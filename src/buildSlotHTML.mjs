@@ -395,6 +395,21 @@ body {
   filter: blur(2.5px) brightness(0.92);
   transition: filter 60ms linear;
 }
+/* Anticipation slowdown — soft golden inset glow on the reel column while
+   it's spinning with extended hold time. Tells the player "this reel can
+   complete the trigger". Combined with the blur tail it reads as a slow,
+   suspenseful descent compared with the normal stagger speed. */
+.reelCol--anticipating {
+  box-shadow: inset 0 0 0 2px rgba(255, 214, 110, 0.55),
+              inset 0 0 35px rgba(255, 214, 110, 0.25);
+  animation: reel-antic-pulse 700ms ease-in-out infinite;
+}
+@keyframes reel-antic-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 2px rgba(255, 214, 110, 0.55),
+                         inset 0 0 35px rgba(255, 214, 110, 0.22); }
+  50%      { box-shadow: inset 0 0 0 2px rgba(255, 230, 168, 0.85),
+                         inset 0 0 55px rgba(255, 214, 110, 0.42); }
+}
 .spinBtn.is-spinning { pointer-events: none; opacity: 0.78; }
 .spinBtn.is-spinning svg { opacity: 0.55; }
 .grow-tag {
@@ -965,6 +980,71 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     reel.rotationCount++;
   }
 
+  /* Dynamic anticipation arming. Called after every reel STOP transition
+     in onTickAll(). Counts visible trigger symbols across the already-
+     stopped reels and, if the count is one short of the GDD's smallest
+     trigger threshold (or already meets it — bigger awards still on the
+     line), pushes back the stop time on every still-spinning reel so the
+     player sees the classic "come on…" slowdown.
+
+     Why this works dynamically rather than pre-computed:
+       1. Real spins (no FORCE_TRIGGER) can land scatters anywhere — we can
+          only tell after each reel settles.
+       2. Even with FORCE_TRIGGER, the random POOL can drop bonus scatters
+          past the planted N, raising the award. The slowdown must hold
+          until the LAST reel that could affect the award has stopped. */
+  function maybeArmAnticipation() {
+    if (!FREESPINS.enabled || !RECT_REELS) return;
+    const threshold = (FREESPINS.triggerCounts && FREESPINS.triggerCounts[0]) ||
+                      (FREESPINS.awards && FREESPINS.awards[0] && FREESPINS.awards[0].count) || 3;
+    /* Highest scatter count in the ladder — anticipation persists until
+       we can no longer reach it (so 4S and 5S awards keep the suspense). */
+    const topRung = (FREESPINS.awards || []).reduce(
+      (m, a) => Math.max(m, a.count), threshold);
+
+    /* Count trigger symbols on every reel that has already settled. */
+    const trig = (FREESPINS.triggerSymbol || "S").toUpperCase();
+    let scattersSoFar = 0;
+    let stoppedCount  = 0;
+    for (const r of RECT_REELS) {
+      if (r.spinning) continue;
+      stoppedCount++;
+      for (let i = 1; i <= ROWS; i++) {
+        if ((r.cells[i].textContent || "").toUpperCase() === trig) scattersSoFar++;
+      }
+    }
+
+    const stillSpinning = RECT_REELS.filter(r => r.spinning);
+    if (stillSpinning.length === 0) return;
+
+    /* Anticipation eligibility — one more scatter would close OR raise the
+       award. Trigger threshold is `threshold`; ladder top is `topRung`.
+       Arm anticipation when (scattersSoFar + 1) >= threshold AND
+       scattersSoFar < topRung (the latter keeps suspense going for the
+       higher rungs after the base trigger is already locked). */
+    const armed = (scattersSoFar + 1 >= threshold) && (scattersSoFar < topRung);
+    if (!armed) return;
+
+    /* Push every still-spinning reel back by HOLD_MS so the slow-down is
+       perceptible; first held reel gets a bigger push, the ones after a
+       slightly smaller one (industry standard cadence). */
+    const HOLD_BASE = 600;
+    const HOLD_STEP = 220;
+    const now = performance.now();
+    stillSpinning.forEach((r, i) => {
+      if (r.anticipating) return;  /* already extended once */
+      r.anticipating = true;
+      r.col.classList.add("reelCol--anticipating");
+      const extra = HOLD_BASE + i * HOLD_STEP;
+      r.scheduledStopAt = Math.max(r.scheduledStopAt, now) + extra;
+      if (r.stopTimerId) clearTimeout(r.stopTimerId);
+      r.stopTimerId = setTimeout(() => {
+        r.stopRequested = true;
+        r.stopRequestTime = performance.now();
+      }, r.scheduledStopAt - now);
+    });
+  }
+
   function commitStopSymbols(reel, reelIdx) {
     /* On stop: ensure the next ROWS visible cells (indexes 1..ROWS) get a
        fresh, settled outcome. The top buffer (index 0) and bottom buffer
@@ -999,38 +1079,28 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     }
 
     /* Arm each reel — apply blur to visible cells, set spinning flag,
-       schedule stop-request based on per-reel stagger. */
+       schedule the BASE stop time (no anticipation yet). Anticipation is
+       added DYNAMICALLY in onTickAll() once we know how many scatters have
+       already landed on stopped reels.
+       Per-reel handle (reel.stopTimerId) lets us cancel & re-schedule when
+       we need to extend a reel's hold time after the previous one stops. */
     RECT_REELS.forEach((reel, idx) => {
       reel.spinning = true;
       reel.stopping = false;
       reel.stopRequested = false;
       reel.rotationCount = 0;
       reel.offsetPx = 0;
+      reel.anticipating = false;
+      reel.scheduledStopAt = performance.now() +
+        SPIN_PROFILE.windupMs + SPIN_PROFILE.accelMs +
+        SPIN_PROFILE.steadyMs + idx * SPIN_PROFILE.staggerMs;
       reel.cells.forEach(c => c.classList.add("is-blurring"));
 
-      /* Anticipation: when a feature trigger is forced, the LAST scatter-
-         carrying reel (the one that completes the threshold) plus every reel
-         after it gets an extra hold time. Visually this is the classic slot
-         "slow-stop on the trigger reel" that signals an incoming feature —
-         the player sees 2 scatters land, the next reel keeps spinning a
-         beat longer ("come on…"), then snaps to the 3rd scatter. */
-      let anticipationMs = 0;
-      if (FORCE_TRIGGER) {
-        const lastScatterIdx = FORCE_TRIGGER.scatterCount - 1;
-        if (idx === lastScatterIdx) anticipationMs = 650;
-        else if (idx > lastScatterIdx) anticipationMs = 350;
-      }
-
-      /* Reel stop is requested after windup + accel + steady + stagger
-         + anticipation. The reel will physically stop when rotationCount >=
-         minRotations AND the delay has elapsed. */
-      const requestDelay = SPIN_PROFILE.windupMs + SPIN_PROFILE.accelMs +
-                           SPIN_PROFILE.steadyMs + idx * SPIN_PROFILE.staggerMs +
-                           anticipationMs;
-      setTimeout(() => {
+      const initialDelay = reel.scheduledStopAt - performance.now();
+      reel.stopTimerId = setTimeout(() => {
         reel.stopRequested = true;
         reel.stopRequestTime = performance.now();
-      }, requestDelay);
+      }, Math.max(0, initialDelay));
     });
 
     if (!spinTicker) {
@@ -1091,8 +1161,14 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
                  to plant a forced-trigger scatter on this reel. */
               const reelIdx = RECT_REELS.indexOf(reel);
               commitStopSymbols(reel, reelIdx);
+              reel.col.classList.remove("reelCol--anticipating");
               /* targetY = -cellStep (resting position with top buffer above) */
               reel.targetY = -reel.cellStep;
+              /* Dynamic anticipation: now that THIS reel has its final
+                 symbols, check how many scatters are visible across every
+                 stopped reel. If we're one short of the trigger threshold,
+                 every still-spinning reel gets a slow-down hold. */
+              maybeArmAnticipation();
             }
           }
         }
