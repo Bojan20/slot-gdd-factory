@@ -1054,18 +1054,26 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
                   (scattersSoFar < topRung);
     if (!armed) return;
 
-    /* Push every still-spinning reel back by HOLD_MS so the slow-down is
-       perceptible. Uniform hold across all anticipating reels — every
-       reel gets the same extra duration so the suspense feels balanced
-       (player reads each remaining reel as equally weighted). */
+    /* Uniform anticipation deadline — every still-spinning reel gets the
+       SAME absolute stop time, so the glow + slowdown duration the
+       player sees is identical across all anticipating reels.
+
+       Deadline = max(currently-scheduled stop across still-spinning) +
+                  HOLD_BASE — pinned to the latest existing schedule so
+                  we never pull a reel forward (anticipation only ever
+                  extends, never shortens). All other reels match that
+                  same deadline, so the first held reel's perceived hold
+                  becomes the canonical duration for every reel after. */
     const HOLD_BASE = 600;
     const now = performance.now();
-    stillSpinning.forEach((r, i) => {
+    const latestScheduled = stillSpinning.reduce(
+      (m, r) => Math.max(m, r.scheduledStopAt), now);
+    const unifiedDeadline = latestScheduled + HOLD_BASE;
+    stillSpinning.forEach((r) => {
       if (r.anticipating) return;  /* already extended once */
       r.anticipating = true;
       r.col.classList.add("reelCol--anticipating");
-      const extra = HOLD_BASE;
-      r.scheduledStopAt = Math.max(r.scheduledStopAt, now) + extra;
+      r.scheduledStopAt = unifiedDeadline;
       if (r.stopTimerId) clearTimeout(r.stopTimerId);
       r.stopTimerId = setTimeout(() => {
         r.stopRequested = true;
