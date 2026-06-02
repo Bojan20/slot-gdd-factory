@@ -71,11 +71,6 @@ import { parseGDD, normalizeFromJSON } from "./src/parser.mjs";
       `<span class="chip"><strong>${escapeHtml(f.label)}</strong></span>`
     ).join("") || `<span class="chip" style="color:#ff6b6b">no features detected</span>`;
 
-    const mathRow = (model.rtp != null || model.volatility || model.maxWin != null) ? `
-          <tr><th>RTP</th><td>${model.rtp != null ? model.rtp + '%' : '—'}</td></tr>
-          <tr><th>Volatility</th><td>${escapeHtml(model.volatility || '—')}</td></tr>
-          <tr><th>Max win</th><td>${model.maxWin != null ? model.maxWin + '×' : '—'}</td></tr>` : '';
-
     resultEl.innerHTML = `
       <div class="card">
         <h3>🧬 Parsed model · ${escapeHtml(fileName)}</h3>
@@ -83,7 +78,7 @@ import { parseGDD, normalizeFromJSON } from "./src/parser.mjs";
         <table>
           <tr><th>Layout</th><td>${model.topology.reels}×${model.topology.rows} · ${model.topology.paylines} lines</td></tr>
           <tr><th>Theme</th><td>${escapeHtml(model.theme.tags.join(" · ") || "—")}</td></tr>
-          <tr><th>Mood</th><td>${escapeHtml(model.theme.mood || "—")}</td></tr>${mathRow}
+          <tr><th>Mood</th><td>${escapeHtml(model.theme.mood || "—")}</td></tr>
         </table>
       </div>
 

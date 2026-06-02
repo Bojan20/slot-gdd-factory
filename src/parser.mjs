@@ -10,9 +10,12 @@
  *   { name, theme: {tags, palette, mood}, topology: {reels, rows, paylines},
  *     symbols: {high[], mid[], low[], specials[]},
  *     features: [{kind, label}],
- *     rtp: number|null, volatility: 'low'|'medium'|'high'|'ultra'|null,
- *     maxWin: number|null,
- *     confidence: {name, topology, symbols, features, math} }
+ *     confidence: {name, topology, symbols, features} }
+ *
+ * Math (RTP / volatility / max-win / paytable / reel weights) is OUT OF SCOPE
+ * of this phase. Boki explicit decree — "nikakva matematika se ne radi dok ne
+ * odradimo savrseno game gdd". Math layer lands in a later phase with PAR
+ * hot-swap injector, not here.
  */
 
 export function parseGDD(text, ext) {
@@ -96,9 +99,7 @@ export function parseMarkdownGDD(text) {
     model.confidence.features = Math.min(1, model.features.length / 3);
   }
 
-  /* math signals — RTP, volatility, max-win — present in many GDDs and
-     in companion *_MATH_GDD.md files. Hits boost the math confidence. */
-  extractMathSignals(text, model);
+  // math (RTP / volatility / max-win) intentionally NOT extracted in this phase.
 
   return model;
 }
@@ -196,73 +197,7 @@ export function extractFeatures(rawText) {
   return out;
 }
 
-/* ─── helper: RTP / volatility / max-win ───────────────────── */
-export function extractMathSignals(text, model) {
-  // RTP — prefer "Target RTP" cell (authoritative), fall back to any "RTP"
-  // cell, finally to prose. Closed-form / MC RTPs are observation values,
-  // not the spec, so we prefer the explicit target.
-  const targetRtpCell = text.match(/\|\s*\*?\*?Target\s+RTP\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
-  const rtpCell = text.match(/\|\s*\*?\*?RTP\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
-  const rtpRe = /(?:target\s+)?RTP\b[^\d]{0,30}(\d{2,3}(?:[.,]\d{1,4})?)\s*%/i;
-  const pickRtp = (cell) => {
-    const num = cell[1].match(/(\d{2,3}(?:[.,]\d{1,4})?)/);
-    return num ? parseFloat(num[1].replace(',', '.')) : null;
-  };
-  let rtpVal = null;
-  if (targetRtpCell) rtpVal = pickRtp(targetRtpCell);
-  if (rtpVal == null && rtpCell) rtpVal = pickRtp(rtpCell);
-  if (rtpVal == null) {
-    const m = text.match(rtpRe);
-    if (m) rtpVal = parseFloat(m[1].replace(',', '.'));
-  }
-  if (rtpVal != null) {
-    model.rtp = rtpVal;
-    model.confidence.math += 0.4;
-  }
-
-  // volatility band — accepts "Volatility", "Volatility category", "Volatility target"
-  const volCell = text.match(/\|\s*\*?\*?Volatility(?:\s+\w+)?\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
-  const volRe = /\bvolatility\b[^\n|]{0,80}?\b(low|mid|medium|high|ultra)\b/i;
-  let volWord = null;
-  if (volCell) {
-    const m = volCell[1].toLowerCase().match(/\b(low|mid|medium|high|ultra)\b/);
-    if (m) volWord = m[1];
-  }
-  if (!volWord) {
-    // theme tags often carry "mid-volatility" / "high-volatility" hyphenated
-    const tagHit = text.match(/\b(low|mid|medium|high|ultra)[\s_-]?volatility\b/i);
-    if (tagHit) volWord = tagHit[1].toLowerCase();
-  }
-  if (!volWord) {
-    const m = text.match(volRe);
-    if (m) volWord = m[1].toLowerCase();
-  }
-  if (volWord) {
-    model.volatility = volWord === 'mid' ? 'medium' : volWord;
-    model.confidence.math += 0.3;
-  }
-
-  // max win — "max win 5000x", "Max win cap 5000× total bet", or "| Max win | 5000x |"
-  // (math GDDs commonly write "Max win cap" rather than "Max win")
-  const maxWinCell = text.match(/\|\s*\*?\*?Max\s+win(?:\s+cap)?\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
-  const maxWinRe =
-    /\bmax(?:imum)?\s+win(?:\s+cap)?\b[^\d]{0,30}(\d{2,6}(?:[.,]\d{1,2})?)\s*[x×]/i;
-  let maxWinVal = null;
-  if (maxWinCell) {
-    const num = maxWinCell[1].match(/(\d{2,6}(?:[.,]\d{1,2})?)\s*[x×]?/);
-    if (num) maxWinVal = parseFloat(num[1].replace(',', '.'));
-  }
-  if (maxWinVal == null) {
-    const m = text.match(maxWinRe);
-    if (m) maxWinVal = parseFloat(m[1].replace(',', '.'));
-  }
-  if (maxWinVal != null) {
-    model.maxWin = maxWinVal;
-    model.confidence.math += 0.3;
-  }
-
-  model.confidence.math = Math.min(1, model.confidence.math);
-}
+// extractMathSignals removed — math is out of scope this phase.
 
 /* ─── JSON GDD passthrough (IR shape) ──────────────────────── */
 export function normalizeFromJSON(obj) {
@@ -275,10 +210,7 @@ export function normalizeFromJSON(obj) {
     kind: f.kind || f.type || 'unknown',
     label: f.label || f.name || f.kind || 'Feature',
   }));
-  model.rtp = obj.rtp ?? obj.target_rtp ?? null;
-  model.volatility = obj.volatility ?? null;
-  model.maxWin = obj.maxWin ?? obj.max_win_x ?? null;
-  model.confidence = { name: 1, topology: 1, symbols: 1, features: 1, math: 1 };
+  model.confidence = { name: 1, topology: 1, symbols: 1, features: 1 };
   return model;
 }
 
@@ -290,9 +222,6 @@ function freshModel() {
     topology: { reels: 5, rows: 3, paylines: 10 },
     symbols: { high: [], mid: [], low: [], specials: [] },
     features: [],
-    rtp: null,
-    volatility: null,
-    maxWin: null,
-    confidence: { name: 0, topology: 0, symbols: 0, features: 0, math: 0 },
+    confidence: { name: 0, topology: 0, symbols: 0, features: 0 },
   };
 }
