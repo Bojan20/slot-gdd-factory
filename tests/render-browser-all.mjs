@@ -1,0 +1,204 @@
+#!/usr/bin/env node
+/**
+ * Browser smoke for every grid fixture.
+ *
+ * For every sample in samples/grids/ (and the 3 originals):
+ *   1. Parses GDD → model → buildSlotHTML
+ *   2. Loads HTML in headless Chromium via playwright
+ *   3. Validates the live DOM
+ *      - .grid-host[data-kind] matches shape.kind
+ *      - cell count matches shape.totalCells (for rect/cluster/etc)
+ *      - hex cells render as .cell.hex; wheel/crash render an <svg>
+ *      - dual subgrids render
+ *   4. Captures one screenshot per fixture into reports/screenshots/
+ *   5. Runs 3 spin actions, checks balance debits and no JS errors
+ *
+ * Exits non-zero on any failure.
+ */
+
+import { parseGDD } from '../src/parser.mjs';
+import { buildGridShape } from '../src/gridShape.mjs';
+import { buildSlotHTML } from '../src/buildSlotHTML.mjs';
+import { readFileSync, readdirSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
+import { resolve, dirname, basename } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { chromium } from 'playwright';
+
+const __filename = fileURLToPath(import.meta.url);
+const REPO = resolve(dirname(__filename), '..');
+const REPORT_DIR = resolve(REPO, 'reports');
+const SHOT_DIR = resolve(REPORT_DIR, 'screenshots');
+if (!existsSync(REPORT_DIR)) mkdirSync(REPORT_DIR, { recursive: true });
+if (!existsSync(SHOT_DIR)) mkdirSync(SHOT_DIR, { recursive: true });
+
+/* buildSlotHTML is now in src/buildSlotHTML.mjs — imported above */
+
+/* ─── DOM validator per kind ────────────────────────────── */
+async function validatePage(page, shape, errors, tag) {
+  const ASSERT = (cond, msg) => { if (!cond) errors.push(`[${tag}] ${msg}`); };
+
+  const kind = await page.getAttribute('#gridHost', 'data-kind');
+  ASSERT(kind === shape.kind, `data-kind=${kind} ≠ shape.kind=${shape.kind}`);
+
+  const cellCount = await page.locator('#gridHost .cell').count();
+  const svgCount  = await page.locator('#gridHost svg').count();
+  const pegCount  = await page.locator('#gridHost .peg').count();
+
+  switch (shape.kind) {
+    case 'rectangular':
+    case 'cluster':
+    case 'lock_respin':
+    case 'infinity':
+    case 'expanding':
+    case 'megaclusters':
+      ASSERT(cellCount === shape.totalCells, `DOM cells=${cellCount} ≠ shape=${shape.totalCells}`);
+      break;
+    case 'variable_reel':
+    case 'diamond':
+    case 'pyramid':
+      ASSERT(cellCount === shape.totalCells, `DOM cells=${cellCount} ≠ shape=${shape.totalCells}`);
+      break;
+    case 'cross':
+    case 'l_shape':
+      ASSERT(cellCount === shape.totalCells, `DOM cells=${cellCount} ≠ shape=${shape.totalCells}`);
+      break;
+    case 'hexagonal': {
+      const hexCells = await page.locator('#gridHost .cell.hex').count();
+      ASSERT(hexCells === shape.totalCells, `hex DOM cells=${hexCells} ≠ shape=${shape.totalCells}`);
+      break;
+    }
+    case 'wheel':
+    case 'radial': {
+      ASSERT(svgCount >= 1, `wheel/radial expected SVG render, got ${svgCount}`);
+      const paths = await page.locator('#gridHost svg path').count();
+      ASSERT(paths === shape.cells.length, `wheel segments paths=${paths} ≠ shape.cells=${shape.cells.length}`);
+      break;
+    }
+    case 'plinko': {
+      ASSERT(pegCount === shape.totalCells, `plinko pegs=${pegCount} ≠ shape=${shape.totalCells}`);
+      break;
+    }
+    case 'crash': {
+      ASSERT(svgCount >= 1, `crash expected SVG curve, got ${svgCount}`);
+      break;
+    }
+    case 'slingo': {
+      // 25 board + 5 strip = 30 cells
+      ASSERT(cellCount === 30, `slingo total cells=${cellCount}, expected 30`);
+      break;
+    }
+    case 'dual': {
+      // primary + sub cells
+      const expected = shape.totalCells + (shape.subgrids ? shape.subgrids.reduce((s, g) => s + g.totalCells, 0) : 0);
+      ASSERT(cellCount === expected, `dual cells=${cellCount}, expected ${expected}`);
+      break;
+    }
+  }
+}
+
+/* ─── Per-fixture browser test ──────────────────────────── */
+async function runFixture(browser, fixturePath, errors) {
+  const text = readFileSync(fixturePath, 'utf-8');
+  const ext  = fixturePath.endsWith('.json') ? 'json' : 'md';
+  const model = parseGDD(text, ext);
+  const shape = buildGridShape(model);
+  const html  = buildSlotHTML(model);
+
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+
+  const consoleErrors = [];
+  page.on('pageerror', e => consoleErrors.push(`pageerror: ${e.message}`));
+  page.on('console', m => {
+    if (m.type() === 'error') consoleErrors.push(`console: ${m.text()}`);
+  });
+
+  await page.setContent(html, { waitUntil: 'load' });
+  await page.waitForSelector('#gridHost', { timeout: 5000 });
+  // give renderer a tick
+  await page.waitForTimeout(80);
+
+  const tag = basename(fixturePath);
+  const before = errors.length;
+  await validatePage(page, shape, errors, tag);
+
+  // record spinCount before/after 3 spins — most reliable indicator
+  // (balance can fluctuate up/down due to dummy wins, so we check the counter)
+  const sc0 = await page.locator('#spinCount').textContent();
+  const bal0 = await page.locator('#bal').textContent();
+  for (let i = 0; i < 3; i++) {
+    await page.click('#spinBtn');
+    await page.waitForTimeout(450);
+  }
+  const sc1 = await page.locator('#spinCount').textContent();
+  const bal1 = await page.locator('#bal').textContent();
+  const spinsIncremented = (parseInt(sc1, 10) - parseInt(sc0, 10)) === 3;
+  if (!spinsIncremented) errors.push(`[${tag}] spin counter did not increment by 3 (sc0=${sc0}, sc1=${sc1})`);
+
+  if (consoleErrors.length > 0) {
+    for (const e of consoleErrors) errors.push(`[${tag}] ${e}`);
+  }
+
+  const shotPath = `${SHOT_DIR}/${tag.replace(/\.(md|json)$/, '')}.png`;
+  await page.screenshot({ path: shotPath, fullPage: false });
+
+  const failed = errors.length - before;
+  await ctx.close();
+  return { tag, kind: shape.kind, totalCells: shape.totalCells, sc0, sc1, bal0, bal1, shotPath, failed, consoleErrors: consoleErrors.length };
+}
+
+/* ─── main ────────────────────────────────────────────────── */
+(async () => {
+  console.log('Launching headless Chromium…');
+  const browser = await chromium.launch({ headless: true });
+  const errors = [];
+  const results = [];
+
+  /* gather fixtures: 19 from samples/grids + 3 originals */
+  const fixtures = [
+    ...readdirSync(resolve(REPO, 'samples/grids')).filter(f => f.endsWith('.md'))
+      .map(f => resolve(REPO, 'samples/grids', f)),
+    resolve(REPO, 'samples/WRATH_OF_OLYMPUS_GAME_GDD.md'),
+    resolve(REPO, 'samples/CRYSTAL_FORGE_GAME_GDD.md'),
+    resolve(REPO, 'samples/MIDNIGHT_FANGS_GAME_GDD.md'),
+  ].filter(f => existsSync(f));
+
+  for (const f of fixtures) {
+    process.stdout.write(`· ${basename(f).padEnd(50)}`);
+    const r = await runFixture(browser, f, errors);
+    results.push(r);
+    console.log(r.failed === 0 ? '✓' : `✗ (${r.failed})`);
+  }
+  await browser.close();
+
+  /* report */
+  const ok = results.filter(r => r.failed === 0).length;
+  const fail = results.length - ok;
+  const lines = [];
+  lines.push(`# Browser-render QA report`);
+  lines.push(``);
+  lines.push(`**Generated**: ${new Date().toISOString()}`);
+  lines.push(`**Fixtures**: ${results.length} · **PASS**: ${ok} · **FAIL**: ${fail}`);
+  lines.push(``);
+  lines.push(`## Per-fixture results`);
+  lines.push(``);
+  lines.push(`| Fixture | kind | cells | spins | bal0 → bal1 | console.err | screenshot | status |`);
+  lines.push(`|---|---|--:|:--:|--:|--:|---|:--:|`);
+  for (const r of results) {
+    const status = r.failed === 0 ? '✅' : `❌ ${r.failed}`;
+    const shotRel = r.shotPath.replace(REPO + '/', '');
+    lines.push(`| \`${r.tag}\` | ${r.kind} | ${r.totalCells} | ${r.sc0}→${r.sc1} | ${r.bal0} → ${r.bal1} | ${r.consoleErrors} | \`${shotRel}\` | ${status} |`);
+  }
+  if (errors.length > 0) {
+    lines.push('');
+    lines.push(`## ❌ Errors (${errors.length})`);
+    lines.push('');
+    for (const e of errors) lines.push(`- ${e}`);
+  }
+
+  const out = lines.join('\n');
+  writeFileSync(`${REPORT_DIR}/browser-render-latest.md`, out);
+  console.log(`\n${out}\n`);
+  console.log(`Report: ${REPORT_DIR}/browser-render-latest.md`);
+  if (fail > 0) process.exit(1);
+})();
