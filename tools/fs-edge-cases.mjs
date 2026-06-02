@@ -56,16 +56,31 @@ const fix2 = '08_pyramid_game_gdd';              // non-rectangular, default FS
 const click = (page, sel) =>
   page.evaluate((s) => document.getElementById(s.replace('#', '')).click(), sel);
 
-/* ─── Scenario 1: double-click dev FS mid-intro ──────────────────────── */
+/* Wait for FSM.phase to become target. The dev FS button now runs a real
+   spin (rectangular ~2.5s, non-rect ~0.5s) before the intro placard, so a
+   bare 300ms timeout is no longer enough. */
+async function waitFor(page, targetPhase, maxMs = 8000) {
+  const deadline = Date.now() + maxMs;
+  while (Date.now() < deadline) {
+    await page.waitForTimeout(150);
+    const p = await page.evaluate(() => window.FSM && window.FSM.phase);
+    if (p === targetPhase) return p;
+  }
+  return null;
+}
+
+/* ─── Scenario 1: double-click dev FS mid-spin ──────────────────────── */
 {
   const { ctx, page, errs } = await newPage(fix1);
   await click(page, '#devFsBtn');
-  await page.waitForTimeout(200);
-  await click(page, '#devFsBtn'); /* should be a no-op — dev btn disabled */
-  await page.waitForTimeout(200);
+  /* Second click immediately — should be a no-op because btn is disabled. */
+  await page.waitForTimeout(100);
+  await click(page, '#devFsBtn');
+  /* Now wait for the spin to settle and the intro to fade in. */
+  await waitFor(page, 'FS_INTRO');
   const fsm = await page.evaluate(() => ({ phase: FSM.phase, total: FSM.spinsTotal }));
-  record('1. double-click dev FS mid-intro', fix1,
-    fsm.phase === 'FS_INTRO' && fsm.total === 14,
+  record('1. double-click dev FS during forced spin', fix1,
+    fsm.phase === 'FS_INTRO' && fsm.total >= 14,
     `phase=${fsm.phase} total=${fsm.total}`, errs);
   await ctx.close();
 }
@@ -74,6 +89,7 @@ const click = (page, sel) =>
 {
   const { ctx, page, errs } = await newPage(fix1);
   await click(page, '#devFsBtn');
+  await waitFor(page, 'FS_INTRO');
   await page.waitForTimeout(300);
   await click(page, '#fsPlacardCta'); /* enter active */
   await page.waitForTimeout(600);
@@ -92,7 +108,8 @@ const click = (page, sel) =>
 {
   const { ctx, page, errs } = await newPage(fix1);
   await click(page, '#devFsBtn');
-  await page.waitForTimeout(300);
+  await waitFor(page, 'FS_INTRO');
+  await page.waitForTimeout(200);
   /* SPIN btn must be disabled while intro overlay is up. */
   const disabled = await page.evaluate(() => document.getElementById('spinBtn').disabled);
   await page.evaluate(() => document.getElementById('spinBtn').click());
@@ -108,6 +125,7 @@ const click = (page, sel) =>
 {
   const { ctx, page, errs } = await newPage(fix1);
   await click(page, '#devFsBtn');
+  await waitFor(page, 'FS_INTRO');
   await page.waitForTimeout(300);
   await click(page, '#fsPlacardCta'); /* active */
   await page.waitForTimeout(600);
@@ -132,6 +150,7 @@ const click = (page, sel) =>
 {
   const { ctx, page, errs } = await newPage(fix1);
   await click(page, '#devFsBtn');
+  await waitFor(page, 'FS_INTRO');
   await page.waitForTimeout(300);
   await click(page, '#fsPlacardCta');
   await click(page, '#fsPlacardCta'); /* 2nd should be ignored (phase changed) */
@@ -148,6 +167,7 @@ const click = (page, sel) =>
   const { ctx, page, errs } = await newPage(fix1);
   /* Round 1 */
   await click(page, '#devFsBtn');
+  await waitFor(page, 'FS_INTRO');
   await page.waitForTimeout(300);
   await click(page, '#fsPlacardCta');
   /* Wait for outro */
@@ -162,15 +182,17 @@ const click = (page, sel) =>
   await page.waitForTimeout(400);
   const phaseAfterReturn = await page.evaluate(() => FSM.phase);
 
-  /* Round 2 — should work identically */
+  /* Round 2 — should work identically. With the new force-trigger flow the
+     dev btn kicks a spin first, so we must waitFor(FS_INTRO) before probing. */
   await click(page, '#devFsBtn');
+  await waitFor(page, 'FS_INTRO');
   await page.waitForTimeout(300);
   const intro2 = await page.evaluate(() => ({
     phase: FSM.phase, total: FSM.spinsTotal, mult: FSM.mult, retrig: FSM.retrigCount,
   }));
   record('7. round → return → round again (state reset)', fix1,
     phaseAfterReturn === 'BASE' && intro2.phase === 'FS_INTRO' &&
-    intro2.total === 14 && intro2.mult === 1 && intro2.retrig === 0,
+    intro2.total >= 14 && intro2.mult === 1 && intro2.retrig === 0,
     `phase=${intro2.phase} total=${intro2.total} mult=${intro2.mult} retrig=${intro2.retrig}`,
     errs);
   await ctx.close();
@@ -180,6 +202,7 @@ const click = (page, sel) =>
 {
   const { ctx, page, errs } = await newPage(fix1);
   await click(page, '#devFsBtn');
+  await waitFor(page, 'FS_INTRO');
   await page.waitForTimeout(300);
   await click(page, '#fsPlacardCta');
   await page.waitForTimeout(1500); /* mid-round */
@@ -198,6 +221,7 @@ const click = (page, sel) =>
 {
   const { ctx, page, errs } = await newPage(fix1);
   await click(page, '#devFsBtn');
+  await waitFor(page, 'FS_INTRO');
   await page.waitForTimeout(300);
   await click(page, '#fsPlacardCta');
   await page.waitForTimeout(800);
@@ -223,6 +247,7 @@ const click = (page, sel) =>
   /* WoO multiplier: progressive, start=1, step=1, cap=10 */
   const cfg = await page.evaluate(() => FREESPINS.multiplier);
   await click(page, '#devFsBtn');
+  await waitFor(page, 'FS_INTRO');
   await page.waitForTimeout(300);
   await click(page, '#fsPlacardCta');
 
@@ -251,6 +276,7 @@ const click = (page, sel) =>
 {
   const { ctx, page, errs } = await newPage(fix2);
   await click(page, '#devFsBtn');
+  await waitFor(page, 'FS_INTRO');
   await page.waitForTimeout(300);
   await click(page, '#fsPlacardCta');
   const max = Date.now() + 120_000;

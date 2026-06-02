@@ -943,6 +943,13 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
   let spinStartTime = 0;
   let allReelsActive = false;
 
+  /* Force-trigger flag — when set before a spin, the stop-symbol commit
+     guarantees N scatters across the first N reels, mirroring "you spun
+     into a feature". The DEV FS button uses this so the player sees the
+     real reel-stop sequence (with anticipation slowdown on the final
+     scatter-carrying reels) before the intro placard appears. */
+  let FORCE_TRIGGER = null;   /* { scatterCount: 3 } | null */
+
   function randomSym() { return POOL[Math.floor(Math.random() * POOL.length)]; }
 
   function rotateStripDown(reel) {
@@ -958,12 +965,20 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     reel.rotationCount++;
   }
 
-  function commitStopSymbols(reel) {
+  function commitStopSymbols(reel, reelIdx) {
     /* On stop: ensure the next ROWS visible cells (indexes 1..ROWS) get a
        fresh, settled outcome. The top buffer (index 0) and bottom buffer
        (last) are kept for the cushion bounce. */
     for (let i = 1; i <= ROWS; i++) {
       reel.cells[i].textContent = randomSym();
+    }
+    /* If we're forcing a feature trigger, plant a scatter on the centre row
+       of the first N reels so handlePostSpin counts the right number. The
+       scatter goes on the middle visible row for max readability. */
+    if (FORCE_TRIGGER && reelIdx < FORCE_TRIGGER.scatterCount) {
+      const trig = (FREESPINS.triggerSymbol || "S");
+      const midRow = Math.max(1, Math.ceil(ROWS / 2));
+      reel.cells[midRow].textContent = trig;
     }
   }
 
@@ -993,11 +1008,25 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
       reel.offsetPx = 0;
       reel.cells.forEach(c => c.classList.add("is-blurring"));
 
-      /* Reel stop is requested after windup + accel + steady + stagger.
-         The reel will physically stop when rotationCount >= minRotations
-         AND the delay has elapsed. */
+      /* Anticipation: when a feature trigger is forced, the LAST scatter-
+         carrying reel (the one that completes the threshold) plus every reel
+         after it gets an extra hold time. Visually this is the classic slot
+         "slow-stop on the trigger reel" that signals an incoming feature —
+         the player sees 2 scatters land, the next reel keeps spinning a
+         beat longer ("come on…"), then snaps to the 3rd scatter. */
+      let anticipationMs = 0;
+      if (FORCE_TRIGGER) {
+        const lastScatterIdx = FORCE_TRIGGER.scatterCount - 1;
+        if (idx === lastScatterIdx) anticipationMs = 650;
+        else if (idx > lastScatterIdx) anticipationMs = 350;
+      }
+
+      /* Reel stop is requested after windup + accel + steady + stagger
+         + anticipation. The reel will physically stop when rotationCount >=
+         minRotations AND the delay has elapsed. */
       const requestDelay = SPIN_PROFILE.windupMs + SPIN_PROFILE.accelMs +
-                           SPIN_PROFILE.steadyMs + idx * SPIN_PROFILE.staggerMs;
+                           SPIN_PROFILE.steadyMs + idx * SPIN_PROFILE.staggerMs +
+                           anticipationMs;
       setTimeout(() => {
         reel.stopRequested = true;
         reel.stopRequestTime = performance.now();
@@ -1058,7 +1087,10 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
               reel.spinning = false;
               reel.stopping = true;
               reel.stopStartMs = now;
-              commitStopSymbols(reel);
+              /* Pass the reel index so commitStopSymbols can decide whether
+                 to plant a forced-trigger scatter on this reel. */
+              const reelIdx = RECT_REELS.indexOf(reel);
+              commitStopSymbols(reel, reelIdx);
               /* targetY = -cellStep (resting position with top buffer above) */
               reel.targetY = -reel.cellStep;
             }
@@ -1162,7 +1194,10 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
      symbol set with a quick fade. Good enough for the FS visual flow (the
      real per-kind spin animations land in the per-kind engine packages). */
   function runStaticReroll(onSettled) {
-    const cells = grid.querySelectorAll(".cell");
+    /* SVG-based kinds (wheel/crash) keep their symbols inside <text> nodes
+       rather than .cell divs. Selector covers both so wheel scatter detection
+       works on top of the same reroll path. */
+    const cells = grid.querySelectorAll(".cell, text");
     if (cells.length === 0) {
       if (typeof onSettled === "function") setTimeout(onSettled, 60);
       return;
@@ -1172,7 +1207,14 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
        cinematic "feel" of a rectangular spin without the 2s windup. */
     cells.forEach(c => c.classList.add("is-blurring"));
     setTimeout(() => {
-      cells.forEach(c => { c.textContent = randomSym() || "?"; });
+      /* If a feature trigger is being forced, plant N scatters on the first
+         N cells so handlePostSpin counts the threshold and fires the intro
+         naturally. Rest of the grid stays random. */
+      const trig = (FREESPINS.triggerSymbol || "S");
+      const forceN = FORCE_TRIGGER ? FORCE_TRIGGER.scatterCount : 0;
+      cells.forEach((c, i) => {
+        c.textContent = (i < forceN) ? trig : (randomSym() || "?");
+      });
       setTimeout(() => {
         cells.forEach(c => c.classList.remove("is-blurring"));
         if (typeof onSettled === "function") onSettled();
@@ -1182,8 +1224,8 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
   /* Count how many trigger-symbols are visible on the current grid. For
      rectangular kinds we look at the VISIBLE strip rows (indexes 1..ROWS),
-     not the buffer cells above/below the mask. Other kinds just count
-     across every .cell. */
+     not the buffer cells above/below the mask. Wheel/crash render through
+     SVG <text> nodes, not .cell divs — those get a dedicated path. */
   function countTriggerSymbols() {
     const id = (FREESPINS.triggerSymbol || "S").toUpperCase();
     if (SHAPE.kind === "rectangular" && RECT_REELS) {
@@ -1195,8 +1237,12 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
       }
       return n;
     }
+    /* Wheel & crash render as SVG — text segments live inside <text>, not
+       .cell divs. Fallback path that counts trigger text anywhere on the
+       grid host, scoped to <text> for SVG and .cell for HTML. */
     let n = 0;
-    grid.querySelectorAll(".cell").forEach(c => {
+    const nodes = grid.querySelectorAll(".cell, text");
+    nodes.forEach(c => {
       if ((c.textContent || "").toUpperCase() === id) n++;
     });
     return n;
@@ -1227,7 +1273,21 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     const scatters = countTriggerSymbols();
     if (!duringFs) {
       const award = spinsForCount(scatters);
-      if (award > 0) FSM_enterIntro(award, scatters);
+      if (award > 0) {
+        /* Settle pause — the player needs to see the scatters land in their
+           final positions for a beat before the cinematic placard fades in.
+           Industry standard reveal pause = 450-650ms; we pick 550ms. */
+        const wasForced = !!FORCE_TRIGGER;
+        FORCE_TRIGGER = null;   /* one-shot — clear so next spin is normal */
+        setTimeout(() => FSM_enterIntro(award, scatters), wasForced ? 550 : 250);
+      } else {
+        /* No trigger this spin — clean up the force flag in case the player
+           started a normal spin while we were in a (bizarre) intermediate
+           state, then re-enable the dev btn so they can try again. */
+        FORCE_TRIGGER = null;
+        if (devFsBtn) devFsBtn.disabled = !FREESPINS.enabled;
+        if (spinButton) spinButton.disabled = false;
+      }
       return;
     }
     /* During FS: check for retrigger. The retrigger threshold is usually
@@ -1429,15 +1489,28 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     });
   }
 
-  /* Dev-only FS trigger — fires the lowest-count award from the GDD ladder
-     so the FS round actually starts (not just a zero-spin no-op). Disabled
-     when the GDD has no FS config. */
+  /* Dev-only FS trigger — runs a real spin with the scatter outcome forced
+     so the player sees the FULL trigger sequence: reels rotate, scatters
+     land one by one with anticipation slowdown on the trigger reel, brief
+     settle pause, THEN the cinematic intro placard fades in. This mirrors
+     what an organic feature hit looks like — exactly the "you spun into a
+     bonus" moment a player remembers.
+
+     Implementation: sets FORCE_TRIGGER flag, kicks runOneBaseSpin(), which
+     uses the normal spin engine + handlePostSpin. The scatter detection in
+     handlePostSpin sees the planted scatters and naturally fires intro. */
   if (devFsBtn) {
     devFsBtn.disabled = !FREESPINS.enabled;
     devFsBtn.addEventListener("click", () => {
       if (FSM.phase !== "BASE" || !FREESPINS.enabled) return;
       const first = (FREESPINS.awards && FREESPINS.awards[0]) || { count: 3, spins: 10 };
-      FSM_enterIntro(first.spins, first.count);
+      /* Disable both buttons immediately so a stray double-tap can't queue
+         a second spin behind this one. They get re-enabled on FSM_enterBase
+         (or by handlePostSpin if FS doesn't trigger for some reason). */
+      devFsBtn.disabled = true;
+      if (spinButton) spinButton.disabled = true;
+      FORCE_TRIGGER = { scatterCount: first.count };
+      runOneBaseSpin();
     });
   }
 

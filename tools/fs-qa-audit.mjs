@@ -92,9 +92,19 @@ async function runOne(file) {
     return row;
   }
 
-  /* ── 1. Click dev FS button → intro overlay ─────────────────── */
-  await page.click('#devFsBtn');
-  await page.waitForTimeout(500);
+  /* ── 1. Click dev FS button → spin sequence → intro overlay ─────────
+     The dev FS button no longer jumps straight to the placard — it forces
+     a real spin with the trigger outcome planted. We poll the FSM phase
+     until it reports FS_INTRO (rectangular: ~2.5s spin + 0.55s settle;
+     non-rectangular: ~0.5s reroll + 0.55s settle). */
+  await page.evaluate(() => document.getElementById('devFsBtn').click());
+  const introWait = Date.now() + 8000;
+  while (Date.now() < introWait) {
+    await page.waitForTimeout(200);
+    const ph = await page.evaluate(() => window.FSM && window.FSM.phase);
+    if (ph === 'FS_INTRO') break;
+  }
+  await page.waitForTimeout(400); /* let the fade-in finish */
   const introState = await page.evaluate(() => {
     const ov = document.getElementById('fsOverlay');
     const placardSpins = document.getElementById('fsPlacardSpins');
@@ -107,12 +117,16 @@ async function runOne(file) {
       devBtnDisabled:  document.getElementById('devFsBtn').disabled,
     };
   });
-  const expectedSpins = String(fsState.awards[0].spins);
+  /* Award must be ONE of the spin counts in the configured ladder. We can't
+     pin it to awards[0] anymore because the new force-trigger flow plants
+     N scatters on the first N reels but the rest of the grid is random —
+     so an extra scatter can organically bump the award up the ladder. */
+  const ladderSpins = fsState.awards.map(a => String(a.spins));
   if (introState.overlayVisible &&
       introState.cta === 'TAP TO BEGIN' &&
-      introState.placardSpins === expectedSpins &&
+      ladderSpins.includes(introState.placardSpins) &&
       introState.spinBtnDisabled && introState.devBtnDisabled) {
-    row.introOk = '✅';
+    row.introOk = '✅ ' + introState.placardSpins + ' FS';
   } else {
     row.introOk = '❌ intro state wrong';
     row.notes.push('intro: ' + JSON.stringify(introState));
