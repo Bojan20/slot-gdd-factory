@@ -949,17 +949,26 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
         • final visible 3 cells are the new outcome
 
      Timing constants mirror SPIN_PROFILE_NORMAL from WoO timing.ts. */
-  /* Industry-standard cadence — reels stop one-by-one with a clearly
-     perceptible gap between each stop (220ms = ~13 frames @60fps), like
-     a real cabinet. First reel lands ~0.95s after click, last reel
-     ~0.95s + 4*220ms = ~1.83s — total spin under 2s, but every reel
-     stop reads as its own discrete beat. Bounce stays a subtle 3px
-     single cushion (clean snap, no rubber wobble). */
+  /* Industry-reference cadence (S-AVP / classic 5-reel cabinet timing).
+     Each reel: windup → accel → steady spin → DECEL (perceivable slow-
+     down before the snap) → snap onto symbols → subtle cushion bounce.
+     Reels stop one-by-one with a 320ms gap = classic cabinet beat
+     (slightly longer than mobile-arcade quickplay).
+     Land timing from SPIN click:
+       reel 1 :  ~1.40s   (windup 100 + accel 120 + steady 830 + decel 350)
+       reel 2 :  ~1.72s
+       reel 3 :  ~2.04s
+       reel 4 :  ~2.36s
+       reel 5 :  ~2.68s
+     Total spin ~2.7s — matches the reference base-game cadence. */
   const SPIN_PROFILE = {
-    windupMs: 90, windupFrames: 6, windupPx: 32,
-    accelMs: 110, steadyMs: 750, decelMs: 220,
-    staggerMs: 220,
-    bouncePx: 3, bounceDecay: 0.45, bounceCount: 1, bounceElasticity: 1.6,
+    windupMs: 100, windupFrames: 6, windupPx: 38,
+    accelMs: 120, steadyMs: 830, decelMs: 350,
+    staggerMs: 320,
+    bouncePx: 4, bounceDecay: 0.42, bounceCount: 1, bounceElasticity: 1.7,
+    /* Decel ease — applied while reel is in 'stopping' phase.
+       Smaller value = slower approach to target (more visible decel). */
+    decelEasingSpeed: 0.11,
   };
 
   /* Public state of the engine */
@@ -1198,7 +1207,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
         reel.strip.style.transform = "translateY(" + Math.round(rawY) + "px)";
       } else if (reel.stopping) {
         anyActive = true;
-        const easingSpeed = 0.18;
+        const easingSpeed = SPIN_PROFILE.decelEasingSpeed || 0.18;
         const snapThreshold = 0.6;
         const currentY = parseFloat(reel.strip.style.transform.replace(/[^\-0-9.]/g, "")) || 0;
         const delta = reel.targetY - currentY;
