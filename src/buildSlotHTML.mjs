@@ -375,14 +375,7 @@ body {
   border: none;
   background: #1a2230;
 }
-.cell.hex::before {
-  content: "";
-  position: absolute;
-  inset: 2px;
-  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
-  border: 1px solid rgba(201, 162, 39, 0.4);
-  pointer-events: none;
-}
+/* Hex inner ornament removed — keep cells flat like every other shape. */
 .wheel-svg { width: 80%; max-width: 480px; aspect-ratio: 1 / 1; }
 /* ─── Reel spin engine (rectangular only, for now) ─────────────────── */
 .reelCol {
@@ -410,10 +403,10 @@ body {
   right: 14px;
   font-size: 0.6rem;
   color: var(--accent);
-  border: 1px dashed var(--accent);
-  border-radius: 12px;
-  padding: 2px 8px;
-  background: rgba(0, 0, 0, 0.5);
+  opacity: 0.55;
+  background: transparent;
+  border: none;
+  padding: 0;
   letter-spacing: 1.5px;
   text-transform: uppercase;
 }
@@ -984,8 +977,8 @@ body {
     strip.className = "grid-rect";
     strip.style.gridTemplateColumns = "repeat(5, " + side + "px)";
     strip.style.gridTemplateRows = side + "px";
-    strip.style.borderTop = "1px dashed var(--accent)";
-    strip.style.paddingTop = "10px";
+    /* Spacing only — visual separator removed for the flat look. */
+    strip.style.marginTop = "12px";
     for (let i = 25; i < 30; i++) strip.appendChild(makeCell(symAt(i)));
     host.appendChild(strip);
     grid.appendChild(host);
