@@ -82,39 +82,45 @@ body {
   overflow: hidden;
 }
 .stage {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "header"
+    "play"
+    "hub";
   width: 100%;
-  max-height: 100vh;
-  padding: 16px;
+  height: 100vh;
+  max-width: 1280px;
+  padding: 12px 16px 12px;
+  gap: 10px;
 }
+.header { grid-area: header; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .title {
   color: var(--accent);
-  font-size: 1.4rem;
+  font-size: 1.25rem;
   font-weight: 800;
   letter-spacing: 1px;
   text-shadow: 0 2px 12px rgba(0,0,0,0.6);
-  flex-shrink: 0;
 }
 .sub {
   color: var(--text);
-  opacity: 0.55;
-  font-size: 0.75rem;
+  opacity: 0.5;
+  font-size: 0.7rem;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  flex-shrink: 0;
 }
-/* Frame fills available space respecting both width and height.
-   The aspect-ratio is whatever the grid needs (we compute cell side
-   to fit inside this frame). max-width and max-height are clamped to
-   the viewport so the grid is always fully visible — title+sub above
-   subtract from the available height. */
+/* Play area = frame + side spin column. Stage grid resizes frame to
+   exactly fill the remaining vertical and horizontal space. */
+.play {
+  grid-area: play;
+  display: grid;
+  grid-template-columns: 1fr 84px;
+  gap: 14px;
+  align-items: stretch;
+  min-height: 0;
+}
 .frame {
   position: relative;
-  width: min(1200px, 92vw);
-  height: min(720px, 78vh);
   background: rgba(0, 0, 0, 0.18);
   border: 1px solid rgba(201, 162, 39, 0.25);
   border-radius: var(--frame-radius);
@@ -124,7 +130,107 @@ body {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  flex-shrink: 0;
+  min-height: 0;
+  min-width: 0;
+}
+/* Side controls — vertical SPIN button column on the right of the frame */
+.sideHud {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+.spinBtn {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: radial-gradient(circle at 30% 30%, #f3d27a 0%, var(--accent) 60%, #6d520f 100%);
+  box-shadow:
+    0 0 22px rgba(201, 162, 39, 0.55),
+    inset 0 2px 6px rgba(255, 230, 168, 0.4),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1a1206;
+  transition: transform .15s ease, box-shadow .2s ease;
+}
+.spinBtn:hover { transform: scale(1.04); box-shadow: 0 0 30px rgba(201, 162, 39, 0.75), inset 0 2px 6px rgba(255, 230, 168, 0.5), inset 0 -3px 8px rgba(0, 0, 0, 0.5); }
+.spinBtn svg { width: 32px; height: 32px; fill: #1a1206; }
+.autoBtn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 1px solid rgba(201, 162, 39, 0.4);
+  background: linear-gradient(180deg, rgba(30, 25, 20, 0.85), rgba(15, 12, 10, 0.9));
+  color: var(--accent);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 1px 0 rgba(255, 230, 168, 0.08), 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.autoBtn svg { width: 22px; height: 22px; }
+/* Bottom bar — BAL | STATUS | BET-/BET/BET+ | SOUND */
+.hub {
+  grid-area: hub;
+  display: grid;
+  grid-template-columns: 36px 1fr 1.4fr 1fr 36px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, rgba(30, 25, 20, 0.7), rgba(10, 8, 6, 0.85));
+  border: 1px solid rgba(201, 162, 39, 0.22);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 230, 168, 0.05), 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+.iconBtn {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(201, 162, 39, 0.25);
+  background: rgba(0, 0, 0, 0.35);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent);
+  cursor: pointer;
+}
+.iconBtn svg { width: 18px; height: 18px; }
+.statBox {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 4px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(201, 162, 39, 0.22);
+  background: linear-gradient(180deg, rgba(30, 25, 20, 0.85), rgba(15, 12, 10, 0.9));
+  box-shadow: inset 0 1px 0 rgba(255, 230, 168, 0.08), 0 2px 6px rgba(0, 0, 0, 0.4);
+  min-width: 0;
+}
+.statBox__label {
+  font-size: 0.55rem; letter-spacing: 2px;
+  color: var(--accent); opacity: 0.75;
+  text-transform: uppercase;
+}
+.statBox__value {
+  font-size: 1.05rem; font-weight: 800;
+  color: #ffe6a8;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+.statBox--status .statBox__value { font-size: 0.95rem; letter-spacing: 1.5px; }
+.betGroup {
+  display: grid;
+  grid-template-columns: 32px 1fr 32px;
+  gap: 6px;
+  align-items: stretch;
+}
+.betStep {
+  width: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  background: linear-gradient(180deg, rgba(30, 25, 20, 0.85), rgba(15, 12, 10, 0.9));
+  color: var(--accent);
+  font-size: 1rem; font-weight: 800;
+  cursor: pointer;
 }
 .gridHost {
   width: 100%;
@@ -197,10 +303,46 @@ body {
 </style></head><body>
 
 <div class="stage">
-  <div class="title">${escapeHtml(model.name)}</div>
-  <div class="sub">${escapeHtml(layoutSub)}</div>
-  <div class="frame">
-    <div class="gridHost" id="gridHost" data-kind="${shape.kind}"></div>
+  <div class="header">
+    <div class="title">${escapeHtml(model.name)}</div>
+    <div class="sub">${escapeHtml(layoutSub)}</div>
+  </div>
+  <div class="play">
+    <div class="frame" id="frameHost">
+      <div class="gridHost" id="gridHost" data-kind="${shape.kind}"></div>
+    </div>
+    <aside class="sideHud" aria-label="Game Controls">
+      <button class="spinBtn" id="spinBtn" aria-label="Spin" type="button">
+        <svg viewBox="0 0 24 24"><path d="M13 2L4.5 14H11L10 22L18.5 9H12L13 2Z"/></svg>
+      </button>
+      <button class="autoBtn" id="autoBtn" aria-label="Auto" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor"/></svg>
+      </button>
+    </aside>
+  </div>
+  <div class="hub">
+    <button class="iconBtn" aria-label="Menu" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+    </button>
+    <div class="statBox statBox--balance">
+      <div class="statBox__label">BAL</div>
+      <div class="statBox__value" id="bal">1000.00</div>
+    </div>
+    <div class="statBox statBox--status">
+      <div class="statBox__label">STATUS</div>
+      <div class="statBox__value" id="status">PRESS SPIN</div>
+    </div>
+    <div class="betGroup">
+      <button class="betStep" aria-label="bet -" type="button">−</button>
+      <div class="statBox statBox--bet">
+        <div class="statBox__label">BET</div>
+        <div class="statBox__value" id="bet">1.00</div>
+      </div>
+      <button class="betStep" aria-label="bet +" type="button">+</button>
+    </div>
+    <button class="iconBtn" aria-label="Sound" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+    </button>
   </div>
 </div>
 
@@ -211,6 +353,7 @@ body {
   const ROWS  = SHAPE.rows;
 
   const grid = document.getElementById("gridHost");
+  const frame = document.getElementById("frameHost");
 
   /* Deterministic symbol fill — repeatable layout per fixture for snapshots */
   function symAt(i) { return POOL[i % POOL.length]; }
@@ -222,17 +365,17 @@ body {
     return el;
   }
 
-  function cellSize(cols, rowsCount) {
-    /* Compute cell side from frame inner dimensions. Frame inner =
-       width - 2*inset. We have grid (cols × rowsCount). Cell side =
-       min(innerW/cols, innerH/rowsCount) - gap loss. */
-    const frame = grid.parentElement;
-    const innerW = frame.clientWidth;
-    const innerH = frame.clientHeight;
-    const gap = 6;
-    const cellW = (innerW - gap * (cols - 1)) / cols;
-    const cellH = (innerH - gap * (rowsCount - 1)) / rowsCount;
-    return Math.min(cellW, cellH);
+  /* Compute the side length so a (cols x rowsCount) grid of square cells
+     with the given gap between them fits inside frame inner box. The grid is
+     centered automatically by .gridHost flex layout. */
+  function cellSize(cols, rowsCount, gap = 6) {
+    /* frame already has padding=var(--frame-inset); use clientWidth/Height
+       which exclude padding. */
+    const innerW = grid.clientWidth || frame.clientWidth;
+    const innerH = grid.clientHeight || frame.clientHeight;
+    const cellW = (innerW - gap * Math.max(0, cols - 1)) / cols;
+    const cellH = (innerH - gap * Math.max(0, rowsCount - 1)) / rowsCount;
+    return Math.max(20, Math.floor(Math.min(cellW, cellH)));
   }
 
   function renderRect() {
@@ -252,7 +395,7 @@ body {
       const tag = document.createElement("div");
       tag.className = "grow-tag";
       tag.textContent = SHAPE.kind === "infinity" ? "∞ horizontal" : "expand vertical";
-      grid.parentElement.appendChild(tag);
+      frame.appendChild(tag);
     }
     grid.appendChild(host);
   }
@@ -308,9 +451,8 @@ body {
     host.className = "grid-hex";
     const ring = Math.floor((SHAPE.columns.length - 1) / 2);
     /* tile size derived from frame dimensions */
-    const frame = grid.parentElement;
-    const innerW = frame.clientWidth;
-    const innerH = frame.clientHeight;
+    const innerW = grid.clientWidth || frame.clientWidth;
+    const innerH = grid.clientHeight || frame.clientHeight;
     const dim = ring * 2 + 1;
     const size = Math.min(innerW / (dim * 1.05), innerH / (dim * 0.9));
     const w = size, h = size * 0.85;
@@ -413,8 +555,7 @@ body {
   function renderSlingo() {
     const host = document.createElement("div");
     host.className = "grid-slingo";
-    const frame = grid.parentElement;
-    const innerH = frame.clientHeight;
+    const innerH = grid.clientHeight || frame.clientHeight;
     /* board takes 5 rows, strip is 1 row; reserve 6 row-units total with gap */
     const totalRows = 6 + 0.4; /* small visual separator */
     const side = (innerH - 12 - 6 * 5) / totalRows;
@@ -440,19 +581,33 @@ body {
     wrap.style.cssText = "display:flex;gap:20px;align-items:center;width:100%;height:100%;justify-content:center";
     const sgRowsB = (SHAPE.subgrids && SHAPE.subgrids[0]) ? SHAPE.subgrids[0].rows : ROWS;
     const sgReelsB = (SHAPE.subgrids && SHAPE.subgrids[0]) ? SHAPE.subgrids[0].reels : REELS;
-    const maxRowsAny = Math.max(ROWS, sgRowsB);
-    const frame = grid.parentElement;
-    const innerW = frame.clientWidth - 40;
-    const innerH = frame.clientHeight;
-    const sideA = Math.min((innerW * 0.4) / REELS, innerH / ROWS);
-    const sideB = Math.min((innerW * 0.4) / sgReelsB, innerH / maxRowsAny);
+    const innerW = (grid.clientWidth || frame.clientWidth) - 30;
+    const innerH = grid.clientHeight || frame.clientHeight;
+    const gap = 4;
+    /* Compute each side's max cell so it fits entirely in the available
+       half-width AND the full inner height. Subgrid B has more rows so its
+       cell will be smaller — this is desired for Colossal asymmetric dual. */
+    const halfW = innerW / 2;
+    const sideA = Math.min(
+      (halfW - gap * (REELS - 1)) / REELS,
+      (innerH - gap * (ROWS - 1)) / ROWS,
+    );
+    const sideB = Math.min(
+      (halfW - gap * (sgReelsB - 1)) / sgReelsB,
+      (innerH - gap * (sgRowsB - 1)) / sgRowsB,
+    );
     /* primary */
     const a = document.createElement("div");
     a.className = "grid-rect";
     a.style.gridTemplateColumns = "repeat(" + REELS + ", " + sideA + "px)";
     a.style.gridTemplateRows = "repeat(" + ROWS + ", " + sideA + "px)";
+    a.style.gap = gap + "px";
     const primCells = SHAPE.totalCells || REELS * ROWS;
-    for (let i = 0; i < primCells; i++) a.appendChild(makeCell(symAt(i)));
+    for (let i = 0; i < primCells; i++) {
+      const el = makeCell(symAt(i));
+      el.style.fontSize = (sideA * 0.32) + "px";
+      a.appendChild(el);
+    }
     wrap.appendChild(a);
     if (SHAPE.subgrids && SHAPE.subgrids[0]) {
       const sg = SHAPE.subgrids[0];
@@ -460,9 +615,10 @@ body {
       b.className = "grid-rect";
       b.style.gridTemplateColumns = "repeat(" + sg.reels + ", " + sideB + "px)";
       b.style.gridTemplateRows = "repeat(" + sg.rows + ", " + sideB + "px)";
+      b.style.gap = gap + "px";
       for (let i = 0; i < sg.totalCells; i++) {
         const el = makeCell(symAt(primCells + i));
-        el.style.fontSize = "0.7rem";
+        el.style.fontSize = Math.max(8, sideB * 0.32) + "px";
         b.appendChild(el);
       }
       wrap.appendChild(b);
