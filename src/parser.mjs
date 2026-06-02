@@ -125,10 +125,12 @@ export function extractTopology(rawText, model) {
     ''
   );
 
-  /* 1. Reels — accept "6 columns", "6", "6 reels", "5-6 (variable)" */
+  /* 1. Reels — accept "6 columns", "6", "6 reels", "5-6 (variable)", "4 (base)" */
   const reelsCell =
     text.match(/\|\s*\*?\*?Reels\*?\*?\s*\|\s*(\d+)(?:\s+columns?)?\s*\|/i) ||
     text.match(/\|\s*\*?\*?Reels\*?\*?\s*\|\s*[^|]*?(\d+)\s+columns?[^|]*\|/i) ||
+    text.match(/\|\s*\*?\*?Reels\*?\*?\s*\|\s*(\d+)\s*\([^|]*\|/i) ||
+    text.match(/\|\s*\*?\*?(?:Primary\s+)?Reels?\*?\*?\s*\|\s*(\d+)\b/i) ||
     text.match(/\|\s*\*?\*?Columns?\*?\*?\s*\|\s*(\d+)/i);
   if (reelsCell) {
     t.reels = parseInt(reelsCell[1], 10);
@@ -136,10 +138,12 @@ export function extractTopology(rawText, model) {
     model.confidence.topology += 0.3;
   }
 
-  /* 2. Rows — accept "5 visible per column", "5", or per-reel variable */
+  /* 2. Rows — accept "5 visible per column", "5", per-reel variable, or "4 (base)" */
   const rowsCell =
     text.match(/\|\s*\*?\*?Rows\*?\*?\s*\|\s*(\d+)(?:\s+visible)?\s*\|/i) ||
-    text.match(/\|\s*\*?\*?Rows\*?\*?\s*\|\s*[^|]*?(\d+)\s+visible[^|]*\|/i);
+    text.match(/\|\s*\*?\*?Rows\*?\*?\s*\|\s*[^|]*?(\d+)\s+visible[^|]*\|/i) ||
+    text.match(/\|\s*\*?\*?Rows\*?\*?\s*\|\s*(\d+)\s*\([^|]*\|/i) ||
+    text.match(/\|\s*\*?\*?(?:Primary\s+)?Rows?\*?\*?\s*\|\s*(\d+)\b/i);
   if (rowsCell) {
     t.rows = parseInt(rowsCell[1], 10);
     t.confidence_rows = 1;
@@ -240,7 +244,12 @@ export function extractTopology(rawText, model) {
     t.shape = 'diamond';
   } else if (/\bcross\s+shape\b|\bplus\s+shape\b|\bcruciform\b/i.test(shapeText)) {
     t.shape = 'cross';
-  } else if (/\bl[\s-]?shape\s+(?:grid|layout|step)\b|\bstep\s+grid\b/i.test(shapeText)) {
+  } else if (
+    /\bl[\s-]?shape\s+(?:grid|layout|step|tetromino|arrangement|tetra)\b/i.test(shapeText) ||
+    /\bstep\s+grid\b/i.test(shapeText) ||
+    /\|\s*\*?\*?Shape\*?\*?\s*\|\s*L[\s-]?shape\b/i.test(shapeText) ||
+    /\bL[\s-]?shape\b[^.\n]{0,40}\b(?:corner|blanked|step|arrangement)\b/i.test(shapeText)
+  ) {
     t.shape = 'l_shape';
   } else if (/\bradial\s+reels?\b|\bcircular\s+(?:reels?|grid)\b/i.test(shapeText)) {
     t.shape = 'radial';
@@ -263,11 +272,22 @@ export function extractTopology(rawText, model) {
     t.evaluation = 'infinity';
   }
 
-  /* 11. Tiered/expanding grid (rows or reels grow on feature trigger) */
-  const expCell = text.match(/\bexpanding\s+grid\b[^\n.]*?(\d+)\s*[→\-–>]+\s*(\d+)/i);
+  /* 11. Tiered/expanding grid (rows or reels grow on feature trigger).
+     Requires an EXPLICIT expansion keyword — never trigger on plain
+     "2-7 rows per reel" (which is variable_reel, not expanding). */
+  const expCell =
+    text.match(/\bexpanding\s+(?:grid|rows?)\b[^\n.]*?(\d+)\s*[→\-–>]+\s*(\d+)/i) ||
+    text.match(/\|\s*\*?\*?Rows\*?\*?\s*\|\s*(\d+)\s*base\s*[→\-–>]+\s*(\d+)\s*max/i) ||
+    text.match(/\|\s*\*?\*?Tiered\s+rows?\*?\*?\s*\|\s*\[\s*(\d+)\s*,\s*(\d+)\s*\]/i) ||
+    text.match(/\|\s*\*?\*?Tiered\s+rows?\*?\*?\s*\|\s*(\d+)[^|]*?[→\-–>]+[^|]*?(\d+)/i) ||
+    text.match(/(\d+)\s+base\s*[→\-–>]+\s*(\d+)\s+max/i);
   if (expCell) {
     t.tiered_rows = [parseInt(expCell[1], 10), parseInt(expCell[2], 10)];
     t.evaluation = t.evaluation || 'lines';
+  }
+  /* Prose: explicit "pop wins" / "gigarise" / "expanding grid" */
+  if (/\bpop[\s-]?(?:wins?|grid|burst)\b|\bgigarise\b|\bexpanding\s+(?:grid|rows?)\b/i.test(text)) {
+    if (!t.tiered_rows) t.tiered_rows = [t.rows || 3, (t.rows || 3) * 3]; // best-effort
   }
 
   /* 12. Lock-and-respin (Hold & Spin / Money-Train shape) */
@@ -303,8 +323,9 @@ export function extractTopology(rawText, model) {
     const m = text.match(/\bplinko\s+rows?\s*=?\s*(\d+)/i);
     if (m) t.plinko_rows = parseInt(m[1], 10);
   }
-  if (/\bsegmented\s+wheel\b|\bwheel\s+segments?\s*=?\s*(\d+)/i.test(text)) {
-    const m = text.match(/\bwheel\s+segments?\s*=?\s*(\d+)/i);
+  if (/\bsegmented\s+wheel\b|\bwheel\s+segments?\s*[=|]\s*(\d+)/i.test(text)) {
+    const m = text.match(/\bwheel\s+segments?\s*[=|]?\s*\*?\*?\s*\|?\s*(\d+)/i) ||
+              text.match(/\|\s*\*?\*?\s*Wheel\s+segments?\s*\*?\*?\s*\|\s*(\d+)/i);
     if (m) t.wheel_segments = parseInt(m[1], 10);
   }
 
