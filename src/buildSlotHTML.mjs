@@ -427,26 +427,22 @@ body.fs-mode-purple { background: #1d1230; }
 body.fs-mode-gold   { background: #2a2114; }
 body.fs-mode-crimson{ background: #2a0f12; }
 
+/* Reel frame in FS modes — flat, no halo, no panel.
+   Mirrors the base-game treatment: cells lebde direktno na body backdrop-u,
+   bez ikakvog dekorativnog frame-a iza rilova. */
 body.fs-mode-purple .frame,
 body.fs-mode-gold .frame,
 body.fs-mode-crimson .frame {
   position: relative;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 body.fs-mode-purple .frame::after,
 body.fs-mode-gold   .frame::after,
 body.fs-mode-crimson .frame::after {
-  /* Soft cinematic halo around the reel area — colour follows the mode.
-     Pure decoration; clipped well inside the frame to avoid edge buzz. */
-  content: "";
-  position: absolute;
-  inset: -8px;
-  border-radius: 18px;
-  pointer-events: none;
-  z-index: 0;
+  content: none;
 }
-body.fs-mode-purple .frame::after { box-shadow: 0 0 90px 8px rgba(173, 109, 255, 0.22) inset; }
-body.fs-mode-gold   .frame::after { box-shadow: 0 0 90px 8px rgba(255, 214, 110, 0.20) inset; }
-body.fs-mode-crimson .frame::after { box-shadow: 0 0 90px 8px rgba(255, 110, 110, 0.20) inset; }
 
 /* FS HUD — slim horizontal bar pinned to the top of the viewport so it
    never disturbs the .stage grid auto-placement. Hidden by default;
@@ -612,31 +608,78 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
 /* Dev-mode FS trigger — pinned bottom-left of the viewport, outside the
    normal hub grid so it can't disturb the production layout. Always-on
-   during development; production builds simply omit the button element. */
+   during development; production builds simply omit the button element.
+   Responsive: scales with viewport via clamp(), uses safe-area insets so
+   it survives notch / home-indicator on mobile, and stays clearly visible
+   (opacity 0.85 baseline, 1.0 on hover) on every screen size. */
 .dev-fs-btn {
   position: fixed;
-  bottom: 14px;
-  left: 14px;
-  z-index: 100;
-  width: 56px;
-  height: 36px;
-  border-radius: 10px;
-  border: 1px dashed rgba(201, 162, 39, 0.55);
-  background: rgba(0, 0, 0, 0.45);
-  color: var(--accent);
-  font-size: 0.55rem;
+  bottom: max(14px, env(safe-area-inset-bottom, 14px));
+  left:   max(14px, env(safe-area-inset-left, 14px));
+  z-index: 2147483000;
+  /* Fluid sizing — from 60×38 on phones up to 88×54 on desktop. */
+  min-width: 60px;
+  min-height: 38px;
+  width:  clamp(60px, 7vw, 88px);
+  height: clamp(38px, 4.5vw, 54px);
+  padding: 0 clamp(8px, 1vw, 14px);
+  border-radius: 12px;
+  border: 2px dashed rgba(255, 214, 110, 0.85);
+  background: linear-gradient(180deg, rgba(40, 30, 16, 0.9), rgba(15, 10, 6, 0.95));
+  color: #ffe6a8;
+  font-family: inherit;
+  font-size: clamp(0.7rem, 1.2vw, 0.95rem);
   font-weight: 800;
   letter-spacing: 1.5px;
   text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.55;
-  transition: opacity 0.15s ease-out;
+  /* High baseline visibility — always discoverable on any backdrop. */
+  opacity: 0.92;
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 214, 110, 0.25),
+    inset 0 1px 0 rgba(255, 230, 168, 0.18);
+  transition: opacity 0.15s ease-out, transform 0.15s ease-out, box-shadow 0.15s ease-out;
 }
-.dev-fs-btn:hover { opacity: 1; }
-.dev-fs-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+.dev-fs-btn:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 214, 110, 0.55),
+    0 0 16px rgba(255, 214, 110, 0.35),
+    inset 0 1px 0 rgba(255, 230, 168, 0.25);
+}
+.dev-fs-btn:active { transform: translateY(0); }
+.dev-fs-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+/* Tablet — keep readable; hub already collapses at 820px so dev button
+   stays out of its way. */
+@media (max-width: 820px) {
+  .dev-fs-btn {
+    bottom: max(10px, env(safe-area-inset-bottom, 10px));
+    left:   max(10px, env(safe-area-inset-left, 10px));
+  }
+}
+/* Phone — keep above the bottom hub even after hub stack expands to 2 rows.
+   Same min size, slightly tighter inset to dodge thumb zones. */
+@media (max-width: 620px) {
+  .dev-fs-btn {
+    min-width: 56px;
+    min-height: 36px;
+    font-size: 0.7rem;
+    bottom: max(8px, env(safe-area-inset-bottom, 8px));
+    left:   max(8px, env(safe-area-inset-left, 8px));
+  }
+}
 </style></head><body>
 
 <!-- Free Spins HUD — rendered always; toggled visible via .fs-hud--active.
