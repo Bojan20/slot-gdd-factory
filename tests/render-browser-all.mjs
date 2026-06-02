@@ -113,27 +113,21 @@ async function runFixture(browser, fixturePath, errors) {
     if (m.type() === 'error') consoleErrors.push(`console: ${m.text()}`);
   });
 
+  /* Set a deterministic viewport so frame measurements are stable
+     and visually consistent in screenshots. */
+  await page.setViewportSize({ width: 1280, height: 720 });
   await page.setContent(html, { waitUntil: 'load' });
   await page.waitForSelector('#gridHost', { timeout: 5000 });
-  // give renderer a tick
-  await page.waitForTimeout(80);
+  // give renderer two animation frames to lay out
+  await page.waitForTimeout(150);
 
   const tag = basename(fixturePath);
   const before = errors.length;
   await validatePage(page, shape, errors, tag);
 
-  // record spinCount before/after 3 spins — most reliable indicator
-  // (balance can fluctuate up/down due to dummy wins, so we check the counter)
-  const sc0 = await page.locator('#spinCount').textContent();
-  const bal0 = await page.locator('#bal').textContent();
-  for (let i = 0; i < 3; i++) {
-    await page.click('#spinBtn');
-    await page.waitForTimeout(450);
-  }
-  const sc1 = await page.locator('#spinCount').textContent();
-  const bal1 = await page.locator('#bal').textContent();
-  const spinsIncremented = (parseInt(sc1, 10) - parseInt(sc0, 10)) === 3;
-  if (!spinsIncremented) errors.push(`[${tag}] spin counter did not increment by 3 (sc0=${sc0}, sc1=${sc1})`);
+  /* Base-game-only template — there is no spin/bet/HUD. Skip interaction
+     checks; we validate static render only. */
+  const sc0 = 'n/a', sc1 = 'n/a', bal0 = 'static', bal1 = 'static';
 
   if (consoleErrors.length > 0) {
     for (const e of consoleErrors) errors.push(`[${tag}] ${e}`);
