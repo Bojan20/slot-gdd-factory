@@ -13,6 +13,8 @@ import { parseGDD, normalizeFromJSON } from "./src/parser.mjs";
   const fileInput = document.getElementById("fileInput");
   const resultEl = document.getElementById("result");
 
+  const LAST_GDD_KEY = "slotgdd.factory.lastGDD";
+
   /* ─── wire dropzone ───────────────────────────────────── */
   dropzone.addEventListener("click", () => fileInput.click());
   dropzone.addEventListener("dragover", (e) => {
@@ -38,12 +40,45 @@ import { parseGDD, normalizeFromJSON } from "./src/parser.mjs";
       const text = await file.text();
       const ext = file.name.split(".").pop().toLowerCase();
       const model = parseGDD(text, ext);
+      /* persist last GDD so refresh restores it (text only — small) */
+      try {
+        localStorage.setItem(LAST_GDD_KEY, JSON.stringify({
+          name: file.name, ext, text, at: Date.now(),
+        }));
+      } catch {}
       renderResult(model, file.name);
     } catch (err) {
       resultEl.innerHTML = `<div class="error">❌ ${escapeHtml(err.message)}</div>`;
       console.error(err);
     }
   }
+
+  /* ─── auto-restore last GDD on page load ─────────────── */
+  function tryRestoreLastGDD() {
+    try {
+      const raw = localStorage.getItem(LAST_GDD_KEY);
+      if (!raw) return;
+      const last = JSON.parse(raw);
+      if (!last?.text) return;
+      /* small banner letting user one-click reload */
+      const banner = document.createElement("div");
+      banner.style.cssText = "position:fixed;top:10px;right:10px;background:#1f2833;border:1px solid #45a29e;border-radius:10px;padding:0.6rem 0.9rem;font-size:0.8rem;color:#c5c6c7;z-index:10;display:flex;gap:0.6rem;align-items:center;box-shadow:0 4px 16px rgba(0,0,0,0.4)";
+      banner.innerHTML = `
+        <span style="color:#66fcf1">⤺ Last GDD:</span>
+        <strong style="color:#c5c6c7">${escapeHtml(last.name)}</strong>
+        <button id="restoreBtn" style="background:#66fcf1;color:#0b0c10;border:0;border-radius:6px;padding:0.3rem 0.7rem;font-size:0.75rem;font-weight:800;cursor:pointer">RELOAD</button>
+        <button id="restoreClose" style="background:transparent;color:#45a29e;border:0;cursor:pointer;font-size:1rem;padding:0 0.2rem">×</button>
+      `;
+      document.body.appendChild(banner);
+      banner.querySelector("#restoreBtn").addEventListener("click", () => {
+        const model = parseGDD(last.text, last.ext);
+        renderResult(model, last.name);
+        banner.remove();
+      });
+      banner.querySelector("#restoreClose").addEventListener("click", () => banner.remove());
+    } catch {}
+  }
+  tryRestoreLastGDD();
 
   /* parser dispatch + helpers moved to src/parser.mjs (pure ESM, Node-testable) */
 
@@ -237,6 +272,10 @@ import { parseGDD, normalizeFromJSON } from "./src/parser.mjs";
     const accent = (model.theme.palette[0]) || "#66fcf1";
     const bg = (model.theme.palette[1]) || "#0b0c10";
 
+    const layoutSub = model.topology.evaluation === 'cluster'
+      ? `${reels}×${rows} · cluster pays`
+      : `${reels}×${rows} · ${model.topology.paylines || ''} lines`;
+
     return `<!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="UTF-8"><title>${escapeHtml(model.name)} · Slot Template</title>
@@ -261,21 +300,37 @@ import { parseGDD, normalizeFromJSON } from "./src/parser.mjs";
           border-radius: 10px; display: flex; align-items: center; justify-content: center;
           font-size: 1.6rem; font-weight: 800; color: ${accent};
           transition: transform 0.15s, border-color 0.15s; }
-  .cell.spin { animation: blur 0.4s linear; }
+  .cell.spin { animation: blur var(--spinMs, 0.4s) linear; }
   .cell.win { border-color: ${accent}; box-shadow: 0 0 12px ${accent}; transform: scale(1.05); }
   @keyframes blur { 0% { filter: blur(0px); } 50% { filter: blur(6px); } 100% { filter: blur(0px); } }
-  .controls { margin-top: 1.5rem; display: flex; gap: 1rem; align-items: center; }
+  .controls { margin-top: 1.5rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; justify-content: center; }
   button { background: ${accent}; color: ${bg}; border: 0; border-radius: 10px;
-           padding: 0.9rem 1.6rem; font-size: 1rem; font-weight: 800; cursor: pointer;
+           padding: 0.85rem 1.4rem; font-size: 0.95rem; font-weight: 800; cursor: pointer;
            transition: transform 0.15s, box-shadow 0.15s; }
-  button:hover { transform: translateY(-1px); box-shadow: 0 4px 16px ${accent}55; }
+  button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px ${accent}55; }
   button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.secondary { background: transparent; color: ${accent}; border: 1px solid ${accent}; }
+  .bet-controls { display: flex; align-items: center; gap: 0.4rem; background: rgba(255,255,255,0.04);
+                  border: 1px solid #2a3b4c; border-radius: 10px; padding: 0.4rem 0.6rem; }
+  .bet-controls button { padding: 0.3rem 0.65rem; font-size: 0.95rem; }
+  .bet-value { min-width: 60px; text-align: center; font-weight: 700; color: ${accent}; }
   .info { font-size: 0.8rem; color: #45a29e; }
+  .info span { color: ${accent}; font-weight: 700; }
+  .hud { margin-top: 0.5rem; display: flex; gap: 1.25rem; font-size: 0.85rem; }
+  .badge { padding: 0.2rem 0.6rem; border-radius: 5px; font-size: 0.7rem; letter-spacing: 1px;
+           text-transform: uppercase; }
+  .badge.spinning { background: ${accent}33; color: ${accent}; }
+  .badge.idle { background: #2a3b4c; color: #45a29e; }
+  .badge.auto { background: #ffd16633; color: #ffd166; }
+  .toggles { display: flex; gap: 0.6rem; margin-top: 0.6rem; font-size: 0.75rem; color: #45a29e; }
+  .toggles label { cursor: pointer; user-select: none; display: flex; align-items: center; gap: 0.3rem; }
+  .toggles input[type="checkbox"] { accent-color: ${accent}; }
   .footer { margin-top: 1.5rem; font-size: 0.65rem; color: #45a29e; opacity: 0.6; text-align: center; max-width: 600px; }
+  .reduced * { animation: none !important; transition: none !important; }
 </style></head><body>
 
 <h1>${escapeHtml(model.name)}</h1>
-<div class="sub">${reels}×${rows} · ${model.topology.paylines} lines · ${escapeHtml(model.theme.tags.join(" · ") || "")}</div>
+<div class="sub">${layoutSub} · ${escapeHtml(model.theme.tags.join(" · ") || "")}</div>
 
 <div class="features-strip">
   ${model.features.map(f => `<span class="feat">${escapeHtml(f.label)}</span>`).join("") || `<span class="feat" style="opacity:0.4">no features</span>`}
@@ -284,8 +339,35 @@ import { parseGDD, normalizeFromJSON } from "./src/parser.mjs";
 <div class="grid" id="grid"></div>
 
 <div class="controls">
+  <div class="bet-controls">
+    <button id="betDown" title="bet -">−</button>
+    <span class="bet-value">Bet <span id="betVal">1</span></span>
+    <button id="betUp" title="bet +">+</button>
+    <button id="betMax" class="secondary" style="margin-left:0.4rem;padding:0.3rem 0.55rem;font-size:0.7rem" title="max bet">MAX</button>
+  </div>
   <button id="spinBtn">🎰 SPIN</button>
-  <span class="info">Balance: <span id="bal">1000.00</span> · Last win: <span id="win">0.00</span></span>
+  <button id="autoBtn" class="secondary">▶ AUTO 10</button>
+  <button id="resetBtn" class="secondary" style="font-size:0.7rem;padding:0.6rem 0.8rem">↺ RESET</button>
+</div>
+
+<div class="hud">
+  <span class="info">Balance: <span id="bal">1000.00</span></span>
+  <span class="info">Last win: <span id="win">0.00</span></span>
+  <span class="info">Spins: <span id="spinCount">0</span></span>
+  <span id="stateBadge" class="badge idle">IDLE</span>
+</div>
+
+<div class="toggles">
+  <label><input type="checkbox" id="turboTog"> ⚡ Turbo</label>
+  <label><input type="checkbox" id="reduceTog"> ♿ Reduce motion</label>
+  <label>Auto count:
+    <select id="autoCount" style="background:#1f2833;color:${accent};border:1px solid ${accent};border-radius:4px;padding:0.1rem 0.3rem;font-size:0.7rem">
+      <option value="10">10</option>
+      <option value="25">25</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+    </select>
+  </label>
 </div>
 
 <div class="footer">
@@ -297,12 +379,56 @@ import { parseGDD, normalizeFromJSON } from "./src/parser.mjs";
   const POOL = ${JSON.stringify(pool.map(s => s.id))};
   const REELS = ${reels};
   const ROWS = ${rows};
+  const BETS = [1, 2, 5, 10, 25, 50];
+  const STORE_KEY = "slotgdd.template." + ${JSON.stringify(model.name)}.replace(/\\W+/g, "_");
+
   const grid = document.getElementById("grid");
   const spinBtn = document.getElementById("spinBtn");
+  const autoBtn = document.getElementById("autoBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const betUpBtn = document.getElementById("betUp");
+  const betDownBtn = document.getElementById("betDown");
+  const betMaxBtn = document.getElementById("betMax");
+  const betValEl = document.getElementById("betVal");
   const balEl = document.getElementById("bal");
   const winEl = document.getElementById("win");
-  let balance = 1000.00;
-  const BET = 1.00;
+  const spinCountEl = document.getElementById("spinCount");
+  const stateBadge = document.getElementById("stateBadge");
+  const turboTog = document.getElementById("turboTog");
+  const reduceTog = document.getElementById("reduceTog");
+  const autoCountSel = document.getElementById("autoCount");
+
+  /* state — persisted */
+  const persisted = (() => {
+    try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { return {}; }
+  })();
+  let balance = persisted.balance ?? 1000.00;
+  let betIdx = persisted.betIdx ?? 0;
+  let totalSpins = persisted.totalSpins ?? 0;
+  let turbo = persisted.turbo ?? false;
+  let reduced = persisted.reduced ?? false;
+  let autoCount = persisted.autoCount ?? 10;
+  turboTog.checked = turbo;
+  reduceTog.checked = reduced;
+  autoCountSel.value = String(autoCount);
+  if (reduced) document.body.classList.add("reduced");
+  autoBtn.textContent = "▶ AUTO " + autoCount;
+
+  function persist() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({ balance, betIdx, totalSpins, turbo, reduced, autoCount }));
+    } catch {}
+  }
+
+  function refreshBet() {
+    betValEl.textContent = BETS[betIdx];
+    persist();
+  }
+  function refreshBalance() { balEl.textContent = balance.toFixed(2); persist(); }
+  function refreshSpins() { spinCountEl.textContent = totalSpins; persist(); }
+
+  function setSpinMs(ms) { document.documentElement.style.setProperty("--spinMs", ms + "ms"); }
+  setSpinMs(turbo ? 120 : 420);
 
   function randSym() { return POOL[Math.floor(Math.random() * POOL.length)]; }
 
@@ -335,7 +461,7 @@ import { parseGDD, normalizeFromJSON } from "./src/parser.mjs";
     }
     if (same >= 3) {
       const payoutMap = { 3: 5, 4: 25, 5: 100 };
-      const win = (payoutMap[same] || 0) * BET;
+      const win = (payoutMap[same] || 0) * BETS[betIdx];
       const winSet = new Set();
       for (let i = 0; i < same; i++) winSet.add(i * ROWS + Math.floor(ROWS/2));
       return { win, winSet };
@@ -343,16 +469,30 @@ import { parseGDD, normalizeFromJSON } from "./src/parser.mjs";
     return { win: 0, winSet: new Set() };
   }
 
+  let autoplayActive = false;
+  let autoplayRemaining = 0;
+
   function spin() {
-    if (balance < BET) return;
+    const BET = BETS[betIdx];
+    if (balance < BET) { stopAutoplay(); return; }
     spinBtn.disabled = true;
+    autoBtn.disabled = true;
+    betUpBtn.disabled = true;
+    betDownBtn.disabled = true;
+    betMaxBtn.disabled = true;
+    stateBadge.className = "badge " + (autoplayActive ? "auto" : "spinning");
+    stateBadge.textContent = autoplayActive ? "AUTO " + autoplayRemaining : "SPINNING";
+
     balance -= BET;
-    balEl.textContent = balance.toFixed(2);
+    totalSpins += 1;
+    refreshBalance();
+    refreshSpins();
     winEl.textContent = "0.00";
 
     const cells = grid.querySelectorAll(".cell");
     cells.forEach(c => c.classList.add("spin"));
 
+    const spinMs = turbo ? 120 : 420;
     setTimeout(() => {
       const syms = [];
       for (let i = 0; i < REELS * ROWS; i++) syms.push(randSym());
@@ -360,14 +500,94 @@ import { parseGDD, normalizeFromJSON } from "./src/parser.mjs";
       renderGrid(syms, winSet);
       if (win > 0) {
         balance += win;
-        balEl.textContent = balance.toFixed(2);
+        refreshBalance();
         winEl.textContent = win.toFixed(2);
       }
-      spinBtn.disabled = false;
-    }, 420);
+      /* re-enable controls (autoplay handles its own state) */
+      if (!autoplayActive) {
+        spinBtn.disabled = false;
+        autoBtn.disabled = false;
+        betUpBtn.disabled = false;
+        betDownBtn.disabled = false;
+        betMaxBtn.disabled = false;
+        stateBadge.className = "badge idle";
+        stateBadge.textContent = "IDLE";
+      } else {
+        autoplayRemaining -= 1;
+        if (autoplayRemaining <= 0 || balance < BETS[betIdx]) {
+          stopAutoplay();
+        } else {
+          stateBadge.textContent = "AUTO " + autoplayRemaining;
+          setTimeout(spin, turbo ? 60 : 200);
+        }
+      }
+    }, spinMs);
   }
 
-  spinBtn.addEventListener("click", spin);
+  function startAutoplay() {
+    if (autoplayActive) return;
+    autoplayActive = true;
+    autoplayRemaining = parseInt(autoCountSel.value, 10);
+    autoBtn.textContent = "⏹ STOP";
+    autoBtn.disabled = false;
+    spin();
+  }
+  function stopAutoplay() {
+    autoplayActive = false;
+    autoplayRemaining = 0;
+    autoBtn.textContent = "▶ AUTO " + autoCount;
+    autoBtn.disabled = false;
+    spinBtn.disabled = false;
+    betUpBtn.disabled = false;
+    betDownBtn.disabled = false;
+    betMaxBtn.disabled = false;
+    stateBadge.className = "badge idle";
+    stateBadge.textContent = "IDLE";
+  }
+
+  spinBtn.addEventListener("click", () => { if (!autoplayActive) spin(); });
+  autoBtn.addEventListener("click", () => {
+    if (autoplayActive) stopAutoplay(); else startAutoplay();
+  });
+  betUpBtn.addEventListener("click", () => {
+    if (betIdx < BETS.length - 1) { betIdx += 1; refreshBet(); }
+  });
+  betDownBtn.addEventListener("click", () => {
+    if (betIdx > 0) { betIdx -= 1; refreshBet(); }
+  });
+  betMaxBtn.addEventListener("click", () => {
+    betIdx = BETS.length - 1; refreshBet();
+  });
+  resetBtn.addEventListener("click", () => {
+    if (!confirm("Reset balance to 1000 and clear spin count?")) return;
+    balance = 1000.00; totalSpins = 0; betIdx = 0;
+    refreshBalance(); refreshSpins(); refreshBet();
+    winEl.textContent = "0.00";
+  });
+  turboTog.addEventListener("change", e => {
+    turbo = e.target.checked;
+    setSpinMs(turbo ? 120 : 420);
+    persist();
+  });
+  reduceTog.addEventListener("change", e => {
+    reduced = e.target.checked;
+    document.body.classList.toggle("reduced", reduced);
+    persist();
+  });
+  autoCountSel.addEventListener("change", e => {
+    autoCount = parseInt(e.target.value, 10);
+    autoBtn.textContent = "▶ AUTO " + autoCount;
+    persist();
+  });
+  /* keyboard — Space spins, A toggles autoplay */
+  document.addEventListener("keydown", e => {
+    if (e.code === "Space") { e.preventDefault(); if (!spinBtn.disabled && !autoplayActive) spin(); }
+    if (e.code === "KeyA") { if (autoplayActive) stopAutoplay(); else startAutoplay(); }
+  });
+
+  refreshBet();
+  refreshBalance();
+  refreshSpins();
   initialGrid();
 </script>
 </body></html>`;
