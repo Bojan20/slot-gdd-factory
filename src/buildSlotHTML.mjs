@@ -74,7 +74,9 @@ export function buildSlotHTML(model) {
 html, body { width: 100%; height: 100%; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: var(--bg0);
+  /* Svetlija full-body pozadina za kontrast — cells su #1a2230, ovo
+     ih jasno odvaja od backdrop-a a zadržava cinematic blue-gray ton. */
+  background: #2e3a52;
   color: var(--text);
   min-height: 100vh;
   display: grid;
