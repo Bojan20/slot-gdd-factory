@@ -125,17 +125,34 @@ export function extractSymbolBlock(text, headingRegex, sink) {
 
 /* ─── helper: feature kinds from prose ─────────────────────── */
 export function extractFeatures(rawText) {
-  // strip "out of scope" / "non-features" sections so negated mentions
-  // (e.g. "cascade — Not in this product") don't false-positive.
+  // (a) strip explicit "out of scope" / "non-features" SECTIONS so a body-
+  //     level "cascade" inside them doesn't fire.
   let text = rawText.replace(
     /#{2,3}\s*(?:\d+\.\s*)?(?:Out[\s-]of[\s-]scope|Explicit non-features|Not in this product)[^#]*(?=#{2,3}|\Z)/gis,
     ''
   );
 
+  // (b) strip individual TABLE ROWS that explicitly negate a feature —
+  //     e.g. "| Tumble / cascade mechanic | Not in this product — fixed-reel slot |"
+  //     or  "| Cascade | N/A |" / "| Cascade | Disabled |" / "| Cascade | None |"
+  text = text.replace(
+    /^\|[^\n|]*?\|[^\n|]*?\b(?:not\s+in\s+this\s+product|out\s+of\s+scope|none|n\/a|disabled|excluded|—|–)\b[^\n|]*?\|.*$/gim,
+    ''
+  );
+
+  // (c) patterns — for features that are commonly described in passing
+  //     (cascade is *also* an animation noun) require an explicit mechanic
+  //     qualifier so VFX language like "coin cascade" doesn't false-positive.
   const patterns = [
     { kind: 'free_spins', re: /\bfree[\s-]?spins?\b/i, label: 'Free Spins' },
     { kind: 'hold_and_win', re: /\bhold[\s_-]?and[\s_-]?win\b|\bH&W\b/i, label: 'Hold & Win' },
-    { kind: 'cascade', re: /\bcascad(e|ing)\b|\btumbl(e|ing)\b/i, label: 'Cascade / Tumble' },
+    {
+      kind: 'cascade',
+      // Must be the slot mechanic — require a slot-context qualifier so
+      // "coin cascade" / "200 ms cascade" (animation language) don't fire.
+      re: /\b(?:cascad(?:e|ing)|tumbl(?:e|ing)|avalanche)\s+(?:mechanic|feature|engine|reel|reels|round|game|win|wins|pays?|symbols?)\b/i,
+      label: 'Cascade / Tumble',
+    },
     { kind: 'multiplier', re: /\bmultiplier(s)?\b/i, label: 'Multiplier' },
     { kind: 'expanding_wild', re: /\bexpanding[\s_-]?wild/i, label: 'Expanding Wild' },
     { kind: 'walking_wild', re: /\bwalking[\s_-]?wild/i, label: 'Walking Wild' },
@@ -153,7 +170,9 @@ export function extractFeatures(rawText) {
     { kind: 'scatter_pay', re: /\bscatter\s+pays?\b/i, label: 'Scatter Pay' },
     {
       kind: 'lightning',
-      re: /\blightning[\s_-]?(multiplier|spark|strike)?/i,
+      // Require a feature qualifier — naked "lightning" (color, sprite,
+      // theme) is too generic in mythology-themed games.
+      re: /\blightning[\s_-]?(?:multiplier|spark|strike|feature)\b/i,
       label: 'Lightning',
     },
     { kind: 'respin', re: /\brespin/i, label: 'Respin' },
