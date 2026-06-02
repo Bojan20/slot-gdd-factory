@@ -392,8 +392,11 @@ body {
   will-change: transform;
 }
 .cell.is-blurring {
-  filter: blur(2.5px) brightness(0.92);
-  transition: filter 60ms linear;
+  /* Motion blur dok se ril vrti — pravi industry "spin" osećaj.
+     Vertikalni motion-blur effect (jača Y-os blur kroz feGaussianBlur
+     fallback je standard CSS blur sa povećanom vrednošću). */
+  filter: blur(4.5px) brightness(0.88);
+  transition: filter 80ms linear;
 }
 /* Anticipation slowdown — soft golden inset glow on the reel column while
    it's spinning with extended hold time. Tells the player "this reel can
@@ -946,11 +949,14 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
         • final visible 3 cells are the new outcome
 
      Timing constants mirror SPIN_PROFILE_NORMAL from WoO timing.ts. */
+  /* Industry-standard cadence — total spin ~1.1s + 4*120ms stagger = ~1.6s
+     on the last reel. Bounce reduced to a single subtle 3px cushion so the
+     landing reads as a clean snap, not a rubber wobble. */
   const SPIN_PROFILE = {
-    windupMs: 115, windupFrames: 7, windupPx: 42,
-    accelMs: 130, steadyMs: 1350, decelMs: 300,
-    staggerMs: 180,
-    bouncePx: 6, bounceDecay: 0.3, bounceCount: 2, bounceElasticity: 1.8,
+    windupMs: 90, windupFrames: 6, windupPx: 32,
+    accelMs: 110, steadyMs: 750, decelMs: 220,
+    staggerMs: 120,
+    bouncePx: 3, bounceDecay: 0.45, bounceCount: 1, bounceElasticity: 1.6,
   };
 
   /* Public state of the engine */
