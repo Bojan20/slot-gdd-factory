@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slot GDD Factory</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0b0c10;
+    color: #c5c6c7;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  h1 { color: #66fcf1; font-size: 2rem; margin-bottom: 0.5rem; letter-spacing: 1px; }
+  .subtitle { color: #45a29e; font-size: 0.95rem; margin-bottom: 2.5rem; }
+  .dropzone {
+    width: 100%; max-width: 480px;
+    border: 2px dashed #45a29e;
+    border-radius: 16px;
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #1f2833;
+  }
+  .dropzone:hover, .dropzone.dragover {
+    border-color: #66fcf1;
+    background: #243442;
+  }
+  .dropzone .icon { font-size: 3rem; margin-bottom: 1rem; }
+  .dropzone .label { font-size: 1.1rem; color: #66fcf1; font-weight: 600; }
+  .dropzone .hint { font-size: 0.8rem; color: #45a29e; margin-top: 0.5rem; }
+  input[type="file"] { display: none; }
+  #result { width: 100%; max-width: 720px; margin-top: 2rem; }
+  .card {
+    background: #1f2833;
+    border: 1px solid #45a29e;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card h3 { color: #66fcf1; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; }
+  .row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .chip {
+    background: #0b0c10;
+    border: 1px solid #45a29e;
+    border-radius: 8px;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.85rem;
+    color: #c5c6c7;
+  }
+  .chip strong { color: #66fcf1; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td { padding: 0.5rem 0.6rem; text-align: left; border-bottom: 1px solid #2a3b4c; }
+  th { color: #66fcf1; font-weight: 600; }
+  .confidence { font-size: 0.75rem; color: #45a29e; margin-top: 0.25rem; }
+  .error { color: #ff6b6b; text-align: center; margin-top: 1rem; padding: 1rem; }
+  .actions { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+  .btn {
+    background: #66fcf1;
+    color: #0b0c10;
+    border: 0;
+    border-radius: 10px;
+    padding: 0.75rem 1.4rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102, 252, 241, 0.3); }
+  .btn-ghost {
+    background: transparent;
+    color: #66fcf1;
+    border: 1px solid #45a29e;
+  }
+  .footer { margin-top: 3rem; font-size: 0.72rem; color: #45a29e; opacity: 0.7; }
+</style>
+</head>
+<body>
+
+<h1>🎰 Slot GDD Factory</h1>
+<div class="subtitle">Jedno dugme. Bilo koji GDD. Playable slot.</div>
+
+<div class="dropzone" id="dropzone">
+  <div class="icon">📄</div>
+  <div class="label">Klikni ili prevuci GDD</div>
+  <div class="hint">MD · JSON · TXT (PDF/DOCX uskoro)</div>
+</div>
+<input type="file" id="fileInput" accept=".md,.json,.txt,.markdown">
+
+<div id="result"></div>
+
+<div class="footer">v0.1 · standalone · math is placeholder dummy</div>
+
+<script src="./app.js"></script>
+</body>
+</html>
