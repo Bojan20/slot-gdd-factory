@@ -949,13 +949,16 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
         • final visible 3 cells are the new outcome
 
      Timing constants mirror SPIN_PROFILE_NORMAL from WoO timing.ts. */
-  /* Industry-standard cadence — total spin ~1.1s + 4*120ms stagger = ~1.6s
-     on the last reel. Bounce reduced to a single subtle 3px cushion so the
-     landing reads as a clean snap, not a rubber wobble. */
+  /* Industry-standard cadence — reels stop one-by-one with a clearly
+     perceptible gap between each stop (220ms = ~13 frames @60fps), like
+     a real cabinet. First reel lands ~0.95s after click, last reel
+     ~0.95s + 4*220ms = ~1.83s — total spin under 2s, but every reel
+     stop reads as its own discrete beat. Bounce stays a subtle 3px
+     single cushion (clean snap, no rubber wobble). */
   const SPIN_PROFILE = {
     windupMs: 90, windupFrames: 6, windupPx: 32,
     accelMs: 110, steadyMs: 750, decelMs: 220,
-    staggerMs: 120,
+    staggerMs: 220,
     bouncePx: 3, bounceDecay: 0.45, bounceCount: 1, bounceElasticity: 1.6,
   };
 
