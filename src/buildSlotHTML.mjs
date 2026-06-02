@@ -74,7 +74,7 @@ export function buildSlotHTML(model) {
 html, body { width: 100%; height: 100%; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: radial-gradient(ellipse at center, var(--bg1) 0%, var(--bg0) 80%);
+  background: var(--bg0);
   color: var(--text);
   min-height: 100vh;
   display: grid;
@@ -351,8 +351,8 @@ body {
 .crash-curve{ width: 80%; max-width: 520px; height: 60%; max-height: 280px; }
 .grid-slingo{ display: flex; flex-direction: column; gap: 12px; align-items: center; }
 .cell {
-  background: linear-gradient(180deg, #1a2230 0%, #131922 100%);
-  border: 1px solid rgba(201, 162, 39, 0.28);
+  background: #1a2230;
+  border: none;
   border-radius: var(--cell-radius);
   display: flex;
   align-items: center;
@@ -360,23 +360,17 @@ body {
   font-size: clamp(0.9rem, 1.4vw, 1.8rem);
   font-weight: 800;
   color: var(--accent);
-  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 230, 168, 0.06),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.4),
-    0 1px 3px rgba(0, 0, 0, 0.5);
+  text-shadow: none;
+  box-shadow: none;
 }
 .cell.lockable {
-  box-shadow:
-    inset 0 0 0 2px rgba(255, 215, 88, 0.35),
-    inset 0 1px 0 rgba(255, 230, 168, 0.08),
-    0 1px 3px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 0 0 2px rgba(255, 215, 88, 0.35);
 }
 .cell.hex {
   clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
   position: absolute;
   border: none;
-  background: linear-gradient(180deg, #1a2230 0%, #131922 100%);
+  background: #1a2230;
 }
 .cell.hex::before {
   content: "";
