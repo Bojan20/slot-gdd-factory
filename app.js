@@ -1,8 +1,10 @@
 /* =============================================================
    Slot GDD Factory · app.js
    One-button GDD upload → parsed model → playable slot in new tab.
-   Zero deps. file:// safe.
+   ESM module. Parser logic lives in src/parser.mjs (Node-testable).
    ============================================================= */
+
+import { parseGDD, normalizeFromJSON } from "./src/parser.mjs";
 
 (() => {
   "use strict";
@@ -43,139 +45,11 @@
     }
   }
 
-  /* ─── parser dispatch ────────────────────────────────── */
-  function parseGDD(text, ext) {
-    if (ext === "json") {
-      const obj = JSON.parse(text);
-      return normalizeFromJSON(obj);
-    }
-    // md / txt / markdown → regex/table parser
-    return parseMarkdownGDD(text);
-  }
+  /* parser dispatch + helpers moved to src/parser.mjs (pure ESM, Node-testable) */
 
-  /* ─── Markdown GDD parser ────────────────────────────── */
-  function parseMarkdownGDD(text) {
-    const model = {
-      name: "Untitled Slot",
-      theme: { tags: [], palette: [], mood: "" },
-      topology: { reels: 5, rows: 3, paylines: 10 },
-      symbols: { high: [], mid: [], low: [], specials: [] },
-      features: [],
-      confidence: { name: 0, topology: 0, symbols: 0, features: 0 },
-    };
-
-    /* name — first H1 or "Internal name" cell */
-    const h1 = text.match(/^#\s+(.+?)(?:\s+—|\s+-|\s+:|\s+\(|$)/m);
-    if (h1) { model.name = h1[1].trim(); model.confidence.name += 0.5; }
-    const internalName = text.match(/\|\s*Internal name\s*\|\s*([^|]+?)\s*\|/i);
-    if (internalName) { model.name = internalName[1].trim(); model.confidence.name = 1.0; }
-
-    /* theme tags */
-    const themeTags = text.match(/\|\s*Theme tags\s*\|\s*([^|]+?)\s*\|/i);
-    if (themeTags) {
-      model.theme.tags = themeTags[1].split(/[·•,\/]/).map(s => s.trim()).filter(Boolean);
-    }
-
-    /* mood */
-    const mood = text.match(/\|\s*Mood\s*\|\s*([^|]+?)\s*\|/i);
-    if (mood) model.theme.mood = mood[1].trim();
-
-    /* color palette — hex codes */
-    const hexes = text.match(/#[0-9a-fA-F]{6}/g);
-    if (hexes) model.theme.palette = [...new Set(hexes)].slice(0, 6);
-
-    /* topology */
-    const reels = text.match(/\|\s*Reels\s*\|\s*(\d+)\s*\|/i);
-    const rows = text.match(/\|\s*Rows\s*\|\s*(\d+)\s*\|/i);
-    const lines = text.match(/\|\s*Paylines\s*\|\s*(\d+)/i);
-    if (reels) { model.topology.reels = parseInt(reels[1], 10); model.confidence.topology += 0.4; }
-    if (rows)  { model.topology.rows  = parseInt(rows[1], 10);  model.confidence.topology += 0.4; }
-    if (lines) { model.topology.paylines = parseInt(lines[1], 10); model.confidence.topology += 0.2; }
-
-    /* symbols — pull table blocks under headers */
-    extractSymbolBlock(text, /High[\s-]?pay/i, model.symbols.high);
-    extractSymbolBlock(text, /Mid[\s-]?pay/i,  model.symbols.mid);
-    extractSymbolBlock(text, /Low[\s-]?pay/i,  model.symbols.low);
-    extractSymbolBlock(text, /Specials?/i,     model.symbols.specials);
-    const totalSyms = model.symbols.high.length + model.symbols.mid.length +
-                      model.symbols.low.length + model.symbols.specials.length;
-    if (totalSyms > 0) model.confidence.symbols = Math.min(1, totalSyms / 8);
-
-    /* features — scan headers and prose */
-    model.features = extractFeatures(text);
-    if (model.features.length > 0) model.confidence.features = Math.min(1, model.features.length / 3);
-
-    return model;
-  }
-
-  /* ─── helper: pull symbol rows under a heading ───────── */
-  function extractSymbolBlock(text, headingRegex, sink) {
-    const headingMatch = text.match(new RegExp(`###[^\n]*${headingRegex.source}[^\n]*`, "i"));
-    if (!headingMatch) return;
-    const start = headingMatch.index + headingMatch[0].length;
-    /* find next ###/## boundary or 4000 chars max */
-    const rest = text.slice(start, start + 4000);
-    const end = rest.search(/\n##\s|\n###\s/);
-    const chunk = end >= 0 ? rest.slice(0, end) : rest;
-    /* match table rows like: | `D` | Diamond | ...| */
-    const rowRe = /\|\s*`?([A-Za-z0-9_]{1,4})`?\s*\|\s*([^|]+?)\s*\|/g;
-    let m;
-    while ((m = rowRe.exec(chunk)) !== null) {
-      const id = m[1].trim();
-      const name = m[2].trim();
-      if (id.toLowerCase() === "id" || name.toLowerCase() === "name") continue;
-      if (id.length > 4) continue;
-      sink.push({ id, name });
-    }
-  }
-
-  /* ─── helper: detect feature kinds from prose ────────── */
-  function extractFeatures(text) {
-    const patterns = [
-      { kind: "free_spins",      re: /\bfree[\s-]?spins?\b/i,                label: "Free Spins" },
-      { kind: "hold_and_win",    re: /\bhold[\s_-]?and[\s_-]?win\b|\bH&W\b/i, label: "Hold & Win" },
-      { kind: "cascade",         re: /\bcascad(e|ing)|tumble|tumbling\b/i,   label: "Cascade / Tumble" },
-      { kind: "multiplier",      re: /\bmultiplier(s)?\b/i,                  label: "Multiplier" },
-      { kind: "expanding_wild",  re: /\bexpanding[\s_-]?wild/i,              label: "Expanding Wild" },
-      { kind: "walking_wild",    re: /\bwalking[\s_-]?wild/i,                label: "Walking Wild" },
-      { kind: "sticky_wild",     re: /\bsticky[\s_-]?wild/i,                 label: "Sticky Wild" },
-      { kind: "mystery_symbol",  re: /\bmystery[\s_-]?symbol/i,              label: "Mystery Symbol" },
-      { kind: "buy_feature",     re: /\bbuy[\s_-]?(feature|bonus)\b/i,       label: "Buy Feature" },
-      { kind: "bonus_pick",      re: /\bpick[\s_-]?(bonus|me|and|n)?/i,      label: "Bonus Pick" },
-      { kind: "wheel_bonus",     re: /\bwheel\s+bonus|bonus\s+wheel/i,       label: "Wheel Bonus" },
-      { kind: "cluster_pays",    re: /\bcluster[\s_-]?pays?\b/i,             label: "Cluster Pays" },
-      { kind: "ways",            re: /\b(?:243|576|1024|3125|117649)\s*ways?\b|\bways?\s+to\s+win\b/i, label: "Ways" },
-      { kind: "scatter_pay",     re: /\bscatter\s+pays?\b/i,                 label: "Scatter Pay" },
-      { kind: "lightning",       re: /\blightning[\s_-]?(multiplier|spark|strike)?/i, label: "Lightning" },
-      { kind: "respin",          re: /\brespin/i,                            label: "Respin" },
-      { kind: "wild_reel",       re: /\bwild[\s_-]?reel/i,                   label: "Wild Reel" },
-    ];
-    const out = [];
-    const seen = new Set();
-    for (const p of patterns) {
-      if (p.re.test(text) && !seen.has(p.kind)) {
-        out.push({ kind: p.kind, label: p.label });
-        seen.add(p.kind);
-      }
-    }
-    return out;
-  }
-
-  /* ─── JSON GDD passthrough (IR shape) ────────────────── */
-  function normalizeFromJSON(obj) {
-    const model = {
-      name: obj.name || obj.gameId || obj.title || "Untitled (JSON)",
-      theme: obj.theme || { tags: [], palette: [], mood: "" },
-      topology: obj.topology || obj.layout || { reels: 5, rows: 3, paylines: 10 },
-      symbols: obj.symbols || { high: [], mid: [], low: [], specials: [] },
-      features: (obj.features || []).map(f => ({
-        kind: f.kind || f.type || "unknown",
-        label: f.label || f.name || f.kind || "Feature"
-      })),
-      confidence: { name: 1, topology: 1, symbols: 1, features: 1 },
-    };
-    return model;
-  }
+  /* parser, symbol/feature/math helpers ALL live in src/parser.mjs now —
+     this file used to inline them; kept in module so the browser flow + the
+     Node `npm test` suite share one source. */
 
   /* ─── render parsed model + Open Slot button ─────────── */
   function renderResult(model, fileName) {
@@ -197,6 +71,11 @@
       `<span class="chip"><strong>${escapeHtml(f.label)}</strong></span>`
     ).join("") || `<span class="chip" style="color:#ff6b6b">no features detected</span>`;
 
+    const mathRow = (model.rtp != null || model.volatility || model.maxWin != null) ? `
+          <tr><th>RTP</th><td>${model.rtp != null ? model.rtp + '%' : '—'}</td></tr>
+          <tr><th>Volatility</th><td>${escapeHtml(model.volatility || '—')}</td></tr>
+          <tr><th>Max win</th><td>${model.maxWin != null ? model.maxWin + '×' : '—'}</td></tr>` : '';
+
     resultEl.innerHTML = `
       <div class="card">
         <h3>🧬 Parsed model · ${escapeHtml(fileName)}</h3>
@@ -204,7 +83,7 @@
         <table>
           <tr><th>Layout</th><td>${model.topology.reels}×${model.topology.rows} · ${model.topology.paylines} lines</td></tr>
           <tr><th>Theme</th><td>${escapeHtml(model.theme.tags.join(" · ") || "—")}</td></tr>
-          <tr><th>Mood</th><td>${escapeHtml(model.theme.mood || "—")}</td></tr>
+          <tr><th>Mood</th><td>${escapeHtml(model.theme.mood || "—")}</td></tr>${mathRow}
         </table>
       </div>
 

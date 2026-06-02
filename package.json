@@ -1,0 +1,14 @@
+{
+  "name": "slot-gdd-factory",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "One-button GDD upload → parsed model → playable slot in a new tab. Zero-runtime, vanilla browser.",
+  "scripts": {
+    "test": "node tests/parse-real.mjs",
+    "serve": "python3 -m http.server 5180"
+  },
+  "devDependencies": {
+    "zod": "^4.2.1"
+  }
+}

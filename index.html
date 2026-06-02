@@ -98,6 +98,9 @@
 
 <div class="footer">v0.1 · standalone · math is placeholder dummy</div>
 
-<script src="./app.js"></script>
+<script type="module" src="./app.js"></script>
+<!-- app.js is an ESM module; imports ./src/parser.mjs at runtime. Must be served
+     via http(s) — file:// blocks module imports. Use `npm run serve`. -->
+
 </body>
 </html>
