@@ -160,10 +160,9 @@ body {
 }
 .frame {
   position: relative;
-  background: rgba(0, 0, 0, 0.18);
+  background: transparent;
   border: none;
-  border-radius: var(--frame-radius);
-  box-shadow: var(--frame-shadow);
+  box-shadow: none;
   padding: var(--frame-inset);
   display: flex;
   align-items: center;
