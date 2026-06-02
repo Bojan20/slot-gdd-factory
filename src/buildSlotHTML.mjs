@@ -614,14 +614,21 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
    (opacity 0.85 baseline, 1.0 on hover) on every screen size. */
 .dev-fs-btn {
   position: fixed;
-  bottom: max(14px, env(safe-area-inset-bottom, 14px));
-  left:   max(14px, env(safe-area-inset-left, 14px));
+  /* Pin top-right corner. Why not bottom-left: hub icon (hamburger) sits in
+     the bottom-left of every layout; on tablet/phone the hub even collapses
+     to a 2-row stack — anything fixed bottom-left collides. Top-right is
+     empty across all viewports (header title is centered, sideHud is right
+     of frame but well below top edge), and the FS HUD is centered (top, not
+     top-right) so the two never overlap even during FS_ACTIVE. */
+  top:   max(10px, env(safe-area-inset-top, 10px));
+  right: max(10px, env(safe-area-inset-right, 10px));
   z-index: 2147483000;
-  /* Fluid sizing — from 60×38 on phones up to 88×54 on desktop. */
-  min-width: 60px;
-  min-height: 38px;
-  width:  clamp(60px, 7vw, 88px);
-  height: clamp(38px, 4.5vw, 54px);
+  /* Fluid sizing — from 56×34 on phones up to 78×42 on desktop. Compact
+     enough to never crowd the header/title row. */
+  min-width: 56px;
+  min-height: 34px;
+  width:  clamp(56px, 5.5vw, 78px);
+  height: clamp(34px, 3.6vw, 42px);
   padding: 0 clamp(8px, 1vw, 14px);
   border-radius: 12px;
   border: 2px dashed rgba(255, 214, 110, 0.85);
@@ -661,23 +668,22 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
   transform: none;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
-/* Tablet — keep readable; hub already collapses at 820px so dev button
-   stays out of its way. */
+/* Tablet — header text shrinks a touch, button stays clear of it. */
 @media (max-width: 820px) {
   .dev-fs-btn {
-    bottom: max(10px, env(safe-area-inset-bottom, 10px));
-    left:   max(10px, env(safe-area-inset-left, 10px));
+    top:   max(8px, env(safe-area-inset-top, 8px));
+    right: max(8px, env(safe-area-inset-right, 8px));
   }
 }
-/* Phone — keep above the bottom hub even after hub stack expands to 2 rows.
-   Same min size, slightly tighter inset to dodge thumb zones. */
+/* Phone — title is centered at ~1rem, button stays in opposite corner. */
 @media (max-width: 620px) {
   .dev-fs-btn {
-    min-width: 56px;
-    min-height: 36px;
-    font-size: 0.7rem;
-    bottom: max(8px, env(safe-area-inset-bottom, 8px));
-    left:   max(8px, env(safe-area-inset-left, 8px));
+    min-width: 48px;
+    min-height: 30px;
+    font-size: 0.65rem;
+    padding: 0 8px;
+    top:   max(6px, env(safe-area-inset-top, 6px));
+    right: max(6px, env(safe-area-inset-right, 6px));
   }
 }
 </style></head><body>
