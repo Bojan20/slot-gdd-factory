@@ -1,15 +1,15 @@
 # Render-all-grids QA report
 
-**Generated**: 2026-06-02T13:04:11.998Z
+**Generated**: 2026-06-02T13:21:04.863Z
 **Fixtures**: 19 · **PASS**: 19 · **FAIL**: 0 · **Rate**: 100.0%
 
 ## Summary table
 
 | # | Fixture | Expected | Actual | R×R | Cells | Cols | Sub | Conf | Parse ms | Status |
 |--:|---|---|---|---|--:|--:|--:|--:|--:|:--:|
-| 1 | `01_rectangular_5x3_GAME_GDD.md` | rectangular | rectangular | 5×3 | 15 | 5 | 0 | 100% | 4.9 | ✅ |
-| 2 | `02_rectangular_6x4_GAME_GDD.md` | rectangular | rectangular | 6×4 | 24 | 6 | 0 | 100% | 2.8 | ✅ |
-| 3 | `03_cluster_7x7_GAME_GDD.md` | cluster | cluster | 7×7 | 49 | 7 | 0 | 100% | 0.1 | ✅ |
+| 1 | `01_rectangular_5x3_GAME_GDD.md` | rectangular | rectangular | 5×3 | 15 | 5 | 0 | 100% | 4.8 | ✅ |
+| 2 | `02_rectangular_6x4_GAME_GDD.md` | rectangular | rectangular | 6×4 | 24 | 6 | 0 | 100% | 3.1 | ✅ |
+| 3 | `03_cluster_7x7_GAME_GDD.md` | cluster | cluster | 7×7 | 49 | 7 | 0 | 100% | 0.2 | ✅ |
 | 4 | `04_variable_reel_GAME_GDD.md` | variable_reel | variable_reel | 6×7 | 28 | 6 | 0 | 100% | 0.3 | ✅ |
 | 5 | `05_megaclusters_GAME_GDD.md` | megaclusters | megaclusters | 4×4 | 16 | 4 | 0 | 100% | 0.1 | ✅ |
 | 6 | `06_hexagonal_GAME_GDD.md` | hexagonal | hexagonal | 7×7 | 37 | 7 | 0 | 100% | 0.2 | ✅ |
@@ -21,10 +21,10 @@
 | 12 | `12_infinity_GAME_GDD.md` | infinity | infinity | 3×3 | 9 | 3 | 0 | 100% | 0.1 | ✅ |
 | 13 | `13_expanding_GAME_GDD.md` | expanding | expanding | 5×3 | 15 | 5 | 0 | 100% | 0.1 | ✅ |
 | 14 | `14_dual_colossal_GAME_GDD.md` | dual | dual | 5×4 | 20 | 5 | 1 | 100% | 0.1 | ✅ |
-| 15 | `15_slingo_GAME_GDD.md` | slingo | slingo | 5×5 | 25 | 5 | 1 | 100% | 0.2 | ✅ |
+| 15 | `15_slingo_GAME_GDD.md` | slingo | slingo | 5×5 | 25 | 5 | 1 | 100% | 0.3 | ✅ |
 | 16 | `16_plinko_GAME_GDD.md` | plinko | plinko | 17×16 | 136 | 16 | 0 | 100% | 0.2 | ✅ |
-| 17 | `17_crash_GAME_GDD.md` | crash | crash | 1×1 | 1 | 1 | 0 | 100% | 0.0 | ✅ |
-| 18 | `18_wheel_GAME_GDD.md` | wheel | wheel | 1×24 | 24 | 1 | 0 | 100% | 0.1 | ✅ |
+| 17 | `17_crash_GAME_GDD.md` | crash | crash | 1×1 | 1 | 1 | 0 | 100% | 0.1 | ✅ |
+| 18 | `18_wheel_GAME_GDD.md` | wheel | wheel | 1×24 | 24 | 1 | 0 | 100% | 0.2 | ✅ |
 | 19 | `19_lock_respin_GAME_GDD.md` | lock_respin | lock_respin | 5×4 | 20 | 5 | 0 | 100% | 0.1 | ✅ |
 
 ## Shape notes
