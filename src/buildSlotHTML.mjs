@@ -91,15 +91,9 @@ body {
   width: 100%;
   height: 100vh;
   max-width: 1440px;
+  margin: 0 auto;
   padding: clamp(8px, 1.5vw, 18px) clamp(8px, 2vw, 24px);
   gap: clamp(6px, 1vw, 12px);
-}
-@media (max-width: 620px) {
-  .stage { padding: 6px 8px; gap: 6px; }
-  .title { font-size: 1rem !important; }
-  .sub { font-size: 0.65rem !important; }
-  .statBox__label { font-size: 0.5rem !important; }
-  .statBox__value { font-size: 0.85rem !important; }
 }
 .header { grid-area: header; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .title {
@@ -116,20 +110,54 @@ body {
   letter-spacing: 1.5px;
   text-transform: uppercase;
 }
-/* Play area = frame + side spin column. Stage grid resizes frame to
-   exactly fill the remaining vertical and horizontal space. */
+/* Play area — symmetrical 3-column layout on desktop so the frame is
+   perfectly horizontally centered. Left column is a transparent spacer
+   the same width as the right SPIN rail. On smaller screens we collapse
+   to a single column and move SPIN underneath the grid (see below). */
 .play {
   grid-area: play;
   display: grid;
-  grid-template-columns: 1fr var(--spin-rail);
-  gap: 18px;
+  grid-template-columns: var(--spin-rail) minmax(0, 1fr) var(--spin-rail);
+  grid-template-areas: "leftSpacer frame sideHud";
+  gap: clamp(8px, 1.4vw, 18px);
   align-items: stretch;
   min-height: 0;
 }
+.frame    { grid-area: frame; }
+.sideHud  { grid-area: sideHud; }
+.leftSpacer { grid-area: leftSpacer; pointer-events: none; visibility: hidden; }
 :root { --spin-rail: 168px; --spin-size: 150px; --spin-auto-size: 58px; }
 @media (max-width: 1100px) { :root { --spin-rail: 140px; --spin-size: 120px; --spin-auto-size: 50px; } }
-@media (max-width: 820px)  { :root { --spin-rail: 110px; --spin-size: 96px;  --spin-auto-size: 42px; } }
-@media (max-width: 620px)  { :root { --spin-rail: 88px;  --spin-size: 76px;  --spin-auto-size: 38px; } }
+@media (max-width: 920px)  { :root { --spin-rail: 110px; --spin-size: 96px;  --spin-auto-size: 42px; } }
+/* Mobile / small screens — collapse to vertical stack:
+   frame on top, SPIN+AUTO row underneath, hub at the bottom. */
+@media (max-width: 820px) {
+  :root { --spin-size: 88px; --spin-auto-size: 42px; }
+  .play {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 1fr auto;
+    grid-template-areas:
+      "frame"
+      "sideHud";
+    gap: 10px;
+  }
+  .leftSpacer { display: none; }
+  .sideHud {
+    flex-direction: row;
+    justify-content: center;
+    gap: 22px;
+    padding: 4px 0;
+  }
+}
+@media (max-width: 620px) {
+  :root { --spin-size: 76px; --spin-auto-size: 38px; }
+  .stage { padding: 6px 8px; gap: 6px; }
+  .title { font-size: 1rem !important; }
+  .sub { font-size: 0.65rem !important; }
+  .statBox__label { font-size: 0.5rem !important; }
+  .statBox__value { font-size: 0.85rem !important; }
+  .sideHud { gap: 16px; }
+}
 .frame {
   position: relative;
   background: rgba(0, 0, 0, 0.18);
@@ -232,18 +260,31 @@ body {
   border-radius: 14px;
   box-shadow: inset 0 1px 0 rgba(255, 230, 168, 0.05), 0 4px 14px rgba(0, 0, 0, 0.45);
 }
+@media (max-width: 820px) {
+  /* Bottom hub on tablets and below — keep all 5 fields in a single row but
+     tighter, since the SPIN column is no longer to the right of the frame. */
+  .hub {
+    grid-template-columns: 36px minmax(80px, 1fr) minmax(110px, 1.5fr) minmax(110px, 1fr) 36px;
+    padding: 8px 10px;
+    gap: 8px;
+  }
+}
 @media (max-width: 620px) {
+  /* Phone — stack hub into a centered 2-row layout so balance + bet are
+     comfortable thumb targets and the status line spans the full width. */
   .hub {
     grid-template-columns: 32px 1fr 1fr 32px;
     grid-template-rows: auto auto;
     grid-template-areas:
       "menu balance bet sound"
-      "menu status status sound";
-    row-gap: 4px;
+      "status status status status";
+    row-gap: 6px;
+    column-gap: 6px;
+    padding: 8px;
   }
   .hub > :nth-child(1) { grid-area: menu; }
   .hub > :nth-child(2) { grid-area: balance; }
-  .hub > :nth-child(3) { grid-area: status; }
+  .hub > :nth-child(3) { grid-area: status; justify-self: stretch; }
   .hub > :nth-child(4) { grid-area: bet; }
   .hub > :nth-child(5) { grid-area: sound; }
 }
@@ -368,6 +409,7 @@ body {
     <div class="sub">${escapeHtml(layoutSub)}</div>
   </div>
   <div class="play">
+    <div class="leftSpacer" aria-hidden="true"></div>
     <div class="frame" id="frameHost">
       <div class="gridHost" id="gridHost" data-kind="${shape.kind}"></div>
     </div>
