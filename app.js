@@ -71,16 +71,26 @@ import { parseGDD, normalizeFromJSON } from "./src/parser.mjs";
       `<span class="chip"><strong>${escapeHtml(f.label)}</strong></span>`
     ).join("") || `<span class="chip" style="color:#ff6b6b">no features detected</span>`;
 
+    const coverageCard = buildCoverageCard(model);
+
     resultEl.innerHTML = `
       <div class="card">
         <h3>🧬 Parsed model · ${escapeHtml(fileName)}</h3>
         <div style="font-size:1.3rem;color:#66fcf1;font-weight:700;margin-bottom:0.75rem">${escapeHtml(model.name)}</div>
         <table>
-          <tr><th>Layout</th><td>${model.topology.reels}×${model.topology.rows} · ${model.topology.paylines} lines</td></tr>
-          <tr><th>Theme</th><td>${escapeHtml(model.theme.tags.join(" · ") || "—")}</td></tr>
+          <tr><th>Layout</th><td>${model.topology.reels}×${model.topology.rows}${model.topology.evaluation === 'cluster' ? ' · cluster pays' : (model.topology.paylines ? ` · ${model.topology.paylines} lines` : '')}</td></tr>
+          <tr><th>Evaluation</th><td>${escapeHtml(model.topology.evaluation || "lines")}</td></tr>
+          <tr><th>Genre</th><td>${escapeHtml(model.theme.genre || "—")}</td></tr>
+          <tr><th>Theme tags</th><td>${escapeHtml(model.theme.tags.join(" · ") || "—")}</td></tr>
           <tr><th>Mood</th><td>${escapeHtml(model.theme.mood || "—")}</td></tr>
+          ${model.theme.setting ? `<tr><th>Setting</th><td>${escapeHtml(model.theme.setting)}</td></tr>` : ""}
+          ${model.theme.typography ? `<tr><th>Typography</th><td>${escapeHtml(model.theme.typography)}</td></tr>` : ""}
+          ${model.theme.vibe_refs ? `<tr><th>Vibe refs</th><td>${escapeHtml(model.theme.vibe_refs)}</td></tr>` : ""}
+          ${model.theme.target_market ? `<tr><th>Market</th><td>${escapeHtml(model.theme.target_market)}</td></tr>` : ""}
         </table>
       </div>
+
+      ${coverageCard}
 
       ${palette ? `<div class="card"><h3>🎨 Color palette</h3><div class="row">${palette}</div></div>` : ""}
 
@@ -102,6 +112,101 @@ import { parseGDD, normalizeFromJSON } from "./src/parser.mjs";
 
     document.getElementById("openSlotBtn").addEventListener("click", () => openPlayableSlot(model));
     document.getElementById("downloadIrBtn").addEventListener("click", () => downloadIR(model, fileName));
+  }
+
+  /* ─── build GDD Coverage Report card ──────────────────── */
+  function buildCoverageCard(model) {
+    const symTotal = model.symbols.high.length + model.symbols.mid.length +
+                     model.symbols.low.length + model.symbols.specials.length;
+    /* per-field rows: label, confidence (0..1), found-summary, status */
+    const rows = [
+      {
+        label: "Name",
+        conf: model.confidence.name,
+        found: model.name && model.name !== "Untitled Slot" ? model.name : null,
+      },
+      {
+        label: "Topology",
+        conf: model.confidence.topology,
+        found: `${model.topology.reels}×${model.topology.rows}${model.topology.evaluation === 'cluster' ? ' · cluster' : (model.topology.paylines ? ` · ${model.topology.paylines} lines` : '')} (${model.topology.evaluation || 'lines'})`,
+      },
+      {
+        label: "Genre",
+        conf: model.theme.genre ? 1.0 : 0,
+        found: model.theme.genre || null,
+      },
+      {
+        label: "Theme tags",
+        conf: model.theme.tags.length > 0 ? 1.0 : 0,
+        found: model.theme.tags.length ? `${model.theme.tags.length} tag(s)` : null,
+      },
+      {
+        label: "Mood",
+        conf: model.theme.mood ? 1.0 : 0,
+        found: model.theme.mood ? model.theme.mood.slice(0, 40) + (model.theme.mood.length > 40 ? "…" : "") : null,
+      },
+      {
+        label: "Setting",
+        conf: model.theme.setting ? 1.0 : 0,
+        found: model.theme.setting ? model.theme.setting.slice(0, 40) + (model.theme.setting.length > 40 ? "…" : "") : null,
+      },
+      {
+        label: "Typography",
+        conf: model.theme.typography ? 1.0 : 0,
+        found: model.theme.typography ? model.theme.typography.slice(0, 40) + (model.theme.typography.length > 40 ? "…" : "") : null,
+      },
+      {
+        label: "Vibe refs",
+        conf: model.theme.vibe_refs ? 1.0 : 0,
+        found: model.theme.vibe_refs ? model.theme.vibe_refs.slice(0, 40) + (model.theme.vibe_refs.length > 40 ? "…" : "") : null,
+      },
+      {
+        label: "Palette",
+        conf: model.theme.palette.length > 0 ? Math.min(1, model.theme.palette.length / 3) : 0,
+        found: model.theme.palette.length ? `${model.theme.palette.length} hex color(s)` : null,
+      },
+      {
+        label: "Symbols",
+        conf: model.confidence.symbols,
+        found: symTotal > 0 ? `${symTotal} (HP=${model.symbols.high.length} MP=${model.symbols.mid.length} LP=${model.symbols.low.length} ★=${model.symbols.specials.length})` : null,
+      },
+      {
+        label: "Features",
+        conf: model.confidence.features,
+        found: model.features.length ? model.features.map(f => f.kind).join(", ") : null,
+      },
+    ];
+
+    /* aggregate score = mean confidence */
+    const totalConf = rows.reduce((sum, r) => sum + r.conf, 0) / rows.length;
+    const pct = Math.round(totalConf * 100);
+    const scoreColor = pct >= 80 ? "#66fcf1" : pct >= 50 ? "#ffd166" : "#ff6b6b";
+
+    const rowsHtml = rows.map(r => {
+      const cPct = Math.round(r.conf * 100);
+      const status = r.conf >= 0.8 ? "✅" : r.conf >= 0.5 ? "⚠️" : "❌";
+      const barColor = r.conf >= 0.8 ? "#66fcf1" : r.conf >= 0.5 ? "#ffd166" : "#ff6b6b";
+      const summary = r.found || `<span style="color:#ff6b6b">not found</span>`;
+      return `
+        <tr>
+          <td style="font-weight:600;color:#c5c6c7">${status} ${r.label}</td>
+          <td style="font-size:0.78rem;color:#9aa">${summary}</td>
+          <td style="width:130px">
+            <div style="background:#0b0c10;border:1px solid #2a3b4c;border-radius:6px;height:8px;overflow:hidden">
+              <div style="background:${barColor};height:100%;width:${cPct}%;transition:width 0.4s"></div>
+            </div>
+            <div style="font-size:0.7rem;color:#45a29e;text-align:right;margin-top:2px">${cPct}%</div>
+          </td>
+        </tr>`;
+    }).join("");
+
+    return `
+      <div class="card">
+        <h3>📊 GDD Coverage Report
+          <span style="float:right;color:${scoreColor};font-weight:800">${pct}%</span>
+        </h3>
+        <table style="margin-top:0.5rem">${rowsHtml}</table>
+      </div>`;
   }
 
   /* ─── open standalone slot in new tab ────────────────── */

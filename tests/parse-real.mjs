@@ -28,6 +28,10 @@ const FIXTURES = [
     label: 'Crystal Forge',
     game: resolve(homedir(), 'Desktop/CrystalForge-GDD/CRYSTAL_FORGE_GAME_GDD.md'),
   },
+  {
+    label: 'Midnight Fangs (cluster-pays synthetic)',
+    game: resolve(homedir(), 'Projects/slot-gdd-factory/samples/MIDNIGHT_FANGS_GAME_GDD.md'),
+  },
 ];
 
 function bar(ch = '─', n = 70) {
@@ -48,8 +52,11 @@ function describe(model, label) {
   console.log(`📄 ${label}`);
   console.log(bar('='));
   console.log(`name        : ${model.name}`);
+  const layoutTail = model.topology.evaluation === 'cluster'
+    ? 'cluster pays'
+    : `${model.topology.paylines ?? '—'} lines`;
   console.log(
-    `topology    : ${model.topology.reels}×${model.topology.rows} · ${model.topology.paylines} lines  (conf ${model.confidence.topology.toFixed(2)})`
+    `topology    : ${model.topology.reels}×${model.topology.rows} · ${layoutTail}  (eval=${model.topology.evaluation})  (conf ${model.confidence.topology.toFixed(2)})`
   );
   console.log(
     `theme tags  : ${model.theme.tags.join(', ') || '—'}  (mood: ${model.theme.mood || '—'})`

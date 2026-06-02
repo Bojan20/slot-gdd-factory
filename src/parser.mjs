@@ -60,6 +60,26 @@ export function parseMarkdownGDD(text) {
   const hexes = text.match(/#[0-9a-fA-F]{6}/g);
   if (hexes) model.theme.palette = [...new Set(hexes)].slice(0, 6);
 
+  /* setting — physical/narrative place */
+  const setting = text.match(/\|\s*\*?\*?Setting\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
+  if (setting) model.theme.setting = setting[1].replace(/\*\*/g, '').trim();
+
+  /* typography — Display + UI font hints (game-side, no math) */
+  const typo = text.match(/\|\s*\*?\*?Typography\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
+  if (typo) model.theme.typography = typo[1].replace(/\*\*/g, '').trim();
+
+  /* vibe references — narrative anchor phrases */
+  const vibe = text.match(/\|\s*\*?\*?Vibe\s+references?\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
+  if (vibe) model.theme.vibe_refs = vibe[1].replace(/\*\*/g, '').trim();
+
+  /* genre — top-level slot subtype */
+  const genre = text.match(/\|\s*\*?\*?Genre\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
+  if (genre) model.theme.genre = genre[1].replace(/\*\*/g, '').trim();
+
+  /* target market — global / region-locked */
+  const market = text.match(/\|\s*\*?\*?Target\s+market\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
+  if (market) model.theme.target_market = market[1].replace(/\*\*/g, '').trim();
+
   /* topology */
   const reels =
     text.match(/\|\s*\*?\*?Reels\*?\*?\s*\|\s*(\d+)(?:\s+columns?)?\s*\|/i) ||
@@ -78,6 +98,26 @@ export function parseMarkdownGDD(text) {
   }
   if (lines) {
     model.topology.paylines = parseInt(lines[1], 10);
+    model.confidence.topology += 0.2;
+  }
+
+  /* evaluation kind — cluster / ways / lines (game-flow, not math) */
+  const evalCell = text.match(/\|\s*\*?\*?Evaluation\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
+  if (evalCell) {
+    const v = evalCell[1].toLowerCase();
+    if (/cluster/.test(v)) model.topology.evaluation = 'cluster';
+    else if (/ways/.test(v)) model.topology.evaluation = 'ways';
+    else if (/line/.test(v)) model.topology.evaluation = 'lines';
+  }
+  /* fallback — infer from prose */
+  if (!model.topology.evaluation) {
+    if (/\bcluster[\s_-]?pays?\b/i.test(text)) model.topology.evaluation = 'cluster';
+    else if (/\b(?:243|576|1024|3125|117649)\s*ways?\b|\bways?\s+to\s+win\b/i.test(text)) model.topology.evaluation = 'ways';
+    else model.topology.evaluation = 'lines';
+  }
+  /* cluster games don't use paylines — null it out to avoid confusion */
+  if (model.topology.evaluation === 'cluster') {
+    model.topology.paylines = null;
     model.confidence.topology += 0.2;
   }
 
@@ -141,17 +181,32 @@ export function extractFeatures(rawText) {
     ''
   );
 
+  // (b2) strip prose lines that explicitly negate a feature —
+  //      e.g. "Crystal Forge has no Bonus Orb / Hold & Win."
+  //      "This game has no cascade." / "no Free Spins in this product".
+  text = text.replace(
+    /^[^\n]*\b(?:has\s+no|with\s*no|without|game\s+has\s+no|no\s+(?:Bonus\s+Orb|Hold\s*&\s*Win|Free\s+Spins|Cascade|Multiplier|Wild|Scatter|Lightning|Respin))\b[^\n]*$/gim,
+    ''
+  );
+
   // (c) patterns — for features that are commonly described in passing
   //     (cascade is *also* an animation noun) require an explicit mechanic
   //     qualifier so VFX language like "coin cascade" doesn't false-positive.
   const patterns = [
     { kind: 'free_spins', re: /\bfree[\s-]?spins?\b/i, label: 'Free Spins' },
-    { kind: 'hold_and_win', re: /\bhold[\s_-]?and[\s_-]?win\b|\bH&W\b/i, label: 'Hold & Win' },
+    {
+      kind: 'hold_and_win',
+      // GDDs spell it three ways: "Hold and Win", "Hold & Win", "H&W".
+      re: /\bhold\s*(?:and|&)\s*win\b|\bH\s*&\s*W\b/i,
+      label: 'Hold & Win',
+    },
     {
       kind: 'cascade',
       // Must be the slot mechanic — require a slot-context qualifier so
       // "coin cascade" / "200 ms cascade" (animation language) don't fire.
-      re: /\b(?:cascad(?:e|ing)|tumbl(?:e|ing)|avalanche)\s+(?:mechanic|feature|engine|reel|reels|round|game|win|wins|pays?|symbols?)\b/i,
+      // Allow 0-2 words between the noun and qualifier so phrases like
+      // "Cascade chain mechanic" pass.
+      re: /\b(?:cascad(?:e|ing)|tumbl(?:e|ing)|avalanche)(?:\s+\w+){0,2}\s+(?:mechanic|feature|engine|reel|reels|round|game|win|wins|pays?|symbols?)\b|\bReel\s+mechanism\s*[—:|]\s*Cascade\b/i,
       label: 'Cascade / Tumble',
     },
     { kind: 'multiplier', re: /\bmultiplier(s)?\b/i, label: 'Multiplier' },
@@ -159,7 +214,12 @@ export function extractFeatures(rawText) {
     { kind: 'walking_wild', re: /\bwalking[\s_-]?wild/i, label: 'Walking Wild' },
     { kind: 'sticky_wild', re: /\bsticky[\s_-]?wild/i, label: 'Sticky Wild' },
     { kind: 'mystery_symbol', re: /\bmystery[\s_-]?symbol/i, label: 'Mystery Symbol' },
-    { kind: 'buy_feature', re: /\bbuy[\s_-]?(feature|bonus)\b/i, label: 'Buy Feature' },
+    {
+      kind: 'bonus_buy',
+      // "Bonus Buy" / "Buy Feature" / "Feature Buy" — direct entry purchase.
+      re: /\bbonus[\s_-]?buy\b|\bbuy[\s_-]?(?:feature|bonus|fs)\b|\bfeature[\s_-]?buy\b/i,
+      label: 'Bonus Buy',
+    },
     { kind: 'bonus_pick', re: /\bpick[\s_-]?(bonus|me)\b(?!\s*axe)/i, label: 'Bonus Pick' },
     { kind: 'wheel_bonus', re: /\bwheel\s+bonus|bonus\s+wheel/i, label: 'Wheel Bonus' },
     { kind: 'cluster_pays', re: /\bcluster[\s_-]?pays?\b/i, label: 'Cluster Pays' },
@@ -180,6 +240,25 @@ export function extractFeatures(rawText) {
     { kind: 'wild_reel', re: /\bwild[\s_-]?reel/i, label: 'Wild Reel' },
     { kind: 'gamble', re: /\bgamble\s+(feature|ladder|round)\b/i, label: 'Gamble' },
     { kind: 'ante_bet', re: /\bante[\s_-]?bet\b/i, label: 'Ante Bet' },
+    {
+      kind: 'super_symbol',
+      // 2×2, 3×3, 4×4 colossal symbol — game-design vocabulary.
+      re: /\b(?:super[\s_-]?symbol|colossal[\s_-]?symbol|mega[\s_-]?symbol|giant[\s_-]?symbol)\b/i,
+      label: 'Super Symbol',
+    },
+    {
+      kind: 'win_cap',
+      // Regulator-mandated terminator. Phrase patterns: "Win Cap", "Max Win Cap",
+      // "Cap Reached" — strictly game-flow noun, not a math value.
+      re: /\bwin[\s_-]?cap\b|\bcap[\s_-]?reached\b|\bmax[\s_-]?win[\s_-]?cap\b/i,
+      label: 'Win Cap',
+    },
+    {
+      kind: 'persistent_multiplier',
+      // FS multiplier that doesn't reset within the round.
+      re: /\bpersistent[\s_-]?multiplier\b|\bmultiplier\s+(?:never\s+resets|grows\s+with)|\bgrows\s+with\s+each\s+cascade\b/i,
+      label: 'Persistent Multiplier',
+    },
   ];
 
   const out = [];
@@ -218,8 +297,17 @@ export function normalizeFromJSON(obj) {
 function freshModel() {
   return {
     name: 'Untitled Slot',
-    theme: { tags: [], palette: [], mood: '' },
-    topology: { reels: 5, rows: 3, paylines: 10 },
+    theme: {
+      tags: [],
+      palette: [],
+      mood: '',
+      setting: '',
+      typography: '',
+      vibe_refs: '',
+      genre: '',
+      target_market: '',
+    },
+    topology: { reels: 5, rows: 3, paylines: 10, evaluation: null },
     symbols: { high: [], mid: [], low: [], specials: [] },
     features: [],
     confidence: { name: 0, topology: 0, symbols: 0, features: 0 },
