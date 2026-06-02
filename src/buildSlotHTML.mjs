@@ -90,9 +90,16 @@ body {
     "hub";
   width: 100%;
   height: 100vh;
-  max-width: 1280px;
-  padding: 12px 16px 12px;
-  gap: 10px;
+  max-width: 1440px;
+  padding: clamp(8px, 1.5vw, 18px) clamp(8px, 2vw, 24px);
+  gap: clamp(6px, 1vw, 12px);
+}
+@media (max-width: 620px) {
+  .stage { padding: 6px 8px; gap: 6px; }
+  .title { font-size: 1rem !important; }
+  .sub { font-size: 0.65rem !important; }
+  .statBox__label { font-size: 0.5rem !important; }
+  .statBox__value { font-size: 0.85rem !important; }
 }
 .header { grid-area: header; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .title {
@@ -114,11 +121,15 @@ body {
 .play {
   grid-area: play;
   display: grid;
-  grid-template-columns: 1fr 84px;
-  gap: 14px;
+  grid-template-columns: 1fr var(--spin-rail);
+  gap: 18px;
   align-items: stretch;
   min-height: 0;
 }
+:root { --spin-rail: 168px; --spin-size: 150px; --spin-auto-size: 58px; }
+@media (max-width: 1100px) { :root { --spin-rail: 140px; --spin-size: 120px; --spin-auto-size: 50px; } }
+@media (max-width: 820px)  { :root { --spin-rail: 110px; --spin-size: 96px;  --spin-auto-size: 42px; } }
+@media (max-width: 620px)  { :root { --spin-rail: 88px;  --spin-size: 76px;  --spin-auto-size: 38px; } }
 .frame {
   position: relative;
   background: rgba(0, 0, 0, 0.18);
@@ -141,28 +152,60 @@ body {
   align-items: center;
   gap: 16px;
 }
+/* SPIN button — reference base game dimensions (150px desktop), 3D metal
+   gold border + multi-layer radial gradient. Industry-standard circular
+   "refresh / two arrows" icon used by most major slot vendors. */
 .spinBtn {
-  width: 76px;
-  height: 76px;
+  width: var(--spin-size);
+  height: var(--spin-size);
+  padding: 0;
   border-radius: 50%;
-  border: none;
+  border: 5px solid;
+  border-color: #dbb840 #b08a18 #8b6914 #c9a227;
   cursor: pointer;
-  background: radial-gradient(circle at 30% 30%, #f3d27a 0%, var(--accent) 60%, #6d520f 100%);
+  background:
+    radial-gradient(ellipse 70% 40% at 50% 15%, rgba(255, 250, 220, 0.5) 0%, transparent 70%),
+    radial-gradient(circle at 50% 50%, rgba(217, 180, 74, 0.45) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 50% at 50% 85%, rgba(0, 0, 0, 0.6) 0%, transparent 60%),
+    linear-gradient(180deg, #3c3223 0%, #231e14 50%, #19140f 100%);
   box-shadow:
-    0 0 22px rgba(201, 162, 39, 0.55),
-    inset 0 2px 6px rgba(255, 230, 168, 0.4),
-    inset 0 -3px 8px rgba(0, 0, 0, 0.45);
+    inset 0 3px 6px rgba(255, 230, 150, 0.22),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.45),
+    0 0 35px rgba(217, 180, 74, 0.25),
+    0 0 60px rgba(217, 180, 74, 0.15),
+    0 10px 35px rgba(0, 0, 0, 0.5),
+    0 25px 60px rgba(0, 0, 0, 0.4);
+  color: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #1a1206;
-  transition: transform .15s ease, box-shadow .2s ease;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.2s ease-out;
 }
-.spinBtn:hover { transform: scale(1.04); box-shadow: 0 0 30px rgba(201, 162, 39, 0.75), inset 0 2px 6px rgba(255, 230, 168, 0.5), inset 0 -3px 8px rgba(0, 0, 0, 0.5); }
-.spinBtn svg { width: 32px; height: 32px; fill: #1a1206; }
+.spinBtn:hover {
+  transform: scale(1.05);
+  box-shadow:
+    inset 0 3px 6px rgba(255, 230, 150, 0.3),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.45),
+    0 0 50px rgba(217, 180, 74, 0.45),
+    0 0 90px rgba(217, 180, 74, 0.2),
+    0 12px 40px rgba(0, 0, 0, 0.55),
+    0 28px 70px rgba(0, 0, 0, 0.42);
+}
+.spinBtn:active { transform: scale(0.97); }
+.spinBtn svg {
+  width: 52%;
+  height: 52%;
+  stroke: var(--accent);
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.65));
+}
 .autoBtn {
-  width: 50px;
-  height: 50px;
+  width: var(--spin-auto-size);
+  height: var(--spin-auto-size);
   border-radius: 50%;
   border: 1px solid rgba(201, 162, 39, 0.4);
   background: linear-gradient(180deg, rgba(30, 25, 20, 0.85), rgba(15, 12, 10, 0.9));
@@ -171,21 +214,38 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: inset 0 1px 0 rgba(255, 230, 168, 0.08), 0 2px 6px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 230, 168, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.45);
 }
-.autoBtn svg { width: 22px; height: 22px; }
+.autoBtn svg { width: 45%; height: 45%; }
 /* Bottom bar — BAL | STATUS | BET-/BET/BET+ | SOUND */
 .hub {
   grid-area: hub;
   display: grid;
-  grid-template-columns: 36px 1fr 1.4fr 1fr 36px;
+  grid-template-columns: 40px minmax(110px, 1fr) minmax(150px, 1.5fr) minmax(150px, 1fr) 40px;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
+  gap: clamp(6px, 1vw, 12px);
+  padding: clamp(6px, 1vw, 10px) clamp(8px, 1.5vw, 16px);
   background: linear-gradient(180deg, rgba(30, 25, 20, 0.7), rgba(10, 8, 6, 0.85));
   border: 1px solid rgba(201, 162, 39, 0.22);
   border-radius: 14px;
   box-shadow: inset 0 1px 0 rgba(255, 230, 168, 0.05), 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+@media (max-width: 620px) {
+  .hub {
+    grid-template-columns: 32px 1fr 1fr 32px;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "menu balance bet sound"
+      "menu status status sound";
+    row-gap: 4px;
+  }
+  .hub > :nth-child(1) { grid-area: menu; }
+  .hub > :nth-child(2) { grid-area: balance; }
+  .hub > :nth-child(3) { grid-area: status; }
+  .hub > :nth-child(4) { grid-area: bet; }
+  .hub > :nth-child(5) { grid-area: sound; }
 }
 .iconBtn {
   width: 36px; height: 36px;
@@ -313,7 +373,15 @@ body {
     </div>
     <aside class="sideHud" aria-label="Game Controls">
       <button class="spinBtn" id="spinBtn" aria-label="Spin" type="button">
-        <svg viewBox="0 0 24 24"><path d="M13 2L4.5 14H11L10 22L18.5 9H12L13 2Z"/></svg>
+        <!-- Industry-standard circular spin / refresh icon — two opposing
+             arrows wrapping in a circle. Used by most major slot vendors
+             on the primary SPIN CTA. -->
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M5.6 17.4a10.5 10.5 0 0 0 18.7 5.2"/>
+          <path d="M26.4 14.6A10.5 10.5 0 0 0 7.7 9.4"/>
+          <polyline points="24.3,22.6 24.3,16.6 18.3,16.6"/>
+          <polyline points="7.7,9.4 7.7,15.4 13.7,15.4"/>
+        </svg>
       </button>
       <button class="autoBtn" id="autoBtn" aria-label="Auto" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor"/></svg>
