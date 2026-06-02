@@ -410,7 +410,257 @@ body {
   letter-spacing: 1.5px;
   text-transform: uppercase;
 }
+
+/* ─── FREE SPINS · cinematic overlay + HUD + visual mode ───────────────────
+   Three visual layers, all driven from the same FSM state.
+
+   1. body.fs-mode-<bg>   — full-stage background swap (purple/gold/crimson)
+                            + subtle frame-edge halo while FS is active.
+   2. .fs-overlay         — full-screen modal placard for intro & outro.
+                            Backdrop-blurs the play area behind it; "tap to
+                            continue" CTA centered. Hidden in BASE / ACTIVE.
+   3. .fs-hud             — sticky HUD pinned above the reel area with 3
+                            stat boxes: SPINS · MULT · TOTAL. Hidden in BASE. */
+
+/* Visual-mode body backgrounds (chosen by GDD palette heuristic). */
+body.fs-mode-purple { background: #1d1230; }
+body.fs-mode-gold   { background: #2a2114; }
+body.fs-mode-crimson{ background: #2a0f12; }
+
+body.fs-mode-purple .frame,
+body.fs-mode-gold .frame,
+body.fs-mode-crimson .frame {
+  position: relative;
+}
+body.fs-mode-purple .frame::after,
+body.fs-mode-gold   .frame::after,
+body.fs-mode-crimson .frame::after {
+  /* Soft cinematic halo around the reel area — colour follows the mode.
+     Pure decoration; clipped well inside the frame to avoid edge buzz. */
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 18px;
+  pointer-events: none;
+  z-index: 0;
+}
+body.fs-mode-purple .frame::after { box-shadow: 0 0 90px 8px rgba(173, 109, 255, 0.22) inset; }
+body.fs-mode-gold   .frame::after { box-shadow: 0 0 90px 8px rgba(255, 214, 110, 0.20) inset; }
+body.fs-mode-crimson .frame::after { box-shadow: 0 0 90px 8px rgba(255, 110, 110, 0.20) inset; }
+
+/* FS HUD — slim horizontal bar pinned to the top of the viewport so it
+   never disturbs the .stage grid auto-placement. Hidden by default;
+   .fs-hud--active flips it on. */
+.fs-hud {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  gap: 10px;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--accent);
+  border-radius: 14px;
+  z-index: 50;
+  font-family: inherit;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+.fs-hud--active { display: flex; }
+.fs-hud__box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 70px;
+}
+.fs-hud__label {
+  font-size: 0.55rem;
+  color: var(--accent);
+  opacity: 0.8;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+.fs-hud__value {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #ffe6a8;
+  letter-spacing: 0.4px;
+}
+.fs-hud__divider {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(201, 162, 39, 0.35);
+  margin: 2px 4px;
+}
+
+/* FS retrigger toast — bubbles up briefly when an additional FS award
+   lands DURING the FS round (scatter re-detection or dev re-trigger). */
+.fs-toast {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  padding: 10px 22px;
+  background: linear-gradient(180deg, #3a2a14, #1d1208);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: #ffe6a8;
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  z-index: 60;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 280ms ease-out, transform 280ms ease-out;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55), 0 0 30px rgba(255, 214, 110, 0.35);
+}
+.fs-toast--show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Full-stage modal placard — intro / outro.
+   Backdrop-blurs the play area behind it. Always-on backdrop click is OFF;
+   only the CTA dismisses to avoid accidental skip during big-win celebrations. */
+.fs-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(7, 5, 14, 0.55);
+  backdrop-filter: blur(10px) saturate(1.1);
+  z-index: 200;
+  opacity: 0;
+  transition: opacity 320ms ease-out;
+}
+.fs-overlay--show {
+  display: flex;
+  opacity: 1;
+}
+.fs-placard {
+  width: min(420px, 86vw);
+  padding: 32px 28px 26px;
+  background: linear-gradient(180deg, #1a1228 0%, #0c0612 100%);
+  border: 1px solid var(--accent);
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
+              inset 0 1px 0 rgba(255, 230, 168, 0.12),
+              0 0 80px rgba(173, 109, 255, 0.18);
+  transform: translateY(8px) scale(0.96);
+  transition: transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.fs-overlay--show .fs-placard { transform: translateY(0) scale(1); }
+body.fs-mode-gold    .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 230, 168, 0.12), 0 0 80px rgba(255, 214, 110, 0.22); }
+body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 230, 168, 0.12), 0 0 80px rgba(255, 110, 110, 0.20); }
+
+.fs-placard__eyebrow {
+  font-size: 0.7rem;
+  color: var(--accent);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  opacity: 0.85;
+  margin-bottom: 12px;
+}
+.fs-placard__title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #ffe6a8;
+  line-height: 1.05;
+  letter-spacing: 1.5px;
+  text-shadow: 0 6px 22px rgba(0, 0, 0, 0.65);
+  margin-bottom: 6px;
+}
+.fs-placard__spins {
+  font-size: 3.2rem;
+  font-weight: 900;
+  color: var(--accent);
+  line-height: 1;
+  text-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), 0 0 32px rgba(255, 214, 110, 0.5);
+  margin: 8px 0 6px;
+}
+.fs-placard__sub {
+  font-size: 0.85rem;
+  color: #d4dcef;
+  opacity: 0.8;
+  margin-bottom: 22px;
+}
+.fs-placard__cta {
+  padding: 12px 28px;
+  background: linear-gradient(180deg, #c9a227 0%, #8a6f15 100%);
+  color: #1a1208;
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  border: 1px solid #dbb840;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5),
+              inset 0 1px 0 rgba(255, 230, 168, 0.35);
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+.fs-placard__cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55),
+              inset 0 1px 0 rgba(255, 230, 168, 0.45),
+              0 0 24px rgba(255, 214, 110, 0.5);
+}
+
+/* Dev-mode FS trigger — pinned bottom-left of the viewport, outside the
+   normal hub grid so it can't disturb the production layout. Always-on
+   during development; production builds simply omit the button element. */
+.dev-fs-btn {
+  position: fixed;
+  bottom: 14px;
+  left: 14px;
+  z-index: 100;
+  width: 56px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px dashed rgba(201, 162, 39, 0.55);
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--accent);
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.55;
+  transition: opacity 0.15s ease-out;
+}
+.dev-fs-btn:hover { opacity: 1; }
+.dev-fs-btn:disabled { opacity: 0.2; cursor: not-allowed; }
 </style></head><body>
+
+<!-- Free Spins HUD — rendered always; toggled visible via .fs-hud--active.
+     Three stat boxes: spins remaining · current multiplier · cumulative FS total.
+     Position: fixed top-center of the viewport, so it never participates in
+     the .stage CSS grid auto-placement. -->
+<div class="fs-hud" id="fsHud" aria-hidden="true">
+  <div class="fs-hud__box">
+    <div class="fs-hud__label">Spins</div>
+    <div class="fs-hud__value" id="fsHudSpins">0 / 0</div>
+  </div>
+  <div class="fs-hud__divider"></div>
+  <div class="fs-hud__box">
+    <div class="fs-hud__label">Mult</div>
+    <div class="fs-hud__value" id="fsHudMult">×1</div>
+  </div>
+  <div class="fs-hud__divider"></div>
+  <div class="fs-hud__box">
+    <div class="fs-hud__label">Total</div>
+    <div class="fs-hud__value" id="fsHudTotal">0.00</div>
+  </div>
+</div>
+<!-- Retrigger / award toast — animates in & out on +N FS event. -->
+<div class="fs-toast" id="fsToast" aria-hidden="true">+0 FREE SPINS</div>
 
 <div class="stage">
   <div class="header">
@@ -465,9 +715,31 @@ body {
   </div>
 </div>
 
+<!-- Dev-only Free-Spins trigger. Pinned bottom-left of the viewport — visible
+     in every template (even with FS disabled in the GDD) so QA can click
+     directly into the FS round without grinding scatter hits. Disabled when
+     FS is not in the parsed model. -->
+<button class="dev-fs-btn" id="devFsBtn" type="button"
+        aria-label="Dev: Trigger Free Spins"
+        title="DEV — force Free Spins entry">FS</button>
+
+<!-- Free Spins full-stage overlay — intro & outro placards.
+     Hidden by default. Layer is on top of EVERYTHING (z-index 200), so it
+     reliably blurs the play area + hub during the cinematic moments. -->
+<div class="fs-overlay" id="fsOverlay" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="fs-placard">
+    <div class="fs-placard__eyebrow" id="fsPlacardEyebrow">YOU TRIGGERED</div>
+    <div class="fs-placard__title" id="fsPlacardTitle">FREE SPINS</div>
+    <div class="fs-placard__spins" id="fsPlacardSpins">10</div>
+    <div class="fs-placard__sub" id="fsPlacardSub">Free Spins begin now.</div>
+    <button class="fs-placard__cta" id="fsPlacardCta" type="button">TAP TO BEGIN</button>
+  </div>
+</div>
+
 <script>
   const POOL = ${JSON.stringify(pool.map(s => s.id))};
   const SHAPE = ${JSON.stringify(shape)};
+  const FREESPINS = ${JSON.stringify(model.freeSpins || { enabled: false })};
   const REELS = SHAPE.reels;
   const ROWS  = SHAPE.rows;
 
@@ -646,14 +918,21 @@ body {
     }
   }
 
-  function startSpinAll() {
+  /* onSettled (optional) fires once when every reel has fully stopped and
+     bounced. Used by the FS auto-spin loop to chain spins back-to-back, and
+     by the post-spin scatter-detection hook to evaluate FS triggers. */
+  function startSpinAll(onSettled) {
     if (!RECT_REELS || allReelsActive) return;
     allReelsActive = true;
     spinStartTime = performance.now();
     const spinBtn = document.getElementById("spinBtn");
     const statusEl = document.getElementById("status");
     spinBtn.classList.add("is-spinning");
-    statusEl.textContent = "SPINNING";
+    /* Don't overwrite FS-specific status messages (e.g. "FS · 3 / 14") that
+       the FSM may have set just before kicking the spin. */
+    if (!statusEl.textContent.startsWith("FS")) {
+      statusEl.textContent = "SPINNING";
+    }
 
     /* Arm each reel — apply blur to visible cells, set spinning flag,
        schedule stop-request based on per-reel stagger. */
@@ -685,7 +964,14 @@ body {
           spinTicker = null;
           allReelsActive = false;
           spinBtn.classList.remove("is-spinning");
-          statusEl.textContent = "PRESS SPIN";
+          if (!statusEl.textContent.startsWith("FS")) {
+            statusEl.textContent = "PRESS SPIN";
+          }
+          if (typeof onSettled === "function") {
+            /* Small breath so the eye sees the symbols land before any
+               follow-up trigger animation kicks. */
+            setTimeout(onSettled, 80);
+          }
         }
       };
       spinTicker = requestAnimationFrame(tick);
@@ -801,10 +1087,308 @@ body {
     return anyActive;
   }
 
+  /* ─── User-driven spin entry (player click on the SPIN button) ─────────
+     During FS_ACTIVE the spin loop is driven by the FSM, not by the player,
+     so we ignore clicks. During FS_INTRO / FS_OUTRO the placard CTA owns
+     the input, so we ignore clicks as well. */
   const spinButton = document.getElementById("spinBtn");
   if (spinButton) {
     spinButton.addEventListener("click", () => {
-      if (SHAPE.kind === "rectangular") startSpinAll();
+      if (FSM.phase !== "BASE") return;
+      runOneBaseSpin();
+    });
+  }
+
+  function runOneBaseSpin() {
+    if (SHAPE.kind === "rectangular") {
+      startSpinAll(() => handlePostSpin(/* during FS */ false));
+    } else {
+      runStaticReroll(() => handlePostSpin(false));
+    }
+  }
+
+  /* ─── Static-grid reroll path (every non-rectangular kind) ───────────────
+     The base-game template doesn't ship a per-kind spin animation for hex /
+     wheel / cluster / plinko / etc. — those just blink to a fresh random
+     symbol set with a quick fade. Good enough for the FS visual flow (the
+     real per-kind spin animations land in the per-kind engine packages). */
+  function runStaticReroll(onSettled) {
+    const cells = grid.querySelectorAll(".cell");
+    if (cells.length === 0) {
+      if (typeof onSettled === "function") setTimeout(onSettled, 60);
+      return;
+    }
+    /* Phase 1: blur + dim. Phase 2 (after 220ms): swap text. Phase 3 (220ms
+       later): clear blur & call onSettled. Total ~440ms — matches the
+       cinematic "feel" of a rectangular spin without the 2s windup. */
+    cells.forEach(c => c.classList.add("is-blurring"));
+    setTimeout(() => {
+      cells.forEach(c => { c.textContent = randomSym() || "?"; });
+      setTimeout(() => {
+        cells.forEach(c => c.classList.remove("is-blurring"));
+        if (typeof onSettled === "function") onSettled();
+      }, 220);
+    }, 220);
+  }
+
+  /* Count how many trigger-symbols are visible on the current grid. For
+     rectangular kinds we look at the VISIBLE strip rows (indexes 1..ROWS),
+     not the buffer cells above/below the mask. Other kinds just count
+     across every .cell. */
+  function countTriggerSymbols() {
+    const id = (FREESPINS.triggerSymbol || "S").toUpperCase();
+    if (SHAPE.kind === "rectangular" && RECT_REELS) {
+      let n = 0;
+      for (const reel of RECT_REELS) {
+        for (let i = 1; i <= ROWS; i++) {
+          if ((reel.cells[i].textContent || "").toUpperCase() === id) n++;
+        }
+      }
+      return n;
+    }
+    let n = 0;
+    grid.querySelectorAll(".cell").forEach(c => {
+      if ((c.textContent || "").toUpperCase() === id) n++;
+    });
+    return n;
+  }
+
+  /* Map a scatter count to the awarded number of spins, using the GDD's
+     award table. Returns 0 if the count doesn't trigger anything. */
+  function spinsForCount(count) {
+    if (!FREESPINS.enabled) return 0;
+    /* Match the highest threshold ≤ count. */
+    const awards = (FREESPINS.awards || []).slice().sort((a, b) => a.count - b.count);
+    let award = 0;
+    for (const a of awards) {
+      if (count >= a.count) award = a.spins;
+    }
+    return award;
+  }
+
+  /* Post-spin trigger evaluation. Called from both base-game spins and FS
+     in-round spins; the duringFs flag decides whether a scatter hit is a
+     fresh trigger (BASE) or a retrigger (FS). */
+  function handlePostSpin(duringFs) {
+    if (!FREESPINS.enabled) {
+      /* No FS configured — nothing to do; FSM stays in BASE. */
+      if (duringFs) FSM_runNextFsSpin();
+      return;
+    }
+    const scatters = countTriggerSymbols();
+    if (!duringFs) {
+      const award = spinsForCount(scatters);
+      if (award > 0) FSM_enterIntro(award, scatters);
+      return;
+    }
+    /* During FS: check for retrigger. The retrigger threshold is usually
+       lower than the initial trigger (e.g. 3S = +5 spins). Hard-cap the
+       per-round retrigger count at 3 so a high-density placeholder symbol
+       pool can't drive the round to infinity (industry standard upper
+       bound — most operators cap retrigger chains at 2–5 per round). */
+    const RETRIGGER_CAP = 3;
+    if (FREESPINS.retrigger && FREESPINS.retrigger.enabled &&
+        scatters >= FREESPINS.retrigger.count &&
+        FSM.retrigCount < RETRIGGER_CAP) {
+      FSM_handleRetrigger(FREESPINS.retrigger.spins);
+    }
+    /* Progressive multiplier escalation — bump on every FS spin that doesn't
+       blow the cap, regardless of win/loss (this is the most common policy;
+       GDD-specific "only on winning spins" can be wired later via the math
+       layer). */
+    if (FREESPINS.multiplier && FREESPINS.multiplier.type === "progressive") {
+      FSM.mult = Math.min(FSM.mult + FREESPINS.multiplier.step, FREESPINS.multiplier.cap);
+    }
+    /* Placeholder per-spin "win" — pure visual filler until the math layer
+       lands. Random 0–25× bet, weighted toward zero so the total looks
+       plausible after a 10-spin round. */
+    const fakeWin = Math.random() < 0.4 ? +(Math.random() * 25 * (FSM.mult || 1)).toFixed(2) : 0;
+    FSM.totalWin += fakeWin;
+
+    FSM.spinsRemaining--;
+    FSM_renderHud();
+
+    if (FSM.spinsRemaining <= 0) {
+      FSM_enterOutro();
+    } else {
+      /* Brief breath between FS spins so the player can track the result. */
+      setTimeout(FSM_runNextFsSpin, 650);
+    }
+  }
+
+  /* ─── FSM · phases: BASE → FS_INTRO → FS_ACTIVE → FS_OUTRO → BASE ────── */
+  const FSM = {
+    phase: "BASE",
+    spinsTotal: 0,
+    spinsRemaining: 0,
+    mult: 1,
+    totalWin: 0,
+    retrigCount: 0,
+  };
+  /* Expose FSM and FREESPINS on window so the QA harness (Playwright eval)
+     can probe state without scraping DOM text. No-op in production. */
+  if (typeof window !== "undefined") {
+    window.FSM = FSM;
+    window.FREESPINS = FREESPINS;
+    window.SHAPE = SHAPE;
+  }
+
+  /* Cached DOM handles for the FS UI — looked up once at boot. */
+  const fsHud      = document.getElementById("fsHud");
+  const fsHudSpins = document.getElementById("fsHudSpins");
+  const fsHudMult  = document.getElementById("fsHudMult");
+  const fsHudTotal = document.getElementById("fsHudTotal");
+  const fsToast    = document.getElementById("fsToast");
+  const fsOverlay  = document.getElementById("fsOverlay");
+  const fsPlacardEyebrow = document.getElementById("fsPlacardEyebrow");
+  const fsPlacardTitle   = document.getElementById("fsPlacardTitle");
+  const fsPlacardSpins   = document.getElementById("fsPlacardSpins");
+  const fsPlacardSub     = document.getElementById("fsPlacardSub");
+  const fsPlacardCta     = document.getElementById("fsPlacardCta");
+  const devFsBtn   = document.getElementById("devFsBtn");
+  const statusElGlobal = document.getElementById("status");
+
+  function FSM_renderHud() {
+    if (!fsHud) return;
+    const consumed = FSM.spinsTotal - FSM.spinsRemaining;
+    fsHudSpins.textContent = consumed + " / " + FSM.spinsTotal;
+    fsHudMult.textContent  = "×" + (FSM.mult || 1);
+    fsHudTotal.textContent = FSM.totalWin.toFixed(2);
+  }
+
+  function FSM_showFsMode() {
+    const mode = (FREESPINS.bgMode || "purple").toLowerCase();
+    document.body.classList.remove("fs-mode-purple", "fs-mode-gold", "fs-mode-crimson");
+    document.body.classList.add("fs-mode-" + mode);
+    fsHud.classList.add("fs-hud--active");
+    fsHud.setAttribute("aria-hidden", "false");
+  }
+
+  function FSM_hideFsMode() {
+    document.body.classList.remove("fs-mode-purple", "fs-mode-gold", "fs-mode-crimson");
+    fsHud.classList.remove("fs-hud--active");
+    fsHud.setAttribute("aria-hidden", "true");
+  }
+
+  function FSM_showOverlay() {
+    fsOverlay.classList.add("fs-overlay--show");
+    fsOverlay.setAttribute("aria-hidden", "false");
+  }
+  function FSM_hideOverlay() {
+    fsOverlay.classList.remove("fs-overlay--show");
+    fsOverlay.setAttribute("aria-hidden", "true");
+  }
+
+  function FSM_showToast(text, duration) {
+    if (!fsToast) return;
+    fsToast.textContent = text;
+    fsToast.classList.add("fs-toast--show");
+    fsToast.setAttribute("aria-hidden", "false");
+    clearTimeout(fsToast._t);
+    fsToast._t = setTimeout(() => {
+      fsToast.classList.remove("fs-toast--show");
+      fsToast.setAttribute("aria-hidden", "true");
+    }, duration || 1800);
+  }
+
+  function FSM_enterIntro(spinsAwarded, scatterCount) {
+    FSM.phase = "FS_INTRO";
+    FSM.spinsTotal = spinsAwarded;
+    FSM.spinsRemaining = spinsAwarded;
+    FSM.mult = (FREESPINS.multiplier && FREESPINS.multiplier.start) || 1;
+    FSM.totalWin = 0;
+    FSM.retrigCount = 0;
+
+    fsPlacardEyebrow.textContent = scatterCount
+      ? scatterCount + " SCATTERS TRIGGERED"
+      : "YOU TRIGGERED";
+    fsPlacardTitle.textContent   = (FREESPINS.introLabel || "FREE SPINS").toUpperCase();
+    fsPlacardSpins.textContent   = String(spinsAwarded);
+    fsPlacardSub.textContent     = "Free Spins begin now.";
+    fsPlacardCta.textContent     = "TAP TO BEGIN";
+
+    /* Lock UI: block manual spin button + dev FS button while overlay is up. */
+    spinButton && (spinButton.disabled = true);
+    devFsBtn   && (devFsBtn.disabled   = true);
+    statusElGlobal && (statusElGlobal.textContent = "FS · READY");
+
+    FSM_showOverlay();
+  }
+
+  function FSM_enterActive() {
+    FSM.phase = "FS_ACTIVE";
+    FSM_hideOverlay();
+    FSM_showFsMode();
+    FSM_renderHud();
+    spinButton && (spinButton.disabled = true);
+    devFsBtn   && (devFsBtn.disabled   = true);
+    /* Kick the first spin after a short visual breath so the player tracks
+       the transition into FS mode (frame halo, BG swap, HUD appear). */
+    setTimeout(FSM_runNextFsSpin, 420);
+  }
+
+  function FSM_runNextFsSpin() {
+    if (FSM.phase !== "FS_ACTIVE") return;
+    statusElGlobal && (statusElGlobal.textContent =
+      "FS · " + ((FSM.spinsTotal - FSM.spinsRemaining) + 1) + " / " + FSM.spinsTotal);
+
+    if (SHAPE.kind === "rectangular") {
+      startSpinAll(() => handlePostSpin(true));
+    } else {
+      runStaticReroll(() => handlePostSpin(true));
+    }
+  }
+
+  function FSM_handleRetrigger(extraSpins) {
+    FSM.spinsTotal += extraSpins;
+    FSM.spinsRemaining += extraSpins;
+    FSM.retrigCount++;
+    FSM_renderHud();
+    FSM_showToast("+" + extraSpins + " FREE SPINS", 1600);
+  }
+
+  function FSM_enterOutro() {
+    FSM.phase = "FS_OUTRO";
+    fsPlacardEyebrow.textContent = (FREESPINS.outroLabel || "FREE SPINS COMPLETE").toUpperCase();
+    fsPlacardTitle.textContent   = "TOTAL WIN";
+    fsPlacardSpins.textContent   = FSM.totalWin.toFixed(2);
+    fsPlacardSub.textContent     = FSM.retrigCount > 0
+      ? FSM.retrigCount + " retrigger" + (FSM.retrigCount === 1 ? "" : "s") +
+        " across " + FSM.spinsTotal + " spins."
+      : FSM.spinsTotal + " spins played.";
+    fsPlacardCta.textContent     = "RETURN TO BASE";
+    statusElGlobal && (statusElGlobal.textContent = "FS · COMPLETE");
+
+    FSM_showOverlay();
+  }
+
+  function FSM_enterBase() {
+    FSM.phase = "BASE";
+    FSM_hideOverlay();
+    FSM_hideFsMode();
+    spinButton && (spinButton.disabled = false);
+    devFsBtn   && (devFsBtn.disabled   = !FREESPINS.enabled);
+    statusElGlobal && (statusElGlobal.textContent = "PRESS SPIN");
+  }
+
+  /* Placard CTA — advances the FSM. Single button drives both intro→active
+     and outro→base transitions; behaviour depends on current phase. */
+  if (fsPlacardCta) {
+    fsPlacardCta.addEventListener("click", () => {
+      if (FSM.phase === "FS_INTRO") FSM_enterActive();
+      else if (FSM.phase === "FS_OUTRO") FSM_enterBase();
+    });
+  }
+
+  /* Dev-only FS trigger — fires the lowest-count award from the GDD ladder
+     so the FS round actually starts (not just a zero-spin no-op). Disabled
+     when the GDD has no FS config. */
+  if (devFsBtn) {
+    devFsBtn.disabled = !FREESPINS.enabled;
+    devFsBtn.addEventListener("click", () => {
+      if (FSM.phase !== "BASE" || !FREESPINS.enabled) return;
+      const first = (FREESPINS.awards && FREESPINS.awards[0]) || { count: 3, spins: 10 };
+      FSM_enterIntro(first.spins, first.count);
     });
   }
 

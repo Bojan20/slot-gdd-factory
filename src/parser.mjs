@@ -101,9 +101,172 @@ export function parseMarkdownGDD(text) {
     model.confidence.features = Math.min(1, model.features.length / 3);
   }
 
+  /* free-spins config — full structured extraction from GDD prose */
+  model.freeSpins = extractFreeSpinsConfig(text, model);
+
   // math (RTP / volatility / max-win) intentionally NOT extracted in this phase.
 
   return model;
+}
+
+/* ─── helper: extract Free Spins config (trigger / awards / retrigger / mult) ──
+ *
+ * Pulls a fully-structured FS block out of any GDD that mentions Free Spins.
+ * Falls back to industry defaults when individual fields are missing, so the
+ * playable template ALWAYS has something sensible to render.
+ *
+ * Output shape:
+ *   { enabled: bool,
+ *     triggerSymbol: 'S',           // scatter / bonus symbol id
+ *     triggerCounts: [3, 4, 5],     // count → spins mapping (sorted asc)
+ *     awards: [{count:3, spins:14}, {count:4, spins:16}, {count:5, spins:18}],
+ *     retrigger: { enabled: bool, count: 3, spins: 5 },
+ *     multiplier: { type: 'static' | 'progressive', start: 1, step: 1, cap: 10 },
+ *     bgMode: 'purple' | 'gold' | 'crimson',
+ *     introLabel, outroLabel }
+ */
+export function extractFreeSpinsConfig(text, model) {
+  const has = /\bfree[\s-]?spins?\b/i.test(text);
+  if (!has) {
+    return { enabled: false };
+  }
+
+  /* Default: industry-standard 3/4/5 scatter ladder, 10/15/20 spins,
+     static ×1 multiplier, retrigger 3S=+5 spins, purple stage. */
+  const fs = {
+    enabled: true,
+    triggerSymbol: 'S',
+    triggerCounts: [3, 4, 5],
+    awards: [
+      { count: 3, spins: 10 },
+      { count: 4, spins: 15 },
+      { count: 5, spins: 20 },
+    ],
+    retrigger: { enabled: true, count: 3, spins: 5 },
+    multiplier: { type: 'static', start: 1, step: 0, cap: 1 },
+    bgMode: 'purple',
+    introLabel: 'FREE SPINS',
+    outroLabel: 'FREE SPINS COMPLETE',
+  };
+
+  /* Use the parsed Specials list to pick a real trigger-symbol id when present.
+     "Scatter / Triggers Free Spins" is the canonical pattern; fall back to
+     first symbol whose name contains "scatter" or "bonus". */
+  if (model && model.symbols && model.symbols.specials) {
+    const scatter = model.symbols.specials.find(s =>
+      /scatter|bonus|trigger/i.test(s.name || '')
+    );
+    if (scatter) fs.triggerSymbol = scatter.id;
+  }
+
+  /* Awards table — "3 | 14" / "4 | 16" / "5 | 18" rows under a Free Spins
+     heading. Accepts a few common header variants. */
+  const awardSection = text.match(
+    /(?:###?\s*[^\n]*Free[\s-]?Spins?[^\n]*\n)([\s\S]+?)(?=\n###?\s|$)/i
+  );
+  if (awardSection) {
+    const block = awardSection[1];
+    const rowRe = /\|\s*:?-?-?:?\s*\|[\s\S]*?\|\s*(\d+)\s*\|\s*(\d+)\s*\|/g;
+    /* Simpler: any "| N | M |" row inside the FS block where N ∈ {2..8} and M ∈ {1..200} */
+    const rows = [];
+    const simpleRow = /^\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*$/gm;
+    let m;
+    while ((m = simpleRow.exec(block)) !== null) {
+      const count = parseInt(m[1], 10);
+      const spins = parseInt(m[2], 10);
+      if (count >= 2 && count <= 9 && spins >= 1 && spins <= 200) {
+        rows.push({ count, spins });
+      }
+    }
+    if (rows.length > 0) {
+      fs.awards = rows.sort((a, b) => a.count - b.count);
+      fs.triggerCounts = fs.awards.map(r => r.count);
+    }
+  }
+
+  /* Trigger threshold — "N+ Scatters" / "N or more". If the text says "3+",
+     align triggerCounts to start at 3. */
+  const thresh = text.match(/\b(\d)\s*\+?\s*(?:scatters?|bonus|S\s+symbols?)\s+(?:anywhere|trigger|on\s+(?:screen|reels))/i);
+  if (thresh) {
+    const n = parseInt(thresh[1], 10);
+    if (n >= 2 && n <= 6 && !fs.triggerCounts.includes(n)) {
+      fs.triggerCounts.unshift(n);
+    }
+  }
+
+  /* Multiplier — "progressive", "starts at ×N", "increments by ×N", "caps at ×N" */
+  const isProgressive = /\bprogressive\s+multiplier|\bmultiplier\s+(?:starts?|increments?|grows?)\b|\bincrements?\s+by\s+[×x]?\d+/i.test(text);
+  if (isProgressive) {
+    const startMatch = text.match(/starts?\s+at\s+[×x]?\s*(\d+)/i);
+    const stepMatch  = text.match(/increments?\s+by\s+[×x]?\s*(\d+)/i);
+    const capMatch   = text.match(/caps?\s+at\s+[×x]?\s*(\d+)/i);
+    fs.multiplier = {
+      type: 'progressive',
+      start: startMatch ? parseInt(startMatch[1], 10) : 1,
+      step:  stepMatch  ? parseInt(stepMatch[1], 10)  : 1,
+      cap:   capMatch   ? parseInt(capMatch[1], 10)   : 10,
+    };
+  } else {
+    const flatMult = text.match(/\b(\d+)[×x]\s+(?:fs|free[\s-]?spins?|multiplier\s+(?:in|during))\b/i);
+    if (flatMult) {
+      const v = parseInt(flatMult[1], 10);
+      fs.multiplier = { type: 'static', start: v, step: 0, cap: v };
+    }
+  }
+
+  /* Retrigger detection — "retrigger possible" / "extra spins added" / "+N FS" */
+  const noRetrig = /\bno\s+retrigger\b|\bretrigger\s+(?:disabled|not\s+supported|not\s+in)/i.test(text);
+  const hasRetrig = /\bretrigger(?:s|ing)?\b|\bextra\s+spins?\s+added|\b\+\s*\d+\s+(?:free[\s-]?spins?|fs)\b/i.test(text);
+  if (noRetrig) {
+    fs.retrigger = { enabled: false, count: 0, spins: 0 };
+  } else if (hasRetrig) {
+    /* try to pull explicit values "+5 FS" or "3 scatters add 5 spins" */
+    const explicit = text.match(/(\d)\s*\+?\s*(?:scatters?|bonus)\s+(?:add[s]?|grants?|gives?)\s+(\d+)\s+(?:free[\s-]?spins?|fs|spins?)/i)
+                  || text.match(/\+\s*(\d+)\s+(?:free[\s-]?spins?|fs|spins?)\s+(?:on\s+)?retrigger/i);
+    if (explicit) {
+      if (explicit.length === 3) {
+        fs.retrigger = { enabled: true, count: parseInt(explicit[1], 10), spins: parseInt(explicit[2], 10) };
+      } else {
+        fs.retrigger = { enabled: true, count: 3, spins: parseInt(explicit[1], 10) };
+      }
+    }
+    /* else keep default { enabled:true, count:3, spins:5 } */
+  }
+
+  /* Visual mode — heuristic from theme palette. If palette has purple/violet
+     hex, use purple. If gold-heavy, use gold. If red/crimson, use crimson. */
+  const pal = (model && model.theme && model.theme.palette) || [];
+  if (pal.some(h => /^#(?:[a-f0-9]{2}){3}$/i.test(h) && isRedish(h))) fs.bgMode = 'crimson';
+  else if (pal.some(h => /^#(?:[a-f0-9]{2}){3}$/i.test(h) && isGoldish(h))) fs.bgMode = 'gold';
+  else fs.bgMode = 'purple';
+
+  /* Intro / outro placard wording — pull explicit GDD copy when present. */
+  const introCopy = text.match(/(?:placard|placeholder|overlay|splash)[^\n]*?[""''""]([^""""''""\n]{3,30})[""''""]/i)
+                 || text.match(/[""""''""]([A-Z][A-Z\s]{2,30})[""""''""][^\n]*?(?:placard|placeholder|overlay|splash|rises|intro)/i);
+  if (introCopy) {
+    const c = introCopy[1].trim();
+    if (/free|spins|bonus/i.test(c) && c.length < 32) fs.introLabel = c.toUpperCase();
+  }
+  const outroCopy = text.match(/[""""''""]([A-Z][A-Z\s]{2,30})[""""''""][^\n]*?(?:outro|return|exit|totals?)/i);
+  if (outroCopy) {
+    const c = outroCopy[1].trim();
+    if (c.length < 32) fs.outroLabel = c.toUpperCase();
+  }
+
+  return fs;
+}
+
+function isRedish(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return r > 150 && r > g + 40 && r > b + 40;
+}
+function isGoldish(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return r > 180 && g > 120 && g < 220 && b < 100;
 }
 
 /* ─── helper: extract complete topology (all 85+ shape kinds) ─ */
@@ -524,6 +687,16 @@ export function normalizeFromJSON(obj) {
     kind: f.kind || f.type || 'unknown',
     label: f.label || f.name || f.kind || 'Feature',
   }));
+  /* FS config — JSON IR may carry an explicit { freeSpins: {...} } block; if
+     not, fall back to industry defaults whenever a `free_spins` feature is
+     declared. Mirrors the markdown-path behaviour. */
+  if (obj.freeSpins && typeof obj.freeSpins === 'object') {
+    model.freeSpins = { enabled: true, ...obj.freeSpins };
+  } else if (model.features.some(f => f.kind === 'free_spins')) {
+    model.freeSpins = extractFreeSpinsConfig('free spins', model);
+  } else {
+    model.freeSpins = { enabled: false };
+  }
   model.confidence = { name: 1, topology: 1, symbols: 1, features: 1 };
   return model;
 }
@@ -589,6 +762,10 @@ function freshModel() {
     },
     symbols: { high: [], mid: [], low: [], specials: [] },
     features: [],
+    /* Structured Free-Spins config — populated by extractFreeSpinsConfig().
+       Always emitted (even when FS is not in the GDD) so downstream code can
+       branch on `freeSpins.enabled` instead of probing undefined. */
+    freeSpins: { enabled: false },
     confidence: { name: 0, topology: 0, symbols: 0, features: 0 },
   };
 }
