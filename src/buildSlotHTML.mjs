@@ -1055,16 +1055,16 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     if (!armed) return;
 
     /* Push every still-spinning reel back by HOLD_MS so the slow-down is
-       perceptible; first held reel gets a bigger push, the ones after a
-       slightly smaller one (industry standard cadence). */
+       perceptible. Uniform hold across all anticipating reels — every
+       reel gets the same extra duration so the suspense feels balanced
+       (player reads each remaining reel as equally weighted). */
     const HOLD_BASE = 600;
-    const HOLD_STEP = 220;
     const now = performance.now();
     stillSpinning.forEach((r, i) => {
       if (r.anticipating) return;  /* already extended once */
       r.anticipating = true;
       r.col.classList.add("reelCol--anticipating");
-      const extra = HOLD_BASE + i * HOLD_STEP;
+      const extra = HOLD_BASE;
       r.scheduledStopAt = Math.max(r.scheduledStopAt, now) + extra;
       if (r.stopTimerId) clearTimeout(r.stopTimerId);
       r.stopTimerId = setTimeout(() => {
