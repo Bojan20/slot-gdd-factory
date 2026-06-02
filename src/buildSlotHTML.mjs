@@ -407,16 +407,7 @@ body {
   transition: filter 60ms linear;
 }
 .spinBtn.is-spinning { pointer-events: none; opacity: 0.78; }
-.spinBtn.is-spinning::after {
-  content: "";
-  position: absolute; inset: -6px;
-  border-radius: 50%;
-  border: 2px solid rgba(201, 162, 39, 0.45);
-  border-top-color: transparent;
-  animation: spinBtnRing 0.9s linear infinite;
-  pointer-events: none;
-}
-@keyframes spinBtnRing { to { transform: rotate(360deg); } }
+.spinBtn.is-spinning svg { opacity: 0.55; }
 .grow-tag {
   position: absolute;
   top: 10px;
