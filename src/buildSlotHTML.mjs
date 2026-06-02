@@ -388,6 +388,35 @@ body {
   pointer-events: none;
 }
 .wheel-svg { width: 80%; max-width: 480px; aspect-ratio: 1 / 1; }
+/* ─── Reel spin engine (rectangular only, for now) ─────────────────── */
+.reelCol {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--cell-radius);
+  background: rgba(0, 0, 0, 0.18);
+}
+.reelStrip {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cell-gap);
+  will-change: transform;
+}
+.cell.is-blurring {
+  filter: blur(2.5px) brightness(0.92);
+  transition: filter 60ms linear;
+}
+.spinBtn.is-spinning { pointer-events: none; opacity: 0.78; }
+.spinBtn.is-spinning::after {
+  content: "";
+  position: absolute; inset: -6px;
+  border-radius: 50%;
+  border: 2px solid rgba(201, 162, 39, 0.45);
+  border-top-color: transparent;
+  animation: spinBtnRing 0.9s linear infinite;
+  pointer-events: none;
+}
+@keyframes spinBtnRing { to { transform: rotate(360deg); } }
 .grow-tag {
   position: absolute;
   top: 10px;
@@ -488,11 +517,57 @@ body {
     return Math.max(20, Math.floor(Math.min(cellW, cellH)));
   }
 
+  /* Track per-reel strips for the spin engine. Only populated for the
+     "rectangular" kind — other shapes keep the original static render. */
+  let RECT_REELS = null;
+  let RECT_SIDE = 0;
+
   function renderRect() {
     const host = document.createElement("div");
     host.className = "grid-rect";
     const side = cellSize(REELS, ROWS);
     host.style.gridTemplateColumns = "repeat(" + REELS + ", " + side + "px)";
+    host.style.gridTemplateRows = side + "px";  // single row of reel columns
+
+    /* For rectangular slots we build N "reelCol" columns, each containing
+       a vertically scrollable strip of cells. The visible window is exactly
+       ROWS cells tall; the strip has extra cells above for spin animation. */
+    if (SHAPE.kind === "rectangular") {
+      RECT_REELS = [];
+      RECT_SIDE = side;
+      const reelH = ROWS * side + (ROWS - 1) * 6; // gap = 6 from token
+      let symIdx = 0;
+      for (let c = 0; c < REELS; c++) {
+        const col = document.createElement("div");
+        col.className = "reelCol";
+        col.style.width = side + "px";
+        col.style.height = reelH + "px";
+        col.style.gridColumn = (c + 1) + " / " + (c + 2);
+        col.style.gridRow = "1 / span " + ROWS;
+
+        const strip = document.createElement("div");
+        strip.className = "reelStrip";
+        /* visible: ROWS cells. Strip carries ROWS visible + 12 above so the
+           spin animation has plenty to scroll through. */
+        const stripCells = ROWS + 12;
+        for (let r = 0; r < stripCells; r++) {
+          const cell = makeCell(symAt(symIdx++), "");
+          cell.style.width = side + "px";
+          cell.style.height = side + "px";
+          cell.style.fontSize = (side * 0.32) + "px";
+          cell.style.flex = "0 0 auto";
+          strip.appendChild(cell);
+        }
+        col.appendChild(strip);
+        host.appendChild(col);
+        RECT_REELS.push({ col, strip, side });
+      }
+      grid.appendChild(host);
+      return;
+    }
+
+    /* All other rectangular-like kinds (cluster, lock_respin, megaclusters,
+       infinity, expanding) keep the static cell-grid render. */
     host.style.gridTemplateRows = "repeat(" + ROWS + ", " + side + "px)";
     let idx = 0;
     for (let r = 0; r < ROWS; r++) {
@@ -508,6 +583,100 @@ body {
       frame.appendChild(tag);
     }
     grid.appendChild(host);
+  }
+
+  /* ─── Reel spin engine (rectangular only) ─────────────────────────
+     Mirrors the reference base game SPIN_PROFILE_NORMAL timings:
+
+       windup  ~115ms  pull up by 42px (visible tension before drop)
+       accel    130ms  ramp from 0 to steady velocity
+       steady  1350ms  scroll downward at ~22-25 cells/sec
+       decel    300ms  smooth ease to aligned stop
+       bounce   2x decaying (6px → 1.8px) cushion landing
+
+     Reels stop staggered left-to-right with staggerMs = 180ms.
+     Each reel re-fills its top with a fresh random batch of symbols on
+     stop so the visible window shows a new outcome.
+  */
+  const SPIN_PROFILE = {
+    windupMs: 115, windupPx: 42,
+    accelMs: 130, steadyMs: 1350, decelMs: 300,
+    staggerMs: 180,
+    bouncePx: 6,
+  };
+
+  function rectReelSpin() {
+    if (!RECT_REELS) return;
+    const stripStepPx = RECT_SIDE + 6; // cell + gap
+    const cellsToScroll = 20; // total cells traveled before landing
+    const reels = RECT_REELS;
+
+    /* Disable interaction while spinning */
+    const spinBtn = document.getElementById("spinBtn");
+    const statusEl = document.getElementById("status");
+    spinBtn.classList.add("is-spinning");
+    statusEl.textContent = "SPINNING";
+
+    reels.forEach((r, idx) => {
+      const strip = r.strip;
+      const startDelay = idx * 30;  // tiny intra-reel offset on start
+      const totalDuration = SPIN_PROFILE.windupMs + SPIN_PROFILE.accelMs +
+                             SPIN_PROFILE.steadyMs + idx * SPIN_PROFILE.staggerMs +
+                             SPIN_PROFILE.decelMs;
+
+      /* Pre-spin: add blur to all cells in the strip */
+      const cells = strip.querySelectorAll(".cell");
+      cells.forEach(c => c.classList.add("is-blurring"));
+
+      /* Use Web Animations API for crisp staged transitions. */
+      setTimeout(() => {
+        const finalY = stripStepPx * cellsToScroll;
+        const overshootY = finalY + SPIN_PROFILE.bouncePx;
+        const settleY = finalY;
+
+        strip.animate([
+          { transform: "translateY(0)" },
+          { transform: "translateY(-" + SPIN_PROFILE.windupPx + "px)", offset: SPIN_PROFILE.windupMs / totalDuration },
+          { transform: "translateY(" + (stripStepPx * 2) + "px)", offset: (SPIN_PROFILE.windupMs + SPIN_PROFILE.accelMs) / totalDuration },
+          { transform: "translateY(" + (stripStepPx * (cellsToScroll - 2)) + "px)", offset: (totalDuration - SPIN_PROFILE.decelMs - 80) / totalDuration },
+          { transform: "translateY(" + overshootY + "px)", offset: (totalDuration - 40) / totalDuration },
+          { transform: "translateY(" + settleY + "px)" },
+        ], {
+          duration: totalDuration,
+          easing: "cubic-bezier(0.22, 0.61, 0.36, 1)",
+          fill: "forwards",
+        });
+
+        /* On stop: re-shuffle the top cells so the visible window shows a
+           fresh outcome, then reset transform without animation. */
+        setTimeout(() => {
+          cells.forEach(c => c.classList.remove("is-blurring"));
+          /* Regenerate visible window with new symbols */
+          const stripCells = strip.children;
+          for (let i = 0; i < stripCells.length; i++) {
+            stripCells[i].textContent = symAt(Math.floor(Math.random() * 100) + idx * 7 + i);
+          }
+          strip.style.transform = "translateY(0)";
+          strip.getAnimations().forEach(a => a.cancel());
+
+          /* Last reel: finalize state */
+          if (idx === reels.length - 1) {
+            spinBtn.classList.remove("is-spinning");
+            statusEl.textContent = "PRESS SPIN";
+          }
+        }, totalDuration);
+      }, startDelay);
+    });
+  }
+
+  /* Wire spin button (only meaningful for rectangular for now). */
+  const spinButton = document.getElementById("spinBtn");
+  if (spinButton) {
+    spinButton.addEventListener("click", () => {
+      if (SHAPE.kind === "rectangular") {
+        rectReelSpin();
+      }
+    });
   }
 
   function renderVariableReel() {

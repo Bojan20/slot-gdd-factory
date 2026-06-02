@@ -45,7 +45,15 @@ async function validatePage(page, shape, errors, tag) {
   const pegCount  = await page.locator('#gridHost .peg').count();
 
   switch (shape.kind) {
-    case 'rectangular':
+    case 'rectangular': {
+      /* Rectangular slots now render as spinnable reel columns with strips
+         that carry extra cells above the visible window. Validate the column
+         count and that each strip has at least ROWS cells. */
+      const colCount = await page.locator('#gridHost .reelCol').count();
+      ASSERT(colCount === shape.reels, `reelCol count=${colCount} ≠ reels=${shape.reels}`);
+      ASSERT(cellCount >= shape.totalCells, `DOM cells=${cellCount} < shape.totalCells=${shape.totalCells}`);
+      break;
+    }
     case 'cluster':
     case 'lock_respin':
     case 'infinity':
