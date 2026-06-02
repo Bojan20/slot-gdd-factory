@@ -161,7 +161,7 @@ body {
 .frame {
   position: relative;
   background: rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(201, 162, 39, 0.25);
+  border: none;
   border-radius: var(--frame-radius);
   box-shadow: var(--frame-shadow);
   padding: var(--frame-inset);
