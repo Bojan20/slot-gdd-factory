@@ -1054,26 +1054,33 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
                   (scattersSoFar < topRung);
     if (!armed) return;
 
-    /* Uniform anticipation deadline — every still-spinning reel gets the
-       SAME absolute stop time, so the glow + slowdown duration the
-       player sees is identical across all anticipating reels.
+    /* Sequential per-reel anticipation hold.
+       Every anticipating reel gets the SAME glow + slowdown duration
+       (HOLD_BASE), but they stop one-by-one — each next reel only starts
+       its own HOLD_BASE countdown after the previous one has landed.
 
-       Deadline = max(currently-scheduled stop across still-spinning) +
-                  HOLD_BASE — pinned to the latest existing schedule so
-                  we never pull a reel forward (anticipation only ever
-                  extends, never shortens). All other reels match that
-                  same deadline, so the first held reel's perceived hold
-                  becomes the canonical duration for every reel after. */
+       Schedule (relative to the moment anticipation arms):
+         reel A stops at: max(its existing schedule, now) + HOLD_BASE
+         reel B stops at: reel-A deadline + HOLD_BASE
+         reel C stops at: reel-B deadline + HOLD_BASE
+       So all four reels have identical perceived anticipation duration
+       and the cabinet "one-by-one" cadence is preserved. */
     const HOLD_BASE = 600;
     const now = performance.now();
-    const latestScheduled = stillSpinning.reduce(
+    /* Anchor to the latest existing scheduledStopAt so we never pull any
+       reel forward (anticipation only ever extends, never shortens). */
+    let cursor = stillSpinning.reduce(
       (m, r) => Math.max(m, r.scheduledStopAt), now);
-    const unifiedDeadline = latestScheduled + HOLD_BASE;
-    stillSpinning.forEach((r) => {
-      if (r.anticipating) return;  /* already extended once */
+    /* Order anticipating reels by their natural stop order so the
+       first to land remains the first to land. */
+    const ordered = stillSpinning
+      .filter(r => !r.anticipating)
+      .sort((a, b) => a.scheduledStopAt - b.scheduledStopAt);
+    ordered.forEach((r) => {
       r.anticipating = true;
       r.col.classList.add("reelCol--anticipating");
-      r.scheduledStopAt = unifiedDeadline;
+      cursor += HOLD_BASE;
+      r.scheduledStopAt = cursor;
       if (r.stopTimerId) clearTimeout(r.stopTimerId);
       r.stopTimerId = setTimeout(() => {
         r.stopRequested = true;
