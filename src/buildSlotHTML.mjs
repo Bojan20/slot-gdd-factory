@@ -1017,12 +1017,23 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     const stillSpinning = RECT_REELS.filter(r => r.spinning);
     if (stillSpinning.length === 0) return;
 
-    /* Anticipation eligibility — one more scatter would close OR raise the
-       award. Trigger threshold is `threshold`; ladder top is `topRung`.
-       Arm anticipation when (scattersSoFar + 1) >= threshold AND
-       scattersSoFar < topRung (the latter keeps suspense going for the
-       higher rungs after the base trigger is already locked). */
-    const armed = (scattersSoFar + 1 >= threshold) && (scattersSoFar < topRung);
+    /* Anticipation eligibility — kreće tek kada padnu (threshold - 1)
+       scattera (npr. 2 scattera za 3+ trigger). Tada je igrač jedan reel
+       daleko od trigger-a, vizuelni signal "još samo jedan" je opravdan.
+
+       1 scatter sam NIJE signal — to je samo običan landing, ne suspense.
+       Tek pri 2. scatteru postaje "almost-trigger" momenat koji opravdava
+       slow-down + glow na svim preostalim reel-ovima.
+
+       Anticipation NASTAVLJA dok god je trigger ili upgrade (4-S, 5-S
+       award) još moguć: scattersSoFar < topRung AND scattersSoFar +
+       remaining >= threshold (matematička dostupnost trigger-a).
+       Trigger threshold sam = 3+ (iz GDD-a), anticipation gate = 2. */
+    const remaining = stillSpinning.length;
+    const anticipationGate = Math.max(1, threshold - 1);
+    const armed = (scattersSoFar >= anticipationGate) &&
+                  (scattersSoFar + remaining >= threshold) &&
+                  (scattersSoFar < topRung);
     if (!armed) return;
 
     /* Push every still-spinning reel back by HOLD_MS so the slow-down is
