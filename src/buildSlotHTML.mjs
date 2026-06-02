@@ -386,7 +386,7 @@ body {
   position: relative;
   overflow: hidden;
   border-radius: var(--cell-radius);
-  background: rgba(0, 0, 0, 0.18);
+  background: transparent;
 }
 .reelStrip {
   position: relative;
