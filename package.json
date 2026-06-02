@@ -9,7 +9,8 @@
     "test:parse": "node tests/parse-real.mjs",
     "test:grids": "node tests/render-grid-all.mjs",
     "test:browser": "node tests/render-browser-all.mjs",
-    "test:all": "npm run test:parse && npm run test:grids && npm run test:browser",
+    "test:qa": "node tools/render-grid-gallery.mjs && node tools/full-qa-audit.mjs",
+    "test:all": "npm run test:parse && npm run test:grids && npm run test:browser && npm run test:qa",
     "serve": "python3 -m http.server 5180"
   },
   "devDependencies": {

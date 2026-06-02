@@ -9,8 +9,9 @@ build/
 .env
 .env.local
 
-# QA artifacts — regenerated per `npm run test:browser`
+# QA artifacts — regenerated per `npm run test:browser` / `npm run test:qa`
 reports/screenshots/
+reports/qa/
 reports/grid-coverage-*.md
 !reports/grid-coverage-latest.md
 !reports/browser-render-latest.md
