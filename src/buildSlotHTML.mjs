@@ -547,9 +547,12 @@ body {
 
         const strip = document.createElement("div");
         strip.className = "reelStrip";
-        /* visible: ROWS cells. Strip carries ROWS visible + 12 above so the
-           spin animation has plenty to scroll through. */
-        const stripCells = ROWS + 12;
+        /* Strip carries ROWS + 2 buffer cells (1 above the visible window,
+           1 below). During spin we rotate cells (pop bottom, unshift top,
+           top gets a fresh random symbol) to create the illusion of an
+           infinite scrolling reel — symbols are ALWAYS visible. */
+        const stripCells = ROWS + 2;
+        const cellRefs = [];
         for (let r = 0; r < stripCells; r++) {
           const cell = makeCell(symAt(symIdx++), "");
           cell.style.width = side + "px";
@@ -557,10 +560,29 @@ body {
           cell.style.fontSize = (side * 0.32) + "px";
           cell.style.flex = "0 0 auto";
           strip.appendChild(cell);
+          cellRefs.push(cell);
         }
+        /* Initial position: strip shifted up by one cellStep so the top
+           buffer cell sits ABOVE the visible window and the first visible
+           row is the second strip cell. WoO trick: this gives us a hidden
+           cell above to pop into view during the very first spin tick. */
+        const cellStep = side + 6;
+        strip.style.transform = "translateY(" + (-cellStep) + "px)";
         col.appendChild(strip);
         host.appendChild(col);
-        RECT_REELS.push({ col, strip, side });
+        RECT_REELS.push({
+          col, strip, side, cellStep,
+          cells: cellRefs,
+          offsetPx: 0,         // accumulated scroll distance within current cell
+          spinning: false,
+          stopping: false,
+          stopRequested: false,
+          stopRequestTime: 0,
+          targetY: -cellStep,  // resting position
+          rotationCount: 0,
+          minRotations: 8,
+          stopDelayMs: 0,
+        });
       }
       grid.appendChild(host);
       return;
@@ -585,97 +607,224 @@ body {
     grid.appendChild(host);
   }
 
-  /* ─── Reel spin engine (rectangular only) ─────────────────────────
-     Mirrors the reference base game SPIN_PROFILE_NORMAL timings:
+  /* ─── Reel spin engine (rectangular only) ──────────────────────────────
+     Mirrors the reference base game onTick + reel cell rotation. Symbols
+     are ALWAYS visible during spin because we rotate cells in the strip
+     rather than translating beyond the visible window:
 
-       windup  ~115ms  pull up by 42px (visible tension before drop)
-       accel    130ms  ramp from 0 to steady velocity
-       steady  1350ms  scroll downward at ~22-25 cells/sec
-       decel    300ms  smooth ease to aligned stop
-       bounce   2x decaying (6px → 1.8px) cushion landing
+        every frame: offsetPx += speedPxPerFrame
+        when offsetPx >= cellStep:
+          • offsetPx -= cellStep
+          • pop bottom cell, unshift to top, randomize the top cell symbol
+          • re-render strip with cells at indexes [0..n-1]
+          • rotation count++
+        strip.transform.y = round(offsetPx - cellStep)
+          (oscillates between -cellStep and 0, exposing the next cell as
+           the top one slides off-mask above)
 
-     Reels stop staggered left-to-right with staggerMs = 180ms.
-     Each reel re-fills its top with a fresh random batch of symbols on
-     stop so the visible window shows a new outcome.
-  */
+     On stop request:
+        • spin keeps rotating until rotationCount >= minRotations AND
+          enough time has passed for this reel's stop-delay (stagger)
+        • transition to "stopping" — strip eases towards targetY with
+          a soft cushion bounce on land (6px overshoot, ~2 bounces)
+        • final visible 3 cells are the new outcome
+
+     Timing constants mirror SPIN_PROFILE_NORMAL from WoO timing.ts. */
   const SPIN_PROFILE = {
-    windupMs: 115, windupPx: 42,
+    windupMs: 115, windupFrames: 7, windupPx: 42,
     accelMs: 130, steadyMs: 1350, decelMs: 300,
     staggerMs: 180,
-    bouncePx: 6,
+    bouncePx: 6, bounceDecay: 0.3, bounceCount: 2, bounceElasticity: 1.8,
   };
 
-  function rectReelSpin() {
-    if (!RECT_REELS) return;
-    const stripStepPx = RECT_SIDE + 6; // cell + gap
-    const cellsToScroll = 20; // total cells traveled before landing
-    const reels = RECT_REELS;
+  /* Public state of the engine */
+  let spinTicker = null;
+  let spinStartTime = 0;
+  let allReelsActive = false;
 
-    /* Disable interaction while spinning */
+  function randomSym() { return POOL[Math.floor(Math.random() * POOL.length)]; }
+
+  function rotateStripDown(reel) {
+    /* Pop bottom cell DOM node, unshift to top, randomize its symbol.
+       This mimics WoO's reel.cells.pop() / unshift() rotation. */
+    const last = reel.cells.pop();
+    reel.cells.unshift(last);
+    last.textContent = randomSym();
+    /* Re-attach in new order */
+    for (let i = 0; i < reel.cells.length; i++) {
+      reel.strip.appendChild(reel.cells[i]);
+    }
+    reel.rotationCount++;
+  }
+
+  function commitStopSymbols(reel) {
+    /* On stop: ensure the next ROWS visible cells (indexes 1..ROWS) get a
+       fresh, settled outcome. The top buffer (index 0) and bottom buffer
+       (last) are kept for the cushion bounce. */
+    for (let i = 1; i <= ROWS; i++) {
+      reel.cells[i].textContent = randomSym();
+    }
+  }
+
+  function startSpinAll() {
+    if (!RECT_REELS || allReelsActive) return;
+    allReelsActive = true;
+    spinStartTime = performance.now();
     const spinBtn = document.getElementById("spinBtn");
     const statusEl = document.getElementById("status");
     spinBtn.classList.add("is-spinning");
     statusEl.textContent = "SPINNING";
 
-    reels.forEach((r, idx) => {
-      const strip = r.strip;
-      const startDelay = idx * 30;  // tiny intra-reel offset on start
-      const totalDuration = SPIN_PROFILE.windupMs + SPIN_PROFILE.accelMs +
-                             SPIN_PROFILE.steadyMs + idx * SPIN_PROFILE.staggerMs +
-                             SPIN_PROFILE.decelMs;
+    /* Arm each reel — apply blur to visible cells, set spinning flag,
+       schedule stop-request based on per-reel stagger. */
+    RECT_REELS.forEach((reel, idx) => {
+      reel.spinning = true;
+      reel.stopping = false;
+      reel.stopRequested = false;
+      reel.rotationCount = 0;
+      reel.offsetPx = 0;
+      reel.cells.forEach(c => c.classList.add("is-blurring"));
 
-      /* Pre-spin: add blur to all cells in the strip */
-      const cells = strip.querySelectorAll(".cell");
-      cells.forEach(c => c.classList.add("is-blurring"));
-
-      /* Use Web Animations API for crisp staged transitions. */
+      /* Reel stop is requested after windup + accel + steady + stagger.
+         The reel will physically stop when rotationCount >= minRotations
+         AND the delay has elapsed. */
+      const requestDelay = SPIN_PROFILE.windupMs + SPIN_PROFILE.accelMs +
+                           SPIN_PROFILE.steadyMs + idx * SPIN_PROFILE.staggerMs;
       setTimeout(() => {
-        const finalY = stripStepPx * cellsToScroll;
-        const overshootY = finalY + SPIN_PROFILE.bouncePx;
-        const settleY = finalY;
-
-        strip.animate([
-          { transform: "translateY(0)" },
-          { transform: "translateY(-" + SPIN_PROFILE.windupPx + "px)", offset: SPIN_PROFILE.windupMs / totalDuration },
-          { transform: "translateY(" + (stripStepPx * 2) + "px)", offset: (SPIN_PROFILE.windupMs + SPIN_PROFILE.accelMs) / totalDuration },
-          { transform: "translateY(" + (stripStepPx * (cellsToScroll - 2)) + "px)", offset: (totalDuration - SPIN_PROFILE.decelMs - 80) / totalDuration },
-          { transform: "translateY(" + overshootY + "px)", offset: (totalDuration - 40) / totalDuration },
-          { transform: "translateY(" + settleY + "px)" },
-        ], {
-          duration: totalDuration,
-          easing: "cubic-bezier(0.22, 0.61, 0.36, 1)",
-          fill: "forwards",
-        });
-
-        /* On stop: re-shuffle the top cells so the visible window shows a
-           fresh outcome, then reset transform without animation. */
-        setTimeout(() => {
-          cells.forEach(c => c.classList.remove("is-blurring"));
-          /* Regenerate visible window with new symbols */
-          const stripCells = strip.children;
-          for (let i = 0; i < stripCells.length; i++) {
-            stripCells[i].textContent = symAt(Math.floor(Math.random() * 100) + idx * 7 + i);
-          }
-          strip.style.transform = "translateY(0)";
-          strip.getAnimations().forEach(a => a.cancel());
-
-          /* Last reel: finalize state */
-          if (idx === reels.length - 1) {
-            spinBtn.classList.remove("is-spinning");
-            statusEl.textContent = "PRESS SPIN";
-          }
-        }, totalDuration);
-      }, startDelay);
+        reel.stopRequested = true;
+        reel.stopRequestTime = performance.now();
+      }, requestDelay);
     });
+
+    if (!spinTicker) {
+      const tick = () => {
+        const stillActive = onTickAll();
+        if (stillActive) {
+          spinTicker = requestAnimationFrame(tick);
+        } else {
+          spinTicker = null;
+          allReelsActive = false;
+          spinBtn.classList.remove("is-spinning");
+          statusEl.textContent = "PRESS SPIN";
+        }
+      };
+      spinTicker = requestAnimationFrame(tick);
+    }
   }
 
-  /* Wire spin button (only meaningful for rectangular for now). */
+  function onTickAll() {
+    const baseSpeed = Math.max(20, RECT_SIDE * 0.25);
+    let anyActive = false;
+    const now = performance.now();
+
+    for (const reel of RECT_REELS) {
+      if (reel.spinning) {
+        anyActive = true;
+        const reelElapsed = now - spinStartTime;
+
+        /* Acceleration ramp: 0.3 → 1.0 over accelMs */
+        let speedPxPerFrame = baseSpeed;
+        if (reelElapsed < SPIN_PROFILE.accelMs) {
+          const p = Math.max(0, reelElapsed / SPIN_PROFILE.accelMs);
+          speedPxPerFrame = baseSpeed * (0.3 + 0.7 * p);
+        }
+
+        reel.offsetPx += speedPxPerFrame;
+
+        /* When we've moved a full cell, rotate */
+        while (reel.offsetPx >= reel.cellStep) {
+          reel.offsetPx -= reel.cellStep;
+          rotateStripDown(reel);
+
+          /* Check stop transition */
+          if (reel.stopRequested) {
+            const stopElapsed = now - reel.stopRequestTime;
+            if (reel.rotationCount >= reel.minRotations && stopElapsed >= reel.stopDelayMs) {
+              reel.spinning = false;
+              reel.stopping = true;
+              reel.stopStartMs = now;
+              commitStopSymbols(reel);
+              /* targetY = -cellStep (resting position with top buffer above) */
+              reel.targetY = -reel.cellStep;
+            }
+          }
+        }
+
+        /* Visual position: y oscillates between -cellStep and 0 */
+        const rawY = reel.offsetPx - reel.cellStep;
+        reel.strip.style.transform = "translateY(" + Math.round(rawY) + "px)";
+      } else if (reel.stopping) {
+        anyActive = true;
+        const easingSpeed = 0.18;
+        const snapThreshold = 0.6;
+        const currentY = parseFloat(reel.strip.style.transform.replace(/[^\-0-9.]/g, "")) || 0;
+        const delta = reel.targetY - currentY;
+
+        if (Math.abs(delta) <= snapThreshold) {
+          /* Snap aligned */
+          reel.strip.style.transform = "translateY(" + reel.targetY + "px)";
+          reel.stopping = false;
+          reel.stopped = true;
+          reel.cells.forEach(c => c.classList.remove("is-blurring"));
+
+          /* Cushion bounce */
+          if (SPIN_PROFILE.bouncePx > 0) {
+            reel.bouncing = true;
+            reel.bounceT = 0;
+            reel.bounceIteration = 0;
+            reel.bouncePhase = 'drop';
+            reel.bounceBaseY = reel.targetY;
+            reel.bouncePx = SPIN_PROFILE.bouncePx;
+          }
+        } else {
+          /* Ease toward target */
+          let step = delta * easingSpeed;
+          if (Math.abs(step) < 0.5 && Math.abs(delta) > snapThreshold) {
+            step = delta > 0 ? 1 : -1;
+          }
+          reel.strip.style.transform = "translateY(" + Math.round(currentY + step) + "px)";
+        }
+      } else if (reel.bouncing) {
+        anyActive = true;
+        reel.bounceT++;
+        const t = reel.bounceT;
+        const iter = reel.bounceIteration;
+        const baseY = reel.bounceBaseY;
+        const currentAmp = reel.bouncePx * Math.pow(SPIN_PROFILE.bounceDecay, iter);
+
+        if (currentAmp < 0.5 || iter >= SPIN_PROFILE.bounceCount) {
+          reel.strip.style.transform = "translateY(" + baseY + "px)";
+          reel.bouncing = false;
+        } else {
+          const dropFrames = Math.max(4, Math.round(6 - iter * 1.0));
+          const returnFrames = Math.max(5, Math.round(9 - iter * 1.5));
+          let offset = 0;
+          if (reel.bouncePhase === 'drop') {
+            const dp = Math.min(1, t / dropFrames);
+            const eased = 1 - Math.pow(1 - dp, SPIN_PROFILE.bounceElasticity);
+            offset = currentAmp * eased;
+            if (t >= dropFrames) { reel.bouncePhase = 'return'; reel.bounceT = 0; }
+          } else {
+            const rp = Math.min(1, t / returnFrames);
+            const eased = rp < 0.5 ? 2 * rp * rp : 1 - Math.pow(-2 * rp + 2, 2) / 2;
+            offset = currentAmp * (1 - eased);
+            if (t >= returnFrames) {
+              reel.bounceIteration = iter + 1;
+              reel.bouncePhase = 'drop';
+              reel.bounceT = 0;
+            }
+          }
+          reel.strip.style.transform = "translateY(" + Math.round(baseY + offset) + "px)";
+        }
+      }
+    }
+    return anyActive;
+  }
+
   const spinButton = document.getElementById("spinBtn");
   if (spinButton) {
     spinButton.addEventListener("click", () => {
-      if (SHAPE.kind === "rectangular") {
-        rectReelSpin();
-      }
+      if (SHAPE.kind === "rectangular") startSpinAll();
     });
   }
 
