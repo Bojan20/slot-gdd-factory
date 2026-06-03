@@ -13,9 +13,9 @@ const ct = (s, n, m = '') => { if (!String(s).includes(n)) throw new Error(`miss
 
 console.log('— blocks/anticipation.mjs —');
 
-t('defaultConfig: 600ms hold / 700ms pulse / gold default / skipDuringFs true', () => {
+t('defaultConfig: 600ms hold / 700ms pulse / gold default / skipDuringFs false (Wave Q: ista anticipacija svuda)', () => {
   const c = defaultConfig();
-  eq(c.holdMs, 600); eq(c.pulseMs, 700); eq(c.gold, '255,214,110'); eq(c.skipDuringFs, true);
+  eq(c.holdMs, 600); eq(c.pulseMs, 700); eq(c.gold, '255,214,110'); eq(c.skipDuringFs, false);
 });
 
 t('resolveConfig: holdMs bounded 100..5000', () => {

@@ -33,7 +33,11 @@ const DEFAULTS = Object.freeze({
   holdMs: 600,
   pulseMs: 700,
   gold: '255,214,110',
-  skipDuringFs: true,
+  /* Boki rule: anticipation must fire EVERYWHERE — BASE and FS_ACTIVE alike.
+     Pre-rule this was `true` (skip during FS lifecycle) as a QA-budget
+     trade-off; that made retrigger reads feel flat. Explicit GDD knob can
+     still flip it back to `true` via `skip-during-fs: true`. */
+  skipDuringFs: false,
 });
 
 export function defaultConfig() {
@@ -59,6 +63,9 @@ export function resolveConfig(model) {
     cfg.pulseMs = Math.floor(src.pulseMs);
   }
   if (isValidRGB(src.gold)) cfg.gold = src.gold;
+  /* Tri-state: explicit true → skip during FS; explicit false → run during FS
+     (matches new default); undefined → defaults wins (false = "run everywhere"). */
+  if (src.skipDuringFs === true) cfg.skipDuringFs = true;
   if (src.skipDuringFs === false) cfg.skipDuringFs = false;
   return cfg;
 }

@@ -127,12 +127,38 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
       return;
     }
     /* During FS: check for retrigger. Industry-standard cap at ${c.retriggerCap}
-       chains per round (most operators cap retrigger chains at 2-5). */
+       chains per round (most operators cap retrigger chains at 2-5).
+       Boki rule (Wave Q): retrigger must play the SAME scatter celebration
+       as a fresh trigger — settle pause → clearWinHighlight → 1500ms gold
+       pulse → toast/handleRetrigger. Pre-rule: just toast, no pulse. */
     const RETRIGGER_CAP = ${c.retriggerCap};
-    if (FREESPINS.retrigger && FREESPINS.retrigger.enabled &&
+    const _isRetrigger = FREESPINS.retrigger && FREESPINS.retrigger.enabled &&
         scatters >= FREESPINS.retrigger.count &&
-        FSM.retrigCount < RETRIGGER_CAP) {
-      FSM_handleRetrigger(FREESPINS.retrigger.spins);
+        FSM.retrigCount < RETRIGGER_CAP;
+    if (_isRetrigger) {
+      const _retrigPause = !!FORCE_TRIGGER ? ${c.forcedSettlePauseMs} : ${c.settlePauseMs};
+      FORCE_TRIGGER = null;
+      /* This-spin's countdown still applies. Multiplier still escalates. */
+      FSM.spinsRemaining--;
+      if (FREESPINS.multiplier && FREESPINS.multiplier.type === "progressive") {
+        FSM.mult = Math.min(FSM.mult + FREESPINS.multiplier.step, FREESPINS.multiplier.cap);
+      }
+      FSM_renderHud();
+      setTimeout(() => {
+        clearWinHighlight();
+        const _celeb = (typeof playScatterCelebration === 'function')
+          ? playScatterCelebration()
+          : Promise.resolve();
+        _celeb.then(() => {
+          FSM_handleRetrigger(FREESPINS.retrigger.spins);
+          /* After retrigger toast — chain into next FS spin (or outro if 0). */
+          setTimeout(() => {
+            if (FSM.spinsRemaining <= 0) FSM_enterOutro();
+            else FSM_runNextFsSpin();
+          }, ${c.fsSpinBreathMs});
+        });
+      }, _retrigPause);
+      return;
     }
     /* Progressive multiplier escalation — bump on every FS spin that doesn't
        blow the cap, regardless of win/loss. */
