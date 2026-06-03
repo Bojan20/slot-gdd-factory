@@ -113,6 +113,58 @@ body {
   letter-spacing: 1.5px;
   text-transform: uppercase;
 }
+/* Stage badge — live indicator za trenutni game phase. Sedi između .title
+   (statički brand) i .sub (statički layout descriptor) tako da hijerarhija
+   čita: brand → live state → struktura. Purely informational (pointer-events
+   off). Boja/animacija reaguje na data-stage atribut — extensibilno za
+   buduće stage-ove (cash eruption, hold&win, bonus). */
+.stage-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 12px 3px 10px;
+  border-radius: 999px;
+  background: rgba(15, 12, 10, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  color: rgba(197, 198, 199, 0.78);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+  transition: color .35s ease, background .35s ease, border-color .35s ease;
+}
+.stage-badge__dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.7;
+  transition: background .35s ease, box-shadow .35s ease, opacity .35s ease;
+}
+.stage-badge[data-stage="fs"] {
+  color: #ffe6a8;
+  background: rgba(40, 30, 16, 0.65);
+  border-color: rgba(217, 180, 74, 0.5);
+}
+.stage-badge[data-stage="fs"] .stage-badge__dot {
+  background: #ffd66e;
+  opacity: 1;
+  box-shadow: 0 0 8px rgba(255, 214, 110, 0.85);
+  animation: stage-badge-pulse 1.6s ease-in-out infinite;
+}
+@keyframes stage-badge-pulse {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 6px rgba(255, 214, 110, 0.55); }
+  50%      { transform: scale(1.25); box-shadow: 0 0 14px rgba(255, 214, 110, 1);   }
+}
+@media (max-width: 620px) {
+  .stage-badge { font-size: 0.55rem; padding: 2px 10px 2px 8px; letter-spacing: 1.8px; gap: 6px; }
+  .stage-badge__dot { width: 5px; height: 5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage-badge[data-stage="fs"] .stage-badge__dot { animation: none; }
+}
 /* Play area — symmetrical 3-column layout on desktop so the frame is
    perfectly horizontally centered. Left column is a transparent spacer
    the same width as the right SPIN rail. On smaller screens we collapse
@@ -732,6 +784,10 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 <div class="stage">
   <div class="header">
     <div class="title">${escapeHtml(model.name)}</div>
+    <div class="stage-badge" id="stageBadge" data-stage="base" aria-live="polite">
+      <span class="stage-badge__dot" aria-hidden="true"></span>
+      <span class="stage-badge__label" id="stageBadgeLabel">BASE GAME</span>
+    </div>
     <div class="sub">${escapeHtml(layoutSub)}</div>
   </div>
   <div class="play">
@@ -1476,6 +1532,20 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
   const fsPlacardCta     = document.getElementById("fsPlacardCta");
   const devFsBtn   = document.getElementById("devFsBtn");
   const statusElGlobal = document.getElementById("status");
+  const stageBadge      = document.getElementById("stageBadge");
+  const stageBadgeLabel = document.getElementById("stageBadgeLabel");
+
+  /* Stage badge driver. Map FSM phases → two visual states:
+       BASE                                → "BASE GAME"  (muted)
+       FS_INTRO / FS_ACTIVE / FS_OUTRO     → "FREE SPINS" (gold pulse)
+     Extensibility: add another data-stage="..." block in CSS and pass a
+     new (stage, label) pair here when new game phases are introduced
+     (cash eruption, hold and win, bonus, etc.). */
+  function setStageBadge(stage, label) {
+    if (!stageBadge) return;
+    stageBadge.dataset.stage = stage;
+    if (label) stageBadgeLabel.textContent = label;
+  }
 
   function FSM_renderHud() {
     if (!fsHud) return;
@@ -1522,6 +1592,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
   function FSM_enterIntro(spinsAwarded, scatterCount) {
     FSM.phase = "FS_INTRO";
+    setStageBadge("fs", "FREE SPINS");
     FSM.spinsTotal = spinsAwarded;
     FSM.spinsRemaining = spinsAwarded;
     FSM.mult = (FREESPINS.multiplier && FREESPINS.multiplier.start) || 1;
@@ -1546,6 +1617,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
   function FSM_enterActive() {
     FSM.phase = "FS_ACTIVE";
+    setStageBadge("fs", "FREE SPINS");
     FSM_hideOverlay();
     FSM_showFsMode();
     FSM_renderHud();
@@ -1578,6 +1650,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
   function FSM_enterOutro() {
     FSM.phase = "FS_OUTRO";
+    setStageBadge("fs", "FREE SPINS");
     fsPlacardEyebrow.textContent = (FREESPINS.outroLabel || "FREE SPINS COMPLETE").toUpperCase();
     fsPlacardTitle.textContent   = "TOTAL WIN";
     fsPlacardSpins.textContent   = FSM.totalWin.toFixed(2);
@@ -1593,6 +1666,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
   function FSM_enterBase() {
     FSM.phase = "BASE";
+    setStageBadge("base", "BASE GAME");
     FSM_hideOverlay();
     FSM_hideFsMode();
     spinButton && (spinButton.disabled = false);
