@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `__TBD__` · main
+> Last updated: **2026-06-03** · HEAD: `cf0c7b5` · main
 
 ---
 
@@ -276,7 +276,7 @@
 | B4.11 | Unit testovi: `tests/blocks/freeSpins.test.mjs` — **21/21 ✅** (defaults + bounds + 4 emitter outputs + parser + roundtrip) | ✅ |
 | B4.12 | Backward compat: GDD bez sekcije → safe defaults identični pre-block ponašanju (FREE SPINS / TAP TO BEGIN / RETURN TO BASE / 320ms fade / 420ms enter-active / 250ms breath / 1800ms toast) | ✅ |
 
-### Wave B5-engine-hot — reelEngine LEGO blok (commit `__TBD__`)
+### Wave B5-engine-hot — reelEngine LEGO blok (commit `cf0c7b5`)
 
 > **Poslednji** i **najveći** hot-path izvlačenje. Kompletan reel spin engine (state machine + animations + static reroll) izvučen iz buildera u modularan blok. Sve zavisnosti (RECT_REELS / spinTicker / FORCE_TRIGGER + 8 funkcija) sada žive u jednom modulu sa 12 GDD-driven knobs.
 
@@ -352,7 +352,7 @@
 
 ---
 
-## ✅ QA matrix (HEAD `__TBD__`)
+## ✅ QA matrix (HEAD `cf0c7b5`)
 
 | Suite | Coverage | Result |
 |---|---|---:|
