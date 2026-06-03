@@ -487,6 +487,23 @@ body {
 }
 .spinBtn.is-spinning { pointer-events: none; opacity: 0.78; }
 .spinBtn.is-spinning svg { opacity: 0.55; }
+
+/* ── Placeholder win highlight ─────────────────────────────────────────────
+   Visual-only: winning cells stay full opacity + nudge scale, non-winning
+   cells dim to ~35%. No keyframes, no glow — just enough to read the combo
+   at a glance. Real win-evaluator (matched line / cluster) lands with math.
+   Scoped to .gridHost (the actual host element) and to all descendant cells
+   so it works for both flat grids and nested SVG/text grids. */
+.gridHost.has-winselection .cell,
+.gridHost.has-winselection text         { opacity: 0.32; transition: opacity 180ms ease, transform 180ms ease; }
+.gridHost.has-winselection .cell.is-win,
+.gridHost.has-winselection text.is-win  { opacity: 1;     transform: scale(1.06); }
+@media (prefers-reduced-motion: reduce) {
+  .gridHost.has-winselection .cell,
+  .gridHost.has-winselection text,
+  .gridHost.has-winselection .cell.is-win,
+  .gridHost.has-winselection text.is-win { transition: none; transform: none; }
+}
 .grow-tag {
   position: absolute;
   top: 10px;
@@ -1408,6 +1425,9 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
   }
 
   function runOneBaseSpin() {
+    /* Clear any leftover win-combo highlight from the previous spin so the
+       grid reads as "neutral, about to spin" instead of "stuck on a win". */
+    clearWinHighlight();
     /* Every uniform-column-grid shape (rectangular / cluster / megaclusters
        / lock_respin / expanding / infinity) uses the same reel spin engine
        — windup → accel → steady → decel → cushion bounce, identical cadence
@@ -1647,10 +1667,50 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     return award;
   }
 
+  /* ── Placeholder win-combo highlight ─────────────────────────────────────
+     No math yet, so we fake the "winning combination" by picking the most-
+     frequent non-scatter symbol on the grid (must occur ≥ 3 times) and
+     marking those cells .is-win while the parent .grid carries
+     .has-winselection (which dims every other cell via CSS). About one
+     spin in three is a "loss" with no highlight at all, so the player gets
+     visual variance instead of every spin lighting up. Cleared at the start
+     of every new spin and at FS phase boundaries. */
+  function clearWinHighlight() {
+    grid.classList.remove("has-winselection");
+    grid.querySelectorAll(".cell.is-win").forEach(c => c.classList.remove("is-win"));
+  }
+  function applyWinHighlight() {
+    clearWinHighlight();
+    if (Math.random() < 0.30) return;   /* 30% of spins read as "no win" */
+    const cells = Array.from(grid.querySelectorAll(".cell"));
+    if (cells.length < 3) return;
+    const trig = (FREESPINS.triggerSymbol || "S").toUpperCase();
+    const counts = new Map();
+    cells.forEach(c => {
+      const sym = (c.textContent || "").trim().toUpperCase();
+      if (!sym || sym === trig) return;
+      counts.set(sym, (counts.get(sym) || 0) + 1);
+    });
+    /* Sort symbols by count desc, take the top one with count ≥ 3. */
+    const best = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+    if (!best || best[1] < 3) return;
+    const winSym = best[0];
+    grid.classList.add("has-winselection");
+    cells.forEach(c => {
+      if ((c.textContent || "").trim().toUpperCase() === winSym) {
+        c.classList.add("is-win");
+      }
+    });
+  }
+
   /* Post-spin trigger evaluation. Called from both base-game spins and FS
      in-round spins; the duringFs flag decides whether a scatter hit is a
      fresh trigger (BASE) or a retrigger (FS). */
   function handlePostSpin(duringFs) {
+    /* Visual win-combo highlight first — independent of FS / scatter logic
+       so it works in BASE and FS_ACTIVE alike. */
+    applyWinHighlight();
+
     if (!FREESPINS.enabled) {
       /* No FS configured — nothing to do; FSM stays in BASE. */
       if (duringFs) FSM_runNextFsSpin();
@@ -1847,6 +1907,8 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
   function FSM_runNextFsSpin() {
     if (FSM.phase !== "FS_ACTIVE") return;
+    /* Clear win highlight from the previous FS spin before this one starts. */
+    clearWinHighlight();
     statusElGlobal && (statusElGlobal.textContent =
       "FS · " + ((FSM.spinsTotal - FSM.spinsRemaining) + 1) + " / " + FSM.spinsTotal);
 
