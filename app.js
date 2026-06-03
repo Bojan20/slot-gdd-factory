@@ -149,6 +149,11 @@ import { buildSlotHTML } from "./src/buildSlotHTML.mjs";
 
     document.getElementById("openSlotBtn").addEventListener("click", () => openPlayableSlot(model));
     document.getElementById("downloadIrBtn").addEventListener("click", () => downloadIR(model, fileName));
+
+    /* AUTO-OPEN preview — Boki direktiva: "ja prevucem GDD a ništa se ne
+       desi". Dropzone uploadovan → preview iframe se ODMAH renderuje, bez
+       potrebe za klikom. Pop-out button i dalje radi za pun tab. */
+    try { openPlayableSlot(model); } catch (e) { console.error("auto-preview failed:", e); }
   }
 
   /* ─── build GDD Coverage Report card ──────────────────── */
@@ -246,15 +251,54 @@ import { buildSlotHTML } from "./src/buildSlotHTML.mjs";
       </div>`;
   }
 
-  /* ─── open standalone slot in new tab ────────────────── */
+  /* ─── render standalone slot — INLINE preview + popout fallback ────────
+     Razlog: window.open(blob:URL, "_blank") tiho blokira Safari/Chrome
+     popup-blocker u ~90% slučajeva čak i kad je trigger user click.
+     Inline iframe + same-origin doc.write daje Boki-ju instant playable
+     preview bez ijednog browser warning-a. Popout dugme i dalje postoji
+     za pun tab; ako popup pada, fallback na download .html. */
   function openPlayableSlot(model) {
     const html = buildSlotHTML(model);
-    const blob = new Blob([html], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const tab = window.open(url, "_blank");
-    if (!tab) {
-      alert("Popup blokiran. Dozvoli popup za localhost da bi se otvorila igra.");
+
+    let previewWrap = document.getElementById("previewWrap");
+    if (!previewWrap) {
+      previewWrap = document.createElement("div");
+      previewWrap.id = "previewWrap";
+      previewWrap.style.cssText = "width:100%;max-width:1280px;margin:1.5rem auto 0;padding:1rem;background:#0b0c10;border:1px solid #45a29e;border-radius:12px";
+      resultEl.parentNode.appendChild(previewWrap);
     }
+    previewWrap.innerHTML = `
+      <div style="display:flex;gap:0.8rem;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-wrap:wrap">
+        <strong style="color:#66fcf1;font-size:0.95rem">🎰 Playable preview · ${escapeHtml(model.name)}</strong>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-ghost" id="reloadPreviewBtn" style="font-size:0.72rem;padding:0.35rem 0.75rem">↻ Reload</button>
+          <button class="btn btn-ghost" id="popoutBtn" style="font-size:0.72rem;padding:0.35rem 0.75rem">↗ Open in new tab</button>
+        </div>
+      </div>
+      <iframe id="previewFrame" style="width:100%;height:80vh;min-height:640px;border:1px solid #243442;border-radius:10px;background:#05070c;display:block"></iframe>
+    `;
+    const iframe = document.getElementById("previewFrame");
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    document.getElementById("reloadPreviewBtn").addEventListener("click", () => openPlayableSlot(model));
+    document.getElementById("popoutBtn").addEventListener("click", () => {
+      const blob = new Blob([html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const tab = window.open(url, "_blank");
+      if (!tab) {
+        /* Fallback: download as .html so Boki može direktno da dvoklikne */
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = (model.name || "slot").replace(/[^a-z0-9-]/gi, "-").toLowerCase() + ".html";
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+      }
+    });
+
+    previewWrap.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   /* buildSlotHTML is now in src/buildSlotHTML.mjs (DRY between app.js + tests) */
