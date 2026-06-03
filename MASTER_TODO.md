@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `51f2a57` · main
+> Last updated: **2026-06-03** · HEAD: `__TBD__` · main
 
 ---
 
@@ -206,7 +206,23 @@
 | B1.7 | Unit testovi: `tests/blocks/paylines.test.mjs` (12 cases) + `tests/blocks/winPresentation.test.mjs` (22 cases — uključuje parser→block roundtrip) | ✅ |
 | B1.8 | GDD-driven: explicit `model.winPresentation.paylines` override industry-standard pool; explicit `mode`, `perEventMs`, `maxEvents`, `noWinChance`, `winCycle` bake u runtime kao literali | ✅ |
 | B1.9 | Backward compat: GDD bez `## Win Presentation` sekcije → svi slotovi `undefined` → block `resolveConfig` daje safe defaults identične pre-block ponašanju | ✅ |
-| B1.10 | Migration debt: TODO ostalo — `_buildStandardPaylines` već izvučen; `detectWinCombos`, `playScatterCelebration`, `applyWinHighlight` cluster mode, `findScatterCellsOnGrid`, FS lifecycle helpers ostaju za sledeće B-talase | ⏳ |
+| B1.10 | Migration debt: TODO ostalo — `_buildStandardPaylines` već izvučen; `detectWinCombos`, `applyWinHighlight` cluster mode, FS lifecycle helpers ostaju za sledeće B-talase | ⏳ |
+
+### Wave B2 — scatterCelebration LEGO blok (commit `__TBD__`)
+
+> Drugi B-talas u LEGO migraciji. Scatter celebration animacija (1500ms pulse/glow nakon settle pre FS_INTRO) izvučena iz `buildSlotHTML.mjs` u modularan blok. CSS keyframes + JS funkcije su sada emitovani iz `src/blocks/scatterCelebration.mjs` umesto inline. GDD-driven knobs (duration, pulse-cycles, dim-opacity, glow-color, glow-peak) bake-uju se u runtime kao literali.
+
+| ID | Feature | Status |
+|---|---|---|
+| B2.1 | `src/blocks/scatterCelebration.mjs` — `defaultConfig` / `resolveConfig` / `emitScatterCelebrationCSS` / `emitScatterCelebrationRuntime` | ✅ |
+| B2.2 | Parser: `extractScatterCelebration()` čita `## Scatter Celebration` / `Trigger Celebration` / `Scatter Animation` / `Trigger Animation` heading variante | ✅ |
+| B2.3 | GDD knobs: `enabled` / `duration-ms` / `pulse-cycles` / `pulse-cycle-ms` / `dim-opacity` / `glow-color` / `glow-peak` — sve opciono | ✅ |
+| B2.4 | `buildSlotHTML.mjs` refactor: ~42 LOC inline CSS + ~60 LOC inline JS zamenjeno sa 2 retke (CSS emit + runtime emit). **0 inline `function findScatterCellsOnGrid \| function playScatterCelebration \| @keyframes scatter-celebrate` u builder-u** | ✅ |
+| B2.5 | Unit testovi: `tests/blocks/scatterCelebration.test.mjs` — **22/22 ✅** (defaults, bounds, CSS literal-bake, runtime emit, stub-when-disabled, parser, roundtrip) | ✅ |
+| B2.6 | Backward compat: GDD bez `## Scatter Celebration` sekcije → svi slotovi `undefined` → block `resolveConfig` daje defaults identične pre-block ponašanju (1500ms / 3 cycles / 500ms / 0.18 dim / 255,214,110 gold / 1.5 peak) | ✅ |
+| B2.7 | `enabled: false` u GDD → emituje stub `playScatterCelebration() = Promise.resolve()` BUILD-TIME (zero runtime cost, ne probija FS lifecycle dispatch) | ✅ |
+| B2.8 | `FREESPINS.scatterCelebration === false` runtime override i dalje radi (legacy escape hatch) | ✅ |
+| B2.9 | Browser QA verifikovan — 23/23 fixture, 0 console errors, scatter celebration animira identično kao pre refaktora | ✅ |
 
 ### Wave Win-cycle per-LINE (commit `255689a`)
 | ID | Feature | Status |
@@ -226,7 +242,7 @@
 
 ---
 
-## ✅ QA matrix (HEAD `51f2a57`)
+## ✅ QA matrix (HEAD `__TBD__`)
 
 | Suite | Coverage | Result |
 |---|---|---:|
@@ -240,7 +256,8 @@
 | `tools/payline-overlay-spot-check.mjs` | 23 fixtures × SVG overlay snapshot | **23/23 ✅** |
 | `tests/blocks/paylines.test.mjs` | paylines block — pure builder + config (LEGO) | **12/12 ✅** |
 | `tests/blocks/winPresentation.test.mjs` | winPresentation block + parser→runtime roundtrip | **22/22 ✅** |
-| **TOTAL** | | **199/199 ✅** |
+| `tests/blocks/scatterCelebration.test.mjs` | scatterCelebration block + parser→runtime roundtrip | **22/22 ✅** |
+| **TOTAL** | | **221/221 ✅** |
 
 ---
 
@@ -248,12 +265,16 @@
 
 | Pri | Item | Why | Effort |
 |:-:|---|---|---|
-| 1 | **Wave J2 — Real reel engine for hex / diamond / pyramid / cross / l_shape** | irregular column shapes; need geometric "column" mapping | L |
-| 2 | **Wave J3 — SVG kinds (wheel / crash / radial / slingo / plinko)** — domain-specific spin animation (wheel arrow stop, crash multiplier curve, plinko peg drops, slingo card flip, radial sweep) | each kind needs its own engine; can't reuse rectangular | L |
-| 3 | **PAR / Math hot-swap injector** | README Phase 2 — placeholder math still in use | XL |
-| 4 | **Stage badge per non-rectangular layout positioning** | currently same place for all shapes; radial / SVG may want different anchor | S |
-| 5 | **Sound cue placeholders** (trigger sting, anticipation hum, FS placard whoosh) | currently silent; production demos want audio scaffolding | M |
-| 6 | **Wired modeling for 21 detected-but-unused feature kinds** (cascade / hold_and_win / multiplier / expanding_wild / walking_wild / sticky_wild / mystery_symbol / bonus_buy / bonus_pick / wheel_bonus / cluster_pays evaluator / ways evaluator / scatter_pay / lightning / respin / wild_reel / gamble / ante_bet / super_symbol / win_cap / persistent_multiplier) | parser detects, template ignores — see full breakdown in chat | XL |
+| 1 | **Wave B3 — `detectWinCombos` (cluster-mode evaluator) → `winPresentation.mjs` proširenje** | trenutno još uvek inline u builder-u; jedini razlog što cluster grids rade | M |
+| 2 | **Wave B4 — FS lifecycle helpers (`FSM_*`, intro/active/outro placards) → `src/blocks/freeSpins.mjs`** | najveći ostatak inline logike u builder-u | L |
+| 3 | **Wave B5 — reel spin engine (`buildReelColumns`, `runOneBaseSpin`, `commitStopSymbols`) → `src/blocks/reelSpin.mjs`** | engine je već extractovan kao funkcije ali još uvek inline u builder-u | L |
+| 4 | **Wave B6 — anticipation glow → `src/blocks/anticipation.mjs`** | per-reel hold glow + threshold gate | S |
+| 5 | **Wave B7 — stage badge → `src/blocks/stageBadge.mjs`** | BASE / FS pill u header-u | S |
+| 6 | **Wave J2 — Real reel engine for hex / diamond / pyramid / cross / l_shape** | irregular column shapes; need geometric "column" mapping | L |
+| 7 | **Wave J3 — SVG kinds (wheel / crash / radial / slingo / plinko)** — domain-specific spin animation | each kind needs its own engine; can't reuse rectangular | L |
+| 8 | **PAR / Math hot-swap injector** | README Phase 2 — placeholder math still in use | XL |
+| 9 | **Sound cue placeholders** (trigger sting, anticipation hum, FS placard whoosh) | currently silent; production demos want audio scaffolding | M |
+| 10 | **Wired modeling for 21 detected-but-unused feature kinds** (cascade / hold_and_win / multiplier / expanding_wild / walking_wild / sticky_wild / mystery_symbol / bonus_buy / bonus_pick / wheel_bonus / cluster_pays evaluator / ways evaluator / scatter_pay / lightning / respin / wild_reel / gamble / ante_bet / super_symbol / win_cap / persistent_multiplier) | parser detects, template ignores | XL |
 
 ---
 

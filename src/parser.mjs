@@ -109,6 +109,11 @@ export function parseMarkdownGDD(text) {
      section; downstream block falls through to safe defaults. */
   extractWinPresentation(text, model);
 
+  /* scatter-celebration block config — extracts optional GDD knobs for the
+     scatterCelebration lego block. No-op when the GDD has no Scatter
+     Celebration section; downstream block falls through to safe defaults. */
+  extractScatterCelebration(text, model);
+
   // math (RTP / volatility / max-win) intentionally NOT extracted in this phase.
 
   return model;
@@ -879,6 +884,27 @@ function freshModel() {
       /* number in [0,1] — forced "no win" chance for visual variance */
       noWinChance: undefined,
     },
+    /* Scatter-celebration block config — consumed by
+       src/blocks/scatterCelebration.mjs. Always emitted with `undefined`
+       slots so the block's resolveConfig() falls through to safe defaults.
+       Populated by extractScatterCelebration() when the GDD declares
+       overrides. */
+    scatterCelebration: {
+      /* boolean — false hard-disables the celebration */
+      enabled: undefined,
+      /* number ms — total celebration duration */
+      durationMs: undefined,
+      /* number — how many brightness cycles play */
+      pulseCycles: undefined,
+      /* number ms — duration of ONE cycle */
+      pulseCycleMs: undefined,
+      /* number in [0,1] — non-scatter cells dim level */
+      dimOpacity: undefined,
+      /* "r,g,b" string — gold drop-shadow halo color */
+      glowColor: undefined,
+      /* number — brightness peak inside a cycle */
+      glowPeak: undefined,
+    },
     confidence: { name: 0, topology: 0, symbols: 0, features: 0 },
   };
 }
@@ -935,4 +961,61 @@ export function extractWinPresentation(text, model) {
     const v = wc[1].toLowerCase();
     wp.winCycle = (v === 'true' || v === 'on' || v === 'yes');
   }
+}
+
+/* ── extractScatterCelebration — GDD-driven trigger animation config ──────
+   Reads optional knobs from a "## Scatter Celebration" / "## Trigger
+   Celebration" / "## Scatter Animation" / "## Trigger Animation" section
+   in the GDD:
+
+     ```
+     ## Scatter Celebration
+     - enabled: true
+     - duration-ms: 1800
+     - pulse-cycles: 4
+     - pulse-cycle-ms: 450
+     - dim-opacity: 0.20
+     - glow-color: 255,214,110
+     - glow-peak: 1.6
+     ```
+
+   All keys optional. Unknown keys ignored. Block's resolveConfig() does the
+   actual validation — parser only forwards what it sees. */
+export function extractScatterCelebration(text, model) {
+  if (!text || !model) return;
+  const headingRx = /^##\s*(?:scatter\s*celebration|trigger\s*celebration|scatter\s*animation|trigger\s*animation)\s*$/im;
+  const startMatch = text.match(headingRx);
+  if (!startMatch) return;
+
+  const start = startMatch.index + startMatch[0].length;
+  const restRx = /^#{1,2}\s/m;
+  const tail = text.slice(start);
+  const nextH = tail.match(restRx);
+  const section = nextH ? tail.slice(0, nextH.index) : tail;
+
+  const sc = model.scatterCelebration;
+  /* enabled on/off */
+  const en = section.match(/\benabled\s*[:=]\s*(true|false|on|off|yes|no)/i);
+  if (en) {
+    const v = en[1].toLowerCase();
+    sc.enabled = (v === 'true' || v === 'on' || v === 'yes');
+  }
+  /* duration-ms */
+  const du = section.match(/\bduration[- ]?ms\s*[:=]\s*(\d+)/i);
+  if (du) sc.durationMs = parseInt(du[1], 10);
+  /* pulse-cycles */
+  const pc = section.match(/\bpulse[- ]?cycles?\s*[:=]\s*(\d+)/i);
+  if (pc) sc.pulseCycles = parseInt(pc[1], 10);
+  /* pulse-cycle-ms */
+  const pcm = section.match(/\bpulse[- ]?cycle[- ]?ms\s*[:=]\s*(\d+)/i);
+  if (pcm) sc.pulseCycleMs = parseInt(pcm[1], 10);
+  /* dim-opacity */
+  const dm = section.match(/\bdim[- ]?opacity\s*[:=]\s*(0?\.\d+|0|1)/i);
+  if (dm) sc.dimOpacity = parseFloat(dm[1]);
+  /* glow-color "r,g,b" */
+  const gc = section.match(/\bglow[- ]?color\s*[:=]\s*(\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3})/i);
+  if (gc) sc.glowColor = gc[1].replace(/\s+/g, '');
+  /* glow-peak */
+  const gp = section.match(/\bglow[- ]?peak\s*[:=]\s*(\d+(?:\.\d+)?)/i);
+  if (gp) sc.glowPeak = parseFloat(gp[1]);
 }
