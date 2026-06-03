@@ -69,6 +69,95 @@ export function buildSlotHTML(model) {
     ),
   };
   const shape = buildGridShape(model);
+  /* ── Payline pool (industry-standard sets per grid kind) ───────────────
+     Each payline is `int[reels]` where the i-th element is the visible
+     ROW INDEX (0-top) that the line passes through on reel i. Mirrors
+     WoO `PAYLINES[lineIdx][reelIdx] = rowIdx` (src/paylines.ts).
+
+     Only line-pays shapes (rectangular, variable_reel, lock_respin,
+     expanding) get a non-empty pool. Cluster / megaclusters / hex /
+     diamond / pyramid / cross / l_shape / SVG kinds use cluster-pays
+     mode (per-symbol cycle as before — the industry rule for them).
+
+     Standard pool used: 20 NetEnt/Pragmatic-style lines for 5×3,
+     25-line extension for 5×4 (adds the deeper W/M/zig-zag rows). For
+     non-standard topologies we synthesise three horizontal rows + two
+     bounded zig-zags so the cycle still reads something. */
+  function _buildStandardPaylines(reels, rows) {
+    if (reels < 3) return [];
+    /* Helper — clamp every row of a line into [0, rows-1] so we can reuse
+       the canonical 5×3 set on taller grids by repeating the centre row. */
+    const clamp = (row) => Math.max(0, Math.min(rows - 1, row));
+    const horizontalRows = rows >= 3 ? [1, 0, 2] : Array.from({length: rows}, (_, i) => i);
+    const lines = [];
+    /* 1-3: three horizontals (middle, top, bottom) */
+    for (const r of horizontalRows.slice(0, Math.min(rows, 4))) {
+      lines.push(Array(reels).fill(clamp(r)));
+    }
+    if (reels >= 3 && rows >= 3) {
+      /* 4-5: V and inverted V */
+      lines.push(Array.from({length: reels}, (_, c) => {
+        const mid = (reels - 1) / 2;
+        const d = Math.abs(c - mid);
+        return clamp(Math.round(d));
+      }));
+      lines.push(Array.from({length: reels}, (_, c) => {
+        const mid = (reels - 1) / 2;
+        const d = Math.abs(c - mid);
+        return clamp(rows - 1 - Math.round(d));
+      }));
+      /* 6-9: U-shape variants on top and bottom rows */
+      const u  = (c) => (c === 0 || c === reels - 1) ? 1 : 0;
+      const u2 = (c) => (c === 0 || c === reels - 1) ? 1 : 2;
+      const u3 = (c) => (c === 0 || c === reels - 1) ? 0 : 1;
+      const u4 = (c) => (c === 0 || c === reels - 1) ? 2 : 1;
+      lines.push(Array.from({length: reels}, (_, c) => clamp(u(c))));
+      lines.push(Array.from({length: reels}, (_, c) => clamp(u2(c))));
+      lines.push(Array.from({length: reels}, (_, c) => clamp(u3(c))));
+      lines.push(Array.from({length: reels}, (_, c) => clamp(u4(c))));
+      /* 10-15: zig-zags (alternating row pairs) */
+      const zig = (a, b) => (c) => clamp(c % 2 === 0 ? a : b);
+      lines.push(Array.from({length: reels}, (_, c) => zig(0, 1)(c)));
+      lines.push(Array.from({length: reels}, (_, c) => zig(1, 0)(c)));
+      lines.push(Array.from({length: reels}, (_, c) => zig(2, 1)(c)));
+      lines.push(Array.from({length: reels}, (_, c) => zig(1, 2)(c)));
+      lines.push(Array.from({length: reels}, (_, c) => zig(0, 2)(c)));
+      lines.push(Array.from({length: reels}, (_, c) => zig(2, 0)(c)));
+      /* 16-20: bounded peaks/valleys */
+      const peaks = [
+        [0, 1, 0, 1, 0], [2, 1, 2, 1, 2],
+        [1, 0, 1, 0, 1], [1, 2, 1, 2, 1],
+        [0, 0, 1, 2, 2],
+      ];
+      for (const p of peaks) {
+        lines.push(Array.from({length: reels}, (_, c) => clamp(p[c] ?? p[p.length - 1])));
+      }
+      /* 21-25: deep-row variations (only when rows >= 4) */
+      if (rows >= 4) {
+        const deep = [
+          [3, 3, 3, 3, 3], [3, 2, 3, 2, 3], [2, 3, 2, 3, 2],
+          [0, 1, 2, 3, 3], [3, 2, 1, 0, 0],
+        ];
+        for (const d of deep) {
+          lines.push(Array.from({length: reels}, (_, c) => clamp(d[c] ?? d[d.length - 1])));
+        }
+      }
+    }
+    /* Dedupe (same path written twice on a tiny grid) */
+    const seen = new Set();
+    const unique = [];
+    for (const line of lines) {
+      const key = line.join(',');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      unique.push(line);
+    }
+    return unique;
+  }
+  const LINE_PAYS_KINDS = new Set(['rectangular', 'variable_reel', 'lock_respin', 'expanding']);
+  const PAYLINE_POOL = LINE_PAYS_KINDS.has(shape.kind)
+    ? _buildStandardPaylines(shape.reels, shape.rows)
+    : [];
   const reels = shape.reels;
   const rows  = shape.rows;
 
@@ -419,6 +508,64 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Anchor for absolutely-positioned children — payline SVG overlay,
+     line badge, big-win plaque etc. all overlay the grid by inset:0. */
+  position: relative;
+}
+/* ── Payline overlay (SVG) ─────────────────────────────────────────────
+   Absolute layer over the entire gridHost. Each winning payline draws
+   ONE <polyline> through the geometric centers of its matched cells,
+   colored by tier (HP gold, MP cyan-ice, LP bronze, WILD magenta). A
+   round number-badge floats at the leftmost endpoint so the player
+   reads "LINE 4" at a glance. SVG drawn at the gridHost dimensions
+   in pixel space (viewBox = "0 0 W H"), updated on each cycle step. */
+.payline-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 6;
+  overflow: visible;
+}
+.payline-path {
+  fill: none;
+  stroke-width: 4.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  /* Drop-shadow brings the line forward over busy reel backgrounds
+     without bleeding past the host bounds (filter clips to overlay). */
+  filter: drop-shadow(0 0 6px rgba(255, 196, 90, 0.55));
+  /* Draw-in animation: starts fully dash-offset, animates to 0 over
+     180ms so the eye reads "the line forms across these symbols". */
+  stroke-dasharray: var(--payline-len, 1000);
+  stroke-dashoffset: var(--payline-len, 1000);
+  animation: payline-draw 220ms ease-out forwards;
+}
+@keyframes payline-draw {
+  to { stroke-dashoffset: 0; }
+}
+.payline-path.tier-HP   { stroke: #ffc85a; filter: drop-shadow(0 0 8px rgba(255, 200, 90, 0.85)); }
+.payline-path.tier-MP   { stroke: #7ec8e3; filter: drop-shadow(0 0 7px rgba(126, 200, 227, 0.75)); }
+.payline-path.tier-LP   { stroke: #d29560; filter: drop-shadow(0 0 6px rgba(210, 149, 96, 0.70)); }
+.payline-path.tier-WILD { stroke: #e070c0; filter: drop-shadow(0 0 8px rgba(224, 112, 192, 0.80)); }
+.payline-badge {
+  fill: rgba(15, 12, 10, 0.92);
+  stroke-width: 1.5;
+}
+.payline-badge.tier-HP   { stroke: #ffc85a; }
+.payline-badge.tier-MP   { stroke: #7ec8e3; }
+.payline-badge.tier-LP   { stroke: #d29560; }
+.payline-badge.tier-WILD { stroke: #e070c0; }
+.payline-badge-text {
+  font: 800 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  fill: #f2f2f2;
+  text-anchor: middle;
+  dominant-baseline: central;
+  letter-spacing: 0.5px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .payline-path { animation: none; stroke-dashoffset: 0; }
 }
 .grid-rect  { display: grid; gap: var(--cell-gap); }
 .grid-vrl   { display: flex; gap: var(--cell-gap); align-items: center; height: 100%; }
@@ -950,7 +1097,14 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
   <div class="play">
     <div class="leftSpacer" aria-hidden="true"></div>
     <div class="frame" id="frameHost">
-      <div class="gridHost" id="gridHost" data-kind="${shape.kind}"></div>
+      <div class="gridHost" id="gridHost" data-kind="${shape.kind}">
+        <!-- Payline overlay — populated at runtime per winning-line cycle
+             step. Sits above the grid (z-index 6) so polylines render
+             over the reels without intercepting pointer events. SVG
+             viewBox is sized to the gridHost client rect on every frame
+             so cell coordinates stay accurate after layout changes. -->
+        <svg class="payline-overlay" id="paylineOverlay" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+      </div>
     </div>
     <aside class="sideHud" aria-label="Game Controls">
       <button class="spinBtn" id="spinBtn" aria-label="Spin" type="button">
@@ -1023,6 +1177,11 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
   /* Per-symbol registry — drives win-cycle event generation. See
      SYMBOL_REGISTRY construction in buildSlotHTML.mjs for the source. */
   const SYMBOL_REGISTRY = ${JSON.stringify(SYMBOL_REGISTRY)};
+  /* Payline pool — int[reels] per line, value = rowIdx at reel i.
+     Empty for cluster-pays grids (cluster, megaclusters, hex, etc).
+     When non-empty, the win cycle runs in line-pays mode (per-line
+     event). When empty, it falls back to per-symbol cluster mode. */
+  const PAYLINE_POOL = ${JSON.stringify(PAYLINE_POOL)};
   const REELS = SHAPE.reels;
   const ROWS  = SHAPE.rows;
 
@@ -1865,6 +2024,9 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     grid.classList.remove("is-winsym-cycling");
     grid.querySelectorAll(".cell.is-win, text.is-win").forEach(c => c.classList.remove("is-win"));
     grid.querySelectorAll(".cell--winsym, text.cell--winsym").forEach(c => c.classList.remove("cell--winsym"));
+    /* Drop any leftover payline SVG so the next spin's neutral state
+       reads clean (no ghost line bleeding into the windup frame). */
+    if (typeof clearPaylineOverlay === 'function') clearPaylineOverlay();
   }
   /* Detect candidate win combos on the settled grid. Placeholder math:
      every non-scatter symbol with count >= 3 becomes one combo. Sorted
@@ -1931,6 +2093,107 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     });
     return events.slice(0, MAX_EVENTS);
   }
+  /* ── Payline SVG overlay — ultimate dynamic win-line renderer ──────────
+     Boki rule: "ne sme nigde da se animira po jedan simbol nego cele win
+     linije sa tim simbolom u toj win liniji i tako svaka win linija
+     posebno." → every winning payline gets ITS OWN polyline drawn
+     through the geometric centers of its matched cells, with the symbol
+     cells pulsing simultaneously and a leftmost line-number badge.
+
+     Geometry model:
+       • SVG sized to gridHost client rect (viewBox = "0 0 W H")
+       • Each cell's center = getBoundingClientRect mid-point, translated
+         into gridHost-local coordinates
+       • Polyline points = "x0,y0 x1,y1 ... xN,yN"
+       • Stroke colored by tier (HP gold, MP cyan, LP bronze, WILD magenta)
+       • Badge = circle + line-number text, anchored at (x0 - 22, y0)
+         clamped to the SVG viewport so it stays visible.
+
+     Idempotent: ensurePaylineOverlay re-creates the SVG node if missing
+     (renderGrid wipes innerHTML at startup), so callers can rely on the
+     overlay existing whenever they call drawPaylineOverlay. */
+  let PAYLINE_SVG = null;
+  function ensurePaylineOverlay() {
+    PAYLINE_SVG = document.getElementById('paylineOverlay');
+    if (!PAYLINE_SVG) {
+      const ns = 'http://www.w3.org/2000/svg';
+      PAYLINE_SVG = document.createElementNS(ns, 'svg');
+      PAYLINE_SVG.setAttribute('id', 'paylineOverlay');
+      PAYLINE_SVG.setAttribute('class', 'payline-overlay');
+      PAYLINE_SVG.setAttribute('aria-hidden', 'true');
+      grid.appendChild(PAYLINE_SVG);
+    }
+    return PAYLINE_SVG;
+  }
+  function clearPaylineOverlay() {
+    const svg = ensurePaylineOverlay();
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+  }
+  /* Convert a DOM cell node into a center-point in gridHost-local
+     pixel coordinates. Returns null if the cell has zero bounds (off-
+     screen / unmounted). */
+  function cellCenterInGrid(cell, gridRect) {
+    if (!cell) return null;
+    const r = cell.getBoundingClientRect();
+    if (!r || (r.width === 0 && r.height === 0)) return null;
+    return {
+      x: (r.left + r.width  / 2) - gridRect.left,
+      y: (r.top  + r.height / 2) - gridRect.top,
+    };
+  }
+  function drawPaylineOverlay(event) {
+    const svg = ensurePaylineOverlay();
+    clearPaylineOverlay();
+    if (!event || !Array.isArray(event.cells) || event.cells.length < 2) return;
+    const gridRect = grid.getBoundingClientRect();
+    if (!gridRect || gridRect.width === 0 || gridRect.height === 0) return;
+    /* Size the SVG to the gridHost — viewBox tracks the live pixel size
+       so polyline coordinates render 1:1 with the cell layout. */
+    svg.setAttribute('width',  String(gridRect.width));
+    svg.setAttribute('height', String(gridRect.height));
+    svg.setAttribute('viewBox', '0 0 ' + gridRect.width + ' ' + gridRect.height);
+    const pts = [];
+    for (const c of event.cells) {
+      const p = cellCenterInGrid(c, gridRect);
+      if (p) pts.push(p);
+    }
+    if (pts.length < 2) return;
+    const tier = event.tier || 'LP';
+    const ns = 'http://www.w3.org/2000/svg';
+    /* Polyline through every matched cell center. */
+    const poly = document.createElementNS(ns, 'polyline');
+    poly.setAttribute('class', 'payline-path tier-' + tier);
+    poly.setAttribute('points', pts.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' '));
+    /* Set the dash length custom prop so the draw-in keyframe runs the
+       full visible length, not the default 1000px placeholder. */
+    let pathLen = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const dx = pts[i].x - pts[i - 1].x;
+      const dy = pts[i].y - pts[i - 1].y;
+      pathLen += Math.sqrt(dx * dx + dy * dy);
+    }
+    poly.style.setProperty('--payline-len', String(Math.ceil(pathLen) + 10));
+    svg.appendChild(poly);
+    /* Line-number badge anchored just left of the leftmost endpoint.
+       Clamped so it stays inside the SVG viewport even on narrow grids. */
+    if (typeof event.lineIndex === 'number') {
+      const bx = Math.max(14, pts[0].x - 22);
+      const by = Math.max(14, Math.min(gridRect.height - 14, pts[0].y));
+      const badgeR = 12;
+      const circle = document.createElementNS(ns, 'circle');
+      circle.setAttribute('class', 'payline-badge tier-' + tier);
+      circle.setAttribute('cx', String(bx));
+      circle.setAttribute('cy', String(by));
+      circle.setAttribute('r',  String(badgeR));
+      svg.appendChild(circle);
+      const t = document.createElementNS(ns, 'text');
+      t.setAttribute('class', 'payline-badge-text');
+      t.setAttribute('x', String(bx));
+      t.setAttribute('y', String(by));
+      t.textContent = String(event.lineIndex + 1);
+      svg.appendChild(t);
+    }
+  }
   /* Token used to invalidate an in-flight cycle when a new spin starts —
      the next spin bumps the token, any pending cycle frame sees the
      mismatch and bails out without touching the DOM. */
@@ -1938,6 +2201,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
   function cancelWinSymCycle() {
     WINSYM_CYCLE_TOKEN++;
     clearWinHighlight();
+    clearPaylineOverlay();
   }
   /* ── Win-symbol cycle (independent modular block) ────────────────────
      Cycles through detected win events one-by-one. Each event:
@@ -1975,22 +2239,149 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
         /* Strip previous event's markers. */
         grid.querySelectorAll('.cell--winsym, text.cell--winsym')
           .forEach(c => c.classList.remove('cell--winsym'));
+        /* Drop the previous event's payline polyline before drawing the
+           next one — keeps exactly ONE line visible per step. */
+        clearPaylineOverlay();
         if (i >= events.length) {
           grid.classList.remove('is-winsym-cycling');
           resolve();
           return;
         }
-        events[i].cells.forEach(c => c.classList.add('cell--winsym'));
+        const ev = events[i];
+        ev.cells.forEach(c => c.classList.add('cell--winsym'));
+        /* If this event carries a lineIndex it came from detectLineWins
+           (payline mode) → draw the polyline through the matched cells.
+           Cluster-mode events (detectWinCombos) have no lineIndex and
+           skip the overlay; they rely on the per-cell pulse alone. */
+        if (typeof ev.lineIndex === 'number') drawPaylineOverlay(ev);
         i++;
         setTimeout(playOne, stepMs);
       };
       playOne();
     });
   }
+  /* ── detectLineWins — payline-based per-line event generation ─────────
+     Industry-standard slot evaluator (placeholder until the math layer
+     lands). For each line in PAYLINE_POOL:
+       1. Walk the line LEFT→RIGHT, reading the symbol at each (reel, row)
+       2. The first reel's symbol (or wild) determines the base symbol
+       3. Count CONSECUTIVE matching cells from the left (wild = substitute)
+       4. If matchLength >= 3 → emit one event for THIS line/symbol
+
+     Output event shape: { lineIndex, symbol, tier, matchLength, cells[] }
+     where cells[] is the actual DOM nodes for ONLY the first matchLength
+     positions (so the highlight reads as a distinct path, not "every
+     occurrence of the symbol on the grid").
+
+     RECT_REELS provides the live (reel, row) → DOM mapping. Reel index
+     into reel.cells: index 0 is the top buffer, 1..visibleRows are the
+     visible rows, last is the bottom buffer — so the lookup is
+     reel.cells[1 + rowIdx]. */
+  function detectLineWins() {
+    if (!Array.isArray(PAYLINE_POOL) || PAYLINE_POOL.length === 0) return [];
+    if (!RECT_REELS || RECT_REELS.length === 0) return [];
+    const reg = SYMBOL_REGISTRY || { regularPay: [], wild: null, scatter: null, tier: {} };
+    const wildId = reg.wild ? reg.wild.toUpperCase() : null;
+    const scatId = (reg.scatter ? reg.scatter : (FREESPINS.triggerSymbol || 'S')).toUpperCase();
+    const regularSet = new Set(reg.regularPay || []);
+    const tierRank = { HP: 0, MP: 1, LP: 2, WILD: 3 };
+    const MAX_EVENTS = 8;
+
+    /* Resolve (reel, row) → DOM cell with bounds-check. Returns null when
+       the line passes through a clipped row (variable_reel diamond shape
+       can have row indices that don't map to a visible cell on every reel). */
+    function cellAt(reelIdx, rowIdx) {
+      const reel = RECT_REELS[reelIdx];
+      if (!reel) return null;
+      const vis = reel.visibleRows || ROWS;
+      if (rowIdx < 0 || rowIdx >= vis) return null;
+      return reel.cells[1 + rowIdx] || null;
+    }
+    function symAtCell(cell) {
+      return cell ? (cell.textContent || '').trim().toUpperCase() : '';
+    }
+
+    const events = [];
+    for (let lineIdx = 0; lineIdx < PAYLINE_POOL.length; lineIdx++) {
+      const line = PAYLINE_POOL[lineIdx];
+      const pathCells = [];
+      for (let r = 0; r < line.length && r < RECT_REELS.length; r++) {
+        pathCells.push(cellAt(r, line[r]));
+      }
+      /* Skip lines that pass through clipped/invalid cells on the leftmost
+         reel — can't evaluate without a base symbol. */
+      if (!pathCells[0]) continue;
+
+      /* Determine the base symbol: first non-wild reading on the line. If
+         the line starts with a wild (or only wilds), the wild itself acts
+         as the carrier (wild-line win). */
+      let baseSym = symAtCell(pathCells[0]);
+      if (wildId && baseSym === wildId) {
+        for (let r = 1; r < pathCells.length; r++) {
+          const s = symAtCell(pathCells[r]);
+          if (s && s !== wildId) { baseSym = s; break; }
+        }
+      }
+      if (!baseSym || baseSym === scatId) continue;
+      /* Restrict to regularPay (or accept anything when registry empty). */
+      if (regularSet.size > 0 && !regularSet.has(baseSym) && baseSym !== wildId) continue;
+
+      /* Count consecutive matches from the left (wild substitutes). Stops
+         at the first reel that holds neither baseSym nor wild, or at a
+         clipped (null) cell. */
+      let matchLength = 0;
+      for (let r = 0; r < pathCells.length; r++) {
+        const cell = pathCells[r];
+        if (!cell) break;
+        const s = symAtCell(cell);
+        if (s === baseSym || (wildId && s === wildId)) matchLength++;
+        else break;
+      }
+      if (matchLength < 3) continue;
+
+      const tier = (reg.tier && reg.tier[baseSym]) || (baseSym === wildId ? 'WILD' : 'LP');
+      events.push({
+        lineIndex: lineIdx,
+        symbol: baseSym,
+        tier,
+        matchLength,
+        cells: pathCells.slice(0, matchLength),
+      });
+    }
+
+    /* Sort: HP first, then MP, then LP, then WILD; within a tier the
+       longer match goes first (5-of-a-kind reads before 3-of-a-kind). */
+    events.sort((a, b) => {
+      const ta = tierRank[a.tier] ?? 9;
+      const tb = tierRank[b.tier] ?? 9;
+      if (ta !== tb) return ta - tb;
+      if (a.matchLength !== b.matchLength) return b.matchLength - a.matchLength;
+      return a.lineIndex - b.lineIndex;
+    });
+
+    /* Dedupe by (symbol + cell signature): two paylines that share the
+       same matched cells (e.g. two lines both running along the middle
+       row when the middle row is a single horizontal) collapse to one
+       event so the cycle doesn't re-light the same cluster twice. */
+    const seen = new Set();
+    const unique = [];
+    for (const ev of events) {
+      const key = ev.symbol + ':' + ev.cells.map(c => c && c.dataset && c.dataset.uid || ev.cells.indexOf(c)).join('|') + ':' + ev.matchLength;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      unique.push(ev);
+    }
+    return unique.slice(0, MAX_EVENTS);
+  }
+
   /* applyWinHighlight is now the public façade: detects events, plays the
      cycle, returns a Promise so callers (BASE post-spin, FS post-spin)
      can await before queuing follow-up work. ~30% of spins are forced
-     "no win" for visual variance. */
+     "no win" for visual variance.
+
+     Strategy dispatch:
+       PAYLINE_POOL.length > 0   → detectLineWins()  (line-pays mode)
+       PAYLINE_POOL.length === 0 → detectWinCombos() (cluster-pays mode) */
   function applyWinHighlight() {
     clearWinHighlight();
     /* Suppressed only during FS_INTRO / FS_OUTRO placards (overlay owns
@@ -1999,7 +2390,9 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
       return Promise.resolve();
     }
     if (Math.random() < 0.30) return Promise.resolve(); /* visual variance */
-    const events = detectWinCombos();
+    const linePays = Array.isArray(PAYLINE_POOL) && PAYLINE_POOL.length > 0
+                     && RECT_REELS && RECT_REELS.length > 0;
+    const events = linePays ? detectLineWins() : detectWinCombos();
     if (events.length === 0) return Promise.resolve();
     return playWinSymCycle(events);
   }
@@ -2181,6 +2574,15 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
       configurable: true,
       get: () => RECT_REELS,
     });
+    /* PAYLINE_POOL + applyWinHighlight + win-line probes exposed for the
+     payline-overlay spot-check harness. Harness forces a deterministic
+     5-of-a-kind by stamping cell textContent then calls applyWinHighlight
+     to verify the SVG overlay path actually renders. */
+    window.PAYLINE_POOL = PAYLINE_POOL;
+    window.SYMBOL_REGISTRY = SYMBOL_REGISTRY;
+    window.applyWinHighlight = applyWinHighlight;
+    window.detectLineWins = detectLineWins;
+    window.drawPaylineOverlay = drawPaylineOverlay;
   }
 
   /* Cached DOM handles for the FS UI — looked up once at boot. */
@@ -2605,6 +3007,9 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
   /* Dispatch */
   function renderGrid() {
     grid.innerHTML = "";
+    /* Re-attach the payline SVG overlay after every render — innerHTML
+       wipe blows away the static node from initial HTML. Idempotent. */
+    ensurePaylineOverlay();
     switch (SHAPE.kind) {
       case "rectangular":
       case "cluster":
