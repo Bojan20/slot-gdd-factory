@@ -67,7 +67,16 @@ async function validatePage(page, shape, errors, tag) {
       ASSERT(cellCount >= shape.totalCells, `${shape.kind} DOM cells=${cellCount} < shape.totalCells=${shape.totalCells}`);
       break;
     }
-    case 'variable_reel':
+    case 'variable_reel': {
+      /* Wave J1: variable_reel now spins via the rectangular reel engine —
+         per-column visibleRows + 2 buffer cells each. Validate column count
+         against shape.reels and that total cells include the buffer slots
+         (shape.totalCells visible + 2×reels buffers). */
+      const colCount = await page.locator('#gridHost .reelCol').count();
+      ASSERT(colCount === shape.reels, `variable_reel reelCol count=${colCount} ≠ reels=${shape.reels}`);
+      ASSERT(cellCount >= shape.totalCells, `variable_reel DOM cells=${cellCount} < shape.totalCells=${shape.totalCells}`);
+      break;
+    }
     case 'diamond':
     case 'pyramid':
       ASSERT(cellCount === shape.totalCells, `DOM cells=${cellCount} ≠ shape=${shape.totalCells}`);

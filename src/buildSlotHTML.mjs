@@ -945,31 +945,49 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     'lock_respin',
     'expanding',
     'infinity',
+    /* Wave J1 — variable_reel (per-reel row counts, e.g. 6×[2,5,7,7,5,2]).
+       Shares the rectangular spin engine but each column has its own
+       visibleRows and is center-aligned in the grid host. */
+    'variable_reel',
   ]);
   let RECT_REELS = null;
   let RECT_SIDE = 0;
 
-  function buildReelColumns(host, cols, rowsCount, side, extraCellClass) {
+  function buildReelColumns(host, cols, rowsCountOrArray, side, extraCellClass) {
     /* Shared reel-strip column builder. Used by every uniform-reel shape.
-       Each column contains a reelStrip div with rowsCount + 2 cells
+       Each column contains a reelStrip div with visibleRows + 2 cells
        (1 buffer above + 1 buffer below the visible window). Rotation of
        these cells during spin is what creates the infinite-scroll
-       illusion in onTickAll(). */
+       illusion in onTickAll().
+
+       rowsCountOrArray:
+         number  — uniform: every reel has the same row count (rectangular,
+                   cluster, megaclusters, lock_respin, expanding, infinity)
+         array   — per-reel: column c has rowsArray[c] visible rows
+                   (variable_reel, e.g. [2,5,7,7,5,2]). The reel is
+                   center-aligned in the grid host with a CSS gridRow offset
+                   so the diamond / hourglass silhouette renders correctly. */
     RECT_REELS = [];
     RECT_SIDE = side;
-    const reelH = rowsCount * side + (rowsCount - 1) * 6;
+    const rowsArray = Array.isArray(rowsCountOrArray)
+      ? rowsCountOrArray
+      : Array.from({ length: cols }, () => rowsCountOrArray);
+    const maxRows = rowsArray.reduce((m, r) => Math.max(m, r), 0);
     let symIdx = 0;
     for (let c = 0; c < cols; c++) {
+      const visibleRows = rowsArray[c];
+      const reelH = visibleRows * side + (visibleRows - 1) * 6;
+      const rowOffset = Math.floor((maxRows - visibleRows) / 2); // center-align
       const col = document.createElement("div");
       col.className = "reelCol";
       col.style.width = side + "px";
       col.style.height = reelH + "px";
       col.style.gridColumn = (c + 1) + " / " + (c + 2);
-      col.style.gridRow = "1 / span " + rowsCount;
+      col.style.gridRow = (rowOffset + 1) + " / span " + visibleRows;
 
       const strip = document.createElement("div");
       strip.className = "reelStrip";
-      const stripCells = rowsCount + 2;
+      const stripCells = visibleRows + 2;
       const cellRefs = [];
       for (let r = 0; r < stripCells; r++) {
         const cell = makeCell(symAt(symIdx++), extraCellClass);
@@ -987,6 +1005,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
       RECT_REELS.push({
         col, strip, side, cellStep,
         cells: cellRefs,
+        visibleRows,                /* per-reel — engine reads this, not ROWS */
         offsetPx: 0,
         spinning: false,
         stopping: false,
@@ -1009,7 +1028,18 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
     if (UNIFORM_REEL_KINDS.has(SHAPE.kind)) {
       const extraClass = (SHAPE.kind === 'lock_respin') ? 'lockable' : '';
-      buildReelColumns(host, REELS, ROWS, side, extraClass);
+      /* For variable_reel each column has its own visibleRows (e.g.
+         [2,5,7,7,5,2]) — we pass the array straight to buildReelColumns
+         which center-aligns each column inside a ROWS-tall track. Every
+         other uniform kind passes a scalar so all reels share ROWS. */
+      let perReelRows = ROWS;
+      if (SHAPE.kind === 'variable_reel' && Array.isArray(SHAPE.columns)) {
+        perReelRows = SHAPE.columns.map(c => c.rows || ROWS);
+        /* Variable reels need the host to render as ROWS-tall stacked rows
+           so the center-aligned columns have somewhere to anchor. */
+        host.style.gridTemplateRows = "repeat(" + ROWS + ", " + side + "px)";
+      }
+      buildReelColumns(host, REELS, perReelRows, side, extraClass);
       if (SHAPE.kind === "expanding" || SHAPE.kind === "infinity") {
         const tag = document.createElement("div");
         tag.className = "grow-tag";
@@ -1020,10 +1050,11 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
       return;
     }
 
-    /* Irregular shapes (hex / diamond / pyramid / cross / l_shape /
-       variable_reel) — they don't share the rectangular column layout, so
-       they keep the legacy static-cell render. runOneBaseSpin dispatches
-       to runStaticReroll for these. */
+    /* Irregular shapes (hex / diamond / pyramid / cross / l_shape) — they
+       don't share the rectangular column layout, so they keep the legacy
+       static-cell render. runOneBaseSpin dispatches to runStaticReroll for
+       these. (variable_reel used to live here but Wave J1 moved it onto
+       the uniform reel engine with per-column visibleRows.) */
     host.style.gridTemplateRows = "repeat(" + ROWS + ", " + side + "px)";
     let idx = 0;
     for (let r = 0; r < ROWS; r++) {
@@ -1150,7 +1181,8 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     for (const r of RECT_REELS) {
       if (r.spinning) continue;
       let reelHits = 0;
-      for (let i = 1; i <= ROWS; i++) {
+      const vis = r.visibleRows || ROWS;
+      for (let i = 1; i <= vis; i++) {
         if ((r.cells[i].textContent || "").toUpperCase() === trig) reelHits++;
       }
       scattersSoFar += (countMode === 'any') ? reelHits : (reelHits > 0 ? 1 : 0);
@@ -1214,10 +1246,13 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
   }
 
   function commitStopSymbols(reel, reelIdx) {
-    /* On stop: ensure the next ROWS visible cells (indexes 1..ROWS) get a
-       fresh, settled outcome. The top buffer (index 0) and bottom buffer
-       (last) are kept for the cushion bounce. */
-    for (let i = 1; i <= ROWS; i++) {
+    /* On stop: ensure the next visibleRows cells (indexes 1..visibleRows)
+       get a fresh, settled outcome. The top buffer (index 0) and bottom
+       buffer (last) are kept for the cushion bounce. visibleRows is
+       per-reel — uniform shapes always equal ROWS, variable_reel varies
+       per column (e.g. 2/5/7/7/5/2). */
+    const vis = reel.visibleRows || ROWS;
+    for (let i = 1; i <= vis; i++) {
       reel.cells[i].textContent = randomSym();
     }
     /* If we're forcing a feature trigger, plant a scatter on the centre row
@@ -1225,7 +1260,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
        scatter goes on the middle visible row for max readability. */
     if (FORCE_TRIGGER && reelIdx < FORCE_TRIGGER.scatterCount) {
       const trig = (FREESPINS.triggerSymbol || "S");
-      const midRow = Math.max(1, Math.ceil(ROWS / 2));
+      const midRow = Math.max(1, Math.ceil(vis / 2));
       reel.cells[midRow].textContent = trig;
     }
   }
@@ -1429,11 +1464,12 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
        grid reads as "neutral, about to spin" instead of "stuck on a win". */
     clearWinHighlight();
     /* Every uniform-column-grid shape (rectangular / cluster / megaclusters
-       / lock_respin / expanding / infinity) uses the same reel spin engine
-       — windup → accel → steady → decel → cushion bounce, identical cadence
-       across shapes. Irregular shapes (hex / diamond / pyramid / cross /
-       l_shape / variable_reel) and SVG kinds (wheel / crash / plinko /
-       radial / slingo) fall through to runStaticReroll. */
+       / lock_respin / expanding / infinity / variable_reel) uses the same
+       reel spin engine — windup → accel → steady → decel → cushion bounce,
+       identical cadence across shapes. variable_reel rides the same engine
+       but with per-column visibleRows (Wave J1). Irregular shapes (hex /
+       diamond / pyramid / cross / l_shape) and SVG kinds (wheel / crash /
+       plinko / radial / slingo) fall through to runStaticReroll. */
     if (UNIFORM_REEL_KINDS.has(SHAPE.kind) && RECT_REELS) {
       startSpinAll(() => handlePostSpin(/* during FS */ false));
     } else {
@@ -1610,11 +1646,16 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
   function countTriggerSymbols() {
     const id = (FREESPINS.triggerSymbol || "S").toUpperCase();
     const countMode = (FREESPINS.countMode === 'any') ? 'any' : 'perReel';
-    if (SHAPE.kind === "rectangular" && RECT_REELS) {
+    /* For rectangular AND variable_reel (both engine-driven kinds with
+       per-reel visible strips) we count from RECT_REELS — that gives the
+       deduped per-reel view the anticipation logic relies on. Every other
+       kind dedupes via the generic .cell scan below. */
+    if ((SHAPE.kind === "rectangular" || SHAPE.kind === "variable_reel") && RECT_REELS) {
       let n = 0;
       for (const reel of RECT_REELS) {
         let hits = 0;
-        for (let i = 1; i <= ROWS; i++) {
+        const vis = reel.visibleRows || ROWS;
+        for (let i = 1; i <= vis; i++) {
           if ((reel.cells[i].textContent || "").toUpperCase() === id) hits++;
         }
         n += (countMode === 'any') ? hits : (hits > 0 ? 1 : 0);
@@ -2223,8 +2264,11 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
       case "megaclusters":
       case "infinity":
       case "expanding":
-        return renderRect();
+      /* Wave J1: variable_reel now uses the rectangular reel engine via
+         per-reel visibleRows in buildReelColumns (handled inside renderRect
+         when SHAPE.kind === 'variable_reel'). */
       case "variable_reel":
+        return renderRect();
       case "diamond":
       case "pyramid":
         return renderVariableReel();

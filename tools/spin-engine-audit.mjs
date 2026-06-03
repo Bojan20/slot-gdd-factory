@@ -36,6 +36,9 @@ const BASE_URL = `http://localhost:${PORT}/dist/gallery`;
 const REEL_ENGINE_KINDS = new Set([
   'rectangular', 'cluster', 'megaclusters',
   'lock_respin', 'expanding', 'infinity',
+  /* Wave J1 — variable_reel now drives the same reel engine via per-reel
+     visibleRows in buildReelColumns. */
+  'variable_reel',
 ]);
 
 const files = readdirSync(GALLERY)

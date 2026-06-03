@@ -1,4 +1,4 @@
-# Free-Spins QA audit · 2026-06-03T11:33:14.815Z
+# Free-Spins QA audit · 2026-06-03T12:04:27.508Z
 
 **Fixtures**: 23 · **FS-enabled**: 17 · **Failures**: 0 · ✅ CLEAN
 
@@ -6,29 +6,29 @@
 
 | Slug | Kind | FS | Intro | Active | Outro | Base | Spins | Retrig | Mult | Total | Errs |
 |---|---|:--:|---|---|---|---|--:|--:|--:|--:|--:|
-| 01_rectangular_5x3_game_gdd | rectangular | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 55.67 | 0 |
-| 02_rectangular_6x4_game_gdd | rectangular | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 23.77 | 0 |
+| 01_rectangular_5x3_game_gdd | rectangular | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 74.47 | 0 |
+| 02_rectangular_6x4_game_gdd | rectangular | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 83.36 | 0 |
 | 03_cluster_7x7_game_gdd | cluster | ⊝ | ✅ FS off (button disabled) | — | — | — | 0 | 0 | ×1 | 0 | 0 |
-| 04_variable_reel_game_gdd | variable_reel | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 19.83 | 0 |
+| 04_variable_reel_game_gdd | variable_reel | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 55.39 | 0 |
 | 05_megaclusters_game_gdd | megaclusters | ⊝ | ✅ FS off (button disabled) | — | — | — | 0 | 0 | ×1 | 0 | 0 |
 | 06_hexagonal_game_gdd | hexagonal | ⊝ | ✅ FS off (button disabled) | — | — | — | 0 | 0 | ×1 | 0 | 0 |
-| 07_diamond_game_gdd | diamond | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 33.69 | 0 |
-| 08_pyramid_game_gdd | pyramid | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 145.4 | 0 |
-| 09_cross_game_gdd | cross | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 17.35 | 0 |
-| 10_lshape_game_gdd | l_shape | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 130.79 | 0 |
-| 11_radial_game_gdd | radial | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 157.01 | 0 |
+| 07_diamond_game_gdd | diamond | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 63.72 | 0 |
+| 08_pyramid_game_gdd | pyramid | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 201.15 | 0 |
+| 09_cross_game_gdd | cross | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 52.38 | 0 |
+| 10_lshape_game_gdd | l_shape | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 150.5 | 0 |
+| 11_radial_game_gdd | radial | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 150.46 | 0 |
 | 12_infinity_game_gdd | infinity | ⊝ | ✅ FS off (button disabled) | — | — | — | 0 | 0 | ×1 | 0 | 0 |
-| 13_expanding_game_gdd | expanding | ✅ | ✅ 15 FS | ✅ fs-mode-purple | ✅ | ✅ | 30 | 3 | ×1 | 156.47 | 0 |
-| 14_dual_colossal_game_gdd | dual | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 200.69 | 0 |
-| 15_slingo_game_gdd | slingo | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 43.28 | 0 |
+| 13_expanding_game_gdd | expanding | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 171.45 | 0 |
+| 14_dual_colossal_game_gdd | dual | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 109.79 | 0 |
+| 15_slingo_game_gdd | slingo | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 67.66 | 0 |
 | 16_plinko_game_gdd | plinko | ⊝ | ✅ FS off (button disabled) | — | — | — | 0 | 0 | ×1 | 0 | 0 |
 | 17_crash_game_gdd | crash | ⊝ | ✅ FS off (button disabled) | — | — | — | 0 | 0 | ×1 | 0 | 0 |
-| 18_wheel_game_gdd | wheel | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 218.88 | 0 |
-| 19_lock_respin_game_gdd | lock_respin | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 43.57 | 0 |
-| 20_rectangular_stacked_scatter_game_gdd | rectangular | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 20 | 0 | ×1 | 94.59 | 0 |
-| crystal_forge_game_gdd | rectangular | ✅ | ✅ 12 FS | ✅ fs-mode-crimson | ✅ | ✅ | 17 | 1 | ×8 | 484.49 | 0 |
-| midnight_fangs_game_gdd | cluster | ✅ | ✅ 20 FS | ✅ fs-mode-crimson | ✅ | ✅ | 35 | 3 | ×10 | 2068.47 | 0 |
-| wrath_of_olympus_game_gdd | rectangular | ✅ | ✅ 16 FS | ✅ fs-mode-gold | ✅ | ✅ | 21 | 1 | ×10 | 1466.79 | 0 |
+| 18_wheel_game_gdd | wheel | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 229.29 | 0 |
+| 19_lock_respin_game_gdd | lock_respin | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 26.88 | 0 |
+| 20_rectangular_stacked_scatter_game_gdd | rectangular | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 20 | 0 | ×1 | 109.81 | 0 |
+| crystal_forge_game_gdd | rectangular | ✅ | ✅ 12 FS | ✅ fs-mode-crimson | ✅ | ✅ | 17 | 1 | ×8 | 299.39 | 0 |
+| midnight_fangs_game_gdd | cluster | ✅ | ✅ 20 FS | ✅ fs-mode-crimson | ✅ | ✅ | 35 | 3 | ×10 | 1083.41 | 0 |
+| wrath_of_olympus_game_gdd | rectangular | ✅ | ✅ 14 FS | ✅ fs-mode-gold | ✅ | ✅ | 19 | 1 | ×10 | 503.76 | 0 |
 
 ## Screenshots (FS-enabled fixtures only)
 

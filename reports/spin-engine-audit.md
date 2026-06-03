@@ -1,6 +1,6 @@
 # Spin-engine audit
 
-Generated: 2026-06-03T11:33:23.252Z
+Generated: 2026-06-03T12:00:39.208Z
 
 **24/24 PASS** — 0 fail
 
@@ -9,7 +9,7 @@ Generated: 2026-06-03T11:33:23.252Z
 | `01_rectangular_5x3_game_gdd.html` | rectangular | 5 | 5 | 25 | ✅ drove | ✅ | 0 | ✅ |
 | `02_rectangular_6x4_game_gdd.html` | rectangular | 6 | 6 | 36 | ✅ drove | ✅ | 0 | ✅ |
 | `03_cluster_7x7_game_gdd.html` | cluster | 7 | 7 | 63 | ✅ drove | ✅ | 0 | ✅ |
-| `04_variable_reel_game_gdd.html` | variable_reel | 0 | 0 | 28 | n/a (irregular) | ✅ | 0 | ✅ |
+| `04_variable_reel_game_gdd.html` | variable_reel | 6 | 6 | 40 | ✅ drove | ✅ | 0 | ✅ |
 | `05_megaclusters_game_gdd.html` | megaclusters | 4 | 4 | 24 | ✅ drove | ✅ | 0 | ✅ |
 | `06_hexagonal_game_gdd.html` | hexagonal | 0 | 0 | 37 | n/a (irregular) | ✅ | 0 | ✅ |
 | `07_diamond_game_gdd.html` | diamond | 0 | 0 | 19 | n/a (irregular) | ✅ | 0 | ✅ |
