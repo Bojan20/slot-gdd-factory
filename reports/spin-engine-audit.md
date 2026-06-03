@@ -1,6 +1,6 @@
 # Spin-engine audit
 
-Generated: 2026-06-03T20:01:29.293Z
+Generated: 2026-06-03T20:19:11.276Z
 
 **24/24 PASS** — 0 fail
 
@@ -12,10 +12,10 @@ Generated: 2026-06-03T20:01:29.293Z
 | `04_variable_reel_game_gdd.html` | variable_reel | 6 | 6 | 40 | ✅ drove | ✅ | 0 | ✅ |
 | `05_megaclusters_game_gdd.html` | megaclusters | 4 | 4 | 24 | ✅ drove | ✅ | 0 | ✅ |
 | `06_hexagonal_game_gdd.html` | hexagonal | 0 | 0 | 37 | n/a (irregular) | ✅ | 0 | ✅ |
-| `07_diamond_game_gdd.html` | diamond | 0 | 0 | 19 | n/a (irregular) | ✅ | 0 | ✅ |
-| `08_pyramid_game_gdd.html` | pyramid | 0 | 0 | 13 | n/a (irregular) | ✅ | 0 | ✅ |
-| `09_cross_game_gdd.html` | cross | 0 | 0 | 21 | n/a (irregular) | ✅ | 0 | ✅ |
-| `10_lshape_game_gdd.html` | l_shape | 0 | 0 | 21 | n/a (irregular) | ✅ | 0 | ✅ |
+| `07_diamond_game_gdd.html` | diamond | 5 | 5 | 29 | ✅ drove | ✅ | 0 | ✅ |
+| `08_pyramid_game_gdd.html` | pyramid | 5 | 5 | 23 | ✅ drove | ✅ | 0 | ✅ |
+| `09_cross_game_gdd.html` | cross | 5 | 5 | 35 | ✅ drove | ✅ | 0 | ✅ |
+| `10_lshape_game_gdd.html` | l_shape | 5 | 5 | 35 | ✅ drove | ✅ | 0 | ✅ |
 | `11_radial_game_gdd.html` | radial | 0 | 0 | 0 | n/a (irregular) | ✅ | 0 | ✅ |
 | `12_infinity_game_gdd.html` | infinity | 3 | 3 | 15 | ✅ drove | ✅ | 0 | ✅ |
 | `13_expanding_game_gdd.html` | expanding | 5 | 5 | 25 | ✅ drove | ✅ | 0 | ✅ |

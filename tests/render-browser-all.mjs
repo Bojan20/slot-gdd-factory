@@ -78,13 +78,29 @@ async function validatePage(page, shape, errors, tag) {
       break;
     }
     case 'diamond':
-    case 'pyramid':
-      ASSERT(cellCount === shape.totalCells, `DOM cells=${cellCount} ≠ shape=${shape.totalCells}`);
+    case 'pyramid': {
+      /* Wave J2: diamond / pyramid now share the rectangular reel-strip
+         engine via per-column visibleRows. Each column has visibleRows + 2
+         buffer cells, so DOM cellCount > shape.totalCells. Validate column
+         count + that visible cells are at least shape.totalCells. */
+      const colCount = await page.locator('#gridHost .reelCol').count();
+      ASSERT(colCount === shape.reels, `${shape.kind} reelCol count=${colCount} ≠ reels=${shape.reels}`);
+      ASSERT(cellCount >= shape.totalCells, `${shape.kind} DOM cells=${cellCount} < shape.totalCells=${shape.totalCells}`);
       break;
+    }
     case 'cross':
-    case 'l_shape':
-      ASSERT(cellCount === shape.totalCells, `DOM cells=${cellCount} ≠ shape=${shape.totalCells}`);
+    case 'l_shape': {
+      /* Wave J2: cross / l_shape ride the rectangular engine with masked
+         cells (mask hides corner-cut cells via .cell--masked). DOM has full
+         REELS×(ROWS+2 buffer) cells; visible cells (non-masked) = shape.totalCells. */
+      const colCount = await page.locator('#gridHost .reelCol').count();
+      const visibleCells = await page.locator('#gridHost .cell:not(.cell--masked)').count();
+      ASSERT(colCount === shape.reels, `${shape.kind} reelCol count=${colCount} ≠ reels=${shape.reels}`);
+      /* visibleCells includes 2 buffer per column on top of the visible
+         window — so >= shape.totalCells. */
+      ASSERT(visibleCells >= shape.totalCells, `${shape.kind} visible cells=${visibleCells} < shape.totalCells=${shape.totalCells}`);
       break;
+    }
     case 'hexagonal': {
       const hexCells = await page.locator('#gridHost .cell.hex').count();
       ASSERT(hexCells === shape.totalCells, `hex DOM cells=${hexCells} ≠ shape=${shape.totalCells}`);

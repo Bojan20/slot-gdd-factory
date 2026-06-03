@@ -39,6 +39,10 @@ const REEL_ENGINE_KINDS = new Set([
   /* Wave J1 — variable_reel now drives the same reel engine via per-reel
      visibleRows in buildReelColumns. */
   'variable_reel',
+  /* Wave J2 — diamond / pyramid join the engine via per-column visibleRows
+     (diamond: center-aligned, pyramid: bottom-anchored). cross / l_shape
+     ride the rectangular engine with masked corner cells. */
+  'diamond', 'pyramid', 'cross', 'l_shape',
 ]);
 
 const files = readdirSync(GALLERY)

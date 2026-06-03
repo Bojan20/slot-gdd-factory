@@ -1,6 +1,6 @@
 # Browser-render QA report
 
-**Generated**: 2026-06-03T19:59:46.726Z
+**Generated**: 2026-06-03T20:14:49.525Z
 **Fixtures**: 23 · **PASS**: 23 · **FAIL**: 0
 
 ## Per-fixture results

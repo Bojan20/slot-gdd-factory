@@ -81,5 +81,15 @@ export function emitReelEngineCSS(cfg = defaultConfig()) {
   filter: blur(${c.blurPx}px) brightness(${c.blurDim});
   transition: filter ${c.blurFadeMs}ms linear;
 }
+/* Cross / L-shape masked cells — engine still spins them, just hide.
+   Wave J2: irregular shapes share the rectangular reel engine; masked
+   cells are visual blanks anchored in the reel strip but not part of
+   the playable surface. */
+.cell.cell--masked,
+.cell.cell--masked.is-blurring {
+  opacity: 0;
+  pointer-events: none;
+  filter: none;
+}
 `;
 }

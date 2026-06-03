@@ -829,6 +829,17 @@ ${emitFreeSpinsOverlayMarkup(resolveFreeSpinsConfig(model))}
        Shares the rectangular spin engine but each column has its own
        visibleRows and is center-aligned in the grid host. */
     'variable_reel',
+    /* Wave J2 — diamond / pyramid: irregular silhouettes that map cleanly
+       onto the uniform reel engine via per-column visibleRows. Diamond
+       center-aligns each column (rhombus); pyramid bottom-anchors (triangle).
+       cross / l_shape: rectangular silhouette with masked corner cells —
+       each column has the same visible row count as a full reel, but
+       individual cells inside the masked area render as transparent
+       blanks (handled in renderRect post-build pass). */
+    'diamond',
+    'pyramid',
+    'cross',
+    'l_shape',
   ]);
   ${emitReelEngineRuntime(resolveReelEngineHotConfig(model))}
 
@@ -842,18 +853,45 @@ ${emitFreeSpinsOverlayMarkup(resolveFreeSpinsConfig(model))}
 
     if (UNIFORM_REEL_KINDS.has(SHAPE.kind)) {
       const extraClass = (SHAPE.kind === 'lock_respin') ? 'lockable' : '';
-      /* For variable_reel each column has its own visibleRows (e.g.
-         [2,5,7,7,5,2]) — we pass the array straight to buildReelColumns
-         which center-aligns each column inside a ROWS-tall track. Every
-         other uniform kind passes a scalar so all reels share ROWS. */
+      /* Per-reel visibleRows array (variable_reel / diamond / pyramid use
+         this; uniform kinds pass a scalar). For cross / l_shape we keep
+         visibleRows uniform (=ROWS) and rely on mask metadata after build
+         to dim disabled cells — the engine still spins every column. */
       let perReelRows = ROWS;
-      if (SHAPE.kind === 'variable_reel' && Array.isArray(SHAPE.columns)) {
+      /* Anchor: 'center' default (variable_reel / diamond hourglass).
+         'bottom' for pyramid (triangle anchored to bottom of the host). */
+      let anchor = 'center';
+      const PER_COLUMN_KINDS = new Set(['variable_reel', 'diamond', 'pyramid']);
+      const SHAPED_HOST_KINDS = new Set(['variable_reel', 'diamond', 'pyramid', 'cross', 'l_shape']);
+      if (PER_COLUMN_KINDS.has(SHAPE.kind) && Array.isArray(SHAPE.columns)) {
         perReelRows = SHAPE.columns.map(c => c.rows || ROWS);
-        /* Variable reels need the host to render as ROWS-tall stacked rows
-           so the center-aligned columns have somewhere to anchor. */
+        if (SHAPE.kind === 'pyramid') anchor = 'bottom';
+      }
+      if (SHAPED_HOST_KINDS.has(SHAPE.kind)) {
+        /* Shape-driven hosts need the grid to render as ROWS-tall stacked
+           rows so the (center/bottom) anchored columns have somewhere to
+           anchor. */
         host.style.gridTemplateRows = "repeat(" + ROWS + ", " + side + "px)";
       }
-      buildReelColumns(host, REELS, perReelRows, side, extraClass);
+      buildReelColumns(host, REELS, perReelRows, side, extraClass, anchor);
+      /* cross / l_shape: dim cells that the GDD shape mask marks as blank
+         (corner cuts). Engine still spins every column, just visual mask. */
+      if (SHAPE.kind === 'cross' || SHAPE.kind === 'l_shape') {
+        for (let c = 0; c < REELS; c++) {
+          const colMask = SHAPE.columns[c] && SHAPE.columns[c].mask;
+          if (!colMask) continue;
+          const reel = RECT_REELS[c];
+          if (!reel) continue;
+          for (let r = 0; r < ROWS; r++) {
+            if (colMask[r]) continue;
+            /* Strip cells are indexed 0..stripBufferCells+visibleRows-1.
+               The visible window is cells[1..visibleRows]. Mark cells in
+               the blank rows as cell--masked so CSS can hide them. */
+            const cell = reel.cells[1 + r];
+            if (cell) cell.classList.add('cell--masked');
+          }
+        }
+      }
       if (SHAPE.kind === "expanding" || SHAPE.kind === "infinity") {
         const tag = document.createElement("div");
         tag.className = "grow-tag";
@@ -1277,13 +1315,14 @@ ${emitFreeSpinsOverlayMarkup(resolveFreeSpinsConfig(model))}
          per-reel visibleRows in buildReelColumns (handled inside renderRect
          when SHAPE.kind === 'variable_reel'). */
       case "variable_reel":
-        return renderRect();
+      /* Wave J2 — diamond / pyramid / cross / l_shape join the rectangular
+         reel engine via per-column visibleRows (diamond/pyramid) or via
+         masked-cell post-build pass (cross / l_shape). */
       case "diamond":
       case "pyramid":
-        return renderVariableReel();
       case "cross":
       case "l_shape":
-        return renderMaskedRect();
+        return renderRect();
       case "hexagonal":
         return renderHex();
       case "radial":

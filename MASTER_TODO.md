@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `cf0c7b5` · main
+> Last updated: **2026-06-03** · HEAD: `__TBD__` · main
 
 ---
 
@@ -118,6 +118,23 @@
 | WH4 | 30% no-win variance — not every spin lights up (placeholder until math evaluator) | ✅ |
 | WH5 | Works on every uniform-reel grid (rectangular + cluster + megaclusters + lock_respin + expanding + infinity + variable_reel) | ✅ |
 | WH6 | `prefers-reduced-motion` respected (no transition, no scale) | ✅ |
+
+### Wave J2 — diamond / pyramid / cross / l_shape real engine (commit `__TBD__`)
+
+> **Irregular shape coverage**. Sve 4 shape sada koriste rectangular reel engine — kraj static-blink ere za HTML grid-ove. Engine voze identično kao rectangular + per-column visibleRows + anchor mode (center / bottom).
+
+| ID | Feature | Status |
+|---|---|---|
+| J2.1 | `buildReelColumns()` u `src/blocks/reelEngine.mjs` proširen sa `anchor` parametrom: `'center'` (default), `'bottom'` (pyramid), `'top'` (future) | ✅ |
+| J2.2 | `UNIFORM_REEL_KINDS` u `buildSlotHTML.mjs` proširen sa: `diamond`, `pyramid`, `cross`, `l_shape` (uz postojeće 7) | ✅ |
+| J2.3 | renderRect dispatch: `PER_COLUMN_KINDS = {variable_reel, diamond, pyramid}` (per-column visibleRows iz `SHAPE.columns[].rows`) + `SHAPED_HOST_KINDS = {variable_reel, diamond, pyramid, cross, l_shape}` (host grid template-rows = repeat(ROWS, ...)) | ✅ |
+| J2.4 | Pyramid anchor='bottom' — triangle anchored to bottom of host; diamond anchor='center' (default — hourglass silhouette) | ✅ |
+| J2.5 | Cross / l_shape — engine spin-uje sve REELS×ROWS reel-strip cells, masked positions dobijaju `.cell--masked` klasu post-build (od mask metadata u SHAPE.columns[c].mask) | ✅ |
+| J2.6 | `reelEngineCSS.mjs` CSS dodatak: `.cell--masked { opacity:0; pointer-events:none; filter:none }` — preko `is-blurring` blur efekta tako da masked cells ostaju nevidljivi i tokom spin-a | ✅ |
+| J2.7 | Dispatch table u renderGrid(): `diamond/pyramid/cross/l_shape` → `renderRect()` (više ne `renderVariableReel()` / `renderMaskedRect()`) | ✅ |
+| J2.8 | `tests/render-browser-all.mjs` ažuriran — diamond/pyramid/cross/l_shape sad validuju reelCol count + visible cells count (umesto strict cellCount=shape.totalCells) | ✅ |
+| J2.9 | `tools/spin-engine-audit.mjs` REEL_ENGINE_KINDS proširen — sve 4 nove shape sad expect-uju real engine (`engine=YES`) | ✅ |
+| J2.10 | Verifikovano: spin engine audit 24/24 ✅ CLEAN, sva 4 nova fixture sad imaju `reelCols=5 engine=YES fs=OK errs=0` | ✅ |
 
 ### Wave J1 — variable_reel real engine (commit `21ab8cb`)
 | ID | Feature | Status |
@@ -352,7 +369,7 @@
 
 ---
 
-## ✅ QA matrix (HEAD `cf0c7b5`)
+## ✅ QA matrix (HEAD `__TBD__`)
 
 | Suite | Coverage | Result |
 |---|---|---:|
@@ -383,12 +400,15 @@
 
 > **LEGO migracija B-talasa GOTOVA** — sve hot-path funkcije, CSS, markup,
 > runtime helperi i lifecycle orchestratori izvučeni u 12 modularnih GDD-driven
-> blokova. `buildSlotHTML.mjs` sa 2678 → 1312 LOC (−51%). Preostalo u buildera
-> = samo orchestrator (importi + JSON injection + DOM cache + emit pozivi).
+> blokova. `buildSlotHTML.mjs` sa 2678 → 1312 LOC (−51%).
+>
+> **Wave J2 GOTOVA** — diamond / pyramid / cross / l_shape sada koriste real
+> reel engine (8 od 10 HTML grid kinds imaju real engine; preostao samo
+> hexagonal sa qr koordinatama + 5 SVG kinds).
 
 | Pri | Item | Why | Effort |
 |:-:|---|---|---|
-| 1 | **Wave J2 — Real reel engine for hex / diamond / pyramid / cross / l_shape** | irregular column shapes; need geometric "column" mapping | L |
+| 1 | **Wave J2b — Hex real reel engine** | hex koristi axial (q,r) koordinate, treba poseban mapper iz hex tiles u reel-strip columns | M |
 | 4 | **Wave J3 — SVG kinds (wheel / crash / radial / slingo / plinko)** — domain-specific spin animation | each kind needs its own engine; can't reuse rectangular | L |
 | 5 | **PAR / Math hot-swap injector** | README Phase 2 — placeholder math still in use | XL |
 | 6 | **Sound cue placeholders** (trigger sting, anticipation hum, FS placard whoosh) | currently silent; production demos want audio scaffolding | M |

@@ -168,14 +168,21 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
     }
   }
 
-  function buildReelColumns(host, cols, rowsCountOrArray, side, extraCellClass) {
+  function buildReelColumns(host, cols, rowsCountOrArray, side, extraCellClass, anchor) {
     /* Shared reel-strip column builder for every uniform-reel shape.
        rowsCountOrArray:
          number  — uniform: every reel has the same row count
-         array   — per-reel (variable_reel): column c has rowsArray[c] visible rows.
-                   Reel is center-aligned via CSS gridRow offset. */
+         array   — per-reel (variable_reel/diamond/pyramid): column c has
+                   rowsArray[c] visible rows.
+       anchor (optional):
+         'center' (default) — diamond / variable_reel hourglass silhouette
+         'bottom'           — pyramid (rows anchored to bottom of host)
+         'top'              — inverse-pyramid silhouette (future) */
     RECT_REELS = [];
     RECT_SIDE = side;
+    const align = anchor === 'bottom' ? 'bottom'
+                : anchor === 'top'    ? 'top'
+                :                       'center';
     const rowsArray = Array.isArray(rowsCountOrArray)
       ? rowsCountOrArray
       : Array.from({ length: cols }, () => rowsCountOrArray);
@@ -184,7 +191,9 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
     for (let c = 0; c < cols; c++) {
       const visibleRows = rowsArray[c];
       const reelH = visibleRows * side + (visibleRows - 1) * 6;
-      const rowOffset = Math.floor((maxRows - visibleRows) / 2);
+      const rowOffset = align === 'bottom' ? (maxRows - visibleRows)
+                      : align === 'top'    ? 0
+                      :                      Math.floor((maxRows - visibleRows) / 2);
       const col = document.createElement("div");
       col.className = "reelCol";
       col.style.width = side + "px";
