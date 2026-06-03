@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `__TBD__` · main
+> Last updated: **2026-06-03** · HEAD: `6d1cb4d` · main
 
 ---
 
@@ -208,7 +208,7 @@
 | B1.9 | Backward compat: GDD bez `## Win Presentation` sekcije → svi slotovi `undefined` → block `resolveConfig` daje safe defaults identične pre-block ponašanju | ✅ |
 | B1.10 | Migration debt: TODO ostalo — `_buildStandardPaylines` već izvučen; `detectWinCombos`, `applyWinHighlight` cluster mode, FS lifecycle helpers ostaju za sledeće B-talase | ⏳ |
 
-### Wave B2 — scatterCelebration LEGO blok (commit `__TBD__`)
+### Wave B2 — scatterCelebration LEGO blok (commit `6d1cb4d`)
 
 > Drugi B-talas u LEGO migraciji. Scatter celebration animacija (1500ms pulse/glow nakon settle pre FS_INTRO) izvučena iz `buildSlotHTML.mjs` u modularan blok. CSS keyframes + JS funkcije su sada emitovani iz `src/blocks/scatterCelebration.mjs` umesto inline. GDD-driven knobs (duration, pulse-cycles, dim-opacity, glow-color, glow-peak) bake-uju se u runtime kao literali.
 
@@ -242,7 +242,7 @@
 
 ---
 
-## ✅ QA matrix (HEAD `__TBD__`)
+## ✅ QA matrix (HEAD `6d1cb4d`)
 
 | Suite | Coverage | Result |
 |---|---|---:|
