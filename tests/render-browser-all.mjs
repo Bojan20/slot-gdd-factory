@@ -58,9 +58,15 @@ async function validatePage(page, shape, errors, tag) {
     case 'lock_respin':
     case 'infinity':
     case 'expanding':
-    case 'megaclusters':
-      ASSERT(cellCount === shape.totalCells, `DOM cells=${cellCount} ≠ shape=${shape.totalCells}`);
+    case 'megaclusters': {
+      /* These shapes now share the rectangular reel-strip engine — every
+         column has ROWS+2 cells (1 buffer above + 1 buffer below the
+         visible window). Validate column count + minimum visible cells. */
+      const colCount = await page.locator('#gridHost .reelCol').count();
+      ASSERT(colCount === shape.reels, `${shape.kind} reelCol count=${colCount} ≠ reels=${shape.reels}`);
+      ASSERT(cellCount >= shape.totalCells, `${shape.kind} DOM cells=${cellCount} < shape.totalCells=${shape.totalCells}`);
       break;
+    }
     case 'variable_reel':
     case 'diamond':
     case 'pyramid':

@@ -912,10 +912,76 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     return Math.max(20, Math.floor(Math.min(cellW, cellH)));
   }
 
-  /* Track per-reel strips for the spin engine. Only populated for the
-     "rectangular" kind — other shapes keep the original static render. */
+  /* Track per-reel strips for the spin engine. Populated for every
+     uniform-column-grid shape kind so the rectangular reel engine
+     (windup → accel → steady → decel → cushion bounce) drives every
+     reel-like shape identically.
+
+     UNIFORM_REEL_KINDS lists shapes that share a flat REELS×ROWS column
+     layout — all of them now build the same RECT_REELS array of reelCol
+     strips. Cluster's 7×7 looks like 7 stacked-symbol columns spinning,
+     same beat as rectangular's 5×3 — just larger. */
+  const UNIFORM_REEL_KINDS = new Set([
+    'rectangular',
+    'cluster',
+    'megaclusters',
+    'lock_respin',
+    'expanding',
+    'infinity',
+  ]);
   let RECT_REELS = null;
   let RECT_SIDE = 0;
+
+  function buildReelColumns(host, cols, rowsCount, side, extraCellClass) {
+    /* Shared reel-strip column builder. Used by every uniform-reel shape.
+       Each column contains a reelStrip div with rowsCount + 2 cells
+       (1 buffer above + 1 buffer below the visible window). Rotation of
+       these cells during spin is what creates the infinite-scroll
+       illusion in onTickAll(). */
+    RECT_REELS = [];
+    RECT_SIDE = side;
+    const reelH = rowsCount * side + (rowsCount - 1) * 6;
+    let symIdx = 0;
+    for (let c = 0; c < cols; c++) {
+      const col = document.createElement("div");
+      col.className = "reelCol";
+      col.style.width = side + "px";
+      col.style.height = reelH + "px";
+      col.style.gridColumn = (c + 1) + " / " + (c + 2);
+      col.style.gridRow = "1 / span " + rowsCount;
+
+      const strip = document.createElement("div");
+      strip.className = "reelStrip";
+      const stripCells = rowsCount + 2;
+      const cellRefs = [];
+      for (let r = 0; r < stripCells; r++) {
+        const cell = makeCell(symAt(symIdx++), extraCellClass);
+        cell.style.width = side + "px";
+        cell.style.height = side + "px";
+        cell.style.fontSize = (side * 0.32) + "px";
+        cell.style.flex = "0 0 auto";
+        strip.appendChild(cell);
+        cellRefs.push(cell);
+      }
+      const cellStep = side + 6;
+      strip.style.transform = "translateY(" + (-cellStep) + "px)";
+      col.appendChild(strip);
+      host.appendChild(col);
+      RECT_REELS.push({
+        col, strip, side, cellStep,
+        cells: cellRefs,
+        offsetPx: 0,
+        spinning: false,
+        stopping: false,
+        stopRequested: false,
+        stopRequestTime: 0,
+        targetY: -cellStep,
+        rotationCount: 0,
+        minRotations: 8,
+        stopDelayMs: 0,
+      });
+    }
+  }
 
   function renderRect() {
     const host = document.createElement("div");
@@ -924,80 +990,30 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     host.style.gridTemplateColumns = "repeat(" + REELS + ", " + side + "px)";
     host.style.gridTemplateRows = side + "px";  // single row of reel columns
 
-    /* For rectangular slots we build N "reelCol" columns, each containing
-       a vertically scrollable strip of cells. The visible window is exactly
-       ROWS cells tall; the strip has extra cells above for spin animation. */
-    if (SHAPE.kind === "rectangular") {
-      RECT_REELS = [];
-      RECT_SIDE = side;
-      const reelH = ROWS * side + (ROWS - 1) * 6; // gap = 6 from token
-      let symIdx = 0;
-      for (let c = 0; c < REELS; c++) {
-        const col = document.createElement("div");
-        col.className = "reelCol";
-        col.style.width = side + "px";
-        col.style.height = reelH + "px";
-        col.style.gridColumn = (c + 1) + " / " + (c + 2);
-        col.style.gridRow = "1 / span " + ROWS;
-
-        const strip = document.createElement("div");
-        strip.className = "reelStrip";
-        /* Strip carries ROWS + 2 buffer cells (1 above the visible window,
-           1 below). During spin we rotate cells (pop bottom, unshift top,
-           top gets a fresh random symbol) to create the illusion of an
-           infinite scrolling reel — symbols are ALWAYS visible. */
-        const stripCells = ROWS + 2;
-        const cellRefs = [];
-        for (let r = 0; r < stripCells; r++) {
-          const cell = makeCell(symAt(symIdx++), "");
-          cell.style.width = side + "px";
-          cell.style.height = side + "px";
-          cell.style.fontSize = (side * 0.32) + "px";
-          cell.style.flex = "0 0 auto";
-          strip.appendChild(cell);
-          cellRefs.push(cell);
-        }
-        /* Initial position: strip shifted up by one cellStep so the top
-           buffer cell sits ABOVE the visible window and the first visible
-           row is the second strip cell. WoO trick: this gives us a hidden
-           cell above to pop into view during the very first spin tick. */
-        const cellStep = side + 6;
-        strip.style.transform = "translateY(" + (-cellStep) + "px)";
-        col.appendChild(strip);
-        host.appendChild(col);
-        RECT_REELS.push({
-          col, strip, side, cellStep,
-          cells: cellRefs,
-          offsetPx: 0,         // accumulated scroll distance within current cell
-          spinning: false,
-          stopping: false,
-          stopRequested: false,
-          stopRequestTime: 0,
-          targetY: -cellStep,  // resting position
-          rotationCount: 0,
-          minRotations: 8,
-          stopDelayMs: 0,
-        });
+    if (UNIFORM_REEL_KINDS.has(SHAPE.kind)) {
+      const extraClass = (SHAPE.kind === 'lock_respin') ? 'lockable' : '';
+      buildReelColumns(host, REELS, ROWS, side, extraClass);
+      if (SHAPE.kind === "expanding" || SHAPE.kind === "infinity") {
+        const tag = document.createElement("div");
+        tag.className = "grow-tag";
+        tag.textContent = SHAPE.kind === "infinity" ? "∞ horizontal" : "expand vertical";
+        frame.appendChild(tag);
       }
       grid.appendChild(host);
       return;
     }
 
-    /* All other rectangular-like kinds (cluster, lock_respin, megaclusters,
-       infinity, expanding) keep the static cell-grid render. */
+    /* Irregular shapes (hex / diamond / pyramid / cross / l_shape /
+       variable_reel) — they don't share the rectangular column layout, so
+       they keep the legacy static-cell render. runOneBaseSpin dispatches
+       to runStaticReroll for these. */
     host.style.gridTemplateRows = "repeat(" + ROWS + ", " + side + "px)";
     let idx = 0;
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < REELS; c++) {
-        host.appendChild(makeCell(symAt(idx), SHAPE.kind === "lock_respin" ? "lockable" : ""));
+        host.appendChild(makeCell(symAt(idx), ""));
         idx++;
       }
-    }
-    if (SHAPE.kind === "expanding" || SHAPE.kind === "infinity") {
-      const tag = document.createElement("div");
-      tag.className = "grow-tag";
-      tag.textContent = SHAPE.kind === "infinity" ? "∞ horizontal" : "expand vertical";
-      frame.appendChild(tag);
     }
     grid.appendChild(host);
   }
@@ -1037,7 +1053,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
        reel 4 :  ~2.36s
        reel 5 :  ~2.68s
      Total spin ~2.7s — matches the reference base-game cadence. */
-  const SPIN_PROFILE = {
+  const SPIN_PROFILE_BASE = {
     windupMs: 100, windupFrames: 6, windupPx: 38,
     accelMs: 120, steadyMs: 830, decelMs: 350,
     staggerMs: 320,
@@ -1046,6 +1062,18 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
        Smaller value = slower approach to target (more visible decel). */
     decelEasingSpeed: 0.11,
   };
+  /* Faster cadence during FS_ACTIVE — industry-standard "you are in the
+     bonus, every spin matters" tempo. Same engine, shorter windup +
+     steady + stagger so a 30-spin FS round lands inside the QA budget. */
+  const SPIN_PROFILE_FS = {
+    windupMs: 70, windupFrames: 5, windupPx: 28,
+    accelMs: 90, steadyMs: 460, decelMs: 240,
+    staggerMs: 180,
+    bouncePx: 3, bounceDecay: 0.5, bounceCount: 1, bounceElasticity: 1.6,
+    decelEasingSpeed: 0.14,
+  };
+  /* Current active profile — flipped by startSpinAll on FSM phase. */
+  let SPIN_PROFILE = SPIN_PROFILE_BASE;
 
   /* Public state of the engine */
   let spinTicker = null;
@@ -1089,6 +1117,14 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
           until the LAST reel that could affect the award has stopped. */
   function maybeArmAnticipation() {
     if (!FREESPINS.enabled || !RECT_REELS) return;
+    /* Anticipation is a BASE-game suspense cue — during FS_ACTIVE the
+       player already knows they're in the bonus, so the +HOLD_BASE per-
+       reel hold just slows the round down. Retrigger anticipation could
+       theoretically apply but the visual payoff is marginal and the
+       extra ~3s per spin × 30+ spins blows the QA harness budget on
+       big grids (cluster 7×7, 6×5). Skip arming whenever we're inside
+       the FS lifecycle. */
+    if (FSM && FSM.phase && FSM.phase !== 'BASE') return;
     const threshold = (FREESPINS.triggerCounts && FREESPINS.triggerCounts[0]) ||
                       (FREESPINS.awards && FREESPINS.awards[0] && FREESPINS.awards[0].count) || 3;
     /* Highest scatter count in the ladder — anticipation persists until
@@ -1191,6 +1227,13 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
      by the post-spin scatter-detection hook to evaluate FS triggers. */
   function startSpinAll(onSettled) {
     if (!RECT_REELS || allReelsActive) return;
+    /* Pick the profile based on the FSM phase. BASE uses the cinematic
+       cabinet cadence; FS_ACTIVE uses the faster bonus-tempo profile.
+       Other phases (FS_INTRO / FS_OUTRO) never spin so they don't
+       reach here. */
+    SPIN_PROFILE = (FSM && FSM.phase === 'FS_ACTIVE')
+      ? SPIN_PROFILE_FS
+      : SPIN_PROFILE_BASE;
     allReelsActive = true;
     spinStartTime = performance.now();
     const spinBtn = document.getElementById("spinBtn");
@@ -1381,7 +1424,13 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
   }
 
   function runOneBaseSpin() {
-    if (SHAPE.kind === "rectangular") {
+    /* Every uniform-column-grid shape (rectangular / cluster / megaclusters
+       / lock_respin / expanding / infinity) uses the same reel spin engine
+       — windup → accel → steady → decel → cushion bounce, identical cadence
+       across shapes. Irregular shapes (hex / diamond / pyramid / cross /
+       l_shape / variable_reel) and SVG kinds (wheel / crash / plinko /
+       radial / slingo) fall through to runStaticReroll. */
+    if (UNIFORM_REEL_KINDS.has(SHAPE.kind) && RECT_REELS) {
       startSpinAll(() => handlePostSpin(/* during FS */ false));
     } else {
       runStaticReroll(() => handlePostSpin(false));
@@ -1693,6 +1742,13 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     window.FSM = FSM;
     window.FREESPINS = FREESPINS;
     window.SHAPE = SHAPE;
+    /* RECT_REELS is the reel-strip engine state — exposed via getter so
+       the audit harness reads the live array even when it's rebuilt on
+       a shape change. */
+    Object.defineProperty(window, 'RECT_REELS', {
+      configurable: true,
+      get: () => RECT_REELS,
+    });
   }
 
   /* Cached DOM handles for the FS UI — looked up once at boot. */
@@ -1810,7 +1866,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     statusElGlobal && (statusElGlobal.textContent =
       "FS · " + ((FSM.spinsTotal - FSM.spinsRemaining) + 1) + " / " + FSM.spinsTotal);
 
-    if (SHAPE.kind === "rectangular") {
+    if (UNIFORM_REEL_KINDS.has(SHAPE.kind) && RECT_REELS) {
       startSpinAll(() => handlePostSpin(true));
     } else {
       runStaticReroll(() => handlePostSpin(true));
