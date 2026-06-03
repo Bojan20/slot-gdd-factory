@@ -114,6 +114,18 @@ export function parseMarkdownGDD(text) {
      Celebration section; downstream block falls through to safe defaults. */
   extractScatterCelebration(text, model);
 
+  /* stage-badge block config — extracts optional GDD knobs for the
+     stageBadge lego block (label text + gold color + pulse cadence). */
+  extractStageBadge(text, model);
+
+  /* anticipation block config — hold / pulse / gold knobs for the
+     anticipation lego block. */
+  extractAnticipation(text, model);
+
+  /* spin-tempo block config — windup / steady / decel / stagger /
+     bounce knobs for the spinTempo lego block. */
+  extractSpinTempo(text, model);
+
   // math (RTP / volatility / max-win) intentionally NOT extracted in this phase.
 
   return model;
@@ -884,6 +896,41 @@ function freshModel() {
       /* number in [0,1] — forced "no win" chance for visual variance */
       noWinChance: undefined,
     },
+    /* Stage-badge block config — consumed by src/blocks/stageBadge.mjs. */
+    stageBadge: {
+      enabled: undefined,
+      baseLabel: undefined,
+      fsLabel: undefined,
+      gold: undefined,
+      pulseMs: undefined,
+      mobileBreakpoint: undefined,
+    },
+    /* Anticipation block config — consumed by src/blocks/anticipation.mjs. */
+    anticipation: {
+      enabled: undefined,
+      holdMs: undefined,
+      pulseMs: undefined,
+      gold: undefined,
+      skipDuringFs: undefined,
+    },
+    /* Spin-tempo block config — consumed by src/blocks/spinTempo.mjs.
+       preset is a string ("s-avp" | "fast" | "slow") that sets the base
+       cadence; per-key overrides follow. */
+    spinTempo: {
+      preset: undefined,
+      windupMs: undefined,
+      windupFrames: undefined,
+      windupPx: undefined,
+      accelMs: undefined,
+      steadyMs: undefined,
+      decelMs: undefined,
+      staggerMs: undefined,
+      bouncePx: undefined,
+      bounceDecay: undefined,
+      bounceCount: undefined,
+      bounceElasticity: undefined,
+      decelEasingSpeed: undefined,
+    },
     /* Scatter-celebration block config — consumed by
        src/blocks/scatterCelebration.mjs. Always emitted with `undefined`
        slots so the block's resolveConfig() falls through to safe defaults.
@@ -1018,4 +1065,117 @@ export function extractScatterCelebration(text, model) {
   /* glow-peak */
   const gp = section.match(/\bglow[- ]?peak\s*[:=]\s*(\d+(?:\.\d+)?)/i);
   if (gp) sc.glowPeak = parseFloat(gp[1]);
+}
+
+/* ── extractStageBadge — GDD-driven stage badge config ───────────────────
+   Reads optional knobs from a "## Stage Badge" / "## Phase Badge" /
+   "## Live Indicator" section in the GDD. All keys optional. */
+export function extractStageBadge(text, model) {
+  if (!text || !model) return;
+  const headingRx = /^##\s*(?:stage\s*badge|phase\s*badge|live\s*indicator)\s*$/im;
+  const startMatch = text.match(headingRx);
+  if (!startMatch) return;
+
+  const start = startMatch.index + startMatch[0].length;
+  const restRx = /^#{1,2}\s/m;
+  const tail = text.slice(start);
+  const nextH = tail.match(restRx);
+  const section = nextH ? tail.slice(0, nextH.index) : tail;
+
+  const sb = model.stageBadge;
+  const en = section.match(/\benabled\s*[:=]\s*(true|false|on|off|yes|no)/i);
+  if (en) {
+    const v = en[1].toLowerCase();
+    sb.enabled = (v === 'true' || v === 'on' || v === 'yes');
+  }
+  const bl = section.match(/\bbase[- ]?label\s*[:=]\s*['"]?([^'"\n]+?)['"]?\s*$/im);
+  if (bl) sb.baseLabel = bl[1].trim();
+  const fl = section.match(/\bfs[- ]?label\s*[:=]\s*['"]?([^'"\n]+?)['"]?\s*$/im);
+  if (fl) sb.fsLabel = fl[1].trim();
+  const gd = section.match(/\bgold\s*[:=]\s*(\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3})/i);
+  if (gd) sb.gold = gd[1].replace(/\s+/g, '');
+  const ms = section.match(/\bpulse[- ]?ms\s*[:=]\s*(\d+)/i);
+  if (ms) sb.pulseMs = parseInt(ms[1], 10);
+  const mb = section.match(/\bmobile[- ]?breakpoint\s*[:=]\s*(\d+)/i);
+  if (mb) sb.mobileBreakpoint = parseInt(mb[1], 10);
+}
+
+/* ── extractAnticipation — GDD-driven anticipation glow config ───────────
+   Reads optional knobs from a "## Anticipation" / "## Reel Anticipation"
+   section. All keys optional. */
+export function extractAnticipation(text, model) {
+  if (!text || !model) return;
+  const headingRx = /^##\s*(?:anticipation|reel\s*anticipation)\s*$/im;
+  const startMatch = text.match(headingRx);
+  if (!startMatch) return;
+
+  const start = startMatch.index + startMatch[0].length;
+  const restRx = /^#{1,2}\s/m;
+  const tail = text.slice(start);
+  const nextH = tail.match(restRx);
+  const section = nextH ? tail.slice(0, nextH.index) : tail;
+
+  const a = model.anticipation;
+  const en = section.match(/\benabled\s*[:=]\s*(true|false|on|off|yes|no)/i);
+  if (en) {
+    const v = en[1].toLowerCase();
+    a.enabled = (v === 'true' || v === 'on' || v === 'yes');
+  }
+  const hm = section.match(/\bhold[- ]?ms\s*[:=]\s*(\d+)/i);
+  if (hm) a.holdMs = parseInt(hm[1], 10);
+  const pm = section.match(/\bpulse[- ]?ms\s*[:=]\s*(\d+)/i);
+  if (pm) a.pulseMs = parseInt(pm[1], 10);
+  const gd = section.match(/\bgold\s*[:=]\s*(\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3})/i);
+  if (gd) a.gold = gd[1].replace(/\s+/g, '');
+  const sd = section.match(/\bskip[- ]?during[- ]?fs\s*[:=]\s*(true|false|on|off|yes|no)/i);
+  if (sd) {
+    const v = sd[1].toLowerCase();
+    a.skipDuringFs = (v === 'true' || v === 'on' || v === 'yes');
+  }
+}
+
+/* ── extractSpinTempo — GDD-driven reel spin cadence config ──────────────
+   Reads optional knobs from a "## Spin Tempo" / "## Reel Tempo" /
+   "## Spin Cadence" section. Supports presets + per-key overrides. */
+export function extractSpinTempo(text, model) {
+  if (!text || !model) return;
+  const headingRx = /^##\s*(?:spin\s*tempo|reel\s*tempo|spin\s*cadence|spin\s*timing)\s*$/im;
+  const startMatch = text.match(headingRx);
+  if (!startMatch) return;
+
+  const start = startMatch.index + startMatch[0].length;
+  const restRx = /^#{1,2}\s/m;
+  const tail = text.slice(start);
+  const nextH = tail.match(restRx);
+  const section = nextH ? tail.slice(0, nextH.index) : tail;
+
+  const st = model.spinTempo;
+  const pr = section.match(/\bpreset\s*[:=]\s*['"]?(s[- ]?avp|fast|slow)['"]?/i);
+  if (pr) st.preset = pr[1].toLowerCase().replace(/\s+/g, '-');
+
+  const intMap = [
+    ['windupMs',     /\bwindup[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['windupFrames', /\bwindup[- ]?frames\s*[:=]\s*(\d+)/i],
+    ['windupPx',     /\bwindup[- ]?px\s*[:=]\s*(\d+)/i],
+    ['accelMs',      /\baccel[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['steadyMs',     /\bsteady[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['decelMs',      /\bdecel[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['staggerMs',    /\bstagger[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['bouncePx',     /\bbounce[- ]?px\s*[:=]\s*(\d+)/i],
+    ['bounceCount',  /\bbounce[- ]?count\s*[:=]\s*(\d+)/i],
+  ];
+  for (const [key, rx] of intMap) {
+    const m = section.match(rx);
+    if (m) st[key] = parseInt(m[1], 10);
+  }
+
+  const floatMap = [
+    ['bounceDecay',      /\bbounce[- ]?decay\s*[:=]\s*(\d+(?:\.\d+)?)/i],
+    ['bounceElasticity', /\bbounce[- ]?elasticity\s*[:=]\s*(\d+(?:\.\d+)?)/i],
+    ['decelEasingSpeed', /\bdecel[- ]?easing[- ]?speed\s*[:=]\s*(\d+(?:\.\d+)?)/i],
+  ];
+  for (const [key, rx] of floatMap) {
+    const m = section.match(rx);
+    if (m) st[key] = parseFloat(m[1]);
+  }
 }

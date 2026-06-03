@@ -66,6 +66,70 @@ export function resolveConfig(model) {
   return cfg;
 }
 
+/* Emit the cluster-mode evaluator runtime. Used by grids that DON'T have
+   paylines (cluster / megaclusters / hex / diamond / pyramid / cross /
+   l_shape / SVG) — fires one event per non-scatter symbol with ≥ 3 hits,
+   wild substitutes & wild-only fallback included. */
+export function emitDetectWinCombosRuntime(cfg = defaultConfig()) {
+  const c = resolveConfig({ winPresentation: cfg });
+  return `
+  /* ── detectWinCombos — cluster-mode evaluator (emitted by winPresentation.mjs)
+     For grids without paylines: bucket all non-scatter glyphs by symbol,
+     wild substitutes across every bucket. Emits one event per bucket that
+     reaches the 3-of-a-kind floor.
+     maxEvents = ${c.maxEvents} (baked from GDD). */
+  function detectWinCombos() {
+    const cells = Array.from(grid.querySelectorAll(".cell, text"));
+    if (cells.length < 3) return [];
+    const reg = SYMBOL_REGISTRY || { regularPay: [], wild: null, scatter: null, tier: {} };
+    const regularSet = new Set(reg.regularPay || []);
+    const wildId  = reg.wild ? reg.wild.toUpperCase() : null;
+    const scatId  = (reg.scatter ? reg.scatter : (FREESPINS.triggerSymbol || 'S')).toUpperCase();
+    /* Per-symbol cell buckets, plus a dedicated wild bucket. */
+    const buckets = new Map();
+    const wildCells = [];
+    cells.forEach(c => {
+      const sym = (c.textContent || "").trim().toUpperCase();
+      if (!sym) return;
+      if (sym === scatId) return;                 /* scatter never participates */
+      if (wildId && sym === wildId) { wildCells.push(c); return; }
+      /* If registry is empty (no GDD symbol table), treat any non-scatter
+         non-wild glyph as "regular" so the cycle still demos something. */
+      if (regularSet.size === 0 || regularSet.has(sym)) {
+        if (!buckets.has(sym)) buckets.set(sym, []);
+        buckets.get(sym).push(c);
+      }
+    });
+    /* Minimum line length — 3 OF A KIND is the universal slot floor.
+       Wild count contributes toward reaching the threshold (wild is the
+       universal substitute, so 2K + 1W counts as 3K). */
+    const tierRank = { HP: 0, MP: 1, LP: 2, WILD: 3 };
+    const MAX_EVENTS = ${c.maxEvents};
+    const events = [];
+    for (const [symbol, list] of buckets) {
+      if (list.length + wildCells.length < 3) continue;
+      const tier = (reg.tier && reg.tier[symbol]) || 'LP';
+      /* Combo cells = the symbol's own cells + every wild cell (wild
+         substitutes for THIS symbol on every line it could complete). */
+      events.push({ symbol, tier, cells: list.concat(wildCells) });
+    }
+    /* Wild-only event: if there are >= 3 wild cells and NO matching
+       regular hit yet, fire a standalone wild celebration so the wild
+       presence still reads. (Rare but possible on wild-reel features.) */
+    if (events.length === 0 && wildCells.length >= 3 && wildId) {
+      events.push({ symbol: wildId, tier: 'WILD', cells: wildCells.slice() });
+    }
+    events.sort((a, b) => {
+      const ta = tierRank[a.tier] ?? 9;
+      const tb = tierRank[b.tier] ?? 9;
+      if (ta !== tb) return ta - tb;
+      return b.cells.length - a.cells.length;  /* longer line first within a tier */
+    });
+    return events.slice(0, MAX_EVENTS);
+  }
+`;
+}
+
 /* Emit the runtime JS as a string. Config knobs are baked into the output
    as literals so the runtime doesn't need to know about the config object
    at all — keeps the browser bundle clean. */

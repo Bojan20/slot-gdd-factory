@@ -25,12 +25,31 @@
 import { buildGridShape } from './gridShape.mjs';
 import { paylineConfig } from './blocks/paylines.mjs';
 import { emitPaylineOverlayRuntime } from './blocks/paylineOverlay.mjs';
-import { emitWinPresentationRuntime, resolveConfig as resolveWinPresentationConfig } from './blocks/winPresentation.mjs';
+import {
+  emitWinPresentationRuntime,
+  emitDetectWinCombosRuntime,
+  resolveConfig as resolveWinPresentationConfig,
+} from './blocks/winPresentation.mjs';
 import {
   emitScatterCelebrationCSS,
   emitScatterCelebrationRuntime,
   resolveConfig as resolveScatterCelebrationConfig,
 } from './blocks/scatterCelebration.mjs';
+import {
+  emitStageBadgeCSS,
+  emitStageBadgeMarkup,
+  emitStageBadgeRuntime,
+  resolveConfig as resolveStageBadgeConfig,
+} from './blocks/stageBadge.mjs';
+import {
+  emitAnticipationCSS,
+  emitAnticipationRuntime,
+  resolveConfig as resolveAnticipationConfig,
+} from './blocks/anticipation.mjs';
+import {
+  emitSpinTempoRuntime,
+  resolveConfig as resolveSpinTempoConfig,
+} from './blocks/spinTempo.mjs';
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({
@@ -156,58 +175,7 @@ body {
   letter-spacing: 1.5px;
   text-transform: uppercase;
 }
-/* Stage badge — live indicator za trenutni game phase. Sedi između .title
-   (statički brand) i .sub (statički layout descriptor) tako da hijerarhija
-   čita: brand → live state → struktura. Purely informational (pointer-events
-   off). Boja/animacija reaguje na data-stage atribut — extensibilno za
-   buduće stage-ove (cash eruption, hold&win, bonus). */
-.stage-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 3px 12px 3px 10px;
-  border-radius: 999px;
-  background: rgba(15, 12, 10, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 2.2px;
-  text-transform: uppercase;
-  color: rgba(197, 198, 199, 0.78);
-  backdrop-filter: blur(4px);
-  pointer-events: none;
-  user-select: none;
-  transition: color .35s ease, background .35s ease, border-color .35s ease;
-}
-.stage-badge__dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.7;
-  transition: background .35s ease, box-shadow .35s ease, opacity .35s ease;
-}
-.stage-badge[data-stage="fs"] {
-  color: #ffe6a8;
-  background: rgba(40, 30, 16, 0.65);
-  border-color: rgba(217, 180, 74, 0.5);
-}
-.stage-badge[data-stage="fs"] .stage-badge__dot {
-  background: #ffd66e;
-  opacity: 1;
-  box-shadow: 0 0 8px rgba(255, 214, 110, 0.85);
-  animation: stage-badge-pulse 1.6s ease-in-out infinite;
-}
-@keyframes stage-badge-pulse {
-  0%, 100% { transform: scale(1);    box-shadow: 0 0 6px rgba(255, 214, 110, 0.55); }
-  50%      { transform: scale(1.25); box-shadow: 0 0 14px rgba(255, 214, 110, 1);   }
-}
-@media (max-width: 620px) {
-  .stage-badge { font-size: 0.55rem; padding: 2px 10px 2px 8px; letter-spacing: 1.8px; gap: 6px; }
-  .stage-badge__dot { width: 5px; height: 5px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .stage-badge[data-stage="fs"] .stage-badge__dot { animation: none; }
-}
+${emitStageBadgeCSS(resolveStageBadgeConfig(model))}
 /* Play area — symmetrical 3-column layout on desktop so the frame is
    perfectly horizontally centered. Left column is a transparent spacer
    the same width as the right SPIN rail. On smaller screens we collapse
@@ -551,41 +519,7 @@ body {
   filter: blur(4.5px) brightness(0.88);
   transition: filter 80ms linear;
 }
-/* Anticipation slowdown — soft golden inset glow on the reel column while
-   it's spinning with extended hold time. Tells the player "this reel can
-   complete the trigger". Combined with the blur tail it reads as a slow,
-   suspenseful descent compared with the normal stagger speed. */
-.reelCol--anticipating {
-  box-shadow: inset 0 0 0 2px rgba(255, 214, 110, 0.55),
-              inset 0 0 35px rgba(255, 214, 110, 0.25);
-  animation: reel-antic-pulse 700ms ease-in-out infinite;
-}
-@keyframes reel-antic-pulse {
-  0%, 100% { box-shadow: inset 0 0 0 2px rgba(255, 214, 110, 0.55),
-                         inset 0 0 35px rgba(255, 214, 110, 0.22); }
-  50%      { box-shadow: inset 0 0 0 2px rgba(255, 230, 168, 0.85),
-                         inset 0 0 55px rgba(255, 214, 110, 0.42); }
-}
-/* Per-cell anticipation glow — used by non-rectangular grids during the
-   column-by-column reveal in runStaticReroll(). Same gold pulse as the
-   rectangular reelCol--anticipating, scaled to a cell-sized inset so it
-   reads cleanly inside cluster / megaclusters / lock_respin / expanding
-   / infinity column footprints. */
-.cell--anticipating {
-  box-shadow: inset 0 0 0 2px rgba(255, 214, 110, 0.6),
-              inset 0 0 16px rgba(255, 214, 110, 0.32);
-  animation: cell-antic-pulse 700ms ease-in-out infinite;
-}
-@keyframes cell-antic-pulse {
-  0%, 100% { box-shadow: inset 0 0 0 2px rgba(255, 214, 110, 0.55),
-                         inset 0 0 14px rgba(255, 214, 110, 0.30); }
-  50%      { box-shadow: inset 0 0 0 2px rgba(255, 230, 168, 0.85),
-                         inset 0 0 22px rgba(255, 214, 110, 0.55); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .reelCol--anticipating,
-  .cell--anticipating { animation: none; }
-}
+${emitAnticipationCSS(resolveAnticipationConfig(model))}
 .spinBtn.is-spinning { pointer-events: none; opacity: 0.78; }
 .spinBtn.is-spinning svg { opacity: 0.55; }
 
@@ -975,10 +909,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 <div class="stage">
   <div class="header">
     <div class="title">${escapeHtml(model.name)}</div>
-    <div class="stage-badge" id="stageBadge" data-stage="base" aria-live="polite">
-      <span class="stage-badge__dot" aria-hidden="true"></span>
-      <span class="stage-badge__label" id="stageBadgeLabel">BASE GAME</span>
-    </div>
+    ${emitStageBadgeMarkup(resolveStageBadgeConfig(model))}
     <div class="sub">${escapeHtml(layoutSub)}</div>
   </div>
   <div class="play">
@@ -1270,18 +1201,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
        reel 4 :  ~2.36s
        reel 5 :  ~2.68s
      Total spin ~2.7s — matches the reference base-game cadence. */
-  /* SINGLE profile used in BOTH base game and free spins — Boki rule:
-     reel spin + reel stop speed must be identical in BG and FS across
-     every grid. No bonus-tempo flip. */
-  const SPIN_PROFILE = {
-    windupMs: 100, windupFrames: 6, windupPx: 38,
-    accelMs: 120, steadyMs: 830, decelMs: 350,
-    staggerMs: 320,
-    bouncePx: 4, bounceDecay: 0.42, bounceCount: 1, bounceElasticity: 1.7,
-    /* Decel ease — applied while reel is in 'stopping' phase.
-       Smaller value = slower approach to target (more visible decel). */
-    decelEasingSpeed: 0.11,
-  };
+  ${emitSpinTempoRuntime(resolveSpinTempoConfig(model))}
 
   /* Public state of the engine */
   let spinTicker = null;
@@ -1310,123 +1230,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     reel.rotationCount++;
   }
 
-  /* Dynamic anticipation arming. Called after every reel STOP transition
-     in onTickAll(). Counts visible trigger symbols across the already-
-     stopped reels and, if the count is one short of the GDD's smallest
-     trigger threshold (or already meets it — bigger awards still on the
-     line), pushes back the stop time on every still-spinning reel so the
-     player sees the classic "come on…" slowdown.
-
-     Why this works dynamically rather than pre-computed:
-       1. Real spins (no FORCE_TRIGGER) can land scatters anywhere — we can
-          only tell after each reel settles.
-       2. Even with FORCE_TRIGGER, the random POOL can drop bonus scatters
-          past the planted N, raising the award. The slowdown must hold
-          until the LAST reel that could affect the award has stopped. */
-  function maybeArmAnticipation() {
-    if (!FREESPINS.enabled || !RECT_REELS) return;
-    /* Anticipation is a BASE-game suspense cue — during FS_ACTIVE the
-       player already knows they're in the bonus, so the +HOLD_BASE per-
-       reel hold just slows the round down. Retrigger anticipation could
-       theoretically apply but the visual payoff is marginal and the
-       extra ~3s per spin × 30+ spins blows the QA harness budget on
-       big grids (cluster 7×7, 6×5). Skip arming whenever we're inside
-       the FS lifecycle. */
-    if (FSM && FSM.phase && FSM.phase !== 'BASE') return;
-    const threshold = (FREESPINS.triggerCounts && FREESPINS.triggerCounts[0]) ||
-                      (FREESPINS.awards && FREESPINS.awards[0] && FREESPINS.awards[0].count) || 3;
-    /* Highest scatter count in the ladder — anticipation persists until
-       we can no longer reach it (so 4S and 5S awards keep the suspense). */
-    const topRung = (FREESPINS.awards || []).reduce(
-      (m, a) => Math.max(m, a.count), threshold);
-
-    /* Count trigger symbols on every reel that has already settled.
-       Two modes (parser.mjs decides per-GDD):
-         'perReel' (default) — each reel adds at most 1 (industry norm)
-         'any'               — every scatter CELL adds 1 (stacked-scatter title) */
-    const trig = (FREESPINS.triggerSymbol || "S").toUpperCase();
-    const countMode = (FREESPINS.countMode === 'any') ? 'any' : 'perReel';
-    let scattersSoFar = 0;
-    for (const r of RECT_REELS) {
-      if (r.spinning) continue;
-      let reelHits = 0;
-      const vis = r.visibleRows || ROWS;
-      for (let i = 1; i <= vis; i++) {
-        if ((r.cells[i].textContent || "").toUpperCase() === trig) reelHits++;
-      }
-      scattersSoFar += (countMode === 'any') ? reelHits : (reelHits > 0 ? 1 : 0);
-    }
-
-    const stillSpinning = RECT_REELS.filter(r => r.spinning);
-    if (stillSpinning.length === 0) return;
-
-    /* Anticipation eligibility — kreće tek kada padnu (threshold - 1)
-       scattera (npr. 2 scattera za 3+ trigger). Tada je igrač jedan reel
-       daleko od trigger-a, vizuelni signal "još samo jedan" je opravdan.
-
-       1 scatter sam NIJE signal — to je samo običan landing, ne suspense.
-       Tek pri 2. scatteru postaje "almost-trigger" momenat koji opravdava
-       slow-down + glow na svim preostalim reel-ovima.
-
-       Anticipation NASTAVLJA dok god je trigger ili upgrade (4-S, 5-S
-       award) još moguć: scattersSoFar < topRung AND scattersSoFar +
-       remaining >= threshold (matematička dostupnost trigger-a).
-       Trigger threshold sam = 3+ (iz GDD-a), anticipation gate = 2. */
-    const remaining = stillSpinning.length;
-    const anticipationGate = Math.max(1, threshold - 1);
-    const armed = (scattersSoFar >= anticipationGate) &&
-                  (scattersSoFar + remaining >= threshold) &&
-                  (scattersSoFar < topRung);
-    if (!armed) return;
-
-    /* Sequential per-reel anticipation hold.
-       Every anticipating reel gets the SAME visible glow duration
-       (HOLD_BASE), and they stop one-by-one — each next reel only starts
-       its own glow + countdown after the previous one has landed.
-
-       Schedule (relative to the moment anticipation arms):
-         reel A glow STARTS at: max(its existing schedule, now)
-                stops at:        glowStart + HOLD_BASE
-         reel B glow STARTS at: reel-A deadline
-                stops at:        glowStart + HOLD_BASE
-         reel C glow STARTS at: reel-B deadline
-                stops at:        glowStart + HOLD_BASE
-       Net effect: every anticipating reel is glow-armed for exactly
-       HOLD_BASE before it lands — first one feels the same as the last
-       one. Cabinet "one-by-one" cadence preserved (glow appears just-in-
-       time, not all-at-once). */
-    const HOLD_BASE = 600;
-    const now = performance.now();
-    /* Anchor to the latest existing scheduledStopAt so we never pull any
-       reel forward (anticipation only ever extends, never shortens). */
-    let cursor = stillSpinning.reduce(
-      (m, r) => Math.max(m, r.scheduledStopAt), now);
-    /* Order anticipating reels by their natural stop order so the
-       first to land remains the first to land. */
-    const ordered = stillSpinning
-      .filter(r => !r.anticipating)
-      .sort((a, b) => a.scheduledStopAt - b.scheduledStopAt);
-    ordered.forEach((r) => {
-      r.anticipating = true;
-      /* This reel's glow window: [cursor, cursor + HOLD_BASE]. Schedule
-         the glow class to appear at the START of the window (not now), so
-         every reel's visible anticipation lasts exactly HOLD_BASE — same
-         as the first one. */
-      const glowStartAt = cursor;
-      cursor += HOLD_BASE;
-      r.scheduledStopAt = cursor;
-      const glowDelay = Math.max(0, glowStartAt - now);
-      if (r.glowTimerId) clearTimeout(r.glowTimerId);
-      r.glowTimerId = setTimeout(() => {
-        r.col.classList.add("reelCol--anticipating");
-      }, glowDelay);
-      if (r.stopTimerId) clearTimeout(r.stopTimerId);
-      r.stopTimerId = setTimeout(() => {
-        r.stopRequested = true;
-        r.stopRequestTime = performance.now();
-      }, r.scheduledStopAt - now);
-    });
-  }
+  ${emitAnticipationRuntime(resolveAnticipationConfig(model))}
 
   function commitStopSymbols(reel, reelIdx) {
     /* On stop: ensure the next visibleRows cells (indexes 1..visibleRows)
@@ -1931,55 +1735,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
      Sorted: HP first, then MP, then LP. Hard cap on event count so the
      cycle never blows the per-spin time budget (industry parity: WoO
      small-win caps the line bouquet around 6-8 entries). */
-  function detectWinCombos() {
-    const cells = Array.from(grid.querySelectorAll(".cell, text"));
-    if (cells.length < 3) return [];
-    const reg = SYMBOL_REGISTRY || { regularPay: [], wild: null, scatter: null, tier: {} };
-    const regularSet = new Set(reg.regularPay || []);
-    const wildId  = reg.wild ? reg.wild.toUpperCase() : null;
-    const scatId  = (reg.scatter ? reg.scatter : (FREESPINS.triggerSymbol || 'S')).toUpperCase();
-    /* Per-symbol cell buckets, plus a dedicated wild bucket. */
-    const buckets = new Map();
-    const wildCells = [];
-    cells.forEach(c => {
-      const sym = (c.textContent || "").trim().toUpperCase();
-      if (!sym) return;
-      if (sym === scatId) return;                 /* scatter never participates */
-      if (wildId && sym === wildId) { wildCells.push(c); return; }
-      /* If registry is empty (no GDD symbol table), treat any non-scatter
-         non-wild glyph as "regular" so the cycle still demos something. */
-      if (regularSet.size === 0 || regularSet.has(sym)) {
-        if (!buckets.has(sym)) buckets.set(sym, []);
-        buckets.get(sym).push(c);
-      }
-    });
-    /* Minimum line length — 3 OF A KIND is the universal slot floor.
-       Wild count contributes toward reaching the threshold (wild is the
-       universal substitute, so 2K + 1W counts as 3K). */
-    const tierRank = { HP: 0, MP: 1, LP: 2, WILD: 3 };
-    const MAX_EVENTS = 8;
-    const events = [];
-    for (const [symbol, list] of buckets) {
-      if (list.length + wildCells.length < 3) continue;
-      const tier = (reg.tier && reg.tier[symbol]) || 'LP';
-      /* Combo cells = the symbol's own cells + every wild cell (wild
-         substitutes for THIS symbol on every line it could complete). */
-      events.push({ symbol, tier, cells: list.concat(wildCells) });
-    }
-    /* Wild-only event: if there are >= 3 wild cells and NO matching
-       regular hit yet, fire a standalone wild celebration so the wild
-       presence still reads. (Rare but possible on wild-reel features.) */
-    if (events.length === 0 && wildCells.length >= 3 && wildId) {
-      events.push({ symbol: wildId, tier: 'WILD', cells: wildCells.slice() });
-    }
-    events.sort((a, b) => {
-      const ta = tierRank[a.tier] ?? 9;
-      const tb = tierRank[b.tier] ?? 9;
-      if (ta !== tb) return ta - tb;
-      return b.cells.length - a.cells.length;  /* longer line first within a tier */
-    });
-    return events.slice(0, MAX_EVENTS);
-  }
+  ${emitDetectWinCombosRuntime(resolveWinPresentationConfig(model))}
   ${emitPaylineOverlayRuntime()}
   ${emitWinPresentationRuntime(resolveWinPresentationConfig(model))}
 
@@ -2125,20 +1881,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
   const fsPlacardCta     = document.getElementById("fsPlacardCta");
   const devFsBtn   = document.getElementById("devFsBtn");
   const statusElGlobal = document.getElementById("status");
-  const stageBadge      = document.getElementById("stageBadge");
-  const stageBadgeLabel = document.getElementById("stageBadgeLabel");
-
-  /* Stage badge driver. Map FSM phases → two visual states:
-       BASE                                → "BASE GAME"  (muted)
-       FS_INTRO / FS_ACTIVE / FS_OUTRO     → "FREE SPINS" (gold pulse)
-     Extensibility: add another data-stage="..." block in CSS and pass a
-     new (stage, label) pair here when new game phases are introduced
-     (cash eruption, hold and win, bonus, etc.). */
-  function setStageBadge(stage, label) {
-    if (!stageBadge) return;
-    stageBadge.dataset.stage = stage;
-    if (label) stageBadgeLabel.textContent = label;
-  }
+  ${emitStageBadgeRuntime(resolveStageBadgeConfig(model))}
 
   function FSM_renderHud() {
     if (!fsHud) return;
@@ -2185,7 +1928,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
   function FSM_enterIntro(spinsAwarded, scatterCount) {
     FSM.phase = "FS_INTRO";
-    setStageBadge("fs", "FREE SPINS");
+    setStageBadge("fs", STAGE_FS_LABEL);
     FSM.spinsTotal = spinsAwarded;
     FSM.spinsRemaining = spinsAwarded;
     FSM.mult = (FREESPINS.multiplier && FREESPINS.multiplier.start) || 1;
@@ -2210,7 +1953,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
   function FSM_enterActive() {
     FSM.phase = "FS_ACTIVE";
-    setStageBadge("fs", "FREE SPINS");
+    setStageBadge("fs", STAGE_FS_LABEL);
     FSM_hideOverlay();
     FSM_showFsMode();
     FSM_renderHud();
@@ -2246,7 +1989,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
   function FSM_enterOutro() {
     FSM.phase = "FS_OUTRO";
-    setStageBadge("fs", "FREE SPINS");
+    setStageBadge("fs", STAGE_FS_LABEL);
     fsPlacardEyebrow.textContent = (FREESPINS.outroLabel || "FREE SPINS COMPLETE").toUpperCase();
     fsPlacardTitle.textContent   = "TOTAL WIN";
     fsPlacardSpins.textContent   = FSM.totalWin.toFixed(2);
@@ -2262,7 +2005,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
   function FSM_enterBase() {
     FSM.phase = "BASE";
-    setStageBadge("base", "BASE GAME");
+    setStageBadge("base", STAGE_BASE_LABEL);
     FSM_hideOverlay();
     FSM_hideFsMode();
     spinButton && (spinButton.disabled = false);

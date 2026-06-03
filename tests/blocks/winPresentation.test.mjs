@@ -19,6 +19,7 @@ import {
   defaultConfig,
   resolveConfig,
   emitWinPresentationRuntime,
+  emitDetectWinCombosRuntime,
 } from '../../src/blocks/winPresentation.mjs';
 import { parseGDD, extractWinPresentation } from '../../src/parser.mjs';
 
@@ -182,6 +183,32 @@ t('parser → emit roundtrip: GDD knobs reach the runtime literally', () => {
   const src = emitWinPresentationRuntime(resolveConfig(out));
   assert.ok(src.includes('const adaptive = 420'), 'perEventMs=420 did not reach runtime');
   assert.ok(src.includes('MAX_EVENTS = 10'), 'maxEvents=10 did not reach runtime');
+});
+
+/* ─── detectWinCombos emitter (B3 extraction) ────────────────────────── */
+
+t('emitDetectWinCombosRuntime: emits cluster evaluator function', () => {
+  const js = emitDetectWinCombosRuntime();
+  assert.ok(js.includes('function detectWinCombos()'), 'must emit detectWinCombos function');
+  assert.ok(js.includes('SYMBOL_REGISTRY'),  'must reference SYMBOL_REGISTRY');
+  assert.ok(js.includes('FREESPINS.triggerSymbol'), 'must reference trigger symbol');
+});
+
+t('emitDetectWinCombosRuntime: bakes maxEvents as MAX_EVENTS literal', () => {
+  const js = emitDetectWinCombosRuntime({ maxEvents: 12 });
+  assert.ok(js.includes('MAX_EVENTS = 12'), 'maxEvents=12 did not reach detectWinCombos');
+});
+
+t('emitDetectWinCombosRuntime: defaults bake maxEvents=8', () => {
+  const js = emitDetectWinCombosRuntime();
+  assert.ok(js.includes('MAX_EVENTS = 8'), 'default maxEvents=8 missing');
+});
+
+t('emitDetectWinCombosRuntime: tierRank includes HP/MP/LP/WILD', () => {
+  const js = emitDetectWinCombosRuntime();
+  for (const k of ['HP', 'MP', 'LP', 'WILD']) {
+    assert.ok(js.includes(`${k}:`), `tierRank missing ${k}`);
+  }
 });
 
 if (fail > 0) {

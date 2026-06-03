@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `6d1cb4d` · main
+> Last updated: **2026-06-03** · HEAD: `__TBD__` · main
 
 ---
 
@@ -224,6 +224,51 @@
 | B2.8 | `FREESPINS.scatterCelebration === false` runtime override i dalje radi (legacy escape hatch) | ✅ |
 | B2.9 | Browser QA verifikovan — 23/23 fixture, 0 console errors, scatter celebration animira identično kao pre refaktora | ✅ |
 
+### Wave B3 — detectWinCombos LEGO blok (commit `__TBD__`)
+
+| ID | Feature | Status |
+|---|---|---|
+| B3.1 | `emitDetectWinCombosRuntime(cfg)` dodat u `src/blocks/winPresentation.mjs` — cluster-mode evaluator izvučen iz buildera | ✅ |
+| B3.2 | `MAX_EVENTS` baked iz `cfg.maxEvents` (single source of truth sa line-pays) | ✅ |
+| B3.3 | `buildSlotHTML.mjs`: 49-LOC inline `function detectWinCombos()` zamenjen sa `${emitDetectWinCombosRuntime(...)}` | ✅ |
+| B3.4 | Unit testovi: 4 nova test-case u `tests/blocks/winPresentation.test.mjs` (function exists, MAX_EVENTS literal, tierRank, defaults) | ✅ |
+
+### Wave B5 — spinTempo LEGO blok (commit `__TBD__`)
+
+| ID | Feature | Status |
+|---|---|---|
+| B5.1 | `src/blocks/spinTempo.mjs` — `defaultConfig` / `resolveConfig` / `emitSpinTempoRuntime` | ✅ |
+| B5.2 | Presets: `s-avp` (cabinet default) / `fast` (arcade quickplay) / `slow` (cinematic) — `preset:` ključ u GDD-u + per-key overrides | ✅ |
+| B5.3 | Sva 13 SPIN_PROFILE knob-a bake-uju se iz GDD-a sa numeric bounds (windupMs / accelMs / steadyMs / decelMs / staggerMs / bouncePx / bounceDecay / bounceCount / bounceElasticity / decelEasingSpeed / windupFrames / windupPx) | ✅ |
+| B5.4 | Parser: `extractSpinTempo()` — heading varijante (Spin Tempo / Reel Tempo / Spin Cadence / Spin Timing) | ✅ |
+| B5.5 | `buildSlotHTML.mjs`: inline `const SPIN_PROFILE = { ... }` zamenjen sa `${emitSpinTempoRuntime(...)}` | ✅ |
+| B5.6 | Unit testovi: `tests/blocks/spinTempo.test.mjs` — **14/14 ✅** | ✅ |
+| B5.7 | Backward compat: GDD bez sekcije → s-avp defaults identični pre-block ponašanju | ✅ |
+
+### Wave B6 — anticipation LEGO blok (commit `__TBD__`)
+
+| ID | Feature | Status |
+|---|---|---|
+| B6.1 | `src/blocks/anticipation.mjs` — CSS emitter (reel + cell keyframe variants) + runtime emitter (HOLD_BASE + maybeArmAnticipation) | ✅ |
+| B6.2 | GDD knobs: `enabled` / `hold-ms` / `pulse-ms` / `gold` / `skip-during-fs` | ✅ |
+| B6.3 | `skip-during-fs: false` → uklanja FS-phase guard (anticipation radi i u FS_ACTIVE) | ✅ |
+| B6.4 | Parser: `extractAnticipation()` — heading varijante (Anticipation / Reel Anticipation) | ✅ |
+| B6.5 | `buildSlotHTML.mjs`: ~34 LOC inline CSS + ~115 LOC inline JS zamenjeno sa 2 emit-poziva | ✅ |
+| B6.6 | Unit testovi: `tests/blocks/anticipation.test.mjs` — **13/13 ✅** | ✅ |
+| B6.7 | Disabled mode → no-op `function maybeArmAnticipation() {}` stub (zero runtime cost) | ✅ |
+
+### Wave B7 — stageBadge LEGO blok (commit `__TBD__`)
+
+| ID | Feature | Status |
+|---|---|---|
+| B7.1 | `src/blocks/stageBadge.mjs` — CSS + Markup + Runtime emitter trio | ✅ |
+| B7.2 | GDD knobs: `enabled` / `base-label` / `fs-label` / `gold` / `pulse-ms` / `mobile-breakpoint` | ✅ |
+| B7.3 | Label injection safety — HTML escape + plain-text validator (rejects `<`, `>`, `{`, `}`, prazno, > 40 char) | ✅ |
+| B7.4 | Parser: `extractStageBadge()` — heading varijante (Stage Badge / Phase Badge / Live Indicator) | ✅ |
+| B7.5 | `buildSlotHTML.mjs`: 52 LOC inline CSS + 5 LOC HTML + 8 LOC JS zamenjeno sa 3 emit-poziva | ✅ |
+| B7.6 | `STAGE_BASE_LABEL` / `STAGE_FS_LABEL` const-evi izloženi runtime-u (umesto literal string-ova u `setStageBadge` pozivima) — GDD može da promeni label tekst bez touch-a u builder | ✅ |
+| B7.7 | Unit testovi: `tests/blocks/stageBadge.test.mjs` — **17/17 ✅** | ✅ |
+
 ### Wave Win-cycle per-LINE (commit `255689a`)
 | ID | Feature | Status |
 |---|---|---|
@@ -242,7 +287,7 @@
 
 ---
 
-## ✅ QA matrix (HEAD `6d1cb4d`)
+## ✅ QA matrix (HEAD `__TBD__`)
 
 | Suite | Coverage | Result |
 |---|---|---:|
@@ -255,9 +300,12 @@
 | `tools/spin-engine-audit.mjs` | 24 × real reel engine drives all column grids | **24/24 ✅ CLEAN** |
 | `tools/payline-overlay-spot-check.mjs` | 23 fixtures × SVG overlay snapshot | **23/23 ✅** |
 | `tests/blocks/paylines.test.mjs` | paylines block — pure builder + config (LEGO) | **12/12 ✅** |
-| `tests/blocks/winPresentation.test.mjs` | winPresentation block + parser→runtime roundtrip | **22/22 ✅** |
+| `tests/blocks/winPresentation.test.mjs` | winPresentation block + detectWinCombos B3 + roundtrip | **26/26 ✅** |
 | `tests/blocks/scatterCelebration.test.mjs` | scatterCelebration block + parser→runtime roundtrip | **22/22 ✅** |
-| **TOTAL** | | **221/221 ✅** |
+| `tests/blocks/stageBadge.test.mjs` | stageBadge block (CSS + Markup + Runtime + parser) | **17/17 ✅** |
+| `tests/blocks/anticipation.test.mjs` | anticipation block (CSS + Runtime + parser) | **13/13 ✅** |
+| `tests/blocks/spinTempo.test.mjs` | spinTempo block (presets + per-key + parser) | **14/14 ✅** |
+| **TOTAL** | | **265/265 ✅** |
 
 ---
 
@@ -265,16 +313,13 @@
 
 | Pri | Item | Why | Effort |
 |:-:|---|---|---|
-| 1 | **Wave B3 — `detectWinCombos` (cluster-mode evaluator) → `winPresentation.mjs` proširenje** | trenutno još uvek inline u builder-u; jedini razlog što cluster grids rade | M |
-| 2 | **Wave B4 — FS lifecycle helpers (`FSM_*`, intro/active/outro placards) → `src/blocks/freeSpins.mjs`** | najveći ostatak inline logike u builder-u | L |
-| 3 | **Wave B5 — reel spin engine (`buildReelColumns`, `runOneBaseSpin`, `commitStopSymbols`) → `src/blocks/reelSpin.mjs`** | engine je već extractovan kao funkcije ali još uvek inline u builder-u | L |
-| 4 | **Wave B6 — anticipation glow → `src/blocks/anticipation.mjs`** | per-reel hold glow + threshold gate | S |
-| 5 | **Wave B7 — stage badge → `src/blocks/stageBadge.mjs`** | BASE / FS pill u header-u | S |
-| 6 | **Wave J2 — Real reel engine for hex / diamond / pyramid / cross / l_shape** | irregular column shapes; need geometric "column" mapping | L |
-| 7 | **Wave J3 — SVG kinds (wheel / crash / radial / slingo / plinko)** — domain-specific spin animation | each kind needs its own engine; can't reuse rectangular | L |
-| 8 | **PAR / Math hot-swap injector** | README Phase 2 — placeholder math still in use | XL |
-| 9 | **Sound cue placeholders** (trigger sting, anticipation hum, FS placard whoosh) | currently silent; production demos want audio scaffolding | M |
-| 10 | **Wired modeling for 21 detected-but-unused feature kinds** (cascade / hold_and_win / multiplier / expanding_wild / walking_wild / sticky_wild / mystery_symbol / bonus_buy / bonus_pick / wheel_bonus / cluster_pays evaluator / ways evaluator / scatter_pay / lightning / respin / wild_reel / gamble / ante_bet / super_symbol / win_cap / persistent_multiplier) | parser detects, template ignores | XL |
+| 1 | **Wave B4 — FS lifecycle helpers (`FSM_*`, intro/active/outro placards) → `src/blocks/freeSpins.mjs`** | najveći ostatak inline logike u builder-u (~250 LOC placard CSS + ~120 LOC FSM driver) | L |
+| 2 | **Wave B5-engine — full reel spin engine (`buildReelColumns`, `runOneBaseSpin`, `onTickAll`, `commitStopSymbols`) → `src/blocks/reelSpin.mjs`** | B5 trenutno samo config — engine telo i dalje inline | L |
+| 3 | **Wave J2 — Real reel engine for hex / diamond / pyramid / cross / l_shape** | irregular column shapes; need geometric "column" mapping | L |
+| 4 | **Wave J3 — SVG kinds (wheel / crash / radial / slingo / plinko)** — domain-specific spin animation | each kind needs its own engine; can't reuse rectangular | L |
+| 5 | **PAR / Math hot-swap injector** | README Phase 2 — placeholder math still in use | XL |
+| 6 | **Sound cue placeholders** (trigger sting, anticipation hum, FS placard whoosh) | currently silent; production demos want audio scaffolding | M |
+| 7 | **Wired modeling for 21 detected-but-unused feature kinds** (cascade / hold_and_win / multiplier / expanding_wild / walking_wild / sticky_wild / mystery_symbol / bonus_buy / bonus_pick / wheel_bonus / cluster_pays evaluator / ways evaluator / scatter_pay / lightning / respin / wild_reel / gamble / ante_bet / super_symbol / win_cap / persistent_multiplier) | parser detects, template ignores | XL |
 
 ---
 
