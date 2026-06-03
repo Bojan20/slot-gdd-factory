@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `__TBD__` · main
+> Last updated: **2026-06-03** · HEAD: `07752ab` · main
 
 ---
 
@@ -119,7 +119,7 @@
 | WH5 | Works on every uniform-reel grid (rectangular + cluster + megaclusters + lock_respin + expanding + infinity + variable_reel) | ✅ |
 | WH6 | `prefers-reduced-motion` respected (no transition, no scale) | ✅ |
 
-### Wave J2 — diamond / pyramid / cross / l_shape real engine (commit `__TBD__`)
+### Wave J2 — diamond / pyramid / cross / l_shape real engine (commit `07752ab`)
 
 > **Irregular shape coverage**. Sve 4 shape sada koriste rectangular reel engine — kraj static-blink ere za HTML grid-ove. Engine voze identično kao rectangular + per-column visibleRows + anchor mode (center / bottom).
 
@@ -369,7 +369,7 @@
 
 ---
 
-## ✅ QA matrix (HEAD `__TBD__`)
+## ✅ QA matrix (HEAD `07752ab`)
 
 | Suite | Coverage | Result |
 |---|---|---:|
