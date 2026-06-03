@@ -1,7 +1,7 @@
 # Browser-render QA report
 
-**Generated**: 2026-06-03T20:14:49.525Z
-**Fixtures**: 23 · **PASS**: 23 · **FAIL**: 0
+**Generated**: 2026-06-03T21:25:08.664Z
+**Fixtures**: 24 · **PASS**: 24 · **FAIL**: 0
 
 ## Per-fixture results
 
@@ -30,3 +30,4 @@
 | `WRATH_OF_OLYMPUS_GAME_GDD.md` | rectangular | 15 | n/a→n/a | static → static | 0 | `reports/screenshots/WRATH_OF_OLYMPUS_GAME_GDD.png` | ✅ |
 | `CRYSTAL_FORGE_GAME_GDD.md` | rectangular | 15 | n/a→n/a | static → static | 0 | `reports/screenshots/CRYSTAL_FORGE_GAME_GDD.png` | ✅ |
 | `MIDNIGHT_FANGS_GAME_GDD.md` | cluster | 30 | n/a→n/a | static → static | 0 | `reports/screenshots/MIDNIGHT_FANGS_GAME_GDD.png` | ✅ |
+| `GATES_OF_OLYMPUS_1000_GAME_GDD.md` | rectangular | 30 | n/a→n/a | static → static | 0 | `reports/screenshots/GATES_OF_OLYMPUS_1000_GAME_GDD.png` | ✅ |

@@ -74,6 +74,33 @@ import {
   emitReelEngineRuntime,
   resolveConfig as resolveReelEngineHotConfig,
 } from './blocks/reelEngine.mjs';
+/* Wave K — Pay-Anywhere suite (Gates of Olympus / Sugar Rush family) */
+import {
+  emitPayAnywhereEvalRuntime,
+  resolveConfig as resolvePayAnywhereEvalConfig,
+} from './blocks/payAnywhereEval.mjs';
+import {
+  emitTumbleCSS,
+  emitTumbleRuntime,
+  resolveConfig as resolveTumbleConfig,
+} from './blocks/tumble.mjs';
+import {
+  emitMultiplierOrbCSS,
+  emitMultiplierOrbRuntime,
+  resolveConfig as resolveMultiplierOrbConfig,
+} from './blocks/multiplierOrb.mjs';
+import {
+  emitBonusBuyCSS,
+  emitBonusBuyMarkup,
+  emitBonusBuyRuntime,
+  resolveConfig as resolveBonusBuyConfig,
+} from './blocks/bonusBuy.mjs';
+import {
+  emitAnteBetCSS,
+  emitAnteBetMarkup,
+  emitAnteBetRuntime,
+  resolveConfig as resolveAnteBetConfig,
+} from './blocks/anteBet.mjs';
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({
@@ -545,6 +572,10 @@ ${emitAnticipationCSS(resolveAnticipationConfig(model))}
 }
 
 ${emitScatterCelebrationCSS(resolveScatterCelebrationConfig(model))}
+${emitTumbleCSS(resolveTumbleConfig(model))}
+${emitMultiplierOrbCSS(resolveMultiplierOrbConfig(model))}
+${emitBonusBuyCSS(resolveBonusBuyConfig(model))}
+${emitAnteBetCSS(resolveAnteBetConfig(model))}
 
 /* ── Win-symbol cycle ── independent modular block ────────────────────────
    Plays AFTER reels settle on a non-trigger BASE spin. Multiple winning
@@ -767,6 +798,9 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
         title="DEV — force Free Spins entry">FS</button>
 
 ${emitFreeSpinsOverlayMarkup(resolveFreeSpinsConfig(model))}
+
+${emitBonusBuyMarkup(resolveBonusBuyConfig(model))}
+${emitAnteBetMarkup(resolveAnteBetConfig(model))}
 
 <script>
   const POOL = ${JSON.stringify(pool.map(s => s.id))};
@@ -1022,6 +1056,17 @@ ${emitFreeSpinsOverlayMarkup(resolveFreeSpinsConfig(model))}
   ${emitWinPresentationRuntime(resolveWinPresentationConfig(model))}
 
   ${emitScatterCelebrationRuntime(resolveScatterCelebrationConfig(model))}
+
+  /* Wave K — Pay-Anywhere suite. Order matters:
+       1. multiplierOrb (annotates orbs + provides accumulateOrbMultiplier)
+       2. payAnywhereEval (detectPayAnywhereWins consumes annotated grid)
+       3. tumble (runTumbleChain consumes detect + orb accumulation)
+       4. bonusBuy / anteBet (UI bindings, last) */
+  ${emitMultiplierOrbRuntime(resolveMultiplierOrbConfig(model))}
+  ${emitPayAnywhereEvalRuntime(resolvePayAnywhereEvalConfig(model))}
+  ${emitTumbleRuntime(resolveTumbleConfig(model))}
+  ${emitBonusBuyRuntime(resolveBonusBuyConfig(model))}
+  ${emitAnteBetRuntime(resolveAnteBetConfig(model))}
 
   ${emitPostSpinRuntime(resolvePostSpinConfig(model))}
 

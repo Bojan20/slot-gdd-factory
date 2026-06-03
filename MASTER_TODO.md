@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `07752ab` · main
+> Last updated: **2026-06-03** · HEAD: `pending-K` · main
 
 ---
 
@@ -118,6 +118,37 @@
 | WH4 | 30% no-win variance — not every spin lights up (placeholder until math evaluator) | ✅ |
 | WH5 | Works on every uniform-reel grid (rectangular + cluster + megaclusters + lock_respin + expanding + infinity + variable_reel) | ✅ |
 | WH6 | `prefers-reduced-motion` respected (no transition, no scale) | ✅ |
+
+### Wave K — Pay-Anywhere suite (Gates of Olympus 1000 family) (commit `pending`)
+
+> **Six deficiencies identified during Gates of Olympus 1000 GDD analysis
+> turned into one cohesive wave**. Parser now reads emoji bucket paytables
+> (8-9 / 10-11 / 12+), Specials block detects Multiplier Orb, and 5 new
+> LEGO blocks deliver scatter-pays evaluation + tumble cascade + orb
+> accumulation + buy-bonus button + ante-bet toggle. WoO/CF/MF continue
+> unchanged (backward compat via auto-enable from topology + features).
+
+| ID | Feature | Files | Status |
+|---|---|---|---|
+| K1 | `payAnywhereEval.mjs` — count-based scatter-pays evaluator. Detects every regular symbol with COUNT ≥ minWin; wild substitutes for every regular; bucket lookup `8-9 / 10-11 / 12+`; tier-sorted events (HP→MP→LP→WILD); MAX_EVENTS cap. Drop-in replacement for `detectLineWins` on pay_anywhere grids. | `src/blocks/payAnywhereEval.mjs` | ✅ |
+| K2 | `tumble.mjs` — cascade runtime (`runTumbleChain(detectFn)` → async iterator). Remove winning cells → gravity drop survivors → refill from reel strip → loop until no wins. Multiplier orbs preserved across chain. CSS keyframes: tumbleRemove + tumbleDrop. | `src/blocks/tumble.mjs` | ✅ |
+| K3 | `multiplierOrb.mjs` — orb symbol annotation + accumulation. `annotateOrbs()` decorates visible orb cells with `data-orb-value`; `accumulateOrbMultiplier()` sums visible orb values; FS-mode persistent `BONUS_MULTIPLIER` (akumulirajući rule). Weighted-random distribution (2x-1000x scale, log-decay). | `src/blocks/multiplierOrb.mjs` | ✅ |
+| K4 | `bonusBuy.mjs` — Buy Bonus button UI + force-trigger wiring. Bottom-right FAB with cost label (100× BET default). Click → `FORCE_TRIGGER = N` + `runOneBaseSpin()` so the existing FS lifecycle handles the rest. | `src/blocks/bonusBuy.mjs` | ✅ |
+| K5 | `anteBet.mjs` — Ante Bet toggle UI + cost/trigger flags. Bottom-left switch (`+25%` default). Toggles `window.ANTE_BET_ON`; PAR layer (Phase 2) will read the flag for real bet calculation. Keyboard-accessible (Space/Enter). | `src/blocks/anteBet.mjs` | ✅ |
+| K6 | Parser `extractPayAnywhereEval()` — reads emoji bucket paytables (`\| ID \| Name \| min8 \| 8-9 \| 10-11 \| 12+ \|`) from High-pay/Mid-pay/Low-pay sections. Auto-detects bucket edges from column headers; sets `payAnywhereEval.{paytable, bucketEdges, minWin}`. | `src/parser.mjs` | ✅ |
+| K7 | Parser `extractMultiplierOrb()` — detects "Multiplier Orb" row in Specials; reads value range from Role column ("2x – 1000x"); auto-builds graduated distribution from range. Detects FS akumulirajući mode → sets `bonusAccumulate=true`. | `src/parser.mjs` | ✅ |
+| K8 | Parser `extractBonusBuy()` — reads `## Bonus Buy` section (numbered prefix `## 07 · Bonus Buy` supported); extracts Cena/Cost cell (`**100x**` bold tolerant); reads guaranteed scatter count. | `src/parser.mjs` | ✅ |
+| K9 | Parser `extractAnteBet()` — reads `## Ante Bet` section; extracts cost percentage (`+25%`) → `costMultiplier=1.25`; detects "duplira/double" → `triggerMultiplier=2`. | `src/parser.mjs` | ✅ |
+| K10 | Parser `extractTumble()` — reads `## Tumble (Cascade) Mechanic` section knobs (`remove-ms`, `gravity-ms`, `refill-ms`, `chain-pause-ms`, `max-chain`, `preserve-orbs`). Numbered heading prefix supported. | `src/parser.mjs` | ✅ |
+| K11 | `extractSymbolBlock` hardened — ID regex requires leading LETTER (was `[A-Za-z0-9_]`), rejects pay multipliers like `"10x"` and bucket thresholds like `"8"` as fake IDs. Dedupes via Set. Skips rows where Name column matches `\d+(\.\d+)?\s*x?` or `\d+\s*[-+–]\s*\d*`. | `src/parser.mjs` | ✅ |
+| K12 | **CRITICAL BUG FIX**: JS regex `\Z` anchor → JavaScript engines treat as literal `Z`, truncating any Markdown section where a row contains "Zeus", "Z (Crown)", etc. Replaced 3 occurrences with portable `$(?![\s\S])` "true end of input" pattern. (Same bug latent in `stripSymbolTables` but unobserved.) | `src/parser.mjs` | ✅ |
+| K13 | Orchestrator wire-up: 6 new imports + 4 CSS emit calls + 2 markup emit calls + 5 runtime emit calls. Order matters (`multiplierOrb` → `payAnywhereEval` → `tumble` → `bonusBuy` → `anteBet`). | `src/buildSlotHTML.mjs` | ✅ |
+| K14 | `freshModel()` extended with 5 new top-level slots (payAnywhereEval / tumble / multiplierOrb / bonusBuy / anteBet) — all `undefined` so block defaults stay backward-compatible for every existing fixture. | `src/parser.mjs` | ✅ |
+| K15 | Sample fixture: `samples/GATES_OF_OLYMPUS_1000_GAME_GDD.md` — full 12-page PDF rendered to markdown with 6×5 topology, bucket paytable for 9 regular symbols + Scatter + Multiplier Orb, Bonus Buy 100x, Ante Bet +25%, akumulirajući FS multiplier. | `samples/` | ✅ |
+| K16 | Unit tests — **116/116 ✅** across 5 new blocks (payAnywhereEval 18, tumble 30, multiplierOrb 24, bonusBuy 21, anteBet 23) covering defaults, auto-enable, override, clamps, CSS emit, markup emit, runtime literal bake, window exposure, reduced-motion gates. | `tests/blocks/*.test.mjs` | ✅ |
+| K17 | Browser render audit — `tests/render-browser-all.mjs` updated to include GoO 1000 fixture. **24/24 ✅ · 0 console errors** (WoO/CF/MF unchanged + GoO new). All grid invariants preserved on rectangular pay_anywhere. | `tests/render-browser-all.mjs` | ✅ |
+| K18 | LEGO integrity grep — orchestrator has 0 inline definitions across original 12 names + 11 new K-wave names (`detectPayAnywhereWins`, `runTumbleChain`, `annotateOrbs`, etc.). Pred-commit gate passes. | — | ✅ |
+| K19 | npm `test:blocks` script — runs all 16 block test files sequentially with `&&` chain. Combined: **322 + 116 = 438 block-test cases pass**. | `package.json` | ✅ |
 
 ### Wave J2 — diamond / pyramid / cross / l_shape real engine (commit `07752ab`)
 
@@ -412,7 +443,7 @@
 | 4 | **Wave J3 — SVG kinds (wheel / crash / radial / slingo / plinko)** — domain-specific spin animation | each kind needs its own engine; can't reuse rectangular | L |
 | 5 | **PAR / Math hot-swap injector** | README Phase 2 — placeholder math still in use | XL |
 | 6 | **Sound cue placeholders** (trigger sting, anticipation hum, FS placard whoosh) | currently silent; production demos want audio scaffolding | M |
-| 7 | **Wired modeling for 21 detected-but-unused feature kinds** (cascade / hold_and_win / multiplier / expanding_wild / walking_wild / sticky_wild / mystery_symbol / bonus_buy / bonus_pick / wheel_bonus / cluster_pays evaluator / ways evaluator / scatter_pay / lightning / respin / wild_reel / gamble / ante_bet / super_symbol / win_cap / persistent_multiplier) | parser detects, template ignores | XL |
+| 7 | **Wired modeling for ~16 detected-but-unused feature kinds** (hold_and_win / expanding_wild / walking_wild / sticky_wild / mystery_symbol / bonus_pick / wheel_bonus / cluster_pays evaluator / ways evaluator / lightning / respin / wild_reel / gamble / super_symbol / win_cap / persistent_multiplier) — Wave K shipped cascade/multiplier(orb)/bonus_buy/ante_bet/scatter_pay/pay_anywhere | parser detects, template ignores | XL |
 
 ---
 

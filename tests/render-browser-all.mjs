@@ -187,13 +187,14 @@ async function runFixture(browser, fixturePath, errors) {
   const errors = [];
   const results = [];
 
-  /* gather fixtures: 19 from samples/grids + 3 originals */
+  /* gather fixtures: 19 from samples/grids + 4 originals (incl. GoO 1000) */
   const fixtures = [
     ...readdirSync(resolve(REPO, 'samples/grids')).filter(f => f.endsWith('.md'))
       .map(f => resolve(REPO, 'samples/grids', f)),
     resolve(REPO, 'samples/WRATH_OF_OLYMPUS_GAME_GDD.md'),
     resolve(REPO, 'samples/CRYSTAL_FORGE_GAME_GDD.md'),
     resolve(REPO, 'samples/MIDNIGHT_FANGS_GAME_GDD.md'),
+    resolve(REPO, 'samples/GATES_OF_OLYMPUS_1000_GAME_GDD.md'),
   ].filter(f => existsSync(f));
 
   for (const f of fixtures) {

@@ -141,6 +141,14 @@ export function parseMarkdownGDD(text) {
      cadence + bounce snap thresholds) */
   extractReelEngineHot(text, model);
 
+  /* Wave K — Pay Anywhere suite (Gates of Olympus / Sugar Rush family).
+     Each detector is no-op when the GDD lacks the relevant section/feature. */
+  extractPayAnywhereEval(text, model);
+  extractMultiplierOrb(text, model);
+  extractBonusBuy(text, model);
+  extractAnteBet(text, model);
+  extractTumble(text, model);
+
   // math (RTP / volatility / max-win) intentionally NOT extracted in this phase.
 
   return model;
@@ -678,13 +686,24 @@ export function extractSymbolBlock(text, headingRegex, sink) {
   const end = rest.search(/\n##\s|\n###\s/);
   const chunk = end >= 0 ? rest.slice(0, end) : rest;
   // accept table rows like: | `D` | Diamond | … | or | D | Diamond | … |
-  const rowRe = /\|\s*`?([A-Za-z0-9_]{1,4})`?\s*\|\s*([^|]+?)\s*\|/g;
+  // ID MUST start with a letter — guards against multi-column pay tables
+  // (e.g. Gates of Olympus 6-col format) where the regex would otherwise
+  // pick up pay multipliers like "10x" or count thresholds like "8" as IDs.
+  const rowRe = /\|\s*`?([A-Za-z][A-Za-z0-9_]{0,3})`?\s*\|\s*([^|]+?)\s*\|/g;
+  const seen = new Set();
   let m;
   while ((m = rowRe.exec(chunk)) !== null) {
     const id = m[1].trim();
     const name = m[2].trim();
     if (id.toLowerCase() === 'id' || name.toLowerCase() === 'name') continue;
     if (id.length > 4) continue;
+    // Skip Name cells that look like pay multipliers ("10x", "2.5x", "1000x")
+    if (/^\d+(?:\.\d+)?\s*x?$/i.test(name)) continue;
+    // Skip Name cells that are bucket headers ("8-9", "10-11", "12+")
+    if (/^\d+\s*[-+–]\s*\d*$/.test(name)) continue;
+    // Dedupe (multi-column tables may emit the same row twice via regex backtrack)
+    if (seen.has(id)) continue;
+    seen.add(id);
     sink.push({ id, name });
   }
 }
@@ -1017,6 +1036,48 @@ function freshModel() {
       glowColor: undefined,
       /* number — brightness peak inside a cycle */
       glowPeak: undefined,
+    },
+    /* Wave K — Pay Anywhere suite (Gates of Olympus / Sugar Rush style).
+       Each sub-block has `undefined` slots so its resolveConfig() falls
+       through to safe defaults. Populated by Wave K extract functions. */
+    payAnywhereEval: {
+      enabled: undefined,
+      minWin: undefined,
+      bucketEdges: undefined,
+      paytable: undefined,
+      maxEvents: undefined,
+    },
+    tumble: {
+      enabled: undefined,
+      removeMs: undefined,
+      gravityMs: undefined,
+      refillMs: undefined,
+      chainPauseMs: undefined,
+      maxChain: undefined,
+      preserveOrbs: undefined,
+    },
+    multiplierOrb: {
+      enabled: undefined,
+      symbolId: undefined,
+      distribution: undefined,
+      bonusAccumulate: undefined,
+      chipColor: undefined,
+      pulseMs: undefined,
+    },
+    bonusBuy: {
+      enabled: undefined,
+      costX: undefined,
+      label: undefined,
+      forceScatters: undefined,
+      color: undefined,
+      confirmMessage: undefined,
+    },
+    anteBet: {
+      enabled: undefined,
+      costMultiplier: undefined,
+      triggerMultiplier: undefined,
+      label: undefined,
+      color: undefined,
     },
     confidence: { name: 0, topology: 0, symbols: 0, features: 0 },
   };
@@ -1402,4 +1463,229 @@ export function extractReelEngineHot(text, model) {
     const m = section.match(rx);
     if (m) rh[k] = parseFloat(m[1]);
   }
+}
+
+/* ─── Wave K — extractors for Pay-Anywhere suite ──────────────────────────── */
+
+/* ── extractPayAnywhereEval — bucket-paytable from emoji symbol tables ───
+   Reads paytables under "### High-pay" / "### Mid-pay" / "### Low-pay"
+   shaped like:
+
+     | ID | Name | min8 | 8-9 | 10-11 | 12+ |
+     |---|---|:-:|:-:|:-:|:-:|
+     | `Z` | Zeus (Crown) | 8 | 10x | 25x | 50x |
+
+   Buckets are inferred from header columns matching `\d+[-+]\d*`. Output:
+     model.payAnywhereEval.paytable = { Z: [10, 25, 50], H: [2.5, 10, 25] }
+     model.payAnywhereEval.bucketEdges = [10, 12]
+     model.payAnywhereEval.minWin = 8
+
+   No-op when topology.evaluation !== 'pay_anywhere' (line-pays games
+   keep their per-line paytables — bucket rule would corrupt them). */
+export function extractPayAnywhereEval(text, model) {
+  if (!text || !model) return;
+  if (!model.topology || model.topology.evaluation !== 'pay_anywhere') return;
+  const pae = model.payAnywhereEval;
+  pae.enabled = true;
+
+  // Section headers we should scan
+  const headers = ['High[\\s-]?pay', 'Mid[\\s-]?pay', 'Low[\\s-]?pay'];
+  const paytable = {};
+  let bucketEdges = null;
+  let minWin = null;
+
+  for (const h of headers) {
+    const headingRx = new RegExp(`###[^\\n]*\\b${h}\\b[^\\n]*\\n`, 'i');
+    const hm = text.match(headingRx);
+    if (!hm) continue;
+    const start = hm.index + hm[0].length;
+    const rest = text.slice(start, start + 4000);
+    const end = rest.search(/\n##\s|\n###\s/);
+    const chunk = end >= 0 ? rest.slice(0, end) : rest;
+
+    // Parse header row (first | … | with bucket columns like "8-9", "10-11", "12+")
+    const headerLineMatch = chunk.match(/^\s*\|([^\n]+)\|\s*$/m);
+    if (!headerLineMatch) continue;
+    const cols = headerLineMatch[1].split('|').map(s => s.trim());
+    // Locate columns labeled like "8-9", "10-11", "12+" (bucket ranges)
+    const bucketColIdx = [];
+    const edges = [];
+    for (let i = 0; i < cols.length; i++) {
+      const c = cols[i];
+      const range = c.match(/^(\d+)\s*[-–]\s*(\d+)$/);
+      const open  = c.match(/^(\d+)\s*\+$/);
+      if (range) { bucketColIdx.push(i); edges.push(parseInt(range[1], 10)); }
+      else if (open) { bucketColIdx.push(i); edges.push(parseInt(open[1], 10)); }
+    }
+    if (bucketColIdx.length < 2) continue;
+
+    // Use the first edge as minWin if not yet set
+    if (minWin == null) minWin = edges[0];
+    // bucketEdges = the SUBSEQUENT bucket start values (drop first)
+    if (!bucketEdges) bucketEdges = edges.slice(1);
+
+    // Parse data rows
+    const dataRowRe = /^\s*\|([^\n]+)\|\s*$/gm;
+    let m;
+    while ((m = dataRowRe.exec(chunk)) !== null) {
+      const rowCols = m[1].split('|').map(s => s.trim());
+      // Skip the header itself and divider rows
+      if (rowCols.every(c => /^[:-\s]+$/.test(c))) continue;
+      const idCol = rowCols[0] ? rowCols[0].replace(/[`*]/g, '').trim() : '';
+      if (!idCol || idCol.toLowerCase() === 'id') continue;
+      const id = idCol.match(/^([A-Za-z0-9_]{1,4})$/);
+      if (!id) continue;
+      const symId = id[1].toUpperCase();
+      const payouts = bucketColIdx.map(ci => {
+        const v = rowCols[ci] || '';
+        const num = v.match(/(\d+(?:\.\d+)?)\s*x?/i);
+        return num ? parseFloat(num[1]) : 0;
+      });
+      if (payouts.some(p => p > 0)) paytable[symId] = payouts;
+    }
+  }
+
+  if (Object.keys(paytable).length > 0) {
+    pae.paytable = paytable;
+    if (bucketEdges && bucketEdges.length > 0) pae.bucketEdges = bucketEdges;
+    if (minWin != null) pae.minWin = minWin;
+  }
+}
+
+/* ── extractMultiplierOrb — detect orb symbol + value distribution ──── */
+export function extractMultiplierOrb(text, model) {
+  if (!text || !model) return;
+  const orb = model.multiplierOrb;
+
+  // Look in Specials block for a row mentioning "Multiplier Orb" / "Orb".
+  // CRITICAL: JS regex does NOT support `\Z` (Perl/Ruby anchor for end of
+  // input). Using `\Z` made the engine treat it as a literal `Z` character,
+  // truncating any Specials block where a row contained the word "Zeus".
+  // `$(?![\s\S])` is the portable "true end of input" pattern.
+  const specialsBlock = text.match(/###[^\n]*\bSpecials?\b[^\n]*\n([\s\S]*?)(?=\n##\s|\n###\s|$(?![\s\S]))/i);
+  if (specialsBlock) {
+    const rows = specialsBlock[1].split(/\n/);
+    for (const row of rows) {
+      // Split on `|` and take all non-empty cells (handles 3/4/5/6-col tables uniformly)
+      const cells = row.split('|').map(s => s.trim()).filter(s => s.length > 0);
+      if (cells.length < 2) continue;
+      const idRaw = cells[0].replace(/[`*]/g, '').trim();
+      const name = cells[1] || '';
+      // Concatenate all REMAINING cells as the "role/description" — that's
+      // where the value range lives in multi-column variants.
+      const role = cells.slice(2).join(' ');
+      if (!/^[A-Za-z][A-Za-z0-9_]{0,3}$/.test(idRaw)) continue;
+      const id = idRaw;
+      if (/orb|multiplier/i.test(name) && id.length <= 4) {
+        orb.enabled = true;
+        orb.symbolId = id.toUpperCase();
+        // Try to read range from role: "2x – 1000x"
+        const range = role.match(/(\d+)\s*x?\s*[–\-]\s*(\d+)\s*x?/);
+        if (range) {
+          const lo = parseInt(range[1], 10);
+          const hi = parseInt(range[2], 10);
+          if (lo > 0 && hi > lo) {
+            // Build a graduated distribution between lo and hi (log-decaying)
+            const dist = [];
+            const baseVals = [2,3,4,5,6,8,10,12,15,20,25,50,100,250,500,1000].filter(v => v >= lo && v <= hi);
+            for (const v of baseVals) {
+              // Weight: higher value = much lower weight (log decay)
+              const w = Math.max(0.5, 500 / Math.pow(v, 1.3));
+              dist.push({ value: v, weight: parseFloat(w.toFixed(2)) });
+            }
+            if (dist.length > 0) orb.distribution = dist;
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  // bonusAccumulate auto-enable when FS block mentions accumulating / progressive multiplier
+  if (orb.enabled && /\b(akumulira|accumulat|progresiv|persistent|bonus[\s_]?multiplier|grows)\b/i.test(text)) {
+    orb.bonusAccumulate = true;
+  }
+}
+
+/* ── extractBonusBuy — detect cost + force-scatter count ─────────────── */
+export function extractBonusBuy(text, model) {
+  if (!text || !model) return;
+  const has = /\bbonus[\s_-]?buy\b|\bbuy[\s_-]?(?:feature|bonus|fs)\b|\bfeature[\s_-]?buy\b/i.test(text);
+  if (!has) return;
+  const bb = model.bonusBuy;
+  bb.enabled = true;
+
+  // Section: "## Bonus Buy" or "## 07 · Bonus Buy" — read Cena (Cost) cell.
+  // Allow numbered heading prefix (`07 · ` / `07. ` / `7) `) before the title.
+  // `$(?![\s\S])` is the portable JS-safe "true end of input" (JS lacks `\Z`).
+  const sec = text.match(/^##\s*(?:\d+[\s.·)\-]+)?Bonus\s*Buy[^\n]*\n([\s\S]*?)(?=\n##\s|$(?![\s\S]))/im);
+  if (sec) {
+    const body = sec[1];
+    const cost = body.match(/\|\s*(?:Cena|Cost|Price)\s*\|\s*\*?\*?(\d+)\s*x?\s*\*?\*?/i);
+    if (cost) bb.costX = parseInt(cost[1], 10);
+    const guar = body.match(/\|\s*(?:Garantuje|Guarantee[s]?)\s*\|[^|\n]*?(\d+)\s*\+?\s*Scatter/i);
+    if (guar) bb.forceScatters = parseInt(guar[1], 10);
+  } else {
+    // Fallback prose: "Bonus Buy: 100x", "Buy Feature 75x"
+    const cost = text.match(/\bbonus[\s_-]?buy[^\n.]{0,40}?(\d+)\s*x\b|\bbuy[\s_-]?(?:feature|bonus)[^\n.]{0,40}?(\d+)\s*x\b/i);
+    if (cost) bb.costX = parseInt(cost[1] || cost[2], 10);
+  }
+}
+
+/* ── extractAnteBet — detect cost multiplier + trigger boost ─────────── */
+export function extractAnteBet(text, model) {
+  if (!text || !model) return;
+  const has = /\bante[\s_-]?bet\b/i.test(text);
+  if (!has) return;
+  const ab = model.anteBet;
+  ab.enabled = true;
+
+  const sec = text.match(/^##\s*(?:\d+[\s.·)\-]+)?Ante\s*Bet[^\n]*\n([\s\S]*?)(?=\n##\s|$(?![\s\S]))/im);
+  if (sec) {
+    const body = sec[1];
+    // Cena: "+25% uloga" / "+20% bet"
+    const pct = body.match(/\|\s*(?:Cena|Cost|Price)\s*\|[^|\n]*?\+(\d+)\s*%/i);
+    if (pct) ab.costMultiplier = 1 + (parseInt(pct[1], 10) / 100);
+    // Trigger doubled
+    if (/\b(duplira|double[sd]?|2x)\b/i.test(body)) ab.triggerMultiplier = 2;
+    else {
+      const m = body.match(/\b(?:×|x)\s*(\d+(?:\.\d+)?)\s+(?:trigger|verovatno[čć])/i);
+      if (m) ab.triggerMultiplier = parseFloat(m[1]);
+    }
+  } else {
+    // Fallback prose
+    const pct = text.match(/\bante[\s_-]?bet[^\n.]{0,40}?\+(\d+)\s*%/i);
+    if (pct) ab.costMultiplier = 1 + (parseInt(pct[1], 10) / 100);
+  }
+}
+
+/* ── extractTumble — read tumble block knobs ─────────────────────────── */
+export function extractTumble(text, model) {
+  if (!text || !model) return;
+  const tu = model.tumble;
+  // If topology already detected cascade, mirror enable
+  if (model.topology && model.topology.cascade && model.topology.cascade.enabled) {
+    tu.enabled = true;
+  }
+  const headingRx = /^##\s*(?:\d+[\s.·)\-]+)?(?:tumble|cascade|avalanche)[^\n]*\n/im;
+  const hm = text.match(headingRx);
+  if (!hm) return;
+  const start = hm.index + hm[0].length;
+  const tail = text.slice(start);
+  const nextH = tail.match(/^#{1,2}\s/m);
+  const section = nextH ? tail.slice(0, nextH.index) : tail;
+
+  const intMap = [
+    ['removeMs',     /\bremove[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['gravityMs',    /\bgravity[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['refillMs',     /\brefill[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['chainPauseMs', /\bchain[- ]?pause[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['maxChain',     /\bmax[- ]?chain\s*[:=]\s*(\d+)/i],
+  ];
+  for (const [k, rx] of intMap) {
+    const m = section.match(rx);
+    if (m) tu[k] = parseInt(m[1], 10);
+  }
+  if (/\bpreserve[- ]?orbs?\s*[:=]\s*(true|yes|on)/i.test(section)) tu.preserveOrbs = true;
+  if (/\bpreserve[- ]?orbs?\s*[:=]\s*(false|no|off)/i.test(section)) tu.preserveOrbs = false;
 }
