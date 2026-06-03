@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `037541f` · main
+> Last updated: **2026-06-03** · HEAD: `0a5f1c1` · main
 
 ---
 
@@ -164,9 +164,36 @@
 | AU4 | `startSpinAll` clears stale `glowTimerId` + removes leftover class so late timer can't flash next round | ✅ |
 | AU5 | Cabinet "one-by-one" cadence preserved (glow appears just-in-time, not all-at-once) | ✅ |
 
+### Wave Win-cycle subtle (commit `88d7e00`)
+| ID | Feature | Status |
+|---|---|---|
+| WS1 | Removed `scale(1.25)` + `rotate(±8°)` — symbol stays strictly inside reel cell | ✅ |
+| WS2 | `winsym-pulse` keyframe = brightness pulse only (1 → 1.35 → 1.18 → 1) + soft gold drop-shadow | ✅ |
+| WS3 | `scatter-celebrate` keyframe = brightness pulse (1 → 1.5 → 1.2 → 1) + drop-shadow, NO transform | ✅ |
+| WS4 | Reads as visible cluster purely through luminance contrast (dim peers 0.22 / 0.18) | ✅ |
+| WS5 | `prefers-reduced-motion` falls back to static brightness boost | ✅ |
+
+### Wave Win-cycle ultimate (commit `0a5f1c1`)
+| ID | Feature | Status |
+|---|---|---|
+| WU1 | `SYMBOL_REGISTRY` built in buildSlotHTML from `model.symbols.{high, mid, low, specials}` | ✅ |
+| WU2 | Registry shape: `{ regularPay[], wild, scatter, tier{} }` injected as inline JS constant | ✅ |
+| WU3 | `detectWinCombos()` returns one event per HP/MP/LP symbol with ≥3 hits (no more "top 3 only") | ✅ |
+| WU4 | Wild cells joined to every regular event (substitute rendering) | ✅ |
+| WU5 | Wild count contributes to ≥3 threshold (2K + 1W counts as 3K) | ✅ |
+| WU6 | Wild-only fallback event when no regular meets threshold but ≥3 wilds present | ✅ |
+| WU7 | Tier-sorted: HP → MP → LP → WILD, longer line first within tier | ✅ |
+| WU8 | Hard cap `MAX_EVENTS = 8` per spin (industry parity) | ✅ |
+| WU9 | Adaptive cycle pacing: ≤4 events = 500ms each, 5+ events = 400ms each | ✅ |
+| WU10 | Override via `playWinSymCycle({ perEventMs })` (legacy `perComboMs` alias kept) | ✅ |
+| WU11 | `applyWinHighlight()` returns `Promise<void>` — awaitable in any flow | ✅ |
+| WU12 | Win cycle runs in BASE **and** FS_ACTIVE (suppressed only during FS_INTRO / FS_OUTRO placards) | ✅ |
+| WU13 | `handlePostSpin(duringFs=true)` awaits cycle before queuing next FS spin (250ms breath) | ✅ |
+| WU14 | Live verified on WoO GDD: regularPay=11, wild=W, scatter=S, tier sort correct | ✅ |
+
 ---
 
-## ✅ QA matrix (HEAD `037541f`)
+## ✅ QA matrix (HEAD `0a5f1c1`)
 
 | Suite | Coverage | Result |
 |---|---|---:|
@@ -252,3 +279,7 @@
 | 24 | `20bfc04` | feat(fx): scatter celebration — modular block before FS placard |
 | 25 | `037541f` | feat(fx): win-symbol cycle + uniform anticipation glow + FS gate |
 | 26 | `ed1ca54` | docs(master-todo): scatter celebration + win-cycle + anticipation-uniform |
+| 27 | `671c273` | docs(master-todo): self-reference hash for ed1ca54 entry |
+| 28 | `88d7e00` | style(win): subtler win-symbol pulse — contained inside the reel cell |
+| 29 | `0a5f1c1` | feat(win): per-symbol event cycle — HP/MP/LP/Wild aware, runs in FS too |
+| 30 | `__TBD__` | docs(master-todo): WS1-5 + WU1-14 + anchor to 0a5f1c1 |
