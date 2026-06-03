@@ -157,7 +157,12 @@ async function runOne(file) {
   await page.screenshot({ path: resolve(QA_DIR, slug, 'active.png') });
 
   /* ── 3. Wait for the whole FS round to finish (poll the FSM phase) ─ */
-  const maxWaitMs = 120_000;
+  /* Budget raised to 300s — BG and FS now share the same cinematic
+     SPIN_PROFILE (no faster FS tempo). Cluster 7×7 + 35-spin FS round =
+     ~120s spin time + intro/outro overhead, so 120s budget no longer
+     fits. 300s is generous; a real FS round on real hardware finishes
+     well under the cap. */
+  const maxWaitMs = 300_000;
   const pollMs    = 400;
   const start     = Date.now();
   while ((Date.now() - start) < maxWaitMs) {

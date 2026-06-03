@@ -1053,7 +1053,10 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
        reel 4 :  ~2.36s
        reel 5 :  ~2.68s
      Total spin ~2.7s — matches the reference base-game cadence. */
-  const SPIN_PROFILE_BASE = {
+  /* SINGLE profile used in BOTH base game and free spins — Boki rule:
+     reel spin + reel stop speed must be identical in BG and FS across
+     every grid. No bonus-tempo flip. */
+  const SPIN_PROFILE = {
     windupMs: 100, windupFrames: 6, windupPx: 38,
     accelMs: 120, steadyMs: 830, decelMs: 350,
     staggerMs: 320,
@@ -1062,18 +1065,6 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
        Smaller value = slower approach to target (more visible decel). */
     decelEasingSpeed: 0.11,
   };
-  /* Faster cadence during FS_ACTIVE — industry-standard "you are in the
-     bonus, every spin matters" tempo. Same engine, shorter windup +
-     steady + stagger so a 30-spin FS round lands inside the QA budget. */
-  const SPIN_PROFILE_FS = {
-    windupMs: 70, windupFrames: 5, windupPx: 28,
-    accelMs: 90, steadyMs: 460, decelMs: 240,
-    staggerMs: 180,
-    bouncePx: 3, bounceDecay: 0.5, bounceCount: 1, bounceElasticity: 1.6,
-    decelEasingSpeed: 0.14,
-  };
-  /* Current active profile — flipped by startSpinAll on FSM phase. */
-  let SPIN_PROFILE = SPIN_PROFILE_BASE;
 
   /* Public state of the engine */
   let spinTicker = null;
@@ -1227,13 +1218,6 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
      by the post-spin scatter-detection hook to evaluate FS triggers. */
   function startSpinAll(onSettled) {
     if (!RECT_REELS || allReelsActive) return;
-    /* Pick the profile based on the FSM phase. BASE uses the cinematic
-       cabinet cadence; FS_ACTIVE uses the faster bonus-tempo profile.
-       Other phases (FS_INTRO / FS_OUTRO) never spin so they don't
-       reach here. */
-    SPIN_PROFILE = (FSM && FSM.phase === 'FS_ACTIVE')
-      ? SPIN_PROFILE_FS
-      : SPIN_PROFILE_BASE;
     allReelsActive = true;
     spinStartTime = performance.now();
     const spinBtn = document.getElementById("spinBtn");
