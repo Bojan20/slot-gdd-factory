@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `21ab8cb` · main
+> Last updated: **2026-06-03** · HEAD: `037541f` · main
 
 ---
 
@@ -130,9 +130,43 @@
 | J1.6 | renderRect: when kind=variable_reel, host gets `repeat(ROWS, side)` template + per-column rows passed in | ✅ |
 | J1.7 | `04_variable_reel` fixture verified live: 6 reels × `[2,5,7,7,5,2]` visibleRows, real reel rotation, dynamic anticipation working | ✅ |
 
+### Wave Scatter-celebration (commit `20bfc04`)
+| ID | Feature | Status |
+|---|---|---|
+| SC1 | CSS keyframe `scatter-celebrate` — 3 × 500ms = 1500ms total, scale 1→1.22→1.10→1.22→1 + rotate ±8°, dual gold drop-shadow | ✅ |
+| SC2 | `.gridHost.is-scatter-celebrating` dims non-scatter cells to 0.18 opacity | ✅ |
+| SC3 | `findScatterCellsOnGrid()` — prefers reel-engine cells (visible-row range only, ignores buffer slots) | ✅ |
+| SC4 | `playScatterCelebration({ durationMs }) → Promise` — modular, composable, auto-cleanup on resolve | ✅ |
+| SC5 | `handlePostSpin` dispatch: reels settle → 200/350ms pause → clearWinHighlight → celebration (1500ms) → FSM_enterIntro | ✅ |
+| SC6 | Opt-out: `FREESPINS.scatterCelebration === false` skips entire block | ✅ |
+| SC7 | `prefers-reduced-motion` respected (static scale, no rotation/keyframes) | ✅ |
+| SC8 | WoO reference: `src/main.ts:2134 await sleep(2000)` + `scatterGlowSnap` keyframe | ✅ |
+
+### Wave Win-cycle (commit `037541f`)
+| ID | Feature | Status |
+|---|---|---|
+| WC1 | CSS keyframe `winsym-pulse` — 800ms × 3 sub-pulses, scale 1→1.25→1.05→1.22→1.06→1 + gold drop-shadow | ✅ |
+| WC2 | `.gridHost.is-winsym-cycling` dims non-active cells to 0.22 opacity | ✅ |
+| WC3 | `detectWinCombos()` — top 3 non-scatter symbols with ≥ 3 occurrences (placeholder until math) | ✅ |
+| WC4 | `playWinSymCycle(combos, { perComboMs }) → Promise` — cycles combos one-by-one, 800ms each, undims at end | ✅ |
+| WC5 | `WINSYM_CYCLE_TOKEN` cancellation — `cancelWinSymCycle()` bumps token, in-flight setTimeout no-ops | ✅ |
+| WC6 | `applyWinHighlight()` gated on `FSM.phase === 'BASE'` — suppressed during FS_INTRO / FS_ACTIVE / FS_OUTRO | ✅ |
+| WC7 | `runOneBaseSpin` calls `cancelWinSymCycle()` so stale cycle from previous spin can't leak | ✅ |
+| WC8 | Opt-out: `FREESPINS.winCycle === false` skips entire block | ✅ |
+| WC9 | WoO reference: `src/presentation.ts` lineMs 500-600ms tier-dependent cycle | ✅ |
+
+### Wave Anticipation-uniform (commit `037541f`)
+| ID | Feature | Status |
+|---|---|---|
+| AU1 | Every anticipating reel glow-armed for exactly HOLD_BASE (600ms) regardless of position in chain | ✅ |
+| AU2 | Per-reel `glowTimerId` schedules `.reelCol--anticipating` to appear at START of that reel's hold window | ✅ |
+| AU3 | Pre-fix: reel A glow 600ms, reel C glow 1800ms (chained cursor) — post-fix: all 600ms uniform | ✅ |
+| AU4 | `startSpinAll` clears stale `glowTimerId` + removes leftover class so late timer can't flash next round | ✅ |
+| AU5 | Cabinet "one-by-one" cadence preserved (glow appears just-in-time, not all-at-once) | ✅ |
+
 ---
 
-## ✅ QA matrix (HEAD `21ab8cb`)
+## ✅ QA matrix (HEAD `037541f`)
 
 | Suite | Coverage | Result |
 |---|---|---:|
@@ -214,4 +248,7 @@
 | 20 | `55dc06b` | fix(spin): unify BG + FS spin/stop speed across every grid |
 | 21 | `21ffff9` | feat(win): placeholder win-combo highlight — winning cells stay lit, rest dim |
 | 22 | `21ab8cb` | feat(spin): wave J1 — real reel engine for variable_reel |
-| 23 | `__TBD__` | docs(master-todo): refresh — Wave J1 done, J2/J3 + win-highlight + spin-tempo entries |
+| 23 | `d62aebe` | docs(master-todo): Wave J1 + win-highlight + spin-tempo entries |
+| 24 | `20bfc04` | feat(fx): scatter celebration — modular block before FS placard |
+| 25 | `037541f` | feat(fx): win-symbol cycle + uniform anticipation glow + FS gate |
+| 26 | `__TBD__` | docs(master-todo): refresh — scatter celebration + win-cycle + anticipation-uniform |
