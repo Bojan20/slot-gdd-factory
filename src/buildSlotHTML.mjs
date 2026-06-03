@@ -548,6 +548,51 @@ body {
     transition: filter 220ms ease;
   }
 }
+
+/* ── Win-symbol cycle ── independent modular block ────────────────────────
+   Plays AFTER reels settle on a non-trigger BASE spin. Multiple winning
+   combinations cycle one-by-one, each lit for ~800ms (WoO/Pragmatic pace),
+   then everything undims back to neutral.
+
+   Composes with: BG/FS swap, scatter celebration, stage badge.
+   Mutually exclusive with: scatter celebration (gating in handlePostSpin
+   ensures only one of the two ever plays per spin).
+
+   Per-combo animation: scale 1.0 → 1.25 → 1.0 across 3 sub-pulses, gold
+   drop-shadow halo + tight outline-style filter. While one combo is lit,
+   ALL other cells (including cells from other combos) dim to 0.22 so the
+   active combo reads as a single bright cluster. */
+.gridHost.is-winsym-cycling .cell,
+.gridHost.is-winsym-cycling text {
+  opacity: 0.22;
+  transition: opacity 180ms ease;
+}
+.gridHost.is-winsym-cycling .cell--winsym,
+.gridHost.is-winsym-cycling text.cell--winsym {
+  opacity: 1 !important;
+  animation: winsym-pulse 800ms ease-in-out 1;
+  transform-origin: center center;
+  filter: drop-shadow(0 0 6px rgba(255, 200, 80, 0.92))
+          drop-shadow(0 0 14px rgba(255, 160, 40, 0.55));
+  z-index: 9;
+  position: relative;
+}
+@keyframes winsym-pulse {
+  0%   { transform: scale(1.00); }
+  20%  { transform: scale(1.25); }
+  40%  { transform: scale(1.05); }
+  60%  { transform: scale(1.22); }
+  80%  { transform: scale(1.06); }
+  100% { transform: scale(1.00); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gridHost.is-winsym-cycling .cell--winsym,
+  .gridHost.is-winsym-cycling text.cell--winsym {
+    animation: none;
+    transform: scale(1.10);
+    transition: filter 180ms ease;
+  }
+}
 .grow-tag {
   position: absolute;
   top: 10px;
@@ -1255,16 +1300,21 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     if (!armed) return;
 
     /* Sequential per-reel anticipation hold.
-       Every anticipating reel gets the SAME glow + slowdown duration
-       (HOLD_BASE), but they stop one-by-one — each next reel only starts
-       its own HOLD_BASE countdown after the previous one has landed.
+       Every anticipating reel gets the SAME visible glow duration
+       (HOLD_BASE), and they stop one-by-one — each next reel only starts
+       its own glow + countdown after the previous one has landed.
 
        Schedule (relative to the moment anticipation arms):
-         reel A stops at: max(its existing schedule, now) + HOLD_BASE
-         reel B stops at: reel-A deadline + HOLD_BASE
-         reel C stops at: reel-B deadline + HOLD_BASE
-       So all four reels have identical perceived anticipation duration
-       and the cabinet "one-by-one" cadence is preserved. */
+         reel A glow STARTS at: max(its existing schedule, now)
+                stops at:        glowStart + HOLD_BASE
+         reel B glow STARTS at: reel-A deadline
+                stops at:        glowStart + HOLD_BASE
+         reel C glow STARTS at: reel-B deadline
+                stops at:        glowStart + HOLD_BASE
+       Net effect: every anticipating reel is glow-armed for exactly
+       HOLD_BASE before it lands — first one feels the same as the last
+       one. Cabinet "one-by-one" cadence preserved (glow appears just-in-
+       time, not all-at-once). */
     const HOLD_BASE = 600;
     const now = performance.now();
     /* Anchor to the latest existing scheduledStopAt so we never pull any
@@ -1278,9 +1328,18 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
       .sort((a, b) => a.scheduledStopAt - b.scheduledStopAt);
     ordered.forEach((r) => {
       r.anticipating = true;
-      r.col.classList.add("reelCol--anticipating");
+      /* This reel's glow window: [cursor, cursor + HOLD_BASE]. Schedule
+         the glow class to appear at the START of the window (not now), so
+         every reel's visible anticipation lasts exactly HOLD_BASE — same
+         as the first one. */
+      const glowStartAt = cursor;
       cursor += HOLD_BASE;
       r.scheduledStopAt = cursor;
+      const glowDelay = Math.max(0, glowStartAt - now);
+      if (r.glowTimerId) clearTimeout(r.glowTimerId);
+      r.glowTimerId = setTimeout(() => {
+        r.col.classList.add("reelCol--anticipating");
+      }, glowDelay);
       if (r.stopTimerId) clearTimeout(r.stopTimerId);
       r.stopTimerId = setTimeout(() => {
         r.stopRequested = true;
@@ -1338,6 +1397,11 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
       reel.rotationCount = 0;
       reel.offsetPx = 0;
       reel.anticipating = false;
+      /* Clean leftover anticipation state from the previous spin so a
+         late-fired glow timer can't flash the wheel on the next round
+         and so the class doesn't persist across spins. */
+      if (reel.glowTimerId) { clearTimeout(reel.glowTimerId); reel.glowTimerId = null; }
+      reel.col.classList.remove("reelCol--anticipating");
       reel.scheduledStopAt = performance.now() +
         SPIN_PROFILE.windupMs + SPIN_PROFILE.accelMs +
         SPIN_PROFILE.steadyMs + idx * SPIN_PROFILE.staggerMs;
@@ -1505,8 +1569,10 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
   function runOneBaseSpin() {
     /* Clear any leftover win-combo highlight from the previous spin so the
-       grid reads as "neutral, about to spin" instead of "stuck on a win". */
-    clearWinHighlight();
+       grid reads as "neutral, about to spin" instead of "stuck on a win".
+       cancelWinSymCycle bumps the cycle token so any in-flight setTimeout
+       from the previous spin's playWinSymCycle no-ops on its next tick. */
+    cancelWinSymCycle();
     /* Every uniform-column-grid shape (rectangular / cluster / megaclusters
        / lock_respin / expanding / infinity / variable_reel) uses the same
        reel spin engine — windup → accel → steady → decel → cushion bounce,
@@ -1762,30 +1828,93 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
      of every new spin and at FS phase boundaries. */
   function clearWinHighlight() {
     grid.classList.remove("has-winselection");
-    grid.querySelectorAll(".cell.is-win").forEach(c => c.classList.remove("is-win"));
+    grid.classList.remove("is-winsym-cycling");
+    grid.querySelectorAll(".cell.is-win, text.is-win").forEach(c => c.classList.remove("is-win"));
+    grid.querySelectorAll(".cell--winsym, text.cell--winsym").forEach(c => c.classList.remove("cell--winsym"));
   }
-  function applyWinHighlight() {
-    clearWinHighlight();
-    if (Math.random() < 0.30) return;   /* 30% of spins read as "no win" */
-    const cells = Array.from(grid.querySelectorAll(".cell"));
-    if (cells.length < 3) return;
+  /* Detect candidate win combos on the settled grid. Placeholder math:
+     every non-scatter symbol with count >= 3 becomes one combo. Sorted
+     by count desc and capped to MAX_COMBOS so the cycle stays inside a
+     few seconds (no math layer yet — when real evaluator lands this
+     function is the swap point). */
+  function detectWinCombos() {
+    const cells = Array.from(grid.querySelectorAll(".cell, text"));
+    if (cells.length < 3) return [];
     const trig = (FREESPINS.triggerSymbol || "S").toUpperCase();
-    const counts = new Map();
+    const buckets = new Map();
     cells.forEach(c => {
       const sym = (c.textContent || "").trim().toUpperCase();
       if (!sym || sym === trig) return;
-      counts.set(sym, (counts.get(sym) || 0) + 1);
+      if (!buckets.has(sym)) buckets.set(sym, []);
+      buckets.get(sym).push(c);
     });
-    /* Sort symbols by count desc, take the top one with count ≥ 3. */
-    const best = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
-    if (!best || best[1] < 3) return;
-    const winSym = best[0];
-    grid.classList.add("has-winselection");
-    cells.forEach(c => {
-      if ((c.textContent || "").trim().toUpperCase() === winSym) {
-        c.classList.add("is-win");
-      }
+    const MAX_COMBOS = 3;
+    return [...buckets.entries()]
+      .filter(([, list]) => list.length >= 3)
+      .sort((a, b) => b[1].length - a[1].length)
+      .slice(0, MAX_COMBOS)
+      .map(([symbol, list]) => ({ symbol, cells: list }));
+  }
+  /* Token used to invalidate an in-flight cycle when a new spin starts —
+     the next spin bumps the token, any pending cycle frame sees the
+     mismatch and bails out without touching the DOM. */
+  let WINSYM_CYCLE_TOKEN = 0;
+  function cancelWinSymCycle() {
+    WINSYM_CYCLE_TOKEN++;
+    clearWinHighlight();
+  }
+  /* ── Win-symbol cycle (independent modular block) ────────────────────
+     Cycles through detected win combinations one-by-one. Each combo:
+       • non-active cells dim (CSS .is-winsym-cycling base rule)
+       • combo cells get .cell--winsym → triggers winsym-pulse 800ms
+       • after that combo's 800ms, classes flip to the next combo
+     After all combos: every class is cleared so the grid is fully
+     undimmed (NEUTRAL) — ready for the next spin.
+     Opt-out: FREESPINS.winCycle === false skips the entire block. */
+  function playWinSymCycle(combos, opts) {
+    return new Promise(resolve => {
+      if (FREESPINS.winCycle === false) { resolve(); return; }
+      if (!combos || combos.length === 0) { resolve(); return; }
+      if (FSM && FSM.phase && FSM.phase !== 'BASE') { resolve(); return; }
+      const perComboMs = (opts && opts.perComboMs) || 800;
+      const reduced = window.matchMedia &&
+                      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const stepMs  = reduced ? 200 : perComboMs;
+      const token = ++WINSYM_CYCLE_TOKEN;
+      grid.classList.add('is-winsym-cycling');
+      let i = 0;
+      const playOne = () => {
+        if (token !== WINSYM_CYCLE_TOKEN) return;          /* cancelled */
+        /* Strip previous combo's markers. */
+        grid.querySelectorAll('.cell--winsym, text.cell--winsym')
+          .forEach(c => c.classList.remove('cell--winsym'));
+        if (i >= combos.length) {
+          grid.classList.remove('is-winsym-cycling');
+          resolve();
+          return;
+        }
+        combos[i].cells.forEach(c => c.classList.add('cell--winsym'));
+        i++;
+        setTimeout(playOne, stepMs);
+      };
+      playOne();
     });
+  }
+  /* Legacy applyWinHighlight kept as a thin compatibility wrapper that now
+     drives the win-symbol cycle. ~30% of spins are forced "no win" so the
+     player sees variance instead of every spin lighting up. */
+  function applyWinHighlight() {
+    clearWinHighlight();
+    /* Win highlight is a BASE-game post-spin treat. During the entire FS
+       lifecycle (FS_INTRO → FS_ACTIVE → FS_OUTRO) we suppress it so the
+       scatter celebration + FS HUD + FS placard own the eye. Win-symbol
+       highlighting only resumes once the round returns to BASE after
+       FS_OUTRO. */
+    if (FSM && FSM.phase && FSM.phase !== 'BASE') return;
+    if (Math.random() < 0.30) return;   /* 30% of spins read as "no win" */
+    const combos = detectWinCombos();
+    if (combos.length === 0) return;
+    playWinSymCycle(combos);
   }
 
   /* ── Scatter celebration — independent modular block ────────────────────
@@ -1854,12 +1983,18 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
      in-round spins; the duringFs flag decides whether a scatter hit is a
      fresh trigger (BASE) or a retrigger (FS). */
   function handlePostSpin(duringFs) {
-    /* Visual win-combo highlight first — independent of FS / scatter logic
-       so it works in BASE and FS_ACTIVE alike. */
-    applyWinHighlight();
-
+    /* Win-highlight gating (Boki rule). Two competing visual blocks must
+       never play simultaneously:
+         - scatter celebration  (trigger spin in BASE)
+         - win-symbol highlight (every other BASE spin)
+       Also: during the entire FS lifecycle (FS_INTRO → FS_ACTIVE →
+       FS_OUTRO) win-highlight is fully suppressed; it resumes only after
+       the round returns to BASE.
+       Decision happens INSIDE this function — we hold the win-highlight
+       call until we know whether a feature triggered. */
     if (!FREESPINS.enabled) {
-      /* No FS configured — nothing to do; FSM stays in BASE. */
+      /* No FS configured — pure BASE game, always safe to highlight. */
+      applyWinHighlight();
       if (duringFs) FSM_runNextFsSpin();
       return;
     }
@@ -1867,27 +2002,29 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     if (!duringFs) {
       const award = spinsForCount(scatters);
       if (award > 0) {
-        /* Trigger flow (each step is an independent block, composable):
-             1) reels settle                                ← already done
-             2) brief settle pause (eye sees final scatters) ← 300ms
-             3) scatter celebration (pulse/glow ~1500ms)     ← playScatterCelebration
-             4) FSM_enterIntro (cinematic placard fades in)  ← composed last
-           Removing/disabling any of these layers leaves the rest intact. */
+        /* Trigger flow — scatter celebration owns the visual stage.
+           NO win-highlight here; any leftover from the previous spin is
+           cleared just before celebration so the eye reads cleanly:
+             1) reels settle                                  ← already done
+             2) settle pause (eye sees final scatters)        ← 200-350ms
+             3) scatter celebration (pulse/glow ~1500ms)
+             4) FSM_enterIntro (cinematic placard fades in)
+           Each layer is its own independent block. */
         const wasForced = !!FORCE_TRIGGER;
         FORCE_TRIGGER = null;   /* one-shot — clear so next spin is normal */
         const settlePause = wasForced ? 350 : 200;
         setTimeout(() => {
-          /* Win-highlight competes for the same cells visually — clear it
-             so the celebration reads clean before the placard. */
           clearWinHighlight();
           playScatterCelebration().then(() => {
             FSM_enterIntro(award, scatters);
           });
         }, settlePause);
       } else {
-        /* No trigger this spin — clean up the force flag in case the player
-           started a normal spin while we were in a (bizarre) intermediate
-           state, then re-enable the dev btn so they can try again. */
+        /* Plain BASE-game spin, no trigger → safe to play win-highlight. */
+        applyWinHighlight();
+        /* Clean up the force flag in case the player started a normal spin
+           while we were in a (bizarre) intermediate state, then re-enable
+           the dev btn so they can try again. */
         FORCE_TRIGGER = null;
         if (devFsBtn) devFsBtn.disabled = !FREESPINS.enabled;
         if (spinButton) spinButton.disabled = false;
@@ -2065,8 +2202,9 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
   function FSM_runNextFsSpin() {
     if (FSM.phase !== "FS_ACTIVE") return;
-    /* Clear win highlight from the previous FS spin before this one starts. */
-    clearWinHighlight();
+    /* Cancel any leftover win-cycle (shouldn't run during FS anyway, but
+       cheap defence; also bumps the cycle token). */
+    cancelWinSymCycle();
     statusElGlobal && (statusElGlobal.textContent =
       "FS · " + ((FSM.spinsTotal - FSM.spinsRemaining) + 1) + " / " + FSM.spinsTotal);
 
