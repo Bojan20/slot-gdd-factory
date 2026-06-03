@@ -251,4 +251,4 @@
 | 23 | `d62aebe` | docs(master-todo): Wave J1 + win-highlight + spin-tempo entries |
 | 24 | `20bfc04` | feat(fx): scatter celebration — modular block before FS placard |
 | 25 | `037541f` | feat(fx): win-symbol cycle + uniform anticipation glow + FS gate |
-| 26 | `__TBD__` | docs(master-todo): refresh — scatter celebration + win-cycle + anticipation-uniform |
+| 26 | `ed1ca54` | docs(master-todo): scatter celebration + win-cycle + anticipation-uniform |
