@@ -42,6 +42,32 @@ export function buildSlotHTML(model) {
     { id: "A", name: "Ace" }, { id: "K", name: "King" }, { id: "Q", name: "Queen" },
     { id: "J", name: "Jack" }, { id: "T", name: "Ten" }, { id: "9", name: "Nine" },
   ];
+  /* ── Symbol registry for the win-cycle module ────────────────────────
+     Classifies every symbol so detectWinCombos knows:
+       • regularPay — HP/MP/LP, candidates for win-lines (each unique
+         id with >=3 hits becomes ONE event)
+       • wild — substitutes for any regular symbol; its cells join EVERY
+         regular event (lit alongside the real symbol)
+       • scatter — NEVER part of a win-line (trigger-only)
+       • tier — 'HP' | 'MP' | 'LP' | 'WILD' (drives sort order so HP
+         events fire first, then MP, then LP) */
+  const _highIds = (model.symbols.high  || []).map(s => String(s.id).toUpperCase());
+  const _midIds  = (model.symbols.mid   || []).map(s => String(s.id).toUpperCase());
+  const _lowIds  = (model.symbols.low   || []).map(s => String(s.id).toUpperCase());
+  const _specials = model.symbols.specials || [];
+  const _wildSym = _specials.find(s => /wild/i.test(s.name || ''));
+  const _scatterSym = _specials.find(s => /scatter|bonus|trigger/i.test(s.name || ''));
+  const SYMBOL_REGISTRY = {
+    regularPay: [..._highIds, ..._midIds, ..._lowIds],
+    wild:    _wildSym    ? String(_wildSym.id).toUpperCase()    : null,
+    scatter: _scatterSym ? String(_scatterSym.id).toUpperCase() : null,
+    tier: Object.assign({},
+      Object.fromEntries(_highIds.map(id => [id, 'HP'])),
+      Object.fromEntries(_midIds .map(id => [id, 'MP'])),
+      Object.fromEntries(_lowIds .map(id => [id, 'LP'])),
+      _wildSym ? { [String(_wildSym.id).toUpperCase()]: 'WILD' } : {}
+    ),
+  };
   const shape = buildGridShape(model);
   const reels = shape.reels;
   const rows  = shape.rows;
@@ -994,6 +1020,9 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
   const POOL = ${JSON.stringify(pool.map(s => s.id))};
   const SHAPE = ${JSON.stringify(shape)};
   const FREESPINS = ${JSON.stringify(model.freeSpins || { enabled: false })};
+  /* Per-symbol registry — drives win-cycle event generation. See
+     SYMBOL_REGISTRY construction in buildSlotHTML.mjs for the source. */
+  const SYMBOL_REGISTRY = ${JSON.stringify(SYMBOL_REGISTRY)};
   const REELS = SHAPE.reels;
   const ROWS  = SHAPE.rows;
 
@@ -1842,23 +1871,65 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
      by count desc and capped to MAX_COMBOS so the cycle stays inside a
      few seconds (no math layer yet — when real evaluator lands this
      function is the swap point). */
+  /* ── detectWinCombos — per-symbol event generation ─────────────────────
+     Ultimate behaviour (Boki rule): every HP/MP/LP symbol with >= 3
+     visible hits becomes its OWN event in the cycle. Wild substitutes —
+     wild cells join EVERY regular event's cell list (lit alongside the
+     real symbol). Scatter NEVER participates (trigger-only).
+
+     Returns array of events:
+       [{ symbol, tier: 'HP'|'MP'|'LP', cells: [...] }, ...]
+     Sorted: HP first, then MP, then LP. Hard cap on event count so the
+     cycle never blows the per-spin time budget (industry parity: WoO
+     small-win caps the line bouquet around 6-8 entries). */
   function detectWinCombos() {
     const cells = Array.from(grid.querySelectorAll(".cell, text"));
     if (cells.length < 3) return [];
-    const trig = (FREESPINS.triggerSymbol || "S").toUpperCase();
+    const reg = SYMBOL_REGISTRY || { regularPay: [], wild: null, scatter: null, tier: {} };
+    const regularSet = new Set(reg.regularPay || []);
+    const wildId  = reg.wild ? reg.wild.toUpperCase() : null;
+    const scatId  = (reg.scatter ? reg.scatter : (FREESPINS.triggerSymbol || 'S')).toUpperCase();
+    /* Per-symbol cell buckets, plus a dedicated wild bucket. */
     const buckets = new Map();
+    const wildCells = [];
     cells.forEach(c => {
       const sym = (c.textContent || "").trim().toUpperCase();
-      if (!sym || sym === trig) return;
-      if (!buckets.has(sym)) buckets.set(sym, []);
-      buckets.get(sym).push(c);
+      if (!sym) return;
+      if (sym === scatId) return;                 /* scatter never participates */
+      if (wildId && sym === wildId) { wildCells.push(c); return; }
+      /* If registry is empty (no GDD symbol table), treat any non-scatter
+         non-wild glyph as "regular" so the cycle still demos something. */
+      if (regularSet.size === 0 || regularSet.has(sym)) {
+        if (!buckets.has(sym)) buckets.set(sym, []);
+        buckets.get(sym).push(c);
+      }
     });
-    const MAX_COMBOS = 3;
-    return [...buckets.entries()]
-      .filter(([, list]) => list.length >= 3)
-      .sort((a, b) => b[1].length - a[1].length)
-      .slice(0, MAX_COMBOS)
-      .map(([symbol, list]) => ({ symbol, cells: list }));
+    /* Minimum line length — 3 OF A KIND is the universal slot floor.
+       Wild count contributes toward reaching the threshold (wild is the
+       universal substitute, so 2K + 1W counts as 3K). */
+    const tierRank = { HP: 0, MP: 1, LP: 2, WILD: 3 };
+    const MAX_EVENTS = 8;
+    const events = [];
+    for (const [symbol, list] of buckets) {
+      if (list.length + wildCells.length < 3) continue;
+      const tier = (reg.tier && reg.tier[symbol]) || 'LP';
+      /* Combo cells = the symbol's own cells + every wild cell (wild
+         substitutes for THIS symbol on every line it could complete). */
+      events.push({ symbol, tier, cells: list.concat(wildCells) });
+    }
+    /* Wild-only event: if there are >= 3 wild cells and NO matching
+       regular hit yet, fire a standalone wild celebration so the wild
+       presence still reads. (Rare but possible on wild-reel features.) */
+    if (events.length === 0 && wildCells.length >= 3 && wildId) {
+      events.push({ symbol: wildId, tier: 'WILD', cells: wildCells.slice() });
+    }
+    events.sort((a, b) => {
+      const ta = tierRank[a.tier] ?? 9;
+      const tb = tierRank[b.tier] ?? 9;
+      if (ta !== tb) return ta - tb;
+      return b.cells.length - a.cells.length;  /* longer line first within a tier */
+    });
+    return events.slice(0, MAX_EVENTS);
   }
   /* Token used to invalidate an in-flight cycle when a new spin starts —
      the next spin bumps the token, any pending cycle frame sees the
@@ -1869,58 +1940,68 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     clearWinHighlight();
   }
   /* ── Win-symbol cycle (independent modular block) ────────────────────
-     Cycles through detected win combinations one-by-one. Each combo:
+     Cycles through detected win events one-by-one. Each event:
        • non-active cells dim (CSS .is-winsym-cycling base rule)
-       • combo cells get .cell--winsym → triggers winsym-pulse 800ms
-       • after that combo's 800ms, classes flip to the next combo
-     After all combos: every class is cleared so the grid is fully
+       • event cells get .cell--winsym → triggers winsym-pulse keyframes
+       • after that event's stepMs, classes flip to the next event
+     After all events: every class is cleared so the grid is fully
      undimmed (NEUTRAL) — ready for the next spin.
-     Opt-out: FREESPINS.winCycle === false skips the entire block. */
-  function playWinSymCycle(combos, opts) {
+
+     Adaptive per-event timing (WoO parity):
+       ≤ 4 events → 500ms each  (WoO small-win lineMs)
+       ≥ 5 events → 400ms each  (compressed so the bouquet stays < 4s)
+     Override via opts.perEventMs (forces a constant).
+
+     Suppressed only during FS_INTRO / FS_OUTRO placard windows (the
+     overlay owns the eye). Allowed inside FS_ACTIVE — Boki rule:
+     win animations are available in FS too. Opt-out: FREESPINS.winCycle
+     === false skips the entire block. */
+  function playWinSymCycle(events, opts) {
     return new Promise(resolve => {
       if (FREESPINS.winCycle === false) { resolve(); return; }
-      if (!combos || combos.length === 0) { resolve(); return; }
-      if (FSM && FSM.phase && FSM.phase !== 'BASE') { resolve(); return; }
-      /* Default 500ms = WoO small-win lineMs; matches the CSS keyframes. */
-      const perComboMs = (opts && opts.perComboMs) || 500;
+      if (!events || events.length === 0) { resolve(); return; }
+      if (FSM && FSM.phase === 'FS_INTRO')  { resolve(); return; }
+      if (FSM && FSM.phase === 'FS_OUTRO')  { resolve(); return; }
       const reduced = window.matchMedia &&
                       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const stepMs  = reduced ? 200 : perComboMs;
+      const adaptive = events.length <= 4 ? 500 : 400;
+      const perEventMs = (opts && (opts.perEventMs || opts.perComboMs)) || adaptive;
+      const stepMs  = reduced ? 200 : perEventMs;
       const token = ++WINSYM_CYCLE_TOKEN;
       grid.classList.add('is-winsym-cycling');
       let i = 0;
       const playOne = () => {
         if (token !== WINSYM_CYCLE_TOKEN) return;          /* cancelled */
-        /* Strip previous combo's markers. */
+        /* Strip previous event's markers. */
         grid.querySelectorAll('.cell--winsym, text.cell--winsym')
           .forEach(c => c.classList.remove('cell--winsym'));
-        if (i >= combos.length) {
+        if (i >= events.length) {
           grid.classList.remove('is-winsym-cycling');
           resolve();
           return;
         }
-        combos[i].cells.forEach(c => c.classList.add('cell--winsym'));
+        events[i].cells.forEach(c => c.classList.add('cell--winsym'));
         i++;
         setTimeout(playOne, stepMs);
       };
       playOne();
     });
   }
-  /* Legacy applyWinHighlight kept as a thin compatibility wrapper that now
-     drives the win-symbol cycle. ~30% of spins are forced "no win" so the
-     player sees variance instead of every spin lighting up. */
+  /* applyWinHighlight is now the public façade: detects events, plays the
+     cycle, returns a Promise so callers (BASE post-spin, FS post-spin)
+     can await before queuing follow-up work. ~30% of spins are forced
+     "no win" for visual variance. */
   function applyWinHighlight() {
     clearWinHighlight();
-    /* Win highlight is a BASE-game post-spin treat. During the entire FS
-       lifecycle (FS_INTRO → FS_ACTIVE → FS_OUTRO) we suppress it so the
-       scatter celebration + FS HUD + FS placard own the eye. Win-symbol
-       highlighting only resumes once the round returns to BASE after
-       FS_OUTRO. */
-    if (FSM && FSM.phase && FSM.phase !== 'BASE') return;
-    if (Math.random() < 0.30) return;   /* 30% of spins read as "no win" */
-    const combos = detectWinCombos();
-    if (combos.length === 0) return;
-    playWinSymCycle(combos);
+    /* Suppressed only during FS_INTRO / FS_OUTRO placards (overlay owns
+       the eye). BASE and FS_ACTIVE both run the cycle. */
+    if (FSM && (FSM.phase === 'FS_INTRO' || FSM.phase === 'FS_OUTRO')) {
+      return Promise.resolve();
+    }
+    if (Math.random() < 0.30) return Promise.resolve(); /* visual variance */
+    const events = detectWinCombos();
+    if (events.length === 0) return Promise.resolve();
+    return playWinSymCycle(events);
   }
 
   /* ── Scatter celebration — independent modular block ────────────────────
@@ -2064,12 +2145,18 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     FSM.spinsRemaining--;
     FSM_renderHud();
 
-    if (FSM.spinsRemaining <= 0) {
-      FSM_enterOutro();
-    } else {
-      /* Brief breath between FS spins so the player can track the result. */
-      setTimeout(FSM_runNextFsSpin, 650);
-    }
+    /* Win-symbol cycle inside FS_ACTIVE (Boki rule). Run the same per-
+       symbol event cycle as in BASE, then chain into the next FS spin
+       (or FS_OUTRO if this was the last spin). The 250ms breath after
+       the cycle resolves keeps the FS round legible without dragging. */
+    const tail = () => {
+      if (FSM.spinsRemaining <= 0) {
+        FSM_enterOutro();
+      } else {
+        setTimeout(FSM_runNextFsSpin, 250);
+      }
+    };
+    applyWinHighlight().then(tail);
   }
 
   /* ─── FSM · phases: BASE → FS_INTRO → FS_ACTIVE → FS_OUTRO → BASE ────── */
