@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `__TBD__` · main
+> Last updated: **2026-06-03** · HEAD: `2eb2afa` · main
 
 ---
 
@@ -276,7 +276,7 @@
 | B4.11 | Unit testovi: `tests/blocks/freeSpins.test.mjs` — **21/21 ✅** (defaults + bounds + 4 emitter outputs + parser + roundtrip) | ✅ |
 | B4.12 | Backward compat: GDD bez sekcije → safe defaults identični pre-block ponašanju (FREE SPINS / TAP TO BEGIN / RETURN TO BASE / 320ms fade / 420ms enter-active / 250ms breath / 1800ms toast) | ✅ |
 
-### Wave B5-css — reelEngineCSS LEGO blok (commit `__TBD__`)
+### Wave B5-css — reelEngineCSS LEGO blok (commit `2eb2afa`)
 
 | ID | Feature | Status |
 |---|---|---|
@@ -285,7 +285,7 @@
 | B5c.3 | Parser: `extractReelEngine()` — heading varijante (Reel Engine / Spin Blur) | ✅ |
 | B5c.4 | Unit testovi: `tests/blocks/reelEngineCSS.test.mjs` — **8/8 ✅** | ✅ |
 
-### Wave B8a — triggerCounting LEGO blok (commit `__TBD__`)
+### Wave B8a — triggerCounting LEGO blok (commit `2eb2afa`)
 
 | ID | Feature | Status |
 |---|---|---|
@@ -295,7 +295,7 @@
 | B8a.4 | Parser: `extractTriggerCounting()` — heading varijante (Trigger Counting / Scatter Counting) | ✅ |
 | B8a.5 | Unit testovi: `tests/blocks/triggerCounting.test.mjs` — **7/7 ✅** | ✅ |
 
-### Wave B8b — postSpin LEGO blok (commit `__TBD__`)
+### Wave B8b — postSpin LEGO blok (commit `2eb2afa`)
 
 | ID | Feature | Status |
 |---|---|---|
@@ -335,7 +335,7 @@
 
 ---
 
-## ✅ QA matrix (HEAD `__TBD__`)
+## ✅ QA matrix (HEAD `2eb2afa`)
 
 | Suite | Coverage | Result |
 |---|---|---:|
