@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `255689a` · main
+> Last updated: **2026-06-03** · HEAD: `pending B1 commit` · main
 
 ---
 
@@ -191,6 +191,23 @@
 | WU13 | `handlePostSpin(duringFs=true)` awaits cycle before queuing next FS spin (250ms breath) | ✅ |
 | WU14 | Live verified on WoO GDD: regularPay=11, wild=W, scatter=S, tier sort correct | ✅ |
 
+### Wave B1 — LEGO block-ification (this commit)
+
+> **Pravilo (`~/.claude/projects/-/memory/rule_slot_gdd_lego_blocks.md`)**: Sve u slot-gdd-factory je modularan lego blok u `src/blocks/<name>.mjs`, učitava se na osnovu GDD-a, `buildSlotHTML.mjs` je samo orchestrator. Migracija pokrenuta — počinje sa najvećim violation-om (~250 LOC inline win presentation logic).
+
+| ID | Feature | Status |
+|---|---|---|
+| B1.1 | `src/blocks/paylines.mjs` — `buildStandardPaylines()` + `paylineConfig()` (pure Node-side, GDD-driven pool) | ✅ |
+| B1.2 | `src/blocks/paylineOverlay.mjs` — `emitPaylineOverlayRuntime()` (SVG draw + badge runtime emitter) | ✅ |
+| B1.3 | `src/blocks/winPresentation.mjs` — `defaultConfig` / `resolveConfig` / `emitWinPresentationRuntime` (detectLineWins + playWinSymCycle + applyWinHighlight + cancelWinSymCycle) | ✅ |
+| B1.4 | Parser: `extractWinPresentation()` — čita `## Win Presentation` sekciju (mode/perEventMs/maxEvents/noWinChance/winCycle/paylines) | ✅ |
+| B1.5 | `buildSlotHTML.mjs` refactor: import + `${emitPaylineOverlayRuntime()}` + `${emitWinPresentationRuntime(resolveWinPresentationConfig(model))}`. **0 inline `function detectLineWins / drawPaylineOverlay / playWinSymCycle / _buildStandardPaylines` u builder-u** | ✅ |
+| B1.6 | Pred-commit grep gate (`grep -nE "function (detectLineWins\|drawPaylineOverlay\|playWinSymCycle\|_buildStandardPaylines)\\b" src/buildSlotHTML.mjs`) returns 0 hits | ✅ |
+| B1.7 | Unit testovi: `tests/blocks/paylines.test.mjs` (12 cases) + `tests/blocks/winPresentation.test.mjs` (22 cases — uključuje parser→block roundtrip) | ✅ |
+| B1.8 | GDD-driven: explicit `model.winPresentation.paylines` override industry-standard pool; explicit `mode`, `perEventMs`, `maxEvents`, `noWinChance`, `winCycle` bake u runtime kao literali | ✅ |
+| B1.9 | Backward compat: GDD bez `## Win Presentation` sekcije → svi slotovi `undefined` → block `resolveConfig` daje safe defaults identične pre-block ponašanju | ✅ |
+| B1.10 | Migration debt: TODO ostalo — `_buildStandardPaylines` već izvučen; `detectWinCombos`, `playScatterCelebration`, `applyWinHighlight` cluster mode, `findScatterCellsOnGrid`, FS lifecycle helpers ostaju za sledeće B-talase | ⏳ |
+
 ### Wave Win-cycle per-LINE (commit `255689a`)
 | ID | Feature | Status |
 |---|---|---|
@@ -209,7 +226,7 @@
 
 ---
 
-## ✅ QA matrix (HEAD `255689a`)
+## ✅ QA matrix (HEAD pending B1)
 
 | Suite | Coverage | Result |
 |---|---|---:|
@@ -219,8 +236,11 @@
 | `tests/render-browser-all.mjs` | 23 grids × headless Chromium | **23/23 ✅ 0 console errors** |
 | `tools/fs-qa-audit.mjs` | 23 fixtures × full FS lifecycle | **23/23 ✅ CLEAN** |
 | `tools/fs-edge-cases.mjs` | 11 lifecycle/race/abuse scenarios | **11/11 ✅ CLEAN** |
-| `tools/spin-engine-audit.mjs` | 24 × real reel engine drives all column grids (now incl. variable_reel) | **24/24 ✅ CLEAN** |
-| **TOTAL** | | **142/142 ✅** |
+| `tools/spin-engine-audit.mjs` | 24 × real reel engine drives all column grids | **24/24 ✅ CLEAN** |
+| `tools/payline-overlay-spot-check.mjs` | 23 fixtures × SVG overlay snapshot | **23/23 ✅** |
+| `tests/blocks/paylines.test.mjs` | paylines block — pure builder + config (LEGO) | **12/12 ✅** |
+| `tests/blocks/winPresentation.test.mjs` | winPresentation block + parser→runtime roundtrip | **22/22 ✅** |
+| **TOTAL** | | **199/199 ✅** |
 
 ---
 

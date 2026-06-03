@@ -12,6 +12,7 @@ build/
 # QA artifacts — regenerated per `npm run test:browser` / `npm run test:qa`
 reports/screenshots/
 reports/qa/
+reports/payline-preview/
 reports/grid-coverage-*.md
 !reports/grid-coverage-latest.md
 !reports/browser-render-latest.md

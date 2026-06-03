@@ -104,6 +104,11 @@ export function parseMarkdownGDD(text) {
   /* free-spins config — full structured extraction from GDD prose */
   model.freeSpins = extractFreeSpinsConfig(text, model);
 
+  /* win-presentation block config — extracts optional GDD knobs for the
+     winPresentation lego block. No-op when the GDD has no Win Presentation
+     section; downstream block falls through to safe defaults. */
+  extractWinPresentation(text, model);
+
   // math (RTP / volatility / max-win) intentionally NOT extracted in this phase.
 
   return model;
@@ -856,6 +861,78 @@ function freshModel() {
        Always emitted (even when FS is not in the GDD) so downstream code can
        branch on `freeSpins.enabled` instead of probing undefined. */
     freeSpins: { enabled: false },
+    /* Win-presentation block config — consumed by src/blocks/winPresentation.mjs.
+       Always emitted with `undefined` slots so the block's resolveConfig()
+       falls through to safe defaults. Populated by extractWinPresentation()
+       when the GDD declares overrides. */
+    winPresentation: {
+      /* 'per-line' | 'cluster' | 'all-at-once' — undefined → block default */
+      mode: undefined,
+      /* number ms | 'auto' — undefined → block default ('auto') */
+      perEventMs: undefined,
+      /* cap on visible events per spin */
+      maxEvents: undefined,
+      /* explicit payline definitions (overrides industry-standard pool) */
+      paylines: undefined,
+      /* boolean — false hard-disables the cycle */
+      winCycle: undefined,
+      /* number in [0,1] — forced "no win" chance for visual variance */
+      noWinChance: undefined,
+    },
     confidence: { name: 0, topology: 0, symbols: 0, features: 0 },
   };
+}
+
+/* ── extractWinPresentation — GDD-driven win cycle config ──────────────────
+   Reads optional knobs from a "## Win Presentation" / "## Win Cycle" /
+   "## Win Animations" section in the GDD:
+
+     ```
+     ## Win Presentation
+     - mode: per-line
+     - per-event-ms: 350
+     - max-events: 12
+     - no-win-chance: 0.20
+     - win-cycle: true
+     ```
+
+   All keys optional. Unknown keys ignored. Block's resolveConfig() does
+   the actual validation — parser only forwards what it sees. */
+export function extractWinPresentation(text, model) {
+  if (!text || !model) return;
+  /* Look for any heading that matches "win presentation" / "win cycle" /
+     "win animations" / "win highlight" — case-insensitive. The H2 block
+     extends to the next H1/H2 or end-of-document. */
+  const headingRx = /^##\s*(?:win\s*presentation|win\s*cycle|win\s*animations?|win\s*highlight)\s*$/im;
+  const startMatch = text.match(headingRx);
+  if (!startMatch) return;
+
+  const start = startMatch.index + startMatch[0].length;
+  const restRx = /^#{1,2}\s/m;
+  const tail = text.slice(start);
+  const nextH = tail.match(restRx);
+  const section = nextH ? tail.slice(0, nextH.index) : tail;
+
+  const wp = model.winPresentation;
+  /* mode */
+  const m = section.match(/\b(?:mode|presentation)\s*[:=]\s*['"]?(per-?line|cluster|all-?at-?once)['"]?/i);
+  if (m) {
+    const v = m[1].toLowerCase().replace(/\s+/g, '-');
+    wp.mode = v === 'perline' ? 'per-line' : (v === 'allatonce' ? 'all-at-once' : v);
+  }
+  /* per-event-ms */
+  const pe = section.match(/\bper[- ]?event[- ]?ms\s*[:=]\s*(\d+|auto)/i);
+  if (pe) wp.perEventMs = pe[1].toLowerCase() === 'auto' ? 'auto' : parseInt(pe[1], 10);
+  /* max-events */
+  const me = section.match(/\bmax[- ]?events?\s*[:=]\s*(\d+)/i);
+  if (me) wp.maxEvents = parseInt(me[1], 10);
+  /* no-win-chance */
+  const nw = section.match(/\bno[- ]?win[- ]?chance\s*[:=]\s*(0?\.\d+|0|1)/i);
+  if (nw) wp.noWinChance = parseFloat(nw[1]);
+  /* win-cycle on/off */
+  const wc = section.match(/\bwin[- ]?cycle\s*[:=]\s*(true|false|on|off|yes|no)/i);
+  if (wc) {
+    const v = wc[1].toLowerCase();
+    wp.winCycle = (v === 'true' || v === 'on' || v === 'yes');
+  }
 }
