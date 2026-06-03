@@ -504,6 +504,50 @@ body {
   .gridHost.has-winselection .cell.is-win,
   .gridHost.has-winselection text.is-win { transition: none; transform: none; }
 }
+
+/* ── Scatter celebration ── independent modular block ─────────────────────
+   Plays AFTER all reels have settled with a trigger-count of scatters, and
+   BEFORE the FS_INTRO placard fades in. Combinable with any mechanic:
+   pure CSS keyframes scoped to .cell--scatter-celebrate, triggered by JS
+   playScatterCelebration(cells, opts) returning a Promise.
+
+   Reference cadence: Wrath of Olympus / Sweet Bonanza style — ~1500ms
+   total = 3 pulse-glow cycles at 500ms each. Each cycle: scale 1 → 1.22
+   with gold radial glow, rotate ±8°, then ease back. Non-scatter cells
+   dim to 0.18 opacity for the entire celebration so the eye locks on
+   the triggers. */
+.gridHost.is-scatter-celebrating .cell,
+.gridHost.is-scatter-celebrating text {
+  opacity: 0.18;
+  transition: opacity 220ms ease;
+}
+.gridHost.is-scatter-celebrating .cell--scatter-celebrate,
+.gridHost.is-scatter-celebrating text.cell--scatter-celebrate {
+  opacity: 1 !important;
+  animation: scatter-celebrate 500ms ease-in-out 3;
+  transform-origin: center center;
+  /* Layered glow: tight gold core + soft amber halo. Pure filter, no
+     extra DOM. Falls back gracefully if drop-shadow isn't supported. */
+  filter: drop-shadow(0 0 8px rgba(255, 200, 80, 0.95))
+          drop-shadow(0 0 18px rgba(255, 160, 40, 0.65));
+  z-index: 10;
+  position: relative;
+}
+@keyframes scatter-celebrate {
+  0%   { transform: scale(1)    rotate(0deg);   }
+  25%  { transform: scale(1.22) rotate(-8deg);  }
+  50%  { transform: scale(1.10) rotate(0deg);   }
+  75%  { transform: scale(1.22) rotate(8deg);   }
+  100% { transform: scale(1)    rotate(0deg);   }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gridHost.is-scatter-celebrating .cell--scatter-celebrate,
+  .gridHost.is-scatter-celebrating text.cell--scatter-celebrate {
+    animation: none;
+    transform: scale(1.10);
+    transition: filter 220ms ease;
+  }
+}
 .grow-tag {
   position: absolute;
   top: 10px;
@@ -1744,6 +1788,68 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     });
   }
 
+  /* ── Scatter celebration — independent modular block ────────────────────
+     Plays the scatter-cells pulse/glow animation AFTER reels settle and
+     BEFORE FSM_enterIntro. Composable with BG/FS, win-highlight, etc.
+
+     Contract:
+       playScatterCelebration(scatterCells, { durationMs })  → Promise<void>
+       - scatterCells: array of DOM nodes (.cell or <text>) to celebrate
+       - durationMs:   total animation duration (default 1500ms — WoO pace,
+                       3 × 500ms pulse cycles)
+     Adds .cell--scatter-celebrate to each cell + .is-scatter-celebrating
+     to the gridHost (dims everything else). Cleans both up on resolve so a
+     follow-up overlay (FS placard) reads on the un-dimmed grid.
+
+     Robustness: if no cells passed OR reduced-motion -> resolves in 0ms.
+     Skipped entirely if FREESPINS.scatterCelebration === false. */
+  function findScatterCellsOnGrid() {
+    const trig = (FREESPINS.triggerSymbol || "S").toUpperCase();
+    /* grid (= #gridHost) already carries the .gridHost class — the CSS
+       rules target .gridHost.is-scatter-celebrating, so we mark the host
+       directly. Don't querySelector('.gridHost') here: it looks for a
+       DESCENDANT, but grid IS the .gridHost element. */
+    const host = grid;
+    /* Prefer reel-engine cells (visible-row range only, ignore buffers) so
+       we don't celebrate scatters that are technically in the strip but
+       above/below the mask. */
+    if (RECT_REELS && RECT_REELS.length > 0) {
+      const hits = [];
+      for (const reel of RECT_REELS) {
+        const vis = reel.visibleRows || ROWS;
+        for (let i = 1; i <= vis; i++) {
+          const c = reel.cells[i];
+          if (c && (c.textContent || "").toUpperCase() === trig) hits.push(c);
+        }
+      }
+      return { host, cells: hits };
+    }
+    /* Non-reel-engine kinds: scan .cell + <text>. */
+    const nodes = grid.querySelectorAll('.cell, text');
+    const hits = [];
+    nodes.forEach(n => {
+      if ((n.textContent || "").toUpperCase() === trig) hits.push(n);
+    });
+    return { host, cells: hits };
+  }
+
+  function playScatterCelebration(opts) {
+    return new Promise(resolve => {
+      if (FREESPINS.scatterCelebration === false) { resolve(); return; }
+      const { host, cells } = findScatterCellsOnGrid();
+      if (!cells || cells.length === 0) { resolve(); return; }
+      const durationMs = (opts && opts.durationMs) || 1500;
+      host.classList.add('is-scatter-celebrating');
+      cells.forEach(c => c.classList.add('cell--scatter-celebrate'));
+      /* Safety: don't leak the classes if the page hides/unmounts mid-flight. */
+      setTimeout(() => {
+        host.classList.remove('is-scatter-celebrating');
+        cells.forEach(c => c.classList.remove('cell--scatter-celebrate'));
+        resolve();
+      }, durationMs);
+    });
+  }
+
   /* Post-spin trigger evaluation. Called from both base-game spins and FS
      in-round spins; the duringFs flag decides whether a scatter hit is a
      fresh trigger (BASE) or a retrigger (FS). */
@@ -1761,12 +1867,23 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     if (!duringFs) {
       const award = spinsForCount(scatters);
       if (award > 0) {
-        /* Settle pause — the player needs to see the scatters land in their
-           final positions for a beat before the cinematic placard fades in.
-           Industry standard reveal pause = 450-650ms; we pick 550ms. */
+        /* Trigger flow (each step is an independent block, composable):
+             1) reels settle                                ← already done
+             2) brief settle pause (eye sees final scatters) ← 300ms
+             3) scatter celebration (pulse/glow ~1500ms)     ← playScatterCelebration
+             4) FSM_enterIntro (cinematic placard fades in)  ← composed last
+           Removing/disabling any of these layers leaves the rest intact. */
         const wasForced = !!FORCE_TRIGGER;
         FORCE_TRIGGER = null;   /* one-shot — clear so next spin is normal */
-        setTimeout(() => FSM_enterIntro(award, scatters), wasForced ? 550 : 250);
+        const settlePause = wasForced ? 350 : 200;
+        setTimeout(() => {
+          /* Win-highlight competes for the same cells visually — clear it
+             so the celebration reads clean before the placard. */
+          clearWinHighlight();
+          playScatterCelebration().then(() => {
+            FSM_enterIntro(award, scatters);
+          });
+        }, settlePause);
       } else {
         /* No trigger this spin — clean up the force flag in case the player
            started a normal spin while we were in a (bizarre) intermediate
