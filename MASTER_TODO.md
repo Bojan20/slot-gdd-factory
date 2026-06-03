@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `2eb2afa` · main
+> Last updated: **2026-06-03** · HEAD: `__TBD__` · main
 
 ---
 
@@ -276,6 +276,23 @@
 | B4.11 | Unit testovi: `tests/blocks/freeSpins.test.mjs` — **21/21 ✅** (defaults + bounds + 4 emitter outputs + parser + roundtrip) | ✅ |
 | B4.12 | Backward compat: GDD bez sekcije → safe defaults identični pre-block ponašanju (FREE SPINS / TAP TO BEGIN / RETURN TO BASE / 320ms fade / 420ms enter-active / 250ms breath / 1800ms toast) | ✅ |
 
+### Wave B5-engine-hot — reelEngine LEGO blok (commit `__TBD__`)
+
+> **Poslednji** i **najveći** hot-path izvlačenje. Kompletan reel spin engine (state machine + animations + static reroll) izvučen iz buildera u modularan blok. Sve zavisnosti (RECT_REELS / spinTicker / FORCE_TRIGGER + 8 funkcija) sada žive u jednom modulu sa 12 GDD-driven knobs.
+
+| ID | Feature | Status |
+|---|---|---|
+| B5h.1 | `src/blocks/reelEngine.mjs` (519 LOC, 13 unit tests) — `emitReelEngineRuntime()` emit-uje sve hot-path simbole | ✅ |
+| B5h.2 | 11 izvučenih simbola: `RECT_REELS` / `RECT_SIDE` / `spinTicker` / `spinStartTime` / `allReelsActive` / `FORCE_TRIGGER` / `randomSym` / `rotateStripDown` / `commitStopSymbols` / `buildReelColumns` | ✅ |
+| B5h.3 | 5 izvučenih engine funkcija: `startSpinAll` / `onTickAll` / `runOneBaseSpin` / `runStaticReroll` (kompletan hot-path) | ✅ |
+| B5h.4 | 12 GDD knobs: `min-rotations` (8) / `settle-breath-ms` (80) / `strip-buffer-cells` (2) / `static-pre-roll-ms` (220) / `static-blur-swap-ms` (220) / `static-stagger-ms` (200) / `static-hold-ms` (400) / `static-settle-ms` (80) / `static-fallback-ms` (60) / `snap-threshold` (0.6) / `min-step-px` (0.5) / `accel-min-factor` (0.3) | ✅ |
+| B5h.5 | Parser: `extractReelEngineHot()` — heading varijante (Reel Engine Hot / Spin Physics / Reel Hot-Path) | ✅ |
+| B5h.6 | `buildSlotHTML.mjs`: **-465 LOC** (1777 → 1312) — pojedinačno najveće smanjenje od svih B-talasa | ✅ |
+| B5h.7 | Unit testovi: `tests/blocks/reelEngine.test.mjs` — **13/13 ✅** | ✅ |
+| B5h.8 | Backward compat — sve magic numbers preserved as defaults (S-AVP cabinet reference); GDD bez sekcije = identično pre-block ponašanju | ✅ |
+| B5h.9 | Dead-code skript (Python AST-aware brace counter) uklonio 18,400 chars original funkcija; verifikovano `_DEPRECATED_*` = 0 hits | ✅ |
+| B5h.10 | Browser QA + spin engine audit verifikovano — 23/23 + 24/24 CLEAN | ✅ |
+
 ### Wave B5-css — reelEngineCSS LEGO blok (commit `2eb2afa`)
 
 | ID | Feature | Status |
@@ -335,7 +352,7 @@
 
 ---
 
-## ✅ QA matrix (HEAD `2eb2afa`)
+## ✅ QA matrix (HEAD `__TBD__`)
 
 | Suite | Coverage | Result |
 |---|---|---:|
@@ -357,17 +374,21 @@
 | `tests/blocks/reelEngineCSS.test.mjs` | reelEngineCSS block (.reelCol + .reelStrip + .is-blurring) | **8/8 ✅** |
 | `tests/blocks/triggerCounting.test.mjs` | triggerCounting block (countTriggerSymbols + spinsForCount) | **7/7 ✅** |
 | `tests/blocks/postSpin.test.mjs` | postSpin block (handlePostSpin orchestration) | **8/8 ✅** |
-| **TOTAL** | | **309/309 ✅** |
+| `tests/blocks/reelEngine.test.mjs` | reelEngine block (full hot-path — 8 functions + 4 state vars + 12 knobs) | **13/13 ✅** |
+| **TOTAL** | | **322/322 ✅** |
 
 ---
 
 ## 🟡 In progress / next up
 
+> **LEGO migracija B-talasa GOTOVA** — sve hot-path funkcije, CSS, markup,
+> runtime helperi i lifecycle orchestratori izvučeni u 12 modularnih GDD-driven
+> blokova. `buildSlotHTML.mjs` sa 2678 → 1312 LOC (−51%). Preostalo u buildera
+> = samo orchestrator (importi + JSON injection + DOM cache + emit pozivi).
+
 | Pri | Item | Why | Effort |
 |:-:|---|---|---|
-| 1 | **Wave B5-engine-hot — hot-path reel engine (`buildReelColumns`, `onTickAll`, `startSpinAll`, `runOneBaseSpin`, `runStaticReroll`, `commitStopSymbols`, `rotateStripDown`, `randomSym`)** → `src/blocks/reelEngine.mjs` | preostali najveći inline ostatak (~450 LOC); odložen zbog hot-path rizika sa stateful međusobnim zavisnostima (`RECT_REELS` / `spinTicker` / `FORCE_TRIGGER` / `allReelsActive`) | L |
-| 2 | **Wave B8c — devFsBtn handler + spin CTA listener → `src/blocks/devTrigger.mjs`** | preostali manji inline ostaci u builder-u | S |
-| 3 | **Wave J2 — Real reel engine for hex / diamond / pyramid / cross / l_shape** | irregular column shapes; need geometric "column" mapping | L |
+| 1 | **Wave J2 — Real reel engine for hex / diamond / pyramid / cross / l_shape** | irregular column shapes; need geometric "column" mapping | L |
 | 4 | **Wave J3 — SVG kinds (wheel / crash / radial / slingo / plinko)** — domain-specific spin animation | each kind needs its own engine; can't reuse rectangular | L |
 | 5 | **PAR / Math hot-swap injector** | README Phase 2 — placeholder math still in use | XL |
 | 6 | **Sound cue placeholders** (trigger sting, anticipation hum, FS placard whoosh) | currently silent; production demos want audio scaffolding | M |

@@ -137,6 +137,10 @@ export function parseMarkdownGDD(text) {
   extractTriggerCounting(text, model);
   extractPostSpin(text, model);
 
+  /* reel-engine hot-path knobs (minRotations / settle breath / static reroll
+     cadence + bounce snap thresholds) */
+  extractReelEngineHot(text, model);
+
   // math (RTP / volatility / max-win) intentionally NOT extracted in this phase.
 
   return model;
@@ -934,6 +938,21 @@ function freshModel() {
     triggerCounting: {
       defaultThreshold: undefined,
     },
+    /* Reel-engine hot-path knobs — consumed by src/blocks/reelEngine.mjs. */
+    reelEngineHot: {
+      minRotations: undefined,
+      settleBreathMs: undefined,
+      stripBufferCells: undefined,
+      staticPreRollMs: undefined,
+      staticBlurSwapMs: undefined,
+      staticStaggerMs: undefined,
+      staticHoldMs: undefined,
+      staticSettleMs: undefined,
+      staticFallbackMs: undefined,
+      snapThreshold: undefined,
+      minStepPx: undefined,
+      accelMinFactor: undefined,
+    },
     /* Post-spin orchestration knobs — consumed by src/blocks/postSpin.mjs. */
     postSpin: {
       settlePauseMs: undefined,
@@ -1343,4 +1362,44 @@ export function extractPostSpin(text, model) {
   }
   const fwc = section.match(/\bfake[- ]?win[- ]?chance\s*[:=]\s*(0?\.\d+|0|1)/i);
   if (fwc) ps.fakeWinChance = parseFloat(fwc[1]);
+}
+
+/* ── extractReelEngineHot — GDD-driven reel engine hot-path knobs ────────
+   "## Reel Engine Hot" / "## Spin Physics" / "## Reel Hot-Path" section. */
+export function extractReelEngineHot(text, model) {
+  if (!text || !model) return;
+  const headingRx = /^##\s*(?:reel\s*engine\s*hot|spin\s*physics|reel\s*hot[- ]?path)\s*$/im;
+  const startMatch = text.match(headingRx);
+  if (!startMatch) return;
+  const start = startMatch.index + startMatch[0].length;
+  const restRx = /^#{1,2}\s/m;
+  const tail = text.slice(start);
+  const nextH = tail.match(restRx);
+  const section = nextH ? tail.slice(0, nextH.index) : tail;
+
+  const rh = model.reelEngineHot;
+  const intMap = [
+    ['minRotations',      /\bmin[- ]?rotations\s*[:=]\s*(\d+)/i],
+    ['settleBreathMs',    /\bsettle[- ]?breath[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['stripBufferCells',  /\bstrip[- ]?buffer[- ]?cells\s*[:=]\s*(\d+)/i],
+    ['staticPreRollMs',   /\bstatic[- ]?pre[- ]?roll[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['staticBlurSwapMs',  /\bstatic[- ]?blur[- ]?swap[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['staticStaggerMs',   /\bstatic[- ]?stagger[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['staticHoldMs',      /\bstatic[- ]?hold[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['staticSettleMs',    /\bstatic[- ]?settle[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['staticFallbackMs',  /\bstatic[- ]?fallback[- ]?ms\s*[:=]\s*(\d+)/i],
+  ];
+  for (const [k, rx] of intMap) {
+    const m = section.match(rx);
+    if (m) rh[k] = parseInt(m[1], 10);
+  }
+  const floatMap = [
+    ['snapThreshold',  /\bsnap[- ]?threshold\s*[:=]\s*(\d+(?:\.\d+)?)/i],
+    ['minStepPx',      /\bmin[- ]?step[- ]?px\s*[:=]\s*(\d+(?:\.\d+)?)/i],
+    ['accelMinFactor', /\baccel[- ]?min[- ]?factor\s*[:=]\s*(\d+(?:\.\d+)?)/i],
+  ];
+  for (const [k, rx] of floatMap) {
+    const m = section.match(rx);
+    if (m) rh[k] = parseFloat(m[1]);
+  }
 }
