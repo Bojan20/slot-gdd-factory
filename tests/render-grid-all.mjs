@@ -46,6 +46,7 @@ const EXPECT = {
   '17_crash':           'crash',
   '18_wheel':           'wheel',
   '19_lock_respin':     'lock_respin',
+  '20_rectangular_stacked_scatter': 'rectangular',
 };
 
 /* ─── Per-kind structural invariants ──────────────────────── */

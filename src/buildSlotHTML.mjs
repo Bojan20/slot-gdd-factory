@@ -1083,10 +1083,8 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     const trig = (FREESPINS.triggerSymbol || "S").toUpperCase();
     const countMode = (FREESPINS.countMode === 'any') ? 'any' : 'perReel';
     let scattersSoFar = 0;
-    let stoppedCount  = 0;
     for (const r of RECT_REELS) {
       if (r.spinning) continue;
-      stoppedCount++;
       let reelHits = 0;
       for (let i = 1; i <= ROWS; i++) {
         if ((r.cells[i].textContent || "").toUpperCase() === trig) reelHits++;

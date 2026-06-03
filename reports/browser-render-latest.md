@@ -1,7 +1,7 @@
 # Browser-render QA report
 
-**Generated**: 2026-06-02T21:53:25.854Z
-**Fixtures**: 22 · **PASS**: 22 · **FAIL**: 0
+**Generated**: 2026-06-03T01:23:32.381Z
+**Fixtures**: 23 · **PASS**: 23 · **FAIL**: 0
 
 ## Per-fixture results
 
@@ -26,6 +26,7 @@
 | `17_crash_GAME_GDD.md` | crash | 1 | n/a→n/a | static → static | 0 | `reports/screenshots/17_crash_GAME_GDD.png` | ✅ |
 | `18_wheel_GAME_GDD.md` | wheel | 24 | n/a→n/a | static → static | 0 | `reports/screenshots/18_wheel_GAME_GDD.png` | ✅ |
 | `19_lock_respin_GAME_GDD.md` | lock_respin | 20 | n/a→n/a | static → static | 0 | `reports/screenshots/19_lock_respin_GAME_GDD.png` | ✅ |
+| `20_rectangular_stacked_scatter_GAME_GDD.md` | rectangular | 20 | n/a→n/a | static → static | 0 | `reports/screenshots/20_rectangular_stacked_scatter_GAME_GDD.png` | ✅ |
 | `WRATH_OF_OLYMPUS_GAME_GDD.md` | rectangular | 15 | n/a→n/a | static → static | 0 | `reports/screenshots/WRATH_OF_OLYMPUS_GAME_GDD.png` | ✅ |
 | `CRYSTAL_FORGE_GAME_GDD.md` | rectangular | 15 | n/a→n/a | static → static | 0 | `reports/screenshots/CRYSTAL_FORGE_GAME_GDD.png` | ✅ |
 | `MIDNIGHT_FANGS_GAME_GDD.md` | cluster | 30 | n/a→n/a | static → static | 0 | `reports/screenshots/MIDNIGHT_FANGS_GAME_GDD.png` | ✅ |
