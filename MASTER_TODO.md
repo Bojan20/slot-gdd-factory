@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `__TBD__` · main
+> Last updated: **2026-06-03** · HEAD: `45368f7` · main
 
 ---
 
@@ -119,7 +119,7 @@
 | WH5 | Works on every uniform-reel grid (rectangular + cluster + megaclusters + lock_respin + expanding + infinity + variable_reel) | ✅ |
 | WH6 | `prefers-reduced-motion` respected (no transition, no scale) | ✅ |
 
-### Wave L–P — 16 detected-but-unused feature kinds wired as LEGO blocks (commit `__TBD__`)
+### Wave L–P — 16 detected-but-unused feature kinds wired as LEGO blocks (commit `45368f7`)
 
 > **Final coverage push** — every feature kind the parser detects now has a
 > dedicated LEGO block with defaults, GDD-driven overrides, CSS + markup +
