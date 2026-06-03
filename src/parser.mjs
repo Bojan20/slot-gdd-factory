@@ -149,6 +149,26 @@ export function parseMarkdownGDD(text) {
   extractAnteBet(text, model);
   extractTumble(text, model);
 
+  /* Wave L–P — 16 detected-but-unused feature kinds wired into blocks.
+     Each detector is no-op when the GDD lacks the relevant section/feature;
+     block resolveConfig() then falls through to safe defaults. */
+  extractStickyWild(text, model);
+  extractExpandingWild(text, model);
+  extractWalkingWild(text, model);
+  extractWildReel(text, model);
+  extractMysterySymbol(text, model);
+  extractClusterPaysEval(text, model);
+  extractWaysEval(text, model);
+  extractPersistentMultiplier(text, model);
+  extractHoldAndWin(text, model);
+  extractRespin(text, model);
+  extractWinCap(text, model);
+  extractBonusPick(text, model);
+  extractWheelBonus(text, model);
+  extractLightning(text, model);
+  extractGamble(text, model);
+  extractSuperSymbol(text, model);
+
   // math (RTP / volatility / max-win) intentionally NOT extracted in this phase.
 
   return model;
@@ -1079,6 +1099,79 @@ function freshModel() {
       label: undefined,
       color: undefined,
     },
+    /* Wave L–P — 16 detected-but-unused feature kinds, now wired.
+       Each block's resolveConfig() falls through to safe defaults. */
+    stickyWild: {
+      enabled: undefined, mode: undefined, durationSpins: undefined,
+      wildSymbolId: undefined, haloColor: undefined, pulseMs: undefined,
+    },
+    expandingWild: {
+      enabled: undefined, mode: undefined, wildSymbolId: undefined,
+      expandDurationMs: undefined, haloColor: undefined,
+    },
+    walkingWild: {
+      enabled: undefined, mode: undefined, wildSymbolId: undefined,
+      direction: undefined, triggerRespin: undefined, haloColor: undefined,
+    },
+    wildReel: {
+      enabled: undefined, mode: undefined, wildSymbolId: undefined,
+      chancePerSpin: undefined, maxReelsPerSpin: undefined, haloColor: undefined,
+    },
+    mysterySymbol: {
+      enabled: undefined, mode: undefined, mysterySymbolId: undefined,
+      revealDelayMs: undefined, revealDurationMs: undefined,
+      includeWild: undefined, includeScatter: undefined, haloColor: undefined,
+    },
+    clusterPaysEval: {
+      enabled: undefined, minCluster: undefined, bucketEdges: undefined,
+      paytable: undefined, maxEvents: undefined, diagonal: undefined,
+    },
+    waysEval: {
+      enabled: undefined, waysCount: undefined, minRun: undefined,
+      direction: undefined, maxEvents: undefined,
+    },
+    persistentMultiplier: {
+      enabled: undefined, mode: undefined, startMult: undefined,
+      growPerWin: undefined, growPerCascade: undefined, maxMult: undefined,
+      resetOnRoundEnd: undefined, chipColor: undefined,
+    },
+    holdAndWin: {
+      enabled: undefined, triggerCount: undefined, bonusSymbolId: undefined,
+      respinsAwarded: undefined, resetOnNewBonus: undefined,
+      haloColor: undefined, jackpotLabels: undefined,
+    },
+    respin: {
+      enabled: undefined, mode: undefined, triggerChance: undefined,
+      costX: undefined, holdRule: undefined, respinsPerTrigger: undefined,
+      haloColor: undefined,
+    },
+    winCap: {
+      enabled: undefined, maxWinX: undefined, mode: undefined,
+      overlayLabel: undefined, overlayMs: undefined, color: undefined,
+      forceRoundEnd: undefined,
+    },
+    bonusPick: {
+      enabled: undefined, mode: undefined, tileCount: undefined,
+      maxPicks: undefined, prizePool: undefined, endTokens: undefined,
+      title: undefined, haloColor: undefined,
+    },
+    wheelBonus: {
+      enabled: undefined, segments: undefined, spinDurationMs: undefined,
+      haloColor: undefined, autoSpin: undefined, title: undefined,
+    },
+    lightning: {
+      enabled: undefined, mode: undefined, triggerChance: undefined,
+      minStrikes: undefined, maxStrikes: undefined, multipliers: undefined,
+      haloColor: undefined, strikeDurationMs: undefined,
+    },
+    gamble: {
+      enabled: undefined, mode: undefined, maxRounds: undefined,
+      multiplier: undefined, collectThresholdX: undefined, haloColor: undefined,
+    },
+    superSymbol: {
+      enabled: undefined, mode: undefined, blockSize: undefined,
+      triggerChance: undefined, symbolPool: undefined, haloColor: undefined,
+    },
     confidence: { name: 0, topology: 0, symbols: 0, features: 0 },
   };
 }
@@ -1688,4 +1781,242 @@ export function extractTumble(text, model) {
   }
   if (/\bpreserve[- ]?orbs?\s*[:=]\s*(true|yes|on)/i.test(section)) tu.preserveOrbs = true;
   if (/\bpreserve[- ]?orbs?\s*[:=]\s*(false|no|off)/i.test(section)) tu.preserveOrbs = false;
+}
+
+
+/* ─── Wave L–P extractors ─────────────────────────────────────────────
+ *
+ * Each extractor finds an optional `## <Feature Name>` (or alias) heading
+ * and parses `key: value` lines or `key = value` lines inside it. All
+ * keys are OPTIONAL — block resolveConfig() falls through to safe
+ * defaults. Auto-enable comes from the features list (see block .mjs).
+ */
+
+function _findSection(text, headingRe) {
+  if (!text) return null;
+  const hm = text.match(headingRe);
+  if (!hm) return null;
+  const start = hm.index + hm[0].length;
+  const tail = text.slice(start);
+  const nextH = tail.match(/^#{1,2}\s/m);
+  return nextH ? tail.slice(0, nextH.index) : tail;
+}
+function _readInt(section, key) {
+  const re = new RegExp('\\b' + key + '\\b\\s*[:=]\\s*(-?\\d+)', 'i');
+  const m = section.match(re);
+  return m ? parseInt(m[1], 10) : undefined;
+}
+function _readFloat(section, key) {
+  const re = new RegExp('\\b' + key + '\\b\\s*[:=]\\s*(-?\\d+(?:\\.\\d+)?)', 'i');
+  const m = section.match(re);
+  return m ? parseFloat(m[1]) : undefined;
+}
+function _readBool(section, key) {
+  if (new RegExp('\\b' + key + '\\b\\s*[:=]\\s*(true|yes|on|enabled)\\b', 'i').test(section)) return true;
+  if (new RegExp('\\b' + key + '\\b\\s*[:=]\\s*(false|no|off|disabled)\\b', 'i').test(section)) return false;
+  return undefined;
+}
+function _readStr(section, key) {
+  const re = new RegExp('\\b' + key + '\\b\\s*[:=]\\s*([^\\n]+)', 'i');
+  const m = section.match(re);
+  if (!m) return undefined;
+  return m[1].trim().replace(/[`'"]+$/g, '').replace(/^[`'"]+/g, '').trim();
+}
+
+export function extractStickyWild(text, model) {
+  const s = _findSection(text, /^##\s+(?:Sticky\s+Wild|StickyWild)[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.stickyWild;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const mode = _readStr(s, 'mode'); if (mode) tgt.mode = mode.toLowerCase();
+  const dur = _readInt(s, 'duration[- ]?spins'); if (dur !== undefined) tgt.durationSpins = dur;
+  const wsid = _readStr(s, 'wild[- ]?symbol[- ]?id'); if (wsid) tgt.wildSymbolId = wsid;
+  const halo = _readStr(s, 'halo[- ]?color'); if (halo) tgt.haloColor = halo;
+  const pulse = _readInt(s, 'pulse[- ]?ms'); if (pulse !== undefined) tgt.pulseMs = pulse;
+}
+
+export function extractExpandingWild(text, model) {
+  const s = _findSection(text, /^##\s+(?:Expanding\s+Wild|ExpandingWild)[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.expandingWild;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const mode = _readStr(s, 'mode'); if (mode) tgt.mode = mode.toLowerCase();
+  const wsid = _readStr(s, 'wild[- ]?symbol[- ]?id'); if (wsid) tgt.wildSymbolId = wsid;
+  const dur = _readInt(s, 'expand[- ]?duration[- ]?ms'); if (dur !== undefined) tgt.expandDurationMs = dur;
+  const halo = _readStr(s, 'halo[- ]?color'); if (halo) tgt.haloColor = halo;
+}
+
+export function extractWalkingWild(text, model) {
+  const s = _findSection(text, /^##\s+(?:Walking\s+Wild|WalkingWild)[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.walkingWild;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const mode = _readStr(s, 'mode'); if (mode) tgt.mode = mode.toLowerCase();
+  const wsid = _readStr(s, 'wild[- ]?symbol[- ]?id'); if (wsid) tgt.wildSymbolId = wsid;
+  const dir = _readStr(s, 'direction'); if (dir) tgt.direction = dir.toLowerCase();
+  const respin = _readBool(s, 'trigger[- ]?respin'); if (respin !== undefined) tgt.triggerRespin = respin;
+  const halo = _readStr(s, 'halo[- ]?color'); if (halo) tgt.haloColor = halo;
+}
+
+export function extractWildReel(text, model) {
+  const s = _findSection(text, /^##\s+(?:Wild\s+Reel|WildReel)[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.wildReel;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const mode = _readStr(s, 'mode'); if (mode) tgt.mode = mode.toLowerCase();
+  const wsid = _readStr(s, 'wild[- ]?symbol[- ]?id'); if (wsid) tgt.wildSymbolId = wsid;
+  const ch = _readFloat(s, 'chance[- ]?per[- ]?spin'); if (ch !== undefined) tgt.chancePerSpin = ch;
+  const mx = _readInt(s, 'max[- ]?reels[- ]?per[- ]?spin'); if (mx !== undefined) tgt.maxReelsPerSpin = mx;
+  const halo = _readStr(s, 'halo[- ]?color'); if (halo) tgt.haloColor = halo;
+}
+
+export function extractMysterySymbol(text, model) {
+  const s = _findSection(text, /^##\s+(?:Mystery\s+Symbol|MysterySymbol)[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.mysterySymbol;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const mode = _readStr(s, 'mode'); if (mode) tgt.mode = mode.toLowerCase();
+  const id = _readStr(s, 'mystery[- ]?symbol[- ]?id'); if (id) tgt.mysterySymbolId = id;
+  const rd = _readInt(s, 'reveal[- ]?delay[- ]?ms'); if (rd !== undefined) tgt.revealDelayMs = rd;
+  const rdr = _readInt(s, 'reveal[- ]?duration[- ]?ms'); if (rdr !== undefined) tgt.revealDurationMs = rdr;
+  const iw = _readBool(s, 'include[- ]?wild'); if (iw !== undefined) tgt.includeWild = iw;
+  const is = _readBool(s, 'include[- ]?scatter'); if (is !== undefined) tgt.includeScatter = is;
+  const halo = _readStr(s, 'halo[- ]?color'); if (halo) tgt.haloColor = halo;
+}
+
+export function extractClusterPaysEval(text, model) {
+  const s = _findSection(text, /^##\s+(?:Cluster\s+Pays(?:\s+Eval)?|ClusterPays)[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.clusterPaysEval;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const mc = _readInt(s, 'min[- ]?cluster'); if (mc !== undefined) tgt.minCluster = mc;
+  const me = _readInt(s, 'max[- ]?events'); if (me !== undefined) tgt.maxEvents = me;
+  const dg = _readBool(s, 'diagonal'); if (dg !== undefined) tgt.diagonal = dg;
+  const bes = _readStr(s, 'bucket[- ]?edges');
+  if (bes) {
+    const nums = bes.split(/[,\s]+/).map(n => parseInt(n, 10)).filter(n => Number.isFinite(n));
+    if (nums.length >= 2) tgt.bucketEdges = nums;
+  }
+}
+
+export function extractWaysEval(text, model) {
+  const s = _findSection(text, /^##\s+(?:Ways(?:\s+Eval)?|WaysToWin)[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.waysEval;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const wc = _readInt(s, 'ways[- ]?count'); if (wc !== undefined) tgt.waysCount = wc;
+  const mr = _readInt(s, 'min[- ]?run'); if (mr !== undefined) tgt.minRun = mr;
+  const dir = _readStr(s, 'direction'); if (dir) tgt.direction = dir.toLowerCase();
+  const me = _readInt(s, 'max[- ]?events'); if (me !== undefined) tgt.maxEvents = me;
+}
+
+export function extractPersistentMultiplier(text, model) {
+  const s = _findSection(text, /^##\s+(?:Persistent\s+Multiplier|PersistentMultiplier)[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.persistentMultiplier;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const mode = _readStr(s, 'mode'); if (mode) tgt.mode = mode.toLowerCase();
+  const sm = _readInt(s, 'start[- ]?mult'); if (sm !== undefined) tgt.startMult = sm;
+  const gw = _readInt(s, 'grow[- ]?per[- ]?win'); if (gw !== undefined) tgt.growPerWin = gw;
+  const gc = _readInt(s, 'grow[- ]?per[- ]?cascade'); if (gc !== undefined) tgt.growPerCascade = gc;
+  const mx = _readInt(s, 'max[- ]?mult'); if (mx !== undefined) tgt.maxMult = mx;
+  const rs = _readBool(s, 'reset[- ]?on[- ]?round[- ]?end'); if (rs !== undefined) tgt.resetOnRoundEnd = rs;
+  const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
+}
+
+export function extractHoldAndWin(text, model) {
+  const s = _findSection(text, /^##\s+(?:Hold\s*(?:&|and)\s*Win|Hold\s*(?:&|and)\s*Spin|HoldAndWin)[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.holdAndWin;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const tc = _readInt(s, 'trigger[- ]?count'); if (tc !== undefined) tgt.triggerCount = tc;
+  const bid = _readStr(s, 'bonus[- ]?symbol[- ]?id'); if (bid) tgt.bonusSymbolId = bid;
+  const ra = _readInt(s, 'respins[- ]?awarded'); if (ra !== undefined) tgt.respinsAwarded = ra;
+  const rn = _readBool(s, 'reset[- ]?on[- ]?new[- ]?bonus'); if (rn !== undefined) tgt.resetOnNewBonus = rn;
+  const halo = _readStr(s, 'halo[- ]?color'); if (halo) tgt.haloColor = halo;
+}
+
+export function extractRespin(text, model) {
+  const s = _findSection(text, /^##\s+Respin[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.respin;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const mode = _readStr(s, 'mode'); if (mode) tgt.mode = mode.toLowerCase();
+  const tc = _readFloat(s, 'trigger[- ]?chance'); if (tc !== undefined) tgt.triggerChance = tc;
+  const cx = _readFloat(s, 'cost[- ]?x'); if (cx !== undefined) tgt.costX = cx;
+  const hr = _readStr(s, 'hold[- ]?rule'); if (hr) tgt.holdRule = hr.toLowerCase();
+  const rp = _readInt(s, 'respins[- ]?per[- ]?trigger'); if (rp !== undefined) tgt.respinsPerTrigger = rp;
+  const halo = _readStr(s, 'halo[- ]?color'); if (halo) tgt.haloColor = halo;
+}
+
+export function extractWinCap(text, model) {
+  const s = _findSection(text, /^##\s+(?:Win\s*Cap|WinCap|Max\s*Win\s*Cap)[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.winCap;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const mx = _readInt(s, 'max[- ]?win[- ]?x'); if (mx !== undefined) tgt.maxWinX = mx;
+  const mode = _readStr(s, 'mode'); if (mode) tgt.mode = mode.toLowerCase();
+  const lbl = _readStr(s, 'overlay[- ]?label'); if (lbl) tgt.overlayLabel = lbl;
+  const ms = _readInt(s, 'overlay[- ]?ms'); if (ms !== undefined) tgt.overlayMs = ms;
+  const c = _readStr(s, '\\bcolor'); if (c) tgt.color = c;
+  const fr = _readBool(s, 'force[- ]?round[- ]?end'); if (fr !== undefined) tgt.forceRoundEnd = fr;
+}
+
+export function extractBonusPick(text, model) {
+  const s = _findSection(text, /^##\s+(?:Bonus\s+Pick|BonusPick|Pick[- ]?Em)[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.bonusPick;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const mode = _readStr(s, 'mode'); if (mode) tgt.mode = mode.toLowerCase();
+  const tc = _readInt(s, 'tile[- ]?count'); if (tc !== undefined) tgt.tileCount = tc;
+  const mp = _readInt(s, 'max[- ]?picks'); if (mp !== undefined) tgt.maxPicks = mp;
+  const title = _readStr(s, 'title'); if (title) tgt.title = title.slice(0, 40);
+  const halo = _readStr(s, 'halo[- ]?color'); if (halo) tgt.haloColor = halo;
+}
+
+export function extractWheelBonus(text, model) {
+  const s = _findSection(text, /^##\s+(?:Wheel\s+Bonus|Bonus\s+Wheel|WheelBonus)[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.wheelBonus;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const sd = _readInt(s, 'spin[- ]?duration[- ]?ms'); if (sd !== undefined) tgt.spinDurationMs = sd;
+  const auto = _readBool(s, 'auto[- ]?spin'); if (auto !== undefined) tgt.autoSpin = auto;
+  const title = _readStr(s, 'title'); if (title) tgt.title = title.slice(0, 40);
+  const halo = _readStr(s, 'halo[- ]?color'); if (halo) tgt.haloColor = halo;
+}
+
+export function extractLightning(text, model) {
+  const s = _findSection(text, /^##\s+(?:Lightning(?:\s+Multiplier|\s+Strike)?)[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.lightning;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const mode = _readStr(s, 'mode'); if (mode) tgt.mode = mode.toLowerCase();
+  const tc = _readFloat(s, 'trigger[- ]?chance'); if (tc !== undefined) tgt.triggerChance = tc;
+  const mn = _readInt(s, 'min[- ]?strikes'); if (mn !== undefined) tgt.minStrikes = mn;
+  const mx = _readInt(s, 'max[- ]?strikes'); if (mx !== undefined) tgt.maxStrikes = mx;
+  const halo = _readStr(s, 'halo[- ]?color'); if (halo) tgt.haloColor = halo;
+  const sd = _readInt(s, 'strike[- ]?duration[- ]?ms'); if (sd !== undefined) tgt.strikeDurationMs = sd;
+}
+
+export function extractGamble(text, model) {
+  const s = _findSection(text, /^##\s+Gamble[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.gamble;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const mode = _readStr(s, 'mode'); if (mode) tgt.mode = mode.toLowerCase();
+  const mr = _readInt(s, 'max[- ]?rounds'); if (mr !== undefined) tgt.maxRounds = mr;
+  const mu = _readFloat(s, 'multiplier'); if (mu !== undefined) tgt.multiplier = mu;
+  const ct = _readInt(s, 'collect[- ]?threshold[- ]?x'); if (ct !== undefined) tgt.collectThresholdX = ct;
+  const halo = _readStr(s, 'halo[- ]?color'); if (halo) tgt.haloColor = halo;
+}
+
+export function extractSuperSymbol(text, model) {
+  const s = _findSection(text, /^##\s+(?:Super\s+Symbol|Colossal\s+Symbol|Mega\s+Symbol|SuperSymbol)[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.superSymbol;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const mode = _readStr(s, 'mode'); if (mode) tgt.mode = mode.toLowerCase();
+  const bs = _readInt(s, 'block[- ]?size'); if (bs !== undefined) tgt.blockSize = bs;
+  const tc = _readFloat(s, 'trigger[- ]?chance'); if (tc !== undefined) tgt.triggerChance = tc;
+  const halo = _readStr(s, 'halo[- ]?color'); if (halo) tgt.haloColor = halo;
 }

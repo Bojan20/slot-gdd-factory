@@ -1,0 +1,264 @@
+/**
+ * src/blocks/bonusPick.mjs
+ *
+ * Wave O1 — Bonus Pick / Pick-Em mini-game block.
+ *
+ * Modal overlay with K hidden tiles. Player clicks tiles to reveal prizes.
+ * Round ends when a "Collect/POOP" tile is hit or all picks consumed.
+ * Industry references: Cleopatra (IGT) sphinx pick, Buffalo Pick'em.
+ *
+ * GDD knobs:
+ *   • mode: 'fs' | 'base' | 'both' | 'triggered'
+ *   • tileCount: number — total tiles on the board (default 12)
+ *   • maxPicks: number — picks allowed (default 5)
+ *   • prizePool: array of { label, value, weight }
+ *   • endTokens: array of token labels that end the round (default ["POP"])
+ *   • title: string — modal title
+ *   • haloColor: 'r,g,b'
+ */
+
+export function defaultConfig() {
+  return {
+    enabled: false,
+    mode: 'triggered',
+    tileCount: 12,
+    maxPicks: 5,
+    prizePool: [
+      { label: '×2',  value: 2,  weight: 28 },
+      { label: '×5',  value: 5,  weight: 22 },
+      { label: '×10', value: 10, weight: 18 },
+      { label: '×25', value: 25, weight: 12 },
+      { label: '×50', value: 50, weight: 7 },
+      { label: '×100', value: 100, weight: 3 },
+      { label: 'POP', value: 0, weight: 10 },
+    ],
+    endTokens: ['POP'],
+    title: 'PICK A PRIZE',
+    haloColor: '255,180,60',
+  };
+}
+
+export function resolveConfig(model = {}) {
+  const cfg = defaultConfig();
+  const m = model.bonusPick || {};
+  if (m.enabled != null) cfg.enabled = !!m.enabled;
+  if (m.mode === 'fs' || m.mode === 'base' || m.mode === 'both' || m.mode === 'triggered') cfg.mode = m.mode;
+  if (Number.isFinite(m.tileCount)) cfg.tileCount = clampInt(m.tileCount, 3, 36);
+  if (Number.isFinite(m.maxPicks)) cfg.maxPicks = clampInt(m.maxPicks, 1, 20);
+  if (Array.isArray(m.prizePool) && m.prizePool.every(p => p && typeof p.label === 'string' && Number.isFinite(p.weight))) {
+    cfg.prizePool = m.prizePool.slice(0, 20).map(p => ({
+      label: p.label.slice(0, 12),
+      value: Number.isFinite(p.value) ? p.value : 0,
+      weight: clampInt(p.weight, 1, 1000),
+    }));
+  }
+  if (Array.isArray(m.endTokens) && m.endTokens.every(t => typeof t === 'string')) {
+    cfg.endTokens = m.endTokens.slice(0, 8);
+  }
+  if (typeof m.title === 'string' && m.title.length > 0 && m.title.length <= 40) cfg.title = m.title;
+  if (typeof m.haloColor === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(m.haloColor)) cfg.haloColor = m.haloColor;
+
+  if (Array.isArray(model.features) && model.features.some(f => f.kind === 'bonus_pick')) {
+    cfg.enabled = true;
+  }
+  return cfg;
+}
+
+export function emitBonusPickCSS(cfg = defaultConfig()) {
+  if (!cfg.enabled) return '';
+  return `
+/* ─── bonus pick ────────────────────────────────────────────────── */
+.bp-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.84);
+  backdrop-filter: blur(8px);
+}
+.bp-overlay[data-show="true"] { display: flex; }
+.bp-modal {
+  background: linear-gradient(160deg, #1a1015, #0a0608);
+  border: 2.5px solid rgba(${cfg.haloColor},.7);
+  border-radius: 18px;
+  padding: 1.5rem 1.8rem;
+  color: #f3eede;
+  min-width: min(440px, 92vw);
+  max-width: 94vw;
+  box-shadow: 0 0 60px rgba(${cfg.haloColor},.45);
+}
+.bp-title {
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: rgba(${cfg.haloColor},1);
+  text-align: center;
+  margin-bottom: 0.9rem;
+  text-shadow: 0 0 10px rgba(${cfg.haloColor},.55);
+}
+.bp-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.55rem;
+  margin-bottom: 0.9rem;
+}
+.bp-tile {
+  aspect-ratio: 1;
+  background: linear-gradient(135deg, rgba(${cfg.haloColor},.18), rgba(${cfg.haloColor},.04));
+  border: 2px solid rgba(${cfg.haloColor},.55);
+  border-radius: 10px;
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: transparent;
+  cursor: pointer;
+  transition: transform .12s, background .12s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bp-tile:hover { transform: translateY(-2px); background: rgba(${cfg.haloColor},.25); }
+.bp-tile:disabled { cursor: not-allowed; opacity: 0.55; transform: none; }
+.bp-tile.is-revealed {
+  color: rgba(${cfg.haloColor},1);
+  background: rgba(0,0,0,.6);
+  border-color: rgba(${cfg.haloColor},.85);
+  text-shadow: 0 0 8px rgba(${cfg.haloColor},.85);
+  animation: bpFlip 420ms cubic-bezier(.4,1.4,.5,1);
+}
+.bp-status {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.65rem;
+  opacity: 0.85;
+}
+.bp-close {
+  display: block;
+  width: 100%;
+  background: rgba(${cfg.haloColor},.85);
+  color: #1a1010;
+  border: none;
+  border-radius: 10px;
+  padding: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  display: none;
+}
+.bp-close[data-show="true"] { display: block; }
+@keyframes bpFlip {
+  0%   { transform: rotateY(180deg); }
+  100% { transform: rotateY(0deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bp-tile.is-revealed { animation: none; }
+}
+`;
+}
+
+export function emitBonusPickMarkup(cfg = defaultConfig()) {
+  if (!cfg.enabled) return '';
+  const tiles = Array.from({ length: cfg.tileCount }, (_, i) =>
+    `<button class="bp-tile" data-bp-idx="${i}" type="button" aria-label="Pick ${i + 1}">?</button>`
+  ).join('');
+  return `<div id="bpOverlay" class="bp-overlay" data-show="false" role="dialog" aria-modal="true" aria-labelledby="bpTitle">
+  <div class="bp-modal">
+    <div id="bpTitle" class="bp-title">${escapeHtml(cfg.title)}</div>
+    <div class="bp-status"><span>PICKS LEFT: <span id="bpLeft">${cfg.maxPicks}</span></span><span>TOTAL: <span id="bpTotal">0</span></span></div>
+    <div class="bp-grid">${tiles}</div>
+    <button id="bpClose" class="bp-close" data-show="false" type="button">COLLECT</button>
+  </div>
+</div>`;
+}
+
+export function emitBonusPickRuntime(cfg = defaultConfig()) {
+  if (!cfg.enabled) return `/* bonusPick: disabled */`;
+  return `/* ─── bonus pick runtime ──────────────────────────────────────── */
+const BP_MAX_PICKS = ${cfg.maxPicks};
+const BP_POOL = ${JSON.stringify(cfg.prizePool)};
+const BP_END_TOKENS = ${JSON.stringify(cfg.endTokens)};
+const BP_STATE = { active: false, picksLeft: 0, totalValue: 0, revealedIdx: new Set() };
+
+function _bpDrawPrize() {
+  let total = 0;
+  for (const p of BP_POOL) total += p.weight;
+  let roll = Math.random() * total;
+  for (const p of BP_POOL) {
+    roll -= p.weight;
+    if (roll <= 0) return p;
+  }
+  return BP_POOL[BP_POOL.length - 1];
+}
+
+function bpOpen() {
+  if (BP_STATE.active) return;
+  BP_STATE.active = true;
+  BP_STATE.picksLeft = BP_MAX_PICKS;
+  BP_STATE.totalValue = 0;
+  BP_STATE.revealedIdx.clear();
+  const ov = document.getElementById('bpOverlay');
+  if (!ov) return;
+  ov.dataset.show = 'true';
+  document.getElementById('bpLeft').textContent = String(BP_STATE.picksLeft);
+  document.getElementById('bpTotal').textContent = '0';
+  document.getElementById('bpClose').dataset.show = 'false';
+  ov.querySelectorAll('.bp-tile').forEach(t => {
+    t.disabled = false;
+    t.classList.remove('is-revealed');
+    t.textContent = '?';
+  });
+}
+
+function bpClose() {
+  BP_STATE.active = false;
+  const ov = document.getElementById('bpOverlay');
+  if (ov) ov.dataset.show = 'false';
+}
+
+function _bpHandleClick(ev) {
+  const t = ev.target.closest('.bp-tile');
+  if (!t || t.disabled || !BP_STATE.active) return;
+  const idx = parseInt(t.dataset.bpIdx, 10);
+  if (BP_STATE.revealedIdx.has(idx)) return;
+  const prize = _bpDrawPrize();
+  BP_STATE.revealedIdx.add(idx);
+  t.classList.add('is-revealed');
+  t.textContent = prize.label;
+  t.disabled = true;
+  BP_STATE.totalValue += prize.value;
+  BP_STATE.picksLeft--;
+  document.getElementById('bpLeft').textContent = String(BP_STATE.picksLeft);
+  document.getElementById('bpTotal').textContent = '×' + BP_STATE.totalValue;
+  const isEnd = BP_END_TOKENS.includes(prize.label);
+  if (isEnd || BP_STATE.picksLeft <= 0) {
+    document.querySelectorAll('.bp-tile').forEach(x => x.disabled = true);
+    document.getElementById('bpClose').dataset.show = 'true';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const ov = document.getElementById('bpOverlay');
+  if (ov) ov.addEventListener('click', _bpHandleClick);
+  const closeBtn = document.getElementById('bpClose');
+  if (closeBtn) closeBtn.addEventListener('click', bpClose);
+});
+
+if (typeof window !== 'undefined') {
+  window.bpOpen    = bpOpen;
+  window.bpClose   = bpClose;
+  window.BP_STATE  = BP_STATE;
+}
+`;
+}
+
+function clampInt(n, lo, hi) {
+  n = Math.floor(Number(n));
+  if (!Number.isFinite(n)) return lo;
+  return Math.max(lo, Math.min(hi, n));
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}

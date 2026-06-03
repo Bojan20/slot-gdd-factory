@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `09749d8` · main
+> Last updated: **2026-06-03** · HEAD: `__TBD__` · main
 
 ---
 
@@ -118,6 +118,70 @@
 | WH4 | 30% no-win variance — not every spin lights up (placeholder until math evaluator) | ✅ |
 | WH5 | Works on every uniform-reel grid (rectangular + cluster + megaclusters + lock_respin + expanding + infinity + variable_reel) | ✅ |
 | WH6 | `prefers-reduced-motion` respected (no transition, no scale) | ✅ |
+
+### Wave L–P — 16 detected-but-unused feature kinds wired as LEGO blocks (commit `__TBD__`)
+
+> **Final coverage push** — every feature kind the parser detects now has a
+> dedicated LEGO block with defaults, GDD-driven overrides, CSS + markup +
+> runtime emitters, auto-enable from `features[]`, no-op stub when disabled,
+> and a unit-test suite. Builder gets 16 new imports + CSS calls + markup
+> calls + runtime calls, all gated by `cfg.enabled` so backward compat is
+> preserved on every existing fixture (browser QA 24/24 ✅ 0 console errors).
+
+**Wave L — modifier wilds (5 blocks)**
+
+| ID | Block | File | Tests |
+|---|---|---|---:|
+| L1 | `stickyWild` — sticky position registry across FS round (Map<r,c → spinsLeft>, mode=fs/base/both, durationSpins=0=persistent) | `src/blocks/stickyWild.mjs` | **18 ✅** |
+| L2 | `expandingWild` — fill column when wild lands, expandWildGrow keyframe + grid mutation | `src/blocks/expandingWild.mjs` | **11 ✅** |
+| L3 | `walkingWild` — wild walks dx/dy per spin (left/right/down), respin trigger flag | `src/blocks/walkingWild.mjs` | **13 ✅** |
+| L4 | `wildReel` — randomly-picked reel fully wild on selected spins, chance + maxReelsPerSpin | `src/blocks/wildReel.mjs` | **12 ✅** |
+| L5 | `mysterySymbol` — `?` placeholder reveals to ONE picked regular symbol (or wild/scatter opt-in), rotateY flip animation | `src/blocks/mysterySymbol.mjs` | **15 ✅** |
+
+**Wave M — math evaluators (3 blocks)**
+
+| ID | Block | File | Tests |
+|---|---|---|---:|
+| M1 | `clusterPaysEval` — flood-fill 4/8-connect (orthogonal/diagonal), bucket-edge payouts, wild substitutes, tier-sorted events | `src/blocks/clusterPaysEval.mjs` | **15 ✅** |
+| M2 | `waysEval` — 243/1024/117649 Megaways evaluator, LTR/RTL/both, min-run, per-reel symbol count multiplication | `src/blocks/waysEval.mjs` | **13 ✅** |
+| M3 | `persistentMultiplier` — non-resetting mult inside round, growPerWin / growPerCascade / maxMult cap, pmChip HUD | `src/blocks/persistentMultiplier.mjs` | **18 ✅** |
+
+**Wave N — round controllers (3 blocks)**
+
+| ID | Block | File | Tests |
+|---|---|---|---:|
+| N1 | `holdAndWin` — ≥N bonus → enter Hold; bonus cells lock; respins reset on new bonus; "all locked" Grand path | `src/blocks/holdAndWin.mjs` | **18 ✅** |
+| N2 | `respin` — per-reel re-spin, holdRule=last-reel/all-but-empty/wild-anchor, mode=fs/base/both/paid | `src/blocks/respin.mjs` | **17 ✅** |
+| N3 | `winCap` — regulator MAX WIN terminator, mode=round/spin, force-end FS round, MAX WIN overlay | `src/blocks/winCap.mjs` | **19 ✅** |
+
+**Wave O — mini-games (2 blocks)**
+
+| ID | Block | File | Tests |
+|---|---|---|---:|
+| O1 | `bonusPick` — pick-em modal with K tiles, weighted prize pool, END tokens that close the round | `src/blocks/bonusPick.mjs` | **18 ✅** |
+| O2 | `wheelBonus` — N-segment wheel modal, ease-decel CSS transform, autoSpin flag, configurable segments | `src/blocks/wheelBonus.mjs` | **19 ✅** |
+
+**Wave P — FX / risk / oversized (3 blocks)**
+
+| ID | Block | File | Tests |
+|---|---|---|---:|
+| P1 | `lightning` — random-hit bolts on N cells, ⚡ glyph + multiplier chip overlay, weighted pool | `src/blocks/lightning.mjs` | **17 ✅** |
+| P2 | `gamble` — double-or-nothing modal, mode=color/suit/ladder, multiplier auto-set (×2 / ×4), maxRounds cap | `src/blocks/gamble.mjs` | **19 ✅** |
+| P3 | `superSymbol` — 2×2/3×3/4×4 colossal block, gridRow/Column span, anchor cell + covered cells | `src/blocks/superSymbol.mjs` | **17 ✅** |
+
+**Wave L–P shared infrastructure**
+
+| ID | Feature | Files | Status |
+|---|---|---|---|
+| LP1 | `freshModel()` extended with 16 new top-level slots — all `undefined` so block defaults stay backward-compatible | `src/parser.mjs` | ✅ |
+| LP2 | 16 `extract*` parser functions — read `## <Feature Name>` (or alias) heading, parse `key: value` / `key = value` lines; helpers `_findSection` / `_readInt` / `_readFloat` / `_readBool` / `_readStr` | `src/parser.mjs` | ✅ |
+| LP3 | `buildSlotHTML.mjs` wired: 16 imports + 14 CSS emit calls + 7 markup emit calls + 16 runtime emit calls (correct order: wilds → super → evaluators → round-control → FX → mini-games) | `src/buildSlotHTML.mjs` | ✅ |
+| LP4 | Unit tests: **256 cases** across 16 new block test files (defaults + auto-enable + override + clamp + CSS/markup/runtime emit + window exposure + stub-when-disabled) | `tests/blocks/*.test.mjs` | ✅ |
+| LP5 | `npm run test:blocks` — combined **384/384 ✅** (existing 128 + new 256) | `package.json` | ✅ |
+| LP6 | Browser render audit — `tests/render-browser-all.mjs` 24/24 ✅ 0 console errors (all 16 blocks emit valid CSS + runtime even when disabled — stub paths exercised) | `tests/render-browser-all.mjs` | ✅ |
+| LP7 | LEGO integrity grep — pred-commit gate `function (detectLineWins\|drawPaylineOverlay\|playWinSymCycle\|_buildStandardPaylines)\b` returns 0 hits in `src/buildSlotHTML.mjs` | — | ✅ |
+| LP8 | Parse-real tests 4/4 ✅ — WoO/CF/MF/GoO 1000 fixtures still parse with 16 new feature slots present in model | `tests/parse-real.mjs` | ✅ |
+| LP9 | Grid render tests 20/20 ✅ — no shape regressions from grid mutation runtimes (expandingWild / superSymbol) | `tests/render-grid-all.mjs` | ✅ |
 
 ### Wave K — Pay-Anywhere suite (Gates of Olympus 1000 family) (commit `09749d8`)
 
@@ -423,7 +487,23 @@
 | `tests/blocks/triggerCounting.test.mjs` | triggerCounting block (countTriggerSymbols + spinsForCount) | **7/7 ✅** |
 | `tests/blocks/postSpin.test.mjs` | postSpin block (handlePostSpin orchestration) | **8/8 ✅** |
 | `tests/blocks/reelEngine.test.mjs` | reelEngine block (full hot-path — 8 functions + 4 state vars + 12 knobs) | **13/13 ✅** |
-| **TOTAL** | | **322/322 ✅** |
+| `tests/blocks/stickyWild.test.mjs` | stickyWild block (Wave L1) | **18/18 ✅** |
+| `tests/blocks/expandingWild.test.mjs` | expandingWild block (Wave L2) | **11/11 ✅** |
+| `tests/blocks/walkingWild.test.mjs` | walkingWild block (Wave L3) | **13/13 ✅** |
+| `tests/blocks/wildReel.test.mjs` | wildReel block (Wave L4) | **12/12 ✅** |
+| `tests/blocks/mysterySymbol.test.mjs` | mysterySymbol block (Wave L5) | **15/15 ✅** |
+| `tests/blocks/clusterPaysEval.test.mjs` | clusterPaysEval block (Wave M1) | **15/15 ✅** |
+| `tests/blocks/waysEval.test.mjs` | waysEval block (Wave M2) | **13/13 ✅** |
+| `tests/blocks/persistentMultiplier.test.mjs` | persistentMultiplier block (Wave M3) | **18/18 ✅** |
+| `tests/blocks/holdAndWin.test.mjs` | holdAndWin block (Wave N1) | **18/18 ✅** |
+| `tests/blocks/respin.test.mjs` | respin block (Wave N2) | **17/17 ✅** |
+| `tests/blocks/winCap.test.mjs` | winCap block (Wave N3) | **19/19 ✅** |
+| `tests/blocks/bonusPick.test.mjs` | bonusPick block (Wave O1) | **18/18 ✅** |
+| `tests/blocks/wheelBonus.test.mjs` | wheelBonus block (Wave O2) | **19/19 ✅** |
+| `tests/blocks/lightning.test.mjs` | lightning block (Wave P1) | **17/17 ✅** |
+| `tests/blocks/gamble.test.mjs` | gamble block (Wave P2) | **19/19 ✅** |
+| `tests/blocks/superSymbol.test.mjs` | superSymbol block (Wave P3) | **17/17 ✅** |
+| **TOTAL** | | **384/384 ✅** |
 
 ---
 
@@ -440,10 +520,10 @@
 | Pri | Item | Why | Effort |
 |:-:|---|---|---|
 | 1 | **Wave J2b — Hex real reel engine** | hex koristi axial (q,r) koordinate, treba poseban mapper iz hex tiles u reel-strip columns | M |
-| 4 | **Wave J3 — SVG kinds (wheel / crash / radial / slingo / plinko)** — domain-specific spin animation | each kind needs its own engine; can't reuse rectangular | L |
-| 5 | **PAR / Math hot-swap injector** | README Phase 2 — placeholder math still in use | XL |
-| 6 | **Sound cue placeholders** (trigger sting, anticipation hum, FS placard whoosh) | currently silent; production demos want audio scaffolding | M |
-| 7 | **Wired modeling for ~16 detected-but-unused feature kinds** (hold_and_win / expanding_wild / walking_wild / sticky_wild / mystery_symbol / bonus_pick / wheel_bonus / cluster_pays evaluator / ways evaluator / lightning / respin / wild_reel / gamble / super_symbol / win_cap / persistent_multiplier) — Wave K shipped cascade/multiplier(orb)/bonus_buy/ante_bet/scatter_pay/pay_anywhere | parser detects, template ignores | XL |
+| 2 | **Wave J3 — SVG kinds (wheel / crash / radial / slingo / plinko)** — domain-specific spin animation | each kind needs its own engine; can't reuse rectangular | L |
+| 3 | **PAR / Math hot-swap injector** | README Phase 2 — placeholder math still in use | XL |
+| 4 | **Sound cue placeholders** (trigger sting, anticipation hum, FS placard whoosh) | currently silent; production demos want audio scaffolding | M |
+| 5 | **Wave L–P orchestration glue** — invoke the 16 new feature blocks at the right lifecycle moments (post-spin: harvest sticky/walking wilds; pre-eval: mystery reveal + super symbol; eval: cluster/ways routing; round-end: pm reset / winCap reset). Blocks emit safe stub no-ops today; this wave wires them into the actual spin pipeline. | M |
 
 ---
 

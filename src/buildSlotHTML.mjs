@@ -101,6 +101,71 @@ import {
   emitAnteBetRuntime,
   resolveConfig as resolveAnteBetConfig,
 } from './blocks/anteBet.mjs';
+/* Wave L–P — 16 detected-but-unused feature kinds, now wired as LEGO blocks */
+import {
+  emitStickyWildCSS, emitStickyWildRuntime,
+  resolveConfig as resolveStickyWildConfig,
+} from './blocks/stickyWild.mjs';
+import {
+  emitExpandingWildCSS, emitExpandingWildRuntime,
+  resolveConfig as resolveExpandingWildConfig,
+} from './blocks/expandingWild.mjs';
+import {
+  emitWalkingWildCSS, emitWalkingWildRuntime,
+  resolveConfig as resolveWalkingWildConfig,
+} from './blocks/walkingWild.mjs';
+import {
+  emitWildReelCSS, emitWildReelRuntime,
+  resolveConfig as resolveWildReelConfig,
+} from './blocks/wildReel.mjs';
+import {
+  emitMysterySymbolCSS, emitMysterySymbolRuntime,
+  resolveConfig as resolveMysterySymbolConfig,
+} from './blocks/mysterySymbol.mjs';
+import {
+  emitClusterPaysEvalRuntime,
+  resolveConfig as resolveClusterPaysEvalConfig,
+} from './blocks/clusterPaysEval.mjs';
+import {
+  emitWaysEvalRuntime,
+  resolveConfig as resolveWaysEvalConfig,
+} from './blocks/waysEval.mjs';
+import {
+  emitPersistentMultiplierCSS, emitPersistentMultiplierMarkup, emitPersistentMultiplierRuntime,
+  resolveConfig as resolvePersistentMultiplierConfig,
+} from './blocks/persistentMultiplier.mjs';
+import {
+  emitHoldAndWinCSS, emitHoldAndWinMarkup, emitHoldAndWinRuntime,
+  resolveConfig as resolveHoldAndWinConfig,
+} from './blocks/holdAndWin.mjs';
+import {
+  emitRespinCSS, emitRespinMarkup, emitRespinRuntime,
+  resolveConfig as resolveRespinConfig,
+} from './blocks/respin.mjs';
+import {
+  emitWinCapCSS, emitWinCapMarkup, emitWinCapRuntime,
+  resolveConfig as resolveWinCapConfig,
+} from './blocks/winCap.mjs';
+import {
+  emitBonusPickCSS, emitBonusPickMarkup, emitBonusPickRuntime,
+  resolveConfig as resolveBonusPickConfig,
+} from './blocks/bonusPick.mjs';
+import {
+  emitWheelBonusCSS, emitWheelBonusMarkup, emitWheelBonusRuntime,
+  resolveConfig as resolveWheelBonusConfig,
+} from './blocks/wheelBonus.mjs';
+import {
+  emitLightningCSS, emitLightningRuntime,
+  resolveConfig as resolveLightningConfig,
+} from './blocks/lightning.mjs';
+import {
+  emitGambleCSS, emitGambleMarkup, emitGambleRuntime,
+  resolveConfig as resolveGambleConfig,
+} from './blocks/gamble.mjs';
+import {
+  emitSuperSymbolCSS, emitSuperSymbolRuntime,
+  resolveConfig as resolveSuperSymbolConfig,
+} from './blocks/superSymbol.mjs';
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({
@@ -576,6 +641,21 @@ ${emitTumbleCSS(resolveTumbleConfig(model))}
 ${emitMultiplierOrbCSS(resolveMultiplierOrbConfig(model))}
 ${emitBonusBuyCSS(resolveBonusBuyConfig(model))}
 ${emitAnteBetCSS(resolveAnteBetConfig(model))}
+/* Wave L–P — 16 feature blocks CSS (no-op when disabled) */
+${emitStickyWildCSS(resolveStickyWildConfig(model))}
+${emitExpandingWildCSS(resolveExpandingWildConfig(model))}
+${emitWalkingWildCSS(resolveWalkingWildConfig(model))}
+${emitWildReelCSS(resolveWildReelConfig(model))}
+${emitMysterySymbolCSS(resolveMysterySymbolConfig(model))}
+${emitPersistentMultiplierCSS(resolvePersistentMultiplierConfig(model))}
+${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
+${emitRespinCSS(resolveRespinConfig(model))}
+${emitWinCapCSS(resolveWinCapConfig(model))}
+${emitBonusPickCSS(resolveBonusPickConfig(model))}
+${emitWheelBonusCSS(resolveWheelBonusConfig(model))}
+${emitLightningCSS(resolveLightningConfig(model))}
+${emitGambleCSS(resolveGambleConfig(model))}
+${emitSuperSymbolCSS(resolveSuperSymbolConfig(model))}
 
 /* ── Win-symbol cycle ── independent modular block ────────────────────────
    Plays AFTER reels settle on a non-trigger BASE spin. Multiple winning
@@ -801,6 +881,14 @@ ${emitFreeSpinsOverlayMarkup(resolveFreeSpinsConfig(model))}
 
 ${emitBonusBuyMarkup(resolveBonusBuyConfig(model))}
 ${emitAnteBetMarkup(resolveAnteBetConfig(model))}
+<!-- Wave L–P markup (empty strings when disabled) -->
+${emitPersistentMultiplierMarkup(resolvePersistentMultiplierConfig(model))}
+${emitHoldAndWinMarkup(resolveHoldAndWinConfig(model))}
+${emitRespinMarkup(resolveRespinConfig(model))}
+${emitWinCapMarkup(resolveWinCapConfig(model))}
+${emitBonusPickMarkup(resolveBonusPickConfig(model))}
+${emitWheelBonusMarkup(resolveWheelBonusConfig(model))}
+${emitGambleMarkup(resolveGambleConfig(model))}
 
 <script>
   const POOL = ${JSON.stringify(pool.map(s => s.id))};
@@ -1067,6 +1155,27 @@ ${emitAnteBetMarkup(resolveAnteBetConfig(model))}
   ${emitTumbleRuntime(resolveTumbleConfig(model))}
   ${emitBonusBuyRuntime(resolveBonusBuyConfig(model))}
   ${emitAnteBetRuntime(resolveAnteBetConfig(model))}
+
+  /* Wave L–P — 16 feature kinds runtime (no-op stubs when disabled).
+     Order: wilds first (modify the grid), then evaluators (read modified
+     grid), then round-control (consume eval results), then mini-games
+     (overlay UIs, independent triggers). */
+  ${emitStickyWildRuntime(resolveStickyWildConfig(model))}
+  ${emitExpandingWildRuntime(resolveExpandingWildConfig(model))}
+  ${emitWalkingWildRuntime(resolveWalkingWildConfig(model))}
+  ${emitWildReelRuntime(resolveWildReelConfig(model))}
+  ${emitMysterySymbolRuntime(resolveMysterySymbolConfig(model))}
+  ${emitSuperSymbolRuntime(resolveSuperSymbolConfig(model))}
+  ${emitClusterPaysEvalRuntime(resolveClusterPaysEvalConfig(model))}
+  ${emitWaysEvalRuntime(resolveWaysEvalConfig(model))}
+  ${emitPersistentMultiplierRuntime(resolvePersistentMultiplierConfig(model))}
+  ${emitHoldAndWinRuntime(resolveHoldAndWinConfig(model))}
+  ${emitRespinRuntime(resolveRespinConfig(model))}
+  ${emitWinCapRuntime(resolveWinCapConfig(model))}
+  ${emitLightningRuntime(resolveLightningConfig(model))}
+  ${emitBonusPickRuntime(resolveBonusPickConfig(model))}
+  ${emitWheelBonusRuntime(resolveWheelBonusConfig(model))}
+  ${emitGambleRuntime(resolveGambleConfig(model))}
 
   ${emitPostSpinRuntime(resolvePostSpinConfig(model))}
 
