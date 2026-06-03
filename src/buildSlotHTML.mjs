@@ -1076,16 +1076,22 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     const topRung = (FREESPINS.awards || []).reduce(
       (m, a) => Math.max(m, a.count), threshold);
 
-    /* Count trigger symbols on every reel that has already settled. */
+    /* Count trigger symbols on every reel that has already settled.
+       Two modes (parser.mjs decides per-GDD):
+         'perReel' (default) — each reel adds at most 1 (industry norm)
+         'any'               — every scatter CELL adds 1 (stacked-scatter title) */
     const trig = (FREESPINS.triggerSymbol || "S").toUpperCase();
+    const countMode = (FREESPINS.countMode === 'any') ? 'any' : 'perReel';
     let scattersSoFar = 0;
     let stoppedCount  = 0;
     for (const r of RECT_REELS) {
       if (r.spinning) continue;
       stoppedCount++;
+      let reelHits = 0;
       for (let i = 1; i <= ROWS; i++) {
-        if ((r.cells[i].textContent || "").toUpperCase() === trig) scattersSoFar++;
+        if ((r.cells[i].textContent || "").toUpperCase() === trig) reelHits++;
       }
+      scattersSoFar += (countMode === 'any') ? reelHits : (reelHits > 0 ? 1 : 0);
     }
 
     const stillSpinning = RECT_REELS.filter(r => r.spinning);
@@ -1404,18 +1410,22 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
      SVG <text> nodes, not .cell divs — those get a dedicated path. */
   function countTriggerSymbols() {
     const id = (FREESPINS.triggerSymbol || "S").toUpperCase();
+    const countMode = (FREESPINS.countMode === 'any') ? 'any' : 'perReel';
     if (SHAPE.kind === "rectangular" && RECT_REELS) {
       let n = 0;
       for (const reel of RECT_REELS) {
+        let hits = 0;
         for (let i = 1; i <= ROWS; i++) {
-          if ((reel.cells[i].textContent || "").toUpperCase() === id) n++;
+          if ((reel.cells[i].textContent || "").toUpperCase() === id) hits++;
         }
+        n += (countMode === 'any') ? hits : (hits > 0 ? 1 : 0);
       }
       return n;
     }
     /* Wheel & crash render as SVG — text segments live inside <text>, not
-       .cell divs. Fallback path that counts trigger text anywhere on the
-       grid host, scoped to <text> for SVG and .cell for HTML. */
+       .cell divs. Per-reel collapse only meaningful for rectangular kinds;
+       for SVG / non-reel grids we always count distinct hits (no reel
+       column to dedupe against). */
     let n = 0;
     const nodes = grid.querySelectorAll(".cell, text");
     nodes.forEach(c => {

@@ -132,11 +132,22 @@ export function extractFreeSpinsConfig(text, model) {
   }
 
   /* Default: industry-standard 3/4/5 scatter ladder, 10/15/20 spins,
-     static ×1 multiplier, retrigger 3S=+5 spins, purple stage. */
+     static ×1 multiplier, retrigger 3S=+5 spins, purple stage.
+
+     `countMode` — how scatters are counted toward the trigger threshold
+     and anticipation gate:
+       'perReel' — each reel contributes at most 1 toward the count
+                   (industry-default; ladder rungs read as "N reels with
+                   a scatter", not "N scatter cells"). DEFAULT.
+       'any'     — every scatter cell counts (a single reel may carry 2-3
+                   scatters that all add to the total). Used by titles
+                   that explicitly call out "stacked scatters" / "scatters
+                   may stack" or use multi-row scatter symbols. */
   const fs = {
     enabled: true,
     triggerSymbol: 'S',
     triggerCounts: [3, 4, 5],
+    countMode: 'perReel',   /* see detection block below */
     awards: [
       { count: 3, spins: 10 },
       { count: 4, spins: 15 },
@@ -232,6 +243,85 @@ export function extractFreeSpinsConfig(text, model) {
     }
     /* else keep default { enabled:true, count:3, spins:5 } */
   }
+
+  /* Scatter count-mode detection — EN + SR phrases.
+
+     Order matters: explicit "may stack" phrases for `any` mode are checked
+     FIRST so an ambiguous fixture that mentions both wins the explicit
+     intent. If neither pattern matches, `countMode` stays at the default
+     'perReel' (already set above).
+
+     PHRASE BANK
+       any (multi-per-reel):
+         - "scatters may stack"
+         - "scatters can stack"
+         - "stacked scatters"
+         - "scatter stacks"
+         - "multiple scatters per reel"
+         - "scatters can land on the same reel"
+         - "more than one scatter per reel"
+         - "2x scatter" / "3x scatter" / "stacked S"
+         - "vise sketera po rilu" / "više skatera po rilu"
+         - "stack-ovani sketeri" / "stakovani sketeri"
+         - "moze vise sketera po rilu" / "može više skatera po rilu"
+       perReel (one-per-reel, default):
+         - "one scatter per reel"
+         - "1 scatter per reel"
+         - "max one scatter per reel"
+         - "only one scatter per reel"
+         - "single scatter per reel"
+         - "scatter on different reels"
+         - "scatters on different reels"
+         - "scatters on distinct reels"
+         - "unique reels"
+         - "per-reel scatter"
+         - "po jedan sketer po rilu" / "po jedan skater po rilu"
+         - "jedan sketer po rilu"
+         - "po rilu jedan sketer"
+         - "samo jedan sketer po rilu" / "samo po jedan sketer"
+         - "jedinstveni rilovi" / "razliciti rilovi"
+  */
+  /* Phonetic-tolerant SR scatter token: handles English transliterations
+     (sketer, skater, sćeter, scater, scatter, sceter) so a writer's
+     spelling doesn't break trigger-mode detection. */
+  const SR_SCATTER = '(?:sketer|skater|sceter|scater|scatter|s[ćč]eter)[a-z]*';
+
+  const anyModeRe = new RegExp(
+    '(?:scatters?\\s+(?:may|can)\\s+stack)' +
+    '|(?:stacked\\s+scatters?)' +
+    '|(?:scatter\\s+stacks?)' +
+    '|(?:multiple\\s+scatters?\\s+per\\s+reel)' +
+    '|(?:scatters?\\s+can\\s+land\\s+on\\s+(?:the\\s+)?same\\s+reel)' +
+    '|(?:more\\s+than\\s+one\\s+scatter\\s+per\\s+reel)' +
+    '|(?:\\b[2-9]\\s*[x×]\\s+scatter)' +
+    '|(?:stacked\\s+S\\b)' +
+    '|(?:v(?:i|í|i)[sš]e\\s+' + SR_SCATTER + '\\s+po\\s+rilu)' +
+    '|(?:stack[\\-\\s]?ovani\\s+' + SR_SCATTER + ')' +
+    '|(?:stakovani\\s+' + SR_SCATTER + ')' +
+    '|(?:mo[zž]e\\s+v(?:i|í)[sš]e\\s+' + SR_SCATTER + '\\s+po\\s+rilu)',
+    'i'
+  );
+
+  const perReelModeRe = new RegExp(
+    '(?:(?:one|1|single|only\\s+one|max(?:imum)?\\s+(?:of\\s+)?one)\\s+scatters?\\s+per\\s+reel)' +
+    '|(?:scatters?\\s+on\\s+(?:different|distinct|separate|unique)\\s+reels?)' +
+    '|(?:unique\\s+reels?\\s+(?:only|required))' +
+    '|(?:per[\\-\\s]reel\\s+scatters?)' +
+    '|(?:scatters?\\s+(?:must|need)\\s+(?:to\\s+)?(?:land\\s+)?on\\s+(?:different|distinct)\\s+reels?)' +
+    '|(?:(?:po\\s+jedan|jedan)\\s+' + SR_SCATTER + '\\s+po\\s+rilu)' +
+    '|(?:po\\s+rilu\\s+jedan\\s+' + SR_SCATTER + ')' +
+    '|(?:samo\\s+(?:po\\s+)?jedan\\s+' + SR_SCATTER + ')' +
+    '|(?:jedinstveni\\s+rilovi)' +
+    '|(?:razli[cč]iti\\s+rilovi)',
+    'i'
+  );
+
+  if (anyModeRe.test(text)) {
+    fs.countMode = 'any';
+  } else if (perReelModeRe.test(text)) {
+    fs.countMode = 'perReel';
+  }
+  /* else: keep default 'perReel' — Boki's rule: GDD silent → one-per-reel. */
 
   /* Visual mode — heuristic from theme palette. If palette has purple/violet
      hex, use purple. If gold-heavy, use gold. If red/crimson, use crimson. */
