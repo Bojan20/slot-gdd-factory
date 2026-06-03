@@ -130,6 +130,13 @@ export function parseMarkdownGDD(text) {
      + transition delays for the freeSpins lego block. */
   extractFreeSpinsPresentation(text, model);
 
+  /* reel-engine CSS knobs (blur strength + brightness + fade) */
+  extractReelEngine(text, model);
+
+  /* trigger-counting + post-spin orchestration knobs */
+  extractTriggerCounting(text, model);
+  extractPostSpin(text, model);
+
   // math (RTP / volatility / max-win) intentionally NOT extracted in this phase.
 
   return model;
@@ -917,6 +924,25 @@ function freshModel() {
       gold: undefined,
       skipDuringFs: undefined,
     },
+    /* Reel-engine CSS knobs — consumed by src/blocks/reelEngineCSS.mjs. */
+    reelEngine: {
+      blurPx: undefined,
+      blurDim: undefined,
+      blurFadeMs: undefined,
+    },
+    /* Trigger-counting config — consumed by src/blocks/triggerCounting.mjs. */
+    triggerCounting: {
+      defaultThreshold: undefined,
+    },
+    /* Post-spin orchestration knobs — consumed by src/blocks/postSpin.mjs. */
+    postSpin: {
+      settlePauseMs: undefined,
+      forcedSettlePauseMs: undefined,
+      retriggerCap: undefined,
+      fsSpinBreathMs: undefined,
+      fakeWinChance: undefined,
+      fakeWinMaxX: undefined,
+    },
     /* Free-spins-presentation block config — consumed by
        src/blocks/freeSpins.mjs. Separate from the structural FS config
        (freeSpins) which is math/feature; this is purely the visual layer. */
@@ -1248,4 +1274,73 @@ export function extractFreeSpinsPresentation(text, model) {
     const m = section.match(rx);
     if (m) fp[k] = parseInt(m[1], 10);
   }
+}
+
+/* ── extractReelEngine — GDD-driven reel engine CSS knobs ────────────────
+   "## Reel Engine" / "## Spin Blur" section. All keys optional. */
+export function extractReelEngine(text, model) {
+  if (!text || !model) return;
+  const headingRx = /^##\s*(?:reel\s*engine|spin\s*blur)\s*$/im;
+  const startMatch = text.match(headingRx);
+  if (!startMatch) return;
+  const start = startMatch.index + startMatch[0].length;
+  const restRx = /^#{1,2}\s/m;
+  const tail = text.slice(start);
+  const nextH = tail.match(restRx);
+  const section = nextH ? tail.slice(0, nextH.index) : tail;
+
+  const re = model.reelEngine;
+  const bp = section.match(/\bblur[- ]?px\s*[:=]\s*(\d+(?:\.\d+)?)/i);
+  if (bp) re.blurPx = parseFloat(bp[1]);
+  const bd = section.match(/\bblur[- ]?dim\s*[:=]\s*(0?\.\d+|0|1)/i);
+  if (bd) re.blurDim = parseFloat(bd[1]);
+  const bf = section.match(/\bblur[- ]?fade[- ]?ms\s*[:=]\s*(\d+)/i);
+  if (bf) re.blurFadeMs = parseInt(bf[1], 10);
+}
+
+/* ── extractTriggerCounting — GDD-driven trigger counting knobs ──────────
+   "## Trigger Counting" / "## Scatter Counting" section. All keys optional. */
+export function extractTriggerCounting(text, model) {
+  if (!text || !model) return;
+  const headingRx = /^##\s*(?:trigger\s*counting|scatter\s*counting)\s*$/im;
+  const startMatch = text.match(headingRx);
+  if (!startMatch) return;
+  const start = startMatch.index + startMatch[0].length;
+  const restRx = /^#{1,2}\s/m;
+  const tail = text.slice(start);
+  const nextH = tail.match(restRx);
+  const section = nextH ? tail.slice(0, nextH.index) : tail;
+
+  const tc = model.triggerCounting;
+  const dt = section.match(/\bdefault[- ]?threshold\s*[:=]\s*(\d+)/i);
+  if (dt) tc.defaultThreshold = parseInt(dt[1], 10);
+}
+
+/* ── extractPostSpin — GDD-driven post-spin orchestration knobs ──────────
+   "## Post Spin" / "## Post-Spin Orchestration" section. All keys optional. */
+export function extractPostSpin(text, model) {
+  if (!text || !model) return;
+  const headingRx = /^##\s*(?:post[- ]?spin|post[- ]?spin\s*orchestration)\s*$/im;
+  const startMatch = text.match(headingRx);
+  if (!startMatch) return;
+  const start = startMatch.index + startMatch[0].length;
+  const restRx = /^#{1,2}\s/m;
+  const tail = text.slice(start);
+  const nextH = tail.match(restRx);
+  const section = nextH ? tail.slice(0, nextH.index) : tail;
+
+  const ps = model.postSpin;
+  const intMap = [
+    ['settlePauseMs',       /\bsettle[- ]?pause[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['forcedSettlePauseMs', /\bforced[- ]?settle[- ]?pause[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['retriggerCap',        /\bretrigger[- ]?cap\s*[:=]\s*(\d+)/i],
+    ['fsSpinBreathMs',      /\bfs[- ]?spin[- ]?breath[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['fakeWinMaxX',         /\bfake[- ]?win[- ]?max[- ]?x\s*[:=]\s*(\d+)/i],
+  ];
+  for (const [k, rx] of intMap) {
+    const m = section.match(rx);
+    if (m) ps[k] = parseInt(m[1], 10);
+  }
+  const fwc = section.match(/\bfake[- ]?win[- ]?chance\s*[:=]\s*(0?\.\d+|0|1)/i);
+  if (fwc) ps.fakeWinChance = parseFloat(fwc[1]);
 }

@@ -58,6 +58,18 @@ import {
   emitFreeSpinsRuntime,
   resolveConfig as resolveFreeSpinsConfig,
 } from './blocks/freeSpins.mjs';
+import {
+  emitReelEngineCSS,
+  resolveConfig as resolveReelEngineConfig,
+} from './blocks/reelEngineCSS.mjs';
+import {
+  emitTriggerCountingRuntime,
+  resolveConfig as resolveTriggerCountingConfig,
+} from './blocks/triggerCounting.mjs';
+import {
+  emitPostSpinRuntime,
+  resolveConfig as resolvePostSpinConfig,
+} from './blocks/postSpin.mjs';
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({
@@ -506,27 +518,7 @@ ${emitStageBadgeCSS(resolveStageBadgeConfig(model))}
 }
 /* Hex inner ornament removed — keep cells flat like every other shape. */
 .wheel-svg { width: 80%; max-width: 480px; aspect-ratio: 1 / 1; }
-/* ─── Reel spin engine (rectangular only, for now) ─────────────────── */
-.reelCol {
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--cell-radius);
-  background: transparent;
-}
-.reelStrip {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--cell-gap);
-  will-change: transform;
-}
-.cell.is-blurring {
-  /* Motion blur dok se ril vrti — pravi industry "spin" osećaj.
-     Vertikalni motion-blur effect (jača Y-os blur kroz feGaussianBlur
-     fallback je standard CSS blur sa povećanom vrednošću). */
-  filter: blur(4.5px) brightness(0.88);
-  transition: filter 80ms linear;
-}
+${emitReelEngineCSS(resolveReelEngineConfig(model))}
 ${emitAnticipationCSS(resolveAnticipationConfig(model))}
 .spinBtn.is-spinning { pointer-events: none; opacity: 0.78; }
 .spinBtn.is-spinning svg { opacity: 0.55; }
@@ -1417,74 +1409,7 @@ ${emitFreeSpinsOverlayMarkup(resolveFreeSpinsConfig(model))}
     return;
   }
 
-  /* Count how many trigger-symbols are visible on the current grid. For
-     rectangular kinds we look at the VISIBLE strip rows (indexes 1..ROWS),
-     not the buffer cells above/below the mask. Wheel/crash render through
-     SVG <text> nodes, not .cell divs — those get a dedicated path. */
-  function countTriggerSymbols() {
-    const id = (FREESPINS.triggerSymbol || "S").toUpperCase();
-    const countMode = (FREESPINS.countMode === 'any') ? 'any' : 'perReel';
-    /* For rectangular AND variable_reel (both engine-driven kinds with
-       per-reel visible strips) we count from RECT_REELS — that gives the
-       deduped per-reel view the anticipation logic relies on. Every other
-       kind dedupes via the generic .cell scan below. */
-    if ((SHAPE.kind === "rectangular" || SHAPE.kind === "variable_reel") && RECT_REELS) {
-      let n = 0;
-      for (const reel of RECT_REELS) {
-        let hits = 0;
-        const vis = reel.visibleRows || ROWS;
-        for (let i = 1; i <= vis; i++) {
-          if ((reel.cells[i].textContent || "").toUpperCase() === id) hits++;
-        }
-        n += (countMode === 'any') ? hits : (hits > 0 ? 1 : 0);
-      }
-      return n;
-    }
-    /* HTML non-rectangular kinds that are flat row-major cell grids with
-       a well-defined REELS×ROWS column shape (cluster / megaclusters /
-       lock_respin / expanding / infinity). The .cell DOM order is row-
-       major (r=0,c=0), (r=0,c=1)… so column index = i % REELS. The
-       perReel collapse there is meaningful: dedupes any column that
-       carried multiple scatters down to 1. */
-    const COL_KINDS = new Set([
-      'cluster', 'megaclusters', 'lock_respin', 'expanding', 'infinity',
-    ]);
-    if (countMode === 'perReel' && COL_KINDS.has(SHAPE.kind)) {
-      const cells = grid.querySelectorAll('.cell');
-      if (REELS && cells.length > 0) {
-        const colsHit = new Set();
-        cells.forEach((c, i) => {
-          if ((c.textContent || '').toUpperCase() === id) {
-            colsHit.add(i % REELS);
-          }
-        });
-        return colsHit.size;
-      }
-    }
-    /* Wheel / crash / radial / slingo / plinko / hex / diamond / pyramid
-       / cross / l_shape / variable_reel — no clean column dedupe. SVG
-       text segments live inside <text> rather than .cell. Count every
-       trigger-symbol cell as one hit. */
-    let n = 0;
-    const nodes = grid.querySelectorAll(".cell, text");
-    nodes.forEach(c => {
-      if ((c.textContent || "").toUpperCase() === id) n++;
-    });
-    return n;
-  }
-
-  /* Map a scatter count to the awarded number of spins, using the GDD's
-     award table. Returns 0 if the count doesn't trigger anything. */
-  function spinsForCount(count) {
-    if (!FREESPINS.enabled) return 0;
-    /* Match the highest threshold ≤ count. */
-    const awards = (FREESPINS.awards || []).slice().sort((a, b) => a.count - b.count);
-    let award = 0;
-    for (const a of awards) {
-      if (count >= a.count) award = a.spins;
-    }
-    return award;
-  }
+  ${emitTriggerCountingRuntime(resolveTriggerCountingConfig(model))}
 
   /* ── Placeholder win-combo highlight ─────────────────────────────────────
      No math yet, so we fake the "winning combination" by picking the most-
@@ -1525,98 +1450,7 @@ ${emitFreeSpinsOverlayMarkup(resolveFreeSpinsConfig(model))}
 
   ${emitScatterCelebrationRuntime(resolveScatterCelebrationConfig(model))}
 
-  /* Post-spin trigger evaluation. Called from both base-game spins and FS
-     in-round spins; the duringFs flag decides whether a scatter hit is a
-     fresh trigger (BASE) or a retrigger (FS). */
-  function handlePostSpin(duringFs) {
-    /* Win-highlight gating (Boki rule). Two competing visual blocks must
-       never play simultaneously:
-         - scatter celebration  (trigger spin in BASE)
-         - win-symbol highlight (every other BASE spin)
-       Also: during the entire FS lifecycle (FS_INTRO → FS_ACTIVE →
-       FS_OUTRO) win-highlight is fully suppressed; it resumes only after
-       the round returns to BASE.
-       Decision happens INSIDE this function — we hold the win-highlight
-       call until we know whether a feature triggered. */
-    if (!FREESPINS.enabled) {
-      /* No FS configured — pure BASE game, always safe to highlight. */
-      applyWinHighlight();
-      if (duringFs) FSM_runNextFsSpin();
-      return;
-    }
-    const scatters = countTriggerSymbols();
-    if (!duringFs) {
-      const award = spinsForCount(scatters);
-      if (award > 0) {
-        /* Trigger flow — scatter celebration owns the visual stage.
-           NO win-highlight here; any leftover from the previous spin is
-           cleared just before celebration so the eye reads cleanly:
-             1) reels settle                                  ← already done
-             2) settle pause (eye sees final scatters)        ← 200-350ms
-             3) scatter celebration (pulse/glow ~1500ms)
-             4) FSM_enterIntro (cinematic placard fades in)
-           Each layer is its own independent block. */
-        const wasForced = !!FORCE_TRIGGER;
-        FORCE_TRIGGER = null;   /* one-shot — clear so next spin is normal */
-        const settlePause = wasForced ? 350 : 200;
-        setTimeout(() => {
-          clearWinHighlight();
-          playScatterCelebration().then(() => {
-            FSM_enterIntro(award, scatters);
-          });
-        }, settlePause);
-      } else {
-        /* Plain BASE-game spin, no trigger → safe to play win-highlight. */
-        applyWinHighlight();
-        /* Clean up the force flag in case the player started a normal spin
-           while we were in a (bizarre) intermediate state, then re-enable
-           the dev btn so they can try again. */
-        FORCE_TRIGGER = null;
-        if (devFsBtn) devFsBtn.disabled = !FREESPINS.enabled;
-        if (spinButton) spinButton.disabled = false;
-      }
-      return;
-    }
-    /* During FS: check for retrigger. The retrigger threshold is usually
-       lower than the initial trigger (e.g. 3S = +5 spins). Hard-cap the
-       per-round retrigger count at 3 so a high-density placeholder symbol
-       pool can't drive the round to infinity (industry standard upper
-       bound — most operators cap retrigger chains at 2–5 per round). */
-    const RETRIGGER_CAP = 3;
-    if (FREESPINS.retrigger && FREESPINS.retrigger.enabled &&
-        scatters >= FREESPINS.retrigger.count &&
-        FSM.retrigCount < RETRIGGER_CAP) {
-      FSM_handleRetrigger(FREESPINS.retrigger.spins);
-    }
-    /* Progressive multiplier escalation — bump on every FS spin that doesn't
-       blow the cap, regardless of win/loss (this is the most common policy;
-       GDD-specific "only on winning spins" can be wired later via the math
-       layer). */
-    if (FREESPINS.multiplier && FREESPINS.multiplier.type === "progressive") {
-      FSM.mult = Math.min(FSM.mult + FREESPINS.multiplier.step, FREESPINS.multiplier.cap);
-    }
-    /* Placeholder per-spin "win" — pure visual filler until the math layer
-       lands. Random 0–25× bet, weighted toward zero so the total looks
-       plausible after a 10-spin round. */
-    const fakeWin = Math.random() < 0.4 ? +(Math.random() * 25 * (FSM.mult || 1)).toFixed(2) : 0;
-    FSM.totalWin += fakeWin;
-
-    FSM.spinsRemaining--;
-    FSM_renderHud();
-
-    /* Win-symbol cycle inside FS_ACTIVE (Boki rule). Run the same per-
-       symbol event cycle as in BASE, then chain into the next FS spin
-       (or FS_OUTRO if this was the last spin). The 250ms breath after
-       the cycle resolves keeps the FS round legible without dragging. */
-    const tail = () => {
-      if (FSM.spinsRemaining <= 0) {
-        FSM_enterOutro();
-      } else {
-        setTimeout(FSM_runNextFsSpin, 250);
-      }
-    };
-    applyWinHighlight().then(tail);
-  }
+  ${emitPostSpinRuntime(resolvePostSpinConfig(model))}
 
   const devFsBtn   = document.getElementById("devFsBtn");
   const statusElGlobal = document.getElementById("status");
