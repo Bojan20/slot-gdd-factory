@@ -37,10 +37,25 @@ import { buildSlotHTML } from "./src/buildSlotHTML.mjs";
 
   /* ─── ingest ─────────────────────────────────────────── */
   async function handleFile(file) {
+    const ext = file.name.split(".").pop().toLowerCase();
+    /* PDF / DOCX — binarni formati koje tekstualni parser ne može da čita */
+    if (ext === 'pdf' || ext === 'docx' || ext === 'doc') {
+      resultEl.innerHTML = `
+        <div class="error" style="max-width:480px;margin:0 auto;text-align:left">
+          <div style="font-size:1.4rem;margin-bottom:0.5rem">📄 PDF / DOCX nije podržan</div>
+          <div style="margin-bottom:1rem">Fajl <strong>${escapeHtml(file.name)}</strong> je binarni format. Parser čita samo tekstualne GDD-eve (<code>.md</code> · <code>.json</code> · <code>.txt</code>).</div>
+          <div style="background:#1f2833;border:1px solid #45a29e;border-radius:8px;padding:0.75rem 1rem;font-size:0.85rem">
+            <strong style="color:#66fcf1">Šta uraditi:</strong><br>
+            1. Koristi <code>.md</code> verziju GDD-a iz projekta<br>
+            <code style="color:#ffd166">samples/GATES_OF_OLYMPUS_1000_GAME_GDD.md</code><br><br>
+            2. Prevuci taj <code>.md</code> fajl ovde umesto PDF-a.
+          </div>
+        </div>`;
+      return;
+    }
     resultEl.innerHTML = `<div class="card"><h3>Reading ${escapeHtml(file.name)}…</h3></div>`;
     try {
       const text = await file.text();
-      const ext = file.name.split(".").pop().toLowerCase();
       const model = parseGDD(text, ext);
       /* persist last GDD so refresh restores it (text only — small) */
       try {
