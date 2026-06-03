@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `35d840f` · main
+> Last updated: **2026-06-03** · HEAD: `21ab8cb` · main
 
 ---
 
@@ -103,9 +103,36 @@
 | I5 | `tools/spin-engine-audit.mjs` — verifies real reel engine on every fixture | ✅ |
 | I6 | `tests/render-browser-all.mjs` updated — column-grid shapes use reelCol + buffer-cell assertion | ✅ |
 
+### Wave Spin-tempo unification (commit `55dc06b`)
+| ID | Feature | Status |
+|---|---|---|
+| ST1 | Removed `SPIN_PROFILE_FS` — single `SPIN_PROFILE` constant drives BG + FS_INTRO + FS_ACTIVE + FS_OUTRO | ✅ |
+| ST2 | Identical windup → accel → steady → decel → stagger cadence across every uniform-reel grid in every phase | ✅ |
+
+### Wave Win-highlight (commit `21ffff9`)
+| ID | Feature | Status |
+|---|---|---|
+| WH1 | CSS: `.gridHost.has-winselection .cell { opacity .32 }`, `.is-win { opacity 1; transform: scale(1.06) }`, 180ms ease | ✅ |
+| WH2 | `applyWinHighlight()` picks most-frequent non-scatter symbol (≥3 occurrences) → marks those cells `.is-win` | ✅ |
+| WH3 | `clearWinHighlight()` runs at start of every BG + FS spin | ✅ |
+| WH4 | 30% no-win variance — not every spin lights up (placeholder until math evaluator) | ✅ |
+| WH5 | Works on every uniform-reel grid (rectangular + cluster + megaclusters + lock_respin + expanding + infinity + variable_reel) | ✅ |
+| WH6 | `prefers-reduced-motion` respected (no transition, no scale) | ✅ |
+
+### Wave J1 — variable_reel real engine (commit `21ab8cb`)
+| ID | Feature | Status |
+|---|---|---|
+| J1.1 | `buildReelColumns()` accepts per-reel rows array (`number \| number[]`) | ✅ |
+| J1.2 | Each reel carries `visibleRows` — center-aligned in host grid via CSS gridRow offset | ✅ |
+| J1.3 | `commitStopSymbols`, `maybeArmAnticipation`, `countTriggerSymbols` read `reel.visibleRows` (not global ROWS) | ✅ |
+| J1.4 | `FORCE_TRIGGER` midRow computed per-reel from `visibleRows` | ✅ |
+| J1.5 | `variable_reel` added to `UNIFORM_REEL_KINDS` — same engine, same cadence | ✅ |
+| J1.6 | renderRect: when kind=variable_reel, host gets `repeat(ROWS, side)` template + per-column rows passed in | ✅ |
+| J1.7 | `04_variable_reel` fixture verified live: 6 reels × `[2,5,7,7,5,2]` visibleRows, real reel rotation, dynamic anticipation working | ✅ |
+
 ---
 
-## ✅ QA matrix (HEAD `35d840f`)
+## ✅ QA matrix (HEAD `21ab8cb`)
 
 | Suite | Coverage | Result |
 |---|---|---:|
@@ -115,7 +142,7 @@
 | `tests/render-browser-all.mjs` | 23 grids × headless Chromium | **23/23 ✅ 0 console errors** |
 | `tools/fs-qa-audit.mjs` | 23 fixtures × full FS lifecycle | **23/23 ✅ CLEAN** |
 | `tools/fs-edge-cases.mjs` | 11 lifecycle/race/abuse scenarios | **11/11 ✅ CLEAN** |
-| `tools/spin-engine-audit.mjs` | 24 × real reel engine drives all column grids | **24/24 ✅ CLEAN** |
+| `tools/spin-engine-audit.mjs` | 24 × real reel engine drives all column grids (now incl. variable_reel) | **24/24 ✅ CLEAN** |
 | **TOTAL** | | **142/142 ✅** |
 
 ---
@@ -124,12 +151,12 @@
 
 | Pri | Item | Why | Effort |
 |:-:|---|---|---|
-| 1 | **Real reel engine for `variable_reel`** (per-reel `rows` varies) | currently legacy blink; Boki rule = every grid spins the same | M |
-| 2 | **Real reel engine for hex / diamond / pyramid / cross / l_shape** | irregular column shapes; need geometric "column" mapping | L |
-| 3 | **SVG kinds (wheel / crash / radial / slingo / plinko)** — domain-specific spin animation (wheel arrow stop, crash multiplier curve, plinko peg drops, slingo card flip, radial sweep) | each kind needs its own engine; can't reuse rectangular | L |
-| 4 | **PAR / Math hot-swap injector** | README Phase 2 — placeholder math still in use | XL |
-| 5 | **Stage badge per non-rectangular layout positioning** | currently same place for all shapes; radial / SVG may want different anchor | S |
-| 6 | **Sound cue placeholders** (trigger sting, anticipation hum, FS placard whoosh) | currently silent; production demos want audio scaffolding | M |
+| 1 | **Wave J2 — Real reel engine for hex / diamond / pyramid / cross / l_shape** | irregular column shapes; need geometric "column" mapping | L |
+| 2 | **Wave J3 — SVG kinds (wheel / crash / radial / slingo / plinko)** — domain-specific spin animation (wheel arrow stop, crash multiplier curve, plinko peg drops, slingo card flip, radial sweep) | each kind needs its own engine; can't reuse rectangular | L |
+| 3 | **PAR / Math hot-swap injector** | README Phase 2 — placeholder math still in use | XL |
+| 4 | **Stage badge per non-rectangular layout positioning** | currently same place for all shapes; radial / SVG may want different anchor | S |
+| 5 | **Sound cue placeholders** (trigger sting, anticipation hum, FS placard whoosh) | currently silent; production demos want audio scaffolding | M |
+| 6 | **Wired modeling for 21 detected-but-unused feature kinds** (cascade / hold_and_win / multiplier / expanding_wild / walking_wild / sticky_wild / mystery_symbol / bonus_buy / bonus_pick / wheel_bonus / cluster_pays evaluator / ways evaluator / scatter_pay / lightning / respin / wild_reel / gamble / ante_bet / super_symbol / win_cap / persistent_multiplier) | parser detects, template ignores — see full breakdown in chat | XL |
 
 ---
 
@@ -152,11 +179,12 @@
 
 | Limitation | Trade-off |
 |---|---|
-| Hex / diamond / pyramid / cross / l_shape — legacy blink reveal | Irregular column geometry, would need per-shape spin engine — Wave J item 2 |
-| Variable_reel — legacy blink | Per-reel varying row count breaks the `RECT_REELS` uniform contract — Wave J item 1 |
-| Wheel / crash / radial / slingo / plinko — legacy blink | SVG / specialised mechanics, need domain-specific engines — Wave J item 3 |
+| Hex / diamond / pyramid / cross / l_shape — legacy blink reveal | Irregular column geometry, would need per-shape spin engine — Wave J2 |
+| Wheel / crash / radial / slingo / plinko — legacy blink | SVG / specialised mechanics, need domain-specific engines — Wave J3 |
 | Anticipation glow OFF during FS_ACTIVE | Retrigger anticipation reads as filler; +HOLD_BASE per held reel blew QA budget |
-| Cluster 7×7 + 35-spin FS round | Inside QA 120s budget thanks to `SPIN_PROFILE_FS` faster tempo |
+| Cluster 7×7 + 35-spin FS round | Now driven by single `SPIN_PROFILE` (no faster FS tempo); still inside QA 300s budget |
+| Win highlight is visual placeholder | Picks most-frequent non-scatter symbol — no real evaluator until PAR math lands |
+| `tools/full-qa-audit.mjs` spin-stress 3-rapid-click times out on `01_rectangular_5x3` | Pre-existing race condition (button disabled mid-spin by design); other QA suites cover spin behaviour |
 
 ---
 
@@ -182,3 +210,8 @@
 | 16 | `ad615b7` | feat(grids): propagate FS features to all column-based shapes |
 | 17 | `81dd81d` | refactor(grids): clean runStaticReroll dead code |
 | 18 | `35d840f` | feat(spin): unify reel engine — every column-grid shape spins like rectangular |
+| 19 | `38e9b25` | docs(master-todo): create + populate from full session inventory |
+| 20 | `55dc06b` | fix(spin): unify BG + FS spin/stop speed across every grid |
+| 21 | `21ffff9` | feat(win): placeholder win-combo highlight — winning cells stay lit, rest dim |
+| 22 | `21ab8cb` | feat(spin): wave J1 — real reel engine for variable_reel |
+| 23 | `__TBD__` | docs(master-todo): refresh — Wave J1 done, J2/J3 + win-highlight + spin-tempo entries |
