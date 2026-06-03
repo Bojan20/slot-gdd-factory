@@ -1503,49 +1503,42 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
       }
     }
 
+    /* Pre-compute cumulative scatter count after each column lands, so we
+       know exactly when the anticipation gate trips and can space the
+       reveals with the correct +HOLD_BASE injection. Deterministic — same
+       prediction the revealColumn() runtime check uses. */
+    const cumulativeAfter = new Array(cols).fill(0);
+    {
+      let acc = 0;
+      for (let c = 0; c < cols; c++) {
+        let hits = 0;
+        for (let ri = 0; ri < colCells[c].length; ri++) {
+          const i = c + ri * cols;
+          if ((resolved[i] || "").toUpperCase() === upperTrig) hits++;
+        }
+        acc += (countMode === 'any') ? hits : (hits > 0 ? 1 : 0);
+        cumulativeAfter[c] = acc;
+      }
+    }
+
     /* Schedule the column reveals. Stagger STAGGER between non-anticipating
-       columns; +HOLD_BASE extra hold once anticipation arms (matches the
-       rectangular sequential anticipation cadence). */
+       columns; +HOLD_BASE injected once the ladder gate trips so the next
+       column inherits the same "still going" beat the rectangular path
+       gives reel B / C / D / E after the first anticipating reel. */
+    const gate = Math.max(1, threshold - 1);
     let cursor = elapsed;
     for (let c = 0; c < cols; c++) {
-      const willArmAfter = (() => {
-        /* Predict scatter count after this column lands so we know whether
-           to apply an anticipation hold on the FOLLOWING column. */
-        const hitsInCol = colCells[c].reduce(
-          (n, cell, ri) => {
-            const i = c + ri * cols;
-            return n + ((resolved[i] || "").toUpperCase() === upperTrig ? 1 : 0);
-          }, 0);
-        const collapseHits = (countMode === 'any') ? hitsInCol : (hitsInCol > 0 ? 1 : 0);
-        return collapseHits;
-      })();
-      ((colIdx, fireAt) => setTimeout(() => revealColumn(colIdx), fireAt))(c, cursor);
-      /* After this column, increment cursor: stagger + (HOLD_BASE if next
-         column should anticipate). The actual gate test happens inside
-         revealColumn — here we just predict to space timing realistically. */
-      const projectedAfter = c === 0
-        ? willArmAfter
-        : willArmAfter; /* simplistic: we always use STAGGER unless ladder gate met */
+      const colIdx = c;
+      const fireAt = cursor;
+      setTimeout(() => revealColumn(colIdx), fireAt);
       cursor += STAGGER;
-      /* Best-effort anticipation hold injection: if the cumulative resolved
-         scatters reach the gate after this column, push the next reveal
-         by HOLD_BASE so the player perceives the "still going" beat. */
       if (c < cols - 1) {
-        let cumulative = 0;
-        for (let cc = 0; cc <= c; cc++) {
-          const hitsInCol = colCells[cc].reduce((n, cell, ri) => {
-            const i = cc + ri * cols;
-            return n + ((resolved[i] || "").toUpperCase() === upperTrig ? 1 : 0);
-          }, 0);
-          cumulative += (countMode === 'any') ? hitsInCol : (hitsInCol > 0 ? 1 : 0);
-        }
+        const cumNow = cumulativeAfter[c];
         const futureRemaining = cols - (c + 1);
-        const gate = Math.max(1, threshold - 1);
-        const willArm = cumulative >= gate &&
-                       (cumulative + futureRemaining >= threshold) &&
-                        cumulative < topRung;
-        if (willArm) cursor += HOLD_BASE;
-        void projectedAfter; /* keep the prediction value used (lint hint) */
+        const armed = cumNow >= gate &&
+                      (cumNow + futureRemaining >= threshold) &&
+                       cumNow < topRung;
+        if (armed) cursor += HOLD_BASE;
       }
     }
 
