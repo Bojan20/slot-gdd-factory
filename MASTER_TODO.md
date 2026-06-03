@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `__TBD__` · main
+> Last updated: **2026-06-03** · HEAD: `0a0a417` · main
 
 ---
 
@@ -224,7 +224,7 @@
 | B2.8 | `FREESPINS.scatterCelebration === false` runtime override i dalje radi (legacy escape hatch) | ✅ |
 | B2.9 | Browser QA verifikovan — 23/23 fixture, 0 console errors, scatter celebration animira identično kao pre refaktora | ✅ |
 
-### Wave B3 — detectWinCombos LEGO blok (commit `__TBD__`)
+### Wave B3 — detectWinCombos LEGO blok (commit `0a0a417`)
 
 | ID | Feature | Status |
 |---|---|---|
@@ -233,7 +233,7 @@
 | B3.3 | `buildSlotHTML.mjs`: 49-LOC inline `function detectWinCombos()` zamenjen sa `${emitDetectWinCombosRuntime(...)}` | ✅ |
 | B3.4 | Unit testovi: 4 nova test-case u `tests/blocks/winPresentation.test.mjs` (function exists, MAX_EVENTS literal, tierRank, defaults) | ✅ |
 
-### Wave B5 — spinTempo LEGO blok (commit `__TBD__`)
+### Wave B5 — spinTempo LEGO blok (commit `0a0a417`)
 
 | ID | Feature | Status |
 |---|---|---|
@@ -245,7 +245,7 @@
 | B5.6 | Unit testovi: `tests/blocks/spinTempo.test.mjs` — **14/14 ✅** | ✅ |
 | B5.7 | Backward compat: GDD bez sekcije → s-avp defaults identični pre-block ponašanju | ✅ |
 
-### Wave B6 — anticipation LEGO blok (commit `__TBD__`)
+### Wave B6 — anticipation LEGO blok (commit `0a0a417`)
 
 | ID | Feature | Status |
 |---|---|---|
@@ -257,7 +257,7 @@
 | B6.6 | Unit testovi: `tests/blocks/anticipation.test.mjs` — **13/13 ✅** | ✅ |
 | B6.7 | Disabled mode → no-op `function maybeArmAnticipation() {}` stub (zero runtime cost) | ✅ |
 
-### Wave B7 — stageBadge LEGO blok (commit `__TBD__`)
+### Wave B7 — stageBadge LEGO blok (commit `0a0a417`)
 
 | ID | Feature | Status |
 |---|---|---|
@@ -287,7 +287,7 @@
 
 ---
 
-## ✅ QA matrix (HEAD `__TBD__`)
+## ✅ QA matrix (HEAD `0a0a417`)
 
 | Suite | Coverage | Result |
 |---|---|---:|
