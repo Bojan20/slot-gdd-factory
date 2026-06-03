@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `pending B1 commit` · main
+> Last updated: **2026-06-03** · HEAD: `51f2a57` · main
 
 ---
 
@@ -191,7 +191,7 @@
 | WU13 | `handlePostSpin(duringFs=true)` awaits cycle before queuing next FS spin (250ms breath) | ✅ |
 | WU14 | Live verified on WoO GDD: regularPay=11, wild=W, scatter=S, tier sort correct | ✅ |
 
-### Wave B1 — LEGO block-ification (this commit)
+### Wave B1 — LEGO block-ification (commit `51f2a57`)
 
 > **Pravilo (`~/.claude/projects/-/memory/rule_slot_gdd_lego_blocks.md`)**: Sve u slot-gdd-factory je modularan lego blok u `src/blocks/<name>.mjs`, učitava se na osnovu GDD-a, `buildSlotHTML.mjs` je samo orchestrator. Migracija pokrenuta — počinje sa najvećim violation-om (~250 LOC inline win presentation logic).
 
@@ -226,7 +226,7 @@
 
 ---
 
-## ✅ QA matrix (HEAD pending B1)
+## ✅ QA matrix (HEAD `51f2a57`)
 
 | Suite | Coverage | Result |
 |---|---|---:|
