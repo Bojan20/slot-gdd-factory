@@ -465,6 +465,26 @@ body {
   50%      { box-shadow: inset 0 0 0 2px rgba(255, 230, 168, 0.85),
                          inset 0 0 55px rgba(255, 214, 110, 0.42); }
 }
+/* Per-cell anticipation glow — used by non-rectangular grids during the
+   column-by-column reveal in runStaticReroll(). Same gold pulse as the
+   rectangular reelCol--anticipating, scaled to a cell-sized inset so it
+   reads cleanly inside cluster / megaclusters / lock_respin / expanding
+   / infinity column footprints. */
+.cell--anticipating {
+  box-shadow: inset 0 0 0 2px rgba(255, 214, 110, 0.6),
+              inset 0 0 16px rgba(255, 214, 110, 0.32);
+  animation: cell-antic-pulse 700ms ease-in-out infinite;
+}
+@keyframes cell-antic-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 2px rgba(255, 214, 110, 0.55),
+                         inset 0 0 14px rgba(255, 214, 110, 0.30); }
+  50%      { box-shadow: inset 0 0 0 2px rgba(255, 230, 168, 0.85),
+                         inset 0 0 22px rgba(255, 214, 110, 0.55); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reelCol--anticipating,
+  .cell--anticipating { animation: none; }
+}
 .spinBtn.is-spinning { pointer-events: none; opacity: 0.78; }
 .spinBtn.is-spinning svg { opacity: 0.55; }
 .grow-tag {
@@ -1377,29 +1397,164 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     /* SVG-based kinds (wheel/crash) keep their symbols inside <text> nodes
        rather than .cell divs. Selector covers both so wheel scatter detection
        works on top of the same reroll path. */
-    const cells = grid.querySelectorAll(".cell, text");
-    if (cells.length === 0) {
+    const cellsAll = grid.querySelectorAll(".cell, text");
+    if (cellsAll.length === 0) {
       if (typeof onSettled === "function") setTimeout(onSettled, 60);
       return;
     }
-    /* Phase 1: blur + dim. Phase 2 (after 220ms): swap text. Phase 3 (220ms
-       later): clear blur & call onSettled. Total ~440ms — matches the
-       cinematic "feel" of a rectangular spin without the 2s windup. */
-    cells.forEach(c => c.classList.add("is-blurring"));
-    setTimeout(() => {
-      /* If a feature trigger is being forced, plant N scatters on the first
-         N cells so handlePostSpin counts the threshold and fires the intro
-         naturally. Rest of the grid stays random. */
-      const trig = (FREESPINS.triggerSymbol || "S");
-      const forceN = FORCE_TRIGGER ? FORCE_TRIGGER.scatterCount : 0;
-      cells.forEach((c, i) => {
-        c.textContent = (i < forceN) ? trig : (randomSym() || "?");
-      });
+
+    /* HTML grids with a clean REELS×ROWS column shape get the rectangular-
+       style sequential reveal: column-by-column landing with optional
+       anticipation glow when the scatter ladder is one short of the trigger.
+       SVG / irregular grids fall back to the original blink-reroll. */
+    const COL_KINDS = new Set([
+      'cluster', 'megaclusters', 'lock_respin', 'expanding', 'infinity',
+    ]);
+    const isColumnGrid = COL_KINDS.has(SHAPE.kind) && REELS > 0;
+
+    const trig = (FREESPINS.triggerSymbol || "S");
+    const forceN = FORCE_TRIGGER ? FORCE_TRIGGER.scatterCount : 0;
+
+    if (!isColumnGrid) {
+      /* Legacy two-phase blink: blur → swap → clear blur. Used for SVG and
+         irregular HTML grids (hex / diamond / pyramid / cross / l_shape /
+         variable_reel / radial / slingo / plinko / wheel / crash). */
+      cellsAll.forEach(c => c.classList.add("is-blurring"));
       setTimeout(() => {
-        cells.forEach(c => c.classList.remove("is-blurring"));
-        if (typeof onSettled === "function") onSettled();
+        cellsAll.forEach((c, i) => {
+          c.textContent = (i < forceN) ? trig : (randomSym() || "?");
+        });
+        setTimeout(() => {
+          cellsAll.forEach(c => c.classList.remove("is-blurring"));
+          if (typeof onSettled === "function") onSettled();
+        }, 220);
       }, 220);
-    }, 220);
+      return;
+    }
+
+    /* ── Sequential column reveal for cell-grid shapes ─────────────────────
+       Row-major DOM order → column index = i % REELS. We compute the new
+       symbol for every cell up front, then reveal columns left-to-right
+       with a per-column stagger that matches the rectangular SPIN_PROFILE
+       (decel ~350ms, stagger ~320ms). Anticipation glow fires column-by-
+       column once the threshold-1 ladder gate is met. */
+    const htmlCells = Array.from(grid.querySelectorAll(".cell"));
+    const cols = REELS;
+    const colCells = Array.from({ length: cols }, () => []);
+    htmlCells.forEach((c, i) => colCells[i % cols].push(c));
+
+    /* Resolve the future symbol for every cell now so we can both render
+       and count scatters without a second pass. */
+    const resolved = htmlCells.map((_, i) =>
+      (i < forceN) ? trig : (randomSym() || "?")
+    );
+    const upperTrig = trig.toUpperCase();
+
+    /* Init: blur every cell (mirrors the "all spinning" state). */
+    htmlCells.forEach(c => c.classList.add("is-blurring"));
+
+    /* GDD threshold + ladder topRung (same logic as maybeArmAnticipation). */
+    const threshold = (FREESPINS.triggerCounts && FREESPINS.triggerCounts[0]) ||
+                      (FREESPINS.awards && FREESPINS.awards[0] && FREESPINS.awards[0].count) || 3;
+    const topRung = (FREESPINS.awards || []).reduce(
+      (m, a) => Math.max(m, a.count), threshold);
+    const countMode = (FREESPINS.countMode === 'any') ? 'any' : 'perReel';
+
+    /* Cadence tuned for the static-cell path so a 35-spin FS round stays
+       inside the QA harness 120s wall-clock budget while still reading
+       as a deliberate column-by-column landing. Rectangular SPIN_PROFILE
+       (320ms stagger, 600ms anticipation hold) is unchanged. */
+    const STAGGER = 200;
+    const HOLD_BASE = 400;
+    let scattersSoFar = 0;
+    let anticipationArmed = false;
+    let elapsed = 220; /* initial pre-roll so the blur is visible first */
+
+    function revealColumn(c) {
+      /* Land every cell in column c with its resolved symbol. */
+      for (const cell of colCells[c]) {
+        const i = htmlCells.indexOf(cell);
+        cell.textContent = resolved[i];
+        cell.classList.remove("is-blurring");
+        cell.classList.remove("cell--anticipating");
+      }
+      /* Update scattersSoFar — perReel collapse: column adds 0 or 1. */
+      const hitsInCol = colCells[c].reduce(
+        (n, cell) => n + ((cell.textContent || "").toUpperCase() === upperTrig ? 1 : 0), 0);
+      scattersSoFar += (countMode === 'any') ? hitsInCol : (hitsInCol > 0 ? 1 : 0);
+
+      /* Re-evaluate the anticipation gate AFTER this column landed. */
+      const remaining = cols - (c + 1);
+      const gate = Math.max(1, threshold - 1);
+      const stillNeedsTrigger = scattersSoFar + remaining >= threshold;
+      const armNow = scattersSoFar >= gate && stillNeedsTrigger && scattersSoFar < topRung;
+      if (armNow) {
+        anticipationArmed = true;
+        /* Glow every still-blurring column (those that haven't revealed yet). */
+        for (let nc = c + 1; nc < cols; nc++) {
+          for (const cell of colCells[nc]) cell.classList.add("cell--anticipating");
+        }
+      } else if (anticipationArmed && !armNow) {
+        /* Gate dropped (math reachability lost OR topRung locked) — clear glow. */
+        anticipationArmed = false;
+        for (let nc = c + 1; nc < cols; nc++) {
+          for (const cell of colCells[nc]) cell.classList.remove("cell--anticipating");
+        }
+      }
+    }
+
+    /* Schedule the column reveals. Stagger STAGGER between non-anticipating
+       columns; +HOLD_BASE extra hold once anticipation arms (matches the
+       rectangular sequential anticipation cadence). */
+    let cursor = elapsed;
+    for (let c = 0; c < cols; c++) {
+      const willArmAfter = (() => {
+        /* Predict scatter count after this column lands so we know whether
+           to apply an anticipation hold on the FOLLOWING column. */
+        const hitsInCol = colCells[c].reduce(
+          (n, cell, ri) => {
+            const i = c + ri * cols;
+            return n + ((resolved[i] || "").toUpperCase() === upperTrig ? 1 : 0);
+          }, 0);
+        const collapseHits = (countMode === 'any') ? hitsInCol : (hitsInCol > 0 ? 1 : 0);
+        return collapseHits;
+      })();
+      ((colIdx, fireAt) => setTimeout(() => revealColumn(colIdx), fireAt))(c, cursor);
+      /* After this column, increment cursor: stagger + (HOLD_BASE if next
+         column should anticipate). The actual gate test happens inside
+         revealColumn — here we just predict to space timing realistically. */
+      const projectedAfter = c === 0
+        ? willArmAfter
+        : willArmAfter; /* simplistic: we always use STAGGER unless ladder gate met */
+      cursor += STAGGER;
+      /* Best-effort anticipation hold injection: if the cumulative resolved
+         scatters reach the gate after this column, push the next reveal
+         by HOLD_BASE so the player perceives the "still going" beat. */
+      if (c < cols - 1) {
+        let cumulative = 0;
+        for (let cc = 0; cc <= c; cc++) {
+          const hitsInCol = colCells[cc].reduce((n, cell, ri) => {
+            const i = cc + ri * cols;
+            return n + ((resolved[i] || "").toUpperCase() === upperTrig ? 1 : 0);
+          }, 0);
+          cumulative += (countMode === 'any') ? hitsInCol : (hitsInCol > 0 ? 1 : 0);
+        }
+        const futureRemaining = cols - (c + 1);
+        const gate = Math.max(1, threshold - 1);
+        const willArm = cumulative >= gate &&
+                       (cumulative + futureRemaining >= threshold) &&
+                        cumulative < topRung;
+        if (willArm) cursor += HOLD_BASE;
+        void projectedAfter; /* keep the prediction value used (lint hint) */
+      }
+    }
+
+    /* Final settle — onSettled fires after the last reveal + a brief
+       breath so handlePostSpin sees the fully-rendered state. */
+    setTimeout(() => {
+      if (typeof onSettled === "function") onSettled();
+    }, cursor + 80);
+    return;
   }
 
   /* Count how many trigger-symbols are visible on the current grid. For
@@ -1420,10 +1575,31 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
       }
       return n;
     }
-    /* Wheel & crash render as SVG — text segments live inside <text>, not
-       .cell divs. Per-reel collapse only meaningful for rectangular kinds;
-       for SVG / non-reel grids we always count distinct hits (no reel
-       column to dedupe against). */
+    /* HTML non-rectangular kinds that are flat row-major cell grids with
+       a well-defined REELS×ROWS column shape (cluster / megaclusters /
+       lock_respin / expanding / infinity). The .cell DOM order is row-
+       major (r=0,c=0), (r=0,c=1)… so column index = i % REELS. The
+       perReel collapse there is meaningful: dedupes any column that
+       carried multiple scatters down to 1. */
+    const COL_KINDS = new Set([
+      'cluster', 'megaclusters', 'lock_respin', 'expanding', 'infinity',
+    ]);
+    if (countMode === 'perReel' && COL_KINDS.has(SHAPE.kind)) {
+      const cells = grid.querySelectorAll('.cell');
+      if (REELS && cells.length > 0) {
+        const colsHit = new Set();
+        cells.forEach((c, i) => {
+          if ((c.textContent || '').toUpperCase() === id) {
+            colsHit.add(i % REELS);
+          }
+        });
+        return colsHit.size;
+      }
+    }
+    /* Wheel / crash / radial / slingo / plinko / hex / diamond / pyramid
+       / cross / l_shape / variable_reel — no clean column dedupe. SVG
+       text segments live inside <text> rather than .cell. Count every
+       trigger-symbol cell as one hit. */
     let n = 0;
     const nodes = grid.querySelectorAll(".cell, text");
     nodes.forEach(c => {

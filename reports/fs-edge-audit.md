@@ -1,4 +1,4 @@
-# Free-Spins edge-case audit · 2026-06-03T01:28:30.460Z
+# Free-Spins edge-case audit · 2026-06-03T02:03:31.132Z
 
 **Scenarios**: 11 · **Failures**: 0 · ✅ CLEAN
 
@@ -13,5 +13,5 @@
 | 7 | round → return → round again (state reset) | wrath_of_olympus_game_gdd | ✅ | phase=FS_INTRO total=14 mult=1 retrig=0 | 0 |
 | 8 | page reload mid-FS resets to BASE cleanly | wrath_of_olympus_game_gdd | ✅ | phase=BASE overlayHidden=true bodyClean=true | 0 |
 | 9 | viewport resize mid-FS doesn't break layout | wrath_of_olympus_game_gdd | ✅ | {"phase":"FS_ACTIVE","hudVisible":true,"framePresent":true} | 0 |
-| 10 | multiplier monotone climb & cap respected | wrath_of_olympus_game_gdd | ✅ | start=1 cap=10 maxSeen=10 samples=272 | 0 |
+| 10 | multiplier monotone climb & cap respected | wrath_of_olympus_game_gdd | ✅ | start=1 cap=10 maxSeen=10 samples=160 | 0 |
 | 11 | non-rectangular runStaticReroll round completes | 08_pyramid_game_gdd | ✅ | phase=BASE | 0 |
