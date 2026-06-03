@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `0a5f1c1` · main
+> Last updated: **2026-06-03** · HEAD: `255689a` · main
 
 ---
 
@@ -191,9 +191,25 @@
 | WU13 | `handlePostSpin(duringFs=true)` awaits cycle before queuing next FS spin (250ms breath) | ✅ |
 | WU14 | Live verified on WoO GDD: regularPay=11, wild=W, scatter=S, tier sort correct | ✅ |
 
+### Wave Win-cycle per-LINE (commit `255689a`)
+| ID | Feature | Status |
+|---|---|---|
+| WL1 | `_buildStandardPaylines(reels, rows)` — 16-25 industry-standard lines (3 horizontals + V + invV + 4 U + 6 zig-zag + 5 peaks + 5 deep-row) | ✅ |
+| WL2 | `LINE_PAYS_KINDS` whitelist: rectangular / variable_reel / lock_respin / expanding | ✅ |
+| WL3 | Cluster-pays grids (cluster / megaclusters / hex / diamond / pyramid / cross / l_shape / SVG) keep per-symbol cycle as INTENDED | ✅ |
+| WL4 | `PAYLINE_POOL` constant injected into inline JS — runtime has paths without a fetch | ✅ |
+| WL5 | `detectLineWins()` walks each payline left-to-right, counts consecutive matches from the leftmost reel, wild substitutes | ✅ |
+| WL6 | Only first `matchLength` cells lit per event — distinct path, NOT every grid cell sharing the symbol | ✅ |
+| WL7 | Wild-headed lines walk forward until a real symbol fixes the carrier; all-wild = WILD-tier event | ✅ |
+| WL8 | Dedupe by `(symbol + cells signature + matchLength)` — two paylines that share the same cluster don't fire twice | ✅ |
+| WL9 | Tier sort identical to per-symbol path (HP → MP → LP → WILD); longer matchLength first | ✅ |
+| WL10 | Strategy dispatch in `applyWinHighlight`: line-pays mode when `PAYLINE_POOL.length > 0 && RECT_REELS`, else cluster mode | ✅ |
+| WL11 | Live verified WoO 5×3: 16 deduped lines, BASE events 3 cells each, FS_ACTIVE 7 distinct line events sa wild substitutes (`WPW`, `VAWVA`, `SHWSH`, `WWH`) | ✅ |
+| WL12 | WoO model parity: mirrors `src/paylines.ts` `PAYLINES[lineIdx][reelIdx] = rowIdx` source-of-truth | ✅ |
+
 ---
 
-## ✅ QA matrix (HEAD `0a5f1c1`)
+## ✅ QA matrix (HEAD `255689a`)
 
 | Suite | Coverage | Result |
 |---|---|---:|
@@ -282,4 +298,6 @@
 | 27 | `671c273` | docs(master-todo): self-reference hash for ed1ca54 entry |
 | 28 | `88d7e00` | style(win): subtler win-symbol pulse — contained inside the reel cell |
 | 29 | `0a5f1c1` | feat(win): per-symbol event cycle — HP/MP/LP/Wild aware, runs in FS too |
-| 30 | `__TBD__` | docs(master-todo): WS1-5 + WU1-14 + anchor to 0a5f1c1 |
+| 30 | `bac1d0c` | docs(master-todo): WS + WU waves + QA matrix anchor to 0a5f1c1 |
+| 31 | `255689a` | feat(win): per-LINE win cycle — payline-based, WoO-faithful |
+| 32 | `__TBD__` | docs(master-todo): WL1-12 + anchor to 255689a |

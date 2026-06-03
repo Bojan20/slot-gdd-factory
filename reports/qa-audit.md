@@ -1,6 +1,6 @@
-# Full QA audit · 2026-06-02T16:45:10.137Z
+# Full QA audit · 2026-06-03T14:54:54.803Z
 
-**Fixtures**: 22 · **Failures**: 0 · ✅ CLEAN
+**Fixtures**: 23 · **Failures**: 0 · ✅ CLEAN
 
 ## Per-fixture results
 
@@ -25,6 +25,7 @@
 | 17_crash_game_gdd | crash | [d](./qa/desktop/17_crash_game_gdd.png) | [m](./qa/mobile/17_crash_game_gdd.png) | — | — | — | 0 | ✅ none |
 | 18_wheel_game_gdd | wheel | [d](./qa/desktop/18_wheel_game_gdd.png) | [m](./qa/mobile/18_wheel_game_gdd.png) | — | — | — | 0 | ✅ none |
 | 19_lock_respin_game_gdd | lock_respin | [d](./qa/desktop/19_lock_respin_game_gdd.png) | [m](./qa/mobile/19_lock_respin_game_gdd.png) | — | — | — | 0 | ✅ none |
+| 20_rectangular_stacked_scatter_game_gdd | rectangular | [d](./qa/desktop/20_rectangular_stacked_scatter_game_gdd.png) | [m](./qa/mobile/20_rectangular_stacked_scatter_game_gdd.png) | [mid](./qa/spin/20_rectangular_stacked_scatter_game_gdd_mid.png) | [post](./qa/spin/20_rectangular_stacked_scatter_game_gdd_post.png) | ✅ | 0 | ✅ none |
 | crystal_forge_game_gdd | rectangular | [d](./qa/desktop/crystal_forge_game_gdd.png) | [m](./qa/mobile/crystal_forge_game_gdd.png) | [mid](./qa/spin/crystal_forge_game_gdd_mid.png) | [post](./qa/spin/crystal_forge_game_gdd_post.png) | ✅ | 0 | ✅ none |
 | midnight_fangs_game_gdd | cluster | [d](./qa/desktop/midnight_fangs_game_gdd.png) | [m](./qa/mobile/midnight_fangs_game_gdd.png) | — | — | — | 0 | ✅ none |
 | wrath_of_olympus_game_gdd | rectangular | [d](./qa/desktop/wrath_of_olympus_game_gdd.png) | [m](./qa/mobile/wrath_of_olympus_game_gdd.png) | [mid](./qa/spin/wrath_of_olympus_game_gdd_mid.png) | [post](./qa/spin/wrath_of_olympus_game_gdd_post.png) | ✅ | 0 | ✅ none |

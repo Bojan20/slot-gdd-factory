@@ -1,4 +1,4 @@
-# Free-Spins edge-case audit · 2026-06-03T14:10:40.334Z
+# Free-Spins edge-case audit · 2026-06-03T14:47:16.418Z
 
 **Scenarios**: 11 · **Failures**: 0 · ✅ CLEAN
 
@@ -10,8 +10,8 @@
 | 4 | dev FS during FS_ACTIVE disabled | wrath_of_olympus_game_gdd | ✅ | disabled=true | 0 |
 | 5 | dev FS during FS_OUTRO disabled | wrath_of_olympus_game_gdd | ✅ | disabled=true | 0 |
 | 6 | rapid double-click intro CTA | wrath_of_olympus_game_gdd | ✅ | phase=FS_ACTIVE | 0 |
-| 7 | round → return → round again (state reset) | wrath_of_olympus_game_gdd | ✅ | phase=FS_INTRO total=14 mult=1 retrig=0 | 0 |
+| 7 | round → return → round again (state reset) | wrath_of_olympus_game_gdd | ✅ | phase=FS_INTRO total=16 mult=1 retrig=0 | 0 |
 | 8 | page reload mid-FS resets to BASE cleanly | wrath_of_olympus_game_gdd | ✅ | phase=BASE overlayHidden=true bodyClean=true | 0 |
 | 9 | viewport resize mid-FS doesn't break layout | wrath_of_olympus_game_gdd | ✅ | {"phase":"FS_ACTIVE","hudVisible":true,"framePresent":true} | 0 |
-| 10 | multiplier monotone climb & cap respected | wrath_of_olympus_game_gdd | ✅ | start=1 cap=10 maxSeen=10 samples=248 | 0 |
+| 10 | multiplier monotone climb & cap respected | wrath_of_olympus_game_gdd | ✅ | start=1 cap=10 maxSeen=10 samples=198 | 0 |
 | 11 | non-rectangular runStaticReroll round completes | 08_pyramid_game_gdd | ✅ | phase=BASE | 0 |
