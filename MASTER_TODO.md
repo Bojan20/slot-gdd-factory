@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `pending-K` · main
+> Last updated: **2026-06-03** · HEAD: `09749d8` · main
 
 ---
 
@@ -119,7 +119,7 @@
 | WH5 | Works on every uniform-reel grid (rectangular + cluster + megaclusters + lock_respin + expanding + infinity + variable_reel) | ✅ |
 | WH6 | `prefers-reduced-motion` respected (no transition, no scale) | ✅ |
 
-### Wave K — Pay-Anywhere suite (Gates of Olympus 1000 family) (commit `pending`)
+### Wave K — Pay-Anywhere suite (Gates of Olympus 1000 family) (commit `09749d8`)
 
 > **Six deficiencies identified during Gates of Olympus 1000 GDD analysis
 > turned into one cohesive wave**. Parser now reads emoji bucket paytables
