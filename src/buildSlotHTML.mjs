@@ -50,6 +50,14 @@ import {
   emitSpinTempoRuntime,
   resolveConfig as resolveSpinTempoConfig,
 } from './blocks/spinTempo.mjs';
+import {
+  emitFreeSpinsCSS,
+  emitFreeSpinsHudMarkup,
+  emitFreeSpinsToastMarkup,
+  emitFreeSpinsOverlayMarkup,
+  emitFreeSpinsRuntime,
+  resolveConfig as resolveFreeSpinsConfig,
+} from './blocks/freeSpins.mjs';
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({
@@ -606,200 +614,7 @@ ${emitScatterCelebrationCSS(resolveScatterCelebrationConfig(model))}
   text-transform: uppercase;
 }
 
-/* ─── FREE SPINS · cinematic overlay + HUD + visual mode ───────────────────
-   Three visual layers, all driven from the same FSM state.
-
-   1. body.fs-mode-<bg>   — full-stage background swap (purple/gold/crimson)
-                            + subtle frame-edge halo while FS is active.
-   2. .fs-overlay         — full-screen modal placard for intro & outro.
-                            Backdrop-blurs the play area behind it; "tap to
-                            continue" CTA centered. Hidden in BASE / ACTIVE.
-   3. .fs-hud             — sticky HUD pinned above the reel area with 3
-                            stat boxes: SPINS · MULT · TOTAL. Hidden in BASE. */
-
-/* Visual-mode body backgrounds (chosen by GDD palette heuristic). */
-body.fs-mode-purple { background: #1d1230; }
-body.fs-mode-gold   { background: #2a2114; }
-body.fs-mode-crimson{ background: #2a0f12; }
-
-/* Reel frame in FS modes — flat, no halo, no panel.
-   Mirrors the base-game treatment: cells lebde direktno na body backdrop-u,
-   bez ikakvog dekorativnog frame-a iza rilova. */
-body.fs-mode-purple .frame,
-body.fs-mode-gold .frame,
-body.fs-mode-crimson .frame {
-  position: relative;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-}
-body.fs-mode-purple .frame::after,
-body.fs-mode-gold   .frame::after,
-body.fs-mode-crimson .frame::after {
-  content: none;
-}
-
-/* FS HUD — slim horizontal bar pinned to the top of the viewport so it
-   never disturbs the .stage grid auto-placement. Hidden by default;
-   .fs-hud--active flips it on. */
-.fs-hud {
-  position: fixed;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: none;
-  gap: 10px;
-  padding: 8px 14px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid var(--accent);
-  border-radius: 14px;
-  z-index: 50;
-  font-family: inherit;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-}
-.fs-hud--active { display: flex; }
-.fs-hud__box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 70px;
-}
-.fs-hud__label {
-  font-size: 0.55rem;
-  color: var(--accent);
-  opacity: 0.8;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-}
-.fs-hud__value {
-  font-size: 1rem;
-  font-weight: 800;
-  color: #ffe6a8;
-  letter-spacing: 0.4px;
-}
-.fs-hud__divider {
-  width: 1px;
-  align-self: stretch;
-  background: rgba(201, 162, 39, 0.35);
-  margin: 2px 4px;
-}
-
-/* FS retrigger toast — bubbles up briefly when an additional FS award
-   lands DURING the FS round (scatter re-detection or dev re-trigger). */
-.fs-toast {
-  position: fixed;
-  top: 70px;
-  left: 50%;
-  transform: translateX(-50%) translateY(-8px);
-  padding: 10px 22px;
-  background: linear-gradient(180deg, #3a2a14, #1d1208);
-  border: 1px solid var(--accent);
-  border-radius: 999px;
-  color: #ffe6a8;
-  font-weight: 800;
-  font-size: 0.9rem;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  z-index: 60;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 280ms ease-out, transform 280ms ease-out;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55), 0 0 30px rgba(255, 214, 110, 0.35);
-}
-.fs-toast--show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-/* Full-stage modal placard — intro / outro.
-   Backdrop-blurs the play area behind it. Always-on backdrop click is OFF;
-   only the CTA dismisses to avoid accidental skip during big-win celebrations. */
-.fs-overlay {
-  position: fixed;
-  inset: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background: rgba(7, 5, 14, 0.55);
-  backdrop-filter: blur(10px) saturate(1.1);
-  z-index: 200;
-  opacity: 0;
-  transition: opacity 320ms ease-out;
-}
-.fs-overlay--show {
-  display: flex;
-  opacity: 1;
-}
-.fs-placard {
-  width: min(420px, 86vw);
-  padding: 32px 28px 26px;
-  background: linear-gradient(180deg, #1a1228 0%, #0c0612 100%);
-  border: 1px solid var(--accent);
-  border-radius: 20px;
-  text-align: center;
-  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
-              inset 0 1px 0 rgba(255, 230, 168, 0.12),
-              0 0 80px rgba(173, 109, 255, 0.18);
-  transform: translateY(8px) scale(0.96);
-  transition: transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.fs-overlay--show .fs-placard { transform: translateY(0) scale(1); }
-body.fs-mode-gold    .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 230, 168, 0.12), 0 0 80px rgba(255, 214, 110, 0.22); }
-body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 230, 168, 0.12), 0 0 80px rgba(255, 110, 110, 0.20); }
-
-.fs-placard__eyebrow {
-  font-size: 0.7rem;
-  color: var(--accent);
-  letter-spacing: 4px;
-  text-transform: uppercase;
-  opacity: 0.85;
-  margin-bottom: 12px;
-}
-.fs-placard__title {
-  font-size: 2rem;
-  font-weight: 800;
-  color: #ffe6a8;
-  line-height: 1.05;
-  letter-spacing: 1.5px;
-  text-shadow: 0 6px 22px rgba(0, 0, 0, 0.65);
-  margin-bottom: 6px;
-}
-.fs-placard__spins {
-  font-size: 3.2rem;
-  font-weight: 900;
-  color: var(--accent);
-  line-height: 1;
-  text-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), 0 0 32px rgba(255, 214, 110, 0.5);
-  margin: 8px 0 6px;
-}
-.fs-placard__sub {
-  font-size: 0.85rem;
-  color: #d4dcef;
-  opacity: 0.8;
-  margin-bottom: 22px;
-}
-.fs-placard__cta {
-  padding: 12px 28px;
-  background: linear-gradient(180deg, #c9a227 0%, #8a6f15 100%);
-  color: #1a1208;
-  font-weight: 800;
-  font-size: 0.9rem;
-  letter-spacing: 2.5px;
-  text-transform: uppercase;
-  border: 1px solid #dbb840;
-  border-radius: 999px;
-  cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5),
-              inset 0 1px 0 rgba(255, 230, 168, 0.35);
-  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
-}
-.fs-placard__cta:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55),
-              inset 0 1px 0 rgba(255, 230, 168, 0.45),
-              0 0 24px rgba(255, 214, 110, 0.5);
-}
+${emitFreeSpinsCSS(resolveFreeSpinsConfig(model))}
 
 /* Dev-mode FS trigger — pinned bottom-left of the viewport, outside the
    normal hub grid so it can't disturb the production layout. Always-on
@@ -883,28 +698,8 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 }
 </style></head><body>
 
-<!-- Free Spins HUD — rendered always; toggled visible via .fs-hud--active.
-     Three stat boxes: spins remaining · current multiplier · cumulative FS total.
-     Position: fixed top-center of the viewport, so it never participates in
-     the .stage CSS grid auto-placement. -->
-<div class="fs-hud" id="fsHud" aria-hidden="true">
-  <div class="fs-hud__box">
-    <div class="fs-hud__label">Spins</div>
-    <div class="fs-hud__value" id="fsHudSpins">0 / 0</div>
-  </div>
-  <div class="fs-hud__divider"></div>
-  <div class="fs-hud__box">
-    <div class="fs-hud__label">Mult</div>
-    <div class="fs-hud__value" id="fsHudMult">×1</div>
-  </div>
-  <div class="fs-hud__divider"></div>
-  <div class="fs-hud__box">
-    <div class="fs-hud__label">Total</div>
-    <div class="fs-hud__value" id="fsHudTotal">0.00</div>
-  </div>
-</div>
-<!-- Retrigger / award toast — animates in & out on +N FS event. -->
-<div class="fs-toast" id="fsToast" aria-hidden="true">+0 FREE SPINS</div>
+${emitFreeSpinsHudMarkup(resolveFreeSpinsConfig(model))}
+${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
 
 <div class="stage">
   <div class="header">
@@ -975,18 +770,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
         aria-label="Dev: Trigger Free Spins"
         title="DEV — force Free Spins entry">FS</button>
 
-<!-- Free Spins full-stage overlay — intro & outro placards.
-     Hidden by default. Layer is on top of EVERYTHING (z-index 200), so it
-     reliably blurs the play area + hub during the cinematic moments. -->
-<div class="fs-overlay" id="fsOverlay" role="dialog" aria-modal="true" aria-hidden="true">
-  <div class="fs-placard">
-    <div class="fs-placard__eyebrow" id="fsPlacardEyebrow">YOU TRIGGERED</div>
-    <div class="fs-placard__title" id="fsPlacardTitle">FREE SPINS</div>
-    <div class="fs-placard__spins" id="fsPlacardSpins">10</div>
-    <div class="fs-placard__sub" id="fsPlacardSub">Free Spins begin now.</div>
-    <button class="fs-placard__cta" id="fsPlacardCta" type="button">TAP TO BEGIN</button>
-  </div>
-</div>
+${emitFreeSpinsOverlayMarkup(resolveFreeSpinsConfig(model))}
 
 <script>
   const POOL = ${JSON.stringify(pool.map(s => s.id))};
@@ -1834,192 +1618,26 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     applyWinHighlight().then(tail);
   }
 
-  /* ─── FSM · phases: BASE → FS_INTRO → FS_ACTIVE → FS_OUTRO → BASE ────── */
-  const FSM = {
-    phase: "BASE",
-    spinsTotal: 0,
-    spinsRemaining: 0,
-    mult: 1,
-    totalWin: 0,
-    retrigCount: 0,
-  };
-  /* Expose FSM and FREESPINS on window so the QA harness (Playwright eval)
-     can probe state without scraping DOM text. No-op in production. */
+  const devFsBtn   = document.getElementById("devFsBtn");
+  const statusElGlobal = document.getElementById("status");
+  ${emitStageBadgeRuntime(resolveStageBadgeConfig(model))}
+  ${emitFreeSpinsRuntime(resolveFreeSpinsConfig(model))}
+
+  /* Expose FREESPINS / SHAPE / RECT_REELS / payline + win probes on window
+     for the QA harness (Playwright eval). FSM is already exposed by the
+     freeSpins block. */
   if (typeof window !== "undefined") {
-    window.FSM = FSM;
     window.FREESPINS = FREESPINS;
     window.SHAPE = SHAPE;
-    /* RECT_REELS is the reel-strip engine state — exposed via getter so
-       the audit harness reads the live array even when it's rebuilt on
-       a shape change. */
     Object.defineProperty(window, 'RECT_REELS', {
       configurable: true,
       get: () => RECT_REELS,
     });
-    /* PAYLINE_POOL + applyWinHighlight + win-line probes exposed for the
-     payline-overlay spot-check harness. Harness forces a deterministic
-     5-of-a-kind by stamping cell textContent then calls applyWinHighlight
-     to verify the SVG overlay path actually renders. */
     window.PAYLINE_POOL = PAYLINE_POOL;
     window.SYMBOL_REGISTRY = SYMBOL_REGISTRY;
     window.applyWinHighlight = applyWinHighlight;
     window.detectLineWins = detectLineWins;
     window.drawPaylineOverlay = drawPaylineOverlay;
-  }
-
-  /* Cached DOM handles for the FS UI — looked up once at boot. */
-  const fsHud      = document.getElementById("fsHud");
-  const fsHudSpins = document.getElementById("fsHudSpins");
-  const fsHudMult  = document.getElementById("fsHudMult");
-  const fsHudTotal = document.getElementById("fsHudTotal");
-  const fsToast    = document.getElementById("fsToast");
-  const fsOverlay  = document.getElementById("fsOverlay");
-  const fsPlacardEyebrow = document.getElementById("fsPlacardEyebrow");
-  const fsPlacardTitle   = document.getElementById("fsPlacardTitle");
-  const fsPlacardSpins   = document.getElementById("fsPlacardSpins");
-  const fsPlacardSub     = document.getElementById("fsPlacardSub");
-  const fsPlacardCta     = document.getElementById("fsPlacardCta");
-  const devFsBtn   = document.getElementById("devFsBtn");
-  const statusElGlobal = document.getElementById("status");
-  ${emitStageBadgeRuntime(resolveStageBadgeConfig(model))}
-
-  function FSM_renderHud() {
-    if (!fsHud) return;
-    const consumed = FSM.spinsTotal - FSM.spinsRemaining;
-    fsHudSpins.textContent = consumed + " / " + FSM.spinsTotal;
-    fsHudMult.textContent  = "×" + (FSM.mult || 1);
-    fsHudTotal.textContent = FSM.totalWin.toFixed(2);
-  }
-
-  function FSM_showFsMode() {
-    const mode = (FREESPINS.bgMode || "purple").toLowerCase();
-    document.body.classList.remove("fs-mode-purple", "fs-mode-gold", "fs-mode-crimson");
-    document.body.classList.add("fs-mode-" + mode);
-    fsHud.classList.add("fs-hud--active");
-    fsHud.setAttribute("aria-hidden", "false");
-  }
-
-  function FSM_hideFsMode() {
-    document.body.classList.remove("fs-mode-purple", "fs-mode-gold", "fs-mode-crimson");
-    fsHud.classList.remove("fs-hud--active");
-    fsHud.setAttribute("aria-hidden", "true");
-  }
-
-  function FSM_showOverlay() {
-    fsOverlay.classList.add("fs-overlay--show");
-    fsOverlay.setAttribute("aria-hidden", "false");
-  }
-  function FSM_hideOverlay() {
-    fsOverlay.classList.remove("fs-overlay--show");
-    fsOverlay.setAttribute("aria-hidden", "true");
-  }
-
-  function FSM_showToast(text, duration) {
-    if (!fsToast) return;
-    fsToast.textContent = text;
-    fsToast.classList.add("fs-toast--show");
-    fsToast.setAttribute("aria-hidden", "false");
-    clearTimeout(fsToast._t);
-    fsToast._t = setTimeout(() => {
-      fsToast.classList.remove("fs-toast--show");
-      fsToast.setAttribute("aria-hidden", "true");
-    }, duration || 1800);
-  }
-
-  function FSM_enterIntro(spinsAwarded, scatterCount) {
-    FSM.phase = "FS_INTRO";
-    setStageBadge("fs", STAGE_FS_LABEL);
-    FSM.spinsTotal = spinsAwarded;
-    FSM.spinsRemaining = spinsAwarded;
-    FSM.mult = (FREESPINS.multiplier && FREESPINS.multiplier.start) || 1;
-    FSM.totalWin = 0;
-    FSM.retrigCount = 0;
-
-    fsPlacardEyebrow.textContent = scatterCount
-      ? scatterCount + " SCATTERS TRIGGERED"
-      : "YOU TRIGGERED";
-    fsPlacardTitle.textContent   = (FREESPINS.introLabel || "FREE SPINS").toUpperCase();
-    fsPlacardSpins.textContent   = String(spinsAwarded);
-    fsPlacardSub.textContent     = "Free Spins begin now.";
-    fsPlacardCta.textContent     = "TAP TO BEGIN";
-
-    /* Lock UI: block manual spin button + dev FS button while overlay is up. */
-    spinButton && (spinButton.disabled = true);
-    devFsBtn   && (devFsBtn.disabled   = true);
-    statusElGlobal && (statusElGlobal.textContent = "FS · READY");
-
-    FSM_showOverlay();
-  }
-
-  function FSM_enterActive() {
-    FSM.phase = "FS_ACTIVE";
-    setStageBadge("fs", STAGE_FS_LABEL);
-    FSM_hideOverlay();
-    FSM_showFsMode();
-    FSM_renderHud();
-    spinButton && (spinButton.disabled = true);
-    devFsBtn   && (devFsBtn.disabled   = true);
-    /* Kick the first spin after a short visual breath so the player tracks
-       the transition into FS mode (frame halo, BG swap, HUD appear). */
-    setTimeout(FSM_runNextFsSpin, 420);
-  }
-
-  function FSM_runNextFsSpin() {
-    if (FSM.phase !== "FS_ACTIVE") return;
-    /* Cancel any leftover win-cycle (shouldn't run during FS anyway, but
-       cheap defence; also bumps the cycle token). */
-    cancelWinSymCycle();
-    statusElGlobal && (statusElGlobal.textContent =
-      "FS · " + ((FSM.spinsTotal - FSM.spinsRemaining) + 1) + " / " + FSM.spinsTotal);
-
-    if (UNIFORM_REEL_KINDS.has(SHAPE.kind) && RECT_REELS) {
-      startSpinAll(() => handlePostSpin(true));
-    } else {
-      runStaticReroll(() => handlePostSpin(true));
-    }
-  }
-
-  function FSM_handleRetrigger(extraSpins) {
-    FSM.spinsTotal += extraSpins;
-    FSM.spinsRemaining += extraSpins;
-    FSM.retrigCount++;
-    FSM_renderHud();
-    FSM_showToast("+" + extraSpins + " FREE SPINS", 1600);
-  }
-
-  function FSM_enterOutro() {
-    FSM.phase = "FS_OUTRO";
-    setStageBadge("fs", STAGE_FS_LABEL);
-    fsPlacardEyebrow.textContent = (FREESPINS.outroLabel || "FREE SPINS COMPLETE").toUpperCase();
-    fsPlacardTitle.textContent   = "TOTAL WIN";
-    fsPlacardSpins.textContent   = FSM.totalWin.toFixed(2);
-    fsPlacardSub.textContent     = FSM.retrigCount > 0
-      ? FSM.retrigCount + " retrigger" + (FSM.retrigCount === 1 ? "" : "s") +
-        " across " + FSM.spinsTotal + " spins."
-      : FSM.spinsTotal + " spins played.";
-    fsPlacardCta.textContent     = "RETURN TO BASE";
-    statusElGlobal && (statusElGlobal.textContent = "FS · COMPLETE");
-
-    FSM_showOverlay();
-  }
-
-  function FSM_enterBase() {
-    FSM.phase = "BASE";
-    setStageBadge("base", STAGE_BASE_LABEL);
-    FSM_hideOverlay();
-    FSM_hideFsMode();
-    spinButton && (spinButton.disabled = false);
-    devFsBtn   && (devFsBtn.disabled   = !FREESPINS.enabled);
-    statusElGlobal && (statusElGlobal.textContent = "PRESS SPIN");
-  }
-
-  /* Placard CTA — advances the FSM. Single button drives both intro→active
-     and outro→base transitions; behaviour depends on current phase. */
-  if (fsPlacardCta) {
-    fsPlacardCta.addEventListener("click", () => {
-      if (FSM.phase === "FS_INTRO") FSM_enterActive();
-      else if (FSM.phase === "FS_OUTRO") FSM_enterBase();
-    });
   }
 
   /* Dev-only FS trigger — runs a real spin with the scatter outcome forced

@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `0a0a417` · main
+> Last updated: **2026-06-03** · HEAD: `__TBD__` · main
 
 ---
 
@@ -257,6 +257,25 @@
 | B6.6 | Unit testovi: `tests/blocks/anticipation.test.mjs` — **13/13 ✅** | ✅ |
 | B6.7 | Disabled mode → no-op `function maybeArmAnticipation() {}` stub (zero runtime cost) | ✅ |
 
+### Wave B4 — freeSpins LEGO blok (commit `__TBD__`)
+
+> Najveći B-talas u LEGO migraciji. Kompletna FS lifecycle (3 vizuelne sloja + 12 FSM helpera + 4 placard ID-jeva) izvučena iz buildera. GDD-driven labels, fade timings, transition delays — sve bake-uje u CSS + markup + runtime kao literali.
+
+| ID | Feature | Status |
+|---|---|---|
+| B4.1 | `src/blocks/freeSpins.mjs` (559 LOC) — 5 emitter funkcija: CSS / HudMarkup / ToastMarkup / OverlayMarkup / Runtime | ✅ |
+| B4.2 | CSS izvučeno: 180 LOC (body.fs-mode-* + .fs-hud + .fs-toast + .fs-overlay + .fs-placard sa svim child rules) | ✅ |
+| B4.3 | Markup izvučeno: HUD (4 stat box + 2 divider) + toast (1 div) + overlay (placard sa 5 ID-jeva: eyebrow/title/spins/sub/cta) | ✅ |
+| B4.4 | Runtime izvučeno: const FSM + 12 helpera (renderHud/showFsMode/hideFsMode/showOverlay/hideOverlay/showToast/enterIntro/enterActive/runNextFsSpin/handleRetrigger/enterOutro/enterBase) + placard CTA listener | ✅ |
+| B4.5 | GDD knobs: `enabled` / `intro-label` / `outro-label` / `total-win-label` / `intro-cta` / `outro-cta` / `intro-sub` / `fade-ms` / `enter-active-ms` / `spin-breath-ms` / `toast-ms` / `retrigger-toast-ms` | ✅ |
+| B4.6 | Label injection safety — `isPlainLabel()` rejects `<`, `>`, `{`, `}`, `\n`; HTML escape u overlay markup | ✅ |
+| B4.7 | Parser: `extractFreeSpinsPresentation()` — 5 heading alijasa (Free Spins Presentation / FS Presentation / Free Spins Placard / Bonus Presentation / FS Placard) | ✅ |
+| B4.8 | `buildSlotHTML.mjs`: -382 LOC (2325 → 1943) — najveće smanjenje od svih B-talasa | ✅ |
+| B4.9 | Disabled mode → CSS+markup prazno, runtime no-op stub za sve 12 FSM_ funkcija (zero browser cost) | ✅ |
+| B4.10 | window.FSM exposure očuvan (QA harness probe — Playwright eval) | ✅ |
+| B4.11 | Unit testovi: `tests/blocks/freeSpins.test.mjs` — **21/21 ✅** (defaults + bounds + 4 emitter outputs + parser + roundtrip) | ✅ |
+| B4.12 | Backward compat: GDD bez sekcije → safe defaults identični pre-block ponašanju (FREE SPINS / TAP TO BEGIN / RETURN TO BASE / 320ms fade / 420ms enter-active / 250ms breath / 1800ms toast) | ✅ |
+
 ### Wave B7 — stageBadge LEGO blok (commit `0a0a417`)
 
 | ID | Feature | Status |
@@ -287,7 +306,7 @@
 
 ---
 
-## ✅ QA matrix (HEAD `0a0a417`)
+## ✅ QA matrix (HEAD `__TBD__`)
 
 | Suite | Coverage | Result |
 |---|---|---:|
@@ -305,7 +324,8 @@
 | `tests/blocks/stageBadge.test.mjs` | stageBadge block (CSS + Markup + Runtime + parser) | **17/17 ✅** |
 | `tests/blocks/anticipation.test.mjs` | anticipation block (CSS + Runtime + parser) | **13/13 ✅** |
 | `tests/blocks/spinTempo.test.mjs` | spinTempo block (presets + per-key + parser) | **14/14 ✅** |
-| **TOTAL** | | **265/265 ✅** |
+| `tests/blocks/freeSpins.test.mjs` | freeSpins block (CSS + 3 markup + runtime + parser) | **21/21 ✅** |
+| **TOTAL** | | **286/286 ✅** |
 
 ---
 
@@ -313,8 +333,8 @@
 
 | Pri | Item | Why | Effort |
 |:-:|---|---|---|
-| 1 | **Wave B4 — FS lifecycle helpers (`FSM_*`, intro/active/outro placards) → `src/blocks/freeSpins.mjs`** | najveći ostatak inline logike u builder-u (~250 LOC placard CSS + ~120 LOC FSM driver) | L |
-| 2 | **Wave B5-engine — full reel spin engine (`buildReelColumns`, `runOneBaseSpin`, `onTickAll`, `commitStopSymbols`) → `src/blocks/reelSpin.mjs`** | B5 trenutno samo config — engine telo i dalje inline | L |
+| 1 | **Wave B5-engine — full reel spin engine (`buildReelColumns`, `runOneBaseSpin`, `onTickAll`, `commitStopSymbols`) → `src/blocks/reelSpin.mjs`** | B5 trenutno samo config — engine telo i dalje inline (~500 LOC) | L |
+| 2 | **Wave B8 — Dev FS button + handlePostSpin → `src/blocks/devFsTrigger.mjs` + `src/blocks/postSpin.mjs`** | preostali manji inline ostaci u builder-u | M |
 | 3 | **Wave J2 — Real reel engine for hex / diamond / pyramid / cross / l_shape** | irregular column shapes; need geometric "column" mapping | L |
 | 4 | **Wave J3 — SVG kinds (wheel / crash / radial / slingo / plinko)** — domain-specific spin animation | each kind needs its own engine; can't reuse rectangular | L |
 | 5 | **PAR / Math hot-swap injector** | README Phase 2 — placeholder math still in use | XL |

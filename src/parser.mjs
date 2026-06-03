@@ -126,6 +126,10 @@ export function parseMarkdownGDD(text) {
      bounce knobs for the spinTempo lego block. */
   extractSpinTempo(text, model);
 
+  /* free-spins-presentation block config — placard labels + fade timings
+     + transition delays for the freeSpins lego block. */
+  extractFreeSpinsPresentation(text, model);
+
   // math (RTP / volatility / max-win) intentionally NOT extracted in this phase.
 
   return model;
@@ -913,6 +917,23 @@ function freshModel() {
       gold: undefined,
       skipDuringFs: undefined,
     },
+    /* Free-spins-presentation block config — consumed by
+       src/blocks/freeSpins.mjs. Separate from the structural FS config
+       (freeSpins) which is math/feature; this is purely the visual layer. */
+    freeSpinsPresentation: {
+      enabled: undefined,
+      introLabel: undefined,
+      outroLabel: undefined,
+      totalWinLabel: undefined,
+      introCta: undefined,
+      outroCta: undefined,
+      introSub: undefined,
+      fadeMs: undefined,
+      enterActiveDelayMs: undefined,
+      spinBreathMs: undefined,
+      toastMs: undefined,
+      retriggerToastMs: undefined,
+    },
     /* Spin-tempo block config — consumed by src/blocks/spinTempo.mjs.
        preset is a string ("s-avp" | "fast" | "slow") that sets the base
        cadence; per-key overrides follow. */
@@ -1177,5 +1198,54 @@ export function extractSpinTempo(text, model) {
   for (const [key, rx] of floatMap) {
     const m = section.match(rx);
     if (m) st[key] = parseFloat(m[1]);
+  }
+}
+
+/* ── extractFreeSpinsPresentation — GDD-driven placard / HUD / toast config
+   Reads optional knobs from a "## Free Spins Presentation" /
+   "## FS Presentation" / "## Free Spins Placard" / "## Bonus Presentation"
+   section. All keys optional. */
+export function extractFreeSpinsPresentation(text, model) {
+  if (!text || !model) return;
+  const headingRx = /^##\s*(?:free\s*spins\s*presentation|fs\s*presentation|free\s*spins\s*placard|bonus\s*presentation|fs\s*placard)\s*$/im;
+  const startMatch = text.match(headingRx);
+  if (!startMatch) return;
+
+  const start = startMatch.index + startMatch[0].length;
+  const restRx = /^#{1,2}\s/m;
+  const tail = text.slice(start);
+  const nextH = tail.match(restRx);
+  const section = nextH ? tail.slice(0, nextH.index) : tail;
+
+  const fp = model.freeSpinsPresentation;
+  const en = section.match(/\benabled\s*[:=]\s*(true|false|on|off|yes|no)/i);
+  if (en) {
+    const v = en[1].toLowerCase();
+    fp.enabled = (v === 'true' || v === 'on' || v === 'yes');
+  }
+
+  const labels = [
+    ['introLabel',    /\bintro[- ]?label\s*[:=]\s*['"]?([^'"\n]+?)['"]?\s*$/im],
+    ['outroLabel',    /\boutro[- ]?label\s*[:=]\s*['"]?([^'"\n]+?)['"]?\s*$/im],
+    ['totalWinLabel', /\btotal[- ]?win[- ]?label\s*[:=]\s*['"]?([^'"\n]+?)['"]?\s*$/im],
+    ['introCta',      /\bintro[- ]?cta\s*[:=]\s*['"]?([^'"\n]+?)['"]?\s*$/im],
+    ['outroCta',      /\boutro[- ]?cta\s*[:=]\s*['"]?([^'"\n]+?)['"]?\s*$/im],
+    ['introSub',      /\bintro[- ]?sub\s*[:=]\s*['"]?([^'"\n]+?)['"]?\s*$/im],
+  ];
+  for (const [k, rx] of labels) {
+    const m = section.match(rx);
+    if (m) fp[k] = m[1].trim();
+  }
+
+  const ints = [
+    ['fadeMs',             /\bfade[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['enterActiveDelayMs', /\benter[- ]?active[- ]?(?:delay[- ]?)?ms\s*[:=]\s*(\d+)/i],
+    ['spinBreathMs',       /\bspin[- ]?breath[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['toastMs',            /\btoast[- ]?ms\s*[:=]\s*(\d+)/i],
+    ['retriggerToastMs',   /\bretrigger[- ]?toast[- ]?ms\s*[:=]\s*(\d+)/i],
+  ];
+  for (const [k, rx] of ints) {
+    const m = section.match(rx);
+    if (m) fp[k] = parseInt(m[1], 10);
   }
 }
