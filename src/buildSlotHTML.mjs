@@ -512,10 +512,11 @@ body {
    playScatterCelebration(cells, opts) returning a Promise.
 
    Reference cadence: Wrath of Olympus / Sweet Bonanza style — ~1500ms
-   total = 3 pulse-glow cycles at 500ms each. Each cycle: scale 1 → 1.22
-   with gold radial glow, rotate ±8°, then ease back. Non-scatter cells
+   total = 3 pulse-glow cycles at 500ms each. Each cycle: brightness
+   1 → 1.5 + gold drop-shadow halo, NO transform (symbol stays strictly
+   inside its reel cell, never crosses the frame mask). Non-scatter cells
    dim to 0.18 opacity for the entire celebration so the eye locks on
-   the triggers. */
+   the triggers via pure luminance contrast. */
 .gridHost.is-scatter-celebrating .cell,
 .gridHost.is-scatter-celebrating text {
   opacity: 0.18;
@@ -524,73 +525,77 @@ body {
 .gridHost.is-scatter-celebrating .cell--scatter-celebrate,
 .gridHost.is-scatter-celebrating text.cell--scatter-celebrate {
   opacity: 1 !important;
+  /* Subtle 3-pulse brightness + glow rhythm — NO transform so the scatter
+     symbol stays strictly inside its reel cell, never crosses the frame
+     mask. Brightness + filter halo carries the celebration weight. */
   animation: scatter-celebrate 500ms ease-in-out 3;
-  transform-origin: center center;
-  /* Layered glow: tight gold core + soft amber halo. Pure filter, no
-     extra DOM. Falls back gracefully if drop-shadow isn't supported. */
-  filter: drop-shadow(0 0 8px rgba(255, 200, 80, 0.95))
-          drop-shadow(0 0 18px rgba(255, 160, 40, 0.65));
+  transform: none;
   z-index: 10;
   position: relative;
 }
 @keyframes scatter-celebrate {
-  0%   { transform: scale(1)    rotate(0deg);   }
-  25%  { transform: scale(1.22) rotate(-8deg);  }
-  50%  { transform: scale(1.10) rotate(0deg);   }
-  75%  { transform: scale(1.22) rotate(8deg);   }
-  100% { transform: scale(1)    rotate(0deg);   }
+  0%   { filter: brightness(1)   drop-shadow(0 0 0  transparent); }
+  40%  { filter: brightness(1.5) drop-shadow(0 0 8px rgba(255, 214, 110, 0.85)); }
+  70%  { filter: brightness(1.2) drop-shadow(0 0 5px rgba(255, 214, 110, 0.50)); }
+  100% { filter: brightness(1)   drop-shadow(0 0 0  transparent); }
 }
 @media (prefers-reduced-motion: reduce) {
   .gridHost.is-scatter-celebrating .cell--scatter-celebrate,
   .gridHost.is-scatter-celebrating text.cell--scatter-celebrate {
     animation: none;
-    transform: scale(1.10);
+    filter: brightness(1.3) drop-shadow(0 0 6px rgba(255, 214, 110, 0.7));
     transition: filter 220ms ease;
   }
 }
 
 /* ── Win-symbol cycle ── independent modular block ────────────────────────
    Plays AFTER reels settle on a non-trigger BASE spin. Multiple winning
-   combinations cycle one-by-one, each lit for ~800ms (WoO/Pragmatic pace),
+   combinations cycle one-by-one, each lit for ~500ms (WoO small-win pace),
    then everything undims back to neutral.
 
    Composes with: BG/FS swap, scatter celebration, stage badge.
    Mutually exclusive with: scatter celebration (gating in handlePostSpin
    ensures only one of the two ever plays per spin).
 
-   Per-combo animation: scale 1.0 → 1.25 → 1.0 across 3 sub-pulses, gold
-   drop-shadow halo + tight outline-style filter. While one combo is lit,
-   ALL other cells (including cells from other combos) dim to 0.22 so the
-   active combo reads as a single bright cluster. */
+   Design constraint (Boki rule): SUBTLE — animation MUST stay entirely
+   inside the reel cell. Hard rules:
+     - NO transform (no scale / rotate) — glyph stays at native size
+     - NO drop-shadow / external glow — every prior version bled past
+       the frame edge; only INSET box-shadow is allowed
+     - Inset gold rim + brightness pulse on the glyph
+     - Neighbour cells dim to 0.30 for cluster contrast
+   The result is a contained "lit-cell" pulse that reads on luminance and
+   a soft inner rim, with zero overflow. */
 .gridHost.is-winsym-cycling .cell,
 .gridHost.is-winsym-cycling text {
-  opacity: 0.22;
-  transition: opacity 180ms ease;
+  opacity: 0.30;
+  transition: opacity 140ms ease;
 }
 .gridHost.is-winsym-cycling .cell--winsym,
 .gridHost.is-winsym-cycling text.cell--winsym {
   opacity: 1 !important;
-  animation: winsym-pulse 800ms ease-in-out 1;
-  transform-origin: center center;
-  filter: drop-shadow(0 0 6px rgba(255, 200, 80, 0.92))
-          drop-shadow(0 0 14px rgba(255, 160, 40, 0.55));
-  z-index: 9;
-  position: relative;
+  animation: winsym-pulse 500ms ease-in-out 1;
+  transform: none;
+  border-radius: 6px;       /* corner-rounded so the inset rim matches the cell */
 }
 @keyframes winsym-pulse {
-  0%   { transform: scale(1.00); }
-  20%  { transform: scale(1.25); }
-  40%  { transform: scale(1.05); }
-  60%  { transform: scale(1.22); }
-  80%  { transform: scale(1.06); }
-  100% { transform: scale(1.00); }
+  0%   { filter: brightness(1.00);
+         box-shadow: inset 0 0 0 0 rgba(255, 196, 90, 0); }
+  35%  { filter: brightness(1.28);
+         box-shadow: inset 0 0 0 2px rgba(255, 196, 90, 0.92),
+                     inset 0 0 8px  rgba(255, 170, 60, 0.55); }
+  70%  { filter: brightness(1.14);
+         box-shadow: inset 0 0 0 2px rgba(255, 196, 90, 0.62),
+                     inset 0 0 6px  rgba(255, 170, 60, 0.32); }
+  100% { filter: brightness(1.00);
+         box-shadow: inset 0 0 0 0 rgba(255, 196, 90, 0); }
 }
 @media (prefers-reduced-motion: reduce) {
   .gridHost.is-winsym-cycling .cell--winsym,
   .gridHost.is-winsym-cycling text.cell--winsym {
     animation: none;
-    transform: scale(1.10);
-    transition: filter 180ms ease;
+    filter: brightness(1.15);
+    box-shadow: inset 0 0 0 2px rgba(255, 196, 90, 0.85);
   }
 }
 .grow-tag {
@@ -1876,7 +1881,8 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
       if (FREESPINS.winCycle === false) { resolve(); return; }
       if (!combos || combos.length === 0) { resolve(); return; }
       if (FSM && FSM.phase && FSM.phase !== 'BASE') { resolve(); return; }
-      const perComboMs = (opts && opts.perComboMs) || 800;
+      /* Default 500ms = WoO small-win lineMs; matches the CSS keyframes. */
+      const perComboMs = (opts && opts.perComboMs) || 500;
       const reduced = window.matchMedia &&
                       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const stepMs  = reduced ? 200 : perComboMs;
