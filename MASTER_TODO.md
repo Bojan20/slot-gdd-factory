@@ -544,23 +544,116 @@
 
 ---
 
-## 🟡 In progress / next up
+## 🟡 In progress / next up — Ultimate-fix roadmap (Wave S → Wave Z)
 
-> **LEGO migracija B-talasa GOTOVA** — sve hot-path funkcije, CSS, markup,
-> runtime helperi i lifecycle orchestratori izvučeni u 12 modularnih GDD-driven
-> blokova. `buildSlotHTML.mjs` sa 2678 → 1312 LOC (−51%).
+> **Kontekst** (04.06.2026, Boki): *"sve fwture koje ubacujemo, ubacujemo
+> kao blokove i sto vise feautrea. dakle, obavezan ultimativni fix svega
+> kao za template, ne specijalno sad za bilo koju konkretnu igru"* —
+> ekspres povodom mrtvog Multiplier Orb-a u GoO. Wave R je popravila
+> osnovnu hook coverage (3 → 14 blokova). Wave S → T → U dovode template
+> do potpune integriteta pre Wave Z (Block Playground) koji onda
+> verifikuje sve vizuelno.
 >
-> **Wave J2 GOTOVA** — diamond / pyramid / cross / l_shape sada koriste real
-> reel engine (8 od 10 HTML grid kinds imaju real engine; preostao samo
-> hexagonal sa qr koordinatama + 5 SVG kinds).
+> **🚧 Hard ordering rule**: Wave Z se NE radi pre Wave U. Razlog je
+> sledeći — playground prikazuje stanje blokova. Ako blokovi još uvek
+> ne emituju hookove kako treba ili imaju game-specific defaults,
+> playground će prikazati broken / pristrasne stvari, što je gore od
+> nikakvog playground-a.
+
+### 🔴 Wave S — HookBus emit consolidation (sledeća, kritična)
+
+> Wave R je rešila **listening** stranu (blokovi sad registruju hookove).
+> Wave S rešava **emitting** stranu — događaji se trenutno emituju iz
+> dva mesta (`winPresentation` + `freeSpins` + `reelEngine`), što je
+> orchestrator-level coupling koji krši LEGO pravilo. Svaki blok mora
+> emitovati svoje sopstvene događaje.
+
+| ID | Item | Why | Effort |
+|:-:|---|---|---|
+| S1 | **`tumble.mjs` interno emituje `onTumbleStep`** umesto da winPresentation to radi za njega | `runTumbleChain()` iterator zna kada nova runda krene; trenutno winPresentation poznaje tumble internals — krši kapsulaciju | S |
+| S2 | **`postSpin.mjs` blok emituje `postSpin` event** umesto da winPresentation to radi | postSpin blok je centralni round-close handler; treba sam da signal-uje postSpin pa drugi blokovi (winCap, respin, holdAndWin, gamble) reaguju | S |
+| S3 | **`winPresentation.mjs` registruje `onWinDetected`** pravu hook svojstvenu sebi, ne unutrašnju funkciju | Trenutno per-line vs cluster vs all-at-once odluka je u orchestratoru (`if (mode === 'lines') showLines() else ...`); treba da bude unutar bloka | M |
+| S4 | **`reelEngine.mjs` emit-uje `onSpinResult` posle settle** umesto da to radi orchestrator implicitno preko winPresentation poziva | reelEngine zna trenutak kada sve reels postanu mirne; treba on da emituje | S |
+| S5 | **`spinTempo.mjs` registruje `preSpin`** za reset tempo state-a | trenutno mu se tempo postavlja iz orchestratora; LEGO kontrakt traži self-driven | S |
+| S6 | **`anticipation.mjs` registruje `preSpin`** za clearing prethodnih timer-a | anticipation state ostaje "armed" između spinova ako se ne čisti | S |
+| S7 | **`stageBadge.mjs` registruje `onFsTrigger`/`onFsEnd`** za phase label update | stage badge sad samo CSS — phase tekst update se radi izvana | S |
+| S8 | **`triggerCounting.mjs` registruje `onSpinResult`** za scatter ladder count | sad se zove direktno iz reelEngine; treba kroz hook |  S |
+| S9 | **Audit: nijedan emit poziv u `buildSlotHTML.mjs`** | grep `HookBus.emit\\(` u orchestrator-u mora biti 0 — sve mora doći iz blokova | S |
+| S10 | **`tools/lego-gate.mjs`** — pred-commit script koji proverava: (a) 0 inline blokova u orchestrator-u, (b) 0 game-specific stringova u `src/blocks/`, (c) svaki blok ima test, (d) 0 emit poziva u `buildSlotHTML.mjs` | bez gate-a, regresije se dešavaju silently | S |
+| S11 | **`npm run test:lego`** script | dodato u `package.json` → CI-ready | XS |
+| S12 | **Verifikacija**: cortex-eyes na GoO + WoO + CF — 0 console errors, hook coverage **14 → 22** blokova nakon S1–S8 | end-to-end dokaz | S |
+
+### 🟠 Wave T — Template cleanup + sane defaults (posle S)
+
+> Pravilo kaže: **nikad game-specific code u src/blocks/**. Audit 04.06.2026
+> našao 11 fajlova sa game-specific reference. Plus blok default-i u 3 bloka
+> su iz konkretnog GDD-a hardkodovan. Wave T to čisti.
+
+| ID | Item | Why | Effort |
+|:-:|---|---|---|
+| T1 | **Vendor neutralization** — 11 fajlova sa game-specific komentarima (`Gates of Olympus reference`, `WoO reference`, `Reactoonz`, `Sweet Bonanza`, `Sugar Rush`) → zameniti sa "pay-anywhere reference", "cascade reference", "industry baseline" | krši `rule_no_vendor_mentions.md` + LEGO pravilo | M |
+| T2 | **`multiplierOrb.mjs` default distribution** — sada 2x–1000x kopija iz GoO. Promeniti default na opštije `[2,3,5,10,25,100]` standard; konkretna igra override-uje preko `model.multiplierOrb.distribution` | template ne sme nositi GoO bias | S |
+| T3 | **`bonusBuy.mjs` default 100x cost** — sada iz GoO PDF-a. Promeniti default na `null` (UI hide) ili median 75x | template ne sme defaultovati na konkretnu igru | XS |
+| T4 | **`anteBet.mjs` default 25%** — sada iz GoO. Promeniti na `null` ili 25% kao median industry | isti razlog | XS |
+| T5 | **`reelEngine.mjs` globals refactor** — koristi `window.ROWS`, `window.REELS`. Refactor da prima preko HookBus state ili eksplicitnog cfg | ne može isto da se testira kao drugi blokovi | M |
+| T6 | **`buildSlotHTML.mjs` slim down** — posle Wave R + S, orchestrator mora biti `import + init + render` only. Trenutno ima 1518 LOC; target < 800 LOC | sve runtime logiku raseliti u odgovarajuće blokove | L |
+| T7 | **Verifikacija**: `grep -nrE "(gates|woo|wrath|olympus|reactoonz)" src/blocks/ = 0 matches`; `wc -l src/buildSlotHTML.mjs < 800` | dokaz čišćenja | S |
+
+### 🟢 Wave U+ — Feature ekspanzija (po jedan blok po wave)
+
+> **Boki pravilo**: *"sto vise feautrea"*. Svaki novi feature kind = novi
+> LEGO blok. Wave U → Z su novi blokovi koji ekspandiraju template.
+
+| ID | Item | Blok | Effort |
+|:-:|---|---|---|
+| U1 | **`progressiveFreeSpins.mjs`** — auto-escalating multiplier po FS spin-u (npr. 1× → 2× → 3× → ... po spin-u), sa cap i reset rule-ovima. Trenutno se to radi rasut između `persistentMultiplier` + `multiplierOrb` + `freeSpins` | nov blok | M |
+| U2 | **`audio.mjs`** — Howler scaffolding (`SPIN_START`, `REEL_STOP`, `WIN_BIG`, `FS_TRIGGER`, `ORB_SPAWN`, `TUMBLE_REMOVE` kategorije). Mute toggle + volume slider. Empty defaults, GDD specifikuje URL-ove | nov blok | M |
+| U3 | **`uiToast.mjs`** — unified toast za win celebration (`BIG WIN` / `MEGA WIN` / `EPIC WIN` thresholds × bet) i feature triggers (`RESPIN!` / `LIGHTNING!`) | nov blok | S |
+| U4 | **`autoplay.mjs`** — N spin auto-play + stop-on-feature-trigger (any FS, ≥10× win, balance limit) settings | nov blok | M |
+| U5 | **`betSelector.mjs`** — coin-value × bet-multiplier model + bet-step buttons. Trenutno hardkodovano `€1` u svim fixturama | nov blok | S |
+| U6 | **`gambleSecondary.mjs`** — Card Gamble + Ladder Gamble (sada samo osnovni `gamble`) — industry pattern je 2 grane | nov blok | M |
+| U7 | **`rngFairness.mjs`** PAR layer skeleton (provably-fair seed + verify endpoint) | nov blok | M |
+| U8 | **`balanceHud.mjs`** — denomination + balance + bet + win pravi HUD, currency aware | nov blok | S |
+| U9 | **`historyLog.mjs`** — last-N spins log (drugi standard regulator) | nov blok | S |
+| U10 | **`paytable.mjs`** modal — full paytable viewer dostupan preko **i** dugmeta | nov blok | S |
+
+### 🔵 Wave Z — Block Playground (POSLEDNJE, posle Wave U)
+
+> **Storybook za LEGO blokove.** Sidebar lista svih blokova → klik → desni
+> panel: live demo, config sliders, HookBus event log uživo, opis.
+> Ruta `/blocks/` u Python serveru.
+>
+> **Zašto na kraju**: playground prikazuje stanje blokova. Ako Wave S/T/U
+> nisu gotovi, playground će prikazati broken/biased/incomplete blokove.
+> Tako Wave Z = automatski regression detector + dokaz da je LEGO sistem
+> ostvario svoju svrhu.
+
+| ID | Item | Detalj | Effort |
+|:-:|---|---|---|
+| Z1 | **`/blocks/index.html`** — sidebar lista 34+ blokova (alphabetical + group by category: wilds / multipliers / fs / round-control / ui) | nav skeleton | XS |
+| Z2 | **Per-block panel template** — live demo (mock 5×3 grid), "Trigger" dugme koje emituje relevantne HookBus events, config sliders za sve `defaultConfig()` keyove, HookBus event log uživo (poslednjih 20 events sa timestamps + payload + listener count) | core UX | L |
+| Z3 | **Block manifest auto-gen** — `tools/gen-block-manifest.mjs` skenira `src/blocks/*.mjs` i pravi `blocks/_manifest.json` sa: imenom, defaultConfig, exported funkcijama, lifecycle hooks (parse iz `HookBus.on(...)` poziva), test file path-om, opisom (parse iz JSDoc) | meta-data | M |
+| Z4 | **Trigger preset library** — gotovi preseti za svaki blok ("4 scatters land", "tumble chain depth 3", "FS round 2 of 10", "win at €10"), klik → emit-uje sequence eventova | demo flow | M |
+| Z5 | **Live HookBus inspector** — prikazuje za svaki event count handler-a + execution time + return values; podržava `step-through` mode (event-by-event playback) | debug | M |
+| Z6 | **Config persistence** — sliderom promenjen config se snima u `localStorage`, vraća se posle reload. "Export GDD snippet" dugme koje generiše YAML/MD fragment koji možeš pasteovati u GDD | save-load | S |
+| Z7 | **`tests/blocks/_playground.test.mjs`** — Playwright test koji loaduje `/blocks/`, klikne na svaki blok iz manifesta, proveri da svaki "Trigger" dugme okida HookBus emit + handler poziv, snimi screenshot. Output: 34+ screenshots u `tools/_eyes/playground/` | regression | M |
+| Z8 | **`tools/cortex-eyes-playground.mjs`** — wrapper koji startuje server + Z7 test + agreguje rezultate. Boki može odraditi sve blokove jednim komandom | dev tool | XS |
+| Z9 | **README.md update** — dokumentuje playground URL + workflow | docs | XS |
+
+---
+
+### 🟣 Future major waves (posle Z)
+
+> Ovi waveovi su veliki i nisu blokirajući za "ultimativni fix" cilj.
+> Crossiramo kad sve gore bude gotovo.
 
 | Pri | Item | Why | Effort |
 |:-:|---|---|---|
 | 1 | **Wave J2b — Hex real reel engine** | hex koristi axial (q,r) koordinate, treba poseban mapper iz hex tiles u reel-strip columns | M |
 | 2 | **Wave J3 — SVG kinds (wheel / crash / radial / slingo / plinko)** — domain-specific spin animation | each kind needs its own engine; can't reuse rectangular | L |
 | 3 | **PAR / Math hot-swap injector** | README Phase 2 — placeholder math still in use | XL |
-| 4 | **Sound cue placeholders** (trigger sting, anticipation hum, FS placard whoosh) | currently silent; production demos want audio scaffolding | M |
-| 5 | **Wave L–P orchestration glue** — invoke the 16 new feature blocks at the right lifecycle moments (post-spin: harvest sticky/walking wilds; pre-eval: mystery reveal + super symbol; eval: cluster/ways routing; round-end: pm reset / winCap reset). Blocks emit safe stub no-ops today; this wave wires them into the actual spin pipeline. | M |
+| 4 | **L2 AI feature synthesizer** za nepoznate features | README Phase 4 | XL |
+| 5 | **L3 Self-improving registry** (AI-gen → human-confirm → trained) | README Phase 5 | XXL |
 
 ---
 
