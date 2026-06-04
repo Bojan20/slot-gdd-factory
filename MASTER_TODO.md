@@ -3,13 +3,13 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `pending Wave T · template cleanup` · main
+> Last updated: **2026-06-04** · HEAD: `e1d2968` · main
 
 ---
 
 ## 🟢 Shipped (in-tree on `origin/main`)
 
-### Wave T — Template cleanup + sane defaults + global SHAPE wiring (commit pending)
+### Wave T — Template cleanup + sane defaults + global SHAPE wiring (commit `e1d2968`)
 
 > **Pre-Wave T audit**: 14 vendor / game-specific reference linija ostalo u `src/` posle Wave S linter passa (`src/pdfToMarkdown.mjs:183,224`, `src/blocks/{gamble,scatterCelebration,reelEngine}.mjs`, `src/buildSlotHTML.mjs:83,668,1078,1153`, `src/parser.mjs:144,611,710,749,909,1060`). Plus kritičan latent bug: **`window.REELS` / `window.ROWS` se nikad nije postavljalo** u orchestratoru → svaki blok koji koristi `window.REELS || 5` fallback je zapravo radio na phantom 5×3 gridu bez obzira na pravi SHAPE.
 >
