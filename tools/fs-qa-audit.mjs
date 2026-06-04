@@ -165,11 +165,37 @@ async function runOne(file) {
   const maxWaitMs = 300_000;
   const pollMs    = 400;
   const start     = Date.now();
+  /* Defensive try/catch: under parallel-batch execution Playwright may
+     decide to tear down the context if another fixture in the same batch
+     throws — the throw bubbles up via `Target page, context or browser
+     has been closed`. We swallow it locally and let the outer post-loop
+     code mark the row as failed so the whole audit run can complete. */
+  let pageClosedDuringPoll = false;
   while ((Date.now() - start) < maxWaitMs) {
-    await page.waitForTimeout(pollMs);
-    const phase = await page.evaluate(() => window.FSM && window.FSM.phase);
-    if (phase === 'FS_OUTRO') break;
-    if (phase === 'BASE') break;  /* shouldn't happen before outro, but bail safely */
+    try {
+      await page.waitForTimeout(pollMs);
+      const phase = await page.evaluate(() => window.FSM && window.FSM.phase);
+      if (phase === 'FS_OUTRO') break;
+      if (phase === 'BASE') break;  /* shouldn't happen before outro, but bail safely */
+    } catch (e) {
+      /* Browser/context/page closed mid-poll. Record and exit the loop
+         so the batch finalizer can still print a row for this fixture. */
+      pageClosedDuringPoll = true;
+      row.notes.push('outro-wait: page closed mid-poll — ' + String(e.message || e).slice(0, 120));
+      break;
+    }
+  }
+  if (pageClosedDuringPoll) {
+    /* Skip downstream waitForSelector + evaluate calls — they would
+       throw on a closed page. Mark row as failed and return early. */
+    row.outroOk = '❌ page closed';
+    row.baseOk  = '❌ page closed';
+    row.consoleErrs = 1;
+    process.stdout.write(`· ${slug.padEnd(40)} kind=${row.kind.padEnd(13)} ` +
+      `intro=${row.introOk} active=${row.activeOk.split(' ')[0]} ` +
+      `outro=${row.outroOk} base=${row.baseOk} spins=? retrig=? errs=1\n`);
+    try { await ctx.close(); } catch (_) { /* already gone */ }
+    return row;
   }
 
   /* Outro overlay fade-in is 320ms; wait for the CTA to actually be visible
