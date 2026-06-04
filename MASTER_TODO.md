@@ -3,13 +3,13 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `pending Wave U2 · audio` · main
+> Last updated: **2026-06-04** · HEAD: `e9287ee` · main
 
 ---
 
 ## 🟢 Shipped (in-tree on `origin/main`)
 
-### Wave U2 — `audio.mjs` Howler-style scaffolding (commit pending)
+### Wave U2 — `audio.mjs` Howler-style scaffolding (commit `e9287ee`)
 
 > **Drugi blok Wave U feature ekspanzije.** Zero-dependency Web Audio API wrapper sa Howler-style cue API-jem za 15 slot lifecycle kategorija. Bez external dep (Howler nije u package.json) — koristim HTMLAudioElement + cloneNode pattern za overlapping playback. Cues lazy-load on first play (asseti se ne učitavaju dok ih GDD ne specifikuje).
 
