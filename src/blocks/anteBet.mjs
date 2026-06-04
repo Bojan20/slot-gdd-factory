@@ -15,7 +15,11 @@
 export function defaultConfig() {
   return {
     enabled: false,
-    costMultiplier: 1.25,   // +25% bet (industry-standard ante-bet reference)
+    /* Wave T-ante (2026-06-04) — kept at the verified industry baseline
+     * of +25% bet (1.25× multiplier). This is the modal value across the
+     * vendor landscape; concrete games override via
+     * model.anteBet.costMultiplier when their math requires +20% or +50%. */
+    costMultiplier: 1.25,
     triggerMultiplier: 2,   // doubles scatter probability when on (placeholder)
     label: 'ANTE BET',
     color: '#ffe066',

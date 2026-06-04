@@ -20,7 +20,8 @@ console.log('\n=== bonusBuy block ===');
 
 const d = defaultConfig();
 t('disabled by default', d.enabled === false);
-t('default costX=100', d.costX === 100);
+/* Wave T-bonus: industry-median 75× replaces 100× GoO-style default. */
+t('default costX=75 (Wave T-bonus)', d.costX === 75);
 t('default label BUY BONUS', d.label === 'BUY BONUS');
 t('default forceScatters=4', d.forceScatters === 4);
 
@@ -49,13 +50,13 @@ t('CSS bakes color', css.includes('#ff5050'));
 const markup = emitBonusBuyMarkup(resolveConfig({ features: [{ kind: 'bonus_buy', label: 'X' }] }));
 t('markup has button#bonusBuyBtn', markup.includes('id="bonusBuyBtn"'));
 t('markup has BUY BONUS label', markup.includes('BUY BONUS'));
-t('markup has 100× BET cost label', markup.includes('100× BET'));
+t('markup has 75× BET cost label (Wave T-bonus)', markup.includes('75× BET'));
 
 const stub = emitBonusBuyRuntime(defaultConfig());
 t('runtime stub empty/comment when disabled', stub.includes('disabled'));
 
 const rt = emitBonusBuyRuntime(resolveConfig({ features: [{ kind: 'bonus_buy', label: 'X' }] }));
-t('runtime declares BONUS_BUY_COST_X', rt.includes('BONUS_BUY_COST_X = 100'));
+t('runtime declares BONUS_BUY_COST_X (Wave T-bonus default 75)', rt.includes('BONUS_BUY_COST_X = 75'));
 t('runtime declares BONUS_BUY_FORCE_SCATTERS', rt.includes('BONUS_BUY_FORCE_SCATTERS = 4'));
 t('runtime wires click listener', rt.includes("addEventListener('click'"));
 t('runtime sets FORCE_TRIGGER', rt.includes('FORCE_TRIGGER = BONUS_BUY_FORCE_SCATTERS'));

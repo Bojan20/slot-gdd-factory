@@ -20,24 +20,18 @@ export function defaultConfig() {
   return {
     enabled: false,
     symbolId: 'M',
-    // Pay-anywhere accumulating-orb reference distribution (industry standard)
+    /* Wave T-orb (2026-06-04) — neutral 6-tier distribution used as a
+     * template baseline. Concrete games override via
+     * model.multiplierOrb.distribution; nothing in the template should
+     * imply a specific math profile. Industry-typical "modest" curve:
+     * heavy weight on small values, geometric falloff to a 100× cap. */
     distribution: [
-      { value: 2,    weight: 250 },
-      { value: 3,    weight: 200 },
-      { value: 4,    weight: 100 },
-      { value: 5,    weight: 100 },
-      { value: 6,    weight: 50 },
-      { value: 8,    weight: 40 },
-      { value: 10,   weight: 30 },
-      { value: 12,   weight: 25 },
-      { value: 15,   weight: 20 },
-      { value: 20,   weight: 15 },
-      { value: 25,   weight: 10 },
-      { value: 50,   weight: 8 },
-      { value: 100,  weight: 6 },
-      { value: 250,  weight: 3 },
-      { value: 500,  weight: 1.5 },
-      { value: 1000, weight: 0.5 },
+      { value:   2, weight: 60 },
+      { value:   3, weight: 40 },
+      { value:   5, weight: 20 },
+      { value:  10, weight: 10 },
+      { value:  25, weight:  5 },
+      { value: 100, weight:  1 },
     ],
     bonusAccumulate: false,  // FS-mode persistent multiplier (pay-anywhere FS rule)
     chipColor: '#ffe680',

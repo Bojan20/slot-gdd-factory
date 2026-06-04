@@ -20,7 +20,10 @@ console.log('\n=== multiplierOrb block ===');
 const d = defaultConfig();
 t('disabled by default', d.enabled === false);
 t('default symbolId=M', d.symbolId === 'M');
-t('default distribution non-empty', d.distribution.length >= 10);
+/* Wave T-orb: neutral 6-tier distribution instead of 16-entry GoO copy. */
+t('default distribution is neutral 6-tier (Wave T-orb)', d.distribution.length === 6
+  && d.distribution[0].value === 2
+  && d.distribution[d.distribution.length - 1].value === 100);
 t('default bonusAccumulate=false', d.bonusAccumulate === false);
 t('default chipColor #ffe680', d.chipColor === '#ffe680');
 t('default pulseMs=1000', d.pulseMs === 1000);

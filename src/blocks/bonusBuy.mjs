@@ -15,7 +15,11 @@
 export function defaultConfig() {
   return {
     enabled: false,
-    costX: 100,            // 100x current bet (industry-standard bonus-buy reference)
+    /* Wave T-bonus (2026-06-04) — industry median is 50-100× current bet.
+     * Default to 75× as a neutral midpoint; concrete games override via
+     * model.bonusBuy.costX. The template no longer leans toward any one
+     * vendor's price point. */
+    costX: 75,
     label: 'BUY BONUS',
     forceScatters: 4,      // guaranteed scatter count when bought
     color: '#ff5050',
