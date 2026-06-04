@@ -172,6 +172,7 @@ export function parseMarkdownGDD(text) {
   extractBalanceHud(text, model);
   extractHistoryLog(text, model);
   extractTurboMode(text, model);
+  extractSettingsPanel(text, model);
   extractHoldAndWin(text, model);
   extractRespin(text, model);
   extractWinCap(text, model);
@@ -1255,6 +1256,19 @@ function freshModel() {
       showInFs: undefined, showInAutoplay: undefined,
       currency: undefined, chipColor: undefined, chipTextColor: undefined,
     },
+    /* Wave U13 — Settings panel (industry-standard preferences modal). */
+    settingsPanel: {
+      enabled: undefined,
+      chipLabel: undefined, chipColor: undefined, chipTextColor: undefined,
+      modalBgColor: undefined, modalAccentColor: undefined,
+      showTurboToggle: undefined, showSoundToggle: undefined,
+      showReducedMotionToggle: undefined, showQuickSpinToggle: undefined,
+      showAutoHideWinToggle: undefined, showLanguageSelector: undefined,
+      availableLocales: undefined,
+      persistInLocalStorage: undefined,
+      closeOnBackdrop: undefined, closeOnEscape: undefined, autoHideOnSpin: undefined,
+      ariaLabel: undefined,
+    },
     /* Wave U11 — Turbo mode toggle (industry-standard cadence override). */
     turboMode: {
       enabled: undefined,
@@ -2224,6 +2238,39 @@ export function extractBetSelector(text, model) {
 
   const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
   const ctc = _readStr(s, 'chip[- ]?text[- ]?color'); if (ctc) tgt.chipTextColor = ctc;
+  const ar = _readStr(s, 'aria[- ]?label'); if (ar) tgt.ariaLabel = ar;
+}
+
+/* Wave U13 — Settings panel extractor.
+ * Reads `## Settings` / `## Settings Panel` / `## Preferences` section. */
+export function extractSettingsPanel(text, model) {
+  const s = _findSection(text, /^##\s+(?:Settings(?:[- ]?Panel)?|Preferences)\b[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.settingsPanel;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const cl = _readStr(s, 'chip[- ]?label'); if (cl) tgt.chipLabel = cl;
+  const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
+  const ctc = _readStr(s, 'chip[- ]?text[- ]?color'); if (ctc) tgt.chipTextColor = ctc;
+  for (const [reKey, modelKey] of [
+    ['show[- ]?turbo[- ]?toggle',          'showTurboToggle'],
+    ['show[- ]?sound[- ]?toggle',          'showSoundToggle'],
+    ['show[- ]?reduced[- ]?motion[- ]?toggle', 'showReducedMotionToggle'],
+    ['show[- ]?quick[- ]?spin[- ]?toggle',  'showQuickSpinToggle'],
+    ['show[- ]?auto[- ]?hide[- ]?win[- ]?toggle', 'showAutoHideWinToggle'],
+    ['show[- ]?language[- ]?selector',     'showLanguageSelector'],
+    ['close[- ]?on[- ]?backdrop',          'closeOnBackdrop'],
+    ['close[- ]?on[- ]?escape',            'closeOnEscape'],
+    ['auto[- ]?hide[- ]?on[- ]?spin',      'autoHideOnSpin'],
+    ['persist[- ]?in[- ]?local[- ]?storage','persistInLocalStorage'],
+  ]) {
+    const v = _readBool(s, reKey);
+    if (v !== undefined) tgt[modelKey] = v;
+  }
+  const al = _readStr(s, 'available[- ]?locales');
+  if (al) {
+    const arr = al.split(/[,;]\s*/).map(x => x.trim()).filter(x => x.length > 0);
+    if (arr.length > 0) tgt.availableLocales = arr;
+  }
   const ar = _readStr(s, 'aria[- ]?label'); if (ar) tgt.ariaLabel = ar;
 }
 
