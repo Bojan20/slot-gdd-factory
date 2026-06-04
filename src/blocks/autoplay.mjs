@@ -67,7 +67,10 @@ const INDUSTRY_STEPS = Object.freeze([10, 25, 50, 100, 250, 500, 1000]);
 
 export function defaultConfig() {
   return {
-    enabled: false,
+    /* Industry-default ON. Autoplay is a baseline player control across
+     * every modern HTML5 slot vendor; only GDDs that explicitly forbid
+     * autoplay (jurisdictional restriction) flip this to false. */
+    enabled: true,
     /* Industry-baseline step values. GDD can override to a subset
      * (e.g. low-volatility games may cap at 250). */
     stepValues: INDUSTRY_STEPS.slice(),
@@ -176,7 +179,14 @@ export function emitAutoplayCSS(cfg = defaultConfig()) {
      pops up an inline panel with step value picker + stop-condition
      toggles. The remaining-spins counter overlays bottom-center of the
      reels area while a session is in progress. */
+  /* Spin-cluster satellite: bottom-right, one slot above turbo
+     (turbo bottom + its size + 10px gap). Anchors the auto panel which
+     pops up via position:absolute relative to this fixed button. */
   .autoplay-btn {
+    position: fixed;
+    right: max(18px, env(safe-area-inset-right, 18px));
+    bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + var(--spin-auto-size, 58px) + 10px);
+    z-index: 25;
     width: var(--spin-auto-size);
     height: var(--spin-auto-size);
     border-radius: 50%;
@@ -198,6 +208,12 @@ export function emitAutoplayCSS(cfg = defaultConfig()) {
     user-select: none;
     -webkit-tap-highlight-color: transparent;
   }
+  @media (max-width: 620px) {
+    .autoplay-btn {
+      right: max(12px, env(safe-area-inset-right, 12px));
+      bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + var(--spin-auto-size, 58px) + 10px);
+    }
+  }
   .autoplay-btn:hover  { transform: scale(1.06); opacity: 0.95; }
   .autoplay-btn:active { transform: scale(0.96); }
   .autoplay-btn.is-active {
@@ -208,10 +224,13 @@ export function emitAutoplayCSS(cfg = defaultConfig()) {
       inset 0 1px 0 rgba(255, 255, 255, 0.16),
       0 2px 8px rgba(0, 0, 0, 0.5);
   }
+  /* Panel anchors to the same right-edge column as .autoplay-btn,
+     popping up two cluster heights above it (turbo + autoplay + gaps). */
   .autoplay-panel {
-    position: absolute;
-    bottom: 64px;
-    right: 8px;
+    position: fixed;
+    right: max(18px, env(safe-area-inset-right, 18px));
+    bottom: calc(max(18px, env(safe-area-inset-bottom, 18px))
+                 + var(--spin-auto-size, 58px) * 2 + 28px);
     z-index: 28;
     min-width: 200px;
     padding: 12px;
@@ -282,8 +301,12 @@ export function emitAutoplayCSS(cfg = defaultConfig()) {
     pointer-events: none;
   }
   .autoplay-counter[hidden] { display: none !important; }
-  @media (max-width: 480px) {
-    .autoplay-panel { right: 4px; min-width: 180px; padding: 10px; }
+  @media (max-width: 620px) {
+    .autoplay-panel {
+      right: max(8px, env(safe-area-inset-right, 8px));
+      min-width: 180px;
+      padding: 10px;
+    }
     .autoplay-counter { bottom: 12px; font-size: 12px; }
   }
 `;

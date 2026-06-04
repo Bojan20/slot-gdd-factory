@@ -180,7 +180,14 @@ export function emitPaytableCSS(cfg = defaultConfig()) {
      i-button + full-screen modal overlay with symbol roster, payout grid,
      feature list, and wild-substitution rules. Composes with betSelector
      via window.__SLOT_BET__ for the real-cash column. */
+  /* Utility-rail slot 1: bottom-left. Fixed so it stays in viewport
+     regardless of stage flow / scroll. z-index 25 keeps it under modals
+     (40) but above reels (1) and overlays (10–15). */
   .paytable-btn {
+    position: fixed;
+    left: max(18px, env(safe-area-inset-left, 18px));
+    bottom: max(18px, env(safe-area-inset-bottom, 18px));
+    z-index: 25;
     width: 36px; height: 36px;
     border-radius: 50%;
     border: 2px solid rgba(${c.chipColor}, 0.7);
@@ -200,6 +207,12 @@ export function emitPaytableCSS(cfg = defaultConfig()) {
     transition: transform 120ms ease-out, opacity 140ms ease-out;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+  }
+  @media (max-width: 620px) {
+    .paytable-btn {
+      left: max(12px, env(safe-area-inset-left, 12px));
+      bottom: max(12px, env(safe-area-inset-bottom, 12px));
+    }
   }
   .paytable-btn:hover  { transform: scale(1.06); opacity: 0.95; }
   .paytable-btn:active { transform: scale(0.94); }

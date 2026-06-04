@@ -48,9 +48,16 @@ export function emitBonusBuyCSS(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   return `
 /* ─── bonus buy ──────────────────────────────────────────────────── */
+/* Bonus Buy is a feature-defining CTA — placed top-center so it never
+   collides with the bottom-right spin cluster (spin/auto/autoplay/turbo)
+   or the bottom-left utility rail (paytable/history/settings). */
 .bonus-buy-btn {
   position: fixed;
-  bottom: 22px; right: 22px;
+  top: max(18px, env(safe-area-inset-top, 18px));
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: auto;
+  right: auto;
   z-index: 60;
   background: linear-gradient(135deg, ${cfg.color}, #b03030);
   color: #fff;
@@ -65,10 +72,10 @@ export function emitBonusBuyCSS(cfg = defaultConfig()) {
   transition: transform .12s, box-shadow .12s;
 }
 .bonus-buy-btn:hover {
-  transform: translateY(-2px);
+  transform: translateX(-50%) translateY(-2px);
   box-shadow: 0 6px 22px rgba(255,80,80,.7), inset 0 1px 0 rgba(255,255,255,.5);
 }
-.bonus-buy-btn:active { transform: translateY(0); }
+.bonus-buy-btn:active { transform: translateX(-50%) translateY(0); }
 .bonus-buy-btn .cost {
   display: block;
   font-size: 0.65rem;
@@ -78,7 +85,11 @@ export function emitBonusBuyCSS(cfg = defaultConfig()) {
 }
 .bonus-buy-btn[disabled] { opacity: 0.5; cursor: not-allowed; }
 @media (max-width: 620px) {
-  .bonus-buy-btn { padding: 0.5rem 0.9rem; font-size: 0.72rem; bottom: 14px; right: 14px; }
+  .bonus-buy-btn {
+    padding: 0.5rem 0.9rem;
+    font-size: 0.72rem;
+    top: max(10px, env(safe-area-inset-top, 10px));
+  }
 }
 `;
 }

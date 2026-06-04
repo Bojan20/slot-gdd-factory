@@ -129,7 +129,13 @@ export function emitTurboModeCSS(cfg = defaultConfig()) {
   const c = resolveConfig({ turboMode: cfg });
   return `
   /* ── turboMode BLOCK — emitted by src/blocks/turboMode.mjs ─────────── */
+  /* Spin-cluster satellite: bottom-right, pinned next to side HUD.
+     Same circular footprint as autoBtn so the cluster reads as one unit. */
   .turbo-btn {
+    position: fixed;
+    right: max(18px, env(safe-area-inset-right, 18px));
+    bottom: max(18px, env(safe-area-inset-bottom, 18px));
+    z-index: 25;
     width: var(--spin-auto-size);
     height: var(--spin-auto-size);
     border-radius: 50%;
@@ -152,6 +158,12 @@ export function emitTurboModeCSS(cfg = defaultConfig()) {
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     opacity: 0.7;
+  }
+  @media (max-width: 620px) {
+    .turbo-btn {
+      right: max(12px, env(safe-area-inset-right, 12px));
+      bottom: max(12px, env(safe-area-inset-bottom, 12px));
+    }
   }
   .turbo-btn:hover  { transform: scale(1.06); opacity: 0.9; }
   .turbo-btn:active { transform: scale(0.94); }

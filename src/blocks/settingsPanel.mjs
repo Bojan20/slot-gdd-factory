@@ -148,7 +148,12 @@ export function emitSettingsPanelCSS(cfg = defaultConfig()) {
   const c = resolveConfig({ settingsPanel: cfg });
   return `
   /* ── settingsPanel BLOCK — emitted by src/blocks/settingsPanel.mjs ─── */
+  /* Utility-rail slot 3: bottom-left, 92px above paytable (two slots up). */
   .settings-btn {
+    position: fixed;
+    left: max(18px, env(safe-area-inset-left, 18px));
+    bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 92px);
+    z-index: 25;
     width: 36px; height: 36px;
     border-radius: 50%;
     border: 2px solid rgba(${c.chipColor}, 0.7);
@@ -168,6 +173,12 @@ export function emitSettingsPanelCSS(cfg = defaultConfig()) {
     transition: transform 280ms ease-out, opacity 140ms ease-out;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+  }
+  @media (max-width: 620px) {
+    .settings-btn {
+      left: max(12px, env(safe-area-inset-left, 12px));
+      bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + 88px);
+    }
   }
   .settings-btn:hover  { transform: rotate(45deg); opacity: 0.95; }
   .settings-btn:active { transform: scale(0.94); }

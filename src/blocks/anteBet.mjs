@@ -46,10 +46,14 @@ export function emitAnteBetCSS(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const pct = Math.round((cfg.costMultiplier - 1) * 100);
   return `
-/* ─── ante bet ───────────────────────────────────────────────────── */
+/* ─── ante bet ─────────────────────────────────────────────────────
+   Top-left feature toggle. Same reasoning as bonus-buy: keeps the
+   bottom rails and corners free for the spin cluster and utility row. */
 .ante-bet {
   position: fixed;
-  bottom: 22px; left: 22px;
+  top: max(18px, env(safe-area-inset-top, 18px));
+  left: max(18px, env(safe-area-inset-left, 18px));
+  bottom: auto;
   z-index: 60;
   display: flex;
   align-items: center;
@@ -96,7 +100,12 @@ export function emitAnteBetCSS(cfg = defaultConfig()) {
   margin-left: 2px;
 }
 @media (max-width: 620px) {
-  .ante-bet { padding: 0.4rem 0.7rem; font-size: 0.7rem; bottom: 14px; left: 14px; }
+  .ante-bet {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.7rem;
+    top: max(10px, env(safe-area-inset-top, 10px));
+    left: max(10px, env(safe-area-inset-left, 10px));
+  }
   .ante-bet .switch { width: 26px; height: 14px; }
   .ante-bet .switch::after { width: 11px; height: 11px; }
   .ante-bet[data-on="true"] .switch::after { transform: translateX(11px); }

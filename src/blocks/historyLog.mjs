@@ -149,7 +149,12 @@ export function emitHistoryLogCSS(cfg = defaultConfig()) {
      Hub button + slide-up panel listing last N spins. Regulator-mandated
      audit trail. Composes with balanceHud (reads __SLOT_BALANCE__) and
      winPresentation (reads __WIN_AWARD__). */
+  /* Utility-rail slot 2: bottom-left, 46px above paytable. */
   .history-btn {
+    position: fixed;
+    left: max(18px, env(safe-area-inset-left, 18px));
+    bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 46px);
+    z-index: 25;
     width: 36px; height: 36px;
     border-radius: 50%;
     border: 2px solid rgba(${c.chipColor}, 0.7);
@@ -169,6 +174,12 @@ export function emitHistoryLogCSS(cfg = defaultConfig()) {
     transition: transform 120ms ease-out, opacity 140ms ease-out;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+  }
+  @media (max-width: 620px) {
+    .history-btn {
+      left: max(12px, env(safe-area-inset-left, 12px));
+      bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + 44px);
+    }
   }
   .history-btn:hover  { transform: scale(1.06); opacity: 0.95; }
   .history-btn:active { transform: scale(0.94); }

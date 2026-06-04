@@ -52,7 +52,10 @@ console.log('— blocks/autoplay.mjs —');
 
 t('defaultConfig: industry-baseline steps + thresholds', () => {
   const d = defaultConfig();
-  eq(d.enabled, false);
+  /* Industry-default ON — autoplay is a baseline player control in modern
+   * HTML5 slots. GDDs that explicitly forbid autoplay flip this off via
+   * `## Autoplay\nenabled: false`. */
+  eq(d.enabled, true);
   eq(d.stepValues.join(','), '10,25,50,100,250,500,1000');
   eq(d.defaultStep, 25);
   eq(d.betUnitFallback, 1.0);
@@ -102,7 +105,12 @@ t('resolveConfig: auto-enable from features[].kind = autoplay', () => {
   for (const k of ['autoplay', 'auto_spin', 'auto-spin', 'AUTO_PLAY']) {
     eq(resolveConfig({ features: [{ kind: k }] }).enabled, true, k);
   }
-  eq(resolveConfig({ features: [{ kind: 'free_spins' }] }).enabled, false);
+  /* free_spins alone leaves the default; default is now ON, so still true.
+   * An explicit `autoplay.enabled = false` (jurisdictional opt-out) is the
+   * only path that forces it back off — covered separately below. */
+  eq(resolveConfig({ features: [{ kind: 'free_spins' }] }).enabled, true);
+  eq(resolveConfig({ autoplay: { enabled: false } }).enabled, false,
+     'explicit opt-out flips it back off');
 });
 
 /* ── CSS ── */
@@ -118,7 +126,9 @@ t('emitAutoplayCSS: enabled bakes button + panel + counter selectors', () => {
                      '.autoplay-start', '.autoplay-counter']) {
     ct(css, sel);
   }
-  ct(css, '@media (max-width: 480px)');
+  /* Mobile breakpoint widened to 620px so the bottom-right spin cluster
+     re-snaps its safe-area offsets on phones in portrait. */
+  ct(css, '@media (max-width: 620px)');
 });
 
 t('emitAutoplayCSS: chipColor interpolated', () => {
