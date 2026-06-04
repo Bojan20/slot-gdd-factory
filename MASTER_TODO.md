@@ -9,7 +9,7 @@
 
 ## 🟢 Shipped (in-tree on `origin/main`)
 
-### Wave T3 — LEGO lifecycle gap fix (trigger flow onTumbleStep) + cortex-eyes hardening (commit `WAVE_T3_PENDING`)
+### Wave T3 — LEGO lifecycle gap fix (trigger flow onTumbleStep) + cortex-eyes hardening (commit `c9e7b42`)
 
 > **Korijenski uzrok**: Cortex-eyes Wave S verification je bio intermittently flake — 4-8/10 run uspeha — sa fail mode-ovima distribuiranim preko GoO / CF / WoO. Naivan dijagnoz je bio "timing race u testu" (3500ms hardcoded wait premali za GoO 6×5 pay-anywhere cascade). Pravi uzrok je bio LEGO **lifecycle gap** u `postSpin.mjs`: kad scatter trigger ili retrigger detektuje FS, postSpin **preskače** `applyWinHighlight()` (Boki pravilo Wave Q: scatter celebration igra solo), čime se preskače `await runTumbleChain(...)` u winPresentation → `onTumbleStep` nikad ne emit-uje u trigger spin → `EXPECTED_EVENTS` lista u cortex-eyes Wave S verifikaciji ima 0× za `onTumbleStep` → fail.
 >
