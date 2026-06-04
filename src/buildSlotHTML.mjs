@@ -699,6 +699,14 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
   if (spinButton) {
     spinButton.addEventListener("click", () => {
       if (FSM.phase !== "BASE") return;
+      /* Wave V3 — spinControl morphs the button between SPIN / STOP_PRE /
+         STOP_POST / SKIP_* and emits its OWN intent events (onSlamRequested,
+         onSkipRequested). The legacy handler may only start a fresh spin
+         when the button is actually in SPIN state. Otherwise click is a
+         slam / skip intent and must NOT also kick a new spin (double-fire
+         bug). */
+      const dataState = spinButton.getAttribute("data-state");
+      if (dataState && dataState !== "SPIN") return;
       runOneBaseSpin();
     });
   }

@@ -1,0 +1,533 @@
+/**
+ * src/blocks/spinControl.mjs
+ *
+ * Wave V3 — Unified primary-action button (SPIN / STOP / SKIP).
+ *
+ * Industry-reference pattern (PlayCore / every major studio modern slot):
+ * the primary CTA in the sideHud is ONE contextual button whose label +
+ * icon + color morph based on the round phase. This block REPLACES the
+ * inline `<button id="spinBtn">` that lived in buildSlotHTML.mjs and
+ * supersedes the standalone `slamStop` + `forceSkip` button blocks (V1,
+ * V2). When enabled, those two are markup/CSS suppressed and spinControl
+ * emits their intent events directly on HookBus.
+ *
+ * State machine (driven by HookBus lifecycle):
+ *
+ *      ┌──────────── onPlayerSpin ───────────┐
+ *      ▼                                     │
+ *   [SPIN] ──preSpin──▶ [STOP_PRE] ──onSpinResult──▶ [STOP_POST]
+ *                          │                                │
+ *                          │                       postSpin │ (rollup begins)
+ *                          ▼                                ▼
+ *                       postSpin (no win)             [SKIP_ROLLUP] ─onSkipComplete─▶ [SPIN]
+ *                          │                                │
+ *                          ▼                                │
+ *                       [SPIN]                              │
+ *                                                           │
+ *   onFsTrigger    ──▶ [SKIP_FSINTRO]   ─onSkipComplete──▶  │
+ *   onFsEnd        ──▶ [SKIP_FSOUTRO]   ─onSkipComplete──▶  │
+ *   (celebration)  ──▶ [SKIP_CELEBRATION] ─onSkipComplete─▶ ▼
+ *                                                       [SPIN]
+ *
+ * Each state owns:
+ *   • data-state attribute       (CSS variant selector)
+ *   • aria-label                 (accessibility)
+ *   • visible SVG icon           (one of 3 baked into markup, sibling
+ *                                  visibility toggled via data-state)
+ *   • click intent               (HookBus emit on tap)
+ *
+ * Click-intent dispatch (single click handler, state-aware):
+ *
+ *   STATE              CLICK EMITS                    SIDE EFFECT
+ *   ─────────────────  ─────────────────────────────  ────────────────────────────
+ *   SPIN               onPlayerSpin                   buildSlotHTML wires → runOneBaseSpin()
+ *   STOP_PRE           onSlamRequested(phase:'pre')   reelEngine awaits onSpinResult then collapses
+ *   STOP_POST          onSlamRequested(phase:'post')  reelEngine collapses immediately
+ *   SKIP_ROLLUP        onSkipRequested(phase:'rollup')        + window.__SLOT_SKIPPED__ = true
+ *   SKIP_FSINTRO       onSkipRequested(phase:'fsIntro')       + window.__SLOT_SKIPPED__ = true
+ *   SKIP_FSOUTRO       onSkipRequested(phase:'fsOutro')       + window.__SLOT_SKIPPED__ = true
+ *   SKIP_CELEBRATION   onSkipRequested(phase:'celebration')   + window.__SLOT_SKIPPED__ = true
+ *
+ * Reels-area click forwarding: when in any STOP state, a pointerup on the
+ * reels host is forwarded to the same slam dispatch path — industry parity
+ * with players tapping anywhere on the reels to fast-stop.
+ *
+ * Bake-time config (resolved from `model.spinControl`):
+ *   { enabled, requireMinSpinMs, hideOnTurbo, hideOnAutoSpin,
+ *     reelsClickAreaEnabled, minRollupMsForShow,
+ *     showDuringRollup, showDuringFsIntro, showDuringFsOutro,
+ *     showDuringCelebration,
+ *     spinAriaLabel, stopAriaLabel, skipAriaLabel,
+ *     stopColor, skipColor }
+ *
+ * Public API (server-side, ES module):
+ *   defaultConfig() / resolveConfig(model)
+ *   emitSpinControlCSS(cfg)       → variant CSS (data-state selectors)
+ *   emitSpinControlMarkup(cfg)    → <button id="spinBtn"> with 3 SVG icons
+ *   emitSpinControlRuntime(cfg)   → state machine + click dispatch
+ *
+ * Runtime contract (after emitted JS executes):
+ *   window.SpinControl.setState(name) / getState() / SPIN_CONTROL_STATE
+ *
+ * Runtime dependencies: HookBus (window.HookBus), document, setTimeout.
+ *
+ * Composition contract:
+ *   - buildSlotHTML.mjs MUST suppress emitSlamStopMarkup/CSS/Runtime and
+ *     emitForceSkipMarkup/CSS/Runtime when spinControl.enabled === true
+ *     (gated via `!spinCtlCfg.enabled && …` ternary). Their runtime stubs
+ *     are still re-attached as no-op `window.slamStopShow/Hide/Request`
+ *     so any third-party consumer that probes those names finds them.
+ *   - The inline click-listener that called `runOneBaseSpin()` directly
+ *     is removed from buildSlotHTML and replaced with a HookBus listener
+ *     on `onPlayerSpin` that calls runOneBaseSpin (preserves FSM gating).
+ *
+ * Z-index ownership: spinControl reuses `.spinBtn` base styles (already
+ * positioned in sideHud column, no z-index needed). Variant overlays
+ * (stop ring pulse, skip glow) are pseudo-elements that stay within
+ * the button's stacking context.
+ */
+
+const VALID_STATES = Object.freeze([
+  'SPIN',
+  'STOP_PRE',
+  'STOP_POST',
+  'SKIP_ROLLUP',
+  'SKIP_FSINTRO',
+  'SKIP_FSOUTRO',
+  'SKIP_CELEBRATION',
+]);
+
+const DEFAULTS = Object.freeze({
+  enabled: true,
+  /* Minimum spin ms before STOP becomes available. Below the threshold
+   * the button stays in SPIN visual (disabled) so the player perceives
+   * reels actually spinning. Same rationale as slamStop V1. */
+  requireMinSpinMs: 250,
+  hideOnTurbo: true,
+  hideOnAutoSpin: true,
+  reelsClickAreaEnabled: true,
+  /* SKIP gating — for very short rollups the skip flash would be
+   * subliminal. */
+  minRollupMsForShow: 600,
+  showDuringRollup: true,
+  showDuringFsIntro: true,
+  showDuringFsOutro: true,
+  showDuringCelebration: false,
+  /* A11y labels (announced via aria-label change on state morph). */
+  spinAriaLabel: 'Spin',
+  stopAriaLabel: 'Stop reels',
+  skipAriaLabel: 'Skip animation',
+  /* Variant accents — comma-separated rgb triplets so emitted CSS can
+   * compose them into rgba() without re-parsing at runtime. */
+  stopColor: '255,80,80',
+  skipColor: '90,180,255',
+});
+
+export function defaultConfig() {
+  return { ...DEFAULTS };
+}
+
+function clampInt(n, lo, hi) {
+  const x = Math.round(Number(n));
+  if (!Number.isFinite(x)) return lo;
+  return Math.max(lo, Math.min(hi, x));
+}
+
+function isRgbTriplet(s) {
+  return typeof s === 'string' && /^\d{1,3},\s*\d{1,3},\s*\d{1,3}$/.test(s);
+}
+
+export function resolveConfig(model = {}) {
+  const cfg = defaultConfig();
+  const m = (model && model.spinControl) || {};
+
+  if (m.enabled != null) cfg.enabled = !!m.enabled;
+  if (Number.isFinite(m.requireMinSpinMs)) cfg.requireMinSpinMs = clampInt(m.requireMinSpinMs, 0, 2000);
+  if (m.hideOnTurbo != null) cfg.hideOnTurbo = !!m.hideOnTurbo;
+  if (m.hideOnAutoSpin != null) cfg.hideOnAutoSpin = !!m.hideOnAutoSpin;
+  if (m.reelsClickAreaEnabled != null) cfg.reelsClickAreaEnabled = !!m.reelsClickAreaEnabled;
+  if (Number.isFinite(m.minRollupMsForShow)) cfg.minRollupMsForShow = clampInt(m.minRollupMsForShow, 0, 5000);
+  if (m.showDuringRollup      != null) cfg.showDuringRollup      = !!m.showDuringRollup;
+  if (m.showDuringFsIntro     != null) cfg.showDuringFsIntro     = !!m.showDuringFsIntro;
+  if (m.showDuringFsOutro     != null) cfg.showDuringFsOutro     = !!m.showDuringFsOutro;
+  if (m.showDuringCelebration != null) cfg.showDuringCelebration = !!m.showDuringCelebration;
+
+  for (const key of ['spinAriaLabel', 'stopAriaLabel', 'skipAriaLabel']) {
+    if (typeof m[key] === 'string' && m[key].length > 0 && m[key].length <= 64) {
+      cfg[key] = m[key];
+    }
+  }
+  if (isRgbTriplet(m.stopColor)) cfg.stopColor = m.stopColor.replace(/\s+/g, '');
+  if (isRgbTriplet(m.skipColor)) cfg.skipColor = m.skipColor.replace(/\s+/g, '');
+
+  return cfg;
+}
+
+function _esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+export function emitSpinControlCSS(cfg = defaultConfig()) {
+  const c = resolveConfig({ spinControl: cfg });
+  if (!c.enabled) return '';
+  return `
+  /* ── spinControl BLOCK — emitted by src/blocks/spinControl.mjs ─────
+     Three icons stacked inside #spinBtn; the active one is shown by
+     data-state. Variant accents recolor border/glow without redrawing
+     the gold base gradient (cheap state-morph, no layout shift). */
+  .spinBtn .spinIcon { display: none; }
+  .spinBtn[data-state="SPIN"] .spinIcon--spin { display: block; }
+  .spinBtn[data-state="STOP_PRE"] .spinIcon--stop,
+  .spinBtn[data-state="STOP_POST"] .spinIcon--stop { display: block; }
+  .spinBtn[data-state^="SKIP_"] .spinIcon--skip { display: block; }
+
+  /* STOP variant — red ring + pulsing inner glow. */
+  .spinBtn[data-state="STOP_PRE"],
+  .spinBtn[data-state="STOP_POST"] {
+    border-color: rgb(${c.stopColor}) rgba(${c.stopColor}, 0.7) rgba(${c.stopColor}, 0.55) rgb(${c.stopColor});
+    box-shadow:
+      inset 0 3px 6px rgba(255, 200, 200, 0.32),
+      inset 0 -4px 8px rgba(0, 0, 0, 0.45),
+      0 0 40px rgba(${c.stopColor}, 0.55),
+      0 0 80px rgba(${c.stopColor}, 0.25),
+      0 10px 35px rgba(0, 0, 0, 0.5),
+      0 25px 60px rgba(0, 0, 0, 0.4);
+  }
+  .spinBtn[data-state="STOP_PRE"] { animation: spinCtlStopPulse 1100ms ease-in-out infinite; }
+  @keyframes spinCtlStopPulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.04); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .spinBtn[data-state="STOP_PRE"] { animation: none; }
+  }
+
+  /* SKIP variant — cyan ring + steady glow. */
+  .spinBtn[data-state^="SKIP_"] {
+    border-color: rgb(${c.skipColor}) rgba(${c.skipColor}, 0.7) rgba(${c.skipColor}, 0.55) rgb(${c.skipColor});
+    box-shadow:
+      inset 0 3px 6px rgba(220, 240, 255, 0.32),
+      inset 0 -4px 8px rgba(0, 0, 0, 0.45),
+      0 0 40px rgba(${c.skipColor}, 0.55),
+      0 0 80px rgba(${c.skipColor}, 0.25),
+      0 10px 35px rgba(0, 0, 0, 0.5),
+      0 25px 60px rgba(0, 0, 0, 0.4);
+  }
+  .spinBtn[data-state^="STOP_"] svg,
+  .spinBtn[data-state^="SKIP_"] svg {
+    stroke: #fff;
+    fill: #fff;
+  }
+  .spinBtn[data-state^="STOP_"] svg { fill: rgb(${c.stopColor}); stroke: rgb(${c.stopColor}); }
+  .spinBtn[data-state^="SKIP_"] svg { fill: rgb(${c.skipColor}); stroke: rgb(${c.skipColor}); }
+  ${c.reelsClickAreaEnabled ? `
+  /* Reels host acts as STOP target while button shows STOP_PRE / STOP_POST. */
+  .reelsHost.spinctl-stop-armed { cursor: pointer; }
+  ` : ''}
+`;
+}
+
+export function emitSpinControlMarkup(cfg = defaultConfig()) {
+  const c = resolveConfig({ spinControl: cfg });
+  if (!c.enabled) return '';
+  const aria = _esc(c.spinAriaLabel);
+  /* Three icons baked in; data-state controls which one is display:block.
+   * SPIN  — circular two-arrow refresh glyph (industry-standard)
+   * STOP  — solid square (universal media-stop glyph)
+   * SKIP  — forward double-triangle (universal media-skip glyph) */
+  return `
+  <button class="spinBtn" id="spinBtn" type="button" data-state="SPIN" aria-label="${aria}">
+    <svg class="spinIcon spinIcon--spin" viewBox="0 0 32 32" aria-hidden="true">
+      <path d="M5.6 17.4a10.5 10.5 0 0 0 18.7 5.2"/>
+      <path d="M26.4 14.6A10.5 10.5 0 0 0 7.7 9.4"/>
+      <polyline points="24.3,22.6 24.3,16.6 18.3,16.6"/>
+      <polyline points="7.7,9.4 7.7,15.4 13.7,15.4"/>
+    </svg>
+    <svg class="spinIcon spinIcon--stop" viewBox="0 0 32 32" aria-hidden="true">
+      <rect x="9" y="9" width="14" height="14" rx="2" stroke-width="0"/>
+    </svg>
+    <svg class="spinIcon spinIcon--skip" viewBox="0 0 32 32" aria-hidden="true">
+      <polygon points="6,8 16,16 6,24" stroke-width="0"/>
+      <polygon points="16,8 26,16 16,24" stroke-width="0"/>
+    </svg>
+  </button>`;
+}
+
+export function emitSpinControlRuntime(cfg = defaultConfig()) {
+  const c = resolveConfig({ spinControl: cfg });
+  if (!c.enabled) {
+    return `
+  /* ── spinControl BLOCK (disabled) — no runtime ─────────────────── */
+  window.SpinControl = { setState: function () {}, getState: function () { return null; } };
+`;
+  }
+  return `
+  /* ── spinControl BLOCK — emitted by src/blocks/spinControl.mjs ──────
+     Owns: #spinBtn DOM + state machine + click intent dispatch.
+     Subscribes to HookBus:
+       preSpin / onSpinResult / onSlamComplete / postSpin /
+       onFsTrigger / onFsEnd / onSkipComplete / onWinPresentationStart /
+       onScatterCelebrationStart
+     Emits to HookBus:
+       onPlayerSpin / onSlamRequested / onSkipRequested
+     Mirrors __SLOT_SKIPPED__ flag (legacy contract from forceSkip). */
+  (function () {
+    var REQUIRE_MIN_SPIN_MS   = ${c.requireMinSpinMs};
+    var HIDE_ON_TURBO         = ${c.hideOnTurbo};
+    var HIDE_ON_AUTOSPIN      = ${c.hideOnAutoSpin};
+    var REELS_CLICK_AREA      = ${c.reelsClickAreaEnabled};
+    var MIN_ROLLUP_MS         = ${c.minRollupMsForShow};
+    var SHOW_ROLLUP           = ${c.showDuringRollup};
+    var SHOW_FS_INTRO         = ${c.showDuringFsIntro};
+    var SHOW_FS_OUTRO         = ${c.showDuringFsOutro};
+    var SHOW_CELEBRATION      = ${c.showDuringCelebration};
+    var SPIN_LABEL            = ${JSON.stringify(c.spinAriaLabel)};
+    var STOP_LABEL            = ${JSON.stringify(c.stopAriaLabel)};
+    var SKIP_LABEL            = ${JSON.stringify(c.skipAriaLabel)};
+
+    var STATE = {
+      enabled: true,
+      current: 'SPIN',
+      armTimerId: null,
+      reelsArmed: false,
+      dispatchLocked: false,   /* one-shot per state — prevents double-emit on race */
+    };
+    if (typeof window !== 'undefined') window.SPIN_CONTROL_STATE = STATE;
+
+    function _btn()       { return document.getElementById('spinBtn'); }
+    function _reelsHost() { return document.getElementById('reelsHost') || document.querySelector('.reelsHost'); }
+
+    function _turboActive()    { return !!(typeof window !== 'undefined' && window.__SLOT_TURBO_ACTIVE__); }
+    function _autoSpinActive() { return !!(typeof window !== 'undefined' && window.__SLOT_AUTOSPIN_ACTIVE__); }
+
+    function _ariaForState(s) {
+      if (s === 'SPIN') return SPIN_LABEL;
+      if (s === 'STOP_PRE' || s === 'STOP_POST') return STOP_LABEL;
+      return SKIP_LABEL;
+    }
+
+    function setState(name) {
+      if (['SPIN','STOP_PRE','STOP_POST','SKIP_ROLLUP','SKIP_FSINTRO','SKIP_FSOUTRO','SKIP_CELEBRATION'].indexOf(name) === -1) return;
+      if (STATE.current === name) return;
+      STATE.current = name;
+      STATE.dispatchLocked = false;
+      var btn = _btn();
+      if (btn) {
+        btn.setAttribute('data-state', name);
+        btn.setAttribute('aria-label', _ariaForState(name));
+        /* disabled=false everywhere by default; SPIN re-enable is handled
+         * by the spin engine via direct .disabled assignment (legacy).
+         * STOP/SKIP states must always be clickable. */
+        if (name !== 'SPIN') btn.disabled = false;
+      }
+      if (name === 'STOP_PRE' || name === 'STOP_POST') _armReelsArea();
+      else _disarmReelsArea();
+    }
+    function getState() { return STATE.current; }
+
+    if (typeof window !== 'undefined') {
+      window.SpinControl = { setState: setState, getState: getState };
+    }
+
+    function _emit(eventName, payload) {
+      if (window.HookBus && typeof window.HookBus.emit === 'function') {
+        try { window.HookBus.emit(eventName, payload || {}); }
+        catch (e) { if (console && console.error) console.error('[spinControl] emit failed:', eventName, e); }
+      }
+    }
+
+    function _onClick(ev) {
+      /* Snapshot the state at click time. The legacy spin-start listener
+       * lives in the orchestrator and ALSO listens for click on #spinBtn;
+       * if state===SPIN we must NOT preempt that path — we let the legacy
+       * handler call runOneBaseSpin() and rely on its preSpin emit to
+       * morph us into STOP_PRE. For STOP/SKIP we OWN the click and must
+       * stop further propagation so the legacy handler doesn't double-fire
+       * a fresh spin on top of the slam/skip intent. */
+      var s = STATE.current;
+      if (s === 'SPIN') {
+        /* Hand-off to legacy listener; nothing to emit. */
+        return;
+      }
+      if (STATE.dispatchLocked) {
+        if (ev && typeof ev.stopImmediatePropagation === 'function') ev.stopImmediatePropagation();
+        return;
+      }
+      STATE.dispatchLocked = true;
+      if (s === 'STOP_PRE' || s === 'STOP_POST') {
+        var phase = (s === 'STOP_PRE') ? 'pre' : 'post';
+        _emit('onSlamRequested', { phase: phase, source: 'button' });
+      } else if (s.indexOf('SKIP_') === 0) {
+        var skipPhase = ({
+          'SKIP_ROLLUP':       'rollup',
+          'SKIP_FSINTRO':      'fsIntro',
+          'SKIP_FSOUTRO':      'fsOutro',
+          'SKIP_CELEBRATION':  'celebration',
+        })[s];
+        if (typeof window !== 'undefined') window.__SLOT_SKIPPED__ = true;
+        _emit('onSkipRequested', { phase: skipPhase, source: 'button' });
+      } else {
+        /* Unknown state — release lock to avoid a permanent dead button. */
+        STATE.dispatchLocked = false;
+      }
+      /* Prevent legacy spin-button handler from re-firing a fresh spin
+       * on top of the slam/skip intent. */
+      if (ev && typeof ev.stopImmediatePropagation === 'function') ev.stopImmediatePropagation();
+    }
+
+    function _armReelsArea() {
+      if (!REELS_CLICK_AREA) return;
+      if (STATE.reelsArmed) return;
+      var host = _reelsHost();
+      if (!host) return;
+      host.classList.add('spinctl-stop-armed');
+      host.addEventListener('pointerup', _onReelsClick, { capture: false });
+      STATE.reelsArmed = true;
+    }
+    function _disarmReelsArea() {
+      if (!REELS_CLICK_AREA) return;
+      if (!STATE.reelsArmed) return;
+      var host = _reelsHost();
+      if (host) {
+        host.classList.remove('spinctl-stop-armed');
+        host.removeEventListener('pointerup', _onReelsClick, { capture: false });
+      }
+      STATE.reelsArmed = false;
+    }
+    function _onReelsClick() {
+      var s = STATE.current;
+      if (s !== 'STOP_PRE' && s !== 'STOP_POST') return;
+      if (STATE.dispatchLocked) return;
+      STATE.dispatchLocked = true;
+      _emit('onSlamRequested', { phase: (s === 'STOP_PRE') ? 'pre' : 'post', source: 'reelsArea' });
+    }
+
+    /* DOM wiring — single click handler. Capture phase so we run BEFORE
+     * the legacy orchestrator listener which is wired in bubble phase
+     * (default). This guarantees we see the CLICK-TIME state, not the
+     * post-preSpin state. */
+    function _wire() {
+      var btn = _btn();
+      if (!btn) return;
+      btn.addEventListener('click', _onClick, true);
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', _wire, { once: true });
+    } else {
+      _wire();
+    }
+
+    /* HookBus lifecycle wiring — drives the state morphs. */
+    if (window.HookBus && typeof window.HookBus.on === 'function') {
+
+      /* Boki rule (04.06.2026): "Treba spin da se vidi, kada se pritisne
+       * spin dugme, onda se pojavi Slam, pa kad se pritisne slam, ako ima
+       * wina ili neke animacije, onda se ukljucuje skip."
+       *
+       * Translation to state machine:
+       *   - On preSpin → INSTANT STOP_PRE (no 250ms timer).
+       *     Player sees Slam the moment they press Spin.
+       *   - onSpinResult internally bumps to STOP_POST but the visible
+       *     icon/color stay the same (both are "press to stop").
+       *   - onSlamComplete + postSpin → branch:
+       *       award > 0 → SKIP_ROLLUP (Skip is the active CTA)
+       *       award == 0 → SPIN (back to idle)
+       *   - onSkipComplete → SPIN.
+       *
+       * Turbo / autoplay still suppress the slam morph because in those
+       * modes the engine owns the cadence and the player should not
+       * interrupt mid-spin. */
+      window.HookBus.on('preSpin', function () {
+        if (STATE.armTimerId !== null) { clearTimeout(STATE.armTimerId); STATE.armTimerId = null; }
+        if (HIDE_ON_TURBO && _turboActive()) return;
+        if (HIDE_ON_AUTOSPIN && _autoSpinActive()) return;
+        /* INSTANT morph — no delay. Boki industry preference. */
+        setState('STOP_PRE');
+      });
+
+      window.HookBus.on('onSpinResult', function () {
+        /* Internal bump: STOP_PRE → STOP_POST so the slam handler uses
+         * the post-response collapse path. Same visible icon/color. */
+        if (STATE.current === 'STOP_PRE') {
+          setState('STOP_POST');
+        }
+      });
+
+      /* Win-branch decision happens on the LAST event of the round —
+       * postSpin for the natural-stop path, onSlamComplete for the
+       * slam-stop path. winPresentation has published __WIN_AWARD__ /
+       * __WIN_ROLLUP_MS__ by then. */
+      function _finalizeRound() {
+        if (STATE.armTimerId !== null) { clearTimeout(STATE.armTimerId); STATE.armTimerId = null; }
+        var award    = (typeof window !== 'undefined') ? window.__WIN_AWARD__    : 0;
+        var rollupMs = (typeof window !== 'undefined') ? window.__WIN_ROLLUP_MS__ : 0;
+        var hasWin   = Number.isFinite(award) && award > 0;
+        var longRoll = !Number.isFinite(rollupMs) || rollupMs >= MIN_ROLLUP_MS;
+        var anim     = (typeof window !== 'undefined') && window.__SLOT_WIN_PRESENT_ACTIVE__ === true;
+        /* Boki rule: "ako ima wina ili neke animacije, onda se ukljucuje
+         * skip". So we morph to SKIP_ROLLUP on EITHER win + long rollup
+         * OR active animation. Otherwise we settle directly to SPIN. */
+        if (SHOW_ROLLUP && (anim || (hasWin && longRoll))) {
+          setState('SKIP_ROLLUP');
+        } else if (STATE.current === 'STOP_PRE' || STATE.current === 'STOP_POST') {
+          setState('SPIN');
+        }
+      }
+      window.HookBus.on('onSlamComplete', _finalizeRound);
+      window.HookBus.on('postSpin',       _finalizeRound);
+
+      window.HookBus.on('onFsTrigger', function () { if (SHOW_FS_INTRO)  setState('SKIP_FSINTRO');  });
+      window.HookBus.on('onFsEnd',     function () { if (SHOW_FS_OUTRO)  setState('SKIP_FSOUTRO');  });
+      window.HookBus.on('onScatterCelebrationStart', function () { if (SHOW_CELEBRATION) setState('SKIP_CELEBRATION'); });
+
+      window.HookBus.on('onSkipComplete', function () {
+        if (typeof window !== 'undefined') window.__SLOT_SKIPPED__ = false;
+        setState('SPIN');
+      });
+    }
+
+    /* __SLOT_SKIPPED__ defaults to false so animation chains that poll it
+     * before any spin happens read a defined value. */
+    if (typeof window !== 'undefined' && window.__SLOT_SKIPPED__ == null) {
+      window.__SLOT_SKIPPED__ = false;
+    }
+
+    /* Legacy stubs — third-party code that referenced the old block APIs
+     * (slamStopRequest / forceSkipRequest / slamStopShow / forceSkipShow)
+     * keeps a defined symbol. They route to the unified dispatch path so
+     * a programmatic slam/skip from outside still works. */
+    if (typeof window !== 'undefined') {
+      if (typeof window.slamStopRequest !== 'function') {
+        window.slamStopRequest = function (source) {
+          var s = STATE.current;
+          if (s !== 'STOP_PRE' && s !== 'STOP_POST') return;
+          _emit('onSlamRequested', { phase: (s === 'STOP_PRE') ? 'pre' : 'post', source: source || 'api' });
+        };
+      }
+      if (typeof window.forceSkipRequest !== 'function') {
+        window.forceSkipRequest = function (source) {
+          var s = STATE.current;
+          if (s.indexOf('SKIP_') !== 0) return;
+          var phase = ({
+            'SKIP_ROLLUP':       'rollup',
+            'SKIP_FSINTRO':      'fsIntro',
+            'SKIP_FSOUTRO':      'fsOutro',
+            'SKIP_CELEBRATION':  'celebration',
+          })[s];
+          window.__SLOT_SKIPPED__ = true;
+          _emit('onSkipRequested', { phase: phase, source: source || 'api' });
+        };
+      }
+      if (typeof window.slamStopShow    !== 'function') window.slamStopShow    = function () {};
+      if (typeof window.slamStopHide    !== 'function') window.slamStopHide    = function () {};
+      if (typeof window.forceSkipShow   !== 'function') window.forceSkipShow   = function () {};
+      if (typeof window.forceSkipHide   !== 'function') window.forceSkipHide   = function () {};
+    }
+  })();
+`;
+}
