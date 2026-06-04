@@ -3,13 +3,13 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `WAVE_T2_PENDING` · main
+> Last updated: **2026-06-04** · HEAD: `d9f0cfc` · main
 
 ---
 
 ## 🟢 Shipped (in-tree on `origin/main`)
 
-### Wave T2 — Vendor purge round 2 (BTG / Zeus / Olympus / Megaways) (commit `WAVE_T2_PENDING`)
+### Wave T2 — Vendor purge round 2 (BTG / Zeus / Olympus / Megaways) (commit `d9f0cfc`)
 
 > **Drugi vendor-neutralization pass posle Wave T.** Wave T (commit `e1d2968`) je očistio 11 fajlova sa Game-title / Vendor-name stringovima, ali audit posle Wave U trijade je otkrio dodatne kategorije vendor-attributnih komentara, heuristika i test labela:
 >
