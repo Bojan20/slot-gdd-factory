@@ -3,11 +3,33 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `e9287ee` · main
+> Last updated: **2026-06-04** · HEAD: `pending Wave U3 · uiToast` · main
 
 ---
 
 ## 🟢 Shipped (in-tree on `origin/main`)
+
+### Wave U3 — `uiToast.mjs` unified BIG/MEGA/EPIC + feature toast (commit pending)
+
+> **Treći blok Wave U feature ekspanzije.** Boki pravilo: *"sto vise feautrea"*. Wave U3 centralizuje "celebration" overlay-e u jedan queue-based renderer — bilo koji blok može da pozove `uiShowToast(label, opts)` umesto da pravi vlastiti banner div. Postojeći lightning/respin/bonus-buy banneri mogu da migriraju u sledećoj wave.
+>
+> **Kompozicija sa audio block-om**: postSpin tier selector je DUPLIRAN po design-u. Visual (uiToast) i auditory (audio) cues su nezavisni LEGO blokovi koji oba reaguju na isti lifecycle event. Mute audio-a ne gasi vizual i obrnuto — to je industry-standard separation.
+
+| ID | Feature | Files | Status |
+|---|---|---|---|
+| U3.1 | `src/blocks/uiToast.mjs` (370 LOC) — 5 tier vocabulary (big, mega, epic, feature, neutral), GDD knobs: enabled, threshold trio (big/mega/epic × 10/50/250x baseline), duration quadruplet (1800/2400/3200/1400ms), queueOnFsEnd flag, fsTriggerLabel ('FREE SPINS!' default), 5-tier color palette, maxQueue (6 default). | `src/blocks/uiToast.mjs` | ✅ |
+| U3.2 | Defensive validation: threshold monotonic ordering enforced (mega > big, epic > mega), duration clamps (BIG/MEGA/EPIC 400-12000ms, feature 300-8000ms), maxQueue clamp [1,32], RGB color regex per tier, fsTriggerLabel length cap (≤32 chars), auto-enable from features[].kind in {ui_toast, win_celebration, big_win, mega_win}. | `src/blocks/uiToast.mjs:resolveConfig` | ✅ |
+| U3.3 | CSS: `.ui-toast-host` fixed top center @ 18vh, per-tier styling (big/mega/epic progressively larger + brighter glow), epic-tier `.is-epic::before` radial flash overlay, `uiToastIn` 380ms bounce keyframe (cubic-bezier(.4,1.55,.5,1)), `uiToastOut` 320ms ease-in keyframe, mobile media query (font size halved), reduced-motion gate. | `src/blocks/uiToast.mjs:emitUiToastCSS` | ✅ |
+| U3.4 | Markup: single `<div id="uiToastHost" aria-live="polite" aria-atomic="true">` — toast nodes are appended dynamically by runtime. | `src/blocks/uiToast.mjs:emitUiToastMarkup` | ✅ |
+| U3.5 | Runtime API (window-exposed): `uiShowToast(label, opts?)` (queues + drains; opts = {tier, amount, ms}), `uiClearToasts()` (flush queue + remove current), `uiGetQueueLength()` (depth probe for tests), `TOAST_STATE` (introspection). Queue drain pattern: synchronous render + setTimeout dismiss after tier-specific duration. | `src/blocks/uiToast.mjs:emitUiToastRuntime` | ✅ |
+| U3.6 | HookBus integration: `postSpin` (tier select by sum payX — BIG/MEGA/EPIC labels), `onFsTrigger` (FREE SPINS! feature toast), `onFsEnd` (FS COMPLETE + totalWin amount, gated by queueOnFsEnd flag), `preSpin` (drop queue tail if cabinet rapid-play — preserve currently displayed, discard pending). | `src/blocks/uiToast.mjs:emitUiToastRuntime` | ✅ |
+| U3.7 | XSS hardening: every label HTML-escaped before DOM injection. Amount formatter strips ".00" suffix for integer wins. Long labels (>64 chars) truncated. | `src/blocks/uiToast.mjs:_toastEscape + uiShowToast` | ✅ |
+| U3.8 | `tests/blocks/uiToast.test.mjs` — **35 unit tests** pass: defaults×1, resolveConfig validation × 6 (thresholds, durations, queue, colors × 2, fsLabel), auto-enable × 1, CSS + markup × 5, runtime contract × 4, behavior via sandbox eval × 14 (BIG/MEGA/EPIC tier select + sub-BIG silent + queue cap + clear + invalid input × 3 + onFsTrigger + onFsEnd with/without amount + queueOnFsEnd=false + preSpin queue drop), hygiene × 4 (determinism, vendor-neutral, XSS, amount format). | `tests/blocks/uiToast.test.mjs` | ✅ |
+| U3.9 | Parser: `extractUiToast(text, model)` čita `## UI Toast` / `## Win Celebration` / `## Win Tier Toast` sekciju, parsira thresholds/durations/queue/label + per-tier colors. freshModel slot dodat sa 12 undefined knobs. Feature kind `ui_toast` u extractFeatures patterns. | `src/parser.mjs:extractUiToast` | ✅ |
+| U3.10 | Orchestrator wire-up: import + 3 emit calls (CSS, markup, runtime) posle audio block. | `src/buildSlotHTML.mjs` | ✅ |
+| U3.11 | `package.json` test:blocks chain proširen sa uiToast.test.mjs. | `package.json` | ✅ |
+| U3.12 | LEGO Gate: **5/5 pass** — orchestrator emit 0, block parity **37/37**, vendor 0, ownership 7/7, listener coverage **28/28**. | — | ✅ |
+| U3.13 | End-to-end QA: npm test 20/20 fixtures, npm test:blocks all green, cortex-eyes-pdf-upload 0 console errors + 42 cells + Base Game title. | — | ✅ |
 
 ### Wave U2 — `audio.mjs` Howler-style scaffolding (commit `e9287ee`)
 

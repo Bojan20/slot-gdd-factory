@@ -149,6 +149,10 @@ import {
   resolveConfig as resolveAudioConfig,
 } from './blocks/audio.mjs';
 import {
+  emitUiToastCSS, emitUiToastMarkup, emitUiToastRuntime,
+  resolveConfig as resolveUiToastConfig,
+} from './blocks/uiToast.mjs';
+import {
   emitHoldAndWinCSS, emitHoldAndWinMarkup, emitHoldAndWinRuntime,
   resolveConfig as resolveHoldAndWinConfig,
 } from './blocks/holdAndWin.mjs';
@@ -664,6 +668,7 @@ ${emitMysterySymbolCSS(resolveMysterySymbolConfig(model))}
 ${emitPersistentMultiplierCSS(resolvePersistentMultiplierConfig(model))}
 ${emitProgressiveFreeSpinsCSS(resolveProgressiveFreeSpinsConfig(model))}
 ${emitAudioCSS(resolveAudioConfig(model))}
+${emitUiToastCSS(resolveUiToastConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
 ${emitRespinCSS(resolveRespinConfig(model))}
 ${emitWinCapCSS(resolveWinCapConfig(model))}
@@ -901,6 +906,7 @@ ${emitAnteBetMarkup(resolveAnteBetConfig(model))}
 ${emitPersistentMultiplierMarkup(resolvePersistentMultiplierConfig(model))}
 ${emitProgressiveFreeSpinsMarkup(resolveProgressiveFreeSpinsConfig(model))}
 ${emitAudioMarkup(resolveAudioConfig(model))}
+${emitUiToastMarkup(resolveUiToastConfig(model))}
 ${emitHoldAndWinMarkup(resolveHoldAndWinConfig(model))}
 ${emitRespinMarkup(resolveRespinConfig(model))}
 ${emitWinCapMarkup(resolveWinCapConfig(model))}
@@ -1196,6 +1202,7 @@ ${emitGambleMarkup(resolveGambleConfig(model))}
   ${emitPersistentMultiplierRuntime(resolvePersistentMultiplierConfig(model))}
   ${emitProgressiveFreeSpinsRuntime(resolveProgressiveFreeSpinsConfig(model))}
   ${emitAudioRuntime(resolveAudioConfig(model))}
+  ${emitUiToastRuntime(resolveUiToastConfig(model))}
   ${emitHoldAndWinRuntime(resolveHoldAndWinConfig(model))}
   ${emitRespinRuntime(resolveRespinConfig(model))}
   ${emitWinCapRuntime(resolveWinCapConfig(model))}

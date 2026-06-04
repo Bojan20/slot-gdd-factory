@@ -162,6 +162,7 @@ export function parseMarkdownGDD(text) {
   extractPersistentMultiplier(text, model);
   extractProgressiveFreeSpins(text, model);
   extractAudio(text, model);
+  extractUiToast(text, model);
   extractHoldAndWin(text, model);
   extractRespin(text, model);
   extractWinCap(text, model);
@@ -837,6 +838,12 @@ export function extractFeatures(rawText) {
       re: /\b(?:audio|sound|sfx|sound\s+effects?|music)\s+(?:design|brief|package|cues?|categories)\b|\b##\s+(?:Audio|Sound)\b|\bSPIN_START\b|\bFS_TRIGGER\b/i,
       label: 'Audio',
     },
+    {
+      // Wave U3 — Unified UI toast for win tiers + feature triggers
+      kind: 'ui_toast',
+      re: /\b(?:ui\s+toast|win\s+celebration|big\s+win\s+toast|mega\s+win\s+toast|epic\s+win\s+toast|win\s+tier\s+toast)\b|\b##\s+(?:UI\s+Toast|Win\s+Celebration)\b/i,
+      label: 'UI Toast',
+    },
   ];
 
   const out = [];
@@ -1161,6 +1168,15 @@ function freshModel() {
       urls: undefined, volumes: undefined,
       showToggle: undefined, toggleColor: undefined,
       bigWinThresholdX: undefined, megaWinThresholdX: undefined, epicWinThresholdX: undefined,
+    },
+    /* Wave U3 — Unified UI toast (BIG / MEGA / EPIC + feature). */
+    uiToast: {
+      enabled: undefined,
+      bigWinThresholdX: undefined, megaWinThresholdX: undefined, epicWinThresholdX: undefined,
+      bigDurationMs: undefined, megaDurationMs: undefined, epicDurationMs: undefined,
+      featureDurationMs: undefined,
+      queueOnFsEnd: undefined, fsTriggerLabel: undefined,
+      colors: undefined, maxQueue: undefined,
     },
     holdAndWin: {
       enabled: undefined, triggerCount: undefined, bonusSymbolId: undefined,
@@ -1975,6 +1991,31 @@ export function extractProgressiveFreeSpins(text, model) {
     const vals = ladderRaw.split(/[,\s]+/).map(v => parseInt(v, 10)).filter(n => Number.isFinite(n) && n >= 1);
     if (vals.length >= 2) tgt.ladderValues = vals;
   }
+}
+
+/* Wave U3 — UI Toast extractor. */
+export function extractUiToast(text, model) {
+  const s = _findSection(text, /^##\s+(?:UI\s+Toast|Win\s+Celebration|Win\s+Tier\s+Toast)\b[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.uiToast;
+  const en  = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const big = _readInt(s, 'big[- ]?win[- ]?threshold[- ]?x'); if (big !== undefined) tgt.bigWinThresholdX = big;
+  const meg = _readInt(s, 'mega[- ]?win[- ]?threshold[- ]?x'); if (meg !== undefined) tgt.megaWinThresholdX = meg;
+  const epi = _readInt(s, 'epic[- ]?win[- ]?threshold[- ]?x'); if (epi !== undefined) tgt.epicWinThresholdX = epi;
+  const bdur = _readInt(s, 'big[- ]?duration[- ]?ms'); if (bdur !== undefined) tgt.bigDurationMs = bdur;
+  const mdur = _readInt(s, 'mega[- ]?duration[- ]?ms'); if (mdur !== undefined) tgt.megaDurationMs = mdur;
+  const edur = _readInt(s, 'epic[- ]?duration[- ]?ms'); if (edur !== undefined) tgt.epicDurationMs = edur;
+  const fdur = _readInt(s, 'feature[- ]?duration[- ]?ms'); if (fdur !== undefined) tgt.featureDurationMs = fdur;
+  const qfe = _readBool(s, 'queue[- ]?on[- ]?fs[- ]?end'); if (qfe !== undefined) tgt.queueOnFsEnd = qfe;
+  const lbl = _readStr(s, 'fs[- ]?trigger[- ]?label'); if (lbl) tgt.fsTriggerLabel = lbl;
+  const mq = _readInt(s, 'max[- ]?queue'); if (mq !== undefined) tgt.maxQueue = mq;
+  /* Tier colors — "big: 255,210,90" style rows. */
+  const colors = {};
+  for (const tier of ['big', 'mega', 'epic', 'feature', 'neutral']) {
+    const v = _readStr(s, '(?:' + tier + ')[- ]?color');
+    if (v && /^\d{1,3},\d{1,3},\d{1,3}$/.test(v.trim())) colors[tier] = v.trim();
+  }
+  if (Object.keys(colors).length > 0) tgt.colors = colors;
 }
 
 /* Wave U2 — Audio scaffolding extractor. */
