@@ -797,6 +797,65 @@
 | U9 | **`historyLog.mjs`** — last-N spins log (drugi standard regulator) | nov blok | ⏳ queued |
 | U10 | **`paytable.mjs`** modal — full paytable viewer dostupan preko **i** dugmeta | nov blok | ⏳ queued |
 
+### 🟣 Wave V — Spin / Slam-Stop / Force-Skip button suite (industry-standard UI cluster)
+
+> **Trigger** (04.06.2026, Boki): *"ajde overi u playa slot kako radi spin slam
+> skip dugme, detaljno"* → industry-reference audit `playa-slot/src/ts/uicontrols/commands/`
+> (IGT internal). Tri komande, jedan button group. Trenutni template ima samo
+> `#spinBtn` — fale **slam-stop** (skip motion-blur tokom rotacije) i
+> **force-skip** (skip win-presentation rollup/FS intro). Bez ovoga slot UX
+> izgleda nedovršeno; rapid-play players ne mogu da "izgaze" animaciju.
+
+#### 🧭 Industry pattern (iz playa-slot SpinCommand/SlamStopCommand/ForceSkipCommand)
+
+| Faza | Dugme vidljivo | Klik dela |
+|---|---|---|
+| **IDLE** | `BTN_SPIN` (spin button) | započni spin |
+| **SPIN_START_BEGIN → reels rotating, server ne odgovorio** | `BTN_SLAM_STOP` (pre-response) | mobx reaction čeka `reelsStopping=true`, onda izvršava `slamStopCommand()` |
+| **server odgovorio → reels stopping** | `BTN_SLAM_STOP` (post-response) | trenutno `slamStopCommand()` → svi reels skoče u final state |
+| **win presentation (rollup, big-win banner, FS intro)** | `BTN_SKIP` (force skip) | postavi `slotProps.skipped = true` → svi animacioni reaction-i bail-uju u final |
+| **FS_TRIGGER pending** | `BTN_SKIP` | preskoči FS intro animaciju, skoči direkt u FS prvi spin |
+| **`turboMode = true`** | (slam-stop hidden) | turbo prelazi preko slam fase, klik na spin dugme = sledeći spin |
+| **`autoSpin` active** | (slam-stop hidden) | autospin sam upravlja klikovima, slam button izlazi |
+
+#### 📋 Atom lista
+
+| ID | Item | Files | Effort | Status |
+|:-:|---|---|:-:|:-:|
+| V1 | **`slamStop.mjs` blok** (300-400 LOC) — defaultConfig (`enabled`, `chipLabel`, `chipColor`, `requireMinSpinMs` (default 250ms — ne prikazuj dok reel nije razigran), `hideOnTurbo`, `hideOnAutoSpin`, `reelsClickAreaEnabled` (cela grid površina klik-na = slam, kao u playa-slot)). resolveConfig sa defensive validation. CSS: `.slam-stop-btn` overlay-pozicija (centar nad reel grid-om, `position: absolute`, centered, `z-index: 20`), pulse animation. emitMarkup: `<button id="slamStopBtn" class="slam-stop-btn" hidden>`. emitRuntime: HookBus integration. | `src/blocks/slamStop.mjs` | M | ⏳ |
+| V2 | **`forceSkip.mjs` blok** (250-350 LOC) — defaultConfig (`enabled`, `chipLabel` = "SKIP", `chipColor`, `disabledPressed` = true (vidi `playa-slot` ForceSkipCommand `_disabledPressed`), `hidePressed` = false, `showDuringRollup`, `showDuringFsIntro`, `showDuringFsOutro`). CSS: `.force-skip-btn` (bottom-center fixed). emitMarkup: `<button id="forceSkipBtn" class="force-skip-btn" hidden>`. emitRuntime: HookBus listeners. | `src/blocks/forceSkip.mjs` | M | ⏳ |
+| V3 | **Spin button state machine refactor** — `reelEngine.mjs` (ili novi `src/blocks/spinButton.mjs`?) — extract iz inline buildSlotHTML.mjs logike, dodaj eksplicitne states: `IDLE` → `SPIN_REQUESTED` → `SPIN_START_BEGIN` → `SPIN_PRE_RESPONSE` → `SPIN_POST_RESPONSE` → `REELS_STOPPING` → `SPIN_STOP_END` → `WIN_PRESENTING` → `IDLE`. `data-state` attribute na `#spinBtn` za CSS/test selektovanje. (Odluka: ako se izvuče u poseban blok, T-slim Wave T progress.) | `src/blocks/reelEngine.mjs` ili nov `src/blocks/spinButton.mjs` | M | ⏳ |
+| V4 | **HookBus events extend** — dodaj `onSlamRequested(payload: {phase: 'pre'\|'post'})`, `onSlamComplete()`, `onSkipRequested(payload: {phase: 'rollup'\|'fsIntro'\|'fsOutro'\|'celebration'})`, `onSkipComplete()`. `EVENTS` array u `hookBus.mjs` extend, listeners coverage proverena u LEGO gate. | `src/blocks/hookBus.mjs` (EVENTS array) | XS | ⏳ |
+| V5 | **`reelEngine.mjs` listener za `onSlamRequested`** — kad emit stigne, force-skip remaining spin timer-i, set all reel `targetIndex` = final landed strip, run `applyFinalLanding()` immediately. Mora poštovati pre-response (server još nije vratio result → čekamo `onSpinResult` u `addWhen` reaction-style) vs post-response (result već stigao → direktan slamStop). Industry pattern: koristi `MobxUtils.addWhen` u playa-slot; mi koristimo HookBus `once()`. | `src/blocks/reelEngine.mjs` | M | ⏳ |
+| V6 | **`winPresentation.mjs` / `scatterCelebration.mjs` / `freeSpins.mjs` listeners za `onSkipRequested`** — svaki blok koji ima rollup/animation petlju mora podržati `cancel()` koji bail-uje u final state. Cancellation tokens u svakom `setTimeout` chain-u. Po `playa-slot` ForceSkipCommand pattern-u: `slotProps.skipped = true` → svi `addWhen` reaction-i koji čekaju na `slotProps.skipped` resolve-uju. | `src/blocks/winPresentation.mjs` + `scatterCelebration.mjs` + `freeSpins.mjs` | M | ⏳ |
+| V7 | **State coordinator** — `postSpin.mjs` orkestrira show/hide tri dugmeta: na `preSpin` → hide spin, show slam (ako enabled + non-turbo + non-autoSpin); na `onSpinResult` → keep slam visible until reels stop; na `postSpin` → hide slam, ako award>0 ili FS trigger pending → show skip; na rollup-end / FS intro-end / FS outro-end → hide skip, show spin. | `src/blocks/postSpin.mjs` (+50-80 LOC) | S | ⏳ |
+| V8 | **CSS overlay z-index hijerarhija** — slam-stop `z-index: 20` (iznad reels), force-skip `z-index: 25` (iznad slam-stop). UI-toast (postojeći blok) `z-index: 30` (iznad oba). Doc u CSS comment block. | `src/blocks/slamStop.mjs` + `src/blocks/forceSkip.mjs` CSS | XS | ⏳ |
+| V9 | **Turbo mode integration** — `slamStop.mjs` listen na `onTurboToggle` (novi event, ili koristi postojeće `model.settings.turbo`?), u turbo mode `style.display = 'none'`. Iz `playa-slot` SlamStopCommand: `!this._parentProps.turboModeActive` guard. Decisión: defer Turbo toggle UI to Wave U-future; za sada V9 = `hideOnTurbo: true` config respect-uje globalni boolean. | `src/blocks/slamStop.mjs` | XS | ⏳ |
+| V10 | **Parser support** — `src/parser.mjs` `extractSlamStop(text, model)` + `extractForceSkip(text, model)` — čita `## Slam Stop` / `## Force Skip` GDD sekcije sa knobs (enabled, chipLabel, chipColor, requireMinSpinMs, hideOnTurbo). Plus feature `kind: 'slam_stop'` / `'force_skip'` u extractFeatures patterns za auto-enable iz feature list. freshModel slot dodat (10-12 undefined knobs). | `src/parser.mjs` + `tests/blocks/parser.test.mjs` | S | ⏳ |
+| V11 | **Orchestrator wire-up** — `src/buildSlotHTML.mjs`: import + 3 emit calls (CSS, markup, runtime) za svaki novi blok (slam-stop posle reelEngine, force-skip posle winPresentation). Tačan red bitan jer CSS z-index zavisi od redosleda inject-a kod tied stacking. | `src/buildSlotHTML.mjs` (+6 lines) | XS | ⏳ |
+| V12 | **`tests/blocks/slamStop.test.mjs`** (target 30+ unit tests) — defaults, resolveConfig validation, CSS injection, markup XSS-safety, runtime sandbox: show on `preSpin`, hide on `postSpin`, click triggers `onSlamRequested` emit, pre-response phase reaction, post-response phase direct call, turbo-mode hide, autoSpin-mode hide. Hygiene: determinism, vendor-neutral, listener-cleanup on unmount. | `tests/blocks/slamStop.test.mjs` | M | ⏳ |
+| V13 | **`tests/blocks/forceSkip.test.mjs`** (target 25+ unit tests) — analogan V12: show during rollup/FS intro/FS outro, click triggers `onSkipRequested` + `slotProps.skipped` flag set, disabled-pressed state honored, hide-pressed state honored, multi-phase emission gating, cleanup. | `tests/blocks/forceSkip.test.mjs` | M | ⏳ |
+| V14 | **`tools/cortex-eyes-wave-v.mjs`** — Playwright skripta: za svaki od 4 fixtures (rectangular / pay-anywhere / cluster / cascade) → klik spin → verify slam button visible @ 200ms postSpin start → klik slam → verify all reels stop within 100ms → verify postSpin emit → ako award > 0 → verify skip button visible during rollup → klik skip → verify rollup terminates within 50ms → verify final-state cell content unchanged. Screenshot 4 phases per fixture (idle / slamming / skipping / settled). 10/10 stability gate. | `tools/cortex-eyes-wave-v.mjs` | M | ⏳ |
+| V15 | **LEGO Gate verification** — orchestrator emit-only, block parity grows 37 → 39, vendor 0, ownership 7/7 (svi novi events imaju vlasnika blok), listener coverage ≥ 30. `npm run test:lego` → 5/5. | LEGO gate | XS | ⏳ |
+| V16 | **Full QA gate post-Wave V** — `npm test` 20/20, `npm run test:blocks` 384+55 (≈440), `parse-real` 4/4 + new slam-stop/force-skip fixtures, `cortex-eyes-pdf-upload` clean, `cortex-eyes-wave-s` + `wave-s-fs` + `wave-v` all 10/10 PASS. Total commit hash pinned. | full QA | XS | ⏳ |
+
+#### 🚦 Order rationale
+
+V4 (HookBus events) first — bez njih V1/V2 ne mogu da emit. Onda V1+V2 paralelno (nezavisni blokovi). Onda V5+V6 (listeners za consumer blokove). Onda V7 (coordinator). V10+V11 (parser + wire-up). V12+V13 (unit tests). V14+V15+V16 (integration + gates).
+
+#### 🎯 Acceptance gate (Wave V "DONE" definicija)
+
+- [ ] Sve 3 dugmeta vidljiva u pravoj fazi po `playa-slot` industry obrascu (verifikovano u headless cortex-eyes screenshot-ima)
+- [ ] Slam-stop u toku rotation phase trenutno zaustavi sve reel-e (≤100ms od click do svi reels stopped)
+- [ ] Force-skip u toku rollup/FS-intro/FS-outro preskoči animaciju (≤50ms od click do final state)
+- [ ] Turbo-mode (boolean config) sakriva slam-stop button bez razbijanja spin flow
+- [ ] LEGO Gate 5/5 i dalje pass
+- [ ] 10/10 cortex-eyes stability runs PASS
+- [ ] 0 vendor mentions (`grep playa-slot src/` = 0; `grep playa src/` = 0 — referenca samo u master TODO i commit messages)
+- [ ] Hash-pin commit posle full Wave V ship
+
+---
+
 ### 🔵 Wave Z — Block Playground (POSLEDNJE, posle Wave U)
 
 > **Storybook za LEGO blokove.** Sidebar lista svih blokova → klik → desni
