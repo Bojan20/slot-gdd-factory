@@ -3,7 +3,51 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `7350c1b` · main · Wave V + Wave U4 + Wave T-slim phase 1 + T-orb/T-bonus/T-ante all shipped
+> Last updated: **2026-06-04** · HEAD: `ed664bf` → (Wave V/U4 senior-fix pending) · main · Wave V + Wave U4 + Wave T-slim phase 1 + T-orb/T-bonus/T-ante shipped + senior-grade QA pass (3 critical + 5 medium fixed)
+
+---
+
+## 🟡 Wave V/U4 senior-grade QA pass — THIS COMMIT
+
+> Triggered by Boki *"Qa ultimativni i review"* — full sweep across LEGO gate, npm test, cortex-eyes-wave-v/s/s-fs, vendor grep, and a 12-criterion senior code review by sub-agent. All gates green pre-review; review surfaced **3 critical + 6 medium bugs** that production-mid-tier code would ship with but would fail a lead-engineer review at Apple/Stripe/Anthropic.
+
+### Findings + fixes (this commit)
+
+| Sev | File:line | Issue | Fix |
+|:--:|---|---|---|
+| 🔴 | `src/blocks/forceSkip.mjs:341-345` | `postSpin` listener guard `if (!STATE.visible) return;` never CALLED `forceSkipHide()` — skip button would linger into next idle phase | Inverted guard: `if (STATE.visible) forceSkipHide();` |
+| 🔴 | `src/blocks/autoplay.mjs:481, 523` | `totalLoss += BET_UNIT_FB` used the bake-time fallback constant, ignoring actual per-spin bet (bet-stepper / ante / bonus-buy). `stopOnLossAbove` would underreport 2-10× | Capture `window.__SLOT_BET__` at onSpinResult → `STATE.lastCost`. postSpin computes `net = lastWin - lastCost`; only the actual NET shortfall feeds `totalLoss`. |
+| 🔴 | `src/blocks/autoplay.mjs:548-560` | `onFsTrigger` listener did NOT cancel the pending `nextSpinTimerId` — pre-existing INTER_SPIN_MS timer could fire mid-FS | Both `onFsTrigger` AND `onFsEnd` now clear `nextSpinTimerId` defensively before any state change. |
+| 🟡 | `src/blocks/slamStop.mjs:265-275` | `slamStopShow()` not idempotent — second call re-adds `is-pulsing` + re-attaches reels-area pointerup listener | Added `if (STATE.visible) return;` guard at function top |
+| 🟡 | `src/blocks/slamStop.mjs:296-308` | `slamStopRequest()` race: 2 pointerup events (button + reels-area overlay) could BOTH emit `onSlamRequested` before button DOM updated | Added `STATE.requestLocked` one-shot flag + try/catch around emit so a throwing listener does not strand the lock. |
+| 🟡 | `src/blocks/autoplay.mjs:513` | `window.__WIN_AWARD__` not validated — `NaN` / `Infinity` / negative would poison `totalWin`/`totalLoss` | Clamp: `(Number.isFinite(raw) && raw >= 0) ? Math.min(raw, 1e10) : 0` |
+| 🟡 | `src/blocks/themeCSS.mjs:46` | `frameInset: 18` undocumented in JSDoc public-API header | Added full param doc with "why 18px" rationale |
+| 🟢 | `tools/lego-gate.mjs` | Vendor blocklist missing studio codename → `playa-slot` references in JSDoc passed the gate undetected | Added `playa-slot`/`playa slot`/`playaslot`/`playa_slot` to `VENDOR_BLOCKLIST` |
+
+### Vendor sweep (src/) — cleanup
+
+> 7 files referenced studio codename `playa-slot` in JSDoc industry-reference notes (slamStop, forceSkip, autoplay, hookBus, reelEngine, buildSlotHTML). All converted to generic *"industry-standard pattern"* phrasing per `rule_no_vendor_mentions.md`.
+
+### Findings NOT yet fixed (secondary — flagged for Boki decision)
+
+| Where | Finding | Why deferred |
+|---|---|:--|
+| `samples/{GATES_OF_OLYMPUS_1000,WRATH_OF_OLYMPUS,CRYSTAL_FORGE}_GAME_GDD.md` | File names embed game/vendor titles | CLAUDE.md explicitly registers `WRATH_OF_OLYMPUS_GAME_GDD.md` + `CRYSTAL_FORGE_GAME_GDD.md` as the canonical GDD test fixtures. Rename touches 6+ tool files, 7 reports, and CLAUDE.md itself — needs Boki call. |
+| `tools/cortex-eyes-wave-s.mjs`, `cortex-eyes-wave-s-fs.mjs`, `gen-woo-demo.mjs`, `diff-pdf-vs-md.mjs` | Hard-coded labels mention "Gates of Olympus 1000", "Wrath of Olympus", "Crystal Forge" | Same fixture-rename dependency. `cortex-eyes-wave-v` already uses generic "Reference GDD A/B/C" labels — pattern to apply across the other tools after fixture rename. |
+| Slam latency = 0ms on ref B/C | Cortex Eyes reports 0ms on cascade + cluster topologies | INVESTIGATED — not a bug. `reelEngine.mjs:428-438` emits synthetic `onSlamComplete{duration:0}` when (a) kind has no rectangular reels (SVG/cluster) OR (b) `allReelsActive===false` (spin already settled). With `requireMinSpinMs:50` in the test harness, cascade fixture settles before slam click. Intentional fast-path. |
+
+### Acceptance gates (post-fix)
+
+| Gate | Result |
+|---|:--:|
+| LEGO Gate 5/5 | ✅ (parity 41/41, ownership 14/14, listener 31/31) |
+| npm test (parser + 20 grid fixtures) | ✅ |
+| npm run test:blocks (796 assertions, 41 blocks) | ✅ |
+| cortex-eyes-wave-v 3/3 | ✅ slam 391ms rectangular (within ≤500ms budget) |
+| cortex-eyes-wave-s 3/3 | ✅ |
+| cortex-eyes-wave-s-fs | ✅ |
+| vendor grep `src/` for `playa-slot` | ✅ 0 matches |
+| Hash pin | (this commit) |
 
 ---
 

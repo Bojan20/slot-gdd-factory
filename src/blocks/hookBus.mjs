@@ -266,9 +266,10 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
     }
 
     /* Wave V: once(event, fn) — register a handler that auto-unsubscribes
-     * after its first invocation. Industry pattern equivalent of
-     * MobxUtils.addWhen used in playa-slot SlamStopCommand/ForceSkipCommand
-     * for one-shot pre-response → post-response coordination. */
+     * after its first invocation. Industry-standard one-shot reactive
+     * primitive (equivalent of when/addWhen reactions) used by slam-stop
+     * and force-skip blocks for pre-response to post-response
+     * coordination. */
     function once(event, fn, opts) {
       if (typeof fn !== 'function') return () => {};
       let fired = false;

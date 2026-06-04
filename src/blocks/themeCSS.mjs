@@ -21,9 +21,17 @@
  * Treated by the LEGO gate the same way as reelEngineCSS.mjs (pure CSS).
  *
  * Bake-time config (resolved from `model.themeCSS`, plus palette default):
- *   { palette: { bg0, bg1, accent, text },
- *     cellGap, cellRadius, frameRadius,
- *     spinRailDesktop, spinSizeDesktop }
+ *   palette        { bg0, bg1, accent, text }  hex colors
+ *   cellGap        px gap between cells inside the grid       (default 6)
+ *   cellRadius     px corner radius on each cell tile         (default 10)
+ *   frameRadius    px corner radius on the .frame container   (default 16)
+ *   frameInset     px padding inside .frame around the grid   (default 18)
+ *                  — industry standard 18px keeps ~1rem
+ *                  breathing room between frame edge + cells
+ *                  so the reel mask never visually touches the
+ *                  cabinet trim under high-zoom displays.
+ *   spinRailDesktop  px side-rail width in desktop layout
+ *   spinSizeDesktop  px diameter of spin button (desktop)
  *
  * Public API:
  *   defaultConfig() / resolveConfig(model)

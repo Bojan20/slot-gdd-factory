@@ -3,7 +3,7 @@
  *
  * Wave U4 — Autoplay session block.
  *
- * Industry-reference pattern (playa-slot AutoSpinSettingsPanel*):
+ * Industry-standard pattern (auto-spin settings panel + session runner):
  *   • Player picks N from a set of supported steps (10 / 25 / 50 / 100 /
  *     250 / 500 / 1000 is the industry baseline).
  *   • Player optionally configures stop-conditions:
@@ -347,8 +347,9 @@ export function emitAutoplayRuntime(cfg = defaultConfig()) {
       completed: 0,            /* spins completed this session */
       step: DEFAULT_STEP,      /* requested session length */
       totalWin: 0,             /* cumulative session win */
-      totalLoss: 0,            /* cumulative session loss (placeholder math) */
+      totalLoss: 0,            /* cumulative session NET loss = sum of max(0, cost-win) */
       lastWin: 0,
+      lastCost: 0,             /* captured at onSpinResult so postSpin reads the actual bet */
       paused: false,           /* paused during FS round */
       pendingStopReason: null, /* set by external events (slam, feature) */
       nextSpinTimerId: null,
@@ -416,6 +417,7 @@ export function emitAutoplayRuntime(cfg = defaultConfig()) {
       STATE.totalWin = 0;
       STATE.totalLoss = 0;
       STATE.lastWin = 0;
+      STATE.lastCost = 0;
       STATE.paused = false;
       STATE.pendingStopReason = null;
       if (typeof window !== 'undefined') window.__SLOT_AUTOSPIN_ACTIVE__ = true;
@@ -509,9 +511,19 @@ export function emitAutoplayRuntime(cfg = defaultConfig()) {
         if (!STATE.active) return;
         /* Sample any payout the engine has staged for this spin so the
          * single-win-X threshold can fire. winPresentation publishes
-         * window.__WIN_AWARD__; if absent (cluster mode), default to 0. */
-        var w = (typeof window.__WIN_AWARD__ === 'number') ? window.__WIN_AWARD__ : 0;
-        STATE.lastWin = w;
+         * window.__WIN_AWARD__; if absent (cluster mode), default to 0.
+         * Defensive clamp: malicious/buggy upstream writes (NaN, Infinity,
+         * negative) must not corrupt session totals downstream. */
+        var raw = (typeof window.__WIN_AWARD__ === 'number') ? window.__WIN_AWARD__ : 0;
+        STATE.lastWin = (Number.isFinite(raw) && raw >= 0) ? Math.min(raw, 1e10) : 0;
+        /* Capture per-spin cost so loss-limit threshold reflects the actual
+         * bet for this spin (bet-stepper / ante / bonus-buy may differ from
+         * the fallback unit). Engine publishes window.__SLOT_BET__; if not
+         * present, fall back to the bake-time unit. */
+        var c = (typeof window.__SLOT_BET__ === 'number' && Number.isFinite(window.__SLOT_BET__))
+                  ? Math.max(0, window.__SLOT_BET__)
+                  : BET_UNIT_FB;
+        STATE.lastCost = c;
       }, { priority: -20 });
 
       window.HookBus.on('postSpin', function (p) {
@@ -520,7 +532,10 @@ export function emitAutoplayRuntime(cfg = defaultConfig()) {
         STATE.completed++;
         STATE.remaining = Math.max(0, STATE.step - STATE.completed);
         STATE.totalWin  += STATE.lastWin;
-        if (STATE.lastWin <= 0) STATE.totalLoss += BET_UNIT_FB;
+        /* Loss = actual bet for this spin (not flat fallback). For wins,
+         * we treat win-vs-cost net positive as 0 contribution to loss. */
+        var net = STATE.lastWin - STATE.lastCost;
+        if (net < 0) STATE.totalLoss += (-net);
         _updateCounter();
         if (window.HookBus && typeof window.HookBus.emit === 'function') {
           window.HookBus.emit('onAutoplayTick', {
@@ -541,12 +556,27 @@ export function emitAutoplayRuntime(cfg = defaultConfig()) {
 
       window.HookBus.on('onFsTrigger', function () {
         if (!STATE.active) return;
+        /* Cancel any pending next-spin timer — FS owns the screen now and
+         * the autoplay session must NOT race a spinBtn click through a
+         * feature transition. Without this, an INTER_SPIN_MS timer set
+         * by the most-recent postSpin (which preceded onFsTrigger by a
+         * frame) would fire mid-FS and corrupt state. The setTimeout
+         * callback also guards on STATE.paused, but belt-and-suspenders. */
+        if (STATE.nextSpinTimerId !== null) {
+          clearTimeout(STATE.nextSpinTimerId);
+          STATE.nextSpinTimerId = null;
+        }
         if (STOP_ON_FEAT) STATE.pendingStopReason = 'feature';
         else STATE.paused = true;
       });
 
       window.HookBus.on('onFsEnd', function () {
         if (!STATE.active) return;
+        /* Defensive: clear any stale timer before deciding next step. */
+        if (STATE.nextSpinTimerId !== null) {
+          clearTimeout(STATE.nextSpinTimerId);
+          STATE.nextSpinTimerId = null;
+        }
         if (STATE.pendingStopReason) { autoplayStop(STATE.pendingStopReason); return; }
         STATE.paused = false;
         if (STATE.remaining > 0) _scheduleNextSpin(INTER_SPIN_MS);

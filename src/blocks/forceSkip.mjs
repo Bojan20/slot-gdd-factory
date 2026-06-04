@@ -3,7 +3,7 @@
  *
  * Wave V2 — Force-Skip button block.
  *
- * Industry-reference pattern (playa-slot ForceSkipCommand.ts):
+ * Industry-standard pattern (force-skip command for rollup/intro/outro):
  *   • A button shown during win-presentation, FS-intro, FS-outro, and
  *     other long-running animation phases. Press = immediately bail to
  *     the final state (skip rollup, skip celebration banner, jump to
@@ -64,11 +64,11 @@ export function defaultConfig() {
     /* Distinct from slam-stop red so the player can't confuse them. */
     chipColor: '90,180,255',
     chipTextColor: '255,255,255',
-    /* Mirror of playa-slot ForceSkipCommand `_disabledPressed`: once
-     * pressed, disable the button so a second click cannot re-fire the
-     * skip request mid-collapse. */
+    /* Industry pattern `disabledPressed`: once pressed, disable the
+     * button so a second click cannot re-fire the skip request
+     * mid-collapse. */
     disabledPressed: true,
-    /* Mirror of playa-slot `_hidePressed`: optionally also hide visually
+    /* Industry pattern `hidePressed`: optionally also hide visually
      * after press. Default off because the button typically gets hidden
      * by onSkipComplete anyway; setting hidePressed forces immediate hide
      * for designs where the post-press flash is undesirable. */
@@ -339,9 +339,12 @@ export function emitForceSkipRuntime(cfg = defaultConfig()) {
 
       window.HookBus.on('preSpin', function () { forceSkipHide(); });
       window.HookBus.on('postSpin', function () {
-        /* Hide if no rollup follows. winPresentation calls forceSkipShow
-         * itself when it kicks off rollup; otherwise we don't show here. */
-        if (!STATE.visible) return;
+        /* Belt-and-suspenders hide. winPresentation.onSpinResult listener
+         * is the SOLE owner of "show skip during rollup"; by the time we
+         * reach postSpin, either winPresentation has already called
+         * forceSkipHide via onSkipComplete, OR no rollup ran and the
+         * button must not linger into the idle phase. Either way: hide. */
+        if (STATE.visible) forceSkipHide();
       });
     }
   })();

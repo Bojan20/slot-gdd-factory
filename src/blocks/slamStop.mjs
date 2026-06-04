@@ -3,7 +3,7 @@
  *
  * Wave V1 — Slam-Stop button block.
  *
- * Industry-reference pattern (playa-slot SlamStopCommand.ts):
+ * Industry-standard pattern (fast-stop / "slam" command):
  *   • A button (and optional whole-reels click area) that the player can
  *     press DURING a spin to collapse the reels into their final landed
  *     positions immediately, skipping the motion-blur rotation phase.
@@ -75,9 +75,9 @@ export function defaultConfig() {
     hideOnTurbo: true,
     hideOnAutoSpin: true,
     /* If true, the entire reel-grid container also fires onSlamRequested
-     * on pointerup (industry pattern: playa-slot SlamStopCommand wires
-     * reelsClickArea.on('pointerup', processSlamStop). The player can
-     * tap anywhere on the reels to slam.) */
+     * on pointerup (industry pattern: a transparent overlay on the
+     * reel grid forwards pointerup → processSlamStop, so the player
+     * can tap anywhere on the reels to slam, not only the button). */
     reelsClickAreaEnabled: true,
     ariaLabel: 'Stop reels',
     pulseAnimation: true,
@@ -247,6 +247,8 @@ export function emitSlamStopRuntime(cfg = defaultConfig()) {
       armed: false,           /* listener active on reelsHost click area */
       armTimerId: null,
       currentPhase: null,     /* 'pre' | 'post' once a result lands */
+      requestLocked: false,   /* one-shot lock — prevents double-emit if two
+                                 click events race before button hides */
     };
     if (typeof window !== 'undefined') window.SLAM_STOP_STATE = STATE;
 
@@ -267,10 +269,16 @@ export function emitSlamStopRuntime(cfg = defaultConfig()) {
       if (!btn) return;
       if (HIDE_ON_TURBO && _turboActive()) return;
       if (HIDE_ON_AUTOSPIN && _autoSpinActive()) return;
+      /* Idempotent: bail if already showing. Without this guard a second
+       * call (e.g. preSpin → FS-base-spin chain firing preSpin again
+       * before the previous arm timer cleared) would re-add 'is-pulsing'
+       * and re-attach the reels-area pointerup listener. */
+      if (STATE.visible) return;
       btn.hidden = false;
       btn.disabled = false;
       if (PULSE_ANIM) btn.classList.add('is-pulsing');
       STATE.visible = true;
+      STATE.requestLocked = false;   /* fresh spin → re-arm the one-shot lock */
       _armClickArea();
     }
 
@@ -281,6 +289,7 @@ export function emitSlamStopRuntime(cfg = defaultConfig()) {
         btn.classList.remove('is-pulsing');
       }
       STATE.visible = false;
+      STATE.requestLocked = false;
       _disarmClickArea();
       if (STATE.armTimerId !== null) {
         clearTimeout(STATE.armTimerId);
@@ -295,15 +304,31 @@ export function emitSlamStopRuntime(cfg = defaultConfig()) {
      * onSlamComplete when reels visually collapsed; that re-hides too. */
     function slamStopRequest(source) {
       if (!STATE.visible) return;
+      /* One-shot lock: industry pattern guarantees one slam intent per
+       * spin even if two pointerup events race (button + reels-area
+       * overlay can both fire on the same tap). Without the lock the
+       * second emit would arrive after btn.disabled=true but before the
+       * DOM repaint, causing a phantom onSlamRequested with no listener
+       * symmetry. */
+      if (STATE.requestLocked) return;
+      STATE.requestLocked = true;
       var s = (typeof source === 'string' && ['button','reelsArea','keyboard'].indexOf(source) !== -1) ? source : 'button';
       var btn = _btn();
       if (btn) { btn.disabled = true; btn.classList.remove('is-pulsing'); }
       _disarmClickArea();
       if (window.HookBus && typeof window.HookBus.emit === 'function') {
-        window.HookBus.emit('onSlamRequested', {
-          phase: STATE.currentPhase || 'post',
-          source: s,
-        });
+        try {
+          window.HookBus.emit('onSlamRequested', {
+            phase: STATE.currentPhase || 'post',
+            source: s,
+          });
+        } catch (e) {
+          /* A listener throwing must not leave the block in a locked
+           * state — re-arm so a subsequent (rare) recovery click can
+           * still slam. */
+          STATE.requestLocked = false;
+          if (console && console.error) console.error('[slamStop] onSlamRequested listener failed:', e);
+        }
       }
     }
 

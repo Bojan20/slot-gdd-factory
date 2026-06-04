@@ -417,8 +417,8 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
       }
     }, { priority: 20 });
 
-    /* Wave V5 — react to slam-stop request. Industry-reference (playa-slot
-       SlamStopCommand): collapse all reels to landed strip immediately.
+    /* Wave V5 — react to slam-stop request. Industry-standard fast-stop
+       pattern: collapse all reels to landed strip immediately.
        Pre-response phase (server result still pending) is impossible in
        this template because the engine bakes the symbol strip at preSpin
        time (placeholder math), so EVERY slam is effectively post-response.

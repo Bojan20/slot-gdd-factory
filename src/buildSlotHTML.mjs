@@ -162,17 +162,17 @@ import {
   emitUiToastCSS, emitUiToastMarkup, emitUiToastRuntime,
   resolveConfig as resolveUiToastConfig,
 } from './blocks/uiToast.mjs';
-// Wave V1 — Slam-stop button (industry-reference playa-slot SlamStopCommand)
+// Wave V1 — Slam-stop button (industry-standard fast-stop command pattern)
 import {
   emitSlamStopCSS, emitSlamStopMarkup, emitSlamStopRuntime,
   resolveConfig as resolveSlamStopConfig,
 } from './blocks/slamStop.mjs';
-// Wave V2 — Force-skip button (industry-reference playa-slot ForceSkipCommand)
+// Wave V2 — Force-skip button (industry-standard rollup/intro skip command pattern)
 import {
   emitForceSkipCSS, emitForceSkipMarkup, emitForceSkipRuntime,
   resolveConfig as resolveForceSkipConfig,
 } from './blocks/forceSkip.mjs';
-// Wave U4 — Autoplay session (industry-reference playa-slot AutoSpinSettingsPanel)
+// Wave U4 — Autoplay session (industry-standard auto-spin panel pattern)
 import {
   emitAutoplayCSS, emitAutoplayMarkup, emitAutoplayRuntime,
   resolveConfig as resolveAutoplayConfig,

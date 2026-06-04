@@ -113,6 +113,10 @@ const VENDOR_BLOCKLIST = [
   'megaways', 'netent', 'microgaming', 'pragmatic',
   'lightning link', 'lightning-link',
   'cleopatra', 'buffalo', 'cash eruption', 'cash_eruption',
+  /* Vendor-codename: any "playa-slot" / "playa slot" / "playaslot" reference
+     leaks the studio name of the industry comparison source. Use
+     "industry-standard" or "fast-stop / force-skip command pattern" instead. */
+  'playa-slot', 'playa slot', 'playaslot', 'playa_slot',
   /* IGT requires word-boundary check (substring "igt" lives in "digital"
      etc); we handle it via the regex check below, not this literal list. */
 ];
