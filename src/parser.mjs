@@ -168,6 +168,7 @@ export function parseMarkdownGDD(text) {
   extractAutoplay(text, model);
   extractBetSelector(text, model);
   extractGambleSecondary(text, model);
+  extractPaytable(text, model);
   extractHoldAndWin(text, model);
   extractRespin(text, model);
   extractWinCap(text, model);
@@ -1251,6 +1252,20 @@ function freshModel() {
       showInFs: undefined, showInAutoplay: undefined,
       currency: undefined, chipColor: undefined, chipTextColor: undefined,
     },
+    /* Wave U10 — Paytable modal (industry-standard regulator-mandated UI). */
+    paytable: {
+      enabled: undefined,
+      chipLabel: undefined, chipColor: undefined, chipTextColor: undefined,
+      modalBgColor: undefined, modalAccentColor: undefined,
+      showFeaturesList: undefined, showWildRules: undefined, showLineMap: undefined,
+      closeOnBackdrop: undefined, closeOnEscape: undefined, autoHideOnSpin: undefined,
+      ariaLabel: undefined,
+      /* `symbols` slot reserved for explicit per-symbol payout overrides
+       * provided by the GDD (e.g. `paytable.symbols.H1 = { 3:10, 4:50, 5:200 }`).
+       * Math is OUT OF SCOPE here — paytable.mjs only DISPLAYS what's set;
+       * the math layer (Phase 2) will populate this from real PAR sheets. */
+      symbols: undefined,
+    },
     holdAndWin: {
       enabled: undefined, triggerCount: undefined, bonusSymbolId: undefined,
       respinsAwarded: undefined, resetOnNewBonus: undefined,
@@ -2178,6 +2193,27 @@ export function extractBetSelector(text, model) {
 
   const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
   const ctc = _readStr(s, 'chip[- ]?text[- ]?color'); if (ctc) tgt.chipTextColor = ctc;
+  const ar = _readStr(s, 'aria[- ]?label'); if (ar) tgt.ariaLabel = ar;
+}
+
+/* Wave U10 — Paytable modal extractor.
+ * Reads `## Paytable` / `## Pay Table` / `## Paytable Modal` GDD section. */
+export function extractPaytable(text, model) {
+  const s = _findSection(text, /^##\s+(?:Paytable|Pay[- ]?Table|Paytable[- ]?Modal)\b[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.paytable;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const cl = _readStr(s, 'chip[- ]?label'); if (cl) tgt.chipLabel = cl;
+  const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
+  const ctc = _readStr(s, 'chip[- ]?text[- ]?color'); if (ctc) tgt.chipTextColor = ctc;
+  const mbg = _readStr(s, 'modal[- ]?bg[- ]?color'); if (mbg) tgt.modalBgColor = mbg;
+  const mac = _readStr(s, 'modal[- ]?accent[- ]?color'); if (mac) tgt.modalAccentColor = mac;
+  const sfl = _readBool(s, 'show[- ]?features[- ]?list'); if (sfl !== undefined) tgt.showFeaturesList = sfl;
+  const swr = _readBool(s, 'show[- ]?wild[- ]?rules'); if (swr !== undefined) tgt.showWildRules = swr;
+  const slm = _readBool(s, 'show[- ]?line[- ]?map'); if (slm !== undefined) tgt.showLineMap = slm;
+  const cob = _readBool(s, 'close[- ]?on[- ]?backdrop'); if (cob !== undefined) tgt.closeOnBackdrop = cob;
+  const coe = _readBool(s, 'close[- ]?on[- ]?escape'); if (coe !== undefined) tgt.closeOnEscape = coe;
+  const ahs = _readBool(s, 'auto[- ]?hide[- ]?on[- ]?spin'); if (ahs !== undefined) tgt.autoHideOnSpin = ahs;
   const ar = _readStr(s, 'aria[- ]?label'); if (ar) tgt.ariaLabel = ar;
 }
 
