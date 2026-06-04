@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `d9f0cfc` · main
+> Last updated: **2026-06-04** · HEAD: `f5932e7` · main
 
 ---
 
@@ -729,16 +729,24 @@
 > Pravilo kaže: **nikad game-specific code u src/blocks/**. Audit 04.06.2026
 > našao 11 fajlova sa game-specific reference. Plus blok default-i u 3 bloka
 > su iz konkretnog GDD-a hardkodovan. Wave T to čisti.
+>
+> **⚠️ Naming-collision note**: u "Shipped" sekciji postoje wave-ovi pod
+> imenom `Wave T2` (commit `d9f0cfc`, vendor purge round 2) i `Wave T3`
+> (commit `c9e7b42`, LEGO lifecycle gap fix). To je **drugi koordinatni
+> sistem** od originalne T1–T7 plan liste ispod. Zbog jasnoće, plan stavke
+> u ovoj sekciji preimenovane su u `T-vendor` / `T-orb` / `T-bonus` /
+> `T-ante` / `T-engine` / `T-slim` / `T-verify`.
 
-| ID | Item | Why | Effort |
+| ID | Item | Why | Status (verified 2026-06-04 HEAD `f5932e7`) |
 |:-:|---|---|---|
-| T1 | **Vendor neutralization** — 11 fajlova sa game-specific komentarima (`Gates of Olympus reference`, `WoO reference`, `Reactoonz`, `Sweet Bonanza`, `Sugar Rush`) → zameniti sa "pay-anywhere reference", "cascade reference", "industry baseline" | krši `rule_no_vendor_mentions.md` + LEGO pravilo | M |
-| T2 | **`multiplierOrb.mjs` default distribution** — sada 2x–1000x kopija iz GoO. Promeniti default na opštije `[2,3,5,10,25,100]` standard; konkretna igra override-uje preko `model.multiplierOrb.distribution` | template ne sme nositi GoO bias | S |
-| T3 | **`bonusBuy.mjs` default 100x cost** — sada iz GoO PDF-a. Promeniti default na `null` (UI hide) ili median 75x | template ne sme defaultovati na konkretnu igru | XS |
-| T4 | **`anteBet.mjs` default 25%** — sada iz GoO. Promeniti na `null` ili 25% kao median industry | isti razlog | XS |
-| T5 | **`reelEngine.mjs` globals refactor** — koristi `window.ROWS`, `window.REELS`. Refactor da prima preko HookBus state ili eksplicitnog cfg | ne može isto da se testira kao drugi blokovi | M |
-| T6 | **`buildSlotHTML.mjs` slim down** — posle Wave R + S, orchestrator mora biti `import + init + render` only. Trenutno ima 1518 LOC; target < 800 LOC | sve runtime logiku raseliti u odgovarajuće blokove | L |
-| T7 | **Verifikacija**: `grep -nrE "(gates|woo|wrath|olympus|reactoonz)" src/blocks/ = 0 matches`; `wc -l src/buildSlotHTML.mjs < 800` | dokaz čišćenja | S |
+| T-vendor | **Vendor neutralization** — 11 fajlova sa game-specific komentarima (`Gates of Olympus reference`, `WoO reference`, `Reactoonz`, `Sweet Bonanza`, `Sugar Rush`) → zameniti sa "pay-anywhere reference", "cascade reference", "industry baseline" | krši `rule_no_vendor_mentions.md` + LEGO pravilo | ✅ **DONE** kroz `e1d2968` (Wave T orig) + `d9f0cfc` (shipped Wave T2, round 2). Grep `(zeus\|olympus\|megaways\|reactoonz\|BTG\|wazdan\|pragmatic)` u `src/` → **0 matches**. |
+| T-orb | **`multiplierOrb.mjs` default distribution** — sada 16-entry 2x–1000x raspored (GoO-bias). Promeniti default na opštije `[2,3,5,10,25,100]` standard; konkretna igra override-uje preko `model.multiplierOrb.distribution` | template ne sme nositi GoO bias | ⏳ **NOT DONE** — `src/blocks/multiplierOrb.mjs:24-41` i dalje ima 16-entry raspored 2x→1000x. Komentar promenjen u "industry standard" ali sadržaj kopija GoO-a. |
+| T-bonus | **`bonusBuy.mjs` default 100x cost** — sada iz GoO PDF-a. Promeniti default na `null` (UI hide) ili median 75x | template ne sme defaultovati na konkretnu igru | ⏳ **NOT DONE** — `src/blocks/bonusBuy.mjs:18` i dalje `costX: 100`. Komentar relabeliran ("industry-standard reference") ali broj ostao. |
+| T-ante | **`anteBet.mjs` default 25%** — sada iz GoO. Promeniti na `null` ili 25% kao median industry | isti razlog | 🟡 **DEBATABLE** — `src/blocks/anteBet.mjs:18` `costMultiplier: 1.25` sa komentarom "industry-standard ante-bet reference". 25% jeste industry-default, pa T-ante može biti **closed kao won't-fix** (Boki da odluči). |
+| T-engine | **`reelEngine.mjs` globals refactor** — koristi `window.ROWS`, `window.REELS`. Refactor da prima preko HookBus state ili eksplicitnog cfg | ne može isto da se testira kao drugi blokovi | ✅ **DONE** — `grep -n "window\.\(ROWS\|REELS\|COLS\)" src/blocks/reelEngine.mjs` → **0 matches**. Refactor je očigledno pristigao kroz Wave R/S engine-tier conformance. |
+| T-slim | **`buildSlotHTML.mjs` slim down** — posle Wave R + S, orchestrator mora biti `import + init + render` only. Trenutno ima 1546 LOC; target < 800 LOC | sve runtime logiku raseliti u odgovarajuće blokove | ⏳ **NOT DONE** — `wc -l src/buildSlotHTML.mjs` = **1546** (target < 800). 746 LOC inline runtime/template logike treba migrirati u blokove. Najveći ostatak Wave T posla. |
+| T-verify | **Verifikacija**: `grep -nrE "(gates\|woo\|wrath\|olympus\|reactoonz)" src/blocks/ = 0 matches`; `wc -l src/buildSlotHTML.mjs < 800` | dokaz čišćenja | 🟡 **PARTIAL** — vendor gate ✅ 0 matches; LOC gate ❌ 1546 (cilj < 800). Zatvara se kad T-slim prođe. |
+| T-LCG | **(bonus, nije original plan)** — LEGO lifecycle gap fix u `postSpin.mjs` (trigger + retrigger flow skipped `onTumbleStep` emit) + cortex-eyes hardening (10/10 stability) | flaky QA gate | ✅ **SHIPPED** kroz `c9e7b42` (shipped Wave T3). |
 
 ### 🟢 Wave U+ — Feature ekspanzija (po jedan blok po wave)
 
