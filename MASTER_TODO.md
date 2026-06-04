@@ -3,11 +3,31 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `79ef9fd` · main
+> Last updated: **2026-06-04** · HEAD: `pending Wave U2 · audio` · main
 
 ---
 
 ## 🟢 Shipped (in-tree on `origin/main`)
+
+### Wave U2 — `audio.mjs` Howler-style scaffolding (commit pending)
+
+> **Drugi blok Wave U feature ekspanzije.** Zero-dependency Web Audio API wrapper sa Howler-style cue API-jem za 15 slot lifecycle kategorija. Bez external dep (Howler nije u package.json) — koristim HTMLAudioElement + cloneNode pattern za overlapping playback. Cues lazy-load on first play (asseti se ne učitavaju dok ih GDD ne specifikuje).
+
+| ID | Feature | Files | Status |
+|---|---|---|---|
+| U2.1 | `src/blocks/audio.mjs` (370 LOC) — 15 categories (SPIN_START, REEL_STOP, TUMBLE_REMOVE, ORB_SPAWN, ANTICIPATION, BUTTON_CLICK, WIN_BASE, WIN_BIG, WIN_MEGA, WIN_EPIC, MULT_GROW, FS_TRIGGER, FS_INTRO, FS_SPIN_START, FS_OUTRO). GDD knobs: enabled, masterVolume, muted, urls (per-category), volumes (per-category), showToggle, toggleColor, bigWinThresholdX (default 10x), megaWinThresholdX (50x), epicWinThresholdX (250x). | `src/blocks/audio.mjs` | ✅ |
+| U2.2 | Defensive validation: URL safety (rejects `javascript:`, `data:`, whitespace, quotes), masterVolume clamp [0,1], per-category volume clamp, monotonic threshold enforcement (mega > big, epic > mega), RGB color regex check. Auto-enable on `audio`/`sound` feature kind ili kad bilo koji URL nije prazan. | `src/blocks/audio.mjs:resolveConfig` | ✅ |
+| U2.3 | CSS mute toggle (fixed top-right circle, strike-through when muted, mobile media query, reduced-motion gate). Markup: `<button id="audioToggle">` sa aria-label + initial state. | `src/blocks/audio.mjs` (emit functions) | ✅ |
+| U2.4 | Runtime API (window-exposed): `audioPlay(category, opts?)` (fire-and-forget, opts.rate honors playbackRate), `audioPreload(category)` (warm cache), `audioSetMuted(bool)`, `audioToggleMuted()`, `audioSetVolume(0..1)`, `AUDIO_STATE` (current state). cloneNode pattern za overlapping playback (rapid reel-stops). | `src/blocks/audio.mjs` (emitAudioRuntime) | ✅ |
+| U2.5 | localStorage persistence: `slot.audio.muted` + `slot.audio.volume` survive reload. 3 try/catch wrappers oko localStorage calls — privacy mode (Safari ITP) ne razbija runtime. | `src/blocks/audio.mjs:emitAudioRuntime` | ✅ |
+| U2.6 | HookBus integration: `preSpin` (BASE → SPIN_START, FS → FS_SPIN_START), `onSpinResult` (REEL_STOP), `onTumbleStep` (TUMBLE_REMOVE + MULT_GROW kad HookBus.getMult > 1), `postSpin` (tier select: BASE/BIG/MEGA/EPIC po sumi payX × threshold), `onFsTrigger` (FS_TRIGGER + FS_INTRO sa 200ms delay), `onFsEnd` (FS_OUTRO). | `src/blocks/audio.mjs:emitAudioRuntime` | ✅ |
+| U2.7 | `tests/blocks/audio.test.mjs` — **38 unit tests** pass: defaults (1), resolveConfig × 8 (clamps, URL safety, threshold ordering), auto-enable × 3, CSS/markup × 4, runtime contract × 6, behavior via sandbox eval × 7 (muted, missing URL, success, postSpin tier select × 4, preSpin BASE vs FS), toggle/volume persistence × 2, hygiene × 4 (determinism, vendor-neutral, AUDIO_CATEGORIES export, XSS guard). | `tests/blocks/audio.test.mjs` | ✅ |
+| U2.8 | Parser: `extractAudio(text, model)` čita `## Audio` / `## Sound` sekciju, parsira `masterVolume`, `muted`, `showToggle`, `toggleColor`, `bigWinThresholdX/megaWinThresholdX/epicWinThresholdX`, plus URL rows formata `- SPIN_START: sounds/spin.mp3` ili `\| SPIN_START \| sounds/spin.mp3 \|` (regex hvata .mp3/.ogg/.wav/.m4a/.aac/.webm). | `src/parser.mjs:extractAudio` | ✅ |
+| U2.9 | freshModel slot dodat sa 10 undefined knobs-ima + feature pattern (audio/sound/sfx kind). | `src/parser.mjs:freshModel + extractFeatures` | ✅ |
+| U2.10 | Orchestrator wire-up: import + 3 emit calls (CSS, markup, runtime) posle progressiveFreeSpins. | `src/buildSlotHTML.mjs` | ✅ |
+| U2.11 | `package.json` test:blocks chain proširen sa audio.test.mjs. | `package.json` | ✅ |
+| U2.12 | LEGO Gate: **5/5 pass** — orchestrator emit 0, block parity **36/36**, vendor 0, ownership 7/7, listener coverage **27/27**. | — | ✅ |
+| U2.13 | End-to-end QA: npm test 20/20 fixtures, npm test:blocks all green, cortex-eyes-pdf-upload 0 console errors + 42 cells + Base Game title (GoO bez audio sekcije → blok disabled, runtime stub, headless prošao). | — | ✅ |
 
 ### Wave U1 — `progressiveFreeSpins.mjs` blok (commit `79ef9fd`)
 

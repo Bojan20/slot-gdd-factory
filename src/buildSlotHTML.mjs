@@ -145,6 +145,10 @@ import {
   resolveConfig as resolveProgressiveFreeSpinsConfig,
 } from './blocks/progressiveFreeSpins.mjs';
 import {
+  emitAudioCSS, emitAudioMarkup, emitAudioRuntime,
+  resolveConfig as resolveAudioConfig,
+} from './blocks/audio.mjs';
+import {
   emitHoldAndWinCSS, emitHoldAndWinMarkup, emitHoldAndWinRuntime,
   resolveConfig as resolveHoldAndWinConfig,
 } from './blocks/holdAndWin.mjs';
@@ -659,6 +663,7 @@ ${emitWildReelCSS(resolveWildReelConfig(model))}
 ${emitMysterySymbolCSS(resolveMysterySymbolConfig(model))}
 ${emitPersistentMultiplierCSS(resolvePersistentMultiplierConfig(model))}
 ${emitProgressiveFreeSpinsCSS(resolveProgressiveFreeSpinsConfig(model))}
+${emitAudioCSS(resolveAudioConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
 ${emitRespinCSS(resolveRespinConfig(model))}
 ${emitWinCapCSS(resolveWinCapConfig(model))}
@@ -895,6 +900,7 @@ ${emitAnteBetMarkup(resolveAnteBetConfig(model))}
 <!-- Wave L–P markup (empty strings when disabled) -->
 ${emitPersistentMultiplierMarkup(resolvePersistentMultiplierConfig(model))}
 ${emitProgressiveFreeSpinsMarkup(resolveProgressiveFreeSpinsConfig(model))}
+${emitAudioMarkup(resolveAudioConfig(model))}
 ${emitHoldAndWinMarkup(resolveHoldAndWinConfig(model))}
 ${emitRespinMarkup(resolveRespinConfig(model))}
 ${emitWinCapMarkup(resolveWinCapConfig(model))}
@@ -1189,6 +1195,7 @@ ${emitGambleMarkup(resolveGambleConfig(model))}
   ${emitWaysEvalRuntime(resolveWaysEvalConfig(model))}
   ${emitPersistentMultiplierRuntime(resolvePersistentMultiplierConfig(model))}
   ${emitProgressiveFreeSpinsRuntime(resolveProgressiveFreeSpinsConfig(model))}
+  ${emitAudioRuntime(resolveAudioConfig(model))}
   ${emitHoldAndWinRuntime(resolveHoldAndWinConfig(model))}
   ${emitRespinRuntime(resolveRespinConfig(model))}
   ${emitWinCapRuntime(resolveWinCapConfig(model))}

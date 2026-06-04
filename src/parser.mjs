@@ -161,6 +161,7 @@ export function parseMarkdownGDD(text) {
   extractWaysEval(text, model);
   extractPersistentMultiplier(text, model);
   extractProgressiveFreeSpins(text, model);
+  extractAudio(text, model);
   extractHoldAndWin(text, model);
   extractRespin(text, model);
   extractWinCap(text, model);
@@ -830,6 +831,12 @@ export function extractFeatures(rawText) {
       re: /\bprogressive[\s_-]?(?:free[\s_-]?spins?|fs)\b|\bfs[\s_-]?multiplier[\s_-]?(?:ladder|escalator|climbs?|grows?)\b|\bmultiplier\s+grows\s+(?:every|each)\s+spin\b|\beach\s+(?:free[\s_-]?)?spin\s+(?:adds|grants|raises)\s+\+?\d+\s*x?\s*(?:to\s+the\s+)?(?:fs[\s_-]?)?multiplier/i,
       label: 'Progressive Free Spins',
     },
+    {
+      // Wave U2 — Audio scaffolding (15 lifecycle cue categories)
+      kind: 'audio',
+      re: /\b(?:audio|sound|sfx|sound\s+effects?|music)\s+(?:design|brief|package|cues?|categories)\b|\b##\s+(?:Audio|Sound)\b|\bSPIN_START\b|\bFS_TRIGGER\b/i,
+      label: 'Audio',
+    },
   ];
 
   const out = [];
@@ -1147,6 +1154,13 @@ function freshModel() {
       enabled: undefined, strategy: undefined, startMult: undefined,
       step: undefined, ladderValues: undefined, maxMult: undefined,
       resetOnRoundEnd: undefined, chipColor: undefined, chipLabel: undefined,
+    },
+    /* Wave U2 — Audio scaffolding (15 lifecycle categories + mute/volume). */
+    audio: {
+      enabled: undefined, masterVolume: undefined, muted: undefined,
+      urls: undefined, volumes: undefined,
+      showToggle: undefined, toggleColor: undefined,
+      bigWinThresholdX: undefined, megaWinThresholdX: undefined, epicWinThresholdX: undefined,
     },
     holdAndWin: {
       enabled: undefined, triggerCount: undefined, bonusSymbolId: undefined,
@@ -1961,6 +1975,29 @@ export function extractProgressiveFreeSpins(text, model) {
     const vals = ladderRaw.split(/[,\s]+/).map(v => parseInt(v, 10)).filter(n => Number.isFinite(n) && n >= 1);
     if (vals.length >= 2) tgt.ladderValues = vals;
   }
+}
+
+/* Wave U2 — Audio scaffolding extractor. */
+export function extractAudio(text, model) {
+  const s = _findSection(text, /^##\s+(?:Audio|Sound)\b[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.audio;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const mv = _readFloat(s, 'master[- ]?volume'); if (mv !== undefined) tgt.masterVolume = mv;
+  const mu = _readBool(s, '\\bmuted'); if (mu !== undefined) tgt.muted = mu;
+  const st = _readBool(s, 'show[- ]?toggle'); if (st !== undefined) tgt.showToggle = st;
+  const tc = _readStr(s, 'toggle[- ]?color'); if (tc) tgt.toggleColor = tc;
+  const big = _readInt(s, 'big[- ]?win[- ]?threshold[- ]?x'); if (big !== undefined) tgt.bigWinThresholdX = big;
+  const mega = _readInt(s, 'mega[- ]?win[- ]?threshold[- ]?x'); if (mega !== undefined) tgt.megaWinThresholdX = mega;
+  const epic = _readInt(s, 'epic[- ]?win[- ]?threshold[- ]?x'); if (epic !== undefined) tgt.epicWinThresholdX = epic;
+  /* URL rows of form "- SPIN_START: sounds/spin.mp3" or "| SPIN_START | sounds/spin.mp3 |" */
+  const urls = {};
+  const urlRe = /(?:^|\n)[\s\-|*]*([A-Z][A-Z_]+)[\s:|]+([\w./\-]+\.(?:mp3|ogg|wav|m4a|aac|webm))/g;
+  let m;
+  while ((m = urlRe.exec(s)) !== null) {
+    urls[m[1]] = m[2];
+  }
+  if (Object.keys(urls).length > 0) tgt.urls = urls;
 }
 
 export function extractHoldAndWin(text, model) {
