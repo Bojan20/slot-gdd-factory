@@ -170,6 +170,7 @@ export function parseMarkdownGDD(text) {
   extractGambleSecondary(text, model);
   extractPaytable(text, model);
   extractBalanceHud(text, model);
+  extractHistoryLog(text, model);
   extractHoldAndWin(text, model);
   extractRespin(text, model);
   extractWinCap(text, model);
@@ -1253,6 +1254,16 @@ function freshModel() {
       showInFs: undefined, showInAutoplay: undefined,
       currency: undefined, chipColor: undefined, chipTextColor: undefined,
     },
+    /* Wave U9 — Session history log (regulator-mandated audit). */
+    historyLog: {
+      enabled: undefined,
+      capacity: undefined, allowCsvExport: undefined,
+      showTime: undefined, timeFormat: undefined,
+      chipLabel: undefined, chipColor: undefined, chipTextColor: undefined,
+      panelBgColor: undefined, panelAccentColor: undefined,
+      closeOnBackdrop: undefined, closeOnEscape: undefined, autoHideOnSpin: undefined,
+      ariaLabel: undefined,
+    },
     /* Wave U8 — Balance HUD (industry-standard regulator-mandated). */
     balanceHud: {
       enabled: undefined,
@@ -2204,6 +2215,32 @@ export function extractBetSelector(text, model) {
 
   const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
   const ctc = _readStr(s, 'chip[- ]?text[- ]?color'); if (ctc) tgt.chipTextColor = ctc;
+  const ar = _readStr(s, 'aria[- ]?label'); if (ar) tgt.ariaLabel = ar;
+}
+
+/* Wave U9 — Session History Log extractor.
+ * Reads `## History Log` / `## Session History` / `## Spin History`. */
+export function extractHistoryLog(text, model) {
+  const s = _findSection(text, /^##\s+(?:History[- ]?Log|Session[- ]?History|Spin[- ]?History)\b[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.historyLog;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const cap = _readInt(s, 'capacity'); if (cap !== undefined) tgt.capacity = cap;
+  const csv = _readBool(s, 'allow[- ]?csv[- ]?export'); if (csv !== undefined) tgt.allowCsvExport = csv;
+  const st = _readBool(s, 'show[- ]?time'); if (st !== undefined) tgt.showTime = st;
+  const tf = _readStr(s, 'time[- ]?format');
+  if (tf) {
+    const v = tf.toLowerCase();
+    if (v === 'hms' || v === 'rel' || v === 'iso') tgt.timeFormat = v;
+  }
+  const cl = _readStr(s, 'chip[- ]?label'); if (cl) tgt.chipLabel = cl;
+  const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
+  const ctc = _readStr(s, 'chip[- ]?text[- ]?color'); if (ctc) tgt.chipTextColor = ctc;
+  const pbg = _readStr(s, 'panel[- ]?bg[- ]?color'); if (pbg) tgt.panelBgColor = pbg;
+  const pac = _readStr(s, 'panel[- ]?accent[- ]?color'); if (pac) tgt.panelAccentColor = pac;
+  const cob = _readBool(s, 'close[- ]?on[- ]?backdrop'); if (cob !== undefined) tgt.closeOnBackdrop = cob;
+  const coe = _readBool(s, 'close[- ]?on[- ]?escape'); if (coe !== undefined) tgt.closeOnEscape = coe;
+  const ahs = _readBool(s, 'auto[- ]?hide[- ]?on[- ]?spin'); if (ahs !== undefined) tgt.autoHideOnSpin = ahs;
   const ar = _readStr(s, 'aria[- ]?label'); if (ar) tgt.ariaLabel = ar;
 }
 
