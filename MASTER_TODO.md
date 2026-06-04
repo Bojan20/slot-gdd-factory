@@ -3,13 +3,13 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `b8f9a13` · main · Wave V + Wave U4 + Wave T-slim phase 1 + T-orb/T-bonus/T-ante shipped + senior-grade QA pass (3 critical + 5 medium fixed)
+> Last updated: **2026-06-04** · HEAD: `9c0eb1b` · main · Wave V + Wave U4 + Wave T-slim phase 1 + T-orb/T-bonus/T-ante + senior-grade QA pass (3 critical + 5 medium fixed + vendor sweep) all shipped
 
 ---
 
-## 🟡 Wave V/U4 senior-grade QA pass — THIS COMMIT
+## 🟢 Wave V/U4 senior-grade QA pass — SHIPPED (commits `b8f9a13` + `9c0eb1b`)
 
-> Triggered by Boki *"Qa ultimativni i review"* — full sweep across LEGO gate, npm test, cortex-eyes-wave-v/s/s-fs, vendor grep, and a 12-criterion senior code review by sub-agent. All gates green pre-review; review surfaced **3 critical + 6 medium bugs** that production-mid-tier code would ship with but would fail a lead-engineer review at Apple/Stripe/Anthropic.
+> Triggered by Boki *"Qa ultimativni i review"* — full sweep across LEGO gate, npm test, cortex-eyes-wave-v/s/s-fs, vendor grep, and a 12-criterion senior code review by sub-agent. All gates green pre-review; review surfaced **3 critical + 5 medium bugs** that production-mid-tier code would ship with but would fail a lead-engineer review at Apple/Stripe/Anthropic. All fixed in `b8f9a13`; hash pin in `9c0eb1b`.
 
 ### Findings + fixes (this commit)
 
@@ -47,7 +47,7 @@
 | cortex-eyes-wave-s 3/3 | ✅ |
 | cortex-eyes-wave-s-fs | ✅ |
 | vendor grep `src/` for `playa-slot` | ✅ 0 matches |
-| Hash pin | (this commit) |
+| Hash pin | ✅ `9c0eb1b` |
 
 ---
 
@@ -819,8 +819,8 @@
 | T-bonus | **`bonusBuy.mjs` default 100x → median 75×** | template ne sme defaultovati na konkretnu igru | ✅ **DONE** `7350c1b` — `costX: 75` (industry median 50-100×). |
 | T-ante | **`anteBet.mjs` default 25%** — odluka da li menjati | isti razlog | ✅ **WON'T-FIX** `7350c1b` — 1.25 jeste verified industry-modal baseline (modalna vrednost u vendor landscape-u), ostaje + bolji komentar. |
 | T-engine | **`reelEngine.mjs` globals refactor** | ne može isto da se testira kao drugi blokovi | ✅ **DONE** kroz Wave R/S engine-tier conformance. 0 `window.ROWS/REELS` matches. |
-| T-slim | **`buildSlotHTML.mjs` slim down** — target < 800 LOC | sve runtime logiku raseliti u blokove | 🟢 **PHASE 1 DONE** `3727b3c` — 1565 → 1041 LOC. 534 LOC migrirano u `themeCSS.mjs` (chrome + grid shapes + dev tools) + `paylineOverlay.mjs` (+ CSS) + `winPresentation.mjs` (+ CSS). Phase 2 (~241 LOC remaining) — script blok + remaining inline runtime helpers. |
-| T-verify | **Verifikacija**: vendor grep + `wc -l < 800` | dokaz čišćenja | 🟡 **PARTIAL** — vendor gate ✅ 0 matches; LOC gate ❌ 1041 (cilj < 800). Zatvara se kad T-slim phase 2 prođe. |
+| T-slim | **`buildSlotHTML.mjs` slim down** — target < 800 LOC | sve runtime logiku raseliti u blokove | 🟢 **PHASE 1 DONE** `3727b3c` — 1565 → 1041 LOC (post-review **1052** zbog 11 LOC import + emit wire-up za Wave U4 autoplay). 534 LOC migrirano u `themeCSS.mjs` (chrome + grid shapes + dev tools) + `paylineOverlay.mjs` (+ CSS) + `winPresentation.mjs` (+ CSS). Phase 2 (~252 LOC remaining) — script blok + remaining inline runtime helpers. |
+| T-verify | **Verifikacija**: vendor grep + `wc -l < 800` | dokaz čišćenja | 🟡 **PARTIAL** — vendor gate ✅ 0 matches (uključuje proširenu `playa-slot` blocklist od senior-grade QA pass-a); LOC gate ❌ 1052 (cilj < 800). Zatvara se kad T-slim phase 2 prođe. |
 | T-LCG | **(bonus, nije original plan)** — LEGO lifecycle gap fix u `postSpin.mjs` (trigger + retrigger flow skipped `onTumbleStep` emit) + cortex-eyes hardening (10/10 stability) | flaky QA gate | ✅ **SHIPPED** kroz `c9e7b42` (shipped Wave T3). |
 
 ### 🟢 Wave U+ — Feature ekspanzija (po jedan blok po wave)
