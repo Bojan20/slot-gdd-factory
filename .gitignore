@@ -20,3 +20,6 @@ reports/
 # tools/diff-pdf-vs-md intermediate dumps + headless test screenshots
 tools/_diff-*
 tools/_eyes/
+
+# Launcher fast-path cache — local-only, regen-uje se na svaki run.
+.last-build-hash
