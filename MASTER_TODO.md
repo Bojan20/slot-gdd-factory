@@ -3,13 +3,13 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: pending Wave S · main
+> Last updated: **2026-06-04** · HEAD: `241ce86` · main
 
 ---
 
 ## 🟢 Shipped (in-tree on `origin/main`)
 
-### Wave S — HookBus emit consolidation + LEGO discipline gate (commit pending)
+### Wave S — HookBus emit consolidation + LEGO discipline gate (commit `241ce86`)
 
 > **Pre-Wave S audit**: emits scattered between `winPresentation` (`onSpinResult` + `onTumbleStep` + `postSpin`), `freeSpins` (FS triplet), `reelEngine` (`preSpin`) — orchestrator-level coupling violating LEGO encapsulation. 11 src/blocks/ files contained vendor / game-specific strings.
 >
