@@ -166,6 +166,7 @@ export function parseMarkdownGDD(text) {
   extractSlamStop(text, model);
   extractForceSkip(text, model);
   extractAutoplay(text, model);
+  extractBetSelector(text, model);
   extractHoldAndWin(text, model);
   extractRespin(text, model);
   extractWinCap(text, model);
@@ -1228,6 +1229,17 @@ function freshModel() {
       interSpinDelayMs: undefined, showCounter: undefined,
       chipColor: undefined, chipTextColor: undefined, ariaLabel: undefined,
     },
+    /* Wave U5 — Bet Selector (coin × multiplier model). */
+    betSelector: {
+      enabled: undefined,
+      coinValues: undefined, multipliers: undefined,
+      defaultCoin: undefined, defaultMultiplier: undefined,
+      currency: undefined, currencyPosition: undefined,
+      showCoinPicker: undefined, showMultiplierPicker: undefined,
+      showStepButtons: undefined, maxBetButton: undefined,
+      panelOnDemand: undefined,
+      chipColor: undefined, chipTextColor: undefined, ariaLabel: undefined,
+    },
     holdAndWin: {
       enabled: undefined, triggerCount: undefined, bonusSymbolId: undefined,
       respinsAwarded: undefined, resetOnNewBonus: undefined,
@@ -2108,6 +2120,51 @@ export function extractAutoplay(text, model) {
   const swa = _readFloat(s, 'stop[- ]?on[- ]?win[- ]?above'); if (swa !== undefined) tgt.stopOnWinAbove = swa;
   const isd = _readInt(s, 'inter[- ]?spin[- ]?delay[- ]?ms'); if (isd !== undefined) tgt.interSpinDelayMs = isd;
   const sc = _readBool(s, 'show[- ]?counter'); if (sc !== undefined) tgt.showCounter = sc;
+  const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
+  const ctc = _readStr(s, 'chip[- ]?text[- ]?color'); if (ctc) tgt.chipTextColor = ctc;
+  const ar = _readStr(s, 'aria[- ]?label'); if (ar) tgt.ariaLabel = ar;
+}
+
+/* Wave U5 — Bet Selector extractor.
+ * Reads `## Bet Selector` / `## Bet Model` / `## Wager Configuration` GDD
+ * section. Recognizes comma-separated `coinValues` / `multipliers` lists
+ * plus `defaultCoin`, `defaultMultiplier`, `currency` ("EUR"/"€"/"USD"),
+ * `currencyPosition`, and the four UI boolean flags. */
+export function extractBetSelector(text, model) {
+  const s = _findSection(text, /^##\s+(?:Bet[- ]?Selector|Bet[- ]?Model|Wager(?:[- ]?Configuration)?)\b[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.betSelector;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  /* coinValues — comma list, accepts decimals like "0.01, 0.02, ...". */
+  const cv = _readStr(s, 'coin[- ]?values?');
+  if (cv) {
+    const arr = cv.split(/[,;]\s*/).map(x => parseFloat(x)).filter(Number.isFinite);
+    if (arr.length > 0) tgt.coinValues = arr;
+  }
+  const mv = _readStr(s, 'multipliers?|bet[- ]?levels?');
+  if (mv) {
+    const arr = mv.split(/[,;]\s*/).map(x => parseInt(x, 10)).filter(n => Number.isFinite(n) && n > 0);
+    if (arr.length > 0) tgt.multipliers = arr;
+  }
+  const dc = _readFloat(s, 'default[- ]?coin'); if (dc !== undefined) tgt.defaultCoin = dc;
+  const dm = _readInt(s, 'default[- ]?multiplier'); if (dm !== undefined) tgt.defaultMultiplier = dm;
+
+  /* Currency — accept EUR/USD/GBP/JPY or actual glyph (€, $, £, ¥). */
+  const cur = _readStr(s, 'currency');
+  if (cur) {
+    const map = { EUR: '€', USD: '$', GBP: '£', JPY: '¥', CHF: 'CHF', PLN: 'PLN' };
+    const code = cur.toUpperCase();
+    tgt.currency = map[code] || cur;
+  }
+  const cp = _readStr(s, 'currency[- ]?position');
+  if (cp) tgt.currencyPosition = /suffix/i.test(cp) ? 'suffix' : 'prefix';
+
+  const scp = _readBool(s, 'show[- ]?coin[- ]?picker'); if (scp !== undefined) tgt.showCoinPicker = scp;
+  const smp = _readBool(s, 'show[- ]?multiplier[- ]?picker'); if (smp !== undefined) tgt.showMultiplierPicker = smp;
+  const ssb = _readBool(s, 'show[- ]?step[- ]?buttons?'); if (ssb !== undefined) tgt.showStepButtons = ssb;
+  const mbb = _readBool(s, 'max[- ]?bet[- ]?button'); if (mbb !== undefined) tgt.maxBetButton = mbb;
+  const pod = _readBool(s, 'panel[- ]?on[- ]?demand'); if (pod !== undefined) tgt.panelOnDemand = pod;
+
   const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
   const ctc = _readStr(s, 'chip[- ]?text[- ]?color'); if (ctc) tgt.chipTextColor = ctc;
   const ar = _readStr(s, 'aria[- ]?label'); if (ar) tgt.ariaLabel = ar;

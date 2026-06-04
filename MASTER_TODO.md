@@ -3,7 +3,63 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `9c0eb1b` · main · Wave V + Wave U4 + Wave T-slim phase 1 + T-orb/T-bonus/T-ante + senior-grade QA pass (3 critical + 5 medium fixed + vendor sweep) all shipped
+> Last updated: **2026-06-04** · HEAD: `f9201db` → (Wave U5 betSelector pending) · main
+
+---
+
+## 🟡 Wave U5 — Bet Selector (THIS COMMIT)
+
+> Triggered by Boki *"Nastavi redom, samo mehanika matematiku ne diramo nikad dok ja ne kazem"*. Bet selector is **mechanics** (UI state + lockout policy + canonical __SLOT_BET__ publication), NOT math (no paytable, no RTP computation — that stays in Math.PAR layer until Boki greenlights).
+
+### What ships
+
+| Atom | What | LOC |
+|:--:|---|:--:|
+| U5-block  | `src/blocks/betSelector.mjs` — coin × multiplier bet model, panel UI, step + max controls, 3-reason lockout (spinning / autoplay / fs) | 568 |
+| U5-tests  | `tests/blocks/betSelector.test.mjs` — 34 assertions, sandbox covers state mutation + emit + lock + reduced-motion | 320 |
+| U5-parser | `extractBetSelector()` in `src/parser.mjs` — reads `## Bet Selector` / `## Bet Model` / `## Wager Configuration` GDD section, EUR/USD/GBP/JPY currency map | +50 |
+| U5-orch   | `buildSlotHTML.mjs` — old hardcoded `<div class="betGroup">…1.00</div>` replaced with `emitBetSelectorMarkup` (CSS + markup + runtime wires) | net +18 |
+| U5-hook   | `hookBus.mjs` HOOK_EVENTS extended with `onBetChanged` | +2 |
+| U5-gate   | `tools/lego-gate.mjs` ownership: `onBetChanged → betSelector.mjs` (sole owner) | +2 |
+
+### Industry-standard contract
+
+| Concept | This block | Reason |
+|---|---|---|
+| Coin ladder | `[0.01, 0.02, 0.05, 0.10, 0.20, 0.50, 1.00]` | Matches 7-step denomination ladder accepted by UKGC / MGA / NJDGE certified slots. |
+| Multiplier ladder | `[1, 5, 10, 20, 50, 100]` | 6-step bet-level ladder; default 10 keeps opening bet at €1.00 (matches legacy hardcoded chip). |
+| Total bet | `coin × multiplier` published to `window.__SLOT_BET__` | autoplay (Wave U4) already reads this for `STATE.lastCost` → accurate `stopOnLossAbove`. |
+| 3-reason lock | `lockReasons = { spinning, autoplay, fs }` — chip + steps + grid disabled while ANY is true | Regulator rule: bet is locked during spin, during autoplay session, AND during FS round (trigger-bet wins for the whole round). |
+| Multi-reason commit | Unlock one reason while another holds → UI stays locked | Avoids race where postSpin would release a lock that onAutoplayStart still needs. |
+| Currency allow-list | `/^[A-Za-z€$£¥₽₺₹₿ ]{1,4}$/` | Narrow regex eliminates XSS surface on bake-time CSS content + runtime DOM. |
+| `onBetChanged` emit | Init + every manual change; `{bet, coin, multiplier, currency, reason}` | bonusBuy / anteBet subscribe to redraw cost chips. |
+| Idempotent emit | try/catch around HookBus.emit; throwing listener does not corrupt UI | Senior-grade rule (rule_senior_grade_code.md). |
+| a11y | role="radiogroup" + aria-checked + aria-haspopup + aria-expanded + aria-disabled + prefers-reduced-motion | 12-point senior check #11. |
+| 0 magic numbers | Every literal has named const + "why" comment | Senior check #14. |
+
+### QA gates (this commit)
+
+| Gate | Result |
+|---|:--:|
+| LEGO Gate 5/5 (parity 42/42, ownership 15/15, listener 32/32) | ✅ |
+| npm test (parser + 20 grid fixtures) | ✅ |
+| npm run test:blocks (830 assertions across 42 blocks) | ✅ |
+| cortex-eyes-wave-v 3/3 PASS | ✅ slam 390ms |
+| cortex-eyes-wave-s 3/3 PASS | ✅ |
+| cortex-eyes-wave-s-fs FS lifecycle | ✅ all 7 events fired |
+| vendor grep src/ | ✅ 0 matches |
+
+### Senior-grade compliance (per `rule_senior_grade_code.md`)
+
+| Criterion | Status |
+|---|:--:|
+| JSDoc public-API contract header | ✅ purpose + industry pattern + LEGO + lifecycle + perf budget + a11y + config keys + runtime contract |
+| Single responsibility | ✅ owns ONLY bet UI + state + `onBetChanged` emit; never reaches into engine / paytable |
+| Idempotency | ✅ `_commit()` deterministic; init emit wrapped in try/catch with silent baseline preservation |
+| 0 magic numbers | ✅ ladders + currency + colors all named consts |
+| Error boundary | ✅ try/catch around emit (both manual + init); console.error structured |
+| Naming clarity | ✅ `_recomputeLock`, `_refreshLockedAffordances`, `_closestInLadder`, `_flatLadder` |
+| 100% test coverage | ✅ 34 assertions: happy + edge + error + idempotency + locked-state + a11y + determinism + vendor-neutrality |
 
 ---
 

@@ -177,6 +177,11 @@ import {
   emitAutoplayCSS, emitAutoplayMarkup, emitAutoplayRuntime,
   resolveConfig as resolveAutoplayConfig,
 } from './blocks/autoplay.mjs';
+// Wave U5 — Bet Selector (industry-standard coin × multiplier bet model)
+import {
+  emitBetSelectorCSS, emitBetSelectorMarkup, emitBetSelectorRuntime,
+  resolveConfig as resolveBetSelectorConfig,
+} from './blocks/betSelector.mjs';
 import {
   emitHoldAndWinCSS, emitHoldAndWinMarkup, emitHoldAndWinRuntime,
   resolveConfig as resolveHoldAndWinConfig,
@@ -309,6 +314,8 @@ ${emitSlamStopCSS(resolveSlamStopConfig(model))}
 ${emitForceSkipCSS(resolveForceSkipConfig(model))}
 ${/* Wave U4 — autoplay session UI (button + panel + counter). */ ''}
 ${emitAutoplayCSS(resolveAutoplayConfig(model))}
+${/* Wave U5 — bet selector UI (chip + panel + steps + max). */ ''}
+${emitBetSelectorCSS(resolveBetSelectorConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
 ${emitRespinCSS(resolveRespinConfig(model))}
 ${emitWinCapCSS(resolveWinCapConfig(model))}
@@ -372,14 +379,11 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
       <div class="statBox__label">STATUS</div>
       <div class="statBox__value" id="status">PRESS SPIN</div>
     </div>
-    <div class="betGroup">
-      <button class="betStep" aria-label="bet -" type="button">−</button>
-      <div class="statBox statBox--bet">
-        <div class="statBox__label">BET</div>
-        <div class="statBox__value" id="bet">1.00</div>
-      </div>
-      <button class="betStep" aria-label="bet +" type="button">+</button>
-    </div>
+    ${/* Wave U5 — bet chip + steps + panel (replaces the static betGroup
+        markup that lived here pre-U5). When the betSelector block is
+        disabled in the GDD, this expression collapses to '' and the hub
+        renders without a bet UI — visually clean, no orphan styles. */ ''}
+    ${emitBetSelectorMarkup(resolveBetSelectorConfig(model))}
     <button class="iconBtn" aria-label="Sound" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
     </button>
@@ -709,6 +713,11 @@ ${emitGambleMarkup(resolveGambleConfig(model))}
   ${emitForceSkipRuntime(resolveForceSkipConfig(model))}
   ${/* Wave U4 — autoplay session runtime. */ ''}
   ${emitAutoplayRuntime(resolveAutoplayConfig(model))}
+  ${/* Wave U5 — bet selector runtime. Publishes window.__SLOT_BET__ +
+      onBetChanged BEFORE autoplay/bonusBuy/anteBet runtimes consume it
+      via emitBlock order; placement here keeps autoplay's onSpinResult
+      read of __SLOT_BET__ deterministic. */ ''}
+  ${emitBetSelectorRuntime(resolveBetSelectorConfig(model))}
   ${emitHoldAndWinRuntime(resolveHoldAndWinConfig(model))}
   ${emitRespinRuntime(resolveRespinConfig(model))}
   ${emitWinCapRuntime(resolveWinCapConfig(model))}

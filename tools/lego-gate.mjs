@@ -103,6 +103,9 @@ const EXPECTED_EMIT_OWNERS = {
   onAutoplayStart: ['autoplay.mjs'],
   onAutoplayTick:  ['autoplay.mjs'],
   onAutoplayStop:  ['autoplay.mjs'],
+  /* Wave U5 — bet selector publishes onBetChanged on every coin / mult /
+   * step / max change (and once with reason:'init' at boot). Sole owner. */
+  onBetChanged:    ['betSelector.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */
