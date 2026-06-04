@@ -165,6 +165,7 @@ export function parseMarkdownGDD(text) {
   extractUiToast(text, model);
   extractSlamStop(text, model);
   extractForceSkip(text, model);
+  extractAutoplay(text, model);
   extractHoldAndWin(text, model);
   extractRespin(text, model);
   extractWinCap(text, model);
@@ -858,6 +859,12 @@ export function extractFeatures(rawText) {
       re: /\b(?:force[\s_-]?skip|skip[\s_-]?animation|skip[\s_-]?button)\b|\b##\s+(?:Force[\s_-]?Skip|Skip[\s_-]?Animation)\b/i,
       label: 'Force Skip',
     },
+    {
+      // Wave U4 — Autoplay (industry-reference AutoSpinSettingsPanel)
+      kind: 'autoplay',
+      re: /\b(?:autoplay|auto[\s_-]?spin|auto[\s_-]?play)\b|\b##\s+(?:Autoplay|Auto[\s_-]?Spin|Auto[\s_-]?Play)\b/i,
+      label: 'Autoplay',
+    },
   ];
 
   const out = [];
@@ -1209,6 +1216,17 @@ function freshModel() {
       showDuringRollup: undefined, showDuringFsIntro: undefined,
       showDuringFsOutro: undefined, showDuringCelebration: undefined,
       minRollupMsForShow: undefined, ariaLabel: undefined,
+    },
+    /* Wave U4 — Autoplay (industry-reference AutoSpinSettingsPanel). */
+    autoplay: {
+      enabled: undefined,
+      stepValues: undefined, defaultStep: undefined,
+      betUnitFallback: undefined,
+      stopOnAnyFeatureTrigger: undefined,
+      stopOnSingleWinX: undefined, stopOnBalanceBelow: undefined,
+      stopOnLossAbove: undefined, stopOnWinAbove: undefined,
+      interSpinDelayMs: undefined, showCounter: undefined,
+      chipColor: undefined, chipTextColor: undefined, ariaLabel: undefined,
     },
     holdAndWin: {
       enabled: undefined, triggerCount: undefined, bonusSymbolId: undefined,
@@ -2066,6 +2084,33 @@ export function extractSlamStop(text, model) {
   const rca = _readBool(s, 'reels[- ]?click[- ]?area(?:[- ]?enabled)?'); if (rca !== undefined) tgt.reelsClickAreaEnabled = rca;
   const ar = _readStr(s, 'aria[- ]?label'); if (ar) tgt.ariaLabel = ar;
   const pa = _readBool(s, 'pulse[- ]?animation'); if (pa !== undefined) tgt.pulseAnimation = pa;
+}
+
+/* Wave U4 — Autoplay extractor.
+ * Reads `## Autoplay` / `## Auto Spin` / `## Auto-Play` GDD section. */
+export function extractAutoplay(text, model) {
+  const s = _findSection(text, /^##\s+(?:Autoplay|Auto[- ]?Spin|Auto[- ]?Play)\b[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.autoplay;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  /* stepValues — accept "10, 25, 50, 100, 250" comma list. */
+  const sv = _readStr(s, 'step[- ]?values?');
+  if (sv) {
+    const arr = sv.split(/[,;]\s*/).map(x => parseInt(x, 10)).filter(n => Number.isFinite(n) && n > 0);
+    if (arr.length > 0) tgt.stepValues = arr;
+  }
+  const ds = _readInt(s, 'default[- ]?step'); if (ds !== undefined) tgt.defaultStep = ds;
+  const bf = _readFloat(s, 'bet[- ]?unit[- ]?fallback'); if (bf !== undefined) tgt.betUnitFallback = bf;
+  const sf = _readBool(s, 'stop[- ]?on[- ]?(?:any[- ]?)?feature(?:[- ]?trigger)?'); if (sf !== undefined) tgt.stopOnAnyFeatureTrigger = sf;
+  const ssx = _readFloat(s, 'stop[- ]?on[- ]?single[- ]?win[- ]?x'); if (ssx !== undefined) tgt.stopOnSingleWinX = ssx;
+  const sbl = _readFloat(s, 'stop[- ]?on[- ]?balance[- ]?below'); if (sbl !== undefined) tgt.stopOnBalanceBelow = sbl;
+  const sla = _readFloat(s, 'stop[- ]?on[- ]?loss[- ]?above'); if (sla !== undefined) tgt.stopOnLossAbove = sla;
+  const swa = _readFloat(s, 'stop[- ]?on[- ]?win[- ]?above'); if (swa !== undefined) tgt.stopOnWinAbove = swa;
+  const isd = _readInt(s, 'inter[- ]?spin[- ]?delay[- ]?ms'); if (isd !== undefined) tgt.interSpinDelayMs = isd;
+  const sc = _readBool(s, 'show[- ]?counter'); if (sc !== undefined) tgt.showCounter = sc;
+  const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
+  const ctc = _readStr(s, 'chip[- ]?text[- ]?color'); if (ctc) tgt.chipTextColor = ctc;
+  const ar = _readStr(s, 'aria[- ]?label'); if (ar) tgt.ariaLabel = ar;
 }
 
 /* Wave V2 — Force-Skip button extractor.

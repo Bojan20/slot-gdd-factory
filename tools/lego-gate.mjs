@@ -99,6 +99,10 @@ const EXPECTED_EMIT_OWNERS = {
    * animation: winPresentation for rollup/celebration, scatterCelebration
    * for its banner phase, freeSpins for FS intro/outro. Multi-owner. */
   onSkipComplete:  ['winPresentation.mjs', 'scatterCelebration.mjs', 'freeSpins.mjs'],
+  /* Wave U4 — autoplay session events all owned by autoplay.mjs. */
+  onAutoplayStart: ['autoplay.mjs'],
+  onAutoplayTick:  ['autoplay.mjs'],
+  onAutoplayStop:  ['autoplay.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */

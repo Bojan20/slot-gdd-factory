@@ -78,6 +78,24 @@
  *      `window.__SLOT_SKIPPED__` to false. Owner: animation-owning block.
  *      Consumers: postSpin coordinator (re-enables spin button).
  *
+ *   ─── Wave U4: autoplay session events ─────────────────────────────
+ *
+ *   onAutoplayStart  ({ remaining: number, step: number })
+ *      Emitted by autoplay.mjs when the player starts an autoplay
+ *      session. `step` is the requested step value (e.g. 25, 50, 100);
+ *      `remaining` mirrors it on start.
+ *      Consumers: slamStop (sets autospin global flag), uiToast.
+ *
+ *   onAutoplayTick   ({ remaining: number, totalWin: number, totalLoss: number, lastWin: number })
+ *      Emitted after every autoplay-driven spin completes. Lets the UI
+ *      show a remaining-spins counter and lets analytics blocks track
+ *      session win/loss.
+ *
+ *   onAutoplayStop   ({ reason: string, completed: number })
+ *      Emitted when an autoplay session ends for ANY reason (see
+ *      `AUTOPLAY_STOP_REASONS` enum). `completed` = spins actually
+ *      played before stopping.
+ *
  * ─── Shared state ──────────────────────────────────────────────────
  *
  *   HookBus.getMult() / HookBus.setMult(v) / HookBus.addMult(delta)
@@ -125,6 +143,22 @@ export const HOOK_EVENTS = Object.freeze([
   'onSlamComplete',
   'onSkipRequested',
   'onSkipComplete',
+  /* Wave U4: autoplay session events */
+  'onAutoplayStart',
+  'onAutoplayStop',
+  'onAutoplayTick',
+]);
+
+/* Wave U4: canonical autoplay stop reasons. */
+export const AUTOPLAY_STOP_REASONS = Object.freeze([
+  'completed',      /* all configured spins played, natural end */
+  'manual',         /* player clicked stop button or spin button */
+  'feature',        /* FS / lightning / bonus pick / gamble triggered */
+  'singleWinAbove', /* single-spin win crossed threshold */
+  'balanceBelow',   /* balance dropped below floor */
+  'lossLimit',      /* cumulative loss exceeded ceiling */
+  'winLimit',       /* cumulative win exceeded ceiling */
+  'slam',           /* player slam-stopped a spin during autoplay */
 ]);
 
 /* Wave V: phase enums for slam/skip payloads — exported so blocks can

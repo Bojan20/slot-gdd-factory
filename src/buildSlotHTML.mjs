@@ -172,6 +172,11 @@ import {
   emitForceSkipCSS, emitForceSkipMarkup, emitForceSkipRuntime,
   resolveConfig as resolveForceSkipConfig,
 } from './blocks/forceSkip.mjs';
+// Wave U4 — Autoplay session (industry-reference playa-slot AutoSpinSettingsPanel)
+import {
+  emitAutoplayCSS, emitAutoplayMarkup, emitAutoplayRuntime,
+  resolveConfig as resolveAutoplayConfig,
+} from './blocks/autoplay.mjs';
 import {
   emitHoldAndWinCSS, emitHoldAndWinMarkup, emitHoldAndWinRuntime,
   resolveConfig as resolveHoldAndWinConfig,
@@ -302,6 +307,8 @@ ${emitUiToastCSS(resolveUiToastConfig(model))}
 ${/* Wave V1+V2 — spin-control overlay buttons. z-index: slam 20, skip 25. */ ''}
 ${emitSlamStopCSS(resolveSlamStopConfig(model))}
 ${emitForceSkipCSS(resolveForceSkipConfig(model))}
+${/* Wave U4 — autoplay session UI (button + panel + counter). */ ''}
+${emitAutoplayCSS(resolveAutoplayConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
 ${emitRespinCSS(resolveRespinConfig(model))}
 ${emitWinCapCSS(resolveWinCapConfig(model))}
@@ -399,6 +406,8 @@ ${emitUiToastMarkup(resolveUiToastConfig(model))}
 ${/* Wave V1+V2 — spin-control buttons (hidden by default; runtime toggles). */ ''}
 ${emitSlamStopMarkup(resolveSlamStopConfig(model))}
 ${emitForceSkipMarkup(resolveForceSkipConfig(model))}
+${/* Wave U4 — autoplay button + panel + counter overlay. */ ''}
+${emitAutoplayMarkup(resolveAutoplayConfig(model))}
 ${emitHoldAndWinMarkup(resolveHoldAndWinConfig(model))}
 ${emitRespinMarkup(resolveRespinConfig(model))}
 ${emitWinCapMarkup(resolveWinCapConfig(model))}
@@ -698,6 +707,8 @@ ${emitGambleMarkup(resolveGambleConfig(model))}
   ${/* Wave V1+V2 — spin-control runtime (emit-only blocks; engine listens). */ ''}
   ${emitSlamStopRuntime(resolveSlamStopConfig(model))}
   ${emitForceSkipRuntime(resolveForceSkipConfig(model))}
+  ${/* Wave U4 — autoplay session runtime. */ ''}
+  ${emitAutoplayRuntime(resolveAutoplayConfig(model))}
   ${emitHoldAndWinRuntime(resolveHoldAndWinConfig(model))}
   ${emitRespinRuntime(resolveRespinConfig(model))}
   ${emitWinCapRuntime(resolveWinCapConfig(model))}
