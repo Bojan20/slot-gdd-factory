@@ -3,13 +3,13 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `pending Wave U1 · progressiveFreeSpins` · main
+> Last updated: **2026-06-04** · HEAD: `79ef9fd` · main
 
 ---
 
 ## 🟢 Shipped (in-tree on `origin/main`)
 
-### Wave U1 — `progressiveFreeSpins.mjs` blok (commit pending)
+### Wave U1 — `progressiveFreeSpins.mjs` blok (commit `79ef9fd`)
 
 > **Prvi blok iz Wave U feature ekspanzije.** Boki pravilo: *"sve fwture koje ubacujemo, ubacujemo kao blokove i sto vise feautrea"*. Wave U1 dodaje fundamentalnu FS mehaniku koja je dosad bila rasut između `persistentMultiplier`, `multiplierOrb` i `freeSpins`: progressive multiplier koji eskalira **na svaki FS spin bez obzira na win**.
 >
