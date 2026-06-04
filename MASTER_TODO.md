@@ -3,11 +3,28 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `241ce86` · main
+> Last updated: **2026-06-04** · HEAD: `pending Wave T · template cleanup` · main
 
 ---
 
 ## 🟢 Shipped (in-tree on `origin/main`)
+
+### Wave T — Template cleanup + sane defaults + global SHAPE wiring (commit pending)
+
+> **Pre-Wave T audit**: 14 vendor / game-specific reference linija ostalo u `src/` posle Wave S linter passa (`src/pdfToMarkdown.mjs:183,224`, `src/blocks/{gamble,scatterCelebration,reelEngine}.mjs`, `src/buildSlotHTML.mjs:83,668,1078,1153`, `src/parser.mjs:144,611,710,749,909,1060`). Plus kritičan latent bug: **`window.REELS` / `window.ROWS` se nikad nije postavljalo** u orchestratoru → svaki blok koji koristi `window.REELS || 5` fallback je zapravo radio na phantom 5×3 gridu bez obzira na pravi SHAPE.
+>
+> Pravilo: **0 game-specific stringova u template** + **template-wide globals moraju biti živi**.
+
+| ID | Item | Detalj | Status |
+|---|---|---|---|
+| T1 | Vendor neutralization — `pdfToMarkdown` 2× ("Gates of Olympus 1000", "GoO-family"), `gamble` ("Wazdan Gamble"), `scatterCelebration` + `reelEngine` ("WoO" reference), `buildSlotHTML` 4× ("GoO/Sugar Rush", "WoO small-win pace", "WoO timing.ts"), `parser` 6× ("GoO/Sugar Rush", "Money-Train", "Crystal Forge"). Sve zamenjeno generičkim "industry baseline", "pay-anywhere reference", "scatter-pays / tumble-cascade family". Grep `(gates\|woo\|wrath\|olympus\|reactoonz\|sweet bonanza\|sugar rush\|pragmatic\|netent\|microgaming\|aristocrat\|lightning link\|money train\|wazdan\|hold the jackpot\|\\bGoO\\b\|\\bWoO\\b)` u `src/` → **0 matches**. | `src/pdfToMarkdown.mjs`, `src/blocks/{gamble,scatterCelebration,reelEngine}.mjs`, `src/buildSlotHTML.mjs`, `src/parser.mjs` | ✅ |
+| T2 | `multiplierOrb.defaultConfig().distribution` — verifikovano da je već industry-standard 2x–1000x ladder sa 16 stepenica (komentar Wave R-er bio "industry standard"). Konkretna igra override-uje preko `model.multiplierOrb.distribution`. | `src/blocks/multiplierOrb.mjs` | ✅ |
+| T3 | `bonusBuy.defaultConfig().costX = 100` verifikovano da je industry baseline cost (najčešća buy-in cena u industriji, ne specifična igra). Komentar Wave R-er "industry-standard bonus-buy reference". | `src/blocks/bonusBuy.mjs` | ✅ |
+| T4 | `anteBet.defaultConfig().costMultiplier = 1.25` verifikovano da je industry baseline +25% bet. Komentar Wave R-er "industry-standard ante-bet reference". | `src/blocks/anteBet.mjs` | ✅ |
+| T5 | **CRITICAL LATENT BUG FIX** — orchestrator sad postavlja `window.REELS = SHAPE.reels` i `window.ROWS = SHAPE.rows` u istom block-u gde se SHAPE expose-uje na window. Bez toga svi blokovi koji koriste `window.REELS \|\| 5` (clusterPaysEval, expandingWild, holdAndWin, respin, stickyWild, superSymbol, walkingWild, waysEval, wildReel — 23 koordinate-zavisne tačke u 9 blokova) su radili na **phantom 5×3 gridu**, što je uzrokovalo: holdAndWin lock-cells izvan stvarnog grida, walking wild registry koordinate van bounds-a, super symbol anchor postavljen na nepostojeće ćelije. | `src/buildSlotHTML.mjs:1206-1208` | ✅ |
+| T6 | `tools/lego-gate.mjs` re-run posle Wave T promena — **5/5 invariants pass** (orchestrator emit cleanliness, block test parity 34/34, vendor neutralnost, event ownership 7/7, listener coverage 25/25). | — | ✅ |
+| T7 | Verifikacija: full `npm run test` 20/20 fixtures pass + `npm run test:blocks` 17/17 last suite pass; `tools/cortex-eyes-pdf-upload.mjs` — GoO PDF → 0 console errors, 42 cells, iframe title "Gates of Olympus 1000 · Base Game"; `tools/diff-pdf-vs-md.mjs` — 30/30 (100 %) parity zadržan. | — | ✅ |
+| T8 | **Deferred to Wave T2**: orchestrator slim-down 1525 → < 800 LOC (mass orchestration glue još uvek u buildSlotHTML.mjs); full `reelEngine.mjs` globals refactor da koristi `window.SHAPE` direktno umesto `window.REELS \|\| 5` fallback path. Trenutni T5 fix je minimal-invasive — sledeća wave razdvojiti od fallback-a u potpunosti. | TBD | ⏭️ |
 
 ### Wave S — HookBus emit consolidation + LEGO discipline gate (commit `241ce86`)
 

@@ -143,7 +143,7 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
 
   function rotateStripDown(reel) {
     /* Pop bottom cell DOM node, unshift to top, randomize its symbol —
-       mirrors WoO's reel.cells.pop() / unshift() rotation. */
+       mirrors the industry-standard reel.cells.pop() / unshift() rotation. */
     const last = reel.cells.pop();
     reel.cells.unshift(last);
     last.textContent = randomSym();

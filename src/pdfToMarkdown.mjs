@@ -180,7 +180,7 @@ function extractGameName(txt) {
   // Strategy 2: first Title-Case sequence followed by "G A M E D E S I G N" / "Game Design"
   m = txt.match(/([A-Z][a-zA-Z]+(?:\s+[A-Z0-9][a-zA-Z0-9]+){1,4})\s+(?:G\s*A\s*M\s*E\s*D\s*E|Game\s*Design)/);
   if (m) return m[1].trim();
-  // Strategy 3: pattern like "Gates of Olympus 1000" in first 500 chars
+  // Strategy 3: 2–3 token Title-Case phrase with optional trailing digits
   m = txt.slice(0, 1500).match(/([A-Z][a-z]+(?:\s+(?:of|the|and|&))?\s+[A-Z][a-z]+(?:\s+\d{2,4})?(?:\s+[A-Z][a-z]+)?)/);
   if (m) return m[1].trim();
   return null;
@@ -221,7 +221,7 @@ function extractMaxWin(txt) {
 
 function extractSymbols(txt) {
   const high = [], low = [], specials = [];
-  // Known GoO-family canonical symbols (extend with more as we learn)
+  // Canonical pay-anywhere mythology-themed symbol vocabulary (extend as more domains land)
   const candidates = [
     { id: 'Z',  re: /\bZeus(?:\s*\(?\s*(?:Crown|kruna))?/i, name: 'Zeus (Crown)', tier: 'high' },
     { id: 'H',  re: /\bHourglass\b|\bpeščani\s+sat/i, name: 'Hourglass', tier: 'high' },

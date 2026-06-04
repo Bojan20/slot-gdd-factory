@@ -80,7 +80,7 @@ import {
   emitReelEngineRuntime,
   resolveConfig as resolveReelEngineHotConfig,
 } from './blocks/reelEngine.mjs';
-/* Wave K — Pay-Anywhere suite (Gates of Olympus / Sugar Rush family) */
+/* Wave K — Pay-Anywhere suite (scatter-pays / tumble-cascade family) */
 import {
   emitPayAnywhereEvalRuntime,
   resolveConfig as resolvePayAnywhereEvalConfig,
@@ -665,7 +665,7 @@ ${emitSuperSymbolCSS(resolveSuperSymbolConfig(model))}
 
 /* ── Win-symbol cycle ── independent modular block ────────────────────────
    Plays AFTER reels settle on a non-trigger BASE spin. Multiple winning
-   combinations cycle one-by-one, each lit for ~500ms (WoO small-win pace),
+   combinations cycle one-by-one, each lit for ~500ms (industry small-win pace),
    then everything undims back to neutral.
 
    Composes with: BG/FS swap, scatter celebration, stage badge.
@@ -1075,7 +1075,7 @@ ${emitGambleMarkup(resolveGambleConfig(model))}
           a soft cushion bounce on land (6px overshoot, ~2 bounces)
         • final visible 3 cells are the new outcome
 
-     Timing constants mirror SPIN_PROFILE_NORMAL from WoO timing.ts. */
+     Timing constants mirror SPIN_PROFILE_NORMAL — industry baseline cabinet cadence. */
   /* Industry-reference cadence (S-AVP / classic 5-reel cabinet timing).
      Each reel: windup → accel → steady spin → DECEL (perceivable slow-
      down before the snap) → snap onto symbols → subtle cushion bounce.
@@ -1150,8 +1150,8 @@ ${emitGambleMarkup(resolveGambleConfig(model))}
      Returns array of events:
        [{ symbol, tier: 'HP'|'MP'|'LP', cells: [...] }, ...]
      Sorted: HP first, then MP, then LP. Hard cap on event count so the
-     cycle never blows the per-spin time budget (industry parity: WoO
-     small-win caps the line bouquet around 6-8 entries). */
+     cycle never blows the per-spin time budget (industry parity:
+     small-win cycles cap the line bouquet around 6-8 entries). */
   ${emitDetectWinCombosRuntime(resolveWinPresentationConfig(model))}
   ${emitPaylineOverlayRuntime()}
   ${emitWinPresentationRuntime(resolveWinPresentationConfig(model))}
@@ -1203,6 +1203,13 @@ ${emitGambleMarkup(resolveGambleConfig(model))}
   if (typeof window !== "undefined") {
     window.FREESPINS = FREESPINS;
     window.SHAPE = SHAPE;
+    /* Wave T5 — without these two, every block that does
+       \`window.REELS || 5\` / \`window.ROWS || 3\` was falling through
+       to default 5×3, so feature blocks placed coordinates on a phantom
+       grid (e.g. walkingWild registry rows beyond actual ROWS). Expose
+       the live SHAPE dimensions so blocks always read the truth. */
+    window.REELS = SHAPE.reels;
+    window.ROWS  = SHAPE.rows;
     Object.defineProperty(window, 'RECT_REELS', {
       configurable: true,
       get: () => RECT_REELS,

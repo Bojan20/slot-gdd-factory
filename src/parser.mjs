@@ -141,7 +141,7 @@ export function parseMarkdownGDD(text) {
      cadence + bounce snap thresholds) */
   extractReelEngineHot(text, model);
 
-  /* Wave K — Pay Anywhere suite (Gates of Olympus / Sugar Rush family).
+  /* Wave K — Pay Anywhere suite (scatter-pays + tumble-cascade family).
      Each detector is no-op when the GDD lacks the relevant section/feature. */
   extractPayAnywhereEval(text, model);
   extractMultiplierOrb(text, model);
@@ -608,7 +608,7 @@ export function extractTopology(rawText, model) {
     if (!t.tiered_rows) t.tiered_rows = [t.rows || 3, (t.rows || 3) * 3]; // best-effort
   }
 
-  /* 12. Lock-and-respin (Hold & Spin / Money-Train shape) */
+  /* 12. Lock-and-respin (Hold & Spin / lock-collect respin shape) */
   if (/\block[\s-]?and[\s-]?respin\b|\bhold[\s-]?and[\s-]?spin\b|\brespin\s+until\s+empty\b|\bsymbols\s+lock\s+in\s+place\b/i.test(text)) {
     t.lock_respin = true;
   }
@@ -707,7 +707,7 @@ export function extractSymbolBlock(text, headingRegex, sink) {
   const chunk = end >= 0 ? rest.slice(0, end) : rest;
   // accept table rows like: | `D` | Diamond | … | or | D | Diamond | … |
   // ID MUST start with a letter — guards against multi-column pay tables
-  // (e.g. Gates of Olympus 6-col format) where the regex would otherwise
+  // (e.g. 6-col bucket paytable format) where the regex would otherwise
   // pick up pay multipliers like "10x" or count thresholds like "8" as IDs.
   const rowRe = /\|\s*`?([A-Za-z][A-Za-z0-9_]{0,3})`?\s*\|\s*([^|]+?)\s*\|/g;
   const seen = new Set();
@@ -746,8 +746,8 @@ export function extractFeatures(rawText) {
   );
 
   // (b2) strip prose lines that explicitly negate a feature —
-  //      e.g. "Crystal Forge has no Bonus Orb / Hold & Win."
-  //      "This game has no cascade." / "no Free Spins in this product".
+  //      e.g. "This game has no Bonus Orb / Hold & Win."
+  //      "This product has no cascade." / "no Free Spins in this product".
   text = text.replace(
     /^[^\n]*\b(?:has\s+no|with\s*no|without|game\s+has\s+no|no\s+(?:Bonus\s+Orb|Hold\s*&\s*Win|Free\s+Spins|Cascade|Multiplier|Wild|Scatter|Lightning|Respin))\b[^\n]*$/gim,
     ''
@@ -906,7 +906,7 @@ function freshModel() {
       growable: false,
       /* tiered/expanding grid (rows or reels grow on trigger) */
       tiered_rows: null,
-      /* lock-and-respin grid (Hold & Spin / Money-Train shape) */
+      /* lock-and-respin grid (Hold & Spin / lock-collect respin shape) */
       lock_respin: false,
       /* twin / mirrored reels */
       twin_reels: false,
@@ -1057,7 +1057,7 @@ function freshModel() {
       /* number — brightness peak inside a cycle */
       glowPeak: undefined,
     },
-    /* Wave K — Pay Anywhere suite (Gates of Olympus / Sugar Rush style).
+    /* Wave K — Pay Anywhere suite (scatter-pays / tumble-cascade style).
        Each sub-block has `undefined` slots so its resolveConfig() falls
        through to safe defaults. Populated by Wave K extract functions. */
     payAnywhereEval: {

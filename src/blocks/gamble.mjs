@@ -9,7 +9,7 @@
  *   • Ladder — step up/down with progressive multiplier
  *
  * Industry references: Novomatic Risk Card, Gaminator Heart/Diamond,
- * Wazdan Gamble.
+ * card / colour gamble (industry-standard post-win risk feature).
  *
  * GDD knobs:
  *   • mode: 'color' | 'suit' | 'ladder'

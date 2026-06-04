@@ -102,7 +102,7 @@ export function emitScatterCelebrationCSS(cfg = defaultConfig()) {
      dimOpacity    = ${c.dimOpacity}
      glowColor     = ${c.glowColor}
      glowPeak      = ${c.glowPeak}
-   Reference: WoO ~1500ms = 3 × 500ms pulse cycles, brightness + halo only,
+   Reference: industry baseline ~1500ms = 3 × 500ms pulse cycles, brightness + halo only,
    NO transform so the glyph never crosses the reel frame mask. */
 .gridHost.is-scatter-celebrating .cell,
 .gridHost.is-scatter-celebrating text {
