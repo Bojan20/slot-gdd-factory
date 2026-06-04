@@ -13,7 +13,7 @@
 
 > **Treći blok Wave U feature ekspanzije.** Boki pravilo: *"sto vise feautrea"*. Wave U3 centralizuje "celebration" overlay-e u jedan queue-based renderer — bilo koji blok može da pozove `uiShowToast(label, opts)` umesto da pravi vlastiti banner div. Postojeći lightning/respin/bonus-buy banneri mogu da migriraju u sledećoj wave.
 >
-> **Kompozicija sa audio block-om**: postSpin tier selector je DUPLIRAN po design-u. Visual (uiToast) i auditory (audio) cues su nezavisni LEGO blokovi koji oba reaguju na isti lifecycle event. Mute audio-a ne gasi vizual i obrnuto — to je industry-standard separation.
+> **Originalna kompozicija sa audio block-om** (zastarelo posle 2026-06-04): postSpin tier selector je bio DUPLIRAN po design-u. Visual (uiToast) i auditory (audio) cues su trebali da budu nezavisni LEGO blokovi koji oba reaguju na isti lifecycle event. **Sad**: audio block je deaktiviran (vidi Wave U2 entry), uiToast tier selector ostaje jedini izvor "celebration" odziva u template-u. Audio cues pripadaju ADB toku, ne GDD-u.
 
 | ID | Feature | Files | Status |
 |---|---|---|---|
@@ -26,7 +26,7 @@
 | U3.7 | XSS hardening: every label HTML-escaped before DOM injection. Amount formatter strips ".00" suffix for integer wins. Long labels (>64 chars) truncated. | `src/blocks/uiToast.mjs:_toastEscape + uiShowToast` | ✅ |
 | U3.8 | `tests/blocks/uiToast.test.mjs` — **35 unit tests** pass: defaults×1, resolveConfig validation × 6 (thresholds, durations, queue, colors × 2, fsLabel), auto-enable × 1, CSS + markup × 5, runtime contract × 4, behavior via sandbox eval × 14 (BIG/MEGA/EPIC tier select + sub-BIG silent + queue cap + clear + invalid input × 3 + onFsTrigger + onFsEnd with/without amount + queueOnFsEnd=false + preSpin queue drop), hygiene × 4 (determinism, vendor-neutral, XSS, amount format). | `tests/blocks/uiToast.test.mjs` | ✅ |
 | U3.9 | Parser: `extractUiToast(text, model)` čita `## UI Toast` / `## Win Celebration` / `## Win Tier Toast` sekciju, parsira thresholds/durations/queue/label + per-tier colors. freshModel slot dodat sa 12 undefined knobs. Feature kind `ui_toast` u extractFeatures patterns. | `src/parser.mjs:extractUiToast` | ✅ |
-| U3.10 | Orchestrator wire-up: import + 3 emit calls (CSS, markup, runtime) posle audio block. | `src/buildSlotHTML.mjs` | ✅ |
+| U3.10 | Orchestrator wire-up: import + 3 emit calls (CSS, markup, runtime) posle progressiveFreeSpins block. (Originalno posle audio block-a; audio deaktiviran 2026-06-04 commit `b18113e`, uiToast emit-ovi su sad direktno posle progressiveFreeSpins.) | `src/buildSlotHTML.mjs` | ✅ |
 | U3.11 | `package.json` test:blocks chain proširen sa uiToast.test.mjs. | `package.json` | ✅ |
 | U3.12 | LEGO Gate: **5/5 pass** — orchestrator emit 0, block parity **37/37**, vendor 0, ownership 7/7, listener coverage **28/28**. | — | ✅ |
 | U3.13 | End-to-end QA: npm test 20/20 fixtures, npm test:blocks all green, cortex-eyes-pdf-upload 0 console errors + 42 cells + Base Game title. | — | ✅ |
@@ -699,18 +699,18 @@
 > **Boki pravilo**: *"sto vise feautrea"*. Svaki novi feature kind = novi
 > LEGO blok. Wave U → Z su novi blokovi koji ekspandiraju template.
 
-| ID | Item | Blok | Effort |
+| ID | Item | Blok | Status |
 |:-:|---|---|---|
-| U1 | **`progressiveFreeSpins.mjs`** — auto-escalating multiplier po FS spin-u (npr. 1× → 2× → 3× → ... po spin-u), sa cap i reset rule-ovima. Trenutno se to radi rasut između `persistentMultiplier` + `multiplierOrb` + `freeSpins` | nov blok | M |
-| U2 | **`audio.mjs`** — Howler scaffolding (`SPIN_START`, `REEL_STOP`, `WIN_BIG`, `FS_TRIGGER`, `ORB_SPAWN`, `TUMBLE_REMOVE` kategorije). Mute toggle + volume slider. Empty defaults, GDD specifikuje URL-ove | nov blok | M |
-| U3 | **`uiToast.mjs`** — unified toast za win celebration (`BIG WIN` / `MEGA WIN` / `EPIC WIN` thresholds × bet) i feature triggers (`RESPIN!` / `LIGHTNING!`) | nov blok | S |
-| U4 | **`autoplay.mjs`** — N spin auto-play + stop-on-feature-trigger (any FS, ≥10× win, balance limit) settings | nov blok | M |
-| U5 | **`betSelector.mjs`** — coin-value × bet-multiplier model + bet-step buttons. Trenutno hardkodovano `€1` u svim fixturama | nov blok | S |
-| U6 | **`gambleSecondary.mjs`** — Card Gamble + Ladder Gamble (sada samo osnovni `gamble`) — industry pattern je 2 grane | nov blok | M |
-| U7 | **`rngFairness.mjs`** PAR layer skeleton (provably-fair seed + verify endpoint) | nov blok | M |
-| U8 | **`balanceHud.mjs`** — denomination + balance + bet + win pravi HUD, currency aware | nov blok | S |
-| U9 | **`historyLog.mjs`** — last-N spins log (drugi standard regulator) | nov blok | S |
-| U10 | **`paytable.mjs`** modal — full paytable viewer dostupan preko **i** dugmeta | nov blok | S |
+| U1 | **`progressiveFreeSpins.mjs`** — auto-escalating multiplier po FS spin-u (npr. 1× → 2× → 3× → ... po spin-u), sa cap i reset rule-ovima. Trenutno se to radi rasut između `persistentMultiplier` + `multiplierOrb` + `freeSpins` | nov blok | ✅ SHIPPED `79ef9fd` |
+| U2 | **`audio.mjs`** — Howler scaffolding (`SPIN_START`, `REEL_STOP`, `WIN_BIG`, `FS_TRIGGER`, `ORB_SPAWN`, `TUMBLE_REMOVE` kategorije). Mute toggle + volume slider. Empty defaults, GDD specifikuje URL-ove | nov blok | ⚠️ SHIPPED `e9287ee` → DEACTIVATED `b18113e` (audio ide u ADB tok, ne GDD; blok ostaje u repo-u kao preserved) |
+| U3 | **`uiToast.mjs`** — unified toast za win celebration (`BIG WIN` / `MEGA WIN` / `EPIC WIN` thresholds × bet) i feature triggers (`RESPIN!` / `LIGHTNING!`) | nov blok | ✅ SHIPPED `a162323` |
+| U4 | **`autoplay.mjs`** — N spin auto-play + stop-on-feature-trigger (any FS, ≥10× win, balance limit) settings | nov blok | ⏳ queued |
+| U5 | **`betSelector.mjs`** — coin-value × bet-multiplier model + bet-step buttons. Trenutno hardkodovano `€1` u svim fixturama | nov blok | ⏳ queued |
+| U6 | **`gambleSecondary.mjs`** — Card Gamble + Ladder Gamble (sada samo osnovni `gamble`) — industry pattern je 2 grane | nov blok | ⏳ queued |
+| U7 | **`rngFairness.mjs`** PAR layer skeleton (provably-fair seed + verify endpoint) | nov blok | ⏳ queued |
+| U8 | **`balanceHud.mjs`** — denomination + balance + bet + win pravi HUD, currency aware | nov blok | ⏳ queued |
+| U9 | **`historyLog.mjs`** — last-N spins log (drugi standard regulator) | nov blok | ⏳ queued |
+| U10 | **`paytable.mjs`** modal — full paytable viewer dostupan preko **i** dugmeta | nov blok | ⏳ queued |
 
 ### 🔵 Wave Z — Block Playground (POSLEDNJE, posle Wave U)
 
