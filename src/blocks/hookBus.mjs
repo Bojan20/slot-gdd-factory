@@ -153,6 +153,8 @@ export const HOOK_EVENTS = Object.freeze([
   'onGambleStart',
   'onGambleRound',
   'onGambleEnd',
+  /* Wave U8: balance HUD state change event */
+  'onBalanceChanged',
 ]);
 
 /* Wave U4: canonical autoplay stop reasons. */

@@ -112,6 +112,9 @@ const EXPECTED_EMIT_OWNERS = {
   onGambleStart:   ['gambleSecondary.mjs'],
   onGambleRound:   ['gambleSecondary.mjs'],
   onGambleEnd:     ['gambleSecondary.mjs'],
+  /* Wave U8 — balance HUD owns __SLOT_BALANCE__ + emits onBalanceChanged
+   * on every spin debit / win credit / gamble settle / manual op. */
+  onBalanceChanged: ['balanceHud.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */

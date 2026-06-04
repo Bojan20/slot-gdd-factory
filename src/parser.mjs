@@ -169,6 +169,7 @@ export function parseMarkdownGDD(text) {
   extractBetSelector(text, model);
   extractGambleSecondary(text, model);
   extractPaytable(text, model);
+  extractBalanceHud(text, model);
   extractHoldAndWin(text, model);
   extractRespin(text, model);
   extractWinCap(text, model);
@@ -1252,6 +1253,16 @@ function freshModel() {
       showInFs: undefined, showInAutoplay: undefined,
       currency: undefined, chipColor: undefined, chipTextColor: undefined,
     },
+    /* Wave U8 — Balance HUD (industry-standard regulator-mandated). */
+    balanceHud: {
+      enabled: undefined,
+      startingBalance: undefined, fallbackBet: undefined,
+      currency: undefined, currencyPosition: undefined,
+      showWinColumn: undefined, showTotalWinDuringFs: undefined,
+      pulseOnChange: undefined,
+      accentColor: undefined, debitColor: undefined, creditColor: undefined,
+      ariaLabel: undefined,
+    },
     /* Wave U10 — Paytable modal (industry-standard regulator-mandated UI). */
     paytable: {
       enabled: undefined,
@@ -2193,6 +2204,31 @@ export function extractBetSelector(text, model) {
 
   const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
   const ctc = _readStr(s, 'chip[- ]?text[- ]?color'); if (ctc) tgt.chipTextColor = ctc;
+  const ar = _readStr(s, 'aria[- ]?label'); if (ar) tgt.ariaLabel = ar;
+}
+
+/* Wave U8 — Balance HUD extractor.
+ * Reads `## Balance HUD` / `## Balance Hud` / `## Wallet HUD` section. */
+export function extractBalanceHud(text, model) {
+  const s = _findSection(text, /^##\s+(?:Balance[- ]?HUD|Balance[- ]?Hud|Wallet[- ]?HUD)\b[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.balanceHud;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const sb = _readFloat(s, 'starting[- ]?balance'); if (sb !== undefined) tgt.startingBalance = sb;
+  const fb = _readFloat(s, 'fallback[- ]?bet'); if (fb !== undefined) tgt.fallbackBet = fb;
+  const cur = _readStr(s, 'currency');
+  if (cur) {
+    const map = { EUR: '€', USD: '$', GBP: '£', JPY: '¥', CHF: 'CHF', PLN: 'PLN' };
+    tgt.currency = map[cur.toUpperCase()] || cur;
+  }
+  const cp = _readStr(s, 'currency[- ]?position');
+  if (cp) tgt.currencyPosition = /suffix/i.test(cp) ? 'suffix' : 'prefix';
+  const swc = _readBool(s, 'show[- ]?win[- ]?column'); if (swc !== undefined) tgt.showWinColumn = swc;
+  const stwfs = _readBool(s, 'show[- ]?total[- ]?win[- ]?during[- ]?fs'); if (stwfs !== undefined) tgt.showTotalWinDuringFs = stwfs;
+  const poc = _readBool(s, 'pulse[- ]?on[- ]?change'); if (poc !== undefined) tgt.pulseOnChange = poc;
+  const ac = _readStr(s, 'accent[- ]?color'); if (ac) tgt.accentColor = ac;
+  const dc = _readStr(s, 'debit[- ]?color'); if (dc) tgt.debitColor = dc;
+  const crc = _readStr(s, 'credit[- ]?color'); if (crc) tgt.creditColor = crc;
   const ar = _readStr(s, 'aria[- ]?label'); if (ar) tgt.ariaLabel = ar;
 }
 

@@ -187,6 +187,11 @@ import {
   emitGambleSecondaryCSS, emitGambleSecondaryMarkup, emitGambleSecondaryRuntime,
   resolveConfig as resolveGambleSecondaryConfig,
 } from './blocks/gambleSecondary.mjs';
+// Wave U8 — Balance HUD (industry-standard regulator-mandated wallet widget)
+import {
+  emitBalanceHudCSS, emitBalanceHudMarkup, emitBalanceHudRuntime,
+  resolveConfig as resolveBalanceHudConfig,
+} from './blocks/balanceHud.mjs';
 // Wave U10 — Paytable modal (industry-standard regulator-mandated info pane)
 import {
   emitPaytableCSS, emitPaytableMarkup, emitPaytableRuntime,
@@ -328,6 +333,8 @@ ${/* Wave U5 — bet selector UI (chip + panel + steps + max). */ ''}
 ${emitBetSelectorCSS(resolveBetSelectorConfig(model))}
 ${/* Wave U6 — secondary gamble overlay (Card + Ladder branches). */ ''}
 ${emitGambleSecondaryCSS(resolveGambleSecondaryConfig(model))}
+${/* Wave U8 — balance HUD (hub widget: Balance | Bet | Win). */ ''}
+${emitBalanceHudCSS(resolveBalanceHudConfig(model))}
 ${/* Wave U10 — paytable modal (i-button + symbol roster + features). */ ''}
 ${emitPaytableCSS(resolvePaytableConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
@@ -434,6 +441,8 @@ ${emitWheelBonusMarkup(resolveWheelBonusConfig(model))}
 ${emitGambleMarkup(resolveGambleConfig(model))}
 ${/* Wave U6 — secondary gamble overlay (full-screen modal). */ ''}
 ${emitGambleSecondaryMarkup(resolveGambleSecondaryConfig(model))}
+${/* Wave U8 — balance HUD markup (free-floating; can be parented later). */ ''}
+${emitBalanceHudMarkup(resolveBalanceHudConfig(model))}
 ${/* Wave U10 — paytable button (in hub) + modal backdrop. */ ''}
 ${emitPaytableMarkup(resolvePaytableConfig(model))}
 
@@ -738,6 +747,8 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
   ${emitBetSelectorRuntime(resolveBetSelectorConfig(model))}
   ${/* Wave U6 — secondary gamble runtime (Card + Ladder branches). */ ''}
   ${emitGambleSecondaryRuntime(resolveGambleSecondaryConfig(model))}
+  ${/* Wave U8 — balance HUD runtime (owns __SLOT_BALANCE__ + onBalanceChanged). */ ''}
+  ${emitBalanceHudRuntime(resolveBalanceHudConfig(model))}
   ${/* Wave U10 — paytable modal runtime (i-button show/hide + roster). */ ''}
   ${emitPaytableRuntime(resolvePaytableConfig(model), model)}
   ${emitHoldAndWinRuntime(resolveHoldAndWinConfig(model))}
