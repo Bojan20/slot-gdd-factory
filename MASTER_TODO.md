@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `a162323` · main
+> Last updated: **2026-06-04** · HEAD: `5c8ee63` · main
 
 ---
 
@@ -31,9 +31,21 @@
 | U3.12 | LEGO Gate: **5/5 pass** — orchestrator emit 0, block parity **37/37**, vendor 0, ownership 7/7, listener coverage **28/28**. | — | ✅ |
 | U3.13 | End-to-end QA: npm test 20/20 fixtures, npm test:blocks all green, cortex-eyes-pdf-upload 0 console errors + 42 cells + Base Game title. | — | ✅ |
 
-### Wave U2 — `audio.mjs` Howler-style scaffolding (commit `e9287ee`)
+### Wave U2 — `audio.mjs` Howler-style scaffolding ⚠️ DEACTIVATED 2026-06-04
 
-> **Drugi blok Wave U feature ekspanzije.** Zero-dependency Web Audio API wrapper sa Howler-style cue API-jem za 15 slot lifecycle kategorija. Bez external dep (Howler nije u package.json) — koristim HTMLAudioElement + cloneNode pattern za overlapping playback. Cues lazy-load on first play (asseti se ne učitavaju dok ih GDD ne specifikuje).
+> **Status:** Blok i testovi ostaju u repo-u (Boki: *"ne brisi audio blok samo ga ne korisit"*), ali `src/buildSlotHTML.mjs` više ne importuje audio modul i ne poziva 3 emit funkcije (CSS/markup/runtime). Razlog: audio je ADB tok (`feedback_adb_vs_gdd.md`), ne GDD. Slot template ne sme da nosi audio HTML/CSS/JS.
+>
+> **Šta i dalje radi**:
+> - `src/blocks/audio.mjs` — kompletan blok, importable za buduću re-aktivaciju.
+> - `tests/blocks/audio.test.mjs` — 38 unit testova i dalje zelene u `npm run test:blocks`.
+> - `src/parser.mjs:extractAudio` — i dalje parsira `## Audio` / `## Sound` sekciju u model, ali render je nem.
+>
+> **Šta ne radi više** (intentional):
+> - Audio import u `buildSlotHTML.mjs` (zamenjen komentarom).
+> - 3 emit poziva (CSS/markup/runtime) u orchestratoru — zamenjeni `${'' /* skipped */}` no-op.
+> - Mute toggle button + `audioPlay()` API se ne pojavljuju u finalnom slot HTML-u.
+>
+> **Originalni opis:** Zero-dependency Web Audio API wrapper sa Howler-style cue API-jem za 15 slot lifecycle kategorija. Bez external dep (Howler nije u package.json) — koristim HTMLAudioElement + cloneNode pattern za overlapping playback. Cues lazy-load on first play (asseti se ne učitavaju dok ih GDD ne specifikuje).
 
 | ID | Feature | Files | Status |
 |---|---|---|---|

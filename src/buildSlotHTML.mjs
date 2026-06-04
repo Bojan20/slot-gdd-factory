@@ -144,10 +144,10 @@ import {
   emitProgressiveFreeSpinsCSS, emitProgressiveFreeSpinsMarkup, emitProgressiveFreeSpinsRuntime,
   resolveConfig as resolveProgressiveFreeSpinsConfig,
 } from './blocks/progressiveFreeSpins.mjs';
-import {
-  emitAudioCSS, emitAudioMarkup, emitAudioRuntime,
-  resolveConfig as resolveAudioConfig,
-} from './blocks/audio.mjs';
+// Wave U2 audio block held in repo (`src/blocks/audio.mjs`) ali NE učitavamo —
+// audio je ADB tok, ne GDD. Hard rule #1 u CLAUDE.md. Import + 3 emit poziva
+// uklonjeni 2026-06-04; blok fajl + parser extractor ostaju za potencijalnu
+// re-aktivaciju, ali ne emituju ništa u trenutni template.
 import {
   emitUiToastCSS, emitUiToastMarkup, emitUiToastRuntime,
   resolveConfig as resolveUiToastConfig,
@@ -667,7 +667,7 @@ ${emitWildReelCSS(resolveWildReelConfig(model))}
 ${emitMysterySymbolCSS(resolveMysterySymbolConfig(model))}
 ${emitPersistentMultiplierCSS(resolvePersistentMultiplierConfig(model))}
 ${emitProgressiveFreeSpinsCSS(resolveProgressiveFreeSpinsConfig(model))}
-${emitAudioCSS(resolveAudioConfig(model))}
+${/* audio CSS skipped — ADB tok, ne GDD */ ''}
 ${emitUiToastCSS(resolveUiToastConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
 ${emitRespinCSS(resolveRespinConfig(model))}
@@ -905,7 +905,7 @@ ${emitAnteBetMarkup(resolveAnteBetConfig(model))}
 <!-- Wave L–P markup (empty strings when disabled) -->
 ${emitPersistentMultiplierMarkup(resolvePersistentMultiplierConfig(model))}
 ${emitProgressiveFreeSpinsMarkup(resolveProgressiveFreeSpinsConfig(model))}
-${emitAudioMarkup(resolveAudioConfig(model))}
+${/* audio markup skipped — ADB tok, ne GDD */ ''}
 ${emitUiToastMarkup(resolveUiToastConfig(model))}
 ${emitHoldAndWinMarkup(resolveHoldAndWinConfig(model))}
 ${emitRespinMarkup(resolveRespinConfig(model))}
@@ -1201,7 +1201,7 @@ ${emitGambleMarkup(resolveGambleConfig(model))}
   ${emitWaysEvalRuntime(resolveWaysEvalConfig(model))}
   ${emitPersistentMultiplierRuntime(resolvePersistentMultiplierConfig(model))}
   ${emitProgressiveFreeSpinsRuntime(resolveProgressiveFreeSpinsConfig(model))}
-  ${emitAudioRuntime(resolveAudioConfig(model))}
+  ${/* audio runtime skipped — ADB tok, ne GDD */ ''}
   ${emitUiToastRuntime(resolveUiToastConfig(model))}
   ${emitHoldAndWinRuntime(resolveHoldAndWinConfig(model))}
   ${emitRespinRuntime(resolveRespinConfig(model))}
