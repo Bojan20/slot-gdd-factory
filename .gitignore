@@ -16,3 +16,7 @@ reports/payline-preview/
 reports/grid-coverage-*.md
 !reports/grid-coverage-latest.md
 !reports/browser-render-latest.md
+
+# tools/diff-pdf-vs-md intermediate dumps + headless test screenshots
+tools/_diff-*
+tools/_eyes/

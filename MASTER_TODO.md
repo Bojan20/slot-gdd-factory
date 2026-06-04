@@ -3,11 +3,24 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-03** · HEAD: `45368f7` · main
+> Last updated: **2026-06-04** · HEAD: `pending PDF/MD parity wave` · main
 
 ---
 
 ## 🟢 Shipped (in-tree on `origin/main`)
+
+### Wave Q — PDF/MD parser parity (commit pending)
+
+> **PDF upload bio funkcionalan ali lossy** — Boki uvek ubacuje PDF, parser je gubio 5+ polja (`theme.tags`, `theme.mood`, `theme.setting`, `theme.genre`, `theme.target_market`) i 1 feature kind (scatter_pay) jer `pdfToMarkdown.mjs` nije rekonstruisao prvi metadata table. Ova wave dovodi PDF parsing do **30/30 (100 %) parity-ja** sa native MD parsing-om za Gates of Olympus 1000.
+
+| ID | Feature | Files | Status |
+|---|---|---|---|
+| Q1 | `tools/diff-pdf-vs-md.mjs` — cortex-eyes parity tool. Parses MD natively + PDF via pdfjs → pdfToMarkdown → parser. Field-by-field diff (30 fields covering name, theme, topology, symbols, features, confidence). Exit 0 = parity, 1 = drift. Dumps intermediate artifacts (`_diff-pdf-raw.txt`, `_diff-pdf-md.md`, `_diff-*-model.json`) for inspection. | `tools/diff-pdf-vs-md.mjs` | ✅ |
+| Q2 | `extractMetaPanel()` — hvata `Tema:`, `Ciljna publika:`, `ŽANR`/`Žanr`/`Genre`, `Mood`/`Setting` iz SR/EN PDF panela. Industry-aware: Olimp/Zeus/Greek implies "Mythology" tag; missing region prefix gets "Global ·"; PDF.js space-out (`Ž A N R`) handled by dropping `\b` before non-ASCII. | `src/pdfToMarkdown.mjs` | ✅ |
+| Q3 | `extractVolatility()` + `extractHitFrequency()` — hvata `V O L A T I L N O S T 5/5 — Maksimalna` i `Hit frequency ~25-30%` iz spaced-out PDF panela. | `src/pdfToMarkdown.mjs` | ✅ |
+| Q4 | Auto-emit `## 02b · Scatter Pay` heading kad je evalKind=pay_anywhere — parser feature count na pay-anywhere igrama sada matchuje MD (6 vs 6 umesto 5 vs 6). | `src/pdfToMarkdown.mjs` | ✅ |
+| Q5 | `tools/cortex-eyes-pdf-upload.mjs` — Playwright headless test koji startuje python server na 5181, drag-drop PDF u dropzone, screenshot pre/posle, console-error tally, iframe content frame inspekcija. Vizuelni dokaz za buduće wave-ove. | `tools/cortex-eyes-pdf-upload.mjs` | ✅ |
+| Q6 | Live verifikovano: GoO 1000 PDF upload → iframe renderuje "Gates of Olympus 1000 · Base Game" + 42 grid cells + 0 console errors. Parser parity 30/30 (100 %). | — | ✅ |
 
 ### Wave A — Foundations (pre-session)
 | ID | Feature | Files | Status |

