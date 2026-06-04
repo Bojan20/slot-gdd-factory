@@ -119,16 +119,29 @@ t('emitAutoplayCSS: empty when disabled', () => {
   eq(emitAutoplayCSS({ ...defaultConfig(), enabled: false }), '');
 });
 
-t('emitAutoplayCSS: enabled bakes button + panel + counter selectors', () => {
+t('emitAutoplayCSS: enabled bakes modal + counter selectors', () => {
   const css = emitAutoplayCSS({ ...defaultConfig(), enabled: true });
-  for (const sel of ['.autoplay-btn', '.autoplay-btn.is-active', '.autoplay-panel',
-                     '.autoplay-steps', '.autoplay-step', '.autoplay-step.is-selected',
-                     '.autoplay-start', '.autoplay-counter']) {
+  /* Wave-V-style WoO modal: backdrop, modal sheet, header, steps grid,
+     stop-condition rows, toggle, input, Start/Back actions, counter. */
+  for (const sel of [
+    '.autoplay-backdrop',
+    '.autoplay-modal',
+    '.autoplay-header', '.autoplay-title', '.autoplay-close',
+    '.autoplay-section', '.autoplay-section-title',
+    '.autoplay-steps', '.autoplay-step', '.autoplay-step.is-selected',
+    '.autoplay-stop-row', '.autoplay-stop-label', '.autoplay-stop-hint',
+    '.autoplay-toggle', '.autoplay-input',
+    '.autoplay-actions',
+    '.autoplay-action--cancel', '.autoplay-action--start',
+    '.autoplay-counter',
+  ]) {
     ct(css, sel);
   }
-  /* Mobile breakpoint widened to 620px so the bottom-right spin cluster
-     re-snaps its safe-area offsets on phones in portrait. */
+  /* Mobile breakpoint at 620px so the modal re-snaps padding + grid on
+     portrait phones; CSS does NOT emit the legacy .autoplay-btn floating
+     trigger — the sideHud autoBtn carries that role. */
   ct(css, '@media (max-width: 620px)');
+  nct(css, '.autoplay-btn');
 });
 
 t('emitAutoplayCSS: chipColor interpolated', () => {
@@ -142,15 +155,26 @@ t('emitAutoplayMarkup: empty when disabled', () => {
   eq(emitAutoplayMarkup({ ...defaultConfig(), enabled: false }), '');
 });
 
-t('emitAutoplayMarkup: panel + counter (no duplicate button — reuses sideHud autoBtn)', () => {
+t('emitAutoplayMarkup: WoO-style modal + counter (no duplicate button — reuses sideHud autoBtn)', () => {
   const html = emitAutoplayMarkup({ ...defaultConfig(), enabled: true });
   /* Boki rule (04.06.2026): autoplay block must NOT render a floating
-   * button. It reuses the existing #autoBtn rendered by the orchestrator
-   * inside .sideHud next to the spin CTA. */
+   * button. It reuses the existing #autoBtn in .sideHud next to spin. */
   nct(html, 'id="autoplayBtn"');
   nct(html, 'class="autoplay-btn"');
-  ct(html, 'id="autoplayPanel"');
+  /* WoO-style modal shell. */
+  ct(html, 'id="autoplayBackdrop"');
+  ct(html, 'id="autoplayModal"');
+  ct(html, 'id="autoplayTitle"');
+  ct(html, 'id="autoplayCloseBtn"');
+  ct(html, 'id="autoplaySteps"');
+  ct(html, 'id="autoplayStopFeatureToggle"');
+  ct(html, 'id="autoplayStopSingleWinX"');
+  ct(html, 'id="autoplayStopWinAbove"');
+  ct(html, 'id="autoplayStopLossAbove"');
+  ct(html, 'id="autoplayCancelBtn"');
+  ct(html, 'id="autoplayStart"');
   ct(html, 'role="dialog"');
+  ct(html, 'aria-modal="true"');
   ct(html, 'id="autoplayCounter"');
   ct(html, 'aria-live="polite"');
 });
