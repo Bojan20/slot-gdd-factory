@@ -1,20 +1,54 @@
 /* eslint-disable no-console */
 import {
   defaultConfig, resolveConfig, emitHookBusRuntime, HOOK_EVENTS,
+  SLAM_PHASES, SKIP_PHASES, SLAM_SOURCES, SKIP_SOURCES,
 } from '../../src/blocks/hookBus.mjs';
 
 let pass = 0, fail = 0;
-const t = (n, fn) => { try { fn(); console.log('  ✓', n); pass++; } catch (e) { console.log('  ✗', n, '\n     ', e.message); fail++; } };
+const pending = [];
+/* Senior-grade runner: detect Promise return and queue for top-level await.
+ * Without this, async tests resolve after summary prints (false-positive). */
+const t = (n, fn) => {
+  try {
+    const ret = fn();
+    if (ret && typeof ret.then === 'function') {
+      pending.push(ret.then(
+        () => { console.log('  ✓', n); pass++; },
+        (e) => { console.log('  ✗', n, '\n     ', e.message); fail++; },
+      ));
+    } else {
+      console.log('  ✓', n); pass++;
+    }
+  } catch (e) {
+    console.log('  ✗', n, '\n     ', e.message); fail++;
+  }
+};
 const eq = (a, b, m = '') => { if (a !== b) throw new Error(`expected ${JSON.stringify(b)}, got ${JSON.stringify(a)} — ${m}`); };
 const ct = (s, n, m = '') => { if (!String(s).includes(n)) throw new Error(`missing substring ${JSON.stringify(n)} — ${m}`); };
 const ok = (v, m = '') => { if (!v) throw new Error(`expected truthy — ${m}`); };
 
 console.log('— blocks/hookBus.mjs —');
 
-t('HOOK_EVENTS canonical list', () => {
-  const expected = ['preSpin', 'onSpinResult', 'onTumbleStep', 'postSpin', 'onFsTrigger', 'onFsSpinResult', 'onFsEnd'];
+t('HOOK_EVENTS canonical list (core + Wave V intent events)', () => {
+  const expected = [
+    'preSpin', 'onSpinResult', 'onTumbleStep', 'postSpin',
+    'onFsTrigger', 'onFsSpinResult', 'onFsEnd',
+    /* Wave V */
+    'onSlamRequested', 'onSlamComplete', 'onSkipRequested', 'onSkipComplete',
+  ];
   eq(HOOK_EVENTS.length, expected.length);
   for (const e of expected) ok(HOOK_EVENTS.includes(e), `missing ${e}`);
+});
+
+t('Wave V enums: SLAM_PHASES / SKIP_PHASES / SLAM_SOURCES / SKIP_SOURCES are frozen and canonical', () => {
+  eq(Object.isFrozen(SLAM_PHASES), true);
+  eq(Object.isFrozen(SKIP_PHASES), true);
+  eq(Object.isFrozen(SLAM_SOURCES), true);
+  eq(Object.isFrozen(SKIP_SOURCES), true);
+  eq(SLAM_PHASES.join(','), 'pre,post');
+  eq(SKIP_PHASES.join(','), 'rollup,fsIntro,fsOutro,celebration');
+  eq(SLAM_SOURCES.join(','), 'button,reelsArea,keyboard');
+  eq(SKIP_SOURCES.join(','), 'button,keyboard');
 });
 
 t('defaultConfig: debugLog off', () => {
@@ -34,8 +68,10 @@ t('emitHookBusRuntime: emits HookBus API surface', () => {
   const src = emitHookBusRuntime();
   ct(src, 'function on(');
   ct(src, 'function off(');
+  ct(src, 'function once(');
   ct(src, 'function emit(');
   ct(src, 'function emitAsync(');
+  ct(src, 'function waitFor(');
   ct(src, 'function getMult(');
   ct(src, 'function setMult(');
   ct(src, 'function addMult(');
@@ -175,6 +211,95 @@ t('runtime: payload is forwarded to handlers', () => {
   eq(got.foo, 42);
 });
 
+/* ── Wave V: once() + waitFor() coverage ── */
+
+t('runtime: once() auto-unsubscribes after first emit', () => {
+  const HB = makeRuntime();
+  let count = 0;
+  HB.once('onSlamRequested', () => { count++; });
+  HB.emit('onSlamRequested', { phase: 'pre' });
+  HB.emit('onSlamRequested', { phase: 'post' });
+  HB.emit('onSlamRequested', { phase: 'pre' });
+  eq(count, 1, 'once handler should only fire once');
+  eq(HB.listenerCount('onSlamRequested'), 0, 'should be cleared after first fire');
+});
+
+t('runtime: once() returns disposer that cancels before first emit', () => {
+  const HB = makeRuntime();
+  let count = 0;
+  const dispose = HB.once('onSkipRequested', () => { count++; });
+  dispose();
+  HB.emit('onSkipRequested', { phase: 'rollup' });
+  eq(count, 0, 'disposed once should not fire');
+  eq(HB.listenerCount('onSkipRequested'), 0);
+});
+
+t('runtime: once() with multiple registrations all fire independently then unsubscribe', () => {
+  const HB = makeRuntime();
+  let a = 0, b = 0;
+  HB.once('onSlamComplete', () => { a++; });
+  HB.once('onSlamComplete', () => { b++; });
+  HB.emit('onSlamComplete', { duration: 50 });
+  HB.emit('onSlamComplete', { duration: 60 });
+  eq(a, 1, 'first once handler should fire exactly once');
+  eq(b, 1, 'second once handler should fire exactly once');
+  eq(HB.listenerCount('onSlamComplete'), 0);
+});
+
+t('runtime: once() handler that throws does not corrupt off() loop', () => {
+  const HB = makeRuntime();
+  let downstreamRan = false;
+  HB.once('onSkipComplete', () => { throw new Error('boom'); });
+  HB.once('onSkipComplete', () => { downstreamRan = true; });
+  HB.emit('onSkipComplete', { phase: 'rollup', duration: 10 });
+  eq(downstreamRan, true, 'second handler should still execute');
+  eq(HB.listenerCount('onSkipComplete'), 0, 'both should be unsubscribed');
+});
+
+t('runtime: waitFor() resolves on next emit', async () => {
+  const HB = makeRuntime();
+  setTimeout(() => HB.emit('onSpinResult', { duringFs: true, foo: 7 }), 5);
+  const payload = await HB.waitFor('onSpinResult');
+  eq(payload.duringFs, true);
+  eq(payload.foo, 7);
+});
+
+t('runtime: waitFor() with timeout rejects when no emit occurs', async () => {
+  const HB = makeRuntime();
+  let rejected = false;
+  try {
+    await HB.waitFor('onFsEnd', 30);
+  } catch (err) {
+    rejected = true;
+    ok(String(err.message).includes('waitFor timeout'), 'should mention waitFor timeout');
+  }
+  eq(rejected, true, 'should reject after timeout window');
+});
+
+t('runtime: waitFor() unsubscribes once-handler on timeout (no leak)', async () => {
+  const HB = makeRuntime();
+  try { await HB.waitFor('onFsEnd', 20); } catch (_) {}
+  eq(HB.listenerCount('onFsEnd'), 0, 'no orphan listener after timeout');
+});
+
+t('runtime: Wave V intent events emit + receive payload like core events', () => {
+  const HB = makeRuntime();
+  const got = [];
+  HB.on('onSlamRequested', (p) => got.push(['slam-req', p.phase, p.source]));
+  HB.on('onSlamComplete',  (p) => got.push(['slam-done', p.duration]));
+  HB.on('onSkipRequested', (p) => got.push(['skip-req', p.phase, p.source]));
+  HB.on('onSkipComplete',  (p) => got.push(['skip-done', p.phase, p.duration]));
+  HB.emit('onSlamRequested', { phase: 'pre',  source: 'button' });
+  HB.emit('onSlamComplete',  { duration: 75 });
+  HB.emit('onSkipRequested', { phase: 'rollup', source: 'keyboard' });
+  HB.emit('onSkipComplete',  { phase: 'rollup', duration: 20 });
+  eq(got.length, 4);
+  eq(got[0].join('|'), 'slam-req|pre|button');
+  eq(got[1].join('|'), 'slam-done|75');
+  eq(got[2].join('|'), 'skip-req|rollup|keyboard');
+  eq(got[3].join('|'), 'skip-done|rollup|20');
+});
+
 t('runtime: window.HookBus + window.__HOOKBUS_MULT__ exposed', () => {
   const src = emitHookBusRuntime();
   const fakeWindow = {};
@@ -184,9 +309,9 @@ t('runtime: window.HookBus + window.__HOOKBUS_MULT__ exposed', () => {
   eq(fakeWindow.__HOOKBUS_MULT__, 1);
 });
 
-/* ── Run async tests ── */
+/* ── Run async tests then print summary ── */
 (async () => {
-  // Re-run async ones serially
+  await Promise.all(pending);
   console.log('\n--- summary ---');
   console.log(`  pass: ${pass}`);
   console.log(`  fail: ${fail}`);

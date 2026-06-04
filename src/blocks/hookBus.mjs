@@ -46,6 +46,38 @@
  *      Emitted as FS round closes (FSM_enterOutro path). Listeners reset
  *      persistent state so next FS round starts clean.
  *
+ *   ─── Wave V: spin-control intent events ───────────────────────────
+ *
+ *   onSlamRequested  ({ phase: 'pre' | 'post', source: 'button' | 'reelsArea' | 'keyboard' })
+ *      Emitted when the player asks reels to stop NOW (slam-stop button
+ *      or click-on-reels area). `phase` distinguishes pre-response
+ *      (server result not yet received → engine must wait via HookBus.once
+ *      for onSpinResult, then collapse all reels to landed strip) from
+ *      post-response (result received → engine collapses immediately).
+ *      Owner: src/blocks/slamStop.mjs (emit). Consumers: reelEngine.mjs.
+ *
+ *   onSlamComplete   ({ duration: number })
+ *      Emitted by reelEngine.mjs after all reels have visually collapsed
+ *      into their final landed positions following a slam request.
+ *      `duration` = ms elapsed from onSlamRequested to all-reels-stopped.
+ *      Owner: src/blocks/reelEngine.mjs. Consumers: postSpin coordinator
+ *      (transitions UI state out of slam phase), audio cues (future ADB).
+ *
+ *   onSkipRequested  ({ phase: 'rollup' | 'fsIntro' | 'fsOutro' | 'celebration', source: 'button' | 'keyboard' })
+ *      Emitted when the player asks the current win-presentation /
+ *      transition animation to terminate immediately. `phase` lets each
+ *      listener decide whether it owns the cancellable animation.
+ *      Sets a global `window.__SLOT_SKIPPED__ = true` flag; long-running
+ *      animation chains poll this flag at every setTimeout step and bail
+ *      to final state when set. Owner: src/blocks/forceSkip.mjs (emit).
+ *      Consumers: winPresentation.mjs, scatterCelebration.mjs, freeSpins.mjs.
+ *
+ *   onSkipComplete   ({ phase: string, duration: number })
+ *      Emitted by whichever block owns the animation that was skipped,
+ *      after it has fully collapsed to its final state. Resets
+ *      `window.__SLOT_SKIPPED__` to false. Owner: animation-owning block.
+ *      Consumers: postSpin coordinator (re-enables spin button).
+ *
  * ─── Shared state ──────────────────────────────────────────────────
  *
  *   HookBus.getMult() / HookBus.setMult(v) / HookBus.addMult(delta)
@@ -80,6 +112,7 @@ export function resolveConfig(model) {
 }
 
 export const HOOK_EVENTS = Object.freeze([
+  /* Wave A → S: core spin lifecycle */
   'preSpin',
   'onSpinResult',
   'onTumbleStep',
@@ -87,7 +120,19 @@ export const HOOK_EVENTS = Object.freeze([
   'onFsTrigger',
   'onFsSpinResult',
   'onFsEnd',
+  /* Wave V: spin-control intent events (slam-stop + force-skip) */
+  'onSlamRequested',
+  'onSlamComplete',
+  'onSkipRequested',
+  'onSkipComplete',
 ]);
+
+/* Wave V: phase enums for slam/skip payloads — exported so blocks can
+ * import the canonical strings instead of stringly-typing. */
+export const SLAM_PHASES = Object.freeze(['pre', 'post']);
+export const SKIP_PHASES = Object.freeze(['rollup', 'fsIntro', 'fsOutro', 'celebration']);
+export const SLAM_SOURCES = Object.freeze(['button', 'reelsArea', 'keyboard']);
+export const SKIP_SOURCES = Object.freeze(['button', 'keyboard']);
 
 export function emitHookBusRuntime(cfg = defaultConfig()) {
   const c = resolveConfig({ hookBus: cfg });
@@ -186,8 +231,39 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
       return (handlers[event] && handlers[event].length) || 0;
     }
 
+    /* Wave V: once(event, fn) — register a handler that auto-unsubscribes
+     * after its first invocation. Industry pattern equivalent of
+     * MobxUtils.addWhen used in playa-slot SlamStopCommand/ForceSkipCommand
+     * for one-shot pre-response → post-response coordination. */
+    function once(event, fn, opts) {
+      if (typeof fn !== 'function') return () => {};
+      let fired = false;
+      const wrapped = function (payload) {
+        if (fired) return;
+        fired = true;
+        off(event, wrapped);
+        try { return fn(payload); }
+        catch (err) { console.error('[HookBus] once handler threw on', event, err); }
+      };
+      return on(event, wrapped, opts);
+    }
+
+    /* Wave V: cancellable wait — resolves on next emit of 'event'. Used by
+     * reelEngine slam-stop pre-response path: await HookBus.waitFor('onSpinResult'). */
+    function waitFor(event, timeoutMs) {
+      return new Promise(function (resolve, reject) {
+        const dispose = once(event, function (payload) {
+          if (timer) clearTimeout(timer);
+          resolve(payload);
+        });
+        const timer = (typeof timeoutMs === 'number' && timeoutMs > 0)
+          ? setTimeout(function () { dispose(); reject(new Error('[HookBus] waitFor timeout: ' + event)); }, timeoutMs)
+          : null;
+      });
+    }
+
     return {
-      on, off, emit, emitAsync,
+      on, off, once, emit, emitAsync, waitFor,
       getMult, setMult, addMult, resetMult, setMultBaseline,
       listenerCount,
       EVENTS,
