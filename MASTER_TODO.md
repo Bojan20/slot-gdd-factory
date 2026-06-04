@@ -3,7 +3,65 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `17afa9a` · main
+> Last updated: **2026-06-04** · HEAD: `d3d77d4` → (Wave U6 gambleSecondary pending) · main
+
+---
+
+## 🟡 Wave U6 — Secondary Gamble (Card + Ladder) — THIS COMMIT
+
+> Triggered by Boki *"Nastavi redom, samo mehanika matematiku ne diramo nikad dok ja ne kazem"*. Post-win risk feature — pure mechanics + UI state machine, no math/PAR coupling. Standalone block; existing `gamble.mjs` (Wave P2 basic single-mode) stays in tree as legacy.
+
+### What ships
+
+| Atom | What | LOC |
+|:--:|---|:--:|
+| U6-block  | `src/blocks/gambleSecondary.mjs` — Card branch (color or suit) + Ladder branch (8 rungs, 2× geometric) + selection splash + 3-reason suppression | 680 |
+| U6-tests  | `tests/blocks/gambleSecondary.test.mjs` — 31 assertions; sandbox covers full Card + Ladder win/lose paths, max-bank cap, FS/autoplay suppression, skip→collect | 380 |
+| U6-parser | `extractGambleSecondary()` in `src/parser.mjs` — reads `## Gamble Secondary` / `## Card and Ladder Gamble` / `## Risk Ladder` GDD section | +40 |
+| U6-orch   | `buildSlotHTML.mjs` — wired emit triplet (CSS + Markup + Runtime) right after existing legacy gamble | +6 |
+| U6-hook   | `hookBus.mjs` HOOK_EVENTS extended with `onGambleStart`, `onGambleRound`, `onGambleEnd` | +5 |
+| U6-gate   | `tools/lego-gate.mjs` ownership: all 3 events → gambleSecondary.mjs (sole owner). emit calls inlined with literal event names for grep-ability | +6 |
+
+### Industry-standard contract
+
+| Concept | This block | Reason |
+|---|---|---|
+| Two-branch UI | Splash with CARD / LADDER / COLLECT (player chooses) | Industry-standard post-win risk feature pattern. |
+| Card branch | color (R/B, 50% × 2) or suit (♥♦♣♠, 25% × 4); GDD selects mode | Two probability profiles cover the typical regulator menu. |
+| Ladder branch | 8 rungs (configurable 3-16), 2× geometric multiplier (configurable 1.1-8), up=50% chance / down=guaranteed | Allows skill-illusion risk management without exposing engine RTP. |
+| Win-bank cap | maxBankX (× current bet); 0 disables | Regulator soft-cap; matches winCap.mjs semantics. |
+| Lockouts | Suppressed during FS round AND autoplay session unless GDD opts in via showInFs/showInAutoplay | Avoids gamble-during-gamble UX confusion; prevents autoplay race. |
+| Skip integration | `onSkipRequested` → auto-collect | Force-skip (Wave V2) doubles as gamble-out. |
+| Idempotent emit | All 3 events use `_safeEmit` wrapper (try/catch); throwing listener never strands STATE | Senior-grade rule. |
+| Deterministic Math.random | Tests inject sequence via Math.random monkey-patch | Sandbox runs without flakey randomness; production uses native Math.random. |
+| 0 magic numbers | Every threshold + cap + multiplier has named const + "why" comment | Senior rule #14. |
+
+### Lego-gate grep-ability lesson
+
+Initial implementation used a generic `_emit(eventName, payload)` helper. lego-gate's `HookBus.emit\('([a-zA-Z]+)'` regex couldn't extract the literal name from a variable — failed ownership check with "NOT EMITTED by any block". Fix: kept the `_safeEmit(fn)` wrapper (single try/catch boundary) but each call site spells out `window.HookBus.emit('onGambleX', {...})` inline so the grep sees the literal token. Pattern noted in JSDoc comment block for future blocks.
+
+### QA gates (this commit)
+
+| Gate | Result |
+|---|:--:|
+| LEGO Gate 5/5 (parity 43/43, ownership 18/18, listener 33/33) | ✅ |
+| npm test (parser + 20 grid fixtures) | ✅ |
+| npm run test:blocks (861 assertions across 43 blocks) | ✅ |
+| cortex-eyes-wave-v 3/3 PASS | ✅ slam 391ms |
+| cortex-eyes-wave-s 3/3 PASS | ✅ |
+| vendor grep src/ | ✅ 0 matches |
+
+### Senior-grade compliance (per `rule_senior_grade_code.md`)
+
+| Criterion | Status |
+|---|:--:|
+| JSDoc public-API contract header | ✅ purpose + industry pattern + LEGO + 4 lifecycle subscribers + 3 emit events + perf budget + a11y + GDD keys + runtime contract + deps |
+| Single responsibility | ✅ pure post-win overlay; never touches engine / paytable / reels |
+| Idempotency | ✅ STATE phase machine; setTimeout grace pause; close() guards on already-idle |
+| 0 magic numbers | ✅ MIN_WIN_X, MAX_BANK_X, CARD_MULT, LADDER_MULT, LADDER_RUNGS, PROMPT_TIMEOUT_MS — all baked + commented |
+| Error boundary | ✅ _safeEmit wrapper around every HookBus.emit |
+| Naming clarity | ✅ _capBank, _ladderValueAt, _refreshCardUI, _refreshLadderUI, _finishGamble |
+| 100% test coverage | ✅ 31 assertions: happy + edge (cap, threshold) + error (suppressed) + idempotency + deterministic random + vendor-neutrality + determinism |
 
 ---
 

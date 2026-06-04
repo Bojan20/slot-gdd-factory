@@ -167,6 +167,7 @@ export function parseMarkdownGDD(text) {
   extractForceSkip(text, model);
   extractAutoplay(text, model);
   extractBetSelector(text, model);
+  extractGambleSecondary(text, model);
   extractHoldAndWin(text, model);
   extractRespin(text, model);
   extractWinCap(text, model);
@@ -1240,6 +1241,16 @@ function freshModel() {
       panelOnDemand: undefined,
       chipColor: undefined, chipTextColor: undefined, ariaLabel: undefined,
     },
+    /* Wave U6 — Secondary Gamble (Card + Ladder branches). */
+    gambleSecondary: {
+      enabled: undefined,
+      modes: undefined,
+      cardMode: undefined, cardMultiplier: undefined, cardMaxRounds: undefined,
+      ladderRungs: undefined, ladderRungMultiplier: undefined, ladderMaxRounds: undefined,
+      minWinForPromptX: undefined, maxBankX: undefined, promptTimeoutMs: undefined,
+      showInFs: undefined, showInAutoplay: undefined,
+      currency: undefined, chipColor: undefined, chipTextColor: undefined,
+    },
     holdAndWin: {
       enabled: undefined, triggerCount: undefined, bonusSymbolId: undefined,
       respinsAwarded: undefined, resetOnNewBonus: undefined,
@@ -2168,6 +2179,40 @@ export function extractBetSelector(text, model) {
   const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
   const ctc = _readStr(s, 'chip[- ]?text[- ]?color'); if (ctc) tgt.chipTextColor = ctc;
   const ar = _readStr(s, 'aria[- ]?label'); if (ar) tgt.ariaLabel = ar;
+}
+
+/* Wave U6 — Secondary Gamble extractor.
+ * Reads `## Gamble Secondary` / `## Card and Ladder Gamble` /
+ * `## Risk Ladder` section. */
+export function extractGambleSecondary(text, model) {
+  const s = _findSection(text, /^##\s+(?:Gamble[- ]?Secondary|Card[- ]?and[- ]?Ladder(?:[- ]?Gamble)?|Risk[- ]?Ladder)\b[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.gambleSecondary;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const md = _readStr(s, 'modes?');
+  if (md) {
+    const arr = md.split(/[,;]\s*/).map(x => x.trim().toLowerCase()).filter(x => x === 'card' || x === 'ladder');
+    if (arr.length > 0) tgt.modes = arr;
+  }
+  const cm = _readStr(s, 'card[- ]?mode');
+  if (cm && /^(color|suit)$/i.test(cm)) tgt.cardMode = cm.toLowerCase();
+  const cmx = _readFloat(s, 'card[- ]?multiplier'); if (cmx !== undefined) tgt.cardMultiplier = cmx;
+  const cmr = _readInt(s, 'card[- ]?max[- ]?rounds'); if (cmr !== undefined) tgt.cardMaxRounds = cmr;
+  const lr = _readInt(s, 'ladder[- ]?rungs?'); if (lr !== undefined) tgt.ladderRungs = lr;
+  const lrm = _readFloat(s, 'ladder[- ]?rung[- ]?multiplier'); if (lrm !== undefined) tgt.ladderRungMultiplier = lrm;
+  const lmr = _readInt(s, 'ladder[- ]?max[- ]?rounds'); if (lmr !== undefined) tgt.ladderMaxRounds = lmr;
+  const mwp = _readFloat(s, 'min[- ]?win(?:[- ]?for[- ]?prompt)?(?:[- ]?x)?'); if (mwp !== undefined) tgt.minWinForPromptX = mwp;
+  const mbx = _readFloat(s, 'max[- ]?bank(?:[- ]?x)?'); if (mbx !== undefined) tgt.maxBankX = mbx;
+  const pt = _readInt(s, 'prompt[- ]?timeout[- ]?ms'); if (pt !== undefined) tgt.promptTimeoutMs = pt;
+  const sif = _readBool(s, 'show[- ]?in[- ]?fs'); if (sif !== undefined) tgt.showInFs = sif;
+  const sia = _readBool(s, 'show[- ]?in[- ]?autoplay'); if (sia !== undefined) tgt.showInAutoplay = sia;
+  const cur = _readStr(s, 'currency');
+  if (cur) {
+    const map = { EUR: '€', USD: '$', GBP: '£', JPY: '¥', CHF: 'CHF', PLN: 'PLN' };
+    tgt.currency = map[cur.toUpperCase()] || cur;
+  }
+  const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
+  const ctc = _readStr(s, 'chip[- ]?text[- ]?color'); if (ctc) tgt.chipTextColor = ctc;
 }
 
 /* Wave V2 — Force-Skip button extractor.

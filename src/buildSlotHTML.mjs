@@ -182,6 +182,11 @@ import {
   emitBetSelectorCSS, emitBetSelectorMarkup, emitBetSelectorRuntime,
   resolveConfig as resolveBetSelectorConfig,
 } from './blocks/betSelector.mjs';
+// Wave U6 — Secondary Gamble (Card + Ladder branches, post-win risk feature)
+import {
+  emitGambleSecondaryCSS, emitGambleSecondaryMarkup, emitGambleSecondaryRuntime,
+  resolveConfig as resolveGambleSecondaryConfig,
+} from './blocks/gambleSecondary.mjs';
 import {
   emitHoldAndWinCSS, emitHoldAndWinMarkup, emitHoldAndWinRuntime,
   resolveConfig as resolveHoldAndWinConfig,
@@ -316,6 +321,8 @@ ${/* Wave U4 — autoplay session UI (button + panel + counter). */ ''}
 ${emitAutoplayCSS(resolveAutoplayConfig(model))}
 ${/* Wave U5 — bet selector UI (chip + panel + steps + max). */ ''}
 ${emitBetSelectorCSS(resolveBetSelectorConfig(model))}
+${/* Wave U6 — secondary gamble overlay (Card + Ladder branches). */ ''}
+${emitGambleSecondaryCSS(resolveGambleSecondaryConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
 ${emitRespinCSS(resolveRespinConfig(model))}
 ${emitWinCapCSS(resolveWinCapConfig(model))}
@@ -418,6 +425,8 @@ ${emitWinCapMarkup(resolveWinCapConfig(model))}
 ${emitBonusPickMarkup(resolveBonusPickConfig(model))}
 ${emitWheelBonusMarkup(resolveWheelBonusConfig(model))}
 ${emitGambleMarkup(resolveGambleConfig(model))}
+${/* Wave U6 — secondary gamble overlay (full-screen modal). */ ''}
+${emitGambleSecondaryMarkup(resolveGambleSecondaryConfig(model))}
 
 <script>
   /* ── HookBus FIRST — every feature block registers on it. ────────── */
@@ -718,6 +727,8 @@ ${emitGambleMarkup(resolveGambleConfig(model))}
       via emitBlock order; placement here keeps autoplay's onSpinResult
       read of __SLOT_BET__ deterministic. */ ''}
   ${emitBetSelectorRuntime(resolveBetSelectorConfig(model))}
+  ${/* Wave U6 — secondary gamble runtime (Card + Ladder branches). */ ''}
+  ${emitGambleSecondaryRuntime(resolveGambleSecondaryConfig(model))}
   ${emitHoldAndWinRuntime(resolveHoldAndWinConfig(model))}
   ${emitRespinRuntime(resolveRespinConfig(model))}
   ${emitWinCapRuntime(resolveWinCapConfig(model))}

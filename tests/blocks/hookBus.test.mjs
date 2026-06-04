@@ -39,6 +39,8 @@ t('HOOK_EVENTS canonical list (core + Wave V intent + Wave U4 autoplay + Wave U5
     'onAutoplayStart', 'onAutoplayStop', 'onAutoplayTick',
     /* Wave U5 */
     'onBetChanged',
+    /* Wave U6 */
+    'onGambleStart', 'onGambleRound', 'onGambleEnd',
   ];
   eq(HOOK_EVENTS.length, expected.length);
   for (const e of expected) ok(HOOK_EVENTS.includes(e), `missing ${e}`);

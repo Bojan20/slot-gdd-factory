@@ -149,6 +149,10 @@ export const HOOK_EVENTS = Object.freeze([
   'onAutoplayTick',
   /* Wave U5: bet-selector state change event */
   'onBetChanged',
+  /* Wave U6: secondary-gamble session events */
+  'onGambleStart',
+  'onGambleRound',
+  'onGambleEnd',
 ]);
 
 /* Wave U4: canonical autoplay stop reasons. */

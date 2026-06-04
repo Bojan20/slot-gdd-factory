@@ -106,6 +106,12 @@ const EXPECTED_EMIT_OWNERS = {
   /* Wave U5 — bet selector publishes onBetChanged on every coin / mult /
    * step / max change (and once with reason:'init' at boot). Sole owner. */
   onBetChanged:    ['betSelector.mjs'],
+  /* Wave U6 — secondary-gamble session events all owned by
+   * gambleSecondary.mjs (start when player picks a branch, round per
+   * card flip / ladder step, end on collect or bust). */
+  onGambleStart:   ['gambleSecondary.mjs'],
+  onGambleRound:   ['gambleSecondary.mjs'],
+  onGambleEnd:     ['gambleSecondary.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */
