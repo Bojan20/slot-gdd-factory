@@ -3,13 +3,13 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `pending PDF/MD parity wave` · main
+> Last updated: **2026-06-04** · HEAD: `5a1ce60` · main
 
 ---
 
 ## 🟢 Shipped (in-tree on `origin/main`)
 
-### Wave Q — PDF/MD parser parity (commit pending)
+### Wave Q — PDF/MD parser parity (commit `5a1ce60`)
 
 > **PDF upload bio funkcionalan ali lossy** — Boki uvek ubacuje PDF, parser je gubio 5+ polja (`theme.tags`, `theme.mood`, `theme.setting`, `theme.genre`, `theme.target_market`) i 1 feature kind (scatter_pay) jer `pdfToMarkdown.mjs` nije rekonstruisao prvi metadata table. Ova wave dovodi PDF parsing do **30/30 (100 %) parity-ja** sa native MD parsing-om za Gates of Olympus 1000.
 
