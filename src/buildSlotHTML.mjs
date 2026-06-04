@@ -141,6 +141,10 @@ import {
   resolveConfig as resolvePersistentMultiplierConfig,
 } from './blocks/persistentMultiplier.mjs';
 import {
+  emitProgressiveFreeSpinsCSS, emitProgressiveFreeSpinsMarkup, emitProgressiveFreeSpinsRuntime,
+  resolveConfig as resolveProgressiveFreeSpinsConfig,
+} from './blocks/progressiveFreeSpins.mjs';
+import {
   emitHoldAndWinCSS, emitHoldAndWinMarkup, emitHoldAndWinRuntime,
   resolveConfig as resolveHoldAndWinConfig,
 } from './blocks/holdAndWin.mjs';
@@ -654,6 +658,7 @@ ${emitWalkingWildCSS(resolveWalkingWildConfig(model))}
 ${emitWildReelCSS(resolveWildReelConfig(model))}
 ${emitMysterySymbolCSS(resolveMysterySymbolConfig(model))}
 ${emitPersistentMultiplierCSS(resolvePersistentMultiplierConfig(model))}
+${emitProgressiveFreeSpinsCSS(resolveProgressiveFreeSpinsConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
 ${emitRespinCSS(resolveRespinConfig(model))}
 ${emitWinCapCSS(resolveWinCapConfig(model))}
@@ -889,6 +894,7 @@ ${emitBonusBuyMarkup(resolveBonusBuyConfig(model))}
 ${emitAnteBetMarkup(resolveAnteBetConfig(model))}
 <!-- Wave L–P markup (empty strings when disabled) -->
 ${emitPersistentMultiplierMarkup(resolvePersistentMultiplierConfig(model))}
+${emitProgressiveFreeSpinsMarkup(resolveProgressiveFreeSpinsConfig(model))}
 ${emitHoldAndWinMarkup(resolveHoldAndWinConfig(model))}
 ${emitRespinMarkup(resolveRespinConfig(model))}
 ${emitWinCapMarkup(resolveWinCapConfig(model))}
@@ -1182,6 +1188,7 @@ ${emitGambleMarkup(resolveGambleConfig(model))}
   ${emitClusterPaysEvalRuntime(resolveClusterPaysEvalConfig(model))}
   ${emitWaysEvalRuntime(resolveWaysEvalConfig(model))}
   ${emitPersistentMultiplierRuntime(resolvePersistentMultiplierConfig(model))}
+  ${emitProgressiveFreeSpinsRuntime(resolveProgressiveFreeSpinsConfig(model))}
   ${emitHoldAndWinRuntime(resolveHoldAndWinConfig(model))}
   ${emitRespinRuntime(resolveRespinConfig(model))}
   ${emitWinCapRuntime(resolveWinCapConfig(model))}

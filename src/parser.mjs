@@ -160,6 +160,7 @@ export function parseMarkdownGDD(text) {
   extractClusterPaysEval(text, model);
   extractWaysEval(text, model);
   extractPersistentMultiplier(text, model);
+  extractProgressiveFreeSpins(text, model);
   extractHoldAndWin(text, model);
   extractRespin(text, model);
   extractWinCap(text, model);
@@ -823,6 +824,12 @@ export function extractFeatures(rawText) {
       re: /\bpersistent[\s_-]?multiplier\b|\bmultiplier\s+(?:never\s+resets|grows\s+with)|\bgrows\s+with\s+each\s+cascade\b/i,
       label: 'Persistent Multiplier',
     },
+    {
+      // Wave U1 — FS multiplier escalator (every FS spin advances regardless of win)
+      kind: 'progressive_free_spins',
+      re: /\bprogressive[\s_-]?(?:free[\s_-]?spins?|fs)\b|\bfs[\s_-]?multiplier[\s_-]?(?:ladder|escalator|climbs?|grows?)\b|\bmultiplier\s+grows\s+(?:every|each)\s+spin\b|\beach\s+(?:free[\s_-]?)?spin\s+(?:adds|grants|raises)\s+\+?\d+\s*x?\s*(?:to\s+the\s+)?(?:fs[\s_-]?)?multiplier/i,
+      label: 'Progressive Free Spins',
+    },
   ];
 
   const out = [];
@@ -1134,6 +1141,12 @@ function freshModel() {
       enabled: undefined, mode: undefined, startMult: undefined,
       growPerWin: undefined, growPerCascade: undefined, maxMult: undefined,
       resetOnRoundEnd: undefined, chipColor: undefined,
+    },
+    /* Wave U1 — Progressive FS multiplier escalator (every spin). */
+    progressiveFreeSpins: {
+      enabled: undefined, strategy: undefined, startMult: undefined,
+      step: undefined, ladderValues: undefined, maxMult: undefined,
+      resetOnRoundEnd: undefined, chipColor: undefined, chipLabel: undefined,
     },
     holdAndWin: {
       enabled: undefined, triggerCount: undefined, bonusSymbolId: undefined,
@@ -1922,6 +1935,32 @@ export function extractPersistentMultiplier(text, model) {
   const mx = _readInt(s, 'max[- ]?mult'); if (mx !== undefined) tgt.maxMult = mx;
   const rs = _readBool(s, 'reset[- ]?on[- ]?round[- ]?end'); if (rs !== undefined) tgt.resetOnRoundEnd = rs;
   const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
+}
+
+/* Wave U1 — Progressive FS multiplier escalator extractor. */
+export function extractProgressiveFreeSpins(text, model) {
+  const s = _findSection(text,
+    /^##\s+(?:Progressive\s+(?:Free\s+Spins?|FS)|ProgressiveFreeSpins|FS\s+Multiplier\s+(?:Ladder|Escalator))[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.progressiveFreeSpins;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const strat = _readStr(s, 'strategy');
+  if (strat) {
+    const norm = strat.toLowerCase().trim();
+    if (['linear', 'doubling', 'fibonacci', 'ladder'].includes(norm)) tgt.strategy = norm;
+  }
+  const sm = _readInt(s, 'start[- ]?mult'); if (sm !== undefined) tgt.startMult = sm;
+  const stp = _readInt(s, '\\bstep\\b'); if (stp !== undefined) tgt.step = stp;
+  const mx = _readInt(s, 'max[- ]?mult'); if (mx !== undefined) tgt.maxMult = mx;
+  const rs = _readBool(s, 'reset[- ]?on[- ]?round[- ]?end'); if (rs !== undefined) tgt.resetOnRoundEnd = rs;
+  const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
+  const cl = _readStr(s, 'chip[- ]?label'); if (cl) tgt.chipLabel = cl;
+  /* Ladder values: "ladder-values: 1,2,5,10,25" inline list */
+  const ladderRaw = _readStr(s, 'ladder[- ]?values');
+  if (ladderRaw) {
+    const vals = ladderRaw.split(/[,\s]+/).map(v => parseInt(v, 10)).filter(n => Number.isFinite(n) && n >= 1);
+    if (vals.length >= 2) tgt.ladderValues = vals;
+  }
 }
 
 export function extractHoldAndWin(text, model) {

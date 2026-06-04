@@ -3,11 +3,27 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `e1d2968` · main
+> Last updated: **2026-06-04** · HEAD: `pending Wave U1 · progressiveFreeSpins` · main
 
 ---
 
 ## 🟢 Shipped (in-tree on `origin/main`)
+
+### Wave U1 — `progressiveFreeSpins.mjs` blok (commit pending)
+
+> **Prvi blok iz Wave U feature ekspanzije.** Boki pravilo: *"sve fwture koje ubacujemo, ubacujemo kao blokove i sto vise feautrea"*. Wave U1 dodaje fundamentalnu FS mehaniku koja je dosad bila rasut između `persistentMultiplier`, `multiplierOrb` i `freeSpins`: progressive multiplier koji eskalira **na svaki FS spin bez obzira na win**.
+>
+> **Kompozicija sa postojećim multiplier source-ima**: HookBus.setMult koristi `Math.max(current, new)` tako da progressiveFreeSpins, persistentMultiplier i multiplierOrb se ne dupliraju — najveći aktivan source pobeđuje.
+
+| ID | Feature | Files | Status |
+|---|---|---|---|
+| U1.1 | `src/blocks/progressiveFreeSpins.mjs` — 4 escalation strategija (linear, doubling, fibonacci, ladder), GDD-driven config (startMult, step, ladderValues, maxMult, resetOnRoundEnd, chipColor, chipLabel), defaultConfig + resolveConfig sa defensive validation (ladder array ≥2 elem, clamp ranges, RGB format check, XSS-safe chip label), CSS chip widget (sits above pm-chip @ bottom: 136px), reduced-motion gate, mobile media query, markup with XSS escape, runtime sa HookBus integration. | `src/blocks/progressiveFreeSpins.mjs` (260 LOC) | ✅ |
+| U1.2 | `tests/blocks/progressiveFreeSpins.test.mjs` — **37 unit tests** pokrivaju: defaults + resolveConfig validation × 12, CSS + markup contract × 4, runtime contract × 6, strategy semantics × 8 (linear/doubling/fibonacci/ladder progression + cap + FSM phase gate + HookBus integration + resetOnRoundEnd flag), hygiene + determinism × 4, vendor-neutral template check × 1, XSS guard × 1. Sandbox-eval pattern dokazuje runtime behavior bez browser-a — instanciram Function ctor sa stub document/FSM/HookBus i pokrećem stvarno `pfsBump()` da verifikujem progresije. | `tests/blocks/progressiveFreeSpins.test.mjs` (300 LOC) | ✅ |
+| U1.3 | `src/parser.mjs` — extractor `extractProgressiveFreeSpins(text, model)` čita `## Progressive Free Spins` ili `## FS Multiplier Ladder` sekciju iz GDD-a, parsira `strategy`, `start-mult`, `step`, `max-mult`, `reset-on-round-end`, `chip-color`, `chip-label`, `ladder-values: 1,2,5,10,25`. Feature kind pattern `progressive_free_spins` + `progressive_fs` (alias) za auto-enable. `freshModel()` slot dodat sa svim `undefined` knobs-ima. | `src/parser.mjs` | ✅ |
+| U1.4 | `src/buildSlotHTML.mjs` — import + 3 emit calls (CSS posle persistentMultiplier, markup posle persistentMultiplier, runtime posle persistentMultiplier — order matters jer chip sits visually iznad pm-chip-a). | `src/buildSlotHTML.mjs` | ✅ |
+| U1.5 | `package.json` `test:blocks` — `progressiveFreeSpins.test.mjs` ubacen u sequential chain posle `persistentMultiplier.test.mjs`. Sad `&&` chain pokriva 33 block test files. | `package.json` | ✅ |
+| U1.6 | LEGO Gate verifikovano: **5/5 invariants pass** (orchestrator emit 0, block test parity 35/35, vendor neutralnost 0, event ownership 7/7, listener coverage 26/26 — `progressiveFreeSpins.mjs` registruje `onFsTrigger` / `onFsSpinResult` / `onFsEnd`). | — | ✅ |
+| U1.7 | End-to-end verifikovano: `npm run test` 20/20 fixtures, `npm run test:blocks` sve suite green, `tools/diff-pdf-vs-md.mjs` 30/30 PDF↔MD parity zadržan, `tools/cortex-eyes-pdf-upload.mjs` 0 console errors + 42 cells + Base Game title. | — | ✅ |
 
 ### Wave T — Template cleanup + sane defaults + global SHAPE wiring (commit `e1d2968`)
 
