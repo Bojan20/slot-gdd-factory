@@ -172,6 +172,14 @@ import {
   emitForceSkipCSS, emitForceSkipMarkup, emitForceSkipRuntime,
   resolveConfig as resolveForceSkipConfig,
 } from './blocks/forceSkip.mjs';
+// Wave V3 — Unified primary action button (SPIN / STOP / SKIP single contextual CTA).
+// When enabled (default), supersedes the V1+V2 buttons — slamStop/forceSkip
+// markup/CSS/runtime are gated off and spinControl emits their intent events
+// directly on HookBus. Industry-reference PlayCore pattern.
+import {
+  emitSpinControlCSS, emitSpinControlMarkup, emitSpinControlRuntime,
+  resolveConfig as resolveSpinControlConfig,
+} from './blocks/spinControl.mjs';
 // Wave U4 — Autoplay session (industry-standard auto-spin panel pattern)
 import {
   emitAutoplayCSS, emitAutoplayMarkup, emitAutoplayRuntime,
@@ -339,9 +347,14 @@ ${emitPersistentMultiplierCSS(resolvePersistentMultiplierConfig(model))}
 ${emitProgressiveFreeSpinsCSS(resolveProgressiveFreeSpinsConfig(model))}
 ${/* audio CSS skipped — ADB tok, ne GDD */ ''}
 ${emitUiToastCSS(resolveUiToastConfig(model))}
-${/* Wave V1+V2 — spin-control overlay buttons. z-index: slam 20, skip 25. */ ''}
-${emitSlamStopCSS(resolveSlamStopConfig(model))}
-${emitForceSkipCSS(resolveForceSkipConfig(model))}
+${/* Wave V1+V2+V3 — primary action button CSS.
+    When V3 spinControl is enabled (default), it owns the visual layer and
+    V1/V2 standalone button CSS is suppressed (their state machines are
+    superseded). Disable spinControl in GDD (`spinControl: { enabled: false }`)
+    to fall back to the V1/V2 dual-button mode. */ ''}
+${resolveSpinControlConfig(model).enabled ? '' : emitSlamStopCSS(resolveSlamStopConfig(model))}
+${resolveSpinControlConfig(model).enabled ? '' : emitForceSkipCSS(resolveForceSkipConfig(model))}
+${emitSpinControlCSS(resolveSpinControlConfig(model))}
 ${/* Wave U4 — autoplay session UI (button + panel + counter). */ ''}
 ${emitAutoplayCSS(resolveAutoplayConfig(model))}
 ${/* Wave U5 — bet selector UI (chip + panel + steps + max). */ ''}
@@ -393,7 +406,9 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
       </div>
     </div>
     <aside class="sideHud" aria-label="Game Controls">
-      <button class="spinBtn" id="spinBtn" aria-label="Spin" type="button">
+      ${resolveSpinControlConfig(model).enabled
+        ? emitSpinControlMarkup(resolveSpinControlConfig(model))
+        : `<button class="spinBtn" id="spinBtn" aria-label="Spin" type="button">
         <!-- Industry-standard circular spin / refresh icon — two opposing
              arrows wrapping in a circle. Used by most major slot vendors
              on the primary SPIN CTA. -->
@@ -403,7 +418,7 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
           <polyline points="24.3,22.6 24.3,16.6 18.3,16.6"/>
           <polyline points="7.7,9.4 7.7,15.4 13.7,15.4"/>
         </svg>
-      </button>
+      </button>`}
       <button class="autoBtn" id="autoBtn" aria-label="Auto" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor"/></svg>
       </button>
@@ -450,8 +465,9 @@ ${emitProgressiveFreeSpinsMarkup(resolveProgressiveFreeSpinsConfig(model))}
 ${/* audio markup skipped — ADB tok, ne GDD */ ''}
 ${emitUiToastMarkup(resolveUiToastConfig(model))}
 ${/* Wave V1+V2 — spin-control buttons (hidden by default; runtime toggles). */ ''}
-${emitSlamStopMarkup(resolveSlamStopConfig(model))}
-${emitForceSkipMarkup(resolveForceSkipConfig(model))}
+${/* Wave V3 supersede: when spinControl enabled, V1/V2 markup OFF (V3 owns the button). */ ''}
+${resolveSpinControlConfig(model).enabled ? '' : emitSlamStopMarkup(resolveSlamStopConfig(model))}
+${resolveSpinControlConfig(model).enabled ? '' : emitForceSkipMarkup(resolveForceSkipConfig(model))}
 ${/* Wave U4 — autoplay button + panel + counter overlay. */ ''}
 ${emitAutoplayMarkup(resolveAutoplayConfig(model))}
 ${emitHoldAndWinMarkup(resolveHoldAndWinConfig(model))}
@@ -763,8 +779,11 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
   ${/* audio runtime skipped — ADB tok, ne GDD */ ''}
   ${emitUiToastRuntime(resolveUiToastConfig(model))}
   ${/* Wave V1+V2 — spin-control runtime (emit-only blocks; engine listens). */ ''}
-  ${emitSlamStopRuntime(resolveSlamStopConfig(model))}
-  ${emitForceSkipRuntime(resolveForceSkipConfig(model))}
+  ${/* Wave V3 supersede: V1/V2 runtimes OFF when spinControl is the active CTA. */ ''}
+  ${resolveSpinControlConfig(model).enabled ? '' : emitSlamStopRuntime(resolveSlamStopConfig(model))}
+  ${resolveSpinControlConfig(model).enabled ? '' : emitForceSkipRuntime(resolveForceSkipConfig(model))}
+  ${/* Wave V3 — unified SPIN / STOP / SKIP CTA runtime (state machine owns #spinBtn). */ ''}
+  ${emitSpinControlRuntime(resolveSpinControlConfig(model))}
   ${/* Wave U4 — autoplay session runtime. */ ''}
   ${emitAutoplayRuntime(resolveAutoplayConfig(model))}
   ${/* Wave U5 — bet selector runtime. Publishes window.__SLOT_BET__ +
