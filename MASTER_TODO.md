@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `ed664bf` → (Wave V/U4 senior-fix pending) · main · Wave V + Wave U4 + Wave T-slim phase 1 + T-orb/T-bonus/T-ante shipped + senior-grade QA pass (3 critical + 5 medium fixed)
+> Last updated: **2026-06-04** · HEAD: `b8f9a13` · main · Wave V + Wave U4 + Wave T-slim phase 1 + T-orb/T-bonus/T-ante shipped + senior-grade QA pass (3 critical + 5 medium fixed)
 
 ---
 
