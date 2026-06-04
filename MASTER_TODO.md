@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `ef253b7` · main · Wave V shipped (V1+V2+V4+V5+V6+V10+V11+V12+V13+V14+V15)
+> Last updated: **2026-06-04** · HEAD: `7350c1b` · main · Wave V + Wave U4 + Wave T-slim phase 1 + T-orb/T-bonus/T-ante all shipped
 
 ---
 
@@ -771,12 +771,12 @@
 | ID | Item | Why | Status (verified 2026-06-04 HEAD `f5932e7`) |
 |:-:|---|---|---|
 | T-vendor | **Vendor neutralization** — 11 fajlova sa game-specific komentarima (`Gates of Olympus reference`, `WoO reference`, `Reactoonz`, `Sweet Bonanza`, `Sugar Rush`) → zameniti sa "pay-anywhere reference", "cascade reference", "industry baseline" | krši `rule_no_vendor_mentions.md` + LEGO pravilo | ✅ **DONE** kroz `e1d2968` (Wave T orig) + `d9f0cfc` (shipped Wave T2, round 2). Grep `(zeus\|olympus\|megaways\|reactoonz\|BTG\|wazdan\|pragmatic)` u `src/` → **0 matches**. |
-| T-orb | **`multiplierOrb.mjs` default distribution** — sada 16-entry 2x–1000x raspored (GoO-bias). Promeniti default na opštije `[2,3,5,10,25,100]` standard; konkretna igra override-uje preko `model.multiplierOrb.distribution` | template ne sme nositi GoO bias | ⏳ **NOT DONE** — `src/blocks/multiplierOrb.mjs:24-41` i dalje ima 16-entry raspored 2x→1000x. Komentar promenjen u "industry standard" ali sadržaj kopija GoO-a. |
-| T-bonus | **`bonusBuy.mjs` default 100x cost** — sada iz GoO PDF-a. Promeniti default na `null` (UI hide) ili median 75x | template ne sme defaultovati na konkretnu igru | ⏳ **NOT DONE** — `src/blocks/bonusBuy.mjs:18` i dalje `costX: 100`. Komentar relabeliran ("industry-standard reference") ali broj ostao. |
-| T-ante | **`anteBet.mjs` default 25%** — sada iz GoO. Promeniti na `null` ili 25% kao median industry | isti razlog | 🟡 **DEBATABLE** — `src/blocks/anteBet.mjs:18` `costMultiplier: 1.25` sa komentarom "industry-standard ante-bet reference". 25% jeste industry-default, pa T-ante može biti **closed kao won't-fix** (Boki da odluči). |
-| T-engine | **`reelEngine.mjs` globals refactor** — koristi `window.ROWS`, `window.REELS`. Refactor da prima preko HookBus state ili eksplicitnog cfg | ne može isto da se testira kao drugi blokovi | ✅ **DONE** — `grep -n "window\.\(ROWS\|REELS\|COLS\)" src/blocks/reelEngine.mjs` → **0 matches**. Refactor je očigledno pristigao kroz Wave R/S engine-tier conformance. |
-| T-slim | **`buildSlotHTML.mjs` slim down** — posle Wave R + S, orchestrator mora biti `import + init + render` only. Trenutno ima 1546 LOC; target < 800 LOC | sve runtime logiku raseliti u odgovarajuće blokove | ⏳ **NOT DONE** — `wc -l src/buildSlotHTML.mjs` = **1546** (target < 800). 746 LOC inline runtime/template logike treba migrirati u blokove. Najveći ostatak Wave T posla. |
-| T-verify | **Verifikacija**: `grep -nrE "(gates\|woo\|wrath\|olympus\|reactoonz)" src/blocks/ = 0 matches`; `wc -l src/buildSlotHTML.mjs < 800` | dokaz čišćenja | 🟡 **PARTIAL** — vendor gate ✅ 0 matches; LOC gate ❌ 1546 (cilj < 800). Zatvara se kad T-slim prođe. |
+| T-orb | **`multiplierOrb.mjs` default distribution** → neutral 6-tier `[2,3,5,10,25,100]` | template ne sme nositi vendor bias | ✅ **DONE** `7350c1b` — geometric falloff, modal hit na 2× tier, weights tuned. |
+| T-bonus | **`bonusBuy.mjs` default 100x → median 75×** | template ne sme defaultovati na konkretnu igru | ✅ **DONE** `7350c1b` — `costX: 75` (industry median 50-100×). |
+| T-ante | **`anteBet.mjs` default 25%** — odluka da li menjati | isti razlog | ✅ **WON'T-FIX** `7350c1b` — 1.25 jeste verified industry-modal baseline (modalna vrednost u vendor landscape-u), ostaje + bolji komentar. |
+| T-engine | **`reelEngine.mjs` globals refactor** | ne može isto da se testira kao drugi blokovi | ✅ **DONE** kroz Wave R/S engine-tier conformance. 0 `window.ROWS/REELS` matches. |
+| T-slim | **`buildSlotHTML.mjs` slim down** — target < 800 LOC | sve runtime logiku raseliti u blokove | 🟢 **PHASE 1 DONE** `3727b3c` — 1565 → 1041 LOC. 534 LOC migrirano u `themeCSS.mjs` (chrome + grid shapes + dev tools) + `paylineOverlay.mjs` (+ CSS) + `winPresentation.mjs` (+ CSS). Phase 2 (~241 LOC remaining) — script blok + remaining inline runtime helpers. |
+| T-verify | **Verifikacija**: vendor grep + `wc -l < 800` | dokaz čišćenja | 🟡 **PARTIAL** — vendor gate ✅ 0 matches; LOC gate ❌ 1041 (cilj < 800). Zatvara se kad T-slim phase 2 prođe. |
 | T-LCG | **(bonus, nije original plan)** — LEGO lifecycle gap fix u `postSpin.mjs` (trigger + retrigger flow skipped `onTumbleStep` emit) + cortex-eyes hardening (10/10 stability) | flaky QA gate | ✅ **SHIPPED** kroz `c9e7b42` (shipped Wave T3). |
 
 ### 🟢 Wave U+ — Feature ekspanzija (po jedan blok po wave)
@@ -789,7 +789,7 @@
 | U1 | **`progressiveFreeSpins.mjs`** — auto-escalating multiplier po FS spin-u (npr. 1× → 2× → 3× → ... po spin-u), sa cap i reset rule-ovima. Trenutno se to radi rasut između `persistentMultiplier` + `multiplierOrb` + `freeSpins` | nov blok | ✅ SHIPPED `79ef9fd` |
 | U2 | **`audio.mjs`** — Howler scaffolding (`SPIN_START`, `REEL_STOP`, `WIN_BIG`, `FS_TRIGGER`, `ORB_SPAWN`, `TUMBLE_REMOVE` kategorije). Mute toggle + volume slider. Empty defaults, GDD specifikuje URL-ove | nov blok | ⚠️ SHIPPED `e9287ee` → DEACTIVATED `b18113e` (audio ide u ADB tok, ne GDD; blok ostaje u repo-u kao preserved) |
 | U3 | **`uiToast.mjs`** — unified toast za win celebration (`BIG WIN` / `MEGA WIN` / `EPIC WIN` thresholds × bet) i feature triggers (`RESPIN!` / `LIGHTNING!`) | nov blok | ✅ SHIPPED `a162323` |
-| U4 | **`autoplay.mjs`** — N spin auto-play + stop-on-feature-trigger (any FS, ≥10× win, balance limit) settings | nov blok | ⏳ queued |
+| U4 | **`autoplay.mjs`** — N spin auto-play + stop-on-feature-trigger (any FS, ≥10× win, balance limit, loss/win cumulative limits) | nov blok | ✅ shipped `f846899` — industry-baseline steps [10..1000], 7 stop reasons (completed/manual/feature/singleWinAbove/balanceBelow/lossLimit/winLimit/slam), 3 nova HookBus event-a (onAutoplayStart/Tick/Stop), 31/31 unit tests, FS pause/resume, slam integration. |
 | U5 | **`betSelector.mjs`** — coin-value × bet-multiplier model + bet-step buttons. Trenutno hardkodovano `€1` u svim fixturama | nov blok | ⏳ queued |
 | U6 | **`gambleSecondary.mjs`** — Card Gamble + Ladder Gamble (sada samo osnovni `gamble`) — industry pattern je 2 grane | nov blok | ⏳ queued |
 | U7 | **`rngFairness.mjs`** PAR layer skeleton (provably-fair seed + verify endpoint) | nov blok | ⏳ queued |
