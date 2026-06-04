@@ -3,13 +3,13 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `pending Wave R · HookBus wiring` · main
+> Last updated: **2026-06-04** · HEAD: `0978e33` · main
 
 ---
 
 ## 🟢 Shipped (in-tree on `origin/main`)
 
-### Wave R — HookBus lifecycle wiring + paylineOverlay test (commit pending)
+### Wave R — HookBus lifecycle wiring + paylineOverlay test (commit `0978e33`)
 
 > **Pre-Wave R audit**: 34 blokova, samo **3** registruju HookBus lifecycle hookove (`multiplierOrb`, `expandingWild`, `stickyWild`). Ostala 31 bloka su po pravilu "dead code by definition" — emituju runtime JS koji se nigde ne zove preko centralnog događaja, pa win cap, hold & win, walking wild, mystery symbol, scatter celebration, persistent multiplier, lightning, super symbol, wild reel, respin, wheel bonus, bonus pick, gamble — sve crta UI ali nikad ne reaguje na spin lifecycle. Wave R popravlja to template-wide.
 >
