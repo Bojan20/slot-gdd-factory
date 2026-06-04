@@ -416,6 +416,53 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
         }
       }
     }, { priority: 20 });
+
+    /* Wave V5 — react to slam-stop request. Industry-reference (playa-slot
+       SlamStopCommand): collapse all reels to landed strip immediately.
+       Pre-response phase (server result still pending) is impossible in
+       this template because the engine bakes the symbol strip at preSpin
+       time (placeholder math), so EVERY slam is effectively post-response.
+       We still honor the payload.phase contract for future server-coupled
+       PAR phase work. */
+    HookBus.on('onSlamRequested', (payload) => {
+      if (!allReelsActive || !Array.isArray(RECT_REELS)) return;
+      const slamStart = performance.now();
+      for (const reel of RECT_REELS) {
+        /* Clear any pending auto-stop timer so it can't double-stop. */
+        if (reel.stopTimerId) { clearTimeout(reel.stopTimerId); reel.stopTimerId = null; }
+        if (reel.glowTimerId) { clearTimeout(reel.glowTimerId); reel.glowTimerId = null; }
+        /* Force immediate stop on next tick: clear minRotations gate and
+           arm stopRequested. onTickAll() will then snap reel.stopping=true
+           on its next rotateStripDown step and the visual collapse proceeds
+           through the existing snap/bounce path. */
+        reel.minRotations = 0;
+        reel.stopDelayMs = 0;
+        reel.stopRequested = true;
+        reel.stopRequestTime = slamStart;
+        reel.col.classList.remove('reelCol--anticipating');
+      }
+      /* Emit onSlamComplete once every reel has actually stopped. We poll
+         allReelsActive instead of subscribing because the existing tick
+         loop already flips it when the last reel settles. */
+      const t0 = slamStart;
+      const pollDoneId = setInterval(() => {
+        if (!allReelsActive) {
+          clearInterval(pollDoneId);
+          const duration = Math.round(performance.now() - t0);
+          HookBus.emit('onSlamComplete', { duration });
+        }
+      }, 16);
+      /* Hard fallback — if reels for some reason never settle (e.g. SVG
+         kind without RECT_REELS path), still fire onSlamComplete after
+         500ms so the UI never deadlocks. */
+      setTimeout(() => {
+        if (allReelsActive) {
+          clearInterval(pollDoneId);
+          const duration = Math.round(performance.now() - t0);
+          HookBus.emit('onSlamComplete', { duration });
+        }
+      }, 500);
+    });
   }
 
   function runOneBaseSpin() {

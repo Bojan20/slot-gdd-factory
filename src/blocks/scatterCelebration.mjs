@@ -200,18 +200,29 @@ export function emitScatterCelebrationRuntime(cfg = defaultConfig()) {
     return { host, cells: hits };
   }
 
+  /* Wave V6 — cancellation token for force-skip support. Each celebration
+     run picks up the current token; an onSkipRequested handler bumps the
+     counter, which the timer closure tests on fire and the early-resolve
+     branch tests too. Defensive against double-fire. */
+  var _SCATTER_CELEBRATION_TOKEN = 0;
+  var _scatterCelebrationActive = false;
+
   function playScatterCelebration(opts) {
     return new Promise(resolve => {
       if (FREESPINS.scatterCelebration === false) { resolve(); return; }
       const { host, cells } = findScatterCellsOnGrid();
       if (!cells || cells.length === 0) { resolve(); return; }
       const durationMs = (opts && opts.durationMs) || ${c.durationMs};
+      const myToken = ++_SCATTER_CELEBRATION_TOKEN;
+      _scatterCelebrationActive = true;
       host.classList.add('is-scatter-celebrating');
       cells.forEach(c => c.classList.add('cell--scatter-celebrate'));
       /* Safety: don't leak the classes if the page hides/unmounts mid-flight. */
       setTimeout(() => {
+        if (myToken !== _SCATTER_CELEBRATION_TOKEN) return; /* cancelled */
         host.classList.remove('is-scatter-celebrating');
         cells.forEach(c => c.classList.remove('cell--scatter-celebrate'));
+        _scatterCelebrationActive = false;
         resolve();
       }, durationMs);
     });
@@ -229,6 +240,23 @@ export function emitScatterCelebrationRuntime(cfg = defaultConfig()) {
   if (typeof HookBus !== 'undefined') {
     HookBus.on('onFsTrigger', () => {
       try { playScatterCelebration(); } catch (e) { /* defensive */ }
+    });
+
+    /* Wave V6 — react to force-skip during the celebration phase. Bump
+       the token so any in-flight setTimeout closure bails, strip the
+       classes manually, then emit onSkipComplete so forceSkip block
+       hides the button + clears the global flag. */
+    HookBus.on('onSkipRequested', (payload) => {
+      if (!payload || payload.phase !== 'celebration') return;
+      if (!_scatterCelebrationActive) return;
+      const t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      _SCATTER_CELEBRATION_TOKEN++;        /* invalidate in-flight timer */
+      _scatterCelebrationActive = false;
+      const { host, cells } = findScatterCellsOnGrid();
+      if (host) host.classList.remove('is-scatter-celebrating');
+      if (cells) cells.forEach(c => c.classList.remove('cell--scatter-celebrate'));
+      const duration = Math.round(((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - t0);
+      HookBus.emit('onSkipComplete', { phase: 'celebration', duration });
     });
   }
 `;

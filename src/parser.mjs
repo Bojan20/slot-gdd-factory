@@ -163,6 +163,8 @@ export function parseMarkdownGDD(text) {
   extractProgressiveFreeSpins(text, model);
   extractAudio(text, model);
   extractUiToast(text, model);
+  extractSlamStop(text, model);
+  extractForceSkip(text, model);
   extractHoldAndWin(text, model);
   extractRespin(text, model);
   extractWinCap(text, model);
@@ -844,6 +846,18 @@ export function extractFeatures(rawText) {
       re: /\b(?:ui\s+toast|win\s+celebration|big\s+win\s+toast|mega\s+win\s+toast|epic\s+win\s+toast|win\s+tier\s+toast)\b|\b##\s+(?:UI\s+Toast|Win\s+Celebration)\b/i,
       label: 'UI Toast',
     },
+    {
+      // Wave V1 — Slam-stop button (industry-reference SlamStopCommand)
+      kind: 'slam_stop',
+      re: /\b(?:slam[\s_-]?stop|quick[\s_-]?stop|reels?\s+slam)\b|\b##\s+(?:Slam[\s_-]?Stop|Quick[\s_-]?Stop)\b/i,
+      label: 'Slam Stop',
+    },
+    {
+      // Wave V2 — Force-skip button (industry-reference ForceSkipCommand)
+      kind: 'force_skip',
+      re: /\b(?:force[\s_-]?skip|skip[\s_-]?animation|skip[\s_-]?button)\b|\b##\s+(?:Force[\s_-]?Skip|Skip[\s_-]?Animation)\b/i,
+      label: 'Force Skip',
+    },
   ];
 
   const out = [];
@@ -1177,6 +1191,24 @@ function freshModel() {
       featureDurationMs: undefined,
       queueOnFsEnd: undefined, fsTriggerLabel: undefined,
       colors: undefined, maxQueue: undefined,
+    },
+    /* Wave V1 — Slam-stop button (industry-reference SlamStopCommand). */
+    slamStop: {
+      enabled: undefined,
+      chipLabel: undefined, chipColor: undefined, chipTextColor: undefined,
+      requireMinSpinMs: undefined,
+      hideOnTurbo: undefined, hideOnAutoSpin: undefined,
+      reelsClickAreaEnabled: undefined,
+      ariaLabel: undefined, pulseAnimation: undefined,
+    },
+    /* Wave V2 — Force-skip button (industry-reference ForceSkipCommand). */
+    forceSkip: {
+      enabled: undefined,
+      chipLabel: undefined, chipColor: undefined, chipTextColor: undefined,
+      disabledPressed: undefined, hidePressed: undefined,
+      showDuringRollup: undefined, showDuringFsIntro: undefined,
+      showDuringFsOutro: undefined, showDuringCelebration: undefined,
+      minRollupMsForShow: undefined, ariaLabel: undefined,
     },
     holdAndWin: {
       enabled: undefined, triggerCount: undefined, bonusSymbolId: undefined,
@@ -2016,6 +2048,44 @@ export function extractUiToast(text, model) {
     if (v && /^\d{1,3},\d{1,3},\d{1,3}$/.test(v.trim())) colors[tier] = v.trim();
   }
   if (Object.keys(colors).length > 0) tgt.colors = colors;
+}
+
+/* Wave V1 — Slam-Stop button extractor.
+ * Reads `## Slam Stop` / `## SlamStop` / `## Quick Stop` GDD section. */
+export function extractSlamStop(text, model) {
+  const s = _findSection(text, /^##\s+(?:Slam[- ]?Stop|SlamStop|Quick[- ]?Stop)\b[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.slamStop;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const cl = _readStr(s, 'chip[- ]?label'); if (cl) tgt.chipLabel = cl;
+  const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
+  const ctc = _readStr(s, 'chip[- ]?text[- ]?color'); if (ctc) tgt.chipTextColor = ctc;
+  const rms = _readInt(s, 'require[- ]?min[- ]?spin[- ]?ms'); if (rms !== undefined) tgt.requireMinSpinMs = rms;
+  const hot = _readBool(s, 'hide[- ]?on[- ]?turbo'); if (hot !== undefined) tgt.hideOnTurbo = hot;
+  const hoa = _readBool(s, 'hide[- ]?on[- ]?auto[- ]?spin'); if (hoa !== undefined) tgt.hideOnAutoSpin = hoa;
+  const rca = _readBool(s, 'reels[- ]?click[- ]?area(?:[- ]?enabled)?'); if (rca !== undefined) tgt.reelsClickAreaEnabled = rca;
+  const ar = _readStr(s, 'aria[- ]?label'); if (ar) tgt.ariaLabel = ar;
+  const pa = _readBool(s, 'pulse[- ]?animation'); if (pa !== undefined) tgt.pulseAnimation = pa;
+}
+
+/* Wave V2 — Force-Skip button extractor.
+ * Reads `## Force Skip` / `## ForceSkip` / `## Skip Animation` section. */
+export function extractForceSkip(text, model) {
+  const s = _findSection(text, /^##\s+(?:Force[- ]?Skip|ForceSkip|Skip[- ]?Animation)\b[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.forceSkip;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const cl = _readStr(s, 'chip[- ]?label'); if (cl) tgt.chipLabel = cl;
+  const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
+  const ctc = _readStr(s, 'chip[- ]?text[- ]?color'); if (ctc) tgt.chipTextColor = ctc;
+  const dp = _readBool(s, 'disabled[- ]?pressed'); if (dp !== undefined) tgt.disabledPressed = dp;
+  const hp = _readBool(s, 'hide[- ]?pressed'); if (hp !== undefined) tgt.hidePressed = hp;
+  const sdr = _readBool(s, 'show[- ]?during[- ]?rollup'); if (sdr !== undefined) tgt.showDuringRollup = sdr;
+  const sdfi = _readBool(s, 'show[- ]?during[- ]?fs[- ]?intro'); if (sdfi !== undefined) tgt.showDuringFsIntro = sdfi;
+  const sdfo = _readBool(s, 'show[- ]?during[- ]?fs[- ]?outro'); if (sdfo !== undefined) tgt.showDuringFsOutro = sdfo;
+  const sdc = _readBool(s, 'show[- ]?during[- ]?celebration'); if (sdc !== undefined) tgt.showDuringCelebration = sdc;
+  const mrm = _readInt(s, 'min[- ]?rollup[- ]?ms(?:[- ]?for[- ]?show)?'); if (mrm !== undefined) tgt.minRollupMsForShow = mrm;
+  const ar = _readStr(s, 'aria[- ]?label'); if (ar) tgt.ariaLabel = ar;
 }
 
 /* Wave U2 — Audio scaffolding extractor. */

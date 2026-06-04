@@ -439,6 +439,25 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
     HookBus.on('preSpin', () => {
       cancelWinSymCycle();
     }, { priority: -10 });
+
+    /* Wave V6 — react to force-skip during rollup/celebration. Same exit
+       mechanism as cancelWinSymCycle (token bump → next playOne() step
+       short-circuits). We're the rollup owner for the 'rollup' phase so
+       we are also responsible for the matching onSkipComplete emit. */
+    HookBus.on('onSkipRequested', (payload) => {
+      if (!payload || (payload.phase !== 'rollup' && payload.phase !== 'celebration')) return;
+      const t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      cancelWinSymCycle();
+      /* Clean up any dangling polylines / winsym marks so the final state
+         is visually settled. */
+      if (typeof grid !== 'undefined' && grid && grid.querySelectorAll) {
+        grid.querySelectorAll('.cell--winsym, text.cell--winsym')
+          .forEach(c => c.classList.remove('cell--winsym'));
+        if (typeof clearPaylineOverlay === 'function') clearPaylineOverlay();
+      }
+      const duration = Math.round(((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - t0);
+      HookBus.emit('onSkipComplete', { phase: payload.phase, duration });
+    });
   }
 
   /* Expose applyWinHighlight on window so headless QA tools can poke it

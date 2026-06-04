@@ -86,8 +86,13 @@ t('emitReelEngineRuntime: bakes stripBufferCells', () => {
 
 t('emitReelEngineRuntime: bakes settle breath + static fallback', () => {
   const js = emitReelEngineRuntime({ settleBreathMs: 120, staticFallbackMs: 90 });
+  /* settleBreathMs is the pause before invoking onSettled at the end of
+   * a successful spin tick chain. */
   ct(js, 'setTimeout(onSettled, 120)');
-  ct(js, 'setTimeout(onSettled, 90)');
+  /* staticFallbackMs is the empty-grid (SVG/wheel) timeout. After Wave R
+   * refactor the call goes through _settled(onSettled) wrapper, so the
+   * literal we look for is the duration in the wrapped call site. */
+  ct(js, '_settled(onSettled), 90');
 });
 
 t('parser: full Reel Engine Hot section', () => {

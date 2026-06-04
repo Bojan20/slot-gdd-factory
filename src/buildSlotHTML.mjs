@@ -152,6 +152,16 @@ import {
   emitUiToastCSS, emitUiToastMarkup, emitUiToastRuntime,
   resolveConfig as resolveUiToastConfig,
 } from './blocks/uiToast.mjs';
+// Wave V1 — Slam-stop button (industry-reference playa-slot SlamStopCommand)
+import {
+  emitSlamStopCSS, emitSlamStopMarkup, emitSlamStopRuntime,
+  resolveConfig as resolveSlamStopConfig,
+} from './blocks/slamStop.mjs';
+// Wave V2 — Force-skip button (industry-reference playa-slot ForceSkipCommand)
+import {
+  emitForceSkipCSS, emitForceSkipMarkup, emitForceSkipRuntime,
+  resolveConfig as resolveForceSkipConfig,
+} from './blocks/forceSkip.mjs';
 import {
   emitHoldAndWinCSS, emitHoldAndWinMarkup, emitHoldAndWinRuntime,
   resolveConfig as resolveHoldAndWinConfig,
@@ -669,6 +679,9 @@ ${emitPersistentMultiplierCSS(resolvePersistentMultiplierConfig(model))}
 ${emitProgressiveFreeSpinsCSS(resolveProgressiveFreeSpinsConfig(model))}
 ${/* audio CSS skipped — ADB tok, ne GDD */ ''}
 ${emitUiToastCSS(resolveUiToastConfig(model))}
+${/* Wave V1+V2 — spin-control overlay buttons. z-index: slam 20, skip 25. */ ''}
+${emitSlamStopCSS(resolveSlamStopConfig(model))}
+${emitForceSkipCSS(resolveForceSkipConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
 ${emitRespinCSS(resolveRespinConfig(model))}
 ${emitWinCapCSS(resolveWinCapConfig(model))}
@@ -907,6 +920,9 @@ ${emitPersistentMultiplierMarkup(resolvePersistentMultiplierConfig(model))}
 ${emitProgressiveFreeSpinsMarkup(resolveProgressiveFreeSpinsConfig(model))}
 ${/* audio markup skipped — ADB tok, ne GDD */ ''}
 ${emitUiToastMarkup(resolveUiToastConfig(model))}
+${/* Wave V1+V2 — spin-control buttons (hidden by default; runtime toggles). */ ''}
+${emitSlamStopMarkup(resolveSlamStopConfig(model))}
+${emitForceSkipMarkup(resolveForceSkipConfig(model))}
 ${emitHoldAndWinMarkup(resolveHoldAndWinConfig(model))}
 ${emitRespinMarkup(resolveRespinConfig(model))}
 ${emitWinCapMarkup(resolveWinCapConfig(model))}
@@ -1203,6 +1219,9 @@ ${emitGambleMarkup(resolveGambleConfig(model))}
   ${emitProgressiveFreeSpinsRuntime(resolveProgressiveFreeSpinsConfig(model))}
   ${/* audio runtime skipped — ADB tok, ne GDD */ ''}
   ${emitUiToastRuntime(resolveUiToastConfig(model))}
+  ${/* Wave V1+V2 — spin-control runtime (emit-only blocks; engine listens). */ ''}
+  ${emitSlamStopRuntime(resolveSlamStopConfig(model))}
+  ${emitForceSkipRuntime(resolveForceSkipConfig(model))}
   ${emitHoldAndWinRuntime(resolveHoldAndWinConfig(model))}
   ${emitRespinRuntime(resolveRespinConfig(model))}
   ${emitWinCapRuntime(resolveWinCapConfig(model))}

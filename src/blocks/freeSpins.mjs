@@ -622,6 +622,28 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
         window.__FS_LAST_TRIGGER__ = { ts: Date.now(), award: p && p.award, scatters: p && p.scatters };
       }
     }, { priority: -30 });
+
+    /* Wave V6 — react to force-skip during FS intro / outro overlays.
+       'fsIntro' → advance from FS_INTRO to FS_ACTIVE (same as CTA click).
+       'fsOutro' → advance from FS_OUTRO to BASE (same as CTA click).
+       Emit matching onSkipComplete so the forceSkip block hides the
+       button and clears window.__SLOT_SKIPPED__. */
+    HookBus.on('onSkipRequested', (payload) => {
+      if (!payload) return;
+      const phase = payload.phase;
+      if (phase !== 'fsIntro' && phase !== 'fsOutro') return;
+      const t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      if (phase === 'fsIntro' && FSM.phase === 'FS_INTRO') {
+        FSM_enterActive();
+      } else if (phase === 'fsOutro' && FSM.phase === 'FS_OUTRO') {
+        FSM_enterBase();
+      } else {
+        /* Phase mismatch — silently no-op but still emit Complete so the
+           UI doesn't deadlock on a stuck skip flag. */
+      }
+      const duration = Math.round(((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - t0);
+      HookBus.emit('onSkipComplete', { phase: phase, duration });
+    });
   }
 `;
 }

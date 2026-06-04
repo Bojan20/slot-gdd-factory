@@ -79,6 +79,7 @@ const HOOK_REGISTRATION_OPT_OUT = new Set([
 
 /* Expected emit ownership — single source of truth for each event. */
 const EXPECTED_EMIT_OWNERS = {
+  /* Core spin lifecycle (Wave A → S) */
   preSpin:        ['reelEngine.mjs', 'freeSpins.mjs'],
   onSpinResult:   ['reelEngine.mjs'],
   onTumbleStep:   ['tumble.mjs'],
@@ -86,6 +87,16 @@ const EXPECTED_EMIT_OWNERS = {
   onFsTrigger:    ['freeSpins.mjs'],
   onFsSpinResult: ['freeSpins.mjs'],
   onFsEnd:        ['freeSpins.mjs'],
+  /* Wave V — spin-control intent events. The button block publishes the
+   * intent; the consumer block that owns the action emits the matching
+   * Complete event back. */
+  onSlamRequested: ['slamStop.mjs'],
+  onSlamComplete:  ['reelEngine.mjs'],
+  onSkipRequested: ['forceSkip.mjs'],
+  /* onSkipComplete is emitted by whichever block owns the cancelled
+   * animation: winPresentation for rollup/celebration, scatterCelebration
+   * for its banner phase, freeSpins for FS intro/outro. Multi-owner. */
+  onSkipComplete:  ['winPresentation.mjs', 'scatterCelebration.mjs', 'freeSpins.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */
