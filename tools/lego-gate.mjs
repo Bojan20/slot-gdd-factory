@@ -68,6 +68,8 @@ const C = {
 const HOOK_REGISTRATION_OPT_OUT = new Set([
   'hookBus.mjs',        // the bus itself
   'reelEngineCSS.mjs',  // pure CSS (uniform-reel keyframes)
+  'themeCSS.mjs',       // pure CSS (chrome / theme / grid shapes / dev tools)
+  'paylineOverlay.mjs', // SVG overlay helpers — no HookBus listener path
   'paylines.mjs',       // pure config (PAYLINE_POOL constant)
   'paylineOverlay.mjs', // SVG overlay drawn synchronously by winPresentation cycle
   'payAnywhereEval.mjs',// pure evaluator function (called from winPresentation)

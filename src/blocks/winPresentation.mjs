@@ -66,6 +66,78 @@ export function resolveConfig(model) {
   return cfg;
 }
 
+/* Wave T-slim — extract of win-highlight + win-symbol-cycle CSS from
+ * buildSlotHTML.mjs orchestrator (originally inline, ~95 LOC). Kept as
+ * an enabled-always block because every grid kind uses these selectors;
+ * disabling would break the no-trigger win presentation cycle. */
+export function emitWinPresentationCSS(/* cfg = defaultConfig() */) {
+  return `
+  /* ── Placeholder win highlight — emitted by src/blocks/winPresentation.mjs
+     Visual-only: winning cells stay full opacity + nudge scale, non-winning
+     cells dim to ~35%. No keyframes, no glow — just enough to read the
+     combo at a glance. Real win-evaluator (matched line / cluster) lands
+     with the math layer. Scoped to .gridHost so it works for both flat
+     grids and nested SVG/text grids. */
+  .gridHost.has-winselection .cell,
+  .gridHost.has-winselection text         { opacity: 0.32; transition: opacity 180ms ease, transform 180ms ease; }
+  .gridHost.has-winselection .cell.is-win,
+  .gridHost.has-winselection text.is-win  { opacity: 1;     transform: scale(1.06); }
+  @media (prefers-reduced-motion: reduce) {
+    .gridHost.has-winselection .cell,
+    .gridHost.has-winselection text,
+    .gridHost.has-winselection .cell.is-win,
+    .gridHost.has-winselection text.is-win { transition: none; transform: none; }
+  }
+
+  /* ── Win-symbol cycle ── independent modular block ────────────────────
+     Plays AFTER reels settle on a non-trigger BASE spin. Multiple winning
+     combinations cycle one-by-one, each lit for ~500ms (industry small-win
+     pace), then everything undims back to neutral.
+
+     Design constraint (Boki rule): SUBTLE — animation MUST stay entirely
+     inside the reel cell. Hard rules:
+       - NO transform (no scale / rotate) — glyph stays at native size
+       - NO drop-shadow / external glow — every prior version bled past
+         the frame edge; only INSET box-shadow is allowed
+       - Inset gold rim + brightness pulse on the glyph
+       - Neighbour cells dim to 0.30 for cluster contrast
+     The result is a contained "lit-cell" pulse that reads on luminance
+     and a soft inner rim, with zero overflow. */
+  .gridHost.is-winsym-cycling .cell,
+  .gridHost.is-winsym-cycling text {
+    opacity: 0.30;
+    transition: opacity 140ms ease;
+  }
+  .gridHost.is-winsym-cycling .cell--winsym,
+  .gridHost.is-winsym-cycling text.cell--winsym {
+    opacity: 1 !important;
+    animation: winsym-pulse 500ms ease-in-out 1;
+    transform: none;
+    border-radius: 6px;
+  }
+  @keyframes winsym-pulse {
+    0%   { filter: brightness(1.00);
+           box-shadow: inset 0 0 0 0 rgba(255, 196, 90, 0); }
+    35%  { filter: brightness(1.28);
+           box-shadow: inset 0 0 0 2px rgba(255, 196, 90, 0.92),
+                       inset 0 0 8px  rgba(255, 170, 60, 0.55); }
+    70%  { filter: brightness(1.14);
+           box-shadow: inset 0 0 0 2px rgba(255, 196, 90, 0.62),
+                       inset 0 0 6px  rgba(255, 170, 60, 0.32); }
+    100% { filter: brightness(1.00);
+           box-shadow: inset 0 0 0 0 rgba(255, 196, 90, 0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gridHost.is-winsym-cycling .cell--winsym,
+    .gridHost.is-winsym-cycling text.cell--winsym {
+      animation: none;
+      filter: brightness(1.15);
+      box-shadow: inset 0 0 0 2px rgba(255, 196, 90, 0.85);
+    }
+  }
+`;
+}
+
 /* Emit the cluster-mode evaluator runtime. Used by grids that DON'T have
    paylines (cluster / megaclusters / hex / diamond / pyramid / cross /
    l_shape / SVG) — fires one event per non-scatter symbol with ≥ 3 hits,

@@ -7,10 +7,17 @@
  * This block is unusual among lego pieces: it lives at *runtime* in the
  * built HTML, not on the Node server side, because it manipulates the DOM
  * (`document.createElementNS`, `getBoundingClientRect`). So the public API
- * is a single string-emitter `emitPaylineOverlayRuntime()` that the
- * orchestrator (`buildSlotHTML.mjs`) splices into the inline `<script>` tag.
+ * is a string-emitter `emitPaylineOverlayRuntime()` that the orchestrator
+ * (`buildSlotHTML.mjs`) splices into the inline `<script>` tag.
+ *
+ * Wave T-slim: `emitPaylineOverlayCSS()` is also exposed so the orchestrator
+ * no longer carries the 55-LOC payline CSS inline. Tier colors are kept
+ * frozen here so a future config layer can override per game without
+ * touching the orchestrator.
  *
  * Public API:
+ *   defaultConfig() / resolveConfig(model)
+ *   emitPaylineOverlayCSS(cfg)   → .payline-overlay + tier classes
  *   emitPaylineOverlayRuntime()  → string of JS to be injected into the
  *                                   runtime <script> tag
  *
@@ -38,9 +45,114 @@
  * overlay existing whenever they call drawPaylineOverlay.
  */
 
-/* Emit the runtime JS source as a string. Pure function — no parameters yet,
-   but the signature accepts a config slot for future per-game overrides
-   (custom badge offset, alternative tier→color mapping etc.). */
+/* Industry-baseline tier palette. RGB triplets so rgba() interpolation in
+ * the CSS template works without re-parsing hex codes. */
+const DEFAULTS = Object.freeze({
+  enabled: true,
+  strokeWidth: 4.5,
+  drawInMs: 220,
+  badgeRadius: 12,
+  /* tier → ["stroke hex", "glow rgba"] */
+  tierColors: Object.freeze({
+    HP:   { stroke: '#ffc85a', glow: '255, 200,  90' },
+    MP:   { stroke: '#7ec8e3', glow: '126, 200, 227' },
+    LP:   { stroke: '#d29560', glow: '210, 149,  96' },
+    WILD: { stroke: '#e070c0', glow: '224, 112, 192' },
+  }),
+});
+
+export function defaultConfig() {
+  return {
+    enabled: DEFAULTS.enabled,
+    strokeWidth: DEFAULTS.strokeWidth,
+    drawInMs: DEFAULTS.drawInMs,
+    badgeRadius: DEFAULTS.badgeRadius,
+    tierColors: { ...DEFAULTS.tierColors },
+  };
+}
+
+export function resolveConfig(model = {}) {
+  const cfg = defaultConfig();
+  const m = (model && model.paylineOverlay) || {};
+  if (m.enabled != null) cfg.enabled = !!m.enabled;
+  if (Number.isFinite(m.strokeWidth))  cfg.strokeWidth = Math.max(1, Math.min(12, Number(m.strokeWidth)));
+  if (Number.isFinite(m.drawInMs))     cfg.drawInMs    = Math.max(60, Math.min(2000, Math.round(m.drawInMs)));
+  if (Number.isFinite(m.badgeRadius))  cfg.badgeRadius = Math.max(6, Math.min(32, Math.round(m.badgeRadius)));
+  /* Defensive merge of tierColors — accept only HP/MP/LP/WILD keys with
+   * the right shape. Anything else is silently ignored. */
+  if (m.tierColors && typeof m.tierColors === 'object') {
+    for (const tier of ['HP', 'MP', 'LP', 'WILD']) {
+      const t = m.tierColors[tier];
+      if (t && typeof t.stroke === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(t.stroke)
+           && typeof t.glow === 'string'   && /^\d{1,3},\s*\d{1,3},\s*\d{1,3}$/.test(t.glow)) {
+        cfg.tierColors[tier] = { stroke: t.stroke, glow: t.glow.replace(/\s+/g, '') };
+      }
+    }
+  }
+  return cfg;
+}
+
+/* CSS string — pulled out of buildSlotHTML.mjs in Wave T-slim. */
+export function emitPaylineOverlayCSS(cfg = defaultConfig()) {
+  const c = resolveConfig({ paylineOverlay: cfg });
+  if (!c.enabled) return '';
+  const t = c.tierColors;
+  return `
+  /* ── Payline overlay (SVG) — emitted by src/blocks/paylineOverlay.mjs
+     Absolute layer over the entire gridHost. Each winning payline draws
+     ONE <polyline> through the geometric centers of its matched cells,
+     colored by tier. A round number-badge floats at the leftmost
+     endpoint so the player reads "LINE 4" at a glance. SVG drawn at the
+     gridHost dimensions in pixel space (viewBox = "0 0 W H"), updated on
+     each cycle step. */
+  .payline-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 6;
+    overflow: visible;
+  }
+  .payline-path {
+    fill: none;
+    stroke-width: ${c.strokeWidth};
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0 6px rgba(255, 196, 90, 0.55));
+    stroke-dasharray: var(--payline-len, 1000);
+    stroke-dashoffset: var(--payline-len, 1000);
+    animation: payline-draw ${c.drawInMs}ms ease-out forwards;
+  }
+  @keyframes payline-draw {
+    to { stroke-dashoffset: 0; }
+  }
+  .payline-path.tier-HP   { stroke: ${t.HP.stroke};   filter: drop-shadow(0 0 8px rgba(${t.HP.glow},   0.85)); }
+  .payline-path.tier-MP   { stroke: ${t.MP.stroke};   filter: drop-shadow(0 0 7px rgba(${t.MP.glow},   0.75)); }
+  .payline-path.tier-LP   { stroke: ${t.LP.stroke};   filter: drop-shadow(0 0 6px rgba(${t.LP.glow},   0.70)); }
+  .payline-path.tier-WILD { stroke: ${t.WILD.stroke}; filter: drop-shadow(0 0 8px rgba(${t.WILD.glow}, 0.80)); }
+  .payline-badge {
+    fill: rgba(15, 12, 10, 0.92);
+    stroke-width: 1.5;
+  }
+  .payline-badge.tier-HP   { stroke: ${t.HP.stroke}; }
+  .payline-badge.tier-MP   { stroke: ${t.MP.stroke}; }
+  .payline-badge.tier-LP   { stroke: ${t.LP.stroke}; }
+  .payline-badge.tier-WILD { stroke: ${t.WILD.stroke}; }
+  .payline-badge-text {
+    font: 800 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    fill: #f2f2f2;
+    text-anchor: middle;
+    dominant-baseline: central;
+    letter-spacing: 0.5px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .payline-path { animation: none; stroke-dashoffset: 0; }
+  }
+`;
+}
+
+/* Emit the runtime JS source as a string. */
 export function emitPaylineOverlayRuntime(/* config = {} */) {
   return `
   /* ── Payline SVG overlay — emitted by src/blocks/paylineOverlay.mjs ────
