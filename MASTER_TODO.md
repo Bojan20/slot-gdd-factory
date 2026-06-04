@@ -3,13 +3,13 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `pending Wave U3 · uiToast` · main
+> Last updated: **2026-06-04** · HEAD: `a162323` · main
 
 ---
 
 ## 🟢 Shipped (in-tree on `origin/main`)
 
-### Wave U3 — `uiToast.mjs` unified BIG/MEGA/EPIC + feature toast (commit pending)
+### Wave U3 — `uiToast.mjs` unified BIG/MEGA/EPIC + feature toast (commit `a162323`)
 
 > **Treći blok Wave U feature ekspanzije.** Boki pravilo: *"sto vise feautrea"*. Wave U3 centralizuje "celebration" overlay-e u jedan queue-based renderer — bilo koji blok može da pozove `uiShowToast(label, opts)` umesto da pravi vlastiti banner div. Postojeći lightning/respin/bonus-buy banneri mogu da migriraju u sledećoj wave.
 >
