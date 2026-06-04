@@ -3,11 +3,36 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `21a9694` · main
+> Last updated: **2026-06-04** · HEAD: `WAVE_T2_PENDING` · main
 
 ---
 
 ## 🟢 Shipped (in-tree on `origin/main`)
+
+### Wave T2 — Vendor purge round 2 (BTG / Zeus / Olympus / Megaways) (commit `WAVE_T2_PENDING`)
+
+> **Drugi vendor-neutralization pass posle Wave T.** Wave T (commit `e1d2968`) je očistio 11 fajlova sa Game-title / Vendor-name stringovima, ali audit posle Wave U trijade je otkrio dodatne kategorije vendor-attributnih komentara, heuristika i test labela:
+>
+> - **BTG attribution** u `parser.mjs` komentarima (`Megaclusters — BTG quarter-split variant`, `megaclusters (BTG quarter-split)`)
+> - **Megaways / TrueWays trademark** u regex patternima (`\bmegaways\b|\btrueways\b`) — strip-ovani; number-ways pattern + `ways to win` fraza i dalje hvataju isti GDD sadržaj
+> - **Zeus / Olimp / Olympus** hardcoded heuristika u `pdfToMarkdown.mjs` — auto-tagging Mythology bazirano na specifičnim deity imenima + Mount Olympus fallback. Strip-ovano: parser sada preserve-uje user-authored theme tagove verbatim, bez franchise-specific augmentacije.
+> - **`Z` symbol entry "Zeus (Crown)"** u kanonskoj symbol vocabulary listi — zamenjeno generičkim `CR` "Crown" entry-jem
+> - **Test labels** u `tests/parse-real.mjs` (`Wrath of Olympus`, `Crystal Forge`, `Midnight Fangs`, `Gates of Olympus 1000`) → generic "Reference GDD A/B/C/D" sa funkcionalnim sufiksima
+> - **Test title** `'override waysCount Megaways'` → `'override waysCount 117649-ways'`
+>
+> **Sample fajlovi netaknuti** — Boki ih je u `CLAUDE.md` fixture listi (`WRATH_OF_OLYMPUS_GAME_GDD.md`, `CRYSTAL_FORGE_GAME_GDD.md` itd.) eksplicitno označio kao official GDD fixtures. Path resolutions u test runner-ima resolve postojeće file paths bez authored vendor labela.
+
+| ID | Item | Files | Status |
+|---|---|---|:--:|
+| T2.1 | `src/parser.mjs` — strip "Megaways · Out of scope" example, drop `megaways` from negation strip regex, rename "Variable rows-per-reel (Megaways)" → "(high-volume ways family)", drop `\bmegaways\b\|\btrueways\b` from kind detection regex (replace with `\bvariable-ways\b\|\bhigh-ways\b`), rename "Megaclusters — BTG quarter-split variant" → "Split-cluster variant", rename "megaclusters (BTG quarter-split)" comment → "(quarter-split cluster variant)", rename example paytable row `Z\|Zeus (Crown)` → `H\|High Symbol A`, rename comment about Zeus → letter "Z" | `src/parser.mjs` (9 lines) | ✅ |
+| T2.2 | `src/gridShape.mjs` — rename "variable per-reel (Megaways family)" → "(high-volume ways family)", rename "Default Megaways pattern" → "Default variable-ways pattern" | `src/gridShape.mjs` (2 lines) | ✅ |
+| T2.3 | `src/pdfToMarkdown.mjs` — strip `\bmegaways\b` from evaluation kind regex (replace with `variable-ways`/`high-ways`), REMOVE Zeus high-symbol entry from canonical symbol vocabulary (replace with generic `CR\|Crown` entry), REMOVE Zeus-specific scatter detection conditional (always use generic "Scatter (Trigger only)"), REMOVE Olympus/Zeus/Greek auto-Mythology tag heuristic (preserve user tags verbatim), REMOVE Mount Olympus setting fallback, rename example comment | `src/pdfToMarkdown.mjs` (6 spots) | ✅ |
+| T2.4 | `src/blocks/payAnywhereEval.mjs` — rename comment `7 Zeus + 2 wild = bucket(9)` → `7 high-symbol + 2 wild = bucket(9)` | `src/blocks/payAnywhereEval.mjs:122` | ✅ |
+| T2.5 | `tests/parse-real.mjs` — 4 FIXTURES labels rewritten as "Reference GDD A/B/C/D" sa mehanic deskriptorima (multiplier-orb / cluster-pays / cluster-pays synthetic / pay-anywhere 1000x cap) | `tests/parse-real.mjs:23-28` | ✅ |
+| T2.6 | `tests/blocks/waysEval.test.mjs` — test title `override waysCount Megaways` → `override waysCount 117649-ways` | `tests/blocks/waysEval.test.mjs:29` | ✅ |
+| T2.7 | Verifikacija: full `grep -niE "(zeus\|olimp\|olympus\|megaways\|trueways)" src/` → **0 matches**, `grep -niE "(BTG\|big-time-gaming\|wazdan\|aristocrat\|wms\|igt\|netent\|microgaming\|pragmatic\|reactoonz)" src/ tests/blocks/ tools/` → **0 matches** (excluded: intentional banned regex in hygiene tests koji asser-uju 0 vendor) | grep gate | ✅ |
+| T2.8 | Verifikacija: `npm test` → 20/20 grid fixtures pass, `npm run test:blocks` → 37 block test files all green, `node tests/parse-real.mjs` → 4/4 fixtures parser floor PASS, `node tests/scatter-count-mode.mjs` → 38/38 PASS, `node tests/render-grid-all.mjs` → 20/20 fixtures pass, `npm run test:lego` → **5/5 invariants pass** | full QA gate | ✅ |
+| T2.9 | **Backward compat note**: `is_megaclusters` polje + `'megaclusters'` topology kind string ostaju kao internal classification labels (industry-common kind identifier, nije vendor authorship u kodu) — input parser i dalje detektuje `\bmega[\s-]?clusters?\b` ali komentari više ne pripisuju BTG. Future Wave kandidat: full rename `'megaclusters'` → `'split_cluster'` sa grandfather alias mapom (cascading promene u 9 fajlova). | deferred | ⏭️ |
 
 ### Wave U3 — `uiToast.mjs` unified BIG/MEGA/EPIC + feature toast (commit `a162323`)
 

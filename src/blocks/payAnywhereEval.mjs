@@ -119,7 +119,7 @@ function detectPayAnywhereWins() {
   }
 
   /* Wild adds to every regular symbol's count (substitute) — apply BEFORE
-     bucket selection so 7 Zeus + 2 wild = bucket(9). */
+     bucket selection so 7 high-symbol + 2 wild = bucket(9). */
   const wildCount = wildCells.length;
   const events = [];
   for (const sym of REG) {

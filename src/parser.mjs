@@ -431,7 +431,7 @@ function isGoldish(hex) {
 export function extractTopology(rawText, model) {
   const t = model.topology;
 
-  /* Apply SAME negation strips as feature detection so "Megaways · Out of scope"
+  /* Apply SAME negation strips as feature detection so "variable-ways · Out of scope"
      or "no cluster pays" lines don't falsely flip the evaluation kind. */
   let text = rawText.replace(
     /#{2,3}\s*(?:\d+\.\s*)?(?:Out[\s-]of[\s-]scope|Explicit non-features|Not in this product)[^#]*(?=#{2,3}|\Z)/gis,
@@ -442,7 +442,7 @@ export function extractTopology(rawText, model) {
     ''
   );
   text = text.replace(
-    /^[^\n]*\b(?:has\s+no|with\s*no|without|no\s+(?:cluster|megaways|ways|hexagonal|infinity))\b[^\n]*$/gim,
+    /^[^\n]*\b(?:has\s+no|with\s*no|without|no\s+(?:cluster|ways|hexagonal|infinity))\b[^\n]*$/gim,
     ''
   );
 
@@ -471,7 +471,7 @@ export function extractTopology(rawText, model) {
     model.confidence.topology += 0.3;
   }
 
-  /* 3. Variable rows-per-reel (Megaways) — "2-7 rows per reel" or per-reel list */
+  /* 3. Variable rows-per-reel (high-volume ways family) — "2-7 rows per reel" or per-reel list */
   const varRows =
     text.match(/\b(\d+)\s*[-–]\s*(\d+)\s+rows?\s+per\s+reel\b/i) ||
     text.match(/\brows?\s+per\s+reel\s*:?\s*(\d+)\s*[-–]\s*(\d+)/i) ||
@@ -514,7 +514,7 @@ export function extractTopology(rawText, model) {
      (must be grid-level, not "scatter pays anywhere" feature line). */
   if (!kind) {
     if (/\bcluster[\s_-]?pays?\b/i.test(text)) kind = 'cluster';
-    else if (/\b(?:243|576|720|1024|1600|3125|4096|7776|15625|46656|117649|1000000)\s*ways?\b|\bways?\s+to\s+win\b|\bmegaways\b|\btrueways\b/i.test(text)) kind = 'ways';
+    else if (/\b(?:243|576|720|1024|1600|3125|4096|7776|15625|46656|117649|1000000)\s*ways?\b|\bways?\s+to\s+win\b|\bvariable[\s-]?ways\b|\bhigh[\s-]?ways\b/i.test(text)) kind = 'ways';
     else if (/\bhexagonal\b|\bhoneycomb\b/i.test(text)) kind = 'hexagonal';
     else if (/\binfinity\s+reels?\b|\binfini[\s-]?reels?\b|\bgrowing\s+(?:columns?|reels?)\b/i.test(text)) kind = 'infinity';
     else if (/\bcrash\s+(?:game|multiplier)\b|\baviator[\s-]?shape\b/i.test(text)) kind = 'crash';
@@ -650,8 +650,8 @@ export function extractTopology(rawText, model) {
     if (m) t.wheel_segments = parseInt(m[1], 10);
   }
 
-  /* 16. Megaclusters — BTG quarter-split variant */
-  if (/\bmegaclusters?\b|\bmega[\s-]?clusters?\b|\bquarter[\s-]?split\s+cluster\b/i.test(text)) {
+  /* 16. Split-cluster variant — quarter-split cluster topology (per-symbol quad subdivision) */
+  if (/\bmega[\s-]?clusters?\b|\bsplit[\s-]?clusters?\b|\bquarter[\s-]?split\s+cluster\b/i.test(text)) {
     t.is_megaclusters = true;
   }
 
@@ -917,7 +917,7 @@ function freshModel() {
       direction: 'ltr',
       /* explicit ways count if known (243/1024/4096/7776/46656/117649/etc) */
       ways_count: null,
-      /* variable rows-per-reel (Megaways: 2-7 per reel) */
+      /* variable rows-per-reel (high-volume ways family, e.g. 2-7 per reel) */
       rows_per_reel: null,
       /* explicit per-reel rows array (diamond/pyramid: [3,4,5,4,3]) */
       rows_per_reel_array: null,
@@ -934,7 +934,7 @@ function freshModel() {
       mirrored_reels: false,
       /* multi-grid (dual/quad simultaneous grids) */
       grid_count: 1,
-      /* megaclusters (BTG quarter-split) */
+      /* split-cluster (quarter-split cluster variant) */
       is_megaclusters: false,
       /* slingo (5×5 + 1×5 hybrid) */
       is_slingo: false,
@@ -1609,10 +1609,10 @@ export function extractReelEngineHot(text, model) {
 
      | ID | Name | min8 | 8-9 | 10-11 | 12+ |
      |---|---|:-:|:-:|:-:|:-:|
-     | `Z` | Zeus (Crown) | 8 | 10x | 25x | 50x |
+     | `H` | High Symbol A | 8 | 10x | 25x | 50x |
 
    Buckets are inferred from header columns matching `\d+[-+]\d*`. Output:
-     model.payAnywhereEval.paytable = { Z: [10, 25, 50], H: [2.5, 10, 25] }
+     model.payAnywhereEval.paytable = { H: [10, 25, 50], M: [2.5, 10, 25] }
      model.payAnywhereEval.bucketEdges = [10, 12]
      model.payAnywhereEval.minWin = 8
 
@@ -1696,7 +1696,7 @@ export function extractMultiplierOrb(text, model) {
   // Look in Specials block for a row mentioning "Multiplier Orb" / "Orb".
   // CRITICAL: JS regex does NOT support `\Z` (Perl/Ruby anchor for end of
   // input). Using `\Z` made the engine treat it as a literal `Z` character,
-  // truncating any Specials block where a row contained the word "Zeus".
+  // truncating any Specials block where a row contained the letter "Z".
   // `$(?![\s\S])` is the portable "true end of input" pattern.
   const specialsBlock = text.match(/###[^\n]*\bSpecials?\b[^\n]*\n([\s\S]*?)(?=\n##\s|\n###\s|$(?![\s\S]))/i);
   if (specialsBlock) {

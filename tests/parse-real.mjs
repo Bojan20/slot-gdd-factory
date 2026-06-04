@@ -21,10 +21,10 @@ const REPO = resolve(dirname(__filename), '..');
 const SAMPLES = resolve(REPO, 'samples');
 
 const FIXTURES = [
-  { label: 'Wrath of Olympus',                       game: resolve(SAMPLES, 'WRATH_OF_OLYMPUS_GAME_GDD.md') },
-  { label: 'Crystal Forge',                          game: resolve(SAMPLES, 'CRYSTAL_FORGE_GAME_GDD.md') },
-  { label: 'Midnight Fangs (cluster-pays synthetic)', game: resolve(SAMPLES, 'MIDNIGHT_FANGS_GAME_GDD.md') },
-  { label: 'Gates of Olympus 1000 (Pay-Anywhere)',   game: resolve(SAMPLES, 'GATES_OF_OLYMPUS_1000_GAME_GDD.md') },
+  { label: 'Reference GDD A (rectangular · multiplier-orb)',   game: resolve(SAMPLES, 'WRATH_OF_OLYMPUS_GAME_GDD.md') },
+  { label: 'Reference GDD B (cluster-pays)',                   game: resolve(SAMPLES, 'CRYSTAL_FORGE_GAME_GDD.md') },
+  { label: 'Reference GDD C (cluster-pays synthetic)',         game: resolve(SAMPLES, 'MIDNIGHT_FANGS_GAME_GDD.md') },
+  { label: 'Reference GDD D (pay-anywhere · 1000x cap)',       game: resolve(SAMPLES, 'GATES_OF_OLYMPUS_1000_GAME_GDD.md') },
 ];
 
 function bar(ch = '─', n = 70) {

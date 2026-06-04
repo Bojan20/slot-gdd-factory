@@ -202,7 +202,7 @@ function extractGrid(txt) {
 function extractEvaluation(txt) {
   if (/\bscatter\s+pays?\b|\bpay\s+anywhere\b|\ball\s+positions?\s+pay/i.test(txt)) return 'pay_anywhere';
   if (/\bcluster\s+pays?\b/i.test(txt)) return 'cluster';
-  if (/\bmegaways\b|\d+\s*ways\b|\bways\s+to\s+win/i.test(txt)) return 'ways';
+  if (/\d+\s*ways\b|\bways\s+to\s+win|\bvariable[\s-]?ways\b|\bhigh[\s-]?ways\b/i.test(txt)) return 'ways';
   return 'lines';
 }
 
@@ -221,12 +221,13 @@ function extractMaxWin(txt) {
 
 function extractSymbols(txt) {
   const high = [], low = [], specials = [];
-  // Canonical pay-anywhere mythology-themed symbol vocabulary (extend as more domains land)
+  // Generic pay-anywhere symbol vocabulary — domain-agnostic icon family.
+  // (Custom GDDs override this seed via explicit High/Mid/Low pay tables.)
   const candidates = [
-    { id: 'Z',  re: /\bZeus(?:\s*\(?\s*(?:Crown|kruna))?/i, name: 'Zeus (Crown)', tier: 'high' },
     { id: 'H',  re: /\bHourglass\b|\bpeščani\s+sat/i, name: 'Hourglass', tier: 'high' },
     { id: 'R',  re: /\bRing\b|\bprsten\b/i, name: 'Ring', tier: 'high' },
     { id: 'C',  re: /\bChalice\b|\bpehar\b/i, name: 'Chalice', tier: 'high' },
+    { id: 'CR', re: /\bCrown\b|\bkruna\b/i, name: 'Crown', tier: 'high' },
     { id: 'RG', re: /\b(?:Red\s+Gem|crveni\s+dragulj)\b/i, name: 'Red Gem', tier: 'low' },
     { id: 'PG', re: /\b(?:Purple\s+Gem|ljubičasti\s+dragulj)\b/i, name: 'Purple Gem', tier: 'low' },
     { id: 'YG', re: /\b(?:Yellow\s+Gem|žuti\s+dragulj)\b/i, name: 'Yellow Gem', tier: 'low' },
@@ -242,10 +243,8 @@ function extractSymbols(txt) {
       else low.push(entry);
     }
   }
-  // Scatter detection
-  if (/\bScatter\b/i.test(txt) && /Zeus|trigger/i.test(txt)) {
-    specials.push({ id: 'S', name: 'Scatter (Zeus)', role: 'Trigger only — ne plaća direktno' });
-  } else if (/\bScatter\b/i.test(txt)) {
+  // Scatter detection — generic trigger-only role
+  if (/\bScatter\b/i.test(txt)) {
     specials.push({ id: 'S', name: 'Scatter', role: 'Trigger only' });
   }
   // Multiplier Orb detection
@@ -306,14 +305,11 @@ function extractAnteBet(txt) {
 function extractMetaPanel(txt) {
   const meta = { themeTags: null, targetMarket: null, genre: null, mood: null, setting: null };
 
-  // "Tema: Antička Grčka, Zeus, Olimp ⚡"   (SR) or  "Theme: ..." (EN)
+  // "Tema: Antička Grčka, Mitologija, Bogovi ⚡"   (SR) or  "Theme: ..." (EN)
   let m = txt.match(/(?:Tema|Theme|Theme\s+tags?)\s*:\s*([^⚡\n|]{3,140})/i);
   if (m) {
     let tags = cleanList(m[1]);
-    // Industry GDD convention: Olympus/Zeus/Greek themes imply "Mythology" tag
-    if (/Olimp|Olympus|Zeus|Mitologij|Grčka|Greek/i.test(tags) && !/Mytholog/i.test(tags)) {
-      tags = tags + ' · Mythology';
-    }
+    // Preserve user-authored theme tags verbatim — no vendor/franchise-specific auto-tagging.
     meta.themeTags = tags;
   }
 
@@ -355,12 +351,9 @@ function extractMetaPanel(txt) {
     }
   }
 
-  // Setting — "Setting:" or derived from theme tags
+  // Setting — "Setting:" only (explicit user input). No franchise-specific fallback.
   m = txt.match(/\b(?:Setting|Mesto|Lokacija)\s*:\s*([^\n⚡|]{3,140})/i);
   if (m) meta.setting = clean(m[1]);
-  if (!meta.setting && meta.themeTags && /Olimp|Olympus/i.test(meta.themeTags)) {
-    meta.setting = 'Mount Olympus / Heavens';
-  }
 
   return meta;
 }
@@ -375,7 +368,7 @@ function clean(s) {
 }
 
 function cleanList(s) {
-  // "Antička Grčka, Zeus, Olimp" → "Antička Grčka · Zeus · Olimp"
+  // "Antička Grčka, Mitologija, Bogovi" → "Antička Grčka · Mitologija · Bogovi"
   // Parser splits on · • , / so any of those works, but · matches MD samples.
   return clean(s)
     .split(/[,·•\/]/)

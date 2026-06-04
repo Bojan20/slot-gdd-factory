@@ -332,7 +332,7 @@ function classifyKind(t) {
   if (t.growable || t.evaluation === 'infinity') return 'infinity';
   // expanding (tiered rows)
   if (t.tiered_rows) return 'expanding';
-  // variable per-reel (Megaways family)
+  // variable per-reel (high-volume ways family)
   if (t.rows_per_reel && t.rows_per_reel.variable) return 'variable_reel';
   // lock-respin
   if (t.lock_respin) return 'lock_respin';
@@ -345,7 +345,7 @@ function computeVariableRows(t, reels) {
   if (t.rows_per_reel_array && t.rows_per_reel_array.length === reels) return t.rows_per_reel_array;
   if (t.rows_per_reel && t.rows_per_reel.variable) {
     const { min, max } = t.rows_per_reel;
-    // Default Megaways pattern: max at center reels, min at edges
+    // Default variable-ways pattern: max at center reels, min at edges
     const arr = [];
     for (let i = 0; i < reels; i++) {
       // simple deterministic pattern: max for middle reels, scaled down at edges

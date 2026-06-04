@@ -26,7 +26,7 @@ const r3 = resolveConfig({
   features: [{ kind: 'ways' }],
   waysEval: { waysCount: 117649, minRun: 4, direction: 'both', maxEvents: 16 },
 });
-t('override waysCount Megaways', r3.waysCount === 117649);
+t('override waysCount 117649-ways', r3.waysCount === 117649);
 t('override minRun', r3.minRun === 4);
 t('override direction=both', r3.direction === 'both');
 t('override maxEvents', r3.maxEvents === 16);
