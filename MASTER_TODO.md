@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `13e9df1` · main
+> Last updated: **2026-06-04** · HEAD: `7fc54ed` · main · Wave U10 paytable modal shipped (6/10 U-atoms now SHIPPED: U1, U3, U4, U5, U6, U10)
 
 ---
 
@@ -953,7 +953,7 @@ Initial implementation used a generic `_emit(eventName, payload)` helper. lego-g
 | U7 | **`rngFairness.mjs`** PAR layer skeleton (provably-fair seed + verify endpoint) | nov blok | ⏳ queued |
 | U8 | **`balanceHud.mjs`** — denomination + balance + bet + win pravi HUD, currency aware | nov blok | ⏳ queued |
 | U9 | **`historyLog.mjs`** — last-N spins log (drugi standard regulator) | nov blok | ⏳ queued |
-| U10 | **`paytable.mjs`** modal — full paytable viewer dostupan preko **i** dugmeta | nov blok | ⏳ queued |
+| U10 | **`paytable.mjs`** modal — full paytable viewer dostupan preko **i** dugmeta | nov blok | ✅ shipped `7fc54ed` — regulator-mandated info modal: 'i' hub button → full-screen overlay sa symbol roster (HP/MP/LP tier colors), 3OAK/4OAK/5OAK payout grid, specials section, feature chips, wild rules note, real-cash bet row composed sa `window.__SLOT_BET__`. Auto-hide na preSpin/onFsTrigger/onAutoplayStart. closeOnBackdrop + Escape. 4 HookBus listeners, 0 emits (pure UI). 41/41 unit tests. |
 
 ### 🟣 Wave V — Spin / Slam-Stop / Force-Skip button suite (industry-standard UI cluster)
 
