@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `b18113e` · main
+> Last updated: **2026-06-04** · HEAD: `21a9694` · main
 
 ---
 
