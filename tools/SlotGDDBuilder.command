@@ -554,6 +554,20 @@ fi
 # ════════════════════════════════════════════════════════════════════════════
 step 8 "Test suite (parse · grids · browser · qa · fs)"
 
+# Escape hatch: `SKIP_TESTS=1` env var bypass-uje pun test suite (3-5 min)
+# i odmah skoči na demo regen + server start. Korisno kad Boki samo želi
+# da vidi slot, ne da regeneriše audit-e. Postavi pre dupli klika ili
+# pokreni iz terminala: `SKIP_TESTS=1 bash ~/Desktop/SlotGDDBuilder.command`
+if [ "${SKIP_TESTS:-0}" = "1" ]; then
+  warn "SKIP_TESTS=1 — preskačem 5-fazni test suite (3-5 min ušteda)"
+  info "Pokreni 'npm run test:all' ručno za pun audit kasnije"
+else
+
+log "${YELLOW}${BOLD}⏳ Testovi traju 3-5 minuta — STRPLJENJE, ne zatvaraj prozor${NC}"
+log "${DIM}   Browser će se otvoriti automatski na kraju Step [12/12].${NC}"
+log "${DIM}   Brzi mode kasnije: bash launcher sa env var SKIP_TESTS=1${NC}"
+log ""
+
 TEST_PHASES=(
   "test:parse|Parser (markdown/json GDD)"
   "test:grids|Grid rendering (svi shape-ovi)"
@@ -592,6 +606,8 @@ if [ ${#FAILED_PHASES[@]} -gt 0 ]; then
 else
   ok "Svi testovi PASS (${PASSED_COUNT}/${#TEST_PHASES[@]})"
 fi
+
+fi   # <-- kraj SKIP_TESTS bloka
 
 # ════════════════════════════════════════════════════════════════════════════
 # STEP 9: REGEN DEMO (WoO + svi samples)

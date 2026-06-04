@@ -9,13 +9,13 @@ build/
 .env
 .env.local
 
-# QA artifacts — regenerated per `npm run test:browser` / `npm run test:qa`
-reports/screenshots/
-reports/qa/
-reports/payline-preview/
-reports/grid-coverage-*.md
-!reports/grid-coverage-latest.md
-!reports/browser-render-latest.md
+# QA artifacts — regenerated per `npm run test:browser` / `npm run test:qa`.
+# ALL report artifacts are now untracked: they're produced fresh on every
+# launcher run (test:grids / test:browser / test:qa / test:fs each writes
+# its own latest.md). Tracking them caused FAST_PATH to NEVER activate
+# (git status always dirty) → Boki saw "stuck for 3-5 min" every double
+# click instead of the intended sub-10s warm boot.
+reports/
 
 # tools/diff-pdf-vs-md intermediate dumps + headless test screenshots
 tools/_diff-*
