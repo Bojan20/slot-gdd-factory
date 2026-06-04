@@ -9,7 +9,7 @@
 
 ## 🟢 Shipped (in-tree on `origin/main`)
 
-### Wave T4 — Rapid-click race + ways detector cells regression (commit `WAVE_T4_PENDING`)
+### Wave T4 — Rapid-click race + ways detector cells regression (commit `3e3ae48`)
 
 > **Boki ultimative launcher** otkrio 6/6 rectangular fixtures `spin=❌` u `npm run test:qa` (full QA audit). Stress test radi 3 rapid clicks (50ms razmak) na `#spinBtn` → cells stuck `is-blurring` posle 4500ms settle wait. Plus dodatne TypeError race scenarije u FS flow za variable_reel + cluster fixture.
 >
