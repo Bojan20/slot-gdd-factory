@@ -512,6 +512,16 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
 
   function FSM_runNextFsSpin() {
     if (FSM.phase !== "FS_ACTIVE") return;
+    /* Wave T4 guard — same race as runOneBaseSpin (engine-block.mjs). If a
+       previous FS spin is still in flight (startSpinAll allReelsActive=true
+       or runStaticReroll staticRerollInFlight=true), bail before emitting
+       preSpin so the reelEngine preSpin listener doesn't clear the live
+       stopTimerId of the running spin and leave reels stuck blurring. */
+    const inFlightFs =
+      (UNIFORM_REEL_KINDS.has(SHAPE.kind) && RECT_REELS)
+        ? !!(typeof allReelsActive !== 'undefined' && allReelsActive)
+        : !!(typeof staticRerollInFlight !== 'undefined' && staticRerollInFlight);
+    if (inFlightFs) return;
     cancelWinSymCycle();
     statusElGlobal && (statusElGlobal.textContent =
       "FS · " + ((FSM.spinsTotal - FSM.spinsRemaining) + 1) + " / " + FSM.spinsTotal);

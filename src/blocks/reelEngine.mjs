@@ -133,6 +133,7 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
   let spinTicker = null;
   let spinStartTime = 0;
   let allReelsActive = false;
+  let staticRerollInFlight = false;
 
   /* Force-trigger flag — when set before a spin, the stop-symbol commit
      guarantees N scatters across the first N reels, mirroring "you spun
@@ -418,6 +419,17 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
   }
 
   function runOneBaseSpin() {
+    /* Wave T4 guard — rapid double/triple click on #spinBtn was racing:
+       click 2 emitted preSpin while click 1's reels were mid-spin, the
+       reelEngine preSpin listener (priority 20) clears every reel.stopTimerId,
+       but the FOLLOW-UP startSpinAll bails out on allReelsActive=true and
+       NEVER re-arms a new stopTimerId. Result: reels spin forever, cells
+       stuck in is-blurring. Idempotent guard at the public entry point keeps
+       LEGO ownership intact (engine still owns its own re-entry safety). */
+    const inFlight = (UNIFORM_REEL_KINDS.has(SHAPE.kind) && RECT_REELS)
+      ? !!allReelsActive
+      : !!staticRerollInFlight;
+    if (inFlight) return;
     cancelWinSymCycle();
     /* HookBus: preSpin → blocks that arm per-spin state (anticipation,
        wild placement) run BEFORE the engine kicks. */
@@ -435,6 +447,8 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
     /* SVG-based kinds (wheel/crash) keep their symbols inside <text> nodes
        rather than .cell divs. Selector covers both so wheel scatter detection
        works on top of the same reroll path. */
+    staticRerollInFlight = true;
+    const _settled = (cb) => { staticRerollInFlight = false; if (typeof cb === 'function') cb(); };
     const cellsAll = grid.querySelectorAll(".cell, text");
     /* Wave S: same onSpinResult contract as startSpinAll — even if the grid
        is empty (SVG/wheel boundary), emit so listeners can reset state. */
@@ -446,7 +460,8 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
     }
     if (cellsAll.length === 0) {
       _emitSettleResult();
-      if (typeof onSettled === "function") setTimeout(onSettled, ${c.staticFallbackMs});
+      if (typeof onSettled === "function") setTimeout(() => _settled(onSettled), ${c.staticFallbackMs});
+      else staticRerollInFlight = false;
       return;
     }
 
@@ -469,7 +484,7 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
           cellsAll.forEach(c => c.classList.remove("is-blurring"));
           /* Wave S: onSpinResult fires the moment the grid is settled. */
           _emitSettleResult();
-          if (typeof onSettled === "function") onSettled();
+          _settled(onSettled);
         }, ${c.staticBlurSwapMs});
       }, ${c.staticPreRollMs});
       return;
@@ -563,7 +578,7 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
     setTimeout(() => {
       /* Wave S: emit onSpinResult once every column has revealed. */
       _emitSettleResult();
-      if (typeof onSettled === "function") onSettled();
+      _settled(onSettled);
     }, cursor + ${c.staticSettleMs});
     return;
   }

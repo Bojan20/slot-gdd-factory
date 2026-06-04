@@ -195,7 +195,11 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
           return;
         }
         const ev = events[i];
-        ev.cells.forEach(c => c.classList.add('cell--winsym'));
+        /* Wave T4 hardening — detectors can race tumble/reroll and emit events
+           with stale (null/undefined) cell refs after gravity pass shifted
+           symbols. Defensive filter prevents TypeError on classList.add. */
+        const cells = Array.isArray(ev && ev.cells) ? ev.cells : [];
+        for (const c of cells) { if (c && c.classList) c.classList.add('cell--winsym'); }
         /* If this event carries a lineIndex it came from detectLineWins
            (payline mode) → draw the polyline through the matched cells.
            Cluster-mode events (detectWinCombos) have no lineIndex and

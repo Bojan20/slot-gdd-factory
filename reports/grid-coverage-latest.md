@@ -1,15 +1,15 @@
 # Render-all-grids QA report
 
-**Generated**: 2026-06-04T11:50:39.106Z
+**Generated**: 2026-06-04T13:34:13.783Z
 **Fixtures**: 20 · **PASS**: 20 · **FAIL**: 0 · **Rate**: 100.0%
 
 ## Summary table
 
 | # | Fixture | Expected | Actual | R×R | Cells | Cols | Sub | Conf | Parse ms | Status |
 |--:|---|---|---|---|--:|--:|--:|--:|--:|:--:|
-| 1 | `01_rectangular_5x3_GAME_GDD.md` | rectangular | rectangular | 5×3 | 15 | 5 | 0 | 100% | 9.8 | ✅ |
+| 1 | `01_rectangular_5x3_GAME_GDD.md` | rectangular | rectangular | 5×3 | 15 | 5 | 0 | 100% | 9.7 | ✅ |
 | 2 | `02_rectangular_6x4_GAME_GDD.md` | rectangular | rectangular | 6×4 | 24 | 6 | 0 | 100% | 6.3 | ✅ |
-| 3 | `03_cluster_7x7_GAME_GDD.md` | cluster | cluster | 7×7 | 49 | 7 | 0 | 100% | 0.2 | ✅ |
+| 3 | `03_cluster_7x7_GAME_GDD.md` | cluster | cluster | 7×7 | 49 | 7 | 0 | 100% | 0.3 | ✅ |
 | 4 | `04_variable_reel_GAME_GDD.md` | variable_reel | variable_reel | 6×7 | 28 | 6 | 0 | 100% | 0.4 | ✅ |
 | 5 | `05_megaclusters_GAME_GDD.md` | megaclusters | megaclusters | 4×4 | 16 | 4 | 0 | 100% | 0.2 | ✅ |
 | 6 | `06_hexagonal_GAME_GDD.md` | hexagonal | hexagonal | 7×7 | 37 | 7 | 0 | 100% | 0.3 | ✅ |

@@ -149,7 +149,10 @@ async function runTumbleChain(detectFn, opts) {
 
     if (!removeCells.size) break;
 
-    for (const c of removeCells) c.classList.add('is-removing');
+    /* Wave T4 hardening — defensive guard. Detectors are supposed to push
+       DOM cells, but a future buggy detector could leak metadata objects
+       in. Skipping non-DOM entries is cheaper than crashing the chain. */
+    for (const c of removeCells) { if (c && c.classList) c.classList.add('is-removing'); }
     await _tumbleSleep(TUMBLE_REMOVE_MS);
 
     // 3 + 4. gravity + refill via reel-strip rotation

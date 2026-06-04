@@ -90,13 +90,19 @@ function _evalWaysDirection(startReel, dir, REELS, ROWS, cells, anchorSyms, wild
       reelsInRun.push(reelIdx);
     }
     if (run >= WAYS_MIN_RUN && ways > 0) {
-      /* Collect cells contributing to the win */
+      /* Wave T4 fix — push actual DOM cell elements (not metadata objects)
+         so tumble.runTumbleChain can call cell.classList.add('is-removing')
+         downstream. Previously emitted { r, c, idx } plain objects which
+         caused "Cannot read properties of undefined (reading 'add')" the
+         first FS spin that landed a ways-mode win. */
       const winCells = [];
       reelsInRun.forEach(reelIdx => {
         for (let r = 0; r < ROWS; r++) {
           const idx = r * REELS + reelIdx;
-          const s = ((cells[idx] && cells[idx].textContent) || '').trim();
-          if (s === sym || s === wild) winCells.push({ r, c: reelIdx, idx });
+          const cellEl = cells[idx];
+          if (!cellEl) continue;
+          const s = ((cellEl.textContent) || '').trim();
+          if (s === sym || s === wild) winCells.push(cellEl);
         }
       });
       events.push({ symbol: sym, ways, runLength: run, cells: winCells });

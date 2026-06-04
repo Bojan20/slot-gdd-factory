@@ -9,6 +9,37 @@
 
 ## 🟢 Shipped (in-tree on `origin/main`)
 
+### Wave T4 — Rapid-click race + ways detector cells regression (commit `WAVE_T4_PENDING`)
+
+> **Boki ultimative launcher** otkrio 6/6 rectangular fixtures `spin=❌` u `npm run test:qa` (full QA audit). Stress test radi 3 rapid clicks (50ms razmak) na `#spinBtn` → cells stuck `is-blurring` posle 4500ms settle wait. Plus dodatne TypeError race scenarije u FS flow za variable_reel + cluster fixture.
+>
+> **DVA root cause-a, ne jedan:**
+>
+> **#1 — Rapid-click race u `runOneBaseSpin` + `FSM_runNextFsSpin`** (cells stuck blurring na 6/6 rectangular):
+> - Klik 1 → `preSpin` emit → `startSpinAll` postavi `reel.stopTimerId = setTimeout(..., initialDelay)`
+> - Klik 2 (50ms kasnije) → `runOneBaseSpin` BEZ guard-a poziva `HookBus.emit('preSpin', ...)`
+> - `reelEngine.preSpin` listener (priority 20, Wave S) CLEAR-uje sve `reel.stopTimerId` od TRENUTNO aktivnog spin-a
+> - `startSpinAll` vidi `allReelsActive=true` → return BEZ re-armiranja `stopTimerId`
+> - **Rezultat**: reels zauvek spin-uju, cells zauvek u `is-blurring`
+>
+> **#2 — `waysEval` push-uje plain object umesto DOM cell** (TypeError `Cannot read properties of undefined (reading 'add')` u variable_reel + cluster fixtures sa FS):
+> - `waysEval.mjs:99` push-ovao `{ r, c: reelIdx, idx }` metadata object u `events[].cells`
+> - `tumble.runTumbleChain` L152 zove `cell.classList.add('is-removing')` na metadata objekat
+> - `.classList` undefined → uncaught TypeError → FS round nikad ne završi
+> - Drugi detektori (`payAnywhereEval`, `clusterPaysEval`) push-uju DOM cells pravilno; samo `waysEval` je leak
+
+| ID | Item | Files | Status |
+|---|---|---|:--:|
+| T4.1 | `src/blocks/reelEngine.mjs` — idempotent guard u `runOneBaseSpin`: `const inFlight = (UNIFORM_REEL_KINDS.has(SHAPE.kind) && RECT_REELS) ? allReelsActive : staticRerollInFlight; if (inFlight) return;` PRE preSpin emit. Klik 2/3 tokom aktivnog spina sad bail-uje tiho, ne dira stopTimerId. | `src/blocks/reelEngine.mjs:420` (+11 LOC) | ✅ |
+| T4.2 | `src/blocks/reelEngine.mjs` — `let staticRerollInFlight = false;` deklaracija; `runStaticReroll` postavi `true` na entry, set `false` u `_settled(onSettled)` helper-u koji uvija `onSettled` callback. Sva 3 grane (empty cells / SVG fallback / column reveal) sad propisno reset-uju flag. | `src/blocks/reelEngine.mjs:136-503` | ✅ |
+| T4.3 | `src/blocks/freeSpins.mjs` — isti guard u `FSM_runNextFsSpin` (FS-active path) pre preSpin emit. Inače rapid-click u FS-active prouzrokuje istu race condition kao base-game. | `src/blocks/freeSpins.mjs:513` (+10 LOC) | ✅ |
+| T4.4 | `src/blocks/waysEval.mjs` — `winCells.push(cellEl)` umesto `{r, c, idx}` metadata objekta. Detector contract sad konzistentan sa payAnywhereEval/clusterPaysEval (svi push-uju DOM cell elements). | `src/blocks/waysEval.mjs:92-103` (+4 LOC) | ✅ |
+| T4.5 | `src/blocks/winPresentation.mjs` — defensive guard u `playWinSymCycle.playOne`: `for (const c of cells) { if (c && c.classList) c.classList.add('cell--winsym'); }` umesto sirovog `forEach(c => c.classList.add(...))`. Sprečava sledeći leak (defense in depth). | `src/blocks/winPresentation.mjs:198` (+5 LOC) | ✅ |
+| T4.6 | `src/blocks/tumble.mjs` — defensive guard u runTumbleChain L152: `for (const c of removeCells) { if (c && c.classList) c.classList.add('is-removing'); }`. Defense in depth — ako detector u budućnosti leakuje, tumble chain ne crashuje. | `src/blocks/tumble.mjs:152` (+3 LOC) | ✅ |
+| T4.7 | Stability: 10/10 consecutive `trace 02_rectangular_6x4 stress` runs **0 console errors**. 5/5 `npm run test:qa` runs **CLEAN**. 3/3 `npm run test:fs` runs **CLEAN**. 5/5 `node tools/cortex-eyes-wave-s.mjs` runs **PASS**. | stability gate | ✅ |
+| T4.8 | Full QA gate: `npm test` 20/20, `npm run test:blocks` 384+ pass / 0 fail, `parse-real` 4/4, `scatter-count` 38/38, `render-grid` 20/20, `test:lego` 5/5 invariants, `test:qa` CLEAN, `test:fs` CLEAN, eyes wave-s 5/5 PASS, eyes wave-s-fs 7/7 events 0 console errors. | full QA | ✅ |
+| T4.9 | Vendor scan: `grep -niE "(zeus\|olimp\|olympus\|megaways\|trueways\|BTG\|wazdan\|aristocrat\|igt\|netent\|microgaming\|pragmatic)" src/ -r` → **0 matches** (T2/T3 cleanup zadržan). | vendor gate | ✅ |
+
 ### Wave T3 — LEGO lifecycle gap fix (trigger flow onTumbleStep) + cortex-eyes hardening (commit `c9e7b42`)
 
 > **Korijenski uzrok**: Cortex-eyes Wave S verification je bio intermittently flake — 4-8/10 run uspeha — sa fail mode-ovima distribuiranim preko GoO / CF / WoO. Naivan dijagnoz je bio "timing race u testu" (3500ms hardcoded wait premali za GoO 6×5 pay-anywhere cascade). Pravi uzrok je bio LEGO **lifecycle gap** u `postSpin.mjs`: kad scatter trigger ili retrigger detektuje FS, postSpin **preskače** `applyWinHighlight()` (Boki pravilo Wave Q: scatter celebration igra solo), čime se preskače `await runTumbleChain(...)` u winPresentation → `onTumbleStep` nikad ne emit-uje u trigger spin → `EXPECTED_EVENTS` lista u cortex-eyes Wave S verifikaciji ima 0× za `onTumbleStep` → fail.

@@ -1,35 +1,35 @@
-# Free-Spins QA audit · 2026-06-04T02:51:24.277Z
+# Free-Spins QA audit · 2026-06-04T14:49:29.746Z
 
-**Fixtures**: 24 · **FS-enabled**: 18 · **Failures**: 5 · ⚠️ ATTENTION
+**Fixtures**: 24 · **FS-enabled**: 18 · **Failures**: 0 · ✅ CLEAN
 
 ## Per-fixture results
 
 | Slug | Kind | FS | Intro | Active | Outro | Base | Spins | Retrig | Mult | Total | Errs |
 |---|---|:--:|---|---|---|---|--:|--:|--:|--:|--:|
-| 01_rectangular_5x3_game_gdd | rectangular | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 84.47 | 0 |
-| 02_rectangular_6x4_game_gdd | rectangular | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ❌ | ❌ | 10 | 0 | ×1 | 25.87 | 1 |
+| 01_rectangular_5x3_game_gdd | rectangular | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 95.43 | 0 |
+| 02_rectangular_6x4_game_gdd | rectangular | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 19.54 | 0 |
 | 03_cluster_7x7_game_gdd | cluster | ⊝ | ✅ FS off (button disabled) | — | — | — | 0 | 0 | ×1 | 0 | 0 |
-| 04_variable_reel_game_gdd | variable_reel | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ❌ | ❌ | 10 | 0 | ×1 | 0.44 | 1 |
+| 04_variable_reel_game_gdd | variable_reel | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 42.05 | 0 |
 | 05_megaclusters_game_gdd | megaclusters | ⊝ | ✅ FS off (button disabled) | — | — | — | 0 | 0 | ×1 | 0 | 0 |
 | 06_hexagonal_game_gdd | hexagonal | ⊝ | ✅ FS off (button disabled) | — | — | — | 0 | 0 | ×1 | 0 | 0 |
-| 07_diamond_game_gdd | diamond | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ❌ | ❌ | 10 | 0 | ×1 | 14.45 | 1 |
-| 08_pyramid_game_gdd | pyramid | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 185.12 | 0 |
-| 09_cross_game_gdd | cross | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 42.33 | 0 |
-| 10_lshape_game_gdd | l_shape | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 155.08 | 0 |
-| 11_radial_game_gdd | radial | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 195.78 | 0 |
+| 07_diamond_game_gdd | diamond | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 78.02 | 0 |
+| 08_pyramid_game_gdd | pyramid | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 118.03 | 0 |
+| 09_cross_game_gdd | cross | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 26.54 | 0 |
+| 10_lshape_game_gdd | l_shape | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 164.82 | 0 |
+| 11_radial_game_gdd | radial | ✅ | ✅ 15 FS | ✅ fs-mode-purple | ✅ | ✅ | 30 | 3 | ×1 | 109.15 | 0 |
 | 12_infinity_game_gdd | infinity | ⊝ | ✅ FS off (button disabled) | — | — | — | 0 | 0 | ×1 | 0 | 0 |
-| 13_expanding_game_gdd | expanding | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ❌ | ❌ | 35 | 3 | ×1 | 0 | 1 |
-| 14_dual_colossal_game_gdd | dual | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 117.82 | 0 |
-| 15_slingo_game_gdd | slingo | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 58.59 | 0 |
+| 13_expanding_game_gdd | expanding | ✅ | ✅ 15 FS | ✅ fs-mode-purple | ✅ | ✅ | 30 | 3 | ×1 | 190.59 | 0 |
+| 14_dual_colossal_game_gdd | dual | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 73.09 | 0 |
+| 15_slingo_game_gdd | slingo | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 15.01 | 0 |
 | 16_plinko_game_gdd | plinko | ⊝ | ✅ FS off (button disabled) | — | — | — | 0 | 0 | ×1 | 0 | 0 |
 | 17_crash_game_gdd | crash | ⊝ | ✅ FS off (button disabled) | — | — | — | 0 | 0 | ×1 | 0 | 0 |
-| 18_wheel_game_gdd | wheel | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 102.77 | 0 |
-| 19_lock_respin_game_gdd | lock_respin | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 28.73 | 0 |
-| 20_rectangular_stacked_scatter_game_gdd | rectangular | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 20 | 0 | ×1 | 103.64 | 0 |
-| crystal_forge_game_gdd | rectangular | ✅ | ✅ 12 FS | ✅ fs-mode-crimson | ✅ | ✅ | 22 | 2 | ×8 | 687.69 | 0 |
-| gates_of_olympus_1000_game_gdd | rectangular | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 25 | 3 | ×1 | 100.16 | 0 |
-| midnight_fangs_game_gdd | cluster | ✅ | ✅ 15 FS | ✅ fs-mode-crimson | ❌ | ❌ | 30 | 3 | ×10 | 116.17 | 1 |
-| wrath_of_olympus_game_gdd | rectangular | ✅ | ✅ 14 FS | ✅ fs-mode-gold | ✅ | ✅ | 19 | 1 | ×10 | 605.16 | 0 |
+| 18_wheel_game_gdd | wheel | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 35 | 3 | ×1 | 176.01 | 0 |
+| 19_lock_respin_game_gdd | lock_respin | ✅ | ✅ 10 FS | ✅ fs-mode-purple | ✅ | ✅ | 10 | 0 | ×1 | 27.83 | 0 |
+| 20_rectangular_stacked_scatter_game_gdd | rectangular | ✅ | ✅ 20 FS | ✅ fs-mode-purple | ✅ | ✅ | 20 | 0 | ×1 | 54.17 | 0 |
+| crystal_forge_game_gdd | rectangular | ✅ | ✅ 15 FS | ✅ fs-mode-crimson | ✅ | ✅ | 25 | 2 | ×8 | 727.96 | 0 |
+| gates_of_olympus_1000_game_gdd | rectangular | ✅ | ✅ 15 FS | ✅ fs-mode-purple | ✅ | ✅ | 30 | 3 | ×1 | 202.56 | 0 |
+| midnight_fangs_game_gdd | cluster | ✅ | ✅ 20 FS | ✅ fs-mode-crimson | ✅ | ✅ | 35 | 3 | ×10 | 1871.9 | 0 |
+| wrath_of_olympus_game_gdd | rectangular | ✅ | ✅ 16 FS | ✅ fs-mode-gold | ✅ | ✅ | 16 | 0 | ×10 | 699.4 | 0 |
 
 ## Screenshots (FS-enabled fixtures only)
 
@@ -160,18 +160,4 @@
 - base:  [`qa/fs/wrath_of_olympus_game_gdd/base.png`](./qa/fs/wrath_of_olympus_game_gdd/base.png)
 
 ## Notes
-- **02_rectangular_6x4_game_gdd**: outro: {"phase":"FS_ACTIVE","overlayVisible":false,"title":"FREE SPINS","total":"10","cta":"TAP TO BEGIN","fsm":{"phase":"FS_ACTIVE","spinsTotal":10,"spinsRemaining":7,"mult":1,"totalWin":25.869999999999997,"retrigCount":0}}
-- **02_rectangular_6x4_game_gdd**: base: {"phase":"FS_ACTIVE","overlayVisible":false,"hudVisible":true,"bodyMode":"fs-mode-purple","spinBtnDisabled":true,"status":"FS · 3 / 10"}
-- **02_rectangular_6x4_game_gdd**: console errs: pageerror: Cannot read properties of undefined (reading 'add')
-- **04_variable_reel_game_gdd**: outro: {"phase":"FS_ACTIVE","overlayVisible":false,"title":"FREE SPINS","total":"10","cta":"TAP TO BEGIN","fsm":{"phase":"FS_ACTIVE","spinsTotal":10,"spinsRemaining":9,"mult":1,"totalWin":0.44,"retrigCount":0}}
-- **04_variable_reel_game_gdd**: base: {"phase":"FS_ACTIVE","overlayVisible":false,"hudVisible":true,"bodyMode":"fs-mode-purple","spinBtnDisabled":true,"status":"FS · 1 / 10"}
-- **04_variable_reel_game_gdd**: console errs: pageerror: Cannot read properties of undefined (reading 'add')
-- **07_diamond_game_gdd**: outro: {"phase":"FS_ACTIVE","overlayVisible":false,"title":"FREE SPINS","total":"10","cta":"TAP TO BEGIN","fsm":{"phase":"FS_ACTIVE","spinsTotal":10,"spinsRemaining":9,"mult":1,"totalWin":14.45,"retrigCount":0}}
-- **07_diamond_game_gdd**: base: {"phase":"FS_ACTIVE","overlayVisible":false,"hudVisible":true,"bodyMode":"fs-mode-purple","spinBtnDisabled":true,"status":"FS · 1 / 10"}
-- **07_diamond_game_gdd**: console errs: pageerror: Cannot read properties of undefined (reading 'add')
-- **13_expanding_game_gdd**: outro: {"phase":"FS_ACTIVE","overlayVisible":false,"title":"FREE SPINS","total":"20","cta":"TAP TO BEGIN","fsm":{"phase":"FS_ACTIVE","spinsTotal":35,"spinsRemaining":28,"mult":1,"totalWin":0,"retrigCount":3}}
-- **13_expanding_game_gdd**: base: {"phase":"FS_ACTIVE","overlayVisible":false,"hudVisible":true,"bodyMode":"fs-mode-purple","spinBtnDisabled":true,"status":"FS · 7 / 35"}
-- **13_expanding_game_gdd**: console errs: pageerror: Cannot read properties of undefined (reading 'add')
-- **midnight_fangs_game_gdd**: outro: {"phase":"FS_ACTIVE","overlayVisible":false,"title":"FREE SPINS","total":"15","cta":"TAP TO BEGIN","fsm":{"phase":"FS_ACTIVE","spinsTotal":30,"spinsRemaining":21,"mult":10,"totalWin":116.17,"retrigCount":3}}
-- **midnight_fangs_game_gdd**: base: {"phase":"FS_ACTIVE","overlayVisible":false,"hudVisible":true,"bodyMode":"fs-mode-crimson","spinBtnDisabled":true,"status":"FS · 9 / 30"}
-- **midnight_fangs_game_gdd**: console errs: pageerror: Cannot read properties of undefined (reading 'add')
+_no notes_
