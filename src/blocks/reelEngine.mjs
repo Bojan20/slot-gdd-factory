@@ -424,44 +424,61 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
        time (placeholder math), so EVERY slam is effectively post-response.
        We still honor the payload.phase contract for future server-coupled
        PAR phase work. */
-    HookBus.on('onSlamRequested', (payload) => {
-      if (!allReelsActive || !Array.isArray(RECT_REELS)) return;
+    HookBus.on('onSlamRequested', () => {
+      if (!Array.isArray(RECT_REELS) || RECT_REELS.length === 0) {
+        /* SVG / non-rectangular kinds — emit immediately so UI proceeds. */
+        HookBus.emit('onSlamComplete', { duration: 0 });
+        return;
+      }
+      if (!allReelsActive) {
+        /* Slam arrived after spin already settled. Defensive synthetic
+           Complete so listeners (e.g. forceSkip) don't hang. */
+        HookBus.emit('onSlamComplete', { duration: 0 });
+        return;
+      }
       const slamStart = performance.now();
+      const reelIdxOf = function (r) { return RECT_REELS.indexOf(r); };
       for (const reel of RECT_REELS) {
-        /* Clear any pending auto-stop timer so it can't double-stop. */
         if (reel.stopTimerId) { clearTimeout(reel.stopTimerId); reel.stopTimerId = null; }
         if (reel.glowTimerId) { clearTimeout(reel.glowTimerId); reel.glowTimerId = null; }
-        /* Force immediate stop on next tick: clear minRotations gate and
-           arm stopRequested. onTickAll() will then snap reel.stopping=true
-           on its next rotateStripDown step and the visual collapse proceeds
-           through the existing snap/bounce path. */
-        reel.minRotations = 0;
-        reel.stopDelayMs = 0;
-        reel.stopRequested = true;
-        reel.stopRequestTime = slamStart;
-        reel.col.classList.remove('reelCol--anticipating');
+        /* Direct collapse: bypass the rotateStripDown while-loop because
+           early in a spin offsetPx may not yet reach cellStep (accel
+           ramp is gentle). Hard-transition reel into stopping state and
+           commit symbols immediately. The existing snap path then drives
+           the visual to its landed strip and bouncing animation. */
+        if (reel.spinning) {
+          reel.spinning = false;
+          reel.stopping = true;
+          reel.stopStartMs = slamStart;
+          reel.stopRequested = true;
+          reel.stopRequestTime = slamStart;
+          reel.targetY = -reel.cellStep;
+          reel.col.classList.remove('reelCol--anticipating');
+          commitStopSymbols(reel, reelIdxOf(reel));
+        }
       }
-      /* Emit onSlamComplete once every reel has actually stopped. We poll
-         allReelsActive instead of subscribing because the existing tick
-         loop already flips it when the last reel settles. */
-      const t0 = slamStart;
-      const pollDoneId = setInterval(() => {
-        if (!allReelsActive) {
-          clearInterval(pollDoneId);
-          const duration = Math.round(performance.now() - t0);
-          HookBus.emit('onSlamComplete', { duration });
-        }
-      }, 16);
-      /* Hard fallback — if reels for some reason never settle (e.g. SVG
-         kind without RECT_REELS path), still fire onSlamComplete after
-         500ms so the UI never deadlocks. */
-      setTimeout(() => {
-        if (allReelsActive) {
-          clearInterval(pollDoneId);
-          const duration = Math.round(performance.now() - t0);
-          HookBus.emit('onSlamComplete', { duration });
-        }
-      }, 500);
+      /* onSlamComplete emit strategy: tickerloop emits onSpinResult when
+         every reel has visually settled. Subscribe once and re-emit as
+         onSlamComplete with elapsed duration. Race-free because the rAF
+         tick + emit are synchronous; if subscribe lands after engine
+         already fired, fallback timer below covers it. */
+      var _slamFired = false;
+      var _fallbackId = null;
+      var _disposer = HookBus.once('onSpinResult', function () {
+        if (_slamFired) return;
+        _slamFired = true;
+        if (_fallbackId) { clearTimeout(_fallbackId); _fallbackId = null; }
+        HookBus.emit('onSlamComplete', { duration: Math.round(performance.now() - slamStart) });
+      });
+      /* Hard fallback — worst-case bounce path is well under 800ms even
+         on the largest rectangular grids (6×5 cluster). 1500ms is a
+         very generous safety net. */
+      _fallbackId = setTimeout(function () {
+        if (_slamFired) return;
+        _slamFired = true;
+        if (typeof _disposer === 'function') _disposer();
+        HookBus.emit('onSlamComplete', { duration: Math.round(performance.now() - slamStart) });
+      }, 1500);
     });
   }
 
