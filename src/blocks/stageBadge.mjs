@@ -10,7 +10,7 @@
  *   base   → muted gray-cyan pill, dot static
  *   fs     → gold gradient pill, dot pulsing 1.6s ease (reduced-motion gated)
  *   (extensible — drop in another `data-stage="..."` block and pass a new
- *    pair to `setStageBadge(stage, label)` for cash eruption / hold&win etc)
+ *    pair to `setStageBadge(stage, label)` for buy-feature / hold&win etc)
  *
  * GDD-driven configuration (consumed from `model.stageBadge`):
  *   enabled          boolean                                  (default true)
@@ -185,6 +185,24 @@ export function emitStageBadgeRuntime(cfg = defaultConfig()) {
     if (!stageBadge) return;
     stageBadge.dataset.stage = stage;
     if (label && stageBadgeLabel) stageBadgeLabel.textContent = label;
+  }
+
+  /* Wave S LEGO conformance — stageBadge registers FS lifecycle listeners
+     so the phase pill self-updates without freeSpins.mjs having to call
+     setStageBadge directly. The freeSpins call sites remain as belt-and-
+     suspenders so a future refactor that drops them won't break the pill. */
+  if (typeof HookBus !== 'undefined') {
+    HookBus.on('onFsTrigger', () => {
+      setStageBadge('fs', STAGE_FS_LABEL);
+    }, { priority: 10 });
+    /* On FS end, the outro placard is still showing — keep the pill in 'fs'
+       state until FSM_enterBase flips it back. We only ensure the label is
+       in sync (in case a GDD override changed it mid-round). */
+    HookBus.on('onFsEnd', () => {
+      if (stageBadge && stageBadge.dataset.stage === 'fs') {
+        if (stageBadgeLabel) stageBadgeLabel.textContent = STAGE_FS_LABEL;
+      }
+    }, { priority: 10 });
   }
 `;
 }

@@ -5,8 +5,8 @@
  *
  * Flood-fill 4-connected (orthogonal) cluster detection for cluster-style
  * grids (typical: 6x5 / 7x7). Cluster ≥ minCluster of same symbol pays.
- * Wild substitutes for every regular. Industry references: Reactoonz 2
- * (Play'n GO), Sweet Bonanza (cluster-mode), Aztec Magic Bonanza.
+ * Wild substitutes for every regular. Industry baseline: cluster-pays grid
+ * evaluator — 4-connected flood fill, min-cluster ≥ 5.
  *
  * GDD knobs:
  *   • minCluster: number — min connected cells to qualify (default 5)

@@ -110,5 +110,29 @@ export function emitTriggerCountingRuntime(cfg = defaultConfig()) {
     }
     return award;
   }
+
+  /* Wave S LEGO conformance — triggerCounting registers onSpinResult to
+     pre-compute the scatter count and cache it on HookBus state. The postSpin
+     orchestrator still calls countTriggerSymbols() for branch decisions, but
+     observers (DEV FS panel, playground inspector, audio cue blocks) can read
+     window.__LAST_SCATTER_COUNT__ without re-walking the grid. */
+  if (typeof HookBus !== 'undefined') {
+    HookBus.on('onSpinResult', (p) => {
+      const count = countTriggerSymbols();
+      if (typeof window !== 'undefined') {
+        window.__LAST_SCATTER_COUNT__ = count;
+        window.__LAST_SCATTER_AWARD__ = spinsForCount(count);
+        window.__LAST_SCATTER_DURING_FS__ = !!(p && p.duringFs);
+      }
+    }, { priority: 5 });
+    /* Reset on preSpin so a held cache from the previous spin can't leak
+       into the new one (helps DEV FS button + Playground display). */
+    HookBus.on('preSpin', () => {
+      if (typeof window !== 'undefined') {
+        window.__LAST_SCATTER_COUNT__ = 0;
+        window.__LAST_SCATTER_AWARD__ = 0;
+      }
+    }, { priority: 5 });
+  }
 `;
 }

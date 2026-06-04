@@ -143,6 +143,34 @@ export function emitAnticipationRuntime(cfg = defaultConfig()) {
           past the planted N, raising the award. The slowdown must hold
           until the LAST reel that could affect the award has stopped. */
   const HOLD_BASE = ${c.holdMs};
+
+  /* Wave S LEGO conformance — anticipation registers preSpin to clear any
+     leftover glow timers / anticipating flags from the previous spin. Without
+     this, a fast click after a near-miss can carry the gold pulse into the
+     fresh spin (visible as ghost glow on reels 4-5 the moment they spawn). */
+  function _anticipationPreSpinReset() {
+    if (!Array.isArray(RECT_REELS)) return;
+    for (const reel of RECT_REELS) {
+      if (reel.glowTimerId) { clearTimeout(reel.glowTimerId); reel.glowTimerId = null; }
+      if (reel.stopTimerId) { /* leave engine to re-set */ }
+      reel.anticipating = false;
+      if (reel.col && reel.col.classList) {
+        reel.col.classList.remove('reelCol--anticipating');
+      }
+    }
+    /* Per-cell variant for non-rectangular grids. */
+    if (typeof document !== 'undefined') {
+      document.querySelectorAll('.cell--anticipating').forEach(c =>
+        c.classList.remove('cell--anticipating'));
+    }
+  }
+  if (typeof HookBus !== 'undefined') {
+    HookBus.on('preSpin', _anticipationPreSpinReset, { priority: 10 });
+    /* Also reset on FS boundary — entering or leaving FS clears state. */
+    HookBus.on('onFsTrigger', _anticipationPreSpinReset, { priority: 10 });
+    HookBus.on('onFsEnd',     _anticipationPreSpinReset, { priority: 10 });
+  }
+
   function maybeArmAnticipation() {
     if (!FREESPINS.enabled || !RECT_REELS) return;
     ${c.skipDuringFs ? `/* Anticipation is a BASE-game suspense cue — skipped during FS lifecycle. */

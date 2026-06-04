@@ -5,8 +5,8 @@
  *
  * Multiplier that does NOT reset between spins inside a round (typically
  * FS round). Grows by `growPerWin`, capped at `maxMult`. HUD chip shows
- * current value. Industry references: Sweet Bonanza ×2/×4/×8/×16 progressive,
- * Wolf Treasure progressive FS multiplier.
+ * current value. Industry baseline: progressive FS multiplier — ×2/×4/×8/×16
+ * doubling ladder or arithmetic add-per-win cap.
  *
  * GDD knobs:
  *   • mode: 'fs' | 'base' | 'both'

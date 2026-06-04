@@ -5,8 +5,8 @@
  *
  * Evaluates "ways" wins: from leftmost reel, count consecutive reels
  * containing the same symbol; multiply by the count of that symbol on
- * each reel. Industry references: 243 ways (Microgaming Thunderstruck),
- * 1024/3125 ways, 117,649 ways (Big Time Gaming Megaways).
+ * each reel. Industry baseline: ways-to-win pattern — 243 / 1024 / 3125 /
+ * 117 649 ways tier ladder, multiplicative reel-count formula.
  *
  * GDD knobs:
  *   • waysCount: number — declared ways (243/1024/4096/7776/117649…)

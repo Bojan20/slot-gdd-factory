@@ -3,8 +3,8 @@
  *
  * Wave L4 — Wild Reel block.
  *
- * A randomly-picked reel turns fully wild on selected spins. References:
- * Wild Reel (Pragmatic Wolf Gold), Stacked Wilds — full reel substitution.
+ * A randomly-picked reel turns fully wild on selected spins. Industry
+ * baseline: stacked / full-reel wild substitution pattern.
  *
  * GDD knobs:
  *   • mode: 'fs' | 'base' | 'both'

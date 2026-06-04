@@ -15,7 +15,7 @@
 export function defaultConfig() {
   return {
     enabled: false,
-    costX: 100,            // 100x current bet (Gates of Olympus reference)
+    costX: 100,            // 100x current bet (industry-standard bonus-buy reference)
     label: 'BUY BONUS',
     forceScatters: 4,      // guaranteed scatter count when bought
     color: '#ff5050',

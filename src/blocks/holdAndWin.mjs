@@ -7,8 +7,7 @@
  * Mechanics: bonus symbols lock, you get K (default 3) respins.
  * Each new bonus symbol RESETS the respin counter to K.
  * Round ends: respins exhausted OR all cells locked (Grand jackpot).
- * Industry references: Lightning Link / Dragon Link (Aristocrat),
- * Money Train (Relax), Hold the Jackpot (Wazdan).
+ * Industry baseline: hold-and-spin coin-collection respin round (universal pattern).
  *
  * GDD knobs:
  *   • triggerCount: number — min bonus symbols to enter Hold (default 6)

@@ -121,5 +121,19 @@ export function emitSpinTempoRuntime(cfg = defaultConfig()) {
     bouncePx: ${c.bouncePx}, bounceDecay: ${c.bounceDecay}, bounceCount: ${c.bounceCount}, bounceElasticity: ${c.bounceElasticity},
     decelEasingSpeed: ${c.decelEasingSpeed},
   };
+
+  /* Wave S LEGO conformance — spinTempo registers a preSpin listener that
+     publishes the active profile onto HookBus state for debug/playground
+     observability. The profile itself is a build-time constant (single
+     SPIN_PROFILE used in BASE + FS), but exposing it on every preSpin lets
+     future features (auto-tempo on auto-spin, slow-mo on near-miss) hot-swap
+     the speeds without re-emitting the bundle. */
+  if (typeof HookBus !== 'undefined') {
+    HookBus.on('preSpin', (p) => {
+      if (typeof window !== 'undefined') {
+        window.__SPIN_PROFILE_ACTIVE__ = { duringFs: !!(p && p.duringFs), ...SPIN_PROFILE };
+      }
+    }, { priority: 5 });
+  }
 `;
 }

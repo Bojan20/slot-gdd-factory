@@ -5,8 +5,8 @@
  *
  * 2×2 / 3×3 / 4×4 super-symbol blocks land on the grid as a single
  * oversized tile. All N×N cells under it count as the symbol for
- * evaluation. Industry references: Mega Moolah colossal, Tarzan
- * giant symbol, NetEnt Colossal symbol (Avalon II).
+ * evaluation. Industry baseline: colossal-symbol pattern — N×N oversized
+ * tile counting as N² individual cells for paytable evaluation.
  *
  * GDD knobs:
  *   • mode: 'fs' | 'base' | 'both'

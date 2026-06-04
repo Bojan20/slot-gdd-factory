@@ -4,8 +4,8 @@
  * Wave O2 — Wheel Bonus / Wheel of Fortune mini-game block.
  *
  * Overlay with a wheel of N segments. Spin button spins the wheel,
- * easing decel, pointer reveals the winning segment. Industry references:
- * Wheel of Fortune (IGT), Mega Moolah jackpot wheel.
+ * easing decel, pointer reveals the winning segment. Industry baseline:
+ * spin-wheel bonus pattern — N-segment wheel with ease-out decel.
  *
  * GDD knobs:
  *   • segments: array of { label, value, color }

@@ -91,13 +91,44 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
      Post-spin orchestration. Called from both base-game spins and FS
      in-round spins; the duringFs flag decides whether a scatter hit is a
      fresh trigger (BASE) or a retrigger (FS). */
-  function handlePostSpin(duringFs) {
+  /* Wave S refactor: postSpin block now OWNS the postSpin event emission.
+     winPresentation no longer emits it — postSpin emits after the presentation
+     pipeline finishes, with the detected events as payload. This means
+     round-control blocks (winCap, holdAndWin, respin, gamble) get a guaranteed
+     "round closed" signal regardless of branch (BASE/FS, win/no-win, trigger/
+     retrigger). */
+  function _emitPostSpin(duringFs, events) {
+    if (typeof HookBus !== 'undefined') {
+      HookBus.emit('postSpin', { duringFs, events: events || [] });
+    }
+  }
+
+  /* Wave S LEGO conformance — postSpin block listens to preSpin to wipe any
+     stale window-side payload cache from the previous round. Belt-and-suspenders
+     for headless QA where the orchestrator might queue overlapping spins. */
+  if (typeof HookBus !== 'undefined') {
+    HookBus.on('preSpin', () => {
+      if (typeof window !== 'undefined') {
+        window.__LAST_POSTSPIN_EVENTS__ = null;
+      }
+    }, { priority: 0 });
+    /* On its own postSpin emission, cache the latest events so playground /
+       inspector tools can introspect without re-running detection. */
+    HookBus.on('postSpin', (p) => {
+      if (typeof window !== 'undefined') {
+        window.__LAST_POSTSPIN_EVENTS__ = (p && p.events) || [];
+      }
+    }, { priority: -20 });
+  }
+
+  async function handlePostSpin(duringFs) {
     /* Win-highlight gating (Boki rule): scatter celebration and win-symbol
        highlight must never play simultaneously. During FS lifecycle
        (FS_INTRO → FS_ACTIVE → FS_OUTRO) win-highlight is fully suppressed;
        it resumes only after the round returns to BASE. */
     if (!FREESPINS.enabled) {
-      applyWinHighlight();
+      const events = (await applyWinHighlight()) || [];
+      _emitPostSpin(duringFs, events);
       if (duringFs) FSM_runNextFsSpin();
       return;
     }
@@ -107,10 +138,13 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
       if (award > 0) {
         /* Trigger flow — scatter celebration owns the visual stage.
            Sequence: reels settle (done) → settle pause → clearWinHighlight
-           → scatter celebration (~1500ms) → FSM_enterIntro. */
+           → scatter celebration (~1500ms) → FSM_enterIntro.
+           postSpin emits with empty events — the spin "concluded" with a
+           trigger, not a payout. */
         const wasForced = !!FORCE_TRIGGER;
         FORCE_TRIGGER = null;   /* one-shot — clear so next spin is normal */
         const settlePause = wasForced ? ${c.forcedSettlePauseMs} : ${c.settlePauseMs};
+        _emitPostSpin(duringFs, []);
         setTimeout(() => {
           clearWinHighlight();
           playScatterCelebration().then(() => {
@@ -119,7 +153,8 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
         }, settlePause);
       } else {
         /* Plain BASE-game spin, no trigger → safe to play win-highlight. */
-        applyWinHighlight();
+        const events = (await applyWinHighlight()) || [];
+        _emitPostSpin(duringFs, events);
         FORCE_TRIGGER = null;
         if (devFsBtn) devFsBtn.disabled = !FREESPINS.enabled;
         if (spinButton) spinButton.disabled = false;
@@ -144,6 +179,9 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
         FSM.mult = Math.min(FSM.mult + FREESPINS.multiplier.step, FREESPINS.multiplier.cap);
       }
       FSM_renderHud();
+      /* postSpin emits BEFORE retrigger celebration — round-control blocks
+         react to the FS spin closing; retrigger reopens the trigger flow. */
+      _emitPostSpin(duringFs, []);
       setTimeout(() => {
         clearWinHighlight();
         const _celeb = (typeof playScatterCelebration === 'function')
@@ -178,14 +216,13 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
     /* Win-symbol cycle inside FS_ACTIVE (Boki rule). Run the same per-
        symbol event cycle as in BASE, then chain into the next FS spin
        (or FS_OUTRO if this was the last spin). */
-    const tail = () => {
-      if (FSM.spinsRemaining <= 0) {
-        FSM_enterOutro();
-      } else {
-        setTimeout(FSM_runNextFsSpin, ${c.fsSpinBreathMs});
-      }
-    };
-    applyWinHighlight().then(tail);
+    const events = (await applyWinHighlight()) || [];
+    _emitPostSpin(duringFs, events);
+    if (FSM.spinsRemaining <= 0) {
+      FSM_enterOutro();
+    } else {
+      setTimeout(FSM_runNextFsSpin, ${c.fsSpinBreathMs});
+    }
   }
 `;
 }

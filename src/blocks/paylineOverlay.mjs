@@ -24,7 +24,7 @@
  * emitted code — the orchestrator wires them):
  *   • `grid`  — the gridHost DOM node (already declared upstream)
  *
- * Geometry model (matches WoO reference 1:1):
+ * Geometry model (line-pays reference 1:1):
  *   • SVG sized to gridHost client rect (viewBox = "0 0 W H")
  *   • Each cell's center = getBoundingClientRect mid-point, translated
  *     into gridHost-local coordinates

@@ -5,8 +5,8 @@
  *
  * Mystery cells appear with a "?" face, then transform into ONE picked
  * regular symbol after the reels settle. All mystery cells on a spin
- * resolve to the SAME symbol. Industry references: Buffalo King Megaways
- * "Mystery Symbol" feature, Hot Hot Fruit "Mystery Wheel".
+ * resolve to the SAME symbol. Industry baseline: unified mystery-reveal
+ * pattern — all "?" cells flip to the same randomly chosen face.
  *
  * GDD knobs:
  *   • mode: 'fs' | 'base' | 'both'

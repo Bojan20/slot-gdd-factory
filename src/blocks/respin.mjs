@@ -5,8 +5,8 @@
  *
  * Per-reel re-spin: after a base spin, optionally re-spin individual reels
  * (typically when 2 of 3 trigger symbols land, or as a paid feature).
- * Industry references: Stack 'em Up (NetEnt), Reel Rush respin, Twin Spin
- * synced respins.
+ * Industry baseline: per-reel re-spin pattern — near-miss save respin or
+ * paid feature respin.
  *
  * GDD knobs:
  *   • mode: 'fs' | 'base' | 'both' | 'paid'

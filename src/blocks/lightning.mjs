@@ -5,8 +5,8 @@
  *
  * On a winning spin (or with a random chance), strike N cells with
  * lightning bolts that overlay random multiplier values (×2..×500).
- * Industry references: Lightning Link multipliers, Lightning Roulette
- * 1×–500× chip drops.
+ * Industry baseline: random-strike multiplier overlays — 1×–500× chip drops
+ * applied on top of the settled grid.
  *
  * GDD knobs:
  *   • mode: 'fs' | 'base' | 'both'

@@ -5,8 +5,8 @@
  *
  * Regulator-mandated max-win enforcement. When cumulative win exceeds
  * maxWinX × bet, current spin/round terminates immediately and a
- * "MAX WIN!" overlay is shown. Industry references: UK regulator
- * mandates 5000x cap on some segments; Pragmatic typically 5000x/10000x.
+ * "MAX WIN!" overlay is shown. Industry baseline: regulator-mandated max-win
+ * cap — typical 5000x / 10 000x bet thresholds.
  *
  * GDD knobs:
  *   • maxWinX: number — multiplier of base bet (default 5000)

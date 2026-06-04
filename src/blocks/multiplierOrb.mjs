@@ -9,7 +9,7 @@
  *   • Stay on screen through tumble chains (preservation owned by tumble.mjs)
  *   • Accumulate Total_Multiplier = Σ(visible orb values)
  *   • Total_Multiplier applies to the FINAL chain payout (or every FS spin
- *     when bonus-multiplier accumulation is enabled — Gates of Olympus rule)
+ *     when bonus-multiplier accumulation is enabled — pay-anywhere FS rule)
  *
  * Bake-time config (resolved from `model.multiplierOrb`):
  *   { enabled, symbolId, distribution: [{value, weight}, ...],
@@ -20,7 +20,7 @@ export function defaultConfig() {
   return {
     enabled: false,
     symbolId: 'M',
-    // Gates of Olympus 1000 reference distribution
+    // Pay-anywhere accumulating-orb reference distribution (industry standard)
     distribution: [
       { value: 2,    weight: 250 },
       { value: 3,    weight: 200 },
@@ -39,7 +39,7 @@ export function defaultConfig() {
       { value: 500,  weight: 1.5 },
       { value: 1000, weight: 0.5 },
     ],
-    bonusAccumulate: false,  // FS-mode persistent multiplier (Gates of Olympus rule)
+    bonusAccumulate: false,  // FS-mode persistent multiplier (pay-anywhere FS rule)
     chipColor: '#ffe680',
     pulseMs: 1000,
   };
@@ -117,7 +117,7 @@ const MULTIPLIER_ORB_BONUS_ACC = ${BONUS_ACC};
 if (typeof window !== 'undefined') window.MULTIPLIER_ORB_ID = MULTIPLIER_ORB_ID;
 
 /* Persistent FS multiplier — bumped every time an orb participates in a
-   bonus tumble chain (Gates of Olympus akumulirajući rule). Reset on
+   bonus tumble chain (pay-anywhere FS accumulating rule). Reset on
    FS_INTRO entry by handlePostSpin / FSM_enterIntro. */
 let BONUS_MULTIPLIER = 0;
 if (typeof window !== 'undefined') {

@@ -279,6 +279,15 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
           if (!statusEl.textContent.startsWith("FS")) {
             statusEl.textContent = "PRESS SPIN";
           }
+          /* Wave S: reelEngine owns onSpinResult emission — it's the block that
+             knows the precise moment when every reel has stopped. Blocks that
+             annotate the settled grid (orb chips, mystery reveal, sticky wild
+             glow, wild reel spawn, lightning strikes) listen here BEFORE the
+             postSpin pipeline (handlePostSpin) starts. */
+          const duringFs = typeof FSM !== 'undefined' && FSM && FSM.phase === 'FS_ACTIVE';
+          if (typeof HookBus !== 'undefined') {
+            HookBus.emit('onSpinResult', { duringFs });
+          }
           if (typeof onSettled === "function") {
             setTimeout(onSettled, ${c.settleBreathMs});
           }
@@ -392,6 +401,22 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
     return anyActive;
   }
 
+  /* Wave S LEGO conformance — reelEngine registers preSpin to reset per-reel
+     stop/glow timers and the FORCE_TRIGGER one-shot flag. Without this, a
+     rapid click during anticipation hold can leave a stale stopTimerId that
+     fires after the new spin started (and instantly stops a fresh reel). */
+  if (typeof HookBus !== 'undefined') {
+    HookBus.on('preSpin', () => {
+      if (Array.isArray(RECT_REELS)) {
+        for (const reel of RECT_REELS) {
+          if (reel.stopTimerId) { clearTimeout(reel.stopTimerId); reel.stopTimerId = null; }
+          if (reel.glowTimerId) { clearTimeout(reel.glowTimerId); reel.glowTimerId = null; }
+          reel.stopRequested = false;
+        }
+      }
+    }, { priority: 20 });
+  }
+
   function runOneBaseSpin() {
     cancelWinSymCycle();
     /* HookBus: preSpin → blocks that arm per-spin state (anticipation,
@@ -411,7 +436,16 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
        rather than .cell divs. Selector covers both so wheel scatter detection
        works on top of the same reroll path. */
     const cellsAll = grid.querySelectorAll(".cell, text");
+    /* Wave S: same onSpinResult contract as startSpinAll — even if the grid
+       is empty (SVG/wheel boundary), emit so listeners can reset state. */
+    function _emitSettleResult() {
+      const duringFs = typeof FSM !== 'undefined' && FSM && FSM.phase === 'FS_ACTIVE';
+      if (typeof HookBus !== 'undefined') {
+        HookBus.emit('onSpinResult', { duringFs });
+      }
+    }
     if (cellsAll.length === 0) {
+      _emitSettleResult();
       if (typeof onSettled === "function") setTimeout(onSettled, ${c.staticFallbackMs});
       return;
     }
@@ -433,6 +467,8 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
         });
         setTimeout(() => {
           cellsAll.forEach(c => c.classList.remove("is-blurring"));
+          /* Wave S: onSpinResult fires the moment the grid is settled. */
+          _emitSettleResult();
           if (typeof onSettled === "function") onSettled();
         }, ${c.staticBlurSwapMs});
       }, ${c.staticPreRollMs});
@@ -525,6 +561,8 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
     }
 
     setTimeout(() => {
+      /* Wave S: emit onSpinResult once every column has revealed. */
+      _emitSettleResult();
       if (typeof onSettled === "function") onSettled();
     }, cursor + ${c.staticSettleMs});
     return;

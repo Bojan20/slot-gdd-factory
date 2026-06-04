@@ -3,11 +3,36 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `0978e33` · main
+> Last updated: **2026-06-04** · HEAD: pending Wave S · main
 
 ---
 
 ## 🟢 Shipped (in-tree on `origin/main`)
+
+### Wave S — HookBus emit consolidation + LEGO discipline gate (commit pending)
+
+> **Pre-Wave S audit**: emits scattered between `winPresentation` (`onSpinResult` + `onTumbleStep` + `postSpin`), `freeSpins` (FS triplet), `reelEngine` (`preSpin`) — orchestrator-level coupling violating LEGO encapsulation. 11 src/blocks/ files contained vendor / game-specific strings.
+>
+> Wave S relocates every event to its true block owner (engine knows when reels settled → reelEngine emits onSpinResult; tumble knows when each cascade step landed → tumble emits onTumbleStep; postSpin owns round-close → emits postSpin with detected events). Every block — engine-tier and feature-tier alike — registers at least one lifecycle listener.
+>
+> Plus: introduces `tools/lego-gate.mjs` + `npm run test:lego` pre-commit invariant — 5 checks that block regression silently slipping in.
+
+| ID | Feature | Files | Status |
+|---|---|---|---|
+| S1 | `tumble.runTumbleChain(detectFn, opts)` — accepts `{duringFs}`, emits `onTumbleStep` internally per cascade step (including 0-event tick). Disabled stub also emits the 0-step event so single-spin slots get identical listener flow. | `src/blocks/tumble.mjs` | ✅ |
+| S2 | `postSpin.handlePostSpin` becomes `async`, awaits `applyWinHighlight()` (which now returns `Promise<events[]>`), then emits `postSpin` with the events as payload — across every branch (BASE+trigger, BASE+no-trigger, FS+retrigger, FS+normal). | `src/blocks/postSpin.mjs` | ✅ |
+| S3 | `winPresentation` registers `onSpinResult` (priority −10) + `preSpin` (priority −10) listeners that cancel in-flight cycle. Drops emit responsibility for `onSpinResult` / `onTumbleStep` / `postSpin`. Now exposes `applyWinHighlight` + `cancelWinSymCycle` on window for headless QA. | `src/blocks/winPresentation.mjs` | ✅ |
+| S4 | `reelEngine.startSpinAll` + `runStaticReroll` emit `onSpinResult` the precise moment every reel settles — before the `setTimeout(onSettled)` deferral that runs the postSpin orchestrator. Detects `duringFs` via `FSM.phase`. Plus reelEngine registers `preSpin` (priority 20) to clear stale `stopTimerId` / `glowTimerId` from prior spin. | `src/blocks/reelEngine.mjs` | ✅ |
+| S5 | `spinTempo` registers `preSpin` (priority 5) publishing the active SPIN_PROFILE on `window.__SPIN_PROFILE_ACTIVE__` for playground / debug observability. | `src/blocks/spinTempo.mjs` | ✅ |
+| S6 | `anticipation` registers `preSpin` + `onFsTrigger` + `onFsEnd` (priority 10) — clears `glowTimerId`, resets `reel.anticipating`, strips `.reelCol--anticipating` / `.cell--anticipating` classes. Fixes ghost-glow on rapid re-spin during anticipation hold. | `src/blocks/anticipation.mjs` | ✅ |
+| S7 | `stageBadge` registers `onFsTrigger` (set 'fs' stage) + `onFsEnd` (label sync). freeSpins.mjs direct calls remain as belt-and-suspenders. | `src/blocks/stageBadge.mjs` | ✅ |
+| S8 | `triggerCounting` registers `onSpinResult` (priority 5) → caches `window.__LAST_SCATTER_COUNT__` + `__LAST_SCATTER_AWARD__`. preSpin listener resets cache. Lets DEV FS panel + playground read scatter count without re-walking grid. | `src/blocks/triggerCounting.mjs` | ✅ |
+| S9 | Audit: `grep "HookBus.emit(" src/buildSlotHTML.mjs` = 0 matches. Orchestrator is now pure compose-and-render — every event originates from its true block owner. | `src/buildSlotHTML.mjs` | ✅ |
+| S10 | `tools/lego-gate.mjs` — pre-commit invariant gate. 5 checks: (1) 0 emit in orchestrator, (2) every block has matching test, (3) 0 vendor strings in src/blocks/, (4) each event has expected single-owner emitter, (5) every non-infra block registers at least one HookBus.on. Exit 0 = ship, 1 = regression. | `tools/lego-gate.mjs` | ✅ |
+| S11 | `npm run test:lego` wired in `package.json` + integrated into `test:all`. CI gate auto-fires before integration suite. | `package.json` | ✅ |
+| S12 | Cortex Eyes verification — `tools/cortex-eyes-wave-s.mjs` runs base spin across GoO + WoO + CF (0 console errors, all 4 base-lifecycle events fire); `tools/cortex-eyes-wave-s-fs.mjs` runs full WoO FS round (intro → 9 active spins → outro). Result: 7/7 lifecycle events emit with positive listener count, 0 console errors. | tools / verification | ✅ |
+| S13 | Engine-tier LEGO conformance — `reelEngine` (preSpin: clear timers), `postSpin` (preSpin: clear events cache; postSpin self-listen to cache events), `tumble` (preSpin: kill chain; onFsEnd: clear DOM classes), `freeSpins` (postSpin: react to winCap trip + onFsTrigger telemetry). 25 / 25 non-infrastructure blocks register at least one lifecycle hook. | engine-tier blocks | ✅ |
+| S14 | Vendor neutralization in 18 blocks — replaced `Gates of Olympus`, `WoO reference`, `Reactoonz`, `Sweet Bonanza`, `Sugar Rush`, `Megaways`, `NetEnt`, `Microgaming`, `Pragmatic`, `Lightning Link`, `Cleopatra`, `Buffalo`, `IGT`, `Cash Eruption`, `Wrath of Olympus` with industry-baseline / pay-anywhere / cluster-pays / line-pays references. lego-gate check #3 enforced. | 18 × `src/blocks/*.mjs` | ✅ |
 
 ### Wave R — HookBus lifecycle wiring + paylineOverlay test (commit `0978e33`)
 
@@ -560,28 +585,11 @@
 > playground će prikazati broken / pristrasne stvari, što je gore od
 > nikakvog playground-a.
 
-### 🔴 Wave S — HookBus emit consolidation (sledeća, kritična)
+### ✅ Wave S — SHIPPED (see "Shipped" section above)
 
-> Wave R je rešila **listening** stranu (blokovi sad registruju hookove).
-> Wave S rešava **emitting** stranu — događaji se trenutno emituju iz
-> dva mesta (`winPresentation` + `freeSpins` + `reelEngine`), što je
-> orchestrator-level coupling koji krši LEGO pravilo. Svaki blok mora
-> emitovati svoje sopstvene događaje.
-
-| ID | Item | Why | Effort |
-|:-:|---|---|---|
-| S1 | **`tumble.mjs` interno emituje `onTumbleStep`** umesto da winPresentation to radi za njega | `runTumbleChain()` iterator zna kada nova runda krene; trenutno winPresentation poznaje tumble internals — krši kapsulaciju | S |
-| S2 | **`postSpin.mjs` blok emituje `postSpin` event** umesto da winPresentation to radi | postSpin blok je centralni round-close handler; treba sam da signal-uje postSpin pa drugi blokovi (winCap, respin, holdAndWin, gamble) reaguju | S |
-| S3 | **`winPresentation.mjs` registruje `onWinDetected`** pravu hook svojstvenu sebi, ne unutrašnju funkciju | Trenutno per-line vs cluster vs all-at-once odluka je u orchestratoru (`if (mode === 'lines') showLines() else ...`); treba da bude unutar bloka | M |
-| S4 | **`reelEngine.mjs` emit-uje `onSpinResult` posle settle** umesto da to radi orchestrator implicitno preko winPresentation poziva | reelEngine zna trenutak kada sve reels postanu mirne; treba on da emituje | S |
-| S5 | **`spinTempo.mjs` registruje `preSpin`** za reset tempo state-a | trenutno mu se tempo postavlja iz orchestratora; LEGO kontrakt traži self-driven | S |
-| S6 | **`anticipation.mjs` registruje `preSpin`** za clearing prethodnih timer-a | anticipation state ostaje "armed" između spinova ako se ne čisti | S |
-| S7 | **`stageBadge.mjs` registruje `onFsTrigger`/`onFsEnd`** za phase label update | stage badge sad samo CSS — phase tekst update se radi izvana | S |
-| S8 | **`triggerCounting.mjs` registruje `onSpinResult`** za scatter ladder count | sad se zove direktno iz reelEngine; treba kroz hook |  S |
-| S9 | **Audit: nijedan emit poziv u `buildSlotHTML.mjs`** | grep `HookBus.emit\\(` u orchestrator-u mora biti 0 — sve mora doći iz blokova | S |
-| S10 | **`tools/lego-gate.mjs`** — pred-commit script koji proverava: (a) 0 inline blokova u orchestrator-u, (b) 0 game-specific stringova u `src/blocks/`, (c) svaki blok ima test, (d) 0 emit poziva u `buildSlotHTML.mjs` | bez gate-a, regresije se dešavaju silently | S |
-| S11 | **`npm run test:lego`** script | dodato u `package.json` → CI-ready | XS |
-| S12 | **Verifikacija**: cortex-eyes na GoO + WoO + CF — 0 console errors, hook coverage **14 → 22** blokova nakon S1–S8 | end-to-end dokaz | S |
+> All 12 items + 2 derived bonuses (engine-tier conformance, vendor cleanup)
+> green. Listener coverage 14 → 25 blocks. Hook coverage 7/7 lifecycle events
+> verified via cortex-eyes-wave-s.mjs + cortex-eyes-wave-s-fs.mjs.
 
 ### 🟠 Wave T — Template cleanup + sane defaults (posle S)
 

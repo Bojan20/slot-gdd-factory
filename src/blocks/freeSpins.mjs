@@ -586,5 +586,32 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
       else if (FSM.phase === "FS_OUTRO") FSM_enterBase();
     });
   }
+
+  /* Wave S LEGO conformance — freeSpins registers postSpin to react to
+     external round-control signals (winCap hard-cap during FS, scheduled
+     forced outro from operator console). When winCap has tripped during an
+     FS spin, we early-exit the FSM to the outro placard so the player gets
+     immediate closure on the MAX WIN moment. */
+  if (typeof HookBus !== 'undefined') {
+    HookBus.on('postSpin', (p) => {
+      if (!p || !p.duringFs) return;
+      if (typeof window !== 'undefined' && window.__WIN_CAP_TRIPPED__ === true) {
+        /* winCap block sets this flag when cumulative payout has reached
+           the GDD-declared cap. Closing the FS round now prevents the
+           remaining spins from accidentally exceeding the cap. */
+        if (FSM.phase === 'FS_ACTIVE' && FSM.spinsRemaining > 0) {
+          FSM.spinsRemaining = 0;
+          FSM_enterOutro();
+        }
+      }
+    }, { priority: -30 });
+    /* FS lifecycle telemetry — used by playground inspector + dev FS panel
+       to verify event sequencing without polluting the round logic. */
+    HookBus.on('onFsTrigger', (p) => {
+      if (typeof window !== 'undefined') {
+        window.__FS_LAST_TRIGGER__ = { ts: Date.now(), award: p && p.award, scatters: p && p.scatters };
+      }
+    }, { priority: -30 });
+  }
 `;
 }

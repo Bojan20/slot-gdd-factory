@@ -4,8 +4,8 @@
  * Wave L3 — Walking Wild block.
  *
  * Wild walks one position per spin (typical: leftward) and triggers a
- * respin until it walks off the grid. Industry references: Jack and the
- * Beanstalk (NetEnt), Dead or Alive 2 — Old Saloon (NetEnt).
+ * respin until it walks off the grid. Industry baseline: directional
+ * walking-wild pattern with auto-respin chain.
  *
  * GDD knobs:
  *   • mode: 'fs' | 'base' | 'both'

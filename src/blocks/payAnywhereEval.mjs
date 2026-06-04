@@ -4,13 +4,13 @@
  * Wave K1 — Pay-anywhere (scatter pays) win evaluator.
  *
  * Replaces the line-based `detectLineWins()` when GDD declares
- * `evaluation: 'pay_anywhere'` (Gates of Olympus / Sugar Rush style).
+ * `evaluation: 'pay_anywhere'` (pay-anywhere cluster reference).
  *
  * Win rule:
  *   For every regular symbol with COUNT >= minWin on the whole grid,
  *   win = bet × paytable[symbol][bucket(count)]
  *
- * Buckets (Gates of Olympus 1000 reference):
+ * Buckets (industry-standard pay-anywhere reference):
  *   8-9   → bucket[0]
  *   10-11 → bucket[1]
  *   12+   → bucket[2]

@@ -15,7 +15,7 @@
 export function defaultConfig() {
   return {
     enabled: false,
-    costMultiplier: 1.25,   // +25% bet (Gates of Olympus reference)
+    costMultiplier: 1.25,   // +25% bet (industry-standard ante-bet reference)
     triggerMultiplier: 2,   // doubles scatter probability when on (placeholder)
     label: 'ANTE BET',
     color: '#ffe066',

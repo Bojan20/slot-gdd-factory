@@ -356,23 +356,31 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
     return events;
   }
 
+  /* Wave S refactor: winPresentation no longer emits onSpinResult or postSpin.
+     reelEngine owns onSpinResult (it knows when reels settle); postSpin block
+     owns postSpin (it owns round-close orchestration). tumble owns onTumbleStep
+     (it knows when each cascade step lands). winPresentation just presents.
+
+     Returns Promise<events[]> so the postSpin orchestrator can read what was
+     detected and emit postSpin with the right payload. */
   async function applyWinHighlight() {
     clearWinHighlight();
     /* Suppressed only during FS_INTRO / FS_OUTRO placards. */
     if (FSM && (FSM.phase === 'FS_INTRO' || FSM.phase === 'FS_OUTRO')) {
-      return;
+      return [];
     }
     const duringFs = !!(FSM && FSM.phase === 'FS_ACTIVE');
 
-    /* 1. onSpinResult — blocks annotate the settled grid. */
-    if (typeof HookBus !== 'undefined') {
-      HookBus.emit('onSpinResult', { duringFs });
-    }
-
-    /* Visual variance — ${(c.noWinChance * 100).toFixed(0)}% of spins forced to no-win. */
+    /* Visual variance — ${(c.noWinChance * 100).toFixed(0)}% of spins forced to no-win.
+       Ask tumble for a 0-events tick so listeners (orb accumulate, persistent
+       mult escalate-on-loss) react identically to a real lossy spin. tumble
+       always exists — even disabled (single-spin slots) its stub emits the
+       onTumbleStep event. */
     if (Math.random() < ${c.noWinChance}) {
-      if (typeof HookBus !== 'undefined') HookBus.emit('postSpin', { duringFs, events: [] });
-      return;
+      if (typeof runTumbleChain === 'function') {
+        await runTumbleChain(() => [], { duringFs });
+      }
+      return [];
     }
 
     const detect = _pickDetector();
@@ -382,39 +390,58 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
     let allEvents = [];
 
     if (tumbleEnabled) {
-      /* runTumbleChain returns { chain, totalWinX, events[] }. We wrap the
-         detector so onTumbleStep fires on each chain step. */
-      let chainIndex = 0;
+      /* tumble block emits onTumbleStep internally now (Wave S). We just wrap
+         the detector to fold HookBus.getMult into payX so escalating mults
+         (orb accumulation, persistent mult, lightning) actually pay out. */
       const wrappedDetect = () => {
         const events = detect() || [];
-        if (typeof HookBus !== 'undefined') {
-          HookBus.emit('onTumbleStep', { duringFs, chainIndex, events });
-        }
         _applyMultToEvents(events);
-        chainIndex++;
         return events;
       };
-      const result = await runTumbleChain(wrappedDetect);
+      const result = await runTumbleChain(wrappedDetect, { duringFs });
       allEvents = (result && result.events) || [];
     } else {
-      /* Single step — emit onTumbleStep once with the detected events. */
-      const events = detect() || [];
-      if (typeof HookBus !== 'undefined') {
-        HookBus.emit('onTumbleStep', { duringFs, chainIndex: 0, events });
-      }
+      /* No cascade slot — single detection. tumble's disabled stub still emits
+         onTumbleStep so listeners (orb/persistent mult) react identically. */
+      let events = detect() || [];
       _applyMultToEvents(events);
+      if (typeof runTumbleChain === 'function') {
+        await runTumbleChain(() => events, { duringFs });
+      }
       allEvents = events;
     }
 
-    /* 6. visual cycle — even if no wins, we still emit postSpin below. */
+    /* Visual cycle — events present? walk them one-by-one. */
     if (allEvents.length > 0) {
       await playWinSymCycle(allEvents);
     }
 
-    /* 7. postSpin — round-control blocks (winCap, respin, bonusPick, etc.) */
-    if (typeof HookBus !== 'undefined') {
-      HookBus.emit('postSpin', { duringFs, events: allEvents });
-    }
+    return allEvents;
+  }
+
+  /* Wave S LEGO conformance — winPresentation registers a LOW-priority (-10)
+     onSpinResult listener that clears any in-flight win cycle the moment
+     reels settle. Annotators (multiplierOrb, mystery, sticky/walking wild,
+     wildReel, lightning, superSymbol) all run at priority 0 or higher, so
+     they execute first; then this cleanup fires last to prep the grid for
+     the new presentation cycle the postSpin orchestrator triggers via
+     applyWinHighlight(). */
+  if (typeof HookBus !== 'undefined') {
+    HookBus.on('onSpinResult', () => {
+      cancelWinSymCycle();
+    }, { priority: -10 });
+    /* Also clear on preSpin so any retrigger / static-reroll path that
+       short-circuits before settle still wipes the previous cycle visuals. */
+    HookBus.on('preSpin', () => {
+      cancelWinSymCycle();
+    }, { priority: -10 });
+  }
+
+  /* Expose applyWinHighlight on window so headless QA tools can poke it
+     directly without going through the full spin lifecycle. */
+  if (typeof window !== 'undefined') {
+    window.applyWinHighlight = applyWinHighlight;
+    window.cancelWinSymCycle = cancelWinSymCycle;
   }
 `;
 }

@@ -5,7 +5,7 @@
  *
  * Modal overlay with K hidden tiles. Player clicks tiles to reveal prizes.
  * Round ends when a "Collect/POOP" tile is hit or all picks consumed.
- * Industry references: Cleopatra (IGT) sphinx pick, Buffalo Pick'em.
+ * Industry baseline: classic pick-em modal — hidden tile reveal with collect terminator.
  *
  * GDD knobs:
  *   • mode: 'fs' | 'base' | 'both' | 'triggered'

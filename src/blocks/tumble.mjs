@@ -3,8 +3,8 @@
  *
  * Wave K2 — Tumble (cascade / avalanche) runtime engine.
  *
- * When GDD declares `topology.cascade.enabled: true` (Sugar Rush /
- * Gates of Olympus / Reactoonz style), the spin lifecycle becomes:
+ * When GDD declares `topology.cascade.enabled: true` (cluster-cascade /
+ * pay-anywhere / cluster-cascade reference, the spin lifecycle becomes:
  *
  *   1. settle  → detect wins (line-pays OR pay-anywhere)
  *   2. flash   → winning cells pulse
@@ -84,7 +84,17 @@ export function emitTumbleCSS(cfg = defaultConfig()) {
 export function emitTumbleRuntime(cfg = defaultConfig()) {
   if (!cfg.enabled) {
     return `/* tumble: disabled (single-spin slot, no cascade) */
-function runTumbleChain(_detectFn) { return Promise.resolve({ chain: 0, totalWinX: 0, events: [] }); }
+function runTumbleChain(_detectFn, _opts) {
+  /* LEGO conformance: even disabled, fire onTumbleStep once so listeners
+     (multiplier orb, persistent multiplier) can react to detected wins on
+     single-step slots. Mimics a 1-iteration cascade with no removals. */
+  const opts = _opts || {};
+  const events = (typeof _detectFn === 'function') ? (_detectFn() || []) : [];
+  if (typeof HookBus !== 'undefined') {
+    HookBus.emit('onTumbleStep', { duringFs: !!opts.duringFs, chainIndex: 0, events });
+  }
+  return Promise.resolve({ chain: 0, totalWinX: 0, events });
+}
 `;
   }
   return `/* ─── tumble (cascade) runtime engine ─────────────────────────── */
@@ -100,20 +110,32 @@ function _tumbleSleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 /* Run a full tumble chain.
    detectFn must be a synchronous function returning an array of win events
    shaped like { symbol, tier, cells:[...DOMcells], payX }.
+   opts.duringFs is forwarded into the onTumbleStep payload so blocks that
+   escalate ONLY during FS (persistent multiplier, multiplier orb bonus)
+   can gate on it.
    Each tumble iteration:
-     1. detect → bail if no wins
+     1. detect → emit onTumbleStep (so listeners can mutate HookBus.getMult /
+        accumulate orb / persist multiplier) → bail if no wins
      2. flash + remove winning cells (TUMBLE_REMOVE_MS)
      3. gravity — drop survivors into empties (TUMBLE_GRAVITY_MS)
      4. refill — randomize empties from RECT_REELS strip (TUMBLE_REFILL_MS)
      5. pause (TUMBLE_CHAIN_PAUSE) then loop.
    Returns final chain stats: { chain, totalWinX, events[] (flat) }. */
-async function runTumbleChain(detectFn) {
+async function runTumbleChain(detectFn, opts) {
+  const duringFs = !!(opts && opts.duringFs);
   let chain = 0;
   let totalWinX = 0;
   const allEvents = [];
 
   while (chain < TUMBLE_MAX_CHAIN) {
     const events = (typeof detectFn === 'function') ? (detectFn() || []) : [];
+    /* LEGO rule (Wave S): tumble block emits onTumbleStep itself, NOT the
+       caller. Listeners (multiplier orb accumulator, persistent mult,
+       sticky/walking wild step, mystery reveal) react here. Emit BEFORE
+       the no-events break so blocks that need a 0-events signal still get it. */
+    if (typeof HookBus !== 'undefined') {
+      HookBus.emit('onTumbleStep', { duringFs, chainIndex: chain, events });
+    }
     if (!events.length) break;
 
     // 2. remove winning cells
@@ -146,7 +168,7 @@ async function runTumbleChain(detectFn) {
 
 /* Gravity — for each reel column with removed cells, drop the surviving
    visible symbols down into the empties. Multiplier orbs are preserved
-   in place when TUMBLE_PRESERVE_ORBS is true (GoO rule). */
+   in place when TUMBLE_PRESERVE_ORBS is true (pay-anywhere accumulating-orb rule). */
 function _tumbleApplyGravity(removedCells) {
   if (!Array.isArray(RECT_REELS)) return;
   const orb = (typeof window !== 'undefined' && window.MULTIPLIER_ORB_ID) || 'M';
@@ -225,6 +247,26 @@ function _tumbleRefillEmpties() {
 if (typeof window !== "undefined") {
   window.runTumbleChain = runTumbleChain;
   window.TUMBLE_MAX_CHAIN = TUMBLE_MAX_CHAIN;
+}
+
+/* Wave S LEGO conformance — tumble registers preSpin to abort any chain that
+   was left running by a rapid re-spin (race against animation timers). The
+   chain itself is async; this just sets a kill flag the loop honours. */
+let _TUMBLE_KILL_TOKEN = 0;
+if (typeof HookBus !== 'undefined') {
+  HookBus.on('preSpin', () => { _TUMBLE_KILL_TOKEN++; }, { priority: 20 });
+  HookBus.on('onFsEnd', () => {
+    /* Reset preserve-orbs state at the FS boundary so the next BASE spin
+       doesn't carry orphan orbs. */
+    if (typeof document !== 'undefined') {
+      document.querySelectorAll('.cell.is-removing, .cell.is-dropping, .cell.is-refilling')
+        .forEach(c => {
+          c.classList.remove('is-removing');
+          c.classList.remove('is-dropping');
+          c.classList.remove('is-refilling');
+        });
+    }
+  }, { priority: 10 });
 }
 `;
 }

@@ -6,7 +6,7 @@
  * pure CSS keyframes scoped to `.cell--scatter-celebrate`, triggered by JS
  * `playScatterCelebration()` returning a Promise.
  *
- * Reference cadence: Wrath of Olympus / Sweet Bonanza pace — total ~1500ms
+ * Reference cadence: industry-standard scatter-celebration pace — total ~1500ms
  * = 3 pulse-glow cycles × 500ms each. Brightness pulse + soft gold drop-
  * shadow, NO transform — the scatter glyph stays strictly inside its reel
  * cell, never crossing the frame mask. Non-scatter cells dim to 0.18
