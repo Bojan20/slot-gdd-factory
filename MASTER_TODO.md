@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `7fc54ed` · main · Wave U10 paytable modal shipped (6/10 U-atoms now SHIPPED: U1, U3, U4, U5, U6, U10)
+> Last updated: **2026-06-04** · HEAD: `40f4258` · main · Wave U8 balanceHud + U9 historyLog shipped → **8/10 U-atoms** SHIPPED (U1, U3, U4, U5, U6, **U8**, **U9**, U10). Remaining: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -951,8 +951,8 @@ Initial implementation used a generic `_emit(eventName, payload)` helper. lego-g
 | U5 | **`betSelector.mjs`** — coin-value × bet-multiplier model + bet-step buttons. Trenutno hardkodovano `€1` u svim fixturama | nov blok | ⏳ queued |
 | U6 | **`gambleSecondary.mjs`** — Card Gamble + Ladder Gamble (sada samo osnovni `gamble`) — industry pattern je 2 grane | nov blok | ⏳ queued |
 | U7 | **`rngFairness.mjs`** PAR layer skeleton (provably-fair seed + verify endpoint) | nov blok | ⏳ queued |
-| U8 | **`balanceHud.mjs`** — denomination + balance + bet + win pravi HUD, currency aware | nov blok | ⏳ queued |
-| U9 | **`historyLog.mjs`** — last-N spins log (drugi standard regulator) | nov blok | ⏳ queued |
+| U8 | **`balanceHud.mjs`** — denomination + balance + bet + win pravi HUD, currency aware | nov blok | ✅ shipped `6ae6d95` — owns `window.__SLOT_BALANCE__` single source-of-truth; preSpin debit (base only, FS free), postSpin credit lastWin, onFsEnd credit totalWin, onGambleEnd credit bank, onBetChanged refresh column. Currency `€/EUR/USD/GBP/JPY/CHF/PLN`, prefix/suffix. Debit-red + credit-green pulse keyframes (reduced-motion respected). New event `onBalanceChanged({balance, delta, reason})` sole-owned by balanceHud (reasons: init/spin/win/gamble/reset/topup/manual). 42/42 unit tests. |
+| U9 | **`historyLog.mjs`** — last-N spins log (drugi standard regulator) | nov blok | ✅ shipped `40f4258` — ring buffer (default 50 entries, cap 500), `≡` hub button → slide-up panel sa table-wrap (#, Time, Bet, Win, Balance) + per-mode classes (base/fs/gamble). Optional CSV export (default OFF, GDD opts in) za NJ audit flow. 7 HookBus listeners (preSpin snapshot, postSpin push 'base', onFsTrigger snapshot, onFsEnd push 'fs' sa totalWin, onGambleEnd push 'gamble' sa stake/bank, onBalanceChanged read-only marker, onAutoplayStart hide). 0 emits — pure audit observer. timeFormat hms/rel/iso. 39/39 unit tests. |
 | U10 | **`paytable.mjs`** modal — full paytable viewer dostupan preko **i** dugmeta | nov blok | ✅ shipped `7fc54ed` — regulator-mandated info modal: 'i' hub button → full-screen overlay sa symbol roster (HP/MP/LP tier colors), 3OAK/4OAK/5OAK payout grid, specials section, feature chips, wild rules note, real-cash bet row composed sa `window.__SLOT_BET__`. Auto-hide na preSpin/onFsTrigger/onAutoplayStart. closeOnBackdrop + Escape. 4 HookBus listeners, 0 emits (pure UI). 41/41 unit tests. |
 
 ### 🟣 Wave V — Spin / Slam-Stop / Force-Skip button suite (industry-standard UI cluster)
