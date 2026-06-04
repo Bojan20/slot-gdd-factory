@@ -179,6 +179,22 @@ if (typeof window !== 'undefined') {
   window.maybeFireLightning = maybeFireLightning;
   window.clearLightning     = clearLightning;
 }
+
+/* HookBus wire-up — lightning fires on every settled grid (BASE + FS),
+   strikes random cells with multiplier values, pushes the chosen mult
+   into HookBus so winPresentation applies it. */
+if (typeof HookBus !== 'undefined') {
+  HookBus.on('preSpin', () => { clearLightning(); });
+  HookBus.on('onSpinResult', () => {
+    const struck = maybeFireLightning();
+    if (struck && Array.isArray(struck) && struck.length > 0) {
+      /* Sum of multipliers — winPresentation reads HookBus.getMult() */
+      const sum = struck.reduce((a, s) => a + (Number(s && s.mult) || 0), 0);
+      if (sum > 0) HookBus.addMult(sum);
+    }
+  });
+  HookBus.on('onFsEnd', () => { clearLightning(); });
+}
 `;
 }
 

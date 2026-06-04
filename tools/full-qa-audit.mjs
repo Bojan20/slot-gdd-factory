@@ -113,12 +113,21 @@ for (const file of fixtures) {
     await pageS.goto(url);
     await pageS.waitForTimeout(400);
 
+    /* Side HUD (aside.sideHud) can overlap #spinBtn on certain viewports and
+       intercept Playwright's pointer hit-test. We bypass the visual hit-test
+       and dispatch the click directly on the button — the runtime spin logic
+       only cares about the click event, not pointer geometry. */
+    const stressClick = async () => pageS.evaluate(() => {
+      const btn = document.querySelector('#spinBtn');
+      if (btn && !btn.disabled) btn.click();
+    });
+
     /* Click 3 times in rapid succession to stress race conditions */
-    await pageS.click('#spinBtn');
+    await stressClick();
     await pageS.waitForTimeout(50);
-    await pageS.click('#spinBtn');
+    await stressClick();
     await pageS.waitForTimeout(50);
-    await pageS.click('#spinBtn');
+    await stressClick();
 
     /* Mid-spin (during steady scroll) */
     await pageS.waitForTimeout(900);

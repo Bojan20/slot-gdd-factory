@@ -116,6 +116,13 @@ if (typeof window !== 'undefined') {
   window.applyExpandingWilds = applyExpandingWilds;
   window.clearExpandingWilds = clearExpandingWilds;
 }
+
+/* HookBus wire-up — expanding wild fires AFTER reels settle. */
+if (typeof HookBus !== 'undefined') {
+  HookBus.on('onSpinResult', () => { applyExpandingWilds(); });
+  HookBus.on('preSpin', () => { clearExpandingWilds(); });
+  HookBus.on('onFsTrigger', () => { clearExpandingWilds(); });
+}
 `;
 }
 

@@ -309,25 +309,112 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
     return unique.slice(0, MAX_EVENTS);
   }
 
-  /* applyWinHighlight — public façade: detects events, plays the cycle,
-     returns a Promise so callers (BASE post-spin, FS post-spin) can await.
-     ${(c.noWinChance * 100).toFixed(0)}% of spins are forced "no win" for visual variance.
-     Strategy dispatch:
-       PAYLINE_POOL.length > 0   → detectLineWins()  (line-pays mode)
-       PAYLINE_POOL.length === 0 → detectWinCombos() (cluster-pays mode) */
-  function applyWinHighlight() {
-    clearWinHighlight();
-    /* Suppressed only during FS_INTRO / FS_OUTRO placards (overlay owns
-       the eye). BASE and FS_ACTIVE both run the cycle. */
-    if (FSM && (FSM.phase === 'FS_INTRO' || FSM.phase === 'FS_OUTRO')) {
-      return Promise.resolve();
+  /* ── applyWinHighlight — THE universal win-presentation orchestrator ──
+     Pipeline (every BASE/FS spin that's not in INTRO/OUTRO placard):
+       1. emit('onSpinResult')   — blocks annotate the settled grid
+                                   (multiplierOrb adds chips, mystery
+                                   reveals, sticky wilds glow, etc.)
+       2. dispatch evaluator by GAME_EVAL_KIND OR fall back to the legacy
+          PAYLINE_POOL heuristic:
+             'line'          → detectLineWins
+             'cluster'       → detectClusterWins → detectWinCombos fallback
+             'ways'          → detectWaysWins → detectLineWins fallback
+             'pay_anywhere'  → detectPayAnywhereWins → detectWinCombos fallback
+       3. if tumble enabled → runTumbleChain(detect, onStep) loops; each
+          step emits onTumbleStep so blocks can mutate HookBus.getMult()
+          (multiplierOrb accumulates, persistentMultiplier escalates, etc.)
+       4. else → single onTumbleStep emit with the detected events
+       5. apply HookBus.getMult() to every event.payX
+       6. playWinSymCycle (visual cycle)
+       7. emit('postSpin')       — round-control blocks (winCap, respin,
+                                   bonusPick triggers) act here
+     Returns Promise so FSM_runNextFsSpin and runOneBaseSpin can chain. */
+  function _pickDetector() {
+    const kind = (typeof GAME_EVAL_KIND === 'string' && GAME_EVAL_KIND) || 'line';
+    /* explicit GDD-declared topology.evaluation → preferred eval */
+    if (kind === 'pay_anywhere' && typeof detectPayAnywhereWins === 'function') return detectPayAnywhereWins;
+    if (kind === 'cluster' && typeof detectClusterWins === 'function') return detectClusterWins;
+    if (kind === 'ways' && typeof detectWaysWins === 'function') return detectWaysWins;
+    if (kind === 'line' && typeof detectLineWins === 'function') return detectLineWins;
+    /* legacy fallback — payline pool present? line mode. else cluster. */
+    const hasPaylines = Array.isArray(PAYLINE_POOL) && PAYLINE_POOL.length > 0
+                       && RECT_REELS && RECT_REELS.length > 0;
+    if (hasPaylines && typeof detectLineWins === 'function') return detectLineWins;
+    if (typeof detectWinCombos === 'function') return detectWinCombos;
+    return () => [];
+  }
+
+  function _applyMultToEvents(events) {
+    if (!events || !events.length) return events;
+    if (typeof HookBus === 'undefined') return events;
+    const m = HookBus.getMult();
+    if (!Number.isFinite(m) || m === 1) return events;
+    for (const ev of events) {
+      if (Number.isFinite(ev.payX)) ev.payX = ev.payX * m;
+      ev.appliedMultX = m;
     }
-    if (Math.random() < ${c.noWinChance}) return Promise.resolve(); /* visual variance */
-    const linePays = Array.isArray(PAYLINE_POOL) && PAYLINE_POOL.length > 0
-                     && RECT_REELS && RECT_REELS.length > 0;
-    const events = linePays ? detectLineWins() : detectWinCombos();
-    if (events.length === 0) return Promise.resolve();
-    return playWinSymCycle(events);
+    return events;
+  }
+
+  async function applyWinHighlight() {
+    clearWinHighlight();
+    /* Suppressed only during FS_INTRO / FS_OUTRO placards. */
+    if (FSM && (FSM.phase === 'FS_INTRO' || FSM.phase === 'FS_OUTRO')) {
+      return;
+    }
+    const duringFs = !!(FSM && FSM.phase === 'FS_ACTIVE');
+
+    /* 1. onSpinResult — blocks annotate the settled grid. */
+    if (typeof HookBus !== 'undefined') {
+      HookBus.emit('onSpinResult', { duringFs });
+    }
+
+    /* Visual variance — ${(c.noWinChance * 100).toFixed(0)}% of spins forced to no-win. */
+    if (Math.random() < ${c.noWinChance}) {
+      if (typeof HookBus !== 'undefined') HookBus.emit('postSpin', { duringFs, events: [] });
+      return;
+    }
+
+    const detect = _pickDetector();
+    const tumbleEnabled = typeof runTumbleChain === 'function'
+                          && typeof TUMBLE_MAX_CHAIN !== 'undefined';
+
+    let allEvents = [];
+
+    if (tumbleEnabled) {
+      /* runTumbleChain returns { chain, totalWinX, events[] }. We wrap the
+         detector so onTumbleStep fires on each chain step. */
+      let chainIndex = 0;
+      const wrappedDetect = () => {
+        const events = detect() || [];
+        if (typeof HookBus !== 'undefined') {
+          HookBus.emit('onTumbleStep', { duringFs, chainIndex, events });
+        }
+        _applyMultToEvents(events);
+        chainIndex++;
+        return events;
+      };
+      const result = await runTumbleChain(wrappedDetect);
+      allEvents = (result && result.events) || [];
+    } else {
+      /* Single step — emit onTumbleStep once with the detected events. */
+      const events = detect() || [];
+      if (typeof HookBus !== 'undefined') {
+        HookBus.emit('onTumbleStep', { duringFs, chainIndex: 0, events });
+      }
+      _applyMultToEvents(events);
+      allEvents = events;
+    }
+
+    /* 6. visual cycle — even if no wins, we still emit postSpin below. */
+    if (allEvents.length > 0) {
+      await playWinSymCycle(allEvents);
+    }
+
+    /* 7. postSpin — round-control blocks (winCap, respin, bonusPick, etc.) */
+    if (typeof HookBus !== 'undefined') {
+      HookBus.emit('postSpin', { duringFs, events: allEvents });
+    }
   }
 `;
 }

@@ -2,12 +2,9 @@
 /**
  * Phase A — Test parser on real production GAME GDDs (math is out of scope).
  *
- * The only two files we feed in:
- *   1. ~/Desktop/WoO-GDD/WRATH_OF_OLYMPUS_GAME_GDD.md
- *   2. ~/Desktop/CrystalForge-GDD/CRYSTAL_FORGE_GAME_GDD.md
- *
- * Math GDD companions are EXPLICITLY ignored — Boki decree:
- * "nikakva matematika se ne radi dok ne odradimo savrseno game gdd".
+ * Fixtures live in samples/ (in-repo, portable). Math GDD companions are
+ * EXPLICITLY ignored — Boki decree:
+ *   "nikakva matematika se ne radi dok ne odradimo savrseno game gdd".
  *
  * What this asserts:
  *   - parser extracts name + topology + symbols + features (sanity floor)
@@ -15,23 +12,19 @@
  * NOT a vitest — pure Node so it runs without dev deps installed.
  */
 import { readFileSync, existsSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { resolve } from 'node:path';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parseGDD } from '../src/parser.mjs';
 
+const __filename = fileURLToPath(import.meta.url);
+const REPO = resolve(dirname(__filename), '..');
+const SAMPLES = resolve(REPO, 'samples');
+
 const FIXTURES = [
-  {
-    label: 'Wrath of Olympus',
-    game: resolve(homedir(), 'Desktop/WoO-GDD/WRATH_OF_OLYMPUS_GAME_GDD.md'),
-  },
-  {
-    label: 'Crystal Forge',
-    game: resolve(homedir(), 'Desktop/CrystalForge-GDD/CRYSTAL_FORGE_GAME_GDD.md'),
-  },
-  {
-    label: 'Midnight Fangs (cluster-pays synthetic)',
-    game: resolve(homedir(), 'Projects/slot-gdd-factory/samples/MIDNIGHT_FANGS_GAME_GDD.md'),
-  },
+  { label: 'Wrath of Olympus',                       game: resolve(SAMPLES, 'WRATH_OF_OLYMPUS_GAME_GDD.md') },
+  { label: 'Crystal Forge',                          game: resolve(SAMPLES, 'CRYSTAL_FORGE_GAME_GDD.md') },
+  { label: 'Midnight Fangs (cluster-pays synthetic)', game: resolve(SAMPLES, 'MIDNIGHT_FANGS_GAME_GDD.md') },
+  { label: 'Gates of Olympus 1000 (Pay-Anywhere)',   game: resolve(SAMPLES, 'GATES_OF_OLYMPUS_1000_GAME_GDD.md') },
 ];
 
 function bar(ch = '─', n = 70) {

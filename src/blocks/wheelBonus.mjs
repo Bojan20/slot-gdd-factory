@@ -251,6 +251,14 @@ if (typeof window !== 'undefined') {
   window.wbClose  = wbClose;
   window.WB_STATE = WB_STATE;
 }
+
+/* HookBus wire-up — wheel modal is opened explicitly by parser-side
+   trigger logic; HookBus listeners ensure the modal closes safely at FS
+   boundaries so it can't leak into the next round. */
+if (typeof HookBus !== 'undefined') {
+  HookBus.on('onFsTrigger', () => { if (WB_STATE.open) wbClose(); });
+  HookBus.on('onFsEnd',     () => { if (WB_STATE.open) wbClose(); });
+}
 `;
 }
 

@@ -25,6 +25,12 @@
 import { buildGridShape } from './gridShape.mjs';
 import { paylineConfig } from './blocks/paylines.mjs';
 import { emitPaylineOverlayRuntime } from './blocks/paylineOverlay.mjs';
+/* HookBus — the lifecycle bus that wires every feature block to the spin
+   engine. Emitted FIRST so every other runtime block can register on it. */
+import {
+  emitHookBusRuntime,
+  resolveConfig as resolveHookBusConfig,
+} from './blocks/hookBus.mjs';
 import {
   emitWinPresentationRuntime,
   emitDetectWinCombosRuntime,
@@ -891,9 +897,16 @@ ${emitWheelBonusMarkup(resolveWheelBonusConfig(model))}
 ${emitGambleMarkup(resolveGambleConfig(model))}
 
 <script>
+  /* ── HookBus FIRST — every feature block registers on it. ────────── */
+  ${emitHookBusRuntime(resolveHookBusConfig(model))}
+
   const POOL = ${JSON.stringify(pool.map(s => s.id))};
   const SHAPE = ${JSON.stringify(shape)};
   const FREESPINS = ${JSON.stringify(model.freeSpins || { enabled: false })};
+  /* Game topology hint — selects payout evaluator: 'line' (default),
+     'cluster', 'ways', 'pay_anywhere'. Read by applyWinHighlight dispatch. */
+  const GAME_EVAL_KIND = ${JSON.stringify((model.topology && model.topology.evaluation) || 'line')};
+  if (typeof window !== "undefined") window.GAME_EVAL_KIND = GAME_EVAL_KIND;
   /* Per-symbol registry — drives win-cycle event generation. See
      SYMBOL_REGISTRY construction in buildSlotHTML.mjs for the source. */
   const SYMBOL_REGISTRY = ${JSON.stringify(SYMBOL_REGISTRY)};

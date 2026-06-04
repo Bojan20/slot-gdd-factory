@@ -394,6 +394,11 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
 
   function runOneBaseSpin() {
     cancelWinSymCycle();
+    /* HookBus: preSpin → blocks that arm per-spin state (anticipation,
+       wild placement) run BEFORE the engine kicks. */
+    if (typeof HookBus !== 'undefined') {
+      HookBus.emit('preSpin', { duringFs: false });
+    }
     if (UNIFORM_REEL_KINDS.has(SHAPE.kind) && RECT_REELS) {
       startSpinAll(() => handlePostSpin(false));
     } else {

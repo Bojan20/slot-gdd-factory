@@ -160,6 +160,23 @@ if (typeof window !== 'undefined') {
   window.revealMysterySymbols = revealMysterySymbols;
   window.clearMysteryFlags    = clearMysteryFlags;
 }
+
+/* HookBus wire-up — mystery symbol is marked on every settled grid and
+   revealed before win evaluation. preSpin clears stale flags so the next
+   spin starts fresh. Without this the block is dead code (functions
+   defined but never called by the spin lifecycle). */
+if (typeof HookBus !== 'undefined') {
+  HookBus.on('preSpin', () => { clearMysteryFlags(); });
+  HookBus.on('onSpinResult', () => {
+    const marked = markMysteryCells();
+    if (Array.isArray(marked) && marked.length > 0) {
+      /* Reveal is async (animation) — wait so the engine sees revealed
+         symbols when it computes the win evaluation. */
+      try { revealMysterySymbols(); } catch (e) { /* defensive */ }
+    }
+  });
+  HookBus.on('onFsEnd', () => { clearMysteryFlags(); });
+}
 `;
 }
 

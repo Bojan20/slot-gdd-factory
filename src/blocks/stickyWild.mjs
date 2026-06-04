@@ -151,6 +151,21 @@ if (typeof window !== 'undefined') {
   window.clearStickyWilds   = clearStickyWilds;
   window.STICKY_WILD_REGISTRY = STICKY_WILD_REGISTRY;
 }
+
+/* HookBus wire-up — sticky wilds participate in every reel settle:
+   onSpinResult → re-apply registered sticky cells; harvest any NEW
+   wild cells on the settled grid.
+   postSpin    → tick countdowns (durationSpins decrement).
+   onFsTrigger → clear last round's registry. */
+if (typeof HookBus !== 'undefined') {
+  HookBus.on('onSpinResult', () => {
+    applyStickyWilds();
+    harvestStickyWilds();
+  });
+  HookBus.on('postSpin', () => { tickStickyWilds(); });
+  HookBus.on('onFsTrigger', () => { clearStickyWilds(); });
+  HookBus.on('onFsEnd', () => { if (STICKY_WILD_MODE === 'fs') clearStickyWilds(); });
+}
 `;
 }
 

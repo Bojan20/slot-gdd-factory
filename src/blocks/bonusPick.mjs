@@ -251,6 +251,13 @@ if (typeof window !== 'undefined') {
   window.bpClose   = bpClose;
   window.BP_STATE  = BP_STATE;
 }
+
+/* HookBus wire-up — pick modal is opened by parser-side trigger logic;
+   HookBus ensures it closes safely at FS boundaries. */
+if (typeof HookBus !== 'undefined') {
+  HookBus.on('onFsTrigger', () => { if (BP_STATE.open) bpClose(); });
+  HookBus.on('onFsEnd',     () => { if (BP_STATE.open) bpClose(); });
+}
 `;
 }
 

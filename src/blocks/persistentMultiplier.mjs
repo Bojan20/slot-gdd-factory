@@ -163,6 +163,22 @@ if (typeof window !== 'undefined') {
 }
 /* Initial render at boot */
 document.addEventListener('DOMContentLoaded', () => _pmRenderChip(false));
+
+/* HookBus wire-up — persistent multiplier bumps on every FS cascade /
+   tumble win and resets when the FS round ends. The current value is
+   pushed into HookBus.setMult so winPresentation applies it to payouts. */
+if (typeof HookBus !== 'undefined') {
+  HookBus.on('onFsSpinResult', () => { pmOnCascade(); });
+  HookBus.on('onTumbleStep', ({ events } = {}) => {
+    if (Array.isArray(events) && events.some(e => Number(e && e.payX) > 0)) {
+      pmOnWin();
+      const v = pmGet();
+      if (v > 0) HookBus.setMult(Math.max(HookBus.getMult(), v));
+    }
+  });
+  HookBus.on('onFsTrigger', () => { pmReset(); });
+  HookBus.on('onFsEnd',     () => { pmOnRoundEnd(); });
+}
 `;
 }
 

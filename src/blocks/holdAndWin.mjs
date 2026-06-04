@@ -228,6 +228,26 @@ if (typeof window !== 'undefined') {
   window.hwEnd           = hwEnd;
   window.HW_STATE        = HW_STATE;
 }
+
+/* HookBus wire-up — Hold & Win activates on postSpin (bonus symbol count
+   meets triggerCount) and re-applies locked-cell visuals on every settled
+   spin while the round is active. onFsTrigger/onFsEnd clear state so the
+   board is fresh for each FS round. */
+if (typeof HookBus !== 'undefined') {
+  HookBus.on('postSpin', () => {
+    if (!HW_STATE.active) {
+      hwMaybeEnter();
+    } else {
+      hwHarvestBonus();
+      hwAfterRespin();
+    }
+  });
+  HookBus.on('onSpinResult', () => {
+    if (HW_STATE.active) hwApplyLocks();
+  });
+  HookBus.on('onFsTrigger', () => { hwEnd(); });
+  HookBus.on('onFsEnd',     () => { hwEnd(); });
+}
 `;
 }
 

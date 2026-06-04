@@ -119,6 +119,14 @@ if (typeof window !== 'undefined') {
   window.maybeFireWildReel = maybeFireWildReel;
   window.clearWildReels    = clearWildReels;
 }
+
+/* HookBus wire-up — wild reel fires AFTER the grid settles (so it can
+   overwrite chosen columns with the wild symbol) and clears on preSpin. */
+if (typeof HookBus !== 'undefined') {
+  HookBus.on('preSpin', () => { clearWildReels(); });
+  HookBus.on('onSpinResult', () => { maybeFireWildReel(); });
+  HookBus.on('onFsEnd',  () => { clearWildReels(); });
+}
 `;
 }
 

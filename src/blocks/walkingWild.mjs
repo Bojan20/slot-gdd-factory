@@ -159,6 +159,26 @@ if (typeof window !== 'undefined') {
   window.clearWalkingWilds   = clearWalkingWilds;
   window.WALKING_WILD_REGISTRY = WALKING_WILD_REGISTRY;
 }
+
+/* HookBus wire-up — walking wilds harvest fresh wilds on every settled
+   grid then step them by (DX, DY) on every tumble step. onFsTrigger /
+   onFsEnd clear the registry. Without this the wild registry never
+   accumulates and walking wilds never move. */
+if (typeof HookBus !== 'undefined') {
+  HookBus.on('onSpinResult', () => {
+    harvestWalkingWilds();
+    applyWalkingWilds();
+  });
+  HookBus.on('onTumbleStep', () => {
+    stepWalkingWilds();
+    applyWalkingWilds();
+  });
+  HookBus.on('preSpin', ({ duringFs } = {}) => {
+    if (!duringFs) clearWalkingWilds();
+  });
+  HookBus.on('onFsTrigger', () => { clearWalkingWilds(); });
+  HookBus.on('onFsEnd',     () => { clearWalkingWilds(); });
+}
 `;
 }
 

@@ -195,6 +195,40 @@ if (typeof window !== 'undefined') {
   window.accumulateOrbMultiplier = accumulateOrbMultiplier;
   window.pickOrbValue = pickOrbValue;
 }
+
+/* ── HookBus registration — wires Multiplier Orb into the spin lifecycle.
+   Without this block the orb is dead code (chips never render, mult never
+   applies). Order: onSpinResult annotates → onTumbleStep accumulates →
+   onFsTrigger resets BONUS_MULTIPLIER between FS rounds. */
+if (typeof HookBus !== 'undefined') {
+  /* On every settled grid (BASE + each FS spin): chip render + pulse. */
+  HookBus.on('onSpinResult', () => {
+    annotateOrbs();
+  });
+  /* On every tumble step (or single-eval step): sum visible orb values
+     into the HookBus multiplier. In FS bonus-accumulate mode the result
+     is the persistent BONUS_MULTIPLIER (rises across the round). */
+  HookBus.on('onTumbleStep', () => {
+    const v = accumulateOrbMultiplier();
+    if (v > 0) {
+      /* Bonus mode → persistent accumulator (already includes prior chain).
+         Non-bonus → this-step orb sum stacks on top of existing mult. */
+      if (MULTIPLIER_ORB_BONUS_ACC) HookBus.setMult(v);
+      else HookBus.addMult(v);
+      /* Mirror into FSM.mult so the FS HUD reads the live value. */
+      if (typeof FSM !== 'undefined' && FSM.phase === 'FS_ACTIVE') {
+        FSM.mult = HookBus.getMult();
+        if (typeof FSM_renderHud === 'function') FSM_renderHud();
+      }
+    }
+  });
+  /* Fresh FS round → clear BONUS_MULTIPLIER so the next round starts from
+     the FREESPINS.multiplier.start baseline. */
+  HookBus.on('onFsTrigger', () => {
+    BONUS_MULTIPLIER = 0;
+    if (typeof window !== 'undefined') window.BONUS_MULTIPLIER = 0;
+  });
+}
 `;
 }
 

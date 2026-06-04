@@ -192,6 +192,21 @@ if (typeof window !== 'undefined') {
   window.respinEnd          = respinEnd;
   window.RESPIN_STATE       = RESPIN_STATE;
 }
+
+/* HookBus wire-up — respin maybe-triggers on postSpin (round close) when
+   no respin is active, and counts down on each postSpin while active.
+   Without this respin is dead code (logic defined but never called). */
+if (typeof HookBus !== 'undefined') {
+  HookBus.on('postSpin', () => {
+    if (RESPIN_STATE.active) {
+      respinAfterSpin();
+    } else {
+      respinMaybeTrigger();
+    }
+  });
+  HookBus.on('onFsTrigger', () => { respinEnd(); });
+  HookBus.on('onFsEnd',     () => { respinEnd(); });
+}
 `;
 }
 

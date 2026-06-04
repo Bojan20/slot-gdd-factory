@@ -474,6 +474,15 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
     FSM.mult = (FREESPINS.multiplier && FREESPINS.multiplier.start) || 1;
     FSM.totalWin = 0;
     FSM.retrigCount = 0;
+    /* HookBus: notify every block (multiplier orb resets BONUS_MULTIPLIER,
+       sticky/walking wilds clear collection, hold-and-win clears board,
+       persistent multiplier resets to baseline). HookBus.resetMult() returns
+       the payout multiplier to FSM.mult baseline. */
+    if (typeof HookBus !== 'undefined') {
+      HookBus.resetMult();
+      HookBus.setMult(FSM.mult);
+      HookBus.emit('onFsTrigger', { award: spinsAwarded, scatters: scatterCount });
+    }
 
     fsPlacardEyebrow.textContent = scatterCount
       ? scatterCount + " SCATTERS TRIGGERED"
@@ -507,10 +516,27 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
     statusElGlobal && (statusElGlobal.textContent =
       "FS · " + ((FSM.spinsTotal - FSM.spinsRemaining) + 1) + " / " + FSM.spinsTotal);
 
+    /* HookBus: preSpin → blocks that arm per-spin state (anticipation,
+       wild placement) run before the engine kicks. */
+    if (typeof HookBus !== 'undefined') {
+      HookBus.emit('preSpin', { duringFs: true });
+    }
     if (UNIFORM_REEL_KINDS.has(SHAPE.kind) && RECT_REELS) {
-      startSpinAll(() => handlePostSpin(true));
+      startSpinAll(() => {
+        /* HookBus: onFsSpinResult → blocks that escalate per FS spin
+           (progressive mult, persistent mult, multiplier-orb-bonus). */
+        if (typeof HookBus !== 'undefined') {
+          HookBus.emit('onFsSpinResult', { chainIndex: 0 });
+        }
+        handlePostSpin(true);
+      });
     } else {
-      runStaticReroll(() => handlePostSpin(true));
+      runStaticReroll(() => {
+        if (typeof HookBus !== 'undefined') {
+          HookBus.emit('onFsSpinResult', { chainIndex: 0 });
+        }
+        handlePostSpin(true);
+      });
     }
   }
 
@@ -525,6 +551,11 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
   function FSM_enterOutro() {
     FSM.phase = "FS_OUTRO";
     setStageBadge("fs", STAGE_FS_LABEL);
+    /* HookBus: onFsEnd → blocks that snapshot final state (hold-and-win
+       reveal, sticky harvest, persistent multiplier final tally). */
+    if (typeof HookBus !== 'undefined') {
+      HookBus.emit('onFsEnd', { totalWin: FSM.totalWin });
+    }
     fsPlacardEyebrow.textContent = ((FREESPINS.outroLabel || FS_OUTRO_LABEL) + "").toUpperCase();
     fsPlacardTitle.textContent   = FS_TOTALWIN_LABEL;
     fsPlacardSpins.textContent   = FSM.totalWin.toFixed(2);

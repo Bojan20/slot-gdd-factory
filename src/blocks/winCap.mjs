@@ -154,6 +154,26 @@ if (typeof window !== 'undefined') {
   window.winCapGet     = winCapGet;
   window.WIN_CAP_MAX_X = WIN_CAP_MAX_X;
 }
+
+/* HookBus wire-up — winCap watches every settled win event and short-
+   circuits the round when the cumulative payout reaches WIN_CAP_MAX_X.
+   onFsTrigger resets the cumulative ledger so each FS round starts fresh.
+   Without these handlers winCap is dead code (function defined but never
+   called). */
+if (typeof HookBus !== 'undefined') {
+  HookBus.on('postSpin', ({ events } = {}) => {
+    if (!Array.isArray(events) || events.length === 0) return;
+    for (const ev of events) {
+      const winX = Number(ev && ev.payX);
+      if (Number.isFinite(winX) && winX > 0 && winCapAdd(winX)) break;
+    }
+  });
+  HookBus.on('preSpin', () => {
+    if (WIN_CAP_MODE === 'spin') winCapReset();
+  });
+  HookBus.on('onFsTrigger', () => { winCapReset(); });
+  HookBus.on('onFsEnd',     () => { winCapReset(); });
+}
 `;
 }
 

@@ -151,6 +151,14 @@ if (typeof window !== 'undefined') {
   window.maybeFireSuperSymbol = maybeFireSuperSymbol;
   window.clearSuperSymbols    = clearSuperSymbols;
 }
+
+/* HookBus wire-up — super symbol assembles a giant cluster on every
+   settled grid (BASE + FS) and clears on next spin. */
+if (typeof HookBus !== 'undefined') {
+  HookBus.on('preSpin', () => { clearSuperSymbols(); });
+  HookBus.on('onSpinResult', () => { maybeFireSuperSymbol(); });
+  HookBus.on('onFsEnd',  () => { clearSuperSymbols(); });
+}
 `;
 }
 

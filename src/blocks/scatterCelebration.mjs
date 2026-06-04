@@ -216,5 +216,20 @@ export function emitScatterCelebrationRuntime(cfg = defaultConfig()) {
       }, durationMs);
     });
   }
+
+  if (typeof window !== 'undefined') {
+    window.playScatterCelebration = playScatterCelebration;
+    window.findScatterCellsOnGrid = findScatterCellsOnGrid;
+  }
+
+  /* HookBus wire-up — fire the scatter celebration when the engine settles
+     enough scatters to trigger FS. The FS pipeline awaits the returned
+     Promise via the onFsTrigger event below. Without this the animation
+     CSS exists but never plays. */
+  if (typeof HookBus !== 'undefined') {
+    HookBus.on('onFsTrigger', () => {
+      try { playScatterCelebration(); } catch (e) { /* defensive */ }
+    });
+  }
 `;
 }

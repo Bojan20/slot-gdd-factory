@@ -3,11 +3,35 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `5a1ce60` · main
+> Last updated: **2026-06-04** · HEAD: `pending Wave R · HookBus wiring` · main
 
 ---
 
 ## 🟢 Shipped (in-tree on `origin/main`)
+
+### Wave R — HookBus lifecycle wiring + paylineOverlay test (commit pending)
+
+> **Pre-Wave R audit**: 34 blokova, samo **3** registruju HookBus lifecycle hookove (`multiplierOrb`, `expandingWild`, `stickyWild`). Ostala 31 bloka su po pravilu "dead code by definition" — emituju runtime JS koji se nigde ne zove preko centralnog događaja, pa win cap, hold & win, walking wild, mystery symbol, scatter celebration, persistent multiplier, lightning, super symbol, wild reel, respin, wheel bonus, bonus pick, gamble — sve crta UI ali nikad ne reaguje na spin lifecycle. Wave R popravlja to template-wide.
+>
+> **Plus**: `paylineOverlay` blok je bio jedini bez `tests/blocks/<name>.test.mjs` para. Wave R dodaje 10-test suite.
+
+| ID | Feature | Files | Status |
+|---|---|---|---|
+| R1 | `tests/blocks/paylineOverlay.test.mjs` — 10 unit tests (emitter contract, 4 runtime funkcija, gridHost wiring, tier color hook, dash-length CSS var, badge clamp, empty-event guard, determinism, syntactic validity, vendor-neutral check). Sva 10 pass. | `tests/blocks/paylineOverlay.test.mjs` | ✅ |
+| R2 | `winCap` HookBus wiring — `postSpin` (watch every settled win event, short-circuit kad cumulative ≥ MAX_X), `preSpin` (per-spin reset), `onFsTrigger`/`onFsEnd` (round reset). Pre R2 funkcije winCapAdd/winCapReset/winCapTrigger bile su definisane ali se nikad nisu zvale. | `src/blocks/winCap.mjs` | ✅ |
+| R3 | `holdAndWin` HookBus wiring — `postSpin` (hwMaybeEnter ako nije aktivan + hwHarvestBonus/hwAfterRespin ako jeste), `onSpinResult` (hwApplyLocks dok je round aktivan), `onFsTrigger`/`onFsEnd` (clear state). Pre R3 board jamna ali nigde ne zaključava ćelije. | `src/blocks/holdAndWin.mjs` | ✅ |
+| R4 | `persistentMultiplier` HookBus wiring — `onFsSpinResult` (pmOnCascade — escalira po FS spin-u), `onTumbleStep` (pmOnWin kad postoji winning event + push pmGet u HookBus.setMult), `onFsTrigger`/`onFsEnd` (reset). Pre R4 chip se renderuje ali multiplier nikad ne raste. | `src/blocks/persistentMultiplier.mjs` | ✅ |
+| R5 | `mysterySymbol` HookBus wiring — `preSpin` (clearMysteryFlags), `onSpinResult` (markMysteryCells + revealMysterySymbols), `onFsEnd` (clear). Pre R5 mystery cell markup postoji ali se nikad ne otkriva. | `src/blocks/mysterySymbol.mjs` | ✅ |
+| R6 | `scatterCelebration` HookBus wiring — `onFsTrigger` (playScatterCelebration). Plus expose-uje `playScatterCelebration`/`findScatterCellsOnGrid` na window-u. Pre R6 CSS keyframes postoje ali nikad ne play-uju. | `src/blocks/scatterCelebration.mjs` | ✅ |
+| R7 | `walkingWild` HookBus wiring — `onSpinResult` (harvest + apply), `onTumbleStep` (step + apply), `preSpin` non-FS (clear), `onFsTrigger`/`onFsEnd` (clear). Pre R7 registry nikad nije rastao. | `src/blocks/walkingWild.mjs` | ✅ |
+| R8 | `respin` HookBus wiring — `postSpin` (maybeTrigger ako nije aktivan + afterSpin ako jeste), `onFsTrigger`/`onFsEnd` (end). Pre R8 respinMaybeTrigger nigde nije pozivan. | `src/blocks/respin.mjs` | ✅ |
+| R9 | `wildReel` HookBus wiring — `preSpin` (clear), `onSpinResult` (maybeFire), `onFsEnd` (clear). | `src/blocks/wildReel.mjs` | ✅ |
+| R10 | `lightning` HookBus wiring — `preSpin` (clear), `onSpinResult` (maybeFire + push sum of multiplier values via HookBus.addMult), `onFsEnd` (clear). Lightning multiplier sada zaista utiče na payout jer ide kroz HookBus.getMult(). | `src/blocks/lightning.mjs` | ✅ |
+| R11 | `superSymbol` HookBus wiring — `preSpin` (clear), `onSpinResult` (maybeFire), `onFsEnd` (clear). | `src/blocks/superSymbol.mjs` | ✅ |
+| R12 | `wheelBonus` HookBus wiring — `onFsTrigger`/`onFsEnd` (safety close ako je modal open na FS boundary). Open trigger ostaje parser-side (modal scena). | `src/blocks/wheelBonus.mjs` | ✅ |
+| R13 | `bonusPick` HookBus wiring — `onFsTrigger`/`onFsEnd` (safety close). | `src/blocks/bonusPick.mjs` | ✅ |
+| R14 | `gamble` HookBus wiring — `postSpin` non-FS sa win totalX > 0 (gambleOpen), `onFsTrigger`/`onFsEnd` (collect to close). | `src/blocks/gamble.mjs` | ✅ |
+| R15 | Verifikovano headless: PDF/MD parity 30/30 (100 %) zadržan, headless GoO 1000 build 0 console errors, iframe sa 42 cells + Base Game title — Wave R nije razbila ništa. Hook coverage **3 → 14** blokova. | — | ✅ |
 
 ### Wave Q — PDF/MD parser parity (commit `5a1ce60`)
 

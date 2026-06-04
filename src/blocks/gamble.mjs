@@ -228,6 +228,21 @@ if (typeof window !== 'undefined') {
   window.gambleCollect = gambleCollect;
   window.GAMBLE_STATE  = GAMBLE_STATE;
 }
+
+/* HookBus wire-up — gamble is offered after a winning base spin (postSpin).
+   FS boundaries close any open gamble session so it can't leak. */
+if (typeof HookBus !== 'undefined') {
+  HookBus.on('postSpin', ({ duringFs, events } = {}) => {
+    if (duringFs) return; /* gamble is BASE-only — don't offer during FS */
+    if (!Array.isArray(events) || events.length === 0) return;
+    const totalX = events.reduce((a, e) => a + (Number(e && e.payX) || 0), 0);
+    if (totalX > 0 && !GAMBLE_STATE.open) {
+      try { gambleOpen(totalX); } catch (e) { /* defensive */ }
+    }
+  });
+  HookBus.on('onFsTrigger', () => { if (GAMBLE_STATE.open) gambleCollect(); });
+  HookBus.on('onFsEnd',     () => { if (GAMBLE_STATE.open) gambleCollect(); });
+}
 `;
 }
 
