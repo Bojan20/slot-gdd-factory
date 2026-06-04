@@ -314,10 +314,12 @@ export function emitAutoplayCSS(cfg = defaultConfig()) {
 
 export function emitAutoplayMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  const c = resolveConfig({ autoplay: cfg });
-  const safeAria = _escape(c.ariaLabel);
+  /* Boki rule (04.06.2026): autoplay reuses the EXISTING `#autoBtn`
+   * already rendered by the orchestrator inside `.sideHud` next to the
+   * spin CTA. The block emits ONLY the slide-up panel + the counter
+   * overlay — never a duplicate floating button. The runtime wires its
+   * click + active-state behaviour onto the existing `#autoBtn`. */
   return `
-  <button id="autoplayBtn" class="autoplay-btn" type="button" aria-label="${safeAria}">AUTO</button>
   <div id="autoplayPanel" class="autoplay-panel" hidden role="dialog" aria-label="Auto-spin settings">
     <h4>Auto spins</h4>
     <div id="autoplaySteps" class="autoplay-steps"></div>
@@ -382,7 +384,9 @@ export function emitAutoplayRuntime(cfg = defaultConfig()) {
       window.__SLOT_AUTOSPIN_ACTIVE__ = false;
     }
 
-    function _btn()      { return document.getElementById('autoplayBtn'); }
+    /* Reuse the existing .sideHud autoBtn rendered by the orchestrator.
+     * Boki rule: no duplicate floating button. */
+    function _btn()      { return document.getElementById('autoBtn'); }
     function _panel()    { return document.getElementById('autoplayPanel'); }
     function _stepsHost(){ return document.getElementById('autoplaySteps'); }
     function _startBtn() { return document.getElementById('autoplayStart'); }

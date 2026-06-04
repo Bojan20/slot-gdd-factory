@@ -137,9 +137,12 @@ t('emitSettingsPanelMarkup: empty when disabled', () => {
   eq(emitSettingsPanelMarkup({ ...defaultConfig(), enabled: false }), '');
 });
 
-t('emitSettingsPanelMarkup: button + dialog + 5 default rows', () => {
+t('emitSettingsPanelMarkup: dialog + 5 default rows (no duplicate button — reuses hub hamburger)', () => {
   const html = emitSettingsPanelMarkup(defaultConfig());
-  ct(html, 'id="settingsBtn"');
+  /* Boki rule (04.06.2026): settings reuses the existing hub hamburger
+   * #settingsMenuBtn. The block emits ONLY the modal. */
+  nct(html, 'id="settingsBtn"');
+  nct(html, 'class="settings-btn"');
   ct(html, 'id="settingsBackdrop"');
   ct(html, 'role="dialog"');
   ct(html, 'aria-modal="true"');
@@ -173,15 +176,18 @@ t('emitSettingsPanelMarkup: locale select options from availableLocales', () => 
   ct(html, '<option value="sr-Latn">sr-Latn</option>');
 });
 
-t('emitSettingsPanelMarkup: XSS in chipLabel + ariaLabel escaped', () => {
+t('emitSettingsPanelMarkup: no user-supplied unsafe text in panel HTML', () => {
+  /* chipLabel + ariaLabel are no longer rendered into markup — the
+   * existing hub hamburger carries its own aria attribute. Sanity
+   * check the panel body is XSS-safe even when those inputs are
+   * malicious. */
   const html = emitSettingsPanelMarkup({
     ...defaultConfig(),
     chipLabel: '<x>',
     ariaLabel: 'a"><script>x',
   });
-  ct(html, '&lt;x&gt;');
-  ct(html, '&quot;');
-  ct(html, '&lt;script&gt;');
+  nct(html, '<script>');
+  nct(html, 'onerror=');
 });
 
 /* ── Runtime stub vs enabled ── */
@@ -235,7 +241,9 @@ function buildSandbox(cfg = defaultConfig(), opts = {}) {
     elements.set(id, el);
     return el;
   }
-  for (const id of ['settingsBtn','settingsBackdrop','settingsCloseBtn','settingsResetBtn',
+  /* settingsMenuBtn is the orchestrator-rendered hub hamburger that
+   * settingsPanel binds to (Boki rule: no duplicate floating button). */
+  for (const id of ['settingsMenuBtn','settingsBackdrop','settingsCloseBtn','settingsResetBtn',
                     'settingsTurboToggle','settingsSoundToggle','settingsReducedMotionToggle',
                     'settingsQuickSpinToggle','settingsAutoHideWinToggle','settingsLocaleSelect']) {
     makeElement(id);
@@ -386,9 +394,9 @@ t('sandbox: settingsPanelShow opens + Hide closes + Toggle flips', () => {
   eq(sb.window.SETTINGS_PANEL_STATE.open, true);
 });
 
-t('sandbox: clicking gear button toggles', () => {
+t('sandbox: clicking hub hamburger toggles modal', () => {
   const sb = buildSandbox(defaultConfig());
-  sb.elements.get('settingsBtn').click();
+  sb.elements.get('settingsMenuBtn').click();
   eq(sb.window.SETTINGS_PANEL_STATE.open, true);
 });
 

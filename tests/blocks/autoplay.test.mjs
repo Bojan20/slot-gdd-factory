@@ -142,20 +142,26 @@ t('emitAutoplayMarkup: empty when disabled', () => {
   eq(emitAutoplayMarkup({ ...defaultConfig(), enabled: false }), '');
 });
 
-t('emitAutoplayMarkup: id=autoplayBtn + panel + counter all hidden/role-correct', () => {
+t('emitAutoplayMarkup: panel + counter (no duplicate button — reuses sideHud autoBtn)', () => {
   const html = emitAutoplayMarkup({ ...defaultConfig(), enabled: true });
-  ct(html, 'id="autoplayBtn"');
-  ct(html, 'class="autoplay-btn"');
+  /* Boki rule (04.06.2026): autoplay block must NOT render a floating
+   * button. It reuses the existing #autoBtn rendered by the orchestrator
+   * inside .sideHud next to the spin CTA. */
+  nct(html, 'id="autoplayBtn"');
+  nct(html, 'class="autoplay-btn"');
   ct(html, 'id="autoplayPanel"');
   ct(html, 'role="dialog"');
   ct(html, 'id="autoplayCounter"');
   ct(html, 'aria-live="polite"');
 });
 
-t('emitAutoplayMarkup: XSS payload in ariaLabel HTML-escaped', () => {
-  const html = emitAutoplayMarkup({ ...defaultConfig(), enabled: true, ariaLabel: 'a"><b>' });
-  ct(html, '&quot;');
-  nct(html, '"><b>');
+t('emitAutoplayMarkup: panel host text is XSS-safe', () => {
+  /* No ariaLabel is rendered into markup anymore (the existing #autoBtn
+   * carries its own aria attributes). Sanity check: nothing in the
+   * emitted panel HTML accepts user-supplied text. */
+  const html = emitAutoplayMarkup({ ...defaultConfig(), enabled: true });
+  nct(html, '<script');
+  nct(html, 'onerror=');
 });
 
 /* ── Runtime stub vs enabled ── */
@@ -216,7 +222,9 @@ function buildSandbox(cfg, opts = {}) {
     elements.set(id, el);
     return el;
   }
-  for (const id of ['autoplayBtn','autoplayPanel','autoplaySteps','autoplayStart','autoplayCounter','spinBtn']) {
+  /* autoBtn is the orchestrator-rendered sideHud control that autoplay
+   * now binds to (Boki rule: no duplicate floating button). */
+  for (const id of ['autoBtn','autoplayPanel','autoplaySteps','autoplayStart','autoplayCounter','spinBtn']) {
     makeElement(id);
   }
 

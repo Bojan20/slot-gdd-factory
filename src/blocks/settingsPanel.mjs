@@ -384,8 +384,11 @@ export function emitSettingsPanelMarkup(cfg = defaultConfig()) {
         </div>`);
   }
 
+  /* Boki rule (04.06.2026): settings reuses the hamburger `#settingsMenuBtn`
+   * already rendered by the orchestrator inside `.hub`. The block emits
+   * ONLY the modal — runtime wires its open behaviour onto the existing
+   * hamburger. No duplicate floating button. */
   return `
-  <button id="settingsBtn" class="settings-btn" type="button" aria-label="${safeAria}">${safeLabel}</button>
   <div id="settingsBackdrop" class="settings-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
     <div id="settingsModal" class="settings-modal" role="document">
       <h2 id="settingsTitle">Settings</h2>
@@ -454,7 +457,9 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
     };
     if (typeof window !== 'undefined') window.SETTINGS_PANEL_STATE = STATE;
 
-    function _btn()       { return document.getElementById('settingsBtn'); }
+    /* Reuse the existing .hub settingsMenuBtn (hamburger icon) rendered
+     * by the orchestrator. Boki rule: no duplicate floating button. */
+    function _btn()       { return document.getElementById('settingsMenuBtn'); }
     function _backdrop()  { return document.getElementById('settingsBackdrop'); }
     function _closeBtn()  { return document.getElementById('settingsCloseBtn'); }
     function _resetBtn()  { return document.getElementById('settingsResetBtn'); }
