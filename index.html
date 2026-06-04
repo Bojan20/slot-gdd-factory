@@ -91,14 +91,15 @@
 <div class="dropzone" id="dropzone">
   <div class="icon">📄</div>
   <div class="label">Klikni ili prevuci GDD</div>
-  <div class="hint">MD · JSON · TXT (PDF/DOCX uskoro)</div>
+  <div class="hint">MD · JSON · TXT · PDF · DOCX</div>
 </div>
-<input type="file" id="fileInput" accept=".md,.json,.txt,.markdown">
+<input type="file" id="fileInput" accept=".md,.json,.txt,.markdown,.pdf,.docx,.doc">
 
 <div id="result"></div>
 
 <div class="footer">v0.1 · standalone · math is placeholder dummy</div>
 
+<script src="./node_modules/mammoth/mammoth.browser.min.js"></script>
 <script type="module" src="./app.js"></script>
 <!-- app.js is an ESM module; imports ./src/parser.mjs at runtime. Must be served
      via http(s) — file:// blocks module imports. Use `npm run serve`. -->

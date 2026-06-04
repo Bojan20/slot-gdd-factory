@@ -7,6 +7,13 @@
 import { parseGDD, normalizeFromJSON } from "./src/parser.mjs";
 import { buildGridShape } from "./src/gridShape.mjs";
 import { buildSlotHTML } from "./src/buildSlotHTML.mjs";
+import * as pdfjsLib from "./node_modules/pdfjs-dist/build/pdf.mjs";
+import { pdfTextToMarkdown } from "./src/pdfToMarkdown.mjs";
+
+/* PDF.js 6.x MORA imati workerSrc set pre prvog getDocument() poziva, inače
+   throws "No GlobalWorkerOptions.workerSrc specified". Worker bundle živi
+   uz pdf.mjs u istom direktorijumu. */
+pdfjsLib.GlobalWorkerOptions.workerSrc = "./node_modules/pdfjs-dist/build/pdf.worker.mjs";
 
 (() => {
   "use strict";
@@ -35,28 +42,55 @@ import { buildSlotHTML } from "./src/buildSlotHTML.mjs";
     if (f) handleFile(f);
   });
 
+  /* ─── extractors for binary formats ──────────────────── */
+  async function extractTextFromPDF(arrayBuffer) {
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let text = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map(item => item.str).join(' ') + '\n\n';
+    }
+    return text;
+  }
+
+  async function extractTextFromDOCX(arrayBuffer) {
+    if (!window.mammoth) {
+      throw new Error('Mammoth library not loaded — proveri da li je <script src> tag prisutan u index.html');
+    }
+    const result = await window.mammoth.extractRawText({ arrayBuffer });
+    return result.value;
+  }
+
   /* ─── ingest ─────────────────────────────────────────── */
   async function handleFile(file) {
     const ext = file.name.split(".").pop().toLowerCase();
-    /* PDF / DOCX — binarni formati koje tekstualni parser ne može da čita */
-    if (ext === 'pdf' || ext === 'docx' || ext === 'doc') {
-      resultEl.innerHTML = `
-        <div class="error" style="max-width:480px;margin:0 auto;text-align:left">
-          <div style="font-size:1.4rem;margin-bottom:0.5rem">📄 PDF / DOCX nije podržan</div>
-          <div style="margin-bottom:1rem">Fajl <strong>${escapeHtml(file.name)}</strong> je binarni format. Parser čita samo tekstualne GDD-eve (<code>.md</code> · <code>.json</code> · <code>.txt</code>).</div>
-          <div style="background:#1f2833;border:1px solid #45a29e;border-radius:8px;padding:0.75rem 1rem;font-size:0.85rem">
-            <strong style="color:#66fcf1">Šta uraditi:</strong><br>
-            1. Koristi <code>.md</code> verziju GDD-a iz projekta<br>
-            <code style="color:#ffd166">samples/GATES_OF_OLYMPUS_1000_GAME_GDD.md</code><br><br>
-            2. Prevuci taj <code>.md</code> fajl ovde umesto PDF-a.
-          </div>
-        </div>`;
-      return;
-    }
-    resultEl.innerHTML = `<div class="card"><h3>Reading ${escapeHtml(file.name)}…</h3></div>`;
+    resultEl.innerHTML = `<div class="card"><h3>📖 Extracting text from ${escapeHtml(file.name)}…</h3></div>`;
     try {
-      const text = await file.text();
-      const model = parseGDD(text, ext);
+      let text;
+      let isBinary = false;
+      if (ext === 'pdf') {
+        text = await extractTextFromPDF(await file.arrayBuffer());
+        isBinary = true;
+      } else if (ext === 'docx' || ext === 'doc') {
+        text = await extractTextFromDOCX(await file.arrayBuffer());
+        isBinary = true;
+      } else {
+        text = await file.text();
+      }
+      /* CRITICAL: PDF.js / mammoth flatten markdown structure into a single
+         text stream — naslovi, tabele, formatting su izgubljeni. Parser.mjs
+         očekuje markdown sintaksu (`#`, `|`, `###`). Ako je izvor binarni
+         (PDF/DOCX), pre prosleđivanja parser-u prvo prolazi kroz heuristički
+         markdown adapter koji rekonstruiše H1/H2/H3 naslove + bucket
+         paytable tabele iz prepoznatih GDD obrazaca. */
+      if (isBinary) {
+        const mdShape = pdfTextToMarkdown(text);
+        if (mdShape && mdShape.length > 80) {
+          text = mdShape;
+        }
+      }
+      const model = parseGDD(text, ext === 'json' ? 'json' : 'md');
       /* persist last GDD so refresh restores it (text only — small) */
       try {
         localStorage.setItem(LAST_GDD_KEY, JSON.stringify({
