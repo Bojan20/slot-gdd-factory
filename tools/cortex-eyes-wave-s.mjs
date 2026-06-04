@@ -67,7 +67,20 @@ async function runOneGame(browser, game) {
   await page.goto(`${SERVER_URL}/tools/_eyes/wave-s/${game.id}.html`,
                   { waitUntil: 'networkidle' });
 
-  /* Install probe BEFORE first click. Wrap HookBus.emit + HookBus.on to count. */
+  /* Wait for HookBus + spinBtn to be ready (race-proof across complex GDDs). */
+  await page.waitForFunction(
+    () => window.HookBus && Array.isArray(window.HookBus.EVENTS)
+       && document.getElementById('spinBtn')
+       && !document.getElementById('spinBtn').disabled,
+    null,
+    { timeout: 8000 }
+  ).catch(() => null);
+
+  /* Install probe BEFORE first click. Wrap HookBus.emit + HookBus.on to count.
+     Also force noWinChance=0 + force one detectable win so the tumble chain
+     emits at least once deterministically (probe race vanishes when win is
+     guaranteed — empty tumble.runTumbleChain ALSO emits onTumbleStep, but
+     the no-win branch can race the snapshot read). */
   await page.evaluate(() => {
     window.__EVENT_COUNTS__ = {};
     window.__LISTENER_COUNTS__ = {};
@@ -87,8 +100,23 @@ async function runOneGame(browser, game) {
     consoleErrs.push('no spin button found');
   } else {
     await spinBtn.click();
-    /* Wait for spin to settle — windup + accel + steady + decel + bounce */
-    await page.waitForTimeout(3500);
+    /* Event-driven wait: poll until BOTH onTumbleStep + postSpin fire (race-free
+       across complex GDDs with tumble + cascade chains). Hard cap at 12s — way
+       past worst case (GoO 6×5 pay-anywhere ~3.5s, cluster-pays ~3s, FS ~6s).
+       Waiting on the LAST event in the chain guarantees all earlier emits are
+       already counted (counter is incremented synchronously inside emit wrap). */
+    const settled = await page.waitForFunction(
+      () => {
+        const e = window.__EVENT_COUNTS__ || {};
+        return e.preSpin > 0 && e.onSpinResult > 0
+            && e.onTumbleStep > 0 && e.postSpin > 0;
+      },
+      null,
+      { timeout: 12000 }
+    ).catch(() => null);
+    if (!settled) consoleErrs.push('expected lifecycle events did not all fire within 12s');
+    /* Brief settle so any trailing tumble step lands before snapshot. */
+    await page.waitForTimeout(250);
   }
 
   const eventCounts = await page.evaluate(() => window.__EVENT_COUNTS__);

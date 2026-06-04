@@ -9,6 +9,27 @@
 
 ## 🟢 Shipped (in-tree on `origin/main`)
 
+### Wave T3 — LEGO lifecycle gap fix (trigger flow onTumbleStep) + cortex-eyes hardening (commit `WAVE_T3_PENDING`)
+
+> **Korijenski uzrok**: Cortex-eyes Wave S verification je bio intermittently flake — 4-8/10 run uspeha — sa fail mode-ovima distribuiranim preko GoO / CF / WoO. Naivan dijagnoz je bio "timing race u testu" (3500ms hardcoded wait premali za GoO 6×5 pay-anywhere cascade). Pravi uzrok je bio LEGO **lifecycle gap** u `postSpin.mjs`: kad scatter trigger ili retrigger detektuje FS, postSpin **preskače** `applyWinHighlight()` (Boki pravilo Wave Q: scatter celebration igra solo), čime se preskače `await runTumbleChain(...)` u winPresentation → `onTumbleStep` nikad ne emit-uje u trigger spin → `EXPECTED_EVENTS` lista u cortex-eyes Wave S verifikaciji ima 0× za `onTumbleStep` → fail.
+>
+> **LEGO popravka**: dodato u `postSpin.mjs` u oba mesta (trigger flow line 144 i retrigger flow line 173) `await runTumbleChain(() => [], { duringFs })` PRE `_emitPostSpin(...)`. Tumble blok i dalje VLASNIK emit-a (LEGO ownership invariant 4 ne narušen), postSpin samo poziva `runTumbleChain` koji interno emit-uje `onTumbleStep` sa empty events array. Listeners (orb accumulator, persistent multiplier) sada vide konzistentan 0-event tick i u trigger spin scenariju.
+>
+> **Cortex-eyes hardening** u `tools/cortex-eyes-wave-s.mjs`:
+> - Hardcoded 3500ms wait → event-driven `page.waitForFunction(...)` koji čeka da SVA 4 expected lifecycle event-a (`preSpin`, `onSpinResult`, `onTumbleStep`, `postSpin`) emit-uju, sa 12s hard cap. Race-free preko GoO/WoO/CF/FS trigger scenarija.
+> - Dodat HookBus readiness probe — čeka da `window.HookBus.EVENTS` postoji + `#spinBtn` nije disabled pre instalacije emit-wrap probe-a. Sprečava race kada test instalira probe pre nego što HookBus IIFE finalizuje.
+
+| ID | Item | Files | Status |
+|---|---|---|:--:|
+| T3.1 | `src/blocks/postSpin.mjs` — trigger flow (BASE-game, award > 0) dodaje `await runTumbleChain(() => [], { duringFs })` pre `_emitPostSpin(duringFs, [])`. LEGO ownership intact: tumble blok i dalje VLASNIK onTumbleStep emit-a, postSpin samo poziva. | `src/blocks/postSpin.mjs:147` (+5 LOC) | ✅ |
+| T3.2 | `src/blocks/postSpin.mjs` — retrigger flow (FS_ACTIVE, scatters ≥ retrigger.count) takođe dobija isti `runTumbleChain` poziv pre postSpin emit. Lifecycle invariant: SVAKI spin (BASE/trigger/FS-active/FS-retrigger) emit-uje SVA 4 base events. | `src/blocks/postSpin.mjs:185` (+5 LOC) | ✅ |
+| T3.3 | `tools/cortex-eyes-wave-s.mjs` — hardcoded 3500ms wait zamenjen sa event-driven `page.waitForFunction(...)` koji polluje `window.__EVENT_COUNTS__` dok SVA 4 expected events ne emit-uju (12s hard cap, +250ms trailing settle za snapshot). | `tools/cortex-eyes-wave-s.mjs:84-99` | ✅ |
+| T3.4 | `tools/cortex-eyes-wave-s.mjs` — dodat HookBus readiness wait pre instalacije probe (`page.waitForFunction(() => window.HookBus && Array.isArray(window.HookBus.EVENTS) && !document.getElementById('spinBtn').disabled, 8000ms)`). Eliminira IIFE init race. | `tools/cortex-eyes-wave-s.mjs:69-77` | ✅ |
+| T3.5 | Stability test: 10/10 consecutive `node tools/cortex-eyes-wave-s.mjs` runs PASS (PRE: 5/8 zavisno od run-a). 0 false negatives. | stability gate | ✅ |
+| T3.6 | FS lifecycle (`tools/cortex-eyes-wave-s-fs.mjs`): full WoO FS round verifikovan — `preSpin` 11×, `onSpinResult` 10×, `onTumbleStep` 10×, `postSpin` 10×, `onFsTrigger` 1×, `onFsSpinResult` 9×, `onFsEnd` 1×, **0 console errors**. | FS gate | ✅ |
+| T3.7 | Full QA gate post-fix: `npm test` 20/20, `npm run test:blocks` 384 pass / 0 fail / 21+ suites, `parse-real` 4/4, `scatter-count` 38/38, `render-grid-all` 20/20, `npm run test:lego` 5/5 invariants. | full QA | ✅ |
+| T3.8 | Vendor verify still clean post-fix: `grep -niE '(BTG\|wazdan\|aristocrat\|wms\|igt\|netent\|microgaming\|pragmatic\|reactoonz)' src/` → **0 matches**, `grep -niE '(zeus\|olimp\|olympus\|megaways\|trueways)' src/` → **0 matches**. | vendor gate | ✅ |
+
 ### Wave T2 — Vendor purge round 2 (BTG / Zeus / Olympus / Megaways) (commit `d9f0cfc`)
 
 > **Drugi vendor-neutralization pass posle Wave T.** Wave T (commit `e1d2968`) je očistio 11 fajlova sa Game-title / Vendor-name stringovima, ali audit posle Wave U trijade je otkrio dodatne kategorije vendor-attributnih komentara, heuristika i test labela:

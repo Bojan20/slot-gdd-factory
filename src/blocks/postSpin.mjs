@@ -144,6 +144,13 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
         const wasForced = !!FORCE_TRIGGER;
         FORCE_TRIGGER = null;   /* one-shot — clear so next spin is normal */
         const settlePause = wasForced ? ${c.forcedSettlePauseMs} : ${c.settlePauseMs};
+        /* LEGO lifecycle (Wave T3): every spin emits onTumbleStep at least
+           once, even trigger spins that skip win-highlight. tumble block
+           owns the emit; we just invoke its empty-detector stub so listeners
+           (orb accumulator, persistent mult) see a consistent 0-event tick. */
+        if (typeof runTumbleChain === 'function') {
+          await runTumbleChain(() => [], { duringFs });
+        }
         _emitPostSpin(duringFs, []);
         setTimeout(() => {
           clearWinHighlight();
@@ -179,6 +186,11 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
         FSM.mult = Math.min(FSM.mult + FREESPINS.multiplier.step, FREESPINS.multiplier.cap);
       }
       FSM_renderHud();
+      /* LEGO lifecycle (Wave T3): retrigger flow also emits onTumbleStep
+         tick — same reasoning as base-game trigger flow above. */
+      if (typeof runTumbleChain === 'function') {
+        await runTumbleChain(() => [], { duringFs });
+      }
       /* postSpin emits BEFORE retrigger celebration — round-control blocks
          react to the FS spin closing; retrigger reopens the trigger flow. */
       _emitPostSpin(duringFs, []);
