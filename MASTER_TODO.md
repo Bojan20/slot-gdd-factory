@@ -3,11 +3,11 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `f9201db` → (Wave U5 betSelector pending) · main
+> Last updated: **2026-06-04** · HEAD: `17afa9a` · main
 
 ---
 
-## 🟡 Wave U5 — Bet Selector (THIS COMMIT)
+## 🟢 Wave U5 — Bet Selector — SHIPPED (commit `17afa9a`)
 
 > Triggered by Boki *"Nastavi redom, samo mehanika matematiku ne diramo nikad dok ja ne kazem"*. Bet selector is **mechanics** (UI state + lockout policy + canonical __SLOT_BET__ publication), NOT math (no paytable, no RTP computation — that stays in Math.PAR layer until Boki greenlights).
 
