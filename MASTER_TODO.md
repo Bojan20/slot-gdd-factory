@@ -3,11 +3,11 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `d3d77d4` → (Wave U6 gambleSecondary pending) · main
+> Last updated: **2026-06-04** · HEAD: `13e9df1` · main
 
 ---
 
-## 🟡 Wave U6 — Secondary Gamble (Card + Ladder) — THIS COMMIT
+## 🟢 Wave U6 — Secondary Gamble (Card + Ladder) — SHIPPED (commit `13e9df1`)
 
 > Triggered by Boki *"Nastavi redom, samo mehanika matematiku ne diramo nikad dok ja ne kazem"*. Post-win risk feature — pure mechanics + UI state machine, no math/PAR coupling. Standalone block; existing `gamble.mjs` (Wave P2 basic single-mode) stays in tree as legacy.
 
