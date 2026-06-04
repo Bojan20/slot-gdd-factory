@@ -29,7 +29,7 @@ const ok = (v, m = '') => { if (!v) throw new Error(`expected truthy — ${m}`);
 
 console.log('— blocks/hookBus.mjs —');
 
-t('HOOK_EVENTS canonical list (core + Wave V intent + U4 autoplay + U5 bet + U6 gamble + U8 balance)', () => {
+t('HOOK_EVENTS canonical list (core + V intent + U4 autoplay + U5 bet + U6 gamble + U8 balance + U11 turbo)', () => {
   const expected = [
     'preSpin', 'onSpinResult', 'onTumbleStep', 'postSpin',
     'onFsTrigger', 'onFsSpinResult', 'onFsEnd',
@@ -43,6 +43,8 @@ t('HOOK_EVENTS canonical list (core + Wave V intent + U4 autoplay + U5 bet + U6 
     'onGambleStart', 'onGambleRound', 'onGambleEnd',
     /* Wave U8 */
     'onBalanceChanged',
+    /* Wave U11 */
+    'onTurboToggle',
   ];
   eq(HOOK_EVENTS.length, expected.length);
   for (const e of expected) ok(HOOK_EVENTS.includes(e), `missing ${e}`);

@@ -115,6 +115,9 @@ const EXPECTED_EMIT_OWNERS = {
   /* Wave U8 — balance HUD owns __SLOT_BALANCE__ + emits onBalanceChanged
    * on every spin debit / win credit / gamble settle / manual op. */
   onBalanceChanged: ['balanceHud.mjs'],
+  /* Wave U11 — turbo mode owns __SLOT_TURBO_ACTIVE__ +
+   * __SLOT_TURBO_SPEED_MULT__ + emits onTurboToggle on every flip. */
+  onTurboToggle:    ['turboMode.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */

@@ -197,6 +197,11 @@ import {
   emitHistoryLogCSS, emitHistoryLogMarkup, emitHistoryLogRuntime,
   resolveConfig as resolveHistoryLogConfig,
 } from './blocks/historyLog.mjs';
+// Wave U11 — Turbo mode (industry-standard 4th spin-cadence option)
+import {
+  emitTurboModeCSS, emitTurboModeMarkup, emitTurboModeRuntime,
+  resolveConfig as resolveTurboModeConfig,
+} from './blocks/turboMode.mjs';
 // Wave U10 — Paytable modal (industry-standard regulator-mandated info pane)
 import {
   emitPaytableCSS, emitPaytableMarkup, emitPaytableRuntime,
@@ -342,6 +347,8 @@ ${/* Wave U8 — balance HUD (hub widget: Balance | Bet | Win). */ ''}
 ${emitBalanceHudCSS(resolveBalanceHudConfig(model))}
 ${/* Wave U9 — session history log (audit panel). */ ''}
 ${emitHistoryLogCSS(resolveHistoryLogConfig(model))}
+${/* Wave U11 — turbo mode toggle (cadence override). */ ''}
+${emitTurboModeCSS(resolveTurboModeConfig(model))}
 ${/* Wave U10 — paytable modal (i-button + symbol roster + features). */ ''}
 ${emitPaytableCSS(resolvePaytableConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
@@ -452,6 +459,8 @@ ${/* Wave U8 — balance HUD markup (free-floating; can be parented later). */ '
 ${emitBalanceHudMarkup(resolveBalanceHudConfig(model))}
 ${/* Wave U9 — session history button + panel. */ ''}
 ${emitHistoryLogMarkup(resolveHistoryLogConfig(model))}
+${/* Wave U11 — turbo button (in sideHud near SPIN). */ ''}
+${emitTurboModeMarkup(resolveTurboModeConfig(model))}
 ${/* Wave U10 — paytable button (in hub) + modal backdrop. */ ''}
 ${emitPaytableMarkup(resolvePaytableConfig(model))}
 
@@ -760,6 +769,8 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
   ${emitBalanceHudRuntime(resolveBalanceHudConfig(model))}
   ${/* Wave U9 — session history runtime (ring buffer + panel). */ ''}
   ${emitHistoryLogRuntime(resolveHistoryLogConfig(model))}
+  ${/* Wave U11 — turbo mode runtime (owns __SLOT_TURBO_ACTIVE__ + onTurboToggle). */ ''}
+  ${emitTurboModeRuntime(resolveTurboModeConfig(model))}
   ${/* Wave U10 — paytable modal runtime (i-button show/hide + roster). */ ''}
   ${emitPaytableRuntime(resolvePaytableConfig(model), model)}
   ${emitHoldAndWinRuntime(resolveHoldAndWinConfig(model))}

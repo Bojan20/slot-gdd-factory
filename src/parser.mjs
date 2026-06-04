@@ -171,6 +171,7 @@ export function parseMarkdownGDD(text) {
   extractPaytable(text, model);
   extractBalanceHud(text, model);
   extractHistoryLog(text, model);
+  extractTurboMode(text, model);
   extractHoldAndWin(text, model);
   extractRespin(text, model);
   extractWinCap(text, model);
@@ -1254,6 +1255,14 @@ function freshModel() {
       showInFs: undefined, showInAutoplay: undefined,
       currency: undefined, chipColor: undefined, chipTextColor: undefined,
     },
+    /* Wave U11 — Turbo mode toggle (industry-standard cadence override). */
+    turboMode: {
+      enabled: undefined,
+      initialActive: undefined, persistInLocalStorage: undefined,
+      turboSpeedMult: undefined,
+      chipLabel: undefined, chipColor: undefined, chipTextColor: undefined,
+      position: undefined, ariaLabel: undefined,
+    },
     /* Wave U9 — Session history log (regulator-mandated audit). */
     historyLog: {
       enabled: undefined,
@@ -2213,6 +2222,22 @@ export function extractBetSelector(text, model) {
   const mbb = _readBool(s, 'max[- ]?bet[- ]?button'); if (mbb !== undefined) tgt.maxBetButton = mbb;
   const pod = _readBool(s, 'panel[- ]?on[- ]?demand'); if (pod !== undefined) tgt.panelOnDemand = pod;
 
+  const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
+  const ctc = _readStr(s, 'chip[- ]?text[- ]?color'); if (ctc) tgt.chipTextColor = ctc;
+  const ar = _readStr(s, 'aria[- ]?label'); if (ar) tgt.ariaLabel = ar;
+}
+
+/* Wave U11 — Turbo mode extractor.
+ * Reads `## Turbo Mode` / `## Turbo Spin` / `## Quick Mode` section. */
+export function extractTurboMode(text, model) {
+  const s = _findSection(text, /^##\s+(?:Turbo[- ]?Mode|Turbo[- ]?Spin|Quick[- ]?Mode)\b[^\n]*\n/im);
+  if (!s) return;
+  const tgt = model.turboMode;
+  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+  const ia = _readBool(s, 'initial[- ]?active'); if (ia !== undefined) tgt.initialActive = ia;
+  const pls = _readBool(s, 'persist[- ]?in[- ]?local[- ]?storage'); if (pls !== undefined) tgt.persistInLocalStorage = pls;
+  const tsm = _readFloat(s, 'turbo[- ]?speed[- ]?mult(?:iplier)?'); if (tsm !== undefined) tgt.turboSpeedMult = tsm;
+  const cl = _readStr(s, 'chip[- ]?label'); if (cl) tgt.chipLabel = cl;
   const cc = _readStr(s, 'chip[- ]?color'); if (cc) tgt.chipColor = cc;
   const ctc = _readStr(s, 'chip[- ]?text[- ]?color'); if (ctc) tgt.chipTextColor = ctc;
   const ar = _readStr(s, 'aria[- ]?label'); if (ar) tgt.ariaLabel = ar;
