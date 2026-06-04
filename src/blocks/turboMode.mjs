@@ -60,7 +60,11 @@
 
 export function defaultConfig() {
   return {
-    enabled: true,
+    /* Industry-default OFF — turbo is opted into per-game via the
+     * settings panel toggle (Wave U13) or a `turbo` feature kind, not
+     * via a floating ⚡ button. Most slots don't ship a dedicated turbo
+     * affordance — it's a settings preference. */
+    enabled: false,
     initialActive: false,
     persistInLocalStorage: true,
     /* Multiplier applied to spin-tempo timings when turbo is on. 0.35

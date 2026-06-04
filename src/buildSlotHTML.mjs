@@ -428,23 +428,22 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
     <button class="iconBtn" id="settingsMenuBtn" aria-label="Settings menu" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
     </button>
-    <div class="statBox statBox--balance">
-      <div class="statBox__label">BAL</div>
-      <div class="statBox__value" id="bal">1000.00</div>
-    </div>
-    <div class="statBox statBox--status">
-      <div class="statBox__label">STATUS</div>
-      <div class="statBox__value" id="status">PRESS SPIN</div>
-    </div>
-    ${/* Wave U5 — bet chip + steps + panel (replaces the static betGroup
-        markup that lived here pre-U5). When the betSelector block is
-        disabled in the GDD, this expression collapses to '' and the hub
-        renders without a bet UI — visually clean, no orphan styles. */ ''}
+    ${/* Wave U8 — balance HUD parented inside the hub (3 columns:
+        BALANCE | BET | WIN with debit/credit pulse). Replaces the
+        old .statBox--balance + .statBox--status pair. */ ''}
+    ${emitBalanceHudMarkup(resolveBalanceHudConfig(model))}
+    ${/* Wave U5 — bet chip + steps + panel. */ ''}
     ${emitBetSelectorMarkup(resolveBetSelectorConfig(model))}
     <button class="iconBtn" aria-label="Sound" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
     </button>
   </div>
+  ${/* Legacy hidden tokens — kept so legacy runtime code that reaches
+      for #bal / #status still finds writable nodes. Visually inert. */ ''}
+  <span hidden aria-hidden="true">
+    <span id="bal">1000.00</span>
+    <span id="status">PRESS SPIN</span>
+  </span>
 </div>
 
 <!-- Dev-only Free-Spins trigger. Pinned bottom-left of the viewport — visible
@@ -478,8 +477,9 @@ ${emitWheelBonusMarkup(resolveWheelBonusConfig(model))}
 ${emitGambleMarkup(resolveGambleConfig(model))}
 ${/* Wave U6 — secondary gamble overlay (full-screen modal). */ ''}
 ${emitGambleSecondaryMarkup(resolveGambleSecondaryConfig(model))}
-${/* Wave U8 — balance HUD markup (free-floating; can be parented later). */ ''}
-${emitBalanceHudMarkup(resolveBalanceHudConfig(model))}
+${/* Wave U8 — balance HUD markup is now parented INSIDE the hub
+    (see .hub block above). No free-floating emit here — keeping the
+    block import for CSS + runtime, just not its markup. */ ''}
 ${/* Wave U9 — session history button + panel. */ ''}
 ${emitHistoryLogMarkup(resolveHistoryLogConfig(model))}
 ${/* Wave U11 — turbo button (in sideHud near SPIN). */ ''}

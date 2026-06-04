@@ -280,7 +280,8 @@ export function emitThemeCSS(cfg = defaultConfig()) {
   .hub {
     grid-area: hub;
     display: grid;
-    grid-template-columns: 40px minmax(110px, 1fr) minmax(150px, 1.5fr) minmax(150px, 1fr) 40px;
+    /* 4 children: menu | balanceHud | betSelector | sound. */
+    grid-template-columns: 40px minmax(220px, 2fr) minmax(180px, 1.4fr) 40px;
     align-items: center;
     gap: clamp(6px, 1vw, 12px);
     padding: clamp(6px, 1vw, 10px) clamp(8px, 1.5vw, 16px);
@@ -291,27 +292,29 @@ export function emitThemeCSS(cfg = defaultConfig()) {
   }
   @media (max-width: 820px) {
     .hub {
-      grid-template-columns: 36px minmax(80px, 1fr) minmax(110px, 1.5fr) minmax(110px, 1fr) 36px;
+      grid-template-columns: 36px minmax(170px, 2fr) minmax(140px, 1.3fr) 36px;
       padding: 8px 10px;
       gap: 8px;
     }
   }
   @media (max-width: 620px) {
     .hub {
-      grid-template-columns: 32px 1fr 1fr 32px;
+      /* Stack: row 1 = menu + balance + sound; row 2 = bet selector full
+       * width. Keeps every interactive control inside the 390px iPhone
+       * viewport without horizontal scroll. */
+      grid-template-columns: 32px 1fr 32px;
       grid-template-rows: auto auto;
       grid-template-areas:
-        "menu balance bet sound"
-        "status status status status";
+        "menu balance sound"
+        "bet  bet     bet";
       row-gap: 6px;
       column-gap: 6px;
       padding: 8px;
     }
     .hub > :nth-child(1) { grid-area: menu; }
-    .hub > :nth-child(2) { grid-area: balance; }
-    .hub > :nth-child(3) { grid-area: status; justify-self: stretch; }
-    .hub > :nth-child(4) { grid-area: bet; }
-    .hub > :nth-child(5) { grid-area: sound; }
+    .hub > :nth-child(2) { grid-area: balance; justify-self: center; }
+    .hub > :nth-child(3) { grid-area: bet;     justify-self: stretch; }
+    .hub > :nth-child(4) { grid-area: sound; }
   }
   .iconBtn {
     width: 36px; height: 36px;

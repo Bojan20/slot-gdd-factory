@@ -66,7 +66,10 @@ export const HISTORY_MODES = Object.freeze(['base', 'fs', 'gamble']);
 
 export function defaultConfig() {
   return {
-    enabled: true,
+    /* Industry-default OFF — history opens from the hub menu, not from a
+     * floating ≡ button. GDDs that want a standalone trigger opt-in via
+     * `## History\nenabled: true` or a `history` feature kind. */
+    enabled: false,
     /* Industry baseline: MGA mandates 10 transactions minimum; UKGC and
      * many NJ regulators want 50+. We default to 50 as the safe
      * cross-jurisdiction baseline. Capacity caps at 500 to keep the
