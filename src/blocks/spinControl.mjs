@@ -722,16 +722,33 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
         var hasWin   = Number.isFinite(award) && award > 0;
         var longRoll = !Number.isFinite(rollupMs) || rollupMs >= MIN_ROLLUP_MS;
         var anim     = (typeof window !== 'undefined') && window.__SLOT_WIN_PRESENT_ACTIVE__ === true;
-        /* Boki rule: "ako ima wina ili neke animacije, onda se ukljucuje
-         * skip". So we morph to SKIP_ROLLUP on EITHER win + long rollup
-         * OR active animation. Otherwise we settle directly to SPIN. */
-        if (SHOW_ROLLUP && (anim || (hasWin && longRoll))) {
-          /* Win/animation branch — SKIP_ROLLUP is clickable; setState here
-           * sets disabled=false implicitly. Clear pending-settle flag so a
-           * future round starts fresh. */
+        /* Boki rule (05.06.2026 "kada sam igrao brzo, opet mi se skipo
+         * pojavio na kraju spina a nije bilo nikakvog win-a"): _finalizeRound
+         * fires on the LAST event of a round (postSpin/onSlamComplete) —
+         * which is ALWAYS AFTER applyWinHighlight has already emitted both
+         * onWinPresentationStart and onWinPresentationEnd (handlePostSpin
+         * awaits the cycle before emitting postSpin). The
+         * onWinPresentationStart listener already morphs us to SKIP_ROLLUP
+         * during the cycle, and onWinPresentationEnd morphs us back to SPIN
+         * when it's done. If we re-morph to SKIP_ROLLUP here, we leak a
+         * STALE SKIP CTA after the cycle ended (or after a skip), which
+         * the player sees as an undead "skip" button on a no-win or
+         * already-resolved spin.
+         *
+         * The SKIP_ROLLUP morph here is therefore only valid as a
+         * FALLBACK for the rare edge where postSpin somehow lands while
+         * we're still in STOP_PRE/STOP_POST (the onWinPresentation pair
+         * never fired for some reason). Otherwise leave the existing
+         * state alone — onWinPresentationEnd / onSkipComplete already set
+         * the correct terminal state. */
+        var inPreEndState = (STATE.current === 'STOP_PRE' || STATE.current === 'STOP_POST');
+        if (SHOW_ROLLUP && (anim || (hasWin && longRoll)) && inPreEndState) {
+          /* Fallback only: Win/animation branch but we never left STOP_*.
+           * Means the cycle is still in flight or never started — keep
+           * the SKIP_ROLLUP morph so the CTA is clickable. */
           setState('SKIP_ROLLUP');
           STATE.slamPendingSettle = false;
-        } else if (STATE.current === 'STOP_PRE' || STATE.current === 'STOP_POST') {
+        } else if (inPreEndState) {
           /* Natural-stop branch — reels stopped on their own, no slam was
            * issued. Morph directly to SPIN (clickable). */
           setState('SPIN');

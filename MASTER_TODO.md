@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `4072a7d` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click fix) + H5.4 + H5.5 (money counter) + H5.6 (time-based tier cadence) + H5.7 (hero-typography layout) + H5.8 (winRollup blok) + H5.9 (skip climax snap) + H5.10 (winRollup skip listener) + H5.11 (STOP CTA minimum-visibility window — fix za "ne pojavljuje uvek stop kad igram brzo")** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: pending · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click fix) + H5.4 + H5.5 (money counter) + H5.6 (time-based tier cadence) + H5.7 (hero-typography layout) + H5.8 (winRollup blok) + H5.9 (skip climax snap) + H5.10 (winRollup skip listener) + H5.11 (STOP CTA minimum-visibility) + H5.12 (stale-SKIP-CTA — _finalizeRound ne resetuje SKIP_ROLLUP posle natural cycle end)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -306,7 +306,77 @@ Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spi
 
 ---
 
-## 🟢 Wave H5.11 — STOP CTA garantovana minimum-visibility (250 ms), queued slam intent — SHIPPED (this commit)
+## 🟢 Wave H5.12 — `_finalizeRound` ne resetuje SKIP_ROLLUP posle natural cycle end — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"kada sam igrao brzo, opet mi se skipo pojavio na kraju spina a nije bilo nikakvog win-a. I ostao je vidljiv dok ga nisam pritisnuo, a kada sam ga pritisnuo, pokrenuli su se rilovi."*
+
+### Root cause — double SKIP_ROLLUP morph
+
+Tok unutar spin-a sa win-om bio je:
+
+1. `preSpin` → `STOP_PRE` state
+2. Reels spin → `onSpinResult` → `STOP_POST`
+3. `handlePostSpin` zove `applyWinHighlight()` (async):
+   - emit `onWinPresentationStart` → spinControl listener: **setState `SKIP_ROLLUP`** ✅
+   - `await playWinSymCycle()` — win-line cycle traje
+   - emit `onWinPresentationEnd` → spinControl listener: **setState `SPIN`** ✅
+4. `handlePostSpin` emit-uje `postSpin` → `_finalizeRound`:
+   - state je trenutno `SPIN` (iz koraka 3)
+   - `__WIN_AWARD__ > 0`, `__WIN_ROLLUP_MS__ >= MIN_ROLLUP_MS` → `hasWin && longRoll = true`
+   - `SHOW_ROLLUP` true → **setState(`SKIP_ROLLUP`)** ❌❌❌
+
+Isto i posle SKIP klik-a (`__WIN_AWARD__` ostaje stari, _finalizeRound vidi hasWin=true i forsuje SKIP_ROLLUP). Rezultat: stale SKIP CTA na `SPIN` button-u, player mora da klikne da bi se razrešilo.
+
+### Fix u `src/blocks/spinControl.mjs` (additive, single guard)
+
+`_finalizeRound`-ov SKIP_ROLLUP branch sad ima dodatni uslov — sme da se izvrši **samo ako je state još uvek `STOP_PRE` ili `STOP_POST`**. Ako je `onWinPresentationEnd` (ili `onSkipComplete`) već postavio state na `SPIN`, _finalizeRound ne dira ga.
+
+```js
+var inPreEndState = (STATE.current === 'STOP_PRE' || STATE.current === 'STOP_POST');
+if (SHOW_ROLLUP && (anim || (hasWin && longRoll)) && inPreEndState) {
+  setState('SKIP_ROLLUP');   // fallback only — cycle never started
+  STATE.slamPendingSettle = false;
+} else if (inPreEndState) {
+  setState('SPIN');
+} else if (STATE.slamPendingSettle) {
+  // re-enable button
+}
+```
+
+### Live probe — `tools/_stale-skip-cta-probe.mjs` (NEW)
+
+3 scenarija × 2 igre, 7 checks po igri:
+
+| Scenario | Setup | Terminal state |
+|---|---|---|
+| **A** Natural win cycle | preSpin → STOP_PRE → onSpinResult → Start → End → postSpin | **`SPIN`** ✅ (pre fix-a: `SKIP_ROLLUP`) |
+| **B** Mid-cycle skip | preSpin → STOP_PRE → onSpinResult → Start → onSkipRequested → End → postSpin | **`SPIN`** ✅ |
+| **C** No-win round | preSpin → STOP_PRE → onSpinResult (events:[]) → postSpin | **`SPIN`** ✅ |
+
+**14/14 PASS** — sva 3 scenarija postavljaju `data-state="SPIN"` i `disabled=false`.
+
+### Full regression matrix (all PASS)
+
+| Gate | Result |
+|---|:--:|
+| `tools/_stale-skip-cta-probe.mjs` (NEW) | **14/14 PASS** |
+| `tests/blocks/spinControl.test.mjs` | **17/17 PASS** |
+| `tools/lego-gate.mjs` | **5/5 PASS** |
+| `tools/_stop-visibility-probe.mjs` (H5.11 regression) | **18/18 PASS** |
+| `tools/_skip-coverage-probe.mjs` (H5.10 regression) | **30/30 PASS** |
+| `tools/_bw-skip-probe.mjs` (H5.9 regression) | **22/22 PASS** |
+| `tools/_bw-tier-cadence-probe.mjs` (regression) | **48/48 PASS** |
+| `tools/_win-rollup-probe.mjs` (H5.8 regression) | **57/57 PASS** |
+
+### Boki rule honored
+
+> *"opet mi se skipo pojavio na kraju spina a nije bilo nikakvog win-a. I ostao je vidljiv dok ga nisam pritisnuo, a kada sam ga pritisnuo, pokrenuli su se rilovi"*
+
+Stale SKIP CTA više se ne pojavi — `_finalizeRound` poštuje terminal state koji su `onWinPresentationEnd` / `onSkipComplete` već postavili. CTA korektno prikazuje SPIN icon na kraju spina (sa ili bez win-a, sa ili bez skip-a). Naredni klik = novi spin (kao što treba).
+
+---
+
+## 🟢 Wave H5.11 — STOP CTA garantovana minimum-visibility (250 ms), queued slam intent — SHIPPED (`4072a7d`)
 
 > Boki (05.06.2026): *"Ne pojavljuje mi se uvek stop dugme kad igram brzo."*
 
