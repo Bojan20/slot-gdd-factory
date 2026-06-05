@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `e5cb15f` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click fix) + H5.4 + H5.5 (money counter) + H5.6 (time-based tier cadence) + H5.7 (hero-typography layout — boxless, counter ≥ label)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: pending · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click fix) + H5.4 + H5.5 (money counter) + H5.6 (time-based tier cadence) + H5.7 (hero-typography layout) + H5.8 (winRollup blok — base-game total-win counter above hub)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -306,7 +306,80 @@ Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spi
 
 ---
 
-## 🟢 Wave H5.7 — Big-Win layout matches industry reference (boxless, counter ≥ label) — SHIPPED (this commit)
+## 🟢 Wave H5.8 — New `winRollup` block — base-game total-win counter above the hub — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"sada obican counter u base game iznad Hub-a koji stoji. za sve winove osim big wina. nadji detaljno u WoO i prepisi kod ovde kao blok. stavi da se pojvljude kao sto je u igri tamo."*
+
+### What this gives the player
+
+A **persistent "TOTAL WIN: €X.XX" counter** that sits between the reels and the hub, hidden when idle and ramping digit-by-digit whenever a regular win lands. Big wins (≥ 10× bet by default) are deferred to the existing `bigWinTier` overlay — the rollup counter steps out of the way the instant `onBigWinTierEntered` fires.
+
+### Reference source (industry baseline)
+
+Reverse-engineered from the `statusBarController.rollupWin` flow in the reference game:
+
+| Aspect | Reference | H5.8 implementation |
+|---|---|---|
+| Trigger | `onWinPresentationStart` → `statusBar.rollupWin(amount, dur, cb, bet)` | `HookBus.on('onWinPresentationStart')` → `winRollupShow(award)` |
+| Counter math | Centi-precision linear, 30 updates/s | `requestAnimationFrame` linear ramp, quantised to cents |
+| Duration | Scales with award magnitude | `MIN_DUR + max(0, x-1) × MS_PER_X`, clamped to [400, 2000] ms by default |
+| Suppression | Big win runs `executeBigWin` instead | `ratio ≥ bigWinTriggerRatio` skips ramp + hides banner |
+| Celebrate band | Win-celebrate effect for 1× < x < 10× | `is-celebrate` class added when ratio ≥ 1 (subtle warm border + glow) |
+| Final state | Stays visible until next action | `data-show=true` persists until next `preSpin` clears it |
+| Currency | Single source of truth (statusBar uses `fmt2()`) | Inherits `currency` + `currencyPosition` from `model.balanceHud` |
+
+### New files
+
+| File | Role |
+|---|---|
+| `src/blocks/winRollup.mjs` | New block — defaultConfig, resolveConfig, emitCSS/Markup/Runtime |
+| `tests/blocks/winRollup.test.mjs` | 20/20 PASS — config validation, XSS escape, currency inheritance, determinism, vendor-neutral source |
+| `tools/_win-rollup-probe.mjs` | Live regression — 19 checks × 3 demos = 57/57 PASS |
+
+### Modified files
+
+| File | Change |
+|---|---|
+| `src/buildSlotHTML.mjs` | + import for winRollup; + CSS emit; + markup emit ABOVE `.hub`; + runtime emit |
+| `package.json` | + `winRollup.test.mjs` in `test:blocks` chain |
+
+### Layout integration (LEGO ownership)
+
+The block injects its own grid row into the `.stage` layout via `:has(#winRollupHost)`, so `themeCSS.mjs` doesn't need to know it exists. Default `.stage` grid is `"header" / "play" / "hub"`; with the block enabled it becomes `"header" / "play" / "winRollup" / "hub"`. Zero coupling — disable the block in config and the grid reverts automatically.
+
+### Lifecycle wiring
+
+| HookBus event | Behavior |
+|---|---|
+| `onWinPresentationStart {award}` | Start rollup if `award/bet < bigWinTriggerRatio`; else suppress |
+| `onWinPresentationEnd` | Snap to final amount (defensive — guards mid-ramp interruption) |
+| `onBigWinTierEntered` | Hide banner immediately (bigWinTier owns the screen) |
+| `preSpin` | Clear display — next spin starts clean |
+| `onFsTrigger` / `onFsEnd` | Clear display — FS overlay owns the screen during free spins |
+
+### Verification (all PASS)
+
+| Gate | Result |
+|---|:--:|
+| `tests/blocks/winRollup.test.mjs` | **20/20 PASS** |
+| `tools/lego-gate.mjs` (5 invariants — 51 blocks now with test parity + 41 with listeners) | **5/5 PASS** |
+| `tools/_win-rollup-probe.mjs` (live, 3 demos × 19 checks) | **57/57 PASS** |
+| `tools/_bw-money-probe.mjs` (regression) | **33/33 PASS** |
+| `tools/_bw-tier-cadence-probe.mjs` (regression) | **48/48 PASS** |
+
+Live verification covered: (1) idle state hidden, (2) regular 3× bet win shows + ramps + celebrates, (3) big 50× win suppressed (state.suppressed=true), (4) preSpin clears display + amount=0, (5) host vertically above hub (hostY=745 vs hubY=811).
+
+### Boki rule honored
+
+> *"obican counter u base game iznad Hub-a koji stoji. za sve winove osim big wina."*
+
+✅ Counter sits above the hub via grid `"winRollup"` row.
+✅ Shows for all wins below `bigWinTriggerRatio` (default 10× bet, GDD-overridable).
+✅ Big wins still trigger `bigWinTier` overlay — the two presenters coexist without visual collision.
+
+---
+
+## 🟢 Wave H5.7 — Big-Win layout matches industry reference (boxless, counter ≥ label) — SHIPPED (`e5cb15f`)
 
 > Boki (05.06.2026): *"Sad nadji counter u WoO igri i ubaci ga na istom mestu kao sto je tamo u igri ubaci ga u rectangulat."*
 

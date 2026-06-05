@@ -206,6 +206,13 @@ import {
   emitBalanceHudCSS, emitBalanceHudMarkup, emitBalanceHudRuntime,
   resolveConfig as resolveBalanceHudConfig,
 } from './blocks/balanceHud.mjs';
+// Wave H5.8 — base-game total-win rollup counter (sits above the hub,
+// hidden until a sub-big-win lands, persists until the next preSpin).
+// Industry reference: statusBarController.rollupWin pattern.
+import {
+  emitWinRollupCSS, emitWinRollupMarkup, emitWinRollupRuntime,
+  resolveConfig as resolveWinRollupConfig,
+} from './blocks/winRollup.mjs';
 // Wave U9 — Session history log (regulator-mandated audit trail)
 import {
   emitHistoryLogCSS, emitHistoryLogMarkup, emitHistoryLogRuntime,
@@ -370,6 +377,7 @@ ${/* Wave U6 — secondary gamble overlay (Card + Ladder branches). */ ''}
 ${emitGambleSecondaryCSS(resolveGambleSecondaryConfig(model))}
 ${/* Wave U8 — balance HUD (hub widget: Balance | Bet | Win). */ ''}
 ${emitBalanceHudCSS(resolveBalanceHudConfig(model))}
+${emitWinRollupCSS(resolveWinRollupConfig(model))}
 ${/* Wave U9 — session history log (audit panel). */ ''}
 ${emitHistoryLogCSS(resolveHistoryLogConfig(model))}
 ${/* Wave U11 — turbo mode toggle (cadence override). */ ''}
@@ -431,6 +439,10 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
       </button>
     </aside>
   </div>
+  ${/* Wave H5.8 — base-game total-win rollup counter. Mounted ABOVE the
+      .hub element (Boki rule "iznad Hub-a koji stoji") so a regular win
+      ticks up here while big wins still defer to bigWinTier overlay. */ ''}
+  ${emitWinRollupMarkup(resolveWinRollupConfig(model))}
   <div class="hub">
     <button class="iconBtn" id="settingsMenuBtn" aria-label="Settings menu" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
@@ -820,6 +832,7 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
   ${emitGambleSecondaryRuntime(resolveGambleSecondaryConfig(model))}
   ${/* Wave U8 — balance HUD runtime (owns __SLOT_BALANCE__ + onBalanceChanged). */ ''}
   ${emitBalanceHudRuntime(resolveBalanceHudConfig(model))}
+  ${emitWinRollupRuntime(resolveWinRollupConfig(model))}
   ${/* Wave U9 — session history runtime (ring buffer + panel). */ ''}
   ${emitHistoryLogRuntime(resolveHistoryLogConfig(model))}
   ${/* Wave U11 — turbo mode runtime (owns __SLOT_TURBO_ACTIVE__ + onTurboToggle). */ ''}
