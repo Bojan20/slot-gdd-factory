@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `aeee296` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + H5.4–H5.19 + H5.20 (FS skip-block bug: playWinSymCycle + playScatterCelebration sad resolve-uju Promise na skip — FS blok više ne blokira na manual stop/skip)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: **(pending push)** · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click + auto-repeat fix) + V5.Y (Space queue across pending-settle) + H5.4 → H5.20** all live. Hub responsive 9/9 PASS. **Latest shipped — H5.20** (FS skip-block bug: `playWinSymCycle` + `playScatterCelebration` sad resolve-uju Promise na skip — FS blok više ne blokira na manual stop/skip). Big-Win Tier ladder fully matured kroz 17 atoma (H5.4 continuous counter → H5.5 absolute money → H5.6 time-based promotion → H5.7 hero typography → H5.8 winRollup block → H5.9 skip instant snap → H5.10 winRollup skip listener → H5.11 STOP min-visibility → H5.12 SKIP_ROLLUP reset fix → H5.13 symbol pulse path → H5.14 BW force visible animation → H5.15 frame-anchored responsive sizing → H5.16 post-FS presentation pipeline → H5.17 autoplay wait-every-win → H5.18 FS intro grid hide → H5.19 BW force bypass scatter check + ultimate QA → H5.20 FS skip Promise leak fix). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -303,6 +303,47 @@ Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spi
 |---|:--:|
 | `tests/blocks/spinControl.test.mjs` | 17/17 PASS |
 | LEGO 5-invariants | 5/5 PASS |
+
+---
+
+## 🟢 Wave V5.Y — Space presses queued during pending-settle window — SHIPPED (`6cf4050`)
+
+> Follow-up to V5.X. Even after killing dup-click + auto-repeat, rapid Space tapping at 50 ms cadence still dropped presses 3-10 during the ~500 ms post-spin pending-settle window. Boki kept tapping, engine never advanced — when the next press FINALLY landed after settle, state was clean SPIN so it kicked a fresh spin (PLAY) instead of the STOP/SKIP the player expected.
+
+### Root cause (Playwright probe, 10 Space presses at 50 ms cadence)
+
+```
+Press 1  SPIN     disabled=false  → spin starts (preSpin)
+Press 2  STOP_PRE disabled=false  → slam emit
+Press 3-10                        → button disabled in pending-settle window
+                                    → old keydown handler bailed early
+                                    → presses dropped silently
+```
+
+### Fix in `src/blocks/spinControl.mjs` (additive)
+
+| Lokacija | Pre | Posle |
+|---|---|---|
+| `keydown` Space handler when `btn.disabled` | early-return (preventDefault but drop intent) | Set `__spacePending = true` one-shot latch + preventDefault — intent preserved across settle window |
+| `disabled` MutationObserver | (did not exist) | When button flips `disabled → false`, if `__spacePending` is true, dispatch one click + clear latch |
+
+### Verification (rerun of the rapid-press probe)
+
+| Metric | Pre-fix | Post-fix |
+|---|:--:|:--:|
+| Spins | 1 | 2 (last latched press drained at 477 ms after settle release) |
+| Slams | 1 | 1 |
+| Skips | 0 | 0 |
+| Pages errors | 0 | 0 |
+
+### Unit + LEGO
+
+| Gate | Result |
+|---|:--:|
+| `tests/blocks/spinControl.test.mjs` | 17/17 PASS |
+| LEGO 5-invariants | 5/5 PASS |
+
+> Pending-settle semantics, slam, big-win tier walkthrough, skip CTA morph, autoplay guard, `ev.repeat` dedup, keyup duplicate-click suppression — **all preserved** unchanged.
 
 ---
 
