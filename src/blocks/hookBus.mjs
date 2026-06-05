@@ -152,6 +152,16 @@ export const HOOK_EVENTS = Object.freeze([
    *   Owner: winPresentation.mjs. */
   'onWinPresentationStart',
   'onWinPresentationEnd',
+  /* Wave H5: Big-Win Tier ladder phase signals
+   * onBigWinTierEntered {tier, x, label, durationMs, soundBus} — fires
+   *   when totalAward/bet crosses a threshold and the ladder banner
+   *   starts. tier is INT 1..5 (vendor-neutral); label is GDD-driven.
+   *   Owner: bigWinTier.mjs.
+   * onBigWinTierExited {tier, reason} — fires when the banner exits.
+   *   reason is 'natural' (duration expired) or 'skipped' (player skip).
+   *   Owner: bigWinTier.mjs. */
+  'onBigWinTierEntered',
+  'onBigWinTierExited',
   /* Wave U4: autoplay session events */
   'onAutoplayStart',
   'onAutoplayStop',

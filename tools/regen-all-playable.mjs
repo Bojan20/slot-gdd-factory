@@ -20,6 +20,20 @@ const targets = [
 for (const t of targets) {
   const md = readFileSync(resolve(REPO, t.src), 'utf8');
   const model = parseGDD(md, 'md');
+  /* Wave H5 — auto-enable Big-Win Tier ladder on every dist demo. Until
+   * per-game GDDs declare their own tier vocabulary explicitly, this
+   * places a vendor-neutral placeholder feature kind so the bigWinTier
+   * block opts in. Per-game `model.bigWinTier = { thresholds, labels,
+   * durations, colors, ... }` overrides land in samples once GDD-side
+   * copy/QA is signed off. */
+  if (!Array.isArray(model.features)) model.features = [];
+  const alreadyDeclared = model.features.some(f =>
+    f && typeof f.kind === 'string' &&
+    /^(big[_-]?win[_-]?tier|win[_-]?ladder|big[_-]?win[_-]?ladder)$/i.test(f.kind),
+  );
+  if (!alreadyDeclared) {
+    model.features.push({ kind: 'big_win_tier', label: 'Big-Win Tier Ladder' });
+  }
   const html = buildSlotHTML(model);
   writeFileSync(resolve(REPO, t.out), html);
   console.log(`✅ ${t.out}  (${(html.length/1024).toFixed(1)} KB)`);

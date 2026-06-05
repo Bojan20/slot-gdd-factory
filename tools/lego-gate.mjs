@@ -105,6 +105,12 @@ const EXPECTED_EMIT_OWNERS = {
    * already set side-by-side) can branch on the visible rollup window. */
   onWinPresentationStart: ['winPresentation.mjs'],
   onWinPresentationEnd:   ['winPresentation.mjs'],
+  /* Wave H5 — Big-Win Tier ladder. Vendor-neutral 5-tier celebration
+   * fired after the per-line rollup ends. tier is INT 1..5; label/
+   * threshold/duration/color all GDD-driven so two games share the
+   * block but show different vocabulary. */
+  onBigWinTierEntered:    ['bigWinTier.mjs'],
+  onBigWinTierExited:     ['bigWinTier.mjs'],
   /* Wave U4 — autoplay session events all owned by autoplay.mjs. */
   onAutoplayStart: ['autoplay.mjs'],
   onAutoplayTick:  ['autoplay.mjs'],

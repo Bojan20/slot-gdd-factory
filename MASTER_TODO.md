@@ -258,6 +258,80 @@ The V5.0 fix bundle proves the SKIP CTA pipeline is sound for the win-rollup pha
 
 ---
 
+## 🟢 Wave H5 — Big-Win Tier ladder (vendor-neutral 5-tier) — SHIPPED (pending hash pin)
+
+> Triggered by Boki *"big win mora da bude template … bigwintier1 da se zna da je big win, samo naming convention sredi"* + *"zapisi sve sto sto treba da radis detaljno u master todo, pa onda otidji u WoO i pogledaj kako je big win odradjen, i ti ga tako ubaci do detalja u rectangulat … u igt playa core i playa slot pogledaj pravila"*. H5 lifts the existing WoO 6.4 three-tier ladder (BIG/MEGA/EPIC, 10x/25x/50x, 4s plaques) into a fully vendor-neutral 5-tier system with GDD-driven labels/thresholds/durations/colors. Same block runs every game; per-game vocabulary lives in `model.bigWinTier`.
+
+### What landed in this wave
+
+| Atom | File | Status |
+|:--:|---|:--:|
+| H5.a — block source | `src/blocks/bigWinTier.mjs` | ✅ CREATED — defaultConfig + resolveConfig + emitCSS + emitMarkup + emitRuntime |
+| H5.b — unit suite | `tests/blocks/bigWinTier.test.mjs` | ✅ 23 PASS — threshold validators, label override, malformed-GDD fallback, vendor-grep, determinism |
+| H5.c — HookBus contract | `src/blocks/hookBus.mjs` | ✅ `onBigWinTierEntered` + `onBigWinTierExited` added to canonical list |
+| H5.d — canonical-list test | `tests/blocks/hookBus.test.mjs` | ✅ extended expected list (29 PASS) |
+| H5.e — LEGO ownership | `tools/lego-gate.mjs` | ✅ single-owner = `bigWinTier.mjs` for both emit events |
+| H5.f — buildSlotHTML wiring | `src/buildSlotHTML.mjs` | ✅ CSS + markup + runtime emit slotted after uiToast |
+| H5.g — dist auto-enable | `tools/regen-all-playable.mjs` | ✅ injects `big_win_tier` feature kind on every demo until per-game GDDs declare their own |
+| H5.h — naming convention | (all surfaces) | ✅ `bigWinTier` namespace, `tier:INT` (1..5), `.big-win-tier-N` CSS, `__BIG_WIN_TIER__` global, `bigWinTierEnter`/`Exit` API |
+
+### Industry reference (vendor-neutral synthesis)
+
+| Source | Rule we lifted |
+|---|---|
+| Slot-CTA baseline §6 | Monotonic threshold table; highest matching tier wins; optional passthrough |
+| Win-presentation order §4 | Banner emit AFTER per-line rollup ends (`onWinPresentationEnd`), not on `postSpin` |
+| Audit-grade win classification §3 | Numeric tier ID (1..5) + per-game label override = regulator-friendly |
+| Reference GDD (WoO 6.4 BIG/MEGA/EPIC, 10/25/50×, 4s plaque) | Threshold ladder + plaque-lifetime ladder structure, generalized to 5 tiers + per-tier durations |
+
+### Naming map (consistent everywhere)
+
+| Surface | Convention | Example |
+|---|---|---|
+| Block file | camelCase | `src/blocks/bigWinTier.mjs` |
+| HookBus event | `on<PascalCase>` | `onBigWinTierEntered` |
+| Event payload | `tier: INT` | `{ tier: 3, x: 67.5, label: 'TIER 3', durationMs: 3200, soundBus: 'high' }` |
+| GDD config key | camelCase | `model.bigWinTier = { thresholds, labels, durations, colors, passthrough, passthroughMs, soundBuses }` |
+| CSS class | BEM-style | `.big-win-tier-host`, `.big-win-tier-banner`, `[data-tier="3"]`, `.is-tier-4`/`.is-tier-5` flash |
+| Frozen enum | SCREAMING_SNAKE | `BIG_WIN_TIER_MIN=1`, `BIG_WIN_TIER_MAX=5`, `BIG_WIN_TIER_IDS=[1,2,3,4,5]` |
+| Public API | camelCase | `window.bigWinTierEnter(tier, x)`, `window.bigWinTierExit(reason)` |
+| Window global | snake-upper | `window.__BIG_WIN_TIER__` (0 = none, 1..5 = active) |
+| LEGO ownership | single-emitter | `EXPECTED_EMIT_OWNERS.onBigWinTierEntered = ['bigWinTier.mjs']` |
+| Skip phase string | matches block name | `onSkipRequested { phase: 'bigWinTier' }` |
+
+### Verification
+
+| Gate | Result |
+|---|:--:|
+| `tests/blocks/bigWinTier.test.mjs` (new) | **23 PASS / 0 fail** |
+| `tests/blocks/hookBus.test.mjs` (canonical list +2) | **29 PASS / 0 fail** |
+| LEGO 5-invariants | **5/5 PASS** (vendor-neutral grep clean; ownership match for both new events) |
+| Live tier enter/exit sanity (Playwright) | `bigWinTierEnter(3, 67.5)` → STATE.current=3, label='TIER 3', x=67.5; `bigWinTierExit('skipped')` → STATE.current=0. ✅ |
+| Visual tier banner screenshot (T1–T5) | `/tmp/cortex-bigwin/tier-N.png` — banner centered, per-tier accent color, ×amount block, exit anim ok |
+| dist regen 3 demos | rectangular 256 KB · WoO 286 KB · GoO 278 KB |
+| Vendor grep `src/blocks/bigWinTier.mjs` | **0 hits** (IGT / PlayCore / playa-slot / pragmatic / megaways / NetEnt / Wolf / Cleopatra / Buffalo / Olympus) |
+
+### Out of scope for H5 — landing in V5.3 + H17 + per-game GDDs
+
+| Atom | Why deferred |
+|---|---|
+| V5.3 — Big-Win toast skip | spinControl must morph CTA to SKIP during `onBigWinTierEntered..Exited` window. Will subscribe and emit `onSkipRequested{phase:'bigWinTier'}`. |
+| H17 — `bigWinMomentAudioMixer.mjs` | Audio block consumes `soundBus` key from payload to cross-fade Howler buses. Audio tok separate per `rule ADB ≠ GDD`. |
+| Per-game label overrides | Sample GDD-ovi nemaju per-tier copy bloka. Trenutno svi tier-i nose placeholder "TIER N" dok GDD authoring (sa marketing copy-jem) ne odredi vocabular. |
+| Particle FX kit | `houseExplosionFXKit` (Tier-D skipped) is the art-pack approach; not blocking the mechanic. |
+
+### Acceptance gates 7/7
+
+1. ✅ Tier ladder is **deterministic** — same `x` always yields same tier.
+2. ✅ Tier **1..5 enum** is the only thing code consumes; labels are GDD-driven strings.
+3. ✅ Banner emits **after** rollup ends (`onWinPresentationEnd`), not during.
+4. ✅ Skip path is **wired** (`onSkipRequested{phase:'bigWinTier'}` → exit).
+5. ✅ preSpin flush prevents stale banner across rounds.
+6. ✅ a11y: `aria-live="polite"` host + `prefers-reduced-motion` honored (animations disabled, opacity:1).
+7. ✅ Vendor grep clean across all emitted CSS/markup/runtime + unit-test suite.
+
+---
+
 ## 🔵 Wave V5 — Skip-completeness (chain-aware fast-finalize) — V5.0 ✅ SHIPPED · V5.1-V5.10 PLANNED
 
 > Triggered by Boki *"E sad nadji kako radi skip dugme i kad i sta se sve vezano za taj koncept desava, win linije, sve sto moze da se skipuje, isto u igtplaya slot i pla=ya core"* + immediate follow-up *"odradi overi zasto ti ga nema skip dugme uopste i zasto ne radi u retangle"*. Wave V3 ships the SPIN/STOP/SKIP unified CTA state machine, but the SKIP side only covers 4 of the 9+ industry-standard fast-finalize phases. This wave brings the template to PlayCore / Playa Slot "skip-ahead" parity.

@@ -162,6 +162,12 @@ import {
   emitUiToastCSS, emitUiToastMarkup, emitUiToastRuntime,
   resolveConfig as resolveUiToastConfig,
 } from './blocks/uiToast.mjs';
+// Wave H5 — Big-Win Tier ladder (vendor-neutral 5-tier celebration ladder
+// driven by totalAward/bet, with GDD-driven labels/thresholds/durations).
+import {
+  emitBigWinTierCSS, emitBigWinTierMarkup, emitBigWinTierRuntime,
+  resolveConfig as resolveBigWinTierConfig,
+} from './blocks/bigWinTier.mjs';
 // Wave V1 — Slam-stop button (industry-standard fast-stop command pattern)
 import {
   emitSlamStopCSS, emitSlamStopMarkup, emitSlamStopRuntime,
@@ -347,6 +353,7 @@ ${emitPersistentMultiplierCSS(resolvePersistentMultiplierConfig(model))}
 ${emitProgressiveFreeSpinsCSS(resolveProgressiveFreeSpinsConfig(model))}
 ${/* audio CSS skipped — ADB tok, ne GDD */ ''}
 ${emitUiToastCSS(resolveUiToastConfig(model))}
+${emitBigWinTierCSS(resolveBigWinTierConfig(model))}
 ${/* Wave V1+V2+V3 — primary action button CSS.
     When V3 spinControl is enabled (default), it owns the visual layer and
     V1/V2 standalone button CSS is suppressed (their state machines are
@@ -463,6 +470,7 @@ ${emitPersistentMultiplierMarkup(resolvePersistentMultiplierConfig(model))}
 ${emitProgressiveFreeSpinsMarkup(resolveProgressiveFreeSpinsConfig(model))}
 ${/* audio markup skipped — ADB tok, ne GDD */ ''}
 ${emitUiToastMarkup(resolveUiToastConfig(model))}
+${emitBigWinTierMarkup(resolveBigWinTierConfig(model))}
 ${/* Wave V1+V2 — spin-control buttons (hidden by default; runtime toggles). */ ''}
 ${/* Wave V3 supersede: when spinControl enabled, V1/V2 markup OFF (V3 owns the button). */ ''}
 ${resolveSpinControlConfig(model).enabled ? '' : emitSlamStopMarkup(resolveSlamStopConfig(model))}
@@ -786,6 +794,8 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
   ${emitProgressiveFreeSpinsRuntime(resolveProgressiveFreeSpinsConfig(model))}
   ${/* audio runtime skipped — ADB tok, ne GDD */ ''}
   ${emitUiToastRuntime(resolveUiToastConfig(model))}
+  ${/* Wave H5 — Big-Win Tier ladder runtime (5-tier vendor-neutral). */ ''}
+  ${emitBigWinTierRuntime(resolveBigWinTierConfig(model))}
   ${/* Wave V1+V2 — spin-control runtime (emit-only blocks; engine listens). */ ''}
   ${/* Wave V3 supersede: V1/V2 runtimes OFF when spinControl is the active CTA. */ ''}
   ${resolveSpinControlConfig(model).enabled ? '' : emitSlamStopRuntime(resolveSlamStopConfig(model))}
