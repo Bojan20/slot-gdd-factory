@@ -32,21 +32,24 @@ const PER_GAME_BIGWIN = {
   '01_rectangular_5x3_playable.html': {
     thresholds: [10, 25, 50, 200, 1000],
     labels:     ['BIGWINTIER1', 'BIGWINTIER2', 'BIGWINTIER3', 'BIGWINTIER4', 'BIGWINTIER5'],
-    durations:  [1800, 2400, 3200, 4800, 6400],
+    /* Boki rule 05.06.2026: "svaki tir traje po 4 sekunde" — uniform
+     * 4 s per tier across all demos. Matches WoO §6.4 reference and
+     * keeps compound walkthrough cadence consistent regardless of game. */
+    durations:  [4000, 4000, 4000, 4000, 4000],
   },
-  /* Wrath-of-Olympus — §6.4 BIG/MEGA/EPIC tier 1..3 with two extra
-   * climax tiers extrapolated up the same curve. 4s plaque per tier. */
+  /* Wrath-of-Olympus — §6.4 BIG/MEGA/EPIC + two extrapolated climax tiers,
+   * 4 s plaque per tier (Boki rule + GDD baseline). */
   'wrath-of-olympus.html': {
     thresholds: [10, 25, 50, 200, 1000],
     labels:     ['BIG WIN', 'MEGA WIN', 'EPIC WIN', 'ZEUS WIN', 'OLYMPUS WIN'],
-    durations:  [4000, 4000, 4000, 4500, 5500],
+    durations:  [4000, 4000, 4000, 4000, 4000],
   },
-  /* Gates-of-Olympus 1000 — mirror BIG / MEGA / SUPER / EPIC structure
-   * with a final mythic peak. Slightly faster banners (peak rapid play). */
+  /* Gates-of-Olympus 1000 — BIG / MEGA / SUPER / EPIC / MYTHIC, 4 s per
+   * tier (Boki rule). */
   'gates-of-olympus-1000.html': {
     thresholds: [10, 30, 60, 200, 800],
     labels:     ['BIG WIN', 'MEGA WIN', 'SUPER WIN', 'EPIC WIN', 'MYTHIC WIN'],
-    durations:  [1800, 2200, 3000, 4400, 6000],
+    durations:  [4000, 4000, 4000, 4000, 4000],
   },
 };
 
