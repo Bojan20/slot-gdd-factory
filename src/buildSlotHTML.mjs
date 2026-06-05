@@ -146,6 +146,14 @@ import {
   emitWaysEvalRuntime,
   resolveConfig as resolveWaysEvalConfig,
 } from './blocks/waysEval.mjs';
+// Wave H13 — Path-Aware Multiplier extension (pure observer; decorates
+// ways events with per-path multiplier chip + aggregate bonus award).
+import {
+  emitPathAwareMultiplierCSS,
+  emitPathAwareMultiplierMarkup,
+  emitPathAwareMultiplierRuntime,
+  resolveConfig as resolvePathAwareMultiplierConfig,
+} from './blocks/pathAwareMultiplier.mjs';
 import {
   emitPersistentMultiplierCSS, emitPersistentMultiplierMarkup, emitPersistentMultiplierRuntime,
   resolveConfig as resolvePersistentMultiplierConfig,
@@ -409,6 +417,8 @@ ${emitBonusPickCSS(resolveBonusPickConfig(model))}
 ${emitWheelBonusCSS(resolveWheelBonusConfig(model))}
 ${/* Wave H15 — Weighted Wheel Segments extension (jackpot tier CSS). */ ''}
 ${emitWeightedWheelSegmentsCSS(resolveWeightedWheelSegmentsConfig(model))}
+${/* Wave H13 — Path-Aware Multiplier extension (per-path chip + HUD CSS). */ ''}
+${emitPathAwareMultiplierCSS(resolvePathAwareMultiplierConfig(model))}
 ${emitLightningCSS(resolveLightningConfig(model))}
 ${emitGambleCSS(resolveGambleConfig(model))}
 ${emitSuperSymbolCSS(resolveSuperSymbolConfig(model))}
@@ -532,6 +542,8 @@ ${emitWinCapMarkup(resolveWinCapConfig(model))}
 ${emitBonusPickMarkup(resolveBonusPickConfig(model))}
 ${emitWheelBonusMarkup(resolveWheelBonusConfig(model))}
 ${emitWeightedWheelSegmentsMarkup(resolveWeightedWheelSegmentsConfig(model))}
+${/* Wave H13 — Path-Aware Multiplier HUD container (chips appear inside cells). */ ''}
+${emitPathAwareMultiplierMarkup(resolvePathAwareMultiplierConfig(model))}
 ${emitGambleMarkup(resolveGambleConfig(model))}
 ${/* Wave U6 — secondary gamble overlay (full-screen modal). */ ''}
 ${emitGambleSecondaryMarkup(resolveGambleSecondaryConfig(model))}
@@ -840,6 +852,11 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
   ${emitSuperSymbolRuntime(resolveSuperSymbolConfig(model))}
   ${emitClusterPaysEvalRuntime(resolveClusterPaysEvalConfig(model))}
   ${emitWaysEvalRuntime(resolveWaysEvalConfig(model))}
+  ${/* Wave H13 — Path-Aware Multiplier runtime monkey-patches
+     * window.detectWaysWins AFTER waysEval runtime emits it. Pure
+     * observer — adds pathMultiplier/pathMultiplierLabel to each event,
+     * paints chips, aggregates additive bonus on postSpin. */ ''}
+  ${emitPathAwareMultiplierRuntime(resolvePathAwareMultiplierConfig(model))}
   ${emitPersistentMultiplierRuntime(resolvePersistentMultiplierConfig(model))}
   ${emitProgressiveFreeSpinsRuntime(resolveProgressiveFreeSpinsConfig(model))}
   ${/* audio runtime skipped — ADB tok, ne GDD */ ''}

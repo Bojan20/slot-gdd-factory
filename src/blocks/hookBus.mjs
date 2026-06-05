@@ -193,6 +193,17 @@ export const HOOK_EVENTS = Object.freeze([
   'onWheelSegmentChosen',
   'onWheelJackpotHit',
   'onWheelAwardCollected',
+  /* Wave H13: Path-Aware Multiplier extension events
+   * onPathMultiplierAssigned {eventIdx, symbol, ways, multiplier, label} —
+   *   fires once per ways event that pathAwareMultiplier decorated with
+   *   a per-path multiplier (during the patched detectWaysWins call).
+   *   Owner: pathAwareMultiplier.mjs.
+   * onPathMultiplierAggregate {events, totalMult, awardBonus, bet} —
+   *   fires once per postSpin when at least one path carried a
+   *   multiplier ≥ 2. Aggregation mode (additive | multiplicative) is
+   *   set in GDD config. Owner: pathAwareMultiplier.mjs. */
+  'onPathMultiplierAssigned',
+  'onPathMultiplierAggregate',
   /* Wave U4: autoplay session events */
   'onAutoplayStart',
   'onAutoplayStop',

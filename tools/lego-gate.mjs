@@ -126,6 +126,13 @@ const EXPECTED_EMIT_OWNERS = {
   onWheelSegmentChosen:      ['weightedWheelSegments.mjs'],
   onWheelJackpotHit:         ['weightedWheelSegments.mjs'],
   onWheelAwardCollected:     ['weightedWheelSegments.mjs'],
+  /* Wave H13 — Path-Aware Multiplier extension. Standalone block
+   * monkey-patches window.detectWaysWins once on DOMContentLoaded; emits
+   * onPathMultiplierAssigned per decorated ways event, and
+   * onPathMultiplierAggregate once per postSpin when at least one path
+   * carries a multiplier ≥ 2. waysEval.mjs source untouched. */
+  onPathMultiplierAssigned:  ['pathAwareMultiplier.mjs'],
+  onPathMultiplierAggregate: ['pathAwareMultiplier.mjs'],
   /* Wave U4 — autoplay session events all owned by autoplay.mjs. */
   onAutoplayStart: ['autoplay.mjs'],
   onAutoplayTick:  ['autoplay.mjs'],

@@ -27,6 +27,10 @@ const targets = [
   { src: 'samples/grids/12_infinity_GAME_GDD.md',     out: 'dist/12_infinity_playable.html' },
   { src: 'samples/grids/13_expanding_GAME_GDD.md',    out: 'dist/13_expanding_playable.html' },
   { src: 'samples/grids/19_lock_respin_GAME_GDD.md',  out: 'dist/19_lock_respin_playable.html' },
+  /* Wave H13 — Path-Aware Multiplier needs a Ways-evaluator dist target.
+   * 04_variable_reel declares 117649-ways evaluation; pathAwareMultiplier
+   * auto-enables on any ways topology. Vendor-neutral demo. */
+  { src: 'samples/grids/04_variable_reel_GAME_GDD.md', out: 'dist/04_variable_reel_playable.html' },
 ];
 
 /* Wave H5 — per-game Big-Win Tier label overrides. Each entry mirrors the
@@ -103,6 +107,13 @@ const PER_GAME_BIGWIN = {
     durations:  [4000, 4000, 4000, 4000, 4000],
   },
   '19_lock_respin_playable.html': {
+    thresholds: [10, 25, 50, 200, 1000],
+    labels:     ['BIGWINTIER1', 'BIGWINTIER2', 'BIGWINTIER3', 'BIGWINTIER4', 'BIGWINTIER5'],
+    durations:  [4000, 4000, 4000, 4000, 4000],
+  },
+  /* Wave H13 — variable-reel ways dist target. Vendor-neutral placeholder
+   * tier ladder (pathAwareMultiplier auto-lights up via ways topology). */
+  '04_variable_reel_playable.html': {
     thresholds: [10, 25, 50, 200, 1000],
     labels:     ['BIGWINTIER1', 'BIGWINTIER2', 'BIGWINTIER3', 'BIGWINTIER4', 'BIGWINTIER5'],
     durations:  [4000, 4000, 4000, 4000, 4000],
@@ -193,6 +204,44 @@ for (const t of targets) {
         { label: 'MAJOR', x: 100 },
         { label: 'GRAND', x: 1000 },
       ],
+    });
+  }
+  /* Wave H13 — auto-light pathAwareMultiplier on any dist that uses
+   * the ways evaluator. Vendor-neutral 6-tier additive multiplier ladder
+   * (2× common → 100× rare). Per-game GDDs can override via
+   * model.pathAwareMultiplier.{multiplierMap, aggregation, ...}. */
+  const hasWaysFeature = model.features.some(f =>
+    f && typeof f.kind === 'string' && /^ways$/i.test(f.kind),
+  );
+  const isWaysTopology = model.topology && (
+    model.topology.evaluation === 'ways' ||
+    Number.isFinite(model.topology.ways_count)
+  );
+  if (hasWaysFeature || isWaysTopology) {
+    const alreadyPaw = model.features.some(f =>
+      f && typeof f.kind === 'string' &&
+      /^(path[_-]?aware[_-]?multiplier|path[_-]?multiplier)$/i.test(f.kind),
+    );
+    if (!alreadyPaw) {
+      model.features.push({ kind: 'path_aware_multiplier', label: 'Path-Aware Multiplier' });
+    }
+    /* Ensure waysEval block is on so the extension has a target to wrap. */
+    model.waysEval = Object.assign({}, model.waysEval || {}, { enabled: true });
+    /* Demo-tier vendor-neutral additive ladder + cool-blue chip color. */
+    model.pathAwareMultiplier = Object.assign({}, model.pathAwareMultiplier || {}, {
+      enabled: true,
+      aggregation: 'additive',
+      multiplierMap: [
+        { x: 2,   weight: 40, label: '×2'   },
+        { x: 3,   weight: 24, label: '×3'   },
+        { x: 5,   weight: 16, label: '×5'   },
+        { x: 10,  weight: 10, label: '×10'  },
+        { x: 25,  weight: 6,  label: '×25'  },
+        { x: 50,  weight: 3,  label: '×50'  },
+        { x: 100, weight: 1,  label: '×100' },
+      ],
+      chipColor: '120,180,255',
+      showAggregateChip: true,
     });
   }
   const html = buildSlotHTML(model);

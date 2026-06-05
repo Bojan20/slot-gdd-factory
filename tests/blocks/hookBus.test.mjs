@@ -43,6 +43,8 @@ t('HOOK_EVENTS canonical list (core + V intent + V5 win-present + U4 autoplay + 
     'onCreditBucketRespinStart', 'onCreditBucketLocked', 'onCreditBucketEnd',
     /* Wave H15 — Weighted Wheel Segments */
     'onWheelSegmentChosen', 'onWheelJackpotHit', 'onWheelAwardCollected',
+    /* Wave H13 — Path-Aware Multiplier */
+    'onPathMultiplierAssigned', 'onPathMultiplierAggregate',
     /* Wave U4 */
     'onAutoplayStart', 'onAutoplayStop', 'onAutoplayTick',
     /* Wave U5 */
