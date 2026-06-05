@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `462e0c9` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click fix) + H5.4** all live. Hub responsive 9/9 PASS. **Wave H5.4 SHIPPED** (linear continuous counter through tiers, no per-tier stop, 4s endHold, single closing fade, in-place skip-snap; 12/12 live probe pass). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: pending · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click fix) + H5.4 + H5.5 (money counter)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -306,7 +306,57 @@ Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spi
 
 ---
 
-## 🟢 Wave H5.4 — Big-Win Tier continuous-counter rewrite — SHIPPED (this commit)
+## 🟢 Wave H5.5 — Big-Win counter shows ABSOLUTE money (no more ratio "×N") — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"counter ne treba da bude x pa counter, nego samo counter da se broji novac, i na kraju countera da ostane koliko se osvojilo a ne x26 i slično."* H5.4 (`849b6ee`) shipped the linear counter but it ticked in ratio-space (`×0 → ×1500`) — the player never saw the actual money they won. H5.5 keeps the **tier-classification math in ratio space** (vendor-neutral ladder math is unchanged: `tier = max{t : thresholds[t-1] ≤ award/bet}`) but ramps the **player-facing counter in ABSOLUTE money** with the same currency symbol/position as `balanceHud` (single UX source of truth — banner counter reads identically to the win column in the HUD).
+
+### What changed in `src/blocks/bigWinTier.mjs`
+
+| Surface | Pre H5.5 | Posle H5.5 |
+|---|---|---|
+| `defaultConfig()` | No currency knobs | `currency: '€'` + `currencyPosition: 'prefix'` (inherit-aware, see resolveConfig) |
+| `resolveConfig()` | — | Resolution order: explicit `model.bigWinTier.currency` > inherit `model.balanceHud.currency` > default `€`. Same for `currencyPosition`. Inheritance keeps banner ↔ HUD visually unified by default. |
+| Runtime bake | `THRESHOLDS / LABELS / DURATIONS / SOUND_BUSES / COMPOUND / FADE_MS / END_HOLD_MS` | + `CURRENCY` + `CUR_POS` (frozen at bake time, no runtime config dereference cost) |
+| `_fmt(v)` (ratio formatter) | `v >= 100` → 0 decimals, else 2 stripped | **REPLACED** by `_fmtMoney(v)` — always 2 decimals + currency symbol prefix/suffix. Output mirrors `balanceHud._formatMoney` byte-for-byte. |
+| `_runCompound(finalTier, finalX)` | `finalX` was the ratio | `_runCompound(finalTier, finalAward)` — second arg is now the **absolute money award** |
+| `_countUpLinear` | `from/to` ratio; threshold check `current >= THRESHOLDS[i]` | `fromAward/toAward` money; threshold check `(current/bet) >= THRESHOLDS[i]` — ladder math still in ratio space, only display is money |
+| Initial banner | `<span data-count="0">×0</span>` | `<span data-count="0">_fmtMoney(0)</span>` → `€0.00` |
+| Skip-snap (`bigWinTierExit`) | `'×' + _fmt(finalX)` | `_fmtMoney(finalX)` |
+| `bigWinTierEnter(tier, x)` | `x` was ratio; default = `THRESHOLDS[tier-1]` | `bigWinTierEnter(tier, award)` — `award` is absolute money; default = `THRESHOLDS[tier-1] × 1.5 × bet` (safely crosses tier threshold) |
+| `onWinPresentationEnd` listener | `_runCompound(tier, ratio)` | `_runCompound(tier, award)` — passes the absolute `window.__WIN_AWARD__` directly |
+| Event payload `x` field | Ratio | **Absolute award amount** (audio/test listeners that need ratio derive it as `x / bet`) — documented in `_runCompound` JSDoc |
+| `_currentBet()` helper | — | NEW — single source of truth for current bet (defensive default 1 if betSelector hasn't mounted yet) |
+
+### Live verification — `tools/_bw-money-probe.mjs` (added as new regression guard)
+
+Playwright probe clicks the BW button on each of 3 demos, samples the counter every 300 ms, and snapshots the last non-null text seen before cleanup (climax frame). Expectations validated:
+
+| Demo | bet | award | climax-frame text | × prefix | currency hits | entered | endX |
+|---|:--:|:--:|---|:--:|:--:|:--:|:--:|
+| rectangular | €1 | €1500 | `€1500.00` ✅ | 0 ✅ | 82 ✅ | 5 ✅ | 1500 ✅ |
+| wrath-of-olympus | €1 | €1500 | `€1500.00` ✅ | 0 ✅ | 82 ✅ | 5 ✅ | 1500 ✅ |
+| gates-of-olympus-1000 | €1 | €1200 | `€1200.00` ✅ | 0 ✅ | 82 ✅ | 5 ✅ | 1200 ✅ |
+
+**Total: 33/33 pass.** Counter ramps `€0.00 → €1500.00` linearly, holds at climax = exact win amount, then fades. 0 console / page errors across all 3 demos.
+
+### Gate-ovi
+
+| Gate | Result |
+|---|:--:|
+| `tests/blocks/bigWinTier.test.mjs` | **24/24 PASS** |
+| `tests/blocks/spinControl.test.mjs` (SKIP_BIGWIN path) | **17/17 PASS** |
+| `tools/lego-gate.mjs` (5 invariants) | **5/5 PASS** |
+| `tools/_bw-money-probe.mjs` (live, 3 demos) | **33/33 PASS** |
+
+### Boki rule honored
+
+> *"counter ne treba da bude x pa counter, nego samo counter da se broji novac, i na kraju countera da ostane koliko se osvojilo a ne x26 i slično"*
+
+Counter is now player money, not designer ratio. Climax plaque shows the exact award before fade-out. Currency inherits from balanceHud so changing one symbol updates both consistently.
+
+---
+
+## 🟢 Wave H5.4 — Big-Win Tier continuous-counter rewrite — SHIPPED (`849b6ee`)
 
 > Boki (05.06.2026): *"Svaki tier treba da traje po 4 sekunde, i onda big win end event isto cetiri sekunde i da se fejdoutuje plaketa. takojde prelaz izmedju tirova mora da bude gladak bez stajanja i big win counter mora non stop da broji istom brzinom"*. H5.3 (`f75d5c1`) shipped a compound walkthrough but each tier had its own fade-in / count-up (easeOutCubic) / fade-out — counter stopped between tiers + ramp speed varied per segment. H5.4 rewrites the runtime to a **single linear counter that escalates tier label/color in place** while the count ticks at constant rate from 0 → finalX over (#tiers × 4 s), then holds 4 s, then fades once.
 

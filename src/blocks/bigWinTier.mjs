@@ -162,6 +162,14 @@ export function defaultConfig() {
      * which Howler bus or asset maps to each key — this block does NOT
      * play audio directly (LEGO separation: visual vs audio). */
     soundBuses: ['low', 'mid', 'high', 'peak', 'climax'],
+    /* Counter formatting — Boki rule 05.06.2026: "counter ne treba da bude
+     * x pa counter, nego samo counter da se broji novac, i na kraju da
+     * ostane koliko se osvojilo". Display the absolute money amount with
+     * the same currency formatting as balanceHud (single source of truth
+     * for currency UX in the slot). Resolved automatically from
+     * model.balanceHud.currency / currencyPosition. */
+    currency:         '€',
+    currencyPosition: 'prefix',   /* 'prefix' → "€1500.00", 'suffix' → "1500.00 €" */
   };
 }
 
@@ -206,6 +214,24 @@ export function resolveConfig(model = {}) {
   if (Array.isArray(m.soundBuses) && m.soundBuses.length === TIER_COUNT) {
     const bs = m.soundBuses.map(v => (typeof v === 'string' && /^[A-Za-z0-9_-]{1,32}$/.test(v)) ? v : null);
     if (bs.every(Boolean)) cfg.soundBuses = bs;
+  }
+
+  /* Currency resolution — explicit override on bigWinTier > inherit from
+   * balanceHud > defaults. Inheritance keeps both blocks visually unified
+   * (Boki UX rule: the banner counter MUST read identically to the win
+   * column in the HUD — same symbol, same position). */
+  const bh = (model && model.balanceHud) || {};
+  if (typeof bh.currency === 'string' && bh.currency.length > 0 && bh.currency.length <= 4) {
+    cfg.currency = bh.currency;
+  }
+  if (bh.currencyPosition === 'prefix' || bh.currencyPosition === 'suffix') {
+    cfg.currencyPosition = bh.currencyPosition;
+  }
+  if (typeof m.currency === 'string' && m.currency.length > 0 && m.currency.length <= 4) {
+    cfg.currency = m.currency;
+  }
+  if (m.currencyPosition === 'prefix' || m.currencyPosition === 'suffix') {
+    cfg.currencyPosition = m.currencyPosition;
   }
 
   /* Auto-enable when GDD declares a feature kind that maps to this block. */
@@ -373,6 +399,8 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
     var COMPOUND     = ${cfg.compound};
     var FADE_MS      = ${cfg.fadeMs};
     var END_HOLD_MS  = ${cfg.endHoldMs};
+    var CURRENCY     = ${JSON.stringify(cfg.currency)};
+    var CUR_POS      = ${JSON.stringify(cfg.currencyPosition)};
 
     var STATE = {
       enabled: true,
@@ -451,12 +479,17 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       STATE.timers.push(swap);
     }
 
-    /* _fmt — display formatter. ×amounts ≥ 100 drop decimals; smaller
-     * amounts keep up to 2 decimals, stripping trailing .00. */
-    function _fmt(v) {
-      if (!Number.isFinite(v) || v < 0) return '0';
-      if (v >= 100) return v.toFixed(0);
-      return v.toFixed(2).replace(/\\.00$/, '').replace(/0$/, '');
+    /* _fmtMoney — currency-aware display formatter. Boki rule 05.06.2026:
+     * "counter ne treba da bude x pa counter, nego samo counter da se
+     *  broji novac, i na kraju da ostane koliko se osvojilo a ne x26".
+     * Output mirrors balanceHud._formatMoney exactly so the banner reads
+     * the same as the win column in the HUD. Always 2 decimals (industry
+     * default for fiat money UX — partial credits look wrong). */
+    function _fmtMoney(v) {
+      var n = Number(v);
+      if (!Number.isFinite(n) || n < 0) n = 0;
+      var s = n.toFixed(2);
+      return CUR_POS === 'suffix' ? (s + ' ' + CURRENCY) : (CURRENCY + s);
     }
 
     /* _delay — token-aware setTimeout wrapper that resolves a promise
@@ -482,25 +515,42 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       }
     }
 
-    /* _runCompound — Boki spec 05.06.2026 (Wave H5.4):
+    /* _currentBet — single source for per-spin stake. Defaults to 1 if
+     * the slot hasn't published a bet yet (defensive: bigWinTier must
+     * never blow up if called before betSelector mounts). */
+    function _currentBet() {
+      var b = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0)
+        ? window.__SLOT_BET__ : 1;
+      return b;
+    }
+
+    /* _runCompound — Boki spec 05.06.2026 (Wave H5.5):
      *   • Each tier owns exactly DURATIONS[i] ms of counter time (default 4s).
-     *   • Counter runs LINEARLY from 0 → finalX over (finalTier × tierMs) ms,
-     *     same speed throughout — no easing, no per-tier reset.
+     *   • Counter runs LINEARLY in ABSOLUTE MONEY 0 → finalAward over
+     *     (finalTier × tierMs) ms, same speed throughout. Display is the
+     *     currency-formatted amount (€1234.56) — no "×N" ratio anywhere.
+     *   • Tier promotions trigger when ratio (current/bet) crosses each
+     *     THRESHOLDS[i] — tier ladder is still ratio-driven (vendor-neutral
+     *     math), only the player-facing counter is money.
      *   • Single banner mounted once, fade-in only at the start. Tier name +
-     *     glow color cross-fade in place when the counter crosses each
-     *     threshold ("gladak prelaz bez stajanja"). No per-tier fade-out.
-     *   • After the counter reaches finalX, the banner HOLDS for endHoldMs
-     *     (default 4000 ms) at the climax visual + amount.
+     *     glow color cross-fade in place when ratio crosses each threshold
+     *     ("gladak prelaz bez stajanja"). No per-tier fade-out.
+     *   • After the counter reaches finalAward, the banner HOLDS for
+     *     endHoldMs (default 4000 ms) at climax visual + final money amount
+     *     ("na kraju countera da ostane koliko se osvojilo").
      *   • Then a single fade-out (FADE_MS) closes the sequence, followed by
      *     onBigWinTierEnd emit.
      *   • Per-tier onBigWinTierEntered/Exited still fire so audio (Wave H17)
      *     can route per-tier bus crossfades; emit happens at the crossing
-     *     moment, not gated on fade timing. */
-    function _runCompound(finalTier, finalX) {
+     *     moment, not gated on fade timing.
+     * Payload contract change: emitted events still carry x for backward
+     * compat with audio/test listeners, but it now represents the ABSOLUTE
+     * AWARD amount (not the ratio). The ratio can be derived as x / bet. */
+    function _runCompound(finalTier, finalAward) {
       _clearTimers();
       STATE.walkActive = true;
       STATE.finalTier  = finalTier;
-      STATE.finalX     = finalX;
+      STATE.finalX     = finalAward;
 
       /* If COMPOUND is off we don't walk through lower tiers — we land on
        * finalTier from the start. Counter still runs over finalTier × dur
@@ -513,7 +563,7 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       /* Mount banner at startTier with fade-in. Counter starts at 0. */
       _mountBannerAt(startTier);
       _emitEntered({
-        tier: startTier, x: finalX, label: STATE.label,
+        tier: startTier, x: finalAward, label: STATE.label,
         durationMs: DURATIONS[startTier - 1], soundBus: SOUND_BUSES[startTier - 1],
         isFinal: (startTier === finalTier),
       });
@@ -526,10 +576,10 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       for (var ti = startTier; ti <= finalTier; ti++) totalCountMs += DURATIONS[ti - 1];
 
       /* After fade-in completes, start the linear counter. The counter
-       * itself triggers tier swaps when current amount crosses thresholds. */
+       * itself triggers tier swaps when current ratio crosses thresholds. */
       var fadeInDone = setTimeout(function () {
         if (!STATE.walkActive) return;
-        _countUpLinear(0, finalX, totalCountMs, startTier, finalTier).then(function () {
+        _countUpLinear(0, finalAward, totalCountMs, startTier, finalTier).then(function () {
           if (!STATE.walkActive) return;
           /* Hold the climax plaque at finalX for endHoldMs (4 s default —
            * "big win end event isto cetiri sekunde"). */
@@ -559,7 +609,7 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       node.setAttribute('data-show', 'enter');
       node.innerHTML =
         '<span class="big-win-tier-label">' + LABELS[tier - 1] + '</span>' +
-        '<span class="big-win-tier-amount" data-count="0">×0</span>';
+        '<span class="big-win-tier-amount" data-count="0">' + _fmtMoney(0) + '</span>';
       host.appendChild(node);
       var hold = setTimeout(function () {
         if (node && node.parentNode === host) node.setAttribute('data-show', 'hold');
@@ -567,22 +617,24 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       STATE.timers.push(hold);
     }
 
-    /* _countUpLinear — linear ramp from 'from' to 'to' over 'dur' ms with
-     * NO easing (same speed throughout — Boki rule "non stop da broji
-     * istom brzinom"). Detects threshold crossings and swaps tier label /
-     * glow color in place so the player perceives a single continuous
-     * celebration that ESCALATES through tiers, not 5 separate banners. */
-    function _countUpLinear(from, to, dur, startTier, finalTier) {
+    /* _countUpLinear — linear ramp from 'fromAward' to 'toAward' over 'dur' ms
+     * with NO easing (same speed throughout — Boki rule "non stop da broji
+     * istom brzinom"). Display is currency-formatted money. Tier promotion
+     * fires when the RATIO (current/bet) crosses each THRESHOLDS[i] — the
+     * ladder remains vendor-neutral ratio math, only the player-facing UI
+     * is absolute money. */
+    function _countUpLinear(fromAward, toAward, dur, startTier, finalTier) {
       return new Promise(function (resolve) {
         var amtEl = _host() && _host().querySelector('.big-win-tier-amount');
-        if (!amtEl || !(dur > 0) || !(to > from)) {
+        if (!amtEl || !(dur > 0) || !(toAward > fromAward)) {
           if (amtEl) {
-            amtEl.textContent = '×' + _fmt(to);
-            amtEl.setAttribute('data-count', String(to));
+            amtEl.textContent = _fmtMoney(toAward);
+            amtEl.setAttribute('data-count', String(toAward));
           }
           resolve();
           return;
         }
+        var bet = _currentBet();
         var t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
         var rafToken = STATE.rafToken = (STATE.rafToken || 0) + 1;
         var activeTier = startTier;
@@ -590,15 +642,15 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
           if (rafToken !== STATE.rafToken) { resolve(); return; }
           var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
           var p = Math.min(1, (now - t0) / dur);
-          /* LINEAR — no easing function. Each ms == same delta x. */
-          var current = from + (to - from) * p;
-          amtEl.textContent = '×' + _fmt(current);
+          /* LINEAR — no easing function. Each ms == same delta money. */
+          var current = fromAward + (toAward - fromAward) * p;
+          amtEl.textContent = _fmtMoney(current);
           amtEl.setAttribute('data-count', String(current));
-          /* Tier promotion check — promote while we're still under the
-           * final tier and the current amount has crossed the next
-           * threshold. Multiple promotions in one frame are possible if
-           * dur is short / to is huge. */
-          while (activeTier < finalTier && current >= THRESHOLDS[activeTier - 1]) {
+          /* Tier promotion check — in RATIO space so the ladder math stays
+           * vendor-neutral regardless of currency / denomination. Multiple
+           * promotions per frame are possible if dur is short / award huge. */
+          var currentRatio = current / bet;
+          while (activeTier < finalTier && currentRatio >= THRESHOLDS[activeTier - 1]) {
             var fromTier = activeTier;
             activeTier += 1;
             _emitExited({ tier: fromTier, reason: 'natural' });
@@ -607,7 +659,7 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
             if (typeof window !== 'undefined') window.__BIG_WIN_TIER__ = activeTier;
             _swapTier(activeTier);
             _emitEntered({
-              tier: activeTier, x: to, label: STATE.label,
+              tier: activeTier, x: toAward, label: STATE.label,
               durationMs: DURATIONS[activeTier - 1],
               soundBus: SOUND_BUSES[activeTier - 1],
               isFinal: (activeTier === finalTier),
@@ -615,15 +667,15 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
           }
           if (p < 1) {
             if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(step);
-            else { amtEl.textContent = '×' + _fmt(to); resolve(); }
+            else { amtEl.textContent = _fmtMoney(toAward); resolve(); }
           } else {
-            amtEl.textContent = '×' + _fmt(to);
-            amtEl.setAttribute('data-count', String(to));
+            amtEl.textContent = _fmtMoney(toAward);
+            amtEl.setAttribute('data-count', String(toAward));
             resolve();
           }
         }
         if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(step);
-        else { amtEl.textContent = '×' + _fmt(to); resolve(); }
+        else { amtEl.textContent = _fmtMoney(toAward); resolve(); }
       });
     }
 
@@ -646,15 +698,24 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       });
     }
 
-    /* bigWinTierEnter(tier, x) — public entry. Idempotent: a second call
-     * during an active walkthrough is ignored. If the block is COMPOUND,
-     * starts a tier-1→tier walkthrough; otherwise jumps to the tier. */
-    function bigWinTierEnter(tier, x) {
+    /* bigWinTierEnter(tier, award) — public entry. Idempotent: a second
+     * call during an active walkthrough is ignored. If the block is
+     * COMPOUND, starts a tier-1→tier walkthrough; otherwise jumps to the
+     * tier. The 'award' parameter is the ABSOLUTE money amount the player
+     * actually won — counter ramps 0 → award in money, and the climax
+     * plaque holds at that exact figure (Boki rule 05.06.2026 "na kraju
+     * countera da ostane koliko se osvojilo"). When no award is provided
+     * (test / programmatic entry), synthesise one that comfortably crosses
+     * the requested tier's threshold so the visual ladder still walks. */
+    function bigWinTierEnter(tier, award) {
       tier = Math.floor(Number(tier));
       if (!(tier >= ${BIG_WIN_TIER_MIN} && tier <= ${BIG_WIN_TIER_MAX})) return;
       if (STATE.walkActive) return;
-      var finalX = Number.isFinite(x) ? x : THRESHOLDS[tier - 1];
-      _runCompound(tier, finalX);
+      var bet = _currentBet();
+      var finalAward = Number.isFinite(award) && award > 0
+        ? award
+        : THRESHOLDS[tier - 1] * 1.5 * bet;
+      _runCompound(tier, finalAward);
     }
 
     /* bigWinTierExit(reason) — fast-finalize the sequence (Boki spec
@@ -681,7 +742,7 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
         var labelEl = node.querySelector('.big-win-tier-label');
         var amtEl   = node.querySelector('.big-win-tier-amount');
         if (labelEl) labelEl.textContent = LABELS[finalTier - 1];
-        if (amtEl)   { amtEl.textContent = '×' + _fmt(finalX); amtEl.setAttribute('data-count', String(finalX)); }
+        if (amtEl)   { amtEl.textContent = _fmtMoney(finalX); amtEl.setAttribute('data-count', String(finalX)); }
       } else {
         /* Banner never mounted (skip arrived during fade-in window) —
          * mount the climax plaque directly so the player gets a glimpse. */
@@ -693,7 +754,7 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
           n.setAttribute('data-show', 'hold');
           n.innerHTML =
             '<span class="big-win-tier-label">' + LABELS[finalTier - 1] + '</span>' +
-            '<span class="big-win-tier-amount" data-count="' + finalX + '">×' + _fmt(finalX) + '</span>';
+            '<span class="big-win-tier-amount" data-count="' + finalX + '">' + _fmtMoney(finalX) + '</span>';
           host.appendChild(n);
         }
       }
@@ -717,11 +778,12 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
     if (window.HookBus && typeof window.HookBus.on === 'function') {
       window.HookBus.on('onWinPresentationEnd', function () {
         var award = (typeof window !== 'undefined' && Number.isFinite(window.__WIN_AWARD__)) ? window.__WIN_AWARD__ : 0;
-        var bet   = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : 1;
-        var ratio = award / bet;
-        var tier = tierFromRatio(ratio);
+        var bet   = _currentBet();
+        /* Tier classification = ratio space (vendor-neutral math).
+         * Counter displays = absolute money (player UX). */
+        var tier = tierFromRatio(award / bet);
         if (tier < 1) return;
-        _runCompound(tier, ratio);
+        _runCompound(tier, award);
       });
 
       window.HookBus.on('onSkipRequested', function (p) {
