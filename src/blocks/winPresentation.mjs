@@ -468,6 +468,36 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
     }
     const duringFs = !!(FSM && FSM.phase === 'FS_ACTIVE');
 
+    /* Wave H5 — early short-circuit for the BW force-big-win path. Per
+     * rule_force_buttons_real_spin (Boki 05.06.2026), the BW dev button
+     * sets window.__FORCE_BIG_WIN_TIER__ before runOneBaseSpin(). We must
+     * consume the flag BEFORE the noWinChance dice roll below — otherwise
+     * a 30% miss would swallow the forced spin and the QA cycle would
+     * stall. Synthesize a single pay event over the tier threshold and
+     * skip detection entirely. */
+    if (typeof window !== 'undefined' && Number.isFinite(window.__FORCE_BIG_WIN_TIER__) && window.__FORCE_BIG_WIN_TIER__ >= 1 && window.__FORCE_BIG_WIN_TIER__ <= 5) {
+      const bwSt = window.BIG_WIN_TIER_STATE;
+      const thresholds = (bwSt && Array.isArray(bwSt.thresholds)) ? bwSt.thresholds : [10, 25, 50, 200, 1000];
+      const forcedTier = window.__FORCE_BIG_WIN_TIER__;
+      const bet = (Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : 1;
+      const forcedAward = thresholds[forcedTier - 1] * 1.5 * bet;
+      const synth = [{
+        symbol: 'FORCE', tier: 'WILD', matchLength: 5,
+        payX: forcedAward, cells: [], forcedBigWinTier: forcedTier,
+      }];
+      if (typeof runTumbleChain === 'function') {
+        await runTumbleChain(() => synth, { duringFs });
+      }
+      window.__WIN_AWARD__ = forcedAward;
+      window.__FORCE_BIG_WIN_TIER__ = null;       /* one-shot reset */
+      window.__SLOT_WIN_PRESENT_ACTIVE__ = true;
+      if (typeof HookBus !== 'undefined') HookBus.emit('onWinPresentationStart', { award: forcedAward, eventCount: 1 });
+      await playWinSymCycle(synth);
+      window.__SLOT_WIN_PRESENT_ACTIVE__ = false;
+      if (typeof HookBus !== 'undefined') HookBus.emit('onWinPresentationEnd', { award: forcedAward });
+      return synth;
+    }
+
     /* Visual variance — ${(c.noWinChance * 100).toFixed(0)}% of spins forced to no-win.
        Ask tumble for a 0-events tick so listeners (orb accumulate, persistent
        mult escalate-on-loss) react identically to a real lossy spin. tumble

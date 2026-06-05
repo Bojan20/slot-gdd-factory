@@ -892,11 +892,14 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
     });
   }
 
-  /* Wave H5 — dev-only Big-Win force button. Cycles through tier 1..5 via
-     the bigWinTier public API. Each click drops the in-flight banner first
-     so a rapid cycle reads cleanly, then enters the next tier in sequence.
-     Disabled when bigWinTier block isn't enabled in the parsed model
-     (window.bigWinTierEnter exists only as a no-op stub then). */
+  /* Wave H5 — dev-only Big-Win force button. Per rule_force_buttons_real_spin
+     (Boki 05.06.2026): force buttons MUST spin the reels, not shortcut into
+     a synthetic banner. So this click cycles tier 1..5, sets a one-shot
+     window.__FORCE_BIG_WIN_TIER__ flag, and kicks runOneBaseSpin(). The
+     winPresentation block reads the flag and synthesises a pay event with
+     payX big enough to cross that tier's GDD threshold; the normal cycle
+     (rollup → onWinPresentationEnd → bigWinTier banner) then fires
+     organically. Disabled when bigWinTier isn't enabled in the parsed model. */
   var devBwBtn = document.getElementById("devBwBtn");
   if (devBwBtn) {
     var bwEnabled = !!(window.BIG_WIN_TIER_STATE && window.BIG_WIN_TIER_STATE.enabled);
@@ -904,14 +907,27 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
     var bwCycleTier = 0;
     devBwBtn.addEventListener("click", function () {
       if (!bwEnabled) return;
+      if (FSM.phase !== "BASE") return;
       bwCycleTier = (bwCycleTier % 5) + 1;     /* 1 → 2 → 3 → 4 → 5 → 1 */
-      /* Pick an x value strictly above the GDD threshold for this tier.
-         We do not know the threshold here, but bigWinTierEnter clamps to
-         the frozen tier enum anyway — we just pass the tier we want.
-         The visible amount comes from the second arg; tier from first. */
-      var xByTier = [12, 30, 70, 250, 1500][bwCycleTier - 1];
-      if (typeof window.bigWinTierExit  === "function") window.bigWinTierExit("skipped");
-      if (typeof window.bigWinTierEnter === "function") window.bigWinTierEnter(bwCycleTier, xByTier);
+      /* Disable BW + spin button so a stray double-tap can't queue a
+         second forced spin behind this one. spinButton re-enables on
+         postSpin per the normal handlePostSpin path; BW re-enables here
+         in the same listener via setTimeout fallback (so a slow engine
+         path can't strand the button). */
+      devBwBtn.disabled = true;
+      if (spinButton) spinButton.disabled = true;
+      window.__FORCE_BIG_WIN_TIER__ = bwCycleTier;
+      runOneBaseSpin();
+      /* Re-enable on the natural onBigWinTierExited (banner closed) so the
+       * QA cycle can immediately fire the next tier. Belt-and-suspenders
+       * hard fallback after 10s covers an upstream error path. */
+      var reEnable = function () { if (devBwBtn) devBwBtn.disabled = !bwEnabled; };
+      var oneShot = function () {
+        if (window.HookBus && typeof window.HookBus.off === 'function') window.HookBus.off('onBigWinTierExited', oneShot);
+        reEnable();
+      };
+      if (window.HookBus && typeof window.HookBus.on === 'function') window.HookBus.on('onBigWinTierExited', oneShot);
+      setTimeout(reEnable, 10000);
     });
   }
 

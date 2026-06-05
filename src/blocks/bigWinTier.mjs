@@ -128,9 +128,12 @@ export function defaultConfig() {
      * 10× / 25× / 50× / 200× / 1000× — covers low-vol → high-vol slot RTP
      * curves while keeping tier 1 reachable within a single base spin. */
     thresholds:    [10, 25, 50, 200, 1000],
-    /* Vendor-neutral placeholder labels. Real games override with their
-     * own copy. Numeric tier survives independent of label vocabulary. */
-    labels:        ['TIER 1', 'TIER 2', 'TIER 3', 'TIER 4', 'TIER 5'],
+    /* Vendor-neutral placeholder labels — Boki rule 05.06.2026:
+     * "bigwintier1-5 da se zna da je big win". The identifier itself
+     * IS the placeholder label so reading the code/DOM always tells you
+     * exactly which tier is firing. Real games override with their own
+     * GDD copy ("BIG WIN", "OLYMPUS WIN", "DRAGON GOLD", whatever). */
+    labels:        ['BIGWINTIER1', 'BIGWINTIER2', 'BIGWINTIER3', 'BIGWINTIER4', 'BIGWINTIER5'],
     /* Banner lifetimes per tier. Ascending — tier 5 deserves the longest
      * moment. */
     durations:     [1800, 2400, 3200, 4800, 6400],
@@ -356,6 +359,13 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       x: 0,                   /* totalAward / bet at entry time */
       label: '',
       timers: [],             /* outstanding setTimeout handles (for clean cancel) */
+      rafToken: 0,            /* count-up rAF generation token (bump on exit) */
+      /* Wave H5 — expose bake-time tier thresholds + labels + durations
+       * via STATE so the BW force flow in winPresentation can read the
+       * exact ladder without re-baking the literals. */
+      thresholds: THRESHOLDS,
+      labels:     LABELS,
+      durations:  DURATIONS,
     };
     if (typeof window !== 'undefined') {
       window.__BIG_WIN_TIER__   = 0;
@@ -408,13 +418,55 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       node.setAttribute('data-show', 'true');
       var idx = tier - 1;
       var inner = LABELS[idx];
+      /* Reference GDD §6.4 mechanic: "Win count-up halts → plaque →
+       * particles 4s per tier". We render the banner with an animated
+       * count-up counter inside it: starts at 0, climbs to STATE.x over
+       * the banner's duration. Two-thirds of the duration is spent on
+       * the count-up; the last third holds the final amount so the
+       * player sees the climax steady-state before exit. */
       if (Number.isFinite(STATE.x) && STATE.x > 0 && tier === STATE.current) {
-        var amt = STATE.x.toFixed(2).replace(/\\.00$/, '');
-        inner += '<span class="big-win-tier-amount">×' + amt + '</span>';
+        inner += '<span class="big-win-tier-amount" data-count="0">×0</span>';
       }
       node.innerHTML = inner;
       host.appendChild(node);
       host.classList.add('is-tier-' + tier);
+      _startCountUp(tier);
+    }
+
+    /* Animated count-up — pure rAF loop, no setInterval. Ramps from 0 to
+     * STATE.x over (durationMs × COUNTUP_FRACTION). Easing: easeOutCubic
+     * so the numbers slow as they approach the climax (slot-CTA baseline
+     * §4 — "win count-up halts" implies decelerating tween, not linear). */
+    var COUNTUP_FRACTION = 0.66;
+    function _startCountUp(tier) {
+      var amtEl = _host() && _host().querySelector('.big-win-tier-amount');
+      if (!amtEl) return;
+      var target = STATE.x;
+      if (!Number.isFinite(target) || target <= 0) return;
+      var totalDur = DURATIONS[tier - 1];
+      var countDur = Math.max(200, Math.round(totalDur * COUNTUP_FRACTION));
+      var t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      var rafToken = STATE.rafToken = (STATE.rafToken || 0) + 1;
+      function step() {
+        /* Token-guard: bail if a new banner started or this one exited. */
+        if (rafToken !== STATE.rafToken) return;
+        var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        var p = Math.min(1, (now - t0) / countDur);
+        /* easeOutCubic: 1 - (1-p)^3 — fast start, slow finish. */
+        var eased = 1 - Math.pow(1 - p, 3);
+        var current = target * eased;
+        amtEl.textContent = '×' + (current >= 100 ? current.toFixed(0) : current.toFixed(2).replace(/\\.00$/, ''));
+        amtEl.setAttribute('data-count', String(current));
+        if (p < 1) {
+          if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(step);
+        } else {
+          /* Snap to exact target so the climax shows the precise GDD
+           * amount, not a rounding artifact from the eased ramp. */
+          amtEl.textContent = '×' + (target >= 100 ? target.toFixed(0) : target.toFixed(2).replace(/\\.00$/, ''));
+          amtEl.setAttribute('data-count', String(target));
+        }
+      }
+      if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(step);
     }
 
     function _hide() {
@@ -460,6 +512,7 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
     function bigWinTierExit(reason) {
       if (STATE.current < 1) return;
       _clearTimers();
+      STATE.rafToken += 1;       /* invalidate in-flight count-up rAF loop */
       var tier = STATE.current;
       _hide();
       _emitExited({ tier: tier, reason: (reason === 'skipped' ? 'skipped' : 'natural') });

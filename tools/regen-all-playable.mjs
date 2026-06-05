@@ -24,10 +24,14 @@ const targets = [
  * harness, never in src/blocks/. The lego-gate vendor scan covers
  * src/blocks/ only, so theme-flavoured labels here are kosher. */
 const PER_GAME_BIGWIN = {
-  /* Rectangular 5×3 — generic industry-baseline ladder (no theme yet). */
+  /* Rectangular 5×3 — generic placeholder ladder. Boki rule 05.06.2026:
+   * "bigwintier1-5 da se zna da je big win" — when a GDD doesn't author
+   * its own tier vocabulary, the dist demo MUST show the identifier
+   * itself ("BIGWINTIER1"..."BIGWINTIER5"), not a made-up vendor-style
+   * substitute. Real per-game GDDs override with their own copy. */
   '01_rectangular_5x3_playable.html': {
     thresholds: [10, 25, 50, 200, 1000],
-    labels:     ['NICE WIN', 'BIG WIN', 'SUPER WIN', 'HYPER WIN', 'GRAND WIN'],
+    labels:     ['BIGWINTIER1', 'BIGWINTIER2', 'BIGWINTIER3', 'BIGWINTIER4', 'BIGWINTIER5'],
     durations:  [1800, 2400, 3200, 4800, 6400],
   },
   /* Wrath-of-Olympus — §6.4 BIG/MEGA/EPIC tier 1..3 with two extra

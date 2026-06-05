@@ -43,9 +43,11 @@ t('defaultConfig: 5 thresholds strictly ascending', () => {
   for (let i = 1; i < 5; i++) ok(c.thresholds[i] > c.thresholds[i - 1], 'must ascend');
 });
 
-t('defaultConfig: vendor-neutral placeholder labels', () => {
+t('defaultConfig: vendor-neutral placeholder labels (BIGWINTIER<N>)', () => {
   const c = defaultConfig();
-  for (const l of c.labels) ok(/^TIER \d$/.test(l), 'label is TIER N');
+  for (let i = 0; i < c.labels.length; i++) {
+    eq(c.labels[i], 'BIGWINTIER' + (i + 1), `label ${i+1} is BIGWINTIER${i+1}`);
+  }
 });
 
 t('defaultConfig: durations 400-20000ms range', () => {
@@ -94,7 +96,7 @@ t('resolveConfig: GDD labels override (vendor-neutral test path)', () => {
 t('resolveConfig: labels too long rejected — fall back to defaults', () => {
   const tooLong = 'A'.repeat(33);
   const c = resolveConfig({ bigWinTier: { enabled: true, labels: [tooLong, 'B', 'C', 'D', 'E'] } });
-  eq(c.labels[0], 'TIER 1');
+  eq(c.labels[0], 'BIGWINTIER1');
 });
 
 t('resolveConfig: durations override accepted in range', () => {

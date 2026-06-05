@@ -258,6 +258,56 @@ The V5.0 fix bundle proves the SKIP CTA pipeline is sound for the win-rollup pha
 
 ---
 
+## 🟢 Wave H5.2 — Big-Win Tier hardening (placeholder naming · animated count-up · BW force REAL spin) — SHIPPED (pending hash pin)
+
+> Boki (05.06.2026): *"rekao sam da bude bigwintier1-5 i opet si stavio nice epic itd … gde je counter … tehnicki deo mehaniku prepisuješ iz WoO igre … force dugme treba da okrene spin, kao bilo koje drugo force dugme. zapisi to pravilo"*. Four distinct fixes in one commit plus a new permanent rule.
+
+### Four fixes in this iteration
+
+| # | Fix | Detail |
+|:--:|---|---|
+| **1** | Default labels = `BIGWINTIER1..5` | Block default + rectangular dist default = literal identifier strings ("bigwintier1-5 da se zna da je big win"). WoO/GoO retain their authored GDD vocab. |
+| **2** | Animated count-up | Banner renders ×0 → ×target via easeOutCubic rAF tween over (durationMs × 0.66). Final 1/3 holds steady. Reference GDD §6.4 "Win count-up halts → plaque" mechanic. Snaps to exact target; cancels cleanly via STATE.rafToken bump. |
+| **3** | BW dev button = REAL spin | New rule `rule_force_buttons_real_spin.md`. BW click sets `window.__FORCE_BIG_WIN_TIER__ = N` + `runOneBaseSpin()`. winPresentation reads flag in `applyWinHighlight`, synthesises one event with `payX = thresholds[N-1] × 1.5 × bet`, runs normal cycle → onWinPresentationEnd → bigWinTier banner. Same path as a real win. One-shot flag clears after consumption. |
+| **4** | New permanent rule | `~/.claude/projects/-/memory/rule_force_buttons_real_spin.md` linked in MEMORY.md — every force/dev button MUST spin reels via `runOneBaseSpin()` with a force flag. NEVER direct API shortcut. |
+
+### Code touched
+
+| File | Why |
+|---|---|
+| `src/blocks/bigWinTier.mjs` | Default labels → BIGWINTIER<N>; STATE exposes `thresholds`/`labels`/`durations`; `_startCountUp()` + `STATE.rafToken`; `_render()` renders `×0` placeholder + invokes count-up. |
+| `src/blocks/winPresentation.mjs` | Early consumption of `__FORCE_BIG_WIN_TIER__` BEFORE `noWinChance` dice roll. Synthesises event, runs cycle, emits Start/End. Old late check removed. |
+| `src/buildSlotHTML.mjs` | BW button: `__FORCE_BIG_WIN_TIER__` + `runOneBaseSpin()`. Re-enable BW on `onBigWinTierExited` for fast cycle + 10s hard fallback. |
+| `tools/regen-all-playable.mjs` | Rectangular labels → BIGWINTIER<N>. WoO/GoO unchanged. |
+| `tests/blocks/bigWinTier.test.mjs` | Default-label assertion expects BIGWINTIER<N>. |
+
+### Live QA — 10/10 PASS (Playwright probe on rectangular dist)
+
+| # | Check | Result |
+|:--:|---|:--:|
+| 1 | Rectangular labels = `['BIGWINTIER1'..'BIGWINTIER5']` | ✅ |
+| 2 | BW click triggers REAL `preSpin` | ✅ |
+| 3 | BW click #1 forces tier 1 | ✅ |
+| 4 | Banner DOM text = "BIGWINTIER1" | ✅ |
+| 5 | Count-up mid-ramp ×13.18 (target 15, easeOut decel visible) | ✅ |
+| 6 | Count-up snaps to exact final 15 == 15 | ✅ |
+| 7-10 | Click cycle #2..#5 → tier 2..5 labeled BIGWINTIER2..5 | ✅ × 4 |
+
+### Visual proof
+
+`/tmp/cortex-bigwin-final/click-1-tier-1-ramp.png` — banner "BIGWINTIER1 ×13.26" mid-ramp climbing toward 15, spinBtn morphed to cyan SKIP CTA.
+
+### Unit + LEGO gates
+
+| Gate | Result |
+|---|:--:|
+| `tests/blocks/bigWinTier.test.mjs` | **23/23 PASS** |
+| `tests/blocks/winPresentation.test.mjs` | **All PASS** |
+| `tests/blocks/spinControl.test.mjs` | **17/17 PASS** |
+| LEGO 5-invariants | **5/5 PASS** |
+
+---
+
 ## 🟢 Wave H5 + V5.3 — Big-Win Tier ladder COMPLETE (skip-integrated · per-game labels · 45/45 live QA) — SHIPPED `49da107`
 
 > Sledeća iteracija (Boki *"ajde zavrsi big win. ultimativno i odradi qa ultiamtivno detaljan i zivi review da si potpuno siguran da sve radi savreseno"*) zatvara preostala dva atoma iz prethodnog H5 ship-a:
