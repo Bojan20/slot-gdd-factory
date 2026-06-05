@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `394057b` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + H5.4–H5.16 + H5.17 (autoplay čeka svaki win do kraja — big-win banner waits for onBigWinTierEnd, regular win hold 1500ms, no-win 250ms)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: pending · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + H5.4–H5.17 + H5.18 (FS intro grid-hide — reel frame potpuno sakriven dok je placard, fade-in tek na TAP TO BEGIN; generic class koja radi za bilo koji bonus intro)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -306,7 +306,103 @@ Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spi
 
 ---
 
-## 🟢 Wave H5.17 — Autoplay čeka SVAKI win do kraja (big-win banner + regular rollup) — SHIPPED (this commit)
+## 🟢 Wave H5.18 — FS/bonus intro: reel grid sakriven dok placard stoji, fade-in tek na TAP TO BEGIN — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"Fs reel grid ili grid bilo kog bonusa ne sme da se pojavi u pozadini dok je plaketa za fs intro prikazana na ekranu. tek kada pritisnem tap to begin, tada se fadinuju reel frame sa svim celijama itd itd, za fs i bilo koji bonus feature."*
+
+### Gap
+
+`.fs-overlay` koristi `backdrop-filter: blur(10px) saturate(1.1)` + `background: rgba(7, 5, 14, 0.55)` — što znači reels iza placard-a su BLURRED + TINT-OVANI ali još uvek vidljivi. Player je video bazni-igri grid kroz blurred placard backdrop, što je remetilo modal hijerarhiju.
+
+### Fix (generic za bilo koji feature intro)
+
+**1. CSS — generic feature-intro state classes:**
+
+```css
+body.is-feature-intro-active .play .frame,
+body.is-feature-intro-active .play .sideHud {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 300ms ease, visibility 0s linear 300ms;
+}
+body.is-feature-intro-fadein .play .frame,
+body.is-feature-intro-fadein .play .sideHud {
+  animation: featureFadeIn 600ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes featureFadeIn {
+  0%   { opacity: 0; visibility: visible; transform: scale(0.94); }
+  60%  { opacity: 1; visibility: visible; transform: scale(1.02); }  /* overshoot */
+  100% { opacity: 1; visibility: visible; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* animation: none + opacity:1 */
+}
+```
+
+`visibility: hidden` čeka 300ms da opacity transition završi pre nego što flip-uje, što sprečava reels da postanu non-clickable u sred fade-out-a.
+
+**2. FSM wiring:**
+- `FSM_enterIntro` → `document.body.classList.add('is-feature-intro-active')` PRE `FSM_showOverlay()`
+- `FSM_enterActive` (TAP TO BEGIN handler) → remove `active`, add `fadein`, after 700ms remove `fadein`. `FSM_showFsMode` (theme background swap) zove se IZMEĐU class swap-a tako da reels otkrivaju već sa FS theme bg-om.
+- `FSM_enterBase` → defensive cleanup (oba class-a remove-uje) — jer outro može da skip-uje active/fadein flow
+
+### Live probe — `tools/_fs-intro-grid-hide-probe.mjs` (NEW)
+
+3 faze × 2 igre, 12 checks po igri:
+
+| Faza | Stanje | Frame opacity | Frame visibility |
+|---|---|:--:|:--:|
+| **INTRO** (placard shown) | `is-feature-intro-active` | **0** ✅ | **hidden** ✅ |
+| **MID** (100ms posle TAP) | `is-feature-intro-fadein` | **0.6-0.7** (animating) ✅ | visible ✅ |
+| **POST** (700ms posle TAP) | obe klase clear | **1** ✅ | visible ✅ |
+
+**24/24 PASS** sve 2 igre. Player tokom intro placard-a NE vidi nikakav grid u pozadini.
+
+### Files
+
+| File | Change |
+|---|---|
+| `src/blocks/freeSpins.mjs` | + 2 CSS keyframe rules + `body.classList.add/remove` u `FSM_enterIntro`, `FSM_enterActive`, defensive remove u `FSM_enterBase` |
+| `tools/_fs-intro-grid-hide-probe.mjs` | NEW — 3 faze × 2 igre = 24 checks |
+
+### Generic mechanism
+
+Klase `is-feature-intro-active` / `is-feature-intro-fadein` su **body-level state** — bilo koji blok koji dođe sa modal intro placard-om u budućnosti može da koristi isti mehanizam:
+
+```js
+// any future bonus feature intro:
+document.body.classList.add('is-feature-intro-active');
+// show placard...
+// on player tap:
+document.body.classList.remove('is-feature-intro-active');
+document.body.classList.add('is-feature-intro-fadein');
+setTimeout(() => document.body.classList.remove('is-feature-intro-fadein'), 700);
+```
+
+Frame + sideHud su hidden CSS-om jednom; svaki bonus dobija isti UX.
+
+### Full regression matrix (all PASS)
+
+| Gate | Result |
+|---|:--:|
+| `tools/_fs-intro-grid-hide-probe.mjs` (NEW) | **24/24 PASS** |
+| `tests/blocks/freeSpins.test.mjs` | **PASS** |
+| `tools/lego-gate.mjs` | **5/5 PASS** |
+| `tools/_post-fs-win-probe.mjs` (H5.16) | **26/26 PASS** |
+| `tools/_autoplay-wait-win-probe.mjs` (H5.17) | **18/18 PASS** |
+| `tools/_bw-force-symbol-pulse-probe.mjs` (H5.14) | **20/20 PASS** |
+| `tools/_win-rollup-probe.mjs` (H5.8) | **57/57 PASS** |
+| `tools/_stale-skip-cta-probe.mjs` (H5.12) | **14/14 PASS** |
+
+### Boki rule honored
+
+> *"Fs reel grid ili grid bilo kog bonusa ne sme da se pojavi u pozadini dok je plaketa za fs intro prikazana"*
+
+Frame `opacity:0` + `visibility:hidden` tokom intro placard-a → nikakav grid u pozadini. TAP TO BEGIN → 600ms cubic-bezier fadein animacija sa overshoot (94% → 102% → 100% scale), pa reset class. Identično za bilo koji future bonus feature.
+
+---
+
+## 🟢 Wave H5.17 — Autoplay čeka SVAKI win do kraja (big-win banner + regular rollup) — SHIPPED (`394057b`)
 
 > Boki (05.06.2026): *"Kada se ukljuci auto play mora da se saceka svaki win do kraja pa cak i big win, ne sme da se preskace odmah, nego realna igra bez skipovanja, kada je autoplay ukljucen."*
 

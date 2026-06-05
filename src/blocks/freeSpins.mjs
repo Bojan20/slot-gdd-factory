@@ -121,6 +121,41 @@ export function emitFreeSpinsCSS(cfg = defaultConfig()) {
      outroLabel         = ${JSON.stringify(c.outroLabel)}
    Three visual layers all driven from the same FSM state. */
 
+/* H5.18 — Boki rule 05.06.2026: "Fs reel grid ili grid bilo kog bonusa
+   ne sme da se pojavi u pozadini dok je plaketa za fs intro prikazana
+   na ekranu. tek kada pritisnem tap to begin, tada se fadinuju reel
+   frame sa svim celijama [...] za fs i bilo koji bonus feature."
+
+   Generic body-level state class: any block that triggers a modal
+   intro placard sets this on document.body before the overlay shows,
+   and clears it (replacing with the fadein twin class) when the
+   player taps to begin. The reel frame is hidden via opacity +
+   visibility so layout space is preserved (no reflow) but nothing
+   leaks through the blurred overlay backdrop. */
+body.is-feature-intro-active .play .frame,
+body.is-feature-intro-active .play .sideHud {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 300ms ease, visibility 0s linear 300ms;
+}
+body.is-feature-intro-fadein .play .frame,
+body.is-feature-intro-fadein .play .sideHud {
+  animation: featureFadeIn 600ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes featureFadeIn {
+  0%   { opacity: 0; visibility: visible; transform: scale(0.94); }
+  60%  { opacity: 1; visibility: visible; transform: scale(1.02); }
+  100% { opacity: 1; visibility: visible; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.is-feature-intro-fadein .play .frame,
+  body.is-feature-intro-fadein .play .sideHud {
+    animation: none;
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
 /* Visual-mode body backgrounds (chosen by GDD palette heuristic). */
 body.fs-mode-purple { background: #1d1230; }
 body.fs-mode-gold   { background: #2a2114; }
@@ -496,6 +531,12 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
     devFsBtn   && (devFsBtn.disabled   = true);
     statusElGlobal && (statusElGlobal.textContent = "FS · READY");
 
+    /* H5.18 — hide reel frame BEFORE the overlay shows so the player
+     * never sees the base-game grid blur through the placard. Reels
+     * fade back in on FSM_enterActive (TAP TO BEGIN). */
+    document.body.classList.remove('is-feature-intro-fadein');
+    document.body.classList.add('is-feature-intro-active');
+
     FSM_showOverlay();
   }
 
@@ -503,8 +544,19 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
     FSM.phase = "FS_ACTIVE";
     setStageBadge("fs", STAGE_FS_LABEL);
     FSM_hideOverlay();
+    /* H5.18 — TAP TO BEGIN tapped. Swap the hide class for the fadein
+     * twin and let the keyframe animation play. After 600 ms the
+     * animation has settled at opacity:1; clear the class so future
+     * intros start from a clean slate. */
+    document.body.classList.remove('is-feature-intro-active');
+    document.body.classList.add('is-feature-intro-fadein');
+    /* FsMode swap (theme background) lands inside the fadein window
+     * so the player experiences a single coordinated reveal. */
     FSM_showFsMode();
     FSM_renderHud();
+    setTimeout(function () {
+      document.body.classList.remove('is-feature-intro-fadein');
+    }, 700);
     spinButton && (spinButton.disabled = true);
     devFsBtn   && (devFsBtn.disabled   = true);
     setTimeout(FSM_runNextFsSpin, FS_ENTER_ACTIVE_MS);
@@ -580,6 +632,10 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
   }
 
   function FSM_enterBase() {
+    /* H5.18 defensive — if any intro-hide class survived (e.g. session
+     * skip / out-of-band state transition), strip it on base entry so
+     * the reel frame is never left invisible. */
+    document.body.classList.remove('is-feature-intro-active', 'is-feature-intro-fadein');
     /* H5.16 — Boki rule 05.06.2026: "kad se vratim iz FS bonusa, treba
      * da bude ako postoji uslov za big win, onda mora big win da se
      * pokaze, ako postoji uslov za bilo koji win onda mora da se pokaze,
