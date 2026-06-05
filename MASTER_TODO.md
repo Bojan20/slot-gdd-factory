@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `5164f51` · main · Wave **U + V + V3 (spinControl unified CTA) + V4 (pending-settle slam pattern) + V5.0 (skip CTA live-fix bundle, 4 commits)** all live. Hub responsive 9/9 PASS. **Wave V5.0 SHIPPED** (`__WIN_AWARD__` publish + 0-award leak guard + Space-key forward + rapid-spin race close). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers (regulator / per-cell mechanics / climax / audit). Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: **(pending push)** · main · Wave **U + V + V3 + V4 + V5.0 + H5.4 (bigWinTier continuous-counter)** all live. Hub responsive 9/9 PASS. **Wave H5.4 SHIPPED** (linear continuous counter through tiers, no per-tier stop, 4s endHold, single closing fade, in-place skip-snap; 12/12 live probe pass). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -255,6 +255,90 @@ Initial implementation used a generic `_emit(eventName, payload)` helper. lego-g
 ### Outstanding for V5.1-V5.10
 
 The V5.0 fix bundle proves the SKIP CTA pipeline is sound for the win-rollup phase. V5.1-V5.10 still need to layer skip listeners onto anticipation / tumble / big-win / hold-and-win / wheel / climax / gamble-reveal phases and add chain-aware dispatch + autoplay guard + always-skippable morph. Scope unchanged from original planning table below.
+
+---
+
+## 🟢 Wave H5.4 — Big-Win Tier continuous-counter rewrite — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"Svaki tier treba da traje po 4 sekunde, i onda big win end event isto cetiri sekunde i da se fejdoutuje plaketa. takojde prelaz izmedju tirova mora da bude gladak bez stajanja i big win counter mora non stop da broji istom brzinom"*. H5.3 (`f75d5c1`) shipped a compound walkthrough but each tier had its own fade-in / count-up (easeOutCubic) / fade-out — counter stopped between tiers + ramp speed varied per segment. H5.4 rewrites the runtime to a **single linear counter that escalates tier label/color in place** while the count ticks at constant rate from 0 → finalX over (#tiers × 4 s), then holds 4 s, then fades once.
+
+### What changed in `src/blocks/bigWinTier.mjs`
+
+| Lokacija | Pre H5.4 | Posle H5.4 |
+|---|---|---|
+| `_runCompound` | Sequencer: per-tier render → fade-in → easeOutCubic count-up (prevX→tierX) → hold → fade-out → next tier | Single mount → linear count-up 0 → finalX over Σ DURATIONS[startTier..finalTier] ms → endHold (`endHoldMs=4000`) → single fade-out |
+| `_countUp` (easeOutCubic) | Per-tier promise; easeOut decel | REPLACED by `_countUpLinear` — pure linear ramp + threshold crossing detection that drives `_swapTier` + per-tier `_emitEntered`/`_emitExited` events in flight |
+| Per-tier fade transitions | 2 × `fadeMs` (600 ms total) stop between tiers | REMOVED — tier swap = `data-tier` attribute morph + label cross-fade (220 ms) over running counter |
+| `bigWinTierExit` (skip) | Cleanup host → mount fresh climax node → fade-out | In-place DOM mutation (no remount) — set `data-tier=finalTier`, label text, `data-count=finalX`; 180 ms glimpse; fade-out |
+| `_mountBanner()` | Hard-coded tier 1 start | REPLACED by `_mountBannerAt(tier)` — starts at `COMPOUND ? 1 : finalTier` |
+| CSS comment block | "enter → hold → exit per tier" | Updated to "ONCE at start" / "during entire walkthrough" / "ONCE at the end" |
+
+### Default config additions
+
+| Key | Default | Why |
+|---|:--:|---|
+| `endHoldMs` | `4000` | Boki "big win end event isto cetiri sekunde" — banner stays steady at climax for this long before fade |
+| `durations` | `[4000, 4000, 4000, 4000, 4000]` | Boki "svaki tier treba da traje po 4 sekunde" — was already 4×4×4×4×4 in default but per-tier count-up + fade gaps inflated effective time |
+| `resolveConfig.endHoldMs` validator | `clampInt(0, 12000)` | New GDD knob exposed |
+
+### Live verification — `tools/_big-win-flow-probe.mjs` (kept in repo as regression guard)
+
+Playwright probe on `wrath-of-olympus.html` (durations `[4000,4000,4000,4500,5500]`, endHold 4000, total 26.3 s natural walkthrough). Tier 5 forced via `bigWinTierEnter(5, 1500)`:
+
+| Acceptance | Result |
+|---|:--:|
+| 5 × `onBigWinTierEntered`, tiers 1→2→3→4→5 | ✅ |
+| 5 × `onBigWinTierExited`, tiers 1→2→3→4→5 | ✅ |
+| 1 × `onBigWinTierEnd` reason=`natural`, finalTier=5, x=1500 | ✅ |
+| Single `.big-win-tier-banner` DOM node throughout (no remount per tier) | ✅ |
+| Counter monotonic non-decreasing 0 → 1500 over 127 samples | ✅ |
+| Counter reaches finalX (≥1490) by end of count window | ✅ |
+| Skip mid-walkthrough → `onBigWinTierEnd` reason=`skipped` | ✅ |
+| Skip latency ≤ 600 ms (measured 484 ms) | ✅ |
+| 0 page errors, 0 console errors | ✅ |
+| **12 / 12 pass** | ✅ |
+
+### Unit + LEGO + dist
+
+| Gate | Result |
+|---|:--:|
+| `tests/blocks/bigWinTier.test.mjs` | 24/24 PASS |
+| LEGO 5-invariants | 5/5 PASS (vendor grep clean — `WoO reference` comments replaced with `Reference GDD`) |
+| `package.json test:blocks` | bigWinTier added to the chain (was missing) |
+| `tools/regen-all-playable.mjs` | 3/3 dist regen — `01_rectangular_5x3_playable.html` 273.6 KB, `wrath-of-olympus.html` 303.7 KB, `gates-of-olympus-1000.html` 296.5 KB |
+
+### Algorithm summary (for downstream listeners)
+
+```
+on onWinPresentationEnd:
+  ratio = __WIN_AWARD__ / __SLOT_BET__
+  tier  = tierFromRatio(ratio)             // 0..5, 0=no-op
+  if tier >= 1: _runCompound(tier, ratio)
+
+_runCompound(finalTier, finalX):
+  startTier = COMPOUND ? 1 : finalTier
+  mount banner at startTier, fade-in (FADE_MS=300ms)
+  emit onBigWinTierEntered(startTier, finalX)
+  totalCountMs = Σ DURATIONS[startTier..finalTier]
+  rAF loop over totalCountMs:
+    current = finalX * (elapsed/totalCountMs)   // LINEAR
+    update amount text
+    while current >= THRESHOLDS[activeTier-1] && activeTier < finalTier:
+      emit onBigWinTierExited(activeTier, 'natural')
+      activeTier++
+      _swapTier(activeTier)                     // morph border/color + label cross-fade
+      emit onBigWinTierEntered(activeTier, finalX)
+  hold endHoldMs (4000ms steady at climax)
+  fade-out FADE_MS
+  emit onBigWinTierExited(finalTier, 'natural')
+  emit onBigWinTierEnd(finalTier, finalX, 'natural')
+
+on onSkipRequested{phase:'bigWinTier'}:
+  bigWinTierExit('skipped')
+    → DOM mutate to finalTier+finalX (no remount, no fade-in)
+    → emit onBigWinTierExited(prevTier, 'skipped')
+    → 180ms glimpse → fade-out → emit onBigWinTierEnd(finalTier, finalX, 'skipped')
+```
 
 ---
 

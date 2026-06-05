@@ -134,9 +134,14 @@ export function defaultConfig() {
      * exactly which tier is firing. Real games override with their own
      * GDD copy ("BIG WIN", "OLYMPUS WIN", "DRAGON GOLD", whatever). */
     labels:        ['BIGWINTIER1', 'BIGWINTIER2', 'BIGWINTIER3', 'BIGWINTIER4', 'BIGWINTIER5'],
-    /* Banner lifetimes per tier. Ascending — tier 5 deserves the longest
-     * moment. */
-    durations:     [1800, 2400, 3200, 4800, 6400],
+    /* Banner segment length per tier. Counter spends `durations[i]` ms
+     * climbing into tier (i+1)'s threshold. Reference GDD §6.4 + §8 —
+     * each tier 4000 ms; full 5-tier compound is 20 s walkthrough. */
+    durations:     [4000, 4000, 4000, 4000, 4000],
+    /* End-state plaque hold after the counter reaches finalX. Banner
+     * stays steady at the final tier visual + amount for this long
+     * before fading out. Reference GDD §6.4 — 4 s per stage including the climax. */
+    endHoldMs:     4000,
     /* Default cool-to-warm palette: yellow → gold → orange → magenta →
      * white-hot. Per-game palette overrides via GDD. */
     colors: [
@@ -195,7 +200,8 @@ export function resolveConfig(model = {}) {
   }
 
   if (m.compound != null) cfg.compound = !!m.compound;
-  if (Number.isFinite(m.fadeMs))  cfg.fadeMs  = clampInt(m.fadeMs,  100, 1200);
+  if (Number.isFinite(m.fadeMs))    cfg.fadeMs    = clampInt(m.fadeMs,    100, 1200);
+  if (Number.isFinite(m.endHoldMs)) cfg.endHoldMs = clampInt(m.endHoldMs, 0, 12000);
 
   if (Array.isArray(m.soundBuses) && m.soundBuses.length === TIER_COUNT) {
     const bs = m.soundBuses.map(v => (typeof v === 'string' && /^[A-Za-z0-9_-]{1,32}$/.test(v)) ? v : null);
@@ -261,7 +267,16 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
     opacity: 0;
     transform: scale(0.65);
     white-space: nowrap;
+    /* Smooth tier morph: when data-tier flips during the walkthrough,
+     * border-color / glow / font-size tween continuously instead of
+     * snapping. Counter never pauses. */
+    transition: border-color 600ms ease, box-shadow 600ms ease, color 600ms ease, font-size 600ms ease;
   }
+  .big-win-tier-banner .big-win-tier-label {
+    display: block;
+    transition: opacity 220ms ease;
+  }
+  .big-win-tier-banner[data-label-swap="true"] .big-win-tier-label { opacity: 0.0; }
   .big-win-tier-banner .big-win-tier-amount {
     display: block;
     font-size: 0.6em;
@@ -270,12 +285,15 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
     margin-top: 0.5rem;
     opacity: 0.92;
   }
-  /* Three banner states drive the fade choreography:
-   *   data-show="enter" — fade-in + scale-up (300ms)
-   *   data-show="hold"  — steady on screen during count-up
-   *   data-show="exit"  — fade-out + scale-down (300ms)
-   * Compound walkthrough uses enter → hold → exit per tier with the
-   * next tier's enter following immediately. */
+  /* Three banner states drive the fade choreography (Wave H5.4 — Boki spec
+   * 05.06.2026 "gladak prelaz bez stajanja"):
+   *   data-show="enter" — fade-in + scale-up (FADE_MS)   — ONCE at start
+   *   data-show="hold"  — steady on screen during the entire walkthrough,
+   *                       counter ticks linearly, tier swaps in place via
+   *                       data-tier attribute morph (border/glow/font-size
+   *                       transition handles the smooth color escalation)
+   *   data-show="exit"  — fade-out + scale-down (FADE_MS) — ONCE at the end,
+   *                       after endHoldMs steady at climax amount */
   .big-win-tier-banner[data-show="enter"] { animation: bigWinTierIn  ${cfg.fadeMs}ms cubic-bezier(.4,1.55,.5,1) forwards; }
   .big-win-tier-banner[data-show="hold"]  { opacity: 1; transform: scale(1); }
   .big-win-tier-banner[data-show="exit"]  { animation: bigWinTierOut ${cfg.fadeMs}ms ease-in forwards; }
@@ -354,6 +372,7 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
     var SOUND_BUSES  = ${soundBuses};
     var COMPOUND     = ${cfg.compound};
     var FADE_MS      = ${cfg.fadeMs};
+    var END_HOLD_MS  = ${cfg.endHoldMs};
 
     var STATE = {
       enabled: true,
@@ -414,27 +433,22 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       return found;
     }
 
-    /* _renderTier — mount a fresh banner for 'tier' in the "enter" fade-in
-     * state. Counter starts at 'startX' (continuous from the previous
-     * tier's end). */
-    function _renderTier(tier, startX) {
-      var host = _host();
-      if (!host) return;
-      while (host.firstChild) host.removeChild(host.firstChild);
-      var node = document.createElement('div');
-      node.className = 'big-win-tier-banner';
-      node.setAttribute('data-tier', String(tier));
-      node.setAttribute('data-show', 'enter');
-      var inner = LABELS[tier - 1];
-      inner += '<span class="big-win-tier-amount" data-count="' + startX + '">×' + _fmt(startX) + '</span>';
-      node.innerHTML = inner;
-      host.appendChild(node);
-      /* After fade-in completes, flip to "hold" so the static state
-       * remains until count-up + hold time expires. */
-      var hold = setTimeout(function () {
-        if (node && node.parentNode === host) node.setAttribute('data-show', 'hold');
-      }, FADE_MS);
-      STATE.timers.push(hold);
+    /* _swapTier — change the banner's data-tier attribute (CSS handles the
+     * smooth color/glow morph) and replace the label text with a brief
+     * cross-fade so the swap reads as a transition, not a jump. Counter
+     * keeps running uninterrupted. */
+    function _swapTier(toTier) {
+      var node = _banner();
+      if (!node) return;
+      node.setAttribute('data-tier', String(toTier));
+      var labelEl = node.querySelector('.big-win-tier-label');
+      if (!labelEl) return;
+      node.setAttribute('data-label-swap', 'true');
+      var swap = setTimeout(function () {
+        labelEl.textContent = LABELS[toTier - 1];
+        node.removeAttribute('data-label-swap');
+      }, 220);
+      STATE.timers.push(swap);
     }
 
     /* _fmt — display formatter. ×amounts ≥ 100 drop decimals; smaller
@@ -443,44 +457,6 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       if (!Number.isFinite(v) || v < 0) return '0';
       if (v >= 100) return v.toFixed(0);
       return v.toFixed(2).replace(/\\.00$/, '').replace(/0$/, '');
-    }
-
-    /* _countUp — rAF-driven count-up from 'from' to 'to' over 'dur' ms
-     * using easeOutCubic. Returns a Promise so the compound sequencer
-     * can await each tier's count completion. */
-    function _countUp(from, to, dur) {
-      return new Promise(function (resolve) {
-        var amtEl = _host() && _host().querySelector('.big-win-tier-amount');
-        if (!amtEl || !(dur > 0) || !(to > from)) {
-          if (amtEl) {
-            amtEl.textContent = '×' + _fmt(to);
-            amtEl.setAttribute('data-count', String(to));
-          }
-          resolve();
-          return;
-        }
-        var t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-        var rafToken = STATE.rafToken = (STATE.rafToken || 0) + 1;
-        function step() {
-          if (rafToken !== STATE.rafToken) { resolve(); return; }
-          var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-          var p = Math.min(1, (now - t0) / dur);
-          var eased = 1 - Math.pow(1 - p, 3);   /* easeOutCubic — decelerating tween */
-          var current = from + (to - from) * eased;
-          amtEl.textContent = '×' + _fmt(current);
-          amtEl.setAttribute('data-count', String(current));
-          if (p < 1) {
-            if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(step);
-            else { amtEl.textContent = '×' + _fmt(to); resolve(); }
-          } else {
-            amtEl.textContent = '×' + _fmt(to);
-            amtEl.setAttribute('data-count', String(to));
-            resolve();
-          }
-        }
-        if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(step);
-        else { amtEl.textContent = '×' + _fmt(to); resolve(); }
-      });
     }
 
     /* _delay — token-aware setTimeout wrapper that resolves a promise
@@ -506,62 +482,149 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       }
     }
 
-    /* _runCompound — sequencer for the walkthrough. Walks tier 1..final,
-     * each step: render banner (fade-in) → count-up to that tier's
-     * threshold (or to finalX on the last tier) → fade-out. The final
-     * tier holds the climax amount for the remaining duration before
-     * fading. Emits onBigWinTierEntered/Exited per tier, then a single
-     * onBigWinTierEnd to close the sequence. */
+    /* _runCompound — Boki spec 05.06.2026 (Wave H5.4):
+     *   • Each tier owns exactly DURATIONS[i] ms of counter time (default 4s).
+     *   • Counter runs LINEARLY from 0 → finalX over (finalTier × tierMs) ms,
+     *     same speed throughout — no easing, no per-tier reset.
+     *   • Single banner mounted once, fade-in only at the start. Tier name +
+     *     glow color cross-fade in place when the counter crosses each
+     *     threshold ("gladak prelaz bez stajanja"). No per-tier fade-out.
+     *   • After the counter reaches finalX, the banner HOLDS for endHoldMs
+     *     (default 4000 ms) at the climax visual + amount.
+     *   • Then a single fade-out (FADE_MS) closes the sequence, followed by
+     *     onBigWinTierEnd emit.
+     *   • Per-tier onBigWinTierEntered/Exited still fire so audio (Wave H17)
+     *     can route per-tier bus crossfades; emit happens at the crossing
+     *     moment, not gated on fade timing. */
     function _runCompound(finalTier, finalX) {
       _clearTimers();
       STATE.walkActive = true;
       STATE.finalTier  = finalTier;
       STATE.finalX     = finalX;
-      var firstTier = COMPOUND ? 1 : finalTier;
-      var prevX = 0;
-      var idx = firstTier;
 
-      function nextTier() {
+      /* If COMPOUND is off we don't walk through lower tiers — we land on
+       * finalTier from the start. Counter still runs over finalTier × dur
+       * so total duration stays predictable per GDD intent. */
+      var startTier = COMPOUND ? 1 : finalTier;
+      STATE.current = startTier;
+      STATE.label   = LABELS[startTier - 1];
+      if (typeof window !== 'undefined') window.__BIG_WIN_TIER__ = startTier;
+
+      /* Mount banner at startTier with fade-in. Counter starts at 0. */
+      _mountBannerAt(startTier);
+      _emitEntered({
+        tier: startTier, x: finalX, label: STATE.label,
+        durationMs: DURATIONS[startTier - 1], soundBus: SOUND_BUSES[startTier - 1],
+        isFinal: (startTier === finalTier),
+      });
+
+      /* Total count time = (#tiers walked) × per-tier duration. Linear count
+       * over this window means the player sees a steady ramp regardless of
+       * which tier is currently highlighted. */
+      var tiersWalked = (finalTier - startTier + 1);
+      var totalCountMs = 0;
+      for (var ti = startTier; ti <= finalTier; ti++) totalCountMs += DURATIONS[ti - 1];
+
+      /* After fade-in completes, start the linear counter. The counter
+       * itself triggers tier swaps when current amount crosses thresholds. */
+      var fadeInDone = setTimeout(function () {
         if (!STATE.walkActive) return;
-        STATE.current = idx;
-        STATE.label   = LABELS[idx - 1];
-        if (typeof window !== 'undefined') window.__BIG_WIN_TIER__ = idx;
-        /* Target amount for this tier — either its threshold (if more
-         * tiers to walk) or the final climax X (if this is the last). */
-        var isFinal = (idx === finalTier);
-        var targetX = isFinal ? finalX : THRESHOLDS[idx - 1];
-        var dur     = DURATIONS[idx - 1];
-        /* Allocate 70% of duration to count-up, 30% to hold-after on the
-         * final tier; intermediate tiers spend their hold time mostly on
-         * the count-up (compound dramaturgy). */
-        var countDur = Math.max(200, Math.round(dur * 0.70));
-        var holdDur  = Math.max(0,   dur - countDur);
-
-        _renderTier(idx, prevX);
-        _emitEntered({
-          tier: idx, x: targetX, label: STATE.label,
-          durationMs: dur, soundBus: SOUND_BUSES[idx - 1],
-          isFinal: isFinal,
-        });
-
-        _delay(FADE_MS).then(function () {
+        _countUpLinear(0, finalX, totalCountMs, startTier, finalTier).then(function () {
           if (!STATE.walkActive) return;
-          return _countUp(prevX, targetX, countDur);
+          /* Hold the climax plaque at finalX for endHoldMs (4 s default —
+           * "big win end event isto cetiri sekunde"). */
+          return _delay(END_HOLD_MS);
         }).then(function () {
           if (!STATE.walkActive) return;
-          return _delay(holdDur);
-        }).then(function () {
-          if (!STATE.walkActive) return;
+          /* Single closing fade-out for the whole sequence ("da se
+           * fejdoutuje plaketa"). */
           return _fadeOutCurrent();
         }).then(function () {
           if (!STATE.walkActive) return;
-          _emitExited({ tier: idx, reason: 'natural' });
-          prevX = targetX;
-          if (idx < finalTier) { idx += 1; nextTier(); }
-          else { _finishSequence('natural'); }
+          _emitExited({ tier: STATE.current, reason: 'natural' });
+          _finishSequence('natural');
         });
-      }
-      nextTier();
+      }, FADE_MS);
+      STATE.timers.push(fadeInDone);
+    }
+
+    /* _mountBannerAt — fresh banner mounted at the given tier, fade-in. */
+    function _mountBannerAt(tier) {
+      var host = _host();
+      if (!host) return;
+      while (host.firstChild) host.removeChild(host.firstChild);
+      var node = document.createElement('div');
+      node.className = 'big-win-tier-banner';
+      node.setAttribute('data-tier', String(tier));
+      node.setAttribute('data-show', 'enter');
+      node.innerHTML =
+        '<span class="big-win-tier-label">' + LABELS[tier - 1] + '</span>' +
+        '<span class="big-win-tier-amount" data-count="0">×0</span>';
+      host.appendChild(node);
+      var hold = setTimeout(function () {
+        if (node && node.parentNode === host) node.setAttribute('data-show', 'hold');
+      }, FADE_MS);
+      STATE.timers.push(hold);
+    }
+
+    /* _countUpLinear — linear ramp from 'from' to 'to' over 'dur' ms with
+     * NO easing (same speed throughout — Boki rule "non stop da broji
+     * istom brzinom"). Detects threshold crossings and swaps tier label /
+     * glow color in place so the player perceives a single continuous
+     * celebration that ESCALATES through tiers, not 5 separate banners. */
+    function _countUpLinear(from, to, dur, startTier, finalTier) {
+      return new Promise(function (resolve) {
+        var amtEl = _host() && _host().querySelector('.big-win-tier-amount');
+        if (!amtEl || !(dur > 0) || !(to > from)) {
+          if (amtEl) {
+            amtEl.textContent = '×' + _fmt(to);
+            amtEl.setAttribute('data-count', String(to));
+          }
+          resolve();
+          return;
+        }
+        var t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        var rafToken = STATE.rafToken = (STATE.rafToken || 0) + 1;
+        var activeTier = startTier;
+        function step() {
+          if (rafToken !== STATE.rafToken) { resolve(); return; }
+          var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+          var p = Math.min(1, (now - t0) / dur);
+          /* LINEAR — no easing function. Each ms == same delta x. */
+          var current = from + (to - from) * p;
+          amtEl.textContent = '×' + _fmt(current);
+          amtEl.setAttribute('data-count', String(current));
+          /* Tier promotion check — promote while we're still under the
+           * final tier and the current amount has crossed the next
+           * threshold. Multiple promotions in one frame are possible if
+           * dur is short / to is huge. */
+          while (activeTier < finalTier && current >= THRESHOLDS[activeTier - 1]) {
+            var fromTier = activeTier;
+            activeTier += 1;
+            _emitExited({ tier: fromTier, reason: 'natural' });
+            STATE.current = activeTier;
+            STATE.label   = LABELS[activeTier - 1];
+            if (typeof window !== 'undefined') window.__BIG_WIN_TIER__ = activeTier;
+            _swapTier(activeTier);
+            _emitEntered({
+              tier: activeTier, x: to, label: STATE.label,
+              durationMs: DURATIONS[activeTier - 1],
+              soundBus: SOUND_BUSES[activeTier - 1],
+              isFinal: (activeTier === finalTier),
+            });
+          }
+          if (p < 1) {
+            if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(step);
+            else { amtEl.textContent = '×' + _fmt(to); resolve(); }
+          } else {
+            amtEl.textContent = '×' + _fmt(to);
+            amtEl.setAttribute('data-count', String(to));
+            resolve();
+          }
+        }
+        if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(step);
+        else { amtEl.textContent = '×' + _fmt(to); resolve(); }
+      });
     }
 
     function _finishSequence(reason) {
@@ -594,32 +657,55 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       _runCompound(tier, finalX);
     }
 
-    /* bigWinTierExit(reason) — fast-finalize the sequence. Skips remaining
-     * tiers, renders the final tier instantaneously with the climax
-     * amount, then emits onBigWinTierEnd. Used by skip CTA + preSpin
-     * flush. */
+    /* bigWinTierExit(reason) — fast-finalize the sequence (Boki spec
+     * 05.06.2026: "skip da radi kako treba i kako reference radi to"):
+     *   • Snap the existing banner to the final tier + final amount
+     *     (in-place — no remount, no re-fade-in, keeps continuity).
+     *   • Emit onBigWinTierExited for whatever tier was active.
+     *   • Single fade-out (FADE_MS) closes the plaque.
+     *   • onBigWinTierEnd emitted with reason='skipped'.
+     * Total visible time after click ≈ FADE_MS ms — fast spinner happy. */
     function bigWinTierExit(reason) {
       if (!STATE.walkActive) return;
       var finalTier = STATE.finalTier;
       var finalX    = STATE.finalX;
+      var prevTier  = STATE.current || finalTier;
       _clearTimers();
-      STATE.rafToken += 1;
-      /* Show the final tier briefly (instant render, no fade) so the
-       * player sees what they would have seen at the end of the
-       * compound walkthrough. Total visible time ≤ FADE_MS so a fast
-       * spinner doesn't get stalled. */
-      _cleanupHost();
-      var host = _host();
-      if (host) {
-        var node = document.createElement('div');
-        node.className = 'big-win-tier-banner';
+      STATE.rafToken += 1;          /* invalidate any in-flight rAF count-up */
+      /* Snap existing banner — DOM mutation, no remount, so the player
+       * never sees a flash of empty host between exit and skip-finalize. */
+      var node = _banner();
+      if (node) {
         node.setAttribute('data-tier', String(finalTier));
         node.setAttribute('data-show', 'hold');
-        node.innerHTML = LABELS[finalTier - 1] + '<span class="big-win-tier-amount" data-count="' + finalX + '">×' + _fmt(finalX) + '</span>';
-        host.appendChild(node);
+        var labelEl = node.querySelector('.big-win-tier-label');
+        var amtEl   = node.querySelector('.big-win-tier-amount');
+        if (labelEl) labelEl.textContent = LABELS[finalTier - 1];
+        if (amtEl)   { amtEl.textContent = '×' + _fmt(finalX); amtEl.setAttribute('data-count', String(finalX)); }
+      } else {
+        /* Banner never mounted (skip arrived during fade-in window) —
+         * mount the climax plaque directly so the player gets a glimpse. */
+        var host = _host();
+        if (host) {
+          var n = document.createElement('div');
+          n.className = 'big-win-tier-banner';
+          n.setAttribute('data-tier', String(finalTier));
+          n.setAttribute('data-show', 'hold');
+          n.innerHTML =
+            '<span class="big-win-tier-label">' + LABELS[finalTier - 1] + '</span>' +
+            '<span class="big-win-tier-amount" data-count="' + finalX + '">×' + _fmt(finalX) + '</span>';
+          host.appendChild(n);
+        }
       }
-      _emitExited({ tier: finalTier, reason: 'skipped' });
-      var t = setTimeout(function () { _fadeOutCurrent().then(function () { _finishSequence('skipped'); }); }, FADE_MS);
+      STATE.current = finalTier;
+      if (typeof window !== 'undefined') window.__BIG_WIN_TIER__ = finalTier;
+      _emitExited({ tier: prevTier, reason: 'skipped' });
+      /* Short visibility hold of the climax before fading — long enough
+       * to register, short enough not to feel like an ignored skip. */
+      var SKIP_GLIMPSE_MS = 180;
+      var t = setTimeout(function () {
+        _fadeOutCurrent().then(function () { _finishSequence('skipped'); });
+      }, SKIP_GLIMPSE_MS);
       STATE.timers.push(t);
     }
 
