@@ -3,7 +3,123 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `45b2cef` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + V5.Y + H5.4–H5.20 + Wave I + Wave I.2 + Wave H14 + Wave H15 + Wave H13 + Wave H11 (bonusBuyDeterministic extension — tier picker + deterministic scatter plant + optional starting multiplier)** all live. Hub responsive 9/9 PASS. **Latest shipped — Wave H11** (tier picker modal with STANDARD 75× / PREMIUM 150× / SUPER 300× plants; each plant has specific `[r,c]` scatter positions + optional `extraMult` starting modifier; pure observer wraps `#bonusBuyBtn` click at capture phase + cell DOM rewrite on `onSpinResult`; **65/65 unit PASS** + **22/22 live Playwright probe on GoO dist** + 5/5 LEGO + 29/29 HookBus canonical = **121/121 PASS** with `bonusBuy.mjs` untouched). Wave H13 before that: per-path multiplier chip + aggregate bonus award on `waysEval` (84/84 + 39/39 live). Wave I.2: MULT force button (88/88 fixtures); Wave I: **11/11 UNIFORM grid kinds** got dist parity (12 incl. variable_reel). Big-Win Tier ladder matured kroz 17 atoma (H5.4 → H5.20). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Remaining extensions u Wave H queue: **H8 cellOverflowCounter** (sledeći u redu), H1-H4 + H6-H7 + H9-H10 + H12 + H16-H18 (regulator + climax + audit). Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: **(pending push)** · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + V5.Y + H5.4–H5.20 + Wave I + Wave I.2 + Wave H14 + Wave H15 + Wave H13 + Wave H11 + Wave H12 (netLossIndicator extension — regulator-mandated session net chip + 3-tier loss ladder; auto-enabled on every dist; **77/77 unit + 26/26 live = 103/103 PASS** with balanceHud untouched). Wave H11 before: bonusBuyDeterministic extension — tier picker + deterministic scatter plant + optional starting multiplier)** all live. Hub responsive 9/9 PASS. **Latest shipped — Wave H11** (tier picker modal with STANDARD 75× / PREMIUM 150× / SUPER 300× plants; each plant has specific `[r,c]` scatter positions + optional `extraMult` starting modifier; pure observer wraps `#bonusBuyBtn` click at capture phase + cell DOM rewrite on `onSpinResult`; **65/65 unit PASS** + **22/22 live Playwright probe on GoO dist** + 5/5 LEGO + 29/29 HookBus canonical = **121/121 PASS** with `bonusBuy.mjs` untouched). Wave H13 before that: per-path multiplier chip + aggregate bonus award on `waysEval` (84/84 + 39/39 live). Wave I.2: MULT force button (88/88 fixtures); Wave I: **11/11 UNIFORM grid kinds** got dist parity (12 incl. variable_reel). Big-Win Tier ladder matured kroz 17 atoma (H5.4 → H5.20). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Remaining extensions u Wave H queue: **H8 cellOverflowCounter** (sledeći u redu), H1-H4 + H6-H7 + H9-H10 + H12 + H16-H18 (regulator + climax + audit). Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+
+---
+
+## 🟢 Wave H12 — `netLossIndicator` extension (regulator-mandated session net chip + threshold ladder) — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"nastavi ultimativno"*. Fifth in the Wave H extension series (after H14 / H15 / H13 / H11). First regulator-protection extension — adds the session-net display chip beside the balance HUD with configurable threshold escalation. Auto-enabled on every dist since balanceHud is ubiquitous.
+
+### Industry pattern (vendor-neutral synthesis)
+
+| Concern | Owner block |
+|---|---|
+| Balance ledger + spin debit/credit/reset + `onBalanceChanged` emit | `balanceHud.mjs` (pre-existing, **untouched**) |
+| **Session-net chip + threshold ladder + direction-aware emit + visibility per FS phase** | **`netLossIndicator.mjs` (NEW)** |
+| Reality-check modal hook-in | future H2 `realityCheck` listens to `onNetThresholdCrossed` |
+
+Regulator anchors:
+- **Spelinspektionen 14.3 (Sweden)** — running session net display obligatory
+- **DGOJ Article 7 (Spain)** — net result visible at all times during play
+- **UKGC LCCP 8.3** — player-protection visibility tooling
+- **Curaçao GCB / MGA RGF / AGCO Reg 78/12** — broadly consistent
+
+### What landed
+
+| Atom | File | Lines | Status |
+|:--:|---|:--:|:--:|
+| H12.a — block source | `src/blocks/netLossIndicator.mjs` | 477 | ✅ CREATED — defaultConfig + resolveConfig + emit{CSS,Markup,Runtime} + 135-line JSDoc with regulator anchors |
+| H12.b — unit suite | `tests/blocks/netLossIndicator.test.mjs` | 351 | ✅ **77/77 PASS** — happy + malformed + hard-requirement + determinism + vendor-neutral + sandbox event-flow (init → caution → warn → recover → alert + reset) |
+| H12.c — HookBus contract | `src/blocks/hookBus.mjs` | +9 | ✅ `onNetThresholdCrossed` added |
+| H12.d — canonical-list test | `tests/blocks/hookBus.test.mjs` | +2 | ✅ 29/29 PASS |
+| H12.e — LEGO ownership | `tools/lego-gate.mjs` | +7 | ✅ single-owner; 36/36 events pass |
+| H12.f — buildSlotHTML wiring | `src/buildSlotHTML.mjs` | +18 | ✅ CSS + (empty) markup + runtime emitted AFTER balanceHud |
+| H12.g — dist auto-enable | `tools/regen-all-playable.mjs` | +12 | ✅ auto-enables unconditionally (every demo has balanceHud) |
+
+### Composition contract (LEGO — pure observer, lazy DOM mount)
+
+| Read | Write |
+|---|---|
+| `HookBus.on('onBalanceChanged', …)` | `window.__NET_LOSS__` + `window.__NET_LOSS_LEVEL__` |
+| `window.__SLOT_BALANCE__` (for reset baseline) | `.balance-hud__col--net` cell appended into `#balanceHud` once |
+| `#balanceHudBalanceValue.textContent` (currency prefix detect) | `data-sign` + `data-level` attributes on the cell |
+| `HookBus.on('onFsTrigger'/'onFsEnd')` for visibility latch | `HookBus.emit('onNetThresholdCrossed', …)` on level transitions |
+| `HookBus.on('onAutoplayStart')` (optional reset) | |
+
+### Algorithm — deepest-magnitude threshold wins
+
+```js
+_resolveLevel(net):
+  hit = '', hitMag = -1
+  for each threshold t in THRESHOLDS:
+    crossed = (t.amount < 0 && net <= t.amount)
+           || (t.amount > 0 && net >= t.amount)
+    if crossed && |t.amount| > hitMag:
+      hit = t.level
+      hitMag = |t.amount|
+  return hit
+```
+
+Naive ascending iteration would overwrite `hit` with the SHALLOWEST cross (e.g. net=-200 with ladder `[-50,-150,-500]` returns 'caution' instead of 'warn'). The magnitude-tracker variant returns the deepest cross consistently in both directions.
+
+### Default config (industry-baseline 3-tier loss ladder)
+
+| Level | Threshold | Color (default) | Use |
+|---|:--:|---|---|
+| **CAUTION** | net ≤ **-€50** | warm amber | First nudge |
+| **WARN** | net ≤ **-€150** | orange | Player should pause |
+| **ALERT** | net ≤ **-€500** | red | Suggest reality-check / break |
+
+Profit milestones are opt-in (loss-only by default per regulator harm-prevention framing).
+
+### Live verification — `tools/_h12-net-loss-indicator-probe.mjs`
+
+Playwright probe on `dist/01_rectangular_5x3_playable.html` (every dist has balanceHud + H12):
+
+| Scenario | Acceptance | Result |
+|---|---|:--:|
+| Presence | balanceHud + NLI_STATE.enabled + mounted + net cell + value + "Net" label + 3 thresholds + reset fn | ✅ 8/8 |
+| **S1 Caution** (-60 debit) | net=-60, level=caution, cell sign=neg, value text shows -€60, `onNetThresholdCrossed{to:'caution'}` fired | ✅ 5/5 |
+| **S2 Warn escalation** (-140 more) | net=-200, level=warn, emit `{from:'caution', to:'warn', direction:'losing'}` | ✅ 3/3 |
+| **S3 Recover** (+100 credit) | net=-100, level=caution, emit direction=recovering | ✅ 3/3 |
+| **S4 Alert** (-550 more, net=-650) | level=alert, cell data-level=alert, emit threshold.amount=-500 | ✅ 4/4 |
+| **S5 Reset** | nliResetSession zeros net/level, cell sign=zero | ✅ 2/2 |
+| 0 page errors | | ✅ |
+| **26 / 26 pass** | | ✅ |
+
+### Full regression
+
+| Gate | Result |
+|---|:--:|
+| `tests/blocks/netLossIndicator.test.mjs` (NEW) | **77 / 77 PASS** |
+| `tests/blocks/balanceHud.test.mjs` (untouched) | **42 / 42 PASS** |
+| `tests/blocks/hookBus.test.mjs` (canonical +1) | **29 / 29 PASS** |
+| `tools/lego-gate.mjs` (36 events, 46 listeners) | **5 / 5 PASS** |
+| `tools/regen-all-playable.mjs` | **12 / 12 regen** (every dist +11 KB for chip + ladder) |
+| `tools/_h12-net-loss-indicator-probe.mjs` (NEW) | **26 / 26 PASS** |
+
+### Acceptance gates 10/10
+
+1. ✅ Vendor-neutral source
+2. ✅ JSDoc 135-line public-API contract header (regulator anchors enumerated)
+3. ✅ Single responsibility (block ONLY owns net display + threshold detection; balance ledger stays in balanceHud)
+4. ✅ Idempotent (`STATE.mounted` gates double-mount; identical balance event = same render output)
+5. ✅ Defensive on input (malformed thresholds/colors/levels → defaults retained)
+6. ✅ Defensive on runtime (missing `#balanceHud` → warn-once + no-op)
+7. ✅ Honors `prefers-reduced-motion`
+8. ✅ a11y — chip lives inside existing `role="status"` `aria-live="polite"` balanceHud root
+9. ✅ Determinism (identical config → byte-identical CSS + runtime)
+10. ✅ HookBus single-owner contract (1 event, owned, verified by lego-gate)
+
+### What H12 does NOT do (out-of-scope by LEGO)
+
+| ❌ Concern | Why |
+|---|---|
+| Reality-check modal popup | H2 `realityCheck` (separate block — listens to `onNetThresholdCrossed`) |
+| Session-time tracking | H3 `sessionTimeout` (separate block) |
+| Persistent net across page reloads | localStorage layer is Phase 2 / settings-panel concern |
+| Server-side audit log of threshold crosses | H18 `payoutEventStreamLog` |
 
 ---
 

@@ -140,6 +140,12 @@ const EXPECTED_EMIT_OWNERS = {
    * bonusBuy.mjs source untouched. */
   onBonusBuyTierSelected:      ['bonusBuyDeterministic.mjs'],
   onDeterministicPlantApplied: ['bonusBuyDeterministic.mjs'],
+  /* Wave H12 — Net Win/Loss Indicator extension. Standalone block
+   * observes onBalanceChanged, computes net = balance - sessionStart,
+   * emits onNetThresholdCrossed when the running net crosses a
+   * configured ladder rung in either direction.
+   * balanceHud.mjs source untouched. */
+  onNetThresholdCrossed:       ['netLossIndicator.mjs'],
   /* Wave U4 — autoplay session events all owned by autoplay.mjs. */
   onAutoplayStart: ['autoplay.mjs'],
   onAutoplayTick:  ['autoplay.mjs'],

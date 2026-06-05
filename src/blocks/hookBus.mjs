@@ -213,6 +213,13 @@ export const HOOK_EVENTS = Object.freeze([
    *   Owner: bonusBuyDeterministic.mjs. */
   'onBonusBuyTierSelected',
   'onDeterministicPlantApplied',
+  /* Wave H12: Net Win/Loss Indicator extension events
+   * onNetThresholdCrossed {from, to, level, net, direction, threshold} —
+   *   fires when running session net crosses any configured threshold in
+   *   either direction. `direction` is 'losing' or 'recovering';
+   *   `threshold` is the matching ladder entry (null if returning to
+   *   the empty level). Owner: netLossIndicator.mjs. */
+  'onNetThresholdCrossed',
   /* Wave U4: autoplay session events */
   'onAutoplayStart',
   'onAutoplayStop',

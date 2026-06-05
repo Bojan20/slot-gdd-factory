@@ -243,7 +243,19 @@ for (const t of targets) {
       chipColor: '120,180,255',
       showAggregateChip: true,
     });
+  }  /* Wave H12 — auto-enable Net Win/Loss Indicator on every demo (it's a
+   * regulator-mandated player-protection chip; defaults to 3-tier loss
+   * ladder -50/-150/-500). The block is a no-op when balanceHud is off
+   * (which it never is in our demos), so safe to inject unconditionally. */
+  const alreadyNli = model.features.some(f =>
+    f && typeof f.kind === 'string' &&
+    /^(net[_-]?loss[_-]?indicator|session[_-]?net)$/i.test(f.kind),
+  );
+  if (!alreadyNli) {
+    model.features.push({ kind: 'net_loss_indicator', label: 'Net Loss Indicator' });
   }
+  model.netLossIndicator = Object.assign({}, model.netLossIndicator || {}, { enabled: true });
+
   /* Wave H11 — auto-enable Bonus Buy Deterministic Plant on demos that
    * already declare a bonus_buy feature (or have bonusBuy enabled). The
    * extension is a no-op when bonusBuy is off (resolveConfig forces

@@ -221,6 +221,13 @@ import {
   emitBalanceHudCSS, emitBalanceHudMarkup, emitBalanceHudRuntime,
   resolveConfig as resolveBalanceHudConfig,
 } from './blocks/balanceHud.mjs';
+// Wave H12 — Net Win/Loss Indicator extension (regulator-mandated player-protection chip)
+import {
+  emitNetLossIndicatorCSS,
+  emitNetLossIndicatorMarkup,
+  emitNetLossIndicatorRuntime,
+  resolveConfig as resolveNetLossIndicatorConfig,
+} from './blocks/netLossIndicator.mjs';
 // Wave H5.8 — base-game total-win rollup counter (sits above the hub,
 // hidden until a sub-big-win lands, persists until the next preSpin).
 // Industry reference: statusBarController.rollupWin pattern.
@@ -408,6 +415,8 @@ ${/* Wave U6 — secondary gamble overlay (Card + Ladder branches). */ ''}
 ${emitGambleSecondaryCSS(resolveGambleSecondaryConfig(model))}
 ${/* Wave U8 — balance HUD (hub widget: Balance | Bet | Win). */ ''}
 ${emitBalanceHudCSS(resolveBalanceHudConfig(model))}
+${/* Wave H12 — Net Win/Loss Indicator (chip CSS for session-net column). */ ''}
+${emitNetLossIndicatorCSS(resolveNetLossIndicatorConfig(model))}
 ${emitWinRollupCSS(resolveWinRollupConfig(model))}
 ${/* Wave U9 — session history log (audit panel). */ ''}
 ${emitHistoryLogCSS(resolveHistoryLogConfig(model))}
@@ -488,6 +497,7 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
         BALANCE | BET | WIN with debit/credit pulse). Replaces the
         old .statBox--balance + .statBox--status pair. */ ''}
     ${emitBalanceHudMarkup(resolveBalanceHudConfig(model))}
+    ${emitNetLossIndicatorMarkup(resolveNetLossIndicatorConfig(model))}
     ${/* Wave U5 — bet chip + steps + panel. */ ''}
     ${emitBetSelectorMarkup(resolveBetSelectorConfig(model))}
     <button class="iconBtn" aria-label="Sound" type="button">
@@ -894,6 +904,9 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
   ${emitGambleSecondaryRuntime(resolveGambleSecondaryConfig(model))}
   ${/* Wave U8 — balance HUD runtime (owns __SLOT_BALANCE__ + onBalanceChanged). */ ''}
   ${emitBalanceHudRuntime(resolveBalanceHudConfig(model))}
+  ${/* Wave H12 — Net Loss Indicator runtime: subscribes to onBalanceChanged
+     * AFTER balanceHud is wired (so handler chain captures all events). */ ''}
+  ${emitNetLossIndicatorRuntime(resolveNetLossIndicatorConfig(model))}
   ${emitWinRollupRuntime(resolveWinRollupConfig(model))}
   ${/* Wave U9 — session history runtime (ring buffer + panel). */ ''}
   ${emitHistoryLogRuntime(resolveHistoryLogConfig(model))}
