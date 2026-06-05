@@ -258,7 +258,7 @@ The V5.0 fix bundle proves the SKIP CTA pipeline is sound for the win-rollup pha
 
 ---
 
-## 🟢 Wave H5 + V5.3 — Big-Win Tier ladder COMPLETE (skip-integrated · per-game labels · 45/45 live QA) — SHIPPED (pending hash pin)
+## 🟢 Wave H5 + V5.3 — Big-Win Tier ladder COMPLETE (skip-integrated · per-game labels · 45/45 live QA) — SHIPPED `49da107`
 
 > Sledeća iteracija (Boki *"ajde zavrsi big win. ultimativno i odradi qa ultiamtivno detaljan i zivi review da si potpuno siguran da sve radi savreseno"*) zatvara preostala dva atoma iz prethodnog H5 ship-a:
 > 1. **V5.3** — spinControl morfuje CTA u `SKIP_BIGWIN` tokom big-win banner-a; klik emit-uje `onSkipRequested{phase:'bigWinTier'}` → blok izlazi.
