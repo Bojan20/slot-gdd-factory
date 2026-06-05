@@ -3,7 +3,105 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-04** · HEAD: `d5026c8` · main · Wave **U11 turboMode** + **U13 settingsPanel** shipped → Wave U **8/10 original atoms** complete (U1, U3, U4, U5, U6, U8, U9, U10) + 2 new (**U11 turboMode**, **U13 settingsPanel**). Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: `4ea1fd5` · main · Wave **U + V + V3 (spinControl unified CTA)** all live. Hub responsive 9/9 PASS. **NEW: Wave H queue planned from Huff'N'More Puff GDD reverse-engineering — 18 candidate blocks across 4 tiers (regulator / per-cell mechanics / climax / audit).** Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+
+---
+
+## 🔵 Wave H — Huff'N'More Puff feature extraction — PLANNED (per `Huff_N_More_Puff_GDD.pdf` reverse-engineering + L&W Hold-&-Spin family pattern catalog)
+
+> Triggered by Boki "Huff_N_More_Puff_GDD pogledaj reci sta treba da se doda" → "Od svega sto si izvukao sta mozemo iskoristiti kao blokove za buduce igre po gdd-u?" → "daj mi cistu listu da vidim sta da se ugradjuje od blokova".
+>
+> **Doctrine:** every block is template-neutral. Names contain NO vendor / franchise / character references — only mechanic-pattern words. Wolf-specific copy enters via `model.bonusClimax.copy` strings at parser stage, never in block source.
+>
+> **Source mapping:** GDD sections 3.3 (Frame System), 4 (Symbols), 5.1-5.6 (Bonus Features), 6.3-6.5 (Win Hierarchy / Frame Visual / Color & Accessibility) cross-referenced with Lock-It-Link DNA, Cash Eruption, Dancing Drums Explosion, Coin Combo (same publisher family), plus UKGC / MGA / NJDGE / AGCO / KSA / Spelinspektionen / DGOJ regulator matrices.
+
+### 🟢 Tier A — ship-now (regulator + universal UX, every commercial slot needs them)
+
+| # | Block (template-neutral) | One-line purpose | Lifecycle hooks | GDD config key | Effort | Industry references |
+|:--:|---|---|---|---|:--:|---|
+| H1 | **`jurisdictionGate.mjs`** | Per-feature opt-out po lokaciji (autoplay cap, gamble allowed, buy allowed) | listens: `preSpin`, `onAutoplayStart`, `onBetChanged`. emits: `onJurisdictionVeto {feature, reason}` | `model.jurisdiction = { code: 'UK'\|'MGA'\|...; features: {gamble, buy, autoplay}}` | M | UKGC LCCP 6.1.1, MGA Class 4, NJDGE 13:69O, AGCO Reg 78/12, KSA RTSA, Curaçao GCB |
+| H2 | **`realityCheck.mjs`** | Periodic popup "You have been playing X min. Win: €Y, Loss: €Z. Continue / Pause / Quit" | listens: `preSpin` (tick counter), `onBalanceChanged`. emits: `onRealityCheckShown`, `onRealityCheckDismissed`, `onRealityCheckQuit` | `model.realityCheck = { enabled, intervalMs, showDetails }` | M | UKGC LCCP 8.3, NJDGE social responsibility, MGA RGF |
+| H3 | **`sessionTimeout.mjs`** | Continuous-play limit + force-pause | listens: `preSpin` (heartbeat), `onAutoplayTick`. emits: `onSessionTimeout`, `onSessionResumed` | `model.sessionTimeout = { enabled, maxMs, breakMs }` | S | UKGC LCCP 8.3.1, AGCO standard 4.07 |
+| H4 | **`colorblindPatterns.mjs`** | Pattern-fill SVG (stripes/dots/checks) as alternative to color-only state indicators; toggle in settings | passive, hooks into `themeCSS` token system. settings toggle exposes `window.__SLOT_COLORBLIND_MODE__` | `model.colorblindPatterns = { enabled, patternSet }` | S | WCAG 2.1 AA 1.4.1, UKGC 5.1, BS 8878 |
+| H5 | **`winTierLadder.mjs`** *(extend `uiToast.mjs`)* | 5-tier win celebration ladder (NICE → BIG → MEGA → EPIC → LEGENDARY) with per-tier audio + animation choreography | listens: `onSpinResult`, `postSpin`. emits: `onWinTierEntered {tier, x}` | `model.winTierLadder = { thresholds: [2,10,50,200,1000], names: [...] }` | S | Industry-standard 5-tier hierarchy across vendors |
+| H6 | **`bonusClimaxReveal.mjs`** | 3-stage end-of-bonus kinematic reveal (APPROACH → BUILDUP → REVEAL) with prize bucket lookup + jackpot tier hits | listens: `onFsEnd`, `onSkipRequested`. emits: `onBonusClimaxStart`, `onBonusClimaxTick`, `onBonusClimaxReveal {tier, cells}`, `onBonusClimaxJackpotHit`, `onBonusClimaxEnd {totalAward}` | `model.bonusClimax = { enabled, approachMs, buildupMs, perTierMs, prizeBuckets, jackpotMap, copy }` | L | GDD 5.3 (Wolf Reveal), Cash Eruption end-reveal, Coin Combo wheel-lock |
+| H7 | **`cellLevelUpgrade.mjs`** | Per-cell tier-multiplier state machine (Lv 0→N nivoa), persist rules per phase (base resets, FS persists) | listens: `preSpin`, `onSpinResult`, `onFsTrigger`, `onFsEnd`. emits: `onCellUpgraded {i, fromLv, toLv}`, `onCellOverflow {i}` | `model.cellLevelUpgrade = { levels: 4, mults: [1,2,3,5], persistInFs, resetInBase, catalystSymbol }` | L | GDD 3.3 + 5.2, Dancing Drums Explosion symbol stacking |
+
+### 🟡 Tier B — ship-next (when 1-2 more GDDs require, or when first downstream block needs it)
+
+| # | Block | One-line purpose | Lifecycle hooks | GDD config key | Effort | Industry references |
+|:--:|---|---|---|---|:--:|---|
+| H8 | **`cellOverflowCounter.mjs`** | Counter for catalyst symbol landing on already-max cell → accumulates bonus toward climax | listens: `onCellUpgraded` (with overflow flag). emits: `onCellOverflowAccumulated {totalPoints}` | `model.cellOverflow = { enabled, perPointBonusX }` | S | GDD 5.2 Mansion Overflow, Tundra Fortune Hunter overflow counter |
+| H9 | **`ambientBackgroundWheel.mjs`** | Always-visible jackpot wheel teaser behind reels with idle rotation + lock animation on trigger | listens: `onSpinResult` (wheel trigger detect), `onBonusClimaxEnd` (lock). emits: `onWheelLocked {segment}`, `onWheelJackpotHit` | `model.ambientWheel = { enabled, segments: [...], weights: [...], idleRpm }` | M | GDD 5.4 Buzz Saw, Mega Moolah jackpot wheel, Coin Combo |
+| H10 | **`dualRoleScatter.mjs`** | Scatter sa primary (trigger) + secondary (state mutator) ulogu | listens: `onSpinResult` (scatter detection). emits: `onScatterPrimary {count}`, `onScatterSecondary {cells, action}` | `model.dualRoleScatter = { enabled, primaryAction, secondaryAction, perSymbolRoles }` | M | GDD 4 Hard Hat dual function, "collector" scatter pattern |
+| H11 | **`bonusBuyDeterministic.mjs`** *(extend `bonusBuy.mjs`)* | Buy plant-uje fiksan broj scatter-a / specifične pozicije na sledećem spinu, NE random | listens: `onBonusBuyPurchased` (existing). emits: `onBuyPlantApplied {symbols, positions}` | `model.bonusBuy = { ..., deterministicPlant: { count, positions, symbol } }` | S | GDD 5.5 Buy Feature, Pragmatic / L&W modern Buy Bonus |
+| H12 | **`netLossIndicator.mjs`** | Sticky session counter "Net win/loss: ±€X" beside balance HUD | listens: `onBalanceChanged`, `onSessionStart`. emits: `onNetThresholdCrossed` | `model.netLossIndicator = { enabled, showInBaseGame, showInFs, alertThreshold }` | S | Spelinspektionen 14.3, DGOJ Art 7, UKGC LCCP 8.3 |
+| H13 | **`pathAwareMultiplier.mjs`** *(extend `waysEval.mjs`)* | Ways combo zna kroz koje cell-e prolazi → additive multiplier per path | listens: `onSpinResult`, `onCellUpgraded`. emits: `onPathMultiplier {pathIdx, cells, totalMult}` | `model.pathAwareMultiplier = { mode: 'additive'\|'max'\|'product' }` | M | GDD 3.3 Multiplicative vs Additive, Dancing Drums frame stacking |
+| H14 | **`holdAndWinCreditBucket.mjs`** *(extend `holdAndWin.mjs`)* | Lock-It-Link DNA: credit-prize stickers locked in cells + respin engine + reset counter | listens: `onSpinResult`, `onHoldAndWinTriggered`. emits: `onCreditBucketRespinStart`, `onCreditBucketLocked {cell, amount}`, `onCreditBucketEnd {total}` | `model.holdAndWinCreditBucket = { startingRespins, lockResetsCounter, prizeMap }` | M | GDD 1 "Lock It Link DNA", Cash Eruption, Coin Combo |
+| H15 | **`weightedWheelSegments.mjs`** *(extend `wheelBonus.mjs`)* | GDD-driven probabilistic segment distribution + multi-tier jackpot map | listens: `onWheelTriggered`. emits: `onWheelSegmentChosen {label, x, jackpot?}` | `model.wheelBonus = { ..., segments: [{label, x, weight, jackpotTier?}] }` | S | GDD 5.4 Buzz Saw weights, Mega Moolah, Buffalo Gold wheel |
+
+### 🔮 Tier C — REM-mode bonus (regulator + audio + audit; surfaced from cross-game research)
+
+| # | Block | One-line purpose | Lifecycle hooks | GDD config key | Effort | Industry references |
+|:--:|---|---|---|---|:--:|---|
+| H16 | **`quickResumeStateSnapshot.mjs`** | Snapshot bonus state every 1s during climax; if player disconnects, reconnect restores | listens: `onBonusClimaxStart`, `onBonusClimaxTick`, `onSessionResumed`. emits: `onClimaxSnapshotTaken`, `onClimaxRestored` | `model.quickResume = { enabled, snapshotIntervalMs, retentionH }` | M | UKGC 7.1.1 "in-progress bonus restore", NJDGE 13:69O-1.4, MGA RGF 12 |
+| H17 | **`bigWinMomentAudioMixer.mjs`** *(extend `audio.mjs`)* | Cross-fade i layer ducking between ambient/anticipation/celebration audio buses | listens: `preSpin`, `onSpinResult`, `onWinTierEntered`, `onBonusClimaxStart`, `onBonusClimaxEnd`. emits: `onAudioBusCrossfade {fromBus, toBus, durationMs}` | `model.audio.mixer = { buses, crossfadeMs, duckRatios }` | M | Howler audio routing, industry layered loop pattern |
+| H18 | **`payoutEventStreamLog.mjs`** *(extend `historyLog.mjs`)* | Append-only event log for regulator audit, every financial transaction with timestamp + audit hash | listens: ALL financial events. emits: `onAuditEntryAppended` | `model.payoutEventLog = { enabled, hashAlgo, retentionDays, exportFormat }` | M | UKGC 7.4 transaction reconstruction, NJDGE 13:69O-1.3, MGA Schedule 5 |
+
+### 🔴 Tier D — niche / game-specific (DO NOT build until explicitly requested)
+
+| # | Skipped | Reason |
+|:--:|---|---|
+| H-skip-1 | `asymmetricStage.mjs` (Buzz Saw 70% background coverage) | Layout-specific; rarely repeats 1:1. Better as per-game CSS override. |
+| H-skip-2 | `characterSpriteRig.mjs` (3D character rigged animations) | Per-game asset, not template-friendly. Belongs in art-pack repo. |
+| H-skip-3 | `houseExplosionFXKit.mjs` (per-tier explosion particles) | Specific VFX; should be GDD-art-pack delivery. |
+
+### Implementation order rationale (when "ajde kreni H" said)
+
+```
+H4 (colorblindPatterns) — smallest, foundational for token system
+  └─ H5 (winTierLadder) — uses ladders concept, independent
+       └─ H1 (jurisdictionGate) — gates downstream block enablement
+            └─ H2 + H3 (realityCheck + sessionTimeout) — pair, share heartbeat
+                 └─ H7 (cellLevelUpgrade) — unlocks H6, H8, H13
+                      └─ H6 (bonusClimaxReveal) — consumes H7 state
+                           └─ H8 (cellOverflowCounter) — consumes H7 + feeds H6
+                                └─ H13 (pathAwareMultiplier) — consumes H7 grid
+                                     └─ H10, H11, H14, H15 — independent extensions
+                                          └─ H9 (ambientBackgroundWheel) — visual ambient
+                                               └─ H16, H17, H18 (regulator + audio + audit)
+```
+
+### Acceptance gate per Wave H atom
+
+| Gate | Required for ALL H-blocks |
+|---|---|
+| JSDoc public-API contract header | ✅ (purpose, industry pattern, LEGO, lifecycle, perf budget, a11y, GDD keys, runtime contract) |
+| Single responsibility | ✅ |
+| Idempotency + dispose | ✅ |
+| 0 magic numbers (named consts + "why" comments) | ✅ |
+| Error boundary on every HookBus.emit | ✅ |
+| 100% test coverage (happy + edge + error + idempotency) | ✅ |
+| LEGO Gate 5/5 invariants pass | ✅ |
+| Cortex Eyes responsive 3 viewports × per-block states | ✅ |
+| Vendor grep `src/blocks/` for game/franchise names | ✅ 0 matches |
+| Master TODO hash pin after every atom | ✅ |
+
+### What Wave H does NOT do
+
+| ❌ Out of scope | Why |
+|---|---|
+| Math layer (PAR, paytable computation, RTP curves) | Boki rule: math layer awaits explicit go-ahead |
+| Franchise-specific copy / sprites / VFX assets | Lives in art-pack repo, not template |
+| Server-side state persistence (DB layer) | Template ships client-side snapshot API only; storage is plug-in |
+| Live web-search-driven regulator updates | Static rule tables baked at GDD time; live updates are runtime concern |
+
+### Open questions (need Boki ruling before H starts)
+
+1. **Climax sequence on slam during bonus** — if player slams during HUFF stage of climax, race all reveals to 50ms (current default) or skip to end-state directly? GDD silent.
+2. **Net loss display unit** — currency or percent of balance? Sweden requires currency, Spain accepts either.
+3. **Reality check default interval** — 30 min (UKGC minimum) or 60 min (player-friendly default)? GDD silent; UKGC accepts both.
+4. **Quick-resume snapshot retention** — 1h (UKGC minimum), 24h (MGA standard), or 30d (NJDGE)? Per-jurisdiction or global default?
 
 ---
 
