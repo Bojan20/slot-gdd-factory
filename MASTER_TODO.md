@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `2ccdee5` · main · Wave **U + V + V3 + V4 + V5.0 + H5.4 (bigWinTier continuous-counter)** all live. Hub responsive 9/9 PASS. **Wave H5.4 SHIPPED** (linear continuous counter through tiers, no per-tier stop, 4s endHold, single closing fade, in-place skip-snap; 12/12 live probe pass). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: **(pending push)** · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click fix) + H5.4** all live. Hub responsive 9/9 PASS. **Wave H5.4 SHIPPED** (linear continuous counter through tiers, no per-tier stop, 4s endHold, single closing fade, in-place skip-snap; 12/12 live probe pass). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -255,6 +255,54 @@ Initial implementation used a generic `_emit(eventName, payload)` helper. lego-g
 ### Outstanding for V5.1-V5.10
 
 The V5.0 fix bundle proves the SKIP CTA pipeline is sound for the win-rollup phase. V5.1-V5.10 still need to layer skip listeners onto anticipation / tumble / big-win / hold-and-win / wheel / climax / gamble-reveal phases and add chain-aware dispatch + autoplay guard + always-skippable morph. Scope unchanged from original planning table below.
+
+---
+
+## 🟢 Wave V5.X — Rapid-Space dup-click + auto-repeat fix — SHIPPED (this commit)
+
+> Boki bug 05.06.2026: *"Kada pritiskam space brzo da igram bas brzo igru, onda se ne pali uvek dugme stop i skip nego samo play. Fiksuj to kako treba bez da menjas bilo sta drugo"*. State machine looked correct (SPIN → STOP_PRE → STOP_POST → SKIP_ROLLUP/SPIN) but rapid Space presses appeared to skip STOP/SKIP states and bounce straight back to PLAY. Root cause: 2 layered click-event amplifications.
+
+### Root causes (both pre-existing, layered)
+
+| # | Bug | Mechanism |
+|:--:|---|---|
+| **A** | **Native button keyup activation duplicates click** | HTML spec: `<button>` activates click on Space KEYUP (not keydown). Our document keydown listener (added in `5ccc3bb` for off-focus Space support) dispatches `btn.click()` immediately. If button is currently focused (which happens after the very first manual click or any Tab), one Space press triggers TWO clicks: ours on keydown + native on keyup. State machine then races through STOP_PRE → STOP_POST/SKIP → SPIN inside a single keypress. Player only ever sees PLAY. |
+| **B** | **OS key auto-repeat floods keydown** | Holding Space fires `keydown` ~30×/s with `ev.repeat=true`. Each repeated keydown was dispatching a fresh click. Even short holds (Boki "brzo da igram bas brzo") could shred the state machine the same way as bug A. |
+
+### Fix in `src/blocks/spinControl.mjs` (additive, no behavior change for legit gestures)
+
+| Lokacija | Pre | Posle |
+|---|---|---|
+| Existing `keydown` Space listener | Fired on every keydown including `ev.repeat=true` | Early-return on `ev.repeat` with `preventDefault` — only the FIRST keydown of a press dispatches |
+| NEW `keyup` Space listener | (did not exist) | If focus is on spinBtn, `preventDefault` so the native keyup activation cannot fire the duplicate click. Mirrors keydown guards (typing target / modal open). |
+
+### Why this works
+
+| Scenario | Old behavior | New behavior |
+|---|---|---|
+| Space pressed while focus is on `<body>` (page load) | Our keydown → 1 click | Our keydown → 1 click (same) |
+| Space pressed while focus is on spinBtn | Our keydown → 1 click + native keyup → 1 click = **2 clicks** | Our keydown → 1 click + native keyup PREVENTED = **1 click** |
+| Space held for 1 second | 30+ keydown clicks | 1 click (repeat ignored) |
+| Space released during disabled (pending-settle) window | early-return | early-return (unchanged) |
+
+### Live verification — `tools/_space-rapid-probe.mjs` (kept as regression guard)
+
+Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spinBtn[data-state]`, capture-phase click counter:
+
+| Scenario | Acceptance | Result |
+|---|---|:--:|
+| 8 rapid Space presses (120 ms cadence) | STOP_* appears, no race-past to SPIN | ✅ timeline: `SPIN → STOP_PRE → SPIN → SKIP_ROLLUP → SPIN → STOP_PRE → SPIN` |
+| Hold Space 1 s (OS auto-repeat) | 1 click (not 30+) | ✅ 1 click |
+| Focused-button single Space press | 1 click (not 2), STOP_* in timeline | ✅ 1 click, `STOP_PRE → STOP_POST → SKIP_ROLLUP` |
+| 0 page errors | | ✅ |
+| **7 / 7 pass** | | ✅ |
+
+### Unit + LEGO
+
+| Gate | Result |
+|---|:--:|
+| `tests/blocks/spinControl.test.mjs` | 17/17 PASS |
+| LEGO 5-invariants | 5/5 PASS |
 
 ---
 

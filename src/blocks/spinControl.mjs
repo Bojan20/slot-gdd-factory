@@ -478,8 +478,34 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
        * lets us pick up new modals automatically without listing each. */
       return !!document.querySelector('[data-modal="true"][data-open="true"]');
     }
+    /* Boki bug 05.06.2026: "Kada pritiskam space brzo da igram bas brzo
+     * igru, onda se ne pali uvek dugme stop i skip nego samo play."
+     *
+     * Two root causes layered:
+     *
+     *   1. HTML spec: native <button> activates click on Space KEYUP (not
+     *      keydown). Our document listener dispatches btn.click() on
+     *      keydown. If the button is currently focused (which it is after
+     *      the very first manual click or any Tab navigation — focus
+     *      sticks across renders), one Space press triggers TWO clicks:
+     *      ours on keydown + native on keyup. State machine then races
+     *      through STOP_PRE → STOP_POST/SKIP → SPIN inside a single
+     *      keypress and the player only ever sees PLAY.
+     *
+     *   2. OS key auto-repeat: holding Space fires keydown ~30×/s with
+     *      ev.repeat=true. Each repeated keydown was dispatching a fresh
+     *      click. Spamming Space (or holding it) shredded the state
+     *      machine the same way as #1.
+     *
+     * Fix (additive, no other behavior changes):
+     *   • Ignore ev.repeat — only the FIRST keydown of a press counts.
+     *   • Add a keyup handler that ALSO preventDefaults Space, so the
+     *     native keyup-activation never fires the second click. Our
+     *     keydown click is the single source of truth.
+     */
     document.addEventListener('keydown', function (ev) {
       if (ev.code !== 'Space' && ev.key !== ' ') return;
+      if (ev.repeat) { ev.preventDefault(); return; }   /* fix #2 — kill auto-repeat */
       if (_isTypingTarget(document.activeElement)) return;
       if (_modalOpen()) return;
       var btn = _btn();
@@ -490,6 +516,27 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
        * (state-machine), then bubble legacy listener (SPIN starter).
        * Behaviorally identical to a native focused-Space activation. */
       btn.click();
+    });
+
+    /* Fix #1 — kill the native keyup-activation second click. Our keydown
+     * handler already dispatched the click; the browser's built-in Space
+     * activation would otherwise add a duplicate when the spinBtn is the
+     * currently focused element. Guard rails mirror keydown (typing
+     * target / modal open / disabled button) so we only suppress when WE
+     * own the gesture. */
+    document.addEventListener('keyup', function (ev) {
+      if (ev.code !== 'Space' && ev.key !== ' ') return;
+      if (_isTypingTarget(document.activeElement)) return;
+      if (_modalOpen()) return;
+      var btn = _btn();
+      if (!btn) return;
+      /* Only prevent native activation if the button is the focused
+       * target (the only case where the native activation would fire a
+       * duplicate). If Space was pressed while focus was elsewhere, the
+       * native activation wouldn't fire anyway, so no need to consume. */
+      if (document.activeElement === btn) {
+        ev.preventDefault();
+      }
     });
 
     /* HookBus lifecycle wiring — drives the state morphs. */
