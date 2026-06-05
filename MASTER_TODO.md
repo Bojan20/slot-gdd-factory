@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `5e78cbe` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click fix) + H5.4 + H5.5 (money counter) + H5.6 (time-based tier cadence) + H5.7 (hero-typography layout) + H5.8 (winRollup blok — base-game total-win counter above hub)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: pending · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click fix) + H5.4 + H5.5 (money counter) + H5.6 (time-based tier cadence) + H5.7 (hero-typography layout) + H5.8 (winRollup blok) + H5.9 (skip = instant climax snap, no tier morph)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -306,7 +306,61 @@ Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spi
 
 ---
 
-## 🟢 Wave H5.8 — New `winRollup` block — base-game total-win counter above the hub — SHIPPED (this commit)
+## 🟢 Wave H5.9 — Skip = instant climax snap, no tier morph — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"Skip treba da u big winu ode na kraju big wina, a ne da presence jedan po jedan tier. ajde samo fix to."*
+
+### Root cause
+
+`bigWinTierExit` was already snapping the banner's `data-tier` attribute directly to `finalTier` (skip probe confirmed 22/22 PASS at event level — 0 new `onBigWinTierEntered` events after the skip, climax tier reached within 50 ms). But the H5.7 hero-typography CSS introduced:
+
+```css
+.big-win-tier-banner {
+  transition: color 600ms ease, font-size 600ms ease, filter 600ms ease;
+}
+```
+
+When the attribute jumped tier-2 → tier-5, those 3 properties **tweened over 600 ms** from the tier-2 styles to the tier-5 styles. Because tier-3 and tier-4 styles lie ON THE COLOR/SIZE/FILTER RAMP between them, the morph LOOKED like a fast walkthrough of tiers 3 and 4 — exactly what Boki saw.
+
+### Fix (CSS-only — runtime untouched)
+
+`bigWinTierExit` now sets `data-skip="true"` on the banner BEFORE swapping `data-tier`. New CSS rules:
+
+```css
+.big-win-tier-banner[data-skip="true"]                     { transition: none; }
+.big-win-tier-banner[data-skip="true"] .big-win-tier-label { transition: none; }
+```
+
+All transitions collapse → climax tier classes apply on the next paint → player sees climax **instantly** (within one frame), then 180 ms hold + 300 ms single fade-out to close. Defensive: `data-label-swap` attribute is cleared before snap so a mid-cross-fade label doesn't open the climax frame at 0% opacity.
+
+### What changed in `src/blocks/bigWinTier.mjs`
+
+| Surface | Pre H5.9 | Posle H5.9 |
+|---|---|---|
+| CSS rules | (none for skip mode) | `.big-win-tier-banner[data-skip="true"]` kills all transitions; label child also pinned |
+| `bigWinTierExit` snap path | Direct attribute swap | + `data-skip="true"` set FIRST + `data-label-swap` cleared, then attribute swap |
+| Defensive mount path (banner never existed) | Plain mount | Mount with `data-skip="true"` so the first paint is climax-ready |
+
+### Live verification
+
+| Probe | Result | What it proves |
+|---|:--:|---|
+| `tools/_bw-skip-probe.mjs` (3 demos × 11 checks) | **22/22 PASS** | Skip at tier 2 → within 50 ms: data-tier=5, amount="€1500.00", state.current=5; 0 new onBigWinTierEntered events; onBigWinTierEnd carries finalTier=5, x=1500 |
+| `tests/blocks/bigWinTier.test.mjs` | **24/24** | Block contract unchanged |
+| `tools/lego-gate.mjs` | **5/5** | LEGO invariants + vendor-neutral |
+| `tools/_bw-money-probe.mjs` (regression) | **33/33** | Money counter still correct |
+| `tools/_bw-tier-cadence-probe.mjs` (regression) | **48/48** | Natural walkthrough cadence preserved (4 s/tier) |
+| `tools/_win-rollup-probe.mjs` (regression) | **57/57** | Base-game counter still correct |
+
+### Boki rule honored
+
+> *"Skip treba da u big winu ode na kraju big wina, a ne da presence jedan po jedan tier."*
+
+Skip is now a frame-1 snap to climax — `data-skip` kills the visual ramp through intermediate tier classes. No more "sliding" through tier 3 / 4 during the 600 ms transition window.
+
+---
+
+## 🟢 Wave H5.8 — New `winRollup` block — base-game total-win counter above the hub — SHIPPED (`5e78cbe`)
 
 > Boki (05.06.2026): *"sada obican counter u base game iznad Hub-a koji stoji. za sve winove osim big wina. nadji detaljno u WoO i prepisi kod ovde kao blok. stavi da se pojvljude kao sto je u igri tamo."*
 

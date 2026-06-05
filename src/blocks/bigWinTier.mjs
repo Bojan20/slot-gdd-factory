@@ -309,6 +309,18 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
     transition: opacity 220ms ease;
   }
   .big-win-tier-banner[data-label-swap="true"] .big-win-tier-label { opacity: 0.0; }
+  /* Skip-snap mode (Boki 05.06.2026: "Skip treba da u big winu ode na
+   * kraju big wina, a ne da presence jedan po jedan tier"). The
+   * walkthrough transitions (600 ms color/font-size/filter morph between
+   * tier classes) make a tier-2 → tier-5 jump LOOK like a sweep through
+   * tier-3 and tier-4 during the transition window. data-skip="true"
+   * collapses all transitions so the climax tier snaps instantly. */
+  .big-win-tier-banner[data-skip="true"] {
+    transition: none;
+  }
+  .big-win-tier-banner[data-skip="true"] .big-win-tier-label {
+    transition: none;
+  }
   .big-win-tier-banner .big-win-tier-amount {
     display: block;
     /* Counter is 1.07× the label (industry-standard hero-typography
@@ -791,9 +803,19 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       _clearTimers();
       STATE.rafToken += 1;          /* invalidate any in-flight rAF count-up */
       /* Snap existing banner — DOM mutation, no remount, so the player
-       * never sees a flash of empty host between exit and skip-finalize. */
+       * never sees a flash of empty host between exit and skip-finalize.
+       * data-skip="true" kills the 600 ms color/font-size/filter
+       * transitions + 220 ms label opacity tween that the walkthrough
+       * relies on, so the climax tier appears INSTANTLY instead of
+       * morphing visually through the intermediate tier classes
+       * (Boki rule 05.06.2026 "ode na kraju big wina, a ne da presence
+       * jedan po jedan tier"). */
       var node = _banner();
       if (node) {
+        node.setAttribute('data-skip', 'true');
+        /* Defensive: clear any in-flight label cross-fade attribute so
+         * the climax label is visible from frame 1. */
+        node.removeAttribute('data-label-swap');
         node.setAttribute('data-tier', String(finalTier));
         node.setAttribute('data-show', 'hold');
         var labelEl = node.querySelector('.big-win-tier-label');
@@ -807,6 +829,7 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
         if (host) {
           var n = document.createElement('div');
           n.className = 'big-win-tier-banner';
+          n.setAttribute('data-skip', 'true');     /* no transitions on the very first frame */
           n.setAttribute('data-tier', String(finalTier));
           n.setAttribute('data-show', 'hold');
           n.innerHTML =
