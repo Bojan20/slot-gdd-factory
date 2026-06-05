@@ -122,6 +122,8 @@ t('emitWinRollupRuntime: enabled wires lifecycle listeners + public API', () => 
   ct(js, 'HookBus.on(\'preSpin\'');
   ct(js, 'HookBus.on(\'onFsTrigger\'');
   ct(js, 'HookBus.on(\'onFsEnd\'');
+  ct(js, 'HookBus.on(\'onSkipRequested\'');
+  ct(js, "p.phase !== 'rollup'");
   ct(js, 'window.winRollupShow');
   ct(js, 'window.winRollupClear');
   ct(js, 'window.WIN_ROLLUP_STATE');

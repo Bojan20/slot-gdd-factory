@@ -424,6 +424,32 @@ export function emitWinRollupRuntime(cfg = defaultConfig()) {
         _setText(award);
       });
 
+      /* Boki rule 05.06.2026: "skip treba da skipuje i osnovni counter.
+       * Kada se preskoci win linija, treba da se skipuje na rollup end."
+       * spinControl emits onSkipRequested{phase:'rollup'} when the player
+       * fast-finalizes the win-line cycle — winPresentation cancels the
+       * line-by-line walk and we MUST snap the counter to the final
+       * amount at the same moment so the two surfaces (highlights + total
+       * win counter) settle together. Reference flow: industry rollup
+       * controllers snap to target on skip in a single tick. */
+      HookBus.on('onSkipRequested', function (p) {
+        if (!p || p.phase !== 'rollup') return;
+        if (!STATE.active || STATE.suppressed) return;
+        if (STATE.rafId !== null) {
+          try { cancelAnimationFrame(STATE.rafId); } catch (_) {}
+          STATE.rafId = null;
+        }
+        /* Snap to the latest known target. lastAward was set the moment
+         * winRollupShow() started — if no shows happened yet (skip arrived
+         * before Start event landed), fall back to window.__WIN_AWARD__ so
+         * we still land on the correct number. */
+        var target = STATE.lastAward;
+        if (!(target > 0) && typeof window !== 'undefined' && Number.isFinite(window.__WIN_AWARD__)) {
+          target = window.__WIN_AWARD__;
+        }
+        _setText(target);
+      });
+
       /* Big-win override — the moment bigWinTier mounts its banner, we
        * step out of the way (it's the dominant visual). */
       HookBus.on('onBigWinTierEntered', function () {

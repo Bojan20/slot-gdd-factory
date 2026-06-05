@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `73babf5` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click fix) + H5.4 + H5.5 (money counter) + H5.6 (time-based tier cadence) + H5.7 (hero-typography layout) + H5.8 (winRollup blok) + H5.9 (skip = instant climax snap, no tier morph)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: pending · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click fix) + H5.4 + H5.5 (money counter) + H5.6 (time-based tier cadence) + H5.7 (hero-typography layout) + H5.8 (winRollup blok) + H5.9 (skip climax snap) + H5.10 (winRollup skip listener — counter snap u istom frame-u sa win-line cycle)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -306,7 +306,78 @@ Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spi
 
 ---
 
-## 🟢 Wave H5.9 — Skip = instant climax snap, no tier morph — SHIPPED (this commit)
+## 🟢 Wave H5.10 — `winRollup` skip listener — counter snap u istom frame-u sa win-line cycle — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"Takodje neka sve radi sa skipom i Kada forsujem big win. I takodje, skip treba da skipuje i osnovni counter. Kada se preskoci win linija, treba da se skipuje na rollup end."*
+
+### Gap
+
+H5.8 (`winRollup` blok) listen-ovao samo `onWinPresentationStart/End`. Kada bi spinControl emit-ovao `onSkipRequested {phase: 'rollup'}`:
+- `winPresentation` — cancel-ovao win-line cycle ✅
+- `bigWinTier` — skip-snap radio za big-win banner ✅
+- **`winRollup`** — nastavljao svoju rAF rollup animaciju nezavisno ❌ (counter polako penjao ka final, dok je linija već gotova)
+
+Industry reference (statusBarController + bigWin overlay): skip MORA da settle-uje SVOJU surface u istom frame-u — nikad samo "bumps to next phase". Player vidi obe surface (highlights + total-win counter) kako se istovremeno smiruju.
+
+### Fix u `src/blocks/winRollup.mjs` (additive — 0 izmena drugih ponašanja)
+
+```js
+HookBus.on('onSkipRequested', function (p) {
+  if (!p || p.phase !== 'rollup') return;
+  if (!STATE.active || STATE.suppressed) return;
+  if (STATE.rafId !== null) cancelAnimationFrame(STATE.rafId);
+  /* Snap to lastAward (or window.__WIN_AWARD__ fallback if skip
+   * arrived before our Start listener landed) */
+  var target = STATE.lastAward > 0 ? STATE.lastAward : window.__WIN_AWARD__;
+  _setText(target);
+});
+```
+
+Banner ostaje vidljiv (`data-show="true"` netaknut), counter snap-uje na final, ostaje na ekranu do sledećeg `preSpin` clear-a.
+
+### Live verification — `tools/_skip-coverage-probe.mjs` (NEW)
+
+3 scenarija × 2 igre, 15 checks po igri:
+
+| Scenario | Pre-skip stanje | Post-skip stanje | Rezultat |
+|---|---|---|:--:|
+| **A** Rollup skip mid-ramp | counter `€0.84` ramping | counter `€3.00` instant, 50 ms kasnije i dalje `€3.00` | ✅ |
+| **B** BW walkthrough skip | tier=2 `€389.89` | tier=5 `€1500.00` instant + onBigWinTierEnd `{reason:'skipped', tier:5}` ~480 ms kasnije | ✅ |
+| **C** Combined (line cycle + counter) | counter ramping na 5× bet | banner i dalje vidljiv + counter snapped na `€5.00` | ✅ |
+
+**30/30 PASS** sve 2 igre.
+
+### Updated test file
+
+| File | Change |
+|---|---|
+| `tests/blocks/winRollup.test.mjs` | + assertion `HookBus.on('onSkipRequested'` baked + `p.phase !== 'rollup'` guard baked. Still 20/20 PASS. |
+
+### Full regression matrix (all PASS)
+
+| Gate | Result |
+|---|:--:|
+| `tests/blocks/winRollup.test.mjs` | **20/20 PASS** |
+| `tools/lego-gate.mjs` (5 invariants, 51 blokova, 41 listenera) | **5/5 PASS** |
+| `tools/_skip-coverage-probe.mjs` (NEW, 3 scenarija × 2 igre) | **30/30 PASS** |
+| `tools/_bw-skip-probe.mjs` (H5.9 regression) | **22/22 PASS** |
+| `tools/_bw-money-probe.mjs` (regression) | **33/33 PASS** |
+| `tools/_bw-tier-cadence-probe.mjs` (regression) | **48/48 PASS** |
+| `tools/_win-rollup-probe.mjs` (H5.8 regression) | **57/57 PASS** |
+
+### BW force + skip pipeline (full coverage — already wired by H5.6/H5.7/H5.9/H5.10)
+
+BW dugme path = isti kao real win, samo sa `__FORCE_BIG_WIN_TIER__` flag-om. Skip na svakoj fazi sad fast-finalizes pravu surface:
+
+| Faza | Skip target | Owner | Coverage |
+|---|---|---|:--:|
+| Reels spinning | STOP slam — reels snap to settled positions | `slamStop` blok | preexisting |
+| Win-line cycle | Linije iscrtavaju instant, counter snap | `winPresentation` + `winRollup` | H5.10 |
+| Big-win walkthrough | Tier=5 climax instant + amount=final | `bigWinTier` | H5.9 |
+
+---
+
+## 🟢 Wave H5.9 — Skip = instant climax snap, no tier morph — SHIPPED (`73babf5`)
 
 > Boki (05.06.2026): *"Skip treba da u big winu ode na kraju big wina, a ne da presence jedan po jedan tier. ajde samo fix to."*
 
