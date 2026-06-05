@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `e294eec` · main · Wave **U + V + V3 (spinControl unified CTA)** all live. Hub responsive 9/9 PASS. **NEW: Wave H queue planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers (regulator / per-cell mechanics / climax / audit).** Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: `9ee3e6a` · main · Wave **U + V + V3 (spinControl unified CTA) + V4 (pending-settle slam pattern)** all live. Hub responsive 9/9 PASS. **NEW: Wave V5 — skip-completeness (chain-aware fast-finalize, 11 atoms) planned.** Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers (regulator / per-cell mechanics / climax / audit). Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -216,6 +216,89 @@ Initial implementation used a generic `_emit(eventName, payload)` helper. lego-g
 | Error boundary | ✅ try/catch around emit (both manual + init); console.error structured |
 | Naming clarity | ✅ `_recomputeLock`, `_refreshLockedAffordances`, `_closestInLadder`, `_flatLadder` |
 | 100% test coverage | ✅ 34 assertions: happy + edge + error + idempotency + locked-state + a11y + determinism + vendor-neutrality |
+
+---
+
+## 🔵 Wave V5 — Skip-completeness (chain-aware fast-finalize) — PLANNED
+
+> Triggered by Boki *"E sad nadji kako radi skip dugme i kad i sta se sve vezano za taj koncept desava, win linije, sve sto moze da se skipuje, isto u igtplaya slot i pla=ya core"* + immediate follow-up *"odradi overi zasto ti ga nema skip dugme uopste i zasto ne radi u retangle"*. Wave V3 ships the SPIN/STOP/SKIP unified CTA state machine, but the SKIP side only covers 4 of the 9+ industry-standard fast-finalize phases. This wave brings the template to PlayCore / Playa Slot "skip-ahead" parity.
+
+### Industry definition (template-neutral)
+
+> **Skip-ahead (a.k.a. fast-finalize)** — single CTA gesture that drops every currently-active long animation (>600ms) onto its end-state synchronously. Player keeps every credit they earned; only the time spent watching the celebration is collapsed. Cancel-vs-skip distinction is critical: cancel removes value, skip preserves it.
+
+### Current coverage (Wave V3, live on `origin/main`)
+
+| Phase | Owner block | Skip listener | Status |
+|---|---|---|:--:|
+| Win rollup tween | `winPresentation` | line 519 | ✅ |
+| FS Intro overlay | `freeSpins` | line 631 | ✅ |
+| FS Outro overlay | `freeSpins` | line 631 (same handler, phase-switched) | ✅ |
+| Scatter celebration banner | `scatterCelebration` | line 249 | ✅ |
+| Gamble (secondary) panel | `gambleSecondary` | line 962 (collect-and-close on skip) | ✅ |
+
+### Gap — what the template needs (atoms)
+
+| ID | Phase | Why obligatory | Effort | Owner block |
+|:--:|---|---|:--:|---|
+| **V5.0** | **Rectangular dist exposes no SKIP CTA at all** — `__WIN_AWARD__` flow inspection + `_finalizeRound` win-branch verification | Live diagnostic of why Boki sees no skip on `01_rectangular_5x3_playable.html`. Block-zero step before any new listener work — confirms the morph rules trigger at all. | S | spinControl `_finalizeRound` + winPresentation award publish |
+| **V5.1** | Anticipation reel slow-stop (600–2000ms) | Most-visible long animation in every base spin with ≥2 scatter teasers; players spam tap to skip | S | `anticipation.mjs` (one listener + abort flag) |
+| **V5.2** | Tumble cascade per-step (400–800ms × up to 6) | Cluster/Olympus-class slot family obligatory; current template has Wrath + Gates fixtures actively using tumble | M | `tumble.mjs` cycle-token bump on `onSkipRequested{phase:'tumble'}` |
+| **V5.3** | Big-Win toast sequence (1500–4000ms) | Industry baseline: every BIG/MEGA/EPIC celebration must collapse to the highest tier instantly on skip | S | `uiToast.mjs` (jump to final tier, hide intermediates) |
+| **V5.4** | Hold-and-Win lock cascade (600ms × N) | Recommended for the holdAndWin family; current `holdAndWin.mjs` ships without skip plumbing | M | `holdAndWin.mjs` lock-animation token |
+| **V5.5** | Wheel bonus spin (3000–5000ms) | Recommended for wheelBonus block; landing reveal must finalize on skip | M | `wheelBonus.mjs` deg-jump-to-final |
+| **V5.6** | Bonus climax reveal (5000–8500ms) — covers Wave H6 climax block | Obligatory once H6 lands; pre-wire the contract here so H6 ships skip-safe | S (pre-wire) | future `bonusClimaxReveal.mjs` |
+| **V5.7** | Chain-aware dispatch — one click drains every currently-active skippable phase, not just current `spinControl` state | PlayCore rule: skip is global "fast-finalize all" gesture, not per-phase | M | spinControl `_onClick` SKIP_* branch refactor to emit `onSkipRequested{phase:'all'}` + each listener self-filters |
+| **V5.8** | Skip lock during autoplay (`HIDE_ON_AUTOSPIN` guard symmetry with slam) | PlayCore: engine owns cadence during autoplay; manual skip would desync | XS | spinControl SKIP morph rutes early-return on `window.__SLOT_AUTOSPIN_ACTIVE__` |
+| **V5.9** | Always-skippable morph — `SKIP_GENERIC` morph on any active animation >600ms (not only the 4 hard-coded triggers) | PlayCore: skip CTA visible during EVERY skippable phase, player should never wonder "can I skip this?" | S | spinControl: subscribe `onAnimationLongStart` / introspect `__SLOT_ANIM_BUSY__` and morph defensively |
+| **V5.10** | Gamble result reveal (800–1200ms) | Currently `gambleSecondary` only skips-to-collect; result REVEAL animation (card flip / ladder climb) doesn't accept skip | S | `gambleSecondary.mjs` reveal token |
+
+### HookBus surface — new contract for chain dispatch
+
+| Event | Payload | Frequency | Owner |
+|---|---|---|---|
+| `onAnimationLongStart` | `{ phase: string, expectedMs: number }` | per long animation | each animation-owning block emits at start |
+| `onAnimationLongComplete` | `{ phase: string, reason: 'natural' \| 'skipped' }` | per long animation end | same emitter |
+| `onSkipRequested` (extended) | `{ phase: 'all' \| <specific>, source }` — `'all'` is new chain mode | per click | spinControl |
+| `onSkipComplete` (extended) | `{ phase, duration, reason }` | per active phase finalized | each listener that handled |
+| `window.__SLOT_ANIM_BUSY__` | `Set<phase>` — readable snapshot of every currently-active skippable phase | continuous | aggregated by spinControl from `onAnimationLongStart`/`Complete` |
+
+### Implementation order (dependency graph)
+
+```
+V5.0 (live diagnostic) ─┐
+                        ├─▶ V5.7 (chain dispatch) ─┐
+V5.1, V5.2, V5.3 ───────┤                          ├─▶ V5.9 (always-skippable morph)
+                        ├─▶ V5.8 (autoplay guard) ─┘
+V5.4, V5.5, V5.10 ──────┘
+V5.6 (pre-wire) — independent (lands with H6)
+```
+
+### Acceptance gates per atom (10 obavezne provere)
+
+1. Listener registered via HookBus.on, NOT inline polling.
+2. `onSkipComplete` emit with correct `{phase, duration, reason}` payload.
+3. Token bump (`*_CYCLE_TOKEN++`) on skip so in-flight setTimeout chains bail.
+4. Final state set to natural-end target (not intermediate, not cleared).
+5. `window.__SLOT_SKIPPED__` flag respected at every long-loop check-point.
+6. `prefers-reduced-motion` honored — skip behavior identical with anim off.
+7. Idempotent: 2× skip click within same phase = no double credit / no crash.
+8. Autoplay symmetry: phase suppressed-or-equivalent during `__SLOT_AUTOSPIN_ACTIVE__`.
+9. Test fixture: `tests/blocks/<block>.test.mjs` exercises skip-mid-animation.
+10. cortex-eyes walkthrough recorded showing CTA morph chain end-to-end.
+
+### Open questions for Boki
+
+| # | Question | Why blocking |
+|:--:|---|---|
+| 1 | Skip CTA always-visible during animations vs only on currently-tracked phase? | PlayCore says always; current Wave V3 says only-tracked. Decides V5.9 scope. |
+| 2 | Tumble cascade — skip-to-end-of-step vs skip-to-end-of-cascade? | Cascade can have 6 steps; player intent ambiguous. Default proposed: skip-to-end-of-cascade. |
+| 3 | Big-Win toast skip — jump straight to LEGENDARY tier card, or play final tier in 200ms? | UX trade-off: instant vs satisfying. Industry default: instant. |
+| 4 | Hold-and-Win lock cascade skip — instant all locks visible or 100ms staggered? | Skill: instant feels jarring; 100ms is industry compromise. |
+
+### Why this matters
+
+Without V5, the template is a "look-at-me" slot — animations play out at their full duration regardless of player intent. PlayCore-grade slots respect the player's clock: every animation >600ms is opt-out via single gesture. Industry reviews (eCOGRA / GLI-19) flag CTAs that lack chain-aware skip as **UX deficient** but not regulatory-blocking. So this is "must-have for shipping" not "blocking certification".
 
 ---
 
