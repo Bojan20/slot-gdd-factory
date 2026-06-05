@@ -12,9 +12,21 @@ import { buildSlotHTML } from '../src/buildSlotHTML.mjs';
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const targets = [
+  /* Three primary demos kept for back-compat (existing probes target these). */
   { src: 'samples/grids/01_rectangular_5x3_GAME_GDD.md', out: 'dist/01_rectangular_5x3_playable.html' },
   { src: 'samples/WRATH_OF_OLYMPUS_GAME_GDD.md',         out: 'dist/wrath-of-olympus.html' },
   { src: 'samples/GATES_OF_OLYMPUS_1000_GAME_GDD.md',    out: 'dist/gates-of-olympus-1000.html' },
+  /* Wave I — multi-topology H5.x verification. 8 UNIFORM_REEL_KINDS that
+   * the H5.x block stack supports but were never built as dist fixtures.
+   * Each gets a per-game bigWinTier config below (PER_GAME_BIGWIN). */
+  { src: 'samples/grids/05_megaclusters_GAME_GDD.md', out: 'dist/05_megaclusters_playable.html' },
+  { src: 'samples/grids/07_diamond_GAME_GDD.md',      out: 'dist/07_diamond_playable.html' },
+  { src: 'samples/grids/08_pyramid_GAME_GDD.md',      out: 'dist/08_pyramid_playable.html' },
+  { src: 'samples/grids/09_cross_GAME_GDD.md',        out: 'dist/09_cross_playable.html' },
+  { src: 'samples/grids/10_lshape_GAME_GDD.md',       out: 'dist/10_lshape_playable.html' },
+  { src: 'samples/grids/12_infinity_GAME_GDD.md',     out: 'dist/12_infinity_playable.html' },
+  { src: 'samples/grids/13_expanding_GAME_GDD.md',    out: 'dist/13_expanding_playable.html' },
+  { src: 'samples/grids/19_lock_respin_GAME_GDD.md',  out: 'dist/19_lock_respin_playable.html' },
 ];
 
 /* Wave H5 — per-game Big-Win Tier label overrides. Each entry mirrors the
@@ -49,6 +61,50 @@ const PER_GAME_BIGWIN = {
   'gates-of-olympus-1000.html': {
     thresholds: [10, 30, 60, 200, 800],
     labels:     ['BIG WIN', 'MEGA WIN', 'SUPER WIN', 'EPIC WIN', 'MYTHIC WIN'],
+    durations:  [4000, 4000, 4000, 4000, 4000],
+  },
+  /* Wave I — multi-topology H5.x fixtures. Vendor-neutral placeholder
+   * labels (BIGWINTIER1..5) so the player-facing copy shows the
+   * identifier and the dist HTML keeps the LEGO test surface honest.
+   * Real games override with their own GDD labels. */
+  '05_megaclusters_playable.html': {
+    thresholds: [10, 25, 50, 200, 1000],
+    labels:     ['BIGWINTIER1', 'BIGWINTIER2', 'BIGWINTIER3', 'BIGWINTIER4', 'BIGWINTIER5'],
+    durations:  [4000, 4000, 4000, 4000, 4000],
+  },
+  '07_diamond_playable.html': {
+    thresholds: [10, 25, 50, 200, 1000],
+    labels:     ['BIGWINTIER1', 'BIGWINTIER2', 'BIGWINTIER3', 'BIGWINTIER4', 'BIGWINTIER5'],
+    durations:  [4000, 4000, 4000, 4000, 4000],
+  },
+  '08_pyramid_playable.html': {
+    thresholds: [10, 25, 50, 200, 1000],
+    labels:     ['BIGWINTIER1', 'BIGWINTIER2', 'BIGWINTIER3', 'BIGWINTIER4', 'BIGWINTIER5'],
+    durations:  [4000, 4000, 4000, 4000, 4000],
+  },
+  '09_cross_playable.html': {
+    thresholds: [10, 25, 50, 200, 1000],
+    labels:     ['BIGWINTIER1', 'BIGWINTIER2', 'BIGWINTIER3', 'BIGWINTIER4', 'BIGWINTIER5'],
+    durations:  [4000, 4000, 4000, 4000, 4000],
+  },
+  '10_lshape_playable.html': {
+    thresholds: [10, 25, 50, 200, 1000],
+    labels:     ['BIGWINTIER1', 'BIGWINTIER2', 'BIGWINTIER3', 'BIGWINTIER4', 'BIGWINTIER5'],
+    durations:  [4000, 4000, 4000, 4000, 4000],
+  },
+  '12_infinity_playable.html': {
+    thresholds: [10, 25, 50, 200, 1000],
+    labels:     ['BIGWINTIER1', 'BIGWINTIER2', 'BIGWINTIER3', 'BIGWINTIER4', 'BIGWINTIER5'],
+    durations:  [4000, 4000, 4000, 4000, 4000],
+  },
+  '13_expanding_playable.html': {
+    thresholds: [10, 25, 50, 200, 1000],
+    labels:     ['BIGWINTIER1', 'BIGWINTIER2', 'BIGWINTIER3', 'BIGWINTIER4', 'BIGWINTIER5'],
+    durations:  [4000, 4000, 4000, 4000, 4000],
+  },
+  '19_lock_respin_playable.html': {
+    thresholds: [10, 25, 50, 200, 1000],
+    labels:     ['BIGWINTIER1', 'BIGWINTIER2', 'BIGWINTIER3', 'BIGWINTIER4', 'BIGWINTIER5'],
     durations:  [4000, 4000, 4000, 4000, 4000],
   },
 };
