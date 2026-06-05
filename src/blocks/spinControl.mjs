@@ -607,7 +607,11 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
         if (HIDE_ON_AUTOSPIN && _autoSpinActive()) return;
         setState('SKIP_BIGWIN');
       });
-      window.HookBus.on('onBigWinTierExited', function () {
+      /* The compound walkthrough emits onBigWinTierExited per walked
+       * tier (intermediate ones still have more tiers to go). Only the
+       * single onBigWinTierEnd marks the sequence boundary — that's what
+       * we revert on. */
+      window.HookBus.on('onBigWinTierEnd', function () {
         if (STATE.current === 'SKIP_BIGWIN') setState('SPIN');
       });
 

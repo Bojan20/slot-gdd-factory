@@ -109,10 +109,16 @@ t('resolveConfig: malformed color rejected', () => {
   eq(c.colors[0], '255,210,90');   /* default tier 1 */
 });
 
-t('resolveConfig: passthrough flag + passthroughMs honored', () => {
-  const c = resolveConfig({ bigWinTier: { enabled: true, passthrough: true, passthroughMs: 350 } });
-  eq(c.passthrough, true);
-  eq(c.passthroughMs, 350);
+t('resolveConfig: compound flag + fadeMs honored', () => {
+  const c = resolveConfig({ bigWinTier: { enabled: true, compound: false, fadeMs: 500 } });
+  eq(c.compound, false);
+  eq(c.fadeMs, 500);
+});
+
+t('defaultConfig: compound walkthrough enabled by default (WoO baseline)', () => {
+  const c = defaultConfig();
+  eq(c.compound, true);
+  eq(c.fadeMs, 300);
 });
 
 t('emitBigWinTierCSS: disabled emits empty string', () => {
@@ -124,8 +130,8 @@ t('emitBigWinTierCSS: enabled emits banner + 5 tier accents', () => {
   ct(css, '.big-win-tier-host', 'host');
   ct(css, '.big-win-tier-banner', 'banner');
   for (let i = 1; i <= 5; i++) ct(css, `[data-tier="${i}"]`, `tier ${i} CSS selector`);
-  ct(css, 'is-tier-4', 'tier-4 flash class');
-  ct(css, 'is-tier-5', 'tier-5 flash class');
+  ct(css, '@keyframes bigWinTierIn',  'fade-in keyframe');
+  ct(css, '@keyframes bigWinTierOut', 'fade-out keyframe');
   ct(css, 'prefers-reduced-motion', 'a11y media query');
 });
 
@@ -153,6 +159,9 @@ t('emitBigWinTierRuntime: enabled emits public API + HookBus wiring', () => {
   ct(rt, "HookBus.on('preSpin'",               'preSpin flush');
   ct(rt, "'onBigWinTierEntered'",              'entered emit');
   ct(rt, "'onBigWinTierExited'",               'exited emit');
+  ct(rt, "'onBigWinTierEnd'",                  'end emit');
+  ct(rt, '_runCompound',                       'compound sequencer');
+  ct(rt, '_fadeOutCurrent',                    'fade-out helper');
 });
 
 t('determinism: identical config → byte-identical runtime emit', () => {

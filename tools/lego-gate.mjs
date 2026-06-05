@@ -111,6 +111,7 @@ const EXPECTED_EMIT_OWNERS = {
    * block but show different vocabulary. */
   onBigWinTierEntered:    ['bigWinTier.mjs'],
   onBigWinTierExited:     ['bigWinTier.mjs'],
+  onBigWinTierEnd:        ['bigWinTier.mjs'],
   /* Wave U4 — autoplay session events all owned by autoplay.mjs. */
   onAutoplayStart: ['autoplay.mjs'],
   onAutoplayTick:  ['autoplay.mjs'],

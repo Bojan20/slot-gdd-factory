@@ -38,7 +38,7 @@ t('HOOK_EVENTS canonical list (core + V intent + V5 win-present + U4 autoplay + 
     /* Wave V5 */
     'onWinPresentationStart', 'onWinPresentationEnd',
     /* Wave H5 */
-    'onBigWinTierEntered', 'onBigWinTierExited',
+    'onBigWinTierEntered', 'onBigWinTierExited', 'onBigWinTierEnd',
     /* Wave U4 */
     'onAutoplayStart', 'onAutoplayStop', 'onAutoplayTick',
     /* Wave U5 */

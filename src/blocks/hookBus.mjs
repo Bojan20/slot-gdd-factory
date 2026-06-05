@@ -162,6 +162,10 @@ export const HOOK_EVENTS = Object.freeze([
    *   Owner: bigWinTier.mjs. */
   'onBigWinTierEntered',
   'onBigWinTierExited',
+  /* onBigWinTierEnd {tier, x, reason} — fires once when the entire
+   * compound walkthrough finishes (natural or skipped). Distinct from
+   * per-tier Exited which fires for every walked tier. */
+  'onBigWinTierEnd',
   /* Wave U4: autoplay session events */
   'onAutoplayStart',
   'onAutoplayStop',

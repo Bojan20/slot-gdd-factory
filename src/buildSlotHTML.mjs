@@ -904,30 +904,29 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
   if (devBwBtn) {
     var bwEnabled = !!(window.BIG_WIN_TIER_STATE && window.BIG_WIN_TIER_STATE.enabled);
     devBwBtn.disabled = !bwEnabled;
-    var bwCycleTier = 0;
+    /* Boki rule (05.06.2026): "forc treba da pusti ceo big win sa svim
+       tirovima i big win end eventom". Always force the max tier so the
+       block plays the full compound walkthrough tier 1 → … → final +
+       emits onBigWinTierEnd. (The block's COMPOUND flag is true by
+       default, matching the WoO reference §6.4 "each tier compounds".) */
     devBwBtn.addEventListener("click", function () {
       if (!bwEnabled) return;
       if (FSM.phase !== "BASE") return;
-      bwCycleTier = (bwCycleTier % 5) + 1;     /* 1 → 2 → 3 → 4 → 5 → 1 */
-      /* Disable BW + spin button so a stray double-tap can't queue a
-         second forced spin behind this one. spinButton re-enables on
-         postSpin per the normal handlePostSpin path; BW re-enables here
-         in the same listener via setTimeout fallback (so a slow engine
-         path can't strand the button). */
+      var maxTier = (window.BIG_WIN_TIER_STATE && Array.isArray(window.BIG_WIN_TIER_STATE.thresholds))
+        ? window.BIG_WIN_TIER_STATE.thresholds.length : 5;
       devBwBtn.disabled = true;
       if (spinButton) spinButton.disabled = true;
-      window.__FORCE_BIG_WIN_TIER__ = bwCycleTier;
+      window.__FORCE_BIG_WIN_TIER__ = maxTier;
       runOneBaseSpin();
-      /* Re-enable on the natural onBigWinTierExited (banner closed) so the
-       * QA cycle can immediately fire the next tier. Belt-and-suspenders
-       * hard fallback after 10s covers an upstream error path. */
+      /* Re-enable on onBigWinTierEnd (the WHOLE sequence completed,
+         natural or skipped) so the next QA force-spin starts clean. */
       var reEnable = function () { if (devBwBtn) devBwBtn.disabled = !bwEnabled; };
       var oneShot = function () {
-        if (window.HookBus && typeof window.HookBus.off === 'function') window.HookBus.off('onBigWinTierExited', oneShot);
+        if (window.HookBus && typeof window.HookBus.off === 'function') window.HookBus.off('onBigWinTierEnd', oneShot);
         reEnable();
       };
-      if (window.HookBus && typeof window.HookBus.on === 'function') window.HookBus.on('onBigWinTierExited', oneShot);
-      setTimeout(reEnable, 10000);
+      if (window.HookBus && typeof window.HookBus.on === 'function') window.HookBus.on('onBigWinTierEnd', oneShot);
+      setTimeout(reEnable, 30000);
     });
   }
 
