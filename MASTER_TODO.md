@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `0965893` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + H5.4 + H5.5 + H5.6 + H5.7 + H5.8 + H5.9 + H5.10 + H5.11 + H5.12 + H5.13 + H5.14 + H5.15 (big-win banner sized + positioned by reels frame bbox via ResizeObserver + --bw-frame-w/h CSS vars, responsive na svakom viewportu)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: `7a96bf4` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + H5.4 + H5.5 + H5.6 + H5.7 + H5.8 + H5.9 + H5.10 + H5.11 + H5.12 + H5.13 + H5.14 + H5.15 (big-win banner sized + positioned by reels frame bbox via ResizeObserver + --bw-frame-w/h CSS vars, responsive na svakom viewportu)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -306,7 +306,7 @@ Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spi
 
 ---
 
-## 🟢 Wave H5.15 — BW banner responsive + anchored to reels frame bbox (industry reference layout-node pattern) — SHIPPED (this commit)
+## 🟢 Wave H5.15 — BW banner responsive + anchored to reels frame bbox (industry reference layout-node pattern) — SHIPPED (`7a96bf4`)
 
 > Boki (05.06.2026): *"Sad napravi big win ceo flow da bude responsive i da bude u skladu sa velicinom ril frames. Pogledaj referencu iz playa core za velicinu."*
 
