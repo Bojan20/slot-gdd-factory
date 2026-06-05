@@ -265,18 +265,42 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
   const c = cfg.colors;
   return `
   /* ── bigWinTier BLOCK — emitted by src/blocks/bigWinTier.mjs ─────────
-     Banner overlay above the reels. z-index 94 sits just under the
-     uiToast layer (95) so a feature toast can still appear on top of a
-     tier banner if the GDD wires them together. Pointer-events off so
-     clicks pass through to the spinControl CTA underneath. */
+     Banner overlay anchored to the REELS FRAME, not the viewport. Boki rule
+     05.06.2026: "big win flow responsive i u skladu sa velicinom ril frames".
+     Industry reference pattern: the big-win banner is a layout node sized +
+     positioned by the layout system — its bbox tracks the reels container,
+     not the page viewport. Bitmap text and FX scale through container
+     transforms on every layout resize.
+
+     Our HTML/CSS equivalent: host stays position:fixed (so it lives ABOVE
+     frame's overflow:hidden without being clipped), but its left/top/width/
+     height are runtime-synced to #frameHost.getBoundingClientRect() via a
+     ResizeObserver in the runtime IIFE. CSS custom properties
+       --bw-frame-x  --bw-frame-y  --bw-frame-w  --bw-frame-h
+     are written every observer tick. Banner font-size, padding, and gap
+     then derive from --bw-frame-w via clamp() math — so a 1200-px frame
+     and a 420-px frame produce visually proportionate banners with the
+     same percentage of the reels area. Viewport fallbacks (100vw/100vh)
+     activate before the first observer tick AND on browsers without
+     ResizeObserver (graceful degradation, no jank).
+
+     z-index 94 sits just under the uiToast layer (95) so a feature toast
+     can still appear on top of a tier banner if the GDD wires them
+     together. Pointer-events off so clicks pass through to the spinControl
+     CTA underneath. */
   .big-win-tier-host {
     position: fixed;
-    inset: 0;
+    left:   var(--bw-frame-x, 0px);
+    top:    var(--bw-frame-y, 0px);
+    width:  var(--bw-frame-w, 100vw);
+    height: var(--bw-frame-h, 100vh);
     z-index: 94;
     pointer-events: none;
     display: flex;
     align-items: center;
     justify-content: center;
+    /* contain layout so banner size changes never reflow ancestors. */
+    contain: layout;
   }
   /* Banner = transparent vertical stack (label on top, counter below) —
    * matches the industry-standard hero-typography bigwin layout. NO box,
@@ -289,8 +313,15 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
-    padding: 40px 60px;
+    /* Gap, padding scale with frame width so the banner keeps the same
+     * visual proportion regardless of cabinet size (Boki rule 05.06.2026
+     * "u skladu sa velicinom ril frames"). The clamp() floors guarantee
+     * legibility on the smallest portrait phone; the ceilings prevent
+     * gigantism on ultra-wide desktops. */
+    gap: clamp(8px, calc(var(--bw-frame-w, 100vw) * 0.018), 24px);
+    padding:
+      clamp(16px, calc(var(--bw-frame-w, 100vw) * 0.04), 60px)
+      clamp(20px, calc(var(--bw-frame-w, 100vw) * 0.06), 80px);
     color: #fff;
     font-weight: 900;
     letter-spacing: 0.18em;
@@ -298,6 +329,12 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
     opacity: 0;
     transform: scale(0.65);
     white-space: nowrap;
+    /* Cap banner footprint inside the frame so it never bleeds outside
+     * the reels area on tall portrait viewports — same containment the
+     * industry reference layout system gets for free via fixed pixel
+     * width on its big-win node. */
+    max-width: 96%;
+    max-height: 96%;
     /* Smooth tier morph: when data-tier flips during the walkthrough,
      * font-size + filter glow + color tween continuously. Counter never
      * pauses. */
@@ -344,13 +381,20 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
   .big-win-tier-banner[data-show="hold"]  { opacity: 1; transform: scale(1); }
   .big-win-tier-banner[data-show="exit"]  { animation: bigWinTierOut ${cfg.fadeMs}ms ease-in forwards; }
   /* Tier visuals — per-tier accent color drives BOTH text fill and the
-   * 3D drop-shadow stack. Font-size escalates so higher tiers feel
-   * physically bigger on screen. clamp() keeps it sane on small viewports.
-   * The drop-shadow ladder produces a chunky 3D extrusion (industry-standard
-   * hero-typography filter stack — vendor-neutral colors from cfg.colors). */
+   * 3D drop-shadow stack. Font-size escalates with frame-width (NOT
+   * viewport-width) so the banner is sized to the reels frame the way
+   * the industry reference layout system sizes its big-win node to the
+   * reels container. The percentage stops 7.5% → 11.5% × frame-w produce
+   * tier-1 ≈ 60-90 px and tier-5 ≈ 92-140 px on a reference 800-1200 px
+   * frame — matches the reels-area-relative hero typography. clamp() floors keep tier-1 ≥ 40 px on a 360 px
+   * portrait phone (legibility floor); ceilings cap tier-5 at 140 px
+   * on a 4K ultrawide so the banner never dominates the cabinet.
+   * The drop-shadow ladder produces a chunky 3D extrusion (industry-
+   * standard hero-typography filter stack — vendor-neutral colors from
+   * cfg.colors). */
   .big-win-tier-banner[data-tier="1"] {
     color: rgba(${c[0]},1);
-    font-size: clamp(48px, 11vw, 90px);
+    font-size: clamp(40px, calc(var(--bw-frame-w, 100vw) * 0.075), 90px);
     filter:
       drop-shadow(0 2px 0 rgba(0,0,0,.55))
       drop-shadow(0 4px 0 rgba(0,0,0,.45))
@@ -358,7 +402,7 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
   }
   .big-win-tier-banner[data-tier="2"] {
     color: rgba(${c[1]},1);
-    font-size: clamp(54px, 12.5vw, 102px);
+    font-size: clamp(46px, calc(var(--bw-frame-w, 100vw) * 0.085), 102px);
     filter:
       drop-shadow(0 2px 0 rgba(0,0,0,.6))
       drop-shadow(0 4px 0 rgba(0,0,0,.5))
@@ -366,7 +410,7 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
   }
   .big-win-tier-banner[data-tier="3"] {
     color: rgba(${c[2]},1);
-    font-size: clamp(60px, 14vw, 114px);
+    font-size: clamp(52px, calc(var(--bw-frame-w, 100vw) * 0.095), 114px);
     filter:
       drop-shadow(0 3px 0 rgba(0,0,0,.65))
       drop-shadow(0 5px 0 rgba(0,0,0,.55))
@@ -374,7 +418,7 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
   }
   .big-win-tier-banner[data-tier="4"] {
     color: rgba(${c[3]},1);
-    font-size: clamp(66px, 15.5vw, 126px);
+    font-size: clamp(58px, calc(var(--bw-frame-w, 100vw) * 0.105), 126px);
     filter:
       drop-shadow(0 3px 0 rgba(0,0,0,.7))
       drop-shadow(0 6px 0 rgba(0,0,0,.6))
@@ -382,7 +426,7 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
   }
   .big-win-tier-banner[data-tier="5"] {
     color: rgba(${c[4]},1);
-    font-size: clamp(72px, 17vw, 140px);
+    font-size: clamp(64px, calc(var(--bw-frame-w, 100vw) * 0.115), 140px);
     filter:
       drop-shadow(0 4px 0 rgba(0,0,0,.75))
       drop-shadow(0 7px 0 rgba(0,0,0,.65))
@@ -396,10 +440,11 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
     0%   { opacity: 1; transform: scale(1); }
     100% { opacity: 0; transform: scale(0.85); }
   }
-  @media (max-width: 620px) {
-    .big-win-tier-banner { padding: 24px 28px; gap: 12px; }
-    /* clamp() handles font-size scaling automatically — no per-tier override needed. */
-  }
+  /* No viewport-width media query — gap/padding/font-size all derive
+   * from --bw-frame-w via clamp(), so the small-screen reduction is
+   * already automatic (a 360 px portrait phone gets the floor; a 1440 px
+   * desktop gets the ceiling). Removing the manual @media keeps the
+   * source of truth single: the reels-frame bbox. */
   @media (prefers-reduced-motion: reduce) {
     .big-win-tier-banner[data-show="enter"],
     .big-win-tier-banner[data-show="exit"] { animation: none; opacity: 1; transform: none; }
@@ -854,6 +899,90 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       window.bigWinTierEnter = bigWinTierEnter;
       window.bigWinTierExit  = bigWinTierExit;
     }
+
+    /* ── Frame-anchored sizing sync ──────────────────────────────────
+     * Boki spec 05.06.2026: "big win flow responsive i u skladu sa
+     * velicinom ril frames".
+     *
+     * Industry reference: big-win is a layout node whose width/height/
+     * position are pushed by the layout system on every resize. The
+     * banner stays sized to the reels area, not the page viewport.
+     *
+     * Our HTML equivalent: read #frameHost's bounding rect on every
+     * resize/scroll and publish it on the host element as four CSS
+     * custom properties (--bw-frame-x/y/w/h). The emitted CSS reads
+     * these to position and size the host and to scale font-size,
+     * padding, and gap proportionally. Falls back to viewport (100vw/h)
+     * if the frame node isn't found OR before the first observer tick,
+     * so initial paint never lands at 0x0.
+     *
+     * Performance: writes are batched per frame via rAF coalescing —
+     * a burst of ResizeObserver callbacks during a window drag becomes
+     * one DOM write per animation frame instead of N. */
+    (function () {
+      if (typeof document === 'undefined' || typeof window === 'undefined') return;
+      var FRAME_SEL = '#frameHost';
+      var rafPending = 0;
+
+      function _syncNow() {
+        rafPending = 0;
+        var host = _host();
+        if (!host) return;
+        var frame = document.querySelector(FRAME_SEL);
+        if (!frame || typeof frame.getBoundingClientRect !== 'function') {
+          /* No frame mounted (smoke-test / disabled host). Leave CSS vars
+           * unset so the viewport fallback (100vw/h) kicks in. */
+          return;
+        }
+        var r = frame.getBoundingClientRect();
+        /* Defensive: pre-layout pass can hand back a zero-sized rect.
+         * Skip the write so we don't squash the banner to 0x0 between
+         * the DOM mount and the first layout pass. */
+        if (!(r.width > 0 && r.height > 0)) return;
+        var s = host.style;
+        s.setProperty('--bw-frame-x', r.left   + 'px');
+        s.setProperty('--bw-frame-y', r.top    + 'px');
+        s.setProperty('--bw-frame-w', r.width  + 'px');
+        s.setProperty('--bw-frame-h', r.height + 'px');
+      }
+
+      function _scheduleSync() {
+        if (rafPending) return;
+        if (typeof window.requestAnimationFrame === 'function') {
+          rafPending = window.requestAnimationFrame(_syncNow);
+        } else {
+          rafPending = 1;
+          setTimeout(_syncNow, 16);
+        }
+      }
+
+      /* Initial paint — try immediately, then again after first rAF so
+       * we catch the post-mount layout pass even if the script runs
+       * before the frame has been measured. */
+      _syncNow();
+      _scheduleSync();
+
+      /* ResizeObserver — fires when the frame box changes (cabinet
+       * rotate, viewport drag, devtools toggle). Cheapest signal. */
+      if (typeof ResizeObserver === 'function') {
+        var ro = new ResizeObserver(_scheduleSync);
+        var frame = document.querySelector(FRAME_SEL);
+        if (frame) ro.observe(frame);
+        /* Also observe documentElement so font-size root changes
+         * (zoom, accessibility) cascade through. */
+        if (document.documentElement) ro.observe(document.documentElement);
+      }
+
+      /* Window resize + scroll — covers page-level reflows and the
+       * fixed-position offset drift when the page is scrolled. Passive
+       * listeners — never blocks scroll. */
+      window.addEventListener('resize', _scheduleSync, { passive: true });
+      window.addEventListener('scroll', _scheduleSync, { passive: true });
+
+      /* Re-sync on tab refocus — Safari/iOS sometimes paints the wrong
+       * bbox after backgrounding. */
+      window.addEventListener('focus', _scheduleSync, { passive: true });
+    })();
 
     if (window.HookBus && typeof window.HookBus.on === 'function') {
       window.HookBus.on('onWinPresentationEnd', function () {

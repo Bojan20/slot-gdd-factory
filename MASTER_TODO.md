@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `0965893` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + H5.4 + H5.5 + H5.6 + H5.7 + H5.8 + H5.9 + H5.10 + H5.11 + H5.12 + H5.13 + H5.14 (BW force prikazuje vidljivu symbol pulse animaciju pre big-win banner-a)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: `0965893` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + H5.4 + H5.5 + H5.6 + H5.7 + H5.8 + H5.9 + H5.10 + H5.11 + H5.12 + H5.13 + H5.14 + H5.15 (big-win banner sized + positioned by reels frame bbox via ResizeObserver + --bw-frame-w/h CSS vars, responsive na svakom viewportu)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -306,7 +306,89 @@ Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spi
 
 ---
 
-## 🟢 Wave H5.14 — BW force prikazuje vidljivu symbol-celebration animaciju pre big-win banner-a — SHIPPED (this commit)
+## 🟢 Wave H5.15 — BW banner responsive + anchored to reels frame bbox (industry reference layout-node pattern) — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"Sad napravi big win ceo flow da bude responsive i da bude u skladu sa velicinom ril frames. Pogledaj referencu iz playa core za velicinu."*
+
+### Gap (pre H5.15)
+
+`bigWinTier` host je bio `position: fixed; inset: 0` — full viewport overlay. Banner font-size + padding + gap su koristili `vw` clamp-ove (`clamp(48px, 11vw, 90px)` itd) — viewport-driven, NE frame-driven. Sledilo:
+
+- Na ultra-wide desktop banner se "izvuče" van reels frame area (vw veće od frame width → text preliva mimo cabinet okvir).
+- Na portrait phone (414×800) banner je radikalno predimenzioniran u odnosu na sitan 398-px frame jer 11vw = 45px ≈ frame_w × 11.4% kad treba da bude ~7.5%.
+- Manuelni `@media (max-width: 620px)` fallback je radio sa pogrešnim signalom (viewport, ne frame).
+
+### Industry reference (vendor-neutral)
+
+Reference layout sistem mount-uje big-win kao layout node čiji width/height/position pushuje layout engine na svaki resize — banner box uvek prati reels container, ne page viewport. Bitmap text + FX skaliraju kroz container transformacije na svakom layout-rezize-u.
+
+### Fix (3 sloja)
+
+1. **Host bounding box anchored na `#frameHost`** (ne na viewport):
+   ```css
+   .big-win-tier-host {
+     position: fixed;
+     left:   var(--bw-frame-x, 0px);
+     top:    var(--bw-frame-y, 0px);
+     width:  var(--bw-frame-w, 100vw);
+     height: var(--bw-frame-h, 100vh);
+   }
+   ```
+   Viewport fallback (`100vw`/`100vh`) jamči korektnu inicijalnu paintu pre prvog observer tick-a.
+
+2. **Per-tier font-size klamp sad računa iz `--bw-frame-w`** umesto `vw`:
+   ```css
+   .big-win-tier-banner[data-tier="3"] {
+     font-size: clamp(52px, calc(var(--bw-frame-w, 100vw) * 0.095), 114px);
+   }
+   ```
+   Floor → ceiling proporcije: 7.5%-11.5% × frame width za tier 1→5. Padding + gap takođe frame-proportional sa clamp() guard-ovima.
+
+3. **Runtime ResizeObserver wiring** (IIFE u `emitBigWinTierRuntime`):
+   - Observer-i: `#frameHost`, `document.documentElement`
+   - Window listeneri: `resize`, `scroll`, `focus` (passive)
+   - rAF coalescing — burst observer poziva = 1 DOM write per frame
+   - Defensive: skip write ako frame bbox = 0x0 (pre-layout pass)
+   - Inicijalni sync + scheduled sync na startup
+
+### Live verification — `tools/_bw-responsive-probe.mjs` (NEW)
+
+3 viewport-a (desktop 1440×900 / tablet 1024×680 / phone 414×800):
+
+| Viewport | Frame bbox | Host bbox | Δ (x,y,w,h) | Tier 1 font | Expected (0.075 × w, clamp 40..90) |
+|---|:--:|:--:|:--:|:--:|:--:|
+| desktop | 1020.0×643.0 @ (210, 90) | 1020.0×643.0 @ (210, 90) | 0,0,0,0 | **76.50 px** | 76.50 ✓ |
+| tablet  |  674.4×433.6 @ (175, 86) |  674.4×433.6 @ (175, 86) | 0,0,0,0 | **50.58 px** | 50.58 ✓ |
+| phone   |  398.0×421.0 @ (8, 63) |  398.0×421.0 @ (8, 63) | 0,0,0,0 | **40.00 px** | 40.00 ✓ (floor caught) |
+
+**30/30 PASS** (10 frame-anchor + 0 errors) × 3 viewports + 3/3 cross-viewport scale.
+
+Host bbox sub-pixel matchuje frame bbox na svakom viewportu. Font-size linearno prati `frame_w` između desktop i tablet (76.50 → 50.58, ratio 0.75 ≈ frame ratio 0.66 sa per-tier coefficient). Phone hit-uje clamp floor (40 px) — legibility za 414-px portrait jamči minimum jer 0.075 × 398 = 29.85 < 40.
+
+### Full regression matrix
+
+| Gate | Result |
+|---|:--:|
+| `tools/_bw-responsive-probe.mjs` (NEW) | **30/30 PASS** + 3/3 scale |
+| `tests/blocks/bigWinTier.test.mjs` | **24/24 PASS** |
+| `tests/blocks/winPresentation.test.mjs` | **PASS** |
+| `tests/blocks/winRollup.test.mjs` | 20/20 PASS |
+| `tests/blocks/themeCSS.test.mjs` | 12/12 PASS |
+| `tests/blocks/hookBus.test.mjs` | 29/29 PASS |
+| `tests/blocks/uiToast.test.mjs` | PASS |
+| `tests/blocks/spinControl.test.mjs` | 17/17 PASS |
+| `tools/lego-gate.mjs` | **5/5 PASS** |
+| `dist/*.html` rebuilt | 3/3 (`--bw-frame-w` baked 13× po HTML) |
+
+### Files changed
+
+- `src/blocks/bigWinTier.mjs` — frame-anchored host, frame-proportional tier sizing, ResizeObserver IIFE
+- `tools/_bw-responsive-probe.mjs` — NEW (3 viewport × 10 checks + cross-viewport scale)
+- `MASTER_TODO.md` — H5.15 row + status
+
+---
+
+## 🟢 Wave H5.14 — BW force prikazuje vidljivu symbol-celebration animaciju pre big-win banner-a — SHIPPED (`0965893`)
 
 > Boki (05.06.2026): *"Isto napravi za force Big Win da se vidi animacija simbola pre nego sto pocne big win."*
 
