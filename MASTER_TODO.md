@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `eb1428b` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click fix) + H5.4 + H5.5 (money counter) + H5.6 (time-based tier cadence) + H5.7 (hero-typography layout) + H5.8 (winRollup blok) + H5.9 (skip climax snap) + H5.10 (winRollup skip listener) + H5.11 (STOP CTA minimum-visibility) + H5.12 (stale-SKIP-CTA — _finalizeRound ne resetuje SKIP_ROLLUP posle natural cycle end)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: pending · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + H5.4 + H5.5 + H5.6 + H5.7 + H5.8 + H5.9 + H5.10 + H5.11 + H5.12 + H5.13 (big-win presentation flow — symbol-celebration pulse umesto per-line cycle pre big-win banner-a, match reference flow)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -306,7 +306,102 @@ Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spi
 
 ---
 
-## 🟢 Wave H5.12 — `_finalizeRound` ne resetuje SKIP_ROLLUP posle natural cycle end — SHIPPED (this commit)
+## 🟢 Wave H5.13 — Big-win presentation flow: symbol pulse → big-win banner (NO per-line cycle pre big-win-a) — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"Kada se desi big win, pogledaj kako reference platforme rade animaciju tog wina pre nego se dođe u Big win. Mislim da nema prvo win line prezentacije pa onda big win, nego ima animacija simbola i onda se prikaze big win. overi detaljno."*
+
+### Reference audit
+
+Pažljivo grepovao referentnu `presentation.ts` u `src/presentation.ts`. Tier-specific flow je eksplicitno koderan:
+
+```
+BIG TIER FLOW (tier === "big"):
+  STEP 1: SYMBOL_CELEBRATION (priority 100, duration 800ms) — "punchy celebration"
+  STEP 2: BIG_WIN overlay     (priority 90)
+  STEP 5: Line presentation   (priority 55, AFTER big-win)
+```
+
+```
+NON-BIG TIER FLOW:
+  STEP 1: WIN_PRESHOW   (preshow pulse 400-600ms)
+  STEP 2: TOTAL_ROLLUP  (counter rollup)
+  STEP 5: Line presentation
+```
+
+**Big-win NE pravi per-line cycle pre overlay-a — pravi single 800 ms SYMBOL_CELEBRATION pulse na svim winning cells, zatim big-win banner uzima ekran.**
+
+### Gap (pre H5.13)
+
+Naša `winPresentation.applyWinHighlight` UVEK je radila per-line `playWinSymCycle(allEvents)` — bez obzira na win magnitude. Big-win path je dobijao isti tretman: line-by-line cycle, ZATIM bigWinTier listener hvata `onWinPresentationEnd` i pokreće compound walkthrough. Player je gledao redundantnu liniju-po-liniju preview ENT pre nego što tier banner napokon krene.
+
+### Fix u `src/blocks/winPresentation.mjs`
+
+**1. Novi config knob:**
+| Key | Default | Range | Source |
+|---|:--:|:--:|---|
+| `bigWinCelebMs` | `800` | 100–5000 | matches reference SYMBOL_CELEBRATION duration |
+
+**2. Novi runtime helper `playSymbolCelebration(events, durMs)`** — promise koji:
+- Sakuplja sve winning cells iz svih event-a u `Set` (no duplicates)
+- Pali `cell--winsym` class na svim odjednom (sinhronizovan pulse)
+- Drži `BIG_WIN_CELEB_MS` (800ms default)
+- Cleanup + resolve
+- Honors WINSYM_CYCLE_TOKEN za cancellation, reduced-motion (200ms), FS_INTRO/OUTRO guards
+
+**3. Branch u `applyWinHighlight`:**
+```js
+var isBigWin = !!(BIG_WIN_TIER_STATE?.enabled && (totalAward / bet) >= BIG_WIN_TIER_STATE.thresholds[0]);
+HookBus.emit('onWinPresentationStart', { award, eventCount, isBigWin });
+if (isBigWin) {
+  await playSymbolCelebration(allEvents, bigWinCelebMs);     // single pulse
+} else {
+  await playWinSymCycle(allEvents);                          // line cycle
+}
+HookBus.emit('onWinPresentationEnd', { award, isBigWin });
+```
+
+**4. BW force-big-win path takođe migriran** — `__FORCE_BIG_WIN_TIER__` short-circuit sad emit-uje `isBigWin: true` i koristi `playSymbolCelebration` umesto `playWinSymCycle`. BW dugme sad ide pravo reference flow-om.
+
+### Live verification — `tools/_bigwin-presentation-flow-probe.mjs` (NEW)
+
+Po 2 scenarija × 2 igre:
+
+| Scenario | startIsBigWin | endIsBigWin | startToEnd | cycling-class | bigWinTier-entered-after-End |
+|---|:--:|:--:|---|:--:|:--:|
+| **A** Regular win (3× bet) | `false` ✅ | `false` ✅ | line cycle full duration | ✅ observed | — |
+| **BC** BW force big-win | `true` ✅ | `true` ✅ | **802 ms** (≈ 800 ms target) | — | ✅ true |
+
+**22/22 PASS** sve 2 igre.
+
+**Player perspective** kad klikne BW (ili real big-win triggered):
+1. Reels spin and settle (existing)
+2. Winning cells pulse SVI ZAJEDNO 800 ms (no line-by-line)
+3. `onWinPresentationEnd` fires (with `isBigWin:true`)
+4. bigWinTier compound walkthrough starts immediately
+
+### Full regression matrix
+
+| Gate | Result |
+|---|:--:|
+| `tools/_bigwin-presentation-flow-probe.mjs` (NEW) | **22/22 PASS** |
+| `tests/blocks/winPresentation.test.mjs` | **PASS** |
+| `tools/lego-gate.mjs` | **5/5 PASS** |
+| `tools/_stale-skip-cta-probe.mjs` (H5.12 regression) | **14/14 PASS** |
+| `tools/_stop-visibility-probe.mjs` (H5.11 regression) | **18/18 PASS** |
+| `tools/_bw-skip-probe.mjs` (H5.9 regression) | **22/22 PASS** |
+| `tools/_skip-coverage-probe.mjs` (H5.10 regression) | **30/30 PASS** |
+| `tools/_bw-tier-cadence-probe.mjs` (regression) | **48/48 PASS** |
+| `tools/_win-rollup-probe.mjs` (H5.8 regression) | **57/57 PASS** |
+
+### Boki rule honored
+
+> *"nema prvo win line prezentacije pa onda big win, nego ima animacija simbola i onda se prikaze big win"*
+
+Big-win path sad ide **SYMBOL_CELEBRATION (800 ms single pulse) → bigWinTier banner**, identično referenci. Regular win ostaje per-line cycle. Granica je `bigWinTier.thresholds[0]` (default 10× bet), GDD-overridable.
+
+---
+
+## 🟢 Wave H5.12 — `_finalizeRound` ne resetuje SKIP_ROLLUP posle natural cycle end — SHIPPED (`eb1428b`)
 
 > Boki (05.06.2026): *"kada sam igrao brzo, opet mi se skipo pojavio na kraju spina a nije bilo nikakvog win-a. I ostao je vidljiv dok ga nisam pritisnuo, a kada sam ga pritisnuo, pokrenuli su se rilovi."*
 

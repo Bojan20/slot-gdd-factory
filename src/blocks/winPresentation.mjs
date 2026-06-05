@@ -37,6 +37,14 @@ const DEFAULTS = Object.freeze({
   maxEvents: 8,
   noWinChance: 0.30,
   winCycle: true,
+  /* Big-win symbol celebration window (Boki rule 05.06.2026: when a big
+   * win lands, the reference flow is "symbol pulse → big-win banner",
+   * NOT "per-line cycle → big-win banner". A single coordinated 800 ms
+   * pulse on ALL winning cells replaces the per-event walk so the
+   * player doesn't see a redundant line-by-line preview before the
+   * tiered big-win banner takes over. Matches the reference presentation
+   * SYMBOL_CELEBRATION duration. */
+  bigWinCelebMs: 800,
 });
 
 export function defaultConfig() {
@@ -62,6 +70,9 @@ export function resolveConfig(model) {
     cfg.noWinChance = src.noWinChance;
   }
   if (src.winCycle === false) cfg.winCycle = false;
+  if (typeof src.bigWinCelebMs === 'number' && src.bigWinCelebMs >= 100 && src.bigWinCelebMs <= 5000) {
+    cfg.bigWinCelebMs = Math.floor(src.bigWinCelebMs);
+  }
 
   return cfg;
 }
@@ -229,6 +240,41 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
     WINSYM_CYCLE_TOKEN++;
     clearWinHighlight();
     clearPaylineOverlay();
+  }
+  /* Big-win symbol celebration — single coordinated pulse on ALL winning
+     cells for BIG_WIN_CELEB_MS, then cleanup. Used in place of the
+     per-line cycle when totalAward/bet crosses the bigWinTier threshold,
+     matching the industry reference flow (symbol pulse → big-win banner,
+     NOT line-cycle → big-win banner).
+     Honors the same token + reduced-motion + FS-intro/outro guards as
+     playWinSymCycle so a mid-presentation cancel propagates cleanly. */
+  function playSymbolCelebration(events, durMs) {
+    return new Promise(resolve => {
+      if (!events || events.length === 0) { resolve(); return; }
+      if (FSM && FSM.phase === 'FS_INTRO') { resolve(); return; }
+      if (FSM && FSM.phase === 'FS_OUTRO') { resolve(); return; }
+      const reduced = window.matchMedia &&
+                      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const hold = reduced ? 200 : (durMs > 0 ? durMs : ${c.bigWinCelebMs});
+      const token = ++WINSYM_CYCLE_TOKEN;
+      grid.classList.add('is-winsym-cycling');
+      /* Highlight every distinct winning cell at once. */
+      const cellSet = new Set();
+      for (const ev of events) {
+        const cells = Array.isArray(ev && ev.cells) ? ev.cells : [];
+        for (const c of cells) {
+          if (c && c.classList) cellSet.add(c);
+        }
+      }
+      for (const c of cellSet) c.classList.add('cell--winsym');
+      setTimeout(() => {
+        if (token !== WINSYM_CYCLE_TOKEN) { resolve(); return; }   /* cancelled */
+        grid.querySelectorAll('.cell--winsym, text.cell--winsym')
+          .forEach(c => c.classList.remove('cell--winsym'));
+        grid.classList.remove('is-winsym-cycling');
+        resolve();
+      }, hold);
+    });
   }
   /* Win-symbol cycle — cycles through detected win events one-by-one.
      Each event:
@@ -491,10 +537,19 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
       window.__WIN_AWARD__ = forcedAward;
       window.__FORCE_BIG_WIN_TIER__ = null;       /* one-shot reset */
       window.__SLOT_WIN_PRESENT_ACTIVE__ = true;
-      if (typeof HookBus !== 'undefined') HookBus.emit('onWinPresentationStart', { award: forcedAward, eventCount: 1 });
-      await playWinSymCycle(synth);
+      /* BW force is by definition a big-win path — emit isBigWin:true and
+       * use the symbol-celebration pulse, matching the reference flow
+       * (SYMBOL_CELEBRATION → BIG_WIN). The synth event has cells:[]
+       * because the force flag short-circuits detection; the celebration
+       * helper handles empty cell lists gracefully. */
+      if (typeof HookBus !== 'undefined') {
+        HookBus.emit('onWinPresentationStart', { award: forcedAward, eventCount: 1, isBigWin: true });
+      }
+      await playSymbolCelebration(synth, ${c.bigWinCelebMs});
       window.__SLOT_WIN_PRESENT_ACTIVE__ = false;
-      if (typeof HookBus !== 'undefined') HookBus.emit('onWinPresentationEnd', { award: forcedAward });
+      if (typeof HookBus !== 'undefined') {
+        HookBus.emit('onWinPresentationEnd', { award: forcedAward, isBigWin: true });
+      }
       return synth;
     }
 
@@ -572,18 +627,45 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
        Gate on totalAward > 0 so the SKIP CTA only appears when there is
        a real rollup to fast-finalize. */
     if (totalAward > 0) {
+      /* Boki rule 05.06.2026 — big-win path skips the per-line cycle and
+       * goes straight to a coordinated symbol-celebration pulse, then
+       * cedes the screen to bigWinTier. Reference flow:
+       *   small/medium win:  WIN_PRESHOW → per-line TOTAL_ROLLUP
+       *   big win:           SYMBOL_CELEBRATION (single pulse) → BIG_WIN
+       * Threshold + enabled state come from BIG_WIN_TIER_STATE; if the
+       * block isn't wired (disabled or absent) we fall through to the
+       * regular per-line cycle so the slot still presents wins. */
+      var __bet = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0)
+        ? window.__SLOT_BET__ : 1;
+      var __bwState = (typeof window !== 'undefined') ? window.BIG_WIN_TIER_STATE : null;
+      var __bwThreshold = (__bwState && Array.isArray(__bwState.thresholds) && __bwState.thresholds[0] > 0)
+        ? __bwState.thresholds[0] : Infinity;
+      var __bwEnabled  = !!(__bwState && __bwState.enabled);
+      var __isBigWin   = __bwEnabled && (totalAward / __bet) >= __bwThreshold;
+
       if (typeof window !== 'undefined') {
         window.__SLOT_WIN_PRESENT_ACTIVE__ = true;
       }
       if (typeof HookBus !== 'undefined') {
-        HookBus.emit('onWinPresentationStart', { award: totalAward, eventCount: allEvents.length });
+        HookBus.emit('onWinPresentationStart', {
+          award: totalAward,
+          eventCount: allEvents.length,
+          isBigWin: __isBigWin,
+        });
       }
-      await playWinSymCycle(allEvents);
+      if (__isBigWin) {
+        await playSymbolCelebration(allEvents, ${c.bigWinCelebMs});
+      } else {
+        await playWinSymCycle(allEvents);
+      }
       if (typeof window !== 'undefined') {
         window.__SLOT_WIN_PRESENT_ACTIVE__ = false;
       }
       if (typeof HookBus !== 'undefined') {
-        HookBus.emit('onWinPresentationEnd', { award: totalAward });
+        HookBus.emit('onWinPresentationEnd', {
+          award: totalAward,
+          isBigWin: __isBigWin,
+        });
       }
     }
 
