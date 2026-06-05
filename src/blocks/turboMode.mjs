@@ -60,11 +60,13 @@
 
 export function defaultConfig() {
   return {
-    /* Industry-default OFF — turbo is opted into per-game via the
-     * settings panel toggle (Wave U13) or a `turbo` feature kind, not
-     * via a floating ⚡ button. Most slots don't ship a dedicated turbo
-     * affordance — it's a settings preference. */
-    enabled: false,
+    /* Industry-default ON — the ⚡ floating chip is the universal
+     * surface across modern HTML5 slot suites (most certified studios
+     * expose it by default). GDDs that prefer a settings-panel toggle
+     * instead can disable the standalone chip via
+     * `## Turbo\nenabled: false` or by emitting a `no_turbo` (a.k.a.
+     * `turbo_disabled`) feature kind. */
+    enabled: true,
     initialActive: false,
     persistInLocalStorage: true,
     /* Multiplier applied to spin-tempo timings when turbo is on. 0.35

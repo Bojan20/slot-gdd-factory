@@ -53,10 +53,13 @@
 
 export function defaultConfig() {
   return {
-    /* Industry-default OFF — paytable opens from the hub menu, not from
-     * a floating i-button. GDDs that want a standalone trigger opt-in
-     * via `## Paytable\nenabled: true` or a `paytable` feature kind. */
-    enabled: false,
+    /* Industry-default ON — paytable is regulator-mandated for MGA / UKGC
+     * / NJ certification (player must inspect math before wagering). The
+     * floating "i" chip is the universal opt-out switch; a GDD that wires
+     * paytable into a hub-menu instead can disable the standalone trigger
+     * via `## Paytable\nenabled: false` or by emitting a `no_paytable`
+     * (a.k.a. `paytable_disabled`) feature kind. */
+    enabled: true,
     chipLabel: 'i',
     chipColor:     '201,162,39',   /* gold accent */
     chipTextColor: '255,230,168',
