@@ -244,6 +244,27 @@ for (const t of targets) {
       showAggregateChip: true,
     });
   }
+  /* Wave H11 — auto-enable Bonus Buy Deterministic Plant on demos that
+   * already declare a bonus_buy feature (or have bonusBuy enabled). The
+   * extension is a no-op when bonusBuy is off (resolveConfig forces
+   * enabled=false in that case). Demo plants use the 3-tier industry
+   * baseline ladder from the block's defaultConfig. Real GDDs override
+   * via model.bonusBuyDeterministic.plants. */
+  const hasBonusBuy = model.features.some(f =>
+    f && typeof f.kind === 'string' && /^bonus[_-]?buy$/i.test(f.kind),
+  ) || !!(model.bonusBuy && model.bonusBuy.enabled === true);
+  if (hasBonusBuy) {
+    const alreadyBbd = model.features.some(f =>
+      f && typeof f.kind === 'string' &&
+      /^(bonus[_-]?buy[_-]?deterministic|deterministic[_-]?plant)$/i.test(f.kind),
+    );
+    if (!alreadyBbd) {
+      model.features.push({ kind: 'bonus_buy_deterministic', label: 'Deterministic Plant' });
+    }
+    model.bonusBuyDeterministic = Object.assign({}, model.bonusBuyDeterministic || {}, {
+      enabled: true,
+    });
+  }
   const html = buildSlotHTML(model);
   writeFileSync(resolve(REPO, t.out), html);
   console.log(`✅ ${t.out}  (${(html.length/1024).toFixed(1)} KB)`);

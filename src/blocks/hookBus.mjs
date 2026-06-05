@@ -204,6 +204,15 @@ export const HOOK_EVENTS = Object.freeze([
    *   set in GDD config. Owner: pathAwareMultiplier.mjs. */
   'onPathMultiplierAssigned',
   'onPathMultiplierAggregate',
+  /* Wave H11: Bonus Buy Deterministic Plant extension events
+   * onBonusBuyTierSelected {tier, costX, plantedCount} — fires when the
+   *   player picks a tier in the picker modal.
+   *   Owner: bonusBuyDeterministic.mjs.
+   * onDeterministicPlantApplied {tier, positions, symbol, count} — fires
+   *   on onSpinResult after the planted cells are rewritten in the DOM.
+   *   Owner: bonusBuyDeterministic.mjs. */
+  'onBonusBuyTierSelected',
+  'onDeterministicPlantApplied',
   /* Wave U4: autoplay session events */
   'onAutoplayStart',
   'onAutoplayStop',

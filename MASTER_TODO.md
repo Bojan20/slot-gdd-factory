@@ -3,7 +3,130 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `15611ea` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + V5.Y + H5.4–H5.20 + Wave I + Wave I.2 + Wave H14 + Wave H15 + Wave H13 (pathAwareMultiplier extension — per-path chip + aggregate bonus)** all live. Hub responsive 9/9 PASS. **Latest shipped — Wave H13** (per-path multiplier chip + additive bonus award; extends `waysEval.mjs` purely as observer; new dist `04_variable_reel_playable.html` (117 649-ways) lights up automatically; **84/84 unit PASS** + **39/39 live Playwright probe** + 209/209 multi-topology + 88/88 force-CTA + 5/5 LEGO + 29/29 HookBus canonical = **503/503 PASS** combined regression with H14 + H15 untouched). Wave I.2 before that: MULT force button — third dev-force CTA next to FS + BW (88/88 fixtures); Wave I: **11/11 UNIFORM grid kinds** got dist parity (was 3, now 12 incl. variable_reel). Big-Win Tier ladder matured kroz 17 atoma (H5.4 → H5.20). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Remaining extensions u Wave H queue: **H11 bonusBuyDeterministic** (sledeći u redu), H17 audioMixer (čeka ADB fazu), H18 payoutEventStreamLog. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: **(pending push)** · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + V5.Y + H5.4–H5.20 + Wave I + Wave I.2 + Wave H14 + Wave H15 + Wave H13 + Wave H11 (bonusBuyDeterministic extension — tier picker + deterministic scatter plant + optional starting multiplier)** all live. Hub responsive 9/9 PASS. **Latest shipped — Wave H11** (tier picker modal with STANDARD 75× / PREMIUM 150× / SUPER 300× plants; each plant has specific `[r,c]` scatter positions + optional `extraMult` starting modifier; pure observer wraps `#bonusBuyBtn` click at capture phase + cell DOM rewrite on `onSpinResult`; **65/65 unit PASS** + **22/22 live Playwright probe on GoO dist** + 5/5 LEGO + 29/29 HookBus canonical = **121/121 PASS** with `bonusBuy.mjs` untouched). Wave H13 before that: per-path multiplier chip + aggregate bonus award on `waysEval` (84/84 + 39/39 live). Wave I.2: MULT force button (88/88 fixtures); Wave I: **11/11 UNIFORM grid kinds** got dist parity (12 incl. variable_reel). Big-Win Tier ladder matured kroz 17 atoma (H5.4 → H5.20). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Remaining extensions u Wave H queue: **H8 cellOverflowCounter** (sledeći u redu), H1-H4 + H6-H7 + H9-H10 + H12 + H16-H18 (regulator + climax + audit). Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+
+---
+
+## 🟢 Wave H11 — `bonusBuyDeterministic` extension (tier picker + deterministic scatter plant) — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"nastavi dalje"*. Fourth in the Wave H extension series (after H14 / H15 / H13). Adds the universal tiered-buy + deterministic-plant DNA on top of `bonusBuy.mjs` — Standard / Premium / Super tier picker modal, each tier plants a SPECIFIC set of scatter cell positions (not random), with optional starting-multiplier modifier.
+
+### Industry pattern (vendor-neutral synthesis)
+
+| Concern | Owner block |
+|---|---|
+| Buy CTA + cost label + click → `FORCE_TRIGGER` + spin kick | `bonusBuy.mjs` (pre-existing, **untouched**) |
+| **Tier picker modal + deterministic plant table + on-cell DOM rewrite + `extraMult` modifier + HookBus emits** | **`bonusBuyDeterministic.mjs` (NEW)** |
+| Cinematic reveal | future H6 `bonusClimaxReveal` |
+
+Regulator angle: UKGC LCCP 5.1.6 + MGA RGF require any Buy Bonus to disclose its trigger mechanic. Deterministic plant table = clean audit row.
+
+### What landed
+
+| Atom | File | Lines | Status |
+|:--:|---|:--:|:--:|
+| H11.a — block source | `src/blocks/bonusBuyDeterministic.mjs` | 526 | ✅ CREATED — defaultConfig + resolveConfig + emit{CSS,Markup,Runtime} + 140-line JSDoc |
+| H11.b — unit suite | `tests/blocks/bonusBuyDeterministic.test.mjs` | 295 | ✅ **65/65 PASS** — happy + malformed + hard-requirement + XSS escape + determinism + vendor-neutral + sandbox event-flow (PREMIUM → 5 cells planted + SUPER → extraMult=2) |
+| H11.c — HookBus contract | `src/blocks/hookBus.mjs` | +12 | ✅ `onBonusBuyTierSelected` + `onDeterministicPlantApplied` added |
+| H11.d — canonical-list test | `tests/blocks/hookBus.test.mjs` | +2 | ✅ 29/29 PASS |
+| H11.e — LEGO ownership | `tools/lego-gate.mjs` | +9 | ✅ single-owner = `bonusBuyDeterministic.mjs`; 35/35 events pass |
+| H11.f — buildSlotHTML wiring | `src/buildSlotHTML.mjs` | +14 | ✅ CSS + markup + runtime emitted AFTER bonusBuy |
+| H11.g — dist auto-enable | `tools/regen-all-playable.mjs` | +18 | ✅ auto-enables on WoO + GoO (only dist that declare `bonus_buy`) |
+
+### Composition contract (LEGO — pure observer + capture-phase click intercept)
+
+| Read | Write |
+|---|---|
+| `#bonusBuyBtn` click (capture wrap → stopPropagation + preventDefault) | `window.__BB_PLANT__` on tier select |
+| Live grid `.cell` nodes (rewrites text on `onSpinResult`) | DOM cell.textContent at planted positions |
+| HookBus `onSpinResult` / `postSpin` / `onFsTrigger` / `onFsEnd` | HookBus emit `onBonusBuyTierSelected` / `onDeterministicPlantApplied` |
+| `HookBus.setMult(extraMult)` when plant carries `extraMult > 1` | |
+
+### Lifecycle
+
+```
+DOMContentLoaded:
+  _patch() → if #bonusBuyBtn missing: warn-once + no-op
+             else: install capture-phase click wrapper
+                   STATE.patched = true
+
+user clicks Buy:
+  capture wrapper: stopPropagation + preventDefault + bbdOpenPicker()
+  modal at z-index 96, data-modal="true" (spinControl modal guards see it)
+
+user clicks tier card (e.g. PREMIUM):
+  bbdSelectTier('PREMIUM'):
+    window.__BB_PLANT__ = { tier, positions, symbol, costX, extraMult }
+    emit onBonusBuyTierSelected { tier, costX, plantedCount }
+    close modal
+    setTimeout(0) → STATE.bypassWrap=true → btn.click() (flows through to
+                                                          bonusBuy original)
+bonusBuy:
+  FORCE_TRIGGER = forceScatters
+  runOneBaseSpin()
+
+onSpinResult:
+  _applyPlant() → cells[r*rows+c].textContent = plant.symbol for each pos
+                  if plant.extraMult > 1: HookBus.setMult(extraMult)
+                  emit onDeterministicPlantApplied { tier, positions, symbol, count }
+
+postSpin: window.__BB_PLANT__ = null    (one-shot per buy)
+onFsTrigger / onFsEnd: defensive reset
+```
+
+### Default config (industry-baseline 3-tier ladder)
+
+| Tier | costX | positions (5×3 grid) | symbol | extraMult |
+|---|:--:|---|:--:|:--:|
+| **STANDARD** | 75× | `[[1,0],[2,1],[3,2]]` (3 scatters) | S | — |
+| **PREMIUM** | 150× | `[[0,0],[1,1],[2,2],[3,1],[4,0]]` (5 scatters) | S | — |
+| **SUPER** | 300× | `[[0,0],[0,2],[2,1],[4,0],[4,2]]` (5 scatters) | S | **+2× start** |
+
+### Live verification — `tools/_h11-deterministic-plant-probe.mjs`
+
+Playwright probe on `dist/gates-of-olympus-1000.html` (bonusBuy + H11 active):
+
+| Scenario | Acceptance | Result |
+|---|---|:--:|
+| Presence | Buy btn + overlay + cancel + 3 tier cards + BBD_STATE.patched + 3 public APIs | ✅ 9/9 |
+| **S1 Buy click opens modal** | modal opens, `FORCE_TRIGGER` NOT changed (capture wrap intercepted) | ✅ 2/2 |
+| **S2 Cancel** | modal closes, `lastSelection` null, `__BB_PLANT__` stays null | ✅ 3/3 |
+| **S3 PREMIUM tier** | `onBonusBuyTierSelected` (PREMIUM, 150×) → `__BB_PLANT__` populated (5 positions, symbol S) → `onSpinResult` → `onDeterministicPlantApplied` (count=5) → ≥5 cells carry symbol → postSpin clears | ✅ 6/6 |
+| **S4 SUPER tier extraMult** | initial `HookBus.getMult()` = 1 → bbdSelectTier('SUPER') → onSpinResult → `getMult() = 2` | ✅ |
+| 0 page errors | | ✅ |
+| **22 / 22 pass** | | ✅ |
+
+### Full regression
+
+| Gate | Result |
+|---|:--:|
+| `tests/blocks/bonusBuyDeterministic.test.mjs` (NEW) | **65 / 65 PASS** |
+| `tests/blocks/bonusBuy.test.mjs` (untouched) | **21 / 21 PASS** |
+| `tests/blocks/hookBus.test.mjs` (canonical +2) | **29 / 29 PASS** |
+| `tools/lego-gate.mjs` (35 events, 45 listeners) | **5 / 5 PASS** |
+| `tools/regen-all-playable.mjs` | **12 / 12 regen** (WoO + GoO got the picker modal) |
+| `tools/_h11-deterministic-plant-probe.mjs` (NEW) | **22 / 22 PASS** |
+
+### Acceptance gates 10/10
+
+1. ✅ Vendor-neutral source
+2. ✅ JSDoc 140-line public-API contract header
+3. ✅ Single responsibility (block ONLY owns picker + plant; bonusBuy keeps CTA + cost + spin kick)
+4. ✅ Idempotent (`STATE.patched` gates re-patch; `STATE.bypassWrap` lets re-dispatch flow through)
+5. ✅ Defensive on input (malformed plants/positions/colors/labels → defaults retained)
+6. ✅ Defensive on runtime (missing `#bonusBuyBtn` → warn once + no-op)
+7. ✅ Honors `prefers-reduced-motion`
+8. ✅ a11y — `role="dialog"`, `aria-modal="true"`, first card focused on open
+9. ✅ Determinism (identical config → byte-identical CSS + runtime)
+10. ✅ HookBus single-owner contract (2 events, both owned, verified)
+
+### What H11 does NOT do (out-of-scope by LEGO)
+
+| ❌ Concern | Why |
+|---|---|
+| Per-tier RTP curve compute | Phase 2 math layer — costX vs expected payout is GDD/PAR concern |
+| Bet deduction enforcement | Wallet layer — block emits intent + plant; debit happens server-side |
+| Cinematic reveal on plant | H6 `bonusClimaxReveal` later in queue |
 
 ---
 

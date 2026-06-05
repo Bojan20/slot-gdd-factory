@@ -111,6 +111,13 @@ import {
   emitBonusBuyRuntime,
   resolveConfig as resolveBonusBuyConfig,
 } from './blocks/bonusBuy.mjs';
+// Wave H11 — Bonus Buy Deterministic Plant extension (pure observer)
+import {
+  emitBonusBuyDeterministicCSS,
+  emitBonusBuyDeterministicMarkup,
+  emitBonusBuyDeterministicRuntime,
+  resolveConfig as resolveBonusBuyDeterministicConfig,
+} from './blocks/bonusBuyDeterministic.mjs';
 import {
   emitAnteBetCSS,
   emitAnteBetMarkup,
@@ -371,6 +378,8 @@ ${emitScatterCelebrationCSS(resolveScatterCelebrationConfig(model))}
 ${emitTumbleCSS(resolveTumbleConfig(model))}
 ${emitMultiplierOrbCSS(resolveMultiplierOrbConfig(model))}
 ${emitBonusBuyCSS(resolveBonusBuyConfig(model))}
+${/* Wave H11 — Bonus Buy Deterministic Plant extension (tier picker modal CSS). */ ''}
+${emitBonusBuyDeterministicCSS(resolveBonusBuyDeterministicConfig(model))}
 ${emitAnteBetCSS(resolveAnteBetConfig(model))}
 /* Wave L–P — 16 feature blocks CSS (no-op when disabled) */
 ${emitStickyWildCSS(resolveStickyWildConfig(model))}
@@ -522,6 +531,7 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
 ${emitFreeSpinsOverlayMarkup(resolveFreeSpinsConfig(model))}
 
 ${emitBonusBuyMarkup(resolveBonusBuyConfig(model))}
+${emitBonusBuyDeterministicMarkup(resolveBonusBuyDeterministicConfig(model))}
 ${emitAnteBetMarkup(resolveAnteBetConfig(model))}
 <!-- Wave L–P markup (empty strings when disabled) -->
 ${emitPersistentMultiplierMarkup(resolvePersistentMultiplierConfig(model))}
@@ -838,6 +848,10 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
   ${emitPayAnywhereEvalRuntime(resolvePayAnywhereEvalConfig(model))}
   ${emitTumbleRuntime(resolveTumbleConfig(model))}
   ${emitBonusBuyRuntime(resolveBonusBuyConfig(model))}
+  ${/* Wave H11 — Deterministic plant runtime monkey-patches #bonusBuyBtn
+     * click at capture phase to open the tier picker BEFORE the original
+     * Buy handler fires. Plants cells on onSpinResult. */ ''}
+  ${emitBonusBuyDeterministicRuntime(resolveBonusBuyDeterministicConfig(model))}
   ${emitAnteBetRuntime(resolveAnteBetConfig(model))}
 
   /* Wave L–P — 16 feature kinds runtime (no-op stubs when disabled).

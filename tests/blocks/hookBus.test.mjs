@@ -45,6 +45,8 @@ t('HOOK_EVENTS canonical list (core + V intent + V5 win-present + U4 autoplay + 
     'onWheelSegmentChosen', 'onWheelJackpotHit', 'onWheelAwardCollected',
     /* Wave H13 — Path-Aware Multiplier */
     'onPathMultiplierAssigned', 'onPathMultiplierAggregate',
+    /* Wave H11 — Bonus Buy Deterministic Plant */
+    'onBonusBuyTierSelected', 'onDeterministicPlantApplied',
     /* Wave U4 */
     'onAutoplayStart', 'onAutoplayStop', 'onAutoplayTick',
     /* Wave U5 */

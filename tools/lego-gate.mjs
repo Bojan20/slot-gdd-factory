@@ -133,6 +133,13 @@ const EXPECTED_EMIT_OWNERS = {
    * carries a multiplier ≥ 2. waysEval.mjs source untouched. */
   onPathMultiplierAssigned:  ['pathAwareMultiplier.mjs'],
   onPathMultiplierAggregate: ['pathAwareMultiplier.mjs'],
+  /* Wave H11 — Bonus Buy Deterministic Plant extension. Standalone block
+   * wraps #bonusBuyBtn click at capture phase to open a tier picker
+   * modal; on tier select sets window.__BB_PLANT__ and re-dispatches the
+   * original click. Plants the chosen cell positions on onSpinResult.
+   * bonusBuy.mjs source untouched. */
+  onBonusBuyTierSelected:      ['bonusBuyDeterministic.mjs'],
+  onDeterministicPlantApplied: ['bonusBuyDeterministic.mjs'],
   /* Wave U4 — autoplay session events all owned by autoplay.mjs. */
   onAutoplayStart: ['autoplay.mjs'],
   onAutoplayTick:  ['autoplay.mjs'],
