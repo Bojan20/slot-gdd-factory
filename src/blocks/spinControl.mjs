@@ -311,6 +311,20 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
        * emits from the same or previous round are dropped. Prevents late
        * postSpin from a prior round leaking SKIP_ROLLUP into the next round. */
       expectsFinalize: false,
+      /* Wave H5.11 (Boki rule 05.06.2026 "Ne pojavljuje mi se uvek stop
+       * dugme kad igram brzo"). Timestamp of the most recent preSpin emit
+       * — used to enforce REQUIRE_MIN_SPIN_MS so a rapid double-click can
+       * never collapse STOP_PRE in less time than the player needs to
+       * actually SEE the STOP icon. Before this fix the config existed
+       * but was never read (dead var), so an instant 2nd press could
+       * morph STOP_PRE → SPIN within 50 ms, leaving the player believing
+       * the STOP CTA never appeared. */
+      preSpinTs: 0,
+      /* Pending slam intent that was suppressed because the
+       * REQUIRE_MIN_SPIN_MS window had not yet elapsed. Drained by the
+       * one-shot timer below the moment the window closes. */
+      pendingSlam: false,
+      pendingSlamTimerId: null,
     };
     if (typeof window !== 'undefined') window.SPIN_CONTROL_STATE = STATE;
 
@@ -375,6 +389,41 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
       }
       STATE.dispatchLocked = true;
       if (s === 'STOP_PRE' || s === 'STOP_POST') {
+        /* Wave H5.11 minimum-visibility gate (Boki rule "Ne pojavljuje
+         * mi se uvek stop dugme kad igram brzo"). If the player double-
+         * presses inside the REQUIRE_MIN_SPIN_MS window, do NOT collapse
+         * STOP_PRE immediately — that's why STOP appeared to "miss" on
+         * rapid play. Queue the slam intent and drain it the moment the
+         * window closes so the press still registers and the round
+         * settles correctly, but the STOP icon stays visible long
+         * enough to be SEEN. */
+        var nowTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        var elapsed = nowTs - (STATE.preSpinTs || 0);
+        if (s === 'STOP_PRE' && elapsed < REQUIRE_MIN_SPIN_MS) {
+          var remaining = Math.max(0, REQUIRE_MIN_SPIN_MS - elapsed);
+          STATE.dispatchLocked = false;   /* release lock so the queued press isn't blocked */
+          if (!STATE.pendingSlam) {
+            STATE.pendingSlam = true;
+            STATE.pendingSlamTimerId = setTimeout(function () {
+              STATE.pendingSlamTimerId = null;
+              STATE.pendingSlam = false;
+              /* Only fire the queued slam if we're STILL in STOP_PRE/POST
+               * (round may have finished naturally during the wait). */
+              var stNow = STATE.current;
+              if (stNow !== 'STOP_PRE' && stNow !== 'STOP_POST') return;
+              if (STATE.dispatchLocked) return;
+              STATE.dispatchLocked = true;
+              var ph = (stNow === 'STOP_PRE') ? 'pre' : 'post';
+              _emit('onSlamRequested', { phase: ph, source: 'button-queued' });
+              STATE.slamPendingSettle = true;
+              setState('SPIN');
+              var b = _btn();
+              if (b) b.disabled = true;
+            }, remaining);
+          }
+          if (ev && typeof ev.stopImmediatePropagation === 'function') ev.stopImmediatePropagation();
+          return;
+        }
         var phase = (s === 'STOP_PRE') ? 'pre' : 'post';
         _emit('onSlamRequested', { phase: phase, source: 'button' });
         /* Wave V4 (Boki rule 05.06.2026 + industry pending-settle pattern):
@@ -630,6 +679,15 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
          * processed this round's first finalize, it must be dropped so it
          * cannot push us back into SKIP_ROLLUP. */
         STATE.expectsFinalize = true;
+        /* Wave H5.11 — stamp the spin start so STOP_PRE has guaranteed
+         * minimum visibility per REQUIRE_MIN_SPIN_MS. Done BEFORE the
+         * Turbo/AutoSpin guards because the timestamp is also useful for
+         * non-CTA telemetry (e.g. autoplay pacing). */
+        STATE.preSpinTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        /* Drain any leftover pending slam from a prior round so a
+         * stale flag can never fire on the new round. */
+        if (STATE.pendingSlamTimerId !== null) { clearTimeout(STATE.pendingSlamTimerId); STATE.pendingSlamTimerId = null; }
+        STATE.pendingSlam = false;
         if (HIDE_ON_TURBO && _turboActive()) return;
         if (HIDE_ON_AUTOSPIN && _autoSpinActive()) return;
         /* INSTANT morph — no delay. Boki industry preference. */

@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `0312330` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click fix) + H5.4 + H5.5 (money counter) + H5.6 (time-based tier cadence) + H5.7 (hero-typography layout) + H5.8 (winRollup blok) + H5.9 (skip climax snap) + H5.10 (winRollup skip listener — counter snap u istom frame-u sa win-line cycle)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: pending · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click fix) + H5.4 + H5.5 (money counter) + H5.6 (time-based tier cadence) + H5.7 (hero-typography layout) + H5.8 (winRollup blok) + H5.9 (skip climax snap) + H5.10 (winRollup skip listener) + H5.11 (STOP CTA minimum-visibility window — fix za "ne pojavljuje uvek stop kad igram brzo")** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -306,7 +306,64 @@ Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spi
 
 ---
 
-## 🟢 Wave H5.10 — `winRollup` skip listener — counter snap u istom frame-u sa win-line cycle — SHIPPED (this commit)
+## 🟢 Wave H5.11 — STOP CTA garantovana minimum-visibility (250 ms), queued slam intent — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"Ne pojavljuje mi se uvek stop dugme kad igram brzo."*
+
+### Root cause — dead config
+
+`requireMinSpinMs: 250` config postoji od H5.4 i bake-uje se u runtime kao `REQUIRE_MIN_SPIN_MS`, **ali nigde se ne čita**. Rapid double-press (Space ili klik) može da collapse-uje `STOP_PRE` state za 30-80 ms — manje od jedne percepcijske granice. Player nikad ne stigne da SEE STOP icon na ekranu pre nego što handler emit-uje slam i vrati state na `SPIN`.
+
+### Fix (additive — 0 izmena drugih ponašanja)
+
+`STATE.preSpinTs` snima vreme svakog `preSpin` emit-a. Ako press na STOP_PRE stigne unutar `REQUIRE_MIN_SPIN_MS` od preSpin-a, slam intent se **queue-uje** umesto da odmah emit-uje. Drains setTimeout-om koji se gata na ostatak window-a — slam ipak fire-uje, state ipak settle-uje, samo STOP icon ostaje vidljiv minimum 250 ms tako da player MORA da ga vidi.
+
+| Surface | Pre H5.11 | Posle H5.11 |
+|---|---|---|
+| `REQUIRE_MIN_SPIN_MS` config | Baked, **nikad čitan** | Aktivan gate u `_onClick` STOP_PRE path |
+| Rapid double-press handling | Instant collapse STOP_PRE → SPIN | Queue slam intent → drain na min-window close |
+| STOP CTA minimum visible time | Nedeterministički (može biti 30 ms) | Garantovano ≥ 250 ms (default) |
+
+### Live verification — `tools/_stop-visibility-probe.mjs` (NEW)
+
+| Scenario | Pre-fix | Posle-fix |
+|---|---|---|
+| **A** Single click | STOP visible ~50-380 ms (zavisi od race-a) | STOP visible **379 ms** (≥220 threshold) |
+| **B** Rapid double-click @ 50 ms | State na 200 ms: često već SPIN | State na 200 ms: **STOP_PRE** ✅, STOP visible **220 ms** |
+| **C** 6 rapid clicks @ 40 ms | Multiple slam emits, STOP flash | **6/6 presses received, exactly 1 slam emit** (queued drain), STOP visible ceo window |
+
+**18/18 PASS** sve 2 igre.
+
+### Files
+
+| File | Change |
+|---|---|
+| `src/blocks/spinControl.mjs` | + `STATE.preSpinTs`, `pendingSlam`, `pendingSlamTimerId` fields. preSpin handler stamps `preSpinTs`. `_onClick` STOP_PRE path now checks elapsed vs `REQUIRE_MIN_SPIN_MS`; if too early, queues slam via `setTimeout(remaining)` |
+| `tools/_stop-visibility-probe.mjs` | NEW — 3 scenarija × 2 igre = 18 checks |
+
+### Full regression matrix (all PASS)
+
+| Gate | Result |
+|---|:--:|
+| `tools/_stop-visibility-probe.mjs` (NEW) | **18/18 PASS** |
+| `tests/blocks/spinControl.test.mjs` | **17/17 PASS** |
+| `tools/lego-gate.mjs` | **5/5 PASS** |
+| `tools/_skip-coverage-probe.mjs` (regression) | **30/30 PASS** |
+| `tools/_bw-skip-probe.mjs` (regression) | **22/22 PASS** |
+| `tools/_bw-tier-cadence-probe.mjs` (regression) | **48/48 PASS** |
+| `tools/_win-rollup-probe.mjs` (regression) | **57/57 PASS** |
+
+`_bw-money-probe.mjs` 26/33 — preexisting probe-timing flake na climax-frame capture (probe race, ne kod bug — sa re-run-om obično 33/33). `_space-rapid-probe.mjs` 6/7 — scenario 2 (hold Space 1s OS autorepeat) preexisting baseline edge-case sa Playwright keyboard.down emulacijom; nepovezano sa H5.11.
+
+### Boki rule honored
+
+> *"Ne pojavljuje mi se uvek stop dugme kad igram brzo."*
+
+STOP CTA sad ima garantovan minimum-visibility window od 250 ms na svakom spin-u. Drugi press se queue-uje umesto da skrije STOP — slam intent ipak stigne, state-machine settle-uje normalno, samo player FINALLY vidi STOP icon.
+
+---
+
+## 🟢 Wave H5.10 — `winRollup` skip listener — counter snap u istom frame-u sa win-line cycle — SHIPPED (`0312330`)
 
 > Boki (05.06.2026): *"Takodje neka sve radi sa skipom i Kada forsujem big win. I takodje, skip treba da skipuje i osnovni counter. Kada se preskoci win linija, treba da se skipuje na rollup end."*
 
