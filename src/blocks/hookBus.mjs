@@ -143,6 +143,15 @@ export const HOOK_EVENTS = Object.freeze([
   'onSlamComplete',
   'onSkipRequested',
   'onSkipComplete',
+  /* Wave V5: win-presentation phase signals
+   * onWinPresentationStart {award, eventCount} — fires after detection,
+   *   before the visual rollup cycle. Marks the start of a skippable
+   *   presentation window. Owner: winPresentation.mjs.
+   * onWinPresentationEnd {award} — fires when the cycle finishes
+   *   naturally (NOT via skip — onSkipComplete handles that path).
+   *   Owner: winPresentation.mjs. */
+  'onWinPresentationStart',
+  'onWinPresentationEnd',
   /* Wave U4: autoplay session events */
   'onAutoplayStart',
   'onAutoplayStop',

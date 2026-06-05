@@ -441,6 +441,13 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
      detected and emit postSpin with the right payload. */
   async function applyWinHighlight() {
     clearWinHighlight();
+    /* Wave V5 — publish award=0 defensively so subscribers never read a
+       stale value from the previous round. Per Boki rule: every spin
+       MUST clear the award before the next one (no leakage between
+       spins). */
+    if (typeof window !== 'undefined') {
+      window.__WIN_AWARD__ = 0;
+    }
     /* Suppressed only during FS_INTRO / FS_OUTRO placards. */
     if (FSM && (FSM.phase === 'FS_INTRO' || FSM.phase === 'FS_OUTRO')) {
       return [];
@@ -487,9 +494,45 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
       allEvents = events;
     }
 
+    /* Wave V5 — publish award + presentation-active signals BEFORE the
+       visual cycle so every downstream block can branch correctly while
+       the rollup is still on screen:
+         • balanceHud  reads window.__WIN_AWARD__ on onSpinResult to set
+                       lastWin (then credits balance on postSpin).
+         • spinControl morphs CTA to SKIP_ROLLUP on onWinPresentationStart
+                       so the player can fast-finalize the cycle.
+         • autoplay    checks lastWin against stopOnWinAbove on postSpin.
+         • historyLog  records the row's win amount.
+         • gambleSecondary seeds the bank with the available win.
+
+       Without these, 5 blocks read undefined and silently behave as if
+       every spin paid 0 — including balance-credit (which is why a 20-spin
+       walk on rectangular dist showed balance going down by bet × N every
+       time regardless of detected wins). */
+    var totalAward = 0;
+    for (var i = 0; i < allEvents.length; i++) {
+      var p = allEvents[i] ? allEvents[i].payX : 0;
+      if (Number.isFinite(p) && p > 0) totalAward += p;
+    }
+    if (typeof window !== 'undefined') {
+      window.__WIN_AWARD__ = totalAward;
+    }
+
     /* Visual cycle — events present? walk them one-by-one. */
     if (allEvents.length > 0) {
+      if (typeof window !== 'undefined') {
+        window.__SLOT_WIN_PRESENT_ACTIVE__ = true;
+      }
+      if (typeof HookBus !== 'undefined') {
+        HookBus.emit('onWinPresentationStart', { award: totalAward, eventCount: allEvents.length });
+      }
       await playWinSymCycle(allEvents);
+      if (typeof window !== 'undefined') {
+        window.__SLOT_WIN_PRESENT_ACTIVE__ = false;
+      }
+      if (typeof HookBus !== 'undefined') {
+        HookBus.emit('onWinPresentationEnd', { award: totalAward });
+      }
     }
 
     return allEvents;

@@ -99,6 +99,12 @@ const EXPECTED_EMIT_OWNERS = {
    * animation: winPresentation for rollup/celebration, scatterCelebration
    * for its banner phase, freeSpins for FS intro/outro. Multi-owner. */
   onSkipComplete:  ['winPresentation.mjs', 'scatterCelebration.mjs', 'freeSpins.mjs'],
+  /* Wave V5 — win-presentation phase signals. winPresentation publishes
+   * both Start and End so subscribers (spinControl morph to SKIP_ROLLUP)
+   * and downstream readers (__WIN_AWARD__, __SLOT_WIN_PRESENT_ACTIVE__
+   * already set side-by-side) can branch on the visible rollup window. */
+  onWinPresentationStart: ['winPresentation.mjs'],
+  onWinPresentationEnd:   ['winPresentation.mjs'],
   /* Wave U4 — autoplay session events all owned by autoplay.mjs. */
   onAutoplayStart: ['autoplay.mjs'],
   onAutoplayTick:  ['autoplay.mjs'],

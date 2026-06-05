@@ -524,6 +524,25 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
       window.HookBus.on('onFsEnd',     function () { if (SHOW_FS_OUTRO)  setState('SKIP_FSOUTRO');  });
       window.HookBus.on('onScatterCelebrationStart', function () { if (SHOW_CELEBRATION) setState('SKIP_CELEBRATION'); });
 
+      /* Wave V5 — win-presentation phase morphs. winPresentation emits
+       * onWinPresentationStart the moment the rollup cycle kicks off (after
+       * detection, before the visual playWinSymCycle) and
+       * onWinPresentationEnd when the cycle finishes naturally. We morph
+       * to SKIP_ROLLUP for the duration so the player can fast-finalize
+       * the win presentation in flight, then morph back to SPIN.
+       * Note: SHOW_ROLLUP gating same as in _finalizeRound so a GDD-level
+       * "no skip on rollup" config is respected. */
+      window.HookBus.on('onWinPresentationStart', function () {
+        if (HIDE_ON_AUTOSPIN && _autoSpinActive()) return;
+        if (SHOW_ROLLUP) setState('SKIP_ROLLUP');
+      });
+      window.HookBus.on('onWinPresentationEnd', function () {
+        /* Natural cycle end — if a skip click already morphed us to SPIN
+         * via onSkipComplete, this is a no-op (setState bails on same
+         * state). Otherwise, settle back to SPIN. */
+        if (STATE.current === 'SKIP_ROLLUP') setState('SPIN');
+      });
+
       window.HookBus.on('onSkipComplete', function () {
         if (typeof window !== 'undefined') window.__SLOT_SKIPPED__ = false;
         setState('SPIN');
