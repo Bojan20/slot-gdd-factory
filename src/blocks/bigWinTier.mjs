@@ -568,6 +568,39 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
         isFinal: (startTier === finalTier),
       });
 
+      /* Bump the cadence token so any in-flight tier-promotion timers
+       * from a stale walkthrough are invalidated when they fire. */
+      STATE.rafToken = (STATE.rafToken || 0) + 1;
+      var cadenceToken = STATE.rafToken;
+
+      /* Schedule TIME-BASED tier promotions FROM THE startTier enter
+       * (T0), NOT from fade-in completion. This keeps tier i visible
+       * for exactly DURATIONS[i-1] ms regardless of fade timing — Boki
+       * rule 05.06.2026: "sve su to blokovi sami za sebe". The block
+       * owns cadence; nothing the caller does can speed it up. */
+      var cumulative = 0;
+      for (var pi = startTier; pi < finalTier; pi++) {
+        cumulative += DURATIONS[pi - 1];
+        (function (fromT, toT, whenMs) {
+          var tid = setTimeout(function () {
+            if (cadenceToken !== STATE.rafToken) return;   /* cancelled by skip/preSpin */
+            if (!STATE.walkActive) return;
+            _emitExited({ tier: fromT, reason: 'natural' });
+            STATE.current = toT;
+            STATE.label   = LABELS[toT - 1];
+            if (typeof window !== 'undefined') window.__BIG_WIN_TIER__ = toT;
+            _swapTier(toT);
+            _emitEntered({
+              tier: toT, x: finalAward, label: STATE.label,
+              durationMs: DURATIONS[toT - 1],
+              soundBus: SOUND_BUSES[toT - 1],
+              isFinal: (toT === finalTier),
+            });
+          }, whenMs);
+          STATE.timers.push(tid);
+        })(pi, pi + 1, cumulative);
+      }
+
       /* Total count time = (#tiers walked) × per-tier duration. Linear count
        * over this window means the player sees a steady ramp regardless of
        * which tier is currently highlighted. */
@@ -575,11 +608,12 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       var totalCountMs = 0;
       for (var ti = startTier; ti <= finalTier; ti++) totalCountMs += DURATIONS[ti - 1];
 
-      /* After fade-in completes, start the linear counter. The counter
-       * itself triggers tier swaps when current ratio crosses thresholds. */
+      /* After fade-in completes, start the linear counter ramp. Tier
+       * promotions are owned by the scheduler above — _countUpLinear
+       * only handles the money ramp. */
       var fadeInDone = setTimeout(function () {
         if (!STATE.walkActive) return;
-        _countUpLinear(0, finalAward, totalCountMs, startTier, finalTier).then(function () {
+        _countUpLinear(0, finalAward, totalCountMs).then(function () {
           if (!STATE.walkActive) return;
           /* Hold the climax plaque at finalX for endHoldMs (4 s default —
            * "big win end event isto cetiri sekunde"). */
@@ -617,13 +651,13 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       STATE.timers.push(hold);
     }
 
-    /* _countUpLinear — linear ramp from 'fromAward' to 'toAward' over 'dur' ms
-     * with NO easing (same speed throughout — Boki rule "non stop da broji
-     * istom brzinom"). Display is currency-formatted money. Tier promotion
-     * fires when the RATIO (current/bet) crosses each THRESHOLDS[i] — the
-     * ladder remains vendor-neutral ratio math, only the player-facing UI
-     * is absolute money. */
-    function _countUpLinear(fromAward, toAward, dur, startTier, finalTier) {
+    /* _countUpLinear — pure linear money ramp from 'fromAward' to 'toAward'
+     * over 'dur' ms with NO easing (Boki rule "non stop da broji istom
+     * brzinom"). Display is currency-formatted money. Counter is
+     * INDEPENDENT of tier swaps — those are scheduled by _runCompound on
+     * a TIME-BASED cadence so the visual ladder rhythm is owned by the
+     * block itself, not by the awarded amount. */
+    function _countUpLinear(fromAward, toAward, dur) {
       return new Promise(function (resolve) {
         var amtEl = _host() && _host().querySelector('.big-win-tier-amount');
         if (!amtEl || !(dur > 0) || !(toAward > fromAward)) {
@@ -634,37 +668,16 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
           resolve();
           return;
         }
-        var bet = _currentBet();
         var t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-        var rafToken = STATE.rafToken = (STATE.rafToken || 0) + 1;
-        var activeTier = startTier;
+        var localToken = STATE.rafToken;       /* read once; _runCompound owns bumps */
         function step() {
-          if (rafToken !== STATE.rafToken) { resolve(); return; }
+          if (localToken !== STATE.rafToken) { resolve(); return; }
           var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
           var p = Math.min(1, (now - t0) / dur);
           /* LINEAR — no easing function. Each ms == same delta money. */
           var current = fromAward + (toAward - fromAward) * p;
           amtEl.textContent = _fmtMoney(current);
           amtEl.setAttribute('data-count', String(current));
-          /* Tier promotion check — in RATIO space so the ladder math stays
-           * vendor-neutral regardless of currency / denomination. Multiple
-           * promotions per frame are possible if dur is short / award huge. */
-          var currentRatio = current / bet;
-          while (activeTier < finalTier && currentRatio >= THRESHOLDS[activeTier - 1]) {
-            var fromTier = activeTier;
-            activeTier += 1;
-            _emitExited({ tier: fromTier, reason: 'natural' });
-            STATE.current = activeTier;
-            STATE.label   = LABELS[activeTier - 1];
-            if (typeof window !== 'undefined') window.__BIG_WIN_TIER__ = activeTier;
-            _swapTier(activeTier);
-            _emitEntered({
-              tier: activeTier, x: toAward, label: STATE.label,
-              durationMs: DURATIONS[activeTier - 1],
-              soundBus: SOUND_BUSES[activeTier - 1],
-              isFinal: (activeTier === finalTier),
-            });
-          }
           if (p < 1) {
             if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(step);
             else { amtEl.textContent = _fmtMoney(toAward); resolve(); }

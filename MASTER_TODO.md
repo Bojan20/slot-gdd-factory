@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `db19644` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click fix) + H5.4 + H5.5 (money counter)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: pending · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click fix) + H5.4 + H5.5 (money counter) + H5.6 (time-based tier cadence)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -306,7 +306,59 @@ Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spi
 
 ---
 
-## 🟢 Wave H5.5 — Big-Win counter shows ABSOLUTE money (no more ratio "×N") — SHIPPED (this commit)
+## 🟢 Wave H5.6 — Tier promotion = TIME-BASED, not threshold-based (block owns cadence) — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"sto se BW force dugmeta tice, ne ponasaju se tirovi isto kao kada se dobiju iz igre. nego se menjaju odmah jedan za drugim. Dugme u forcu uvek samo poziva ishod ne diriguje kako ce se bilo sta drugo ponasati, sve su to blokovi sami za sebe."*
+
+### Root cause
+
+H5.5 still drove tier swaps on ratio crossings (`current/bet >= THRESHOLDS[i]`). With BW-force award = 1.5× top threshold × bet, tier 1-4 all crossed in <2.7 s and tier 5 sat for the remaining 17.3 s. A real win with tighter ratio produced a different rhythm — so the **caller implicitly dictated tier cadence**. That broke Boki's LEGO principle "blokovi sami za sebe".
+
+### Fix
+
+Tier promotion is now TIME-BASED. Each tier `i` is visible for exactly `DURATIONS[i-1]` ms (default 4 s, GDD-overridable) regardless of awarded amount. Counter ramps linearly in parallel (`_countUpLinear`) but it no longer drives tier swaps. Scheduling is owned by `_runCompound` and anchored on the startTier enter timestamp (T0), so fade-in latency doesn't shift the cadence.
+
+### What changed in `src/blocks/bigWinTier.mjs`
+
+| Surface | Pre H5.6 | Posle H5.6 |
+|---|---|---|
+| Tier promotion trigger | `while (currentRatio >= THRESHOLDS[activeTier-1])` inside `_countUpLinear` rAF loop | `setTimeout(promote, cumulative)` scheduled from `_runCompound` at T0; each tier visible exactly `DURATIONS[i-1]` ms |
+| Cadence ownership | Implicit — counter rate × award magnitude | Explicit — block scheduler reads `DURATIONS[]` and ignores award magnitude entirely |
+| `_countUpLinear` arity | `(fromAward, toAward, dur, startTier, finalTier)` | `(fromAward, toAward, dur)` — pure money ramp |
+| Cancellation token | `STATE.rafToken` bumped inside `_countUpLinear` | `STATE.rafToken` bumped at top of `_runCompound`; tier timers + count-up rAF share the same token |
+| First-interval offset bug | Tier 2 fired 4 s AFTER fade-in (effective 4.3 s from tier 1 enter) | Tier 2 fires DURATIONS[0] ms from tier 1 enter (T0) → ±2 ms across all intervals |
+| Threshold values | Drove runtime swap | Retained for tier classification only (`tierFromRatio` in `onWinPresentationEnd` listener) — no longer touches runtime cadence |
+
+### Live verification — `tools/_bw-tier-cadence-probe.mjs` (new regression guard)
+
+Probe checks two scenarios per demo: (1) BW-force click (loose ratio = 1.5×threshold), (2) programmatic `bigWinTierEnter(5, tightAward)` where award = exactly tier-5 threshold × bet (tight). Both must produce identical 4 s intervals.
+
+| Demo | BW-click intervals (ms) | Tight-prog intervals (ms) | Δ from 4000ms |
+|---|---|---|:--:|
+| rectangular | `[4001, 4000, 4001, 4000]` | `[4001, 4000, 4000, 4000]` | ≤ 2 ms |
+| wrath-of-olympus | `[4002, 3999, 4000, 4001]` | `[4001, 4000, 4000, 4000]` | ≤ 2 ms |
+| gates-of-olympus-1000 | `[4001, 3999, 4000, 4000]` | `[4001, 4000, 4000, 4000]` | ≤ 2 ms |
+
+**48/48 PASS.** Cadence is identical regardless of award magnitude. Caller (BW dugme, real spin, programmatic, future force-anything) cannot dictate tier rhythm anymore.
+
+### Gate-ovi
+
+| Gate | Result |
+|---|:--:|
+| `tests/blocks/bigWinTier.test.mjs` | **24/24 PASS** |
+| `tools/lego-gate.mjs` (5 invariants) | **5/5 PASS** |
+| `tools/_bw-tier-cadence-probe.mjs` (live, 3 demos × 2 scenarios) | **48/48 PASS** |
+| `tools/_bw-money-probe.mjs` (regression check, 3 demos) | **33/33 PASS** |
+
+### Boki rule honored
+
+> *"Dugme u forcu uvek samo poziva ishod ne diriguje kako ce se bilo sta drugo ponasati, sve su to blokovi sami za sebe."*
+
+Block alone owns cadence. The caller pipes in award + tier and steps back — the block plays its choreography on its own clock.
+
+---
+
+## 🟢 Wave H5.5 — Big-Win counter shows ABSOLUTE money (no more ratio "×N") — SHIPPED (`db19644`)
 
 > Boki (05.06.2026): *"counter ne treba da bude x pa counter, nego samo counter da se broji novac, i na kraju countera da ostane koliko se osvojilo a ne x26 i slično."* H5.4 (`849b6ee`) shipped the linear counter but it ticked in ratio-space (`×0 → ×1500`) — the player never saw the actual money they won. H5.5 keeps the **tier-classification math in ratio space** (vendor-neutral ladder math is unchanged: `tier = max{t : thresholds[t-1] ≤ award/bet}`) but ramps the **player-facing counter in ABSOLUTE money** with the same currency symbol/position as `balanceHud` (single UX source of truth — banner counter reads identically to the win column in the HUD).
 
