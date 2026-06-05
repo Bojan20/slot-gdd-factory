@@ -95,6 +95,9 @@ const VALID_STATES = Object.freeze([
   'SKIP_FSINTRO',
   'SKIP_FSOUTRO',
   'SKIP_CELEBRATION',
+  /* Wave V5.3 — Big-Win Tier banner is on-screen. Click emits
+   * onSkipRequested{phase:'bigWinTier'} → bigWinTier listener exits. */
+  'SKIP_BIGWIN',
 ]);
 
 const DEFAULTS = Object.freeze({
@@ -324,7 +327,7 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
     }
 
     function setState(name) {
-      if (['SPIN','STOP_PRE','STOP_POST','SKIP_ROLLUP','SKIP_FSINTRO','SKIP_FSOUTRO','SKIP_CELEBRATION'].indexOf(name) === -1) return;
+      if (['SPIN','STOP_PRE','STOP_POST','SKIP_ROLLUP','SKIP_FSINTRO','SKIP_FSOUTRO','SKIP_CELEBRATION','SKIP_BIGWIN'].indexOf(name) === -1) return;
       if (STATE.current === name) return;
       STATE.current = name;
       STATE.dispatchLocked = false;
@@ -393,6 +396,7 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
           'SKIP_FSINTRO':      'fsIntro',
           'SKIP_FSOUTRO':      'fsOutro',
           'SKIP_CELEBRATION':  'celebration',
+          'SKIP_BIGWIN':       'bigWinTier',
         })[s];
         if (typeof window !== 'undefined') window.__SLOT_SKIPPED__ = true;
         _emit('onSkipRequested', { phase: skipPhase, source: 'button' });
@@ -593,6 +597,20 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
       window.HookBus.on('onSlamComplete', _finalizeRound);
       window.HookBus.on('postSpin',       _finalizeRound);
 
+      /* Wave V5.3 — Big-Win Tier banner morphs CTA to SKIP_BIGWIN for the
+       * full banner lifetime. Click on the cyan SKIP CTA emits
+       * onSkipRequested{phase:'bigWinTier'} → bigWinTier listener calls
+       * bigWinTierExit('skipped') which clears banner + emits Exited.
+       * onBigWinTierExited returns CTA to SPIN (idle). Autoplay-aware:
+       * during autoplay the engine owns cadence, no manual skip morph. */
+      window.HookBus.on('onBigWinTierEntered', function () {
+        if (HIDE_ON_AUTOSPIN && _autoSpinActive()) return;
+        setState('SKIP_BIGWIN');
+      });
+      window.HookBus.on('onBigWinTierExited', function () {
+        if (STATE.current === 'SKIP_BIGWIN') setState('SPIN');
+      });
+
       window.HookBus.on('onFsTrigger', function () { if (SHOW_FS_INTRO)  setState('SKIP_FSINTRO');  });
       window.HookBus.on('onFsEnd',     function () { if (SHOW_FS_OUTRO)  setState('SKIP_FSOUTRO');  });
       window.HookBus.on('onScatterCelebrationStart', function () { if (SHOW_CELEBRATION) setState('SKIP_CELEBRATION'); });
@@ -649,6 +667,7 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
             'SKIP_FSINTRO':      'fsIntro',
             'SKIP_FSOUTRO':      'fsOutro',
             'SKIP_CELEBRATION':  'celebration',
+            'SKIP_BIGWIN':       'bigWinTier',
           })[s];
           window.__SLOT_SKIPPED__ = true;
           _emit('onSkipRequested', { phase: phase, source: source || 'api' });

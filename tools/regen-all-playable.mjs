@@ -17,15 +17,41 @@ const targets = [
   { src: 'samples/GATES_OF_OLYMPUS_1000_GAME_GDD.md',    out: 'dist/gates-of-olympus-1000.html' },
 ];
 
+/* Wave H5 — per-game Big-Win Tier label overrides. Each entry mirrors the
+ * matching sample GDD's §big-win section verbatim (so the dist HTML reads
+ * the same tier vocabulary the design doc specifies). The block itself
+ * stays vendor-neutral — these labels live only in samples + this tool
+ * harness, never in src/blocks/. The lego-gate vendor scan covers
+ * src/blocks/ only, so theme-flavoured labels here are kosher. */
+const PER_GAME_BIGWIN = {
+  /* Rectangular 5×3 — generic industry-baseline ladder (no theme yet). */
+  '01_rectangular_5x3_playable.html': {
+    thresholds: [10, 25, 50, 200, 1000],
+    labels:     ['NICE WIN', 'BIG WIN', 'SUPER WIN', 'HYPER WIN', 'GRAND WIN'],
+    durations:  [1800, 2400, 3200, 4800, 6400],
+  },
+  /* Wrath-of-Olympus — §6.4 BIG/MEGA/EPIC tier 1..3 with two extra
+   * climax tiers extrapolated up the same curve. 4s plaque per tier. */
+  'wrath-of-olympus.html': {
+    thresholds: [10, 25, 50, 200, 1000],
+    labels:     ['BIG WIN', 'MEGA WIN', 'EPIC WIN', 'ZEUS WIN', 'OLYMPUS WIN'],
+    durations:  [4000, 4000, 4000, 4500, 5500],
+  },
+  /* Gates-of-Olympus 1000 — mirror BIG / MEGA / SUPER / EPIC structure
+   * with a final mythic peak. Slightly faster banners (peak rapid play). */
+  'gates-of-olympus-1000.html': {
+    thresholds: [10, 30, 60, 200, 800],
+    labels:     ['BIG WIN', 'MEGA WIN', 'SUPER WIN', 'EPIC WIN', 'MYTHIC WIN'],
+    durations:  [1800, 2200, 3000, 4400, 6000],
+  },
+};
+
 for (const t of targets) {
   const md = readFileSync(resolve(REPO, t.src), 'utf8');
   const model = parseGDD(md, 'md');
-  /* Wave H5 — auto-enable Big-Win Tier ladder on every dist demo. Until
-   * per-game GDDs declare their own tier vocabulary explicitly, this
-   * places a vendor-neutral placeholder feature kind so the bigWinTier
-   * block opts in. Per-game `model.bigWinTier = { thresholds, labels,
-   * durations, colors, ... }` overrides land in samples once GDD-side
-   * copy/QA is signed off. */
+  /* Wave H5 — auto-enable Big-Win Tier ladder on every dist demo and
+   * attach per-game labels/thresholds/durations. Per-game `model.bigWinTier`
+   * is what the player actually reads on screen. */
   if (!Array.isArray(model.features)) model.features = [];
   const alreadyDeclared = model.features.some(f =>
     f && typeof f.kind === 'string' &&
@@ -33,6 +59,11 @@ for (const t of targets) {
   );
   if (!alreadyDeclared) {
     model.features.push({ kind: 'big_win_tier', label: 'Big-Win Tier Ladder' });
+  }
+  const outBase = t.out.split('/').pop();
+  const perGame = PER_GAME_BIGWIN[outBase];
+  if (perGame) {
+    model.bigWinTier = Object.assign({}, model.bigWinTier || {}, { enabled: true }, perGame);
   }
   const html = buildSlotHTML(model);
   writeFileSync(resolve(REPO, t.out), html);

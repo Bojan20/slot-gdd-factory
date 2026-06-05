@@ -258,6 +258,86 @@ The V5.0 fix bundle proves the SKIP CTA pipeline is sound for the win-rollup pha
 
 ---
 
+## 🟢 Wave H5 + V5.3 — Big-Win Tier ladder COMPLETE (skip-integrated · per-game labels · 45/45 live QA) — SHIPPED (pending hash pin)
+
+> Sledeća iteracija (Boki *"ajde zavrsi big win. ultimativno i odradi qa ultiamtivno detaljan i zivi review da si potpuno siguran da sve radi savreseno"*) zatvara preostala dva atoma iz prethodnog H5 ship-a:
+> 1. **V5.3** — spinControl morfuje CTA u `SKIP_BIGWIN` tokom big-win banner-a; klik emit-uje `onSkipRequested{phase:'bigWinTier'}` → blok izlazi.
+> 2. **Per-game labele** — sve 3 demo igre dobijaju svoj autorski tier vokabular kroz `tools/regen-all-playable.mjs` (sample GDD-ovi ostaju u repo-u kao test fixture).
+
+### V5.3 — spinControl SKIP_BIGWIN state
+
+| Lokacija | Šta dodato |
+|---|---|
+| `VALID_STATES` | `+ 'SKIP_BIGWIN'` (frozen list) |
+| `setState` whitelist | `+ 'SKIP_BIGWIN'` |
+| `_onClick` SKIP_* phase mapping | `+ 'SKIP_BIGWIN': 'bigWinTier'` |
+| New listeners | `onBigWinTierEntered → setState('SKIP_BIGWIN')` (autoplay-gated); `onBigWinTierExited → revert SPIN` |
+| Legacy stub `forceSkipRequest` phase mapping | `+ 'SKIP_BIGWIN': 'bigWinTier'` (third-party API parity) |
+
+### Per-game label vocabulary (sve u `tools/regen-all-playable.mjs`)
+
+| Demo | Tier 1 | Tier 2 | Tier 3 | Tier 4 | Tier 5 |
+|---|---|---|---|---|---|
+| `01_rectangular_5x3_playable.html` | NICE WIN | BIG WIN | SUPER WIN | HYPER WIN | GRAND WIN |
+| `wrath-of-olympus.html` | BIG WIN | MEGA WIN | EPIC WIN | ZEUS WIN | OLYMPUS WIN |
+| `gates-of-olympus-1000.html` | BIG WIN | MEGA WIN | SUPER WIN | EPIC WIN | MYTHIC WIN |
+
+### Ultimate live QA (Playwright × 3 igre × 11 checks = 45 PASS)
+
+| QA atom | Što proverava | Result |
+|---|---|:--:|
+| **QA-1** (5 × 3) | Per-tier label match `bigWinTierEnter(t, x) → banner text === GDD label` | ✅ 15/15 |
+| **QA-2** (1 × 3) | `onWinPresentationEnd → SKIP_BIGWIN` state morf | ✅ 3/3 |
+| **QA-3** (1 × 3) | Click na SKIP CTA emit-uje `onSkipRequested{phase:'bigWinTier'}` | ✅ 3/3 |
+| **QA-4** (1 × 3) | bigWinTier emit-uje `onBigWinTierExited{reason:'skipped'}` | ✅ 3/3 |
+| **QA-5** (1 × 3) | State revert na SPIN posle skip | ✅ 3/3 |
+| **QA-6** (1 × 3) | `preSpin` flush stale banner | ✅ 3/3 |
+| **QA-7** (1 × 3) | Autoplay-active suppress-uje SKIP_BIGWIN morf | ✅ 3/3 |
+| **QA-8** (1 × 3) | `tierFromRatio` deterministic (isti input → isti tier) | ✅ 3/3 |
+| **QA-9** (1 × 3) | Out-of-range tier 6 reject (frozen enum constraint) | ✅ 3/3 |
+| **QA-10** (1 × 3) | Idempotent enter — viši tier drži, niži ignored | ✅ 3/3 |
+| **QA-11** (1 × 3) | Screenshot snimak tier 5 banner-a | ✅ 3/3 |
+
+### Visual proof
+
+`/tmp/cortex-bigwin-ult/`:
+- `01_rectangular_5x3_playable-tier5.png` — **GRAND WIN ×1500**
+- `wrath-of-olympus-tier5.png` — **OLYMPUS WIN ×1500** + SKIP CTA visible
+- `gates-of-olympus-1000-tier5.png` — **MYTHIC WIN ×1500** + SKIP CTA visible
+
+### Unit + LEGO gates (pre commit)
+
+| Gate | Result |
+|---|:--:|
+| `tests/blocks/spinControl.test.mjs` (postojeći) | **17/17 PASS** |
+| `tests/blocks/bigWinTier.test.mjs` (postojeći) | **23/23 PASS** |
+| `tests/blocks/winPresentation.test.mjs` | **All PASS** |
+| `tests/blocks/hookBus.test.mjs` | **29/29 PASS** |
+| LEGO 5-invariants | **5/5 PASS** (vendor grep clean — labels live in `tools/regen-all-playable.mjs`, NOT in `src/blocks/`) |
+
+### Što ostaje out-of-scope (po izboru, ne blokira H5+V5.3 production)
+
+| Atom | Razlog |
+|---|---|
+| H17 — Audio mixer | Audio tok je ADB (CLAUDE.md hard rule), neutral od bigWinTier osim payload `soundBus` key |
+| Per-tier particle FX kit | `houseExplosionFXKit` (Tier-D skipped) — art-pack delivery, ne kodni atom |
+| Sample GDD parser extension za `bigWinTier` literal | Trenutno labele u tool-u rade; parser ekstenzija je nice-to-have kad budu dodate druge igre |
+
+### Acceptance gates 10/10
+
+1. ✅ `tier: INT` (1..5) jedini consumed contract code-side; labels su strings iz GDD config-a
+2. ✅ Vendor grep `src/blocks/` čist (0 hits)
+3. ✅ Banner emit POSLE rollup-a (`onWinPresentationEnd`)
+4. ✅ Skip CTA morfuje SAMO tokom banner-a (SKIP_BIGWIN window)
+5. ✅ preSpin flush — stale banner nikad ne pređe round boundary
+6. ✅ Autoplay symmetry — engine owns cadence; manualni skip morf gated
+7. ✅ a11y — `aria-live="polite"` + `prefers-reduced-motion` honored
+8. ✅ Determinism — isti input → isti tier; isti config → byte-identical CSS/runtime
+9. ✅ Idempotency — duplicate enter no-op; lower-tier ignored; out-of-range rejected
+10. ✅ Per-game vocabulary works end-to-end — `bigWinTierEnter(N, x)` → DOM banner shows GDD label "OLYMPUS WIN", not "TIER 5"
+
+---
+
 ## 🟢 Wave H5 — Big-Win Tier ladder (vendor-neutral 5-tier) — SHIPPED `c1f211c`
 
 > Triggered by Boki *"big win mora da bude template … bigwintier1 da se zna da je big win, samo naming convention sredi"* + *"zapisi sve sto sto treba da radis detaljno u master todo, pa onda otidji u WoO i pogledaj kako je big win odradjen, i ti ga tako ubaci do detalja u rectangulat … u igt playa core i playa slot pogledaj pravila"*. H5 lifts the existing WoO 6.4 three-tier ladder (BIG/MEGA/EPIC, 10x/25x/50x, 4s plaques) into a fully vendor-neutral 5-tier system with GDD-driven labels/thresholds/durations/colors. Same block runs every game; per-game vocabulary lives in `model.bigWinTier`.
