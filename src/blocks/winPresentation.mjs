@@ -518,8 +518,16 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
       window.__WIN_AWARD__ = totalAward;
     }
 
-    /* Visual cycle — events present? walk them one-by-one. */
-    if (allEvents.length > 0) {
+    /* Visual cycle — only fire the SKIP_ROLLUP presentation window when
+       the round actually paid something. Boki bug 05.06.2026: gating on
+       allEvents.length > 0 made the cycle (and the SKIP CTA morph in
+       spinControl) appear on any spin where the detector found candidate
+       lines but every payX was 0/undefined — common during a rapid
+       click race where stale events from the prior round leak in, or
+       when the placeholder math returns shape events without payouts.
+       Gate on totalAward > 0 so the SKIP CTA only appears when there is
+       a real rollup to fast-finalize. */
+    if (totalAward > 0) {
       if (typeof window !== 'undefined') {
         window.__SLOT_WIN_PRESENT_ACTIVE__ = true;
       }
