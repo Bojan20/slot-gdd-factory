@@ -503,6 +503,23 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
      *     native keyup-activation never fires the second click. Our
      *     keydown click is the single source of truth.
      */
+    /* Wave V5.4 — Space-during-pending-settle queue. Boki bug 05.06.2026:
+     * "Kada pritiskam space brzo da igram bas brzo igru, onda se ne pali
+     * uvek dugme stop i skip nego samo play". Live probe showed that
+     * during the ~500ms post-slam pending-settle window the button is
+     * .disabled=true, so rapid Space presses 3..N inside that window were
+     * being dropped on the floor. The player kept tapping and the engine
+     * never advanced, so the next press that landed AFTER settle (state
+     * already back to SPIN) just kicked a fresh spin — looking like
+     * "only PLAY ever fires".
+     *
+     * Fix: instead of dropping the press, latch a one-shot intent flag.
+     * A MutationObserver on the button's disabled attribute fires the
+     * queued click the instant the engine re-enables the CTA. The intent
+     * is one-shot (cleared on consumption AND on the next manual press)
+     * so the queue never stacks. preSpin also clears it so a stale press
+     * from a previous round can't poison a new round. */
+    var __spacePending = false;
     document.addEventListener('keydown', function (ev) {
       if (ev.code !== 'Space' && ev.key !== ' ') return;
       if (ev.repeat) { ev.preventDefault(); return; }   /* fix #2 — kill auto-repeat */
@@ -510,13 +527,42 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
       if (_modalOpen()) return;
       var btn = _btn();
       if (!btn) return;
-      if (btn.disabled) { ev.preventDefault(); return; }
       ev.preventDefault();
-      /* Synthesize a click — routes through capture _onClick first
-       * (state-machine), then bubble legacy listener (SPIN starter).
-       * Behaviorally identical to a native focused-Space activation. */
+      if (btn.disabled) {
+        /* Engine is mid-settle; latch the intent so it fires the moment
+         * the CTA becomes interactive again. */
+        __spacePending = true;
+        return;
+      }
+      /* Live press — consume any stale latched intent so a manual + queued
+       * back-to-back don't fire twice. */
+      __spacePending = false;
       btn.click();
     });
+    /* Drain queued Space the moment the button flips out of .disabled.
+     * MutationObserver runs synchronously after the disabled attribute
+     * mutation, so the latency is one microtask. */
+    function _wireSpaceQueueDrain() {
+      var btn = _btn();
+      if (!btn || typeof MutationObserver !== 'function') return;
+      var mo = new MutationObserver(function () {
+        if (__spacePending && !btn.disabled) {
+          __spacePending = false;
+          btn.click();
+        }
+      });
+      mo.observe(btn, { attributes: true, attributeFilter: ['disabled'] });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', _wireSpaceQueueDrain, { once: true });
+    } else {
+      _wireSpaceQueueDrain();
+    }
+    /* preSpin safety: a press latched in the previous round must NOT
+     * leak into the new round's actionable window. */
+    if (window.HookBus && typeof window.HookBus.on === 'function') {
+      window.HookBus.on('preSpin', function () { __spacePending = false; });
+    }
 
     /* Fix #1 — kill the native keyup-activation second click. Our keydown
      * handler already dispatched the click; the browser's built-in Space
