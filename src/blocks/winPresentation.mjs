@@ -697,6 +697,90 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
     return allEvents;
   }
 
+  /* presentExternalWin(award) — public post-FS / post-bonus win presenter.
+   * Boki rule 05.06.2026: "kad se vratim iz FS bonusa, treba da bude ako
+   * postoji uslov za big win, onda mora big win da se pokaze, ako postoji
+   * uslov za bilo koji win onda mora da se pokaze, dakle isto win
+   * animacija counter itd."
+   *
+   * The FS outro placard publishes the aggregated FS total. Once the
+   * placard closes (CTA click or fsOutro skip), the round MUST run the
+   * same presentation chain as a base-game win:
+   *   • big-win path  → symbol pulse → bigWinTier compound walkthrough
+   *   • regular win   → winRollup counter ramps to award, banner stays
+   *                     until next preSpin clears
+   *
+   * This helper synthesises that flow off-grid (FS doesn't produce real
+   * line events). It picks up to 8 visible grid cells for the symbol
+   * celebration (matches H5.14 BW-force convention) so the big-win pulse
+   * is visible; for regular wins it emits Start/End immediately so the
+   * winRollup counter starts ticking with the FS aggregate amount. */
+  async function presentExternalWin(award) {
+    const amt = Number(award);
+    if (!(amt > 0)) return;
+    if (typeof window === 'undefined') return;
+
+    /* Wave H5.16 — let downstream listeners read the correct amount BEFORE
+     * Start emits (winRollup peeks at __WIN_AWARD__ as a fallback). */
+    window.__WIN_AWARD__ = amt;
+
+    const bet      = (Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0)
+      ? window.__SLOT_BET__ : 1;
+    const bwState  = window.BIG_WIN_TIER_STATE || null;
+    const bwTrig   = (bwState && Array.isArray(bwState.thresholds) && bwState.thresholds[0] > 0)
+      ? bwState.thresholds[0] : Infinity;
+    const isBigWin = !!(bwState && bwState.enabled && (amt / bet) >= bwTrig);
+
+    /* For big-win: synth grid cells (mirrors H5.14 BW-force) so the
+     * 800ms symbol pulse is actually visible. */
+    const synth = [];
+    if (isBigWin) {
+      const FORCE_CELL_COUNT = 8;
+      const forceCells = [];
+      try {
+        const allCells = (typeof grid !== 'undefined' && grid && grid.querySelectorAll)
+          ? Array.from(grid.querySelectorAll('.cell'))
+          : (document.querySelectorAll && Array.from(document.querySelectorAll('.gridHost .cell, #gridHost .cell, .reelsHost .cell')));
+        if (allCells && allCells.length > 0) {
+          const stride = Math.max(1, Math.floor(allCells.length / FORCE_CELL_COUNT));
+          for (let i = 0; i < allCells.length && forceCells.length < FORCE_CELL_COUNT; i += stride) {
+            if (allCells[i]) forceCells.push(allCells[i]);
+          }
+        }
+      } catch (_) { /* defensive — pulse degrades to no-op */ }
+      synth.push({ symbol: 'POST_FS', tier: 'WILD', matchLength: 5, payX: amt, cells: forceCells });
+    }
+
+    window.__SLOT_WIN_PRESENT_ACTIVE__ = true;
+    if (typeof HookBus !== 'undefined') {
+      HookBus.emit('onWinPresentationStart', {
+        award: amt,
+        eventCount: isBigWin ? 1 : 0,
+        isBigWin: isBigWin,
+        source: 'post-fs',
+      });
+    }
+
+    if (isBigWin) {
+      await playSymbolCelebration(synth, ${c.bigWinCelebMs});
+    } else {
+      /* Regular win — no on-reel cycle (FS aggregate has no line events
+       * to walk). winRollup ramps the counter from its Start listener,
+       * which already fired above. Hold here briefly (single-frame
+       * resolution) so the End emit sequences naturally. */
+      await new Promise(r => setTimeout(r, 50));
+    }
+
+    window.__SLOT_WIN_PRESENT_ACTIVE__ = false;
+    if (typeof HookBus !== 'undefined') {
+      HookBus.emit('onWinPresentationEnd', {
+        award: amt,
+        isBigWin: isBigWin,
+        source: 'post-fs',
+      });
+    }
+  }
+
   /* Wave S LEGO conformance — winPresentation registers a LOW-priority (-10)
      onSpinResult listener that clears any in-flight win cycle the moment
      reels settle. Annotators (multiplierOrb, mystery, sticky/walking wild,
@@ -737,8 +821,11 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
   /* Expose applyWinHighlight on window so headless QA tools can poke it
      directly without going through the full spin lifecycle. */
   if (typeof window !== 'undefined') {
-    window.applyWinHighlight = applyWinHighlight;
-    window.cancelWinSymCycle = cancelWinSymCycle;
+    window.applyWinHighlight  = applyWinHighlight;
+    window.cancelWinSymCycle  = cancelWinSymCycle;
+    /* H5.16 public entry for post-FS / post-bonus presentation. freeSpins
+     * calls this on FSM_enterBase when the FS aggregate qualifies. */
+    window.presentExternalWin = presentExternalWin;
   }
 `;
 }

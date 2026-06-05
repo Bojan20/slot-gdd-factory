@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `7a96bf4` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + H5.4 + H5.5 + H5.6 + H5.7 + H5.8 + H5.9 + H5.10 + H5.11 + H5.12 + H5.13 + H5.14 + H5.15 (big-win banner sized + positioned by reels frame bbox via ResizeObserver + --bw-frame-w/h CSS vars, responsive na svakom viewportu)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: pending · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + H5.4–H5.15 + H5.16 (post-FS win presentation — kad se vratim iz FS, big-win banner ili regular rollup counter ide ako totalWin qualifies, identično kao base-game win flow)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -303,6 +303,72 @@ Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spi
 |---|:--:|
 | `tests/blocks/spinControl.test.mjs` | 17/17 PASS |
 | LEGO 5-invariants | 5/5 PASS |
+
+---
+
+## 🟢 Wave H5.16 — Post-FS win presentation: big-win banner / regular rollup ide kad se vratim iz FS — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"kad se vratim iz FS bonusa, treba da bude ako postoji uslov za big win, onda mora big win da se pokaze, ako postoji uslov za bilo koji win onda mora da se pokaze, dakle isto win animacija counter itd."*
+
+### Gap
+
+`FSM_enterBase` (FS outro → BASE prelaz) prebacivao state na BASE i odmah re-enable-ovao spin button — bez obzira na `FSM.totalWin`. Player se vraćao u base game sa unblokrianim CTA i bez win-presentation chain-a, iako je FS aggregate mogao da kvalifikuje za big-win banner ili regular rollup counter.
+
+Reference (`bigWinController.prepareForShow(fsTotalWin, fsBetAmount)` + `bigWin.show`) seamless prebacuje iz FS outro u big-win overlay. Naš pipeline bio prekinut.
+
+### Fix (dva sloja)
+
+**1. Novi public helper `window.presentExternalWin(award)` u `winPresentation.mjs`** — post-FS / post-bonus presenter koji:
+- Postavlja `__WIN_AWARD__ = amt` PRE Start emit-a (da winRollup pravilno pokupi)
+- Detektuje `isBigWin` iz `BIG_WIN_TIER_STATE.thresholds[0]`
+- Ako big-win: sintetizuje 8 grid cells (identičan stride pick kao H5.14 BW-force) + `playSymbolCelebration(synth, 800ms)`
+- Ako regular: emit Start odmah (winRollup pokupi), short 50ms hold, emit End
+- Vraća Promise
+
+**2. `FSM_enterBase` u `freeSpins.mjs` modify** — pre nego što vrati BASE state:
+- Snapshot `FSM.totalWin` u local
+- Hide FS overlay + reset stage badge (kao i ranije)
+- Ako `totalWin > 0`:
+  - Drži spin button DISABLED
+  - Pozove `window.presentExternalWin(totalWin)`
+  - Posle promise resolve: ako `BIG_WIN_TIER_STATE.walkActive` → čeka `onBigWinTierEnd` pre re-enable; inače re-enable odmah
+  - Safety floor 30s na re-enable timeout
+- Ako 0: re-enable odmah (legacy behavior)
+
+### Live probe — `tools/_post-fs-win-probe.mjs` (NEW)
+
+| Scenario | award | startIsBigWin | startSource | rollupText | startToEnd | pulsedCells | bwAfterEnd |
+|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| **A** Regular (3× bet) | €3 | `false` ✅ | `'post-fs'` ✅ | `€3.00` ✅ | — | — | — |
+| **B** Big (50× bet) | €50 | `true` ✅ | `'post-fs'` ✅ | — | **802ms** ✅ | **8 cells** ✅ | ✅ |
+
+**26/26 PASS** sve 2 igre.
+
+### Boki rule honored
+
+> *"kad se vratim iz FS bonusa, [...] mora big win da se pokaze, [...] dakle isto win animacija counter itd."*
+
+Posle FS outro:
+- **Regular FS win** → winRollup counter ramps `€0.00 → €N.NN`, banner ostaje vidljiv do sledećeg spina
+- **Big FS win** → 8 grid cells pulse 800ms, zatim bigWinTier compound walkthrough (tier 1→5 sa €N.NN climax counter)
+- **No FS win** → direct prelaz u BASE (legacy behavior)
+
+Spin button drži se disabled tokom cele presentation chain-a — player ne može da klikne novi spin preko big-win banner-a.
+
+### Full regression matrix
+
+| Gate | Result |
+|---|:--:|
+| `tools/_post-fs-win-probe.mjs` (NEW) | **26/26 PASS** |
+| `tests/blocks/winPresentation.test.mjs` | **PASS** |
+| `tests/blocks/freeSpins.test.mjs` | **PASS** |
+| `tools/lego-gate.mjs` | **5/5 PASS** |
+| `tools/_bw-force-symbol-pulse-probe.mjs` (H5.14) | **20/20 PASS** |
+| `tools/_stale-skip-cta-probe.mjs` (H5.12) | **14/14 PASS** |
+| `tools/_stop-visibility-probe.mjs` (H5.11) | **18/18 PASS** |
+| `tools/_win-rollup-probe.mjs` (H5.8) | **57/57 PASS** |
+| `tools/_bw-skip-probe.mjs` (H5.9) | **22/22 PASS** |
+| `tools/_skip-coverage-probe.mjs` (H5.10) | **30/30 PASS** |
 
 ---
 

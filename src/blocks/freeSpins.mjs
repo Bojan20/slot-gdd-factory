@@ -580,13 +580,58 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
   }
 
   function FSM_enterBase() {
+    /* H5.16 — Boki rule 05.06.2026: "kad se vratim iz FS bonusa, treba
+     * da bude ako postoji uslov za big win, onda mora big win da se
+     * pokaze, ako postoji uslov za bilo koji win onda mora da se pokaze,
+     * dakle isto win animacija counter itd."
+     *
+     * Capture the FS aggregate BEFORE we touch state. If it qualifies for
+     * any win (>0), kick the post-FS presentation chain. Spin button stays
+     * disabled until the chain resolves so the player can't accidentally
+     * launch a new spin on top of the big-win banner / rollup counter. */
+    var __fsTotalWin = (FSM && Number.isFinite(FSM.totalWin)) ? FSM.totalWin : 0;
     FSM.phase = "BASE";
     setStageBadge("base", STAGE_BASE_LABEL);
     FSM_hideOverlay();
     FSM_hideFsMode();
-    spinButton && (spinButton.disabled = false);
     devFsBtn   && (devFsBtn.disabled   = !FREESPINS.enabled);
     statusElGlobal && (statusElGlobal.textContent = "PRESS SPIN");
+
+    if (__fsTotalWin > 0 && typeof window !== 'undefined' && typeof window.presentExternalWin === 'function') {
+      /* Hold the spin button until the post-FS presentation closes.
+       * bigWinTier banner fires onBigWinTierEnd at the very end of a
+       * compound walkthrough (or skip); regular wins resolve immediately
+       * once presentExternalWin's promise settles. */
+      spinButton && (spinButton.disabled = true);
+      var __reEnable = function () {
+        spinButton && (spinButton.disabled = false);
+      };
+      var __postFsCleanup = function () {
+        if (typeof window === 'undefined' || !window.HookBus) { __reEnable(); return; }
+        var bwActive = !!(window.BIG_WIN_TIER_STATE && window.BIG_WIN_TIER_STATE.walkActive);
+        if (bwActive) {
+          var onBwEnd = function () {
+            if (window.HookBus && typeof window.HookBus.off === 'function') window.HookBus.off('onBigWinTierEnd', onBwEnd);
+            __reEnable();
+          };
+          window.HookBus.on('onBigWinTierEnd', onBwEnd);
+          /* Safety floor: re-enable after 30s no-matter-what, so a missed
+           * onBigWinTierEnd doesn't permanently lock the spin CTA. */
+          setTimeout(function () { __reEnable(); }, 30000);
+        } else {
+          __reEnable();
+        }
+      };
+      try {
+        var p = window.presentExternalWin(__fsTotalWin);
+        if (p && typeof p.then === 'function') p.then(__postFsCleanup, __postFsCleanup);
+        else __postFsCleanup();
+      } catch (_) {
+        __reEnable();
+      }
+    } else {
+      spinButton && (spinButton.disabled = false);
+    }
   }
 
   /* Placard CTA — advances the FSM. */
