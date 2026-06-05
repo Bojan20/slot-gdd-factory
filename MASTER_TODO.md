@@ -258,7 +258,7 @@ The V5.0 fix bundle proves the SKIP CTA pipeline is sound for the win-rollup pha
 
 ---
 
-## 🟢 Wave H5.2 — Big-Win Tier hardening (placeholder naming · animated count-up · BW force REAL spin) — SHIPPED (pending hash pin)
+## 🟢 Wave H5.2 — Big-Win Tier hardening (placeholder naming · animated count-up · BW force REAL spin) — SHIPPED `d972910`
 
 > Boki (05.06.2026): *"rekao sam da bude bigwintier1-5 i opet si stavio nice epic itd … gde je counter … tehnicki deo mehaniku prepisuješ iz WoO igre … force dugme treba da okrene spin, kao bilo koje drugo force dugme. zapisi to pravilo"*. Four distinct fixes in one commit plus a new permanent rule.
 
