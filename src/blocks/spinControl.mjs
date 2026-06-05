@@ -303,6 +303,11 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
        * flag tells _finalizeRound to re-enable the button when the
        * settlement window closes. */
       slamPendingSettle: false,
+      /* Wave V5 — one-shot finalize gate. preSpin arms; first onSlamComplete
+       * OR postSpin runs _finalizeRound and disarms. Subsequent stale
+       * emits from the same or previous round are dropped. Prevents late
+       * postSpin from a prior round leaking SKIP_ROLLUP into the next round. */
+      expectsFinalize: false,
     };
     if (typeof window !== 'undefined') window.SPIN_CONTROL_STATE = STATE;
 
@@ -510,6 +515,24 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
          * onSlamComplete dropped due to upstream error) could leave the
          * button locked into disabled forever. */
         STATE.slamPendingSettle = false;
+        /* Wave V5 anti-leak (Boki bug 05.06.2026): clear the win-presentation
+         * globals at the TOP of the new round so a late postSpin / late
+         * onSlamComplete from the previous round (rapid-click race during a
+         * win cycle) cannot read stale __WIN_AWARD__ > 0 and falsely morph
+         * the new spin's CTA into SKIP_ROLLUP. Must run BEFORE winPresentation
+         * preSpin (priority -10) sees the new round so the same clear is
+         * idempotent if it also wipes these. */
+        if (typeof window !== 'undefined') {
+          window.__WIN_AWARD__ = 0;
+          window.__SLOT_WIN_PRESENT_ACTIVE__ = false;
+          window.__SLOT_SKIPPED__ = false;
+        }
+        /* Wave V5 — arm a one-shot finalize gate. _finalizeRound is the
+         * sink for onSlamComplete + postSpin; if a stale finalize from a
+         * previous round (or a duplicated emit) arrives after we already
+         * processed this round's first finalize, it must be dropped so it
+         * cannot push us back into SKIP_ROLLUP. */
+        STATE.expectsFinalize = true;
         if (HIDE_ON_TURBO && _turboActive()) return;
         if (HIDE_ON_AUTOSPIN && _autoSpinActive()) return;
         /* INSTANT morph — no delay. Boki industry preference. */
@@ -529,6 +552,15 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
        * slam-stop path. winPresentation has published __WIN_AWARD__ /
        * __WIN_ROLLUP_MS__ by then. */
       function _finalizeRound() {
+        /* Wave V5 anti-leak: drop late events from a previous round whose
+         * finalize already ran. Without this gate, a stale postSpin emit
+         * (rapid-click race: spin 1's handlePostSpin awaits its cycle
+         * cleanup and emits postSpin AFTER spin 2's preSpin already armed
+         * a new round) would read stale __WIN_AWARD__ + hasWin=true and
+         * morph the new spin's CTA back into SKIP_ROLLUP. The flag is
+         * armed in preSpin and disarmed on the first finalize this round. */
+        if (!STATE.expectsFinalize) return;
+        STATE.expectsFinalize = false;
         if (STATE.armTimerId !== null) { clearTimeout(STATE.armTimerId); STATE.armTimerId = null; }
         var award    = (typeof window !== 'undefined') ? window.__WIN_AWARD__    : 0;
         var rollupMs = (typeof window !== 'undefined') ? window.__WIN_ROLLUP_MS__ : 0;
