@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `a3a38ea` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + H5.4–H5.15 + H5.16 (post-FS win presentation — kad se vratim iz FS, big-win banner ili regular rollup counter ide ako totalWin qualifies, identično kao base-game win flow)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: pending · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + H5.4–H5.16 + H5.17 (autoplay čeka svaki win do kraja — big-win banner waits for onBigWinTierEnd, regular win hold 1500ms, no-win 250ms)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -306,7 +306,88 @@ Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spi
 
 ---
 
-## 🟢 Wave H5.16 — Post-FS win presentation: big-win banner / regular rollup ide kad se vratim iz FS — SHIPPED (this commit)
+## 🟢 Wave H5.17 — Autoplay čeka SVAKI win do kraja (big-win banner + regular rollup) — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"Kada se ukljuci auto play mora da se saceka svaki win do kraja pa cak i big win, ne sme da se preskace odmah, nego realna igra bez skipovanja, kada je autoplay ukljucen."*
+
+### Gap
+
+Autoplay `postSpin` handler je triggerovao sledeći spin za fiksnih **250ms** (`INTER_SPIN_MS`) — bez obzira na win magnitude. Big-win banner (compound walkthrough do ~24s) bio prekidan novim `preSpin`-om već posle 250ms, koji cancele bigWinTier kroz `preSpin` listener. Player nije video celu animaciju. Regular rollup counter takođe nije imao vremena da settle.
+
+### Fix (tri sloja)
+
+**1. Novi config knob-ovi** u `autoplay.mjs`:
+| Key | Default | Range | Smisao |
+|---|:--:|:--:|---|
+| `interSpinDelayAfterWinMs` | 1500ms | 0–10000 | Hold posle regular win-a (counter visible time) |
+| `bigWinWaitTimeoutMs` | 30000ms | 1000–120000 | Safety floor za big-win wait |
+
+**2. Runtime bake** — `WIN_HOLD_MS` + `BW_WAIT_TO_MS` kao baked literali.
+
+**3. `postSpin` handler tri-branch logic:**
+
+```js
+var isBigWin = !!(BIG_WIN_TIER_STATE?.enabled && (award/bet) >= thresholds[0]);
+
+if (isBigWin) {
+  // Subscribe to onBigWinTierEnd. Schedule next spin ONLY when banner ends.
+  var onEnd = function () { HookBus.off('onBigWinTierEnd', onEnd); _scheduleNextSpin(INTER_SPIN_MS); };
+  HookBus.on('onBigWinTierEnd', onEnd);
+  setTimeout(onEnd, BW_WAIT_TO_MS);     // safety floor
+} else if (award > 0) {
+  _scheduleNextSpin(WIN_HOLD_MS);       // regular win — 1500ms hold
+} else {
+  _scheduleNextSpin(INTER_SPIN_MS);     // no win — 250ms gap
+}
+```
+
+### Live probe — `tools/_autoplay-wait-win-probe.mjs` (NEW)
+
+3 scenarija × 2 igre. Mock-uje `spinBtn.click` da meri timing umesto da pokreće realan spin.
+
+| Scenario | award | clicked @ 2s? | next-click delay |
+|---|:--:|:--:|:--:|
+| **A** No win | 0 | — | **252ms** ≈ INTER_SPIN_MS ✅ |
+| **B** Regular (3× bet) | €3 | — | **1502ms** ≈ WIN_HOLD_MS ✅ |
+| **C** Big (50× bet) | €50 | **NO** ✅ | **2253ms** (waited for `onBigWinTierEnd`) ✅ |
+
+**18/18 PASS** — autoplay čeka End event pre nego što schedule-uje next spin. Big-win walkthrough nikad ne biva preskočen autoplay-om.
+
+### Player perspective u autoplay
+
+- **No-win round** → 250ms gap → next spin (fluidan ritam, brza igra)
+- **Regular win** → counter ramps + 1500ms hold → next spin (counter čitljiv)
+- **Big win** → full 24s tier walkthrough sa endHold i fade-out → next spin (NIKAD preskočen)
+
+### Files
+
+| File | Change |
+|---|---|
+| `src/blocks/autoplay.mjs` | + 2 config knobs (defaultConfig + resolveConfig + runtime bake) + tri-branch postSpin handler |
+| `tools/_autoplay-wait-win-probe.mjs` | NEW — 3 scenarija × 2 demos = 18 checks |
+
+### Full regression matrix
+
+| Gate | Result |
+|---|:--:|
+| `tools/_autoplay-wait-win-probe.mjs` (NEW) | **18/18 PASS** |
+| `tests/blocks/autoplay.test.mjs` | **31/31 PASS** |
+| `tools/lego-gate.mjs` | **5/5 PASS** |
+| `tools/_post-fs-win-probe.mjs` (H5.16) | **26/26 PASS** |
+| `tools/_bw-force-symbol-pulse-probe.mjs` (H5.14) | **20/20 PASS** |
+| `tools/_stale-skip-cta-probe.mjs` (H5.12) | **14/14 PASS** |
+| `tools/_win-rollup-probe.mjs` (H5.8) | **57/57 PASS** |
+| `tools/_skip-coverage-probe.mjs` (H5.10) | **30/30 PASS** |
+
+### Boki rule honored
+
+> *"mora da se saceka svaki win do kraja pa cak i big win, ne sme da se preskace odmah, nego realna igra bez skipovanja"*
+
+Autoplay sad sluša `onBigWinTierEnd` za big-win i hold-uje 1500ms za regular win-ove. Realna igra bez skipovanja preko banner-a.
+
+---
+
+## 🟢 Wave H5.16 — Post-FS win presentation: big-win banner / regular rollup ide kad se vratim iz FS — SHIPPED (`a3a38ea`)
 
 > Boki (05.06.2026): *"kad se vratim iz FS bonusa, treba da bude ako postoji uslov za big win, onda mora big win da se pokaze, ako postoji uslov za bilo koji win onda mora da se pokaze, dakle isto win animacija counter itd."*
 

@@ -90,6 +90,18 @@ export function defaultConfig() {
      * the result before the next spin starts; many vendors use 600-800ms
      * for "casual" mode and 100-150ms for "rapid" mode. */
     interSpinDelayMs: 250,
+    /* After a REGULAR win (sub-big-win), hold this much longer before the
+     * next spin so the player actually sees the rollup counter settle.
+     * Boki rule 05.06.2026: "Kada se ukljuci auto play mora da se saceka
+     * svaki win do kraja [...] realna igra bez skipovanja". Industry
+     * vendors default ~1500ms post-win in casual autoplay. */
+    interSpinDelayAfterWinMs: 1500,
+    /* For big-win rounds, autoplay does NOT use a fixed delay — it
+     * waits for onBigWinTierEnd before scheduling the next spin. This
+     * fallback caps that wait so a missed End event can't permanently
+     * stall the session (30s = covers the longest legitimate tier-5
+     * walkthrough plus endHold plus fade-out plus a safety margin). */
+    bigWinWaitTimeoutMs: 30000,
     /* Show the remaining-spins counter overlay during a session. */
     showCounter: true,
     chipColor:     '90,180,255',
@@ -137,6 +149,12 @@ export function resolveConfig(model = {}) {
 
   if (Number.isFinite(m.interSpinDelayMs)) {
     cfg.interSpinDelayMs = Math.max(0, Math.min(5000, Math.round(m.interSpinDelayMs)));
+  }
+  if (Number.isFinite(m.interSpinDelayAfterWinMs)) {
+    cfg.interSpinDelayAfterWinMs = Math.max(0, Math.min(10000, Math.round(m.interSpinDelayAfterWinMs)));
+  }
+  if (Number.isFinite(m.bigWinWaitTimeoutMs)) {
+    cfg.bigWinWaitTimeoutMs = Math.max(1000, Math.min(120000, Math.round(m.bigWinWaitTimeoutMs)));
   }
   if (m.showCounter != null) cfg.showCounter = !!m.showCounter;
 
@@ -567,6 +585,8 @@ export function emitAutoplayRuntime(cfg = defaultConfig()) {
     var STOP_LOSS_HI   = ${c.stopOnLossAbove   === null ? 'null' : c.stopOnLossAbove};
     var STOP_WIN_HI    = ${c.stopOnWinAbove    === null ? 'null' : c.stopOnWinAbove};
     var INTER_SPIN_MS  = ${c.interSpinDelayMs};
+    var WIN_HOLD_MS    = ${c.interSpinDelayAfterWinMs};
+    var BW_WAIT_TO_MS  = ${c.bigWinWaitTimeoutMs};
     var SHOW_COUNTER   = ${c.showCounter};
 
     var STATE = {
@@ -889,7 +909,49 @@ export function emitAutoplayRuntime(cfg = defaultConfig()) {
         if (STATE.remaining <= 0) { autoplayStop('completed'); return; }
         if (STATE.pendingStopReason) { autoplayStop(STATE.pendingStopReason); return; }
         if (STATE.paused) return;
-        _scheduleNextSpin(INTER_SPIN_MS);
+
+        /* Boki rule 05.06.2026: "Kada se ukljuci auto play mora da se
+         * saceka svaki win do kraja pa cak i big win, ne sme da se
+         * preskace odmah, nego realna igra bez skipovanja."
+         *
+         * Three branches:
+         *   1. No win              → standard INTER_SPIN_MS gap
+         *   2. Regular win (>0,
+         *      sub-big-win)        → WIN_HOLD_MS (default 1500 ms) so
+         *                            the rollup counter is fully visible
+         *   3. Big win             → DO NOT schedule a fixed delay; wait
+         *                            for onBigWinTierEnd (compound walk
+         *                            + endHold + fade-out, ~24 s for the
+         *                            top tier). Safety floor =
+         *                            BW_WAIT_TO_MS so a missed End event
+         *                            can't permanently stall the session. */
+        var __award = (typeof window !== 'undefined' && Number.isFinite(window.__WIN_AWARD__)) ? window.__WIN_AWARD__ : 0;
+        var __bet   = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : 1;
+        var __bw    = (typeof window !== 'undefined') ? window.BIG_WIN_TIER_STATE : null;
+        var __bwTrig = (__bw && Array.isArray(__bw.thresholds) && __bw.thresholds[0] > 0) ? __bw.thresholds[0] : Infinity;
+        var __isBigWin = !!(__bw && __bw.enabled && (__award / __bet) >= __bwTrig);
+
+        if (__isBigWin) {
+          /* Wait for the big-win banner sequence to finish naturally.
+           * Player should never see autoplay race past a tiered banner. */
+          var __waitDone = false;
+          var __onBwEnd = function () {
+            if (__waitDone) return;
+            __waitDone = true;
+            if (window.HookBus && typeof window.HookBus.off === 'function') window.HookBus.off('onBigWinTierEnd', __onBwEnd);
+            if (!STATE.active || STATE.paused) return;
+            _scheduleNextSpin(INTER_SPIN_MS);
+          };
+          if (window.HookBus && typeof window.HookBus.on === 'function') window.HookBus.on('onBigWinTierEnd', __onBwEnd);
+          /* Safety floor — if End event never lands (browser tab throttled,
+           * upstream block disabled mid-session, etc.) re-schedule after
+           * the configured timeout so the autoplay session can recover. */
+          setTimeout(__onBwEnd, BW_WAIT_TO_MS);
+        } else if (__award > 0) {
+          _scheduleNextSpin(WIN_HOLD_MS);
+        } else {
+          _scheduleNextSpin(INTER_SPIN_MS);
+        }
       }, { priority: -25 });
 
       window.HookBus.on('onFsTrigger', function () {
