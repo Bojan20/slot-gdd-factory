@@ -128,6 +128,27 @@ for (const t of targets) {
   if (perGame) {
     model.bigWinTier = Object.assign({}, model.bigWinTier || {}, { enabled: true }, perGame);
   }
+  /* Wave H14 — auto-enable Hold-and-Win Credit Bucket extension on demos
+   * that already declare a `hold_and_win` feature kind. Default prize map
+   * + jackpot ladder are template-neutral; per-game GDDs can override via
+   * `model.holdAndWinCreditBucket.*`. The extension is a no-op when the
+   * base holdAndWin block is disabled. */
+  const hasHnW = model.features.some(f =>
+    f && typeof f.kind === 'string' && /^hold[_-]?and[_-]?win$/i.test(f.kind),
+  );
+  if (hasHnW) {
+    const alreadyHasBucket = model.features.some(f =>
+      f && typeof f.kind === 'string' &&
+      /^(hold[_-]?and[_-]?win[_-]?credit[_-]?bucket|credit[_-]?bucket)$/i.test(f.kind),
+    );
+    if (!alreadyHasBucket) {
+      model.features.push({ kind: 'hold_and_win_credit_bucket', label: 'Credit Bucket' });
+    }
+    /* Make sure the base holdAndWin block is on too (it auto-enables via
+     * the hold_and_win feature kind already, but be explicit so the demo
+     * lights up the locked-cell halo + HUD on the first respin). */
+    model.holdAndWin = Object.assign({}, model.holdAndWin || {}, { enabled: true });
+  }
   const html = buildSlotHTML(model);
   writeFileSync(resolve(REPO, t.out), html);
   console.log(`✅ ${t.out}  (${(html.length/1024).toFixed(1)} KB)`);

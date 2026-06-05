@@ -112,6 +112,12 @@ const EXPECTED_EMIT_OWNERS = {
   onBigWinTierEntered:    ['bigWinTier.mjs'],
   onBigWinTierExited:     ['bigWinTier.mjs'],
   onBigWinTierEnd:        ['bigWinTier.mjs'],
+  /* Wave H14 — Hold-and-Win Credit Bucket extension. Standalone block
+   * observes window.HW_STATE.lockedCells diff on postSpin and emits
+   * per-lock + start + end events. holdAndWin.mjs source untouched. */
+  onCreditBucketRespinStart: ['holdAndWinCreditBucket.mjs'],
+  onCreditBucketLocked:      ['holdAndWinCreditBucket.mjs'],
+  onCreditBucketEnd:         ['holdAndWinCreditBucket.mjs'],
   /* Wave U4 — autoplay session events all owned by autoplay.mjs. */
   onAutoplayStart: ['autoplay.mjs'],
   onAutoplayTick:  ['autoplay.mjs'],

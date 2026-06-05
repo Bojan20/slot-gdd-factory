@@ -237,6 +237,13 @@ import {
   emitHoldAndWinCSS, emitHoldAndWinMarkup, emitHoldAndWinRuntime,
   resolveConfig as resolveHoldAndWinConfig,
 } from './blocks/holdAndWin.mjs';
+// Wave H14 — Hold-and-Win Credit Bucket extension (pure observer)
+import {
+  emitHoldAndWinCreditBucketCSS,
+  emitHoldAndWinCreditBucketMarkup,
+  emitHoldAndWinCreditBucketRuntime,
+  resolveConfig as resolveHoldAndWinCreditBucketConfig,
+} from './blocks/holdAndWinCreditBucket.mjs';
 import {
   emitRespinCSS, emitRespinMarkup, emitRespinRuntime,
   resolveConfig as resolveRespinConfig,
@@ -387,6 +394,8 @@ ${emitSettingsPanelCSS(resolveSettingsPanelConfig(model))}
 ${/* Wave U10 — paytable modal (i-button + symbol roster + features). */ ''}
 ${emitPaytableCSS(resolvePaytableConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
+${/* Wave H14 — Hold-and-Win Credit Bucket extension (chip + jackpot CSS). */ ''}
+${emitHoldAndWinCreditBucketCSS(resolveHoldAndWinCreditBucketConfig(model))}
 ${emitRespinCSS(resolveRespinConfig(model))}
 ${emitWinCapCSS(resolveWinCapConfig(model))}
 ${emitBonusPickCSS(resolveBonusPickConfig(model))}
@@ -508,6 +517,7 @@ ${resolveSpinControlConfig(model).enabled ? '' : emitForceSkipMarkup(resolveForc
 ${/* Wave U4 — autoplay button + panel + counter overlay. */ ''}
 ${emitAutoplayMarkup(resolveAutoplayConfig(model))}
 ${emitHoldAndWinMarkup(resolveHoldAndWinConfig(model))}
+${emitHoldAndWinCreditBucketMarkup(resolveHoldAndWinCreditBucketConfig(model))}
 ${emitRespinMarkup(resolveRespinConfig(model))}
 ${emitWinCapMarkup(resolveWinCapConfig(model))}
 ${emitBonusPickMarkup(resolveBonusPickConfig(model))}
@@ -853,6 +863,9 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
   ${/* Wave U10 — paytable modal runtime (i-button show/hide + roster). */ ''}
   ${emitPaytableRuntime(resolvePaytableConfig(model), model)}
   ${emitHoldAndWinRuntime(resolveHoldAndWinConfig(model))}
+  ${/* Wave H14 — Credit Bucket emits AFTER holdAndWin runtime so HW_STATE
+     * is already populated when the observer's postSpin listener fires. */ ''}
+  ${emitHoldAndWinCreditBucketRuntime(resolveHoldAndWinCreditBucketConfig(model))}
   ${emitRespinRuntime(resolveRespinConfig(model))}
   ${emitWinCapRuntime(resolveWinCapConfig(model))}
   ${emitLightningRuntime(resolveLightningConfig(model))}

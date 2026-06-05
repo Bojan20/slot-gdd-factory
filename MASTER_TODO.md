@@ -3,7 +3,132 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `3f37372` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + V5.Y + H5.4–H5.20 + Wave I + Wave I.2** all live. Hub responsive 9/9 PASS. **Latest shipped — Wave I.2** (MULT force button — third dev-force CTA next to FS + BW; 14/22 fixtures expose multiplier feature → MULT enabled conditionally per GDD; `_wave-i2-force-cta-probe.mjs` **88/88 PASS** across 11 topologies; Wave I H5.x regression **209/209 PASS**; combined **297/297 PASS**). Wave I before it: **11/11 UNIFORM grid kinds** got their own playable dist with full H5.x stack (skip / stop / big-win / win-rollup / autoplay / FS) — was 3 dist, now 11. Big-Win Tier ladder fully matured kroz 17 atoma (H5.4 continuous counter → H5.5 absolute money → H5.6 time-based promotion → H5.7 hero typography → H5.8 winRollup block → H5.9 skip instant snap → H5.10 winRollup skip listener → H5.11 STOP min-visibility → H5.12 SKIP_ROLLUP reset fix → H5.13 symbol pulse path → H5.14 BW force visible animation → H5.15 frame-anchored responsive sizing → H5.16 post-FS presentation pipeline → H5.17 autoplay wait-every-win → H5.18 FS intro grid hide → H5.19 BW force bypass scatter check + ultimate QA → H5.20 FS skip Promise leak fix). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: **(pending push)** · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + V5.Y + H5.4–H5.20 + Wave I + Wave I.2 + Wave H14 (holdAndWinCreditBucket extension — vendor-neutral credit-on-reels + jackpot ladder)** all live. Hub responsive 9/9 PASS. **Latest shipped — Wave I.2** (MULT force button — third dev-force CTA next to FS + BW; 14/22 fixtures expose multiplier feature → MULT enabled conditionally per GDD; `_wave-i2-force-cta-probe.mjs` **88/88 PASS** across 11 topologies; Wave I H5.x regression **209/209 PASS**; combined **297/297 PASS**). Wave I before it: **11/11 UNIFORM grid kinds** got their own playable dist with full H5.x stack (skip / stop / big-win / win-rollup / autoplay / FS) — was 3 dist, now 11. Big-Win Tier ladder fully matured kroz 17 atoma (H5.4 continuous counter → H5.5 absolute money → H5.6 time-based promotion → H5.7 hero typography → H5.8 winRollup block → H5.9 skip instant snap → H5.10 winRollup skip listener → H5.11 STOP min-visibility → H5.12 SKIP_ROLLUP reset fix → H5.13 symbol pulse path → H5.14 BW force visible animation → H5.15 frame-anchored responsive sizing → H5.16 post-FS presentation pipeline → H5.17 autoplay wait-every-win → H5.18 FS intro grid hide → H5.19 BW force bypass scatter check + ultimate QA → H5.20 FS skip Promise leak fix). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+
+---
+
+## 🟢 Wave H14 — `holdAndWinCreditBucket` extension (credit-on-reels + jackpot ladder) — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"mislim da je prvo najbolje extention na postojece … kreni redom ultimativno, ako mozes da iskoristis osnovni izgled idi iz WoO igre, koristi ulaz tehnikalije, izlaz i slicno … pricam za hold and win"*. First of the Wave H extension series — adds the universal "Credit Bucket" / "Cash-On-Reels" DNA on top of the existing `holdAndWin.mjs` LEGO atom without modifying its source.
+
+### Industry pattern (vendor-neutral synthesis)
+
+The modern hold-and-spin family has 3 layered concerns:
+
+| Concern | Owner block |
+|---|---|
+| Bonus symbol detection + lock map + respin counter + base HUD chrome | `holdAndWin.mjs` (pre-existing, untouched) |
+| Per-cell credit value chip + jackpot tag + bucket-sum payout + all-locked grand award | **`holdAndWinCreditBucket.mjs` (NEW — this wave)** |
+| Audio cues + cinematic reveal | future H17 / H6 hooks via `onCreditBucketEnd` |
+
+### What landed
+
+| Atom | File | Lines | Status |
+|:--:|---|:--:|:--:|
+| H14.a — block source | `src/blocks/holdAndWinCreditBucket.mjs` | 388 | ✅ CREATED — defaultConfig + resolveConfig + emit{CSS,Markup,Runtime} + JSDoc 113-line contract header |
+| H14.b — unit suite | `tests/blocks/holdAndWinCreditBucket.test.mjs` | 275 | ✅ **58/58 PASS** — happy + malformed-input + determinism + vendor-neutral + sandbox event-flow smoke test |
+| H14.c — HookBus contract | `src/blocks/hookBus.mjs` | +13 | ✅ `onCreditBucketRespinStart` + `onCreditBucketLocked` + `onCreditBucketEnd` added |
+| H14.d — canonical-list test | `tests/blocks/hookBus.test.mjs` | +2 | ✅ 29/29 PASS (expected list expanded) |
+| H14.e — LEGO ownership | `tools/lego-gate.mjs` | +6 | ✅ single-owner = `holdAndWinCreditBucket.mjs` for all 3 events; 28/28 pass |
+| H14.f — buildSlotHTML wiring | `src/buildSlotHTML.mjs` | +12 | ✅ CSS + (empty) markup + runtime emitted AFTER holdAndWin runtime so HW_STATE is populated when observer fires |
+| H14.g — dist auto-enable | `tools/regen-all-playable.mjs` | +18 | ✅ injects `hold_and_win_credit_bucket` feature kind whenever GDD declares `hold_and_win` |
+
+### Composition contract (LEGO — block is pure observer, zero coupling)
+
+| Read | Write |
+|---|---|
+| `window.HW_STATE.lockedCells` (diff snapshot on `postSpin`) | `window.__WIN_AWARD__` (final round payout, hand off to winPresentation) |
+| `window.__SLOT_BET__` (currency unit) | `window.__HW_CREDIT_TOTAL__` + `window.__HW_CREDIT_JACKPOT__` |
+| existing `.cell.is-locked-bonus` nodes (chip insertion target) | `.hw-credit-chip` span appended inside each locked cell |
+| existing `#hwHud` DOM (extends with TOTAL chip) | `<div.hw-credit-total-box>` injected once into HUD |
+| `HookBus.on('postSpin'/'onSpinResult'/'onFsTrigger'/'onFsEnd')` | `HookBus.emit('onCreditBucketRespinStart'/'Locked'/'End')` |
+
+### Lifecycle (HookBus contract)
+
+```
+postSpin:
+  if HW_STATE.active && !STATE.roundActive:
+    _onRoundEnter()  → STATE clear + emit onCreditBucketRespinStart
+    _diffAndAssign() → draw values for new locked cells + emit onCreditBucketLocked per
+    _renderAllChips() + _renderHudTotal()
+  elif HW_STATE.active && STATE.roundActive:
+    _diffAndAssign() + _renderAllChips() + _renderHudTotal()
+  elif !HW_STATE.active && STATE.roundActive:
+    final _diffAndAssign() + _renderAllChips() + _renderHudTotal()
+    _onRoundExit()   → if allLocked: total += jackpotMap[allLockedAward].x
+                       → window.__WIN_AWARD__ = total × bet
+                       → emit onCreditBucketEnd { total, jackpotTier, cellCount, allLocked }
+
+onSpinResult:
+  if STATE.roundActive: _renderAllChips()   /* DOM re-paint after grid swap */
+
+onFsTrigger / onFsEnd:
+  hwCreditReset()   /* FS round starts on clean slate */
+```
+
+### Default config (industry-baseline 7-tier credit ladder + 4-tier jackpot)
+
+| Knob | Default | Why |
+|---|---|---|
+| `prizeMap` | 7 tiers `[1×@32, 2×@22, 3×@14, 5×@9, 10×@5, 15×@2, 25×@1]` | Standard low-vol → mid-vol cash-on-reels distribution; sum-of-weights = 85 keeps any single tier rare |
+| `jackpotMap` | `MINI 5×@12, MINOR 25×@4, MAJOR 100×@1, GRAND 1000×@0.25` | Universal 4-tier WAP-jackpot pattern; weights span ~50× MINI:GRAND ratio |
+| `allLockedAward` | `'GRAND'` (1000×) | Industry rule: full-grid lock auto-awards top tier on top of bucket sum |
+| `bucketColor` / `jackpotColor` | `255,215,80` warm gold / `255,80,80` alert red | High-contrast against dark cell backgrounds; honor `prefers-reduced-motion` |
+| `currencyPrefix` | `'×'` | Vendor-neutral default; per-game GDD can switch to `'€'` / `'$'` |
+| `hudShowsTotal` | `true` | Adds dedicated TOTAL chip to the existing hold-and-win HUD root |
+
+### Live verification — `tools/_h14-credit-bucket-probe.mjs` (kept as regression guard)
+
+Playwright probe on `dist/19_lock_respin_playable.html`:
+
+| Acceptance | Result |
+|---|:--:|
+| `HW_STATE` present + `lockedCells` is `Map` | ✅ |
+| `HW_CREDIT_STATE.enabled === true` (block runtime active) | ✅ |
+| `hwCreditReset` function exposed | ✅ |
+| `__HW_CREDIT_TOTAL__` starts at 0 | ✅ |
+| Round-enter → `onCreditBucketRespinStart` fired exactly once | ✅ |
+| 3 manual locks + 4 auto-harvest → 7 `onCreditBucketLocked` events | ✅ |
+| Round-exit → `onCreditBucketEnd` fired exactly once | ✅ |
+| `end.cellCount` matches DOM `.hw-credit-chip` count | ✅ 7 === 7 |
+| `end.allLocked === false` (7 of 20 cells) | ✅ |
+| `__WIN_AWARD__` pushed > 0 (downstream pipeline armed) | ✅ |
+| HUD TOTAL chip rendered with `×` prefix | ✅ |
+| `hwCreditReset` clears total + state + DOM chips | ✅ |
+| 0 page errors | ✅ |
+| **15 / 15 pass** | ✅ |
+
+### Full regression (after H14 wire)
+
+| Gate | Result |
+|---|:--:|
+| `tests/blocks/holdAndWinCreditBucket.test.mjs` (NEW) | **58 / 58 PASS** |
+| `tests/blocks/holdAndWin.test.mjs` (existing — untouched) | **21 / 21 PASS** |
+| `tests/blocks/hookBus.test.mjs` (canonical list +3) | **29 / 29 PASS** |
+| `tools/lego-gate.mjs` (5 invariants, 28 events, 42 listeners) | **5 / 5 PASS** |
+| `tools/regen-all-playable.mjs` (11 demos) | **11 / 11 regen** (19_lock_respin grew 14.5 KB → bucket + jackpot CSS/runtime) |
+| `tools/_h14-credit-bucket-probe.mjs` (NEW live probe) | **15 / 15 PASS** |
+
+### Acceptance gates 10/10
+
+1. ✅ Vendor-neutral source (regex sweep matched 0 vendor strings)
+2. ✅ JSDoc public-API contract header (113 lines: industry pattern, lifecycle, GDD config, public API, runtime contract, composition contract, industry references)
+3. ✅ Single responsibility (block ONLY owns credit-bucket layer; lock-map + respin counter remain holdAndWin's)
+4. ✅ Idempotent (multiple `postSpin` events on same lockedCells size → no duplicate emits)
+5. ✅ Defensive on input (malformed prizeMap / jackpotMap / colors → fall back to defaults, never crash)
+6. ✅ Defensive on runtime (missing `HW_STATE` → `console.warn` once + no-op, dist still boots)
+7. ✅ Honors `prefers-reduced-motion` (chip transitions disabled when set)
+8. ✅ a11y — HUD TOTAL chip lives inside existing `aria-live="polite"` HUD root
+9. ✅ Determinism (identical config → byte-identical CSS + runtime)
+10. ✅ HookBus single-owner contract (3 events, all owned by this block, verified by `lego-gate.mjs`)
+
+### What H14 does NOT do (out-of-scope by LEGO)
+
+| ❌ Concern | Why |
+|---|---|
+| Cinematic reveal (build-up music + camera zoom on jackpot hit) | Belongs in H6 `bonusClimaxReveal` + H17 audio mixer; H14 only emits the data, not the kinematic |
+| Server-side bucket draw (RNG fairness for regulators) | Math layer is Phase 2; H14 uses `Math.random()` for the demo, will swap for engine-driven draws when math layer arrives |
+| Per-game art assets for coin/jackpot tags | Per-game art-pack delivery; H14 emits semantic data (`label='MINI'`, `isJackpot=true`) and the art pack restyles |
 
 ---
 

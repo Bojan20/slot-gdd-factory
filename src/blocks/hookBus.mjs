@@ -166,6 +166,19 @@ export const HOOK_EVENTS = Object.freeze([
    * compound walkthrough finishes (natural or skipped). Distinct from
    * per-tier Exited which fires for every walked tier. */
   'onBigWinTierEnd',
+  /* Wave H14: Hold-and-Win Credit Bucket extension events
+   * onCreditBucketRespinStart {startingRespins} — fires when holdAndWin
+   *   enters its respin round and the credit-bucket layer arms.
+   *   Owner: holdAndWinCreditBucket.mjs.
+   * onCreditBucketLocked {cell, amount, label, isJackpot} — fires for
+   *   each newly locked bonus cell as its credit/jackpot value is drawn.
+   *   Owner: holdAndWinCreditBucket.mjs.
+   * onCreditBucketEnd {total, jackpotTier, cellCount, allLocked} — fires
+   *   once when the H&W round ends (respins exhausted or grid filled).
+   *   Owner: holdAndWinCreditBucket.mjs. */
+  'onCreditBucketRespinStart',
+  'onCreditBucketLocked',
+  'onCreditBucketEnd',
   /* Wave U4: autoplay session events */
   'onAutoplayStart',
   'onAutoplayStop',
