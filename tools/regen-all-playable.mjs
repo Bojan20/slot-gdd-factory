@@ -149,6 +149,52 @@ for (const t of targets) {
      * lights up the locked-cell halo + HUD on the first respin). */
     model.holdAndWin = Object.assign({}, model.holdAndWin || {}, { enabled: true });
   }
+  /* Wave H15 — demo-only: light up wheelBonus + weightedWheelSegments on
+   * the baseline rectangular dist so the extension is observable end-to-end
+   * (no other dist currently declares wheel_bonus). Vendor-neutral demo
+   * segments with explicit weights + 4-tier jackpot map. Real GDDs that
+   * declare wheel_bonus + weighted_wheel_segments features get their own
+   * per-game tables via model.wheelBonus / model.weightedWheelSegments. */
+  if (outBase === '01_rectangular_5x3_playable.html') {
+    const alreadyWheel = model.features.some(f =>
+      f && typeof f.kind === 'string' && /^wheel[_-]?bonus$/i.test(f.kind),
+    );
+    if (!alreadyWheel) {
+      model.features.push({ kind: 'wheel_bonus', label: 'Bonus Wheel' });
+    }
+    const alreadyWeighted = model.features.some(f =>
+      f && typeof f.kind === 'string' && /^weighted[_-]?wheel/i.test(f.kind),
+    );
+    if (!alreadyWeighted) {
+      model.features.push({ kind: 'weighted_wheel_segments', label: 'Weighted Wheel' });
+    }
+    /* 8 segments with the last 2 as jackpot tiers (MAJOR + GRAND). */
+    model.wheelBonus = Object.assign({}, model.wheelBonus || {}, {
+      enabled: true,
+      title: 'BONUS WHEEL',
+      segments: [
+        { label: '×2',    value: 2,    color: '#e8c270' },
+        { label: '×5',    value: 5,    color: '#d28a3a' },
+        { label: '×10',   value: 10,   color: '#c45050' },
+        { label: '×20',   value: 20,   color: '#7050c4' },
+        { label: '×50',   value: 50,   color: '#3aa0c2' },
+        { label: '×100',  value: 100,  color: '#2bb56b' },
+        { label: 'MAJOR', value: 0,    color: '#e84f8a', jackpotTier: 'MAJOR' },
+        { label: 'GRAND', value: 0,    color: '#ffd24a', jackpotTier: 'GRAND' },
+      ],
+    });
+    /* Steep distribution — small mults common, jackpots rare. */
+    model.weightedWheelSegments = Object.assign({}, model.weightedWheelSegments || {}, {
+      enabled: true,
+      weights: [32, 24, 18, 12, 7, 4, 2, 1],
+      jackpotMap: [
+        { label: 'MINI',  x: 5 },
+        { label: 'MINOR', x: 25 },
+        { label: 'MAJOR', x: 100 },
+        { label: 'GRAND', x: 1000 },
+      ],
+    });
+  }
   const html = buildSlotHTML(model);
   writeFileSync(resolve(REPO, t.out), html);
   console.log(`✅ ${t.out}  (${(html.length/1024).toFixed(1)} KB)`);

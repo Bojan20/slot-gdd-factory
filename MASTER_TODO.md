@@ -3,7 +3,132 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `e41927e` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + V5.Y + H5.4–H5.20 + Wave I + Wave I.2 + Wave H14 (holdAndWinCreditBucket extension — vendor-neutral credit-on-reels + jackpot ladder)** all live. Hub responsive 9/9 PASS. **Latest shipped — Wave I.2** (MULT force button — third dev-force CTA next to FS + BW; 14/22 fixtures expose multiplier feature → MULT enabled conditionally per GDD; `_wave-i2-force-cta-probe.mjs` **88/88 PASS** across 11 topologies; Wave I H5.x regression **209/209 PASS**; combined **297/297 PASS**). Wave I before it: **11/11 UNIFORM grid kinds** got their own playable dist with full H5.x stack (skip / stop / big-win / win-rollup / autoplay / FS) — was 3 dist, now 11. Big-Win Tier ladder fully matured kroz 17 atoma (H5.4 continuous counter → H5.5 absolute money → H5.6 time-based promotion → H5.7 hero typography → H5.8 winRollup block → H5.9 skip instant snap → H5.10 winRollup skip listener → H5.11 STOP min-visibility → H5.12 SKIP_ROLLUP reset fix → H5.13 symbol pulse path → H5.14 BW force visible animation → H5.15 frame-anchored responsive sizing → H5.16 post-FS presentation pipeline → H5.17 autoplay wait-every-win → H5.18 FS intro grid hide → H5.19 BW force bypass scatter check + ultimate QA → H5.20 FS skip Promise leak fix). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: **(pending push)** · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + V5.Y + H5.4–H5.20 + Wave I + Wave I.2 + Wave H14 + Wave H15 (weightedWheelSegments extension — probabilistic segment draw + jackpot tier mapping)** all live. Hub responsive 9/9 PASS. **Latest shipped — Wave I.2** (MULT force button — third dev-force CTA next to FS + BW; 14/22 fixtures expose multiplier feature → MULT enabled conditionally per GDD; `_wave-i2-force-cta-probe.mjs` **88/88 PASS** across 11 topologies; Wave I H5.x regression **209/209 PASS**; combined **297/297 PASS**). Wave I before it: **11/11 UNIFORM grid kinds** got their own playable dist with full H5.x stack (skip / stop / big-win / win-rollup / autoplay / FS) — was 3 dist, now 11. Big-Win Tier ladder fully matured kroz 17 atoma (H5.4 continuous counter → H5.5 absolute money → H5.6 time-based promotion → H5.7 hero typography → H5.8 winRollup block → H5.9 skip instant snap → H5.10 winRollup skip listener → H5.11 STOP min-visibility → H5.12 SKIP_ROLLUP reset fix → H5.13 symbol pulse path → H5.14 BW force visible animation → H5.15 frame-anchored responsive sizing → H5.16 post-FS presentation pipeline → H5.17 autoplay wait-every-win → H5.18 FS intro grid hide → H5.19 BW force bypass scatter check + ultimate QA → H5.20 FS skip Promise leak fix). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+
+---
+
+## 🟢 Wave H15 — `weightedWheelSegments` extension (probabilistic draw + jackpot tier mapping) — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"nastavi dalje ultimativno"*. Second of the Wave H extension series. Adds the universal wheel-bonus DNA on top of the existing `wheelBonus.mjs` LEGO atom — non-uniform segment selection (small mults common, jackpots rare) + 4-tier jackpot map (MINI/MINOR/MAJOR/GRAND) + on-collect `__WIN_AWARD__` push that hands off to winPresentation → bigWinTier chain naturally.
+
+### Industry pattern (vendor-neutral synthesis)
+
+The modern wheel-bonus pattern has 3 layered concerns:
+
+| Concern | Owner block |
+|---|---|
+| Modal overlay + segment DOM + spin animation + Spin/Collect buttons | `wheelBonus.mjs` (pre-existing, **+15 lines for jackpotTier passthrough + window expose**) |
+| **Probabilistic draw + jackpot tier mapping + tier badges + award resolution** | **`weightedWheelSegments.mjs` (NEW — this wave)** |
+| Audio cues + cinematic reveal | future H17 / H6 hooks via `onWheelJackpotHit` + `onWheelAwardCollected` |
+
+### What landed
+
+| Atom | File | Lines | Status |
+|:--:|---|:--:|:--:|
+| H15.a — block source | `src/blocks/weightedWheelSegments.mjs` | 358 | ✅ CREATED — defaultConfig + resolveConfig + emit{CSS,Markup,Runtime} + 130-line JSDoc contract header |
+| H15.b — unit suite | `tests/blocks/weightedWheelSegments.test.mjs` | 280 | ✅ **55/55 PASS** — happy + malformed-input + hard-requirement (wheelBonus must be enabled) + determinism + vendor-neutral + sandbox event-flow smoke test (GRAND tier → 1000× → 2000 award) |
+| H15.c — HookBus contract | `src/blocks/hookBus.mjs` | +14 | ✅ `onWheelSegmentChosen` + `onWheelJackpotHit` + `onWheelAwardCollected` added |
+| H15.d — canonical-list test | `tests/blocks/hookBus.test.mjs` | +2 | ✅ 29/29 PASS (expected list expanded) |
+| H15.e — LEGO ownership | `tools/lego-gate.mjs` | +7 | ✅ single-owner = `weightedWheelSegments.mjs` for all 3 events; 31/31 events pass |
+| H15.f — buildSlotHTML wiring | `src/buildSlotHTML.mjs` | +15 | ✅ CSS + (empty) markup + runtime emitted AFTER wheelBonus runtime so window.wbSpin exists at patch time |
+| H15.g — wheelBonus extension hooks | `src/blocks/wheelBonus.mjs` | +15 | ✅ MINOR — preserve `jackpotTier` in segment sanitization + expose `window.WB_SEGMENTS` / `window.WB_DUR` so extension reads live config (no behavior change for native uniform-draw path) |
+| H15.h — dist auto-enable | `tools/regen-all-playable.mjs` | +44 | ✅ rectangular demo dist gets 8-segment wheel + weighted draw + 4-tier jackpot ladder live (vendor-neutral demo config) |
+
+### Composition contract (LEGO — pure observer + minor wheelBonus passthrough)
+
+| Read | Write |
+|---|---|
+| `window.wbSpin` (monkey-patched once) | `window.__origWbSpin` (preserved for diagnostics) |
+| `window.WB_SEGMENTS` (live segment array w/ jackpotTier flags) | `window.WB_STATE.result` (chosen segment) |
+| `window.__SLOT_BET__` (currency unit) | `window.__WIN_AWARD__` on Collect (→ winPresentation → bigWinTier) |
+| `HookBus.on('onFsTrigger'/'onFsEnd')` for state reset | `HookBus.emit('onWheelSegmentChosen'/'onWheelJackpotHit'/'onWheelAwardCollected')` |
+
+### Lifecycle (HookBus contract)
+
+```
+DOMContentLoaded:
+  _patch() → if window.wbSpin missing: console.warn + no-op
+             else: window.__origWbSpin = window.wbSpin
+                   window.wbSpin = patched(weightedDraw + jackpot dispatch)
+                   window.wbClose = wrapped(push __WIN_AWARD__ + emit collected)
+                   _paintTierBadges() (data-tier="GRAND" on tier cells)
+                   STATE.patched = true
+
+user clicks SPIN:
+  patched wbSpin:
+    winIdx = _weightedDrawIndex(weights, segments.length)
+    drive same rotation animation as native wbSpin
+    on completion (WB_DUR + 80ms):
+      tier = seg.jackpotTier (if defined)
+      jackpotX = _findJackpot(tier).x (if matched)
+      STATE.lastResult = { index, label, value, jackpotTier, jackpotX }
+      emit onWheelSegmentChosen { index, label, value, jackpotTier?, jackpotX? }
+      if tier: emit onWheelJackpotHit { tier, x }
+
+user clicks COLLECT:
+  patched wbClose:
+    award = jackpotX > 0 ? jackpotX : (allowFallback ? value : value)
+    window.__WIN_AWARD__ = award × bet
+    emit onWheelAwardCollected { award, isJackpot, tier? }
+    STATE.lastResult = null
+    call original wbClose (hide overlay)
+
+onFsTrigger / onFsEnd:
+  STATE.lastResult = null  (defensive — wheelBonus already closes modal)
+```
+
+### Default config (industry-baseline 4-tier jackpot, uniform fallback)
+
+| Knob | Default | Why |
+|---|---|---|
+| `weights` | `null` (uniform fallback) | When GDD doesn't override, weighted draw becomes uniform — same behavior as native wheelBonus. Auto-enables when array length === segments.length. |
+| `jackpotMap` | `MINI 5×, MINOR 25×, MAJOR 100×, GRAND 1000×` | Universal 4-tier WAP-jackpot pattern; per-game GDD can override labels + multipliers |
+| `defaultTierColor` | `255,80,80` (alert red) | High-contrast accent on the tier wb-seg cells (`box-shadow inset 2px + glow`) |
+| `allowFallbackToValue` | `true` | If a jackpot tier hits but its label isn't in the map, award the segment's nominal value (defensive — never award 0 silently) |
+
+### Live verification — `tools/_h15-weighted-wheel-probe.mjs` (kept as regression guard)
+
+Playwright probe on `dist/01_rectangular_5x3_playable.html` (rectangular dist auto-enables wheelBonus + H15 with 8-segment demo wheel: 6 credit segments + 2 jackpot tiers MAJOR + GRAND):
+
+| Scenario | Acceptance | Result |
+|---|---|:--:|
+| Presence | `wbSpin` fn, `__origWbSpin` preserved, `WB_SEGMENTS.length === 8`, `WWS_STATE.patched === true`, weights length 8, jackpotMap length 4, `wwsDraw` helper exposed | ✅ 8/8 |
+| **S1 GRAND tier** (`Math.random=0.999` → idx 7) | `onWheelSegmentChosen` with `index=7`, `jackpotTier='GRAND'`, `jackpotX=1000`; `onWheelJackpotHit` fired (tier=GRAND, x=1000); result text "YOU WON GRAND!"; CSS `data-jackpot="true"` engaged; `onWheelAwardCollected` award=1000 isJackpot=true; `__WIN_AWARD__ = 1000 × bet(2) = 2000` | ✅ 8/8 |
+| **S2 Credit** (`Math.random=0.001` → idx 0 = ×2) | `onWheelSegmentChosen` with `index=0`, no `jackpotTier`; `onWheelJackpotHit` **NOT** fired; `onWheelAwardCollected` award=2 isJackpot=false; `__WIN_AWARD__ = 2 × bet(2) = 4` | ✅ 5/5 |
+| 0 page errors | | ✅ |
+| **22 / 22 pass** | | ✅ |
+
+### Full regression (after H15 wire)
+
+| Gate | Result |
+|---|:--:|
+| `tests/blocks/weightedWheelSegments.test.mjs` (NEW) | **55 / 55 PASS** |
+| `tests/blocks/wheelBonus.test.mjs` (passthrough patched) | **19 / 19 PASS** |
+| `tests/blocks/hookBus.test.mjs` (canonical list +3) | **29 / 29 PASS** |
+| `tools/lego-gate.mjs` (5 invariants, 31 events, 43 listeners) | **5 / 5 PASS** |
+| `tools/regen-all-playable.mjs` (11 demos) | **11 / 11 regen** (rectangular grew 18 KB → wheelBonus + H15 wire) |
+| `tools/_h15-weighted-wheel-probe.mjs` (NEW live probe) | **22 / 22 PASS** |
+
+### Acceptance gates 10/10
+
+1. ✅ Vendor-neutral source (regex sweep matched 0 vendor strings)
+2. ✅ JSDoc public-API contract header (130 lines)
+3. ✅ Single responsibility (block ONLY owns weighted draw + tier mapping; wheel chrome/animation remain wheelBonus's)
+4. ✅ Idempotent (`STATE.patched` gates re-entry; double-patch = no-op)
+5. ✅ Defensive on input (malformed weights / jackpotMap / colors → fall back to defaults, never crash)
+6. ✅ Defensive on runtime (missing `wbSpin` → `console.warn` once + no-op, dist still boots)
+7. ✅ Honors `prefers-reduced-motion` (jackpot pulse disabled when set)
+8. ✅ a11y — result chip lives in existing `aria-live="polite"` wb-result element
+9. ✅ Determinism (identical config → byte-identical CSS + runtime)
+10. ✅ HookBus single-owner contract (3 events, all owned by this block, verified by `lego-gate.mjs`)
+
+### What H15 does NOT do (out-of-scope by LEGO)
+
+| ❌ Concern | Why |
+|---|---|
+| Cinematic reveal (camera zoom + buildup music on jackpot hit) | Belongs in H6 `bonusClimaxReveal` + H17 audio mixer |
+| Server-side weight table (RNG fairness for regulators) | Math layer is Phase 2; H15 uses `Math.random()` for the demo |
+| Per-game art assets for jackpot icons | Per-game art-pack delivery; H15 emits semantic data (`tier='GRAND'`) |
 
 ---
 

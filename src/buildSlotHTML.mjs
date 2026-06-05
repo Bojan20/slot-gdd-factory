@@ -260,6 +260,13 @@ import {
   emitWheelBonusCSS, emitWheelBonusMarkup, emitWheelBonusRuntime,
   resolveConfig as resolveWheelBonusConfig,
 } from './blocks/wheelBonus.mjs';
+// Wave H15 — Weighted Wheel Segments extension (pure observer)
+import {
+  emitWeightedWheelSegmentsCSS,
+  emitWeightedWheelSegmentsMarkup,
+  emitWeightedWheelSegmentsRuntime,
+  resolveConfig as resolveWeightedWheelSegmentsConfig,
+} from './blocks/weightedWheelSegments.mjs';
 import {
   emitLightningCSS, emitLightningRuntime,
   resolveConfig as resolveLightningConfig,
@@ -400,6 +407,8 @@ ${emitRespinCSS(resolveRespinConfig(model))}
 ${emitWinCapCSS(resolveWinCapConfig(model))}
 ${emitBonusPickCSS(resolveBonusPickConfig(model))}
 ${emitWheelBonusCSS(resolveWheelBonusConfig(model))}
+${/* Wave H15 — Weighted Wheel Segments extension (jackpot tier CSS). */ ''}
+${emitWeightedWheelSegmentsCSS(resolveWeightedWheelSegmentsConfig(model))}
 ${emitLightningCSS(resolveLightningConfig(model))}
 ${emitGambleCSS(resolveGambleConfig(model))}
 ${emitSuperSymbolCSS(resolveSuperSymbolConfig(model))}
@@ -522,6 +531,7 @@ ${emitRespinMarkup(resolveRespinConfig(model))}
 ${emitWinCapMarkup(resolveWinCapConfig(model))}
 ${emitBonusPickMarkup(resolveBonusPickConfig(model))}
 ${emitWheelBonusMarkup(resolveWheelBonusConfig(model))}
+${emitWeightedWheelSegmentsMarkup(resolveWeightedWheelSegmentsConfig(model))}
 ${emitGambleMarkup(resolveGambleConfig(model))}
 ${/* Wave U6 — secondary gamble overlay (full-screen modal). */ ''}
 ${emitGambleSecondaryMarkup(resolveGambleSecondaryConfig(model))}
@@ -871,6 +881,11 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
   ${emitLightningRuntime(resolveLightningConfig(model))}
   ${emitBonusPickRuntime(resolveBonusPickConfig(model))}
   ${emitWheelBonusRuntime(resolveWheelBonusConfig(model))}
+  ${/* Wave H15 — Weighted Wheel runtime monkey-patches window.wbSpin
+     * AFTER wheelBonus runtime emits it. resolveConfig requires the
+     * second positional arg (the resolved wheelBonus config) so it can
+     * bake the live segments[] array into the patch (jackpotTier reads). */ ''}
+  ${emitWeightedWheelSegmentsRuntime(resolveWeightedWheelSegmentsConfig(model), resolveWheelBonusConfig(model))}
   ${emitGambleRuntime(resolveGambleConfig(model))}
 
   ${emitPostSpinRuntime(resolvePostSpinConfig(model))}

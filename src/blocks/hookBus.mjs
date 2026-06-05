@@ -179,6 +179,20 @@ export const HOOK_EVENTS = Object.freeze([
   'onCreditBucketRespinStart',
   'onCreditBucketLocked',
   'onCreditBucketEnd',
+  /* Wave H15: Weighted Wheel Segments extension events
+   * onWheelSegmentChosen {index, label, value, jackpotTier?, jackpotX?} —
+   *   fires when the wheel animation ends and the winning segment is
+   *   resolved (weighted draw). Owner: weightedWheelSegments.mjs.
+   * onWheelJackpotHit {tier, x} — fires when the chosen segment carries
+   *   a jackpotTier label that matched cfg.jackpotMap.
+   *   Owner: weightedWheelSegments.mjs.
+   * onWheelAwardCollected {award, isJackpot, tier?} — fires on Collect
+   *   click; window.__WIN_AWARD__ is pushed so the existing
+   *   winPresentation → bigWinTier chain handles payout.
+   *   Owner: weightedWheelSegments.mjs. */
+  'onWheelSegmentChosen',
+  'onWheelJackpotHit',
+  'onWheelAwardCollected',
   /* Wave U4: autoplay session events */
   'onAutoplayStart',
   'onAutoplayStop',

@@ -40,11 +40,20 @@ export function resolveConfig(model = {}) {
   const m = model.wheelBonus || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (Array.isArray(m.segments) && m.segments.length >= 3 && m.segments.every(s => s && typeof s.label === 'string')) {
-    cfg.segments = m.segments.slice(0, 24).map(s => ({
-      label: s.label.slice(0, 10),
-      value: Number.isFinite(s.value) ? s.value : 0,
-      color: (typeof s.color === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(s.color)) ? s.color : '#c0a850',
-    }));
+    cfg.segments = m.segments.slice(0, 24).map(s => {
+      const out = {
+        label: s.label.slice(0, 10),
+        value: Number.isFinite(s.value) ? s.value : 0,
+        color: (typeof s.color === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(s.color)) ? s.color : '#c0a850',
+      };
+      /* Wave H15 — preserve optional jackpotTier label (e.g. 'GRAND')
+       * so the weightedWheelSegments extension can read it from the
+       * baked segments JSON. Defensive: only safe label format. */
+      if (typeof s.jackpotTier === 'string' && /^[A-Z0-9_ -]{1,16}$/.test(s.jackpotTier)) {
+        out.jackpotTier = s.jackpotTier;
+      }
+      return out;
+    });
   }
   if (Number.isFinite(m.spinDurationMs)) cfg.spinDurationMs = clampInt(m.spinDurationMs, 800, 12000);
   if (typeof m.haloColor === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(m.haloColor)) cfg.haloColor = m.haloColor;
@@ -246,10 +255,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 if (typeof window !== 'undefined') {
-  window.wbOpen   = wbOpen;
-  window.wbSpin   = wbSpin;
-  window.wbClose  = wbClose;
-  window.WB_STATE = WB_STATE;
+  window.wbOpen      = wbOpen;
+  window.wbSpin      = wbSpin;
+  window.wbClose     = wbClose;
+  window.WB_STATE    = WB_STATE;
+  /* Wave H15 — expose the bakeline segments + duration so the
+   * weightedWheelSegments extension can read the live config without
+   * baking a duplicate copy. */
+  window.WB_SEGMENTS = WB_SEGMENTS;
+  window.WB_DUR      = WB_DUR;
 }
 
 /* HookBus wire-up — wheel modal is opened explicitly by parser-side

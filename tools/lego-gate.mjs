@@ -118,6 +118,14 @@ const EXPECTED_EMIT_OWNERS = {
   onCreditBucketRespinStart: ['holdAndWinCreditBucket.mjs'],
   onCreditBucketLocked:      ['holdAndWinCreditBucket.mjs'],
   onCreditBucketEnd:         ['holdAndWinCreditBucket.mjs'],
+  /* Wave H15 — Weighted Wheel Segments extension. Standalone block
+   * monkey-patches window.wbSpin once on DOMContentLoaded; emits
+   * onWheelSegmentChosen on resolution, onWheelJackpotHit if the chosen
+   * segment carries a jackpotTier label, onWheelAwardCollected on
+   * Collect click (which also pushes window.__WIN_AWARD__). */
+  onWheelSegmentChosen:      ['weightedWheelSegments.mjs'],
+  onWheelJackpotHit:         ['weightedWheelSegments.mjs'],
+  onWheelAwardCollected:     ['weightedWheelSegments.mjs'],
   /* Wave U4 — autoplay session events all owned by autoplay.mjs. */
   onAutoplayStart: ['autoplay.mjs'],
   onAutoplayTick:  ['autoplay.mjs'],
