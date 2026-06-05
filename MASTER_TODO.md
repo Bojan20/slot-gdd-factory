@@ -3,7 +3,117 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `aa123e3` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + V5.Y + H5.4–H5.20 + Wave I + Wave I.2 + Wave H14 + Wave H15 (weightedWheelSegments extension — probabilistic segment draw + jackpot tier mapping)** all live. Hub responsive 9/9 PASS. **Latest shipped — Wave I.2** (MULT force button — third dev-force CTA next to FS + BW; 14/22 fixtures expose multiplier feature → MULT enabled conditionally per GDD; `_wave-i2-force-cta-probe.mjs` **88/88 PASS** across 11 topologies; Wave I H5.x regression **209/209 PASS**; combined **297/297 PASS**). Wave I before it: **11/11 UNIFORM grid kinds** got their own playable dist with full H5.x stack (skip / stop / big-win / win-rollup / autoplay / FS) — was 3 dist, now 11. Big-Win Tier ladder fully matured kroz 17 atoma (H5.4 continuous counter → H5.5 absolute money → H5.6 time-based promotion → H5.7 hero typography → H5.8 winRollup block → H5.9 skip instant snap → H5.10 winRollup skip listener → H5.11 STOP min-visibility → H5.12 SKIP_ROLLUP reset fix → H5.13 symbol pulse path → H5.14 BW force visible animation → H5.15 frame-anchored responsive sizing → H5.16 post-FS presentation pipeline → H5.17 autoplay wait-every-win → H5.18 FS intro grid hide → H5.19 BW force bypass scatter check + ultimate QA → H5.20 FS skip Promise leak fix). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: `15611ea` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + V5.Y + H5.4–H5.20 + Wave I + Wave I.2 + Wave H14 + Wave H15 + Wave H13 (pathAwareMultiplier extension — per-path chip + aggregate bonus)** all live. Hub responsive 9/9 PASS. **Latest shipped — Wave H13** (per-path multiplier chip + additive bonus award; extends `waysEval.mjs` purely as observer; new dist `04_variable_reel_playable.html` (117 649-ways) lights up automatically; **84/84 unit PASS** + **39/39 live Playwright probe** + 209/209 multi-topology + 88/88 force-CTA + 5/5 LEGO + 29/29 HookBus canonical = **503/503 PASS** combined regression with H14 + H15 untouched). Wave I.2 before that: MULT force button — third dev-force CTA next to FS + BW (88/88 fixtures); Wave I: **11/11 UNIFORM grid kinds** got dist parity (was 3, now 12 incl. variable_reel). Big-Win Tier ladder matured kroz 17 atoma (H5.4 → H5.20). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Remaining extensions u Wave H queue: **H11 bonusBuyDeterministic** (sledeći u redu), H17 audioMixer (čeka ADB fazu), H18 payoutEventStreamLog. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+
+---
+
+## 🟢 Wave H13 — `pathAwareMultiplier` extension (per-path multiplier chip + aggregate bonus) — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"radi dalje ultimativno sa svim mogucim qa proverama svakog grida, svakog bloka cortex uys review detaljan i sve savrseno da bude"*. Third of the Wave H extension series (after H14 holdAndWinCreditBucket + H15 weightedWheelSegments). Adds per-path tagging on top of the existing `waysEval.mjs` LEGO atom — every emitted ways event gets an `×N` chip drawn from a weighted ladder, aggregate is added to `__WIN_AWARD__` so the existing winPresentation → bigWinTier chain handles payout naturally.
+
+### Industry pattern (vendor-neutral synthesis)
+
+The modern Ways-to-Win path-multiplier pattern has 3 layered concerns:
+
+| Concern | Owner block |
+|---|---|
+| Path detection (per-symbol consecutive-reel evaluation → `{ symbol, ways, runLength, cells }` events) | `waysEval.mjs` (pre-existing, **untouched**) |
+| **Per-path weighted multiplier draw + on-cell chip render + aggregate bonus award + HookBus emits** | **`pathAwareMultiplier.mjs` (NEW — this wave)** |
+| Audio cues + cinematic reveal | future H17 / H6 hooks via `onPathMultiplierAssigned` + `onPathMultiplierAggregate` |
+
+### What landed
+
+| Atom | File | Lines | Status |
+|:--:|---|:--:|:--:|
+| H13.a — block source | `src/blocks/pathAwareMultiplier.mjs` | 446 | ✅ CREATED — defaultConfig + resolveConfig + emit{CSS,Markup,Runtime} + 130-line JSDoc contract header |
+| H13.b — unit suite | `tests/blocks/pathAwareMultiplier.test.mjs` | 320 | ✅ **84/84 PASS** — happy + malformed-input + hard-requirement (waysEval must be enabled) + additive vs multiplicative aggregation + sandbox event-flow smoke test (deterministic seeded RNG → ×2/×10 draws → totalMult=12 → awardBonus=0.0625 push) |
+| H13.c — HookBus contract | `src/blocks/hookBus.mjs` | +12 | ✅ `onPathMultiplierAssigned` + `onPathMultiplierAggregate` added |
+| H13.d — canonical-list test | `tests/blocks/hookBus.test.mjs` | +2 | ✅ 29/29 PASS (expected list expanded) |
+| H13.e — LEGO ownership | `tools/lego-gate.mjs` | +9 | ✅ single-owner = `pathAwareMultiplier.mjs` for both events; 33/33 events pass |
+| H13.f — buildSlotHTML wiring | `src/buildSlotHTML.mjs` | +18 | ✅ CSS + HUD markup + runtime emitted AFTER waysEval runtime so window.detectWaysWins exists at patch time |
+| H13.g — variable_reel dist | `tools/regen-all-playable.mjs` | +49 | ✅ NEW dist `04_variable_reel_playable.html` (117 649-ways) + auto-enable wiring on any ways topology — 7-tier additive ladder (×2 weight 40 → ×100 weight 1), cool-blue chip color |
+| H13.h — live probe | `tools/_h13-path-mult-probe.mjs` | 230 | ✅ **39/39 PASS** — patch presence + deterministic seeded RNG (S1: ×2+×10), preSpin wipe (S2), FS boundary reset (S3) |
+
+### Composition contract (LEGO — pure observer, 0 modifications to waysEval)
+
+| Read | Write |
+|---|---|
+| `window.detectWaysWins` (monkey-patched once on DOMContentLoaded) | `window.__origDetectWaysWins` (preserved for diagnostics) |
+| `window.WAYS_COUNT` (baked by waysEval) | event objects: `+ pathMultiplier, + pathMultiplierLabel` |
+| `window.__SLOT_BET__`, `.cell.is-winning` host nodes | `.cell .paw-path-chip` per win-cell + `#pawHudTotal` aggregate |
+| `HookBus.on('preSpin'/'postSpin'/'onFsTrigger'/'onFsEnd')` | `HookBus.emit('onPathMultiplierAssigned'/'onPathMultiplierAggregate')`, additive push onto `__WIN_AWARD__` |
+
+### Lifecycle (HookBus contract)
+
+```
+DOMContentLoaded:
+  _patch() → if window.detectWaysWins missing: console.warn + no-op
+             else: window.__origDetectWaysWins = window.detectWaysWins
+                   window.detectWaysWins = patched(decorate + emit + chip + HUD)
+                   STATE.patched = true
+  _bindHookBus() → on('preSpin') = pawReset
+                   on('postSpin') = _onPostSpinAggregate
+                   on('onFsTrigger') = pawReset
+                   on('onFsEnd') = pawReset
+
+every patched detectWaysWins call (from win-eval pipeline):
+  events = __origDetectWaysWins(...)
+  for each event:
+    draw = _weightedDraw()
+    event.pathMultiplier = draw.x
+    event.pathMultiplierLabel = draw.label
+    emit onPathMultiplierAssigned { eventIdx, symbol, ways, multiplier, label }
+  STATE.totalMult = additive Σ(mult) (or multiplicative Π)
+  _renderChips(events) → .paw-path-chip per win cell
+  _renderHud(totalMult) → #pawHudTotal text + data-show=true
+
+postSpin (HookBus):
+  if events.length ≥ 1 && totalMult ≥ 2:
+    pathSum = Σ(ways × mult)
+    awardBonus = pathSum × bet / max(WAYS_COUNT, awardScaleDenom)
+    __WIN_AWARD__ = prior + awardBonus (additive)
+    emit onPathMultiplierAggregate { events, totalMult, awardBonus, bet }
+
+preSpin / onFsTrigger / onFsEnd:
+  pawReset() → state cleared, chips removed, HUD hidden
+```
+
+### Default 7-tier additive ladder (vendor-neutral, GDD-overridable)
+
+| Tier | × multiplier | Weight | ~Probability |
+|:--:|:--:|:--:|:--:|
+| 1 | ×2   | 40 | 40 % |
+| 2 | ×3   | 24 | 24 % |
+| 3 | ×5   | 16 | 16 % |
+| 4 | ×10  | 10 | 10 % |
+| 5 | ×25  |  6 |  6 % |
+| 6 | ×50  |  3 |  3 % |
+| 7 | ×100 |  1 |  1 % |
+
+Aggregation default = **additive** (industry-standard, regulator-friendly — every chip independently auditable). GDD can override to `multiplicative` for premium "every land × every other" variants.
+
+### QA grand total
+
+| Gate | Result |
+|---|:--:|
+| Unit suite (NEW)                                                  | **84/84 PASS** |
+| `waysEval` (existing, untouched)                                  | **12/12 PASS** |
+| HookBus canonical (+2 events: assigned + aggregate)               | **29/29 PASS** |
+| LEGO (33 events, 44 listeners, 54 blocks)                         | **5/5 PASS** |
+| Live Playwright probe na `04_variable_reel_playable.html`         | **39/39 PASS** |
+| H14 + H15 extension probes (no regression)                        | **37/37 PASS** |
+| Wave I multi-topology (11 grids × 19 checks)                      | **209/209 PASS** |
+| Wave I.2 force-CTA (11 grids × 8 checks)                          | **88/88 PASS** |
+| Dist regen (now 12 demos incl. variable_reel)                     | **12/12 demos** |
+| **Combined**                                                      | **503/503 PASS, 0 errors** |
+
+### Sledeći u extension queue (po prethodnom prioritetu)
+
+| # | Extension | Owner | Effort |
+|:--:|---|---|:--:|
+| 4 | `bonusBuyDeterministic` (H11) | extends `bonusBuy` | S |
+| — | H17 audioMixer (čeka ADB fazu) | extends `audio` | M |
+| — | H18 payoutEventStreamLog (regulator-mandated) | extends `historyLog` | S |
 
 ---
 
