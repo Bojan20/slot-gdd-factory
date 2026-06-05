@@ -258,7 +258,7 @@ The V5.0 fix bundle proves the SKIP CTA pipeline is sound for the win-rollup pha
 
 ---
 
-## 🟢 Wave H5 — Big-Win Tier ladder (vendor-neutral 5-tier) — SHIPPED (pending hash pin)
+## 🟢 Wave H5 — Big-Win Tier ladder (vendor-neutral 5-tier) — SHIPPED `c1f211c`
 
 > Triggered by Boki *"big win mora da bude template … bigwintier1 da se zna da je big win, samo naming convention sredi"* + *"zapisi sve sto sto treba da radis detaljno u master todo, pa onda otidji u WoO i pogledaj kako je big win odradjen, i ti ga tako ubaci do detalja u rectangulat … u igt playa core i playa slot pogledaj pravila"*. H5 lifts the existing WoO 6.4 three-tier ladder (BIG/MEGA/EPIC, 10x/25x/50x, 4s plaques) into a fully vendor-neutral 5-tier system with GDD-driven labels/thresholds/durations/colors. Same block runs every game; per-game vocabulary lives in `model.bigWinTier`.
 
