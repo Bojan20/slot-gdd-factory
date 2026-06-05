@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `4ea1fd5` · main · Wave **U + V + V3 (spinControl unified CTA)** all live. Hub responsive 9/9 PASS. **NEW: Wave H queue planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers (regulator / per-cell mechanics / climax / audit).** Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: `e294eec` · main · Wave **U + V + V3 (spinControl unified CTA)** all live. Hub responsive 9/9 PASS. **NEW: Wave H queue planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers (regulator / per-cell mechanics / climax / audit).** Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
