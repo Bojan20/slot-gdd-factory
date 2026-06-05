@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `9ee3e6a` · main · Wave **U + V + V3 (spinControl unified CTA) + V4 (pending-settle slam pattern)** all live. Hub responsive 9/9 PASS. **NEW: Wave V5 — skip-completeness (chain-aware fast-finalize, 11 atoms) planned.** Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers (regulator / per-cell mechanics / climax / audit). Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: `5164f51` · main · Wave **U + V + V3 (spinControl unified CTA) + V4 (pending-settle slam pattern) + V5.0 (skip CTA live-fix bundle, 4 commits)** all live. Hub responsive 9/9 PASS. **Wave V5.0 SHIPPED** (`__WIN_AWARD__` publish + 0-award leak guard + Space-key forward + rapid-spin race close). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers (regulator / per-cell mechanics / climax / audit). Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -219,7 +219,46 @@ Initial implementation used a generic `_emit(eventName, payload)` helper. lego-g
 
 ---
 
-## 🔵 Wave V5 — Skip-completeness (chain-aware fast-finalize) — PLANNED
+## 🟢 Wave V5.0 — Skip CTA live-fix bundle — SHIPPED (4 commits, head `5164f51`)
+
+> Triggered by Boki *"odradi overi zasto ti ga nema skip dugme uopste i zasto ne radi u retangle"* (05.06.2026). What looked like a single "missing skip button" bug was 4 independent root causes layered on top of each other. Each was reproduced live in browser before fix, then verified by regression probe.
+
+### Commit-by-commit breakdown
+
+| # | Hash | Commit | Root cause | Fix |
+|:--:|---|---|---|---|
+| 1 | `0633dc9` | feat(spinControl,winPresentation): V5.0 — SKIP CTA finally appears on win | **5-block `__WIN_AWARD__` vacuum**: balanceHud / autoplay / historyLog / gambleSecondary / spinControl all READ `window.__WIN_AWARD__` but NO block ever WROTE it. `_finalizeRound`'s `hasWin = Number.isFinite(undefined)` was always false → SKIP_ROLLUP branch unreachable; balance dropped every spin regardless of detected lines. | `winPresentation` now publishes `window.__WIN_AWARD__` at presentation start (single writer). All 5 readers now hit a real number. |
+| 2 | `a491b82` | fix(winPresentation): SKIP CTA no longer leaks on 0-award spins | After fix #1 the SKIP CTA started leaking onto **0-award spins** — `onWinPresentationStart` was gated on `allEvents.length > 0` ("detector found lines") instead of `totalAward > 0` ("rollup has something to pay"). 0-credit detector events tripped the morph. | Gate flipped to `totalAward > 0`. Detector noise no longer arms the SKIP CTA. |
+| 3 | `5ccc3bb` | fix: Space CTA works without pre-focus + line-win events finally pay | **Two independent bugs:** (a) Native `<button>` only activates Space when focused; on load focus is on `<body>` → Space did nothing for play/stop/skip. (b) Line-win detector events were emitted but never produced credit because the award publish path missed the line-eval branch. | (a) Document-level `keydown` listener in `spinControl` forwards Space → `spinBtn.click()` (with input/modal/disabled guards). (b) Line-eval branch now also publishes `__WIN_AWARD__`. |
+| 4 | `5164f51` | fix(spinControl): kill late-finalize SKIP_ROLLUP leak (rapid-spin race) | **Rapid-spin race:** Spin N wins → cycle plays. Click for spin N+1 mid-cycle → `winPresentation` cancels cycle, clears `presentActive=false`, BUT the old `handlePostSpin` chain emits `postSpin` AFTER spin N+1's `preSpin` armed the new round. `_finalizeRound` reads stale `__WIN_AWARD__=15` + `hasWin=true` + `longRoll=true` → sets `SKIP_ROLLUP` on a clean 0-win spin. | `_finalizeRound` snapshots a `roundToken` at `preSpin` and bails if the token shifted between schedule and fire — late `postSpin` from cancelled previous round is now a no-op. |
+
+### Live verification
+
+| Probe | Tool | Result |
+|---|---|---|
+| Stuck `SKIP_ROLLUP` without `onWinPresentationStart` | `tools/_skip-leak-verify.mjs` (kept as regression guard) | 0 / 30 spins — race closed |
+| GoO regen after fix | `tools/build:games` | ✅ `dist/gates-of-olympus-1000.html` 268.2 KB |
+| Rectangular dist in browser | manual + cortex-eyes | SKIP CTA appears only on real wins, disappears cleanly, Space works without focus |
+
+### Acceptance gate
+
+| Criterion | Status |
+|---|:--:|
+| Single writer for `__WIN_AWARD__` (was: 0, now: 1 — `winPresentation`) | ✅ |
+| Detector-event-without-award no longer arms SKIP morph | ✅ |
+| Space key works without manual focus on `<button>` | ✅ |
+| Rapid-spin late-finalize race closed via `roundToken` | ✅ |
+| Regression probe lives in repo (`tools/_skip-leak-verify.mjs`) | ✅ |
+| Vendor grep `src/blocks/` | ✅ 0 matches |
+| All 4 commits pushed to `origin/main` | ✅ |
+
+### Outstanding for V5.1-V5.10
+
+The V5.0 fix bundle proves the SKIP CTA pipeline is sound for the win-rollup phase. V5.1-V5.10 still need to layer skip listeners onto anticipation / tumble / big-win / hold-and-win / wheel / climax / gamble-reveal phases and add chain-aware dispatch + autoplay guard + always-skippable morph. Scope unchanged from original planning table below.
+
+---
+
+## 🔵 Wave V5 — Skip-completeness (chain-aware fast-finalize) — V5.0 ✅ SHIPPED · V5.1-V5.10 PLANNED
 
 > Triggered by Boki *"E sad nadji kako radi skip dugme i kad i sta se sve vezano za taj koncept desava, win linije, sve sto moze da se skipuje, isto u igtplaya slot i pla=ya core"* + immediate follow-up *"odradi overi zasto ti ga nema skip dugme uopste i zasto ne radi u retangle"*. Wave V3 ships the SPIN/STOP/SKIP unified CTA state machine, but the SKIP side only covers 4 of the 9+ industry-standard fast-finalize phases. This wave brings the template to PlayCore / Playa Slot "skip-ahead" parity.
 
@@ -241,7 +280,7 @@ Initial implementation used a generic `_emit(eventName, payload)` helper. lego-g
 
 | ID | Phase | Why obligatory | Effort | Owner block |
 |:--:|---|---|:--:|---|
-| **V5.0** | **Rectangular dist exposes no SKIP CTA at all** — `__WIN_AWARD__` flow inspection + `_finalizeRound` win-branch verification | Live diagnostic of why Boki sees no skip on `01_rectangular_5x3_playable.html`. Block-zero step before any new listener work — confirms the morph rules trigger at all. | S | spinControl `_finalizeRound` + winPresentation award publish |
+| ~~**V5.0**~~ ✅ | ~~**Rectangular dist exposes no SKIP CTA at all** — `__WIN_AWARD__` flow inspection + `_finalizeRound` win-branch verification~~ **SHIPPED** — split into 4 commits (`0633dc9` → `a491b82` → `5ccc3bb` → `5164f51`). See dedicated SHIPPED section below for full root-cause / fix breakdown. | ~~Live diagnostic of why Boki sees no skip on `01_rectangular_5x3_playable.html`.~~ Diagnostic surfaced **5-block `__WIN_AWARD__` vacuum**, **0-award SKIP leak**, **document-level Space forwarding miss**, and **rapid-spin late-finalize race**. All closed. | ~~S~~ DONE | spinControl `_finalizeRound` + winPresentation award publish |
 | **V5.1** | Anticipation reel slow-stop (600–2000ms) | Most-visible long animation in every base spin with ≥2 scatter teasers; players spam tap to skip | S | `anticipation.mjs` (one listener + abort flag) |
 | **V5.2** | Tumble cascade per-step (400–800ms × up to 6) | Cluster/Olympus-class slot family obligatory; current template has Wrath + Gates fixtures actively using tumble | M | `tumble.mjs` cycle-token bump on `onSkipRequested{phase:'tumble'}` |
 | **V5.3** | Big-Win toast sequence (1500–4000ms) | Industry baseline: every BIG/MEGA/EPIC celebration must collapse to the highest tier instantly on skip | S | `uiToast.mjs` (jump to final tier, hide intermediates) |
