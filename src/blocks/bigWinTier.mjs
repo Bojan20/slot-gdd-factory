@@ -278,38 +278,46 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
     align-items: center;
     justify-content: center;
   }
+  /* Banner = transparent vertical stack (label on top, counter below) —
+   * matches the industry-standard hero-typography bigwin layout. NO box,
+   * NO border, NO background, NO outer glow. Just two big text elements
+   * with a 3D drop-shadow depth stack so they read crisp against any
+   * reels art showing through. Boki rule 05.06.2026: "nadji counter u
+   * referentnoj igri i ubaci ga na istom mestu kao sto je tamo u igri". */
   .big-win-tier-banner {
     pointer-events: none;
-    background: rgba(0, 0, 0, 0.74);
-    border: 3px solid rgba(255, 255, 255, 0.62);
-    border-radius: 22px;
-    padding: 1.6rem 3.4rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 40px 60px;
     color: #fff;
     font-weight: 900;
     letter-spacing: 0.18em;
     text-align: center;
-    text-shadow: 0 0 18px rgba(255, 255, 255, 0.7);
-    box-shadow: 0 0 90px rgba(255, 255, 255, 0.5);
     opacity: 0;
     transform: scale(0.65);
     white-space: nowrap;
     /* Smooth tier morph: when data-tier flips during the walkthrough,
-     * border-color / glow / font-size tween continuously instead of
-     * snapping. Counter never pauses. */
-    transition: border-color 600ms ease, box-shadow 600ms ease, color 600ms ease, font-size 600ms ease;
+     * font-size + filter glow + color tween continuously. Counter never
+     * pauses. */
+    transition: color 600ms ease, font-size 600ms ease, filter 600ms ease;
   }
   .big-win-tier-banner .big-win-tier-label {
     display: block;
+    line-height: 1;
     transition: opacity 220ms ease;
   }
   .big-win-tier-banner[data-label-swap="true"] .big-win-tier-label { opacity: 0.0; }
   .big-win-tier-banner .big-win-tier-amount {
     display: block;
-    font-size: 0.6em;
-    font-weight: 800;
-    letter-spacing: 0.22em;
-    margin-top: 0.5rem;
-    opacity: 0.92;
+    /* Counter is 1.07× the label (industry-standard hero-typography
+     * proportion: value reads ~7% bigger than label). */
+    font-size: 1.07em;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    line-height: 1;
+    opacity: 1;
   }
   /* Three banner states drive the fade choreography (Wave H5.4 — Boki spec
    * 05.06.2026 "gladak prelaz bez stajanja"):
@@ -323,11 +331,51 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
   .big-win-tier-banner[data-show="enter"] { animation: bigWinTierIn  ${cfg.fadeMs}ms cubic-bezier(.4,1.55,.5,1) forwards; }
   .big-win-tier-banner[data-show="hold"]  { opacity: 1; transform: scale(1); }
   .big-win-tier-banner[data-show="exit"]  { animation: bigWinTierOut ${cfg.fadeMs}ms ease-in forwards; }
-  .big-win-tier-banner[data-tier="1"] { border-color: rgba(${c[0]},.95); color: rgba(${c[0]},1); box-shadow: 0 0 70px rgba(${c[0]},.55);  font-size: 2.4rem; }
-  .big-win-tier-banner[data-tier="2"] { border-color: rgba(${c[1]},.95); color: rgba(${c[1]},1); box-shadow: 0 0 80px rgba(${c[1]},.6);   font-size: 2.7rem; }
-  .big-win-tier-banner[data-tier="3"] { border-color: rgba(${c[2]},.95); color: rgba(${c[2]},1); box-shadow: 0 0 90px rgba(${c[2]},.65);  font-size: 3.0rem; }
-  .big-win-tier-banner[data-tier="4"] { border-color: rgba(${c[3]},.95); color: rgba(${c[3]},1); box-shadow: 0 0 100px rgba(${c[3]},.7);  font-size: 3.3rem; }
-  .big-win-tier-banner[data-tier="5"] { border-color: rgba(${c[4]},.95); color: rgba(${c[4]},1); box-shadow: 0 0 110px rgba(${c[4]},.78); font-size: 3.8rem; }
+  /* Tier visuals — per-tier accent color drives BOTH text fill and the
+   * 3D drop-shadow stack. Font-size escalates so higher tiers feel
+   * physically bigger on screen. clamp() keeps it sane on small viewports.
+   * The drop-shadow ladder produces a chunky 3D extrusion (industry-standard
+   * hero-typography filter stack — vendor-neutral colors from cfg.colors). */
+  .big-win-tier-banner[data-tier="1"] {
+    color: rgba(${c[0]},1);
+    font-size: clamp(48px, 11vw, 90px);
+    filter:
+      drop-shadow(0 2px 0 rgba(0,0,0,.55))
+      drop-shadow(0 4px 0 rgba(0,0,0,.45))
+      drop-shadow(0 8px 14px rgba(${c[0]},.55));
+  }
+  .big-win-tier-banner[data-tier="2"] {
+    color: rgba(${c[1]},1);
+    font-size: clamp(54px, 12.5vw, 102px);
+    filter:
+      drop-shadow(0 2px 0 rgba(0,0,0,.6))
+      drop-shadow(0 4px 0 rgba(0,0,0,.5))
+      drop-shadow(0 10px 18px rgba(${c[1]},.6));
+  }
+  .big-win-tier-banner[data-tier="3"] {
+    color: rgba(${c[2]},1);
+    font-size: clamp(60px, 14vw, 114px);
+    filter:
+      drop-shadow(0 3px 0 rgba(0,0,0,.65))
+      drop-shadow(0 5px 0 rgba(0,0,0,.55))
+      drop-shadow(0 12px 22px rgba(${c[2]},.65));
+  }
+  .big-win-tier-banner[data-tier="4"] {
+    color: rgba(${c[3]},1);
+    font-size: clamp(66px, 15.5vw, 126px);
+    filter:
+      drop-shadow(0 3px 0 rgba(0,0,0,.7))
+      drop-shadow(0 6px 0 rgba(0,0,0,.6))
+      drop-shadow(0 14px 26px rgba(${c[3]},.7));
+  }
+  .big-win-tier-banner[data-tier="5"] {
+    color: rgba(${c[4]},1);
+    font-size: clamp(72px, 17vw, 140px);
+    filter:
+      drop-shadow(0 4px 0 rgba(0,0,0,.75))
+      drop-shadow(0 7px 0 rgba(0,0,0,.65))
+      drop-shadow(0 16px 30px rgba(${c[4]},.78));
+  }
   @keyframes bigWinTierIn {
     0%   { opacity: 0; transform: scale(0.7); }
     100% { opacity: 1; transform: scale(1); }
@@ -337,12 +385,8 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
     100% { opacity: 0; transform: scale(0.85); }
   }
   @media (max-width: 620px) {
-    .big-win-tier-banner[data-tier="1"] { font-size: 1.7rem; }
-    .big-win-tier-banner[data-tier="2"] { font-size: 1.9rem; }
-    .big-win-tier-banner[data-tier="3"] { font-size: 2.1rem; }
-    .big-win-tier-banner[data-tier="4"] { font-size: 2.3rem; }
-    .big-win-tier-banner[data-tier="5"] { font-size: 2.6rem; }
-    .big-win-tier-banner { padding: 1rem 1.8rem; }
+    .big-win-tier-banner { padding: 24px 28px; gap: 12px; }
+    /* clamp() handles font-size scaling automatically — no per-tier override needed. */
   }
   @media (prefers-reduced-motion: reduce) {
     .big-win-tier-banner[data-show="enter"],

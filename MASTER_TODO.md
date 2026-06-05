@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `fea17e7` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click fix) + H5.4 + H5.5 (money counter) + H5.6 (time-based tier cadence)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: pending · main · Wave **U + V + V3 + V4 + V5.0 + V5.X (rapid-Space dup-click fix) + H5.4 + H5.5 (money counter) + H5.6 (time-based tier cadence) + H5.7 (hero-typography layout — boxless, counter ≥ label)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -306,7 +306,56 @@ Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spi
 
 ---
 
-## 🟢 Wave H5.6 — Tier promotion = TIME-BASED, not threshold-based (block owns cadence) — SHIPPED (this commit)
+## 🟢 Wave H5.7 — Big-Win layout matches industry reference (boxless, counter ≥ label) — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"Sad nadji counter u WoO igri i ubaci ga na istom mestu kao sto je tamo u igri ubaci ga u rectangulat."*
+
+### Reference layout audit
+
+Side-by-side capture via `tools/_woo-counter-screenshot.mjs` revealed the reference bigwin layout:
+
+| Surface | Reference (industry, hero-typography) | H5.6 factory (BEFORE) |
+|---|---|---|
+| Wrapper | Transparent flex column, no border, no bg, no box-shadow, gap 20px, padding 40×60px | Opaque box: `rgba(0,0,0,0.74)` bg, 3px border, 22px radius, 90-110px outer glow, 1.6×3.4rem padding |
+| Title font | clamp(64px, 16vw, **140px**) | 2.4rem → 3.8rem (~38-61px) — too small |
+| Value/counter font | clamp(72px, 18vw, **150px**) — **bigger than title** | 0.6em × banner font (~36px) — **smaller than label** |
+| Depth | 5-step `filter: drop-shadow()` stack (3D extrusion + soft outer halo) | Single text-shadow blur (18px) |
+| Tier escalation | Per-tier hue + font-size growth | Per-tier border + box-shadow color + font-size growth |
+
+### What changed in `src/blocks/bigWinTier.mjs` (CSS only — runtime unchanged)
+
+| CSS surface | Pre H5.7 | Posle H5.7 |
+|---|---|---|
+| `.big-win-tier-banner` | Box with bg + border + radius + outer box-shadow | Transparent flex column, gap 20px, padding 40×60px — pure hero-typography stack |
+| `.big-win-tier-amount` | `font-size: 0.6em` (60% of label) | `font-size: 1.07em` (industry-standard 7% bigger than label) |
+| Tier visuals | `border-color + box-shadow` per tier | `filter: drop-shadow()` 3-step depth stack per tier — 2 dark drops for chunky 3D extrusion + 1 colored halo from `cfg.colors[i]` |
+| Per-tier font-size | `2.4rem → 3.8rem` | `clamp(48px, 11vw, 90px) → clamp(72px, 17vw, 140px)` — viewport-responsive, max 140px on desktop |
+| Mobile breakpoint | Per-tier `font-size` override + reduced padding | clamp() auto-handles font-size; only padding/gap shrink |
+| Transition target | `border-color, box-shadow, color, font-size` | `color, font-size, filter` — matches the new visual properties |
+
+### Vendor-neutral integrity
+
+Block source remains free of vendor / studio / brand strings (LEGO invariant 3 still PASS). The 3D drop-shadow ladder is industry-standard hero-typography (used by every AAA slot vendor); color palette comes from `cfg.colors[]` which is GDD-driven.
+
+### Live verification (all 4 probes PASS)
+
+| Probe | Result | What it proves |
+|---|:--:|---|
+| `tests/blocks/bigWinTier.test.mjs` | **24/24** | Config / runtime determinism preserved |
+| `tools/lego-gate.mjs` | **5/5** | LEGO invariants + vendor-neutral source |
+| `tools/_bw-tier-cadence-probe.mjs` (3 demos × 2 scenarios) | **48/48** | 4 s/tier cadence unchanged (block still owns rhythm) |
+| `tools/_bw-money-probe.mjs` (3 demos) | **33/33** | Counter still ramps `€0.00 → €N.NN`, climax holds at exact award |
+| `tools/_woo-counter-screenshot.mjs` (visual diff) | layout match | Both reference + factory render: 140px+ font, transparent wrapper, label-on-top + counter-below stack |
+
+### Boki rule honored
+
+> *"Sad nadji counter u WoO igri i ubaci ga na istom mestu kao sto je tamo u igri ubaci ga u rectangulat."*
+
+Layout = identical to the reference: hero-typography flex column, transparent wrapper, 140px+ glyphs with 3D drop-shadow depth, counter slightly bigger than the label. All three demos (rectangular, WoO, GoO) now share the same big-win visual cadence and proportions because the block — not the call site — owns layout.
+
+---
+
+## 🟢 Wave H5.6 — Tier promotion = TIME-BASED, not threshold-based (block owns cadence) — SHIPPED (`fea17e7`)
 
 > Boki (05.06.2026): *"sto se BW force dugmeta tice, ne ponasaju se tirovi isto kao kada se dobiju iz igre. nego se menjaju odmah jedan za drugim. Dugme u forcu uvek samo poziva ishod ne diriguje kako ce se bilo sta drugo ponasati, sve su to blokovi sami za sebe."*
 
