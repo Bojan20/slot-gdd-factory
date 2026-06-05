@@ -442,6 +442,47 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
       _wire();
     }
 
+    /* Wave V5 — global Space keyboard shortcut. Native <button> already
+     * activates on Space when focused, but on page load the focus is on
+     * <body> so the first Space press does nothing — the player has to
+     * Tab to the button first. Industry slots dispatch Space as the
+     * primary CTA gesture regardless of focus, so we forward
+     * document-level Space presses to the spinBtn click path (which then
+     * routes through _onClick state-machine logic + the legacy bubble
+     * listener for SPIN starts). Guards:
+     *   • ignore when focus is in an input / textarea / contentEditable
+     *     so number-pickers + chat fields still get the spacebar
+     *   • ignore when ANY modal-mode panel is open (autoplay / settings /
+     *     paytable / historyLog / gambleSecondary) — they own the screen
+     *   • respect button.disabled (pending-settle window) so a Space mash
+     *     during settle can't start a new spin */
+    function _isTypingTarget(el) {
+      if (!el) return false;
+      var tag = el.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+      if (el.isContentEditable) return true;
+      return false;
+    }
+    function _modalOpen() {
+      /* Defensive scan — modals reachable from the hub. Each sets
+       * data-open="true" on its root element when active; that selector
+       * lets us pick up new modals automatically without listing each. */
+      return !!document.querySelector('[data-modal="true"][data-open="true"]');
+    }
+    document.addEventListener('keydown', function (ev) {
+      if (ev.code !== 'Space' && ev.key !== ' ') return;
+      if (_isTypingTarget(document.activeElement)) return;
+      if (_modalOpen()) return;
+      var btn = _btn();
+      if (!btn) return;
+      if (btn.disabled) { ev.preventDefault(); return; }
+      ev.preventDefault();
+      /* Synthesize a click — routes through capture _onClick first
+       * (state-machine), then bubble legacy listener (SPIN starter).
+       * Behaviorally identical to a native focused-Space activation. */
+      btn.click();
+    });
+
     /* HookBus lifecycle wiring — drives the state morphs. */
     if (window.HookBus && typeof window.HookBus.on === 'function') {
 

@@ -354,11 +354,25 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
       if (matchLength < 3) continue;
 
       const tier = (reg.tier && reg.tier[baseSym]) || (baseSym === wildId ? 'WILD' : 'LP');
+      /* Wave V5 — placeholder payX so spins actually pay out before the
+       * PAR/math-engine integration phase lands. Industry-typical 3/4/5-OAK
+       * multipliers per tier × current bet. Without this every line-win
+       * event came back with payX undefined, totalAward stayed 0, and the
+       * SKIP CTA + balance credit + history row all silently treated the
+       * spin as a zero-paying outcome. Real math swaps this for PAR-table
+       * lookups; the contract (event has a payX number) stays identical. */
+      var _baseBet = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : 1;
+      var _tierPay = (tier === 'HP')   ? { 3:  5, 4:  25, 5: 100 }
+                   : (tier === 'MP')   ? { 3:  2, 4:  10, 5:  30 }
+                   : (tier === 'WILD') ? { 3: 10, 4:  50, 5: 250 }
+                   :                     { 3:  1, 4:   3, 5:  10 };
+      var _payMult = _tierPay[matchLength] || (_tierPay[5] * (matchLength - 5 + 1));
       events.push({
         lineIndex: lineIdx,
         symbol: baseSym,
         tier,
         matchLength,
+        payX: _payMult * _baseBet,
         cells: pathCells.slice(0, matchLength),
       });
     }
