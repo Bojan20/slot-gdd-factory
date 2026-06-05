@@ -296,6 +296,13 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
       armTimerId: null,
       reelsArmed: false,
       dispatchLocked: false,   /* one-shot per state — prevents double-emit on race */
+      /* Wave V4 — industry "pending-settle" CTA pattern. After a slam click
+       * we immediately revert the visual to SPIN (so the player sees their
+       * press registered) but the button stays .disabled=true until the
+       * last reel signals OnReelComplete (onSlamComplete + postSpin). This
+       * flag tells _finalizeRound to re-enable the button when the
+       * settlement window closes. */
+      slamPendingSettle: false,
     };
     if (typeof window !== 'undefined') window.SPIN_CONTROL_STATE = STATE;
 
@@ -362,6 +369,19 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
       if (s === 'STOP_PRE' || s === 'STOP_POST') {
         var phase = (s === 'STOP_PRE') ? 'pre' : 'post';
         _emit('onSlamRequested', { phase: phase, source: 'button' });
+        /* Wave V4 (Boki rule 05.06.2026 + industry pending-settle pattern):
+         * immediately revert the visual to SPIN so the player sees their
+         * press registered, but keep the CTA non-interactive until the
+         * last reel emits OnReelComplete (which happens via onSlamComplete
+         * + postSpin → _finalizeRound below). Without this morph, the
+         * button reads STOP for ~400ms while reels finish their bounce
+         * decay, which feels broken (Boki: "ubrzo nakon stop dugmeta treba
+         * spin dugme da se pojavi"). With it, the player sees:
+         * STOP-click → SPIN icon (dim/disabled) → SPIN (clickable). */
+        STATE.slamPendingSettle = true;
+        setState('SPIN');
+        var btnSlam = _btn();
+        if (btnSlam) btnSlam.disabled = true;
       } else if (s.indexOf('SKIP_') === 0) {
         var skipPhase = ({
           'SKIP_ROLLUP':       'rollup',
@@ -444,6 +464,11 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
        * interrupt mid-spin. */
       window.HookBus.on('preSpin', function () {
         if (STATE.armTimerId !== null) { clearTimeout(STATE.armTimerId); STATE.armTimerId = null; }
+        /* Wave V4 safety: clear any stale pending-settle flag at the start
+         * of a fresh spin, otherwise an unfinished slam round (rare edge:
+         * onSlamComplete dropped due to upstream error) could leave the
+         * button locked into disabled forever. */
+        STATE.slamPendingSettle = false;
         if (HIDE_ON_TURBO && _turboActive()) return;
         if (HIDE_ON_AUTOSPIN && _autoSpinActive()) return;
         /* INSTANT morph — no delay. Boki industry preference. */
@@ -473,9 +498,23 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
          * skip". So we morph to SKIP_ROLLUP on EITHER win + long rollup
          * OR active animation. Otherwise we settle directly to SPIN. */
         if (SHOW_ROLLUP && (anim || (hasWin && longRoll))) {
+          /* Win/animation branch — SKIP_ROLLUP is clickable; setState here
+           * sets disabled=false implicitly. Clear pending-settle flag so a
+           * future round starts fresh. */
           setState('SKIP_ROLLUP');
+          STATE.slamPendingSettle = false;
         } else if (STATE.current === 'STOP_PRE' || STATE.current === 'STOP_POST') {
+          /* Natural-stop branch — reels stopped on their own, no slam was
+           * issued. Morph directly to SPIN (clickable). */
           setState('SPIN');
+        } else if (STATE.slamPendingSettle) {
+          /* Pending-settle branch — slam was clicked, visual is already
+           * SPIN (set in _onClick) but the button is disabled while reels
+           * finished bounce decay. The last reel has now committed —
+           * re-enable so the player can press again. */
+          var btnDone = _btn();
+          if (btnDone) btnDone.disabled = false;
+          STATE.slamPendingSettle = false;
         }
       }
       window.HookBus.on('onSlamComplete', _finalizeRound);
