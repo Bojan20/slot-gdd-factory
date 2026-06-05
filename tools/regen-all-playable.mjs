@@ -256,6 +256,23 @@ for (const t of targets) {
   }
   model.netLossIndicator = Object.assign({}, model.netLossIndicator || {}, { enabled: true });
 
+  /* Wave H2 — auto-enable Reality Check modal on every demo. UKGC LCCP
+   * 8.3 mandates this for British market. For demo visibility, use a
+   * short 60s interval + spin-trigger every 25 spins. Real production
+   * GDDs override intervalMs to 30 / 60 min per market regulation. */
+  const alreadyRc = model.features.some(f =>
+    f && typeof f.kind === 'string' && /^reality[_-]?check$/i.test(f.kind),
+  );
+  if (!alreadyRc) {
+    model.features.push({ kind: 'reality_check', label: 'Reality Check' });
+  }
+  model.realityCheck = Object.assign({}, model.realityCheck || {}, {
+    enabled: true,
+    intervalMs: 60000,      /* 60s demo interval — production would use 1800000 (30min) */
+    spinInterval: 25,
+    triggerOnLossLevel: 'alert',
+  });
+
   /* Wave H11 — auto-enable Bonus Buy Deterministic Plant on demos that
    * already declare a bonus_buy feature (or have bonusBuy enabled). The
    * extension is a no-op when bonusBuy is off (resolveConfig forces

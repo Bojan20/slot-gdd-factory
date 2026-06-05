@@ -49,6 +49,9 @@ t('HOOK_EVENTS canonical list (core + V intent + V5 win-present + U4 autoplay + 
     'onBonusBuyTierSelected', 'onDeterministicPlantApplied',
     /* Wave H12 — Net Loss Indicator */
     'onNetThresholdCrossed',
+    /* Wave H2 — Reality Check player-protection */
+    'onRealityCheckShown', 'onRealityCheckDismissed', 'onRealityCheckPaused',
+    'onRealityCheckResumed', 'onRealityCheckQuit',
     /* Wave U4 */
     'onAutoplayStart', 'onAutoplayStop', 'onAutoplayTick',
     /* Wave U5 */

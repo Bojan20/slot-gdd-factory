@@ -146,6 +146,15 @@ const EXPECTED_EMIT_OWNERS = {
    * configured ladder rung in either direction.
    * balanceHud.mjs source untouched. */
   onNetThresholdCrossed:       ['netLossIndicator.mjs'],
+  /* Wave H2 — Reality Check player-protection modal. Standalone block
+   * owns the modal DOM + trigger logic (time/spin/loss) + CTA wiring.
+   * Listens to preSpin / onAutoplayTick / onBalanceChanged /
+   * onNetThresholdCrossed. Emits its own lifecycle events. */
+  onRealityCheckShown:         ['realityCheck.mjs'],
+  onRealityCheckDismissed:     ['realityCheck.mjs'],
+  onRealityCheckPaused:        ['realityCheck.mjs'],
+  onRealityCheckResumed:       ['realityCheck.mjs'],
+  onRealityCheckQuit:          ['realityCheck.mjs'],
   /* Wave U4 — autoplay session events all owned by autoplay.mjs. */
   onAutoplayStart: ['autoplay.mjs'],
   onAutoplayTick:  ['autoplay.mjs'],

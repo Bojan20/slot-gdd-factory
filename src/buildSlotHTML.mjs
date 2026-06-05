@@ -228,6 +228,13 @@ import {
   emitNetLossIndicatorRuntime,
   resolveConfig as resolveNetLossIndicatorConfig,
 } from './blocks/netLossIndicator.mjs';
+// Wave H2 — Reality Check player-protection modal (UKGC LCCP 8.3)
+import {
+  emitRealityCheckCSS,
+  emitRealityCheckMarkup,
+  emitRealityCheckRuntime,
+  resolveConfig as resolveRealityCheckConfig,
+} from './blocks/realityCheck.mjs';
 // Wave H5.8 — base-game total-win rollup counter (sits above the hub,
 // hidden until a sub-big-win lands, persists until the next preSpin).
 // Industry reference: statusBarController.rollupWin pattern.
@@ -417,6 +424,8 @@ ${/* Wave U8 — balance HUD (hub widget: Balance | Bet | Win). */ ''}
 ${emitBalanceHudCSS(resolveBalanceHudConfig(model))}
 ${/* Wave H12 — Net Win/Loss Indicator (chip CSS for session-net column). */ ''}
 ${emitNetLossIndicatorCSS(resolveNetLossIndicatorConfig(model))}
+${/* Wave H2 — Reality Check modal CSS (regulator player-protection popup). */ ''}
+${emitRealityCheckCSS(resolveRealityCheckConfig(model))}
 ${emitWinRollupCSS(resolveWinRollupConfig(model))}
 ${/* Wave U9 — session history log (audit panel). */ ''}
 ${emitHistoryLogCSS(resolveHistoryLogConfig(model))}
@@ -498,6 +507,7 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
         old .statBox--balance + .statBox--status pair. */ ''}
     ${emitBalanceHudMarkup(resolveBalanceHudConfig(model))}
     ${emitNetLossIndicatorMarkup(resolveNetLossIndicatorConfig(model))}
+    ${emitRealityCheckMarkup(resolveRealityCheckConfig(model))}
     ${/* Wave U5 — bet chip + steps + panel. */ ''}
     ${emitBetSelectorMarkup(resolveBetSelectorConfig(model))}
     <button class="iconBtn" aria-label="Sound" type="button">
@@ -907,6 +917,10 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
   ${/* Wave H12 — Net Loss Indicator runtime: subscribes to onBalanceChanged
      * AFTER balanceHud is wired (so handler chain captures all events). */ ''}
   ${emitNetLossIndicatorRuntime(resolveNetLossIndicatorConfig(model))}
+  ${/* Wave H2 — Reality Check runtime listens to preSpin / onAutoplayTick
+     * / onBalanceChanged / onNetThresholdCrossed. Emits its own
+     * lifecycle events. */ ''}
+  ${emitRealityCheckRuntime(resolveRealityCheckConfig(model))}
   ${emitWinRollupRuntime(resolveWinRollupConfig(model))}
   ${/* Wave U9 — session history runtime (ring buffer + panel). */ ''}
   ${emitHistoryLogRuntime(resolveHistoryLogConfig(model))}

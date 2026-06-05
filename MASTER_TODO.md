@@ -3,7 +3,121 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `304b5a4` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + V5.Y + H5.4–H5.20 + Wave I + Wave I.2 + Wave H14 + Wave H15 + Wave H13 + Wave H11 + Wave H12 (netLossIndicator extension — regulator-mandated session net chip + 3-tier loss ladder; auto-enabled on every dist; **77/77 unit + 26/26 live = 103/103 PASS** with balanceHud untouched). Wave H11 before: bonusBuyDeterministic extension — tier picker + deterministic scatter plant + optional starting multiplier)** all live. Hub responsive 9/9 PASS. **Latest shipped — Wave H11** (tier picker modal with STANDARD 75× / PREMIUM 150× / SUPER 300× plants; each plant has specific `[r,c]` scatter positions + optional `extraMult` starting modifier; pure observer wraps `#bonusBuyBtn` click at capture phase + cell DOM rewrite on `onSpinResult`; **65/65 unit PASS** + **22/22 live Playwright probe on GoO dist** + 5/5 LEGO + 29/29 HookBus canonical = **121/121 PASS** with `bonusBuy.mjs` untouched). Wave H13 before that: per-path multiplier chip + aggregate bonus award on `waysEval` (84/84 + 39/39 live). Wave I.2: MULT force button (88/88 fixtures); Wave I: **11/11 UNIFORM grid kinds** got dist parity (12 incl. variable_reel). Big-Win Tier ladder matured kroz 17 atoma (H5.4 → H5.20). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Remaining extensions u Wave H queue: **H8 cellOverflowCounter** (sledeći u redu), H1-H4 + H6-H7 + H9-H10 + H12 + H16-H18 (regulator + climax + audit). Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: **(pending push)** · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + V5.Y + H5.4–H5.20 + Wave I + Wave I.2 + Wave H14 + Wave H15 + Wave H13 + Wave H11 + Wave H12 + Wave H2 (realityCheck player-protection modal — UKGC LCCP 8.3; periodic interrupt with session summary + CONTINUE/PAUSE/QUIT CTAs; natural consumer of H12 onNetThresholdCrossed; **70/70 unit + 20/20 live + 5/5 LEGO + 29/29 HookBus = 124/124 PASS** with 0 mutations to other blocks)** all live. Wave H12 before: netLossIndicator extension — regulator-mandated session net chip + 3-tier loss ladder; auto-enabled on every dist; **77/77 unit + 26/26 live = 103/103 PASS** with balanceHud untouched). Wave H11 before: bonusBuyDeterministic extension — tier picker + deterministic scatter plant + optional starting multiplier)** all live. Hub responsive 9/9 PASS. **Latest shipped — Wave H11** (tier picker modal with STANDARD 75× / PREMIUM 150× / SUPER 300× plants; each plant has specific `[r,c]` scatter positions + optional `extraMult` starting modifier; pure observer wraps `#bonusBuyBtn` click at capture phase + cell DOM rewrite on `onSpinResult`; **65/65 unit PASS** + **22/22 live Playwright probe on GoO dist** + 5/5 LEGO + 29/29 HookBus canonical = **121/121 PASS** with `bonusBuy.mjs` untouched). Wave H13 before that: per-path multiplier chip + aggregate bonus award on `waysEval` (84/84 + 39/39 live). Wave I.2: MULT force button (88/88 fixtures); Wave I: **11/11 UNIFORM grid kinds** got dist parity (12 incl. variable_reel). Big-Win Tier ladder matured kroz 17 atoma (H5.4 → H5.20). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Remaining extensions u Wave H queue: **H8 cellOverflowCounter** (sledeći u redu), H1-H4 + H6-H7 + H9-H10 + H12 + H16-H18 (regulator + climax + audit). Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+
+---
+
+## 🟢 Wave H2 — `realityCheck` player-protection modal (UKGC LCCP 8.3) — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"nastavi ultimativno"*. Sixth in the Wave H extension series — second regulator-protection block (after H12 netLossIndicator). Adds the **Reality Check** modal: a periodic interrupt with session summary (time / spins / win / loss / net) and three CTAs (CONTINUE / PAUSE / QUIT). Natural downstream consumer of H12's `onNetThresholdCrossed` — the alert-level loss triggers the modal automatically.
+
+### Industry pattern (vendor-neutral synthesis)
+
+| Trigger source | Default | Notes |
+|---|:--:|---|
+| Time-based | 10 min (defaultConfig) / 1 min (dist demo) | UKGC convention 30/60 min in production |
+| Spin-count-based | 0 (off in defaultConfig) / 25 (dist demo) | Useful for low-time-per-spin players |
+| Loss-based (alert level) | `onNetThresholdCrossed{to:'alert', direction:'losing'}` | Hooks H12's emit directly |
+
+### Regulator anchors
+
+| Authority | Rule |
+|---|---|
+| **UKGC LCCP 8.3** (UK) | Reality Check explicitly named obligation |
+| **MGA RGF** (Malta) | Periodic-summary mechanism required |
+| **NJDGE 13:69O** (New Jersey) | Session reality-check rule |
+| Spelinspektionen / DGOJ | Convergent player-protection baseline |
+
+### What landed
+
+| Atom | File | Lines | Status |
+|:--:|---|:--:|:--:|
+| H2.a — block source | `src/blocks/realityCheck.mjs` | 525 | ✅ defaultConfig + resolveConfig + emit{CSS,Markup,Runtime} + 135-line JSDoc (regulator anchors enumerated) |
+| H2.b — unit suite | `tests/blocks/realityCheck.test.mjs` | 355 | ✅ **70/70 PASS** — happy + malformed + XSS + determinism + vendor-neutral + sandbox event flow (5 spinInterval trigger → continue → loss trigger → pause → quit) |
+| H2.c — HookBus contract | `src/blocks/hookBus.mjs` | +14 | ✅ 5 new events: `Shown`, `Dismissed`, `Paused`, `Resumed`, `Quit` |
+| H2.d — canonical-list test | `tests/blocks/hookBus.test.mjs` | +3 | ✅ 29/29 PASS |
+| H2.e — LEGO ownership | `tools/lego-gate.mjs` | +9 | ✅ single-owner; 41/41 events |
+| H2.f — buildSlotHTML wiring | `src/buildSlotHTML.mjs` | +18 | ✅ CSS + markup + runtime |
+| H2.g — dist auto-enable | `tools/regen-all-playable.mjs` | +14 | ✅ auto-enabled on every demo (demo settings: 60s + 25 spins) |
+
+### Composition contract (standalone — own modal DOM)
+
+| Read | Write |
+|---|---|
+| `HookBus.on('preSpin')` (spin counter + time delta) | `window.__REALITY_PAUSE_ACTIVE__` during PAUSE |
+| `HookBus.on('onAutoplayTick')` (time advance + win/loss snapshot) | `window.RC_STATE` (full counters) |
+| `HookBus.on('onBalanceChanged')` (win/loss accumulator) | Modal overlay DOM `data-show` flip |
+| `HookBus.on('onNetThresholdCrossed')` (loss-level trigger from H12) | HookBus emit `onRealityCheck{Shown,Dismissed,Paused,Resumed,Quit}` |
+| `window.autoplayStop` (optional defensive halt) | |
+
+### Default config
+
+| Knob | Default | Notes |
+|---|:--:|---|
+| `intervalMs` | 600000 (10 min) | Production override to 1.8M (30min) per UKGC convention |
+| `spinInterval` | 0 (disabled) | Set >0 to enable spin-count trigger |
+| `triggerOnLossLevel` | `'alert'` | Matches H12's deepest threshold; `''` disables |
+| `pauseOptions` | `[5, 15, 30]` min | UKGC LCCP 8.3 references timed-break |
+| `dismissBlocksSpin` | `true` | Defensive — player MUST acknowledge |
+| `accentColor` | `255,170,80` (amber) | High-contrast warning hue |
+
+### Demo regen config (every dist)
+
+```js
+realityCheck: {
+  enabled: true,
+  intervalMs: 60000,        // 60s for demo visibility
+  spinInterval: 25,         // every 25 spins
+  triggerOnLossLevel: 'alert',
+}
+```
+
+### Live verification — `tools/_h2-reality-check-probe.mjs`
+
+Playwright probe on `dist/01_rectangular_5x3_playable.html`:
+
+| Scenario | Acceptance | Result |
+|---|---|:--:|
+| Presence | overlay + 3 CTAs + 3 pause buttons + RC_STATE.enabled + 3 public APIs + `__REALITY_PAUSE_ACTIVE__=false` | ✅ 6/6 |
+| **S1 Spin trigger** | 25 preSpin → spins=25, overlay data-show=true, ≥1 `onRealityCheckShown{reason:'spins'}` | ✅ 3/3 |
+| **S2 Continue** | CONTINUE click → `onRealityCheckDismissed{reason:'continue'}`, overlay hidden | ✅ 2/2 |
+| **S3 Loss trigger** | emit `onNetThresholdCrossed{to:'alert', direction:'losing'}` → modal shown with reason=loss | ✅ |
+| **S4 Pause flow** | PAUSE click reveals options, 5 MIN click emits `onRealityCheckPaused{durationMs:300000}`, `__REALITY_PAUSE_ACTIVE__` flips true | ✅ 4/4 |
+| **S5 Quit flow** | QUIT click emits `onRealityCheckQuit{stats:{...net:-150...}}`, counters cleared to 0 | ✅ 3/3 |
+| 0 page errors | | ✅ |
+| **20 / 20 pass** | | ✅ |
+
+### Full regression
+
+| Gate | Result |
+|---|:--:|
+| `tests/blocks/realityCheck.test.mjs` (NEW) | **70 / 70 PASS** |
+| `tests/blocks/hookBus.test.mjs` (canonical +5) | **29 / 29 PASS** |
+| `tools/lego-gate.mjs` (41 events, 47 listeners) | **5 / 5 PASS** |
+| `tools/regen-all-playable.mjs` | **12 / 12 regen** (+15 KB per dist for modal + runtime) |
+| `tools/_h2-reality-check-probe.mjs` (NEW) | **20 / 20 PASS** |
+
+### Acceptance gates 10/10
+
+1. ✅ Vendor-neutral source
+2. ✅ JSDoc 135-line public-API contract header
+3. ✅ Single responsibility (block owns modal + triggers; balance ledger stays in balanceHud, net tracking in H12)
+4. ✅ Idempotent (`STATE._shown` gates double-open; `STATE.paused` blocks re-show during pause window)
+5. ✅ Defensive on input (malformed intervalMs/pauseOptions/colors/levels → defaults retained)
+6. ✅ Defensive on runtime (`if (this.ownerDoc...)` guards on DOM lookups; tab-backgrounded delta clamp)
+7. ✅ Honors `prefers-reduced-motion`
+8. ✅ a11y — `role="dialog"`, `aria-modal="true"`, descriptive title
+9. ✅ Determinism (identical config → byte-identical CSS + runtime)
+10. ✅ HookBus single-owner contract (5 events, all owned, verified)
+
+### What H2 does NOT do (out-of-scope by LEGO)
+
+| ❌ Concern | Why |
+|---|---|
+| Server-side audit log of shows/dismissals | H18 `payoutEventStreamLog` (with hash chain) |
+| Mandatory hard spin lock during pause | Soft signal via `__REALITY_PAUSE_ACTIVE__`; per-jurisdiction hard-lock is gateway concern |
+| Time-based reality check across page reloads | localStorage / server session — Phase 2 |
+| Self-exclusion (multi-day block) | Separate compliance block — out of slot scope |
 
 ---
 

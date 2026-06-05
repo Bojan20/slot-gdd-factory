@@ -220,6 +220,19 @@ export const HOOK_EVENTS = Object.freeze([
    *   `threshold` is the matching ladder entry (null if returning to
    *   the empty level). Owner: netLossIndicator.mjs. */
   'onNetThresholdCrossed',
+  /* Wave H2: Reality Check player-protection modal events
+   * onRealityCheckShown {reason, stats} — fires when the modal opens
+   *   (reason: 'time' | 'spins' | 'loss' | 'manual').
+   *   Owner: realityCheck.mjs.
+   * onRealityCheckDismissed {reason} — fires when CONTINUE clicked.
+   * onRealityCheckPaused {durationMs} — fires when player picks a pause.
+   * onRealityCheckResumed {} — fires when the pause timer expires.
+   * onRealityCheckQuit {stats} — fires when QUIT clicked; session ends. */
+  'onRealityCheckShown',
+  'onRealityCheckDismissed',
+  'onRealityCheckPaused',
+  'onRealityCheckResumed',
+  'onRealityCheckQuit',
   /* Wave U4: autoplay session events */
   'onAutoplayStart',
   'onAutoplayStop',
