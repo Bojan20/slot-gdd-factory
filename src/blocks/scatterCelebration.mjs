@@ -203,9 +203,16 @@ export function emitScatterCelebrationRuntime(cfg = defaultConfig()) {
   /* Wave V6 — cancellation token for force-skip support. Each celebration
      run picks up the current token; an onSkipRequested handler bumps the
      counter, which the timer closure tests on fire and the early-resolve
-     branch tests too. Defensive against double-fire. */
+     branch tests too. Defensive against double-fire.
+
+     H5.20 (Boki bug 05.06.2026 "kada rucno stopiram i skipujem winove u
+     FS, zabaguje i blokira FS blok"): the skip path used to bump the
+     token WITHOUT calling the pending Promise resolver, so an awaiting
+     handlePostSpin retrigger chain blocked forever. We now stash the
+     resolver in _pendingResolve and the skip handler invokes it. */
   var _SCATTER_CELEBRATION_TOKEN = 0;
-  var _scatterCelebrationActive = false;
+  var _scatterCelebrationActive  = false;
+  var _scatterPendingResolve     = null;
 
   function playScatterCelebration(opts) {
     return new Promise(resolve => {
@@ -215,14 +222,16 @@ export function emitScatterCelebrationRuntime(cfg = defaultConfig()) {
       const durationMs = (opts && opts.durationMs) || ${c.durationMs};
       const myToken = ++_SCATTER_CELEBRATION_TOKEN;
       _scatterCelebrationActive = true;
+      _scatterPendingResolve    = resolve;
       host.classList.add('is-scatter-celebrating');
       cells.forEach(c => c.classList.add('cell--scatter-celebrate'));
       /* Safety: don't leak the classes if the page hides/unmounts mid-flight. */
       setTimeout(() => {
-        if (myToken !== _SCATTER_CELEBRATION_TOKEN) return; /* cancelled */
+        if (myToken !== _SCATTER_CELEBRATION_TOKEN) return; /* cancelled — skip handler already resolved */
         host.classList.remove('is-scatter-celebrating');
         cells.forEach(c => c.classList.remove('cell--scatter-celebrate'));
         _scatterCelebrationActive = false;
+        _scatterPendingResolve    = null;
         resolve();
       }, durationMs);
     });
@@ -255,6 +264,14 @@ export function emitScatterCelebrationRuntime(cfg = defaultConfig()) {
       const { host, cells } = findScatterCellsOnGrid();
       if (host) host.classList.remove('is-scatter-celebrating');
       if (cells) cells.forEach(c => c.classList.remove('cell--scatter-celebrate'));
+      /* H5.20 — resolve the pending Promise so handlePostSpin's await
+       * chain unblocks immediately on skip (was blocking the next FS
+       * spin scheduling indefinitely). */
+      if (typeof _scatterPendingResolve === 'function') {
+        const _r = _scatterPendingResolve;
+        _scatterPendingResolve = null;
+        _r();
+      }
       const duration = Math.round(((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - t0);
       HookBus.emit('onSkipComplete', { phase: 'celebration', duration });
     });

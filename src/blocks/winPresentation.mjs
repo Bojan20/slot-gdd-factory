@@ -300,7 +300,18 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
       grid.classList.add('is-winsym-cycling');
       let i = 0;
       const playOne = () => {
-        if (token !== WINSYM_CYCLE_TOKEN) return;          /* cancelled */
+        if (token !== WINSYM_CYCLE_TOKEN) {
+          /* H5.20 — Boki bug 05.06.2026: "kada rucno stopiram i skipujem
+           * winove u FS, zabaguje i blokira FS blok". Root cause: this
+           * function returned WITHOUT resolving the Promise on a skip,
+           * so the await in handlePostSpin (the FS chain) blocked forever
+           * → next FS spin never scheduled. Strip the cycle classes (the
+           * skip handler already strips them but be defensive) and resolve
+           * so the awaiting chain unblocks. */
+          grid.classList.remove('is-winsym-cycling');
+          resolve();
+          return;
+        }
         /* Strip previous event's markers. */
         grid.querySelectorAll('.cell--winsym, text.cell--winsym')
           .forEach(c => c.classList.remove('cell--winsym'));

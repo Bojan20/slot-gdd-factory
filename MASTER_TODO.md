@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `3ffcf09` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + H5.4–H5.18 + H5.19 (QA pass — BW force bypass scatter check za GoO + cortex eyes 10/10 + probe race fixes)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: pending · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + H5.4–H5.19 + H5.20 (FS skip-block bug: playWinSymCycle + playScatterCelebration sad resolve-uju Promise na skip — FS blok više ne blokira na manual stop/skip)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -306,7 +306,108 @@ Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spi
 
 ---
 
-## 🟢 Wave H5.19 — Ultimate QA pass + BW force bypass scatter check + cortex-eyes 10/10 — SHIPPED (this commit)
+## 🟢 Wave H5.20 — FS skip-block bug fix: Promise leaks blokirali FS chain na manual stop/skip — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"kada rucno stopiram i skiopujem winove u FS, zabaguje i blokira FS blok. Fix ultimativno sve zakrpi da nema nijednog bug-a u tom kontekstu."*
+
+### Root cause — DVA Promise leaks
+
+Dva async helper-a u presentation pipeline-u imala isti bug: na skip event, bump-ovali su cancellation token ALI **NIKAD nisu resolve-ovali Promise**. Bilo koji await na njima blokirao je pozivnu chain forever:
+
+| Function | Linija | Pre-fix ponašanje |
+|---|:--:|---|
+| `playWinSymCycle` u `winPresentation.mjs` | 302-303 | `if (token !== WINSYM_CYCLE_TOKEN) return;` ❌ **bez resolve-a** |
+| `playScatterCelebration` u `scatterCelebration.mjs` | 222 | `if (myToken !== _SCATTER_CELEBRATION_TOKEN) return;` ❌ **setTimeout no-op** |
+
+Posledica u FS contextu:
+1. FS spin reels settle
+2. `handlePostSpin` čeka `await applyWinHighlight()`
+3. `applyWinHighlight` čeka `await playWinSymCycle(events)`
+4. Player klikne SKIP → token++ → `playOne` ide u return BEZ resolve
+5. **`await playWinSymCycle` zaglavi forever**
+6. `_emitPostSpin` nikad ne fire
+7. `FSM_runNextFsSpin` nikad ne starta
+8. **FS BLOK BLOKIRA**
+
+Identičan failure mode za retrigger flow koji `await`-uje `playScatterCelebration` u handlePostSpin.
+
+### Fix #1 — `playWinSymCycle` (winPresentation.mjs)
+
+```js
+if (token !== WINSYM_CYCLE_TOKEN) {
+  /* H5.20 — strip cycle classes + resolve so the awaiting chain unblocks */
+  grid.classList.remove('is-winsym-cycling');
+  resolve();
+  return;
+}
+```
+
+### Fix #2 — `playScatterCelebration` (scatterCelebration.mjs)
+
+Stash resolver u closure-scoped `_scatterPendingResolve`. Skip handler ga invoke-uje:
+
+```js
+function playScatterCelebration(opts) {
+  return new Promise(resolve => {
+    ...
+    _scatterPendingResolve = resolve;
+    ...
+  });
+}
+
+HookBus.on('onSkipRequested', (payload) => {
+  if (payload?.phase !== 'celebration' || !_scatterCelebrationActive) return;
+  _SCATTER_CELEBRATION_TOKEN++;
+  /* ... cleanup classes ... */
+  /* H5.20 — resolve pending Promise so handlePostSpin unblocks */
+  if (typeof _scatterPendingResolve === 'function') {
+    const _r = _scatterPendingResolve;
+    _scatterPendingResolve = null;
+    _r();
+  }
+  HookBus.emit('onSkipComplete', { phase: 'celebration', duration });
+});
+```
+
+### Live probe — `tools/_fs-skip-block-probe.mjs` (NEW)
+
+| Scenario | Description | Result |
+|---|---|:--:|
+| A | `cancelWinSymCycle` helper exists + emit Skip doesn't throw | ✅ |
+| B | `playScatterCelebration(5000ms)` + 100ms later Skip → Promise resolves within 500ms | ✅ (1-103ms) |
+| C | 3× back-to-back: each iteration resolves cleanly | ✅ (all 3) |
+
+**12/12 PASS** sve 2 igre.
+
+### Plus regression probe `_fs-stop-skip-probe.mjs`
+
+Real FS flow sa 3 spins, svaki sa STOP + SKIP:
+- FSM ostaje u FS_ACTIVE ✅
+- preSpin count se penje 1→2→3→4 (svaki sledeći spin starta) ✅
+- spinsRemaining decreases properly ✅
+- 0 console errors ✅
+
+### Full regression matrix (sva 3 demos)
+
+| Gate | Result |
+|---|:--:|
+| `tools/_fs-skip-block-probe.mjs` (NEW) | **12/12 PASS** |
+| `tools/_fs-stop-skip-probe.mjs` (real flow) | **stable** |
+| `tools/_cortex-eyes-h5x-qa.mjs` | **10/10 PASS** |
+| `tests/blocks/winPresentation.test.mjs` | **PASS** |
+| `tests/blocks/scatterCelebration.test.mjs` | **PASS** |
+| `tools/lego-gate.mjs` | **5/5 PASS** |
+| Plus H5.4–H5.19 regressions | **ALL PASS** |
+
+### Boki rule honored
+
+> *"kada rucno stopiram i skiopujem winove u FS, zabaguje i blokira FS blok. Fix ultimativno sve zakrpi da nema nijednog bug-a u tom kontekstu."*
+
+FS chain više ne blokira — Promise leaks fix-ovani u obe helper funkcije. Manual STOP + SKIP tokom FS spina, FS retrigger sa skip celebration, sve radi. Sledeći FS spin se uvek scheduluje.
+
+---
+
+## 🟢 Wave H5.19 — Ultimate QA pass + BW force bypass scatter check + cortex-eyes 10/10 — SHIPPED (`3ffcf09`)
 
 > Boki (05.06.2026): *"qa detaljan i cortex eys i ultimativan review svega. zakrpi sve rupe i svaki moguci scenario na osnovu dokumentacije iz igt kako treba i kako je implementirano kod nas u retangular"*
 
