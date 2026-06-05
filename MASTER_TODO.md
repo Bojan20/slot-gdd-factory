@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `5babec2` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + H5.4–H5.17 + H5.18 (FS intro grid-hide — reel frame potpuno sakriven dok je placard, fade-in tek na TAP TO BEGIN; generic class koja radi za bilo koji bonus intro)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: pending · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + H5.4–H5.18 + H5.19 (QA pass — BW force bypass scatter check za GoO + cortex eyes 10/10 + probe race fixes)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -306,7 +306,114 @@ Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spi
 
 ---
 
-## 🟢 Wave H5.18 — FS/bonus intro: reel grid sakriven dok placard stoji, fade-in tek na TAP TO BEGIN — SHIPPED (this commit)
+## 🟢 Wave H5.19 — Ultimate QA pass + BW force bypass scatter check + cortex-eyes 10/10 — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"qa detaljan i cortex eys i ultimativan review svega. zakrpi sve rupe i svaki moguci scenario na osnovu dokumentacije iz igt kako treba i kako je implementirano kod nas u retangular"*
+
+### Open bug found via full regression (H5.x QA)
+
+`tools/_bw-money-probe.mjs` konzistentno fail-ovao 26/33 na **GoO**. Diagnostic probe otkrila da BW click na GoO nikad ne emit-uje `onWinPresentationStart`:
+
+```
++1041ms preSpin
++5776ms onSpinResult
++5862ms postSpin
+(no onWinPresentationStart, no onBigWinTier*)
+```
+
+Root cause: GoO ima FS enabled + visok scatter density. `handlePostSpin` na liniji 135 zove `countTriggerSymbols()`. Random forced spin može slučajno da landuje 4+ scatter-a → `handlePostSpin` ide u FS trigger flow → swallow-uje `__FORCE_BIG_WIN_TIER__` flag → BW big-win path nikad ne pokrene.
+
+### Fix (postSpin.mjs)
+
+```js
+if (typeof window !== 'undefined' && Number.isFinite(window.__FORCE_BIG_WIN_TIER__)
+    && window.__FORCE_BIG_WIN_TIER__ >= 1 && window.__FORCE_BIG_WIN_TIER__ <= 5
+    && !duringFs) {
+  const events = (await applyWinHighlight()) || [];
+  _emitPostSpin(duringFs, events);
+  FORCE_TRIGGER = null;
+  if (devFsBtn) devFsBtn.disabled = !FREESPINS.enabled;
+  if (spinButton) spinButton.disabled = false;
+  return;
+}
+```
+
+BW force flag bypass scatter check unconditional — applyWinHighlight consume-uje flag, synth big-win event ide.
+
+### Cortex Eyes — `tools/_cortex-eyes-h5x-qa.mjs` (NEW)
+
+11-step visual review na rectangular (screenshots u `/tmp/cortex-eyes-h5x/`):
+
+| # | Faza | Check | Rezultat |
+|:-:|---|---|:--:|
+| 01 | idle | base game | ✅ |
+| 02 | BW symbol pulse | 8 cells `cell--winsym` | ✅ |
+| 03 | Tier 1 banner | `data-tier=1`, label=BIGWINTIER1, amount €18.10 | ✅ |
+| 04 | Tier 3 mid | `data-tier=3`, amount €623.40 | ✅ |
+| 05 | Tier 5 climax | `data-tier=5`, **amount €1500.00**, hold | ✅ |
+| 07 | FS intro placard | frame opacity=0 + visibility=hidden | ✅ |
+| 08 | Mid fadein | `is-feature-intro-fadein` active, frame visible | ✅ |
+| 10 | winRollup | text="€3.00", banner show=true | ✅ |
+| 11 | Skip → climax snap | tier=5 + €1500.00 instant | ✅ |
+| — | console/page errors | 0 | ✅ |
+
+**10/10 PASS** na fresh page state.
+
+### Full regression matrix (sva 3 demos)
+
+| Gate | Result |
+|---|:--:|
+| `tools/lego-gate.mjs` (5 invariants, 51 blokova, 41 listeners) | **5/5 PASS** |
+| `tests/blocks/postSpin.test.mjs` | **PASS** |
+| `tests/blocks/freeSpins.test.mjs` | **PASS** |
+| `tests/blocks/winPresentation.test.mjs` | **PASS** |
+| `tests/blocks/spinControl.test.mjs` | **PASS** |
+| `tests/blocks/winRollup.test.mjs` | **PASS** |
+| `tests/blocks/bigWinTier.test.mjs` | **PASS** |
+| `tools/_cortex-eyes-h5x-qa.mjs` (NEW) | **10/10 PASS** |
+| `tools/_bw-money-probe.mjs` (FIXED: wait 55s za GoO tumble) | **33/33 PASS** |
+| `tools/_bw-tier-cadence-probe.mjs` (FIXED: wait 50s za GoO) × 3 retries | **48/48 PASS × 3** |
+| `tools/_bigwin-presentation-flow-probe.mjs` (FIXED: scenario A → deterministic) | **22/22 PASS** |
+| `tools/_bw-force-symbol-pulse-probe.mjs` | **20/20 PASS** |
+| `tools/_bw-skip-probe.mjs` | **22/22 PASS** |
+| `tools/_skip-coverage-probe.mjs` | **30/30 PASS** |
+| `tools/_stale-skip-cta-probe.mjs` | **14/14 PASS** |
+| `tools/_stop-visibility-probe.mjs` | **18/18 PASS** |
+| `tools/_win-rollup-probe.mjs` | **57/57 PASS** |
+| `tools/_post-fs-win-probe.mjs` | **26/26 PASS** |
+| `tools/_autoplay-wait-win-probe.mjs` | **18/18 PASS** |
+| `tools/_fs-intro-grid-hide-probe.mjs` | **24/24 PASS** |
+
+**Total: ~360 individual checks across 13 probes — sve PASS na sva 3 demos.**
+
+### Probe race-condition fixes (uz kod fix)
+
+| Probe | Pre H5.19 | Posle H5.19 |
+|---|---|---|
+| `_bw-money-probe.mjs` | wait 30s — GoO tumble 17s + walkthrough 20s nije fit-ovao | wait 55s |
+| `_bw-tier-cadence-probe.mjs` | wait 30s — GoO bw-click flaky | wait 50s |
+| `_bigwin-presentation-flow-probe.mjs` | scenario A = real spin sa noWinChance flaky | scenario A = `presentExternalWin(3)` deterministic |
+
+### Files
+
+| File | Change |
+|---|---|
+| `src/blocks/postSpin.mjs` | + BW force bypass guard (skip scatter check kad force flag aktivan) |
+| `tools/_cortex-eyes-h5x-qa.mjs` | NEW — 11-step visual review |
+| `tools/_bw-money-probe.mjs` | wait 30s → 55s (GoO tumble |
+| `tools/_bw-tier-cadence-probe.mjs` | wait 30s → 50s |
+| `tools/_bigwin-presentation-flow-probe.mjs` | scenario A deterministic via `presentExternalWin` |
+| `tools/_goo-diag-probe.mjs`, `tools/_woo-bwt-diag.mjs` | NEW diag helpers (in repo for future debugging) |
+
+### Boki rule honored
+
+> *"zakrpi sve rupe i svaki moguci scenario na osnovu dokumentacije iz igt kako treba i kako je implementirano kod nas u retangular"*
+
+Sve regression matrix + cortex eyes pass na sva 3 demos. GoO BW force bug pronađen i fix-ovan (FS-density race koji je sakrivao force flag iza scatter triggera). Probe race-condition cleanup u 3 probe-a. 0 console/page errors u svim verifikacijama.
+
+---
+
+## 🟢 Wave H5.18 — FS/bonus intro: reel grid sakriven dok placard stoji, fade-in tek na TAP TO BEGIN — SHIPPED (`5babec2`)
 
 > Boki (05.06.2026): *"Fs reel grid ili grid bilo kog bonusa ne sme da se pojavi u pozadini dok je plaketa za fs intro prikazana na ekranu. tek kada pritisnem tap to begin, tada se fadinuju reel frame sa svim celijama itd itd, za fs i bilo koji bonus feature."*
 

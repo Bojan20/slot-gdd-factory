@@ -69,7 +69,10 @@ try {
     await page.evaluate(() => document.getElementById('devBwBtn')?.click());
 
     // Wait for full walkthrough: spin(~3s) + 5×4s tiers + 4s endHold + 0.3s fade ≈ 28s
-    await page.waitForTimeout(30000);
+    /* H5.19 — GoO has a long pre-presentation tumble chain (~17s),
+     * so the full sequence (spin + tumble + 5×4s walkthrough + 4s endHold
+     * + fade) lands near ~50s. Allow margin. */
+    await page.waitForTimeout(55000);
 
     const trace = await page.evaluate(() => {
       clearInterval(window.__BWM__.sampler);

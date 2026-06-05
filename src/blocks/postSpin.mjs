@@ -132,6 +132,24 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
       if (duringFs) FSM_runNextFsSpin();
       return;
     }
+    /* H5.19 — Boki rule QA 05.06.2026: BW force MUST win big-win path on
+     * every demo, including high-scatter-density games (GoO). Without this
+     * guard, the post-spin grid can legitimately contain enough scatters
+     * to trigger countTriggerSymbols → FS intro branch, swallowing the
+     * forced big-win flag. The force-flag is one-shot, set ONLY by the
+     * BW dev button right before runOneBaseSpin(); when it's present we
+     * skip scatter detection entirely and let winPresentation's force
+     * short-circuit consume the flag + synthesise the big-win event. */
+    if (typeof window !== 'undefined' && Number.isFinite(window.__FORCE_BIG_WIN_TIER__)
+        && window.__FORCE_BIG_WIN_TIER__ >= 1 && window.__FORCE_BIG_WIN_TIER__ <= 5
+        && !duringFs) {
+      const events = (await applyWinHighlight()) || [];
+      _emitPostSpin(duringFs, events);
+      FORCE_TRIGGER = null;
+      if (devFsBtn) devFsBtn.disabled = !FREESPINS.enabled;
+      if (spinButton) spinButton.disabled = false;
+      return;
+    }
     const scatters = countTriggerSymbols();
     if (!duringFs) {
       const award = spinsForCount(scatters);

@@ -73,7 +73,10 @@ async function runScenario(page, scenario, label) {
       window.bigWinTierEnter(5, tight);
     });
   }
-  await page.waitForTimeout(30000);
+  /* H5.19 — GoO BW-click flow includes a long tumble chain (~17s) before
+   * the bigWinTier walkthrough starts. Allow margin for 5×4s walkthrough
+   * + endHold + fade on top of the tumble. */
+  await page.waitForTimeout(50000);
   const trace = await page.evaluate(() => window.__C__);
   const entered = trace.events.filter(e => e.n === 'onBigWinTierEntered').sort((a,b)=>a.t-b.t);
   const intervals = [];
