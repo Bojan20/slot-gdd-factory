@@ -258,8 +258,24 @@ export function emitThemeCSS(cfg = defaultConfig()) {
     stroke-linejoin: round;
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.65));
   }
-  .spinBtn.is-spinning { pointer-events: none; opacity: 0.78; }
-  .spinBtn.is-spinning svg { opacity: 0.55; }
+  /* Wave V3 fix (05.06.2026): pre-V3 the spin button had only one mode and
+     went pointer-events:none for the whole spin. Now spinControl morphs the
+     button into a STOP/SKIP CTA the instant preSpin fires — the player MUST
+     be able to click it to slam-stop. So we gate the pointer-events block
+     to the legacy/idle SPIN visual: button is non-clickable only when its
+     state is genuinely SPIN (legacy build with spinControl.enabled=false,
+     or the sub-frame race window between is-spinning add and the preSpin
+     emit). In STOP_PRE / STOP_POST / SKIP_* the button must remain a hit
+     target — spinControl's _onClick handler enforces "no double spin start"
+     via the data-state check, plus runOneBaseSpin's inFlight guard.
+     Symptom that triggered this fix: real mouse click on the STOP CTA was
+     a no-op; Space key worked because keyboard activation bypasses the CSS
+     hit-test (the click event is dispatched directly to the focused button
+     element regardless of pointer-events). */
+  .spinBtn.is-spinning:not([data-state]),
+  .spinBtn.is-spinning[data-state="SPIN"] { pointer-events: none; opacity: 0.78; }
+  .spinBtn.is-spinning:not([data-state]) svg,
+  .spinBtn.is-spinning[data-state="SPIN"] svg { opacity: 0.55; }
   .autoBtn {
     width: var(--spin-auto-size);
     height: var(--spin-auto-size);
