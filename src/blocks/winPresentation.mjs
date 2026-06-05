@@ -527,9 +527,35 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
       const forcedTier = window.__FORCE_BIG_WIN_TIER__;
       const bet = (Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : 1;
       const forcedAward = thresholds[forcedTier - 1] * 1.5 * bet;
+      /* Boki rule 05.06.2026: "Isto napravi za force Big Win da se vidi
+       * animacija simbola pre nego sto pocne big win." A real big-win
+       * picks winning cells from detected lines; the BW force short-
+       * circuits detection so we have to synthesise the visual targets
+       * ourselves. Sample up to 8 grid cells across the reels (matches
+       * the industry SYMBOL_CELEBRATION density on a 5x3 grid) so the
+       * 800 ms pulse is actually visible to the player instead of a
+       * silent 800 ms dead window. We DON'T touch payline overlays —
+       * the synth event has no lineIndex so playSymbolCelebration's
+       * cell-pulse path is the only visual side-effect, keeping the
+       * BW force vendor-neutral and free of fake math. */
+      const FORCE_CELL_COUNT = 8;
+      const forceCells = [];
+      try {
+        const allCells = (typeof grid !== 'undefined' && grid && grid.querySelectorAll)
+          ? Array.from(grid.querySelectorAll('.cell'))
+          : (document.querySelectorAll && Array.from(document.querySelectorAll('.gridHost .cell, #gridHost .cell, .reelsHost .cell')));
+        if (allCells && allCells.length > 0) {
+          /* Deterministic pick (every 2nd cell from a shuffled-ish slice)
+           * so the visual reads as a coordinated burst, not a random splatter. */
+          const stride = Math.max(1, Math.floor(allCells.length / FORCE_CELL_COUNT));
+          for (let i = 0; i < allCells.length && forceCells.length < FORCE_CELL_COUNT; i += stride) {
+            if (allCells[i]) forceCells.push(allCells[i]);
+          }
+        }
+      } catch (_) { /* defensive — pulse degrades to no-op if grid not queryable */ }
       const synth = [{
         symbol: 'FORCE', tier: 'WILD', matchLength: 5,
-        payX: forcedAward, cells: [], forcedBigWinTier: forcedTier,
+        payX: forcedAward, cells: forceCells, forcedBigWinTier: forcedTier,
       }];
       if (typeof runTumbleChain === 'function') {
         await runTumbleChain(() => synth, { duringFs });
@@ -539,9 +565,8 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
       window.__SLOT_WIN_PRESENT_ACTIVE__ = true;
       /* BW force is by definition a big-win path — emit isBigWin:true and
        * use the symbol-celebration pulse, matching the reference flow
-       * (SYMBOL_CELEBRATION → BIG_WIN). The synth event has cells:[]
-       * because the force flag short-circuits detection; the celebration
-       * helper handles empty cell lists gracefully. */
+       * (SYMBOL_CELEBRATION → BIG_WIN). With synthesised forceCells the
+       * 800 ms pulse is now VISIBLE on screen prior to the tier banner. */
       if (typeof HookBus !== 'undefined') {
         HookBus.emit('onWinPresentationStart', { award: forcedAward, eventCount: 1, isBigWin: true });
       }

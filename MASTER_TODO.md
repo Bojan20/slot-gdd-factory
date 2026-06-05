@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `54c35cc` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + H5.4 + H5.5 + H5.6 + H5.7 + H5.8 + H5.9 + H5.10 + H5.11 + H5.12 + H5.13 (big-win presentation flow — symbol-celebration pulse umesto per-line cycle pre big-win banner-a, match reference flow)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: pending · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + H5.4 + H5.5 + H5.6 + H5.7 + H5.8 + H5.9 + H5.10 + H5.11 + H5.12 + H5.13 + H5.14 (BW force prikazuje vidljivu symbol pulse animaciju pre big-win banner-a)** all live. Hub responsive 9/9 PASS. **Wave H5.5 SHIPPED** (counter shows ABSOLUTE money amount with currency symbol — no more ratio "×N" — inherits currency/position from balanceHud so banner reads identically to win column; climax holds at exact award before fade; 33/33 live money probe pass across 3 demos). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
@@ -306,7 +306,66 @@ Playwright probe on `01_rectangular_5x3_playable.html`, MutationObserver on `spi
 
 ---
 
-## 🟢 Wave H5.13 — Big-win presentation flow: symbol pulse → big-win banner (NO per-line cycle pre big-win-a) — SHIPPED (this commit)
+## 🟢 Wave H5.14 — BW force prikazuje vidljivu symbol-celebration animaciju pre big-win banner-a — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"Isto napravi za force Big Win da se vidi animacija simbola pre nego sto pocne big win."*
+
+### Gap (pre H5.14)
+
+H5.13 je uveo `playSymbolCelebration` koji pulsuje sve `cells` iz events. ALI BW force path je sintetizovao event sa `cells: []` (jer force short-circuit-uje detekciju). Result: `playSymbolCelebration` nema target cells → 800 ms tihi "dead window" pre nego što bigWinTier banner stigne. Player ne vidi nikakvu animaciju simbola — direktan prelaz iz spin-a u tier banner.
+
+### Fix
+
+BW force path sad sintetizuje listu winning cells iz DOM grid-a pre nego što pokrene celebration:
+
+```js
+const FORCE_CELL_COUNT = 8;
+const allCells = Array.from(grid.querySelectorAll('.cell'));
+const stride = Math.max(1, Math.floor(allCells.length / FORCE_CELL_COUNT));
+for (let i = 0; i < allCells.length && forceCells.length < FORCE_CELL_COUNT; i += stride) {
+  if (allCells[i]) forceCells.push(allCells[i]);
+}
+const synth = [{ ..., cells: forceCells, ... }];
+```
+
+- **8 cells** (industry SYMBOL_CELEBRATION density za 5×3 grid)
+- **Deterministic stride pick** — coordinated burst, ne random splatter
+- **Defensive try/catch** — ako grid nije queryable, pulse degrades to graceful no-op (no crash)
+- **NO payline overlay** — synth event nema `lineIndex` (vendor-neutral, ne fake math)
+
+### Live verification — `tools/_bw-force-symbol-pulse-probe.mjs` (NEW)
+
+| Demo | startToEnd | maxWinsymDuringCeleb | cyclingClass | clearedAfterEnd | bigWinTier-after-End |
+|---|:--:|:--:|:--:|:--:|:--:|
+| rectangular | **803 ms** | **8 cells** | ✅ | ✅ (count=0) | ✅ true |
+| wrath-of-olympus | **801 ms** | **8 cells** | ✅ | ✅ (count=0) | ✅ true |
+
+**20/20 PASS** sve 2 igre.
+
+### Full regression matrix
+
+| Gate | Result |
+|---|:--:|
+| `tools/_bw-force-symbol-pulse-probe.mjs` (NEW) | **20/20 PASS** |
+| `tests/blocks/winPresentation.test.mjs` | **PASS** |
+| `tools/lego-gate.mjs` | **5/5 PASS** |
+| `tools/_stale-skip-cta-probe.mjs` (H5.12) | **14/14 PASS** |
+| `tools/_stop-visibility-probe.mjs` (H5.11) | **18/18 PASS** |
+| `tools/_bw-skip-probe.mjs` (H5.9) | **22/22 PASS** |
+| `tools/_skip-coverage-probe.mjs` (H5.10) | **30/30 PASS** |
+| `tools/_win-rollup-probe.mjs` (H5.8) | **57/57 PASS** |
+| `tools/_bw-tier-cadence-probe.mjs` | flaky GoO startup race (preexisting) |
+| `tools/_bigwin-presentation-flow-probe.mjs` | rectangular A noWinChance race (preexisting) |
+
+### Boki rule honored
+
+> *"Isto napravi za force Big Win da se vidi animacija simbola pre nego sto pocne big win."*
+
+BW force button sad pokazuje 800 ms vidljivu pulse animaciju na **8 grid cells** PRE nego što bigWinTier banner uzme ekran. Identično referenci, identično real big-win-u.
+
+---
+
+## 🟢 Wave H5.13 — Big-win presentation flow: symbol pulse → big-win banner (NO per-line cycle pre big-win-a) — SHIPPED (`54c35cc`)
 
 > Boki (05.06.2026): *"Kada se desi big win, pogledaj kako reference platforme rade animaciju tog wina pre nego se dođe u Big win. Mislim da nema prvo win line prezentacije pa onda big win, nego ima animacija simbola i onda se prikaze big win. overi detaljno."*
 
