@@ -460,6 +460,13 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
 <button class="dev-fs-btn" id="devFsBtn" type="button"
         aria-label="Dev: Trigger Free Spins"
         title="DEV — force Free Spins entry">FS</button>
+<!-- Wave H5 — dev-only Big-Win force button (cyan accent, sits left of FS).
+     Click cycles tier 1 → 2 → 3 → 4 → 5 → 1 by directly invoking the
+     bigWinTier public API. Disabled when bigWinTier block is not enabled
+     in the parsed model. -->
+<button class="dev-bw-btn" id="devBwBtn" type="button"
+        aria-label="Dev: Force Big Win"
+        title="DEV — force Big Win tier cycle">BW</button>
 
 ${emitFreeSpinsOverlayMarkup(resolveFreeSpinsConfig(model))}
 
@@ -882,6 +889,29 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
       if (spinButton) spinButton.disabled = true;
       FORCE_TRIGGER = { scatterCount: first.count };
       runOneBaseSpin();
+    });
+  }
+
+  /* Wave H5 — dev-only Big-Win force button. Cycles through tier 1..5 via
+     the bigWinTier public API. Each click drops the in-flight banner first
+     so a rapid cycle reads cleanly, then enters the next tier in sequence.
+     Disabled when bigWinTier block isn't enabled in the parsed model
+     (window.bigWinTierEnter exists only as a no-op stub then). */
+  var devBwBtn = document.getElementById("devBwBtn");
+  if (devBwBtn) {
+    var bwEnabled = !!(window.BIG_WIN_TIER_STATE && window.BIG_WIN_TIER_STATE.enabled);
+    devBwBtn.disabled = !bwEnabled;
+    var bwCycleTier = 0;
+    devBwBtn.addEventListener("click", function () {
+      if (!bwEnabled) return;
+      bwCycleTier = (bwCycleTier % 5) + 1;     /* 1 → 2 → 3 → 4 → 5 → 1 */
+      /* Pick an x value strictly above the GDD threshold for this tier.
+         We do not know the threshold here, but bigWinTierEnter clamps to
+         the frozen tier enum anyway — we just pass the tier we want.
+         The visible amount comes from the second arg; tier from first. */
+      var xByTier = [12, 30, 70, 250, 1500][bwCycleTier - 1];
+      if (typeof window.bigWinTierExit  === "function") window.bigWinTierExit("skipped");
+      if (typeof window.bigWinTierEnter === "function") window.bigWinTierEnter(bwCycleTier, xByTier);
     });
   }
 

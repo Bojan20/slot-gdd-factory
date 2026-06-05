@@ -459,6 +459,62 @@ export function emitDevToolsCSS() {
     transform: none;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   }
+  /* Wave H5 — dev-only Big-Win force button. Sits LEFT of the FS dev btn,
+     cyan accent palette so the two are visually distinct. Click cycles
+     through tier 1 → 5 → 1 by calling window.bigWinTierEnter(N, x). */
+  .dev-bw-btn {
+    position: fixed;
+    top:   max(10px, env(safe-area-inset-top, 10px));
+    right: calc(max(10px, env(safe-area-inset-right, 10px)) + clamp(56px, 5.5vw, 78px) + 8px);
+    z-index: 2147483000;
+    min-width: 56px;
+    min-height: 34px;
+    width:  clamp(56px, 5.5vw, 78px);
+    height: clamp(34px, 3.6vw, 42px);
+    padding: 0 clamp(8px, 1vw, 14px);
+    border-radius: 12px;
+    border: 2px dashed rgba(110, 200, 255, 0.85);
+    background: linear-gradient(180deg, rgba(16, 30, 42, 0.9), rgba(6, 12, 18, 0.95));
+    color: #c2eaff;
+    font-family: inherit;
+    font-size: clamp(0.7rem, 1.2vw, 0.95rem);
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.92;
+    box-shadow:
+      0 4px 14px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(110, 200, 255, 0.25),
+      inset 0 1px 0 rgba(180, 230, 255, 0.18);
+    transition: opacity 0.15s ease-out, transform 0.15s ease-out, box-shadow 0.15s ease-out;
+  }
+  .dev-bw-btn:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+    box-shadow:
+      0 6px 18px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(110, 200, 255, 0.55),
+      0 0 16px rgba(110, 200, 255, 0.35),
+      inset 0 1px 0 rgba(180, 230, 255, 0.25);
+  }
+  .dev-bw-btn:active { transform: translateY(0); }
+  .dev-bw-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  }
+  @media (max-width: 820px) {
+    .dev-bw-btn {
+      top:   max(8px, env(safe-area-inset-top, 8px));
+      right: calc(max(8px, env(safe-area-inset-right, 8px)) + 48px + 6px);
+    }
+  }
   @media (max-width: 820px) {
     .dev-fs-btn {
       top:   max(8px, env(safe-area-inset-top, 8px));
