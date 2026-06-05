@@ -479,6 +479,17 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
 <button class="dev-bw-btn" id="devBwBtn" type="button"
         aria-label="Dev: Force Big Win"
         title="DEV — force Big Win tier cycle">BW</button>
+<!-- Wave I.2 — dev-only Multiplier force button (magenta accent, sits left
+     of BW). Click cycles 2× → 5× → 10× → 25× → 50× → 100× → 1× (reset).
+     Sets HookBus.setMult(value) before runOneBaseSpin(); winPresentation
+     _applyMultToEvents multiplies payX by the active mult, so the next
+     spin's win flows through the multiplier chain. Disabled when no
+     multiplier feature block is enabled in the GDD. Boki rule
+     05.06.2026: "ako ima neka igra neki multiplier, onda da postoji
+     dugme za taj force". -->
+<button class="dev-mult-btn" id="devMultBtn" type="button"
+        aria-label="Dev: Force multiplier on next spin"
+        title="DEV — force ×N multiplier on next win">MULT</button>
 
 ${emitFreeSpinsOverlayMarkup(resolveFreeSpinsConfig(model))}
 
@@ -940,6 +951,59 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
       };
       if (window.HookBus && typeof window.HookBus.on === 'function') window.HookBus.on('onBigWinTierEnd', oneShot);
       setTimeout(reEnable, 30000);
+    });
+  }
+
+  /* Wave I.2 — dev-only Multiplier force button. Boki rule 05.06.2026:
+   * "ako ima neka igra neki multiplier, onda da postoji dugme za taj
+   *  force". Sets HookBus.setMult(value) before kicking runOneBaseSpin();
+   * winPresentation _applyMultToEvents multiplies payX so the next spin's
+   * win flows through the multiplier chain. The button is enabled only if
+   * one of the multiplier-style feature blocks (multiplierOrb /
+   * persistentMultiplier / lightning / progressiveFreeSpins) is wired in
+   * the GDD. Click cycles 2× → 5× → 10× → 25× → 50× → 100× → 1× (reset). */
+  var devMultBtn = document.getElementById("devMultBtn");
+  if (devMultBtn) {
+    var MULT_CYCLE = [2, 5, 10, 25, 50, 100, 1];
+    var multIdx = 0;
+    /* Baked at build time from the parsed GDD's feature list. The button
+     * shows / functions only when the game declares some multiplier-style
+     * feature (multiplier, multiplier_orb, persistent_multiplier,
+     * lightning, progressive_free_spins). */
+    var HAS_MULT_FEATURE = ${JSON.stringify((function (m) {
+      const feats = Array.isArray(m.features) ? m.features : [];
+      const re = /^(multiplier|multiplier[_-]?orb|persistent[_-]?multiplier|lightning|progressive[_-]?free[_-]?spins)$/i;
+      return feats.some(f => f && typeof f.kind === 'string' && re.test(f.kind));
+    })(model))};
+    function _multFeatureLive() { return HAS_MULT_FEATURE; }
+    var multLive = _multFeatureLive();
+    devMultBtn.disabled = !multLive;
+    if (multLive) devMultBtn.textContent = "×" + MULT_CYCLE[multIdx];
+    devMultBtn.addEventListener("click", function () {
+      if (!_multFeatureLive()) return;
+      if (FSM.phase !== "BASE") return;
+      var val = MULT_CYCLE[multIdx];
+      multIdx = (multIdx + 1) % MULT_CYCLE.length;
+      devMultBtn.textContent = "×" + MULT_CYCLE[multIdx];
+      /* Set the multiplier BEFORE kicking the spin so applyWinHighlight
+       * sees it on the first detector pass. HookBus.setMult is the single
+       * source of truth — winPresentation reads HookBus.getMult(). */
+      if (window.HookBus && typeof window.HookBus.setMult === 'function') {
+        window.HookBus.setMult(val);
+      }
+      devMultBtn.disabled = true;
+      if (spinButton) spinButton.disabled = true;
+      runOneBaseSpin();
+      /* Re-enable on postSpin so the next force is available. Safety
+       * floor 8 s in case postSpin is suppressed by a follow-on feature
+       * trigger (FS intro, big-win). */
+      var reEnableMult = function () { if (devMultBtn) devMultBtn.disabled = !_multFeatureLive(); };
+      var oneShotPS = function () {
+        if (window.HookBus && typeof window.HookBus.off === 'function') window.HookBus.off('postSpin', oneShotPS);
+        reEnableMult();
+      };
+      if (window.HookBus && typeof window.HookBus.on === 'function') window.HookBus.on('postSpin', oneShotPS);
+      setTimeout(reEnableMult, 8000);
     });
   }
 

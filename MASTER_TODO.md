@@ -3,11 +3,95 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> Last updated: **2026-06-05** · HEAD: `dd9f701` · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + V5.Y + H5.4–H5.20 + Wave I (multi-topology H5.x verification — 8 nepokrivenih UNIFORM kinds dodato, 11 dist demos × 19 H5.x checks = 209/209 PASS)** all live. Hub responsive 9/9 PASS. **Latest shipped — H5.20** (FS skip-block bug: `playWinSymCycle` + `playScatterCelebration` sad resolve-uju Promise na skip — FS blok više ne blokira na manual stop/skip). Big-Win Tier ladder fully matured kroz 17 atoma (H5.4 continuous counter → H5.5 absolute money → H5.6 time-based promotion → H5.7 hero typography → H5.8 winRollup block → H5.9 skip instant snap → H5.10 winRollup skip listener → H5.11 STOP min-visibility → H5.12 SKIP_ROLLUP reset fix → H5.13 symbol pulse path → H5.14 BW force visible animation → H5.15 frame-anchored responsive sizing → H5.16 post-FS presentation pipeline → H5.17 autoplay wait-every-win → H5.18 FS intro grid hide → H5.19 BW force bypass scatter check + ultimate QA → H5.20 FS skip Promise leak fix). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
+> Last updated: **2026-06-05** · HEAD: pending · main · Wave **U + V + V3 + V4 + V5.0 + V5.X + V5.Y + H5.4–H5.20 + Wave I + Wave I.2 (MULT force button — per-grid force-CTA verification, 88/88 PASS + 209/209 H5.x regression)** all live. Hub responsive 9/9 PASS. **Latest shipped — H5.20** (FS skip-block bug: `playWinSymCycle` + `playScatterCelebration` sad resolve-uju Promise na skip — FS blok više ne blokira na manual stop/skip). Big-Win Tier ladder fully matured kroz 17 atoma (H5.4 continuous counter → H5.5 absolute money → H5.6 time-based promotion → H5.7 hero typography → H5.8 winRollup block → H5.9 skip instant snap → H5.10 winRollup skip listener → H5.11 STOP min-visibility → H5.12 SKIP_ROLLUP reset fix → H5.13 symbol pulse path → H5.14 BW force visible animation → H5.15 frame-anchored responsive sizing → H5.16 post-FS presentation pipeline → H5.17 autoplay wait-every-win → H5.18 FS intro grid hide → H5.19 BW force bypass scatter check + ultimate QA → H5.20 FS skip Promise leak fix). **V5.1-V5.10 still PLANNED** (anticipation / tumble / big-win / hold-and-win / wheel / climax / chain dispatch / autoplay guard / always-skippable morph / gamble reveal). Wave H queue still planned from a frame-upgrade Hold-&-Spin reference GDD reverse-engineering — 18 candidate blocks across 4 tiers. Remaining iz originalnog plana: U2 (deactivated by design — ADB tok), U7 (rngFairness — math-adjacent, awaits Boki call).
 
 ---
 
-## 🟢 Wave I — Multi-topology H5.x verification (svi UNIFORM grid kinds dele isti UI) — SHIPPED (this commit)
+## 🟢 Wave I.2 — MULT force button + per-grid force-CTA QA — SHIPPED (this commit)
+
+> Boki (05.06.2026): *"Qa da svaki grid radi sa svim sto skip spin, big win, da u svakom gridu p[opstoji force dugme koje pravilno radi, na primer ako ima neka igra neki mulotipliyer, onda da postoji dugme za taj force. ultiamtivno"*
+
+### Pre-Wave I.2 stanje
+
+| Force button | Pokriva |
+|---|---|
+| `devFsBtn` (FS) | Force FS bonus entry — conditional on FREESPINS.enabled |
+| `devBwBtn` (BW) | Force Big-Win tier walkthrough — conditional on bigWinTier.enabled |
+| `devMultBtn` (MULT) | **NIJE postojao** |
+
+Boki: ako igra ima multiplier feature, treba force dugme. Audit (`tools/_mult-feature-audit.mjs`) je pronašao 14 od 22 fixture imaju neku multiplier-style feature (multiplier / multiplier_orb / persistent_multiplier / lightning / progressive_free_spins).
+
+### Implementacija (3 sloja, vendor-neutral)
+
+**1. Markup** (`src/buildSlotHTML.mjs`):
+```html
+<button class="dev-mult-btn" id="devMultBtn"
+        aria-label="Dev: Force multiplier on next spin"
+        title="DEV — force ×N multiplier on next win">MULT</button>
+```
+
+**2. CSS** (`src/blocks/themeCSS.mjs`) — magenta paleta (`230,110,255`), pinned top-right left of BW dugmeta (BW levo od FS):
+- Cycles 2× → 5× → 10× → 25× → 50× → 100× → 1× (reset) — label updates per click
+- `:disabled` opacity 0.35 + cursor not-allowed
+
+**3. Runtime** (`buildSlotHTML.mjs`):
+- `HAS_MULT_FEATURE` baked literal — `true` ako GDD declared ANY multiplier-style feature
+- Click handler: `HookBus.setMult(value)` → `runOneBaseSpin()`
+- `winPresentation _applyMultToEvents` multiplikuje `payX × mult` na detect
+- Re-enables on `postSpin` (8 s safety floor for FS-trigger edge cases)
+
+### Live probe — `tools/_wave-i2-force-cta-probe.mjs` (NEW)
+
+8 checks po demo × 11 demos = **88/88 PASS**:
+
+| Demo | mult expected | result |
+|---|:--:|:--:|
+| rectangular | ✓ | 8/8 |
+| wrath-of-olympus | ✓ | 8/8 |
+| gates-of-olympus | ✓ | 8/8 |
+| megaclusters | × | 8/8 (button disabled, as expected) |
+| diamond | ✓ | 8/8 |
+| pyramid | × | 8/8 |
+| cross | × | 8/8 |
+| l_shape | ✓ | 8/8 |
+| infinity | ✓ | 8/8 |
+| expanding | ✓ | 8/8 |
+| lock_respin | ✓ | 8/8 |
+
+Checks verifikuju: FS/BW/MULT buttons present + correct enabled state, MULT label cycles after click, MULT-induced spin fires postSpin event, MULT re-enables after spin, 0 console errors.
+
+### Regression — Wave I H5.x still PASS
+
+`tools/_wave-i-multi-topology-probe.mjs`: **209/209 PASS** across all 11 topologies. MULT dugme dodavanje nije slomio postojeći H5.x flow.
+
+### Full regression summary
+
+| Gate | Result |
+|---|:--:|
+| `tools/_wave-i-multi-topology-probe.mjs` (H5.x) | **209/209 PASS** |
+| `tools/_wave-i2-force-cta-probe.mjs` (NEW, force CTAs) | **88/88 PASS** |
+| `tools/lego-gate.mjs` (5 invariants) | **5/5 PASS** |
+
+**Combined: 297/297 PASS across 11 grid topologies.** Sve tri force CTA-e (FS / BW / MULT) rade jednako i pravilno na svakom grid kind-u; MULT je conditionally enabled samo gde GDD declares multiplier feature.
+
+### Files
+
+| File | Change |
+|---|---|
+| `src/buildSlotHTML.mjs` | + `<button #devMultBtn>` markup + runtime handler with HAS_MULT_FEATURE baked literal |
+| `src/blocks/themeCSS.mjs` | + `.dev-mult-btn` CSS (magenta accent, positioned left-of-BW) + mobile breakpoint |
+| `tools/_mult-feature-audit.mjs` | NEW — parser audit, multiplier features per fixture |
+| `tools/_wave-i2-force-cta-probe.mjs` | NEW — 88-check force-CTA probe |
+
+### Boki rule honored
+
+> *"ako ima neka igra neki multiplier, onda da postoji dugme za taj force"*
+
+MULT button postoji u svakom dist demo; enabled is conditional on GDD feature declaration. Click sets HookBus.setMult(value) and triggers a real spin so the multiplier chain (winPresentation.\_applyMultToEvents → multiplierOrb → persistentMultiplier → lightning → onWinPresentationStart) all fires naturally with the forced value.
+
+---
+
+## 🟢 Wave I — Multi-topology H5.x verification (svi UNIFORM grid kinds dele isti UI) — SHIPPED (`dd9f701`)
 
 > Boki (05.06.2026): *"Slusaj, mislim na big win, na ceo UI kako radi, da se ubaci u svaki moguci grid. Win linije kako treba, spin stop skip, counteri itd itd. sve sto si ubacio u rectangle da imam u svaki moguci grid."*
 

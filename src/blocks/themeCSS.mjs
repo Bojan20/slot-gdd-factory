@@ -515,6 +515,64 @@ export function emitDevToolsCSS() {
       right: calc(max(8px, env(safe-area-inset-right, 8px)) + 48px + 6px);
     }
   }
+  /* Wave I.2 — dev-only Multiplier force button. Sits LEFT of BW dugme
+     (which sits left of FS). Magenta palette so all three force CTAs
+     are visually distinguishable. Click cycles 2× → 5× → 10× → 25× →
+     50× → 100× → 1× (reset). Honored by winPresentation _applyMultToEvents
+     on the next spin. */
+  .dev-mult-btn {
+    position: fixed;
+    top:   max(10px, env(safe-area-inset-top, 10px));
+    right: calc(max(10px, env(safe-area-inset-right, 10px)) + (clamp(56px, 5.5vw, 78px) + 8px) * 2);
+    z-index: 2147483000;
+    min-width: 56px;
+    min-height: 34px;
+    width:  clamp(56px, 5.5vw, 78px);
+    height: clamp(34px, 3.6vw, 42px);
+    padding: 0 clamp(8px, 1vw, 14px);
+    border-radius: 12px;
+    border: 2px dashed rgba(230, 110, 255, 0.85);
+    background: linear-gradient(180deg, rgba(38, 16, 48, 0.9), rgba(18, 6, 28, 0.95));
+    color: #f1c2ff;
+    font-family: inherit;
+    font-size: clamp(0.7rem, 1.2vw, 0.95rem);
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.92;
+    box-shadow:
+      0 4px 14px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(230, 110, 255, 0.25),
+      inset 0 1px 0 rgba(245, 200, 255, 0.18);
+    transition: opacity 0.15s ease-out, transform 0.15s ease-out, box-shadow 0.15s ease-out;
+  }
+  .dev-mult-btn:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+    box-shadow:
+      0 6px 18px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(230, 110, 255, 0.55),
+      0 0 16px rgba(230, 110, 255, 0.35),
+      inset 0 1px 0 rgba(245, 200, 255, 0.25);
+  }
+  .dev-mult-btn:active { transform: translateY(0); }
+  .dev-mult-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  }
+  @media (max-width: 820px) {
+    .dev-mult-btn {
+      top:   max(8px, env(safe-area-inset-top, 8px));
+      right: calc(max(8px, env(safe-area-inset-right, 8px)) + (48px + 6px) * 2);
+    }
+  }
   @media (max-width: 820px) {
     .dev-fs-btn {
       top:   max(8px, env(safe-area-inset-top, 8px));
