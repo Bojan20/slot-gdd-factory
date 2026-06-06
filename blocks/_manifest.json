@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-06T03:37:54.099Z",
+  "generatedAt": "2026-06-06T08:18:23.080Z",
   "blocksDir": "src/blocks",
   "totalBlocks": 62,
   "blocks": [
@@ -602,7 +602,7 @@
         "peakMultiplierMax": 25,
         "fadeFallbackMs": 200
       },
-      "loc": 207
+      "loc": 208
     },
     {
       "name": "expandingWild",
@@ -819,7 +819,7 @@
         "cushionBounceMs": 240,
         "fadeFallbackMs": 200
       },
-      "loc": 400
+      "loc": 403
     },
     {
       "name": "historyLog",
@@ -1442,7 +1442,7 @@
         "finalSettleMs": 240,
         "fadeFallbackMs": 200
       },
-      "loc": 217
+      "loc": 218
     },
     {
       "name": "postSpin",
@@ -1594,7 +1594,7 @@
         "minStepPx": 0.5,
         "accelMinFactor": 0.3
       },
-      "loc": 668
+      "loc": 681
     },
     {
       "name": "reelEngineCSS",
@@ -1786,7 +1786,7 @@
         "matchPulseMs": 480,
         "fadeFallbackMs": 220
       },
-      "loc": 213
+      "loc": 214
     },
     {
       "name": "spinControl",
@@ -2298,7 +2298,7 @@
         "maxRevolutions": 7,
         "fadeFallbackMs": 220
       },
-      "loc": 248
+      "loc": 250
     },
     {
       "name": "wildReel",

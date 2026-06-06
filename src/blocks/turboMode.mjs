@@ -150,7 +150,9 @@ export function emitTurboModeCSS(cfg = defaultConfig()) {
     color: rgb(${c.chipTextColor});
     font-family: inherit;
     font-weight: 800;
-    font-size: 10px;
+    /* Wave Q-fix — bumped from 10px to 11px so the chip clears the
+       universal-gdd typography gate (min readable size 11px). */
+    font-size: 11px;
     letter-spacing: 1.2px;
     cursor: pointer;
     display: flex;

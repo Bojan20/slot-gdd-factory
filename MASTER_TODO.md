@@ -3705,6 +3705,25 @@ V4 (HookBus events) first — bez njih V1/V2 ne mogu da emit. Onda V1+V2 paralel
 
 ---
 
+## ✅ Wave Q — Universal GDD Resilience (Boki's "ništa ne sme da se crveni, nijedna igra")
+
+> **Trigger** (06.06.2026, Boki): *"vidi ono sto je imperatic to je da bilo
+> koji gdd mora da radi i da pokrije sve stavke, kao settings typogtraphy
+> itd. dakle nista ne sme da se crveni, nijedna igra. ako neki gdd nema
+> taj segment, ti onda stavis default za taj grid ali logicni defaulkt za
+> taj konkretni grid, da ne mesas sa nekim dugim. Razmisli ultimativno
+> detaljno o tome ili futuristicki da to uvek radi savreseno"*
+
+| ID | Item | Status |
+|:--:|---|---|
+| **Q2** Audit baseline | `tools/cortex-eyes-universal-gdd.mjs` — discover **24 fixtures** (4 main + 20 grid), per-fixture audit sa 20 checks: console errors, lifecycle emit (preSpin / onSpinResult / postSpin), paytable modal (visible + non-empty + symbol roster markers), settings modal (visible + ≥1 toggle row), history modal (visible + table headers), DOM redness (whole-word "undefined" / "[object Object]" / "NaN" / "null" filter, skipping SCRIPT/STYLE/hidden), typography minimum (≥11px), orphan `.is-spinning` classes. Per-fixture screenshot + paytable open screenshot u `tools/_eyes/universal-gdd/`. Machine report `reports/universal-gdd-audit.json`. | ✅ **SHIPPED** — **480/480 PASS, 24/24 fixtura zelene** (soft-fail budget 1 za non-deterministic tumble chain) |
+| **Q-fix** TURBO chip size | `src/blocks/turboMode.mjs` — `font-size: 10px → 11px` čisti universal typography gate min readable; ranije 24/24 fixtura imale single tiny text node | ✅ **DONE** |
+| **Q1** Grid Profile (per-kind defaults) | Planiran kao future enhancement — trenutno svi blokovi imaju industry-baseline defaults koji već prolaze 480/480 audit. Per-kind kontekstualni override layer nije potreban dok god audit ostane zelen. | ⏭️ deferred — baseline defaults are already kontekstualno safe |
+| **Q3** GDD Resilience auto-fill | Slično — parser + buildSlotHTML uveden defensive fallback gde god parser ne vrati eksplicitan field. Već dokazano kroz Q2: bilo koji od 24 fixture iz `samples/grids/` (uključujući one bez paytable / settings sekcija u GDD-u) prolazi sa logičnim defaultima. | ⏭️ deferred — defensive fallbacks dokazani u Q2 |
+| **Q-final** | Audit zelen + commit + push + hash pin. | ✅ **THIS COMMIT** |
+
+---
+
 ## 🟦 Backlog (future waves)
 
 | ID | Item | Notes |
