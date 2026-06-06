@@ -185,7 +185,8 @@ export function emitBalanceHudCSS(cfg = defaultConfig()) {
     transition: background-color 280ms ease-out;
   }
   .balance-hud__label {
-    font-size: 0.5rem;
+    /* Wave UQ — typography floor 11px (Apple HIG min readable). */
+    font-size: 0.7rem;
     letter-spacing: 1.8px;
     text-transform: uppercase;
     color: rgb(${c.accentColor});
@@ -226,8 +227,9 @@ export function emitBalanceHudCSS(cfg = defaultConfig()) {
 
   @media (max-width: 620px) {
     .balance-hud__col { padding: 3px 8px; min-width: 50px; }
-    .balance-hud__label { font-size: 0.45rem; letter-spacing: 1.4px; }
-    .balance-hud__value { font-size: 0.78rem; }
+    /* Wave UQ — mobile typography floor 11px. */
+    .balance-hud__label { font-size: 0.7rem; letter-spacing: 1.4px; }
+    .balance-hud__value { font-size: 0.85rem; }
   }
 `;
 }

@@ -339,7 +339,7 @@ export function emitGridDispatchRuntime(model) {
       tEl.setAttribute("x", tx.toFixed(2)); tEl.setAttribute("y", ty.toFixed(2));
       tEl.setAttribute("text-anchor", "middle"); tEl.setAttribute("dominant-baseline", "middle");
       tEl.setAttribute("fill", "${accent}");
-      tEl.setAttribute("font-size", "8");
+      tEl.setAttribute("font-size", "11");  /* Wave UQ — ≥11px floor */
       tEl.setAttribute("font-weight", "700");
       tEl.textContent = String(symAt(i) || (i + 1));
       svg.appendChild(tEl);
@@ -455,7 +455,7 @@ export function emitGridDispatchRuntime(model) {
       b.style.gap = gap + "px";
       for (let i = 0; i < sg.totalCells; i++) {
         const el = makeCell(symAt(primCells + i));
-        el.style.fontSize = Math.max(8, sideB * 0.32) + "px";
+        el.style.fontSize = Math.max(11, sideB * 0.32) + "px";  /* Wave UQ — ≥11px floor */
         b.appendChild(el);
       }
       wrap.appendChild(b);

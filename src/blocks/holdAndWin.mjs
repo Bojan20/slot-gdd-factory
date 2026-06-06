@@ -92,7 +92,7 @@ export function emitHoldAndWinCSS(cfg = defaultConfig()) {
 }
 .hw-hud[data-show="true"] { display: inline-flex; }
 .hw-hud .hw-box { display: flex; flex-direction: column; align-items: center; }
-.hw-hud .hw-lbl { font-size: 0.55rem; opacity: 0.75; letter-spacing: 0.12em; }
+.hw-hud .hw-lbl { font-size: 0.7rem; opacity: 0.75; letter-spacing: 0.12em; } /* Wave UQ — ≥11px floor */
 .hw-hud .hw-val { font-size: 1.05rem; }
 @media (prefers-reduced-motion: reduce) {
   .cell.is-locked-bonus { animation: none; }

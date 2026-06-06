@@ -21,5 +21,9 @@ reports/
 tools/_diff-*
 tools/_eyes/
 
+# Wave UQ — Ultimate QA staged HTML artifacts (regenerated each run).
+# Synthetic fixtures + manifest ARE tracked (source-of-truth for matrix).
+tools/_qa/ultimate-html/
+
 # Launcher fast-path cache — local-only, regen-uje se na svaki run.
 .last-build-hash

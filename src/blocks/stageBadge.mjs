@@ -104,7 +104,8 @@ export function emitStageBadgeCSS(cfg = defaultConfig()) {
   border-radius: 999px;
   background: rgba(15, 12, 10, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 0.62rem;
+  /* Wave UQ — typography floor 11px (Apple HIG min readable). */
+  font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 2.2px;
   text-transform: uppercase;
@@ -137,7 +138,8 @@ export function emitStageBadgeCSS(cfg = defaultConfig()) {
   50%      { transform: scale(1.25); box-shadow: 0 0 14px rgba(${c.gold}, 1);    }
 }
 @media (max-width: ${c.mobileBreakpoint}px) {
-  .stage-badge { font-size: 0.55rem; padding: 2px 10px 2px 8px; letter-spacing: 1.8px; gap: 6px; }
+  /* Wave UQ — mobile floor 11px (matches desktop, no shrink below readable). */
+  .stage-badge { font-size: 0.7rem; padding: 2px 10px 2px 8px; letter-spacing: 1.8px; gap: 6px; }
   .stage-badge__dot { width: 5px; height: 5px; }
 }
 @media (prefers-reduced-motion: reduce) {

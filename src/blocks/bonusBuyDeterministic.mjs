@@ -356,7 +356,7 @@ export function emitBonusBuyDeterministicCSS(cfg = defaultConfig()) {
   .bbd-tier-card .bbd-tier-mod {
     display: inline-block;
     margin-top: 0.5rem;
-    font-size: 0.65rem;
+    font-size: 0.7rem;  /* Wave UQ — ≥11px floor */
     font-weight: 800;
     letter-spacing: 0.08em;
     padding: 0.15rem 0.45rem;

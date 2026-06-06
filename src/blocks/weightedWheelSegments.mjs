@@ -234,7 +234,7 @@ export function emitWeightedWheelSegmentsCSS(cfg = defaultConfig()) {
     bottom: 12px;
     left: 50%;
     transform: translateX(-50%) rotate(0deg);
-    font-size: 0.5rem;
+    font-size: 0.7rem;  /* Wave UQ — ≥11px floor */
     font-weight: 900;
     letter-spacing: 0.08em;
     color: rgba(${c}, 1);

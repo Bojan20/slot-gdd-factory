@@ -181,8 +181,8 @@ export function emitThemeCSS(cfg = defaultConfig()) {
     :root { --spin-size: 76px; --spin-auto-size: 38px; }
     .stage { padding: 6px 8px; gap: 6px; }
     .title { font-size: 1rem !important; }
-    .sub { font-size: 0.65rem !important; }
-    .statBox__label { font-size: 0.5rem !important; }
+    .sub { font-size: 0.7rem !important; }                         /* Wave UQ — ≥11px floor */
+    .statBox__label { font-size: 0.7rem !important; }                /* Wave UQ — ≥11px floor */
     .statBox__value { font-size: 0.85rem !important; }
     .sideHud { gap: 16px; }
   }
@@ -358,7 +358,7 @@ export function emitThemeCSS(cfg = defaultConfig()) {
     min-width: 0;
   }
   .statBox__label {
-    font-size: 0.55rem; letter-spacing: 2px;
+    font-size: 0.7rem; letter-spacing: 2px;  /* Wave UQ — ≥11px floor */
     color: var(--accent); opacity: 0.75;
     text-transform: uppercase;
   }
@@ -405,7 +405,7 @@ export function emitDevToolsCSS() {
     position: absolute;
     top: 10px;
     right: 14px;
-    font-size: 0.6rem;
+    font-size: 0.7rem;  /* Wave UQ — ≥11px floor */
     color: var(--accent);
     opacity: 0.55;
     background: transparent;
@@ -589,7 +589,7 @@ export function emitDevToolsCSS() {
     .dev-fs-btn {
       min-width: 48px;
       min-height: 30px;
-      font-size: 0.65rem;
+      font-size: 0.7rem;  /* Wave UQ — ≥11px floor */
       padding: 0 8px;
       top:   max(6px, env(safe-area-inset-top, 6px));
       right: max(6px, env(safe-area-inset-right, 6px));

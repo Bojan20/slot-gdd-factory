@@ -266,7 +266,8 @@ export function emitBetSelectorCSS(cfg = defaultConfig()) {
     box-shadow: none;
   }
   .bet-chip__label {
-    font-size: 10px;
+    /* Wave UQ — typography floor 11px (Apple HIG min readable). */
+    font-size: 11px;
     letter-spacing: 2px;
     text-transform: uppercase;
     opacity: 0.75;

@@ -201,7 +201,7 @@ body.fs-mode-crimson .frame::after {
   min-width: 70px;
 }
 .fs-hud__label {
-  font-size: 0.55rem;
+  font-size: 0.7rem;  /* Wave UQ — ≥11px floor */
   color: var(--accent);
   opacity: 0.8;
   letter-spacing: 1.4px;

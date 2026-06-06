@@ -248,7 +248,7 @@ export function emitPathAwareMultiplierCSS(cfg = defaultConfig()) {
     border-radius: 8px;
     background: rgba(${c}, 0.92);
     color: rgba(20, 30, 40, 0.95);
-    font-size: 0.62rem;
+    font-size: 0.7rem;  /* Wave UQ — ≥11px floor */
     font-weight: 900;
     letter-spacing: 0.04em;
     line-height: 1;
@@ -289,7 +289,7 @@ export function emitPathAwareMultiplierCSS(cfg = defaultConfig()) {
     pointer-events: none;
   }
   #pawHud[data-show="true"] { display: block; }
-  #pawHud .paw-hud-label { opacity: 0.85; font-size: 0.62rem; display: block; }
+  #pawHud .paw-hud-label { opacity: 0.85; font-size: 0.7rem; display: block; } /* Wave UQ — ≥11px floor */
   #pawHud .paw-hud-total { font-size: 1.1rem; line-height: 1; }
 `;
 }

@@ -137,7 +137,7 @@ export function emitProgressiveFreeSpinsCSS(cfg = defaultConfig()) {
   box-shadow: 0 0 16px rgba(${cfg.chipColor},.4);
 }
 .pfs-chip[data-show="true"] { display: inline-flex; }
-.pfs-chip .pfs-lbl { font-size: 0.62rem; opacity: 0.82; letter-spacing: 0.1em; }
+.pfs-chip .pfs-lbl { font-size: 0.7rem; opacity: 0.82; letter-spacing: 0.1em; } /* Wave UQ — ≥11px floor */
 .pfs-chip .pfs-val { font-size: 1.1rem; }
 .pfs-chip.is-grown { animation: pfsGrow 700ms cubic-bezier(.4,1.45,.5,1); }
 @keyframes pfsGrow {

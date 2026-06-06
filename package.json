@@ -16,7 +16,9 @@
     "test:runtime": "node tests/runtime/gridRenderer.test.mjs && node tests/runtime/devForceButtons.test.mjs && node tests/runtime/globalsContract.test.mjs",
     "test:manifest": "node tools/gen-block-manifest.mjs && node tests/_gen-block-manifest.test.mjs",
     "test:playground": "node tools/cortex-eyes-playground.mjs",
-    "test:all": "npm run test:lego && npm run test:parse && npm run test:grids && npm run test:browser && npm run test:qa && npm run test:fs && npm run test:blocks && npm run test:runtime && npm run test:manifest && npm run test:playground",
+    "test:ultimate": "node tools/gen-synthetic-gdds.mjs && node tools/cortex-eyes-ultimate-qa.mjs",
+    "test:ultimate:quick": "node tools/cortex-eyes-ultimate-qa.mjs --quick",
+    "test:all": "npm run test:lego && npm run test:parse && npm run test:grids && npm run test:browser && npm run test:qa && npm run test:fs && npm run test:blocks && npm run test:runtime && npm run test:manifest && npm run test:playground && npm run test:ultimate",
     "serve": "python3 -m http.server 5180"
   },
   "devDependencies": {

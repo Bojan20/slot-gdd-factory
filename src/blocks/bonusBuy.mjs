@@ -84,7 +84,7 @@ export function emitBonusBuyCSS(cfg = defaultConfig()) {
 .bonus-buy-btn:active { transform: translateX(-50%) translateY(0); }
 .bonus-buy-btn .cost {
   display: block;
-  font-size: 0.65rem;
+  font-size: 0.7rem;  /* Wave UQ — ≥11px floor */
   font-weight: 700;
   opacity: 0.88;
   margin-top: 2px;

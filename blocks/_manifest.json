@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-06T08:18:23.080Z",
+  "generatedAt": "2026-06-06T09:55:28.918Z",
   "blocksDir": "src/blocks",
   "totalBlocks": 62,
   "blocks": [
@@ -25,7 +25,7 @@
         "label": "ANTE BET",
         "color": "#ffe066"
       },
-      "loc": 173
+      "loc": 178
     },
     {
       "name": "anticipation",
@@ -217,7 +217,7 @@
         "creditColor": "120,255,180",
         "ariaLabel": "Balance HUD"
       },
-      "loc": 507
+      "loc": 509
     },
     {
       "name": "betSelector",
@@ -275,7 +275,7 @@
         "chipTextColor": "20,20,20",
         "ariaLabel": "Adjust bet"
       },
-      "loc": 779
+      "loc": 780
     },
     {
       "name": "bigWinTier",
@@ -369,7 +369,7 @@
         "color": "#ff5050",
         "confirmMessage": ""
       },
-      "loc": 146
+      "loc": 152
     },
     {
       "name": "bonusBuyDeterministic",
@@ -861,7 +861,7 @@
         "autoHideOnSpin": true,
         "ariaLabel": "Open session history"
       },
-      "loc": 677
+      "loc": 682
     },
     {
       "name": "holdAndWin",
@@ -1009,7 +1009,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 414
+      "loc": 418
     },
     {
       "name": "lightning",
@@ -1333,7 +1333,7 @@
           }
         }
       },
-      "loc": 248
+      "loc": 254
     },
     {
       "name": "paylines",
@@ -1386,7 +1386,7 @@
         "autoHideOnSpin": true,
         "ariaLabel": "Open paytable"
       },
-      "loc": 613
+      "loc": 619
     },
     {
       "name": "persistentMultiplier",
@@ -1674,7 +1674,7 @@
         "glowColor": "255,214,110",
         "glowPeak": 1.5
       },
-      "loc": 281
+      "loc": 284
     },
     {
       "name": "settingsPanel",
@@ -1683,7 +1683,9 @@
       "category": "ui",
       "description": "cog button on the hub opens a modal sa konsolidovanim user-toggle",
       "exports": [
+        "BET_STEP_PRESETS_DEFAULT",
         "SETTINGS_KEYS",
+        "VOLATILITY_OPTIONS_DEFAULT",
         "defaultConfig",
         "emitSettingsPanelCSS",
         "emitSettingsPanelMarkup",
@@ -1696,7 +1698,11 @@
         "onTurboToggle",
         "preSpin"
       ],
-      "emittedEvents": [],
+      "emittedEvents": [
+        "onBetStepPresetChanged",
+        "onMaxWinCapToggled",
+        "onVolatilityChanged"
+      ],
       "defaultConfig": {
         "enabled": true,
         "chipLabel": "⚙",
@@ -1717,13 +1723,30 @@
           "es-ES",
           "fr-FR"
         ],
+        "showVolatilitySelector": true,
+        "showBetStepPresets": true,
+        "showMaxWinCapToggle": true,
+        "volatilityOptions": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "betStepPresets": [
+          0.1,
+          0.5,
+          1,
+          5
+        ],
+        "defaultVolatility": "medium",
+        "defaultBetStepPreset": 1,
+        "defaultMaxWinCapEnabled": true,
         "persistInLocalStorage": true,
         "closeOnBackdrop": true,
         "closeOnEscape": true,
         "autoHideOnSpin": true,
         "ariaLabel": "Open settings"
       },
-      "loc": 668
+      "loc": 895
     },
     {
       "name": "slamStop",
@@ -1892,7 +1915,7 @@
         "pulseMs": 1600,
         "mobileBreakpoint": 620
       },
-      "loc": 209
+      "loc": 211
     },
     {
       "name": "stickyWild",
@@ -1978,7 +2001,7 @@
         "frameRadius": 16,
         "frameInset": 18
       },
-      "loc": 635
+      "loc": 641
     },
     {
       "name": "triggerCounting",
@@ -2061,7 +2084,7 @@
         "position": "sideHud",
         "ariaLabel": "Toggle turbo spin mode"
       },
-      "loc": 349
+      "loc": 351
     },
     {
       "name": "uiToast",

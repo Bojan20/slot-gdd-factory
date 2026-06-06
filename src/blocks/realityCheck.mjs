@@ -273,7 +273,7 @@ export function emitRealityCheckCSS(cfg = defaultConfig()) {
   }
   .rc-stat__label {
     display: block;
-    font-size: 0.6rem;
+    font-size: 0.7rem;  /* Wave UQ — ≥11px floor */
     font-weight: 700;
     letter-spacing: 0.12em;
     color: rgba(255, 255, 255, 0.6);

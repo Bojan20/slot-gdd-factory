@@ -1,0 +1,66 @@
+# UQ Fixture 028 · Wheel bonus with weighted segments · rectangular
+
+| Field | Value |
+|---|---|
+| **Internal name** | UQ-rectangular-wheel-bonus |
+| **Genre** | wheel-bonus |
+| **Theme tags** | synthetic · vendor-neutral · QA fixture |
+| **Mood** | balanced |
+| **Typography** | UI sans 14px |
+
+## Topology
+
+| Field | Value |
+|---|---|
+| **Reels** | 5 |
+| **Rows** | 3 |
+| **Paylines** | 15 |
+| **Evaluation** | Lines |
+
+## Symbols
+
+### High-pay
+| ID | Name |
+|---|---|
+| `H1` | Crystal |
+| `H2` | Ember |
+| `H3` | Frost |
+
+### Mid-pay
+| ID | Name |
+|---|---|
+| `A` | Ace |
+| `K` | King |
+| `Q` | Queen |
+
+### Low-pay
+| ID | Name |
+|---|---|
+| `J` | Jack |
+| `10` | Ten |
+
+## Features
+- Wheel Bonus
+- Weighted Wheel Segments
+- Jackpot
+
+## Wheel Bonus
+
+segmentCount: 12
+
+## Weighted Wheel Segments
+
+| Segment | Value | Weight |
+
+|---|--:|--:|
+
+| 2× bet | 2 | 30 |
+
+| 5× bet | 5 | 20 |
+
+| MINI | jackpot | 5 |
+
+| MAJOR | jackpot | 1 |
+
+## Notes
+Synthetic fixture for Wave UQ Ultimate QA. Pattern: Scatter triggers a wheel; segments are non-uniformly weighted; 4 jackpot cells.

@@ -100,7 +100,7 @@ export function emitAnteBetCSS(cfg = defaultConfig()) {
   background: #fff;
 }
 .ante-bet .pct {
-  font-size: 0.65rem;
+  font-size: 0.7rem;  /* Wave UQ — ≥11px floor */
   opacity: 0.7;
   margin-left: 2px;
 }

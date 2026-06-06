@@ -1,0 +1,1050 @@
+{
+  "generatedAt": "2026-06-06T09:40:55.439Z",
+  "count": 174,
+  "fixtures": [
+    {
+      "idx": 1,
+      "file": "001_rectangular_classic-lines.md",
+      "kind": "rectangular",
+      "pattern": "classic-lines"
+    },
+    {
+      "idx": 2,
+      "file": "002_rectangular_stacked_scatter_classic-lines.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "classic-lines"
+    },
+    {
+      "idx": 3,
+      "file": "003_expanding_classic-lines.md",
+      "kind": "expanding",
+      "pattern": "classic-lines"
+    },
+    {
+      "idx": 4,
+      "file": "004_dual_classic-lines.md",
+      "kind": "dual",
+      "pattern": "classic-lines"
+    },
+    {
+      "idx": 5,
+      "file": "005_lock_respin_classic-lines.md",
+      "kind": "lock_respin",
+      "pattern": "classic-lines"
+    },
+    {
+      "idx": 6,
+      "file": "006_variable_reel_megaways-cascade.md",
+      "kind": "variable_reel",
+      "pattern": "megaways-cascade"
+    },
+    {
+      "idx": 7,
+      "file": "007_cluster_cluster-pays.md",
+      "kind": "cluster",
+      "pattern": "cluster-pays"
+    },
+    {
+      "idx": 8,
+      "file": "008_megaclusters_cluster-pays.md",
+      "kind": "megaclusters",
+      "pattern": "cluster-pays"
+    },
+    {
+      "idx": 9,
+      "file": "009_hexagonal_cluster-pays.md",
+      "kind": "hexagonal",
+      "pattern": "cluster-pays"
+    },
+    {
+      "idx": 10,
+      "file": "010_rectangular_hold-and-win.md",
+      "kind": "rectangular",
+      "pattern": "hold-and-win"
+    },
+    {
+      "idx": 11,
+      "file": "011_lock_respin_hold-and-win.md",
+      "kind": "lock_respin",
+      "pattern": "hold-and-win"
+    },
+    {
+      "idx": 12,
+      "file": "012_rectangular_bonus-buy.md",
+      "kind": "rectangular",
+      "pattern": "bonus-buy"
+    },
+    {
+      "idx": 13,
+      "file": "013_rectangular_stacked_scatter_bonus-buy.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "bonus-buy"
+    },
+    {
+      "idx": 14,
+      "file": "014_variable_reel_bonus-buy.md",
+      "kind": "variable_reel",
+      "pattern": "bonus-buy"
+    },
+    {
+      "idx": 15,
+      "file": "015_expanding_bonus-buy.md",
+      "kind": "expanding",
+      "pattern": "bonus-buy"
+    },
+    {
+      "idx": 16,
+      "file": "016_infinity_bonus-buy.md",
+      "kind": "infinity",
+      "pattern": "bonus-buy"
+    },
+    {
+      "idx": 17,
+      "file": "017_dual_bonus-buy.md",
+      "kind": "dual",
+      "pattern": "bonus-buy"
+    },
+    {
+      "idx": 18,
+      "file": "018_cluster_bonus-buy.md",
+      "kind": "cluster",
+      "pattern": "bonus-buy"
+    },
+    {
+      "idx": 19,
+      "file": "019_megaclusters_bonus-buy.md",
+      "kind": "megaclusters",
+      "pattern": "bonus-buy"
+    },
+    {
+      "idx": 20,
+      "file": "020_hexagonal_bonus-buy.md",
+      "kind": "hexagonal",
+      "pattern": "bonus-buy"
+    },
+    {
+      "idx": 21,
+      "file": "021_diamond_bonus-buy.md",
+      "kind": "diamond",
+      "pattern": "bonus-buy"
+    },
+    {
+      "idx": 22,
+      "file": "022_pyramid_bonus-buy.md",
+      "kind": "pyramid",
+      "pattern": "bonus-buy"
+    },
+    {
+      "idx": 23,
+      "file": "023_cross_bonus-buy.md",
+      "kind": "cross",
+      "pattern": "bonus-buy"
+    },
+    {
+      "idx": 24,
+      "file": "024_l_shape_bonus-buy.md",
+      "kind": "l_shape",
+      "pattern": "bonus-buy"
+    },
+    {
+      "idx": 25,
+      "file": "025_lock_respin_bonus-buy.md",
+      "kind": "lock_respin",
+      "pattern": "bonus-buy"
+    },
+    {
+      "idx": 26,
+      "file": "026_rectangular_bonus-buy-deterministic.md",
+      "kind": "rectangular",
+      "pattern": "bonus-buy-deterministic"
+    },
+    {
+      "idx": 27,
+      "file": "027_variable_reel_bonus-buy-deterministic.md",
+      "kind": "variable_reel",
+      "pattern": "bonus-buy-deterministic"
+    },
+    {
+      "idx": 28,
+      "file": "028_rectangular_wheel-bonus.md",
+      "kind": "rectangular",
+      "pattern": "wheel-bonus"
+    },
+    {
+      "idx": 29,
+      "file": "029_wheel_wheel-bonus.md",
+      "kind": "wheel",
+      "pattern": "wheel-bonus"
+    },
+    {
+      "idx": 30,
+      "file": "030_radial_wheel-bonus.md",
+      "kind": "radial",
+      "pattern": "wheel-bonus"
+    },
+    {
+      "idx": 31,
+      "file": "031_rectangular_tumble-multiplier.md",
+      "kind": "rectangular",
+      "pattern": "tumble-multiplier"
+    },
+    {
+      "idx": 32,
+      "file": "032_rectangular_stacked_scatter_tumble-multiplier.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "tumble-multiplier"
+    },
+    {
+      "idx": 33,
+      "file": "033_variable_reel_tumble-multiplier.md",
+      "kind": "variable_reel",
+      "pattern": "tumble-multiplier"
+    },
+    {
+      "idx": 34,
+      "file": "034_expanding_tumble-multiplier.md",
+      "kind": "expanding",
+      "pattern": "tumble-multiplier"
+    },
+    {
+      "idx": 35,
+      "file": "035_infinity_tumble-multiplier.md",
+      "kind": "infinity",
+      "pattern": "tumble-multiplier"
+    },
+    {
+      "idx": 36,
+      "file": "036_dual_tumble-multiplier.md",
+      "kind": "dual",
+      "pattern": "tumble-multiplier"
+    },
+    {
+      "idx": 37,
+      "file": "037_diamond_tumble-multiplier.md",
+      "kind": "diamond",
+      "pattern": "tumble-multiplier"
+    },
+    {
+      "idx": 38,
+      "file": "038_pyramid_tumble-multiplier.md",
+      "kind": "pyramid",
+      "pattern": "tumble-multiplier"
+    },
+    {
+      "idx": 39,
+      "file": "039_cross_tumble-multiplier.md",
+      "kind": "cross",
+      "pattern": "tumble-multiplier"
+    },
+    {
+      "idx": 40,
+      "file": "040_l_shape_tumble-multiplier.md",
+      "kind": "l_shape",
+      "pattern": "tumble-multiplier"
+    },
+    {
+      "idx": 41,
+      "file": "041_rectangular_pay-anywhere.md",
+      "kind": "rectangular",
+      "pattern": "pay-anywhere"
+    },
+    {
+      "idx": 42,
+      "file": "042_diamond_pay-anywhere.md",
+      "kind": "diamond",
+      "pattern": "pay-anywhere"
+    },
+    {
+      "idx": 43,
+      "file": "043_pyramid_pay-anywhere.md",
+      "kind": "pyramid",
+      "pattern": "pay-anywhere"
+    },
+    {
+      "idx": 44,
+      "file": "044_cross_pay-anywhere.md",
+      "kind": "cross",
+      "pattern": "pay-anywhere"
+    },
+    {
+      "idx": 45,
+      "file": "045_l_shape_pay-anywhere.md",
+      "kind": "l_shape",
+      "pattern": "pay-anywhere"
+    },
+    {
+      "idx": 46,
+      "file": "046_rectangular_sticky-wild-fs.md",
+      "kind": "rectangular",
+      "pattern": "sticky-wild-fs"
+    },
+    {
+      "idx": 47,
+      "file": "047_rectangular_stacked_scatter_sticky-wild-fs.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "sticky-wild-fs"
+    },
+    {
+      "idx": 48,
+      "file": "048_variable_reel_sticky-wild-fs.md",
+      "kind": "variable_reel",
+      "pattern": "sticky-wild-fs"
+    },
+    {
+      "idx": 49,
+      "file": "049_expanding_sticky-wild-fs.md",
+      "kind": "expanding",
+      "pattern": "sticky-wild-fs"
+    },
+    {
+      "idx": 50,
+      "file": "050_infinity_sticky-wild-fs.md",
+      "kind": "infinity",
+      "pattern": "sticky-wild-fs"
+    },
+    {
+      "idx": 51,
+      "file": "051_dual_sticky-wild-fs.md",
+      "kind": "dual",
+      "pattern": "sticky-wild-fs"
+    },
+    {
+      "idx": 52,
+      "file": "052_lock_respin_sticky-wild-fs.md",
+      "kind": "lock_respin",
+      "pattern": "sticky-wild-fs"
+    },
+    {
+      "idx": 53,
+      "file": "053_rectangular_expanding-wild.md",
+      "kind": "rectangular",
+      "pattern": "expanding-wild"
+    },
+    {
+      "idx": 54,
+      "file": "054_rectangular_stacked_scatter_expanding-wild.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "expanding-wild"
+    },
+    {
+      "idx": 55,
+      "file": "055_variable_reel_expanding-wild.md",
+      "kind": "variable_reel",
+      "pattern": "expanding-wild"
+    },
+    {
+      "idx": 56,
+      "file": "056_expanding_expanding-wild.md",
+      "kind": "expanding",
+      "pattern": "expanding-wild"
+    },
+    {
+      "idx": 57,
+      "file": "057_infinity_expanding-wild.md",
+      "kind": "infinity",
+      "pattern": "expanding-wild"
+    },
+    {
+      "idx": 58,
+      "file": "058_dual_expanding-wild.md",
+      "kind": "dual",
+      "pattern": "expanding-wild"
+    },
+    {
+      "idx": 59,
+      "file": "059_lock_respin_expanding-wild.md",
+      "kind": "lock_respin",
+      "pattern": "expanding-wild"
+    },
+    {
+      "idx": 60,
+      "file": "060_rectangular_walking-wild.md",
+      "kind": "rectangular",
+      "pattern": "walking-wild"
+    },
+    {
+      "idx": 61,
+      "file": "061_rectangular_stacked_scatter_walking-wild.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "walking-wild"
+    },
+    {
+      "idx": 62,
+      "file": "062_expanding_walking-wild.md",
+      "kind": "expanding",
+      "pattern": "walking-wild"
+    },
+    {
+      "idx": 63,
+      "file": "063_dual_walking-wild.md",
+      "kind": "dual",
+      "pattern": "walking-wild"
+    },
+    {
+      "idx": 64,
+      "file": "064_lock_respin_walking-wild.md",
+      "kind": "lock_respin",
+      "pattern": "walking-wild"
+    },
+    {
+      "idx": 65,
+      "file": "065_rectangular_mystery-symbol.md",
+      "kind": "rectangular",
+      "pattern": "mystery-symbol"
+    },
+    {
+      "idx": 66,
+      "file": "066_rectangular_stacked_scatter_mystery-symbol.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "mystery-symbol"
+    },
+    {
+      "idx": 67,
+      "file": "067_variable_reel_mystery-symbol.md",
+      "kind": "variable_reel",
+      "pattern": "mystery-symbol"
+    },
+    {
+      "idx": 68,
+      "file": "068_expanding_mystery-symbol.md",
+      "kind": "expanding",
+      "pattern": "mystery-symbol"
+    },
+    {
+      "idx": 69,
+      "file": "069_infinity_mystery-symbol.md",
+      "kind": "infinity",
+      "pattern": "mystery-symbol"
+    },
+    {
+      "idx": 70,
+      "file": "070_dual_mystery-symbol.md",
+      "kind": "dual",
+      "pattern": "mystery-symbol"
+    },
+    {
+      "idx": 71,
+      "file": "071_cluster_mystery-symbol.md",
+      "kind": "cluster",
+      "pattern": "mystery-symbol"
+    },
+    {
+      "idx": 72,
+      "file": "072_megaclusters_mystery-symbol.md",
+      "kind": "megaclusters",
+      "pattern": "mystery-symbol"
+    },
+    {
+      "idx": 73,
+      "file": "073_hexagonal_mystery-symbol.md",
+      "kind": "hexagonal",
+      "pattern": "mystery-symbol"
+    },
+    {
+      "idx": 74,
+      "file": "074_lock_respin_mystery-symbol.md",
+      "kind": "lock_respin",
+      "pattern": "mystery-symbol"
+    },
+    {
+      "idx": 75,
+      "file": "075_rectangular_super-symbol.md",
+      "kind": "rectangular",
+      "pattern": "super-symbol"
+    },
+    {
+      "idx": 76,
+      "file": "076_variable_reel_super-symbol.md",
+      "kind": "variable_reel",
+      "pattern": "super-symbol"
+    },
+    {
+      "idx": 77,
+      "file": "077_megaclusters_super-symbol.md",
+      "kind": "megaclusters",
+      "pattern": "super-symbol"
+    },
+    {
+      "idx": 78,
+      "file": "078_rectangular_progressive-fs.md",
+      "kind": "rectangular",
+      "pattern": "progressive-fs"
+    },
+    {
+      "idx": 79,
+      "file": "079_rectangular_stacked_scatter_progressive-fs.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "progressive-fs"
+    },
+    {
+      "idx": 80,
+      "file": "080_variable_reel_progressive-fs.md",
+      "kind": "variable_reel",
+      "pattern": "progressive-fs"
+    },
+    {
+      "idx": 81,
+      "file": "081_expanding_progressive-fs.md",
+      "kind": "expanding",
+      "pattern": "progressive-fs"
+    },
+    {
+      "idx": 82,
+      "file": "082_infinity_progressive-fs.md",
+      "kind": "infinity",
+      "pattern": "progressive-fs"
+    },
+    {
+      "idx": 83,
+      "file": "083_dual_progressive-fs.md",
+      "kind": "dual",
+      "pattern": "progressive-fs"
+    },
+    {
+      "idx": 84,
+      "file": "084_cluster_progressive-fs.md",
+      "kind": "cluster",
+      "pattern": "progressive-fs"
+    },
+    {
+      "idx": 85,
+      "file": "085_megaclusters_progressive-fs.md",
+      "kind": "megaclusters",
+      "pattern": "progressive-fs"
+    },
+    {
+      "idx": 86,
+      "file": "086_hexagonal_progressive-fs.md",
+      "kind": "hexagonal",
+      "pattern": "progressive-fs"
+    },
+    {
+      "idx": 87,
+      "file": "087_lock_respin_progressive-fs.md",
+      "kind": "lock_respin",
+      "pattern": "progressive-fs"
+    },
+    {
+      "idx": 88,
+      "file": "088_rectangular_lightning.md",
+      "kind": "rectangular",
+      "pattern": "lightning"
+    },
+    {
+      "idx": 89,
+      "file": "089_rectangular_stacked_scatter_lightning.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "lightning"
+    },
+    {
+      "idx": 90,
+      "file": "090_expanding_lightning.md",
+      "kind": "expanding",
+      "pattern": "lightning"
+    },
+    {
+      "idx": 91,
+      "file": "091_dual_lightning.md",
+      "kind": "dual",
+      "pattern": "lightning"
+    },
+    {
+      "idx": 92,
+      "file": "092_diamond_lightning.md",
+      "kind": "diamond",
+      "pattern": "lightning"
+    },
+    {
+      "idx": 93,
+      "file": "093_pyramid_lightning.md",
+      "kind": "pyramid",
+      "pattern": "lightning"
+    },
+    {
+      "idx": 94,
+      "file": "094_cross_lightning.md",
+      "kind": "cross",
+      "pattern": "lightning"
+    },
+    {
+      "idx": 95,
+      "file": "095_l_shape_lightning.md",
+      "kind": "l_shape",
+      "pattern": "lightning"
+    },
+    {
+      "idx": 96,
+      "file": "096_lock_respin_lightning.md",
+      "kind": "lock_respin",
+      "pattern": "lightning"
+    },
+    {
+      "idx": 97,
+      "file": "097_rectangular_gamble-card.md",
+      "kind": "rectangular",
+      "pattern": "gamble-card"
+    },
+    {
+      "idx": 98,
+      "file": "098_rectangular_stacked_scatter_gamble-card.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "gamble-card"
+    },
+    {
+      "idx": 99,
+      "file": "099_variable_reel_gamble-card.md",
+      "kind": "variable_reel",
+      "pattern": "gamble-card"
+    },
+    {
+      "idx": 100,
+      "file": "100_expanding_gamble-card.md",
+      "kind": "expanding",
+      "pattern": "gamble-card"
+    },
+    {
+      "idx": 101,
+      "file": "101_infinity_gamble-card.md",
+      "kind": "infinity",
+      "pattern": "gamble-card"
+    },
+    {
+      "idx": 102,
+      "file": "102_dual_gamble-card.md",
+      "kind": "dual",
+      "pattern": "gamble-card"
+    },
+    {
+      "idx": 103,
+      "file": "103_cluster_gamble-card.md",
+      "kind": "cluster",
+      "pattern": "gamble-card"
+    },
+    {
+      "idx": 104,
+      "file": "104_megaclusters_gamble-card.md",
+      "kind": "megaclusters",
+      "pattern": "gamble-card"
+    },
+    {
+      "idx": 105,
+      "file": "105_hexagonal_gamble-card.md",
+      "kind": "hexagonal",
+      "pattern": "gamble-card"
+    },
+    {
+      "idx": 106,
+      "file": "106_diamond_gamble-card.md",
+      "kind": "diamond",
+      "pattern": "gamble-card"
+    },
+    {
+      "idx": 107,
+      "file": "107_pyramid_gamble-card.md",
+      "kind": "pyramid",
+      "pattern": "gamble-card"
+    },
+    {
+      "idx": 108,
+      "file": "108_cross_gamble-card.md",
+      "kind": "cross",
+      "pattern": "gamble-card"
+    },
+    {
+      "idx": 109,
+      "file": "109_l_shape_gamble-card.md",
+      "kind": "l_shape",
+      "pattern": "gamble-card"
+    },
+    {
+      "idx": 110,
+      "file": "110_lock_respin_gamble-card.md",
+      "kind": "lock_respin",
+      "pattern": "gamble-card"
+    },
+    {
+      "idx": 111,
+      "file": "111_slingo_gamble-card.md",
+      "kind": "slingo",
+      "pattern": "gamble-card"
+    },
+    {
+      "idx": 112,
+      "file": "112_rectangular_gamble-ladder.md",
+      "kind": "rectangular",
+      "pattern": "gamble-ladder"
+    },
+    {
+      "idx": 113,
+      "file": "113_rectangular_stacked_scatter_gamble-ladder.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "gamble-ladder"
+    },
+    {
+      "idx": 114,
+      "file": "114_variable_reel_gamble-ladder.md",
+      "kind": "variable_reel",
+      "pattern": "gamble-ladder"
+    },
+    {
+      "idx": 115,
+      "file": "115_expanding_gamble-ladder.md",
+      "kind": "expanding",
+      "pattern": "gamble-ladder"
+    },
+    {
+      "idx": 116,
+      "file": "116_infinity_gamble-ladder.md",
+      "kind": "infinity",
+      "pattern": "gamble-ladder"
+    },
+    {
+      "idx": 117,
+      "file": "117_dual_gamble-ladder.md",
+      "kind": "dual",
+      "pattern": "gamble-ladder"
+    },
+    {
+      "idx": 118,
+      "file": "118_cluster_gamble-ladder.md",
+      "kind": "cluster",
+      "pattern": "gamble-ladder"
+    },
+    {
+      "idx": 119,
+      "file": "119_megaclusters_gamble-ladder.md",
+      "kind": "megaclusters",
+      "pattern": "gamble-ladder"
+    },
+    {
+      "idx": 120,
+      "file": "120_hexagonal_gamble-ladder.md",
+      "kind": "hexagonal",
+      "pattern": "gamble-ladder"
+    },
+    {
+      "idx": 121,
+      "file": "121_diamond_gamble-ladder.md",
+      "kind": "diamond",
+      "pattern": "gamble-ladder"
+    },
+    {
+      "idx": 122,
+      "file": "122_pyramid_gamble-ladder.md",
+      "kind": "pyramid",
+      "pattern": "gamble-ladder"
+    },
+    {
+      "idx": 123,
+      "file": "123_cross_gamble-ladder.md",
+      "kind": "cross",
+      "pattern": "gamble-ladder"
+    },
+    {
+      "idx": 124,
+      "file": "124_l_shape_gamble-ladder.md",
+      "kind": "l_shape",
+      "pattern": "gamble-ladder"
+    },
+    {
+      "idx": 125,
+      "file": "125_lock_respin_gamble-ladder.md",
+      "kind": "lock_respin",
+      "pattern": "gamble-ladder"
+    },
+    {
+      "idx": 126,
+      "file": "126_slingo_gamble-ladder.md",
+      "kind": "slingo",
+      "pattern": "gamble-ladder"
+    },
+    {
+      "idx": 127,
+      "file": "127_rectangular_ante-bet.md",
+      "kind": "rectangular",
+      "pattern": "ante-bet"
+    },
+    {
+      "idx": 128,
+      "file": "128_rectangular_stacked_scatter_ante-bet.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "ante-bet"
+    },
+    {
+      "idx": 129,
+      "file": "129_variable_reel_ante-bet.md",
+      "kind": "variable_reel",
+      "pattern": "ante-bet"
+    },
+    {
+      "idx": 130,
+      "file": "130_expanding_ante-bet.md",
+      "kind": "expanding",
+      "pattern": "ante-bet"
+    },
+    {
+      "idx": 131,
+      "file": "131_infinity_ante-bet.md",
+      "kind": "infinity",
+      "pattern": "ante-bet"
+    },
+    {
+      "idx": 132,
+      "file": "132_dual_ante-bet.md",
+      "kind": "dual",
+      "pattern": "ante-bet"
+    },
+    {
+      "idx": 133,
+      "file": "133_diamond_ante-bet.md",
+      "kind": "diamond",
+      "pattern": "ante-bet"
+    },
+    {
+      "idx": 134,
+      "file": "134_pyramid_ante-bet.md",
+      "kind": "pyramid",
+      "pattern": "ante-bet"
+    },
+    {
+      "idx": 135,
+      "file": "135_cross_ante-bet.md",
+      "kind": "cross",
+      "pattern": "ante-bet"
+    },
+    {
+      "idx": 136,
+      "file": "136_l_shape_ante-bet.md",
+      "kind": "l_shape",
+      "pattern": "ante-bet"
+    },
+    {
+      "idx": 137,
+      "file": "137_lock_respin_ante-bet.md",
+      "kind": "lock_respin",
+      "pattern": "ante-bet"
+    },
+    {
+      "idx": 138,
+      "file": "138_rectangular_bonus-pick.md",
+      "kind": "rectangular",
+      "pattern": "bonus-pick"
+    },
+    {
+      "idx": 139,
+      "file": "139_variable_reel_bonus-pick.md",
+      "kind": "variable_reel",
+      "pattern": "bonus-pick"
+    },
+    {
+      "idx": 140,
+      "file": "140_lock_respin_bonus-pick.md",
+      "kind": "lock_respin",
+      "pattern": "bonus-pick"
+    },
+    {
+      "idx": 141,
+      "file": "141_crash_crash-curve.md",
+      "kind": "crash",
+      "pattern": "crash-curve"
+    },
+    {
+      "idx": 142,
+      "file": "142_plinko_plinko-drop.md",
+      "kind": "plinko",
+      "pattern": "plinko-drop"
+    },
+    {
+      "idx": 143,
+      "file": "143_slingo_slingo-board.md",
+      "kind": "slingo",
+      "pattern": "slingo-board"
+    },
+    {
+      "idx": 144,
+      "file": "144_rectangular_win-cap-low.md",
+      "kind": "rectangular",
+      "pattern": "win-cap-low"
+    },
+    {
+      "idx": 145,
+      "file": "145_rectangular_stacked_scatter_win-cap-low.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "win-cap-low"
+    },
+    {
+      "idx": 146,
+      "file": "146_variable_reel_win-cap-low.md",
+      "kind": "variable_reel",
+      "pattern": "win-cap-low"
+    },
+    {
+      "idx": 147,
+      "file": "147_expanding_win-cap-low.md",
+      "kind": "expanding",
+      "pattern": "win-cap-low"
+    },
+    {
+      "idx": 148,
+      "file": "148_infinity_win-cap-low.md",
+      "kind": "infinity",
+      "pattern": "win-cap-low"
+    },
+    {
+      "idx": 149,
+      "file": "149_dual_win-cap-low.md",
+      "kind": "dual",
+      "pattern": "win-cap-low"
+    },
+    {
+      "idx": 150,
+      "file": "150_diamond_win-cap-low.md",
+      "kind": "diamond",
+      "pattern": "win-cap-low"
+    },
+    {
+      "idx": 151,
+      "file": "151_pyramid_win-cap-low.md",
+      "kind": "pyramid",
+      "pattern": "win-cap-low"
+    },
+    {
+      "idx": 152,
+      "file": "152_cross_win-cap-low.md",
+      "kind": "cross",
+      "pattern": "win-cap-low"
+    },
+    {
+      "idx": 153,
+      "file": "153_l_shape_win-cap-low.md",
+      "kind": "l_shape",
+      "pattern": "win-cap-low"
+    },
+    {
+      "idx": 154,
+      "file": "154_rectangular_maximalist.md",
+      "kind": "rectangular",
+      "pattern": "maximalist"
+    },
+    {
+      "idx": 155,
+      "file": "155_variable_reel_maximalist.md",
+      "kind": "variable_reel",
+      "pattern": "maximalist"
+    },
+    {
+      "idx": 156,
+      "file": "156_rectangular_minimalist.md",
+      "kind": "rectangular",
+      "pattern": "minimalist"
+    },
+    {
+      "idx": 157,
+      "file": "157_rectangular_stacked_scatter_minimalist.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "minimalist"
+    },
+    {
+      "idx": 158,
+      "file": "158_variable_reel_minimalist.md",
+      "kind": "variable_reel",
+      "pattern": "minimalist"
+    },
+    {
+      "idx": 159,
+      "file": "159_expanding_minimalist.md",
+      "kind": "expanding",
+      "pattern": "minimalist"
+    },
+    {
+      "idx": 160,
+      "file": "160_infinity_minimalist.md",
+      "kind": "infinity",
+      "pattern": "minimalist"
+    },
+    {
+      "idx": 161,
+      "file": "161_dual_minimalist.md",
+      "kind": "dual",
+      "pattern": "minimalist"
+    },
+    {
+      "idx": 162,
+      "file": "162_cluster_minimalist.md",
+      "kind": "cluster",
+      "pattern": "minimalist"
+    },
+    {
+      "idx": 163,
+      "file": "163_megaclusters_minimalist.md",
+      "kind": "megaclusters",
+      "pattern": "minimalist"
+    },
+    {
+      "idx": 164,
+      "file": "164_hexagonal_minimalist.md",
+      "kind": "hexagonal",
+      "pattern": "minimalist"
+    },
+    {
+      "idx": 165,
+      "file": "165_diamond_minimalist.md",
+      "kind": "diamond",
+      "pattern": "minimalist"
+    },
+    {
+      "idx": 166,
+      "file": "166_pyramid_minimalist.md",
+      "kind": "pyramid",
+      "pattern": "minimalist"
+    },
+    {
+      "idx": 167,
+      "file": "167_cross_minimalist.md",
+      "kind": "cross",
+      "pattern": "minimalist"
+    },
+    {
+      "idx": 168,
+      "file": "168_l_shape_minimalist.md",
+      "kind": "l_shape",
+      "pattern": "minimalist"
+    },
+    {
+      "idx": 169,
+      "file": "169_lock_respin_minimalist.md",
+      "kind": "lock_respin",
+      "pattern": "minimalist"
+    },
+    {
+      "idx": 170,
+      "file": "170_wheel_minimalist.md",
+      "kind": "wheel",
+      "pattern": "minimalist"
+    },
+    {
+      "idx": 171,
+      "file": "171_radial_minimalist.md",
+      "kind": "radial",
+      "pattern": "minimalist"
+    },
+    {
+      "idx": 172,
+      "file": "172_crash_minimalist.md",
+      "kind": "crash",
+      "pattern": "minimalist"
+    },
+    {
+      "idx": 173,
+      "file": "173_plinko_minimalist.md",
+      "kind": "plinko",
+      "pattern": "minimalist"
+    },
+    {
+      "idx": 174,
+      "file": "174_slingo_minimalist.md",
+      "kind": "slingo",
+      "pattern": "minimalist"
+    }
+  ]
+}
