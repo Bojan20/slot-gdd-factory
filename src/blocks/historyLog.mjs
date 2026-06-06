@@ -159,9 +159,12 @@ export function emitHistoryLogCSS(cfg = defaultConfig()) {
   .history-btn {
     position: fixed;
     left: max(18px, env(safe-area-inset-left, 18px));
-    bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 46px);
+    /* Wave K5 — bumped to 54px clearance so the 44px chip never
+       overlaps the paytable chip below it. */
+    bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 54px);
     z-index: 25;
-    width: 36px; height: 36px;
+    /* Wave K5 — WCAG 2.5.5 / Apple HIG 44pt floor. */
+    width: 44px; height: 44px;
     border-radius: 50%;
     border: 2px solid rgba(${c.chipColor}, 0.7);
     background: linear-gradient(180deg, rgba(${c.chipColor}, 0.18), rgba(${c.chipColor}, 0.06));
@@ -171,6 +174,8 @@ export function emitHistoryLogCSS(cfg = defaultConfig()) {
     font-size: 18px;
     line-height: 1;
     cursor: pointer;
+    /* Wave K5 — kills iOS double-tap zoom. */
+    touch-action: manipulation;
     display: flex;
     align-items: center;
     justify-content: center;

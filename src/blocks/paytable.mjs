@@ -196,7 +196,8 @@ export function emitPaytableCSS(cfg = defaultConfig()) {
     left: max(18px, env(safe-area-inset-left, 18px));
     bottom: max(18px, env(safe-area-inset-bottom, 18px));
     z-index: 25;
-    width: 36px; height: 36px;
+    /* Wave K5 — WCAG 2.5.5 / Apple HIG 44pt floor. */
+    width: 44px; height: 44px;
     border-radius: 50%;
     border: 2px solid rgba(${c.chipColor}, 0.7);
     background: linear-gradient(180deg, rgba(${c.chipColor}, 0.18), rgba(${c.chipColor}, 0.06));
@@ -206,6 +207,9 @@ export function emitPaytableCSS(cfg = defaultConfig()) {
     font-size: 18px;
     font-style: italic;
     cursor: pointer;
+    /* Wave K5 — kills iOS double-tap zoom on the chip so successive
+       taps don't accidentally scale the page. */
+    touch-action: manipulation;
     display: flex;
     align-items: center;
     justify-content: center;

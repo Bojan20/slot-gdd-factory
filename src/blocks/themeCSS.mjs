@@ -234,6 +234,9 @@ export function emitThemeCSS(cfg = defaultConfig()) {
     display: flex;
     align-items: center;
     justify-content: center;
+    /* Wave K5 — primary CTA gets manipulation so rapid taps register
+       as discrete spins without iOS interpreting them as zoom gesture. */
+    touch-action: manipulation;
     transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
                 box-shadow 0.2s ease-out;
   }
@@ -333,13 +336,16 @@ export function emitThemeCSS(cfg = defaultConfig()) {
     .hub > :nth-child(4) { grid-area: sound; }
   }
   .iconBtn {
-    width: 36px; height: 36px;
+    /* Wave K5 — WCAG 2.5.5 / Apple HIG 44pt minimum tap target. */
+    width: 44px; height: 44px;
     border-radius: 10px;
     border: 1px solid rgba(201, 162, 39, 0.25);
     background: rgba(0, 0, 0, 0.35);
     display: flex; align-items: center; justify-content: center;
     color: var(--accent);
     cursor: pointer;
+    /* Wave K5 — kills iOS double-tap zoom on the hub hamburger / etc. */
+    touch-action: manipulation;
   }
   .iconBtn svg { width: 18px; height: 18px; }
   .statBox {
