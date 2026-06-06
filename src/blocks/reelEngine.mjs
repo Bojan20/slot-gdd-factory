@@ -502,25 +502,38 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
     }
     if (UNIFORM_REEL_KINDS.has(SHAPE.kind) && RECT_REELS) {
       startSpinAll(() => handlePostSpin(false));
-    } else if (SHAPE.kind === 'hexagonal' && typeof window.__SLOT_HEX_RUNSPIN__ === 'function') {
-      /* Wave J2b — hex topology owns per-axial-column spin via the
-         dedicated hexReelEngine block. */
-      window.__SLOT_HEX_RUNSPIN__(() => handlePostSpin(false));
-    } else if (
-      /* Wave J3 — SVG-kind registry. Each SVG topology
-         (wheel / radial / crash / slingo / plinko) registers an entry
-         in window.__SLOT_KIND_RUNSPIN__[kind]. Dispatcher hands the
-         spin off; settle still routes through handlePostSpin so all
-         downstream blocks (winPresentation, scatterCelebration, FS
-         trigger) compose identically with rectangular. Registry
-         pattern keeps the dispatcher closed for modification — new
-         topologies land as block-level additions. */
-      window.__SLOT_KIND_RUNSPIN__
-      && typeof window.__SLOT_KIND_RUNSPIN__[SHAPE.kind] === 'function'
-    ) {
-      window.__SLOT_KIND_RUNSPIN__[SHAPE.kind](() => handlePostSpin(false));
     } else {
-      runStaticReroll(() => handlePostSpin(false));
+      /* Non-rectangular path — reelEngine remains the SOLE OWNER of
+         onSpinResult emission (LEGO gate single-owner invariant). It
+         wraps the supplied onSettled callback so the engine block
+         (hex / wheel / crash / slingo / plinko / static-reroll) does
+         not need to know about lifecycle ownership. */
+      const _wrappedSettled = () => {
+        const duringFs = typeof FSM !== 'undefined' && FSM && FSM.phase === 'FS_ACTIVE';
+        if (typeof HookBus !== 'undefined') {
+          HookBus.emit('onSpinResult', { duringFs });
+        }
+        handlePostSpin(false);
+      };
+      if (SHAPE.kind === 'hexagonal' && typeof window.__SLOT_HEX_RUNSPIN__ === 'function') {
+        /* Wave J2b — hex topology owns per-axial-column spin via the
+           dedicated hexReelEngine block. */
+        window.__SLOT_HEX_RUNSPIN__(_wrappedSettled);
+      } else if (
+        /* Wave J3 — SVG-kind registry. Each SVG topology
+           (wheel / radial / crash / slingo / plinko) registers an
+           entry in window.__SLOT_KIND_RUNSPIN__[kind]. New topologies
+           land as block-level additions; dispatcher stays closed. */
+        window.__SLOT_KIND_RUNSPIN__
+        && typeof window.__SLOT_KIND_RUNSPIN__[SHAPE.kind] === 'function'
+      ) {
+        window.__SLOT_KIND_RUNSPIN__[SHAPE.kind](_wrappedSettled);
+      } else {
+        /* runStaticReroll emits onSpinResult itself (line 549) — use the
+           raw onSettled to avoid double-emit. Path still routes through
+           handlePostSpin via the inner callback. */
+        runStaticReroll(() => handlePostSpin(false));
+      }
     }
   }
 

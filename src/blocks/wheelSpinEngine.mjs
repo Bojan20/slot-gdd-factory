@@ -215,6 +215,8 @@ export function emitWheelSpinEngineRuntime(cfg = defaultConfig()) {
         void svg.offsetWidth;
         svg.style.transition = '';
         var cb = STATE.pendingSettle; STATE.pendingSettle = null;
+        /* onSpinResult is emitted by the dispatcher (reelEngine) so
+           single-owner ownership stays intact. */
         if (typeof cb === 'function') setTimeout(cb, 0);
       }
       svg.addEventListener('transitionend', _onTransitionEnd);

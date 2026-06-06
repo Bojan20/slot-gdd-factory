@@ -345,6 +345,9 @@ export function emitHexReelEngineRuntime(cfg = defaultConfig()) {
         if (typeof hexOnSettled === 'function') {
           var cb = hexOnSettled;
           hexOnSettled = null;
+          /* onSpinResult is emitted by the dispatcher (reelEngine) so
+             single-owner ownership stays intact. Engine just invokes
+             the supplied settle callback. */
           setTimeout(cb, 0);
         }
       }

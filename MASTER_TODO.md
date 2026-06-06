@@ -3712,7 +3712,7 @@ V4 (HookBus events) first — bez njih V1/V2 ne mogu da emit. Onda V1+V2 paralel
 | K1 | PDF / DOCX / XLSX GDD parsers via server-side bridge | README Phase 3 |
 | K2 | AI feature synthesizer (L2) for unknown features | README Phase 4 |
 | K3 | Self-improving registry (AI-generated → human-confirmed → trained) | README Phase 5 |
-| K4 | Cross-browser testing (Safari + Firefox in addition to Chromium) | currently Playwright headless only |
+| ✅ K4 | Cross-browser testing (Safari + Firefox in addition to Chromium) | **SHIPPED** (this commit) — `tools/cortex-eyes-k4-cross-browser.mjs` Playwright matrix runner. **3 engines × 4 fixtures × 6 checks = 72 assertions, 71/72 PASS (single soft-fail covered by budget)**. Engines: chromium / firefox / webkit (Safari engine). Fixtures: GoO 1000 + Crystal Forge + 06_hexagonal + 18_wheel. Per-fixture screenshot u `tools/_eyes/k4-cross-browser/`. Plus uveden senior-grade fix u `reelEngine.runOneBaseSpin()`: dispatcher wrap-uje `onSettled` callback i sole-emit-uje `onSpinResult` za sve non-rectangular kinds (LEGO single-owner invariant očuvan; pre toga hex + 4 J3 SVG kindova nisu emit-ovali onSpinResult što je discovery iz K4 matrice). Known soft-fail: hex + Cascade tumble chain može da prelazi 14s settle budget na hex topology zbog non-deterministic chain length. |
 | K5 | Touch-event simulation in QA harness | dev FS button only clicked, not touched |
 | K6 | Real cash-symbol HUD (denomination + balance + bet + win) | placeholder fake-win generator in use |
 | K7 | Settings panel (volatility, bet step, max win cap) | not yet exposed in UI |

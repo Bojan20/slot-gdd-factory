@@ -170,6 +170,7 @@ export function emitSlingoSpinEngineRuntime(cfg = defaultConfig()) {
       function _settle() {
         STATE.running = false;
         var cb = STATE.pending; STATE.pending = null;
+        /* onSpinResult is emitted by the dispatcher (reelEngine). */
         if (typeof cb === 'function') setTimeout(cb, 0);
       }
 

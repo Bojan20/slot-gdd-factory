@@ -187,6 +187,7 @@ export function emitCrashSpinEngineRuntime(cfg = defaultConfig()) {
         svg.classList.remove('is-spinning');
         STATE.rotating = false;
         var cb = STATE.pending; STATE.pending = null;
+        /* onSpinResult is emitted by the dispatcher (reelEngine). */
         if (typeof cb === 'function') setTimeout(cb, 0);
       }
       STATE.settleTimer = setTimeout(_settle, ${SPIN_MS} + 30);
