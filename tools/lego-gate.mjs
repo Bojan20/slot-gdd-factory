@@ -174,6 +174,13 @@ const EXPECTED_EMIT_OWNERS = {
   /* Wave U11 — turbo mode owns __SLOT_TURBO_ACTIVE__ +
    * __SLOT_TURBO_SPEED_MULT__ + emits onTurboToggle on every flip. */
   onTurboToggle:    ['turboMode.mjs'],
+  /* Wave K7 — settingsPanel owns the player-preference layer for
+   * volatility / bet-step preset / max-win cap, and is the sole emitter
+   * of their lifecycle events. Downstream blocks (spin engine,
+   * betSelector, winCap) listen but never re-emit. */
+  onVolatilityChanged:    ['settingsPanel.mjs'],
+  onBetStepPresetChanged: ['settingsPanel.mjs'],
+  onMaxWinCapToggled:     ['settingsPanel.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */

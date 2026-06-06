@@ -58,7 +58,9 @@ t('defaultConfig: industry-baseline + 5 toggle rows visible by default', () => {
 
 t('SETTINGS_KEYS enum is frozen + canonical', () => {
   eq(Object.isFrozen(SETTINGS_KEYS), true);
-  eq(SETTINGS_KEYS.join(','), 'turbo,soundMuted,reducedMotion,quickSpin,autoHideWin,locale');
+  /* Wave K7 — three extension keys appended after the original six. */
+  eq(SETTINGS_KEYS.join(','),
+    'turbo,soundMuted,reducedMotion,quickSpin,autoHideWin,locale,volatility,betStepPreset,maxWinCapEnabled');
 });
 
 t('resolveConfig: 10 boolean flags coerce', () => {

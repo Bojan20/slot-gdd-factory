@@ -247,6 +247,10 @@ export const HOOK_EVENTS = Object.freeze([
   'onBalanceChanged',
   /* Wave U11: turbo-mode toggle event */
   'onTurboToggle',
+  /* Wave K7: settings-panel extension — sole-owned by settingsPanel.mjs */
+  'onVolatilityChanged',
+  'onBetStepPresetChanged',
+  'onMaxWinCapToggled',
 ]);
 
 /* Wave U4: canonical autoplay stop reasons. */

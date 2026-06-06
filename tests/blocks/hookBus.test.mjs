@@ -62,6 +62,8 @@ t('HOOK_EVENTS canonical list (core + V intent + V5 win-present + U4 autoplay + 
     'onBalanceChanged',
     /* Wave U11 */
     'onTurboToggle',
+    /* Wave K7 — settings-panel extension (sole-owned by settingsPanel.mjs) */
+    'onVolatilityChanged', 'onBetStepPresetChanged', 'onMaxWinCapToggled',
   ];
   eq(HOOK_EVENTS.length, expected.length);
   for (const e of expected) ok(HOOK_EVENTS.includes(e), `missing ${e}`);

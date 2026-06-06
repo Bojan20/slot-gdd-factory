@@ -66,7 +66,18 @@ export const SETTINGS_KEYS = Object.freeze([
   'quickSpin',
   'autoHideWin',
   'locale',
+  /* Wave K7 — extension: player-side selectors / toggles that drive
+     downstream blocks (spin engine, autoplay, win-cap enforcement). */
+  'volatility',        /* 'low' | 'medium' | 'high' */
+  'betStepPreset',     /* number — coin / bet step quick-select */
+  'maxWinCapEnabled',  /* boolean — opt-in cap from limits.max_win_x */
 ]);
+
+/** @type {Readonly<string[]>} */
+export const VOLATILITY_OPTIONS_DEFAULT = Object.freeze(['low', 'medium', 'high']);
+
+/** @type {Readonly<number[]>} industry baseline ladder (covers retail floor) */
+export const BET_STEP_PRESETS_DEFAULT = Object.freeze([0.10, 0.50, 1.00, 5.00]);
 
 export function defaultConfig() {
   return {
@@ -84,6 +95,16 @@ export function defaultConfig() {
     showLanguageSelector:   false,
     /* Industry-baseline language set — narrowed per game by GDD. */
     availableLocales: ['en-US', 'sr-Latn', 'de-DE', 'es-ES', 'fr-FR'],
+    /* Wave K7 — extension defaults (all ON in baseline; gridProfile +
+       GDD can opt-out per topology where the row isn't meaningful). */
+    showVolatilitySelector:  true,
+    showBetStepPresets:      true,
+    showMaxWinCapToggle:     true,
+    volatilityOptions:       ['low', 'medium', 'high'],
+    betStepPresets:          [0.10, 0.50, 1.00, 5.00],
+    defaultVolatility:       'medium',
+    defaultBetStepPreset:    1.00,
+    defaultMaxWinCapEnabled: true,
     persistInLocalStorage: true,
     closeOnBackdrop: true,
     closeOnEscape:   true,
@@ -108,9 +129,38 @@ export function resolveConfig(model = {}) {
   }
   for (const flag of ['showTurboToggle', 'showSoundToggle', 'showReducedMotionToggle',
                        'showQuickSpinToggle', 'showAutoHideWinToggle', 'showLanguageSelector',
+                       'showVolatilitySelector', 'showBetStepPresets', 'showMaxWinCapToggle',
                        'persistInLocalStorage', 'closeOnBackdrop', 'closeOnEscape',
                        'autoHideOnSpin']) {
     if (m[flag] != null) cfg[flag] = !!m[flag];
+  }
+
+  /* Wave K7 — volatility option list (defensive: keep only canonical labels) */
+  if (Array.isArray(m.volatilityOptions) && m.volatilityOptions.length > 0) {
+    const cleaned = m.volatilityOptions
+      .filter(v => typeof v === 'string' && /^(low|medium|high)$/.test(v));
+    if (cleaned.length > 0) cfg.volatilityOptions = [...new Set(cleaned)];
+  }
+  if (typeof m.defaultVolatility === 'string' && /^(low|medium|high)$/.test(m.defaultVolatility)) {
+    cfg.defaultVolatility = m.defaultVolatility;
+  }
+
+  /* Wave K7 — bet-step preset ladder (defensive: only finite positive numbers
+     within plausible retail range, deduped, max 8 entries) */
+  if (Array.isArray(m.betStepPresets) && m.betStepPresets.length > 0) {
+    const cleaned = m.betStepPresets
+      .map(n => Number(n))
+      .filter(n => Number.isFinite(n) && n > 0 && n <= 10000);
+    if (cleaned.length > 0) cfg.betStepPresets = [...new Set(cleaned)].sort((a, b) => a - b).slice(0, 8);
+  }
+  if (Number.isFinite(m.defaultBetStepPreset) && m.defaultBetStepPreset > 0) {
+    cfg.defaultBetStepPreset = Number(m.defaultBetStepPreset);
+  }
+
+  /* Wave K7 — max-win cap default state (industry baseline = enabled, but
+     a GDD can ship the toggle off-by-default for free-play / no-limits demos). */
+  if (m.defaultMaxWinCapEnabled != null) {
+    cfg.defaultMaxWinCapEnabled = !!m.defaultMaxWinCapEnabled;
   }
 
   if (Array.isArray(m.availableLocales) && m.availableLocales.length > 0) {
@@ -291,6 +341,50 @@ export function emitSettingsPanelCSS(cfg = defaultConfig()) {
     cursor: pointer;
   }
 
+  /* Wave K7 — stack layout for rows that carry a segmented selector
+     instead of a binary toggle (volatility / bet-step). */
+  .settings-row--stack {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .settings-seg-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+  .settings-seg {
+    flex: 1 1 auto;
+    min-width: 60px;
+    /* Wave K5 — clears 44pt tap-target floor (WCAG 2.5.5 / Apple HIG). */
+    min-height: 44px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(${c.modalAccentColor}, 0.45);
+    background: rgba(${c.modalAccentColor}, 0.12);
+    color: rgb(${c.chipTextColor});
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 120ms ease-out, border-color 120ms ease-out, transform 100ms ease-out;
+  }
+  .settings-seg:hover  { background: rgba(${c.modalAccentColor}, 0.24); }
+  .settings-seg:active { transform: scale(0.96); }
+  .settings-seg.is-active {
+    background: rgba(${c.modalAccentColor}, 0.85);
+    border-color: rgba(${c.modalAccentColor}, 1);
+    color: rgb(${c.modalBgColor});
+  }
+  .settings-seg:focus-visible {
+    outline: 2px solid rgba(${c.modalAccentColor}, 1);
+    outline-offset: 2px;
+  }
+
   .settings-actions {
     display: flex;
     gap: 10px;
@@ -384,6 +478,49 @@ export function emitSettingsPanelMarkup(cfg = defaultConfig()) {
         </div>`);
   }
 
+  /* Wave K7 — Volatility segmented control. */
+  if (c.showVolatilitySelector) {
+    const segs = c.volatilityOptions.map(v =>
+      `<button type="button" class="settings-seg" data-volatility="${_escape(v)}" aria-label="Volatility ${_escape(v)}">${_escape(v[0].toUpperCase() + v.slice(1))}</button>`
+    ).join('');
+    rows.push(`
+        <div class="settings-row settings-row--stack" data-setting="volatility">
+          <div>
+            <div class="settings-row__label">Volatility</div>
+            <div class="settings-row__hint">Risk profile of math layer</div>
+          </div>
+          <div id="settingsVolatilitySeg" class="settings-seg-group" role="radiogroup" aria-label="Volatility selector">${segs}</div>
+        </div>`);
+  }
+
+  /* Wave K7 — Bet-step preset ladder (quick-select coin / bet value). */
+  if (c.showBetStepPresets) {
+    const presets = c.betStepPresets.map(n => {
+      const safe = (typeof n === 'number' && isFinite(n)) ? n.toFixed(2) : '0.00';
+      return `<button type="button" class="settings-seg" data-bet-step="${_escape(safe)}" aria-label="Bet step ${_escape(safe)}">${_escape(safe)}</button>`;
+    }).join('');
+    rows.push(`
+        <div class="settings-row settings-row--stack" data-setting="betStepPreset">
+          <div>
+            <div class="settings-row__label">Bet Step</div>
+            <div class="settings-row__hint">Quick-select coin value</div>
+          </div>
+          <div id="settingsBetStepSeg" class="settings-seg-group" role="radiogroup" aria-label="Bet step selector">${presets}</div>
+        </div>`);
+  }
+
+  /* Wave K7 — Max Win Cap toggle. */
+  if (c.showMaxWinCapToggle) {
+    rows.push(`
+        <div class="settings-row" data-setting="maxWinCapEnabled">
+          <div>
+            <div class="settings-row__label">Max Win Cap</div>
+            <div class="settings-row__hint">Honor regulator / GDD win ceiling</div>
+          </div>
+          <button id="settingsMaxWinCapToggle" class="settings-toggle" type="button" aria-label="Max win cap toggle" aria-pressed="false"></button>
+        </div>`);
+  }
+
   /* Boki rule (04.06.2026): settings reuses the hamburger `#settingsMenuBtn`
    * already rendered by the orchestrator inside `.hub`. The block emits
    * ONLY the modal — runtime wires its open behaviour onto the existing
@@ -434,20 +571,31 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
     var SHOW_QS      = ${c.showQuickSpinToggle};
     var SHOW_AHW     = ${c.showAutoHideWinToggle};
     var SHOW_LOCALE  = ${c.showLanguageSelector};
+    /* Wave K7 — extension visibility flags. */
+    var SHOW_VOLATILITY = ${c.showVolatilitySelector};
+    var SHOW_BETSTEP    = ${c.showBetStepPresets};
+    var SHOW_MAXWIN     = ${c.showMaxWinCapToggle};
     var PERSIST      = ${c.persistInLocalStorage};
     var CLOSE_BACK   = ${c.closeOnBackdrop};
     var CLOSE_ESC    = ${c.closeOnEscape};
     var AUTO_HIDE    = ${c.autoHideOnSpin};
     var LOCALES      = ${JSON.stringify(c.availableLocales)};
+    /* Wave K7 — canonical option lists, baked from cfg. */
+    var VOLATILITY_OPTIONS = ${JSON.stringify(c.volatilityOptions)};
+    var BET_STEP_PRESETS   = ${JSON.stringify(c.betStepPresets)};
     var LS_PREFIX    = 'slot.settings.';
 
     var DEFAULTS = {
-      turbo:         false,
-      soundMuted:    false,
-      reducedMotion: false,
-      quickSpin:     false,
-      autoHideWin:   true,
-      locale:        LOCALES[0] || 'en-US',
+      turbo:            false,
+      soundMuted:       false,
+      reducedMotion:    false,
+      quickSpin:        false,
+      autoHideWin:      true,
+      locale:           LOCALES[0] || 'en-US',
+      /* Wave K7 — extension defaults */
+      volatility:       ${JSON.stringify(c.defaultVolatility)},
+      betStepPreset:    ${Number(c.defaultBetStepPreset)},
+      maxWinCapEnabled: ${!!c.defaultMaxWinCapEnabled},
     };
 
     var STATE = {
@@ -486,6 +634,11 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
       window.__SLOT_QUICK_SPIN__     = !!STATE.prefs.quickSpin;
       window.__SLOT_AUTO_HIDE_WIN__  = !!STATE.prefs.autoHideWin;
       window.__SLOT_LOCALE__         = String(STATE.prefs.locale);
+      /* Wave K7 — downstream blocks read these directly (engine cadence
+         tuning, autoplay max-bet clamp, win-cap enforcement). */
+      window.__SLOT_VOLATILITY__         = String(STATE.prefs.volatility);
+      window.__SLOT_BET_STEP_PRESET__    = Number(STATE.prefs.betStepPreset);
+      window.__SLOT_MAX_WIN_CAP_ENABLED__ = !!STATE.prefs.maxWinCapEnabled;
     }
 
     function _paintToggle(name, on) {
@@ -504,6 +657,30 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
         var sel = _locale();
         if (sel) sel.value = STATE.prefs.locale;
       }
+      /* Wave K7 — paint segmented groups + max-win toggle. */
+      if (SHOW_VOLATILITY) _paintSegGroup('settingsVolatilitySeg', 'volatility', String(STATE.prefs.volatility));
+      if (SHOW_BETSTEP)    _paintSegGroup('settingsBetStepSeg',    'bet-step',   _fmtBet(STATE.prefs.betStepPreset));
+      if (SHOW_MAXWIN)     _paintToggle('MaxWinCap', STATE.prefs.maxWinCapEnabled);
+    }
+
+    /* Wave K7 — helpers for segmented group rendering. */
+    function _fmtBet(n) {
+      var v = Number(n);
+      if (!isFinite(v)) v = DEFAULTS.betStepPreset;
+      return v.toFixed(2);
+    }
+    function _paintSegGroup(rootId, attr, activeValue) {
+      var root = document.getElementById(rootId);
+      if (!root) return;
+      var segs = root.querySelectorAll('.settings-seg');
+      for (var i = 0; i < segs.length; i++) {
+        var seg = segs[i];
+        var v = seg.getAttribute('data-' + attr);
+        var on = String(v) === String(activeValue);
+        seg.classList.toggle('is-active', on);
+        seg.setAttribute('aria-checked', on ? 'true' : 'false');
+        seg.setAttribute('role', 'radio');
+      }
     }
 
     /* ─── public API ─────────────────────────────────────────────────── */
@@ -515,6 +692,12 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
       var coerced;
       if (key === 'locale') {
         coerced = (typeof value === 'string' && LOCALES.indexOf(value) !== -1) ? value : DEFAULTS.locale;
+      } else if (key === 'volatility') {
+        coerced = (typeof value === 'string' && VOLATILITY_OPTIONS.indexOf(value) !== -1)
+          ? value : DEFAULTS.volatility;
+      } else if (key === 'betStepPreset') {
+        var n = Number(value);
+        coerced = (isFinite(n) && BET_STEP_PRESETS.indexOf(n) !== -1) ? n : DEFAULTS.betStepPreset;
       } else {
         coerced = !!value;
       }
@@ -533,6 +716,18 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
       }
       if (key === 'soundMuted' && typeof window.audioSetMuted === 'function') {
         try { window.audioSetMuted(coerced); } catch (_) {}
+      }
+      /* Wave K7 — settingsPanel is the SOLE OWNER of these three lifecycle
+         emits (LEGO single-owner gate). Downstream blocks (spin engine,
+         betSelector, winCap) listen and update their internal state. */
+      if (window.HookBus && typeof window.HookBus.emit === 'function') {
+        if (key === 'volatility') {
+          window.HookBus.emit('onVolatilityChanged', { value: coerced, source: 'settings' });
+        } else if (key === 'betStepPreset') {
+          window.HookBus.emit('onBetStepPresetChanged', { value: coerced, source: 'settings' });
+        } else if (key === 'maxWinCapEnabled') {
+          window.HookBus.emit('onMaxWinCapToggled', { enabled: coerced, source: 'settings' });
+        }
       }
     }
 
@@ -587,6 +782,11 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
         if (raw === null) continue;
         if (k === 'locale') {
           if (LOCALES.indexOf(raw) !== -1) STATE.prefs[k] = raw;
+        } else if (k === 'volatility') {
+          if (VOLATILITY_OPTIONS.indexOf(raw) !== -1) STATE.prefs[k] = raw;
+        } else if (k === 'betStepPreset') {
+          var n = Number(raw);
+          if (isFinite(n) && BET_STEP_PRESETS.indexOf(n) !== -1) STATE.prefs[k] = n;
         } else {
           STATE.prefs[k] = (raw === 'true' || raw === '1');
         }
@@ -624,6 +824,33 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
       if (SHOW_LOCALE) {
         var sel = _locale();
         if (sel) sel.addEventListener('change', function () { settingsSet('locale', sel.value); });
+      }
+
+      /* Wave K7 — segmented group click handlers (event delegation). */
+      if (SHOW_VOLATILITY) {
+        var volRoot = document.getElementById('settingsVolatilitySeg');
+        if (volRoot) volRoot.addEventListener('click', function (ev) {
+          var btn = ev.target && ev.target.closest && ev.target.closest('.settings-seg');
+          if (!btn) return;
+          var v = btn.getAttribute('data-volatility');
+          if (v) settingsSet('volatility', v);
+        });
+      }
+      if (SHOW_BETSTEP) {
+        var bsRoot = document.getElementById('settingsBetStepSeg');
+        if (bsRoot) bsRoot.addEventListener('click', function (ev) {
+          var btn = ev.target && ev.target.closest && ev.target.closest('.settings-seg');
+          if (!btn) return;
+          var raw = btn.getAttribute('data-bet-step');
+          var n = Number(raw);
+          if (isFinite(n)) settingsSet('betStepPreset', n);
+        });
+      }
+      if (SHOW_MAXWIN) {
+        var mw = _toggle('MaxWinCap');
+        if (mw) mw.addEventListener('click', function () {
+          settingsSet('maxWinCapEnabled', !STATE.prefs.maxWinCapEnabled);
+        });
       }
 
       if (CLOSE_BACK) {
