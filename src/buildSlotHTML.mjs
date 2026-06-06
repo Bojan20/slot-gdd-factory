@@ -308,6 +308,16 @@ import {
   emitSuperSymbolCSS, emitSuperSymbolRuntime,
   resolveConfig as resolveSuperSymbolConfig,
 } from './blocks/superSymbol.mjs';
+/* Wave T-slim Phase 2 — extracted grid-render infrastructure (~700 LOC).
+   Helpers (symAt / makeCell / cellSize / UNIFORM_REEL_KINDS) emit BEFORE
+   the reel engine; per-kind render dispatcher emits AFTER engine + payline
+   overlay so all referenced helpers are in scope at runtime. */
+import {
+  emitGridHelpersRuntime,
+  emitGridDispatchRuntime,
+} from './runtime/gridRenderer.mjs';
+import { emitDevForceButtonsRuntime } from './runtime/devForceButtons.mjs';
+import { emitGlobalsContractRuntime } from './runtime/globalsContract.mjs';
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({
@@ -614,245 +624,52 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
   const grid = document.getElementById("gridHost");
   const frame = document.getElementById("frameHost");
 
-  /* Deterministic symbol fill — repeatable layout per fixture for snapshots */
-  function symAt(i) { return POOL[i % POOL.length]; }
+  /* Wave T-slim Phase 2 — symAt / makeCell / cellSize / UNIFORM_REEL_KINDS
+     are extracted to src/runtime/gridRenderer.mjs. They MUST be emitted
+     here, BEFORE the reel engine runtime, because the engine block
+     references makeCell / symAt / UNIFORM_REEL_KINDS at its execution
+     time. */
+  ${emitGridHelpersRuntime(model)}
 
-  function makeCell(text, extraClass = "") {
-    const el = document.createElement("div");
-    el.className = "cell" + (extraClass ? " " + extraClass : "");
-    el.textContent = text || "?";
-    return el;
-  }
-
-  /* Compute the side length so a (cols x rowsCount) grid of square cells
-     with the given gap between them fits inside frame inner box. The grid is
-     centered automatically by .gridHost flex layout. */
-  function cellSize(cols, rowsCount, gap = 6) {
-    /* frame already has padding=var(--frame-inset); use clientWidth/Height
-       which exclude padding. */
-    const innerW = grid.clientWidth || frame.clientWidth;
-    const innerH = grid.clientHeight || frame.clientHeight;
-    const cellW = (innerW - gap * Math.max(0, cols - 1)) / cols;
-    const cellH = (innerH - gap * Math.max(0, rowsCount - 1)) / rowsCount;
-    return Math.max(20, Math.floor(Math.min(cellW, cellH)));
-  }
-
-  /* Track per-reel strips for the spin engine. Populated for every
-     uniform-column-grid shape kind so the rectangular reel engine
-     (windup → accel → steady → decel → cushion bounce) drives every
-     reel-like shape identically.
-
-     UNIFORM_REEL_KINDS lists shapes that share a flat REELS×ROWS column
-     layout — all of them now build the same RECT_REELS array of reelCol
-     strips. Cluster's 7×7 looks like 7 stacked-symbol columns spinning,
-     same beat as rectangular's 5×3 — just larger. */
-  const UNIFORM_REEL_KINDS = new Set([
-    'rectangular',
-    'cluster',
-    'megaclusters',
-    'lock_respin',
-    'expanding',
-    'infinity',
-    /* Wave J1 — variable_reel (per-reel row counts, e.g. 6×[2,5,7,7,5,2]).
-       Shares the rectangular spin engine but each column has its own
-       visibleRows and is center-aligned in the grid host. */
-    'variable_reel',
-    /* Wave J2 — diamond / pyramid: irregular silhouettes that map cleanly
-       onto the uniform reel engine via per-column visibleRows. Diamond
-       center-aligns each column (rhombus); pyramid bottom-anchors (triangle).
-       cross / l_shape: rectangular silhouette with masked corner cells —
-       each column has the same visible row count as a full reel, but
-       individual cells inside the masked area render as transparent
-       blanks (handled in renderRect post-build pass). */
-    'diamond',
-    'pyramid',
-    'cross',
-    'l_shape',
-  ]);
   ${emitReelEngineRuntime(resolveReelEngineHotConfig(model))}
 
-
-  function renderRect() {
-    const host = document.createElement("div");
-    host.className = "grid-rect";
-    const side = cellSize(REELS, ROWS);
-    host.style.gridTemplateColumns = "repeat(" + REELS + ", " + side + "px)";
-    host.style.gridTemplateRows = side + "px";  // single row of reel columns
-
-    if (UNIFORM_REEL_KINDS.has(SHAPE.kind)) {
-      const extraClass = (SHAPE.kind === 'lock_respin') ? 'lockable' : '';
-      /* Per-reel visibleRows array (variable_reel / diamond / pyramid use
-         this; uniform kinds pass a scalar). For cross / l_shape we keep
-         visibleRows uniform (=ROWS) and rely on mask metadata after build
-         to dim disabled cells — the engine still spins every column. */
-      let perReelRows = ROWS;
-      /* Anchor: 'center' default (variable_reel / diamond hourglass).
-         'bottom' for pyramid (triangle anchored to bottom of the host). */
-      let anchor = 'center';
-      const PER_COLUMN_KINDS = new Set(['variable_reel', 'diamond', 'pyramid']);
-      const SHAPED_HOST_KINDS = new Set(['variable_reel', 'diamond', 'pyramid', 'cross', 'l_shape']);
-      if (PER_COLUMN_KINDS.has(SHAPE.kind) && Array.isArray(SHAPE.columns)) {
-        perReelRows = SHAPE.columns.map(c => c.rows || ROWS);
-        if (SHAPE.kind === 'pyramid') anchor = 'bottom';
-      }
-      if (SHAPED_HOST_KINDS.has(SHAPE.kind)) {
-        /* Shape-driven hosts need the grid to render as ROWS-tall stacked
-           rows so the (center/bottom) anchored columns have somewhere to
-           anchor. */
-        host.style.gridTemplateRows = "repeat(" + ROWS + ", " + side + "px)";
-      }
-      buildReelColumns(host, REELS, perReelRows, side, extraClass, anchor);
-      /* cross / l_shape: dim cells that the GDD shape mask marks as blank
-         (corner cuts). Engine still spins every column, just visual mask. */
-      if (SHAPE.kind === 'cross' || SHAPE.kind === 'l_shape') {
-        for (let c = 0; c < REELS; c++) {
-          const colMask = SHAPE.columns[c] && SHAPE.columns[c].mask;
-          if (!colMask) continue;
-          const reel = RECT_REELS[c];
-          if (!reel) continue;
-          for (let r = 0; r < ROWS; r++) {
-            if (colMask[r]) continue;
-            /* Strip cells are indexed 0..stripBufferCells+visibleRows-1.
-               The visible window is cells[1..visibleRows]. Mark cells in
-               the blank rows as cell--masked so CSS can hide them. */
-            const cell = reel.cells[1 + r];
-            if (cell) cell.classList.add('cell--masked');
-          }
-        }
-      }
-      if (SHAPE.kind === "expanding" || SHAPE.kind === "infinity") {
-        const tag = document.createElement("div");
-        tag.className = "grow-tag";
-        tag.textContent = SHAPE.kind === "infinity" ? "∞ horizontal" : "expand vertical";
-        frame.appendChild(tag);
-      }
-      grid.appendChild(host);
-      return;
-    }
-
-    /* Irregular shapes (hex / diamond / pyramid / cross / l_shape) — they
-       don't share the rectangular column layout, so they keep the legacy
-       static-cell render. runOneBaseSpin dispatches to runStaticReroll for
-       these. (variable_reel used to live here but Wave J1 moved it onto
-       the uniform reel engine with per-column visibleRows.) */
-    host.style.gridTemplateRows = "repeat(" + ROWS + ", " + side + "px)";
-    let idx = 0;
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < REELS; c++) {
-        host.appendChild(makeCell(symAt(idx), ""));
-        idx++;
-      }
-    }
-    grid.appendChild(host);
-  }
-
-  /* ─── Reel spin engine (rectangular only) ──────────────────────────────
-     Mirrors the reference base game onTick + reel cell rotation. Symbols
-     are ALWAYS visible during spin because we rotate cells in the strip
-     rather than translating beyond the visible window:
-
-        every frame: offsetPx += speedPxPerFrame
-        when offsetPx >= cellStep:
-          • offsetPx -= cellStep
-          • pop bottom cell, unshift to top, randomize the top cell symbol
-          • re-render strip with cells at indexes [0..n-1]
-          • rotation count++
-        strip.transform.y = round(offsetPx - cellStep)
-          (oscillates between -cellStep and 0, exposing the next cell as
-           the top one slides off-mask above)
-
-     On stop request:
-        • spin keeps rotating until rotationCount >= minRotations AND
-          enough time has passed for this reel's stop-delay (stagger)
-        • transition to "stopping" — strip eases towards targetY with
-          a soft cushion bounce on land (6px overshoot, ~2 bounces)
-        • final visible 3 cells are the new outcome
-
-     Timing constants mirror SPIN_PROFILE_NORMAL — industry baseline cabinet cadence. */
-  /* Industry-reference cadence (S-AVP / classic 5-reel cabinet timing).
-     Each reel: windup → accel → steady spin → DECEL (perceivable slow-
-     down before the snap) → snap onto symbols → subtle cushion bounce.
-     Reels stop one-by-one with a 320ms gap = classic cabinet beat
-     (slightly longer than mobile-arcade quickplay).
-     Land timing from SPIN click:
-       reel 1 :  ~1.40s   (windup 100 + accel 120 + steady 830 + decel 350)
-       reel 2 :  ~1.72s
-       reel 3 :  ~2.04s
-       reel 4 :  ~2.36s
-       reel 5 :  ~2.68s
-     Total spin ~2.7s — matches the reference base-game cadence. */
+  /* Reel spin engine cadence + anticipation — see src/blocks/reelEngine.mjs
+     + src/blocks/spinTempo.mjs + src/blocks/anticipation.mjs JSDoc for the
+     per-reel timing budget and rotation algorithm. */
   ${emitSpinTempoRuntime(resolveSpinTempoConfig(model))}
 
   ${emitAnticipationRuntime(resolveAnticipationConfig(model))}
 
-
-  /* onSettled (optional) fires once when every reel has fully stopped and
-     bounced. Used by the FS auto-spin loop to chain spins back-to-back, and
-     by the post-spin scatter-detection hook to evaluate FS triggers. */
-
-
-  /* ─── User-driven spin entry (player click on the SPIN button) ─────────
-     During FS_ACTIVE the spin loop is driven by the FSM, not by the player,
-     so we ignore clicks. During FS_INTRO / FS_OUTRO the placard CTA owns
-     the input, so we ignore clicks as well. */
+  /* User-driven SPIN button click. During FS_* phases the FSM / placard CTA
+     owns the input. Wave V3 — spinControl morphs the button between SPIN /
+     STOP_PRE / STOP_POST / SKIP_*; this handler only fires a fresh spin
+     when data-state is SPIN (otherwise spinControl emits its own intent). */
   const spinButton = document.getElementById("spinBtn");
   if (spinButton) {
     spinButton.addEventListener("click", () => {
       if (FSM.phase !== "BASE") return;
-      /* Wave V3 — spinControl morphs the button between SPIN / STOP_PRE /
-         STOP_POST / SKIP_* and emits its OWN intent events (onSlamRequested,
-         onSkipRequested). The legacy handler may only start a fresh spin
-         when the button is actually in SPIN state. Otherwise click is a
-         slam / skip intent and must NOT also kick a new spin (double-fire
-         bug). */
       const dataState = spinButton.getAttribute("data-state");
       if (dataState && dataState !== "SPIN") return;
       runOneBaseSpin();
     });
   }
 
-
-  /* ─── Static-grid reroll path (every non-rectangular kind) ───────────────
-     The base-game template doesn't ship a per-kind spin animation for hex /
-     wheel / cluster / plinko / etc. — those just blink to a fresh random
-     symbol set with a quick fade. Good enough for the FS visual flow (the
-     real per-kind spin animations land in the per-kind engine packages). */
-
   ${emitTriggerCountingRuntime(resolveTriggerCountingConfig(model))}
 
-  /* ── Placeholder win-combo highlight ─────────────────────────────────────
-     No math yet, so we fake the "winning combination" by picking the most-
-     frequent non-scatter symbol on the grid (must occur ≥ 3 times) and
-     marking those cells .is-win while the parent .grid carries
-     .has-winselection (which dims every other cell via CSS). About one
-     spin in three is a "loss" with no highlight at all, so the player gets
-     visual variance instead of every spin lighting up. Cleared at the start
-     of every new spin and at FS phase boundaries. */
+  /* Placeholder win-highlight clear — pure DOM strip-down of .is-win /
+     .cell--winsym + .has-winselection grid flag + payline overlay reset.
+     Called at the start of every new spin and at FS phase boundaries. */
   function clearWinHighlight() {
     grid.classList.remove("has-winselection");
     grid.classList.remove("is-winsym-cycling");
     grid.querySelectorAll(".cell.is-win, text.is-win").forEach(c => c.classList.remove("is-win"));
     grid.querySelectorAll(".cell--winsym, text.cell--winsym").forEach(c => c.classList.remove("cell--winsym"));
-    /* Drop any leftover payline SVG so the next spin's neutral state
-       reads clean (no ghost line bleeding into the windup frame). */
     if (typeof clearPaylineOverlay === 'function') clearPaylineOverlay();
   }
-  /* Detect candidate win combos on the settled grid. Placeholder math:
-     every non-scatter symbol with count >= 3 becomes one combo. Sorted
-     by count desc and capped to MAX_COMBOS so the cycle stays inside a
-     few seconds (no math layer yet — when real evaluator lands this
-     function is the swap point). */
-  /* ── detectWinCombos — per-symbol event generation ─────────────────────
-     Ultimate behaviour (Boki rule): every HP/MP/LP symbol with >= 3
-     visible hits becomes its OWN event in the cycle. Wild substitutes —
-     wild cells join EVERY regular event's cell list (lit alongside the
-     real symbol). Scatter NEVER participates (trigger-only).
-
-     Returns array of events:
-       [{ symbol, tier: 'HP'|'MP'|'LP', cells: [...] }, ...]
-     Sorted: HP first, then MP, then LP. Hard cap on event count so the
-     cycle never blows the per-spin time budget (industry parity:
-     small-win cycles cap the line bouquet around 6-8 entries). */
+  /* detectWinCombos / paylineOverlay / winPresentation runtime — see the
+     corresponding blocks under src/blocks/ for the algorithmic contract
+     (per-symbol HP/MP/LP event generation, wild substitution, scatter
+     exclusion, MAX_COMBOS cap). */
   ${emitDetectWinCombosRuntime(resolveWinPresentationConfig(model))}
   ${emitPaylineOverlayRuntime()}
   ${emitWinPresentationRuntime(resolveWinPresentationConfig(model))}
@@ -953,420 +770,30 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
   ${emitStageBadgeRuntime(resolveStageBadgeConfig(model))}
   ${emitFreeSpinsRuntime(resolveFreeSpinsConfig(model))}
 
-  /* Expose FREESPINS / SHAPE / RECT_REELS / payline + win probes on window
-     for the QA harness (Playwright eval). FSM is already exposed by the
-     freeSpins block. */
-  if (typeof window !== "undefined") {
-    window.FREESPINS = FREESPINS;
-    window.SHAPE = SHAPE;
-    /* Wave T5 — without these two, every block that does
-       \`window.REELS || 5\` / \`window.ROWS || 3\` was falling through
-       to default 5×3, so feature blocks placed coordinates on a phantom
-       grid (e.g. walkingWild registry rows beyond actual ROWS). Expose
-       the live SHAPE dimensions so blocks always read the truth. */
-    window.REELS = SHAPE.reels;
-    window.ROWS  = SHAPE.rows;
-    Object.defineProperty(window, 'RECT_REELS', {
-      configurable: true,
-      get: () => RECT_REELS,
-    });
-    window.PAYLINE_POOL = PAYLINE_POOL;
-    window.SYMBOL_REGISTRY = SYMBOL_REGISTRY;
-    window.applyWinHighlight = applyWinHighlight;
-    window.detectLineWins = detectLineWins;
-    window.drawPaylineOverlay = drawPaylineOverlay;
-  }
+  /* Wave T-slim Phase 2 — extracted window.* exposure surface (was inline
+     ~22 LOC). Now in src/runtime/globalsContract.mjs. */
+  ${emitGlobalsContractRuntime()}
 
-  /* Dev-only FS trigger — runs a real spin with the scatter outcome forced
-     so the player sees the FULL trigger sequence: reels rotate, scatters
-     land one by one with anticipation slowdown on the trigger reel, brief
-     settle pause, THEN the cinematic intro placard fades in. This mirrors
-     what an organic feature hit looks like — exactly the "you spun into a
-     bonus" moment a player remembers.
+  /* Wave T-slim Phase 2 — extracted three QA / dev force-button handlers
+     (~144 LOC was inline). Now in src/runtime/devForceButtons.mjs. The
+     emit MUST come after globalsContract so window.BIG_WIN_TIER_STATE is
+     already wired, after spinButton lookup, after HookBus runtime, and
+     after FREESPINS / FSM / FORCE_TRIGGER are in scope. */
+  ${emitDevForceButtonsRuntime(model)}
 
-     Implementation: sets FORCE_TRIGGER flag, kicks runOneBaseSpin(), which
-     uses the normal spin engine + handlePostSpin. The scatter detection in
-     handlePostSpin sees the planted scatters and naturally fires intro. */
-  if (devFsBtn) {
-    devFsBtn.disabled = !FREESPINS.enabled;
-    devFsBtn.addEventListener("click", () => {
-      if (FSM.phase !== "BASE" || !FREESPINS.enabled) return;
-      const first = (FREESPINS.awards && FREESPINS.awards[0]) || { count: 3, spins: 10 };
-      /* Disable both buttons immediately so a stray double-tap can't queue
-         a second spin behind this one. They get re-enabled on FSM_enterBase
-         (or by handlePostSpin if FS doesn't trigger for some reason). */
-      devFsBtn.disabled = true;
-      if (spinButton) spinButton.disabled = true;
-      FORCE_TRIGGER = { scatterCount: first.count };
-      runOneBaseSpin();
-    });
-  }
-
-  /* Wave H5 — dev-only Big-Win force button. Per rule_force_buttons_real_spin
-     (Boki 05.06.2026): force buttons MUST spin the reels, not shortcut into
-     a synthetic banner. So this click cycles tier 1..5, sets a one-shot
-     window.__FORCE_BIG_WIN_TIER__ flag, and kicks runOneBaseSpin(). The
-     winPresentation block reads the flag and synthesises a pay event with
-     payX big enough to cross that tier's GDD threshold; the normal cycle
-     (rollup → onWinPresentationEnd → bigWinTier banner) then fires
-     organically. Disabled when bigWinTier isn't enabled in the parsed model. */
-  var devBwBtn = document.getElementById("devBwBtn");
-  if (devBwBtn) {
-    var bwEnabled = !!(window.BIG_WIN_TIER_STATE && window.BIG_WIN_TIER_STATE.enabled);
-    devBwBtn.disabled = !bwEnabled;
-    /* Boki rule (05.06.2026): "forc treba da pusti ceo big win sa svim
-       tirovima i big win end eventom". Always force the max tier so the
-       block plays the full compound walkthrough tier 1 → … → final +
-       emits onBigWinTierEnd. (The block's COMPOUND flag is true by
-       default, matching the WoO reference §6.4 "each tier compounds".) */
-    devBwBtn.addEventListener("click", function () {
-      if (!bwEnabled) return;
-      if (FSM.phase !== "BASE") return;
-      var maxTier = (window.BIG_WIN_TIER_STATE && Array.isArray(window.BIG_WIN_TIER_STATE.thresholds))
-        ? window.BIG_WIN_TIER_STATE.thresholds.length : 5;
-      devBwBtn.disabled = true;
-      if (spinButton) spinButton.disabled = true;
-      window.__FORCE_BIG_WIN_TIER__ = maxTier;
-      runOneBaseSpin();
-      /* Re-enable on onBigWinTierEnd (the WHOLE sequence completed,
-         natural or skipped) so the next QA force-spin starts clean. */
-      var reEnable = function () { if (devBwBtn) devBwBtn.disabled = !bwEnabled; };
-      var oneShot = function () {
-        if (window.HookBus && typeof window.HookBus.off === 'function') window.HookBus.off('onBigWinTierEnd', oneShot);
-        reEnable();
-      };
-      if (window.HookBus && typeof window.HookBus.on === 'function') window.HookBus.on('onBigWinTierEnd', oneShot);
-      setTimeout(reEnable, 30000);
-    });
-  }
-
-  /* Wave I.2 — dev-only Multiplier force button. Boki rule 05.06.2026:
-   * "ako ima neka igra neki multiplier, onda da postoji dugme za taj
-   *  force". Sets HookBus.setMult(value) before kicking runOneBaseSpin();
-   * winPresentation _applyMultToEvents multiplies payX so the next spin's
-   * win flows through the multiplier chain. The button is enabled only if
-   * one of the multiplier-style feature blocks (multiplierOrb /
-   * persistentMultiplier / lightning / progressiveFreeSpins) is wired in
-   * the GDD. Click cycles 2× → 5× → 10× → 25× → 50× → 100× → 1× (reset). */
-  var devMultBtn = document.getElementById("devMultBtn");
-  if (devMultBtn) {
-    var MULT_CYCLE = [2, 5, 10, 25, 50, 100, 1];
-    var multIdx = 0;
-    /* Baked at build time from the parsed GDD's feature list. The button
-     * shows / functions only when the game declares some multiplier-style
-     * feature (multiplier, multiplier_orb, persistent_multiplier,
-     * lightning, progressive_free_spins). */
-    var HAS_MULT_FEATURE = ${JSON.stringify((function (m) {
-      const feats = Array.isArray(m.features) ? m.features : [];
-      const re = /^(multiplier|multiplier[_-]?orb|persistent[_-]?multiplier|lightning|progressive[_-]?free[_-]?spins)$/i;
-      return feats.some(f => f && typeof f.kind === 'string' && re.test(f.kind));
-    })(model))};
-    function _multFeatureLive() { return HAS_MULT_FEATURE; }
-    var multLive = _multFeatureLive();
-    devMultBtn.disabled = !multLive;
-    if (multLive) devMultBtn.textContent = "×" + MULT_CYCLE[multIdx];
-    devMultBtn.addEventListener("click", function () {
-      if (!_multFeatureLive()) return;
-      if (FSM.phase !== "BASE") return;
-      var val = MULT_CYCLE[multIdx];
-      multIdx = (multIdx + 1) % MULT_CYCLE.length;
-      devMultBtn.textContent = "×" + MULT_CYCLE[multIdx];
-      /* Set the multiplier BEFORE kicking the spin so applyWinHighlight
-       * sees it on the first detector pass. HookBus.setMult is the single
-       * source of truth — winPresentation reads HookBus.getMult(). */
-      if (window.HookBus && typeof window.HookBus.setMult === 'function') {
-        window.HookBus.setMult(val);
-      }
-      devMultBtn.disabled = true;
-      if (spinButton) spinButton.disabled = true;
-      runOneBaseSpin();
-      /* Re-enable on postSpin so the next force is available. Safety
-       * floor 8 s in case postSpin is suppressed by a follow-on feature
-       * trigger (FS intro, big-win). */
-      var reEnableMult = function () { if (devMultBtn) devMultBtn.disabled = !_multFeatureLive(); };
-      var oneShotPS = function () {
-        if (window.HookBus && typeof window.HookBus.off === 'function') window.HookBus.off('postSpin', oneShotPS);
-        reEnableMult();
-      };
-      if (window.HookBus && typeof window.HookBus.on === 'function') window.HookBus.on('postSpin', oneShotPS);
-      setTimeout(reEnableMult, 8000);
-    });
-  }
-
-  function renderVariableReel() {
-    const host = document.createElement("div");
-    host.className = "grid-vrl";
-    const maxRows = Math.max(...SHAPE.columns.map(c => c.rows));
-    const side = cellSize(SHAPE.columns.length, maxRows);
-    let idx = 0;
-    for (let c = 0; c < SHAPE.columns.length; c++) {
-      const colEl = document.createElement("div");
-      colEl.className = "col";
-      const colRows = SHAPE.columns[c].rows;
-      for (let r = 0; r < colRows; r++) {
-        const cell = makeCell(symAt(idx));
-        cell.style.width = side + "px";
-        cell.style.height = side + "px";
-        colEl.appendChild(cell);
-        idx++;
-      }
-      host.appendChild(colEl);
-    }
-    grid.appendChild(host);
-  }
-
-  function renderMaskedRect() {
-    const host = document.createElement("div");
-    host.className = "grid-rect";
-    const side = cellSize(REELS, ROWS);
-    host.style.gridTemplateColumns = "repeat(" + REELS + ", " + side + "px)";
-    host.style.gridTemplateRows = "repeat(" + ROWS + ", " + side + "px)";
-    let idx = 0;
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < REELS; c++) {
-        const colMask = SHAPE.columns[c] && SHAPE.columns[c].mask;
-        const enabled = colMask ? colMask[r] : true;
-        if (enabled) {
-          host.appendChild(makeCell(symAt(idx)));
-          idx++;
-        } else {
-          const blank = document.createElement("div");
-          blank.style.cssText = "width:" + side + "px;height:" + side + "px;opacity:0.02";
-          host.appendChild(blank);
-        }
-      }
-    }
-    grid.appendChild(host);
-  }
-
-  function renderHex() {
-    const host = document.createElement("div");
-    host.className = "grid-hex";
-    const ring = Math.floor((SHAPE.columns.length - 1) / 2);
-    /* tile size derived from frame dimensions */
-    const innerW = grid.clientWidth || frame.clientWidth;
-    const innerH = grid.clientHeight || frame.clientHeight;
-    const dim = ring * 2 + 1;
-    const size = Math.min(innerW / (dim * 1.05), innerH / (dim * 0.9));
-    const w = size, h = size * 0.85;
-    host.style.width  = (dim * w * 1.05 + 20) + "px";
-    host.style.height = (dim * h + 20) + "px";
-    SHAPE.cells.forEach((c, i) => {
-      const q = c.hex ? c.hex.q : 0;
-      const r = c.hex ? c.hex.r : 0;
-      const x = (q + ring) * w * 1.0 + (r % 2 ? w * 0.5 : 0) + 10;
-      const y = (r + ring) * h + 10;
-      const el = makeCell(symAt(i), "hex");
-      el.style.left = x + "px";
-      el.style.top = y + "px";
-      el.style.width = w + "px";
-      el.style.height = (h * 1.15) + "px";
-      host.appendChild(el);
-    });
-    grid.appendChild(host);
-  }
-
-  function renderWheel() {
-    const host = document.createElement("div");
-    host.className = "grid-wheel";
-    const segments = SHAPE.cells.length;
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("class", "wheel-svg");
-    svg.setAttribute("viewBox", "-100 -100 200 200");
-    for (let i = 0; i < segments; i++) {
-      const a0 = (i / segments) * 2 * Math.PI - Math.PI / 2;
-      const a1 = ((i + 1) / segments) * 2 * Math.PI - Math.PI / 2;
-      const x0 = Math.cos(a0) * 92, y0 = Math.sin(a0) * 92;
-      const x1 = Math.cos(a1) * 92, y1 = Math.sin(a1) * 92;
-      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      path.setAttribute("d", "M 0 0 L " + x0.toFixed(2) + " " + y0.toFixed(2) + " A 92 92 0 0 1 " + x1.toFixed(2) + " " + y1.toFixed(2) + " Z");
-      path.setAttribute("fill", i % 2 ? "#1a2230" : "#0f1620");
-      path.setAttribute("stroke", "${accent}");
-      path.setAttribute("stroke-width", "0.5");
-      svg.appendChild(path);
-      const mid = (a0 + a1) / 2;
-      const tx = Math.cos(mid) * 62, ty = Math.sin(mid) * 62;
-      const tEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      tEl.setAttribute("x", tx.toFixed(2)); tEl.setAttribute("y", ty.toFixed(2));
-      tEl.setAttribute("text-anchor", "middle"); tEl.setAttribute("dominant-baseline", "middle");
-      tEl.setAttribute("fill", "${accent}");
-      tEl.setAttribute("font-size", "8");
-      tEl.setAttribute("font-weight", "700");
-      tEl.textContent = String(symAt(i) || (i + 1));
-      svg.appendChild(tEl);
-    }
-    host.appendChild(svg);
-    grid.appendChild(host);
-  }
-
-  function renderPlinko() {
-    const host = document.createElement("div");
-    host.className = "grid-plinko";
-    let idx = 0;
-    for (let r = 0; r < SHAPE.columns.length; r++) {
-      const rowEl = document.createElement("div");
-      rowEl.className = "plinko-row";
-      const pegCount = SHAPE.columns[r].rows;
-      for (let c = 0; c < pegCount; c++) {
-        const peg = document.createElement("div");
-        peg.className = "peg";
-        rowEl.appendChild(peg);
-        idx++;
-      }
-      host.appendChild(rowEl);
-    }
-    grid.appendChild(host);
-  }
-
-  function renderCrash() {
-    const host = document.createElement("div");
-    host.className = "grid-crash";
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("class", "crash-curve");
-    svg.setAttribute("viewBox", "0 0 320 180");
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    let d = "M 0 180";
-    for (let x = 0; x <= 320; x += 6) {
-      const y = 180 - Math.pow(x / 320, 2) * 160 * 0.85;
-      d += " L " + x + " " + y.toFixed(1);
-    }
-    path.setAttribute("d", d);
-    path.setAttribute("stroke", "${accent}");
-    path.setAttribute("stroke-width", "3");
-    path.setAttribute("fill", "none");
-    svg.appendChild(path);
-    const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    txt.setAttribute("x", "240"); txt.setAttribute("y", "40");
-    txt.setAttribute("fill", "${accent}");
-    txt.setAttribute("font-size", "24"); txt.setAttribute("font-weight", "800");
-    txt.textContent = "1.00x";
-    svg.appendChild(txt);
-    host.appendChild(svg);
-    grid.appendChild(host);
-  }
-
-  function renderSlingo() {
-    const host = document.createElement("div");
-    host.className = "grid-slingo";
-    const innerH = grid.clientHeight || frame.clientHeight;
-    /* board takes 5 rows, strip is 1 row; reserve 6 row-units total with gap */
-    const totalRows = 6 + 0.4; /* small visual separator */
-    const side = (innerH - 12 - 6 * 5) / totalRows;
-    const board = document.createElement("div");
-    board.className = "grid-rect";
-    board.style.gridTemplateColumns = "repeat(5, " + side + "px)";
-    board.style.gridTemplateRows = "repeat(5, " + side + "px)";
-    for (let i = 0; i < 25; i++) board.appendChild(makeCell(symAt(i)));
-    host.appendChild(board);
-    const strip = document.createElement("div");
-    strip.className = "grid-rect";
-    strip.style.gridTemplateColumns = "repeat(5, " + side + "px)";
-    strip.style.gridTemplateRows = side + "px";
-    /* Spacing only — visual separator removed for the flat look. */
-    strip.style.marginTop = "12px";
-    for (let i = 25; i < 30; i++) strip.appendChild(makeCell(symAt(i)));
-    host.appendChild(strip);
-    grid.appendChild(host);
-  }
-
-  function renderDual() {
-    const wrap = document.createElement("div");
-    wrap.style.cssText = "display:flex;gap:20px;align-items:center;width:100%;height:100%;justify-content:center";
-    const sgRowsB = (SHAPE.subgrids && SHAPE.subgrids[0]) ? SHAPE.subgrids[0].rows : ROWS;
-    const sgReelsB = (SHAPE.subgrids && SHAPE.subgrids[0]) ? SHAPE.subgrids[0].reels : REELS;
-    const innerW = (grid.clientWidth || frame.clientWidth) - 30;
-    const innerH = grid.clientHeight || frame.clientHeight;
-    const gap = 4;
-    /* Compute each side's max cell so it fits entirely in the available
-       half-width AND the full inner height. Subgrid B has more rows so its
-       cell will be smaller — this is desired for Colossal asymmetric dual. */
-    const halfW = innerW / 2;
-    const sideA = Math.min(
-      (halfW - gap * (REELS - 1)) / REELS,
-      (innerH - gap * (ROWS - 1)) / ROWS,
-    );
-    const sideB = Math.min(
-      (halfW - gap * (sgReelsB - 1)) / sgReelsB,
-      (innerH - gap * (sgRowsB - 1)) / sgRowsB,
-    );
-    /* primary */
-    const a = document.createElement("div");
-    a.className = "grid-rect";
-    a.style.gridTemplateColumns = "repeat(" + REELS + ", " + sideA + "px)";
-    a.style.gridTemplateRows = "repeat(" + ROWS + ", " + sideA + "px)";
-    a.style.gap = gap + "px";
-    const primCells = SHAPE.totalCells || REELS * ROWS;
-    for (let i = 0; i < primCells; i++) {
-      const el = makeCell(symAt(i));
-      el.style.fontSize = (sideA * 0.32) + "px";
-      a.appendChild(el);
-    }
-    wrap.appendChild(a);
-    if (SHAPE.subgrids && SHAPE.subgrids[0]) {
-      const sg = SHAPE.subgrids[0];
-      const b = document.createElement("div");
-      b.className = "grid-rect";
-      b.style.gridTemplateColumns = "repeat(" + sg.reels + ", " + sideB + "px)";
-      b.style.gridTemplateRows = "repeat(" + sg.rows + ", " + sideB + "px)";
-      b.style.gap = gap + "px";
-      for (let i = 0; i < sg.totalCells; i++) {
-        const el = makeCell(symAt(primCells + i));
-        el.style.fontSize = Math.max(8, sideB * 0.32) + "px";
-        b.appendChild(el);
-      }
-      wrap.appendChild(b);
-    }
-    grid.appendChild(wrap);
-  }
-
-  /* Dispatch */
-  function renderGrid() {
-    grid.innerHTML = "";
-    /* Re-attach the payline SVG overlay after every render — innerHTML
-       wipe blows away the static node from initial HTML. Idempotent. */
-    ensurePaylineOverlay();
-    switch (SHAPE.kind) {
-      case "rectangular":
-      case "cluster":
-      case "lock_respin":
-      case "megaclusters":
-      case "infinity":
-      case "expanding":
-      /* Wave J1: variable_reel now uses the rectangular reel engine via
-         per-reel visibleRows in buildReelColumns (handled inside renderRect
-         when SHAPE.kind === 'variable_reel'). */
-      case "variable_reel":
-      /* Wave J2 — diamond / pyramid / cross / l_shape join the rectangular
-         reel engine via per-column visibleRows (diamond/pyramid) or via
-         masked-cell post-build pass (cross / l_shape). */
-      case "diamond":
-      case "pyramid":
-      case "cross":
-      case "l_shape":
-        return renderRect();
-      case "hexagonal":
-        return renderHex();
-      case "radial":
-      case "wheel":
-        return renderWheel();
-      case "plinko":
-        return renderPlinko();
-      case "crash":
-        return renderCrash();
-      case "slingo":
-        return renderSlingo();
-      case "dual":
-        return renderDual();
-      default:
-        return renderRect();
-    }
-  }
-
-  /* Initial render + responsive on resize */
-  function fit() { renderGrid(); }
-  window.addEventListener("resize", fit);
-  /* run after first layout pass so .frame has measured dimensions */
-  requestAnimationFrame(fit);
+  /* Wave T-slim Phase 2 — extracted ~280 LOC of inline renderRect /
+     renderVariableReel / renderMaskedRect / renderHex / renderWheel /
+     renderPlinko / renderCrash / renderSlingo / renderDual / renderGrid
+     dispatcher / fit + resize listener. Lives in
+     src/runtime/gridRenderer.mjs#emitGridDispatchRuntime. Emitted at this
+     point so all referenced helpers are already in scope:
+       • buildReelColumns / RECT_REELS (from emitReelEngineRuntime)
+       • ensurePaylineOverlay (from emitPaylineOverlayRuntime)
+       • symAt / makeCell / cellSize / UNIFORM_REEL_KINDS
+         (from emitGridHelpersRuntime above, pre-engine)
+       • POOL / SHAPE / REELS / ROWS (top-of-script constants)
+       • grid / frame (DOM refs from top of script). */
+  ${emitGridDispatchRuntime(model)}
 </script>
 </body></html>`;
 }

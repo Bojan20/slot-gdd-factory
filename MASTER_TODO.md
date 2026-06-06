@@ -3568,7 +3568,7 @@ Without V5, the template is a "look-at-me" slot — animations play out at their
 > green. Listener coverage 14 → 25 blocks. Hook coverage 7/7 lifecycle events
 > verified via cortex-eyes-wave-s.mjs + cortex-eyes-wave-s-fs.mjs.
 
-### 🟠 Wave T — Template cleanup + sane defaults (posle S)
+### ✅ Wave T — Template cleanup + sane defaults — SHIPPED (T-slim Phase 2 closes the wave)
 
 > Pravilo kaže: **nikad game-specific code u src/blocks/**. Audit 04.06.2026
 > našao 11 fajlova sa game-specific reference. Plus blok default-i u 3 bloka
@@ -3588,8 +3588,8 @@ Without V5, the template is a "look-at-me" slot — animations play out at their
 | T-bonus | **`bonusBuy.mjs` default 100x → median 75×** | template ne sme defaultovati na konkretnu igru | ✅ **DONE** `7350c1b` — `costX: 75` (industry median 50-100×). |
 | T-ante | **`anteBet.mjs` default 25%** — odluka da li menjati | isti razlog | ✅ **WON'T-FIX** `7350c1b` — 1.25 jeste verified industry-modal baseline (modalna vrednost u vendor landscape-u), ostaje + bolji komentar. |
 | T-engine | **`reelEngine.mjs` globals refactor** | ne može isto da se testira kao drugi blokovi | ✅ **DONE** kroz Wave R/S engine-tier conformance. 0 `window.ROWS/REELS` matches. |
-| T-slim | **`buildSlotHTML.mjs` slim down** — target < 800 LOC | sve runtime logiku raseliti u blokove | 🟢 **PHASE 1 DONE** `3727b3c` — 1565 → 1041 LOC (post-review **1052** zbog 11 LOC import + emit wire-up za Wave U4 autoplay). 534 LOC migrirano u `themeCSS.mjs` (chrome + grid shapes + dev tools) + `paylineOverlay.mjs` (+ CSS) + `winPresentation.mjs` (+ CSS). Phase 2 (~252 LOC remaining) — script blok + remaining inline runtime helpers. |
-| T-verify | **Verifikacija**: vendor grep + `wc -l < 800` | dokaz čišćenja | 🟡 **PARTIAL** — vendor gate ✅ 0 matches (uključuje proširenu `playa-slot` blocklist od senior-grade QA pass-a); LOC gate ❌ 1052 (cilj < 800). Zatvara se kad T-slim phase 2 prođe. |
+| T-slim | **`buildSlotHTML.mjs` slim down** — target < 800 LOC | sve runtime logiku raseliti u blokove | ✅ **PHASE 2 DONE** (this commit) — 1372 → **799 LOC** (-573 LOC). Tri nova runtime modula u `src/runtime/`: `gridRenderer.mjs` (496 LOC, sve render*/symAt/makeCell/cellSize/UNIFORM_REEL_KINDS + dispatcher + fit/resize), `devForceButtons.mjs` (206 LOC, sve 3 force buttona — FS / BW / Mult), `globalsContract.mjs` (79 LOC, centralizovana `window.*` exposure). 53/53 novih runtime testova PASS. Phase 1 commit `3727b3c` migrirao 534 LOC u blokove; Phase 2 sad zatvara budžet. |
+| T-verify | **Verifikacija**: vendor grep + `wc -l < 800` | dokaz čišćenja | ✅ **DONE** (this commit) — vendor gate 0 matches, LOC gate **799 < 800** (cilj postignut). LEGO 5/5 PASS, npm test ✅ 20 fixtures, npm run test:blocks ✅, cortex-eyes-wave-s 3/3 PASS, npm run test:runtime 53/53 PASS. |
 | T-LCG | **(bonus, nije original plan)** — LEGO lifecycle gap fix u `postSpin.mjs` (trigger + retrigger flow skipped `onTumbleStep` emit) + cortex-eyes hardening (10/10 stability) | flaky QA gate | ✅ **SHIPPED** kroz `c9e7b42` (shipped Wave T3). |
 
 ### 🟢 Wave U+ — Feature ekspanzija (po jedan blok po wave)
