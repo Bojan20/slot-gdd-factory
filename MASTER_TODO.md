@@ -3686,7 +3686,7 @@ V4 (HookBus events) first — bez njih V1/V2 ne mogu da emit. Onda V1+V2 paralel
 | Z5 | **Live HookBus inspector** — log card sa replay + capped ring buffer | debug | ✅ shipped — `attachHookBus()` idempotent, slušа sve canonical events iz manifesta, prikazuje timestamp + JSON payload, cap 200 rows; "Re-attach" + "Clear log" + "Copy log" buttons. Empty-state hint kad nema `window.HookBus`. |
 | Z6 | **Persistence + Export GDD snippet** | save-load | ✅ shipped — `localStorage[slot.playground.v1]` snima filter + active block; restored on boot. Escape clears filter. 3 quick-action dugmeta: "Copy block JSON", "Copy defaultConfig", "Export GDD snippet" (Markdown + YAML fragment ready to paste). |
 | Z7+Z8 | **`tools/cortex-eyes-playground.mjs`** — Playwright headless verification | regression | ✅ shipped — **17/17 PASS** (page load + 0 console errors + manifest reach + welcome grid + sidebar count + hash routing + 7-card detail layout + 4+ buttons + live log mount + empty-state hint + Z6 persistence reload + filter narrow + clear restore + unknown hash safety). |
-| Z9 | README.md update | docs | ⏳ pending — povezaću playground URL + workflow u sledećem doc-only commit-u. |
+| Z9 | README.md update | docs | ✅ shipped — "Block Playground (Wave Z)" sekcija u README sa workflow-om: `gen-block-manifest.mjs` → `npm run serve` → `cortex-eyes-playground.mjs` 17/17 gate, hash routing + localStorage persistence napomena. |
 
 ---
 

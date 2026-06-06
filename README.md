@@ -25,6 +25,31 @@ open index.html
 
 Then drag-drop a sample GDD from `samples/`.
 
+## Block Playground (Wave Z)
+
+A storybook-style viewer for every LEGO block in `src/blocks/`. Lists 57
+blocks grouped by category (engine / wild / multiplier / fs /
+round-control / evaluator / feature / ui / audit) with searchable
+sidebar, per-block detail panel, `defaultConfig()` snapshot, lifecycle /
+emit / export chips, live HookBus event log (when running inside an
+active slot tab), and quick actions (Copy block JSON / Copy
+defaultConfig / Export GDD snippet).
+
+```bash
+# 1) regenerate the manifest after touching anything in src/blocks/*
+node tools/gen-block-manifest.mjs
+
+# 2) serve the static playground (any http server will do)
+npm run serve                # → http://localhost:5180/blocks/
+
+# 3) (optional) headless regression — 17/17 PASS gate
+node tools/cortex-eyes-playground.mjs
+```
+
+Hash-routed: deep-link any block via `#<name>` (e.g.
+`http://localhost:5180/blocks/#multiplierOrb`). Filter + active block
+persist across reload via `localStorage[slot.playground.v1]`.
+
 ## Why a separate repo
 
 `slot-math-engine-template` is the heavy CORTEX matični engine — Rust sim,
