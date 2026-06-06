@@ -52,7 +52,7 @@ const PRINT_ONLY = process.argv.includes('--print');
 
 /** Category buckets — keyword routing keeps the playground sidebar grouped. */
 const CATEGORY_RULES = [
-  { name: 'engine',        match: /(reelEngine|spinTempo|anticipation|postSpin|tumble|hookBus|themeCSS|reelEngineCSS)/i },
+  { name: 'engine',        match: /(reelEngine|spinTempo|anticipation|postSpin|tumble|hookBus|themeCSS|reelEngineCSS|hexReelEngine|wheelSpinEngine|crashSpinEngine|plinkoSpinEngine|slingoSpinEngine)/i },
   { name: 'wild',          match: /(wild|stickyWild|expandingWild|walkingWild|wildReel|mysterySymbol|superSymbol)/i },
   { name: 'multiplier',    match: /(multiplier|lightning|persistentMultiplier|pathAware|progressiveFreeSpins)/i },
   { name: 'fs',            match: /(freeSpins|scatterCelebration|stageBadge|triggerCounting)/i },

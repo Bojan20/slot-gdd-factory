@@ -503,13 +503,22 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
     if (UNIFORM_REEL_KINDS.has(SHAPE.kind) && RECT_REELS) {
       startSpinAll(() => handlePostSpin(false));
     } else if (SHAPE.kind === 'hexagonal' && typeof window.__SLOT_HEX_RUNSPIN__ === 'function') {
-      /* Wave J2b — hex topology has its own dedicated reel engine
-         (src/blocks/hexReelEngine.mjs) that owns per-axial-column spin
-         animation. Dispatcher hands control over; settle callback
-         routes through the standard handlePostSpin so all downstream
-         (winPresentation, scatterCelebration, FS trigger) work
-         identically to rectangular. */
+      /* Wave J2b — hex topology owns per-axial-column spin via the
+         dedicated hexReelEngine block. */
       window.__SLOT_HEX_RUNSPIN__(() => handlePostSpin(false));
+    } else if (
+      /* Wave J3 — SVG-kind registry. Each SVG topology
+         (wheel / radial / crash / slingo / plinko) registers an entry
+         in window.__SLOT_KIND_RUNSPIN__[kind]. Dispatcher hands the
+         spin off; settle still routes through handlePostSpin so all
+         downstream blocks (winPresentation, scatterCelebration, FS
+         trigger) compose identically with rectangular. Registry
+         pattern keeps the dispatcher closed for modification — new
+         topologies land as block-level additions. */
+      window.__SLOT_KIND_RUNSPIN__
+      && typeof window.__SLOT_KIND_RUNSPIN__[SHAPE.kind] === 'function'
+    ) {
+      window.__SLOT_KIND_RUNSPIN__[SHAPE.kind](() => handlePostSpin(false));
     } else {
       runStaticReroll(() => handlePostSpin(false));
     }

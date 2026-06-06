@@ -314,6 +314,26 @@ import {
   emitHexReelEngineCSS, emitHexReelEngineRuntime,
   resolveConfig as resolveHexReelEngineConfig,
 } from './blocks/hexReelEngine.mjs';
+/* Wave J3 — per-kind SVG spin engines. Each block self-disables when
+   its kind doesn't match; otherwise registers a function under
+   window.__SLOT_KIND_RUNSPIN__[kind] which the rectangular dispatcher
+   in reelEngine.runOneBaseSpin() routes through. */
+import {
+  emitWheelSpinEngineCSS, emitWheelSpinEngineRuntime,
+  resolveConfig as resolveWheelSpinEngineConfig,
+} from './blocks/wheelSpinEngine.mjs';
+import {
+  emitCrashSpinEngineCSS, emitCrashSpinEngineRuntime,
+  resolveConfig as resolveCrashSpinEngineConfig,
+} from './blocks/crashSpinEngine.mjs';
+import {
+  emitPlinkoSpinEngineCSS, emitPlinkoSpinEngineRuntime,
+  resolveConfig as resolvePlinkoSpinEngineConfig,
+} from './blocks/plinkoSpinEngine.mjs';
+import {
+  emitSlingoSpinEngineCSS, emitSlingoSpinEngineRuntime,
+  resolveConfig as resolveSlingoSpinEngineConfig,
+} from './blocks/slingoSpinEngine.mjs';
 /* Wave T-slim Phase 2 — extracted grid-render infrastructure (~700 LOC).
    Helpers (symAt / makeCell / cellSize / UNIFORM_REEL_KINDS) emit BEFORE
    the reel engine; per-kind render dispatcher emits AFTER engine + payline
@@ -402,6 +422,11 @@ ${emitGridShapesCSS()}
 ${emitReelEngineCSS(resolveReelEngineConfig(model))}
 ${/* Wave J2b — hex reel engine CSS (no-op when shape !== hexagonal). */ ''}
 ${emitHexReelEngineCSS(resolveHexReelEngineConfig(model))}
+${/* Wave J3 — per-kind SVG spin engine CSS (no-op when shape mismatches). */ ''}
+${emitWheelSpinEngineCSS(resolveWheelSpinEngineConfig(model))}
+${emitCrashSpinEngineCSS(resolveCrashSpinEngineConfig(model))}
+${emitPlinkoSpinEngineCSS(resolvePlinkoSpinEngineConfig(model))}
+${emitSlingoSpinEngineCSS(resolveSlingoSpinEngineConfig(model))}
 ${emitAnticipationCSS(resolveAnticipationConfig(model))}
 
 ${emitWinPresentationCSS(resolveWinPresentationConfig(model))}
@@ -648,6 +673,16 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
      defensively. Hex engine self-disables when shape !== 'hexagonal'
      so the cost on rectangular builds is one stub assignment. */
   ${emitHexReelEngineRuntime(resolveHexReelEngineConfig(model))}
+
+  /* Wave J3 — per-kind SVG spin engines. Each block self-disables
+     when its kind doesn't match SHAPE.kind and registers an entry
+     in window.__SLOT_KIND_RUNSPIN__ otherwise. Dispatcher in
+     reelEngine.runOneBaseSpin reads the registry. Order does not
+     matter between J3 blocks — each owns its own kind exclusively. */
+  ${emitWheelSpinEngineRuntime(resolveWheelSpinEngineConfig(model))}
+  ${emitCrashSpinEngineRuntime(resolveCrashSpinEngineConfig(model))}
+  ${emitPlinkoSpinEngineRuntime(resolvePlinkoSpinEngineConfig(model))}
+  ${emitSlingoSpinEngineRuntime(resolveSlingoSpinEngineConfig(model))}
 
   /* Reel spin engine cadence + anticipation — see src/blocks/reelEngine.mjs
      + src/blocks/spinTempo.mjs + src/blocks/anticipation.mjs JSDoc for the

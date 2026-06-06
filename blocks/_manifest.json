@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-06T02:27:43.002Z",
+  "generatedAt": "2026-06-06T03:37:54.099Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 58,
+  "totalBlocks": 62,
   "blocks": [
     {
       "name": "anteBet",
@@ -578,6 +578,31 @@
         "diagonal": false
       },
       "loc": 164
+    },
+    {
+      "name": "crashSpinEngine",
+      "file": "src/blocks/crashSpinEngine.mjs",
+      "testFile": "tests/blocks/crashSpinEngine.test.mjs",
+      "category": "engine",
+      "description": "────────────────────────────",
+      "exports": [
+        "defaultConfig",
+        "emitCrashSpinEngineCSS",
+        "emitCrashSpinEngineRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": true,
+        "spinDurationMs": 1800,
+        "peakMultiplierMin": 1.2,
+        "peakMultiplierMax": 25,
+        "fadeFallbackMs": 200
+      },
+      "loc": 207
     },
     {
       "name": "expandingWild",
@@ -1396,6 +1421,30 @@
       "loc": 190
     },
     {
+      "name": "plinkoSpinEngine",
+      "file": "src/blocks/plinkoSpinEngine.mjs",
+      "testFile": "tests/blocks/plinkoSpinEngine.test.mjs",
+      "category": "engine",
+      "description": "────────────────────────────",
+      "exports": [
+        "defaultConfig",
+        "emitPlinkoSpinEngineCSS",
+        "emitPlinkoSpinEngineRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": true,
+        "rowStepMs": 110,
+        "finalSettleMs": 240,
+        "fadeFallbackMs": 200
+      },
+      "loc": 217
+    },
+    {
       "name": "postSpin",
       "file": "src/blocks/postSpin.mjs",
       "testFile": "tests/blocks/postSpin.test.mjs",
@@ -1545,7 +1594,7 @@
         "minStepPx": 0.5,
         "accelMinFactor": 0.3
       },
-      "loc": 659
+      "loc": 668
     },
     {
       "name": "reelEngineCSS",
@@ -1713,6 +1762,31 @@
         "pulseAnimation": true
       },
       "loc": 400
+    },
+    {
+      "name": "slingoSpinEngine",
+      "file": "src/blocks/slingoSpinEngine.mjs",
+      "testFile": "tests/blocks/slingoSpinEngine.test.mjs",
+      "category": "engine",
+      "description": "────────────────────────────",
+      "exports": [
+        "defaultConfig",
+        "emitSlingoSpinEngineCSS",
+        "emitSlingoSpinEngineRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": true,
+        "perColumnSpinMs": 750,
+        "staggerMs": 140,
+        "matchPulseMs": 480,
+        "fadeFallbackMs": 220
+      },
+      "loc": 213
     },
     {
       "name": "spinControl",
@@ -2200,6 +2274,31 @@
         "title": "BONUS WHEEL"
       },
       "loc": 287
+    },
+    {
+      "name": "wheelSpinEngine",
+      "file": "src/blocks/wheelSpinEngine.mjs",
+      "testFile": "tests/blocks/wheelSpinEngine.test.mjs",
+      "category": "engine",
+      "description": "────────────────────────────",
+      "exports": [
+        "defaultConfig",
+        "emitWheelSpinEngineCSS",
+        "emitWheelSpinEngineRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": true,
+        "spinDurationMs": 2400,
+        "minRevolutions": 4,
+        "maxRevolutions": 7,
+        "fadeFallbackMs": 220
+      },
+      "loc": 248
     },
     {
       "name": "wildReel",
