@@ -3890,4 +3890,4 @@ V4 (HookBus events) first — bez njih V1/V2 ne mogu da emit. Onda V1+V2 paralel
 | 42 | `1041496` | feat(gridProfile): Wave UD — Universal Grid-Aware Defaults SHIPPED |
 | 43 | `412c7d6` | feat(k5-touch): Wave K5 — touch QA harness + CSS WCAG tap-target fixes SHIPPED |
 | 44 | `9b5a1c1` | feat(settingsPanel): Wave K7 — volatility / bet-step / max-win-cap extension SHIPPED |
-| 45 | `__THIS__` | docs(master-todo): comprehensive sync (HEAD anchor + recent waves + 62-block QA matrix + flipped K-row backlog) |
+| 45 | `b19599d` | docs(master-todo): comprehensive sync (HEAD anchor + recent waves + 62-block QA matrix + flipped K-row backlog) |
