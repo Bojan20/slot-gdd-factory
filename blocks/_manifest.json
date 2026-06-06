@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-06T02:08:16.986Z",
+  "generatedAt": "2026-06-06T02:27:43.002Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 57,
+  "totalBlocks": 58,
   "blocks": [
     {
       "name": "anteBet",
@@ -770,6 +770,33 @@
       "loc": 971
     },
     {
+      "name": "hexReelEngine",
+      "file": "src/blocks/hexReelEngine.mjs",
+      "testFile": "tests/blocks/hexReelEngine.test.mjs",
+      "category": "engine",
+      "description": "Wave J2b — Hex real reel engine.",
+      "exports": [
+        "defaultConfig",
+        "emitHexReelEngineCSS",
+        "emitHexReelEngineRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": true,
+        "spinDurationMs": 1800,
+        "staggerPerColumnMs": 280,
+        "minRotations": 8,
+        "cushionBouncePx": 6,
+        "cushionBounceMs": 240,
+        "fadeFallbackMs": 200
+      },
+      "loc": 400
+    },
+    {
       "name": "historyLog",
       "file": "src/blocks/historyLog.mjs",
       "testFile": "tests/blocks/historyLog.test.mjs",
@@ -1518,7 +1545,7 @@
         "minStepPx": 0.5,
         "accelMinFactor": 0.3
       },
-      "loc": 651
+      "loc": 659
     },
     {
       "name": "reelEngineCSS",

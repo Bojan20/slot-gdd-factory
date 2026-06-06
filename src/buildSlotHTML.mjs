@@ -308,6 +308,12 @@ import {
   emitSuperSymbolCSS, emitSuperSymbolRuntime,
   resolveConfig as resolveSuperSymbolConfig,
 } from './blocks/superSymbol.mjs';
+/* Wave J2b — hex real reel engine (axial-column spin animation for
+   honeycomb topology). Hot-on whenever SHAPE.kind === 'hexagonal'. */
+import {
+  emitHexReelEngineCSS, emitHexReelEngineRuntime,
+  resolveConfig as resolveHexReelEngineConfig,
+} from './blocks/hexReelEngine.mjs';
 /* Wave T-slim Phase 2 — extracted grid-render infrastructure (~700 LOC).
    Helpers (symAt / makeCell / cellSize / UNIFORM_REEL_KINDS) emit BEFORE
    the reel engine; per-kind render dispatcher emits AFTER engine + payline
@@ -394,6 +400,8 @@ ${emitStageBadgeCSS(resolveStageBadgeConfig(model))}
 ${emitPaylineOverlayCSS(resolvePaylineOverlayConfig(model))}
 ${emitGridShapesCSS()}
 ${emitReelEngineCSS(resolveReelEngineConfig(model))}
+${/* Wave J2b — hex reel engine CSS (no-op when shape !== hexagonal). */ ''}
+${emitHexReelEngineCSS(resolveHexReelEngineConfig(model))}
 ${emitAnticipationCSS(resolveAnticipationConfig(model))}
 
 ${emitWinPresentationCSS(resolveWinPresentationConfig(model))}
@@ -632,6 +640,14 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
   ${emitGridHelpersRuntime(model)}
 
   ${emitReelEngineRuntime(resolveReelEngineHotConfig(model))}
+
+  /* Wave J2b — hex real reel engine. MUST emit AFTER reelEngine so the
+     rectangular dispatcher in runOneBaseSpin() can probe
+     window.__SLOT_HEX_RUNSPIN__ once shape === 'hexagonal'. AFTER
+     grid dispatch as well — renderHex() calls __SLOT_HEX_BUILD__()
+     defensively. Hex engine self-disables when shape !== 'hexagonal'
+     so the cost on rectangular builds is one stub assignment. */
+  ${emitHexReelEngineRuntime(resolveHexReelEngineConfig(model))}
 
   /* Reel spin engine cadence + anticipation — see src/blocks/reelEngine.mjs
      + src/blocks/spinTempo.mjs + src/blocks/anticipation.mjs JSDoc for the

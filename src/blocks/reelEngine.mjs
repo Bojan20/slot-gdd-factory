@@ -502,6 +502,14 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
     }
     if (UNIFORM_REEL_KINDS.has(SHAPE.kind) && RECT_REELS) {
       startSpinAll(() => handlePostSpin(false));
+    } else if (SHAPE.kind === 'hexagonal' && typeof window.__SLOT_HEX_RUNSPIN__ === 'function') {
+      /* Wave J2b — hex topology has its own dedicated reel engine
+         (src/blocks/hexReelEngine.mjs) that owns per-axial-column spin
+         animation. Dispatcher hands control over; settle callback
+         routes through the standard handlePostSpin so all downstream
+         (winPresentation, scatterCelebration, FS trigger) work
+         identically to rectangular. */
+      window.__SLOT_HEX_RUNSPIN__(() => handlePostSpin(false));
     } else {
       runStaticReroll(() => handlePostSpin(false));
     }

@@ -3697,7 +3697,7 @@ V4 (HookBus events) first — bez njih V1/V2 ne mogu da emit. Onda V1+V2 paralel
 
 | Pri | Item | Why | Effort |
 |:-:|---|---|---|
-| 1 | **Wave J2b — Hex real reel engine** | hex koristi axial (q,r) koordinate, treba poseban mapper iz hex tiles u reel-strip columns | M |
+| ✅ | **Wave J2b — Hex real reel engine** | hex koristi axial (q,r) koordinate, treba poseban mapper iz hex tiles u reel-strip columns | **SHIPPED** (this commit) — `src/blocks/hexReelEngine.mjs` (~310 LOC) novi LEGO blok sa per-axial-q column spin animacijom. `__SLOT_HEX_BUILD__()` re-parent-uje cells iz `renderHex` u column strips, `__SLOT_HEX_RUNSPIN__()` izvodi vertical translate + rotate-down sa cushion bounce. Rectangular dispatcher u `reelEngine.runOneBaseSpin()` rute-uje hex shape ovde. 19/19 unit tests PASS, cortex-eyes-wave-j2b 6/6 (7 axial kolona, 28/37 cells rotated post-spin, 0 console errors). HookBus preSpin listener cancel-uje in-flight rAF za double-click idempotency. CSS reduced-motion fallback cross-fade. |
 | 2 | **Wave J3 — SVG kinds (wheel / crash / radial / slingo / plinko)** — domain-specific spin animation | each kind needs its own engine; can't reuse rectangular | L |
 | 3 | **PAR / Math hot-swap injector** | README Phase 2 — placeholder math still in use | XL |
 | 4 | **L2 AI feature synthesizer** za nepoznate features | README Phase 4 | XL |

@@ -534,6 +534,34 @@ body.play-body {
   font-family: var(--p-font-mono, ui-monospace, monospace);
 }
 
+/* ── Z.4 — Trigger preset library ───────────────────────────── */
+.play-presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 6px;
+}
+.play-btn-preset {
+  text-align: left;
+  font-family: var(--p-mono);
+  font-size: 11.5px;
+  padding: 6px 10px;
+  letter-spacing: 0.1px;
+}
+.play-btn-preset[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.play-btn-ok {
+  background: rgba(108, 211, 148, 0.18);
+  border-color: rgba(108, 211, 148, 0.6);
+  color: var(--p-good);
+}
+.play-btn-warn {
+  background: rgba(240, 99, 99, 0.18);
+  border-color: rgba(240, 99, 99, 0.6);
+  color: var(--p-danger);
+}
+
 /* ── Reduced motion ──────────────────────────────────────────── */
 @media (prefers-reduced-motion: no-preference) {
   .play-side-item, .play-files a, .play-welcome-card {

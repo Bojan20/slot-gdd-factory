@@ -32,8 +32,10 @@ blocks grouped by category (engine / wild / multiplier / fs /
 round-control / evaluator / feature / ui / audit) with searchable
 sidebar, per-block detail panel, `defaultConfig()` snapshot, lifecycle /
 emit / export chips, live HookBus event log (when running inside an
-active slot tab), and quick actions (Copy block JSON / Copy
-defaultConfig / Export GDD snippet).
+active slot tab), quick actions (Copy block JSON / Copy defaultConfig /
+Export GDD snippet), and an 18-preset **trigger library** so you can
+fire canonical HookBus sequences (`preSpin`, `tumbleStep ×3`, `FS trigger`,
+`BigWin MEGA tier`, `Reality Check shown`, etc) with one click.
 
 ```bash
 # 1) regenerate the manifest after touching anything in src/blocks/*

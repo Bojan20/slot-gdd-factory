@@ -287,6 +287,11 @@ export function emitGridDispatchRuntime(model) {
     const w = size, h = size * 0.85;
     host.style.width  = (dim * w * 1.05 + 20) + "px";
     host.style.height = (dim * h + 20) + "px";
+    /* Build cell list in SHAPE.cells order — hex engine pivots these
+       into per-q axial column strips after layout settles. Each cell
+       still receives its (q, r) layout coordinates so the visual
+       silhouette matches the legacy static render exactly. */
+    const cellEls = [];
     SHAPE.cells.forEach((c, i) => {
       const q = c.hex ? c.hex.q : 0;
       const r = c.hex ? c.hex.r : 0;
@@ -298,8 +303,16 @@ export function emitGridDispatchRuntime(model) {
       el.style.width = w + "px";
       el.style.height = (h * 1.15) + "px";
       host.appendChild(el);
+      cellEls.push(el);
     });
     grid.appendChild(host);
+    /* Wave J2b — hand the layout off to the hex reel engine, which
+       re-parents each cell into per-q column strips for spin
+       animation. No-op when the engine block is disabled or absent
+       (defensive: pre-J2b builds still render the static layout). */
+    if (typeof window.__SLOT_HEX_BUILD__ === 'function') {
+      window.__SLOT_HEX_BUILD__(host, cellEls, w, h);
+    }
   }
 
   function renderWheel() {

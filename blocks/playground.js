@@ -386,6 +386,36 @@
       ]),
     ]);
 
+    /* Z.4 — trigger preset library
+     *
+     * Curated, vendor-neutral list of HookBus event sequences a tester
+     * can fire from the playground with one click. Each preset is a
+     * sequence (e.g. preSpin → onSpinResult → postSpin) so it can model
+     * real round transitions. Pure UI — when no bus is present the
+     * presets render but are disabled with a tooltip explaining why.
+     *
+     * Per-block adaptive presets: if the active block listens on a
+     * canonical event NOT covered by the global list, a row is appended
+     * so each block always has at least its own event-firing preset.
+     */
+    const blockSpecific = (block.lifecycleHooks || []).filter(
+      (ev) => !TRIGGER_PRESETS.some((p) => p.events.some((e) => e.name === ev))
+    ).map((ev) => ({
+      id:    'adaptive:' + ev,
+      label: ev + ' (adaptive)',
+      group: 'Block-specific',
+      events: [{ name: ev, payload: {} }],
+    }));
+    const presetButtons = TRIGGER_PRESETS.concat(blockSpecific).map((preset) =>
+      el('button', {
+        class: 'play-btn play-btn-preset',
+        type:  'button',
+        title: preset.events.map((e) => `${e.name}  ${JSON.stringify(e.payload)}`).join('\n'),
+        'data-preset-id': preset.id,
+        onclick: function () { runPreset(preset, this); },
+      }, preset.label)
+    );
+
     /* Z.5 — live HookBus inspector card */
     const liveCard = el('section', { class: 'play-card', style: 'grid-column: 1 / -1;' }, [
       el('h3', {}, [
@@ -410,6 +440,10 @@
           copyText(state.eventRows.map(r => `${r.ts}  ${r.name}  ${r.payload}`).join('\n'), this);
         } }, 'Copy log'),
       ]),
+      el('h3', { style: 'margin-top:18px;' }, 'Trigger presets'),
+      el('p', { style: 'margin: 0 0 8px; color: var(--p-fg-3, #8a96aa); font-size: 11.5px;' },
+        'Fire canonical HookBus sequences. Buttons are no-ops without a bus; embed playground inside a slot tab to dispatch live.'),
+      el('div', { class: 'play-presets', id: 'presetRow' }, presetButtons),
     ]);
 
     const grid = el('div', { class: 'play-detail-grid' }, [
@@ -424,6 +458,91 @@
     /* Z.5 — best-effort attach + replay existing log rows */
     attachHookBus();
     if (state.eventRows.length) replayLog();
+  }
+
+  /* ── Z.4 — Trigger preset library ──────────────────────────────
+   *
+   * Curated, vendor-neutral list of HookBus event sequences. Each
+   * preset is a SHORT script (1-3 events) that simulates a real round
+   * transition or a specific player intent (slam, skip, bet change,
+   * net-loss threshold crossing). Hand-picked from the canonical
+   * HOOK_EVENTS set so every preset corresponds to a real lifecycle
+   * point.
+   *
+   * Payload shapes match the JSDoc contracts in `src/blocks/hookBus.mjs`.
+   * Adding a new preset = append an entry; the per-block detail panel
+   * re-renders the button row each time you select a block.
+   *
+   * When the active block listens on a canonical event NOT covered
+   * here, an "adaptive" row is appended automatically so every block
+   * always has at least its own event-firing preset. */
+  const TRIGGER_PRESETS = Object.freeze([
+    { id: 'preSpinBase',    label: '▶ preSpin (base)',     events: [{ name: 'preSpin', payload: { duringFs: false } }] },
+    { id: 'preSpinFs',      label: '▶ preSpin (FS)',       events: [{ name: 'preSpin', payload: { duringFs: true  } }] },
+    { id: 'onSpinResult',   label: '⊙ onSpinResult',       events: [{ name: 'onSpinResult', payload: { duringFs: false } }] },
+    { id: 'tumbleChain3',   label: '↻ tumbleStep ×3',      events: [
+      { name: 'onTumbleStep', payload: { duringFs: false, chainIndex: 0, events: [{ symbol: 'A', ways: 5 }] } },
+      { name: 'onTumbleStep', payload: { duringFs: false, chainIndex: 1, events: [{ symbol: 'B', ways: 4 }] } },
+      { name: 'onTumbleStep', payload: { duringFs: false, chainIndex: 2, events: [{ symbol: 'C', ways: 3 }] } },
+    ]},
+    { id: 'postSpinNoWin',  label: '■ postSpin (no win)',  events: [{ name: 'postSpin', payload: { duringFs: false } }] },
+    { id: 'fsTrigger10',    label: '✦ onFsTrigger (10 spins)', events: [{ name: 'onFsTrigger', payload: { award: 10, scatters: 4 } }] },
+    { id: 'fsEnd',          label: '✦ onFsEnd (€500)',     events: [{ name: 'onFsEnd', payload: { totalWin: 500 } }] },
+    { id: 'slamRequest',    label: '⏹ onSlamRequested',    events: [{ name: 'onSlamRequested', payload: { phase: 'rotating', source: 'button' } }] },
+    { id: 'skipRequest',    label: '⏭ onSkipRequested',    events: [{ name: 'onSkipRequested', payload: { phase: 'rollup', source: 'button' } }] },
+    { id: 'winPresent',     label: '★ winPresentation cycle', events: [
+      { name: 'onWinPresentationStart', payload: { award: 25, eventCount: 3 } },
+      { name: 'onWinPresentationEnd',   payload: { award: 25 } },
+    ]},
+    { id: 'bigWinMega',     label: '🏆 BigWin MEGA tier',   events: [
+      { name: 'onBigWinTierEntered', payload: { tier: 4, x: 250, label: 'MEGA WIN', durationMs: 3000, soundBus: 'mega' } },
+      { name: 'onBigWinTierExited',  payload: { tier: 4, reason: 'natural' } },
+      { name: 'onBigWinTierEnd',     payload: { tier: 4, x: 250, reason: 'natural' } },
+    ]},
+    { id: 'betChange',      label: '€ onBetChanged (5.00)', events: [{ name: 'onBetChanged', payload: { newBet: 5.00 } }] },
+    { id: 'balanceCredit',  label: '💰 onBalanceChanged (+€10)', events: [{ name: 'onBalanceChanged', payload: { balance: 1010, delta: 10, reason: 'win' } }] },
+    { id: 'autoplayStart',  label: '⟳ onAutoplayStart (25)', events: [{ name: 'onAutoplayStart', payload: { remaining: 25, step: 25 } }] },
+    { id: 'autoplayTick',   label: '⟳ onAutoplayTick',     events: [{ name: 'onAutoplayTick', payload: { remaining: 24, win: 0 } }] },
+    { id: 'netLossAlert',   label: '⚠ onNetThresholdCrossed (alert)', events: [{ name: 'onNetThresholdCrossed', payload: { to: 'alert', direction: 'losing', net: -150 } }] },
+    { id: 'realityShown',   label: '🛑 onRealityCheckShown', events: [{ name: 'onRealityCheckShown', payload: { reason: 'timer', netSinceStart: -50 } }] },
+    { id: 'turboToggle',    label: '⚡ onTurboToggle (on)',  events: [{ name: 'onTurboToggle', payload: { active: true, source: 'api' } }] },
+  ]);
+
+  /* Runs every event in a preset through window.HookBus.emit. When
+   * the bus is missing, flashes the button to red briefly and writes
+   * a hint to the log. When the bus IS present, each emit lands in
+   * the live log automatically via the attached listener. */
+  function runPreset(preset, btnEl) {
+    const bus = (typeof window !== 'undefined') ? window.HookBus : null;
+    if (!bus || typeof bus.emit !== 'function') {
+      if (btnEl) {
+        const orig = btnEl.textContent;
+        btnEl.classList.add('play-btn-warn');
+        btnEl.textContent = '⚠ no HookBus';
+        setTimeout(() => {
+          btnEl.classList.remove('play-btn-warn');
+          btnEl.textContent = orig;
+        }, 1500);
+      }
+      return false;
+    }
+    for (const ev of preset.events) {
+      try {
+        bus.emit(ev.name, ev.payload);
+      } catch (e) {
+        console.warn(`[playground] preset "${preset.id}" emit ${ev.name} failed:`, e);
+      }
+    }
+    if (btnEl) {
+      const orig = btnEl.textContent;
+      btnEl.classList.add('play-btn-ok');
+      btnEl.textContent = '✓ Fired (' + preset.events.length + ')';
+      setTimeout(() => {
+        btnEl.classList.remove('play-btn-ok');
+        btnEl.textContent = orig;
+      }, 1100);
+    }
+    return true;
   }
 
   /* ── Z.5 — HookBus inspector ─────────────────────────────────
@@ -616,6 +735,16 @@
     getActiveBlock: () => state.selected,
     getManifest:    () => state.manifest,
     reattachHookBus: () => attachHookBus(),
+    /* Z.4 — preset access for QA harness + scripted demos */
+    listPresets:    () => TRIGGER_PRESETS.map((p) => ({ id: p.id, label: p.label, events: p.events.length })),
+    runPreset:      (id) => {
+      const p = TRIGGER_PRESETS.find((x) => x.id === id);
+      if (!p) return false;
+      return runPreset(p, null);
+    },
+    /* Z.5 — log access for snapshot diffing in tests */
+    getEventLog:    () => state.eventRows.slice(),
+    clearEventLog:  () => { state.eventRows = []; const log = $('#eventLog'); if (log) log.innerHTML = '<div class="play-event-empty">Log cleared.</div>'; },
   };
 
   if (document.readyState === 'loading') {

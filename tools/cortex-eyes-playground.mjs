@@ -117,6 +117,58 @@ try {
   log(emptyHint === 1, 'live log shows empty-state placeholder (no HookBus on this page)',
       `expected 1 placeholder, got ${emptyHint}`);
 
+  /* 4a.quint — Z4 trigger preset library — buttons render + listPresets exposed */
+  const presetButtons = await page.locator('.play-btn-preset').count();
+  log(presetButtons >= 18, 'trigger preset library has ≥18 buttons',
+      `expected ≥18 buttons, got ${presetButtons}`);
+  const presetIds = await page.evaluate(() =>
+    window.BlockPlayground && window.BlockPlayground.listPresets
+      ? window.BlockPlayground.listPresets().map((p) => p.id)
+      : []
+  );
+  log(presetIds.includes('preSpinBase') && presetIds.includes('fsTrigger10'),
+      'window.BlockPlayground.listPresets() exposes canonical entries',
+      `got ${presetIds.length} presets`);
+
+  /* 4a.six — preset click without HookBus shows warn pill + auto-restores */
+  await page.click('button[data-preset-id="preSpinBase"]');
+  await page.waitForTimeout(80);
+  const warnPill = await page.locator('button.play-btn-warn').count();
+  log(warnPill === 1, 'preset click without HookBus shows ⚠ warn state',
+      `expected 1 warn button, got ${warnPill}`);
+  await page.waitForTimeout(1700);
+  const warnGone = await page.locator('button.play-btn-warn').count();
+  log(warnGone === 0, 'warn state auto-restores after 1.5s',
+      `expected 0, got ${warnGone}`);
+
+  /* 4a.sev — preset round-trip with a stub HookBus → ✓ Fired pill + log row */
+  await page.evaluate(() => {
+    /* stub minimal HookBus surface for the test */
+    if (!window.HookBus) {
+      const handlers = {};
+      window.HookBus = {
+        on:   (n, fn) => { (handlers[n] = handlers[n] || []).push(fn); },
+        emit: (n, p)  => { for (const fn of (handlers[n] || [])) try { fn(p); } catch (_) {} },
+      };
+      window.BlockPlayground.reattachHookBus();
+    }
+    window.BlockPlayground.clearEventLog();
+  });
+  await page.click('button[data-preset-id="fsTrigger10"]');
+  await page.waitForTimeout(120);
+  const okPill = await page.locator('button.play-btn-ok').count();
+  log(okPill === 1, 'preset click with HookBus shows ✓ Fired confirmation',
+      `expected 1 ok button, got ${okPill}`);
+  const logRows = await page.locator('#eventLog .play-event-row').count();
+  log(logRows >= 1, 'preset emit landed in live log',
+      `expected ≥1 row, got ${logRows}`);
+  const logSnapshot = await page.evaluate(() =>
+    window.BlockPlayground.getEventLog().map((r) => r.name)
+  );
+  log(logSnapshot.includes('onFsTrigger'),
+      'getEventLog() returns the emitted event name',
+      `got ${JSON.stringify(logSnapshot)}`);
+
   /* 4a.qrt — Z6 localStorage persistence — filter survives reload */
   await page.fill('#filter', 'wild');
   await page.waitForTimeout(80);
