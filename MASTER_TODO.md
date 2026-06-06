@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-06 · **HEAD**: pending UQ commit · main
+> **Last updated**: 2026-06-06 · **HEAD**: `8387e5c` · main
 > **Most recent ship**: Wave **UQ** — Ultimate QA matrix (198 fixtures ×
 > 13 asserts = **2574/2574 PASS**; 19 grid kinds × 26 industry patterns;
 > typography ≥11px enforced across 16 blokova / runtime layers)
@@ -27,7 +27,7 @@
 
 | Hash | Wave | Subject |
 |---|---|---|
-| pending | **UQ** | **Ultimate QA matrix** — 174 synthetic GDD generator (19 kinds × 26 industry patterns) + 12-pt headless probe × 198 fixtures = **2574/2574 PASS**, 0 fail; 16 typography fixes (≥11px floor); inline ThreadingHTTPServer for Playwright concurrent fetches |
+| `8387e5c` | **UQ** | **Ultimate QA matrix** — 174 synthetic GDD generator (19 kinds × 26 industry patterns) + 12-pt headless probe × 198 fixtures = **2574/2574 PASS**, 0 fail; 16 typography fixes (≥11px floor); inline ThreadingHTTPServer for Playwright concurrent fetches |
 | `9b5a1c1` | **K7** | settingsPanel extension — volatility / bet-step / max-win-cap + 3 HookBus events |
 | `412c7d6` | **K5** | touch QA harness + CSS WCAG tap-target fixes (chips 36→44px, touch-action: manipulation) |
 | `1041496` | **UD** | gridProfile registry — per-`SHAPE.kind` contextual default override layer |
