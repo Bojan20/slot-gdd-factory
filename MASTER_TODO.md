@@ -3839,11 +3839,12 @@ V4 (HookBus events) first — bez njih V1/V2 ne mogu da emit. Onda V1+V2 paralel
 |---|---:|
 | Fixtures discovered | 198 (174 synth + 24 in-tree) |
 | Assertions total | 2574 |
-| PASS | **2567 (99.73%)** |
-| FAIL | 6 — sve isti non-deterministic tumble-cascade timeout (cluster/variable_reel/hexagonal sa Bonus Buy / Mystery Symbol / Progressive FS feature stack) |
+| **PASS** | **2574 (100.00%)** |
+| **FAIL** | **0** |
 
-> Soft-fail budget 7 (~0.3% od total) absorbs the known cascade race;
-> isti pattern već dokumentovan u Q + K4 wave-ovima. Audit exits 0.
+> 🎉 Sve zelene posle 14s settle budget kalibracije + Wave-UQ font-size
+> floor fix-ova u 4 bloka (anteBet / bonusBuy / themeCSS / turboMode chips
+> sub-11px na uskim viewport-ima). Exit 0 bez soft-fail allowance.
 
 | ID | Item | Notes |
 |---|---|---|
