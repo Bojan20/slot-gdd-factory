@@ -1,0 +1,2306 @@
+{
+  "generatedAt": "2026-06-06T02:08:16.986Z",
+  "blocksDir": "src/blocks",
+  "totalBlocks": 57,
+  "blocks": [
+    {
+      "name": "anteBet",
+      "file": "src/blocks/anteBet.mjs",
+      "testFile": "tests/blocks/anteBet.test.mjs",
+      "category": "feature",
+      "description": "When GDD declares an `ante_bet` feature, this block emits:",
+      "exports": [
+        "defaultConfig",
+        "emitAnteBetCSS",
+        "emitAnteBetMarkup",
+        "emitAnteBetRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "costMultiplier": 1.25,
+        "triggerMultiplier": 2,
+        "label": "ANTE BET",
+        "color": "#ffe066"
+      },
+      "loc": 173
+    },
+    {
+      "name": "anticipation",
+      "file": "src/blocks/anticipation.mjs",
+      "testFile": "tests/blocks/anticipation.test.mjs",
+      "category": "engine",
+      "description": "Slot GDD Factory · anticipation BLOCK",
+      "exports": [
+        "defaultConfig",
+        "emitAnticipationCSS",
+        "emitAnticipationRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": true,
+        "holdMs": 600,
+        "pulseMs": 700,
+        "gold": "255,214,110",
+        "skipDuringFs": false
+      },
+      "loc": 235
+    },
+    {
+      "name": "audio",
+      "file": "src/blocks/audio.mjs",
+      "testFile": "tests/blocks/audio.test.mjs",
+      "category": "ui",
+      "description": "Zero-dependency Web Audio API wrapper that provides a Howler-style cue",
+      "exports": [
+        "AUDIO_CATEGORIES",
+        "defaultConfig",
+        "emitAudioCSS",
+        "emitAudioMarkup",
+        "emitAudioRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "onSpinResult",
+        "onTumbleStep",
+        "postSpin",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "masterVolume": 0.7,
+        "muted": false,
+        "urls": {
+          "SPIN_START": "",
+          "REEL_STOP": "",
+          "TUMBLE_REMOVE": "",
+          "ORB_SPAWN": "",
+          "ANTICIPATION": "",
+          "BUTTON_CLICK": "",
+          "WIN_BASE": "",
+          "WIN_BIG": "",
+          "WIN_MEGA": "",
+          "WIN_EPIC": "",
+          "MULT_GROW": "",
+          "FS_TRIGGER": "",
+          "FS_INTRO": "",
+          "FS_SPIN_START": "",
+          "FS_OUTRO": ""
+        },
+        "volumes": {
+          "SPIN_START": 1,
+          "REEL_STOP": 1,
+          "TUMBLE_REMOVE": 1,
+          "ORB_SPAWN": 1,
+          "ANTICIPATION": 1,
+          "BUTTON_CLICK": 1,
+          "WIN_BASE": 1,
+          "WIN_BIG": 1,
+          "WIN_MEGA": 1,
+          "WIN_EPIC": 1,
+          "MULT_GROW": 1,
+          "FS_TRIGGER": 1,
+          "FS_INTRO": 1,
+          "FS_SPIN_START": 1,
+          "FS_OUTRO": 1
+        },
+        "showToggle": true,
+        "toggleColor": "255,255,255",
+        "bigWinThresholdX": 10,
+        "megaWinThresholdX": 50,
+        "epicWinThresholdX": 250
+      },
+      "loc": 362
+    },
+    {
+      "name": "autoplay",
+      "file": "src/blocks/autoplay.mjs",
+      "testFile": "tests/blocks/autoplay.test.mjs",
+      "category": "round-control",
+      "description": "• Player picks N from a set of supported steps (10 / 25 / 50 / 100 /",
+      "exports": [
+        "defaultConfig",
+        "emitAutoplayCSS",
+        "emitAutoplayMarkup",
+        "emitAutoplayRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onBigWinTierEnd",
+        "onFsEnd",
+        "onFsTrigger",
+        "onSlamRequested",
+        "onSpinResult",
+        "postSpin"
+      ],
+      "emittedEvents": [
+        "onAutoplayStart",
+        "onAutoplayStop",
+        "onAutoplayTick"
+      ],
+      "defaultConfig": {
+        "enabled": true,
+        "stepValues": [
+          10,
+          25,
+          50,
+          100,
+          250,
+          500,
+          1000
+        ],
+        "defaultStep": 25,
+        "betUnitFallback": 1,
+        "stopOnAnyFeatureTrigger": true,
+        "stopOnSingleWinX": null,
+        "stopOnBalanceBelow": null,
+        "stopOnLossAbove": null,
+        "stopOnWinAbove": null,
+        "interSpinDelayMs": 250,
+        "interSpinDelayAfterWinMs": 1500,
+        "bigWinWaitTimeoutMs": 30000,
+        "showCounter": true,
+        "chipColor": "90,180,255",
+        "chipTextColor": "255,255,255",
+        "ariaLabel": "Auto-spin"
+      },
+      "loc": 994
+    },
+    {
+      "name": "balanceHud",
+      "file": "src/blocks/balanceHud.mjs",
+      "testFile": "tests/blocks/balanceHud.test.mjs",
+      "category": "ui",
+      "description": "widget that shows BALANCE | BET | WIN (and TOTAL WIN during FS) with",
+      "exports": [
+        "BALANCE_REASONS",
+        "defaultConfig",
+        "emitBalanceHudCSS",
+        "emitBalanceHudMarkup",
+        "emitBalanceHudRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onBetChanged",
+        "onFsEnd",
+        "onFsTrigger",
+        "onGambleEnd",
+        "onSpinResult",
+        "postSpin",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onBalanceChanged"
+      ],
+      "defaultConfig": {
+        "enabled": true,
+        "startingBalance": 1000,
+        "fallbackBet": 1,
+        "currency": "€",
+        "currencyPosition": "prefix",
+        "showWinColumn": true,
+        "showTotalWinDuringFs": true,
+        "pulseOnChange": true,
+        "accentColor": "255,230,168",
+        "debitColor": "255,120,120",
+        "creditColor": "120,255,180",
+        "ariaLabel": "Balance HUD"
+      },
+      "loc": 507
+    },
+    {
+      "name": "betSelector",
+      "file": "src/blocks/betSelector.mjs",
+      "testFile": "tests/blocks/betSelector.test.mjs",
+      "category": "ui",
+      "description": "• Player picks a coin denomination from a fixed coin ladder",
+      "exports": [
+        "defaultConfig",
+        "emitBetSelectorCSS",
+        "emitBetSelectorMarkup",
+        "emitBetSelectorRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onAutoplayStart",
+        "onAutoplayStop",
+        "onFsEnd",
+        "onFsTrigger",
+        "postSpin",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onBetChanged"
+      ],
+      "defaultConfig": {
+        "enabled": true,
+        "coinValues": [
+          0.01,
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.5,
+          1
+        ],
+        "multipliers": [
+          1,
+          5,
+          10,
+          20,
+          50,
+          100
+        ],
+        "defaultCoin": 0.1,
+        "defaultMultiplier": 10,
+        "currency": "€",
+        "currencyPosition": "prefix",
+        "showCoinPicker": true,
+        "showMultiplierPicker": true,
+        "showStepButtons": true,
+        "maxBetButton": true,
+        "panelOnDemand": true,
+        "chipColor": "255,200,80",
+        "chipTextColor": "20,20,20",
+        "ariaLabel": "Adjust bet"
+      },
+      "loc": 779
+    },
+    {
+      "name": "bigWinTier",
+      "file": "src/blocks/bigWinTier.mjs",
+      "testFile": "tests/blocks/bigWinTier.test.mjs",
+      "category": "round-control",
+      "description": "Five-tier celebration ladder for any win whose total-award-to-bet ratio",
+      "exports": [
+        "BIG_WIN_TIER_IDS",
+        "defaultConfig",
+        "emitBigWinTierCSS",
+        "emitBigWinTierMarkup",
+        "emitBigWinTierRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onSkipRequested",
+        "onWinPresentationEnd",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onBigWinTierEnd",
+        "onBigWinTierEntered",
+        "onBigWinTierExited"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "thresholds": [
+          10,
+          25,
+          50,
+          200,
+          1000
+        ],
+        "labels": [
+          "BIGWINTIER1",
+          "BIGWINTIER2",
+          "BIGWINTIER3",
+          "BIGWINTIER4",
+          "BIGWINTIER5"
+        ],
+        "durations": [
+          4000,
+          4000,
+          4000,
+          4000,
+          4000
+        ],
+        "endHoldMs": 4000,
+        "colors": [
+          "255,210,90",
+          "255,170,60",
+          "255,110,60",
+          "230,80,170",
+          "255,240,200"
+        ],
+        "compound": true,
+        "fadeMs": 300,
+        "soundBuses": [
+          "low",
+          "mid",
+          "high",
+          "peak",
+          "climax"
+        ],
+        "currency": "€",
+        "currencyPosition": "prefix"
+      },
+      "loc": 1013
+    },
+    {
+      "name": "bonusBuy",
+      "file": "src/blocks/bonusBuy.mjs",
+      "testFile": "tests/blocks/bonusBuy.test.mjs",
+      "category": "feature",
+      "description": "When GDD declares a `bonus_buy` feature, this block emits:",
+      "exports": [
+        "defaultConfig",
+        "emitBonusBuyCSS",
+        "emitBonusBuyMarkup",
+        "emitBonusBuyRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "costX": 75,
+        "label": "BUY BONUS",
+        "forceScatters": 4,
+        "color": "#ff5050",
+        "confirmMessage": ""
+      },
+      "loc": 146
+    },
+    {
+      "name": "bonusBuyDeterministic",
+      "file": "src/blocks/bonusBuyDeterministic.mjs",
+      "testFile": "tests/blocks/bonusBuyDeterministic.test.mjs",
+      "category": "feature",
+      "description": "The modern Bonus Buy ecosystem evolved beyond the original \"pay N×",
+      "exports": [
+        "defaultConfig",
+        "emitBonusBuyDeterministicCSS",
+        "emitBonusBuyDeterministicMarkup",
+        "emitBonusBuyDeterministicRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "onSpinResult",
+        "postSpin"
+      ],
+      "emittedEvents": [
+        "onBonusBuyTierSelected",
+        "onDeterministicPlantApplied"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "plants": [
+          {
+            "tier": "STANDARD",
+            "costX": 75,
+            "positions": [
+              [
+                1,
+                0
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                2
+              ]
+            ],
+            "symbol": "S",
+            "description": "Guaranteed 3 scatters — entry-level buy."
+          },
+          {
+            "tier": "PREMIUM",
+            "costX": 150,
+            "positions": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                0
+              ]
+            ],
+            "symbol": "S",
+            "description": "Guaranteed 5 scatters — mid-tier value buy."
+          },
+          {
+            "tier": "SUPER",
+            "costX": 300,
+            "positions": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                2
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                2
+              ]
+            ],
+            "symbol": "S",
+            "extraMult": 2,
+            "description": "Guaranteed 5 scatters + 2× starting multiplier."
+          }
+        ],
+        "symbolDefault": "S",
+        "pickerTitle": "CHOOSE YOUR BUY",
+        "pickerColor": "255,170,80",
+        "closeOnBackdrop": true
+      },
+      "loc": 681
+    },
+    {
+      "name": "bonusPick",
+      "file": "src/blocks/bonusPick.mjs",
+      "testFile": "tests/blocks/bonusPick.test.mjs",
+      "category": "feature",
+      "description": "Modal overlay with K hidden tiles. Player clicks tiles to reveal prizes.",
+      "exports": [
+        "defaultConfig",
+        "emitBonusPickCSS",
+        "emitBonusPickMarkup",
+        "emitBonusPickRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "mode": "triggered",
+        "tileCount": 12,
+        "maxPicks": 5,
+        "prizePool": [
+          {
+            "label": "×2",
+            "value": 2,
+            "weight": 28
+          },
+          {
+            "label": "×5",
+            "value": 5,
+            "weight": 22
+          },
+          {
+            "label": "×10",
+            "value": 10,
+            "weight": 18
+          },
+          {
+            "label": "×25",
+            "value": 25,
+            "weight": 12
+          },
+          {
+            "label": "×50",
+            "value": 50,
+            "weight": 7
+          },
+          {
+            "label": "×100",
+            "value": 100,
+            "weight": 3
+          },
+          {
+            "label": "POP",
+            "value": 0,
+            "weight": 10
+          }
+        ],
+        "endTokens": [
+          "POP"
+        ],
+        "title": "PICK A PRIZE",
+        "haloColor": "255,180,60"
+      },
+      "loc": 272
+    },
+    {
+      "name": "clusterPaysEval",
+      "file": "src/blocks/clusterPaysEval.mjs",
+      "testFile": "tests/blocks/clusterPaysEval.test.mjs",
+      "category": "evaluator",
+      "description": "Flood-fill 4-connected (orthogonal) cluster detection for cluster-style",
+      "exports": [
+        "defaultConfig",
+        "emitClusterPaysEvalRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "minCluster": 5,
+        "bucketEdges": [
+          5,
+          8,
+          10,
+          12,
+          15
+        ],
+        "paytable": null,
+        "maxEvents": 8,
+        "diagonal": false
+      },
+      "loc": 164
+    },
+    {
+      "name": "expandingWild",
+      "file": "src/blocks/expandingWild.mjs",
+      "testFile": "tests/blocks/expandingWild.test.mjs",
+      "category": "wild",
+      "description": "When GDD declares an `expanding_wild` feature, this block emits:",
+      "exports": [
+        "defaultConfig",
+        "emitExpandingWildCSS",
+        "emitExpandingWildRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsTrigger",
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "mode": "fs",
+        "wildSymbolId": "W",
+        "expandDurationMs": 360,
+        "haloColor": "255,214,110"
+      },
+      "loc": 134
+    },
+    {
+      "name": "forceSkip",
+      "file": "src/blocks/forceSkip.mjs",
+      "testFile": "tests/blocks/forceSkip.test.mjs",
+      "category": "round-control",
+      "description": "• A button shown during win-presentation, FS-intro, FS-outro, and",
+      "exports": [
+        "defaultConfig",
+        "emitForceSkipCSS",
+        "emitForceSkipMarkup",
+        "emitForceSkipRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "onSkipComplete",
+        "onSpinResult",
+        "postSpin",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onSkipRequested"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "chipLabel": "SKIP",
+        "chipColor": "90,180,255",
+        "chipTextColor": "255,255,255",
+        "disabledPressed": true,
+        "hidePressed": false,
+        "showDuringRollup": true,
+        "showDuringFsIntro": true,
+        "showDuringFsOutro": true,
+        "showDuringCelebration": false,
+        "minRollupMsForShow": 600,
+        "ariaLabel": "Skip animation"
+      },
+      "loc": 353
+    },
+    {
+      "name": "freeSpins",
+      "file": "src/blocks/freeSpins.mjs",
+      "testFile": "tests/blocks/freeSpins.test.mjs",
+      "category": "fs",
+      "description": "Slot GDD Factory · freeSpins BLOCK",
+      "exports": [
+        "defaultConfig",
+        "emitFreeSpinsCSS",
+        "emitFreeSpinsHudMarkup",
+        "emitFreeSpinsOverlayMarkup",
+        "emitFreeSpinsRuntime",
+        "emitFreeSpinsToastMarkup",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onBigWinTierEnd",
+        "onFsTrigger",
+        "onSkipRequested",
+        "postSpin"
+      ],
+      "emittedEvents": [
+        "onFsEnd",
+        "onFsSpinResult",
+        "onFsTrigger",
+        "onSkipComplete",
+        "preSpin"
+      ],
+      "defaultConfig": {
+        "enabled": true,
+        "introLabel": "FREE SPINS",
+        "outroLabel": "FREE SPINS COMPLETE",
+        "totalWinLabel": "TOTAL WIN",
+        "introCta": "TAP TO BEGIN",
+        "outroCta": "RETURN TO BASE",
+        "introSub": "Free Spins begin now.",
+        "fadeMs": 320,
+        "enterActiveDelayMs": 420,
+        "spinBreathMs": 250,
+        "toastMs": 1800,
+        "retriggerToastMs": 1600
+      },
+      "loc": 751
+    },
+    {
+      "name": "gamble",
+      "file": "src/blocks/gamble.mjs",
+      "testFile": "tests/blocks/gamble.test.mjs",
+      "category": "feature",
+      "description": "After a winning spin, player can gamble the win. Standard variants:",
+      "exports": [
+        "defaultConfig",
+        "emitGambleCSS",
+        "emitGambleMarkup",
+        "emitGambleRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "postSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "mode": "color",
+        "maxRounds": 5,
+        "multiplier": 2,
+        "collectThresholdX": 0,
+        "haloColor": "200,80,80"
+      },
+      "loc": 259
+    },
+    {
+      "name": "gambleSecondary",
+      "file": "src/blocks/gambleSecondary.mjs",
+      "testFile": "tests/blocks/gambleSecondary.test.mjs",
+      "category": "feature",
+      "description": "Branch 1 — CARD GAMBLE",
+      "exports": [
+        "defaultConfig",
+        "emitGambleSecondaryCSS",
+        "emitGambleSecondaryMarkup",
+        "emitGambleSecondaryRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onAutoplayStart",
+        "onAutoplayStop",
+        "onFsEnd",
+        "onFsTrigger",
+        "onSkipRequested",
+        "onSpinResult",
+        "postSpin"
+      ],
+      "emittedEvents": [
+        "onGambleEnd",
+        "onGambleRound",
+        "onGambleStart"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "modes": [
+          "card",
+          "ladder"
+        ],
+        "cardMode": "color",
+        "cardMultiplier": 2,
+        "cardMaxRounds": 5,
+        "ladderRungs": 8,
+        "ladderRungMultiplier": 2,
+        "ladderMaxRounds": 8,
+        "minWinForPromptX": 1,
+        "maxBankX": 1000,
+        "promptTimeoutMs": 0,
+        "showInFs": false,
+        "showInAutoplay": false,
+        "currency": "€",
+        "chipColor": "180,80,80",
+        "chipTextColor": "255,255,255"
+      },
+      "loc": 971
+    },
+    {
+      "name": "historyLog",
+      "file": "src/blocks/historyLog.mjs",
+      "testFile": "tests/blocks/historyLog.test.mjs",
+      "category": "ui",
+      "description": "spin records an entry the player can scrub through after the fact.",
+      "exports": [
+        "HISTORY_MODES",
+        "defaultConfig",
+        "emitHistoryLogCSS",
+        "emitHistoryLogMarkup",
+        "emitHistoryLogRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onAutoplayStart",
+        "onBalanceChanged",
+        "onFsEnd",
+        "onFsTrigger",
+        "onGambleEnd",
+        "postSpin",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": true,
+        "capacity": 50,
+        "allowCsvExport": false,
+        "showTime": true,
+        "timeFormat": "hms",
+        "chipLabel": "≡",
+        "chipColor": "201,162,39",
+        "chipTextColor": "255,230,168",
+        "panelBgColor": "10,12,18",
+        "panelAccentColor": "201,162,39",
+        "closeOnBackdrop": true,
+        "closeOnEscape": true,
+        "autoHideOnSpin": true,
+        "ariaLabel": "Open session history"
+      },
+      "loc": 677
+    },
+    {
+      "name": "holdAndWin",
+      "file": "src/blocks/holdAndWin.mjs",
+      "testFile": "tests/blocks/holdAndWin.test.mjs",
+      "category": "feature",
+      "description": "Trigger: ≥N bonus/coin symbols on the grid → enter Hold round.",
+      "exports": [
+        "defaultConfig",
+        "emitHoldAndWinCSS",
+        "emitHoldAndWinMarkup",
+        "emitHoldAndWinRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "onSpinResult",
+        "postSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "triggerCount": 6,
+        "bonusSymbolId": "B",
+        "respinsAwarded": 3,
+        "resetOnNewBonus": true,
+        "haloColor": "255,160,40",
+        "jackpotLabels": [
+          "MINI",
+          "MINOR",
+          "MAJOR",
+          "GRAND"
+        ]
+      },
+      "loc": 258
+    },
+    {
+      "name": "holdAndWinCreditBucket",
+      "file": "src/blocks/holdAndWinCreditBucket.mjs",
+      "testFile": "tests/blocks/holdAndWinCreditBucket.test.mjs",
+      "category": "feature",
+      "description": "The \"Credit Bucket\" / \"Cash-On-Reels\" pattern is the universal DNA of",
+      "exports": [
+        "defaultConfig",
+        "emitHoldAndWinCreditBucketCSS",
+        "emitHoldAndWinCreditBucketMarkup",
+        "emitHoldAndWinCreditBucketRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "onSpinResult",
+        "postSpin"
+      ],
+      "emittedEvents": [
+        "onCreditBucketEnd",
+        "onCreditBucketLocked",
+        "onCreditBucketRespinStart"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "prizeMap": [
+          {
+            "x": 1,
+            "weight": 32
+          },
+          {
+            "x": 2,
+            "weight": 22
+          },
+          {
+            "x": 3,
+            "weight": 14
+          },
+          {
+            "x": 5,
+            "weight": 9
+          },
+          {
+            "x": 10,
+            "weight": 5
+          },
+          {
+            "x": 15,
+            "weight": 2
+          },
+          {
+            "x": 25,
+            "weight": 1
+          }
+        ],
+        "jackpotMap": [
+          {
+            "label": "MINI",
+            "x": 5,
+            "weight": 12
+          },
+          {
+            "label": "MINOR",
+            "x": 25,
+            "weight": 4
+          },
+          {
+            "label": "MAJOR",
+            "x": 100,
+            "weight": 1
+          },
+          {
+            "label": "GRAND",
+            "x": 1000,
+            "weight": 0.25
+          }
+        ],
+        "allLockedAward": "GRAND",
+        "bucketColor": "255,215,80",
+        "jackpotColor": "255,80,80",
+        "currencyPrefix": "×",
+        "hudShowsTotal": true
+      },
+      "loc": 639
+    },
+    {
+      "name": "hookBus",
+      "file": "src/blocks/hookBus.mjs",
+      "testFile": "tests/blocks/hookBus.test.mjs",
+      "category": "engine",
+      "description": "Slot GDD Factory · hookBus BLOCK",
+      "exports": [
+        "AUTOPLAY_STOP_REASONS",
+        "HOOK_EVENTS",
+        "SKIP_PHASES",
+        "SKIP_SOURCES",
+        "SLAM_PHASES",
+        "SLAM_SOURCES",
+        "defaultConfig",
+        "emitHookBusRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onSpinResult"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "debugLog": false
+      },
+      "loc": 414
+    },
+    {
+      "name": "lightning",
+      "file": "src/blocks/lightning.mjs",
+      "testFile": "tests/blocks/lightning.test.mjs",
+      "category": "multiplier",
+      "description": "On a winning spin (or with a random chance), strike N cells with",
+      "exports": [
+        "defaultConfig",
+        "emitLightningCSS",
+        "emitLightningRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "mode": "fs",
+        "triggerChance": 0.22,
+        "minStrikes": 2,
+        "maxStrikes": 6,
+        "multipliers": [
+          {
+            "value": 2,
+            "weight": 38
+          },
+          {
+            "value": 3,
+            "weight": 24
+          },
+          {
+            "value": 5,
+            "weight": 16
+          },
+          {
+            "value": 10,
+            "weight": 12
+          },
+          {
+            "value": 25,
+            "weight": 6
+          },
+          {
+            "value": 50,
+            "weight": 3
+          },
+          {
+            "value": 100,
+            "weight": 1
+          }
+        ],
+        "haloColor": "160,210,255",
+        "strikeDurationMs": 700
+      },
+      "loc": 211
+    },
+    {
+      "name": "multiplierOrb",
+      "file": "src/blocks/multiplierOrb.mjs",
+      "testFile": "tests/blocks/multiplierOrb.test.mjs",
+      "category": "multiplier",
+      "description": "Special \"orb\" symbol (`M` by default) that carries a multiplier value",
+      "exports": [
+        "defaultConfig",
+        "emitMultiplierOrbCSS",
+        "emitMultiplierOrbRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsTrigger",
+        "onSpinResult",
+        "onTumbleStep"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "symbolId": "M",
+        "distribution": [
+          {
+            "value": 2,
+            "weight": 60
+          },
+          {
+            "value": 3,
+            "weight": 40
+          },
+          {
+            "value": 5,
+            "weight": 20
+          },
+          {
+            "value": 10,
+            "weight": 10
+          },
+          {
+            "value": 25,
+            "weight": 5
+          },
+          {
+            "value": 100,
+            "weight": 1
+          }
+        ],
+        "bonusAccumulate": false,
+        "chipColor": "#ffe680",
+        "pulseMs": 1000
+      },
+      "loc": 235
+    },
+    {
+      "name": "mysterySymbol",
+      "file": "src/blocks/mysterySymbol.mjs",
+      "testFile": "tests/blocks/mysterySymbol.test.mjs",
+      "category": "wild",
+      "description": "Mystery cells appear with a \"?\" face, then transform into ONE picked",
+      "exports": [
+        "defaultConfig",
+        "emitMysterySymbolCSS",
+        "emitMysterySymbolRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "mode": "fs",
+        "mysterySymbolId": "M",
+        "revealDelayMs": 320,
+        "revealDurationMs": 420,
+        "includeWild": false,
+        "includeScatter": false,
+        "haloColor": "180,120,255"
+      },
+      "loc": 188
+    },
+    {
+      "name": "netLossIndicator",
+      "file": "src/blocks/netLossIndicator.mjs",
+      "testFile": "tests/blocks/netLossIndicator.test.mjs",
+      "category": "audit",
+      "description": "Regulator-mandated player-protection HUD chip. A persistent indicator",
+      "exports": [
+        "defaultConfig",
+        "emitNetLossIndicatorCSS",
+        "emitNetLossIndicatorMarkup",
+        "emitNetLossIndicatorRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onAutoplayStart",
+        "onBalanceChanged",
+        "onFsEnd",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [
+        "onNetThresholdCrossed"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "thresholds": [
+          {
+            "amount": -50,
+            "level": "caution",
+            "label": "CAUTION"
+          },
+          {
+            "amount": -150,
+            "level": "warn",
+            "label": "WARN"
+          },
+          {
+            "amount": -500,
+            "level": "alert",
+            "label": "ALERT"
+          }
+        ],
+        "showLabel": true,
+        "showInBaseGame": true,
+        "showInFs": true,
+        "currencyPrefix": "€",
+        "positiveColor": "120,220,140",
+        "negativeColor": "230,90,80",
+        "neutralColor": "200,200,210",
+        "resetOnSessionReset": true,
+        "resetOnAutoplayStart": false
+      },
+      "loc": 546
+    },
+    {
+      "name": "pathAwareMultiplier",
+      "file": "src/blocks/pathAwareMultiplier.mjs",
+      "testFile": "tests/blocks/pathAwareMultiplier.test.mjs",
+      "category": "multiplier",
+      "description": "In a Ways-to-Win evaluator each anchored symbol can spawn multiple",
+      "exports": [
+        "defaultConfig",
+        "emitPathAwareMultiplierCSS",
+        "emitPathAwareMultiplierMarkup",
+        "emitPathAwareMultiplierRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "postSpin",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onPathMultiplierAggregate",
+        "onPathMultiplierAssigned"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "multiplierMap": [
+          {
+            "x": 2,
+            "weight": 40
+          },
+          {
+            "x": 3,
+            "weight": 24
+          },
+          {
+            "x": 5,
+            "weight": 16
+          },
+          {
+            "x": 10,
+            "weight": 10
+          },
+          {
+            "x": 25,
+            "weight": 6
+          },
+          {
+            "x": 50,
+            "weight": 3
+          },
+          {
+            "x": 100,
+            "weight": 1
+          }
+        ],
+        "baseMultiplier": 1,
+        "aggregation": "additive",
+        "chipColor": "120,180,255",
+        "showAggregateChip": true,
+        "awardScaleDenom": 0
+      },
+      "loc": 595
+    },
+    {
+      "name": "payAnywhereEval",
+      "file": "src/blocks/payAnywhereEval.mjs",
+      "testFile": "tests/blocks/payAnywhereEval.test.mjs",
+      "category": "evaluator",
+      "description": "Replaces the line-based `detectLineWins()` when GDD declares",
+      "exports": [
+        "defaultConfig",
+        "emitPayAnywhereEvalRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "minWin": 8,
+        "bucketEdges": [
+          10,
+          12
+        ],
+        "paytable": {},
+        "maxEvents": 9,
+        "noWinChance": 0
+      },
+      "loc": 172
+    },
+    {
+      "name": "paylineOverlay",
+      "file": "src/blocks/paylineOverlay.mjs",
+      "testFile": "tests/blocks/paylineOverlay.test.mjs",
+      "category": "evaluator",
+      "description": "Slot GDD Factory · paylineOverlay BLOCK",
+      "exports": [
+        "defaultConfig",
+        "emitPaylineOverlayCSS",
+        "emitPaylineOverlayRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": true,
+        "strokeWidth": 4.5,
+        "drawInMs": 220,
+        "badgeRadius": 12,
+        "tierColors": {
+          "HP": {
+            "stroke": "#ffc85a",
+            "glow": "255, 200,  90"
+          },
+          "MP": {
+            "stroke": "#7ec8e3",
+            "glow": "126, 200, 227"
+          },
+          "LP": {
+            "stroke": "#d29560",
+            "glow": "210, 149,  96"
+          },
+          "WILD": {
+            "stroke": "#e070c0",
+            "glow": "224, 112, 192"
+          }
+        }
+      },
+      "loc": 248
+    },
+    {
+      "name": "paylines",
+      "file": "src/blocks/paylines.mjs",
+      "testFile": "tests/blocks/paylines.test.mjs",
+      "category": "evaluator",
+      "description": "Slot GDD Factory · paylines BLOCK",
+      "exports": [
+        "LINE_PAYS_KINDS",
+        "buildStandardPaylines",
+        "paylineConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [],
+      "defaultConfig": null,
+      "loc": 128
+    },
+    {
+      "name": "paytable",
+      "file": "src/blocks/paytable.mjs",
+      "testFile": "tests/blocks/paytable.test.mjs",
+      "category": "ui",
+      "description": "• An \"i\" / \"?\" button somewhere on the hub opens a full-screen modal",
+      "exports": [
+        "defaultConfig",
+        "emitPaytableCSS",
+        "emitPaytableMarkup",
+        "emitPaytableRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onAutoplayStart",
+        "onBetChanged",
+        "onFsTrigger",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": true,
+        "chipLabel": "i",
+        "chipColor": "201,162,39",
+        "chipTextColor": "255,230,168",
+        "modalBgColor": "10,12,18",
+        "modalAccentColor": "201,162,39",
+        "showFeaturesList": true,
+        "showWildRules": true,
+        "showLineMap": false,
+        "closeOnBackdrop": true,
+        "closeOnEscape": true,
+        "autoHideOnSpin": true,
+        "ariaLabel": "Open paytable"
+      },
+      "loc": 613
+    },
+    {
+      "name": "persistentMultiplier",
+      "file": "src/blocks/persistentMultiplier.mjs",
+      "testFile": "tests/blocks/persistentMultiplier.test.mjs",
+      "category": "multiplier",
+      "description": "Multiplier that does NOT reset between spins inside a round (typically",
+      "exports": [
+        "defaultConfig",
+        "emitPersistentMultiplierCSS",
+        "emitPersistentMultiplierMarkup",
+        "emitPersistentMultiplierRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsSpinResult",
+        "onFsTrigger",
+        "onTumbleStep"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "mode": "fs",
+        "startMult": 1,
+        "growPerWin": 1,
+        "growPerCascade": 0,
+        "maxMult": 0,
+        "resetOnRoundEnd": true,
+        "chipColor": "255,214,110"
+      },
+      "loc": 190
+    },
+    {
+      "name": "postSpin",
+      "file": "src/blocks/postSpin.mjs",
+      "testFile": "tests/blocks/postSpin.test.mjs",
+      "category": "engine",
+      "description": "Slot GDD Factory · postSpin BLOCK",
+      "exports": [
+        "defaultConfig",
+        "emitPostSpinRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "postSpin",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "postSpin"
+      ],
+      "defaultConfig": {
+        "settlePauseMs": 200,
+        "forcedSettlePauseMs": 350,
+        "retriggerCap": 3,
+        "fsSpinBreathMs": 250,
+        "fakeWinChance": 0.4,
+        "fakeWinMaxX": 25
+      },
+      "loc": 259
+    },
+    {
+      "name": "progressiveFreeSpins",
+      "file": "src/blocks/progressiveFreeSpins.mjs",
+      "testFile": "tests/blocks/progressiveFreeSpins.test.mjs",
+      "category": "multiplier",
+      "description": "Multiplier that **escalates on every FS spin regardless of win**, in",
+      "exports": [
+        "defaultConfig",
+        "emitProgressiveFreeSpinsCSS",
+        "emitProgressiveFreeSpinsMarkup",
+        "emitProgressiveFreeSpinsRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsSpinResult",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "strategy": "linear",
+        "startMult": 1,
+        "step": 1,
+        "ladderValues": [
+          1,
+          2,
+          3,
+          5,
+          10,
+          25,
+          50,
+          100
+        ],
+        "maxMult": 0,
+        "resetOnRoundEnd": true,
+        "chipColor": "255,180,80",
+        "chipLabel": "FS MULT"
+      },
+      "loc": 273
+    },
+    {
+      "name": "realityCheck",
+      "file": "src/blocks/realityCheck.mjs",
+      "testFile": "tests/blocks/realityCheck.test.mjs",
+      "category": "audit",
+      "description": "Regulator-mandated \"Reality Check\" popup. Periodically interrupts",
+      "exports": [
+        "defaultConfig",
+        "emitRealityCheckCSS",
+        "emitRealityCheckMarkup",
+        "emitRealityCheckRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onAutoplayTick",
+        "onBalanceChanged",
+        "onNetThresholdCrossed",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onRealityCheckDismissed",
+        "onRealityCheckPaused",
+        "onRealityCheckQuit",
+        "onRealityCheckResumed",
+        "onRealityCheckShown"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "intervalMs": 600000,
+        "spinInterval": 0,
+        "triggerOnLossLevel": "alert",
+        "pauseOptions": [
+          5,
+          15,
+          30
+        ],
+        "currencyPrefix": "€",
+        "showElapsedTime": true,
+        "showSpinCount": true,
+        "showNetSummary": true,
+        "dismissBlocksSpin": true,
+        "accentColor": "255,170,80",
+        "title": "REALITY CHECK"
+      },
+      "loc": 686
+    },
+    {
+      "name": "reelEngine",
+      "file": "src/blocks/reelEngine.mjs",
+      "testFile": "tests/blocks/reelEngine.test.mjs",
+      "category": "engine",
+      "description": "Slot GDD Factory · reelEngine BLOCK (hot-path)",
+      "exports": [
+        "defaultConfig",
+        "emitReelEngineRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onSlamRequested",
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onSlamComplete",
+        "onSpinResult",
+        "preSpin"
+      ],
+      "defaultConfig": {
+        "minRotations": 8,
+        "settleBreathMs": 80,
+        "stripBufferCells": 2,
+        "staticPreRollMs": 220,
+        "staticBlurSwapMs": 220,
+        "staticStaggerMs": 200,
+        "staticHoldMs": 400,
+        "staticSettleMs": 80,
+        "staticFallbackMs": 60,
+        "snapThreshold": 0.6,
+        "minStepPx": 0.5,
+        "accelMinFactor": 0.3
+      },
+      "loc": 651
+    },
+    {
+      "name": "reelEngineCSS",
+      "file": "src/blocks/reelEngineCSS.mjs",
+      "testFile": "tests/blocks/reelEngineCSS.test.mjs",
+      "category": "engine",
+      "description": "Slot GDD Factory · reelEngineCSS BLOCK",
+      "exports": [
+        "defaultConfig",
+        "emitReelEngineCSS",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "blurPx": 4.5,
+        "blurDim": 0.88,
+        "blurFadeMs": 80
+      },
+      "loc": 96
+    },
+    {
+      "name": "respin",
+      "file": "src/blocks/respin.mjs",
+      "testFile": "tests/blocks/respin.test.mjs",
+      "category": "feature",
+      "description": "Per-reel re-spin: after a base spin, optionally re-spin individual reels",
+      "exports": [
+        "defaultConfig",
+        "emitRespinCSS",
+        "emitRespinMarkup",
+        "emitRespinRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "postSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "mode": "base",
+        "triggerChance": 0.08,
+        "costX": 0,
+        "holdRule": "last-reel",
+        "respinsPerTrigger": 1,
+        "haloColor": "120,210,255"
+      },
+      "loc": 223
+    },
+    {
+      "name": "scatterCelebration",
+      "file": "src/blocks/scatterCelebration.mjs",
+      "testFile": "tests/blocks/scatterCelebration.test.mjs",
+      "category": "fs",
+      "description": "Slot GDD Factory · scatterCelebration BLOCK",
+      "exports": [
+        "defaultConfig",
+        "emitScatterCelebrationCSS",
+        "emitScatterCelebrationRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsTrigger",
+        "onSkipRequested"
+      ],
+      "emittedEvents": [
+        "onSkipComplete"
+      ],
+      "defaultConfig": {
+        "enabled": true,
+        "durationMs": 1500,
+        "pulseCycles": 3,
+        "pulseCycleMs": 500,
+        "dimOpacity": 0.18,
+        "glowColor": "255,214,110",
+        "glowPeak": 1.5
+      },
+      "loc": 281
+    },
+    {
+      "name": "settingsPanel",
+      "file": "src/blocks/settingsPanel.mjs",
+      "testFile": "tests/blocks/settingsPanel.test.mjs",
+      "category": "ui",
+      "description": "cog button on the hub opens a modal sa konsolidovanim user-toggle",
+      "exports": [
+        "SETTINGS_KEYS",
+        "defaultConfig",
+        "emitSettingsPanelCSS",
+        "emitSettingsPanelMarkup",
+        "emitSettingsPanelRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onAutoplayStart",
+        "onFsTrigger",
+        "onTurboToggle",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": true,
+        "chipLabel": "⚙",
+        "chipColor": "201,162,39",
+        "chipTextColor": "255,230,168",
+        "modalBgColor": "10,12,18",
+        "modalAccentColor": "201,162,39",
+        "showTurboToggle": true,
+        "showSoundToggle": true,
+        "showReducedMotionToggle": true,
+        "showQuickSpinToggle": true,
+        "showAutoHideWinToggle": true,
+        "showLanguageSelector": false,
+        "availableLocales": [
+          "en-US",
+          "sr-Latn",
+          "de-DE",
+          "es-ES",
+          "fr-FR"
+        ],
+        "persistInLocalStorage": true,
+        "closeOnBackdrop": true,
+        "closeOnEscape": true,
+        "autoHideOnSpin": true,
+        "ariaLabel": "Open settings"
+      },
+      "loc": 668
+    },
+    {
+      "name": "slamStop",
+      "file": "src/blocks/slamStop.mjs",
+      "testFile": "tests/blocks/slamStop.test.mjs",
+      "category": "round-control",
+      "description": "• A button (and optional whole-reels click area) that the player can",
+      "exports": [
+        "defaultConfig",
+        "emitSlamStopCSS",
+        "emitSlamStopMarkup",
+        "emitSlamStopRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "onSlamComplete",
+        "onSpinResult",
+        "postSpin",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onSlamRequested"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "chipLabel": "STOP",
+        "chipColor": "255,80,80",
+        "chipTextColor": "255,255,255",
+        "requireMinSpinMs": 250,
+        "hideOnTurbo": true,
+        "hideOnAutoSpin": true,
+        "reelsClickAreaEnabled": true,
+        "ariaLabel": "Stop reels",
+        "pulseAnimation": true
+      },
+      "loc": 400
+    },
+    {
+      "name": "spinControl",
+      "file": "src/blocks/spinControl.mjs",
+      "testFile": "tests/blocks/spinControl.test.mjs",
+      "category": "round-control",
+      "description": "the primary CTA in the sideHud is ONE contextual button whose label +",
+      "exports": [
+        "defaultConfig",
+        "emitSpinControlCSS",
+        "emitSpinControlMarkup",
+        "emitSpinControlRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onBigWinTierEnd",
+        "onBigWinTierEntered",
+        "onFsEnd",
+        "onFsTrigger",
+        "onScatterCelebrationStart",
+        "onSkipComplete",
+        "onSlamComplete",
+        "onSpinResult",
+        "onWinPresentationEnd",
+        "onWinPresentationStart",
+        "postSpin",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": true,
+        "requireMinSpinMs": 250,
+        "hideOnTurbo": true,
+        "hideOnAutoSpin": true,
+        "reelsClickAreaEnabled": true,
+        "minRollupMsForShow": 600,
+        "showDuringRollup": true,
+        "showDuringFsIntro": true,
+        "showDuringFsOutro": true,
+        "showDuringCelebration": false,
+        "spinAriaLabel": "Spin",
+        "stopAriaLabel": "Stop reels",
+        "skipAriaLabel": "Skip animation",
+        "stopColor": "255,80,80",
+        "skipColor": "90,180,255"
+      },
+      "loc": 856
+    },
+    {
+      "name": "spinTempo",
+      "file": "src/blocks/spinTempo.mjs",
+      "testFile": "tests/blocks/spinTempo.test.mjs",
+      "category": "engine",
+      "description": "Slot GDD Factory · spinTempo BLOCK",
+      "exports": [
+        "defaultConfig",
+        "emitSpinTempoRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "windupMs": 100,
+        "windupFrames": 6,
+        "windupPx": 38,
+        "accelMs": 120,
+        "steadyMs": 830,
+        "decelMs": 350,
+        "staggerMs": 320,
+        "bouncePx": 4,
+        "bounceDecay": 0.42,
+        "bounceCount": 1,
+        "bounceElasticity": 1.7,
+        "decelEasingSpeed": 0.11
+      },
+      "loc": 140
+    },
+    {
+      "name": "stageBadge",
+      "file": "src/blocks/stageBadge.mjs",
+      "testFile": "tests/blocks/stageBadge.test.mjs",
+      "category": "fs",
+      "description": "Slot GDD Factory · stageBadge BLOCK",
+      "exports": [
+        "defaultConfig",
+        "emitStageBadgeCSS",
+        "emitStageBadgeMarkup",
+        "emitStageBadgeRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": true,
+        "baseLabel": "BASE GAME",
+        "fsLabel": "FREE SPINS",
+        "gold": "255,214,110",
+        "pulseMs": 1600,
+        "mobileBreakpoint": 620
+      },
+      "loc": 209
+    },
+    {
+      "name": "stickyWild",
+      "file": "src/blocks/stickyWild.mjs",
+      "testFile": "tests/blocks/stickyWild.test.mjs",
+      "category": "wild",
+      "description": "When GDD declares a `sticky_wild` feature, this block emits:",
+      "exports": [
+        "defaultConfig",
+        "emitStickyWildCSS",
+        "emitStickyWildRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "onSpinResult",
+        "postSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "mode": "fs",
+        "durationSpins": 0,
+        "wildSymbolId": "W",
+        "haloColor": "255,214,110",
+        "pulseMs": 1400
+      },
+      "loc": 178
+    },
+    {
+      "name": "superSymbol",
+      "file": "src/blocks/superSymbol.mjs",
+      "testFile": "tests/blocks/superSymbol.test.mjs",
+      "category": "wild",
+      "description": "2×2 / 3×3 / 4×4 super-symbol blocks land on the grid as a single",
+      "exports": [
+        "defaultConfig",
+        "emitSuperSymbolCSS",
+        "emitSuperSymbolRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "mode": "base",
+        "blockSize": 2,
+        "triggerChance": 0.18,
+        "symbolPool": null,
+        "haloColor": "255,200,80"
+      },
+      "loc": 175
+    },
+    {
+      "name": "themeCSS",
+      "file": "src/blocks/themeCSS.mjs",
+      "testFile": "tests/blocks/themeCSS.test.mjs",
+      "category": "engine",
+      "description": "Wave T-slim — extract of the slot-template \"chrome\" CSS that previously",
+      "exports": [
+        "defaultConfig",
+        "emitDevToolsCSS",
+        "emitGridShapesCSS",
+        "emitThemeCSS",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "palette": {
+          "bg0": "#05070c",
+          "bg1": "#0b0f16",
+          "accent": "#c9a227",
+          "text": "#f2f2f2"
+        },
+        "cellGap": 6,
+        "cellRadius": 10,
+        "frameRadius": 16,
+        "frameInset": 18
+      },
+      "loc": 635
+    },
+    {
+      "name": "triggerCounting",
+      "file": "src/blocks/triggerCounting.mjs",
+      "testFile": "tests/blocks/triggerCounting.test.mjs",
+      "category": "fs",
+      "description": "Slot GDD Factory · triggerCounting BLOCK",
+      "exports": [
+        "defaultConfig",
+        "emitTriggerCountingRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "defaultThreshold": 3
+      },
+      "loc": 139
+    },
+    {
+      "name": "tumble",
+      "file": "src/blocks/tumble.mjs",
+      "testFile": "tests/blocks/tumble.test.mjs",
+      "category": "engine",
+      "description": "When GDD declares `topology.cascade.enabled: true` (cluster-cascade /",
+      "exports": [
+        "defaultConfig",
+        "emitTumbleCSS",
+        "emitTumbleRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onTumbleStep"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "removeMs": 280,
+        "gravityMs": 320,
+        "refillMs": 260,
+        "chainPauseMs": 180,
+        "maxChain": 16,
+        "preserveOrbs": true
+      },
+      "loc": 283
+    },
+    {
+      "name": "turboMode",
+      "file": "src/blocks/turboMode.mjs",
+      "testFile": "tests/blocks/turboMode.test.mjs",
+      "category": "round-control",
+      "description": "spin toggle): a hub button flips a global flag that compresses the",
+      "exports": [
+        "defaultConfig",
+        "emitTurboModeCSS",
+        "emitTurboModeMarkup",
+        "emitTurboModeRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onTurboToggle"
+      ],
+      "defaultConfig": {
+        "enabled": true,
+        "initialActive": false,
+        "persistInLocalStorage": true,
+        "turboSpeedMult": 0.35,
+        "chipLabel": "TURBO",
+        "chipColor": "255,140,40",
+        "chipTextColor": "255,255,255",
+        "position": "sideHud",
+        "ariaLabel": "Toggle turbo spin mode"
+      },
+      "loc": 349
+    },
+    {
+      "name": "uiToast",
+      "file": "src/blocks/uiToast.mjs",
+      "testFile": "tests/blocks/uiToast.test.mjs",
+      "category": "ui",
+      "description": "Centralised \"celebration\" overlay for win tiers and feature triggers.",
+      "exports": [
+        "TOAST_TIERS",
+        "defaultConfig",
+        "emitUiToastCSS",
+        "emitUiToastMarkup",
+        "emitUiToastRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "postSpin",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "bigWinThresholdX": 10,
+        "megaWinThresholdX": 50,
+        "epicWinThresholdX": 250,
+        "bigDurationMs": 1800,
+        "megaDurationMs": 2400,
+        "epicDurationMs": 3200,
+        "featureDurationMs": 1400,
+        "queueOnFsEnd": true,
+        "fsTriggerLabel": "FREE SPINS!",
+        "colors": {
+          "big": "255,210,90",
+          "mega": "210,120,255",
+          "epic": "255,80,140",
+          "feature": "110,200,255",
+          "neutral": "255,255,255"
+        },
+        "maxQueue": 6
+      },
+      "loc": 383
+    },
+    {
+      "name": "walkingWild",
+      "file": "src/blocks/walkingWild.mjs",
+      "testFile": "tests/blocks/walkingWild.test.mjs",
+      "category": "wild",
+      "description": "Wild walks one position per spin (typical: leftward) and triggers a",
+      "exports": [
+        "defaultConfig",
+        "emitWalkingWildCSS",
+        "emitWalkingWildRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "onSpinResult",
+        "onTumbleStep",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "mode": "fs",
+        "wildSymbolId": "W",
+        "direction": "left",
+        "triggerRespin": true,
+        "haloColor": "110,255,170"
+      },
+      "loc": 190
+    },
+    {
+      "name": "waysEval",
+      "file": "src/blocks/waysEval.mjs",
+      "testFile": "tests/blocks/waysEval.test.mjs",
+      "category": "evaluator",
+      "description": "Evaluates \"ways\" wins: from leftmost reel, count consecutive reels",
+      "exports": [
+        "defaultConfig",
+        "emitWaysEvalRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "waysCount": 243,
+        "minRun": 3,
+        "direction": "ltr",
+        "maxEvents": 8
+      },
+      "loc": 156
+    },
+    {
+      "name": "weightedWheelSegments",
+      "file": "src/blocks/weightedWheelSegments.mjs",
+      "testFile": "tests/blocks/weightedWheelSegments.test.mjs",
+      "category": "feature",
+      "description": "Modern wheel-bonus mini-games use **non-uniform** segment selection:",
+      "exports": [
+        "defaultConfig",
+        "emitWeightedWheelSegmentsCSS",
+        "emitWeightedWheelSegmentsMarkup",
+        "emitWeightedWheelSegmentsRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [
+        "onWheelAwardCollected",
+        "onWheelJackpotHit",
+        "onWheelSegmentChosen"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "weights": null,
+        "jackpotMap": [
+          {
+            "label": "MINI",
+            "x": 5
+          },
+          {
+            "label": "MINOR",
+            "x": 25
+          },
+          {
+            "label": "MAJOR",
+            "x": 100
+          },
+          {
+            "label": "GRAND",
+            "x": 1000
+          }
+        ],
+        "defaultTierColor": "255,80,80",
+        "allowFallbackToValue": true
+      },
+      "loc": 519
+    },
+    {
+      "name": "wheelBonus",
+      "file": "src/blocks/wheelBonus.mjs",
+      "testFile": "tests/blocks/wheelBonus.test.mjs",
+      "category": "feature",
+      "description": "Overlay with a wheel of N segments. Spin button spins the wheel,",
+      "exports": [
+        "defaultConfig",
+        "emitWheelBonusCSS",
+        "emitWheelBonusMarkup",
+        "emitWheelBonusRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "segments": [
+          {
+            "label": "×2",
+            "value": 2,
+            "color": "#e8c270"
+          },
+          {
+            "label": "×5",
+            "value": 5,
+            "color": "#d28a3a"
+          },
+          {
+            "label": "×10",
+            "value": 10,
+            "color": "#c45050"
+          },
+          {
+            "label": "×20",
+            "value": 20,
+            "color": "#7050c4"
+          },
+          {
+            "label": "×50",
+            "value": 50,
+            "color": "#3aa0c2"
+          },
+          {
+            "label": "×100",
+            "value": 100,
+            "color": "#2bb56b"
+          },
+          {
+            "label": "×500",
+            "value": 500,
+            "color": "#e84f8a"
+          },
+          {
+            "label": "×1000",
+            "value": 1000,
+            "color": "#ffd24a"
+          }
+        ],
+        "spinDurationMs": 3800,
+        "haloColor": "255,210,90",
+        "autoSpin": false,
+        "title": "BONUS WHEEL"
+      },
+      "loc": 287
+    },
+    {
+      "name": "wildReel",
+      "file": "src/blocks/wildReel.mjs",
+      "testFile": "tests/blocks/wildReel.test.mjs",
+      "category": "wild",
+      "description": "A randomly-picked reel turns fully wild on selected spins. Industry",
+      "exports": [
+        "defaultConfig",
+        "emitWildReelCSS",
+        "emitWildReelRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "mode": "fs",
+        "wildSymbolId": "W",
+        "chancePerSpin": 0.18,
+        "maxReelsPerSpin": 1,
+        "haloColor": "255,180,90"
+      },
+      "loc": 143
+    },
+    {
+      "name": "winCap",
+      "file": "src/blocks/winCap.mjs",
+      "testFile": "tests/blocks/winCap.test.mjs",
+      "category": "feature",
+      "description": "Regulator-mandated max-win enforcement. When cumulative win exceeds",
+      "exports": [
+        "defaultConfig",
+        "emitWinCapCSS",
+        "emitWinCapMarkup",
+        "emitWinCapRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "postSpin",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "maxWinX": 5000,
+        "mode": "round",
+        "overlayLabel": "MAX WIN!",
+        "overlayMs": 2400,
+        "color": "255,215,0",
+        "forceRoundEnd": true
+      },
+      "loc": 188
+    },
+    {
+      "name": "winPresentation",
+      "file": "src/blocks/winPresentation.mjs",
+      "testFile": "tests/blocks/winPresentation.test.mjs",
+      "category": "round-control",
+      "description": "Slot GDD Factory · winPresentation BLOCK",
+      "exports": [
+        "defaultConfig",
+        "emitDetectWinCombosRuntime",
+        "emitWinPresentationCSS",
+        "emitWinPresentationRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onSkipRequested",
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onSkipComplete",
+        "onWinPresentationEnd",
+        "onWinPresentationStart"
+      ],
+      "defaultConfig": {
+        "mode": "per-line",
+        "perEventMs": "auto",
+        "maxEvents": 8,
+        "noWinChance": 0.3,
+        "winCycle": true,
+        "bigWinCelebMs": 800
+      },
+      "loc": 843
+    },
+    {
+      "name": "winRollup",
+      "file": "src/blocks/winRollup.mjs",
+      "testFile": "tests/blocks/winRollup.test.mjs",
+      "category": "round-control",
+      "description": "Slot GDD Factory · winRollup BLOCK",
+      "exports": [
+        "defaultConfig",
+        "emitWinRollupCSS",
+        "emitWinRollupMarkup",
+        "emitWinRollupRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onBigWinTierEntered",
+        "onFsEnd",
+        "onFsTrigger",
+        "onSkipRequested",
+        "onWinPresentationEnd",
+        "onWinPresentationStart",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": true,
+        "labelText": "TOTAL WIN",
+        "bigWinTriggerRatio": 10,
+        "minDurationMs": 400,
+        "maxDurationMs": 2000,
+        "msPerBetMultiple": 60,
+        "holdMs": 0,
+        "currency": "€",
+        "currencyPosition": "prefix"
+      },
+      "loc": 479
+    }
+  ]
+}

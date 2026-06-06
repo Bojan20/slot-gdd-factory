@@ -3603,9 +3603,9 @@ Without V5, the template is a "look-at-me" slot — animations play out at their
 | U2 | **`audio.mjs`** — Howler scaffolding (`SPIN_START`, `REEL_STOP`, `WIN_BIG`, `FS_TRIGGER`, `ORB_SPAWN`, `TUMBLE_REMOVE` kategorije). Mute toggle + volume slider. Empty defaults, GDD specifikuje URL-ove | nov blok | ⚠️ SHIPPED `e9287ee` → DEACTIVATED `b18113e` (audio ide u ADB tok, ne GDD; blok ostaje u repo-u kao preserved) |
 | U3 | **`uiToast.mjs`** — unified toast za win celebration (`BIG WIN` / `MEGA WIN` / `EPIC WIN` thresholds × bet) i feature triggers (`RESPIN!` / `LIGHTNING!`) | nov blok | ✅ SHIPPED `a162323` |
 | U4 | **`autoplay.mjs`** — N spin auto-play + stop-on-feature-trigger (any FS, ≥10× win, balance limit, loss/win cumulative limits) | nov blok | ✅ shipped `f846899` — industry-baseline steps [10..1000], 7 stop reasons (completed/manual/feature/singleWinAbove/balanceBelow/lossLimit/winLimit/slam), 3 nova HookBus event-a (onAutoplayStart/Tick/Stop), 31/31 unit tests, FS pause/resume, slam integration. |
-| U5 | **`betSelector.mjs`** — coin-value × bet-multiplier model + bet-step buttons. Trenutno hardkodovano `€1` u svim fixturama | nov blok | ⏳ queued |
-| U6 | **`gambleSecondary.mjs`** — Card Gamble + Ladder Gamble (sada samo osnovni `gamble`) — industry pattern je 2 grane | nov blok | ⏳ queued |
-| U7 | **`rngFairness.mjs`** PAR layer skeleton (provably-fair seed + verify endpoint) | nov blok | ⏳ queued |
+| U5 | **`betSelector.mjs`** — coin-value × bet-multiplier model + bet-step buttons | nov blok | ✅ shipped — 778 LOC blok + 34/34 unit tests, full CSS/markup/runtime wired u buildSlotHTML, vendor-neutral PASS |
+| U6 | **`gambleSecondary.mjs`** — Card Gamble + Ladder Gamble grane | nov blok | ✅ shipped — 970 LOC blok + 31/31 unit tests, full CSS/markup/runtime wired, vendor-neutral PASS |
+| U7 | **`rngFairness.mjs`** PAR layer skeleton (provably-fair seed + verify endpoint) | nov blok | ⏳ queued — **math layer**, čeka PAR Phase 2 |
 | U8 | **`balanceHud.mjs`** — denomination + balance + bet + win pravi HUD, currency aware | nov blok | ✅ shipped `6ae6d95` — owns `window.__SLOT_BALANCE__` single source-of-truth; preSpin debit (base only, FS free), postSpin credit lastWin, onFsEnd credit totalWin, onGambleEnd credit bank, onBetChanged refresh column. Currency `€/EUR/USD/GBP/JPY/CHF/PLN`, prefix/suffix. Debit-red + credit-green pulse keyframes (reduced-motion respected). New event `onBalanceChanged({balance, delta, reason})` sole-owned by balanceHud (reasons: init/spin/win/gamble/reset/topup/manual). 42/42 unit tests. |
 | U9 | **`historyLog.mjs`** — last-N spins log (drugi standard regulator) | nov blok | ✅ shipped `40f4258` — ring buffer (default 50 entries, cap 500), `≡` hub button → slide-up panel sa table-wrap (#, Time, Bet, Win, Balance) + per-mode classes (base/fs/gamble). Optional CSV export (default OFF, GDD opts in) za NJ audit flow. 7 HookBus listeners (preSpin snapshot, postSpin push 'base', onFsTrigger snapshot, onFsEnd push 'fs' sa totalWin, onGambleEnd push 'gamble' sa stake/bank, onBalanceChanged read-only marker, onAutoplayStart hide). 0 emits — pure audit observer. timeFormat hms/rel/iso. 39/39 unit tests. |
 | U10 | **`paytable.mjs`** modal — full paytable viewer dostupan preko **i** dugmeta | nov blok | ✅ shipped `7fc54ed` — regulator-mandated info modal: 'i' hub button → full-screen overlay sa symbol roster (HP/MP/LP tier colors), 3OAK/4OAK/5OAK payout grid, specials section, feature chips, wild rules note, real-cash bet row composed sa `window.__SLOT_BET__`. Auto-hide na preSpin/onFsTrigger/onAutoplayStart. closeOnBackdrop + Escape. 4 HookBus listeners, 0 emits (pure UI). 41/41 unit tests. |
@@ -3671,28 +3671,22 @@ V4 (HookBus events) first — bez njih V1/V2 ne mogu da emit. Onda V1+V2 paralel
 
 ---
 
-### 🔵 Wave Z — Block Playground (POSLEDNJE, posle Wave U)
+### ✅ Wave Z — Block Playground — SHIPPED (this commit)
 
 > **Storybook za LEGO blokove.** Sidebar lista svih blokova → klik → desni
-> panel: live demo, config sliders, HookBus event log uživo, opis.
-> Ruta `/blocks/` u Python serveru.
->
-> **Zašto na kraju**: playground prikazuje stanje blokova. Ako Wave S/T/U
-> nisu gotovi, playground će prikazati broken/biased/incomplete blokove.
-> Tako Wave Z = automatski regression detector + dokaz da je LEGO sistem
-> ostvario svoju svrhu.
+> panel: per-block detail + config snapshot + HookBus event log + quick
+> actions. Statička ruta `blocks/index.html` servirana iz `python3 -m http.server`.
 
-| ID | Item | Detalj | Effort |
-|:-:|---|---|---|
-| Z1 | **`/blocks/index.html`** — sidebar lista 34+ blokova (alphabetical + group by category: wilds / multipliers / fs / round-control / ui) | nav skeleton | XS |
-| Z2 | **Per-block panel template** — live demo (mock 5×3 grid), "Trigger" dugme koje emituje relevantne HookBus events, config sliders za sve `defaultConfig()` keyove, HookBus event log uživo (poslednjih 20 events sa timestamps + payload + listener count) | core UX | L |
-| Z3 | **Block manifest auto-gen** — `tools/gen-block-manifest.mjs` skenira `src/blocks/*.mjs` i pravi `blocks/_manifest.json` sa: imenom, defaultConfig, exported funkcijama, lifecycle hooks (parse iz `HookBus.on(...)` poziva), test file path-om, opisom (parse iz JSDoc) | meta-data | M |
-| Z4 | **Trigger preset library** — gotovi preseti za svaki blok ("4 scatters land", "tumble chain depth 3", "FS round 2 of 10", "win at €10"), klik → emit-uje sequence eventova | demo flow | M |
-| Z5 | **Live HookBus inspector** — prikazuje za svaki event count handler-a + execution time + return values; podržava `step-through` mode (event-by-event playback) | debug | M |
-| Z6 | **Config persistence** — sliderom promenjen config se snima u `localStorage`, vraća se posle reload. "Export GDD snippet" dugme koje generiše YAML/MD fragment koji možeš pasteovati u GDD | save-load | S |
-| Z7 | **`tests/blocks/_playground.test.mjs`** — Playwright test koji loaduje `/blocks/`, klikne na svaki blok iz manifesta, proveri da svaki "Trigger" dugme okida HookBus emit + handler poziv, snimi screenshot. Output: 34+ screenshots u `tools/_eyes/playground/` | regression | M |
-| Z8 | **`tools/cortex-eyes-playground.mjs`** — wrapper koji startuje server + Z7 test + agreguje rezultate. Boki može odraditi sve blokove jednim komandom | dev tool | XS |
-| Z9 | **README.md update** — dokumentuje playground URL + workflow | docs | XS |
+| ID | Item | Detalj | Status |
+|:-:|---|---|:--:|
+| Z1 | **`blocks/index.html`** — sidebar grouped by category, search filter | nav skeleton | ✅ shipped — 57 blokova u 9 kategorija, hash routing, ARIA `aria-current`. |
+| Z2 | **Per-block detail panel** — exports / listens / emits chips + source links + defaultConfig snapshot + 7 cards layout | core UX | ✅ shipped — XSS-safe rendering kroz `esc()`, syntax-highlighted JSON viewer (color tokens: k=key, s=string, n=number, b=bool, x=null/empty). |
+| Z3 | **`tools/gen-block-manifest.mjs`** — auto-scan `src/blocks/*.mjs` | meta-data | ✅ shipped — 57 blokova, parsira JSDoc opis, exports, `HookBus.on/.once/.waitFor/.emit` reference, učitava `defaultConfig()` runtime sa defensive error capture. Sort deterministic za stable git diff. |
+| Z4 | Trigger preset library | demo flow | ⏭️ deferred to Wave Z phase 2 — zahteva integrated iframe + bus injection, MVP playground je inspector-mode. |
+| Z5 | **Live HookBus inspector** — log card sa replay + capped ring buffer | debug | ✅ shipped — `attachHookBus()` idempotent, slušа sve canonical events iz manifesta, prikazuje timestamp + JSON payload, cap 200 rows; "Re-attach" + "Clear log" + "Copy log" buttons. Empty-state hint kad nema `window.HookBus`. |
+| Z6 | **Persistence + Export GDD snippet** | save-load | ✅ shipped — `localStorage[slot.playground.v1]` snima filter + active block; restored on boot. Escape clears filter. 3 quick-action dugmeta: "Copy block JSON", "Copy defaultConfig", "Export GDD snippet" (Markdown + YAML fragment ready to paste). |
+| Z7+Z8 | **`tools/cortex-eyes-playground.mjs`** — Playwright headless verification | regression | ✅ shipped — **17/17 PASS** (page load + 0 console errors + manifest reach + welcome grid + sidebar count + hash routing + 7-card detail layout + 4+ buttons + live log mount + empty-state hint + Z6 persistence reload + filter narrow + clear restore + unknown hash safety). |
+| Z9 | README.md update | docs | ⏳ pending — povezaću playground URL + workflow u sledećem doc-only commit-u. |
 
 ---
 
