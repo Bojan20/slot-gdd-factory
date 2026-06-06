@@ -1,3 +1,4 @@
+import { applyGridProfile } from '../registry/gridProfile.mjs';
 /**
  * src/blocks/paytable.mjs
  *
@@ -79,7 +80,8 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  /* Wave UD — baseline → per-kind context override → explicit GDD. */
+  const cfg = applyGridProfile('paytable', defaultConfig(), model);
   const m = (model && model.paytable) || {};
 
   if (m.enabled != null) cfg.enabled = !!m.enabled;

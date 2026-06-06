@@ -61,6 +61,8 @@ const DEFAULTS = Object.freeze({
   }),
 });
 
+import { applyGridProfile } from '../registry/gridProfile.mjs';
+
 export function defaultConfig() {
   return {
     enabled: DEFAULTS.enabled,
@@ -72,7 +74,11 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  /* Wave UD — start from global baseline, then apply per-`SHAPE.kind`
+     contextual override (gridProfile registry), then let explicit GDD
+     model values win on top. Order is intentional: baseline → context →
+     explicit so a GDD always has the final word. */
+  let cfg = applyGridProfile('paylineOverlay', defaultConfig(), model);
   const m = (model && model.paylineOverlay) || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (Number.isFinite(m.strokeWidth))  cfg.strokeWidth = Math.max(1, Math.min(12, Number(m.strokeWidth)));

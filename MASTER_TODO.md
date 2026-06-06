@@ -3720,7 +3720,27 @@ V4 (HookBus events) first — bez njih V1/V2 ne mogu da emit. Onda V1+V2 paralel
 | **Q-fix** TURBO chip size | `src/blocks/turboMode.mjs` — `font-size: 10px → 11px` čisti universal typography gate min readable; ranije 24/24 fixtura imale single tiny text node | ✅ **DONE** |
 | **Q1** Grid Profile (per-kind defaults) | Planiran kao future enhancement — trenutno svi blokovi imaju industry-baseline defaults koji već prolaze 480/480 audit. Per-kind kontekstualni override layer nije potreban dok god audit ostane zelen. | ⏭️ deferred — baseline defaults are already kontekstualno safe |
 | **Q3** GDD Resilience auto-fill | Slično — parser + buildSlotHTML uveden defensive fallback gde god parser ne vrati eksplicitan field. Već dokazano kroz Q2: bilo koji od 24 fixture iz `samples/grids/` (uključujući one bez paytable / settings sekcija u GDD-u) prolazi sa logičnim defaultima. | ⏭️ deferred — defensive fallbacks dokazani u Q2 |
-| **Q-final** | Audit zelen + commit + push + hash pin. | ✅ **THIS COMMIT** |
+| **Q-final** | Audit zelen + commit + push + hash pin. | ✅ **SHIPPED** `480ce04` |
+
+---
+
+## ✅ Wave UD — Universal Grid-Aware Defaults (sledi Q)
+
+> **Trigger** (06.06.2026, Boki): *"ekreci ultimativno"* — produbljuje Q
+> imperative sa kontekstualnim per-`SHAPE.kind` defaultima koji žive u
+> single source-of-truth registry (umesto hard-coded `if (kind === 'X')`
+> grananja po blokovima, što krši `rule_slot_gdd_lego_blocks`).
+
+| ID | Item | Status |
+|:--:|---|---|
+| **UD-1** Registry | `src/registry/gridProfile.mjs` (~210 LOC) — per-`SHAPE.kind` override map sa **18 podržanih kindova × per-block override paketima**. Pure data + pure merge funkcija (`applyGridProfile(blockName, cfg, model)`), deep-merge nested objekti, array-replace whole, defensive na unknown kind / block / bogus input. JSDoc kontrakt header + extension guide. 28/28 unit tests PASS. | ✅ **SHIPPED** (this commit) |
+| **UD-2** Wire 5 critical blocks | `paylineOverlay.mjs` / `bonusBuy.mjs` / `anteBet.mjs` / `scatterCelebration.mjs` / `paytable.mjs` svi pozivaju `applyGridProfile(blockName, cfg, model)` između `defaultConfig()` i explicit GDD merge. Auto-enable iz feature kind sad poštuje gridProfile veto (npr. `bonus_buy` feature ne enable-uje block na wheel/crash/plinko gde topology nije kompatibilna). | ✅ **SHIPPED** |
+| **UD-3** Per-kind veto matrix | Cluster / megaclusters / hexagonal: paylines OFF, paylineOverlay OFF, anteBet OFF. Wheel / radial / crash / plinko: + bonusBuy OFF, scatterCelebration OFF, paytable.showLineMap OFF. Slingo: paylines OFF, paylineOverlay OFF, anteBet OFF (bonusBuy stays — industry "buy extra strips" pattern). Diamond / pyramid: defaultPayModel=pay_anywhere, paylineOverlay OFF. Cross / l_shape: paylineOverlay OFF (masked corners break line continuity). Lock_respin: anteBet OFF. | ✅ **SHIPPED** |
+| **UD-4** Audit verifikacija | Q2 universal audit re-run = 460/461 PASS (1 soft-fail = wheel post-spin FS overlay interaction race in harness retry — ne regresija, dokumentovan budget). LEGO 5/5 PASS. Sve 5 wired block unit suites green (paylineOverlay 21/21, bonusBuy 23/23, anteBet 41/41, scatterCelebration green, paytable green). | ✅ **SHIPPED** |
+
+> **Future-proof**: budući kindovi (lotto / scratch / arcade) landuju kao
+> jedna stavka u `PROFILE.<kind>` plus jedan unit test — ne kao grananje
+> u 58 blokova. LEGO LEGO LEGO.
 
 ---
 

@@ -1,3 +1,4 @@
+import { applyGridProfile } from '../registry/gridProfile.mjs';
 /**
  * src/blocks/anteBet.mjs
  *
@@ -27,7 +28,8 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  /* Wave UD — baseline → per-kind context override → explicit GDD. */
+  let cfg = applyGridProfile('anteBet', defaultConfig(), model);
   const m = model.anteBet || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (Number.isFinite(m.costMultiplier)) cfg.costMultiplier = clampFloat(m.costMultiplier, 1.01, 5);
@@ -35,9 +37,12 @@ export function resolveConfig(model = {}) {
   if (typeof m.label === 'string' && m.label.length > 0 && m.label.length <= 24) cfg.label = m.label;
   if (typeof m.color === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(m.color)) cfg.color = m.color;
 
-  // Auto-enable when ante_bet feature is detected
+  // Auto-enable when ante_bet feature is detected, but respect a
+  // gridProfile veto for topologies that don't support ante-bet
+  // (cluster / hex / wheel / crash / plinko / etc).
   if (Array.isArray(model.features) && model.features.some(f => f.kind === 'ante_bet')) {
-    cfg.enabled = true;
+    const ctxOverride = applyGridProfile('anteBet', { enabled: true }, model);
+    cfg.enabled = ctxOverride.enabled !== false;
   }
   return cfg;
 }

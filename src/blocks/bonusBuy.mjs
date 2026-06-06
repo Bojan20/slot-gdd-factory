@@ -1,3 +1,4 @@
+import { applyGridProfile } from '../registry/gridProfile.mjs';
 /**
  * src/blocks/bonusBuy.mjs
  *
@@ -28,7 +29,8 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  /* Wave UD — baseline → per-kind context override → explicit GDD. */
+  let cfg = applyGridProfile('bonusBuy', defaultConfig(), model);
   const m = model.bonusBuy || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (Number.isFinite(m.costX)) cfg.costX = clampInt(m.costX, 1, 10000);
@@ -37,9 +39,13 @@ export function resolveConfig(model = {}) {
   if (typeof m.color === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(m.color)) cfg.color = m.color;
   if (typeof m.confirmMessage === 'string' && m.confirmMessage.length <= 200) cfg.confirmMessage = m.confirmMessage;
 
-  // Auto-enable when bonus_buy feature is detected
+  // Auto-enable when bonus_buy feature is detected (but only when the
+  // grid topology supports buy-in — wheel / crash / plinko / radial
+  // self-disable via gridProfile and an explicit feature mention should
+  // NOT override that topology-level decision).
   if (Array.isArray(model.features) && model.features.some(f => f.kind === 'bonus_buy')) {
-    cfg.enabled = true;
+    const ctxOverride = applyGridProfile('bonusBuy', { enabled: true }, model);
+    cfg.enabled = ctxOverride.enabled !== false;
   }
   return cfg;
 }

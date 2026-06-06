@@ -1,3 +1,4 @@
+import { applyGridProfile } from '../registry/gridProfile.mjs';
 /**
  * Slot GDD Factory · scatterCelebration BLOCK
  *
@@ -58,9 +59,11 @@ function isValidGlow(s) {
 }
 
 /* Merge defaults with model.scatterCelebration, accepting only known keys
-   with the correct shape — defends against malformed GDD overrides. */
+   with the correct shape — defends against malformed GDD overrides.
+   Wave UD: gridProfile contextual override sits between baseline and
+   the explicit GDD entry. */
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = applyGridProfile('scatterCelebration', defaultConfig(), model);
   const src = (model && model.scatterCelebration) || {};
 
   if (src.enabled === false) cfg.enabled = false;
