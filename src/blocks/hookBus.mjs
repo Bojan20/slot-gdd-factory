@@ -233,6 +233,23 @@ export const HOOK_EVENTS = Object.freeze([
   'onRealityCheckPaused',
   'onRealityCheckResumed',
   'onRealityCheckQuit',
+  /* Wave H3: Session Timeout (continuous-play cap + forced break) events
+   * onSessionWarningShown {remainingMs, sessionMs} — fires when sessionMs
+   *   crosses `maxMs - warnMs` threshold (single-shot until reset).
+   *   Owner: sessionTimeout.mjs.
+   * onSessionTimeoutFired {sessionMs, breakMs, forceLogout} — fires when
+   *   sessionMs reaches the hard `maxMs` cap; forced break begins.
+   * onSessionResumed {breakDurationMs, reason} — fires when break ends
+   *   (auto | manual | logout) and the spin gateway is released.
+   * onSessionExtended {extendedMs} — fires when player acknowledges the
+   *   warning modal under UKGC soft-model (skips forced break this cycle).
+   * onSessionLogoutRequested {sessionMs} — fires when player picks QUIT
+   *   inside a forced break (AGCO/NJDGE hard-exit submode). */
+  'onSessionWarningShown',
+  'onSessionTimeoutFired',
+  'onSessionResumed',
+  'onSessionExtended',
+  'onSessionLogoutRequested',
   /* Wave U4: autoplay session events */
   'onAutoplayStart',
   'onAutoplayStop',

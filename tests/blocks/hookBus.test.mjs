@@ -52,6 +52,9 @@ t('HOOK_EVENTS canonical list (core + V intent + V5 win-present + U4 autoplay + 
     /* Wave H2 — Reality Check player-protection */
     'onRealityCheckShown', 'onRealityCheckDismissed', 'onRealityCheckPaused',
     'onRealityCheckResumed', 'onRealityCheckQuit',
+    /* Wave H3 — Session Timeout (continuous-play cap) */
+    'onSessionWarningShown', 'onSessionTimeoutFired', 'onSessionResumed',
+    'onSessionExtended', 'onSessionLogoutRequested',
     /* Wave U4 */
     'onAutoplayStart', 'onAutoplayStop', 'onAutoplayTick',
     /* Wave U5 */

@@ -235,6 +235,14 @@ import {
   emitRealityCheckRuntime,
   resolveConfig as resolveRealityCheckConfig,
 } from './blocks/realityCheck.mjs';
+// Wave H3 — Session Timeout (continuous-play cap + forced break)
+// UKGC LCCP 8.3.1 / AGCO Standard 4.07 / MGA RGF Part III
+import {
+  emitSessionTimeoutCSS,
+  emitSessionTimeoutMarkup,
+  emitSessionTimeoutRuntime,
+  resolveConfig as resolveSessionTimeoutConfig,
+} from './blocks/sessionTimeout.mjs';
 // Wave H5.8 — base-game total-win rollup counter (sits above the hub,
 // hidden until a sub-big-win lands, persists until the next preSpin).
 // Industry reference: statusBarController.rollupWin pattern.
@@ -469,6 +477,8 @@ ${/* Wave H12 — Net Win/Loss Indicator (chip CSS for session-net column). */ '
 ${emitNetLossIndicatorCSS(resolveNetLossIndicatorConfig(model))}
 ${/* Wave H2 — Reality Check modal CSS (regulator player-protection popup). */ ''}
 ${emitRealityCheckCSS(resolveRealityCheckConfig(model))}
+${/* Wave H3 — Session Timeout modal CSS (continuous-play cap + forced break). */ ''}
+${emitSessionTimeoutCSS(resolveSessionTimeoutConfig(model))}
 ${emitWinRollupCSS(resolveWinRollupConfig(model))}
 ${/* Wave U9 — session history log (audit panel). */ ''}
 ${emitHistoryLogCSS(resolveHistoryLogConfig(model))}
@@ -551,6 +561,8 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
     ${emitBalanceHudMarkup(resolveBalanceHudConfig(model))}
     ${emitNetLossIndicatorMarkup(resolveNetLossIndicatorConfig(model))}
     ${emitRealityCheckMarkup(resolveRealityCheckConfig(model))}
+    ${/* Wave H3 — session-timeout modal (warning + forced-break dual mode). */ ''}
+    ${emitSessionTimeoutMarkup(resolveSessionTimeoutConfig(model))}
     ${/* Wave U5 — bet chip + steps + panel. */ ''}
     ${emitBetSelectorMarkup(resolveBetSelectorConfig(model))}
     <button class="iconBtn" aria-label="Sound" type="button">
@@ -789,6 +801,10 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
      * / onBalanceChanged / onNetThresholdCrossed. Emits its own
      * lifecycle events. */ ''}
   ${emitRealityCheckRuntime(resolveRealityCheckConfig(model))}
+  ${/* Wave H3 — Session Timeout runtime: subscribes to preSpin / autoplay /
+     * realityCheck pause-resume. MUST follow realityCheck so realityCheck's
+     * emits already exist when sessionTimeout registers its listeners. */ ''}
+  ${emitSessionTimeoutRuntime(resolveSessionTimeoutConfig(model))}
   ${emitWinRollupRuntime(resolveWinRollupConfig(model))}
   ${/* Wave U9 — session history runtime (ring buffer + panel). */ ''}
   ${emitHistoryLogRuntime(resolveHistoryLogConfig(model))}

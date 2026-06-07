@@ -155,6 +155,16 @@ const EXPECTED_EMIT_OWNERS = {
   onRealityCheckPaused:        ['realityCheck.mjs'],
   onRealityCheckResumed:       ['realityCheck.mjs'],
   onRealityCheckQuit:          ['realityCheck.mjs'],
+  /* Wave H3 — Session Timeout (continuous-play cap + forced break).
+   * Standalone block owns the modal DOM + dual-mode (warning, break)
+   * + countdown UI + extend/logout CTAs + autoplay-stop integration.
+   * Listens to preSpin / onAutoplayTick / onRealityCheckPaused /
+   * onRealityCheckResumed (avoids stacking two regulator pauses). */
+  onSessionWarningShown:    ['sessionTimeout.mjs'],
+  onSessionTimeoutFired:    ['sessionTimeout.mjs'],
+  onSessionResumed:         ['sessionTimeout.mjs'],
+  onSessionExtended:        ['sessionTimeout.mjs'],
+  onSessionLogoutRequested: ['sessionTimeout.mjs'],
   /* Wave U4 — autoplay session events all owned by autoplay.mjs. */
   onAutoplayStart: ['autoplay.mjs'],
   onAutoplayTick:  ['autoplay.mjs'],

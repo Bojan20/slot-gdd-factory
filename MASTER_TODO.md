@@ -3,18 +3,19 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-06 · **HEAD**: `8387e5c` · main
-> **Most recent ship**: Wave **UQ** — Ultimate QA matrix (198 fixtures ×
-> 13 asserts = **2574/2574 PASS**; 19 grid kinds × 26 industry patterns;
-> typography ≥11px enforced across 16 blokova / runtime layers)
+> **Last updated**: 2026-06-07 · **HEAD**: `8387e5c` (pin pending) · main
+> **Most recent ship**: Wave **H3** — `sessionTimeout` continuous-play
+> cap + forced-break block (UKGC LCCP 8.3.1 / AGCO 4.07 / MGA RGF Part III
+> / Spelinspektionen 14.4 / DGOJ Art 7 / NJDGE 13:69O-1.4). 87/87 unit +
+> 35/35 live Playwright + 2574/2574 ultimate-QA regression all green.
 
 ## 📊 Project status snapshot
 
 | Metric | Value |
 |---|---|
-| **LEGO blocks** | **62** (engine 13 / wild 6 / multiplier 5 / fs 4 / round-control 8 / evaluator 5 / feature 12 / ui 7 / audit 2) |
-| **HookBus canonical events** | **44** (sole-emitter ownership enforced by LEGO gate) |
-| **LEGO gate** | **5/5 PASS** — emit cleanliness · block-test parity · vendor-neutral source · event ownership 44/44 · listener coverage 52/52 |
+| **LEGO blocks** | **63** (engine 13 / wild 6 / multiplier 5 / fs 4 / round-control 8 / evaluator 5 / feature 12 / ui 7 / audit 2 / regulator 1 — sessionTimeout joins realityCheck under regulator) |
+| **HookBus canonical events** | **49** (sole-emitter ownership enforced by LEGO gate; +5 from Wave H3: onSessionWarningShown / onSessionTimeoutFired / onSessionResumed / onSessionExtended / onSessionLogoutRequested) |
+| **LEGO gate** | **5/5 PASS** — emit cleanliness · block-test parity · vendor-neutral source · event ownership 49/49 · listener coverage 53/53 |
 | **Ultimate QA matrix** (Wave UQ) | **2574/2574 PASS** — 198 fixtures (174 synth + 4 sample + 20 grid) × 13 asserts (parse / build / load / 0 console err / 0 page err / HookBus / spin visible / preSpin / postSpin / DOM-redness / typography ≥11px / grid rendered / no SLOT-token leak); 19 grids × 26 industry patterns |
 | **Universal GDD audit** (Wave Q) | **440/442 PASS** (24 fixtures × ~20 checks; 2 soft-fail = wheel/radial fsOverlay race tracked under J3-FS-cleanup) |
 | **Cross-browser matrix** | **71/72 PASS** (chromium + firefox + webkit × 4 fixtures × 6 checks) |
@@ -27,6 +28,7 @@
 
 | Hash | Wave | Subject |
 |---|---|---|
+| _pending_ | **H3** | **`sessionTimeout`** continuous-play cap + forced-break block. UKGC LCCP 8.3.1 / AGCO Standard 4.07 / MGA RGF Part III / Spelinspektionen 14.4 / DGOJ Art 7 / NJDGE 13:69O-1.4. Dual-mode modal (warning + break), 87/87 unit + 35/35 live probe (warning trigger → EXTEND → force-break → manual resume → realityCheck pause integration → resume); 5 HookBus events sole-owned; 2574/2574 ultimate-QA still green |
 | `8387e5c` | **UQ** | **Ultimate QA matrix** — 174 synthetic GDD generator (19 kinds × 26 industry patterns) + 12-pt headless probe × 198 fixtures = **2574/2574 PASS**, 0 fail; 16 typography fixes (≥11px floor); inline ThreadingHTTPServer for Playwright concurrent fetches |
 | `9b5a1c1` | **K7** | settingsPanel extension — volatility / bet-step / max-win-cap + 3 HookBus events |
 | `412c7d6` | **K5** | touch QA harness + CSS WCAG tap-target fixes (chips 36→44px, touch-action: manipulation) |
@@ -40,6 +42,144 @@
 | `6a69c3f` | **T-slim** | hash pin Phase 2 |
 | `00e70cd` | **T-slim P2** | orchestrator 1372→799 LOC (< 800 budget) via 3 new `src/runtime/` modules |
 | `d1bf351` | qa | flip paytable / historyLog / turboMode default enabled → true |
+
+---
+
+## 🟢 Wave H3 — `sessionTimeout` continuous-play cap + forced-break (UKGC LCCP 8.3.1 / AGCO 4.07) — SHIPPED (this commit)
+
+> Boki (07.06.2026): *"ne staj"*. Seventh in the Wave H extension series — third regulator-protection block (after H12 netLossIndicator + H2 realityCheck). Natural pair with H2 (share heartbeat semantics, pause clocks reciprocally). Closes the **continuous-play-cap obligation** that several jurisdictions place on every commercial slot.
+
+### Industry pattern (vendor-neutral synthesis)
+
+| Trigger stage | Default | Notes |
+|---|:--:|---|
+| Warning | `sessionMs ≥ maxMs - warnMs` (60s lead-time by default) | AGCO 4.07 best-practice lead-time |
+| Forced break | `sessionMs ≥ maxMs` (60 min default) | UKGC LCCP 8.3.1 mandatory break |
+| Auto-resume | `setTimeout(breakMs)` (5 min default) | Soft-model — MGA RGF acceptable |
+| Hard logout | optional `forceLogout=true` emit `onSessionLogoutRequested` | AGCO Ontario submodel; NJDGE 13:69O-1.4 |
+| Pause stacking | `pauseDuringReality=true` honors `onRealityCheckPaused/Resumed` | Avoids double-counting two regulator pauses |
+
+### Regulator anchors
+
+| Authority | Rule |
+|---|---|
+| **UKGC LCCP 8.3.1** (UK) | Continuous-play cap + mandatory break explicit obligation |
+| **AGCO Standard 4.07** (Ontario) | Session-time enforcement + warning lead-time |
+| **MGA RGF Part III** (Malta) | Session-time monitoring + soft-resume |
+| **Spelinspektionen 14.4** (Sweden) | Daily-play-time cap |
+| **DGOJ Art. 7** (Spain) | Auto-exclusion after cap hit |
+| **NJDGE 13:69O-1.4** (New Jersey) | Session-time logging + hard-exit option |
+
+### What landed
+
+| Atom | File | Lines | Status |
+|:--:|---|:--:|:--:|
+| H3.a — block source | `src/blocks/sessionTimeout.mjs` | 528 | ✅ defaultConfig + resolveConfig + emit{CSS,Markup,Runtime} + 145-line JSDoc (regulator anchors enumerated) |
+| H3.b — unit suite | `tests/blocks/sessionTimeout.test.mjs` | 350 | ✅ **87/87 PASS** — happy + cross-bounds (warnMs ≤ maxMs) + clamp floor/ceiling + XSS + determinism + vendor-neutral + 6 sandbox scenarios (warning → extend → force → manual resume → realityCheck pause/resume → idempotency) |
+| H3.c — HookBus contract | `src/blocks/hookBus.mjs` | +20 | ✅ 5 new events: `Warning Shown`, `Timeout Fired`, `Resumed`, `Extended`, `Logout Requested` |
+| H3.d — canonical-list test | `tests/blocks/hookBus.test.mjs` | +3 | ✅ 29/29 PASS (test list extended) |
+| H3.e — LEGO ownership | `tools/lego-gate.mjs` | +13 | ✅ 5/5 PASS — 49/49 single-owner; 53/53 listener coverage |
+| H3.f — buildSlotHTML wiring | `src/buildSlotHTML.mjs` | +21 | ✅ CSS (z-index 98 above realityCheck) + markup (modal) + runtime (after realityCheck wire) |
+| H3.g — dist auto-enable | `tools/regen-all-playable.mjs` | +18 | ✅ auto-enabled on every demo (90s cap / 20s warn / 30s break for QA visibility) |
+| H3.h — live probe | `tools/_h3-session-timeout-probe.mjs` | 240 | ✅ **35/35 PASS** on `dist/01_rectangular_5x3_playable.html` |
+| H3.i — package.json | `package.json` | +1 | ✅ added to `npm run test:blocks` chain |
+
+### Composition contract (standalone — own modal DOM)
+
+| Read | Write |
+|---|---|
+| `HookBus.on('preSpin')` (clock tick + threshold check) | `window.__SESSION_BREAK_ACTIVE__` during break |
+| `HookBus.on('onAutoplayTick')` (time delta during autoplay) | `window.ST_STATE` (sessionMs, warned, breakActive, breakEndsAt) |
+| `HookBus.on('onRealityCheckPaused')` → flip `paused=true` | `data-show` + `data-mode` on `#stOverlay` |
+| `HookBus.on('onRealityCheckResumed')` → flip `paused=false` | HookBus emit {Warning, Fired, Resumed, Extended, Logout} |
+| `window.autoplayStop('sessionTimeout')` (optional defensive halt on force-break) | |
+
+### Default config (production-friendly)
+
+| Knob | Default | Notes |
+|---|:--:|---|
+| `maxMs` | 3 600 000 (60 min) | UKGC LCCP 8.3.1 default cap |
+| `warnMs` | 60 000 (60 s) | AGCO Standard 4.07 best-practice lead-time |
+| `breakMs` | 300 000 (5 min) | UKGC convention; MGA acceptable |
+| `forceLogout` | `false` | Soft-model. AGCO/NJDGE hard-exit submode flips to true |
+| `extendable` | `true` | UKGC soft mode: player can EXTEND from warning |
+| `pauseDuringReality` | `true` | Pauses our clock during `onRealityCheckPaused` |
+| `accentColor` | `255,90,90` (high-urgency red) | Distinct from realityCheck amber |
+
+### Demo regen config (every dist — short for QA visibility)
+
+```js
+sessionTimeout: {
+  enabled: true,
+  maxMs: 90 * 1000,      // 90s demo cap (prod: 30/60 min)
+  warnMs: 20 * 1000,     // 20s lead-time before forced break
+  breakMs: 30 * 1000,    // 30s forced break (prod: 5 min)
+  forceLogout: false,
+  extendable: true,
+  pauseDuringReality: true,
+}
+```
+
+### Live verification — `tools/_h3-session-timeout-probe.mjs`
+
+Playwright probe on `dist/01_rectangular_5x3_playable.html`:
+
+| Scenario | Acceptance | Result |
+|---|---|:--:|
+| Presence | overlay + title + counter + EXTEND btn + ST_STATE.enabled + 4 public APIs + `__SESSION_BREAK_ACTIVE__=false` + (QUIT btn absent since `forceLogout=false`) | ✅ 7/7 |
+| **S1 Warning** | sessionMs at threshold → 1 `onSessionWarningShown{remainingMs, sessionMs}` + overlay data-show=true + data-mode=warning + `ST_STATE.warned=true` | ✅ 5/5 |
+| **S2 Extend** | EXTEND click → `onSessionExtended{extendedMs}` + sessionMs reset + warned=false + overlay hidden | ✅ 4/4 |
+| **S3 Force-break** | sessionMs ≥ maxMs → 1 `onSessionTimeoutFired{sessionMs, breakMs:30000, forceLogout:false}` + `__SESSION_BREAK_ACTIVE__=true` + ST_STATE.breakActive=true + overlay data-mode=break + title flipped to "TAKE A BREAK" | ✅ 7/7 |
+| **S4 Manual resume** | stResumeFromBreak('manual') → 1 `onSessionResumed{reason:'manual'}` + `__SESSION_BREAK_ACTIVE__=false` + sessionMs/warned reset + overlay hidden | ✅ 6/6 |
+| **S5 Reality pause** | onRealityCheckPaused → ST_STATE.paused=true; preSpin while paused → 0 fired, 0 warning emits; break flag stays false | ✅ 4/4 |
+| **S6 Reality resume** | onRealityCheckResumed → ST_STATE.paused=false | ✅ 1/1 |
+| Errors | 0 page errors throughout probe | ✅ 1/1 |
+| **TOTAL** | **35/35 PASS, 0 errors** | ✅ |
+
+### Senior-grade rule honored (rule_senior_grade_code)
+
+| Rule | Evidence |
+|---|---|
+| SRP | Block does clock + modal only; no math, no engine coupling |
+| 0 magic numbers | `MAX_MS_FLOOR`, `MAX_MS_CEILING`, `BREAK_MS_FLOOR`, `BREAK_MS_CEILING`, `TICK_DELTA_CAP`, `COUNTDOWN_TICK_MS` all named with "why" comments |
+| Idempotent emit | every `HookBus.emit` wrapped in try/catch — throwing listener can't strand STATE |
+| Lego-gate grep-ability | every emit uses inline literal event name (no variable indirection) |
+| Typography floor | All emitted font-sizes ≥ 0.7rem (=11.2px ≥ 11px Wave UQ floor) |
+| Vendor-neutral | 0 matches for vendor/franchise regex across CSS / markup / runtime |
+| Defensive ticks | `TICK_DELTA_CAP = MAX_MS` — backgrounded tab can't fire 8 emits in a row after wake |
+| Error boundary | DOM mounts guard against missing elements (`_overlay()` returns null gracefully) |
+| Composition | Pauses reciprocally with realityCheck — no double-counting two regulator pauses |
+| Test coverage | 87/87 unit (sandbox covers warning, extend, force, resume, reality-integration, idempotency) |
+
+### What H3 does NOT do (out-of-scope by LEGO)
+
+| ❌ Out of scope | Why |
+|---|---|
+| Daily-play-time aggregation across multiple sessions | Server-side concern (DB layer); template ships per-session in-memory only |
+| Self-exclusion list integration | Belongs to operator account layer, not slot template |
+| Audit-log retention | Will land via H18 `payoutEventStreamLog.mjs` (Tier C) |
+| Per-jurisdiction default override | Stays in `model.sessionTimeout` GDD override — no per-market table baked into block |
+
+### Wave H sequence status (post-H3)
+
+| # | Block | Status |
+|:--:|---|:--:|
+| H1 | `jurisdictionGate.mjs` | ⏳ queued |
+| **H2** | `realityCheck.mjs` | ✅ shipped |
+| **H3** | `sessionTimeout.mjs` | ✅ **THIS COMMIT** |
+| H4 | `colorblindPatterns.mjs` | ⏳ queued |
+| H5 / H5.x | `bigWinTier.mjs` | ✅ shipped |
+| H6 | `bonusClimaxReveal.mjs` | ⏳ queued |
+| H7 | `cellLevelUpgrade.mjs` | ⏳ queued |
+| H8 | `cellOverflowCounter.mjs` | ⏳ queued |
+| H9 | `ambientBackgroundWheel.mjs` | ⏳ queued |
+| H10 | `dualRoleScatter.mjs` | ⏳ queued |
+| H11 | `bonusBuyDeterministic.mjs` | ✅ shipped |
+| **H12** | `netLossIndicator.mjs` | ✅ shipped |
+| H13 | `pathAwareMultiplier.mjs` | ✅ shipped |
+| H14 | `holdAndWinCreditBucket.mjs` | ✅ shipped |
+| H15 | `weightedWheelSegments.mjs` | ✅ shipped |
+| H16-H18 | Tier C (regulator + audio + audit) | 🔮 REM-mode bonus |
 
 ---
 

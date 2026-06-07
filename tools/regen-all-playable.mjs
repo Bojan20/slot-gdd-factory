@@ -273,6 +273,27 @@ for (const t of targets) {
     triggerOnLossLevel: 'alert',
   });
 
+  /* Wave H3 — auto-enable Session Timeout (continuous-play cap + forced
+   * break) on every demo. UKGC LCCP 8.3.1 + AGCO Standard 4.07 mandate
+   * a continuous-play cap. Demo values are tiny so QA can witness both
+   * the warning and the forced-break in seconds; real production GDDs
+   * override maxMs to 30/60 min per market. */
+  const alreadySt = model.features.some(f =>
+    f && typeof f.kind === 'string' && /^session[_-]?(timeout|limit)$/i.test(f.kind),
+  );
+  if (!alreadySt) {
+    model.features.push({ kind: 'session_timeout', label: 'Session Timeout' });
+  }
+  model.sessionTimeout = Object.assign({}, model.sessionTimeout || {}, {
+    enabled: true,
+    maxMs: 90 * 1000,        /* 90s demo cap — production would use 3600000 (60min) */
+    warnMs: 20 * 1000,       /* 20s lead-time before forced break — production 60s */
+    breakMs: 30 * 1000,      /* 30s break for demo — production 300000 (5min) */
+    forceLogout: false,      /* demo uses soft model — break ends with auto-resume */
+    extendable: true,
+    pauseDuringReality: true,
+  });
+
   /* Wave H11 — auto-enable Bonus Buy Deterministic Plant on demos that
    * already declare a bonus_buy feature (or have bonusBuy enabled). The
    * extension is a no-op when bonusBuy is off (resolveConfig forces
