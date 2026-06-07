@@ -3,7 +3,7 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-07 · **HEAD**: `8387e5c` (pin pending) · main
+> **Last updated**: 2026-06-07 · **HEAD**: `5c65bf6` · main
 > **Most recent ship**: Wave **H3** — `sessionTimeout` continuous-play
 > cap + forced-break block (UKGC LCCP 8.3.1 / AGCO 4.07 / MGA RGF Part III
 > / Spelinspektionen 14.4 / DGOJ Art 7 / NJDGE 13:69O-1.4). 87/87 unit +
@@ -28,7 +28,7 @@
 
 | Hash | Wave | Subject |
 |---|---|---|
-| _pending_ | **H3** | **`sessionTimeout`** continuous-play cap + forced-break block. UKGC LCCP 8.3.1 / AGCO Standard 4.07 / MGA RGF Part III / Spelinspektionen 14.4 / DGOJ Art 7 / NJDGE 13:69O-1.4. Dual-mode modal (warning + break), 87/87 unit + 35/35 live probe (warning trigger → EXTEND → force-break → manual resume → realityCheck pause integration → resume); 5 HookBus events sole-owned; 2574/2574 ultimate-QA still green |
+| `5c65bf6` | **H3** | **`sessionTimeout`** continuous-play cap + forced-break block. UKGC LCCP 8.3.1 / AGCO Standard 4.07 / MGA RGF Part III / Spelinspektionen 14.4 / DGOJ Art 7 / NJDGE 13:69O-1.4. Dual-mode modal (warning + break), 87/87 unit + 35/35 live probe (warning trigger → EXTEND → force-break → manual resume → realityCheck pause integration → resume); 5 HookBus events sole-owned; 2574/2574 ultimate-QA still green |
 | `8387e5c` | **UQ** | **Ultimate QA matrix** — 174 synthetic GDD generator (19 kinds × 26 industry patterns) + 12-pt headless probe × 198 fixtures = **2574/2574 PASS**, 0 fail; 16 typography fixes (≥11px floor); inline ThreadingHTTPServer for Playwright concurrent fetches |
 | `9b5a1c1` | **K7** | settingsPanel extension — volatility / bet-step / max-win-cap + 3 HookBus events |
 | `412c7d6` | **K5** | touch QA harness + CSS WCAG tap-target fixes (chips 36→44px, touch-action: manipulation) |
