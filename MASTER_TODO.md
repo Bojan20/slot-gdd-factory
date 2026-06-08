@@ -4,6 +4,7 @@
 > and what's queued. Updated after every wave/feature.
 >
 > **Last updated**: 2026-06-08 · **HEAD**: `1b30a0d` · main
+> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, queued
 > **Most recent ship**: Wave **C1** — **Zero-touch GDD → op-package cert
 > pipeline** (`src/cert/` + `tools/cert-build.mjs`). 5 cert modules
 > (jurisdictions / complianceGate / manifest / evidencePack / bundler)
@@ -48,6 +49,128 @@
 | `6a69c3f` | **T-slim** | hash pin Phase 2 |
 | `00e70cd` | **T-slim P2** | orchestrator 1372→799 LOC (< 800 budget) via 3 new `src/runtime/` modules |
 | `d1bf351` | qa | flip paytable / historyLog / turboMode default enabled → true |
+
+---
+
+## 🎯 Pre-Math Perfection Roadmap (queued — 2026-06-08)
+
+> Boki direktiva (08.06.2026): *"reci sta ima da se radi, da se dovede do
+> savrsenstva i dinamicki uvek responzivno na svaki gdd moguci, pre nego
+> matematiku ubacimo"*. Sve dole je presentation / parser / blok / QA /
+> dynamic-responsiveness. **Math sloj (PAR / RTP / volatility / win cap /
+> RNG fairness) je svesno IZVAN ovog plana** — ulazi tek kad Boki kaže
+> "ajmo na matematiku".
+>
+> Princip: **bilo koji GDD, bilo koji grid, bilo koja jurisdikcija →
+> renderuje se savršeno bez ručnog peglanja**.
+
+### Faza 1 · Zatvori postojeće rupe (brzi sweep)
+
+| Wave | Stanje | Cilj | Fajlovi | Procena |
+|---|---|---|---|---|
+| **D1** Universal GDD audit | 440/442 | **442/442** zero red | `tools/cortex-eyes-universal-gdd.mjs` + 2 fixture fix | 20 min |
+| **D2** Cross-browser | 71/72 | **72/72** | Playwright matrix u `tests/` | 15 min |
+| **D3** Touch QA | 98/120 | **120/120** | 22 fail-a — hit-area ≥44px, swipe gestures, pointer-events | 45 min |
+| **D4** Orchestrator LOC budget | 799/800 | re-budget na 600 ili dignuti gate na 1000 | `src/buildSlotHTML.mjs` | 10 min |
+
+### Faza 2 · Dinamički bulletproof parser (srce zahteva)
+
+| Wave | Šta | Zašto bitno za "bilo koji GDD" |
+|---|---|---|
+| **P1** Malformed GDD recovery | parser ne sme da baca — svaka regex grupa try/catch + confidence drop | GDD bez tabele/naslova/sa typo — i dalje render |
+| **P2** Smart defaults engine | nedostaje sekcija → kontekstualni default po grid topologiji (5×3 ≠ 6×5 ≠ 7×7 cluster) | "ako neki GDD nema taj segment → logičan default" (Boki Wave Q2) |
+| **P3** Symbol tier autodetect | parser sam klasifikuje low/mid/high/special iz emoji/payout hint/order | mnogi GDD-ovi nemaju eksplicitne tier oznake |
+| **P4** Theme palette autoextract | tags → palette mapping (egypt/norse/cyber/candy/horror/ocean/jungle/space) | bez ručnog palette per game |
+| **P5** Topology auto-infer | ako fali "reels × rows" → iz feature kind + paylines broja | scatter-pay/cluster/ways/lines/cascading svi različito mapuju |
+| **P6** Feature kind unknown → graceful fallback blok | kind koji ne postoji → registrovan kao `feature.generic` sa label-om | nikad crveno ni za izmišljeni feature |
+| **P7** GDD round-trip stabilnost | parse → emit → reparse mora dati identičan model | regulator submission preduslov |
+| **P8** Hot-reload bez page refresh | watcher → HookBus `onGddChange` → blocks re-init lifecycle | dev iteration loop < 200ms |
+
+### Faza 3 · Više fičera = više blokova (Boki imperativ 04.06)
+
+| # | Novi blok | Lifecycle | Industry-ref kind |
+|---|---|---|---|
+| B64 | `symbolUpgrade` | onTumbleStep | level-up symbol transmute |
+| B65 | `mysteryReveal` | preSpin/onSpinResult | mystery symbol → uniform reveal |
+| B66 | `winwaysIndicator` | onSpinResult | 1024 / 4096 / 117 649 ways display |
+| B67 | `multiplierLadder` | onTumbleStep/onFsSpinResult | persistent climbing mult |
+| B68 | `coinShower` | onSpinResult (big-win) | particle presenter |
+| B69 | `fsProgressBar` | onFsSpinResult | "spin X of Y" UI |
+| B70 | `stickyMeter` | preSpin/postSpin | sticky symbol counter |
+| B71 | `pickBonusReveal` | onFsTrigger (alt) | pick-3-of-N reveal |
+| B72 | `wheelBonusReveal` | onFsTrigger (alt) | rotational reward picker (extension layer iznad postojećeg `wheelBonus.mjs`) |
+| B73 | `energyMeter` | onSpinResult | metered side-feature gauge |
+| B74 | `rewardChest` | postSpin | end-of-round reveal |
+| B75 | `symbolStackCollapse` | onTumbleStep | full-reel stack drop |
+| B76 | `scatterAnticipationV2` | preSpin/onReelLand | **fix Boki bug**: bez "fake nada" na rilima koji više ne mogu trigger |
+
+> Pravilo per blok: JSDoc kontrakt header (purpose / industry-ref / public API / lifecycle / perf / a11y / GDD keys), 100% test coverage, default config bez magic brojeva.
+
+### Faza 4 · A11y + Mobile + Performance hardening
+
+| Wave | Šta | Mera |
+|---|---|---|
+| **A1** WCAG AAA contrast | svi tekst-tokeni ≥ 7:1, ne 4.5:1 | axe-core u CI per fixture |
+| **A2** Keyboard nav 100% | Tab/Shift-Tab/Enter/Space na svaki control, focus ring vidljiv | manual matrix + headless probe |
+| **A3** Screen reader full pass | aria-live regions na svaki dinamični segment | NVDA/VoiceOver simulator |
+| **A4** prefers-reduced-motion per blok | svaki blok sa animacijom mora da gasi na media query | grep + assertion u test |
+| **A5** RTL layout | mirror grid, mirror progress bars, brojevi ostaju LTR | per locale fixture |
+| **A6** 60fps budget | rAF budget ≤ 16.6ms per blok | Performance API trace |
+| **A7** Memory leak detector | 10k spins headless, heap snapshot delta < 5MB | Playwright mem probe |
+| **A8** PWA installability | manifest.json + service worker + offline shell | Lighthouse ≥ 95 |
+| **A9** Safe-area + notch | `env(safe-area-inset-*)` na svim edge UI | iOS sim screenshot |
+| **A10** Haptic gating | Web Vibration API samo na big-win / fs-trigger, opt-in | settings toggle |
+
+### Faza 5 · Presentation polish (vidi se igraču odmah)
+
+| Wave | Šta | Status |
+|---|---|---|
+| **V1** Scatter anticipation v2 | Boki bug "padne 1. ril → 2. ril → 3. ril i anticipation se gasi" | 🔴 zna se da je broken |
+| **V2** FS intro/outro per theme | trenutno generic, dignuti na theme-aware (egypt/norse/cyber/itd) | 🟡 generic |
+| **V3** Big win tier visual ladder | mega/epic/legendary/ultimate sa count-up i screen-shake gating | 🟡 osnovni |
+| **V4** Spin button ikona | dve strelice (Boki već tražio) — verifikuj da je svuda primenjeno | ❓ proveriti |
+| **V5** Win cycle preference | per-line / cluster / all-at-once postoji — dodati `cascade-stagger` | 🟢 expand |
+| **V6** Symbol settle bounce | reel land easing per theme | 🟡 generic |
+| **V7** Hover/tap simbol info | tap symbol → mini paytable popover | ❌ nema |
+
+### Faza 6 · Tools + dev experience
+
+| Wave | Šta |
+|---|---|
+| **T1** Block playground diff vizualizacija — pre/posle config change side-by-side |
+| **T2** Live GDD editor — `samples/*.md` u UI editoru, instant render preview |
+| **T3** Multi-game compare hub — 2–4 igre side-by-side za regresiju |
+| **T4** GDD snippet export per blok — proširiti na sve blokove (postoji za neke) |
+| **T5** Cortex eyes auto-screenshot every PR — slika u PR comment-u |
+
+### Faza 7 · Hardening + i18n + cert expand (renamed → HX da se ne sudara sa shipped Wave H serijom)
+
+| Wave | Šta |
+|---|---|
+| **HX1** Stress: 10k spinova headless po fixture | memory + console errors + frame budget |
+| **HX2** Long-session profile: 4h kontinuirana sesija | leak/jitter detection |
+| **HX3** i18n: en / sr / de / es / fr / it / pt-BR / tr / ru / zh-Hans | per-game key matrix |
+| **HX4** Currency formatting per jurisdikciji | UKGC GBP / MGA EUR / NJDGE USD / SGA SEK… |
+| **HX5** Cert pipeline expand: +5 jurisdikcija (Ontario AGCO / Romania ONJN / Greece HGC / Czech MF / Sweden SSGA v2) |
+| **HX6** Production build sourcemap split | dev/prod artifact razdvojen |
+
+### Prioritet redosleda (Boki bira startni Wave)
+
+| Prioritet | Faza | Razlog |
+|:--:|---|---|
+| 🥇 | **F2 (P1–P8)** dinamički parser | direktno odgovara "responzivno na svaki GDD moguci" |
+| 🥈 | **F1 (D1–D4)** zatvoriti gaps | nije savršeno dok god 22 touch testa fail-uje |
+| 🥉 | **F5 V1** scatter anticipation v2 | Boki već žalio, vidi se golim okom |
+| 4 | **F3** novih 13 blokova | "sto vise feautrea" pravilo |
+| 5 | **F4** a11y + mobile + perf | regulator + senior-grade |
+| 6 | **F6** dev tools | brža iteracija |
+| 7 | **F7 (HX1–HX6)** hardening + cert expand | dugoročno |
+
+### Svesno izvan ovog plana
+
+| Stavka | Zašto |
+|---|---|
+| Math / PAR / RTP / volatility / win cap / RNG fairness | Boki: *"pre nego matematiku ubacimo"* — posebna faza |
 
 ---
 
