@@ -4,7 +4,7 @@
 > and what's queued. Updated after every wave/feature.
 >
 > **Last updated**: 2026-06-08 · **HEAD**: `ee3abf6` · main
-> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, ✅ **P1 + D3 + P2 (covers P3+P4+P5 via stages)** shipped (6/47 incl. audit reclassify)
+> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, ✅ **P1 + D3 + P2 (covers P3+P4+P5 via stages) + P6 + P7** shipped (8/47)
 > **Most recent ship**: Wave **P2** — **Smart Defaults Engine** (4-stage
 > backfill: theme palette autoextract from tags/name/mood, topology
 > kind+dims+paylines inference from feature mix, symbol tier classifier,
@@ -109,8 +109,8 @@
 | ✅ **P3** Symbol tier autodetect (`classifySymbolTiers`) | parser sam klasifikuje low/mid/high/special iz emoji/payout hint/order | **SHIPPED u P2** `ee3abf6` stage 3 — audit korekcija 08.06.2026 |
 | ✅ **P4** Theme palette autoextract (`deriveThemePalette`) | tags → palette mapping (egypt/norse/cyber/candy/horror/ocean/jungle/space) | **SHIPPED u P2** `ee3abf6` stage 1 — audit korekcija 08.06.2026 |
 | ✅ **P5** Topology auto-infer (`inferTopology`) | ako fali "reels × rows" → iz feature kind + paylines broja | **SHIPPED u P2** `ee3abf6` stage 2 — audit korekcija 08.06.2026 |
-| **P6** Feature kind unknown → graceful fallback blok | kind koji ne postoji → registrovan kao `feature.generic` sa label-om | nikad crveno ni za izmišljeni feature |
-| **P7** GDD round-trip stabilnost | parse → emit → reparse mora dati identičan model | regulator submission preduslov |
+| ✅ **P6** Feature kind unknown → graceful fallback `e30dc3e` | `extractGenericFeatures(text, knownLabels)` u parser.mjs — 3 discovery surface (heading/bold/bullet), 60+ blocklist tokens, suffix-stripped dedupe, 12 cap, negation-safe | **SHIPPED** — 20/20 unit + zero regresija u 2574/2574 ultimate matrix |
+| ✅ **P7** GDD round-trip stabilnost `e30dc3e` | `serializeToCanonicalJSON` + `stableFingerprint` + `roundTrip(text)`; volatile metadata strip; deterministic feature sort; 4/4 sample fixture (WRATH/CRYSTAL/GATES/MIDNIGHT) PASS | **SHIPPED** — 21/21 unit + idempotency + 100KB junk graceful |
 | **P8** Hot-reload bez page refresh | watcher → HookBus `onGddChange` → blocks re-init lifecycle | dev iteration loop < 200ms |
 
 ### Faza 3 · Više fičera = više blokova (Boki imperativ 04.06)
