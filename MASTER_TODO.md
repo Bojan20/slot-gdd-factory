@@ -3,9 +3,20 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-08 · **HEAD**: `6ab643d` · main
-> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, ✅ **P1 + D3** shipped (2/47)
-> **Most recent ship**: Wave **D3** — **Touch QA 98/120 → 120/120** (100%
+> **Last updated**: 2026-06-08 · **HEAD**: `ee3abf6` · main
+> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, ✅ **P1 + D3 + P2** shipped (3/47)
+> **Most recent ship**: Wave **P2** — **Smart Defaults Engine** (4-stage
+> backfill: theme palette autoextract from tags/name/mood, topology
+> kind+dims+paylines inference from feature mix, symbol tier classifier,
+> recommended feature mix synthesis). New module `src/registry/smartDefaults.mjs`
+> (425 LOC) + 34/34 unit tests. Wired into BOTH `parseMarkdownGDD()` and
+> `normalizeFromJSON()` so JSON IR and markdown converge to identical
+> renderable model. Every derived field tagged in
+> `confidence._derivedBy[field] = 'smartDefaults'` for regulator review.
+> QA delta: cross-browser **70/72 → 72/72 ALL GREEN** (hex now passes on
+> chromium+firefox+webkit), universal GDD 440/442 → 460/461, blocks
+> 929 → 963 (+34), touch K5 stable 120/120, ultimate stable 2574/2574.
+> Previous ship: Wave **D3** — Touch QA 98/120 → 120/120 (100%
 > mobile reachability). 5 stacked root-causes fixed: missing viewport
 > meta tag, 100vh vs 100dvh URL bar issue, hub-vs-fixed-chip collision,
 > wheel SVG hit-test escape via stacking context, FS-mode probe artefact.
@@ -94,7 +105,7 @@
 | Wave | Šta | Zašto bitno za "bilo koji GDD" |
 |---|---|---|
 | ✅ **P1** Malformed GDD recovery | `_safeExtract` harness + `parseGDD` outer guard; `model.confidence._failures[]` schema; 20/20 PASS suite covering null/empty/unicode/100KB/corrupt/typo/JSON-fallback/DOS/idempotency | **SHIPPED** — parser nikada ne baca, svaki throw evidentiran, postojeća regresija 4/4 + LEGO 5/5 + univ audit 460/461 zelena |
-| **P2** Smart defaults engine | nedostaje sekcija → kontekstualni default po grid topologiji (5×3 ≠ 6×5 ≠ 7×7 cluster) | "ako neki GDD nema taj segment → logičan default" (Boki Wave Q2) |
+| ✅ **P2** Smart Defaults Engine `ee3abf6` | `src/registry/smartDefaults.mjs` 4 stages (palette / topology / symbol tier / feature mix), 34/34 unit tests, wired u oba parser path-a, derived field provenance | **SHIPPED** — cross-browser 72/72 ALL GREEN, univ GDD 460/461, blocks 929 → 963 |
 | **P3** Symbol tier autodetect | parser sam klasifikuje low/mid/high/special iz emoji/payout hint/order | mnogi GDD-ovi nemaju eksplicitne tier oznake |
 | **P4** Theme palette autoextract | tags → palette mapping (egypt/norse/cyber/candy/horror/ocean/jungle/space) | bez ručnog palette per game |
 | **P5** Topology auto-infer | ako fali "reels × rows" → iz feature kind + paylines broja | scatter-pay/cluster/ways/lines/cascading svi različito mapuju |
