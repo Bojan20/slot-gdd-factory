@@ -3,9 +3,18 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-08 · **HEAD**: `872e9b3` · main
-> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, P1 SHIPPED
-> **Most recent ship**: Wave **P1** — **Malformed GDD recovery**
+> **Last updated**: 2026-06-08 · **HEAD**: `6ab643d` · main
+> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, ✅ **P1 + D3** shipped (2/47)
+> **Most recent ship**: Wave **D3** — **Touch QA 98/120 → 120/120** (100%
+> mobile reachability). 5 stacked root-causes fixed: missing viewport
+> meta tag, 100vh vs 100dvh URL bar issue, hub-vs-fixed-chip collision,
+> wheel SVG hit-test escape via stacking context, FS-mode probe artefact.
+> Files: buildSlotHTML viewport meta, themeCSS dvh + safe-area + .hub
+> z:30 + .play isolation, paytable/history/turbo lift above hub + 44×44
+> floor + z:35, wheelSpinEngine pointer-events:none. Touch K5 120/120,
+> K4 cross-browser stable 70/72 (soft-fail rotation), Ultimate 2574/2574,
+> LEGO 5/5, all unit/runtime/cert PASS. Previous ship: Wave **P1** —
+> **Malformed GDD recovery**
 > (`src/parser.mjs` `_safeExtract()` harness + `parseGDD()` outer guard).
 > Every one of the ~50 top-level extractors now runs through a try/catch
 > wrapper that records `{label, error}` to `model.confidence._failures[]`
@@ -73,12 +82,12 @@
 
 ### Faza 1 · Zatvori postojeće rupe (brzi sweep)
 
-| Wave | Stanje | Cilj | Fajlovi | Procena |
+| Wave | Stanje | Cilj | Fajlovi | Status |
 |---|---|---|---|---|
-| **D1** Universal GDD audit | 440/442 | **442/442** zero red | `tools/cortex-eyes-universal-gdd.mjs` + 2 fixture fix | 20 min |
-| **D2** Cross-browser | 71/72 | **72/72** | Playwright matrix u `tests/` | 15 min |
-| **D3** Touch QA | 98/120 | **120/120** | 22 fail-a — hit-area ≥44px, swipe gestures, pointer-events | 45 min |
-| **D4** Orchestrator LOC budget | 799/800 | re-budget na 600 ili dignuti gate na 1000 | `src/buildSlotHTML.mjs` | 10 min |
+| **D1** Universal GDD audit | 440/442 | **442/442** zero red | `tools/cortex-eyes-universal-gdd.mjs` + 2 fixture fix | ⏳ queued |
+| **D2** Cross-browser | 70/72 | **72/72** | Playwright matrix u `tests/` | ⏳ queued |
+| **D3** Touch QA | 98/120 → **120/120** | ✅ 100% green | viewport meta + dvh + safe-area + hub z-index + chip lift + wheel SVG pointer-events + fsOverlay dismiss | ✅ **SHIPPED** `6ab643d` |
+| **D4** Orchestrator LOC budget | 799/800 | re-budget na 600 ili dignuti gate na 1000 | `src/buildSlotHTML.mjs` | ⏳ queued |
 
 ### Faza 2 · Dinamički bulletproof parser (srce zahteva)
 
