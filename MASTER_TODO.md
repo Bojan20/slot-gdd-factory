@@ -4,7 +4,7 @@
 > and what's queued. Updated after every wave/feature.
 >
 > **Last updated**: 2026-06-08 · **HEAD**: `ee3abf6` · main
-> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, ✅ **P1 + D3 + P2** shipped (3/47)
+> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, ✅ **P1 + D3 + P2 (covers P3+P4+P5 via stages)** shipped (6/47 incl. audit reclassify)
 > **Most recent ship**: Wave **P2** — **Smart Defaults Engine** (4-stage
 > backfill: theme palette autoextract from tags/name/mood, topology
 > kind+dims+paylines inference from feature mix, symbol tier classifier,
@@ -106,9 +106,9 @@
 |---|---|---|
 | ✅ **P1** Malformed GDD recovery | `_safeExtract` harness + `parseGDD` outer guard; `model.confidence._failures[]` schema; 20/20 PASS suite covering null/empty/unicode/100KB/corrupt/typo/JSON-fallback/DOS/idempotency | **SHIPPED** — parser nikada ne baca, svaki throw evidentiran, postojeća regresija 4/4 + LEGO 5/5 + univ audit 460/461 zelena |
 | ✅ **P2** Smart Defaults Engine `ee3abf6` | `src/registry/smartDefaults.mjs` 4 stages (palette / topology / symbol tier / feature mix), 34/34 unit tests, wired u oba parser path-a, derived field provenance | **SHIPPED** — cross-browser 72/72 ALL GREEN, univ GDD 460/461, blocks 929 → 963 |
-| **P3** Symbol tier autodetect | parser sam klasifikuje low/mid/high/special iz emoji/payout hint/order | mnogi GDD-ovi nemaju eksplicitne tier oznake |
-| **P4** Theme palette autoextract | tags → palette mapping (egypt/norse/cyber/candy/horror/ocean/jungle/space) | bez ručnog palette per game |
-| **P5** Topology auto-infer | ako fali "reels × rows" → iz feature kind + paylines broja | scatter-pay/cluster/ways/lines/cascading svi različito mapuju |
+| ✅ **P3** Symbol tier autodetect (`classifySymbolTiers`) | parser sam klasifikuje low/mid/high/special iz emoji/payout hint/order | **SHIPPED u P2** `ee3abf6` stage 3 — audit korekcija 08.06.2026 |
+| ✅ **P4** Theme palette autoextract (`deriveThemePalette`) | tags → palette mapping (egypt/norse/cyber/candy/horror/ocean/jungle/space) | **SHIPPED u P2** `ee3abf6` stage 1 — audit korekcija 08.06.2026 |
+| ✅ **P5** Topology auto-infer (`inferTopology`) | ako fali "reels × rows" → iz feature kind + paylines broja | **SHIPPED u P2** `ee3abf6` stage 2 — audit korekcija 08.06.2026 |
 | **P6** Feature kind unknown → graceful fallback blok | kind koji ne postoji → registrovan kao `feature.generic` sa label-om | nikad crveno ni za izmišljeni feature |
 | **P7** GDD round-trip stabilnost | parse → emit → reparse mora dati identičan model | regulator submission preduslov |
 | **P8** Hot-reload bez page refresh | watcher → HookBus `onGddChange` → blocks re-init lifecycle | dev iteration loop < 200ms |
