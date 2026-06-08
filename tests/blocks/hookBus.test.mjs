@@ -69,6 +69,8 @@ t('HOOK_EVENTS canonical list (core + V intent + V5 win-present + U4 autoplay + 
     'onVolatilityChanged', 'onBetStepPresetChanged', 'onMaxWinCapToggled',
     /* Wave P8 — hot-reload (dev-mode SSE → in-page re-parse) */
     'onHotReloadConnect', 'onHotReloadDisconnect', 'onGddChange',
+    /* Wave U-FORCE-ALL — universal feature force panel */
+    'onForceFeatureRequested',
   ];
   eq(HOOK_EVENTS.length, expected.length);
   for (const e of expected) ok(HOOK_EVENTS.includes(e), `missing ${e}`);

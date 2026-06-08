@@ -280,6 +280,18 @@ export const HOOK_EVENTS = Object.freeze([
   'onHotReloadConnect',
   'onHotReloadDisconnect',
   'onGddChange',
+  /* Wave U-FORCE-ALL: universal feature force panel.
+   * onForceFeatureRequested {kind, label, source} — fires when a chip
+   *   in the universal force panel is pressed. `kind` is one of the
+   *   parser-recognized feature kinds (free_spins, bonus_buy, hold_and_win,
+   *   bonus_pick, wheel_bonus, multiplier, cascade, cluster_pays, ways,
+   *   expanding_wild, walking_wild, sticky_wild, mystery_symbol, scatter_pay,
+   *   lightning, respin, wild_reel, gamble, ante_bet, super_symbol, big_win).
+   *   `source` is 'panel' for chip-clicks. Owner: src/blocks/universalForcePanel.mjs.
+   *   Consumers: any feature block that wants to react deterministically;
+   *   genericFeatureBanner.mjs is the catch-all for kinds without a
+   *   dedicated handler. */
+  'onForceFeatureRequested',
 ]);
 
 /* Wave U4: canonical autoplay stop reasons. */

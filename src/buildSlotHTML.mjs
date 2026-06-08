@@ -193,6 +193,19 @@ import {
   emitForceSkipCSS, emitForceSkipMarkup, emitForceSkipRuntime,
   resolveConfig as resolveForceSkipConfig,
 } from './blocks/forceSkip.mjs';
+// Wave U-FORCE-ALL — Universal feature force panel + generic banner fallback.
+// Detects every parsed feature kind and paints a chip rail of FORCE buttons,
+// each one driving a real spin with `__FORCE_FEATURE__` set so dedicated
+// blocks (FS, BW, BB, …) or the generic banner respond. Presentation-time
+// QA surface for partners/regulators uploading arbitrary GDDs.
+import {
+  emitUniversalForcePanelCSS, emitUniversalForcePanelMarkup, emitUniversalForcePanelRuntime,
+  resolveConfig as resolveUniversalForcePanelConfig,
+} from './blocks/universalForcePanel.mjs';
+import {
+  emitGenericFeatureBannerCSS, emitGenericFeatureBannerMarkup, emitGenericFeatureBannerRuntime,
+  resolveConfig as resolveGenericFeatureBannerConfig,
+} from './blocks/genericFeatureBanner.mjs';
 // Wave V3 — Unified primary action button (SPIN / STOP / SKIP single contextual CTA).
 // When enabled (default), supersedes the V1+V2 buttons — slamStop/forceSkip
 // markup/CSS/runtime are gated off and spinControl emits their intent events
@@ -496,6 +509,8 @@ ${/* Wave V1+V2+V3 — primary action button CSS.
     to fall back to the V1/V2 dual-button mode. */ ''}
 ${resolveSpinControlConfig(model).enabled ? '' : emitSlamStopCSS(resolveSlamStopConfig(model))}
 ${resolveSpinControlConfig(model).enabled ? '' : emitForceSkipCSS(resolveForceSkipConfig(model))}
+${emitUniversalForcePanelCSS(resolveUniversalForcePanelConfig(model))}
+${emitGenericFeatureBannerCSS(resolveGenericFeatureBannerConfig(model))}
 ${emitSpinControlCSS(resolveSpinControlConfig(model))}
 ${/* Wave U4 — autoplay session UI (button + panel + counter). */ ''}
 ${emitAutoplayCSS(resolveAutoplayConfig(model))}
@@ -653,6 +668,8 @@ ${/* Wave V1+V2 — spin-control buttons (hidden by default; runtime toggles). *
 ${/* Wave V3 supersede: when spinControl enabled, V1/V2 markup OFF (V3 owns the button). */ ''}
 ${resolveSpinControlConfig(model).enabled ? '' : emitSlamStopMarkup(resolveSlamStopConfig(model))}
 ${resolveSpinControlConfig(model).enabled ? '' : emitForceSkipMarkup(resolveForceSkipConfig(model))}
+${emitUniversalForcePanelMarkup(resolveUniversalForcePanelConfig(model), model)}
+${emitGenericFeatureBannerMarkup(resolveGenericFeatureBannerConfig(model))}
 ${/* Wave U4 — autoplay button + panel + counter overlay. */ ''}
 ${emitAutoplayMarkup(resolveAutoplayConfig(model))}
 ${emitHoldAndWinMarkup(resolveHoldAndWinConfig(model))}
@@ -819,6 +836,8 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${/* Wave V3 supersede: V1/V2 runtimes OFF when spinControl is the active CTA. */ ''}
   ${resolveSpinControlConfig(model).enabled ? '' : emitSlamStopRuntime(resolveSlamStopConfig(model))}
   ${resolveSpinControlConfig(model).enabled ? '' : emitForceSkipRuntime(resolveForceSkipConfig(model))}
+  ${emitUniversalForcePanelRuntime(resolveUniversalForcePanelConfig(model), model)}
+  ${emitGenericFeatureBannerRuntime(resolveGenericFeatureBannerConfig(model))}
   ${/* Wave V3 — unified SPIN / STOP / SKIP CTA runtime (state machine owns #spinBtn). */ ''}
   ${emitSpinControlRuntime(resolveSpinControlConfig(model))}
   ${/* Wave U4 — autoplay session runtime. */ ''}

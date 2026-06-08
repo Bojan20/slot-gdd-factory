@@ -80,6 +80,8 @@ const HOOK_REGISTRATION_OPT_OUT = new Set([
   'hotReload.mjs',      // Wave P8 — emit-only dev block; reacts to SSE,
                         // not to spin-engine lifecycle. Owns onGddChange /
                         // onHotReloadConnect / onHotReloadDisconnect emits.
+  'universalForcePanel.mjs', // Wave U-FORCE-ALL — emit-only dev/QA chip rail;
+                        // wires DOM click handlers, never reads HookBus.
 ]);
 
 /* Expected emit ownership — single source of truth for each event. */
@@ -200,6 +202,9 @@ const EXPECTED_EMIT_OWNERS = {
   onHotReloadConnect:    ['hotReload.mjs'],
   onHotReloadDisconnect: ['hotReload.mjs'],
   onGddChange:           ['hotReload.mjs'],
+  /* Wave U-FORCE-ALL — universal force panel is the sole emitter of
+   * `onForceFeatureRequested`. Generic banner only listens. */
+  onForceFeatureRequested: ['universalForcePanel.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */

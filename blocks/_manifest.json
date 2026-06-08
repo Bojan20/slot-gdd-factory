@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-08T22:28:24.729Z",
+  "generatedAt": "2026-06-08T23:07:54.077Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 65,
+  "totalBlocks": 67,
   "blocks": [
     {
       "name": "anteBet",
@@ -795,6 +795,33 @@
       "loc": 971
     },
     {
+      "name": "genericFeatureBanner",
+      "file": "src/blocks/genericFeatureBanner.mjs",
+      "testFile": "tests/blocks/genericFeatureBanner.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave U-FORCE-ALL.2 — Generic feature banner (fallback).",
+      "exports": [
+        "DEDICATED_KINDS",
+        "defaultConfig",
+        "emitGenericFeatureBannerCSS",
+        "emitGenericFeatureBannerMarkup",
+        "emitGenericFeatureBannerRuntime",
+        "resolveConfig",
+        "shouldHandle"
+      ],
+      "lifecycleHooks": [
+        "onForceFeatureRequested"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": true,
+        "dwellMs": 1200,
+        "fadeMs": 240,
+        "handleKinds": "auto"
+      },
+      "loc": 256
+    },
+    {
       "name": "hexReelEngine",
       "file": "src/blocks/hexReelEngine.mjs",
       "testFile": "tests/blocks/hexReelEngine.test.mjs",
@@ -1009,7 +1036,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 447
+      "loc": 459
     },
     {
       "name": "hotReload",
@@ -2239,6 +2266,45 @@
         "maxQueue": 6
       },
       "loc": 383
+    },
+    {
+      "name": "universalForcePanel",
+      "file": "src/blocks/universalForcePanel.mjs",
+      "testFile": "tests/blocks/universalForcePanel.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave U-FORCE-ALL.1 — Universal feature force panel (PRESENTATION MODE).",
+      "exports": [
+        "KIND_FULL",
+        "KIND_SHORT",
+        "KNOWN_KINDS",
+        "defaultConfig",
+        "emitUniversalForcePanelCSS",
+        "emitUniversalForcePanelMarkup",
+        "emitUniversalForcePanelRuntime",
+        "resolveConfig",
+        "selectKinds"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onForceFeatureRequested"
+      ],
+      "defaultConfig": {
+        "enabled": true,
+        "includeKinds": "auto",
+        "alwaysIncludeKinds": [
+          "big_win"
+        ],
+        "excludeKinds": [],
+        "chipHeight": 28,
+        "chipFontSize": 10,
+        "panelTop": 12,
+        "panelRight": 12,
+        "panelGap": 6,
+        "ariaLabel": "Feature force panel",
+        "showLabelText": true,
+        "labelText": "FORCE"
+      },
+      "loc": 423
     },
     {
       "name": "walkingWild",
