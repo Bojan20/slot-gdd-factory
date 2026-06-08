@@ -162,7 +162,8 @@ export function emitHistoryLogCSS(cfg = defaultConfig()) {
     /* Wave K5 — bumped to 54px clearance so the 44px chip never
        overlaps the paytable chip below it. */
     bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 54px);
-    z-index: 25;
+    /* Wave D3 — above .hub (z 30) on mobile. */
+    z-index: 35;
     /* Wave K5 — WCAG 2.5.5 / Apple HIG 44pt floor. */
     width: 44px; height: 44px;
     border-radius: 50%;
@@ -189,7 +190,10 @@ export function emitHistoryLogCSS(cfg = defaultConfig()) {
   @media (max-width: 620px) {
     .history-btn {
       left: max(12px, env(safe-area-inset-left, 12px));
-      bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + 44px);
+      /* Wave D3 — lift above hub bar (96px) + paytable chip clearance (44 + 10 gap)
+         = 150px from bottom safe-area inset. Stacks paytable / history / open
+         vertical air without colliding with .hub > settings or sound icons. */
+      bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + 150px);
     }
   }
   .history-btn:hover  { transform: scale(1.06); opacity: 0.95; }

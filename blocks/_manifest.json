@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-06T09:55:28.918Z",
+  "generatedAt": "2026-06-08T11:39:35.225Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 62,
+  "totalBlocks": 63,
   "blocks": [
     {
       "name": "anteBet",
@@ -861,7 +861,7 @@
         "autoHideOnSpin": true,
         "ariaLabel": "Open session history"
       },
-      "loc": 682
+      "loc": 686
     },
     {
       "name": "holdAndWin",
@@ -1009,7 +1009,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 418
+      "loc": 435
     },
     {
       "name": "lightning",
@@ -1386,7 +1386,7 @@
         "autoHideOnSpin": true,
         "ariaLabel": "Open paytable"
       },
-      "loc": 619
+      "loc": 623
     },
     {
       "name": "persistentMultiplier",
@@ -1675,6 +1675,48 @@
         "glowPeak": 1.5
       },
       "loc": 284
+    },
+    {
+      "name": "sessionTimeout",
+      "file": "src/blocks/sessionTimeout.mjs",
+      "testFile": "tests/blocks/sessionTimeout.test.mjs",
+      "category": "uncategorised",
+      "description": "Regulator-mandated continuous-play cap. Tracks how long the player",
+      "exports": [
+        "defaultConfig",
+        "emitSessionTimeoutCSS",
+        "emitSessionTimeoutMarkup",
+        "emitSessionTimeoutRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onAutoplayTick",
+        "onRealityCheckPaused",
+        "onRealityCheckResumed",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onSessionExtended",
+        "onSessionLogoutRequested",
+        "onSessionResumed",
+        "onSessionTimeoutFired",
+        "onSessionWarningShown"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "maxMs": 3600000,
+        "warnMs": 60000,
+        "breakMs": 300000,
+        "forceLogout": false,
+        "extendable": true,
+        "pauseDuringReality": true,
+        "accentColor": "255,90,90",
+        "warningTitle": "SESSION TIME WARNING",
+        "breakTitle": "TAKE A BREAK",
+        "copyContinue": "EXTEND SESSION",
+        "copyQuit": "END SESSION"
+      },
+      "loc": 693
     },
     {
       "name": "settingsPanel",
@@ -2001,7 +2043,7 @@
         "frameRadius": 16,
         "frameInset": 18
       },
-      "loc": 641
+      "loc": 664
     },
     {
       "name": "triggerCounting",
@@ -2084,7 +2126,7 @@
         "position": "sideHud",
         "ariaLabel": "Toggle turbo spin mode"
       },
-      "loc": 351
+      "loc": 362
     },
     {
       "name": "uiToast",
@@ -2321,7 +2363,7 @@
         "maxRevolutions": 7,
         "fadeFallbackMs": 220
       },
-      "loc": 250
+      "loc": 258
     },
     {
       "name": "wildReel",

@@ -195,7 +195,9 @@ export function emitPaytableCSS(cfg = defaultConfig()) {
     position: fixed;
     left: max(18px, env(safe-area-inset-left, 18px));
     bottom: max(18px, env(safe-area-inset-bottom, 18px));
-    z-index: 25;
+    /* Wave D3 — above .hub (z 30) so the chip is never hidden by hub
+       stacking context on mobile. Modals still win at z 40+. */
+    z-index: 35;
     /* Wave K5 — WCAG 2.5.5 / Apple HIG 44pt floor. */
     width: 44px; height: 44px;
     border-radius: 50%;
@@ -223,7 +225,9 @@ export function emitPaytableCSS(cfg = defaultConfig()) {
   @media (max-width: 620px) {
     .paytable-btn {
       left: max(12px, env(safe-area-inset-left, 12px));
-      bottom: max(12px, env(safe-area-inset-bottom, 12px));
+      /* Wave D3 — lift above the .hub bar (~96px tall on mobile: 2 rows × 44px + 8px row-gap)
+         so settings/sound icons in the hub stay un-blocked by the fixed chip. */
+      bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + 96px);
     }
   }
   .paytable-btn:hover  { transform: scale(1.06); opacity: 0.95; }

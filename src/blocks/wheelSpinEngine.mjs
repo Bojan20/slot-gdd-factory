@@ -116,7 +116,15 @@ export function emitWheelSpinEngineCSS(cfg = defaultConfig()) {
 .grid-wheel .wheel-svg {
   transform-origin: 50% 50%;
   will-change: transform;
+  /* Wave D3 — Wheel SVG is purely decorative; player triggers spin via
+     #spinBtn, not by tapping segments. Without this, segment <line>s and
+     pointer arrows stretching beyond the host bounds intercept taps on
+     hub icons (settings / paytable / history) below the wheel area on
+     mobile viewports → K5 touch QA fail. Children get pointer-events:none
+     so even animated transforms can't extend a hit-target downward. */
+  pointer-events: none;
 }
+.grid-wheel .wheel-svg * { pointer-events: none; }
 .grid-wheel .wheel-svg.is-spinning {
   /* Spin transform applied by JS — CSS just declares the transition
      ease curve so the browser owns the tween. */

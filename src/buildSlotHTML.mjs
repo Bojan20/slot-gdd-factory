@@ -421,7 +421,27 @@ export function buildSlotHTML(model) {
 
   return `<!DOCTYPE html>
 <html lang="en"><head>
-<meta charset="UTF-8"><title>${escapeHtml(model.name)} · Base Game</title>
+<meta charset="UTF-8">
+<!--
+  Wave D3 — Mobile viewport contract.
+  • width=device-width   → use the real screen, not the 980px default.
+  • initial-scale=1 + max/min=1 → lock to 1:1, kill double-tap zoom.
+  • viewport-fit=cover   → respect notch / home-bar safe-area-insets.
+
+  Without this, mobile Safari/Chrome render at 980px and the layout falls
+  off-screen — hub touch targets become unreachable (K5 audit 20/120 fail).
+
+  NOTE: deliberately NO interactive-widget=resizes-content key. WebKit
+  Safari emits a console warning on that key ("not recognized + ignored") which
+  trips the K4 cross-browser zero-console-error gate even though the page
+  still works. Chromium-only feature, not worth the cross-browser noise.
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="${bg0}">
+<meta name="format-detection" content="telephone=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>${escapeHtml(model.name)} · Base Game</title>
 <style>
 ${emitThemeCSS(resolveThemeCSSConfig(model))}
 ${emitStageBadgeCSS(resolveStageBadgeConfig(model))}

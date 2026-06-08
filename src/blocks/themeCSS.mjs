@@ -106,7 +106,11 @@ export function emitThemeCSS(cfg = defaultConfig()) {
        i daje "screen on a stage" osećaj kao casino floor cabinet. */
     background: #5a6b88;
     color: var(--text);
+    /* Wave D3 — dvh ≠ vh on iOS Safari: vh uključuje URL bar visinu pa
+       layout postaje viši od ekrana kad se URL bar sakrije/pokaže. dvh
+       je "dynamic viewport height" → uvek tačno = visible viewport. */
     min-height: 100vh;
+    min-height: 100dvh;
     display: grid;
     place-items: center;
     overflow: hidden;
@@ -120,9 +124,15 @@ export function emitThemeCSS(cfg = defaultConfig()) {
       "hub";
     width: 100%;
     height: 100vh;
+    height: 100dvh;
     max-width: 1440px;
     margin: 0 auto;
-    padding: clamp(8px, 1.5vw, 18px) clamp(8px, 2vw, 24px);
+    /* Wave D3 — safe-area-inset awareness for notch / home-bar so hub
+       and top status badge remain reachable on iPhone 11+ / Pixel 6+. */
+    padding: max(clamp(8px, 1.5vw, 18px), env(safe-area-inset-top))
+             max(clamp(8px, 2vw,  24px), env(safe-area-inset-right))
+             max(clamp(8px, 1.5vw, 18px), env(safe-area-inset-bottom))
+             max(clamp(8px, 2vw,  24px), env(safe-area-inset-left));
     gap: clamp(6px, 1vw, 12px);
   }
   .header { grid-area: header; display: flex; flex-direction: column; align-items: center; gap: 2px; }
@@ -152,6 +162,14 @@ export function emitThemeCSS(cfg = defaultConfig()) {
     gap: clamp(8px, 1.4vw, 18px);
     align-items: stretch;
     min-height: 0;
+    /* Wave D3 — isolate stacking context so SVG children (wheel pointer,
+       payline overlay) can't poke through z-axis above hub / fixed chips.
+       NOTE: keep overflow visible here — hex tumble engine animates
+       cells beyond the frame for the drop-in transition, and clipping
+       them mid-tumble breaks postSpin completion. SVG hit-test issue is
+       solved structurally by .hub z-index 30 plus chip z-index 35
+       instead of an overflow clip on the play container. */
+    isolation: isolate;
   }
   .frame    { grid-area: frame; }
   .sideHud  { grid-area: sideHud; }
@@ -298,6 +316,12 @@ export function emitThemeCSS(cfg = defaultConfig()) {
   /* Bottom bar — BAL | STATUS | BET-/BET/BET+ | SOUND */
   .hub {
     grid-area: hub;
+    /* Wave D3 — stack hub above any SVG that may extend below the play
+       area (wheel pointer line, payline overlay SVG, etc). Without this,
+       SVG <line> elements in the wheel engine intercept taps on hub
+       buttons on mobile → K5 fail "settings tap → modal opens". */
+    position: relative;
+    z-index: 30;
     display: grid;
     /* 4 children: menu | balanceHud | betSelector | sound. */
     grid-template-columns: 40px minmax(220px, 2fr) minmax(180px, 1.4fr) 40px;
