@@ -18,7 +18,9 @@
     "test:playground": "node tools/cortex-eyes-playground.mjs",
     "test:ultimate": "node tools/gen-synthetic-gdds.mjs && node tools/cortex-eyes-ultimate-qa.mjs",
     "test:ultimate:quick": "node tools/cortex-eyes-ultimate-qa.mjs --quick",
-    "test:all": "npm run test:lego && npm run test:parse && npm run test:grids && npm run test:browser && npm run test:qa && npm run test:fs && npm run test:blocks && npm run test:runtime && npm run test:manifest && npm run test:playground && npm run test:ultimate",
+    "test:cert": "node tests/cert/jurisdictions.test.mjs && node tests/cert/complianceGate.test.mjs && node tests/cert/manifest.test.mjs && node tests/cert/evidencePack.test.mjs && node tests/cert/bundler.test.mjs && node tests/cert/cli.integration.test.mjs",
+    "cert:build": "node tools/cert-build.mjs",
+    "test:all": "npm run test:lego && npm run test:parse && npm run test:grids && npm run test:browser && npm run test:qa && npm run test:fs && npm run test:blocks && npm run test:runtime && npm run test:manifest && npm run test:playground && npm run test:cert && npm run test:ultimate",
     "serve": "python3 -m http.server 5180"
   },
   "devDependencies": {

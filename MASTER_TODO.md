@@ -3,11 +3,16 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-07 · **HEAD**: `5c65bf6` · main
-> **Most recent ship**: Wave **H3** — `sessionTimeout` continuous-play
-> cap + forced-break block (UKGC LCCP 8.3.1 / AGCO 4.07 / MGA RGF Part III
-> / Spelinspektionen 14.4 / DGOJ Art 7 / NJDGE 13:69O-1.4). 87/87 unit +
-> 35/35 live Playwright + 2574/2574 ultimate-QA regression all green.
+> **Last updated**: 2026-06-08 · **HEAD**: _pending Wave C1 commit_ · main
+> **Most recent ship**: Wave **C1** — **Zero-touch GDD → op-package cert
+> pipeline** (`src/cert/` + `tools/cert-build.mjs`). 5 cert modules
+> (jurisdictions / complianceGate / manifest / evidencePack / bundler)
+> + CLI orchestrator covered by **160/160 cert tests PASS**. Supports
+> UKGC / MGA / DGA / SGA / NJDGE / DGOJ. Parser extended with 3
+> social-responsibility kinds (reality_check / session_timeout /
+> net_loss_indicator). LEGO gate 5/5 PASS, parse regression 4/4 PASS.
+> Live demo on `WRATH_OF_OLYMPUS_GAME_GDD.md` → MGA bundle dir +
+> `.opkg.zip` written in <2s.
 
 ## 📊 Project status snapshot
 
@@ -28,6 +33,7 @@
 
 | Hash | Wave | Subject |
 |---|---|---|
+| _pending_ | **C1** | **Zero-touch cert pipeline** — `src/cert/{jurisdictions,complianceGate,manifest,evidencePack,bundler}.mjs` + `tools/cert-build.mjs` CLI orchestrator. Supports **UKGC / MGA / DGA / SGA / NJDGE / DGOJ**; emits deterministic `<game_id>-<version>.opkg/` bundle with manifest.json + evidence.json + compliance.json + README.txt + source/ + optional `.zip`. 160/160 cert tests PASS (jurisdictions 21 / complianceGate 29 / manifest 30 / evidencePack 34 / bundler 27 / CLI integration 19). Parser extended with 3 social-responsibility kinds (`reality_check` / `session_timeout` / `net_loss_indicator`). LEGO gate 5/5 PASS, parse regression 4/4 PASS, exit-code contract: 0 PASS / 1 compliance FAIL / 2 fatal |
 | `5c65bf6` | **H3** | **`sessionTimeout`** continuous-play cap + forced-break block. UKGC LCCP 8.3.1 / AGCO Standard 4.07 / MGA RGF Part III / Spelinspektionen 14.4 / DGOJ Art 7 / NJDGE 13:69O-1.4. Dual-mode modal (warning + break), 87/87 unit + 35/35 live probe (warning trigger → EXTEND → force-break → manual resume → realityCheck pause integration → resume); 5 HookBus events sole-owned; 2574/2574 ultimate-QA still green |
 | `8387e5c` | **UQ** | **Ultimate QA matrix** — 174 synthetic GDD generator (19 kinds × 26 industry patterns) + 12-pt headless probe × 198 fixtures = **2574/2574 PASS**, 0 fail; 16 typography fixes (≥11px floor); inline ThreadingHTTPServer for Playwright concurrent fetches |
 | `9b5a1c1` | **K7** | settingsPanel extension — volatility / bet-step / max-win-cap + 3 HookBus events |

@@ -831,6 +831,24 @@ export function extractFeatures(rawText) {
       label: 'Win Cap',
     },
     {
+      // Wave C1 — UKGC LCCP 8.3 / MGA RGF mandated periodic player summary.
+      kind: 'reality_check',
+      re: /\breality[\s_-]?check\b|\bperiodic[\s_-]?summary\b|\bsession[\s_-]?check[\s_-]?popup\b/i,
+      label: 'Reality Check',
+    },
+    {
+      // Wave C1 — SGA / DGA mandated continuous-play cap with forced break.
+      kind: 'session_timeout',
+      re: /\bsession[\s_-]?timeout\b|\bcontinuous[\s_-]?play[\s_-]?cap\b|\bforced[\s_-]?break\b|\bsession[\s_-]?limit\b/i,
+      label: 'Session Timeout',
+    },
+    {
+      // Wave C1 — DGA / Spelinspektionen mandated cumulative net-loss surface.
+      kind: 'net_loss_indicator',
+      re: /\bnet[\s_-]?loss[\s_-]?indicator\b|\bcumulative[\s_-]?loss[\s_-]?display\b|\bnet[\s_-]?loss\b(?:\s+(?:indicator|display|surface|threshold))?/i,
+      label: 'Net Loss Indicator',
+    },
+    {
       kind: 'persistent_multiplier',
       // FS multiplier that doesn't reset within the round.
       re: /\bpersistent[\s_-]?multiplier\b|\bmultiplier\s+(?:never\s+resets|grows\s+with)|\bgrows\s+with\s+each\s+cascade\b/i,
