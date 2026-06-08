@@ -969,12 +969,315 @@ export function extractFeatures(rawText) {
   }
   // respin is usually a sub-mechanic of H&W — de-dupe.
   if (seen.has('hold_and_win') && seen.has('respin')) {
-    return out.filter(f => f.kind !== 'respin');
+    const filtered = out.filter(f => f.kind !== 'respin');
+    /* Wave P6 — generic feature discovery pass (see helper below). */
+    return appendGenericFeatures(text, filtered, seen);
+  }
+  /* Wave P6 — generic feature discovery pass.
+     Any feature name mentioned in the GDD that none of the ~50
+     patterns above caught is registered as `feature_generic` with
+     the verbatim label so the renderer NEVER drops it silently.
+     Idempotent: dedupes by lowercase label, skips known kinds. */
+  return appendGenericFeatures(text, out, seen);
+}
+
+/* ─── Wave P6 — generic feature discovery ────────────────────
+ *
+ * Catches feature names the parser's pattern bank does NOT recognise.
+ * Rule: "nikad crveno ni za izmišljeni feature" (master TODO P6).
+ *
+ * Discovery surfaces, in order of preference:
+ *   1. Markdown headings ending in "Feature" / "Mechanic" / "Bonus"
+ *      (case-insensitive). E.g. `## PsyOps Rain Feature`.
+ *   2. Bold tags `**X Feature**` / `**X Mechanic**` inside body text.
+ *   3. Bullet rows under a "Features" / "Mechanics" section.
+ *
+ * Dedupe rules:
+ *   - Skip if label (lowercased, stripped) matches an already-emitted
+ *     feature label.
+ *   - Skip generic noise tokens (free spins, wild, multiplier, etc.)
+ *     since those are already covered by the explicit patterns above.
+ *   - Cap at 12 discovered generics per GDD (sane upper bound — beyond
+ *     that the GDD is likely listing UI strings, not real features).
+ *
+ * Output shape: `{ kind: 'feature_generic', label, _discovered: true }`.
+ * Downstream `buildSlotHTML` already renders unknown kinds via the
+ * `featureList` UI block without throwing, so the only thing P6 needs
+ * is the surface that lets discovery results through.
+ */
+const _GENERIC_FEATURE_BLOCKLIST = new Set([
+  'free spins', 'wild', 'multiplier', 'cascade', 'cluster pays', 'ways',
+  'scatter pay', 'lightning', 'respin', 'gamble', 'ante bet', 'autoplay',
+  'reality check', 'session timeout', 'net loss indicator', 'feature',
+  'mechanic', 'bonus', 'feature mechanic', 'feature feature', 'mechanic feature',
+  'mechanic mechanic', 'bonus feature', 'feature bonus', 'super symbol',
+  'force skip', 'slam stop', 'turbo mode', 'settings panel', 'bonus pick',
+  'bonus buy', 'sticky wild', 'expanding wild', 'walking wild', 'wild reel',
+  'mystery symbol', 'persistent multiplier', 'progressive free spins',
+  'hold and win', 'hold & win', 'wheel bonus', 'win cap', 'ui toast',
+  'paytable', 'balance hud', 'history log', 'audio', 'pay anywhere',
+  'free spins feature', 'bonus mechanic', 'bonus feature mechanic',
+  'main feature', 'core mechanic', 'core feature', 'key feature',
+  'special feature', 'special mechanic', 'this feature', 'that feature',
+  'the feature', 'a feature', 'an feature',
+]);
+
+const _GENERIC_MAX = 12;
+
+export function extractGenericFeatures(rawText, knownLabels = new Set()) {
+  if (typeof rawText !== 'string' || rawText.length === 0) return [];
+
+  /* Same "out of scope" / "non-features" cleanup as extractFeatures so
+     we don't lift labels from explicit-negation sections. */
+  let text = rawText.replace(
+    /#{2,3}\s*(?:\d+\.\s*)?(?:Out[\s-]of[\s-]scope|Explicit non-features|Not in this product)[^#]*(?=#{2,3}|\Z)/gis,
+    ''
+  );
+
+  const found = new Map(); // lowercased label -> verbatim label
+  const norm = (s) => s.replace(/\s+/g, ' ').trim();
+  const lower = (s) => norm(s).toLowerCase();
+
+  /* Strip standard suffixes so "Wild Feature" → "wild" matches the
+     extractFeatures `wild` label during dedupe. */
+  const stripSuffix = (s) =>
+    s.replace(/\s+(feature|mechanic|bonus|ability|power)s?\s*$/i, '').trim();
+
+  const tryAdd = (rawLabel) => {
+    const label = norm(rawLabel)
+      .replace(/^[\d.]+\s*/, '')          // strip "1. " / "2.1 "
+      .replace(/[*_#`]/g, '')              // strip markdown decoration
+      .replace(/[:\-–—|]+$/, '')           // strip trailing punctuation
+      .replace(/^[:\-–—|]+/, '')
+      .trim();
+    if (label.length < 3 || label.length > 60) return;
+    const lo = lower(label);
+    if (_GENERIC_FEATURE_BLOCKLIST.has(lo)) return;
+    const stripped = lower(stripSuffix(label));
+    if (_GENERIC_FEATURE_BLOCKLIST.has(stripped)) return;
+    /* Pure-number / pure-symbol labels are noise, not features. */
+    if (!/[a-z]/i.test(label)) return;
+    /* Skip if a *known* feature label collides (case-insensitive),
+       both with and without "Feature/Mechanic/Bonus" suffix. */
+    for (const k of knownLabels) {
+      const kl = lower(k);
+      const ks = lower(stripSuffix(k));
+      if (kl === lo || kl === stripped || ks === lo || ks === stripped) return;
+    }
+    /* Skip if a previously-extracted generic has the same (stripped) label. */
+    if (found.has(lo) || found.has(stripped)) return;
+    found.set(lo, label);
+  };
+
+  /* 1. Markdown headings ending in Feature / Mechanic / Bonus. */
+  const headingRe = /^#{1,4}\s*(?:\d+\.\s*)?(.+?)\s*(?:feature|mechanic|bonus|ability|power)\s*$/gim;
+  let m;
+  while ((m = headingRe.exec(text)) !== null && found.size < _GENERIC_MAX) {
+    tryAdd(`${m[1]} ${m[0].match(/(feature|mechanic|bonus|ability|power)/i)[0]}`);
+  }
+
+  /* 2. Bold tags. */
+  const boldRe = /\*\*([^*\n]{3,40}?(?:feature|mechanic|bonus|ability|power))\*\*/gi;
+  while ((m = boldRe.exec(text)) !== null && found.size < _GENERIC_MAX) {
+    tryAdd(m[1]);
+  }
+
+  /* 3. Bullet rows under a "Features" / "Mechanics" / "Bonus" section.
+        JS RegExp has no `\Z`, so split-on-heading-boundary is simpler
+        and equally deterministic. Walk every line; when we hit a
+        candidate section heading flip an `inSection` flag; on next
+        heading flip off. */
+  /* Any heading whose text ends in features/mechanics/bonuses is a
+     section we should harvest. Allows arbitrary prefix words ("Real
+     Features", "Custom Mechanics", "All Bonuses") while still gating
+     out unrelated headings ("Free Spins" / "Wild" — those are picked
+     up by extractFeatures patterns above, not the discovery pass). */
+  const sectionHeadingRe = /^#{1,4}\s+(?:\d+\.\s*)?[\w\s-]*\b(?:features?|mechanics?|bonuses?)\b/i;
+  const anyHeadingRe = /^#{1,4}\s+/;
+  const bulletRe = /^\s*[-*•]\s+([^\n:]{3,60})/;
+  let inSection = false;
+  for (const line of text.split('\n')) {
+    if (found.size >= _GENERIC_MAX) break;
+    if (anyHeadingRe.test(line)) {
+      inSection = sectionHeadingRe.test(line);
+      continue;
+    }
+    if (!inSection) continue;
+    const bm = line.match(bulletRe);
+    if (bm) tryAdd(bm[1]);
+  }
+
+  /* Return in insertion order for deterministic test fixtures. */
+  return Array.from(found.values()).map((label) => ({
+    kind: 'feature_generic',
+    label,
+    _discovered: true,
+  }));
+}
+
+function appendGenericFeatures(text, existing, knownKindSet) {
+  const knownLabels = new Set(existing.map((f) => f.label));
+  const generics = extractGenericFeatures(text, knownLabels);
+  return generics.length === 0 ? existing : existing.concat(generics);
+}
+
+// extractMathSignals removed — math is out of scope this phase.
+
+/* ─── Wave P7 — GDD round-trip stabilnost ──────────────────────
+ *
+ * Regulator submission preduslov: parsiranjem GDD-a + ponovnom
+ * normalizacijom modela kao JSON mora se dobiti **identičan
+ * fingerprint**. Bez ovoga, dva uzastopna build-a istog GDD-a
+ * mogu da emit-uju različite renderable modele — što je tihi
+ * regression detector.
+ *
+ * Funkcije:
+ *
+ *   serializeToCanonicalJSON(model) → object
+ *     Drops volatile metadata (confidence._failures, _derivedBy)
+ *     i sortira nizove deterministički. Direktno feed-uje
+ *     normalizeFromJSON.
+ *
+ *   stableFingerprint(model) → object
+ *     Minimum-stable subset modela koji round-trip mora očuvati.
+ *     Strožiji od full canonical (uključuje samo render-affecting
+ *     polja), korišćen u testu da assert ne pukne na pomeranju
+ *     debug metadata.
+ *
+ *   roundTrip(text) → { initial, restored, fingerprintMatch }
+ *     End-to-end helper za testove + dev tooling: parse(text) →
+ *     serialize → normalizeFromJSON → fingerprint compare.
+ *
+ * Acceptance (sve mora da prođe):
+ *   - fingerprint(parse(text)) === fingerprint(roundTrip(text).restored)
+ *   - 4× sample GDD prolazi (WRATH_OF_OLYMPUS / CRYSTAL_FORGE /
+ *     GATES / MIDNIGHT_FANGS)
+ *   - Idempotency: roundTrip(roundTrip(text).restored serialized) ===
+ *     roundTrip(text).restored
+ *   - Bulletproof: parser.mjs P1 harness already guards malformed input;
+ *     round-trip nikad ne baca, čak i na null/empty.
+ */
+
+const _VOLATILE_KEYS = new Set([
+  '_failures', '_derivedBy', '_discovered',
+]);
+
+function _sortFeaturesDeterministic(features) {
+  if (!Array.isArray(features)) return [];
+  /* Sort by kind, then by label. Stable + deterministic across runs.
+     Doesn't lose data — only re-orders. */
+  return features
+    .filter((f) => f && typeof f === 'object')
+    .slice()
+    .sort((a, b) => {
+      const ak = String(a.kind || '');
+      const bk = String(b.kind || '');
+      if (ak !== bk) return ak < bk ? -1 : 1;
+      const al = String(a.label || '');
+      const bl = String(b.label || '');
+      return al < bl ? -1 : al > bl ? 1 : 0;
+    });
+}
+
+function _stripVolatile(obj) {
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(_stripVolatile);
+  const out = {};
+  for (const k of Object.keys(obj).sort()) {
+    if (_VOLATILE_KEYS.has(k)) continue;
+    out[k] = _stripVolatile(obj[k]);
   }
   return out;
 }
 
-// extractMathSignals removed — math is out of scope this phase.
+export function serializeToCanonicalJSON(model) {
+  if (!model || typeof model !== 'object') return {};
+  const cloned = {
+    name: model.name || '',
+    theme: model.theme || {},
+    topology: model.topology || {},
+    symbols: model.symbols || { high: [], mid: [], low: [], specials: [] },
+    features: _sortFeaturesDeterministic(model.features),
+    freeSpins: model.freeSpins || { enabled: false },
+  };
+  return _stripVolatile(cloned);
+}
+
+export function stableFingerprint(model) {
+  if (!model || typeof model !== 'object') return null;
+  return {
+    name: String(model.name || ''),
+    topology: {
+      kind: String((model.topology || {}).kind || ''),
+      reels: Number((model.topology || {}).reels || 0),
+      rows: Number((model.topology || {}).rows || 0),
+      paylines: Number((model.topology || {}).paylines || 0),
+      shape: String((model.topology || {}).shape || ''),
+      evaluation: (model.topology || {}).evaluation || null,
+    },
+    /* Feature kinds only (labels can wobble per palette/locale; kinds
+       are the contract). Sort + dedupe so order doesn't matter. */
+    featureKinds: Array.from(
+      new Set(
+        (model.features || [])
+          .filter((f) => f && f.kind)
+          .map((f) => String(f.kind))
+      )
+    ).sort(),
+    /* Theme palette family (computed by P4 / smartDefaults), not the
+       raw hex colours — hexes can shift if the palette source updates,
+       but the family token stays. */
+    themeTagsCount: Array.isArray((model.theme || {}).tags)
+      ? model.theme.tags.length
+      : 0,
+    paletteSize: Array.isArray((model.theme || {}).palette)
+      ? model.theme.palette.length
+      : 0,
+    /* Free-spins on/off is the gate-level contract. Detailed config
+       (multiplier ladder, retrigger) intentionally not included —
+       wave-by-wave parser refinement re-derives those. */
+    freeSpinsEnabled: !!((model.freeSpins || {}).enabled),
+    /* Symbol tier counts — exact tier *contents* may re-classify (P3
+       smartDefaults), but the *count per tier* is the stable contract. */
+    symbolTierCounts: {
+      high: Array.isArray((model.symbols || {}).high) ? model.symbols.high.length : 0,
+      mid: Array.isArray((model.symbols || {}).mid) ? model.symbols.mid.length : 0,
+      low: Array.isArray((model.symbols || {}).low) ? model.symbols.low.length : 0,
+      specials: Array.isArray((model.symbols || {}).specials) ? model.symbols.specials.length : 0,
+    },
+  };
+}
+
+export function roundTrip(text) {
+  /* Soft-fail on any bad input — P1 outer guard semantic. */
+  let initial = null;
+  let restored = null;
+  let fingerprintInitial = null;
+  let fingerprintRestored = null;
+  try {
+    initial = parseGDD(text);
+    const canonical = serializeToCanonicalJSON(initial);
+    restored = normalizeFromJSON(canonical);
+    fingerprintInitial = stableFingerprint(initial);
+    fingerprintRestored = stableFingerprint(restored);
+  } catch (err) {
+    return {
+      initial,
+      restored,
+      fingerprintMatch: false,
+      error: err && err.message ? err.message : String(err),
+    };
+  }
+  const aJson = JSON.stringify(fingerprintInitial);
+  const bJson = JSON.stringify(fingerprintRestored);
+  return {
+    initial,
+    restored,
+    fingerprintInitial,
+    fingerprintRestored,
+    fingerprintMatch: aJson === bJson,
+  };
+}
 
 /* ─── JSON GDD passthrough (IR shape) ──────────────────────── */
 export function normalizeFromJSON(obj) {
