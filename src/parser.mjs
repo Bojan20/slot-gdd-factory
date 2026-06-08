@@ -1,3 +1,5 @@
+import { applySmartDefaults } from './registry/smartDefaults.mjs';
+
 /**
  * Slot GDD Factory · pure parser module
  * No DOM, no globals — safe to import from Node tests and from app.js.
@@ -240,6 +242,14 @@ export function parseMarkdownGDD(text) {
   _safeExtract('extractSuperSymbol', () => extractSuperSymbol(text, model), model);
 
   // math (RTP / volatility / max-win) intentionally NOT extracted in this phase.
+
+  /* Wave P2 — Smart Defaults Engine. Backfill anything the parser
+     could not extract from explicit GDD text — palette from tags,
+     topology kind/dims from feature mix, symbol tier classification,
+     and a recommended feature mix when the upstream GDD lists none.
+     Each derived field is tagged in `model.confidence._derivedBy`
+     so callers can distinguish "from spec" vs "inferred". */
+  applySmartDefaults(model);
 
   return model;
 }
@@ -987,7 +997,11 @@ export function normalizeFromJSON(obj) {
   } else {
     model.freeSpins = { enabled: false };
   }
-  model.confidence = { name: 1, topology: 1, symbols: 1, features: 1 };
+  model.confidence = { name: 1, topology: 1, symbols: 1, features: 1, _failures: [], _derivedBy: {} };
+  /* Wave P2 — JSON path also routes through smart defaults so that
+     pitch-deck JSON with only `name` + `theme.tags` produces a fully
+     renderable model identical to the markdown happy path. */
+  applySmartDefaults(model);
   return model;
 }
 
