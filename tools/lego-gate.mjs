@@ -77,6 +77,9 @@ const HOOK_REGISTRATION_OPT_OUT = new Set([
   'waysEval.mjs',       // pure evaluator function
   'bonusBuy.mjs',       // UI modal triggered by user click, not lifecycle
   'anteBet.mjs',        // toggle stored in URL hash, not lifecycle
+  'hotReload.mjs',      // Wave P8 — emit-only dev block; reacts to SSE,
+                        // not to spin-engine lifecycle. Owns onGddChange /
+                        // onHotReloadConnect / onHotReloadDisconnect emits.
 ]);
 
 /* Expected emit ownership — single source of truth for each event. */
@@ -191,6 +194,12 @@ const EXPECTED_EMIT_OWNERS = {
   onVolatilityChanged:    ['settingsPanel.mjs'],
   onBetStepPresetChanged: ['settingsPanel.mjs'],
   onMaxWinCapToggled:     ['settingsPanel.mjs'],
+  /* Wave P8 — hot-reload (dev-mode SSE) is the sole emitter of these
+   * dev-loop events. onGddChange is the in-page fast-path signal;
+   * onHotReloadConnect / onHotReloadDisconnect track SSE lifecycle. */
+  onHotReloadConnect:    ['hotReload.mjs'],
+  onHotReloadDisconnect: ['hotReload.mjs'],
+  onGddChange:           ['hotReload.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */

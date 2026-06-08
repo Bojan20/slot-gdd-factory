@@ -184,7 +184,14 @@ t('manifest is fresh — `gen-block-manifest.mjs --check` would pass', () => {
    * with --print so we don't overwrite the file mid-test. The two
    * snapshots are byte-comparable after trimming the generatedAt
    * (which changes per-run by design). */
-  const r = spawnSync('node', ['tools/gen-block-manifest.mjs', '--print'], { cwd: REPO });
+  /* Default spawnSync maxBuffer is 1MB on modern Node, but explicit is
+   * safer: the manifest size grew past 64KB once Wave P8 landed and the
+   * truncation surfaced as "Unterminated string in JSON". 8MB is well
+   * above any plausible block manifest size. */
+  const r = spawnSync('node', ['tools/gen-block-manifest.mjs', '--print'], {
+    cwd: REPO,
+    maxBuffer: 8 * 1024 * 1024,
+  });
   if (r.status !== 0) throw new Error(`generator exited with ${r.status}: ${r.stderr}`);
   const fresh = JSON.parse(r.stdout.toString('utf8'));
   /* Compare everything except generatedAt */

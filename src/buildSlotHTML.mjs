@@ -275,6 +275,13 @@ import {
   emitSymbolInfoPopoverCSS, emitSymbolInfoPopoverMarkup, emitSymbolInfoPopoverRuntime,
   resolveConfig as resolveSymbolInfoPopoverConfig,
 } from './blocks/symbolInfoPopover.mjs';
+// Wave P8 — Hot-Reload BLOCK (dev-mode SSE → in-page re-parse or full reload).
+// Disabled by default; opt-in via model.hotReload.enabled (set by dev server
+// or by the parent page on localhost). Production builds emit a 0-byte stub.
+import {
+  emitHotReloadCSS, emitHotReloadMarkup, emitHotReloadRuntime,
+  resolveConfig as resolveHotReloadConfig,
+} from './blocks/hotReload.mjs';
 import {
   emitHoldAndWinCSS, emitHoldAndWinMarkup, emitHoldAndWinRuntime,
   resolveConfig as resolveHoldAndWinConfig,
@@ -514,6 +521,8 @@ ${emitSettingsPanelCSS(resolveSettingsPanelConfig(model))}
 ${/* Wave U10 — paytable modal (i-button + symbol roster + features). */ ''}
 ${emitPaytableCSS(resolvePaytableConfig(model))}
 ${emitSymbolInfoPopoverCSS(resolveSymbolInfoPopoverConfig(model))}
+${/* Wave P8 — hot-reload indicator badge (dev-mode only). */ ''}
+${emitHotReloadCSS(resolveHotReloadConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
 ${/* Wave H14 — Hold-and-Win Credit Bucket extension (chip + jackpot CSS). */ ''}
 ${emitHoldAndWinCreditBucketCSS(resolveHoldAndWinCreditBucketConfig(model))}
@@ -670,6 +679,8 @@ ${emitSettingsPanelMarkup(resolveSettingsPanelConfig(model))}
 ${/* Wave U10 — paytable button (in hub) + modal backdrop. */ ''}
 ${emitPaytableMarkup(resolvePaytableConfig(model))}
 ${emitSymbolInfoPopoverMarkup(resolveSymbolInfoPopoverConfig(model))}
+${/* Wave P8 — hot-reload indicator host (hidden until connected). */ ''}
+${emitHotReloadMarkup(resolveHotReloadConfig(model))}
 
 <script>
   /* ── HookBus FIRST — every feature block registers on it. ────────── */
@@ -842,6 +853,11 @@ ${emitSymbolInfoPopoverMarkup(resolveSymbolInfoPopoverConfig(model))}
   ${/* Wave U10 — paytable modal runtime (i-button show/hide + roster). */ ''}
   ${emitPaytableRuntime(resolvePaytableConfig(model), model)}
   ${emitSymbolInfoPopoverRuntime(resolveSymbolInfoPopoverConfig(model))}
+  ${/* Wave P8 — hot-reload runtime (dev-mode). Placed AFTER HookBus and
+     * AFTER every other block runtime so that subscribers to onGddChange
+     * are already registered when an SSE-driven re-parse fires. Disabled
+     * by default → 0-byte side effect in production. */ ''}
+  ${emitHotReloadRuntime(resolveHotReloadConfig(model))}
   ${emitHoldAndWinRuntime(resolveHoldAndWinConfig(model))}
   ${/* Wave H14 — Credit Bucket emits AFTER holdAndWin runtime so HW_STATE
      * is already populated when the observer's postSpin listener fires. */ ''}

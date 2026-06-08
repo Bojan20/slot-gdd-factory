@@ -200,8 +200,21 @@ manifest.blocks.sort((a, b) => a.name.localeCompare(b.name));
 const json = JSON.stringify(manifest, null, 2);
 
 if (PRINT_ONLY) {
-  console.log(json);
-  process.exit(0);
+  /* Wave P8 fix — never call process.exit() before stdout has drained
+   * AND make sure the summary console.log lines below NEVER append to
+   * the printed JSON (they would corrupt the JSON.parse downstream).
+   * console.log + immediate exit truncates at the stream highWaterMark
+   * (~65 KB) on macOS, causing JSON.parse to throw "Unterminated string"
+   * in the manifest-freshness test. Use write+callback so we exit only
+   * after the kernel has accepted the full payload. */
+  process.stdout.write(json + '\n', () => process.exit(0));
+  /* Keep the event loop alive long enough for the drain callback to
+   * fire; the explicit infinite timeout is unref'd so it never blocks
+   * a normal exit path on its own. */
+  setTimeout(() => process.exit(0), 5000).unref();
+  /* Halt synchronous execution so the summary below does not interleave
+   * with the JSON payload on stdout. */
+  await new Promise(() => {});
 }
 
 if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true });

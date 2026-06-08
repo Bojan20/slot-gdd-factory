@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-08T20:29:07.465Z",
+  "generatedAt": "2026-06-08T22:28:24.729Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 64,
+  "totalBlocks": 65,
   "blocks": [
     {
       "name": "anteBet",
@@ -1009,7 +1009,46 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 435
+      "loc": 447
+    },
+    {
+      "name": "hotReload",
+      "file": "src/blocks/hotReload.mjs",
+      "testFile": "tests/blocks/hotReload.test.mjs",
+      "category": "uncategorised",
+      "description": "Modern slot-game dev tooling exposes a `dev` server that watches the",
+      "exports": [
+        "defaultConfig",
+        "emitHotReloadCSS",
+        "emitHotReloadMarkup",
+        "emitHotReloadRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onGddChange",
+        "onHotReloadConnect",
+        "onHotReloadDisconnect"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "endpoint": "/__dev/events",
+        "reconnectMs": 1500,
+        "reconnectMaxMs": 10000,
+        "debounceMs": 120,
+        "fullReloadCategories": [
+          "block",
+          "orchestrator",
+          "runtime"
+        ],
+        "fastReloadCategories": [
+          "gdd",
+          "sample"
+        ],
+        "keepalivePingMs": 25000,
+        "indicator": true
+      },
+      "loc": 406
     },
     {
       "name": "lightning",

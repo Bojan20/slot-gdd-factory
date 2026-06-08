@@ -268,6 +268,18 @@ export const HOOK_EVENTS = Object.freeze([
   'onVolatilityChanged',
   'onBetStepPresetChanged',
   'onMaxWinCapToggled',
+  /* Wave P8: hot-reload BLOCK events (dev-mode, production-disabled).
+   * onHotReloadConnect    {}                — SSE established.
+   * onHotReloadDisconnect { reason }        — SSE closed / errored.
+   * onGddChange           { model, src }    — dev server reported a sample
+   *   GDD change AND the page successfully re-parsed it in-place. Blocks
+   *   that hold parsed-model-derived state (paytable, themeCSS, anticipation
+   *   thresholds, …) can subscribe to re-arm without a full page reload.
+   *   Owner: src/blocks/hotReload.mjs (emit). Consumers: any block that
+   *   wants live-edit responsiveness. */
+  'onHotReloadConnect',
+  'onHotReloadDisconnect',
+  'onGddChange',
 ]);
 
 /* Wave U4: canonical autoplay stop reasons. */
