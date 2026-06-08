@@ -125,6 +125,38 @@ t('emitSpinControlMarkup: data-state=SPIN default + 3 stacked icons', () => {
   ct(html, 'aria-label="Spin"');
 });
 
+t('Wave V4: spinIcon--spin uses two-arrow refresh glyph (Boki requirement)', () => {
+  /* Boki specified "dve strelice" for the spin icon. The implementation
+     stacks 2 SVG <path> arcs (two opposing half-circles) + 2 <polyline>
+     arrowheads inside `<svg class="spinIcon--spin">`. This test pins
+     the count + ensures the icon stays a double-arrow glyph across
+     refactors. */
+  const html = emitSpinControlMarkup(defaultConfig());
+  const m = html.match(/<svg class="spinIcon spinIcon--spin"[^>]*>([\s\S]*?)<\/svg>/);
+  ok(m, 'spinIcon--spin SVG not found');
+  const inner = m[1];
+  const pathCount = (inner.match(/<path\b/g) || []).length;
+  const polylineCount = (inner.match(/<polyline\b/g) || []).length;
+  eq(pathCount, 2, 'spinIcon--spin must have 2 <path> arcs (two arrows)');
+  eq(polylineCount, 2, 'spinIcon--spin must have 2 <polyline> arrowheads');
+});
+
+t('Wave V4: spinIcon--stop is solid square (single rect)', () => {
+  const html = emitSpinControlMarkup(defaultConfig());
+  const m = html.match(/<svg class="spinIcon spinIcon--stop"[^>]*>([\s\S]*?)<\/svg>/);
+  ok(m, 'spinIcon--stop SVG not found');
+  const rectCount = (m[1].match(/<rect\b/g) || []).length;
+  eq(rectCount, 1, 'spinIcon--stop must be a single rect');
+});
+
+t('Wave V4: spinIcon--skip is forward double-triangle (two polygons)', () => {
+  const html = emitSpinControlMarkup(defaultConfig());
+  const m = html.match(/<svg class="spinIcon spinIcon--skip"[^>]*>([\s\S]*?)<\/svg>/);
+  ok(m, 'spinIcon--skip SVG not found');
+  const polyCount = (m[1].match(/<polygon\b/g) || []).length;
+  eq(polyCount, 2, 'spinIcon--skip must be a double-triangle (2 polygons)');
+});
+
 t('emitSpinControlMarkup: XSS in aria escaped', () => {
   const html = emitSpinControlMarkup({ ...defaultConfig(), spinAriaLabel: 'a"><script>x' });
   ct(html, '&quot;');

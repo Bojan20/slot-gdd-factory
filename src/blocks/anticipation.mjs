@@ -199,7 +199,21 @@ export function emitAnticipationRuntime(cfg = defaultConfig()) {
     if (stillSpinning.length === 0) return;
 
     const remaining = stillSpinning.length;
-    const anticipationGate = Math.max(1, threshold - 1);
+    /* Wave V1 — Boki bug fix "padne 1. ril → 2. ril → 3. ril i anticipation
+       se gasi" (MASTER_TODO V1):
+       Pre-fix: anticipationGate = max(1, threshold - 1). That demanded
+       scattersSoFar ≥ threshold-1 BEFORE arming, which silently dropped
+       the suspense the moment a mid-spin reel landed scatter-light. E.g.
+       threshold=3, 1 scatter after 3 reels stopped (2 remaining) →
+       1 ≥ 2 ? false → anticipation never armed even though mathematically
+       1 + 2 = 3 (trigger still reachable if both remaining land scatter).
+       Post-fix: anticipationGate = max(1, threshold - remaining). The
+       gate now reflects "minimum scatters needed so the remaining reels
+       can still hit threshold IF every one of them lands scatter". Combined
+       with the (scattersSoFar + remaining >= threshold) reachability check,
+       the suspense fires the moment the trigger is *mathematically alive*
+       and stays armed until either threshold or topRung is settled. */
+    const anticipationGate = Math.max(1, threshold - remaining);
     const armed = (scattersSoFar >= anticipationGate) &&
                   (scattersSoFar + remaining >= threshold) &&
                   (scattersSoFar < topRung);
