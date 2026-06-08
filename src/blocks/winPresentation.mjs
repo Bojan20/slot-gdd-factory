@@ -45,6 +45,12 @@ const DEFAULTS = Object.freeze({
    * tiered big-win banner takes over. Matches the reference presentation
    * SYMBOL_CELEBRATION duration. */
   bigWinCelebMs: 800,
+  /* Wave V5 — cascade-stagger mode step. Per-event delay when mode is
+   * 'cascade-stagger' (vs default ~500ms for per-line cycle). Industry
+   * range 60-120 ms; the lower bound matches Hacksaw / NoLimit cascade
+   * pacing where the player reads the chain in one breath instead of
+   * one-by-one. Falls back to perEventMs when mode != 'cascade-stagger'. */
+  staggerStepMs: 80,
 });
 
 export function defaultConfig() {
@@ -57,8 +63,19 @@ export function resolveConfig(model) {
   const cfg = defaultConfig();
   const src = (model && model.winPresentation) || {};
 
-  if (src.mode === 'per-line' || src.mode === 'cluster' || src.mode === 'all-at-once') {
+  if (
+    src.mode === 'per-line' ||
+    src.mode === 'cluster' ||
+    src.mode === 'all-at-once' ||
+    src.mode === 'cascade-stagger'   /* Wave V5 — new cascade-pace cycle mode */
+  ) {
     cfg.mode = src.mode;
+  }
+  if (
+    typeof src.staggerStepMs === 'number' &&
+    src.staggerStepMs >= 20 && src.staggerStepMs <= 500
+  ) {
+    cfg.staggerStepMs = Math.floor(src.staggerStepMs);
   }
   if (src.perEventMs === 'auto' || (typeof src.perEventMs === 'number' && src.perEventMs > 0)) {
     cfg.perEventMs = src.perEventMs;
@@ -219,19 +236,24 @@ export function emitDetectWinCombosRuntime(cfg = defaultConfig()) {
 export function emitWinPresentationRuntime(cfg = defaultConfig()) {
   const c = resolveConfig({ winPresentation: cfg });
   /* perEventMs: 'auto' → adaptive (events.length <= 4 ? 500 : 400)
-                 number → constant override */
-  const perEventMsJS = c.perEventMs === 'auto'
-    ? `(events.length <= 4 ? 500 : 400)`
-    : String(c.perEventMs);
+                 number → constant override
+     Wave V5 — when mode === 'cascade-stagger', the cycle pace is the
+     tighter `staggerStepMs` (default 80 ms) so wins read as a single
+     fast cascade instead of one-by-one. Falls back to perEventMs when
+     mode is per-line / cluster / all-at-once. */
+  const perEventMsJS = c.mode === 'cascade-stagger'
+    ? String(c.staggerStepMs)
+    : (c.perEventMs === 'auto' ? `(events.length <= 4 ? 500 : 400)` : String(c.perEventMs));
 
   return `
   /* ── winPresentation BLOCK — emitted by src/blocks/winPresentation.mjs ─
      GDD-driven knobs (baked at build time):
-       mode         = ${JSON.stringify(c.mode)}
-       perEventMs   = ${JSON.stringify(c.perEventMs)}
-       maxEvents    = ${c.maxEvents}
-       noWinChance  = ${c.noWinChance}
-       winCycle     = ${c.winCycle}
+       mode          = ${JSON.stringify(c.mode)}
+       perEventMs    = ${JSON.stringify(c.perEventMs)}
+       maxEvents     = ${c.maxEvents}
+       noWinChance   = ${c.noWinChance}
+       winCycle      = ${c.winCycle}
+       staggerStepMs = ${c.staggerStepMs} (Wave V5 — used when mode='cascade-stagger')
      Token used to invalidate an in-flight cycle when a new spin starts —
      the next spin bumps the token, any pending cycle frame sees the
      mismatch and bails out without touching the DOM. */

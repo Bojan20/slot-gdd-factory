@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-08T12:23:06.685Z",
+  "generatedAt": "2026-06-08T20:29:07.465Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 63,
+  "totalBlocks": 64,
   "blocks": [
     {
       "name": "anteBet",
@@ -52,7 +52,7 @@
         "gold": "255,214,110",
         "skipDuringFs": false
       },
-      "loc": 235
+      "loc": 249
     },
     {
       "name": "audio",
@@ -2017,6 +2017,36 @@
       "loc": 175
     },
     {
+      "name": "symbolInfoPopover",
+      "file": "src/blocks/symbolInfoPopover.mjs",
+      "testFile": "tests/blocks/symbolInfoPopover.test.mjs",
+      "category": "uncategorised",
+      "description": "Slot GDD Factory · symbolInfoPopover BLOCK",
+      "exports": [
+        "defaultConfig",
+        "emitSymbolInfoPopoverCSS",
+        "emitSymbolInfoPopoverMarkup",
+        "emitSymbolInfoPopoverRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": true,
+        "autoHideMs": 2400,
+        "accentColor": "255,214,110",
+        "bgColor": "10,12,18",
+        "textColor": "245,242,228",
+        "showTierBadge": true,
+        "showPayoutHint": true
+      },
+      "loc": 296
+    },
+    {
       "name": "themeCSS",
       "file": "src/blocks/themeCSS.mjs",
       "testFile": "tests/blocks/themeCSS.test.mjs",
@@ -2453,9 +2483,10 @@
         "maxEvents": 8,
         "noWinChance": 0.3,
         "winCycle": true,
-        "bigWinCelebMs": 800
+        "bigWinCelebMs": 800,
+        "staggerStepMs": 80
       },
-      "loc": 843
+      "loc": 865
     },
     {
       "name": "winRollup",

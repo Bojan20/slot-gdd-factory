@@ -63,6 +63,43 @@ t('resolveConfig: invalid mode falls back to default', () => {
   assert.equal(c.mode, 'per-line');
 });
 
+/* ── Wave V5 — cascade-stagger mode ────────────────────────────────── */
+
+t('Wave V5: cascade-stagger is a valid mode', () => {
+  const c = resolveConfig({ winPresentation: { mode: 'cascade-stagger' } });
+  assert.equal(c.mode, 'cascade-stagger');
+});
+
+t('Wave V5: defaultConfig has staggerStepMs = 80', () => {
+  assert.equal(defaultConfig().staggerStepMs, 80);
+});
+
+t('Wave V5: staggerStepMs bounded 20..500', () => {
+  assert.equal(resolveConfig({ winPresentation: { staggerStepMs: 120 } }).staggerStepMs, 120);
+  assert.equal(resolveConfig({ winPresentation: { staggerStepMs: 10 } }).staggerStepMs, 80);
+  assert.equal(resolveConfig({ winPresentation: { staggerStepMs: 9999 } }).staggerStepMs, 80);
+  assert.equal(resolveConfig({ winPresentation: { staggerStepMs: 'fast' } }).staggerStepMs, 80);
+});
+
+t('Wave V5: runtime emit bakes staggerStepMs as perEventMs literal when mode=cascade-stagger', () => {
+  const js = emitWinPresentationRuntime({ ...defaultConfig(), mode: 'cascade-stagger', staggerStepMs: 90 });
+  /* Cascade mode overrides perEventMs adaptive — staggerStepMs literal must appear. */
+  assert.ok(js.includes('const adaptive = 90'), 'expected adaptive=90 from staggerStepMs');
+});
+
+t('Wave V5: runtime emit keeps adaptive perEventMs when mode != cascade-stagger', () => {
+  const js = emitWinPresentationRuntime({ ...defaultConfig(), mode: 'per-line' });
+  /* per-line mode → adaptive `(events.length <= 4 ? 500 : 400)`, NOT a bare literal. */
+  assert.ok(/const adaptive = \(events\.length/.test(js),
+    'expected adaptive ternary for per-line mode');
+});
+
+t('Wave V5: runtime emit header documents the V5 cascade-stagger knob', () => {
+  const js = emitWinPresentationRuntime();
+  assert.ok(/Wave V5.*cascade-stagger/.test(js),
+    'runtime header must reference V5 knob');
+});
+
 t('resolveConfig: numeric perEventMs accepted', () => {
   const c = resolveConfig({ winPresentation: { perEventMs: 350 } });
   assert.equal(c.perEventMs, 350);

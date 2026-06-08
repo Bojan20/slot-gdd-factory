@@ -270,6 +270,11 @@ import {
   emitPaytableCSS, emitPaytableMarkup, emitPaytableRuntime,
   resolveConfig as resolvePaytableConfig,
 } from './blocks/paytable.mjs';
+// Wave V7 — Tap-cell mini paytable popover (single-symbol inspector)
+import {
+  emitSymbolInfoPopoverCSS, emitSymbolInfoPopoverMarkup, emitSymbolInfoPopoverRuntime,
+  resolveConfig as resolveSymbolInfoPopoverConfig,
+} from './blocks/symbolInfoPopover.mjs';
 import {
   emitHoldAndWinCSS, emitHoldAndWinMarkup, emitHoldAndWinRuntime,
   resolveConfig as resolveHoldAndWinConfig,
@@ -508,6 +513,7 @@ ${/* Wave U13 — settings panel (consolidated preferences modal). */ ''}
 ${emitSettingsPanelCSS(resolveSettingsPanelConfig(model))}
 ${/* Wave U10 — paytable modal (i-button + symbol roster + features). */ ''}
 ${emitPaytableCSS(resolvePaytableConfig(model))}
+${emitSymbolInfoPopoverCSS(resolveSymbolInfoPopoverConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
 ${/* Wave H14 — Hold-and-Win Credit Bucket extension (chip + jackpot CSS). */ ''}
 ${emitHoldAndWinCreditBucketCSS(resolveHoldAndWinCreditBucketConfig(model))}
@@ -663,6 +669,7 @@ ${/* Wave U13 — settings gear button + modal. */ ''}
 ${emitSettingsPanelMarkup(resolveSettingsPanelConfig(model))}
 ${/* Wave U10 — paytable button (in hub) + modal backdrop. */ ''}
 ${emitPaytableMarkup(resolvePaytableConfig(model))}
+${emitSymbolInfoPopoverMarkup(resolveSymbolInfoPopoverConfig(model))}
 
 <script>
   /* ── HookBus FIRST — every feature block registers on it. ────────── */
@@ -834,6 +841,7 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
   ${emitSettingsPanelRuntime(resolveSettingsPanelConfig(model))}
   ${/* Wave U10 — paytable modal runtime (i-button show/hide + roster). */ ''}
   ${emitPaytableRuntime(resolvePaytableConfig(model), model)}
+  ${emitSymbolInfoPopoverRuntime(resolveSymbolInfoPopoverConfig(model))}
   ${emitHoldAndWinRuntime(resolveHoldAndWinConfig(model))}
   ${/* Wave H14 — Credit Bucket emits AFTER holdAndWin runtime so HW_STATE
      * is already populated when the observer's postSpin listener fires. */ ''}

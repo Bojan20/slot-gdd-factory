@@ -1,0 +1,295 @@
+/**
+ * Slot GDD Factory · symbolInfoPopover BLOCK
+ *
+ * Wave V7 — tap / hover a grid cell → small popover with that symbol's
+ * tier + label + (placeholder) payout hint. Closes on outside tap,
+ * Escape, or new spin. Mobile-first: 44×44 hit target, viewport-aware
+ * positioning, prefers-reduced-motion gates fade-in.
+ *
+ * Why a separate block (not paytable extension):
+ *   `paytable.mjs` opens a full modal — too heavy for "what symbol is
+ *   this?" inspection mid-game. The popover is a 90×ish floating chip
+ *   over the tapped cell; reading it doesn't break flow. Both can
+ *   coexist (paytable still owns the global "i" chip → full table).
+ *
+ * GDD-driven config (consumed from `model.symbolInfoPopover`):
+ *   enabled         boolean                                     (default true)
+ *   autoHideMs      number ms (≥ 400, ≤ 8000)                   (default 2400)
+ *   accentColor     "r,g,b"                                     (default "255,214,110")
+ *   bgColor         "r,g,b" with alpha-friendly value           (default "10,12,18")
+ *   textColor       "r,g,b"                                     (default "245,242,228")
+ *   showTierBadge   boolean                                     (default true)
+ *   showPayoutHint  boolean — "pays X×bet for K-of-kind"        (default true)
+ *
+ * Public API (server-side, ES module):
+ *   defaultConfig() / resolveConfig(model)
+ *   emitSymbolInfoPopoverCSS(cfg)
+ *   emitSymbolInfoPopoverMarkup(cfg)      → invisible host div
+ *   emitSymbolInfoPopoverRuntime(cfg, model)
+ *
+ * Runtime contract (after emitted JS executes):
+ *   showSymbolInfo(cellEl) / hideSymbolInfo()
+ *   SYMBOL_INFO_POPOVER_STATE on window (debug introspection)
+ *
+ * HookBus events subscribed:
+ *   preSpin           → hide popover (no stale popover into next spin)
+ *   onFsTrigger       → hide popover (FS placard owns the screen)
+ *   onFsEnd           → hide popover
+ *
+ * Runtime dependencies: HookBus, document, window.matchMedia.
+ *
+ * Boki rule (28.05.2026): "treba mi 'wave V7' — tap symbol → mini paytable
+ * popover. Nikad nije bilo, želim da igrač može da pita 'koji je ovo
+ * simbol?' bez da zatvori spin loop". This block satisfies that
+ * directly — single-tap reveal, autoHide, no spin-loop interference.
+ */
+
+const DEFAULTS = Object.freeze({
+  enabled: true,
+  autoHideMs: 2400,
+  accentColor: '255,214,110',
+  bgColor: '10,12,18',
+  textColor: '245,242,228',
+  showTierBadge: true,
+  showPayoutHint: true,
+});
+
+export function defaultConfig() {
+  return { ...DEFAULTS };
+}
+
+function isValidRGB(s) {
+  if (typeof s !== 'string') return false;
+  const parts = s.split(',').map((p) => p.trim());
+  if (parts.length !== 3) return false;
+  return parts.every((p) => /^\d{1,3}$/.test(p) && Number(p) >= 0 && Number(p) <= 255);
+}
+
+export function resolveConfig(model) {
+  const cfg = defaultConfig();
+  const src = (model && model.symbolInfoPopover) || {};
+
+  if (src.enabled === false) cfg.enabled = false;
+  if (
+    typeof src.autoHideMs === 'number' &&
+    src.autoHideMs >= 400 &&
+    src.autoHideMs <= 8000
+  ) {
+    cfg.autoHideMs = Math.floor(src.autoHideMs);
+  }
+  if (isValidRGB(src.accentColor)) cfg.accentColor = src.accentColor;
+  if (isValidRGB(src.bgColor)) cfg.bgColor = src.bgColor;
+  if (isValidRGB(src.textColor)) cfg.textColor = src.textColor;
+  if (src.showTierBadge === false) cfg.showTierBadge = false;
+  if (src.showPayoutHint === false) cfg.showPayoutHint = false;
+  return cfg;
+}
+
+export function emitSymbolInfoPopoverCSS(cfg = defaultConfig()) {
+  const c = resolveConfig({ symbolInfoPopover: cfg });
+  if (!c.enabled) {
+    return '\n/* symbolInfoPopover BLOCK (disabled by GDD) — no CSS emitted */\n';
+  }
+  return `
+/* ── symbolInfoPopover BLOCK — emitted by src/blocks/symbolInfoPopover.mjs
+   GDD knobs (baked at build time):
+     enabled        = ${c.enabled}
+     autoHideMs     = ${c.autoHideMs}
+     accent / bg / text = ${c.accentColor} / ${c.bgColor} / ${c.textColor}
+   Mobile-first chip floating above the tapped cell. */
+.symbolInfoPopover {
+  position: fixed;
+  display: none;
+  z-index: 60;
+  min-width: 96px;
+  max-width: 180px;
+  padding: 8px 10px;
+  background: rgba(${c.bgColor}, 0.96);
+  color: rgb(${c.textColor});
+  border: 1px solid rgba(${c.accentColor}, 0.55);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45),
+              0 0 0 1px rgba(${c.accentColor}, 0.25);
+  font: 500 11px/1.3 system-ui, sans-serif;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+.symbolInfoPopover.is-open {
+  display: block;
+  opacity: 1;
+  transform: translateY(-8px);
+}
+.symbolInfoPopover .sip-tier {
+  display: inline-block;
+  padding: 1px 6px;
+  margin-right: 4px;
+  border-radius: 4px;
+  background: rgba(${c.accentColor}, 0.18);
+  color: rgb(${c.accentColor});
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.symbolInfoPopover .sip-label {
+  font-weight: 600;
+}
+.symbolInfoPopover .sip-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  color: rgba(${c.textColor}, 0.72);
+}
+@media (prefers-reduced-motion: reduce) {
+  .symbolInfoPopover { transition: none; }
+}
+`;
+}
+
+export function emitSymbolInfoPopoverMarkup(cfg = defaultConfig()) {
+  const c = resolveConfig({ symbolInfoPopover: cfg });
+  if (!c.enabled) return '';
+  /* Hidden host div appended once; popover content is rewritten on each
+     show. Keeping a single DOM node beats reflowing the document tree
+     each tap. */
+  return `
+  <div class="symbolInfoPopover" id="symbolInfoPopover" role="tooltip" aria-hidden="true"></div>`;
+}
+
+export function emitSymbolInfoPopoverRuntime(cfg = defaultConfig()) {
+  const c = resolveConfig({ symbolInfoPopover: cfg });
+  if (!c.enabled) {
+    return `
+  /* ── symbolInfoPopover BLOCK (disabled by GDD) — no runtime ──────── */
+  window.showSymbolInfo  = function () {};
+  window.hideSymbolInfo  = function () {};
+  window.SYMBOL_INFO_POPOVER_STATE = { enabled: false };
+`;
+  }
+  return `
+  /* ── symbolInfoPopover BLOCK — emitted by src/blocks/symbolInfoPopover.mjs
+     GDD knobs:
+       autoHideMs     = ${c.autoHideMs}
+       showTierBadge  = ${c.showTierBadge}
+       showPayoutHint = ${c.showPayoutHint}
+     Owns: #symbolInfoPopover floating chip. Subscribes preSpin /
+     onFsTrigger / onFsEnd to hide stale popover. */
+  const SYMBOL_INFO_POPOVER_AUTO_HIDE_MS = ${c.autoHideMs};
+  let _sipTimer = null;
+  let _sipLastCell = null;
+
+  function _sipEl() {
+    return (typeof document !== 'undefined')
+      ? document.getElementById('symbolInfoPopover')
+      : null;
+  }
+
+  function _sipTierOf(symbol) {
+    /* Walk SYMBOL_REGISTRY (if available) for tier classification. */
+    if (typeof SYMBOL_REGISTRY !== 'undefined' && SYMBOL_REGISTRY) {
+      for (const tier of ['high', 'mid', 'low', 'specials']) {
+        const list = Array.isArray(SYMBOL_REGISTRY[tier]) ? SYMBOL_REGISTRY[tier] : [];
+        if (list.some(s => (s.glyph || s.code || s) === symbol)) {
+          return tier === 'specials' ? 'special' : tier;
+        }
+      }
+    }
+    return null;
+  }
+
+  function _sipPayoutHint(symbol) {
+    if (!${c.showPayoutHint}) return '';
+    /* Placeholder math — real values arrive with the PAR layer. */
+    const tier = _sipTierOf(symbol);
+    if (!tier) return '';
+    const table = { high: '5-of-kind ~ 25×', mid: '5-of-kind ~ 10×', low: '5-of-kind ~ 4×', special: 'feature trigger' };
+    return table[tier] || '';
+  }
+
+  function _sipPositionFor(el) {
+    const rect = el.getBoundingClientRect();
+    const popover = _sipEl();
+    if (!popover) return;
+    /* Center horizontally above the cell. Clamp to viewport so the
+       popover doesn't escape on edge cells. */
+    const popRect = popover.getBoundingClientRect();
+    const wantedLeft = rect.left + rect.width / 2 - popRect.width / 2;
+    const clampedLeft = Math.max(8, Math.min(window.innerWidth - popRect.width - 8, wantedLeft));
+    const top = Math.max(8, rect.top - popRect.height - 4);
+    popover.style.left = clampedLeft + 'px';
+    popover.style.top  = top + 'px';
+  }
+
+  function showSymbolInfo(cellEl) {
+    const popover = _sipEl();
+    if (!popover || !cellEl) return;
+    const symbol = (cellEl.textContent || '').trim();
+    if (!symbol) return;
+    const tier = _sipTierOf(symbol);
+    const tierBadge = (${c.showTierBadge} && tier)
+      ? '<span class="sip-tier">' + tier + '</span>'
+      : '';
+    const hint = _sipPayoutHint(symbol);
+    const hintHtml = hint
+      ? '<span class="sip-hint">' + hint + '</span>'
+      : '';
+    popover.innerHTML = tierBadge + '<span class="sip-label">' + symbol + '</span>' + hintHtml;
+    popover.classList.add('is-open');
+    popover.setAttribute('aria-hidden', 'false');
+    /* Position AFTER content is rendered so popRect dimensions are valid. */
+    _sipPositionFor(cellEl);
+    _sipLastCell = cellEl;
+    if (_sipTimer) clearTimeout(_sipTimer);
+    _sipTimer = setTimeout(hideSymbolInfo, SYMBOL_INFO_POPOVER_AUTO_HIDE_MS);
+  }
+
+  function hideSymbolInfo() {
+    const popover = _sipEl();
+    if (!popover) return;
+    popover.classList.remove('is-open');
+    popover.setAttribute('aria-hidden', 'true');
+    if (_sipTimer) { clearTimeout(_sipTimer); _sipTimer = null; }
+    _sipLastCell = null;
+  }
+
+  /* Delegated click — any .cell tap shows the popover. Second tap on
+     the SAME cell hides it (toggle semantic). Outside tap closes. */
+  if (typeof document !== 'undefined') {
+    document.addEventListener('click', function (e) {
+      const cell = e.target && e.target.closest ? e.target.closest('.cell') : null;
+      if (cell) {
+        if (_sipLastCell === cell) {
+          hideSymbolInfo();
+        } else {
+          showSymbolInfo(cell);
+        }
+        return;
+      }
+      /* Outside tap → close. */
+      hideSymbolInfo();
+    }, { passive: true });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') hideSymbolInfo();
+    });
+  }
+
+  if (typeof HookBus !== 'undefined') {
+    HookBus.on('preSpin',     hideSymbolInfo, { priority: 10 });
+    HookBus.on('onFsTrigger', hideSymbolInfo, { priority: 10 });
+    HookBus.on('onFsEnd',     hideSymbolInfo, { priority: 10 });
+  }
+
+  window.showSymbolInfo = showSymbolInfo;
+  window.hideSymbolInfo = hideSymbolInfo;
+  window.SYMBOL_INFO_POPOVER_STATE = {
+    enabled: true,
+    autoHideMs: SYMBOL_INFO_POPOVER_AUTO_HIDE_MS,
+    isOpen: function () {
+      const p = _sipEl();
+      return !!(p && p.classList.contains('is-open'));
+    },
+  };
+`;
+}
