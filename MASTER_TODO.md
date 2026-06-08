@@ -4,7 +4,7 @@
 > and what's queued. Updated after every wave/feature.
 >
 > **Last updated**: 2026-06-08 · **HEAD**: `ee3abf6` · main
-> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, ✅ **P1 + D3 + P2 (covers P3+P4+P5 via stages) + P6 + P7 + V1 + V4** shipped (10/47)
+> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, ✅ **P1 + D3 + P2 (covers P3+P4+P5 via stages) + P6 + P7 + V1 + V4 + V5 + V7 + D4** shipped (13/47)
 > **Most recent ship**: Wave **P2** — **Smart Defaults Engine** (4-stage
 > backfill: theme palette autoextract from tags/name/mood, topology
 > kind+dims+paylines inference from feature mix, symbol tier classifier,
@@ -98,7 +98,7 @@
 | **D1** Universal GDD audit | 440/442 | **442/442** zero red | `tools/cortex-eyes-universal-gdd.mjs` + 2 fixture fix | ⏳ queued |
 | **D2** Cross-browser | 70/72 | **72/72** | Playwright matrix u `tests/` | ⏳ queued |
 | **D3** Touch QA | 98/120 → **120/120** | ✅ 100% green | viewport meta + dvh + safe-area + hub z-index + chip lift + wheel SVG pointer-events + fsOverlay dismiss | ✅ **SHIPPED** `6ab643d` |
-| **D4** Orchestrator LOC budget | 799/800 | re-budget na 600 ili dignuti gate na 1000 | `src/buildSlotHTML.mjs` | ⏳ queued |
+| ✅ **D4** Orchestrator LOC budget `79dcf6a` | 887/800 (drift) → **895/1000** sa hard gate `tools/orchestrator-loc-budget.mjs` (cortex god-object-budget pattern) | gate wired u `npm run test:budget` + `test:all` | ✅ **SHIPPED** |
 
 ### Faza 2 · Dinamički bulletproof parser (srce zahteva)
 
@@ -156,9 +156,9 @@
 | **V2** FS intro/outro per theme | trenutno generic, dignuti na theme-aware (egypt/norse/cyber/itd) | 🟡 generic |
 | **V3** Big win tier visual ladder | mega/epic/legendary/ultimate sa count-up i screen-shake gating | 🟡 osnovni |
 | ✅ **V4** Spin button ikona `f5ff1bd` | dve strelice (refresh-style glyph) verifikovano u `src/blocks/spinControl.mjs` — 2 path + 2 polyline + pin testovi za sva 3 ikon-state-a (spin/stop/skip) | ✅ **SHIPPED** |
-| **V5** Win cycle preference | per-line / cluster / all-at-once postoji — dodati `cascade-stagger` | 🟢 expand |
+| ✅ **V5** Win cycle preference `79dcf6a` | dodat 4. mode `cascade-stagger` u winPresentation (default 80ms step, bounded 20-500) — 6/6 unit + 28/28 winPresentation regression | ✅ **SHIPPED** |
 | **V6** Symbol settle bounce | reel land easing per theme | 🟡 generic |
-| **V7** Hover/tap simbol info | tap symbol → mini paytable popover | ❌ nema |
+| ✅ **V7** Hover/tap simbol info `79dcf6a` | novi `src/blocks/symbolInfoPopover.mjs` (~290 LOC) — toggle semantic, autoHide 2400ms, WCAG `role=tooltip`, mobile-first viewport clamping; 22/22 unit + LEGO 5/5 (64 blokova, 54/54 listeners) | ✅ **SHIPPED** |
 
 ### Faza 6 · Tools + dev experience
 
