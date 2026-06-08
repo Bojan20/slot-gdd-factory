@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-08T11:39:35.225Z",
+  "generatedAt": "2026-06-08T12:23:06.685Z",
   "blocksDir": "src/blocks",
   "totalBlocks": 63,
   "blocks": [
@@ -2043,7 +2043,7 @@
         "frameRadius": 16,
         "frameInset": 18
       },
-      "loc": 664
+      "loc": 665
     },
     {
       "name": "triggerCounting",

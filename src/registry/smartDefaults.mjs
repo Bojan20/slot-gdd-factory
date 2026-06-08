@@ -81,7 +81,7 @@ const PALETTE_CATALOGUE = Object.freeze({
 const TAG_TO_PALETTE = Object.freeze([
   ['horror_blood',     /horror|vampir|gothic|spook|dark|haunt|necro|undead|coffin/i],
   ['norse_iron',       /norse|viking|odin|thor|asgard|ragnarok|valhalla/i],
-  ['egypt_lapis',      /egypt|pyramid|pharaoh|sphinx|nile|anubis|cleopatra|ra(\b|\W)/i],
+  ['egypt_lapis',      /egypt|pyramid|pharaoh|sphinx|nile|anubis|hieroglyph|scarab|ankh|ra(\b|\W)/i],
   ['mythology_gold',   /olymp|zeus|greek|mytholog|titan|hercules|aphrodite|apollo|deity|god\b/i],
   ['dragon_jade',      /dragon|asia(n)?|orient|panda|jade|samurai|sakura|fortune|chinese/i],
   ['candy_pop',        /candy|sweet|fruit|sugar|bonbon|lollipop|gummy|donut|sprinkle/i],
