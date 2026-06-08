@@ -19,75 +19,155 @@
  */
 
 export function parseGDD(text, ext) {
+  /* Wave P1 — defensive entry guard.
+     A completely unreadable input (null / undefined / non-string / corrupt
+     JSON) must NEVER throw out of the parser. We return a freshModel() with
+     a synthetic `_failures` entry so downstream code (`buildSlotHTML`, UI
+     badges, regulator probes) can detect the partial-parse condition. */
+  if (text == null) {
+    const m = freshModel();
+    m.confidence._failures.push({ label: 'input', error: 'null/undefined input' });
+    return m;
+  }
+  if (typeof text !== 'string') {
+    try {
+      text = String(text);
+    } catch {
+      const m = freshModel();
+      m.confidence._failures.push({ label: 'input', error: 'non-stringifiable input' });
+      return m;
+    }
+  }
   if (ext === 'json') {
-    return normalizeFromJSON(JSON.parse(text));
+    try {
+      return normalizeFromJSON(JSON.parse(text));
+    } catch (err) {
+      /* JSON GDD malformed → fall through to markdown parser. Most "json"
+         uploads that fail JSON.parse are actually JS-flavored configs with
+         comments / trailing commas; the markdown extractor will still pull
+         what it can from the raw text. */
+      const m = parseMarkdownGDD(text);
+      m.confidence._failures.unshift({ label: 'json.parse', error: String(err && err.message || err) });
+      return m;
+    }
   }
   // md / markdown / txt — regex / table parser
   return parseMarkdownGDD(text);
 }
 
+/* ── _safeExtract — Wave P1 isolation harness ───────────────────────────────
+ *
+ * Every top-level `extractXxx(text, model)` call in `parseMarkdownGDD()` is
+ * routed through this wrapper. If the extractor throws (corrupt regex group,
+ * bad table layout, unicode confusion, etc.) the failure is recorded on
+ * `model.confidence._failures[]` and parsing continues with the next section.
+ *
+ * Why a wrapper instead of inline try/catch per extractor:
+ *   - one place enforces the failure schema (label + error message)
+ *   - extractors stay readable (single body, no try/catch boilerplate)
+ *   - tests can assert on `_failures.length` to detect regressions
+ *
+ * Senior-grade contract:
+ *   - never throws (catches Error and non-Error throws)
+ *   - never mutates the model on failure (extractor is expected to mutate;
+ *     wrapper only adds the failure record)
+ *   - O(1) overhead on the happy path (one try/catch, no allocation)
+ */
+function _safeExtract(label, fn, model) {
+  try {
+    return fn();
+  } catch (err) {
+    const message = err && err.message ? err.message : String(err);
+    model.confidence._failures.push({ label, error: message });
+    return undefined;
+  }
+}
+
 /* ─── markdown GDD parser ──────────────────────────────────── */
 export function parseMarkdownGDD(text) {
   const model = freshModel();
+  /* Wave P1 — outer guard against unreadable input. parseGDD() already
+     coerces null/undefined; this is a belt-and-braces check for callers
+     that invoke parseMarkdownGDD() directly (tests, dev tooling). */
+  if (typeof text !== 'string' || text.length === 0) {
+    model.confidence._failures.push({ label: 'parseMarkdownGDD.input', error: 'empty or non-string input' });
+    return model;
+  }
+
+  /* Wave P1 — every section below is wrapped by `_safeExtract`. A single
+     malformed regex group / corrupt table / unicode confusion can never
+     abort the whole parse; the offending section is recorded in
+     `model.confidence._failures[]` and the next section runs as normal. */
 
   /* name — H1 heading, or "Internal name" table cell */
-  const h1 = text.match(/^#\s+(.+?)(?:\s+—|\s+-|\s+:|\s+\(|$)/m);
-  if (h1) {
-    model.name = h1[1].trim();
-    model.confidence.name += 0.5;
-  }
-  const internalName = text.match(/\|\s*\*?\*?Internal name\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
-  if (internalName) {
-    model.name = internalName[1].replace(/\*\*/g, '').trim();
-    model.confidence.name = 1.0;
-  }
+  _safeExtract('header.name', () => {
+    const h1 = text.match(/^#\s+(.+?)(?:\s+—|\s+-|\s+:|\s+\(|$)/m);
+    if (h1) {
+      model.name = h1[1].trim();
+      model.confidence.name += 0.5;
+    }
+    const internalName = text.match(/\|\s*\*?\*?Internal name\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
+    if (internalName) {
+      model.name = internalName[1].replace(/\*\*/g, '').trim();
+      model.confidence.name = 1.0;
+    }
+  }, model);
 
-  /* theme tags */
-  const themeTags = text.match(/\|\s*\*?\*?Theme tags\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
-  if (themeTags) {
-    model.theme.tags = themeTags[1]
-      .replace(/\*\*/g, '')
-      .split(/[·•,\/]/)
-      .map(s => s.trim())
-      .filter(Boolean);
-  }
+  /* theme block — tags / mood / palette / setting / typography / vibe / genre / market */
+  _safeExtract('theme.tags', () => {
+    const themeTags = text.match(/\|\s*\*?\*?Theme tags\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
+    if (themeTags) {
+      model.theme.tags = themeTags[1]
+        .replace(/\*\*/g, '')
+        .split(/[·•,\/]/)
+        .map(s => s.trim())
+        .filter(Boolean);
+    }
+  }, model);
 
-  /* mood */
-  const mood = text.match(/\|\s*\*?\*?Mood\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
-  if (mood) model.theme.mood = mood[1].replace(/\*\*/g, '').trim();
+  _safeExtract('theme.mood', () => {
+    const mood = text.match(/\|\s*\*?\*?Mood\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
+    if (mood) model.theme.mood = mood[1].replace(/\*\*/g, '').trim();
+  }, model);
 
-  /* color palette — hex codes */
-  const hexes = text.match(/#[0-9a-fA-F]{6}/g);
-  if (hexes) model.theme.palette = [...new Set(hexes)].slice(0, 6);
+  _safeExtract('theme.palette', () => {
+    const hexes = text.match(/#[0-9a-fA-F]{6}/g);
+    if (hexes) model.theme.palette = [...new Set(hexes)].slice(0, 6);
+  }, model);
 
-  /* setting — physical/narrative place */
-  const setting = text.match(/\|\s*\*?\*?Setting\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
-  if (setting) model.theme.setting = setting[1].replace(/\*\*/g, '').trim();
+  _safeExtract('theme.setting', () => {
+    const setting = text.match(/\|\s*\*?\*?Setting\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
+    if (setting) model.theme.setting = setting[1].replace(/\*\*/g, '').trim();
+  }, model);
 
-  /* typography — Display + UI font hints (game-side, no math) */
-  const typo = text.match(/\|\s*\*?\*?Typography\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
-  if (typo) model.theme.typography = typo[1].replace(/\*\*/g, '').trim();
+  _safeExtract('theme.typography', () => {
+    const typo = text.match(/\|\s*\*?\*?Typography\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
+    if (typo) model.theme.typography = typo[1].replace(/\*\*/g, '').trim();
+  }, model);
 
-  /* vibe references — narrative anchor phrases */
-  const vibe = text.match(/\|\s*\*?\*?Vibe\s+references?\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
-  if (vibe) model.theme.vibe_refs = vibe[1].replace(/\*\*/g, '').trim();
+  _safeExtract('theme.vibe_refs', () => {
+    const vibe = text.match(/\|\s*\*?\*?Vibe\s+references?\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
+    if (vibe) model.theme.vibe_refs = vibe[1].replace(/\*\*/g, '').trim();
+  }, model);
 
-  /* genre — top-level slot subtype */
-  const genre = text.match(/\|\s*\*?\*?Genre\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
-  if (genre) model.theme.genre = genre[1].replace(/\*\*/g, '').trim();
+  _safeExtract('theme.genre', () => {
+    const genre = text.match(/\|\s*\*?\*?Genre\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
+    if (genre) model.theme.genre = genre[1].replace(/\*\*/g, '').trim();
+  }, model);
 
-  /* target market — global / region-locked */
-  const market = text.match(/\|\s*\*?\*?Target\s+market\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
-  if (market) model.theme.target_market = market[1].replace(/\*\*/g, '').trim();
+  _safeExtract('theme.target_market', () => {
+    const market = text.match(/\|\s*\*?\*?Target\s+market\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
+    if (market) model.theme.target_market = market[1].replace(/\*\*/g, '').trim();
+  }, model);
 
   /* topology — full coverage of industry shapes (Phase-G grid expansion) */
-  extractTopology(text, model);
+  _safeExtract('extractTopology', () => extractTopology(text, model), model);
 
   /* symbols */
-  extractSymbolBlock(text, /High[\s-]?pay/i, model.symbols.high);
-  extractSymbolBlock(text, /Mid[\s-]?pay/i, model.symbols.mid);
-  extractSymbolBlock(text, /Low[\s-]?pay/i, model.symbols.low);
-  extractSymbolBlock(text, /Specials?/i, model.symbols.specials);
+  _safeExtract('extractSymbolBlock.high', () => extractSymbolBlock(text, /High[\s-]?pay/i, model.symbols.high), model);
+  _safeExtract('extractSymbolBlock.mid', () => extractSymbolBlock(text, /Mid[\s-]?pay/i, model.symbols.mid), model);
+  _safeExtract('extractSymbolBlock.low', () => extractSymbolBlock(text, /Low[\s-]?pay/i, model.symbols.low), model);
+  _safeExtract('extractSymbolBlock.specials', () => extractSymbolBlock(text, /Specials?/i, model.symbols.specials), model);
   const totalSyms =
     model.symbols.high.length +
     model.symbols.mid.length +
@@ -96,91 +176,68 @@ export function parseMarkdownGDD(text) {
   if (totalSyms > 0) model.confidence.symbols = Math.min(1, totalSyms / 8);
 
   /* features */
-  model.features = extractFeatures(text);
-  if (model.features.length > 0) {
-    model.confidence.features = Math.min(1, model.features.length / 3);
-  }
+  _safeExtract('extractFeatures', () => {
+    model.features = extractFeatures(text);
+    if (model.features.length > 0) {
+      model.confidence.features = Math.min(1, model.features.length / 3);
+    }
+  }, model);
 
   /* free-spins config — full structured extraction from GDD prose */
-  model.freeSpins = extractFreeSpinsConfig(text, model);
+  _safeExtract('extractFreeSpinsConfig', () => {
+    model.freeSpins = extractFreeSpinsConfig(text, model);
+  }, model);
 
-  /* win-presentation block config — extracts optional GDD knobs for the
-     winPresentation lego block. No-op when the GDD has no Win Presentation
-     section; downstream block falls through to safe defaults. */
-  extractWinPresentation(text, model);
+  /* All remaining extractors share the same contract: read from `text`,
+     write to `model.<slot>`, no-op when the relevant section is absent. */
+  _safeExtract('extractWinPresentation', () => extractWinPresentation(text, model), model);
+  _safeExtract('extractScatterCelebration', () => extractScatterCelebration(text, model), model);
+  _safeExtract('extractStageBadge', () => extractStageBadge(text, model), model);
+  _safeExtract('extractAnticipation', () => extractAnticipation(text, model), model);
+  _safeExtract('extractSpinTempo', () => extractSpinTempo(text, model), model);
+  _safeExtract('extractFreeSpinsPresentation', () => extractFreeSpinsPresentation(text, model), model);
+  _safeExtract('extractReelEngine', () => extractReelEngine(text, model), model);
+  _safeExtract('extractTriggerCounting', () => extractTriggerCounting(text, model), model);
+  _safeExtract('extractPostSpin', () => extractPostSpin(text, model), model);
+  _safeExtract('extractReelEngineHot', () => extractReelEngineHot(text, model), model);
 
-  /* scatter-celebration block config — extracts optional GDD knobs for the
-     scatterCelebration lego block. No-op when the GDD has no Scatter
-     Celebration section; downstream block falls through to safe defaults. */
-  extractScatterCelebration(text, model);
+  /* Wave K — Pay Anywhere suite (scatter-pays + tumble-cascade family). */
+  _safeExtract('extractPayAnywhereEval', () => extractPayAnywhereEval(text, model), model);
+  _safeExtract('extractMultiplierOrb', () => extractMultiplierOrb(text, model), model);
+  _safeExtract('extractBonusBuy', () => extractBonusBuy(text, model), model);
+  _safeExtract('extractAnteBet', () => extractAnteBet(text, model), model);
+  _safeExtract('extractTumble', () => extractTumble(text, model), model);
 
-  /* stage-badge block config — extracts optional GDD knobs for the
-     stageBadge lego block (label text + gold color + pulse cadence). */
-  extractStageBadge(text, model);
-
-  /* anticipation block config — hold / pulse / gold knobs for the
-     anticipation lego block. */
-  extractAnticipation(text, model);
-
-  /* spin-tempo block config — windup / steady / decel / stagger /
-     bounce knobs for the spinTempo lego block. */
-  extractSpinTempo(text, model);
-
-  /* free-spins-presentation block config — placard labels + fade timings
-     + transition delays for the freeSpins lego block. */
-  extractFreeSpinsPresentation(text, model);
-
-  /* reel-engine CSS knobs (blur strength + brightness + fade) */
-  extractReelEngine(text, model);
-
-  /* trigger-counting + post-spin orchestration knobs */
-  extractTriggerCounting(text, model);
-  extractPostSpin(text, model);
-
-  /* reel-engine hot-path knobs (minRotations / settle breath / static reroll
-     cadence + bounce snap thresholds) */
-  extractReelEngineHot(text, model);
-
-  /* Wave K — Pay Anywhere suite (scatter-pays + tumble-cascade family).
-     Each detector is no-op when the GDD lacks the relevant section/feature. */
-  extractPayAnywhereEval(text, model);
-  extractMultiplierOrb(text, model);
-  extractBonusBuy(text, model);
-  extractAnteBet(text, model);
-  extractTumble(text, model);
-
-  /* Wave L–P — 16 detected-but-unused feature kinds wired into blocks.
-     Each detector is no-op when the GDD lacks the relevant section/feature;
-     block resolveConfig() then falls through to safe defaults. */
-  extractStickyWild(text, model);
-  extractExpandingWild(text, model);
-  extractWalkingWild(text, model);
-  extractWildReel(text, model);
-  extractMysterySymbol(text, model);
-  extractClusterPaysEval(text, model);
-  extractWaysEval(text, model);
-  extractPersistentMultiplier(text, model);
-  extractProgressiveFreeSpins(text, model);
-  extractAudio(text, model);
-  extractUiToast(text, model);
-  extractSlamStop(text, model);
-  extractForceSkip(text, model);
-  extractAutoplay(text, model);
-  extractBetSelector(text, model);
-  extractGambleSecondary(text, model);
-  extractPaytable(text, model);
-  extractBalanceHud(text, model);
-  extractHistoryLog(text, model);
-  extractTurboMode(text, model);
-  extractSettingsPanel(text, model);
-  extractHoldAndWin(text, model);
-  extractRespin(text, model);
-  extractWinCap(text, model);
-  extractBonusPick(text, model);
-  extractWheelBonus(text, model);
-  extractLightning(text, model);
-  extractGamble(text, model);
-  extractSuperSymbol(text, model);
+  /* Wave L–P — 16 detected-but-unused feature kinds wired into blocks. */
+  _safeExtract('extractStickyWild', () => extractStickyWild(text, model), model);
+  _safeExtract('extractExpandingWild', () => extractExpandingWild(text, model), model);
+  _safeExtract('extractWalkingWild', () => extractWalkingWild(text, model), model);
+  _safeExtract('extractWildReel', () => extractWildReel(text, model), model);
+  _safeExtract('extractMysterySymbol', () => extractMysterySymbol(text, model), model);
+  _safeExtract('extractClusterPaysEval', () => extractClusterPaysEval(text, model), model);
+  _safeExtract('extractWaysEval', () => extractWaysEval(text, model), model);
+  _safeExtract('extractPersistentMultiplier', () => extractPersistentMultiplier(text, model), model);
+  _safeExtract('extractProgressiveFreeSpins', () => extractProgressiveFreeSpins(text, model), model);
+  _safeExtract('extractAudio', () => extractAudio(text, model), model);
+  _safeExtract('extractUiToast', () => extractUiToast(text, model), model);
+  _safeExtract('extractSlamStop', () => extractSlamStop(text, model), model);
+  _safeExtract('extractForceSkip', () => extractForceSkip(text, model), model);
+  _safeExtract('extractAutoplay', () => extractAutoplay(text, model), model);
+  _safeExtract('extractBetSelector', () => extractBetSelector(text, model), model);
+  _safeExtract('extractGambleSecondary', () => extractGambleSecondary(text, model), model);
+  _safeExtract('extractPaytable', () => extractPaytable(text, model), model);
+  _safeExtract('extractBalanceHud', () => extractBalanceHud(text, model), model);
+  _safeExtract('extractHistoryLog', () => extractHistoryLog(text, model), model);
+  _safeExtract('extractTurboMode', () => extractTurboMode(text, model), model);
+  _safeExtract('extractSettingsPanel', () => extractSettingsPanel(text, model), model);
+  _safeExtract('extractHoldAndWin', () => extractHoldAndWin(text, model), model);
+  _safeExtract('extractRespin', () => extractRespin(text, model), model);
+  _safeExtract('extractWinCap', () => extractWinCap(text, model), model);
+  _safeExtract('extractBonusPick', () => extractBonusPick(text, model), model);
+  _safeExtract('extractWheelBonus', () => extractWheelBonus(text, model), model);
+  _safeExtract('extractLightning', () => extractLightning(text, model), model);
+  _safeExtract('extractGamble', () => extractGamble(text, model), model);
+  _safeExtract('extractSuperSymbol', () => extractSuperSymbol(text, model), model);
 
   // math (RTP / volatility / max-win) intentionally NOT extracted in this phase.
 
@@ -1366,7 +1423,17 @@ function freshModel() {
       enabled: undefined, mode: undefined, blockSize: undefined,
       triggerChance: undefined, symbolPool: undefined, haloColor: undefined,
     },
-    confidence: { name: 0, topology: 0, symbols: 0, features: 0 },
+    confidence: {
+      name: 0,
+      topology: 0,
+      symbols: 0,
+      features: 0,
+      /* Wave P1 — Malformed GDD recovery. Every extractor runs through
+         `_safeExtract()`; throw → label appended here, parsing continues.
+         Empty array == zero structural failures. Downstream UI / probes can
+         surface a "partial parse" badge by checking `confidence._failures.length`. */
+      _failures: [],
+    },
   };
 }
 

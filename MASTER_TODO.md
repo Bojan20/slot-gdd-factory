@@ -3,17 +3,23 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-08 · **HEAD**: `1b30a0d` · main
-> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, queued
-> **Most recent ship**: Wave **C1** — **Zero-touch GDD → op-package cert
-> pipeline** (`src/cert/` + `tools/cert-build.mjs`). 5 cert modules
-> (jurisdictions / complianceGate / manifest / evidencePack / bundler)
-> + CLI orchestrator covered by **160/160 cert tests PASS**. Supports
-> UKGC / MGA / DGA / SGA / NJDGE / DGOJ. Parser extended with 3
-> social-responsibility kinds (reality_check / session_timeout /
-> net_loss_indicator). LEGO gate 5/5 PASS, parse regression 4/4 PASS.
-> Live demo on `WRATH_OF_OLYMPUS_GAME_GDD.md` → MGA bundle dir +
-> `.opkg.zip` written in <2s.
+> **Last updated**: 2026-06-08 · **HEAD**: `<pending P1>` · main
+> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, P1 SHIPPED
+> **Most recent ship**: Wave **P1** — **Malformed GDD recovery**
+> (`src/parser.mjs` `_safeExtract()` harness + `parseGDD()` outer guard).
+> Every one of the ~50 top-level extractors now runs through a try/catch
+> wrapper that records `{label, error}` to `model.confidence._failures[]`
+> instead of throwing. Null/undefined/non-string/JSON-malformed inputs
+> short-circuit to a `freshModel()` with a synthetic input failure;
+> markdown extractors continue past any single-section regex throw.
+> Covered by **20/20 PASS** new `tests/blocks/parserMalformed.test.mjs`
+> suite (null / undefined / non-string / empty / whitespace / random ASCII
+> / unicode salad / 100KB pseudo-random / corrupt tables / typo headers /
+> JSON.parse failure → markdown fallback / 1000-row paytable DOS guard /
+> happy-path zero-failures / schema integrity / idempotency). LEGO gate
+> 5/5 PASS, parse regression 4/4 PASS, universal GDD audit 460/461 PASS
+> (1 pre-existing wheel fsOverlay soft-fail unchanged), all 63 block tests
+> PASS, cert 19/19 PASS.
 
 ## 📊 Project status snapshot
 
@@ -34,6 +40,7 @@
 
 | Hash | Wave | Subject |
 |---|---|---|
+| `<pending>` | **P1** | **Malformed GDD recovery** — `src/parser.mjs` `_safeExtract(label, fn, model)` harness wraps every top-level extractor; `parseGDD()` outer guard for null/undefined/non-string/JSON-malformed input. Failures recorded in `model.confidence._failures[]` (label + error) instead of throwing. New `tests/blocks/parserMalformed.test.mjs` 20/20 PASS (null / empty / unicode / 100KB random / corrupt tables / typo headers / JSON.parse fallback / 1000-row DOS guard / idempotency / schema integrity). LEGO gate 5/5 PASS, parse regression 4/4 PASS, universal GDD audit 460/461 PASS, 63 block tests all green |
 | `1b30a0d` | **C1** | **Zero-touch cert pipeline** — `src/cert/{jurisdictions,complianceGate,manifest,evidencePack,bundler}.mjs` + `tools/cert-build.mjs` CLI orchestrator. Supports **UKGC / MGA / DGA / SGA / NJDGE / DGOJ**; emits deterministic `<game_id>-<version>.opkg/` bundle with manifest.json + evidence.json + compliance.json + README.txt + source/ + optional `.zip`. 160/160 cert tests PASS (jurisdictions 21 / complianceGate 29 / manifest 30 / evidencePack 34 / bundler 27 / CLI integration 19). Parser extended with 3 social-responsibility kinds (`reality_check` / `session_timeout` / `net_loss_indicator`). LEGO gate 5/5 PASS, parse regression 4/4 PASS, exit-code contract: 0 PASS / 1 compliance FAIL / 2 fatal |
 | `5c65bf6` | **H3** | **`sessionTimeout`** continuous-play cap + forced-break block. UKGC LCCP 8.3.1 / AGCO Standard 4.07 / MGA RGF Part III / Spelinspektionen 14.4 / DGOJ Art 7 / NJDGE 13:69O-1.4. Dual-mode modal (warning + break), 87/87 unit + 35/35 live probe (warning trigger → EXTEND → force-break → manual resume → realityCheck pause integration → resume); 5 HookBus events sole-owned; 2574/2574 ultimate-QA still green |
 | `8387e5c` | **UQ** | **Ultimate QA matrix** — 174 synthetic GDD generator (19 kinds × 26 industry patterns) + 12-pt headless probe × 198 fixtures = **2574/2574 PASS**, 0 fail; 16 typography fixes (≥11px floor); inline ThreadingHTTPServer for Playwright concurrent fetches |
@@ -77,7 +84,7 @@
 
 | Wave | Šta | Zašto bitno za "bilo koji GDD" |
 |---|---|---|
-| **P1** Malformed GDD recovery | parser ne sme da baca — svaka regex grupa try/catch + confidence drop | GDD bez tabele/naslova/sa typo — i dalje render |
+| ✅ **P1** Malformed GDD recovery | `_safeExtract` harness + `parseGDD` outer guard; `model.confidence._failures[]` schema; 20/20 PASS suite covering null/empty/unicode/100KB/corrupt/typo/JSON-fallback/DOS/idempotency | **SHIPPED** — parser nikada ne baca, svaki throw evidentiran, postojeća regresija 4/4 + LEGO 5/5 + univ audit 460/461 zelena |
 | **P2** Smart defaults engine | nedostaje sekcija → kontekstualni default po grid topologiji (5×3 ≠ 6×5 ≠ 7×7 cluster) | "ako neki GDD nema taj segment → logičan default" (Boki Wave Q2) |
 | **P3** Symbol tier autodetect | parser sam klasifikuje low/mid/high/special iz emoji/payout hint/order | mnogi GDD-ovi nemaju eksplicitne tier oznake |
 | **P4** Theme palette autoextract | tags → palette mapping (egypt/norse/cyber/candy/horror/ocean/jungle/space) | bez ručnog palette per game |
