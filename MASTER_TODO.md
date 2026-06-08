@@ -4,7 +4,7 @@
 > and what's queued. Updated after every wave/feature.
 >
 > **Last updated**: 2026-06-08 · **HEAD**: `ee3abf6` · main
-> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, ✅ **P1 + D3 + P2 (covers P3+P4+P5 via stages) + P6 + P7** shipped (8/47)
+> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, ✅ **P1 + D3 + P2 (covers P3+P4+P5 via stages) + P6 + P7 + V1 + V4** shipped (10/47)
 > **Most recent ship**: Wave **P2** — **Smart Defaults Engine** (4-stage
 > backfill: theme palette autoextract from tags/name/mood, topology
 > kind+dims+paylines inference from feature mix, symbol tier classifier,
@@ -152,10 +152,10 @@
 
 | Wave | Šta | Status |
 |---|---|---|
-| **V1** Scatter anticipation v2 | Boki bug "padne 1. ril → 2. ril → 3. ril i anticipation se gasi" | 🔴 zna se da je broken |
+| ✅ **V1** Scatter anticipation v2 `f5ff1bd` | Boki bug "padne 1. ril → 2. ril → 3. ril i anticipation se gasi" — fix: `anticipationGate = max(1, threshold - remaining)` (mathematically-alive gate); 15/15 unit + 14/14 regression + 2574/2574 ultimate zelena | ✅ **SHIPPED** |
 | **V2** FS intro/outro per theme | trenutno generic, dignuti na theme-aware (egypt/norse/cyber/itd) | 🟡 generic |
 | **V3** Big win tier visual ladder | mega/epic/legendary/ultimate sa count-up i screen-shake gating | 🟡 osnovni |
-| **V4** Spin button ikona | dve strelice (Boki već tražio) — verifikuj da je svuda primenjeno | ❓ proveriti |
+| ✅ **V4** Spin button ikona `f5ff1bd` | dve strelice (refresh-style glyph) verifikovano u `src/blocks/spinControl.mjs` — 2 path + 2 polyline + pin testovi za sva 3 ikon-state-a (spin/stop/skip) | ✅ **SHIPPED** |
 | **V5** Win cycle preference | per-line / cluster / all-at-once postoji — dodati `cascade-stagger` | 🟢 expand |
 | **V6** Symbol settle bounce | reel land easing per theme | 🟡 generic |
 | **V7** Hover/tap simbol info | tap symbol → mini paytable popover | ❌ nema |
