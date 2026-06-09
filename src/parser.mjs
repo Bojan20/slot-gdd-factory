@@ -315,29 +315,64 @@ export function extractFreeSpinsConfig(text, model) {
     if (scatter) fs.triggerSymbol = scatter.id;
   }
 
-  /* Awards table — "3 | 14" / "4 | 16" / "5 | 18" rows under a Free Spins
-     heading. Accepts a few common header variants. */
-  const awardSection = text.match(
-    /(?:###?\s*[^\n]*Free[\s-]?Spins?[^\n]*\n)([\s\S]+?)(?=\n###?\s|$)/i
-  );
-  if (awardSection) {
-    const block = awardSection[1];
-    const rowRe = /\|\s*:?-?-?:?\s*\|[\s\S]*?\|\s*(\d+)\s*\|\s*(\d+)\s*\|/g;
-    /* Simpler: any "| N | M |" row inside the FS block where N ∈ {2..8} and M ∈ {1..200} */
-    const rows = [];
-    const simpleRow = /^\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*$/gm;
-    let m;
-    while ((m = simpleRow.exec(block)) !== null) {
-      const count = parseInt(m[1], 10);
-      const spins = parseInt(m[2], 10);
-      if (count >= 2 && count <= 9 && spins >= 1 && spins <= 200) {
+  /* Awards table — three input flavors must all yield the same parsed
+     award ladder:
+       (a) MD pipe table:
+             | 3 Scattera | 14 spins |
+             | 4 Scattera | 16 spins |
+             | 5 Scattera | 18 spins |
+       (b) MD pipe table compact: `| 3 | 14 |`
+       (c) PDF-extracted text (pdfjs strips newlines): the whole
+           document arrives as one giant line, so `^...$/gm` row regexes
+           never match. We need a pattern that ignores line structure and
+           keys off the SCATTER + N + spins co-occurrence within a small
+           window of characters. Examples from the WoO PDF:
+             "3 Scattera ~1/1,000 14 spins 2× bet"
+             "4 Scattera ~1/12,500 16 spins 3× bet"
+             "5 Scattera ~1/200,000 18 spins 10× bet"
+  */
+  const rows = [];
+  /* Pattern (a)+(b): MD pipe rows. Two-cell `| 3 | 14 |` AND three-cell
+     `| 3 Scatters | something | 14 spins |` both yield the same award.
+     `m` flag plus `^...$` so we don't collide with the PDF flow text
+     pattern below. Greedy `[\s\S]*?` between cells handles a long label
+     column ("3 | 1/1,000 | 14 | 2× bet") without missing the trailing
+     spins count. We extract the FIRST 1-digit token after `|` (the
+     count) and look ahead to the LAST cell beginning with 1-3 digits
+     (the spins). The pattern only matches when both numbers are inside
+     the same MD row (no newline allowed inside cells). */
+  const mdRow = /^\|\s*(\d+)\s*(?:scatters?\w*)?\s*(?:\|[^|\n]*?)*?\|\s*(\d+)\s*(?:spins?\w*)?\s*\|/gim;
+  let m1;
+  while ((m1 = mdRow.exec(text)) !== null) {
+    const count = parseInt(m1[1], 10);
+    const spins = parseInt(m1[2], 10);
+    if (count >= 2 && count <= 9 && spins >= 1 && spins <= 200) {
+      rows.push({ count, spins });
+    }
+  }
+  /* Pattern (c): PDF flow — `N Scattera ... M spins` within 80 chars,
+     where N is a trigger count and M is a spin award. We scan all matches
+     across the document (NOT scoped to a Free Spins heading because PDF
+     extraction destroys heading structure). */
+  if (rows.length === 0) {
+    const pdfRow = /(\d)\s*(?:Scatter[a-z]*|Scattera|Sketer[a-z]*|Skater[a-z]*)\s+[\s\S]{0,80}?\s(\d{1,3})\s*spins?\b/gi;
+    let m2;
+    const seenCounts = new Set();
+    while ((m2 = pdfRow.exec(text)) !== null) {
+      const count = parseInt(m2[1], 10);
+      const spins = parseInt(m2[2], 10);
+      if (count >= 2 && count <= 9 && spins >= 1 && spins <= 200 && !seenCounts.has(count)) {
         rows.push({ count, spins });
+        seenCounts.add(count);
       }
     }
-    if (rows.length > 0) {
-      fs.awards = rows.sort((a, b) => a.count - b.count);
-      fs.triggerCounts = fs.awards.map(r => r.count);
-    }
+  }
+  if (rows.length > 0) {
+    /* Dedupe by count (keep first occurrence) + sort ascending. */
+    const byCount = new Map();
+    for (const r of rows) if (!byCount.has(r.count)) byCount.set(r.count, r);
+    fs.awards = Array.from(byCount.values()).sort((a, b) => a.count - b.count);
+    fs.triggerCounts = fs.awards.map(r => r.count);
   }
 
   /* Trigger threshold — "N+ Scatters" / "N or more". If the text says "3+",
@@ -431,6 +466,23 @@ export function extractFreeSpinsConfig(text, model) {
      spelling doesn't break trigger-mode detection. */
   const SR_SCATTER = '(?:sketer|skater|sceter|scater|scatter|s[ćč]eter)[a-z]*';
 
+  /* 2026-06-09 — Boki bug fix: WoO PDF was parsed as countMode='any' even
+     though the source GDD explicitly says "Max 1 Scatter po rilu po
+     spinu" → perReel. Two false positives lived in anyModeRe:
+
+       (1) `\b[2-9]\s*[x×]\s+scatter` matched "FS triggered sa **3× Scatter**"
+           (where 3× is a SCATTER COUNT, not a stack) and "**5× Scatter**
+           koji bi bio previše čest" (a hypothetical, also a count). Removed
+           — this shorthand is too ambiguous across docs.
+
+       (2) `stacked S` alone matched too eagerly. Removed.
+
+     Also added explicit negation/prevention guard: when "stacking
+     prevention" / "max 1 scatter" / "scatter stacking prevention" appears,
+     this is a HARD perReel signal and beats every any-mode phrase in the
+     same document (industry convention — vendors call this out exactly
+     because the default-on-paper is anywhere-count without the guard).
+  */
   const anyModeRe = new RegExp(
     '(?:scatters?\\s+(?:may|can)\\s+stack)' +
     '|(?:stacked\\s+scatters?)' +
@@ -438,8 +490,6 @@ export function extractFreeSpinsConfig(text, model) {
     '|(?:multiple\\s+scatters?\\s+per\\s+reel)' +
     '|(?:scatters?\\s+can\\s+land\\s+on\\s+(?:the\\s+)?same\\s+reel)' +
     '|(?:more\\s+than\\s+one\\s+scatter\\s+per\\s+reel)' +
-    '|(?:\\b[2-9]\\s*[x×]\\s+scatter)' +
-    '|(?:stacked\\s+S\\b)' +
     '|(?:v(?:i|í|i)[sš]e\\s+' + SR_SCATTER + '\\s+po\\s+rilu)' +
     '|(?:stack[\\-\\s]?ovani\\s+' + SR_SCATTER + ')' +
     '|(?:stakovani\\s+' + SR_SCATTER + ')' +
@@ -453,18 +503,29 @@ export function extractFreeSpinsConfig(text, model) {
     '|(?:unique\\s+reels?\\s+(?:only|required))' +
     '|(?:per[\\-\\s]reel\\s+scatters?)' +
     '|(?:scatters?\\s+(?:must|need)\\s+(?:to\\s+)?(?:land\\s+)?on\\s+(?:different|distinct)\\s+reels?)' +
+    '|(?:scatter[s\\-\\s]?stacking\\s+prevention)' +
+    '|(?:no\\s+stacked\\s+scatters?)' +
+    '|(?:stacked\\s+scatters?\\s+(?:are\\s+)?(?:not\\s+allowed|prevented|disabled))' +
+    '|(?:max(?:imum)?\\s+(?:of\\s+)?(?:one|1)\\s+scatter[/\\s]+reel)' +
     '|(?:(?:po\\s+jedan|jedan)\\s+' + SR_SCATTER + '\\s+po\\s+rilu)' +
     '|(?:po\\s+rilu\\s+jedan\\s+' + SR_SCATTER + ')' +
     '|(?:samo\\s+(?:po\\s+)?jedan\\s+' + SR_SCATTER + ')' +
+    '|(?:max(?:imum)?\\s*1\\s+' + SR_SCATTER + '\\s+po\\s+rilu)' +
     '|(?:jedinstveni\\s+rilovi)' +
     '|(?:razli[cč]iti\\s+rilovi)',
     'i'
   );
 
-  if (anyModeRe.test(text)) {
-    fs.countMode = 'any';
-  } else if (perReelModeRe.test(text)) {
+  /* Precedence: explicit perReel signals (especially the "stacking
+     prevention" / "Max 1 Scatter po rilu" guards) ALWAYS win over any-mode
+     phrases that may appear elsewhere in the same document. This matches
+     real-world GDD convention — a designer who calls out the prevention
+     mechanism is unambiguously stating per-reel intent even if they also
+     describe stack behavior somewhere else (e.g. as a comparison). */
+  if (perReelModeRe.test(text)) {
     fs.countMode = 'perReel';
+  } else if (anyModeRe.test(text)) {
+    fs.countMode = 'any';
   }
   /* else: keep default 'perReel' — Boki's rule: GDD silent → one-per-reel. */
 

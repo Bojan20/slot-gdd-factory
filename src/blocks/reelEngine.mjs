@@ -171,9 +171,40 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
     /* On stop: ensure the next visibleRows cells (indexes 1..visibleRows)
        get a fresh, settled outcome. Top/bottom buffers kept for the bounce. */
     const vis = reel.visibleRows || ROWS;
+    /* 2026-06-09 — Boki bug fix: WoO GDD explicitly says "Max 1 Scatter
+       po rilu po spinu" (industry-standard scatter-stacking prevention).
+       The countMode='perReel' parser path correctly counts scatters
+       across distinct reels, but at the RANDOM-FILL layer the engine
+       previously allowed multiple scatter symbols inside the same reel
+       window — a small but real natural-deal probability when scatter
+       weight=1 in the POOL. That violates the GDD invariant and inflates
+       perceived FS rate. When the model declares perReel mode, enforce
+       max-one-scatter-per-reel as a deterministic post-process: keep
+       the FIRST scatter in the visible window, replace any subsequent
+       scatter with a non-trigger symbol re-roll. */
+    const _trig = String(FREESPINS.triggerSymbol || 'S').toUpperCase();
+    const _enforcePerReel = (FREESPINS.countMode === 'perReel');
+    let _scattersThisReel = 0;
     for (let i = 1; i <= vis; i++) {
       var _sym = randomSym();
       reel.cells[i].textContent = _sym || reel.cells[i].textContent || '?';
+      if (_enforcePerReel && String(_sym || '').toUpperCase() === _trig) {
+        if (_scattersThisReel >= 1) {
+          /* Re-roll until we get a non-trigger. Hard cap at 8 attempts
+             so a degenerate pool (e.g. pool = [S]) cannot infinite-loop —
+             after cap, drop a literal '?' which can never be a scatter. */
+          let attempts = 0;
+          while (attempts < 8 && String(reel.cells[i].textContent || '').toUpperCase() === _trig) {
+            reel.cells[i].textContent = randomSym() || '?';
+            attempts++;
+          }
+          if (String(reel.cells[i].textContent || '').toUpperCase() === _trig) {
+            reel.cells[i].textContent = '?';
+          }
+        } else {
+          _scattersThisReel++;
+        }
+      }
     }
     /* Force-trigger plant: scatter on centre row of first N reels. */
     if (FORCE_TRIGGER && reelIdx < FORCE_TRIGGER.scatterCount) {
