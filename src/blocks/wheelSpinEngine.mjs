@@ -178,14 +178,28 @@ export function emitWheelSpinEngineRuntime(cfg = defaultConfig()) {
       return host.querySelector('svg.wheel-svg') || host.querySelector('svg');
     }
 
-    /** Randomise visible segment text so each spin shows a fresh face. */
+    /** Randomise visible segment text so each spin shows a fresh face.
+     *  2026-06-09 — Boki bug fix: wheel/radial spin engine ignored
+     *  FORCE_TRIGGER, so the UFP FS chip and the Buy Bonus button
+     *  silently failed on these two grid kinds (scatter never appeared
+     *  on the wheel face → countTriggerSymbols returned 0 → FS never
+     *  entered). Honor the plant: first N labels become the FS trigger
+     *  symbol so countTriggerSymbols (segment-text scan) crosses the
+     *  award threshold for a deterministic FS entry. */
     function _shuffleSegmentText() {
       var svg = _resolveSvg();
       if (!svg) return;
       var labels = svg.querySelectorAll('text');
       var n = labels.length;
+      var forceN = (typeof FORCE_TRIGGER !== 'undefined' && FORCE_TRIGGER && FORCE_TRIGGER.scatterCount > 0)
+        ? FORCE_TRIGGER.scatterCount : 0;
+      var trig = (window.FREESPINS && window.FREESPINS.triggerSymbol) || 'S';
       for (var i = 0; i < n; i++) {
-        labels[i].textContent = String(POOL[Math.floor(Math.random() * POOL.length)] || (i + 1));
+        if (i < forceN) {
+          labels[i].textContent = String(trig);
+        } else {
+          labels[i].textContent = String(POOL[Math.floor(Math.random() * POOL.length)] || (i + 1));
+        }
       }
     }
 

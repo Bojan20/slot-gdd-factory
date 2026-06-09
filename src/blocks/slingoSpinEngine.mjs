@@ -174,12 +174,20 @@ export function emitSlingoSpinEngineRuntime(cfg = defaultConfig()) {
         if (typeof cb === 'function') setTimeout(cb, 0);
       }
 
+      /* 2026-06-09 — Boki bug fix: slingo strip ignored FORCE_TRIGGER so
+       * UFP FS chip + Buy Bonus failed silently on slingo (no scatter
+       * planted on the strip → 0 scatter count → no FS trigger). Plant
+       * the trigger symbol on the first N strip columns when the flag is
+       * armed; same contract as reelEngine.commitStopSymbols. */
+      var _forceN = (typeof FORCE_TRIGGER !== 'undefined' && FORCE_TRIGGER && FORCE_TRIGGER.scatterCount > 0)
+        ? FORCE_TRIGGER.scatterCount : 0;
+      var _trig = (window.FREESPINS && window.FREESPINS.triggerSymbol) || 'S';
       for (var c = 0; c < strip.length; c++) {
         (function (col) {
           var stopAt = ${SPIN_MS} + col * ${STAGGER};
           var t = setTimeout(function () {
             strip[col].classList.remove('is-spinning');
-            strip[col].textContent = _randSym();
+            strip[col].textContent = (col < _forceN) ? String(_trig) : _randSym();
             /* Check the board column (5 board cells stacked) for any
                cell that matches the new strip symbol. */
             var symbol = strip[col].textContent;

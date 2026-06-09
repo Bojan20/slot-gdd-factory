@@ -390,6 +390,18 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
         try { FORCE_TRIGGER = _plant; } catch (_) {}
         try { window.FORCE_TRIGGER = _plant; } catch (_) {}
         try { window.__SLOT_DEV_FORCE_FS__ = true; } catch (_) {}
+        /* 2026-06-09 — Boki bug fix: on wheel/crash/plinko/radial GDDs that
+         * mention "Free Spins" but lack a proper paytable scatter ladder,
+         * the parser leaves FREESPINS.enabled = false. The FS chip then
+         * planted scatter perfectly but spinsForCount returned 0 (gated
+         * by the disabled flag), and FS_INTRO never entered. Dev-force is
+         * an explicit player intent — flip enabled ON for this round so
+         * the trigger ladder is honored. Safe because awards/triggerCounts
+         * are still backfilled with industry defaults by the parser. */
+        try {
+          if (FREESPINS && FREESPINS.enabled !== true) FREESPINS.enabled = true;
+          if (window.FREESPINS && window.FREESPINS.enabled !== true) window.FREESPINS.enabled = true;
+        } catch (_) {}
       } catch (_) {}
     }
     if (kind === 'big_win') { try { window.__FORCE_BIG_WIN_TIER__ = 3; } catch (_) {} }
