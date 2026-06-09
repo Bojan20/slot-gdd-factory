@@ -706,31 +706,15 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
   </span>
 </div>
 
-<!-- Dev-only Free-Spins trigger. Pinned bottom-left of the viewport — visible
-     in every template (even with FS disabled in the GDD) so QA can click
-     directly into the FS round without grinding scatter hits. Disabled when
-     FS is not in the parsed model. -->
-<button class="dev-fs-btn" id="devFsBtn" type="button"
-        aria-label="Dev: Trigger Free Spins"
-        title="DEV — force Free Spins entry">FS</button>
-<!-- Wave H5 — dev-only Big-Win force button (cyan accent, sits left of FS).
-     Click cycles tier 1 → 2 → 3 → 4 → 5 → 1 by directly invoking the
-     bigWinTier public API. Disabled when bigWinTier block is not enabled
-     in the parsed model. -->
-<button class="dev-bw-btn" id="devBwBtn" type="button"
-        aria-label="Dev: Force Big Win"
-        title="DEV — force Big Win tier cycle">BW</button>
-<!-- Wave I.2 — dev-only Multiplier force button (magenta accent, sits left
-     of BW). Click cycles 2× → 5× → 10× → 25× → 50× → 100× → 1× (reset).
-     Sets HookBus.setMult(value) before runOneBaseSpin(); winPresentation
-     _applyMultToEvents multiplies payX by the active mult, so the next
-     spin's win flows through the multiplier chain. Disabled when no
-     multiplier feature block is enabled in the GDD. Boki rule
-     05.06.2026: "ako ima neka igra neki multiplier, onda da postoji
-     dugme za taj force". -->
-<button class="dev-mult-btn" id="devMultBtn" type="button"
-        aria-label="Dev: Force multiplier on next spin"
-        title="DEV — force ×N multiplier on next win">MULT</button>
+<!-- 2026-06-09 — devFsBtn / devBwBtn / devMultBtn REMOVED.
+     The bottom-left dev-rail duplicated the universal-force-panel (top-right).
+     Players saw two FS buttons, two BIG-WIN buttons, two MULT buttons.
+     The ufp-panel is the SOLE force CTA surface now. Legacy lookups
+     (devFsBtn id) get a stub node so emitDevForceButtonsRuntime + freeSpins
+     dev hooks degrade silently. -->
+<span hidden id="devFsBtn" aria-hidden="true"></span>
+<span hidden id="devBwBtn" aria-hidden="true"></span>
+<span hidden id="devMultBtn" aria-hidden="true"></span>
 
 ${emitFreeSpinsOverlayMarkup(resolveFreeSpinsConfig(model))}
 

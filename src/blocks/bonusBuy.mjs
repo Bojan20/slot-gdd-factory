@@ -54,48 +54,77 @@ export function emitBonusBuyCSS(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   return `
 /* ─── bonus buy ──────────────────────────────────────────────────── */
-/* Bonus Buy is a feature-defining CTA — placed top-center so it never
-   collides with the bottom-right spin cluster (spin/auto/autoplay/turbo)
-   or the bottom-left utility rail (paytable/history/settings). */
+/* 2026-06-09 — Boki direktiva: "Bonus buy, stavi negde sa strane, gde ima
+   mesta, ne zelim da mi preklapa bilo sta iznad rilova."
+   Was: top-center → overlapped game title + universalForcePanel chips.
+   Now: pinned LEFT MIDDLE, vertical orientation, narrow side dock.
+   Off the reels by ~96px, fully clear of header / sub / hub. Mobile
+   collapses to a top-left chip so we never eat the small viewport. */
 .bonus-buy-btn {
   position: fixed;
-  top: max(18px, env(safe-area-inset-top, 18px));
-  left: 50%;
-  transform: translateX(-50%);
+  top: 50%;
+  left: max(14px, env(safe-area-inset-left, 14px));
+  transform: translateY(-50%);
   bottom: auto;
   right: auto;
-  z-index: 60;
+  z-index: 55;             /* under universalForcePanel (60) and toasts */
   background: linear-gradient(135deg, ${cfg.color}, #b03030);
   color: #fff;
   border: 2px solid rgba(255,255,255,.4);
   border-radius: 14px;
-  padding: 0.65rem 1.2rem;
-  font-size: 0.85rem;
+  padding: 0.7rem 0.55rem;
+  font-size: 0.78rem;
   font-weight: 900;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.18em;
   cursor: pointer;
+  /* Vertical text orientation for the side dock — narrow column, no
+     overlap with the reel frame. Industry pattern: side-mounted buy
+     ladder seen on most modern HTML5 buy-bonus slots. */
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  min-height: 120px;
+  max-width: 44px;
   box-shadow: 0 4px 18px rgba(255,80,80,.5), inset 0 1px 0 rgba(255,255,255,.4);
-  transition: transform .12s, box-shadow .12s;
+  transition: transform .12s, box-shadow .12s, opacity .12s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 .bonus-buy-btn:hover {
-  transform: translateX(-50%) translateY(-2px);
+  transform: translateY(-50%) translateX(2px);
   box-shadow: 0 6px 22px rgba(255,80,80,.7), inset 0 1px 0 rgba(255,255,255,.5);
 }
-.bonus-buy-btn:active { transform: translateX(-50%) translateY(0); }
+.bonus-buy-btn:active { transform: translateY(-50%) translateX(0); }
 .bonus-buy-btn .cost {
   display: block;
-  font-size: 0.7rem;  /* Wave UQ — ≥11px floor */
+  /* Wave UQ floor — Apple HIG / WCAG ≥ 11px. 0.7rem = 11.2px. */
+  font-size: 0.7rem;
   font-weight: 700;
   opacity: 0.88;
-  margin-top: 2px;
+  letter-spacing: 0.12em;
+  margin-top: 4px;
 }
 .bonus-buy-btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+/* Mobile (≤620px) — collapse to a small top-left chip (no vertical text
+   on narrow viewports; the left dock would steal too much screen). */
 @media (max-width: 620px) {
   .bonus-buy-btn {
-    padding: 0.5rem 0.9rem;
-    font-size: 0.72rem;
     top: max(10px, env(safe-area-inset-top, 10px));
+    left: max(8px, env(safe-area-inset-left, 8px));
+    transform: none;
+    writing-mode: horizontal-tb;
+    min-height: 0;
+    max-width: none;
+    padding: 0.45rem 0.7rem;
+    font-size: 0.66rem;
+    letter-spacing: 0.04em;
   }
+  .bonus-buy-btn:hover  { transform: translateY(-1px); }
+  .bonus-buy-btn:active { transform: translateY(0); }
+  .bonus-buy-btn .cost { font-size: 0.7rem; letter-spacing: 0.02em; margin-top: 2px; }
 }
 `;
 }
@@ -126,8 +155,14 @@ const BONUS_BUY_CONFIRM = ${CONFIRM};
       if (!window.confirm(BONUS_BUY_CONFIRM)) return;
     }
     if (typeof FORCE_TRIGGER === 'undefined') return;
-    FORCE_TRIGGER = BONUS_BUY_FORCE_SCATTERS;
-    if (typeof window !== 'undefined') window.FORCE_TRIGGER = BONUS_BUY_FORCE_SCATTERS;
+    /* 2026-06-09 — Boki bug: was FORCE_TRIGGER = BONUS_BUY_FORCE_SCATTERS
+       (a plain number). The reelEngine commitStopSymbols reads
+       FORCE_TRIGGER.scatterCount — a number has no .scatterCount property,
+       so the buy click silently produced ZERO planted scatters and the FS
+       trigger never fired. Engine contract: { scatterCount: <int> }. */
+    var _plant = { scatterCount: BONUS_BUY_FORCE_SCATTERS };
+    FORCE_TRIGGER = _plant;
+    if (typeof window !== 'undefined') window.FORCE_TRIGGER = _plant;
     if (typeof runOneBaseSpin === 'function') runOneBaseSpin();
     btn.setAttribute('disabled', 'disabled');
     setTimeout(() => btn.removeAttribute('disabled'), 1200);

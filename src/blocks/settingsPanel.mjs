@@ -198,11 +198,14 @@ export function emitSettingsPanelCSS(cfg = defaultConfig()) {
   const c = resolveConfig({ settingsPanel: cfg });
   return `
   /* ── settingsPanel BLOCK — emitted by src/blocks/settingsPanel.mjs ─── */
-  /* Utility-rail slot 3: bottom-left, 92px above paytable (two slots up). */
+  /* Utility-rail slot 1 (bottom of rail): bottom-left.
+     Stack (bottom-up): settings (96) → paytable (156) → history (216).
+     2026-06-09 — was 92 (collided with paytable's 96). Now anchored to
+     the canonical 96 anchor and the rail stacks UP from here. */
   .settings-btn {
     position: fixed;
     left: max(18px, env(safe-area-inset-left, 18px));
-    bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 92px);
+    bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 96px);
     z-index: 25;
     width: 36px; height: 36px;
     border-radius: 50%;
@@ -227,6 +230,7 @@ export function emitSettingsPanelCSS(cfg = defaultConfig()) {
   @media (max-width: 620px) {
     .settings-btn {
       left: max(12px, env(safe-area-inset-left, 12px));
+      /* Mobile rail: settings (88) → paytable (148) → history (208). */
       bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + 88px);
     }
   }

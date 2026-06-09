@@ -140,14 +140,27 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
      into a feature". The DEV FS button uses this. */
   let FORCE_TRIGGER = null;   /* { scatterCount: 3 } | null */
 
-  function randomSym() { return POOL[Math.floor(Math.random() * POOL.length)]; }
+  /* 2026-06-09 — Boki bug: "posle par spinova izgube neki simboli tj celije
+     iz reel frame-a". Root cause: if POOL is somehow empty (or returns falsy)
+     and the rotation/commit writes that to textContent, the cell is left with
+     empty text — visually invisible. Guarantee a printable glyph on every
+     write. The '?' fallback is the same one the constructor (makeCell) uses
+     so the visual contract holds across the whole grid lifecycle. */
+  function randomSym() {
+    if (!Array.isArray(POOL) || POOL.length === 0) return '?';
+    var s = POOL[Math.floor(Math.random() * POOL.length)];
+    return (s == null || s === '') ? '?' : s;
+  }
 
   function rotateStripDown(reel) {
     /* Pop bottom cell DOM node, unshift to top, randomize its symbol —
        mirrors the industry-standard reel.cells.pop() / unshift() rotation. */
     const last = reel.cells.pop();
     reel.cells.unshift(last);
-    last.textContent = randomSym();
+    var _sym = randomSym();
+    /* Belt+brace — if randomSym ever returned falsy past the guard, keep the
+       previous glyph instead of erasing the cell. Better stale than empty. */
+    last.textContent = _sym || last.textContent || '?';
     for (let i = 0; i < reel.cells.length; i++) {
       reel.strip.appendChild(reel.cells[i]);
     }
@@ -159,7 +172,8 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
        get a fresh, settled outcome. Top/bottom buffers kept for the bounce. */
     const vis = reel.visibleRows || ROWS;
     for (let i = 1; i <= vis; i++) {
-      reel.cells[i].textContent = randomSym();
+      var _sym = randomSym();
+      reel.cells[i].textContent = _sym || reel.cells[i].textContent || '?';
     }
     /* Force-trigger plant: scatter on centre row of first N reels. */
     if (FORCE_TRIGGER && reelIdx < FORCE_TRIGGER.scatterCount) {
@@ -247,6 +261,20 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
       statusEl.textContent = "SPINNING";
     }
 
+    /* 2026-06-09 — Boki bug: "turbo ne radi". Live turbo multiplier
+       (0.35 default) was published by turboMode block but no engine path
+       read it. We read it once per spin and compress the per-reel schedule
+       window proportionally. Speed-up multiplier shortens the wait before
+       a reel is allowed to stop; pixel-per-frame speed is also scaled. */
+    const _turboMult = (typeof window !== 'undefined' && typeof window.__SLOT_TURBO_SPEED_MULT__ === 'number')
+      ? Math.max(0.1, Math.min(1, window.__SLOT_TURBO_SPEED_MULT__))
+      : 1.0;
+    /* Min rotations also drops when turbo is on — fewer full strips per
+       reel so settle lands faster. Floor at 3 to keep visible motion. */
+    const _minRot = (_turboMult < 1)
+      ? Math.max(3, Math.round(${c.minRotations} * _turboMult))
+      : ${c.minRotations};
+
     RECT_REELS.forEach((reel, idx) => {
       reel.spinning = true;
       reel.stopping = false;
@@ -254,11 +282,13 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
       reel.rotationCount = 0;
       reel.offsetPx = 0;
       reel.anticipating = false;
+      reel.minRotations = _minRot;
+      reel._turboMult = _turboMult;
       if (reel.glowTimerId) { clearTimeout(reel.glowTimerId); reel.glowTimerId = null; }
       reel.col.classList.remove("reelCol--anticipating");
       reel.scheduledStopAt = performance.now() +
-        SPIN_PROFILE.windupMs + SPIN_PROFILE.accelMs +
-        SPIN_PROFILE.steadyMs + idx * SPIN_PROFILE.staggerMs;
+        (SPIN_PROFILE.windupMs + SPIN_PROFILE.accelMs +
+         SPIN_PROFILE.steadyMs + idx * SPIN_PROFILE.staggerMs) * _turboMult;
       reel.cells.forEach(c => c.classList.add("is-blurring"));
 
       const initialDelay = reel.scheduledStopAt - performance.now();

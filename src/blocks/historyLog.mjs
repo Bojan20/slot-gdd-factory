@@ -155,14 +155,14 @@ export function emitHistoryLogCSS(cfg = defaultConfig()) {
      Hub button + slide-up panel listing last N spins. Regulator-mandated
      audit trail. Composes with balanceHud (reads __SLOT_BALANCE__) and
      winPresentation (reads __WIN_AWARD__). */
-  /* Utility-rail slot 2: bottom-left, 46px above paytable. */
+  /* Utility-rail slot 3 (top of rail): bottom-left.
+     Stack (bottom-up): settings (96) → paytable (156) → history (216).
+     2026-06-09 — bumped from 150 to 216 to clear paytable (156+44 = 200)
+     with safe 16px gap. */
   .history-btn {
     position: fixed;
     left: max(18px, env(safe-area-inset-left, 18px));
-    /* 2026-06-09 — paytable chip now lifted +96px above hub on all
-       viewports, so history sits +96+54 = 150px so the 44px chip
-       never overlaps the paytable chip below it. */
-    bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 150px);
+    bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 216px);
     /* Wave D3 — above .hub (z 30) on mobile. */
     z-index: 35;
     /* Wave K5 — WCAG 2.5.5 / Apple HIG 44pt floor. */
@@ -191,9 +191,8 @@ export function emitHistoryLogCSS(cfg = defaultConfig()) {
   @media (max-width: 620px) {
     .history-btn {
       left: max(12px, env(safe-area-inset-left, 12px));
-      /* 2026-06-09 — mobile paytable now lifted +130px so history sits
-         +130+54 = 184px to maintain the 44px chip gap. */
-      bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + 184px);
+      /* Mobile rail: settings (88) → paytable (148) → history (208). */
+      bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + 208px);
     }
   }
   .history-btn:hover  { transform: scale(1.06); opacity: 0.95; }

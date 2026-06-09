@@ -188,18 +188,14 @@ export function emitPaytableCSS(cfg = defaultConfig()) {
      i-button + full-screen modal overlay with symbol roster, payout grid,
      feature list, and wild-substitution rules. Composes with betSelector
      via window.__SLOT_BET__ for the real-cash column. */
-  /* Utility-rail slot 1: bottom-left. Fixed so it stays in viewport
-     regardless of stage flow / scroll. z-index 25 keeps it under modals
-     (40) but above reels (1) and overlays (10–15). */
+  /* Utility-rail slot 2: bottom-left, second-from-bottom.
+     Rail stack (bottom-up): settings (96) → paytable (156) → history (216).
+     2026-06-09 — Boki audit: settings (92) + paytable (96) bili na ISTOM
+     mestu i preklapali se. Razdvojeno: 60px vertikalni razmak između chip-a. */
   .paytable-btn {
     position: fixed;
     left: max(18px, env(safe-area-inset-left, 18px));
-    /* 2026-06-09 — lift chip above the hub bar so it never overlaps
-       #settingsMenuBtn on desktop+tablet. Hub is ~88px tall on
-       desktop (44px iconBtn + padding) so 96px clearance keeps a
-       safe gap. Mobile rule below adds extra height for the wrapping
-       2-row hub layout. */
-    bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 96px);
+    bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 156px);
     /* Wave D3 — above .hub (z 30) so the chip is never hidden by hub
        stacking context on mobile. Modals still win at z 40+. */
     z-index: 35;
@@ -230,10 +226,8 @@ export function emitPaytableCSS(cfg = defaultConfig()) {
   @media (max-width: 620px) {
     .paytable-btn {
       left: max(12px, env(safe-area-inset-left, 12px));
-      /* 2026-06-09 — mobile hub wraps to 2 rows (~110px tall with
-         padding) so lift to 130px so the chip never overlaps the
-         menu/balance row. */
-      bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + 130px);
+      /* Mobile rail: settings (88) → paytable (148) → history (208). */
+      bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + 148px);
     }
   }
   .paytable-btn:hover  { transform: scale(1.06); opacity: 0.95; }

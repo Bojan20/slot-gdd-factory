@@ -372,10 +372,27 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
       catch (_) {}
     }
 
-    // Map well-known kinds to legacy single-feature flags so existing
-    // blocks (freeSpins / bigWinTier) react without further wiring.
-    if (kind === 'free_spins') { try { window.__SLOT_DEV_FORCE_FS__ = true; } catch (_) {} }
-    if (kind === 'big_win')    { try { window.__FORCE_BIG_WIN_TIER__ = 3; } catch (_) {} }
+    /* 2026-06-09 — Boki bug: FS chip click set only window.__SLOT_DEV_FORCE_FS__,
+       but the reelEngine never reads that flag — it reads FORCE_TRIGGER. So the
+       FS chip looked active, the spin ran, no scatters were planted, no FS
+       triggered. Real fix: write the same { scatterCount } shape the original
+       devFsBtn used, picked from the parsed FREESPINS.awards ladder.
+       NOTE: the engine's FORCE_TRIGGER is a let-binding in the outer script
+       scope. From this IIFE we can write through to it via lexical scope.
+       We also mirror onto window.FORCE_TRIGGER as a defensive belt+brace
+       for any code path that reads through window. */
+    if (kind === 'free_spins') {
+      try {
+        var _first = (typeof FREESPINS !== 'undefined' && FREESPINS && Array.isArray(FREESPINS.awards) && FREESPINS.awards[0])
+          ? FREESPINS.awards[0]
+          : { count: 3, spins: 10 };
+        var _plant = { scatterCount: (_first.count || 3) };
+        try { FORCE_TRIGGER = _plant; } catch (_) {}
+        try { window.FORCE_TRIGGER = _plant; } catch (_) {}
+        try { window.__SLOT_DEV_FORCE_FS__ = true; } catch (_) {}
+      } catch (_) {}
+    }
+    if (kind === 'big_win') { try { window.__FORCE_BIG_WIN_TIER__ = 3; } catch (_) {} }
 
     _runSpin();
 
