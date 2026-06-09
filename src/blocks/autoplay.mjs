@@ -191,7 +191,7 @@ function _escape(s) {
 export function emitAutoplayCSS(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const c = resolveConfig({ autoplay: cfg });
-  /* ── industry-reference autoplay modal (Wrath-of-Olympus pattern) ──
+  /* ── industry-reference autoplay modal (vendor-neutral baseline) ──
      Trigger lives in `.sideHud #autoBtn` (orchestrator-owned). When the
      player taps it we open a FULL-SCREEN dark-gold modal with:
        • header  — "AUTOPLAY" + close (×)

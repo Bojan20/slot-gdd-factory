@@ -89,9 +89,11 @@ export function defaultConfig() {
        provides one (e.g. cabinet trim). */
     showToggle: true,
     toggleColor: '255,255,255',
-    /* Win-tier thresholds in multiples of bet — WIN_BIG fires when
-       roundTotalX >= bigWinThresholdX, MEGA at >= mega, EPIC at >= epic.
-       Standard industry breakpoints. */
+    /* Win-tier thresholds in multiples of bet — tier 1 fires at
+       roundTotalX >= bigWinThresholdX, tier 2 at >= megaWinThresholdX,
+       tier 3 at >= epicWinThresholdX. Field names kept for API stability;
+       player-visible labels live in `uiToast`/`bigWinTier` and are
+       vendor-neutral placeholders per `rule_no_vendor_mentions`. */
     bigWinThresholdX: 10,
     megaWinThresholdX: 50,
     epicWinThresholdX: 250,

@@ -8,13 +8,20 @@
  * bonus-buy flash) with one queue-based toast renderer so the visual
  * cadence is consistent across the whole slot template.
  *
- * Tier vocabulary:
+ * Tier vocabulary (INTERNAL identifiers only — player-visible labels are
+ * always GDD-overridable placeholders per `rule_no_vendor_mentions`):
  *
- *   BIG  WIN   sum payX ≥ bigWinThresholdX        (default 10x)
- *   MEGA WIN   sum payX ≥ megaWinThresholdX       (default 50x)
- *   EPIC WIN   sum payX ≥ epicWinThresholdX       (default 250x)
- *   FEATURE    feature trigger banner             (RESPIN! / LIGHTNING! / etc)
- *   NEUTRAL    informational toast                (e.g. round number)
+ *   tier `big`     sum payX ≥ bigWinThresholdX        (default 10x)
+ *   tier `mega`    sum payX ≥ megaWinThresholdX       (default 50x)
+ *   tier `epic`    sum payX ≥ epicWinThresholdX       (default 250x)
+ *   tier `feature` feature trigger banner             (label per GDD)
+ *   tier `neutral` informational toast                (label per GDD)
+ *
+ * The internal tier-identifier strings (`big`/`mega`/`epic`) are JS
+ * variable names — they NEVER appear in the player-visible DOM. The
+ * default labels emitted are vendor-neutral placeholders
+ * (`UITOAST_TIER1`/`UITOAST_TIER2`/`UITOAST_TIER3`); every game must
+ * override them via `model.uiToast.labels`.
  *
  * Lifecycle (HookBus contract):
  *
@@ -71,8 +78,15 @@ export function defaultConfig() {
     featureDurationMs: 1400,
     /* Whether to queue a "FS COMPLETE" toast at the end of a FS round. */
     queueOnFsEnd: true,
-    /* Label fired on onFsTrigger. */
+    /* Label fired on onFsTrigger. Placeholder — overridable per GDD. */
     fsTriggerLabel: 'FREE SPINS!',
+    /* Per-tier player-visible labels. Defaults are vendor-neutral
+       placeholders per `rule_no_vendor_mentions`; every GDD overrides. */
+    labels: {
+      big:  'UITOAST_TIER1',
+      mega: 'UITOAST_TIER2',
+      epic: 'UITOAST_TIER3',
+    },
     /* Color palette — "r,g,b" each. */
     colors: {
       big:     '255,210,90',
@@ -113,6 +127,16 @@ export function resolveConfig(model = {}) {
       const c = m.colors[tier];
       if (typeof c === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(c)) {
         cfg.colors[tier] = c;
+      }
+    }
+  }
+  /* Per-tier player-visible labels — strict validation:
+     1-32 char, no HTML metacharacters (XSS hygiene). */
+  if (m.labels && typeof m.labels === 'object') {
+    for (const tier of ['big', 'mega', 'epic']) {
+      const lbl = m.labels[tier];
+      if (typeof lbl === 'string' && lbl.length > 0 && lbl.length <= 32 && !/[<>{}]/.test(lbl)) {
+        cfg.labels[tier] = lbl;
       }
     }
   }
@@ -232,6 +256,9 @@ const TOAST_DUR_EPIC    = ${cfg.epicDurationMs};
 const TOAST_DUR_FEATURE = ${cfg.featureDurationMs};
 const TOAST_MAX_QUEUE   = ${cfg.maxQueue};
 const TOAST_FS_LABEL    = ${JSON.stringify(cfg.fsTriggerLabel)};
+const TOAST_LABEL_BIG   = ${JSON.stringify(cfg.labels.big)};
+const TOAST_LABEL_MEGA  = ${JSON.stringify(cfg.labels.mega)};
+const TOAST_LABEL_EPIC  = ${JSON.stringify(cfg.labels.epic)};
 const TOAST_QUEUE_FS_END = ${cfg.queueOnFsEnd ? 'true' : 'false'};
 const TOAST_STATE = { current: null, queue: [], paused: false };
 
@@ -343,9 +370,9 @@ if (typeof HookBus !== 'undefined') {
     const totalX = events.reduce((a, e) => a + (Number(e && e.payX) || 0), 0);
     const tier = _toastTierFromPayX(totalX);
     if (!tier) return;
-    const label = tier === 'epic' ? 'EPIC WIN'
-                : tier === 'mega' ? 'MEGA WIN'
-                                  : 'BIG WIN';
+    const label = tier === 'epic' ? TOAST_LABEL_EPIC
+                : tier === 'mega' ? TOAST_LABEL_MEGA
+                                  : TOAST_LABEL_BIG;
     uiShowToast(label, { tier, amount: totalX });
   });
   HookBus.on('onFsTrigger', () => {

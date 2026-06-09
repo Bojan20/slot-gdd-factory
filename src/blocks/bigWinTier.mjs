@@ -6,9 +6,10 @@
  * Five-tier celebration ladder for any win whose total-award-to-bet ratio
  * exceeds a configurable threshold. Vendor-neutral by design: every tier
  * is addressed by INT (1..5) in the code; the player-facing label,
- * threshold, duration, and color are all GDD-driven. Two games can share
- * the same block while showing entirely different vocabulary
- * ("BIG WIN" / "ZEUS STRIKE" / "DRAGON GOLD" — code never knows).
+ * threshold, duration, and color are all GDD-driven. Defaults are
+ * placeholder identifiers `BIGWINTIER1`..`BIGWINTIER5` (Boki rule
+ * 05.06.2026: never `mega`/`epic`/`legendary`/`ultimate` and never any
+ * theme/vendor copy from any reference game in the code).
  *
  * Industry pattern (single-source-of-truth interpretation of the slot-CTA
  * baseline + audit-grade tier classification):
@@ -131,8 +132,8 @@ export function defaultConfig() {
     /* Vendor-neutral placeholder labels — Boki rule 05.06.2026:
      * "bigwintier1-5 da se zna da je big win". The identifier itself
      * IS the placeholder label so reading the code/DOM always tells you
-     * exactly which tier is firing. Real games override with their own
-     * GDD copy ("BIG WIN", "OLYMPUS WIN", "DRAGON GOLD", whatever). */
+     * exactly which tier is firing. Real games override per-GDD; this
+     * block never ships a non-placeholder default. */
     labels:        ['BIGWINTIER1', 'BIGWINTIER2', 'BIGWINTIER3', 'BIGWINTIER4', 'BIGWINTIER5'],
     /* Banner segment length per tier. Counter spends `durations[i]` ms
      * climbing into tier (i+1)'s threshold. Reference GDD §6.4 + §8 —

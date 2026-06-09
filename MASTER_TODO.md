@@ -155,11 +155,11 @@
 | Wave | Šta | Status |
 |---|---|---|
 | ✅ **V1** Scatter anticipation v2 `f5ff1bd` | Boki bug "padne 1. ril → 2. ril → 3. ril i anticipation se gasi" — fix: `anticipationGate = max(1, threshold - remaining)` (mathematically-alive gate); 15/15 unit + 14/14 regression + 2574/2574 ultimate zelena | ✅ **SHIPPED** |
-| **V2** FS intro/outro per theme | trenutno generic, dignuti na theme-aware (egypt/norse/cyber/itd) | 🟡 generic |
-| **V3** Big win tier visual ladder | mega/epic/legendary/ultimate sa count-up i screen-shake gating | 🟡 osnovni |
+| 🗑 ~~V2 FS intro/outro per theme~~ | **DROPPED 2026-06-09** — Boki: *"Necemo teme vizualne za razlicite slotove, to izbrisi. Bice samo jedan templejt za sad"* | ❌ dropped |
+| **V3** Big-win tier visual ladder | tier ladder za 5 placeholder tier-ova (`BIGWINTIER1`–`BIGWINTIER5`, **NIKAD nice/epic/legendary/ultimate** per `rule_no_vendor_mentions`) sa count-up + screen-shake gating | 🟡 osnovni |
 | ✅ **V4** Spin button ikona `f5ff1bd` | dve strelice (refresh-style glyph) verifikovano u `src/blocks/spinControl.mjs` — 2 path + 2 polyline + pin testovi za sva 3 ikon-state-a (spin/stop/skip) | ✅ **SHIPPED** |
 | ✅ **V5** Win cycle preference `79dcf6a` | dodat 4. mode `cascade-stagger` u winPresentation (default 80ms step, bounded 20-500) — 6/6 unit + 28/28 winPresentation regression | ✅ **SHIPPED** |
-| **V6** Symbol settle bounce | reel land easing per theme | 🟡 generic |
+| 🗑 ~~V6 Symbol settle bounce~~ | **DROPPED 2026-06-09** — generic visual polish (cubic-bezier over-shoot na reel-land), per-theme varianta otpada zajedno sa V2; current linear settle ostaje | ❌ dropped |
 | ✅ **V7** Hover/tap simbol info `79dcf6a` | novi `src/blocks/symbolInfoPopover.mjs` (~290 LOC) — toggle semantic, autoHide 2400ms, WCAG `role=tooltip`, mobile-first viewport clamping; 22/22 unit + LEGO 5/5 (64 blokova, 54/54 listeners) | ✅ **SHIPPED** |
 
 ### Faza 6 · Tools + dev experience

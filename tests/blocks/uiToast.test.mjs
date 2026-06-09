@@ -18,9 +18,9 @@
  *  15. runtime bakes thresholds + durations + maxQueue + label
  *  16. runtime exposes uiShowToast / uiClearToasts / uiGetQueueLength / TOAST_STATE
  *  17. runtime registers HookBus.on for postSpin / onFsTrigger / onFsEnd / preSpin
- *  18. behavior: postSpin BIG tier with payX 15 plays one toast labeled 'BIG WIN'
- *  19. behavior: postSpin MEGA tier with payX 75 plays 'MEGA WIN'
- *  20. behavior: postSpin EPIC tier with payX 300 plays 'EPIC WIN'
+ *  18. behavior: postSpin BIG tier with payX 15 plays one toast labeled UITOAST_TIER1
+ *  19. behavior: postSpin MEGA tier with payX 75 plays UITOAST_TIER2
+ *  20. behavior: postSpin EPIC tier with payX 300 plays UITOAST_TIER3
  *  21. behavior: postSpin sub-BIG (payX 5) plays nothing
  *  22. behavior: uiShowToast queues + drains sequentially
  *  23. behavior: queue capped at maxQueue
@@ -268,28 +268,52 @@ function makeEvalCtx(cfg) {
   return ctx;
 }
 
-t('behavior: postSpin BIG tier with payX 15 → BIG WIN toast', () => {
+t('behavior: postSpin BIG tier with payX 15 → placeholder UITOAST_TIER1 toast', () => {
   const ctx = makeEvalCtx({});
   ctx.HookBus.emit('postSpin', { events: [{ payX: 15 }] });
   const big = ctx.renderLog.filter(r => r.tier === 'big');
   assert.equal(big.length, 1);
-  assert.ok(big[0].html.includes('BIG WIN'));
+  assert.ok(big[0].html.includes('UITOAST_TIER1'));
 });
 
-t('behavior: postSpin MEGA tier with payX 75 → MEGA WIN toast', () => {
+t('behavior: postSpin MEGA tier with payX 75 → UITOAST_TIER2 toast', () => {
   const ctx = makeEvalCtx({});
   ctx.HookBus.emit('postSpin', { events: [{ payX: 75 }] });
   const mega = ctx.renderLog.filter(r => r.tier === 'mega');
   assert.equal(mega.length, 1);
-  assert.ok(mega[0].html.includes('MEGA WIN'));
+  assert.ok(mega[0].html.includes('UITOAST_TIER2'));
 });
 
-t('behavior: postSpin EPIC tier with payX 300 → EPIC WIN toast', () => {
+t('behavior: postSpin EPIC tier with payX 300 → UITOAST_TIER3 toast', () => {
   const ctx = makeEvalCtx({});
   ctx.HookBus.emit('postSpin', { events: [{ payX: 300 }] });
   const epic = ctx.renderLog.filter(r => r.tier === 'epic');
   assert.equal(epic.length, 1);
-  assert.ok(epic[0].html.includes('EPIC WIN'));
+  assert.ok(epic[0].html.includes('UITOAST_TIER3'));
+});
+
+t('behavior: GDD-supplied placeholder labels override defaults', () => {
+  const cfg = resolveConfig({ uiToast: { labels: { big: 'PLAY_TIER1', mega: 'PLAY_TIER2', epic: 'PLAY_TIER3' } } });
+  const ctx = makeEvalCtx(cfg);
+  ctx.HookBus.emit('postSpin', { events: [{ payX: 15 }] });
+  ctx.HookBus.emit('postSpin', { events: [{ payX: 75 }] });
+  ctx.HookBus.emit('postSpin', { events: [{ payX: 300 }] });
+  const labels = ctx.renderLog.map(r => r.html).join(' ');
+  assert.ok(labels.includes('PLAY_TIER1'));
+  assert.ok(labels.includes('PLAY_TIER2'));
+  assert.ok(labels.includes('PLAY_TIER3'));
+});
+
+t('config: malformed labels (XSS / oversize / non-string) rejected', () => {
+  // <script> → rejected → default kept
+  const a = resolveConfig({ uiToast: { labels: { big: '<script>' } } });
+  assert.equal(a.labels.big, 'UITOAST_TIER1');
+  // 100-char string → rejected → default kept
+  const b = resolveConfig({ uiToast: { labels: { mega: 'x'.repeat(100) } } });
+  assert.equal(b.labels.mega, 'UITOAST_TIER2');
+  // non-string → rejected → default kept
+  const c = resolveConfig({ uiToast: { labels: { epic: 42 } } });
+  assert.equal(c.labels.epic, 'UITOAST_TIER3');
 });
 
 t('behavior: postSpin sub-BIG (payX 5) plays nothing', () => {
