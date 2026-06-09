@@ -591,7 +591,14 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
         payX: forcedAward, cells: forceCells, forcedBigWinTier: forcedTier,
       }];
       if (typeof runTumbleChain === 'function') {
-        await runTumbleChain(() => synth, { duringFs });
+        /* 2026-06-09 — Boki bug fix: detector returned the SAME synth array
+         * on every chain iteration, so runTumbleChain looped forever
+         * (TUMBLE_MAX_CHAIN times × ~1s per chain). The BW force is a
+         * SINGLE-STEP visual — emit synth once, then return empty so the
+         * chain breaks cleanly and the banner enters within ~1s instead
+         * of ~10s. */
+        let __synthFired = false;
+        await runTumbleChain(() => { if (__synthFired) return []; __synthFired = true; return synth; }, { duringFs });
       }
       window.__WIN_AWARD__ = forcedAward;
       window.__FORCE_BIG_WIN_TIER__ = null;       /* one-shot reset */

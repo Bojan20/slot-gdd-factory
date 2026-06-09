@@ -53,11 +53,18 @@ export function emitTriggerCountingRuntime(cfg = defaultConfig()) {
   function countTriggerSymbols() {
     const id = (FREESPINS.triggerSymbol || "S").toUpperCase();
     const countMode = (FREESPINS.countMode === 'any') ? 'any' : 'perReel';
-    /* For rectangular AND variable_reel (both engine-driven kinds with
-       per-reel visible strips) we count from RECT_REELS — that gives the
-       deduped per-reel view the anticipation logic relies on. Every other
-       kind dedupes via the generic .cell scan below. */
-    if ((SHAPE.kind === "rectangular" || SHAPE.kind === "variable_reel") && RECT_REELS) {
+    /* 2026-06-09 — Boki bug fix: ALL kinds that use buildReelColumns
+       (rectangular, variable_reel, lock_respin, expanding, cross, l_shape,
+       diamond, pyramid — every UNIFORM_REEL_KIND) populate RECT_REELS with
+       per-column visible strips. The previous gate let only rectangular /
+       variable_reel through RECT_REELS and routed every other column-grid
+       through the .cell DOM scan with (i mod REELS) modulo, which silently
+       miscounted column-major DOM grids (lock_respin is column-major +
+       buffer cells, so the modulo cycled through columns multiple times
+       within a single real column, producing 1 instead of 3 for a clean
+       3-scatter plant). Use RECT_REELS whenever it exists — that gives an
+       authoritative per-column view, immune to DOM ordering. */
+    if (RECT_REELS && RECT_REELS.length > 0) {
       let n = 0;
       for (const reel of RECT_REELS) {
         let hits = 0;

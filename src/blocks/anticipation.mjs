@@ -175,6 +175,14 @@ export function emitAnticipationRuntime(cfg = defaultConfig()) {
     if (!FREESPINS.enabled || !RECT_REELS) return;
     ${c.skipDuringFs ? `/* Anticipation is a BASE-game suspense cue — skipped during FS lifecycle. */
     if (FSM && FSM.phase && FSM.phase !== 'BASE') return;` : `/* skipDuringFs disabled in GDD — anticipation also runs inside FS_*. */`}
+    /* 2026-06-09 — Boki bug: clicking the UFP FS chip or BUY BONUS plants
+     * scatter on the first N reels via FORCE_TRIGGER. With anticipation
+     * active, every reel-stop re-armed the remaining reels (scattersSoFar
+     * always crossed the gate immediately), each arm appended +HOLD_BASE
+     * to scheduledStopAt, and the spin never settled. Skip anticipation
+     * entirely while FORCE_TRIGGER is engaged — force-spin is a deterministic
+     * dev surface, the suspense beat is moot. */
+    if (typeof FORCE_TRIGGER !== 'undefined' && FORCE_TRIGGER && FORCE_TRIGGER.scatterCount > 0) return;
     const threshold = (FREESPINS.triggerCounts && FREESPINS.triggerCounts[0]) ||
                       (FREESPINS.awards && FREESPINS.awards[0] && FREESPINS.awards[0].count) || 3;
     /* Highest scatter count in the ladder — anticipation persists until

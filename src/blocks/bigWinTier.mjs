@@ -180,6 +180,22 @@ export function resolveConfig(model = {}) {
 
   if (m.enabled != null) cfg.enabled = !!m.enabled;
 
+  /* 2026-06-09 — Boki bug fix: big-win-tier was the only force chip that
+   * silently did nothing on partner GDDs (the UFP `alwaysIncludeKinds`
+   * pinned the chip ON, but bigWinTier.enabled stayed false → click set
+   * `__FORCE_BIG_WIN_TIER__` but the runtime stub no-op'd it). Big-win
+   * celebration is a baseline slot feature — every commercial slot has
+   * one. Default to ON unless the GDD explicitly disables it (regulator
+   * opt-out path still honored: { bigWinTier: { enabled: false } } wins).
+   * Also auto-enable on docstring contract for explicit feature kinds. */
+  if (m.enabled == null) {
+    const features = Array.isArray(model && model.features) ? model.features : [];
+    const BW_PATTERN = /^(big[_-]?win([_-]?tier)?|win[_-]?ladder)$/i;
+    const detected = features.some(f => f && typeof f.kind === 'string' && BW_PATTERN.test(f.kind));
+    /* Auto-on whenever the feature is detected OR the GDD did not opt out. */
+    cfg.enabled = detected ? true : true;
+  }
+
   /* Threshold array — must be exactly TIER_COUNT, strictly ascending,
    * positive. Reject malformed input silently and fall back to defaults
    * so a broken GDD doesn't crash the build. */
