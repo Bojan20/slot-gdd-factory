@@ -32,7 +32,7 @@ const OUT  = resolve(REPO, 'tools/_eyes/realtime-huff');
 if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
 
 const HOME = process.env.HOME;
-const PDF  = `${HOME}/Desktop/Huff_N_More_Puff_GDD.pdf`;
+const PDF  = (existsSync(`${HOME}/Desktop/GDD/Huff_N_More_Puff_GDD.pdf`) ? `${HOME}/Desktop/GDD/Huff_N_More_Puff_GDD.pdf` : `${HOME}/Desktop/Huff_N_More_Puff_GDD.pdf`);
 if (!existsSync(PDF)) {
   console.error(`ERR: PDF not found at ${PDF}`);
   process.exit(1);

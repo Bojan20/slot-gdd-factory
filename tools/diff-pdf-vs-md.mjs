@@ -28,8 +28,15 @@ const __filename = fileURLToPath(import.meta.url);
 const REPO = resolve(dirname(__filename), '..');
 
 const argv = process.argv.slice(2);
-const MD_PATH = argv[0] || `${process.env.HOME}/Desktop/Gates_of_Olympus_1000_GDD.md`;
-const PDF_PATH = argv[1] || `${process.env.HOME}/Desktop/Gates_of_Olympus_1000_GDD.pdf`;
+/* 2026-06-09 — rule_gdd_folder_desktop: prefer ~/Desktop/GDD/. */
+const _HOME = process.env.HOME;
+function _findGdd(filename) {
+  const newP = `${_HOME}/Desktop/GDD/${filename}`;
+  const oldP = `${_HOME}/Desktop/${filename}`;
+  return existsSync(newP) ? newP : oldP;
+}
+const MD_PATH  = argv[0] || _findGdd('Gates_of_Olympus_1000_GDD.md');
+const PDF_PATH = argv[1] || _findGdd('Gates_of_Olympus_1000_GDD.pdf');
 
 if (!existsSync(MD_PATH))  { console.error(`❌ MD not found: ${MD_PATH}`);  process.exit(2); }
 if (!existsSync(PDF_PATH)) { console.error(`❌ PDF not found: ${PDF_PATH}`); process.exit(2); }

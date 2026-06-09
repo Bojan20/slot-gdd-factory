@@ -19,7 +19,11 @@ const REPO = resolve(dirname(__filename), '..');
 const OUT  = resolve(REPO, 'tools/_eyes');
 if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
 
-const PDF_PATH = `${process.env.HOME}/Desktop/Gates_of_Olympus_1000_GDD.pdf`;
+/* 2026-06-09 — rule_gdd_folder_desktop: prefer ~/Desktop/GDD/. */
+const _HOME = process.env.HOME;
+const PDF_PATH = existsSync(`${_HOME}/Desktop/GDD/Gates_of_Olympus_1000_GDD.pdf`)
+  ? `${_HOME}/Desktop/GDD/Gates_of_Olympus_1000_GDD.pdf`
+  : `${_HOME}/Desktop/Gates_of_Olympus_1000_GDD.pdf`;
 if (!existsSync(PDF_PATH)) {
   console.error(`❌ PDF fixture missing: ${PDF_PATH}`);
   process.exit(2);

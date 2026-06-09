@@ -24,10 +24,18 @@ const OUT = resolve(REPO, 'tools/_eyes/pdf-multi');
 if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
 
 const HOME = process.env.HOME;
+/* 2026-06-09 — Boki rule_gdd_folder_desktop: GDD PDFs live in
+   ~/Desktop/GDD/. We resolve each PDF by checking that folder first
+   and only fall back to bare ~/Desktop/ for unmigrated copies. */
+function _resolveGddPdf(filename) {
+  const newPath = `${HOME}/Desktop/GDD/${filename}`;
+  const oldPath = `${HOME}/Desktop/${filename}`;
+  return existsSync(newPath) ? newPath : oldPath;
+}
 const PDFS = [
-  { name: 'Huff_N_More_Puff',     path: `${HOME}/Desktop/Huff_N_More_Puff_GDD.pdf` },
-  { name: 'Gates_of_Olympus_1000', path: `${HOME}/Desktop/Gates_of_Olympus_1000_GDD.pdf` },
-  { name: 'Starlight_Travellers',  path: `${HOME}/Desktop/Starlight_Travellers_GDD.pdf` },
+  { name: 'Huff_N_More_Puff',      path: _resolveGddPdf('Huff_N_More_Puff_GDD.pdf') },
+  { name: 'Gates_of_Olympus_1000', path: _resolveGddPdf('Gates_of_Olympus_1000_GDD.pdf') },
+  { name: 'Starlight_Travellers',  path: _resolveGddPdf('Starlight_Travellers_GDD.pdf') },
 ];
 
 for (const p of PDFS) {
