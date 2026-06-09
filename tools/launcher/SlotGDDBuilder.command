@@ -143,19 +143,24 @@ else
   exit 1
 fi
 
-# ── 5. Open browser sa cache-bust query (svaki klik = svež HTML) ────
+# ── 5. NE otvaraj browser — Boki: "ne otvaraj mi ti" (09.06.2026) ──
+# Server je spreman, URL je ispod. Boki sam klikne / copy-paste.
 BUST=$(date +%s)
-open "${SERVER_URL}?v=${BUST}"
-ok "Browser otvoren: ${SERVER_URL}?v=${BUST}"
+TARGET_URL="${SERVER_URL}?v=${BUST}"
 
 # ── 6. Notification + summary ──────────────────────────────────────
 T1=$(date +%s)
 ELAPSED=$((T1 - T0))
-osascript -e "display notification \"Slot GDD spreman za ${ELAPSED}s (no-cache)\" with title \"Slot GDD Builder\" sound name \"Glass\"" 2>/dev/null || true
+osascript -e "display notification \"Server spreman za ${ELAPSED}s — otvori manuelno\" with title \"Slot GDD Builder\" sound name \"Glass\"" 2>/dev/null || true
 
 log ""
-log "${BOLD}${GREEN}✓ Spremno za ${ELAPSED}s${NC}  ${DIM}no-store + cache-bust query${NC}"
+log "${BOLD}${GREEN}✓ Server READY za ${ELAPSED}s${NC}  ${DIM}no-store + cache-bust query${NC}"
+log ""
+log "${BOLD}${CYAN}🔗 Otvori manuelno:${NC}"
+log "   ${BOLD}${TARGET_URL}${NC}"
+log ""
 log "${DIM}   Server PID: $SERVER_PID — ostaje u pozadini${NC}"
+log "${DIM}   Cmd+dblclick link iznad ili copy → paste u browser${NC}"
 log "${DIM}   Da ugasiš server: lsof -ti :$SERVER_PORT | xargs kill${NC}"
 log ""
 
