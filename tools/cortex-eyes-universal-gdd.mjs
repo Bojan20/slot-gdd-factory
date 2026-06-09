@@ -384,22 +384,13 @@ async function run() {
   console.log('═══════════════════════════════════════════════════════════════');
   console.log(`📝 Full per-fixture JSON: ${reportPath}`);
   console.log(`📸 Per-fixture screenshots: tools/_eyes/universal-gdd/*.png`);
-  /* Known-acceptable soft-fail budget:
-       • 1 for non-deterministic tumble cascade outliers (variable_reel +
-         hex + crystalForge can chain 10+ tumbles, occasionally
-         exceeding the 22s settle budget)
-       • 2 for wheel + radial SVG kinds where the FS overlay stays
-         visible post-spin (kindless cellgrid produces no scatter
-         detection clear) and intercepts the paytable click — pre-K7
-         race, tracked under future Wave J3-FS-cleanup.
-     Total tolerated soft-fails: 3. Anything above → real regression. */
-  const SOFT_FAIL_BUDGET = 3;
+  /* 2026-06-09 — Boki imperative: "sve mora da bude zeleno, svaki jebeni
+     paramaetar". Soft-fail budget removed. The two prior offenders
+     (radial + wheel FS overlay auto-trigger) are root-cause fixed in
+     buildSlotHTML.mjs (synthetic ★ scatter + FS-incompatible kind guard).
+     Any fail now is a real regression — exit non-zero. */
   const failCount = totalChecks - totalPass;
-  if (failCount <= SOFT_FAIL_BUDGET) {
-    if (failCount > 0) console.log(`ℹ️  ${failCount} ≤ soft-fail budget (${SOFT_FAIL_BUDGET}) — exit clean.`);
-    process.exit(0);
-  }
-  process.exit(1);
+  process.exit(failCount === 0 ? 0 : 1);
 }
 
 run().catch((e) => { console.error('Fatal:', e); process.exit(1); });

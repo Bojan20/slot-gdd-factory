@@ -396,6 +396,34 @@ export function buildSlotHTML(model) {
     { id: "A", name: "Ace" }, { id: "K", name: "King" }, { id: "Q", name: "Queen" },
     { id: "J", name: "Jack" }, { id: "T", name: "Ten" }, { id: "9", name: "Nine" },
   ];
+  /* 2026-06-09 — synthetic scatter for FS-enabled GDDs without a declared
+     scatter/bonus/trigger symbol. Real bug Boki saw (radial + wheel
+     fixtures): GDD declares Free Spins as a feature but lists no scatter
+     symbol. Before this guard:
+       triggerSymbol defaulted to literal "S"
+       countTriggerSymbols() matched any cell with text "S"
+       radial pool [O,R,s,n] → lowercase "s" upper-case-matched "S"
+         → 2-3 hits/spin → FS auto-trigger every spin
+       wheel pool [J,B] with triggerSymbol="B" → 24 segments × 50%
+         → ~12 B per spin → instant FS trigger
+     Industry behavior: scatter MUST be a unique single-glyph id that no
+     other tier symbol shadows. We inject a star-glyph entry whose upper-
+     case form (★) doesn't collide with any A-Z paytable id. */
+  const fsDeclared = !!(model.freeSpins && model.freeSpins.enabled);
+  const scatterAlreadyDeclared = allSymsResolved.some(
+    s => /scatter|trigger|bonus/i.test(s.name || '')
+  );
+  if (fsDeclared && !scatterAlreadyDeclared) {
+    /* Synthetic scatter — see comment block above for the root cause.
+       The actual injection happens here; the FS-incompatible-kind guard
+       runs AFTER buildGridShape (we need the resolved shape.kind, not a
+       tag-regex guess that misidentifies "radial" as "wheel"). */
+    const SYNTH_SCATTER = { id: '★', name: 'Scatter (auto)' };
+    allSymsResolved.unshift(SYNTH_SCATTER);
+    if (!Array.isArray(model.symbols.specials)) model.symbols.specials = [];
+    model.symbols.specials = [SYNTH_SCATTER, ...model.symbols.specials];
+    model.freeSpins = Object.assign({}, model.freeSpins, { triggerSymbol: '★' });
+  }
   /* 2026-06-09 — weighted random pool (industry-standard reel-strip
      emulation). Before this, the pool was uniform across all symbols,
      so a 13-symbol set produced scatter at ~7% per cell → 3+ scatters
@@ -419,6 +447,13 @@ export function buildSlotHTML(model) {
   const _idsMid    = new Set((model.symbols.mid   || []).map(s => String(s.id).toUpperCase()));
   const _idsLow    = new Set((model.symbols.low   || []).map(s => String(s.id).toUpperCase()));
   function _weight(sym) {
+    /* Synthetic ★ scatter (injected above for FS-enabled GDDs without an
+       explicit scatter symbol) — weight 0 so it NEVER appears in random
+       fills. FS in those games can only fire via the Force-FS dev panel
+       or the universal force CTA, never accidentally. This is the only
+       safe rate for tiny-roster grids (diamond / cross / l_shape /
+       slingo) where a weight-1 scatter still hit-rated 3-5% per cell. */
+    if (String(sym.id) === '★') return 0;
     if (_isWild(sym))    return 1;
     if (_isScatter(sym)) return 1;
     if (_isBonus(sym))   return 1;
@@ -461,6 +496,12 @@ export function buildSlotHTML(model) {
     ),
   };
   const shape = buildGridShape(model);
+  /* FS-incompatible grid kinds — see comment block above. Resolved AFTER
+     buildGridShape so we read the canonical shape.kind, not a tag guess. */
+  const FS_INCOMPATIBLE_KINDS = new Set(['wheel', 'plinko', 'crash']);
+  if (model.freeSpins && model.freeSpins.enabled && FS_INCOMPATIBLE_KINDS.has(shape.kind)) {
+    model.freeSpins = Object.assign({}, model.freeSpins, { enabled: false });
+  }
   /* ── Payline pool (LEGO-block delegation) ───────────────────────────────
      Server-side payline synthesis lives in `src/blocks/paylines.mjs`. This
      builder is now a pure orchestrator — it asks the block for the pool

@@ -12,9 +12,9 @@
  * happening roughly 1-in-100 spins (FS hit frequency ~1%).
  */
 import { chromium } from 'playwright';
-import { spawn } from 'node:child_process';
 import { readFileSync, existsSync, writeFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { createServer } from 'node:http';
+import { extname, resolve, dirname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { parseGDD } from '../src/parser.mjs';
@@ -26,18 +26,46 @@ const OUT = resolve(REPO, 'tools/_eyes/scatter-rate');
 import { mkdirSync } from 'node:fs';
 if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
 
+import { readdirSync as _rd } from 'node:fs';
 const FIXTURES = [
-  { id: 'crystal-forge',     file: 'samples/CRYSTAL_FORGE_GAME_GDD.md',     spins: 30 },
-  { id: 'wrath-of-olympus',  file: 'samples/WRATH_OF_OLYMPUS_GAME_GDD.md',  spins: 30 },
-  { id: 'midnight-fangs',    file: 'samples/MIDNIGHT_FANGS_GAME_GDD.md',    spins: 30 },
-  { id: 'gates-1000',        file: 'samples/GATES_OF_OLYMPUS_1000_GAME_GDD.md', spins: 30 },
+  ..._rd(resolve(REPO, 'samples')).filter(f => f.endsWith('.md')).map(f => ({
+    id: f.replace(/_GAME_GDD\.md$|\.md$/, '').toLowerCase(),
+    file: 'samples/' + f, spins: 20,
+  })),
+  ..._rd(resolve(REPO, 'samples/grids')).filter(f => f.endsWith('.md')).map(f => ({
+    id: 'grid_' + f.replace(/_GAME_GDD\.md$|\.md$/, '').toLowerCase(),
+    file: 'samples/grids/' + f, spins: 20,
+  })),
 ];
 
 const PORT = 5239;
-const server = spawn('python3', ['-m', 'http.server', String(PORT)], {
-  cwd: REPO, stdio: 'ignore',
+/* In-process Node HTTP static server. Replaced the python3 spawn —
+   under 24-fixture load the python http.server intermittently shut
+   down half-way through, producing ERR_CONNECTION_REFUSED. Keeping
+   the server in-process means a single event loop, no PIPE close
+   races, and trivial per-request error logging. */
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js':   'application/javascript; charset=utf-8',
+  '.mjs':  'application/javascript; charset=utf-8',
+  '.css':  'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.svg':  'image/svg+xml',
+  '.png':  'image/png',
+};
+const server = createServer((req, res) => {
+  try {
+    const url = new URL(req.url, 'http://x');
+    const rel = decodeURIComponent(url.pathname.replace(/^\/+/, ''));
+    const filePath = normalize(join(REPO, rel));
+    if (!filePath.startsWith(REPO)) { res.statusCode = 403; return res.end('forbidden'); }
+    if (!existsSync(filePath)) { res.statusCode = 404; return res.end('not found'); }
+    const body = readFileSync(filePath);
+    res.setHeader('Content-Type', MIME[extname(filePath)] || 'application/octet-stream');
+    res.end(body);
+  } catch (e) { res.statusCode = 500; res.end('server error: ' + e.message); }
 });
-await new Promise(r => setTimeout(r, 700));
+await new Promise((ok, fail) => server.listen(PORT, '127.0.0.1', ok).once('error', fail));
 
 let allGreen = true;
 const summary = [];
@@ -142,7 +170,7 @@ for (const fix of FIXTURES) {
 }
 
 await browser.close();
-server.kill('SIGTERM');
+await new Promise(r => server.close(r));
 
 console.log(`\nRESULT: ${allGreen ? '✓ all within industry baseline' : '✗ rate too high — engine needs weighted pool'}`);
 process.exit(allGreen ? 0 : 1);
