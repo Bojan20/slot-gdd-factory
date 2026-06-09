@@ -181,6 +181,23 @@ export function pdfTextToMarkdown(raw) {
     out.push(`${fs.triggerCount}+ Scatter simbola bilo gde na mreži.`);
     out.push(`**Nagrada:** ${fs.spinsAward} Free Spins.`);
     out.push('');
+    /* 2026-06-09 — emit the FULL ladder when ≥2 rungs detected so
+       parser.mjs awards extractor picks up every count→spins pair
+       (Boki bug: WoO PDF had 3/14, 4/16, 5/18 but adapter previously
+       collapsed it into a single 14-spin row → parser fell back to
+       the default [3/10, 4/15, 5/20] ladder). Single-rung GDDs
+       (Star = {6, 20}, Gates with only 4+ row) keep the original
+       single-row emit through the `**Nagrada:**` line above. */
+    if (Array.isArray(fs.awards) && fs.awards.length >= 1) {
+      out.push(`### Award Table`);
+      out.push('');
+      out.push('| Scatters | Spins awarded |');
+      out.push('|:---:|:---:|');
+      for (const a of fs.awards) {
+        out.push(`| ${a.count} | ${a.spins} |`);
+      }
+      out.push('');
+    }
     if (fs.akumulirajuci) {
       out.push(`### Akumulirajući Multiplier`);
       out.push('Svaki multiplier orb koji učestvuje u dobitku se dodaje u Bonus_Multiplier (počinje na 0x). Akumulirajuća mehanika — primenjuje se na svaki naredni dobitak u bonusu.');
@@ -862,12 +879,62 @@ function extractFreeSpins(txt) {
       if (n >= 5 && n <= 200) { spinsAward = n; break; }
     }
   }
+  /* 2026-06-09 — Boki bug fix: WoO + Gates + Star + Huff award table
+     never round-tripped to runtime because this adapter emitted only a
+     single trigger row ("N+ Scatter → M Free Spins") and the
+     downstream parser silently fell back to the default ladder
+     [3/10, 4/15, 5/20]. Real GDDs ship a per-count ladder
+     (3 → 14, 4 → 16, 5 → 18) and we MUST surface every rung so the
+     simulator awards the exact spin count the designer wrote.
+
+     Multi-pass ladder extraction over the flat PDF text:
+
+       (1) MD-pipe rungs that survived adapter-input (rare but seen
+           when the PDF was already MD-derived).
+       (2) Inline "N Scatter[a-z]* ... M spins" pairs within an 80-char
+           window — the canonical PDF-flow shape (`pdfjs` joins items
+           with ` ` so every rung sits on one line for us).
+       (3) Inline "N+ Scatter ... = N spins" / "N+ Scatter ... → M Free
+           Spins" arrow / equals form used by Gates/Huff.
+
+     Dedupe by count; sort ascending. */
+  const awards = [];
+  const seen = new Set();
+  function _addAward(c, s) {
+    if (Number.isFinite(c) && c >= 2 && c <= 9 &&
+        Number.isFinite(s) && s >= 1 && s <= 200 && !seen.has(c)) {
+      awards.push({ count: c, spins: s });
+      seen.add(c);
+    }
+  }
+  /* (1) MD pipe rows */
+  let m1;
+  const mdRow = /^\|\s*(\d+)\s*(?:scatters?\w*)?\s*(?:\|[^|\n]*?)*?\|\s*(\d+)\s*(?:spins?\w*)?\s*\|/gim;
+  while ((m1 = mdRow.exec(txt)) !== null) {
+    _addAward(parseInt(m1[1], 10), parseInt(m1[2], 10));
+  }
+  /* (2) Inline "N Scatter... M spins" */
+  let m2;
+  const inlineSpins = /(\d)\s*\+?\s*(?:Scatter[a-z]*|Sketer[a-z]*|Skater[a-z]*)\s+[\s\S]{0,80}?\s(\d{1,3})\s*(?:Free\s+)?Spins?\b/gi;
+  while ((m2 = inlineSpins.exec(txt)) !== null) {
+    _addAward(parseInt(m2[1], 10), parseInt(m2[2], 10));
+  }
+  /* (3) Arrow / equals shape — "4+ Scatter ... = 15 Free Spins" or
+        "3+ Scatter → 14 spins". Already covered by (2) when the arrow
+        is followed by `spins`, but some GDDs put just the number after. */
+  let m3a;
+  const arrowSpins = /(\d)\s*\+?\s*(?:Scatter[a-z]*|Sketer[a-z]*)\s+[\s\S]{0,80}?[=→\-:]\s*(\d{1,3})\s*(?:Free\s+)?Spins?/gi;
+  while ((m3a = arrowSpins.exec(txt)) !== null) {
+    _addAward(parseInt(m3a[1], 10), parseInt(m3a[2], 10));
+  }
+  awards.sort((a, b) => a.count - b.count);
+
   const akumulirajuci = /\bakumulirajuć|accumulat|progressive|persistent|grows|sticky\s+multiplier|builds\s+up/i.test(txt);
   let retriggerSpins = 5;
   const m3 = txt.match(/\+\s*(\d+)\s*(?:Free\s+Spins?|spinova)/i)
           || txt.match(/Retrigger\s*:?\s*\+?\s*(\d+)/i);
   if (m3) retriggerSpins = parseInt(m3[1], 10);
-  return { detected: true, triggerCount, spinsAward, akumulirajuci, retriggerSpins };
+  return { detected: true, triggerCount, spinsAward, awards, akumulirajuci, retriggerSpins };
 }
 
 function extractBonusBuy(txt) {
