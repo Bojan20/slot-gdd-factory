@@ -701,16 +701,13 @@ cat "$SERVER_LOG" >> "$LOG_FILE" 2>/dev/null || true
 ok "Server ready: $SERVER_URL"
 
 # ════════════════════════════════════════════════════════════════════════════
-# STEP 12: URL READY — Boki sam otvara (09.06.2026: "ne otvaraj mi ti")
+# STEP 12: AUTO-OPEN BROWSER (Boki 09.06.2026: "ne zelim da manuelno otvaam")
 # ════════════════════════════════════════════════════════════════════════════
-step 12 "URL spreman za manuelno otvaranje"
+step 12 "Otvaranje u default browser-u"
 
 TARGET_URL="$SERVER_URL"
-log ""
-log "${BOLD}${CYAN}🔗 Otvori manuelno:${NC}"
-log "   ${BOLD}$TARGET_URL${NC}"
-log ""
-ok "Server READY — Cmd+dblclick link iznad ili copy → paste u browser"
+open "$TARGET_URL" || fail "open $TARGET_URL"
+ok "Browser otvoren: $TARGET_URL"
 
 # ════════════════════════════════════════════════════════════════════════════
 # FINAL REPORT
