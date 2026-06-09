@@ -63,7 +63,13 @@ t('emitReelEngineRuntime: bakes static path cadence', () => {
   ct(js, 'STAGGER = 250');
   ct(js, 'HOLD_BASE = 500');
   ct(js, 'elapsed = 300');
-  ct(js, '}, 280');                /* static blur swap */
+  /* 2026-06-09 turbo gate: legacy static path now wraps the
+     staticBlurSwapMs constant inside `Math.round(<MS> * _stm)` so the
+     turbo chip compresses cadence for dual / SVG / irregular grids.
+     Bake-time invariant: the literal constant still appears verbatim,
+     just inside a Math.round expression instead of as a bare timer arg. */
+  ct(js, 'Math.round(280');         /* static blur swap (turbo-aware) */
+  ct(js, 'Math.round(300');         /* static pre-roll (turbo-aware) */
   ct(js, 'cursor + 120');           /* static settle */
 });
 

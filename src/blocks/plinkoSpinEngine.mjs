@@ -168,13 +168,21 @@ export function emitPlinkoSpinEngineRuntime(cfg = defaultConfig()) {
         path.push({ row: r, col: col });
       }
 
+      /* Turbo gate — CSS bakes step/settle. Override per-spin so turbo
+         chip ACTUALLY compresses cadence (Boki bug). */
+      var _tm = (typeof window.__SLOT_TURBO_SPEED_MULT__ === 'number' && window.__SLOT_TURBO_SPEED_MULT__ > 0)
+        ? window.__SLOT_TURBO_SPEED_MULT__ : 1.0;
+      var _stepMs   = Math.max(20, Math.round(${STEP_MS}   * _tm));
+      var _settleMs = Math.max(40, Math.round(${SETTLE_MS} * _tm));
+
       /* Arm ball at row 0 */
       var start = _pegCenter(board, 0, path[0].col);
       ball.style.transition = 'none';
       ball.style.transform = 'translate(' + start.x + 'px, ' + start.y + 'px)';
       ball.classList.add('is-armed');
       void ball.offsetWidth;
-      ball.style.transition = ''; /* restore CSS-defined transition */
+      ball.style.transition =
+        'transform ' + _stepMs + 'ms cubic-bezier(0.5, 0, 0.6, 1), opacity 80ms ease';
 
       STATE.dropping = true;
       STATE.pending = onSettled || null;
@@ -191,9 +199,9 @@ export function emitPlinkoSpinEngineRuntime(cfg = defaultConfig()) {
                 var cb = STATE.pending; STATE.pending = null;
                 /* onSpinResult is emitted by the dispatcher (reelEngine). */
                 if (typeof cb === 'function') setTimeout(cb, 0);
-              }, ${SETTLE_MS});
+              }, _settleMs);
             }
-          }, idx * ${STEP_MS});
+          }, idx * _stepMs);
           STATE.dropTimers.push(t);
         })(path[i], i);
       }

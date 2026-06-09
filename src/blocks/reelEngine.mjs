@@ -608,6 +608,13 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
     const forceN = FORCE_TRIGGER ? FORCE_TRIGGER.scatterCount : 0;
 
     if (!isColumnGrid) {
+      /* Turbo gate — static-reroll path is used by dual_colossal and other
+         irregular grids. Compress per-spin so turbo chip ACTUALLY speeds up
+         these kinds (Boki bug: turbo on dual had no observable effect). */
+      var _stm = (typeof window.__SLOT_TURBO_SPEED_MULT__ === 'number' && window.__SLOT_TURBO_SPEED_MULT__ > 0)
+        ? window.__SLOT_TURBO_SPEED_MULT__ : 1.0;
+      var _preMs  = Math.max(20, Math.round(${c.staticPreRollMs}  * _stm));
+      var _swapMs = Math.max(20, Math.round(${c.staticBlurSwapMs} * _stm));
       /* Legacy two-phase blink for SVG and irregular HTML grids. */
       cellsAll.forEach(c => c.classList.add("is-blurring"));
       setTimeout(() => {
@@ -619,8 +626,8 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
           /* Wave S: onSpinResult fires the moment the grid is settled. */
           _emitSettleResult();
           _settled(onSettled);
-        }, ${c.staticBlurSwapMs});
-      }, ${c.staticPreRollMs});
+        }, _swapMs);
+      }, _preMs);
       return;
     }
 

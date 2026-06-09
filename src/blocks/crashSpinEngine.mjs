@@ -151,13 +151,19 @@ export function emitCrashSpinEngineRuntime(cfg = defaultConfig()) {
       if (STATE.settleTimer) { clearTimeout(STATE.settleTimer); STATE.settleTimer = null; }
       if (STATE.counterIv) { clearInterval(STATE.counterIv); STATE.counterIv = null; }
 
+      /* Turbo gate — CSS bakes transition duration. Override per-spin so
+         turbo chip ACTUALLY compresses cadence (Boki bug). */
+      var _tm = (typeof window.__SLOT_TURBO_SPEED_MULT__ === 'number' && window.__SLOT_TURBO_SPEED_MULT__ > 0)
+        ? window.__SLOT_TURBO_SPEED_MULT__ : 1.0;
+      var _spinDur = Math.max(60, Math.round(${SPIN_MS} * _tm));
+
       var len = (typeof path.getTotalLength === 'function') ? path.getTotalLength() : 320;
       /* Pre-roll: curve hidden via stroke-dashoffset = full length. */
       path.style.transition = 'none';
       path.style.strokeDasharray = len + ' ' + len;
       path.style.strokeDashoffset = len;
       void path.offsetWidth; /* reflow */
-      path.style.transition = ''; /* restore CSS default */
+      path.style.transition = 'stroke-dashoffset ' + _spinDur + 'ms cubic-bezier(0.42, 0, 0.58, 1.0)';
 
       svg.classList.add('is-spinning');
 
@@ -173,7 +179,7 @@ export function emitCrashSpinEngineRuntime(cfg = defaultConfig()) {
       /* Counter tick — interpolate displayed value from 1.00 to peak. */
       var startedAt = Date.now();
       STATE.counterIv = setInterval(function () {
-        var t = Math.min(1, (Date.now() - startedAt) / ${SPIN_MS});
+        var t = Math.min(1, (Date.now() - startedAt) / _spinDur);
         var v = 1 + (peak - 1) * t * t; /* quadratic ease-in */
         text.textContent = v.toFixed(2) + 'x';
       }, 30);
@@ -190,7 +196,7 @@ export function emitCrashSpinEngineRuntime(cfg = defaultConfig()) {
         /* onSpinResult is emitted by the dispatcher (reelEngine). */
         if (typeof cb === 'function') setTimeout(cb, 0);
       }
-      STATE.settleTimer = setTimeout(_settle, ${SPIN_MS} + 30);
+      STATE.settleTimer = setTimeout(_settle, _spinDur + 30);
     }
 
     if (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function') {

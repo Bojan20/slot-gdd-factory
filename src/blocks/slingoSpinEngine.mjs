@@ -182,9 +182,12 @@ export function emitSlingoSpinEngineRuntime(cfg = defaultConfig()) {
       var _forceN = (typeof FORCE_TRIGGER !== 'undefined' && FORCE_TRIGGER && FORCE_TRIGGER.scatterCount > 0)
         ? FORCE_TRIGGER.scatterCount : 0;
       var _trig = (window.FREESPINS && window.FREESPINS.triggerSymbol) || 'S';
+      /* Turbo gate — Boki bug: turbo had no observable effect on slingo. */
+      var _tm = (typeof window.__SLOT_TURBO_SPEED_MULT__ === 'number' && window.__SLOT_TURBO_SPEED_MULT__ > 0)
+        ? window.__SLOT_TURBO_SPEED_MULT__ : 1.0;
       for (var c = 0; c < strip.length; c++) {
         (function (col) {
-          var stopAt = ${SPIN_MS} + col * ${STAGGER};
+          var stopAt = Math.max(40, Math.round((${SPIN_MS} + col * ${STAGGER}) * _tm));
           var t = setTimeout(function () {
             strip[col].classList.remove('is-spinning');
             strip[col].textContent = (col < _forceN) ? String(_trig) : _randSym();

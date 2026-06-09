@@ -385,13 +385,20 @@ export function emitHexReelEngineRuntime(cfg = defaultConfig()) {
       }
       hexSpinStart = performance.now();
       hexOnSettled = onSettled || null;
+      /* Turbo gate — engine bakes SPIN_MS/STAGGER_MS at orchestrator
+         time, but turbo is a live toggle. Read the canonical multiplier
+         set by turboMode.mjs and scale per-spin so the chip ACTUALLY
+         compresses cadence (Boki bug: turbo chip toggled but no observed
+         speedup on hex/wheel/crash/plinko/slingo). 1.0 when off. */
+      var _tm = (typeof window.__SLOT_TURBO_SPEED_MULT__ === 'number' && window.__SLOT_TURBO_SPEED_MULT__ > 0)
+        ? window.__SLOT_TURBO_SPEED_MULT__ : 1.0;
       for (var i = 0; i < HEX_REELS.length; i++) {
         var reel = HEX_REELS[i];
         reel.spinning = true;
         reel.stopping = false;
         reel.y = 0;
         reel.rotationCount = 0;
-        reel.stopAt = hexSpinStart + ${SPIN_MS} + i * ${STAGGER_MS};
+        reel.stopAt = hexSpinStart + (${SPIN_MS} * _tm) + i * (${STAGGER_MS} * _tm);
         reel.strip.parentElement.classList.add('is-spinning');
         reel.strip.parentElement.classList.remove('is-stopping');
       }

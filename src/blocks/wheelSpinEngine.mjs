@@ -218,6 +218,15 @@ export function emitWheelSpinEngineRuntime(cfg = defaultConfig()) {
       STATE.rotating = true;
       STATE.pendingSettle = onSettled || null;
 
+      /* Turbo gate — CSS bakes transition duration at orchestrator time
+         but turbo is a live toggle. Override per-spin so the chip ACTUALLY
+         compresses cadence (Boki bug: turbo had no observable effect on
+         wheel/radial). */
+      var _tm = (typeof window.__SLOT_TURBO_SPEED_MULT__ === 'number' && window.__SLOT_TURBO_SPEED_MULT__ > 0)
+        ? window.__SLOT_TURBO_SPEED_MULT__ : 1.0;
+      var _spinDur = Math.max(60, Math.round(${SPIN_MS} * _tm));
+      svg.style.transition = 'transform ' + _spinDur + 'ms cubic-bezier(0.18, 0.89, 0.32, 1.0)';
+
       svg.classList.add('is-spinning');
       /* Trigger the CSS-driven transform transition */
       svg.style.transform = 'rotate(' + (STATE.currentAngleDeg + revs * 360) + 'deg)';
@@ -246,7 +255,7 @@ export function emitWheelSpinEngineRuntime(cfg = defaultConfig()) {
          hidden, transition cancelled by another preSpin). */
       STATE.settleTimer = setTimeout(function () {
         if (STATE.rotating) _onTransitionEnd();
-      }, ${SPIN_MS} + 250);
+      }, _spinDur + 250);
     }
 
     /* HookBus listener — defensive snap on rapid double-click preSpin. */
