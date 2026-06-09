@@ -292,6 +292,15 @@ export const HOOK_EVENTS = Object.freeze([
    *   genericFeatureBanner.mjs is the catch-all for kinds without a
    *   dedicated handler. */
   'onForceFeatureRequested',
+  /* Scatter Celebration phase signals
+   * onScatterCelebrationStart {cellCount, durationMs} — fires when the
+   *   FS trigger scatter celebration animation begins. spinControl uses
+   *   this to morph its #spinBtn into a SKIP CTA for the celebration
+   *   phase. Owner: scatterCelebration.mjs.
+   * onScatterCelebrationEnd {reason} — fires when the celebration ends
+   *   (reason: 'natural' | 'skipped'). Owner: scatterCelebration.mjs. */
+  'onScatterCelebrationStart',
+  'onScatterCelebrationEnd',
 ]);
 
 /* Wave U4: canonical autoplay stop reasons. */

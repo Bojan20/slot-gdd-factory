@@ -228,6 +228,11 @@ export function emitScatterCelebrationRuntime(cfg = defaultConfig()) {
       _scatterPendingResolve    = resolve;
       host.classList.add('is-scatter-celebrating');
       cells.forEach(c => c.classList.add('cell--scatter-celebrate'));
+      /* 2026-06-09 — emit lifecycle event so spinControl can morph
+         the SPIN button into a SKIP CTA during the celebration phase.
+         Was: spinControl registered for onScatterCelebrationStart but
+         scatterCelebration never emitted it → unknown-event warning. */
+      try { HookBus.emit('onScatterCelebrationStart', { cellCount: cells.length, durationMs: durationMs }); } catch (_) {}
       /* Safety: don't leak the classes if the page hides/unmounts mid-flight. */
       setTimeout(() => {
         if (myToken !== _SCATTER_CELEBRATION_TOKEN) return; /* cancelled — skip handler already resolved */
@@ -235,6 +240,7 @@ export function emitScatterCelebrationRuntime(cfg = defaultConfig()) {
         cells.forEach(c => c.classList.remove('cell--scatter-celebrate'));
         _scatterCelebrationActive = false;
         _scatterPendingResolve    = null;
+        try { HookBus.emit('onScatterCelebrationEnd', { reason: 'natural' }); } catch (_) {}
         resolve();
       }, durationMs);
     });
@@ -276,6 +282,7 @@ export function emitScatterCelebrationRuntime(cfg = defaultConfig()) {
         _r();
       }
       const duration = Math.round(((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - t0);
+      try { HookBus.emit('onScatterCelebrationEnd', { reason: 'skipped' }); } catch (_) {}
       HookBus.emit('onSkipComplete', { phase: 'celebration', duration });
     });
   }

@@ -205,6 +205,11 @@ const EXPECTED_EMIT_OWNERS = {
   /* Wave U-FORCE-ALL — universal force panel is the sole emitter of
    * `onForceFeatureRequested`. Generic banner only listens. */
   onForceFeatureRequested: ['universalForcePanel.mjs'],
+  /* 2026-06-09 — scatterCelebration owns its own lifecycle phase events.
+   * spinControl listens to morph the SPIN CTA into a SKIP button during
+   * the celebration window. */
+  onScatterCelebrationStart: ['scatterCelebration.mjs'],
+  onScatterCelebrationEnd:   ['scatterCelebration.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */

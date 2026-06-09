@@ -329,7 +329,17 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
   }
 
   function onTickAll() {
-    const baseSpeed = Math.max(20, RECT_SIDE * 0.25);
+    /* 2026-06-09 — Boki bug: my earlier fix shortened the schedule window
+       but left base pixel speed unchanged → reels stopped EARLIER without
+       traveling proportionally faster, so the whole spin felt the same or
+       even longer (the deceleration tail dominated). Real fix: scale base
+       pixel speed inversely with the active turbo multiplier so the reels
+       actually MOVE faster on screen during a turbo spin. */
+    var _liveTurboMult = (typeof window !== 'undefined' && typeof window.__SLOT_TURBO_SPEED_MULT__ === 'number')
+      ? Math.max(0.1, Math.min(1, window.__SLOT_TURBO_SPEED_MULT__))
+      : 1.0;
+    var _speedScale = (_liveTurboMult > 0) ? (1 / _liveTurboMult) : 1.0;
+    const baseSpeed = Math.max(20, RECT_SIDE * 0.25) * _speedScale;
     let anyActive = false;
     const now = performance.now();
 

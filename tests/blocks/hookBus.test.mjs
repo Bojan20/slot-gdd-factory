@@ -71,6 +71,9 @@ t('HOOK_EVENTS canonical list (core + V intent + V5 win-present + U4 autoplay + 
     'onHotReloadConnect', 'onHotReloadDisconnect', 'onGddChange',
     /* Wave U-FORCE-ALL — universal feature force panel */
     'onForceFeatureRequested',
+    /* 2026-06-09 — scatterCelebration lifecycle (spinControl morphs SPIN
+     * → SKIP during the celebration window) */
+    'onScatterCelebrationStart', 'onScatterCelebrationEnd',
   ];
   eq(HOOK_EVENTS.length, expected.length);
   for (const e of expected) ok(HOOK_EVENTS.includes(e), `missing ${e}`);
