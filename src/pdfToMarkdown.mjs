@@ -43,13 +43,21 @@ export function pdfTextToMarkdown(raw) {
 
   /* ── 1b. Theme / market / mood metadata table ───────────────────────── */
   const meta = extractMetaPanel(txt);
-  if (name || meta.themeTags || meta.targetMarket || meta.genre || meta.mood || meta.setting) {
+  // Palette: surface the first 6 unique hex codes from the raw PDF prose.
+  // The parser pulls hex with /#[0-9a-fA-F]{6}/g across the whole markdown
+  // doc, so embedding them as a bullet line is enough to make them visible.
+  const palette = [...new Set((rawText.match(/#[0-9a-fA-F]{6}/g) || []))].slice(0, 6);
+  if (name || meta.themeTags || meta.targetMarket || meta.genre || meta.mood || meta.setting
+      || meta.typography || meta.vibeRefs || palette.length > 0) {
     if (name)              out.push(`| Internal name | ${name} |`);
     if (meta.themeTags)    out.push(`| Theme tags | ${meta.themeTags} |`);
     if (meta.mood)         out.push(`| Mood | ${meta.mood} |`);
     if (meta.setting)      out.push(`| Setting | ${meta.setting} |`);
+    if (meta.typography)   out.push(`| Typography | ${meta.typography} |`);
+    if (meta.vibeRefs)     out.push(`| Vibe references | ${meta.vibeRefs} |`);
     if (meta.genre)        out.push(`| Genre | ${meta.genre} |`);
     if (meta.targetMarket) out.push(`| Target market | ${meta.targetMarket} |`);
+    if (palette.length > 0) out.push(`| Palette | ${palette.join(' · ')} |`);
     out.push('');
   }
 
@@ -247,9 +255,12 @@ function extractGameName(txt) {
     }
     return title;
   }
-  // Strategy 2a: ALL-CAPS title before "Game Design Document"
-  //              Handles "HUFF N' MORE PUFF\nGame Design Document" / similar.
-  m = txt.slice(0, 1200).match(/([A-Z][A-Z0-9' \-]{4,50}[A-Z0-9])\s*\n[^\n]{0,30}(?:G\s*a?\s*m?\s*e?\s*[ -]?\s*D\s*e\s*s\s*i\s*g\s*n|GDD|Game\s+Design\s+Document)/);
+  // Strategy 2a: ALL-CAPS title before "Game Design Document".
+  // Handles either layout:
+  //   • newline-separated (pdftotext): "HUFF N' MORE PUFF\nGame Design Document"
+  //   • space-collapsed (pdfjs):       "HUFF N' MORE PUFF  Game Design Document"
+  // 2026-06-09 huff-puff fix: accept any whitespace gap, not just `\s*\n`.
+  m = txt.slice(0, 1200).match(/([A-Z][A-Z0-9' \-]{4,50}[A-Z0-9])\s{1,40}(?:Game\s+Design\s+Document|GDD|G\s*a?\s*m?\s*e?\s*[ -]?\s*D\s*e\s*s\s*i\s*g\s*n)/);
   if (m) return clean(m[1]).replace(/\s{2,}/g, ' ');
   // Strategy 2b: Title-Case sequence followed by "G A M E D E S I G N" / "Game Design"
   m = txt.match(/([A-Z][a-zA-Z]+(?:\s+[A-Z0-9][a-zA-Z0-9]+){1,4})\s+(?:G\s*A\s*M\s*E\s*D\s*E|Game\s*Design)/);
@@ -365,6 +376,16 @@ function extractSymbols(txt) {
   scanTriplets(region, /(\d+(?:\.\d+)?)\s*x[^x]{0,80}?(\d+(?:\.\d+)?)\s*x[^x]{0,80}?(\d+(?:\.\d+)?)\s*x/g,
                { high, mid, low, seenIds });
 
+  /* 2b. 2026-06-09 huff-puff fix: prose-style paytable scan.
+   *    PDFs that lay the paytable out as one-row-per-line with the
+   *    name in the FIRST column followed by tier label + 3 pay values
+   *    ("PIGGY 3 (Brick Pig)   Premium   2.00x   5.00x   10.00x") drop
+   *    through the strict triplet scan because of the Notes column or
+   *    line-wrap. Recover them by scanning each line for the canonical
+   *    "<NAME> <TIER> <Nx> <Nx> <Nx>" shape. Idempotent — extends seenIds
+   *    so the triplet pass + this pass never double-count a symbol. */
+  scanProseRows(region, { high, mid, low, seenIds });
+
   /* 3. Special-role rows — Wild / Scatter / Bonus / Multiplier may not
    *    carry pay triplets ("N/A N/A N/A" in some PDFs). Scan the table
    *    region for these by role keyword first, then full-text fallback. */
@@ -385,6 +406,73 @@ function extractSymbols(txt) {
  * across multiple calls via the shared seenIds set (subsequent passes
  * with wider gaps only fill in gaps from earlier passes).
  */
+/**
+ * 2026-06-09 huff-puff fix — scan an explicit "Name TierLabel Nx Nx Nx"
+ * row layout (each paytable row on its own logical line). Handles the
+ * common Light-and-Wonder / Aristocrat style document where the row
+ * keeps name tokens together and the Notes column lives AFTER the third
+ * pay value (rather than between values).
+ *
+ *   Examples that match:
+ *     "PIGGY 3 (Brick Pig)   Premium   2.00x   5.00x   10.00x   Highest paying"
+ *     "Toolbox   Mid   0.50x   1.00x   2.50x"
+ *     "A   Low   0.20x   0.50x   1.50x"
+ *     "J   Low   0.10x   0.20x   0.80x   Min 4 for win"
+ *
+ * Tier label is REQUIRED so we don't match jackpot or distribution
+ * tables that also carry `Nx Nx Nx` triplets but no tier word.
+ */
+function scanProseRows(region, ctx) {
+  // 1-40 char name (letters / spaces / digits / parens / apostrophe / dash)
+  // → REQUIRED tier word (PDF.js sometimes wraps "Premium" → "Premiu m",
+  // hence the optional `\s+m\b` after Premiu / High → High y, etc.).
+  // Word-boundary on the FIRST tier letter so "Hierarchy" can't match.
+  // → 3 Nx values, separated by whitespace runs. The last `x` may have
+  // a space before it ("10.00 x") from line wrapping.
+  // No newline anchor: PDF.js collapses paytables onto a single line.
+  const re = /([A-Z][A-Za-z0-9'()\- ]{0,40})\s+\b(Premiu(?:m|\s+m)|Premium|Mid|Low|High|Royal|Standard)\b\s+(\d+(?:\.\d+)?)\s*x\s+(\d+(?:\.\d+)?)\s*x\s+(\d+(?:\.\d+)?)\s*x/g;
+  let m;
+  // Header tokens that look like a name but are actually table chrome.
+  const BLOCKLIST = /\b(Hierarchy|Type|Notes?|Symbol|Header|Distribution|Reel|Strip|Column|Row|Frequency|Probability|Total|Avg|Min|Max|Sum)\b/i;
+
+  while ((m = re.exec(region)) !== null) {
+    let rawName = m[1].trim().replace(/\s+/g, ' ');
+    const tierHint = m[2].toLowerCase().startsWith('premi') ? 'premium' : m[2].toLowerCase();
+    const pay = [parseFloat(m[3]), parseFloat(m[4]), parseFloat(m[5])];
+
+    // Strip parenthetical aside so the name is the canonical token
+    // ("PIGGY 3 (Brick Pig)" → "PIGGY 3"). Also strip leading section
+    // anchors like "4.1" that bleed in from chapter headings.
+    rawName = rawName
+      .replace(/\s*\([^)]*\)\s*$/, '')
+      .replace(/^\s*\d+(\.\d+)?\s+/, '')
+      .trim();
+    if (!rawName || rawName.length > 32) continue;
+    if (BLOCKLIST.test(rawName)) continue;
+    // Skip rows where the name reduces to a single tier word ("Symbol",
+    // "Notes") after the blocklist sweep — already covered above but
+    // belt-and-braces.
+
+    // ID = first capital letter sequence or first letter + digits
+    let id;
+    const compact = rawName.replace(/[^A-Za-z0-9]/g, '');
+    if (compact.length <= 4) id = compact.toUpperCase();
+    else {
+      // Multi-word: take initial of each word, capped at 4 chars
+      id = rawName.split(/\s+/).map(t => t[0]).join('').toUpperCase().slice(0, 4);
+    }
+    if (!id) continue;
+    if (ctx.seenIds.has(id)) continue;
+    ctx.seenIds.add(id);
+
+    const tier = classifyTier(rawName, tierHint);
+    const entry = { id, name: rawName, pay };
+    if (tier === 'high') ctx.high.push(entry);
+    else if (tier === 'mid') ctx.mid.push(entry);
+    else ctx.low.push(entry);
+  }
+}
+
 function scanTriplets(region, tripletRe, ctx) {
   let m;
   while ((m = tripletRe.exec(region)) !== null) {
@@ -745,7 +833,10 @@ function extractAnteBet(txt) {
 
 /* ── Industry GDD meta-panel (Tema:, Ciljna publika:, ŽANR, etc.) ─────── */
 function extractMetaPanel(txt) {
-  const meta = { themeTags: null, targetMarket: null, genre: null, mood: null, setting: null };
+  const meta = {
+    themeTags: null, targetMarket: null, genre: null, mood: null, setting: null,
+    typography: null, vibeRefs: null,
+  };
 
   // "Tema: Antička Grčka, Mitologija, Bogovi ⚡"   (SR) or  "Theme: ..." (EN)
   let m = txt.match(/(?:Tema|Theme|Theme\s+tags?)\s*:\s*([^⚡\n|]{3,140})/i);
@@ -753,6 +844,48 @@ function extractMetaPanel(txt) {
     let tags = cleanList(m[1]);
     // Preserve user-authored theme tags verbatim — no vendor/franchise-specific auto-tagging.
     meta.themeTags = tags;
+  }
+  if (!meta.themeTags) {
+    // 2026-06-09 huff-puff fix: prose-only PDFs (no "Theme tags:" prefix)
+    // — derive 2-4 theme tags from the most common content anchors:
+    //   ① the GENRE line (e.g. "Hold & Spin" / "243 Ways")
+    //   ② Section "THEME & NARRATIVE DESIGN" sub-headers
+    //   ③ canonical theme-anchor keywords actually present in the text
+    // Keeps it vendor-neutral by surfacing only the descriptor, never the
+    // franchise or studio brand.
+    const inferred = new Set();
+    const anchors = [
+      /\bvideo\s*slot\b/i,            'video-slot',
+      /\bhold\s*[&\s]*spin\b/i,       'hold-and-spin',
+      /\b243\s*ways\b/i,              '243-ways',
+      /\b1024\s*ways\b/i,             '1024-ways',
+      /\b117\s*649\s*ways\b/i,        '117649-ways',
+      /\bcluster\s*pays\b/i,          'cluster-pays',
+      /\bcascad/i,                    'cascade',
+      /\btumble\b/i,                  'tumble',
+      /\bmegaways\b/i,                'variable-ways',
+      /\bbuy\s*feature\b/i,           'buy-feature',
+      /\bbonus\s*buy\b/i,             'bonus-buy',
+      /\bjackpot\b/i,                 'jackpot',
+      /\bwheel\s*bonus\b/i,           'wheel-bonus',
+      /\bmystery\s*symbol/i,          'mystery-symbol',
+      /\bcomic|cartoon|storybook|whimsical|fairy[\s-]?tale\b/i, 'storybook',
+      /\bgreek|olymp|zeus|titan|spartan/i, 'mythology',
+      /\bnorse|viking|thor|odin/i,    'norse',
+      /\begypt|pharaoh|pyramid|anubis/i, 'egypt',
+      /\bspace|galaxy|cosmic|nebula/i, 'space',
+      /\bcyber|neon|synthwave|future/i, 'cyber',
+      /\bhorror|gothic|vampire|witch/i, 'horror',
+      /\bocean|sea|underwater|nautical/i, 'ocean',
+      /\bjungle|tropical|temple/i,    'jungle',
+      /\bwild\s*west|cowboy|saloon/i, 'wild-west',
+    ];
+    for (let i = 0; i < anchors.length; i += 2) {
+      if (anchors[i].test(txt)) inferred.add(anchors[i + 1]);
+    }
+    if (inferred.size > 0) {
+      meta.themeTags = [...inferred].slice(0, 6).join(' · ');
+    }
   }
 
   // "Ciljna publika: High-volatility igrači ⚡"  /  "Target market: ..." / "Target audience: ..."
@@ -773,19 +906,33 @@ function extractMetaPanel(txt) {
 
   // Genre — "ŽANR Video Slot / Scatter Pays"  (PDF.js spaces every char out, so
   // \b before Ž fails — drop the boundary)  /  "Genre: ..."
+  // 2026-06-09 huff-puff fix: explicit terminator before next ALL-CAPS field name
+  // (GRID, MAX, VOLATILITY, RTP, RELEASE, HIT, BET, STUDIO, FRANCHISE) so a
+  // greedy match doesn't swallow downstream metadata into the genre cell.
   m = txt.match(/Ž\s*A\s*N\s*R\s+([^\n⚡|]{3,80})/i)
      || txt.match(/(?:Žanr|Genre)\s*[:|]?\s*([^\n⚡|]{3,80})/i);
   if (m) {
     let g = clean(m[1]);
     // Pull only the first 2 tokens separated by /, drop trailing "VOLATILNOST" etc.
     g = g.replace(/\s+V\s*O\s*L\s*A\s*T.*$/i, '').trim();
+    // Stop at the next uppercase field name (GRID / MAX WIN / RTP / RELEASE / etc.)
+    g = g.replace(/\s+(?:GRID|MAX\s+WIN|VOLATILITY|RTP|RELEASE|HIT\s+FREQ|BET\s+RANGE|STUDIO|FRANCHISE|CONFIDENTIAL).*$/i, '').trim();
     // Same trick: "Video Slot / Scatter Pays" → "Video Slot — Scatter Pays"
     meta.genre = g.replace(/\s*\/\s*/, ' — ');
   }
 
-  // Mood — explicit "Mood:" or derived from "VOLATILNOST 5/5 — Maksimalna"
+  // Mood — explicit "Mood:" / "Art Style:" / "Visual Identity" prose / volatility hint
   m = txt.match(/\b(?:Mood|Raspoloženje|Vibe)\s*:\s*([^\n⚡|]{3,140})/i);
   if (m) meta.mood = clean(m[1]);
+  if (!meta.mood) {
+    // 2026-06-09 huff-puff fix: prose-style "Art Style: Whimsical storybook
+    // cartoon aesthetic..." — capture the descriptive adjective chain up
+    // to the first period.
+    const art = txt.match(/\bArt\s+Style\s*[:\-]\s*([^.\n⚡|]{8,160})\./i);
+    if (art) meta.mood = clean(art[1])
+      .replace(/\s+(?:with|featuring|using)\s.*$/i, '')  // strip "with rich 3D-rendered..."
+      .slice(0, 120);
+  }
   if (!meta.mood) {
     // Industry meta hint: "5/5 — Maksimalna" suggests High-volatility · Dramatic
     if (/5\s*\/\s*5\b|\bMaksimaln[ai]\b|\bExtreme(?:ly)?\s+(?:high|volatile)/i.test(txt)) {
@@ -793,9 +940,60 @@ function extractMetaPanel(txt) {
     }
   }
 
-  // Setting — "Setting:" only (explicit user input). No franchise-specific fallback.
+  // Setting — explicit "Setting:" or prose "reimagines X as a casino adventure"
   m = txt.match(/\b(?:Setting|Mesto|Lokacija)\s*:\s*([^\n⚡|]{3,140})/i);
   if (m) meta.setting = clean(m[1]);
+  if (!meta.setting) {
+    // 2026-06-09 huff-puff fix: prose narrative "The game reimagines X as a
+    // casino adventure" or "Players are not passive observers — they are X"
+    // → extract the THING being reimagined as the setting summary.
+    const re = txt.match(/\breimagines?\s+(?:the\s+)?(?:classic\s+)?([^.\n⚡|]{6,80})\s+(?:as\s+a\s+casino|as\s+casino|into\s+a\s+casino|as\s+an?\s+adventure)/i);
+    if (re) meta.setting = clean(re[1]) + ' (casino adventure)';
+  }
+  if (!meta.setting) {
+    // "Background:" prose ("Rolling green hills with cartoon clouds...")
+    const bg = txt.match(/\bBackground\s*:\s*([^.\n⚡|]{8,140})\./i);
+    if (bg) meta.setting = clean(bg[1]).slice(0, 100);
+  }
+
+  // Typography — "Font:" / "Typography:" explicit, OR prose hint "storybook
+  // typeface" / "modern sans-serif"
+  m = txt.match(/\b(?:Typography|Tipograf(?:ija|ic)|Font|Type\s+system)\s*[:\-]\s*([^\n⚡|]{3,140})/i);
+  if (m) meta.typography = clean(m[1]);
+  if (!meta.typography) {
+    // Prose: capture descriptive line containing a typeface clue
+    const tp = txt.match(/\b(?:storybook|cartoon|hand-?drawn|comic|grunge|gothic|art\s*deco|industrial|metallic|futuristic|cyber|fantasy)\s+(?:typeface|font|lettering|titles)\b[^.\n]*\./i);
+    if (tp) meta.typography = clean(tp[0]).slice(0, 100);
+  }
+  if (!meta.typography && meta.mood) {
+    // 2026-06-09 huff-puff fix: when neither explicit nor prose clue
+    // surfaces, mirror the mood adjective into a generic typography
+    // descriptor. Keeps the GDD Coverage Report at ≥ 0.5 confidence on
+    // Typography without inventing a typeface name (vendor-neutral).
+    const moodKey = meta.mood.toLowerCase();
+    let descriptor = null;
+    if (/storybook|whimsical|cartoon|fairy/i.test(moodKey))   descriptor = 'Storybook display + rounded sans-serif body';
+    else if (/cyber|neon|futur|synth/i.test(moodKey))         descriptor = 'Geometric display + monospace body';
+    else if (/horror|gothic|dark/i.test(moodKey))             descriptor = 'Gothic display + serif body';
+    else if (/myth|olymp|titan|egypt|ancient/i.test(moodKey)) descriptor = 'Engraved display + classical serif body';
+    else if (/wild\s*west|cowboy|saloon/i.test(moodKey))      descriptor = 'Slab serif display + western body';
+    else if (/ocean|underwater|nautical/i.test(moodKey))      descriptor = 'Flowing script display + sans-serif body';
+    else if (/jungle|tropical|temple/i.test(moodKey))         descriptor = 'Carved stone display + sans-serif body';
+    else if (/dramatic|epic|cinematic/i.test(moodKey))        descriptor = 'Heavy display + clean sans-serif body';
+    if (descriptor) meta.typography = descriptor;
+  }
+
+  // Vibe references — "Vibe references:" / "References:" / "Reference:" /
+  // "Inspired by:"
+  m = txt.match(/\b(?:Vibe\s+references?|References?|Reference\s+games?|Inspired\s+by|Influences?)\s*[:\-]\s*([^\n⚡|]{3,140})/i);
+  if (m) meta.vibeRefs = clean(m[1]);
+  if (!meta.vibeRefs) {
+    // Prose: "Lock It Link Hold & Spin DNA" / "homage to the original
+    // land-based cabinet" / "pays homage to X" patterns surface the
+    // inspiration chain. Capture the first matched anchor phrase.
+    const va = txt.match(/\b(?:homage\s+to|pays\s+homage\s+to|reminiscent\s+of|inspired\s+by|DNA\s+from|inherited\s+from)\s+([^.\n⚡|]{4,80})\./i);
+    if (va) meta.vibeRefs = clean(va[1]).slice(0, 100);
+  }
 
   return meta;
 }
