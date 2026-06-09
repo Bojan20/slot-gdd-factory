@@ -182,6 +182,8 @@ export function emitBalanceHudCSS(cfg = defaultConfig()) {
     border: 1px solid rgba(201, 162, 39, 0.18);
     background: linear-gradient(180deg, rgba(30, 25, 20, 0.65), rgba(15, 12, 10, 0.85));
     min-width: 0;
+    flex: 1 1 0;
+    overflow: hidden;
     transition: background-color 280ms ease-out;
   }
   .balance-hud__label {
@@ -226,10 +228,20 @@ export function emitBalanceHudCSS(cfg = defaultConfig()) {
   ` : ''}
 
   @media (max-width: 620px) {
-    .balance-hud__col { padding: 3px 8px; min-width: 50px; }
+    .balance-hud__col { padding: 3px 6px; min-width: 0; }
+    .balance-hud { gap: 2px; }
     /* Wave UQ — mobile typography floor 11px. */
     .balance-hud__label { font-size: 0.7rem; letter-spacing: 1.4px; }
     .balance-hud__value { font-size: 0.85rem; }
+  }
+  /* 2026-06-09 — extreme-narrow viewport (iPhone SE 320-390px): tighten
+     padding + drop letter-spacing so the 3-column HUD never escapes the
+     middle hub cell and overlaps the settings/sound icon on the edges. */
+  @media (max-width: 420px) {
+    .balance-hud__col { padding: 2px 3px; }
+    .balance-hud { gap: 1px; }
+    .balance-hud__label { font-size: 0.65rem; letter-spacing: 0.5px; }
+    .balance-hud__value { font-size: 0.78rem; }
   }
 `;
 }

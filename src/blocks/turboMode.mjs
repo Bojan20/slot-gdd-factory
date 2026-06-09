@@ -140,7 +140,10 @@ export function emitTurboModeCSS(cfg = defaultConfig()) {
   .turbo-btn {
     position: fixed;
     right: max(18px, env(safe-area-inset-right, 18px));
-    bottom: max(18px, env(safe-area-inset-bottom, 18px));
+    /* 2026-06-09 — lift above the hub bar on every viewport so the
+       chip never overlaps the hub's right-side sound icon. Matches
+       paytable chip lift on the left mirror. */
+    bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 96px);
     /* Wave D3 — above .hub (z 30) on mobile so hub stacking context
        never hides the turbo chip. */
     z-index: 35;
@@ -172,10 +175,9 @@ export function emitTurboModeCSS(cfg = defaultConfig()) {
   @media (max-width: 620px) {
     .turbo-btn {
       right: max(12px, env(safe-area-inset-right, 12px));
-      /* Wave D3 — lift above .hub bar (~96px tall on mobile) so the chip
-         never sits ON TOP of the hub sound / settings icon. Same vertical
-         band as paytable-btn (left side mirror). */
-      bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + 96px);
+      /* 2026-06-09 — mobile hub wraps to 2 rows; lift to match paytable
+         chip on the left mirror so both sit cleanly above the hub bar. */
+      bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + 130px);
       /* Wave D3 — WCAG 2.5.5 / Apple HIG 44pt minimum tap target.
          --spin-auto-size shrinks to 38px below 620px which falls below
          the AAA floor → bump to 44px on mobile so the chip is actually

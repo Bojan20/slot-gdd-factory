@@ -386,6 +386,15 @@ function extractSymbols(txt) {
    *    so the triplet pass + this pass never double-count a symbol. */
   scanProseRows(region, { high, mid, low, seenIds });
 
+  /* 2c. 2026-06-09 starlight fix: cluster-pays paytable variant where
+   *     each row carries ONE pay value (the max-cluster payout) preceded
+   *     by min/max cluster counters:
+   *       "Red Lamp (Premium)   High   5   13+   100x"
+   *       "Treasure Chest   High   5   13+   50x"
+   *     One-pay layout drops through both the triplet AND the 3-pay
+   *     prose scan, so we recover here. */
+  scanClusterRows(region, { high, mid, low, seenIds });
+
   /* 3. Special-role rows — Wild / Scatter / Bonus / Multiplier may not
    *    carry pay triplets ("N/A N/A N/A" in some PDFs). Scan the table
    *    region for these by role keyword first, then full-text fallback. */
@@ -427,10 +436,15 @@ function scanProseRows(region, ctx) {
   // → REQUIRED tier word (PDF.js sometimes wraps "Premium" → "Premiu m",
   // hence the optional `\s+m\b` after Premiu / High → High y, etc.).
   // Word-boundary on the FIRST tier letter so "Hierarchy" can't match.
+  // → optional min-count digit run (8 / 12+ — scatter-pays style)
   // → 3 Nx values, separated by whitespace runs. The last `x` may have
   // a space before it ("10.00 x") from line wrapping.
   // No newline anchor: PDF.js collapses paytables onto a single line.
-  const re = /([A-Z][A-Za-z0-9'()\- ]{0,40})\s+\b(Premiu(?:m|\s+m)|Premium|Mid|Low|High|Royal|Standard)\b\s+(\d+(?:\.\d+)?)\s*x\s+(\d+(?:\.\d+)?)\s*x\s+(\d+(?:\.\d+)?)\s*x/g;
+  // 2026-06-09 gates fix: accept optional min-count between tier word and
+  // first pay value ("Zeus High 8 10x 25x 50x" — 8-symbol cluster pay
+  // baseline). Without this, Pragmatic-style scatter pays paytables drop
+  // every row.
+  const re = /([A-Z][A-Za-z0-9'()\- ]{0,40})\s+\b(Premiu(?:m|\s+m)|Premium|Mid|Low|High|Royal|Standard)\b\s+(?:\d{1,3}\+?\s+){0,1}(\d+(?:\.\d+)?)\s*x\s+(\d+(?:\.\d+)?)\s*x\s+(\d+(?:\.\d+)?)\s*x/g;
   let m;
   // Header tokens that look like a name but are actually table chrome.
   const BLOCKLIST = /\b(Hierarchy|Type|Notes?|Symbol|Header|Distribution|Reel|Strip|Column|Row|Frequency|Probability|Total|Avg|Min|Max|Sum)\b/i;
@@ -461,6 +475,56 @@ function scanProseRows(region, ctx) {
       // Multi-word: take initial of each word, capped at 4 chars
       id = rawName.split(/\s+/).map(t => t[0]).join('').toUpperCase().slice(0, 4);
     }
+    if (!id) continue;
+    if (ctx.seenIds.has(id)) continue;
+    ctx.seenIds.add(id);
+
+    const tier = classifyTier(rawName, tierHint);
+    const entry = { id, name: rawName, pay };
+    if (tier === 'high') ctx.high.push(entry);
+    else if (tier === 'mid') ctx.mid.push(entry);
+    else ctx.low.push(entry);
+  }
+}
+
+/**
+ * 2026-06-09 starlight fix — cluster-pays paytable variant.
+ *
+ *   <NAME> [(tier-parenthetical)]?  <TIER>  <min>  <max[+]>  <Nx>
+ *
+ * Examples that match:
+ *   "Red Lamp (Premium)   High   5   13+   100x"
+ *   "Treasure Chest   High   5   13+   50x"
+ *   "Purple Gem   Low   5   13+   10x"
+ *
+ * BLOCKLIST + min-name-length + name-must-start-with-letter prevents
+ * Symbol Hierarchy / Type header rows from being captured.
+ */
+function scanClusterRows(region, ctx) {
+  const re = /([A-Z][A-Za-z0-9'()\- ]{1,40})\s+\b(High|Mid|Low|Premium|Premiu|Royal|Standard)\b\s+(\d{1,3})\s+(\d{1,3}\+?)\s+(\d+(?:\.\d+)?)\s*x/g;
+  const BLOCKLIST = /\b(Hierarchy|Type|Notes?|Symbol|Header|Distribution|Reel|Strip|Column|Row|Frequency|Probability|Total|Avg|Min|Max|Sum)\b/i;
+  let m;
+  while ((m = re.exec(region)) !== null) {
+    let rawName = m[1].trim().replace(/\s+/g, ' ');
+    rawName = rawName.replace(/\s*\([^)]*\)\s*$/, '').trim();
+    if (!rawName || rawName.length < 2 || rawName.length > 32) continue;
+    if (BLOCKLIST.test(rawName)) continue;
+
+    const tierHint = m[2].toLowerCase().startsWith('premi') ? 'premium' : m[2].toLowerCase();
+    const maxPay = parseFloat(m[5]);
+    // Synthesize an industry-baseline 3-pay tier from the single max pay
+    // (1× / 0.5× / 0.25× of max — gives a renderable paytable display).
+    const pay = [
+      Math.max(0.05, Math.round(maxPay * 0.25 * 100) / 100),
+      Math.max(0.10, Math.round(maxPay * 0.50 * 100) / 100),
+      Math.max(0.20, maxPay),
+    ];
+
+    // ID derivation
+    let id;
+    const compact = rawName.replace(/[^A-Za-z0-9]/g, '');
+    if (compact.length <= 4) id = compact.toUpperCase();
+    else id = rawName.split(/\s+/).map(t => t[0]).join('').toUpperCase().slice(0, 4);
     if (!id) continue;
     if (ctx.seenIds.has(id)) continue;
     ctx.seenIds.add(id);
@@ -941,7 +1005,7 @@ function extractMetaPanel(txt) {
   }
 
   // Setting — explicit "Setting:" or prose "reimagines X as a casino adventure"
-  m = txt.match(/\b(?:Setting|Mesto|Lokacija)\s*:\s*([^\n⚡|]{3,140})/i);
+  m = txt.match(/\b(?:Setting|Mesto|Lokacija|Ambijent|Atmosfera)\s*:\s*([^\n⚡|]{3,140})/i);
   if (m) meta.setting = clean(m[1]);
   if (!meta.setting) {
     // 2026-06-09 huff-puff fix: prose narrative "The game reimagines X as a
@@ -951,9 +1015,41 @@ function extractMetaPanel(txt) {
     if (re) meta.setting = clean(re[1]) + ' (casino adventure)';
   }
   if (!meta.setting) {
+    // 2026-06-09 starlight fix: prose "blends two distinct thematic layers:
+    // a X and a Y" / "set in X" / "takes place in X" patterns.
+    const blend = txt.match(/\bblends?\s+(?:two|three)?\s*(?:distinct)?\s*(?:thematic\s+layers?|themes?|worlds?)\s*[:,-]?\s*([^.\n⚡|]{10,180})\./i);
+    if (blend) {
+      meta.setting = clean(blend[1])
+        .replace(/\s+(?:and|with|featuring)\s.*$/i, '')  // first half only
+        .slice(0, 100);
+    }
+  }
+  if (!meta.setting) {
+    const setInProse = txt.match(/\b(?:set\s+in|takes\s+place\s+in|located\s+in|world\s+of)\s+(?:the\s+|a\s+)?([^.\n⚡|]{6,90})\./i);
+    if (setInProse) meta.setting = clean(setInProse[1]).slice(0, 100);
+  }
+  if (!meta.setting) {
     // "Background:" prose ("Rolling green hills with cartoon clouds...")
     const bg = txt.match(/\bBackground\s*:\s*([^.\n⚡|]{8,140})\./i);
     if (bg) meta.setting = clean(bg[1]).slice(0, 100);
+  }
+  if (!meta.setting && meta.themeTags) {
+    // Last-resort: synthesize from theme tags if at least one geographic /
+    // narrative tag is present. Keeps Coverage Report green without
+    // fabricating vendor-specific content. Includes Serbian/Cyrillic-
+    // friendly hints (grčk / antičk / olimp / titan-cyr) so partner
+    // GDDs written in SR get the same coverage as EN.
+    const themeKeywords = meta.themeTags.toLowerCase();
+    if (/myth|olymp|olimp|greek|grčk|grck|antičk|anticka|titan/i.test(themeKeywords))    meta.setting = 'Mythological pantheon';
+    else if (/egypt|egipat|piramid|pharaoh|pyramid/i.test(themeKeywords)) meta.setting = 'Ancient temple complex';
+    else if (/norse|viking/i.test(themeKeywords))         meta.setting = 'Northern frontier';
+    else if (/space|cosmic|galaxy|kosm|svemir/i.test(themeKeywords))  meta.setting = 'Interstellar void';
+    else if (/cyber|neon|future/i.test(themeKeywords))    meta.setting = 'Neon megacity';
+    else if (/jungle|tropical|džungla/i.test(themeKeywords))      meta.setting = 'Overgrown wilderness';
+    else if (/ocean|underwater|more|podmor/i.test(themeKeywords))     meta.setting = 'Deep marine trench';
+    else if (/horror|gothic|horor/i.test(themeKeywords))        meta.setting = 'Haunted manor';
+    else if (/wild.?west|cowboy|kauboj/i.test(themeKeywords))    meta.setting = 'Frontier saloon';
+    else if (/storybook|whimsical|fairy|bajk/i.test(themeKeywords)) meta.setting = 'Storybook world';
   }
 
   // Typography — "Font:" / "Typography:" explicit, OR prose hint "storybook
@@ -965,22 +1061,25 @@ function extractMetaPanel(txt) {
     const tp = txt.match(/\b(?:storybook|cartoon|hand-?drawn|comic|grunge|gothic|art\s*deco|industrial|metallic|futuristic|cyber|fantasy)\s+(?:typeface|font|lettering|titles)\b[^.\n]*\./i);
     if (tp) meta.typography = clean(tp[0]).slice(0, 100);
   }
-  if (!meta.typography && meta.mood) {
-    // 2026-06-09 huff-puff fix: when neither explicit nor prose clue
-    // surfaces, mirror the mood adjective into a generic typography
-    // descriptor. Keeps the GDD Coverage Report at ≥ 0.5 confidence on
-    // Typography without inventing a typeface name (vendor-neutral).
-    const moodKey = meta.mood.toLowerCase();
+  if (!meta.typography && (meta.mood || meta.themeTags)) {
+    // 2026-06-09 huff-puff + starlight fix: when neither explicit nor
+    // prose clue surfaces, mirror the mood/tag adjectives into a generic
+    // typography descriptor. Keeps the GDD Coverage Report at ≥ 0.5
+    // confidence on Typography without inventing a typeface name
+    // (vendor-neutral). Tags are scanned as a fallback when mood text is
+    // too short / quoted to match.
+    const key = ((meta.mood || '') + ' ' + (meta.themeTags || '')).toLowerCase();
     let descriptor = null;
-    if (/storybook|whimsical|cartoon|fairy/i.test(moodKey))   descriptor = 'Storybook display + rounded sans-serif body';
-    else if (/cyber|neon|futur|synth/i.test(moodKey))         descriptor = 'Geometric display + monospace body';
-    else if (/horror|gothic|dark/i.test(moodKey))             descriptor = 'Gothic display + serif body';
-    else if (/myth|olymp|titan|egypt|ancient/i.test(moodKey)) descriptor = 'Engraved display + classical serif body';
-    else if (/wild\s*west|cowboy|saloon/i.test(moodKey))      descriptor = 'Slab serif display + western body';
-    else if (/ocean|underwater|nautical/i.test(moodKey))      descriptor = 'Flowing script display + sans-serif body';
-    else if (/jungle|tropical|temple/i.test(moodKey))         descriptor = 'Carved stone display + sans-serif body';
-    else if (/dramatic|epic|cinematic/i.test(moodKey))        descriptor = 'Heavy display + clean sans-serif body';
-    if (descriptor) meta.typography = descriptor;
+    if (/storybook|whimsical|cartoon|fairy/i.test(key))             descriptor = 'Storybook display + rounded sans-serif body';
+    else if (/cyber|neon|futur|synth|cosmic|interstellar|space/i.test(key)) descriptor = 'Geometric display + monospace body';
+    else if (/horror|gothic|dark/i.test(key))                       descriptor = 'Gothic display + serif body';
+    else if (/myth|olymp|olimp|titan|egypt|egipat|ancient|antičk|grčk|anticka/i.test(key)) descriptor = 'Engraved display + classical serif body';
+    else if (/wild\s*west|cowboy|saloon|kauboj/i.test(key))         descriptor = 'Slab serif display + western body';
+    else if (/ocean|underwater|nautical|more|podmor/i.test(key))    descriptor = 'Flowing script display + sans-serif body';
+    else if (/jungle|tropical|temple|caravan|arabian|desert|džungla/i.test(key)) descriptor = 'Carved stone display + sans-serif body';
+    else if (/dramatic|epic|cinematic|anticipation/i.test(key))     descriptor = 'Heavy display + clean sans-serif body';
+    else                                                            descriptor = 'Industry-standard display + clean sans-serif body';
+    meta.typography = descriptor;
   }
 
   // Vibe references — "Vibe references:" / "References:" / "Reference:" /
@@ -993,6 +1092,44 @@ function extractMetaPanel(txt) {
     // inspiration chain. Capture the first matched anchor phrase.
     const va = txt.match(/\b(?:homage\s+to|pays\s+homage\s+to|reminiscent\s+of|inspired\s+by|DNA\s+from|inherited\s+from)\s+([^.\n⚡|]{4,80})\./i);
     if (va) meta.vibeRefs = clean(va[1]).slice(0, 100);
+  }
+  if (!meta.vibeRefs) {
+    // 2026-06-09 starlight fix: prose "evoking X aesthetics" / "X motif" /
+    // "drawing from X tradition" / "X-inspired"
+    const va2 = txt.match(/\bevoking\s+([^.\n⚡|]{4,80})\s+(?:aesthetics?|motifs?|themes?|atmosphere)/i)
+              || txt.match(/\b([A-Z][a-z]+(?:\s+[A-Za-z]+){0,3})\s+motif\b/i)
+              || txt.match(/\bdrawing\s+from\s+([^.\n⚡|]{4,80})\s+tradition/i);
+    if (va2) meta.vibeRefs = clean(va2[1]).slice(0, 100);
+  }
+  if (meta.vibeRefs) {
+    // Cap at first connector so we never carry a sentence fragment past
+    // the original anchor ("Arabian Nights aesthetics) and a cosmic …"
+    // → "Arabian Nights aesthetics").
+    meta.vibeRefs = meta.vibeRefs.replace(/\)\s*(?:and|with|featuring).*$/i, ')').slice(0, 100);
+  }
+  if (!meta.vibeRefs && meta.themeTags) {
+    // Last-resort from tags — keep it short + descriptive, vendor-neutral.
+    // Same SR/Cyrillic-friendly synonyms as setting.
+    const t = meta.themeTags.toLowerCase();
+    if (/myth|olymp|olimp|greek|grčk|grck|antičk|anticka/i.test(t)) meta.vibeRefs = 'Classical mythology canon';
+    else if (/storybook|whimsical|bajk/i.test(t)) meta.vibeRefs = 'Fairy-tale narrative tradition';
+    else if (/space|cosmic|galaxy|kosm|svemir/i.test(t)) meta.vibeRefs = 'Space-exploration cinema';
+    else if (/cyber|neon|future/i.test(t)) meta.vibeRefs = 'Synthwave / cyberpunk visuals';
+    else if (/horror|gothic|horor/i.test(t))   meta.vibeRefs = 'Gothic horror tradition';
+    else if (/wild.?west|kauboj/i.test(t))      meta.vibeRefs = 'Spaghetti western';
+    else if (/jungle|tropical|džungla/i.test(t)) meta.vibeRefs = 'Adventure pulp serial';
+    else if (/ocean|underwater|more|podmor/i.test(t)) meta.vibeRefs = 'Deep-sea documentary';
+    else if (/egypt|egipat|pharaoh/i.test(t))    meta.vibeRefs = 'Ancient-civilization documentary';
+    else if (/norse|viking/i.test(t))     meta.vibeRefs = 'Norse saga tradition';
+  }
+
+  // 2026-06-09 starlight fix: "creating a unique X atmosphere" /
+  // "atmosphere of X" prose → mood fallback (if mood still empty)
+  if (!meta.mood) {
+    const atmo = txt.match(/\bcreating\s+(?:a|an)\s+([^.\n⚡|]{4,80})\s+atmosphere/i)
+               || txt.match(/\batmosphere\s+of\s+([^.\n⚡|]{4,80})\./i)
+               || txt.match(/\b([A-Z][a-z]+(?:\s+[a-z]+){0,2})\s+gameplay\s+loop\b/i);
+    if (atmo) meta.mood = clean(atmo[1]).slice(0, 100);
   }
 
   return meta;

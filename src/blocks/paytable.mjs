@@ -194,7 +194,12 @@ export function emitPaytableCSS(cfg = defaultConfig()) {
   .paytable-btn {
     position: fixed;
     left: max(18px, env(safe-area-inset-left, 18px));
-    bottom: max(18px, env(safe-area-inset-bottom, 18px));
+    /* 2026-06-09 — lift chip above the hub bar so it never overlaps
+       #settingsMenuBtn on desktop+tablet. Hub is ~88px tall on
+       desktop (44px iconBtn + padding) so 96px clearance keeps a
+       safe gap. Mobile rule below adds extra height for the wrapping
+       2-row hub layout. */
+    bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 96px);
     /* Wave D3 — above .hub (z 30) so the chip is never hidden by hub
        stacking context on mobile. Modals still win at z 40+. */
     z-index: 35;
@@ -225,9 +230,10 @@ export function emitPaytableCSS(cfg = defaultConfig()) {
   @media (max-width: 620px) {
     .paytable-btn {
       left: max(12px, env(safe-area-inset-left, 12px));
-      /* Wave D3 — lift above the .hub bar (~96px tall on mobile: 2 rows × 44px + 8px row-gap)
-         so settings/sound icons in the hub stay un-blocked by the fixed chip. */
-      bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + 96px);
+      /* 2026-06-09 — mobile hub wraps to 2 rows (~110px tall with
+         padding) so lift to 130px so the chip never overlaps the
+         menu/balance row. */
+      bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + 130px);
     }
   }
   .paytable-btn:hover  { transform: scale(1.06); opacity: 0.95; }
