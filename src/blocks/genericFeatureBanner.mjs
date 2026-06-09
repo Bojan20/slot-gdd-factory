@@ -146,7 +146,7 @@ export function emitGenericFeatureBannerCSS(cfg = defaultConfig()) {
 }
 .gfb-banner__kicker {
   display: block;
-  font-size: 10px;
+  font-size: 11px;          /* Apple HIG floor — was 10px, lifted by huff-puff deep QA */
   letter-spacing: 0.18em;
   color: rgba(201,162,39,.85);
   margin-bottom: 6px;

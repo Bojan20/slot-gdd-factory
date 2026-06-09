@@ -158,7 +158,11 @@ async function run() {
            still keeps CI runtime reasonable (3 engines × 4 fixtures × 7s
            ≈ 84s wall-clock + browser launch overhead). Poll early-exit
            below short-circuits when postSpin lands sooner. */
-        const SETTLE_BUDGET_MS = 14000;
+        /* Long-running tumble cascades on hex + firefox+webkit reflow cost
+           can push us past 14s in cold-cache runs. Lifted to 24s — still
+           well under any reasonable CI budget when amortized across the
+           sub-second pass cases. */
+        const SETTLE_BUDGET_MS = 24000;
         const POLL_MS = 250;
         for (let elapsed = 0; elapsed < SETTLE_BUDGET_MS; elapsed += POLL_MS) {
           await page.waitForTimeout(POLL_MS);

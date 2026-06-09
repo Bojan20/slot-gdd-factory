@@ -326,7 +326,7 @@ export function emitAutoplayCSS(cfg = defaultConfig()) {
   }
   .autoplay-stop-hint {
     display: block;
-    font-size: 10.5px;
+    font-size: 11px;          /* Apple HIG floor — was 10.5px, lifted by huff-puff deep QA */
     font-weight: 500;
     opacity: 0.55;
     margin-top: 2px;

@@ -289,7 +289,7 @@ export function emitHistoryLogCSS(cfg = defaultConfig()) {
     background: rgb(${c.panelBgColor});
     text-align: right;
     padding: 6px 8px;
-    font-size: 10px;
+    font-size: 11px;          /* Apple HIG floor — was 10px, lifted by huff-puff deep QA */
     letter-spacing: 1.5px;
     text-transform: uppercase;
     opacity: 0.65;
@@ -334,7 +334,7 @@ export function emitHistoryLogCSS(cfg = defaultConfig()) {
 
   @media (max-width: 480px) {
     .history-panel { padding: 14px 12px 18px; max-height: 80vh; }
-    .history-table thead th { font-size: 9px; padding: 4px 5px; }
+    .history-table thead th { font-size: 11px; padding: 4px 5px; }
     .history-table tbody td { padding: 5px 5px; font-size: 11px; }
   }
 `;

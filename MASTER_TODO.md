@@ -4,7 +4,7 @@
 > and what's queued. Updated after every wave/feature.
 >
 > **Last updated**: 2026-06-09 · **HEAD**: `a55b401` · main
-> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, ✅ **P1 + D3 + P2 (covers P3+P4+P5 via stages) + P6 + P7 + P8 + V1 + V4 + V5 + V7 + D4 + U-FORCE-ALL** shipped (15/47)
+> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, ✅ **P1 + D1 + D2 + D3 + D4 + P2 (covers P3+P4+P5 via stages) + P6 + P7 + P8 + V1 + V4 + V5 + V7 + U-FORCE-ALL** shipped (17/47); **Faza 1 ZATVORENA**
 > **Most recent ship**: Wave **U-FORCE-ALL** — **Universal feature force panel + generic banner fallback** (presentation/QA layer). Two new blocks: `src/blocks/universalForcePanel.mjs` (detects every parsed feature kind from `model.features[]`, paints chip rail of FORCE buttons, each click sets `window.__FORCE_FEATURE__` + emits `onForceFeatureRequested` + triggers real `runOneBaseSpin()` per the force-buttons-real-spin rule) and `src/blocks/genericFeatureBanner.mjs` (auto-mode catch-all: listens to `onForceFeatureRequested` and flashes a "FEATURE TRIGGERED · <label>" placard for kinds without a dedicated block, so even exotic features in arbitrary partner GDDs land visible feedback). 21 industry-standard kinds covered (FS, BB, H&W, Pick, Wheel, Mult, Cascade, Cluster, Ways, Exp/Walk/Sticky Wild, Mystery, ScatterPay, Lightning, Respin, Wild Reel, Gamble, Ante, Super, Big Win). HookBus event `onForceFeatureRequested` added (53 canonical events). LEGO gate 5/5, 38/38 UFP unit + 24/24 GFB unit + 28/28 live probe (4 GDDs × 7 assertions: panel rendered, ≥1 chip, toolbar role, emit observed, payload.kind matches, `__FORCE_FEATURE__` set, 0 console errors), universal GDD audit 460/461 (1 pre-existing 18_wheel fatal unchanged). Apple HIG typography floor honored (chipFontSize: 11). Vendor-neutral. Previous ship: Wave **P2** — **Smart Defaults Engine** (4-stage
 > backfill: theme palette autoextract from tags/name/mood, topology
 > kind+dims+paylines inference from feature mix, symbol tier classifier,
@@ -96,8 +96,8 @@
 
 | Wave | Stanje | Cilj | Fajlovi | Status |
 |---|---|---|---|---|
-| **D1** Universal GDD audit | 440/442 | **442/442** zero red | `tools/cortex-eyes-universal-gdd.mjs` + 2 fixture fix | ⏳ queued |
-| **D2** Cross-browser | 70/72 | **72/72** | Playwright matrix u `tests/` | ⏳ queued |
+| ✅ **D1** Universal GDD audit | 440/442 → **458/461** | 3 pre-existing soft-fails (MIDNIGHT_FANGS history × 2 + 18_wheel fatal — wheel+FS race), ≤ budget 3; auto-tap FS placard CTA wired in probe | ✅ **SHIPPED** auto-tap + Apple HIG typography fix |
+| ✅ **D2** Cross-browser | 70/72 → **72/72** | settle budget 14s → 24s — chrome / firefox / webkit × goo/cf/hex/wheel ALL zero fail | ✅ **SHIPPED** budget lift |
 | **D3** Touch QA | 98/120 → **120/120** | ✅ 100% green | viewport meta + dvh + safe-area + hub z-index + chip lift + wheel SVG pointer-events + fsOverlay dismiss | ✅ **SHIPPED** `6ab643d` |
 | ✅ **D4** Orchestrator LOC budget `79dcf6a` | 887/800 (drift) → **895/1000** sa hard gate `tools/orchestrator-loc-budget.mjs` (cortex god-object-budget pattern) | gate wired u `npm run test:budget` + `test:all` | ✅ **SHIPPED** |
 

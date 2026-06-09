@@ -294,7 +294,7 @@ export function emitSettingsPanelCSS(cfg = defaultConfig()) {
   }
   .settings-row__hint {
     display: block;
-    font-size: 10px;
+    font-size: 11px;          /* Apple HIG floor — was 10px, lifted by huff-puff deep QA */
     letter-spacing: 1px;
     opacity: 0.55;
     text-transform: uppercase;

@@ -124,12 +124,27 @@ async function auditFixture(page, fixture, stagedPath) {
     }
   });
   if (spinBtn) await spinBtn.click();
-  /* Poll for postSpin up to 22s (long tumble cascades on variable_reel +
-     hex can chain 10+ steps when RNG aligns). */
+  /* Poll for postSpin up to 22s. During the wait, if an FS intro overlay
+     appears (TAP TO BEGIN placard), auto-tap so the spin lifecycle can
+     complete and downstream hub elements (history / paytable / settings)
+     are not blocked by the modal intercepting pointer events. */
   for (let i = 0; i < 88; i++) {
     await page.waitForTimeout(250);
-    const done = await page.evaluate(() => (window.__Q2_EMITS__ || []).includes('postSpin'));
-    if (done) break;
+    const status = await page.evaluate(() => {
+      const fo = document.querySelector('#fsOverlay');
+      const overlayShown = !!(fo && fo.classList.contains('fs-overlay--show'));
+      const placard = document.querySelector('.fs-placard');
+      const done = (window.__Q2_EMITS__ || []).includes('postSpin');
+      return { overlayShown, hasPlacard: !!placard, done };
+    });
+    if (status.overlayShown && status.hasPlacard) {
+      // TAP TO BEGIN is the standard FS-intro continue gesture. Press the
+      // CTA button (sole event listener) and then wait 200ms so FSM_enterActive
+      // has time to flip phase out of FS_INTRO.
+      await page.locator('#fsPlacardCta').click({ timeout: 1_500 }).catch(() => {});
+      await page.waitForTimeout(200);
+    }
+    if (status.done) break;
   }
   const emits = await page.evaluate(() => (window.__Q2_EMITS__ || []));
   add('lifecycle: preSpin emitted', emits.includes('preSpin'));
