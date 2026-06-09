@@ -391,11 +391,49 @@ export function buildSlotHTML(model) {
     ...model.symbols.mid, ...model.symbols.low,
   ];
   /* Fallback if GDD declared no symbols */
-  const pool = allSyms.length > 0 ? allSyms : [
+  const allSymsResolved = allSyms.length > 0 ? allSyms : [
     { id: "W", name: "Wild" }, { id: "S", name: "Scatter" },
     { id: "A", name: "Ace" }, { id: "K", name: "King" }, { id: "Q", name: "Queen" },
     { id: "J", name: "Jack" }, { id: "T", name: "Ten" }, { id: "9", name: "Nine" },
   ];
+  /* 2026-06-09 — weighted random pool (industry-standard reel-strip
+     emulation). Before this, the pool was uniform across all symbols,
+     so a 13-symbol set produced scatter at ~7% per cell → 3+ scatters
+     every other spin and FS triggers nonstop. Real slots use weighted
+     strips: low-pay symbols dominate, wild/scatter/bonus rare.
+     Multiplicity per tier (industry baseline ≈ 96% RTP):
+       Wild     ×1
+       Scatter  ×1
+       Bonus    ×1
+       High pay ×4 each
+       Mid pay  ×6 each
+       Low pay  ×9 each
+     Effect: scatter rate per cell falls to ~1-2% on a typical 10-symbol
+     roster — landed FS hit-frequency lands in the 0.5-3% band that the
+     industry treats as canonical. Deterministic — same model → same
+     pool layout (no rng leak). */
+  const _isWild    = (s) => /wild/i.test(s.name || '');
+  const _isScatter = (s) => /scatter|trigger/i.test(s.name || '');
+  const _isBonus   = (s) => /bonus|coin\b|jack(pot)?/i.test(s.name || '');
+  const _idsHigh   = new Set((model.symbols.high  || []).map(s => String(s.id).toUpperCase()));
+  const _idsMid    = new Set((model.symbols.mid   || []).map(s => String(s.id).toUpperCase()));
+  const _idsLow    = new Set((model.symbols.low   || []).map(s => String(s.id).toUpperCase()));
+  function _weight(sym) {
+    if (_isWild(sym))    return 1;
+    if (_isScatter(sym)) return 1;
+    if (_isBonus(sym))   return 1;
+    const id = String(sym.id).toUpperCase();
+    if (_idsHigh.has(id)) return 4;
+    if (_idsMid.has(id))  return 6;
+    if (_idsLow.has(id))  return 9;
+    // Fallback for unknown / specials list entries → middle weight
+    return 5;
+  }
+  const pool = [];
+  for (const sym of allSymsResolved) {
+    const w = _weight(sym);
+    for (let i = 0; i < w; i++) pool.push(sym);
+  }
   /* ── Symbol registry for the win-cycle module ────────────────────────
      Classifies every symbol so detectWinCombos knows:
        • regularPay — HP/MP/LP, candidates for win-lines (each unique
