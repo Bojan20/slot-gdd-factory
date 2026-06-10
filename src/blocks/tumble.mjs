@@ -57,7 +57,9 @@ export function resolveConfig(model = {}) {
                     (model.topology && model.topology.kind) ||
                     null;
   const TUMBLE_INCOMPATIBLE_SHAPES = new Set([
-    'lock_respin', 'wheel', 'plinko', 'crash', 'slingo', 'radial', 'hex',
+    'lock_respin', 'wheel', 'plinko', 'crash', 'slingo', 'radial',
+    'hex', 'hexagonal',     /* parser emits 'hexagonal'; 'hex' kept for legacy */
+    'diamond', 'pyramid', 'cross', 'l_shape',  /* irregular shapes own their own settle path */
   ]);
   if (shapeKind && TUMBLE_INCOMPATIBLE_SHAPES.has(shapeKind)) {
     cfg.enabled = false;
