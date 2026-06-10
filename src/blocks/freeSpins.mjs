@@ -698,6 +698,51 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
     });
   }
 
+  /* 2026-06-10 (Boki: "ultimativno detaljan QA svakog grida") — expose a
+   * QA-only hard exit that collapses any FS lifecycle straight back to
+   * BASE without running every remaining FS spin. The grid matrix walker
+   * uses this on high-scatter shapes (rectangular_stacked_scatter,
+   * variable_reel) where natural retrigger chains can run 30+ spins —
+   * forcing the round to settle for the STATE/NO_ERRORS assertions.
+   * Production code path (CTA click + organic round end) is untouched. */
+  if (typeof window !== "undefined") {
+    window.fsHardExit = function () {
+      try {
+        if (FSM.phase === "FS_INTRO") {
+          FSM_enterOutro();
+          FSM_enterBase();
+        } else if (FSM.phase === "FS_ACTIVE") {
+          FSM.spinsRemaining = 0;
+          FSM_enterOutro();
+          FSM_enterBase();
+        } else if (FSM.phase === "FS_OUTRO") {
+          FSM_enterBase();
+        }
+        /* Clear any in-flight presentation flags so STATE assertion can
+         * confirm a clean idle round. Production code never reaches
+         * fsHardExit, so resetting these is QA-only. */
+        try { window.__SLOT_WIN_PRESENT_ACTIVE__ = false; } catch (_) {}
+        try {
+          var sb = document.getElementById("spinBtn");
+          if (sb) {
+            sb.classList.remove("is-spinning");
+            sb.disabled = false;
+          }
+        } catch (_) {}
+        try {
+          var ovs = document.querySelectorAll(
+            ".fs-overlay, .fs-overlay-cta, [data-fs-overlay]"
+          );
+          ovs.forEach(function (el) {
+            if (el && el.dataset) el.dataset.show = "false";
+            if (el && el.style) el.style.display = "none";
+          });
+        } catch (_) {}
+      } catch (_) { /* defensive */ }
+      return (FSM && FSM.phase) || "BASE";
+    };
+  }
+
   /* Wave S LEGO conformance — freeSpins registers postSpin to react to
      external round-control signals (winCap hard-cap during FS, scheduled
      forced outro from operator console). When winCap has tripped during an

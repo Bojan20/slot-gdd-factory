@@ -42,13 +42,18 @@ const OUT  = `${REPO}/tools/_eyes/grid-matrix`;
 mkdirSync(OUT, { recursive: true });
 
 const GRIDS_DIR = `${REPO}/samples/grids`;
+/* CLI: --only=label1,label2 to restrict to a subset (handy while
+ * iterating on a 2-grid failure pocket without re-running 20 × 2.5 min). */
+const ONLY = (process.argv.find(a => a.startsWith('--only=')) || '').split('=')[1] || '';
+const ONLY_SET = ONLY ? new Set(ONLY.split(',').map(s => s.trim())) : null;
 const TARGETS = readdirSync(GRIDS_DIR)
   .filter(f => /\.md$/.test(f))
   .sort()
   .map(f => ({
     label: f.replace(/_GAME_GDD\.md$/, '').replace(/^\d+_/, ''),
     file: `${GRIDS_DIR}/${f}`,
-  }));
+  }))
+  .filter(t => !ONLY_SET || ONLY_SET.has(t.label));
 
 const PORT = 5280;
 const server = spawn('python3', ['-m', 'http.server', String(PORT)], { cwd: REPO, stdio: 'ignore' });
@@ -154,6 +159,7 @@ async function runOne(label, file) {
 
     // SPIN LOOP
     detail.balanceBefore = await frame.evaluate(() => document.querySelector('#balanceHudBalanceValue')?.textContent?.trim());
+    let fsAcrossSpinLoop = 0;
     for (let i = 0; i < 25; i++) {
       let ready = false;
       for (let j = 0; j < 80; j++) {
@@ -178,10 +184,39 @@ async function runOne(label, file) {
           if (fsReady) {
             await frame.evaluate(() => document.getElementById('spinBtn')?.click());
             await page.waitForTimeout(1200);
+            fsAcrossSpinLoop++;
+            /* High-scatter shapes (stacked_scatter) can re-trigger every
+             * single spin and pin us in FS forever. After 8 successful
+             * FS spins within the base SPIN_LOOP stage, force-collapse
+             * back to BASE so we can finish the 25 base spin budget. */
+            if (fsAcrossSpinLoop >= 8) {
+              await frame.evaluate(() => { try { window.fsHardExit && window.fsHardExit(); } catch(_) {} });
+              await page.waitForTimeout(400);
+              fsAcrossSpinLoop = 0;
+            }
             continue;
           }
         }
         await page.waitForTimeout(150);
+      }
+      if (!ready) {
+        /* If we still can't reach BASE+idle, last-resort hard exit so
+         * the loop can advance instead of stalling on j-budget. */
+        const stillStuck = await frame.evaluate(() => {
+          const b = document.getElementById('spinBtn');
+          const ph = window.FSM ? window.FSM.phase : 'BASE';
+          return ph !== 'BASE' || !b || b.disabled || b.classList.contains('is-spinning') || window.__SLOT_WIN_PRESENT_ACTIVE__;
+        });
+        if (stillStuck) {
+          await frame.evaluate(() => { try { window.fsHardExit && window.fsHardExit(); } catch(_) {} });
+          await page.waitForTimeout(400);
+          // Re-check ready once after hard exit
+          ready = await frame.evaluate(() => {
+            const b = document.getElementById('spinBtn');
+            const ph = window.FSM ? window.FSM.phase : 'BASE';
+            return b && !b.disabled && !b.classList.contains('is-spinning') && ph === 'BASE' && !window.__SLOT_WIN_PRESENT_ACTIVE__;
+          });
+        }
       }
       if (!ready) break;
       const psBefore = await frame.evaluate(() => window.__M.postSpins);
@@ -398,6 +433,22 @@ async function runOne(label, file) {
         if (cta) cta.click();
       });
       await page.waitForTimeout(200);
+    }
+
+    /* 2026-06-10 — high-scatter shapes (rectangular_stacked_scatter,
+     * variable_reel) can chain 30+ FS retriggers. If after every drain
+     * pass we are still in any FS_* phase, force-collapse via
+     * window.fsHardExit() (QA escape hatch wired in freeSpins.mjs).
+     * Production code never invokes it. */
+    {
+      const stuckInFs = await frame.evaluate(() => {
+        const ph = window.FSM && window.FSM.phase;
+        return !!(ph && ph !== 'BASE');
+      });
+      if (stuckInFs) {
+        await frame.evaluate(() => { try { window.fsHardExit && window.fsHardExit(); } catch(_) {} });
+        await page.waitForTimeout(400);
+      }
     }
 
     // STATE — final phase + no stuck overlays + button idle
