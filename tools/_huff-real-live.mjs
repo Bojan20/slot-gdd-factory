@@ -154,7 +154,10 @@ for (let i = 0; i < 15; i++) {
     award: window.__WIN_AWARD__,
   }));
   await frame.evaluate(() => document.getElementById('spinBtn')?.click());
-  await page.waitForTimeout(2800);
+  /* Wait long enough for postSpin → applyWinHighlight → rollup chain to
+   * complete on winning spins (rollup celebration ~2-3s + breath). Below
+   * 4s the snapshot races the HUD update on win spins. */
+  await page.waitForTimeout(4500);
   const after = await frame.evaluate(() => ({
     winStarts: window.__LIVE.events.onWinPresentationStart || 0,
     balText: document.querySelector('#balanceHudBalanceValue')?.textContent?.trim() || null,
