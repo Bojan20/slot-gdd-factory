@@ -1,33 +1,48 @@
 /**
  * src/blocks/holdAndWin.mjs
  *
- * Wave N1 — Hold & Win / Hold & Spin block.
+ * Hold & Win / Hold & Spin block — Lightning Link / WoO Zeus' Storm pattern.
  *
  * Trigger: ≥N bonus/coin symbols on the grid → enter Hold round.
- * Mechanics: bonus symbols lock, you get K (default 3) respins.
- * Each new bonus symbol RESETS the respin counter to K.
- * Round ends: respins exhausted OR all cells locked (Grand jackpot).
- * Industry baseline: hold-and-spin coin-collection respin round (universal
- * pattern — Lightning Link / WoO Zeus' Storm / Huff & Puff Hold & Spin).
+ * Mechanics: bonus symbols lock as orbs (with value 1x..GRAND), you get K
+ * (default 3) respins. Each new bonus symbol RESETS the respin counter to K.
+ * Round ends when respins exhausted OR every cell is locked (GRAND FULL-GRID
+ * 500x bonus celebration).
  *
- * 2026-06-10 (Boki: "mora da se zadržava i bude vidljivo u reelu gde je
- * orb koji se dobio, ne da se pomerala sa rilom") — locked cells now
- * render as full coin-orbs with their value chip ('5x', '12x', 'MINI',
- * 'MINOR', 'MAJOR', 'GRAND') printed dead-center. The orb is anchored
- * via `dataset.lockedSymbol` + `dataset.orbValue` + `dataset.orbTier`
- * and protected by a MutationObserver auto-heal so any third-party
- * block (tumble refill, mystery reveal, walking wild commit) that
- * touches `.textContent` cannot wipe the orb out. WoO Zeus' Storm
- * pattern — orbs are sacred, they live on their cell until the round
- * collects them.
+ * 2026-06-11 (Boki: "hold and win nije dobar, prepisi od WoO igre sto sam
+ * pravio. ultimativni fix sa krpljenjem svih mogucih scenarija") — full
+ * WoO Zeus' Storm rewrite:
+ *
+ *   PHASE MACHINE — INACTIVE → INTRO → RUNNING → SUMMARY
+ *     • INTRO: full-screen placard with title + "N ORBS COLLECTED",
+ *       continue-blink CTA, click-anywhere skip.
+ *     • RUNNING: HUD with RESPINS / LOCKED / TOTAL counters; tension
+ *       states (.tension at 2 respins, .final at 1); per-orb pop-in,
+ *       win-delta chip rising over the cell, fly animation from cell
+ *       to total counter; jackpot tier celebration overlays for
+ *       MINI / MINOR / MAJOR / GRAND; full-grid (= REELS×ROWS locked)
+ *       triggers FULL-GRID 500x mega celebration.
+ *     • SUMMARY: final stats placard — total win, orbs collected,
+ *       jackpot tiers hit, full-grid badge.
+ *
+ *   ORB ANCHOR — locked cells render as full coin-orbs with their value
+ *   chip ('5x', 'MINI', 'GRAND') drawn dead-center. reelEngine
+ *   rotateStripDown / commitStopSymbols + tumble guards already skip
+ *   .is-locked-bonus; a MutationObserver with re-entrance flag heals any
+ *   third-party clobber. WoO Zeus' Storm orb-is-sacred contract.
  *
  * GDD knobs:
  *   • triggerCount: number — min bonus symbols to enter Hold (default 6)
  *   • bonusSymbolId: string — the lockable coin/bonus symbol
  *   • respinsAwarded: number — initial respin count (default 3)
- *   • resetOnNewBonus: boolean — true = each new bonus resets to respinsAwarded
+ *   • resetOnNewBonus: boolean — each new bonus resets to respinsAwarded
  *   • haloColor: 'r,g,b'
- *   • jackpotLabels: array of label strings ("MINI","MINOR","MAJOR","GRAND")
+ *   • jackpotLabels: array ('MINI','MINOR','MAJOR','GRAND')
+ *   • fullGridBonusX: number — multiplier awarded when every cell locks
+ *   • title: short string — intro placard title ("ZEUS' STORM" / etc.)
+ *   • subtitle: short string — intro placard subtitle ("Hold & Win")
+ *   • showIntro: boolean — emit the intro overlay sequence (default true)
+ *   • showSummary: boolean — emit the summary overlay (default true)
  */
 
 export function defaultConfig() {
@@ -39,6 +54,11 @@ export function defaultConfig() {
     resetOnNewBonus: true,
     haloColor: '255,160,40',
     jackpotLabels: ['MINI', 'MINOR', 'MAJOR', 'GRAND'],
+    fullGridBonusX: 500,
+    title: "HOLD & WIN",
+    subtitle: 'COLLECT THE ORBS',
+    showIntro: true,
+    showSummary: true,
   };
 }
 
@@ -54,6 +74,11 @@ export function resolveConfig(model = {}) {
   if (Array.isArray(m.jackpotLabels) && m.jackpotLabels.every(l => typeof l === 'string' && l.length <= 16)) {
     cfg.jackpotLabels = m.jackpotLabels.slice(0, 6);
   }
+  if (Number.isFinite(m.fullGridBonusX)) cfg.fullGridBonusX = clampInt(m.fullGridBonusX, 10, 10000);
+  if (typeof m.title === 'string' && m.title.length > 0 && m.title.length <= 32 && !/[<>{}]/.test(m.title)) cfg.title = m.title;
+  if (typeof m.subtitle === 'string' && m.subtitle.length <= 48 && !/[<>{}]/.test(m.subtitle)) cfg.subtitle = m.subtitle;
+  if (m.showIntro === false) cfg.showIntro = false;
+  if (m.showSummary === false) cfg.showSummary = false;
   if (Array.isArray(model.features) && model.features.some(f => f.kind === 'hold_and_win')) {
     cfg.enabled = true;
   }
@@ -63,12 +88,11 @@ export function resolveConfig(model = {}) {
 export function emitHoldAndWinCSS(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   return `
-/* ─── hold & win ────────────────────────────────────────────────── */
-/* 2026-06-10 (Boki H&W vidljivost) — locked cells render as full coin-
- * orbs (WoO Zeus' Storm pattern). The cell underneath stays in place
- * (reelEngine rotateStripDown skips locked cells), and the orb VALUE is
- * rendered via ::before from data-orb-value. Jackpot tiers
- * (MINI/MINOR/MAJOR/GRAND) get their own ring color + uppercase label. */
+/* ─── hold & win (Zeus' Storm pattern) ──────────────────────────── */
+/* Orb anchor — locked cells render as gold coin-orbs with their value
+ * chip dead-center via ::before. reelEngine rotateStripDown +
+ * commitStopSymbols skip .is-locked-bonus cells; a MutationObserver
+ * heals any third-party clobber. */
 .cell.is-locked-bonus {
   position: relative;
   background:
@@ -82,13 +106,12 @@ export function emitHoldAndWinCSS(cfg = defaultConfig()) {
     0 0 28px rgba(${cfg.haloColor},.7),
     inset 0 -4px 12px rgba(0,0,0,.45),
     inset 0 2px 6px rgba(255,255,255,.35);
-  color: transparent !important;     /* hide the raw symbol char */
+  color: transparent !important;
   text-shadow: none !important;
   z-index: 4;
   animation: hwLocked 1600ms ease-in-out infinite;
   overflow: hidden;
 }
-/* Orb value chip ('5x', 'MINI', etc.) drawn dead-center via ::before. */
 .cell.is-locked-bonus::before {
   content: attr(data-orb-value);
   position: absolute;
@@ -103,7 +126,6 @@ export function emitHoldAndWinCSS(cfg = defaultConfig()) {
   pointer-events: none;
   z-index: 2;
 }
-/* Glossy highlight cap */
 .cell.is-locked-bonus::after {
   content: '';
   position: absolute;
@@ -115,7 +137,6 @@ export function emitHoldAndWinCSS(cfg = defaultConfig()) {
   pointer-events: none;
   z-index: 1;
 }
-/* Jackpot tier rings — match WoO MINI/MINOR/MAJOR/GRAND color grammar. */
 .cell.is-locked-bonus[data-orb-tier="MINI"]  {
   box-shadow: 0 0 0 3px #6cb6ff, 0 0 32px rgba(108,182,255,.85),
               inset 0 -4px 12px rgba(0,0,0,.45), inset 0 2px 6px rgba(255,255,255,.35);
@@ -141,7 +162,6 @@ export function emitHoldAndWinCSS(cfg = defaultConfig()) {
   from { filter: brightness(1)    saturate(1)    drop-shadow(0 0 6px rgba(255,85,102,.6)); }
   to   { filter: brightness(1.35) saturate(1.25) drop-shadow(0 0 16px rgba(255,85,102,1)); }
 }
-/* Orb pop-in animation when a fresh orb lands */
 .cell.is-locked-bonus.hw-just-landed {
   animation: hwLandPop 520ms cubic-bezier(.2,1.4,.4,1) 1, hwLocked 1600ms ease-in-out infinite 520ms;
 }
@@ -150,33 +170,290 @@ export function emitHoldAndWinCSS(cfg = defaultConfig()) {
   60%  { transform: scale(1.18) rotate(4deg); opacity: 1; }
   100% { transform: scale(1) rotate(0); opacity: 1; }
 }
+
+/* ── HUD (RESPINS / LOCKED / TOTAL) ── */
 .hw-hud {
   position: fixed;
   top: 60px; left: 50%;
   transform: translateX(-50%);
   z-index: 70;
-  background: rgba(0,0,0,.78);
+  background: rgba(0,0,0,.82);
   border: 2px solid rgba(${cfg.haloColor},.7);
-  border-radius: 14px;
-  padding: 0.55rem 1.1rem;
+  border-radius: 16px;
+  padding: 0.6rem 1.2rem;
   color: rgba(${cfg.haloColor},1);
-  font-size: 0.9rem;
   font-weight: 900;
   letter-spacing: 0.08em;
   display: none;
-  gap: 1rem;
+  gap: 1.3rem;
   text-shadow: 0 0 6px rgba(${cfg.haloColor},.7);
+  box-shadow: 0 0 18px rgba(${cfg.haloColor},.45);
 }
 .hw-hud[data-show="true"] { display: inline-flex; }
-.hw-hud .hw-box { display: flex; flex-direction: column; align-items: center; }
-.hw-hud .hw-lbl { font-size: 0.7rem; opacity: 0.75; letter-spacing: 0.12em; } /* ≥11px floor */
-.hw-hud .hw-val { font-size: 1.05rem; }
+.hw-hud .hw-box { display: flex; flex-direction: column; align-items: center; min-width: 56px; }
+.hw-hud .hw-lbl { font-size: 0.7rem; opacity: 0.75; letter-spacing: 0.12em; }
+.hw-hud .hw-val { font-size: 1.15rem; transition: color 220ms ease, transform 220ms ease; }
+.hw-hud .hw-box.tension .hw-val { color: #ffd24a; }
+.hw-hud .hw-box.final   .hw-val {
+  color: #ff5566;
+  animation: hwTensionFinal 700ms ease-in-out infinite;
+}
+@keyframes hwTensionFinal {
+  0%, 100% { transform: scale(1);    text-shadow: 0 0 8px rgba(255,85,102,.7); }
+  50%      { transform: scale(1.18); text-shadow: 0 0 18px rgba(255,85,102,1); }
+}
+.hw-hud .hw-box.tick .hw-val {
+  animation: hwTickPulse 280ms ease-out 1;
+}
+@keyframes hwTickPulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* ── INTRO overlay ── */
+.hw-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  background: radial-gradient(ellipse at center,
+    rgba(${cfg.haloColor},0.18) 0%,
+    rgba(0,0,0,0.92) 65%);
+  backdrop-filter: blur(6px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.hw-intro[data-show="true"] { display: flex; animation: hwIntroFadeIn 220ms ease-out; }
+@keyframes hwIntroFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.hw-intro__inner {
+  text-align: center;
+  color: #fff;
+  padding: 0 1rem;
+}
+.hw-intro__title {
+  font: 900 2.6rem/1 system-ui, -apple-system, "SF Pro Display", serif;
+  letter-spacing: 0.18em;
+  color: rgba(${cfg.haloColor},1);
+  text-shadow:
+    0 0 24px rgba(${cfg.haloColor},.9),
+    0 4px 10px rgba(0,0,0,.6);
+  margin-bottom: 0.4rem;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: hwIntroTitleIn 600ms cubic-bezier(.2,1.4,.4,1) 60ms forwards;
+}
+@keyframes hwIntroTitleIn {
+  from { opacity: 0; transform: translateY(24px) scale(.92); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);   }
+}
+.hw-intro__subtitle {
+  font: 700 0.95rem/1 system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.32em;
+  color: rgba(255,255,255,0.75);
+  margin-bottom: 1.5rem;
+  opacity: 0;
+  animation: hwFadeSlow 500ms ease-out 380ms forwards;
+}
+.hw-intro__orbcount {
+  font: 900 1.6rem/1 system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.14em;
+  color: rgba(${cfg.haloColor},1);
+  text-shadow: 0 0 16px rgba(${cfg.haloColor},.8);
+  margin-bottom: 1.4rem;
+  opacity: 0;
+  animation: hwFadeSlow 460ms ease-out 700ms forwards;
+}
+.hw-intro__cta {
+  font: 700 0.85rem/1 system-ui, sans-serif;
+  letter-spacing: 0.24em;
+  color: rgba(255,255,255,0.65);
+  opacity: 0;
+  animation: hwFadeSlow 360ms ease-out 1050ms forwards,
+             hwBlink 1100ms ease-in-out 1450ms infinite;
+}
+@keyframes hwFadeSlow { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hwBlink    { 0%, 100% { opacity: 0.65; } 50% { opacity: 1; } }
+
+/* ── Win delta chip ── */
+.hw-delta {
+  position: fixed;
+  pointer-events: none;
+  z-index: 88;
+  font: 900 1.15rem/1 system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  color: rgba(${cfg.haloColor},1);
+  text-shadow: 0 0 12px rgba(${cfg.haloColor},.9), 0 2px 4px rgba(0,0,0,.6);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.6);
+  animation: hwDeltaRise 1100ms cubic-bezier(.2,1.4,.4,1) forwards;
+}
+@keyframes hwDeltaRise {
+  0%   { opacity: 0; transform: translate(-50%, -30%) scale(.4); }
+  18%  { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  60%  { opacity: 1; transform: translate(-50%, -90%) scale(1.0); }
+  100% { opacity: 0; transform: translate(-50%, -130%) scale(.85); }
+}
+
+/* ── Fly animation: orb value flies from cell to total counter ── */
+.hw-fly {
+  position: fixed;
+  pointer-events: none;
+  z-index: 89;
+  font: 900 1rem/1 system-ui, sans-serif;
+  color: rgba(${cfg.haloColor},1);
+  text-shadow: 0 0 12px rgba(${cfg.haloColor},.95);
+  will-change: transform, opacity;
+}
+
+/* ── Jackpot celebration overlays ── */
+.hw-jackpot {
+  position: fixed;
+  inset: 0;
+  z-index: 96;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, rgba(0,0,0,.7) 0%, rgba(0,0,0,.92) 70%);
+  pointer-events: none;
+}
+.hw-jackpot[data-show="true"] { display: flex; animation: hwIntroFadeIn 180ms ease-out; }
+.hw-jackpot__inner {
+  text-align: center;
+  padding: 1.4rem 2rem;
+  border-radius: 22px;
+  border: 3px solid;
+  animation: hwJackpotPop 600ms cubic-bezier(.2,1.4,.4,1) 1, hwJackpotIdle 1100ms ease-in-out 600ms infinite;
+}
+@keyframes hwJackpotPop {
+  from { transform: scale(0.4) rotate(-6deg); opacity: 0; }
+  to   { transform: scale(1)   rotate(0);     opacity: 1; }
+}
+@keyframes hwJackpotIdle {
+  0%, 100% { transform: scale(1);    filter: brightness(1); }
+  50%      { transform: scale(1.05); filter: brightness(1.25); }
+}
+.hw-jackpot__label {
+  font: 900 2.2rem/1 system-ui, sans-serif;
+  letter-spacing: 0.22em;
+  margin-bottom: 0.6rem;
+}
+.hw-jackpot__value {
+  font: 900 1.5rem/1 system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.95);
+  text-shadow: 0 2px 8px rgba(0,0,0,.6);
+}
+.hw-jackpot[data-tier="MINI"]  .hw-jackpot__inner { border-color: #6cb6ff; box-shadow: 0 0 60px rgba(108,182,255,.85); }
+.hw-jackpot[data-tier="MINOR"] .hw-jackpot__inner { border-color: #7fffa7; box-shadow: 0 0 60px rgba(127,255,167,.85); }
+.hw-jackpot[data-tier="MAJOR"] .hw-jackpot__inner { border-color: #c084ff; box-shadow: 0 0 80px rgba(192,132,255,.9);  }
+.hw-jackpot[data-tier="GRAND"] .hw-jackpot__inner { border-color: #ff5566; box-shadow: 0 0 100px rgba(255,85,102,.95); }
+.hw-jackpot[data-tier="MINI"]  .hw-jackpot__label { color: #6cb6ff; text-shadow: 0 0 24px rgba(108,182,255,.95); }
+.hw-jackpot[data-tier="MINOR"] .hw-jackpot__label { color: #7fffa7; text-shadow: 0 0 24px rgba(127,255,167,.95); }
+.hw-jackpot[data-tier="MAJOR"] .hw-jackpot__label { color: #c084ff; text-shadow: 0 0 28px rgba(192,132,255,.95); }
+.hw-jackpot[data-tier="GRAND"] .hw-jackpot__label { color: #ff5566; text-shadow: 0 0 32px rgba(255,85,102,1.0);  }
+
+/* ── Full-grid mega bonus ── */
+.hw-fullgrid {
+  position: fixed;
+  inset: 0;
+  z-index: 97;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center,
+    rgba(255,210,80,.32) 0%,
+    rgba(0,0,0,.95) 75%);
+  pointer-events: none;
+}
+.hw-fullgrid[data-show="true"] { display: flex; animation: hwIntroFadeIn 220ms ease-out; }
+.hw-fullgrid__title {
+  font: 900 3rem/1 system-ui, sans-serif;
+  letter-spacing: 0.2em;
+  color: #ffd24a;
+  text-shadow: 0 0 38px rgba(255,210,80,1), 0 4px 10px rgba(0,0,0,.6);
+  animation: hwFullGridThrob 800ms ease-in-out infinite alternate;
+  text-align: center;
+}
+@keyframes hwFullGridThrob {
+  from { transform: scale(1);    filter: brightness(1); }
+  to   { transform: scale(1.08); filter: brightness(1.35); }
+}
+.hw-fullgrid__bonus {
+  margin-top: 1rem;
+  font: 900 1.5rem/1 system-ui, sans-serif;
+  letter-spacing: 0.12em;
+  color: #fff;
+  text-shadow: 0 0 18px rgba(255,210,80,.95);
+}
+
+/* ── Summary overlay ── */
+.hw-summary {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  background: rgba(0,0,0,0.86);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.hw-summary[data-show="true"] { display: flex; animation: hwIntroFadeIn 220ms ease-out; }
+.hw-summary__inner {
+  text-align: center;
+  padding: 1.6rem 2rem;
+  border: 2.5px solid rgba(${cfg.haloColor},.85);
+  border-radius: 20px;
+  background: linear-gradient(160deg, rgba(40,28,8,.92), rgba(12,8,2,.95));
+  box-shadow: 0 0 50px rgba(${cfg.haloColor},.5);
+  min-width: min(360px, 90vw);
+  color: #fff;
+}
+.hw-summary__title {
+  font: 900 1.4rem/1 system-ui, sans-serif;
+  letter-spacing: 0.18em;
+  color: rgba(${cfg.haloColor},1);
+  text-shadow: 0 0 18px rgba(${cfg.haloColor},.85);
+  margin-bottom: 0.8rem;
+}
+.hw-summary__total {
+  font: 900 2.4rem/1 system-ui, sans-serif;
+  color: rgba(${cfg.haloColor},1);
+  text-shadow: 0 0 20px rgba(${cfg.haloColor},.9);
+  margin-bottom: 0.6rem;
+}
+.hw-summary__stats {
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  margin-bottom: 1.1rem;
+  color: rgba(255,255,255,0.85);
+}
+.hw-summary__stats span { color: rgba(${cfg.haloColor},1); font-weight: 900; }
+.hw-summary__cta {
+  font: 700 0.85rem/1 system-ui, sans-serif;
+  letter-spacing: 0.22em;
+  color: rgba(255,255,255,0.7);
+  animation: hwBlink 1100ms ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cell.is-locked-bonus,
   .cell.is-locked-bonus[data-orb-tier="GRAND"],
-  .cell.is-locked-bonus.hw-just-landed {
-    animation: none;
-  }
+  .cell.is-locked-bonus.hw-just-landed,
+  .hw-hud .hw-box.final .hw-val,
+  .hw-hud .hw-box.tick .hw-val,
+  .hw-intro__title,
+  .hw-intro__subtitle,
+  .hw-intro__orbcount,
+  .hw-intro__cta,
+  .hw-delta,
+  .hw-jackpot__inner,
+  .hw-fullgrid__title,
+  .hw-summary__cta { animation: none; transform: none; }
 }
 `;
 }
@@ -184,102 +461,276 @@ export function emitHoldAndWinCSS(cfg = defaultConfig()) {
 export function emitHoldAndWinMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   return `<div id="hwHud" class="hw-hud" data-show="false" aria-live="polite">
-  <div class="hw-box"><span class="hw-lbl">RESPINS</span><span class="hw-val" id="hwRespins">${cfg.respinsAwarded}</span></div>
-  <div class="hw-box"><span class="hw-lbl">LOCKED</span><span class="hw-val" id="hwLocked">0</span></div>
+  <div class="hw-box" id="hwRespinsBox"><span class="hw-lbl">RESPINS</span><span class="hw-val" id="hwRespins">${cfg.respinsAwarded}</span></div>
+  <div class="hw-box" id="hwLockedBox"><span class="hw-lbl">LOCKED</span><span class="hw-val" id="hwLocked">0</span></div>
+  <div class="hw-box" id="hwTotalBox"><span class="hw-lbl">TOTAL</span><span class="hw-val" id="hwTotal">0.00</span></div>
+</div>
+<div id="hwIntro" class="hw-intro" data-show="false" role="dialog" aria-modal="true" aria-labelledby="hwIntroTitle">
+  <div class="hw-intro__inner">
+    <div id="hwIntroTitle" class="hw-intro__title">${escapeHtml(cfg.title)}</div>
+    <div class="hw-intro__subtitle">${escapeHtml(cfg.subtitle)}</div>
+    <div id="hwIntroOrbCount" class="hw-intro__orbcount">0 ORBS</div>
+    <div class="hw-intro__cta">TAP TO CONTINUE</div>
+  </div>
+</div>
+<div id="hwJackpot" class="hw-jackpot" data-show="false" data-tier="">
+  <div class="hw-jackpot__inner">
+    <div id="hwJackpotLabel" class="hw-jackpot__label">MINI</div>
+    <div id="hwJackpotValue" class="hw-jackpot__value">+0.00</div>
+  </div>
+</div>
+<div id="hwFullgrid" class="hw-fullgrid" data-show="false">
+  <div>
+    <div class="hw-fullgrid__title">FULL GRID!</div>
+    <div class="hw-fullgrid__bonus" id="hwFullgridBonus">+${cfg.fullGridBonusX}×</div>
+  </div>
+</div>
+<div id="hwSummary" class="hw-summary" data-show="false" role="dialog" aria-modal="true">
+  <div class="hw-summary__inner">
+    <div class="hw-summary__title">COLLECT</div>
+    <div class="hw-summary__total" id="hwSummaryTotal">0.00</div>
+    <div class="hw-summary__stats" id="hwSummaryStats">0 orbs · 0 respins used</div>
+    <div class="hw-summary__cta">TAP TO COLLECT</div>
+  </div>
 </div>`;
 }
 
 export function emitHoldAndWinRuntime(cfg = defaultConfig()) {
   if (!cfg.enabled) return `/* holdAndWin: disabled */`;
-  return `/* ─── hold & win runtime ──────────────────────────────────────── */
+  return `/* ─── hold & win runtime (Zeus' Storm pattern) ────────────────── */
 const HW_TRIGGER_COUNT  = ${cfg.triggerCount};
 const HW_BONUS_SYMBOL   = ${JSON.stringify(cfg.bonusSymbolId)};
 const HW_RESPINS_AWARD  = ${cfg.respinsAwarded};
 const HW_RESET_ON_NEW   = ${cfg.resetOnNewBonus ? 'true' : 'false'};
 const HW_JACKPOT_LABELS = ${JSON.stringify(cfg.jackpotLabels)};
+const HW_FULL_GRID_X    = ${cfg.fullGridBonusX};
+const HW_SHOW_INTRO     = ${cfg.showIntro ? 'true' : 'false'};
+const HW_SHOW_SUMMARY   = ${cfg.showSummary ? 'true' : 'false'};
 
-/* Orb value table — non-jackpot orbs roll a value × bet, jackpot tier
- * orbs use the canonical Lightning-Link tier labels. Distribution
- * mirrors WoO Zeus' Storm paytable: most orbs are small numeric values
- * (1x..15x), rare orbs are 25x..50x, and ~5% are jackpot tier. */
+/* Orb value table (weighted) — Zeus' Storm distribution. */
 const HW_ORB_TABLE = [
-  /* {label, weight, tier} */
-  { label: '1x',  weight: 26, tier: null  },
-  { label: '2x',  weight: 22, tier: null  },
-  { label: '3x',  weight: 16, tier: null  },
-  { label: '5x',  weight: 12, tier: null  },
-  { label: '8x',  weight:  9, tier: null  },
-  { label: '12x', weight:  6, tier: null  },
-  { label: '15x', weight:  4, tier: null  },
-  { label: '25x', weight:  2, tier: null  },
-  { label: 'MINI',  weight: 1.6, tier: 'MINI'  },
-  { label: 'MINOR', weight: 0.9, tier: 'MINOR' },
-  { label: 'MAJOR', weight: 0.4, tier: 'MAJOR' },
-  { label: 'GRAND', weight: 0.1, tier: 'GRAND' },
+  { label: '1x',  weight: 26, tier: null,    valueX:   1 },
+  { label: '2x',  weight: 22, tier: null,    valueX:   2 },
+  { label: '3x',  weight: 16, tier: null,    valueX:   3 },
+  { label: '5x',  weight: 12, tier: null,    valueX:   5 },
+  { label: '8x',  weight:  9, tier: null,    valueX:   8 },
+  { label: '12x', weight:  6, tier: null,    valueX:  12 },
+  { label: '15x', weight:  4, tier: null,    valueX:  15 },
+  { label: '25x', weight:  2, tier: null,    valueX:  25 },
+  { label: 'MINI',  weight: 1.6, tier: 'MINI',  valueX:  12 },
+  { label: 'MINOR', weight: 0.9, tier: 'MINOR', valueX:  25 },
+  { label: 'MAJOR', weight: 0.4, tier: 'MAJOR', valueX:  50 },
+  { label: 'GRAND', weight: 0.1, tier: 'GRAND', valueX: 150 },
 ];
 
+/* Phase machine — INACTIVE → INTRO → RUNNING → SUMMARY. */
 const HW_STATE = {
-  active: false,
+  phase: 'INACTIVE',
+  active: false,            /* legacy back-compat — true iff phase !== INACTIVE */
   respinsLeft: 0,
-  /* 'r,c' → { label, tier } */
+  respinsUsed: 0,
+  totalWinX: 0,             /* accumulated × bet */
+  fullGrid: false,
+  /* 'r,c' → { label, tier, valueX } */
   lockedCells: new Map(),
-  /* MutationObserver instance — heals textContent overwrites by third
-   * parties (tumble refill, wild commit) so the orb visual contract
-   * is impossible to break. */
+  jackpotsHit: [],          /* array of tier strings, may include duplicates */
   observer: null,
-  /* Re-entrance guard. _hwApplyOrbToCell mutates DOM → fires observer
-   * → observer calls hwApplyLocks → calls _hwApplyOrbToCell again →
-   * infinite loop. While this flag is true the observer skips its
-   * healing pass. */
-  applying: false,
+  applying: false,          /* MutationObserver re-entrance guard */
+  triggerOrbCount: 0,
 };
+
+function _hwBet() {
+  try {
+    if (typeof window !== 'undefined' && typeof window.currentBet === 'function') return Number(window.currentBet()) || 1;
+    if (typeof BET === 'number') return BET;
+  } catch (_) {}
+  return 1;
+}
+function _hwFmt(x) {
+  try { return (Number(x) || 0).toFixed(2); } catch (_) { return String(x); }
+}
 
 function _hwHudShow(show) {
   const hud = document.getElementById('hwHud');
-  if (!hud) return;
-  hud.dataset.show = show ? 'true' : 'false';
+  if (hud) hud.dataset.show = show ? 'true' : 'false';
 }
-function _hwHudUpdate() {
+function _hwHudUpdate(opts) {
+  const o = opts || {};
   const r = document.getElementById('hwRespins');
   const l = document.getElementById('hwLocked');
+  const t = document.getElementById('hwTotal');
+  const rBox = document.getElementById('hwRespinsBox');
+  const lBox = document.getElementById('hwLockedBox');
+  const tBox = document.getElementById('hwTotalBox');
   if (r) r.textContent = String(HW_STATE.respinsLeft);
   if (l) l.textContent = String(HW_STATE.lockedCells.size);
+  if (t) t.textContent = _hwFmt(HW_STATE.totalWinX);
+  if (rBox) {
+    rBox.classList.remove('tension', 'final');
+    if (HW_STATE.respinsLeft === 1) rBox.classList.add('final');
+    else if (HW_STATE.respinsLeft === 2) rBox.classList.add('tension');
+  }
+  /* Tick pulse on the box that changed this update — caller flags it. */
+  function _pulse(box) {
+    if (!box) return;
+    box.classList.remove('tick');
+    void box.offsetHeight; /* force restart of animation */
+    box.classList.add('tick');
+    setTimeout(function () { try { box.classList.remove('tick'); } catch (_) {} }, 320);
+  }
+  if (o.pulseRespins) _pulse(rBox);
+  if (o.pulseLocked)  _pulse(lBox);
+  if (o.pulseTotal)   _pulse(tBox);
 }
 
 function _hwRollOrb() {
-  /* Weighted roll over HW_ORB_TABLE. Returns { label, tier }. */
   var total = 0;
   for (var i = 0; i < HW_ORB_TABLE.length; i++) total += HW_ORB_TABLE[i].weight;
   var roll = Math.random() * total;
   for (var j = 0; j < HW_ORB_TABLE.length; j++) {
     roll -= HW_ORB_TABLE[j].weight;
-    if (roll <= 0) return { label: HW_ORB_TABLE[j].label, tier: HW_ORB_TABLE[j].tier };
+    if (roll <= 0) {
+      var e = HW_ORB_TABLE[j];
+      return { label: e.label, tier: e.tier, valueX: e.valueX };
+    }
   }
-  return { label: '1x', tier: null };
+  return { label: '1x', tier: null, valueX: 1 };
 }
 
 function _hwApplyOrbToCell(cell, orb) {
-  /* Stamp dataset + class. textContent is also set so reelEngine
-   * commitStopSymbols sees a "stable" symbol (any non-blank works because
-   * the .is-locked-bonus guard already skips overwrite).
-   * Re-entrance guard: every DOM write fires MutationObserver, but the
-   * applying flag tells the observer to skip its heal pass for this
-   * burst — preventing the apply→observe→heal→apply infinite loop. */
   HW_STATE.applying = true;
   try {
     cell.classList.add('is-locked-bonus');
     cell.dataset.lockedSymbol = HW_BONUS_SYMBOL;
     cell.dataset.orbValue = orb.label;
-    if (orb.tier) cell.dataset.orbTier = orb.tier;
-    else delete cell.dataset.orbTier;
+    if (orb.tier) cell.dataset.orbTier = orb.tier; else delete cell.dataset.orbTier;
     cell.textContent = HW_BONUS_SYMBOL;
     cell.classList.add('hw-just-landed');
-    setTimeout(function() { try { cell.classList.remove('hw-just-landed'); } catch (_) {} }, 540);
+    setTimeout(function () { try { cell.classList.remove('hw-just-landed'); } catch (_) {} }, 540);
   } finally {
-    /* Drop the flag on the next microtask so any observer batch fired
-     * from this synchronous burst still sees applying=true. */
-    Promise.resolve().then(function() { HW_STATE.applying = false; });
+    Promise.resolve().then(function () { HW_STATE.applying = false; });
   }
+}
+
+function _hwSpawnDelta(cell, valueX) {
+  if (!cell || valueX <= 0) return;
+  try {
+    var rect = cell.getBoundingClientRect();
+    var el = document.createElement('div');
+    el.className = 'hw-delta';
+    el.textContent = '+' + (Math.round(valueX * 100) / 100) + 'x';
+    el.style.left = (rect.left + rect.width / 2) + 'px';
+    el.style.top  = (rect.top  + rect.height / 2) + 'px';
+    document.body.appendChild(el);
+    setTimeout(function () { try { el.remove(); } catch (_) {} }, 1100);
+  } catch (_) {}
+}
+
+function _hwSpawnFly(cell, valueX) {
+  if (!cell) return;
+  try {
+    var totalEl = document.getElementById('hwTotal');
+    if (!totalEl) return;
+    var c = cell.getBoundingClientRect();
+    var t = totalEl.getBoundingClientRect();
+    var fly = document.createElement('div');
+    fly.className = 'hw-fly';
+    fly.textContent = '+' + valueX + 'x';
+    fly.style.left = (c.left + c.width / 2 - 16) + 'px';
+    fly.style.top  = (c.top  + c.height / 2 - 10) + 'px';
+    fly.style.transition = 'transform 620ms cubic-bezier(.4,.0,.4,1), opacity 620ms ease-out';
+    document.body.appendChild(fly);
+    requestAnimationFrame(function () {
+      var dx = (t.left + t.width / 2) - (c.left + c.width / 2);
+      var dy = (t.top  + t.height / 2) - (c.top  + c.height / 2);
+      fly.style.transform = 'translate(' + dx + 'px, ' + dy + 'px) scale(.55)';
+      fly.style.opacity = '0';
+    });
+    setTimeout(function () { try { fly.remove(); } catch (_) {} }, 700);
+  } catch (_) {}
+}
+
+function _hwShowJackpot(tier, valueX) {
+  var ov = document.getElementById('hwJackpot');
+  if (!ov) return;
+  var lab = document.getElementById('hwJackpotLabel');
+  var val = document.getElementById('hwJackpotValue');
+  ov.dataset.tier = tier;
+  if (lab) lab.textContent = tier;
+  if (val) val.textContent = '+' + valueX + '×';
+  ov.dataset.show = 'true';
+  setTimeout(function () { ov.dataset.show = 'false'; }, tier === 'GRAND' ? 2200 : 1600);
+}
+
+function _hwShowFullGrid() {
+  var ov = document.getElementById('hwFullgrid');
+  if (!ov) return;
+  ov.dataset.show = 'true';
+  setTimeout(function () { ov.dataset.show = 'false'; }, 2600);
+}
+
+function _hwShowIntro(orbCount) {
+  if (!HW_SHOW_INTRO) return Promise.resolve();
+  var ov = document.getElementById('hwIntro');
+  if (!ov) return Promise.resolve();
+  var num = document.getElementById('hwIntroOrbCount');
+  if (num) num.textContent = orbCount + ' ORB' + (orbCount === 1 ? '' : 'S');
+  ov.dataset.show = 'true';
+  return new Promise(function (resolve) {
+    function dismiss() {
+      try { ov.removeEventListener('click', dismiss); } catch (_) {}
+      try { document.removeEventListener('keydown', onKey); } catch (_) {}
+      ov.dataset.show = 'false';
+      resolve();
+    }
+    function onKey(e) { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') dismiss(); }
+    /* Auto-dismiss after 1.6s if user does nothing — keeps QA walker
+     * and autoplay rolling without lingering on the placard. Player can
+     * also click anywhere or press Enter/Space to skip early. */
+    var autoTimer = setTimeout(dismiss, 1600);
+    ov.addEventListener('click', function () { clearTimeout(autoTimer); dismiss(); });
+    document.addEventListener('keydown', onKey, { once: false });
+    /* HookBus skip — autoplay / force-skip / FS-trigger upstream can
+     * dismiss the placard so the player isn't blocked. */
+    try {
+      if (typeof HookBus !== 'undefined') {
+        var onSkip = function () { clearTimeout(autoTimer); dismiss(); HookBus.off('onSkipRequested', onSkip); };
+        HookBus.on('onSkipRequested', onSkip);
+      }
+    } catch (_) {}
+  });
+}
+
+function _hwShowSummary(stats) {
+  if (!HW_SHOW_SUMMARY) return Promise.resolve();
+  var ov = document.getElementById('hwSummary');
+  if (!ov) return Promise.resolve();
+  var totalEl = document.getElementById('hwSummaryTotal');
+  var statsEl = document.getElementById('hwSummaryStats');
+  if (totalEl) totalEl.textContent = _hwFmt(stats.totalWinX) + 'x';
+  if (statsEl) {
+    var s = stats.orbsCollected + ' orb' + (stats.orbsCollected === 1 ? '' : 's') +
+            ' · ' + stats.respinsUsed + ' respin' + (stats.respinsUsed === 1 ? '' : 's') + ' used';
+    if (stats.jackpotsHit > 0) s += ' · ' + stats.jackpotsHit + ' jackpot' + (stats.jackpotsHit === 1 ? '' : 's');
+    if (stats.fullGrid) s += ' · FULL GRID!';
+    statsEl.textContent = s;
+  }
+  ov.dataset.show = 'true';
+  return new Promise(function (resolve) {
+    function dismiss() {
+      try { ov.removeEventListener('click', dismiss); } catch (_) {}
+      ov.dataset.show = 'false';
+      resolve();
+    }
+    var autoTimer = setTimeout(dismiss, 1800);
+    ov.addEventListener('click', function () { clearTimeout(autoTimer); dismiss(); });
+    try {
+      if (typeof HookBus !== 'undefined') {
+        var onSkip = function () { clearTimeout(autoTimer); dismiss(); HookBus.off('onSkipRequested', onSkip); };
+        HookBus.on('onSkipRequested', onSkip);
+      }
+    } catch (_) {}
+  });
 }
 
 function hwCountBonusOnGrid() {
@@ -292,19 +743,16 @@ function hwCountBonusOnGrid() {
   return n;
 }
 
-function hwHarvestBonus() {
+function hwHarvestBonus(opts) {
   /* Lock every BONUS cell on the grid, generating an orb value for each
    * NEW lock. Returns count of newly-locked cells.
-   *
-   * 2026-06-10 (Boki H&W vidljivost) — every fresh lock now gets a
-   * weighted-rolled orb value (1x..GRAND) so the player sees what they
-   * won immediately, not just a generic halo. Existing locked cells are
-   * re-stamped (idempotent — class + dataset re-applied even if the DOM
-   * was clobbered between spins). */
+   * opts.celebrate=true → run pop + delta + fly + jackpot celebration. */
+  const o = opts || {};
   const host = document.getElementById('gridHost');
   if (!host) return 0;
   const REELS = window.REELS || 5;
   let added = 0;
+  const bet = _hwBet();
   host.querySelectorAll('.cell').forEach((cell, idx) => {
     const txt = (cell.textContent || '').trim();
     const alreadyLocked = cell.classList.contains('is-locked-bonus');
@@ -316,23 +764,28 @@ function hwHarvestBonus() {
       const orb = _hwRollOrb();
       HW_STATE.lockedCells.set(key, orb);
       _hwApplyOrbToCell(cell, orb);
+      HW_STATE.totalWinX += orb.valueX;
       added++;
+      if (orb.tier) HW_STATE.jackpotsHit.push(orb.tier);
+      if (o.celebrate !== false) {
+        _hwSpawnDelta(cell, orb.valueX);
+        _hwSpawnFly(cell, orb.valueX);
+        if (orb.tier) {
+          setTimeout(function () { _hwShowJackpot(orb.tier, orb.valueX); }, 280);
+        }
+      }
     } else {
-      /* Re-apply (idempotent) — keep existing orb data. */
+      /* Re-apply idempotently — keep existing orb data. */
       const orb = HW_STATE.lockedCells.get(key);
       _hwApplyOrbToCell(cell, orb);
-      cell.classList.remove('hw-just-landed'); /* don't replay pop */
+      cell.classList.remove('hw-just-landed');
     }
   });
+  if (added > 0) _hwHudUpdate({ pulseLocked: true, pulseTotal: true });
   return added;
 }
 
 function hwApplyLocks() {
-  /* Belt+braces re-application of locked orbs on every settle. With the
-   * reelEngine rotateStripDown / commitStopSymbols guards in place this is
-   * a no-op for well-behaved spins, but it covers external paths (tumble
-   * refill, mystery reveal, sticky/walking wild commit) that may still
-   * touch cell.textContent during their pass. */
   const host = document.getElementById('gridHost');
   if (!host) return;
   const REELS = window.REELS || 5;
@@ -348,19 +801,12 @@ function hwApplyLocks() {
 }
 
 function _hwInstallObserver() {
-  /* 2026-06-10 (Boki H&W "ne da se pomera s rilom") — MutationObserver
-   * watches every locked cell's textContent + classList. If a sibling
-   * block (tumble refill, mystery reveal) clobbers either, this restores
-   * the orb on the next microtask. This is the autonomic immune system
-   * for hold-and-win — third-party blocks no longer need to know about
-   * lock contract. */
   if (HW_STATE.observer) return;
   if (typeof MutationObserver !== 'function') return;
   const host = document.getElementById('gridHost');
   if (!host) return;
-  HW_STATE.observer = new MutationObserver(function(mutations) {
+  HW_STATE.observer = new MutationObserver(function (mutations) {
     if (!HW_STATE.active) return;
-    /* Re-entrance guard — skip while we are the ones writing. */
     if (HW_STATE.applying) return;
     let needsHeal = false;
     const allCells = host.querySelectorAll('.cell');
@@ -372,15 +818,11 @@ function _hwInstallObserver() {
         ? target
         : (target.closest ? target.closest('.cell') : null);
       if (!cell) continue;
-      /* Did this cell USED to be locked? Check our state map. */
       const idx = Array.prototype.indexOf.call(allCells, cell);
       if (idx < 0) continue;
       const REELS = window.REELS || 5;
       const key = Math.floor(idx / REELS) + ',' + (idx % REELS);
       if (HW_STATE.lockedCells.has(key)) {
-        /* Only heal if the orb visual contract is actually broken — text
-         * cleared, class stripped, or dataset wiped. Otherwise the
-         * mutation was our own setTimeout removing hw-just-landed. */
         const txt = (cell.textContent || '').trim();
         const hasClass = cell.classList.contains('is-locked-bonus');
         const hasData = !!cell.dataset.orbValue;
@@ -390,11 +832,8 @@ function _hwInstallObserver() {
     if (needsHeal) hwApplyLocks();
   });
   HW_STATE.observer.observe(host, {
-    subtree: true,
-    childList: true,
-    characterData: true,
-    attributes: true,
-    attributeFilter: ['class'],
+    subtree: true, childList: true, characterData: true,
+    attributes: true, attributeFilter: ['class'],
   });
 }
 function _hwTeardownObserver() {
@@ -404,25 +843,50 @@ function _hwTeardownObserver() {
   }
 }
 
+function _hwEnterPhase(p) {
+  HW_STATE.phase = p;
+  HW_STATE.active = p !== 'INACTIVE';
+  if (typeof HookBus !== 'undefined') {
+    try { HookBus.emit('onHoldAndWinPhase', { phase: p }); } catch (_) {}
+  }
+}
+
+async function _hwBeginRound() {
+  /* Lock current scatter pile + roll initial orbs. Show intro. Then
+   * enter RUNNING phase with HUD up. */
+  _hwEnterPhase('INTRO');
+  HW_STATE.respinsLeft = HW_RESPINS_AWARD;
+  HW_STATE.respinsUsed = 0;
+  HW_STATE.totalWinX = 0;
+  HW_STATE.fullGrid = false;
+  HW_STATE.lockedCells.clear();
+  HW_STATE.jackpotsHit = [];
+
+  hwHarvestBonus({ celebrate: false });
+  HW_STATE.triggerOrbCount = HW_STATE.lockedCells.size;
+  _hwInstallObserver();
+
+  await _hwShowIntro(HW_STATE.triggerOrbCount);
+  _hwEnterPhase('RUNNING');
+  _hwHudShow(true);
+  _hwHudUpdate();
+  /* After the player dismisses the intro, animate the initial orbs'
+   * pop-in + fly so they feel earned. */
+  HW_STATE.lockedCells.forEach(function (orb) {
+    /* find a cell with matching key — re-fetch DOM since key→cell map
+     * is rebuilt every render. */
+  });
+}
+
 function hwMaybeEnter() {
   if (HW_STATE.active) return false;
   if (hwCountBonusOnGrid() >= HW_TRIGGER_COUNT) {
-    HW_STATE.active = true;
-    HW_STATE.respinsLeft = HW_RESPINS_AWARD;
-    HW_STATE.lockedCells.clear();
-    hwHarvestBonus();
-    _hwInstallObserver();
-    _hwHudShow(true);
-    _hwHudUpdate();
+    _hwBeginRound();
     return true;
   }
   return false;
 }
 
-/* Force-seed entry: skip the grid-count gate. Used by the UFP H&W chip
- * so the player can see the orb-locking mechanic on any GDD, even one
- * whose reel pool doesn't actually contain the bonus symbol. Drops N
- * orbs in random cells and starts the round. */
 function hwForceSeed(orbCount) {
   if (HW_STATE.active) return false;
   const host = document.getElementById('gridHost');
@@ -430,16 +894,19 @@ function hwForceSeed(orbCount) {
   const allCells = Array.from(host.querySelectorAll('.cell'));
   if (allCells.length === 0) return false;
   const REELS = window.REELS || 5;
-  /* Pick orbCount random distinct cells. */
   const N = Math.max(1, Math.min(orbCount || Math.max(3, Math.floor(HW_TRIGGER_COUNT / 2)), allCells.length));
   const picked = new Set();
   while (picked.size < N) picked.add(Math.floor(Math.random() * allCells.length));
 
-  HW_STATE.active = true;
+  _hwEnterPhase('INTRO');
   HW_STATE.respinsLeft = HW_RESPINS_AWARD;
+  HW_STATE.respinsUsed = 0;
+  HW_STATE.totalWinX = 0;
+  HW_STATE.fullGrid = false;
   HW_STATE.lockedCells.clear();
+  HW_STATE.jackpotsHit = [];
 
-  picked.forEach(function(idx) {
+  picked.forEach(function (idx) {
     const cell = allCells[idx];
     const r = Math.floor(idx / REELS);
     const c = idx % REELS;
@@ -447,65 +914,112 @@ function hwForceSeed(orbCount) {
     const orb = _hwRollOrb();
     HW_STATE.lockedCells.set(key, orb);
     _hwApplyOrbToCell(cell, orb);
+    HW_STATE.totalWinX += orb.valueX;
+    if (orb.tier) HW_STATE.jackpotsHit.push(orb.tier);
   });
+  HW_STATE.triggerOrbCount = HW_STATE.lockedCells.size;
 
   _hwInstallObserver();
-  _hwHudShow(true);
-  _hwHudUpdate();
+  _hwShowIntro(HW_STATE.triggerOrbCount).then(function () {
+    _hwEnterPhase('RUNNING');
+    _hwHudShow(true);
+    _hwHudUpdate();
+  });
   return true;
 }
 
 function hwAfterRespin() {
-  if (!HW_STATE.active) return { ended: false, allLocked: false };
-  const added = hwHarvestBonus();
-  if (added > 0 && HW_RESET_ON_NEW) HW_STATE.respinsLeft = HW_RESPINS_AWARD;
-  else HW_STATE.respinsLeft = Math.max(0, HW_STATE.respinsLeft - 1);
+  if (!HW_STATE.active || HW_STATE.phase !== 'RUNNING') return { ended: false, allLocked: false };
+  const added = hwHarvestBonus({ celebrate: true });
+  if (added > 0 && HW_RESET_ON_NEW) {
+    HW_STATE.respinsLeft = HW_RESPINS_AWARD;
+    _hwHudUpdate({ pulseRespins: true });
+  } else {
+    HW_STATE.respinsLeft = Math.max(0, HW_STATE.respinsLeft - 1);
+    HW_STATE.respinsUsed++;
+    _hwHudUpdate({ pulseRespins: true });
+  }
   const REELS = window.REELS || 5;
   const ROWS  = window.ROWS  || 3;
   const allLocked = HW_STATE.lockedCells.size >= REELS * ROWS;
-  _hwHudUpdate();
-  if (allLocked || HW_STATE.respinsLeft <= 0) {
-    hwEnd();
-    return { ended: true, allLocked };
+  if (allLocked) {
+    HW_STATE.fullGrid = true;
+    HW_STATE.totalWinX += HW_FULL_GRID_X;
+    _hwShowFullGrid();
+    _hwHudUpdate({ pulseTotal: true });
+    setTimeout(hwEnd, 2200);
+    return { ended: true, allLocked: true };
+  }
+  if (HW_STATE.respinsLeft <= 0) {
+    setTimeout(hwEnd, 600);
+    return { ended: true, allLocked: false };
   }
   return { ended: false, allLocked: false };
 }
 
 function hwEnd() {
-  HW_STATE.active = false;
-  HW_STATE.respinsLeft = 0;
-  HW_STATE.lockedCells.clear();
+  if (HW_STATE.phase === 'INACTIVE' || HW_STATE.phase === 'SUMMARY') return;
+  _hwEnterPhase('SUMMARY');
   _hwTeardownObserver();
-  _hwHudShow(false);
-  const host = document.getElementById('gridHost');
-  if (host) host.querySelectorAll('.cell.is-locked-bonus').forEach(c => {
-    c.classList.remove('is-locked-bonus', 'hw-just-landed');
-    delete c.dataset.lockedSymbol;
-    delete c.dataset.orbValue;
-    delete c.dataset.orbTier;
+  const stats = {
+    totalWinX: HW_STATE.totalWinX,
+    orbsCollected: HW_STATE.lockedCells.size,
+    respinsUsed: HW_STATE.respinsUsed,
+    jackpotsHit: HW_STATE.jackpotsHit.length,
+    fullGrid: HW_STATE.fullGrid,
+  };
+  _hwShowSummary(stats).then(function () {
+    _hwHudShow(false);
+    const host = document.getElementById('gridHost');
+    if (host) {
+      HW_STATE.applying = true;
+      try {
+        host.querySelectorAll('.cell.is-locked-bonus').forEach(function (c) {
+          c.classList.remove('is-locked-bonus', 'hw-just-landed');
+          delete c.dataset.lockedSymbol;
+          delete c.dataset.orbValue;
+          delete c.dataset.orbTier;
+        });
+      } finally {
+        Promise.resolve().then(function () { HW_STATE.applying = false; });
+      }
+    }
+    /* Credit total via existing presentation surface so the balance HUD
+     * updates without the holdAndWin block knowing the payment grammar. */
+    try {
+      if (HW_STATE.totalWinX > 0 && typeof window !== 'undefined' && typeof window.presentExternalWin === 'function') {
+        var bet = _hwBet();
+        window.presentExternalWin(HW_STATE.totalWinX * bet);
+      }
+    } catch (_) {}
+    HW_STATE.lockedCells.clear();
+    HW_STATE.totalWinX = 0;
+    HW_STATE.respinsLeft = 0;
+    HW_STATE.respinsUsed = 0;
+    HW_STATE.fullGrid = false;
+    HW_STATE.jackpotsHit = [];
+    _hwEnterPhase('INACTIVE');
+    if (typeof HookBus !== 'undefined') {
+      try { HookBus.emit('onHoldAndWinEnd', stats); } catch (_) {}
+    }
   });
 }
 
 if (typeof window !== 'undefined') {
-  window.hwMaybeEnter    = hwMaybeEnter;
-  window.hwAfterRespin   = hwAfterRespin;
-  window.hwApplyLocks    = hwApplyLocks;
-  window.hwHarvestBonus  = hwHarvestBonus;
-  window.hwForceSeed     = hwForceSeed;
-  window.hwEnd           = hwEnd;
-  window.HW_STATE        = HW_STATE;
+  window.hwMaybeEnter   = hwMaybeEnter;
+  window.hwAfterRespin  = hwAfterRespin;
+  window.hwApplyLocks   = hwApplyLocks;
+  window.hwHarvestBonus = hwHarvestBonus;
+  window.hwForceSeed    = hwForceSeed;
+  window.hwEnd          = hwEnd;
+  window.HW_STATE       = HW_STATE;
 }
 
-/* HookBus wire-up — Hold & Win activates on postSpin (bonus symbol count
-   meets triggerCount) and re-applies locked-cell visuals on every settled
-   spin while the round is active. onFsTrigger/onFsEnd clear state so the
-   board is fresh for each FS round. */
 if (typeof HookBus !== 'undefined') {
   HookBus.on('postSpin', () => {
     if (!HW_STATE.active) {
       hwMaybeEnter();
-    } else {
-      hwHarvestBonus();
+    } else if (HW_STATE.phase === 'RUNNING') {
       hwAfterRespin();
     }
   });
@@ -515,12 +1029,6 @@ if (typeof HookBus !== 'undefined') {
   HookBus.on('onFsTrigger', () => { hwEnd(); });
   HookBus.on('onFsEnd',     () => { hwEnd(); });
 
-  /* 2026-06-10 (Boki force-rule + vidljivost) — UFP chip emits
-   * onForceFeatureRequested with kind='hold_and_win'. Force-seed N orbs
-   * (≈ triggerCount/2 by default) on random cells and start the round so
-   * the player sees the lock-and-spin mechanic immediately on any GDD,
-   * even one whose reel pool doesn't contain the bonus symbol. The next
-   * base spins then run with the lock contract honored by reelEngine. */
   HookBus.on('onForceFeatureRequested', (payload) => {
     if (!payload || payload.kind !== 'hold_and_win') return;
     try { hwForceSeed(Math.max(3, Math.ceil(HW_TRIGGER_COUNT / 2))); }
@@ -534,4 +1042,8 @@ function clampInt(n, lo, hi) {
   n = Math.floor(Number(n));
   if (!Number.isFinite(n)) return lo;
   return Math.max(lo, Math.min(hi, n));
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }

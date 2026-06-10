@@ -63,6 +63,11 @@ import {
   resolveConfig as resolveAnticipationConfig,
 } from './blocks/anticipation.mjs';
 import {
+  emitAnticipationUniversalCSS,
+  emitAnticipationUniversalRuntime,
+  resolveConfig as resolveAnticipationUniversalConfig,
+} from './blocks/anticipationUniversal.mjs';
+import {
   emitSpinTempoRuntime,
   resolveConfig as resolveSpinTempoConfig,
 } from './blocks/spinTempo.mjs';
@@ -560,6 +565,7 @@ ${emitCrashSpinEngineCSS(resolveCrashSpinEngineConfig(model))}
 ${emitPlinkoSpinEngineCSS(resolvePlinkoSpinEngineConfig(model))}
 ${emitSlingoSpinEngineCSS(resolveSlingoSpinEngineConfig(model))}
 ${emitAnticipationCSS(resolveAnticipationConfig(model))}
+${emitAnticipationUniversalCSS(resolveAnticipationUniversalConfig(model))}
 
 ${emitWinPresentationCSS(resolveWinPresentationConfig(model))}
 
@@ -820,6 +826,7 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitSpinTempoRuntime(resolveSpinTempoConfig(model))}
 
   ${emitAnticipationRuntime(resolveAnticipationConfig(model))}
+  ${emitAnticipationUniversalRuntime(resolveAnticipationUniversalConfig(model))}
 
   /* User-driven SPIN button click. During FS_* phases the FSM / placard CTA
      owns the input. Wave V3 — spinControl morphs the button between SPIN /
