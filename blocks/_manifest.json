@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-08T23:07:54.077Z",
+  "generatedAt": "2026-06-10T13:45:33.636Z",
   "blocksDir": "src/blocks",
   "totalBlocks": 67,
   "blocks": [
@@ -52,7 +52,7 @@
         "gold": "255,214,110",
         "skipDuringFs": false
       },
-      "loc": 249
+      "loc": 257
     },
     {
       "name": "audio",
@@ -121,7 +121,7 @@
         "megaWinThresholdX": 50,
         "epicWinThresholdX": 250
       },
-      "loc": 362
+      "loc": 364
     },
     {
       "name": "autoplay",
@@ -217,7 +217,7 @@
         "creditColor": "120,255,180",
         "ariaLabel": "Balance HUD"
       },
-      "loc": 509
+      "loc": 521
     },
     {
       "name": "betSelector",
@@ -344,7 +344,7 @@
         "currency": "€",
         "currencyPosition": "prefix"
       },
-      "loc": 1013
+      "loc": 1030
     },
     {
       "name": "bonusBuy",
@@ -369,7 +369,7 @@
         "color": "#ff5050",
         "confirmMessage": ""
       },
-      "loc": 152
+      "loc": 187
     },
     {
       "name": "bonusBuyDeterministic",
@@ -577,7 +577,7 @@
         "maxEvents": 8,
         "diagonal": false
       },
-      "loc": 164
+      "loc": 174
     },
     {
       "name": "crashSpinEngine",
@@ -602,7 +602,7 @@
         "peakMultiplierMax": 25,
         "fadeFallbackMs": 200
       },
-      "loc": 208
+      "loc": 214
     },
     {
       "name": "expandingWild",
@@ -810,7 +810,8 @@
         "shouldHandle"
       ],
       "lifecycleHooks": [
-        "onForceFeatureRequested"
+        "onForceFeatureRequested",
+        "postSpin"
       ],
       "emittedEvents": [],
       "defaultConfig": {
@@ -819,7 +820,7 @@
         "fadeMs": 240,
         "handleKinds": "auto"
       },
-      "loc": 256
+      "loc": 304
     },
     {
       "name": "hexReelEngine",
@@ -846,7 +847,7 @@
         "cushionBounceMs": 240,
         "fadeFallbackMs": 200
       },
-      "loc": 403
+      "loc": 410
     },
     {
       "name": "historyLog",
@@ -888,7 +889,7 @@
         "autoHideOnSpin": true,
         "ariaLabel": "Open session history"
       },
-      "loc": 686
+      "loc": 685
     },
     {
       "name": "holdAndWin",
@@ -1036,7 +1037,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 459
+      "loc": 475
     },
     {
       "name": "hotReload",
@@ -1508,7 +1509,7 @@
         "finalSettleMs": 240,
         "fadeFallbackMs": 200
       },
-      "loc": 218
+      "loc": 226
     },
     {
       "name": "postSpin",
@@ -1660,7 +1661,7 @@
         "minStepPx": 0.5,
         "accelMinFactor": 0.3
       },
-      "loc": 681
+      "loc": 759
     },
     {
       "name": "reelEngineCSS",
@@ -1729,6 +1730,8 @@
         "onSkipRequested"
       ],
       "emittedEvents": [
+        "onScatterCelebrationEnd",
+        "onScatterCelebrationStart",
         "onSkipComplete"
       ],
       "defaultConfig": {
@@ -1740,7 +1743,7 @@
         "glowColor": "255,214,110",
         "glowPeak": 1.5
       },
-      "loc": 284
+      "loc": 291
     },
     {
       "name": "sessionTimeout",
@@ -1854,7 +1857,7 @@
         "autoHideOnSpin": true,
         "ariaLabel": "Open settings"
       },
-      "loc": 895
+      "loc": 899
     },
     {
       "name": "slamStop",
@@ -1917,7 +1920,7 @@
         "matchPulseMs": 480,
         "fadeFallbackMs": 220
       },
-      "loc": 214
+      "loc": 225
     },
     {
       "name": "spinControl",
@@ -2160,7 +2163,7 @@
       "defaultConfig": {
         "defaultThreshold": 3
       },
-      "loc": 139
+      "loc": 146
     },
     {
       "name": "tumble",
@@ -2190,7 +2193,7 @@
         "maxChain": 16,
         "preserveOrbs": true
       },
-      "loc": 283
+      "loc": 334
     },
     {
       "name": "turboMode",
@@ -2222,7 +2225,7 @@
         "position": "sideHud",
         "ariaLabel": "Toggle turbo spin mode"
       },
-      "loc": 362
+      "loc": 364
     },
     {
       "name": "uiToast",
@@ -2256,6 +2259,11 @@
         "featureDurationMs": 1400,
         "queueOnFsEnd": true,
         "fsTriggerLabel": "FREE SPINS!",
+        "labels": {
+          "big": "UITOAST_TIER1",
+          "mega": "UITOAST_TIER2",
+          "epic": "UITOAST_TIER3"
+        },
         "colors": {
           "big": "255,210,90",
           "mega": "210,120,255",
@@ -2265,7 +2273,7 @@
         },
         "maxQueue": 6
       },
-      "loc": 383
+      "loc": 410
     },
     {
       "name": "universalForcePanel",
@@ -2286,7 +2294,8 @@
       ],
       "lifecycleHooks": [],
       "emittedEvents": [
-        "onForceFeatureRequested"
+        "onForceFeatureRequested",
+        "onForceMultiplier"
       ],
       "defaultConfig": {
         "enabled": true,
@@ -2296,7 +2305,7 @@
         ],
         "excludeKinds": [],
         "chipHeight": 28,
-        "chipFontSize": 10,
+        "chipFontSize": 11,
         "panelTop": 12,
         "panelRight": 12,
         "panelGap": 6,
@@ -2304,7 +2313,7 @@
         "showLabelText": true,
         "labelText": "FORCE"
       },
-      "loc": 423
+      "loc": 519
     },
     {
       "name": "walkingWild",
@@ -2356,7 +2365,7 @@
         "direction": "ltr",
         "maxEvents": 8
       },
-      "loc": 156
+      "loc": 167
     },
     {
       "name": "weightedWheelSegments",
@@ -2498,7 +2507,7 @@
         "maxRevolutions": 7,
         "fadeFallbackMs": 220
       },
-      "loc": 258
+      "loc": 281
     },
     {
       "name": "wildReel",
@@ -2591,7 +2600,7 @@
         "bigWinCelebMs": 800,
         "staggerStepMs": 80
       },
-      "loc": 865
+      "loc": 899
     },
     {
       "name": "winRollup",

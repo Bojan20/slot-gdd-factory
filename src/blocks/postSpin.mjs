@@ -170,9 +170,30 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
           await runTumbleChain(() => [], { duringFs });
         }
         _emitPostSpin(duringFs, []);
+        /* Bug-fix 2026-06-10 — trigger flow previously left spinBtn locked
+           in disabled=true while waiting on scatterCelebration → FSM_enterIntro.
+           If playScatterCelebration hung (shape with no scatter cells found,
+           e.g. megaclusters/cluster7x7/hexagonal/wheel/starlight) the
+           promise never resolved and the button stayed disabled forever
+           with phase still BASE. Symptom: walker BLOCKED at attempt 2 with
+           phase=BASE, disabled=true, hasFsCta=true, winPres=false.
+           FSM_enterIntro owns button state once it fires (disables for the
+           intro overlay), so re-enable here so a stalled celebration cannot
+           leave the player stranded. */
+        if (spinButton) spinButton.disabled = false;
         setTimeout(() => {
           clearWinHighlight();
-          playScatterCelebration().then(() => {
+          /* Safety timeout — scatterCelebration must resolve within 5s no
+             matter what (default celebration is ~1500ms). */
+          var _celebTimeout = setTimeout(function() {
+            /* Forced advance — fire FS_INTRO even if celebration never resolved. */
+            try { FSM_enterIntro(award, scatters); } catch (_) {}
+          }, 5000);
+          playScatterCelebration().then(function() {
+            clearTimeout(_celebTimeout);
+            FSM_enterIntro(award, scatters);
+          }).catch(function() {
+            clearTimeout(_celebTimeout);
             FSM_enterIntro(award, scatters);
           });
         }, settlePause);
