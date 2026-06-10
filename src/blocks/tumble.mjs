@@ -46,6 +46,22 @@ export function resolveConfig(model = {}) {
   if (model.topology && model.topology.cascade && model.topology.cascade.enabled) {
     cfg.enabled = true;
   }
+  /* Bug-fix 2026-06-10: tumble cascade is mechanically incompatible with
+     non-reel shapes (lock-and-spin, wheel, plinko, crash, slingo, radial).
+     Symptom observed on Huff & More Puff: tumble fired 67× across 7 spins,
+     leaving 13 cells stuck with `.is-removing` (opacity:0, scale:0.4) —
+     ghost cells that looked like "the grid is disappearing". These shapes
+     own their own settle path (holdAndWin, wheelSpin, etc.) and never
+     should be touched by tumble. Force disable. */
+  const shapeKind = (model.shape && model.shape.kind) ||
+                    (model.topology && model.topology.kind) ||
+                    null;
+  const TUMBLE_INCOMPATIBLE_SHAPES = new Set([
+    'lock_respin', 'wheel', 'plinko', 'crash', 'slingo', 'radial', 'hex',
+  ]);
+  if (shapeKind && TUMBLE_INCOMPATIBLE_SHAPES.has(shapeKind)) {
+    cfg.enabled = false;
+  }
   return cfg;
 }
 
@@ -166,6 +182,29 @@ async function runTumbleChain(detectFn, opts) {
     await _tumbleSleep(TUMBLE_CHAIN_PAUSE);
   }
 
+  /* Wave Z safety net (2026-06-10): if any cell is still stuck in a
+     tumble animation class (race against rapid re-spin, cancelled chain,
+     bail-out path), force-clean before returning so the grid never shows
+     ghost (opacity:0) or shrunk (scale:0.4) cells. Also re-populates
+     textContent from RECT_REELS in case a cell was emptied mid-animation. */
+  document.querySelectorAll('.cell.is-removing, .cell.is-dropping, .cell.is-refilling').forEach(c => {
+    c.classList.remove('is-removing');
+    c.classList.remove('is-dropping');
+    c.classList.remove('is-refilling');
+  });
+  if (Array.isArray(RECT_REELS)) {
+    for (let r = 0; r < RECT_REELS.length; r++) {
+      const reel = RECT_REELS[r];
+      if (!reel || !Array.isArray(reel.visible)) continue;
+      const vRows = reel.visibleRows || reel.visible.length;
+      for (let row = 0; row < vRows; row++) {
+        const cell = (typeof reel.cellAt === 'function') ? reel.cellAt(row) : (reel.cells && reel.cells[row]);
+        if (!cell) continue;
+        const sym = String(reel.visible[row] || '').trim();
+        if (sym && (cell.textContent || '').trim() !== sym) cell.textContent = sym;
+      }
+    }
+  }
   return { chain, totalWinX, events: allEvents };
 }
 
@@ -257,7 +296,19 @@ if (typeof window !== "undefined") {
    chain itself is async; this just sets a kill flag the loop honours. */
 let _TUMBLE_KILL_TOKEN = 0;
 if (typeof HookBus !== 'undefined') {
-  HookBus.on('preSpin', () => { _TUMBLE_KILL_TOKEN++; }, { priority: 20 });
+  HookBus.on('preSpin', () => {
+    _TUMBLE_KILL_TOKEN++;
+    /* Wave Z (2026-06-10): on EVERY preSpin, clear tumble animation
+       classes so a previous orphan never bleeds into the new spin. */
+    if (typeof document !== 'undefined') {
+      document.querySelectorAll('.cell.is-removing, .cell.is-dropping, .cell.is-refilling')
+        .forEach(c => {
+          c.classList.remove('is-removing');
+          c.classList.remove('is-dropping');
+          c.classList.remove('is-refilling');
+        });
+    }
+  }, { priority: 20 });
   HookBus.on('onFsEnd', () => {
     /* Reset preserve-orbs state at the FS boundary so the next BASE spin
        doesn't carry orphan orbs. */

@@ -205,6 +205,10 @@ const EXPECTED_EMIT_OWNERS = {
   /* Wave U-FORCE-ALL — universal force panel is the sole emitter of
    * `onForceFeatureRequested`. Generic banner only listens. */
   onForceFeatureRequested: ['universalForcePanel.mjs'],
+  /* 2026-06-10 — UFP also emits a dedicated multiplier-force signal so
+   * mult-aware blocks (multiplierOrb, persistentMultiplier, pathAware)
+   * can render visual feedback on the grid. */
+  onForceMultiplier: ['universalForcePanel.mjs'],
   /* 2026-06-09 — scatterCelebration owns its own lifecycle phase events.
    * spinControl listens to morph the SPIN CTA into a SKIP button during
    * the celebration window. */

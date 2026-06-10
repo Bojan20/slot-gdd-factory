@@ -292,6 +292,13 @@ export const HOOK_EVENTS = Object.freeze([
    *   genericFeatureBanner.mjs is the catch-all for kinds without a
    *   dedicated handler. */
   'onForceFeatureRequested',
+  /* onForceMultiplier {multX} — fires when the UFP multiplier chip
+   *   force-sets a multiplier value. Owner: universalForcePanel.mjs.
+   *   Consumers: multiplierOrb / persistentMultiplier / pathAwareMultiplier
+   *   blocks that want to render a visual feedback ON THE GRID for the
+   *   forced value (orb chip, frame badge, etc). genericFeatureBanner
+   *   already handles the banner placard separately. */
+  'onForceMultiplier',
   /* Scatter Celebration phase signals
    * onScatterCelebrationStart {cellCount, durationMs} — fires when the
    *   FS trigger scatter celebration animation begins. spinControl uses

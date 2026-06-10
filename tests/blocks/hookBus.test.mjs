@@ -71,6 +71,9 @@ t('HOOK_EVENTS canonical list (core + V intent + V5 win-present + U4 autoplay + 
     'onHotReloadConnect', 'onHotReloadDisconnect', 'onGddChange',
     /* Wave U-FORCE-ALL — universal feature force panel */
     'onForceFeatureRequested',
+    /* 2026-06-10 — UFP multiplier force chip emits this so mult-aware
+     * blocks can render visual feedback on the grid (not just banner). */
+    'onForceMultiplier',
     /* 2026-06-09 — scatterCelebration lifecycle (spinControl morphs SPIN
      * → SKIP during the celebration window) */
     'onScatterCelebrationStart', 'onScatterCelebrationEnd',

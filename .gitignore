@@ -27,3 +27,6 @@ tools/_qa/ultimate-html/
 
 # Launcher fast-path cache — local-only, regen-uje se na svaki run.
 .last-build-hash
+
+# Claude Code local state
+.claude/
