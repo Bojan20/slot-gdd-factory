@@ -116,11 +116,15 @@ export function pdfTextToMarkdown(raw) {
     out.push('');
   }
 
-  /* ── 3. Tumble / Cascade ────────────────────────────────────────────── */
-  if (/\b(tumbl|cascad|avalanch)/i.test(txt)) {
+  /* ── 3. Tumble / Cascade ──────────────────────────────────────────────
+     Fire only on real mechanic mentions. SFX prose like "cascading metallic
+     chimes" must NOT inject a Cascade mechanic section, and must NOT pull
+     a Multiplier Orb mechanic into a GDD that has none. */
+  const cascadeMech = /\b(?:tumbl(?:e|es|ing)|cascad(?:e|es|ing)|avalanche)\s+(?:mechanic|reel|reels|engine|feature|win|game|round|symbols?|chain|pays?)\b|\breel\s+mechanism\s*[—:|-]\s*(?:cascade|tumble|avalanche)\b|\b(?:cascading|tumbling)\s+(?:reel|reels|wins?|symbols?)\b/i;
+  if (cascadeMech.test(txt)) {
     out.push(`## 04 · Tumble (Cascade) Mechanic`);
     out.push('');
-    out.push('Reel mechanism — Cascade. Tumble mehanika u svakom spinu — pobednički simboli nestaju, gravitacija puni prazna polja, novi simboli padaju sa vrha. Multiplier orbi ostaju na ekranu tokom celog tumblesa.');
+    out.push('Reel mechanism — Cascade. Tumble mehanika u svakom spinu — pobednički simboli nestaju, gravitacija puni prazna polja, novi simboli padaju sa vrha.');
     out.push('');
   }
 
@@ -200,7 +204,7 @@ export function pdfTextToMarkdown(raw) {
     }
     if (fs.akumulirajuci) {
       out.push(`### Akumulirajući Multiplier`);
-      out.push('Svaki multiplier orb koji učestvuje u dobitku se dodaje u Bonus_Multiplier (počinje na 0x). Akumulirajuća mehanika — primenjuje se na svaki naredni dobitak u bonusu.');
+      out.push('Akumulirajuća mehanika — multiplier raste tokom bonusa i primenjuje se na naredne dobitke.');
       out.push('');
     }
     /* 2026-06-09 — preserve "No retrigger" intent from the PDF body so
@@ -241,6 +245,49 @@ export function pdfTextToMarkdown(raw) {
     out.push('|---|---|');
     out.push(`| Cena | +${ab.pctIncrease}% uloga |`);
     out.push(`| Efekat | Duplira verovatnoću za bonus trigger |`);
+    out.push('');
+  }
+
+  /* ── 8. Hold & Spin / Hold & Win / Lock It Link ────────────────────────
+     Industry-standard Lightning-Link family hold-and-respin mechanic. We
+     surface it as a Hold & Win section so the parser feature list picks
+     it up via the standard `hold_and_win` extractor. */
+  if (/\bhold\s*[&]?\s*(?:and\s+)?spin\b|\bhold\s*[&]?\s*(?:and\s+)?win\b|\block\s+it\s+link\b|\bH\s*&\s*W\b/i.test(txt)) {
+    out.push(`## 09 · Hold & Win`);
+    out.push('');
+    out.push('Hold & Spin mehanika — pobednički ili specijalni simboli ostaju zaključani na ekranu, prazne pozicije se respinuju. Brojač respinova se resetuje svaki put kad se sleti nov simbol koji se zaključa.');
+    out.push('');
+  }
+
+  /* ── 9. Wheel Bonus ────────────────────────────────────────────────────
+     Vendor-neutral wheel feature. Detects "Bonus Wheel", "Buzz Saw Wheel",
+     "Prize Wheel", "Wheel of Fortune" style triggers. */
+  if (/\b(?:bonus\s+wheel|wheel\s+bonus|prize\s+wheel|buzz\s+saw\s+wheel|wheel\s+of\s+\w+)\b/i.test(txt)) {
+    out.push(`## 10 · Wheel Bonus`);
+    out.push('');
+    out.push('Bonus točak — pokreće se posebnim simbolom/triggerom i dodeljuje jednu od segmentnih nagrada (kredit nagrade, jackpot tier-ovi, ili sekundarni feature triggeri).');
+    out.push('');
+  }
+
+  /* ── 10. Jackpots ──────────────────────────────────────────────────────
+     Industry-standard Mini/Minor/Major/Grand jackpot ladder. We surface
+     the jackpot list whenever the GDD names at least one tier so the
+     parser jackpot extractor lights up. */
+  if (/\b(?:mini|minor|major|grand|mega)\s+jackpot\b|\bjackpots?\s+(?:ladder|tier|map|system)\b|\bwap\s+jackpot\b/i.test(txt)) {
+    out.push(`## 11 · Jackpots`);
+    out.push('');
+    out.push('Jackpot sistem sa više nivoa (Mini / Minor / Major / Grand). Dodeljuje se kroz Wheel Bonus, Wolf Reveal ili specijalne kombinacije u bonus rundi.');
+    out.push('');
+  }
+
+  /* ── 11. Gamble Feature ────────────────────────────────────────────────
+     Risk-doubling secondary feature ("Gamble", "Double-up", "Card gamble").
+     Disabled in many jurisdictions (UK, IE, AU) — still part of the GDD
+     mechanic surface where available. */
+  if (/\bgamble\s+(?:feature|ladder|round|option)\b|\bdouble[\s-]?up\s+feature\b|\bcard\s+gamble\b/i.test(txt)) {
+    out.push(`## 12 · Gamble Feature`);
+    out.push('');
+    out.push('Sekundarni gamble feature — igrač može da rizikuje dobitak na 2x (card color / coin flip). Dostupno samo u jurisdikcijama gde je dozvoljeno.');
     out.push('');
   }
 
@@ -1060,8 +1107,8 @@ function extractMetaPanel(txt) {
       /\b1024\s*ways\b/i,             '1024-ways',
       /\b117\s*649\s*ways\b/i,        '117649-ways',
       /\bcluster\s*pays\b/i,          'cluster-pays',
-      /\bcascad/i,                    'cascade',
-      /\btumble\b/i,                  'tumble',
+      /\b(?:cascad(?:e|es|ing)|reel\s+mechanism)\s+(?:mechanic|reel|reels|engine|feature|win|game|round|symbols?|chain|pays?)\b|\breel\s+mechanism\s*[—:|-]\s*cascade\b/i, 'cascade',
+      /\btumbl(?:e|es|ing)\s+(?:mechanic|reel|reels|engine|feature|game|round|symbols?|chain|pays?)\b|\btumble\s+(?:reels?|symbols?)\b/i, 'tumble',
       /\bmegaways\b/i,                'variable-ways',
       /\bbuy\s*feature\b/i,           'buy-feature',
       /\bbonus\s*buy\b/i,             'bonus-buy',

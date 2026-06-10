@@ -907,8 +907,10 @@ export function extractFeatures(rawText) {
     { kind: 'free_spins', re: /\bfree[\s-]?spins?\b/i, label: 'Free Spins' },
     {
       kind: 'hold_and_win',
-      // GDDs spell it three ways: "Hold and Win", "Hold & Win", "H&W".
-      re: /\bhold\s*(?:and|&)\s*win\b|\bH\s*&\s*W\b/i,
+      // GDDs spell it many ways: "Hold and Win", "Hold & Win", "H&W",
+      // "Hold and Spin", "Hold & Spin" (Lightning Link family),
+      // "Lock It Link" (Scientific Games franchise marker).
+      re: /\bhold\s*(?:and|&)\s*(?:win|spin)\b|\bH\s*&\s*(?:W|S)\b|\block\s+it\s+link\b/i,
       label: 'Hold & Win',
     },
     {
@@ -1130,6 +1132,7 @@ export function extractGenericFeatures(rawText, knownLabels = new Set()) {
   const tryAdd = (rawLabel) => {
     const label = norm(rawLabel)
       .replace(/^[\d.]+\s*/, '')          // strip "1. " / "2.1 "
+      .replace(/^[·•⋅]\s*/, '')            // strip leading bullet from "## 10 · Title" style headings
       .replace(/[*_#`]/g, '')              // strip markdown decoration
       .replace(/[:\-–—|]+$/, '')           // strip trailing punctuation
       .replace(/^[:\-–—|]+/, '')
