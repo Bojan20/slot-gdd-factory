@@ -1,1050 +1,3387 @@
 {
-  "generatedAt": "2026-06-08T20:33:35.602Z",
-  "count": 174,
+  "generatedAt": "2026-06-09T19:06:16.896Z",
+  "count": 308,
   "fixtures": [
     {
       "idx": 1,
-      "file": "001_rectangular_classic-lines.md",
+      "file": "001__RECT__FS_Wild_Mult.md",
       "kind": "rectangular",
-      "pattern": "classic-lines"
+      "pattern": "classic-lines",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 2,
-      "file": "002_rectangular_stacked_scatter_classic-lines.md",
+      "file": "002__RECTSTACK__FS_Wild_Mult.md",
       "kind": "rectangular_stacked_scatter",
-      "pattern": "classic-lines"
+      "pattern": "classic-lines",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 3,
-      "file": "003_expanding_classic-lines.md",
+      "file": "003__EXPAND__FS_Wild_Mult.md",
       "kind": "expanding",
-      "pattern": "classic-lines"
+      "pattern": "classic-lines",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 4,
-      "file": "004_dual_classic-lines.md",
+      "file": "004__DUAL__FS_Wild_Mult.md",
       "kind": "dual",
-      "pattern": "classic-lines"
+      "pattern": "classic-lines",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 5,
-      "file": "005_lock_respin_classic-lines.md",
+      "file": "005__LOCK__FS_Wild_Mult.md",
       "kind": "lock_respin",
-      "pattern": "classic-lines"
+      "pattern": "classic-lines",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 6,
-      "file": "006_variable_reel_megaways-cascade.md",
+      "file": "006__VARREEL__Cascade_Ways_PersistMult_+1.md",
       "kind": "variable_reel",
-      "pattern": "megaways-cascade"
+      "pattern": "megaways-cascade",
+      "density": "std",
+      "features": [
+        "cascade",
+        "ways",
+        "persistent_multiplier",
+        "free_spins"
+      ]
     },
     {
       "idx": 7,
-      "file": "007_cluster_cluster-pays.md",
+      "file": "007__CLUSTER__ClusterPays_Cascade_MultOrb.md",
       "kind": "cluster",
-      "pattern": "cluster-pays"
+      "pattern": "cluster-pays",
+      "density": "std",
+      "features": [
+        "cluster_pays",
+        "cascade",
+        "multiplier_orb"
+      ]
     },
     {
       "idx": 8,
-      "file": "008_megaclusters_cluster-pays.md",
+      "file": "008__MEGA__ClusterPays_Cascade_MultOrb.md",
       "kind": "megaclusters",
-      "pattern": "cluster-pays"
+      "pattern": "cluster-pays",
+      "density": "std",
+      "features": [
+        "cluster_pays",
+        "cascade",
+        "multiplier_orb"
+      ]
     },
     {
       "idx": 9,
-      "file": "009_hexagonal_cluster-pays.md",
+      "file": "009__HEX__ClusterPays_Cascade_MultOrb.md",
       "kind": "hexagonal",
-      "pattern": "cluster-pays"
+      "pattern": "cluster-pays",
+      "density": "std",
+      "features": [
+        "cluster_pays",
+        "cascade",
+        "multiplier_orb"
+      ]
     },
     {
       "idx": 10,
-      "file": "010_rectangular_hold-and-win.md",
+      "file": "010__RECT__HoldAndWin_Respin_Jackpot.md",
       "kind": "rectangular",
-      "pattern": "hold-and-win"
+      "pattern": "hold-and-win",
+      "density": "std",
+      "features": [
+        "hold_and_win",
+        "respin",
+        "jackpot"
+      ]
     },
     {
       "idx": 11,
-      "file": "011_lock_respin_hold-and-win.md",
+      "file": "011__LOCK__HoldAndWin_Respin_Jackpot.md",
       "kind": "lock_respin",
-      "pattern": "hold-and-win"
+      "pattern": "hold-and-win",
+      "density": "std",
+      "features": [
+        "hold_and_win",
+        "respin",
+        "jackpot"
+      ]
     },
     {
       "idx": 12,
-      "file": "012_rectangular_bonus-buy.md",
+      "file": "012__RECT__FS_BonusBuy.md",
       "kind": "rectangular",
-      "pattern": "bonus-buy"
+      "pattern": "bonus-buy",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "bonus_buy"
+      ]
     },
     {
       "idx": 13,
-      "file": "013_rectangular_stacked_scatter_bonus-buy.md",
+      "file": "013__RECTSTACK__FS_BonusBuy.md",
       "kind": "rectangular_stacked_scatter",
-      "pattern": "bonus-buy"
+      "pattern": "bonus-buy",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "bonus_buy"
+      ]
     },
     {
       "idx": 14,
-      "file": "014_variable_reel_bonus-buy.md",
+      "file": "014__VARREEL__FS_BonusBuy.md",
       "kind": "variable_reel",
-      "pattern": "bonus-buy"
+      "pattern": "bonus-buy",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "bonus_buy"
+      ]
     },
     {
       "idx": 15,
-      "file": "015_expanding_bonus-buy.md",
+      "file": "015__EXPAND__FS_BonusBuy.md",
       "kind": "expanding",
-      "pattern": "bonus-buy"
+      "pattern": "bonus-buy",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "bonus_buy"
+      ]
     },
     {
       "idx": 16,
-      "file": "016_infinity_bonus-buy.md",
+      "file": "016__INF__FS_BonusBuy.md",
       "kind": "infinity",
-      "pattern": "bonus-buy"
+      "pattern": "bonus-buy",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "bonus_buy"
+      ]
     },
     {
       "idx": 17,
-      "file": "017_dual_bonus-buy.md",
+      "file": "017__DUAL__FS_BonusBuy.md",
       "kind": "dual",
-      "pattern": "bonus-buy"
+      "pattern": "bonus-buy",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "bonus_buy"
+      ]
     },
     {
       "idx": 18,
-      "file": "018_cluster_bonus-buy.md",
+      "file": "018__CLUSTER__FS_BonusBuy.md",
       "kind": "cluster",
-      "pattern": "bonus-buy"
+      "pattern": "bonus-buy",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "bonus_buy"
+      ]
     },
     {
       "idx": 19,
-      "file": "019_megaclusters_bonus-buy.md",
+      "file": "019__MEGA__FS_BonusBuy.md",
       "kind": "megaclusters",
-      "pattern": "bonus-buy"
+      "pattern": "bonus-buy",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "bonus_buy"
+      ]
     },
     {
       "idx": 20,
-      "file": "020_hexagonal_bonus-buy.md",
+      "file": "020__HEX__FS_BonusBuy.md",
       "kind": "hexagonal",
-      "pattern": "bonus-buy"
+      "pattern": "bonus-buy",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "bonus_buy"
+      ]
     },
     {
       "idx": 21,
-      "file": "021_diamond_bonus-buy.md",
+      "file": "021__DIA__FS_BonusBuy.md",
       "kind": "diamond",
-      "pattern": "bonus-buy"
+      "pattern": "bonus-buy",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "bonus_buy"
+      ]
     },
     {
       "idx": 22,
-      "file": "022_pyramid_bonus-buy.md",
+      "file": "022__PYR__FS_BonusBuy.md",
       "kind": "pyramid",
-      "pattern": "bonus-buy"
+      "pattern": "bonus-buy",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "bonus_buy"
+      ]
     },
     {
       "idx": 23,
-      "file": "023_cross_bonus-buy.md",
+      "file": "023__CROSS__FS_BonusBuy.md",
       "kind": "cross",
-      "pattern": "bonus-buy"
+      "pattern": "bonus-buy",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "bonus_buy"
+      ]
     },
     {
       "idx": 24,
-      "file": "024_l_shape_bonus-buy.md",
+      "file": "024__LSHAPE__FS_BonusBuy.md",
       "kind": "l_shape",
-      "pattern": "bonus-buy"
+      "pattern": "bonus-buy",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "bonus_buy"
+      ]
     },
     {
       "idx": 25,
-      "file": "025_lock_respin_bonus-buy.md",
+      "file": "025__LOCK__FS_BonusBuy.md",
       "kind": "lock_respin",
-      "pattern": "bonus-buy"
+      "pattern": "bonus-buy",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "bonus_buy"
+      ]
     },
     {
       "idx": 26,
-      "file": "026_rectangular_bonus-buy-deterministic.md",
+      "file": "026__RECT__FS_BonusBuyDet.md",
       "kind": "rectangular",
-      "pattern": "bonus-buy-deterministic"
+      "pattern": "bonus-buy-deterministic",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "bonus_buy_deterministic"
+      ]
     },
     {
       "idx": 27,
-      "file": "027_variable_reel_bonus-buy-deterministic.md",
+      "file": "027__VARREEL__FS_BonusBuyDet.md",
       "kind": "variable_reel",
-      "pattern": "bonus-buy-deterministic"
+      "pattern": "bonus-buy-deterministic",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "bonus_buy_deterministic"
+      ]
     },
     {
       "idx": 28,
-      "file": "028_rectangular_wheel-bonus.md",
+      "file": "028__RECT__WheelBonus_WeightedWheel_Jackpot.md",
       "kind": "rectangular",
-      "pattern": "wheel-bonus"
+      "pattern": "wheel-bonus",
+      "density": "std",
+      "features": [
+        "wheel_bonus",
+        "weighted_wheel_segments",
+        "jackpot"
+      ]
     },
     {
       "idx": 29,
-      "file": "029_wheel_wheel-bonus.md",
+      "file": "029__WHEEL__WheelBonus_WeightedWheel_Jackpot.md",
       "kind": "wheel",
-      "pattern": "wheel-bonus"
+      "pattern": "wheel-bonus",
+      "density": "std",
+      "features": [
+        "wheel_bonus",
+        "weighted_wheel_segments",
+        "jackpot"
+      ]
     },
     {
       "idx": 30,
-      "file": "030_radial_wheel-bonus.md",
+      "file": "030__RADIAL__WheelBonus_WeightedWheel_Jackpot.md",
       "kind": "radial",
-      "pattern": "wheel-bonus"
+      "pattern": "wheel-bonus",
+      "density": "std",
+      "features": [
+        "wheel_bonus",
+        "weighted_wheel_segments",
+        "jackpot"
+      ]
     },
     {
       "idx": 31,
-      "file": "031_rectangular_tumble-multiplier.md",
+      "file": "031__RECT__Cascade_MultOrb_FS.md",
       "kind": "rectangular",
-      "pattern": "tumble-multiplier"
+      "pattern": "tumble-multiplier",
+      "density": "std",
+      "features": [
+        "cascade",
+        "multiplier_orb",
+        "free_spins"
+      ]
     },
     {
       "idx": 32,
-      "file": "032_rectangular_stacked_scatter_tumble-multiplier.md",
+      "file": "032__RECTSTACK__Cascade_MultOrb_FS.md",
       "kind": "rectangular_stacked_scatter",
-      "pattern": "tumble-multiplier"
+      "pattern": "tumble-multiplier",
+      "density": "std",
+      "features": [
+        "cascade",
+        "multiplier_orb",
+        "free_spins"
+      ]
     },
     {
       "idx": 33,
-      "file": "033_variable_reel_tumble-multiplier.md",
+      "file": "033__VARREEL__Cascade_MultOrb_FS.md",
       "kind": "variable_reel",
-      "pattern": "tumble-multiplier"
+      "pattern": "tumble-multiplier",
+      "density": "std",
+      "features": [
+        "cascade",
+        "multiplier_orb",
+        "free_spins"
+      ]
     },
     {
       "idx": 34,
-      "file": "034_expanding_tumble-multiplier.md",
+      "file": "034__EXPAND__Cascade_MultOrb_FS.md",
       "kind": "expanding",
-      "pattern": "tumble-multiplier"
+      "pattern": "tumble-multiplier",
+      "density": "std",
+      "features": [
+        "cascade",
+        "multiplier_orb",
+        "free_spins"
+      ]
     },
     {
       "idx": 35,
-      "file": "035_infinity_tumble-multiplier.md",
+      "file": "035__INF__Cascade_MultOrb_FS.md",
       "kind": "infinity",
-      "pattern": "tumble-multiplier"
+      "pattern": "tumble-multiplier",
+      "density": "std",
+      "features": [
+        "cascade",
+        "multiplier_orb",
+        "free_spins"
+      ]
     },
     {
       "idx": 36,
-      "file": "036_dual_tumble-multiplier.md",
+      "file": "036__DUAL__Cascade_MultOrb_FS.md",
       "kind": "dual",
-      "pattern": "tumble-multiplier"
+      "pattern": "tumble-multiplier",
+      "density": "std",
+      "features": [
+        "cascade",
+        "multiplier_orb",
+        "free_spins"
+      ]
     },
     {
       "idx": 37,
-      "file": "037_diamond_tumble-multiplier.md",
+      "file": "037__DIA__Cascade_MultOrb_FS.md",
       "kind": "diamond",
-      "pattern": "tumble-multiplier"
+      "pattern": "tumble-multiplier",
+      "density": "std",
+      "features": [
+        "cascade",
+        "multiplier_orb",
+        "free_spins"
+      ]
     },
     {
       "idx": 38,
-      "file": "038_pyramid_tumble-multiplier.md",
+      "file": "038__PYR__Cascade_MultOrb_FS.md",
       "kind": "pyramid",
-      "pattern": "tumble-multiplier"
+      "pattern": "tumble-multiplier",
+      "density": "std",
+      "features": [
+        "cascade",
+        "multiplier_orb",
+        "free_spins"
+      ]
     },
     {
       "idx": 39,
-      "file": "039_cross_tumble-multiplier.md",
+      "file": "039__CROSS__Cascade_MultOrb_FS.md",
       "kind": "cross",
-      "pattern": "tumble-multiplier"
+      "pattern": "tumble-multiplier",
+      "density": "std",
+      "features": [
+        "cascade",
+        "multiplier_orb",
+        "free_spins"
+      ]
     },
     {
       "idx": 40,
-      "file": "040_l_shape_tumble-multiplier.md",
+      "file": "040__LSHAPE__Cascade_MultOrb_FS.md",
       "kind": "l_shape",
-      "pattern": "tumble-multiplier"
+      "pattern": "tumble-multiplier",
+      "density": "std",
+      "features": [
+        "cascade",
+        "multiplier_orb",
+        "free_spins"
+      ]
     },
     {
       "idx": 41,
-      "file": "041_rectangular_pay-anywhere.md",
+      "file": "041__RECT__ScatterPay_Cascade.md",
       "kind": "rectangular",
-      "pattern": "pay-anywhere"
+      "pattern": "pay-anywhere",
+      "density": "std",
+      "features": [
+        "scatter_pays",
+        "cascade"
+      ]
     },
     {
       "idx": 42,
-      "file": "042_diamond_pay-anywhere.md",
+      "file": "042__DIA__ScatterPay_Cascade.md",
       "kind": "diamond",
-      "pattern": "pay-anywhere"
+      "pattern": "pay-anywhere",
+      "density": "std",
+      "features": [
+        "scatter_pays",
+        "cascade"
+      ]
     },
     {
       "idx": 43,
-      "file": "043_pyramid_pay-anywhere.md",
+      "file": "043__PYR__ScatterPay_Cascade.md",
       "kind": "pyramid",
-      "pattern": "pay-anywhere"
+      "pattern": "pay-anywhere",
+      "density": "std",
+      "features": [
+        "scatter_pays",
+        "cascade"
+      ]
     },
     {
       "idx": 44,
-      "file": "044_cross_pay-anywhere.md",
+      "file": "044__CROSS__ScatterPay_Cascade.md",
       "kind": "cross",
-      "pattern": "pay-anywhere"
+      "pattern": "pay-anywhere",
+      "density": "std",
+      "features": [
+        "scatter_pays",
+        "cascade"
+      ]
     },
     {
       "idx": 45,
-      "file": "045_l_shape_pay-anywhere.md",
+      "file": "045__LSHAPE__ScatterPay_Cascade.md",
       "kind": "l_shape",
-      "pattern": "pay-anywhere"
+      "pattern": "pay-anywhere",
+      "density": "std",
+      "features": [
+        "scatter_pays",
+        "cascade"
+      ]
     },
     {
       "idx": 46,
-      "file": "046_rectangular_sticky-wild-fs.md",
+      "file": "046__RECT__FS_StickyWild_Wild.md",
       "kind": "rectangular",
-      "pattern": "sticky-wild-fs"
+      "pattern": "sticky-wild-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "sticky_wild",
+        "wild"
+      ]
     },
     {
       "idx": 47,
-      "file": "047_rectangular_stacked_scatter_sticky-wild-fs.md",
+      "file": "047__RECTSTACK__FS_StickyWild_Wild.md",
       "kind": "rectangular_stacked_scatter",
-      "pattern": "sticky-wild-fs"
+      "pattern": "sticky-wild-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "sticky_wild",
+        "wild"
+      ]
     },
     {
       "idx": 48,
-      "file": "048_variable_reel_sticky-wild-fs.md",
+      "file": "048__VARREEL__FS_StickyWild_Wild.md",
       "kind": "variable_reel",
-      "pattern": "sticky-wild-fs"
+      "pattern": "sticky-wild-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "sticky_wild",
+        "wild"
+      ]
     },
     {
       "idx": 49,
-      "file": "049_expanding_sticky-wild-fs.md",
+      "file": "049__EXPAND__FS_StickyWild_Wild.md",
       "kind": "expanding",
-      "pattern": "sticky-wild-fs"
+      "pattern": "sticky-wild-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "sticky_wild",
+        "wild"
+      ]
     },
     {
       "idx": 50,
-      "file": "050_infinity_sticky-wild-fs.md",
+      "file": "050__INF__FS_StickyWild_Wild.md",
       "kind": "infinity",
-      "pattern": "sticky-wild-fs"
+      "pattern": "sticky-wild-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "sticky_wild",
+        "wild"
+      ]
     },
     {
       "idx": 51,
-      "file": "051_dual_sticky-wild-fs.md",
+      "file": "051__DUAL__FS_StickyWild_Wild.md",
       "kind": "dual",
-      "pattern": "sticky-wild-fs"
+      "pattern": "sticky-wild-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "sticky_wild",
+        "wild"
+      ]
     },
     {
       "idx": 52,
-      "file": "052_lock_respin_sticky-wild-fs.md",
+      "file": "052__LOCK__FS_StickyWild_Wild.md",
       "kind": "lock_respin",
-      "pattern": "sticky-wild-fs"
+      "pattern": "sticky-wild-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "sticky_wild",
+        "wild"
+      ]
     },
     {
       "idx": 53,
-      "file": "053_rectangular_expanding-wild.md",
+      "file": "053__RECT__ExpandWild_FS.md",
       "kind": "rectangular",
-      "pattern": "expanding-wild"
+      "pattern": "expanding-wild",
+      "density": "std",
+      "features": [
+        "expanding_wild",
+        "free_spins"
+      ]
     },
     {
       "idx": 54,
-      "file": "054_rectangular_stacked_scatter_expanding-wild.md",
+      "file": "054__RECTSTACK__ExpandWild_FS.md",
       "kind": "rectangular_stacked_scatter",
-      "pattern": "expanding-wild"
+      "pattern": "expanding-wild",
+      "density": "std",
+      "features": [
+        "expanding_wild",
+        "free_spins"
+      ]
     },
     {
       "idx": 55,
-      "file": "055_variable_reel_expanding-wild.md",
+      "file": "055__VARREEL__ExpandWild_FS.md",
       "kind": "variable_reel",
-      "pattern": "expanding-wild"
+      "pattern": "expanding-wild",
+      "density": "std",
+      "features": [
+        "expanding_wild",
+        "free_spins"
+      ]
     },
     {
       "idx": 56,
-      "file": "056_expanding_expanding-wild.md",
+      "file": "056__EXPAND__ExpandWild_FS.md",
       "kind": "expanding",
-      "pattern": "expanding-wild"
+      "pattern": "expanding-wild",
+      "density": "std",
+      "features": [
+        "expanding_wild",
+        "free_spins"
+      ]
     },
     {
       "idx": 57,
-      "file": "057_infinity_expanding-wild.md",
+      "file": "057__INF__ExpandWild_FS.md",
       "kind": "infinity",
-      "pattern": "expanding-wild"
+      "pattern": "expanding-wild",
+      "density": "std",
+      "features": [
+        "expanding_wild",
+        "free_spins"
+      ]
     },
     {
       "idx": 58,
-      "file": "058_dual_expanding-wild.md",
+      "file": "058__DUAL__ExpandWild_FS.md",
       "kind": "dual",
-      "pattern": "expanding-wild"
+      "pattern": "expanding-wild",
+      "density": "std",
+      "features": [
+        "expanding_wild",
+        "free_spins"
+      ]
     },
     {
       "idx": 59,
-      "file": "059_lock_respin_expanding-wild.md",
+      "file": "059__LOCK__ExpandWild_FS.md",
       "kind": "lock_respin",
-      "pattern": "expanding-wild"
+      "pattern": "expanding-wild",
+      "density": "std",
+      "features": [
+        "expanding_wild",
+        "free_spins"
+      ]
     },
     {
       "idx": 60,
-      "file": "060_rectangular_walking-wild.md",
+      "file": "060__RECT__WalkWild_FS.md",
       "kind": "rectangular",
-      "pattern": "walking-wild"
+      "pattern": "walking-wild",
+      "density": "std",
+      "features": [
+        "walking_wild",
+        "free_spins"
+      ]
     },
     {
       "idx": 61,
-      "file": "061_rectangular_stacked_scatter_walking-wild.md",
+      "file": "061__RECTSTACK__WalkWild_FS.md",
       "kind": "rectangular_stacked_scatter",
-      "pattern": "walking-wild"
+      "pattern": "walking-wild",
+      "density": "std",
+      "features": [
+        "walking_wild",
+        "free_spins"
+      ]
     },
     {
       "idx": 62,
-      "file": "062_expanding_walking-wild.md",
+      "file": "062__EXPAND__WalkWild_FS.md",
       "kind": "expanding",
-      "pattern": "walking-wild"
+      "pattern": "walking-wild",
+      "density": "std",
+      "features": [
+        "walking_wild",
+        "free_spins"
+      ]
     },
     {
       "idx": 63,
-      "file": "063_dual_walking-wild.md",
+      "file": "063__DUAL__WalkWild_FS.md",
       "kind": "dual",
-      "pattern": "walking-wild"
+      "pattern": "walking-wild",
+      "density": "std",
+      "features": [
+        "walking_wild",
+        "free_spins"
+      ]
     },
     {
       "idx": 64,
-      "file": "064_lock_respin_walking-wild.md",
+      "file": "064__LOCK__WalkWild_FS.md",
       "kind": "lock_respin",
-      "pattern": "walking-wild"
+      "pattern": "walking-wild",
+      "density": "std",
+      "features": [
+        "walking_wild",
+        "free_spins"
+      ]
     },
     {
       "idx": 65,
-      "file": "065_rectangular_mystery-symbol.md",
+      "file": "065__RECT__Mystery_FS.md",
       "kind": "rectangular",
-      "pattern": "mystery-symbol"
+      "pattern": "mystery-symbol",
+      "density": "std",
+      "features": [
+        "mystery_symbol",
+        "free_spins"
+      ]
     },
     {
       "idx": 66,
-      "file": "066_rectangular_stacked_scatter_mystery-symbol.md",
+      "file": "066__RECTSTACK__Mystery_FS.md",
       "kind": "rectangular_stacked_scatter",
-      "pattern": "mystery-symbol"
+      "pattern": "mystery-symbol",
+      "density": "std",
+      "features": [
+        "mystery_symbol",
+        "free_spins"
+      ]
     },
     {
       "idx": 67,
-      "file": "067_variable_reel_mystery-symbol.md",
+      "file": "067__VARREEL__Mystery_FS.md",
       "kind": "variable_reel",
-      "pattern": "mystery-symbol"
+      "pattern": "mystery-symbol",
+      "density": "std",
+      "features": [
+        "mystery_symbol",
+        "free_spins"
+      ]
     },
     {
       "idx": 68,
-      "file": "068_expanding_mystery-symbol.md",
+      "file": "068__EXPAND__Mystery_FS.md",
       "kind": "expanding",
-      "pattern": "mystery-symbol"
+      "pattern": "mystery-symbol",
+      "density": "std",
+      "features": [
+        "mystery_symbol",
+        "free_spins"
+      ]
     },
     {
       "idx": 69,
-      "file": "069_infinity_mystery-symbol.md",
+      "file": "069__INF__Mystery_FS.md",
       "kind": "infinity",
-      "pattern": "mystery-symbol"
+      "pattern": "mystery-symbol",
+      "density": "std",
+      "features": [
+        "mystery_symbol",
+        "free_spins"
+      ]
     },
     {
       "idx": 70,
-      "file": "070_dual_mystery-symbol.md",
+      "file": "070__DUAL__Mystery_FS.md",
       "kind": "dual",
-      "pattern": "mystery-symbol"
+      "pattern": "mystery-symbol",
+      "density": "std",
+      "features": [
+        "mystery_symbol",
+        "free_spins"
+      ]
     },
     {
       "idx": 71,
-      "file": "071_cluster_mystery-symbol.md",
+      "file": "071__CLUSTER__Mystery_FS.md",
       "kind": "cluster",
-      "pattern": "mystery-symbol"
+      "pattern": "mystery-symbol",
+      "density": "std",
+      "features": [
+        "mystery_symbol",
+        "free_spins"
+      ]
     },
     {
       "idx": 72,
-      "file": "072_megaclusters_mystery-symbol.md",
+      "file": "072__MEGA__Mystery_FS.md",
       "kind": "megaclusters",
-      "pattern": "mystery-symbol"
+      "pattern": "mystery-symbol",
+      "density": "std",
+      "features": [
+        "mystery_symbol",
+        "free_spins"
+      ]
     },
     {
       "idx": 73,
-      "file": "073_hexagonal_mystery-symbol.md",
+      "file": "073__HEX__Mystery_FS.md",
       "kind": "hexagonal",
-      "pattern": "mystery-symbol"
+      "pattern": "mystery-symbol",
+      "density": "std",
+      "features": [
+        "mystery_symbol",
+        "free_spins"
+      ]
     },
     {
       "idx": 74,
-      "file": "074_lock_respin_mystery-symbol.md",
+      "file": "074__LOCK__Mystery_FS.md",
       "kind": "lock_respin",
-      "pattern": "mystery-symbol"
+      "pattern": "mystery-symbol",
+      "density": "std",
+      "features": [
+        "mystery_symbol",
+        "free_spins"
+      ]
     },
     {
       "idx": 75,
-      "file": "075_rectangular_super-symbol.md",
+      "file": "075__RECT__ColSym_FS.md",
       "kind": "rectangular",
-      "pattern": "super-symbol"
+      "pattern": "super-symbol",
+      "density": "std",
+      "features": [
+        "super_symbol",
+        "free_spins"
+      ]
     },
     {
       "idx": 76,
-      "file": "076_variable_reel_super-symbol.md",
+      "file": "076__VARREEL__ColSym_FS.md",
       "kind": "variable_reel",
-      "pattern": "super-symbol"
+      "pattern": "super-symbol",
+      "density": "std",
+      "features": [
+        "super_symbol",
+        "free_spins"
+      ]
     },
     {
       "idx": 77,
-      "file": "077_megaclusters_super-symbol.md",
+      "file": "077__MEGA__ColSym_FS.md",
       "kind": "megaclusters",
-      "pattern": "super-symbol"
+      "pattern": "super-symbol",
+      "density": "std",
+      "features": [
+        "super_symbol",
+        "free_spins"
+      ]
     },
     {
       "idx": 78,
-      "file": "078_rectangular_progressive-fs.md",
+      "file": "078__RECT__FS_ProgFS.md",
       "kind": "rectangular",
-      "pattern": "progressive-fs"
+      "pattern": "progressive-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 79,
-      "file": "079_rectangular_stacked_scatter_progressive-fs.md",
+      "file": "079__RECTSTACK__FS_ProgFS.md",
       "kind": "rectangular_stacked_scatter",
-      "pattern": "progressive-fs"
+      "pattern": "progressive-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 80,
-      "file": "080_variable_reel_progressive-fs.md",
+      "file": "080__VARREEL__FS_ProgFS.md",
       "kind": "variable_reel",
-      "pattern": "progressive-fs"
+      "pattern": "progressive-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 81,
-      "file": "081_expanding_progressive-fs.md",
+      "file": "081__EXPAND__FS_ProgFS.md",
       "kind": "expanding",
-      "pattern": "progressive-fs"
+      "pattern": "progressive-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 82,
-      "file": "082_infinity_progressive-fs.md",
+      "file": "082__INF__FS_ProgFS.md",
       "kind": "infinity",
-      "pattern": "progressive-fs"
+      "pattern": "progressive-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 83,
-      "file": "083_dual_progressive-fs.md",
+      "file": "083__DUAL__FS_ProgFS.md",
       "kind": "dual",
-      "pattern": "progressive-fs"
+      "pattern": "progressive-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 84,
-      "file": "084_cluster_progressive-fs.md",
+      "file": "084__CLUSTER__FS_ProgFS.md",
       "kind": "cluster",
-      "pattern": "progressive-fs"
+      "pattern": "progressive-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 85,
-      "file": "085_megaclusters_progressive-fs.md",
+      "file": "085__MEGA__FS_ProgFS.md",
       "kind": "megaclusters",
-      "pattern": "progressive-fs"
+      "pattern": "progressive-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 86,
-      "file": "086_hexagonal_progressive-fs.md",
+      "file": "086__HEX__FS_ProgFS.md",
       "kind": "hexagonal",
-      "pattern": "progressive-fs"
+      "pattern": "progressive-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 87,
-      "file": "087_lock_respin_progressive-fs.md",
+      "file": "087__LOCK__FS_ProgFS.md",
       "kind": "lock_respin",
-      "pattern": "progressive-fs"
+      "pattern": "progressive-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 88,
-      "file": "088_rectangular_lightning.md",
+      "file": "088__RECT__Lightning_FS.md",
       "kind": "rectangular",
-      "pattern": "lightning"
+      "pattern": "lightning",
+      "density": "std",
+      "features": [
+        "lightning",
+        "free_spins"
+      ]
     },
     {
       "idx": 89,
-      "file": "089_rectangular_stacked_scatter_lightning.md",
+      "file": "089__RECTSTACK__Lightning_FS.md",
       "kind": "rectangular_stacked_scatter",
-      "pattern": "lightning"
+      "pattern": "lightning",
+      "density": "std",
+      "features": [
+        "lightning",
+        "free_spins"
+      ]
     },
     {
       "idx": 90,
-      "file": "090_expanding_lightning.md",
+      "file": "090__EXPAND__Lightning_FS.md",
       "kind": "expanding",
-      "pattern": "lightning"
+      "pattern": "lightning",
+      "density": "std",
+      "features": [
+        "lightning",
+        "free_spins"
+      ]
     },
     {
       "idx": 91,
-      "file": "091_dual_lightning.md",
+      "file": "091__DUAL__Lightning_FS.md",
       "kind": "dual",
-      "pattern": "lightning"
+      "pattern": "lightning",
+      "density": "std",
+      "features": [
+        "lightning",
+        "free_spins"
+      ]
     },
     {
       "idx": 92,
-      "file": "092_diamond_lightning.md",
+      "file": "092__DIA__Lightning_FS.md",
       "kind": "diamond",
-      "pattern": "lightning"
+      "pattern": "lightning",
+      "density": "std",
+      "features": [
+        "lightning",
+        "free_spins"
+      ]
     },
     {
       "idx": 93,
-      "file": "093_pyramid_lightning.md",
+      "file": "093__PYR__Lightning_FS.md",
       "kind": "pyramid",
-      "pattern": "lightning"
+      "pattern": "lightning",
+      "density": "std",
+      "features": [
+        "lightning",
+        "free_spins"
+      ]
     },
     {
       "idx": 94,
-      "file": "094_cross_lightning.md",
+      "file": "094__CROSS__Lightning_FS.md",
       "kind": "cross",
-      "pattern": "lightning"
+      "pattern": "lightning",
+      "density": "std",
+      "features": [
+        "lightning",
+        "free_spins"
+      ]
     },
     {
       "idx": 95,
-      "file": "095_l_shape_lightning.md",
+      "file": "095__LSHAPE__Lightning_FS.md",
       "kind": "l_shape",
-      "pattern": "lightning"
+      "pattern": "lightning",
+      "density": "std",
+      "features": [
+        "lightning",
+        "free_spins"
+      ]
     },
     {
       "idx": 96,
-      "file": "096_lock_respin_lightning.md",
+      "file": "096__LOCK__Lightning_FS.md",
       "kind": "lock_respin",
-      "pattern": "lightning"
+      "pattern": "lightning",
+      "density": "std",
+      "features": [
+        "lightning",
+        "free_spins"
+      ]
     },
     {
       "idx": 97,
-      "file": "097_rectangular_gamble-card.md",
+      "file": "097__RECT__Gamble.md",
       "kind": "rectangular",
-      "pattern": "gamble-card"
+      "pattern": "gamble-card",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
     },
     {
       "idx": 98,
-      "file": "098_rectangular_stacked_scatter_gamble-card.md",
+      "file": "098__RECTSTACK__Gamble.md",
       "kind": "rectangular_stacked_scatter",
-      "pattern": "gamble-card"
+      "pattern": "gamble-card",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
     },
     {
       "idx": 99,
-      "file": "099_variable_reel_gamble-card.md",
+      "file": "099__VARREEL__Gamble.md",
       "kind": "variable_reel",
-      "pattern": "gamble-card"
+      "pattern": "gamble-card",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
     },
     {
       "idx": 100,
-      "file": "100_expanding_gamble-card.md",
+      "file": "100__EXPAND__Gamble.md",
       "kind": "expanding",
-      "pattern": "gamble-card"
+      "pattern": "gamble-card",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
     },
     {
       "idx": 101,
-      "file": "101_infinity_gamble-card.md",
+      "file": "101__INF__Gamble.md",
       "kind": "infinity",
-      "pattern": "gamble-card"
+      "pattern": "gamble-card",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
     },
     {
       "idx": 102,
-      "file": "102_dual_gamble-card.md",
+      "file": "102__DUAL__Gamble.md",
       "kind": "dual",
-      "pattern": "gamble-card"
+      "pattern": "gamble-card",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
     },
     {
       "idx": 103,
-      "file": "103_cluster_gamble-card.md",
+      "file": "103__CLUSTER__Gamble.md",
       "kind": "cluster",
-      "pattern": "gamble-card"
+      "pattern": "gamble-card",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
     },
     {
       "idx": 104,
-      "file": "104_megaclusters_gamble-card.md",
+      "file": "104__MEGA__Gamble.md",
       "kind": "megaclusters",
-      "pattern": "gamble-card"
+      "pattern": "gamble-card",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
     },
     {
       "idx": 105,
-      "file": "105_hexagonal_gamble-card.md",
+      "file": "105__HEX__Gamble.md",
       "kind": "hexagonal",
-      "pattern": "gamble-card"
+      "pattern": "gamble-card",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
     },
     {
       "idx": 106,
-      "file": "106_diamond_gamble-card.md",
+      "file": "106__DIA__Gamble.md",
       "kind": "diamond",
-      "pattern": "gamble-card"
+      "pattern": "gamble-card",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
     },
     {
       "idx": 107,
-      "file": "107_pyramid_gamble-card.md",
+      "file": "107__PYR__Gamble.md",
       "kind": "pyramid",
-      "pattern": "gamble-card"
+      "pattern": "gamble-card",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
     },
     {
       "idx": 108,
-      "file": "108_cross_gamble-card.md",
+      "file": "108__CROSS__Gamble.md",
       "kind": "cross",
-      "pattern": "gamble-card"
+      "pattern": "gamble-card",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
     },
     {
       "idx": 109,
-      "file": "109_l_shape_gamble-card.md",
+      "file": "109__LSHAPE__Gamble.md",
       "kind": "l_shape",
-      "pattern": "gamble-card"
+      "pattern": "gamble-card",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
     },
     {
       "idx": 110,
-      "file": "110_lock_respin_gamble-card.md",
+      "file": "110__LOCK__Gamble.md",
       "kind": "lock_respin",
-      "pattern": "gamble-card"
+      "pattern": "gamble-card",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
     },
     {
       "idx": 111,
-      "file": "111_slingo_gamble-card.md",
+      "file": "111__SLINGO__Gamble.md",
       "kind": "slingo",
-      "pattern": "gamble-card"
+      "pattern": "gamble-card",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
     },
     {
       "idx": 112,
-      "file": "112_rectangular_gamble-ladder.md",
+      "file": "112__RECT__GambleLadder.md",
       "kind": "rectangular",
-      "pattern": "gamble-ladder"
+      "pattern": "gamble-ladder",
+      "density": "std",
+      "features": [
+        "gamble_secondary"
+      ]
     },
     {
       "idx": 113,
-      "file": "113_rectangular_stacked_scatter_gamble-ladder.md",
+      "file": "113__RECTSTACK__GambleLadder.md",
       "kind": "rectangular_stacked_scatter",
-      "pattern": "gamble-ladder"
+      "pattern": "gamble-ladder",
+      "density": "std",
+      "features": [
+        "gamble_secondary"
+      ]
     },
     {
       "idx": 114,
-      "file": "114_variable_reel_gamble-ladder.md",
+      "file": "114__VARREEL__GambleLadder.md",
       "kind": "variable_reel",
-      "pattern": "gamble-ladder"
+      "pattern": "gamble-ladder",
+      "density": "std",
+      "features": [
+        "gamble_secondary"
+      ]
     },
     {
       "idx": 115,
-      "file": "115_expanding_gamble-ladder.md",
+      "file": "115__EXPAND__GambleLadder.md",
       "kind": "expanding",
-      "pattern": "gamble-ladder"
+      "pattern": "gamble-ladder",
+      "density": "std",
+      "features": [
+        "gamble_secondary"
+      ]
     },
     {
       "idx": 116,
-      "file": "116_infinity_gamble-ladder.md",
+      "file": "116__INF__GambleLadder.md",
       "kind": "infinity",
-      "pattern": "gamble-ladder"
+      "pattern": "gamble-ladder",
+      "density": "std",
+      "features": [
+        "gamble_secondary"
+      ]
     },
     {
       "idx": 117,
-      "file": "117_dual_gamble-ladder.md",
+      "file": "117__DUAL__GambleLadder.md",
       "kind": "dual",
-      "pattern": "gamble-ladder"
+      "pattern": "gamble-ladder",
+      "density": "std",
+      "features": [
+        "gamble_secondary"
+      ]
     },
     {
       "idx": 118,
-      "file": "118_cluster_gamble-ladder.md",
+      "file": "118__CLUSTER__GambleLadder.md",
       "kind": "cluster",
-      "pattern": "gamble-ladder"
+      "pattern": "gamble-ladder",
+      "density": "std",
+      "features": [
+        "gamble_secondary"
+      ]
     },
     {
       "idx": 119,
-      "file": "119_megaclusters_gamble-ladder.md",
+      "file": "119__MEGA__GambleLadder.md",
       "kind": "megaclusters",
-      "pattern": "gamble-ladder"
+      "pattern": "gamble-ladder",
+      "density": "std",
+      "features": [
+        "gamble_secondary"
+      ]
     },
     {
       "idx": 120,
-      "file": "120_hexagonal_gamble-ladder.md",
+      "file": "120__HEX__GambleLadder.md",
       "kind": "hexagonal",
-      "pattern": "gamble-ladder"
+      "pattern": "gamble-ladder",
+      "density": "std",
+      "features": [
+        "gamble_secondary"
+      ]
     },
     {
       "idx": 121,
-      "file": "121_diamond_gamble-ladder.md",
+      "file": "121__DIA__GambleLadder.md",
       "kind": "diamond",
-      "pattern": "gamble-ladder"
+      "pattern": "gamble-ladder",
+      "density": "std",
+      "features": [
+        "gamble_secondary"
+      ]
     },
     {
       "idx": 122,
-      "file": "122_pyramid_gamble-ladder.md",
+      "file": "122__PYR__GambleLadder.md",
       "kind": "pyramid",
-      "pattern": "gamble-ladder"
+      "pattern": "gamble-ladder",
+      "density": "std",
+      "features": [
+        "gamble_secondary"
+      ]
     },
     {
       "idx": 123,
-      "file": "123_cross_gamble-ladder.md",
+      "file": "123__CROSS__GambleLadder.md",
       "kind": "cross",
-      "pattern": "gamble-ladder"
+      "pattern": "gamble-ladder",
+      "density": "std",
+      "features": [
+        "gamble_secondary"
+      ]
     },
     {
       "idx": 124,
-      "file": "124_l_shape_gamble-ladder.md",
+      "file": "124__LSHAPE__GambleLadder.md",
       "kind": "l_shape",
-      "pattern": "gamble-ladder"
+      "pattern": "gamble-ladder",
+      "density": "std",
+      "features": [
+        "gamble_secondary"
+      ]
     },
     {
       "idx": 125,
-      "file": "125_lock_respin_gamble-ladder.md",
+      "file": "125__LOCK__GambleLadder.md",
       "kind": "lock_respin",
-      "pattern": "gamble-ladder"
+      "pattern": "gamble-ladder",
+      "density": "std",
+      "features": [
+        "gamble_secondary"
+      ]
     },
     {
       "idx": 126,
-      "file": "126_slingo_gamble-ladder.md",
+      "file": "126__SLINGO__GambleLadder.md",
       "kind": "slingo",
-      "pattern": "gamble-ladder"
+      "pattern": "gamble-ladder",
+      "density": "std",
+      "features": [
+        "gamble_secondary"
+      ]
     },
     {
       "idx": 127,
-      "file": "127_rectangular_ante-bet.md",
+      "file": "127__RECT__AnteBet_FS.md",
       "kind": "rectangular",
-      "pattern": "ante-bet"
+      "pattern": "ante-bet",
+      "density": "std",
+      "features": [
+        "ante_bet",
+        "free_spins"
+      ]
     },
     {
       "idx": 128,
-      "file": "128_rectangular_stacked_scatter_ante-bet.md",
+      "file": "128__RECTSTACK__AnteBet_FS.md",
       "kind": "rectangular_stacked_scatter",
-      "pattern": "ante-bet"
+      "pattern": "ante-bet",
+      "density": "std",
+      "features": [
+        "ante_bet",
+        "free_spins"
+      ]
     },
     {
       "idx": 129,
-      "file": "129_variable_reel_ante-bet.md",
+      "file": "129__VARREEL__AnteBet_FS.md",
       "kind": "variable_reel",
-      "pattern": "ante-bet"
+      "pattern": "ante-bet",
+      "density": "std",
+      "features": [
+        "ante_bet",
+        "free_spins"
+      ]
     },
     {
       "idx": 130,
-      "file": "130_expanding_ante-bet.md",
+      "file": "130__EXPAND__AnteBet_FS.md",
       "kind": "expanding",
-      "pattern": "ante-bet"
+      "pattern": "ante-bet",
+      "density": "std",
+      "features": [
+        "ante_bet",
+        "free_spins"
+      ]
     },
     {
       "idx": 131,
-      "file": "131_infinity_ante-bet.md",
+      "file": "131__INF__AnteBet_FS.md",
       "kind": "infinity",
-      "pattern": "ante-bet"
+      "pattern": "ante-bet",
+      "density": "std",
+      "features": [
+        "ante_bet",
+        "free_spins"
+      ]
     },
     {
       "idx": 132,
-      "file": "132_dual_ante-bet.md",
+      "file": "132__DUAL__AnteBet_FS.md",
       "kind": "dual",
-      "pattern": "ante-bet"
+      "pattern": "ante-bet",
+      "density": "std",
+      "features": [
+        "ante_bet",
+        "free_spins"
+      ]
     },
     {
       "idx": 133,
-      "file": "133_diamond_ante-bet.md",
+      "file": "133__DIA__AnteBet_FS.md",
       "kind": "diamond",
-      "pattern": "ante-bet"
+      "pattern": "ante-bet",
+      "density": "std",
+      "features": [
+        "ante_bet",
+        "free_spins"
+      ]
     },
     {
       "idx": 134,
-      "file": "134_pyramid_ante-bet.md",
+      "file": "134__PYR__AnteBet_FS.md",
       "kind": "pyramid",
-      "pattern": "ante-bet"
+      "pattern": "ante-bet",
+      "density": "std",
+      "features": [
+        "ante_bet",
+        "free_spins"
+      ]
     },
     {
       "idx": 135,
-      "file": "135_cross_ante-bet.md",
+      "file": "135__CROSS__AnteBet_FS.md",
       "kind": "cross",
-      "pattern": "ante-bet"
+      "pattern": "ante-bet",
+      "density": "std",
+      "features": [
+        "ante_bet",
+        "free_spins"
+      ]
     },
     {
       "idx": 136,
-      "file": "136_l_shape_ante-bet.md",
+      "file": "136__LSHAPE__AnteBet_FS.md",
       "kind": "l_shape",
-      "pattern": "ante-bet"
+      "pattern": "ante-bet",
+      "density": "std",
+      "features": [
+        "ante_bet",
+        "free_spins"
+      ]
     },
     {
       "idx": 137,
-      "file": "137_lock_respin_ante-bet.md",
+      "file": "137__LOCK__AnteBet_FS.md",
       "kind": "lock_respin",
-      "pattern": "ante-bet"
+      "pattern": "ante-bet",
+      "density": "std",
+      "features": [
+        "ante_bet",
+        "free_spins"
+      ]
     },
     {
       "idx": 138,
-      "file": "138_rectangular_bonus-pick.md",
+      "file": "138__RECT__BonusPick.md",
       "kind": "rectangular",
-      "pattern": "bonus-pick"
+      "pattern": "bonus-pick",
+      "density": "std",
+      "features": [
+        "bonus_pick"
+      ]
     },
     {
       "idx": 139,
-      "file": "139_variable_reel_bonus-pick.md",
+      "file": "139__VARREEL__BonusPick.md",
       "kind": "variable_reel",
-      "pattern": "bonus-pick"
+      "pattern": "bonus-pick",
+      "density": "std",
+      "features": [
+        "bonus_pick"
+      ]
     },
     {
       "idx": 140,
-      "file": "140_lock_respin_bonus-pick.md",
+      "file": "140__LOCK__BonusPick.md",
       "kind": "lock_respin",
-      "pattern": "bonus-pick"
+      "pattern": "bonus-pick",
+      "density": "std",
+      "features": [
+        "bonus_pick"
+      ]
     },
     {
       "idx": 141,
-      "file": "141_crash_crash-curve.md",
+      "file": "141__CRASH__Crash.md",
       "kind": "crash",
-      "pattern": "crash-curve"
+      "pattern": "crash-curve",
+      "density": "std",
+      "features": [
+        "crash"
+      ]
     },
     {
       "idx": 142,
-      "file": "142_plinko_plinko-drop.md",
+      "file": "142__PLINKO__Plinko.md",
       "kind": "plinko",
-      "pattern": "plinko-drop"
+      "pattern": "plinko-drop",
+      "density": "std",
+      "features": [
+        "plinko"
+      ]
     },
     {
       "idx": 143,
-      "file": "143_slingo_slingo-board.md",
+      "file": "143__SLINGO__Slingo_FS.md",
       "kind": "slingo",
-      "pattern": "slingo-board"
+      "pattern": "slingo-board",
+      "density": "std",
+      "features": [
+        "slingo",
+        "free_spins"
+      ]
     },
     {
       "idx": 144,
-      "file": "144_rectangular_win-cap-low.md",
+      "file": "144__RECT__WinCap_ScatterPay_Cascade.md",
       "kind": "rectangular",
-      "pattern": "win-cap-low"
+      "pattern": "win-cap-low",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "scatter_pays",
+        "cascade"
+      ]
     },
     {
       "idx": 145,
-      "file": "145_rectangular_stacked_scatter_win-cap-low.md",
+      "file": "145__RECTSTACK__WinCap_ScatterPay_Cascade.md",
       "kind": "rectangular_stacked_scatter",
-      "pattern": "win-cap-low"
+      "pattern": "win-cap-low",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "scatter_pays",
+        "cascade"
+      ]
     },
     {
       "idx": 146,
-      "file": "146_variable_reel_win-cap-low.md",
+      "file": "146__VARREEL__WinCap_ScatterPay_Cascade.md",
       "kind": "variable_reel",
-      "pattern": "win-cap-low"
+      "pattern": "win-cap-low",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "scatter_pays",
+        "cascade"
+      ]
     },
     {
       "idx": 147,
-      "file": "147_expanding_win-cap-low.md",
+      "file": "147__EXPAND__WinCap_ScatterPay_Cascade.md",
       "kind": "expanding",
-      "pattern": "win-cap-low"
+      "pattern": "win-cap-low",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "scatter_pays",
+        "cascade"
+      ]
     },
     {
       "idx": 148,
-      "file": "148_infinity_win-cap-low.md",
+      "file": "148__INF__WinCap_ScatterPay_Cascade.md",
       "kind": "infinity",
-      "pattern": "win-cap-low"
+      "pattern": "win-cap-low",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "scatter_pays",
+        "cascade"
+      ]
     },
     {
       "idx": 149,
-      "file": "149_dual_win-cap-low.md",
+      "file": "149__DUAL__WinCap_ScatterPay_Cascade.md",
       "kind": "dual",
-      "pattern": "win-cap-low"
+      "pattern": "win-cap-low",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "scatter_pays",
+        "cascade"
+      ]
     },
     {
       "idx": 150,
-      "file": "150_diamond_win-cap-low.md",
+      "file": "150__DIA__WinCap_ScatterPay_Cascade.md",
       "kind": "diamond",
-      "pattern": "win-cap-low"
+      "pattern": "win-cap-low",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "scatter_pays",
+        "cascade"
+      ]
     },
     {
       "idx": 151,
-      "file": "151_pyramid_win-cap-low.md",
+      "file": "151__PYR__WinCap_ScatterPay_Cascade.md",
       "kind": "pyramid",
-      "pattern": "win-cap-low"
+      "pattern": "win-cap-low",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "scatter_pays",
+        "cascade"
+      ]
     },
     {
       "idx": 152,
-      "file": "152_cross_win-cap-low.md",
+      "file": "152__CROSS__WinCap_ScatterPay_Cascade.md",
       "kind": "cross",
-      "pattern": "win-cap-low"
+      "pattern": "win-cap-low",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "scatter_pays",
+        "cascade"
+      ]
     },
     {
       "idx": 153,
-      "file": "153_l_shape_win-cap-low.md",
+      "file": "153__LSHAPE__WinCap_ScatterPay_Cascade.md",
       "kind": "l_shape",
-      "pattern": "win-cap-low"
+      "pattern": "win-cap-low",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "scatter_pays",
+        "cascade"
+      ]
     },
     {
       "idx": 154,
-      "file": "154_rectangular_maximalist.md",
+      "file": "154__RECT__FS_Wild_StickyWild_+6.md",
       "kind": "rectangular",
-      "pattern": "maximalist"
+      "pattern": "maximalist",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "wild",
+        "sticky_wild",
+        "multiplier_orb",
+        "cascade",
+        "bonus_buy",
+        "gamble",
+        "ante_bet",
+        "super_symbol"
+      ]
     },
     {
       "idx": 155,
-      "file": "155_variable_reel_maximalist.md",
+      "file": "155__VARREEL__FS_Wild_StickyWild_+6.md",
       "kind": "variable_reel",
-      "pattern": "maximalist"
+      "pattern": "maximalist",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "wild",
+        "sticky_wild",
+        "multiplier_orb",
+        "cascade",
+        "bonus_buy",
+        "gamble",
+        "ante_bet",
+        "super_symbol"
+      ]
     },
     {
       "idx": 156,
-      "file": "156_rectangular_minimalist.md",
+      "file": "156__RECT__Mult_FS.md",
       "kind": "rectangular",
-      "pattern": "minimalist"
+      "pattern": "mult-bg-only",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "free_spins"
+      ]
     },
     {
       "idx": 157,
-      "file": "157_rectangular_stacked_scatter_minimalist.md",
+      "file": "157__RECTSTACK__Mult_FS.md",
       "kind": "rectangular_stacked_scatter",
-      "pattern": "minimalist"
+      "pattern": "mult-bg-only",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "free_spins"
+      ]
     },
     {
       "idx": 158,
-      "file": "158_variable_reel_minimalist.md",
+      "file": "158__VARREEL__Mult_FS.md",
       "kind": "variable_reel",
-      "pattern": "minimalist"
+      "pattern": "mult-bg-only",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "free_spins"
+      ]
     },
     {
       "idx": 159,
-      "file": "159_expanding_minimalist.md",
+      "file": "159__EXPAND__Mult_FS.md",
       "kind": "expanding",
-      "pattern": "minimalist"
+      "pattern": "mult-bg-only",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "free_spins"
+      ]
     },
     {
       "idx": 160,
-      "file": "160_infinity_minimalist.md",
+      "file": "160__INF__Mult_FS.md",
       "kind": "infinity",
-      "pattern": "minimalist"
+      "pattern": "mult-bg-only",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "free_spins"
+      ]
     },
     {
       "idx": 161,
-      "file": "161_dual_minimalist.md",
+      "file": "161__DUAL__Mult_FS.md",
       "kind": "dual",
-      "pattern": "minimalist"
+      "pattern": "mult-bg-only",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "free_spins"
+      ]
     },
     {
       "idx": 162,
-      "file": "162_cluster_minimalist.md",
-      "kind": "cluster",
-      "pattern": "minimalist"
+      "file": "162__LOCK__Mult_FS.md",
+      "kind": "lock_respin",
+      "pattern": "mult-bg-only",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "free_spins"
+      ]
     },
     {
       "idx": 163,
-      "file": "163_megaclusters_minimalist.md",
-      "kind": "megaclusters",
-      "pattern": "minimalist"
+      "file": "163__RECT__FS_ProgFS.md",
+      "kind": "rectangular",
+      "pattern": "mult-fs-only",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 164,
-      "file": "164_hexagonal_minimalist.md",
-      "kind": "hexagonal",
-      "pattern": "minimalist"
+      "file": "164__RECTSTACK__FS_ProgFS.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "mult-fs-only",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 165,
-      "file": "165_diamond_minimalist.md",
-      "kind": "diamond",
-      "pattern": "minimalist"
+      "file": "165__VARREEL__FS_ProgFS.md",
+      "kind": "variable_reel",
+      "pattern": "mult-fs-only",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 166,
-      "file": "166_pyramid_minimalist.md",
-      "kind": "pyramid",
-      "pattern": "minimalist"
+      "file": "166__EXPAND__FS_ProgFS.md",
+      "kind": "expanding",
+      "pattern": "mult-fs-only",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 167,
-      "file": "167_cross_minimalist.md",
-      "kind": "cross",
-      "pattern": "minimalist"
+      "file": "167__INF__FS_ProgFS.md",
+      "kind": "infinity",
+      "pattern": "mult-fs-only",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 168,
-      "file": "168_l_shape_minimalist.md",
-      "kind": "l_shape",
-      "pattern": "minimalist"
+      "file": "168__DUAL__FS_ProgFS.md",
+      "kind": "dual",
+      "pattern": "mult-fs-only",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 169,
-      "file": "169_lock_respin_minimalist.md",
-      "kind": "lock_respin",
-      "pattern": "minimalist"
+      "file": "169__CLUSTER__FS_ProgFS.md",
+      "kind": "cluster",
+      "pattern": "mult-fs-only",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 170,
-      "file": "170_wheel_minimalist.md",
-      "kind": "wheel",
-      "pattern": "minimalist"
+      "file": "170__MEGA__FS_ProgFS.md",
+      "kind": "megaclusters",
+      "pattern": "mult-fs-only",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 171,
-      "file": "171_radial_minimalist.md",
-      "kind": "radial",
-      "pattern": "minimalist"
+      "file": "171__HEX__FS_ProgFS.md",
+      "kind": "hexagonal",
+      "pattern": "mult-fs-only",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 172,
-      "file": "172_crash_minimalist.md",
-      "kind": "crash",
-      "pattern": "minimalist"
+      "file": "172__LOCK__FS_ProgFS.md",
+      "kind": "lock_respin",
+      "pattern": "mult-fs-only",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "progressive_free_spins"
+      ]
     },
     {
       "idx": 173,
-      "file": "173_plinko_minimalist.md",
-      "kind": "plinko",
-      "pattern": "minimalist"
+      "file": "173__RECT__Mult_ProgFS_FS.md",
+      "kind": "rectangular",
+      "pattern": "mult-bg-and-fs",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "progressive_free_spins",
+        "free_spins"
+      ]
     },
     {
       "idx": 174,
-      "file": "174_slingo_minimalist.md",
+      "file": "174__RECTSTACK__Mult_ProgFS_FS.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "mult-bg-and-fs",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "progressive_free_spins",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 175,
+      "file": "175__VARREEL__Mult_ProgFS_FS.md",
+      "kind": "variable_reel",
+      "pattern": "mult-bg-and-fs",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "progressive_free_spins",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 176,
+      "file": "176__EXPAND__Mult_ProgFS_FS.md",
+      "kind": "expanding",
+      "pattern": "mult-bg-and-fs",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "progressive_free_spins",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 177,
+      "file": "177__INF__Mult_ProgFS_FS.md",
+      "kind": "infinity",
+      "pattern": "mult-bg-and-fs",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "progressive_free_spins",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 178,
+      "file": "178__DUAL__Mult_ProgFS_FS.md",
+      "kind": "dual",
+      "pattern": "mult-bg-and-fs",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "progressive_free_spins",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 179,
+      "file": "179__LOCK__Mult_ProgFS_FS.md",
+      "kind": "lock_respin",
+      "pattern": "mult-bg-and-fs",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "progressive_free_spins",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 180,
+      "file": "180__RECT__Mult_PersistMult.md",
+      "kind": "rectangular",
+      "pattern": "persistent-mult-bg",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "persistent_multiplier"
+      ]
+    },
+    {
+      "idx": 181,
+      "file": "181__RECTSTACK__Mult_PersistMult.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "persistent-mult-bg",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "persistent_multiplier"
+      ]
+    },
+    {
+      "idx": 182,
+      "file": "182__VARREEL__Mult_PersistMult.md",
+      "kind": "variable_reel",
+      "pattern": "persistent-mult-bg",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "persistent_multiplier"
+      ]
+    },
+    {
+      "idx": 183,
+      "file": "183__EXPAND__Mult_PersistMult.md",
+      "kind": "expanding",
+      "pattern": "persistent-mult-bg",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "persistent_multiplier"
+      ]
+    },
+    {
+      "idx": 184,
+      "file": "184__INF__Mult_PersistMult.md",
+      "kind": "infinity",
+      "pattern": "persistent-mult-bg",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "persistent_multiplier"
+      ]
+    },
+    {
+      "idx": 185,
+      "file": "185__DUAL__Mult_PersistMult.md",
+      "kind": "dual",
+      "pattern": "persistent-mult-bg",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "persistent_multiplier"
+      ]
+    },
+    {
+      "idx": 186,
+      "file": "186__CLUSTER__Mult_PersistMult.md",
+      "kind": "cluster",
+      "pattern": "persistent-mult-bg",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "persistent_multiplier"
+      ]
+    },
+    {
+      "idx": 187,
+      "file": "187__MEGA__Mult_PersistMult.md",
+      "kind": "megaclusters",
+      "pattern": "persistent-mult-bg",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "persistent_multiplier"
+      ]
+    },
+    {
+      "idx": 188,
+      "file": "188__HEX__Mult_PersistMult.md",
+      "kind": "hexagonal",
+      "pattern": "persistent-mult-bg",
+      "density": "std",
+      "features": [
+        "multiplier",
+        "persistent_multiplier"
+      ]
+    },
+    {
+      "idx": 189,
+      "file": "189__RECT__Lightning_FS.md",
+      "kind": "rectangular",
+      "pattern": "lightning-fs",
+      "density": "std",
+      "features": [
+        "lightning",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 190,
+      "file": "190__RECTSTACK__Lightning_FS.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "lightning-fs",
+      "density": "std",
+      "features": [
+        "lightning",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 191,
+      "file": "191__EXPAND__Lightning_FS.md",
+      "kind": "expanding",
+      "pattern": "lightning-fs",
+      "density": "std",
+      "features": [
+        "lightning",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 192,
+      "file": "192__DUAL__Lightning_FS.md",
+      "kind": "dual",
+      "pattern": "lightning-fs",
+      "density": "std",
+      "features": [
+        "lightning",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 193,
+      "file": "193__DIA__Lightning_FS.md",
+      "kind": "diamond",
+      "pattern": "lightning-fs",
+      "density": "std",
+      "features": [
+        "lightning",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 194,
+      "file": "194__PYR__Lightning_FS.md",
+      "kind": "pyramid",
+      "pattern": "lightning-fs",
+      "density": "std",
+      "features": [
+        "lightning",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 195,
+      "file": "195__CROSS__Lightning_FS.md",
+      "kind": "cross",
+      "pattern": "lightning-fs",
+      "density": "std",
+      "features": [
+        "lightning",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 196,
+      "file": "196__LSHAPE__Lightning_FS.md",
+      "kind": "l_shape",
+      "pattern": "lightning-fs",
+      "density": "std",
+      "features": [
+        "lightning",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 197,
+      "file": "197__LOCK__Lightning_FS.md",
+      "kind": "lock_respin",
+      "pattern": "lightning-fs",
+      "density": "std",
+      "features": [
+        "lightning",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 198,
+      "file": "198__RECT__StickyWild_Wild.md",
+      "kind": "rectangular",
+      "pattern": "sticky-wild-bg",
+      "density": "std",
+      "features": [
+        "sticky_wild",
+        "wild"
+      ]
+    },
+    {
+      "idx": 199,
+      "file": "199__RECTSTACK__StickyWild_Wild.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "sticky-wild-bg",
+      "density": "std",
+      "features": [
+        "sticky_wild",
+        "wild"
+      ]
+    },
+    {
+      "idx": 200,
+      "file": "200__VARREEL__StickyWild_Wild.md",
+      "kind": "variable_reel",
+      "pattern": "sticky-wild-bg",
+      "density": "std",
+      "features": [
+        "sticky_wild",
+        "wild"
+      ]
+    },
+    {
+      "idx": 201,
+      "file": "201__EXPAND__StickyWild_Wild.md",
+      "kind": "expanding",
+      "pattern": "sticky-wild-bg",
+      "density": "std",
+      "features": [
+        "sticky_wild",
+        "wild"
+      ]
+    },
+    {
+      "idx": 202,
+      "file": "202__INF__StickyWild_Wild.md",
+      "kind": "infinity",
+      "pattern": "sticky-wild-bg",
+      "density": "std",
+      "features": [
+        "sticky_wild",
+        "wild"
+      ]
+    },
+    {
+      "idx": 203,
+      "file": "203__DUAL__StickyWild_Wild.md",
+      "kind": "dual",
+      "pattern": "sticky-wild-bg",
+      "density": "std",
+      "features": [
+        "sticky_wild",
+        "wild"
+      ]
+    },
+    {
+      "idx": 204,
+      "file": "204__LOCK__StickyWild_Wild.md",
+      "kind": "lock_respin",
+      "pattern": "sticky-wild-bg",
+      "density": "std",
+      "features": [
+        "sticky_wild",
+        "wild"
+      ]
+    },
+    {
+      "idx": 205,
+      "file": "205__RECT__WildReel_FS.md",
+      "kind": "rectangular",
+      "pattern": "wild-reel-fs",
+      "density": "std",
+      "features": [
+        "wild_reel",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 206,
+      "file": "206__RECTSTACK__WildReel_FS.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "wild-reel-fs",
+      "density": "std",
+      "features": [
+        "wild_reel",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 207,
+      "file": "207__VARREEL__WildReel_FS.md",
+      "kind": "variable_reel",
+      "pattern": "wild-reel-fs",
+      "density": "std",
+      "features": [
+        "wild_reel",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 208,
+      "file": "208__EXPAND__WildReel_FS.md",
+      "kind": "expanding",
+      "pattern": "wild-reel-fs",
+      "density": "std",
+      "features": [
+        "wild_reel",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 209,
+      "file": "209__INF__WildReel_FS.md",
+      "kind": "infinity",
+      "pattern": "wild-reel-fs",
+      "density": "std",
+      "features": [
+        "wild_reel",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 210,
+      "file": "210__DUAL__WildReel_FS.md",
+      "kind": "dual",
+      "pattern": "wild-reel-fs",
+      "density": "std",
+      "features": [
+        "wild_reel",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 211,
+      "file": "211__LOCK__WildReel_FS.md",
+      "kind": "lock_respin",
+      "pattern": "wild-reel-fs",
+      "density": "std",
+      "features": [
+        "wild_reel",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 212,
+      "file": "212__RECT__WalkWild_FS.md",
+      "kind": "rectangular",
+      "pattern": "nudging-wild",
+      "density": "std",
+      "features": [
+        "walking_wild",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 213,
+      "file": "213__RECTSTACK__WalkWild_FS.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "nudging-wild",
+      "density": "std",
+      "features": [
+        "walking_wild",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 214,
+      "file": "214__EXPAND__WalkWild_FS.md",
+      "kind": "expanding",
+      "pattern": "nudging-wild",
+      "density": "std",
+      "features": [
+        "walking_wild",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 215,
+      "file": "215__DUAL__WalkWild_FS.md",
+      "kind": "dual",
+      "pattern": "nudging-wild",
+      "density": "std",
+      "features": [
+        "walking_wild",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 216,
+      "file": "216__LOCK__WalkWild_FS.md",
+      "kind": "lock_respin",
+      "pattern": "nudging-wild",
+      "density": "std",
+      "features": [
+        "walking_wild",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 217,
+      "file": "217__CLUSTER__Mystery_ClusterPays_Cascade.md",
+      "kind": "cluster",
+      "pattern": "mystery-cluster",
+      "density": "std",
+      "features": [
+        "mystery_symbol",
+        "cluster_pays",
+        "cascade"
+      ]
+    },
+    {
+      "idx": 218,
+      "file": "218__MEGA__Mystery_ClusterPays_Cascade.md",
+      "kind": "megaclusters",
+      "pattern": "mystery-cluster",
+      "density": "std",
+      "features": [
+        "mystery_symbol",
+        "cluster_pays",
+        "cascade"
+      ]
+    },
+    {
+      "idx": 219,
+      "file": "219__HEX__Mystery_ClusterPays_Cascade.md",
+      "kind": "hexagonal",
+      "pattern": "mystery-cluster",
+      "density": "std",
+      "features": [
+        "mystery_symbol",
+        "cluster_pays",
+        "cascade"
+      ]
+    },
+    {
+      "idx": 220,
+      "file": "220__RECT__ColSym_FS.md",
+      "kind": "rectangular",
+      "pattern": "super-symbol-fs",
+      "density": "std",
+      "features": [
+        "super_symbol",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 221,
+      "file": "221__VARREEL__ColSym_FS.md",
+      "kind": "variable_reel",
+      "pattern": "super-symbol-fs",
+      "density": "std",
+      "features": [
+        "super_symbol",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 222,
+      "file": "222__MEGA__ColSym_FS.md",
+      "kind": "megaclusters",
+      "pattern": "super-symbol-fs",
+      "density": "std",
+      "features": [
+        "super_symbol",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 223,
+      "file": "223__RECT__FS_HoldAndWin_Respin.md",
+      "kind": "rectangular",
+      "pattern": "hold-in-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "hold_and_win",
+        "respin"
+      ]
+    },
+    {
+      "idx": 224,
+      "file": "224__LOCK__FS_HoldAndWin_Respin.md",
+      "kind": "lock_respin",
+      "pattern": "hold-in-fs",
+      "density": "std",
+      "features": [
+        "free_spins",
+        "hold_and_win",
+        "respin"
+      ]
+    },
+    {
+      "idx": 225,
+      "file": "225__RECT__BonusBuy_BonusBuyDet_FS_+1.md",
+      "kind": "rectangular",
+      "pattern": "bonus-buy-multi-tier",
+      "density": "std",
+      "features": [
+        "bonus_buy",
+        "bonus_buy_deterministic",
+        "free_spins",
+        "progressive_free_spins"
+      ]
+    },
+    {
+      "idx": 226,
+      "file": "226__VARREEL__BonusBuy_BonusBuyDet_FS_+1.md",
+      "kind": "variable_reel",
+      "pattern": "bonus-buy-multi-tier",
+      "density": "std",
+      "features": [
+        "bonus_buy",
+        "bonus_buy_deterministic",
+        "free_spins",
+        "progressive_free_spins"
+      ]
+    },
+    {
+      "idx": 227,
+      "file": "227__RECT__Gamble.md",
+      "kind": "rectangular",
+      "pattern": "gamble-card-after-win",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
+    },
+    {
+      "idx": 228,
+      "file": "228__RECTSTACK__Gamble.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "gamble-card-after-win",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
+    },
+    {
+      "idx": 229,
+      "file": "229__VARREEL__Gamble.md",
+      "kind": "variable_reel",
+      "pattern": "gamble-card-after-win",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
+    },
+    {
+      "idx": 230,
+      "file": "230__EXPAND__Gamble.md",
+      "kind": "expanding",
+      "pattern": "gamble-card-after-win",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
+    },
+    {
+      "idx": 231,
+      "file": "231__INF__Gamble.md",
+      "kind": "infinity",
+      "pattern": "gamble-card-after-win",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
+    },
+    {
+      "idx": 232,
+      "file": "232__DUAL__Gamble.md",
+      "kind": "dual",
+      "pattern": "gamble-card-after-win",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
+    },
+    {
+      "idx": 233,
+      "file": "233__DIA__Gamble.md",
+      "kind": "diamond",
+      "pattern": "gamble-card-after-win",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
+    },
+    {
+      "idx": 234,
+      "file": "234__PYR__Gamble.md",
+      "kind": "pyramid",
+      "pattern": "gamble-card-after-win",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
+    },
+    {
+      "idx": 235,
+      "file": "235__CROSS__Gamble.md",
+      "kind": "cross",
+      "pattern": "gamble-card-after-win",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
+    },
+    {
+      "idx": 236,
+      "file": "236__LSHAPE__Gamble.md",
+      "kind": "l_shape",
+      "pattern": "gamble-card-after-win",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
+    },
+    {
+      "idx": 237,
+      "file": "237__LOCK__Gamble.md",
+      "kind": "lock_respin",
+      "pattern": "gamble-card-after-win",
+      "density": "std",
+      "features": [
+        "gamble"
+      ]
+    },
+    {
+      "idx": 238,
+      "file": "238__RECT__GambleLadder_FS.md",
+      "kind": "rectangular",
+      "pattern": "gamble-ladder-fs-totals",
+      "density": "std",
+      "features": [
+        "gamble_secondary",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 239,
+      "file": "239__RECTSTACK__GambleLadder_FS.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "gamble-ladder-fs-totals",
+      "density": "std",
+      "features": [
+        "gamble_secondary",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 240,
+      "file": "240__VARREEL__GambleLadder_FS.md",
+      "kind": "variable_reel",
+      "pattern": "gamble-ladder-fs-totals",
+      "density": "std",
+      "features": [
+        "gamble_secondary",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 241,
+      "file": "241__EXPAND__GambleLadder_FS.md",
+      "kind": "expanding",
+      "pattern": "gamble-ladder-fs-totals",
+      "density": "std",
+      "features": [
+        "gamble_secondary",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 242,
+      "file": "242__INF__GambleLadder_FS.md",
+      "kind": "infinity",
+      "pattern": "gamble-ladder-fs-totals",
+      "density": "std",
+      "features": [
+        "gamble_secondary",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 243,
+      "file": "243__DUAL__GambleLadder_FS.md",
+      "kind": "dual",
+      "pattern": "gamble-ladder-fs-totals",
+      "density": "std",
+      "features": [
+        "gamble_secondary",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 244,
+      "file": "244__DIA__GambleLadder_FS.md",
+      "kind": "diamond",
+      "pattern": "gamble-ladder-fs-totals",
+      "density": "std",
+      "features": [
+        "gamble_secondary",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 245,
+      "file": "245__PYR__GambleLadder_FS.md",
+      "kind": "pyramid",
+      "pattern": "gamble-ladder-fs-totals",
+      "density": "std",
+      "features": [
+        "gamble_secondary",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 246,
+      "file": "246__CROSS__GambleLadder_FS.md",
+      "kind": "cross",
+      "pattern": "gamble-ladder-fs-totals",
+      "density": "std",
+      "features": [
+        "gamble_secondary",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 247,
+      "file": "247__LSHAPE__GambleLadder_FS.md",
+      "kind": "l_shape",
+      "pattern": "gamble-ladder-fs-totals",
+      "density": "std",
+      "features": [
+        "gamble_secondary",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 248,
+      "file": "248__LOCK__GambleLadder_FS.md",
+      "kind": "lock_respin",
+      "pattern": "gamble-ladder-fs-totals",
+      "density": "std",
+      "features": [
+        "gamble_secondary",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 249,
+      "file": "249__RECT__PathMult_Ways.md",
+      "kind": "rectangular",
+      "pattern": "path-aware-mult-ways",
+      "density": "std",
+      "features": [
+        "path_aware_multiplier",
+        "ways"
+      ]
+    },
+    {
+      "idx": 250,
+      "file": "250__RECTSTACK__PathMult_Ways.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "path-aware-mult-ways",
+      "density": "std",
+      "features": [
+        "path_aware_multiplier",
+        "ways"
+      ]
+    },
+    {
+      "idx": 251,
+      "file": "251__VARREEL__PathMult_Ways.md",
+      "kind": "variable_reel",
+      "pattern": "path-aware-mult-ways",
+      "density": "std",
+      "features": [
+        "path_aware_multiplier",
+        "ways"
+      ]
+    },
+    {
+      "idx": 252,
+      "file": "252__EXPAND__PathMult_Ways.md",
+      "kind": "expanding",
+      "pattern": "path-aware-mult-ways",
+      "density": "std",
+      "features": [
+        "path_aware_multiplier",
+        "ways"
+      ]
+    },
+    {
+      "idx": 253,
+      "file": "253__INF__PathMult_Ways.md",
+      "kind": "infinity",
+      "pattern": "path-aware-mult-ways",
+      "density": "std",
+      "features": [
+        "path_aware_multiplier",
+        "ways"
+      ]
+    },
+    {
+      "idx": 254,
+      "file": "254__DUAL__PathMult_Ways.md",
+      "kind": "dual",
+      "pattern": "path-aware-mult-ways",
+      "density": "std",
+      "features": [
+        "path_aware_multiplier",
+        "ways"
+      ]
+    },
+    {
+      "idx": 255,
+      "file": "255__RECT__WinCap_FS.md",
+      "kind": "rectangular",
+      "pattern": "win-cap-high",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 256,
+      "file": "256__RECTSTACK__WinCap_FS.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "win-cap-high",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 257,
+      "file": "257__VARREEL__WinCap_FS.md",
+      "kind": "variable_reel",
+      "pattern": "win-cap-high",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 258,
+      "file": "258__EXPAND__WinCap_FS.md",
+      "kind": "expanding",
+      "pattern": "win-cap-high",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 259,
+      "file": "259__INF__WinCap_FS.md",
+      "kind": "infinity",
+      "pattern": "win-cap-high",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 260,
+      "file": "260__DUAL__WinCap_FS.md",
+      "kind": "dual",
+      "pattern": "win-cap-high",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 261,
+      "file": "261__DIA__WinCap_FS.md",
+      "kind": "diamond",
+      "pattern": "win-cap-high",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 262,
+      "file": "262__PYR__WinCap_FS.md",
+      "kind": "pyramid",
+      "pattern": "win-cap-high",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 263,
+      "file": "263__CROSS__WinCap_FS.md",
+      "kind": "cross",
+      "pattern": "win-cap-high",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 264,
+      "file": "264__LSHAPE__WinCap_FS.md",
+      "kind": "l_shape",
+      "pattern": "win-cap-high",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 265,
+      "file": "265__LOCK__WinCap_FS.md",
+      "kind": "lock_respin",
+      "pattern": "win-cap-high",
+      "density": "std",
+      "features": [
+        "win_cap",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 266,
+      "file": "266__CLUSTER__ScatterPay_Cascade.md",
+      "kind": "cluster",
+      "pattern": "scatter-pay-hex",
+      "density": "std",
+      "features": [
+        "scatter_pays",
+        "cascade"
+      ]
+    },
+    {
+      "idx": 267,
+      "file": "267__MEGA__ScatterPay_Cascade.md",
+      "kind": "megaclusters",
+      "pattern": "scatter-pay-hex",
+      "density": "std",
+      "features": [
+        "scatter_pays",
+        "cascade"
+      ]
+    },
+    {
+      "idx": 268,
+      "file": "268__HEX__ScatterPay_Cascade.md",
+      "kind": "hexagonal",
+      "pattern": "scatter-pay-hex",
+      "density": "std",
+      "features": [
+        "scatter_pays",
+        "cascade"
+      ]
+    },
+    {
+      "idx": 269,
+      "file": "269__RECT__Respin_Wild.md",
+      "kind": "rectangular",
+      "pattern": "respin-on-anchor",
+      "density": "std",
+      "features": [
+        "respin",
+        "wild"
+      ]
+    },
+    {
+      "idx": 270,
+      "file": "270__RECTSTACK__Respin_Wild.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "respin-on-anchor",
+      "density": "std",
+      "features": [
+        "respin",
+        "wild"
+      ]
+    },
+    {
+      "idx": 271,
+      "file": "271__VARREEL__Respin_Wild.md",
+      "kind": "variable_reel",
+      "pattern": "respin-on-anchor",
+      "density": "std",
+      "features": [
+        "respin",
+        "wild"
+      ]
+    },
+    {
+      "idx": 272,
+      "file": "272__EXPAND__Respin_Wild.md",
+      "kind": "expanding",
+      "pattern": "respin-on-anchor",
+      "density": "std",
+      "features": [
+        "respin",
+        "wild"
+      ]
+    },
+    {
+      "idx": 273,
+      "file": "273__INF__Respin_Wild.md",
+      "kind": "infinity",
+      "pattern": "respin-on-anchor",
+      "density": "std",
+      "features": [
+        "respin",
+        "wild"
+      ]
+    },
+    {
+      "idx": 274,
+      "file": "274__DUAL__Respin_Wild.md",
+      "kind": "dual",
+      "pattern": "respin-on-anchor",
+      "density": "std",
+      "features": [
+        "respin",
+        "wild"
+      ]
+    },
+    {
+      "idx": 275,
+      "file": "275__LOCK__Respin_Wild.md",
+      "kind": "lock_respin",
+      "pattern": "respin-on-anchor",
+      "density": "std",
+      "features": [
+        "respin",
+        "wild"
+      ]
+    },
+    {
+      "idx": 276,
+      "file": "276__RECT__Cascade_FS.md",
+      "kind": "rectangular",
+      "pattern": "cascade-then-fs",
+      "density": "std",
+      "features": [
+        "cascade",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 277,
+      "file": "277__RECTSTACK__Cascade_FS.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "cascade-then-fs",
+      "density": "std",
+      "features": [
+        "cascade",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 278,
+      "file": "278__VARREEL__Cascade_FS.md",
+      "kind": "variable_reel",
+      "pattern": "cascade-then-fs",
+      "density": "std",
+      "features": [
+        "cascade",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 279,
+      "file": "279__EXPAND__Cascade_FS.md",
+      "kind": "expanding",
+      "pattern": "cascade-then-fs",
+      "density": "std",
+      "features": [
+        "cascade",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 280,
+      "file": "280__INF__Cascade_FS.md",
+      "kind": "infinity",
+      "pattern": "cascade-then-fs",
+      "density": "std",
+      "features": [
+        "cascade",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 281,
+      "file": "281__DUAL__Cascade_FS.md",
+      "kind": "dual",
+      "pattern": "cascade-then-fs",
+      "density": "std",
+      "features": [
+        "cascade",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 282,
+      "file": "282__DIA__Cascade_FS.md",
+      "kind": "diamond",
+      "pattern": "cascade-then-fs",
+      "density": "std",
+      "features": [
+        "cascade",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 283,
+      "file": "283__PYR__Cascade_FS.md",
+      "kind": "pyramid",
+      "pattern": "cascade-then-fs",
+      "density": "std",
+      "features": [
+        "cascade",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 284,
+      "file": "284__CROSS__Cascade_FS.md",
+      "kind": "cross",
+      "pattern": "cascade-then-fs",
+      "density": "std",
+      "features": [
+        "cascade",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 285,
+      "file": "285__LSHAPE__Cascade_FS.md",
+      "kind": "l_shape",
+      "pattern": "cascade-then-fs",
+      "density": "std",
+      "features": [
+        "cascade",
+        "free_spins"
+      ]
+    },
+    {
+      "idx": 286,
+      "file": "286__RECT__Cascade_StickyWild_MultOrb_+5.md",
+      "kind": "rectangular",
+      "pattern": "maximalist-fs-hold-mult",
+      "density": "std",
+      "features": [
+        "cascade",
+        "sticky_wild",
+        "multiplier_orb",
+        "bonus_buy",
+        "free_spins",
+        "progressive_free_spins",
+        "hold_and_win",
+        "gamble"
+      ]
+    },
+    {
+      "idx": 287,
+      "file": "287__RECT__Cascade_StickyWild_MultOrb_+5__max.md",
+      "kind": "rectangular",
+      "pattern": "maximalist-fs-hold-mult",
+      "density": "max",
+      "features": [
+        "cascade",
+        "sticky_wild",
+        "multiplier_orb",
+        "bonus_buy",
+        "free_spins",
+        "progressive_free_spins",
+        "hold_and_win",
+        "gamble"
+      ]
+    },
+    {
+      "idx": 288,
+      "file": "288__VARREEL__Cascade_StickyWild_MultOrb_+5.md",
+      "kind": "variable_reel",
+      "pattern": "maximalist-fs-hold-mult",
+      "density": "std",
+      "features": [
+        "cascade",
+        "sticky_wild",
+        "multiplier_orb",
+        "bonus_buy",
+        "free_spins",
+        "progressive_free_spins",
+        "hold_and_win",
+        "gamble"
+      ]
+    },
+    {
+      "idx": 289,
+      "file": "289__VARREEL__Cascade_StickyWild_MultOrb_+5__max.md",
+      "kind": "variable_reel",
+      "pattern": "maximalist-fs-hold-mult",
+      "density": "max",
+      "features": [
+        "cascade",
+        "sticky_wild",
+        "multiplier_orb",
+        "bonus_buy",
+        "free_spins",
+        "progressive_free_spins",
+        "hold_and_win",
+        "gamble"
+      ]
+    },
+    {
+      "idx": 290,
+      "file": "290__RECT__BareGrid__min.md",
+      "kind": "rectangular",
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
+    },
+    {
+      "idx": 291,
+      "file": "291__RECTSTACK__BareGrid__min.md",
+      "kind": "rectangular_stacked_scatter",
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
+    },
+    {
+      "idx": 292,
+      "file": "292__VARREEL__BareGrid__min.md",
+      "kind": "variable_reel",
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
+    },
+    {
+      "idx": 293,
+      "file": "293__EXPAND__BareGrid__min.md",
+      "kind": "expanding",
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
+    },
+    {
+      "idx": 294,
+      "file": "294__INF__BareGrid__min.md",
+      "kind": "infinity",
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
+    },
+    {
+      "idx": 295,
+      "file": "295__DUAL__BareGrid__min.md",
+      "kind": "dual",
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
+    },
+    {
+      "idx": 296,
+      "file": "296__CLUSTER__BareGrid__min.md",
+      "kind": "cluster",
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
+    },
+    {
+      "idx": 297,
+      "file": "297__MEGA__BareGrid__min.md",
+      "kind": "megaclusters",
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
+    },
+    {
+      "idx": 298,
+      "file": "298__HEX__BareGrid__min.md",
+      "kind": "hexagonal",
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
+    },
+    {
+      "idx": 299,
+      "file": "299__DIA__BareGrid__min.md",
+      "kind": "diamond",
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
+    },
+    {
+      "idx": 300,
+      "file": "300__PYR__BareGrid__min.md",
+      "kind": "pyramid",
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
+    },
+    {
+      "idx": 301,
+      "file": "301__CROSS__BareGrid__min.md",
+      "kind": "cross",
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
+    },
+    {
+      "idx": 302,
+      "file": "302__LSHAPE__BareGrid__min.md",
+      "kind": "l_shape",
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
+    },
+    {
+      "idx": 303,
+      "file": "303__LOCK__BareGrid__min.md",
+      "kind": "lock_respin",
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
+    },
+    {
+      "idx": 304,
+      "file": "304__WHEEL__BareGrid__min.md",
+      "kind": "wheel",
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
+    },
+    {
+      "idx": 305,
+      "file": "305__RADIAL__BareGrid__min.md",
+      "kind": "radial",
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
+    },
+    {
+      "idx": 306,
+      "file": "306__CRASH__BareGrid__min.md",
+      "kind": "crash",
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
+    },
+    {
+      "idx": 307,
+      "file": "307__PLINKO__BareGrid__min.md",
+      "kind": "plinko",
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
+    },
+    {
+      "idx": 308,
+      "file": "308__SLINGO__BareGrid__min.md",
       "kind": "slingo",
-      "pattern": "minimalist"
+      "pattern": "minimalist",
+      "density": "min",
+      "features": []
     }
   ]
 }

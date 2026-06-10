@@ -319,6 +319,191 @@ const PATTERNS = [
     compatible: (k) => k === 'rectangular' || k === 'variable_reel',
   },
   {
+    id: 'mult-bg-only',
+    label: 'Base-game multiplier only',
+    description: 'Base-game multiplier only — Free Spins phase is flat 1×.',
+    features: ['multiplier', 'free_spins'],
+    sections: ['## Base Multiplier\nappliesTo: base\nlocked: true'],
+    compatible: (k) => KINDS[k].evals.includes('lines') || KINDS[k].evals.includes('ways'),
+  },
+  {
+    id: 'mult-fs-only',
+    label: 'Free Spins multiplier only',
+    description: 'Only Free Spins phase carries a multiplier; base-game is flat 1×.',
+    features: ['free_spins', 'progressive_free_spins'],
+    sections: ['## Base Multiplier\nappliesTo: base\nvalue: 1\nnote: BG = 1x; multiplier engages only inside Free Spins.'],
+    compatible: (k) => KINDS[k].evals.includes('lines') || KINDS[k].evals.includes('ways') || KINDS[k].evals.includes('cluster'),
+  },
+  {
+    id: 'mult-bg-and-fs',
+    label: 'BG + FS multiplier (FS progressive)',
+    description: 'Both base-game and Free Spins carry a multiplier; FS multiplier is progressive.',
+    features: ['multiplier', 'progressive_free_spins', 'free_spins'],
+    sections: [
+      '## Base Multiplier\nappliesTo: base',
+      '## Progressive Free Spins\nstartAt: 1\nincrement: 1\ncap: 10',
+    ],
+    compatible: (k) => KINDS[k].evals.includes('lines') || KINDS[k].evals.includes('ways'),
+  },
+  {
+    id: 'persistent-mult-bg',
+    label: 'Persistent base-game multiplier',
+    description: 'Multiplier persists across base-game spins; resets on session end.',
+    features: ['multiplier', 'persistent_multiplier'],
+    sections: ['## Persistent Multiplier\nappliesTo: base\nresetOn: session\nstartAt: 1\nincrement: 1'],
+    compatible: (k) => KINDS[k].evals.includes('ways') || KINDS[k].evals.includes('cluster'),
+  },
+  {
+    id: 'lightning-fs',
+    label: 'Lightning multiplier (FS only)',
+    description: 'Lightning multiplier symbols zap only during Free Spins; base-game flat.',
+    features: ['lightning', 'free_spins'],
+    sections: ['## Lightning\nappliesTo: fs\nnote: Lightning engages only inside Free Spins.'],
+    compatible: (k) => KINDS[k].evals.includes('lines') || KINDS[k].evals.includes('pay_anywhere'),
+  },
+  {
+    id: 'sticky-wild-bg',
+    label: 'Sticky wilds in base game',
+    description: 'Rare pattern — sticky wilds persist across base-game spins, not only Free Spins.',
+    features: ['sticky_wild', 'wild'],
+    sections: ['## Sticky Wild\nappliesTo: base\nresetOn: spin_after_stick'],
+    compatible: (k) => KINDS[k].evals.includes('lines') || KINDS[k].evals.includes('ways'),
+  },
+  {
+    id: 'wild-reel-fs',
+    label: 'Full wild reel (Free Spins)',
+    description: 'During Free Spins, an entire reel can turn fully wild.',
+    features: ['wild_reel', 'free_spins'],
+    sections: ['## Wild Reel\nappliesTo: fs\ntriggerOn: random'],
+    compatible: (k) => KINDS[k].evals.includes('lines') || KINDS[k].evals.includes('ways'),
+  },
+  {
+    id: 'nudging-wild',
+    label: 'Nudging walking wild',
+    description: 'Walking wild nudges 1 reel per spin; retrigger resets position.',
+    features: ['walking_wild', 'free_spins'],
+    sections: ['## Walking Wild\nnudgeStep: 1\nresetOnRetrigger: true'],
+    compatible: (k) => KINDS[k].evals.includes('lines'),
+  },
+  {
+    id: 'mystery-cluster',
+    label: 'Mystery symbol on cluster pays',
+    description: 'Mystery symbols land then reveal a matching paying icon; cluster cascade evaluates after reveal.',
+    features: ['mystery_symbol', 'cluster_pays', 'cascade'],
+    sections: ['## Mystery Symbol\nrevealsTo: single_payable\nresolveBefore: cluster_eval'],
+    compatible: (k) => KINDS[k].evals.includes('cluster'),
+  },
+  {
+    id: 'super-symbol-fs',
+    label: 'Colossal super-symbol in FS',
+    description: 'Colossal 2×2 / 3×3 stacked symbol unlocks in Free Spins.',
+    features: ['super_symbol', 'free_spins'],
+    sections: ['## Super Symbol\nappliesTo: fs\nsizes: 2x2,3x3'],
+    compatible: (k) => k === 'rectangular' || k === 'variable_reel' || k === 'megaclusters',
+  },
+  {
+    id: 'hold-in-fs',
+    label: 'Hold & Win round inside Free Spins',
+    description: 'Free Spins can spawn a Hold & Win sub-round triggered by 6+ bonus coins during FS.',
+    features: ['free_spins', 'hold_and_win', 'respin'],
+    sections: [
+      '## Free Spins',
+      '| Scatters | Spins |',
+      '|--:|--:|',
+      '| 3 | 14 |',
+      '| 4 | 16 |',
+      '| 5 | 18 |',
+      '## Hold and Win',
+      'triggerCount: 6\nappliesTo: fs\nrespinsAwarded: 3\nresetOnCollect: 3',
+    ],
+    compatible: (k) => k === 'rectangular' || k === 'lock_respin',
+  },
+  {
+    id: 'bonus-buy-multi-tier',
+    label: 'Bonus Buy — three tiers w/ FS multiplier',
+    description: 'Standard / Premium / Super buy tiers; each plants explicit scatter counts and carries an FS multiplier.',
+    features: ['bonus_buy', 'bonus_buy_deterministic', 'free_spins', 'progressive_free_spins'],
+    sections: [
+      '## Bonus Buy Tier',
+      '| Tier | Cost | Plants | FS Mult |',
+      '|---|--:|---|--:|',
+      '| Standard | 75 | 3 scatters | 1× |',
+      '| Premium | 150 | 4 scatters | 2× |',
+      '| Super | 300 | 5 scatters | 3× |',
+      '## Progressive Free Spins\nstartAt: 1\nincrement: 1\ncap: 10',
+    ],
+    compatible: (k) => k === 'rectangular' || k === 'variable_reel',
+  },
+  {
+    id: 'gamble-card-after-win',
+    label: 'Card gamble after every win',
+    description: 'Every win offers an optional red/black card gamble for ×2.',
+    features: ['gamble'],
+    sections: ['## Gamble\nmode: card\ntriggerOn: every_win'],
+    compatible: (k) => KINDS[k].evals.includes('lines') || KINDS[k].evals.includes('ways') || KINDS[k].evals.includes('pay_anywhere'),
+  },
+  {
+    id: 'gamble-ladder-fs-totals',
+    label: 'Ladder gamble on Free Spins totals',
+    description: 'After Free Spins end, totals can be risked on a climbing ladder gamble.',
+    features: ['gamble_secondary', 'free_spins'],
+    sections: ['## Gamble Ladder\nappliesTo: fs_total\nmaxRung: 10'],
+    compatible: (k) => KINDS[k].evals.includes('lines') || KINDS[k].evals.includes('ways') || KINDS[k].evals.includes('pay_anywhere'),
+  },
+  {
+    id: 'path-aware-mult-ways',
+    label: 'Path-aware multiplier (ways)',
+    description: 'Multiplier ladder is path-aware on a ways evaluator — different winning paths can carry different multipliers.',
+    features: ['path_aware_multiplier', 'ways'],
+    sections: ['## Path-Aware Multiplier\nappliesTo: ways\nladder: 1,2,3,5,10'],
+    compatible: (k) => KINDS[k].evals.includes('ways'),
+  },
+  {
+    id: 'win-cap-high',
+    label: 'Win cap (high ceiling 25000×)',
+    description: 'Hard win cap at 25000× bet — high enough that cap rarely fires.',
+    features: ['win_cap', 'free_spins'],
+    sections: ['## Win Cap\nmaxWinX: 25000'],
+    compatible: (k) => KINDS[k].evals.includes('lines') || KINDS[k].evals.includes('pay_anywhere') || KINDS[k].evals.includes('ways'),
+  },
+  {
+    id: 'scatter-pay-hex',
+    label: 'Scatter pays on hex grid',
+    description: 'Hex / cluster grid evaluates 8+ matching scatter pays; cascade after.',
+    features: ['scatter_pays', 'cascade'],
+    sections: ['## Scatter Pays\nminMatch: 8\nappliesTo: grid'],
+    compatible: (k) => k === 'hexagonal' || KINDS[k].evals.includes('cluster'),
+  },
+  {
+    id: 'respin-on-anchor',
+    label: 'Respin on anchor symbol',
+    description: 'Anchor symbol locks in place and triggers a respin loop until no new anchor lands.',
+    features: ['respin', 'wild'],
+    sections: ['## Respin\ntriggerOn: anchor\nlockOnTrigger: true'],
+    compatible: (k) => KINDS[k].evals.includes('lines') || KINDS[k].evals.includes('ways'),
+  },
+  {
+    id: 'cascade-then-fs',
+    label: 'Cascade in BG carries into Free Spins',
+    description: 'Base-game uses cascade; Free Spins uses the same cascade evaluator.',
+    features: ['cascade', 'free_spins'],
+    sections: ['## Cascade\nappliesTo: base,fs'],
+    compatible: (k) => KINDS[k].evals.includes('ways') || KINDS[k].evals.includes('pay_anywhere'),
+  },
+  {
+    id: 'maximalist-fs-hold-mult',
+    label: 'Maximalist — FS + Hold & Win + progressive mult + gamble',
+    description: 'Cascade + sticky wild + multiplier orb + bonus buy + Hold & Win in FS + progressive FS multiplier + gamble.',
+    features: ['cascade', 'sticky_wild', 'multiplier_orb', 'bonus_buy', 'free_spins', 'progressive_free_spins', 'hold_and_win', 'gamble'],
+    sections: [
+      '## Bonus Buy\ncostX: 100',
+      '## Hold and Win\ntriggerCount: 6\nrespinsAwarded: 3',
+      '## Progressive Free Spins\nstartAt: 1\nincrement: 1\ncap: 10',
+      '## Gamble\nmode: card',
+    ],
+    compatible: (k) => k === 'rectangular' || k === 'variable_reel',
+  },
+  {
     id: 'minimalist',
     label: 'Minimalist — bare grid + 1 symbol',
     description: 'Smallest viable GDD: name + grid + one HP symbol. Tests default fall-through across all blocks.',
@@ -448,6 +633,52 @@ function renderGDD(kind, pattern, idx) {
     out.push(sec);
     out.push('');
   }
+  /* 2026-06-09 — synthetic POOL has tiny symbol count (≤10), so default
+     scatter weight gives ~10%/cell hit rate. With default retrigger
+     enabled, FS rounds enter an infinite retrigger loop (cortex-eyes
+     fleet walker debug confirmed: spinsTotal grows 15→20→25→… each
+     spin while spinsRemaining barely ticks down). Synthetic fixtures
+     test LIFECYCLE not balance, so we hard-disable retrigger for every
+     emitted GDD that declares Free Spins. Hand-written sample GDDs
+     stay untouched. */
+  /* Always declare a Big-Win Tier ladder so the BW chip animates a
+     visible tier walk for QA. Vendor-neutral placeholder labels. */
+  out.push('## Big Win Tier');
+  out.push('| Tier | Threshold (x bet) | Label |');
+  out.push('|---|--:|---|');
+  out.push('| 1 | 10 | BIGWINTIER1 |');
+  out.push('| 2 | 25 | BIGWINTIER2 |');
+  out.push('| 3 | 50 | BIGWINTIER3 |');
+  out.push('| 4 | 200 | BIGWINTIER4 |');
+  out.push('| 5 | 1000 | BIGWINTIER5 |');
+  out.push('');
+  if (pattern.features.includes('free_spins') ||
+      pattern.features.includes('progressive_free_spins') ||
+      pattern.features.includes('bonus_buy') ||
+      pattern.features.includes('bonus_buy_deterministic') ||
+      pattern.features.includes('ante_bet') ||
+      pattern.features.includes('scatter_pays')) {
+    /* 2026-06-09 — make synthetic FS rounds SHORT (5 spins, no retrigger)
+       so the cortex-eyes fleet walker can verify the full lifecycle
+       BASE → FS_INTRO → FS_ACTIVE → FS_OUTRO → BASE inside its per-PDF
+       budget. Real GDDs ship larger ladders (3/14, 4/16, 5/18); this
+       only affects synthetic QA fixtures. */
+    out.push('## Free Spins');
+    out.push('');
+    out.push('### Trigger');
+    out.push('3+ Scatter symbols anywhere.');
+    out.push('');
+    out.push('### Award Table');
+    out.push('| Scatters | Spins awarded |');
+    out.push('|:---:|:---:|');
+    out.push('| 3 | 5 |');
+    out.push('| 4 | 5 |');
+    out.push('| 5 | 5 |');
+    out.push('');
+    out.push('### Retrigger');
+    out.push('No retrigger — synthetic QA fixture.');
+    out.push('');
+  }
   out.push('## Notes');
   out.push(`Synthetic fixture for Wave UQ Ultimate QA. Pattern: ${pattern.description}`);
   out.push('');
@@ -455,13 +686,21 @@ function renderGDD(kind, pattern, idx) {
 }
 
 /* ── Combo expansion ────────────────────────────────────────────── */
+function densitiesFor(pattern) {
+  if (pattern.minimal) return ['min'];
+  if (pattern.id === 'maximalist-fs-hold-mult') return ['std', 'max'];
+  return ['std'];
+}
+
 function buildCombos() {
   const combos = [];
   let idx = 1;
   for (const pattern of PATTERNS) {
     for (const kind of Object.keys(KINDS)) {
       if (!pattern.compatible(kind)) continue;
-      combos.push({ idx: idx++, pattern, kind });
+      for (const density of densitiesFor(pattern)) {
+        combos.push({ idx: idx++, pattern, kind, density });
+      }
     }
   }
   return combos;
@@ -484,16 +723,70 @@ for (const f of readdirSync(OUT)) {
   if (f.endsWith('.md')) unlinkSync(resolvePath(OUT, f));
 }
 
+/* Feature → short camel label for filename encoding (Boki:
+ * "nazovi PDF GDD-ove po featurima koje imaju, da znam sta gledam"). */
+const FEATURE_LABEL = {
+  free_spins: 'FS', free_spin: 'FS',
+  cascade: 'Cascade', tumble: 'Cascade',
+  multiplier_orb: 'MultOrb', multiplier: 'Mult',
+  persistent_multiplier: 'PersistMult',
+  progressive_free_spins: 'ProgFS',
+  sticky_wild: 'StickyWild', expanding_wild: 'ExpandWild',
+  walking_wild: 'WalkWild', wild_reel: 'WildReel', wild: 'Wild',
+  mystery_symbol: 'Mystery', super_symbol: 'ColSym',
+  hold_and_win: 'HoldAndWin', respin: 'Respin',
+  bonus_buy: 'BonusBuy', bonus_buy_deterministic: 'BonusBuyDet',
+  wheel_bonus: 'WheelBonus', weighted_wheel_segments: 'WeightedWheel',
+  bonus_pick: 'BonusPick',
+  gamble: 'Gamble', gamble_secondary: 'GambleLadder',
+  ante_bet: 'AnteBet', lightning: 'Lightning',
+  path_aware_multiplier: 'PathMult',
+  ways: 'Ways', cluster_pays: 'ClusterPays', scatter_pays: 'ScatterPay',
+  win_cap: 'WinCap', jackpot: 'Jackpot',
+  crash: 'Crash', plinko: 'Plinko', slingo: 'Slingo',
+  feature_generic: 'Feat',
+};
+const GRID_LABEL = {
+  rectangular: 'RECT', rectangular_stacked_scatter: 'RECTSTACK',
+  variable_reel: 'VARREEL', expanding: 'EXPAND', infinity: 'INF',
+  dual: 'DUAL', cluster: 'CLUSTER', megaclusters: 'MEGA',
+  hexagonal: 'HEX', diamond: 'DIA', pyramid: 'PYR', cross: 'CROSS',
+  l_shape: 'LSHAPE', lock_respin: 'LOCK', wheel: 'WHEEL',
+  radial: 'RADIAL', crash: 'CRASH', plinko: 'PLINKO', slingo: 'SLINGO',
+};
+function encodeFeatureFilename(c) {
+  const gridSlug = GRID_LABEL[c.kind] || c.kind.toUpperCase();
+  const feats = (c.pattern.features || []).map(f => FEATURE_LABEL[f] || _camel(f));
+  const dedup = [];
+  const seen = new Set();
+  for (const f of feats) if (!seen.has(f)) { seen.add(f); dedup.push(f); }
+  let featSeg;
+  if (dedup.length === 0)        featSeg = 'BareGrid';
+  else if (dedup.length <= 3)    featSeg = dedup.join('_');
+  else                           featSeg = dedup.slice(0, 3).join('_') + '_+' + (dedup.length - 3);
+  const densitySfx = c.density === 'min' ? '__min'
+                   : c.density === 'max' ? '__max'
+                   : '';
+  return `${String(c.idx).padStart(3, '0')}__${gridSlug}__${featSeg}${densitySfx}.md`;
+}
+function _camel(s) {
+  return String(s || '').split(/[\s_-]+/).filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('');
+}
+
 const manifest = [];
 for (const c of combos) {
-  const filename = `${String(c.idx).padStart(3, '0')}_${c.kind}_${c.pattern.id}.md`;
+  const filename = encodeFeatureFilename(c);
   const body = renderGDD(c.kind, c.pattern, c.idx);
   if (PRINT_ONLY) {
     console.log(`tools/_qa/ultimate-fixtures/${filename}`);
   } else {
     writeFileSync(resolvePath(OUT, filename), body, 'utf8');
   }
-  manifest.push({ idx: c.idx, file: filename, kind: c.kind, pattern: c.pattern.id });
+  manifest.push({
+    idx: c.idx, file: filename, kind: c.kind, pattern: c.pattern.id,
+    density: c.density, features: c.pattern.features,
+  });
 }
 
 writeFileSync(

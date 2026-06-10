@@ -203,7 +203,16 @@ export function pdfTextToMarkdown(raw) {
       out.push('Svaki multiplier orb koji učestvuje u dobitku se dodaje u Bonus_Multiplier (počinje na 0x). Akumulirajuća mehanika — primenjuje se na svaki naredni dobitak u bonusu.');
       out.push('');
     }
-    if (fs.retriggerSpins) {
+    /* 2026-06-09 — preserve "No retrigger" intent from the PDF body so
+       parser.mjs noRetrig regex lights up after pdfTextToMarkdown
+       round-trips. Otherwise synthetic QA fixtures that say "No
+       retrigger" land in the UI flow with default retrigger=enabled →
+       FS rounds loop forever and never emit onFsEnd. */
+    if (/\bno\s+retrigger\b|\bretrigger\s+(?:disabled|not\s+supported|not\s+in|not\s+allowed)\b/i.test(txt)) {
+      out.push(`### Retrigger`);
+      out.push('No retrigger.');
+      out.push('');
+    } else if (fs.retriggerSpins) {
       out.push(`### Retrigger`);
       out.push(`3+ Scatter tokom bonusa = **+${fs.retriggerSpins} Free Spins** (neograničeno).`);
       out.push('');
@@ -926,6 +935,29 @@ function extractFreeSpins(txt) {
   const arrowSpins = /(\d)\s*\+?\s*(?:Scatter[a-z]*|Sketer[a-z]*)\s+[\s\S]{0,80}?[=→\-:]\s*(\d{1,3})\s*(?:Free\s+)?Spins?/gi;
   while ((m3a = arrowSpins.exec(txt)) !== null) {
     _addAward(parseInt(m3a[1], 10), parseInt(m3a[2], 10));
+  }
+  /* (4) PDF-flattened ladder. pdfjs strips `|` separators so the
+        original `| 3 | 5 | | 4 | 5 | | 5 | 5 |` table becomes the bare
+        sequence `Scatters Spins awarded 3 5 4 5 5 5`. We anchor on the
+        "Scatters … Spins awarded" header (with optional `|` survival)
+        and pair the trailing single-digit + 1-3-digit numbers as
+        (count, spins) rungs until we hit a non-paired token. */
+  if (awards.length === 0) {
+    const headerIdx = txt.search(/scatters?\s*\|?\s*spins\s*awarded/i);
+    if (headerIdx >= 0) {
+      const window = txt.slice(headerIdx, headerIdx + 220);
+      const numsOnly = window.replace(/[^\d\s]+/g, ' ').split(/\s+/).filter(Boolean).map(Number);
+      /* Iterate pairs after the header. First-pair `count` should be
+         between 2-9. */
+      for (let i = 0; i + 1 < numsOnly.length; i += 2) {
+        const c = numsOnly[i], s = numsOnly[i + 1];
+        if (c >= 2 && c <= 9 && s >= 1 && s <= 200) {
+          _addAward(c, s);
+        } else {
+          break;
+        }
+      }
+    }
   }
   awards.sort((a, b) => a.count - b.count);
 
