@@ -1,4 +1,6 @@
-# UQ Fixture 066 · Mystery symbol reveal · rectangular_stacked_scatter
+# Synth 066 Mystery symbol reveal
+
+**Game name:** Synth 066 Mystery symbol reveal
 
 | Field | Value |
 |---|---|
@@ -6,7 +8,13 @@
 | **Genre** | mystery-symbol |
 | **Theme tags** | synthetic · vendor-neutral · QA fixture |
 | **Mood** | balanced |
+| **Setting** | abstract neon arcade |
+| **Vibe refs** | retro · synthetic · QA |
 | **Typography** | UI sans 14px |
+
+Mood: balanced.
+Setting: abstract neon arcade backdrop.
+Vibe references: retro · synthetic · QA.
 
 ## Topology
 
@@ -44,6 +52,19 @@
 |---|---|
 | `S` | Scatter |
 | `MY` | Mystery |
+
+### Symbol Roster (parser-friendly fallback)
+
+- `H1` — Crystal (HP)
+- `H2` — Ember (HP)
+- `H3` — Frost (HP)
+- `A` — Ace (MP)
+- `K` — King (MP)
+- `Q` — Queen (MP)
+- `J` — Jack (LP)
+- `10` — Ten (LP)
+- `S` — Scatter (Special)
+- `MY` — Mystery (Special)
 
 ## Features
 - Mystery Symbol

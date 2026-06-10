@@ -1,4 +1,6 @@
-# UQ Fixture 187 · Persistent base-game multiplier · megaclusters
+# Synth 187 Persistent base-game multiplier
+
+**Game name:** Synth 187 Persistent base-game multiplier
 
 | Field | Value |
 |---|---|
@@ -6,7 +8,13 @@
 | **Genre** | persistent-mult-bg |
 | **Theme tags** | synthetic · vendor-neutral · QA fixture |
 | **Mood** | balanced |
+| **Setting** | abstract neon arcade |
+| **Vibe refs** | retro · synthetic · QA |
 | **Typography** | UI sans 14px |
+
+Mood: balanced.
+Setting: abstract neon arcade backdrop.
+Vibe references: retro · synthetic · QA.
 
 ## Topology
 
@@ -14,7 +22,7 @@
 |---|---|
 | **Reels** | 4 |
 | **Rows** | 4 |
-| **Paylines** | — |
+| **Paylines** | 1 |
 | **Evaluation** | Cluster |
 
 ## Symbols
@@ -37,6 +45,16 @@
 |---|---|
 | `L1` | Amber |
 | `L2` | Slate |
+
+### Symbol Roster (parser-friendly fallback)
+
+- `H1` — Garnet (HP)
+- `H2` — Emerald (HP)
+- `H3` — Sapphire (HP)
+- `M1` — Topaz (MP)
+- `M2` — Citrine (MP)
+- `L1` — Amber (LP)
+- `L2` — Slate (LP)
 
 ## Features
 - Multiplier

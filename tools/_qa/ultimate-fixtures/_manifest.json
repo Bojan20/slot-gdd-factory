@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-09T19:06:16.896Z",
+  "generatedAt": "2026-06-10T09:34:02.462Z",
   "count": 308,
   "fixtures": [
     {
@@ -3233,155 +3233,231 @@
     },
     {
       "idx": 290,
-      "file": "290__RECT__BareGrid__min.md",
+      "file": "290__RECT__FS_Wild_Mult__min.md",
       "kind": "rectangular",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 291,
-      "file": "291__RECTSTACK__BareGrid__min.md",
+      "file": "291__RECTSTACK__FS_Wild_Mult__min.md",
       "kind": "rectangular_stacked_scatter",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 292,
-      "file": "292__VARREEL__BareGrid__min.md",
+      "file": "292__VARREEL__FS_Wild_Mult__min.md",
       "kind": "variable_reel",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 293,
-      "file": "293__EXPAND__BareGrid__min.md",
+      "file": "293__EXPAND__FS_Wild_Mult__min.md",
       "kind": "expanding",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 294,
-      "file": "294__INF__BareGrid__min.md",
+      "file": "294__INF__FS_Wild_Mult__min.md",
       "kind": "infinity",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 295,
-      "file": "295__DUAL__BareGrid__min.md",
+      "file": "295__DUAL__FS_Wild_Mult__min.md",
       "kind": "dual",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 296,
-      "file": "296__CLUSTER__BareGrid__min.md",
+      "file": "296__CLUSTER__FS_Wild_Mult__min.md",
       "kind": "cluster",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 297,
-      "file": "297__MEGA__BareGrid__min.md",
+      "file": "297__MEGA__FS_Wild_Mult__min.md",
       "kind": "megaclusters",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 298,
-      "file": "298__HEX__BareGrid__min.md",
+      "file": "298__HEX__FS_Wild_Mult__min.md",
       "kind": "hexagonal",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 299,
-      "file": "299__DIA__BareGrid__min.md",
+      "file": "299__DIA__FS_Wild_Mult__min.md",
       "kind": "diamond",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 300,
-      "file": "300__PYR__BareGrid__min.md",
+      "file": "300__PYR__FS_Wild_Mult__min.md",
       "kind": "pyramid",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 301,
-      "file": "301__CROSS__BareGrid__min.md",
+      "file": "301__CROSS__FS_Wild_Mult__min.md",
       "kind": "cross",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 302,
-      "file": "302__LSHAPE__BareGrid__min.md",
+      "file": "302__LSHAPE__FS_Wild_Mult__min.md",
       "kind": "l_shape",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 303,
-      "file": "303__LOCK__BareGrid__min.md",
+      "file": "303__LOCK__FS_Wild_Mult__min.md",
       "kind": "lock_respin",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 304,
-      "file": "304__WHEEL__BareGrid__min.md",
+      "file": "304__WHEEL__FS_Wild_Mult__min.md",
       "kind": "wheel",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 305,
-      "file": "305__RADIAL__BareGrid__min.md",
+      "file": "305__RADIAL__FS_Wild_Mult__min.md",
       "kind": "radial",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 306,
-      "file": "306__CRASH__BareGrid__min.md",
+      "file": "306__CRASH__FS_Wild_Mult__min.md",
       "kind": "crash",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 307,
-      "file": "307__PLINKO__BareGrid__min.md",
+      "file": "307__PLINKO__FS_Wild_Mult__min.md",
       "kind": "plinko",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     },
     {
       "idx": 308,
-      "file": "308__SLINGO__BareGrid__min.md",
+      "file": "308__SLINGO__FS_Wild_Mult__min.md",
       "kind": "slingo",
       "pattern": "minimalist",
       "density": "min",
-      "features": []
+      "features": [
+        "free_spins",
+        "wild",
+        "multiplier"
+      ]
     }
   ]
 }

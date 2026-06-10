@@ -83,11 +83,28 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "./node_modules/pdfjs-dist/build/pdf.wo
          očekuje markdown sintaksu (`#`, `|`, `###`). Ako je izvor binarni
          (PDF/DOCX), pre prosleđivanja parser-u prvo prolazi kroz heuristički
          markdown adapter koji rekonstruiše H1/H2/H3 naslove + bucket
-         paytable tabele iz prepoznatih GDD obrazaca. */
+         paytable tabele iz prepoznatih GDD obrazaca.
+
+         2026-06-10 — Boki bug "029 prevuko — crveni X, nema simbola,
+         nema feature-a". Sintetic PDFs (generated from rich MD via
+         pandoc) retain enough structure that PDF.js extracts a text
+         which ALREADY contains `## Topology`, `## Symbols`, `### High-pay`
+         markers and pipe tables. Sending such input through
+         `pdfTextToMarkdown` re-builds a generic skeleton that DISCARDS
+         sintetic-specific symbols + features. Detect that case (text
+         already has ≥3 `## `-prefixed headers) and forward the raw
+         text straight to parser.mjs. */
       if (isBinary) {
-        const mdShape = pdfTextToMarkdown(text);
-        if (mdShape && mdShape.length > 80) {
-          text = mdShape;
+        const headerCount = (text.match(/##\s+\S/g) || []).length;
+        const looksLikeMd = headerCount >= 3 && text.length > 500;
+        if (looksLikeMd) {
+          /* PDF retained Markdown structure — skip the adapter so we
+             don't lose sintetic-specific symbols/features. */
+        } else {
+          const mdShape = pdfTextToMarkdown(text);
+          if (mdShape && mdShape.length > 80) {
+            text = mdShape;
+          }
         }
       }
       const model = parseGDD(text, ext === 'json' ? 'json' : 'md');
@@ -153,6 +170,21 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "./node_modules/pdfjs-dist/build/pdf.wo
       ...model.symbols.specials.map(s => `★ <strong>${s.id}</strong> ${s.name}`),
     ].map(t => `<span class="chip">${t}</span>`).join("");
 
+    /* Wave UQ2 — segment-based games (wheel/plinko/slingo) carry their
+       playable content in wheelBonus.segments, plinko buckets, etc. — not
+       in HP/MP/LP rosters. Show a Wheel Segments card so a wheel GDD doesn't
+       look like a broken upload (Boki 029-bug: "nema simbola crveni se X"). */
+    const _evalKind = model.topology && (model.topology.evaluation || model.topology.kind);
+    const _isWheel = _evalKind === 'wheel';
+    const _wheelSegs = (model.wheelBonus && Array.isArray(model.wheelBonus.segments)) ? model.wheelBonus.segments : [];
+    const _wheelWeights = (model.weightedWheelSegments && Array.isArray(model.weightedWheelSegments.weights)) ? model.weightedWheelSegments.weights : null;
+    const _segChips = _isWheel && _wheelSegs.length ? _wheelSegs.map((s, i) => {
+      const w = _wheelWeights && Number.isFinite(_wheelWeights[i]) ? ` · w=${_wheelWeights[i]}` : '';
+      const tier = s.jackpotTier ? ' 🏆' : '';
+      const swatch = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${s.color || '#c0a850'};margin-right:6px;vertical-align:middle"></span>`;
+      return `<span class="chip">${swatch}<strong>${escapeHtml(String(s.label || ''))}</strong>${tier}${w}</span>`;
+    }).join('') : '';
+
     const featChips = model.features.map(f =>
       `<span class="chip"><strong>${escapeHtml(f.label)}</strong></span>`
     ).join("") || `<span class="chip" style="color:#ff6b6b">no features detected</span>`;
@@ -181,9 +213,15 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "./node_modules/pdfjs-dist/build/pdf.wo
       ${palette ? `<div class="card"><h3>🎨 Color palette</h3><div class="row">${palette}</div></div>` : ""}
 
       <div class="card">
-        <h3>🎯 Symbols (${symTotal})</h3>
+        <h3>🎯 Symbols (${symTotal})${_isWheel ? ' <span style="font-size:0.7rem;color:#9aa;font-weight:400">· auto-fill (wheel mode)</span>' : ''}</h3>
         <div class="row">${symChips || `<span class="chip">no symbols detected</span>`}</div>
       </div>
+
+      ${_isWheel && _segChips ? `
+      <div class="card">
+        <h3>🎡 Wheel segments (${_wheelSegs.length})</h3>
+        <div class="row">${_segChips}</div>
+      </div>` : ''}
 
       <div class="card">
         <h3>⚡ Features (${model.features.length})</h3>
@@ -256,11 +294,25 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "./node_modules/pdfjs-dist/build/pdf.wo
         conf: model.theme.palette.length > 0 ? Math.min(1, model.theme.palette.length / 3) : 0,
         found: model.theme.palette.length ? `${model.theme.palette.length} hex color(s)` : null,
       },
-      {
-        label: "Symbols",
-        conf: model.confidence.symbols,
-        found: symTotal > 0 ? `${symTotal} (HP=${model.symbols.high.length} MP=${model.symbols.mid.length} LP=${model.symbols.low.length} ★=${model.symbols.specials.length})` : null,
-      },
+      /* Wave UQ2 — wheel/plinko/slingo: re-label the row + re-summarize.
+         Coverage Report previously read "❌ Symbols not found" for a clean
+         wheel GDD even though the wheel block was fully populated. */
+      (() => {
+        const evalKind = model.topology && (model.topology.evaluation || model.topology.kind);
+        if (evalKind === 'wheel') {
+          const segs = (model.wheelBonus && Array.isArray(model.wheelBonus.segments)) ? model.wheelBonus.segments : [];
+          return {
+            label: "Wheel segments",
+            conf: model.confidence.symbols,
+            found: segs.length > 0 ? `${segs.length} segment(s) · ${segs.filter(s => s.jackpotTier).length} jackpot tier(s)` : null,
+          };
+        }
+        return {
+          label: "Symbols",
+          conf: model.confidence.symbols,
+          found: symTotal > 0 ? `${symTotal} (HP=${model.symbols.high.length} MP=${model.symbols.mid.length} LP=${model.symbols.low.length} ★=${model.symbols.specials.length})` : null,
+        };
+      })(),
       {
         label: "Features",
         conf: model.confidence.features,

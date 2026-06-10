@@ -1,4 +1,6 @@
-# UQ Fixture 029 · Wheel bonus with weighted segments · wheel
+# Synth 029 Wheel bonus with weighted segments
+
+**Game name:** Synth 029 Wheel bonus with weighted segments
 
 | Field | Value |
 |---|---|
@@ -6,16 +8,59 @@
 | **Genre** | wheel-bonus |
 | **Theme tags** | synthetic · vendor-neutral · QA fixture |
 | **Mood** | balanced |
+| **Setting** | abstract neon arcade |
+| **Vibe refs** | retro · synthetic · QA |
 | **Typography** | UI sans 14px |
+
+Mood: balanced.
+Setting: abstract neon arcade backdrop.
+Vibe references: retro · synthetic · QA.
 
 ## Topology
 
 | Field | Value |
 |---|---|
-| **Reels** | — |
-| **Rows** | — |
-| **Paylines** | — |
+| **Reels** | 1 |
+| **Rows** | 1 |
+| **Paylines** | 1 |
 | **Evaluation** | wheel |
+
+This game uses a wheel grid topology.
+
+## Symbols
+
+### High-pay
+| ID | Name |
+|---|---|
+| `H1` | Crown |
+| `H2` | Bell |
+
+### Mid-pay
+| ID | Name |
+|---|---|
+| `A` | Ace |
+| `K` | King |
+
+### Low-pay
+| ID | Name |
+|---|---|
+| `J` | Jack |
+| `10` | Ten |
+
+### Specials
+| ID | Name |
+|---|---|
+| `S` | Scatter |
+
+### Symbol Roster (parser-friendly fallback)
+
+- `H1` — Crown (HP)
+- `H2` — Bell (HP)
+- `A` — Ace (MP)
+- `K` — King (MP)
+- `J` — Jack (LP)
+- `10` — Ten (LP)
+- `S` — Scatter (Special)
 
 ## Features
 - Wheel Bonus

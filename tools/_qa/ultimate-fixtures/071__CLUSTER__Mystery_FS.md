@@ -1,4 +1,6 @@
-# UQ Fixture 071 · Mystery symbol reveal · cluster
+# Synth 071 Mystery symbol reveal
+
+**Game name:** Synth 071 Mystery symbol reveal
 
 | Field | Value |
 |---|---|
@@ -6,7 +8,13 @@
 | **Genre** | mystery-symbol |
 | **Theme tags** | synthetic · vendor-neutral · QA fixture |
 | **Mood** | balanced |
+| **Setting** | abstract neon arcade |
+| **Vibe refs** | retro · synthetic · QA |
 | **Typography** | UI sans 14px |
+
+Mood: balanced.
+Setting: abstract neon arcade backdrop.
+Vibe references: retro · synthetic · QA.
 
 ## Topology
 
@@ -14,7 +22,7 @@
 |---|---|
 | **Reels** | 7 |
 | **Rows** | 7 |
-| **Paylines** | — |
+| **Paylines** | 1 |
 | **Evaluation** | Cluster |
 
 ## Symbols
@@ -43,6 +51,18 @@
 |---|---|
 | `S` | Scatter |
 | `MY` | Mystery |
+
+### Symbol Roster (parser-friendly fallback)
+
+- `H1` — Garnet (HP)
+- `H2` — Emerald (HP)
+- `H3` — Sapphire (HP)
+- `M1` — Topaz (MP)
+- `M2` — Citrine (MP)
+- `L1` — Amber (LP)
+- `L2` — Slate (LP)
+- `S` — Scatter (Special)
+- `MY` — Mystery (Special)
 
 ## Features
 - Mystery Symbol

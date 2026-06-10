@@ -646,6 +646,12 @@ export function extractTopology(rawText, model) {
     else if (/hex/.test(v)) kind = 'hexagonal';
     else if (/infinity/.test(v)) kind = 'infinity';
     else if (/crash/.test(v)) kind = 'crash';
+    /* Wave UQ2 — explicit Evaluation: wheel/plinko/slingo/radial cells were
+       falling through to /line/ default → "lines" topology over a wheel GDD
+       (304 bare grid case). Add explicit segment-evaluation matches. */
+    else if (/wheel|radial/.test(v)) kind = 'wheel';
+    else if (/plinko|peg/.test(v)) kind = 'plinko';
+    else if (/slingo/.test(v)) kind = 'slingo';
     else if (/line/.test(v)) kind = 'lines';
   }
   /* 6b. Fallback — infer from prose. Order matters: pay_anywhere is STRICT
@@ -927,6 +933,23 @@ export function extractFeatures(rawText) {
     },
     { kind: 'bonus_pick', re: /\bpick[\s_-]?(bonus|me)\b(?!\s*axe)/i, label: 'Bonus Pick' },
     { kind: 'wheel_bonus', re: /\bwheel\s+bonus|bonus\s+wheel/i, label: 'Wheel Bonus' },
+    {
+      /* 2026-06-10 — synthetic fixtures declare these explicit kinds. */
+      kind: 'weighted_wheel_segments',
+      re: /\bweighted\s+wheel\s+segments?\b|\bweighted[\s_-]?wheel\b/i,
+      label: 'Weighted Wheel Segments',
+    },
+    {
+      kind: 'jackpot',
+      re: /\bjackpot(?:s|\s+(?:ladder|tier|map|ladder|system))?\b/i,
+      label: 'Jackpot',
+    },
+    { kind: 'progressive_free_spins', re: /\bprogressive\s+free[\s-]?spins?\b/i, label: 'Progressive FS' },
+    { kind: 'persistent_multiplier', re: /\bpersistent\s+multiplier\b/i, label: 'Persistent Multiplier' },
+    { kind: 'multiplier_orb', re: /\bmultiplier\s+orbs?\b/i, label: 'Multiplier Orb' },
+    { kind: 'gamble_secondary', re: /\bgamble\s+ladder\b|\bladder\s+gamble\b/i, label: 'Gamble Ladder' },
+    { kind: 'bonus_buy_deterministic', re: /\bbonus\s+buy\s+tier\b|\bdeterministic\s+(?:bonus|buy|plant)\b/i, label: 'Bonus Buy Deterministic' },
+    { kind: 'path_aware_multiplier', re: /\bpath[\s_-]?aware\s+multiplier\b|\bpath\s+multiplier\b/i, label: 'Path-Aware Multiplier' },
     { kind: 'cluster_pays', re: /\bcluster[\s_-]?pays?\b/i, label: 'Cluster Pays' },
     {
       kind: 'ways',
@@ -2954,13 +2977,134 @@ export function extractBonusPick(text, model) {
 
 export function extractWheelBonus(text, model) {
   const s = _findSection(text, /^##\s+(?:Wheel\s+Bonus|Bonus\s+Wheel|WheelBonus)[^\n]*\n/im);
-  if (!s) return;
   const tgt = model.wheelBonus;
-  const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
-  const sd = _readInt(s, 'spin[- ]?duration[- ]?ms'); if (sd !== undefined) tgt.spinDurationMs = sd;
-  const auto = _readBool(s, 'auto[- ]?spin'); if (auto !== undefined) tgt.autoSpin = auto;
-  const title = _readStr(s, 'title'); if (title) tgt.title = title.slice(0, 40);
-  const halo = _readStr(s, 'halo[- ]?color'); if (halo) tgt.haloColor = halo;
+  if (s) {
+    const en = _readBool(s, 'enabled'); if (en !== undefined) tgt.enabled = en;
+    const sd = _readInt(s, 'spin[- ]?duration[- ]?ms'); if (sd !== undefined) tgt.spinDurationMs = sd;
+    const auto = _readBool(s, 'auto[- ]?spin'); if (auto !== undefined) tgt.autoSpin = auto;
+    const title = _readStr(s, 'title'); if (title) tgt.title = title.slice(0, 40);
+    const halo = _readStr(s, 'halo[- ]?color'); if (halo) tgt.haloColor = halo;
+    /* Wave UQ2 — segmentCount: N — generate N evenly-spaced default segments
+       so the wheel renders with the GDD-declared size even when no explicit
+       segments table is provided. The Weighted Wheel Segments block (below)
+       can later override label/value/weight per index. */
+    const sc = _readInt(s, 'segment[- ]?count');
+    if (sc !== undefined && sc >= 3 && sc <= 48) {
+      tgt.segments = _synthDefaultSegments(sc);
+    }
+  }
+  /* Wave UQ2 — parse the standalone "## Weighted Wheel Segments" table.
+     Format (pipe-separated, header + body rows):
+       | Segment   | Value   | Weight |
+       |-----------|---------|--------|
+       | 2× bet    | 2       | 30     |
+       | MINI      | jackpot | 5      |
+     "jackpot" value → recorded as jackpotTier=<Segment label upper-cased>,
+     numeric value → multiplier x bet. Weights bubble up to the
+     weightedWheelSegments block via model.weightedWheelSegments.weights[]. */
+  const wTable = _findSection(text, /^##\s+(?:Weighted\s+Wheel\s+Segments?|Wheel\s+Segments?)[^\n]*\n/im);
+  if (wTable) {
+    const parsed = _parseWheelSegmentsTable(wTable);
+    if (parsed && parsed.length >= 3) {
+      tgt.segments = parsed.map(p => {
+        const out = { label: p.label, value: p.value, color: _wheelSegmentColor(p) };
+        if (p.jackpotTier) out.jackpotTier = p.jackpotTier;
+        return out;
+      });
+      if (!model.weightedWheelSegments) model.weightedWheelSegments = {};
+      model.weightedWheelSegments.weights = parsed.map(p => p.weight);
+    }
+  }
+  /* Wave UQ2 — implicit enable when the topology is wheel-evaluation OR
+     when the features list mentions a wheel bonus. Avoids the previous
+     "029 renders nothing" failure where the GDD declared wheel topology
+     but `Wheel Bonus` section was minimal so `enabled` stayed undefined. */
+  const isWheelTopology = model.topology && (model.topology.evaluation === 'wheel' || model.topology.kind === 'wheel');
+  const featuresMentionWheel = Array.isArray(model.features) && model.features.some(f =>
+    f && (f.kind === 'wheel_bonus' || /wheel/i.test(f.label || ''))
+  );
+  if ((isWheelTopology || featuresMentionWheel) && tgt.enabled === undefined) {
+    tgt.enabled = true;
+  }
+}
+
+/* Wave UQ2 — N evenly-spaced default segments (industry baseline:
+   alternating multiplier tiers — low/mid/high/jackpot — so the wheel
+   visually reads correctly even with no explicit GDD table). */
+function _synthDefaultSegments(n) {
+  const TIERS = [
+    { label: '×2',   value: 2,   color: '#3aa0c2' },
+    { label: '×5',   value: 5,   color: '#2bb56b' },
+    { label: '×10',  value: 10,  color: '#e8c270' },
+    { label: '×25',  value: 25,  color: '#d28a3a' },
+    { label: '×50',  value: 50,  color: '#c45050' },
+    { label: '×100', value: 100, color: '#7050c4' },
+  ];
+  const out = [];
+  for (let i = 0; i < n; i++) out.push(TIERS[i % TIERS.length]);
+  return out;
+}
+
+/* Wave UQ2 — strict pipe-table parser. Returns null if no body row found. */
+function _parseWheelSegmentsTable(section) {
+  const lines = section.split('\n').map(l => l.trim()).filter(Boolean);
+  const rows = [];
+  for (const line of lines) {
+    if (!line.startsWith('|')) continue;
+    /* Skip header divider rows like "|---|---|---|" or "|:--|--:|--:|" */
+    if (/^\|[\s:|-]+\|$/.test(line)) continue;
+    const cells = line.split('|').map(c => c.trim()).filter((c, i, arr) => !(c === '' && (i === 0 || i === arr.length - 1)));
+    /* Drop the literal header row */
+    if (/^segment$/i.test(cells[0])) continue;
+    if (cells.length < 2) continue;
+    const labelRaw = cells[0];
+    const valueRaw = cells[1];
+    const weightRaw = cells[2];
+    /* Detect "jackpot" sentinel value */
+    const jackpot = /jackpot|^(mini|minor|major|mega|grand)$/i.test(valueRaw) || /^(mini|minor|major|mega|grand)$/i.test(labelRaw);
+    let value = 0;
+    if (!jackpot) {
+      /* "2× bet" / "×5" / "5x" / "100" → numeric */
+      const numMatch = String(valueRaw).match(/-?\d+(?:\.\d+)?/);
+      if (numMatch) value = parseFloat(numMatch[0]);
+      else {
+        const labelNumMatch = String(labelRaw).match(/(\d+(?:\.\d+)?)\s*[x×]/i);
+        if (labelNumMatch) value = parseFloat(labelNumMatch[1]);
+      }
+    }
+    const weight = (() => {
+      const wm = String(weightRaw || '').match(/-?\d+(?:\.\d+)?/);
+      return wm ? parseFloat(wm[0]) : 1;
+    })();
+    let label = labelRaw.replace(/\s*bet\s*$/i, '').replace(/\s+/g, ' ').slice(0, 10);
+    if (jackpot && !/^(MINI|MINOR|MAJOR|MEGA|GRAND)$/i.test(label)) {
+      const tierMatch = labelRaw.match(/\b(MINI|MINOR|MAJOR|MEGA|GRAND)\b/i);
+      if (tierMatch) label = tierMatch[1].toUpperCase();
+    }
+    const out = { label, value, weight };
+    if (jackpot) {
+      const tierMatch = (labelRaw.match(/\b(MINI|MINOR|MAJOR|MEGA|GRAND)\b/i) || [])[1]
+                    || (valueRaw.match(/\b(MINI|MINOR|MAJOR|MEGA|GRAND)\b/i) || [])[1]
+                    || 'MAJOR';
+      out.jackpotTier = tierMatch.toUpperCase();
+    }
+    rows.push(out);
+  }
+  return rows.length ? rows : null;
+}
+
+function _wheelSegmentColor(p) {
+  if (p.jackpotTier) {
+    const M = { MINI: '#3aa0c2', MINOR: '#2bb56b', MAJOR: '#e8c270', MEGA: '#c45050', GRAND: '#7050c4' };
+    return M[p.jackpotTier] || '#e8c270';
+  }
+  const v = p.value || 0;
+  if (v >= 500) return '#7050c4';
+  if (v >= 100) return '#c45050';
+  if (v >= 25)  return '#d28a3a';
+  if (v >= 10)  return '#e8c270';
+  if (v >= 5)   return '#2bb56b';
+  return '#3aa0c2';
 }
 
 export function extractLightning(text, model) {

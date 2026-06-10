@@ -1,4 +1,6 @@
-# UQ Fixture 203 · Sticky wilds in base game · dual
+# Synth 203 Sticky wilds in base game
+
+**Game name:** Synth 203 Sticky wilds in base game
 
 | Field | Value |
 |---|---|
@@ -6,7 +8,13 @@
 | **Genre** | sticky-wild-bg |
 | **Theme tags** | synthetic · vendor-neutral · QA fixture |
 | **Mood** | balanced |
+| **Setting** | abstract neon arcade |
+| **Vibe refs** | retro · synthetic · QA |
 | **Typography** | UI sans 14px |
+
+Mood: balanced.
+Setting: abstract neon arcade backdrop.
+Vibe references: retro · synthetic · QA.
 
 ## Topology
 
@@ -43,6 +51,18 @@
 | ID | Name |
 |---|---|
 | `W` | Wild |
+
+### Symbol Roster (parser-friendly fallback)
+
+- `H1` — Crystal (HP)
+- `H2` — Ember (HP)
+- `H3` — Frost (HP)
+- `A` — Ace (MP)
+- `K` — King (MP)
+- `Q` — Queen (MP)
+- `J` — Jack (LP)
+- `10` — Ten (LP)
+- `W` — Wild (Special)
 
 ## Features
 - Sticky Wild

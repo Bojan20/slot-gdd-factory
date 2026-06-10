@@ -1,4 +1,6 @@
-# UQ Fixture 182 · Persistent base-game multiplier · variable_reel
+# Synth 182 Persistent base-game multiplier
+
+**Game name:** Synth 182 Persistent base-game multiplier
 
 | Field | Value |
 |---|---|
@@ -6,7 +8,13 @@
 | **Genre** | persistent-mult-bg |
 | **Theme tags** | synthetic · vendor-neutral · QA fixture |
 | **Mood** | balanced |
+| **Setting** | abstract neon arcade |
+| **Vibe refs** | retro · synthetic · QA |
 | **Typography** | UI sans 14px |
+
+Mood: balanced.
+Setting: abstract neon arcade backdrop.
+Vibe references: retro · synthetic · QA.
 
 ## Topology
 
@@ -14,7 +22,7 @@
 |---|---|
 | **Reels** | 6 |
 | **Rows** | 5 |
-| **Paylines** | — |
+| **Paylines** | 1 |
 | **Evaluation** | Ways |
 
 ## Symbols
@@ -38,6 +46,17 @@
 |---|---|
 | `J` | Jack |
 | `10` | Ten |
+
+### Symbol Roster (parser-friendly fallback)
+
+- `H1` — Crystal (HP)
+- `H2` — Ember (HP)
+- `H3` — Frost (HP)
+- `A` — Ace (MP)
+- `K` — King (MP)
+- `Q` — Queen (MP)
+- `J` — Jack (LP)
+- `10` — Ten (LP)
 
 ## Features
 - Multiplier

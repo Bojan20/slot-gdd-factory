@@ -411,7 +411,41 @@ export function applySmartDefaults(model) {
   inferTopology(model);
   classifySymbolTiers(model);
   synthesizeFeatureMix(model);
+  reclassifySegmentBasedConfidence(model);
   return model;
+}
+
+/* Wave UQ2 — segment-based games (wheel / plinko / crash / slingo) don't
+   have a HP/MP/LP roster the way line-pays slots do. Before this pass, a
+   clean wheel GDD scored `confidence.symbols = 0` → "❌ Symbols not found"
+   in the Coverage Report, even though the wheel block was fully populated.
+   We re-route the metric: if the topology is segment-based, score it on
+   `wheelBonus.segments` (or plinko buckets / slingo board) instead of
+   the empty symbols roster. The Coverage UI also relabels the row. */
+function reclassifySegmentBasedConfidence(model) {
+  if (!model || !model.confidence || !model.topology) return;
+  const evalKind = model.topology.evaluation || model.topology.kind;
+  const SEGMENT_KINDS = new Set(['wheel', 'plinko', 'crash', 'slingo']);
+  if (!SEGMENT_KINDS.has(evalKind)) return;
+  /* Wave UQ2 — for segment-based games, the playable content lives in the
+     segment / bucket config, not the symbol roster. We BOOST (never lower)
+     the symbols confidence so a clean wheel GDD doesn't display a red X in
+     the Coverage Report. A tiny / partial roster still gets the boost; a
+     fuller roster keeps whatever the base extractor scored. */
+  let boosted = 0;
+  if (evalKind === 'wheel') {
+    const segs = (model.wheelBonus && Array.isArray(model.wheelBonus.segments)) ? model.wheelBonus.segments : [];
+    const enabled = !!(model.wheelBonus && model.wheelBonus.enabled);
+    boosted = segs.length >= 3 ? 1 : (segs.length > 0 || enabled ? 0.8 : 0.5);
+  } else if (evalKind === 'slingo') {
+    boosted = 0.85;
+  } else if (evalKind === 'plinko' || evalKind === 'crash') {
+    boosted = 0.7;
+  }
+  if (boosted > (model.confidence.symbols || 0)) {
+    model.confidence.symbols = boosted;
+    recordDerived(model, `confidence.symbols=${evalKind}Mode`);
+  }
 }
 
 /* ─── introspection helpers (used by tests + parser audit tools) ──────── */

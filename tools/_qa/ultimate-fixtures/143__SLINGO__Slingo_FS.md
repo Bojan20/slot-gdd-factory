@@ -1,4 +1,6 @@
-# UQ Fixture 143 · Slingo board match · slingo
+# Synth 143 Slingo board match
+
+**Game name:** Synth 143 Slingo board match
 
 | Field | Value |
 |---|---|
@@ -6,7 +8,13 @@
 | **Genre** | slingo-board |
 | **Theme tags** | synthetic · vendor-neutral · QA fixture |
 | **Mood** | balanced |
+| **Setting** | abstract neon arcade |
+| **Vibe refs** | retro · synthetic · QA |
 | **Typography** | UI sans 14px |
+
+Mood: balanced.
+Setting: abstract neon arcade backdrop.
+Vibe references: retro · synthetic · QA.
 
 ## Topology
 
@@ -14,8 +22,10 @@
 |---|---|
 | **Reels** | 5 |
 | **Rows** | 5 |
-| **Paylines** | — |
+| **Paylines** | 1 |
 | **Evaluation** | slingo |
+
+This game uses a slingo grid topology.
 
 ## Symbols
 
@@ -43,6 +53,18 @@
 | ID | Name |
 |---|---|
 | `S` | Scatter |
+
+### Symbol Roster (parser-friendly fallback)
+
+- `H1` — Crystal (HP)
+- `H2` — Ember (HP)
+- `H3` — Frost (HP)
+- `A` — Ace (MP)
+- `K` — King (MP)
+- `Q` — Queen (MP)
+- `J` — Jack (LP)
+- `10` — Ten (LP)
+- `S` — Scatter (Special)
 
 ## Features
 - Slingo

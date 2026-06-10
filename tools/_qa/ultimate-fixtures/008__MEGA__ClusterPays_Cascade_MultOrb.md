@@ -1,4 +1,6 @@
-# UQ Fixture 008 · Cluster pays cascade · megaclusters
+# Synth 008 Cluster pays cascade
+
+**Game name:** Synth 008 Cluster pays cascade
 
 | Field | Value |
 |---|---|
@@ -6,7 +8,13 @@
 | **Genre** | cluster-pays |
 | **Theme tags** | synthetic · vendor-neutral · QA fixture |
 | **Mood** | balanced |
+| **Setting** | abstract neon arcade |
+| **Vibe refs** | retro · synthetic · QA |
 | **Typography** | UI sans 14px |
+
+Mood: balanced.
+Setting: abstract neon arcade backdrop.
+Vibe references: retro · synthetic · QA.
 
 ## Topology
 
@@ -14,7 +22,7 @@
 |---|---|
 | **Reels** | 4 |
 | **Rows** | 4 |
-| **Paylines** | — |
+| **Paylines** | 1 |
 | **Evaluation** | Cluster |
 
 ## Symbols
@@ -42,6 +50,17 @@
 | ID | Name |
 |---|---|
 | `M` | Multiplier Orb |
+
+### Symbol Roster (parser-friendly fallback)
+
+- `H1` — Garnet (HP)
+- `H2` — Emerald (HP)
+- `H3` — Sapphire (HP)
+- `M1` — Topaz (MP)
+- `M2` — Citrine (MP)
+- `L1` — Amber (LP)
+- `L2` — Slate (LP)
+- `M` — Multiplier Orb (Special)
 
 ## Features
 - Cluster Pays

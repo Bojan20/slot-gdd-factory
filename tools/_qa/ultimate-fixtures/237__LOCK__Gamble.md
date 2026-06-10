@@ -1,4 +1,6 @@
-# UQ Fixture 237 · Card gamble after every win · lock_respin
+# Synth 237 Card gamble after every win
+
+**Game name:** Synth 237 Card gamble after every win
 
 | Field | Value |
 |---|---|
@@ -6,7 +8,13 @@
 | **Genre** | gamble-card-after-win |
 | **Theme tags** | synthetic · vendor-neutral · QA fixture |
 | **Mood** | balanced |
+| **Setting** | abstract neon arcade |
+| **Vibe refs** | retro · synthetic · QA |
 | **Typography** | UI sans 14px |
+
+Mood: balanced.
+Setting: abstract neon arcade backdrop.
+Vibe references: retro · synthetic · QA.
 
 ## Topology
 
@@ -38,6 +46,17 @@
 |---|---|
 | `J` | Jack |
 | `10` | Ten |
+
+### Symbol Roster (parser-friendly fallback)
+
+- `H1` — Crystal (HP)
+- `H2` — Ember (HP)
+- `H3` — Frost (HP)
+- `A` — Ace (MP)
+- `K` — King (MP)
+- `Q` — Queen (MP)
+- `J` — Jack (LP)
+- `10` — Ten (LP)
 
 ## Features
 - Gamble

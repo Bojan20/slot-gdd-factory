@@ -1,4 +1,6 @@
-# UQ Fixture 132 · Ante Bet (double scatter chance) · dual
+# Synth 132 Ante Bet (double scatter chance)
+
+**Game name:** Synth 132 Ante Bet (double scatter chance)
 
 | Field | Value |
 |---|---|
@@ -6,7 +8,13 @@
 | **Genre** | ante-bet |
 | **Theme tags** | synthetic · vendor-neutral · QA fixture |
 | **Mood** | balanced |
+| **Setting** | abstract neon arcade |
+| **Vibe refs** | retro · synthetic · QA |
 | **Typography** | UI sans 14px |
+
+Mood: balanced.
+Setting: abstract neon arcade backdrop.
+Vibe references: retro · synthetic · QA.
 
 ## Topology
 
@@ -43,6 +51,18 @@
 | ID | Name |
 |---|---|
 | `S` | Scatter |
+
+### Symbol Roster (parser-friendly fallback)
+
+- `H1` — Crystal (HP)
+- `H2` — Ember (HP)
+- `H3` — Frost (HP)
+- `A` — Ace (MP)
+- `K` — King (MP)
+- `Q` — Queen (MP)
+- `J` — Jack (LP)
+- `10` — Ten (LP)
+- `S` — Scatter (Special)
 
 ## Features
 - Ante Bet

@@ -1,4 +1,6 @@
-# UQ Fixture 080 · Progressive FS multiplier · variable_reel
+# Synth 080 Progressive FS multiplier
+
+**Game name:** Synth 080 Progressive FS multiplier
 
 | Field | Value |
 |---|---|
@@ -6,7 +8,13 @@
 | **Genre** | progressive-fs |
 | **Theme tags** | synthetic · vendor-neutral · QA fixture |
 | **Mood** | balanced |
+| **Setting** | abstract neon arcade |
+| **Vibe refs** | retro · synthetic · QA |
 | **Typography** | UI sans 14px |
+
+Mood: balanced.
+Setting: abstract neon arcade backdrop.
+Vibe references: retro · synthetic · QA.
 
 ## Topology
 
@@ -14,7 +22,7 @@
 |---|---|
 | **Reels** | 6 |
 | **Rows** | 5 |
-| **Paylines** | — |
+| **Paylines** | 1 |
 | **Evaluation** | Ways |
 
 ## Symbols
@@ -43,6 +51,18 @@
 | ID | Name |
 |---|---|
 | `S` | Scatter |
+
+### Symbol Roster (parser-friendly fallback)
+
+- `H1` — Crystal (HP)
+- `H2` — Ember (HP)
+- `H3` — Frost (HP)
+- `A` — Ace (MP)
+- `K` — King (MP)
+- `Q` — Queen (MP)
+- `J` — Jack (LP)
+- `10` — Ten (LP)
+- `S` — Scatter (Special)
 
 ## Features
 - Free Spins

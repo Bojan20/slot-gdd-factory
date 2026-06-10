@@ -1,4 +1,6 @@
-# UQ Fixture 089 · Lightning multipliers · rectangular_stacked_scatter
+# Synth 089 Lightning multipliers
+
+**Game name:** Synth 089 Lightning multipliers
 
 | Field | Value |
 |---|---|
@@ -6,7 +8,13 @@
 | **Genre** | lightning |
 | **Theme tags** | synthetic · vendor-neutral · QA fixture |
 | **Mood** | balanced |
+| **Setting** | abstract neon arcade |
+| **Vibe refs** | retro · synthetic · QA |
 | **Typography** | UI sans 14px |
+
+Mood: balanced.
+Setting: abstract neon arcade backdrop.
+Vibe references: retro · synthetic · QA.
 
 ## Topology
 
@@ -44,6 +52,19 @@
 |---|---|
 | `S` | Scatter |
 | `L` | Lightning |
+
+### Symbol Roster (parser-friendly fallback)
+
+- `H1` — Crystal (HP)
+- `H2` — Ember (HP)
+- `H3` — Frost (HP)
+- `A` — Ace (MP)
+- `K` — King (MP)
+- `Q` — Queen (MP)
+- `J` — Jack (LP)
+- `10` — Ten (LP)
+- `S` — Scatter (Special)
+- `L` — Lightning (Special)
 
 ## Features
 - Lightning

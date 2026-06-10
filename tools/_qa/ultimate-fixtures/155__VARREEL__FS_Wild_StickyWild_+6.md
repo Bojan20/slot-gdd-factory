@@ -1,4 +1,6 @@
-# UQ Fixture 155 · Maximalist — every compatible feature · variable_reel
+# Synth 155 Maximalist
+
+**Game name:** Synth 155 Maximalist
 
 | Field | Value |
 |---|---|
@@ -6,7 +8,13 @@
 | **Genre** | maximalist |
 | **Theme tags** | synthetic · vendor-neutral · QA fixture |
 | **Mood** | balanced |
+| **Setting** | abstract neon arcade |
+| **Vibe refs** | retro · synthetic · QA |
 | **Typography** | UI sans 14px |
+
+Mood: balanced.
+Setting: abstract neon arcade backdrop.
+Vibe references: retro · synthetic · QA.
 
 ## Topology
 
@@ -14,7 +22,7 @@
 |---|---|
 | **Reels** | 6 |
 | **Rows** | 5 |
-| **Paylines** | — |
+| **Paylines** | 1 |
 | **Evaluation** | Ways |
 
 ## Symbols
@@ -45,6 +53,20 @@
 | `W` | Wild |
 | `S` | Scatter |
 | `M` | Multiplier Orb |
+
+### Symbol Roster (parser-friendly fallback)
+
+- `H1` — Crystal (HP)
+- `H2` — Ember (HP)
+- `H3` — Frost (HP)
+- `A` — Ace (MP)
+- `K` — King (MP)
+- `Q` — Queen (MP)
+- `J` — Jack (LP)
+- `10` — Ten (LP)
+- `W` — Wild (Special)
+- `S` — Scatter (Special)
+- `M` — Multiplier Orb (Special)
 
 ## Features
 - Free Spins

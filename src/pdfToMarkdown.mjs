@@ -402,6 +402,42 @@ function extractSymbols(txt) {
   scanTriplets(region, /(\d+(?:\.\d+)?)\s*x[^x]{0,80}?(\d+(?:\.\d+)?)\s*x[^x]{0,80}?(\d+(?:\.\d+)?)\s*x/g,
                { high, mid, low, seenIds });
 
+  /* 2026-06-10 — Synthetic-fixture bullet roster pattern.
+     pdfTextToMarkdown rebuild was discarding the symbol list from
+     synthetic GDDs because their MD pipe tables don't carry pay
+     values (Nx Nx Nx) — only `| ID | Name |`. The new fallback
+     "Symbol Roster" prose-bullet form survives pdfjs strip but
+     LOSES the leading bullet character AND the backticks:
+       Source:  "- `H1` — Crown (HP)"
+       PDFjs:   " H1 — Crown (HP) "
+     Anchor on `<ID> <dash> <Name> (TIER)` and let bullets/backticks
+     be optional. Allow numeric IDs (e.g. `10`) and ID lengths up to
+     4 chars to cover `MY` / `Mlt` etc. */
+  const bulletRe = /(?:^|\s)`?([A-Za-z0-9]{1,4})`?\s*[—\-–:]+\s*([^(\n]+?)\s*\(\s*(HP|MP|LP|Special)\s*\)/gi;
+  let bm;
+  while ((bm = bulletRe.exec(txt)) !== null) {
+    const id = bm[1].trim();
+    const name = bm[2].trim();
+    const tier = bm[3].toUpperCase();
+    if (seenIds.has(id)) continue;
+    seenIds.add(id);
+    const entry = { id, name, pay: [] };
+    if (tier === 'HP') high.push(entry);
+    else if (tier === 'MP') mid.push(entry);
+    else if (tier === 'LP') low.push(entry);
+    else if (tier === 'SPECIAL') {
+      /* Heuristic role mapping for synth specials. */
+      const lower = name.toLowerCase();
+      let role = 'Substitutes';
+      if (/scatter/i.test(name) || id.toUpperCase() === 'S') role = 'Trigger only';
+      else if (/wild/i.test(name) || id.toUpperCase() === 'W') role = 'Substitutes all paying symbols';
+      else if (/bonus|orb|coin/i.test(name) || id.toUpperCase() === 'B') role = 'Bonus trigger';
+      else if (/mystery/i.test(name)) role = 'Mystery reveal';
+      else if (/multiplier/i.test(name) || /orb/i.test(name)) role = 'Multiplier';
+      specials.push({ ...entry, role });
+    }
+  }
+
   /* 2b. 2026-06-09 huff-puff fix: prose-style paytable scan.
    *    PDFs that lay the paytable out as one-row-per-line with the
    *    name in the FIRST column followed by tier label + 3 pay values
