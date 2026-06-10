@@ -154,13 +154,31 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
 
   function rotateStripDown(reel) {
     /* Pop bottom cell DOM node, unshift to top, randomize its symbol —
-       mirrors the industry-standard reel.cells.pop() / unshift() rotation. */
-    const last = reel.cells.pop();
+       mirrors the industry-standard reel.cells.pop() / unshift() rotation.
+       2026-06-10 (Boki H&W rule): if the BOTTOM cell carries .is-locked-bonus
+       (a hold-and-win locked orb), do NOT rotate it out of position.
+       In every hold-and-spin family slot, locked orbs are STATIC —
+       they don't travel with the reel during respins. Implementation:
+       walk reel.cells from bottom up, pick the FIRST non-locked cell to
+       rotate; if every cell is locked, no rotation at all. Locked cells
+       keep their original dataset.lockedSymbol text. */
+    let _popIdx = reel.cells.length - 1;
+    while (_popIdx >= 0 && reel.cells[_popIdx] && reel.cells[_popIdx].classList.contains('is-locked-bonus')) {
+      _popIdx--;
+    }
+    if (_popIdx < 0) {
+      /* Every cell on this reel is locked — pure no-op, do not spin. */
+      reel.rotationCount++;
+      return;
+    }
+    const last = reel.cells.splice(_popIdx, 1)[0];
     reel.cells.unshift(last);
     var _sym = randomSym();
     /* Belt+brace — if randomSym ever returned falsy past the guard, keep the
        previous glyph instead of erasing the cell. Better stale than empty. */
     last.textContent = _sym || last.textContent || '?';
+    /* Re-append in current order so visual DOM matches the rotated array.
+       Locked cells stay where they are; non-locked cells shuffle around them. */
     for (let i = 0; i < reel.cells.length; i++) {
       reel.strip.appendChild(reel.cells[i]);
     }
@@ -186,6 +204,15 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
     const _enforcePerReel = (FREESPINS.countMode === 'perReel');
     let _scattersThisReel = 0;
     for (let i = 1; i <= vis; i++) {
+      /* 2026-06-10 (Boki H&W rule): skip overwrite for locked orbs. The
+       * lock-and-spin pattern (industry-standard Hold & Spin / coin
+       * collection round) requires the captured orb to STAY on its cell
+       * across every respin. Without this guard the random fill obliterates
+       * the orb symbol on every settle and only hwApplyLocks restores it
+       * after, causing the visible "orb travels with the reel" bug. */
+      if (reel.cells[i] && reel.cells[i].classList && reel.cells[i].classList.contains('is-locked-bonus')) {
+        continue;
+      }
       var _sym = randomSym();
       reel.cells[i].textContent = _sym || reel.cells[i].textContent || '?';
       if (_enforcePerReel && String(_sym || '').toUpperCase() === _trig) {

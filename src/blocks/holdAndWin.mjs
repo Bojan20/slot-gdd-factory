@@ -146,7 +146,10 @@ function hwCountBonusOnGrid() {
 }
 
 function hwHarvestBonus() {
-  /* Lock all current bonus cells, return how many NEW lock'd this spin */
+  /* Lock all current bonus cells, return how many NEW lock'd this spin.
+   * Stamp dataset.lockedSymbol so reelEngine can preserve text through
+   * rotations + commitStopSymbols (which both now respect the .is-locked-bonus
+   * class — see reelEngine.mjs Boki H&W rule). */
   const host = document.getElementById('gridHost');
   if (!host) return 0;
   const REELS = window.REELS || 5;
@@ -157,15 +160,21 @@ function hwHarvestBonus() {
     const c = idx % REELS;
     const key = r + ',' + c;
     if (!HW_STATE.lockedCells.has(key)) {
-      HW_STATE.lockedCells.set(key, 'BONUS');
+      HW_STATE.lockedCells.set(key, HW_BONUS_SYMBOL);
       added++;
     }
     cell.classList.add('is-locked-bonus');
+    cell.dataset.lockedSymbol = HW_BONUS_SYMBOL;
   });
   return added;
 }
 
 function hwApplyLocks() {
+  /* Belt+braces re-application of locked orbs on every settle. With the
+   * reelEngine rotateStripDown / commitStopSymbols guards in place this is
+   * a no-op for well-behaved spins, but it covers external paths (tumble
+   * refill, mystery reveal, sticky/walking wild commit) that may still
+   * touch cell.textContent during their pass. */
   const host = document.getElementById('gridHost');
   if (!host) return;
   const REELS = window.REELS || 5;
@@ -175,8 +184,9 @@ function hwApplyLocks() {
     const idx = r * REELS + c;
     const cell = cells[idx];
     if (!cell) return;
-    cell.textContent = HW_BONUS_SYMBOL;
+    cell.textContent = val || HW_BONUS_SYMBOL;
     cell.classList.add('is-locked-bonus');
+    cell.dataset.lockedSymbol = val || HW_BONUS_SYMBOL;
   });
 }
 
