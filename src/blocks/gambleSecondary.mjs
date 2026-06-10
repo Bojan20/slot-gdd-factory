@@ -964,6 +964,19 @@ export function emitGambleSecondaryRuntime(cfg = defaultConfig()) {
           gambleSecondaryCollect();
         }
       });
+
+      /* 2026-06-10 (Boki force-rule, "fix ultimativno kao blokove da
+       * rade za bilo koji gdd ako ih ima") — UFP chip emit-uje
+       * onForceFeatureRequested. gambleSecondary se inače pali sam
+       * posle wining base spin-a; ali kad korisnik klikne GAMBLE chip,
+       * mora se otvoriti odmah, čak i bez prethodnog wina. Industry
+       * QA panel pattern. Bankroll seed = ostatak bilansa za primer
+       * (uses live STATE.bank if set, fallback 1× bet). */
+      window.HookBus.on('onForceFeatureRequested', function (payload) {
+        if (!payload || payload.kind !== 'gamble') return;
+        if (STATE.phase !== 'idle') return;
+        try { gambleSecondaryOpen(); } catch (_) { /* defensive */ }
+      });
     }
   })();
 `;

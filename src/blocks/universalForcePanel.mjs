@@ -473,7 +473,42 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
       } catch (_) {}
     }
 
-    _runSpin();
+    /* 2026-06-10 — Boki: "wheel mi ne radi, force. gamble takodje. fix
+       ultimativno kao blokove da rade za bilo koji gdd ako ih ima".
+       Root cause: modal-style features (wheel, gamble, bonus_pick,
+       hold_and_win) were already opening their overlays via the
+       onForceFeatureRequested HookBus event — but the UFP runtime then
+       ALSO fired runOneBaseSpin() right after. The base spin animated
+       reels in the background, and on some lifecycle paths the
+       FSM/postSpin transitions closed the just-opened overlay (or the
+       user perceived "spin happens, modal doesn't").
+
+       Fix: classify kinds into MODAL_ONLY vs SPIN_DRIVEN. For modal
+       kinds the panel emits the event + does any block-specific seed
+       work and STOPS — no base spin is triggered. The overlay opens
+       cleanly, with no parallel reel motion. */
+    var MODAL_ONLY_KINDS = ['wheel_bonus', 'gamble', 'bonus_pick'];
+
+    /* hold_and_win needs a seeded BONUS payload on the next base spin so
+       the H&W trigger fires inside its regular postSpin entry path. Plant
+       FORCE_TRIGGER with bonusCount = triggerCount from HW config (default
+       6, industry minimum), then run the spin. */
+    if (kind === 'hold_and_win') {
+      try {
+        var _hwCount = 6;
+        try {
+          if (typeof HW_TRIGGER_COUNT === 'number' && HW_TRIGGER_COUNT > 0) _hwCount = HW_TRIGGER_COUNT;
+          else if (window.HW_TRIGGER_COUNT && window.HW_TRIGGER_COUNT > 0) _hwCount = window.HW_TRIGGER_COUNT;
+        } catch (_) {}
+        var _hwPlant = { bonusCount: _hwCount };
+        try { FORCE_TRIGGER = _hwPlant; } catch (_) {}
+        try { window.FORCE_TRIGGER = _hwPlant; } catch (_) {}
+      } catch (_) {}
+    }
+
+    if (MODAL_ONLY_KINDS.indexOf(kind) === -1) {
+      _runSpin();
+    }
 
     setTimeout(function() {
       BUSY = false;

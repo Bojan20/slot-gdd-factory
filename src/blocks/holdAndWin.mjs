@@ -246,6 +246,29 @@ if (typeof HookBus !== 'undefined') {
   });
   HookBus.on('onFsTrigger', () => { hwEnd(); });
   HookBus.on('onFsEnd',     () => { hwEnd(); });
+
+  /* 2026-06-10 (Boki force-rule, "fix ultimativno kao blokove da rade za
+   * bilo koji gdd ako ih ima") — UFP chip emits onForceFeatureRequested
+   * with kind='hold_and_win'. UFP runtime already planted FORCE_TRIGGER
+   * with bonusCount = HW_TRIGGER_COUNT before firing the base spin, so on
+   * postSpin the regular hwMaybeEnter() path will fire (bonus pile lands,
+   * round activates). This listener is a defensive belt-and-braces hard
+   * activation for GDDs where the FORCE_TRIGGER → reelEngine bonus plant
+   * path is muted (e.g. ways-only topology with no bonus symbol in the
+   * pool): we set HW_STATE.active manually so the next postSpin's
+   * hwAfterRespin path takes over the HUD. */
+  HookBus.on('onForceFeatureRequested', (payload) => {
+    if (!payload || payload.kind !== 'hold_and_win') return;
+    try {
+      if (!HW_STATE.active) {
+        HW_STATE.active = true;
+        HW_STATE.respinsLeft = HW_RESPINS_AWARD;
+        HW_STATE.lockedCells.clear();
+        _hwHudShow(true);
+        _hwHudUpdate();
+      }
+    } catch (_) { /* defensive */ }
+  });
 }
 `;
 }
