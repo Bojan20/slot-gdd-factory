@@ -51,14 +51,25 @@
  *   • Performance: single DOM node reused across triggers
  */
 
+/* 2026-06-10 — Boki bug "ne rade svi forsovi" (Huff multiplier/cascade/
+   ways + Star multiplier/cascade/cluster_pays):
+   - `multiplier`, `cascade`, `cluster_pays`, `ways` were listed here as
+     "dedicated" but the corresponding *.mjs blocks (multiplierOrb,
+     tumble engine, clusterPaysEval, waysEval) do NOT subscribe to
+     `onForceFeatureRequested`. They are passive composition atoms,
+     not interactive feature surfaces.
+   - Result: clicking these chips emitted onForceFeatureRequested but
+     no listener responded → chip appeared dead in the UI.
+   - Fix: remove them from the "dedicated" list so genericFeatureBanner
+     picks them up and shows the standard "FEATURE TRIGGERED · <label>"
+     placard. Player gets a visible response on every force chip.
+
+   Also removed `wheel_bonus` placeholder because (per prior Boki bug)
+   wheelBonus runtime doesn't subscribe either. */
 const KINDS_WITH_DEDICATED_BLOCK = Object.freeze([
   'free_spins',
   'bonus_buy',
   'hold_and_win',
-  'multiplier',
-  'cascade',
-  'cluster_pays',
-  'ways',
   'expanding_wild',
   'walking_wild',
   'sticky_wild',
