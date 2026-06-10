@@ -133,7 +133,11 @@ export function emitWinPresentationCSS(/* cfg = defaultConfig() */) {
      and a soft inner rim, with zero overflow. */
   .gridHost.is-winsym-cycling .cell,
   .gridHost.is-winsym-cycling text {
-    opacity: 0.30;
+    /* 2026-06-10 — Boki bug "ćelije nestaju kad se win desi". Prethodni
+       0.30 opacity izgledao kao da ćelije nestaju (premalo vidljivo).
+       Pojačano na 0.55 — još uvek jasno dim-ovano, ali igrač lako čita
+       simbole u dim-ovanim ćelijama. Winning ćelije i dalje na 1.0. */
+    opacity: 0.55;
     transition: opacity 140ms ease;
   }
   .gridHost.is-winsym-cycling .cell--winsym,
@@ -211,13 +215,22 @@ export function emitDetectWinCombosRuntime(cfg = defaultConfig()) {
       const tier = (reg.tier && reg.tier[symbol]) || 'LP';
       /* Combo cells = the symbol's own cells + every wild cell (wild
          substitutes for THIS symbol on every line it could complete). */
-      events.push({ symbol, tier, cells: list.concat(wildCells) });
+      /* 2026-06-10 (Boki bug "nema win prezentacije") — emit payX so
+         applyWinHighlight's totalAward > 0 gate fires. detectWinCombos
+         is the legacy fallback for slots without explicit eval kind;
+         without payX win presentation skipped these too. */
+      const __comboCount = list.length + wildCells.length;
+      const __tierMult = tier === 'HP' ? 1.0 : tier === 'MP' ? 0.5 : tier === 'WILD' ? 2.0 : 0.25;
+      const __bet = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : 1;
+      const __payX = Math.min(50, __tierMult * __comboCount) * __bet;
+      events.push({ symbol, tier, matchLength: __comboCount, payX: __payX, cells: list.concat(wildCells) });
     }
     /* Wild-only event: if there are >= 3 wild cells and NO matching
        regular hit yet, fire a standalone wild celebration so the wild
        presence still reads. (Rare but possible on wild-reel features.) */
     if (events.length === 0 && wildCells.length >= 3 && wildId) {
-      events.push({ symbol: wildId, tier: 'WILD', cells: wildCells.slice() });
+      const __wbet = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : 1;
+      events.push({ symbol: wildId, tier: 'WILD', matchLength: wildCells.length, payX: 2.0 * wildCells.length * __wbet, cells: wildCells.slice() });
     }
     events.sort((a, b) => {
       const ta = tierRank[a.tier] ?? 9;
@@ -836,6 +849,20 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
        short-circuits before settle still wipes the previous cycle visuals. */
     HookBus.on('preSpin', () => {
       cancelWinSymCycle();
+      /* 2026-06-10 — defense-in-depth: cancelWinSymCycle bumps the
+         token but the visual class may linger across a race condition
+         (e.g. rapid click on TURBO while a celebration is mid-flight).
+         Hard-clear the dim-base + winsym marks so the next BASE spin
+         starts with FULLY visible cells, not dim-ovane "nestale" cells. */
+      try {
+        if (typeof grid !== 'undefined' && grid && grid.classList) {
+          grid.classList.remove('is-winsym-cycling');
+        }
+        if (typeof grid !== 'undefined' && grid && grid.querySelectorAll) {
+          grid.querySelectorAll('.cell--winsym, text.cell--winsym')
+            .forEach(c => c.classList.remove('cell--winsym'));
+        }
+      } catch (_) {}
     }, { priority: -10 });
 
     /* Wave V6 — react to force-skip during rollup/celebration. Same exit

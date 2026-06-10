@@ -105,7 +105,18 @@ function _evalWaysDirection(startReel, dir, REELS, ROWS, cells, anchorSyms, wild
           if (s === sym || s === wild) winCells.push(cellEl);
         }
       });
-      events.push({ symbol: sym, ways, runLength: run, cells: winCells });
+      /* 2026-06-10 (Boki bug "nema win prezentacije") — emit payX so
+         applyWinHighlight's totalAward > 0 gate fires and
+         onWinPresentationStart actually emits. Industry baseline payout
+         per ways: tier_mult × runLength × ways × bet (capped). Without
+         this every ways-mode game (Huff lock_respin, GoO base, Megaclusters)
+         silently treated wins as zero-paying and skipped the presentation. */
+      const __regWE = (typeof SYMBOL_REGISTRY !== 'undefined' && SYMBOL_REGISTRY) ? SYMBOL_REGISTRY : null;
+      const tier = (__regWE && __regWE.tier && __regWE.tier[sym]) || 'LP';
+      const tierMult = tier === 'HP' ? 1.0 : tier === 'MP' ? 0.5 : tier === 'WILD' ? 2.0 : 0.25;
+      const bet = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : 1;
+      const payX = Math.min(50, tierMult * (run - WAYS_MIN_RUN + 1) * Math.min(ways, 20)) * bet;
+      events.push({ symbol: sym, ways, runLength: run, tier, matchLength: run, payX, cells: winCells });
     }
   }
   return events;

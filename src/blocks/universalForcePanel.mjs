@@ -406,6 +406,73 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
     }
     if (kind === 'big_win') { try { window.__FORCE_BIG_WIN_TIER__ = 3; } catch (_) {} }
 
+    /* 2026-06-10 — Boki bug "multiplier force ne radi". UFP chip emit-uje
+       onForceFeatureRequested + spin, ali ne postavlja stvarni mult. Pa
+       spin se dešava sa default mult=1, multiplier banner se prikaže
+       ali NIJEDAN visual feedback na ćeliji + nijedan multiplied payout.
+
+       devForceButtons.mjs već implementira pravi mult-force kroz
+       HookBus.setMult(N). Replikujem isti pattern ovde: cycle kroz
+       2× → 3× → 5× → 10× → 2× tako da svaki klik daje različitu
+       vrednost (vidljiv napredak), pa spin. Multiplier blokovi koji
+       slušaju onMultiplierApplied / postSpin (multiplierOrb,
+       progressiveFreeSpins, persistentMultiplier) reaguju na novi
+       mult automatski, a winPresentation primenjuje mult na payouts. */
+    if (kind === 'multiplier') {
+      try {
+        if (window.HookBus && typeof window.HookBus.setMult === 'function') {
+          var _ladder = [2, 3, 5, 10];
+          window.__UFP_MULT_IDX__ = ((window.__UFP_MULT_IDX__ || 0) + 1) % _ladder.length;
+          var _newMult = _ladder[window.__UFP_MULT_IDX__];
+          window.HookBus.setMult(_newMult);
+          /* Plant a scatter-style multiplier seed: if multiplierOrb is
+             active, force its lastMult so the next spin renders an
+             orb chip with this value on the grid. */
+          if (window.MULT_ORB_STATE) {
+            window.MULT_ORB_STATE.forcedNextValue = _newMult;
+          }
+          /* Emit a dedicated event so multiplierOrb / pathAwareMultiplier
+             / persistentMultiplier blocks can wire to it for visual
+             feedback ON THE GRID, not just a placeholder banner. */
+          try { window.HookBus.emit('onForceMultiplier', { multX: _newMult }); } catch (_) {}
+          /* 2026-06-10 — vidljiv x N chip nad random cellom, fade 1.8s.
+             Vizualni odgovor na Boki "kako treba multiplier da se prikaze". */
+          (function _renderUfpMultChip() {
+            try {
+              var cells = document.querySelectorAll('.cell');
+              if (!cells.length) return;
+              var target = cells[Math.floor(Math.random() * cells.length)];
+              var rect = target.getBoundingClientRect();
+              var chip = document.createElement('div');
+              chip.className = 'ufp-mult-chip';
+              chip.textContent = 'x' + _newMult;
+              chip.style.cssText =
+                'position:fixed;' +
+                'left:' + (rect.left + rect.width / 2 - 28) + 'px;' +
+                'top:'  + (rect.top  + rect.height / 2 - 28) + 'px;' +
+                'width:56px;height:56px;border-radius:50%;' +
+                'background:radial-gradient(circle,rgba(255,200,40,1) 0%,rgba(255,130,20,0.95) 70%,rgba(120,60,0,0.85) 100%);' +
+                'color:#fff;font:900 22px/56px system-ui,-apple-system,sans-serif;' +
+                'text-align:center;letter-spacing:.04em;' +
+                'box-shadow:0 8px 24px rgba(0,0,0,.55),inset 0 -3px 8px rgba(0,0,0,.25),inset 0 2px 4px rgba(255,255,255,.35);' +
+                'pointer-events:none;z-index:95;opacity:0;transform:scale(.4);' +
+                'transition:opacity .25s ease,transform .9s cubic-bezier(.2,1.3,.4,1);';
+              document.body.appendChild(chip);
+              requestAnimationFrame(function() {
+                chip.style.opacity = '1';
+                chip.style.transform = 'scale(1) translateY(-22px)';
+              });
+              setTimeout(function() {
+                chip.style.opacity = '0';
+                chip.style.transform = 'scale(.92) translateY(-44px)';
+              }, 1100);
+              setTimeout(function() { try { chip.remove(); } catch (_) {} }, 1800);
+            } catch (_) {}
+          })();
+        }
+      } catch (_) {}
+    }
+
     _runSpin();
 
     setTimeout(function() {

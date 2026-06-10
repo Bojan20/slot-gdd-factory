@@ -140,7 +140,18 @@ function detectClusterWins() {
     ev.forEach(e => {
       const bucket = _clusterBucketFor(e.count);
       const tier = (reg && reg.tier && reg.tier[sym]) || 'LP';
-      events.push({ ...e, bucket, tier });
+      /* 2026-06-10 (Boki bug "nema win prezentacije") — emit payX so
+         applyWinHighlight's totalAward > 0 gate fires and
+         onWinPresentationStart actually emits. Cluster-pays payout:
+         tier_mult × count × bucket_multiplier × bet (capped). Without
+         this every cluster-mode game (Starlight cluster_pays, Sweet Bonanza,
+         Megaclusters) silently treated wins as zero-paying and skipped the
+         presentation. */
+      const tierMult = tier === 'HP' ? 1.0 : tier === 'MP' ? 0.5 : tier === 'WILD' ? 2.0 : 0.25;
+      const bucketMult = bucket === 'BIG' ? 5 : bucket === 'MED' ? 2 : 1;
+      const __bet = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : 1;
+      const payX = Math.min(100, tierMult * e.count * bucketMult) * __bet;
+      events.push({ ...e, bucket, tier, payX, matchLength: e.count });
     });
   }
 

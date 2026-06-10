@@ -1,0 +1,21 @@
+import { chromium } from 'playwright';
+import { spawn } from 'node:child_process';
+const REPO = '/Users/vanvinklstudio/Projects/slot-gdd-factory';
+const HOME = process.env.HOME;
+const PDF = `${HOME}/Desktop/GDD/Huff_N_More_Puff_GDD.pdf`;
+const PORT = 5267;
+const server = spawn('python3', ['-m', 'http.server', String(PORT)], { cwd: REPO, stdio: 'ignore' });
+await new Promise(r => setTimeout(r, 700));
+const browser = await chromium.launch({ headless: true });
+const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });
+const page = await ctx.newPage();
+const errs = [];
+page.on('console', m => { if (m.type()==='error') errs.push(m.text().slice(0,200)); });
+page.on('pageerror', e => errs.push('PAGE:'+String(e).slice(0,200)));
+await page.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: 'load' });
+await (await page.$('#fileInput')).setInputFiles(PDF);
+try { await page.waitForSelector('#previewFrame', { timeout: 15000 }); } catch(e) { console.log('NO FRAME after 15s'); }
+await page.waitForTimeout(2000);
+console.log('errors during load:', errs.length);
+errs.forEach(e => console.log('  '+e));
+await ctx.close(); await browser.close(); server.kill('SIGTERM');

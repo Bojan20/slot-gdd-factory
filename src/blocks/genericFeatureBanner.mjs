@@ -250,7 +250,44 @@ export function emitGenericFeatureBannerRuntime(cfg = defaultConfig()) {
       var k = payload.kind || '';
       if (!_shouldHandle(k)) return;
       window.genericFeatureBannerShow(payload.label || k);
+      /* 2026-06-10 (Boki bug "multiplier force ne radi") — banner alone is
+         a passive label, but force chips MUST also alter the next spin's
+         math state so the player sees a real effect:
+           • multiplier  → arm HookBus.setMult(3) for the next spin
+           • cascade     → flag the next spin to force a cascade chain (real
+                           tumble already runs on win; we just publish a
+                           hint so devs/QA know the chip armed)
+           • ways        → flag a generous ways pick on next detect
+           • cluster_pays → flag a generous cluster pick on next detect
+         The effect auto-clears via the postSpin one-shot reset below so a
+         single chip click affects exactly the next spin. */
+      try {
+        if (k === 'multiplier' && typeof HookBus.setMult === 'function') {
+          HookBus.setMult(3);
+          window.__FORCE_MULT_ONESHOT__ = true;
+        } else if (k === 'cascade') {
+          window.__FORCE_CASCADE_ONESHOT__ = true;
+        } else if (k === 'ways') {
+          window.__FORCE_WAYS_ONESHOT__ = true;
+        } else if (k === 'cluster_pays') {
+          window.__FORCE_CLUSTER_ONESHOT__ = true;
+        }
+      } catch (e) {
+        /* defensive — never crash the banner on a mult-API surface absence */
+      }
     });
+    /* One-shot reset: clear the armed effects after the next postSpin
+       completes (HookBus.getMult drops back to baseline, force flags clear).
+       Without this the multiplier would persist forever after one click. */
+    HookBus.on('postSpin', function() {
+      if (window.__FORCE_MULT_ONESHOT__ && typeof HookBus.resetMult === 'function') {
+        HookBus.resetMult();
+        window.__FORCE_MULT_ONESHOT__ = false;
+      }
+      if (window.__FORCE_CASCADE_ONESHOT__) window.__FORCE_CASCADE_ONESHOT__ = false;
+      if (window.__FORCE_WAYS_ONESHOT__) window.__FORCE_WAYS_ONESHOT__ = false;
+      if (window.__FORCE_CLUSTER_ONESHOT__) window.__FORCE_CLUSTER_ONESHOT__ = false;
+    }, { priority: -50 });
   }
 
   if (document.readyState === 'loading') {
