@@ -919,11 +919,22 @@ export function extractFeatures(rawText) {
       // "coin cascade" / "200 ms cascade" (animation language) don't fire.
       // Allow 0-2 words between the noun and qualifier so phrases like
       // "Cascade chain mechanic" pass.
-      re: /\b(?:cascad(?:e|ing)|tumbl(?:e|ing)|avalanche)(?:\s+\w+){0,2}\s+(?:mechanic|feature|engine|reel|reels|round|game|win|wins|pays?|symbols?)\b|\bReel\s+mechanism\s*[—:|]\s*Cascade\b/i,
+      // 2026-06-10 — added Serbian qualifiers (mehanika, kaskada) and `+`
+      // separator so Pragmatic-style "Tumble + scatter pays" + Gates PDF's
+      // section heading "Tumble (Cascade) Mehanika" both trigger.
+      re: /\b(?:cascad(?:e|ing)|tumbl(?:e|ing)|avalanche)(?:[\s+()]+\w+){0,3}\s*(?:[\s+()]*)\s*(?:mechanic|mehanika|feature|engine|reel|reels|round|game|win|wins|pays?|symbols?|chain|lanac|cascade)\b|\bReel\s+mechanism\s*[—:|]\s*Cascade\b|##\s*\d*\.?\d*\s*Tumble\b|\bprocessTumble\b/i,
       label: 'Cascade / Tumble',
     },
     { kind: 'multiplier', re: /\bmultiplier(s)?\b/i, label: 'Multiplier' },
-    { kind: 'expanding_wild', re: /\bexpanding[\s_-]?wild/i, label: 'Expanding Wild' },
+    {
+      // 2026-06-10 — relaxed: matches "Expanding Wild", "Expanding King"
+      // (Starlight pattern), "Expanding Symbol", etc. The "wild substitute"
+      // qualifier covers vendor-specific names where the expanding entity
+      // isn't literally called "wild" (e.g. Starlight's Three Kings system).
+      kind: 'expanding_wild',
+      re: /\bexpanding[\s_-]?(?:wild|king|symbol|reel|stack|frame)\b|\bexpands?\s+to\s+(?:cover|fill)\s+(?:entire|full)?\s*reel\b/i,
+      label: 'Expanding Wild',
+    },
     { kind: 'walking_wild', re: /\bwalking[\s_-]?wild/i, label: 'Walking Wild' },
     { kind: 'sticky_wild', re: /\bsticky[\s_-]?wild/i, label: 'Sticky Wild' },
     { kind: 'mystery_symbol', re: /\bmystery[\s_-]?symbol/i, label: 'Mystery Symbol' },
@@ -933,7 +944,16 @@ export function extractFeatures(rawText) {
       re: /\bbonus[\s_-]?buy\b|\bbuy[\s_-]?(?:feature|bonus|fs)\b|\bfeature[\s_-]?buy\b/i,
       label: 'Bonus Buy',
     },
-    { kind: 'bonus_pick', re: /\bpick[\s_-]?(bonus|me)\b(?!\s*axe)/i, label: 'Bonus Pick' },
+    {
+      // 2026-06-10 — bonus_pick captures the universal "pick & reveal"
+      // mini-game pattern: "Pick Bonus", "Pick Me", "pick-and-reveal",
+      // "Mystery Pick", "Treasure Pick", "Selection Bonus", "pick 3 of N".
+      // Vendor variants: Starlight Mystery Upgrade Selection, Pragmatic
+      // Cash Pick, NetEnt Treasure Hunt.
+      kind: 'bonus_pick',
+      re: /\bpick[\s_-]?(bonus|me)\b(?!\s*axe)|\bpick[\s_-]?and[\s_-]?reveal\b|\bpick[\s_-]?to[\s_-]?reveal\b|\bmystery\s+(?:upgrade|pick|selection|reveal)\b|\bselect(?:\s+\w+){0,2}\s+orbs?\b|\bselection\s+bonus\b|\btreasure\s+pick\b/i,
+      label: 'Bonus Pick',
+    },
     { kind: 'wheel_bonus', re: /\bwheel\s+bonus|bonus\s+wheel/i, label: 'Wheel Bonus' },
     {
       /* 2026-06-10 — synthetic fixtures declare these explicit kinds. */
@@ -1013,18 +1033,12 @@ export function extractFeatures(rawText) {
       re: /\bprogressive[\s_-]?(?:free[\s_-]?spins?|fs)\b|\bfs[\s_-]?multiplier[\s_-]?(?:ladder|escalator|climbs?|grows?)\b|\bmultiplier\s+grows\s+(?:every|each)\s+spin\b|\beach\s+(?:free[\s_-]?)?spin\s+(?:adds|grants|raises)\s+\+?\d+\s*x?\s*(?:to\s+the\s+)?(?:fs[\s_-]?)?multiplier/i,
       label: 'Progressive Free Spins',
     },
-    {
-      // Wave U2 — Audio scaffolding (15 lifecycle cue categories)
-      kind: 'audio',
-      re: /\b(?:audio|sound|sfx|sound\s+effects?|music)\s+(?:design|brief|package|cues?|categories)\b|\b##\s+(?:Audio|Sound)\b|\bSPIN_START\b|\bFS_TRIGGER\b/i,
-      label: 'Audio',
-    },
-    {
-      // Wave U3 — Unified UI toast for win tiers + feature triggers
-      kind: 'ui_toast',
-      re: /\b(?:ui\s+toast|win\s+celebration|big\s+win\s+toast|mega\s+win\s+toast|epic\s+win\s+toast|win\s+tier\s+toast)\b|\b##\s+(?:UI\s+Toast|Win\s+Celebration)\b/i,
-      label: 'UI Toast',
-    },
+    /* 2026-06-10 (Boki rule "audio van scope-a; UI infra ne ide u features list"):
+     * `audio` i `ui_toast` patterns su uklonjeni iz extractFeatures. Audio je
+     * eksplicitna Boki zabrana — ne sme se pominjati u simulator scope-u.
+     * `ui_toast` je infrastrukturni blok (uvek default-on kao win-celebration
+     * placard), ne game-design feature kojeg igrač bira/koji se forsuje. Ostaje
+     * dostupan kao runtime blok, samo ne curi u model.features array i u UFP. */
     {
       // Wave V1 — Slam-stop button (industry-reference SlamStopCommand)
       kind: 'slam_stop',
