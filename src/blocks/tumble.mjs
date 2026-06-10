@@ -203,6 +203,10 @@ async function runTumbleChain(detectFn, opts) {
         const cell = (typeof reel.cellAt === 'function') ? reel.cellAt(row) : (reel.cells && reel.cells[row]);
         if (!cell) continue;
         const sym = String(reel.visible[row] || '').trim();
+        /* 2026-06-10 (Boki H&W: "orb se ne pomera s rilom") — never
+         * overwrite a hold-and-win locked cell during tumble settle.
+         * The locked orb owns its position until hwEnd. */
+        if (cell.classList && cell.classList.contains('is-locked-bonus')) continue;
         if (sym && (cell.textContent || '').trim() !== sym) cell.textContent = sym;
       }
     }
@@ -248,6 +252,8 @@ function _tumbleApplyGravity(removedCells) {
     for (let row = 0; row < vRows; row++) {
       const cell = (typeof reel.cellAt === 'function') ? reel.cellAt(row) : (reel.cells && reel.cells[row]);
       if (!cell) continue;
+      /* H&W lock guard — orb cells never participate in gravity rewrite. */
+      if (cell.classList && cell.classList.contains('is-locked-bonus')) continue;
       cell.classList.remove('is-removing');
       cell.textContent = newVisible[row] || '';
       if (newVisible[row]) cell.classList.add('is-dropping');
@@ -273,6 +279,8 @@ function _tumbleRefillEmpties() {
       reel.visible[row] = sym;
       const cell = (typeof reel.cellAt === 'function') ? reel.cellAt(row) : (reel.cells && reel.cells[row]);
       if (cell) {
+        /* H&W lock guard — orb cells never get a refill rewrite. */
+        if (cell.classList && cell.classList.contains('is-locked-bonus')) continue;
         cell.classList.remove('is-dropping');
         cell.textContent = sym;
         cell.classList.add('is-refilling');
