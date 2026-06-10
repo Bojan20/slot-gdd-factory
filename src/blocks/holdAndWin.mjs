@@ -227,6 +227,11 @@ const HW_STATE = {
    * parties (tumble refill, wild commit) so the orb visual contract
    * is impossible to break. */
   observer: null,
+  /* Re-entrance guard. _hwApplyOrbToCell mutates DOM → fires observer
+   * → observer calls hwApplyLocks → calls _hwApplyOrbToCell again →
+   * infinite loop. While this flag is true the observer skips its
+   * healing pass. */
+  applying: false,
 };
 
 function _hwHudShow(show) {
@@ -256,17 +261,25 @@ function _hwRollOrb() {
 function _hwApplyOrbToCell(cell, orb) {
   /* Stamp dataset + class. textContent is also set so reelEngine
    * commitStopSymbols sees a "stable" symbol (any non-blank works because
-   * the .is-locked-bonus guard already skips overwrite). */
-  cell.classList.add('is-locked-bonus');
-  cell.dataset.lockedSymbol = HW_BONUS_SYMBOL;
-  cell.dataset.orbValue = orb.label;
-  if (orb.tier) cell.dataset.orbTier = orb.tier;
-  else delete cell.dataset.orbTier;
-  /* Keep textContent in sync (the symbol id, not the value chip — the
-   * value chip is rendered via CSS ::before). */
-  cell.textContent = HW_BONUS_SYMBOL;
-  cell.classList.add('hw-just-landed');
-  setTimeout(function() { try { cell.classList.remove('hw-just-landed'); } catch (_) {} }, 540);
+   * the .is-locked-bonus guard already skips overwrite).
+   * Re-entrance guard: every DOM write fires MutationObserver, but the
+   * applying flag tells the observer to skip its heal pass for this
+   * burst — preventing the apply→observe→heal→apply infinite loop. */
+  HW_STATE.applying = true;
+  try {
+    cell.classList.add('is-locked-bonus');
+    cell.dataset.lockedSymbol = HW_BONUS_SYMBOL;
+    cell.dataset.orbValue = orb.label;
+    if (orb.tier) cell.dataset.orbTier = orb.tier;
+    else delete cell.dataset.orbTier;
+    cell.textContent = HW_BONUS_SYMBOL;
+    cell.classList.add('hw-just-landed');
+    setTimeout(function() { try { cell.classList.remove('hw-just-landed'); } catch (_) {} }, 540);
+  } finally {
+    /* Drop the flag on the next microtask so any observer batch fired
+     * from this synchronous burst still sees applying=true. */
+    Promise.resolve().then(function() { HW_STATE.applying = false; });
+  }
 }
 
 function hwCountBonusOnGrid() {
@@ -347,7 +360,10 @@ function _hwInstallObserver() {
   if (!host) return;
   HW_STATE.observer = new MutationObserver(function(mutations) {
     if (!HW_STATE.active) return;
+    /* Re-entrance guard — skip while we are the ones writing. */
+    if (HW_STATE.applying) return;
     let needsHeal = false;
+    const allCells = host.querySelectorAll('.cell');
     for (let i = 0; i < mutations.length; i++) {
       const m = mutations[i];
       const target = m.target;
@@ -357,11 +373,19 @@ function _hwInstallObserver() {
         : (target.closest ? target.closest('.cell') : null);
       if (!cell) continue;
       /* Did this cell USED to be locked? Check our state map. */
-      const idx = Array.prototype.indexOf.call(host.querySelectorAll('.cell'), cell);
+      const idx = Array.prototype.indexOf.call(allCells, cell);
       if (idx < 0) continue;
       const REELS = window.REELS || 5;
       const key = Math.floor(idx / REELS) + ',' + (idx % REELS);
-      if (HW_STATE.lockedCells.has(key)) needsHeal = true;
+      if (HW_STATE.lockedCells.has(key)) {
+        /* Only heal if the orb visual contract is actually broken — text
+         * cleared, class stripped, or dataset wiped. Otherwise the
+         * mutation was our own setTimeout removing hw-just-landed. */
+        const txt = (cell.textContent || '').trim();
+        const hasClass = cell.classList.contains('is-locked-bonus');
+        const hasData = !!cell.dataset.orbValue;
+        if (txt !== HW_BONUS_SYMBOL || !hasClass || !hasData) needsHeal = true;
+      }
     }
     if (needsHeal) hwApplyLocks();
   });
