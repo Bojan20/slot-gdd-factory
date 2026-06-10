@@ -276,10 +276,20 @@ if (typeof HookBus !== 'undefined') {
    * onForceFeatureRequested but wheelBonus never had a listener, so
    * clicking the WHEEL chip only painted the generic banner. Open the
    * actual modal now so the chip behaves like every other force CTA. */
+  /* 2026-06-11 (Boki rule "pritisnes force dugme odradi se spin i onda se
+   * dobije ishod forsa") — chip click arms the modal for the next postSpin
+   * instead of opening immediately. Player sees: chip → reels spin →
+   * settle → wheel modal opens. */
   HookBus.on('onForceFeatureRequested', (payload) => {
     if (!payload || payload.kind !== 'wheel_bonus') return;
-    try { wbOpen(); } catch (_) { /* defensive */ }
+    window.__FORCE_WHEEL_OPEN__ = true;
   });
+  HookBus.on('postSpin', (p) => {
+    if (!window.__FORCE_WHEEL_OPEN__) return;
+    if (p && p.duringFs) return;          /* honour FS-boundary safety */
+    window.__FORCE_WHEEL_OPEN__ = false;
+    try { wbOpen(); } catch (_) { /* defensive */ }
+  }, { priority: -60 });
 }
 `;
 }

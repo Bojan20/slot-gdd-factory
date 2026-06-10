@@ -248,11 +248,23 @@ if (typeof HookBus !== 'undefined') {
    * with a demo stake of 1× bet so player can immediately pick red/black
    * (or whatever the configured mode requires) without first needing a
    * winning spin. */
+  /* 2026-06-11 (Boki rule "pritisnes force dugme odradi se spin i onda
+   * se dobije ishod forsa") — chip click defers modal open to the next
+   * postSpin so the player sees the full flow: chip → reels spin →
+   * settle → gamble modal. The natural postSpin listener above (offers
+   * gamble on actual winning spin) still applies — this just guarantees
+   * the modal opens even if the forced spin lands no real win. */
   HookBus.on('onForceFeatureRequested', (payload) => {
     if (!payload || payload.kind !== 'gamble') return;
-    if (GAMBLE_STATE.active) return;
-    try { gambleOpen(1); } catch (_) { /* defensive */ }
+    window.__FORCE_GAMBLE_OPEN__ = true;
   });
+  HookBus.on('postSpin', (p) => {
+    if (!window.__FORCE_GAMBLE_OPEN__) return;
+    if (p && p.duringFs) return;
+    if (GAMBLE_STATE.active) return;
+    window.__FORCE_GAMBLE_OPEN__ = false;
+    try { gambleOpen(1); } catch (_) { /* defensive */ }
+  }, { priority: -60 });
 }
 `;
 }

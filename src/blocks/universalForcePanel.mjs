@@ -486,8 +486,16 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
        Fix: classify kinds into MODAL_ONLY vs SPIN_DRIVEN. For modal
        kinds the panel emits the event + does any block-specific seed
        work and STOPS — no base spin is triggered. The overlay opens
-       cleanly, with no parallel reel motion. */
-    var MODAL_ONLY_KINDS = ['wheel_bonus', 'gamble', 'bonus_pick'];
+       cleanly, with no parallel reel motion.
+
+       2026-06-11 (Boki rule): "pritisnes force dugme odradi se spin i
+       onda se dobije ishod forsa" — every chip MUST drive a real spin,
+       and the outcome (modal, BW walk, FS entry, mult applied to win)
+       must materialise as the spin settles. Modal kinds now defer their
+       overlay open to the postSpin listener (see wheelBonus/gamble/
+       bonusPick): chip click → flag → spin → settle → modal. No more
+       MODAL_ONLY skip path. */
+    var MODAL_ONLY_KINDS = [];
 
     /* hold_and_win needs a seeded BONUS payload on the next base spin so
        the H&W trigger fires inside its regular postSpin entry path. Plant
