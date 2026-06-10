@@ -188,10 +188,13 @@ t('emitBalanceHudRuntime: disabled emits stub (window.balance* no-op)', () => {
   nct(src, "HookBus.on(");
 });
 
-t('emitBalanceHudRuntime: enabled wires 6 listeners + emit + window API', () => {
+t('emitBalanceHudRuntime: enabled wires expected listeners + emit + window API', () => {
+  /* 2026-06-10 bug-fix — onSpinResult listener removed; lastWin snapshot
+   * moved into the postSpin listener so it reads the fresh __WIN_AWARD__
+   * (postSpin orchestrator runs applyWinHighlight BEFORE emitting postSpin,
+   * so by then __WIN_AWARD__ is the round's real total, not 0). */
   const src = emitBalanceHudRuntime(defaultConfig());
   ct(src, "HookBus.on('preSpin'");
-  ct(src, "HookBus.on('onSpinResult'");
   ct(src, "HookBus.on('postSpin'");
   ct(src, "HookBus.on('onFsTrigger'");
   ct(src, "HookBus.on('onFsEnd'");

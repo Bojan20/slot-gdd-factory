@@ -464,16 +464,22 @@ export function emitBalanceHudRuntime(cfg = defaultConfig()) {
         _refreshWin(0, false);
       });
 
-      window.HookBus.on('onSpinResult', function () {
+      /* Bug-fix 2026-06-10: onSpinResult fires BEFORE postSpin handler
+       * runs applyWinHighlight() which sets window.__WIN_AWARD__. Reading
+       * the value here always gave 0 (cleared by spinControl preSpin),
+       * so balanceCredit never added the win. Symptom: Boki saw HUD WIN
+       * column stuck at "—" and balance going down by bet on every spin
+       * regardless of actual wins. Snapshot lastWin in postSpin INSTEAD
+       * (which fires AFTER applyWinHighlight) so __WIN_AWARD__ is fresh. */
+      window.HookBus.on('postSpin', function (p) {
+        var inFs = !!(p && p.duringFs);
+        /* Read fresh __WIN_AWARD__ — set by applyWinHighlight() in the
+         * postSpin orchestrator, which already finished before this emit. */
         var w = (typeof window.__WIN_AWARD__ === 'number' && window.__WIN_AWARD__ >= 0
                  && Number.isFinite(window.__WIN_AWARD__))
           ? Math.min(window.__WIN_AWARD__, 1e10)
           : 0;
         STATE.lastWin = w;
-      }, { priority: -25 });
-
-      window.HookBus.on('postSpin', function (p) {
-        var inFs = !!(p && p.duringFs);
         if (!inFs && STATE.lastWin > 0) {
           balanceCredit(STATE.lastWin, 'win');
         }
