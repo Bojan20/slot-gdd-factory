@@ -77,7 +77,9 @@ const KINDS_WITH_DEDICATED_BLOCK = Object.freeze([
   'scatter_pay',
   'respin',
   'wild_reel',
-  'gamble',
+  'gamble',          /* 2026-06-10 — gamble.mjs now opens its own modal */
+  'wheel_bonus',     /* 2026-06-10 — wheelBonus.mjs now opens its own modal */
+  'bonus_pick',      /* 2026-06-10 — bonusPick.mjs now opens its own modal */
   'ante_bet',
   'super_symbol',
   'big_win',

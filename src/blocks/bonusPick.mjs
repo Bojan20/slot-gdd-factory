@@ -257,6 +257,12 @@ if (typeof window !== 'undefined') {
 if (typeof HookBus !== 'undefined') {
   HookBus.on('onFsTrigger', () => { if (BP_STATE.open) bpClose(); });
   HookBus.on('onFsEnd',     () => { if (BP_STATE.open) bpClose(); });
+  /* 2026-06-10 (Boki force-rule) — UFP chip emits onForceFeatureRequested.
+   * Open pick modal directly so the chip actually does something. */
+  HookBus.on('onForceFeatureRequested', (payload) => {
+    if (!payload || payload.kind !== 'bonus_pick') return;
+    try { bpOpen(); } catch (_) { /* defensive */ }
+  });
 }
 `;
 }

@@ -272,6 +272,14 @@ if (typeof window !== 'undefined') {
 if (typeof HookBus !== 'undefined') {
   HookBus.on('onFsTrigger', () => { if (WB_STATE.open) wbClose(); });
   HookBus.on('onFsEnd',     () => { if (WB_STATE.open) wbClose(); });
+  /* 2026-06-10 (Boki: "wheel mi ne radi, force") — UFP chip emits
+   * onForceFeatureRequested but wheelBonus never had a listener, so
+   * clicking the WHEEL chip only painted the generic banner. Open the
+   * actual modal now so the chip behaves like every other force CTA. */
+  HookBus.on('onForceFeatureRequested', (payload) => {
+    if (!payload || payload.kind !== 'wheel_bonus') return;
+    try { wbOpen(); } catch (_) { /* defensive */ }
+  });
 }
 `;
 }

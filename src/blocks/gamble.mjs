@@ -242,6 +242,17 @@ if (typeof HookBus !== 'undefined') {
   });
   HookBus.on('onFsTrigger', () => { if (GAMBLE_STATE.open) gambleCollect(); });
   HookBus.on('onFsEnd',     () => { if (GAMBLE_STATE.open) gambleCollect(); });
+  /* 2026-06-10 (Boki: "gamble takodje [ne radi]") — UFP chip emits
+   * onForceFeatureRequested but gamble never had a listener, so clicking
+   * GAMBLE chip just painted a banner without opening the modal. Open
+   * with a demo stake of 1× bet so player can immediately pick red/black
+   * (or whatever the configured mode requires) without first needing a
+   * winning spin. */
+  HookBus.on('onForceFeatureRequested', (payload) => {
+    if (!payload || payload.kind !== 'gamble') return;
+    if (GAMBLE_STATE.active) return;
+    try { gambleOpen(1); } catch (_) { /* defensive */ }
+  });
 }
 `;
 }
