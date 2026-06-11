@@ -514,7 +514,9 @@ export function emitHistoryLogRuntime(cfg = defaultConfig()) {
     }
     function historyLogClear() {
       STATE.entries = [];
-      STATE.nextId = 1;
+      /* Fable audit (high): nextId reset to 1 would silently reuse old
+       * spin IDs across cleared sessions, breaking export traceability
+       * + analytics correlation. Keep the monotonic counter. */
       if (STATE.open) _refresh();
     }
     function historyLogGetEntries() { return STATE.entries.slice(); }

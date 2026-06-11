@@ -345,7 +345,7 @@ t('sandbox: monotonic IDs (1, 2, 3, ...)', () => {
   eq(e.map(x => x.id).join(','), '1,2,3');
 });
 
-t('sandbox: historyLogClear empties + resets ID counter', () => {
+t('sandbox: historyLogClear empties but keeps monotonic ID counter (Fable audit AL-5.2)', () => {
   const sb = buildSandbox(defaultConfig());
   sb.window.__SLOT_BALANCE__ = 1000;
   sb.HookBus.emit('preSpin', { duringFs: false });
@@ -353,10 +353,12 @@ t('sandbox: historyLogClear empties + resets ID counter', () => {
   eq(sb.window.historyLogGetEntries().length, 1);
   sb.window.historyLogClear();
   eq(sb.window.historyLogGetEntries().length, 0);
-  /* New entry → id resets to 1. */
+  /* Fable audit (high): nextId must NOT reset on clear — reusing IDs
+   * across cleared sessions breaks export traceability + analytics
+   * correlation. First new entry after clear should be id=2, not 1. */
   sb.HookBus.emit('preSpin', { duringFs: false });
   sb.HookBus.emit('postSpin', { duringFs: false });
-  eq(sb.window.historyLogGetEntries()[0].id, 1);
+  eq(sb.window.historyLogGetEntries()[0].id, 2);
 });
 
 t('sandbox: historyLogShow opens + Hide closes + Toggle flips', () => {

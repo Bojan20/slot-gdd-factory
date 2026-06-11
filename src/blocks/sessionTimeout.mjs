@@ -595,7 +595,13 @@ export function emitSessionTimeoutRuntime(cfg = defaultConfig()) {
     function _logout() {
       if (!FORCE_LOGOUT) return;
       var stats = { sessionMs: STATE.sessionMs };
-      stResumeFromBreak('logout');
+      /* Fable audit (high): logout was calling stResumeFromBreak('logout')
+       * which fires onSessionResumed FIRST, then the logout event. Side-
+       * effect listeners on Resumed re-enable the slot UI which immediately
+       * gets torn down by the Logout — visible flicker + audit log
+       * records a false "session resumed". Skip Resume during logout. */
+      STATE.onBreak = false;
+      STATE.breakStartMs = 0;
       if (typeof window !== 'undefined' && window.HookBus && typeof window.HookBus.emit === 'function') {
         try {
           window.HookBus.emit('onSessionLogoutRequested', stats);

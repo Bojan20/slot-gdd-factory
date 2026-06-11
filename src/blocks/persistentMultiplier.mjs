@@ -168,10 +168,19 @@ document.addEventListener('DOMContentLoaded', () => _pmRenderChip(false));
    tumble win and resets when the FS round ends. The current value is
    pushed into HookBus.setMult so winPresentation applies it to payouts. */
 if (typeof HookBus !== 'undefined') {
-  HookBus.on('onFsSpinResult', () => { pmOnCascade(); });
+  /* Fable audit (high): handlers were inverted — onFsSpinResult (the
+   * whole FS spin landing) used to call pmOnCascade (the per-cascade-step
+   * grower), while onTumbleStep (each cascade step) called pmOnWin (the
+   * per-FS-spin grower). Result: persistent mult double-fired on tumble
+   * FS and under-fired on the per-spin path. Correct mapping below. */
+  HookBus.on('onFsSpinResult', () => {
+    pmOnWin();
+    const v = pmGet();
+    if (v > 0) HookBus.setMult(Math.max(HookBus.getMult(), v));
+  });
   HookBus.on('onTumbleStep', ({ events } = {}) => {
     if (Array.isArray(events) && events.some(e => Number(e && e.payX) > 0)) {
-      pmOnWin();
+      pmOnCascade();
       const v = pmGet();
       if (v > 0) HookBus.setMult(Math.max(HookBus.getMult(), v));
     }

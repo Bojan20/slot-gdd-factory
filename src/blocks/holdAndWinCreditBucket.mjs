@@ -142,6 +142,15 @@ const DEFAULT_JACKPOT_MAP = Object.freeze([
 const HEX_RGB = /^\d{1,3},\s*\d{1,3},\s*\d{1,3}$/;
 const SAFE_LABEL = /^[A-Z0-9_ -]{1,16}$/;
 
+/* Fable audit (high): HEX_RGB only counts digits, so "999,215,80" would
+ * pass syntactic check but is out of the 0..255 channel range. Validate
+ * each channel as a proper RGB byte. */
+function _isValidRgb(s) {
+  if (typeof s !== 'string' || !HEX_RGB.test(s)) return false;
+  const parts = s.split(',').map(p => parseInt(p.trim(), 10));
+  return parts.length === 3 && parts.every(n => Number.isFinite(n) && n >= 0 && n <= 255);
+}
+
 function clampInt(n, lo, hi) {
   const x = Math.round(Number(n));
   if (!Number.isFinite(x)) return lo;
@@ -223,10 +232,10 @@ export function resolveConfig(model = {}) {
     }
   }
 
-  if (typeof m.bucketColor === 'string' && HEX_RGB.test(m.bucketColor)) {
+  if (typeof m.bucketColor === 'string' && _isValidRgb(m.bucketColor)) {
     cfg.bucketColor = m.bucketColor.replace(/\s+/g, '');
   }
-  if (typeof m.jackpotColor === 'string' && HEX_RGB.test(m.jackpotColor)) {
+  if (typeof m.jackpotColor === 'string' && _isValidRgb(m.jackpotColor)) {
     cfg.jackpotColor = m.jackpotColor.replace(/\s+/g, '');
   }
   if (typeof m.currencyPrefix === 'string' && m.currencyPrefix.length > 0 && m.currencyPrefix.length <= 4) {

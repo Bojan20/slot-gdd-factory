@@ -15,7 +15,20 @@
  *   • endTokens: array of token labels that end the round (default ["POP"])
  *   • title: string — modal title
  *   • haloColor: 'r,g,b'
+ *
+ * Perf budget: CSS ≤ 1.5 KB, markup ≤ 1 KB for tileCount=12, runtime ≤ 2 KB,
+ *              open→first-paint ≤ 16ms.
  */
+
+const LIMITS = {
+  tileCount: [3, 36],
+  maxPicks: [1, 20],
+  weight: [1, 1000],
+  poolMax: 20,
+  labelMax: 12,
+  endTokensMax: 8,
+  titleMax: 40,
+};
 
 export function defaultConfig() {
   return {
@@ -43,22 +56,22 @@ export function resolveConfig(model = {}) {
   const m = model.bonusPick || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (m.mode === 'fs' || m.mode === 'base' || m.mode === 'both' || m.mode === 'triggered') cfg.mode = m.mode;
-  if (Number.isFinite(m.tileCount)) cfg.tileCount = clampInt(m.tileCount, 3, 36);
-  if (Number.isFinite(m.maxPicks)) cfg.maxPicks = clampInt(m.maxPicks, 1, 20);
+  if (Number.isFinite(m.tileCount)) cfg.tileCount = clampInt(m.tileCount, LIMITS.tileCount[0], LIMITS.tileCount[1]);
+  if (Number.isFinite(m.maxPicks)) cfg.maxPicks = clampInt(m.maxPicks, LIMITS.maxPicks[0], LIMITS.maxPicks[1]);
   if (Array.isArray(m.prizePool) && m.prizePool.every(p => p && typeof p.label === 'string' && Number.isFinite(p.weight))) {
-    cfg.prizePool = m.prizePool.slice(0, 20).map(p => ({
-      label: p.label.slice(0, 12),
+    cfg.prizePool = m.prizePool.slice(0, LIMITS.poolMax).map(p => ({
+      label: p.label.slice(0, LIMITS.labelMax),
       value: Number.isFinite(p.value) ? p.value : 0,
-      weight: clampInt(p.weight, 1, 1000),
+      weight: clampInt(p.weight, LIMITS.weight[0], LIMITS.weight[1]),
     }));
   }
   if (Array.isArray(m.endTokens) && m.endTokens.every(t => typeof t === 'string')) {
-    cfg.endTokens = m.endTokens.slice(0, 8);
+    cfg.endTokens = m.endTokens.slice(0, LIMITS.endTokensMax);
   }
-  if (typeof m.title === 'string' && m.title.length > 0 && m.title.length <= 40) cfg.title = m.title;
+  if (typeof m.title === 'string' && m.title.length > 0 && m.title.length <= LIMITS.titleMax) cfg.title = m.title;
   if (typeof m.haloColor === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(m.haloColor)) cfg.haloColor = m.haloColor;
 
-  if (Array.isArray(model.features) && model.features.some(f => f.kind === 'bonus_pick')) {
+  if (m.enabled == null && Array.isArray(model.features) && model.features.some(f => f.kind === 'bonus_pick')) {
     cfg.enabled = true;
   }
   return cfg;
@@ -177,100 +190,156 @@ export function emitBonusPickMarkup(cfg = defaultConfig()) {
 export function emitBonusPickRuntime(cfg = defaultConfig()) {
   if (!cfg.enabled) return `/* bonusPick: disabled */`;
   return `/* ─── bonus pick runtime ──────────────────────────────────────── */
-const BP_MAX_PICKS = ${cfg.maxPicks};
-const BP_POOL = ${JSON.stringify(cfg.prizePool)};
-const BP_END_TOKENS = ${JSON.stringify(cfg.endTokens)};
-const BP_STATE = { active: false, picksLeft: 0, totalValue: 0, revealedIdx: new Set() };
+(function () {
+  if (typeof window !== 'undefined' && window.__bpInit) return;
+  if (typeof window !== 'undefined') window.__bpInit = true;
 
-function _bpDrawPrize() {
-  let total = 0;
-  for (const p of BP_POOL) total += p.weight;
-  let roll = Math.random() * total;
-  for (const p of BP_POOL) {
-    roll -= p.weight;
-    if (roll <= 0) return p;
+  const BP_MAX_PICKS = ${cfg.maxPicks};
+  const BP_POOL = ${JSON.stringify(cfg.prizePool)};
+  const BP_END_TOKENS = ${JSON.stringify(cfg.endTokens)};
+  const BP_STATE = { active: false, picksLeft: 0, totalValue: 0, revealedIdx: new Set() };
+  let _bpReturnFocus = null;
+
+  /* Determinism: defer to host-provided seeded PRNG (window.__rng); fall back
+     to Math.random only when no seeded source is wired (dev preview). */
+  function _bpRand() {
+    return (typeof window !== 'undefined' && typeof window.__rng === 'function')
+      ? window.__rng()
+      : Math.random();
   }
-  return BP_POOL[BP_POOL.length - 1];
-}
 
-function bpOpen() {
-  if (BP_STATE.active) return;
-  BP_STATE.active = true;
-  BP_STATE.picksLeft = BP_MAX_PICKS;
-  BP_STATE.totalValue = 0;
-  BP_STATE.revealedIdx.clear();
-  const ov = document.getElementById('bpOverlay');
-  if (!ov) return;
-  ov.dataset.show = 'true';
-  document.getElementById('bpLeft').textContent = String(BP_STATE.picksLeft);
-  document.getElementById('bpTotal').textContent = '0';
-  document.getElementById('bpClose').dataset.show = 'false';
-  ov.querySelectorAll('.bp-tile').forEach(t => {
-    t.disabled = false;
-    t.classList.remove('is-revealed');
-    t.textContent = '?';
-  });
-}
-
-function bpClose() {
-  BP_STATE.active = false;
-  const ov = document.getElementById('bpOverlay');
-  if (ov) ov.dataset.show = 'false';
-}
-
-function _bpHandleClick(ev) {
-  const t = ev.target.closest('.bp-tile');
-  if (!t || t.disabled || !BP_STATE.active) return;
-  const idx = parseInt(t.dataset.bpIdx, 10);
-  if (BP_STATE.revealedIdx.has(idx)) return;
-  const prize = _bpDrawPrize();
-  BP_STATE.revealedIdx.add(idx);
-  t.classList.add('is-revealed');
-  t.textContent = prize.label;
-  t.disabled = true;
-  BP_STATE.totalValue += prize.value;
-  BP_STATE.picksLeft--;
-  document.getElementById('bpLeft').textContent = String(BP_STATE.picksLeft);
-  document.getElementById('bpTotal').textContent = '×' + BP_STATE.totalValue;
-  const isEnd = BP_END_TOKENS.includes(prize.label);
-  if (isEnd || BP_STATE.picksLeft <= 0) {
-    document.querySelectorAll('.bp-tile').forEach(x => x.disabled = true);
-    document.getElementById('bpClose').dataset.show = 'true';
+  function _bpEmit(name, payload) {
+    if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
+      try { HookBus.emit(name, payload); } catch (_) { /* defensive */ }
+    }
   }
-}
 
-document.addEventListener('DOMContentLoaded', () => {
-  const ov = document.getElementById('bpOverlay');
-  if (ov) ov.addEventListener('click', _bpHandleClick);
-  const closeBtn = document.getElementById('bpClose');
-  if (closeBtn) closeBtn.addEventListener('click', bpClose);
-});
+  function _bpDrawPrize() {
+    let total = 0;
+    for (const p of BP_POOL) total += p.weight;
+    let roll = _bpRand() * total;
+    for (const p of BP_POOL) {
+      roll -= p.weight;
+      if (roll <= 0) return p;
+    }
+    return BP_POOL[BP_POOL.length - 1];
+  }
 
-if (typeof window !== 'undefined') {
-  window.bpOpen    = bpOpen;
-  window.bpClose   = bpClose;
-  window.BP_STATE  = BP_STATE;
-}
+  function _bpFocusables(ov) {
+    const sel = '.bp-tile:not([disabled]), .bp-close[data-show="true"]';
+    return Array.from(ov.querySelectorAll(sel));
+  }
 
-/* HookBus wire-up — pick modal is opened by parser-side trigger logic;
-   HookBus ensures it closes safely at FS boundaries. */
-if (typeof HookBus !== 'undefined') {
-  HookBus.on('onFsTrigger', () => { if (BP_STATE.open) bpClose(); });
-  HookBus.on('onFsEnd',     () => { if (BP_STATE.open) bpClose(); });
-  /* 2026-06-11 (Boki rule "pritisnes force dugme odradi se spin i onda
-   * se dobije ishod forsa") — chip click arms pick modal for the next
-   * postSpin so player sees: chip → reels spin → settle → pick modal. */
-  HookBus.on('onForceFeatureRequested', (payload) => {
-    if (!payload || payload.kind !== 'bonus_pick') return;
-    window.__FORCE_BONUS_PICK_OPEN__ = true;
+  function _bpKeydown(ev) {
+    if (!BP_STATE.active) return;
+    if (ev.key === 'Escape') { ev.preventDefault(); bpClose(); return; }
+    if (ev.key !== 'Tab') return;
+    const ov = document.getElementById('bpOverlay');
+    if (!ov) return;
+    const f = _bpFocusables(ov);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    const cur = document.activeElement;
+    if (ev.shiftKey && cur === first) { ev.preventDefault(); last.focus(); }
+    else if (!ev.shiftKey && cur === last) { ev.preventDefault(); first.focus(); }
+  }
+
+  function bpOpen() {
+    if (BP_STATE.active) return;
+    BP_STATE.active = true;
+    BP_STATE.picksLeft = BP_MAX_PICKS;
+    BP_STATE.totalValue = 0;
+    BP_STATE.revealedIdx.clear();
+    const ov = document.getElementById('bpOverlay');
+    if (!ov) return;
+    _bpReturnFocus = document.activeElement;
+    ov.dataset.show = 'true';
+    document.getElementById('bpLeft').textContent = String(BP_STATE.picksLeft);
+    document.getElementById('bpTotal').textContent = '0';
+    document.getElementById('bpClose').dataset.show = 'false';
+    const tiles = ov.querySelectorAll('.bp-tile');
+    tiles.forEach(t => {
+      t.disabled = false;
+      t.classList.remove('is-revealed');
+      t.textContent = '?';
+    });
+    if (tiles[0]) { try { tiles[0].focus(); } catch (_) {} }
+    _bpEmit('bonusPick:opened', { picks: BP_MAX_PICKS });
+  }
+
+  function bpClose() {
+    BP_STATE.active = false;
+    const ov = document.getElementById('bpOverlay');
+    if (ov) ov.dataset.show = 'false';
+    _bpEmit('bonusPick:completed', { totalValue: BP_STATE.totalValue });
+    if (_bpReturnFocus && typeof _bpReturnFocus.focus === 'function') {
+      try { _bpReturnFocus.focus(); } catch (_) {}
+    }
+    _bpReturnFocus = null;
+  }
+
+  function _bpHandleClick(ev) {
+    const t = ev.target.closest('.bp-tile');
+    if (!t || t.disabled || !BP_STATE.active) return;
+    const idx = parseInt(t.dataset.bpIdx, 10);
+    if (BP_STATE.revealedIdx.has(idx)) return;
+    const prize = _bpDrawPrize();
+    BP_STATE.revealedIdx.add(idx);
+    t.classList.add('is-revealed');
+    t.textContent = prize.label;
+    t.disabled = true;
+    BP_STATE.totalValue += prize.value;
+    BP_STATE.picksLeft--;
+    document.getElementById('bpLeft').textContent = String(BP_STATE.picksLeft);
+    document.getElementById('bpTotal').textContent = '×' + BP_STATE.totalValue;
+    _bpEmit('bonusPick:revealed', { idx, prize, picksLeft: BP_STATE.picksLeft, totalValue: BP_STATE.totalValue });
+    const isEnd = BP_END_TOKENS.includes(prize.label);
+    if (isEnd || BP_STATE.picksLeft <= 0) {
+      document.querySelectorAll('.bp-tile').forEach(x => x.disabled = true);
+      const close = document.getElementById('bpClose');
+      close.dataset.show = 'true';
+      try { close.focus(); } catch (_) {}
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const ov = document.getElementById('bpOverlay');
+    if (ov) {
+      ov.addEventListener('click', _bpHandleClick);
+      ov.addEventListener('keydown', _bpKeydown);
+    }
+    const closeBtn = document.getElementById('bpClose');
+    if (closeBtn) closeBtn.addEventListener('click', bpClose);
   });
-  HookBus.on('postSpin', (p) => {
-    if (!window.__FORCE_BONUS_PICK_OPEN__) return;
-    if (p && p.duringFs) return;
-    window.__FORCE_BONUS_PICK_OPEN__ = false;
-    try { bpOpen(); } catch (_) { /* defensive */ }
-  }, { priority: -60 });
-}
+
+  if (typeof window !== 'undefined') {
+    window.bpOpen    = bpOpen;
+    window.bpClose   = bpClose;
+    window.BP_STATE  = BP_STATE;
+  }
+
+  /* HookBus wire-up — block now owns its lifecycle hook
+     ('feature:bonusPick:trigger') and emits canonical bonusPick:* events
+     so downstream blocks (winRollup, totalsBar, etc.) can react. */
+  if (typeof HookBus !== 'undefined') {
+    HookBus.on('feature:bonusPick:trigger', () => { try { bpOpen(); } catch (_) {} });
+    HookBus.on('onFsTrigger', () => { if (BP_STATE.open) bpClose(); });
+    HookBus.on('onFsEnd',     () => { if (BP_STATE.open) bpClose(); });
+    /* 2026-06-11 (Boki rule "pritisnes force dugme odradi se spin i onda
+     * se dobije ishod forsa") — chip click arms pick modal for the next
+     * postSpin so player sees: chip → reels spin → settle → pick modal. */
+    HookBus.on('onForceFeatureRequested', (payload) => {
+      if (!payload || payload.kind !== 'bonus_pick') return;
+      window.__FORCE_BONUS_PICK_OPEN__ = true;
+    });
+    HookBus.on('postSpin', (p) => {
+      if (!window.__FORCE_BONUS_PICK_OPEN__) return;
+      if (p && p.duringFs) return;
+      window.__FORCE_BONUS_PICK_OPEN__ = false;
+      try { bpOpen(); } catch (_) { /* defensive */ }
+    }, { priority: -60 });
+  }
+})();
 `;
 }
 

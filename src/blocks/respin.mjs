@@ -136,6 +136,11 @@ function _respinHeldReels() {
 
 function respinMaybeTrigger() {
   if (!_respinPhaseAllowed() || RESPIN_STATE.active) return false;
+  /* Fable audit (critical): paid mode must NEVER auto-fire — that would
+   * silently spend the player's bet on a respin they never asked for.
+   * paid mode triggers ONLY via an explicit UI handler that emits
+   * respinPaidCharge (currency deduction) before activating. */
+  if (RESPIN_MODE === 'paid') return false;
   if (Math.random() >= RESPIN_CHANCE) return false;
   return respinStart();
 }

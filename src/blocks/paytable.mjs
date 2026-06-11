@@ -90,8 +90,13 @@ export function resolveConfig(model = {}) {
     cfg.chipLabel = m.chipLabel;
   }
   for (const key of ['chipColor', 'chipTextColor', 'modalBgColor', 'modalAccentColor']) {
+    /* Fable audit (high): the {1,3} digit pattern alone accepts "999,215,80"
+     * which is out of the 0..255 RGB channel range. Validate each
+     * channel as a byte before committing the value. */
     if (typeof m[key] === 'string' && /^\d{1,3},\s*\d{1,3},\s*\d{1,3}$/.test(m[key])) {
-      cfg[key] = m[key].replace(/\s+/g, '');
+      const channels = m[key].split(',').map(p => parseInt(p.trim(), 10));
+      const allBytes = channels.length === 3 && channels.every(n => n >= 0 && n <= 255);
+      if (allBytes) cfg[key] = m[key].replace(/\s+/g, '');
     }
   }
   for (const flag of ['showFeaturesList', 'showWildRules', 'showLineMap',
