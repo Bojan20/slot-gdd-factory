@@ -4239,6 +4239,59 @@ V4 (HookBus events) first — bez njih V1/V2 ne mogu da emit. Onda V1+V2 paralel
 
 ---
 
+## ✅ Wave AL-3 — WoO 5×3 / 10-lines parity (kill lock_respin + wheel_bonus false positives) (Boki 2026-06-11)
+
+> **Trigger** (11.06.2026, Boki): *"idi u igru WoO na Mac-u i ooveri
+> dooobro gdd. niisi ga dobro napisao. izanaliziraj dobro igru i
+> ispravi gdd a onda ispravi na osnovu gdd-a ceo grid"*.
+
+### Šta je urađeno
+
+| Aspekt | Detalji |
+|:--|:--|
+| **Truth source** | `~/Projects/Wrath Of Olympus/GDD.md` (real shipped game): 5 reels × 3 rows, 10 fixed paylines, lines evaluation, features = Free Spins + Hold & Win (Zeus's Storm) + Lightning Multiplier + Jackpot ladder (Mini/Minor/Major/Grand). No wheel bonus. No pay-anywhere. |
+| **Defekt PRE fix-a** (Wrath PDF parsed) | kind=lock_respin (PRAVI rectangular), 5×4 (PRAVI 5×3), 25 paylines (PRAVI 10), evaluation=pay_anywhere (PRAVI lines), features sa wheel_bonus + scatter_pay (NIJEDAN ne postoji u real WoO) |
+| **Root cause #1 — extractEvaluation** | regex `\bscatter\s+pays?\b` hvatao reč "anywhere" iz opisa Scatter simbola ("S Scatter Triggera FS — anywhere") i flip-uje cel game na pay_anywhere |
+| **Fix #1** | Nova `extractPaylineCount(txt)` traži "10 fixed paylines" / "Paylines: 10" / "25 paylines". Eksplicitna count value = "ovo je line game" → preempts keyword fallbacks |
+| **Root cause #2 — missing paylines emission** | pdfToMarkdown nikad nije emitovao `\| Paylines \| N \|` u Topology tabelu → parser + smartDefaults padali na per-kind default-e (25 za rectangular, 25 za lock_respin) |
+| **Fix #2** | Emit `\| Paylines \| N \|` kad je evaluation=lines i count ekstraktovan |
+| **Root cause #3 — jackpot stub vendor leak** | Hardkodovan stub text pomenuo "Wheel Bonus, Wolf Reveal" kao default jackpot mehanizam → (a) vendor leak per `rule_no_vendor_mentions`, (b) feature extractor `wheel\s+bonus` regex pucao na svaki GDD sa jackpot-om |
+| **Fix #3** | Stub rewritten vendor-neutral ("trigger uslove definisane u feature sekcijama") — ne pali nijednu feature regex, real wheel games i dalje matchaju jer PDF body sam sadrži reči |
+| **smartDefaults guard** | `t.confidence_reels === 1 && t.confidence_rows === 1` → "explicit topology, hands off" — sprečava hold_and_win u features[] da forsuje kind=lock_respin + snap 5×3 → 5×4 kad GDD jasno kaže 5 reels × 3 rows u tabeli |
+
+### 📊 Pre-fix vs post-fix (Wrath of Olympus)
+
+| Polje | Pre-fix | Post-fix | Real WoO |
+|:--|:--|:--|:--|
+| Topology kind | 🔴 `lock_respin` | ✅ `rectangular` | rectangular |
+| Reels × Rows | 🔴 5×4 | ✅ 5×3 | 5×3 |
+| Paylines | 🔴 25 | ✅ 10 | 10 fixed |
+| Evaluation | 🔴 `pay_anywhere` | ✅ `lines` | lines (L→R) |
+| Features | 🔴 +wheel_bonus +scatter_pay | ✅ FS + HW + mult + jackpot | FS + HW + Lightning + Jackpot |
+
+### 📊 Cross-GDD regression (sve 4 GDD-a kroz parser)
+
+| GDD | Topology (pre) | Topology (post) | Promena |
+|:--|:--|:--|:-:|
+| Gates of Olympus 1000 | rectangular 6×5 pay_anywhere 20pl | rectangular 6×5 pay_anywhere 20pl | — |
+| **Wrath of Olympus** | **lock_respin 5×4 pay_anywhere 25pl** | **rectangular 5×3 lines 10pl** | ✅ FIXED |
+| Huff N More Puff | lock_respin 5×3 ways | lock_respin 5×3 ways | — |
+| Starlight Travellers | cluster 6×5 | cluster 6×5 | — |
+
+### 📊 Test gate-ovi
+
+| Provera | Rezultat |
+|:--|:-:|
+| 4-GDD ultimate live audit | ✅ **ALL PERFECT** (0 console err, 0 page err, 0 redness po GDD-u) |
+| Wrath chip set (live audit) | ✅ free_spins, hold_and_win, multiplier, jackpot, big_win (real WoO mehanika) |
+| `test:parse` (4 reference fixtures) | ✅ **4/4 PASS** |
+| `test:blocks` | ✅ ALL PASS |
+| `test:lego` 5 invariants | ✅ **5/5 PASS** |
+| `test:budget` LOC budget | ✅ orchestrator within budget |
+| `test:runtime` | ✅ **31/31 PASS** |
+
+---
+
 ## ✅ Wave AL-2 — 4-GDD ultimate parity audit + 4 missing UFP kinds (Boki 2026-06-11)
 
 > **Trigger** (11.06.2026, Boki): *"prodji sada sa kojim god AI treba
