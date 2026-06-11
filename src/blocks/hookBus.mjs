@@ -308,6 +308,12 @@ export const HOOK_EVENTS = Object.freeze([
    *   (reason: 'natural' | 'skipped'). Owner: scatterCelebration.mjs. */
   'onScatterCelebrationStart',
   'onScatterCelebrationEnd',
+  /* onDailyJackpotAward {amount, currency, atUtcDay} — fires when the
+   *   daily-jackpot per-spin random roll succeeds (or force-chip flagged
+   *   the next spin). Owner: src/blocks/dailyJackpot.mjs.
+   *   Consumers: audio bus (jackpot sting), historyLog (transaction row),
+   *   any external HUD that wants to react to the award. */
+  'onDailyJackpotAward',
 ]);
 
 /* Wave U4: canonical autoplay stop reasons. */

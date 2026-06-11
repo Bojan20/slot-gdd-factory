@@ -77,6 +77,9 @@ t('HOOK_EVENTS canonical list (core + V intent + V5 win-present + U4 autoplay + 
     /* 2026-06-09 — scatterCelebration lifecycle (spinControl morphs SPIN
      * → SKIP during the celebration window) */
     'onScatterCelebrationStart', 'onScatterCelebrationEnd',
+    /* 2026-06-11 Wave AL-4 / Fable-4 — dailyJackpot block emits
+     * onDailyJackpotAward when the per-spin random roll succeeds. */
+    'onDailyJackpotAward',
   ];
   eq(HOOK_EVENTS.length, expected.length);
   for (const e of expected) ok(HOOK_EVENTS.includes(e), `missing ${e}`);

@@ -225,6 +225,12 @@ const EXPECTED_EMIT_OWNERS = {
    * the celebration window. */
   onScatterCelebrationStart: ['scatterCelebration.mjs'],
   onScatterCelebrationEnd:   ['scatterCelebration.mjs'],
+  /* 2026-06-11 Wave AL-4 / Fable-4 — dailyJackpot block owns the award
+   * lifecycle event. Fires inside the postSpin handler when the random
+   * roll succeeds (or window.dailyJackpotForce() was set). Consumers:
+   * audio bus (jackpot sting), historyLog (transaction row), partner
+   * external HUDs. */
+  onDailyJackpotAward: ['dailyJackpot.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */
