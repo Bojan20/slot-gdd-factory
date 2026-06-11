@@ -73,6 +73,50 @@ export function resolveConfig(model) {
 export function emitAnticipationCSS(cfg = defaultConfig()) {
   const c = resolveConfig({ anticipation: cfg });
   if (!c.enabled) return `\n/* anticipation BLOCK (disabled by GDD) — no CSS emitted */\n`;
+
+  /* ── private CSS magic-number constants ────────────────────────────────
+     Every opacity / blur / accent literal that previously lived inline in
+     the template now has exactly one named declaration. Opacities are kept
+     as STRINGS (not Number) so the emitted CSS text is byte-identical to
+     the prior hand-tuned values — e.g. "0.30" must not collapse to "0.3"
+     via Number.prototype.toString(), which would break visual diffs and
+     any snapshot tests in tests/visual-regression. */
+
+  // Gold inset-border alpha at steady state. Shared by: reelCol static rule,
+  // reel keyframe 0%/100%, cell keyframe 0%/100% border, AND reused as the
+  // cell keyframe 50% inset-glow alpha (same numeric value, different role).
+  const OPACITY_BORDER_STEADY      = '0.55';
+  // Gold inset-glow alpha on the .reelCol--anticipating static (non-keyframe) rule.
+  const OPACITY_GLOW_REEL_STATIC   = '0.25';
+  // Gold inset-glow alpha at reel keyframe 0%/100% — the resting low end of the pulse.
+  const OPACITY_GLOW_REEL_KF_BASE  = '0.22';
+  // Gold inset-glow alpha at reel keyframe 50% — peak of the mid-pulse swell.
+  const OPACITY_GLOW_REEL_KF_PEAK  = '0.42';
+  // Lighter-accent inset-border alpha at the 50% mid-pulse highlight (both reel + cell variants).
+  const OPACITY_HIGHLIGHT_MIDPULSE = '0.85';
+  // Gold inset-border alpha on the .cell--anticipating static rule — slightly hotter than reel.
+  const OPACITY_BORDER_CELL_STATIC = '0.6';
+  // Gold inset-glow alpha on the .cell--anticipating static rule.
+  const OPACITY_GLOW_CELL_STATIC   = '0.32';
+  // Gold inset-glow alpha at cell keyframe 0%/100% — the resting low end of the cell pulse.
+  const OPACITY_GLOW_CELL_KF_BASE  = '0.30';
+
+  // Inset-glow blur radius on the reel column — used by static rule AND kf 0%/100%.
+  const BLUR_REEL_BASE    = '35px';
+  // Inset-glow blur radius on the reel column at kf 50% — wider mid-pulse spread.
+  const BLUR_REEL_PEAK    = '55px';
+  // Inset-glow blur radius on .cell--anticipating static rule.
+  const BLUR_CELL_STATIC  = '16px';
+  // Inset-glow blur radius on cell at kf 0%/100% — slightly tighter than the static rule.
+  const BLUR_CELL_KF_BASE = '14px';
+  // Inset-glow blur radius on cell at kf 50% — wider mid-pulse spread.
+  const BLUR_CELL_PEAK    = '22px';
+
+  // Lighter accent RGB triplet (no alpha). Used ONLY at the 50% mid-pulse
+  // keyframe of both reel + cell variants to lift the border above the
+  // steady GDD-knob `gold` color for a perceptible highlight pop.
+  const GOLD_HIGHLIGHT_RGB = '255, 230, 168';
+
   return `
 /* ── anticipation BLOCK — emitted by src/blocks/anticipation.mjs ──────────
    GDD knobs (baked at build time):
@@ -84,26 +128,26 @@ export function emitAnticipationCSS(cfg = defaultConfig()) {
    is one short of trigger. Two keyframe sets — reel-antic-pulse (column
    variant) and cell-antic-pulse (per-cell variant for non-rectangular). */
 .reelCol--anticipating {
-  box-shadow: inset 0 0 0 2px rgba(${c.gold}, 0.55),
-              inset 0 0 35px rgba(${c.gold}, 0.25);
+  box-shadow: inset 0 0 0 2px rgba(${c.gold}, ${OPACITY_BORDER_STEADY}),
+              inset 0 0 ${BLUR_REEL_BASE} rgba(${c.gold}, ${OPACITY_GLOW_REEL_STATIC});
   animation: reel-antic-pulse ${c.pulseMs}ms ease-in-out infinite;
 }
 @keyframes reel-antic-pulse {
-  0%, 100% { box-shadow: inset 0 0 0 2px rgba(${c.gold}, 0.55),
-                         inset 0 0 35px rgba(${c.gold}, 0.22); }
-  50%      { box-shadow: inset 0 0 0 2px rgba(255, 230, 168, 0.85),
-                         inset 0 0 55px rgba(${c.gold}, 0.42); }
+  0%, 100% { box-shadow: inset 0 0 0 2px rgba(${c.gold}, ${OPACITY_BORDER_STEADY}),
+                         inset 0 0 ${BLUR_REEL_BASE} rgba(${c.gold}, ${OPACITY_GLOW_REEL_KF_BASE}); }
+  50%      { box-shadow: inset 0 0 0 2px rgba(${GOLD_HIGHLIGHT_RGB}, ${OPACITY_HIGHLIGHT_MIDPULSE}),
+                         inset 0 0 ${BLUR_REEL_PEAK} rgba(${c.gold}, ${OPACITY_GLOW_REEL_KF_PEAK}); }
 }
 .cell--anticipating {
-  box-shadow: inset 0 0 0 2px rgba(${c.gold}, 0.6),
-              inset 0 0 16px rgba(${c.gold}, 0.32);
+  box-shadow: inset 0 0 0 2px rgba(${c.gold}, ${OPACITY_BORDER_CELL_STATIC}),
+              inset 0 0 ${BLUR_CELL_STATIC} rgba(${c.gold}, ${OPACITY_GLOW_CELL_STATIC});
   animation: cell-antic-pulse ${c.pulseMs}ms ease-in-out infinite;
 }
 @keyframes cell-antic-pulse {
-  0%, 100% { box-shadow: inset 0 0 0 2px rgba(${c.gold}, 0.55),
-                         inset 0 0 14px rgba(${c.gold}, 0.30); }
-  50%      { box-shadow: inset 0 0 0 2px rgba(255, 230, 168, 0.85),
-                         inset 0 0 22px rgba(${c.gold}, 0.55); }
+  0%, 100% { box-shadow: inset 0 0 0 2px rgba(${c.gold}, ${OPACITY_BORDER_STEADY}),
+                         inset 0 0 ${BLUR_CELL_KF_BASE} rgba(${c.gold}, ${OPACITY_GLOW_CELL_KF_BASE}); }
+  50%      { box-shadow: inset 0 0 0 2px rgba(${GOLD_HIGHLIGHT_RGB}, ${OPACITY_HIGHLIGHT_MIDPULSE}),
+                         inset 0 0 ${BLUR_CELL_PEAK} rgba(${c.gold}, ${OPACITY_BORDER_STEADY}); }
 }
 @media (prefers-reduced-motion: reduce) {
   .reelCol--anticipating,
