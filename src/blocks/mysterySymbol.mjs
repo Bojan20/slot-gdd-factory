@@ -54,6 +54,29 @@ export function resolveConfig(model = {}) {
   if (m.includeScatter != null) cfg.includeScatter = !!m.includeScatter;
   if (typeof m.haloColor === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(m.haloColor)) cfg.haloColor = m.haloColor;
 
+  /* Fable audit (critical): even with the '?' default, a GDD can override
+   * mysterySymbolId to a value that collides with a real paytable symbol
+   * id. If so, every cell of that symbol would be flagged is-mystery and
+   * silently corrupted on reveal. Disable the block when a collision is
+   * detected against model.symbols.{high,mid,low,specials} or paytable
+   * keys. */
+  const collisionIds = new Set();
+  const sym = model.symbols || {};
+  ['high', 'mid', 'low', 'specials'].forEach((tier) => {
+    const arr = sym[tier];
+    if (!Array.isArray(arr)) return;
+    arr.forEach((s) => {
+      if (s && typeof s.id === 'string') collisionIds.add(s.id);
+      else if (typeof s === 'string') collisionIds.add(s);
+    });
+  });
+  if (model.paytable && model.paytable.symbols && typeof model.paytable.symbols === 'object') {
+    Object.keys(model.paytable.symbols).forEach((k) => collisionIds.add(k));
+  }
+  if (collisionIds.has(cfg.mysterySymbolId)) {
+    cfg.enabled = false;
+  }
+
   if (Array.isArray(model.features) && model.features.some(f => f.kind === 'mystery_symbol')) {
     cfg.enabled = true;
   }
@@ -116,7 +139,11 @@ function _pickMysteryReveal() {
   const pool = reg.regularPay.slice();
   if (MYSTERY_INCLUDE_WILD && reg.wild) pool.push(reg.wild);
   if (MYSTERY_INCLUDE_SCATTER && reg.scatter) pool.push(reg.scatter);
-  return pool[Math.floor(Math.random() * pool.length)];
+  /* Determinism contract: replays / RTP sims / audit traces must
+   * reproduce the chosen reveal face. Use engine-supplied RNG when
+   * available, fall back to Math.random for standalone preview only. */
+  const rng = (typeof ENGINE_RNG === 'function') ? ENGINE_RNG : Math.random;
+  return pool[Math.floor(rng() * pool.length)];
 }
 
 function markMysteryCells() {
@@ -129,6 +156,7 @@ function markMysteryCells() {
     const sym = (cell.textContent || '').trim();
     if (sym === MYSTERY_ID) {
       cell.classList.add('is-mystery');
+      cell.setAttribute('aria-label', 'mystery symbol');
       marked.push(idx);
     }
   });
@@ -148,13 +176,15 @@ function revealMysterySymbols() {
   if (mystCells.length === 0) return Promise.resolve(null);
   _revealing = true;
   const chosen = _pickMysteryReveal();
-  /* Fable audit (critical, partial): commit the revealed face IMMEDIATELY
-   * so the win evaluator sees the resolved symbol, not '?'. The animation
-   * (delay → flip class → swap text) is purely cosmetic and runs in
-   * parallel; eval has already received the truth via the synchronous
-   * textContent assignment below. */
+  /* Fable audit (critical): commit the revealed face IMMEDIATELY (sync)
+   * so the win evaluator — which reads cell.textContent right after this
+   * hook returns — sees the resolved symbol, not '?'. The rotateY flip
+   * animation runs as a separate post-eval cosmetic pass; eval truth has
+   * already been committed synchronously via textContent + dataset
+   * before any timers fire. */
   mystCells.forEach((cell) => {
     cell.dataset.mysteryFace = chosen;
+    cell.textContent = chosen;
     cell.setAttribute('aria-label', 'mystery symbol revealed as ' + chosen);
   });
   /* Announce once via aria-live for screen-reader users. Create the
@@ -177,9 +207,6 @@ function revealMysterySymbols() {
       mystCells.forEach((cell) => {
         cell.classList.remove('is-mystery');
         cell.classList.add('is-mystery-revealing');
-        setTimeout(() => {
-          cell.textContent = chosen;
-        }, MYSTERY_REVEAL_DUR / 2);
         setTimeout(() => {
           cell.classList.remove('is-mystery-revealing');
         }, MYSTERY_REVEAL_DUR);
@@ -227,7 +254,6 @@ if (typeof HookBus !== 'undefined') {
 }
 
 function clampInt(n, lo, hi) {
-  n = Math.floor(Number(n));
   if (!Number.isFinite(n)) return lo;
-  return Math.max(lo, Math.min(hi, n));
+  return Math.max(lo, Math.min(hi, Math.floor(n)));
 }
