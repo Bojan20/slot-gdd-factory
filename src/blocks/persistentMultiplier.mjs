@@ -100,6 +100,7 @@ export function emitPersistentMultiplierMarkup(cfg = defaultConfig()) {
 export function emitPersistentMultiplierRuntime(cfg = defaultConfig()) {
   if (!cfg.enabled) return `/* persistentMultiplier: disabled */`;
   return `/* ─── persistent multiplier runtime ───────────────────────────── */
+(() => {
 const PM_MODE          = ${JSON.stringify(cfg.mode)};
 const PM_START         = ${cfg.startMult};
 const PM_GROW_WIN      = ${cfg.growPerWin};
@@ -161,33 +162,39 @@ if (typeof window !== 'undefined') {
   window.pmOnRoundEnd  = pmOnRoundEnd;
   window.pmGet         = pmGet;
 }
-/* Initial render at boot */
-document.addEventListener('DOMContentLoaded', () => _pmRenderChip(false));
 
-/* HookBus wire-up — persistent multiplier bumps on every FS cascade /
-   tumble win and resets when the FS round ends. The current value is
-   pushed into HookBus.setMult so winPresentation applies it to payouts. */
+/* Initial render at boot */
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => _pmRenderChip(false));
+} else {
+  _pmRenderChip(false);
+}
+
+/* HookBus wire-up — cascade growth on each tumble step, per-spin win bump
+   only when the FS spin actually paid. Multiplier value is published via
+   onMultChange so the canonical mult owner (winPresentation) reconciles —
+   this block never writes HookBus.setMult directly (single-owner-emit). */
 if (typeof HookBus !== 'undefined') {
-  /* Fable audit (high): handlers were inverted — onFsSpinResult (the
-   * whole FS spin landing) used to call pmOnCascade (the per-cascade-step
-   * grower), while onTumbleStep (each cascade step) called pmOnWin (the
-   * per-FS-spin grower). Result: persistent mult double-fired on tumble
-   * FS and under-fired on the per-spin path. Correct mapping below. */
-  HookBus.on('onFsSpinResult', () => {
+  HookBus.on('onFsSpinResult', ({ events, totalWin } = {}) => {
+    if (PM_GROW_WIN === 0) return;
+    const paid = (Array.isArray(events) && events.some(e => Number(e && e.payX) > 0))
+              || Number(totalWin) > 0;
+    if (!paid) return;
     pmOnWin();
     const v = pmGet();
-    if (v > 0) HookBus.setMult(Math.max(HookBus.getMult(), v));
+    if (v > 1) HookBus.emit('onMultChange', { source: 'persistent', value: v });
   });
   HookBus.on('onTumbleStep', ({ events } = {}) => {
     if (Array.isArray(events) && events.some(e => Number(e && e.payX) > 0)) {
       pmOnCascade();
       const v = pmGet();
-      if (v > 0) HookBus.setMult(Math.max(HookBus.getMult(), v));
+      if (v > 1) HookBus.emit('onMultChange', { source: 'persistent', value: v });
     }
   });
   HookBus.on('onFsTrigger', () => { pmReset(); });
   HookBus.on('onFsEnd',     () => { pmOnRoundEnd(); });
 }
+})();
 `;
 }
 
