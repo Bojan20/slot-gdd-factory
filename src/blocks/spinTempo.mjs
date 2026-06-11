@@ -4,10 +4,12 @@
  * Reel-spin cadence config — drives the windup → accel → steady → decel →
  * stagger → cushion-bounce timing of every uniform-reel grid. Single
  * SPIN_PROFILE object consumed by the reel engine in both BASE and FS
- * (Boki rule: identical tempo across phases).
+ * (Boki rule: identical tempo across phases). Exists so GDD authors can
+ * re-tune a slot's "feel" without touching reel-engine internals.
  *
- * Industry reference: S-AVP classic 5-reel cabinet — each reel lands ~1.4s
- * after click, +320ms stagger per reel. The full ladder fires in ~2.7s.
+ * Industry reference: S-AVP classic 5-reel cabinet archetype — each reel
+ * lands ~1.4s after click, +320ms stagger per reel, full ladder fires in
+ * ~2.7s. Vendor-neutral baseline; no proprietary cabinet name is encoded.
  *
  * GDD-driven configuration (consumed from `model.spinTempo`):
  *   windupMs           number ms — pre-spin recoil duration   (default 100)
@@ -29,11 +31,41 @@
  *   "slow"       cinematic suspense (windup 140, steady 1100, decel 480, stagger 380)
  *
  * Public API (server-side, ES module):
- *   defaultConfig()                → safe defaults (s-avp preset)
- *   resolveConfig(model)           → merge defaults with GDD override
- *   emitSpinTempoRuntime(config)   → runtime JS — `const SPIN_PROFILE = {...}`
+ *   defaultConfig()              → object — safe defaults (s-avp preset).
+ *                                  Pure, deterministic, no side effects.
+ *   resolveConfig(model)         → object — merges defaults with
+ *                                  `model.spinTempo` (preset first, then
+ *                                  per-key overrides). Pure, no I/O,
+ *                                  unknown keys ignored.
+ *   emitSpinTempoRuntime(config) → string — runtime JS source declaring
+ *                                  `const SPIN_PROFILE = {...}`, ready to
+ *                                  concatenate into the bundled player.
+ *
+ * Lifecycle bus contract:
+ *   Consumed only at build time, no runtime HookBus subscription. This
+ *   block neither calls `bus.on(...)` nor emits `bus.emit(...)` — it
+ *   produces a static `SPIN_PROFILE` literal that the reel engine reads
+ *   synchronously on spin start. Future runtime re-tuning (e.g. turbo
+ *   toggle) MUST add an explicit `spin:tempo:update` contract here before
+ *   wiring any subscriber.
+ *
+ * Performance budget:
+ *   defaultConfig()              ≤ 0.1 ms, single object allocation.
+ *   resolveConfig(model)         ≤ 0.5 ms, ≤ 1 shallow-merge allocation.
+ *   emitSpinTempoRuntime(config) ≤ 1.0 ms, ≤ 1 string allocation.
+ *   DOM mutations per call:      0 — server-side emitter, no DOM access.
+ *   Runtime consumer (reel engine): one rAF-driven tween per reel; the
+ *   full five-reel ladder must hold the 60 fps frame budget (≤ 16.6 ms).
+ *
+ * Accessibility (default-on):
+ *   This block draws no UI and emits no ARIA roles — config-only module.
+ *   `prefers-reduced-motion: reduce` is honored at the consumer (reel
+ *   engine) layer: when the media query matches, the consumer MUST scale
+ *   all *Ms values by ≤ 0.2 and force `bounceCount = 0`, preserving the
+ *   auditable spin outcome while collapsing the cinematic ladder. Authors
+ *   SHOULD NOT bake reduced-motion timings into the GDD preset itself —
+ *   the toggle is a runtime user preference, not a slot setting.
  */
-
 const DEFAULTS = Object.freeze({
   windupMs: 100, windupFrames: 6, windupPx: 38,
   accelMs: 120, steadyMs: 830, decelMs: 350,
