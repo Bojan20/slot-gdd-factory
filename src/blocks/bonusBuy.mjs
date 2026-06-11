@@ -24,6 +24,9 @@ export function defaultConfig() {
     label: 'BUY BONUS',
     forceScatters: 4,      // guaranteed scatter count when bought
     color: '#ff5050',
+    colorDark: '#b03030',  // dark gradient stop; override alongside `color`
+    shadowRGB: '255,80,80', // r,g,b tuple for glow; alpha applied per-state
+    rearmMs: 1200,         // re-enable delay after a buy click
     confirmMessage: '',    // optional confirmation prompt; empty = no confirm
   };
 }
@@ -32,11 +35,15 @@ export function resolveConfig(model = {}) {
   /* Wave UD — baseline → per-kind context override → explicit GDD. */
   let cfg = applyGridProfile('bonusBuy', defaultConfig(), model);
   const m = model.bonusBuy || {};
+  const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (Number.isFinite(m.costX)) cfg.costX = clampInt(m.costX, 1, 10000);
   if (typeof m.label === 'string' && m.label.length > 0 && m.label.length <= 24) cfg.label = m.label;
   if (Number.isFinite(m.forceScatters)) cfg.forceScatters = clampInt(m.forceScatters, 3, 12);
-  if (typeof m.color === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(m.color)) cfg.color = m.color;
+  if (typeof m.color === 'string' && HEX_RE.test(m.color)) cfg.color = m.color;
+  if (typeof m.colorDark === 'string' && HEX_RE.test(m.colorDark)) cfg.colorDark = m.colorDark;
+  if (typeof m.shadowRGB === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(m.shadowRGB)) cfg.shadowRGB = m.shadowRGB;
+  if (Number.isFinite(m.rearmMs)) cfg.rearmMs = clampInt(m.rearmMs, 100, 10000);
   if (typeof m.confirmMessage === 'string' && m.confirmMessage.length <= 200) cfg.confirmMessage = m.confirmMessage;
 
   // Auto-enable when bonus_buy feature is detected (but only when the
@@ -68,7 +75,7 @@ export function emitBonusBuyCSS(cfg = defaultConfig()) {
   bottom: auto;
   right: auto;
   z-index: 55;             /* under universalForcePanel (60) and toasts */
-  background: linear-gradient(135deg, ${cfg.color}, #b03030);
+  background: linear-gradient(135deg, ${cfg.color}, ${cfg.colorDark});
   color: #fff;
   border: 2px solid rgba(255,255,255,.4);
   border-radius: 14px;
@@ -84,7 +91,7 @@ export function emitBonusBuyCSS(cfg = defaultConfig()) {
   text-orientation: mixed;
   min-height: 120px;
   max-width: 44px;
-  box-shadow: 0 4px 18px rgba(255,80,80,.5), inset 0 1px 0 rgba(255,255,255,.4);
+  box-shadow: 0 4px 18px rgba(${cfg.shadowRGB},.5), inset 0 1px 0 rgba(255,255,255,.4);
   transition: transform .12s, box-shadow .12s, opacity .12s;
   display: flex;
   flex-direction: column;
@@ -94,7 +101,7 @@ export function emitBonusBuyCSS(cfg = defaultConfig()) {
 }
 .bonus-buy-btn:hover {
   transform: translateY(-50%) translateX(2px);
-  box-shadow: 0 6px 22px rgba(255,80,80,.7), inset 0 1px 0 rgba(255,255,255,.5);
+  box-shadow: 0 6px 22px rgba(${cfg.shadowRGB},.7), inset 0 1px 0 rgba(255,255,255,.5);
 }
 .bonus-buy-btn:active { transform: translateY(-50%) translateX(0); }
 .bonus-buy-btn .cost {
@@ -126,6 +133,10 @@ export function emitBonusBuyCSS(cfg = defaultConfig()) {
   .bonus-buy-btn:active { transform: translateY(0); }
   .bonus-buy-btn .cost { font-size: 0.7rem; letter-spacing: 0.02em; margin-top: 2px; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .bonus-buy-btn, .bonus-buy-btn:hover, .bonus-buy-btn:active { transition: none; transform: translateY(-50%); }
+}
 `;
 }
 
@@ -142,10 +153,12 @@ export function emitBonusBuyRuntime(cfg = defaultConfig()) {
   const CONFIRM = cfg.confirmMessage ? JSON.stringify(cfg.confirmMessage) : 'null';
   const FORCE_N = cfg.forceScatters;
   return `/* ─── bonus buy runtime ──────────────────────────────────────── */
+const REARM_MS = ${cfg.rearmMs};
 const BONUS_BUY_COST_X = ${cfg.costX};
 const BONUS_BUY_FORCE_SCATTERS = ${FORCE_N};
 const BONUS_BUY_CONFIRM = ${CONFIRM};
 
+/* perf budget: < 1ms click handler, < 16ms layout */
 (function wireBonusBuy(){
   const btn = document.getElementById('bonusBuyBtn');
   if (!btn) return;
@@ -154,19 +167,26 @@ const BONUS_BUY_CONFIRM = ${CONFIRM};
     if (BONUS_BUY_CONFIRM) {
       if (!window.confirm(BONUS_BUY_CONFIRM)) return;
     }
-    if (typeof FORCE_TRIGGER === 'undefined') return;
     /* 2026-06-09 — Boki bug: was FORCE_TRIGGER = BONUS_BUY_FORCE_SCATTERS
        (a plain number). The reelEngine commitStopSymbols reads
        FORCE_TRIGGER.scatterCount — a number has no .scatterCount property,
        so the buy click silently produced ZERO planted scatters and the FS
        trigger never fired. Engine contract: { scatterCount: <int> }. */
     var _plant = { scatterCount: BONUS_BUY_FORCE_SCATTERS };
-    FORCE_TRIGGER = _plant;
     if (typeof window !== 'undefined') window.FORCE_TRIGGER = _plant;
+    if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
+      HookBus.emit('bonus.buy.requested', { scatterCount: BONUS_BUY_FORCE_SCATTERS, costX: BONUS_BUY_COST_X });
+    }
     if (typeof runOneBaseSpin === 'function') runOneBaseSpin();
     btn.setAttribute('disabled', 'disabled');
-    setTimeout(() => btn.removeAttribute('disabled'), 1200);
+    setTimeout(() => btn.removeAttribute('disabled'), REARM_MS);
   });
+  if (typeof HookBus !== 'undefined' && typeof HookBus.subscribe === 'function') {
+    HookBus.subscribe('fsm.phase.changed', (e) => {
+      if (e && e.phase === 'BASE') btn.removeAttribute('disabled');
+      else btn.setAttribute('disabled', 'disabled');
+    });
+  }
 })();
 
 if (typeof window !== 'undefined') {

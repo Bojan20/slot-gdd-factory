@@ -181,8 +181,15 @@ export function emitPlinkoSpinEngineRuntime(cfg = defaultConfig()) {
       ball.style.transform = 'translate(' + start.x + 'px, ' + start.y + 'px)';
       ball.classList.add('is-armed');
       void ball.offsetWidth;
-      ball.style.transition =
-        'transform ' + _stepMs + 'ms cubic-bezier(0.5, 0, 0.6, 1), opacity 80ms ease';
+      /* Fable audit (critical): inline transition style overrode the
+       * @media (prefers-reduced-motion: reduce) CSS rule that should
+       * disable animation for accessibility. Honor the user setting
+       * before re-arming the transition. */
+      var _reducedMotion = (typeof window !== 'undefined' && window.matchMedia
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      ball.style.transition = _reducedMotion
+        ? 'none'
+        : 'transform ' + _stepMs + 'ms cubic-bezier(0.5, 0, 0.6, 1), opacity 80ms ease';
 
       STATE.dropping = true;
       STATE.pending = onSettled || null;

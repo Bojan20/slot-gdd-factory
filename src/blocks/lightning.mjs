@@ -46,7 +46,16 @@ export function resolveConfig(model = {}) {
   if (Number.isFinite(m.triggerChance)) cfg.triggerChance = clampFloat(m.triggerChance, 0, 1);
   if (Number.isFinite(m.minStrikes)) cfg.minStrikes = clampInt(m.minStrikes, 1, 25);
   if (Number.isFinite(m.maxStrikes)) cfg.maxStrikes = clampInt(m.maxStrikes, cfg.minStrikes, 36);
-  if (Array.isArray(m.multipliers) && m.multipliers.every(p => p && Number.isFinite(p.value) && Number.isFinite(p.weight))) {
+  /* Fable audit (critical): if GDD raises minStrikes ABOVE the default
+   * maxStrikes (e.g. { minStrikes: 10 }) without supplying max, the
+   * documented `min ≤ max` contract was silently violated, collapsing
+   * picker range to a single value. Hoist max to ≥ new min. */
+  if (cfg.maxStrikes < cfg.minStrikes) cfg.maxStrikes = cfg.minStrikes;
+  if (Array.isArray(m.multipliers) && m.multipliers.length > 0 &&
+      m.multipliers.every(p => p && Number.isFinite(p.value) && Number.isFinite(p.weight))) {
+    /* Fable audit (high): the .every() check was vacuously true on an
+     * empty array → defaults overwritten with [] → _litDrawMult returned
+     * undefined → ×undefined tags + NaN payout. Require length > 0. */
     cfg.multipliers = m.multipliers.slice(0, 16).map(p => ({
       value: clampInt(p.value, 1, 10000),
       weight: clampInt(p.weight, 1, 1000),

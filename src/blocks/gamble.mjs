@@ -236,12 +236,12 @@ if (typeof HookBus !== 'undefined') {
     if (duringFs) return; /* gamble is BASE-only — don't offer during FS */
     if (!Array.isArray(events) || events.length === 0) return;
     const totalX = events.reduce((a, e) => a + (Number(e && e.payX) || 0), 0);
-    if (totalX > 0 && !GAMBLE_STATE.open) {
+    if (totalX > 0 && !GAMBLE_STATE.active) {
       try { gambleOpen(totalX); } catch (e) { /* defensive */ }
     }
   });
-  HookBus.on('onFsTrigger', () => { if (GAMBLE_STATE.open) gambleCollect(); });
-  HookBus.on('onFsEnd',     () => { if (GAMBLE_STATE.open) gambleCollect(); });
+  HookBus.on('onFsTrigger', () => { if (GAMBLE_STATE.active) gambleCollect(); });
+  HookBus.on('onFsEnd',     () => { if (GAMBLE_STATE.active) gambleCollect(); });
   /* 2026-06-10 (Boki: "gamble takodje [ne radi]") — UFP chip emits
    * onForceFeatureRequested but gamble never had a listener, so clicking
    * GAMBLE chip just painted a banner without opening the modal. Open

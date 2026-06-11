@@ -103,8 +103,9 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
+  const src = model || {};
   const cfg = defaultConfig();
-  const m = (model && model.balanceHud) || {};
+  const m = src.balanceHud || {};
 
   if (m.enabled != null) cfg.enabled = !!m.enabled;
 
@@ -117,6 +118,9 @@ export function resolveConfig(model = {}) {
     cfg.fallbackBet = Math.max(0.01, Math.min(10000, Number(m.fallbackBet)));
   }
 
+  /* Industry currency codes ('CHF', 'USD') and single-glyph symbols ('€',
+   * '¥', '₿') both must be accepted; only over-long blobs ('EUROZONE')
+   * and empty strings are rejected. */
   if (typeof m.currency === 'string' && m.currency.length > 0 && m.currency.length <= 4) {
     cfg.currency = m.currency;
   }
@@ -129,8 +133,11 @@ export function resolveConfig(model = {}) {
   if (m.pulseOnChange != null)         cfg.pulseOnChange         = !!m.pulseOnChange;
 
   for (const key of ['accentColor', 'debitColor', 'creditColor']) {
-    if (typeof m[key] === 'string' && /^\d{1,3},\s*\d{1,3},\s*\d{1,3}$/.test(m[key])) {
-      cfg[key] = m[key].replace(/\s+/g, '');
+    if (typeof m[key] === 'string') {
+      const m3 = m[key].match(/^(\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})$/);
+      if (m3) {
+        cfg[key] = [m3[1], m3[2], m3[3]].map(n => Math.max(0, Math.min(255, +n))).join(',');
+      }
     }
   }
   if (typeof m.ariaLabel === 'string' && m.ariaLabel.length > 0 && m.ariaLabel.length <= 64) {
@@ -138,8 +145,8 @@ export function resolveConfig(model = {}) {
   }
 
   /* Auto-disable when GDD explicitly opts out (dev-only / kiosk demo). */
-  if (model.features && Array.isArray(model.features)) {
-    const explicitlyOff = model.features.some(
+  if (src.features && Array.isArray(src.features)) {
+    const explicitlyOff = src.features.some(
       (f) => f && typeof f.kind === 'string' && /^(no[_-]?balance[_-]?hud|balance[_-]?hud[_-]?disabled)$/i.test(f.kind),
     );
     if (explicitlyOff) cfg.enabled = false;
@@ -157,9 +164,35 @@ function _escape(s) {
     .replace(/'/g, '&#39;');
 }
 
+const STYLE = {
+  GAP_PX: 4,
+  COL_PAD: '4px 12px',
+  RADIUS_PX: 10,
+  BORDER_ALPHA: 0.18,
+  BG_TRANSITION_MS: 280,
+  LABEL_REM: 0.7,
+  LABEL_LS_PX: 1.8,
+  VALUE_REM: 0.95,
+  VALUE_WEIGHT: 800,
+  ZERO_OPACITY: 0.55,
+  PULSE_BG_START_A: 0.35,
+  PULSE_BG_END_A: 0.12,
+  DEBIT_PULSE_MS: 420,
+  CREDIT_PULSE_MS: 520,
+  MOB_COL_PAD: '3px 6px',
+  MOB_GAP_PX: 2,
+  MOB_LABEL_LS_PX: 1.4,
+  MOB_VALUE_REM: 0.85,
+  NARROW_COL_PAD: '2px 3px',
+  NARROW_GAP_PX: 1,
+  NARROW_LABEL_LS_PX: 0.5,
+  NARROW_LABEL_REM: 0.65,
+  NARROW_VALUE_REM: 0.78,
+};
+
 export function emitBalanceHudCSS(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  const c = resolveConfig({ balanceHud: cfg });
+  const c = cfg;
   return `
   /* ── balanceHud BLOCK — emitted by src/blocks/balanceHud.mjs ─────────
      Hub-bar widget: BALANCE | BET | WIN columns with proper currency.
@@ -168,7 +201,7 @@ export function emitBalanceHudCSS(cfg = defaultConfig()) {
   .balance-hud {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: ${STYLE.GAP_PX}px;
     color: rgb(${c.accentColor});
     font-variant-numeric: tabular-nums;
   }
@@ -177,48 +210,48 @@ export function emitBalanceHudCSS(cfg = defaultConfig()) {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 4px 12px;
-    border-radius: 10px;
-    border: 1px solid rgba(201, 162, 39, 0.18);
+    padding: ${STYLE.COL_PAD};
+    border-radius: ${STYLE.RADIUS_PX}px;
+    border: 1px solid rgba(201, 162, 39, ${STYLE.BORDER_ALPHA});
     background: linear-gradient(180deg, rgba(30, 25, 20, 0.65), rgba(15, 12, 10, 0.85));
     min-width: 0;
     flex: 1 1 0;
     overflow: hidden;
-    transition: background-color 280ms ease-out;
+    transition: background-color ${STYLE.BG_TRANSITION_MS}ms ease-out;
   }
   .balance-hud__label {
     /* Wave UQ — typography floor 11px (Apple HIG min readable). */
-    font-size: 0.7rem;
-    letter-spacing: 1.8px;
+    font-size: ${STYLE.LABEL_REM}rem;
+    letter-spacing: ${STYLE.LABEL_LS_PX}px;
     text-transform: uppercase;
     color: rgb(${c.accentColor});
     opacity: 0.6;
     line-height: 1;
   }
   .balance-hud__value {
-    font-size: 0.95rem;
-    font-weight: 800;
+    font-size: ${STYLE.VALUE_REM}rem;
+    font-weight: ${STYLE.VALUE_WEIGHT};
     color: rgb(${c.accentColor});
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
     margin-top: 2px;
     line-height: 1.1;
   }
   .balance-hud__col--win .balance-hud__value { color: rgb(${c.creditColor}); }
-  .balance-hud__col--win .balance-hud__value.is-zero { color: rgb(${c.accentColor}); opacity: 0.55; }
+  .balance-hud__col--win .balance-hud__value.is-zero { color: rgb(${c.accentColor}); opacity: ${STYLE.ZERO_OPACITY}; }
 
   ${c.pulseOnChange ? `
   .balance-hud__col.is-debit-pulse {
-    animation: balanceDebitPulse 420ms ease-out 1;
+    animation: balanceDebitPulse ${STYLE.DEBIT_PULSE_MS}ms ease-out 1;
   }
   .balance-hud__col.is-credit-pulse {
-    animation: balanceCreditPulse 520ms ease-out 1;
+    animation: balanceCreditPulse ${STYLE.CREDIT_PULSE_MS}ms ease-out 1;
   }
   @keyframes balanceDebitPulse {
-    0%   { background: linear-gradient(180deg, rgba(${c.debitColor}, 0.35), rgba(${c.debitColor}, 0.12)); }
+    0%   { background: linear-gradient(180deg, rgba(${c.debitColor}, ${STYLE.PULSE_BG_START_A}), rgba(${c.debitColor}, ${STYLE.PULSE_BG_END_A})); }
     100% { background: linear-gradient(180deg, rgba(30, 25, 20, 0.65), rgba(15, 12, 10, 0.85)); }
   }
   @keyframes balanceCreditPulse {
-    0%   { background: linear-gradient(180deg, rgba(${c.creditColor}, 0.35), rgba(${c.creditColor}, 0.12)); }
+    0%   { background: linear-gradient(180deg, rgba(${c.creditColor}, ${STYLE.PULSE_BG_START_A}), rgba(${c.creditColor}, ${STYLE.PULSE_BG_END_A})); }
     100% { background: linear-gradient(180deg, rgba(30, 25, 20, 0.65), rgba(15, 12, 10, 0.85)); }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -228,27 +261,27 @@ export function emitBalanceHudCSS(cfg = defaultConfig()) {
   ` : ''}
 
   @media (max-width: 620px) {
-    .balance-hud__col { padding: 3px 6px; min-width: 0; }
-    .balance-hud { gap: 2px; }
+    .balance-hud__col { padding: ${STYLE.MOB_COL_PAD}; min-width: 0; }
+    .balance-hud { gap: ${STYLE.MOB_GAP_PX}px; }
     /* Wave UQ — mobile typography floor 11px. */
-    .balance-hud__label { font-size: 0.7rem; letter-spacing: 1.4px; }
-    .balance-hud__value { font-size: 0.85rem; }
+    .balance-hud__label { font-size: ${STYLE.LABEL_REM}rem; letter-spacing: ${STYLE.MOB_LABEL_LS_PX}px; }
+    .balance-hud__value { font-size: ${STYLE.MOB_VALUE_REM}rem; }
   }
   /* 2026-06-09 — extreme-narrow viewport (iPhone SE 320-390px): tighten
      padding + drop letter-spacing so the 3-column HUD never escapes the
      middle hub cell and overlaps the settings/sound icon on the edges. */
   @media (max-width: 420px) {
-    .balance-hud__col { padding: 2px 3px; }
-    .balance-hud { gap: 1px; }
-    .balance-hud__label { font-size: 0.65rem; letter-spacing: 0.5px; }
-    .balance-hud__value { font-size: 0.78rem; }
+    .balance-hud__col { padding: ${STYLE.NARROW_COL_PAD}; }
+    .balance-hud { gap: ${STYLE.NARROW_GAP_PX}px; }
+    .balance-hud__label { font-size: ${STYLE.NARROW_LABEL_REM}rem; letter-spacing: ${STYLE.NARROW_LABEL_LS_PX}px; }
+    .balance-hud__value { font-size: ${STYLE.NARROW_VALUE_REM}rem; }
   }
 `;
 }
 
 export function emitBalanceHudMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  const c = resolveConfig({ balanceHud: cfg });
+  const c = cfg;
   const safeAria = _escape(c.ariaLabel);
   return `
   <div id="balanceHud" class="balance-hud" role="status" aria-live="polite" aria-label="${safeAria}">
@@ -282,7 +315,7 @@ export function emitBalanceHudRuntime(cfg = defaultConfig()) {
 `;
   }
 
-  const c = resolveConfig({ balanceHud: cfg });
+  const c = cfg;
 
   return `
   /* ── balanceHud BLOCK — emitted by src/blocks/balanceHud.mjs ──────────

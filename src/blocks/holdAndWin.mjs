@@ -931,14 +931,18 @@ function hwForceSeed(orbCount) {
 function hwAfterRespin() {
   if (!HW_STATE.active || HW_STATE.phase !== 'RUNNING') return { ended: false, allLocked: false };
   const added = hwHarvestBonus({ celebrate: true });
+  /* Fable audit (critical): respinsUsed was incremented only on the
+   * else-branch, but a respin where HW_RESET_ON_NEW fires (orb landed,
+   * counter resets) was ALSO consumed by the engine. Summary placard
+   * was under-reporting ("0 respins used" on 10-spin rounds). Always
+   * increment, then conditionally refill or decrement remaining. */
+  HW_STATE.respinsUsed++;
   if (added > 0 && HW_RESET_ON_NEW) {
     HW_STATE.respinsLeft = HW_RESPINS_AWARD;
-    _hwHudUpdate({ pulseRespins: true });
   } else {
     HW_STATE.respinsLeft = Math.max(0, HW_STATE.respinsLeft - 1);
-    HW_STATE.respinsUsed++;
-    _hwHudUpdate({ pulseRespins: true });
   }
+  _hwHudUpdate({ pulseRespins: true });
   const REELS = window.REELS || 5;
   const ROWS  = window.ROWS  || 3;
   const allLocked = HW_STATE.lockedCells.size >= REELS * ROWS;

@@ -54,11 +54,29 @@ export function resolveConfig(model = {}) {
 export function emitClusterPaysEvalRuntime(cfg = defaultConfig()) {
   if (!cfg.enabled) return `/* clusterPaysEval: disabled */`;
   const EDGES = JSON.stringify(cfg.bucketEdges);
+  /* Fable audit (critical): cfg.paytable was accepted in resolveConfig
+   * but never read by the runtime — every cluster-mode GDD silently fell
+   * back to the placeholder linear lookup. Bake the GDD paytable into a
+   * runtime constant so detectClusterWins consults the right curve. */
+  const PAYTABLE = JSON.stringify(cfg.paytable || null);
   return `/* ─── cluster pays evaluator ──────────────────────────────────── */
 const CLUSTER_MIN          = ${cfg.minCluster};
 const CLUSTER_BUCKET_EDGES = ${EDGES};
 const CLUSTER_MAX_EVENTS   = ${cfg.maxEvents};
 const CLUSTER_DIAGONAL     = ${cfg.diagonal ? 'true' : 'false'};
+const CLUSTER_PAYTABLE     = ${PAYTABLE};
+
+function _clusterPayLookup(symbolId, count) {
+  if (!CLUSTER_PAYTABLE || !Array.isArray(CLUSTER_PAYTABLE)) return null;
+  const row = CLUSTER_PAYTABLE.find(p => p && p.symbolId === symbolId);
+  if (!row || !Array.isArray(row.bucketEdges) || !Array.isArray(row.pays)) return null;
+  let bucketIdx = -1;
+  for (let i = 0; i < row.bucketEdges.length; i++) {
+    if (count >= row.bucketEdges[i]) bucketIdx = i; else break;
+  }
+  if (bucketIdx < 0 || bucketIdx >= row.pays.length) return null;
+  return row.pays[bucketIdx];
+}
 
 function _clusterBucketFor(count) {
   /* Returns the highest bucket edge ≤ count. */
@@ -149,7 +167,14 @@ function detectClusterWins() {
       const tierMult = tier === 'HP' ? 1.0 : tier === 'MP' ? 0.5 : tier === 'WILD' ? 2.0 : 0.25;
       const bucketMult = bucket === 'BIG' ? 5 : bucket === 'MED' ? 2 : 1;
       const __bet = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : 1;
-      const payX = Math.min(100, tierMult * e.count * bucketMult) * __bet;
+      /* Fable audit (critical): consult the GDD paytable first; fall
+       * back to the placeholder formula only when no row matches. The
+       * GDD paytable is the regulator-vetted source of truth — silently
+       * ignoring it produced math drift on every cluster-mode game. */
+      const gddPay = _clusterPayLookup(sym, e.count);
+      const payX = gddPay != null
+        ? gddPay * __bet
+        : Math.min(100, tierMult * e.count * bucketMult) * __bet;
       events.push({ ...e, bucket, tier, payX, matchLength: e.count });
     });
   }

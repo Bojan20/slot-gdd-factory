@@ -45,9 +45,18 @@ export function resolveConfig(model = {}) {
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (typeof m.symbolId === 'string' && /^[A-Z]{1,4}$/.test(m.symbolId)) cfg.symbolId = m.symbolId;
   if (Array.isArray(m.distribution) && m.distribution.length > 0) {
-    cfg.distribution = m.distribution
+    /* Fable audit (high): if EVERY supplied entry fails the value>0
+     * filter, the array collapses to [] and pickOrbValue blows up.
+     * Keep the default distribution unless the filter produced ≥1 entry.
+     * Fable audit (low): also reject non-positive weights so a stray
+     * negative doesn't silently bias the picker. */
+    const filtered = m.distribution
       .filter(e => Number.isFinite(e.value) && e.value > 0)
-      .map(e => ({ value: Number(e.value), weight: Number(e.weight) || 1 }));
+      .map(e => {
+        const w = Number(e.weight);
+        return { value: Number(e.value), weight: Number.isFinite(w) && w > 0 ? w : 1 };
+      });
+    if (filtered.length > 0) cfg.distribution = filtered;
   }
   if (m.bonusAccumulate != null) cfg.bonusAccumulate = !!m.bonusAccumulate;
   if (typeof m.chipColor === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(m.chipColor)) cfg.chipColor = m.chipColor;
@@ -193,8 +202,15 @@ if (typeof window !== 'undefined') {
 /* ── HookBus registration — wires Multiplier Orb into the spin lifecycle.
    Without this block the orb is dead code (chips never render, mult never
    applies). Order: onSpinResult annotates → onTumbleStep accumulates →
-   onFsTrigger resets BONUS_MULTIPLIER between FS rounds. */
-if (typeof HookBus !== 'undefined') {
+   onFsTrigger resets BONUS_MULTIPLIER between FS rounds.
+
+   Fable audit (high): re-emit of this runtime (hot-reload, re-bake,
+   dev-mode HMR) would otherwise stack listeners → annotateOrbs runs N×
+   per spin → BONUS_MULTIPLIER += total fires N× → RTP drifts upward.
+   Sentinel flag is idempotent across reloads. */
+if (typeof HookBus !== 'undefined' &&
+    !(typeof window !== 'undefined' && window.__MULTIPLIER_ORB_WIRED__)) {
+  if (typeof window !== 'undefined') window.__MULTIPLIER_ORB_WIRED__ = true;
   /* On every settled grid (BASE + each FS spin): chip render + pulse. */
   HookBus.on('onSpinResult', () => {
     annotateOrbs();

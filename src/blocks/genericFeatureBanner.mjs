@@ -92,6 +92,11 @@ const DEFAULTS = Object.freeze({
   /** Kinds this banner is allowed to handle. If undefined, banner only
    *  fires for kinds without a dedicated block (default and safest). */
   handleKinds: 'auto',
+  /* Fable audit (critical): the multiplier force-chip baked the literal
+   * `HookBus.setMult(3)` into the emitted runtime — a hidden magic number
+   * for what's effectively a balance knob. Now GDD-tunable, clamped in
+   * resolveConfig (1..1000). */
+  forceMultiplierValue: 3,
 });
 
 export function defaultConfig() {
@@ -114,6 +119,7 @@ export function resolveConfig(model = {}) {
   if (isPositiveInt(src.dwellMs, 200, 6000)) cfg.dwellMs = src.dwellMs;
   if (isPositiveInt(src.fadeMs,   50,  800)) cfg.fadeMs  = src.fadeMs;
   if (src.handleKinds === 'auto' || isKindArray(src.handleKinds)) cfg.handleKinds = src.handleKinds;
+  if (isPositiveInt(src.forceMultiplierValue, 1, 1000)) cfg.forceMultiplierValue = src.forceMultiplierValue;
 
   return cfg;
 }
@@ -265,7 +271,7 @@ export function emitGenericFeatureBannerRuntime(cfg = defaultConfig()) {
          single chip click affects exactly the next spin. */
       try {
         if (k === 'multiplier' && typeof HookBus.setMult === 'function') {
-          HookBus.setMult(3);
+          HookBus.setMult(${c.forceMultiplierValue});
           window.__FORCE_MULT_ONESHOT__ = true;
         } else if (k === 'cascade') {
           window.__FORCE_CASCADE_ONESHOT__ = true;

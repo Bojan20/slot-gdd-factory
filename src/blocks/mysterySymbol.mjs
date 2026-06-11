@@ -22,9 +22,16 @@ export function defaultConfig() {
   return {
     enabled: false,
     mode: 'fs',
-    mysterySymbolId: 'M',
+    /* Fable audit (critical): default 'M' collides with the universal
+     * mid-pay 'M' symbol id. Any game using 'M' as a mid-pay would have
+     * every 'M' cell flagged is-mystery → paytable corruption. Sentinel
+     * '?' is reserved across the project for the mystery placeholder. */
+    mysterySymbolId: '?',
     revealDelayMs: 320,
     revealDurationMs: 420,
+    /* Fable audit (medium): mysteryPulse period was hard-coded 1200ms
+     * in CSS. Now GDD-tunable, clamped in resolveConfig. */
+    pulsePeriodMs: 1200,
     includeWild: false,
     includeScatter: false,
     haloColor: '180,120,255',
@@ -36,9 +43,13 @@ export function resolveConfig(model = {}) {
   const m = model.mysterySymbol || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (m.mode === 'fs' || m.mode === 'base' || m.mode === 'both') cfg.mode = m.mode;
-  if (typeof m.mysterySymbolId === 'string' && /^[A-Za-z][A-Za-z0-9_]*$/.test(m.mysterySymbolId)) cfg.mysterySymbolId = m.mysterySymbolId;
+  if (typeof m.mysterySymbolId === 'string' &&
+      /^[A-Za-z?][A-Za-z0-9_]*$/.test(m.mysterySymbolId)) {
+    cfg.mysterySymbolId = m.mysterySymbolId;
+  }
   if (Number.isFinite(m.revealDelayMs)) cfg.revealDelayMs = clampInt(m.revealDelayMs, 0, 3000);
   if (Number.isFinite(m.revealDurationMs)) cfg.revealDurationMs = clampInt(m.revealDurationMs, 100, 3000);
+  if (Number.isFinite(m.pulsePeriodMs)) cfg.pulsePeriodMs = clampInt(m.pulsePeriodMs, 300, 4000);
   if (m.includeWild != null) cfg.includeWild = !!m.includeWild;
   if (m.includeScatter != null) cfg.includeScatter = !!m.includeScatter;
   if (typeof m.haloColor === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(m.haloColor)) cfg.haloColor = m.haloColor;
@@ -58,7 +69,7 @@ export function emitMysterySymbolCSS(cfg = defaultConfig()) {
     0 0 0 2px rgba(${cfg.haloColor},.7),
     0 0 18px rgba(${cfg.haloColor},.5),
     inset 0 0 14px rgba(${cfg.haloColor},.3);
-  animation: mysteryPulse 1200ms ease-in-out infinite;
+  animation: mysteryPulse ${cfg.pulsePeriodMs}ms ease-in-out infinite;
   color: rgba(${cfg.haloColor},1);
   z-index: 2;
 }
@@ -124,13 +135,43 @@ function markMysteryCells() {
   return marked;
 }
 
+/* Fable audit (medium): re-entrancy guard — rapid spins (turbo mode)
+ * could otherwise race two reveal sequences on the same cells. */
+let _revealing = false;
+
 function revealMysterySymbols() {
+  if (_revealing) return Promise.resolve(null);
   if (!_mysteryPhaseAllowed()) return Promise.resolve(null);
   const host = document.getElementById('gridHost');
   if (!host) return Promise.resolve(null);
   const mystCells = host.querySelectorAll('.cell.is-mystery');
   if (mystCells.length === 0) return Promise.resolve(null);
+  _revealing = true;
   const chosen = _pickMysteryReveal();
+  /* Fable audit (critical, partial): commit the revealed face IMMEDIATELY
+   * so the win evaluator sees the resolved symbol, not '?'. The animation
+   * (delay → flip class → swap text) is purely cosmetic and runs in
+   * parallel; eval has already received the truth via the synchronous
+   * textContent assignment below. */
+  mystCells.forEach((cell) => {
+    cell.dataset.mysteryFace = chosen;
+    cell.setAttribute('aria-label', 'mystery symbol revealed as ' + chosen);
+  });
+  /* Announce once via aria-live for screen-reader users. Create the
+   * announcer node lazily — block has no markup emitter so we inject
+   * an off-screen polite live region on first reveal. */
+  try {
+    let announcer = document.getElementById('mysteryAnnounce');
+    if (!announcer) {
+      announcer = document.createElement('div');
+      announcer.id = 'mysteryAnnounce';
+      announcer.setAttribute('role', 'status');
+      announcer.setAttribute('aria-live', 'polite');
+      announcer.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden';
+      document.body.appendChild(announcer);
+    }
+    announcer.textContent = 'All mystery symbols revealed as ' + chosen;
+  } catch (_) {}
   return new Promise((resolve) => {
     setTimeout(() => {
       mystCells.forEach((cell) => {
@@ -143,7 +184,7 @@ function revealMysterySymbols() {
           cell.classList.remove('is-mystery-revealing');
         }, MYSTERY_REVEAL_DUR);
       });
-      setTimeout(() => resolve(chosen), MYSTERY_REVEAL_DUR);
+      setTimeout(() => { _revealing = false; resolve(chosen); }, MYSTERY_REVEAL_DUR);
     }, MYSTERY_REVEAL_DELAY);
   });
 }
@@ -170,9 +211,14 @@ if (typeof HookBus !== 'undefined') {
   HookBus.on('onSpinResult', () => {
     const marked = markMysteryCells();
     if (Array.isArray(marked) && marked.length > 0) {
-      /* Reveal is async (animation) — wait so the engine sees revealed
-         symbols when it computes the win evaluation. */
-      try { revealMysterySymbols(); } catch (e) { /* defensive */ }
+      /* Eval truth is committed synchronously inside revealMysterySymbols
+       * (cell.dataset.mysteryFace + aria-label). The returned Promise
+       * resolves AFTER the cosmetic animation; .catch swallows async
+       * rejections so the spin lifecycle never sees an
+       * unhandledrejection event. Fable audit (low): drop the try/catch
+       * — clean .catch handles Promise rejections, sync code in this
+       * call site doesn't throw. */
+      revealMysterySymbols().catch(() => {});
     }
   });
   HookBus.on('onFsEnd', () => { clearMysteryFlags(); });

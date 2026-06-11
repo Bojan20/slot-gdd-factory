@@ -12,7 +12,7 @@ function t(name, ok) { if (ok) { pass++; console.log('  ✓ ' + name); } else { 
 console.log('\n=== mysterySymbol block ===');
 const d = defaultConfig();
 t('disabled by default', d.enabled === false);
-t('default mysterySymbolId=M', d.mysterySymbolId === 'M');
+t('default mysterySymbolId=? (Fable audit AL-5.1: avoid M collision)', d.mysterySymbolId === '?');
 t('default revealDelayMs=320', d.revealDelayMs === 320);
 t('default includeWild=false', d.includeWild === false);
 

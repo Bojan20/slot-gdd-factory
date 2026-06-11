@@ -76,14 +76,35 @@
  *
  * Runtime contract (after emitted JS executes):
  *
- *   window.__BIG_WIN_TIER__              current tier (0=none, 1..5)
- *   window.bigWinTierEnter(tier)         programmatic enter (test hook)
- *   window.bigWinTierExit(reason)        programmatic exit (test hook)
- *   window.BIG_WIN_TIER_STATE            { current, x, label, timers[] }
+ *   window.__BIG_WIN_TIER__                current tier (0=none, 1..5)
+ *   window.bigWinTierEnter(tier, award?)   programmatic enter (test hook).
+ *                                          When `award` is omitted, a
+ *                                          synthesised value of
+ *                                          thresholds[tier-1] × 1.5 × bet
+ *                                          is used so the visual ladder
+ *                                          still walks — this differs
+ *                                          from the real money figure, so
+ *                                          external integrations meant to
+ *                                          drive the counter MUST pass
+ *                                          their own `award`.
+ *   window.bigWinTierExit(reason)          programmatic exit (test hook)
+ *   window.BIG_WIN_TIER_STATE              { current, x, label, timers[] }
  *
  *   HookBus events:
  *     onBigWinTierEntered { tier, x, label, durationMs }    (this block owns)
  *     onBigWinTierExited  { tier, reason }                  (this block owns)
+ *
+ * Performance budget:
+ *
+ *   ≤1 rAF callback per frame during the money count-up ramp (single
+ *   `_countUpLinear` step loop, no parallel rAFs); ≤1 DOM write per
+ *   ResizeObserver burst (coalesced through `_scheduleSync` rAF); at most
+ *   (finalTier − 1) outstanding tier-promotion setTimeout handles + one
+ *   fade-in handle + one label-swap handle per active tier (cleared on
+ *   skip / preSpin via `_clearTimers`); target ≤2 ms main-thread cost per
+ *   `_emitEntered` / `_emitExited` emit (pure HookBus dispatch — no DOM
+ *   work in the emit path). Aria announcement fires exactly once per
+ *   sequence (no per-frame announcer churn).
  *
  * Composition contract:
  *
@@ -116,6 +137,18 @@
 const TIER_COUNT = 5;
 const BIG_WIN_TIER_MIN = 1;
 const BIG_WIN_TIER_MAX = TIER_COUNT;
+
+/* Named timing + bounds constants (Boki rule: "0 magic numbers"). The CSS
+ * tier-morph transition and the runtime label-swap timer MUST share the
+ * same source so tuning fadeMs alone never leaves the morph mis-aligned. */
+const LABEL_SWAP_MS        = 220;     /* label cross-fade swap on tier promotion */
+const TIER_MORPH_MS        = 600;     /* color/font-size/filter morph between tier classes */
+const SKIP_GLIMPSE_MS      = 180;     /* climax visibility window after skip before fade-out */
+const RAF_FALLBACK_MS      = 16;      /* setTimeout fallback when requestAnimationFrame missing */
+const MIN_TIER_DURATION_MS = 400;     /* per-tier duration lower bound */
+const MAX_TIER_DURATION_MS = 20000;   /* per-tier duration upper bound */
+const MAX_LABEL_LEN        = 32;      /* GDD label string cap */
+const MAX_CURRENCY_LEN     = 4;       /* currency symbol cap (e.g. "USD ") */
 
 /** Frozen tier IDs surface — used by tests + by downstream listeners that
  *  need to clamp/validate. Keeping this exported as a frozen array is the
@@ -180,20 +213,15 @@ export function resolveConfig(model = {}) {
 
   if (m.enabled != null) cfg.enabled = !!m.enabled;
 
-  /* 2026-06-09 — Boki bug fix: big-win-tier was the only force chip that
-   * silently did nothing on partner GDDs (the UFP `alwaysIncludeKinds`
-   * pinned the chip ON, but bigWinTier.enabled stayed false → click set
-   * `__FORCE_BIG_WIN_TIER__` but the runtime stub no-op'd it). Big-win
-   * celebration is a baseline slot feature — every commercial slot has
-   * one. Default to ON unless the GDD explicitly disables it (regulator
-   * opt-out path still honored: { bigWinTier: { enabled: false } } wins).
-   * Also auto-enable on docstring contract for explicit feature kinds. */
+  /* Default OFF (per docstring contract). Auto-enable only when the GDD
+   * declares an explicit feature kind that maps to this block. The
+   * regulator opt-out path is the explicit { bigWinTier: { enabled: false } }
+   * branch above; the explicit { enabled: true } branch is the opt-in. */
   if (m.enabled == null) {
     const features = Array.isArray(model && model.features) ? model.features : [];
     const BW_PATTERN = /^(big[_-]?win([_-]?tier)?|win[_-]?ladder)$/i;
     const detected = features.some(f => f && typeof f.kind === 'string' && BW_PATTERN.test(f.kind));
-    /* Auto-on whenever the feature is detected OR the GDD did not opt out. */
-    cfg.enabled = detected ? true : true;
+    cfg.enabled = detected;
   }
 
   /* Threshold array — must be exactly TIER_COUNT, strictly ascending,
@@ -209,13 +237,13 @@ export function resolveConfig(model = {}) {
   }
 
   if (Array.isArray(m.labels) && m.labels.length === TIER_COUNT) {
-    const ls = m.labels.map(v => (typeof v === 'string' && v.length > 0 && v.length <= 32) ? v : null);
+    const ls = m.labels.map(v => (typeof v === 'string' && v.length > 0 && v.length <= MAX_LABEL_LEN) ? v : null);
     if (ls.every(Boolean)) cfg.labels = ls;
   }
 
   if (Array.isArray(m.durations) && m.durations.length === TIER_COUNT) {
     const ds = m.durations.map(v => Number(v));
-    if (ds.every(v => Number.isFinite(v) && v >= 400 && v <= 20000)) cfg.durations = ds;
+    if (ds.every(v => Number.isFinite(v) && v >= MIN_TIER_DURATION_MS && v <= MAX_TIER_DURATION_MS)) cfg.durations = ds;
   }
 
   if (Array.isArray(m.colors) && m.colors.length === TIER_COUNT) {
@@ -238,25 +266,17 @@ export function resolveConfig(model = {}) {
    * (Boki UX rule: the banner counter MUST read identically to the win
    * column in the HUD — same symbol, same position). */
   const bh = (model && model.balanceHud) || {};
-  if (typeof bh.currency === 'string' && bh.currency.length > 0 && bh.currency.length <= 4) {
+  if (typeof bh.currency === 'string' && bh.currency.length > 0 && bh.currency.length <= MAX_CURRENCY_LEN) {
     cfg.currency = bh.currency;
   }
   if (bh.currencyPosition === 'prefix' || bh.currencyPosition === 'suffix') {
     cfg.currencyPosition = bh.currencyPosition;
   }
-  if (typeof m.currency === 'string' && m.currency.length > 0 && m.currency.length <= 4) {
+  if (typeof m.currency === 'string' && m.currency.length > 0 && m.currency.length <= MAX_CURRENCY_LEN) {
     cfg.currency = m.currency;
   }
   if (m.currencyPosition === 'prefix' || m.currencyPosition === 'suffix') {
     cfg.currencyPosition = m.currencyPosition;
-  }
-
-  /* Auto-enable when GDD declares a feature kind that maps to this block. */
-  if (Array.isArray(model.features)) {
-    const hit = model.features.some(f =>
-      f && typeof f.kind === 'string' && /^(big[_-]?win[_-]?tier|win[_-]?ladder|big[_-]?win[_-]?ladder)$/i.test(f.kind)
-    );
-    if (hit) cfg.enabled = true;
   }
 
   return cfg;
@@ -354,13 +374,14 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
     max-height: 96%;
     /* Smooth tier morph: when data-tier flips during the walkthrough,
      * font-size + filter glow + color tween continuously. Counter never
-     * pauses. */
-    transition: color 600ms ease, font-size 600ms ease, filter 600ms ease;
+     * pauses. Timing is hoisted (TIER_MORPH_MS) so the runtime label-swap
+     * timer (LABEL_SWAP_MS) stays in lockstep with the CSS morph. */
+    transition: color ${TIER_MORPH_MS}ms ease, font-size ${TIER_MORPH_MS}ms ease, filter ${TIER_MORPH_MS}ms ease;
   }
   .big-win-tier-banner .big-win-tier-label {
     display: block;
     line-height: 1;
-    transition: opacity 220ms ease;
+    transition: opacity ${LABEL_SWAP_MS}ms ease;
   }
   .big-win-tier-banner[data-label-swap="true"] .big-win-tier-label { opacity: 0.0; }
   /* Skip-snap mode (Boki 05.06.2026: "Skip treba da u big winu ode na
@@ -466,12 +487,33 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
     .big-win-tier-banner[data-show="enter"],
     .big-win-tier-banner[data-show="exit"] { animation: none; opacity: 1; transform: none; }
   }
+  /* Screen-reader-only live region. Hosts the single end-of-sequence
+   * announcement of the final money amount — the rAF-driven counter
+   * itself is aria-hidden so SR queues never spam thousands of frames. */
+  .big-win-tier-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
 `;
 }
 
 export function emitBigWinTierMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="bigWinTierHost" class="big-win-tier-host" aria-live="polite" aria-atomic="true"></div>`;
+  /* aria-live is NOT on the host (which contains the rAF-driven counter —
+   * announcing every frame would either spam or get dropped). It is on the
+   * dedicated screen-reader-only #bigWinTierAnnounce node, which receives
+   * exactly one update per sequence (the final money amount, after the
+   * endHoldMs steady-state). The visible label gets its own aria-live so
+   * the ~5 tier-name swaps reach the player; the visible amount carries
+   * aria-hidden because the SR-only announce node speaks for it. */
+  return `<div id="bigWinTierHost" class="big-win-tier-host"><div id="bigWinTierAnnounce" class="big-win-tier-sr" role="status" aria-live="polite" aria-atomic="true"></div></div>`;
 }
 
 export function emitBigWinTierRuntime(cfg = defaultConfig()) {
@@ -514,11 +556,14 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
     var LABELS       = ${labels};
     var DURATIONS    = ${durations};
     var SOUND_BUSES  = ${soundBuses};
-    var COMPOUND     = ${cfg.compound};
-    var FADE_MS      = ${cfg.fadeMs};
-    var END_HOLD_MS  = ${cfg.endHoldMs};
-    var CURRENCY     = ${JSON.stringify(cfg.currency)};
-    var CUR_POS      = ${JSON.stringify(cfg.currencyPosition)};
+    var COMPOUND        = ${cfg.compound};
+    var FADE_MS         = ${cfg.fadeMs};
+    var END_HOLD_MS     = ${cfg.endHoldMs};
+    var LABEL_SWAP_MS   = ${LABEL_SWAP_MS};
+    var SKIP_GLIMPSE_MS = ${SKIP_GLIMPSE_MS};
+    var RAF_FALLBACK_MS = ${RAF_FALLBACK_MS};
+    var CURRENCY        = ${JSON.stringify(cfg.currency)};
+    var CUR_POS         = ${JSON.stringify(cfg.currencyPosition)};
 
     var STATE = {
       enabled: true,
@@ -541,6 +586,15 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
 
     function _host()   { return document.getElementById('bigWinTierHost'); }
     function _banner() { return _host() ? _host().querySelector('.big-win-tier-banner') : null; }
+
+    /* _announce — single end-of-sequence SR push. The visible counter
+     * mutates every rAF; we keep that aria-hidden and route ONE update
+     * to the dedicated polite live region after endHoldMs so SR users
+     * hear the final money amount once, not the ramp. */
+    function _announce(text) {
+      var ann = document.getElementById('bigWinTierAnnounce');
+      if (ann) ann.textContent = text;
+    }
 
     function _clearTimers() {
       for (var i = 0; i < STATE.timers.length; i++) {
@@ -593,7 +647,7 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       var swap = setTimeout(function () {
         labelEl.textContent = LABELS[toTier - 1];
         node.removeAttribute('data-label-swap');
-      }, 220);
+      }, LABEL_SWAP_MS);
       STATE.timers.push(swap);
     }
 
@@ -628,9 +682,12 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
 
     function _cleanupHost() {
       var host = _host();
-      if (host) {
-        while (host.firstChild) host.removeChild(host.firstChild);
-      }
+      if (!host) return;
+      /* Remove the banner only — preserve the SR-only announce region
+       * so its end-of-sequence message survives the post-fade teardown
+       * (and so the next sequence doesn't re-mount a duplicate node). */
+      var b = host.querySelector('.big-win-tier-banner');
+      if (b) host.removeChild(b);
     }
 
     /* _currentBet — single source for per-spin stake. Defaults to 1 if
@@ -665,6 +722,12 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
      * compat with audio/test listeners, but it now represents the ABSOLUTE
      * AWARD amount (not the ratio). The ratio can be derived as x / bet. */
     function _runCompound(finalTier, finalAward) {
+      /* Idempotency guard — matches the contract documented on
+       * bigWinTierEnter. A double-fired onWinPresentationEnd (or a stale
+       * presentation cycle racing a fresh spin) must NOT restart the
+       * ladder mid-flight; doing so would double-emit onBigWinTierEntered
+       * and orphan the prior fade-out chain. */
+      if (STATE.walkActive) return;
       _clearTimers();
       STATE.walkActive = true;
       STATE.finalTier  = finalTier;
@@ -738,6 +801,9 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
           return _delay(END_HOLD_MS);
         }).then(function () {
           if (!STATE.walkActive) return;
+          /* Single SR push of the final amount, fired exactly once per
+           * sequence — see _announce() for the rationale. */
+          _announce(_fmtMoney(STATE.finalX));
           /* Single closing fade-out for the whole sequence ("da se
            * fejdoutuje plaketa"). */
           return _fadeOutCurrent();
@@ -750,18 +816,24 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       STATE.timers.push(fadeInDone);
     }
 
-    /* _mountBannerAt — fresh banner mounted at the given tier, fade-in. */
+    /* _mountBannerAt — fresh banner mounted at the given tier, fade-in.
+     * Removes any prior banner but preserves the SR-only announce node. */
     function _mountBannerAt(tier) {
       var host = _host();
       if (!host) return;
-      while (host.firstChild) host.removeChild(host.firstChild);
+      var oldBanner = host.querySelector('.big-win-tier-banner');
+      if (oldBanner) host.removeChild(oldBanner);
       var node = document.createElement('div');
       node.className = 'big-win-tier-banner';
       node.setAttribute('data-tier', String(tier));
       node.setAttribute('data-show', 'enter');
+      /* Label gets aria-live so the ~5 tier-name swaps reach the SR;
+       * amount is aria-hidden because its rAF-driven text would otherwise
+       * spam the queue every frame. The final money announcement is
+       * routed once through #bigWinTierAnnounce after endHoldMs. */
       node.innerHTML =
-        '<span class="big-win-tier-label">' + LABELS[tier - 1] + '</span>' +
-        '<span class="big-win-tier-amount" data-count="0">' + _fmtMoney(0) + '</span>';
+        '<span class="big-win-tier-label" aria-live="polite" aria-atomic="true">' + LABELS[tier - 1] + '</span>' +
+        '<span class="big-win-tier-amount" aria-hidden="true" data-count="0">' + _fmtMoney(0) + '</span>';
       host.appendChild(node);
       var hold = setTimeout(function () {
         if (node && node.parentNode === host) node.setAttribute('data-show', 'hold');
@@ -895,17 +967,19 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
           n.setAttribute('data-tier', String(finalTier));
           n.setAttribute('data-show', 'hold');
           n.innerHTML =
-            '<span class="big-win-tier-label">' + LABELS[finalTier - 1] + '</span>' +
-            '<span class="big-win-tier-amount" data-count="' + finalX + '">' + _fmtMoney(finalX) + '</span>';
+            '<span class="big-win-tier-label" aria-live="polite" aria-atomic="true">' + LABELS[finalTier - 1] + '</span>' +
+            '<span class="big-win-tier-amount" aria-hidden="true" data-count="' + finalX + '">' + _fmtMoney(finalX) + '</span>';
           host.appendChild(n);
         }
       }
       STATE.current = finalTier;
       if (typeof window !== 'undefined') window.__BIG_WIN_TIER__ = finalTier;
       _emitExited({ tier: prevTier, reason: 'skipped' });
+      /* Single SR push of the climax amount before fade — same one-shot
+       * announce contract the natural path uses. */
+      _announce(_fmtMoney(finalX));
       /* Short visibility hold of the climax before fading — long enough
        * to register, short enough not to feel like an ignored skip. */
-      var SKIP_GLIMPSE_MS = 180;
       var t = setTimeout(function () {
         _fadeOutCurrent().then(function () { _finishSequence('skipped'); });
       }, SKIP_GLIMPSE_MS);
@@ -969,7 +1043,7 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
           rafPending = window.requestAnimationFrame(_syncNow);
         } else {
           rafPending = 1;
-          setTimeout(_syncNow, 16);
+          setTimeout(_syncNow, RAF_FALLBACK_MS);
         }
       }
 

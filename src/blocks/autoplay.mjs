@@ -13,8 +13,8 @@
  *       - Stop if cumulative session loss ≥ Z
  *       - Stop if cumulative session win ≥ W
  *   • Each autoplay-driven spin runs through the same lifecycle as a
- *     manual spin — the block simply re-fires the spin button (or directly
- *     invokes `window.runOneBaseSpin`) at the right time.
+ *     manual spin — the block simply fires a `#spinBtn` click at the
+ *     right time.
  *
  * The block ONLY owns autoplay session state + the three new HookBus
  * intent events (onAutoplayStart / onAutoplayTick / onAutoplayStop). It
@@ -48,7 +48,7 @@
  *     stopOnAnyFeatureTrigger, stopOnSingleWinX, stopOnBalanceBelow,
  *     stopOnLossAbove, stopOnWinAbove,
  *     interSpinDelayMs, showCounter,
- *     chipColor, chipTextColor, ariaLabel }
+ *     chipColor, chipTextColor, modalBgColor, ariaLabel }
  *
  * Public API (server-side, ES module):
  *   defaultConfig() / resolveConfig(model)
@@ -60,7 +60,7 @@
  *   autoplayStart(step?)   / autoplayStop(reason?) / autoplayIsActive()
  *   AUTOPLAY_STATE         on window for introspection
  *
- * Runtime dependencies: HookBus, document, setTimeout, window.runOneBaseSpin.
+ * Runtime dependencies: HookBus, document, setTimeout, `#spinBtn` click.
  */
 
 const INDUSTRY_STEPS = Object.freeze([10, 25, 50, 100, 250, 500, 1000]);
@@ -106,6 +106,7 @@ export function defaultConfig() {
     showCounter: true,
     chipColor:     '90,180,255',
     chipTextColor: '255,255,255',
+    modalBgColor:  '14,12,28',
     ariaLabel: 'Auto-spin',
   };
 }
@@ -163,6 +164,9 @@ export function resolveConfig(model = {}) {
   }
   if (typeof m.chipTextColor === 'string' && /^\d{1,3},\s*\d{1,3},\s*\d{1,3}$/.test(m.chipTextColor)) {
     cfg.chipTextColor = m.chipTextColor.replace(/\s+/g, '');
+  }
+  if (typeof m.modalBgColor === 'string' && /^\d{1,3},\s*\d{1,3},\s*\d{1,3}$/.test(m.modalBgColor)) {
+    cfg.modalBgColor = m.modalBgColor.replace(/\s+/g, '');
   }
   if (typeof m.ariaLabel === 'string' && m.ariaLabel.length > 0 && m.ariaLabel.length <= 64) {
     cfg.ariaLabel = m.ariaLabel;
@@ -602,6 +606,9 @@ export function emitAutoplayRuntime(cfg = defaultConfig()) {
       paused: false,           /* paused during FS round */
       pendingStopReason: null, /* set by external events (slam, feature) */
       nextSpinTimerId: null,
+      bwSafetyTimerId: null,   /* setTimeout id of big-win wait safety floor */
+      bwEndHandler: null,      /* onBigWinTierEnd listener so we can off() on stop */
+      returnFocus: null,       /* element to refocus on _hideModal (a11y dialog pattern) */
     };
     if (typeof window !== 'undefined') {
       window.AUTOPLAY_STATE = STATE;
@@ -682,6 +689,8 @@ export function emitAutoplayRuntime(cfg = defaultConfig()) {
       _renderSteps();
       _syncToggle();
       _syncInputs();
+      /* APG dialog pattern: remember who had focus so we can restore it. */
+      STATE.returnFocus = document.activeElement;
       bd.hidden = false;
       /* Move keyboard focus to Start so the player can press Enter. */
       var s = _startBtn();
@@ -690,6 +699,11 @@ export function emitAutoplayRuntime(cfg = defaultConfig()) {
     function _hideModal() {
       var bd = _backdrop();
       if (bd) bd.hidden = true;
+      var rf = STATE.returnFocus;
+      STATE.returnFocus = null;
+      if (rf && typeof rf.focus === 'function') {
+        try { rf.focus(); } catch (_) {}
+      }
     }
     function _isModalOpen() {
       var bd = _backdrop();
@@ -742,6 +756,19 @@ export function emitAutoplayRuntime(cfg = defaultConfig()) {
         clearTimeout(STATE.nextSpinTimerId);
         STATE.nextSpinTimerId = null;
       }
+      /* Cancel any pending big-win safety timer + detach orphan listener
+       * so a stop mid-big-win can't fire _scheduleNextSpin into a
+       * subsequent session (or a later non-autoplay big-win round). */
+      if (STATE.bwSafetyTimerId !== null) {
+        clearTimeout(STATE.bwSafetyTimerId);
+        STATE.bwSafetyTimerId = null;
+      }
+      if (STATE.bwEndHandler !== null) {
+        if (window.HookBus && typeof window.HookBus.off === 'function') {
+          window.HookBus.off('onBigWinTierEnd', STATE.bwEndHandler);
+        }
+        STATE.bwEndHandler = null;
+      }
       var completed = STATE.completed;
       STATE.active = false;
       STATE.pendingStopReason = null;
@@ -787,11 +814,11 @@ export function emitAutoplayRuntime(cfg = defaultConfig()) {
       var loss = RUNTIME_STOP.lossAbove;
       var win  = RUNTIME_STOP.winAbove;
       var bal  = RUNTIME_STOP.balanceBelow;
-      if (swx  !== null && STATE.lastWin   >= swx * BET_UNIT_FB) return 'singleWinAbove';
-      if (loss !== null && STATE.totalLoss >= loss)              return 'lossLimit';
-      if (win  !== null && STATE.totalWin  >= win)               return 'winLimit';
-      if (STOP_BAL_LO  !== null && typeof window.__SLOT_BALANCE__ === 'number'
-          && window.__SLOT_BALANCE__ < STOP_BAL_LO) return 'balanceBelow';
+      if (swx  !== null && STATE.lastWin   >= swx * STATE.lastCost) return 'singleWinAbove';
+      if (loss !== null && STATE.totalLoss >= loss)                 return 'lossLimit';
+      if (win  !== null && STATE.totalWin  >= win)                  return 'winLimit';
+      if (bal  !== null && typeof window.__SLOT_BALANCE__ === 'number'
+          && window.__SLOT_BALANCE__ < bal) return 'balanceBelow';
       return null;
     }
 
@@ -853,6 +880,36 @@ export function emitAutoplayRuntime(cfg = defaultConfig()) {
         if (ev.key === 'Escape' && _isModalOpen()) {
           ev.preventDefault();
           _hideModal();
+        }
+      });
+
+      /* Focus trap — Tab/Shift+Tab cycles focus inside the modal so
+       * keyboard users can't escape into the underlying reels/HUD
+       * (WCAG 2.4.3 / APG dialog pattern). */
+      document.addEventListener('keydown', function (ev) {
+        if (ev.key !== 'Tab' || !_isModalOpen()) return;
+        var modal = _modal();
+        if (!modal) return;
+        var nodes = modal.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        var focusables = [];
+        for (var i = 0; i < nodes.length; i++) {
+          var n = nodes[i];
+          if (n.disabled) continue;
+          if (n.getAttribute && n.getAttribute('aria-hidden') === 'true') continue;
+          if (n.offsetParent === null && n !== document.activeElement) continue;
+          focusables.push(n);
+        }
+        if (focusables.length === 0) return;
+        var first = focusables[0];
+        var last  = focusables[focusables.length - 1];
+        if (ev.shiftKey && document.activeElement === first) {
+          ev.preventDefault();
+          last.focus();
+        } else if (!ev.shiftKey && document.activeElement === last) {
+          ev.preventDefault();
+          first.focus();
         }
       });
     }
@@ -938,15 +995,21 @@ export function emitAutoplayRuntime(cfg = defaultConfig()) {
           var __onBwEnd = function () {
             if (__waitDone) return;
             __waitDone = true;
+            if (STATE.bwSafetyTimerId !== null) {
+              clearTimeout(STATE.bwSafetyTimerId);
+              STATE.bwSafetyTimerId = null;
+            }
             if (window.HookBus && typeof window.HookBus.off === 'function') window.HookBus.off('onBigWinTierEnd', __onBwEnd);
+            STATE.bwEndHandler = null;
             if (!STATE.active || STATE.paused) return;
             _scheduleNextSpin(INTER_SPIN_MS);
           };
+          STATE.bwEndHandler = __onBwEnd;
           if (window.HookBus && typeof window.HookBus.on === 'function') window.HookBus.on('onBigWinTierEnd', __onBwEnd);
           /* Safety floor — if End event never lands (browser tab throttled,
            * upstream block disabled mid-session, etc.) re-schedule after
            * the configured timeout so the autoplay session can recover. */
-          setTimeout(__onBwEnd, BW_WAIT_TO_MS);
+          STATE.bwSafetyTimerId = setTimeout(__onBwEnd, BW_WAIT_TO_MS);
         } else if (__award > 0) {
           _scheduleNextSpin(WIN_HOLD_MS);
         } else {
