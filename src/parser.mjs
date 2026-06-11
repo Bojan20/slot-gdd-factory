@@ -367,6 +367,30 @@ export function extractFreeSpinsConfig(text, model) {
       }
     }
   }
+  /* Pattern (d): PDF flow with MD-rendered compact table — when the GDD
+     uses `| Scatters | Spins awarded |` header followed by `| 3 | 14 |`
+     rows (no "Scattera" word in each row), neither (a) [needs `^`] nor
+     (c) [needs "Scattera"] fires. Wave AL-3 (Boki WoO PDF audit): detect
+     the header context once, then extract consecutive `| N | M |` pairs
+     within the next 400 chars. Bounds 2 ≤ count ≤ 9 and 1 ≤ spins ≤ 200
+     filter out unrelated numeric tables. */
+  if (rows.length === 0) {
+    const hdr = text.match(/\bscatters?\s*\|\s*spins?\s+awarded\b/i);
+    if (hdr) {
+      const scan = text.slice(hdr.index, hdr.index + 600);
+      const cellRow = /\|\s*(\d{1,2})\s*\|\s*(\d{1,3})\s*\|/g;
+      let m3;
+      const seenCounts = new Set();
+      while ((m3 = cellRow.exec(scan)) !== null) {
+        const count = parseInt(m3[1], 10);
+        const spins = parseInt(m3[2], 10);
+        if (count >= 2 && count <= 9 && spins >= 1 && spins <= 200 && !seenCounts.has(count)) {
+          rows.push({ count, spins });
+          seenCounts.add(count);
+        }
+      }
+    }
+  }
   if (rows.length > 0) {
     /* Dedupe by count (keep first occurrence) + sort ascending. */
     const byCount = new Map();
@@ -846,11 +870,29 @@ export function stripSymbolTables(text) {
 
 /* ─── helper: symbol table rows under a heading ────────────── */
 export function extractSymbolBlock(text, headingRegex, sink) {
-  const headingMatch = text.match(new RegExp(`###[^\\n]*${headingRegex.source}[^\\n]*`, 'i'));
+  /* Wave AL-3 (2026-06-11, Boki WoO PDF audit): two-step heading scope
+   * fix so this extractor works on BOTH MD input (each heading on its
+   * own line) AND PDF flow text (pdfjs strips newlines → one giant
+   * line).
+   *
+   * Step 1 — heading match: disallow `#` (would span past the next
+   * heading) and `|` (would consume the section's own table content)
+   * between the opening `###` and the tier keyword. The match ends at
+   * the tier keyword itself so the chunk starts at the FIRST byte of
+   * actual section content.
+   *
+   * Step 2 — chunk end: search for next `## ` / `### ` heading in PDF
+   * flow text where headings sit inline (no `\n` separators), or the
+   * traditional `\n## ` / `\n### ` markers for MD input. We start the
+   * search from position 1 of rest so we can't zero-length the chunk
+   * when the first byte of rest happens to be whitespace immediately
+   * before a heading. */
+  const headingMatch = text.match(new RegExp(`###[^#|\\n]*?${headingRegex.source}\\b`, 'i'));
   if (!headingMatch) return;
   const start = headingMatch.index + headingMatch[0].length;
   const rest = text.slice(start, start + 4000);
-  const end = rest.search(/\n##\s|\n###\s/);
+  const endRel = rest.slice(1).search(/[\n\s]#{2,3}\s+\S/);
+  const end = endRel >= 0 ? endRel + 1 : -1;
   const chunk = end >= 0 ? rest.slice(0, end) : rest;
   // accept table rows like: | `D` | Diamond | … | or | D | Diamond | … |
   // ID MUST start with a letter — guards against multi-column pay tables
