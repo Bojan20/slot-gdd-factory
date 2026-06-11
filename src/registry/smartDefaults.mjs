@@ -252,9 +252,20 @@ export function inferTopology(model) {
     const kinds = features.map((f) => (f && f.kind) || '').join(' ').toLowerCase();
 
     /* kind heuristic when missing or stuck at 'rectangular' default but
-       feature mix clearly implies non-rectangular topology. */
+       feature mix clearly implies non-rectangular topology.
+       Wave AL-3 (2026-06-11, Boki WoO audit): when the GDD EXPLICITLY
+       declares reels AND rows (confidence=1 on both — i.e. parsed from
+       an actual "Reels | 5" / "Rows | 3" table cell, not a default),
+       respect that declaration as authoritative. Real-world bug: GDDs
+       like "Wrath of Olympus" declare a rectangular 5×3 base with
+       Hold & Win as a FEATURE that locks cells DURING the H&W round
+       only. Without this guard, smartDefaults flipped the whole game
+       to lock_respin 5×4 just because "hold_and_win" appeared in
+       features[], wrong-sizing the base grid and forcing all 20 cells
+       to render as permanently lockable. */
+    const explicitTopo = (t.confidence_reels === 1 && t.confidence_rows === 1);
     let didKind = false;
-    if (!present(t.kind) || t.kind === 'rectangular') {
+    if ((!present(t.kind) || t.kind === 'rectangular') && !explicitTopo) {
       let inferred = null;
       /* Order matters — more-specific kinds first. `hex_cluster` for
          example contains the word 'cluster' but is a hexagonal topology;

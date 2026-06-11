@@ -91,6 +91,14 @@ export function pdfTextToMarkdown(raw) {
   } else {
     out.push(`| Evaluation | Lines |`);
   }
+  /* 2026-06-11 — emit explicit paylines count when the GDD declares one.
+   * Without this, parser.mjs + smartDefaults fall back to per-kind defaults
+   * (rectangular default = 25, lock_respin = 25, etc) — losing the
+   * designer-stated count (e.g. WoO has 10 fixed paylines, not 25). */
+  if (evalKind === 'lines') {
+    const plCount = extractPaylineCount(txt);
+    if (plCount) out.push(`| Paylines | ${plCount} |`);
+  }
   if (rtp)    out.push(`| RTP (standard) | ${rtp}% | Glavna verzija |`);
   if (maxWin) out.push(`| Max win | ${maxWin}x | Hard cap |`);
   if (volatility) out.push(`| Volatility | ${volatility} |`);
@@ -276,7 +284,14 @@ export function pdfTextToMarkdown(raw) {
   if (/\b(?:mini|minor|major|grand|mega)\s+jackpot\b|\bjackpots?\s+(?:ladder|tier|map|system)\b|\bwap\s+jackpot\b/i.test(txt)) {
     out.push(`## 11 · Jackpots`);
     out.push('');
-    out.push('Jackpot sistem sa više nivoa (Mini / Minor / Major / Grand). Dodeljuje se kroz Wheel Bonus, Wolf Reveal ili specijalne kombinacije u bonus rundi.');
+    /* 2026-06-11 — vendor-neutral + no false-positive feature triggers.
+     * Earlier stub mentioned "Wheel Bonus" + "Wolf Reveal" which (a)
+     * leaked vendor-specific terminology and (b) made the downstream
+     * `wheel_bonus` feature regex fire on every GDD with a jackpot
+     * ladder, even ones (e.g. Wrath of Olympus) whose jackpots are
+     * awarded inside Hold & Win, not a wheel. Phrase now uses
+     * mechanism-neutral language. */
+    out.push('Jackpot sistem sa više nivoa (Mini / Minor / Major / Grand). Dodeljuje se kroz trigger uslove definisane u feature sekcijama (npr. bonus feature, hold-and-win runda, ili specijalna simbol kombinacija).');
     out.push('');
   }
 
@@ -377,7 +392,28 @@ function extractGrid(txt) {
   return { reels: null, rows: null };
 }
 
+/* Explicit payline count rules out pay-anywhere / cluster eval. Industry
+ * GDDs that say "10 fixed paylines" / "25 paylines" are line evaluators
+ * by definition; downstream heuristics that match the word "anywhere"
+ * (e.g. "Scatter pays anywhere on the grid") would otherwise misclassify
+ * the whole game. — 2026-06-11 Wrath-of-Olympus parser audit. */
+function extractPaylineCount(txt) {
+  /* Order matters — most-specific phrasing first. */
+  let m = txt.match(/\b(\d{1,4})\s*fix(?:ed|ne|sne)?\s*payline-?(?:a|s|ova|i)?\b/i);
+  if (m) return parseInt(m[1], 10);
+  m = txt.match(/\bPaylines?\s*[:=]?\s*(\d{1,4})\b/i);
+  if (m) return parseInt(m[1], 10);
+  m = txt.match(/\b(\d{1,4})\s*payline-?(?:a|s|ova|i)?\b/i);
+  if (m) return parseInt(m[1], 10);
+  return null;
+}
+
 function extractEvaluation(txt) {
+  /* When the GDD explicitly declares a payline count it IS a line
+   * evaluator — pre-empts the keyword fallbacks below so "Scatter pays
+   * anywhere" inside a feature description doesn't flip the whole
+   * game to pay_anywhere. */
+  if (extractPaylineCount(txt) > 0) return 'lines';
   if (/\bscatter\s+pays?\b|\bpay\s+anywhere\b|\ball\s+positions?\s+pay/i.test(txt)) return 'pay_anywhere';
   if (/\bcluster\s+pays?\b/i.test(txt)) return 'cluster';
   if (/\d+\s*ways\b|\bways\s+to\s+win|\bvariable[\s-]?ways\b|\bhigh[\s-]?ways\b/i.test(txt)) return 'ways';
