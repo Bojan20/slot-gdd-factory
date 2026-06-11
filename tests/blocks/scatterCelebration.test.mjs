@@ -115,8 +115,10 @@ t('emitScatterCelebrationCSS: contains keyframe + main classes', () => {
 
 t('emitScatterCelebrationCSS: bakes knobs as literals', () => {
   const css = emitScatterCelebrationCSS({
-    durationMs: 2000, pulseCycles: 4, pulseCycleMs: 500,
-    dimOpacity: 0.22, glowColor: '200,100,50', glowPeak: 1.8,
+    scatterCelebration: {
+      durationMs: 2000, pulseCycles: 4, pulseCycleMs: 500,
+      dimOpacity: 0.22, glowColor: '200,100,50', glowPeak: 1.8,
+    },
   });
   contains(css, 'opacity: 0.22');
   contains(css, 'scatter-celebrate 500ms ease-in-out 4');
@@ -132,12 +134,12 @@ t('emitScatterCelebrationRuntime: emits both functions when enabled', () => {
 });
 
 t('emitScatterCelebrationRuntime: bakes durationMs as literal', () => {
-  const js = emitScatterCelebrationRuntime({ durationMs: 1800 });
+  const js = emitScatterCelebrationRuntime({ scatterCelebration: { durationMs: 1800 } });
   contains(js, '|| 1800');
 });
 
 t('emitScatterCelebrationRuntime: enabled=false → stub that resolves', () => {
-  const js = emitScatterCelebrationRuntime({ enabled: false });
+  const js = emitScatterCelebrationRuntime({ scatterCelebration: { enabled: false } });
   contains(js, 'disabled by GDD');
   contains(js, 'function playScatterCelebration() { return Promise.resolve()');
   contains(js, 'function findScatterCellsOnGrid() { return { host: grid, cells: [] }');

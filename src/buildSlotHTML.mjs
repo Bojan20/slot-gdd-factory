@@ -49,7 +49,6 @@ import {
 import {
   emitScatterCelebrationCSS,
   emitScatterCelebrationRuntime,
-  resolveConfig as resolveScatterCelebrationConfig,
 } from './blocks/scatterCelebration.mjs';
 import {
   emitStageBadgeCSS,
@@ -574,7 +573,7 @@ ${emitAnticipationUniversalCSS(resolveAnticipationUniversalConfig(model))}
 
 ${emitWinPresentationCSS(resolveWinPresentationConfig(model))}
 
-${emitScatterCelebrationCSS(resolveScatterCelebrationConfig(model))}
+${emitScatterCelebrationCSS(model)}
 ${emitTumbleCSS(resolveTumbleConfig(model))}
 ${emitMultiplierOrbCSS(resolveMultiplierOrbConfig(model))}
 ${emitBonusBuyCSS(resolveBonusBuyConfig(model))}
@@ -889,7 +888,7 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitPaylineOverlayRuntime()}
   ${emitWinPresentationRuntime(resolveWinPresentationConfig(model))}
 
-  ${emitScatterCelebrationRuntime(resolveScatterCelebrationConfig(model))}
+  ${emitScatterCelebrationRuntime(model)}
 
   /* Wave K — Pay-Anywhere suite. Order matters:
        1. multiplierOrb (annotates orbs + provides accumulateOrbMultiplier)

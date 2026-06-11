@@ -38,9 +38,14 @@
  *   emitThemeCSS(cfg)  → full chrome CSS as a string
  */
 
+const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+
+const DEFAULT_BREAKPOINTS = Object.freeze({ xl: 1100, lg: 920, md: 820, sm: 620 });
+
 const DEFAULT_PALETTE = Object.freeze({
   bg0:    '#05070c',
   bg1:    '#0b0f16',
+  stage:  '#5a6b88',
   accent: '#c9a227',
   text:   '#f2f2f2',
 });
@@ -52,6 +57,10 @@ export function defaultConfig() {
     cellRadius: 10,
     frameRadius: 16,
     frameInset: 18,
+    spinRailDesktop: 168,
+    spinSizeDesktop: 150,
+    spinAutoSizeDesktop: 58,
+    breakpoints: { ...DEFAULT_BREAKPOINTS },
   };
 }
 
@@ -63,33 +72,54 @@ export function resolveConfig(model = {}) {
 
   /* Pull palette from explicit themeCSS override OR from existing theme array. */
   if (src.palette && typeof src.palette === 'object') {
-    if (/^#[0-9a-fA-F]{3,8}$/.test(src.palette.bg0 || ''))    cfg.palette.bg0    = src.palette.bg0;
-    if (/^#[0-9a-fA-F]{3,8}$/.test(src.palette.bg1 || ''))    cfg.palette.bg1    = src.palette.bg1;
-    if (/^#[0-9a-fA-F]{3,8}$/.test(src.palette.accent || '')) cfg.palette.accent = src.palette.accent;
-    if (/^#[0-9a-fA-F]{3,8}$/.test(src.palette.text || ''))   cfg.palette.text   = src.palette.text;
+    if (HEX_RE.test(src.palette.bg0 || ''))    cfg.palette.bg0    = src.palette.bg0;
+    if (HEX_RE.test(src.palette.bg1 || ''))    cfg.palette.bg1    = src.palette.bg1;
+    if (HEX_RE.test(src.palette.stage || ''))  cfg.palette.stage  = src.palette.stage;
+    if (HEX_RE.test(src.palette.accent || '')) cfg.palette.accent = src.palette.accent;
+    if (HEX_RE.test(src.palette.text || ''))   cfg.palette.text   = src.palette.text;
   } else if (model.theme && Array.isArray(model.theme.palette)) {
     const p = model.theme.palette;
-    if (typeof p[0] === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(p[0])) cfg.palette.bg0    = p[0];
-    if (typeof p[1] === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(p[1])) cfg.palette.bg1    = p[1];
-    if (typeof p[2] === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(p[2])) cfg.palette.accent = p[2];
+    if (typeof p[0] === 'string' && HEX_RE.test(p[0])) cfg.palette.bg0    = p[0];
+    if (typeof p[1] === 'string' && HEX_RE.test(p[1])) cfg.palette.bg1    = p[1];
+    if (typeof p[2] === 'string' && HEX_RE.test(p[2])) cfg.palette.accent = p[2];
+    if (typeof p[3] === 'string' && HEX_RE.test(p[3])) cfg.palette.text   = p[3];
   }
 
   for (const key of ['cellGap', 'cellRadius', 'frameRadius', 'frameInset']) {
     if (Number.isFinite(src[key])) cfg[key] = Math.max(0, Math.min(64, Math.round(src[key])));
+  }
+  for (const key of ['spinRailDesktop', 'spinSizeDesktop', 'spinAutoSizeDesktop']) {
+    if (Number.isFinite(src[key])) cfg[key] = Math.max(16, Math.min(400, Math.round(src[key])));
+  }
+
+  if (src.breakpoints && typeof src.breakpoints === 'object') {
+    for (const key of ['xl', 'lg', 'md', 'sm']) {
+      if (Number.isFinite(src.breakpoints[key])) {
+        cfg.breakpoints[key] = Math.max(1, Math.min(4096, Math.round(src.breakpoints[key])));
+      }
+    }
   }
 
   return cfg;
 }
 
 export function emitThemeCSS(cfg = defaultConfig()) {
-  const c = resolveConfig({ themeCSS: cfg });
-  const { bg0, bg1, accent, text } = c.palette;
+  const base = defaultConfig();
+  const c = {
+    ...base,
+    ...cfg,
+    palette: { ...base.palette, ...(cfg.palette || {}) },
+    breakpoints: { ...base.breakpoints, ...(cfg.breakpoints || {}) },
+  };
+  const { bg0, bg1, stage, accent, text } = c.palette;
+  const bp = c.breakpoints;
   return `
   /* ── Chrome theme — emitted by src/blocks/themeCSS.mjs ─────────────── */
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --bg0: ${bg0};
     --bg1: ${bg1};
+    --bg-stage: ${stage};
     --accent: ${accent};
     --text: ${text};
     --frame-inset: ${c.frameInset}px;
@@ -104,7 +134,7 @@ export function emitThemeCSS(cfg = defaultConfig()) {
     /* Light slate blue-gray full-body pozadina — cells su #1a2230 (dark
        blue-black), ovaj svetliji ton (~4.5:1 kontrast) ih jasno odvaja
        i daje "screen on a stage" osećaj kao casino floor cabinet. */
-    background: #5a6b88;
+    background: var(--bg-stage);
     color: var(--text);
     /* Wave D3 — dvh ≠ vh on iOS Safari: vh uključuje URL bar visinu pa
        layout postaje viši od ekrana kad se URL bar sakrije/pokaže. dvh
@@ -174,10 +204,10 @@ export function emitThemeCSS(cfg = defaultConfig()) {
   .frame    { grid-area: frame; }
   .sideHud  { grid-area: sideHud; }
   .leftSpacer { grid-area: leftSpacer; pointer-events: none; visibility: hidden; }
-  :root { --spin-rail: 168px; --spin-size: 150px; --spin-auto-size: 58px; }
-  @media (max-width: 1100px) { :root { --spin-rail: 140px; --spin-size: 120px; --spin-auto-size: 50px; } }
-  @media (max-width: 920px)  { :root { --spin-rail: 110px; --spin-size: 96px;  --spin-auto-size: 42px; } }
-  @media (max-width: 820px) {
+  :root { --spin-rail: ${c.spinRailDesktop}px; --spin-size: ${c.spinSizeDesktop}px; --spin-auto-size: ${c.spinAutoSizeDesktop}px; }
+  @media (max-width: ${bp.xl}px) { :root { --spin-rail: 140px; --spin-size: 120px; --spin-auto-size: 50px; } }
+  @media (max-width: ${bp.lg}px)  { :root { --spin-rail: 110px; --spin-size: 96px;  --spin-auto-size: 42px; } }
+  @media (max-width: ${bp.md}px) {
     :root { --spin-size: 88px; --spin-auto-size: 42px; }
     .play {
       grid-template-columns: minmax(0, 1fr);
@@ -195,13 +225,13 @@ export function emitThemeCSS(cfg = defaultConfig()) {
       padding: 4px 0;
     }
   }
-  @media (max-width: 620px) {
+  @media (max-width: ${bp.sm}px) {
     :root { --spin-size: 76px; --spin-auto-size: 38px; }
     .stage { padding: 6px 8px; gap: 6px; }
-    .title { font-size: 1rem !important; }
-    .sub { font-size: 0.7rem !important; }                         /* Wave UQ — ≥11px floor */
-    .statBox__label { font-size: 0.7rem !important; }                /* Wave UQ — ≥11px floor */
-    .statBox__value { font-size: 0.85rem !important; }
+    .stage .title { font-size: 1rem; }
+    .stage .sub { font-size: 0.7rem; }                         /* Wave UQ — ≥11px floor */
+    .stage .statBox__label { font-size: 0.7rem; }                /* Wave UQ — ≥11px floor */
+    .stage .statBox__value { font-size: 0.85rem; }
     .sideHud { gap: 16px; }
   }
   .frame {
@@ -333,14 +363,14 @@ export function emitThemeCSS(cfg = defaultConfig()) {
     border-radius: 14px;
     box-shadow: inset 0 1px 0 rgba(255, 230, 168, 0.05), 0 4px 14px rgba(0, 0, 0, 0.45);
   }
-  @media (max-width: 820px) {
+  @media (max-width: ${bp.md}px) {
     .hub {
       grid-template-columns: 36px minmax(170px, 2fr) minmax(140px, 1.3fr) 36px;
       padding: 8px 10px;
       gap: 8px;
     }
   }
-  @media (max-width: 620px) {
+  @media (max-width: ${bp.sm}px) {
     .hub {
       /* Stack: row 1 = menu + balance + sound; row 2 = bet selector full
        * width. Keeps every interactive control inside the 390px iPhone
@@ -539,7 +569,7 @@ export function emitDevToolsCSS() {
     transform: none;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   }
-  @media (max-width: 820px) {
+  @media (max-width: ${DEFAULT_BREAKPOINTS.md}px) {
     .dev-bw-btn {
       top:   max(8px, env(safe-area-inset-top, 8px));
       right: calc(max(8px, env(safe-area-inset-right, 8px)) + 48px + 6px);
@@ -597,19 +627,19 @@ export function emitDevToolsCSS() {
     transform: none;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   }
-  @media (max-width: 820px) {
+  @media (max-width: ${DEFAULT_BREAKPOINTS.md}px) {
     .dev-mult-btn {
       top:   max(8px, env(safe-area-inset-top, 8px));
       right: calc(max(8px, env(safe-area-inset-right, 8px)) + (48px + 6px) * 2);
     }
   }
-  @media (max-width: 820px) {
+  @media (max-width: ${DEFAULT_BREAKPOINTS.md}px) {
     .dev-fs-btn {
       top:   max(8px, env(safe-area-inset-top, 8px));
       right: max(8px, env(safe-area-inset-right, 8px));
     }
   }
-  @media (max-width: 620px) {
+  @media (max-width: ${DEFAULT_BREAKPOINTS.sm}px) {
     .dev-fs-btn {
       min-width: 48px;
       min-height: 30px;

@@ -102,7 +102,6 @@
  *   • Idempotent listeners + lifecycle ownership.
  */
 
-const TIER_ORDER = ['low', 'mid', 'high'];
 const TIER_INDEX = Object.freeze({ low: 0, mid: 1, high: 2 });
 
 const DEFAULTS = Object.freeze({
@@ -311,9 +310,17 @@ export function emitSymbolUpgradeRuntime(cfg = defaultConfig()) {
   const SYMBOL_UPGRADE_MORPH_MS     = ${c.morphMs};
   const SYMBOL_UPGRADE_BONUS_ACC    = ${c.bonusAccumulate};
   const SYMBOL_UPGRADE_TIER_INDEX   = { low: 0, mid: 1, high: 2 };
+  const SWAP_MORPH_FRACTION = 0.4;
+  const FRAME_BUDGET_MS     = 16;
+  const PRIORITY_NORMAL     = 5;
+  const REDUCED_MOTION = typeof matchMedia === 'function'
+    && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  let _symbolUpgradeStats = { count: 0, lastTumble: -1 };
-  let _symbolUpgradeFsStats = { count: 0 };
+  /* Stats objects must be mutated in place — never reassigned — so the
+     window.__SYMBOL_UPGRADE_BASE_STATS__ / __SYMBOL_UPGRADE_FS__ pointers
+     published below remain live across spins. */
+  const _symbolUpgradeStats = { count: 0, lastTumble: -1 };
+  const _symbolUpgradeFsStats = { count: 0 };
   let _symbolUpgradeTumbleIndex = 0;
 
   function _suTierOf(symbol) {
@@ -396,16 +403,26 @@ export function emitSymbolUpgradeRuntime(cfg = defaultConfig()) {
     if (!toSymbol || toSymbol === fromSymbol) return false;
     const toTier = _suTierOf(toSymbol) || fromTier;
 
-    cellEl.classList.add('is-upgrading');
-    /* Swap textContent halfway through the morph for the cleanest visual
-       (40% mark of morph = the pinch frame). */
-    const swapAt = Math.floor(SYMBOL_UPGRADE_MORPH_MS * 0.4);
-    setTimeout(() => {
-      if (cellEl && cellEl.isConnected) cellEl.textContent = toSymbol;
-    }, swapAt);
-    setTimeout(() => {
-      if (cellEl && cellEl.classList) cellEl.classList.remove('is-upgrading');
-    }, SYMBOL_UPGRADE_FLASH_MS + 16);
+    if (REDUCED_MOTION) {
+      /* Reduced-motion users get the contracted instant swap — no flash
+         class, no setTimeout chain. */
+      cellEl.textContent = toSymbol;
+    } else {
+      cellEl.classList.add('is-upgrading');
+      /* Swap textContent at the pinch frame (40% of morph) for the
+         cleanest visual. */
+      const swapAt = Math.floor(SYMBOL_UPGRADE_MORPH_MS * SWAP_MORPH_FRACTION);
+      setTimeout(() => {
+        if (cellEl && cellEl.isConnected) cellEl.textContent = toSymbol;
+      }, swapAt);
+      /* Anchor cleanup to the longer of flash/morph so the swap always
+         fires before the class is removed (preserves the pinch-frame
+         guarantee when morphMs > flashMs). */
+      const cleanupAt = Math.max(SYMBOL_UPGRADE_FLASH_MS, SYMBOL_UPGRADE_MORPH_MS) + FRAME_BUDGET_MS;
+      setTimeout(() => {
+        if (cellEl && cellEl.classList) cellEl.classList.remove('is-upgrading');
+      }, cleanupAt);
+    }
 
     _symbolUpgradeStats.count += 1;
     if (SYMBOL_UPGRADE_BONUS_ACC && _suInFreeSpins()) {
@@ -482,7 +499,8 @@ export function emitSymbolUpgradeRuntime(cfg = defaultConfig()) {
 
   if (typeof HookBus !== 'undefined') {
     HookBus.on('preSpin', () => {
-      _symbolUpgradeStats = { count: 0, lastTumble: -1 };
+      _symbolUpgradeStats.count = 0;
+      _symbolUpgradeStats.lastTumble = -1;
       _symbolUpgradeTumbleIndex = 0;
       _suLadderCache = null;
       if (typeof document !== 'undefined') {
@@ -490,22 +508,22 @@ export function emitSymbolUpgradeRuntime(cfg = defaultConfig()) {
           el.classList.remove('is-upgrading');
         });
       }
-    }, { priority: 5 });
+    }, { priority: PRIORITY_NORMAL });
 
     HookBus.on('onTumbleStep', () => {
       _symbolUpgradeTumbleIndex += 1;
       _symbolUpgradeStats.lastTumble = _symbolUpgradeTumbleIndex;
       _suProcessTumble();
-    }, { priority: 5 });
+    }, { priority: PRIORITY_NORMAL });
 
     HookBus.on('postSpin', () => {
       /* No DOM mutation — counter only. Lets downstream HUD blocks read
          window.__SYMBOL_UPGRADE_BASE_STATS__ at the round boundary. */
-    }, { priority: 5 });
+    }, { priority: PRIORITY_NORMAL });
 
     HookBus.on('onFsEnd', () => {
-      _symbolUpgradeFsStats = { count: 0 };
-    }, { priority: 5 });
+      _symbolUpgradeFsStats.count = 0;
+    }, { priority: PRIORITY_NORMAL });
   }
 
   if (typeof window !== 'undefined') {

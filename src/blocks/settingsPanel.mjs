@@ -499,9 +499,9 @@ export function emitSettingsPanelMarkup(cfg = defaultConfig()) {
 
   /* Wave K7 — Bet-step preset ladder (quick-select coin / bet value). */
   if (c.showBetStepPresets) {
-    const presets = c.betStepPresets.map(n => {
+    const presets = c.betStepPresets.map((n, i) => {
       const safe = (typeof n === 'number' && isFinite(n)) ? n.toFixed(2) : '0.00';
-      return `<button type="button" class="settings-seg" data-bet-step="${_escape(safe)}" aria-label="Bet step ${_escape(safe)}">${_escape(safe)}</button>`;
+      return `<button type="button" class="settings-seg" data-bet-step-idx="${i}" aria-label="Bet step ${_escape(safe)}">${_escape(safe)}</button>`;
     }).join('');
     rows.push(`
         <div class="settings-row settings-row--stack" data-setting="betStepPreset">
@@ -569,6 +569,18 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
        onAutoplayStart → auto-hide
      Emits: nothing — pure preferences UI. */
   (function () {
+    if (typeof document === 'undefined') {
+      if (typeof window !== 'undefined') {
+        window.settingsPanelShow   = function () {};
+        window.settingsPanelHide   = function () {};
+        window.settingsPanelToggle = function () {};
+        window.settingsGet         = function () { return undefined; };
+        window.settingsSet         = function () {};
+        window.settingsReset       = function () {};
+        window.SETTINGS_PANEL_STATE = { enabled: false, open: false, prefs: {} };
+      }
+      return;
+    }
     var SHOW_TURBO   = ${c.showTurboToggle};
     var SHOW_SOUND   = ${c.showSoundToggle};
     var SHOW_RM      = ${c.showReducedMotionToggle};
@@ -607,7 +619,7 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
       open: false,
       prefs: Object.assign({}, DEFAULTS),
     };
-    if (typeof window !== 'undefined') window.SETTINGS_PANEL_STATE = STATE;
+    window.SETTINGS_PANEL_STATE = STATE;
 
     /* Reuse the existing .hub settingsMenuBtn (hamburger icon) rendered
      * by the orchestrator. Boki rule: no duplicate floating button. */
@@ -633,7 +645,6 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
     }
 
     function _applyGlobals() {
-      if (typeof window === 'undefined') return;
       window.__SLOT_REDUCED_MOTION__ = !!STATE.prefs.reducedMotion;
       window.__SLOT_QUICK_SPIN__     = !!STATE.prefs.quickSpin;
       window.__SLOT_AUTO_HIDE_WIN__  = !!STATE.prefs.autoHideWin;
@@ -663,7 +674,7 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
       }
       /* Wave K7 — paint segmented groups + max-win toggle. */
       if (SHOW_VOLATILITY) _paintSegGroup('settingsVolatilitySeg', 'volatility', String(STATE.prefs.volatility));
-      if (SHOW_BETSTEP)    _paintSegGroup('settingsBetStepSeg',    'bet-step',   _fmtBet(STATE.prefs.betStepPreset));
+      if (SHOW_BETSTEP)    _paintSegGroup('settingsBetStepSeg',    'bet-step-idx', String(BET_STEP_PRESETS.indexOf(STATE.prefs.betStepPreset)));
       if (SHOW_MAXWIN)     _paintToggle('MaxWinCap', STATE.prefs.maxWinCapEnabled);
     }
 
@@ -684,7 +695,37 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
         seg.classList.toggle('is-active', on);
         seg.setAttribute('aria-checked', on ? 'true' : 'false');
         seg.setAttribute('role', 'radio');
+        seg.setAttribute('tabindex', on ? '0' : '-1');
       }
+    }
+
+    /* Wave K7 — ARIA radiogroup keyboard navigation. Arrows advance focus +
+       apply selection so keyboard-only users can move between options. */
+    function _wireSegKbd(root, attr, apply) {
+      if (!root) return;
+      root.addEventListener('keydown', function (ev) {
+        if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight' &&
+            ev.key !== 'ArrowUp'   && ev.key !== 'ArrowDown') return;
+        var segs = root.querySelectorAll('.settings-seg');
+        if (segs.length === 0) return;
+        var cur = -1;
+        for (var i = 0; i < segs.length; i++) {
+          if (segs[i] === document.activeElement) { cur = i; break; }
+        }
+        if (cur === -1) {
+          for (var j = 0; j < segs.length; j++) {
+            if (segs[j].classList.contains('is-active')) { cur = j; break; }
+          }
+        }
+        if (cur === -1) cur = 0;
+        var next = (ev.key === 'ArrowLeft' || ev.key === 'ArrowUp')
+          ? (cur - 1 + segs.length) % segs.length
+          : (cur + 1) % segs.length;
+        ev.preventDefault();
+        if (typeof segs[next].focus === 'function') { try { segs[next].focus(); } catch (_) {} }
+        var v = segs[next].getAttribute('data-' + attr);
+        if (v != null) apply(v);
+      });
     }
 
     /* ─── public API ─────────────────────────────────────────────────── */
@@ -695,13 +736,13 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
       if (!(key in DEFAULTS)) return;
       var coerced;
       if (key === 'locale') {
-        coerced = (typeof value === 'string' && LOCALES.indexOf(value) !== -1) ? value : DEFAULTS.locale;
+        coerced = (typeof value === 'string' && LOCALES.indexOf(value) !== -1) ? value : STATE.prefs[key];
       } else if (key === 'volatility') {
         coerced = (typeof value === 'string' && VOLATILITY_OPTIONS.indexOf(value) !== -1)
-          ? value : DEFAULTS.volatility;
+          ? value : STATE.prefs[key];
       } else if (key === 'betStepPreset') {
         var n = Number(value);
-        coerced = (isFinite(n) && BET_STEP_PRESETS.indexOf(n) !== -1) ? n : DEFAULTS.betStepPreset;
+        coerced = (isFinite(n) && BET_STEP_PRESETS.indexOf(n) !== -1) ? n : STATE.prefs[key];
       } else {
         coerced = !!value;
       }
@@ -747,6 +788,49 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
       if (typeof window.turboModeOff === 'function') {
         try { window.turboModeOff('api'); } catch (_) {}
       }
+      /* Mirror muted reset to audio block — UI paints "Sound ON" so the
+         session must actually be unmuted, not just look that way. */
+      if (typeof window.audioSetMuted === 'function') {
+        try { window.audioSetMuted(false); } catch (_) {}
+      }
+      /* settingsPanel is the SOLE OWNER of these K7 emits — reset must
+         re-emit so downstream listeners (spin engine, betSelector, winCap)
+         resync to defaults instead of holding the pre-reset value. */
+      if (window.HookBus && typeof window.HookBus.emit === 'function') {
+        window.HookBus.emit('onVolatilityChanged',    { value: DEFAULTS.volatility,       source: 'reset' });
+        window.HookBus.emit('onBetStepPresetChanged', { value: DEFAULTS.betStepPreset,    source: 'reset' });
+        window.HookBus.emit('onMaxWinCapToggled',     { enabled: DEFAULTS.maxWinCapEnabled, source: 'reset' });
+      }
+    }
+
+    /* WCAG 2.4.3 / 2.1.2 focus trap — dialog with aria-modal="true" must
+       hold focus until dismissed, then restore the prior focus owner. */
+    var _prevFocus = null;
+    function _modalFocusables() {
+      var modal = document.getElementById('settingsModal');
+      if (!modal) return [];
+      var list = modal.querySelectorAll(
+        'button:not([disabled]), select:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      var out = [];
+      for (var i = 0; i < list.length; i++) {
+        var el = list[i];
+        if (el.offsetParent !== null || el === document.activeElement) out.push(el);
+      }
+      return out;
+    }
+    function _onTrapKeydown(ev) {
+      if (ev.key !== 'Tab' || !STATE.open) return;
+      var f = _modalFocusables();
+      if (f.length === 0) return;
+      var first = f[0], last = f[f.length - 1];
+      if (ev.shiftKey && document.activeElement === first) {
+        ev.preventDefault();
+        if (typeof last.focus === 'function') { try { last.focus(); } catch (_) {} }
+      } else if (!ev.shiftKey && document.activeElement === last) {
+        ev.preventDefault();
+        if (typeof first.focus === 'function') { try { first.focus(); } catch (_) {} }
+      }
     }
 
     function settingsPanelShow() {
@@ -754,8 +838,10 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
       _paintAll();
       var bd = _backdrop();
       if (!bd) return;
+      _prevFocus = document.activeElement;
       bd.hidden = false;
       STATE.open = true;
+      document.addEventListener('keydown', _onTrapKeydown);
       var cb = _closeBtn();
       if (cb && typeof cb.focus === 'function') { try { cb.focus(); } catch (_) {} }
     }
@@ -763,6 +849,11 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
       if (!STATE.open) return;
       var bd = _backdrop(); if (bd) bd.hidden = true;
       STATE.open = false;
+      document.removeEventListener('keydown', _onTrapKeydown);
+      if (_prevFocus && typeof _prevFocus.focus === 'function') {
+        try { _prevFocus.focus(); } catch (_) {}
+      }
+      _prevFocus = null;
     }
     function settingsPanelToggle() {
       if (STATE.open) settingsPanelHide(); else settingsPanelShow();

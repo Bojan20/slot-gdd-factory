@@ -19,14 +19,27 @@
  * + detectWinCombos / detectPayAnywhereWins which other blocks expose.
  */
 
+/* ─── tuning constants (no magic numbers) ─────────────────────────── */
+const MS_MIN = 50;
+const MS_MAX = 2000;
+const PAUSE_MIN = 0;
+const PAUSE_MAX = 2000;
+const CHAIN_MIN = 1;
+const CHAIN_MAX_CEIL = 64;
+const DEFAULT_REMOVE_MS = 280;
+const DEFAULT_GRAVITY_MS = 320;
+const DEFAULT_REFILL_MS = 260;
+const DEFAULT_CHAIN_PAUSE_MS = 180;
+const DEFAULT_MAX_CHAIN = 16;
+
 export function defaultConfig() {
   return {
     enabled: false,
-    removeMs: 280,    // fade-out duration for winning symbols
-    gravityMs: 320,   // drop animation per row of fall
-    refillMs: 260,    // new-symbol drop-in
-    chainPauseMs: 180,// breath between tumbles
-    maxChain: 16,     // safety cap on consecutive tumble iterations
+    removeMs: DEFAULT_REMOVE_MS,         // fade-out duration for winning symbols
+    gravityMs: DEFAULT_GRAVITY_MS,       // drop animation per row of fall
+    refillMs: DEFAULT_REFILL_MS,         // new-symbol drop-in
+    chainPauseMs: DEFAULT_CHAIN_PAUSE_MS, // breath between tumbles
+    maxChain: DEFAULT_MAX_CHAIN,         // safety cap on consecutive tumble iterations
     preserveOrbs: true, // multiplier orbs stay on screen across tumbles
   };
 }
@@ -35,11 +48,11 @@ export function resolveConfig(model = {}) {
   const cfg = defaultConfig();
   const m = model.tumble || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
-  if (Number.isFinite(m.removeMs))     cfg.removeMs    = clampInt(m.removeMs, 50, 2000);
-  if (Number.isFinite(m.gravityMs))    cfg.gravityMs   = clampInt(m.gravityMs, 50, 2000);
-  if (Number.isFinite(m.refillMs))     cfg.refillMs    = clampInt(m.refillMs, 50, 2000);
-  if (Number.isFinite(m.chainPauseMs)) cfg.chainPauseMs= clampInt(m.chainPauseMs, 0, 2000);
-  if (Number.isFinite(m.maxChain))     cfg.maxChain    = clampInt(m.maxChain, 1, 64);
+  if (Number.isFinite(m.removeMs))     cfg.removeMs    = clampInt(m.removeMs, MS_MIN, MS_MAX);
+  if (Number.isFinite(m.gravityMs))    cfg.gravityMs   = clampInt(m.gravityMs, MS_MIN, MS_MAX);
+  if (Number.isFinite(m.refillMs))     cfg.refillMs    = clampInt(m.refillMs, MS_MIN, MS_MAX);
+  if (Number.isFinite(m.chainPauseMs)) cfg.chainPauseMs= clampInt(m.chainPauseMs, PAUSE_MIN, PAUSE_MAX);
+  if (Number.isFinite(m.maxChain))     cfg.maxChain    = clampInt(m.maxChain, CHAIN_MIN, CHAIN_MAX_CEIL);
   if (m.preserveOrbs != null) cfg.preserveOrbs = !!m.preserveOrbs;
 
   // Auto-enable when GDD topology declares cascade
@@ -48,7 +61,7 @@ export function resolveConfig(model = {}) {
   }
   /* Bug-fix 2026-06-10: tumble cascade is mechanically incompatible with
      non-reel shapes (lock-and-spin, wheel, plinko, crash, slingo, radial).
-     Symptom observed on Huff & More Puff: tumble fired 67× across 7 spins,
+     Symptom observed on hold-and-spin shape: tumble fired 67× across 7 spins,
      leaving 13 cells stuck with `.is-removing` (opacity:0, scale:0.4) —
      ghost cells that looked like "the grid is disappearing". These shapes
      own their own settle path (holdAndWin, wheelSpin, etc.) and never
@@ -87,9 +100,11 @@ export function emitTumbleCSS(cfg = defaultConfig()) {
 }
 .cell.is-dropping {
   animation: tumbleDrop ${cfg.gravityMs}ms cubic-bezier(.34,1.2,.6,1) forwards;
+  pointer-events: none;
 }
 .cell.is-refilling {
   animation: tumbleDrop ${cfg.refillMs}ms cubic-bezier(.34,1.05,.6,1) forwards;
+  pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .cell.is-removing  { animation: none; opacity: 0; }
@@ -111,7 +126,8 @@ function runTumbleChain(_detectFn, _opts) {
   if (typeof HookBus !== 'undefined') {
     HookBus.emit('onTumbleStep', { duringFs: !!opts.duringFs, chainIndex: 0, events });
   }
-  return Promise.resolve({ chain: 0, totalWinX: 0, events });
+  const totalWinX = events.reduce((s,e)=> s + (Number.isFinite(e.payX)?e.payX:0), 0);
+  return Promise.resolve({ chain: 0, totalWinX, events });
 }
 `;
   }
@@ -141,11 +157,15 @@ function _tumbleSleep(ms) { return new Promise(r => setTimeout(r, ms)); }
    Returns final chain stats: { chain, totalWinX, events[] (flat) }. */
 async function runTumbleChain(detectFn, opts) {
   const duringFs = !!(opts && opts.duringFs);
+  /* Snapshot kill token at entry so a preSpin during a rapid re-spin bails
+     this in-flight chain instead of racing the new spin's grid mutations. */
+  const myToken = _TUMBLE_KILL_TOKEN;
   let chain = 0;
   let totalWinX = 0;
   const allEvents = [];
 
   while (chain < TUMBLE_MAX_CHAIN) {
+    if (myToken !== _TUMBLE_KILL_TOKEN) break;
     const events = (typeof detectFn === 'function') ? (detectFn() || []) : [];
     /* LEGO rule (Wave S): tumble block emits onTumbleStep itself, NOT the
        caller. Listeners (multiplier orb accumulator, persistent mult,
@@ -177,7 +197,7 @@ async function runTumbleChain(detectFn, opts) {
     _tumbleApplyGravity(removeCells);
     await _tumbleSleep(TUMBLE_GRAVITY_MS);
 
-    _tumbleRefillEmpties(removeCells);
+    _tumbleRefillEmpties();
     await _tumbleSleep(TUMBLE_REFILL_MS);
 
     // 5. breath
@@ -273,8 +293,12 @@ function _tumbleRefillEmpties() {
                 : (Array.isArray(reel.symbols) ? reel.symbols : []);
     for (let row = 0; row < vRows; row++) {
       if (reel.visible[row]) continue;
+      /* Route through the shared seedable RNG so replay/regression harnesses
+         can reproduce a cascade byte-for-byte; fall back to Math.random. */
+      const rngRoll = (typeof window !== 'undefined' && typeof window.__rng === 'function')
+        ? window.__rng() : Math.random();
       const sym = (strip.length > 0)
-        ? String(strip[Math.floor(Math.random() * strip.length)]).toUpperCase()
+        ? String(strip[Math.floor(rngRoll * strip.length)]).toUpperCase()
         : 'A';
       reel.visible[row] = sym;
       const cell = (typeof reel.cellAt === 'function') ? reel.cellAt(row) : (reel.cells && reel.cells[row]);
@@ -284,16 +308,17 @@ function _tumbleRefillEmpties() {
         cell.classList.remove('is-dropping');
         cell.textContent = sym;
         cell.classList.add('is-refilling');
+        /* Per-cell cleanup. A global setTimeout query would also strip
+           animation classes off cells the next spin freshly painted. */
+        const _onEnd = () => {
+          cell.classList.remove('is-refilling');
+          cell.classList.remove('is-dropping');
+          cell.removeEventListener('animationend', _onEnd);
+        };
+        cell.addEventListener('animationend', _onEnd, { once: true });
       }
     }
   }
-  // Clear refill animation after a frame so subsequent tumbles can re-trigger
-  setTimeout(() => {
-    document.querySelectorAll('.cell.is-refilling, .cell.is-dropping').forEach(c => {
-      c.classList.remove('is-refilling');
-      c.classList.remove('is-dropping');
-    });
-  }, TUMBLE_REFILL_MS + 20);
 }
 
 if (typeof window !== "undefined") {

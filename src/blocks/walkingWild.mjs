@@ -7,13 +7,40 @@
  * respin until it walks off the grid. Industry baseline: directional
  * walking-wild pattern with auto-respin chain.
  *
+ * Renderer contract: cells displaying the wild symbol MUST expose
+ * `data-symbol="<id>"` on the `.cell` element so detection is decoupled
+ * from text/glyph rendering.
+ *
  * GDD knobs:
  *   • mode: 'fs' | 'base' | 'both'
  *   • wildSymbolId: string
  *   • direction: 'left' | 'right' | 'down'
  *   • triggerRespin: boolean (true = walk grants extra respin)
- *   • haloColor: 'r,g,b'
+ *   • haloColor: 'r,g,b' (each channel clamped 0–255)
  */
+
+const WW_SHIFT_PX        = 8;
+const WW_STEP_MS         = 700;
+const WW_ARROW_EM        = 0.6;
+const WW_BRIGHTNESS_PEAK = 1.4;
+const WW_ALPHA_RING      = 0.7;
+const WW_ALPHA_GLOW      = 0.45;
+const WW_ALPHA_ARROW     = 0.9;
+const WW_DEFAULT_REELS   = 5;
+const WW_DEFAULT_ROWS    = 3;
+
+function _clampRgbChannel(n) {
+  n = parseInt(n, 10);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(255, n));
+}
+
+function _parseHaloColor(s) {
+  if (typeof s !== 'string') return null;
+  const m = /^(\d{1,3}),(\d{1,3}),(\d{1,3})$/.exec(s);
+  if (!m) return null;
+  return _clampRgbChannel(m[1]) + ',' + _clampRgbChannel(m[2]) + ',' + _clampRgbChannel(m[3]);
+}
 
 export function defaultConfig() {
   return {
@@ -34,7 +61,10 @@ export function resolveConfig(model = {}) {
   if (typeof m.wildSymbolId === 'string' && /^[A-Za-z][A-Za-z0-9_]*$/.test(m.wildSymbolId)) cfg.wildSymbolId = m.wildSymbolId;
   if (m.direction === 'left' || m.direction === 'right' || m.direction === 'down') cfg.direction = m.direction;
   if (m.triggerRespin != null) cfg.triggerRespin = !!m.triggerRespin;
-  if (typeof m.haloColor === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(m.haloColor)) cfg.haloColor = m.haloColor;
+  if (typeof m.haloColor === 'string') {
+    const parsed = _parseHaloColor(m.haloColor);
+    if (parsed) cfg.haloColor = parsed;
+  }
 
   if (Array.isArray(model.features) && model.features.some(f => f.kind === 'walking_wild')) {
     cfg.enabled = true;
@@ -44,28 +74,34 @@ export function resolveConfig(model = {}) {
 
 export function emitWalkingWildCSS(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
+  const arrowRot = cfg.direction === 'right' ? '0deg'
+                 : cfg.direction === 'down'  ? '90deg'
+                 :                             '180deg';
+  const shiftX = cfg.direction === 'left'  ? `-${WW_SHIFT_PX}px`
+               : cfg.direction === 'right' ? `${WW_SHIFT_PX}px`
+               :                             '0';
+  const shiftY = cfg.direction === 'down'  ? `${WW_SHIFT_PX}px` : '0';
   return `
 /* ─── walking wild ──────────────────────────────────────────────── */
 .cell.is-walking-wild {
   box-shadow:
-    0 0 0 2px rgba(${cfg.haloColor},.7),
-    0 0 16px rgba(${cfg.haloColor},.45);
-  animation: walkingWildStep 700ms ease-in-out;
+    0 0 0 2px rgba(${cfg.haloColor},${WW_ALPHA_RING}),
+    0 0 16px rgba(${cfg.haloColor},${WW_ALPHA_GLOW});
+  animation: walkingWildStep ${WW_STEP_MS}ms ease-in-out;
   z-index: 3;
 }
 @keyframes walkingWildStep {
   0%   { transform: translateX(0); filter: brightness(1); }
-  50%  { transform: translateX(${cfg.direction === 'left' ? '-8px' : cfg.direction === 'right' ? '8px' : '0'}) translateY(${cfg.direction === 'down' ? '8px' : '0'}); filter: brightness(1.4); }
+  50%  { transform: translateX(${shiftX}) translateY(${shiftY}); filter: brightness(${WW_BRIGHTNESS_PEAK}); }
   100% { transform: translateX(0); filter: brightness(1); }
 }
 .cell.is-walking-wild::before {
   content: '▶';
   position: absolute;
   top: 4px; left: 6px;
-  font-size: 0.6em;
-  color: rgba(${cfg.haloColor},.9);
-  ${cfg.direction === 'right' ? '' : "transform: rotate(180deg);"}
-  ${cfg.direction === 'down' ? 'transform: rotate(90deg);' : ''}
+  font-size: ${WW_ARROW_EM}em;
+  color: rgba(${cfg.haloColor},${WW_ALPHA_ARROW});
+  transform: rotate(${arrowRot});
   pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -79,12 +115,14 @@ export function emitWalkingWildRuntime(cfg = defaultConfig()) {
   const dx = cfg.direction === 'left' ? -1 : cfg.direction === 'right' ? 1 : 0;
   const dy = cfg.direction === 'down' ? 1 : 0;
   return `/* ─── walking wild runtime ────────────────────────────────────── */
-const WALKING_WILD_MODE     = ${JSON.stringify(cfg.mode)};
-const WALKING_WILD_SYMBOL   = ${JSON.stringify(cfg.wildSymbolId)};
-const WALKING_WILD_DX       = ${dx};
-const WALKING_WILD_DY       = ${dy};
-const WALKING_WILD_RESPIN   = ${cfg.triggerRespin ? 'true' : 'false'};
-const WALKING_WILD_REGISTRY = new Map(); /* key 'r,c' → { age: int } */
+const WALKING_WILD_MODE          = ${JSON.stringify(cfg.mode)};
+const WALKING_WILD_SYMBOL        = ${JSON.stringify(cfg.wildSymbolId)};
+const WALKING_WILD_DX            = ${dx};
+const WALKING_WILD_DY            = ${dy};
+const WALKING_WILD_RESPIN        = ${cfg.triggerRespin ? 'true' : 'false'};
+const WALKING_WILD_DEFAULT_REELS = ${WW_DEFAULT_REELS};
+const WALKING_WILD_DEFAULT_ROWS  = ${WW_DEFAULT_ROWS};
+const WALKING_WILD_REGISTRY      = new Map(); /* key 'r,c' → { age: int } */
 
 function _walkWildPhaseAllowed() {
   if (typeof FSM === 'undefined') return WALKING_WILD_MODE !== 'fs';
@@ -98,11 +136,10 @@ function harvestWalkingWilds() {
   if (!_walkWildPhaseAllowed()) return;
   const host = document.getElementById('gridHost');
   if (!host) return;
-  const REELS = window.REELS || 5;
+  const REELS = window.REELS || WALKING_WILD_DEFAULT_REELS;
   const cells = host.querySelectorAll('.cell');
   cells.forEach((cell, idx) => {
-    const sym = (cell.textContent || '').trim();
-    if (sym !== WALKING_WILD_SYMBOL) return;
+    if (cell.dataset.symbol !== WALKING_WILD_SYMBOL) return;
     const r = Math.floor(idx / REELS);
     const c = idx % REELS;
     const key = r + ',' + c;
@@ -112,8 +149,8 @@ function harvestWalkingWilds() {
 
 function stepWalkingWilds() {
   if (!_walkWildPhaseAllowed()) { WALKING_WILD_REGISTRY.clear(); return false; }
-  const REELS = window.REELS || 5;
-  const ROWS  = window.ROWS  || 3;
+  const REELS = window.REELS || WALKING_WILD_DEFAULT_REELS;
+  const ROWS  = window.ROWS  || WALKING_WILD_DEFAULT_ROWS;
   const next  = new Map();
   let stillOnGrid = false;
   WALKING_WILD_REGISTRY.forEach((meta, key) => {
@@ -134,7 +171,7 @@ function applyWalkingWilds() {
   if (!_walkWildPhaseAllowed()) return;
   const host = document.getElementById('gridHost');
   if (!host) return;
-  const REELS = window.REELS || 5;
+  const REELS = window.REELS || WALKING_WILD_DEFAULT_REELS;
   const cells = host.querySelectorAll('.cell');
   WALKING_WILD_REGISTRY.forEach((meta, key) => {
     const [r, c] = key.split(',').map(n => parseInt(n, 10));
@@ -142,6 +179,7 @@ function applyWalkingWilds() {
     const cell = cells[idx];
     if (!cell) return;
     cell.textContent = WALKING_WILD_SYMBOL;
+    cell.dataset.symbol = WALKING_WILD_SYMBOL;
     cell.classList.add('is-walking-wild');
   });
 }
@@ -160,36 +198,25 @@ if (typeof window !== 'undefined') {
   window.WALKING_WILD_REGISTRY = WALKING_WILD_REGISTRY;
 }
 
-/* HookBus wire-up — walking wilds harvest fresh wilds on every settled
-   grid then step them by (DX, DY) on every tumble step. onFsTrigger /
-   onFsEnd clear the registry. Without this the wild registry never
-   accumulates and walking wilds never move. */
+/* HookBus wire-up — step existing wilds + harvest new ones on the spin
+   boundary (onSpinResult). If a walker remains on grid and triggerRespin
+   is set, emit a respin request so the chain continues. preSpin clears
+   the registry only on a fresh, non-FS, non-respin spin so the chain
+   survives the respin handoff. */
 if (typeof HookBus !== 'undefined') {
   HookBus.on('onSpinResult', () => {
-    /* Fable audit (critical): walking step was driven by onTumbleStep,
-     * which fires once per cascade step — a single 4-step tumble would
-     * walk the wild 4 cells in ONE spin, violating the documented
-     * "one position per spin" pattern and breaking RNG reproducibility.
-     * Step on the SPIN boundary instead; tumble step is for the harvest
-     * + apply pass that keeps existing wilds visible across cascades. */
-    stepWalkingWilds();
+    const stillOn = stepWalkingWilds();
     harvestWalkingWilds();
     applyWalkingWilds();
+    if (WALKING_WILD_RESPIN && stillOn && typeof HookBus.emit === 'function') {
+      HookBus.emit('requestRespin', { source: 'walkingWild' });
+    }
   });
-  HookBus.on('onTumbleStep', () => {
-    applyWalkingWilds();
-  });
-  HookBus.on('preSpin', ({ duringFs } = {}) => {
-    if (!duringFs) clearWalkingWilds();
+  HookBus.on('preSpin', ({ duringFs, isRespin } = {}) => {
+    if (!duringFs && !isRespin) clearWalkingWilds();
   });
   HookBus.on('onFsTrigger', () => { clearWalkingWilds(); });
   HookBus.on('onFsEnd',     () => { clearWalkingWilds(); });
 }
 `;
-}
-
-function clampInt(n, lo, hi) {
-  n = Math.floor(Number(n));
-  if (!Number.isFinite(n)) return lo;
-  return Math.max(lo, Math.min(hi, n));
 }

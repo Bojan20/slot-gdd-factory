@@ -52,6 +52,7 @@ const DEFAULTS = Object.freeze({
   textColor: '245,242,228',
   showTierBadge: true,
   showPayoutHint: true,
+  payoutHints: {},
 });
 
 export function defaultConfig() {
@@ -70,18 +71,17 @@ export function resolveConfig(model) {
   const src = (model && model.symbolInfoPopover) || {};
 
   if (src.enabled === false) cfg.enabled = false;
-  if (
-    typeof src.autoHideMs === 'number' &&
-    src.autoHideMs >= 400 &&
-    src.autoHideMs <= 8000
-  ) {
-    cfg.autoHideMs = Math.floor(src.autoHideMs);
+  if (typeof src.autoHideMs === 'number' && Number.isFinite(src.autoHideMs)) {
+    cfg.autoHideMs = Math.max(400, Math.min(8000, Math.floor(src.autoHideMs)));
   }
   if (isValidRGB(src.accentColor)) cfg.accentColor = src.accentColor;
   if (isValidRGB(src.bgColor)) cfg.bgColor = src.bgColor;
   if (isValidRGB(src.textColor)) cfg.textColor = src.textColor;
   if (src.showTierBadge === false) cfg.showTierBadge = false;
   if (src.showPayoutHint === false) cfg.showPayoutHint = false;
+  if (src.payoutHints && typeof src.payoutHints === 'object' && !Array.isArray(src.payoutHints)) {
+    cfg.payoutHints = { ...src.payoutHints };
+  }
   return cfg;
 }
 
@@ -179,6 +179,9 @@ export function emitSymbolInfoPopoverRuntime(cfg = defaultConfig()) {
   const SYMBOL_INFO_POPOVER_AUTO_HIDE_MS = ${c.autoHideMs};
   let _sipTimer = null;
   let _sipLastCell = null;
+  const SIP_VIEWPORT_PAD = 8;
+  const SIP_CELL_GAP = 4;
+  const SIP_PAYOUT_HINTS = ${JSON.stringify(c.payoutHints)};
 
   function _sipEl() {
     return (typeof document !== 'undefined')
@@ -187,37 +190,31 @@ export function emitSymbolInfoPopoverRuntime(cfg = defaultConfig()) {
   }
 
   function _sipTierOf(symbol) {
-    /* Walk SYMBOL_REGISTRY (if available) for tier classification. */
-    if (typeof SYMBOL_REGISTRY !== 'undefined' && SYMBOL_REGISTRY) {
-      for (const tier of ['high', 'mid', 'low', 'specials']) {
-        const list = Array.isArray(SYMBOL_REGISTRY[tier]) ? SYMBOL_REGISTRY[tier] : [];
-        if (list.some(s => (s.glyph || s.code || s) === symbol)) {
-          return tier === 'specials' ? 'special' : tier;
-        }
-      }
+    if (typeof SYMBOL_REGISTRY === 'undefined' || !SYMBOL_REGISTRY) return null;
+    if (typeof SYMBOL_REGISTRY.tierOf === 'function') return SYMBOL_REGISTRY.tierOf(symbol);
+    for (const tier of Object.keys(SYMBOL_REGISTRY)) {
+      const list = Array.isArray(SYMBOL_REGISTRY[tier]) ? SYMBOL_REGISTRY[tier] : [];
+      if (list.some(s => (s.glyph || s.code || s) === symbol)) return tier;
     }
     return null;
   }
 
   function _sipPayoutHint(symbol) {
     if (!${c.showPayoutHint}) return '';
-    /* Placeholder math — real values arrive with the PAR layer. */
     const tier = _sipTierOf(symbol);
     if (!tier) return '';
-    const table = { high: '5-of-kind ~ 25×', mid: '5-of-kind ~ 10×', low: '5-of-kind ~ 4×', special: 'feature trigger' };
-    return table[tier] || '';
+    return SIP_PAYOUT_HINTS[tier] || '';
   }
 
   function _sipPositionFor(el) {
     const rect = el.getBoundingClientRect();
     const popover = _sipEl();
     if (!popover) return;
-    /* Center horizontally above the cell. Clamp to viewport so the
-       popover doesn't escape on edge cells. */
-    const popRect = popover.getBoundingClientRect();
-    const wantedLeft = rect.left + rect.width / 2 - popRect.width / 2;
-    const clampedLeft = Math.max(8, Math.min(window.innerWidth - popRect.width - 8, wantedLeft));
-    const top = Math.max(8, rect.top - popRect.height - 4);
+    const popW = popover.offsetWidth;
+    const popH = popover.offsetHeight;
+    const wantedLeft = rect.left + rect.width / 2 - popW / 2;
+    const clampedLeft = Math.max(SIP_VIEWPORT_PAD, Math.min(window.innerWidth - popW - SIP_VIEWPORT_PAD, wantedLeft));
+    const top = Math.max(SIP_VIEWPORT_PAD, rect.top - popH - SIP_CELL_GAP);
     popover.style.left = clampedLeft + 'px';
     popover.style.top  = top + 'px';
   }

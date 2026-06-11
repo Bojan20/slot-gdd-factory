@@ -59,6 +59,22 @@
 
 const VALID_SOURCES = Object.freeze(['button', 'reelsArea', 'keyboard']);
 
+/* Layout / timing constants for the slam button. Hoisted so tuning the
+ * button or aligning it with shared block tokens means editing one
+ * table instead of hunting string literals inside the CSS template. */
+const SLAM_CSS = Object.freeze({
+  size: 120,
+  sizeMobile: 96,
+  zIndex: 20,
+  pulseMs: 1100,
+  transitionMs: 120,
+  fadeMs: 160,
+  mobileBp: 480,
+  fontPx: 22,
+  fontPxMobile: 18,
+  borderPx: 3,
+});
+
 export function defaultConfig() {
   return {
     enabled: false,
@@ -88,16 +104,21 @@ export function resolveConfig(model = {}) {
   const cfg = defaultConfig();
   const m = (model && model.slamStop) || {};
 
-  if (m.enabled != null) cfg.enabled = !!m.enabled;
+  /* Track explicit caller intent on `enabled` so the features-based
+   * auto-enable below never silently overrides a hard "off". */
+  const explicit = m.enabled != null;
+  if (explicit) cfg.enabled = !!m.enabled;
 
   if (typeof m.chipLabel === 'string' && m.chipLabel.length > 0 && m.chipLabel.length <= 16) {
     cfg.chipLabel = m.chipLabel;
   }
-  if (typeof m.chipColor === 'string' && /^\d{1,3},\s*\d{1,3},\s*\d{1,3}$/.test(m.chipColor)) {
-    cfg.chipColor = m.chipColor.replace(/\s+/g, '');
+  if (typeof m.chipColor === 'string') {
+    const parsedChip = parseRgbTriplet(m.chipColor);
+    if (parsedChip) cfg.chipColor = parsedChip;
   }
-  if (typeof m.chipTextColor === 'string' && /^\d{1,3},\s*\d{1,3},\s*\d{1,3}$/.test(m.chipTextColor)) {
-    cfg.chipTextColor = m.chipTextColor.replace(/\s+/g, '');
+  if (typeof m.chipTextColor === 'string') {
+    const parsedText = parseRgbTriplet(m.chipTextColor);
+    if (parsedText) cfg.chipTextColor = parsedText;
   }
   if (Number.isFinite(m.requireMinSpinMs)) {
     cfg.requireMinSpinMs = clampInt(m.requireMinSpinMs, 0, 2000);
@@ -110,8 +131,11 @@ export function resolveConfig(model = {}) {
   }
   if (m.pulseAnimation != null) cfg.pulseAnimation = !!m.pulseAnimation;
 
-  /* Auto-enable when GDD declares a slam-stop feature kind. */
-  if (model.features && Array.isArray(model.features)) {
+  /* Auto-enable when GDD declares a slam-stop feature kind, but only if
+   * the caller did not set `enabled` themselves — explicit intent always
+   * wins to preserve determinism for authoring tools that disable the
+   * block per build. */
+  if (!explicit && model.features && Array.isArray(model.features)) {
     const hasSlamFeature = model.features.some(
       (f) => f && typeof f.kind === 'string' && /^(slam[_-]?stop|quick[_-]?stop)$/i.test(f.kind),
     );
@@ -127,6 +151,25 @@ function clampInt(n, lo, hi) {
   return Math.max(lo, Math.min(hi, x));
 }
 
+/* Parse and validate an "r,g,b" string with each channel in 0..255.
+ * Returns the canonical whitespace-free form for direct interpolation
+ * into rgba(), or null when any channel is malformed or out of range
+ * (caller then falls back to default). */
+function parseRgbTriplet(s) {
+  if (typeof s !== 'string') return null;
+  const parts = s.split(',');
+  if (parts.length !== 3) return null;
+  const out = [];
+  for (let i = 0; i < 3; i += 1) {
+    const t = parts[i].trim();
+    if (!/^\d{1,3}$/.test(t)) return null;
+    const n = Number(t);
+    if (n < 0 || n > 255) return null;
+    out.push(n);
+  }
+  return out.join(',');
+}
+
 /* HTML escape — applied to any string baked into runtime JS that will
  * eventually reach innerHTML. The chipLabel passes through this. */
 function _slamEscape(s) {
@@ -140,9 +183,10 @@ function _slamEscape(s) {
 
 export function emitSlamStopCSS(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  const c = resolveConfig({ slamStop: cfg });
-  /* z-index 20: above reels (10), below uiToast (30) and force-skip (25).
-   * See Wave V8 stacking doc in master TODO. */
+  /* cfg is canonical per the resolveConfig → emit* contract; no re-resolve. */
+  const c = cfg;
+  /* z-index ordering: above reels (10), below uiToast (30) and force-skip
+   * (25). See Wave V8 stacking doc in master TODO. */
   return `
   /* ── slamStop BLOCK — emitted by src/blocks/slamStop.mjs ─────────── */
   .slam-stop-btn {
@@ -150,29 +194,29 @@ export function emitSlamStopCSS(cfg = defaultConfig()) {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) scale(1);
-    z-index: 20;
-    min-width: 120px;
-    min-height: 120px;
+    z-index: ${SLAM_CSS.zIndex};
+    min-width: ${SLAM_CSS.size}px;
+    min-height: ${SLAM_CSS.size}px;
     border-radius: 50%;
-    border: 3px solid rgba(${c.chipColor}, 1);
+    border: ${SLAM_CSS.borderPx}px solid rgba(${c.chipColor}, 1);
     background: radial-gradient(circle at 30% 30%, rgba(${c.chipColor}, 0.95), rgba(${c.chipColor}, 0.65) 70%, rgba(${c.chipColor}, 0.45));
     color: rgb(${c.chipTextColor});
     font-family: inherit;
     font-weight: 800;
-    font-size: 22px;
+    font-size: ${SLAM_CSS.fontPx}px;
     letter-spacing: 2px;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
     box-shadow: 0 0 24px rgba(${c.chipColor}, 0.55), 0 4px 12px rgba(0, 0, 0, 0.45);
     cursor: pointer;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    transition: transform 120ms ease-out, opacity 160ms ease-out;
+    transition: transform ${SLAM_CSS.transitionMs}ms ease-out, opacity ${SLAM_CSS.fadeMs}ms ease-out;
   }
   .slam-stop-btn[hidden] { display: none !important; }
   .slam-stop-btn:active { transform: translate(-50%, -50%) scale(0.94); }
   .slam-stop-btn:disabled { opacity: 0.55; cursor: default; }
   ${c.pulseAnimation ? `
-  .slam-stop-btn.is-pulsing { animation: slamStopPulse 1100ms ease-in-out infinite; }
+  .slam-stop-btn.is-pulsing { animation: slamStopPulse ${SLAM_CSS.pulseMs}ms ease-in-out infinite; }
   @keyframes slamStopPulse {
     0%   { box-shadow: 0 0 24px rgba(${c.chipColor}, 0.55), 0 4px 12px rgba(0, 0, 0, 0.45); transform: translate(-50%, -50%) scale(1); }
     50%  { box-shadow: 0 0 36px rgba(${c.chipColor}, 0.85), 0 6px 16px rgba(0, 0, 0, 0.55); transform: translate(-50%, -50%) scale(1.04); }
@@ -187,15 +231,16 @@ export function emitSlamStopCSS(cfg = defaultConfig()) {
    * on the host so other CSS doesn't fight the pointer cursor. */
   .reelsHost.slam-armed { cursor: pointer; }
   ` : ''}
-  @media (max-width: 480px) {
-    .slam-stop-btn { min-width: 96px; min-height: 96px; font-size: 18px; }
+  @media (max-width: ${SLAM_CSS.mobileBp}px) {
+    .slam-stop-btn { min-width: ${SLAM_CSS.sizeMobile}px; min-height: ${SLAM_CSS.sizeMobile}px; font-size: ${SLAM_CSS.fontPxMobile}px; }
   }
 `;
 }
 
 export function emitSlamStopMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  const c = resolveConfig({ slamStop: cfg });
+  /* cfg is canonical per the resolveConfig → emit* contract; no re-resolve. */
+  const c = cfg;
   const safeLabel = _slamEscape(c.chipLabel);
   const safeAria = _slamEscape(c.ariaLabel);
   return `
@@ -222,7 +267,8 @@ export function emitSlamStopRuntime(cfg = defaultConfig()) {
 `;
   }
 
-  const c = resolveConfig({ slamStop: cfg });
+  /* cfg is canonical per the resolveConfig → emit* contract; no re-resolve. */
+  const c = cfg;
 
   return `
   /* ── slamStop BLOCK — emitted by src/blocks/slamStop.mjs ─────────────

@@ -21,12 +21,22 @@ import { applyGridProfile } from '../registry/gridProfile.mjs';
  *   dimOpacity    number in [0,1] — non-scatter cells dim level   (default 0.18)
  *   glowColor     "r,g,b" string — drop-shadow halo color         (default "255,214,110")
  *   glowPeak      number — brightness peak inside a cycle          (default 1.5)
+ *   haloPx        number px — peak-stage drop-shadow blur          (default 8)
+ *   haloMidPx     number px — mid-stage drop-shadow blur           (default 5)
+ *   haloAlphaPeak number in [0,1] — peak-stage halo alpha          (default 0.85)
+ *   haloAlphaMid  number in [0,1] — mid-stage halo alpha           (default 0.50)
+ *   midPeakRatio  number in [0,1] — mid-stage brightness curve     (default 0.4)
+ *   dimTransitionMs number ms — dim/halo CSS transition duration   (default 220)
+ *   celebrateZIndex number — celebrating cell stack level          (default 10)
+ *   reducedMotionPeakRatio number in [0,1] — RM brightness ratio   (default 0.6)
+ *   reducedMotionHaloPx    number px — RM halo blur                (default 6)
+ *   reducedMotionHaloAlpha number in [0,1] — RM halo alpha         (default 0.7)
  *
  * Public API (server-side, ES module):
  *   defaultConfig()                            → safe defaults
  *   resolveConfig(model)                       → merge defaults with GDD override
- *   emitScatterCelebrationCSS(config)          → CSS string (keyframes + classes)
- *   emitScatterCelebrationRuntime(config)      → runtime JS string for orchestrator
+ *   emitScatterCelebrationCSS(model)           → CSS string (keyframes + classes)
+ *   emitScatterCelebrationRuntime(model)       → runtime JS string for orchestrator
  *
  * Runtime contract (after emitted JS executes):
  *   findScatterCellsOnGrid()                   → { host, cells } locator
@@ -44,6 +54,37 @@ const DEFAULTS = Object.freeze({
   dimOpacity: 0.18,
   glowColor: '255,214,110',
   glowPeak: 1.5,
+  haloPx: 8,
+  haloMidPx: 5,
+  haloAlphaPeak: 0.85,
+  haloAlphaMid: 0.50,
+  midPeakRatio: 0.4,
+  dimTransitionMs: 220,
+  celebrateZIndex: 10,
+  reducedMotionPeakRatio: 0.6,
+  reducedMotionHaloPx: 6,
+  reducedMotionHaloAlpha: 0.7,
+});
+
+/* Numeric clamp bounds — single source of truth for resolveConfig + tests.
+   Each entry: { min, max, integer? }; integer keys are floored after the
+   bounds check. Lifted out per senior review (0-magic-numbers rule). */
+const BOUNDS = Object.freeze({
+  durationMs:             { min: 100, max: 10000, integer: true },
+  pulseCycles:            { min: 1,   max: 12,    integer: true },
+  pulseCycleMs:           { min: 50,  max: 5000,  integer: true },
+  dimOpacity:             { min: 0,   max: 1,     integer: false },
+  glowPeak:               { min: 1,   max: 5,     integer: false },
+  haloPx:                 { min: 0,   max: 64,    integer: true },
+  haloMidPx:              { min: 0,   max: 64,    integer: true },
+  haloAlphaPeak:          { min: 0,   max: 1,     integer: false },
+  haloAlphaMid:           { min: 0,   max: 1,     integer: false },
+  midPeakRatio:           { min: 0,   max: 1,     integer: false },
+  dimTransitionMs:        { min: 0,   max: 5000,  integer: true },
+  celebrateZIndex:        { min: 0,   max: 1000,  integer: true },
+  reducedMotionPeakRatio: { min: 0,   max: 1,     integer: false },
+  reducedMotionHaloPx:    { min: 0,   max: 64,    integer: true },
+  reducedMotionHaloAlpha: { min: 0,   max: 1,     integer: false },
 });
 
 export function defaultConfig() {
@@ -67,34 +108,27 @@ export function resolveConfig(model) {
   const src = (model && model.scatterCelebration) || {};
 
   if (src.enabled === false) cfg.enabled = false;
-  if (typeof src.durationMs === 'number' && src.durationMs >= 100 && src.durationMs <= 10000) {
-    cfg.durationMs = Math.floor(src.durationMs);
-  }
-  if (typeof src.pulseCycles === 'number' && src.pulseCycles >= 1 && src.pulseCycles <= 12) {
-    cfg.pulseCycles = Math.floor(src.pulseCycles);
-  }
-  if (typeof src.pulseCycleMs === 'number' && src.pulseCycleMs >= 50 && src.pulseCycleMs <= 5000) {
-    cfg.pulseCycleMs = Math.floor(src.pulseCycleMs);
-  }
-  if (typeof src.dimOpacity === 'number' && src.dimOpacity >= 0 && src.dimOpacity <= 1) {
-    cfg.dimOpacity = src.dimOpacity;
+  for (const key of Object.keys(BOUNDS)) {
+    const v = src[key];
+    const b = BOUNDS[key];
+    if (typeof v === 'number' && v >= b.min && v <= b.max) {
+      cfg[key] = b.integer ? Math.floor(v) : v;
+    }
   }
   if (isValidGlow(src.glowColor)) cfg.glowColor = src.glowColor;
-  if (typeof src.glowPeak === 'number' && src.glowPeak >= 1 && src.glowPeak <= 5) {
-    cfg.glowPeak = src.glowPeak;
-  }
 
   return cfg;
 }
 
 /* Emit the CSS block (keyframes + classes). Knobs baked in as literals so
-   no runtime style-recalc is needed when the celebration triggers. */
-export function emitScatterCelebrationCSS(cfg = defaultConfig()) {
-  const c = resolveConfig({ scatterCelebration: cfg });
-  const peak = c.glowPeak;
-  const mid  = (1 + (peak - 1) * 0.4).toFixed(2); /* gentler 70%-stage value */
-  const haloPx = 8;
-  const haloMidPx = 5;
+   no runtime style-recalc is needed when the celebration triggers.
+   Takes the full GDD model (not the sub-config) so gridProfile context
+   overrides survive — passing a raw sub-block strips model.SHAPE.kind. */
+export function emitScatterCelebrationCSS(model = {}) {
+  const c = resolveConfig(model);
+  const peak  = c.glowPeak;
+  const mid   = (1 + (peak - 1) * c.midPeakRatio).toFixed(2);
+  const rmBri = (1 + (peak - 1) * c.reducedMotionPeakRatio).toFixed(2);
   return `
 /* ── scatterCelebration BLOCK — emitted by src/blocks/scatterCelebration.mjs ─
    GDD knobs (baked at build time):
@@ -110,37 +144,38 @@ export function emitScatterCelebrationCSS(cfg = defaultConfig()) {
 .gridHost.is-scatter-celebrating .cell,
 .gridHost.is-scatter-celebrating text {
   opacity: ${c.dimOpacity};
-  transition: opacity 220ms ease;
+  transition: opacity ${c.dimTransitionMs}ms ease;
 }
 .gridHost.is-scatter-celebrating .cell--scatter-celebrate,
 .gridHost.is-scatter-celebrating text.cell--scatter-celebrate {
   opacity: 1 !important;
   animation: scatter-celebrate ${c.pulseCycleMs}ms ease-in-out ${c.pulseCycles};
   transform: none;
-  z-index: 10;
+  z-index: ${c.celebrateZIndex};
   position: relative;
 }
 @keyframes scatter-celebrate {
   0%   { filter: brightness(1)        drop-shadow(0 0 0          transparent); }
-  40%  { filter: brightness(${peak})  drop-shadow(0 0 ${haloPx}px    rgba(${c.glowColor}, 0.85)); }
-  70%  { filter: brightness(${mid})   drop-shadow(0 0 ${haloMidPx}px rgba(${c.glowColor}, 0.50)); }
+  40%  { filter: brightness(${peak})  drop-shadow(0 0 ${c.haloPx}px    rgba(${c.glowColor}, ${c.haloAlphaPeak})); }
+  70%  { filter: brightness(${mid})   drop-shadow(0 0 ${c.haloMidPx}px rgba(${c.glowColor}, ${c.haloAlphaMid})); }
   100% { filter: brightness(1)        drop-shadow(0 0 0          transparent); }
 }
 @media (prefers-reduced-motion: reduce) {
   .gridHost.is-scatter-celebrating .cell--scatter-celebrate,
   .gridHost.is-scatter-celebrating text.cell--scatter-celebrate {
     animation: none;
-    filter: brightness(${(1 + (peak - 1) * 0.6).toFixed(2)}) drop-shadow(0 0 6px rgba(${c.glowColor}, 0.7));
-    transition: filter 220ms ease;
+    filter: brightness(${rmBri}) drop-shadow(0 0 ${c.reducedMotionHaloPx}px rgba(${c.glowColor}, ${c.reducedMotionHaloAlpha}));
+    transition: filter ${c.dimTransitionMs}ms ease;
   }
 }
 `;
 }
 
 /* Emit the runtime JS as a string. Config knobs baked into the output as
-   literals — keeps the browser bundle clean. */
-export function emitScatterCelebrationRuntime(cfg = defaultConfig()) {
-  const c = resolveConfig({ scatterCelebration: cfg });
+   literals — keeps the browser bundle clean. Takes the full GDD model
+   (not the sub-config) so gridProfile context overrides survive. */
+export function emitScatterCelebrationRuntime(model = {}) {
+  const c = resolveConfig(model);
   /* If GDD disables the block entirely, emit a stub that resolves
      immediately — every caller can still `.then()` without branching. */
   if (!c.enabled) {
