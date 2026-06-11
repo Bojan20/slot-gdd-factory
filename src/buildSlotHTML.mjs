@@ -293,6 +293,11 @@ import {
   emitSymbolInfoPopoverCSS, emitSymbolInfoPopoverMarkup, emitSymbolInfoPopoverRuntime,
   resolveConfig as resolveSymbolInfoPopoverConfig,
 } from './blocks/symbolInfoPopover.mjs';
+// Wave B64 — Symbol upgrade / transmute on tumble refill (cascade level-up)
+import {
+  emitSymbolUpgradeCSS, emitSymbolUpgradeMarkup, emitSymbolUpgradeRuntime,
+  resolveConfig as resolveSymbolUpgradeConfig,
+} from './blocks/symbolUpgrade.mjs';
 // Wave P8 — Hot-Reload BLOCK (dev-mode SSE → in-page re-parse or full reload).
 // Disabled by default; opt-in via model.hotReload.enabled (set by dev server
 // or by the parent page on localhost). Production builds emit a 0-byte stub.
@@ -621,6 +626,8 @@ ${emitSettingsPanelCSS(resolveSettingsPanelConfig(model))}
 ${/* Wave U10 — paytable modal (i-button + symbol roster + features). */ ''}
 ${emitPaytableCSS(resolvePaytableConfig(model))}
 ${emitSymbolInfoPopoverCSS(resolveSymbolInfoPopoverConfig(model))}
+${/* Wave B64 — Symbol upgrade flash + morph keyframes (decorates .cell). */ ''}
+${emitSymbolUpgradeCSS(resolveSymbolUpgradeConfig(model))}
 ${/* Wave P8 — hot-reload indicator badge (dev-mode only). */ ''}
 ${emitHotReloadCSS(resolveHotReloadConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
@@ -765,6 +772,8 @@ ${emitSettingsPanelMarkup(resolveSettingsPanelConfig(model))}
 ${/* Wave U10 — paytable button (in hub) + modal backdrop. */ ''}
 ${emitPaytableMarkup(resolvePaytableConfig(model))}
 ${emitSymbolInfoPopoverMarkup(resolveSymbolInfoPopoverConfig(model))}
+${/* Wave B64 — symbolUpgrade has no markup (decorates existing .cell DOM). */ ''}
+${emitSymbolUpgradeMarkup(resolveSymbolUpgradeConfig(model))}
 ${/* Wave P8 — hot-reload indicator host (hidden until connected). */ ''}
 ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
 
@@ -942,6 +951,9 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${/* Wave U10 — paytable modal runtime (i-button show/hide + roster). */ ''}
   ${emitPaytableRuntime(resolvePaytableConfig(model), model)}
   ${emitSymbolInfoPopoverRuntime(resolveSymbolInfoPopoverConfig(model))}
+  ${/* Wave B64 — symbolUpgrade runtime. Listens onTumbleStep AFTER tumble
+       refill so freshly-dropped symbols get a chance to morph upward. */ ''}
+  ${emitSymbolUpgradeRuntime(resolveSymbolUpgradeConfig(model))}
   ${/* Wave P8 — hot-reload runtime (dev-mode). Placed AFTER HookBus and
      * AFTER every other block runtime so that subscribers to onGddChange
      * are already registered when an SSE-driven re-parse fires. Disabled

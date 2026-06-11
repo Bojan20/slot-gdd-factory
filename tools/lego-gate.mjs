@@ -205,6 +205,17 @@ const EXPECTED_EMIT_OWNERS = {
   /* Wave U-FORCE-ALL — universal force panel is the sole emitter of
    * `onForceFeatureRequested`. Generic banner only listens. */
   onForceFeatureRequested: ['universalForcePanel.mjs'],
+  /* Wave B64 — symbolUpgrade is the sole emitter of per-cell upgrade
+   * events. Fires inside the onTumbleStep handler after refill so any
+   * downstream HUD listener gets the canonical post-refill snapshot. */
+  onSymbolUpgrade:        ['symbolUpgrade.mjs'],
+  onSymbolUpgradeCascade: ['symbolUpgrade.mjs'],
+  /* 2026-06-11 — holdAndWin phase machine emits its own INACTIVE → INTRO
+   * → RUNNING → SUMMARY phase signal + a final end stats payload. Both
+   * are sole-owned by the block; downstream HUD / summary listeners read
+   * the running totals from the payload. */
+  onHoldAndWinPhase: ['holdAndWin.mjs'],
+  onHoldAndWinEnd:   ['holdAndWin.mjs'],
   /* 2026-06-10 — UFP also emits a dedicated multiplier-force signal so
    * mult-aware blocks (multiplierOrb, persistentMultiplier, pathAware)
    * can render visual feedback on the grid. */

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-10T13:45:33.636Z",
+  "generatedAt": "2026-06-11T02:23:12.047Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 67,
+  "totalBlocks": 69,
   "blocks": [
     {
       "name": "anteBet",
@@ -53,6 +53,34 @@
         "skipDuringFs": false
       },
       "loc": 257
+    },
+    {
+      "name": "anticipationUniversal",
+      "file": "src/blocks/anticipationUniversal.mjs",
+      "testFile": "tests/blocks/anticipationUniversal.test.mjs",
+      "category": "engine",
+      "description": "2026-06-11 (Boki: \"ne radi mi anticipacija u svim gridovima. potpuno",
+      "exports": [
+        "defaultConfig",
+        "emitAnticipationUniversalCSS",
+        "emitAnticipationUniversalRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": true,
+        "pulseMs": 700,
+        "gold": "255,214,110",
+        "tickMs": 140,
+        "showBadge": true,
+        "skipDuringFs": false
+      },
+      "loc": 338
     },
     {
       "name": "audio",
@@ -196,7 +224,6 @@
         "onFsEnd",
         "onFsTrigger",
         "onGambleEnd",
-        "onSpinResult",
         "postSpin",
         "preSpin"
       ],
@@ -217,7 +244,7 @@
         "creditColor": "120,255,180",
         "ariaLabel": "Balance HUD"
       },
-      "loc": 521
+      "loc": 527
     },
     {
       "name": "betSelector",
@@ -496,8 +523,10 @@
         "resolveConfig"
       ],
       "lifecycleHooks": [
+        "onForceFeatureRequested",
         "onFsEnd",
-        "onFsTrigger"
+        "onFsTrigger",
+        "postSpin"
       ],
       "emittedEvents": [],
       "defaultConfig": {
@@ -548,7 +577,7 @@
         "title": "PICK A PRIZE",
         "haloColor": "255,180,60"
       },
-      "loc": 272
+      "loc": 285
     },
     {
       "name": "clusterPaysEval",
@@ -713,7 +742,7 @@
         "toastMs": 1800,
         "retriggerToastMs": 1600
       },
-      "loc": 751
+      "loc": 796
     },
     {
       "name": "gamble",
@@ -729,6 +758,7 @@
         "resolveConfig"
       ],
       "lifecycleHooks": [
+        "onForceFeatureRequested",
         "onFsEnd",
         "onFsTrigger",
         "postSpin"
@@ -742,7 +772,7 @@
         "collectThresholdX": 0,
         "haloColor": "200,80,80"
       },
-      "loc": 259
+      "loc": 282
     },
     {
       "name": "gambleSecondary",
@@ -760,6 +790,7 @@
       "lifecycleHooks": [
         "onAutoplayStart",
         "onAutoplayStop",
+        "onForceFeatureRequested",
         "onFsEnd",
         "onFsTrigger",
         "onSkipRequested",
@@ -792,7 +823,7 @@
         "chipColor": "180,80,80",
         "chipTextColor": "255,255,255"
       },
-      "loc": 971
+      "loc": 984
     },
     {
       "name": "genericFeatureBanner",
@@ -820,7 +851,7 @@
         "fadeMs": 240,
         "handleKinds": "auto"
       },
-      "loc": 304
+      "loc": 306
     },
     {
       "name": "hexReelEngine",
@@ -896,7 +927,7 @@
       "file": "src/blocks/holdAndWin.mjs",
       "testFile": "tests/blocks/holdAndWin.test.mjs",
       "category": "feature",
-      "description": "Trigger: ≥N bonus/coin symbols on the grid → enter Hold round.",
+      "description": "Hold & Win / Hold & Spin block — industry-standard lock-and-respin pattern.",
       "exports": [
         "defaultConfig",
         "emitHoldAndWinCSS",
@@ -905,12 +936,17 @@
         "resolveConfig"
       ],
       "lifecycleHooks": [
+        "onForceFeatureRequested",
         "onFsEnd",
         "onFsTrigger",
+        "onSkipRequested",
         "onSpinResult",
         "postSpin"
       ],
-      "emittedEvents": [],
+      "emittedEvents": [
+        "onHoldAndWinEnd",
+        "onHoldAndWinPhase"
+      ],
       "defaultConfig": {
         "enabled": false,
         "triggerCount": 6,
@@ -923,9 +959,14 @@
           "MINOR",
           "MAJOR",
           "GRAND"
-        ]
+        ],
+        "fullGridBonusX": 500,
+        "title": "HOLD & WIN",
+        "subtitle": "COLLECT THE ORBS",
+        "showIntro": true,
+        "showSummary": true
       },
-      "loc": 258
+      "loc": 1072
     },
     {
       "name": "holdAndWinCreditBucket",
@@ -1537,7 +1578,7 @@
         "fakeWinChance": 0.4,
         "fakeWinMaxX": 25
       },
-      "loc": 259
+      "loc": 280
     },
     {
       "name": "progressiveFreeSpins",
@@ -1661,7 +1702,7 @@
         "minStepPx": 0.5,
         "accelMinFactor": 0.3
       },
-      "loc": 759
+      "loc": 806
     },
     {
       "name": "reelEngineCSS",
@@ -2116,6 +2157,45 @@
       "loc": 296
     },
     {
+      "name": "symbolUpgrade",
+      "file": "src/blocks/symbolUpgrade.mjs",
+      "testFile": "tests/blocks/symbolUpgrade.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave B64 (Faza 3 · Pre-Math Roadmap) — Symbol Upgrade / Transmute block.",
+      "exports": [
+        "defaultConfig",
+        "emitSymbolUpgradeCSS",
+        "emitSymbolUpgradeMarkup",
+        "emitSymbolUpgradeRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onTumbleStep",
+        "postSpin",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onSymbolUpgrade",
+        "onSymbolUpgradeCascade"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "probability": 0.06,
+        "maxPerTumble": 2,
+        "eligibleTiers": [
+          "low",
+          "mid"
+        ],
+        "ladder": null,
+        "flashColor": "255,210,90",
+        "flashMs": 480,
+        "morphMs": 220,
+        "bonusAccumulate": true
+      },
+      "loc": 519
+    },
+    {
       "name": "themeCSS",
       "file": "src/blocks/themeCSS.mjs",
       "testFile": "tests/blocks/themeCSS.test.mjs",
@@ -2193,7 +2273,7 @@
         "maxChain": 16,
         "preserveOrbs": true
       },
-      "loc": 334
+      "loc": 344
     },
     {
       "name": "turboMode",
@@ -2313,7 +2393,7 @@
         "showLabelText": true,
         "labelText": "FORCE"
       },
-      "loc": 519
+      "loc": 580
     },
     {
       "name": "walkingWild",
@@ -2429,8 +2509,10 @@
         "resolveConfig"
       ],
       "lifecycleHooks": [
+        "onForceFeatureRequested",
         "onFsEnd",
-        "onFsTrigger"
+        "onFsTrigger",
+        "postSpin"
       ],
       "emittedEvents": [],
       "defaultConfig": {
@@ -2482,7 +2564,7 @@
         "autoSpin": false,
         "title": "BONUS WHEEL"
       },
-      "loc": 287
+      "loc": 305
     },
     {
       "name": "wheelSpinEngine",

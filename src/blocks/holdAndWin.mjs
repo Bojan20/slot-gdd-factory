@@ -1,7 +1,7 @@
 /**
  * src/blocks/holdAndWin.mjs
  *
- * Hold & Win / Hold & Spin block — Lightning Link / WoO Zeus' Storm pattern.
+ * Hold & Win / Hold & Spin block — industry-standard lock-and-respin pattern.
  *
  * Trigger: ≥N bonus/coin symbols on the grid → enter Hold round.
  * Mechanics: bonus symbols lock as orbs (with value 1x..GRAND), you get K

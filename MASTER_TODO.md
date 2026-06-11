@@ -60,6 +60,7 @@
 
 | Hash | Wave | Subject |
 |---|---|---|
+| _pending_ | **B64** | **`symbolUpgrade` block (Faza 3 #1)** — cascade-with-transmute level-up on tumble refill. Owns 2 HookBus events (`onSymbolUpgrade` · `onSymbolUpgradeCascade`), 4 lifecycle listeners (preSpin · onTumbleStep · postSpin · onFsEnd), Fisher–Yates fair cap selection (default ≤2 per tumble), auto-derived ladder from `SYMBOL_REGISTRY` tiers when GDD omits explicit pairs, force/QA hook `window.symbolUpgradeForceAt(col,row)` routes through real upgrade path (rule_force_buttons_real_spin), auto-disabled on tumble-incompatible shapes (wheel/hex/plinko/crash/slingo/radial). 26/26 unit + LEGO 5/5 (69 blocks · 60/60 event ownership · 57/57 listener coverage) + budget 1012/1050 + grids 20/20 + browser 24/24 + manifest 17/17. Sweep extras: `holdAndWin.mjs` vendor string purged ("Lightning Link" → "industry-standard lock-and-respin"), `anticipationUniversal.mjs` got its missing test (15/15), `onHoldAndWinPhase` / `onHoldAndWinEnd` declared in EXPECTED_EMIT_OWNERS. |
 | `6e2405f` | **P8** | **Hot-reload bez page refresh** — closes Faza 2 (P1–P8 all SHIPPED). New `tools/dev-server.mjs` (Node HTTP + SSE + `fs.watch` recursive on `samples/`, `src/`, `app.js`, `index.html`; categorize() → gdd/parser/orchestrator/block/runtime/asset; path-safe static serving; `/__dev/events` SSE, `/__dev/gdd?path=` reader, `/__dev/health`). New `src/blocks/hotReload.mjs` (EventSource client + 1.5× backoff cap, debounced full reload, in-page fast-path that calls `window.__SLOT_REPARSE__` then `HookBus.emit('onGddChange',{model,src})`; opt-in via `model.hotReload.enabled`; production builds emit a 0-byte stub; HMR badge w/ `role=status`+`aria-live=polite` honoring `prefers-reduced-motion`). 3 new HookBus events (`onHotReloadConnect`, `onHotReloadDisconnect`, `onGddChange`) wired in `EXPECTED_EMIT_OWNERS`. Manifest gen `--print` flush fix (use `process.stdout.write` + callback so 64 KB highWaterMark no longer truncates JSON). `npm run dev` script added. **Tests:** 23/23 `tests/blocks/hotReload.test.mjs` + 18/18 `tests/_dev-server.test.mjs` + 7/7 `tools/_p8-hot-reload-probe.mjs` live SSE probe + 1452/0 block regression + LEGO 5/5 (event-ownership 52/52, listener-coverage 54/54) + manifest freshness PASS |
 | `872e9b3` | **P1** | **Malformed GDD recovery** — `src/parser.mjs` `_safeExtract(label, fn, model)` harness wraps every top-level extractor; `parseGDD()` outer guard for null/undefined/non-string/JSON-malformed input. Failures recorded in `model.confidence._failures[]` (label + error) instead of throwing. New `tests/blocks/parserMalformed.test.mjs` 20/20 PASS (null / empty / unicode / 100KB random / corrupt tables / typo headers / JSON.parse fallback / 1000-row DOS guard / idempotency / schema integrity). LEGO gate 5/5 PASS, parse regression 4/4 PASS, universal GDD audit 460/461 PASS, 63 block tests all green |
 | `1b30a0d` | **C1** | **Zero-touch cert pipeline** — `src/cert/{jurisdictions,complianceGate,manifest,evidencePack,bundler}.mjs` + `tools/cert-build.mjs` CLI orchestrator. Supports **UKGC / MGA / DGA / SGA / NJDGE / DGOJ**; emits deterministic `<game_id>-<version>.opkg/` bundle with manifest.json + evidence.json + compliance.json + README.txt + source/ + optional `.zip`. 160/160 cert tests PASS (jurisdictions 21 / complianceGate 29 / manifest 30 / evidencePack 34 / bundler 27 / CLI integration 19). Parser extended with 3 social-responsibility kinds (`reality_check` / `session_timeout` / `net_loss_indicator`). LEGO gate 5/5 PASS, parse regression 4/4 PASS, exit-code contract: 0 PASS / 1 compliance FAIL / 2 fatal |
@@ -117,21 +118,21 @@
 
 ### Faza 3 · Više fičera = više blokova (Boki imperativ 04.06)
 
-| # | Novi blok | Lifecycle | Industry-ref kind |
-|---|---|---|---|
-| B64 | `symbolUpgrade` | onTumbleStep | level-up symbol transmute |
-| B65 | `mysteryReveal` | preSpin/onSpinResult | mystery symbol → uniform reveal |
-| B66 | `winwaysIndicator` | onSpinResult | 1024 / 4096 / 117 649 ways display |
-| B67 | `multiplierLadder` | onTumbleStep/onFsSpinResult | persistent climbing mult |
-| B68 | `coinShower` | onSpinResult (big-win) | particle presenter |
-| B69 | `fsProgressBar` | onFsSpinResult | "spin X of Y" UI |
-| B70 | `stickyMeter` | preSpin/postSpin | sticky symbol counter |
-| B71 | `pickBonusReveal` | onFsTrigger (alt) | pick-3-of-N reveal |
-| B72 | `wheelBonusReveal` | onFsTrigger (alt) | rotational reward picker (extension layer iznad postojećeg `wheelBonus.mjs`) |
-| B73 | `energyMeter` | onSpinResult | metered side-feature gauge |
-| B74 | `rewardChest` | postSpin | end-of-round reveal |
-| B75 | `symbolStackCollapse` | onTumbleStep | full-reel stack drop |
-| B76 | `scatterAnticipationV2` | preSpin/onReelLand | **fix Boki bug**: bez "fake nada" na rilima koji više ne mogu trigger |
+| # | Novi blok | Lifecycle | Industry-ref kind | Status |
+|---|---|---|---|---|
+| B64 | `symbolUpgrade` | onTumbleStep | level-up symbol transmute | ✅ **SHIPPED** (this commit) |
+| B65 | `mysteryReveal` | preSpin/onSpinResult | mystery symbol → uniform reveal | ⏳ queued |
+| B66 | `winwaysIndicator` | onSpinResult | 1024 / 4096 / 117 649 ways display | ⏳ queued |
+| B67 | `multiplierLadder` | onTumbleStep/onFsSpinResult | persistent climbing mult | ⏳ queued |
+| B68 | `coinShower` | onSpinResult (big-win) | particle presenter | ⏳ queued |
+| B69 | `fsProgressBar` | onFsSpinResult | "spin X of Y" UI | ⏳ queued |
+| B70 | `stickyMeter` | preSpin/postSpin | sticky symbol counter | ⏳ queued |
+| B71 | `pickBonusReveal` | onFsTrigger (alt) | pick-3-of-N reveal | ⏳ queued |
+| B72 | `wheelBonusReveal` | onFsTrigger (alt) | rotational reward picker (extension layer iznad postojećeg `wheelBonus.mjs`) | ⏳ queued |
+| B73 | `energyMeter` | onSpinResult | metered side-feature gauge | ⏳ queued |
+| B74 | `rewardChest` | postSpin | end-of-round reveal | ⏳ queued |
+| B75 | `symbolStackCollapse` | onTumbleStep | full-reel stack drop | ⏳ queued |
+| B76 | `scatterAnticipationV2` | preSpin/onReelLand | **fix Boki bug**: bez "fake nada" na rilima koji više ne mogu trigger | ⏳ queued |
 
 > Pravilo per blok: JSDoc kontrakt header (purpose / industry-ref / public API / lifecycle / perf / a11y / GDD keys), 100% test coverage, default config bez magic brojeva.
 

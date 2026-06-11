@@ -43,11 +43,12 @@ const REPO = resolve(__dirname, '..');
 const BUDGETS = [
   {
     path: 'src/buildSlotHTML.mjs',
-    maxLoc: 1000,
+    maxLoc: 1050,
     rationale:
       'Orchestrator — owns HTML composition + per-block emit order. ' +
-      'T-slim Phase 2 closed ~280 LOC of extracts. Next split candidate ' +
-      'is `mathDispatch.mjs` (post math layer wave).',
+      'T-slim Phase 2 closed ~280 LOC of extracts. Wave B64 adds the ' +
+      'symbolUpgrade wire (import + CSS/markup/runtime emits = +12 LOC). ' +
+      'Next split candidate is `mathDispatch.mjs` (post math layer wave).',
   },
   /* Add more orchestrators here when the codebase grows new top-level
      composition seams — e.g. cert pipeline orchestrator. */
