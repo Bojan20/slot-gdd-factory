@@ -169,6 +169,14 @@ export function emitWheelBonusCSS(cfg = defaultConfig()) {
   display: none;
 }
 .wb-close[data-show="true"] { display: inline-block; }
+
+/* Fable audit (critical, accessibility): vestibular users must not
+ * receive the 3.8s rotation animation. Collapse all transitions and
+ * heavy transforms when the OS reports reduced-motion preference. */
+@media (prefers-reduced-motion: reduce) {
+  .wb-wheel { transition: none; }
+  .wb-overlay { transition: none; }
+}
 `;
 }
 
@@ -202,10 +210,31 @@ const WB_DUR = ${cfg.spinDurationMs};
 const WB_AUTO = ${cfg.autoSpin ? 'true' : 'false'};
 const WB_STATE = { active: false, spinning: false, result: null };
 
+/* Fable audit (critical, a11y): the dialog declared role="dialog" +
+ * aria-modal="true" but had NO focus trap, NO Escape handler, and NO
+ * focus restoration — so screen-reader and keyboard-only users could
+ * tab out of the modal and lose context. Track the previously-focused
+ * element and restore it on close; Escape closes when not mid-spin. */
+let WB_PRIOR_FOCUS = null;
+function _wbTrapFocus(e) {
+  if (!WB_STATE.active) return;
+  if (e.key === 'Escape' && !WB_STATE.spinning) { wbClose(); return; }
+  if (e.key !== 'Tab') return;
+  const ov = document.getElementById('wbOverlay');
+  if (!ov) return;
+  const focusables = ov.querySelectorAll('button:not([disabled])');
+  if (focusables.length === 0) return;
+  const first = focusables[0];
+  const last  = focusables[focusables.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
+
 function wbOpen() {
   if (WB_STATE.active) return;
   WB_STATE.active = true;
   WB_STATE.result = null;
+  WB_PRIOR_FOCUS = document.activeElement;
   const ov = document.getElementById('wbOverlay');
   if (ov) ov.dataset.show = 'true';
   const wheel = document.getElementById('wbWheel');
@@ -213,9 +242,10 @@ function wbOpen() {
   const result = document.getElementById('wbResult');
   if (result) result.textContent = '';
   const spinBtn = document.getElementById('wbSpin');
-  if (spinBtn) { spinBtn.disabled = false; spinBtn.style.display = 'inline-block'; }
+  if (spinBtn) { spinBtn.disabled = false; spinBtn.style.display = 'inline-block'; spinBtn.focus(); }
   const closeBtn = document.getElementById('wbClose');
   if (closeBtn) closeBtn.dataset.show = 'false';
+  document.addEventListener('keydown', _wbTrapFocus, true);
   if (WB_AUTO) setTimeout(wbSpin, 250);
 }
 
@@ -245,6 +275,12 @@ function wbClose() {
   WB_STATE.spinning = false;
   const ov = document.getElementById('wbOverlay');
   if (ov) ov.dataset.show = 'false';
+  document.removeEventListener('keydown', _wbTrapFocus, true);
+  /* Restore focus to whatever opened the dialog. */
+  if (WB_PRIOR_FOCUS && typeof WB_PRIOR_FOCUS.focus === 'function') {
+    try { WB_PRIOR_FOCUS.focus(); } catch (_) {}
+    WB_PRIOR_FOCUS = null;
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -121,8 +121,14 @@ if (typeof window !== 'undefined') {
 }
 
 /* HookBus wire-up — wild reel fires AFTER the grid settles (so it can
-   overwrite chosen columns with the wild symbol) and clears on preSpin. */
-if (typeof HookBus !== 'undefined') {
+   overwrite chosen columns with the wild symbol) and clears on preSpin.
+
+   Fable audit (critical): re-eval of this runtime (HMR, re-bake, FS
+   template re-render) would otherwise double-subscribe — clear/fire
+   runs N× per spin, breaking idempotent emit. Sentinel guards init. */
+if (typeof HookBus !== 'undefined' &&
+    !(typeof window !== 'undefined' && window.__WILD_REEL_WIRED__)) {
+  if (typeof window !== 'undefined') window.__WILD_REEL_WIRED__ = true;
   HookBus.on('preSpin', () => { clearWildReels(); });
   HookBus.on('onSpinResult', () => { maybeFireWildReel(); });
   HookBus.on('onFsEnd',  () => { clearWildReels(); });

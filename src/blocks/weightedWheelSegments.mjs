@@ -126,6 +126,15 @@
 const HEX_RGB = /^\d{1,3},\s*\d{1,3},\s*\d{1,3}$/;
 const SAFE_LABEL = /^[A-Z0-9_ -]{1,16}$/;
 
+/* Fable audit (critical): HEX_RGB only checks digit count — "999,300,400"
+ * passes syntactic check but is out of the 0..255 channel range and
+ * ships broken rgba() to dist. Validate each channel as a byte. */
+function _isValidRgb(s) {
+  if (typeof s !== 'string' || !HEX_RGB.test(s)) return false;
+  const parts = s.split(',').map(p => parseInt(p.trim(), 10));
+  return parts.length === 3 && parts.every(n => Number.isFinite(n) && n >= 0 && n <= 255);
+}
+
 function clampInt(n, lo, hi) {
   const x = Math.round(Number(n));
   if (!Number.isFinite(x)) return lo;
@@ -207,7 +216,7 @@ export function resolveConfig(model = {}) {
     cfg.jackpotMap = m.jackpotMap.map(j => ({ label: j.label, x: Number(j.x) }));
   }
 
-  if (typeof m.defaultTierColor === 'string' && HEX_RGB.test(m.defaultTierColor)) {
+  if (typeof m.defaultTierColor === 'string' && _isValidRgb(m.defaultTierColor)) {
     cfg.defaultTierColor = m.defaultTierColor.replace(/\s+/g, '');
   }
 

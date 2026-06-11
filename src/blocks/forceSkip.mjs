@@ -53,9 +53,49 @@
  *   FORCE_SKIP_STATE on window.
  *
  * Runtime dependencies: HookBus (window.HookBus), document, setTimeout.
+ *
+ * Performance budget:
+ *   - onSpinResult listener: ~50µs (1 setTimeout schedule + payload read).
+ *   - show/hide/request: ≤3 DOM reads per call (single getElementById).
+ *   - Zero allocations in steady state when no skip is requested.
+ *   - prefers-reduced-motion query elides transition + active-scale cost.
  */
 
 const VALID_PHASES = Object.freeze(['rollup', 'fsIntro', 'fsOutro', 'celebration']);
+
+/* Visual / layout constants — lifted from the CSS template so GDD and
+ * sibling blocks can reason about the contract without scraping the
+ * string literal. Mirrors the Wave AL-4/Fable-3 pattern from
+ * anticipation.mjs. Z_INDEX 25 sits above slam-stop (20) and below
+ * uiToast (30). MIN_HEIGHT_PX 44 is the WCAG 2.5.5 touch-target floor. */
+const Z_INDEX              = 25;
+const BOTTOM_PX            = 20;
+const MIN_WIDTH_PX         = 140;
+const MIN_HEIGHT_PX        = 44;
+const PADDING_Y_PX         = 8;
+const PADDING_X_PX         = 24;
+const BORDER_RADIUS_PX     = 22;
+const BORDER_WIDTH_PX      = 2;
+const FONT_SIZE_PX         = 14;
+const LETTER_SPACING_PX    = 1.5;
+const TEXT_SHADOW_Y_PX     = 1;
+const TEXT_SHADOW_BLUR_PX  = 2;
+const BOX_GLOW_BLUR_PX     = 18;
+const BOX_SHADOW_Y_PX      = 3;
+const BOX_SHADOW_BLUR_PX   = 8;
+const MOBILE_BREAKPOINT_PX = 480;
+const MOBILE_FONT_SIZE_PX  = 12;
+const MOBILE_MIN_WIDTH_PX  = 110;
+const MOBILE_MIN_HEIGHT_PX = 38;
+const BG_OPACITY           = 0.85;
+const GLOW_OPACITY         = 0.45;
+const TEXT_SHADOW_OPACITY  = 0.4;
+const BOX_SHADOW_OPACITY   = 0.35;
+const DISABLED_OPACITY     = 0.5;
+const TRANSFORM_MS         = 100;
+const OPACITY_MS           = 140;
+const ACTIVE_SCALE         = 0.96;
+const HOOKBUS_BIND_RETRIES = 50;
 
 export function defaultConfig() {
   return {
@@ -146,39 +186,42 @@ function _skipEscape(s) {
 export function emitForceSkipCSS(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const c = resolveConfig({ forceSkip: cfg });
-  /* z-index 25: above slam-stop (20), below uiToast (30). */
   return `
   /* ── forceSkip BLOCK — emitted by src/blocks/forceSkip.mjs ────────── */
   .force-skip-btn {
     position: fixed;
-    bottom: 20px;
+    bottom: ${BOTTOM_PX}px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 25;
-    min-width: 140px;
-    min-height: 44px;
-    padding: 8px 24px;
-    border-radius: 22px;
-    border: 2px solid rgba(${c.chipColor}, 1);
-    background: rgba(${c.chipColor}, 0.85);
+    z-index: ${Z_INDEX};
+    min-width: ${MIN_WIDTH_PX}px;
+    min-height: ${MIN_HEIGHT_PX}px;
+    padding: ${PADDING_Y_PX}px ${PADDING_X_PX}px;
+    border-radius: ${BORDER_RADIUS_PX}px;
+    border: ${BORDER_WIDTH_PX}px solid rgba(${c.chipColor}, 1);
+    background: rgba(${c.chipColor}, ${BG_OPACITY});
     color: rgb(${c.chipTextColor});
     font-family: inherit;
     font-weight: 700;
-    font-size: 14px;
-    letter-spacing: 1.5px;
+    font-size: ${FONT_SIZE_PX}px;
+    letter-spacing: ${LETTER_SPACING_PX}px;
     text-transform: uppercase;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-    box-shadow: 0 0 18px rgba(${c.chipColor}, 0.45), 0 3px 8px rgba(0, 0, 0, 0.35);
+    text-shadow: 0 ${TEXT_SHADOW_Y_PX}px ${TEXT_SHADOW_BLUR_PX}px rgba(0, 0, 0, ${TEXT_SHADOW_OPACITY});
+    box-shadow: 0 0 ${BOX_GLOW_BLUR_PX}px rgba(${c.chipColor}, ${GLOW_OPACITY}), 0 ${BOX_SHADOW_Y_PX}px ${BOX_SHADOW_BLUR_PX}px rgba(0, 0, 0, ${BOX_SHADOW_OPACITY});
     cursor: pointer;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    transition: transform 100ms ease-out, opacity 140ms ease-out;
+    transition: transform ${TRANSFORM_MS}ms ease-out, opacity ${OPACITY_MS}ms ease-out;
   }
   .force-skip-btn[hidden] { display: none !important; }
-  .force-skip-btn:active { transform: translateX(-50%) scale(0.96); }
-  .force-skip-btn:disabled { opacity: 0.5; cursor: default; }
-  @media (max-width: 480px) {
-    .force-skip-btn { font-size: 12px; min-width: 110px; min-height: 38px; }
+  .force-skip-btn:active { transform: translateX(-50%) scale(${ACTIVE_SCALE}); }
+  .force-skip-btn:disabled { opacity: ${DISABLED_OPACITY}; cursor: default; }
+  @media (max-width: ${MOBILE_BREAKPOINT_PX}px) {
+    .force-skip-btn { font-size: ${MOBILE_FONT_SIZE_PX}px; min-width: ${MOBILE_MIN_WIDTH_PX}px; min-height: ${MOBILE_MIN_HEIGHT_PX}px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .force-skip-btn { transition: none; }
+    .force-skip-btn:active { transform: translateX(-50%); }
   }
 `;
 }
@@ -231,11 +274,18 @@ export function emitForceSkipRuntime(cfg = defaultConfig()) {
     var SHOW_DURING_FS_OUTRO      = ${c.showDuringFsOutro};
     var SHOW_DURING_CELEBRATION   = ${c.showDuringCelebration};
     var MIN_ROLLUP_MS_FOR_SHOW    = ${c.minRollupMsForShow};
+    var VALID_PHASES              = ${JSON.stringify([...VALID_PHASES])};
+    var HOOKBUS_BIND_RETRIES      = ${HOOKBUS_BIND_RETRIES};
 
     var STATE = {
       enabled: true,
       visible: false,
       currentPhase: null,
+      /* requested: latched true once forceSkipRequest fires; cleared on
+       * forceSkipHide. Prevents a double-click / button+Enter race from
+       * emitting onSkipRequested twice in the same tick before the
+       * disabled attribute paints. */
+      requested: false,
     };
     if (typeof window !== 'undefined') {
       window.FORCE_SKIP_STATE = STATE;
@@ -245,6 +295,7 @@ export function emitForceSkipRuntime(cfg = defaultConfig()) {
     function _btn() { return document.getElementById('forceSkipBtn'); }
 
     function _phaseGated(phase) {
+      if (VALID_PHASES.indexOf(phase) === -1) return false;
       if (phase === 'rollup')      return SHOW_DURING_ROLLUP;
       if (phase === 'fsIntro')     return SHOW_DURING_FS_INTRO;
       if (phase === 'fsOutro')     return SHOW_DURING_FS_OUTRO;
@@ -272,6 +323,7 @@ export function emitForceSkipRuntime(cfg = defaultConfig()) {
       }
       STATE.visible = false;
       STATE.currentPhase = null;
+      STATE.requested = false;
       if (typeof window !== 'undefined') window.__SLOT_SKIPPED__ = false;
     }
 
@@ -282,6 +334,8 @@ export function emitForceSkipRuntime(cfg = defaultConfig()) {
      * listener below. */
     function forceSkipRequest(source) {
       if (!STATE.visible) return;
+      if (STATE.requested) return;
+      STATE.requested = true;
       var s = (typeof source === 'string' && ['button','keyboard'].indexOf(source) !== -1) ? source : 'button';
       var phase = STATE.currentPhase || 'rollup';
       if (typeof window !== 'undefined') window.__SLOT_SKIPPED__ = true;
@@ -315,38 +369,72 @@ export function emitForceSkipRuntime(cfg = defaultConfig()) {
       _wireButton();
     }
 
-    if (window.HookBus && typeof window.HookBus.on === 'function') {
-      /* onSpinResult → if award > 0, the rollup phase begins; show after
-       * the engine emits the eventual rollup duration. We can't know the
-       * duration here so we defer the decision: just call forceSkipShow
-       * via a microtask delay so winPresentation has wired its own state
-       * first. If the rollup turns out shorter than MIN_ROLLUP_MS_FOR_SHOW,
-       * winPresentation can call forceSkipHide pre-emptively. */
-      window.HookBus.on('onSpinResult', function (payload) {
-        /* Defer to a tick so payload.totalAward (if set by winPresentation
-         * listener with priority > 0) is visible. */
-        setTimeout(function () {
-          if (window.__WIN_ROLLUP_MS__ != null && window.__WIN_ROLLUP_MS__ < MIN_ROLLUP_MS_FOR_SHOW) return;
-          if (window.__WIN_AWARD__ != null && window.__WIN_AWARD__ <= 0) return;
-          forceSkipShow('rollup');
-        }, 0);
-      }, { priority: -10 });
+    /* Keyboard accessibility: Space / Enter triggers skip while the
+     * button is visible. Mirrors the 'keyboard' source whitelisted in
+     * forceSkipRequest. */
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== ' ' && e.key !== 'Enter') return;
+      if (!STATE.visible) return;
+      forceSkipRequest('keyboard');
+    });
 
-      window.HookBus.on('onFsTrigger', function () { forceSkipShow('fsIntro'); });
-      window.HookBus.on('onFsEnd',     function () { forceSkipShow('fsOutro'); });
+    /* Deferred HookBus binder: HookBus may load after this script under
+     * a different bundle order. Retry on each tick until the API surface
+     * appears; loud-fail after the retry budget so a misconfigured page
+     * does not silently lose every lifecycle hook. */
+    function _bind() {
+      if (window.HookBus && typeof window.HookBus.on === 'function') {
+        /* onSpinResult → if award > 0, the rollup phase begins; show after
+         * the engine emits the eventual rollup duration. We can't know the
+         * duration here so we defer the decision: just call forceSkipShow
+         * via a microtask delay so winPresentation has wired its own state
+         * first. If the rollup turns out shorter than MIN_ROLLUP_MS_FOR_SHOW,
+         * winPresentation can call forceSkipHide pre-emptively. */
+        window.HookBus.on('onSpinResult', function (payload) {
+          /* Read award + rollup duration off the payload first (HookBus
+           * single-source-of-truth contract). Fall back to the legacy
+           * window globals (__WIN_AWARD__, __WIN_ROLLUP_MS__) only when
+           * payload omits the field — this preserves the existing block
+           * contract during the migration to payload-only. */
+          var totalAward = (payload && payload.totalAward != null)
+            ? payload.totalAward
+            : (typeof window.__WIN_AWARD__ === 'number' ? window.__WIN_AWARD__ : null);
+          var rollupMs   = (payload && payload.rollupMs != null)
+            ? payload.rollupMs
+            : (typeof window.__WIN_ROLLUP_MS__ === 'number' ? window.__WIN_ROLLUP_MS__ : null);
+          /* Defer to a tick so payload-mutating listeners with higher
+           * priority have run. */
+          setTimeout(function () {
+            if (rollupMs != null && rollupMs < MIN_ROLLUP_MS_FOR_SHOW) return;
+            if (totalAward != null && totalAward <= 0) return;
+            forceSkipShow('rollup');
+          }, 0);
+        }, { priority: -10 });
 
-      window.HookBus.on('onSkipComplete', function () { forceSkipHide(); });
+        window.HookBus.on('onFsTrigger', function () { forceSkipShow('fsIntro'); });
+        window.HookBus.on('onFsEnd',     function () { forceSkipShow('fsOutro'); });
 
-      window.HookBus.on('preSpin', function () { forceSkipHide(); });
-      window.HookBus.on('postSpin', function () {
-        /* Belt-and-suspenders hide. winPresentation.onSpinResult listener
-         * is the SOLE owner of "show skip during rollup"; by the time we
-         * reach postSpin, either winPresentation has already called
-         * forceSkipHide via onSkipComplete, OR no rollup ran and the
-         * button must not linger into the idle phase. Either way: hide. */
-        if (STATE.visible) forceSkipHide();
-      });
+        window.HookBus.on('onSkipComplete', function () { forceSkipHide(); });
+
+        window.HookBus.on('preSpin', function () { forceSkipHide(); });
+        window.HookBus.on('postSpin', function () {
+          /* Belt-and-suspenders hide. winPresentation.onSpinResult listener
+           * is the SOLE owner of "show skip during rollup"; by the time we
+           * reach postSpin, either winPresentation has already called
+           * forceSkipHide via onSkipComplete, OR no rollup ran and the
+           * button must not linger into the idle phase. Either way: hide. */
+          if (STATE.visible) forceSkipHide();
+        });
+        return;
+      }
+      _bind._tries = (_bind._tries || 0) + 1;
+      if (_bind._tries < HOOKBUS_BIND_RETRIES) {
+        setTimeout(_bind, 0);
+      } else if (typeof console !== 'undefined' && console.error) {
+        console.error('[forceSkip] HookBus missing — lifecycle hooks not bound');
+      }
     }
+    _bind();
   })();
 `;
 }

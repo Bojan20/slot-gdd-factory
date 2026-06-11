@@ -166,11 +166,17 @@ if (typeof window !== 'undefined') {
    accumulates and walking wilds never move. */
 if (typeof HookBus !== 'undefined') {
   HookBus.on('onSpinResult', () => {
+    /* Fable audit (critical): walking step was driven by onTumbleStep,
+     * which fires once per cascade step — a single 4-step tumble would
+     * walk the wild 4 cells in ONE spin, violating the documented
+     * "one position per spin" pattern and breaking RNG reproducibility.
+     * Step on the SPIN boundary instead; tumble step is for the harvest
+     * + apply pass that keeps existing wilds visible across cascades. */
+    stepWalkingWilds();
     harvestWalkingWilds();
     applyWalkingWilds();
   });
   HookBus.on('onTumbleStep', () => {
-    stepWalkingWilds();
     applyWalkingWilds();
   });
   HookBus.on('preSpin', ({ duringFs } = {}) => {
