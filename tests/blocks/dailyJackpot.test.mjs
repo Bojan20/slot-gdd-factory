@@ -147,6 +147,86 @@ t('vendor-neutral: no vendor / studio / brand strings in any emit', () => {
   });
 });
 
+/* ── 2026-06-11 Wave AL-4 / Fable-5 review-driven tests ──────────── */
+
+t('resolveConfig: maxPool fallback respects raised minPool (Fable HIGH)', () => {
+  /* GDD raises minPoolAmount above the default max but omits explicit
+   * maxPoolAmount — invariant max >= min must hold. */
+  const c = resolveConfig({ dailyJackpot: { minPoolAmount: 200000 } });
+  ok(c.maxPoolAmount >= c.minPoolAmount, 'invariant max>=min');
+  eq(c.minPoolAmount, 200000);
+});
+
+t('emitDailyJackpotCSS: labelText sanitised for CSS comment context (Fable medium)', () => {
+  /* Construct the close-comment digraph indirectly so the test file
+   * itself never literally embeds it (avoids a tooling/lexer foot-gun
+   * in some Node test reporters). */
+  const STAR = String.fromCharCode(42);
+  const SLASH = String.fromCharCode(47);
+  const dangerous = 'X ' + STAR + SLASH + ' inj';
+  const c = resolveConfig({ dailyJackpot: { enabled: true, labelText: dangerous } });
+  const css = emitDailyJackpotCSS(c);
+  /* The raw close-comment digraph must not appear in the emitted CSS
+   * within the labelText echo. We assert by counting digraphs: the
+   * baseline (default labelText) has exactly one close-comment digraph
+   * (the one that terminates the knob block) — the dangerous label
+   * MUST NOT increase that count. */
+  const cssDefault = emitDailyJackpotCSS(resolveConfig({ dailyJackpot: { enabled: true } }));
+  const baselineCount = (cssDefault.match(new RegExp('\\' + STAR + '\\' + SLASH, 'g')) || []).length;
+  const candidateCount = (css.match(new RegExp('\\' + STAR + '\\' + SLASH, 'g')) || []).length;
+  eq(candidateCount, baselineCount, 'sanitiser must NOT introduce extra close-comment digraphs');
+});
+
+t('emitDailyJackpotRuntime: injectable RNG via window.__SLOT_RNG__ (Fable medium)', () => {
+  const rt = emitDailyJackpotRuntime(resolveConfig({ dailyJackpot: { enabled: true } }));
+  ct(rt, 'window.__SLOT_RNG__', 'runtime reads the documented RNG override hook');
+  ct(rt, 'Math.random', 'production fallback to Math.random preserved');
+});
+
+t('emitDailyJackpotRuntime: logs subscriber errors instead of swallowing (Fable medium)', () => {
+  const rt = emitDailyJackpotRuntime(resolveConfig({ dailyJackpot: { enabled: true } }));
+  ct(rt, 'console.error', 'subscriber-throw path surfaces a diagnostic signal');
+  ct(rt, '[dailyJackpot] onDailyJackpotAward subscriber threw:', 'precise log prefix');
+});
+
+t('emitDailyJackpotRuntime: re-init guard prevents double-subscribe on HMR (Fable medium)', () => {
+  const rt = emitDailyJackpotRuntime(resolveConfig({ dailyJackpot: { enabled: true } }));
+  ct(rt, '__DAILY_JACKPOT_INSTALLED__', 'idempotent install flag declared');
+});
+
+t('emitDailyJackpotRuntime: forceNext cleared on FS/BW entry (Fable low)', () => {
+  const rt = emitDailyJackpotRuntime(resolveConfig({ dailyJackpot: { enabled: true } }));
+  /* Both onFsTrigger and onBigWinTierEntered handlers must clear the
+   * pending forceNext so a QA-pressed force chip cannot fire surprisingly
+   * after the dominant overlay resolves. Match braces-and-all then assert
+   * each contains the `STATE.forceNext = false` reset. */
+  const fsBlock = rt.match(/onFsTrigger[\s\S]*?\}\);/);
+  const bwBlock = rt.match(/onBigWinTierEntered[\s\S]*?\}\);/);
+  ok(fsBlock && fsBlock[0].includes('STATE.forceNext'), 'FS handler clears forceNext');
+  ok(bwBlock && bwBlock[0].includes('STATE.forceNext'), 'BW handler clears forceNext');
+});
+
+t('emitDailyJackpotMarkup: suffix currency renders amount with trailing glyph (Fable low)', () => {
+  const html = emitDailyJackpotMarkup(
+    resolveConfig({ dailyJackpot: { enabled: true, currencyPosition: 'suffix', currency: '€' } })
+  );
+  ct(html, '0.00 €', 'suffix position keeps glyph after amount');
+});
+
+t('resolveConfig: tolerates missing model / missing dailyJackpot key (Fable low)', () => {
+  eq(resolveConfig().enabled, false);
+  eq(resolveConfig({}).enabled, false);
+  eq(resolveConfig({ dailyJackpot: undefined }).enabled, false);
+  eq(resolveConfig(null).enabled, false);
+});
+
+t('emitDailyJackpotRuntime: monotonic clock guard (Fable medium)', () => {
+  const rt = emitDailyJackpotRuntime(resolveConfig({ dailyJackpot: { enabled: true } }));
+  /* Reset only fires on forward day-index advance — backward NTP
+   * correction must not wipe an in-flight pool. */
+  ct(rt, 'today <= STATE.lastResetUtcDay', 'monotonic guard literal present');
+});
+
 console.log('--- summary ---');
 console.log('  pass:', pass);
 console.log('  fail:', fail);

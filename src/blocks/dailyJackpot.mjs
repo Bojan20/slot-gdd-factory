@@ -106,7 +106,14 @@ export function resolveConfig(model) {
   if (isPlainText(src.labelText, 24)) cfg.labelText = src.labelText;
   cfg.resetUTCHour       = clampInt(src.resetUTCHour,       0,                 23,    cfg.resetUTCHour);
   cfg.minPoolAmount      = clampNum(src.minPoolAmount,      1,                 1e9,   cfg.minPoolAmount);
-  cfg.maxPoolAmount      = clampNum(src.maxPoolAmount,      cfg.minPoolAmount, 1e9,   cfg.maxPoolAmount);
+  /* Fable review HIGH-severity catch: when GDD raises minPoolAmount but
+   * omits maxPoolAmount, the fallback (default 100000) might be < the
+   * new floor. Force the result through Math.max(min, ...) so the
+   * documented `max >= min` invariant cannot be violated silently. */
+  cfg.maxPoolAmount      = Math.max(
+    cfg.minPoolAmount,
+    clampNum(src.maxPoolAmount, cfg.minPoolAmount, 1e9, Math.max(cfg.maxPoolAmount, cfg.minPoolAmount))
+  );
   cfg.contribRate        = clampNum(src.contribRate,        0,                 1,     cfg.contribRate);
   cfg.triggerProbability = clampNum(src.triggerProbability, 0,                 1,     cfg.triggerProbability);
   cfg.holdMs             = clampNum(src.holdMs,             500,               30000, cfg.holdMs);
@@ -192,11 +199,18 @@ export function emitDailyJackpotCSS(cfg = defaultConfig()) {
   // Cream glyph color — the amount text fill (no transparency needed).
   const TEXT_BANNER_HEX            = '#f6f1d6';
 
+  /* Fable review (medium): isPlainText rejects angle brackets and braces
+   * but not the close-comment digraph. A 24-char label could otherwise
+   * terminate the knob comment block in the emitted CSS and inject
+   * arbitrary rules. Neutralize the digraph by inserting a space
+   * between asterisk and slash before baking the label into the
+   * comment context. */
+  const _labelForCssComment = String(c.labelText).replace(/\x2A\x2F/g, '* /');
   return `
 /* ── dailyJackpot BLOCK — emitted by src/blocks/dailyJackpot.mjs ──────────
    GDD knobs (baked at build time):
      enabled            = ${c.enabled}
-     labelText          = ${c.labelText}
+     labelText          = ${_labelForCssComment}
      resetUTCHour       = ${c.resetUTCHour}
      minPoolAmount      = ${c.minPoolAmount}
      maxPoolAmount      = ${c.maxPoolAmount}
@@ -285,6 +299,11 @@ export function emitDailyJackpotRuntime(cfg = defaultConfig()) {
      Currency formatting mirrors balanceHud._formatMoney exactly so the
      player reads a single, consistent currency glyph across the slot. */
   (function () {
+    /* Fable review (medium): re-init guard. Hot-reload / re-mount paths
+     * would otherwise double-subscribe every HookBus listener and
+     * compound contributions/awards. Idempotent flag on window. */
+    if (typeof window !== 'undefined' && window.__DAILY_JACKPOT_INSTALLED__) return;
+    if (typeof window !== 'undefined') window.__DAILY_JACKPOT_INSTALLED__ = true;
     var LABEL_TEXT     = ${JSON.stringify(c.labelText)};
     var RESET_UTC_HOUR = ${c.resetUTCHour};
     var MIN_POOL       = ${c.minPoolAmount};
@@ -343,7 +362,16 @@ export function emitDailyJackpotRuntime(cfg = defaultConfig()) {
 
     function _maybeResetPool() {
       var today = _currentResetDay(Date.now());
-      if (STATE.lastResetUtcDay === today) return;
+      /* Fable review (medium): monotonic guard. NTP correction, leap
+       * second, or device clock skew nudging Date.now() backward across
+       * the reset boundary would otherwise wipe an in-flight pool.
+       * Only reset on forward day-index advance. */
+      if (STATE.lastResetUtcDay === -1) {
+        STATE.lastResetUtcDay = today;
+        STATE.pool = MIN_POOL;
+        return;
+      }
+      if (today <= STATE.lastResetUtcDay) return;
       STATE.lastResetUtcDay = today;
       STATE.pool = MIN_POOL;
     }
@@ -414,7 +442,15 @@ export function emitDailyJackpotRuntime(cfg = defaultConfig()) {
             currency: CURRENCY,
             atUtcDay: atDay,
           });
-        } catch (_) { /* defensive — never let a subscriber crash the spin */ }
+        } catch (e) {
+          /* Fable review (medium): never silently swallow — log the
+           * subscriber error so analytics/audio drops are observable.
+           * Spin lifecycle still continues (the catch survives the
+           * throw), but the diagnostic signal reaches console. */
+          if (typeof console !== 'undefined' && console.error) {
+            console.error('[dailyJackpot] onDailyJackpotAward subscriber threw:', e);
+          }
+        }
       }
       dailyJackpotShow(amount);
     }
@@ -443,13 +479,22 @@ export function emitDailyJackpotRuntime(cfg = defaultConfig()) {
       HookBus.on('postSpin', function () {
         if (STATE.suppressed) return;
         if (STATE.awarding)   return;
-        var hit = STATE.forceNext || (Math.random() < TRIGGER_PROB);
+        /* Fable review (medium): injectable RNG so golden-master tests
+         * + replay tooling can drive deterministic outcomes. Production
+         * path is unchanged (Math.random) when no override is set. */
+        var _rng = (typeof window !== 'undefined' && typeof window.__SLOT_RNG__ === 'function')
+          ? window.__SLOT_RNG__
+          : Math.random;
+        var hit = STATE.forceNext || (_rng() < TRIGGER_PROB);
         if (hit) _award();
       });
 
-      /* FS intro takes over the screen — suppress and hide. */
+      /* FS intro takes over the screen — suppress and hide. Fable review
+       * (low): also clear pending forceNext so a QA-pressed force can't
+       * fire surprisingly when the FS round eventually ends. */
       HookBus.on('onFsTrigger', function () {
         STATE.suppressed = true;
+        STATE.forceNext  = false;
         _clearTimers();
         _hide();
         STATE.awarding = false;
@@ -459,9 +504,11 @@ export function emitDailyJackpotRuntime(cfg = defaultConfig()) {
       });
 
       /* Big-win override — bigWinTier is the dominant celebration.
-       * Step out of the way so the player reads one banner at a time. */
+       * Step out of the way so the player reads one banner at a time.
+       * Also clear forceNext per the same QA-surprise reasoning above. */
       HookBus.on('onBigWinTierEntered', function () {
         STATE.suppressed = true;
+        STATE.forceNext  = false;
         _clearTimers();
         _hide();
         STATE.awarding = false;
