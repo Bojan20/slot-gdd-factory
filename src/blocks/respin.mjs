@@ -1,6 +1,9 @@
 /**
  * src/blocks/respin.mjs
  *
+ * perf budget: O(reels*rows) DOM walk, ≤0.3ms @ 5×3
+ * Accessibility: banner uses aria-live="polite" + role="status" for screen reader.
+ *
  * Wave N2 — Respin block.
  *
  * Per-reel re-spin: after a base spin, optionally re-spin individual reels
@@ -21,6 +24,7 @@ export function defaultConfig() {
   return {
     enabled: false,
     mode: 'base',
+    reels: 5,
     triggerChance: 0.08,
     costX: 0,            // 0 = free (auto-trigger only)
     holdRule: 'last-reel',
@@ -33,6 +37,7 @@ export function resolveConfig(model = {}) {
   const cfg = defaultConfig();
   const m = model.respin || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
+  if (Number.isFinite(m.reels)) cfg.reels = clampInt(m.reels, 3, 10);
   if (m.mode === 'fs' || m.mode === 'base' || m.mode === 'both' || m.mode === 'paid') cfg.mode = m.mode;
   if (Number.isFinite(m.triggerChance)) cfg.triggerChance = clampFloat(m.triggerChance, 0, 1);
   if (Number.isFinite(m.costX)) cfg.costX = clampFloat(m.costX, 0, 1000);
@@ -88,7 +93,7 @@ export function emitRespinCSS(cfg = defaultConfig()) {
 
 export function emitRespinMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="respinBanner" class="respin-banner" data-show="false">RESPIN</div>`;
+  return `<div id="respinBanner" class="respin-banner" role="status" aria-live="polite" data-show="false">RESPIN</div>`;
 }
 
 export function emitRespinRuntime(cfg = defaultConfig()) {
@@ -99,6 +104,7 @@ const RESPIN_CHANCE       = ${cfg.triggerChance};
 const RESPIN_COST_X       = ${cfg.costX};
 const RESPIN_HOLD_RULE    = ${JSON.stringify(cfg.holdRule)};
 const RESPIN_PER_TRIGGER  = ${cfg.respinsPerTrigger};
+const REELS               = ${cfg.reels};
 const RESPIN_STATE = { active: false, heldReels: new Set(), spinsLeft: 0 };
 
 function _respinPhaseAllowed() {
@@ -112,11 +118,16 @@ function _respinPhaseAllowed() {
 
 function _respinHeldReels() {
   /* Returns which reels to HOLD (others re-spin) */
-  const REELS = window.REELS || 5;
   const heldSet = new Set();
   if (RESPIN_HOLD_RULE === 'all-but-empty') {
-    /* Hold every reel that has any pay symbol; re-spin empty ones */
-    for (let c = 0; c < REELS; c++) heldSet.add(c);
+    /* Hold reels with pay symbols; re-spin empty columns */
+    const host = document.getElementById('gridHost');
+    if (host) {
+      host.querySelectorAll('.cell').forEach((cell, idx) => {
+        const symbol = (cell.textContent || '').trim();
+        if (symbol) heldSet.add(idx % REELS);
+      });
+    }
   } else if (RESPIN_HOLD_RULE === 'last-reel') {
     /* Hold all but the rightmost reel */
     for (let c = 0; c < REELS - 1; c++) heldSet.add(c);
