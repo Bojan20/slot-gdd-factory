@@ -234,10 +234,30 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
       }
     }
     /* Force-trigger plant: scatter on centre row of first N reels. */
-    if (FORCE_TRIGGER && reelIdx < FORCE_TRIGGER.scatterCount) {
+    if (FORCE_TRIGGER && FORCE_TRIGGER.scatterCount && reelIdx < FORCE_TRIGGER.scatterCount) {
       const trig = (FREESPINS.triggerSymbol || "S");
       const midRow = Math.max(1, Math.ceil(vis / 2));
       reel.cells[midRow].textContent = trig;
+    }
+    /* 2026-06-11 (Boki: "svaki fors u svakom gridu mora da radi tako da
+     * pritisnes force, odradi se spin, dobije se ishod") — force-plant
+     * BONUS symbols for the Hold & Win trigger pile. The H&W chip sets
+     * FORCE_TRIGGER.bonusCount + bonusSymbol, the spin runs normally, and
+     * the postSpin hwMaybeEnter() path lights up because the grid lands
+     * with bonusCount instances of the bonus symbol. Plant one bonus on
+     * every reel up to bonusCount: top row first, then center row when
+     * bonusCount exceeds the reel count. */
+    if (FORCE_TRIGGER && FORCE_TRIGGER.bonusCount && FORCE_TRIGGER.bonusSymbol) {
+      const bonusSym = String(FORCE_TRIGGER.bonusSymbol);
+      const reelsCount = (typeof REELS !== 'undefined' && REELS) || 5;
+      const bonusPerReel = Math.ceil(FORCE_TRIGGER.bonusCount / reelsCount);
+      for (let pp = 0; pp < bonusPerReel; pp++) {
+        const flatIdx = reelIdx + (pp * reelsCount);
+        if (flatIdx >= FORCE_TRIGGER.bonusCount) break;
+        /* Spread vertically: top row, then bottom, then middle, then any. */
+        const slot = (pp === 0) ? 1 : Math.min(vis, pp + 1);
+        if (reel.cells[slot]) reel.cells[slot].textContent = bonusSym;
+      }
     }
   }
 

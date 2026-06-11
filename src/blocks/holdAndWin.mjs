@@ -1029,10 +1029,32 @@ if (typeof HookBus !== 'undefined') {
   HookBus.on('onFsTrigger', () => { hwEnd(); });
   HookBus.on('onFsEnd',     () => { hwEnd(); });
 
+  /* 2026-06-11 (Boki rule "pritisnes force dugme odradi se spin i onda
+   * se dobije ishod forsa") — chip click no longer seeds orbs in-place.
+   * UFP plants FORCE_TRIGGER with bonusCount + bonusSymbol, the base
+   * spin lands the bonus pile, and the regular postSpin → hwMaybeEnter
+   * path enters INTRO → RUNNING. Player sees: chip → reels spin → orbs
+   * lock + INTRO placard. If the spin somehow fails to plant (e.g. the
+   * reel pool refuses to accept the symbol on a heavily-stacked grid),
+   * fall back to hwForceSeed on a slight delay so the chip is never
+   * silent. */
   HookBus.on('onForceFeatureRequested', (payload) => {
     if (!payload || payload.kind !== 'hold_and_win') return;
-    try { hwForceSeed(Math.max(3, Math.ceil(HW_TRIGGER_COUNT / 2))); }
-    catch (_) { /* defensive */ }
+    /* Fallback timer — wait long enough that the just-fired base spin
+     * has a chance to land its bonus pile through FORCE_TRIGGER. If the
+     * pile lands, hwMaybeEnter() activated the round in postSpin and
+     * HW_STATE.active is already true. If the pool refused the bonus
+     * symbol (no B in the natural strip) OR if FS interrupted, we no-op:
+     * forcing both orbs AND FS into the same round corrupts both
+     * lifecycles. */
+    setTimeout(function () {
+      try {
+        if (HW_STATE.active) return;
+        var fsActive = (typeof FSM !== 'undefined' && FSM && FSM.phase && FSM.phase !== 'BASE');
+        if (fsActive) return;
+        hwForceSeed(Math.max(3, Math.ceil(HW_TRIGGER_COUNT / 2)));
+      } catch (_) {}
+    }, 1700);
   });
 }
 `;

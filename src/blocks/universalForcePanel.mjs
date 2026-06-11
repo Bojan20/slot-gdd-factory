@@ -504,14 +504,32 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
     if (kind === 'hold_and_win') {
       try {
         var _hwCount = 6;
+        var _hwSym = 'B';
         try {
           if (typeof HW_TRIGGER_COUNT === 'number' && HW_TRIGGER_COUNT > 0) _hwCount = HW_TRIGGER_COUNT;
           else if (window.HW_TRIGGER_COUNT && window.HW_TRIGGER_COUNT > 0) _hwCount = window.HW_TRIGGER_COUNT;
         } catch (_) {}
-        var _hwPlant = { bonusCount: _hwCount };
+        try {
+          if (typeof HW_BONUS_SYMBOL === 'string') _hwSym = HW_BONUS_SYMBOL;
+          else if (typeof window.HW_BONUS_SYMBOL === 'string') _hwSym = window.HW_BONUS_SYMBOL;
+        } catch (_) {}
+        /* Plant 'bonusSymbol' + 'bonusCount' — reelEngine commitStopSymbols
+         * sprays the bonus pile so the next spin's postSpin hwMaybeEnter()
+         * lights up the round. Industry contract per Boki rule "pritisnes
+         * force, odradi se spin, dobije se ishod forsa". */
+        var _hwPlant = { bonusCount: _hwCount, bonusSymbol: _hwSym };
         try { FORCE_TRIGGER = _hwPlant; } catch (_) {}
         try { window.FORCE_TRIGGER = _hwPlant; } catch (_) {}
       } catch (_) {}
+    }
+
+    /* Modal-style features (wheel_bonus, gamble, bonus_pick) defer their
+     * overlay open to the postSpin listener inside their own block. The
+     * UFP just plants window.__FORCE_FEATURE__ which the block reads in
+     * its postSpin handler. This gives the Boki sequence: chip → spin →
+     * settle → modal. */
+    if (kind === 'wheel_bonus' || kind === 'gamble' || kind === 'bonus_pick') {
+      try { window.__FORCE_FEATURE_PENDING__ = kind; } catch (_) {}
     }
 
     if (MODAL_ONLY_KINDS.indexOf(kind) === -1) {
