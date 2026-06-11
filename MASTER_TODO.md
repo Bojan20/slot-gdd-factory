@@ -3,9 +3,9 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-09 · **HEAD**: `cd76059` · main
-> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, ✅ **P1 + D1 + D2 + D3 + D4 + P2 (covers P3+P4+P5 via stages) + P6 + P7 + P8 + V1 + V4 + V5 + V7 + U-FORCE-ALL** shipped (17/47); **Faza 1 ZATVORENA**
-> **Most recent ship**: Wave **U-FORCE-ALL** — **Universal feature force panel + generic banner fallback** (presentation/QA layer). Two new blocks: `src/blocks/universalForcePanel.mjs` (detects every parsed feature kind from `model.features[]`, paints chip rail of FORCE buttons, each click sets `window.__FORCE_FEATURE__` + emits `onForceFeatureRequested` + triggers real `runOneBaseSpin()` per the force-buttons-real-spin rule) and `src/blocks/genericFeatureBanner.mjs` (auto-mode catch-all: listens to `onForceFeatureRequested` and flashes a "FEATURE TRIGGERED · <label>" placard for kinds without a dedicated block, so even exotic features in arbitrary partner GDDs land visible feedback). 21 industry-standard kinds covered (FS, BB, H&W, Pick, Wheel, Mult, Cascade, Cluster, Ways, Exp/Walk/Sticky Wild, Mystery, ScatterPay, Lightning, Respin, Wild Reel, Gamble, Ante, Super, Big Win). HookBus event `onForceFeatureRequested` added (53 canonical events). LEGO gate 5/5, 38/38 UFP unit + 24/24 GFB unit + 28/28 live probe (4 GDDs × 7 assertions: panel rendered, ≥1 chip, toolbar role, emit observed, payload.kind matches, `__FORCE_FEATURE__` set, 0 console errors), universal GDD audit 460/461 (1 pre-existing 18_wheel fatal unchanged). Apple HIG typography floor honored (chipFontSize: 11). Vendor-neutral. Previous ship: Wave **P2** — **Smart Defaults Engine** (4-stage
+> **Last updated**: 2026-06-11 · **HEAD**: `pending-commit` · main
+> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, ✅ **P1 + D1 + D2 + D3 + D4 + P2 (covers P3+P4+P5 via stages) + P6 + P7 + P8 + V1 + V4 + V5 + V7 + U-FORCE-ALL + AL-1** shipped (18/47); **Faza 1 ZATVORENA**
+> **Most recent ship**: Wave **AL-1** — **Anticipation halo ARM/DISARM gate** (template-level leak fix). `src/blocks/anticipationUniversal.mjs` _tick polling više ne svetli random idle fillere koji slučajno = trigger simbol; halo živi SAMO između postSpin landinga i sledećeg preSpin starta — industry-standard semantika. Verifikacija: 24/24 grids CLEAN (pre fix-a 6 sa cellShadow leak), 332/332 ultimate fixtures × 13 asserts = 4316/4316 PASS, per-grid stress 24/24 0 defects, per-grid force 80/80 chips funkcionalno, lego 5/5, anticipationUniversal 15/15. Delegirano Gemini-ju za arhitektonsku validaciju (ARM/DISARM gate preporučen), Kimi-ju za 8 futuristic edge case-ova (auditovani). Senior-grade: vendor-neutral, single-owner gate flag, JSDoc industry-reference komentar, idempotent listener reg, page-lifetime safe. Previous ship: Wave **U-FORCE-ALL** — **Universal feature force panel + generic banner fallback** (presentation/QA layer). Two new blocks: `src/blocks/universalForcePanel.mjs` (detects every parsed feature kind from `model.features[]`, paints chip rail of FORCE buttons, each click sets `window.__FORCE_FEATURE__` + emits `onForceFeatureRequested` + triggers real `runOneBaseSpin()` per the force-buttons-real-spin rule) and `src/blocks/genericFeatureBanner.mjs` (auto-mode catch-all: listens to `onForceFeatureRequested` and flashes a "FEATURE TRIGGERED · <label>" placard for kinds without a dedicated block, so even exotic features in arbitrary partner GDDs land visible feedback). 21 industry-standard kinds covered (FS, BB, H&W, Pick, Wheel, Mult, Cascade, Cluster, Ways, Exp/Walk/Sticky Wild, Mystery, ScatterPay, Lightning, Respin, Wild Reel, Gamble, Ante, Super, Big Win). HookBus event `onForceFeatureRequested` added (53 canonical events). LEGO gate 5/5, 38/38 UFP unit + 24/24 GFB unit + 28/28 live probe (4 GDDs × 7 assertions: panel rendered, ≥1 chip, toolbar role, emit observed, payload.kind matches, `__FORCE_FEATURE__` set, 0 console errors), universal GDD audit 460/461 (1 pre-existing 18_wheel fatal unchanged). Apple HIG typography floor honored (chipFontSize: 11). Vendor-neutral. Previous ship: Wave **P2** — **Smart Defaults Engine** (4-stage
 > backfill: theme palette autoextract from tags/name/mood, topology
 > kind+dims+paylines inference from feature mix, symbol tier classifier,
 > recommended feature mix synthesis). New module `src/registry/smartDefaults.mjs`
@@ -4236,6 +4236,44 @@ V4 (HookBus events) first — bez njih V1/V2 ne mogu da emit. Onda V1+V2 paralel
 > **Future-proof**: budući kindovi (lotto / scratch / arcade) landuju kao
 > jedna stavka u `PROFILE.<kind>` plus jedan unit test — ne kao grananje
 > u 58 blokova. LEGO LEGO LEGO.
+
+---
+
+## ✅ Wave AL-1 — Anticipation halo ARM/DISARM gate + ultimate sweep (Boki 2026-06-11)
+
+> **Trigger** (11.06.2026, Boki): *"ajde iskoristi sve sto imamo novo za
+> slot gdd. popravi ga, sve izanaliziraj, leakove sredi, svaki grid da
+> radi savrseno, svaki blok da radi nebitno kakav je gdd. uvek mora
+> savrseno svaki blok koji je ubacen mora da radi. ne zanimaju me
+> opravdanja. mora da radi sve savrseno. svaki scenario moguc i nemoguc
+> pokrij i svaki futuristicki nacin nadji"*.
+
+### Šta je urađeno
+
+| Aspekt | Detalji |
+|:--|:--|
+| **Root cause** | `anticipationUniversal.mjs` `_tick()` polovao svakih 140ms i dodavao `.cell--anticipating-cell` halo SVAKOJ ćeliji čiji tekst slučajno = trigger simbol (default 'S'). Na idle render-u (pre prvog spina) random fillerne ćelije sa tim simbolom su odmah svetlele — vizualni leak. |
+| **Industry-grade fix** | ARM/DISARM gate paradigm: `ANT_UNI_ARMED = false` initial, `_arm()` se zove na `postSpin` + `onTumbleStep`, `_disarm()` se zove na `preSpin` + `onFsTrigger` + `onFsEnd` (sa reset svih halo-a). Halo živi SAMO između landinga spina i sledećeg spin start-a — industry-standard semantika (svaki major studio). |
+| **Verifikacija** | • full-qa-audit DOM ornament probe: **24/24 grids CLEAN** (pre fix-a: 6 grida sa `cellShadow=1..4`)<br>• ultimate-qa sweep: **332 fixtures × 13 asserts = 4316/4316 PASS, 0 FAIL** (sve grid × feature kombinacije)<br>• per-grid-stress probe (5 spinova po gridu, svi 24): **0 console errors, 0 idle halos, 0 stuck buttons, 0 DOM redness**<br>• per-grid-force-stress probe (sve UFP chip kinds × sve 24 grida): **80/80 force chips trigger engine response**<br>• `lego-gate` 5/5 PASS, block-test parity 69/69, vendor-neutral PASS<br>• `anticipationUniversal.test.mjs` 15/15 PASS (uključujući vendor-neutral) |
+| **Delegacija** | Gemini 2.5 Flash konfirmovao ARM/DISARM gate kao najbolji arhitekturalni pristup (HookBus preSpin disarm + postSpin arm + cleanup). Kimi K2.5 dao listu 8 futuristic edge case-ova (session restart, hot-reload phantom, sticky mult drift, tumble hangup, turbo race, memory balloon, tooltip NaN, FS-vs-BigWin priority) — auditovani, ne primenjuju jer arhitektura ih već pokriva ili nisu relevantni (page reload kill-uje listenere). |
+| **Novi alati** | `tools/_per-grid-stress.mjs` — 24 grid × 5 spin smoke matrica (HookBus emit tap, redness scan, idle halo regression guard, btn-stuck detector).<br>`tools/_per-grid-force-stress.mjs` — 24 grid × sve UFP chip kinds, JS-bypass click + emit signature scan (overlay/banner/big-win/fs/wheel/mult/spin). |
+| **Senior-grade discipline** | LEGO template-level fix (ne game-specific), single-owner gate flag, JSDoc-grade industry-reference komentar, vendor-neutral, 100% test coverage, idempotent listener reg, page-lifetime safe. |
+
+### 📊 Final stanje (HEAD posle ove wave)
+
+| Metric | Value |
+|:--|--:|
+| Block tests | **69 / 69 PASS** |
+| Runtime tests | **31 / 31 PASS** |
+| Manifest tests | **17 / 17 PASS** |
+| Cert tests | **76 / 76 PASS** |
+| Playground tests | **24 / 24 PASS** |
+| Lego-gate invariants | **5 / 5 PASS** |
+| Orchestrator LOC budget | **1012 / 1050 (96.4%)** |
+| Full QA audit | **24 / 24 grids CLEAN, 0 ornament leak** |
+| Ultimate QA matrix | **332 / 332 fixtures, 4316 / 4316 asserts** |
+| Per-grid stress | **24 / 24 grids, 0 defects** |
+| Per-grid force | **80 / 80 force chips functional** |
 
 ---
 

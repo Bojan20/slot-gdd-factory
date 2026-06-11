@@ -173,7 +173,17 @@ export function emitAnticipationUniversalRuntime(cfg = defaultConfig()) {
    * are SVG) and rely on the whole-host pulse + badge counter. */
   var ANT_UNI_ENGINE_PULSE_ONLY = new Set(['wheel', 'plinko', 'crash', 'radial', 'slingo']);
 
+  /* ARMED gate — closed initially so idle random fillers that happen to
+   * carry the trigger symbol DON'T get a halo before any spin has even
+   * run. Industry-standard semantic: anticipation halo lives ONLY between
+   * a postSpin landing and the NEXT preSpin start — i.e. while the player
+   * is reading the just-landed scatter count. */
+  var ANT_UNI_ARMED = false;
+  var ANT_UNI_SPINNING = false;
+
   function _canRun() {
+    if (!ANT_UNI_ARMED) return false;
+    if (ANT_UNI_SPINNING) return false;
     if (ANT_UNI_SKIP_FS) {
       try {
         if (typeof window.FSM !== 'undefined' && window.FSM && window.FSM.phase &&
@@ -321,11 +331,28 @@ export function emitAnticipationUniversalRuntime(cfg = defaultConfig()) {
     }
     _paintBadge(0, _readLadder().threshold, false);
   }
+  function _disarm() {
+    /* Player just started the next spin — strip last spin's halos
+     * and close the gate until postSpin re-arms. */
+    ANT_UNI_ARMED = false;
+    ANT_UNI_SPINNING = true;
+    _resetAll();
+  }
+  function _arm() {
+    /* Spin landed. Open the gate so _tick can paint halos on the
+     * just-resolved cells. */
+    ANT_UNI_SPINNING = false;
+    ANT_UNI_ARMED = true;
+    _tick();   /* paint immediately so player sees halo on landed scatters
+                * without waiting up to ANT_UNI_TICK_MS for next interval. */
+  }
   if (typeof HookBus !== 'undefined') {
     try {
-      HookBus.on('preSpin', _resetAll, { priority: 8 });
-      HookBus.on('onFsTrigger', _resetAll, { priority: 8 });
-      HookBus.on('onFsEnd',     _resetAll, { priority: 8 });
+      HookBus.on('preSpin',     _disarm, { priority: 8 });
+      HookBus.on('postSpin',    _arm,    { priority: 8 });
+      HookBus.on('onTumbleStep', _arm,   { priority: 8 });
+      HookBus.on('onFsTrigger', _disarm, { priority: 8 });
+      HookBus.on('onFsEnd',     _disarm, { priority: 8 });
     } catch (_) {}
   }
 
