@@ -37,12 +37,19 @@ export function resolveConfig(model = {}) {
   if (typeof m.label === 'string' && m.label.length > 0 && m.label.length <= 24) cfg.label = m.label;
   if (typeof m.color === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(m.color)) cfg.color = m.color;
 
-  // Auto-enable when ante_bet feature is detected, but respect a
-  // gridProfile veto for topologies that don't support ante-bet
-  // (cluster / hex / wheel / crash / plinko / etc).
+  // Auto-enable when ante_bet feature is detected.
+  //
+  // Wave AL-2 (4-GDD audit, 2026-06-11): explicit GDD detection of
+  // `ante_bet` MUST override the gridProfile veto. Industry-standard
+  // grids (cluster, hex, wheel, etc.) default to no ante-bet because
+  // their trigger model usually doesn't use it — but if a designer
+  // explicitly puts ante_bet in the GDD, we honor that. Boki's rule:
+  // "tačno ono što se traži, ništa više ništa manje."
+  // The previous behavior re-applied `applyGridProfile` with
+  // `{ enabled: true }`, which let the profile veto silently win and
+  // dropped the chip for cluster GDDs that DO want ante-bet.
   if (Array.isArray(model.features) && model.features.some(f => f.kind === 'ante_bet')) {
-    const ctxOverride = applyGridProfile('anteBet', { enabled: true }, model);
-    cfg.enabled = ctxOverride.enabled !== false;
+    cfg.enabled = true;
   }
   return cfg;
 }

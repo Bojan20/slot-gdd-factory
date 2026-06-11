@@ -76,9 +76,12 @@ const ALL_KNOWN_KINDS = Object.freeze([
   'bonus_pick',
   'wheel_bonus',
   'multiplier',
+  'multiplier_orb',
+  'persistent_multiplier',
   'cascade',
   'cluster_pays',
   'ways',
+  'pay_anywhere',
   'expanding_wild',
   'walking_wild',
   'sticky_wild',
@@ -90,55 +93,64 @@ const ALL_KNOWN_KINDS = Object.freeze([
   'gamble',
   'ante_bet',
   'super_symbol',
+  'jackpot',
   'big_win',
 ]);
 
 const KIND_LABELS = Object.freeze({
-  free_spins:      'FS',
-  bonus_buy:       'BUY',
-  hold_and_win:    'H&W',
-  bonus_pick:      'PICK',
-  wheel_bonus:     'WHEEL',
-  multiplier:      '×MULT',
-  cascade:         'CASCADE',
-  cluster_pays:    'CLUSTER',
-  ways:            'WAYS',
-  expanding_wild:  'EXP-W',
-  walking_wild:    'WALK-W',
-  sticky_wild:     'STICK-W',
-  mystery_symbol:  'MYST',
-  scatter_pay:     'SCATPAY',
-  lightning:       '⚡',
-  respin:          'RESPIN',
-  wild_reel:       'WILD-R',
-  gamble:          'GAMBLE',
-  ante_bet:        'ANTE',
-  super_symbol:    'SUPER',
-  big_win:         'BIG-WIN',
+  free_spins:            'FS',
+  bonus_buy:             'BUY',
+  hold_and_win:          'H&W',
+  bonus_pick:            'PICK',
+  wheel_bonus:           'WHEEL',
+  multiplier:            '×MULT',
+  multiplier_orb:        '◯×',
+  persistent_multiplier: 'P×',
+  cascade:               'CASCADE',
+  cluster_pays:          'CLUSTER',
+  ways:                  'WAYS',
+  pay_anywhere:          'ANY-PAY',
+  expanding_wild:        'EXP-W',
+  walking_wild:          'WALK-W',
+  sticky_wild:           'STICK-W',
+  mystery_symbol:        'MYST',
+  scatter_pay:           'SCATPAY',
+  lightning:             '⚡',
+  respin:                'RESPIN',
+  wild_reel:             'WILD-R',
+  gamble:                'GAMBLE',
+  ante_bet:              'ANTE',
+  super_symbol:          'SUPER',
+  jackpot:               'JACKPOT',
+  big_win:               'BIG-WIN',
 });
 
 const KIND_FULL_LABELS = Object.freeze({
-  free_spins:      'Free Spins',
-  bonus_buy:       'Bonus Buy',
-  hold_and_win:    'Hold & Win',
-  bonus_pick:      'Bonus Pick',
-  wheel_bonus:     'Wheel Bonus',
-  multiplier:      'Multiplier',
-  cascade:         'Cascade / Tumble',
-  cluster_pays:    'Cluster Pays',
-  ways:            'Ways',
-  expanding_wild:  'Expanding Wild',
-  walking_wild:    'Walking Wild',
-  sticky_wild:     'Sticky Wild',
-  mystery_symbol:  'Mystery Symbol',
-  scatter_pay:     'Scatter Pay',
-  lightning:       'Lightning',
-  respin:          'Respin',
-  wild_reel:       'Wild Reel',
-  gamble:          'Gamble',
-  ante_bet:        'Ante Bet',
-  super_symbol:    'Super Symbol',
-  big_win:         'Big Win',
+  free_spins:            'Free Spins',
+  bonus_buy:             'Bonus Buy',
+  hold_and_win:          'Hold & Win',
+  bonus_pick:            'Bonus Pick',
+  wheel_bonus:           'Wheel Bonus',
+  multiplier:            'Multiplier',
+  multiplier_orb:        'Multiplier Orb',
+  persistent_multiplier: 'Persistent Multiplier',
+  cascade:               'Cascade / Tumble',
+  cluster_pays:          'Cluster Pays',
+  ways:                  'Ways',
+  pay_anywhere:          'Pay Anywhere',
+  expanding_wild:        'Expanding Wild',
+  walking_wild:          'Walking Wild',
+  sticky_wild:           'Sticky Wild',
+  mystery_symbol:        'Mystery Symbol',
+  scatter_pay:           'Scatter Pay',
+  lightning:             'Lightning',
+  respin:                'Respin',
+  wild_reel:             'Wild Reel',
+  gamble:                'Gamble',
+  ante_bet:              'Ante Bet',
+  super_symbol:          'Super Symbol',
+  jackpot:               'Jackpot',
+  big_win:               'Big Win',
 });
 
 /**
@@ -405,6 +417,63 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
       } catch (_) {}
     }
     if (kind === 'big_win') { try { window.__FORCE_BIG_WIN_TIER__ = 3; } catch (_) {} }
+
+    /* 2026-06-11 (Wave AL-2 / 4-GDD audit) — jackpot, multiplier_orb,
+     * persistent_multiplier, pay_anywhere were detected by the parser
+     * for Gates / Huff / Wrath GDDs but UFP had no chip nor handler.
+     * Each new kind below sets a deterministic flag that the engine
+     * + relevant block consumes on the next runOneBaseSpin() per the
+     * force-buttons-real-spin rule. */
+    if (kind === 'jackpot') {
+      /* Top-tier jackpot: drive big_win tier 5 (or max tier) so the
+       * payout ladder lands at GRAND. bigWinTier reads this flag in
+       * its postSpin handler — same path as big_win chip but at the
+       * top rung. */
+      try { window.__FORCE_BIG_WIN_TIER__ = 5; } catch (_) {}
+      try { window.__FORCE_JACKPOT__ = true; } catch (_) {}
+    }
+    if (kind === 'multiplier_orb') {
+      /* Plant the next spin to land a high-value orb. multiplierOrb
+       * block reads MULT_ORB_STATE.forcedNextValue in its onSpinResult
+       * hook so the orb materialises on a random cell. */
+      try {
+        if (window.MULT_ORB_STATE) {
+          window.MULT_ORB_STATE.forcedNextValue = 50;   /* 50× — premium orb */
+          window.MULT_ORB_STATE.forceNextSpin = true;
+        }
+        if (window.HookBus && typeof window.HookBus.setMult === 'function') {
+          window.HookBus.setMult(50);
+        }
+      } catch (_) {}
+    }
+    if (kind === 'persistent_multiplier') {
+      /* persistentMultiplier block bumps the carry-over multiplier
+       * across spins. Force-bump by +1 and seed the next spin so the
+       * visual ratchet renders. */
+      try {
+        if (window.PERSISTENT_MULT_STATE) {
+          var _cur = (window.PERSISTENT_MULT_STATE.current || 1) + 1;
+          window.PERSISTENT_MULT_STATE.current = Math.min(_cur, 100);
+          window.PERSISTENT_MULT_STATE.forceNextSpin = true;
+        }
+        if (window.HookBus && typeof window.HookBus.setMult === 'function') {
+          window.HookBus.setMult(window.PERSISTENT_MULT_STATE
+            ? window.PERSISTENT_MULT_STATE.current : 2);
+        }
+      } catch (_) {}
+    }
+    if (kind === 'pay_anywhere') {
+      /* pay_anywhere is an EVALUATION MODE, not a transient trigger —
+       * games using it always evaluate that way. The force chip
+       * therefore drives a deterministic 8-of-kind plant so the player
+       * can see the eval visualised. reelEngine reads FORCE_TRIGGER
+       * symbolPile to seed cells. */
+      try {
+        var _payPlant = { symbolPile: { count: 8, symbol: 'M' } };
+        try { FORCE_TRIGGER = _payPlant; } catch (_) {}
+        try { window.FORCE_TRIGGER = _payPlant; } catch (_) {}
+      } catch (_) {}
+    }
 
     /* 2026-06-10 — Boki bug "multiplier force ne radi". UFP chip emit-uje
        onForceFeatureRequested + spin, ali ne postavlja stvarni mult. Pa

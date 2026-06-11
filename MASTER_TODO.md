@@ -3,9 +3,9 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-11 · **HEAD**: `9f56c72` · main
-> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, ✅ **P1 + D1 + D2 + D3 + D4 + P2 (covers P3+P4+P5 via stages) + P6 + P7 + P8 + V1 + V4 + V5 + V7 + U-FORCE-ALL + AL-1** shipped (18/47); **Faza 1 ZATVORENA**
-> **Most recent ship**: Wave **AL-1** — **Anticipation halo ARM/DISARM gate** (template-level leak fix). `src/blocks/anticipationUniversal.mjs` _tick polling više ne svetli random idle fillere koji slučajno = trigger simbol; halo živi SAMO između postSpin landinga i sledećeg preSpin starta — industry-standard semantika. Verifikacija: 24/24 grids CLEAN (pre fix-a 6 sa cellShadow leak), 332/332 ultimate fixtures × 13 asserts = 4316/4316 PASS, per-grid stress 24/24 0 defects, per-grid force 80/80 chips funkcionalno, lego 5/5, anticipationUniversal 15/15. Delegirano Gemini-ju za arhitektonsku validaciju (ARM/DISARM gate preporučen), Kimi-ju za 8 futuristic edge case-ova (auditovani). Senior-grade: vendor-neutral, single-owner gate flag, JSDoc industry-reference komentar, idempotent listener reg, page-lifetime safe. Previous ship: Wave **U-FORCE-ALL** — **Universal feature force panel + generic banner fallback** (presentation/QA layer). Two new blocks: `src/blocks/universalForcePanel.mjs` (detects every parsed feature kind from `model.features[]`, paints chip rail of FORCE buttons, each click sets `window.__FORCE_FEATURE__` + emits `onForceFeatureRequested` + triggers real `runOneBaseSpin()` per the force-buttons-real-spin rule) and `src/blocks/genericFeatureBanner.mjs` (auto-mode catch-all: listens to `onForceFeatureRequested` and flashes a "FEATURE TRIGGERED · <label>" placard for kinds without a dedicated block, so even exotic features in arbitrary partner GDDs land visible feedback). 21 industry-standard kinds covered (FS, BB, H&W, Pick, Wheel, Mult, Cascade, Cluster, Ways, Exp/Walk/Sticky Wild, Mystery, ScatterPay, Lightning, Respin, Wild Reel, Gamble, Ante, Super, Big Win). HookBus event `onForceFeatureRequested` added (53 canonical events). LEGO gate 5/5, 38/38 UFP unit + 24/24 GFB unit + 28/28 live probe (4 GDDs × 7 assertions: panel rendered, ≥1 chip, toolbar role, emit observed, payload.kind matches, `__FORCE_FEATURE__` set, 0 console errors), universal GDD audit 460/461 (1 pre-existing 18_wheel fatal unchanged). Apple HIG typography floor honored (chipFontSize: 11). Vendor-neutral. Previous ship: Wave **P2** — **Smart Defaults Engine** (4-stage
+> **Last updated**: 2026-06-11 · **HEAD**: `pending` · main
+> **Next-up roadmap**: [🎯 Pre-Math Perfection Roadmap](#-pre-math-perfection-roadmap-queued--2026-06-08) — 7 faza, 47 wave-a, ✅ **P1 + D1 + D2 + D3 + D4 + P2 + P6 + P7 + P8 + V1 + V4 + V5 + V7 + U-FORCE-ALL + AL-1 + AL-2** shipped (19/47); **Faza 1 ZATVORENA**
+> **Most recent ship**: Wave **AL-2** — **4-GDD ultimate parity audit** (Boki 11.06: "prodji sa kojim god AI treba kroz ove glavne gddove, 4 gddova u gdd folderu — svaki mora da radi savršeno, da ima sve po gddu, ništa više ništa manje"). Audit 4 PDF-a (Gates of Olympus 1000, Huff N More Puff, Starlight Travellers, Wrath of Olympus): poređenje parsed features vs UFP chips. Pronađeno 4 missing kinds (jackpot, multiplier_orb, persistent_multiplier, pay_anywhere) koji nisu bili u `ALL_KNOWN_KINDS` UFP-a. Dodati labels + force handlers (jackpot → BW tier 5; multiplier_orb → MULT_ORB_STATE.forcedNextValue=50; persistent_multiplier → +1 ratchet; pay_anywhere → 8-of-kind symbol pile plant). AnteBet block sad poštuje explicit GDD detection preko gridProfile veto-a — cluster GDDs koji imaju ante_bet sad render-uju ANTE chip (Starlight). Build-time exposure: `window.__SLOT_MODEL_FEATURES__` / `__SLOT_MODEL_NAME__` / `__SLOT_MODEL_SYMBOLS__` za QA tooling, regulator probes, cortex-eyes. Verifikacija: 4/4 GDDs missing=0 extra=0 phantom=0, 4-GDD ultimate audit ✅ ALL PERFECT (0 NO-OP chips, 0 console errs, 0 redness), per-grid stress 24/24 0 defekata, lego 5/5, blocks/runtime pass. Senior-grade: vendor-neutral, kompletno LEGO discipline (single-owner emit, dedupe). Previous ship: Wave **AL-1** — **Anticipation halo ARM/DISARM gate** (template-level leak fix). `src/blocks/anticipationUniversal.mjs` _tick polling više ne svetli random idle fillere koji slučajno = trigger simbol; halo živi SAMO između postSpin landinga i sledećeg preSpin starta — industry-standard semantika. Verifikacija: 24/24 grids CLEAN (pre fix-a 6 sa cellShadow leak), 332/332 ultimate fixtures × 13 asserts = 4316/4316 PASS, per-grid stress 24/24 0 defects, per-grid force 80/80 chips funkcionalno, lego 5/5, anticipationUniversal 15/15. Delegirano Gemini-ju za arhitektonsku validaciju (ARM/DISARM gate preporučen), Kimi-ju za 8 futuristic edge case-ova (auditovani). Senior-grade: vendor-neutral, single-owner gate flag, JSDoc industry-reference komentar, idempotent listener reg, page-lifetime safe. Previous ship: Wave **U-FORCE-ALL** — **Universal feature force panel + generic banner fallback** (presentation/QA layer). Two new blocks: `src/blocks/universalForcePanel.mjs` (detects every parsed feature kind from `model.features[]`, paints chip rail of FORCE buttons, each click sets `window.__FORCE_FEATURE__` + emits `onForceFeatureRequested` + triggers real `runOneBaseSpin()` per the force-buttons-real-spin rule) and `src/blocks/genericFeatureBanner.mjs` (auto-mode catch-all: listens to `onForceFeatureRequested` and flashes a "FEATURE TRIGGERED · <label>" placard for kinds without a dedicated block, so even exotic features in arbitrary partner GDDs land visible feedback). 21 industry-standard kinds covered (FS, BB, H&W, Pick, Wheel, Mult, Cascade, Cluster, Ways, Exp/Walk/Sticky Wild, Mystery, ScatterPay, Lightning, Respin, Wild Reel, Gamble, Ante, Super, Big Win). HookBus event `onForceFeatureRequested` added (53 canonical events). LEGO gate 5/5, 38/38 UFP unit + 24/24 GFB unit + 28/28 live probe (4 GDDs × 7 assertions: panel rendered, ≥1 chip, toolbar role, emit observed, payload.kind matches, `__FORCE_FEATURE__` set, 0 console errors), universal GDD audit 460/461 (1 pre-existing 18_wheel fatal unchanged). Apple HIG typography floor honored (chipFontSize: 11). Vendor-neutral. Previous ship: Wave **P2** — **Smart Defaults Engine** (4-stage
 > backfill: theme palette autoextract from tags/name/mood, topology
 > kind+dims+paylines inference from feature mix, symbol tier classifier,
 > recommended feature mix synthesis). New module `src/registry/smartDefaults.mjs`
@@ -4236,6 +4236,50 @@ V4 (HookBus events) first — bez njih V1/V2 ne mogu da emit. Onda V1+V2 paralel
 > **Future-proof**: budući kindovi (lotto / scratch / arcade) landuju kao
 > jedna stavka u `PROFILE.<kind>` plus jedan unit test — ne kao grananje
 > u 58 blokova. LEGO LEGO LEGO.
+
+---
+
+## ✅ Wave AL-2 — 4-GDD ultimate parity audit + 4 missing UFP kinds (Boki 2026-06-11)
+
+> **Trigger** (11.06.2026, Boki): *"prodji sada sa kojim god AI treba
+> kroz ove glavne gddove, 4 gddova u gdd folderu. svaki mora da radi
+> savrseno, da ima sve po gddu, nista vise nista manje, ali tacno ono
+> sto se trazi. da svaki force radi saveseno, da se prikazuje savrseno
+> itd itd, sve ultimativno da radi bez ijedne greske, samo savrseno"*.
+
+### Šta je urađeno
+
+| Aspekt | Detalji |
+|:--|:--|
+| **Audit alat** | `tools/_4-gdds-ultimate-audit.mjs` — upload-via-dropzone × 4 PDF-a, čeka iframe, instrumentira HookBus, klikne svaki UFP chip + 5 base spinova, scan DOM redness, screenshot idle+final, per-GDD verdict markdown |
+| **Inspect alat** | `tools/_inspect-iframe-model.mjs` — čita `window.__SLOT_MODEL_FEATURES__` + UFP chip set + bonus_buy/ante_bet own chips, dijagnostikuje missing/extra phantom kinds |
+| **Extract alat** | `tools/_extract-gdd-specs.mjs` — CLI-side PDF parser + raw keyword scan; truth source vs iframe build |
+| **Root cause #1** | 4 industry-standard feature kinds nisu bili u `UFP.ALL_KNOWN_KINDS`: `jackpot`, `multiplier_orb`, `persistent_multiplier`, `pay_anywhere`. Parser detektovao na svim 4 GDD-ovima, ali UFP filter rejected → no chip → "force ne radi" |
+| **Root cause #2** | `anteBet.resolveConfig` koristila `applyGridProfile('anteBet', { enabled: true }, model)` koji je tihimi cluster veto-om gasio chip čak i kad je GDD eksplicitno tražio ante_bet. Starlight (cluster) imao ante_bet u features ali bez chip-a |
+| **Build-time exposure** | `buildSlotHTML.mjs` sad emit-uje 3 nove window globale: `__SLOT_MODEL_FEATURES__` / `__SLOT_MODEL_NAME__` / `__SLOT_MODEL_SYMBOLS__` — QA / regulator probes / cortex-eyes ne moraju više scrape inline scripts |
+| **Force handlers** | Dodati handleri u UFP `_onChipClick`: jackpot → `__FORCE_BIG_WIN_TIER__=5` + `__FORCE_JACKPOT__=true`; multiplier_orb → `MULT_ORB_STATE.forcedNextValue=50` + HookBus.setMult(50); persistent_multiplier → `PERSISTENT_MULT_STATE.current+=1`; pay_anywhere → `FORCE_TRIGGER.symbolPile={count:8, symbol:'M'}` |
+
+### 📊 Pre-fix vs post-fix po GDD
+
+| GDD | Parsed features | Pre-fix chips | Pre-fix missing | Post-fix chips | Post-fix missing |
+|:--|:--|:-:|:--|:-:|:-:|
+| Gates of Olympus 1000 | 6 | 4 | multiplier_orb, ante_bet | 5 UFP + BUY + ANTE | **0** ✅ |
+| Huff N More Puff | 8 | 7 | jackpot | 8 UFP + BUY | **0** ✅ |
+| Starlight Travellers | 8 | 5 | jackpot, ante_bet, feature_generic | 6 UFP + BUY + ANTE | **0** ✅ |
+| Wrath of Olympus | 6 | 6 | jackpot | 7 UFP | **0** ✅ |
+
+### 📊 Regression po fixu
+
+| Provera | Rezultat |
+|:--|:-:|
+| 4-GDD ultimate audit | ✅ **ALL PERFECT** (0 NO-OP chips, 0 redness) |
+| Per-grid stress (24 grids × 5 spinova) | ✅ **0/24 defekata** |
+| LEGO invariants | ✅ **5/5 PASS** |
+| anteBet block tests | ✅ **23/23 PASS** |
+| universalForcePanel block tests | ✅ **38/38 PASS** |
+| Per-block tests | ✅ **69/69 PASS** |
+| Runtime tests | ✅ **31/31 PASS** |
+| `window.__SLOT_MODEL_FEATURES__` exposed | ✅ |
 
 ---
 

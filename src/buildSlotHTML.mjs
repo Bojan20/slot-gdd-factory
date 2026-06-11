@@ -784,6 +784,24 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   const POOL = ${JSON.stringify(pool.map(s => s.id))};
   const SHAPE = ${JSON.stringify(shape)};
   const FREESPINS = ${JSON.stringify(model.freeSpins || { enabled: false })};
+  /* Wave AL-2 (4-GDD audit) — expose parser-detected feature kinds + name
+   * + symbol tier counts as a window-side QA hook so external auditors
+   * (cortex-eyes, regulator probes, dev tools) can verify parser → UI
+   * parity without scraping inline scripts. Safe for production: read-only
+   * snapshot of the build-time model, no runtime mutation. */
+  const __MODEL_FEATURES__ = ${JSON.stringify((model.features || []).map(f => ({ kind: f.kind, label: f.label })))};
+  const __MODEL_NAME__ = ${JSON.stringify(model.name || 'Untitled Slot')};
+  const __MODEL_SYMBOL_COUNTS__ = ${JSON.stringify({
+    hp: (model.symbols && model.symbols.high) ? model.symbols.high.length : 0,
+    mp: (model.symbols && model.symbols.mid)  ? model.symbols.mid.length  : 0,
+    lp: (model.symbols && model.symbols.low)  ? model.symbols.low.length  : 0,
+    sp: (model.symbols && model.symbols.specials) ? model.symbols.specials.length : 0,
+  })};
+  if (typeof window !== 'undefined') {
+    window.__SLOT_MODEL_FEATURES__ = __MODEL_FEATURES__;
+    window.__SLOT_MODEL_NAME__     = __MODEL_NAME__;
+    window.__SLOT_MODEL_SYMBOLS__  = __MODEL_SYMBOL_COUNTS__;
+  }
   /* Game topology hint — selects payout evaluator: 'line' (default),
      'cluster', 'ways', 'pay_anywhere'. Read by applyWinHighlight dispatch. */
   const GAME_EVAL_KIND = ${JSON.stringify((model.topology && model.topology.evaluation) || 'line')};
