@@ -154,6 +154,91 @@ t('vendor-neutral: no vendor / studio / brand strings in any emit', () => {
   });
 });
 
+/* ── 2026-06-11 Wave AL-4 / Fable-2 edge cases ───────────────────────── */
+
+/* Fable contribution (in/out behavior style). */
+t('resolveConfig: holdMs override propagates to runtime literal', () => {
+  const cfg = resolveConfig({ winRollup: { holdMs: 1337 } });
+  eq(cfg.holdMs, 1337, 'holdMs accepted via resolveConfig');
+  const rt = emitWinRollupRuntime(cfg);
+  ct(rt, '1337', 'holdMs value baked into runtime literal');
+});
+
+t('resolveConfig: msPerBetMultiple clamps negative to 0 and huge to 1000', () => {
+  const negCfg = resolveConfig({ winRollup: { msPerBetMultiple: -50 } });
+  eq(negCfg.msPerBetMultiple, 0, 'negative msPerBetMultiple clamps to 0 floor');
+  const hugeCfg = resolveConfig({ winRollup: { msPerBetMultiple: 999999 } });
+  eq(hugeCfg.msPerBetMultiple, 1000, 'huge msPerBetMultiple clamps to 1000 ceiling');
+  const zeroCfg = resolveConfig({ winRollup: { msPerBetMultiple: 0 } });
+  eq(zeroCfg.msPerBetMultiple, 0, 'zero msPerBetMultiple honored at boundary');
+});
+
+t('resolveConfig: bigWinTriggerRatio accepts fractional > 0, rejects 0 and negative', () => {
+  const fracCfg = resolveConfig({ winRollup: { bigWinTriggerRatio: 0.5 } });
+  eq(fracCfg.bigWinTriggerRatio, 0.5, 'fractional ratio 0.5 honored (degenerate but valid)');
+  const zeroCfg = resolveConfig({ winRollup: { bigWinTriggerRatio: 0 } });
+  eq(zeroCfg.bigWinTriggerRatio, 10, 'zero rejected, default 10 retained');
+  const negCfg = resolveConfig({ winRollup: { bigWinTriggerRatio: -5 } });
+  eq(negCfg.bigWinTriggerRatio, 10, 'negative rejected, default 10 retained');
+});
+
+t('emitWinRollupMarkup: unicode currency symbols (¥, ₿) render in formatted amount', () => {
+  const yenCfg = resolveConfig({ winRollup: { currency: '¥' } });
+  eq(yenCfg.currency, '¥', 'yen symbol accepted via resolveConfig');
+  ct(emitWinRollupMarkup(yenCfg), '¥', 'yen symbol present in markup output');
+  const btcCfg = resolveConfig({ winRollup: { currency: '₿' } });
+  ct(emitWinRollupMarkup(btcCfg), '₿', 'bitcoin symbol present in markup output');
+});
+
+t('resolveConfig: empty-string and too-long currency fall back to default', () => {
+  eq(resolveConfig({ winRollup: { currency: '' } }).currency, '€', 'empty falls back to €');
+  eq(resolveConfig({ winRollup: { currency: 'TOOLONG' } }).currency, '€', '> 4 chars rejected');
+  eq(resolveConfig({ balanceHud: { currency: '' } }).currency, '€', 'empty balanceHud does not override');
+});
+
+/* Corti contribution (emitter-shape style). */
+t('emitWinRollupCSS: @keyframes absent when disabled', () => {
+  const disabled = emitWinRollupCSS(resolveConfig({ winRollup: { enabled: false } }));
+  notct(disabled, '@keyframes', 'disabled emit has no keyframes');
+  notct(disabled, 'animation:', 'disabled emit has no animation property');
+});
+
+t('emitWinRollupMarkup: counter target (#winRollupAmount + data-count) present exactly once when enabled, zero when disabled', () => {
+  const html = emitWinRollupMarkup(defaultConfig());
+  const idMatches = html.match(/id="winRollupAmount"/g) || [];
+  const countMatches = html.match(/data-count/g) || [];
+  eq(idMatches.length, 1, 'enabled host carries #winRollupAmount once');
+  eq(countMatches.length, 1, 'enabled host carries data-count once');
+  const offHtml = emitWinRollupMarkup(resolveConfig({ winRollup: { enabled: false } }));
+  eq((offHtml.match(/id="winRollupAmount"/g) || []).length, 0, 'disabled markup has no counter target');
+});
+
+t('emitWinRollupRuntime: lifecycle listeners wired exactly once (no double-subscribe loop)', () => {
+  const cfg = resolveConfig({ winRollup: { labelText: 'TOTAL' } });
+  const rt = emitWinRollupRuntime(cfg);
+  const onStartCount = (rt.match(/HookBus\.on\(['"]onWinPresentationStart['"]/g) || []).length;
+  eq(onStartCount, 1, 'onWinPresentationStart wired once, not in a loop');
+  const preSpinCount = (rt.match(/HookBus\.on\(['"]preSpin['"]/g) || []).length;
+  eq(preSpinCount, 1, 'preSpin wired once');
+});
+
+t('resolveConfig: minDurationMs > maxDurationMs collapses to safe ordering', () => {
+  /* Defensive: if a GDD sets min=3000, max=1000 the resolver must end with
+   * cfg.minDurationMs <= cfg.maxDurationMs so the runtime rollup never
+   * computes a negative tween range. */
+  const cfg = resolveConfig({ winRollup: { minDurationMs: 3000, maxDurationMs: 1000 } });
+  ok(cfg.minDurationMs <= cfg.maxDurationMs,
+     `expected min<=max, got min=${cfg.minDurationMs} max=${cfg.maxDurationMs}`);
+});
+
+t('emitWinRollupRuntime: WIN_ROLLUP_STATE shape declared with all four keys', () => {
+  const rt = emitWinRollupRuntime(defaultConfig());
+  ct(rt, 'WIN_ROLLUP_STATE', 'state global declared');
+  ['enabled', 'active', 'lastAward', 'suppressed'].forEach(k => {
+    ct(rt, k, `state key ${k} present in runtime emit`);
+  });
+});
+
 console.log('--- summary ---');
 console.log('  pass:', pass);
 console.log('  fail:', fail);
