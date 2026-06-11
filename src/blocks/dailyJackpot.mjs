@@ -1,68 +1,66 @@
 /**
  * Slot GDD Factory · dailyJackpot BLOCK
  *
- * Time-gated jackpot pool that contributes from every spin's bet, rolls
- * a per-spin probability check, and on hit awards the live pool snapshot
- * to the player via a centered overlay banner. Resets each UTC day at
- * the configured hour.
+ * Vendor-neutral DAILY JACKPOT presenter — a persistent pool that grows
+ * by a fraction of every bet, resets each UTC day at a configured hour,
+ * and on a per-spin random roll awards the current pool snapshot to the
+ * player. On hit, the block paints a centered banner overlay and emits
+ * `onDailyJackpotAward` so audio, QA harness and analytics can react.
+ * Disabled by default — every GDD opts in explicitly (matches the
+ * industry baseline: jackpots are an optional layer above the math).
  *
- * Industry reference (vendor-neutral):
- *   • Per-spin contribution rate (e.g. 1% of bet) feeds an in-memory
- *     pool — pool starts at minPoolAmount each reset day.
- *   • Pool is clamped to maxPoolAmount; overflow is the operator's
- *     reserve (out of scope for this presenter).
- *   • Trigger probability is a deterministic random roll per spin (no
- *     scatter / paytable interaction) — keeps the math layer simple
- *     and orthogonal to base-game RTP.
- *   • Suppressed during FS / BW / BigWin overlays so two banners never
- *     stack.
+ * Industry reference (jackpotController contribution + roll loop):
+ *   • Pool seed → minPoolAmount at the start of every UTC reset window
+ *   • Per-spin contribution → bet × contribRate, clamped to maxPoolAmount
+ *   • Per-spin award roll  → Math.random() < triggerProbability
+ *   • Award snapshot       → current pool value at the moment of the hit
+ *   • Reset cadence        → UTC day rollover at configured resetUTCHour
+ *   • Suppressed while a higher-priority overlay owns the screen
+ *     (FS intro, bigWinTier) so two banners never stack
  *
  * Lifecycle hooks (LEGO doctrine):
- *   preSpin                → contribute (pool += bet * contribRate)
- *   postSpin               → random-roll; on hit, emit onDailyJackpotAward
- *                            + paint banner, reset pool to minPoolAmount
- *   onFsTrigger            → set suppressed=true (skip rolls during FS)
- *   onFsEnd                → suppressed=false
- *   onBigWinTierEntered    → suppressed=true
- *   onBigWinTierExited     → suppressed=false
+ *   preSpin                → check UTC reset, contribute bet to pool
+ *   postSpin               → random-roll for award (skipped when suppressed)
+ *   onFsTrigger            → suppress (FS intro takes over)
+ *   onFsEnd                → un-suppress
+ *   onBigWinTierEntered    → suppress (big-win owns the screen)
+ *   onBigWinTierExited     → un-suppress
  *
  * GDD-driven configuration (consumed from `model.dailyJackpot`):
- *   enabled              boolean (default false — opt-in)
- *   labelText            string  banner label (default "DAILY JACKPOT")
- *   resetUTCHour         number  0..23 (default 0 = midnight UTC)
- *   minPoolAmount        number  pool floor (default 1000)
- *   maxPoolAmount        number  pool ceiling (default 100000)
- *   contribRate          number  per-bet contribution (default 0.01)
- *   triggerProbability   number  per-spin hit chance (default 0.00001)
- *   holdMs               number  banner duration ms (default 5000)
+ *   enabled              boolean   (default false — off until GDD opts in)
+ *   labelText            string    banner label   (default "DAILY JACKPOT")
+ *   resetUTCHour         number    0..23 daily reset hour (default 0 — midnight UTC)
+ *   minPoolAmount        number    pool floor     (default 1000)
+ *   maxPoolAmount        number    pool ceiling   (default 100000)
+ *   contribRate          number    per-bet contribution rate (default 0.01 — 1%)
+ *   triggerProbability   number    per-spin hit chance (default 0.00001)
+ *   holdMs               number    banner visibility duration (default 5000)
  *
  * Currency:
- *   Inherited from balanceHud per project convention.
+ *   Inherits from balanceHud by default (single UX source of truth for
+ *   currency formatting across the slot). Per-block override is exposed
+ *   for completeness but rarely set in practice.
  *
- * Public API (server-side, ES module):
- *   defaultConfig()                 → frozen safe defaults
- *   resolveConfig(model)            → merge defaults with GDD override
- *   emitDailyJackpotCSS(config)     → CSS string (banner + a11y)
- *   emitDailyJackpotMarkup(config)  → HTML fragment (banner host)
- *   emitDailyJackpotRuntime(config) → runtime JS (state + hooks + public API)
- *
- * HookBus contract:
- *   Emits         : onDailyJackpotAward({ amount, currency, atUtcDay })
- *   Subscribes    : preSpin, postSpin, onFsTrigger, onFsEnd,
- *                   onBigWinTierEntered, onBigWinTierExited
+ * Public API:
+ *   defaultConfig()                  → frozen safe defaults
+ *   resolveConfig(model)             → merge defaults with GDD override
+ *   emitDailyJackpotCSS(config)      → CSS string (banner + reduced-motion)
+ *   emitDailyJackpotMarkup(config)   → HTML fragment (banner host + ARIA)
+ *   emitDailyJackpotRuntime(config)  → runtime JS (state, hooks, public API)
  *
  * Runtime contract:
- *   window.DAILY_JACKPOT_STATE     { enabled, pool, lastResetUtcDay, suppressed }
- *   window.dailyJackpotShow(amt)   programmatic banner kick (QA hook)
- *   window.dailyJackpotForce()     forces next postSpin to award
+ *   window.DAILY_JACKPOT_STATE       { enabled, pool, lastResetUtcDay, suppressed }
+ *   window.dailyJackpotShow(amount)  programmatic kick (QA hook)
+ *   window.dailyJackpotForce()       forces next postSpin to award (force chip)
  *
- * Senior-grade contract:
- *   • Idempotent emit (resolveConfig() with no input → frozen defaults)
- *   • Defensive on input (every numeric clamped, every string length-bounded)
- *   • prefers-reduced-motion collapses banner animation
- *   • ARIA role="status" + aria-live="polite" on banner
- *   • 0 magic numbers in CSS — opacity/blur named constants
- *   • Vendor-neutral
+ * Owned events (emits — registered in HookBus canonical list):
+ *   onDailyJackpotAward { amount, currency, atUtcDay }
+ *     amount   : pool snapshot at the moment of the hit (number)
+ *     currency : resolved currency glyph (string)
+ *     atUtcDay : reset-window day index for the award
+ *
+ * Subscribes (no new emits beyond the one above): preSpin, postSpin,
+ * onFsTrigger, onFsEnd, onBigWinTierEntered, onBigWinTierExited.
  */
 
 const DEFAULTS = Object.freeze({
@@ -74,6 +72,8 @@ const DEFAULTS = Object.freeze({
   contribRate:        0.01,
   triggerProbability: 0.00001,
   holdMs:             5000,
+  /* Currency knobs — inherited from balanceHud by default in resolveConfig.
+   * Surfaced here so a future GDD can override per-block if needed. */
   currency:           '€',
   currencyPosition:   'prefix',
 });
@@ -104,14 +104,16 @@ export function resolveConfig(model) {
 
   if (src.enabled === true) cfg.enabled = true;
   if (isPlainText(src.labelText, 24)) cfg.labelText = src.labelText;
-  cfg.resetUTCHour       = clampInt(src.resetUTCHour,       0,        23,       cfg.resetUTCHour);
-  cfg.minPoolAmount      = clampNum(src.minPoolAmount,      1,        1e9,      cfg.minPoolAmount);
-  cfg.maxPoolAmount      = clampNum(src.maxPoolAmount,      cfg.minPoolAmount, 1e9, cfg.maxPoolAmount);
-  cfg.contribRate        = clampNum(src.contribRate,        0,        1,        cfg.contribRate);
-  cfg.triggerProbability = clampNum(src.triggerProbability, 0,        1,        cfg.triggerProbability);
-  cfg.holdMs             = clampNum(src.holdMs,             500,      30000,    cfg.holdMs);
+  cfg.resetUTCHour       = clampInt(src.resetUTCHour,       0,                 23,    cfg.resetUTCHour);
+  cfg.minPoolAmount      = clampNum(src.minPoolAmount,      1,                 1e9,   cfg.minPoolAmount);
+  cfg.maxPoolAmount      = clampNum(src.maxPoolAmount,      cfg.minPoolAmount, 1e9,   cfg.maxPoolAmount);
+  cfg.contribRate        = clampNum(src.contribRate,        0,                 1,     cfg.contribRate);
+  cfg.triggerProbability = clampNum(src.triggerProbability, 0,                 1,     cfg.triggerProbability);
+  cfg.holdMs             = clampNum(src.holdMs,             500,               30000, cfg.holdMs);
 
-  /* Currency inherit — same chain as winRollup. */
+  /* Currency inherit: balanceHud > explicit override > default. Mirrors
+   * the winRollup / bigWinTier inheritance rule so the WHOLE slot reads
+   * currency from a single source. */
   const bh = (model && model.balanceHud) || {};
   if (typeof bh.currency === 'string' && bh.currency.length > 0 && bh.currency.length <= 4) {
     cfg.currency = bh.currency;
@@ -128,17 +130,67 @@ export function resolveConfig(model) {
   return cfg;
 }
 
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, ch => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',
+  }[ch]));
+}
+
 export function emitDailyJackpotCSS(cfg = defaultConfig()) {
   const c = resolveConfig({ dailyJackpot: cfg });
   if (!c.enabled) return `\n/* dailyJackpot BLOCK (disabled by GDD) — no CSS emitted */\n`;
 
-  /* Named visual constants — strings to preserve byte-identity in
-   * emitted CSS (e.g. "0.90" must not collapse to "0.9"). */
-  const BANNER_BG_OPACITY        = '0.92'; /* solid backdrop on banner host */
-  const BANNER_BORDER_OPACITY    = '0.85'; /* gold accent border alpha */
-  const BANNER_GLOW_OPACITY      = '0.40'; /* outer glow alpha */
-  const BANNER_FADE_DURATION_MS  = 320;    /* fade-in / fade-out cycle */
-  const BANNER_LIFT_PX           = 24;     /* enter-from-below offset */
+  /* ── private CSS magic-number constants ────────────────────────────────
+     Every opacity / blur / accent literal that would otherwise live
+     inline in the template has exactly one named declaration (same
+     pattern as anticipation.mjs Wave AL-4 / Fable-3). Opacities are
+     kept as STRINGS so the emitted CSS text is byte-identical to the
+     hand-tuned values — Number.prototype.toString() would collapse
+     "0.40" → "0.4" and break any visual-regression snapshots. */
+
+  // Banner backdrop fill — translucent dark plate beneath the glyphs.
+  const OPACITY_BANNER_BG          = '0.92';
+  // Banner gold rim at steady state.
+  const OPACITY_BANNER_BORDER      = '0.85';
+  // Outer halo glow alpha — soft warm spread behind the banner.
+  const OPACITY_BANNER_GLOW        = '0.40';
+  // Label glyph color alpha — slightly recessed under the amount glyph.
+  const OPACITY_LABEL              = '0.70';
+
+  // Outer halo blur radius — the soft warm spread behind the banner.
+  const BLUR_BANNER_GLOW           = '60px';
+
+  // Banner border width.
+  const BORDER_WIDTH_BANNER        = '2px';
+  // Banner corner radius.
+  const RADIUS_BANNER              = '16px';
+  // Banner padding (vertical / horizontal).
+  const PAD_BANNER_V               = '26px';
+  const PAD_BANNER_H               = '48px';
+
+  // Enter-from-below offset for the fade-in keyframe.
+  const LIFT_BANNER_ENTER          = '24px';
+  // Fade-in / fade-out cycle duration.
+  const DUR_BANNER_FADE_MS         = '320ms';
+
+  // Z-index for the fixed overlay — above the stage and reels but below
+  // any modal (modals in this repo park at z >= 1000).
+  const Z_INDEX_OVERLAY            = '60';
+
+  // Typography — extracted so a future GDD theme override touches one
+  // declaration each. (Currently constants by design: vendor-neutral.)
+  const FS_LABEL                   = '14px';
+  const FS_AMOUNT                  = '42px';
+  const LS_LABEL                   = '0.18em';
+  const MARGIN_AMOUNT_TOP          = '6px';
+
+  // Dark plate RGB triplet — translucent base under the gold rim.
+  const BANNER_PLATE_RGB           = '8, 7, 10';
+  // Gold accent RGB triplet — the celebratory warm color. Centralised
+  // here so a future theme override would touch one place.
+  const GOLD_ACCENT_RGB            = '201, 162, 39';
+  // Cream glyph color — the amount text fill (no transparency needed).
+  const TEXT_BANNER_HEX            = '#f6f1d6';
 
   return `
 /* ── dailyJackpot BLOCK — emitted by src/blocks/dailyJackpot.mjs ──────────
@@ -148,9 +200,14 @@ export function emitDailyJackpotCSS(cfg = defaultConfig()) {
      resetUTCHour       = ${c.resetUTCHour}
      minPoolAmount      = ${c.minPoolAmount}
      maxPoolAmount      = ${c.maxPoolAmount}
+     contribRate        = ${c.contribRate}
      triggerProbability = ${c.triggerProbability}
      holdMs             = ${c.holdMs}
-*/
+
+   Fixed-position banner overlay centered over the stage. Fades in on
+   award and stays visible for holdMs before fading out. Sits above the
+   reels but beneath any modal so a bonusPick or BW overlay still claims
+   focus. */
 .dailyJackpot-host {
   position: fixed;
   inset: 0;
@@ -158,23 +215,33 @@ export function emitDailyJackpotCSS(cfg = defaultConfig()) {
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  z-index: 60;
+  z-index: ${Z_INDEX_OVERLAY};
 }
 .dailyJackpot-host[data-show="false"] { display: none; }
 .dailyJackpot-banner {
-  background: rgba(8, 7, 10, ${BANNER_BG_OPACITY});
-  border: 2px solid rgba(201, 162, 39, ${BANNER_BORDER_OPACITY});
-  box-shadow: 0 0 60px rgba(201, 162, 39, ${BANNER_GLOW_OPACITY});
-  padding: 26px 48px;
-  border-radius: 16px;
-  color: #f6f1d6;
+  background: rgba(${BANNER_PLATE_RGB}, ${OPACITY_BANNER_BG});
+  border: ${BORDER_WIDTH_BANNER} solid rgba(${GOLD_ACCENT_RGB}, ${OPACITY_BANNER_BORDER});
+  box-shadow: 0 0 ${BLUR_BANNER_GLOW} rgba(${GOLD_ACCENT_RGB}, ${OPACITY_BANNER_GLOW});
+  padding: ${PAD_BANNER_V} ${PAD_BANNER_H};
+  border-radius: ${RADIUS_BANNER};
+  color: ${TEXT_BANNER_HEX};
   text-align: center;
-  animation: dailyJackpot-enter ${BANNER_FADE_DURATION_MS}ms ease-out;
+  animation: dailyJackpot-enter ${DUR_BANNER_FADE_MS} ease-out;
 }
-.dailyJackpot-label  { font-size: 14px; letter-spacing: 0.18em; opacity: 0.7; }
-.dailyJackpot-amount { font-size: 42px; font-weight: 700; margin-top: 6px; }
+.dailyJackpot-label  {
+  font-size: ${FS_LABEL};
+  letter-spacing: ${LS_LABEL};
+  opacity: ${OPACITY_LABEL};
+  text-transform: uppercase;
+}
+.dailyJackpot-amount {
+  font-size: ${FS_AMOUNT};
+  font-weight: 700;
+  margin-top: ${MARGIN_AMOUNT_TOP};
+  font-variant-numeric: tabular-nums;
+}
 @keyframes dailyJackpot-enter {
-  from { opacity: 0; transform: translateY(${BANNER_LIFT_PX}px); }
+  from { opacity: 0; transform: translateY(${LIFT_BANNER_ENTER}); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -183,142 +250,226 @@ export function emitDailyJackpotCSS(cfg = defaultConfig()) {
 `;
 }
 
-function _escape(s) {
-  return String(s).replace(/[&<>"']/g, ch => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;',
-  }[ch]));
-}
-
 export function emitDailyJackpotMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ dailyJackpot: cfg });
   if (!c.enabled) return '';
-  return `
-  <div id="dailyJackpotHost" class="dailyJackpot-host" data-show="false" role="status" aria-live="polite" aria-atomic="true">
-    <div class="dailyJackpot-banner">
-      <div class="dailyJackpot-label">${_escape(c.labelText)}</div>
-      <div class="dailyJackpot-amount" id="dailyJackpotAmount" data-amount="0">${_escape(c.currencyPosition === 'prefix' ? c.currency : '')}0${_escape(c.currencyPosition === 'suffix' ? c.currency : '')}</div>
-    </div>
-  </div>`;
+  /* role="status" + aria-live="polite" — assistive tech announces the
+   * award once when the banner appears (a single state change, no risk
+   * of screen-reader spam). */
+  const zero = c.currencyPosition === 'suffix' ? '0.00 ' + c.currency : c.currency + '0.00';
+  return `<div id="dailyJackpotHost" class="dailyJackpot-host" data-show="false" role="status" aria-live="polite" aria-atomic="true">
+      <div class="dailyJackpot-banner">
+        <div class="dailyJackpot-label" id="dailyJackpotLabel">${esc(c.labelText)}</div>
+        <div class="dailyJackpot-amount" id="dailyJackpotAmount" data-amount="0">${esc(zero)}</div>
+      </div>
+    </div>`;
 }
 
 export function emitDailyJackpotRuntime(cfg = defaultConfig()) {
   const c = resolveConfig({ dailyJackpot: cfg });
   if (!c.enabled) {
     return `
-  /* ── dailyJackpot BLOCK (disabled by GDD) ──────────────────────────── */
-  const DAILY_JACKPOT_STATE = { enabled: false, pool: 0, lastResetUtcDay: -1, suppressed: false };
-  if (typeof window !== 'undefined') window.DAILY_JACKPOT_STATE = DAILY_JACKPOT_STATE;
-  if (typeof window !== 'undefined') {
-    window.dailyJackpotShow  = function () {};
-    window.dailyJackpotForce = function () {};
-  }
+  /* ── dailyJackpot BLOCK (disabled by GDD) — no-op stubs ─────────────── */
+  window.DAILY_JACKPOT_STATE = { enabled: false, pool: 0, lastResetUtcDay: -1, suppressed: false };
+  window.dailyJackpotShow  = function () {};
+  window.dailyJackpotForce = function () {};
 `;
   }
   return `
-  /* ── dailyJackpot BLOCK — emitted by src/blocks/dailyJackpot.mjs ──────
-     GDD knobs (baked at build time):
-       resetUTCHour       = ${c.resetUTCHour}
-       minPoolAmount      = ${c.minPoolAmount}
-       maxPoolAmount      = ${c.maxPoolAmount}
-       contribRate        = ${c.contribRate}
-       triggerProbability = ${c.triggerProbability}
-       holdMs             = ${c.holdMs}
-  */
-  const DJ_CFG = Object.freeze({
-    resetUTCHour:       ${c.resetUTCHour},
-    minPoolAmount:      ${c.minPoolAmount},
-    maxPoolAmount:      ${c.maxPoolAmount},
-    contribRate:        ${c.contribRate},
-    triggerProbability: ${c.triggerProbability},
-    holdMs:             ${c.holdMs},
-  });
-  const DJ_CURRENCY = ${JSON.stringify(c.currency)};
-  const DJ_CURRENCY_POSITION = ${JSON.stringify(c.currencyPosition)};
+  /* ── dailyJackpot BLOCK — emitted by src/blocks/dailyJackpot.mjs ─────
+     Reference flow (industry baseline jackpotController):
+       1. preSpin  → check UTC reset window → contribute bet * rate to pool
+       2. postSpin → random-roll for award (suppressed during FS / BW)
+       3. On award → snapshot pool, emit onDailyJackpotAward, paint banner,
+                     reset pool to floor, hide after holdMs
+     Currency formatting mirrors balanceHud._formatMoney exactly so the
+     player reads a single, consistent currency glyph across the slot. */
+  (function () {
+    var LABEL_TEXT     = ${JSON.stringify(c.labelText)};
+    var RESET_UTC_HOUR = ${c.resetUTCHour};
+    var MIN_POOL       = ${c.minPoolAmount};
+    var MAX_POOL       = ${c.maxPoolAmount};
+    var CONTRIB_RATE   = ${c.contribRate};
+    var TRIGGER_PROB   = ${c.triggerProbability};
+    var HOLD_MS        = ${c.holdMs};
+    var CURRENCY       = ${JSON.stringify(c.currency)};
+    var CUR_POS        = ${JSON.stringify(c.currencyPosition)};
 
-  const DAILY_JACKPOT_STATE = {
-    enabled: true,
-    pool: DJ_CFG.minPoolAmount,
-    lastResetUtcDay: -1,
-    suppressed: false,
-  };
-  if (typeof window !== 'undefined') window.DAILY_JACKPOT_STATE = DAILY_JACKPOT_STATE;
+    var MS_PER_DAY = 86400000;
 
-  let _djForceNext = false;
-  let _djHideTimer = null;
-
-  function _djCurrentUtcDay() {
-    const now = new Date();
-    /* Day index = floor((now − dayShift) / 86400 sec), where dayShift
-     * accounts for resetUTCHour so each "day" starts at the configured
-     * UTC hour (default midnight). */
-    const hourShiftMs = DJ_CFG.resetUTCHour * 3600 * 1000;
-    return Math.floor((now.getTime() - hourShiftMs) / 86400000);
-  }
-
-  function _djFormatAmount(n) {
-    const v = (Math.round(n * 100) / 100).toFixed(2);
-    return DJ_CURRENCY_POSITION === 'prefix' ? (DJ_CURRENCY + v) : (v + DJ_CURRENCY);
-  }
-
-  function _djShowBanner(amount) {
-    const host = document.getElementById('dailyJackpotHost');
-    const amt  = document.getElementById('dailyJackpotAmount');
-    if (!host || !amt) return;
-    amt.textContent = _djFormatAmount(amount);
-    amt.setAttribute('data-amount', String(amount));
-    host.setAttribute('data-show', 'true');
-    if (_djHideTimer) clearTimeout(_djHideTimer);
-    _djHideTimer = setTimeout(() => {
-      host.setAttribute('data-show', 'false');
-      _djHideTimer = null;
-    }, DJ_CFG.holdMs);
-  }
-
-  function _djAward() {
-    const amount = DAILY_JACKPOT_STATE.pool;
-    if (typeof HookBus !== 'undefined') {
-      try { HookBus.emit('onDailyJackpotAward', { amount, currency: DJ_CURRENCY, atUtcDay: _djCurrentUtcDay() }); } catch (_) {}
-    }
-    _djShowBanner(amount);
-    DAILY_JACKPOT_STATE.pool = DJ_CFG.minPoolAmount;
-  }
-
-  function _djResetIfNewDay() {
-    const today = _djCurrentUtcDay();
-    if (today !== DAILY_JACKPOT_STATE.lastResetUtcDay) {
-      DAILY_JACKPOT_STATE.lastResetUtcDay = today;
-      DAILY_JACKPOT_STATE.pool = DJ_CFG.minPoolAmount;
-    }
-  }
-
-  if (typeof HookBus !== 'undefined') {
-    HookBus.on('preSpin', (p) => {
-      _djResetIfNewDay();
-      if (DAILY_JACKPOT_STATE.suppressed) return;
-      const bet = (p && Number.isFinite(p.bet)) ? p.bet : 0;
-      DAILY_JACKPOT_STATE.pool = Math.min(
-        DAILY_JACKPOT_STATE.pool + bet * DJ_CFG.contribRate,
-        DJ_CFG.maxPoolAmount
-      );
-    });
-    HookBus.on('postSpin', () => {
-      if (DAILY_JACKPOT_STATE.suppressed) return;
-      const hit = _djForceNext || (Math.random() < DJ_CFG.triggerProbability);
-      _djForceNext = false;
-      if (hit) _djAward();
-    });
-    HookBus.on('onFsTrigger',         () => { DAILY_JACKPOT_STATE.suppressed = true; });
-    HookBus.on('onFsEnd',             () => { DAILY_JACKPOT_STATE.suppressed = false; });
-    HookBus.on('onBigWinTierEntered', () => { DAILY_JACKPOT_STATE.suppressed = true; });
-    HookBus.on('onBigWinTierExited',  () => { DAILY_JACKPOT_STATE.suppressed = false; });
-  }
-
-  if (typeof window !== 'undefined') {
-    window.dailyJackpotShow  = function (amt) {
-      const n = Number(amt);
-      if (Number.isFinite(n) && n >= 0) _djShowBanner(n);
+    var STATE = {
+      enabled:         true,
+      pool:            MIN_POOL,
+      lastResetUtcDay: -1,
+      suppressed:      false,
+      forceNext:       false,
+      awarding:        false,
+      timers:          [],
     };
-    window.dailyJackpotForce = function () { _djForceNext = true; };
-  }
+    if (typeof window !== 'undefined') window.DAILY_JACKPOT_STATE = STATE;
+
+    function _host()     { return document.getElementById('dailyJackpotHost'); }
+    function _amountEl() { return document.getElementById('dailyJackpotAmount'); }
+
+    function _currentBet() {
+      var b = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0)
+        ? window.__SLOT_BET__ : 1;
+      return b;
+    }
+
+    function _fmtMoney(v) {
+      var n = Number(v);
+      if (!Number.isFinite(n) || n < 0) n = 0;
+      var s = n.toFixed(2);
+      return CUR_POS === 'suffix' ? (s + ' ' + CURRENCY) : (CURRENCY + s);
+    }
+
+    function _clearTimers() {
+      for (var i = 0; i < STATE.timers.length; i++) {
+        try { clearTimeout(STATE.timers[i]); } catch (_) {}
+      }
+      STATE.timers.length = 0;
+    }
+
+    /* Reset-window day index. The day "rolls over" at RESET_UTC_HOUR — so
+     * for resetUTCHour=6, a Date.now() at 04:00 UTC is still inside the
+     * previous day's window. Shift the timestamp back by RESET_UTC_HOUR
+     * before flooring to days so each day index aligns with the slot's
+     * own jackpot rollover, not the calendar midnight. */
+    function _currentResetDay(nowMs) {
+      var shifted = nowMs - (RESET_UTC_HOUR * 3600000);
+      return Math.floor(shifted / MS_PER_DAY);
+    }
+
+    function _maybeResetPool() {
+      var today = _currentResetDay(Date.now());
+      if (STATE.lastResetUtcDay === today) return;
+      STATE.lastResetUtcDay = today;
+      STATE.pool = MIN_POOL;
+    }
+
+    function _contribute(bet) {
+      if (!(bet > 0) || !(CONTRIB_RATE > 0)) return;
+      var next = STATE.pool + (bet * CONTRIB_RATE);
+      if (next > MAX_POOL) next = MAX_POOL;
+      STATE.pool = next;
+    }
+
+    function _setAmount(amount) {
+      var el = _amountEl();
+      if (!el) return;
+      el.textContent = _fmtMoney(amount);
+      el.setAttribute('data-amount', String(amount));
+    }
+
+    function _show() {
+      var h = _host();
+      if (!h) return;
+      h.setAttribute('data-show', 'true');
+    }
+
+    function _hide() {
+      var h = _host();
+      if (!h) return;
+      h.setAttribute('data-show', 'false');
+    }
+
+    function dailyJackpotShow(amount) {
+      amount = Number(amount);
+      if (!Number.isFinite(amount) || amount <= 0) return;
+      _clearTimers();
+      _setAmount(amount);
+      _show();
+      var tid = setTimeout(function () {
+        _hide();
+        STATE.awarding = false;
+      }, HOLD_MS);
+      STATE.timers.push(tid);
+    }
+
+    function dailyJackpotForce() {
+      STATE.forceNext = true;
+    }
+
+    function _award() {
+      /* Idempotent guard — never emit a second award while a banner is
+       * still on screen. The runtime's postSpin only fires once per spin,
+       * but a force chip + organic hit in the same tick could double-fire
+       * without this. */
+      if (STATE.awarding) return;
+      STATE.awarding = true;
+
+      var amount = STATE.pool;
+      var atDay  = _currentResetDay(Date.now());
+
+      /* Reset pool to floor for the next contribution cycle. The next
+       * UTC reset will land on the same value (idempotent). */
+      STATE.pool = MIN_POOL;
+      STATE.forceNext = false;
+
+      if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
+        try {
+          HookBus.emit('onDailyJackpotAward', {
+            amount:   amount,
+            currency: CURRENCY,
+            atUtcDay: atDay,
+          });
+        } catch (_) { /* defensive — never let a subscriber crash the spin */ }
+      }
+      dailyJackpotShow(amount);
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dailyJackpotShow  = dailyJackpotShow;
+      window.dailyJackpotForce = dailyJackpotForce;
+    }
+
+    if (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function') {
+      /* preSpin: roll the daily reset window FIRST so a fresh UTC day
+       * always starts clean, THEN contribute the current bet. Order
+       * matters — if we contributed before checking reset, a bet that
+       * landed across the rollover boundary would be wiped. Contribution
+       * is skipped while suppressed (FS / BW) — the player isn't paying
+       * a base-game bet during those overlays. */
+      HookBus.on('preSpin', function () {
+        _maybeResetPool();
+        if (STATE.suppressed) return;
+        _contribute(_currentBet());
+      });
+
+      /* postSpin: random-roll for the award unless suppressed. Force chip
+       * bypasses the probability roll but still respects suppression — a
+       * QA force during FS would otherwise paint over the FS intro. */
+      HookBus.on('postSpin', function () {
+        if (STATE.suppressed) return;
+        if (STATE.awarding)   return;
+        var hit = STATE.forceNext || (Math.random() < TRIGGER_PROB);
+        if (hit) _award();
+      });
+
+      /* FS intro takes over the screen — suppress and hide. */
+      HookBus.on('onFsTrigger', function () {
+        STATE.suppressed = true;
+        _clearTimers();
+        _hide();
+        STATE.awarding = false;
+      });
+      HookBus.on('onFsEnd', function () {
+        STATE.suppressed = false;
+      });
+
+      /* Big-win override — bigWinTier is the dominant celebration.
+       * Step out of the way so the player reads one banner at a time. */
+      HookBus.on('onBigWinTierEntered', function () {
+        STATE.suppressed = true;
+        _clearTimers();
+        _hide();
+        STATE.awarding = false;
+      });
+      HookBus.on('onBigWinTierExited', function () {
+        STATE.suppressed = false;
+      });
+    }
+  })();
 `;
 }
