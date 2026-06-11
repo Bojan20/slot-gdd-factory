@@ -117,6 +117,13 @@ const DEFAULTS = Object.freeze({
   indicator: true,
 });
 
+const LIMITS = Object.freeze({
+  reconnectMsMax: 60000,
+  reconnectMaxMsMax: 300000,
+  debounceMsMax: 5000,
+  keepalivePingMsMax: 600000,
+});
+
 export function defaultConfig() {
   return {
     enabled: DEFAULTS.enabled,
@@ -143,9 +150,11 @@ function isStringList(v) {
 
 function isSafePath(s) {
   /* server-mounted absolute endpoint or relative; reject absolute http(s)
-   * URLs to prevent the runtime opening a cross-origin EventSource. */
+   * URLs and protocol-relative `//host/path` forms to prevent the runtime
+   * opening a cross-origin EventSource. */
   if (typeof s !== 'string' || s.length === 0 || s.length > 256) return false;
-  if (/^https?:/i.test(s)) return false;
+  if (/^[a-z]+:/i.test(s)) return false;
+  if (s.startsWith('//')) return false;
   return /^[a-zA-Z0-9._\-/?=&]+$/.test(s);
 }
 
@@ -155,22 +164,23 @@ export function resolveConfig(model) {
 
   if (src.enabled === true) cfg.enabled = true;
   if (isSafePath(src.endpoint)) cfg.endpoint = src.endpoint;
-  if (isPositiveInt(src.reconnectMs, 60000)) cfg.reconnectMs = Math.floor(src.reconnectMs);
-  if (isPositiveInt(src.reconnectMaxMs, 300000)) cfg.reconnectMaxMs = Math.floor(src.reconnectMaxMs);
+  if (isPositiveInt(src.reconnectMs, LIMITS.reconnectMsMax)) cfg.reconnectMs = Math.floor(src.reconnectMs);
+  if (isPositiveInt(src.reconnectMaxMs, LIMITS.reconnectMaxMsMax)) cfg.reconnectMaxMs = Math.floor(src.reconnectMaxMs);
   if (cfg.reconnectMaxMs < cfg.reconnectMs) cfg.reconnectMaxMs = cfg.reconnectMs;
-  if (isPositiveInt(src.debounceMs, 5000)) cfg.debounceMs = Math.floor(src.debounceMs);
-  if (isPositiveInt(src.keepalivePingMs, 600000)) cfg.keepalivePingMs = Math.floor(src.keepalivePingMs);
+  if (isPositiveInt(src.debounceMs, LIMITS.debounceMsMax)) cfg.debounceMs = Math.floor(src.debounceMs);
+  if (isPositiveInt(src.keepalivePingMs, LIMITS.keepalivePingMsMax)) cfg.keepalivePingMs = Math.floor(src.keepalivePingMs);
   if (isStringList(src.fullReloadCategories)) cfg.fullReloadCategories = [...src.fullReloadCategories];
   if (isStringList(src.fastReloadCategories)) cfg.fastReloadCategories = [...src.fastReloadCategories];
   if (src.indicator === false) cfg.indicator = false;
+  const fast = new Set(cfg.fastReloadCategories);
+  cfg.fullReloadCategories = cfg.fullReloadCategories.filter((c) => !fast.has(c));
   return cfg;
 }
 
 /* ─── CSS (indicator badge) ───────────────────────────────────────── */
 
 export function emitHotReloadCSS(cfg = defaultConfig()) {
-  const c = resolveConfig({ hotReload: cfg });
-  if (!c.enabled || !c.indicator) return '';
+  if (!cfg.enabled || !cfg.indicator) return '';
   return `
   /* Wave P8 — hot-reload indicator badge */
   .hmr-badge {
