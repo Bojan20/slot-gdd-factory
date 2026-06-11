@@ -1,4 +1,16 @@
 import { applyGridProfile } from '../registry/gridProfile.mjs';
+import { RAIL_SLOT_OFFSETS, RAIL_Z_INDEX } from '../registry/utilityRail.mjs';
+
+const MODAL_MAX_WIDTH = 720;
+const Z_INDEX_MODAL = 40;
+const CHIP_LABEL_MAX_LEN = 4;
+const ARIA_LABEL_MAX_LEN = 64;
+const TIER_COLORS = {
+  HP: '255,200,90',
+  MP: '126,200,227',
+  LP: '210,149,96',
+};
+
 /**
  * src/blocks/paytable.mjs
  *
@@ -86,7 +98,7 @@ export function resolveConfig(model = {}) {
 
   if (m.enabled != null) cfg.enabled = !!m.enabled;
 
-  if (typeof m.chipLabel === 'string' && m.chipLabel.length > 0 && m.chipLabel.length <= 4) {
+  if (typeof m.chipLabel === 'string' && m.chipLabel.length > 0 && m.chipLabel.length <= CHIP_LABEL_MAX_LEN) {
     cfg.chipLabel = m.chipLabel;
   }
   for (const key of ['chipColor', 'chipTextColor', 'modalBgColor', 'modalAccentColor']) {
@@ -103,7 +115,7 @@ export function resolveConfig(model = {}) {
                        'closeOnBackdrop', 'closeOnEscape', 'autoHideOnSpin']) {
     if (m[flag] != null) cfg[flag] = !!m[flag];
   }
-  if (typeof m.ariaLabel === 'string' && m.ariaLabel.length > 0 && m.ariaLabel.length <= 64) {
+  if (typeof m.ariaLabel === 'string' && m.ariaLabel.length > 0 && m.ariaLabel.length <= ARIA_LABEL_MAX_LEN) {
     cfg.ariaLabel = m.ariaLabel;
   }
 
@@ -150,13 +162,12 @@ function _rosterFromModel(model) {
     const id = String(s.id || '').toUpperCase();
     if (!id) return;
     const fromGdd = explicit[id] || explicit[s.id];
-    const payouts = (fromGdd && typeof fromGdd === 'object')
-      ? {
-          3: Number(fromGdd[3]) || DEFAULT_PAYOUTS[tier][3],
-          4: Number(fromGdd[4]) || DEFAULT_PAYOUTS[tier][4],
-          5: Number(fromGdd[5]) || DEFAULT_PAYOUTS[tier][5],
-        }
-      : { ...DEFAULT_PAYOUTS[tier] };
+    const payouts = { ...DEFAULT_PAYOUTS[tier] };
+    if (fromGdd && typeof fromGdd === 'object') {
+      const n3 = Number(fromGdd[3]); if (Number.isFinite(n3)) payouts[3] = n3;
+      const n4 = Number(fromGdd[4]); if (Number.isFinite(n4)) payouts[4] = n4;
+      const n5 = Number(fromGdd[5]); if (Number.isFinite(n5)) payouts[5] = n5;
+    }
     out.push({ id, name: String(s.name || id), tier, payouts });
   };
   (sym.high || []).forEach(s => push(s, 'HP'));
@@ -170,6 +181,7 @@ function _specialsFromModel(model) {
   return (sym.specials || []).map(s => ({
     id: String(s.id || '').toUpperCase(),
     name: String(s.name || s.id || ''),
+    kind: String(s.kind || '').toLowerCase(),
   })).filter(x => x.id);
 }
 
@@ -200,10 +212,10 @@ export function emitPaytableCSS(cfg = defaultConfig()) {
   .paytable-btn {
     position: fixed;
     left: max(18px, env(safe-area-inset-left, 18px));
-    bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 156px);
+    bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + ${RAIL_SLOT_OFFSETS.paytable.desktop}px);
     /* Wave D3 — above .hub (z 30) so the chip is never hidden by hub
        stacking context on mobile. Modals still win at z 40+. */
-    z-index: 35;
+    z-index: ${RAIL_Z_INDEX};
     /* Wave K5 — WCAG 2.5.5 / Apple HIG 44pt floor. */
     width: 44px; height: 44px;
     border-radius: 50%;
@@ -232,7 +244,7 @@ export function emitPaytableCSS(cfg = defaultConfig()) {
     .paytable-btn {
       left: max(12px, env(safe-area-inset-left, 12px));
       /* Mobile rail: settings (88) → paytable (148) → history (208). */
-      bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + 148px);
+      bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + ${RAIL_SLOT_OFFSETS.paytable.mobile}px);
     }
   }
   .paytable-btn:hover  { transform: scale(1.06); opacity: 0.95; }
@@ -242,7 +254,7 @@ export function emitPaytableCSS(cfg = defaultConfig()) {
   .paytable-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 40;
+    z-index: ${Z_INDEX_MODAL};
     background: rgba(0, 0, 0, 0.72);
     display: flex;
     align-items: center;
@@ -267,7 +279,7 @@ export function emitPaytableCSS(cfg = defaultConfig()) {
       inset 0 1px 0 rgba(255, 255, 255, 0.08);
     color: rgb(${c.chipTextColor});
     font-family: inherit;
-    max-width: 720px;
+    max-width: ${MODAL_MAX_WIDTH}px;
     width: 100%;
     max-height: calc(100vh - 48px);
     overflow-y: auto;
@@ -316,9 +328,9 @@ export function emitPaytableCSS(cfg = defaultConfig()) {
     font-weight: 800;
     font-size: 13px;
   }
-  .paytable-grid .paytable-id.tier-HP { background: rgba(255, 200, 90, 0.18); border-color: rgba(255, 200, 90, 0.5); color: #ffc85a; }
-  .paytable-grid .paytable-id.tier-MP { background: rgba(126, 200, 227, 0.18); border-color: rgba(126, 200, 227, 0.5); color: #7ec8e3; }
-  .paytable-grid .paytable-id.tier-LP { background: rgba(210, 149, 96, 0.18); border-color: rgba(210, 149, 96, 0.5); color: #d29560; }
+  .paytable-grid .paytable-id.tier-HP { background: rgba(${TIER_COLORS.HP}, 0.18); border-color: rgba(${TIER_COLORS.HP}, 0.5); color: #ffc85a; }
+  .paytable-grid .paytable-id.tier-MP { background: rgba(${TIER_COLORS.MP}, 0.18); border-color: rgba(${TIER_COLORS.MP}, 0.5); color: #7ec8e3; }
+  .paytable-grid .paytable-id.tier-LP { background: rgba(${TIER_COLORS.LP}, 0.18); border-color: rgba(${TIER_COLORS.LP}, 0.5); color: #d29560; }
   .paytable-grid .paytable-name {
     opacity: 0.85;
   }
@@ -396,6 +408,12 @@ export function emitPaytableCSS(cfg = defaultConfig()) {
     }
     .paytable-grid .paytable-id { width: 24px; height: 24px; font-size: 11px; }
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .paytable-backdrop { animation: none; }
+    .paytable-btn { transition: none; }
+    .paytable-btn:hover, .paytable-btn:active { transform: none; }
+  }
 `;
 }
 
@@ -445,6 +463,9 @@ export function emitPaytableRuntime(cfg = defaultConfig(), model = {}) {
        onAutoplayStart    → auto-hide (autoplay takes over)
      Emits: nothing — pure UI pane. */
   (function () {
+    if (window.__PAYTABLE_WIRED__) return;
+    window.__PAYTABLE_WIRED__ = true;
+
     var ROSTER      = ${JSON.stringify(roster)};
     var SPECIALS    = ${JSON.stringify(specials)};
     var FEATURES    = ${JSON.stringify(features)};
@@ -457,6 +478,7 @@ export function emitPaytableRuntime(cfg = defaultConfig(), model = {}) {
     var STATE = {
       enabled: true,
       open: false,
+      lastFocus: null,
     };
     if (typeof window !== 'undefined') window.PAYTABLE_STATE = STATE;
 
@@ -474,6 +496,31 @@ export function emitPaytableRuntime(cfg = defaultConfig(), model = {}) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    }
+
+    function _getFocusableElements() {
+      var modal = document.getElementById('paytableModal');
+      if (!modal) return [];
+      return Array.from(modal.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )).filter(function (el) {
+        return !el.hasAttribute('disabled') && el.offsetParent !== null;
+      });
+    }
+
+    function _trapTab(ev) {
+      if (ev.key !== 'Tab') return;
+      var focusables = _getFocusableElements();
+      if (focusables.length === 0) return;
+      var first = focusables[0];
+      var last = focusables[focusables.length - 1];
+      if (ev.shiftKey && document.activeElement === first) {
+        ev.preventDefault();
+        last.focus();
+      } else if (!ev.shiftKey && document.activeElement === last) {
+        ev.preventDefault();
+        first.focus();
+      }
     }
 
     function _renderSymbolGrid() {
@@ -516,7 +563,19 @@ export function emitPaytableRuntime(cfg = defaultConfig(), model = {}) {
 
     function _renderWildNote() {
       if (!SHOW_WILD) return '';
-      var wild = SPECIALS.find(function (s) { return /wild/i.test(s.name) || /^W$/i.test(s.id); });
+      /* Some GDD parsers populate symbols.specials with id+name only
+         (no kind field); detect wild by either explicit kind === wild,
+         id W / WILD, or a name containing 'wild' (case-insensitive).
+         No backticks here — this comment sits inside an outer template
+         literal in emitPaytableRuntime. */
+      var wild = SPECIALS.find(function (s) {
+        if (!s) return false;
+        if (s.kind === 'wild') return true;
+        var id = String(s.id || '').toLowerCase();
+        if (id === 'w' || id === 'wild') return true;
+        var nm = String(s.name || '').toLowerCase();
+        return nm.indexOf('wild') !== -1;
+      });
       if (!wild) return '';
       return '<h3>Wild Rules</h3><div class="paytable-wild-note">' +
         '<strong>' + _escapeHtml(wild.id) + '</strong> substitutes for all paying symbols. ' +
@@ -552,16 +611,23 @@ export function emitPaytableRuntime(cfg = defaultConfig(), model = {}) {
 
     function paytableShow() {
       if (STATE.open) return;
+      STATE.lastFocus = (typeof document.activeElement !== 'undefined')
+        ? document.activeElement : null;
       _refreshContent();
       _refreshBetRow();
       var bd = _backdrop();
       if (!bd) return;
       bd.hidden = false;
       STATE.open = true;
-      /* Focus the close button for keyboard ergonomics. */
-      var cb = _closeBtn();
-      if (cb && typeof cb.focus === 'function') {
-        try { cb.focus(); } catch (_) {}
+      /* Sandbox JSDOM stubs that lack addEventListener must still allow the
+         block to open — guard before binding the focus trap. */
+      if (typeof document.addEventListener === 'function') {
+        document.addEventListener('keydown', _trapTab);
+      }
+      var focusables = _getFocusableElements();
+      var firstFocus = focusables.length > 0 ? focusables[0] : _closeBtn();
+      if (firstFocus && typeof firstFocus.focus === 'function') {
+        try { firstFocus.focus(); } catch (_) {}
       }
     }
 
@@ -570,6 +636,12 @@ export function emitPaytableRuntime(cfg = defaultConfig(), model = {}) {
       var bd = _backdrop();
       if (bd) bd.hidden = true;
       STATE.open = false;
+      if (typeof document.removeEventListener === 'function') {
+        document.removeEventListener('keydown', _trapTab);
+      }
+      if (STATE.lastFocus && typeof STATE.lastFocus.focus === 'function') {
+        try { STATE.lastFocus.focus(); } catch (_) {}
+      }
     }
 
     function paytableToggle() {

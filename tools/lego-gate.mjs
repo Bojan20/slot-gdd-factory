@@ -231,6 +231,13 @@ const EXPECTED_EMIT_OWNERS = {
    * audio bus (jackpot sting), historyLog (transaction row), partner
    * external HUDs. */
   onDailyJackpotAward: ['dailyJackpot.mjs'],
+  /* 2026-06-11 AL-5.x — persistent multiplier publishes the current
+   * value via onMultChange so the canonical mult owner (winPresentation)
+   * reconciles the next rollup. Single-owner-emit holds because the
+   * mult VALUE is owned by HookBus.setMult; this event is just a
+   * notification with source attribution. Both blocks emit it: the
+   * persistent ladder (FS round) and the multiplierOrb (per-orb hit). */
+  onMultChange: ['persistentMultiplier.mjs', 'multiplierOrb.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */

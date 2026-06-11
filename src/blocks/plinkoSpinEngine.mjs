@@ -11,6 +11,9 @@
  *   ball motion. This block animates the ball as a CSS-transformed
  *   `<div>` traversing the peg grid one row per step.
  *
+ * Performance budget: ≤ 16ms/frame during drop animation, ≤ N timers
+ * queued, single repaint per row step.
+ *
  * Composition contract (LEGO ownership)
  * ────────────────────────────────────
  *   • SOLE OWNER of plinko ball animation. Registers
@@ -38,6 +41,11 @@ const DEFAULTS = Object.freeze({
   rowStepMs: 110,           /* per-row drop tempo */
   finalSettleMs: 240,       /* bucket land bounce */
   fadeFallbackMs: 200,
+  ballPx: 14,               /* ball diameter in pixels */
+  opacityMs: 80,            /* opacity transition duration */
+  minStepMs: 20,            /* minimum step duration under turbo */
+  minSettleMs: 40,          /* minimum settle duration under turbo */
+  walkBias: 0.5,            /* probability bias toward target bucket */
 });
 
 export function defaultConfig() { return { ...DEFAULTS }; }
@@ -73,15 +81,15 @@ export function emitPlinkoSpinEngineCSS(cfg = defaultConfig()) {
 .grid-plinko { position: relative; }
 .plinko-ball {
   position: absolute;
-  width: 14px;
-  height: 14px;
+  width: ${cfg.ballPx}px;
+  height: ${cfg.ballPx}px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #ffea84, #c9a227);
   box-shadow: 0 0 8px rgba(201, 162, 39, 0.5);
   pointer-events: none;
   will-change: transform, opacity;
   opacity: 0;
-  transition: transform ${cfg.rowStepMs}ms cubic-bezier(0.5, 0, 0.6, 1), opacity 80ms ease;
+  transition: transform ${cfg.rowStepMs}ms cubic-bezier(0.5, 0, 0.6, 1), opacity ${cfg.opacityMs}ms ease;
   z-index: 10;
 }
 .plinko-ball.is-armed { opacity: 1; }
@@ -96,8 +104,13 @@ export function emitPlinkoSpinEngineCSS(cfg = defaultConfig()) {
 
 export function emitPlinkoSpinEngineRuntime(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  const STEP_MS    = cfg.rowStepMs;
-  const SETTLE_MS  = cfg.finalSettleMs;
+  const STEP_MS      = cfg.rowStepMs;
+  const SETTLE_MS    = cfg.finalSettleMs;
+  const BALL_PX      = cfg.ballPx;
+  const OPACITY_MS   = cfg.opacityMs;
+  const MIN_STEP_MS  = cfg.minStepMs;
+  const MIN_SETTLE_MS = cfg.minSettleMs;
+  const WALK_BIAS    = cfg.walkBias;
   return `
   /* ── Plinko spin runtime (Wave J3) ─────────────────────────── */
   (function () {
@@ -132,17 +145,22 @@ export function emitPlinkoSpinEngineRuntime(cfg = defaultConfig()) {
       var rect = pegs[colIdx].getBoundingClientRect();
       var boardRect = board.getBoundingClientRect();
       return {
-        x: rect.left - boardRect.left + (rect.width  / 2) - 7, /* center 14px ball */
-        y: rect.top  - boardRect.top  + (rect.height / 2) - 7,
+        x: rect.left - boardRect.left + (rect.width  / 2) - ${BALL_PX / 2},
+        y: rect.top  - boardRect.top  + (rect.height / 2) - ${BALL_PX / 2},
       };
     }
 
     function _clearTimers() {
       for (var i = 0; i < STATE.dropTimers.length; i++) clearTimeout(STATE.dropTimers[i]);
       STATE.dropTimers.length = 0;
+      STATE.pending = null;
     }
 
-    function _spin(onSettled) {
+    function _spin(onSettled, ctx) {
+      if (STATE.dropping) {
+        if (typeof onSettled === 'function') setTimeout(onSettled, 0);
+        return;
+      }
       var board = _resolveBoard();
       if (!board) {
         if (typeof onSettled === 'function') setTimeout(onSettled, 0);
@@ -158,11 +176,24 @@ export function emitPlinkoSpinEngineRuntime(cfg = defaultConfig()) {
       /* Walk: ball starts at row 0 center, picks left/right at each
          subsequent row using SHAPE.columns row counts as the implicit
          peg layout. */
+      var targetCol = (ctx && typeof ctx.bucket === 'number') ? ctx.bucket : null;
       var pegRows = SHAPE.columns && SHAPE.columns.length ? SHAPE.columns.length : 1;
       var col = Math.floor((SHAPE.columns && SHAPE.columns[0] ? SHAPE.columns[0].rows : 1) / 2);
       var path = [{ row: 0, col: col }];
       for (var r = 1; r < pegRows; r++) {
-        col += (Math.random() < 0.5 ? 0 : 1);
+        var moveRight;
+        if (targetCol !== null) {
+          if (col < targetCol) {
+            moveRight = Math.random() < (${WALK_BIAS} + (1 - ${WALK_BIAS}) * 0.5);
+          } else if (col > targetCol) {
+            moveRight = Math.random() < (${WALK_BIAS} - ${WALK_BIAS} * 0.5);
+          } else {
+            moveRight = Math.random() < ${WALK_BIAS};
+          }
+        } else {
+          moveRight = Math.random() < ${WALK_BIAS};
+        }
+        col += moveRight ? 1 : 0;
         var maxCol = (SHAPE.columns[r] && SHAPE.columns[r].rows) || 1;
         if (col >= maxCol) col = maxCol - 1;
         path.push({ row: r, col: col });
@@ -172,8 +203,11 @@ export function emitPlinkoSpinEngineRuntime(cfg = defaultConfig()) {
          chip ACTUALLY compresses cadence (Boki bug). */
       var _tm = (typeof window.__SLOT_TURBO_SPEED_MULT__ === 'number' && window.__SLOT_TURBO_SPEED_MULT__ > 0)
         ? window.__SLOT_TURBO_SPEED_MULT__ : 1.0;
-      var _stepMs   = Math.max(20, Math.round(${STEP_MS}   * _tm));
-      var _settleMs = Math.max(40, Math.round(${SETTLE_MS} * _tm));
+      var _reducedMotion = (typeof window !== 'undefined' && window.matchMedia
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      var _stepMs   = _reducedMotion ? 0 : Math.max(${MIN_STEP_MS}, Math.round(${STEP_MS}   * _tm));
+      var _settleMs = _reducedMotion ? 0 : Math.max(${MIN_SETTLE_MS}, Math.round(${SETTLE_MS} * _tm));
+      var _opacityMs = Math.max(${MIN_STEP_MS}, Math.round(${OPACITY_MS} * _tm));
 
       /* Arm ball at row 0 */
       var start = _pegCenter(board, 0, path[0].col);
@@ -181,15 +215,7 @@ export function emitPlinkoSpinEngineRuntime(cfg = defaultConfig()) {
       ball.style.transform = 'translate(' + start.x + 'px, ' + start.y + 'px)';
       ball.classList.add('is-armed');
       void ball.offsetWidth;
-      /* Fable audit (critical): inline transition style overrode the
-       * @media (prefers-reduced-motion: reduce) CSS rule that should
-       * disable animation for accessibility. Honor the user setting
-       * before re-arming the transition. */
-      var _reducedMotion = (typeof window !== 'undefined' && window.matchMedia
-        && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-      ball.style.transition = _reducedMotion
-        ? 'none'
-        : 'transform ' + _stepMs + 'ms cubic-bezier(0.5, 0, 0.6, 1), opacity 80ms ease';
+      ball.style.transition = 'transform ' + _stepMs + 'ms cubic-bezier(0.5, 0, 0.6, 1), opacity ' + _opacityMs + 'ms ease';
 
       STATE.dropping = true;
       STATE.pending = onSettled || null;
@@ -200,13 +226,17 @@ export function emitPlinkoSpinEngineRuntime(cfg = defaultConfig()) {
             var pos = _pegCenter(board, step.row, step.col);
             ball.style.transform = 'translate(' + pos.x + 'px, ' + pos.y + 'px)';
             if (idx === path.length - 1) {
-              setTimeout(function () {
+              var settleTimer = setTimeout(function () {
                 ball.classList.add('is-landed');
                 STATE.dropping = false;
                 var cb = STATE.pending; STATE.pending = null;
                 /* onSpinResult is emitted by the dispatcher (reelEngine). */
-                if (typeof cb === 'function') setTimeout(cb, 0);
+                if (typeof cb === 'function') {
+                  var cbTimer = setTimeout(cb, 0);
+                  STATE.dropTimers.push(cbTimer);
+                }
               }, _settleMs);
+              STATE.dropTimers.push(settleTimer);
             }
           }, idx * _stepMs);
           STATE.dropTimers.push(t);

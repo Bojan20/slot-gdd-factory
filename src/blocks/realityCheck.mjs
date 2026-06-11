@@ -140,10 +140,32 @@
 const HEX_RGB = /^\d{1,3},\s*\d{1,3},\s*\d{1,3}$/;
 const SAFE_LEVEL = /^[a-z][a-z0-9_-]{0,15}$/;
 
+/* Regulator-meaningful limits — auditable table, no inline magic numbers. */
+const MIN_INTERVAL_MS    = 5000;
+const MAX_INTERVAL_MS    = 24 * 60 * 60 * 1000;
+const MIN_SPIN_INTERVAL  = 0;
+const MAX_SPIN_INTERVAL  = 10000;
+const MIN_PAUSE_MIN      = 1;
+const MAX_PAUSE_MIN      = 1440;
+const MAX_PAUSE_OPTIONS  = 5;
+const MAX_CCY_PREFIX_LEN = 4;
+const MAX_TITLE_LEN      = 60;
+const FMT_INT_ABOVE      = 100;
+
 function clampInt(n, lo, hi) {
   const x = Math.round(Number(n));
   if (!Number.isFinite(x)) return lo;
   return Math.max(lo, Math.min(hi, x));
+}
+
+/* GDDs are author-written; `"false"` (string) is a common typo. Reject
+ * truthy-string coercion and accept only literal booleans / the JSON-ish
+ * strings `"true"`/`"false"`. */
+function _coerceBool(v, fallback) {
+  if (typeof v === 'boolean') return v;
+  if (v === 'true') return true;
+  if (v === 'false') return false;
+  return fallback;
 }
 
 function _esc(s) {
@@ -153,8 +175,8 @@ function _esc(s) {
 }
 
 function _validPauseOptions(arr) {
-  if (!Array.isArray(arr) || arr.length === 0 || arr.length > 5) return false;
-  return arr.every(v => Number.isInteger(v) && v >= 1 && v <= 1440);
+  if (!Array.isArray(arr) || arr.length === 0 || arr.length > MAX_PAUSE_OPTIONS) return false;
+  return arr.every(v => Number.isInteger(v) && v >= MIN_PAUSE_MIN && v <= MAX_PAUSE_MIN);
 }
 
 export function defaultConfig() {
@@ -180,10 +202,10 @@ export function resolveConfig(model = {}) {
   const cfg = defaultConfig();
   const m = (model && model.realityCheck) || {};
 
-  if (m.enabled != null) cfg.enabled = !!m.enabled;
+  cfg.enabled = _coerceBool(m.enabled, cfg.enabled);
 
-  if (Number.isFinite(m.intervalMs)) cfg.intervalMs = clampInt(m.intervalMs, 5000, 24 * 60 * 60 * 1000);
-  if (Number.isFinite(m.spinInterval)) cfg.spinInterval = clampInt(m.spinInterval, 0, 10000);
+  if (Number.isFinite(m.intervalMs)) cfg.intervalMs = clampInt(m.intervalMs, MIN_INTERVAL_MS, MAX_INTERVAL_MS);
+  if (Number.isFinite(m.spinInterval)) cfg.spinInterval = clampInt(m.spinInterval, MIN_SPIN_INTERVAL, MAX_SPIN_INTERVAL);
 
   if (typeof m.triggerOnLossLevel === 'string') {
     if (m.triggerOnLossLevel === '' || SAFE_LEVEL.test(m.triggerOnLossLevel)) {
@@ -193,20 +215,20 @@ export function resolveConfig(model = {}) {
 
   if (_validPauseOptions(m.pauseOptions)) cfg.pauseOptions = m.pauseOptions.slice();
 
-  if (typeof m.currencyPrefix === 'string' && m.currencyPrefix.length > 0 && m.currencyPrefix.length <= 4) {
+  if (typeof m.currencyPrefix === 'string' && m.currencyPrefix.length > 0 && m.currencyPrefix.length <= MAX_CCY_PREFIX_LEN) {
     cfg.currencyPrefix = m.currencyPrefix;
   }
 
-  if (m.showElapsedTime != null) cfg.showElapsedTime = !!m.showElapsedTime;
-  if (m.showSpinCount != null) cfg.showSpinCount = !!m.showSpinCount;
-  if (m.showNetSummary != null) cfg.showNetSummary = !!m.showNetSummary;
-  if (m.dismissBlocksSpin != null) cfg.dismissBlocksSpin = !!m.dismissBlocksSpin;
+  cfg.showElapsedTime   = _coerceBool(m.showElapsedTime,   cfg.showElapsedTime);
+  cfg.showSpinCount     = _coerceBool(m.showSpinCount,     cfg.showSpinCount);
+  cfg.showNetSummary    = _coerceBool(m.showNetSummary,    cfg.showNetSummary);
+  cfg.dismissBlocksSpin = _coerceBool(m.dismissBlocksSpin, cfg.dismissBlocksSpin);
 
   if (typeof m.accentColor === 'string' && HEX_RGB.test(m.accentColor)) {
     cfg.accentColor = m.accentColor.replace(/\s+/g, '');
   }
 
-  if (typeof m.title === 'string' && m.title.length > 0 && m.title.length <= 60) {
+  if (typeof m.title === 'string' && m.title.length > 0 && m.title.length <= MAX_TITLE_LEN) {
     cfg.title = m.title;
   }
 
@@ -422,6 +444,9 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
     var SPIN_INTERVAL       = ${spinInterval};
     var TRIGGER_LOSS_LEVEL  = ${triggerOnLossLevel};
     var PREFIX              = ${currencyPrefix};
+    /* Threshold at/above which amounts are formatted as integers
+     * (kept in sync with FMT_INT_ABOVE in resolveConfig). */
+    var FMT_INT_ABOVE       = ${FMT_INT_ABOVE};
 
     var STATE = {
       enabled: true,
@@ -435,6 +460,14 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
       _lastTickWall: 0,     /* wall-clock ms of last tick (for delta calc) */
       _shown: false,        /* modal currently visible */
       _pauseTimer: 0,       /* setTimeout handle for auto-resume */
+      /* Autoplay-cumulative baselines — onAutoplayTick reports running
+       * totals, so we add deltas to stay coherent with onBalanceChanged
+       * (which reports per-spin deltas). Both listeners now ADD only. */
+      _lastAutoWin:  0,
+      _lastAutoLoss: 0,
+      /* Focus-management bookkeeping for the regulator dialog. */
+      _prevFocus:   null,
+      _keydownTrap: null,
     };
     if (typeof window !== 'undefined') {
       window.__REALITY_PAUSE_ACTIVE__ = false;
@@ -452,7 +485,7 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
     function _fmtAmount(v) {
       var abs = Math.abs(v);
       var sign = v < 0 ? '-' : '';
-      var str = (abs >= 100) ? abs.toFixed(0) : abs.toFixed(2);
+      var str = (abs >= FMT_INT_ABOVE) ? abs.toFixed(0) : abs.toFixed(2);
       return sign + PREFIX + str;
     }
 
@@ -484,6 +517,78 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
       }
     }
 
+    /* Regulator dialog focus-management: WAI-ARIA "dialog" + aria-modal
+     * obligates us to (a) move focus into the dialog on show, (b) trap
+     * Tab inside it, and (c) ignore Escape (regulator dialogs are
+     * non-dismissible by keyboard). On hide we restore focus to the
+     * element that owned it before show. */
+    function _focusableInModal() {
+      var ov = _overlay();
+      if (!ov) return [];
+      var sel = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+      var nodes = ov.querySelectorAll(sel);
+      var out = [];
+      for (var i = 0; i < nodes.length; i++) {
+        var n = nodes[i];
+        if (!n.disabled && n.offsetParent !== null) out.push(n);
+      }
+      return out;
+    }
+
+    function _installFocusTrap() {
+      if (typeof document === 'undefined') return;
+      STATE._prevFocus = document.activeElement || null;
+      var trap = function (e) {
+        if (!STATE._shown) return;
+        /* Sandbox harnesses sometimes fire the listener with undefined as
+           a wake-up tick; defensive guard avoids a TypeError on .key. */
+        if (!e || (typeof e.key === 'undefined' && typeof e.keyCode === 'undefined')) return;
+        if (e.key === 'Escape' || e.keyCode === 27) {
+          /* Regulator dialog — Esc must NOT dismiss. */
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+        if (e.key !== 'Tab' && e.keyCode !== 9) return;
+        var f = _focusableInModal();
+        if (f.length === 0) { e.preventDefault(); return; }
+        var first = f[0], last = f[f.length - 1];
+        var active = document.activeElement;
+        if (e.shiftKey) {
+          if (active === first || !_overlay().contains(active)) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (active === last || !_overlay().contains(active)) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      };
+      STATE._keydownTrap = trap;
+      if (typeof document.addEventListener === 'function') {
+        document.addEventListener('keydown', trap, true);
+      }
+      var cont = document.getElementById('rcBtnContinue');
+      if (cont && typeof cont.focus === 'function') {
+        try { cont.focus(); } catch (_) {}
+      }
+    }
+
+    function _releaseFocusTrap() {
+      if (typeof document !== 'undefined' && STATE._keydownTrap
+          && typeof document.removeEventListener === 'function') {
+        document.removeEventListener('keydown', STATE._keydownTrap, true);
+      }
+      STATE._keydownTrap = null;
+      var prev = STATE._prevFocus;
+      STATE._prevFocus = null;
+      if (prev && typeof prev.focus === 'function') {
+        try { prev.focus(); } catch (_) {}
+      }
+    }
+
     function rcShow(reason) {
       if (STATE._shown) return;
       _renderStats();
@@ -493,6 +598,7 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
       if (opts) opts.setAttribute('data-show', 'false');
       STATE._shown = true;
       STATE.lastShowAt = STATE.elapsedMs;
+      _installFocusTrap();
       if (typeof window !== 'undefined' && window.HookBus && typeof window.HookBus.emit === 'function') {
         try {
           window.HookBus.emit('onRealityCheckShown', {
@@ -514,7 +620,9 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
       if (ov) ov.setAttribute('data-show', 'false');
       var opts = _pauseOpts();
       if (opts) opts.setAttribute('data-show', 'false');
+      var wasShown = STATE._shown;
       STATE._shown = false;
+      if (wasShown) _releaseFocusTrap();
     }
 
     function rcDismiss(reason) {
@@ -571,6 +679,13 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
       if (typeof window !== 'undefined' && typeof window.autoplayStop === 'function') {
         try { window.autoplayStop('realityCheckQuit'); } catch (_) {}
       }
+      /* Clear any in-flight pause: otherwise the global pause flag stays
+       * latched and the auto-resume timer fires minutes later against a
+       * zeroed session, corrupting downstream audit-trail consumers. */
+      if (STATE._pauseTimer) { clearTimeout(STATE._pauseTimer); STATE._pauseTimer = 0; }
+      STATE.paused = false;
+      STATE.pauseEndsAt = 0;
+      if (typeof window !== 'undefined') window.__REALITY_PAUSE_ACTIVE__ = false;
       rcResetSession();
     }
 
@@ -581,6 +696,10 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
       STATE.totalLoss = 0;
       STATE.lastShowAt = 0;
       STATE._lastTickWall = _now();
+      /* Reset autoplay cumulative baselines so the next tick's delta
+       * doesn't include pre-reset totals. */
+      STATE._lastAutoWin  = 0;
+      STATE._lastAutoLoss = 0;
       _renderStats();
     }
 
@@ -651,7 +770,11 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
       }
     }
 
-    if (typeof window !== 'undefined' && window.HookBus && typeof window.HookBus.on === 'function') {
+    var _busWired = false;
+    function _wireHookBus() {
+      if (_busWired) return true;
+      if (typeof window === 'undefined' || !window.HookBus || typeof window.HookBus.on !== 'function') return false;
+      _busWired = true;
       window.HookBus.on('preSpin', function () {
         if (STATE.paused) return;
         _tickTime();
@@ -662,10 +785,20 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
       window.HookBus.on('onAutoplayTick', function (p) {
         if (STATE.paused) return;
         _tickTime();
-        /* Track win/loss directly from autoplay payload so we stay
-         * accurate even when balanceHud is disabled. */
-        if (p && Number.isFinite(p.totalWin))  STATE.totalWin  = p.totalWin;
-        if (p && Number.isFinite(p.totalLoss)) STATE.totalLoss = p.totalLoss;
+        /* Autoplay payload reports CUMULATIVE win/loss. Take the delta
+         * vs. our last seen value and ADD it — matches the onBalanceChanged
+         * additive semantics so the two listeners stay coherent for the
+         * Reality Check audit payload. Resets handled in rcResetSession. */
+        if (p && Number.isFinite(p.totalWin)) {
+          var dW = p.totalWin - STATE._lastAutoWin;
+          if (dW > 0) STATE.totalWin += dW;
+          STATE._lastAutoWin = p.totalWin;
+        }
+        if (p && Number.isFinite(p.totalLoss)) {
+          var dL = p.totalLoss - STATE._lastAutoLoss;
+          if (dL > 0) STATE.totalLoss += dL;
+          STATE._lastAutoLoss = p.totalLoss;
+        }
         _maybeShowTime();
       });
       window.HookBus.on('onBalanceChanged', function (p) {
@@ -679,6 +812,24 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
           rcShow('loss');
         }
       });
+      return true;
+    }
+
+    /* Late-binding: if HookBus hasn't been installed at IIFE-eval time
+     * (script ordering, async injection), retry on the next microtask
+     * and again on DOMContentLoaded. Lifecycle ownership is mandatory —
+     * silent skip would violate the senior contract. */
+    if (!_wireHookBus()) {
+      if (typeof Promise !== 'undefined') {
+        Promise.resolve().then(_wireHookBus);
+      }
+      if (typeof document !== 'undefined') {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', _wireHookBus, { once: true });
+        } else if (typeof setTimeout === 'function') {
+          setTimeout(_wireHookBus, 0);
+        }
+      }
     }
   })();
 `;
