@@ -35,7 +35,6 @@
  *   onFsTrigger    → start FS bookkeeping (cap fsCarryWin)
  *   onFsEnd        → push single 'fs' entry with the round's totalWin
  *   onGambleEnd    → push 'gamble' entry (bet=stake at start, win=bank)
- *   onBalanceChanged → snapshot current balance for the next push
  *
  * Composition contract:
  *   • Reads window.__SLOT_BALANCE__ (Wave U8 balanceHud).
@@ -48,7 +47,7 @@
  *     chipLabel, chipColor, chipTextColor,
  *     panelBgColor, panelAccentColor,
  *     closeOnBackdrop, closeOnEscape, autoHideOnSpin,
- *     ariaLabel }
+ *     ariaLabel, betFallback, winClampMax, currency }
  *
  * Public API:
  *   defaultConfig() / resolveConfig(model)
@@ -93,6 +92,19 @@ export function defaultConfig() {
     closeOnEscape:   true,
     autoHideOnSpin:  true,
     ariaLabel: 'Open session history',
+    /* Audit-row fallback when __SLOT_BET__ is missing/invalid. Default
+     * 0 keeps the trail truthful; a GDD must opt in to any synthetic
+     * value rather than silently recording a fictional bet. */
+    betFallback: 0,
+    /* Upper bound on the credited win recorded per spin. Defends the
+     * audit log against a runaway __WIN_AWARD__. Default 1e10 keeps
+     * pre-existing behaviour but is now visible to operators tuning
+     * high-volatility GDDs. */
+    winClampMax: 1e10,
+    /* Currency glyph prefixed to money columns. Empty by default so
+     * the build is vendor-neutral across markets; a GDD or balanceHud
+     * integration wires the specific symbol (e.g. '€', '£', '$'). */
+    currency: '',
   };
 }
 
@@ -124,6 +136,15 @@ export function resolveConfig(model = {}) {
   }
   if (typeof m.ariaLabel === 'string' && m.ariaLabel.length > 0 && m.ariaLabel.length <= 64) {
     cfg.ariaLabel = m.ariaLabel;
+  }
+  if (Number.isFinite(m.betFallback) && m.betFallback >= 0) {
+    cfg.betFallback = m.betFallback;
+  }
+  if (Number.isFinite(m.winClampMax) && m.winClampMax > 0) {
+    cfg.winClampMax = m.winClampMax;
+  }
+  if (typeof m.currency === 'string' && m.currency.length <= 4) {
+    cfg.currency = m.currency;
   }
 
   if (model.features && Array.isArray(model.features)) {
@@ -239,6 +260,8 @@ export function emitHistoryLogCSS(cfg = defaultConfig()) {
   }
   @media (prefers-reduced-motion: reduce) {
     .history-backdrop, .history-panel { animation: none; }
+    .history-btn { transition: none; }
+    .history-btn:hover, .history-btn:active { transform: none; }
   }
 
   .history-panel header {
@@ -401,20 +424,21 @@ export function emitHistoryLogRuntime(cfg = defaultConfig()) {
        onFsTrigger       → cap fsCarryWin (start FS round bookkeeping)
        onFsEnd           → push 'fs' entry with totalWin
        onGambleEnd       → push 'gamble' entry
-       onBalanceChanged  → snapshot balance for next entry
-       preSpin           → auto-hide panel (if autoHideOnSpin)
+       preSpin           → snapshot balance + auto-hide panel
        onFsTrigger       → auto-hide (FS owns screen)
        onAutoplayStart   → auto-hide
      Emits: nothing — read-only audit observer. */
   (function () {
-    var CAPACITY    = ${c.capacity};
-    var SHOW_TIME   = ${c.showTime};
-    var TIME_FMT    = ${JSON.stringify(c.timeFormat)};
-    var ALLOW_CSV   = ${c.allowCsvExport};
-    var CURRENCY    = '€'; /* matches balanceHud default; can be wired later */
-    var CLOSE_BACK  = ${c.closeOnBackdrop};
-    var CLOSE_ESC   = ${c.closeOnEscape};
-    var AUTO_HIDE   = ${c.autoHideOnSpin};
+    var CAPACITY     = ${c.capacity};
+    var SHOW_TIME    = ${c.showTime};
+    var TIME_FMT     = ${JSON.stringify(c.timeFormat)};
+    var ALLOW_CSV    = ${c.allowCsvExport};
+    var CURRENCY     = ${JSON.stringify(c.currency)};
+    var BET_FALLBACK = ${c.betFallback};
+    var WIN_CLAMP    = ${c.winClampMax};
+    var CLOSE_BACK   = ${c.closeOnBackdrop};
+    var CLOSE_ESC    = ${c.closeOnEscape};
+    var AUTO_HIDE    = ${c.autoHideOnSpin};
 
     var STATE = {
       enabled: true,
@@ -424,7 +448,9 @@ export function emitHistoryLogRuntime(cfg = defaultConfig()) {
       lastBalanceBefore: null, /* snapshotted on preSpin BASE */
       fsActive: false,
       fsBalanceBefore: null,
+      prevFocus: null,     /* a11y: focus to restore on hide */
     };
+    var _trapHandler = null;
     if (typeof window !== 'undefined') window.HISTORY_LOG_STATE = STATE;
 
     function _btn()       { return document.getElementById('historyBtn'); }
@@ -494,20 +520,64 @@ export function emitHistoryLogRuntime(cfg = defaultConfig()) {
       body.innerHTML = rows;
     }
 
+    function _focusables() {
+      var panel = document.getElementById('historyPanel');
+      if (!panel) return [];
+      return Array.prototype.slice.call(panel.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      ));
+    }
+
     function historyLogShow() {
       if (STATE.open) return;
       _refresh();
       var bd = _backdrop();
       if (!bd) return;
+      /* WCAG 2.4.3 — remember the trigger so focus can return there. */
+      STATE.prevFocus = (typeof document !== 'undefined') ? document.activeElement : null;
       bd.hidden = false;
       STATE.open = true;
       var cb = _closeBtn();
       if (cb && typeof cb.focus === 'function') { try { cb.focus(); } catch (_) {} }
+      /* WCAG 2.1.2 — keep Tab/Shift+Tab inside the dialog while open. */
+      _trapHandler = function (ev) {
+        if (ev.key !== 'Tab' || !STATE.open) return;
+        var f = _focusables();
+        if (f.length === 0) { ev.preventDefault(); return; }
+        var first = f[0];
+        var last  = f[f.length - 1];
+        var active = document.activeElement;
+        if (ev.shiftKey) {
+          if (active === first || f.indexOf(active) === -1) {
+            ev.preventDefault();
+            try { last.focus(); } catch (_) {}
+          }
+        } else {
+          if (active === last || f.indexOf(active) === -1) {
+            ev.preventDefault();
+            try { first.focus(); } catch (_) {}
+          }
+        }
+      };
+      if (typeof document.addEventListener === 'function') {
+        document.addEventListener('keydown', _trapHandler);
+      }
     }
     function historyLogHide() {
       if (!STATE.open) return;
       var bd = _backdrop(); if (bd) bd.hidden = true;
       STATE.open = false;
+      if (_trapHandler) {
+        if (typeof document.removeEventListener === 'function') {
+          document.removeEventListener('keydown', _trapHandler);
+        }
+        _trapHandler = null;
+      }
+      var pf = STATE.prevFocus;
+      STATE.prevFocus = null;
+      if (pf && typeof pf.focus === 'function') {
+        try { pf.focus(); } catch (_) {}
+      }
     }
     function historyLogToggle() {
       if (STATE.open) historyLogHide(); else historyLogShow();
@@ -615,11 +685,11 @@ export function emitHistoryLogRuntime(cfg = defaultConfig()) {
         if (inFs) return;
         var bet = (typeof window.__SLOT_BET__ === 'number' && window.__SLOT_BET__ > 0)
           ? window.__SLOT_BET__
-          : 1.00;
+          : BET_FALLBACK;
         var win = (typeof window.__WIN_AWARD__ === 'number'
                    && Number.isFinite(window.__WIN_AWARD__)
                    && window.__WIN_AWARD__ >= 0)
-          ? Math.min(window.__WIN_AWARD__, 1e10)
+          ? Math.min(window.__WIN_AWARD__, WIN_CLAMP)
           : 0;
         var balanceBefore = (STATE.lastBalanceBefore != null)
           ? STATE.lastBalanceBefore
@@ -639,7 +709,7 @@ export function emitHistoryLogRuntime(cfg = defaultConfig()) {
       /* On FS round end push a single 'fs' entry summarising the round. */
       window.HookBus.on('onFsEnd', function (p) {
         var totalWin = (p && Number.isFinite(p.totalWin) && p.totalWin >= 0)
-          ? Math.min(p.totalWin, 1e10)
+          ? Math.min(p.totalWin, WIN_CLAMP)
           : 0;
         var before = (STATE.fsBalanceBefore != null) ? STATE.fsBalanceBefore : 0;
         var after  = (typeof window.__SLOT_BALANCE__ === 'number') ? window.__SLOT_BALANCE__ : before + totalWin;
@@ -674,12 +744,14 @@ export function emitHistoryLogRuntime(cfg = defaultConfig()) {
         });
       }, { priority: -30 });
 
-      window.HookBus.on('onBalanceChanged', function () {
-        /* No-op record; the balance is already read at push time. Hook
-         * exists so listener-coverage gate counts this block as live. */
-      });
-
       window.HookBus.on('onAutoplayStart', function () { historyLogHide(); });
+
+      /* balance touched out-of-band (deposit, withdrawal, gamble settle
+       * outside our explicit handlers) — refresh display if panel is
+       * currently open so the latest balance column matches __SLOT_BALANCE__. */
+      window.HookBus.on('onBalanceChanged', function () {
+        if (STATE.open) { _refresh(); }
+      });
     }
   })();
 `;

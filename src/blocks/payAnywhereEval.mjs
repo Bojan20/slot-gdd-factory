@@ -19,7 +19,15 @@
  * cycle pay-anywhere events through the same `is-winsym-cycling` pulse.
  *
  * Pure module — no DOM, no globals. Safe to import in tests + builder.
+ *
+ * Perf budget: < 0.5 ms for 6×5 grid, < 1 ms for 7×7 — called every spin
+ * on every cell, regression risk is silent.
  */
+
+const MIN_WIN_FLOOR = 3, MIN_WIN_CEIL = 30;
+const EDGE_FLOOR = 4, EDGE_CEIL = 60;
+const MAX_EVENTS_CEIL = 20;
+const MAX_BUCKETS = 8;
 
 export function defaultConfig() {
   return {
@@ -36,13 +44,33 @@ export function resolveConfig(model = {}) {
   const cfg = defaultConfig();
   const m = model.payAnywhereEval || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
-  if (Number.isFinite(m.minWin)) cfg.minWin = clampInt(m.minWin, 3, 30);
+  if (Number.isFinite(m.minWin)) cfg.minWin = clampInt(m.minWin, MIN_WIN_FLOOR, MIN_WIN_CEIL);
   if (Array.isArray(m.bucketEdges) && m.bucketEdges.every(Number.isFinite)) {
-    cfg.bucketEdges = m.bucketEdges.map(n => clampInt(n, 4, 60)).sort((a, b) => a - b);
+    let edges = m.bucketEdges.map(n => clampInt(n, EDGE_FLOOR, EDGE_CEIL)).sort((a, b) => a - b);
+    if (edges.length > MAX_BUCKETS) {
+      console.warn(`payAnywhereEval: bucketEdges length ${edges.length} > MAX_BUCKETS=${MAX_BUCKETS}; clamping`);
+      edges = edges.slice(0, MAX_BUCKETS);
+    }
+    cfg.bucketEdges = edges;
   }
-  if (m.paytable && typeof m.paytable === 'object') cfg.paytable = m.paytable;
-  if (Number.isFinite(m.maxEvents)) cfg.maxEvents = clampInt(m.maxEvents, 1, 20);
+  if (m.paytable && typeof m.paytable === 'object') {
+    cfg.paytable = {};
+    for (const k of Object.keys(m.paytable)) {
+      const row = m.paytable[k];
+      if (Array.isArray(row)) cfg.paytable[String(k).toUpperCase()] = row.map(n => Number(n) || 0);
+    }
+  }
+  if (Number.isFinite(m.maxEvents)) cfg.maxEvents = clampInt(m.maxEvents, 1, MAX_EVENTS_CEIL);
   if (Number.isFinite(m.noWinChance)) cfg.noWinChance = clampFloat(m.noWinChance, 0, 1);
+  // Validate paytable rows match bucketEdges.length + 1 — undefined indexing
+  // would otherwise mask a configuration error as a silent 0-pay.
+  const expectedRowLen = cfg.bucketEdges.length + 1;
+  for (const k of Object.keys(cfg.paytable)) {
+    const row = cfg.paytable[k];
+    if (row.length !== expectedRowLen) {
+      console.warn(`payAnywhereEval: paytable[${k}] length ${row.length} ≠ bucketEdges.length+1 (${expectedRowLen})`);
+    }
+  }
   // Auto-enable when the topology declares pay_anywhere — single source of truth
   if (model.topology && model.topology.evaluation === 'pay_anywhere') {
     cfg.enabled = true;
@@ -63,11 +91,13 @@ function detectPayAnywhereWins() { return []; }
   const PAYTABLE = JSON.stringify(cfg.paytable);
   const MAX_EVENTS = Math.floor(cfg.maxEvents);
 
-  return `/* ─── payAnywhereEval — count-based scatter-pays evaluator ───────── */
+  return `/* ─── payAnywhereEval — count-based scatter-pays evaluator ─────────
+   Perf budget: < 0.5 ms for 6×5 grid, < 1 ms for 7×7. */
 const PAY_ANYWHERE_MIN_WIN = ${MIN_WIN};
 const PAY_ANYWHERE_BUCKETS = ${BUCKET_EDGES};
 const PAY_ANYWHERE_TABLE   = ${PAYTABLE};
 const PAY_ANYWHERE_MAX_EVENTS = ${MAX_EVENTS};
+const PAY_ANYWHERE_NO_WIN = ${Number(cfg.noWinChance) || 0};
 
 /* Compute which bucket index a count falls into.
    bucketEdges=[10,12], count=9  → 0  (8-9)
@@ -123,7 +153,9 @@ function detectPayAnywhereWins() {
   const wildCount = wildCells.length;
   const events = [];
   for (const sym of REG) {
-    const total = (counts[sym] || 0) + wildCount;
+    const natural = counts[sym] || 0;
+    if (natural === 0) continue;            // no symbol on grid → wilds can't scatter it
+    const total = natural + wildCount;
     if (total < PAY_ANYWHERE_MIN_WIN) continue;
     const bucket = _payAnywhereBucket(total);
     const row = PAY_ANYWHERE_TABLE[sym];
@@ -139,8 +171,8 @@ function detectPayAnywhereWins() {
     });
   }
 
-  /* Tier sort: HP → MP → LP → WILD. Within tier, higher count first. */
-  const tierRank = { HP: 0, MP: 1, LP: 2, WILD: 3 };
+  /* Tier sort: HP → MP → LP. Within tier, higher count first. */
+  const tierRank = { HP: 0, MP: 1, LP: 2 };
   events.sort((a, b) => {
     const ra = tierRank[a.tier] ?? 9;
     const rb = tierRank[b.tier] ?? 9;
@@ -148,6 +180,7 @@ function detectPayAnywhereWins() {
     return b.count - a.count;
   });
 
+  if (PAY_ANYWHERE_NO_WIN > 0 && Math.random() < PAY_ANYWHERE_NO_WIN) return [];
   return events.slice(0, PAY_ANYWHERE_MAX_EVENTS);
 }
 

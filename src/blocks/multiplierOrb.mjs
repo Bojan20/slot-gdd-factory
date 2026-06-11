@@ -16,6 +16,11 @@
  *     bonusAccumulate: false }
  */
 
+const PULSE_MS_MIN = 100;
+const PULSE_MS_MAX = 5000;
+const PULSE_MS_DEFAULT = 1000;
+const clampInt = (n, lo, hi) => Math.min(hi, Math.max(lo, Math.trunc(n)));
+
 export function defaultConfig() {
   return {
     enabled: false,
@@ -35,7 +40,9 @@ export function defaultConfig() {
     ],
     bonusAccumulate: false,  // FS-mode persistent multiplier (pay-anywhere FS rule)
     chipColor: '#ffe680',
-    pulseMs: 1000,
+    chipGlow: '255,200,80',   // RGB values for glow effect (opacities added in CSS)
+    chipShadow: '#000',       // Shadow color for text-shadow
+    pulseMs: PULSE_MS_DEFAULT,
   };
 }
 
@@ -60,7 +67,9 @@ export function resolveConfig(model = {}) {
   }
   if (m.bonusAccumulate != null) cfg.bonusAccumulate = !!m.bonusAccumulate;
   if (typeof m.chipColor === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(m.chipColor)) cfg.chipColor = m.chipColor;
-  if (Number.isFinite(m.pulseMs)) cfg.pulseMs = clampInt(m.pulseMs, 100, 5000);
+  if (typeof m.chipGlow === 'string') cfg.chipGlow = m.chipGlow;
+  if (typeof m.chipShadow === 'string') cfg.chipShadow = m.chipShadow;
+  if (Number.isFinite(m.pulseMs)) cfg.pulseMs = clampInt(m.pulseMs, PULSE_MS_MIN, PULSE_MS_MAX);
 
   // Auto-enable if GDD declared a Multiplier Orb special symbol
   if (model.symbols && Array.isArray(model.symbols.specials)) {
@@ -84,14 +93,14 @@ export function emitMultiplierOrbCSS(cfg = defaultConfig()) {
   font-size: 0.65em;
   font-weight: 900;
   color: ${cfg.chipColor};
-  text-shadow: 0 0 6px rgba(255,200,80,.9), 0 1px 0 #000;
+  text-shadow: 0 0 6px rgba(${cfg.chipGlow},.9), 0 1px 0 ${cfg.chipShadow};
   letter-spacing: 0.02em;
   pointer-events: none;
 }
 @keyframes orbPulse {
-  0%   { filter: brightness(1) drop-shadow(0 0 0 rgba(255,200,80,0)); }
-  50%  { filter: brightness(1.5) drop-shadow(0 0 12px rgba(255,200,80,.95)); }
-  100% { filter: brightness(1) drop-shadow(0 0 0 rgba(255,200,80,0)); }
+  0%   { filter: brightness(1) drop-shadow(0 0 0 rgba(${cfg.chipGlow},0)); }
+  50%  { filter: brightness(1.5) drop-shadow(0 0 12px rgba(${cfg.chipGlow},.95)); }
+  100% { filter: brightness(1) drop-shadow(0 0 0 rgba(${cfg.chipGlow},0)); }
 }
 .cell--orb.is-pulsing { animation: orbPulse ${cfg.pulseMs}ms ease-in-out 1; }
 @media (prefers-reduced-motion: reduce) {
@@ -117,6 +126,7 @@ const MULTIPLIER_ORB_ENABLED = true;
 const MULTIPLIER_ORB_ID = "${ID}";
 const MULTIPLIER_ORB_DIST = ${DIST};
 const MULTIPLIER_ORB_BONUS_ACC = ${BONUS_ACC};
+const ORB_RNG = (typeof window !== 'undefined' && window.GameRNG?.next) ? window.GameRNG.next : Math.random;
 if (typeof window !== 'undefined') window.MULTIPLIER_ORB_ID = MULTIPLIER_ORB_ID;
 
 /* Persistent FS multiplier — bumped every time an orb participates in a
@@ -131,7 +141,7 @@ if (typeof window !== 'undefined') {
 /* Weighted-random pick from MULTIPLIER_ORB_DIST. */
 function pickOrbValue() {
   const total = MULTIPLIER_ORB_DIST.reduce((a, e) => a + e.weight, 0);
-  let r = Math.random() * total;
+  let r = ORB_RNG() * total;
   for (const e of MULTIPLIER_ORB_DIST) {
     r -= e.weight;
     if (r <= 0) return e.value;
@@ -140,7 +150,8 @@ function pickOrbValue() {
 }
 
 /* Annotate every visible orb cell with a data-orb-value attribute and
-   the .cell--orb / .is-pulsing classes. Called once per spin settle. */
+   the .cell--orb / .is-pulsing classes. Called once per spin settle.
+   Perf budget: ≤0.5 ms per spin settle on 5×4 grid. */
 function annotateOrbs() {
   if (!Array.isArray(RECT_REELS)) return;
   for (let r = 0; r < RECT_REELS.length; r++) {
@@ -155,7 +166,6 @@ function annotateOrbs() {
         if (!cell.dataset.orbValue) cell.dataset.orbValue = String(pickOrbValue());
         cell.classList.add('cell--orb');
         cell.classList.add('is-pulsing');
-        setTimeout(() => cell.classList.remove('is-pulsing'), ${cfg.pulseMs});
       } else {
         cell.classList.remove('cell--orb');
         cell.classList.remove('is-pulsing');
@@ -188,7 +198,7 @@ function accumulateOrbMultiplier() {
   }
   // Bonus mode returns the persistent multiplier (applies to every subsequent win)
   if (MULTIPLIER_ORB_BONUS_ACC && typeof FSM !== 'undefined' && FSM.phase === 'FS_ACTIVE') {
-    return Math.max(total, BONUS_MULTIPLIER);
+    return BONUS_MULTIPLIER;
   }
   return total;
 }
@@ -240,11 +250,4 @@ if (typeof HookBus !== 'undefined' &&
   });
 }
 `;
-}
-
-/* ─── helpers ─────────────────────────────────────────────────────── */
-function clampInt(n, lo, hi) {
-  n = Math.floor(Number(n));
-  if (!Number.isFinite(n)) return lo;
-  return Math.max(lo, Math.min(hi, n));
 }

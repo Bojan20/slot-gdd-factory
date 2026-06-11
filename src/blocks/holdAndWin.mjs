@@ -59,6 +59,27 @@ export function defaultConfig() {
     subtitle: 'COLLECT THE ORBS',
     showIntro: true,
     showSummary: true,
+    /* Grid dims — single authoritative source so key encoding
+     * (r*REELS+c) and full-grid trigger (size >= REELS*ROWS) work on any
+     * non-5×3 layout. Resolved from model.reels/model.rows by
+     * resolveConfig, never from window globals at runtime. */
+    reels: 5,
+    rows: 3,
+    /* Timings (ms) — surface for GDD override, no inline magic numbers. */
+    timings: {
+      introAutoMs: 1600,
+      summaryAutoMs: 1800,
+      endFullGridMs: 2200,
+      endNormalMs: 600,
+      forceFallbackMs: 1700,
+      jackpotDelayMs: 280,
+      jackpotShortMs: 1600,
+      jackpotGrandMs: 2200,
+      fullGridMs: 2600,
+    },
+    /* Orb distribution — null = built-in Zeus' Storm table. GDD may
+     * override with array of { label, weight, tier, valueX }. */
+    orbTable: null,
   };
 }
 
@@ -79,6 +100,20 @@ export function resolveConfig(model = {}) {
   if (typeof m.subtitle === 'string' && m.subtitle.length <= 48 && !/[<>{}]/.test(m.subtitle)) cfg.subtitle = m.subtitle;
   if (m.showIntro === false) cfg.showIntro = false;
   if (m.showSummary === false) cfg.showSummary = false;
+  /* Grid dims — pull from top-level model so any GDD that specifies a
+   * non-5×3 layout flows through to runtime constants. */
+  if (Number.isFinite(model.reels)) cfg.reels = clampInt(model.reels, 1, 16);
+  if (Number.isFinite(model.rows))  cfg.rows  = clampInt(model.rows,  1, 16);
+  if (m.timings && typeof m.timings === 'object') {
+    for (const k of Object.keys(cfg.timings)) {
+      if (Number.isFinite(m.timings[k])) cfg.timings[k] = clampInt(m.timings[k], 0, 60000);
+    }
+  }
+  if (Array.isArray(m.orbTable) && m.orbTable.every(e =>
+    e && typeof e.label === 'string' &&
+    Number.isFinite(e.weight) && Number.isFinite(e.valueX))) {
+    cfg.orbTable = m.orbTable.slice();
+  }
   if (Array.isArray(model.features) && model.features.some(f => f.kind === 'hold_and_win')) {
     cfg.enabled = true;
   }
@@ -497,6 +532,22 @@ export function emitHoldAndWinMarkup(cfg = defaultConfig()) {
 
 export function emitHoldAndWinRuntime(cfg = defaultConfig()) {
   if (!cfg.enabled) return `/* holdAndWin: disabled */`;
+  const orbTableJSON = cfg.orbTable
+    ? JSON.stringify(cfg.orbTable)
+    : JSON.stringify([
+        { label: '1x',  weight: 26,  tier: null,    valueX:   1 },
+        { label: '2x',  weight: 22,  tier: null,    valueX:   2 },
+        { label: '3x',  weight: 16,  tier: null,    valueX:   3 },
+        { label: '5x',  weight: 12,  tier: null,    valueX:   5 },
+        { label: '8x',  weight:  9,  tier: null,    valueX:   8 },
+        { label: '12x', weight:  6,  tier: null,    valueX:  12 },
+        { label: '15x', weight:  4,  tier: null,    valueX:  15 },
+        { label: '25x', weight:  2,  tier: null,    valueX:  25 },
+        { label: 'MINI',  weight: 1.6, tier: 'MINI',  valueX:  12 },
+        { label: 'MINOR', weight: 0.9, tier: 'MINOR', valueX:  25 },
+        { label: 'MAJOR', weight: 0.4, tier: 'MAJOR', valueX:  50 },
+        { label: 'GRAND', weight: 0.1, tier: 'GRAND', valueX: 150 },
+      ]);
   return `/* ─── hold & win runtime (Zeus' Storm pattern) ────────────────── */
 const HW_TRIGGER_COUNT  = ${cfg.triggerCount};
 const HW_BONUS_SYMBOL   = ${JSON.stringify(cfg.bonusSymbolId)};
@@ -507,21 +558,34 @@ const HW_FULL_GRID_X    = ${cfg.fullGridBonusX};
 const HW_SHOW_INTRO     = ${cfg.showIntro ? 'true' : 'false'};
 const HW_SHOW_SUMMARY   = ${cfg.showSummary ? 'true' : 'false'};
 
-/* Orb value table (weighted) — Zeus' Storm distribution. */
-const HW_ORB_TABLE = [
-  { label: '1x',  weight: 26, tier: null,    valueX:   1 },
-  { label: '2x',  weight: 22, tier: null,    valueX:   2 },
-  { label: '3x',  weight: 16, tier: null,    valueX:   3 },
-  { label: '5x',  weight: 12, tier: null,    valueX:   5 },
-  { label: '8x',  weight:  9, tier: null,    valueX:   8 },
-  { label: '12x', weight:  6, tier: null,    valueX:  12 },
-  { label: '15x', weight:  4, tier: null,    valueX:  15 },
-  { label: '25x', weight:  2, tier: null,    valueX:  25 },
-  { label: 'MINI',  weight: 1.6, tier: 'MINI',  valueX:  12 },
-  { label: 'MINOR', weight: 0.9, tier: 'MINOR', valueX:  25 },
-  { label: 'MAJOR', weight: 0.4, tier: 'MAJOR', valueX:  50 },
-  { label: 'GRAND', weight: 0.1, tier: 'GRAND', valueX: 150 },
-];
+/* Grid dims — GDD-driven, never read from window globals. */
+const HW_REELS          = ${cfg.reels};
+const HW_ROWS           = ${cfg.rows};
+
+/* Hoisted timings (ms) — surface for GDD override; no inline magic. */
+const HW_T_INTRO_AUTO_MS     = ${cfg.timings.introAutoMs};
+const HW_T_SUMMARY_AUTO_MS   = ${cfg.timings.summaryAutoMs};
+const HW_T_END_FULLGRID_MS   = ${cfg.timings.endFullGridMs};
+const HW_T_END_NORMAL_MS     = ${cfg.timings.endNormalMs};
+const HW_T_FORCE_FALLBACK_MS = ${cfg.timings.forceFallbackMs};
+const HW_T_JACKPOT_DELAY_MS  = ${cfg.timings.jackpotDelayMs};
+const HW_T_JACKPOT_SHORT_MS  = ${cfg.timings.jackpotShortMs};
+const HW_T_JACKPOT_GRAND_MS  = ${cfg.timings.jackpotGrandMs};
+const HW_T_FULLGRID_MS       = ${cfg.timings.fullGridMs};
+const HW_FORCE_SEED_DEFAULT  = Math.max(3, Math.ceil(HW_TRIGGER_COUNT / 2));
+
+/* Orb value table (weighted) — Zeus' Storm distribution, GDD-overridable. */
+const HW_ORB_TABLE = ${orbTableJSON};
+
+/* Deterministic RNG hook — routes through host-injected rng() so QA can
+ * pin a seed and PAR validation can replay distributions. Math.random
+ * remains a last-resort fallback only. */
+function _hwRng() {
+  try {
+    if (typeof window !== 'undefined' && typeof window.rng === 'function') return window.rng();
+  } catch (_) {}
+  return Math.random();
+}
 
 /* Phase machine — INACTIVE → INTRO → RUNNING → SUMMARY. */
 const HW_STATE = {
@@ -586,7 +650,7 @@ function _hwHudUpdate(opts) {
 function _hwRollOrb() {
   var total = 0;
   for (var i = 0; i < HW_ORB_TABLE.length; i++) total += HW_ORB_TABLE[i].weight;
-  var roll = Math.random() * total;
+  var roll = _hwRng() * total;
   for (var j = 0; j < HW_ORB_TABLE.length; j++) {
     roll -= HW_ORB_TABLE[j].weight;
     if (roll <= 0) {
@@ -659,14 +723,14 @@ function _hwShowJackpot(tier, valueX) {
   if (lab) lab.textContent = tier;
   if (val) val.textContent = '+' + valueX + '×';
   ov.dataset.show = 'true';
-  setTimeout(function () { ov.dataset.show = 'false'; }, tier === 'GRAND' ? 2200 : 1600);
+  setTimeout(function () { ov.dataset.show = 'false'; }, tier === 'GRAND' ? HW_T_JACKPOT_GRAND_MS : HW_T_JACKPOT_SHORT_MS);
 }
 
 function _hwShowFullGrid() {
   var ov = document.getElementById('hwFullgrid');
   if (!ov) return;
   ov.dataset.show = 'true';
-  setTimeout(function () { ov.dataset.show = 'false'; }, 2600);
+  setTimeout(function () { ov.dataset.show = 'false'; }, HW_T_FULLGRID_MS);
 }
 
 function _hwShowIntro(orbCount) {
@@ -684,10 +748,10 @@ function _hwShowIntro(orbCount) {
       resolve();
     }
     function onKey(e) { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') dismiss(); }
-    /* Auto-dismiss after 1.6s if user does nothing — keeps QA walker
-     * and autoplay rolling without lingering on the placard. Player can
-     * also click anywhere or press Enter/Space to skip early. */
-    var autoTimer = setTimeout(dismiss, 1600);
+    /* Auto-dismiss if user does nothing — keeps QA walker and autoplay
+     * rolling without lingering on the placard. Player can also click
+     * anywhere or press Enter/Space to skip early. */
+    var autoTimer = setTimeout(dismiss, HW_T_INTRO_AUTO_MS);
     ov.addEventListener('click', function () { clearTimeout(autoTimer); dismiss(); });
     document.addEventListener('keydown', onKey, { once: false });
     /* HookBus skip — autoplay / force-skip / FS-trigger upstream can
@@ -719,11 +783,14 @@ function _hwShowSummary(stats) {
   return new Promise(function (resolve) {
     function dismiss() {
       try { ov.removeEventListener('click', dismiss); } catch (_) {}
+      try { document.removeEventListener('keydown', onKey); } catch (_) {}
       ov.dataset.show = 'false';
       resolve();
     }
-    var autoTimer = setTimeout(dismiss, 1800);
+    function onKey(e) { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') dismiss(); }
+    var autoTimer = setTimeout(dismiss, HW_T_SUMMARY_AUTO_MS);
     ov.addEventListener('click', function () { clearTimeout(autoTimer); dismiss(); });
+    document.addEventListener('keydown', onKey, { once: false });
     try {
       if (typeof HookBus !== 'undefined') {
         var onSkip = function () { clearTimeout(autoTimer); dismiss(); HookBus.off('onSkipRequested', onSkip); };
@@ -750,15 +817,14 @@ function hwHarvestBonus(opts) {
   const o = opts || {};
   const host = document.getElementById('gridHost');
   if (!host) return 0;
-  const REELS = window.REELS || 5;
   let added = 0;
   const bet = _hwBet();
   host.querySelectorAll('.cell').forEach((cell, idx) => {
     const txt = (cell.textContent || '').trim();
     const alreadyLocked = cell.classList.contains('is-locked-bonus');
     if (txt !== HW_BONUS_SYMBOL && !alreadyLocked) return;
-    const r = Math.floor(idx / REELS);
-    const c = idx % REELS;
+    const r = Math.floor(idx / HW_REELS);
+    const c = idx % HW_REELS;
     const key = r + ',' + c;
     if (!HW_STATE.lockedCells.has(key)) {
       const orb = _hwRollOrb();
@@ -771,7 +837,7 @@ function hwHarvestBonus(opts) {
         _hwSpawnDelta(cell, orb.valueX);
         _hwSpawnFly(cell, orb.valueX);
         if (orb.tier) {
-          setTimeout(function () { _hwShowJackpot(orb.tier, orb.valueX); }, 280);
+          setTimeout(function () { _hwShowJackpot(orb.tier, orb.valueX); }, HW_T_JACKPOT_DELAY_MS);
         }
       }
     } else {
@@ -788,11 +854,10 @@ function hwHarvestBonus(opts) {
 function hwApplyLocks() {
   const host = document.getElementById('gridHost');
   if (!host) return;
-  const REELS = window.REELS || 5;
   const cells = host.querySelectorAll('.cell');
   HW_STATE.lockedCells.forEach((orb, key) => {
     const [r, c] = key.split(',').map(n => parseInt(n, 10));
-    const idx = r * REELS + c;
+    const idx = r * HW_REELS + c;
     const cell = cells[idx];
     if (!cell) return;
     _hwApplyOrbToCell(cell, orb);
@@ -820,8 +885,7 @@ function _hwInstallObserver() {
       if (!cell) continue;
       const idx = Array.prototype.indexOf.call(allCells, cell);
       if (idx < 0) continue;
-      const REELS = window.REELS || 5;
-      const key = Math.floor(idx / REELS) + ',' + (idx % REELS);
+      const key = Math.floor(idx / HW_REELS) + ',' + (idx % HW_REELS);
       if (HW_STATE.lockedCells.has(key)) {
         const txt = (cell.textContent || '').trim();
         const hasClass = cell.classList.contains('is-locked-bonus');
@@ -872,10 +936,21 @@ async function _hwBeginRound() {
   _hwHudUpdate();
   /* After the player dismisses the intro, animate the initial orbs'
    * pop-in + fly so they feel earned. */
-  HW_STATE.lockedCells.forEach(function (orb) {
-    /* find a cell with matching key — re-fetch DOM since key→cell map
-     * is rebuilt every render. */
-  });
+  const introHost = document.getElementById('gridHost');
+  if (introHost) {
+    const introCells = introHost.querySelectorAll('.cell');
+    HW_STATE.lockedCells.forEach(function (orb, key) {
+      const parts = key.split(',');
+      const r = parseInt(parts[0], 10);
+      const c = parseInt(parts[1], 10);
+      const idx = r * HW_REELS + c;
+      const cell = introCells[idx];
+      if (!cell) return;
+      _hwApplyOrbToCell(cell, orb);
+      _hwSpawnDelta(cell, orb.valueX);
+      _hwSpawnFly(cell, orb.valueX);
+    });
+  }
 }
 
 function hwMaybeEnter() {

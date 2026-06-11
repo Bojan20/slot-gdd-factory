@@ -219,7 +219,9 @@ export function resolveConfig(model = {}) {
    * branch above; the explicit { enabled: true } branch is the opt-in. */
   if (m.enabled == null) {
     const features = Array.isArray(model && model.features) ? model.features : [];
-    const BW_PATTERN = /^(big[_-]?win([_-]?tier)?|win[_-]?ladder)$/i;
+    /* Accept "big_win", "big-win", "big_win_tier", "big-win-tier",
+     * "big_win_ladder", "big-win-ladder", or plain "win_ladder". */
+    const BW_PATTERN = /^(big[_-]?win([_-]?(tier|ladder))?|win[_-]?ladder)$/i;
     const detected = features.some(f => f && typeof f.kind === 'string' && BW_PATTERN.test(f.kind));
     cfg.enabled = detected;
   }

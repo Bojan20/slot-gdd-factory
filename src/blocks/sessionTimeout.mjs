@@ -602,6 +602,7 @@ export function emitSessionTimeoutRuntime(cfg = defaultConfig()) {
        * records a false "session resumed". Skip Resume during logout. */
       STATE.onBreak = false;
       STATE.breakStartMs = 0;
+      if (typeof window !== 'undefined') window.__SESSION_BREAK_ACTIVE__ = false;
       if (typeof window !== 'undefined' && window.HookBus && typeof window.HookBus.emit === 'function') {
         try {
           window.HookBus.emit('onSessionLogoutRequested', stats);

@@ -8,8 +8,7 @@
  *   • Card suit — 25% quadruple
  *   • Ladder — step up/down with progressive multiplier
  *
- * Industry references: Novomatic Risk Card, Gaminator Heart/Diamond,
- * card / colour gamble (industry-standard post-win risk feature).
+ * Industry references: card / colour gamble (industry-standard post-win risk feature).
  *
  * GDD knobs:
  *   • mode: 'color' | 'suit' | 'ladder'
@@ -18,6 +17,13 @@
  *   • collectThresholdX: number — auto-collect cap (0 = no cap)
  *   • haloColor: 'r,g,b'
  */
+
+const Z_INDEX_GAMBLE = 88;
+const MAX_ROUNDS_HARD_CAP = 20;
+const MULT_MIN = 1.1;
+const MULT_MAX = 16;
+const COLLECT_CAP_MAX = 1_000_000;
+const STAKE_PRECISION = 100; // 2-decimal rounding
 
 export function defaultConfig() {
   return {
@@ -39,9 +45,9 @@ export function resolveConfig(model = {}) {
     if (m.mode === 'suit') cfg.multiplier = 4;
     if (m.mode === 'color') cfg.multiplier = 2;
   }
-  if (Number.isFinite(m.maxRounds)) cfg.maxRounds = clampInt(m.maxRounds, 1, 20);
-  if (Number.isFinite(m.multiplier)) cfg.multiplier = clampFloat(m.multiplier, 1.1, 16);
-  if (Number.isFinite(m.collectThresholdX)) cfg.collectThresholdX = clampInt(m.collectThresholdX, 0, 1000000);
+  if (Number.isFinite(m.maxRounds)) cfg.maxRounds = clampInt(m.maxRounds, 1, MAX_ROUNDS_HARD_CAP);
+  if (Number.isFinite(m.multiplier) && !m.mode) cfg.multiplier = clampFloat(m.multiplier, MULT_MIN, MULT_MAX);
+  if (Number.isFinite(m.collectThresholdX)) cfg.collectThresholdX = clampInt(m.collectThresholdX, 0, COLLECT_CAP_MAX);
   if (typeof m.haloColor === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(m.haloColor)) cfg.haloColor = m.haloColor;
 
   if (Array.isArray(model.features) && model.features.some(f => f.kind === 'gamble')) {
@@ -57,7 +63,7 @@ export function emitGambleCSS(cfg = defaultConfig()) {
 .gamble-overlay {
   position: fixed;
   inset: 0;
-  z-index: 88;
+  z-index: ${Z_INDEX_GAMBLE};
   display: none;
   align-items: center;
   justify-content: center;
@@ -128,6 +134,10 @@ export function emitGambleCSS(cfg = defaultConfig()) {
   cursor: pointer;
   font-size: 0.85rem;
 }
+@media (prefers-reduced-motion: reduce) {
+  .gamble-overlay { backdrop-filter: none; }
+  .gamble-modal, .gamble-btn, .gamble-title { box-shadow: none; text-shadow: none; }
+}
 `;
 }
 
@@ -171,8 +181,9 @@ function _gambleWinChance() {
 function gambleOpen(stakeX) {
   if (GAMBLE_STATE.active) return;
   GAMBLE_STATE.active = true;
-  GAMBLE_STATE.stakeX = stakeX || 1;
+  GAMBLE_STATE.stakeX = Number.isFinite(stakeX) && stakeX > 0 ? stakeX : 1;
   GAMBLE_STATE.rounds = 0;
+  GAMBLE_STATE._prevFocus = (typeof document !== 'undefined') ? document.activeElement : null;
   const ov = document.getElementById('gambleOverlay');
   if (ov) ov.dataset.show = 'true';
   const stake = document.getElementById('gambleStake');
@@ -180,6 +191,10 @@ function gambleOpen(stakeX) {
   const result = document.getElementById('gambleResult');
   if (result) result.textContent = 'Pick to continue';
   document.querySelectorAll('.gamble-btn').forEach(b => b.disabled = false);
+  const firstBtn = document.querySelector('.gamble-btn');
+  if (firstBtn && typeof firstBtn.focus === 'function') { try { firstBtn.focus(); } catch (_) {} }
+  GAMBLE_STATE._keydownHandler = (e) => { if (e && e.key === 'Escape') gambleCollect(); };
+  document.addEventListener('keydown', GAMBLE_STATE._keydownHandler);
 }
 
 function _gambleResolvePick(pickToken) {
@@ -188,7 +203,7 @@ function _gambleResolvePick(pickToken) {
   const won = Math.random() < _gambleWinChance();
   const result = document.getElementById('gambleResult');
   if (won) {
-    GAMBLE_STATE.stakeX = Math.round(GAMBLE_STATE.stakeX * GAMBLE_MULT * 100) / 100;
+    GAMBLE_STATE.stakeX = Math.round(GAMBLE_STATE.stakeX * GAMBLE_MULT * ${STAKE_PRECISION}) / ${STAKE_PRECISION};
     if (result) result.textContent = 'WIN! Stake ×' + GAMBLE_STATE.stakeX;
     const stake = document.getElementById('gambleStake');
     if (stake) stake.textContent = String(GAMBLE_STATE.stakeX);
@@ -212,6 +227,14 @@ function gambleCollect() {
   GAMBLE_STATE.rounds = 0;
   const ov = document.getElementById('gambleOverlay');
   if (ov) ov.dataset.show = 'false';
+  if (GAMBLE_STATE._keydownHandler) {
+    document.removeEventListener('keydown', GAMBLE_STATE._keydownHandler);
+    GAMBLE_STATE._keydownHandler = null;
+  }
+  if (GAMBLE_STATE._prevFocus && typeof GAMBLE_STATE._prevFocus.focus === 'function') {
+    try { GAMBLE_STATE._prevFocus.focus(); } catch (_) {}
+    GAMBLE_STATE._prevFocus = null;
+  }
   return collected;
 }
 
@@ -232,39 +255,28 @@ if (typeof window !== 'undefined') {
 /* HookBus wire-up — gamble is offered after a winning base spin (postSpin).
    FS boundaries close any open gamble session so it can't leak. */
 if (typeof HookBus !== 'undefined') {
+  /* Single owner-listener for postSpin: natural-win path first, then the
+   * forced-open path (UFP chip → spin → modal even with no real win). */
   HookBus.on('postSpin', ({ duringFs, events } = {}) => {
     if (duringFs) return; /* gamble is BASE-only — don't offer during FS */
-    if (!Array.isArray(events) || events.length === 0) return;
-    const totalX = events.reduce((a, e) => a + (Number(e && e.payX) || 0), 0);
-    if (totalX > 0 && !GAMBLE_STATE.active) {
-      try { gambleOpen(totalX); } catch (e) { /* defensive */ }
+    if (Array.isArray(events) && events.length > 0) {
+      const totalX = events.reduce((a, e) => a + (Number(e && e.payX) || 0), 0);
+      if (totalX > 0 && !GAMBLE_STATE.active) {
+        try { gambleOpen(totalX); } catch (e) { /* defensive */ }
+        return;
+      }
     }
-  });
+    if (window.__FORCE_GAMBLE_OPEN__ && !GAMBLE_STATE.active) {
+      window.__FORCE_GAMBLE_OPEN__ = false;
+      try { gambleOpen(1); } catch (_) { /* defensive */ }
+    }
+  }, { priority: -60 });
   HookBus.on('onFsTrigger', () => { if (GAMBLE_STATE.active) gambleCollect(); });
   HookBus.on('onFsEnd',     () => { if (GAMBLE_STATE.active) gambleCollect(); });
-  /* 2026-06-10 (Boki: "gamble takodje [ne radi]") — UFP chip emits
-   * onForceFeatureRequested but gamble never had a listener, so clicking
-   * GAMBLE chip just painted a banner without opening the modal. Open
-   * with a demo stake of 1× bet so player can immediately pick red/black
-   * (or whatever the configured mode requires) without first needing a
-   * winning spin. */
-  /* 2026-06-11 (Boki rule "pritisnes force dugme odradi se spin i onda
-   * se dobije ishod forsa") — chip click defers modal open to the next
-   * postSpin so the player sees the full flow: chip → reels spin →
-   * settle → gamble modal. The natural postSpin listener above (offers
-   * gamble on actual winning spin) still applies — this just guarantees
-   * the modal opens even if the forced spin lands no real win. */
   HookBus.on('onForceFeatureRequested', (payload) => {
     if (!payload || payload.kind !== 'gamble') return;
     window.__FORCE_GAMBLE_OPEN__ = true;
   });
-  HookBus.on('postSpin', (p) => {
-    if (!window.__FORCE_GAMBLE_OPEN__) return;
-    if (p && p.duringFs) return;
-    if (GAMBLE_STATE.active) return;
-    window.__FORCE_GAMBLE_OPEN__ = false;
-    try { gambleOpen(1); } catch (_) { /* defensive */ }
-  }, { priority: -60 });
 }
 `;
 }

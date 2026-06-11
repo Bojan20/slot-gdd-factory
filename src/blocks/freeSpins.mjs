@@ -1,6 +1,9 @@
 /**
  * Slot GDD Factory · freeSpins BLOCK
  *
+ * Performance budget: ≤ 1ms per FSM_renderHud, ≤ 50KB cumulative listener
+ * heap across a 200-retrigger session.
+ *
  * The full Free-Spins lifecycle visual layer — driven by the FSM phase
  * machine (BASE → FS_INTRO → FS_ACTIVE → FS_OUTRO → BASE).
  *
@@ -31,6 +34,9 @@
  *   spinBreathMs          number ms — breath after win cycle      (default 250)
  *   toastMs               number ms — default toast visibility    (default 1800)
  *   retriggerToastMs      number ms — retrigger toast visibility  (default 1600)
+ *   featureFadeInMs       number ms — intro reel fade-in duration (default 600)
+ *   featureHideMs         number ms — intro reel hide duration    (default 300)
+ *   bigWinSafetyMs        number ms — big-win re-enable safety    (default 30000)
  *
  * Public API (server-side, ES module):
  *   defaultConfig()                        → safe defaults
@@ -60,6 +66,9 @@ const DEFAULTS = Object.freeze({
   spinBreathMs: 250,
   toastMs: 1800,
   retriggerToastMs: 1600,
+  featureFadeInMs: 600,
+  featureHideMs: 300,
+  bigWinSafetyMs: 30000,
 });
 
 export function defaultConfig() {
@@ -94,6 +103,9 @@ export function resolveConfig(model) {
     ['spinBreathMs',         0,  3000],
     ['toastMs',            300,  6000],
     ['retriggerToastMs',   300,  6000],
+    ['featureFadeInMs',    300,  2000],
+    ['featureHideMs',      100,  1000],
+    ['bigWinSafetyMs',   10000, 120000],
   ];
   for (const [k, lo, hi] of msMap) {
     if (k in src) {
@@ -136,11 +148,11 @@ body.is-feature-intro-active .play .frame,
 body.is-feature-intro-active .play .sideHud {
   opacity: 0;
   visibility: hidden;
-  transition: opacity 300ms ease, visibility 0s linear 300ms;
+  transition: opacity ${c.featureHideMs}ms ease, visibility 0s linear ${c.featureHideMs}ms;
 }
 body.is-feature-intro-fadein .play .frame,
 body.is-feature-intro-fadein .play .sideHud {
-  animation: featureFadeIn 600ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: featureFadeIn ${c.featureFadeInMs}ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 @keyframes featureFadeIn {
   0%   { opacity: 0; visibility: visible; transform: scale(0.94); }
@@ -427,6 +439,9 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
   const FS_ENTER_ACTIVE_MS   = ${c.enterActiveDelayMs};
   const FS_TOAST_MS          = ${c.toastMs};
   const FS_RETRIGGER_TOAST_MS = ${c.retriggerToastMs};
+  const FS_FEATURE_FADEIN_MS = ${c.featureFadeInMs};
+  const FS_FEATURE_HIDE_MS   = ${c.featureHideMs};
+  const FS_BIGWIN_SAFETY_MS  = ${c.bigWinSafetyMs};
 
   /* ─── FSM · phases: BASE → FS_INTRO → FS_ACTIVE → FS_OUTRO → BASE ────── */
   const FSM = {
@@ -461,7 +476,9 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
   }
 
   function FSM_showFsMode() {
-    const mode = (FREESPINS.bgMode || "purple").toLowerCase();
+    const FS_MODE_WHITELIST = new Set(["purple", "gold", "crimson"]);
+    const raw = String(FREESPINS.bgMode || "purple").toLowerCase();
+    const mode = FS_MODE_WHITELIST.has(raw) ? raw : "purple";
     document.body.classList.remove("fs-mode-purple", "fs-mode-gold", "fs-mode-crimson");
     document.body.classList.add("fs-mode-" + mode);
     if (fsHud) {
@@ -502,10 +519,12 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
   }
 
   function FSM_enterIntro(spinsAwarded, scatterCount) {
+    const n = Number.isFinite(spinsAwarded) ? Math.max(0, Math.floor(spinsAwarded)) : 0;
+    if (n === 0) { FSM_enterBase(); return; }
     FSM.phase = "FS_INTRO";
     setStageBadge("fs", STAGE_FS_LABEL);
-    FSM.spinsTotal = spinsAwarded;
-    FSM.spinsRemaining = spinsAwarded;
+    FSM.spinsTotal = n;
+    FSM.spinsRemaining = n;
     FSM.mult = (FREESPINS.multiplier && FREESPINS.multiplier.start) || 1;
     FSM.totalWin = 0;
     FSM.retrigCount = 0;
@@ -545,9 +564,8 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
     setStageBadge("fs", STAGE_FS_LABEL);
     FSM_hideOverlay();
     /* H5.18 — TAP TO BEGIN tapped. Swap the hide class for the fadein
-     * twin and let the keyframe animation play. After 600 ms the
-     * animation has settled at opacity:1; clear the class so future
-     * intros start from a clean slate. */
+     * twin and let the keyframe animation play. After the animation
+     * completes, clear the class so future intros start from a clean slate. */
     document.body.classList.remove('is-feature-intro-active');
     document.body.classList.add('is-feature-intro-fadein');
     /* FsMode swap (theme background) lands inside the fadein window
@@ -556,7 +574,7 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
     FSM_renderHud();
     setTimeout(function () {
       document.body.classList.remove('is-feature-intro-fadein');
-    }, 700);
+    }, FS_FEATURE_FADEIN_MS);
     spinButton && (spinButton.disabled = true);
     devFsBtn   && (devFsBtn.disabled   = true);
     setTimeout(FSM_runNextFsSpin, FS_ENTER_ACTIVE_MS);
@@ -578,11 +596,6 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
     statusElGlobal && (statusElGlobal.textContent =
       "FS · " + ((FSM.spinsTotal - FSM.spinsRemaining) + 1) + " / " + FSM.spinsTotal);
 
-    /* HookBus: preSpin → blocks that arm per-spin state (anticipation,
-       wild placement) run before the engine kicks. */
-    if (typeof HookBus !== 'undefined') {
-      HookBus.emit('preSpin', { duringFs: true });
-    }
     if (UNIFORM_REEL_KINDS.has(SHAPE.kind) && RECT_REELS) {
       startSpinAll(() => {
         /* HookBus: onFsSpinResult → blocks that escalate per FS spin
@@ -603,11 +616,13 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
   }
 
   function FSM_handleRetrigger(extraSpins) {
-    FSM.spinsTotal += extraSpins;
-    FSM.spinsRemaining += extraSpins;
+    const n = Number.isFinite(extraSpins) ? Math.max(0, Math.floor(extraSpins)) : 0;
+    if (n === 0) return;
+    FSM.spinsTotal += n;
+    FSM.spinsRemaining += n;
     FSM.retrigCount++;
     FSM_renderHud();
-    FSM_showToast("+" + extraSpins + " FREE SPINS", FS_RETRIGGER_TOAST_MS);
+    FSM_showToast("+" + n + " FREE SPINS", FS_RETRIGGER_TOAST_MS);
   }
 
   function FSM_enterOutro() {
@@ -666,14 +681,19 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
         if (typeof window === 'undefined' || !window.HookBus) { __reEnable(); return; }
         var bwActive = !!(window.BIG_WIN_TIER_STATE && window.BIG_WIN_TIER_STATE.walkActive);
         if (bwActive) {
-          var onBwEnd = function () {
+          var __safety = null;
+          var __cleanup = function () {
             if (window.HookBus && typeof window.HookBus.off === 'function') window.HookBus.off('onBigWinTierEnd', onBwEnd);
+            if (__safety !== null) clearTimeout(__safety);
+          };
+          var onBwEnd = function () {
+            __cleanup();
             __reEnable();
           };
           window.HookBus.on('onBigWinTierEnd', onBwEnd);
           /* Safety floor: re-enable after 30s no-matter-what, so a missed
            * onBigWinTierEnd doesn't permanently lock the spin CTA. */
-          setTimeout(function () { __reEnable(); }, 30000);
+          __safety = setTimeout(function () { __cleanup(); __reEnable(); }, FS_BIGWIN_SAFETY_MS);
         } else {
           __reEnable();
         }

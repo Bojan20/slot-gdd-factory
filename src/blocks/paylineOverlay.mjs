@@ -45,6 +45,8 @@
  * overlay existing whenever they call drawPaylineOverlay.
  */
 
+import { applyGridProfile } from '../registry/gridProfile.mjs';
+
 /* Industry-baseline tier palette. RGB triplets so rgba() interpolation in
  * the CSS template works without re-parsing hex codes. */
 const DEFAULTS = Object.freeze({
@@ -52,6 +54,12 @@ const DEFAULTS = Object.freeze({
   strokeWidth: 4.5,
   drawInMs: 220,
   badgeRadius: 12,
+  zIndex: 6,
+  badgePadFromStart: 22,
+  badgeEdgePad: 14,
+  badgeFontPx: 11,
+  dashPlaceholder: 1000,
+  dashBuffer: 10,
   /* tier → ["stroke hex", "glow rgba"] */
   tierColors: Object.freeze({
     HP:   { stroke: '#ffc85a', glow: '255, 200,  90' },
@@ -59,9 +67,15 @@ const DEFAULTS = Object.freeze({
     LP:   { stroke: '#d29560', glow: '210, 149,  96' },
     WILD: { stroke: '#e070c0', glow: '224, 112, 192' },
   }),
+  /* drop-shadow blur + alpha per tier (and base path) */
+  glow: Object.freeze({
+    base: Object.freeze({ blurPx: 6, alpha: 0.55 }),
+    HP:   Object.freeze({ blurPx: 8, alpha: 0.85 }),
+    MP:   Object.freeze({ blurPx: 7, alpha: 0.75 }),
+    LP:   Object.freeze({ blurPx: 6, alpha: 0.70 }),
+    WILD: Object.freeze({ blurPx: 8, alpha: 0.80 }),
+  }),
 });
-
-import { applyGridProfile } from '../registry/gridProfile.mjs';
 
 export function defaultConfig() {
   return {
@@ -69,7 +83,18 @@ export function defaultConfig() {
     strokeWidth: DEFAULTS.strokeWidth,
     drawInMs: DEFAULTS.drawInMs,
     badgeRadius: DEFAULTS.badgeRadius,
-    tierColors: { ...DEFAULTS.tierColors },
+    zIndex: DEFAULTS.zIndex,
+    badgePadFromStart: DEFAULTS.badgePadFromStart,
+    badgeEdgePad: DEFAULTS.badgeEdgePad,
+    badgeFontPx: DEFAULTS.badgeFontPx,
+    dashPlaceholder: DEFAULTS.dashPlaceholder,
+    dashBuffer: DEFAULTS.dashBuffer,
+    tierColors: Object.fromEntries(
+      Object.entries(DEFAULTS.tierColors).map(([k, v]) => [k, { ...v }])
+    ),
+    glow: Object.fromEntries(
+      Object.entries(DEFAULTS.glow).map(([k, v]) => [k, { ...v }])
+    ),
   };
 }
 
@@ -89,7 +114,7 @@ export function resolveConfig(model = {}) {
   if (m.tierColors && typeof m.tierColors === 'object') {
     for (const tier of ['HP', 'MP', 'LP', 'WILD']) {
       const t = m.tierColors[tier];
-      if (t && typeof t.stroke === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(t.stroke)
+      if (t && typeof t.stroke === 'string' && /^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(t.stroke)
            && typeof t.glow === 'string'   && /^\d{1,3},\s*\d{1,3},\s*\d{1,3}$/.test(t.glow)) {
         cfg.tierColors[tier] = { stroke: t.stroke, glow: t.glow.replace(/\s+/g, '') };
       }
@@ -98,11 +123,17 @@ export function resolveConfig(model = {}) {
   return cfg;
 }
 
-/* CSS string — pulled out of buildSlotHTML.mjs in Wave T-slim. */
-export function emitPaylineOverlayCSS(cfg = defaultConfig()) {
-  const c = resolveConfig({ paylineOverlay: cfg });
+/* CSS string — pulled out of buildSlotHTML.mjs in Wave T-slim.
+ * Accepts either a resolved cfg object or a full `{ paylineOverlay: {…} }`
+ * model. Detects shape so we don't double-wrap and re-apply `applyGridProfile`
+ * on top of an already-resolved baseline. */
+export function emitPaylineOverlayCSS(cfgOrModel = {}) {
+  const c = (cfgOrModel && cfgOrModel.paylineOverlay)
+    ? resolveConfig(cfgOrModel)
+    : resolveConfig({ paylineOverlay: cfgOrModel });
   if (!c.enabled) return '';
   const t = c.tierColors;
+  const g = c.glow;
   return `
   /* ── Payline overlay (SVG) — emitted by src/blocks/paylineOverlay.mjs
      Absolute layer over the entire gridHost. Each winning payline draws
@@ -117,7 +148,7 @@ export function emitPaylineOverlayCSS(cfg = defaultConfig()) {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 6;
+    z-index: ${c.zIndex};
     overflow: visible;
   }
   .payline-path {
@@ -125,18 +156,18 @@ export function emitPaylineOverlayCSS(cfg = defaultConfig()) {
     stroke-width: ${c.strokeWidth};
     stroke-linecap: round;
     stroke-linejoin: round;
-    filter: drop-shadow(0 0 6px rgba(255, 196, 90, 0.55));
-    stroke-dasharray: var(--payline-len, 1000);
-    stroke-dashoffset: var(--payline-len, 1000);
+    filter: drop-shadow(0 0 ${g.base.blurPx}px rgba(255, 196, 90, ${g.base.alpha}));
+    stroke-dasharray: var(--payline-len, ${c.dashPlaceholder});
+    stroke-dashoffset: var(--payline-len, ${c.dashPlaceholder});
     animation: payline-draw ${c.drawInMs}ms ease-out forwards;
   }
   @keyframes payline-draw {
     to { stroke-dashoffset: 0; }
   }
-  .payline-path.tier-HP   { stroke: ${t.HP.stroke};   filter: drop-shadow(0 0 8px rgba(${t.HP.glow},   0.85)); }
-  .payline-path.tier-MP   { stroke: ${t.MP.stroke};   filter: drop-shadow(0 0 7px rgba(${t.MP.glow},   0.75)); }
-  .payline-path.tier-LP   { stroke: ${t.LP.stroke};   filter: drop-shadow(0 0 6px rgba(${t.LP.glow},   0.70)); }
-  .payline-path.tier-WILD { stroke: ${t.WILD.stroke}; filter: drop-shadow(0 0 8px rgba(${t.WILD.glow}, 0.80)); }
+  .payline-path.tier-HP   { stroke: ${t.HP.stroke};   filter: drop-shadow(0 0 ${g.HP.blurPx}px rgba(${t.HP.glow},   ${g.HP.alpha})); }
+  .payline-path.tier-MP   { stroke: ${t.MP.stroke};   filter: drop-shadow(0 0 ${g.MP.blurPx}px rgba(${t.MP.glow},   ${g.MP.alpha})); }
+  .payline-path.tier-LP   { stroke: ${t.LP.stroke};   filter: drop-shadow(0 0 ${g.LP.blurPx}px rgba(${t.LP.glow},   ${g.LP.alpha})); }
+  .payline-path.tier-WILD { stroke: ${t.WILD.stroke}; filter: drop-shadow(0 0 ${g.WILD.blurPx}px rgba(${t.WILD.glow}, ${g.WILD.alpha})); }
   .payline-badge {
     fill: rgba(15, 12, 10, 0.92);
     stroke-width: 1.5;
@@ -146,7 +177,7 @@ export function emitPaylineOverlayCSS(cfg = defaultConfig()) {
   .payline-badge.tier-LP   { stroke: ${t.LP.stroke}; }
   .payline-badge.tier-WILD { stroke: ${t.WILD.stroke}; }
   .payline-badge-text {
-    font: 800 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font: 800 ${c.badgeFontPx}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     fill: #f2f2f2;
     text-anchor: middle;
     dominant-baseline: central;
@@ -158,8 +189,14 @@ export function emitPaylineOverlayCSS(cfg = defaultConfig()) {
 `;
 }
 
-/* Emit the runtime JS source as a string. */
-export function emitPaylineOverlayRuntime(/* config = {} */) {
+/* Emit the runtime JS source as a string. Accepts the same shape as
+ * `emitPaylineOverlayCSS` so the orchestrator can pass either a resolved
+ * cfg or a full model. Tunables resolved from cfg are inlined into the
+ * emitted runtime as plain JS constants (no `window.*` plumbing needed). */
+export function emitPaylineOverlayRuntime(cfgOrModel = {}) {
+  const c = (cfgOrModel && cfgOrModel.paylineOverlay)
+    ? resolveConfig(cfgOrModel)
+    : resolveConfig({ paylineOverlay: cfgOrModel });
   return `
   /* ── Payline SVG overlay — emitted by src/blocks/paylineOverlay.mjs ────
      Boki rule: "ne sme nigde da se animira po jedan simbol nego cele win
@@ -167,6 +204,10 @@ export function emitPaylineOverlayRuntime(/* config = {} */) {
      posebno." → every winning payline gets ITS OWN polyline drawn
      through the geometric centers of its matched cells, with the symbol
      cells pulsing simultaneously and a leftmost line-number badge. */
+  const BADGE_R = ${c.badgeRadius};
+  const BADGE_OFFSET_X = ${c.badgePadFromStart};
+  const BADGE_EDGE_PAD = ${c.badgeEdgePad};
+  const DASH_BUFFER = ${c.dashBuffer};
   let PAYLINE_SVG = null;
   function ensurePaylineOverlay() {
     PAYLINE_SVG = document.getElementById('paylineOverlay');
@@ -220,26 +261,25 @@ export function emitPaylineOverlayRuntime(/* config = {} */) {
     poly.setAttribute('class', 'payline-path tier-' + tier);
     poly.setAttribute('points', pts.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' '));
     /* Set the dash length custom prop so the draw-in keyframe runs the
-       full visible length, not the default 1000px placeholder. */
+       full visible length, not the default placeholder. */
     let pathLen = 0;
     for (let i = 1; i < pts.length; i++) {
       const dx = pts[i].x - pts[i - 1].x;
       const dy = pts[i].y - pts[i - 1].y;
       pathLen += Math.sqrt(dx * dx + dy * dy);
     }
-    poly.style.setProperty('--payline-len', String(Math.ceil(pathLen) + 10));
+    poly.style.setProperty('--payline-len', String(Math.ceil(pathLen) + DASH_BUFFER));
     svg.appendChild(poly);
     /* Line-number badge anchored just left of the leftmost endpoint.
        Clamped so it stays inside the SVG viewport even on narrow grids. */
     if (typeof event.lineIndex === 'number') {
-      const bx = Math.max(14, pts[0].x - 22);
-      const by = Math.max(14, Math.min(gridRect.height - 14, pts[0].y));
-      const badgeR = 12;
+      const bx = Math.max(BADGE_EDGE_PAD, pts[0].x - BADGE_OFFSET_X);
+      const by = Math.max(BADGE_EDGE_PAD, Math.min(gridRect.height - BADGE_EDGE_PAD, pts[0].y));
       const circle = document.createElementNS(ns, 'circle');
       circle.setAttribute('class', 'payline-badge tier-' + tier);
       circle.setAttribute('cx', String(bx));
       circle.setAttribute('cy', String(by));
-      circle.setAttribute('r',  String(badgeR));
+      circle.setAttribute('r',  String(BADGE_R));
       svg.appendChild(circle);
       const t = document.createElementNS(ns, 'text');
       t.setAttribute('class', 'payline-badge-text');

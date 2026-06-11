@@ -106,6 +106,9 @@
  *   HookBus.getMult() is the single source of truth — never read FSM.mult
  *   or BONUS_MULTIPLIER directly from non-HookBus consumers.
  *
+ * ─── Performance budget ────────────────────────────────────────────
+ *   emit fanout: O(handlers); target ≤ 0.2ms for 50 listeners.
+ *
  * GDD-driven configuration (consumed from `model.hookBus`):
  *   debugLog   boolean — log every event to console            (default false)
  *
@@ -352,8 +355,9 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
     const EVENTS = ${JSON.stringify(Array.from(HOOK_EVENTS))};
     for (const e of EVENTS) handlers[e] = [];
 
-    let _mult = 1;
-    let _multBase = 1;
+    const MULT_IDENTITY = 1;
+    let _mult = MULT_IDENTITY;
+    let _multBase = MULT_IDENTITY;
 
     function on(event, fn, opts) {
       if (!handlers[event]) {
@@ -382,7 +386,8 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
       if (!list || list.length === 0) return [];
       const results = [];
       ${debug ? `console.log('[HookBus]', event, payload, 'handlers:', list.length);` : ''}
-      for (const entry of list) {
+      const snap = list.slice();
+      for (const entry of snap) {
         try {
           const r = entry.fn(payload || {});
           results.push(r);
@@ -398,7 +403,8 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
       if (!list || list.length === 0) return [];
       const results = [];
       ${debug ? `console.log('[HookBus.async]', event, payload, 'handlers:', list.length);` : ''}
-      for (const entry of list) {
+      const snap = list.slice();
+      for (const entry of snap) {
         try {
           const r = await entry.fn(payload || {});
           results.push(r);
@@ -453,14 +459,21 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
     /* Wave V: cancellable wait — resolves on next emit of 'event'. Used by
      * reelEngine slam-stop pre-response path: await HookBus.waitFor('onSpinResult'). */
     function waitFor(event, timeoutMs) {
+      /* Default timeout = no timeout (resolves only when emit lands).
+       * Pass 0 or omit to wait indefinitely; pass positive ms to cap. */
+      const useTimer = typeof timeoutMs === 'number' && timeoutMs > 0;
       return new Promise(function (resolve, reject) {
+        let timer = null;
         const dispose = once(event, function (payload) {
           if (timer) clearTimeout(timer);
           resolve(payload);
         });
-        const timer = (typeof timeoutMs === 'number' && timeoutMs > 0)
-          ? setTimeout(function () { dispose(); reject(new Error('[HookBus] waitFor timeout: ' + event)); }, timeoutMs)
-          : null;
+        if (useTimer) {
+          timer = setTimeout(function () {
+            dispose();
+            reject(new Error('[HookBus] waitFor timeout: ' + event));
+          }, timeoutMs);
+        }
       });
     }
 
@@ -474,7 +487,9 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
 
   if (typeof window !== 'undefined') {
     window.HookBus = HookBus;
-    window.__HOOKBUS_MULT__ = 1;
+    /* Always expose the current multiplier on window so QA harness +
+     * playground inspectors can read it without poking HookBus.getMult(). */
+    window.__HOOKBUS_MULT__ = HookBus.getMult();
   }
 `;
 }

@@ -133,13 +133,13 @@ const DEFAULT_PRIZE_MAP = Object.freeze([
 ]);
 
 const DEFAULT_JACKPOT_MAP = Object.freeze([
-  { label: 'MINI',  x: 5,    weight: 12 },
-  { label: 'MINOR', x: 25,   weight: 4  },
-  { label: 'MAJOR', x: 100,  weight: 1  },
-  { label: 'GRAND', x: 1000, weight: 0.25 },
+  { label: 'MINI',  x: 5,    weight: 0.12 },
+  { label: 'MINOR', x: 25,   weight: 0.04 },
+  { label: 'MAJOR', x: 100,  weight: 0.01 },
+  { label: 'GRAND', x: 1000, weight: 0.0025 },
 ]);
 
-const HEX_RGB = /^\d{1,3},\s*\d{1,3},\s*\d{1,3}$/;
+const HEX_RGB = /^(?:\d{1,2}|1\d{2}|2[0-4]\d|25[0-5]),\s*(?:\d{1,2}|1\d{2}|2[0-4]\d|25[0-5]),\s*(?:\d{1,2}|1\d{2}|2[0-4]\d|25[0-5])$/;
 const SAFE_LABEL = /^[A-Z0-9_ -]{1,16}$/;
 
 /* Fable audit (high): HEX_RGB only counts digits, so "999,215,80" would
@@ -209,11 +209,19 @@ export function resolveConfig(model = {}) {
 
   if (_validPrizeMap(m.prizeMap)) {
     cfg.prizeMap = m.prizeMap.map(e => ({ x: Number(e.x), weight: Number(e.weight) }));
+  } else if (m.prizeMap !== undefined) {
+    if (typeof console !== 'undefined' && console.warn) {
+      console.warn('[holdAndWinCreditBucket] invalid prizeMap in GDD, using defaults');
+    }
   }
   if (_validJackpotMap(m.jackpotMap)) {
     cfg.jackpotMap = m.jackpotMap.map(e => ({
       label: e.label, x: Number(e.x), weight: Number(e.weight),
     }));
+  } else if (m.jackpotMap !== undefined) {
+    if (typeof console !== 'undefined' && console.warn) {
+      console.warn('[holdAndWinCreditBucket] invalid jackpotMap in GDD, using defaults');
+    }
   }
 
   if (typeof m.allLockedAward === 'string' && SAFE_LABEL.test(m.allLockedAward)) {
@@ -264,6 +272,9 @@ export function emitHoldAndWinCreditBucketCSS(cfg = defaultConfig()) {
      Renders the credit / jackpot value chip inside every locked H&W cell.
      Sibling of the existing .is-locked-bonus halo (owned by holdAndWin).
      pointer-events: none — chip never intercepts cell taps. */
+  .cell.is-locked-bonus {
+    position: relative;
+  }
   .hw-credit-chip {
     position: absolute;
     inset: auto 0 4px 0;        /* bottom-anchored band across the cell */
@@ -324,9 +335,9 @@ export function emitHoldAndWinCreditBucketRuntime(cfg = defaultConfig()) {
 
   const prizeMapJson    = JSON.stringify(cfg.prizeMap);
   const jackpotMapJson  = JSON.stringify(cfg.jackpotMap.map(j => ({
-    ...j, label: _esc(j.label),
+    ...j, label: j.label,
   })));
-  const allLockedAward  = JSON.stringify(_esc(cfg.allLockedAward));
+  const allLockedAward  = JSON.stringify(cfg.allLockedAward);
   const currencyPrefix  = JSON.stringify(cfg.currencyPrefix);
 
   return `
@@ -436,17 +447,15 @@ export function emitHoldAndWinCreditBucketRuntime(cfg = defaultConfig()) {
     }
 
     /* _renderCellChip — locate the .cell at (r,c) and attach the chip.
-     * Existing chip is replaced (idempotent across re-render). */
+     * Existing chip is replaced (idempotent across re-render).
+     * Requires grid to emit data-r and data-c attributes on .cell nodes. */
     function _renderCellChip(key, info) {
       var host = _gridHost();
       if (!host) return;
       var parts = key.split(',');
       var r = parseInt(parts[0], 10);
       var c = parseInt(parts[1], 10);
-      var reels = window.REELS || 5;
-      var idx = r * reels + c;
-      var cells = host.querySelectorAll('.cell');
-      var cell = cells[idx];
+      var cell = host.querySelector('.cell[data-r="' + r + '"][data-c="' + c + '"]');
       if (!cell) return;
       var prev = cell.querySelector('.hw-credit-chip');
       if (prev) prev.parentNode.removeChild(prev);
@@ -456,11 +465,6 @@ export function emitHoldAndWinCreditBucketRuntime(cfg = defaultConfig()) {
       chip.textContent = info.isJackpot
         ? info.label
         : (PREFIX + _fmt(info.x));
-      /* keep the cell position:relative implicit via existing CSS
-       * (.is-locked-bonus already participates in stacking via z-index). */
-      if (getComputedStyle(cell).position === 'static') {
-        cell.style.position = 'relative';
-      }
       cell.classList.add('hw-has-credit');
       cell.appendChild(chip);
     }
@@ -554,11 +558,14 @@ export function emitHoldAndWinCreditBucketRuntime(cfg = defaultConfig()) {
           finalJackpot = ALL_LOCKED;
         }
       }
-      /* Push __WIN_AWARD__ so the existing win-presentation / bigWinTier
-       * chain treats this round payout like any other. winPresentation
-       * publishes the award on rollup; we just hand it the number. */
+      /* Compute award amount and validate bet. Accumulate onto any existing
+       * line-win award so paying lines are not erased by bucket payout.
+       * If bet is invalid (0, NaN, negative), use 0 to avoid false credits. */
+      var bet = Number(window.__SLOT_BET__);
+      var betValid = Number.isFinite(bet) && bet > 0;
+      var awardAmount = finalTotal * (betValid ? bet : 0);
       if (typeof window !== 'undefined') {
-        window.__WIN_AWARD__         = finalTotal * (Number(window.__SLOT_BET__) || 1);
+        window.__WIN_AWARD__         = (Number(window.__WIN_AWARD__) || 0) + awardAmount;
         window.__HW_CREDIT_TOTAL__   = finalTotal;
         window.__HW_CREDIT_JACKPOT__ = finalJackpot;
       }
@@ -569,6 +576,7 @@ export function emitHoldAndWinCreditBucketRuntime(cfg = defaultConfig()) {
             jackpotTier: finalJackpot,
             cellCount: STATE.values.size,
             allLocked: allLocked,
+            award: awardAmount,
           });
         } catch (e) {
           if (console && console.error) console.error('[hwCredit] emit End failed:', e);

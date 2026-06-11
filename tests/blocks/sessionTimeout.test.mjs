@@ -318,8 +318,12 @@ recorded.length = 0;
 sandboxWindow.document.getElementById('stBtnQuit').click();
 t('sandbox: logout click fires onSessionLogoutRequested',
   recorded.filter(e => e.e === 'logout').length === 1);
-t('sandbox: logout flow also emits onSessionResumed (releases break)',
-  recorded.filter(e => e.e === 'resumed').length === 1);
+/* Fable audit (AL-5.2 high): logout no longer emits the spurious
+ * onSessionResumed BEFORE the logout event — that caused a UI flicker
+ * (resume re-enabled the slot, then logout tore it down). Break state
+ * is still released directly so QA can observe the clean exit. */
+t('sandbox: logout flow does NOT emit a spurious onSessionResumed (Fable AL-5.2)',
+  recorded.filter(e => e.e === 'resumed').length === 0);
 t('sandbox: __SESSION_BREAK_ACTIVE__ released after logout',
   sandboxWindow.__SESSION_BREAK_ACTIVE__ === false);
 
