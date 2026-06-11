@@ -4239,6 +4239,41 @@ V4 (HookBus events) first — bez njih V1/V2 ne mogu da emit. Onda V1+V2 paralel
 
 ---
 
+## ✅ Wave AL-3.1 — PDF symbol + FS award extraction restored on MD-rendered PDFs (`7064696`)
+
+> **Follow-on** to AL-3: live audit pokazao da `~/Desktop/GDD/Wrath_of_Olympus_GDD.pdf` upload kroz dropzone i dalje gubi simbole (HP=0 MP=0 LP=0 SP=2) i FS awards (default `[10/15/20]` umesto pravih `[14/16/18]`), iako je topology fix iz AL-3 stigao do `rectangular 5×3`.
+
+### Šta je urađeno (`7064696`)
+
+| Defekt | Root cause | Fix |
+|:--|:--|:--|
+| Symbol tiers HP=MP=LP=SP=0 | `extractSymbolBlock` heading regex `###[^\n]*Tier[^\n]*` greedy-konzumira sve do sledećeg pageline newline-a kad pdfjs flattens text → `start` posle real tier section, regex pravi false positives | Non-greedy `###[^#\|\n]*?Tier\b` + chunk-end scan iz offset 1 sa `[\n\s]#{1,2}\s+\S` |
+| FS awards default `[10/15/20]` | Pattern (a) traži `^\|` start-of-line, (c) traži literal "Scattera" word — neither matches modern compact MD table `\| 3 \| 14 \|` extracted by pdfjs | Pattern (d): detect `Scatters \| Spins awarded` header context jednom, scan sledeća 600 chars za `\| N \| M \|` cell pairs |
+| PDF GDDs nisu parser-friendly | Nije postojao alat za regenerisanje | `tools/_md-to-pdf-gdd.mjs` — embed-uje literal MD u `<pre>` blok tako da pdfjs ekstrakcija sačuva `##` / `###` / pipe-table markere verbatim |
+
+### Verifikacija WoO PDF post-fix
+
+| Polje | Pre-fix | Post-fix |
+|:--|:-:|:-:|
+| Shape | lock_respin 5×4 | **rectangular 5×3** ✅ |
+| HP simboli | 0 | **3** (Z Zeus, H Hades, P Poseidon) ✅ |
+| MP simboli | 0 | **3** (HM Helm, SH Shield, SW Sword) ✅ |
+| LP simboli | 0 | **5** (LA, GM, AM, LR, VA) ✅ |
+| Special | 2 | **3** (W Wild, S Scatter, B Bonus Orb) ✅ |
+| FS awards | `[10/15/20]` (defaults) | **`[14/16/18]`** (real game) ✅ |
+
+### Regression
+
+| Suite | Rezultat |
+|:--|:-:|
+| test:parse 4 reference GDDs | ✅ 4/4 |
+| test:blocks 69 block suites | ✅ ALL PASS |
+| test:lego invariants | ✅ 5/5 |
+| per-grid stress 24 grids | ✅ 0/24 defekata |
+| 4-GDD ultimate audit | ✅ ALL PERFECT |
+
+---
+
 ## ✅ Wave AL-3 — WoO 5×3 / 10-lines parity (kill lock_respin + wheel_bonus false positives) (Boki 2026-06-11)
 
 > **Trigger** (11.06.2026, Boki): *"idi u igru WoO na Mac-u i ooveri
