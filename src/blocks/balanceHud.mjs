@@ -82,7 +82,9 @@ export function defaultConfig() {
     /* Fallback bet used when betSelector is disabled / not loaded yet.
      * The same number the U5 block uses as its industry-default. */
     fallbackBet: 1.00,
-    /* Currency symbol — UTF-8 char, single grapheme.  */
+    /* Currency symbol or 3–4 char industry code. 1–4 char range is
+     * intentional: accepts single-glyph symbols ('€', '¥', '₿') AND
+     * ISO/crypto codes ('USD', 'CHF', 'USDT'). Validator at resolveConfig. */
     currency: '€',
     /* "prefix" → "€10.00"; "suffix" → "10.00 €". MGA/UKGC accept both. */
     currencyPosition: 'prefix',
