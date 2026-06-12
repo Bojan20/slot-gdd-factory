@@ -122,10 +122,9 @@ const HEX_RGB = /^\d{1,3},\s*\d{1,3},\s*\d{1,3}$/;
 const SAFE_LABEL = /^[A-Z0-9_ -]{1,16}$/;
 const SAFE_SYMBOL = /^[A-Za-z][A-Za-z0-9_]{0,7}$/;
 
-function clampInt(n, lo, hi) {
-  const x = Math.round(Number(n));
-  if (!Number.isFinite(x)) return lo;
-  return Math.max(lo, Math.min(hi, x));
+function _validRgb(s) {
+  if (typeof s !== 'string' || !HEX_RGB.test(s)) return false;
+  return s.split(',').every(n => +n.trim() >= 0 && +n.trim() <= 255);
 }
 
 function _esc(s) {
@@ -218,6 +217,7 @@ export function defaultConfig() {
 export function resolveConfig(model = {}) {
   const cfg = defaultConfig();
   const m = (model && model.bonusBuyDeterministic) || {};
+  const explicitDisable = m.enabled === false;
 
   if (m.enabled != null) cfg.enabled = !!m.enabled;
 
@@ -248,7 +248,7 @@ export function resolveConfig(model = {}) {
   if (typeof m.pickerTitle === 'string' && m.pickerTitle.length > 0 && m.pickerTitle.length <= 60) {
     cfg.pickerTitle = m.pickerTitle;
   }
-  if (typeof m.pickerColor === 'string' && HEX_RGB.test(m.pickerColor)) {
+  if (_validRgb(m.pickerColor)) {
     cfg.pickerColor = m.pickerColor.replace(/\s+/g, '');
   }
   if (m.closeOnBackdrop != null) cfg.closeOnBackdrop = !!m.closeOnBackdrop;
@@ -259,7 +259,7 @@ export function resolveConfig(model = {}) {
       f && typeof f.kind === 'string' &&
       /^(bonus[_-]?buy[_-]?deterministic|deterministic[_-]?plant)$/i.test(f.kind),
     );
-    if (hit && buyEnabled) cfg.enabled = true;
+    if (hit && buyEnabled && !explicitDisable) cfg.enabled = true;
   }
 
   return cfg;
@@ -419,12 +419,12 @@ export function emitBonusBuyDeterministicRuntime(cfg = defaultConfig()) {
   }
 
   const plantsJson = JSON.stringify(cfg.plants.map(p => ({
-    tier: _esc(p.tier),
+    tier: p.tier,
     costX: p.costX,
     positions: p.positions,
     symbol: p.symbol || cfg.symbolDefault,
     extraMult: p.extraMult || 0,
-    description: _esc(p.description || ''),
+    description: p.description || '',
   })));
   const symbolDefault = JSON.stringify(cfg.symbolDefault);
   const closeOnBackdrop = cfg.closeOnBackdrop ? 'true' : 'false';
@@ -462,10 +462,12 @@ export function emitBonusBuyDeterministicRuntime(cfg = defaultConfig()) {
       return ov ? ov.querySelectorAll('.bbd-tier-card') : [];
     }
 
+    var _prevFocus = null;
     function bbdOpenPicker() {
       if (STATE.modalOpen) return;
       var ov = _overlay();
       if (!ov) return;
+      _prevFocus = (typeof document !== 'undefined') ? document.activeElement : null;
       ov.setAttribute('data-show', 'true');
       STATE.modalOpen = true;
       /* Move focus to the first tier card for keyboard navigation. */
@@ -481,6 +483,9 @@ export function emitBonusBuyDeterministicRuntime(cfg = defaultConfig()) {
       STATE.modalOpen = false;
       STATE.lastSelection = null;
       if (typeof window !== 'undefined') window.__BB_PLANT__ = null;
+      if (_prevFocus && typeof _prevFocus.focus === 'function') {
+        try { _prevFocus.focus(); } catch (_) {}
+      }
     }
 
     function bbdSelectTier(tierLabel) {
@@ -546,26 +551,22 @@ export function emitBonusBuyDeterministicRuntime(cfg = defaultConfig()) {
       if (!plant || !Array.isArray(plant.positions)) return;
       var host = document.getElementById('gridHost');
       if (!host) return;
-      var reels = window.REELS || 5;
-      var rows  = window.ROWS  || 3;
+      if (typeof window.REELS !== 'number' || typeof window.ROWS !== 'number') return;
+      var reels = window.REELS, rows = window.ROWS;
       var cells = host.querySelectorAll('.cell');
       var planted = 0;
       for (var i = 0; i < plant.positions.length; i++) {
         var pos = plant.positions[i];
         var r = pos[0], c = pos[1];
         if (r < 0 || r >= reels || c < 0 || c >= rows) continue;   /* out of grid for this topology */
-        var idx = r * rows + c;                                     /* column-major in the rendered grid */
-        /* Many engines render row-major. Try column-major first; if cell
-         * count suggests row-major (reels × rows), recompute. */
-        if (cells.length === reels * rows) {
-          /* Default layout in this template: row-major iteration in
-           * renderRect produces order (r0c0, r0c1, ..., r1c0, ...).
-           * Reels are columns; cells[reel*rows + row] is correct. */
-          idx = r * rows + c;
-        }
+        var idx = (cells.length === reels * rows)
+          ? c * reels + r   /* row-major: row*reels + reel */
+          : r * rows + c;   /* column-major */
         var cell = cells[idx];
         if (!cell) continue;
-        cell.textContent = plant.symbol;
+        var symEl = cell.querySelector('.symbol') || cell;
+        symEl.textContent = plant.symbol;
+        cell.setAttribute('data-symbol', plant.symbol);
         planted++;
       }
       /* Apply extraMult on this spin via HookBus shared state if asked. */
@@ -630,6 +631,9 @@ export function emitBonusBuyDeterministicRuntime(cfg = defaultConfig()) {
           });
         }
       }
+      document.addEventListener('keydown', function (e) {
+        if (STATE.modalOpen && e.key === 'Escape') bbdCancelPicker();
+      });
       STATE.patched = true;
     }
 
