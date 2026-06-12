@@ -18,12 +18,14 @@
  * Otherwise we fall back to the industry-standard 16/20/25-line set so a
  * fresh GDD without an explicit pool still produces correct line cycling.
  */
+// @perf: O(reels × ~25) one-shot at config build, target < 0.1 ms / call
 
 /* Grid kinds that pay on lines (vs. cluster / ways / wheel etc.). Used by
    the orchestrator to decide whether to instantiate a payline pool at all. */
-export const LINE_PAYS_KINDS = new Set([
+const _LINE_PAYS_KINDS = new Set([
   'rectangular', 'variable_reel', 'lock_respin', 'expanding'
 ]);
+export const LINE_PAYS_KINDS = Object.freeze({ has: (k) => _LINE_PAYS_KINDS.has(k) });
 
 /* ── industry-standard payline synthesiser ─────────────────────────────────
    Same generator that previously lived inline in buildSlotHTML.mjs. Pure
@@ -32,6 +34,8 @@ export const LINE_PAYS_KINDS = new Set([
    (no randomness, no Date.now), so PAR comparators and parity gates can
    diff hashes deterministically. */
 export function buildStandardPaylines(reels, rows) {
+  reels = Math.max(0, Math.floor(Number(reels) || 0));
+  rows  = Math.max(0, Math.floor(Number(rows)  || 0));
   if (reels < 3) return [];
   /* Helper — clamp every row of a line into [0, rows-1] so we can reuse
      the canonical 5×3 set on taller grids by repeating the centre row. */
@@ -39,7 +43,7 @@ export function buildStandardPaylines(reels, rows) {
   const horizontalRows = rows >= 3 ? [1, 0, 2] : Array.from({length: rows}, (_, i) => i);
   const lines = [];
   /* 1-3: three horizontals (middle, top, bottom) */
-  for (const r of horizontalRows.slice(0, Math.min(rows, 4))) {
+  for (const r of horizontalRows) {
     lines.push(Array(reels).fill(clamp(r)));
   }
   if (reels >= 3 && rows >= 3) {
@@ -71,23 +75,27 @@ export function buildStandardPaylines(reels, rows) {
     lines.push(Array.from({length: reels}, (_, c) => zig(1, 2)(c)));
     lines.push(Array.from({length: reels}, (_, c) => zig(0, 2)(c)));
     lines.push(Array.from({length: reels}, (_, c) => zig(2, 0)(c)));
-    /* 16-20: bounded peaks/valleys */
-    const peaks = [
-      [0, 1, 0, 1, 0], [2, 1, 2, 1, 2],
-      [1, 0, 1, 0, 1], [1, 2, 1, 2, 1],
-      [0, 0, 1, 2, 2],
-    ];
-    for (const p of peaks) {
-      lines.push(Array.from({length: reels}, (_, c) => clamp(p[c] ?? p[p.length - 1])));
-    }
-    /* 21-25: deep-row variations (only when rows >= 4) */
-    if (rows >= 4) {
-      const deep = [
-        [3, 3, 3, 3, 3], [3, 2, 3, 2, 3], [2, 3, 2, 3, 2],
-        [0, 1, 2, 3, 3], [3, 2, 1, 0, 0],
+    /* 16-25: 5-column patterns. Gated to reels === 5 so 6/7-reel grids
+       don't get a truncated/last-column-repeated path. */
+    if (reels === 5) {
+      /* 16-20: bounded peaks/valleys */
+      const peaks = [
+        [0, 1, 0, 1, 0], [2, 1, 2, 1, 2],
+        [1, 0, 1, 0, 1], [1, 2, 1, 2, 1],
+        [0, 0, 1, 2, 2],
       ];
-      for (const d of deep) {
-        lines.push(Array.from({length: reels}, (_, c) => clamp(d[c] ?? d[d.length - 1])));
+      for (const p of peaks) {
+        lines.push(Array.from({length: reels}, (_, c) => clamp(p[c] ?? p[p.length - 1])));
+      }
+      /* 21-25: deep-row variations (only when rows >= 4) */
+      if (rows >= 4) {
+        const deep = [
+          [3, 3, 3, 3, 3], [3, 2, 3, 2, 3], [2, 3, 2, 3, 2],
+          [0, 1, 2, 3, 3], [3, 2, 1, 0, 0],
+        ];
+        for (const d of deep) {
+          lines.push(Array.from({length: reels}, (_, c) => clamp(d[c] ?? d[d.length - 1])));
+        }
       }
     }
   }
@@ -113,15 +121,17 @@ export function buildStandardPaylines(reels, rows) {
         cluster mode instead)                                                  ← non-line shapes
 */
 export function paylineConfig(model, shape) {
+  if (!shape || !LINE_PAYS_KINDS.has(shape.kind)) return { mode: 'cluster', pool: [] };
+
   const explicit = model && model.winPresentation && Array.isArray(model.winPresentation.paylines)
-    ? model.winPresentation.paylines
+    ? model.winPresentation.paylines.filter(l =>
+        Array.isArray(l) && l.length === shape.reels &&
+        l.every(r => Number.isInteger(r) && r >= 0 && r < shape.rows)
+      )
     : null;
 
   if (explicit && explicit.length > 0) {
     return { mode: 'line-pays', pool: explicit };
   }
-  if (LINE_PAYS_KINDS.has(shape.kind)) {
-    return { mode: 'line-pays', pool: buildStandardPaylines(shape.reels, shape.rows) };
-  }
-  return { mode: 'cluster', pool: [] };
+  return { mode: 'line-pays', pool: buildStandardPaylines(shape.reels, shape.rows) };
 }
