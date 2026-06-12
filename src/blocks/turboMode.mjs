@@ -58,6 +58,16 @@
  *   TURBO_MODE_STATE on window
  */
 
+const LIMITS = {
+  TURBO_MULT_MIN: 0.1,
+  TURBO_MULT_MAX: 1.0,
+  CHIP_LABEL_MAX: 8,
+  ARIA_LABEL_MAX: 64,
+  DEFAULT_TURBO_MULT: 0.35,
+  RGB_MIN: 0,
+  RGB_MAX: 255,
+};
+
 export function defaultConfig() {
   return {
     /* Industry-default ON — the ⚡ floating chip is the universal
@@ -72,7 +82,7 @@ export function defaultConfig() {
     /* Multiplier applied to spin-tempo timings when turbo is on. 0.35
      * gives roughly 3× faster spins which matches the industry "quick
      * spin" baseline (turbo proper goes even further — see U12). */
-    turboSpeedMult: 0.35,
+    turboSpeedMult: LIMITS.DEFAULT_TURBO_MULT,
     chipLabel: 'TURBO',
     chipColor:     '255,140,40',     /* warm orange, distinct from gold accent */
     chipTextColor: '255,255,255',
@@ -93,22 +103,24 @@ export function resolveConfig(model = {}) {
   if (m.persistInLocalStorage != null) cfg.persistInLocalStorage = !!m.persistInLocalStorage;
 
   if (Number.isFinite(m.turboSpeedMult) && m.turboSpeedMult > 0) {
-    /* Industry sane range: 0.1 (10× faster, basically instant) → 1.0
-     * (no speedup, just a UI toggle without effect). */
-    cfg.turboSpeedMult = Math.max(0.1, Math.min(1.0, Number(m.turboSpeedMult)));
+    /* Industry sane range: TURBO_MULT_MIN (10× faster, basically instant)
+     * → TURBO_MULT_MAX (no speedup, just a UI toggle without effect). */
+    cfg.turboSpeedMult = Math.max(LIMITS.TURBO_MULT_MIN, Math.min(LIMITS.TURBO_MULT_MAX, Number(m.turboSpeedMult)));
   }
 
-  if (typeof m.chipLabel === 'string' && m.chipLabel.length > 0 && m.chipLabel.length <= 8) {
+  if (typeof m.chipLabel === 'string' && m.chipLabel.length > 0 && m.chipLabel.length <= LIMITS.CHIP_LABEL_MAX) {
     cfg.chipLabel = m.chipLabel;
   }
   for (const key of ['chipColor', 'chipTextColor']) {
     if (typeof m[key] === 'string' && /^\d{1,3},\s*\d{1,3},\s*\d{1,3}$/.test(m[key])) {
-      cfg[key] = m[key].replace(/\s+/g, '');
+      const parts = m[key].replace(/\s+/g, '').split(',').map((n) => Math.max(LIMITS.RGB_MIN, Math.min(LIMITS.RGB_MAX, parseInt(n, 10))));
+      if (parts.every(Number.isFinite)) cfg[key] = parts.join(',');
     }
   }
-  if (typeof m.ariaLabel === 'string' && m.ariaLabel.length > 0 && m.ariaLabel.length <= 64) {
+  if (typeof m.ariaLabel === 'string' && m.ariaLabel.length > 0 && m.ariaLabel.length <= LIMITS.ARIA_LABEL_MAX) {
     cfg.ariaLabel = m.ariaLabel;
   }
+  if (m.position === 'sideHud' || m.position === 'bottomBar') cfg.position = m.position;
 
   /* Auto-disable from feature kind. */
   if (model.features && Array.isArray(model.features)) {
@@ -131,8 +143,8 @@ function _escape(s) {
 }
 
 export function emitTurboModeCSS(cfg = defaultConfig()) {
-  if (!cfg.enabled) return '';
   const c = resolveConfig({ turboMode: cfg });
+  if (!c.enabled) return '';
   return `
   /* ── turboMode BLOCK — emitted by src/blocks/turboMode.mjs ─────────── */
   /* Spin-cluster satellite: bottom-right, pinned next to side HUD.
@@ -143,10 +155,11 @@ export function emitTurboModeCSS(cfg = defaultConfig()) {
     /* 2026-06-09 — lift above the hub bar on every viewport so the
        chip never overlaps the hub's right-side sound icon. Matches
        paytable chip lift on the left mirror. */
-    bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 96px);
-    /* Wave D3 — above .hub (z 30) on mobile so hub stacking context
-       never hides the turbo chip. */
-    z-index: 35;
+    bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + var(--hub-bar-height, 96px));
+    /* Wave D3 — sit above .hub on mobile so hub stacking context never
+       hides the turbo chip. Consume --hub-z owned by the hub block so
+       a hub z-index shift carries through automatically. */
+    z-index: calc(var(--hub-z, 30) + 5);
     width: var(--spin-auto-size);
     height: var(--spin-auto-size);
     border-radius: 50%;
@@ -177,7 +190,7 @@ export function emitTurboModeCSS(cfg = defaultConfig()) {
       right: max(12px, env(safe-area-inset-right, 12px));
       /* 2026-06-09 — mobile hub wraps to 2 rows; lift to match paytable
          chip on the left mirror so both sit cleanly above the hub bar. */
-      bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + 130px);
+      bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + var(--hub-bar-height, 130px));
       /* Wave D3 — WCAG 2.5.5 / Apple HIG 44pt minimum tap target.
          --spin-auto-size shrinks to 38px below 620px which falls below
          the AAA floor → bump to 44px on mobile so the chip is actually
