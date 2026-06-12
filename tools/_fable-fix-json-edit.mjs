@@ -71,6 +71,11 @@ const RETRIABLE_STATES = new Set([
   'test-failed-redrive',
   'test-failed',
   'apply-failed',
+  // Wave 4 — dirty blocks from Wave 1 (when files had uncommitted edits)
+  // are now clean after the parallel agent's commits landed. They were
+  // never asked for a patch at all, so the JSON-edit pass is their first
+  // chance.
+  'dirty',
 ]);
 
 const status = existsSync(STATUS_JSON) ? JSON.parse(readFileSync(STATUS_JSON, 'utf8')) : {};
