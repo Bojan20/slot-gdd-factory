@@ -72,7 +72,13 @@ export function resolveConfig(model) {
 
   if (src.enabled === false) cfg.enabled = false;
   if (typeof src.autoHideMs === 'number' && Number.isFinite(src.autoHideMs)) {
-    cfg.autoHideMs = Math.max(400, Math.min(8000, Math.floor(src.autoHideMs)));
+    // Out-of-range autoHideMs falls back to the default (2400ms) rather
+    // than silently clamping. Clamping would mask a GDD typo (e.g. `240`
+    // ms is far too fast for screen-reader announce + read time;
+    // `99999` is sloppy big-number that should round-trip-warn into the
+    // default safe band). See test "autoHideMs bounded 400..8000".
+    const v = Math.floor(src.autoHideMs);
+    if (v >= 400 && v <= 8000) cfg.autoHideMs = v;
   }
   if (isValidRGB(src.accentColor)) cfg.accentColor = src.accentColor;
   if (isValidRGB(src.bgColor)) cfg.bgColor = src.bgColor;

@@ -28,7 +28,11 @@ t('CSS has is-walking-wild', css.includes('.cell.is-walking-wild'));
 
 t('runtime stub when disabled', emitWalkingWildRuntime(defaultConfig()).includes('disabled'));
 const rt = emitWalkingWildRuntime(r);
-t('runtime DX=-1 (left)', rt.includes('WALKING_WILD_DX       = -1'));
+// Whitespace-insensitive — Fable widened the column alignment to match
+// the longest constant name (WALKING_WILD_RESPIN). The original literal
+// asserted a 7-space pad; live code emits 12. What matters is the value,
+// not the indent width.
+t('runtime DX=-1 (left)', /WALKING_WILD_DX\s+=\s*-1\b/.test(rt));
 t('runtime exposes harvestWalkingWilds', rt.includes('window.harvestWalkingWilds'));
 t('runtime exposes stepWalkingWilds', rt.includes('window.stepWalkingWilds'));
 t('runtime exposes applyWalkingWilds', rt.includes('window.applyWalkingWilds'));

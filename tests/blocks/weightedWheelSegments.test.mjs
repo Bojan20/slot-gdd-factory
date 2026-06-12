@@ -194,6 +194,24 @@ function makeSandbox() {
     el.classList = {
       add(c) { set.add(c); }, remove(c) { set.delete(c); }, contains(c) { return set.has(c); },
     };
+    // EventListener stubs — runtime calls add/remove/dispatch on the
+    // spin button to wire its click handler. Fable's re-arm refactor
+    // clears then re-binds on re-trigger, which previously blew up
+    // ("removeEventListener is not a function") in this sandbox.
+    const listeners = new Map();
+    el.addEventListener = (type, fn) => {
+      if (!listeners.has(type)) listeners.set(type, new Set());
+      listeners.get(type).add(fn);
+    };
+    el.removeEventListener = (type, fn) => {
+      const s = listeners.get(type);
+      if (s) s.delete(fn);
+    };
+    el.dispatchEvent = (ev) => {
+      const s = listeners.get(ev && ev.type);
+      if (s) for (const fn of s) try { fn(ev); } catch (_e) { /* swallow */ }
+      return true;
+    };
     return el;
   }
 

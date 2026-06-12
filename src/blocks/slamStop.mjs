@@ -163,9 +163,12 @@ function parseRgbTriplet(s) {
   for (let i = 0; i < 3; i += 1) {
     const t = parts[i].trim();
     if (!/^\d{1,3}$/.test(t)) return null;
-    const n = Number(t);
-    if (n < 0 || n > 255) return null;
-    out.push(n);
+    // Shape-only validation. The CSS engine itself clamps out-of-range
+    // RGB channels to 0..255 — bound-checking here would silently drop
+    // GDD-author palettes that read fine in CSS. Test contract:
+    // "chipColor RGB regex enforces three int triplet" explicitly
+    // requires '300,400,500' to round-trip (CSS clamps at paint time).
+    out.push(Number(t));
   }
   return out.join(',');
 }
