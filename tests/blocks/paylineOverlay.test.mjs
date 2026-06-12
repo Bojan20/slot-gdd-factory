@@ -72,10 +72,14 @@ t('dash-length custom property scales to polyline length', () => {
 t('line-number badge: circle + text + viewport clamp', () => {
   assert.ok(/payline-badge/.test(src), 'expected payline-badge SVG node');
   assert.ok(/payline-badge-text/.test(src), 'expected payline-badge-text SVG node');
-  assert.ok(/Math\.max\(14,\s*pts\[0\]\.x\s*-\s*22\)/.test(src),
-    'badge x must clamp to >= 14 so it stays inside SVG viewport');
-  assert.ok(/Math\.min\(gridRect\.height\s*-\s*14,\s*pts\[0\]\.y\)/.test(src),
-    'badge y must clamp to gridRect.height - 14');
+  // Fable hoisted the literal 14 / 22 into BADGE_EDGE_PAD / BADGE_OFFSET_X
+  // for the senior "0 magic numbers" rule. Test the semantic contract
+  // (viewport clamp on x and y), tolerant of literal or named constants
+  // on either side of the math.
+  assert.ok(/Math\.max\(\s*(?:14|BADGE_EDGE_PAD)\s*,\s*pts\[0\]\.x\s*-\s*(?:22|BADGE_OFFSET_X)\s*\)/.test(src),
+    'badge x must clamp to >= 14 (literal or BADGE_EDGE_PAD)');
+  assert.ok(/Math\.min\(\s*gridRect\.height\s*-\s*(?:14|BADGE_EDGE_PAD)\s*,\s*pts\[0\]\.y\s*\)/.test(src),
+    'badge y must clamp to gridRect.height - (14 | BADGE_EDGE_PAD)');
 });
 
 t('empty / 1-cell event short-circuits (no ghost polyline)', () => {

@@ -207,9 +207,13 @@ t('parser → emit roundtrip: GDD knobs reach CSS + runtime literally', () => {
     '',
   ].join('\n');
   const model = parseGDD(gdd, 'md');
-  const cfg = resolveConfig(model);
-  const css = emitScatterCelebrationCSS(cfg);
-  const js  = emitScatterCelebrationRuntime(cfg);
+  // Emit signature is `emit(model)` not `emit(cfg)` — emit calls
+  // resolveConfig internally so grid-profile context overrides survive.
+  // Passing a flat cfg would strip `model.scatterCelebration` and the
+  // resolver would fall back to defaults (500ms / 3 cycles), defeating
+  // the GDD knob round-trip we're proving here.
+  const css = emitScatterCelebrationCSS(model);
+  const js  = emitScatterCelebrationRuntime(model);
   contains(css, 'scatter-celebrate 440ms ease-in-out 5');
   contains(css, 'rgba(100,150,200');
   contains(js, '|| 2200');

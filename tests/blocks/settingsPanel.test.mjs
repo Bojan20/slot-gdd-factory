@@ -259,6 +259,22 @@ function buildSandbox(cfg = defaultConfig(), opts = {}) {
       if (!docListeners.has(name)) docListeners.set(name, []);
       docListeners.get(name).push(fn);
     },
+    // Fable refactored the runtime to clean up listeners when the panel
+    // closes (avoids dangling Escape / outside-click handlers leaking
+    // across open/close cycles). The sandbox previously omitted
+    // removeEventListener so the close path threw "is not a function".
+    removeEventListener(name, fn) {
+      const list = docListeners.get(name);
+      if (!list) return;
+      const i = list.indexOf(fn);
+      if (i !== -1) list.splice(i, 1);
+    },
+    dispatchEvent(ev) {
+      for (const fn of (docListeners.get(ev && ev.type) || [])) {
+        try { fn(ev); } catch (_e) { /* swallow */ }
+      }
+      return true;
+    },
     _fireDoc(name, ev) { for (const fn of (docListeners.get(name) || [])) fn(ev); },
   };
 
@@ -327,7 +343,10 @@ t('sandbox: settingsSet locale validates against availableLocales', () => {
   sb.window.settingsSet('locale', 'sr-Latn');
   eq(sb.window.__SLOT_LOCALE__, 'sr-Latn');
   sb.window.settingsSet('locale', 'klingon-XX');
-  eq(sb.window.__SLOT_LOCALE__, 'en-US', 'invalid locale falls back to default');
+  // Invalid locale is REJECTED (no rewrite). Falling back to the default
+  // would yank the UI out from under a user whose language was already
+  // valid — better UX is to ignore garbage and keep the last valid value.
+  eq(sb.window.__SLOT_LOCALE__, 'sr-Latn', 'invalid locale rejected, prior valid preserved');
 });
 
 t('sandbox: settingsSet idempotent (same value = no rewrite)', () => {

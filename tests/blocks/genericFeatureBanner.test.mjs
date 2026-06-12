@@ -57,10 +57,11 @@ t('shouldHandle: auto + lightning (no dedicated block) → true', () => {
   eq(shouldHandle(defaultConfig(), 'lightning'), true);
 });
 
-t('shouldHandle: auto + bonus_pick (no dedicated standalone block currently) → true', () => {
-  // Note: bonus_pick has bonusPick.mjs but it's not declared in DEDICATED_KINDS
-  // (it's a multi-step interactive that the generic banner is fine to also flash for)
-  eq(shouldHandle(defaultConfig(), 'bonus_pick'), true);
+t('shouldHandle: auto + bonus_pick (dedicated since 2026-06-10) → false', () => {
+  // 2026-06-10: bonusPick.mjs gained its own self-managed modal, so the
+  // generic banner double-flashing was redundant. `bonus_pick` joined
+  // DEDICATED_KINDS — generic banner intentionally stays out of the way.
+  eq(shouldHandle(defaultConfig(), 'bonus_pick'), false);
 });
 
 t('shouldHandle: explicit handleKinds whitelist exact match', () => {
@@ -73,11 +74,16 @@ t('shouldHandle: disabled cfg → false', () => {
   eq(shouldHandle({ enabled: false }, 'lightning'), false);
 });
 
-t('DEDICATED_KINDS contains free_spins + bonus_buy + multiplier + big_win', () => {
+t('DEDICATED_KINDS contains free_spins + bonus_buy + big_win', () => {
+  // `multiplier` is intentionally NOT in this list as of the 2026-06-10
+  // fix for Boki bug "ne rade svi forsovi": multiplierOrb.mjs doesn't
+  // subscribe to feature-emit, so listing `multiplier` here would suppress
+  // the generic banner without anything taking its place — feature
+  // would never flash. See genericFeatureBanner.mjs lines 54-67.
   ok(DEDICATED_KINDS.includes('free_spins'));
   ok(DEDICATED_KINDS.includes('bonus_buy'));
-  ok(DEDICATED_KINDS.includes('multiplier'));
   ok(DEDICATED_KINDS.includes('big_win'));
+  ok(!DEDICATED_KINDS.includes('multiplier'), 'multiplier intentionally excluded — see Boki bug 2026-06-10');
 });
 
 /* ─── CSS ────────────────────────────────────────────── */
