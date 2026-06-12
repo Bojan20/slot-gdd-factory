@@ -968,10 +968,9 @@ function hwForceSeed(orbCount) {
   if (!host) return false;
   const allCells = Array.from(host.querySelectorAll('.cell'));
   if (allCells.length === 0) return false;
-  const REELS = window.REELS || 5;
-  const N = Math.max(1, Math.min(orbCount || Math.max(3, Math.floor(HW_TRIGGER_COUNT / 2)), allCells.length));
+  const N = Math.max(1, Math.min(orbCount || HW_FORCE_SEED_DEFAULT, allCells.length));
   const picked = new Set();
-  while (picked.size < N) picked.add(Math.floor(Math.random() * allCells.length));
+  while (picked.size < N) picked.add(Math.floor(_hwRng() * allCells.length));
 
   _hwEnterPhase('INTRO');
   HW_STATE.respinsLeft = HW_RESPINS_AWARD;
@@ -983,8 +982,8 @@ function hwForceSeed(orbCount) {
 
   picked.forEach(function (idx) {
     const cell = allCells[idx];
-    const r = Math.floor(idx / REELS);
-    const c = idx % REELS;
+    const r = Math.floor(idx / HW_REELS);
+    const c = idx % HW_REELS;
     const key = r + ',' + c;
     const orb = _hwRollOrb();
     HW_STATE.lockedCells.set(key, orb);
@@ -1006,11 +1005,16 @@ function hwForceSeed(orbCount) {
 function hwAfterRespin() {
   if (!HW_STATE.active || HW_STATE.phase !== 'RUNNING') return { ended: false, allLocked: false };
   const added = hwHarvestBonus({ celebrate: true });
-  /* Fable audit (critical): respinsUsed was incremented only on the
-   * else-branch, but a respin where HW_RESET_ON_NEW fires (orb landed,
-   * counter resets) was ALSO consumed by the engine. Summary placard
-   * was under-reporting ("0 respins used" on 10-spin rounds). Always
-   * increment, then conditionally refill or decrement remaining. */
+  /* Re-entrance gate: a stray postSpin after the end-timer is scheduled
+   * but before SUMMARY transitions in would otherwise schedule a second
+   * hwEnd. If we have no respins left AND no new orb landed, this is
+   * that stray re-entry — no-op. */
+  if (HW_STATE.respinsLeft <= 0 && added === 0) return { ended: false, allLocked: false };
+  /* respinsUsed was incremented only on the else-branch, but a respin
+   * where HW_RESET_ON_NEW fires (orb landed, counter resets) was ALSO
+   * consumed by the engine. Summary placard was under-reporting
+   * ("0 respins used" on 10-spin rounds). Always increment, then
+   * conditionally refill or decrement remaining. */
   HW_STATE.respinsUsed++;
   if (added > 0 && HW_RESET_ON_NEW) {
     HW_STATE.respinsLeft = HW_RESPINS_AWARD;
@@ -1018,19 +1022,17 @@ function hwAfterRespin() {
     HW_STATE.respinsLeft = Math.max(0, HW_STATE.respinsLeft - 1);
   }
   _hwHudUpdate({ pulseRespins: true });
-  const REELS = window.REELS || 5;
-  const ROWS  = window.ROWS  || 3;
-  const allLocked = HW_STATE.lockedCells.size >= REELS * ROWS;
+  const allLocked = HW_STATE.lockedCells.size >= HW_REELS * HW_ROWS;
   if (allLocked) {
     HW_STATE.fullGrid = true;
     HW_STATE.totalWinX += HW_FULL_GRID_X;
     _hwShowFullGrid();
     _hwHudUpdate({ pulseTotal: true });
-    setTimeout(hwEnd, 2200);
+    setTimeout(hwEnd, HW_T_END_FULLGRID_MS);
     return { ended: true, allLocked: true };
   }
   if (HW_STATE.respinsLeft <= 0) {
-    setTimeout(hwEnd, 600);
+    setTimeout(hwEnd, HW_T_END_NORMAL_MS);
     return { ended: true, allLocked: false };
   }
   return { ended: false, allLocked: false };
@@ -1063,12 +1065,12 @@ function hwEnd() {
         Promise.resolve().then(function () { HW_STATE.applying = false; });
       }
     }
-    /* Credit total via existing presentation surface so the balance HUD
-     * updates without the holdAndWin block knowing the payment grammar. */
+    /* Credit total via canonical HookBus signal — payments block owns
+     * the balance grammar. Removes the window-global coupling that
+     * silently dropped the total in alt hosts / test harnesses. */
     try {
-      if (HW_STATE.totalWinX > 0 && typeof window !== 'undefined' && typeof window.presentExternalWin === 'function') {
-        var bet = _hwBet();
-        window.presentExternalWin(HW_STATE.totalWinX * bet);
+      if (HW_STATE.totalWinX > 0 && typeof HookBus !== 'undefined') {
+        HookBus.emit('onHoldAndWinPayout', { winX: HW_STATE.totalWinX, bet: _hwBet() });
       }
     } catch (_) {}
     HW_STATE.lockedCells.clear();
@@ -1094,7 +1096,8 @@ if (typeof window !== 'undefined') {
   window.HW_STATE       = HW_STATE;
 }
 
-if (typeof HookBus !== 'undefined') {
+if (typeof HookBus !== 'undefined' && !(typeof window !== 'undefined' && window.__hwInstalled)) {
+  if (typeof window !== 'undefined') window.__hwInstalled = true;
   HookBus.on('postSpin', () => {
     if (!HW_STATE.active) {
       hwMaybeEnter();
@@ -1131,9 +1134,9 @@ if (typeof HookBus !== 'undefined') {
         if (HW_STATE.active) return;
         var fsActive = (typeof FSM !== 'undefined' && FSM && FSM.phase && FSM.phase !== 'BASE');
         if (fsActive) return;
-        hwForceSeed(Math.max(3, Math.ceil(HW_TRIGGER_COUNT / 2)));
+        hwForceSeed(HW_FORCE_SEED_DEFAULT);
       } catch (_) {}
-    }, 1700);
+    }, HW_T_FORCE_FALLBACK_MS);
   });
 }
 `;
