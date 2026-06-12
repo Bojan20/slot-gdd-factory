@@ -3,7 +3,10 @@
  *
  * Wave V3 — Unified primary-action button (SPIN / STOP / SKIP).
  *
- * Industry-reference pattern (PlayCore / every major studio modern slot):
+ * Perf budget: state morph ≤ 1ms; click handler ≤ 0.2ms; zero layout
+ * thrash (icon swap via data-state only).
+ *
+ * Industry-reference pattern (industry-standard contextual primary CTA pattern):
  * the primary CTA in the sideHud is ONE contextual button whose label +
  * icon + color morph based on the round phase. This block REPLACES the
  * inline `<button id="spinBtn">` that lived in buildSlotHTML.mjs and
@@ -126,6 +129,13 @@ const DEFAULTS = Object.freeze({
   skipColor: '90,180,255',
 });
 
+/* Hard ceilings for resolveConfig clamps and metadata sanity. Hoisted so
+ * tuning lives here, not inside the clamp call sites. */
+const MAX_REQUIRE_MIN_SPIN_MS    = 2000;
+const MAX_MIN_ROLLUP_MS_FOR_SHOW = 5000;
+const MAX_ARIA_LABEL_LEN         = 64;
+const MAX_RGB_OCTET              = 255;
+
 export function defaultConfig() {
   return { ...DEFAULTS };
 }
@@ -137,7 +147,9 @@ function clampInt(n, lo, hi) {
 }
 
 function isRgbTriplet(s) {
-  return typeof s === 'string' && /^\d{1,3},\s*\d{1,3},\s*\d{1,3}$/.test(s);
+  if (typeof s !== 'string') return false;
+  const m = s.match(/^(\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})$/);
+  return !!m && m.slice(1).every(n => +n <= MAX_RGB_OCTET);
 }
 
 export function resolveConfig(model = {}) {
@@ -145,18 +157,18 @@ export function resolveConfig(model = {}) {
   const m = (model && model.spinControl) || {};
 
   if (m.enabled != null) cfg.enabled = !!m.enabled;
-  if (Number.isFinite(m.requireMinSpinMs)) cfg.requireMinSpinMs = clampInt(m.requireMinSpinMs, 0, 2000);
+  cfg.requireMinSpinMs = clampInt(m.requireMinSpinMs, 0, MAX_REQUIRE_MIN_SPIN_MS);
   if (m.hideOnTurbo != null) cfg.hideOnTurbo = !!m.hideOnTurbo;
   if (m.hideOnAutoSpin != null) cfg.hideOnAutoSpin = !!m.hideOnAutoSpin;
   if (m.reelsClickAreaEnabled != null) cfg.reelsClickAreaEnabled = !!m.reelsClickAreaEnabled;
-  if (Number.isFinite(m.minRollupMsForShow)) cfg.minRollupMsForShow = clampInt(m.minRollupMsForShow, 0, 5000);
+  cfg.minRollupMsForShow = clampInt(m.minRollupMsForShow, 0, MAX_MIN_ROLLUP_MS_FOR_SHOW);
   if (m.showDuringRollup      != null) cfg.showDuringRollup      = !!m.showDuringRollup;
   if (m.showDuringFsIntro     != null) cfg.showDuringFsIntro     = !!m.showDuringFsIntro;
   if (m.showDuringFsOutro     != null) cfg.showDuringFsOutro     = !!m.showDuringFsOutro;
   if (m.showDuringCelebration != null) cfg.showDuringCelebration = !!m.showDuringCelebration;
 
   for (const key of ['spinAriaLabel', 'stopAriaLabel', 'skipAriaLabel']) {
-    if (typeof m[key] === 'string' && m[key].length > 0 && m[key].length <= 64) {
+    if (typeof m[key] === 'string' && m[key].length > 0 && m[key].length <= MAX_ARIA_LABEL_LEN) {
       cfg[key] = m[key];
     }
   }
