@@ -18,6 +18,7 @@
  *   fsSpinBreathMs       number ms — breath before next FS spin          (default 250)
  *   fakeWinChance        number in [0,1] — chance a placeholder spin pays (default 0.4)
  *   fakeWinMaxX          number — placeholder fake-win max (×bet)        (default 25)
+ *   celebrationTimeoutMs number ms — scatter-celebration safety cutoff   (default 5000)
  *
  * Public API:
  *   defaultConfig() / resolveConfig(model)
@@ -36,6 +37,7 @@ const DEFAULTS = Object.freeze({
   fsSpinBreathMs: 250,
   fakeWinChance: 0.4,
   fakeWinMaxX: 25,
+  celebrationTimeoutMs: 5000,
 });
 
 export function defaultConfig() {
@@ -62,6 +64,7 @@ export function resolveConfig(model) {
     ['retriggerCap',        0,   10],
     ['fsSpinBreathMs',      0, 2000],
     ['fakeWinMaxX',         0, 1000],
+    ['celebrationTimeoutMs', 1000, 10000],
   ];
   for (const [k, lo, hi] of intMap) {
     if (k in src) {
@@ -87,6 +90,7 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
        fsSpinBreathMs       = ${c.fsSpinBreathMs}
        fakeWinChance        = ${c.fakeWinChance}
        fakeWinMaxX          = ${c.fakeWinMaxX}
+       celebrationTimeoutMs = ${c.celebrationTimeoutMs}
 
      Post-spin orchestration. Called from both base-game spins and FS
      in-round spins; the duringFs flag decides whether a scatter hit is a
@@ -106,18 +110,17 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
   /* Wave S LEGO conformance — postSpin block listens to preSpin to wipe any
      stale window-side payload cache from the previous round. Belt-and-suspenders
      for headless QA where the orchestrator might queue overlapping spins. */
-  if (typeof HookBus !== 'undefined') {
+  /* Idempotency sentinel — guards against double-evaluation under HMR /
+     playground re-mount so cache-wipe + cache-write handlers fire once. */
+  if (typeof HookBus !== 'undefined' && typeof window !== 'undefined' && !window.__POSTSPIN_BLOCK_WIRED__) {
+    window.__POSTSPIN_BLOCK_WIRED__ = true;
     HookBus.on('preSpin', () => {
-      if (typeof window !== 'undefined') {
-        window.__LAST_POSTSPIN_EVENTS__ = null;
-      }
+      window.__LAST_POSTSPIN_EVENTS__ = null;
     }, { priority: 0 });
     /* On its own postSpin emission, cache the latest events so playground /
        inspector tools can introspect without re-running detection. */
     HookBus.on('postSpin', (p) => {
-      if (typeof window !== 'undefined') {
-        window.__LAST_POSTSPIN_EVENTS__ = (p && p.events) || [];
-      }
+      window.__LAST_POSTSPIN_EVENTS__ = (p && p.events) || [];
     }, { priority: -20 });
   }
 
@@ -133,15 +136,16 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
       return;
     }
     /* H5.19 — Boki rule QA 05.06.2026: BW force MUST win big-win path on
-     * every demo, including high-scatter-density games (GoO). Without this
+     * every demo, including high-scatter-density grids. Without this
      * guard, the post-spin grid can legitimately contain enough scatters
      * to trigger countTriggerSymbols → FS intro branch, swallowing the
      * forced big-win flag. The force-flag is one-shot, set ONLY by the
      * BW dev button right before runOneBaseSpin(); when it's present we
      * skip scatter detection entirely and let winPresentation's force
      * short-circuit consume the flag + synthesise the big-win event. */
+    const BW_TIER_MIN = 1, BW_TIER_MAX = 5;
     if (typeof window !== 'undefined' && Number.isFinite(window.__FORCE_BIG_WIN_TIER__)
-        && window.__FORCE_BIG_WIN_TIER__ >= 1 && window.__FORCE_BIG_WIN_TIER__ <= 5
+        && window.__FORCE_BIG_WIN_TIER__ >= BW_TIER_MIN && window.__FORCE_BIG_WIN_TIER__ <= BW_TIER_MAX
         && !duringFs) {
       const events = (await applyWinHighlight()) || [];
       _emitPostSpin(duringFs, events);
@@ -169,32 +173,28 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
         if (typeof runTumbleChain === 'function') {
           await runTumbleChain(() => [], { duringFs });
         }
-        _emitPostSpin(duringFs, []);
-        /* Bug-fix 2026-06-10 — trigger flow previously left spinBtn locked
-           in disabled=true while waiting on scatterCelebration → FSM_enterIntro.
-           If playScatterCelebration hung (shape with no scatter cells found,
-           e.g. megaclusters/cluster7x7/hexagonal/wheel/starlight) the
-           promise never resolved and the button stayed disabled forever
-           with phase still BASE. Symptom: walker BLOCKED at attempt 2 with
-           phase=BASE, disabled=true, hasFsCta=true, winPres=false.
-           FSM_enterIntro owns button state once it fires (disables for the
-           intro overlay), so re-enable here so a stalled celebration cannot
-           leave the player stranded. */
-        if (spinButton) spinButton.disabled = false;
         setTimeout(() => {
           clearWinHighlight();
-          /* Safety timeout — scatterCelebration must resolve within 5s no
-             matter what (default celebration is ~1500ms). */
+          /* Safety timeout — scatterCelebration must resolve within
+             celebrationTimeoutMs (GDD-tunable) no matter what. On both
+             timeout and rejection we force FSM_enterIntro, emit postSpin
+             (round-boundary signal lines up with actual closure), and
+             re-enable spinButton so a stalled shape can't strand the
+             player. Happy path: FSM_enterIntro owns button state. */
           var _celebTimeout = setTimeout(function() {
-            /* Forced advance — fire FS_INTRO even if celebration never resolved. */
             try { FSM_enterIntro(award, scatters); } catch (_) {}
-          }, 5000);
+            _emitPostSpin(duringFs, []);
+            if (spinButton) spinButton.disabled = false;
+          }, ${c.celebrationTimeoutMs});
           playScatterCelebration().then(function() {
             clearTimeout(_celebTimeout);
             FSM_enterIntro(award, scatters);
+            _emitPostSpin(duringFs, []);
           }).catch(function() {
             clearTimeout(_celebTimeout);
             FSM_enterIntro(award, scatters);
+            _emitPostSpin(duringFs, []);
+            if (spinButton) spinButton.disabled = false;
           });
         }, settlePause);
       } else {
@@ -230,17 +230,36 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
       if (typeof runTumbleChain === 'function') {
         await runTumbleChain(() => [], { duringFs });
       }
-      /* postSpin emits BEFORE retrigger celebration — round-control blocks
-         react to the FS spin closing; retrigger reopens the trigger flow. */
-      _emitPostSpin(duringFs, []);
       setTimeout(() => {
         clearWinHighlight();
         const _celeb = (typeof playScatterCelebration === 'function')
           ? playScatterCelebration()
           : Promise.resolve();
+        /* Mirror trigger-flow safety — celebration must resolve within
+           celebrationTimeoutMs or we force-advance the retrigger so the FS
+           round can't stall. postSpin emits after handleRetrigger so the
+           round-closure signal lines up with the actual boundary. */
+        var _retrigTimeout = setTimeout(function() {
+          try {
+            FSM_handleRetrigger(FREESPINS.retrigger.spins);
+            _emitPostSpin(duringFs, []);
+            if (FSM.spinsRemaining <= 0) FSM_enterOutro();
+            else FSM_runNextFsSpin();
+          } catch (_) {}
+        }, ${c.celebrationTimeoutMs});
         _celeb.then(() => {
+          clearTimeout(_retrigTimeout);
           FSM_handleRetrigger(FREESPINS.retrigger.spins);
+          _emitPostSpin(duringFs, []);
           /* After retrigger toast — chain into next FS spin (or outro if 0). */
+          setTimeout(() => {
+            if (FSM.spinsRemaining <= 0) FSM_enterOutro();
+            else FSM_runNextFsSpin();
+          }, ${c.fsSpinBreathMs});
+        }).catch(() => {
+          clearTimeout(_retrigTimeout);
+          FSM_handleRetrigger(FREESPINS.retrigger.spins);
+          _emitPostSpin(duringFs, []);
           setTimeout(() => {
             if (FSM.spinsRemaining <= 0) FSM_enterOutro();
             else FSM_runNextFsSpin();
