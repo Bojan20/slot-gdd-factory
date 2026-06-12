@@ -26,6 +26,9 @@
  *   maybeArmAnticipation()          callback after every reel stop
  *
  * Runtime dependencies: FREESPINS, RECT_REELS, FSM, ROWS, performance.
+ *
+ * Performance: maybeArmAnticipation() — O(reels × rows) scan, 0 allocations,
+ * budget < 200µs per reel-stop.
  */
 
 const DEFAULTS = Object.freeze({
@@ -39,6 +42,9 @@ const DEFAULTS = Object.freeze({
      still flip it back to `true` via `skip-during-fs: true`. */
   skipDuringFs: false,
 });
+
+const HOLD_MS_MIN  = 100, HOLD_MS_MAX  = 5000;
+const PULSE_MS_MIN = 200, PULSE_MS_MAX = 5000;
 
 export function defaultConfig() {
   return { ...DEFAULTS };
@@ -56,10 +62,10 @@ export function resolveConfig(model) {
   const src = (model && model.anticipation) || {};
 
   if (src.enabled === false) cfg.enabled = false;
-  if (typeof src.holdMs === 'number' && src.holdMs >= 100 && src.holdMs <= 5000) {
+  if (typeof src.holdMs === 'number' && src.holdMs >= HOLD_MS_MIN && src.holdMs <= HOLD_MS_MAX) {
     cfg.holdMs = Math.floor(src.holdMs);
   }
-  if (typeof src.pulseMs === 'number' && src.pulseMs >= 200 && src.pulseMs <= 5000) {
+  if (typeof src.pulseMs === 'number' && src.pulseMs >= PULSE_MS_MIN && src.pulseMs <= PULSE_MS_MAX) {
     cfg.pulseMs = Math.floor(src.pulseMs);
   }
   if (isValidRGB(src.gold)) cfg.gold = src.gold;
@@ -83,9 +89,11 @@ export function emitAnticipationCSS(cfg = defaultConfig()) {
      any snapshot tests in tests/visual-regression. */
 
   // Gold inset-border alpha at steady state. Shared by: reelCol static rule,
-  // reel keyframe 0%/100%, cell keyframe 0%/100% border, AND reused as the
-  // cell keyframe 50% inset-glow alpha (same numeric value, different role).
+  // reel keyframe 0%/100%, cell keyframe 0%/100% border.
   const OPACITY_BORDER_STEADY      = '0.55';
+  // Gold inset-glow alpha at cell keyframe 50% — same numeric value as
+  // OPACITY_BORDER_STEADY but decoupled so tuning one role does not drift the other.
+  const OPACITY_GLOW_CELL_KF_PEAK  = '0.55';
   // Gold inset-glow alpha on the .reelCol--anticipating static (non-keyframe) rule.
   const OPACITY_GLOW_REEL_STATIC   = '0.25';
   // Gold inset-glow alpha at reel keyframe 0%/100% — the resting low end of the pulse.
@@ -112,6 +120,9 @@ export function emitAnticipationCSS(cfg = defaultConfig()) {
   // Inset-glow blur radius on cell at kf 50% — wider mid-pulse spread.
   const BLUR_CELL_PEAK    = '22px';
 
+  // Inset-border width — single source of truth for every `inset 0 0 0 …` box-shadow site.
+  const BORDER_WIDTH      = '2px';
+
   // Lighter accent RGB triplet (no alpha). Used ONLY at the 50% mid-pulse
   // keyframe of both reel + cell variants to lift the border above the
   // steady GDD-knob `gold` color for a perceptible highlight pop.
@@ -128,26 +139,26 @@ export function emitAnticipationCSS(cfg = defaultConfig()) {
    is one short of trigger. Two keyframe sets — reel-antic-pulse (column
    variant) and cell-antic-pulse (per-cell variant for non-rectangular). */
 .reelCol--anticipating {
-  box-shadow: inset 0 0 0 2px rgba(${c.gold}, ${OPACITY_BORDER_STEADY}),
+  box-shadow: inset 0 0 0 ${BORDER_WIDTH} rgba(${c.gold}, ${OPACITY_BORDER_STEADY}),
               inset 0 0 ${BLUR_REEL_BASE} rgba(${c.gold}, ${OPACITY_GLOW_REEL_STATIC});
   animation: reel-antic-pulse ${c.pulseMs}ms ease-in-out infinite;
 }
 @keyframes reel-antic-pulse {
-  0%, 100% { box-shadow: inset 0 0 0 2px rgba(${c.gold}, ${OPACITY_BORDER_STEADY}),
+  0%, 100% { box-shadow: inset 0 0 0 ${BORDER_WIDTH} rgba(${c.gold}, ${OPACITY_BORDER_STEADY}),
                          inset 0 0 ${BLUR_REEL_BASE} rgba(${c.gold}, ${OPACITY_GLOW_REEL_KF_BASE}); }
-  50%      { box-shadow: inset 0 0 0 2px rgba(${GOLD_HIGHLIGHT_RGB}, ${OPACITY_HIGHLIGHT_MIDPULSE}),
+  50%      { box-shadow: inset 0 0 0 ${BORDER_WIDTH} rgba(${GOLD_HIGHLIGHT_RGB}, ${OPACITY_HIGHLIGHT_MIDPULSE}),
                          inset 0 0 ${BLUR_REEL_PEAK} rgba(${c.gold}, ${OPACITY_GLOW_REEL_KF_PEAK}); }
 }
 .cell--anticipating {
-  box-shadow: inset 0 0 0 2px rgba(${c.gold}, ${OPACITY_BORDER_CELL_STATIC}),
+  box-shadow: inset 0 0 0 ${BORDER_WIDTH} rgba(${c.gold}, ${OPACITY_BORDER_CELL_STATIC}),
               inset 0 0 ${BLUR_CELL_STATIC} rgba(${c.gold}, ${OPACITY_GLOW_CELL_STATIC});
   animation: cell-antic-pulse ${c.pulseMs}ms ease-in-out infinite;
 }
 @keyframes cell-antic-pulse {
-  0%, 100% { box-shadow: inset 0 0 0 2px rgba(${c.gold}, ${OPACITY_BORDER_STEADY}),
+  0%, 100% { box-shadow: inset 0 0 0 ${BORDER_WIDTH} rgba(${c.gold}, ${OPACITY_BORDER_STEADY}),
                          inset 0 0 ${BLUR_CELL_KF_BASE} rgba(${c.gold}, ${OPACITY_GLOW_CELL_KF_BASE}); }
-  50%      { box-shadow: inset 0 0 0 2px rgba(${GOLD_HIGHLIGHT_RGB}, ${OPACITY_HIGHLIGHT_MIDPULSE}),
-                         inset 0 0 ${BLUR_CELL_PEAK} rgba(${c.gold}, ${OPACITY_BORDER_STEADY}); }
+  50%      { box-shadow: inset 0 0 0 ${BORDER_WIDTH} rgba(${GOLD_HIGHLIGHT_RGB}, ${OPACITY_HIGHLIGHT_MIDPULSE}),
+                         inset 0 0 ${BLUR_CELL_PEAK} rgba(${c.gold}, ${OPACITY_GLOW_CELL_KF_PEAK}); }
 }
 @media (prefers-reduced-motion: reduce) {
   .reelCol--anticipating,
