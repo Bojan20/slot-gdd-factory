@@ -7,9 +7,9 @@
  * (Boki rule: identical tempo across phases). Exists so GDD authors can
  * re-tune a slot's "feel" without touching reel-engine internals.
  *
- * Industry reference: S-AVP classic 5-reel cabinet archetype — each reel
- * lands ~1.4s after click, +320ms stagger per reel, full ladder fires in
- * ~2.7s. Vendor-neutral baseline; no proprietary cabinet name is encoded.
+ * Industry reference: classic 5-reel cabinet archetype — each reel lands
+ * ~1.4s after click, +320ms stagger per reel, full ladder fires in ~2.7s.
+ * Vendor-neutral baseline; no proprietary cabinet name is encoded.
  *
  * GDD-driven configuration (consumed from `model.spinTempo`):
  *   windupMs           number ms — pre-spin recoil duration   (default 100)
@@ -26,12 +26,14 @@
  *   decelEasingSpeed   number — decel curve speed (0..1)      (default 0.11)
  *
  * Presets (set via `preset: "<name>"` in GDD before per-key overrides):
- *   "s-avp"      cabinet reference (default, all values above)
+ *   "classic"    cabinet reference (default, all values above)
  *   "fast"       arcade quickplay  (windup 60, steady 600, decel 240, stagger 220)
  *   "slow"       cinematic suspense (windup 140, steady 1100, decel 480, stagger 380)
+ *   "s-avp"      DEPRECATED alias for "classic" — vendor identifier retained
+ *                for back-compat only; new GDDs SHOULD use "classic".
  *
  * Public API (server-side, ES module):
- *   defaultConfig()              → object — safe defaults (s-avp preset).
+ *   defaultConfig()              → object — safe defaults (classic preset).
  *                                  Pure, deterministic, no side effects.
  *   resolveConfig(model)         → object — merges defaults with
  *                                  `model.spinTempo` (preset first, then
@@ -75,7 +77,8 @@ const DEFAULTS = Object.freeze({
 });
 
 const PRESETS = Object.freeze({
-  's-avp': DEFAULTS,
+  'classic': DEFAULTS,
+  's-avp':   DEFAULTS, /* deprecated vendor alias — prefer "classic" */
   'fast':  Object.freeze({ ...DEFAULTS, windupMs: 60,  accelMs:  90, steadyMs:  600, decelMs: 240, staggerMs: 220 }),
   'slow':  Object.freeze({ ...DEFAULTS, windupMs: 140, accelMs: 150, steadyMs: 1100, decelMs: 480, staggerMs: 380 }),
 });
@@ -115,13 +118,21 @@ function clampFloat(v, lo, hi) {
 export function resolveConfig(model) {
   const src = (model && model.spinTempo) || {};
   /* preset (if given) becomes the starting point; per-key overrides
-     follow. Unknown preset names fall back to s-avp. */
-  const presetName = typeof src.preset === 'string' ? src.preset.toLowerCase() : 's-avp';
+     follow. Unknown preset names fall back to "classic". The legacy
+     "s-avp" key is accepted as a deprecated alias; a one-shot console
+     warning nudges authors toward the neutral name without breaking
+     existing GDDs. */
+  const rawPreset = typeof src.preset === 'string' ? src.preset.toLowerCase() : 'classic';
+  if (rawPreset === 's-avp' && typeof console !== 'undefined' && !resolveConfig.__sAvpWarned) {
+    resolveConfig.__sAvpWarned = true;
+    console.warn('[spinTempo] preset "s-avp" is deprecated; use "classic" instead.');
+  }
+  const presetName = rawPreset;
   const base = PRESETS[presetName] || DEFAULTS;
   const cfg = { ...base };
 
-  const intKeys   = ['windupMs', 'windupFrames', 'windupPx', 'accelMs', 'steadyMs', 'decelMs', 'staggerMs', 'bouncePx', 'bounceCount'];
-  const floatKeys = ['bounceDecay', 'bounceElasticity', 'decelEasingSpeed'];
+  const intKeys   = ['windupMs', 'windupFrames', 'windupPx', 'accelMs', 'steadyMs', 'decelMs', 'staggerMs', 'bounceCount'];
+  const floatKeys = ['bouncePx', 'bounceDecay', 'bounceElasticity', 'decelEasingSpeed'];
 
   for (const k of intKeys) {
     if (k in src) {
@@ -153,19 +164,5 @@ export function emitSpinTempoRuntime(cfg = defaultConfig()) {
     bouncePx: ${c.bouncePx}, bounceDecay: ${c.bounceDecay}, bounceCount: ${c.bounceCount}, bounceElasticity: ${c.bounceElasticity},
     decelEasingSpeed: ${c.decelEasingSpeed},
   };
-
-  /* Wave S LEGO conformance — spinTempo registers a preSpin listener that
-     publishes the active profile onto HookBus state for debug/playground
-     observability. The profile itself is a build-time constant (single
-     SPIN_PROFILE used in BASE + FS), but exposing it on every preSpin lets
-     future features (auto-tempo on auto-spin, slow-mo on near-miss) hot-swap
-     the speeds without re-emitting the bundle. */
-  if (typeof HookBus !== 'undefined') {
-    HookBus.on('preSpin', (p) => {
-      if (typeof window !== 'undefined') {
-        window.__SPIN_PROFILE_ACTIVE__ = { duringFs: !!(p && p.duringFs), ...SPIN_PROFILE };
-      }
-    }, { priority: 5 });
-  }
 `;
 }
