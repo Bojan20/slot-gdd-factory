@@ -162,6 +162,15 @@ const DEDUPE_OWNED_BY_OTHER_BLOCK = Object.freeze([
   'ante_bet',    // anteBet.mjs paints its own ANTE chip
 ]);
 
+const BOUNDS = Object.freeze({
+  CHIP_HEIGHT:    Object.freeze({ min: 16, max: 48 }),
+  CHIP_FONT_SIZE: Object.freeze({ min: 11, max: 20 }),
+  PANEL_OFFSET:   Object.freeze({ min: 0,  max: 400 }),
+  PANEL_GAP:      Object.freeze({ min: 0,  max: 24 }),
+  ARIA_LABEL_MAX: 40,
+  LABEL_TEXT_MAX: 12,
+});
+
 const DEFAULTS = Object.freeze({
   enabled: true,
   /** "auto" → derive from model.features; otherwise array of kinds */
@@ -192,8 +201,14 @@ function isPositiveInt(v, lo, hi) {
   return typeof v === 'number' && isFinite(v) && v >= lo && v <= hi && Number.isInteger(v);
 }
 
-function isPlainLabel(s, maxLen = 40) {
-  return typeof s === 'string' && s.length > 0 && s.length <= maxLen && !/[<>{}]/.test(s);
+// Strict allowlist: alphanumerics, space, underscore, hyphen, ampersand,
+// parens, and the few symbol glyphs used in KIND_LABELS (× ◯ ⚡). Anything
+// else — quotes, backticks, angle brackets, braces, control chars — is
+// rejected so attacker-controlled GDD strings cannot break out of the
+// HTML attributes they are interpolated into downstream.
+const PLAIN_LABEL_ALLOWLIST = /^[A-Za-z0-9 _\-&()×◯⚡]+$/;
+function isPlainLabel(s, maxLen = BOUNDS.ARIA_LABEL_MAX) {
+  return typeof s === 'string' && s.length > 0 && s.length <= maxLen && PLAIN_LABEL_ALLOWLIST.test(s);
 }
 
 function isKindArray(arr) {
@@ -205,17 +220,27 @@ export function resolveConfig(model = {}) {
   const src = (model && model.universalForcePanel) || {};
 
   if (src.enabled === false) cfg.enabled = false;
-  if (src.includeKinds === 'auto' || isKindArray(src.includeKinds)) cfg.includeKinds = src.includeKinds;
+  if (src.includeKinds === 'auto' || isKindArray(src.includeKinds)) {
+    cfg.includeKinds = src.includeKinds;
+  } else if (src.includeKinds !== undefined) {
+    // Invalid includeKinds (e.g. typo ['freespins']) coerces to 'auto'.
+    // Surface a warning at build time so QA can diagnose missing chips.
+    try {
+      if (typeof console !== 'undefined' && console.warn) {
+        console.warn('[universalForcePanel] invalid includeKinds, coercing to "auto":', src.includeKinds);
+      }
+    } catch (_) {}
+  }
   if (isKindArray(src.alwaysIncludeKinds)) cfg.alwaysIncludeKinds = [...src.alwaysIncludeKinds];
   if (isKindArray(src.excludeKinds)) cfg.excludeKinds = [...src.excludeKinds];
-  if (isPositiveInt(src.chipHeight,    16, 48))  cfg.chipHeight    = src.chipHeight;
-  if (isPositiveInt(src.chipFontSize,  11, 20))  cfg.chipFontSize  = src.chipFontSize;
-  if (isPositiveInt(src.panelTop,       0, 400)) cfg.panelTop      = src.panelTop;
-  if (isPositiveInt(src.panelRight,     0, 400)) cfg.panelRight    = src.panelRight;
-  if (isPositiveInt(src.panelGap,       0, 24))  cfg.panelGap      = src.panelGap;
+  if (isPositiveInt(src.chipHeight,   BOUNDS.CHIP_HEIGHT.min,    BOUNDS.CHIP_HEIGHT.max))    cfg.chipHeight    = src.chipHeight;
+  if (isPositiveInt(src.chipFontSize, BOUNDS.CHIP_FONT_SIZE.min, BOUNDS.CHIP_FONT_SIZE.max)) cfg.chipFontSize  = src.chipFontSize;
+  if (isPositiveInt(src.panelTop,     BOUNDS.PANEL_OFFSET.min,   BOUNDS.PANEL_OFFSET.max))   cfg.panelTop      = src.panelTop;
+  if (isPositiveInt(src.panelRight,   BOUNDS.PANEL_OFFSET.min,   BOUNDS.PANEL_OFFSET.max))   cfg.panelRight    = src.panelRight;
+  if (isPositiveInt(src.panelGap,     BOUNDS.PANEL_GAP.min,      BOUNDS.PANEL_GAP.max))      cfg.panelGap      = src.panelGap;
   if (isPlainLabel(src.ariaLabel))               cfg.ariaLabel     = src.ariaLabel;
   if (src.showLabelText === false)               cfg.showLabelText = false;
-  if (isPlainLabel(src.labelText, 12))           cfg.labelText     = src.labelText;
+  if (isPlainLabel(src.labelText, BOUNDS.LABEL_TEXT_MAX)) cfg.labelText = src.labelText;
 
   return cfg;
 }
@@ -277,7 +302,7 @@ export function emitUniversalForcePanelCSS(cfg = defaultConfig()) {
   justify-content: flex-end;
 }
 .ufp-label {
-  font-size: ${Math.max(11, c.chipFontSize - 1)}px;
+  font-size: ${Math.max(BOUNDS.CHIP_FONT_SIZE.min, c.chipFontSize - 1)}px;
   letter-spacing: 0.08em;
   color: rgba(255,255,255,0.55);
   align-self: center;
