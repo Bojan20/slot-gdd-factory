@@ -10,11 +10,17 @@
  *
  * GDD knobs:
  *   • minCluster: number — min connected cells to qualify (default 5)
- *   • paytable: [{ symbolId, bucketEdges: [5,8,10,12], pays: [n, n, n, n] }]
- *     — per-symbol bucket payouts (≥5 / ≥8 / ≥10 / ≥12 typical)
- *   • bucketEdges: number[] — global default edges
+ *   • paytable: [{ symbolId, bucketEdges: [5,8,10,12,15], pays: [n,n,n,n,n] }]
+ *     — per-symbol bucket payouts (≥5 / ≥8 / ≥10 / ≥12 / ≥15 typical)
+ *   • bucketEdges: number[] — global default edges (aligned to bucketMultipliers)
+ *   • bucketMultipliers: number[] — per-bucket payout multipliers (aligned to bucketEdges)
+ *   • tierMultipliers: { HP, MP, LP, WILD } — per-tier payout multipliers
+ *   • payCap: number — payX cap per cluster (pre-bet, in multiplier units)
+ *   • defaultBet: number — fallback when window.__SLOT_BET__ is missing
  *   • maxEvents: number
  *   • diagonal: boolean — false (4-connect) vs true (8-connect)
+ *
+ * Budget: ≤ 1.5 ms on 7×7 grid, ≤ 16 symbols, diagonal=true.
  */
 
 export function defaultConfig() {
@@ -22,6 +28,10 @@ export function defaultConfig() {
     enabled: false,
     minCluster: 5,
     bucketEdges: [5, 8, 10, 12, 15],
+    bucketMultipliers: [1, 2, 3, 5, 8],
+    tierMultipliers: { HP: 1.0, MP: 0.5, LP: 0.25, WILD: 2.0 },
+    payCap: 100,
+    defaultBet: 1,
     paytable: null,        // null = use placeholder linear lookup
     maxEvents: 8,
     diagonal: false,
@@ -37,6 +47,18 @@ export function resolveConfig(model = {}) {
     cfg.bucketEdges = m.bucketEdges.slice().sort((a, b) => a - b).map(n => Math.floor(n));
   }
   if (m.paytable && typeof m.paytable === 'object') cfg.paytable = m.paytable;
+  if (Array.isArray(m.bucketMultipliers) && m.bucketMultipliers.every(n => Number.isFinite(n) && n >= 0)) {
+    cfg.bucketMultipliers = m.bucketMultipliers.slice();
+  }
+  if (m.tierMultipliers && typeof m.tierMultipliers === 'object') {
+    for (const k of ['HP', 'MP', 'LP', 'WILD']) {
+      if (Number.isFinite(m.tierMultipliers[k]) && m.tierMultipliers[k] >= 0) {
+        cfg.tierMultipliers[k] = m.tierMultipliers[k];
+      }
+    }
+  }
+  if (Number.isFinite(m.payCap) && m.payCap > 0) cfg.payCap = m.payCap;
+  if (Number.isFinite(m.defaultBet) && m.defaultBet > 0) cfg.defaultBet = m.defaultBet;
   if (Number.isFinite(m.maxEvents)) cfg.maxEvents = clampInt(m.maxEvents, 1, 32);
   if (m.diagonal != null) cfg.diagonal = !!m.diagonal;
 
@@ -59,9 +81,16 @@ export function emitClusterPaysEvalRuntime(cfg = defaultConfig()) {
    * back to the placeholder linear lookup. Bake the GDD paytable into a
    * runtime constant so detectClusterWins consults the right curve. */
   const PAYTABLE = JSON.stringify(cfg.paytable || null);
+  const BUCKET_MULTS_JSON = JSON.stringify(cfg.bucketMultipliers);
+  const TIER_MULTS_JSON   = JSON.stringify(cfg.tierMultipliers);
   return `/* ─── cluster pays evaluator ──────────────────────────────────── */
+/* Budget: ≤ 1.5 ms on 7×7 grid, ≤ 16 symbols, diagonal=true. */
 const CLUSTER_MIN          = ${cfg.minCluster};
 const CLUSTER_BUCKET_EDGES = ${EDGES};
+const CLUSTER_BUCKET_MULTS = ${BUCKET_MULTS_JSON};
+const CLUSTER_TIER_MULTS   = ${TIER_MULTS_JSON};
+const CLUSTER_PAY_CAP      = ${cfg.payCap};
+const CLUSTER_DEFAULT_BET  = ${cfg.defaultBet};
 const CLUSTER_MAX_EVENTS   = ${cfg.maxEvents};
 const CLUSTER_DIAGONAL     = ${cfg.diagonal ? 'true' : 'false'};
 const CLUSTER_PAYTABLE     = ${PAYTABLE};
@@ -141,9 +170,6 @@ function detectClusterWins() {
           /* must have at least one non-wild anchor */
           const hasAnchor = cluster.some(({ r: cr, c: cc }) => grid[cr][cc] === symId);
           if (hasAnchor) found.push({ symbol: symId, cells: cluster, count: cluster.length });
-        } else {
-          /* unmark for other syms */
-          cluster.forEach(({ idx: ci }) => { visited[ci] = false; });
         }
       }
     }
@@ -164,9 +190,18 @@ function detectClusterWins() {
          tier_mult × count × bucket_multiplier × bet (capped). Without
          this every cluster-mode game silently treated wins as
          zero-paying and skipped the presentation. */
-      const tierMult = tier === 'HP' ? 1.0 : tier === 'MP' ? 0.5 : tier === 'WILD' ? 2.0 : 0.25;
-      const bucketMult = bucket === 'BIG' ? 5 : bucket === 'MED' ? 2 : 1;
-      const __bet = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : 1;
+      /* Fable audit (critical): _clusterBucketFor returns a numeric
+       * index, so the previous string compare to 'BIG'/'MED' always
+       * collapsed bucketMult to 1 and flattened the documented
+       * ≥5/≥8/≥10/≥12/≥15 payout curve. Look up multipliers by index
+       * from cfg-emitted tables instead — no magic numbers. */
+      const tierMult = (CLUSTER_TIER_MULTS && Number.isFinite(CLUSTER_TIER_MULTS[tier]))
+        ? CLUSTER_TIER_MULTS[tier]
+        : ((CLUSTER_TIER_MULTS && Number.isFinite(CLUSTER_TIER_MULTS.LP)) ? CLUSTER_TIER_MULTS.LP : 0);
+      const bucketMult = (bucket >= 0 && bucket < CLUSTER_BUCKET_MULTS.length)
+        ? CLUSTER_BUCKET_MULTS[bucket]
+        : (CLUSTER_BUCKET_MULTS[0] != null ? CLUSTER_BUCKET_MULTS[0] : 1);
+      const __bet = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : CLUSTER_DEFAULT_BET;
       /* Fable audit (critical): consult the GDD paytable first; fall
        * back to the placeholder formula only when no row matches. The
        * GDD paytable is the regulator-vetted source of truth — silently
@@ -174,7 +209,7 @@ function detectClusterWins() {
       const gddPay = _clusterPayLookup(sym, e.count);
       const payX = gddPay != null
         ? gddPay * __bet
-        : Math.min(100, tierMult * e.count * bucketMult) * __bet;
+        : Math.min(CLUSTER_PAY_CAP, tierMult * e.count * bucketMult) * __bet;
       events.push({ ...e, bucket, tier, payX, matchLength: e.count });
     });
   }
@@ -187,6 +222,21 @@ function detectClusterWins() {
 
 if (typeof window !== 'undefined') {
   window.detectClusterWins = detectClusterWins;
+  /* Sole emitter of 'clusterPays:evaluated' — downstream presentation
+   * blocks subscribe here. Subscribed to canonical 'reels:stopped'
+   * lifecycle hook so callers cannot invoke detection at wrong phase. */
+  if (window.HookBus && typeof window.HookBus.on === 'function') {
+    window.HookBus.on('reels:stopped', () => {
+      const __t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : 0;
+      const wins = detectClusterWins();
+      if (typeof performance !== 'undefined' && performance.now && (performance.now() - __t0) > 1.5) {
+        try { console.warn('[clusterPaysEval] detectClusterWins exceeded 1.5 ms budget'); } catch (e) {}
+      }
+      if (typeof window.HookBus.emit === 'function') {
+        window.HookBus.emit('clusterPays:evaluated', { wins });
+      }
+    });
+  }
 }
 `;
 }
