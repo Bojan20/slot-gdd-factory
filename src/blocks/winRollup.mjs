@@ -96,8 +96,14 @@ export function resolveConfig(model) {
   if (Number.isFinite(src.bigWinTriggerRatio) && src.bigWinTriggerRatio > 0) {
     cfg.bigWinTriggerRatio = src.bigWinTriggerRatio;
   }
-  cfg.minDurationMs    = clampNum(src.minDurationMs,    50, 5000,  cfg.minDurationMs);
-  cfg.maxDurationMs    = clampNum(src.maxDurationMs,    cfg.minDurationMs, 10000, cfg.maxDurationMs);
+  const minResolved = clampNum(src.minDurationMs, 50, 5000, cfg.minDurationMs);
+  cfg.minDurationMs = minResolved;
+  cfg.maxDurationMs = clampNum(
+    src.maxDurationMs,
+    minResolved,
+    10000,
+    Math.max(cfg.maxDurationMs, minResolved)
+  );
   cfg.msPerBetMultiple = clampNum(src.msPerBetMultiple, 0,  1000,  cfg.msPerBetMultiple);
   cfg.holdMs           = clampNum(src.holdMs,           0,  10000, cfg.holdMs);
 
