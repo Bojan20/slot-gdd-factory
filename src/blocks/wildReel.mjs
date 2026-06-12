@@ -6,6 +6,8 @@
  * A randomly-picked reel turns fully wild on selected spins. Industry
  * baseline: stacked / full-reel wild substitution pattern.
  *
+ * Budget: ≤ 0.2 ms/spin, ≤ ROWS × MAX cells written, O(REELS) RNG draws.
+ *
  * GDD knobs:
  *   • mode: 'fs' | 'base' | 'both'
  *   • wildSymbolId: string
@@ -13,6 +15,12 @@
  *   • maxReelsPerSpin: number — at most N wild reels in one spin
  *   • haloColor: 'r,g,b'
  */
+
+const REELS_FALLBACK     = 5;
+const ROWS_FALLBACK      = 3;
+const MAX_REELS_HARD_CAP = 7;
+const PICK_RETRY_BUDGET  = 16;
+const WILD_REEL_Z        = 2;
 
 export function defaultConfig() {
   return {
@@ -32,7 +40,7 @@ export function resolveConfig(model = {}) {
   if (m.mode === 'fs' || m.mode === 'base' || m.mode === 'both') cfg.mode = m.mode;
   if (typeof m.wildSymbolId === 'string' && /^[A-Za-z][A-Za-z0-9_]*$/.test(m.wildSymbolId)) cfg.wildSymbolId = m.wildSymbolId;
   if (Number.isFinite(m.chancePerSpin)) cfg.chancePerSpin = clampFloat(m.chancePerSpin, 0, 1);
-  if (Number.isFinite(m.maxReelsPerSpin)) cfg.maxReelsPerSpin = clampInt(m.maxReelsPerSpin, 1, 7);
+  if (Number.isFinite(m.maxReelsPerSpin)) cfg.maxReelsPerSpin = clampInt(m.maxReelsPerSpin, 1, MAX_REELS_HARD_CAP);
   if (typeof m.haloColor === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(m.haloColor)) cfg.haloColor = m.haloColor;
 
   if (Array.isArray(model.features) && model.features.some(f => f.kind === 'wild_reel')) {
@@ -50,7 +58,7 @@ export function emitWildReelCSS(cfg = defaultConfig()) {
     0 0 0 1.5px rgba(${cfg.haloColor},.6),
     inset 0 0 12px rgba(${cfg.haloColor},.4);
   animation: wildReelFlare 600ms ease-out;
-  z-index: 2;
+  z-index: ${WILD_REEL_Z};
 }
 @keyframes wildReelFlare {
   0%   { filter: brightness(2.4) saturate(2); transform: scaleY(0.4); }
@@ -66,10 +74,17 @@ export function emitWildReelCSS(cfg = defaultConfig()) {
 export function emitWildReelRuntime(cfg = defaultConfig()) {
   if (!cfg.enabled) return `/* wildReel: disabled */`;
   return `/* ─── wild reel runtime ───────────────────────────────────────── */
-const WILD_REEL_MODE      = ${JSON.stringify(cfg.mode)};
-const WILD_REEL_SYMBOL    = ${JSON.stringify(cfg.wildSymbolId)};
-const WILD_REEL_CHANCE    = ${cfg.chancePerSpin};
-const WILD_REEL_MAX       = ${cfg.maxReelsPerSpin};
+const WILD_REEL_MODE       = ${JSON.stringify(cfg.mode)};
+const WILD_REEL_SYMBOL     = ${JSON.stringify(cfg.wildSymbolId)};
+const WILD_REEL_CHANCE     = ${cfg.chancePerSpin};
+const WILD_REEL_MAX        = ${cfg.maxReelsPerSpin};
+const WILD_REEL_REELS_FB   = ${REELS_FALLBACK};
+const WILD_REEL_ROWS_FB    = ${ROWS_FALLBACK};
+const WILD_REEL_RETRY_BUD  = ${PICK_RETRY_BUDGET};
+
+function _wildReelRand() {
+  return (typeof RNG !== 'undefined' && typeof RNG.next === 'function') ? RNG.next() : Math.random();
+}
 
 function _wildReelPhaseAllowed() {
   if (typeof FSM === 'undefined') return WILD_REEL_MODE !== 'fs';
@@ -81,30 +96,39 @@ function _wildReelPhaseAllowed() {
 
 function maybeFireWildReel() {
   if (!_wildReelPhaseAllowed()) return [];
+  /* Roll ONCE for the feature; then pick a count. Rolling per-reel
+     would make E[wild reels] = chance + chance² + … and break the
+     documented "probability a wild reel fires" semantics. */
+  if (_wildReelRand() >= WILD_REEL_CHANCE) return [];
+  const n = 1 + Math.floor(_wildReelRand() * WILD_REEL_MAX);
   const fired = [];
-  const REELS = window.REELS || 5;
-  const ROWS  = window.ROWS  || 3;
+  const REELS = window.REELS || WILD_REEL_REELS_FB;
+  const ROWS  = window.ROWS  || WILD_REEL_ROWS_FB;
   const host  = document.getElementById('gridHost');
   if (!host) return [];
   const cells = host.querySelectorAll('.cell');
-  let chosen = 0;
   const used = new Set();
-  while (chosen < WILD_REEL_MAX) {
-    if (Math.random() >= WILD_REEL_CHANCE) break;
-    let col = Math.floor(Math.random() * REELS);
+  for (let i = 0; i < n; i++) {
+    let col = Math.floor(_wildReelRand() * REELS);
     let safety = 0;
-    while (used.has(col) && safety++ < 16) col = Math.floor(Math.random() * REELS);
+    while (used.has(col) && safety++ < WILD_REEL_RETRY_BUD) col = Math.floor(_wildReelRand() * REELS);
     if (used.has(col)) break;
     used.add(col);
     for (let r = 0; r < ROWS; r++) {
       const idx = r * REELS + col;
       const cell = cells[idx];
       if (!cell) continue;
+      /* Write through the canonical grid model so win-eval sees the
+         wild — DOM textContent must follow the model, not lead it. */
+      if (typeof window.GRID !== 'undefined' && typeof window.GRID.set === 'function') {
+        window.GRID.set(col, r, WILD_REEL_SYMBOL);
+      } else if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
+        HookBus.emit('symbolOverride', { col, row: r, symbolId: WILD_REEL_SYMBOL });
+      }
       cell.textContent = WILD_REEL_SYMBOL;
       cell.classList.add('is-wild-reel');
     }
     fired.push(col);
-    chosen++;
   }
   return fired;
 }
