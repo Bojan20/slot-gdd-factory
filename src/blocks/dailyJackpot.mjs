@@ -61,6 +61,10 @@
  *
  * Subscribes (no new emits beyond the one above): preSpin, postSpin,
  * onFsTrigger, onFsEnd, onBigWinTierEntered, onBigWinTierExited.
+ *
+ * Performance budget: emit (CSS + markup + runtime string construction)
+ * targets < 200 µs total; per-spin runtime work < 20 µs (one Date.now,
+ * one arithmetic compare, one RNG call); zero per-frame allocations.
  */
 
 const DEFAULTS = Object.freeze({
@@ -141,6 +145,18 @@ function esc(s) {
   return String(s).replace(/[&<>"']/g, ch => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',
   }[ch]));
+}
+
+/* Fable review (medium): single source of truth for the zero-state
+ * money string. The markup's initial banner placeholder and the
+ * runtime's _fmtMoney would otherwise own decimal precision and
+ * suffix-spacing rules independently — a future tweak to one would
+ * silently desync from the other until the first award repainted. */
+function _formatMoney(n, currency, currencyPosition) {
+  let v = Number(n);
+  if (!Number.isFinite(v) || v < 0) v = 0;
+  const s = v.toFixed(2);
+  return currencyPosition === 'suffix' ? (s + ' ' + currency) : (currency + s);
 }
 
 export function emitDailyJackpotCSS(cfg = defaultConfig()) {
@@ -270,7 +286,7 @@ export function emitDailyJackpotMarkup(cfg = defaultConfig()) {
   /* role="status" + aria-live="polite" — assistive tech announces the
    * award once when the banner appears (a single state change, no risk
    * of screen-reader spam). */
-  const zero = c.currencyPosition === 'suffix' ? '0.00 ' + c.currency : c.currency + '0.00';
+  const zero = _formatMoney(0, c.currency, c.currencyPosition);
   return `<div id="dailyJackpotHost" class="dailyJackpot-host" data-show="false" role="status" aria-live="polite" aria-atomic="true">
       <div class="dailyJackpot-banner">
         <div class="dailyJackpot-label" id="dailyJackpotLabel">${esc(c.labelText)}</div>
@@ -284,9 +300,18 @@ export function emitDailyJackpotRuntime(cfg = defaultConfig()) {
   if (!c.enabled) {
     return `
   /* ── dailyJackpot BLOCK (disabled by GDD) — no-op stubs ─────────────── */
-  window.DAILY_JACKPOT_STATE = { enabled: false, pool: 0, lastResetUtcDay: -1, suppressed: false };
-  window.dailyJackpotShow  = function () {};
-  window.dailyJackpotForce = function () {};
+  (function () {
+    /* Fable review (low): same install guard as the enabled path so a
+     * stray duplicate emit (or a hot-rebuild flipping enabled) cannot
+     * clobber a live STATE object or QA hooks already wired by the
+     * enabled stub. */
+    if (typeof window === 'undefined') return;
+    if (window.__DAILY_JACKPOT_INSTALLED__) return;
+    window.DAILY_JACKPOT_STATE = { enabled: false, pool: 0, lastResetUtcDay: -1, suppressed: false };
+    window.dailyJackpotShow  = function () {};
+    window.dailyJackpotForce = function () {};
+    window.__DAILY_JACKPOT_INSTALLED__ = true;
+  })();
 `;
   }
   return `
@@ -301,9 +326,11 @@ export function emitDailyJackpotRuntime(cfg = defaultConfig()) {
   (function () {
     /* Fable review (medium): re-init guard. Hot-reload / re-mount paths
      * would otherwise double-subscribe every HookBus listener and
-     * compound contributions/awards. Idempotent flag on window. */
+     * compound contributions/awards. Idempotent flag on window — the
+     * flag is only SET after subscriptions are actually wired so that
+     * if HookBus is missing at install time a later retry can wire up
+     * properly instead of being permanently stuck in an inert state. */
     if (typeof window !== 'undefined' && window.__DAILY_JACKPOT_INSTALLED__) return;
-    if (typeof window !== 'undefined') window.__DAILY_JACKPOT_INSTALLED__ = true;
     var LABEL_TEXT     = ${JSON.stringify(c.labelText)};
     var RESET_UTC_HOUR = ${c.resetUTCHour};
     var MIN_POOL       = ${c.minPoolAmount};
@@ -315,6 +342,7 @@ export function emitDailyJackpotRuntime(cfg = defaultConfig()) {
     var CUR_POS        = ${JSON.stringify(c.currencyPosition)};
 
     var MS_PER_DAY = 86400000;
+    var MS_PER_HOUR = 3600000;
 
     var STATE = {
       enabled:         true,
@@ -331,9 +359,8 @@ export function emitDailyJackpotRuntime(cfg = defaultConfig()) {
     function _amountEl() { return document.getElementById('dailyJackpotAmount'); }
 
     function _currentBet() {
-      var b = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0)
-        ? window.__SLOT_BET__ : 1;
-      return b;
+      return (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0)
+        ? window.__SLOT_BET__ : 0;
     }
 
     function _fmtMoney(v) {
@@ -356,7 +383,7 @@ export function emitDailyJackpotRuntime(cfg = defaultConfig()) {
      * before flooring to days so each day index aligns with the slot's
      * own jackpot rollover, not the calendar midnight. */
     function _currentResetDay(nowMs) {
-      var shifted = nowMs - (RESET_UTC_HOUR * 3600000);
+      var shifted = nowMs - (RESET_UTC_HOUR * MS_PER_HOUR);
       return Math.floor(shifted / MS_PER_DAY);
     }
 
@@ -405,6 +432,11 @@ export function emitDailyJackpotRuntime(cfg = defaultConfig()) {
     function dailyJackpotShow(amount) {
       amount = Number(amount);
       if (!Number.isFinite(amount) || amount <= 0) return;
+      /* Fable review (high): claim the awarding gate before painting so
+       * a QA-triggered banner shares the same idempotent fence as the
+       * organic _award() path — otherwise the next postSpin random-roll
+       * could fire _award on top of an already-visible banner. */
+      STATE.awarding = true;
       _clearTimers();
       _setAmount(amount);
       _show();
@@ -516,6 +548,11 @@ export function emitDailyJackpotRuntime(cfg = defaultConfig()) {
       HookBus.on('onBigWinTierExited', function () {
         STATE.suppressed = false;
       });
+      /* Subscriptions wired — only NOW mark the block installed so a
+       * later retry can recover from a missing-HookBus first attempt. */
+      if (typeof window !== 'undefined') window.__DAILY_JACKPOT_INSTALLED__ = true;
+    } else if (typeof console !== 'undefined' && console.error) {
+      console.error('[dailyJackpot] HookBus missing — block inert');
     }
   })();
 `;
