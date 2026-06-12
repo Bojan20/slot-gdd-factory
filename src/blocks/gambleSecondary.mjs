@@ -111,6 +111,10 @@ const VALID_CARD_MODES   = Object.freeze(['color', 'suit']);
 const VALID_BRANCHES     = Object.freeze(['card', 'ladder']);
 const VALID_PHASES       = Object.freeze(['idle','prompt','card','ladder','busted','collected']);
 const VALID_CARD_TOKENS  = Object.freeze(['R','B','H','D','C','S']);
+const CARD_MULT_RANGE     = Object.freeze([1.1, 16]);
+const ROUNDS_RANGE        = Object.freeze([1, 20]);
+const LADDER_RUNGS_RANGE  = Object.freeze([3, 16]);
+const LADDER_MULT_RANGE   = Object.freeze([1.1, 8]);
 
 /* ─── default + resolve ─────────────────────────────────────────────────── */
 
@@ -162,26 +166,27 @@ export function resolveConfig(model = {}) {
 
   if (VALID_CARD_MODES.indexOf(m.cardMode) !== -1) {
     cfg.cardMode = m.cardMode;
-    /* Auto-set multiplier when GDD picks a mode but no explicit multiplier. */
-    if (!Number.isFinite(m.cardMultiplier)) {
-      cfg.cardMultiplier = m.cardMode === 'suit' ? 4 : 2;
-    }
+    /* Fire fallback on any non-valid multiplier (not just non-finite):
+     * a finite ≤ 1 value would otherwise keep the 2× default and silently
+     * break RTP for suit mode (25% odds paid at 2× instead of 4×). */
+    const validMult = Number.isFinite(m.cardMultiplier) && m.cardMultiplier > 1;
+    if (!validMult) cfg.cardMultiplier = m.cardMode === 'suit' ? 4 : 2;
   }
   if (Number.isFinite(m.cardMultiplier) && m.cardMultiplier > 1) {
-    cfg.cardMultiplier = Math.max(1.1, Math.min(16, Number(m.cardMultiplier)));
+    cfg.cardMultiplier = Math.max(CARD_MULT_RANGE[0], Math.min(CARD_MULT_RANGE[1], Number(m.cardMultiplier)));
   }
 
   if (Number.isFinite(m.cardMaxRounds)) {
-    cfg.cardMaxRounds = Math.max(1, Math.min(20, Math.round(m.cardMaxRounds)));
+    cfg.cardMaxRounds = Math.max(ROUNDS_RANGE[0], Math.min(ROUNDS_RANGE[1], Math.round(m.cardMaxRounds)));
   }
   if (Number.isFinite(m.ladderRungs)) {
-    cfg.ladderRungs = Math.max(3, Math.min(16, Math.round(m.ladderRungs)));
+    cfg.ladderRungs = Math.max(LADDER_RUNGS_RANGE[0], Math.min(LADDER_RUNGS_RANGE[1], Math.round(m.ladderRungs)));
   }
   if (Number.isFinite(m.ladderRungMultiplier) && m.ladderRungMultiplier > 1) {
-    cfg.ladderRungMultiplier = Math.max(1.1, Math.min(8, Number(m.ladderRungMultiplier)));
+    cfg.ladderRungMultiplier = Math.max(LADDER_MULT_RANGE[0], Math.min(LADDER_MULT_RANGE[1], Number(m.ladderRungMultiplier)));
   }
   if (Number.isFinite(m.ladderMaxRounds)) {
-    cfg.ladderMaxRounds = Math.max(1, Math.min(20, Math.round(m.ladderMaxRounds)));
+    cfg.ladderMaxRounds = Math.max(ROUNDS_RANGE[0], Math.min(ROUNDS_RANGE[1], Math.round(m.ladderMaxRounds)));
   }
   if (Number.isFinite(m.minWinForPromptX) && m.minWinForPromptX >= 0) {
     cfg.minWinForPromptX = Math.min(1000, Number(m.minWinForPromptX));
