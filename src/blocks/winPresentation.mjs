@@ -53,6 +53,15 @@ const DEFAULTS = Object.freeze({
   staggerStepMs: 80,
 });
 
+/* Validation bounds for GDD-supplied overrides — kept frozen and adjacent
+   to DEFAULTS so resolveConfig has no unnamed literals. Range intent
+   (industry pacing windows) is named here, not re-derived at every site. */
+const LIMITS = Object.freeze({
+  STAGGER_MIN_MS: 20, STAGGER_MAX_MS: 500,
+  MAX_EVENTS_CAP: 50,
+  BIG_WIN_MIN_MS: 100, BIG_WIN_MAX_MS: 5000,
+});
+
 export function defaultConfig() {
   return { ...DEFAULTS };
 }
@@ -73,21 +82,21 @@ export function resolveConfig(model) {
   }
   if (
     typeof src.staggerStepMs === 'number' &&
-    src.staggerStepMs >= 20 && src.staggerStepMs <= 500
+    src.staggerStepMs >= LIMITS.STAGGER_MIN_MS && src.staggerStepMs <= LIMITS.STAGGER_MAX_MS
   ) {
     cfg.staggerStepMs = Math.floor(src.staggerStepMs);
   }
   if (src.perEventMs === 'auto' || (typeof src.perEventMs === 'number' && src.perEventMs > 0)) {
     cfg.perEventMs = src.perEventMs;
   }
-  if (typeof src.maxEvents === 'number' && src.maxEvents > 0 && src.maxEvents <= 50) {
+  if (typeof src.maxEvents === 'number' && src.maxEvents > 0 && src.maxEvents <= LIMITS.MAX_EVENTS_CAP) {
     cfg.maxEvents = Math.floor(src.maxEvents);
   }
   if (typeof src.noWinChance === 'number' && src.noWinChance >= 0 && src.noWinChance <= 1) {
     cfg.noWinChance = src.noWinChance;
   }
   if (src.winCycle === false) cfg.winCycle = false;
-  if (typeof src.bigWinCelebMs === 'number' && src.bigWinCelebMs >= 100 && src.bigWinCelebMs <= 5000) {
+  if (typeof src.bigWinCelebMs === 'number' && src.bigWinCelebMs >= LIMITS.BIG_WIN_MIN_MS && src.bigWinCelebMs <= LIMITS.BIG_WIN_MAX_MS) {
     cfg.bigWinCelebMs = Math.floor(src.bigWinCelebMs);
   }
 
@@ -98,7 +107,11 @@ export function resolveConfig(model) {
  * buildSlotHTML.mjs orchestrator (originally inline, ~95 LOC). Kept as
  * an enabled-always block because every grid kind uses these selectors;
  * disabling would break the no-trigger win presentation cycle. */
-export function emitWinPresentationCSS(/* cfg = defaultConfig() */) {
+/* Contract: caller passes a resolved cfg (or omits for defaults). We do
+   NOT re-run resolveConfig — matches emitDetectWinCombosRuntime and avoids
+   the asymmetric "partial cfg silently dropped, defaults stacked twice"
+   misuse that the senior review flagged. */
+export function emitWinPresentationCSS(cfg = defaultConfig()) {
   return `
   /* ── Placeholder win highlight — emitted by src/blocks/winPresentation.mjs
      Visual-only: winning cells stay full opacity + nudge scale, non-winning
@@ -143,7 +156,11 @@ export function emitWinPresentationCSS(/* cfg = defaultConfig() */) {
   .gridHost.is-winsym-cycling .cell--winsym,
   .gridHost.is-winsym-cycling text.cell--winsym {
     opacity: 1 !important;
-    animation: winsym-pulse 500ms ease-in-out 1;
+    /* Duration is driven by --winsym-pulse-ms set by the runtime before
+       each cycle so the keyframe length tracks resolved perEventMs /
+       bigWinCelebMs (fixes desync when GDD overrides the 500ms default
+       — overlap on short steps, dead air on long ones). */
+    animation: winsym-pulse var(--winsym-pulse-ms, 500ms) ease-in-out 1;
     transform: none;
     border-radius: 6px;
   }
@@ -175,7 +192,7 @@ export function emitWinPresentationCSS(/* cfg = defaultConfig() */) {
    l_shape / SVG) — fires one event per non-scatter symbol with ≥ 3 hits,
    wild substitutes & wild-only fallback included. */
 export function emitDetectWinCombosRuntime(cfg = defaultConfig()) {
-  const c = resolveConfig({ winPresentation: cfg });
+  const c = cfg; // already resolved by caller — no double-validation
   return `
   /* ── detectWinCombos — cluster-mode evaluator (emitted by winPresentation.mjs)
      For grids without paylines: bucket all non-scatter glyphs by symbol,
@@ -293,6 +310,9 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
       const hold = reduced ? 200 : (durMs > 0 ? durMs : ${c.bigWinCelebMs});
       const token = ++WINSYM_CYCLE_TOKEN;
       grid.classList.add('is-winsym-cycling');
+      /* Sync keyframe length with the hold window so the pulse doesn't
+         finish ~300 ms before cleanup on a big-win celebration. */
+      grid.style.setProperty('--winsym-pulse-ms', hold + 'ms');
       /* Highlight every distinct winning cell at once. */
       const cellSet = new Set();
       for (const ev of events) {
@@ -333,6 +353,10 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
       const stepMs  = reduced ? 200 : perEventMs;
       const token = ++WINSYM_CYCLE_TOKEN;
       grid.classList.add('is-winsym-cycling');
+      /* Sync keyframe length with stepMs so cascade-stagger (80 ms) and
+         GDD-overridden perEventMs read as one beat per cell instead of
+         overlapping or leaving dead air against a fixed 500 ms keyframe. */
+      grid.style.setProperty('--winsym-pulse-ms', stepMs + 'ms');
       let i = 0;
       const playOne = () => {
         if (token !== WINSYM_CYCLE_TOKEN) {
