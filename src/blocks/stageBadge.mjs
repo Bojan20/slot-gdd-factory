@@ -1,6 +1,9 @@
 /**
  * Slot GDD Factory · stageBadge BLOCK
  *
+ * Performance budget: ≤1 active animation; backdrop-filter limited to header
+ * pill; runtime <0.5KB minified.
+ *
  * Live indicator pill in the header showing the current game phase. Sits
  * between `.title` (brand) and `.sub` (layout descriptor) so the visual
  * hierarchy reads: brand → live state → structure. Pointer-events off,
@@ -34,6 +37,13 @@
  * (provided by emitStageBadgeMarkup output).
  */
 
+const PULSE_MIN_MS = 200;
+const PULSE_MAX_MS = 10000;
+const BREAKPOINT_MIN = 320;
+const BREAKPOINT_MAX = 1200;
+const LABEL_MAX_LEN = 40;
+const HOOK_PRIORITY = 10;
+
 const DEFAULTS = Object.freeze({
   enabled: true,
   baseLabel: 'BASE GAME',
@@ -41,6 +51,28 @@ const DEFAULTS = Object.freeze({
   gold: '255,214,110',
   pulseMs: 1600,
   mobileBreakpoint: 620,
+  pillGap: 7,
+  pillPaddingTop: 3,
+  pillPaddingRight: 12,
+  pillPaddingBottom: 3,
+  pillPaddingLeft: 10,
+  mutedColor: '197,198,199',
+  mutedColorAlpha: 0.78,
+  mutedBgColor: '15,12,10',
+  mutedBgAlpha: 0.45,
+  mutedBorderAlpha: 0.08,
+  blurAmount: 4,
+  dotSize: 6,
+  dotSizeMobile: 5,
+  pulseScale: 1.25,
+  shadowMinRadius: 6,
+  shadowMaxRadius: 14,
+  letterSpacing: 2.2,
+  letterSpacingMobile: 1.8,
+  mobileGap: 6,
+  mobilePaddingTop: 2,
+  mobilePaddingRight: 10,
+  mobilePaddingLeft: 8,
 });
 
 export function defaultConfig() {
@@ -55,7 +87,7 @@ function isValidRGB(s) {
 }
 
 function isPlainText(s) {
-  return typeof s === 'string' && s.length > 0 && s.length <= 40 && !/[<>{}]/.test(s);
+  return typeof s === 'string' && s.length > 0 && s.length <= LABEL_MAX_LEN && !/[<>{}]/.test(s);
 }
 
 export function resolveConfig(model) {
@@ -66,10 +98,10 @@ export function resolveConfig(model) {
   if (isPlainText(src.baseLabel)) cfg.baseLabel = src.baseLabel;
   if (isPlainText(src.fsLabel))   cfg.fsLabel = src.fsLabel;
   if (isValidRGB(src.gold))       cfg.gold = src.gold;
-  if (typeof src.pulseMs === 'number' && src.pulseMs >= 200 && src.pulseMs <= 10000) {
+  if (typeof src.pulseMs === 'number' && src.pulseMs >= PULSE_MIN_MS && src.pulseMs <= PULSE_MAX_MS) {
     cfg.pulseMs = Math.floor(src.pulseMs);
   }
-  if (typeof src.mobileBreakpoint === 'number' && src.mobileBreakpoint >= 320 && src.mobileBreakpoint <= 1200) {
+  if (typeof src.mobileBreakpoint === 'number' && src.mobileBreakpoint >= BREAKPOINT_MIN && src.mobileBreakpoint <= BREAKPOINT_MAX) {
     cfg.mobileBreakpoint = Math.floor(src.mobileBreakpoint);
   }
   return cfg;
@@ -99,28 +131,31 @@ export function emitStageBadgeCSS(cfg = defaultConfig()) {
 .stage-badge {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 3px 12px 3px 10px;
+  gap: ${c.pillGap}px;
+  padding: ${c.pillPaddingTop}px ${c.pillPaddingRight}px ${c.pillPaddingBottom}px ${c.pillPaddingLeft}px;
   border-radius: 999px;
-  background: rgba(15, 12, 10, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(${c.mutedBgColor}, ${c.mutedBgAlpha});
+  border: 1px solid rgba(255, 255, 255, ${c.mutedBorderAlpha});
   /* Wave UQ — typography floor 11px (Apple HIG min readable). */
   font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 2.2px;
+  letter-spacing: ${c.letterSpacing}px;
   text-transform: uppercase;
-  color: rgba(197, 198, 199, 0.78);
-  backdrop-filter: blur(4px);
+  color: rgba(${c.mutedColor}, ${c.mutedColorAlpha});
+  backdrop-filter: blur(${c.blurAmount}px);
   pointer-events: none;
   user-select: none;
   transition: color .35s ease, background .35s ease, border-color .35s ease;
 }
 .stage-badge__dot {
-  width: 6px; height: 6px;
+  width: ${c.dotSize}px; height: ${c.dotSize}px;
   border-radius: 50%;
   background: currentColor;
   opacity: 0.7;
   transition: background .35s ease, box-shadow .35s ease, opacity .35s ease;
+}
+.stage-badge__label {
+  display: inline-block;
 }
 .stage-badge[data-stage="fs"] {
   color: rgba(${c.gold}, 1);
@@ -134,13 +169,13 @@ export function emitStageBadgeCSS(cfg = defaultConfig()) {
   animation: stage-badge-pulse ${c.pulseMs}ms ease-in-out infinite;
 }
 @keyframes stage-badge-pulse {
-  0%, 100% { transform: scale(1);    box-shadow: 0 0 6px  rgba(${c.gold}, 0.55); }
-  50%      { transform: scale(1.25); box-shadow: 0 0 14px rgba(${c.gold}, 1);    }
+  0%, 100% { transform: scale(1);         box-shadow: 0 0 ${c.shadowMinRadius}px  rgba(${c.gold}, 0.55); }
+  50%      { transform: scale(${c.pulseScale}); box-shadow: 0 0 ${c.shadowMaxRadius}px rgba(${c.gold}, 1);    }
 }
 @media (max-width: ${c.mobileBreakpoint}px) {
   /* Wave UQ — mobile floor 11px (matches desktop, no shrink below readable). */
-  .stage-badge { font-size: 0.7rem; padding: 2px 10px 2px 8px; letter-spacing: 1.8px; gap: 6px; }
-  .stage-badge__dot { width: 5px; height: 5px; }
+  .stage-badge { font-size: 0.7rem; padding: ${c.mobilePaddingTop}px ${c.mobilePaddingRight}px ${c.mobilePaddingTop}px ${c.mobilePaddingLeft}px; letter-spacing: ${c.letterSpacingMobile}px; gap: ${c.mobileGap}px; }
+  .stage-badge__dot { width: ${c.dotSizeMobile}px; height: ${c.dotSizeMobile}px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .stage-badge[data-stage="fs"] .stage-badge__dot { animation: none; }
@@ -194,17 +229,14 @@ export function emitStageBadgeRuntime(cfg = defaultConfig()) {
      setStageBadge directly. The freeSpins call sites remain as belt-and-
      suspenders so a future refactor that drops them won't break the pill. */
   if (typeof HookBus !== 'undefined') {
+    if (stageBadge.__sbHooked) return;
+    stageBadge.__sbHooked = true;
     HookBus.on('onFsTrigger', () => {
       setStageBadge('fs', STAGE_FS_LABEL);
-    }, { priority: 10 });
-    /* On FS end, the outro placard is still showing — keep the pill in 'fs'
-       state until FSM_enterBase flips it back. We only ensure the label is
-       in sync (in case a GDD override changed it mid-round). */
-    HookBus.on('onFsEnd', () => {
-      if (stageBadge && stageBadge.dataset.stage === 'fs') {
-        if (stageBadgeLabel) stageBadgeLabel.textContent = STAGE_FS_LABEL;
-      }
-    }, { priority: 10 });
+    }, { priority: HOOK_PRIORITY });
+    HookBus.on('onBaseEnter', () => {
+      setStageBadge('base', STAGE_BASE_LABEL);
+    }, { priority: HOOK_PRIORITY });
   }
 `;
 }
