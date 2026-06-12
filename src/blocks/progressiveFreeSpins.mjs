@@ -82,7 +82,8 @@ export function resolveConfig(model = {}) {
   const cfg = defaultConfig();
   const m = (model && model.progressiveFreeSpins) || {};
 
-  if (m.enabled != null) cfg.enabled = !!m.enabled;
+  const explicitEnabled = m.enabled != null;
+  if (explicitEnabled) cfg.enabled = !!m.enabled;
   if (typeof m.strategy === 'string' && STRATEGIES.includes(m.strategy)) {
     cfg.strategy = m.strategy;
   }
@@ -90,9 +91,12 @@ export function resolveConfig(model = {}) {
   if (Number.isFinite(m.step)) cfg.step = clampInt(m.step, 1, 1000);
   if (Array.isArray(m.ladderValues) && m.ladderValues.length >= 2 &&
       m.ladderValues.every(v => Number.isFinite(v) && v >= 1)) {
-    cfg.ladderValues = m.ladderValues
-      .slice(0, 32)
-      .map(v => clampInt(v, 1, 1000000));
+    const asc = m.ladderValues.every((v, i, a) => i === 0 || v >= a[i - 1]);
+    if (asc) {
+      cfg.ladderValues = m.ladderValues
+        .slice(0, 32)
+        .map(v => clampInt(v, 1, 1000000));
+    }
   }
   if (Number.isFinite(m.maxMult)) cfg.maxMult = clampInt(m.maxMult, 0, 10000000);
   if (m.resetOnRoundEnd != null) cfg.resetOnRoundEnd = !!m.resetOnRoundEnd;
@@ -103,8 +107,12 @@ export function resolveConfig(model = {}) {
     cfg.chipLabel = m.chipLabel;
   }
 
+  /* Doubling with step < 2 would be a no-op or shrink — clamp at resolve
+     time so the runtime can trust the resolved config without magic floors. */
+  if (cfg.strategy === 'doubling' && cfg.step < 2) cfg.step = 2;
+
   /* Auto-enable when GDD declares a progressive_free_spins feature kind */
-  if (Array.isArray(model.features) &&
+  if (!explicitEnabled && Array.isArray(model.features) &&
       model.features.some(f => f.kind === 'progressive_free_spins' || f.kind === 'progressive_fs')) {
     cfg.enabled = true;
   }
@@ -197,9 +205,9 @@ function _pfsCap(n) {
 }
 
 function pfsReset() {
-  PFS_STATE.current = PFS_START;
+  PFS_STATE.current = PFS_STRATEGY === 'ladder' ? PFS_LADDER[0] : PFS_START;
   PFS_STATE.stepIndex = 0;
-  PFS_STATE.prev = PFS_START;
+  PFS_STATE.prev = PFS_STATE.current;
   _pfsRenderChip(false);
 }
 
@@ -207,7 +215,7 @@ function pfsBump() {
   if (!_pfsActive()) return PFS_STATE.current;
   let next;
   if (PFS_STRATEGY === 'doubling') {
-    next = _pfsCap(PFS_STATE.current * Math.max(2, PFS_STEP));
+    next = _pfsCap(PFS_STATE.current * PFS_STEP);
   } else if (PFS_STRATEGY === 'fibonacci') {
     next = _pfsCap(PFS_STATE.current + PFS_STATE.prev);
   } else if (PFS_STRATEGY === 'ladder') {
