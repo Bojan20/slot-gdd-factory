@@ -58,6 +58,30 @@ const DEFAULTS = Object.freeze({
   accelMinFactor: 0.3,
 });
 
+const MAX_MIN_ROTATIONS = 30;
+const MAX_SETTLE_MS = 1000;
+const MAX_STRIP_BUFFER_CELLS = 8;
+const MAX_STATIC_MS = 2000;
+const MAX_STAGGER_MS = 1000;
+const MAX_FALLBACK_MS = 500;
+const MAX_FLOAT_PX = 5;
+const MIN_FLOAT_PX = 0.01;
+
+const RANGES = Object.freeze({
+  minRotations:     [1, MAX_MIN_ROTATIONS],
+  settleBreathMs:   [0, MAX_SETTLE_MS],
+  stripBufferCells: [1, MAX_STRIP_BUFFER_CELLS],
+  staticPreRollMs:  [0, MAX_STATIC_MS],
+  staticBlurSwapMs: [0, MAX_STATIC_MS],
+  staticStaggerMs:  [0, MAX_STAGGER_MS],
+  staticHoldMs:     [0, MAX_STATIC_MS],
+  staticSettleMs:   [0, MAX_STAGGER_MS],
+  staticFallbackMs: [0, MAX_FALLBACK_MS],
+  snapThreshold:    [MIN_FLOAT_PX, MAX_FLOAT_PX],
+  minStepPx:        [MIN_FLOAT_PX, MAX_FLOAT_PX],
+  accelMinFactor:   [0, 1],
+});
+
 export function defaultConfig() {
   return { ...DEFAULTS };
 }
@@ -77,15 +101,15 @@ export function resolveConfig(model) {
   const cfg = defaultConfig();
   const src = (model && model.reelEngineHot) || {};
   const intMap = [
-    ['minRotations',      1,   30],
-    ['settleBreathMs',    0, 1000],
-    ['stripBufferCells',  1,    8],
-    ['staticPreRollMs',   0, 2000],
-    ['staticBlurSwapMs',  0, 2000],
-    ['staticStaggerMs',   0, 1000],
-    ['staticHoldMs',      0, 2000],
-    ['staticSettleMs',    0, 1000],
-    ['staticFallbackMs',  0,  500],
+    ['minRotations',      ...RANGES.minRotations],
+    ['settleBreathMs',    ...RANGES.settleBreathMs],
+    ['stripBufferCells',  ...RANGES.stripBufferCells],
+    ['staticPreRollMs',   ...RANGES.staticPreRollMs],
+    ['staticBlurSwapMs',  ...RANGES.staticBlurSwapMs],
+    ['staticStaggerMs',   ...RANGES.staticStaggerMs],
+    ['staticHoldMs',      ...RANGES.staticHoldMs],
+    ['staticSettleMs',    ...RANGES.staticSettleMs],
+    ['staticFallbackMs',  ...RANGES.staticFallbackMs],
   ];
   for (const [k, lo, hi] of intMap) {
     if (k in src) {
@@ -94,9 +118,9 @@ export function resolveConfig(model) {
     }
   }
   const floatMap = [
-    ['snapThreshold',  0.01, 5],
-    ['minStepPx',      0.01, 5],
-    ['accelMinFactor', 0,    1],
+    ['snapThreshold',  ...RANGES.snapThreshold],
+    ['minStepPx',      ...RANGES.minStepPx],
+    ['accelMinFactor', ...RANGES.accelMinFactor],
   ];
   for (const [k, lo, hi] of floatMap) {
     if (k in src) {
@@ -108,6 +132,11 @@ export function resolveConfig(model) {
 }
 
 export function emitReelEngineRuntime(cfg = defaultConfig()) {
+  if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV !== 'production') {
+    for (const k of Object.keys(cfg)) {
+      if (!(k in DEFAULTS)) console.warn('[reelEngine] unknown cfg key:', k);
+    }
+  }
   const c = resolveConfig({ reelEngineHot: cfg });
   return `
   /* ── reelEngine BLOCK (hot-path) — emitted by src/blocks/reelEngine.mjs ──
@@ -148,7 +177,7 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
      so the visual contract holds across the whole grid lifecycle. */
   function randomSym() {
     if (!Array.isArray(POOL) || POOL.length === 0) return '?';
-    var s = POOL[Math.floor(Math.random() * POOL.length)];
+    const s = POOL[Math.floor(Math.random() * POOL.length)];
     return (s == null || s === '') ? '?' : s;
   }
 
@@ -167,7 +196,7 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
       _popIdx--;
     }
     if (_popIdx < 0) {
-      /* Every cell on this reel is locked — pure no-op, do not spin. */
+      /* Counter must still advance so the rotation loop can settle; visually nothing moves because all cells are locked. */
       reel.rotationCount++;
       return;
     }
