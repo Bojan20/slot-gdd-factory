@@ -19,6 +19,10 @@
  * carry the wildSymbolId already.
  */
 
+const MAX_DURATION_SPINS = 99;
+const MIN_PULSE_MS = 200;
+const MAX_PULSE_MS = 5000;
+
 export function defaultConfig() {
   return {
     enabled: false,
@@ -33,14 +37,18 @@ export function defaultConfig() {
 export function resolveConfig(model = {}) {
   const cfg = defaultConfig();
   const m = model.stickyWild || {};
-  if (m.enabled != null) cfg.enabled = !!m.enabled;
+  const enabledExplicit = m.enabled != null;
+  if (enabledExplicit) cfg.enabled = !!m.enabled;
   if (m.mode === 'fs' || m.mode === 'base' || m.mode === 'both') cfg.mode = m.mode;
-  if (Number.isFinite(m.durationSpins)) cfg.durationSpins = clampInt(m.durationSpins, 0, 99);
+  if (Number.isFinite(m.durationSpins)) cfg.durationSpins = clampInt(m.durationSpins, 0, MAX_DURATION_SPINS);
   if (typeof m.wildSymbolId === 'string' && /^[A-Za-z][A-Za-z0-9_]*$/.test(m.wildSymbolId)) cfg.wildSymbolId = m.wildSymbolId;
-  if (typeof m.haloColor === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(m.haloColor)) cfg.haloColor = m.haloColor;
-  if (Number.isFinite(m.pulseMs)) cfg.pulseMs = clampInt(m.pulseMs, 200, 5000);
+  if (typeof m.haloColor === 'string') {
+    const mh = /^(\d{1,3}),(\d{1,3}),(\d{1,3})$/.exec(m.haloColor);
+    if (mh && mh.slice(1).every(v => +v <= 255)) cfg.haloColor = m.haloColor;
+  }
+  if (Number.isFinite(m.pulseMs)) cfg.pulseMs = clampInt(m.pulseMs, MIN_PULSE_MS, MAX_PULSE_MS);
 
-  if (Array.isArray(model.features) && model.features.some(f => f.kind === 'sticky_wild')) {
+  if (!enabledExplicit && Array.isArray(model.features) && model.features.some(f => f.kind === 'sticky_wild')) {
     cfg.enabled = true;
   }
   return cfg;
@@ -94,16 +102,23 @@ function _stickyPhaseAllowed() {
   return true; // 'both'
 }
 
+function _stickyReels(host) {
+  const n = Number(host && host.dataset && host.dataset.reels);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 function harvestStickyWilds() {
   if (!_stickyPhaseAllowed()) return;
   const host = document.getElementById('gridHost');
   if (!host) return;
+  const REELS = _stickyReels(host);
+  if (!REELS) return;
   const cells = host.querySelectorAll('.cell');
   cells.forEach((cell, idx) => {
     const sym = (cell.textContent || '').trim();
     if (sym !== STICKY_WILD_SYMBOL) return;
-    const r = Math.floor(idx / (window.REELS || 5));
-    const c = idx % (window.REELS || 5);
+    const r = Math.floor(idx / REELS);
+    const c = idx % REELS;
     const key = r + ',' + c;
     if (!STICKY_WILD_REGISTRY.has(key)) {
       STICKY_WILD_REGISTRY.set(key, STICKY_WILD_DURATION > 0 ? STICKY_WILD_DURATION : Infinity);
@@ -115,14 +130,17 @@ function applyStickyWilds() {
   if (!_stickyPhaseAllowed()) return;
   const host = document.getElementById('gridHost');
   if (!host) return;
-  const REELS = window.REELS || 5;
+  const REELS = _stickyReels(host);
+  if (!REELS) return;
+  const cells = host.querySelectorAll('.cell');
   STICKY_WILD_REGISTRY.forEach((spinsLeft, key) => {
     const [r, c] = key.split(',').map(n => parseInt(n, 10));
     const idx = r * REELS + c;
-    const cell = host.querySelectorAll('.cell')[idx];
+    const cell = cells[idx];
     if (!cell) return;
     cell.textContent = STICKY_WILD_SYMBOL;
     cell.classList.add('is-sticky-wild');
+    cell.setAttribute('aria-label', 'sticky wild');
   });
 }
 
@@ -141,7 +159,10 @@ function tickStickyWilds() {
 function clearStickyWilds() {
   STICKY_WILD_REGISTRY.clear();
   const host = document.getElementById('gridHost');
-  if (host) host.querySelectorAll('.cell.is-sticky-wild').forEach(c => c.classList.remove('is-sticky-wild'));
+  if (host) host.querySelectorAll('.cell.is-sticky-wild').forEach(c => {
+    c.classList.remove('is-sticky-wild');
+    c.removeAttribute('aria-label');
+  });
 }
 
 if (typeof window !== 'undefined') {
@@ -157,7 +178,8 @@ if (typeof window !== 'undefined') {
    wild cells on the settled grid.
    postSpin    → tick countdowns (durationSpins decrement).
    onFsTrigger → clear last round's registry. */
-if (typeof HookBus !== 'undefined') {
+if (typeof HookBus !== 'undefined' && typeof window !== 'undefined' && !window.__STICKY_WILD_WIRED__) {
+  window.__STICKY_WILD_WIRED__ = true;
   HookBus.on('onSpinResult', () => {
     applyStickyWilds();
     harvestStickyWilds();
@@ -165,6 +187,7 @@ if (typeof HookBus !== 'undefined') {
   HookBus.on('postSpin', () => { tickStickyWilds(); });
   HookBus.on('onFsTrigger', () => { clearStickyWilds(); });
   HookBus.on('onFsEnd', () => { if (STICKY_WILD_MODE === 'fs') clearStickyWilds(); });
+  HookBus.on('onRoundEnd', () => { if (STICKY_WILD_MODE !== 'fs') clearStickyWilds(); });
 }
 `;
 }
