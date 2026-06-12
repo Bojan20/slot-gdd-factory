@@ -45,6 +45,8 @@ export function resolveConfig(model = {}) {
   return cfg;
 }
 
+const SUPER_FONT_SCALE_EM = 1.4;
+
 export function emitSuperSymbolCSS(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   return `
@@ -53,7 +55,7 @@ export function emitSuperSymbolCSS(cfg = defaultConfig()) {
   z-index: 4;
   background: radial-gradient(circle at 50% 35%, rgba(${cfg.haloColor},.45), rgba(${cfg.haloColor},.08));
   border: 2.5px solid rgba(${cfg.haloColor},.85);
-  font-size: ${cfg.blockSize * 1.4}em !important;
+  font-size: ${cfg.blockSize * SUPER_FONT_SCALE_EM}em !important;
   box-shadow:
     0 0 0 1px rgba(${cfg.haloColor},.4),
     0 0 22px rgba(${cfg.haloColor},.55);
@@ -133,6 +135,9 @@ function maybeFireSuperSymbol() {
       cell.classList.add('is-super-covered');
     }
   }
+  if (typeof HookBus !== 'undefined') {
+    HookBus.emit('onSuperSymbolLand', { r: startR, c: startC, size: SUPER_SIZE, symbol: symId });
+  }
   return { r: startR, c: startC, size: SUPER_SIZE, symbol: symId };
 }
 
@@ -144,7 +149,10 @@ function clearSuperSymbols() {
     c.style.gridRow = '';
     c.style.gridColumn = '';
   });
-  host.querySelectorAll('.cell.is-super-covered').forEach(c => c.classList.remove('is-super-covered'));
+  host.querySelectorAll('.cell.is-super-covered').forEach(c => {
+    c.classList.remove('is-super-covered');
+    c.textContent = '';
+  });
 }
 
 if (typeof window !== 'undefined') {
