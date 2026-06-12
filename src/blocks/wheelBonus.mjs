@@ -15,6 +15,23 @@
  *   • title: string
  */
 
+/* Hoisted constants — senior contract "0 magic numbers" so tuning,
+ * audit, and theming are all traceable from one place. Referenced from
+ * both the resolve path and the emit (CSS / runtime) paths. */
+const WB = {
+  MIN_DUR_MS: 800,
+  MAX_DUR_MS: 12000,
+  MAX_SEGMENTS: 24,
+  MAX_LABEL_LEN: 10,
+  MAX_TITLE_LEN: 40,
+  OVERLAY_Z: 92,
+  SPIN_REVOLUTIONS: 6,
+  ANIM_TAIL_MS: 80,
+  AUTO_DELAY_MS: 250,
+  FALLBACK_SEG_COLOR: '#c0a850',
+  MIN_SEGMENTS: 4,
+};
+
 export function defaultConfig() {
   return {
     enabled: false,
@@ -39,12 +56,15 @@ export function resolveConfig(model = {}) {
   const cfg = defaultConfig();
   const m = model.wheelBonus || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
-  if (Array.isArray(m.segments) && m.segments.length >= 3 && m.segments.every(s => s && typeof s.label === 'string')) {
-    cfg.segments = m.segments.slice(0, 24).map(s => {
+  /* Floor raised to WB.MIN_SEGMENTS (4) — CSS wedge geometry uses
+   * skewY(-(90 - segDeg)); for n<4 segDeg≥90 so the skew goes
+   * non-negative and slices render inverted/overlapping. */
+  if (Array.isArray(m.segments) && m.segments.length >= WB.MIN_SEGMENTS && m.segments.every(s => s && typeof s.label === 'string')) {
+    cfg.segments = m.segments.slice(0, WB.MAX_SEGMENTS).map(s => {
       const out = {
-        label: s.label.slice(0, 10),
+        label: s.label.slice(0, WB.MAX_LABEL_LEN),
         value: Number.isFinite(s.value) ? s.value : 0,
-        color: (typeof s.color === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(s.color)) ? s.color : '#c0a850',
+        color: (typeof s.color === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(s.color)) ? s.color : WB.FALLBACK_SEG_COLOR,
       };
       /* Wave H15 — preserve optional jackpotTier label (e.g. 'GRAND')
        * so the weightedWheelSegments extension can read it from the
@@ -55,10 +75,16 @@ export function resolveConfig(model = {}) {
       return out;
     });
   }
-  if (Number.isFinite(m.spinDurationMs)) cfg.spinDurationMs = clampInt(m.spinDurationMs, 800, 12000);
-  if (typeof m.haloColor === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(m.haloColor)) cfg.haloColor = m.haloColor;
+  if (Number.isFinite(m.spinDurationMs)) cfg.spinDurationMs = clampInt(m.spinDurationMs, WB.MIN_DUR_MS, WB.MAX_DUR_MS);
+  /* Defensive-input rule: regex confirms shape, then clamp components
+   * to the 0–255 RGB gamut — `999,999,999` matches the regex but is
+   * invalid colour data and renders unpredictably across engines. */
+  if (typeof m.haloColor === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(m.haloColor)) {
+    const parts = m.haloColor.split(',').map(Number);
+    if (parts.every(n => Number.isFinite(n) && n >= 0 && n <= 255)) cfg.haloColor = parts.join(',');
+  }
   if (m.autoSpin != null) cfg.autoSpin = !!m.autoSpin;
-  if (typeof m.title === 'string' && m.title.length > 0 && m.title.length <= 40) cfg.title = m.title;
+  if (typeof m.title === 'string' && m.title.length > 0 && m.title.length <= WB.MAX_TITLE_LEN) cfg.title = m.title;
 
   if (Array.isArray(model.features) && model.features.some(f => f.kind === 'wheel_bonus')) {
     cfg.enabled = true;
@@ -73,12 +99,16 @@ export function emitWheelBonusCSS(cfg = defaultConfig()) {
 .wb-overlay {
   position: fixed;
   inset: 0;
-  z-index: 92;
+  z-index: ${WB.OVERLAY_Z};
   display: none;
   align-items: center;
   justify-content: center;
   background: rgba(0,0,0,.86);
-  backdrop-filter: blur(8px);
+}
+/* @supports gate — backdrop-filter is a known jank trigger on browsers
+ * that fall back to software compositing; opt in only when supported. */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .wb-overlay { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 }
 .wb-overlay[data-show="true"] { display: flex; }
 .wb-modal {
@@ -174,8 +204,8 @@ export function emitWheelBonusCSS(cfg = defaultConfig()) {
  * receive the 3.8s rotation animation. Collapse all transitions and
  * heavy transforms when the OS reports reduced-motion preference. */
 @media (prefers-reduced-motion: reduce) {
-  .wb-wheel { transition: none; }
-  .wb-overlay { transition: none; }
+  .wb-wheel { transition: none !important; }
+  .wb-overlay { transition: none !important; }
 }
 `;
 }
@@ -184,9 +214,14 @@ export function emitWheelBonusMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const n = cfg.segments.length;
   const segDeg = 360 / n;
+  /* Clamp skew defensively: when segDeg >= 90 (n<4) the CSS triangle
+   * clip flips; resolveConfig already enforces n >= WB.MIN_SEGMENTS but
+   * direct emit callers might bypass it. Floor at a tiny positive
+   * value to keep skew strictly negative. */
+  const skew = Math.max(0.0001, 90 - segDeg);
   const segs = cfg.segments.map((s, i) => {
     const rotate = i * segDeg;
-    return `<div class="wb-seg" style="transform: rotate(${rotate}deg) skewY(-${90 - segDeg}deg); background:${s.color}"><span style="transform: skewY(${90 - segDeg}deg) rotate(${segDeg / 2}deg); display:inline-block;">${escapeHtml(s.label)}</span></div>`;
+    return `<div class="wb-seg" style="transform: rotate(${rotate}deg) skewY(-${skew}deg); background:${s.color}"><span style="transform: skewY(${skew}deg) rotate(${segDeg / 2}deg); display:inline-block;">${escapeHtml(s.label)}</span></div>`;
   }).join('');
   return `<div id="wbOverlay" class="wb-overlay" data-show="false" role="dialog" aria-modal="true" aria-labelledby="wbTitle">
   <div class="wb-modal">
@@ -205,10 +240,26 @@ export function emitWheelBonusMarkup(cfg = defaultConfig()) {
 export function emitWheelBonusRuntime(cfg = defaultConfig()) {
   if (!cfg.enabled) return `/* wheelBonus: disabled */`;
   return `/* ─── wheel bonus runtime ─────────────────────────────────────── */
-const WB_SEGMENTS = ${JSON.stringify(cfg.segments)};
+// Perf budget: ≤ 1 paint per frame, ≤ 8ms scripting/frame on mid-tier
+// mobile; backdrop-filter is gated behind @supports to avoid jank on
+// unsupported browsers.
+// Canonical HookBus events:
+//   wheelBonus.open     (host → UI)  open the modal
+//   wheelBonus.close    (host → UI)  close the modal
+//   wheelBonus.request  (host → UI)  ask UI to start a spin
+//   wheelBonus.spin     (UI → math)  UI requests a draw from math layer
+//   wheelBonus.result   (math → UI)  math returns { segmentIndex }
+//   wheelBonus.complete (UI → host)  fired after settle with { value, label }
+const WB_SEGMENTS = ${JSON.stringify(cfg.segments).replace(/</g, '\\u003c')};
 const WB_DUR = ${cfg.spinDurationMs};
 const WB_AUTO = ${cfg.autoSpin ? 'true' : 'false'};
+const WB_REVS = ${WB.SPIN_REVOLUTIONS};
+const WB_SETTLE_MS = ${WB.ANIM_TAIL_MS};
+const WB_AUTO_DELAY_MS = ${WB.AUTO_DELAY_MS};
 const WB_STATE = { active: false, spinning: false, result: null };
+function _wbReducedMotion() {
+  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
 
 /* Fable audit (critical, a11y): the dialog declared role="dialog" +
  * aria-modal="true" but had NO focus trap, NO Escape handler, and NO
@@ -246,31 +297,74 @@ function wbOpen() {
   const closeBtn = document.getElementById('wbClose');
   if (closeBtn) closeBtn.dataset.show = 'false';
   document.addEventListener('keydown', _wbTrapFocus, true);
-  if (WB_AUTO) setTimeout(wbSpin, 250);
+  /* Announce so extensions (e.g. weightedWheelSegments) can repaint
+   * tier badges every time the modal opens — wheelBonus may rebuild
+   * .wb-seg nodes on re-entry. */
+  if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
+    try { HookBus.emit('onWheelModalOpened', {}); } catch (_) {}
+  }
+  if (WB_AUTO) setTimeout(wbSpin, WB_AUTO_DELAY_MS);
 }
 
+/* Single-owner rule: UI does NOT draw the winning segment. wbSpin
+ * arms the spin and emits wheelBonus.spin; the math layer answers with
+ * wheelBonus.result { segmentIndex } and wbAnimateTo runs the visual. */
 function wbSpin() {
   if (!WB_STATE.active || WB_STATE.spinning) return;
   WB_STATE.spinning = true;
-  const segDeg = 360 / WB_SEGMENTS.length;
-  const winIdx = Math.floor(Math.random() * WB_SEGMENTS.length);
-  WB_STATE.result = WB_SEGMENTS[winIdx];
-  const targetDeg = -(winIdx * segDeg) - (segDeg / 2) + (360 * 6); // 6 full spins
-  const wheel = document.getElementById('wbWheel');
-  if (wheel) wheel.style.transform = 'rotate(' + targetDeg + 'deg)';
   const spinBtn = document.getElementById('wbSpin');
   if (spinBtn) spinBtn.disabled = true;
-  setTimeout(() => {
+  if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
+    try { HookBus.emit('wheelBonus.spin', {}); } catch (_) {}
+  }
+}
+
+function wbAnimateTo(winIdx) {
+  if (!WB_STATE.active) return;
+  if (!(Number.isInteger(winIdx) && winIdx >= 0 && winIdx < WB_SEGMENTS.length)) winIdx = 0;
+  WB_STATE.spinning = true;
+  const segDeg = 360 / WB_SEGMENTS.length;
+  WB_STATE.result = WB_SEGMENTS[winIdx];
+  const targetDeg = -(winIdx * segDeg) - (segDeg / 2) + (360 * WB_REVS);
+  const wheel = document.getElementById('wbWheel');
+  const spinBtn = document.getElementById('wbSpin');
+  const reduce = _wbReducedMotion();
+  if (wheel) {
+    if (reduce) {
+      /* Snap with no transition; settle fires synchronously below. */
+      const prev = wheel.style.transition;
+      wheel.style.transition = 'none';
+      wheel.style.transform = 'rotate(' + targetDeg + 'deg)';
+      void wheel.offsetWidth;
+      wheel.style.transition = prev;
+    } else {
+      wheel.style.transform = 'rotate(' + targetDeg + 'deg)';
+    }
+  }
+  const settle = () => {
     WB_STATE.spinning = false;
     const result = document.getElementById('wbResult');
     if (result) result.textContent = 'YOU WON ' + WB_STATE.result.label + '!';
     const closeBtn = document.getElementById('wbClose');
     if (closeBtn) closeBtn.dataset.show = 'true';
     if (spinBtn) spinBtn.style.display = 'none';
-  }, WB_DUR + 80);
+    if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
+      try { HookBus.emit('onWheelSettled', { index: winIdx, segment: WB_STATE.result }); } catch (_) {}
+      try { HookBus.emit('wheelBonus.complete', { value: WB_STATE.result.value, label: WB_STATE.result.label }); } catch (_) {}
+    }
+  };
+  if (reduce) settle();
+  else setTimeout(settle, WB_DUR + WB_SETTLE_MS);
 }
 
 function wbClose() {
+  /* Emit collect FIRST so listeners (e.g. weightedWheelSegments) can
+   * compute __WIN_AWARD__ before the overlay tears down. Payload carries
+   * the current result (or null when closed without a spin) so the
+   * listener can early-return on phantom collects. */
+  if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
+    try { HookBus.emit('onWheelCollect', { result: WB_STATE.result }); } catch (_) {}
+  }
   WB_STATE.active = false;
   WB_STATE.spinning = false;
   const ov = document.getElementById('wbOverlay');
@@ -288,18 +382,27 @@ document.addEventListener('DOMContentLoaded', () => {
   if (sb) sb.addEventListener('click', wbSpin);
   const cb = document.getElementById('wbClose');
   if (cb) cb.addEventListener('click', wbClose);
+  /* Wave H15 — deterministic readiness signal so extensions can install
+   * their draw strategy + initial paint without polling. Fired exactly
+   * once per page, after DOM wiring is complete. */
+  if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
+    try { HookBus.emit('onWheelBonusReady', {}); } catch (_) {}
+  }
 });
 
 if (typeof window !== 'undefined') {
   window.wbOpen      = wbOpen;
   window.wbSpin      = wbSpin;
   window.wbClose     = wbClose;
+  window.wbAnimateTo = wbAnimateTo;
   window.WB_STATE    = WB_STATE;
   /* Wave H15 — expose the bakeline segments + duration so the
    * weightedWheelSegments extension can read the live config without
    * baking a duplicate copy. */
   window.WB_SEGMENTS = WB_SEGMENTS;
   window.WB_DUR      = WB_DUR;
+  window.WB_REVS     = WB_REVS;
+  window.WB_SETTLE_MS = WB_SETTLE_MS;
 }
 
 /* HookBus wire-up — wheel modal is opened explicitly by parser-side
@@ -308,6 +411,19 @@ if (typeof window !== 'undefined') {
 if (typeof HookBus !== 'undefined') {
   HookBus.on('onFsTrigger', () => { if (WB_STATE.open) wbClose(); });
   HookBus.on('onFsEnd',     () => { if (WB_STATE.open) wbClose(); });
+  /* Canonical lifecycle — host opens/closes the modal and feeds the
+   * draw result back from the math layer. */
+  HookBus.on('wheelBonus.open',  () => { try { wbOpen();  } catch (_) {} });
+  HookBus.on('wheelBonus.close', () => { try { wbClose(); } catch (_) {} });
+  HookBus.on('wheelBonus.request', () => {
+    if (typeof HookBus.emit === 'function') {
+      try { HookBus.emit('wheelBonus.spin', {}); } catch (_) {}
+    }
+  });
+  HookBus.on('wheelBonus.result', (payload) => {
+    if (!payload || typeof payload.segmentIndex !== 'number') return;
+    try { wbAnimateTo(payload.segmentIndex); } catch (_) {}
+  });
   /* 2026-06-10 (Boki: "wheel mi ne radi, force") — UFP chip emits
    * onForceFeatureRequested but wheelBonus never had a listener, so
    * clicking the WHEEL chip only painted the generic banner. Open the

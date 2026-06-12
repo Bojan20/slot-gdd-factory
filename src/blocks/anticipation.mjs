@@ -188,6 +188,18 @@ export function emitAnticipationRuntime(cfg = defaultConfig()) {
           until the LAST reel that could affect the award has stopped. */
   const HOLD_BASE = ${c.holdMs};
 
+  /* Shared registry — anticipation.mjs is the single owner of the rect-reel
+     kind list. Companion blocks (e.g. anticipationUniversal.mjs) read from
+     window.__ANT_RECT_KINDS__ so adding/renaming a reel shape touches one
+     file, not two. Idempotent: only seeded if not already present. */
+  if (typeof window !== 'undefined' && !(window.__ANT_RECT_KINDS__ instanceof Set)) {
+    window.__ANT_RECT_KINDS__ = new Set([
+      'rectangular','cluster','megaclusters','lock_respin',
+      'expanding','infinity','variable_reel',
+      'diamond','pyramid','cross','l_shape'
+    ]);
+  }
+
   /* Wave S LEGO conformance — anticipation registers preSpin to clear any
      leftover glow timers / anticipating flags from the previous spin. Without
      this, a fast click after a near-miss can carry the gold pulse into the

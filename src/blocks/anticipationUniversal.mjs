@@ -38,9 +38,29 @@ const DEFAULTS = Object.freeze({
   enabled: true,
   pulseMs: 700,
   gold: '255,214,110',
+  warmCore: '255,235,178',
   tickMs: 140,
   showBadge: true,
   skipDuringFs: false,
+  /* Force-trigger spins are the dev/QA preview path — keep the halo
+     visible by default. Flip to true via GDD to opt out. */
+  suppressOnForceTrigger: false,
+  fallbackThreshold: 3,
+  fallbackTopRung: 5,
+  fallbackTriggerSymbol: 'S',
+  fallbackShapeKind: 'rectangular',
+  badgeInsetPx: 6,
+  badgeRadiusPx: 14,
+  badgeTopPx: 10,
+  badgeRightPx: 10,
+  badgeOffsetPx: 4,
+  badgeScale: 0.92,
+  transitionMs: 220,
+  zBadge: 80,
+  zCell: 3,
+  zHostPulse: 1,
+  hookBusRetries: 20,
+  hookBusRetryMs: 50,
 });
 
 export function defaultConfig() {
@@ -62,11 +82,25 @@ export function resolveConfig(model) {
     cfg.pulseMs = Math.floor(src.pulseMs);
   }
   if (isValidRGB(src.gold)) cfg.gold = src.gold;
+  if (isValidRGB(src.warmCore)) cfg.warmCore = src.warmCore;
   if (typeof src.tickMs === 'number' && src.tickMs >= 60 && src.tickMs <= 1000) {
     cfg.tickMs = Math.floor(src.tickMs);
   }
   if (src.showBadge === false) cfg.showBadge = false;
   if (src.skipDuringFs === true) cfg.skipDuringFs = true;
+  if (src.suppressOnForceTrigger === true) cfg.suppressOnForceTrigger = true;
+  if (typeof src.fallbackThreshold === 'number' && src.fallbackThreshold >= 1) {
+    cfg.fallbackThreshold = Math.floor(src.fallbackThreshold);
+  }
+  if (typeof src.fallbackTopRung === 'number' && src.fallbackTopRung >= 1) {
+    cfg.fallbackTopRung = Math.floor(src.fallbackTopRung);
+  }
+  if (typeof src.fallbackTriggerSymbol === 'string' && src.fallbackTriggerSymbol.length > 0) {
+    cfg.fallbackTriggerSymbol = String(src.fallbackTriggerSymbol).toUpperCase();
+  }
+  if (typeof src.fallbackShapeKind === 'string' && src.fallbackShapeKind.length > 0) {
+    cfg.fallbackShapeKind = src.fallbackShapeKind;
+  }
   return cfg;
 }
 
@@ -82,13 +116,13 @@ export function emitAnticipationUniversalCSS(cfg = defaultConfig()) {
               inset 0 0 20px rgba(${c.gold}, 0.5),
               0 0 18px rgba(${c.gold}, 0.65) !important;
   animation: ant-uni-cell-pulse ${c.pulseMs}ms ease-in-out infinite !important;
-  z-index: 3;
+  z-index: ${c.zCell};
 }
 @keyframes ant-uni-cell-pulse {
   0%, 100% { box-shadow: inset 0 0 0 2px rgba(${c.gold}, 0.7),
                          inset 0 0 16px rgba(${c.gold}, 0.4),
                          0 0 14px rgba(${c.gold}, 0.5); }
-  50%      { box-shadow: inset 0 0 0 2px rgba(255, 235, 178, 1),
+  50%      { box-shadow: inset 0 0 0 2px rgba(${c.warmCore}, 1),
                          inset 0 0 26px rgba(${c.gold}, 0.75),
                          0 0 26px rgba(${c.gold}, 0.8); }
 }
@@ -98,27 +132,27 @@ export function emitAnticipationUniversalCSS(cfg = defaultConfig()) {
 .gridHost--ant-pulse::after {
   content: '';
   position: absolute;
-  inset: -6px;
-  border-radius: 14px;
+  inset: -${c.badgeInsetPx}px;
+  border-radius: ${c.badgeRadiusPx}px;
   pointer-events: none;
   box-shadow: 0 0 0 2px rgba(${c.gold}, 0.55),
               0 0 32px rgba(${c.gold}, 0.45);
   animation: ant-uni-host-pulse ${c.pulseMs}ms ease-in-out infinite;
-  z-index: 1;
+  z-index: ${c.zHostPulse};
 }
 @keyframes ant-uni-host-pulse {
   0%, 100% { box-shadow: 0 0 0 2px rgba(${c.gold}, 0.5),
                          0 0 28px rgba(${c.gold}, 0.4); }
-  50%      { box-shadow: 0 0 0 3px rgba(255, 235, 178, 0.9),
+  50%      { box-shadow: 0 0 0 3px rgba(${c.warmCore}, 0.9),
                          0 0 52px rgba(${c.gold}, 0.75); }
 }
 ${c.showBadge ? `.ant-badge {
   position: absolute;
-  top: 10px; right: 10px;
-  z-index: 80;
+  top: ${c.badgeTopPx}px; right: ${c.badgeRightPx}px;
+  z-index: ${c.zBadge};
   background: linear-gradient(180deg, rgba(40,30,8,0.92), rgba(20,14,4,0.95));
   border: 1px solid rgba(${c.gold}, 0.85);
-  border-radius: 14px;
+  border-radius: ${c.badgeRadiusPx}px;
   padding: 0.42rem 0.85rem;
   color: rgba(${c.gold}, 1);
   font: 900 0.82rem/1 system-ui, -apple-system, "SF Pro Display", "Segoe UI", sans-serif;
@@ -126,8 +160,8 @@ ${c.showBadge ? `.ant-badge {
   text-shadow: 0 0 8px rgba(${c.gold}, 0.7);
   box-shadow: 0 0 14px rgba(${c.gold}, 0.5);
   opacity: 0;
-  transform: translateY(-4px) scale(0.92);
-  transition: opacity 220ms ease, transform 220ms cubic-bezier(.2,1.3,.4,1);
+  transform: translateY(-${c.badgeOffsetPx}px) scale(${c.badgeScale});
+  transition: opacity ${c.transitionMs}ms ease, transform ${c.transitionMs}ms cubic-bezier(.2,1.3,.4,1);
   pointer-events: none;
   user-select: none;
   display: inline-flex;
@@ -159,7 +193,12 @@ export function emitAnticipationUniversalRuntime(cfg = defaultConfig()) {
   const c = resolveConfig({ anticipationUniversal: cfg });
   if (!c.enabled) return `/* anticipationUniversal: disabled */`;
   return `
-/* ─── anticipation (universal companion) runtime ──────────────────── */
+/* ─── anticipation (universal companion) runtime ────────────────────
+ * PERF BUDGET: ≤ 0.4ms/tick @ 60 .cell, ${c.tickMs}ms interval.
+ *   • Cell-diff uses Set membership (O(n)) instead of indexOf (O(n²)).
+ *   • Badge writes diff textContent/dataset before mutating to avoid
+ *     style-recalc churn on idle ticks.
+ *   • HookBus subscription is sentinel-gated to survive hot-reload. */
 (function () {
   'use strict';
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
@@ -167,11 +206,33 @@ export function emitAnticipationUniversalRuntime(cfg = defaultConfig()) {
   var ANT_UNI_TICK_MS = ${c.tickMs};
   var ANT_UNI_SHOW_BADGE = ${c.showBadge};
   ${c.skipDuringFs ? `var ANT_UNI_SKIP_FS = true;` : `var ANT_UNI_SKIP_FS = false;`}
+  var ANT_UNI_SUPPRESS_ON_FORCE = ${c.suppressOnForceTrigger ? 'true' : 'false'};
+  var ANT_UNI_FALLBACK_THRESHOLD = ${c.fallbackThreshold};
+  var ANT_UNI_FALLBACK_TOPRUNG   = ${c.fallbackTopRung};
+  var ANT_UNI_FALLBACK_TRIGSYM   = ${JSON.stringify(c.fallbackTriggerSymbol)};
+  var ANT_UNI_FALLBACK_SHAPEKIND = ${JSON.stringify(c.fallbackShapeKind)};
+  var ANT_UNI_HOOKBUS_RETRIES    = ${c.hookBusRetries};
+  var ANT_UNI_HOOKBUS_RETRY_MS   = ${c.hookBusRetryMs};
+
+  var ANT_UNI_FALLBACK_WARNED = false;
+  function _warnFallback(field) {
+    if (ANT_UNI_FALLBACK_WARNED) return;
+    ANT_UNI_FALLBACK_WARNED = true;
+    try { console.warn('[anticipationUniversal] FREESPINS schema missing/malformed — using fallback (' + field + ')'); } catch (_) {}
+  }
+
   /* Shapes that own their suspense via engine animation (spinning pointer,
    * climbing multiplier, falling ball). For them we skip per-cell glow
    * (their grid often has no .cell elements anyway, e.g. wheel/radial
-   * are SVG) and rely on the whole-host pulse + badge counter. */
+   * are SVG) and emit ONLY the host pulse + badge counter. */
   var ANT_UNI_ENGINE_PULSE_ONLY = new Set(['wheel', 'plinko', 'crash', 'radial', 'slingo']);
+
+  /* Single-owner registry for rect-reel kinds — column anticipation lives
+   * in anticipation.mjs. Read from window.__ANT_RECT_KINDS__ if that block
+   * published one; fall back so this block keeps working standalone. */
+  var ANT_UNI_RECT_KINDS = (window.__ANT_RECT_KINDS__ instanceof Set)
+    ? window.__ANT_RECT_KINDS__
+    : new Set(['rectangular','cluster','megaclusters','lock_respin','expanding','infinity','variable_reel','diamond','pyramid','cross','l_shape']);
 
   /* ARMED gate — closed initially so idle random fillers that happen to
    * carry the trigger symbol DON'T get a halo before any spin has even
@@ -190,38 +251,47 @@ export function emitAnticipationUniversalRuntime(cfg = defaultConfig()) {
             window.FSM.phase !== 'BASE') return false;
       } catch (_) {}
     }
-    try {
-      if (window.FORCE_TRIGGER && window.FORCE_TRIGGER.scatterCount > 0) return false;
-    } catch (_) {}
+    /* Force-trigger spins are the dev/QA preview surface — only suppress
+     * the halo if the GDD explicitly opts in via suppressOnForceTrigger. */
+    if (ANT_UNI_SUPPRESS_ON_FORCE) {
+      try {
+        if (window.FORCE_TRIGGER && window.FORCE_TRIGGER.scatterCount > 0) return false;
+      } catch (_) {}
+    }
     return true;
   }
 
   function _readLadder() {
-    var threshold = 3, topRung = 5;
+    var threshold = ANT_UNI_FALLBACK_THRESHOLD;
+    var topRung = ANT_UNI_FALLBACK_TOPRUNG;
+    var usedFallback = true;
     try {
       var fs = window.FREESPINS;
       if (fs) {
-        threshold = (fs.triggerCounts && fs.triggerCounts[0]) ||
-                    (fs.awards && fs.awards[0] && fs.awards[0].count) || 3;
-        topRung = (fs.awards || []).reduce(function (m, a) {
-          return Math.max(m, a.count);
-        }, threshold);
+        var t = (fs.triggerCounts && fs.triggerCounts[0]) ||
+                (fs.awards && fs.awards[0] && fs.awards[0].count);
+        if (t) { threshold = t; usedFallback = false; }
+        if (Array.isArray(fs.awards) && fs.awards.length) {
+          topRung = fs.awards.reduce(function (m, a) { return Math.max(m, a.count); }, threshold);
+        }
       }
     } catch (_) {}
+    if (usedFallback) _warnFallback('triggerCounts/awards');
     return { threshold: threshold, topRung: topRung };
   }
   function _trigSym() {
     try {
       var fs = window.FREESPINS;
-      if (fs) return String(fs.triggerSymbol || 'S').toUpperCase();
+      if (fs && fs.triggerSymbol) return String(fs.triggerSymbol).toUpperCase();
     } catch (_) {}
-    return 'S';
+    _warnFallback('triggerSymbol');
+    return ANT_UNI_FALLBACK_TRIGSYM;
   }
   function _shapeKind() {
     try {
       if (window.SHAPE && window.SHAPE.kind) return String(window.SHAPE.kind);
     } catch (_) {}
-    return 'rectangular';
+    return ANT_UNI_FALLBACK_SHAPEKIND;
   }
 
   function _ensureBadge(host) {
@@ -232,10 +302,17 @@ export function emitAnticipationUniversalRuntime(cfg = defaultConfig()) {
     badge.id = 'antBadge';
     badge.className = 'ant-badge';
     badge.dataset.show = 'false';
+    /* Accessibility: numeric change "2 → 3 → 4" is invisible to assistive
+     * tech without a live region. Sighted players read the throb; SR users
+     * read the count update. */
+    badge.setAttribute('role', 'status');
+    badge.setAttribute('aria-live', 'polite');
+    badge.setAttribute('aria-atomic', 'true');
+    badge.setAttribute('aria-label', 'Scatter progress');
     badge.innerHTML = '<span aria-hidden="true">🎯</span> ' +
       '<span class="ant-badge__num" id="antBadgeNum">0</span>' +
       '<span class="ant-badge__sep">/</span>' +
-      '<span class="ant-badge__num" id="antBadgeThr">3</span>';
+      '<span class="ant-badge__num" id="antBadgeThr">' + String(ANT_UNI_FALLBACK_THRESHOLD) + '</span>';
     var anchor = (host && host.parentElement) || host;
     if (anchor) {
       try {
@@ -253,19 +330,24 @@ export function emitAnticipationUniversalRuntime(cfg = defaultConfig()) {
     if (!badge) return;
     var n = document.getElementById('antBadgeNum');
     var t = document.getElementById('antBadgeThr');
-    if (n) n.textContent = String(scatters);
-    if (t) t.textContent = String(threshold);
-    badge.dataset.show = scatters > 0 ? 'true' : 'false';
-    badge.dataset.warm = warm ? 'true' : 'false';
+    var nText = String(scatters);
+    var tText = String(threshold);
+    /* Diff before write — avoid style-recalc on idle ticks. */
+    if (n && n.textContent !== nText) n.textContent = nText;
+    if (t && t.textContent !== tText) t.textContent = tText;
+    var showVal = scatters > 0 ? 'true' : 'false';
+    var warmVal = warm ? 'true' : 'false';
+    if (badge.dataset.show !== showVal) badge.dataset.show = showVal;
+    if (badge.dataset.warm !== warmVal) badge.dataset.warm = warmVal;
   }
 
   function _tick() {
     if (!_canRun()) {
       /* Clean up state when we're in a phase that shouldn't show
-       * anticipation (FS lifecycle, force-trigger spin). */
-      _paintBadge(0, 3, false);
-      var host = document.getElementById('gridHost');
-      if (host) host.classList.remove('gridHost--ant-pulse');
+       * anticipation (FS lifecycle, opt-in force-trigger suppression). */
+      _paintBadge(0, ANT_UNI_FALLBACK_THRESHOLD, false);
+      var host0 = document.getElementById('gridHost');
+      if (host0) host0.classList.remove('gridHost--ant-pulse');
       return;
     }
     var host = document.getElementById('gridHost');
@@ -274,12 +356,17 @@ export function emitAnticipationUniversalRuntime(cfg = defaultConfig()) {
     var trig = _trigSym();
     var kind = _shapeKind();
 
+    /* Engine-pulse-only shapes: no per-cell metaphor (SVG grids). Show
+     * the badge + host pulse based on engine signals; skip cell logic. */
+    if (ANT_UNI_ENGINE_PULSE_ONLY.has(kind)) {
+      _paintBadge(0, ladder.threshold, false);
+      host.classList.toggle('gridHost--ant-pulse', false);
+      return;
+    }
+
     var cells = host.querySelectorAll('.cell');
     if (cells.length === 0) {
-      /* SVG-based shape (wheel/radial). Show badge only when FS enabled
-       * + use whole-host pulse based on natural progress signals from
-       * the engine. For these shapes the count cannot be derived from
-       * .cell text so we just keep badge at 0. */
+      /* Non-rect grid that hasn't built .cell yet — keep badge at 0. */
       _paintBadge(0, ladder.threshold, false);
       host.classList.remove('gridHost--ant-pulse');
       return;
@@ -298,10 +385,11 @@ export function emitAnticipationUniversalRuntime(cfg = defaultConfig()) {
         scatterCells[j].classList.add('cell--anticipating-cell');
       }
     }
-    /* Strip from cells that no longer carry the trigger. */
+    /* Strip from cells that no longer carry the trigger — O(n) via Set. */
+    var scatterSet = new Set(scatterCells);
     var marked = host.querySelectorAll('.cell.cell--anticipating-cell');
     for (var k = 0; k < marked.length; k++) {
-      if (scatterCells.indexOf(marked[k]) === -1) {
+      if (!scatterSet.has(marked[k])) {
         marked[k].classList.remove('cell--anticipating-cell');
       }
     }
@@ -309,14 +397,8 @@ export function emitAnticipationUniversalRuntime(cfg = defaultConfig()) {
     var warm = scattersSoFar >= Math.max(1, ladder.threshold - 1) && scattersSoFar < ladder.topRung;
     _paintBadge(scattersSoFar, ladder.threshold, warm);
 
-    /* Whole-host pulse for non-rect shapes. */
-    var useHostPulse = kind !== 'rectangular' &&
-                       kind !== 'cluster' &&
-                       kind !== 'megaclusters' &&
-                       kind !== 'lock_respin' &&
-                       kind !== 'expanding' &&
-                       kind !== 'infinity' &&
-                       kind !== 'variable_reel';
+    /* Whole-host pulse for non-rect shapes — registry owned by anticipation.mjs. */
+    var useHostPulse = !ANT_UNI_RECT_KINDS.has(kind);
     if (useHostPulse && warm) host.classList.add('gridHost--ant-pulse');
     else host.classList.remove('gridHost--ant-pulse');
   }
@@ -346,14 +428,36 @@ export function emitAnticipationUniversalRuntime(cfg = defaultConfig()) {
     _tick();   /* paint immediately so player sees halo on landed scatters
                 * without waiting up to ANT_UNI_TICK_MS for next interval. */
   }
-  if (typeof HookBus !== 'undefined') {
+  /* Sentinel-gated subscription — hot-reload / double-emit would otherwise
+   * stack N copies of _arm/_disarm per phase, corrupting ARMED/SPINNING. */
+  function _wireHooks() {
+    if (window.__ANT_UNI_HOOKED__) return true;
+    if (typeof HookBus === 'undefined') return false;
     try {
       HookBus.on('preSpin',     _disarm, { priority: 8 });
       HookBus.on('postSpin',    _arm,    { priority: 8 });
       HookBus.on('onTumbleStep', _arm,   { priority: 8 });
       HookBus.on('onFsTrigger', _disarm, { priority: 8 });
       HookBus.on('onFsEnd',     _disarm, { priority: 8 });
-    } catch (_) {}
+      window.__ANT_UNI_HOOKED__ = true;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+  if (!_wireHooks()) {
+    /* HookBus loaded after this block — poll briefly so we don't fall back
+     * to interval-only timing silently. */
+    var __antUniHookRetries = 0;
+    var __antUniHookRetryId = setInterval(function () {
+      __antUniHookRetries++;
+      if (_wireHooks() || __antUniHookRetries >= ANT_UNI_HOOKBUS_RETRIES) {
+        clearInterval(__antUniHookRetryId);
+        if (!window.__ANT_UNI_HOOKED__) {
+          try { console.warn('[anticipationUniversal] HookBus not available after ' + __antUniHookRetries + ' retries — interval-only timing'); } catch (_) {}
+        }
+      }
+    }, ANT_UNI_HOOKBUS_RETRY_MS);
   }
 
   if (window.__ANT_UNI_TICK_ID__) clearInterval(window.__ANT_UNI_TICK_ID__);

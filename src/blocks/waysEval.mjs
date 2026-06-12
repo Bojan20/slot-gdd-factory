@@ -8,12 +8,19 @@
  * each reel. Industry baseline: ways-to-win pattern — 243 / 1024 / 3125 /
  * 117 649 ways tier ladder, multiplicative reel-count formula.
  *
+ * Perf budget: ≤ 0.5 ms / spin on 5×3, ≤ 2 ms on 6×4 (DOM textContent reads only, no layout).
+ *
  * GDD knobs:
  *   • waysCount: number — declared ways (243/1024/4096/7776/117649…)
  *   • minRun: number — min consecutive reels (default 3 = LTR)
  *   • direction: 'ltr' | 'rtl' | 'both'
  *   • maxEvents: number
+ *   • payCap: number — per-win payout ceiling multiplier (default 50)
+ *   • waysCap: number — ways count ceiling for payout formula (default 20)
+ *   • tierMult: { HP, MP, WILD, LP } — per-tier payout multipliers
  */
+
+const WAYS_BOUNDS = { waysCount: [9, 999999], minRun: [2, 9], maxEvents: [1, 32] };
 
 export function defaultConfig() {
   return {
@@ -22,6 +29,9 @@ export function defaultConfig() {
     minRun: 3,
     direction: 'ltr',
     maxEvents: 8,
+    payCap: 50,
+    waysCap: 20,
+    tierMult: { HP: 1.0, MP: 0.5, WILD: 2.0, LP: 0.25 },
   };
 }
 
@@ -29,10 +39,17 @@ export function resolveConfig(model = {}) {
   const cfg = defaultConfig();
   const m = model.waysEval || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
-  if (Number.isFinite(m.waysCount)) cfg.waysCount = clampInt(m.waysCount, 9, 999999);
-  if (Number.isFinite(m.minRun)) cfg.minRun = clampInt(m.minRun, 2, 7);
+  if (Number.isFinite(m.waysCount)) cfg.waysCount = clampInt(m.waysCount, ...WAYS_BOUNDS.waysCount);
+  if (Number.isFinite(m.minRun)) cfg.minRun = clampInt(m.minRun, ...WAYS_BOUNDS.minRun);
   if (m.direction === 'ltr' || m.direction === 'rtl' || m.direction === 'both') cfg.direction = m.direction;
-  if (Number.isFinite(m.maxEvents)) cfg.maxEvents = clampInt(m.maxEvents, 1, 32);
+  if (Number.isFinite(m.maxEvents)) cfg.maxEvents = clampInt(m.maxEvents, ...WAYS_BOUNDS.maxEvents);
+  if (Number.isFinite(m.payCap)) cfg.payCap = clampInt(m.payCap, 1, 10000);
+  if (Number.isFinite(m.waysCap)) cfg.waysCap = clampInt(m.waysCap, 1, 100000);
+  if (m.tierMult && typeof m.tierMult === 'object') {
+    for (const k of ['HP', 'MP', 'WILD', 'LP']) {
+      if (Number.isFinite(m.tierMult[k])) cfg.tierMult[k] = m.tierMult[k];
+    }
+  }
 
   const hasFeature = Array.isArray(model.features) && model.features.some(f => f.kind === 'ways');
   const isWaysGrid = model.topology && (
@@ -40,17 +57,28 @@ export function resolveConfig(model = {}) {
     Number.isFinite(model.topology.ways_count)
   );
   if (hasFeature || isWaysGrid) cfg.enabled = true;
-  if (model.topology && Number.isFinite(model.topology.ways_count)) cfg.waysCount = model.topology.ways_count;
+  if (model.topology && Number.isFinite(model.topology.ways_count))
+    cfg.waysCount = clampInt(model.topology.ways_count, ...WAYS_BOUNDS.waysCount);
   return cfg;
 }
 
 export function emitWaysEvalRuntime(cfg = defaultConfig()) {
+  cfg = { ...defaultConfig(), ...cfg };
   if (!cfg.enabled) return `/* waysEval: disabled */`;
+  const waysCount = clampInt(cfg.waysCount, ...WAYS_BOUNDS.waysCount);
+  const minRun    = clampInt(cfg.minRun,    ...WAYS_BOUNDS.minRun);
+  const maxEvents = clampInt(cfg.maxEvents, ...WAYS_BOUNDS.maxEvents);
+  const payCap    = clampInt(cfg.payCap,    1, 10000);
+  const waysCap   = clampInt(cfg.waysCap,   1, 100000);
+  const tierMult  = { ...defaultConfig().tierMult, ...cfg.tierMult };
   return `/* ─── ways evaluator ──────────────────────────────────────────── */
-const WAYS_COUNT      = ${cfg.waysCount};
-const WAYS_MIN_RUN    = ${cfg.minRun};
+const WAYS_COUNT      = ${waysCount};
+const WAYS_MIN_RUN    = ${minRun};
 const WAYS_DIRECTION  = ${JSON.stringify(cfg.direction)};
-const WAYS_MAX_EVENTS = ${cfg.maxEvents};
+const WAYS_MAX_EVENTS = ${maxEvents};
+const WAYS_PAY_CAP    = ${payCap};
+const WAYS_CAP        = ${waysCap};
+const WAYS_TIER_MULT  = ${JSON.stringify(tierMult)};
 
 function _waysReelSymbols(reelIdx, REELS, ROWS, cells) {
   const out = new Set();
@@ -113,9 +141,9 @@ function _evalWaysDirection(startReel, dir, REELS, ROWS, cells, anchorSyms, wild
          silently treated wins as zero-paying and skipped the presentation. */
       const __regWE = (typeof SYMBOL_REGISTRY !== 'undefined' && SYMBOL_REGISTRY) ? SYMBOL_REGISTRY : null;
       const tier = (__regWE && __regWE.tier && __regWE.tier[sym]) || 'LP';
-      const tierMult = tier === 'HP' ? 1.0 : tier === 'MP' ? 0.5 : tier === 'WILD' ? 2.0 : 0.25;
+      const mult = (WAYS_TIER_MULT && WAYS_TIER_MULT[tier]) || WAYS_TIER_MULT.LP;
       const bet = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : 1;
-      const payX = Math.min(50, tierMult * (run - WAYS_MIN_RUN + 1) * Math.min(ways, 20)) * bet;
+      const payX = Math.min(WAYS_PAY_CAP, mult * (run - WAYS_MIN_RUN + 1) * Math.min(ways, WAYS_CAP)) * bet;
       events.push({ symbol: sym, ways, runLength: run, tier, matchLength: run, payX, cells: winCells });
     }
   }
@@ -154,7 +182,7 @@ function detectWaysWins() {
 
 if (typeof window !== 'undefined') {
   window.detectWaysWins = detectWaysWins;
-  window.WAYS_COUNT     = WAYS_COUNT;
+  window.__waysEval     = { count: WAYS_COUNT };
 }
 `;
 }

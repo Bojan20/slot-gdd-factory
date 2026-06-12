@@ -32,10 +32,10 @@
  *
  * Lifecycle (HookBus contract):
  *
- *   DOMContentLoaded → install the wbSpin monkey-patch IF wheelBonus
- *                      runtime is present (window.wbSpin defined). If
- *                      missing, console.warn once + no-op so the dist
- *                      still loads.
+ *   DOMContentLoaded → install the wbSpin wrapper + listener replacement
+ *                      IF wheelBonus runtime is present (window.wbSpin
+ *                      defined). If missing, console.warn once + no-op
+ *                      so the dist still loads.
  *   user clicks wbSpin button → patched wbSpin runs:
  *                      1) weighted draw via cfg.weights[]
  *                      2) if drawn segment carries a jackpotTier, look up
@@ -62,7 +62,8 @@
  *     enabled:        boolean (default false; auto-enables if any feature
  *                     kind matches /weighted[_-]?wheel/i, OR when GDD
  *                     declares model.weightedWheelSegments.weights AND
- *                     wheelBonus is enabled.)
+ *                     wheelBonus is enabled; manual override always takes
+ *                     precedence.)
  *     weights:        number[] of length === model.wheelBonus.segments.length
  *                     (default: all 1.0 — uniform fallback). When the
  *                     length doesn't match, falls back to uniform.
@@ -93,6 +94,9 @@
  *   emitWeightedWheelSegmentsRuntime(cfg, wheelCfg)
  *                                            → runtime JS (monkey-patch wbSpin)
  *
+ * Performance budget: ≤0.1ms per draw at n≤24; CSS emit ≤2KB; runtime
+ * emit ≤4KB.
+ *
  * Runtime contract (after emitted JS executes):
  *
  *   window.WWS_STATE             { enabled, weights, jackpotMap,
@@ -121,6 +125,9 @@
  *     vendor-neutral naming).
  *   • Audit-grade weight table: single source of truth in GDD config;
  *     code never derives weights from other inputs.
+ *
+ * Performance budget: ≤0.1ms per draw at n≤24; CSS emit ≤2KB;
+ * runtime emit ≤4KB.
  */
 
 const HEX_RGB = /^\d{1,3},\s*\d{1,3},\s*\d{1,3}$/;
@@ -128,11 +135,20 @@ const SAFE_LABEL = /^[A-Z0-9_ -]{1,16}$/;
 
 /* Fable audit (critical): HEX_RGB only checks digit count — "999,300,400"
  * passes syntactic check but is out of the 0..255 channel range and
- * ships broken rgba() to dist. Validate each channel as a byte. */
-function _isValidRgb(s) {
-  if (typeof s !== 'string' || !HEX_RGB.test(s)) return false;
-  const parts = s.split(',').map(p => parseInt(p.trim(), 10));
-  return parts.length === 3 && parts.every(n => Number.isFinite(n) && n >= 0 && n <= 255);
+ * ships broken rgba() to dist. Parse + clamp each channel to a byte;
+ * return null when input is malformed so the caller falls back to the
+ * default. */
+function _normalizeRgb(s) {
+  if (typeof s !== 'string' || !HEX_RGB.test(s)) return null;
+  const parts = s.split(',').map(p => p.trim());
+  if (parts.length !== 3) return null;
+  const out = [];
+  for (let i = 0; i < 3; i++) {
+    const n = Number(parts[i]);
+    if (!Number.isFinite(n)) return null;
+    out.push(clampInt(n, 0, 255));
+  }
+  return out.join(',');
 }
 
 function clampInt(n, lo, hi) {
@@ -203,6 +219,15 @@ export function resolveConfig(model = {}) {
     model.wheelBonus.enabled === true ||
     (Array.isArray(model.features) && model.features.some(f => f && f.kind === 'wheel_bonus'))
   ));
+
+  /* Fable audit (high): docstring promises auto-enable when the GDD
+   * declares model.weightedWheelSegments.weights and wheelBonus is on.
+   * Honour that contract — otherwise GDDs written against the doc stay
+   * silently disabled. */
+  if (!cfg.enabled && wheelEnabled && Array.isArray(m.weights) && m.weights.length > 0) {
+    cfg.enabled = true;
+  }
+
   if (!wheelEnabled) cfg.enabled = false;
 
   const expectedLen = (model.wheelBonus && Array.isArray(model.wheelBonus.segments))
@@ -216,8 +241,9 @@ export function resolveConfig(model = {}) {
     cfg.jackpotMap = m.jackpotMap.map(j => ({ label: j.label, x: Number(j.x) }));
   }
 
-  if (typeof m.defaultTierColor === 'string' && _isValidRgb(m.defaultTierColor)) {
-    cfg.defaultTierColor = m.defaultTierColor.replace(/\s+/g, '');
+  if (typeof m.defaultTierColor === 'string') {
+    const rgb = _normalizeRgb(m.defaultTierColor);
+    if (rgb) cfg.defaultTierColor = rgb;
   }
 
   if (m.allowFallbackToValue != null) cfg.allowFallbackToValue = !!m.allowFallbackToValue;
@@ -352,13 +378,15 @@ export function emitWeightedWheelSegmentsRuntime(cfg = defaultConfig(), wheelCfg
     }
 
     function _paintTierBadges() {
-      /* Mark each wb-seg whose data-tier matches one of BAKED_SEGMENTS
+      /* Mark each wb-seg whose data-tier matches one of the live segments'
        * jackpotTier strings. wheelBonus doesn't set data-tier itself —
-       * we do it here so the CSS picks them up. */
+       * we do it here so the CSS picks them up. Use WB_SEGMENTS_LIVE as
+       * the single source of truth for both draw and paint. */
       var nodes = document.querySelectorAll('#wbWheel .wb-seg');
       if (!nodes || nodes.length === 0) return;
-      for (var i = 0; i < nodes.length && i < BAKED_SEGMENTS.length; i++) {
-        var seg = BAKED_SEGMENTS[i];
+      var segs = window.WB_SEGMENTS_LIVE || BAKED_SEGMENTS;
+      for (var i = 0; i < nodes.length && i < segs.length; i++) {
+        var seg = segs[i];
         if (seg && typeof seg.jackpotTier === 'string' && seg.jackpotTier.length > 0) {
           nodes[i].setAttribute('data-tier', seg.jackpotTier);
         } else {
@@ -379,7 +407,8 @@ export function emitWeightedWheelSegmentsRuntime(cfg = defaultConfig(), wheelCfg
         }
         return;
       }
-      window.__origWbSpin = window.wbSpin;
+      var origWbSpin = window.wbSpin;
+      window.__origWbSpin = origWbSpin;
       window.WB_SEGMENTS_LIVE = (typeof window.WB_SEGMENTS !== 'undefined') ? window.WB_SEGMENTS : BAKED_SEGMENTS;
 
       window.wbSpin = function () {
@@ -391,11 +420,10 @@ export function emitWeightedWheelSegmentsRuntime(cfg = defaultConfig(), wheelCfg
         var seg = segs[winIdx] || { label: '', value: 0 };
         WB.result = seg;
 
-        /* Drive the same rotation animation wheelBonus already uses.
-         * 6 full revolutions + center on the winning segment, same maths
-         * as the original. */
+        /* Drive the same rotation animation wheelBonus already uses. */
         var segDeg = 360 / segs.length;
-        var targetDeg = -(winIdx * segDeg) - (segDeg / 2) + (360 * 6);
+        var revs = (typeof window.WB_REVS !== 'undefined') ? window.WB_REVS : 6;
+        var targetDeg = -(winIdx * segDeg) - (segDeg / 2) + (360 * revs);
         var wheel = document.getElementById('wbWheel');
         if (wheel) wheel.style.transform = 'rotate(' + targetDeg + 'deg)';
         var spinBtn = document.getElementById('wbSpin');
@@ -403,6 +431,7 @@ export function emitWeightedWheelSegmentsRuntime(cfg = defaultConfig(), wheelCfg
 
         /* Resolve award + tier on completion. */
         var dur = (typeof window.WB_DUR !== 'undefined') ? window.WB_DUR : 3800;
+        var settleBuf = (typeof window.WB_SETTLE_MS !== 'undefined') ? window.WB_SETTLE_MS : 80;
         setTimeout(function () {
           WB.spinning = false;
           var tier = (seg && typeof seg.jackpotTier === 'string' && seg.jackpotTier.length > 0)
@@ -444,32 +473,43 @@ export function emitWeightedWheelSegmentsRuntime(cfg = defaultConfig(), wheelCfg
               if (console && console.error) console.error('[wws] emit chosen failed:', e);
             }
           }
-        }, dur + 80);
+        }, dur + settleBuf);
       };
+
+      /* Replace click listener: wheelBonus bound to local ref, not window.wbSpin,
+       * so monkey-patch doesn't affect initial clicks. Remove old binding, add new. */
+      var spinBtn = document.getElementById('wbSpin');
+      if (spinBtn) {
+        spinBtn.removeEventListener('click', origWbSpin);
+        spinBtn.addEventListener('click', window.wbSpin);
+      }
 
       /* Wrap wbClose so we publish __WIN_AWARD__ on collect. */
       if (typeof window.wbClose === 'function') {
         var origClose = window.wbClose;
         window.__origWbClose = origClose;
         window.wbClose = function () {
+          /* Guard against phantom collect: if no spin happened, defer to
+           * original close without emitting award event. */
+          if (!STATE.lastResult) {
+            return origClose.call(this);
+          }
           /* Resolve the award now — favor jackpot multiplier if it hit,
            * otherwise the segment's nominal value (with fallback to
            * value if the jackpot tier wasn't in the map). */
           var award = 0;
           var isJackpot = false;
           var tierLabel = '';
-          if (STATE.lastResult) {
-            var lr = STATE.lastResult;
-            if (lr.jackpotTier && lr.jackpotX > 0) {
-              award = lr.jackpotX;
-              isJackpot = true;
-              tierLabel = lr.jackpotTier;
-            } else if (lr.jackpotTier && ALLOW_FALLBACK) {
-              award = lr.value;
-              tierLabel = lr.jackpotTier;
-            } else {
-              award = lr.value;
-            }
+          var lr = STATE.lastResult;
+          if (lr.jackpotTier && lr.jackpotX > 0) {
+            award = lr.jackpotX;
+            isJackpot = true;
+            tierLabel = lr.jackpotTier;
+          } else if (lr.jackpotTier && ALLOW_FALLBACK) {
+            award = lr.value;
+            tierLabel = lr.jackpotTier;
+          } else {
+            award = lr.value;
           }
           var bet = (typeof window.__SLOT_BET__ === 'number' && window.__SLOT_BET__ > 0)
             ? window.__SLOT_BET__ : 1;
@@ -493,19 +533,59 @@ export function emitWeightedWheelSegmentsRuntime(cfg = defaultConfig(), wheelCfg
         };
       }
 
+      /* Wrap wbOpen to repaint tier badges on modal (re)open and fix click
+       * listener. wheelBonus binds its DOM listeners to local references,
+       * so we need to replace the element to unbind and rebind to our
+       * weighted draw function. */
+      if (typeof window.wbOpen === 'function') {
+        var origOpen = window.wbOpen;
+        window.__origWbOpen = origOpen;
+        window.wbOpen = function () {
+          var result = origOpen.call(this);
+          /* Replace spin button to remove old listener and add ours. */
+          var spinBtn = document.getElementById('wbSpin');
+          if (spinBtn && spinBtn.parentNode) {
+            var newSpinBtn = spinBtn.cloneNode(true);
+            spinBtn.parentNode.replaceChild(newSpinBtn, spinBtn);
+            newSpinBtn.addEventListener('click', window.wbSpin);
+          }
+          /* Repaint tier badges on modal open. */
+          _paintTierBadges();
+          return result;
+        };
+      }
+
       /* Paint tier badges once the wheel DOM exists. */
       _paintTierBadges();
       STATE.patched = true;
     }
 
     /* Patch at DOMContentLoaded if the document is still loading; else
-     * patch immediately. Defensive: also schedule a microtask retry in
-     * case wheelBonus runtime is emitted AFTER us in the bundle order
-     * (it isn't currently, but harden anyway). */
+     * patch immediately. If wheelBonus is emitted after us in bundle,
+     * subscribe to its ready event or watch for #wbWheel DOM. */
     function _safePatchSchedule() {
       _patch();
+
       if (!STATE.patched) {
-        setTimeout(_patch, 0);
+        /* Try HookBus event if available. */
+        if (typeof window !== 'undefined' && window.HookBus && typeof window.HookBus.on === 'function') {
+          try {
+            window.HookBus.on('onWheelBonusReady', _patch);
+          } catch (e) {
+            /* Event not available, fall back to observer. */
+          }
+        }
+
+        /* Fallback: watch for #wbWheel element appearance. */
+        if (!STATE.patched && typeof window !== 'undefined' && typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
+          var observer = new MutationObserver(function () {
+            _patch();
+            if (STATE.patched) observer.disconnect();
+          });
+          observer.observe(document.documentElement, { childList: true, subtree: true });
+          /* Safety: disconnect after 10 seconds. */
+          setTimeout(function () { observer.disconnect(); }, 10000);
+        }
       }
     }
     if (typeof document !== 'undefined') {
