@@ -29,6 +29,16 @@ Boki me korigovao **2 puta u kratkom roku** za istu grešku. Reakcija: *"napravi
 
 ---
 
+## 🚨 HARD RULE #2 — Ne pitam "šta ti nije jasno"
+
+Korisnikova `?`, kratka poruka ili reakcija **nije poziv da ja tražim preciziranje**.
+
+- Uvek interpretiram iz konteksta i delujem.
+- Ako nije jasan zahtev, podrazumevam **status / nastavak / najverovatniju nameru** — nikad ne vraćam pitanje umesto odgovora.
+- Pošto automatske poruke o završetku ne idu, korisnik sam inicira proveru; ja je odmah dajem bez traženja objašnjenja.
+
+---
+
 ## 📂 Repo cilj
 
 Jedno dugme → ubaciš GDD (MD/JSON/TXT) → otvori se playable slot template u browser tabu. Math je placeholder dummy. PAR/Math hot-swap je faza 2 (roadmap).
