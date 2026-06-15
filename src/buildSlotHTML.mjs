@@ -81,6 +81,12 @@ import {
   resolveConfig as resolveStickyMeterConfig,
 } from './blocks/stickyMeter.mjs';
 import {
+  emitEnergyMeterCSS,
+  emitEnergyMeterMarkup,
+  emitEnergyMeterRuntime,
+  resolveConfig as resolveEnergyMeterConfig,
+} from './blocks/energyMeter.mjs';
+import {
   emitCoinShowerCSS,
   emitCoinShowerMarkup,
   emitCoinShowerRuntime,
@@ -592,6 +598,7 @@ ${emitFsProgressBarCSS(resolveFsProgressBarConfig(model))}
 ${emitWinwaysIndicatorCSS(resolveWinwaysIndicatorConfig(model))}
 ${emitMultiplierLadderCSS(resolveMultiplierLadderConfig(model))}
 ${emitStickyMeterCSS(resolveStickyMeterConfig(model))}
+${emitEnergyMeterCSS(resolveEnergyMeterConfig(model))}
 ${emitCoinShowerCSS(resolveCoinShowerConfig(model))}
 ${emitPaylineOverlayCSS(resolvePaylineOverlayConfig(model))}
 ${emitGridShapesCSS()}
@@ -694,6 +701,7 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
     ${emitWinwaysIndicatorMarkup(resolveWinwaysIndicatorConfig(model))}
     ${emitMultiplierLadderMarkup(resolveMultiplierLadderConfig(model))}
     ${emitStickyMeterMarkup(resolveStickyMeterConfig(model))}
+    ${emitEnergyMeterMarkup(resolveEnergyMeterConfig(model))}
     ${emitCoinShowerMarkup(resolveCoinShowerConfig(model))}
     <div class="sub">${escapeHtml(layoutSub)}</div>
   </div>
@@ -1041,6 +1049,7 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitWinwaysIndicatorRuntime(resolveWinwaysIndicatorConfig(model))}
   ${emitMultiplierLadderRuntime(resolveMultiplierLadderConfig(model))}
   ${emitStickyMeterRuntime(resolveStickyMeterConfig(model))}
+  ${emitEnergyMeterRuntime(resolveEnergyMeterConfig(model))}
   ${emitCoinShowerRuntime(resolveCoinShowerConfig(model))}
   ${emitFreeSpinsRuntime(resolveFreeSpinsConfig(model))}
 

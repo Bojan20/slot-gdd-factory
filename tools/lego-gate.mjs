@@ -273,6 +273,9 @@ const EXPECTED_EMIT_OWNERS = {
   onMultLadderReset:  ['multiplierLadder.mjs'],
   /* B70 stickyMeter — sole emitter of sticky-count delta events. */
   onStickyCountChange: ['stickyMeter.mjs'],
+  /* B73 energyMeter — sole emitter of gauge fill + full trigger events. */
+  onEnergyChange:      ['energyMeter.mjs'],
+  onEnergyFull:        ['energyMeter.mjs'],
   /* B68 coinShower — particle-burst block, sole owner of its lifecycle. */
   onCoinShowerStart:  ['coinShower.mjs'],
   onCoinShowerEnd:    ['coinShower.mjs'],
