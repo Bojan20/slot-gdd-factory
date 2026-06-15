@@ -69,6 +69,12 @@ import {
   resolveConfig as resolveWinwaysIndicatorConfig,
 } from './blocks/winwaysIndicator.mjs';
 import {
+  emitMultiplierLadderCSS,
+  emitMultiplierLadderMarkup,
+  emitMultiplierLadderRuntime,
+  resolveConfig as resolveMultiplierLadderConfig,
+} from './blocks/multiplierLadder.mjs';
+import {
   emitAnticipationCSS,
   emitAnticipationRuntime,
   resolveConfig as resolveAnticipationConfig,
@@ -572,6 +578,7 @@ ${emitThemeCSS(resolveThemeCSSConfig(model))}
 ${emitStageBadgeCSS(resolveStageBadgeConfig(model))}
 ${emitFsProgressBarCSS(resolveFsProgressBarConfig(model))}
 ${emitWinwaysIndicatorCSS(resolveWinwaysIndicatorConfig(model))}
+${emitMultiplierLadderCSS(resolveMultiplierLadderConfig(model))}
 ${emitPaylineOverlayCSS(resolvePaylineOverlayConfig(model))}
 ${emitGridShapesCSS()}
 ${emitReelEngineCSS(resolveReelEngineConfig(model))}
@@ -671,6 +678,7 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
     ${emitStageBadgeMarkup(resolveStageBadgeConfig(model))}
     ${emitFsProgressBarMarkup(resolveFsProgressBarConfig(model))}
     ${emitWinwaysIndicatorMarkup(resolveWinwaysIndicatorConfig(model))}
+    ${emitMultiplierLadderMarkup(resolveMultiplierLadderConfig(model))}
     <div class="sub">${escapeHtml(layoutSub)}</div>
   </div>
   <div class="play">
@@ -1015,6 +1023,7 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitStageBadgeRuntime(resolveStageBadgeConfig(model))}
   ${emitFsProgressBarRuntime(resolveFsProgressBarConfig(model))}
   ${emitWinwaysIndicatorRuntime(resolveWinwaysIndicatorConfig(model))}
+  ${emitMultiplierLadderRuntime(resolveMultiplierLadderConfig(model))}
   ${emitFreeSpinsRuntime(resolveFreeSpinsConfig(model))}
 
   /* Wave T-slim Phase 2 — extracted window.* exposure surface (was inline

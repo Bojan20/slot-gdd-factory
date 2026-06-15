@@ -268,6 +268,9 @@ const EXPECTED_EMIT_OWNERS = {
   onWheelModalOpened: ['wheelBonus.mjs'],
   onWheelSettled:     ['wheelBonus.mjs'],
   onWheelCollect:     ['wheelBonus.mjs'],
+  /* B67 multiplierLadder — sole emitter of ladder lifecycle events. */
+  onMultLadderStep:   ['multiplierLadder.mjs'],
+  onMultLadderReset:  ['multiplierLadder.mjs'],
   /* wildReel emits `symbolOverride` when its full-column wild paints over
    * the rolled symbols on a designated reel. winEval / paylineOverlay
    * subscribe so they treat the overridden cells as the wild for the
