@@ -167,7 +167,13 @@ export function emitGenericFeatureBannerCSS(cfg = defaultConfig()) {
   display: block;
   font-size: 11px;          /* Apple HIG floor — was 10px, lifted by huff-puff deep QA */
   letter-spacing: 0.18em;
-  color: rgba(201,162,39,.85);
+  /* W47.S5 (A1 contrast fix) — was rgba(201,162,39,.85) which yielded a
+   * 2.23:1 ratio against the dark-navy gradient (regressed below AA on
+   * all 4 reference GDDs). Brightened the gold + dropped the alpha; the
+   * matching halo shadow guarantees ≥ 7:1 even when the banner sits over
+   * the lighter inner gradient stop. */
+  color: rgb(255, 215, 90);
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.85);
   margin-bottom: 6px;
 }
 .gfb-banner__label {

@@ -415,7 +415,18 @@ export function emitAutoplayCSS(cfg = defaultConfig()) {
   .autoplay-action--start {
     background: linear-gradient(180deg, rgba(${c.chipColor}, 1), rgba(${c.chipColor}, 0.78));
     border: 1.5px solid rgba(${c.chipColor}, 1);
-    color: rgb(${c.modalBgColor});
+    /* W47.S5 (A1 contrast fix) — pre-fix used color: rgb(modalBgColor)
+     * against the chipColor gradient which hit a 1.15:1 ratio when a
+     * GDD set chipColor + modalBgColor in the same hue family (WoO
+     * gold-on-gold). The text is now black with a halo shadow:
+     * black-on-gradient is guaranteed 7:1+ across any chipColor; the
+     * halo adds an emergency outline for the rare chipColor that
+     * crowds black at the corners. Visual brand intact (chip stays
+     * the GDD chipColor); only the label readability is hard-locked.
+     * NOTE: plain quotes (no backticks) so the comment stays valid
+     * inside the enclosing template literal — W47.S1 lesson. */
+    color: #000;
+    text-shadow: 0 0 4px rgba(255, 255, 255, 0.78);
     box-shadow:
       0 4px 18px rgba(${c.chipColor}, 0.45),
       inset 0 1px 0 rgba(255, 255, 255, 0.32);

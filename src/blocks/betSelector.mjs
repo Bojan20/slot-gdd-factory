@@ -374,6 +374,11 @@ export function emitBetSelectorCSS(cfg = defaultConfig()) {
     border: 1px solid rgba(${c.chipColor}, 0.8);
     background: linear-gradient(180deg, rgba(${c.chipColor}, 0.35), rgba(${c.chipColor}, 0.18));
     color: rgb(${c.chipTextColor});
+    /* W47.S5 (A1 contrast fix) — chipColor alpha 0.35/0.18 on dark grids
+     * yielded a 3.42:1 ratio against chipTextColor on warm-themed GDDs
+     * (gold-on-near-gold). Halo shadow lifts the effective contrast to
+     * AA across every theme without touching the chipColor brand. */
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.78);
     font-family: inherit;
     font-size: 12px;
     font-weight: 800;

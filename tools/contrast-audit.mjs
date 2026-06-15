@@ -30,6 +30,19 @@
  *   - Top failing elements (selector, sample text, ratio).
  *   - reports/contrast-audit.json — structured for downstream tools.
  *
+ * Known limitation
+ * ----------------
+ * `getComputedStyle(el).backgroundColor` returns `rgba(0,0,0,0)` when the
+ * element's background is a CSS `linear-gradient(...)` — getComputedStyle
+ * does NOT resolve gradient-image backgrounds to a single RGB. The audit
+ * then walks the parent chain for an opaque solid; gradient-painted
+ * buttons therefore look like the underlying page background, inflating
+ * the failure count for visually-correct-but-gradient-styled buttons.
+ * The audit is still useful as a *trending* signal and catches the
+ * non-gradient real fails (the ones where a solid-on-solid token is
+ * genuinely sub-AA). A future revision could parse the gradient stops
+ * to pick a midpoint colour — left as W47.SX.
+ *
  * Exit codes
  * ----------
  *   0   all checked nodes meet the active gate (AAA by default).
