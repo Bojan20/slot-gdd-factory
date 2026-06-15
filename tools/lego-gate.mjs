@@ -82,6 +82,12 @@ const HOOK_REGISTRATION_OPT_OUT = new Set([
                         // onHotReloadConnect / onHotReloadDisconnect emits.
   'universalForcePanel.mjs', // Wave U-FORCE-ALL — emit-only dev/QA chip rail;
                         // wires DOM click handlers, never reads HookBus.
+  /* W47.S2 (2026-06-15) — spinTempo is a pure config emitter: produces a
+   * static SPIN_PROFILE literal consumed by the reel engine synchronously.
+   * Per its own JSDoc header — "Consumed only at build time, no runtime
+   * HookBus subscription. This block neither calls bus.on(...) nor emits
+   * bus.emit(...)". Adding it here aligns gate with header contract. */
+  'spinTempo.mjs',
 ]);
 
 /* Expected emit ownership — single source of truth for each event. */
@@ -238,6 +244,35 @@ const EXPECTED_EMIT_OWNERS = {
    * notification with source attribution. Both blocks emit it: the
    * persistent ladder (FS round) and the multiplierOrb (per-orb hit). */
   onMultChange: ['persistentMultiplier.mjs', 'multiplierOrb.mjs'],
+
+  /* W47.S2 (2026-06-15) — close the LEGO ownership matrix for events
+   * the runtime has been emitting since AL-x but were never declared
+   * here. Each one is a real lifecycle signal that downstream blocks
+   * (audio bus, historyLog, regulator probes, future analytics) read.
+   * Surfacing them in the canonical map turns LEGO gate from 3/5 to
+   * 5/5 without changing block behaviour. */
+  onHoldAndWinPayout: ['holdAndWin.mjs'],
+  onSuperSymbolLand:  ['superSymbol.mjs'],
+  /* walkingWild emits `requestRespin` as an intent — a wild that walked
+   * off the visible band asks the spin engine to roll one more spin so
+   * the player sees the wild re-enter. The spin engine consumes it via
+   * its own respinMaybeTrigger() chain; this is the single-owner emit
+   * site for the request side. */
+  requestRespin:      ['walkingWild.mjs'],
+  /* Wave AL-1 / U-FORCE-ALL — wheelBonus owns its full modal lifecycle:
+   * onWheelBonusReady before reveal, onWheelModalOpened on visible open,
+   * onWheelSettled when the segment resolves, onWheelCollect on the
+   * collect-CTA click. (weightedWheelSegments owns the segment-chosen +
+   * jackpot-hit + award-collected variants — separate ownership matrix.) */
+  onWheelBonusReady:  ['wheelBonus.mjs'],
+  onWheelModalOpened: ['wheelBonus.mjs'],
+  onWheelSettled:     ['wheelBonus.mjs'],
+  onWheelCollect:     ['wheelBonus.mjs'],
+  /* wildReel emits `symbolOverride` when its full-column wild paints over
+   * the rolled symbols on a designated reel. winEval / paylineOverlay
+   * subscribe so they treat the overridden cells as the wild for the
+   * upcoming evaluation. */
+  symbolOverride:     ['wildReel.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */
