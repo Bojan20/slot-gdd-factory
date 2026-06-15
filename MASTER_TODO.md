@@ -43,6 +43,63 @@
 > (1 pre-existing wheel fsOverlay soft-fail unchanged), all 63 block tests
 > PASS, cert 19/19 PASS.
 
+## 🎯 W46 CORTEX INTEGRATION — INFRASTRUCTURE LIVE (2026-06-15)
+
+**Cortex-side W46 stack je 100% LANDED + LIVE.** Stvarna integracija sa ovim repom je sada moguća jednom komandom.
+
+### Šta cortex daje slot-gdd-factory-ju (commit `67a159e`)
+
+| Capability | Komanda | Šta radi za slot-gdd-factory |
+|:--|:--|:--|
+| Multi-modal vision | `cortex-slot-builder --pdf <gdd>` | PDF → PNG cache → Opus 4.8 čita stranice direktno (200 DPI default) |
+| RAG retrieval | `cortex-slot-builder --rag "<query>"` | SQLite + Ollama nomic-embed-text → top-k chunks iz indeksiranog `agents/` + `src/blocks/` |
+| Closed-loop QA | `cortex-slot-builder --closed-loop` | Emit → cortex-eyes-ultimate-qa → fail feedback → iterate ≤3× |
+| Council fan-out | `cortex-slot-builder --council=3` | Opus 4.8 + Kimi K2.6 + Fable 5 paralelno + synthesis arbiter |
+| Adversarial gate | `cortex-slot-builder --adversarial` | A emit → B red-team attack → C judge ruling |
+| Vote feedback | `cortex-agent-vote <call_id> +1\|-1` | 👍/👎 → agent_score → prompt-doctor auto-improvement (1st of month) |
+| JSON envelope | `cortex-slot-builder --json` | Structured handshake za downstream pipelines |
+| Vendor leak guard | runtime grep on every emit | Blokira IGT/Pragmatic/Megaways/itd u outputu (HARD RULE #1 enforced kroz runtime ne samo prompt) |
+
+### Live integration smoke (2026-06-15)
+
+| Test | Rezultat |
+|:--|:-:|
+| 10/10 cortex agent `--check` selftests | ✅ |
+| 7/7 cortex utility `--check` (pdf-to-images, claude-ask, rag, regulator-feed, agent-vote, prompt-doctor, prompt-evolve) | ✅ |
+| Both LaunchAgents loaded (regulator 4×/day, prompt-doctor monthly) | ✅ |
+| Live regulator scan across 12 jurisdictions → 180 new entries | ✅ |
+| RAG index slot-gdd-factory agents/ + src/blocks/ | ✅ |
+
+### End-to-end komanda (kad krenemo agent-driven build)
+
+```bash
+cortex-slot-builder \
+  --pdf ~/Desktop/GDD/Wrath_of_Olympus_GDD.pdf \
+  --rag "anticipation halo gate" \
+  --closed-loop \
+  --rag-kind agent_corpus \
+  --scope end-to-end \
+  "Build slot from this GDD, run eyes QA, iterate to green"
+```
+
+Iza scene:
+1. PDF → 200 DPI PNG cache
+2. RAG query "anticipation halo" → top-5 chunks iz `src/blocks/*.mjs`
+3. Opus 4.8 emit HTML (sa vendor leak guard)
+4. cortex-eyes-ultimate-qa pokrene → vraća fail/pass
+5. Ako fail → feed back → re-emit
+6. Final stdout = green HTML put
+
+### W46 master deferral matrix (slot-gdd-factory specifični)
+
+| Sloj | Status | Razlog |
+|:--|:-:|:--|
+| Math layer | OFF | `rule_no_math_unless_asked` — Boki nije rekao "ajmo matematiku" |
+| Audio layer | OFF | `rule_audio_off_until_asked` — Boki nije rekao "ajmo audio" |
+| W46 agent integracija na realnim GDD-ovima | READY but NOT RUN | Live integracija je infrastrukturno spremna; Boki vodi kada da pokrenemo zbog token cost-a (council fan-out ~$0.20-1.00/poziv) |
+
+---
+
 ## 🛠 W46 — SLOT KNOWLEDGE STACK V2 (PLAN — 2026-06-15)
 
 > Boki direktiva (2026-06-15 03:53 → 04:36): definitivni agent stack za slot-gdd-factory + slot-math-engine-template projekte. **6 domain-owner agenata + slot-sage v2 orkestrator + slot-builder na vrhu.** Light council ($500-800/mo) — ne pure cloud, ne pure local, **balansirani trade-off**.
