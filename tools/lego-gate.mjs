@@ -434,6 +434,85 @@ async function checkListenerCoverage() {
   };
 }
 
+/* Check 6 — Backtick-free template-literal scope (W47.S4 anti-recurrence).
+ *
+ * Closes the regression class that hit twice in two days:
+ *   - W47.S1 #3: `return` literal inside a comment closed the template
+ *     literal in respin.mjs → "Unexpected token const" cascade.
+ *   - W47.S3 #2: daemon-added `--bw-shake-amp` and `prefers-reduced-motion`
+ *     backticks inside JSDoc comments inside emitBigWinTier{CSS,Runtime}
+ *     template scope → "Invalid left-hand side expression" → ModuleJob.link.
+ *
+ * Rule: inside the body of any `return \`...\`;` block (or `= \`...\`;`),
+ * no further backtick may appear EXCEPT the closing one. JSDoc comments
+ * that want to reference identifiers should use plain text or single
+ * quotes — backticks have no syntactic meaning in CSS / HTML output.
+ *
+ * Implementation: scan each block for a return statement whose body
+ * begins with a backtick, capture the literal range up to the next
+ * unescaped backtick at statement boundary, and assert no backtick lives
+ * inside that range outside of `\${...}` substitution heads.
+ *
+ * Trade-off: this is intentionally conservative — we only check the
+ * common `return \`...\`;` and `const X = \`...\`;` patterns where the
+ * literal is the WHOLE statement value. Nested template literals or
+ * tagged templates won't trip the check, but they're not the regression
+ * shape we're trying to prevent. */
+async function checkBacktickInTemplate() {
+  const blocks = await listBlockFiles();
+  const offenders = [];
+  /* Markdown-style backtick pair: `text` with no `$` inside (which would
+   * mean a template substitution, not a Markdown span). This is the
+   * exact shape that bit us twice — JSDoc / line comments quoting an
+   * identifier the Markdown-way inside an emit*CSS / emit*Runtime
+   * template literal body. */
+  const MARKDOWN_BACKTICK_PAIR = /`[^`$\n]+`/;
+  for (const b of blocks) {
+    const src = await readBlockSrc(b);
+    const lines = src.split('\n');
+    let inTemplate = false;
+    let templateStartLine = 0;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (!inTemplate) {
+        /* Open: line ends with `return \`` or `= \`` (no closing same-line). */
+        if (/(?:^|\s)return\s+`[^`]*$/.test(line)
+            || /=\s+`[^`]*$/.test(line)) {
+          inTemplate = true;
+          templateStartLine = i + 1;
+        }
+        continue;
+      }
+      /* Inside template body. Two regression shapes to catch BEFORE we
+       * decide on closing:
+       *   (a) Comment line (starts with `*` or `//`) containing a
+       *       Markdown backtick pair → premature close + cascade.
+       *   (b) Reserved JS keyword as a backticked code span (`return`,
+       *       `const`, `let`, etc) — that pattern hit W47.S1 too. */
+      const isCommentLine = /^\s*(\*|\/\/|\/\*)/.test(line);
+      if (isCommentLine && MARKDOWN_BACKTICK_PAIR.test(line)) {
+        offenders.push(`${b}:${i + 1} (template opened at line ${templateStartLine}): "${line.trim().slice(0, 80)}"`);
+        continue;
+      }
+      /* Closing detection — ONLY when the line is the canonical close
+       * pattern: `  \`;` (whitespace + backtick + semicolon). Anything
+       * else stays "inside template" so the comment-pair check above
+       * keeps firing for the rest of the body. */
+      if (/^\s*`;?\s*$/.test(line)) {
+        inTemplate = false;
+      }
+    }
+  }
+  const pass = offenders.length === 0;
+  return {
+    name: '6. Backtick-free template body',
+    pass,
+    detail: pass
+      ? `${blocks.length} blocks scanned, no Markdown backtick spans inside comment lines within return template literals`
+      : `Markdown backtick pair in comment inside template body (closes literal prematurely):\n      ${offenders.join('\n      ')}`,
+  };
+}
+
 async function main() {
   console.log(C.bold(C.cyan('\n🔒 LEGO Gate — slot-gdd-factory')));
   console.log(C.dim('   Wave S pre-commit invariants. Fails fast if any check trips.\n'));
@@ -444,6 +523,7 @@ async function main() {
     await checkVendorNeutrality(),
     await checkEventOwnership(),
     await checkListenerCoverage(),
+    await checkBacktickInTemplate(),
   ];
 
   let failed = 0;
