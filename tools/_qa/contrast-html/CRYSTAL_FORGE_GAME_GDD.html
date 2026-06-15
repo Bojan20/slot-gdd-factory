@@ -419,6 +419,106 @@
 }
 
 
+/* ─── fsProgressBar ─────────────────────────────────────────────── */
+.fs-progress {
+  position: fixed;
+  top: calc(max(12px, env(safe-area-inset-top, 12px)) + 4px); right: 12px;
+  z-index: 32;                  /* sits between modal hub (30) and fixed chips (35) */
+  display: none;
+  align-items: center;
+  gap: 8px;
+  min-width: 144px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255,210,90, 0.55);
+  font-size: 12px;
+  font-weight: 700;
+  color: rgb(255,210,90);
+  letter-spacing: 0.05em;
+  /* W47.S5 (A1 lesson) — halo for the label so theme overrides don't
+   * regress contrast even when the GDD picks a near-track barColor. */
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.85);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+.fs-progress[data-show="true"] { display: inline-flex; }
+.fs-progress__label { white-space: nowrap; }
+.fs-progress__track {
+  position: relative;
+  width: 64px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255, 0.16);
+  overflow: hidden;
+}
+.fs-progress__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(255,210,90, 0.65), rgba(255,210,90, 1));
+  border-radius: 999px;
+  transition: width 240ms ease-out;
+}
+.fs-progress.is-done .fs-progress__fill { background: rgba(255,210,90, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .fs-progress__fill { transition: none; }
+}
+
+
+  /* winwaysIndicator — Wave B66 */
+  .winways-chip {
+    position: fixed;
+    top: calc(max(8px, env(safe-area-inset-top, 0px) + 8px)); left: calc(max(8px, env(safe-area-inset-left, 0px) + 8px));
+    z-index: 32;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(0,0,0,0.55);
+    color: #f2f2f2;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+    pointer-events: none;
+    transition: background 650ms ease-out, color 650ms ease-out;
+  }
+  .winways-chip[data-flash="true"] {
+    background: #c9a227;
+    color: #000;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .winways-chip {
+      transition: none;
+    }
+  }
+  
+
+  /* multiplierLadder — Wave B67 */
+  .mult-ladder {
+    position: fixed;
+    top: calc(max(8px, env(safe-area-inset-top, 0px) + 8px)); right: calc(max(8px, env(safe-area-inset-right, 0px) + 8px));
+    z-index: 33;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: rgba(0,0,0,0.55);
+    color: #f2f2f2;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    line-height: 1.4;
+    pointer-events: none;
+    transition: background 280ms ease-out, color 280ms ease-out;
+    display: none;
+  }
+  .mult-ladder[data-visible="true"] { display: inline-block; }
+  .mult-ladder[data-step="true"] {
+    background: #c9a227;
+    color: #000;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mult-ladder { transition: none; }
+  }
+  
+
   /* ── Payline overlay (SVG) — emitted by src/blocks/paylineOverlay.mjs
      Absolute layer over the entire gridHost. Each winning payline draws
      ONE <polyline> through the geometric centers of its matched cells,
@@ -2691,7 +2791,10 @@ body.fs-mode-crimson .frame::after {
 /* FS HUD — slim horizontal bar pinned to the top of the viewport. */
 .fs-hud {
   position: fixed;
-  top: 10px;
+  /* W47.S8 (A9 safe-area) — was top: 10px which sat right under the
+   * notch on iPhone landscape. Honour env(safe-area-inset-top) with a
+   * 10px fallback so the FS HUD slides DOWN on notched devices. */
+  top: calc(max(10px, env(safe-area-inset-top, 0px) + 10px));
   left: 50%;
   transform: translateX(-50%);
   display: none;
@@ -2735,7 +2838,10 @@ body.fs-mode-crimson .frame::after {
 /* FS retrigger toast. */
 .fs-toast {
   position: fixed;
-  top: 70px;
+  /* W47.S8 (A9 safe-area) — was top: 70px which still clipped under
+   * the notch on iPhone 14 Pro Max landscape. Wrap in env() with 70px
+   * fallback so the toast appears below the inset. */
+  top: calc(max(70px, env(safe-area-inset-top, 0px) + 70px));
   left: 50%;
   transform: translateX(-50%) translateY(-8px);
   padding: 10px 22px;
@@ -3071,6 +3177,15 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
       <span class="stage-badge__dot" aria-hidden="true"></span>
       <span class="stage-badge__label" id="stageBadgeLabel">BASE GAME</span>
     </div>
+    
+  <div id="fsProgress" class="fs-progress" role="progressbar"
+       aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"
+       aria-label="Free spins progress" data-show="false">
+    <span id="fsProgressLabel" class="fs-progress__label" aria-live="polite">Spin 0 of 0</span>
+    <span class="fs-progress__track"><span id="fsProgressFill" class="fs-progress__fill"></span></span>
+  </div>
+    <div id="winwaysChip" class="winways-chip" role="status" aria-live="polite" aria-label="243 WAYS">243 WAYS</div>
+    <div id="multLadder" class="mult-ladder" role="status" aria-live="polite" aria-label="Multiplier ladder" data-visible="false" data-tier="0">×1</div>
     <div class="sub">5×3 rectangular · 10 lines</div>
   </div>
   <div class="play">
@@ -5483,22 +5598,77 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     }
     var scattersSoFar = scatterCells.length;
 
-    /* Light up every visible trigger cell. */
-    for (var j = 0; j < scatterCells.length; j++) {
-      if (!scatterCells[j].classList.contains('cell--anticipating-cell')) {
-        scatterCells[j].classList.add('cell--anticipating-cell');
+    /* W47.S9 (B76 / scatterAnticipationV2) — mathematically-alive gate.
+     *
+     * Boki bug: "fake nada na rilima koji više ne mogu trigger". Pre-fix
+     * the halo painted on every trigger cell + warm fired whenever
+     * scattersSoFar crossed threshold-1, even when the remaining reels
+     * could no longer contribute enough scatters to hit the threshold
+     * (e.g. a 5-reel grid that already showed 0 scatters on reels 1-3
+     * with threshold=3 is impossible to win, yet the halo on the lone
+     * reel-4 scatter still teased the player).
+     *
+     * Fix: count reel columns + reels-with-a-trigger, compute the upper
+     * bound maxAchievable = scattersSoFar + (reelCols - reelsWithTrigger)
+     * (one trigger per remaining reel is the engine hard cap), and
+     * STRIP every halo + force warm=false when maxAchievable < threshold.
+     *
+     * Tick polling stays cheap: one extra .reelCol querySelectorAll +
+     * a Set membership scan per cell — O(n) once per tick, no extra
+     * DOM writes when alive, just a single classList.remove when dead.
+     * NOTE: plain ASCII quotes (no backticks) because this comment lives
+     * inside a runtime template literal — W47.S1 lesson.
+     */
+    var reelCols = host.querySelectorAll('.reelCol');
+    var reelColCount = reelCols.length;
+    var reelsWithTrigger = 0;
+    if (reelColCount > 0 && scattersSoFar > 0) {
+      var seen = new Set();
+      for (var rc = 0; rc < scatterCells.length; rc++) {
+        /* Walk up the parents until we hit a .reelCol (or null). */
+        var cur = scatterCells[rc].parentElement;
+        while (cur && !cur.classList.contains('reelCol')) cur = cur.parentElement;
+        if (cur && !seen.has(cur)) { seen.add(cur); reelsWithTrigger++; }
       }
     }
-    /* Strip from cells that no longer carry the trigger — O(n) via Set. */
-    var scatterSet = new Set(scatterCells);
-    var marked = host.querySelectorAll('.cell.cell--anticipating-cell');
-    for (var k = 0; k < marked.length; k++) {
-      if (!scatterSet.has(marked[k])) {
-        marked[k].classList.remove('cell--anticipating-cell');
+    /* When the column count is unknown (non-rect grid / shape that
+     * doesn't use reel columns), fall back to the legacy behaviour by
+     * setting maxAchievable = scattersSoFar + threshold so the gate
+     * never fires. That matches pre-fix semantics for those shapes,
+     * and the cheaper, kind-specific gates (engine pulse, host pulse)
+     * still own the suspense there. */
+    var maxAchievable = (reelColCount > 0)
+      ? (scattersSoFar + Math.max(0, reelColCount - reelsWithTrigger))
+      : (scattersSoFar + ladder.threshold);
+    var mathAlive = maxAchievable >= ladder.threshold;
+
+    /* Light up every visible trigger cell — OR strip them all when the
+     * gate has decided the spin can no longer hit the threshold. */
+    if (mathAlive) {
+      for (var j = 0; j < scatterCells.length; j++) {
+        if (!scatterCells[j].classList.contains('cell--anticipating-cell')) {
+          scatterCells[j].classList.add('cell--anticipating-cell');
+        }
+      }
+      /* Strip from cells that no longer carry the trigger — O(n) via Set. */
+      var scatterSet = new Set(scatterCells);
+      var marked = host.querySelectorAll('.cell.cell--anticipating-cell');
+      for (var k = 0; k < marked.length; k++) {
+        if (!scatterSet.has(marked[k])) {
+          marked[k].classList.remove('cell--anticipating-cell');
+        }
+      }
+    } else {
+      /* Dead: clear every halo so the lone trigger doesn't tease. */
+      var dead = host.querySelectorAll('.cell.cell--anticipating-cell');
+      for (var dk = 0; dk < dead.length; dk++) {
+        dead[dk].classList.remove('cell--anticipating-cell');
       }
     }
 
-    var warm = scattersSoFar >= Math.max(1, ladder.threshold - 1) && scattersSoFar < ladder.topRung;
+    var warm = mathAlive
+      && scattersSoFar >= Math.max(1, ladder.threshold - 1)
+      && scattersSoFar < ladder.topRung;
     _paintBadge(scattersSoFar, ladder.threshold, warm);
 
     /* Whole-host pulse for non-rect shapes — registry owned by anticipation.mjs. */
@@ -10708,6 +10878,217 @@ if (typeof HookBus !== 'undefined') {
     }, { priority: 10 });
   })();
 
+  
+  /* ─── fsProgressBar BLOCK — emitted by src/blocks/fsProgressBar.mjs ──
+     Owns: progress strip lifecycle for the FS round.
+     Listens: onFsTrigger / onFsSpinResult / onFsRetrigger / onFsEnd.
+     Emits: nothing (pure presenter).
+     The block reads FSM.spinsTotal + FSM.spinsRemaining when present so
+     a host slot that drives the FS round through freeSpins.mjs gets the
+     counters for free; everything else flows through HookBus payloads. */
+  (function _fsProgressBarBoot() {
+    var LABEL_TMPL    = "{i} of {n}";
+    var SHOW_ON_RETRIG = true;
+    var HIDE_DELAY    = 1100;
+
+    var state = { total: 0, consumed: 0, hideTimer: 0 };
+
+    function _node()  { return document.getElementById('fsProgress'); }
+    function _label() { return document.getElementById('fsProgressLabel'); }
+    function _fill()  { return document.getElementById('fsProgressFill'); }
+
+    function _fmt(i, n) {
+      return LABEL_TMPL.replace('{i}', String(i)).replace('{n}', String(n));
+    }
+
+    function _paint() {
+      var host = _node(); if (!host) return;
+      var lbl  = _label();
+      var fill = _fill();
+      var total = Math.max(0, state.total);
+      var done  = Math.min(state.consumed, total);
+      if (lbl)  lbl.textContent = _fmt(done, total);
+      if (fill) fill.style.width = (total > 0 ? (done * 100 / total) : 0) + '%';
+      host.setAttribute('aria-valuemax', String(total));
+      host.setAttribute('aria-valuenow', String(done));
+      host.classList.toggle('is-done', total > 0 && done >= total);
+    }
+
+    function fsProgressShow(total) {
+      var host = _node(); if (!host) return;
+      if (state.hideTimer) { clearTimeout(state.hideTimer); state.hideTimer = 0; }
+      state.total = Math.max(0, Math.min(999, Math.floor(Number(total) || 0)));
+      state.consumed = 0;
+      _paint();
+      host.setAttribute('data-show', 'true');
+    }
+
+    function fsProgressUpdate(consumed) {
+      var n = Number(consumed);
+      if (!Number.isFinite(n)) return;
+      state.consumed = Math.max(0, Math.floor(n));
+      _paint();
+    }
+
+    function fsProgressRetrigger(extra) {
+      var add = Number(extra);
+      if (!Number.isFinite(add) || add <= 0) return;
+      state.total = Math.min(999, state.total + Math.floor(add));
+      _paint();
+      if (SHOW_ON_RETRIG) {
+        var host = _node(); if (host) host.setAttribute('data-show', 'true');
+      }
+    }
+
+    function fsProgressHide() {
+      var host = _node(); if (!host) return;
+      if (state.hideTimer) clearTimeout(state.hideTimer);
+      state.hideTimer = setTimeout(function () {
+        var n = _node();
+        if (n) n.setAttribute('data-show', 'false');
+        state.hideTimer = 0;
+        state.total = 0;
+        state.consumed = 0;
+      }, HIDE_DELAY);
+    }
+
+    /* Public surface — exposed for hooks + manual force from the console. */
+    window.fsProgressShow   = fsProgressShow;
+    window.fsProgressUpdate = fsProgressUpdate;
+    window.fsProgressHide   = fsProgressHide;
+
+    function _spinsFromFSM(payload) {
+      if (payload && Number.isFinite(payload.award))         return payload.award;
+      if (payload && Number.isFinite(payload.spinsTotal))    return payload.spinsTotal;
+      if (typeof FSM !== 'undefined' && Number.isFinite(FSM.spinsTotal)) return FSM.spinsTotal;
+      return 0;
+    }
+
+    if (typeof HookBus !== 'undefined') {
+      HookBus.on('onFsTrigger', function (payload) {
+        fsProgressShow(_spinsFromFSM(payload));
+      });
+      HookBus.on('onFsSpinResult', function (payload) {
+        var total = (typeof FSM !== 'undefined') ? FSM.spinsTotal : state.total;
+        var remaining = (payload && Number.isFinite(payload.spinsRemaining))
+                        ? payload.spinsRemaining
+                        : (typeof FSM !== 'undefined' ? FSM.spinsRemaining : 0);
+        if (total > 0 && state.total !== total) state.total = total;
+        fsProgressUpdate(state.total - remaining);
+      });
+      HookBus.on('onFsRetrigger', function (payload) {
+        fsProgressRetrigger(payload && payload.award);
+      });
+      HookBus.on('onFsEnd', function () { fsProgressHide(); });
+    }
+  })();
+
+  
+  (function(){
+    if (typeof window === 'undefined' || !window.HookBus) return;
+    var chip = document.getElementById('winwaysChip');
+    if (!chip) return;
+    var flashMs = 650;
+    var resetTimer = null;
+
+    HookBus.on('onSpinResult', function (p) {
+      if (!p) return;
+      var hit = (p.kind === 'ways') || (Number(p.waysHits) > 0) || (Number(p.waysWins) > 0);
+      if (!hit) return;
+      chip.setAttribute('data-flash', 'true');
+      if (resetTimer) clearTimeout(resetTimer);
+      resetTimer = setTimeout(function () {
+        chip.setAttribute('data-flash', 'false');
+      }, flashMs);
+    });
+
+    // Always reset on preSpin so the chip is calm at the start of the next round.
+    HookBus.on('preSpin', function () {
+      chip.setAttribute('data-flash', 'false');
+      if (resetTimer) { clearTimeout(resetTimer); resetTimer = null; }
+    });
+  })();
+  
+  
+  (function(){
+    if (typeof window === 'undefined' || !window.HookBus) return;
+    var host = document.getElementById('multLadder');
+    if (!host) return;
+    var STEPS = [1,2,3,5,10];
+    var MAX = STEPS.length - 1;
+    var template = "×{N}";
+    var flashMs = 280;
+    var startTier = 0;
+    var climbOnBase = false;
+    var tier = startTier;
+    var fsActive = false;
+    var stepResetTimer = null;
+
+    function render(t) {
+      tier = Math.max(0, Math.min(MAX, t | 0));
+      var v = STEPS[tier];
+      host.textContent = template.replace('{N}', String(v));
+      host.setAttribute('data-tier', String(tier));
+      host.setAttribute('aria-label', 'Multiplier ladder: ' + template.replace('{N}', String(v)));
+    }
+    function show() { host.setAttribute('data-visible', 'true'); }
+    function hide() { host.setAttribute('data-visible', 'false'); }
+    function flash() {
+      host.setAttribute('data-step', 'true');
+      if (stepResetTimer) clearTimeout(stepResetTimer);
+      stepResetTimer = setTimeout(function () { host.setAttribute('data-step', 'false'); }, flashMs);
+    }
+    function climb() {
+      if (tier >= MAX) return;
+      var from = tier;
+      var to = tier + 1;
+      render(to);
+      flash();
+      try { window.HookBus.emit('onMultLadderStep', { from: STEPS[from], to: STEPS[to], max: STEPS[MAX] }); } catch (_) {}
+    }
+    function reset() {
+      tier = startTier;
+      render(startTier);
+      hide();
+      try { window.HookBus.emit('onMultLadderReset'); } catch (_) {}
+    }
+
+    HookBus.on('onFsTrigger', function () {
+      fsActive = true;
+      render(startTier);
+      show();
+    });
+    HookBus.on('onFsSpinResult', function (p) {
+      if (!fsActive) return;
+      if (!p) return;
+      var win = Number(p.award || p.win || p.tumbleWin || 0);
+      if (win > 0) climb();
+    });
+    HookBus.on('onTumbleStep', function (p) {
+      if (!climbOnBase && !fsActive) return;
+      if (!p) return;
+      var win = Number(p.win || p.stepWin || 0);
+      if (win > 0) climb();
+    });
+    HookBus.on('onFsEnd', function () {
+      fsActive = false;
+      reset();
+    });
+    /* Synchronise to authoritative value when the canonical owner emits.
+     * Idempotent — render is the only DOM mutation. */
+    HookBus.on('onMultChange', function (p) {
+      if (!p) return;
+      var v = Number(p.value || p.mult || 0);
+      if (!Number.isFinite(v) || v <= 0) return;
+      var idx = STEPS.indexOf(v);
+      if (idx < 0) return;
+      render(idx);
+    });
+
+    /* Boot: pre-render at startTier but stay hidden until FS begins. */
+    render(startTier);
+  })();
+  
   
   /* ── freeSpins BLOCK — emitted by src/blocks/freeSpins.mjs ───────────
      GDD knobs baked at build time:
