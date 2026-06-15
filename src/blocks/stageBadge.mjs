@@ -227,16 +227,32 @@ export function emitStageBadgeRuntime(cfg = defaultConfig()) {
   /* Wave S LEGO conformance — stageBadge registers FS lifecycle listeners
      so the phase pill self-updates without freeSpins.mjs having to call
      setStageBadge directly. The freeSpins call sites remain as belt-and-
-     suspenders so a future refactor that drops them won't break the pill. */
-  if (typeof HookBus !== 'undefined') {
+     suspenders so a future refactor that drops them won't break the pill.
+
+     W47.S1 fix (2026-06-15) — wrapped the listener registration in a
+     self-invoked function so the early-out "return" for the idempotency
+     guard (__sbHooked) has a function scope to return from. Pre-fix the
+     bare "return" was emitted at the top level of the inline script
+     tag and threw "SyntaxError: Illegal return statement", which
+     cascaded into HookBus not mounting + tap-preSpin firing 0 events.
+     Detected via Playwright CDP "Runtime.exceptionThrown" at line 12748
+     col 31 of the emitted HTML.
+
+     NOTE: this comment uses plain quotes (not backticks) because the
+     whole runtime body lives inside a template literal in
+     emitStageBadgeRuntime() — a stray backtick here would close the
+     template literal mid-stream and re-introduce the same syntax
+     error class we just fixed. */
+  (function _stageBadgeBindFsListeners() {
+    if (typeof HookBus === 'undefined') return;
     if (stageBadge.__sbHooked) return;
     stageBadge.__sbHooked = true;
     HookBus.on('onFsTrigger', () => {
       setStageBadge('fs', STAGE_FS_LABEL);
-    }, { priority: HOOK_PRIORITY });
+    }, { priority: ${HOOK_PRIORITY} });
     HookBus.on('onBaseEnter', () => {
       setStageBadge('base', STAGE_BASE_LABEL);
-    }, { priority: HOOK_PRIORITY });
-  }
+    }, { priority: ${HOOK_PRIORITY} });
+  })();
 `;
 }

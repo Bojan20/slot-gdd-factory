@@ -104,7 +104,15 @@ const RESPIN_CHANCE       = ${cfg.triggerChance};
 const RESPIN_COST_X       = ${cfg.costX};
 const RESPIN_HOLD_RULE    = ${JSON.stringify(cfg.holdRule)};
 const RESPIN_PER_TRIGGER  = ${cfg.respinsPerTrigger};
-const REELS               = ${cfg.reels};
+/* W47.S1 fix (2026-06-15) — was 'const REELS = N;' which collided with
+   the reelEngine block's earlier 'const REELS = SHAPE.reels;' and threw
+   SyntaxError: Identifier REELS has already been declared, breaking
+   bootstrap on every Respin_Wild synth fixture (24 cascading fails).
+   Renamed to a block-local identifier so respin keeps its own count
+   without clobbering the outer scope. Plain quotes (not backticks) so
+   this comment can live inside the template literal of
+   emitRespinRuntime() without prematurely closing it. */
+const RESPIN_REELS        = ${cfg.reels};
 const RESPIN_STATE = { active: false, heldReels: new Set(), spinsLeft: 0 };
 
 function _respinPhaseAllowed() {
@@ -125,12 +133,12 @@ function _respinHeldReels() {
     if (host) {
       host.querySelectorAll('.cell').forEach((cell, idx) => {
         const symbol = (cell.textContent || '').trim();
-        if (symbol) heldSet.add(idx % REELS);
+        if (symbol) heldSet.add(idx % RESPIN_REELS);
       });
     }
   } else if (RESPIN_HOLD_RULE === 'last-reel') {
     /* Hold all but the rightmost reel */
-    for (let c = 0; c < REELS - 1; c++) heldSet.add(c);
+    for (let c = 0; c < RESPIN_REELS - 1; c++) heldSet.add(c);
   } else if (RESPIN_HOLD_RULE === 'wild-anchor') {
     /* Hold reels that contain a wild */
     const host = document.getElementById('gridHost');
@@ -138,7 +146,7 @@ function _respinHeldReels() {
     const wild = reg && reg.wild;
     if (host && wild) {
       host.querySelectorAll('.cell').forEach((cell, idx) => {
-        if ((cell.textContent || '').trim() === wild) heldSet.add(idx % REELS);
+        if ((cell.textContent || '').trim() === wild) heldSet.add(idx % RESPIN_REELS);
       });
     }
   }
