@@ -105,6 +105,18 @@ import {
   resolveConfig as resolveRewardChestConfig,
 } from './blocks/rewardChest.mjs';
 import {
+  emitSymbolStackCollapseCSS,
+  emitSymbolStackCollapseMarkup,
+  emitSymbolStackCollapseRuntime,
+  resolveConfig as resolveSymbolStackCollapseConfig,
+} from './blocks/symbolStackCollapse.mjs';
+import {
+  emitWheelBonusRevealCSS,
+  emitWheelBonusRevealMarkup,
+  emitWheelBonusRevealRuntime,
+  resolveConfig as resolveWheelBonusRevealConfig,
+} from './blocks/wheelBonusReveal.mjs';
+import {
   emitAnticipationCSS,
   emitAnticipationRuntime,
   resolveConfig as resolveAnticipationConfig,
@@ -614,6 +626,8 @@ ${emitEnergyMeterCSS(resolveEnergyMeterConfig(model))}
 ${emitPickBonusRevealCSS(resolvePickBonusRevealConfig(model))}
 ${emitCoinShowerCSS(resolveCoinShowerConfig(model))}
 ${emitRewardChestCSS(resolveRewardChestConfig(model))}
+${emitSymbolStackCollapseCSS(resolveSymbolStackCollapseConfig(model))}
+${emitWheelBonusRevealCSS(resolveWheelBonusRevealConfig(model))}
 ${emitPaylineOverlayCSS(resolvePaylineOverlayConfig(model))}
 ${emitGridShapesCSS()}
 ${emitReelEngineCSS(resolveReelEngineConfig(model))}
@@ -731,6 +745,8 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
              viewBox is sized to the gridHost client rect on every frame
              so cell coordinates stay accurate after layout changes. -->
         <svg class="payline-overlay" id="paylineOverlay" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+        ${emitSymbolStackCollapseMarkup(resolveSymbolStackCollapseConfig(model))}
+        ${emitWheelBonusRevealMarkup(resolveWheelBonusRevealConfig(model))}
       </div>
     </div>
     <aside class="sideHud" aria-label="Game Controls">
@@ -1069,6 +1085,8 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitPickBonusRevealRuntime(resolvePickBonusRevealConfig(model))}
   ${emitCoinShowerRuntime(resolveCoinShowerConfig(model))}
   ${emitRewardChestRuntime(resolveRewardChestConfig(model))}
+  ${emitSymbolStackCollapseRuntime(resolveSymbolStackCollapseConfig(model))}
+  ${emitWheelBonusRevealRuntime(resolveWheelBonusRevealConfig(model))}
   ${emitFreeSpinsRuntime(resolveFreeSpinsConfig(model))}
 
   /* Wave T-slim Phase 2 — extracted window.* exposure surface (was inline

@@ -285,6 +285,12 @@ const EXPECTED_EMIT_OWNERS = {
   /* B74 rewardChest — chest-reveal presenter, sole owner of its lifecycle. */
   onRewardChestOpen:  ['rewardChest.mjs'],
   onRewardChestClose: ['rewardChest.mjs'],
+  /* B75 symbolStackCollapse — full-reel stack drop presenter. */
+  onStackCollapseStart: ['symbolStackCollapse.mjs'],
+  onStackCollapseEnd:   ['symbolStackCollapse.mjs'],
+  /* B72 wheelBonusReveal — post-wheel-settle reveal presenter, sole owner. */
+  onWheelRevealStart:   ['wheelBonusReveal.mjs'],
+  onWheelRevealEnd:     ['wheelBonusReveal.mjs'],
   /* wildReel emits `symbolOverride` when its full-column wild paints over
    * the rolled symbols on a designated reel. winEval / paylineOverlay
    * subscribe so they treat the overridden cells as the wild for the
