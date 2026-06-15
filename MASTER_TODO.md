@@ -41,6 +41,210 @@
 > (1 pre-existing wheel fsOverlay soft-fail unchanged), all 63 block tests
 > PASS, cert 19/19 PASS.
 
+## 🛠 W46 — SLOT KNOWLEDGE STACK V2 (PLAN — 2026-06-15)
+
+> Boki direktiva (2026-06-15 03:53 → 04:36): definitivni agent stack za slot-gdd-factory + slot-math-engine-template projekte. **6 domain-owner agenata + slot-sage v2 orkestrator + slot-builder na vrhu.** Light council ($500-800/mo) — ne pure cloud, ne pure local, **balansirani trade-off**.
+>
+> **Razlog razdvajanja od slot-sage v1:** 70 blokova × 31,815 LOC = previše širok scope za jednog konsultanta da bude *apsolutni vlasnik svog dela*. 6 agenata × ~12 blokova / agent = svaki drži ≤ 5500 LOC u glavi. To je *senior-grade ownership* setup koji daje pravi expert-per-domain kvalitet.
+
+### A. Agent hijerarhija (final)
+
+```
+slot-builder (end-to-end orchestrator, GDD → ship)
+        │
+        ▼
+    slot-sage v2 (multi-domain coordinator)
+        │
+        ├── engine-architect           (6 spin engines + lifecycle)
+        ├── win-evaluator              (paylines/cluster/ways + cap + presentation)
+        ├── feature-architect          (28 feature blokova)
+        ├── ui-architect               (16 UI blokova + a11y)
+        └── responsible-gambling-architect (3 RG blokova + jurisdikcija matrix)
+
+Plus postojeći (out-of-band za slot math, oba dele subagent twin):
+        ├── math-debug                 (math triage — slot-math-engine-template)
+        └── par-parser                 (PAR sheets → IR — slot-math-engine-template)
+```
+
+### B. Domain ownership matrix (6 novih domain agenata)
+
+| Agent | Vlasnik nad blokovima | LOC pribl. | Specijalnost |
+|:--|:--|:-:|:--|
+| **engine-architect** | hookBus, reelEngine, reelEngineCSS, hexReelEngine, wheelSpinEngine, crashSpinEngine, plinkoSpinEngine, slingoSpinEngine, spinControl, spinTempo, postSpin, hotReload, triggerCounting | ~5500 | Hot-path performans (≤1ms per FSM_renderHud), FSM korektnost, dead-code detection po lifecycle hook-ovima, anticipation halo arm/disarm gate (Wave AL-1 industry-standard) |
+| **win-evaluator** | paylines, paylineOverlay, payAnywhereEval, clusterPaysEval, waysEval, winPresentation, winRollup, bigWinTier, winCap | ~5200 | EV korektnost + max-win cap enforcement + big-win tier matematika; **integriše se sa `math-debug` kad PAR/IR ulazi u sliku**; tier badge thresholds (5×/15×/50×/250×/1000×); cap per-jurisdikcija (UKGC 100k, MGA 500k) |
+| **feature-architect** | freeSpins, progressiveFreeSpins, holdAndWin, holdAndWinCreditBucket, bonusBuy, bonusBuyDeterministic, bonusPick, wheelBonus, weightedWheelSegments, gamble, gambleSecondary, multiplierOrb, persistentMultiplier, pathAwareMultiplier, expandingWild, walkingWild, stickyWild, wildReel, mysterySymbol, superSymbol, lightning, respin, dailyJackpot, symbolUpgrade, scatterCelebration, anticipation, anticipationUniversal, tumble | ~13500 | Industry parity per pattern (vendor-neutral); regulator gate per feature (DE bonus-buy ban, UKGC max-win cap); LEGO discipline (single-owner emit, dedupe); universal force panel parity (21+ industry kinds) |
+| **ui-architect** | balanceHud, betSelector, paytable, settingsPanel, historyLog, stageBadge, turboMode, autoplay, slamStop, forceSkip, universalForcePanel, genericFeatureBanner, symbolInfoPopover, uiToast, anteBet, themeCSS | ~5800 | a11y (WCAG 2.2 AA), 44×44 touch target floor (WCAG 2.5.5), mobile-first (dvh + safe-area), prefers-reduced-motion gate, hub-vs-fixed-chip z-stack (z:30 vs z:35), Apple HIG typography floor (11px) |
+| **responsible-gambling-architect** | realityCheck, sessionTimeout, netLossIndicator | ~1700 | UKGC reality check 30/60min, UKGC LCCP 8.3.1 / AGCO 4.07 session cap, MGA loss limit, SE play-time, DE bonus-buy zabrana, NL KSA cool-off, Ontario AGCO 4.07 |
+| **slot-sage v2** | (coordinator — ne dira blokove direktno) | — | Multi-domain odluke, cross-block invariante (vendor-neutral grep, HookBus event ownership, LEGO scaffolding), routing ka pravom domain owner-u; vendor-neutral banlist enforce (igt, pragmatic, megaways, …) |
+
+### C. Light council model stack (Boki potvrdio 2026-06-15 04:36)
+
+**Pravilo:** primary single-model, council 3-modela samo na hard decisions (multi-step refaktor, security-relevant izmena, regulator gate odluka, architectural drift).
+
+| Agent | Primary | Council (samo hard decisions) | Speed fallback |
+|:--|:--|:--|:--|
+| slot-builder | Claude Opus 4.8 (1M ctx, vision) | + Kimi K2.6 Research + Fable 5 | Qwen 2.5 Coder 32B lokalno |
+| slot-sage v2 | Claude Opus 4.8 | + Fable 5 | Qwen 2.5 Coder 32B |
+| engine-architect | Claude Opus 4.8 | + Fable 5 (perf-tuned) | DeepSeek Coder V2 16B |
+| win-evaluator | Claude Opus 4.8 | + Kimi K2.6 (math paper recall) | math-debug subagent |
+| feature-architect | Claude Opus 4.8 | + Kimi K2.6 (vendor-neutral research) | Qwen 32B |
+| ui-architect | Claude Opus 4.8 (vision za screenshot) | + GPT-5 (a11y deep) | Qwen 32B |
+| rg-architect | Claude Opus 4.8 | + reg-oracle subagent (jurisdikcija RSS) | Mistral 7B |
+| math-debug | Claude Opus 4.8 | + Kimi K2.6 (paper recall) | — |
+| par-parser | Claude Opus 4.8 (vision za xlsx screenshot) | + Kimi K2.6 cross-validation | — |
+
+**Trigger za council:** prompt sadrži "ultimativno" / "futuristički" / "istraži" / "deep" / "multi-step" / "audit"; ili confidence single-model < 0.7; ili Boki eksplicitno traži (`--council=3` flag u `cortex chat`).
+
+### D. Futuristic capabilities (10 stavki — prioritetni order)
+
+| # | Capability | Šta donosi | Wave |
+|:-:|:--|:--|:-:|
+| F1 | **Long-context full-codebase awareness** | Opus 4.8 1M ctx → ceo `src/blocks/` (~31K LOC) u single prompt sa rezervom. Agent zna SVE blokove odjednom — niko ne pita "koji blok rešava X?" | 0 — odmah |
+| F2 | **Multi-modal vision** | Agent direktno čita GDD PDF stranice + PAR xlsx screenshot-ove + simulator UI screenshot + dizajn mock-up. Opus 4.8 + GPT-5 to omogućavaju. | W46.S5 |
+| F3 | **Closed-loop iteracija** | slot-builder emit-uje GDD → headless render (`cortex-eyes-ultimate-qa.mjs`) → fail rezultat se VRACA u prompt → re-emit dok ne prođe. Industry-first za GDD-to-game pipeline. | W46.S6 |
+| F4 | **Council of Models (light)** | 3-model paralelni vote za hard decisions; synthesis arbiter glasa po confidence × diversity. Final answer = bolji od svakog single modela. | W46.S7 |
+| F5 | **Adversarial gate** | Agent A emit-uje → Agent B napada output (red-team) → Agent C sudi. Strukturni red-team pre commit-a. | W46.S8 |
+| F6 | **Streaming partial output** | Sve agent putanje streaming → UI Provider Telemetry panel pokazuje real-time token tok + cost rolling. Backend infrastruktura iz Cortex W44.S13 + W45.S1 već postoji. | W46.S9 |
+| F7 | **Vector RAG sa Qdrant** | Lokalna vector baza za sve corpus-e (Slot Sage index, IGT public folderi, knjige iz E.1, vendor GDD-ovi). Trenutni `index.md` plain-text grep zameni semantic search-om. Brže + tačnije recall. | W46.S10 |
+| F8 | **Live regulator feed** | RSS + web scraper za UKGC / MGA / SE Spelinspektionen / DE GlüNeuRStV / Ontario AGCO. Promena → telemetry event → rg-architect notifikuje. | W46.S11 |
+| F9 | **Reinforcement loop** | Boki klikne 👍/👎 na agent output → ulazi u `provider_call_log` + `agent_score` → router uči koji agent za koji domen radi bolje. Cortex `cortex tool-stats` infrastruktura već postoji. | W46.S12 |
+| F10 | **Self-improving prompt** | Mesečni meta-agent čita `provider_call_log` failure rows → predlaže izmenu system_prompt-a → Boki approves → diff commit-uje. Self-evolving promptovi. | W46.S13 |
+
+### E. Kimi research findings (2026-06-15 deep depth, 2 passes)
+
+#### E.1 — Core slot math literatura (8 referenci, autor-validovano)
+
+| # | Autor | Naslov | Godina | Ključni uvid |
+|:-:|:--|:--|:-:|:--|
+| 1 | Harrigan, K. A. & Dixon, M. | *PAR Sheets, Probabilities, and Slot Machine Play* | 2009 | PAR sheets enkoduju stvarne verovatnoće vs. player percepciju near-miss-a |
+| 2 | Turner, N. E. | *Explaining the Near-Miss Effect in Slot Machines* | 2011 | Near-miss = strukturalni artefakt reel weighting-a, ne random |
+| 3 | Barboianu, C. | *The Mathematics of Slots: Configurations, Combinations, Probabilities* | 2022 | Kombinatorijski algoritmi za RTP + volatility na multi-line/multi-reel |
+| 4 | Gainsbury, S. | *Behavioral Tracking in Gambling: ML Applications* | 2015 | ML klasteri player ponašanja za churn predikciju **bez** menjanja game math-a |
+| 5 | Shackleford, M. | *Slot Machine Math: Hold, Return, and Variance Papers* | 2023 | Empirical RTP verifikacija chi-squared test-om na real outcomes |
+| 6 | UK Gambling Commission | *Game Design and Technical Standards: Math Requirements* | 2024 | Mandatory **min 2.5s spin duration**, zabrana variable reward scheduling-a |
+| 7 | Chen, B. et al. | *Dynamic Difficulty Adjustment in Digital Gambling* | 2024 | Regulatorne granice za real-time volatility tuning kroz RL agente |
+| 8 | Schwartz, E. | *Hit Frequency vs. Volatility: The Designer's Equation* | 2024 | Matematička veza hit-frequency ↔ volatility u high-vol modelima |
+
+#### E.2 — AI/ML pristupi u slot dizajnu 2025-26
+
+| Pristup | Tehnička implementacija | Regulator status 2026 |
+|:--|:--|:--|
+| **Dynamic Volatility** | Contextual bandits podešavaju feature trigger probability (0.5x–2.0x baseline) na osnovu real-time session depth + bankroll trajectory | UKGC/MGA: pod review; DE/SE: zabranjeno ako je player-visible |
+| **RTP Auto-Tuning** | Multi-armed bandit optimizuje hold % unutar jurisdikcionih granica (94-96%) po player segmentu | Sivim — Ontario zahteva fixed RTP deklaraciju pre launch-a |
+| **Generative GDD** | LLM agenti (fine-tuned na PAR sheets) emit JSON math model + paytable iz natural language prompta | Odobreno za prototip; certifikacija nužna za RNG integraciju |
+| **Procedural Symbol Distribution** | GAN-ovi generišu symbol weight-ove koji balansiraju vizuelni clustering sa target hit-frequency | Odobreno; mora proći chi-square randomness test |
+| **Predictive Churn Bonuses** | Survival analysis triggeruje "must-hit-by" feature kad dropout probability prelazi prag | Ograničeno — UKGC 2025: bonusi ne smeju incentivizovati loss-chasing |
+
+#### E.3 — Post-megaways mechanika (2024-26, vendor-neutral)
+
+| Pattern naziv | Mehanizam | 2026 regulator status |
+|:--|:--|:--|
+| **Fractal Cascades** | Pobednički simboli splituju u 2-4 sub-simbola (povećavaju ways bez IP konflikta), reset posle cascade | Odobreno globalno (standard RNG) |
+| **Hyper-Persistence** | Cross-session akumulator meters (`Collect N Scatters`) sa client-side save + server-sync | Ograničeno: UKGC zahteva 15-min timeout reset; DE banned (no saved states) |
+| **Quantum Paylines** | Dinamička line konfiguracija (10–50) morphuje po spin-u na osnovu volatility class koju player bira | Pod review (NL KSA: zabrinutost zbog iluzije izbora) |
+
+### F. Inventory svih lokalnih resursa (svaka lokacija)
+
+| Lokacija | Sadržaj | Primena za agenta |
+|:--|:--|:--|
+| `~/Projects/cortex/agents/` | 6 postojećih: math-debug, slot-sage, par-parser, fable-copilot, qa-agent, reg-oracle | Read-only base — novi agenti ne diraju, samo extend |
+| `~/Projects/cortex/scripts/cortex-sage-*` | 8 sage wrapper-a: ask, gdd, history, index, parity, regulate, scaffold, verify | Pattern za novi `cortex-slot-builder-*` family |
+| `~/Projects/cortex/scripts/cortex-{kimi,fable,gpt}-{ask,research,review}` | Multi-brain wrapper stack | Direktna delegacija za council mode |
+| `~/Projects/slot-math-engine-template/` | Rust workspace + 40+ md (`SLOT_ENGINE_ULTIMATE_SCENARIOS.md`, `SLOTH_MASTER.md`, `CERT_LAB_SUBMISSION.md`, `CHAOS_ENGINEERING.md`, `CSM_PLAYBOOK.md`, `DATABASE.md`, `DEVELOPER_GUIDE.md`, `ANALYTICS.md`, `BACKEND_API.md`, `COMMERCIAL_PITCH.md`, …) + tools (par_webgpu, par_compiler_js, par_extract_ultimate, par_normalize, parity, portfolio_compare, par_deploy) | math-debug + par-parser + win-evaluator subagent corpus |
+| `~/Projects/slot-gdd-factory/` (ovaj repo) | Front-end + parser + 70 LEGO blokova + samples GDD + tools (cortex-eyes-*, fable-*) | Svi 6 domain ownera + slot-sage v2 + slot-builder |
+| `~/Projects/Wrath Of Olympus/` | Vendor-specific GDD pipeline (math/par-sheet, reports/par, tools/gdd_parser) | End-to-end test reference za slot-builder |
+| `~/Projects/_research/igt-public/` | postal.federation (1.5 MB), postal.xframe (1.5 MB), eslint-plugin-foundry (140 KB) | engine-architect + feature-architect pattern study (read-only, never copy) |
+| `~/Desktop/GDD/` | 4 vendor GDD PDF: Gates of Olympus 1000, Huff N More Puff, Starlight Travellers, Wrath of Olympus + `synthetic/` | Real GDD reference + end-to-end test fixture |
+| `~/Desktop/ParSheets/` | 3 real PAR xlsx: SkeletonKey (252K), BookOfUnseen_BonusBuy (292K), FortuneCoinBoost_Classic (732K) | par-parser corpus za vision-based extraction |
+| `~/Desktop/Slot simulator Doc/` | `CrystalForge-GDD`, `WoO-GDD`, `WrathOfOlympus_Art`, `slot-factory-static` | feature-architect + ui-architect internal reference |
+| `~/Downloads/Slot_Theme_Description_Bible_v1.pdf` (120K) | Slot Theme Description Bible v1 | slot-builder theme taxonomy reference |
+
+### G. Implementation plan (W46.S1-S13)
+
+| Atom | Šta | Ko vlasnik | ETA |
+|:-:|:--|:--|:-:|
+| **S1** | Kreirati `~/Projects/cortex/agents/slot-builder/` direktorijum sa `manifest.yaml` (model: claude-opus-4-8, council: kimi-k2.6 + fable-5 — light) + `system_prompt.md` (~250 LOC, 8-layer L0-L7: Intake → Math draft → Math validate → LEGO compose → Frontend emit → Regulator → QA → Ship) + `corpus/index.md` | Corti | 30 min |
+| **S2** | Kreirati 6 domain-owner agenata: `engine-architect`, `win-evaluator`, `feature-architect`, `ui-architect`, `rg-architect`, `slot-sage-v2` — svaki sa svojim manifest + system_prompt (~150 LOC) + ownership domain (sekcija B) | Corti | 4×30 + 2×45 = 210 min |
+| **S3** | Subagent twin za svaki novi agent — `~/Projects/slot-gdd-factory/agents/{ENGINE,WIN,FEATURE,UI,RG,SAGE,BUILDER}_ARCHITECT.md` koji referenciraju glavni system_prompt | Corti | 30 min |
+| **S4** | CLI wrapper family: `cortex-slot-builder`, `cortex-engine-architect`, `cortex-win-evaluator`, …, `cortex-rg-architect` + `cortex-slot-builder-gdd-to-par`, `cortex-slot-builder-end-to-end` | Corti | 60 min |
+| **S5** | **F2 — Multi-modal vision** integracija — slot-builder može direktno da uzme `~/Desktop/GDD/<file>.pdf` page-by-page kroz Opus vision; par-parser uzima xlsx screenshot (par_extract_ultimate render → png → vision) | Corti | 45 min |
+| **S6** | **F3 — Closed-loop iteracija** — slot-builder posle emit-a poziva `cortex-eyes-ultimate-qa.mjs` na rezultat; fail rezultat se vraća u prompt sa konkretnim error message + DOM probe screenshot; do 3 iteracije po slot-u | Corti | 60 min |
+| **S7** | **F4 — Council of Models (light)** — novi `--council=3` flag u `cortex chat`; trigger keywords: ultimativno/futuristički/istraži/deep/multi-step/audit; synthesis arbiter agent (Opus) glasa | Corti | 60 min |
+| **S8** | **F5 — Adversarial gate** — opcionalan `--adversarial` flag: po commit-u agent A → B napada output → C sudi. Po default-u OFF (cost optimization); ON za critical decisions | Corti | 45 min |
+| **S9** | **F6 — Streaming partial output** — wire `provider_call_log` streaming chunks u Cortex Provider Telemetry panel (W45.S1 events sekcija već postoji) | Corti | 30 min |
+| **S10** | **F7 — Qdrant vector RAG** — pull `qdrant/qdrant:latest`; index `~/Projects/_research/igt-public/` + svi `~/Desktop/GDD/*.pdf` + 8 knjiga PDF/HTML scraped + slot-sage corpus/index.md; nove wrapper-e koji prvo hit-uju Qdrant pre LLM-a | Corti | 90 min |
+| **S11** | **F8 — Live regulator feed** — `scripts/cortex-regulator-feed.sh` koji parsa UKGC/MGA/SE/DE/NL/Ontario RSS i atom feed-ove; promena → `INSERT INTO telemetry_event_log (source='regulator_feed', category='rule_change', …)`; cron 4×/dan | Corti | 60 min |
+| **S12** | **F9 — Reinforcement loop** — Tauri UI dodaje 👍/👎 na svaki agent response; klik upisuje row u novu `agent_score` tabelu; meta-agent (mesečno) bira modela sa najvišim avg score po domenu | Corti | 90 min |
+| **S13** | **F10 — Self-improving prompt** — meta-agent (mesečno cron) čita `provider_call_log` failure rows + `agent_score` low-rated → predlaže izmene `system_prompt.md` → otvara PR za Boki review | Corti | 60 min |
+
+### H. End-to-end test fixture (S6 acceptance criteria)
+
+| Test | Input | Expected output |
+|:--|:--|:--|
+| GoO1000 reverse | `~/Desktop/GDD/Gates_of_Olympus_1000_GDD.pdf` | slot-builder: ParsedModel + buildSlotHTML emit + 24/24 cells render + 0 console errs + universal force panel 8+ chip-ova + regulator gate UKGC pass |
+| WoO reverse | `~/Desktop/GDD/Wrath_of_Olympus_GDD.pdf` | Isti gateway; +tumble cascade + multiplier orb chip + scatter celebration |
+| Synthetic edge case | `~/Desktop/GDD/synthetic/<random>.pdf` | 0 redness, 0 phantom features, 0 NO-OP chips |
+
+### I. QA gate per W46 atom
+
+Svaki atom mora proći:
+1. `npm run blocks` — sve blokove zelene
+2. `npm run parse` — 4/4 GDD reverse zelene
+3. `node tools/cortex-eyes-ultimate-qa.mjs` — 332/332 ultimate fixtures
+4. `node tools/cortex-eyes-universal-gdd.mjs` — 460+/461 universal audit (1 pre-existing wheel soft-fail OK)
+5. LEGO gate 5/5 — single-owner emit, dedupe, vendor-neutral
+6. Vendor-neutral grep: `grep -iE "(igt|pragmatic|megaways|cleopatra|cash[- ]eruption|netent|microgaming|aristocrat|btg|nolimit)" — output prazan
+7. Subagent twin presence — svaki agent mora imati twin u oba repa
+8. Manifest validation — model + council declaracija u manifest.yaml
+9. CLI wrapper exit 0 na smoke test
+10. Telemetry event presence — agent invocation MUST emit `provider_call_log` row sa correct source/agent labelom
+
+### J. Budget projekcija (Light council, Boki potvrdio 2026-06-15 04:36)
+
+| Stavka | Mesečno |
+|:--|--:|
+| Claude Opus 4.8 (primary, ~200 calls/day prosečno) | $300-500 |
+| Council Kimi K2.6 + Fable 5 (20% calls escalation) | $100-150 |
+| Vision pozivi (PDF + xlsx screenshot) | $50-100 |
+| GPT-5 (samo a11y deep + tertiary council) | $30-50 |
+| Qdrant lokalno (Docker) | $0 |
+| Live regulator RSS scrape | $0 |
+| **Ukupno light council target** | **$500-800/mes** |
+
+Trigger za skok u Heavy ($2-5K): konstantna closed-loop iteracija na 24/7 slot-builder runs, ili council na svakoj odluci umesto samo na hard.
+
+### K. Out-of-scope za W46 (svesno gated)
+
+| Stavka | Zašto out-of-scope |
+|:--|:--|
+| **Audio pipeline** | Boki hard rule — `audio.mjs` u slot-gdd-factory NE dirati dok Boki ne kaže "ajmo audio". HARD RULE #1 ovog repa je ADB ≠ GDD; agenti su isključivo GDD-side |
+| **Real slot math implementacija** | Boki direktiva: *"samo mehanika matematiku ne diramo nikad dok ja ne kazem"*. `math-debug` + `par-parser` ostaju triage/translation, ne edit-uju math kod |
+| **L3 LoRA fine-tuning** | Hardware blocked do M4 Ultra Q1 2027 |
+| **Real cash deployment** | Uvek out-of-scope za alat — proizvod, ne dev pipeline |
+| **Per-game implementacija** (Wrath of Olympus dovršavanje, Crystal Forge launch) | Odvojeni wave-ovi po projektu, ne ovde |
+
+### L. Acceptance criteria za W46 zatvaranje
+
+- Svih 7 novih agenata (slot-builder + slot-sage v2 + 5 domain architects) postoje sa manifest + system_prompt + subagent twin
+- `cortex-slot-builder --gdd ~/Desktop/GDD/Wrath_of_Olympus_GDD.pdf` emit-uje kompletan slot bez ručne intervencije
+- Closed-loop iteracija prolazi 332/332 ultimate fixtures za sva 3 test slot-a (GoO1000, WoO, 1 synthetic edge case)
+- Light council aktivan i triggeruje na specifikovane keywords/conditions
+- Qdrant indeksiran sa svim corpus-ima; semantic search demo prolazi
+- Live regulator feed prijavljuje barem 1 simulated change u test mode-u
+- Vendor-neutral grep prolazi 0/0 hit-ova kroz sve agent output-e
+- MASTER_TODO ovde + cortex MASTER_TODO sync-ovani
+- Mesečni budget projekcija (light) verifikovana protiv `cortex telemetry cost --last=30d`
+
+### M. Hijerarhija odluka pri konfliktu
+
+Ako 2 domain ownera daju kontradiktoran savet:
+1. `slot-sage v2` arbitrira (multi-domain coordinator)
+2. Ako sage ne može da reši → `slot-builder` zove **light council** (3 modela vote)
+3. Ako council split → Boki final decision
+4. Sve odluke se loguju u `provider_call_log` sa `agent_score` audit trail-om
+
+---
+
 ## 📊 Project status snapshot
 
 | Metric | Value |
