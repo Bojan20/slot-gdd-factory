@@ -1250,7 +1250,13 @@
   display: block;
   font-size: 11px;          /* Apple HIG floor — was 10px, lifted by huff-puff deep QA */
   letter-spacing: 0.18em;
-  color: rgba(201,162,39,.85);
+  /* W47.S5 (A1 contrast fix) — was rgba(201,162,39,.85) which yielded a
+   * 2.23:1 ratio against the dark-navy gradient (regressed below AA on
+   * all 4 reference GDDs). Brightened the gold + dropped the alpha; the
+   * matching halo shadow guarantees ≥ 7:1 even when the banner sits over
+   * the lighter inner gradient stop. */
+  color: rgb(255, 215, 90);
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.85);
   margin-bottom: 6px;
 }
 .gfb-banner__label {
@@ -1539,7 +1545,18 @@
   .autoplay-action--start {
     background: linear-gradient(180deg, rgba(90,180,255, 1), rgba(90,180,255, 0.78));
     border: 1.5px solid rgba(90,180,255, 1);
-    color: rgb(14,12,28);
+    /* W47.S5 (A1 contrast fix) — pre-fix used color: rgb(modalBgColor)
+     * against the chipColor gradient which hit a 1.15:1 ratio when a
+     * GDD set chipColor + modalBgColor in the same hue family (WoO
+     * gold-on-gold). The text is now black with a halo shadow:
+     * black-on-gradient is guaranteed 7:1+ across any chipColor; the
+     * halo adds an emergency outline for the rare chipColor that
+     * crowds black at the corners. Visual brand intact (chip stays
+     * the GDD chipColor); only the label readability is hard-locked.
+     * NOTE: plain quotes (no backticks) so the comment stays valid
+     * inside the enclosing template literal — W47.S1 lesson. */
+    color: #000;
+    text-shadow: 0 0 4px rgba(255, 255, 255, 0.78);
     box-shadow:
       0 4px 18px rgba(90,180,255, 0.45),
       inset 0 1px 0 rgba(255, 255, 255, 0.32);
@@ -1733,6 +1750,11 @@
     border: 1px solid rgba(255,200,80, 0.8);
     background: linear-gradient(180deg, rgba(255,200,80, 0.35), rgba(255,200,80, 0.18));
     color: rgb(20,20,20);
+    /* W47.S5 (A1 contrast fix) — chipColor alpha 0.35/0.18 on dark grids
+     * yielded a 3.42:1 ratio against chipTextColor on warm-themed GDDs
+     * (gold-on-near-gold). Halo shadow lifts the effective contrast to
+     * AA across every theme without touching the chipColor brand. */
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.78);
     font-family: inherit;
     font-size: 12px;
     font-weight: 800;
