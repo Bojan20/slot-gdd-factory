@@ -279,6 +279,12 @@ const EXPECTED_EMIT_OWNERS = {
   /* B68 coinShower — particle-burst block, sole owner of its lifecycle. */
   onCoinShowerStart:  ['coinShower.mjs'],
   onCoinShowerEnd:    ['coinShower.mjs'],
+  /* B71 pickBonusReveal — post-pick reveal presenter, sole owner. */
+  onPickRevealStart:  ['pickBonusReveal.mjs'],
+  onPickRevealEnd:    ['pickBonusReveal.mjs'],
+  /* B74 rewardChest — chest-reveal presenter, sole owner of its lifecycle. */
+  onRewardChestOpen:  ['rewardChest.mjs'],
+  onRewardChestClose: ['rewardChest.mjs'],
   /* wildReel emits `symbolOverride` when its full-column wild paints over
    * the rolled symbols on a designated reel. winEval / paylineOverlay
    * subscribe so they treat the overridden cells as the wild for the

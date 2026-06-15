@@ -87,11 +87,23 @@ import {
   resolveConfig as resolveEnergyMeterConfig,
 } from './blocks/energyMeter.mjs';
 import {
+  emitPickBonusRevealCSS,
+  emitPickBonusRevealMarkup,
+  emitPickBonusRevealRuntime,
+  resolveConfig as resolvePickBonusRevealConfig,
+} from './blocks/pickBonusReveal.mjs';
+import {
   emitCoinShowerCSS,
   emitCoinShowerMarkup,
   emitCoinShowerRuntime,
   resolveConfig as resolveCoinShowerConfig,
 } from './blocks/coinShower.mjs';
+import {
+  emitRewardChestCSS,
+  emitRewardChestMarkup,
+  emitRewardChestRuntime,
+  resolveConfig as resolveRewardChestConfig,
+} from './blocks/rewardChest.mjs';
 import {
   emitAnticipationCSS,
   emitAnticipationRuntime,
@@ -599,7 +611,9 @@ ${emitWinwaysIndicatorCSS(resolveWinwaysIndicatorConfig(model))}
 ${emitMultiplierLadderCSS(resolveMultiplierLadderConfig(model))}
 ${emitStickyMeterCSS(resolveStickyMeterConfig(model))}
 ${emitEnergyMeterCSS(resolveEnergyMeterConfig(model))}
+${emitPickBonusRevealCSS(resolvePickBonusRevealConfig(model))}
 ${emitCoinShowerCSS(resolveCoinShowerConfig(model))}
+${emitRewardChestCSS(resolveRewardChestConfig(model))}
 ${emitPaylineOverlayCSS(resolvePaylineOverlayConfig(model))}
 ${emitGridShapesCSS()}
 ${emitReelEngineCSS(resolveReelEngineConfig(model))}
@@ -702,7 +716,9 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
     ${emitMultiplierLadderMarkup(resolveMultiplierLadderConfig(model))}
     ${emitStickyMeterMarkup(resolveStickyMeterConfig(model))}
     ${emitEnergyMeterMarkup(resolveEnergyMeterConfig(model))}
+    ${emitPickBonusRevealMarkup(resolvePickBonusRevealConfig(model))}
     ${emitCoinShowerMarkup(resolveCoinShowerConfig(model))}
+    ${emitRewardChestMarkup(resolveRewardChestConfig(model))}
     <div class="sub">${escapeHtml(layoutSub)}</div>
   </div>
   <div class="play">
@@ -1050,7 +1066,9 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitMultiplierLadderRuntime(resolveMultiplierLadderConfig(model))}
   ${emitStickyMeterRuntime(resolveStickyMeterConfig(model))}
   ${emitEnergyMeterRuntime(resolveEnergyMeterConfig(model))}
+  ${emitPickBonusRevealRuntime(resolvePickBonusRevealConfig(model))}
   ${emitCoinShowerRuntime(resolveCoinShowerConfig(model))}
+  ${emitRewardChestRuntime(resolveRewardChestConfig(model))}
   ${emitFreeSpinsRuntime(resolveFreeSpinsConfig(model))}
 
   /* Wave T-slim Phase 2 — extracted window.* exposure surface (was inline
