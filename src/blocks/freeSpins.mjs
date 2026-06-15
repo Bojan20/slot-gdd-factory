@@ -191,7 +191,10 @@ body.fs-mode-crimson .frame::after {
 /* FS HUD — slim horizontal bar pinned to the top of the viewport. */
 .fs-hud {
   position: fixed;
-  top: 10px;
+  /* W47.S8 (A9 safe-area) — was top: 10px which sat right under the
+   * notch on iPhone landscape. Honour env(safe-area-inset-top) with a
+   * 10px fallback so the FS HUD slides DOWN on notched devices. */
+  top: calc(max(10px, env(safe-area-inset-top, 0px) + 10px));
   left: 50%;
   transform: translateX(-50%);
   display: none;
@@ -235,7 +238,10 @@ body.fs-mode-crimson .frame::after {
 /* FS retrigger toast. */
 .fs-toast {
   position: fixed;
-  top: 70px;
+  /* W47.S8 (A9 safe-area) — was top: 70px which still clipped under
+   * the notch on iPhone 14 Pro Max landscape. Wrap in env() with 70px
+   * fallback so the toast appears below the inset. */
+  top: calc(max(70px, env(safe-area-inset-top, 0px) + 70px));
   left: 50%;
   transform: translateX(-50%) translateY(-8px);
   padding: 10px 22px;

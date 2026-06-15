@@ -126,8 +126,12 @@ export function emitProgressiveFreeSpinsCSS(cfg = defaultConfig()) {
 /* ─── progressive free spins multiplier (Wave U1) ───────────────── */
 .pfs-chip {
   position: fixed;
-  bottom: 136px;          /* sits above pm-chip @ 80px so they stack */
-  right: 22px;
+  /* W47.S8 (A9 safe-area) — wrap both bottom and right in max(N, env)
+   * so the chip stays above the home-bar AND respects the right-edge
+   * gesture zone. Stack relationship with pm-chip (80px base) holds:
+   * when home-bar pushes pm-chip up by inset, this chip stacks above. */
+  bottom: calc(max(136px, env(safe-area-inset-bottom, 0px) + 136px));
+  right: calc(max(22px, env(safe-area-inset-right, 22px)));
   z-index: 56;
   background: rgba(0,0,0,.72);
   border: 1.5px solid rgba(${cfg.chipColor},.75);

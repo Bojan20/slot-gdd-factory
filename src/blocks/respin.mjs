@@ -71,7 +71,11 @@ export function emitRespinCSS(cfg = defaultConfig()) {
 }
 .respin-banner {
   position: fixed;
-  top: 110px; left: 50%;
+  /* W47.S8 (A9 safe-area) — was top: 110px which clipped under the
+   * notch on iPhone landscape. Honour env(safe-area-inset-top) with
+   * 110px fallback so the banner slides DOWN on notched devices. */
+  top: calc(max(110px, env(safe-area-inset-top, 0px) + 110px));
+  left: 50%;
   transform: translateX(-50%);
   z-index: 65;
   background: rgba(0,0,0,.78);

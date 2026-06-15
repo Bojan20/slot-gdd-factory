@@ -209,7 +209,11 @@ export function emitHoldAndWinCSS(cfg = defaultConfig()) {
 /* ── HUD (RESPINS / LOCKED / TOTAL) ── */
 .hw-hud {
   position: fixed;
-  top: 60px; left: 50%;
+  /* W47.S8 (A9 safe-area) — was top: 60px which collided with the
+   * notch on iPhone Pro Max landscape. Honour env(safe-area-inset-top)
+   * with a 60px fallback so the HUD slides INWARD on noctched devices. */
+  top: calc(max(60px, env(safe-area-inset-top, 0px) + 60px));
+  left: 50%;
   transform: translateX(-50%);
   z-index: 70;
   background: rgba(0,0,0,.82);

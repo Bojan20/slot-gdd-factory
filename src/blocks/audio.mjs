@@ -148,7 +148,13 @@ export function emitAudioCSS(cfg = defaultConfig()) {
 /* ─── audio mute toggle (Wave U2) ────────────────────────────────── */
 .audio-toggle {
   position: fixed;
-  top: 14px; right: 14px;
+  /* W47.S8 (A9 safe-area) — was top: 14px / right: 14px which hit the
+   * notch on iPhone X+ in landscape and the punch-hole on Pixel/Galaxy.
+   * Wrap each edge in max(originalPx, env(safe-area-inset-side,
+   * fallback)) so the toggle slides INWARD on devices with insets and
+   * keeps the original offset where there are none. */
+  top: calc(max(14px, env(safe-area-inset-top, 14px)));
+  right: calc(max(14px, env(safe-area-inset-right, 14px)));
   z-index: 70;
   width: 38px; height: 38px;
   background: rgba(0,0,0,.55);
