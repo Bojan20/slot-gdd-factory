@@ -148,6 +148,9 @@ const RAF_FALLBACK_MS      = 16;      /* setTimeout fallback when requestAnimati
 const MIN_TIER_DURATION_MS = 400;     /* per-tier duration lower bound */
 const MAX_TIER_DURATION_MS = 20000;   /* per-tier duration upper bound */
 const MAX_LABEL_LEN        = 32;      /* GDD label string cap */
+const MAX_SHAKE_PX         = 16;      /* W47.S3 — translate amplitude clamp */
+const MIN_SHAKE_PERIOD_MS  = 80;      /* W47.S3 — oscillator cycle lower bound */
+const MAX_SHAKE_PERIOD_MS  = 600;     /* W47.S3 — oscillator cycle upper bound */
 const MAX_CURRENCY_LEN     = 4;       /* currency symbol cap (e.g. "USD ") */
 
 /** Frozen tier IDs surface — used by tests + by downstream listeners that
@@ -204,6 +207,18 @@ export function defaultConfig() {
      * model.balanceHud.currency / currencyPosition. */
     currency:         '€',
     currencyPosition: 'prefix',   /* 'prefix' → "€1500.00", 'suffix' → "1500.00 €" */
+    /* W47.S3 (V3 polish) — screen-shake intensity ladder per tier (px
+     * amplitude on translate). Default 0 / 0 / 2 / 4 / 6 — tiers 1-2
+     * stay calm (warm yellow / gold celebration), tiers 3+ ramp the
+     * physicality. Gated below by `shakeMinTier` (default 3) so the
+     * "BIGWINTIER1" and "BIGWINTIER2" payouts read as joyful but not
+     * disruptive. Each value clamps to [0, 16] in resolveConfig. */
+    shakeAmplitudePxPerTier: [0, 0, 2, 4, 6],
+    shakeMinTier:            3,
+    /* Frame-rate of the shake oscillator (ms per cycle). The oscillator
+     * loops while a tier is on screen; cycle short enough to feel
+     * intense, long enough to stay 60 fps friendly. */
+    shakePeriodMs:           220,
   };
 }
 
@@ -279,6 +294,29 @@ export function resolveConfig(model = {}) {
   }
   if (m.currencyPosition === 'prefix' || m.currencyPosition === 'suffix') {
     cfg.currencyPosition = m.currencyPosition;
+  }
+
+  /* W47.S3 (V3 polish) — screen-shake ladder validation. Each amplitude
+   * clamps to [0, MAX_SHAKE_PX]; the array MUST be TIER_COUNT long or we
+   * keep defaults. shakeMinTier clamps to [1, TIER_COUNT]. shakePeriodMs
+   * clamps to [MIN_SHAKE_PERIOD_MS, MAX_SHAKE_PERIOD_MS]. The whole
+   * feature can be disabled by passing all zeroes in the amplitude
+   * array OR by setting shakeMinTier above TIER_COUNT. */
+  if (Array.isArray(m.shakeAmplitudePxPerTier)
+      && m.shakeAmplitudePxPerTier.length === TIER_COUNT) {
+    const amps = m.shakeAmplitudePxPerTier.map(v => {
+      const n = Number(v);
+      if (!Number.isFinite(n) || n < 0) return 0;
+      return Math.min(n, MAX_SHAKE_PX);
+    });
+    cfg.shakeAmplitudePxPerTier = amps;
+  }
+  if (Number.isFinite(m.shakeMinTier)) {
+    cfg.shakeMinTier = clampInt(Math.floor(m.shakeMinTier), 1, TIER_COUNT);
+  }
+  if (Number.isFinite(m.shakePeriodMs)) {
+    const p = Number(m.shakePeriodMs);
+    cfg.shakePeriodMs = Math.min(Math.max(p, MIN_SHAKE_PERIOD_MS), MAX_SHAKE_PERIOD_MS);
   }
 
   return cfg;
@@ -480,6 +518,24 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
     0%   { opacity: 1; transform: scale(1); }
     100% { opacity: 0; transform: scale(0.85); }
   }
+  /* W47.S3 (V3 polish) — screen-shake oscillator. Three keyframes (low,
+   * mid, hi) staged so a per-tier CSS variable --bw-shake-amp drives
+   * the amplitude without forcing distinct keyframe sets per tier. The
+   * oscillator translates the WHOLE banner — not the counter alone — so
+   * the visual force tracks the celebration tier without breaking the
+   * count-up readability. Each cycle is symmetric round-trip so the
+   * resting state of the banner is preserved between cycles. */
+  @keyframes bigWinTierShake {
+    0%, 100% { transform: scale(1) translate(0, 0); }
+    25%      { transform: scale(1) translate(calc(var(--bw-shake-amp) * 1px),
+                                              calc(var(--bw-shake-amp) * -0.5px)); }
+    50%      { transform: scale(1) translate(0, calc(var(--bw-shake-amp) * 0.7px)); }
+    75%      { transform: scale(1) translate(calc(var(--bw-shake-amp) * -1px),
+                                              calc(var(--bw-shake-amp) * -0.4px)); }
+  }
+  .big-win-tier-banner.is-shaking {
+    animation: bigWinTierShake var(--bw-shake-period, 220ms) ease-in-out infinite;
+  }
   /* No viewport-width media query — gap/padding/font-size all derive
    * from --bw-frame-w via clamp(), so the small-screen reduction is
    * already automatic (a 360 px portrait phone gets the floor; a 1440 px
@@ -488,6 +544,11 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
   @media (prefers-reduced-motion: reduce) {
     .big-win-tier-banner[data-show="enter"],
     .big-win-tier-banner[data-show="exit"] { animation: none; opacity: 1; transform: none; }
+    /* W47.S3 — explicit shake kill under reduced-motion. The runtime
+     * also reads matchMedia() and skips the .is-shaking class toggle,
+     * but the CSS-side hard-stop is the seatbelt: if any code path
+     * ever reaches the toggle, the animation still does nothing. */
+    .big-win-tier-banner.is-shaking { animation: none; transform: none; }
   }
   /* Screen-reader-only live region. Hosts the single end-of-sequence
    * announcement of the final money amount — the rAF-driven counter
@@ -566,6 +627,10 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
     var RAF_FALLBACK_MS = ${RAF_FALLBACK_MS};
     var CURRENCY        = ${JSON.stringify(cfg.currency)};
     var CUR_POS         = ${JSON.stringify(cfg.currencyPosition)};
+    /* W47.S3 — per-tier screen-shake amplitude + oscillator period.
+     * Read by _applyShake() to drive the CSS custom properties. */
+    var SHAKE_AMP       = ${JSON.stringify(cfg.shakeAmplitudePxPerTier)};
+    var SHAKE_PERIOD_MS = ${cfg.shakePeriodMs};
 
     var STATE = {
       enabled: true,
@@ -638,11 +703,21 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
     /* _swapTier — change the banner's data-tier attribute (CSS handles the
      * smooth color/glow morph) and replace the label text with a brief
      * cross-fade so the swap reads as a transition, not a jump. Counter
-     * keeps running uninterrupted. */
+     * keeps running uninterrupted.
+     *
+     * W47.S3 (V3 polish) — also toggles the per-tier screen-shake class.
+     * The shake amplitude rides as a CSS custom property so a single
+     * @keyframes set scales without per-tier keyframes (see
+     * emitBigWinTierCSS). Hard gates:
+     *   1. prefers-reduced-motion → no class, no property set, no work.
+     *   2. amplitude === 0        → no class (tier 1-2 by default stay calm).
+     *   3. tier < shakeMinTier    → no class (caller-tunable gate).
+     */
     function _swapTier(toTier) {
       var node = _banner();
       if (!node) return;
       node.setAttribute('data-tier', String(toTier));
+      _applyShake(node, toTier);
       var labelEl = node.querySelector('.big-win-tier-label');
       if (!labelEl) return;
       node.setAttribute('data-label-swap', 'true');
@@ -651,6 +726,29 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
         node.removeAttribute('data-label-swap');
       }, LABEL_SWAP_MS);
       STATE.timers.push(swap);
+    }
+
+    /* _applyShake (W47.S3) — translates the per-tier amplitude into a
+     * CSS custom property + class toggle. Defense in depth: the matchMedia
+     * gate here is independent of the CSS @media gate, so a partial
+     * platform support for prefers-reduced-motion still calms the
+     * banner. The function is idempotent — re-calling with the same tier
+     * is a no-op visually (animation continues on the same CSS variable). */
+    function _applyShake(node, toTier) {
+      var minTier = ${cfg.shakeMinTier};
+      var amp = SHAKE_AMP[toTier - 1] || 0;
+      var reduceMotion = (typeof window !== 'undefined' &&
+                          typeof window.matchMedia === 'function' &&
+                          window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      if (reduceMotion || amp <= 0 || toTier < minTier) {
+        node.classList.remove('is-shaking');
+        node.style.removeProperty('--bw-shake-amp');
+        node.style.removeProperty('--bw-shake-period');
+        return;
+      }
+      node.style.setProperty('--bw-shake-amp', String(amp));
+      node.style.setProperty('--bw-shake-period', SHAKE_PERIOD_MS + 'ms');
+      node.classList.add('is-shaking');
     }
 
     /* _fmtMoney — currency-aware display formatter. Boki rule 05.06.2026:
@@ -678,7 +776,15 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
 
     function _fadeOutCurrent() {
       var node = _banner();
-      if (node) node.setAttribute('data-show', 'exit');
+      if (node) {
+        node.setAttribute('data-show', 'exit');
+        /* W47.S3 — stop shaking before exit so the fade reads as a
+         * clean settle, not a shaking ghost. The CSS-side media-query
+         * gate is a backup; this line is the deterministic path. */
+        node.classList.remove('is-shaking');
+        node.style.removeProperty('--bw-shake-amp');
+        node.style.removeProperty('--bw-shake-period');
+      }
       return _delay(FADE_MS);
     }
 
@@ -837,6 +943,10 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
         '<span class="big-win-tier-label" aria-live="polite" aria-atomic="true">' + LABELS[tier - 1] + '</span>' +
         '<span class="big-win-tier-amount" aria-hidden="true" data-count="0">' + _fmtMoney(0) + '</span>';
       host.appendChild(node);
+      /* W47.S3 — start the shake right when the banner mounts so the
+       * fade-in lands on a banner that's already pulsing. Subsequent
+       * tier swaps re-evaluate via _swapTier → _applyShake. */
+      _applyShake(node, tier);
       var hold = setTimeout(function () {
         if (node && node.parentNode === host) node.setAttribute('data-show', 'hold');
       }, FADE_MS);

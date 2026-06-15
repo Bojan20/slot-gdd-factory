@@ -324,17 +324,76 @@ if (stageFailures.length > 0) {
 }
 console.log('');
 
-/* Multi-threaded HTTP server — Python single-threaded http.server can't
- * survive Playwright's 4× concurrent fetch storms (ERR_CONNECTION_REFUSED
- * floods). We inline `ThreadingHTTPServer` instead. */
-const server = spawn('python3', ['-c',
-  `from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
-import os, sys
-os.chdir(${JSON.stringify(REPO)})
-ThreadingHTTPServer(("127.0.0.1", ${PORT}), SimpleHTTPRequestHandler).serve_forever()
-`,
-], { stdio: 'ignore' });
-await new Promise((r) => setTimeout(r, 700));
+/* W47.S3 — Node inline HTTP server. Python's ThreadingHTTPServer flaked
+ * under 6× Playwright concurrency (8/332 fixtures hit ERR_CONNECTION_REFUSED
+ * intermittently — see W47.S2 honest disclosure). Node http.Server handles
+ * the same load without breaking a sweat: same-process, no GIL, no socket
+ * accept-queue starvation, no extra subprocess. Static-file serving is
+ * read-only HEAD/GET, so the surface is minimal.
+ *
+ * Path safety: every request URL is decoded, normalised, and asserted to
+ * stay inside REPO. `..` traversal returns 403. Mime type comes from a
+ * tiny lookup — no extra dep. */
+const { createServer } = await import('node:http');
+const { promises: fsp_, createReadStream } = await import('node:fs');
+const nodePath = await import('node:path');
+
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js':   'application/javascript; charset=utf-8',
+  '.mjs':  'application/javascript; charset=utf-8',
+  '.css':  'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.svg':  'image/svg+xml',
+  '.png':  'image/png',
+  '.jpg':  'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.ico':  'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.map':  'application/json; charset=utf-8',
+};
+
+const server = createServer((req, res) => {
+  try {
+    const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
+    let filePath = decodeURIComponent(url.pathname);
+    if (filePath === '/' || filePath === '') filePath = '/index.html';
+    /* Resolve absolute and check it stays inside REPO. */
+    const abs = nodePath.resolve(REPO, '.' + filePath);
+    if (!abs.startsWith(REPO + nodePath.sep) && abs !== REPO) {
+      res.writeHead(403, { 'Content-Type': 'text/plain' });
+      res.end('forbidden');
+      return;
+    }
+    fsp_.stat(abs).then((s) => {
+      if (s.isDirectory()) {
+        res.writeHead(403, { 'Content-Type': 'text/plain' });
+        res.end('directory listing not allowed');
+        return;
+      }
+      const ext = nodePath.extname(abs).toLowerCase();
+      const ct = MIME[ext] || 'application/octet-stream';
+      res.writeHead(200, {
+        'Content-Type': ct,
+        'Cache-Control': 'no-store',
+        'Content-Length': s.size,
+      });
+      createReadStream(abs).pipe(res);
+    }).catch(() => {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('not found');
+    });
+  } catch (err) {
+    res.writeHead(500, { 'Content-Type': 'text/plain' });
+    res.end('server error: ' + err.message);
+  }
+});
+
+await new Promise((resolve, reject) => {
+  server.listen(PORT, '127.0.0.1', resolve);
+  server.once('error', reject);
+});
 
 let totalPass = 0, totalFail = 0;
 const fixtureRows = [];
@@ -370,7 +429,14 @@ try {
   await Promise.all(Array.from({ length: concurrency }, (_, k) => worker(k)));
 } finally {
   if (browser) await browser.close().catch(() => {});
-  server.kill();
+  /* W47.S3 — Node http.Server uses .close() not .kill(). Force-close
+   * idle keep-alive sockets so the script exits promptly. */
+  if (typeof server.close === 'function') {
+    server.closeAllConnections?.();
+    await new Promise((r) => server.close(() => r()));
+  } else if (typeof server.kill === 'function') {
+    server.kill();
+  }
 }
 
 const overall = { pass: totalPass, fail: totalFail, fixtures: fixtureRows.length };

@@ -185,5 +185,66 @@ t('vendor-neutral: no vendor / studio / brand strings in any emit', () => {
   for (const w of banned) ne(all, w, `banned vendor token: ${w}`);
 });
 
+/* ── W47.S3 — V3 screen-shake ladder ──────────────────────────────── */
+
+t('defaultConfig exposes shake ladder (W47.S3)', () => {
+  const c = defaultConfig();
+  ok(Array.isArray(c.shakeAmplitudePxPerTier), 'shakeAmplitudePxPerTier must be array');
+  eq(c.shakeAmplitudePxPerTier.length, 5, 'shake ladder must be 5 entries long');
+  eq(c.shakeAmplitudePxPerTier[0], 0, 'tier 1 calm by default');
+  eq(c.shakeAmplitudePxPerTier[1], 0, 'tier 2 calm by default');
+  ok(c.shakeAmplitudePxPerTier[2] >= 1, 'tier 3+ shakes');
+  ok(c.shakeAmplitudePxPerTier[4] >= c.shakeAmplitudePxPerTier[2], 'amplitude monotonic non-decreasing');
+  eq(c.shakeMinTier, 3, 'shakeMinTier defaults to 3 (gate matches the amplitudes)');
+  ok(c.shakePeriodMs >= 80 && c.shakePeriodMs <= 600, 'shakePeriodMs within bounds');
+});
+
+t('resolveConfig clamps shake amplitudes + period (W47.S3)', () => {
+  const c = resolveConfig({ bigWinTier: {
+    enabled: true,
+    shakeAmplitudePxPerTier: [-5, 0, 200, 'bad', 6],   /* -5 → 0, 200 → 16, 'bad' → 0 */
+    shakeMinTier: 99,                                    /* clamped to 5 */
+    shakePeriodMs: 9999,                                 /* clamped to 600 */
+  }});
+  eq(c.shakeAmplitudePxPerTier[0], 0, '-5 clamps to 0');
+  eq(c.shakeAmplitudePxPerTier[2], 16, '200 clamps to MAX_SHAKE_PX=16');
+  eq(c.shakeAmplitudePxPerTier[3], 0, 'NaN clamps to 0');
+  eq(c.shakeMinTier, 5, 'minTier > TIER_COUNT clamps to 5');
+  eq(c.shakePeriodMs, 600, 'period clamps to MAX_SHAKE_PERIOD_MS');
+});
+
+t('resolveConfig rejects wrong-length shake ladder (W47.S3)', () => {
+  const c = resolveConfig({ bigWinTier: { enabled: true, shakeAmplitudePxPerTier: [2, 4] }});
+  /* Falls back to defaults — wrong-length array must not corrupt the ladder. */
+  eq(c.shakeAmplitudePxPerTier.length, 5, 'must keep 5-element default');
+});
+
+t('emitBigWinTierCSS contains shake keyframes (W47.S3)', () => {
+  const css = emitBigWinTierCSS(resolveConfig({ bigWinTier: { enabled: true } }));
+  ct(css, '@keyframes bigWinTierShake', 'keyframes declared');
+  ct(css, '.big-win-tier-banner.is-shaking', 'class selector present');
+  ct(css, '--bw-shake-amp', 'amplitude CSS variable wired');
+  ct(css, '@media (prefers-reduced-motion: reduce)', 'reduced-motion gate present');
+  /* The reduced-motion block must explicitly kill the shake animation. */
+  ct(css, '.big-win-tier-banner.is-shaking { animation: none', 'reduced-motion kills shake');
+});
+
+t('emitBigWinTierRuntime carries SHAKE constants + _applyShake (W47.S3)', () => {
+  const rt = emitBigWinTierRuntime(resolveConfig({ bigWinTier: { enabled: true } }));
+  ct(rt, 'SHAKE_AMP', 'SHAKE_AMP constant emitted');
+  ct(rt, 'SHAKE_PERIOD_MS', 'SHAKE_PERIOD_MS constant emitted');
+  ct(rt, '_applyShake', 'helper function emitted');
+  ct(rt, "matchMedia('(prefers-reduced-motion: reduce)')", 'matchMedia gate in runtime');
+  ct(rt, "classList.add('is-shaking')", 'class toggle wired');
+  ct(rt, "classList.remove('is-shaking')", 'cleanup in fadeOut + applyShake');
+});
+
+t('shake defaults pass vendor-neutral check (W47.S3)', () => {
+  const css = emitBigWinTierCSS(resolveConfig({ bigWinTier: { enabled: true } }));
+  /* The shake keyframes must NOT reference any branded effect name. */
+  const banned = ['MegaShake', 'ThunderShake', 'BigBoom', 'IGT', 'pragmatic'];
+  for (const w of banned) ne(css, w, `banned in shake CSS: ${w}`);
+});
+
 console.log('--- summary ---\n  pass:', pass, '\n  fail:', fail);
 if (fail > 0) process.exit(1);
