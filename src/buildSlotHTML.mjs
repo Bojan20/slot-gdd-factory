@@ -117,6 +117,12 @@ import {
   resolveConfig as resolveWheelBonusRevealConfig,
 } from './blocks/wheelBonusReveal.mjs';
 import {
+  emitMysteryRevealCSS,
+  emitMysteryRevealMarkup,
+  emitMysteryRevealRuntime,
+  resolveConfig as resolveMysteryRevealConfig,
+} from './blocks/mysteryReveal.mjs';
+import {
   emitAnticipationCSS,
   emitAnticipationRuntime,
   resolveConfig as resolveAnticipationConfig,
@@ -628,6 +634,7 @@ ${emitCoinShowerCSS(resolveCoinShowerConfig(model))}
 ${emitRewardChestCSS(resolveRewardChestConfig(model))}
 ${emitSymbolStackCollapseCSS(resolveSymbolStackCollapseConfig(model))}
 ${emitWheelBonusRevealCSS(resolveWheelBonusRevealConfig(model))}
+${emitMysteryRevealCSS(resolveMysteryRevealConfig(model))}
 ${emitPaylineOverlayCSS(resolvePaylineOverlayConfig(model))}
 ${emitGridShapesCSS()}
 ${emitReelEngineCSS(resolveReelEngineConfig(model))}
@@ -747,6 +754,7 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
         <svg class="payline-overlay" id="paylineOverlay" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
         ${emitSymbolStackCollapseMarkup(resolveSymbolStackCollapseConfig(model))}
         ${emitWheelBonusRevealMarkup(resolveWheelBonusRevealConfig(model))}
+        ${emitMysteryRevealMarkup(resolveMysteryRevealConfig(model))}
       </div>
     </div>
     <aside class="sideHud" aria-label="Game Controls">
@@ -1087,6 +1095,7 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitRewardChestRuntime(resolveRewardChestConfig(model))}
   ${emitSymbolStackCollapseRuntime(resolveSymbolStackCollapseConfig(model))}
   ${emitWheelBonusRevealRuntime(resolveWheelBonusRevealConfig(model))}
+  ${emitMysteryRevealRuntime(resolveMysteryRevealConfig(model))}
   ${emitFreeSpinsRuntime(resolveFreeSpinsConfig(model))}
 
   /* Wave T-slim Phase 2 — extracted window.* exposure surface (was inline

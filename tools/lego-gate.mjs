@@ -288,6 +288,9 @@ const EXPECTED_EMIT_OWNERS = {
   /* B75 symbolStackCollapse — full-reel stack drop presenter. */
   onStackCollapseStart: ['symbolStackCollapse.mjs'],
   onStackCollapseEnd:   ['symbolStackCollapse.mjs'],
+  /* B65 mysteryReveal — event-presenter sibling of mysterySymbol. */
+  onMysteryRevealStart: ['mysteryReveal.mjs'],
+  onMysteryRevealEnd:   ['mysteryReveal.mjs'],
   /* B72 wheelBonusReveal — post-wheel-settle reveal presenter, sole owner. */
   onWheelRevealStart:   ['wheelBonusReveal.mjs'],
   onWheelRevealEnd:     ['wheelBonusReveal.mjs'],
