@@ -271,6 +271,9 @@ const EXPECTED_EMIT_OWNERS = {
   /* B67 multiplierLadder — sole emitter of ladder lifecycle events. */
   onMultLadderStep:   ['multiplierLadder.mjs'],
   onMultLadderReset:  ['multiplierLadder.mjs'],
+  /* B68 coinShower — particle-burst block, sole owner of its lifecycle. */
+  onCoinShowerStart:  ['coinShower.mjs'],
+  onCoinShowerEnd:    ['coinShower.mjs'],
   /* wildReel emits `symbolOverride` when its full-column wild paints over
    * the rolled symbols on a designated reel. winEval / paylineOverlay
    * subscribe so they treat the overridden cells as the wild for the
