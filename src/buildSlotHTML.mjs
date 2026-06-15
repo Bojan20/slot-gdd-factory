@@ -63,6 +63,12 @@ import {
   resolveConfig as resolveFsProgressBarConfig,
 } from './blocks/fsProgressBar.mjs';
 import {
+  emitWinwaysIndicatorCSS,
+  emitWinwaysIndicatorMarkup,
+  emitWinwaysIndicatorRuntime,
+  resolveConfig as resolveWinwaysIndicatorConfig,
+} from './blocks/winwaysIndicator.mjs';
+import {
   emitAnticipationCSS,
   emitAnticipationRuntime,
   resolveConfig as resolveAnticipationConfig,
@@ -565,6 +571,7 @@ export function buildSlotHTML(model) {
 ${emitThemeCSS(resolveThemeCSSConfig(model))}
 ${emitStageBadgeCSS(resolveStageBadgeConfig(model))}
 ${emitFsProgressBarCSS(resolveFsProgressBarConfig(model))}
+${emitWinwaysIndicatorCSS(resolveWinwaysIndicatorConfig(model))}
 ${emitPaylineOverlayCSS(resolvePaylineOverlayConfig(model))}
 ${emitGridShapesCSS()}
 ${emitReelEngineCSS(resolveReelEngineConfig(model))}
@@ -663,6 +670,7 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
     <div class="title">${escapeHtml(model.name)}</div>
     ${emitStageBadgeMarkup(resolveStageBadgeConfig(model))}
     ${emitFsProgressBarMarkup(resolveFsProgressBarConfig(model))}
+    ${emitWinwaysIndicatorMarkup(resolveWinwaysIndicatorConfig(model))}
     <div class="sub">${escapeHtml(layoutSub)}</div>
   </div>
   <div class="play">
@@ -1006,6 +1014,7 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   const statusElGlobal = document.getElementById("status");
   ${emitStageBadgeRuntime(resolveStageBadgeConfig(model))}
   ${emitFsProgressBarRuntime(resolveFsProgressBarConfig(model))}
+  ${emitWinwaysIndicatorRuntime(resolveWinwaysIndicatorConfig(model))}
   ${emitFreeSpinsRuntime(resolveFreeSpinsConfig(model))}
 
   /* Wave T-slim Phase 2 — extracted window.* exposure surface (was inline
