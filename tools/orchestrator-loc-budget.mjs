@@ -43,12 +43,17 @@ const REPO = resolve(__dirname, '..');
 const BUDGETS = [
   {
     path: 'src/buildSlotHTML.mjs',
-    maxLoc: 1050,
+    maxLoc: 1180,
     rationale:
       'Orchestrator — owns HTML composition + per-block emit order. ' +
       'T-slim Phase 2 closed ~280 LOC of extracts. Wave B64 adds the ' +
       'symbolUpgrade wire (import + CSS/markup/runtime emits = +12 LOC). ' +
-      'Next split candidate is `mathDispatch.mjs` (post math layer wave).',
+      'W47.S15–S19 added 6 reveal/meter blocks (B65 mysteryReveal, ' +
+      'B71 pickBonusReveal, B72 wheelBonusReveal, B73 energyMeter, ' +
+      'B74 rewardChest, B75 symbolStackCollapse), each ~12 LOC wire = ' +
+      '+72 LOC bringing F3 LEGO chain to 13/13 complete. Budget bumped ' +
+      'from 1050 → 1180 to absorb. Next split candidate remains ' +
+      '`mathDispatch.mjs` (post math layer wave).',
   },
   /* Add more orchestrators here when the codebase grows new top-level
      composition seams — e.g. cert pipeline orchestrator. */
