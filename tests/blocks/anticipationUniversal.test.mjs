@@ -130,5 +130,49 @@ t('vendor-neutral: no studio / game names in emitted artefacts', () => {
   }
 });
 
+/* ── W47.S9 (B76) — mathematically-alive gate ──────────────────────────
+ * The fix lives inside the emitted runtime template literal — we cannot
+ * directly invoke the inner _tick() from the host suite, so the test
+ * asserts that the runtime SOURCE carries the gate's structural anchors
+ * (queries, maxAchievable expression, dead-branch removal of
+ * cell--anticipating-cell, warm short-circuit). */
+
+t('B76: runtime carries .reelCol querySelectorAll for the math-alive gate', () => {
+  const rt = emitAnticipationUniversalRuntime(resolveConfig({ anticipationUniversal: { enabled: true } }));
+  ct(rt, '.reelCol', 'must read reel columns to compute remaining-reel count');
+  ct(rt, "querySelectorAll('.reelCol')", 'must enumerate columns');
+});
+
+t('B76: runtime computes maxAchievable + mathAlive', () => {
+  const rt = emitAnticipationUniversalRuntime(resolveConfig({ anticipationUniversal: { enabled: true } }));
+  ct(rt, 'maxAchievable', 'gate identifier present');
+  ct(rt, 'mathAlive', 'mathAlive identifier present');
+  ct(rt, 'scattersSoFar + Math.max(0, reelColCount - reelsWithTrigger)',
+     'maxAchievable formula intact (one trigger per remaining reel cap)');
+});
+
+t('B76: dead branch strips every cell--anticipating-cell halo', () => {
+  const rt = emitAnticipationUniversalRuntime(resolveConfig({ anticipationUniversal: { enabled: true } }));
+  ct(rt, "querySelectorAll('.cell.cell--anticipating-cell')",
+     'dead branch enumerates halos');
+  ct(rt, "classList.remove('cell--anticipating-cell')",
+     'dead branch removes class');
+});
+
+t('B76: warm short-circuit gated by mathAlive', () => {
+  const rt = emitAnticipationUniversalRuntime(resolveConfig({ anticipationUniversal: { enabled: true } }));
+  ct(rt, 'var warm = mathAlive', 'warm starts from mathAlive boolean');
+});
+
+t('B76: non-rect grids keep legacy behaviour (gate never fires)', () => {
+  const rt = emitAnticipationUniversalRuntime(resolveConfig({ anticipationUniversal: { enabled: true } }));
+  /* When reelColCount is 0 the gate falls back to scattersSoFar +
+   * threshold so mathAlive stays true and the legacy code path runs
+   * for wheel / plinko / radial shapes that own their suspense
+   * through engine pulses. */
+  ct(rt, '(reelColCount > 0)', 'fallback branch present');
+  ct(rt, '(scattersSoFar + ladder.threshold)', 'legacy fallback formula');
+});
+
 console.log(`\n  ${pass} pass / ${fail} fail`);
 if (fail > 0) process.exit(1);

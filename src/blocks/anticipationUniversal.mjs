@@ -379,22 +379,77 @@ export function emitAnticipationUniversalRuntime(cfg = defaultConfig()) {
     }
     var scattersSoFar = scatterCells.length;
 
-    /* Light up every visible trigger cell. */
-    for (var j = 0; j < scatterCells.length; j++) {
-      if (!scatterCells[j].classList.contains('cell--anticipating-cell')) {
-        scatterCells[j].classList.add('cell--anticipating-cell');
+    /* W47.S9 (B76 / scatterAnticipationV2) — mathematically-alive gate.
+     *
+     * Boki bug: "fake nada na rilima koji više ne mogu trigger". Pre-fix
+     * the halo painted on every trigger cell + warm fired whenever
+     * scattersSoFar crossed threshold-1, even when the remaining reels
+     * could no longer contribute enough scatters to hit the threshold
+     * (e.g. a 5-reel grid that already showed 0 scatters on reels 1-3
+     * with threshold=3 is impossible to win, yet the halo on the lone
+     * reel-4 scatter still teased the player).
+     *
+     * Fix: count reel columns + reels-with-a-trigger, compute the upper
+     * bound maxAchievable = scattersSoFar + (reelCols - reelsWithTrigger)
+     * (one trigger per remaining reel is the engine hard cap), and
+     * STRIP every halo + force warm=false when maxAchievable < threshold.
+     *
+     * Tick polling stays cheap: one extra .reelCol querySelectorAll +
+     * a Set membership scan per cell — O(n) once per tick, no extra
+     * DOM writes when alive, just a single classList.remove when dead.
+     * NOTE: plain ASCII quotes (no backticks) because this comment lives
+     * inside a runtime template literal — W47.S1 lesson.
+     */
+    var reelCols = host.querySelectorAll('.reelCol');
+    var reelColCount = reelCols.length;
+    var reelsWithTrigger = 0;
+    if (reelColCount > 0 && scattersSoFar > 0) {
+      var seen = new Set();
+      for (var rc = 0; rc < scatterCells.length; rc++) {
+        /* Walk up the parents until we hit a .reelCol (or null). */
+        var cur = scatterCells[rc].parentElement;
+        while (cur && !cur.classList.contains('reelCol')) cur = cur.parentElement;
+        if (cur && !seen.has(cur)) { seen.add(cur); reelsWithTrigger++; }
       }
     }
-    /* Strip from cells that no longer carry the trigger — O(n) via Set. */
-    var scatterSet = new Set(scatterCells);
-    var marked = host.querySelectorAll('.cell.cell--anticipating-cell');
-    for (var k = 0; k < marked.length; k++) {
-      if (!scatterSet.has(marked[k])) {
-        marked[k].classList.remove('cell--anticipating-cell');
+    /* When the column count is unknown (non-rect grid / shape that
+     * doesn't use reel columns), fall back to the legacy behaviour by
+     * setting maxAchievable = scattersSoFar + threshold so the gate
+     * never fires. That matches pre-fix semantics for those shapes,
+     * and the cheaper, kind-specific gates (engine pulse, host pulse)
+     * still own the suspense there. */
+    var maxAchievable = (reelColCount > 0)
+      ? (scattersSoFar + Math.max(0, reelColCount - reelsWithTrigger))
+      : (scattersSoFar + ladder.threshold);
+    var mathAlive = maxAchievable >= ladder.threshold;
+
+    /* Light up every visible trigger cell — OR strip them all when the
+     * gate has decided the spin can no longer hit the threshold. */
+    if (mathAlive) {
+      for (var j = 0; j < scatterCells.length; j++) {
+        if (!scatterCells[j].classList.contains('cell--anticipating-cell')) {
+          scatterCells[j].classList.add('cell--anticipating-cell');
+        }
+      }
+      /* Strip from cells that no longer carry the trigger — O(n) via Set. */
+      var scatterSet = new Set(scatterCells);
+      var marked = host.querySelectorAll('.cell.cell--anticipating-cell');
+      for (var k = 0; k < marked.length; k++) {
+        if (!scatterSet.has(marked[k])) {
+          marked[k].classList.remove('cell--anticipating-cell');
+        }
+      }
+    } else {
+      /* Dead: clear every halo so the lone trigger doesn't tease. */
+      var dead = host.querySelectorAll('.cell.cell--anticipating-cell');
+      for (var dk = 0; dk < dead.length; dk++) {
+        dead[dk].classList.remove('cell--anticipating-cell');
       }
     }
 
-    var warm = scattersSoFar >= Math.max(1, ladder.threshold - 1) && scattersSoFar < ladder.topRung;
+    var warm = mathAlive
+      && scattersSoFar >= Math.max(1, ladder.threshold - 1)
+      && scattersSoFar < ladder.topRung;
     _paintBadge(scattersSoFar, ladder.threshold, warm);
 
     /* Whole-host pulse for non-rect shapes — registry owned by anticipation.mjs. */
