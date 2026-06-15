@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-11T12:04:32.039Z",
+  "generatedAt": "2026-06-15T22:23:36.901Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 69,
+  "totalBlocks": 81,
   "blocks": [
     {
       "name": "anteBet",
@@ -25,7 +25,7 @@
         "label": "ANTE BET",
         "color": "#ffe066"
       },
-      "loc": 178
+      "loc": 217
     },
     {
       "name": "anticipation",
@@ -52,7 +52,7 @@
         "gold": "255,214,110",
         "skipDuringFs": false
       },
-      "loc": 257
+      "loc": 324
     },
     {
       "name": "anticipationUniversal",
@@ -69,6 +69,8 @@
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
+        "onTumbleStep",
+        "postSpin",
         "preSpin"
       ],
       "emittedEvents": [],
@@ -76,11 +78,29 @@
         "enabled": true,
         "pulseMs": 700,
         "gold": "255,214,110",
+        "warmCore": "255,235,178",
         "tickMs": 140,
         "showBadge": true,
-        "skipDuringFs": false
+        "skipDuringFs": false,
+        "suppressOnForceTrigger": false,
+        "fallbackThreshold": 3,
+        "fallbackTopRung": 5,
+        "fallbackTriggerSymbol": "S",
+        "fallbackShapeKind": "rectangular",
+        "badgeInsetPx": 6,
+        "badgeRadiusPx": 14,
+        "badgeTopPx": 10,
+        "badgeRightPx": 10,
+        "badgeOffsetPx": 4,
+        "badgeScale": 0.92,
+        "transitionMs": 220,
+        "zBadge": 80,
+        "zCell": 3,
+        "zHostPulse": 1,
+        "hookBusRetries": 20,
+        "hookBusRetryMs": 50
       },
-      "loc": 338
+      "loc": 524
     },
     {
       "name": "audio",
@@ -149,7 +169,7 @@
         "megaWinThresholdX": 50,
         "epicWinThresholdX": 250
       },
-      "loc": 364
+      "loc": 370
     },
     {
       "name": "autoplay",
@@ -201,9 +221,10 @@
         "showCounter": true,
         "chipColor": "90,180,255",
         "chipTextColor": "255,255,255",
+        "modalBgColor": "14,12,28",
         "ariaLabel": "Auto-spin"
       },
-      "loc": 994
+      "loc": 1068
     },
     {
       "name": "balanceHud",
@@ -244,7 +265,7 @@
         "creditColor": "120,255,180",
         "ariaLabel": "Balance HUD"
       },
-      "loc": 527
+      "loc": 562
     },
     {
       "name": "betSelector",
@@ -302,7 +323,7 @@
         "chipTextColor": "20,20,20",
         "ariaLabel": "Adjust bet"
       },
-      "loc": 780
+      "loc": 785
     },
     {
       "name": "bigWinTier",
@@ -369,9 +390,18 @@
           "climax"
         ],
         "currency": "€",
-        "currencyPosition": "prefix"
+        "currencyPosition": "prefix",
+        "shakeAmplitudePxPerTier": [
+          0,
+          0,
+          2,
+          4,
+          6
+        ],
+        "shakeMinTier": 3,
+        "shakePeriodMs": 220
       },
-      "loc": 1030
+      "loc": 1216
     },
     {
       "name": "bonusBuy",
@@ -394,9 +424,12 @@
         "label": "BUY BONUS",
         "forceScatters": 4,
         "color": "#ff5050",
+        "colorDark": "#b03030",
+        "shadowRGB": "255,80,80",
+        "rearmMs": 1200,
         "confirmMessage": ""
       },
-      "loc": 187
+      "loc": 207
     },
     {
       "name": "bonusBuyDeterministic",
@@ -507,7 +540,7 @@
         "pickerColor": "255,170,80",
         "closeOnBackdrop": true
       },
-      "loc": 681
+      "loc": 685
     },
     {
       "name": "bonusPick",
@@ -577,7 +610,7 @@
         "title": "PICK A PRIZE",
         "haloColor": "255,180,60"
       },
-      "loc": 285
+      "loc": 354
     },
     {
       "name": "clusterPaysEval",
@@ -602,11 +635,64 @@
           12,
           15
         ],
+        "bucketMultipliers": [
+          1,
+          2,
+          3,
+          5,
+          8
+        ],
+        "tierMultipliers": {
+          "HP": 1,
+          "MP": 0.5,
+          "LP": 0.25,
+          "WILD": 2
+        },
+        "payCap": 100,
+        "defaultBet": 1,
         "paytable": null,
         "maxEvents": 8,
         "diagonal": false
       },
-      "loc": 174
+      "loc": 249
+    },
+    {
+      "name": "coinShower",
+      "file": "src/blocks/coinShower.mjs",
+      "testFile": "tests/blocks/coinShower.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave W47.S13 — B68 · coinShower block.",
+      "exports": [
+        "defaultConfig",
+        "emitCoinShowerCSS",
+        "emitCoinShowerMarkup",
+        "emitCoinShowerRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onBigWinTier",
+        "onFsTrigger",
+        "onSpinResult",
+        "onTumbleStep"
+      ],
+      "emittedEvents": [
+        "onCoinShowerEnd",
+        "onCoinShowerStart"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "triggerMode": "big_win",
+        "minWinX": 25,
+        "bigWinMinTier": 2,
+        "chainMinLen": 3,
+        "coinCount": 48,
+        "durationMs": 2000,
+        "coinColor": "255,214,110",
+        "spawnArc": "top",
+        "gravityPx": 1400,
+        "haptic": false
+      },
+      "loc": 357
     },
     {
       "name": "crashSpinEngine",
@@ -629,9 +715,100 @@
         "spinDurationMs": 1800,
         "peakMultiplierMin": 1.2,
         "peakMultiplierMax": 25,
-        "fadeFallbackMs": 200
+        "fadeFallbackMs": 200,
+        "peakSkewExponent": 2.4,
+        "pathLengthFallbackPx": 320,
+        "counterTickMs": 30,
+        "settleBufferMs": 30,
+        "minTurboSpinMs": 60,
+        "counterFlickerFloor": 0.65,
+        "counterTickDivisor": 20
       },
-      "loc": 214
+      "loc": 279
+    },
+    {
+      "name": "dailyJackpot",
+      "file": "src/blocks/dailyJackpot.mjs",
+      "testFile": "tests/blocks/dailyJackpot.test.mjs",
+      "category": "uncategorised",
+      "description": "Slot GDD Factory · dailyJackpot BLOCK",
+      "exports": [
+        "defaultConfig",
+        "emitDailyJackpotCSS",
+        "emitDailyJackpotMarkup",
+        "emitDailyJackpotRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onBigWinTierEntered",
+        "onBigWinTierExited",
+        "onFsEnd",
+        "onFsTrigger",
+        "postSpin",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onDailyJackpotAward"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "labelText": "DAILY JACKPOT",
+        "resetUTCHour": 0,
+        "minPoolAmount": 1000,
+        "maxPoolAmount": 100000,
+        "contribRate": 0.01,
+        "triggerProbability": 0.00001,
+        "holdMs": 5000,
+        "currency": "€",
+        "currencyPosition": "prefix"
+      },
+      "loc": 560
+    },
+    {
+      "name": "energyMeter",
+      "file": "src/blocks/energyMeter.mjs",
+      "testFile": "tests/blocks/energyMeter.test.mjs",
+      "category": "uncategorised",
+      "description": "feature (e.g. \"ENERGY 7/10\") that fills on qualifying events",
+      "exports": [
+        "defaultConfig",
+        "emitEnergyMeterCSS",
+        "emitEnergyMeterMarkup",
+        "emitEnergyMeterRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onEnergyTick",
+        "onFsEnd",
+        "onSpinResult",
+        "onTumbleStep",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onEnergyChange",
+        "onEnergyFull"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "capacity": 10,
+        "perStep": 1,
+        "fillOn": "win",
+        "scatterSymbol": "S",
+        "autoResetOnFull": true,
+        "resetOnFsEnd": true,
+        "position": "top-left",
+        "labelTemplate": "ENERGY {N}/{M}",
+        "fontSizePx": 12,
+        "bgColor": "rgba(0,0,0,0.55)",
+        "fgColor": "#f2f2f2",
+        "fillColor": "#c9a227",
+        "fullColor": "#48d597",
+        "flashMs": 300,
+        "zIndex": 35,
+        "width": 120,
+        "showInBase": true
+      },
+      "loc": 267
     },
     {
       "name": "expandingWild",
@@ -658,7 +835,7 @@
         "expandDurationMs": 360,
         "haloColor": "255,214,110"
       },
-      "loc": 134
+      "loc": 179
     },
     {
       "name": "forceSkip",
@@ -698,7 +875,7 @@
         "minRollupMsForShow": 600,
         "ariaLabel": "Skip animation"
       },
-      "loc": 353
+      "loc": 441
     },
     {
       "name": "freeSpins",
@@ -725,8 +902,7 @@
         "onFsEnd",
         "onFsSpinResult",
         "onFsTrigger",
-        "onSkipComplete",
-        "preSpin"
+        "onSkipComplete"
       ],
       "defaultConfig": {
         "enabled": true,
@@ -740,9 +916,44 @@
         "enterActiveDelayMs": 420,
         "spinBreathMs": 250,
         "toastMs": 1800,
-        "retriggerToastMs": 1600
+        "retriggerToastMs": 1600,
+        "featureFadeInMs": 600,
+        "featureHideMs": 300,
+        "bigWinSafetyMs": 30000
       },
-      "loc": 796
+      "loc": 822
+    },
+    {
+      "name": "fsProgressBar",
+      "file": "src/blocks/fsProgressBar.mjs",
+      "testFile": "tests/blocks/fsProgressBar.test.mjs",
+      "category": "uncategorised",
+      "description": "exactly where they are in the FS round (e.g. \"Spin 7 of 15\"). The bar",
+      "exports": [
+        "defaultConfig",
+        "emitFsProgressBarCSS",
+        "emitFsProgressBarMarkup",
+        "emitFsProgressBarRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsRetrigger",
+        "onFsSpinResult",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "position": "top-right",
+        "barColor": "255,210,90",
+        "barTextColor": "14,12,28",
+        "trackColor": "255,255,255",
+        "labelTemplate": "{i} of {n}",
+        "showOnRetrigger": true,
+        "fontSizePx": 12
+      },
+      "loc": 310
     },
     {
       "name": "gamble",
@@ -772,7 +983,7 @@
         "collectThresholdX": 0,
         "haloColor": "200,80,80"
       },
-      "loc": 282
+      "loc": 294
     },
     {
       "name": "gambleSecondary",
@@ -823,7 +1034,7 @@
         "chipColor": "180,80,80",
         "chipTextColor": "255,255,255"
       },
-      "loc": 984
+      "loc": 989
     },
     {
       "name": "genericFeatureBanner",
@@ -849,9 +1060,10 @@
         "enabled": true,
         "dwellMs": 1200,
         "fadeMs": 240,
-        "handleKinds": "auto"
+        "handleKinds": "auto",
+        "forceMultiplierValue": 3
       },
-      "loc": 306
+      "loc": 318
     },
     {
       "name": "hexReelEngine",
@@ -918,9 +1130,12 @@
         "closeOnBackdrop": true,
         "closeOnEscape": true,
         "autoHideOnSpin": true,
-        "ariaLabel": "Open session history"
+        "ariaLabel": "Open session history",
+        "betFallback": 0,
+        "winClampMax": 10000000000,
+        "currency": ""
       },
-      "loc": 685
+      "loc": 759
     },
     {
       "name": "holdAndWin",
@@ -945,6 +1160,7 @@
       ],
       "emittedEvents": [
         "onHoldAndWinEnd",
+        "onHoldAndWinPayout",
         "onHoldAndWinPhase"
       ],
       "defaultConfig": {
@@ -964,9 +1180,23 @@
         "title": "HOLD & WIN",
         "subtitle": "COLLECT THE ORBS",
         "showIntro": true,
-        "showSummary": true
+        "showSummary": true,
+        "reels": 5,
+        "rows": 3,
+        "timings": {
+          "introAutoMs": 1600,
+          "summaryAutoMs": 1800,
+          "endFullGridMs": 2200,
+          "endNormalMs": 600,
+          "forceFallbackMs": 1700,
+          "jackpotDelayMs": 280,
+          "jackpotShortMs": 1600,
+          "jackpotGrandMs": 2200,
+          "fullGridMs": 2600
+        },
+        "orbTable": null
       },
-      "loc": 1072
+      "loc": 1158
     },
     {
       "name": "holdAndWinCreditBucket",
@@ -1028,22 +1258,22 @@
           {
             "label": "MINI",
             "x": 5,
-            "weight": 12
+            "weight": 0.12
           },
           {
             "label": "MINOR",
             "x": 25,
-            "weight": 4
+            "weight": 0.04
           },
           {
             "label": "MAJOR",
             "x": 100,
-            "weight": 1
+            "weight": 0.01
           },
           {
             "label": "GRAND",
             "x": 1000,
-            "weight": 0.25
+            "weight": 0.0025
           }
         ],
         "allLockedAward": "GRAND",
@@ -1052,7 +1282,7 @@
         "currencyPrefix": "×",
         "hudShowsTotal": true
       },
-      "loc": 639
+      "loc": 656
     },
     {
       "name": "hookBus",
@@ -1078,7 +1308,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 475
+      "loc": 496
     },
     {
       "name": "hotReload",
@@ -1117,7 +1347,7 @@
         "keepalivePingMs": 25000,
         "indicator": true
       },
-      "loc": 406
+      "loc": 416
     },
     {
       "name": "lightning",
@@ -1176,7 +1406,53 @@
         "haloColor": "160,210,255",
         "strikeDurationMs": 700
       },
-      "loc": 211
+      "loc": 220
+    },
+    {
+      "name": "multiplierLadder",
+      "file": "src/blocks/multiplierLadder.mjs",
+      "testFile": "tests/blocks/multiplierLadder.test.mjs",
+      "category": "multiplier",
+      "description": "ladder (e.g. 1× → 2× → 3× → 5× → 10×). The player sees the current",
+      "exports": [
+        "defaultConfig",
+        "emitMultiplierLadderCSS",
+        "emitMultiplierLadderMarkup",
+        "emitMultiplierLadderRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsSpinResult",
+        "onFsTrigger",
+        "onMultChange",
+        "onTumbleStep"
+      ],
+      "emittedEvents": [
+        "onMultLadderReset",
+        "onMultLadderStep"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "steps": [
+          1,
+          2,
+          3,
+          5,
+          10
+        ],
+        "startTier": 0,
+        "position": "top-right",
+        "labelTemplate": "×{N}",
+        "fontSizePx": 14,
+        "bgColor": "rgba(0,0,0,0.55)",
+        "fgColor": "#f2f2f2",
+        "accentColor": "#c9a227",
+        "flashMs": 280,
+        "zIndex": 33,
+        "climbOnBaseTumble": false
+      },
+      "loc": 240
     },
     {
       "name": "multiplierOrb",
@@ -1227,9 +1503,46 @@
         ],
         "bonusAccumulate": false,
         "chipColor": "#ffe680",
+        "chipGlow": "255,200,80",
+        "chipShadow": "#000",
         "pulseMs": 1000
       },
-      "loc": 235
+      "loc": 254
+    },
+    {
+      "name": "mysteryReveal",
+      "file": "src/blocks/mysteryReveal.mjs",
+      "testFile": "tests/blocks/mysteryReveal.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave W47.S19 — B65 · mysteryReveal block.",
+      "exports": [
+        "defaultConfig",
+        "emitMysteryRevealCSS",
+        "emitMysteryRevealMarkup",
+        "emitMysteryRevealRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onSpinResult"
+      ],
+      "emittedEvents": [
+        "onMysteryRevealEnd",
+        "onMysteryRevealStart"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "showBanner": true,
+        "delayMs": 320,
+        "durationMs": 900,
+        "autoCloseMs": 200,
+        "bannerTemplate": "MYSTERY: {SYM}",
+        "haloColor": "180,120,255",
+        "fgColor": "255,255,255",
+        "bgAlpha": 0.6,
+        "position": "center",
+        "haptic": false
+      },
+      "loc": 329
     },
     {
       "name": "mysterySymbol",
@@ -1252,14 +1565,15 @@
       "defaultConfig": {
         "enabled": false,
         "mode": "fs",
-        "mysterySymbolId": "M",
+        "mysterySymbolId": "?",
         "revealDelayMs": 320,
         "revealDurationMs": 420,
+        "pulsePeriodMs": 1200,
         "includeWild": false,
         "includeScatter": false,
         "haloColor": "180,120,255"
       },
-      "loc": 188
+      "loc": 260
     },
     {
       "name": "netLossIndicator",
@@ -1401,7 +1715,7 @@
         "maxEvents": 9,
         "noWinChance": 0
       },
-      "loc": 172
+      "loc": 205
     },
     {
       "name": "paylineOverlay",
@@ -1422,6 +1736,12 @@
         "strokeWidth": 4.5,
         "drawInMs": 220,
         "badgeRadius": 12,
+        "zIndex": 6,
+        "badgePadFromStart": 22,
+        "badgeEdgePad": 14,
+        "badgeFontPx": 11,
+        "dashPlaceholder": 1000,
+        "dashBuffer": 10,
         "tierColors": {
           "HP": {
             "stroke": "#ffc85a",
@@ -1439,9 +1759,31 @@
             "stroke": "#e070c0",
             "glow": "224, 112, 192"
           }
+        },
+        "glow": {
+          "base": {
+            "blurPx": 6,
+            "alpha": 0.55
+          },
+          "HP": {
+            "blurPx": 8,
+            "alpha": 0.85
+          },
+          "MP": {
+            "blurPx": 7,
+            "alpha": 0.75
+          },
+          "LP": {
+            "blurPx": 6,
+            "alpha": 0.7
+          },
+          "WILD": {
+            "blurPx": 8,
+            "alpha": 0.8
+          }
         }
       },
-      "loc": 254
+      "loc": 294
     },
     {
       "name": "paylines",
@@ -1457,7 +1799,7 @@
       "lifecycleHooks": [],
       "emittedEvents": [],
       "defaultConfig": null,
-      "loc": 128
+      "loc": 138
     },
     {
       "name": "paytable",
@@ -1494,7 +1836,7 @@
         "autoHideOnSpin": true,
         "ariaLabel": "Open paytable"
       },
-      "loc": 623
+      "loc": 700
     },
     {
       "name": "persistentMultiplier",
@@ -1515,7 +1857,9 @@
         "onFsTrigger",
         "onTumbleStep"
       ],
-      "emittedEvents": [],
+      "emittedEvents": [
+        "onMultChange"
+      ],
       "defaultConfig": {
         "enabled": false,
         "mode": "fs",
@@ -1526,7 +1870,40 @@
         "resetOnRoundEnd": true,
         "chipColor": "255,214,110"
       },
-      "loc": 190
+      "loc": 210
+    },
+    {
+      "name": "pickBonusReveal",
+      "file": "src/blocks/pickBonusReveal.mjs",
+      "testFile": "tests/blocks/pickBonusReveal.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave W47.S16 — B71 · pickBonusReveal block.",
+      "exports": [
+        "defaultConfig",
+        "emitPickBonusRevealCSS",
+        "emitPickBonusRevealMarkup",
+        "emitPickBonusRevealRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onBonusPickResolved",
+        "onFsTrigger",
+        "onWheelAwardCollected"
+      ],
+      "emittedEvents": [
+        "onPickRevealEnd",
+        "onPickRevealStart"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "triggerEvent": "onBonusPickResolved",
+        "revealStyle": "zoom",
+        "durationMs": 1500,
+        "haloColor": "255,214,110",
+        "messageTpl": "YOU WON {label}",
+        "autoCloseMs": 700
+      },
+      "loc": 310
     },
     {
       "name": "plinkoSpinEngine",
@@ -1548,9 +1925,14 @@
         "enabled": true,
         "rowStepMs": 110,
         "finalSettleMs": 240,
-        "fadeFallbackMs": 200
+        "fadeFallbackMs": 200,
+        "ballPx": 14,
+        "opacityMs": 80,
+        "minStepMs": 20,
+        "minSettleMs": 40,
+        "walkBias": 0.5
       },
-      "loc": 226
+      "loc": 263
     },
     {
       "name": "postSpin",
@@ -1576,9 +1958,10 @@
         "retriggerCap": 3,
         "fsSpinBreathMs": 250,
         "fakeWinChance": 0.4,
-        "fakeWinMaxX": 25
+        "fakeWinMaxX": 25,
+        "celebrationTimeoutMs": 5000
       },
-      "loc": 280
+      "loc": 299
     },
     {
       "name": "progressiveFreeSpins",
@@ -1619,7 +2002,7 @@
         "chipColor": "255,180,80",
         "chipLabel": "FS MULT"
       },
-      "loc": 273
+      "loc": 285
     },
     {
       "name": "realityCheck",
@@ -1665,7 +2048,7 @@
         "accentColor": "255,170,80",
         "title": "REALITY CHECK"
       },
-      "loc": 686
+      "loc": 837
     },
     {
       "name": "reelEngine",
@@ -1702,7 +2085,7 @@
         "minStepPx": 0.5,
         "accelMinFactor": 0.3
       },
-      "loc": 806
+      "loc": 835
     },
     {
       "name": "reelEngineCSS",
@@ -1729,7 +2112,7 @@
       "file": "src/blocks/respin.mjs",
       "testFile": "tests/blocks/respin.test.mjs",
       "category": "feature",
-      "description": "Per-reel re-spin: after a base spin, optionally re-spin individual reels",
+      "description": "perf budget: O(reels*rows) DOM walk, ≤0.3ms @ 5×3",
       "exports": [
         "defaultConfig",
         "emitRespinCSS",
@@ -1746,13 +2129,81 @@
       "defaultConfig": {
         "enabled": false,
         "mode": "base",
+        "reels": 5,
         "triggerChance": 0.08,
         "costX": 0,
         "holdRule": "last-reel",
         "respinsPerTrigger": 1,
         "haloColor": "120,210,255"
       },
-      "loc": 223
+      "loc": 251
+    },
+    {
+      "name": "rewardChest",
+      "file": "src/blocks/rewardChest.mjs",
+      "testFile": "tests/blocks/rewardChest.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave W47.S16 — B74 · rewardChest block.",
+      "exports": [
+        "defaultConfig",
+        "emitRewardChestCSS",
+        "emitRewardChestMarkup",
+        "emitRewardChestRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onBigWinTier",
+        "onFsEnd",
+        "onSpinResult"
+      ],
+      "emittedEvents": [
+        "onRewardChestClose",
+        "onRewardChestOpen"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "triggerMode": "special_symbol",
+        "specialSymbol": "CHEST",
+        "minSpecials": 1,
+        "bigWinMinTier": 2,
+        "pool": [
+          {
+            "kind": "credits",
+            "weight": 50,
+            "payload": {
+              "amountX": 10
+            }
+          },
+          {
+            "kind": "multiplier",
+            "weight": 25,
+            "payload": {
+              "mult": 2
+            }
+          },
+          {
+            "kind": "free_spins",
+            "weight": 15,
+            "payload": {
+              "spins": 5
+            }
+          },
+          {
+            "kind": "mystery",
+            "weight": 10,
+            "payload": {
+              "tier": 1
+            }
+          }
+        ],
+        "revealMs": 1600,
+        "position": "center",
+        "chestColor": "198,140,46",
+        "ringColor": "255,214,110",
+        "haptic": false,
+        "autoCloseMs": 1200
+      },
+      "loc": 531
     },
     {
       "name": "scatterCelebration",
@@ -1782,9 +2233,19 @@
         "pulseCycleMs": 500,
         "dimOpacity": 0.18,
         "glowColor": "255,214,110",
-        "glowPeak": 1.5
+        "glowPeak": 1.5,
+        "haloPx": 8,
+        "haloMidPx": 5,
+        "haloAlphaPeak": 0.85,
+        "haloAlphaMid": 0.5,
+        "midPeakRatio": 0.4,
+        "dimTransitionMs": 220,
+        "celebrateZIndex": 10,
+        "reducedMotionPeakRatio": 0.6,
+        "reducedMotionHaloPx": 6,
+        "reducedMotionHaloAlpha": 0.7
       },
-      "loc": 291
+      "loc": 326
     },
     {
       "name": "sessionTimeout",
@@ -1826,7 +2287,7 @@
         "copyContinue": "EXTEND SESSION",
         "copyQuit": "END SESSION"
       },
-      "loc": 693
+      "loc": 700
     },
     {
       "name": "settingsPanel",
@@ -1898,7 +2359,7 @@
         "autoHideOnSpin": true,
         "ariaLabel": "Open settings"
       },
-      "loc": 899
+      "loc": 990
     },
     {
       "name": "slamStop",
@@ -1936,7 +2397,7 @@
         "ariaLabel": "Stop reels",
         "pulseAnimation": true
       },
-      "loc": 400
+      "loc": 449
     },
     {
       "name": "slingoSpinEngine",
@@ -1959,16 +2420,27 @@
         "perColumnSpinMs": 750,
         "staggerMs": 140,
         "matchPulseMs": 480,
-        "fadeFallbackMs": 220
+        "fadeFallbackMs": 220,
+        "minStopMs": 40,
+        "stripCycleDivisor": 8,
+        "stripCycleMinMs": 60,
+        "stripTranslatePx": 6,
+        "stripFadeOpacity": 0.85,
+        "matchOutlinePx": 2,
+        "matchOutlineOffsetPx": -3,
+        "matchGlowPx": 14,
+        "matchGlowAlpha": 0.7,
+        "matchOutlineColor": "#ffd76a",
+        "triggerSymbolFallback": "S"
       },
-      "loc": 225
+      "loc": 313
     },
     {
       "name": "spinControl",
       "file": "src/blocks/spinControl.mjs",
       "testFile": "tests/blocks/spinControl.test.mjs",
       "category": "round-control",
-      "description": "the primary CTA in the sideHud is ONE contextual button whose label +",
+      "description": "Perf budget: state morph ≤ 1ms; click handler ≤ 0.2ms; zero layout",
       "exports": [
         "defaultConfig",
         "emitSpinControlCSS",
@@ -2008,7 +2480,7 @@
         "stopColor": "255,80,80",
         "skipColor": "90,180,255"
       },
-      "loc": 856
+      "loc": 868
     },
     {
       "name": "spinTempo",
@@ -2021,9 +2493,7 @@
         "emitSpinTempoRuntime",
         "resolveConfig"
       ],
-      "lifecycleHooks": [
-        "preSpin"
-      ],
+      "lifecycleHooks": [],
       "emittedEvents": [],
       "defaultConfig": {
         "windupMs": 100,
@@ -2039,7 +2509,7 @@
         "bounceElasticity": 1.7,
         "decelEasingSpeed": 0.11
       },
-      "loc": 140
+      "loc": 169
     },
     {
       "name": "stageBadge",
@@ -2055,7 +2525,7 @@
         "resolveConfig"
       ],
       "lifecycleHooks": [
-        "onFsEnd",
+        "onBaseEnter",
         "onFsTrigger"
       ],
       "emittedEvents": [],
@@ -2065,9 +2535,73 @@
         "fsLabel": "FREE SPINS",
         "gold": "255,214,110",
         "pulseMs": 1600,
-        "mobileBreakpoint": 620
+        "mobileBreakpoint": 620,
+        "pillGap": 7,
+        "pillPaddingTop": 3,
+        "pillPaddingRight": 12,
+        "pillPaddingBottom": 3,
+        "pillPaddingLeft": 10,
+        "mutedColor": "197,198,199",
+        "mutedColorAlpha": 0.78,
+        "mutedBgColor": "15,12,10",
+        "mutedBgAlpha": 0.45,
+        "mutedBorderAlpha": 0.08,
+        "blurAmount": 4,
+        "dotSize": 6,
+        "dotSizeMobile": 5,
+        "pulseScale": 1.25,
+        "shadowMinRadius": 6,
+        "shadowMaxRadius": 14,
+        "letterSpacing": 2.2,
+        "letterSpacingMobile": 1.8,
+        "mobileGap": 6,
+        "mobilePaddingTop": 2,
+        "mobilePaddingRight": 10,
+        "mobilePaddingLeft": 8
       },
-      "loc": 211
+      "loc": 259
+    },
+    {
+      "name": "stickyMeter",
+      "file": "src/blocks/stickyMeter.mjs",
+      "testFile": "tests/blocks/stickyMeter.test.mjs",
+      "category": "uncategorised",
+      "description": "how many sticky symbols (typically wilds) are currently anchored on",
+      "exports": [
+        "defaultConfig",
+        "emitStickyMeterCSS",
+        "emitStickyMeterMarkup",
+        "emitStickyMeterRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "onSpinResult",
+        "onTumbleStep",
+        "postSpin",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onStickyCountChange"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "maxCap": 30,
+        "showMaxCap": true,
+        "position": "bottom-left",
+        "labelTemplate": "STICKY {N}",
+        "labelTemplateWithMax": "STICKY {N}/{M}",
+        "fontSizePx": 12,
+        "bgColor": "rgba(0,0,0,0.55)",
+        "fgColor": "#f2f2f2",
+        "accentColor": "#c9a227",
+        "flashMs": 220,
+        "zIndex": 34,
+        "stickySelector": ".cell--sticky, .cell--locked, [data-sticky=\"true\"], [data-locked=\"true\"]",
+        "showInBase": false
+      },
+      "loc": 246
     },
     {
       "name": "stickyWild",
@@ -2084,6 +2618,7 @@
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
+        "onRoundEnd",
         "onSpinResult",
         "postSpin"
       ],
@@ -2096,7 +2631,7 @@
         "haloColor": "255,214,110",
         "pulseMs": 1400
       },
-      "loc": 178
+      "loc": 201
     },
     {
       "name": "superSymbol",
@@ -2115,7 +2650,9 @@
         "onSpinResult",
         "preSpin"
       ],
-      "emittedEvents": [],
+      "emittedEvents": [
+        "onSuperSymbolLand"
+      ],
       "defaultConfig": {
         "enabled": false,
         "mode": "base",
@@ -2124,7 +2661,7 @@
         "symbolPool": null,
         "haloColor": "255,200,80"
       },
-      "loc": 175
+      "loc": 183
     },
     {
       "name": "symbolInfoPopover",
@@ -2152,9 +2689,45 @@
         "bgColor": "10,12,18",
         "textColor": "245,242,228",
         "showTierBadge": true,
-        "showPayoutHint": true
+        "showPayoutHint": true,
+        "payoutHints": {}
       },
-      "loc": 296
+      "loc": 299
+    },
+    {
+      "name": "symbolStackCollapse",
+      "file": "src/blocks/symbolStackCollapse.mjs",
+      "testFile": "tests/blocks/symbolStackCollapse.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave W47.S18 — B75 · symbolStackCollapse block.",
+      "exports": [
+        "defaultConfig",
+        "emitSymbolStackCollapseCSS",
+        "emitSymbolStackCollapseMarkup",
+        "emitSymbolStackCollapseRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onTumbleStep"
+      ],
+      "emittedEvents": [
+        "onStackCollapseEnd",
+        "onStackCollapseStart"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "triggerMode": "same_symbol",
+        "minStackHeight": 3,
+        "minClearCount": 6,
+        "durationMs": 1200,
+        "autoCloseMs": 400,
+        "flashColor": "255,235,150",
+        "accentColor": "255,200,80",
+        "showLabel": true,
+        "labelTemplate": "+{N} {S}",
+        "haptic": false
+      },
+      "loc": 431
     },
     {
       "name": "symbolUpgrade",
@@ -2193,7 +2766,7 @@
         "morphMs": 220,
         "bonusAccumulate": true
       },
-      "loc": 519
+      "loc": 537
     },
     {
       "name": "themeCSS",
@@ -2214,15 +2787,25 @@
         "palette": {
           "bg0": "#05070c",
           "bg1": "#0b0f16",
+          "stage": "#5a6b88",
           "accent": "#c9a227",
           "text": "#f2f2f2"
         },
         "cellGap": 6,
         "cellRadius": 10,
         "frameRadius": 16,
-        "frameInset": 18
+        "frameInset": 18,
+        "spinRailDesktop": 168,
+        "spinSizeDesktop": 150,
+        "spinAutoSizeDesktop": 58,
+        "breakpoints": {
+          "xl": 1100,
+          "lg": 920,
+          "md": 820,
+          "sm": 620
+        }
       },
-      "loc": 665
+      "loc": 695
     },
     {
       "name": "triggerCounting",
@@ -2273,7 +2856,7 @@
         "maxChain": 16,
         "preserveOrbs": true
       },
-      "loc": 344
+      "loc": 369
     },
     {
       "name": "turboMode",
@@ -2305,7 +2888,7 @@
         "position": "sideHud",
         "ariaLabel": "Toggle turbo spin mode"
       },
-      "loc": 364
+      "loc": 377
     },
     {
       "name": "uiToast",
@@ -2393,7 +2976,7 @@
         "showLabelText": true,
         "labelText": "FORCE"
       },
-      "loc": 580
+      "loc": 674
     },
     {
       "name": "walkingWild",
@@ -2411,10 +2994,11 @@
         "onFsEnd",
         "onFsTrigger",
         "onSpinResult",
-        "onTumbleStep",
         "preSpin"
       ],
-      "emittedEvents": [],
+      "emittedEvents": [
+        "requestRespin"
+      ],
       "defaultConfig": {
         "enabled": false,
         "mode": "fs",
@@ -2423,7 +3007,7 @@
         "triggerRespin": true,
         "haloColor": "110,255,170"
       },
-      "loc": 190
+      "loc": 223
     },
     {
       "name": "waysEval",
@@ -2443,9 +3027,17 @@
         "waysCount": 243,
         "minRun": 3,
         "direction": "ltr",
-        "maxEvents": 8
+        "maxEvents": 8,
+        "payCap": 50,
+        "waysCap": 20,
+        "tierMult": {
+          "HP": 1,
+          "MP": 0.5,
+          "WILD": 2,
+          "LP": 0.25
+        }
       },
-      "loc": 167
+      "loc": 195
     },
     {
       "name": "weightedWheelSegments",
@@ -2462,7 +3054,8 @@
       ],
       "lifecycleHooks": [
         "onFsEnd",
-        "onFsTrigger"
+        "onFsTrigger",
+        "onWheelBonusReady"
       ],
       "emittedEvents": [
         "onWheelAwardCollected",
@@ -2493,7 +3086,7 @@
         "defaultTierColor": "255,80,80",
         "allowFallbackToValue": true
       },
-      "loc": 519
+      "loc": 608
     },
     {
       "name": "wheelBonus",
@@ -2514,7 +3107,12 @@
         "onFsTrigger",
         "postSpin"
       ],
-      "emittedEvents": [],
+      "emittedEvents": [
+        "onWheelBonusReady",
+        "onWheelCollect",
+        "onWheelModalOpened",
+        "onWheelSettled"
+      ],
       "defaultConfig": {
         "enabled": false,
         "segments": [
@@ -2564,7 +3162,41 @@
         "autoSpin": false,
         "title": "BONUS WHEEL"
       },
-      "loc": 305
+      "loc": 457
+    },
+    {
+      "name": "wheelBonusReveal",
+      "file": "src/blocks/wheelBonusReveal.mjs",
+      "testFile": "tests/blocks/wheelBonusReveal.test.mjs",
+      "category": "feature",
+      "description": "Wave W47.S18 — B72 · wheelBonusReveal block.",
+      "exports": [
+        "defaultConfig",
+        "emitWheelBonusRevealCSS",
+        "emitWheelBonusRevealMarkup",
+        "emitWheelBonusRevealRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onWheelJackpotHit",
+        "onWheelSettled"
+      ],
+      "emittedEvents": [
+        "onWheelRevealEnd",
+        "onWheelRevealStart"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "revealStyle": "zoom",
+        "highlightDurationMs": 1200,
+        "autoCloseMs": 800,
+        "haloColor": "255,210,90",
+        "centerMessage": "YOU WON {label}",
+        "jackpotMinValue": 100,
+        "jackpotMessage": "JACKPOT! {label}",
+        "jackpotHaloColor": "255,80,80"
+      },
+      "loc": 309
     },
     {
       "name": "wheelSpinEngine",
@@ -2608,7 +3240,9 @@
         "onSpinResult",
         "preSpin"
       ],
-      "emittedEvents": [],
+      "emittedEvents": [
+        "symbolOverride"
+      ],
       "defaultConfig": {
         "enabled": false,
         "mode": "fs",
@@ -2617,7 +3251,7 @@
         "maxReelsPerSpin": 1,
         "haloColor": "255,180,90"
       },
-      "loc": 143
+      "loc": 173
     },
     {
       "name": "winCap",
@@ -2682,7 +3316,7 @@
         "bigWinCelebMs": 800,
         "staggerStepMs": 80
       },
-      "loc": 899
+      "loc": 923
     },
     {
       "name": "winRollup",
@@ -2718,7 +3352,39 @@
         "currency": "€",
         "currencyPosition": "prefix"
       },
-      "loc": 479
+      "loc": 485
+    },
+    {
+      "name": "winwaysIndicator",
+      "file": "src/blocks/winwaysIndicator.mjs",
+      "testFile": "tests/blocks/winwaysIndicator.test.mjs",
+      "category": "uncategorised",
+      "description": "ways) displays a persistent label so the player knows the topology",
+      "exports": [
+        "defaultConfig",
+        "emitWinwaysIndicatorCSS",
+        "emitWinwaysIndicatorMarkup",
+        "emitWinwaysIndicatorRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "waysCount": 243,
+        "position": "top-left",
+        "labelTemplate": "{N} WAYS",
+        "fontSizePx": 12,
+        "bgColor": "rgba(0,0,0,0.55)",
+        "fgColor": "#f2f2f2",
+        "accentColor": "#c9a227",
+        "flashMs": 650,
+        "zIndex": 32
+      },
+      "loc": 168
     }
   ]
 }
