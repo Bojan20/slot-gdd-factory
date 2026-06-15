@@ -271,6 +271,8 @@ const EXPECTED_EMIT_OWNERS = {
   /* B67 multiplierLadder — sole emitter of ladder lifecycle events. */
   onMultLadderStep:   ['multiplierLadder.mjs'],
   onMultLadderReset:  ['multiplierLadder.mjs'],
+  /* B70 stickyMeter — sole emitter of sticky-count delta events. */
+  onStickyCountChange: ['stickyMeter.mjs'],
   /* B68 coinShower — particle-burst block, sole owner of its lifecycle. */
   onCoinShowerStart:  ['coinShower.mjs'],
   onCoinShowerEnd:    ['coinShower.mjs'],
