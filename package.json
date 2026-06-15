@@ -34,6 +34,9 @@
     "test:aria:strict": "node tools/aria-live-audit.mjs --fail-on-violation",
     "test:fps": "node tools/fps-budget-audit.mjs",
     "test:fps:strict": "node tools/fps-budget-audit.mjs --fail-on-violation",
+    "test:mem": "node tools/memory-leak-probe.mjs",
+    "test:mem:strict": "node tools/memory-leak-probe.mjs --fail-on-violation",
+    "test:mem:soak": "node tools/memory-leak-probe.mjs --soak",
     "test:contrast": "node tools/contrast-audit.mjs --aa-gate",
     "test:contrast:report": "node tools/contrast-audit.mjs",
     "test:safe-area": "node tools/safe-area-audit.mjs"
