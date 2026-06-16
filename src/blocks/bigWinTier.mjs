@@ -549,6 +549,67 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
      * but the CSS-side hard-stop is the seatbelt: if any code path
      * ever reaches the toggle, the animation still does nothing. */
     .big-win-tier-banner.is-shaking { animation: none; transform: none; }
+    /* W48.V3 polish — tier stepper dots stop pulsing under reduced-motion. */
+    .big-win-tier-stepper .big-win-tier-step,
+    .big-win-tier-stepper .big-win-tier-step.is-active { animation: none; transform: none; }
+  }
+
+  /* W48.V3 polish — five-step tier ladder. Pure CSS-driven from the
+   * banner's data-tier attribute: dots 1..N (where N == current tier)
+   * light up; dots N+1..5 stay dim. During passthrough mode (where the
+   * banner walks 1→2→...→finalTier), the dot fill order matches the
+   * tier walk because data-tier updates at each step. Dots scale per
+   * frame size — tiny on portrait phone, prominent on desktop. */
+  .big-win-tier-stepper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(6px, calc(var(--bw-frame-w, 100vw) * 0.012), 14px);
+    margin-top: clamp(4px, calc(var(--bw-frame-w, 100vw) * 0.008), 10px);
+    margin-bottom: clamp(2px, calc(var(--bw-frame-w, 100vw) * 0.004), 6px);
+  }
+  .big-win-tier-stepper .big-win-tier-step {
+    width:  clamp(8px, calc(var(--bw-frame-w, 100vw) * 0.014), 16px);
+    height: clamp(8px, calc(var(--bw-frame-w, 100vw) * 0.014), 16px);
+    border-radius: 50%;
+    background: rgba(255,255,255,0.22);
+    border: 1.5px solid rgba(255,255,255,0.38);
+    transition: background ${TIER_MORPH_MS}ms ease, transform ${TIER_MORPH_MS}ms ease,
+                box-shadow ${TIER_MORPH_MS}ms ease, border-color ${TIER_MORPH_MS}ms ease;
+  }
+  /* Active dots take the current tier's color from the banner palette.
+   * The CSS keyword currentColor inherits from the banner — keeps the
+   * stepper visually in sync with the morphing banner color during the
+   * walkthrough. */
+  .big-win-tier-stepper .big-win-tier-step.is-active {
+    background: currentColor;
+    border-color: currentColor;
+    transform: scale(1.18);
+    box-shadow: 0 0 8px currentColor;
+  }
+  /* CSS-only fill: which dots are active depends on banner data-tier.
+   * Selectors pre-target each combination so no JS toggling is needed —
+   * stepper repaints instantly when banner data-tier flips. */
+  .big-win-tier-banner[data-tier="1"] .big-win-tier-stepper .big-win-tier-step[data-step="1"],
+  .big-win-tier-banner[data-tier="2"] .big-win-tier-stepper .big-win-tier-step[data-step="1"],
+  .big-win-tier-banner[data-tier="2"] .big-win-tier-stepper .big-win-tier-step[data-step="2"],
+  .big-win-tier-banner[data-tier="3"] .big-win-tier-stepper .big-win-tier-step[data-step="1"],
+  .big-win-tier-banner[data-tier="3"] .big-win-tier-stepper .big-win-tier-step[data-step="2"],
+  .big-win-tier-banner[data-tier="3"] .big-win-tier-stepper .big-win-tier-step[data-step="3"],
+  .big-win-tier-banner[data-tier="4"] .big-win-tier-stepper .big-win-tier-step[data-step="1"],
+  .big-win-tier-banner[data-tier="4"] .big-win-tier-stepper .big-win-tier-step[data-step="2"],
+  .big-win-tier-banner[data-tier="4"] .big-win-tier-stepper .big-win-tier-step[data-step="3"],
+  .big-win-tier-banner[data-tier="4"] .big-win-tier-stepper .big-win-tier-step[data-step="4"],
+  .big-win-tier-banner[data-tier="5"] .big-win-tier-stepper .big-win-tier-step[data-step="1"],
+  .big-win-tier-banner[data-tier="5"] .big-win-tier-stepper .big-win-tier-step[data-step="2"],
+  .big-win-tier-banner[data-tier="5"] .big-win-tier-stepper .big-win-tier-step[data-step="3"],
+  .big-win-tier-banner[data-tier="5"] .big-win-tier-stepper .big-win-tier-step[data-step="4"],
+  .big-win-tier-banner[data-tier="5"] .big-win-tier-stepper .big-win-tier-step[data-step="5"] {
+    background: currentColor;
+    border-color: currentColor;
+    transform: scale(1.18);
+    box-shadow: 0 0 8px currentColor;
   }
   /* Screen-reader-only live region. Hosts the single end-of-sequence
    * announcement of the final money amount — the rAF-driven counter
@@ -718,6 +779,11 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       if (!node) return;
       node.setAttribute('data-tier', String(toTier));
       _applyShake(node, toTier);
+      /* W48.V3 polish — keep the stepper progressbar aria-valuenow in
+       * sync with the visible state so SR users hear "n of 5" updates
+       * exactly when the visual climbs. CSS already handles dot fill. */
+      var stepper = node.querySelector('.big-win-tier-stepper');
+      if (stepper) stepper.setAttribute('aria-valuenow', String(toTier));
       var labelEl = node.querySelector('.big-win-tier-label');
       if (!labelEl) return;
       node.setAttribute('data-label-swap', 'true');
@@ -941,6 +1007,13 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
        * routed once through #bigWinTierAnnounce after endHoldMs. */
       node.innerHTML =
         '<span class="big-win-tier-label" aria-live="polite" aria-atomic="true">' + LABELS[tier - 1] + '</span>' +
+        '<div class="big-win-tier-stepper" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="' + tier + '" aria-label="Win tier progress">' +
+          '<span class="big-win-tier-step" data-step="1" aria-hidden="true"></span>' +
+          '<span class="big-win-tier-step" data-step="2" aria-hidden="true"></span>' +
+          '<span class="big-win-tier-step" data-step="3" aria-hidden="true"></span>' +
+          '<span class="big-win-tier-step" data-step="4" aria-hidden="true"></span>' +
+          '<span class="big-win-tier-step" data-step="5" aria-hidden="true"></span>' +
+        '</div>' +
         '<span class="big-win-tier-amount" aria-hidden="true" data-count="0">' + _fmtMoney(0) + '</span>';
       host.appendChild(node);
       /* W47.S3 — start the shake right when the banner mounts so the
@@ -1080,6 +1153,13 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
           n.setAttribute('data-show', 'hold');
           n.innerHTML =
             '<span class="big-win-tier-label" aria-live="polite" aria-atomic="true">' + LABELS[finalTier - 1] + '</span>' +
+            '<div class="big-win-tier-stepper" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="' + finalTier + '" aria-label="Win tier progress">' +
+              '<span class="big-win-tier-step" data-step="1" aria-hidden="true"></span>' +
+              '<span class="big-win-tier-step" data-step="2" aria-hidden="true"></span>' +
+              '<span class="big-win-tier-step" data-step="3" aria-hidden="true"></span>' +
+              '<span class="big-win-tier-step" data-step="4" aria-hidden="true"></span>' +
+              '<span class="big-win-tier-step" data-step="5" aria-hidden="true"></span>' +
+            '</div>' +
             '<span class="big-win-tier-amount" aria-hidden="true" data-count="' + finalX + '">' + _fmtMoney(finalX) + '</span>';
           host.appendChild(n);
         }

@@ -246,5 +246,67 @@ t('shake defaults pass vendor-neutral check (W47.S3)', () => {
   for (const w of banned) ne(css, w, `banned in shake CSS: ${w}`);
 });
 
+/* ─── W48 / V3 polish — five-step tier stepper ladder ───────────── */
+
+t('V3 polish: CSS emits .big-win-tier-stepper with 5 step rules', () => {
+  const css = emitBigWinTierCSS(resolveConfig({ bigWinTier: { enabled: true } }));
+  if (!css.includes('.big-win-tier-stepper')) throw new Error('missing .big-win-tier-stepper rule');
+  if (!css.includes('.big-win-tier-step')) throw new Error('missing .big-win-tier-step rule');
+  /* Each tier must have its step-fill selector set. */
+  for (const tier of [1, 2, 3, 4, 5]) {
+    const sel = `[data-tier="${tier}"] .big-win-tier-stepper .big-win-tier-step[data-step="1"]`;
+    if (!css.includes(sel)) throw new Error(`missing fill selector for tier ${tier}`);
+  }
+});
+
+t('V3 polish: runtime injects 5 step nodes + role=progressbar', () => {
+  const r = emitBigWinTierRuntime(resolveConfig({ bigWinTier: { enabled: true } }));
+  if (!r.includes('role="progressbar"')) throw new Error('missing progressbar role');
+  if (!r.includes('aria-valuemin="0"')) throw new Error('missing aria-valuemin');
+  if (!r.includes('aria-valuemax="5"')) throw new Error('missing aria-valuemax');
+  if (!r.includes('aria-label="Win tier progress"')) throw new Error('missing aria-label');
+  for (const step of [1, 2, 3, 4, 5]) {
+    if (!r.includes(`data-step="${step}"`)) throw new Error(`missing step ${step}`);
+  }
+});
+
+t('V3 polish: runtime _swapTier updates aria-valuenow on stepper', () => {
+  const r = emitBigWinTierRuntime(resolveConfig({ bigWinTier: { enabled: true } }));
+  if (!r.includes("querySelector('.big-win-tier-stepper')")) {
+    throw new Error('missing stepper query in _swapTier');
+  }
+  if (!r.includes("setAttribute('aria-valuenow'")) {
+    throw new Error('missing aria-valuenow update');
+  }
+});
+
+t('V3 polish: skip-snap path also injects stepper (non-mounted edge)', () => {
+  const r = emitBigWinTierRuntime(resolveConfig({ bigWinTier: { enabled: true } }));
+  const occ = (r.match(/role="progressbar"/g) || []).length;
+  if (occ < 2) throw new Error(`expected ≥ 2 stepper inserts, got ${occ}`);
+});
+
+t('V3 polish: reduced-motion CSS kills stepper animation', () => {
+  const css = emitBigWinTierCSS(resolveConfig({ bigWinTier: { enabled: true } }));
+  if (!css.includes('prefers-reduced-motion: reduce')) {
+    throw new Error('missing reduced-motion media query');
+  }
+  const m = css.match(/@media \(prefers-reduced-motion: reduce\)[\s\S]*?\n  \}\s*\n/);
+  if (!m || !m[0].includes('.big-win-tier-step')) {
+    throw new Error('reduced-motion block missing stepper kill rule');
+  }
+});
+
+t('V3 polish: disabled emits no stepper', () => {
+  const css = emitBigWinTierCSS(resolveConfig({ bigWinTier: { enabled: false } }));
+  if (css.includes('.big-win-tier-stepper')) {
+    throw new Error('disabled CSS leaked stepper rule');
+  }
+  const r = emitBigWinTierRuntime(resolveConfig({ bigWinTier: { enabled: false } }));
+  if (r.includes('role="progressbar"')) {
+    throw new Error('disabled runtime leaked stepper markup');
+  }
+});
+
 console.log('--- summary ---\n  pass:', pass, '\n  fail:', fail);
 if (fail > 0) process.exit(1);
