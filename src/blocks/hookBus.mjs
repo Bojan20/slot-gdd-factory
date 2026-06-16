@@ -271,6 +271,9 @@ export const HOOK_EVENTS = Object.freeze([
   'onVolatilityChanged',
   'onBetStepPresetChanged',
   'onMaxWinCapToggled',
+  /* Wave A5: locale + dir lifecycle (settingsPanel→rtlLayout). */
+  'onLocaleChanged',
+  'onDirChanged',
   /* Wave P8: hot-reload BLOCK events (dev-mode, production-disabled).
    * onHotReloadConnect    {}                — SSE established.
    * onHotReloadDisconnect { reason }        — SSE closed / errored.

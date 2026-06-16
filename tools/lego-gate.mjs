@@ -202,6 +202,11 @@ const EXPECTED_EMIT_OWNERS = {
   onVolatilityChanged:    ['settingsPanel.mjs'],
   onBetStepPresetChanged: ['settingsPanel.mjs'],
   onMaxWinCapToggled:     ['settingsPanel.mjs'],
+  /* Wave A5 — locale + dir lifecycle. settingsPanel owns the locale
+   * preference write; rtlLayout consumes it and is the sole owner of
+   * the resulting html[dir] flip + onDirChanged announcement. */
+  onLocaleChanged:        ['settingsPanel.mjs'],
+  onDirChanged:           ['rtlLayout.mjs'],
   /* Wave P8 — hot-reload (dev-mode SSE) is the sole emitter of these
    * dev-loop events. onGddChange is the in-page fast-path signal;
    * onHotReloadConnect / onHotReloadDisconnect track SSE lifecycle. */

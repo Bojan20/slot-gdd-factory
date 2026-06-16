@@ -2,14 +2,14 @@
 
 > Canonical source: `~/Projects/cortex/agents/ui-architect/`.
 
-## Owns (22 blocks ≈ 6900 LOC)
+## Owns (23 blocks ≈ 7050 LOC)
 
 `balanceHud`, `betSelector`, `paytable`, `settingsPanel`, `historyLog`,
 `stageBadge`, `turboMode`, `autoplay`, `slamStop`, `forceSkip`,
 `universalForcePanel`, `genericFeatureBanner`, `symbolInfoPopover`,
 `uiToast`, `anteBet`, `themeCSS`,
 `fsProgressBar`, `winwaysIndicator`, `multiplierLadder`, `stickyMeter`,
-`energyMeter`, `hapticFeedback`.
+`energyMeter`, `hapticFeedback`, `rtlLayout`.
 
 ### HUD / meter sub-group (W47.S7–S15)
 

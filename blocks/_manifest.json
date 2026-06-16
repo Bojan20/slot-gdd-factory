@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-16T08:50:27.315Z",
+  "generatedAt": "2026-06-16T09:01:22.887Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 82,
+  "totalBlocks": 83,
   "blocks": [
     {
       "name": "anteBet",
@@ -1346,7 +1346,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 496
+      "loc": 499
     },
     {
       "name": "hotReload",
@@ -2244,6 +2244,57 @@
       "loc": 531
     },
     {
+      "name": "rtlLayout",
+      "file": "src/blocks/rtlLayout.mjs",
+      "testFile": "tests/blocks/rtlLayout.test.mjs",
+      "category": "uncategorised",
+      "description": "markets need bidirectional layout. Mirror the surrounding chrome",
+      "exports": [
+        "defaultConfig",
+        "emitRtlLayoutCSS",
+        "emitRtlLayoutRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onLocaleChanged"
+      ],
+      "emittedEvents": [
+        "onDirChanged"
+      ],
+      "defaultConfig": {
+        "enabled": true,
+        "forceDir": null,
+        "numericSelectors": [
+          ".balance-hud__value",
+          ".win-rollup",
+          ".win-rollup__value",
+          ".bet-display",
+          ".bet-selector__value",
+          ".jackpot-value",
+          ".multiplier-ladder__value",
+          ".energy-meter__value",
+          ".sticky-meter__count",
+          ".fs-progress-bar__count",
+          ".history-log__amount",
+          "[data-numeric]"
+        ],
+        "rtlLocaleList": [
+          "ar",
+          "he",
+          "fa",
+          "ur",
+          "ps",
+          "sd",
+          "dv",
+          "nqo",
+          "yi",
+          "ckb",
+          "syr"
+        ]
+      },
+      "loc": 226
+    },
+    {
       "name": "scatterCelebration",
       "file": "src/blocks/scatterCelebration.mjs",
       "testFile": "tests/blocks/scatterCelebration.test.mjs",
@@ -2351,6 +2402,7 @@
       ],
       "emittedEvents": [
         "onBetStepPresetChanged",
+        "onLocaleChanged",
         "onMaxWinCapToggled",
         "onVolatilityChanged"
       ],
@@ -2399,7 +2451,7 @@
         "autoHideOnSpin": true,
         "ariaLabel": "Open settings"
       },
-      "loc": 1014
+      "loc": 1018
     },
     {
       "name": "slamStop",

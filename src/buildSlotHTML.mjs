@@ -353,6 +353,11 @@ import {
   emitHapticFeedbackRuntime,
   resolveConfig as resolveHapticFeedbackConfig,
 } from './blocks/hapticFeedback.mjs';
+// Wave A5 — RTL layout (bidirectional support, numeric isolation)
+import {
+  emitRtlLayoutCSS, emitRtlLayoutRuntime,
+  resolveConfig as resolveRtlLayoutConfig,
+} from './blocks/rtlLayout.mjs';
 // Wave U10 — Paytable modal (industry-standard regulator-mandated info pane)
 import {
   emitPaytableCSS, emitPaytableMarkup, emitPaytableRuntime,
@@ -704,6 +709,8 @@ ${/* Wave U11 — turbo mode toggle (cadence override). */ ''}
 ${emitTurboModeCSS(resolveTurboModeConfig(model))}
 ${/* Wave U13 — settings panel (consolidated preferences modal). */ ''}
 ${emitSettingsPanelCSS(resolveSettingsPanelConfig(model))}
+${/* Wave A5 — RTL layout (numeric isolation + html[dir=rtl] mirrors). */ ''}
+${emitRtlLayoutCSS(resolveRtlLayoutConfig(model))}
 ${/* Wave U10 — paytable modal (i-button + symbol roster + features). */ ''}
 ${emitPaytableCSS(resolvePaytableConfig(model))}
 ${emitSymbolInfoPopoverCSS(resolveSymbolInfoPopoverConfig(model))}
@@ -1061,6 +1068,9 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${/* Wave A10 — haptic feedback runtime. Reads window.__SLOT_HAPTIC_ENABLED__
      * set by settingsPanel; fires on bigWin tier ≥ floor and FS trigger. */ ''}
   ${emitHapticFeedbackRuntime(resolveHapticFeedbackConfig(model))}
+  ${/* Wave A5 — RTL layout runtime (auto-detect from __SLOT_LOCALE__,
+     * flip html[dir=rtl] / 'ltr', emit onDirChanged event). */ ''}
+  ${emitRtlLayoutRuntime(resolveRtlLayoutConfig(model))}
   ${/* Wave U10 — paytable modal runtime (i-button show/hide + roster). */ ''}
   ${emitPaytableRuntime(resolvePaytableConfig(model), model)}
   ${emitSymbolInfoPopoverRuntime(resolveSymbolInfoPopoverConfig(model))}

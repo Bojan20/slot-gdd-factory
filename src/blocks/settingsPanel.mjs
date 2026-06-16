@@ -789,6 +789,9 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
           window.HookBus.emit('onBetStepPresetChanged', { value: coerced, source: 'settings' });
         } else if (key === 'maxWinCapEnabled') {
           window.HookBus.emit('onMaxWinCapToggled', { enabled: coerced, source: 'settings' });
+        } else if (key === 'locale') {
+          /* Wave A5 — rtlLayout consumes this to flip html[dir] live. */
+          window.HookBus.emit('onLocaleChanged', { value: coerced, source: 'settings' });
         }
       }
     }
@@ -817,6 +820,7 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
         window.HookBus.emit('onVolatilityChanged',    { value: DEFAULTS.volatility,       source: 'reset' });
         window.HookBus.emit('onBetStepPresetChanged', { value: DEFAULTS.betStepPreset,    source: 'reset' });
         window.HookBus.emit('onMaxWinCapToggled',     { enabled: DEFAULTS.maxWinCapEnabled, source: 'reset' });
+        window.HookBus.emit('onLocaleChanged',        { value: DEFAULTS.locale,           source: 'reset' });
         /* Wave A10 — haptic global resynced via _applyGlobals() above. */
       }
     }
