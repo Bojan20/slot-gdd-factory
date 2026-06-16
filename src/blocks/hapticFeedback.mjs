@@ -140,11 +140,24 @@ export function emitHapticFeedbackRuntime(cfg = defaultConfig()) {
       return !!(typeof window !== 'undefined' && window.__SLOT_AUTOSPIN_ACTIVE__);
     }
 
+    /* W50 — Defense-in-depth LDW gate. winPresentation already prevents
+     * onBigWinTierEntered from firing during a Losses-Disguised-as-Wins
+     * round (suppresses onWinPresentationStart upstream), so the canonical
+     * hapticFeedback call site is silent. This guard catches any FUTURE
+     * direct caller (window.hapticFeedback(...) from a custom hook) that
+     * tries to vibrate during an LDW-flagged round. Dixon 2010 + UKGC
+     * RTS 7C + AGCO 4.07: tactile cues belong to the win-presentation
+     * suppression bundle, not just visual + audio. */
+    function _ldwActive() {
+      return !!(typeof window !== 'undefined' && window.__LDW_SUPPRESSED__ === true);
+    }
+
     window.hapticFeedback = function hapticFeedback(input, reason) {
       if (!ENABLED) return false;
       if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return false;
       if (_reduceMotion()) return false;
       if (_autoplayActive()) return false;
+      if (_ldwActive()) return false;
 
       var pattern;
       if (Array.isArray(input)) {

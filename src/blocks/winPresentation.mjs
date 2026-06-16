@@ -51,6 +51,30 @@ const DEFAULTS = Object.freeze({
    * pacing where the player reads the chain in one breath instead of
    * one-by-one. Falls back to perEventMs when mode != 'cascade-stagger'. */
   staggerStepMs: 80,
+  /* Wave LDW (W48 spin-quality) — Losses Disguised as Wins suppression.
+   * Regulator-driven: when totalAward ≤ currentBet, the round is a net
+   * LOSS for the player but legacy designs still celebrate it (rollup
+   * counter ticks up, sound triggers, screen-shake, big-win pulse).
+   * Regulators class this as deceptive presentation.
+   *
+   * Citations:
+   *   • Dixon, M. (2010). "Losses Disguised as Wins in Modern Multi-Line
+   *     Video Slot Machines". Addiction Research & Theory.
+   *   • UKGC Remote Gambling Technical Standards (RTS) 7C — Game design:
+   *     "must not present a net loss as a win".
+   *   • Ontario AGCO Standard 4.07 § Win presentation — net delta gate.
+   *   • UKGC 17-Jan-2025 amendment — explicit false-win prohibition.
+   *
+   * When `suppressLDW: true` AND `totalAward ≤ currentBet`:
+   *   • onWinPresentationStart NOT emitted
+   *   • symbol cycle / big-win pulse NOT played
+   *   • SKIP_ROLLUP CTA NOT shown
+   *   • balance credit still happens (player got their amount back, just
+   *     no fake celebration)
+   *
+   * Default is TRUE because regulator-strictest jurisdictions (UK, ON)
+   * are an industry baseline; relaxed markets can opt out via GDD. */
+  suppressLDW: true,
 });
 
 /* Validation bounds for GDD-supplied overrides — kept frozen and adjacent
@@ -99,6 +123,11 @@ export function resolveConfig(model) {
   if (typeof src.bigWinCelebMs === 'number' && src.bigWinCelebMs >= LIMITS.BIG_WIN_MIN_MS && src.bigWinCelebMs <= LIMITS.BIG_WIN_MAX_MS) {
     cfg.bigWinCelebMs = Math.floor(src.bigWinCelebMs);
   }
+  /* Wave LDW — accept either model.winPresentation.suppressLDW or the
+   * regulator-profile alias model.responsibleGambling.suppressLDW. */
+  if (typeof src.suppressLDW === 'boolean') cfg.suppressLDW = src.suppressLDW;
+  const rg = (model && model.responsibleGambling) || {};
+  if (typeof rg.suppressLDW === 'boolean') cfg.suppressLDW = rg.suppressLDW;
 
   return cfg;
 }
@@ -728,7 +757,21 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
        when the placeholder math returns shape events without payouts.
        Gate on totalAward > 0 so the SKIP CTA only appears when there is
        a real rollup to fast-finalize. */
-    if (totalAward > 0) {
+    /* Wave LDW — Losses Disguised as Wins gate. Suppress celebration FX
+     * when net delta (totalAward - currentBet) ≤ 0. Player still gets
+     * the credit via balanceHud, just no fake win UX. Per Dixon 2010 +
+     * UKGC RTS 7C + AGCO 4.07 + UKGC 17-Jan-2025. */
+    var __ldwBet = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0)
+      ? window.__SLOT_BET__ : 1;
+    var __ldwSuppress = ${c.suppressLDW} && (totalAward > 0) && (totalAward <= __ldwBet);
+    if (typeof window !== 'undefined') {
+      window.__LDW_SUPPRESSED__ = !!__ldwSuppress;
+    }
+    if (__ldwSuppress && typeof HookBus !== 'undefined') {
+      try { HookBus.emit('onLdwSuppressed', { award: totalAward, bet: __ldwBet }); } catch (_) {}
+    }
+
+    if (totalAward > 0 && !__ldwSuppress) {
       /* Boki rule 05.06.2026 — big-win path skips the per-line cycle and
        * goes straight to a coordinated symbol-celebration pulse, then
        * cedes the screen to bigWinTier. Reference flow:
@@ -737,8 +780,7 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
        * Threshold + enabled state come from BIG_WIN_TIER_STATE; if the
        * block isn't wired (disabled or absent) we fall through to the
        * regular per-line cycle so the slot still presents wins. */
-      var __bet = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0)
-        ? window.__SLOT_BET__ : 1;
+      var __bet = __ldwBet;
       var __bwState = (typeof window !== 'undefined') ? window.BIG_WIN_TIER_STATE : null;
       var __bwThreshold = (__bwState && Array.isArray(__bwState.thresholds) && __bwState.thresholds[0] > 0)
         ? __bwState.thresholds[0] : Infinity;
@@ -803,6 +845,23 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
 
     const bet      = (Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0)
       ? window.__SLOT_BET__ : 1;
+
+    /* W50 — LDW gate on FS / post-bonus aggregate presentation. The base
+     * spin gate (totalAward ≤ currentBet → suppress) is structurally
+     * unsuitable for FS because the FS spin itself has bet=0, but the
+     * FS ENTRY consumed a real base-game stake. For player-protection
+     * symmetry we apply the same gate here using the BASE bet as
+     * reference: if the FS aggregate amount ≤ the base bet that triggered
+     * FS, the round is mathematically a wash and we must NOT play the
+     * "you won" celebration. Per Dixon 2010 + UKGC RTS 7C + AGCO 4.07 +
+     * UKGC 17-Jan-2025 false-win prohibition. */
+    const ldwSuppress = ${c.suppressLDW} && (amt > 0) && (amt <= bet);
+    window.__LDW_SUPPRESSED__ = !!ldwSuppress;
+    if (ldwSuppress && typeof HookBus !== 'undefined') {
+      try { HookBus.emit('onLdwSuppressed', { award: amt, bet: bet, source: 'post-fs' }); } catch (_) {}
+      return;
+    }
+
     const bwState  = window.BIG_WIN_TIER_STATE || null;
     const bwTrig   = (bwState && Array.isArray(bwState.thresholds) && bwState.thresholds[0] > 0)
       ? bwState.thresholds[0] : Infinity;
@@ -873,6 +932,14 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
        short-circuits before settle still wipes the previous cycle visuals. */
     HookBus.on('preSpin', () => {
       cancelWinSymCycle();
+      /* W50 — Reset the per-round LDW suppression flag at the START of the
+         next spin so a stale "true" from the previous round doesn't bleed
+         forward and accidentally mute the next spin's celebration. The
+         flag is per-round contract: set by winPresentation runtime when
+         this round triggers suppression, cleared at preSpin. */
+      if (typeof window !== 'undefined') {
+        window.__LDW_SUPPRESSED__ = false;
+      }
       /* 2026-06-10 — defense-in-depth: cancelWinSymCycle bumps the
          token but the visual class may linger across a race condition
          (e.g. rapid click on TURBO while a celebration is mid-flight).

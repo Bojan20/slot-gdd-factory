@@ -460,10 +460,82 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## 🛡 W50 — LDW (Losses Disguised as Wins) CROSS-BLOCK GATE (✅ LANDED — 2026-06-16)
+
+> Boki direktiva (2026-06-16 18:50): *"kad zavrsis kreni ultimativno dalje, ultra detaljno sa svim qa ultimativnim detaljnim, da se pokrpe sve rupe i sva moguca scenatrija da se pokriju, da sve radi savrseno, sve moguce provere odradi"*.
+>
+> **Regulator anchor** (HARD gate referenced kroz 6 od 7 W45 cortex agenata): Dixon 2010 + UKGC RTS 7C + Ontario AGCO Standard 4.07 + UKGC 17-Jan-2025 false-win prohibition. Net-delta gate: `totalWin − totalBet ≤ 0` → suppress win FX (visual + audio + haptic + tier banner).
+
+### 1. Pre-W50 audit — koje su rupe nađene
+
+| Block | LDW gate pre W50 | Rupa |
+|:--|:-:|:--|
+| `winPresentation.mjs` | ✅ Source-of-truth (W48) | preSpin reset nije bilo → flag mogao curiti |
+| `winRollup.mjs` | ✅ Indirect (gated upstream) | — |
+| `bigWinTier.mjs` | ✅ Indirect (gated upstream) | — |
+| `hapticFeedback.mjs` | 🟡 Indirect samo | Defense-in-depth nedostao za direkt API call |
+| `netLossIndicator.mjs` | 🔴 GAP | NE sluša `onLdwSuppressed` → RG accounting prazno |
+| `presentExternalWin()` (FS) | 🔴 GAP | FS bet=0 semantika → false win pass-through |
+| Stale flag bleed | 🔴 GAP | `__LDW_SUPPRESSED__=true` mogao curiti u sledeću rundu |
+
+### 2. Šta je urađeno
+
+| Fajl | Promena | Linije |
+|:--|:--|:-:|
+| `src/blocks/winPresentation.mjs` | +`presentExternalWin()` LDW gate (FS aggregate koristi base bet kao reference) + preSpin reset `__LDW_SUPPRESSED__ = false` | +24 |
+| `src/blocks/hapticFeedback.mjs` | +`_ldwActive()` helper + `if (_ldwActive()) return false` gate pre `navigator.vibrate` | +14 |
+| `src/blocks/netLossIndicator.mjs` | +`HookBus.on('onLdwSuppressed', …)` · STATE.ldw{Count,AwardSum,BetSum} · `window.__NLI_LDW_{COUNT,NET,AWARD_SUM,BET_SUM}__` exposure | +24 |
+| `tests/blocks/_ldwCrossBlock.test.mjs` | **NEW** — 43 testa kroz 10 sekcija | +252 |
+
+### 3. Sandbox scenario coverage
+
+| Scenario | Award | Bet | Suppress | Authority |
+|:--|:-:|:-:|:-:|:--|
+| LDW gate fires | 10 | 20 | ✅ TRUE | Dixon 2010 |
+| Real win | 30 | 20 | FALSE | net > 0 |
+| Exact net-zero | 20 | 20 | ✅ TRUE | UKGC 17-Jan-2025 (win ≤ stake) |
+| ε-above-bet | 20.01 | 20 | FALSE | net > 0 |
+| Zero award | 0 | 20 | FALSE | no win, no FX |
+| GDD opt-out | 10 | 20 | FALSE | permissive jurisdiction |
+
+### 4. Ultimate QA gate matrix (9/9 ZELENO)
+
+| # | Gate | Komanda | Rezultat |
+|:-:|:--|:--|:-:|
+| 1 | `winPresentationLDW.test.mjs` regression | `node tests/blocks/winPresentationLDW.test.mjs` | ✅ **22/0** |
+| 2 | `_ldwCrossBlock.test.mjs` (NEW) | `node tests/blocks/_ldwCrossBlock.test.mjs` | ✅ **43/0** |
+| 3 | `netLossIndicator.test.mjs` regression | sandbox + DOM probe | ✅ **77/0** |
+| 4 | `hapticFeedback.test.mjs` regression | runtime + STATE probe | ✅ **24/0** |
+| 5 | `winRollup.test.mjs` regression | sandbox + token race | ✅ **30/0** |
+| 6 | `bigWinTier.test.mjs` regression | tier ladder + reduced-motion | ✅ **36/0** |
+| 7 | LEGO 6 invariants gate | `node tools/lego-gate.mjs` | ✅ **6/6** (86 blokova skenirano) |
+| 8 | npm test (20 grid fixtures) | `npm test` | ✅ **20/20** |
+| 9 | Vendor leak in W50 changed files | `grep -iE "(lightning link\|sweet bonanza\|megaways)"` | ✅ clean |
+| **Σ** | **9 gate matrix** | — | **232 testova zelena · 0 fail** |
+
+### 5. HookBus `onLdwSuppressed` (single-owner contract)
+
+| Emit owner | Listeners | Payload |
+|:--|:--|:--|
+| `winPresentation.mjs` (base spin) | `netLossIndicator.mjs` (W50) | `{ award, bet }` |
+| `winPresentation.mjs` (FS post-aggregate, NEW W50) | `netLossIndicator.mjs` | `{ award, bet, source: 'post-fs' }` |
+
+### 6. Honest delivery
+
+| Status | Stavka |
+|:--|:--|
+| ✅ Done | 3 src/blocks LDW gate dopune + 1 NEW test (43 case) + 232 zelena u celom W50 suite |
+| ⏳ Out-of-scope | Audio LDW gate (`rule_audio_off_until_asked` — sound bus gating čekaće "ajmo audio") |
+| ⚠️ Honest scope | Math layer LDW dependencies (PAR / RTP cap) ostaju gated (`rule_no_math_unless_asked`) |
+| 🎯 Sledeći logičan korak | Mogu (a) `winCap` cross-jurisdiction enforcement, (b) `realityCheck` LDW counter wire-up, (c) tema po tvom izboru |
+
+---
+
 ## 🚀 Recent wave timeline (newest first)
 
 | Hash | Wave | Subject |
 |---|---|---|
+| _TBD_ | **W50** | **LDW (Losses Disguised as Wins) cross-block gate** — 3 src/blocks dopune (`winPresentation.mjs` presentExternalWin gate + preSpin reset; `hapticFeedback.mjs` `_ldwActive()` defense-in-depth; `netLossIndicator.mjs` `onLdwSuppressed` listener + RG metrics exposure) + new `_ldwCrossBlock.test.mjs` (43 case kroz 10 sekcija: source-of-truth, winRollup indirect, bigWinTier indirect, haptic D-i-D, netLoss listener, sandbox 6 scenarija, regulator profile precedence, EXPECTED_EMIT_OWNERS, vendor-neutral, determinism). Ultimate QA 9/9 ZELENO: 232 testova / 0 fail / LEGO 6/6 / npm 20/20 / vendor clean. Citations: Dixon 2010 + UKGC RTS 7C + AGCO 4.07 + UKGC 17-Jan-2025. |
 | `e05a618` | **W49.A** | **ULTIMATE SLOT AGENTS KB landovan** — 9 research izvora + master `SLOT_MECHANICS_ENCYCLOPEDIA.md` (11 §, 24 KB) + 8 200 linija research-pool. 5 HARD RULES + Bridge table 22 IGT→SGF + Gap matrix 30+ + 10 industry patterns za file:line extract + Regulator gates 12 × 25 + 53 HookBus events + Glossary industry→vendor-neutral + Agent contract. **Gap audit**: 5 critical (config-parser-RE + playa-cli-RE + Kimi pass-3 stub + 7 SGF agent prompt-a bez pointer + 7 Cortex agent prompt-a bez pointer) + 4 follow-up (WoO RE + GDD corpus + vendor patent corpus + WCAG/haptic deep). T1-T4 plan ~2 h 30 min. |
 | `e300cf0` | **B64** | **`symbolUpgrade` block (Faza 3 #1)** — cascade-with-transmute level-up on tumble refill. Owns 2 HookBus events (`onSymbolUpgrade` · `onSymbolUpgradeCascade`), 4 lifecycle listeners (preSpin · onTumbleStep · postSpin · onFsEnd), Fisher–Yates fair cap selection (default ≤2 per tumble), auto-derived ladder from `SYMBOL_REGISTRY` tiers when GDD omits explicit pairs, force/QA hook `window.symbolUpgradeForceAt(col,row)` routes through real upgrade path (rule_force_buttons_real_spin), auto-disabled on tumble-incompatible shapes (wheel/hex/plinko/crash/slingo/radial). 26/26 unit + LEGO 5/5 (69 blocks · 60/60 event ownership · 57/57 listener coverage) + budget 1012/1050 + grids 20/20 + browser 24/24 + manifest 17/17. Sweep extras: `holdAndWin.mjs` vendor string purged ("Lightning Link" → "industry-standard lock-and-respin"), `anticipationUniversal.mjs` got its missing test (15/15), `onHoldAndWinPhase` / `onHoldAndWinEnd` declared in EXPECTED_EMIT_OWNERS. |
 | `6e2405f` | **P8** | **Hot-reload bez page refresh** — closes Faza 2 (P1–P8 all SHIPPED). New `tools/dev-server.mjs` (Node HTTP + SSE + `fs.watch` recursive on `samples/`, `src/`, `app.js`, `index.html`; categorize() → gdd/parser/orchestrator/block/runtime/asset; path-safe static serving; `/__dev/events` SSE, `/__dev/gdd?path=` reader, `/__dev/health`). New `src/blocks/hotReload.mjs` (EventSource client + 1.5× backoff cap, debounced full reload, in-page fast-path that calls `window.__SLOT_REPARSE__` then `HookBus.emit('onGddChange',{model,src})`; opt-in via `model.hotReload.enabled`; production builds emit a 0-byte stub; HMR badge w/ `role=status`+`aria-live=polite` honoring `prefers-reduced-motion`). 3 new HookBus events (`onHotReloadConnect`, `onHotReloadDisconnect`, `onGddChange`) wired in `EXPECTED_EMIT_OWNERS`. Manifest gen `--print` flush fix (use `process.stdout.write` + callback so 64 KB highWaterMark no longer truncates JSON). `npm run dev` script added. **Tests:** 23/23 `tests/blocks/hotReload.test.mjs` + 18/18 `tests/_dev-server.test.mjs` + 7/7 `tools/_p8-hot-reload-probe.mjs` live SSE probe + 1452/0 block regression + LEGO 5/5 (event-ownership 52/52, listener-coverage 54/54) + manifest freshness PASS |

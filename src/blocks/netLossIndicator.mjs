@@ -539,6 +539,28 @@ export function emitNetLossIndicatorRuntime(cfg = defaultConfig()) {
       window.HookBus.on('onFsEnd', function () {
         STATE.inFs = false; _renderCell();
       });
+      /* W50 — LDW (Losses Disguised as Wins) observation. When
+       * winPresentation suppresses celebration FX because totalAward ≤
+       * currentBet (Dixon 2010 + UKGC RTS 7C + AGCO 4.07 + UKGC
+       * 17-Jan-2025), the round is still a NET LOSS at the regulator
+       * level. balance flow already drives onBalanceChanged via
+       * balanceCredit/Debit so the session net moves correctly. We
+       * additionally bump an internal LDW counter + cumulative net
+       * delta so realityCheck / sessionTimeout / audit log can read a
+       * per-session count of suppressed rounds (player-protection
+       * surface). NO display side effect — pure metric. */
+      window.HookBus.on('onLdwSuppressed', function (p) {
+        if (!STATE.ldwCount) STATE.ldwCount = 0;
+        STATE.ldwCount += 1;
+        if (p && Number.isFinite(p.award)) STATE.ldwAwardSum = (STATE.ldwAwardSum || 0) + p.award;
+        if (p && Number.isFinite(p.bet))   STATE.ldwBetSum   = (STATE.ldwBetSum   || 0) + p.bet;
+        if (typeof window !== 'undefined') {
+          window.__NLI_LDW_COUNT__   = STATE.ldwCount;
+          window.__NLI_LDW_AWARD_SUM__ = STATE.ldwAwardSum || 0;
+          window.__NLI_LDW_BET_SUM__   = STATE.ldwBetSum || 0;
+          window.__NLI_LDW_NET__     = (STATE.ldwAwardSum || 0) - (STATE.ldwBetSum || 0);
+        }
+      });
     }
   })();
 `;
