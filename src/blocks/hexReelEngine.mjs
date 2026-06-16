@@ -429,6 +429,14 @@ export function emitHexReelEngineRuntime(cfg = defaultConfig()) {
         reel.y = 0;
         reel.rotationCount = 0;
         reel.stopAt = hexSpinStart + (${SPIN_MS} * _tm) + i * (${STAGGER_MS} * _tm);
+        /* W57.A6 — prefers-reduced-motion gate (WCAG 2.3.3): collapse
+         * the per-reel stop window to NOW so the loop resolves in 1 tick
+         * without playing the spin curve. State machine stays intact. */
+        if (typeof matchMedia === 'function' &&
+            matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          reel.stopAt = hexSpinStart;
+          reel.minRotations = 0;
+        }
         reel.strip.parentElement.classList.add('is-spinning');
         reel.strip.parentElement.classList.remove('is-stopping');
       }

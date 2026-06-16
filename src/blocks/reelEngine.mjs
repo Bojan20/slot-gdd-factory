@@ -443,6 +443,16 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
       reel.scheduledStopAt = performance.now() +
         (SPIN_PROFILE.windupMs + SPIN_PROFILE.accelMs +
          SPIN_PROFILE.steadyMs + idx * SPIN_PROFILE.staggerMs) * _turboMult;
+      /* W57.A6 — prefers-reduced-motion gate. Collapse scheduled stop to
+       * NOW so the reel resolves in the next rAF tick without playing the
+       * full windup/accel/steady curve. Industry baseline: animations
+       * MUST be suppressed when (prefers-reduced-motion: reduce) per
+       * WCAG 2.3.3 + WAI-Adapt. We don't kill rAF (engine state machine
+       * stays intact); we just collapse the time axis. */
+      if (typeof matchMedia === 'function' &&
+          matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        reel.scheduledStopAt = performance.now();
+      }
       /* 2026-06-16 (Boki "sve celije dok se reel okrece, u svakom gridu sve
          ti glupo… mutno i dalje"). Cell-level blur is gone — defaults paint
          a no-op rule. Instead toggle .is-spinning on the COLUMN so the

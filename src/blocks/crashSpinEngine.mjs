@@ -218,6 +218,15 @@ export function emitCrashSpinEngineRuntime(cfg = defaultConfig()) {
       /* Counter tick — rAF-driven so background-tab throttling can't
          strand the label between the curve reveal and the settle snap. */
       var startedAt = Date.now();
+      /* W57.A6 — prefers-reduced-motion gate (WCAG 2.3.3): collapse the
+       * counter ramp so the very first _counterTick gets t = 1 → instant
+       * settle. SVG curve still draws (it's a single stroke-dashoffset
+       * transition), but the numeric counter snaps. */
+      var _RM_REDUCED = (typeof matchMedia === 'function' &&
+                         matchMedia('(prefers-reduced-motion: reduce)').matches);
+      if (_RM_REDUCED) {
+        startedAt = Date.now() - _spinDur - 1; /* force t >= 1 on first tick */
+      }
       function _counterTick() {
         if (!STATE.rotating) { STATE.counterRaf = null; return; }
         var t = Math.min(1, (Date.now() - startedAt) / _spinDur);

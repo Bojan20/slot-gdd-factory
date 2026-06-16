@@ -76,6 +76,56 @@ block('4. Pattern source citation', () => {
     /spiral-of-death/i.test(hexSrc));
 });
 
+/* ════════════════════════════════════════════════════════════════════
+ * 5. W57.A6 — prefers-reduced-motion runtime gate (WCAG 2.3.3)
+ *    Pattern: every rAF engine inspects matchMedia('(prefers-reduced-
+ *    motion: reduce)') at spin trigger and collapses its time axis so
+ *    the spin resolves in ≤ 1 rAF tick — without killing the engine
+ *    state machine (single-owner emit contracts stay intact).
+ * ════════════════════════════════════════════════════════════════════ */
+const crashSrc = readFileSync(resolve(here, '../../src/blocks/crashSpinEngine.mjs'), 'utf8');
+
+block('5. reelEngine.mjs prefers-reduced-motion gate', () => {
+  t('5.1 W57.A6 marker comment present',                /W57\.A6/.test(reelSrc));
+  t('5.2 matchMedia query for prefers-reduced-motion: reduce',
+    /matchMedia\(\s*['"]\(prefers-reduced-motion:\s*reduce\)['"]\s*\)\.matches/.test(reelSrc));
+  t('5.3 RM-true path collapses scheduledStopAt to now',
+    /matchMedia[\s\S]{0,300}reel\.scheduledStopAt\s*=\s*performance\.now\(\)/.test(reelSrc));
+  t('5.4 WCAG 2.3.3 cited in JSDoc comment',            /WCAG\s*2\.3\.3/.test(reelSrc));
+});
+
+block('6. hexReelEngine.mjs prefers-reduced-motion gate', () => {
+  t('6.1 W57.A6 marker comment present',                /W57\.A6/.test(hexSrc));
+  t('6.2 matchMedia query for prefers-reduced-motion: reduce',
+    /matchMedia\(\s*['"]\(prefers-reduced-motion:\s*reduce\)['"]\s*\)\.matches/.test(hexSrc));
+  t('6.3 RM-true path collapses stopAt to spin-start instant',
+    /matchMedia[\s\S]{0,300}reel\.stopAt\s*=\s*hexSpinStart/.test(hexSrc));
+  t('6.4 RM-true path zeroes minRotations (instant resolve)',
+    /matchMedia[\s\S]{0,400}reel\.minRotations\s*=\s*0/.test(hexSrc));
+  t('6.5 WCAG 2.3.3 cited in JSDoc comment',            /WCAG\s*2\.3\.3/.test(hexSrc));
+});
+
+block('7. crashSpinEngine.mjs prefers-reduced-motion gate', () => {
+  t('7.1 W57.A6 marker comment present',                /W57\.A6/.test(crashSrc));
+  t('7.2 matchMedia query for prefers-reduced-motion: reduce',
+    /matchMedia\(\s*['"]\(prefers-reduced-motion:\s*reduce\)['"]\s*\)\.matches/.test(crashSrc));
+  t('7.3 RM-true path forces t >= 1 on first tick (startedAt back-dated)',
+    /_RM_REDUCED[\s\S]{0,200}startedAt\s*=\s*Date\.now\(\)\s*-\s*_spinDur/.test(crashSrc));
+  t('7.4 WCAG 2.3.3 cited in JSDoc comment',            /WCAG\s*2\.3\.3/.test(crashSrc));
+});
+
+block('8. Cross-engine RM invariants', () => {
+  /* Patterns common to all 3 engines: matchMedia gate is COMPILE-TIME
+   * baked (typeof matchMedia === 'function' guard) so SSR / worker
+   * contexts don't throw. */
+  for (const [name, src] of [['reelEngine', reelSrc], ['hexReelEngine', hexSrc], ['crashSpinEngine', crashSrc]]) {
+    t(`8.${name}.SSR-safe typeof guard`,
+      /typeof\s+matchMedia\s*===\s*['"]function['"]/.test(src));
+    t(`8.${name}.no-throw on RM path (no exceptions raised in RM branch)`,
+      !(/matchMedia[\s\S]{0,400}throw\s+/.test(src)));
+  }
+});
+
 console.log('');
 console.log(`  pass: ${pass}   fail: ${fail}`);
 process.exit(fail > 0 ? 1 : 0);
