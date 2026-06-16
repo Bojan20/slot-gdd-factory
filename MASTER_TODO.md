@@ -460,6 +460,85 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## ⏲ W53 — sessionTimeout PARITY W50 + W51 wire-up (✅ LANDED — 2026-06-16)
+
+> Boki direktiva (2026-06-16 19:12): *"kad zavrsis kreni ultimativno dalje, ultra detaljno sa svim qa ultimativnim detaljnim, da se pokrpe sve rupe i sva moguca scenatrija da se pokriju, da sve radi savrseno, sve moguce provere odradi"*.
+>
+> **Regulator anchor**: AGCO Standard 4.07 + UKGC LCCP 8.3.1 zahtevaju session-cap modal da ima ISTI audit-trail kao realityCheck — session-cumulative LDW (W50) + winCap (W51) signali u svim event payload-ima.
+
+### 1. Pre-W53 audit — 5 rupa
+
+| Layer | Pre W53 | Rupa |
+|:--|:-:|:--|
+| `sessionTimeout.mjs` STATE | ✅ sessionMs/warned/breakActive | ❌ NEMA W50/W51 metrike |
+| HookBus listeners | ✅ preSpin/autoplayTick/realityCheck Paused+Resumed | ❌ NE sluša `onLdwSuppressed`/`onWinCapTriggered` |
+| `onSessionWarningShown` payload | ✅ remainingMs + sessionMs | ❌ NEMA W50/W51 polja |
+| `onSessionTimeoutFired` payload | ✅ sessionMs/breakMs/forceLogout | ❌ NEMA W50/W51 polja |
+| `onSessionLogoutRequested` payload | ✅ sessionMs | ❌ NEMA W50/W51 polja |
+| `stResetSession` | ✅ resetuje core counters | ❌ NE resetuje W53 metrike → session leak |
+
+### 2. Šta je urađeno
+
+| Fajl | Promena | Linije |
+|:--|:--|:-:|
+| `src/blocks/sessionTimeout.mjs` | +STATE.ldw{Count,AwardSum,BetSum} + STATE.winCap{Hits,LastJurisdiction} (5 polja) + 2 HookBus listenera + 3 payload augmentations (Warning/Timeout/Logout) + stResetSession W53 cleanup | +55 |
+| `tests/blocks/_sessionTimeoutW53.test.mjs` | **NEW** — 51 testa kroz 9 sekcija | +220 |
+
+### 3. Payload augmentation matrix
+
+| Event | Pre W53 | Post W53 |
+|:--|:--|:--|
+| `onSessionWarningShown` | remainingMs + sessionMs | + 6 W53 polja (ldwCount/AwardSum/BetSum/Net + winCapHits/LastJurisdiction) |
+| `onSessionTimeoutFired` | sessionMs/breakMs/forceLogout | + 6 W53 polja |
+| `onSessionLogoutRequested` | sessionMs | + 6 W53 polja |
+
+### 4. Ultimate QA 7/7 ZELENO
+
+| # | Gate | Rezultat |
+|:-:|:--|:-:|
+| 1 | `_sessionTimeoutW53.test.mjs` (NEW) | ✅ **51/0** |
+| 2 | `sessionTimeout.test.mjs` regression | ✅ **87/0** |
+| 3 | `_realityCheckW52.test.mjs` regression (W52) | ✅ 46/0 |
+| 4 | `_winCapJurisdictions.test.mjs` regression (W51) | ✅ 74/0 |
+| 5 | `_ldwCrossBlock.test.mjs` regression (W50) | ✅ 43/0 |
+| 6 | LEGO 6 invariants gate | ✅ **6/6** (86 blokova) |
+| 7 | npm test (20 grid fixtures) | ✅ **20/20** |
+| **Σ** | **7 gate matrix** | **321 testa zelena / 0 fail** |
+
+### 5. Sandbox event simulation (sekcija 7)
+
+| Korak | Akcija | Provera |
+|:-:|:--|:--|
+| 7.1-7.3 | Initial state | ldwCount=0 · winCapHits=0 |
+| 7.4-7.7 | Emit 2 LDW (5+8 award / 10+10 bet) | count=2 · awardSum=13 · betSum=20 · net=−7 |
+| 7.8-7.11 | Emit 2 winCap (DE, ON) | hits=2 · last=ON (overwrites DE) |
+
+### 6. Cumulative state (W50 + W51 + W52 + W53)
+
+| Wave | Gate | Tests | Owner |
+|:--|:--|:-:|:--|
+| W50 | LDW cross-block | 232 | winPresentation + haptic + netLoss |
+| W51 | winCap 8-jurisdiction | 96 | winCap |
+| W52 | realityCheck W50+W51 wire-up | 233 | realityCheck |
+| **W53** | **sessionTimeout W50+W51 wire-up** | **321** | **sessionTimeout** |
+| **Σ** | **4 regulator HARD gate-a closed (paritetna RG visibility)** | **882** | — |
+
+### 7. Honest delivery
+
+| Status | Stavka |
+|:--|:--|
+| ✅ Done | 1 src dopuna + 51-test NEW + 7-gate QA + master TODO + commit + push |
+| ⏳ Out-of-scope | Modal DOM rendering W53 metrika (kao kod W52 — čeka MGA/UKGC visual-spec) |
+| 🎯 Sledeći logičan korak | (a) `autoplay` block listener za onLdwSuppressed (stop autoplay na cluster LDW); (b) modal DOM rendering W52+W53 polja; (c) drugo po izboru |
+
+### 8. Komiti
+
+| SHA | Šta | Push |
+|:-:|:--|:-:|
+| _TBD_ | **W53 — sessionTimeout W50+W51 paritetni wire-up** (5 STATE polja + 2 listeners + 3 payload aug + reset + 51 testa) | ⏳ |
+
+---
+
 ## 👁 W52 — realityCheck PLAYER-PROTECTION VISIBILITY · W50 + W51 wire-up (✅ LANDED — 2026-06-16)
 
 > Boki direktiva (2026-06-16 19:07): *"kad zavrsis kreni ultimativno dalje, ultra detaljno sa svim qa ultimativnim detaljnim, da se pokrpe sve rupe i sva moguca scenatrija da se pokriju, da sve radi savrseno, sve moguce provere odradi"*.

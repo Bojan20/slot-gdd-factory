@@ -422,6 +422,17 @@ export function emitSessionTimeoutRuntime(cfg = defaultConfig()) {
       lastTickWall: 0,
       _breakTimer: 0,
       _countdownTimer: 0,
+      /* W53 — player-protection visibility counters paritetno sa W52
+       * realityCheck. AGCO Standard 4.07 + UKGC LCCP 8.3.1 require the
+       * session-cap modal to surface session-cumulative LDW (W50) +
+       * winCap (W51) signals along with elapsed time. Pure metrics —
+       * no display side-effect in the listener; read by stWarn /
+       * stForceTimeout / _logout when building stats payloads. */
+      ldwCount:        0,
+      ldwAwardSum:     0,
+      ldwBetSum:       0,
+      winCapHits:      0,
+      winCapLastJurisdiction: '',
     };
     if (typeof window !== 'undefined') {
       window.__SESSION_BREAK_ACTIVE__ = false;
@@ -514,6 +525,13 @@ export function emitSessionTimeoutRuntime(cfg = defaultConfig()) {
           window.HookBus.emit('onSessionWarningShown', {
             remainingMs: Math.max(0, MAX_MS - STATE.sessionMs),
             sessionMs: STATE.sessionMs,
+            /* W53 — paritetno sa realityCheck W52 stats */
+            ldwCount:    STATE.ldwCount,
+            ldwAwardSum: STATE.ldwAwardSum,
+            ldwBetSum:   STATE.ldwBetSum,
+            ldwNet:      STATE.ldwAwardSum - STATE.ldwBetSum,
+            winCapHits:  STATE.winCapHits,
+            winCapLastJurisdiction: STATE.winCapLastJurisdiction,
           });
         } catch (e) {
           if (console && console.error) console.error('[st] emit WarningShown failed:', e);
@@ -535,6 +553,13 @@ export function emitSessionTimeoutRuntime(cfg = defaultConfig()) {
             sessionMs: STATE.sessionMs,
             breakMs: BREAK_MS,
             forceLogout: FORCE_LOGOUT,
+            /* W53 — paritetno sa realityCheck W52 stats */
+            ldwCount:    STATE.ldwCount,
+            ldwAwardSum: STATE.ldwAwardSum,
+            ldwBetSum:   STATE.ldwBetSum,
+            ldwNet:      STATE.ldwAwardSum - STATE.ldwBetSum,
+            winCapHits:  STATE.winCapHits,
+            winCapLastJurisdiction: STATE.winCapLastJurisdiction,
           });
         } catch (e) {
           if (console && console.error) console.error('[st] emit TimeoutFired failed:', e);
@@ -594,7 +619,16 @@ export function emitSessionTimeoutRuntime(cfg = defaultConfig()) {
 
     function _logout() {
       if (!FORCE_LOGOUT) return;
-      var stats = { sessionMs: STATE.sessionMs };
+      var stats = {
+        sessionMs: STATE.sessionMs,
+        /* W53 — paritetno sa realityCheck W52 stats */
+        ldwCount:    STATE.ldwCount,
+        ldwAwardSum: STATE.ldwAwardSum,
+        ldwBetSum:   STATE.ldwBetSum,
+        ldwNet:      STATE.ldwAwardSum - STATE.ldwBetSum,
+        winCapHits:  STATE.winCapHits,
+        winCapLastJurisdiction: STATE.winCapLastJurisdiction,
+      };
       /* Fable audit (high): logout was calling stResumeFromBreak('logout')
        * which fires onSessionResumed FIRST, then the logout event. Side-
        * effect listeners on Resumed re-enable the slot UI which immediately
@@ -620,6 +654,13 @@ export function emitSessionTimeoutRuntime(cfg = defaultConfig()) {
       STATE.breakActive = false;
       STATE.breakEndsAt = 0;
       STATE.lastTickWall = _now();
+      /* W53 — reset player-protection metrics on session boundary so
+       * next session counters start at 0. */
+      STATE.ldwCount    = 0;
+      STATE.ldwAwardSum = 0;
+      STATE.ldwBetSum   = 0;
+      STATE.winCapHits  = 0;
+      STATE.winCapLastJurisdiction = '';
       if (typeof window !== 'undefined') window.__SESSION_BREAK_ACTIVE__ = false;
       _hide();
     }
@@ -691,6 +732,22 @@ export function emitSessionTimeoutRuntime(cfg = defaultConfig()) {
         if (PAUSE_DURING_REALITY) {
           STATE.paused = false;
           STATE.lastTickWall = _now();
+        }
+      });
+      /* W53 — LDW (W50) audit signal paritetno sa realityCheck (W52).
+       * Player-protection visibility per AGCO 4.07 + UKGC LCCP 8.3.1:
+       * session-cap modal stats must show how many rounds paid below
+       * stake (LDW suppressed) along with elapsed time. */
+      window.HookBus.on('onLdwSuppressed', function (p) {
+        STATE.ldwCount += 1;
+        if (p && Number.isFinite(p.award)) STATE.ldwAwardSum += p.award;
+        if (p && Number.isFinite(p.bet))   STATE.ldwBetSum   += p.bet;
+      });
+      /* W53 — winCap (W51) audit signal paritetno sa realityCheck. */
+      window.HookBus.on('onWinCapTriggered', function (p) {
+        STATE.winCapHits += 1;
+        if (p && typeof p.jurisdiction === 'string') {
+          STATE.winCapLastJurisdiction = p.jurisdiction;
         }
       });
     }
