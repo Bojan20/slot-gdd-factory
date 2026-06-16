@@ -2,12 +2,22 @@
 
 > Canonical source: `~/Projects/cortex/agents/ui-architect/`.
 
-## Owns (16 blocks ≈ 5800 LOC)
+## Owns (21 blocks ≈ 6700 LOC)
 
 `balanceHud`, `betSelector`, `paytable`, `settingsPanel`, `historyLog`,
 `stageBadge`, `turboMode`, `autoplay`, `slamStop`, `forceSkip`,
 `universalForcePanel`, `genericFeatureBanner`, `symbolInfoPopover`,
-`uiToast`, `anteBet`, `themeCSS`.
+`uiToast`, `anteBet`, `themeCSS`,
+`fsProgressBar`, `winwaysIndicator`, `multiplierLadder`, `stickyMeter`,
+`energyMeter`.
+
+### HUD / meter sub-group (W47.S7–S15)
+
+Five side-feature HUD chips landed across W47: persistent climbing
+counters, progress bars, and metered gauges that paint on the play
+surface but never own engine state. Each respects the same Apple HIG
+≥ 11 px floor, 44 × 44 touch target, and `prefers-reduced-motion`
+gate as the rest of the UI rail.
 
 ## Specialty
 

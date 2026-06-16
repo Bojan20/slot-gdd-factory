@@ -519,6 +519,156 @@
   }
   
 
+  /* stickyMeter — Wave B70 */
+  .sticky-meter {
+    position: fixed;
+    bottom: calc(max(8px, env(safe-area-inset-bottom, 0px) + 8px)); left: calc(max(8px, env(safe-area-inset-left, 0px) + 8px));
+    z-index: 34;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: rgba(0,0,0,0.55);
+    color: #f2f2f2;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    line-height: 1.4;
+    pointer-events: none;
+    transition: background 220ms ease-out, color 220ms ease-out, transform 220ms ease-out;
+    display: none;
+  }
+  .sticky-meter[data-visible="true"] { display: inline-block; }
+  .sticky-meter[data-change="up"] {
+    background: #c9a227;
+    color: #000;
+    transform: scale(1.08);
+  }
+  .sticky-meter[data-full="true"] {
+    background: #c9a227;
+    color: #000;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sticky-meter { transition: none; }
+    .sticky-meter[data-change="up"] { transform: none; }
+  }
+  
+
+
+/* ─── pickBonusReveal block — emitted by src/blocks/pickBonusReveal.mjs ─ */
+.pick-reveal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.3);
+  z-index: 95;
+  background: rgba(0, 0, 0, 0.82);
+  border: 2px solid rgba(255,214,110, 0.85);
+  border-radius: 18px;
+  padding: 1.3rem 2rem;
+  color: rgba(255,214,110, 1);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(255,214,110, 0.7);
+  box-shadow: 0 0 36px rgba(255,214,110, 0.55);
+  display: none;
+  pointer-events: none;
+  min-width: 220px;
+  max-width: 80vw;
+}
+.pick-reveal[data-active="true"] {
+  display: block;
+  animation: pickRevealZoom 1500ms cubic-bezier(.34, 1.56, .64, 1) forwards;
+}
+.pick-reveal .pr-headline {
+  font-size: 0.78rem;
+  opacity: 0.8;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.4rem;
+}
+.pick-reveal .pr-prize {
+  font-size: 1.4rem;
+}
+@keyframes pickRevealZoom {
+  0%   { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  60%  { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pick-reveal[data-active="true"] {
+    animation: none;
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+}
+@media (max-width: 480px) {
+  .pick-reveal { padding: 1rem 1.4rem; min-width: 180px; }
+  .pick-reveal .pr-prize { font-size: 1.1rem; }
+}
+
+
+
+
+
+/* ─── wheelBonusReveal block — emitted by src/blocks/wheelBonusReveal.mjs ─ */
+.wheel-reveal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.4);
+  z-index: 96;
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid rgba(255,210,90, 0.85);
+  border-radius: 18px;
+  padding: 1.4rem 2.2rem;
+  color: rgba(255,210,90, 1);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-align: center;
+  text-shadow: 0 0 12px rgba(255,210,90, 0.7);
+  box-shadow: 0 0 40px rgba(255,210,90, 0.6);
+  display: none;
+  pointer-events: none;
+  min-width: 240px;
+  max-width: 80vw;
+}
+.wheel-reveal[data-active="true"] {
+  display: block;
+  animation: wheelRevealZoom 1200ms cubic-bezier(.34, 1.56, .64, 1) forwards;
+}
+.wheel-reveal[data-jackpot="true"] {
+  border-color: rgba(255,80,80, 1);
+  color: rgba(255,80,80, 1);
+  text-shadow: 0 0 14px rgba(255,80,80, 0.85);
+  box-shadow: 0 0 56px rgba(255,80,80, 0.75);
+}
+.wheel-reveal .wr-headline {
+  font-size: 0.82rem;
+  opacity: 0.82;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.45rem;
+}
+.wheel-reveal .wr-prize {
+  font-size: 1.5rem;
+}
+@keyframes wheelRevealZoom {
+  0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+  60%  { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wheel-reveal[data-active="true"] {
+    animation: none;
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+}
+@media (max-width: 480px) {
+  .wheel-reveal { padding: 1.1rem 1.5rem; min-width: 200px; }
+  .wheel-reveal .wr-prize { font-size: 1.18rem; }
+}
+
+
+
   /* ── Payline overlay (SVG) — emitted by src/blocks/paylineOverlay.mjs
      Absolute layer over the entire gridHost. Each winning payline draws
      ONE <polyline> through the geometric centers of its matched cells,
@@ -3841,6 +3991,14 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
   </div>
     <div id="winwaysChip" class="winways-chip" role="status" aria-live="polite" aria-label="243 WAYS">243 WAYS</div>
     <div id="multLadder" class="mult-ladder" role="status" aria-live="polite" aria-label="Multiplier ladder" data-visible="false" data-tier="0">×1</div>
+    <div id="stickyMeter" class="sticky-meter" role="status" aria-live="polite" aria-label="Sticky symbol count" data-visible="false" data-count="0">STICKY 0/30</div>
+    
+    <div id="pickReveal" class="pick-reveal" data-active="false" role="status" aria-live="polite" aria-label="Bonus prize reveal">
+  <div class="pr-headline">PRIZE</div>
+  <div class="pr-prize">—</div>
+</div>
+    
+    
     <div class="sub">5×3 rectangular · 10 lines</div>
   </div>
   <div class="play">
@@ -3853,6 +4011,12 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
              viewBox is sized to the gridHost client rect on every frame
              so cell coordinates stay accurate after layout changes. -->
         <svg class="payline-overlay" id="paylineOverlay" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+        
+        <div id="wheelReveal" class="wheel-reveal" data-active="false" data-jackpot="false" role="status" aria-live="polite" aria-label="Wheel reveal">
+  <div class="wr-headline">RESULT</div>
+  <div class="wr-prize">—</div>
+</div>
+        
       </div>
     </div>
     <aside class="sideHud" aria-label="Game Controls">
@@ -13178,6 +13342,202 @@ if (typeof HookBus !== 'undefined') {
     /* Boot: pre-render at startTier but stay hidden until FS begins. */
     render(startTier);
   })();
+  
+  
+  (function(){
+    if (typeof window === 'undefined' || !window.HookBus) return;
+    var host = document.getElementById('stickyMeter');
+    if (!host) return;
+    var SELECTOR = ".cell--sticky, .cell--locked, [data-sticky=\"true\"], [data-locked=\"true\"]";
+    var MAX = 30;
+    var template = "STICKY {N}/{M}";
+    var flashMs = 220;
+    var showInBase = false;
+    var count = 0, prevCount = 0;
+    var fsActive = false;
+    var resetTimer = null;
+
+    function probeCount() {
+      try {
+        return Math.min(MAX, document.querySelectorAll(SELECTOR).length);
+      } catch (_) { return 0; }
+    }
+    function render(n) {
+      count = Math.max(0, Math.min(MAX, n | 0));
+      host.textContent = template.replace('{N}', String(count)).replace('{M}', String(MAX));
+      host.setAttribute('data-count', String(count));
+      host.setAttribute('data-full', count >= MAX ? 'true' : 'false');
+      host.setAttribute('aria-label', 'Sticky symbol count: ' + count + ' of ' + MAX);
+    }
+    function show() { host.setAttribute('data-visible', 'true'); }
+    function hide() { host.setAttribute('data-visible', 'false'); }
+    function flashUp() {
+      host.setAttribute('data-change', 'up');
+      if (resetTimer) clearTimeout(resetTimer);
+      resetTimer = setTimeout(function () { host.setAttribute('data-change', 'none'); }, flashMs);
+    }
+    function reCount(label) {
+      if (!fsActive && !showInBase) return;
+      var fresh = probeCount();
+      if (fresh === count) return;
+      prevCount = count;
+      var delta = fresh - count;
+      render(fresh);
+      if (delta > 0) flashUp();
+      try { window.HookBus.emit('onStickyCountChange', { from: prevCount, to: count, max: MAX, source: label }); } catch (_) {}
+    }
+    function reset() {
+      prevCount = count;
+      count = 0;
+      render(0);
+      hide();
+      if (prevCount > 0) {
+        try { window.HookBus.emit('onStickyCountChange', { from: prevCount, to: 0, max: MAX, source: 'reset' }); } catch (_) {}
+      }
+    }
+
+    HookBus.on('onFsTrigger', function () {
+      fsActive = true;
+      render(0);
+      show();
+    });
+    HookBus.on('preSpin',      function () { prevCount = count; });
+    HookBus.on('postSpin',     function () { reCount('postSpin'); });
+    HookBus.on('onSpinResult', function () { reCount('onSpinResult'); });
+    HookBus.on('onTumbleStep', function () { reCount('onTumbleStep'); });
+    HookBus.on('onFsEnd',      function () { fsActive = false; reset(); });
+
+    /* Boot — show immediately in BASE if showInBase is set; otherwise
+     * stay hidden until FS begins. */
+    if (showInBase) { show(); render(probeCount()); }
+    else            { render(0); }
+  })();
+  
+  
+  /* ─── pickBonusReveal runtime — emitted by src/blocks/pickBonusReveal.mjs ─ */
+(function _pickBonusRevealRuntime() {
+  var PR_DURATION_MS  = 1500;
+  var PR_AUTO_CLOSE   = 700;
+  var PR_MESSAGE_TPL  = "YOU WON {label}";
+  var PR_TOKEN        = 0;
+
+  function _prHost() {
+    return (typeof document !== 'undefined') ? document.getElementById('pickReveal') : null;
+  }
+
+  function _prFire(label, payload) {
+    var host = _prHost();
+    if (!host) return;
+    var safeLabel = String(label == null ? '' : label).slice(0, 40);
+    var msg = PR_MESSAGE_TPL.replace('{label}', safeLabel);
+    var prizeEl = host.querySelector('.pr-prize');
+    if (prizeEl) prizeEl.textContent = msg;
+    host.setAttribute('aria-label', 'Prize revealed: ' + safeLabel);
+
+    /* Re-entrancy: invalidate any in-flight close timer. */
+    var token = ++PR_TOKEN;
+    /* Force animation restart by toggling data-active. */
+    host.dataset.active = 'false';
+    void host.offsetWidth;
+    host.dataset.active = 'true';
+
+    if (typeof HookBus !== 'undefined') {
+      try { HookBus.emit('onPickRevealStart', { label: safeLabel, payload: payload || null, durationMs: PR_DURATION_MS }); } catch (_) {}
+    }
+
+    setTimeout(function () {
+      if (token !== PR_TOKEN) return;
+      host.dataset.active = 'false';
+      if (typeof HookBus !== 'undefined') {
+        try { HookBus.emit('onPickRevealEnd', { label: safeLabel, reason: 'natural' }); } catch (_) {}
+      }
+    }, PR_DURATION_MS + PR_AUTO_CLOSE);
+  }
+
+  if (typeof window !== 'undefined') {
+    window.firePickBonusReveal = _prFire;
+  }
+
+  if (typeof HookBus !== 'undefined') {
+    HookBus.on('onBonusPickResolved', function (evt) {
+      var label = (evt && (evt.label || evt.prize || evt.tileLabel)) || 'PRIZE';
+      _prFire(label, evt);
+    });
+  }
+})();
+
+  /* coinShower: disabled */
+  
+  
+  /* ─── wheelBonusReveal runtime — emitted by src/blocks/wheelBonusReveal.mjs ─ */
+(function _wheelBonusRevealRuntime() {
+  var WR_DURATION_MS = 1200;
+  var WR_AUTO_CLOSE  = 800;
+  var WR_MESSAGE_TPL = "YOU WON {label}";
+  var WR_JP_TPL      = "JACKPOT! {label}";
+  var WR_JP_MIN      = 100;
+  var WR_TOKEN       = 0;
+
+  function _wrHost() {
+    return (typeof document !== 'undefined') ? document.getElementById('wheelReveal') : null;
+  }
+
+  function _wrFire(label, value, isJackpot, payload) {
+    var host = _wrHost();
+    if (!host) return;
+    var safeLabel = String(label == null ? '' : label).slice(0, 40);
+    var tpl = isJackpot ? WR_JP_TPL : WR_MESSAGE_TPL;
+    var msg = tpl.replace('{label}', safeLabel);
+    var prizeEl = host.querySelector('.wr-prize');
+    if (prizeEl) prizeEl.textContent = msg;
+    host.dataset.jackpot = isJackpot ? 'true' : 'false';
+    host.setAttribute('aria-label', (isJackpot ? 'Jackpot revealed: ' : 'Wheel reveal: ') + safeLabel);
+
+    /* Re-entrancy + animation restart. */
+    var token = ++WR_TOKEN;
+    host.dataset.active = 'false';
+    void host.offsetWidth;
+    host.dataset.active = 'true';
+
+    if (typeof HookBus !== 'undefined') {
+      try { HookBus.emit('onWheelRevealStart', { label: safeLabel, value: value, jackpot: !!isJackpot, payload: payload || null, durationMs: WR_DURATION_MS }); } catch (_) {}
+    }
+
+    setTimeout(function () {
+      if (token !== WR_TOKEN) return;
+      host.dataset.active = 'false';
+      if (typeof HookBus !== 'undefined') {
+        try { HookBus.emit('onWheelRevealEnd', { label: safeLabel, value: value, jackpot: !!isJackpot, reason: 'natural' }); } catch (_) {}
+      }
+    }, WR_DURATION_MS + WR_AUTO_CLOSE);
+  }
+
+  if (typeof window !== 'undefined') {
+    window.fireWheelBonusReveal = _wrFire;
+  }
+
+  if (typeof HookBus !== 'undefined') {
+    /* Primary: wheel settles on a chosen segment. wheelBonus.mjs emits
+       { index, segment: { label, value, color } }. */
+    HookBus.on('onWheelSettled', function (evt) {
+      var seg   = (evt && evt.segment) || {};
+      var label = seg.label || 'PRIZE';
+      var value = Number(seg.value);
+      var jp    = Number.isFinite(value) && value >= WR_JP_MIN;
+      _wrFire(label, value, jp, evt);
+    });
+
+    /* Escalation: weightedWheelSegments.mjs separately emits
+       onWheelJackpotHit when the chosen segment carries a jackpotTier
+       label. Treat this as forced-jackpot regardless of value threshold. */
+    HookBus.on('onWheelJackpotHit', function (evt) {
+      var label = (evt && (evt.label || evt.tier || 'JACKPOT'));
+      var value = Number(evt && evt.value);
+      _wrFire(label, Number.isFinite(value) ? value : 0, true, evt);
+    });
+  }
+})();
+
   
   
   /* ── freeSpins BLOCK — emitted by src/blocks/freeSpins.mjs ───────────

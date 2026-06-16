@@ -2,7 +2,7 @@
 
 > Canonical source: `~/Projects/cortex/agents/feature-architect/`.
 
-## Owns (28 blocks ≈ 13 500 LOC)
+## Owns (34 blocks ≈ 15 200 LOC)
 
 `freeSpins`, `progressiveFreeSpins`, `holdAndWin`,
 `holdAndWinCreditBucket`, `bonusBuy`, `bonusBuyDeterministic`,
@@ -11,7 +11,18 @@
 `pathAwareMultiplier`, `expandingWild`, `walkingWild`, `stickyWild`,
 `wildReel`, `mysterySymbol`, `superSymbol`, `lightning`, `respin`,
 `dailyJackpot`, `symbolUpgrade`, `scatterCelebration`, `anticipation`,
-`anticipationUniversal`, `tumble`.
+`anticipationUniversal`, `tumble`,
+`coinShower`, `mysteryReveal`, `pickBonusReveal`, `rewardChest`,
+`symbolStackCollapse`, `wheelBonusReveal`.
+
+### Event-presenter sub-group (W47.S13–S19)
+
+Six post-spin / post-pick / post-tumble reveal blocks landed across
+W47. Each listens to a feature-side emit (`onMysteryReveal`,
+`onPickResolved`, `onChestOpened`, `onStackCollapse`,
+`onWheelLanded`, `onWinCelebrate`) and paints a celebratory placard
+without owning game state — strictly presentation siblings of the
+core feature blocks they shadow.
 
 ## Specialty
 
