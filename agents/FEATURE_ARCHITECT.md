@@ -31,6 +31,51 @@ feature (DE bonus-buy ban, UKGC max-win cap, NL persistent state ban);
 LEGO discipline (single-owner emit, dedupe); universal force panel
 parity (21+ industry kinds).
 
+## 📚 Knowledge base (W49 — landed 2026-06-16 · HEAD `a5610a8`)
+
+> feature-architect MUST cite source for every parity / pattern claim.
+> Citation budget: ≤ 3 `file:line` refs per feature recommendation.
+
+### Primary encyclopedia
+
+| Source | Path | Use for |
+|:--|:--|:--|
+| Master synthesis | `agents/SLOT_MECHANICS_ENCYCLOPEDIA.md` | §4 gap analysis 30+ blokova (wave kandidati) · §5 10 industry patterns · §8 vendor-neutral glossary |
+
+### Feature corpus
+
+| Source | Path | Lines | Use for |
+|:--|:--|:-:|:--|
+| WoO controllers RE | `agents/research-pool/woo-controllers-RE.md` | 1 480 | Production hnw + bigWin + fs controllers · sticky-pin · tier ladder · cancellation tokens |
+| Web mechanics universe | `agents/research-pool/web-slot-mechanics.md` | 1 623 | Cross-vendor feature catalog (industry parity reference) |
+| IGT playa-slot RE | `agents/research-pool/playa-slot-RE.md` | 1 089 | LockAndRespin / WheelBonus / Jackpot / Tumbling industry patterns |
+
+### Feature pattern catalog (file:line bound)
+
+| Pattern | Source | SGF block | Status |
+|:--|:--|:--|:-:|
+| Sticky-pin Hold&Win (state: IDLE → TRIGGERED → COLLECTING → RESPINNING → AWARDING → EXIT) | `woo-controllers-RE.md` §1 | `holdAndWin.mjs` | ✅ landed, compare contract |
+| Big Win 3-tier ladder (10×/25×/50×, NOT 5-tier) — WoO production reality | `woo-controllers-RE.md` §2 | `bigWinTier.mjs` (5-tier default) | ⚠️ schema mismatch — verify which is canonical |
+| Atomic credit at finalize (triggerWin escrow + sessionWin commit in single `creditBalance`) | `woo-controllers-RE.md` §1, §3 | `holdAndWinCreditBucket.mjs` | check parity |
+| HnW + FS mutually exclusive (HnW grid no scatter, FS reels exclude HnW symbol) | `woo-controllers-RE.md` §4 | invariant check in `slot-sage-v2` | ✅ documented |
+| Controller-owned `sessionId` monotonic token (12+ checkpoints) | `woo-controllers-RE.md` §1 race handling | all bonus controllers | refactor candidate |
+| LDW (Losses Disguised as Wins) suppression — Dixon 2010 + UKGC RTS 7C | `woo-controllers-RE.md` §8 + `web-math-rng-regulator.md` | `winPresentation.mjs` | 🔴 OPEN gap |
+
+### Honest gaps + anti-patterns flagged
+
+| Issue | Source | Action |
+|:--|:--|:--|
+| `setForceJackpot` in WoO BYPASSES orb-table generator — violates "force buttons must take real spin" rule | `woo-controllers-RE.md` §1 anti-pattern | ❌ DO NOT copy — SGF must use `runOneBaseSpin()` flag-driven force |
+| `ORB_LAND_CHANCE = 0.01` const drift vs sim formula (`0.0352 + fillRatio × 0.015`) | `woo-controllers-RE.md` §1 W1 QA defect | documented for math layer |
+| Vendor patent corpus (BTG / Stake / Lock&Win) | 🟡 | Kimi pass-3 background |
+| Tier nomenclature: ALWAYS `tier1..tier5` in SGF, NEVER Nice/Epic/Mega/Sensational/BIG WIN/MEGA WIN | HARD RULE #1 | enforce in `winPresentation.mjs` |
+
+### Citation contract
+
+Every feature verdict must cite `file:line` from corpus. No "industry-standard" without specific source.
+
+---
+
 ## Model stack
 
 Primary: Claude Opus 4.8. Council: Kimi K2.6 (research depth).

@@ -94,6 +94,45 @@ cortex-slot-builder --council=3 --scope end-to-end ~/Desktop/GDD/<file>.pdf
 | 4 | all models failed (primary + council exhausted) |
 | 5 | closed-loop cap exhausted (3 iterations without green) |
 
+## 📚 Knowledge base (W49 — landed 2026-06-16 · HEAD `a5610a8`)
+
+> slot-builder MUST cite source for every architectural claim. No invention.
+> Citation budget: ≤ 3 `file:line` refs per emit. If pattern not in KB → say so.
+
+### Primary encyclopedia
+
+| Source | Path | Use for |
+|:--|:--|:--|
+| Master synthesis (11 §) | `agents/SLOT_MECHANICS_ENCYCLOPEDIA.md` | §3 Bridge table (22 IGT layers → SGF) · §7 HookBus 53 events · §10 agent contract |
+
+### Domain corpus (research-pool — 8 200+ lines verified)
+
+| Source | Path | Lines | Use for |
+|:--|:--|:-:|:--|
+| SGF atomic inventory | `agents/research-pool/sgf-current-state.md` | 710 | parser, buildSlotHTML, manifest, 88 blokova map |
+| IGT playa-core RE | `agents/research-pool/playa-core-RE.md` | 1 651 | Stage / Sequencer / AssetLoader pipeline |
+| IGT playa-cli RE | `agents/research-pool/playa-cli-RE.md` | 1 014 | Dev server, GLR replay format, RGS proxy |
+| IGT config-parser RE | `agents/research-pool/config-parser-RE.md` | 1 148 | JSON manifest emitter (NOT full IR transpiler — honest scope) |
+| WoO controllers RE | `agents/research-pool/woo-controllers-RE.md` | 1 480 | hnwController + bigWinController + fsController production patterns |
+
+### Honest gaps slot-builder MUST acknowledge
+
+| Gap | Status |
+|:--|:-:|
+| `config-parser-RE` scope correction: it's a manifest emitter, not full IR transpiler — SGF parser already exceeds it on defensiveness | ✅ documented §6 |
+| `playa-cli-RE`: gaffTool.html ships in private sibling, default launch can't force outcomes | ✅ documented §2-3 |
+| `~/Desktop/GDD/*.pdf` corpus probe matrix not yet wired into CI | ⏳ T2.5 |
+| Kimi pass-3 deep web research | 🔄 background pass running |
+
+### Citation contract
+
+Every slot-builder emit must include 1-3 `file:line` refs from the table above when:
+- Designing a new layer / block / pipeline stage
+- Justifying an architectural choice
+- Comparing SGF approach against industry-grade reference
+
+---
+
 ## Hard rules slot-builder honours in THIS repo
 
 1. **ADB ≠ GDD** (CLAUDE.md HARD RULE #1). slot-builder NEVER touches
