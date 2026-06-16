@@ -39,7 +39,13 @@
     "test:mem:soak": "node tools/memory-leak-probe.mjs --soak",
     "test:contrast": "node tools/contrast-audit.mjs --aa-gate",
     "test:contrast:report": "node tools/contrast-audit.mjs",
-    "test:safe-area": "node tools/safe-area-audit.mjs"
+    "test:safe-area": "node tools/safe-area-audit.mjs",
+    "test:dev-tools": "node tests/blocks/devTools.test.mjs",
+    "gdd:snippets": "node tools/gen-gdd-snippets.mjs",
+    "compare": "node tools/multi-game-compare.mjs",
+    "block:diff": "node tools/block-diff-playground.mjs",
+    "live:editor": "node tools/live-gdd-editor.mjs",
+    "pr:report": "node tools/pr-screenshot-report.mjs"
   },
   "devDependencies": {
     "playwright": "^1.60.0",
