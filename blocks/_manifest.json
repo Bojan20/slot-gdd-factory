@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-16T17:26:41.708Z",
+  "generatedAt": "2026-06-16T20:51:00.645Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 86,
+  "totalBlocks": 87,
   "blocks": [
     {
       "name": "anteBet",
@@ -1101,7 +1101,7 @@
           ]
         }
       },
-      "loc": 188
+      "loc": 201
     },
     {
       "name": "hexReelEngine",
@@ -1689,7 +1689,8 @@
         "onAutoplayStart",
         "onBalanceChanged",
         "onFsEnd",
-        "onFsTrigger"
+        "onFsTrigger",
+        "onLdwSuppressed"
       ],
       "emittedEvents": [
         "onNetThresholdCrossed"
@@ -1723,7 +1724,7 @@
         "resetOnSessionReset": true,
         "resetOnAutoplayStart": false
       },
-      "loc": 546
+      "loc": 568
     },
     {
       "name": "pathAwareMultiplier",
@@ -2149,7 +2150,9 @@
       "lifecycleHooks": [
         "onAutoplayTick",
         "onBalanceChanged",
+        "onLdwSuppressed",
         "onNetThresholdCrossed",
+        "onWinCapTriggered",
         "preSpin"
       ],
       "emittedEvents": [
@@ -2177,7 +2180,7 @@
         "accentColor": "255,170,80",
         "title": "REALITY CHECK"
       },
-      "loc": 837
+      "loc": 893
     },
     {
       "name": "reelEngine",
@@ -2447,8 +2450,10 @@
       ],
       "lifecycleHooks": [
         "onAutoplayTick",
+        "onLdwSuppressed",
         "onRealityCheckPaused",
         "onRealityCheckResumed",
+        "onWinCapTriggered",
         "preSpin"
       ],
       "emittedEvents": [
@@ -2472,7 +2477,7 @@
         "copyContinue": "EXTEND SESSION",
         "copyQuit": "END SESSION"
       },
-      "loc": 700
+      "loc": 757
     },
     {
       "name": "settingsPanel",
@@ -2822,6 +2827,50 @@
         "pulseMs": 1400
       },
       "loc": 201
+    },
+    {
+      "name": "stormMultiplierReel",
+      "file": "src/blocks/stormMultiplierReel.mjs",
+      "testFile": "tests/blocks/stormMultiplierReel.test.mjs",
+      "category": "multiplier",
+      "description": "W56 (W49.T5.B gap closure) — Auxiliary multiplier reel block. A",
+      "exports": [
+        "defaultConfig",
+        "emitStormMultiplierReelCSS",
+        "emitStormMultiplierReelRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onSlamStop",
+        "onSpinResult",
+        "postSpin",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onStormMultiplierStart",
+        "onStormMultiplierStop"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "values": [
+          2,
+          3,
+          5,
+          10
+        ],
+        "position": "left",
+        "itemSizePx": 64,
+        "spinSpeedNormalMs": 700,
+        "spinSpeedTurboMs": 400,
+        "landingMs": 700,
+        "themeClass": "",
+        "showMissGlyph": true,
+        "missGlyph": "×",
+        "valueSuffix": "x",
+        "role": "img",
+        "ariaLabelPrefix": "Multiplier reel"
+      },
+      "loc": 463
     },
     {
       "name": "superSymbol",
@@ -3448,8 +3497,9 @@
       "file": "src/blocks/winCap.mjs",
       "testFile": "tests/blocks/winCap.test.mjs",
       "category": "feature",
-      "description": "Regulator-mandated max-win enforcement. When cumulative win exceeds",
+      "description": "Wave N3 (base) + W51 (cross-jurisdiction enforcement) — Win Cap terminator.",
       "exports": [
+        "JURISDICTION_CEILINGS",
         "defaultConfig",
         "emitWinCapCSS",
         "emitWinCapMarkup",
@@ -3462,17 +3512,22 @@
         "postSpin",
         "preSpin"
       ],
-      "emittedEvents": [],
+      "emittedEvents": [
+        "onWinCapClamped",
+        "onWinCapTriggered"
+      ],
       "defaultConfig": {
         "enabled": false,
         "maxWinX": 5000,
         "mode": "round",
+        "jurisdiction": "OFF",
+        "ceilingApplied": false,
         "overlayLabel": "MAX WIN!",
         "overlayMs": 2400,
         "color": "255,215,0",
         "forceRoundEnd": true
       },
-      "loc": 188
+      "loc": 276
     },
     {
       "name": "winPresentation",
@@ -3508,7 +3563,7 @@
         "staggerStepMs": 80,
         "suppressLDW": true
       },
-      "loc": 976
+      "loc": 1001
     },
     {
       "name": "winRollup",

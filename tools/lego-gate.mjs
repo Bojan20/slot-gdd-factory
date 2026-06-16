@@ -250,6 +250,13 @@ const EXPECTED_EMIT_OWNERS = {
    * downstream HUD listener gets the canonical post-refill snapshot. */
   onSymbolUpgrade:        ['symbolUpgrade.mjs'],
   onSymbolUpgradeCascade: ['symbolUpgrade.mjs'],
+  /* W56 — Aux multiplier reel (vendor-neutral aux_reel_multiplier).
+   * Side-by-side strip reel that spins with the main grid and lands on
+   * a multiplier value (or MISS). Per-spin draw is math-controlled
+   * externally; this block only PRESENTS the value from
+   * spinResult.stormMultiplierTarget. Closes W49.T5.B GDD corpus RE gap. */
+  onStormMultiplierStart: ['stormMultiplierReel.mjs'],
+  onStormMultiplierStop:  ['stormMultiplierReel.mjs'],
   /* 2026-06-11 — holdAndWin phase machine emits its own INACTIVE → INTRO
    * → RUNNING → SUMMARY phase signal + a final end stats payload. Both
    * are sole-owned by the block; downstream HUD / summary listeners read

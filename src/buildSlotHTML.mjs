@@ -385,6 +385,14 @@ import {
   emitSymbolUpgradeCSS, emitSymbolUpgradeMarkup, emitSymbolUpgradeRuntime,
   resolveConfig as resolveSymbolUpgradeConfig,
 } from './blocks/symbolUpgrade.mjs';
+// W56 — Auxiliary multiplier reel (vendor-neutral aux_reel_multiplier).
+// Closes W49.T5.B GDD corpus RE gap. Opt-in per GDD via
+// model.stormMultiplierReel.enabled. Math-blind: receives target value
+// externally from spinResult.stormMultiplierTarget.
+import {
+  emitStormMultiplierReelCSS, emitStormMultiplierReelRuntime,
+  resolveConfig as resolveStormMultiplierReelConfig,
+} from './blocks/stormMultiplierReel.mjs';
 // Wave P8 — Hot-Reload BLOCK (dev-mode SSE → in-page re-parse or full reload).
 // Disabled by default; opt-in via model.hotReload.enabled (set by dev server
 // or by the parent page on localhost). Production builds emit a 0-byte stub.
@@ -759,6 +767,8 @@ ${emitPaytableCSS(resolvePaytableConfig(model))}
 ${emitSymbolInfoPopoverCSS(resolveSymbolInfoPopoverConfig(model))}
 ${/* Wave B64 — Symbol upgrade flash + morph keyframes (decorates .cell). */ ''}
 ${emitSymbolUpgradeCSS(resolveSymbolUpgradeConfig(model))}
+${/* W56 — aux multiplier reel CSS (no-op when model.stormMultiplierReel.enabled = false). */ ''}
+${emitStormMultiplierReelCSS(resolveStormMultiplierReelConfig(model))}
 ${/* Wave P8 — hot-reload indicator badge (dev-mode only). */ ''}
 ${emitHotReloadCSS(resolveHotReloadConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
@@ -916,6 +926,8 @@ ${emitPaytableMarkup(resolvePaytableConfig(model))}
 ${emitSymbolInfoPopoverMarkup(resolveSymbolInfoPopoverConfig(model))}
 ${/* Wave B64 — symbolUpgrade has no markup (decorates existing .cell DOM). */ ''}
 ${emitSymbolUpgradeMarkup(resolveSymbolUpgradeConfig(model))}
+${/* W56 — aux multiplier reel mount slot (block runtime ensure-mounts here when enabled). */ ''}
+<div id="stormMultiplierReelMount" aria-hidden="true"></div>
 ${/* Wave P8 — hot-reload indicator host (hidden until connected). */ ''}
 ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
 
@@ -1126,6 +1138,11 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${/* Wave B64 — symbolUpgrade runtime. Listens onTumbleStep AFTER tumble
        refill so freshly-dropped symbols get a chance to morph upward. */ ''}
   ${emitSymbolUpgradeRuntime(resolveSymbolUpgradeConfig(model))}
+  ${/* W56 — aux multiplier reel runtime. Subscribes preSpin → start,
+       onSpinResult → set target, postSpin → stop on target, onSlamStop
+       → instant snap. Math-blind (consumes spinResult.stormMultiplierTarget
+       set by engine; force chip flag override consumed once and cleared). */ ''}
+  ${emitStormMultiplierReelRuntime(resolveStormMultiplierReelConfig(model))}
   ${/* Wave P8 — hot-reload runtime (dev-mode). Placed AFTER HookBus and
      * AFTER every other block runtime so that subscribers to onGddChange
      * are already registered when an SSE-driven re-parse fires. Disabled
