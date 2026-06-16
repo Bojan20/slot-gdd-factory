@@ -221,7 +221,10 @@ const BONUS_BUY_CONFIRM = ${CONFIRM};
     var _plant = { scatterCount: BONUS_BUY_FORCE_SCATTERS };
     if (typeof window !== 'undefined') window.FORCE_TRIGGER = _plant;
     if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
-      HookBus.emit('bonus.buy.requested', { scatterCount: BONUS_BUY_FORCE_SCATTERS, costX: BONUS_BUY_COST_X });
+      /* W57.A7 — canonical camelCase event name (was 'bonus.buy.requested'
+       * pre-rename). LEGO gate now blocks NEW colon/dot event names;
+       * legacy survivors are explicitly whitelisted in lego-gate.mjs. */
+      HookBus.emit('onBonusBuyRequested', { scatterCount: BONUS_BUY_FORCE_SCATTERS, costX: BONUS_BUY_COST_X });
     }
     if (typeof runOneBaseSpin === 'function') runOneBaseSpin();
     btn.setAttribute('disabled', 'disabled');

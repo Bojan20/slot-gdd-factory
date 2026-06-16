@@ -180,7 +180,10 @@ function wireAnteBet(){
     el.dataset.on = ANTE_BET_ON ? 'true' : 'false';
     el.setAttribute('aria-checked', ANTE_BET_ON ? 'true' : 'false');
     if (typeof window !== 'undefined') window.ANTE_BET_ON = ANTE_BET_ON;
-    if (typeof HookBus !== 'undefined') HookBus.emit('anteBet:changed', { on: ANTE_BET_ON, costMult: ANTE_BET_COST_MULT, triggerMult: ANTE_BET_TRIGGER_MULT });
+    /* W57.A7 — canonical camelCase event name (was 'anteBet:changed'
+     * pre-rename). LEGO gate now blocks NEW colon/dot event names;
+     * legacy survivors are explicitly whitelisted in lego-gate.mjs. */
+    if (typeof HookBus !== 'undefined') HookBus.emit('onAnteBetChanged', { on: ANTE_BET_ON, costMult: ANTE_BET_COST_MULT, triggerMult: ANTE_BET_TRIGGER_MULT });
   }
   el.addEventListener('click', () => {
     if (typeof FSM !== 'undefined' && FSM.phase !== 'BASE') return; // locked mid-bonus

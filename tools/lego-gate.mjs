@@ -262,6 +262,13 @@ const EXPECTED_EMIT_OWNERS = {
    * spinResult.stormMultiplierTarget. Closes W49.T5.B GDD corpus RE gap. */
   onStormMultiplierStart: ['stormMultiplierReel.mjs'],
   onStormMultiplierStop:  ['stormMultiplierReel.mjs'],
+  /* W57.A7 — Canonical camelCase event names for renamed legacy events.
+   * Pre-W57: 'anteBet:changed' / 'bonus.buy.requested' (colon/dot form).
+   * Both were orphan-emit (no listeners) so rename is safe; legacy form
+   * removed from source. LEGO §7 colon/dot gate blocks new emissions of
+   * the legacy shape — and §4 here declares the canonical owners. */
+  onAnteBetChanged:    ['anteBet.mjs'],
+  onBonusBuyRequested: ['bonusBuy.mjs'],
   /* 2026-06-11 — holdAndWin phase machine emits its own INACTIVE → INTRO
    * → RUNNING → SUMMARY phase signal + a final end stats payload. Both
    * are sole-owned by the block; downstream HUD / summary listeners read
@@ -588,6 +595,72 @@ async function checkBacktickInTemplate() {
   };
 }
 
+/* ════════════════════════════════════════════════════════════════════
+ * W57.A7 — Colon/dot event-name canonicalization gate.
+ *
+ * Canonical event names follow the `on<PascalCase>` shape (e.g. `onSpinStart`,
+ * `onBigWinTierEntered`). Colon-separated names (`anteBet:changed`) and
+ * dot-separated names (`bonus.buy.requested`) are LEGACY: they predate the
+ * convention. This gate accepts the existing legacy survivors via an
+ * explicit whitelist, but BLOCKS any NEW colon/dot event names — every
+ * future emit/listener must use the canonical form.
+ *
+ * Whitelist policy: shrinks only (existing legacy can be renamed; the
+ * whitelist entry is then removed). Adding to the whitelist requires an
+ * explicit rationale in the comment.
+ * ════════════════════════════════════════════════════════════════════ */
+const COLON_DOT_LEGACY_WHITELIST = new Set([
+  /* expandingWild block — orphan-emit pair predating the convention.
+   * No listeners in source; safe to rename in a future W57.A7.2. */
+  'expandingWild:applied',
+  'expandingWild:cleared',
+  /* clusterPaysEval ↔ engine handshake — `reels:stopped` is the legacy
+   * trigger for cluster re-evaluation; full rename would touch the
+   * engine dispatcher chain. Defer to dedicated W57.A7.3. */
+  'reels:stopped',
+  'clusterPays:evaluated',
+  /* wheelBonus family — 6 events form the wheelBonus block's own
+   * open/close/request/spin/complete/result protocol. Rename touches
+   * wheelBonusReveal listener wiring too (W57.A7.4 candidate). */
+  'wheelBonus.open',
+  'wheelBonus.close',
+  'wheelBonus.request',
+  'wheelBonus.spin',
+  'wheelBonus.complete',
+  'wheelBonus.result',
+  /* bonusPick feature trigger — namespaced "feature:" prefix matches the
+   * feature-discovery protocol; rename in W57.A7.5 alongside other
+   * `feature:*` events when they're introduced. */
+  'feature:bonusPick:trigger',
+]);
+
+async function checkColonDotEventNames() {
+  const blocks = await listBlockFiles();
+  /* Capture every HookBus.emit('...') / HookBus.on('...') call where the
+   * event name contains : or . — flag any not on the whitelist. */
+  const EVENT_NAME_RE = /HookBus\.(?:emit|on)\(\s*['"]([^'"]*[:.][^'"]*)['"]/g;
+  const offenders = [];
+  for (const b of blocks) {
+    const src = await readBlockSrc(b);
+    let m;
+    EVENT_NAME_RE.lastIndex = 0;
+    while ((m = EVENT_NAME_RE.exec(src))) {
+      const eventName = m[1];
+      if (!COLON_DOT_LEGACY_WHITELIST.has(eventName)) {
+        offenders.push(`${b}: "${eventName}" (use canonical on<PascalCase>)`);
+      }
+    }
+  }
+  const pass = offenders.length === 0;
+  return {
+    name: '7. Colon/dot event canonicalization (W57.A7)',
+    pass,
+    detail: pass
+      ? `${blocks.length} blocks scanned, ${COLON_DOT_LEGACY_WHITELIST.size} legacy events whitelisted; no new colon/dot events`
+      : `New colon/dot event name(s) outside legacy whitelist:\n      ${offenders.join('\n      ')}`,
+  };
+}
+
 async function main() {
   console.log(C.bold(C.cyan('\n🔒 LEGO Gate — slot-gdd-factory')));
   console.log(C.dim('   Wave S pre-commit invariants. Fails fast if any check trips.\n'));
@@ -599,6 +672,7 @@ async function main() {
     await checkEventOwnership(),
     await checkListenerCoverage(),
     await checkBacktickInTemplate(),
+    await checkColonDotEventNames(),
   ];
 
   let failed = 0;
