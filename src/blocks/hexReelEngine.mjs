@@ -149,10 +149,32 @@ export function emitHexReelEngineCSS(cfg = defaultConfig()) {
   position: absolute;
   pointer-events: auto;
 }
+/* 2026-06-16 (v8 hex parity): the prior filter: blur(0.4px) on the
+ * spinning strip violated the v8 "cell-never-mutated" rule — even
+ * 0.4px softened glyphs visibly on hex grids. Motion legibility now
+ * comes from the column-level ::after motion overlay (matches the
+ * rectangular reelEngineCSS pattern). The strip itself stays sharp.
+ *
+ * Any future re-introduction of a non-zero filter under
+ * .hex-reel-col.is-spinning .hex-reel-strip or on .cell.hex is
+ * caught by tests/blocks/_no-muddy-cell.test.mjs. */
 .hex-reel-col.is-spinning .hex-reel-strip {
-  /* CSS-driven blur during spin — keeps motion legible without
-     burning a per-frame transform update. Cleared on stop. */
-  filter: blur(0.4px);
+  filter: none;
+}
+.hex-reel-col.is-spinning::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.22) 0%,
+    transparent 18%,
+    transparent 82%,
+    rgba(0, 0, 0, 0.22) 100%
+  );
+  mix-blend-mode: multiply;
+  z-index: 2;
 }
 .hex-reel-col.is-stopping .hex-reel-strip {
   transition: transform ${cfg.cushionBounceMs}ms cubic-bezier(0.34, 1.56, 0.64, 1);
