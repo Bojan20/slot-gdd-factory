@@ -42,6 +42,15 @@
 /* W51 — per-jurisdiction ceiling matrix. Operator cannot exceed.
  * `OFF` = no jurisdiction profile, GDD value passes through (used for
  * permissive markets / unregulated demo builds). */
+/* W58.J-AGCO — Jurisdictions that require RTP transparency disclosure
+ * at session launch. Mirrors W57.A4 + W58.J-UKGC routing pattern.
+ *
+ * Citations:
+ *   • ON AGCO Standard 4.06 — RTP transparency display mandatory
+ *   • UKGC RTS 8 — return-to-player must be visible to player
+ *   • MGA Player Protection — RTP visibility recommended */
+export const RTP_DISCLOSURE_REQUIRED_JURISDICTIONS = Object.freeze(['ON', 'UKGC', 'MGA']);
+
 export const JURISDICTION_CEILINGS = Object.freeze({
   UKGC: 100000,
   MGA:  500000,
@@ -119,6 +128,22 @@ export function resolveConfig(model = {}) {
     }
   }
 
+  /* W58.J-AGCO — RTP transparency disclosure. ON AGCO Standard 4.06 +
+   * UKGC RTS 8 require RTP visible to player at session launch. Read
+   * RTP from model.math.rtp (read-only — math layer remains gated per
+   * rule_no_math_unless_asked; we only EXPOSE existing value). Falls
+   * back to model.rtp shorthand. Value clamped to 0..1 range; falsy
+   * values left as null so downstream consumers can detect absence. */
+  let rtpValue = null;
+  if (model && model.math && Number.isFinite(model.math.rtp)) {
+    rtpValue = Number(model.math.rtp);
+  } else if (model && Number.isFinite(model.rtp)) {
+    rtpValue = Number(model.rtp);
+  }
+  if (rtpValue !== null && (rtpValue < 0 || rtpValue > 1)) rtpValue = null;
+  cfg.rtp = rtpValue;
+  cfg.requireRtpDisclosure = !!(cfg.jurisdiction && RTP_DISCLOSURE_REQUIRED_JURISDICTIONS.indexOf(cfg.jurisdiction) !== -1);
+
   return cfg;
 }
 
@@ -185,6 +210,8 @@ const WIN_CAP_OVERLAY_MS   = ${cfg.overlayMs};
 const WIN_CAP_FORCE_END    = ${cfg.forceRoundEnd ? 'true' : 'false'};
 const WIN_CAP_JURISDICTION = ${JSON.stringify(cfg.jurisdiction)};
 const WIN_CAP_CEILING_APPLIED = ${cfg.ceilingApplied ? 'true' : 'false'};
+const WIN_CAP_RTP_REQUIRED = ${cfg.requireRtpDisclosure ? 'true' : 'false'};
+const WIN_CAP_RTP_VALUE = ${cfg.rtp === null ? 'null' : Number(cfg.rtp)};
 let WIN_CAP_CUMULATIVE_X = 0;
 
 /* W51 — emit one-time clamp audit event so RG / compliance log sees that
@@ -194,6 +221,21 @@ if (WIN_CAP_CEILING_APPLIED && typeof HookBus !== 'undefined') {
     HookBus.emit('onWinCapClamped', {
       jurisdiction: WIN_CAP_JURISDICTION,
       ceiling: WIN_CAP_MAX_X,
+    });
+  } catch (_) {}
+}
+
+/* W58.J-AGCO — emit RTP transparency disclosure event at boot so
+ * downstream consumer (regulator modal / paytable / H1 jurisdictionGate)
+ * surfaces the RTP value to the player before first spin. Honest scope:
+ * if RTP value is null (math layer gated; no value in model), event
+ * payload carries rtp:null so consumer can render "RTP: pending"
+ * placeholder instead of throwing. */
+if (WIN_CAP_RTP_REQUIRED && typeof HookBus !== 'undefined') {
+  try {
+    HookBus.emit('onRtpDisclosureRequired', {
+      jurisdiction: WIN_CAP_JURISDICTION,
+      rtp: WIN_CAP_RTP_VALUE,
     });
   } catch (_) {}
 }

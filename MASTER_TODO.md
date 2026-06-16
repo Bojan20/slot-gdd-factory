@@ -983,6 +983,47 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## 🌍 W58.J-AGCO — RTP transparency disclosure gate (✅ LANDED — 2026-06-17)
+
+> **Regulator anchor**: ON AGCO Standard 4.06 + UKGC RTS 8 + MGA Player Protection.
+> **Vezano za**: slot-gdd-factory · math-blind (čita postojeći `model.math.rtp`, ne računa).
+
+### 1. Šta je zatvoreno
+
+| Block | Promena | Linije |
+|:--|:--|:-:|
+| `src/blocks/winCap.mjs` | +`RTP_DISCLOSURE_REQUIRED_JURISDICTIONS = ['ON','UKGC','MGA']` · resolveConfig: čita `model.math.rtp` ili `model.rtp` shorthand, clamp 0..1, postavlja `cfg.rtp` + `cfg.requireRtpDisclosure` · runtime emit `onRtpDisclosureRequired{jurisdiction,rtp}` jednom na boot kad jurisdiction zahteva | +35 |
+| `tools/lego-gate.mjs` | +`onRtpDisclosureRequired: ['winCap.mjs']` single-owner | +7 |
+| `tests/blocks/_winCapRtpDisclosure.test.mjs` | **NEW** — 28 testa kroz 6 sekcija | +185 |
+
+### 2. Ultimate QA 12/12 ZELENO
+
+| # | Gate | Verdict |
+|:-:|:--|:-:|
+| 1 | LEGO 7/7 invariants | ✅ (88 blokova) |
+| 2 | `_winCapRtpDisclosure` (NEW) | ✅ **28/0** |
+| 3 | `_winCapJurisdictions` reg | ✅ 78/0 |
+| 4 | `winCap.test.mjs` reg | ✅ 22/0 |
+| 5 | `_autoplayJurisdictionGate` reg (W58.J-UKGC) | ✅ 33/0 |
+| 6 | `_bonusBuyJurisdictionGate` (A4) | ✅ 45/0 |
+| 7 | `_ldwCrossBlock` (W50) | ✅ 43/0 |
+| 8 | `_realityCheckW52` | ✅ 46/0 |
+| 9 | `_sessionTimeoutW53` | ✅ 51/0 |
+| 10 | `_engineDeltaCap` (A1+A6) | ✅ 32/0 |
+| 11 | `stormMultiplierReel` (W56) | ✅ 61/0 |
+| 12 | npm test (20 grid fixtures) | ✅ 20/20 |
+| **Σ** | — | **459 testa · 0 fail** |
+
+### 3. Honest scope
+
+| Tip | Stavka |
+|:--|:--|
+| ✅ Done | RTP disclosure emit event · math-blind (no math computation) · 28-test pin · LEGO event-owner register |
+| ⏳ Out-of-scope | Modal DOM rendering (downstream H1 jurisdictionGate ili paytable extension) · 4 jurisdikcija ostaje OPEN (SE play-time · DE spin pace + no saved state · NL Cruks · EU AI Act DDA) |
+| 🎯 Sledeći logičan korak | W58.J-SE (persistent play-time display) ili W58.J-DE (spin pace + no saved state) |
+
+---
+
 ## 🌍 W58.J-UKGC — Autoplay disclosure jurisdiction gate (✅ LANDED — 2026-06-17)
 
 > **Regulator anchor**: UKGC LCCP 1.4.6 + ON AGCO Standard 4.06 + MGA Player Protection.

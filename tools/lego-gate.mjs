@@ -142,6 +142,13 @@ const EXPECTED_EMIT_OWNERS = {
    * and was forcibly lowered. */
   onWinCapTriggered: ['winCap.mjs'],
   onWinCapClamped:   ['winCap.mjs'],
+  /* W58.J-AGCO — RTP transparency disclosure event. ON AGCO Standard
+   * 4.06 + UKGC RTS 8 require RTP visible to player at session launch.
+   * Emitted once at boot when jurisdiction profile is ON/UKGC/MGA;
+   * downstream consumer (regulator modal / paytable / H1 jurisdictionGate)
+   * surfaces the RTP to the player. Payload: { jurisdiction, rtp } where
+   * rtp may be null when math layer gated (consumer renders placeholder). */
+  onRtpDisclosureRequired: ['winCap.mjs'],
   /* W58.J-UKGC — Autoplay disclosure gate per UKGC LCCP 1.4.6 +
    * ON AGCO Standard 4.06 + MGA Player Protection. Fires when player
    * tries autoplayStart() but jurisdiction requires disclosure and
