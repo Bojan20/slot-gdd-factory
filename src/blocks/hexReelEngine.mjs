@@ -219,6 +219,18 @@ export function emitHexReelEngineRuntime(cfg = defaultConfig()) {
     var hexSpinStart = 0;
     var hexOnSettled = null;
     var hexCellH = 0;
+    /* W57.A5 — Two-tier spinToken / tickToken stale-callback guard.
+     * Declared at outer engine scope so BOTH the public entry
+     * (__SLOT_HEX_RUNSPIN__) and the tick loop (hexTickAll) can wrap their
+     * setTimeout callbacks. Pattern source: agents/research-pool/woo-reels-RE.md §8.3. */
+    var __hexSpinToken = 0;
+    function __hexSptGuard(fn) {
+      var captured = __hexSpinToken;
+      return function () {
+        if (captured !== __hexSpinToken) return; /* stale */
+        return fn.apply(this, arguments);
+      };
+    }
 
     /** Randomise one cell text from POOL. Mirrors rectangular randomSym(). */
     function _hexRandSym() {
@@ -377,8 +389,10 @@ export function emitHexReelEngineRuntime(cfg = defaultConfig()) {
           hexOnSettled = null;
           /* onSpinResult is emitted by the dispatcher (reelEngine) so
              single-owner ownership stays intact. Engine just invokes
-             the supplied settle callback. */
-          setTimeout(cb, 0);
+             the supplied settle callback.
+             W57.A5 — wrap with spinToken guard so a delayed-tab-resume
+             can't fire the settle of an aborted spin on top of a fresh one. */
+          setTimeout(__hexSptGuard(cb), 0);
         }
       }
     }
@@ -415,6 +429,11 @@ export function emitHexReelEngineRuntime(cfg = defaultConfig()) {
       }
       hexSpinStart = performance.now();
       hexOnSettled = onSettled || null;
+      /* W57.A5 — increment spin token. The guard helper is declared at
+       * outer engine scope (see above) so both this entry and the
+       * hexTickAll closure can wrap callbacks with the same captured-vs-
+       * current comparison. */
+      __hexSpinToken++;
       /* Turbo gate — engine bakes SPIN_MS/STAGGER_MS at orchestrator
          time, but turbo is a live toggle. Read the canonical multiplier
          set by turboMode.mjs and scale per-spin so the chip ACTUALLY

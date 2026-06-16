@@ -415,6 +415,32 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
       statusEl.textContent = "SPINNING";
     }
 
+    /* W57.A5 — Two-tier spinToken / tickToken stale-callback guard.
+     * Pattern source: agents/research-pool/woo-reels-RE.md §8.3 (production
+     * pattern) + engine-architect W57 audit HIGH severity verdict.
+     *
+     * Problem: setTimeout callbacks scheduled during spin N can fire AFTER
+     * the user has slam-stopped, requested skip, or triggered spin N+1
+     * (e.g. tab unsuspend after long throttle, autoplay rapid-fire). Those
+     * stale callbacks read fresh state and corrupt the new spin's lifecycle.
+     *
+     * Solution: increment __spinToken at every spin trigger. Each wrapped
+     * setTimeout captures the spin's token at schedule time; the callback
+     * runs ONLY if captured token still matches __spinToken when it fires.
+     * Mismatched callbacks are silently dropped (no error, no side effect). */
+    if (typeof window.__reelEngineSpinToken__ !== 'number') {
+      window.__reelEngineSpinToken__ = 0;
+    }
+    window.__reelEngineSpinToken__++;
+    const __spinToken = window.__reelEngineSpinToken__;
+    const __sptGuard = function (fn) {
+      const captured = __spinToken;
+      return function () {
+        if (captured !== window.__reelEngineSpinToken__) return; /* stale */
+        return fn.apply(this, arguments);
+      };
+    };
+
     /* 2026-06-09 — Boki bug: "turbo ne radi". Live turbo multiplier
        (0.35 default) was published by turboMode block but no engine path
        read it. We read it once per spin and compress the per-reel schedule
@@ -463,10 +489,13 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
       reel.cells.forEach(c => c.classList.add("is-blurring"));
 
       const initialDelay = reel.scheduledStopAt - performance.now();
-      reel.stopTimerId = setTimeout(() => {
+      /* W57.A5 — wrap stop-request setTimeout with spinToken guard so a
+       * delayed-tab-resume can't re-arm a stale stop on a spin that has
+       * already been slam-stopped or replaced by the next spin. */
+      reel.stopTimerId = setTimeout(__sptGuard(() => {
         reel.stopRequested = true;
         reel.stopRequestTime = performance.now();
-      }, Math.max(0, initialDelay));
+      }), Math.max(0, initialDelay));
     });
 
     if (!spinTicker) {
@@ -511,7 +540,9 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
             HookBus.emit('onSpinResult', { duringFs });
           }
           if (typeof onSettled === "function") {
-            setTimeout(onSettled, ${c.settleBreathMs});
+            /* W57.A5 — settle handoff also guarded so a tab resume after
+             * the loop ended can't double-fire postSpin pipeline. */
+            setTimeout(__sptGuard(onSettled), ${c.settleBreathMs});
           }
         }
       };
