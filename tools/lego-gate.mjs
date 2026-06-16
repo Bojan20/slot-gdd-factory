@@ -82,6 +82,9 @@ const HOOK_REGISTRATION_OPT_OUT = new Set([
                         // onHotReloadConnect / onHotReloadDisconnect emits.
   'universalForcePanel.mjs', // Wave U-FORCE-ALL — emit-only dev/QA chip rail;
                         // wires DOM click handlers, never reads HookBus.
+  'pwaInstallability.mjs', // Wave A8 — emit-only PWA lifecycle (SW ready,
+                        // A2HS prompt, appinstalled); listens to window
+                        // events directly, never reads HookBus.
   /* W47.S2 (2026-06-15) — spinTempo is a pure config emitter: produces a
    * static SPIN_PROFILE literal consumed by the reel engine synchronously.
    * Per its own JSDoc header — "Consumed only at build time, no runtime
@@ -207,6 +210,11 @@ const EXPECTED_EMIT_OWNERS = {
    * the resulting html[dir] flip + onDirChanged announcement. */
   onLocaleChanged:        ['settingsPanel.mjs'],
   onDirChanged:           ['rtlLayout.mjs'],
+  /* Wave A8 — PWA install lifecycle. pwaInstallability is sole emitter
+   * (SW ready + A2HS prompt + appinstalled). */
+  onPwaInstallable:       ['pwaInstallability.mjs'],
+  onPwaInstalled:         ['pwaInstallability.mjs'],
+  onPwaSwReady:           ['pwaInstallability.mjs'],
   /* Wave P8 — hot-reload (dev-mode SSE) is the sole emitter of these
    * dev-loop events. onGddChange is the in-page fast-path signal;
    * onHotReloadConnect / onHotReloadDisconnect track SSE lifecycle. */

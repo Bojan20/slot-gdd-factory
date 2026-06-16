@@ -274,6 +274,10 @@ export const HOOK_EVENTS = Object.freeze([
   /* Wave A5: locale + dir lifecycle (settingsPanel→rtlLayout). */
   'onLocaleChanged',
   'onDirChanged',
+  /* Wave A8: PWA installability lifecycle (sole-owned by pwaInstallability). */
+  'onPwaInstallable',
+  'onPwaInstalled',
+  'onPwaSwReady',
   /* Wave P8: hot-reload BLOCK events (dev-mode, production-disabled).
    * onHotReloadConnect    {}                — SSE established.
    * onHotReloadDisconnect { reason }        — SSE closed / errored.

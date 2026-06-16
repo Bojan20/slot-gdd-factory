@@ -358,6 +358,11 @@ import {
   emitRtlLayoutCSS, emitRtlLayoutRuntime,
   resolveConfig as resolveRtlLayoutConfig,
 } from './blocks/rtlLayout.mjs';
+// Wave A8 — PWA installability (manifest + SW + a2hs prompt)
+import {
+  emitPwaInstallabilityMarkup, emitPwaInstallabilityRuntime,
+  resolveConfig as resolvePwaInstallabilityConfig,
+} from './blocks/pwaInstallability.mjs';
 // Wave U10 — Paytable modal (industry-standard regulator-mandated info pane)
 import {
   emitPaytableCSS, emitPaytableMarkup, emitPaytableRuntime,
@@ -631,6 +636,8 @@ export function buildSlotHTML(model) {
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>${escapeHtml(model.name)} · Base Game</title>
+${/* Wave A8 — PWA installability head injection (manifest + icons + theme). */ ''}
+${emitPwaInstallabilityMarkup(resolvePwaInstallabilityConfig({ ...model, gameName: model.name }))}
 <style>
 ${emitThemeCSS(resolveThemeCSSConfig(model))}
 ${emitStageBadgeCSS(resolveStageBadgeConfig(model))}
@@ -1071,6 +1078,9 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${/* Wave A5 — RTL layout runtime (auto-detect from __SLOT_LOCALE__,
      * flip html[dir=rtl] / 'ltr', emit onDirChanged event). */ ''}
   ${emitRtlLayoutRuntime(resolveRtlLayoutConfig(model))}
+  ${/* Wave A8 — PWA installability runtime (blob-URL SW register +
+     * beforeinstallprompt + appinstalled + iOS detection). */ ''}
+  ${emitPwaInstallabilityRuntime(resolvePwaInstallabilityConfig({ ...model, gameName: model.name }))}
   ${/* Wave U10 — paytable modal runtime (i-button show/hide + roster). */ ''}
   ${emitPaytableRuntime(resolvePaytableConfig(model), model)}
   ${emitSymbolInfoPopoverRuntime(resolveSymbolInfoPopoverConfig(model))}

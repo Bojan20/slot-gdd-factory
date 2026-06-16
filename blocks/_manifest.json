@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-16T09:01:22.887Z",
+  "generatedAt": "2026-06-16T09:06:09.701Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 83,
+  "totalBlocks": 84,
   "blocks": [
     {
       "name": "anteBet",
@@ -1346,7 +1346,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 499
+      "loc": 503
     },
     {
       "name": "hotReload",
@@ -2041,6 +2041,38 @@
         "chipLabel": "FS MULT"
       },
       "loc": 285
+    },
+    {
+      "name": "pwaInstallability",
+      "file": "src/blocks/pwaInstallability.mjs",
+      "testFile": "tests/blocks/pwaInstallability.test.mjs",
+      "category": "uncategorised",
+      "description": "players can add to home-screen, run full-screen without browser",
+      "exports": [
+        "defaultConfig",
+        "emitPwaInstallabilityMarkup",
+        "emitPwaInstallabilityRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onPwaInstallable",
+        "onPwaInstalled",
+        "onPwaSwReady"
+      ],
+      "defaultConfig": {
+        "enabled": true,
+        "name": "Slot Game",
+        "shortName": "",
+        "display": "standalone",
+        "orientation": "any",
+        "themeColor": "#05070c",
+        "backgroundColor": "#0b0f16",
+        "scope": ".",
+        "startUrl": ".",
+        "iconColor": "#c9a227"
+      },
+      "loc": 315
     },
     {
       "name": "realityCheck",
