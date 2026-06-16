@@ -393,6 +393,14 @@ import {
   emitStormMultiplierReelCSS, emitStormMultiplierReelRuntime,
   resolveConfig as resolveStormMultiplierReelConfig,
 } from './blocks/stormMultiplierReel.mjs';
+// W58.J-DE — GlüStV (Glücksspielstaatsvertrag 2021) compliance gate.
+// Auto-enabled when jurisdiction === 'DE'. Boot-time only: sets
+// window.__DE_MIN_SPIN_MS__ spin-pace floor (§11(2)) + clears prefixed
+// session storage (§6e) + emits 2 sole-owner audit events.
+import {
+  emitGermanyComplianceGateCSS, emitGermanyComplianceGateRuntime,
+  resolveConfig as resolveGermanyComplianceGateConfig,
+} from './blocks/germanyComplianceGate.mjs';
 // Wave P8 — Hot-Reload BLOCK (dev-mode SSE → in-page re-parse or full reload).
 // Disabled by default; opt-in via model.hotReload.enabled (set by dev server
 // or by the parent page on localhost). Production builds emit a 0-byte stub.
@@ -1143,6 +1151,9 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
        → instant snap. Math-blind (consumes spinResult.stormMultiplierTarget
        set by engine; force chip flag override consumed once and cleared). */ ''}
   ${emitStormMultiplierReelRuntime(resolveStormMultiplierReelConfig(model))}
+  ${/* W58.J-DE — GlüStV §11(2) spin pace floor + §6e session state clear.
+       Boot-time IIFE; 0-byte side effect when jurisdiction is not DE. */ ''}
+  ${emitGermanyComplianceGateRuntime(resolveGermanyComplianceGateConfig(model))}
   ${/* Wave P8 — hot-reload runtime (dev-mode). Placed AFTER HookBus and
      * AFTER every other block runtime so that subscribers to onGddChange
      * are already registered when an SSE-driven re-parse fires. Disabled

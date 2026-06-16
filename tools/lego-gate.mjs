@@ -95,6 +95,11 @@ const HOOK_REGISTRATION_OPT_OUT = new Set([
    * HookBus subscription. This block neither calls bus.on(...) nor emits
    * bus.emit(...)". Adding it here aligns gate with header contract. */
   'spinTempo.mjs',
+  /* W58.J-DE — germanyComplianceGate is an emit-only boot block. Sets
+   * window.__DE_MIN_SPIN_MS__ flag + clears prefixed storage + fires
+   * onMinSpinPaceEnforced + onGameStateCleared. Has no spin-lifecycle
+   * listener — it INFORMS downstream consumers, never reads from them. */
+  'germanyComplianceGate.mjs',
 ]);
 
 /* Expected emit ownership — single source of truth for each event. */
@@ -163,6 +168,20 @@ const EXPECTED_EMIT_OWNERS = {
    * Downstream consumer (cert harness audit trail, telemetry) records
    * the obligation activation. Payload: { jurisdiction, rule }. */
   onPlayTimeDisplayRequired: ['realityCheck.mjs'],
+  /* W58.J-DE — German GlüStV (Glücksspielstaatsvertrag 2021) compliance
+   * gate. Two boot-time obligations fired by germanyComplianceGate.mjs
+   * when jurisdiction === 'DE':
+   *   • §11(2) Spielpause — 5-second spin-pace floor; sets
+   *     window.__DE_MIN_SPIN_MS__ and emits onMinSpinPaceEnforced once.
+   *     Downstream consumers (autoplay tick, slamStop, turboMode dispatch)
+   *     must respect the floor at spin-trigger time.
+   *   • §6e Speicherverbot — clears localStorage + sessionStorage entries
+   *     matching SGF prefixes (__SLOT_, __FS_, __HW_, __BB_, __RC_, __BG_)
+   *     and emits onGameStateCleared with the count and prefix list.
+   * §11(3) bonus-buy ban is already enforced by bonusBuy.mjs (W57.A4)
+   * and not duplicated here. */
+  onMinSpinPaceEnforced: ['germanyComplianceGate.mjs'],
+  onGameStateCleared:    ['germanyComplianceGate.mjs'],
   /* Wave H5 — Big-Win Tier ladder. Vendor-neutral 5-tier celebration
    * fired after the per-line rollup ends. tier is INT 1..5; label/
    * threshold/duration/color all GDD-driven so two games share the

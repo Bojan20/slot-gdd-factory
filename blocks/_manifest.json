@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-16T20:51:00.645Z",
+  "generatedAt": "2026-06-16T23:26:38.719Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 87,
+  "totalBlocks": 88,
   "blocks": [
     {
       "name": "anteBet",
@@ -17,7 +17,9 @@
         "resolveConfig"
       ],
       "lifecycleHooks": [],
-      "emittedEvents": [],
+      "emittedEvents": [
+        "onAnteBetChanged"
+      ],
       "defaultConfig": {
         "enabled": false,
         "costMultiplier": 1.25,
@@ -25,7 +27,7 @@
         "label": "ANTE BET",
         "color": "#ffe066"
       },
-      "loc": 217
+      "loc": 220
     },
     {
       "name": "anticipation",
@@ -193,6 +195,7 @@
         "postSpin"
       ],
       "emittedEvents": [
+        "onAutoplayDisclosureRequired",
         "onAutoplayStart",
         "onAutoplayStop",
         "onAutoplayTick"
@@ -222,9 +225,11 @@
         "chipColor": "90,180,255",
         "chipTextColor": "255,255,255",
         "modalBgColor": "14,12,28",
-        "ariaLabel": "Auto-spin"
+        "ariaLabel": "Auto-spin",
+        "jurisdiction": "",
+        "requireDisclosure": false
       },
-      "loc": 1068
+      "loc": 1137
     },
     {
       "name": "balanceHud",
@@ -417,7 +422,9 @@
         "resolveConfig"
       ],
       "lifecycleHooks": [],
-      "emittedEvents": [],
+      "emittedEvents": [
+        "onBonusBuyRequested"
+      ],
       "defaultConfig": {
         "enabled": false,
         "costX": 75,
@@ -429,7 +436,7 @@
         "rearmMs": 1200,
         "confirmMessage": ""
       },
-      "loc": 207
+      "loc": 256
     },
     {
       "name": "bonusBuyDeterministic",
@@ -724,7 +731,7 @@
         "counterFlickerFloor": 0.65,
         "counterTickDivisor": 20
       },
-      "loc": 279
+      "loc": 288
     },
     {
       "name": "dailyJackpot",
@@ -1066,6 +1073,41 @@
       "loc": 318
     },
     {
+      "name": "germanyComplianceGate",
+      "file": "src/blocks/germanyComplianceGate.mjs",
+      "testFile": "tests/blocks/germanyComplianceGate.test.mjs",
+      "category": "uncategorised",
+      "description": "W58.J-DE — GlüStV (Glücksspielstaatsvertrag 2021) compliance gate.",
+      "exports": [
+        "DE_MIN_SPIN_MS_DEFAULT",
+        "STATE_CLEAR_PREFIXES",
+        "defaultConfig",
+        "emitGermanyComplianceGateCSS",
+        "emitGermanyComplianceGateRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onGameStateCleared",
+        "onMinSpinPaceEnforced"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "jurisdiction": null,
+        "minSpinMs": 5000,
+        "clearOnBoot": true,
+        "prefixes": [
+          "__SLOT_",
+          "__FS_",
+          "__HW_",
+          "__BB_",
+          "__RC_",
+          "__BG_"
+        ]
+      },
+      "loc": 237
+    },
+    {
       "name": "hapticFeedback",
       "file": "src/blocks/hapticFeedback.mjs",
       "testFile": "tests/blocks/hapticFeedback.test.mjs",
@@ -1128,7 +1170,7 @@
         "cushionBounceMs": 240,
         "fadeFallbackMs": 200
       },
-      "loc": 426
+      "loc": 467
     },
     {
       "name": "historyLog",
@@ -2141,6 +2183,7 @@
       "category": "audit",
       "description": "Regulator-mandated \"Reality Check\" popup. Periodically interrupts",
       "exports": [
+        "PLAY_TIME_DISPLAY_REQUIRED_JURISDICTIONS",
         "defaultConfig",
         "emitRealityCheckCSS",
         "emitRealityCheckMarkup",
@@ -2156,6 +2199,7 @@
         "preSpin"
       ],
       "emittedEvents": [
+        "onPlayTimeDisplayRequired",
         "onRealityCheckDismissed",
         "onRealityCheckPaused",
         "onRealityCheckQuit",
@@ -2178,9 +2222,11 @@
         "showNetSummary": true,
         "dismissBlocksSpin": true,
         "accentColor": "255,170,80",
-        "title": "REALITY CHECK"
+        "title": "REALITY CHECK",
+        "jurisdiction": null,
+        "requirePersistentPlayTimeDisplay": false
       },
-      "loc": 893
+      "loc": 1005
     },
     {
       "name": "reelEngine",
@@ -2217,7 +2263,7 @@
         "minStepPx": 0.5,
         "accelMinFactor": 0.3
       },
-      "loc": 1008
+      "loc": 1069
     },
     {
       "name": "reelEngineCSS",
@@ -3500,6 +3546,7 @@
       "description": "Wave N3 (base) + W51 (cross-jurisdiction enforcement) — Win Cap terminator.",
       "exports": [
         "JURISDICTION_CEILINGS",
+        "RTP_DISCLOSURE_REQUIRED_JURISDICTIONS",
         "defaultConfig",
         "emitWinCapCSS",
         "emitWinCapMarkup",
@@ -3513,6 +3560,7 @@
         "preSpin"
       ],
       "emittedEvents": [
+        "onRtpDisclosureRequired",
         "onWinCapClamped",
         "onWinCapTriggered"
       ],
@@ -3527,7 +3575,7 @@
         "color": "255,215,0",
         "forceRoundEnd": true
       },
-      "loc": 276
+      "loc": 325
     },
     {
       "name": "winPresentation",
