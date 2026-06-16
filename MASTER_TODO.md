@@ -460,6 +460,84 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## 🌩 W56 — AUX MULTIPLIER REEL · stormMultiplierReel block (✅ LANDED — 2026-06-16)
+
+> Boki direktiva (2026-06-16 ~20:45): *"kreni"* — vlasnik bira (HARD RULE #3). Otkriće tokom backlog audit-a: B76 `scatterAnticipationV2` je STALE marker (Wave V1 `f5ff1bd` već rešio Boki bug "padne 1. ril → 2. ril → 3. ril i anticipation se gasi" fix-in-place u `anticipation.mjs`). Jedini stvarno missing block iz Pre-Math Faza 3 + W49.T5.B gap = **`stormMultiplierReel.mjs`** (aux_reel_multiplier kind). W56 ga landuje.
+
+### W56.A — Šta je landovano
+
+| Fajl | Tip | Linije | Funkcija |
+|:--|:-:|:-:|:--|
+| `src/blocks/stormMultiplierReel.mjs` | **NEW BLOCK** | 440 | Vendor-neutral aux multiplier strip reel (left/right/top/bottom) — side-by-side sa main grid, sync stop · GDD knobs: enabled/values/position/itemSizePx/spinSpeed/landingMs/themeClass/missGlyph/valueSuffix/ARIA · 2 nova HookBus events sole-owned · force chip `window.stormMultiplierForceAt(value)` routes kroz `runOneBaseSpin()` |
+| `tests/blocks/stormMultiplierReel.test.mjs` | NEW TEST | 220 | **61/61** assertion (defaults, bounds clamp, values sanitization, position whitelist, themeClass CSS-injection guard, vertical/horizontal CSS, lifecycle, sole-owner emit, force chip contract, flag-consumed-after-use, math-blind, vendor neutrality, ARIA, JSDoc completeness) |
+| `src/buildSlotHTML.mjs` | MODIFIED | +17 | Import + CSS + markup mount + runtime emit slot (svi 0-byte kad enabled=false — opt-in only) |
+| `tools/lego-gate.mjs` | MODIFIED | +7 | 2 nova EXPECTED_EMIT_OWNERS reda (`onStormMultiplierStart`, `onStormMultiplierStop`) — 96 → 98 events sole-owned |
+| `package.json` | MODIFIED | +1/-1 | test:blocks chain appendovan novim testom (87 → 88 blokova ali 90 testova zbog historic motionOverlay + LDW + sharpness) |
+| `blocks/_manifest.json` | REGEN | +77/-12 | 86 → **87 blokova** registered |
+
+### W56.B — Industry-pattern reference
+
+| Aspect | Detail |
+|:--|:--|
+| Industry pattern (vendor-neutral) | Aux strip reel sa per-spin multiplier draw (industry-baseline pattern, post-2010s) |
+| Production reference (interno) | `~/Projects/Wrath Of Olympus/src/stormMultiplierReel.ts` (820 LOC GSAP-based) |
+| Vendor-neutral generalization | SGF block uses `srm-` CSS prefix, no theme strings in source; theme skin via opt-in `themeClass` GDD knob (sanitized) |
+| Math gate (HONEST) | Block presents value; engine decides. **0 internal RNG**. `spinResult.stormMultiplierTarget` is external input |
+
+### W56.C — Lifecycle + HookBus contract
+
+| Event | Owner | Lifecycle |
+|:--|:--|:--|
+| `preSpin` (listener) | this block | Start aux reel free-running scroll |
+| `onSpinResult` (listener) | this block | Consume `spinResult.stormMultiplierTarget` + force-chip flag override |
+| `postSpin` (listener) | this block | Stop on target value (CSS cubic-bezier landing) |
+| `onSlamStop` (listener) | this block | Instant snap to target |
+| `onStormMultiplierStart` (**sole emitter**) | this block | After startSpin · payload `{ values }` |
+| `onStormMultiplierStop` (**sole emitter**) | this block | After landing · payload `{ value, isMiss, slam? }` |
+
+### W56.D — Ultimate QA 9/9 matrix
+
+| # | Gate | Verdict |
+|:-:|:--|:-:|
+| 1 | stormMultiplierReel unit test | ✅ **61/61** |
+| 2 | LEGO gate 6/6 invariants | ✅ (98 sole-owner · 72 listener · 87 vendor-neutral · backtick-free template body) |
+| 3 | npm test (parser floor + grid fixtures) | ✅ 4/4 + 20/20 |
+| 4 | `test:sharpness` CI gate (5 GDDs) | ✅ 5/5 baseline:ok · 0 cell mutations (no regression posle integration) |
+| 5 | Vendor leak grep u block + CSS | ✅ 0 hits (Wrath / Lightning / IGT / Pragmatic / NetEnt clean) |
+| 6 | Force chip routes kroz `runOneBaseSpin` (NE direct stopSpin shortcut) | ✅ verified u test #16 |
+| 7 | Math-blind invariant (NO internal RNG) | ✅ verified u test #18 (grep no `Math.random`/weighted/cumulative) |
+| 8 | Force chip flag CONSUMED after one use (no spin-to-spin leak) | ✅ verified u test #17 |
+| 9 | Block manifest regen + auto-categorization | ✅ 87 blokova |
+
+### W56.E — Hash pin
+
+| SHA | Šta | Push |
+|:-:|:--|:-:|
+| `32b4515` | **W56** — stormMultiplierReel block + 61/61 test + LEGO 6/6 + orchestrator wire + manifest regen + W49.T5.B gap closed | ✅ |
+
+### W56.F — Pre-Math Faza 3 status flip
+
+| # | Blok | Status pre W56 | Status posle W56 |
+|:-:|:--|:--|:--|
+| B64 | symbolUpgrade | ✅ SHIPPED | ✅ SHIPPED |
+| B65 | mysteryReveal | ✅ SHIPPED | ✅ SHIPPED |
+| B66 | winwaysIndicator | ✅ SHIPPED | ✅ SHIPPED |
+| B67 | multiplierLadder | ✅ SHIPPED | ✅ SHIPPED |
+| B68 | coinShower | ✅ SHIPPED | ✅ SHIPPED |
+| B69 | fsProgressBar | ✅ SHIPPED | ✅ SHIPPED |
+| B70 | stickyMeter | ✅ SHIPPED | ✅ SHIPPED |
+| B71 | pickBonusReveal | ✅ SHIPPED | ✅ SHIPPED |
+| B72 | wheelBonusReveal | ✅ SHIPPED | ✅ SHIPPED |
+| B73 | energyMeter | ✅ SHIPPED | ✅ SHIPPED |
+| B74 | rewardChest | ✅ SHIPPED | ✅ SHIPPED |
+| B75 | symbolStackCollapse | ✅ SHIPPED | ✅ SHIPPED |
+| **B76** | **scatterAnticipationV2** | ⏳ queued (STALE) | ✅ **OBSOLETE — fix-in-place u Wave V1 `f5ff1bd`** (verifikovano: `tests/blocks/anticipationV2.test.mjs` testira `anticipation.mjs` source) |
+| **W56** | **stormMultiplierReel** (W49.T5.B gap) | ❌ NOT YET | ✅ **LANDED `32b4515`** |
+
+**Faza 3 = 13/13 zatvoreno** (12 shipped + 1 OBSOLETE).
+
+---
+
 ## 🎯 W55 — SPIN-SHARPNESS CI INTEGRATION · full 5-GDD baseline + test:all gate wire-up (✅ LANDED — 2026-06-16)
 
 > Boki direktiva (2026-06-16 ~20:20): *"?"* → Vlasnik tumači `?` per HARD RULE #2 kao "ima li nešto sledeće?" — zatvaram W54 out-of-scope: full 5-GDD baseline + CI integration. W54 je probe-ovao samo 1 GDD (crystal); 4 ostala su naslijedila ranije ručno bake-ovane brojeve. W55 osvežava sve 5 baseline-ova svežim merama + integriše probe u `npm run test:all` chain kao gate.
@@ -909,6 +987,7 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 | Hash | Wave | Subject |
 |---|---|---|
+| `32b4515` | **W56** | **Aux multiplier reel · stormMultiplierReel block (closes W49.T5.B GDD corpus RE gap + closes Pre-Math Faza 3)** — vendor-neutral 440-LOC blok (`srm-` CSS prefix, NO Wrath/Lightning/IGT strings) sa GDD knobs (enabled/values/position left-right-top-bottom/itemSizePx/spinSpeed/landingMs/themeClass/ARIA), 2 nova HookBus events sole-owned (onStormMultiplierStart/Stop · 96 → 98), force chip `window.stormMultiplierForceAt(value)` routes kroz `runOneBaseSpin()` (per rule_force_buttons_real_spin), math-blind (0 internal RNG — engine populates `spinResult.stormMultiplierTarget`), opt-in default (enabled=false → 0-byte side effect). Lifecycle: preSpin→start, onSpinResult→consume target + force-flag override + flag-consume-after-use, postSpin→stop, onSlamStop→snap. 61/61 unit + LEGO 6/6 (98 sole-owner · 72 listener · 87 vendor-neutral) + npm 4/4 + grid 20/20 + sharpness 5/5 0 mutations + manifest 86→87. **Pre-Math Faza 3 = 13/13 closed (12 shipped + B76 OBSOLETE via Wave V1 fix-in-place)**. |
 | `40d4620` | **W55** | **Spin-sharpness CI integration · full 5-GDD baseline + test:all gate wire-up** — fresh probe na svih 5 reference GDD (huff/wrath/crystal/gates/midnight): **159 cells / 27 spinning surfaces / 27 overlays painted / 0 cell-filter mutations** (5/5 PASS). `package.json` `test:all` chain: `test:sharpness` insertovan posle `test:no-muddy-cell` (susedni presentation-invariant probe-ovi). `test:blocks` chain: motionOverlay + winPresentationLDW appendovani na kraj 86-test chain-a (33+22 = +55 assertions svaki npm test:blocks run). LEGO 6/6 + 5/5 sharpness regression + 33/33 + 22/22 unit via npm. Honest scope marker: Wave 3.1 rectangular migration → motionOverlay deferred (default knob harmonization needed: streakAlpha 0.04 vs 0.10, shadowAlpha 0.18 vs 0.22). |
 | `0355aaa` | **W54** | **Spin-quality close-out · motionOverlay Wave 3 + LDW gate + sharpness probe Wave 4** — orphan harvest 713 LOC + 5 integration izmena. New `src/blocks/motionOverlay.mjs` (shared `::after`/`::before` overlay za 5 engina, 0 JS/frame, WCAG 2.3.3) + `tests/blocks/motionOverlay.test.mjs` 33/33 + `tests/blocks/winPresentationLDW.test.mjs` 22/22 (Dixon 2010 + UKGC RTS 7C + AGCO 4.07 + UKGC 17-Jan-2025) + `tools/_spin-sharpness-probe.mjs` Wave 4 (Playwright computed-style sharpness assertion + Laplacian baseline ±15% u `cert/golden-spin-sharpness.json`). Orchestrator wires per 5 engine-a (hex/wheel/crash/plinko/slingo). Hex engine drops Wave 1 inline overlay — orchestrator's emit pokriva. 4 nova npm script-a. Ultimate QA 9/9: 33+22 unit + LEGO 6/6 (96 events sole-owner · 71 listener · 86 blokova vendor-neutral) + npm 4/4 + grid 20/20 + sharpness probe crystal 25 cells 0 mutations + 0 vendor leaks + 15 LDW citation hits + GPU-only zero-JS. |
 | _TBD_ | **W50** | **LDW (Losses Disguised as Wins) cross-block gate** — 3 src/blocks dopune (`winPresentation.mjs` presentExternalWin gate + preSpin reset; `hapticFeedback.mjs` `_ldwActive()` defense-in-depth; `netLossIndicator.mjs` `onLdwSuppressed` listener + RG metrics exposure) + new `_ldwCrossBlock.test.mjs` (43 case kroz 10 sekcija: source-of-truth, winRollup indirect, bigWinTier indirect, haptic D-i-D, netLoss listener, sandbox 6 scenarija, regulator profile precedence, EXPECTED_EMIT_OWNERS, vendor-neutral, determinism). Ultimate QA 9/9 ZELENO: 232 testova / 0 fail / LEGO 6/6 / npm 20/20 / vendor clean. Citations: Dixon 2010 + UKGC RTS 7C + AGCO 4.07 + UKGC 17-Jan-2025. |
