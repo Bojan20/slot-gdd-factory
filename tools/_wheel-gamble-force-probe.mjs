@@ -2,12 +2,23 @@
 /**
  * tools/_wheel-gamble-force-probe.mjs
  *
- * Multi-GDD live probe: for each fixture, click each force chip and
- * verify that:
- *   • The corresponding overlay/modal opens
- *   • No base spin runs in parallel for MODAL_ONLY kinds
- *   • The modal stays visible for ≥4 s (not closed by a stray FSM
- *     transition or postSpin race)
+ * Multi-GDD live probe — UPDATED 2026-06-16 for `rule_force_buttons_real_spin`.
+ *
+ * Force pattern (current contract):
+ *   chip click  →  base spin runs  →  postSpin hook  →  overlay opens
+ *
+ * Per kind:
+ *   • wheel_bonus / gamble / bonus_pick: chip arms `__FORCE_*_OPEN__` flag,
+ *     spin runs, postSpin opens overlay. We wait long enough (≤8 s) for
+ *     the spin to complete and the overlay to render.
+ *   • hold_and_win: chip plants FORCE_TRIGGER → spin lands bonus pile →
+ *     postSpin → hwMaybeEnter activates HW HUD. Fallback `hwForceSeed`
+ *     fires at HW_T_FORCE_FALLBACK_MS (≈2.6 s) if the natural pile
+ *     refuses to land.
+ *
+ * We assert: (a) spin DID run after chip click, (b) overlay/HUD visible
+ * after the spin settles. Old "no parallel spin" assertion is INVERTED
+ * because real-spin pattern requires the spin to happen.
  *
  * Exits 0 if every probe row passes its assertion.
  */
@@ -72,11 +83,39 @@ for (const target of TARGETS) {
     }, FORCE_KINDS.map(f => f.overlaySel));
     await frame.waitForTimeout(100);
 
+    /* Arm canonical spin signal via HookBus BEFORE clicking chip. The
+     * preSpin event is the single authoritative "real spin starting"
+     * signal per LEGO contract — reelEngine.runOneBaseSpin emits it. */
+    await frame.evaluate(() => {
+      window.__PROBE_SAW_PRESPIN__ = false;
+      window.__PROBE_SAW_POSTSPIN__ = false;
+      if (window.HookBus && typeof window.HookBus.on === 'function') {
+        window.HookBus.on('preSpin', () => { window.__PROBE_SAW_PRESPIN__ = true; });
+        window.HookBus.on('postSpin', () => { window.__PROBE_SAW_POSTSPIN__ = true; });
+      }
+    });
+
     await frame.evaluate(k => {
       const b = document.querySelector('.ufp-chip[data-ufp-kind="' + k + '"]');
       if (b) b.click();
     }, kind);
-    await frame.waitForTimeout(1500);
+
+    /* Wait until postSpin fires (preSpin → spin runs → postSpin) — capped
+     * at 8 s. */
+    let spinRan = false;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 8000) {
+      const flags = await frame.evaluate(() => ({
+        pre:  !!window.__PROBE_SAW_PRESPIN__,
+        post: !!window.__PROBE_SAW_POSTSPIN__,
+      }));
+      if (flags.pre) spinRan = true;
+      if (flags.pre && flags.post) break;
+      await frame.waitForTimeout(120);
+    }
+
+    /* Settle pad — allow postSpin → wbOpen / hwForceSeed to land. */
+    await frame.waitForTimeout(kind === 'hold_and_win' ? 3200 : 700);
 
     const visible = await frame.evaluate(sel => {
       const el = document.querySelector(sel);
@@ -88,7 +127,9 @@ for (const target of TARGETS) {
         show,
         display: cs.display,
         opacity: cs.opacity,
-        ok: (show === 'true' && cs.display !== 'none' && parseFloat(cs.opacity) > 0.1),
+        /* H&W HUD uses display flex w/o data-show; modal kinds use data-show. */
+        ok: (cs.display !== 'none' && parseFloat(cs.opacity) > 0.1 &&
+             (show === 'true' || show === undefined || show === null)),
       };
     }, overlaySel);
 
@@ -100,15 +141,14 @@ for (const target of TARGETS) {
       status: ok ? 'PASS' : ('FAIL ' + JSON.stringify(visible)),
     });
 
-    // For modal kinds, check spin is NOT running in parallel
-    if (['wheel_bonus', 'gamble', 'bonus_pick'].includes(kind)) {
-      const reelMoving = await frame.evaluate(() => {
-        const isSpinning = document.querySelector('.reel.spinning, .reels.spinning, [data-spinning="true"]');
-        return !!isSpinning || (window.FSM && window.FSM.phase && /SPIN|RESULT/.test(window.FSM.phase));
-      });
-      rows.push({ target: target.name, kind: kind + '   (parallel-spin check)', status: reelMoving ? 'FAIL (spin ran)' : 'PASS' });
-      if (reelMoving) fail++; else pass++;
-    }
+    /* Real-spin assertion (positive): a force chip MUST cause a real
+     * base spin per `rule_force_buttons_real_spin`. */
+    rows.push({
+      target: target.name,
+      kind: kind + '   (real-spin check)',
+      status: spinRan ? 'PASS' : 'FAIL (no spin ran)',
+    });
+    if (spinRan) pass++; else fail++;
   }
 }
 
