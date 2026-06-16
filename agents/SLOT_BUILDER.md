@@ -114,6 +114,8 @@ cortex-slot-builder --council=3 --scope end-to-end ~/Desktop/GDD/<file>.pdf
 | IGT playa-cli RE | `agents/research-pool/playa-cli-RE.md` | 1 014 | Dev server, GLR replay format, RGS proxy |
 | IGT config-parser RE | `agents/research-pool/config-parser-RE.md` | 1 148 | JSON manifest emitter (NOT full IR transpiler — honest scope) |
 | WoO controllers RE | `agents/research-pool/woo-controllers-RE.md` | 1 480 | hnwController + bigWinController + fsController production patterns |
+| **ENC: slot mechanics encyclopedia** (W49.T5.A) | `agents/research-pool/kimi-mechanics-encyclopedia.md` | 636 | **60 mechanics taxonomy + 53 HookBus events + 85 vendor→neutral glossary** — citation contract `[ENC §N.M]` |
+| **GDD corpus production RE** (W49.T5.B) | `agents/research-pool/gdd-corpus-RE.md` | 506 | **4 prod GDDs × 25 cross-features × 14 force chips** — parser coverage gap matrix |
 
 ### Honest gaps slot-builder MUST acknowledge
 

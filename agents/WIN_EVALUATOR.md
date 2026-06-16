@@ -34,6 +34,7 @@ Tier badge thresholds (5×/15×/50×/250×/1000×). Cap per jurisdiction
 | Books + academic | `agents/research-pool/books-academic.md` | 645 | Kassem ch.7 (paytable math) · 21 verified BibTeX |
 | WoO controllers RE | `agents/research-pool/woo-controllers-RE.md` | 1 480 | bigWinController tier thresholds (3-tier WoO production: 10×/25×/50×) |
 | IGT config-parser RE | `agents/research-pool/config-parser-RE.md` | 1 148 | IR scope correction — manifest emitter, NOT full math IR |
+| **GDD corpus production RE** (W49.T5.B) | `agents/research-pool/gdd-corpus-RE.md` | 506 | **4 prod GDD paytable shapes** (paylines / scatter-pays / variable-ways / cluster) — NO RTP numbers per `rule_no_math_unless_asked` |
 
 ### Tier ladder reality check
 

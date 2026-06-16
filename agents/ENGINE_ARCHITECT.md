@@ -34,6 +34,7 @@ dead-code detection via lifecycle hooks, anticipation halo arm/disarm
 | IGT playa-core RE | `agents/research-pool/playa-core-RE.md` | 1 651 | Stage / Sequencer / AssetLoader / Hook lifecycle |
 | WoO reels RE | `agents/research-pool/woo-reels-RE.md` | 1 237 | Production state machine — but NOTE: actual state machine lives in `renderer.ts` god-class (7 800 LOC), NOT `reels.ts` (math weight tables only) |
 | IGT qa-tools RE | `agents/research-pool/qa-tools-RE.md` | 560 | Engine cert harness reference |
+| **ENC: slot mechanics encyclopedia** (W49.T5.A) | `agents/research-pool/kimi-mechanics-encyclopedia.md` | 636 | **10 FSM patterns** (BaseSpin/FreeSpin/Bonus/Tumble/LockRespin/BigWinTier/Anticipation/Autoplay/ErrorRecovery/Session) + animation curves §5 (Bezier, slam-stop, cascade timing) |
 
 ### Engine pattern catalog (file:line bound)
 

@@ -31,6 +31,7 @@ NL Cruks (cool-off). Always cites rule numbers.
 | Web math + RNG + regulator | `agents/research-pool/web-math-rng-regulator.md` | 910 | UKGC LCCP + MGA RGF + AGCO Standards + NL KSA + SE Spelinspektionen + DE GlüStV + IT ADM + ON AGCO + NJ DGE + EU AI Act Art.5 |
 | Books + academic | `agents/research-pool/books-academic.md` | 645 | Schull "Addiction by Design" + Dixon LDW papers + historical regulator framework |
 | WoO controllers RE | `agents/research-pool/woo-controllers-RE.md` | 1 480 | §8 regulator-relevant findings (LDW, net-delta, big-win threshold compliance) |
+| **Mobile/PWA/Haptic encyclopedia** (W49.T5.D) | `agents/research-pool/mobile-pwa-haptic-RE.md` | 1 666 | **15 WCAG 2.2 AA criteria** + reduced-motion + color-blindness + screen-reader live regions + 24+ iOS Safari quirks catalog |
 
 ### Per-jurisdiction citation map (file:rule)
 

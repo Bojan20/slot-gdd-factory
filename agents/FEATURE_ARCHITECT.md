@@ -49,6 +49,9 @@ parity (21+ industry kinds).
 | WoO controllers RE | `agents/research-pool/woo-controllers-RE.md` | 1 480 | Production hnw + bigWin + fs controllers · sticky-pin · tier ladder · cancellation tokens |
 | Web mechanics universe | `agents/research-pool/web-slot-mechanics.md` | 1 623 | Cross-vendor feature catalog (industry parity reference) |
 | IGT playa-slot RE | `agents/research-pool/playa-slot-RE.md` | 1 089 | LockAndRespin / WheelBonus / Jackpot / Tumbling industry patterns |
+| **ENC: slot mechanics encyclopedia** (W49.T5.A) | `agents/research-pool/kimi-mechanics-encyclopedia.md` | 636 | **60 mechanics + 53 HookBus events + 8 vendor RE case studies** (BTG/Pragmatic/NetEnt/Yggdrasil/Relax/Wazdan/Stake/Evolution) |
+| **GDD corpus production RE** (W49.T5.B) | `agents/research-pool/gdd-corpus-RE.md` | 506 | **25 cross-features atlas** — parser coverage gap matrix · `aux_reel_multiplier` (`stormMultiplierReel.mjs`) block proposal |
+| **Vendor patents corpus** (W49.T5.C) | `agents/research-pool/vendor-patents-RE.md` | 1 548 | **6 verified patents + 65 honest unverified markers** — BTG NZ 716804 EXPIRED June 2024 (variable-ways open) |
 
 ### Feature pattern catalog (file:line bound)
 

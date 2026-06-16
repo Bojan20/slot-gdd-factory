@@ -44,6 +44,7 @@ discipline (hub z:30 vs fixed z:35); Apple HIG typography floor (11 px).
 | IGT playa-core RE | `agents/research-pool/playa-core-RE.md` | 1 651 | PIXI 7.3 + React 18 + @pixi/ui pipeline reference |
 | WoO reels RE | `agents/research-pool/woo-reels-RE.md` | 1 237 | `prefers-reduced-motion` GAP in BOTH — open opportunity |
 | IGT layout_tool RE | `agents/research-pool/layout-tool-RE.md` | 998 | Electron 9 + PIXI 6 layout authoring (PSD → JSON) — reference, NOT for adoption |
+| **Mobile/PWA/Haptic encyclopedia** (W49.T5.D) | `agents/research-pool/mobile-pwa-haptic-RE.md` | 1 666 | **15 WCAG 2.2 AA criteria + dvh/svh/lvh viewport + iOS Safari haptic honesty (no API)** + Android VibrationEffect + 70 tables + 55 URL citations |
 
 ### A11y / mobile pattern catalog
 

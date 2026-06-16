@@ -38,6 +38,8 @@ NEVER edits blocks. Coordinates.
 | SGF atomic inventory | `agents/research-pool/sgf-current-state.md` | 710 | 88 blokova × ownership map · LEGO single-owner validation |
 | Web mechanics universe | `agents/research-pool/web-slot-mechanics.md` | 1 623 | cross-vendor pattern arbitration |
 | IGT playa-slot RE | `agents/research-pool/playa-slot-RE.md` | 1 089 | industry domain layer reference |
+| **ENC: slot mechanics encyclopedia** (W49.T5.A) | `agents/research-pool/kimi-mechanics-encyclopedia.md` | 636 | **60 mechanics + 85 vendor→neutral glossary** — single source for LEGO arbitration & vendor-neutral terminology |
+| **Vendor patents corpus** (W49.T5.C) | `agents/research-pool/vendor-patents-RE.md` | 1 548 | **6 verified patents + 65 honest unverified markers** — clean-room implementation guide for arbitration disputes |
 
 ### Vendor-neutral glossary (HARD RULE #1 enforcement)
 
