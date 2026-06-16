@@ -366,6 +366,15 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
         cell.style.height = side + "px";
         cell.style.fontSize = (side * 0.32) + "px";
         cell.style.flex = "0 0 auto";
+        /* W48 bugfix v6 — semantic reel tagging. data-reel stays stable
+         * because cells never leave their reel column (rotateStripDown
+         * rotates within ONE reel only). data-row is intentionally NOT
+         * set at construction — cells move through strip positions
+         * during rotation, so a frozen-at-build data-row would lie. Row
+         * lookup goes through RECT_REELS[reel].cells[row+1] which is
+         * always accurate, even after rotation (locked cells stay
+         * pinned at their original strip index per the W48 v1 fix). */
+        cell.dataset.reel = String(c);
         strip.appendChild(cell);
         cellRefs.push(cell);
       }

@@ -926,21 +926,98 @@ function hwCountBonusOnGrid() {
   return n;
 }
 
+/* W48 bugfix v6 — _hwResolveCell(reel, row) returns the DOM cell at the
+ * SEMANTIC (reel, row) coordinate, no matter how the strip has rotated.
+ *
+ * Industry pattern: the canonical hold-and-spin trigger walks a 2D
+ * triggerGrid by reel + row and keys orbs per (reel, row). Our previous
+ * flat-DOM-index mapping (idx / HW_REELS, idx % HW_REELS) was wrong:
+ * the DOM is column-major + carries top/bottom buffer cells per reel,
+ * so the flat idx neither matched the (reel, row) pair nor stayed
+ * stable across rotation. This helper goes through RECT_REELS — the
+ * engine per-reel array — so visible row N inside reel R is always
+ * RECT_REELS[R].cells[N + 1] (the +1 hops the top buffer). Locked
+ * cells stay pinned at that array idx per the W48 v1 sticky-pin fix,
+ * so the lookup is stable even after dozens of respin rotations. */
+function _hwResolveCell(reelIdx, rowIdx) {
+  if (typeof window === 'undefined') return null;
+  const reels = window.RECT_REELS;
+  if (!Array.isArray(reels) || !reels[reelIdx]) return null;
+  const reel = reels[reelIdx];
+  const vis = reel.visibleRows;
+  if (rowIdx < 0 || rowIdx >= vis) return null;
+  /* +1: cell array layout is [topBuffer, vis_0, vis_1, ..., vis_N-1,
+   * bottomBuffer]. visible row N = strip index N+1. */
+  return reel.cells[rowIdx + 1] || null;
+}
+
 function hwHarvestBonus(opts) {
   /* Lock every BONUS cell on the grid, generating an orb value for each
    * NEW lock. Returns count of newly-locked cells.
    * opts.celebrate=true → run pop + delta + fly + jackpot celebration.
    *
-   * W48 bugfix v5 (Boki 2026-06-16): added opts.mapOnly. When true,
-   * positions + orb values are recorded into HW_STATE.lockedCells BUT
-   * the DOM is NOT mutated — bonus cells stay rendered as the raw
-   * symbol glyph that LANDED in the trigger spin. Used by _hwBeginRound
-   * so the intro placard appears OVER the original grid; only after the
-   * player dismisses the placard do we apply the orb chips (with the
-   * pop-in animation). This preserves Boki's rule: "tu gde se pao
-   * hold and win simbol, na toj celiji mora i da ostane kada se udje
-   * u hold and win — ne sme da se menja pozicija bilo kog simbola". */
+   * W48 bugfix v5: opts.mapOnly records positions + orbs without
+   * mutating the DOM, so the intro placard appears over the original
+   * trigger spin (bonus glyphs stay rendered as themselves).
+   *
+   * W48 bugfix v6 (Boki 2026-06-16): walks RECT_REELS by semantic
+   * (reel, row) instead of the flat querySelectorAll order. Old impl
+   * (idx → r,c) miscounted positions on any grid with buffer cells
+   * (every uniform reel topology since reelEngine default
+   * stripBufferCells=2). After this fix, the (reel, row) key written
+   * here matches the (reel, row) key read back in PHASE 2 verbatim. */
   const o = opts || {};
+  /* RECT_REELS path — semantic (reel, row) walk, no DOM idx math. */
+  if (typeof window !== 'undefined' && Array.isArray(window.RECT_REELS) && window.RECT_REELS.length > 0) {
+    let added = 0;
+    const reels = window.RECT_REELS;
+    for (let r = 0; r < reels.length; r++) {
+      const reel = reels[r];
+      const vis = reel.visibleRows;
+      for (let row = 0; row < vis; row++) {
+        const cell = reel.cells[row + 1];   // skip top buffer
+        if (!cell) continue;
+        const txt = (cell.textContent || '').trim();
+        const alreadyLocked = cell.classList.contains('is-locked-bonus');
+        if (txt !== HW_BONUS_SYMBOL && !alreadyLocked) continue;
+        const key = r + ',' + row;
+        if (!HW_STATE.lockedCells.has(key)) {
+          const orb = _hwRollOrb();
+          HW_STATE.lockedCells.set(key, orb);
+          if (!o.mapOnly) {
+            _hwApplyOrbToCell(cell, orb);
+            HW_STATE.totalWinX += orb.valueX;
+            if (orb.tier) HW_STATE.jackpotsHit.push(orb.tier);
+            if (o.celebrate !== false) {
+              _hwSpawnDelta(cell, orb.valueX);
+              _hwSpawnFly(cell, orb.valueX);
+              if (orb.tier) {
+                setTimeout(function () { _hwShowJackpot(orb.tier, orb.valueX); }, HW_T_JACKPOT_DELAY_MS);
+              }
+            }
+          } else {
+            /* Still accumulate the prize ledger so the intro placard
+             * "N ORBS COLLECTED" line reflects the real trigger count. */
+            HW_STATE.totalWinX += orb.valueX;
+            if (orb.tier) HW_STATE.jackpotsHit.push(orb.tier);
+          }
+          added++;
+        } else if (!o.mapOnly) {
+          const orb = HW_STATE.lockedCells.get(key);
+          _hwApplyOrbToCell(cell, orb);
+          cell.classList.remove('hw-just-landed');
+        }
+      }
+    }
+    if (added > 0 && !o.mapOnly) _hwHudUpdate({ pulseLocked: true, pulseTotal: true });
+    return added;
+  }
+
+  /* Fallback path — non-rectangular topology (hex / wheel / crash /
+   * slingo / plinko) doesn't populate RECT_REELS. Walk the flat DOM
+   * cell list; the key is still 'idx,0' so PHASE 2 retrieval below
+   * mirrors the write. Bonus presence on these shapes is rare and
+   * cosmetic — H&W is wired to uniform reel grids in shipping GDDs. */
   const host = document.getElementById('gridHost');
   if (!host) return 0;
   let added = 0;
@@ -948,9 +1025,7 @@ function hwHarvestBonus(opts) {
     const txt = (cell.textContent || '').trim();
     const alreadyLocked = cell.classList.contains('is-locked-bonus');
     if (txt !== HW_BONUS_SYMBOL && !alreadyLocked) return;
-    const r = Math.floor(idx / HW_REELS);
-    const c = idx % HW_REELS;
-    const key = r + ',' + c;
+    const key = 'flat,' + idx;
     if (!HW_STATE.lockedCells.has(key)) {
       const orb = _hwRollOrb();
       HW_STATE.lockedCells.set(key, orb);
@@ -958,25 +1033,11 @@ function hwHarvestBonus(opts) {
         _hwApplyOrbToCell(cell, orb);
         HW_STATE.totalWinX += orb.valueX;
         if (orb.tier) HW_STATE.jackpotsHit.push(orb.tier);
-        if (o.celebrate !== false) {
-          _hwSpawnDelta(cell, orb.valueX);
-          _hwSpawnFly(cell, orb.valueX);
-          if (orb.tier) {
-            setTimeout(function () { _hwShowJackpot(orb.tier, orb.valueX); }, HW_T_JACKPOT_DELAY_MS);
-          }
-        }
       } else {
-        /* Still accumulate the prize ledger so the intro placard
-         * "N ORBS COLLECTED" line reflects the real trigger count. */
         HW_STATE.totalWinX += orb.valueX;
         if (orb.tier) HW_STATE.jackpotsHit.push(orb.tier);
       }
       added++;
-    } else if (!o.mapOnly) {
-      /* Re-apply idempotently — keep existing orb data. */
-      const orb = HW_STATE.lockedCells.get(key);
-      _hwApplyOrbToCell(cell, orb);
-      cell.classList.remove('hw-just-landed');
     }
   });
   if (added > 0 && !o.mapOnly) _hwHudUpdate({ pulseLocked: true, pulseTotal: true });
@@ -984,13 +1045,19 @@ function hwHarvestBonus(opts) {
 }
 
 function hwApplyLocks() {
+  /* W48 v6 — semantic (reel,row) retrieval via RECT_REELS, mirrors the
+   * key shape written by hwHarvestBonus. Flat-fallback keys are still
+   * honoured for non-rectangular topologies. */
   const host = document.getElementById('gridHost');
   if (!host) return;
-  const cells = host.querySelectorAll('.cell');
   HW_STATE.lockedCells.forEach((orb, key) => {
-    const [r, c] = key.split(',').map(n => parseInt(n, 10));
-    const idx = r * HW_REELS + c;
-    const cell = cells[idx];
+    const parts = key.split(',');
+    let cell = null;
+    if (parts[0] === 'flat') {
+      cell = host.querySelectorAll('.cell')[parseInt(parts[1], 10)] || null;
+    } else {
+      cell = _hwResolveCell(parseInt(parts[0], 10), parseInt(parts[1], 10));
+    }
     if (!cell) return;
     _hwApplyOrbToCell(cell, orb);
     cell.classList.remove('hw-just-landed');
@@ -1005,8 +1072,12 @@ function _hwInstallObserver() {
   HW_STATE.observer = new MutationObserver(function (mutations) {
     if (!HW_STATE.active) return;
     if (HW_STATE.applying) return;
-    let needsHeal = false;
-    const allCells = host.querySelectorAll('.cell');
+    /* W48 v6 — observer doesn't try to recompute the key from the
+     * mutated cell (the old flat-idx math was wrong on buffered
+     * grids). Simpler: any mutation while H&W is RUNNING triggers
+     * a full hwApplyLocks() — idempotent re-paint of every locked
+     * cell. The hot path is cheap (≤ 15 locked cells × cell update). */
+    let touchesLocked = false;
     for (let i = 0; i < mutations.length; i++) {
       const m = mutations[i];
       const target = m.target;
@@ -1015,17 +1086,20 @@ function _hwInstallObserver() {
         ? target
         : (target.closest ? target.closest('.cell') : null);
       if (!cell) continue;
-      const idx = Array.prototype.indexOf.call(allCells, cell);
-      if (idx < 0) continue;
-      const key = Math.floor(idx / HW_REELS) + ',' + (idx % HW_REELS);
-      if (HW_STATE.lockedCells.has(key)) {
+      /* Only care if THIS cell is one of our locked ones — i.e. it
+       * carries .is-locked-bonus already, or it lost it. */
+      if (cell.classList.contains('is-locked-bonus') ||
+          (cell.dataset && cell.dataset.orbValue)) {
         const txt = (cell.textContent || '').trim();
         const hasClass = cell.classList.contains('is-locked-bonus');
         const hasData = !!cell.dataset.orbValue;
-        if (txt !== HW_BONUS_SYMBOL || !hasClass || !hasData) needsHeal = true;
+        if (txt !== HW_BONUS_SYMBOL || !hasClass || !hasData) {
+          touchesLocked = true;
+          break;
+        }
       }
     }
-    if (needsHeal) hwApplyLocks();
+    if (touchesLocked) hwApplyLocks();
   });
   HW_STATE.observer.observe(host, {
     subtree: true, childList: true, characterData: true,
@@ -1085,22 +1159,25 @@ async function _hwBeginRound() {
   _hwHudShow(true);
   _hwHudUpdate();
 
-  /* PHASE 2 — apply orb chips NOW. Each cell gets pop-in + delta + fly. */
-  const introHost = document.getElementById('gridHost');
-  if (introHost) {
-    const introCells = introHost.querySelectorAll('.cell');
-    HW_STATE.lockedCells.forEach(function (orb, key) {
-      const parts = key.split(',');
-      const r = parseInt(parts[0], 10);
-      const c = parseInt(parts[1], 10);
-      const idx = r * HW_REELS + c;
-      const cell = introCells[idx];
-      if (!cell) return;
-      _hwApplyOrbToCell(cell, orb);
-      _hwSpawnDelta(cell, orb.valueX);
-      _hwSpawnFly(cell, orb.valueX);
-    });
-  }
+  /* PHASE 2 — apply orb chips NOW. Each cell gets pop-in + delta + fly.
+   * W48 v6: lookup via _hwResolveCell (semantic reel,row) — matches the
+   * key shape that hwHarvestBonus({mapOnly:true}) wrote. */
+  HW_STATE.lockedCells.forEach(function (orb, key) {
+    const parts = key.split(',');
+    let cell = null;
+    if (parts[0] === 'flat') {
+      const host = document.getElementById('gridHost');
+      if (host) cell = host.querySelectorAll('.cell')[parseInt(parts[1], 10)] || null;
+    } else {
+      const reelIdx = parseInt(parts[0], 10);
+      const rowIdx  = parseInt(parts[1], 10);
+      cell = _hwResolveCell(reelIdx, rowIdx);
+    }
+    if (!cell) return;
+    _hwApplyOrbToCell(cell, orb);
+    _hwSpawnDelta(cell, orb.valueX);
+    _hwSpawnFly(cell, orb.valueX);
+  });
 }
 
 /* W48 bugfix v3 — bonus-symbol celebration before H&W intro.
@@ -1161,39 +1238,59 @@ function hwMaybeEnter() {
 function hwForceSeed(orbCount) {
   if (HW_STATE.active) return false;
   if (HW_STATE.entering) return false;
-  const host = document.getElementById('gridHost');
-  if (!host) return false;
-  const allCells = Array.from(host.querySelectorAll('.cell'));
-  if (allCells.length === 0) return false;
-  const N = Math.max(1, Math.min(orbCount || HW_FORCE_SEED_DEFAULT, allCells.length));
-  const picked = new Set();
-  while (picked.size < N) picked.add(Math.floor(_hwRng() * allCells.length));
+  /* W48 v6 — pick random VISIBLE (reel, row) coordinates from RECT_REELS,
+   * not flat DOM indices. Falls back to flat picks on non-rect topology.
+   * Each picked key is a 'reel,row' string matching the natural path. */
+  let pickedKeys = [];
+  if (typeof window !== 'undefined' && Array.isArray(window.RECT_REELS) && window.RECT_REELS.length > 0) {
+    const reels = window.RECT_REELS;
+    const allKeys = [];
+    for (let r = 0; r < reels.length; r++) {
+      const vis = reels[r].visibleRows;
+      for (let row = 0; row < vis; row++) allKeys.push(r + ',' + row);
+    }
+    if (allKeys.length === 0) return false;
+    const N = Math.max(1, Math.min(orbCount || HW_FORCE_SEED_DEFAULT, allKeys.length));
+    const pool = allKeys.slice();
+    while (pickedKeys.length < N && pool.length > 0) {
+      pickedKeys.push(pool.splice(Math.floor(_hwRng() * pool.length), 1)[0]);
+    }
+  } else {
+    const host = document.getElementById('gridHost');
+    if (!host) return false;
+    const cellCount = host.querySelectorAll('.cell').length;
+    if (cellCount === 0) return false;
+    const N = Math.max(1, Math.min(orbCount || HW_FORCE_SEED_DEFAULT, cellCount));
+    const seen = new Set();
+    while (seen.size < N) seen.add(Math.floor(_hwRng() * cellCount));
+    pickedKeys = Array.from(seen).map(i => 'flat,' + i);
+  }
 
-  /* W48 bugfix v4 — Boki rule: "mora prvo da se zavrsi spin, da se prikaze
-   * animacija dobitka pa tek onda da se udje u hold and win". The forced
-   * path used to mount the placard instantly. We now stamp the picked
-   * cells with the bonus glyph and play the same celebration the natural
-   * path uses BEFORE entering INTRO. */
+  /* W48 bugfix v4 — celebrate BEFORE entering INTRO. Stamp the bonus
+   * glyph on each picked cell so the celebration has visible targets. */
   HW_STATE.entering = true;
-  picked.forEach(function (idx) {
-    const cell = allCells[idx];
+  pickedKeys.forEach(function (key) {
+    const parts = key.split(',');
+    let cell = null;
+    if (parts[0] === 'flat') {
+      const host = document.getElementById('gridHost');
+      if (host) cell = host.querySelectorAll('.cell')[parseInt(parts[1], 10)] || null;
+    } else {
+      cell = _hwResolveCell(parseInt(parts[0], 10), parseInt(parts[1], 10));
+    }
     if (cell && !cell.classList.contains('is-locked-bonus')) {
       cell.textContent = HW_BONUS_SYMBOL;
     }
   });
   playHwBonusCelebration().then(function () {
     HW_STATE.entering = false;
-    _hwForceSeedMount(picked, allCells);
+    _hwForceSeedMount(pickedKeys);
   });
   return true;
 }
 
-function _hwForceSeedMount(picked, allCells) {
-  /* W48 bugfix v5 — same two-phase mount as the natural _hwBeginRound:
-   *   PHASE 1 (before intro): roll the orb ladger into HW_STATE.lockedCells
-   *     BUT do NOT mutate the DOM. The bonus glyph that was stamped by
-   *     hwForceSeed during the celebration stays visible behind the intro.
-   *   PHASE 2 (after intro dismissed): apply orb chips with pop-in. */
+function _hwForceSeedMount(pickedKeys) {
+  /* W48 v5+v6 — two-phase mount with semantic key shape. */
   _hwEnterPhase('INTRO');
   HW_STATE.respinsLeft = HW_RESPINS_AWARD;
   HW_STATE.respinsUsed = 0;
@@ -1202,11 +1299,8 @@ function _hwForceSeedMount(picked, allCells) {
   HW_STATE.lockedCells.clear();
   HW_STATE.jackpotsHit = [];
 
-  /* PHASE 1 — roll orb values, record positions, DO NOT mutate DOM. */
-  picked.forEach(function (idx) {
-    const r = Math.floor(idx / HW_REELS);
-    const c = idx % HW_REELS;
-    const key = r + ',' + c;
+  /* PHASE 1 — record positions, DO NOT mutate DOM. */
+  pickedKeys.forEach(function (key) {
     const orb = _hwRollOrb();
     HW_STATE.lockedCells.set(key, orb);
     HW_STATE.totalWinX += orb.valueX;
@@ -1219,15 +1313,19 @@ function _hwForceSeedMount(picked, allCells) {
     _hwEnterPhase('RUNNING');
     _hwHudShow(true);
     _hwHudUpdate();
-    /* PHASE 2 — apply orb chips NOW with pop-in animation. */
-    picked.forEach(function (idx) {
-      const cell = allCells[idx];
-      if (!cell) return;
-      const r = Math.floor(idx / HW_REELS);
-      const c = idx % HW_REELS;
-      const key = r + ',' + c;
+    /* PHASE 2 — apply orb chips with pop-in. */
+    pickedKeys.forEach(function (key) {
       const orb = HW_STATE.lockedCells.get(key);
       if (!orb) return;
+      const parts = key.split(',');
+      let cell = null;
+      if (parts[0] === 'flat') {
+        const host = document.getElementById('gridHost');
+        if (host) cell = host.querySelectorAll('.cell')[parseInt(parts[1], 10)] || null;
+      } else {
+        cell = _hwResolveCell(parseInt(parts[0], 10), parseInt(parts[1], 10));
+      }
+      if (!cell) return;
       _hwApplyOrbToCell(cell, orb);
       _hwSpawnDelta(cell, orb.valueX);
       _hwSpawnFly(cell, orb.valueX);

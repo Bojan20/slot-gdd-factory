@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-16T11:07:16.874Z",
+  "generatedAt": "2026-06-16T11:23:43.131Z",
   "blocksDir": "src/blocks",
   "totalBlocks": 85,
   "blocks": [
@@ -1235,7 +1235,7 @@
         },
         "orbTable": null
       },
-      "loc": 1389
+      "loc": 1487
     },
     {
       "name": "holdAndWinCreditBucket",
@@ -2188,7 +2188,7 @@
         "minStepPx": 0.5,
         "accelMinFactor": 0.3
       },
-      "loc": 970
+      "loc": 979
     },
     {
       "name": "reelEngineCSS",

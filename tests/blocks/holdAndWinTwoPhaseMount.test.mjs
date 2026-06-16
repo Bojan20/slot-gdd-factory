@@ -88,10 +88,11 @@ t('_hwBeginRound applies orb chips AFTER intro resolves (PHASE 2)', () => {
 /* ─── _hwForceSeedMount two-phase contract ───────────────────────── */
 
 t('_hwForceSeedMount records orbs without _hwApplyOrbToCell pre-intro', () => {
-  const mountBody = rt.match(/function _hwForceSeedMount\(picked, allCells\)[\s\S]*?\n\}/);
+  /* W48 v6 — signature changed from (picked, allCells) to (pickedKeys). */
+  const mountBody = rt.match(/function _hwForceSeedMount\(pickedKeys\)[\s\S]*?\n\}/);
   ok(mountBody, '_hwForceSeedMount body not extractable');
   /* The PHASE 1 forEach should ONLY touch HW_STATE.lockedCells (no DOM). */
-  const phase1 = mountBody[0].match(/picked\.forEach\(function \(idx\)\s*\{[\s\S]*?\}\);/);
+  const phase1 = mountBody[0].match(/pickedKeys\.forEach\(function \(key\)\s*\{[\s\S]*?\}\);/);
   ok(phase1, 'PHASE 1 forEach not found');
   ct(phase1[0], 'HW_STATE.lockedCells.set(key, orb)');
   if (phase1[0].includes('_hwApplyOrbToCell')) {
@@ -100,7 +101,7 @@ t('_hwForceSeedMount records orbs without _hwApplyOrbToCell pre-intro', () => {
 });
 
 t('_hwForceSeedMount applies orb chips AFTER intro promise resolves', () => {
-  const mountBody = rt.match(/function _hwForceSeedMount\(picked, allCells\)[\s\S]*?\n\}/);
+  const mountBody = rt.match(/function _hwForceSeedMount\(pickedKeys\)[\s\S]*?\n\}/);
   /* PHASE 2 lives inside _hwShowIntro(...).then(function () { ... }). */
   const phase2 = mountBody[0].match(/_hwShowIntro\(HW_STATE\.triggerOrbCount\)\.then\(function \(\)\s*\{[\s\S]*?\n  \}\);/);
   ok(phase2, 'PHASE 2 .then block not found');

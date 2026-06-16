@@ -68,7 +68,8 @@ t('hwForceSeed celebration path resolves to _hwForceSeedMount', () => {
   const m = hw.match(/function hwForceSeed[\s\S]*?return true;\s*\n\s*\}/);
   ok(m, 'hwForceSeed body not extractable');
   ct(m[0], 'playHwBonusCelebration().then');
-  ct(m[0], '_hwForceSeedMount(picked, allCells)');
+  /* W48 v6 — signature changed from (picked, allCells) to (pickedKeys). */
+  ct(m[0], '_hwForceSeedMount(pickedKeys)');
 });
 
 t('hwForceSeed early-returns if entering already in flight', () => {
