@@ -165,22 +165,10 @@ export function emitHexReelEngineCSS(cfg = defaultConfig()) {
  * .hex-reel-col.is-spinning .hex-reel-strip or on .cell.hex is
  * caught by tests/blocks/_no-muddy-cell.test.mjs. */
 .hex-reel-col.is-spinning .hex-reel-strip {
+  /* Cell glyph layer stays sharp. Motion overlay (shadow + streaks +
+   * speed lines) is emitted by src/blocks/motionOverlay.mjs from the
+   * orchestrator for the .hex-reel-col.is-spinning surface (Wave 3). */
   filter: none;
-}
-.hex-reel-col.is-spinning::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.22) 0%,
-    transparent 18%,
-    transparent 82%,
-    rgba(0, 0, 0, 0.22) 100%
-  );
-  mix-blend-mode: multiply;
-  z-index: 2;
 }
 .hex-reel-col.is-stopping .hex-reel-strip {
   transition: transform ${cfg.cushionBounceMs}ms cubic-bezier(0.34, 1.56, 0.64, 1);

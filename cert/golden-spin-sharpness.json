@@ -1,0 +1,35 @@
+{
+  "generated": "2026-06-16T17:24:13.174Z",
+  "gdds": {
+    "huff": {
+      "inspectedCells": 25,
+      "spinningSurfaces": 5,
+      "overlayPainted": 5,
+      "cellViolations": 0
+    },
+    "wrath": {
+      "inspectedCells": 25,
+      "spinningSurfaces": 5,
+      "overlayPainted": 5,
+      "cellViolations": 0
+    },
+    "crystal": {
+      "inspectedCells": 25,
+      "spinningSurfaces": 5,
+      "overlayPainted": 5,
+      "cellViolations": 0
+    },
+    "gates": {
+      "inspectedCells": 42,
+      "spinningSurfaces": 6,
+      "overlayPainted": 6,
+      "cellViolations": 0
+    },
+    "midnight": {
+      "inspectedCells": 42,
+      "spinningSurfaces": 6,
+      "overlayPainted": 6,
+      "cellViolations": 0
+    }
+  }
+}

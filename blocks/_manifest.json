@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-16T11:33:11.996Z",
+  "generatedAt": "2026-06-16T17:26:41.708Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 85,
+  "totalBlocks": 86,
   "blocks": [
     {
       "name": "anteBet",
@@ -1128,7 +1128,7 @@
         "cushionBounceMs": 240,
         "fadeFallbackMs": 200
       },
-      "loc": 410
+      "loc": 426
     },
     {
       "name": "historyLog",
@@ -1479,6 +1479,31 @@
         "strikeDurationMs": 700
       },
       "loc": 220
+    },
+    {
+      "name": "motionOverlay",
+      "file": "src/blocks/motionOverlay.mjs",
+      "testFile": "tests/blocks/motionOverlay.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave 3 (W48 spin-quality rollout) — Shared ::after / ::before motion-",
+      "exports": [
+        "defaultConfig",
+        "emitMotionOverlayCSS",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "shadowAlpha": 0.22,
+        "streakAlpha": 0.1,
+        "streakSpacingPx": 6,
+        "speedLinesAlpha": 0.06,
+        "speedLineSpeedMs": 600,
+        "enableShadow": true,
+        "enableStreaks": true,
+        "enableSpeedLines": true
+      },
+      "loc": 237
     },
     {
       "name": "multiplierLadder",
@@ -2176,8 +2201,8 @@
         "preSpin"
       ],
       "defaultConfig": {
-        "minRotations": 8,
-        "settleBreathMs": 80,
+        "minRotations": 5,
+        "settleBreathMs": 60,
         "stripBufferCells": 2,
         "staticPreRollMs": 220,
         "staticBlurSwapMs": 220,
@@ -2189,7 +2214,7 @@
         "minStepPx": 0.5,
         "accelMinFactor": 0.3
       },
-      "loc": 979
+      "loc": 1008
     },
     {
       "name": "reelEngineCSS",
@@ -2205,11 +2230,16 @@
       "lifecycleHooks": [],
       "emittedEvents": [],
       "defaultConfig": {
-        "blurPx": 4.5,
-        "blurDim": 0.88,
-        "blurFadeMs": 80
+        "blurPx": 0,
+        "blurDim": 1,
+        "blurFadeMs": 80,
+        "streakAlpha": 0.04,
+        "streakSpacingPx": 4,
+        "shadowAlpha": 0.2,
+        "speedLinesAlpha": 0.04,
+        "speedLineSpeedMs": 150
       },
-      "loc": 96
+      "loc": 183
     },
     {
       "name": "respin",
@@ -2649,25 +2679,27 @@
       "exports": [
         "defaultConfig",
         "emitSpinTempoRuntime",
+        "projectSpinProfile",
+        "projectSpinTempoIntoEngines",
         "resolveConfig"
       ],
       "lifecycleHooks": [],
       "emittedEvents": [],
       "defaultConfig": {
         "windupMs": 100,
-        "windupFrames": 6,
-        "windupPx": 38,
-        "accelMs": 120,
-        "steadyMs": 830,
-        "decelMs": 350,
-        "staggerMs": 320,
-        "bouncePx": 4,
-        "bounceDecay": 0.42,
-        "bounceCount": 1,
-        "bounceElasticity": 1.7,
-        "decelEasingSpeed": 0.11
+        "windupFrames": 7,
+        "windupPx": 42,
+        "accelMs": 130,
+        "steadyMs": 720,
+        "decelMs": 300,
+        "staggerMs": 180,
+        "bouncePx": 6,
+        "bounceDecay": 0.3,
+        "bounceCount": 2,
+        "bounceElasticity": 1.8,
+        "decelEasingSpeed": 0.16
       },
-      "loc": 169
+      "loc": 317
     },
     {
       "name": "stageBadge",
@@ -3461,6 +3493,7 @@
         "preSpin"
       ],
       "emittedEvents": [
+        "onLdwSuppressed",
         "onSkipComplete",
         "onWinPresentationEnd",
         "onWinPresentationStart"
@@ -3472,9 +3505,10 @@
         "noWinChance": 0.3,
         "winCycle": true,
         "bigWinCelebMs": 800,
-        "staggerStepMs": 80
+        "staggerStepMs": 80,
+        "suppressLDW": true
       },
-      "loc": 934
+      "loc": 976
     },
     {
       "name": "winRollup",

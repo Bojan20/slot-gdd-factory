@@ -464,6 +464,26 @@ import {
   emitSlingoSpinEngineCSS, emitSlingoSpinEngineRuntime,
   resolveConfig as resolveSlingoSpinEngineConfig,
 } from './blocks/slingoSpinEngine.mjs';
+/* Wave 3 (W48 spin-quality rollout) — shared ::after motion-overlay
+   block, painted on each engine's spinning surface so the cell layer
+   stays sharp on every topology (rectangular/hex/wheel/crash/plinko/
+   slingo). LEGO discipline: engines don't import motionOverlay; the
+   orchestrator emits it once per engine right after that engine's CSS. */
+import {
+  emitMotionOverlayCSS,
+  resolveConfig as resolveMotionOverlayConfig,
+} from './blocks/motionOverlay.mjs';
+/* Engine surface map for Wave 3 motion-overlay parity. SVG engines that
+ * rotate (wheel/crash/plinko) suppress vertical streaks per topology
+ * semantics. Rectangular stays on legacy reelEngineCSS overlay until
+ * Wave 3.1 migration. */
+const MOTION_OVERLAY_SURFACES = Object.freeze([
+  { surfaceSelector: '.hex-reel-col.is-spinning',        kindKey: 'hex' },
+  { surfaceSelector: '.grid-wheel .wheel-svg.is-spinning',   kindKey: 'wheel',  layers: { streaks: false } },
+  { surfaceSelector: '.grid-crash .crash-svg.is-spinning',   kindKey: 'crash',  layers: { streaks: false } },
+  { surfaceSelector: '.grid-plinko .plinko-svg.is-spinning', kindKey: 'plinko', layers: { streaks: false } },
+  { surfaceSelector: '.grid-slingo .slingo-col.is-spinning', kindKey: 'slingo' },
+]);
 /* Wave T-slim Phase 2 — extracted grid-render infrastructure (~700 LOC).
    Helpers (symAt / makeCell / cellSize / UNIFORM_REEL_KINDS) emit BEFORE
    the reel engine; per-kind render dispatcher emits AFTER engine + payline
@@ -674,6 +694,10 @@ ${emitWheelSpinEngineCSS(resolveWheelSpinEngineConfig(model))}
 ${emitCrashSpinEngineCSS(resolveCrashSpinEngineConfig(model))}
 ${emitPlinkoSpinEngineCSS(resolvePlinkoSpinEngineConfig(model))}
 ${emitSlingoSpinEngineCSS(resolveSlingoSpinEngineConfig(model))}
+${/* Wave 3 — motion overlay parity per engine (LEGO: orchestrator wires;
+     engines stay sharp-cell). Wheel/crash/plinko rotate or transform-non-
+     vertically → vertical streaks disabled there. */ ''}
+${MOTION_OVERLAY_SURFACES.map(s => emitMotionOverlayCSS(resolveMotionOverlayConfig(model), s)).join('\n')}
 ${emitAnticipationCSS(resolveAnticipationConfig(model))}
 ${emitAnticipationUniversalCSS(resolveAnticipationUniversalConfig(model))}
 
