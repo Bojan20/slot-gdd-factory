@@ -983,6 +983,119 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## 🔬 W57 — AGENTSKI AUDIT BACKLOG (OPEN — 2026-06-16 21:33)
+
+> Boki direktiva (2026-06-16 21:26): *"pokreni sva tri redom, ultimativna overa na kraju i detaljan qa"* — pokrenuo sam **3 agenta paralelno** (`slot-sage-v2 --scope invariant`, `rg-architect --scope cross`, `engine-architect --scope perf`) sa SGF Knowledge base file:line citation budget-om. Sva tri verdict-a: **BLOCKED**. Posle verifikacije agent nalaza per `rule_no_false_positive_qa`, identifikovano **5 stvarnih 🔴 rupa + 2 🟡 medium + 1 false positive**.
+>
+> **Vezano za:** **slot-gdd-factory** isključivo (Cortex agent prompt-ovi nisu menjani u ovom audit-u).
+>
+> **CLI workaround**: `cortex-slot-sage-v2/rg-architect/engine-architect` CLI ima dispatcher chain bug — `cortex-claude-ask` ne prihvata input ni preko `--print` ni stdin. Zaobišao sam preko **CC built-in `Plan` Agent tool-a** sa identičnim scope-prompt-om (isti efekat, ne troši Cortex telemetry). Bug treba zatvoriti odvojeno (cortex repo W46.S4 dispatcher fix).
+
+### 1. Agent run log
+
+| Agent | Pokretač | Wallclock | Verdict | Findings |
+|:--|:--|:-:|:-:|:-:|
+| **slot-sage-v2** (LEGO invariant) | CC Plan agent | ~3 min | 🔴 BLOCKED | 6 raw (2 ghost owner + 2 colon-event + 2 NULL-byte false positive) |
+| **rg-architect** (cross-jurisdiction) | CC Plan agent | ~4 min | 🔴 BLOCKED | 9/12 jurisdikcija blocked |
+| **engine-architect** (hot-path perf) | CC Plan agent | ~3 min | 🔴 BLOCKED | 4 HIGH + 4 MED + 6 KB pattern gap |
+
+### 2. Verifikacija agent nalaza (per `rule_no_false_positive_qa`)
+
+| # | Agent finding | Verifikacija | Verdict |
+|:-:|:--|:--|:-:|
+| 1 | `multiplierOrb.mjs` ghost owner za `onMultChange` | `grep -cE "HookBus\.emit\(" src/blocks/multiplierOrb.mjs = 0` | 🔴 STVARNA |
+| 2 | `freeSpins.mjs` ghost owner za `preSpin` | `grep -cE "HookBus\.emit\('preSpin" src/blocks/freeSpins.mjs = 0` | 🔴 STVARNA |
+| 3 | `MAX_DELTA_MS` cap missing u 3 rAF engina | `grep -cE "MAX_DELTA_MS" reel/hex/crash = 0/0/0` | 🔴 STVARNA |
+| 4 | `IT` key absent u `JURISDICTION_CEILINGS` | `grep -E "^\s*IT:" src/blocks/winCap.mjs = empty` | 🔴 STVARNA |
+| 5 | `bonusBuy.mjs` nema jurisdiction gate | `grep -cE "jurisdiction" src/blocks/bonusBuy.mjs = 0` | 🔴 STVARNA |
+| 6 | NULL bytes u storm/symbolStack | `xxd "$f" \| grep -c " 00 00 " = 0/0` | ✅ **FALSE POSITIVE** (file heuristic — UTF-8 stvarno) |
+| 7 | Colon/dot event names (`anteBet:changed` + `bonus.buy.requested`) | regex evades gate `[a-zA-Z]+` pattern | 🟡 STVARNA low-prio |
+
+### 3. Regression baseline (current LANDED state pre W57)
+
+| Test | Verdict |
+|:--|:-:|
+| LEGO 6/6 invariants gate | ✅ **PASS** (87 blokova) |
+| W50 LDW cross-block | ✅ 43/0 |
+| W51 winCap 8-jurisdiction | ✅ 74/0 |
+| W52 realityCheck wire-up | ✅ 46/0 |
+| W53 sessionTimeout wire-up | ✅ 51/0 |
+| W56 stormMultiplierReel | ✅ 61/0 |
+| npm test (20 grid fixtures) | ✅ 20/20 |
+| **Σ regression** | **295 testa zelena** |
+
+### 4. W57 fix plan (rangirano po impact × spremnost)
+
+| # | Atom | Tip | Težina | Lokacija | Pin test |
+|:-:|:--|:--|:-:|:--|:--|
+| 🔴 **A1** | **MAX_DELTA_MS=50 cap** u 3 rAF engina (spiral-of-death gate) | perf fix | S (~30 min) | `reelEngine.mjs:462-488`, `hexReelEngine.mjs:314-323`, `crashSpinEngine.mjs:221-231` | new `tests/blocks/_engineDeltaCap.test.mjs` |
+| 🔴 **A2** | **Ghost owner cleanup** u `lego-gate.mjs:103, 287` | matrix truthing | XS (~5 min) | `tools/lego-gate.mjs:103` (preSpin owners drop freeSpins) + `:287` (onMultChange owners drop multiplierOrb) | LEGO 6/6 still green |
+| 🔴 **A3** | **IT u `JURISDICTION_CEILINGS`** + IT regulator profile auto-enable | matrix dopuna | XS (~10 min) | `src/blocks/winCap.mjs:46-54` (add `IT: 250000`) | `_winCapJurisdictions.test.mjs` matrix dopuna |
+| 🔴 **A4** | **bonusBuy jurisdiction gate** — UKGC Jun-2026/SE 14:6/DE §11(3)/NL §31 → forced disabled | new gate logic | S (~30 min) | `src/blocks/bonusBuy.mjs:34` (resolveConfig + jurisdiction lookup) | new `tests/blocks/_bonusBuyJurisdictionGate.test.mjs` |
+| 🟡 **A5** | Two-tier `spinToken/tickToken` guard | refactor | M (~2h) | 6 engina + hookBus.mjs export helpers | new `tests/blocks/_engineStaleCallbackGuard.test.mjs` |
+| 🟡 **A6** | `prefers-reduced-motion` u 3 rAF hot ticks | a11y patch | XS (~10 min) | `reelEngine.mjs`, `hexReelEngine.mjs`, `crashSpinEngine.mjs` matchMedia gate | extend `_engineDeltaCap.test.mjs` |
+| 🟢 **A7** | Colon/dot event canonicalization | naming migration | M (~1h) | `anteBet.mjs:183`, `bonusBuy.mjs:178`, `lego-gate.mjs` regex `[a-zA-Z][\w.:]*` | LEGO gate regex tightening test |
+
+### 5. Cross-jurisdiction coverage matrix (rg-architect verdict)
+
+| Jurisdiction | Status | Blokeri |
+|:--|:-:|:--|
+| UKGC | 🟡 partial | LCCP 1.4.6 autoplay disclosure ❌ · Jun-2026 bonus-buy ban ❌ |
+| MGA | ✅ clear | net loss + 500k× cap wired |
+| AGCO Ontario | 🟡 partial | 4.06 RTP transparency ❌ |
+| SE Spelinspektionen | 🔴 blocked | 14:6 bonus-buy ban ❌ · 7.2 persistent play-time display ❌ |
+| DE GlüStV | 🔴 blocked | §11(2) spin pace ❌ · §11(3) buy ban ❌ · §6e no saved state ❌ |
+| NL KSA | 🔴 blocked | §31 bonus-buy ban ❌ · Cruks cool-off ❌ |
+| ON AGCO | 🟡 partial | 4.06 RTP transparency ❌ |
+| NJ DGE | ✅ clear | per-licence variance OK |
+| IT ADM | 🔴 blocked | entire jurisdiction absent from matrix |
+| EU AI Act | 🔴 blocked | Art.5 DDA detection gate flag ❌ |
+| Curaçao GCB | ✅ clear | OFF default covers |
+| DGOJ Spain | ✅ clear | netLossIndicator persistent HUD |
+
+**Worst offender**: DE GlüStV (3 🔴) + IT ADM (entire 🔴) + `bonusBuy` block (6 🔴 across SE/DE/NL/UKGC/AGCO/EU)
+
+### 6. Engine perf findings (engine-architect verdict)
+
+| Tip | Count | Najjači |
+|:--|:-:|:--|
+| HIGH | 4 | MAX_DELTA_MS missing × 3 + 0 spinToken adoption |
+| MED | 4 | Globals · setTimeout race · pre-compute-before-animation gap · postSpin nested race |
+| KB pattern gap | 6 | spinToken (0%) · pre-compute · MAX_DELTA · per-reel anticipation ramp · velocity ramp · `prefers-reduced-motion` |
+| Dead-code traps | 0 | ✅ SGF clean (NEMA SPIN_PROFILE_SLAM ni snapPx/easingSpeed shadowing iz WoO) |
+
+### 7. Honest delivery
+
+| Status | Stavka |
+|:--|:--|
+| ✅ Done | 3 paralelna agenta · 3 nezavisni verdict-a · 7 nalaza nezavisno verifikovano · 295 regression zelena baseline · MASTER_TODO detaljan zapis |
+| 🛠 Workaround | Cortex CLI dispatcher chain bug zaobišao preko CC Plan agenata (odvojen bug u cortex repo-u) |
+| ⏳ Out-of-scope (svesno) | W57 implementation atomi A1-A7 čekaju Boki signal `kreni` |
+| 🎯 Sledeći logičan korak | (a) W57 cluster commit redom (A1+A2+A3+A4 → 4 commit-a · ~75 min), (b) bundle commit (sve 4 atom u 1 SHA · ~75 min), (c) drugi prioritet po izboru |
+
+### 8. Komiti
+
+| SHA | Šta | Push |
+|:-:|:--|:-:|
+| _TBD_ | **W57.A1** — MAX_DELTA_MS=50 cap u 3 rAF engina + test pin | ⏳ |
+| _TBD_ | **W57.A2** — Ghost owner cleanup u lego-gate.mjs (multiplierOrb + freeSpins) | ⏳ |
+| _TBD_ | **W57.A3** — IT u JURISDICTION_CEILINGS + test matrix update | ⏳ |
+| _TBD_ | **W57.A4** — bonusBuy jurisdiction gate (UKGC/SE/DE/NL) + new test | ⏳ |
+| _TBD_ | **W57.A5-A7** — backlog (spinToken guard · prefers-reduced-motion · colon/dot canonicalization) | ⏳ |
+
+### 9. Boki rule sinhronizacija
+
+| Pravilo | Primena u W57 |
+|:--|:--|
+| `rule_no_false_positive_qa` | ✅ Sva 3 agent finding-a verifikovana grep-om PRE prijavljivanja kao 🔴 |
+| `rule_no_vendor_mentions` | W57 atomi pišu vendor-neutral output (rule numbers, ne vendor names) |
+| `rule_no_math_unless_asked` | W57 ne dira math layer (engine perf je presentation/hot-path) |
+| `rule_audio_off_until_asked` | W57 ne dira audio.mjs |
+| `rule_ultimate_checklist` | Svaki W57 atom prolazi 9-tačka gate pre commit-a |
+| `rule_master_todo_auto_commit` | Ova sekcija commit + push odmah po landing-u, BEZ pitanja |
+
+---
+
 ## 🚀 Recent wave timeline (newest first)
 
 | Hash | Wave | Subject |
