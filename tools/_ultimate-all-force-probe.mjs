@@ -76,9 +76,13 @@ const KIND_OUTCOME = {
   super_symbol:          { banner: true },
   jackpot:               { banner: true },
   big_win:               { sel: '.big-win-overlay, [data-bw-active="true"], #bwOverlay' },
-  /* Owned by other block — UFP de-dupes, but the OWNER's CTA still exists. */
+  /* Owned by other block — UFP de-dupes, but the OWNER's CTA still exists.
+   * bonus_buy = real-spin force (chip → planted scatters → spin → FS intro).
+   * ante_bet  = STAKE TOGGLE (industry-standard): click flips data-on,
+   *             bet stake updates, next manual spin uses new stake.
+   *             Not a real-spin force — assert toggle flip instead. */
   bonus_buy:             { sel: '#bonusBuyBtn, .bonus-buy-btn', ownedBy: 'bonusBuy' },
-  ante_bet:              { sel: '#anteBetToggle, .ante-bet', ownedBy: 'anteBet' },
+  ante_bet:              { sel: '#anteBetToggle, .ante-bet', ownedBy: 'anteBet', toggleOnly: true },
 };
 
 const ALL_KINDS = Object.keys(KIND_OUTCOME);
@@ -132,7 +136,9 @@ for (const target of TARGETS) {
       continue;
     }
 
-    /* Reset per-round signals. */
+    /* Reset per-round signals + force FSM back to BASE so chips that
+     * gate on phase (bonusBuy, anteBet) actually engage. Prior chip in
+     * the same iframe round can leave FSM in BW_INTRO/FS_INTRO/etc. */
     consoleErrors = [];
     await frame.evaluate(() => {
       window.__PROBE_PRE__ = false;
@@ -147,7 +153,14 @@ for (const target of TARGETS) {
        '#fsOverlay', '#bwOverlay', '.generic-feature-banner']
         .forEach(s => { const el = document.querySelector(s);
                         if (el && el.dataset) el.dataset.show = 'false'; });
+      /* Force-reset FSM to BASE so phase-gated CTAs (bonusBuy, anteBet)
+       * actually engage. Real player wouldn't be machine-gunning chips
+       * — this is purely a probe-level inter-chip isolation. */
+      if (window.FSM) {
+        try { window.FSM.phase = 'BASE'; } catch (_) {}
+      }
     });
+    await frame.waitForTimeout(150);
 
     /* Click — UFP chip if present, owner's CTA otherwise. */
     let clickOk = false;
@@ -168,6 +181,21 @@ for (const target of TARGETS) {
     if (!clickOk) {
       rows.push({ gdd: target.name, kind, status: 'SKIP', detail: 'click target not in DOM' });
       skip++;
+      continue;
+    }
+
+    /* Toggle-only kinds (ante_bet) don't trigger a real spin — they
+     * flip the stake config. Assert the data-on flip instead. */
+    if (outcome.toggleOnly) {
+      const flipped = await frame.evaluate(sel => {
+        const el = document.querySelector(sel.split(',')[0].trim());
+        return el && el.dataset && el.dataset.on === 'true';
+      }, outcome.sel);
+      const noErrors = consoleErrors.length === 0;
+      const ok = flipped && noErrors;
+      const detail = `toggle:${flipped ? '✓' : '✗'} errs:${consoleErrors.length}`;
+      if (ok) { pass++; rows.push({ gdd: target.name, kind, status: 'PASS', detail }); }
+      else { fail++; rows.push({ gdd: target.name, kind, status: 'FAIL', detail }); }
       continue;
     }
 
