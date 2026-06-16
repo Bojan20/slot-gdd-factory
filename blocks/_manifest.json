@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-16T01:05:08.592Z",
+  "generatedAt": "2026-06-16T08:50:27.315Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 81,
+  "totalBlocks": 82,
   "blocks": [
     {
       "name": "anteBet",
@@ -1064,6 +1064,44 @@
         "forceMultiplierValue": 3
       },
       "loc": 318
+    },
+    {
+      "name": "hapticFeedback",
+      "file": "src/blocks/hapticFeedback.mjs",
+      "testFile": "tests/blocks/hapticFeedback.test.mjs",
+      "category": "uncategorised",
+      "description": "player events. Mobile browsers expose `navigator.vibrate`, but misuse",
+      "exports": [
+        "defaultConfig",
+        "emitHapticFeedbackRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onBigWinTierEntered",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "bigWinMinTier": 3,
+        "fsTrigger": true,
+        "maxDurationMs": 500,
+        "patterns": {
+          "bigWin": [
+            40,
+            60,
+            40
+          ],
+          "fsTrigger": [
+            30,
+            40,
+            30,
+            40,
+            30
+          ]
+        }
+      },
+      "loc": 188
     },
     {
       "name": "hexReelEngine",
@@ -2339,6 +2377,8 @@
         "showVolatilitySelector": true,
         "showBetStepPresets": true,
         "showMaxWinCapToggle": true,
+        "showHapticToggle": true,
+        "defaultHapticEnabled": false,
         "volatilityOptions": [
           "low",
           "medium",
@@ -2359,7 +2399,7 @@
         "autoHideOnSpin": true,
         "ariaLabel": "Open settings"
       },
-      "loc": 990
+      "loc": 1014
     },
     {
       "name": "slamStop",

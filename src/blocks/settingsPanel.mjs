@@ -100,6 +100,8 @@ export function defaultConfig() {
     showVolatilitySelector:  true,
     showBetStepPresets:      true,
     showMaxWinCapToggle:     true,
+    showHapticToggle:        true,
+    defaultHapticEnabled:    false,
     volatilityOptions:       ['low', 'medium', 'high'],
     betStepPresets:          [0.10, 0.50, 1.00, 5.00],
     defaultVolatility:       'medium',
@@ -130,10 +132,11 @@ export function resolveConfig(model = {}) {
   for (const flag of ['showTurboToggle', 'showSoundToggle', 'showReducedMotionToggle',
                        'showQuickSpinToggle', 'showAutoHideWinToggle', 'showLanguageSelector',
                        'showVolatilitySelector', 'showBetStepPresets', 'showMaxWinCapToggle',
-                       'persistInLocalStorage', 'closeOnBackdrop', 'closeOnEscape',
+                       'showHapticToggle', 'persistInLocalStorage', 'closeOnBackdrop', 'closeOnEscape',
                        'autoHideOnSpin']) {
     if (m[flag] != null) cfg[flag] = !!m[flag];
   }
+  if (m.defaultHapticEnabled != null) cfg.defaultHapticEnabled = !!m.defaultHapticEnabled;
 
   /* Wave K7 — volatility option list (defensive: keep only canonical labels) */
   if (Array.isArray(m.volatilityOptions) && m.volatilityOptions.length > 0) {
@@ -524,6 +527,16 @@ export function emitSettingsPanelMarkup(cfg = defaultConfig()) {
           <button id="settingsMaxWinCapToggle" class="settings-toggle" type="button" aria-label="Max win cap toggle" aria-pressed="false"></button>
         </div>`);
   }
+  if (c.showHapticToggle) {
+    rows.push(`
+        <div class="settings-row" data-setting="hapticEnabled">
+          <div>
+            <div class="settings-row__label">Haptic Feedback</div>
+            <div class="settings-row__hint">Vibrate on big wins & free spins</div>
+          </div>
+          <button id="settingsHapticToggle" class="settings-toggle" type="button" aria-label="Haptic feedback toggle" aria-pressed="false"></button>
+        </div>`);
+  }
 
   /* Boki rule (04.06.2026): settings reuses the hamburger `#settingsMenuBtn`
    * already rendered by the orchestrator inside `.hub`. The block emits
@@ -591,6 +604,7 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
     var SHOW_VOLATILITY = ${c.showVolatilitySelector};
     var SHOW_BETSTEP    = ${c.showBetStepPresets};
     var SHOW_MAXWIN     = ${c.showMaxWinCapToggle};
+    var SHOW_HAPTIC     = ${c.showHapticToggle};
     var PERSIST      = ${c.persistInLocalStorage};
     var CLOSE_BACK   = ${c.closeOnBackdrop};
     var CLOSE_ESC    = ${c.closeOnEscape};
@@ -612,6 +626,7 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
       volatility:       ${JSON.stringify(c.defaultVolatility)},
       betStepPreset:    ${Number(c.defaultBetStepPreset)},
       maxWinCapEnabled: ${!!c.defaultMaxWinCapEnabled},
+      hapticEnabled:    ${!!c.defaultHapticEnabled},
     };
 
     var STATE = {
@@ -654,6 +669,7 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
       window.__SLOT_VOLATILITY__         = String(STATE.prefs.volatility);
       window.__SLOT_BET_STEP_PRESET__    = Number(STATE.prefs.betStepPreset);
       window.__SLOT_MAX_WIN_CAP_ENABLED__ = !!STATE.prefs.maxWinCapEnabled;
+      window.__SLOT_HAPTIC_ENABLED__     = !!STATE.prefs.hapticEnabled;
     }
 
     function _paintToggle(name, on) {
@@ -676,6 +692,7 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
       if (SHOW_VOLATILITY) _paintSegGroup('settingsVolatilitySeg', 'volatility', String(STATE.prefs.volatility));
       if (SHOW_BETSTEP)    _paintSegGroup('settingsBetStepSeg',    'bet-step-idx', String(BET_STEP_PRESETS.indexOf(STATE.prefs.betStepPreset)));
       if (SHOW_MAXWIN)     _paintToggle('MaxWinCap', STATE.prefs.maxWinCapEnabled);
+      if (SHOW_HAPTIC)     _paintToggle('Haptic',    STATE.prefs.hapticEnabled);
     }
 
     /* Wave K7 — helpers for segmented group rendering. */
@@ -800,6 +817,7 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
         window.HookBus.emit('onVolatilityChanged',    { value: DEFAULTS.volatility,       source: 'reset' });
         window.HookBus.emit('onBetStepPresetChanged', { value: DEFAULTS.betStepPreset,    source: 'reset' });
         window.HookBus.emit('onMaxWinCapToggled',     { enabled: DEFAULTS.maxWinCapEnabled, source: 'reset' });
+        /* Wave A10 — haptic global resynced via _applyGlobals() above. */
       }
     }
 
@@ -945,6 +963,12 @@ export function emitSettingsPanelRuntime(cfg = defaultConfig()) {
         var mw = _toggle('MaxWinCap');
         if (mw) mw.addEventListener('click', function () {
           settingsSet('maxWinCapEnabled', !STATE.prefs.maxWinCapEnabled);
+        });
+      }
+      if (SHOW_HAPTIC) {
+        var hapt = _toggle('Haptic');
+        if (hapt) hapt.addEventListener('click', function () {
+          settingsSet('hapticEnabled', !STATE.prefs.hapticEnabled);
         });
       }
 

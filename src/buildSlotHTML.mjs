@@ -348,6 +348,11 @@ import {
   emitSettingsPanelCSS, emitSettingsPanelMarkup, emitSettingsPanelRuntime,
   resolveConfig as resolveSettingsPanelConfig,
 } from './blocks/settingsPanel.mjs';
+// Wave A10 — Haptic feedback gate (Web Vibration API, opt-in)
+import {
+  emitHapticFeedbackRuntime,
+  resolveConfig as resolveHapticFeedbackConfig,
+} from './blocks/hapticFeedback.mjs';
 // Wave U10 — Paytable modal (industry-standard regulator-mandated info pane)
 import {
   emitPaytableCSS, emitPaytableMarkup, emitPaytableRuntime,
@@ -1053,6 +1058,9 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitTurboModeRuntime(resolveTurboModeConfig(model))}
   ${/* Wave U13 — settings panel runtime (gear modal + preferences). */ ''}
   ${emitSettingsPanelRuntime(resolveSettingsPanelConfig(model))}
+  ${/* Wave A10 — haptic feedback runtime. Reads window.__SLOT_HAPTIC_ENABLED__
+     * set by settingsPanel; fires on bigWin tier ≥ floor and FS trigger. */ ''}
+  ${emitHapticFeedbackRuntime(resolveHapticFeedbackConfig(model))}
   ${/* Wave U10 — paytable modal runtime (i-button show/hide + roster). */ ''}
   ${emitPaytableRuntime(resolvePaytableConfig(model), model)}
   ${emitSymbolInfoPopoverRuntime(resolveSymbolInfoPopoverConfig(model))}
