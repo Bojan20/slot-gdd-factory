@@ -886,6 +886,17 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
           grid.querySelectorAll('.cell--winsym, text.cell--winsym')
             .forEach(c => c.classList.remove('cell--winsym'));
         }
+        /* 2026-06-16 (Boki bug v4): "treba da se pokazuje dobitak tek
+         * kada padne celija na ril, ne kada pritisnem spin dugme i odmah
+         * da se pokaze simbol". The PREVIOUS spin's .is-win class lingers
+         * on cells that contain the winning symbols; as the strip rotates,
+         * those highlighted cells DOM nodes travel with the rotation,
+         * making the spin LOOK like wins are already lit. clearWinHighlight
+         * (orchestrator-scope helper) strips .is-win + .has-winselection +
+         * payline overlay in one shot. */
+        if (typeof clearWinHighlight === 'function') {
+          clearWinHighlight();
+        }
       } catch (_) {}
     }, { priority: -10 });
 

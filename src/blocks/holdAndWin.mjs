@@ -702,6 +702,11 @@ function _hwRng() {
 const HW_STATE = {
   phase: 'INACTIVE',
   active: false,            /* legacy back-compat — true iff phase !== INACTIVE */
+  /* W48 bugfix v4 — set true between hwMaybeEnter() / hwForceSeed()
+   * detection and _hwBeginRound() / _hwForceSeedMount(). Prevents a
+   * second postSpin from re-entering through either path while the
+   * bonus celebration is still playing. */
+  entering: false,
   respinsLeft: 0,
   respinsUsed: 0,
   totalWinX: 0,             /* accumulated × bet */
@@ -1098,12 +1103,20 @@ function playHwBonusCelebration() {
 
 function hwMaybeEnter() {
   if (HW_STATE.active) return false;
+  /* W48 bugfix v4 — guard against double-entry while celebration is in
+   * flight. The celebration is async (1500ms+); a second postSpin event
+   * (e.g. UFP fallback timer firing in parallel) could fire hwForceSeed
+   * in the middle and mount the intro before celebration completes,
+   * making the player see the placard with no preceding pulse. */
+  if (HW_STATE.entering) return false;
   if (hwCountBonusOnGrid() >= HW_TRIGGER_COUNT) {
     /* W48 bugfix v3 — celebrate the bonus pile FIRST, then mount intro.
      * Boki rule (2026-06-16): "mora prvo da se zavrsi spin, da se prikaze
      * animacija dobitka pa tek onda da se udje u hold and win". The
      * bonus-cell pulse is the "animacija dobitka" for this trigger type. */
+    HW_STATE.entering = true;
     playHwBonusCelebration().then(function () {
+      HW_STATE.entering = false;
       _hwBeginRound();
     });
     return true;
@@ -1113,6 +1126,7 @@ function hwMaybeEnter() {
 
 function hwForceSeed(orbCount) {
   if (HW_STATE.active) return false;
+  if (HW_STATE.entering) return false;
   const host = document.getElementById('gridHost');
   if (!host) return false;
   const allCells = Array.from(host.querySelectorAll('.cell'));
@@ -1121,6 +1135,26 @@ function hwForceSeed(orbCount) {
   const picked = new Set();
   while (picked.size < N) picked.add(Math.floor(_hwRng() * allCells.length));
 
+  /* W48 bugfix v4 — Boki rule: "mora prvo da se zavrsi spin, da se prikaze
+   * animacija dobitka pa tek onda da se udje u hold and win". The forced
+   * path used to mount the placard instantly. We now stamp the picked
+   * cells with the bonus glyph and play the same celebration the natural
+   * path uses BEFORE entering INTRO. */
+  HW_STATE.entering = true;
+  picked.forEach(function (idx) {
+    const cell = allCells[idx];
+    if (cell && !cell.classList.contains('is-locked-bonus')) {
+      cell.textContent = HW_BONUS_SYMBOL;
+    }
+  });
+  playHwBonusCelebration().then(function () {
+    HW_STATE.entering = false;
+    _hwForceSeedMount(picked, allCells);
+  });
+  return true;
+}
+
+function _hwForceSeedMount(picked, allCells) {
   _hwEnterPhase('INTRO');
   HW_STATE.respinsLeft = HW_RESPINS_AWARD;
   HW_STATE.respinsUsed = 0;
