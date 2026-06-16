@@ -929,12 +929,21 @@ function hwCountBonusOnGrid() {
 function hwHarvestBonus(opts) {
   /* Lock every BONUS cell on the grid, generating an orb value for each
    * NEW lock. Returns count of newly-locked cells.
-   * opts.celebrate=true → run pop + delta + fly + jackpot celebration. */
+   * opts.celebrate=true → run pop + delta + fly + jackpot celebration.
+   *
+   * W48 bugfix v5 (Boki 2026-06-16): added opts.mapOnly. When true,
+   * positions + orb values are recorded into HW_STATE.lockedCells BUT
+   * the DOM is NOT mutated — bonus cells stay rendered as the raw
+   * symbol glyph that LANDED in the trigger spin. Used by _hwBeginRound
+   * so the intro placard appears OVER the original grid; only after the
+   * player dismisses the placard do we apply the orb chips (with the
+   * pop-in animation). This preserves Boki's rule: "tu gde se pao
+   * hold and win simbol, na toj celiji mora i da ostane kada se udje
+   * u hold and win — ne sme da se menja pozicija bilo kog simbola". */
   const o = opts || {};
   const host = document.getElementById('gridHost');
   if (!host) return 0;
   let added = 0;
-  const bet = _hwBet();
   host.querySelectorAll('.cell').forEach((cell, idx) => {
     const txt = (cell.textContent || '').trim();
     const alreadyLocked = cell.classList.contains('is-locked-bonus');
@@ -945,25 +954,32 @@ function hwHarvestBonus(opts) {
     if (!HW_STATE.lockedCells.has(key)) {
       const orb = _hwRollOrb();
       HW_STATE.lockedCells.set(key, orb);
-      _hwApplyOrbToCell(cell, orb);
-      HW_STATE.totalWinX += orb.valueX;
-      added++;
-      if (orb.tier) HW_STATE.jackpotsHit.push(orb.tier);
-      if (o.celebrate !== false) {
-        _hwSpawnDelta(cell, orb.valueX);
-        _hwSpawnFly(cell, orb.valueX);
-        if (orb.tier) {
-          setTimeout(function () { _hwShowJackpot(orb.tier, orb.valueX); }, HW_T_JACKPOT_DELAY_MS);
+      if (!o.mapOnly) {
+        _hwApplyOrbToCell(cell, orb);
+        HW_STATE.totalWinX += orb.valueX;
+        if (orb.tier) HW_STATE.jackpotsHit.push(orb.tier);
+        if (o.celebrate !== false) {
+          _hwSpawnDelta(cell, orb.valueX);
+          _hwSpawnFly(cell, orb.valueX);
+          if (orb.tier) {
+            setTimeout(function () { _hwShowJackpot(orb.tier, orb.valueX); }, HW_T_JACKPOT_DELAY_MS);
+          }
         }
+      } else {
+        /* Still accumulate the prize ledger so the intro placard
+         * "N ORBS COLLECTED" line reflects the real trigger count. */
+        HW_STATE.totalWinX += orb.valueX;
+        if (orb.tier) HW_STATE.jackpotsHit.push(orb.tier);
       }
-    } else {
+      added++;
+    } else if (!o.mapOnly) {
       /* Re-apply idempotently — keep existing orb data. */
       const orb = HW_STATE.lockedCells.get(key);
       _hwApplyOrbToCell(cell, orb);
       cell.classList.remove('hw-just-landed');
     }
   });
-  if (added > 0) _hwHudUpdate({ pulseLocked: true, pulseTotal: true });
+  if (added > 0 && !o.mapOnly) _hwHudUpdate({ pulseLocked: true, pulseTotal: true });
   return added;
 }
 
@@ -1032,8 +1048,25 @@ function _hwEnterPhase(p) {
 }
 
 async function _hwBeginRound() {
-  /* Lock current scatter pile + roll initial orbs. Show intro. Then
-   * enter RUNNING phase with HUD up. */
+  /* W48 bugfix v5 — Boki rule: "tu gde se pao hold and win simbol, na
+   * toj celiji mora i da ostane kada se udje u hold and win. ne sme da
+   * se menja pozicija bilo kog simbola".
+   *
+   * Two-phase mount:
+   *   PHASE 1 (before intro placard): mapOnly harvest — discover the
+   *     (r,c) positions of the bonus pile and roll the orb values into
+   *     HW_STATE.lockedCells, but leave the grid DOM untouched. The
+   *     player sees the ORIGINAL trigger spin behind the intro placard,
+   *     with the bonus glyphs still rendered as themselves.
+   *
+   *   PHASE 2 (after intro dismissed): apply orb chips to the same
+   *     positions with the pop-in animation so the orbs feel earned at
+   *     the moment of reveal.
+   *
+   * Non-bonus cells are never touched in either phase — their symbols
+   * stay verbatim from the trigger spin and across every respin (the
+   * respin engine writes only NON-locked cells, gated by the same
+   * .is-locked-bonus selector). */
   _hwEnterPhase('INTRO');
   HW_STATE.respinsLeft = HW_RESPINS_AWARD;
   HW_STATE.respinsUsed = 0;
@@ -1042,7 +1075,8 @@ async function _hwBeginRound() {
   HW_STATE.lockedCells.clear();
   HW_STATE.jackpotsHit = [];
 
-  hwHarvestBonus({ celebrate: false });
+  /* PHASE 1 — discover only; do NOT mutate DOM. */
+  hwHarvestBonus({ mapOnly: true });
   HW_STATE.triggerOrbCount = HW_STATE.lockedCells.size;
   _hwInstallObserver();
 
@@ -1050,8 +1084,8 @@ async function _hwBeginRound() {
   _hwEnterPhase('RUNNING');
   _hwHudShow(true);
   _hwHudUpdate();
-  /* After the player dismisses the intro, animate the initial orbs'
-   * pop-in + fly so they feel earned. */
+
+  /* PHASE 2 — apply orb chips NOW. Each cell gets pop-in + delta + fly. */
   const introHost = document.getElementById('gridHost');
   if (introHost) {
     const introCells = introHost.querySelectorAll('.cell');
@@ -1155,6 +1189,11 @@ function hwForceSeed(orbCount) {
 }
 
 function _hwForceSeedMount(picked, allCells) {
+  /* W48 bugfix v5 — same two-phase mount as the natural _hwBeginRound:
+   *   PHASE 1 (before intro): roll the orb ladger into HW_STATE.lockedCells
+   *     BUT do NOT mutate the DOM. The bonus glyph that was stamped by
+   *     hwForceSeed during the celebration stays visible behind the intro.
+   *   PHASE 2 (after intro dismissed): apply orb chips with pop-in. */
   _hwEnterPhase('INTRO');
   HW_STATE.respinsLeft = HW_RESPINS_AWARD;
   HW_STATE.respinsUsed = 0;
@@ -1163,14 +1202,13 @@ function _hwForceSeedMount(picked, allCells) {
   HW_STATE.lockedCells.clear();
   HW_STATE.jackpotsHit = [];
 
+  /* PHASE 1 — roll orb values, record positions, DO NOT mutate DOM. */
   picked.forEach(function (idx) {
-    const cell = allCells[idx];
     const r = Math.floor(idx / HW_REELS);
     const c = idx % HW_REELS;
     const key = r + ',' + c;
     const orb = _hwRollOrb();
     HW_STATE.lockedCells.set(key, orb);
-    _hwApplyOrbToCell(cell, orb);
     HW_STATE.totalWinX += orb.valueX;
     if (orb.tier) HW_STATE.jackpotsHit.push(orb.tier);
   });
@@ -1181,6 +1219,19 @@ function _hwForceSeedMount(picked, allCells) {
     _hwEnterPhase('RUNNING');
     _hwHudShow(true);
     _hwHudUpdate();
+    /* PHASE 2 — apply orb chips NOW with pop-in animation. */
+    picked.forEach(function (idx) {
+      const cell = allCells[idx];
+      if (!cell) return;
+      const r = Math.floor(idx / HW_REELS);
+      const c = idx % HW_REELS;
+      const key = r + ',' + c;
+      const orb = HW_STATE.lockedCells.get(key);
+      if (!orb) return;
+      _hwApplyOrbToCell(cell, orb);
+      _hwSpawnDelta(cell, orb.valueX);
+      _hwSpawnFly(cell, orb.valueX);
+    });
   });
   return true;
 }

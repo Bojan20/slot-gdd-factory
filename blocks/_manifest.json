@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-16T10:56:01.554Z",
+  "generatedAt": "2026-06-16T11:07:16.874Z",
   "blocksDir": "src/blocks",
   "totalBlocks": 85,
   "blocks": [
@@ -1235,7 +1235,7 @@
         },
         "orbTable": null
       },
-      "loc": 1338
+      "loc": 1389
     },
     {
       "name": "holdAndWinCreditBucket",
