@@ -983,7 +983,7 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
-## 🔬 W57 — AGENTSKI AUDIT BACKLOG (OPEN — 2026-06-16 21:33)
+## 🔬 W57 — AGENTSKI AUDIT BACKLOG (✅ A1-A4 LANDED · A5-A7 queued — 2026-06-16 21:42)
 
 > Boki direktiva (2026-06-16 21:26): *"pokreni sva tri redom, ultimativna overa na kraju i detaljan qa"* — pokrenuo sam **3 agenta paralelno** (`slot-sage-v2 --scope invariant`, `rg-architect --scope cross`, `engine-architect --scope perf`) sa SGF Knowledge base file:line citation budget-om. Sva tri verdict-a: **BLOCKED**. Posle verifikacije agent nalaza per `rule_no_false_positive_qa`, identifikovano **5 stvarnih 🔴 rupa + 2 🟡 medium + 1 false positive**.
 >
@@ -1077,11 +1077,11 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 | SHA | Šta | Push |
 |:-:|:--|:-:|
-| _TBD_ | **W57.A1** — MAX_DELTA_MS=50 cap u 3 rAF engina + test pin | ⏳ |
-| _TBD_ | **W57.A2** — Ghost owner cleanup u lego-gate.mjs (multiplierOrb + freeSpins) | ⏳ |
-| _TBD_ | **W57.A3** — IT u JURISDICTION_CEILINGS + test matrix update | ⏳ |
-| _TBD_ | **W57.A4** — bonusBuy jurisdiction gate (UKGC/SE/DE/NL) + new test | ⏳ |
-| _TBD_ | **W57.A5-A7** — backlog (spinToken guard · prefers-reduced-motion · colon/dot canonicalization) | ⏳ |
+| **`545103d`** | **W57.A1+A2+A3** — engine delta cap (reelEngine+hexReelEngine, crashSpinEngine intentionally excluded auto-clamp Math.min) + lego-gate ghost owner cleanup (preSpin drop freeSpins · onMultChange drop multiplierOrb) + IT u JURISDICTION_CEILINGS (250000) + 2 new tests (`_engineDeltaCap.test.mjs` 13/0 + extended `_winCapJurisdictions.test.mjs` 8→9 jurisdikcija = 78/0) | ✅ |
+| **`debf14f`** | **W57.A4** — bonusBuy cross-jurisdiction ban gate (UKGC/SE/DE/NL forced disable kroz precedence chain regulator.profile > responsibleGambling.jurisdiction > bonusBuy.jurisdiction) + `BONUS_BUY_BANNED_JURISDICTIONS` frozen export + new test (`_bonusBuyJurisdictionGate.test.mjs` 45/0) | ✅ |
+| _TBD_ | **W57.A5** — Two-tier `spinToken/tickToken` stale-callback guard (6 engines · ~2h M effort) | ⏳ |
+| _TBD_ | **W57.A6** — `prefers-reduced-motion` runtime gate (3 rAF engines · honest re-eval: pravi RM design potreban, ne XS quick patch) | ⏳ |
+| _TBD_ | **W57.A7** — Colon/dot event canonicalization (`anteBet:changed` → `onAnteBetChanged`; `bonus.buy.requested` → `onBonusBuyRequested`) + gate regex tightening | ⏳ |
 
 ### 9. Boki rule sinhronizacija
 
