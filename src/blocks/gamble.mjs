@@ -145,9 +145,9 @@ export function emitGambleMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   let buttons = '';
   if (cfg.mode === 'color') {
-    buttons = `<button class="gamble-btn" data-pick="red">RED</button><button class="gamble-btn gamble-btn--alt" data-pick="black">BLACK</button>`;
+    buttons = `<button class="gamble-btn" data-pick="red" aria-label="Pick red">RED</button><button class="gamble-btn gamble-btn--alt" data-pick="black" aria-label="Pick black">BLACK</button>`;
   } else if (cfg.mode === 'suit') {
-    buttons = `<button class="gamble-btn" data-pick="hearts">♥</button><button class="gamble-btn gamble-btn--alt" data-pick="spades">♠</button><button class="gamble-btn" data-pick="diamonds">♦</button><button class="gamble-btn gamble-btn--alt" data-pick="clubs">♣</button>`;
+    buttons = `<button class="gamble-btn" data-pick="hearts" aria-label="Pick hearts">♥</button><button class="gamble-btn gamble-btn--alt" data-pick="spades" aria-label="Pick spades">♠</button><button class="gamble-btn" data-pick="diamonds" aria-label="Pick diamonds">♦</button><button class="gamble-btn gamble-btn--alt" data-pick="clubs" aria-label="Pick clubs">♣</button>`;
   } else {
     buttons = `<button class="gamble-btn" data-pick="up">↑ HIGHER</button><button class="gamble-btn gamble-btn--alt" data-pick="down">↓ LOWER</button>`;
   }

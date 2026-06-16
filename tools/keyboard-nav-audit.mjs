@@ -94,9 +94,35 @@ function auditFile(file) {
     /addEventListener\(\s*['"](keydown|keyup|keypress)['"]/.test(src) ||
     /\.onkeydown\s*=/.test(src);
   const hasButtonHTML = /<button\b/.test(src);
-  const hasNonButtonInteractive =
-    /cursor\s*:\s*pointer/.test(src) ||
-    /<div\b[^>]*\bdata-(click|action|cta)\b/i.test(src);
+
+  /* Tighter "non-button interactive" detection — pure cursor:pointer is
+   * not enough (many <button> styles use it). We confirm an actual
+   * non-button widget owns the click semantic by one of:
+   *   1. <div|span> with data-(click|action|cta)
+   *   2. cursor:pointer on a class that ALSO appears on a non-button tag
+   *      (div / span / a / li / label) in the file's markup
+   *   3. cursor:pointer on a bare type selector for a non-button element
+   *      (e.g. `.reelsHost { cursor: pointer }` where reelsHost is a div) */
+  function _detectNonButtonInteractive(source) {
+    if (/<(?:div|span)\b[^>]*\bdata-(?:click|action|cta)\b/i.test(source)) return true;
+
+    const cssClassRules = source.matchAll(
+      /(?<sel>(?:\.[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*\s*,?\s*)+)\{[^}]*cursor\s*:\s*pointer[^}]*\}/g,
+    );
+    for (const m of cssClassRules) {
+      const classes = (m.groups.sel.match(/\.[A-Za-z0-9_-]+/g) || []).map(s => s.slice(1));
+      for (const cls of classes) {
+        const esc = cls.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const onNonButton = new RegExp(
+          `<(?:div|span|a|li|label)\\b[^>]*\\bclass\\s*=\\s*['"\\\`][^'"\\\`]*\\b${esc}\\b`,
+          'i',
+        ).test(source);
+        if (onNonButton) return true;
+      }
+    }
+    return false;
+  }
+  const hasNonButtonInteractive = _detectNonButtonInteractive(src);
 
   if (NON_INTERACTIVE.has(fname)) return findings;
   if (!hasClickHandler && !hasKeyHandler && !hasButtonHTML && !hasNonButtonInteractive) {

@@ -504,7 +504,7 @@ export function emitHoldAndWinMarkup(cfg = defaultConfig()) {
   <div class="hw-box" id="hwLockedBox"><span class="hw-lbl">LOCKED</span><span class="hw-val" id="hwLocked">0</span></div>
   <div class="hw-box" id="hwTotalBox"><span class="hw-lbl">TOTAL</span><span class="hw-val" id="hwTotal">0.00</span></div>
 </div>
-<div id="hwIntro" class="hw-intro" data-show="false" role="dialog" aria-modal="true" aria-labelledby="hwIntroTitle">
+<div id="hwIntro" class="hw-intro" data-show="false" role="dialog" aria-modal="true" aria-labelledby="hwIntroTitle" tabindex="0" aria-label="Hold and Win intro — press Enter or Space to continue">
   <div class="hw-intro__inner">
     <div id="hwIntroTitle" class="hw-intro__title">${escapeHtml(cfg.title)}</div>
     <div class="hw-intro__subtitle">${escapeHtml(cfg.subtitle)}</div>
@@ -524,7 +524,7 @@ export function emitHoldAndWinMarkup(cfg = defaultConfig()) {
     <div class="hw-fullgrid__bonus" id="hwFullgridBonus">+${cfg.fullGridBonusX}×</div>
   </div>
 </div>
-<div id="hwSummary" class="hw-summary" data-show="false" role="dialog" aria-modal="true">
+<div id="hwSummary" class="hw-summary" data-show="false" role="dialog" aria-modal="true" tabindex="0" aria-label="Hold and Win summary — press Enter or Space to collect">
   <div class="hw-summary__inner">
     <div class="hw-summary__title">COLLECT</div>
     <div class="hw-summary__total" id="hwSummaryTotal">0.00</div>

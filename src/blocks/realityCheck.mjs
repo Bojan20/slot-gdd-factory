@@ -407,7 +407,7 @@ export function emitRealityCheckMarkup(cfg = defaultConfig()) {
       <button id="rcBtnQuit" class="rc-btn rc-btn--quit" type="button">QUIT</button>
     </div>
     <div id="rcPauseOptions" class="rc-pause-options" data-show="false">
-      ${cfg.pauseOptions.map(min => `<button class="rc-pause-btn" type="button" data-pause-min="${min}">${min} MIN</button>`).join('')}
+      ${cfg.pauseOptions.map(min => `<button class="rc-pause-btn" type="button" data-pause-min="${min}" aria-label="Pause for ${min} minute${min === 1 ? '' : 's'}">${min} MIN</button>`).join('')}
     </div>
   </div>
 </div>`;

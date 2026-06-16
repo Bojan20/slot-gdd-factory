@@ -356,8 +356,8 @@ export function emitSessionTimeoutMarkup(cfg = defaultConfig()) {
       <span class="st-meta" id="stMeta">Mandatory break in</span>
     </div>
     <div class="st-actions">
-      ${showExtend ? `<button id="stBtnExtend" class="st-btn" type="button">${_esc(cfg.copyContinue)}</button>` : ''}
-      ${showQuit   ? `<button id="stBtnQuit"   class="st-btn st-btn--quit" type="button">${_esc(cfg.copyQuit)}</button>` : ''}
+      ${showExtend ? `<button id="stBtnExtend" class="st-btn" type="button" aria-label="${_esc(cfg.copyContinue) || 'Continue session'}">${_esc(cfg.copyContinue)}</button>` : ''}
+      ${showQuit   ? `<button id="stBtnQuit"   class="st-btn st-btn--quit" type="button" aria-label="${_esc(cfg.copyQuit) || 'Quit session'}">${_esc(cfg.copyQuit)}</button>` : ''}
     </div>
   </div>
 </div>`;

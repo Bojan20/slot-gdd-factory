@@ -392,7 +392,7 @@ export function emitFreeSpinsOverlayMarkup(cfg = defaultConfig()) {
     <div class="fs-placard__title" id="fsPlacardTitle">${esc(c.introLabel)}</div>
     <div class="fs-placard__spins" id="fsPlacardSpins">10</div>
     <div class="fs-placard__sub" id="fsPlacardSub">${esc(c.introSub)}</div>
-    <button class="fs-placard__cta" id="fsPlacardCta" type="button">${esc(c.introCta)}</button>
+    <button class="fs-placard__cta" id="fsPlacardCta" type="button" aria-label="${esc(c.introCta) || 'Continue to free spins'}">${esc(c.introCta)}</button>
   </div>
 </div>`;
 }
