@@ -135,6 +135,8 @@ import {
 import {
   emitSpinTempoRuntime,
   resolveConfig as resolveSpinTempoConfig,
+  projectSpinProfile,
+  projectSpinTempoIntoEngines,
 } from './blocks/spinTempo.mjs';
 import {
   emitFreeSpinsCSS,
@@ -481,6 +483,11 @@ function escapeHtml(s) {
 
 /* Build the base-game-only standalone HTML for a parsed model. */
 export function buildSlotHTML(model) {
+  /* Wave 2 (2026-06-16) — Project the canonical spinTempo profile into
+   * every engine sub-config BEFORE the engines resolve. Single author-
+   * facing knob retunes all six engines. Per-engine pinned overrides
+   * win over projection (see spinTempo.projectSpinTempoIntoEngines). */
+  model = projectSpinTempoIntoEngines(model);
   const allSyms = [
     ...model.symbols.specials, ...model.symbols.high,
     ...model.symbols.mid, ...model.symbols.low,

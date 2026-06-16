@@ -103,6 +103,12 @@ function clampInt(v, lo, hi) {
  * GDD knobs come via `model.reelEngineHot` (shared cadence). The block
  * provides defensive clamping for any hex-specific override under
  * `model.hexReelEngine` (forward-compat — none required today).
+ *
+ * 2026-06-16 (Wave 2): orchestrator (buildSlotHTML.mjs) projects the
+ * canonical spinTempo profile via spinTempo.projectSpinProfile('hex')
+ * and writes the result into `model.hexReelEngine` BEFORE this block
+ * resolves. That keeps LEGO discipline (no cross-import) while making
+ * the canonical preset the single source of truth.
  */
 export function resolveConfig(model) {
   const cfg = defaultConfig();

@@ -183,6 +183,120 @@ export function resolveConfig(model) {
   return cfg;
 }
 
+/* ── projectSpinProfile(kind, profile) ──────────────────────────────────
+ * Wave 2 of the senior spin-quality plan: one canonical tempo source,
+ * six engines consume.
+ *
+ * Each engine has its own natural motion axis (translateY, rotate,
+ * stroke-dashoffset, gravity step) but shares cadence semantics. This
+ * projector takes the canonical SPIN_PROFILE knobs and returns the
+ * engine-shaped fields the engine's resolveConfig() previously baked
+ * from private DEFAULTS:
+ *
+ *   rectangular  → already consumes SPIN_PROFILE directly (no projection)
+ *   hex          → { spinDurationMs }
+ *   wheel        → { spinDurationMs }
+ *   crash        → { spinDurationMs }
+ *   plinko       → { rowStepMs }
+ *   slingo       → { perColumnSpinMs, staggerMs }
+ *
+ * Author retunes one block (spinTempo preset / per-key overrides) and
+ * all six engines respond. Engine-local DEFAULTS shrink to geometry-
+ * only (ball px, peg rows, segment count). Anything in milliseconds
+ * belongs here.
+ *
+ * The projector is a PURE function: given the same `profile` it always
+ * returns the same engine-shaped record. No globals, no side effects.
+ *
+ * @param {string} kind           — one of 'rectangular' | 'hex' | 'wheel'
+ *                                  | 'crash' | 'plinko' | 'slingo'
+ * @param {object} [profile]      — canonical profile (defaults to DEFAULTS)
+ * @returns {object}              — engine-shaped fields
+ */
+export function projectSpinProfile(kind, profile) {
+  const p = profile || DEFAULTS;
+  const fullCycle = (p.windupMs | 0) + (p.accelMs | 0) + (p.steadyMs | 0) + (p.decelMs | 0);
+  switch (String(kind || '').toLowerCase()) {
+    case 'rectangular':
+    case 'rect':
+      /* Rectangular engine consumes SPIN_PROFILE directly — projection
+       * is a no-op identity for symmetry with the other engines. */
+      return { ...p };
+    case 'hex':
+      /* Hex strip translates Y like rectangular; total column duration
+       * equals one full cycle. Stagger inherits canonical staggerMs. */
+      return {
+        spinDurationMs: fullCycle,
+        staggerMs:      p.staggerMs | 0,
+      };
+    case 'wheel':
+      /* Wheel rotates by N revolutions over the full cycle plus a half-
+       * cycle deceleration overshoot. Slightly longer than rectangular
+       * to give the rim a satisfying overshoot bounce. */
+      return {
+        spinDurationMs: fullCycle + ((p.decelMs | 0) >> 1),
+      };
+    case 'crash':
+      /* Crash curves draw across the full cycle (counter ticks per
+       * counterTickDivisor frames against the same total). */
+      return {
+        spinDurationMs: fullCycle,
+      };
+    case 'plinko':
+      /* Plinko ball drops one row per stagger tick (staggerMs is the
+       * natural per-row gate — accelMs+decelMs are bundled into the
+       * easing curve, not added rows). Bounded to plinko BOUNDS. */
+      return {
+        rowStepMs: Math.max(40, Math.min(500, p.staggerMs | 0)),
+      };
+    case 'slingo':
+      /* Slingo strips pump down per column; perColumnSpinMs ≈ full
+       * cycle, stagger matches canonical (tight cascade, no per-strip
+       * private value). */
+      return {
+        perColumnSpinMs: fullCycle,
+        staggerMs:       p.staggerMs | 0,
+      };
+    default:
+      return { ...p };
+  }
+}
+
+/**
+ * Wave 2 orchestrator helper — project the canonical spinTempo profile
+ * into every engine sub-config so all six engines retune from one knob.
+ *
+ * Per-engine fields the GDD already pinned WIN over projection — we
+ * only fill in shared cadence fields the author didn't override. Pure:
+ * returns a new model object, never mutates the input.
+ *
+ * Lives next to projectSpinProfile to keep tempo logic in one block
+ * (LEGO discipline) and to free orchestrator LOC budget.
+ *
+ * @param {object} model — parsed GDD model
+ * @returns {object} — model with engine sub-configs projection-filled
+ */
+export function projectSpinTempoIntoEngines(model) {
+  if (!model || typeof model !== 'object') return model;
+  const profile = resolveConfig(model);
+  function fill(src, key, projected) {
+    const existing = (src[key] && typeof src[key] === 'object') ? src[key] : {};
+    return { ...src, [key]: { ...projected, ...existing } };
+  }
+  const hex    = projectSpinProfile('hex',    profile);
+  const wheel  = projectSpinProfile('wheel',  profile);
+  const crash  = projectSpinProfile('crash',  profile);
+  const plinko = projectSpinProfile('plinko', profile);
+  const slingo = projectSpinProfile('slingo', profile);
+  let m = model;
+  m = fill(m, 'hexReelEngine',    { spinDurationMs: hex.spinDurationMs, staggerPerColumnMs: hex.staggerMs });
+  m = fill(m, 'wheelSpinEngine',  { spinDurationMs: wheel.spinDurationMs });
+  m = fill(m, 'crashSpinEngine',  { spinDurationMs: crash.spinDurationMs });
+  m = fill(m, 'plinkoSpinEngine', { rowStepMs:      plinko.rowStepMs });
+  m = fill(m, 'slingoSpinEngine', { perColumnSpinMs: slingo.perColumnSpinMs, staggerMs: slingo.staggerMs });
+  return m;
+}
+
 export function emitSpinTempoRuntime(cfg = defaultConfig()) {
   const c = resolveConfig({ spinTempo: cfg });
   return `
