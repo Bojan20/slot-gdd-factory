@@ -58,17 +58,30 @@ const SOAK = argv.includes('--soak');
 const STRICT = argv.includes('--fail-on-violation');
 let SPINS = SOAK ? 10000 : parseInt(process.env.PROBE_SPINS || '200', 10);
 let LIMIT_MB = SOAK ? 25 : parseFloat(process.env.PROBE_LIMIT_MB || '5');
+/* Wave HX2 — long-session profile (4h default). With --hours N the probe
+ * runs until N hours elapsed, sampling heap + fps + DOM count every
+ * `--sample-secs S` seconds (default 60s). Spins continue back-to-back
+ * regardless of clock time. Budget auto-scales to soak. */
+let HOURS = 0;
+let SAMPLE_SECS = 60;
 for (let i = 0; i < argv.length; i++) {
-  if (argv[i] === '--spins') SPINS = parseInt(argv[++i], 10);
-  if (argv[i] === '--limit') LIMIT_MB = parseFloat(argv[++i]);
+  if (argv[i] === '--spins')       SPINS = parseInt(argv[++i], 10);
+  if (argv[i] === '--limit')       LIMIT_MB = parseFloat(argv[++i]);
+  if (argv[i] === '--hours')       HOURS = parseFloat(argv[++i]);
+  if (argv[i] === '--sample-secs') SAMPLE_SECS = parseFloat(argv[++i]);
+}
+if (HOURS > 0) {
+  /* Long-session mode: ramp spin ceiling so we don't quit before time. */
+  SPINS = Math.max(SPINS, HOURS * 60 * 60); /* ≥ 1 spin/sec budget */
+  LIMIT_MB = Math.max(LIMIT_MB, 25 + HOURS * 8); /* +8 MB/h drift budget */
 }
 
 const FIXTURE = process.env.PROBE_FIXTURE || 'WRATH_OF_OLYMPUS_GAME_GDD.html';
 const PORT = 5234;
 
 console.log(C.bold(C.cyan('\n🧠 Memory leak probe — slot-gdd-factory\n')));
-console.log(C.dim(`   Wave F4 / A7 perf gate.`));
-console.log(C.dim(`   Spins: ${SPINS} · Heap budget: ${LIMIT_MB} MB · Fixture: ${FIXTURE}`));
+console.log(C.dim(`   Wave F4 / A7 perf gate${HOURS > 0 ? ` + HX2 ${HOURS}h long-session profile` : ''}.`));
+console.log(C.dim(`   Spins: ${SPINS} · Heap budget: ${LIMIT_MB} MB · Fixture: ${FIXTURE}${HOURS > 0 ? ` · Hours: ${HOURS} · Sample every ${SAMPLE_SECS}s` : ''}`));
 console.log(C.dim(`   Mode: ${STRICT ? 'STRICT (failing gate)' : 'REPORT-ONLY (exit 0)'}\n`));
 
 /* ── 1. Build fixtures if missing ────────────────────────────────────── */

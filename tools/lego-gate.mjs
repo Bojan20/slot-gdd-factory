@@ -215,6 +215,9 @@ const EXPECTED_EMIT_OWNERS = {
   onPwaInstallable:       ['pwaInstallability.mjs'],
   onPwaInstalled:         ['pwaInstallability.mjs'],
   onPwaSwReady:           ['pwaInstallability.mjs'],
+  /* Wave HX3+HX4 — i18n locale apply event. i18n.mjs is sole emitter
+   * (setLocale + initial paint announce). */
+  onLanguagePackApplied:  ['i18n.mjs'],
   /* Wave P8 — hot-reload (dev-mode SSE) is the sole emitter of these
    * dev-loop events. onGddChange is the in-page fast-path signal;
    * onHotReloadConnect / onHotReloadDisconnect track SSE lifecycle. */

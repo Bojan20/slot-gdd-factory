@@ -363,6 +363,11 @@ import {
   emitPwaInstallabilityMarkup, emitPwaInstallabilityRuntime,
   resolveConfig as resolvePwaInstallabilityConfig,
 } from './blocks/pwaInstallability.mjs';
+// Wave HX3 + HX4 — i18n (10 language packs) + currency formatter
+import {
+  emitI18nRuntime,
+  resolveConfig as resolveI18nConfig,
+} from './blocks/i18n.mjs';
 // Wave U10 — Paytable modal (industry-standard regulator-mandated info pane)
 import {
   emitPaytableCSS, emitPaytableMarkup, emitPaytableRuntime,
@@ -1081,6 +1086,9 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${/* Wave A8 — PWA installability runtime (blob-URL SW register +
      * beforeinstallprompt + appinstalled + iOS detection). */ ''}
   ${emitPwaInstallabilityRuntime(resolvePwaInstallabilityConfig({ ...model, gameName: model.name }))}
+  ${/* Wave HX3+HX4 — i18n + currency runtime (10 packs, [data-i18n]
+     * + [data-money] painters, onLocaleChanged listener). */ ''}
+  ${emitI18nRuntime(resolveI18nConfig(model))}
   ${/* Wave U10 — paytable modal runtime (i-button show/hide + roster). */ ''}
   ${emitPaytableRuntime(resolvePaytableConfig(model), model)}
   ${emitSymbolInfoPopoverRuntime(resolveSymbolInfoPopoverConfig(model))}

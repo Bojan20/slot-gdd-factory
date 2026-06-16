@@ -138,6 +138,100 @@ const REGISTRY = Object.freeze({
     ]),
     anchor: 'DGOJ Real Decreto 958/2020',
   }),
+
+  /* ─── Wave HX5 expansion (W48) ─────────────────────────────────── */
+
+  /* Ontario, Canada — AGCO Standards for Internet Gaming (Reg 4.21).
+   * Heavy social-responsibility quartet + mandatory self-exclusion path. */
+  AGCO: Object.freeze({
+    code: 'AGCO',
+    name: 'Alcohol & Gaming Commission of Ontario',
+    region: 'CA-ON',
+    required: Object.freeze([
+      'reality_check',
+      'session_timeout',
+      'net_loss_indicator',
+      'win_cap',
+      'autoplay',
+    ]),
+    recommended: Object.freeze([
+      'history_log',
+    ]),
+    anchor: 'AGCO Registrar Standards for Internet Gaming s.4.21',
+  }),
+
+  /* Romania — ONJN Order 144/2018 + technical guidelines.
+   * Reality check + session timer baseline. */
+  ONJN: Object.freeze({
+    code: 'ONJN',
+    name: 'Oficiul National pentru Jocuri de Noroc (Romania)',
+    region: 'RO',
+    required: Object.freeze([
+      'reality_check',
+      'session_timeout',
+    ]),
+    recommended: Object.freeze([
+      'net_loss_indicator',
+      'autoplay',
+    ]),
+    anchor: 'ONJN Order 144/2018 + technical guideline 12/2021',
+  }),
+
+  /* Greece — HGC Regulation 17/2021 (Hellenic Gaming Commission).
+   * Reality check + session timer + autoplay disclosure baseline. */
+  HGC: Object.freeze({
+    code: 'HGC',
+    name: 'Hellenic Gaming Commission',
+    region: 'GR',
+    required: Object.freeze([
+      'reality_check',
+      'session_timeout',
+      'autoplay',
+    ]),
+    recommended: Object.freeze([
+      'net_loss_indicator',
+      'win_cap',
+    ]),
+    anchor: 'HGC Regulation 17/2021 — online gambling player protection',
+  }),
+
+  /* Czech Republic — Ministry of Finance (Zakon c. 186/2016 Sb.).
+   * Standard responsibility set; net loss indicator mandatory. */
+  MFCR: Object.freeze({
+    code: 'MFCR',
+    name: 'Ministerstvo financi CR (Czech Republic)',
+    region: 'CZ',
+    required: Object.freeze([
+      'reality_check',
+      'session_timeout',
+      'net_loss_indicator',
+    ]),
+    recommended: Object.freeze([
+      'autoplay',
+      'win_cap',
+    ]),
+    anchor: 'Act No. 186/2016 Coll. on Gambling + Decree 18/2017',
+  }),
+
+  /* Sweden v2 — SGA tightening (2024-2025) adds mandatory win cap +
+   * autoplay disclosure on top of the prior quartet. Kept alongside
+   * SGA so legacy submissions to the original framework remain valid. */
+  SGA_V2: Object.freeze({
+    code: 'SGA_V2',
+    name: 'Spelinspektionen v2 (Sweden, 2024+)',
+    region: 'SE',
+    required: Object.freeze([
+      'reality_check',
+      'session_timeout',
+      'net_loss_indicator',
+      'win_cap',
+      'autoplay',
+    ]),
+    recommended: Object.freeze([
+      'history_log',
+    ]),
+    anchor: 'Spelinspektionen Foreskrifter v2 (2024-01) — strengthened controls',
+  }),
 });
 
 /**

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-16T09:06:09.701Z",
+  "generatedAt": "2026-06-16T09:26:09.664Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 84,
+  "totalBlocks": 85,
   "blocks": [
     {
       "name": "anteBet",
@@ -401,7 +401,7 @@
         "shakeMinTier": 3,
         "shakePeriodMs": 220
       },
-      "loc": 1216
+      "loc": 1296
     },
     {
       "name": "bonusBuy",
@@ -1346,7 +1346,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 503
+      "loc": 505
     },
     {
       "name": "hotReload",
@@ -1386,6 +1386,38 @@
         "indicator": true
       },
       "loc": 416
+    },
+    {
+      "name": "i18n",
+      "file": "src/blocks/i18n.mjs",
+      "testFile": "tests/blocks/i18n.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave HX3 + HX4 — Internationalization + currency formatting.",
+      "exports": [
+        "CURRENCY_FORMATS",
+        "CURRENCY_SYMBOLS",
+        "LANGUAGE_PACKS",
+        "defaultConfig",
+        "emitI18nRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onLocaleChanged"
+      ],
+      "emittedEvents": [
+        "onLanguagePackApplied"
+      ],
+      "defaultConfig": {
+        "enabled": true,
+        "defaultLocale": "en-US",
+        "defaultCurrency": "USD",
+        "extraPacks": {},
+        "fallbackChain": [
+          "en-US"
+        ],
+        "useIntlNumberFormat": false
+      },
+      "loc": 491
     },
     {
       "name": "lightning",

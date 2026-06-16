@@ -278,6 +278,8 @@ export const HOOK_EVENTS = Object.freeze([
   'onPwaInstallable',
   'onPwaInstalled',
   'onPwaSwReady',
+  /* Wave HX3+HX4: i18n + currency lifecycle (sole-owned by i18n.mjs). */
+  'onLanguagePackApplied',
   /* Wave P8: hot-reload BLOCK events (dev-mode, production-disabled).
    * onHotReloadConnect    {}                — SSE established.
    * onHotReloadDisconnect { reason }        — SSE closed / errored.
