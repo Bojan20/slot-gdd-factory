@@ -983,6 +983,65 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## 🇩🇪 W58.J-DE — GlüStV 2021 compliance gate (§11(2) + §6e) (✅ LANDED — 2026-06-17)
+
+> **Regulator anchor**: Glücksspielstaatsvertrag 2021 §11(2) Spielpause (≥ 5 s spin floor) + §6e Speicherverbot (no persisted state) + §11(3) Boni-Verbot (već zatvoren W57.A4 u bonusBuy.mjs · NE duplira se ovde).
+> **Vezano za**: slot-gdd-factory · math-blind (5-sec floor je presentation-layer cadence, ne math).
+
+### 1. Šta je zatvoreno
+
+| Block | Promena | Linije |
+|:--|:--|:-:|
+| `src/blocks/germanyComplianceGate.mjs` | **NEW** 236 LOC vendor-neutral centralized gate. Exports `STATE_CLEAR_PREFIXES = ['__SLOT_','__FS_','__HW_','__BB_','__RC_','__BG_']` (frozen) + `DE_MIN_SPIN_MS_DEFAULT = 5000` (frozen const). 3-key precedence (mirror W57.A4 / J-UKGC / J-AGCO / J-SE) auto-enabled kad jurisdiction === 'DE'; explicit opt-in via GDD knob. Bounds clamp na minSpinMs ∈ [1000, 30000]; prefix sanitization (alphanumeric + underscore only, HTML/CSS injection rejected). emitCSS no-op (block nema visual surface). emitRuntime boot-time IIFE: §11(2) postavi `window.__DE_MIN_SPIN_MS__ = 5000` + emit `onMinSpinPaceEnforced{jurisdiction, minSpinMs, rule:'DE-GluStV-2021-§11(2)'}`; §6e iteriraj localStorage + sessionStorage prefix-match clear + emit `onGameStateCleared{jurisdiction, prefixesCleared, count, rule:'DE-GluStV-2021-§6e'}`. Private-mode safe (try/catch around each storage access). Kad CLEAR_ON_BOOT=false → §6e branch suppresses storage touch ali §11(2) emit still fires (audit trail intact). | +236 |
+| `tools/lego-gate.mjs` | +`onMinSpinPaceEnforced: ['germanyComplianceGate.mjs']` + `onGameStateCleared: ['germanyComplianceGate.mjs']` sole-owner declarations (103 → **105** events). +`germanyComplianceGate.mjs` u HOOK_REGISTRATION_OPT_OUT (emit-only block). | +19 |
+| `src/buildSlotHTML.mjs` | Import + runtime emit slot posle stormMultiplierReel runtime-a (downstream HookBus listeners stignu da se registruju pre boot-time IIFE). 0-byte side effect kad non-DE. | +11 |
+| `blocks/_manifest.json` | Regen — 87 → **88** blocks (germanyComplianceGate registered). | +76/-15 |
+| `tests/blocks/germanyComplianceGate.test.mjs` | **NEW** 252 LOC: 11 sections (exports + frozen contract, defaultConfig + mutation-leak protection, resolveConfig 3-key precedence + auto-enable DE, knob clamping + prefix sanitization, emitCSS no-op, emitRuntime disabled empty, §11(2) wiring + flag + emit + citation, §6e wiring + helper + try/catch + indexOf prefix-match + emit + count + fresh-slice, clearOnBoot=false branch, LEGO contracts + W58.J-DE marker + GlüStV citation + HOOK_REGISTRATION_OPT_OUT, honest scope §11(2) + §6e + §11(3) W57.A4 + rule_no_math_unless_asked + no vendor strings). | +252 |
+| `package.json` | test:blocks chain extends sa novim testom | +1/-1 |
+
+### 2. Ultimate QA matrix (9/9 ZELENO)
+
+| # | Gate | Verdict |
+|:-:|:--|:-:|
+| 1 | `germanyComplianceGate.test.mjs` | ✅ **55/55** |
+| 2 | LEGO 7 invariants | ✅ **7/7** (88 blokova · 105 sole-owner · 72 listener · 11 legacy whitelisted) |
+| 3 | npm test (parser floor + grid) | ✅ 4/4 + 20/20 |
+| 4 | Block manifest regen | ✅ 88 blocks |
+| 5 | Vendor-neutral source | ✅ 0 hits |
+| 6 | Math-blind invariant | ✅ rule_no_math_unless_asked cited |
+| 7 | Private-mode storage safety | ✅ try/catch around each access |
+| 8 | Non-DE short-circuit (0 runtime cost) | ✅ emitRuntime disabled → empty string |
+| 9 | LEGO HOOK_REGISTRATION_OPT_OUT registration | ✅ emit-only block declared |
+
+### 3. Hash pin
+
+| SHA | Šta | Push |
+|:-:|:--|:-:|
+| `c74442c` | **W58.J-DE** — germanyComplianceGate.mjs (NEW 236 LOC) + 55/55 unit + LEGO 7/7 + 105 sole-owner events + orchestrator wire + manifest 87→88 | ✅ |
+
+### 4. Honest follow-up scope
+
+| Stavka | Status |
+|:--|:--|
+| §11(2) downstream enforcement (autoplay tick, slamStop, turboMode) | ⏳ W58.J-DE.2 atomic landing — gate infrastructure + emit dostupni, downstream consumers moraju da čitaju `window.__DE_MIN_SPIN_MS__` na dispatch time |
+| §6e cookies/IndexedDB clear | ⏳ W58.J-DE.3 — trenutno samo localStorage + sessionStorage; IndexedDB clear traži posebnu Promise-based path |
+| §11(3) bonus-buy ban | ✅ Already covered by W57.A4 (`BONUS_BUY_BANNED_JURISDICTIONS` u bonusBuy.mjs) |
+
+### 5. Cross-jurisdiction sweep progress
+
+| Atom | Jurisdiction | Status |
+|:--|:--|:-:|
+| W58.J-UKGC | autoplay disclosure | ✅ (`3f25d57`) |
+| W58.J-AGCO | RTP transparency | ✅ (`837f909`) |
+| W58.J-SE | play-time HUD | ✅ (`16d52f1`) |
+| **W58.J-DE** | **GlüStV §11(2)+§6e** | **✅ (`c74442c`)** |
+| W58.J-NL | NL KSA §31 + Cruks cool-off | ⏳ queued |
+| W58.J-EU | EU AI Act Art.5 DDA | ⏳ queued |
+
+**4/6 LANDED · 2/6 queued (NL, EU)**
+
+---
+
 ## 🌍 W58.J-SE — Persistent play-time display gate (✅ LANDED — 2026-06-17)
 
 > **Regulator anchor**: Spelinspektionen Föreskrifter SIFS 2018:6 §7.2 "Information om tid och förlust" — continuous-display obligation. Cousin obligations: UKGC RTS 12 + DGOJ Art 8 (NOT YET on whitelist — shrinks-only policy, dodaju se posebnim atomom kad bude potrebno).
