@@ -63,9 +63,17 @@ t('CSS: emits @keyframes hwBonusCelebrate', () => {
   ct(css, '@keyframes hwBonusCelebrate');
 });
 
-t('CSS: dims non-celebrating cells during host class', () => {
-  ct(css, '.gridHost.is-hnw-bonus-celebrating .cell');
-  ct(css, 'filter: brightness(0.55)');
+t('CSS: bonus cells get bright glow + drop-shadow (no host-class dim)', () => {
+  /* W48 v7 — host class no longer dims everything (Boki: "mutne celije").
+   * Bonus cells stand out via their OWN brightness/glow without dimming
+   * surrounding cells. */
+  ct(css, '.gridHost.is-hnw-bonus-celebrating .cell.cell--hnw-bonus-celebrate');
+  ct(css, 'filter: brightness(1.45)');
+  ct(css, 'drop-shadow');
+  /* No `.gridHost.is-hnw-bonus-celebrating .cell {` (the bare-cell dim rule
+   * we removed). Must NOT include the brightness 0.55 base override. */
+  const m = css.match(/\.gridHost\.is-hnw-bonus-celebrating \.cell,\s*\.gridHost\.is-hnw-bonus-celebrating text\s*\{[^}]*filter:\s*brightness\(0\.55\)/);
+  if (m) throw new Error('host-class dim rule still present');
 });
 
 t('CSS: celebration cells get scaled + drop-shadow', () => {

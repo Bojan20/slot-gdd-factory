@@ -500,20 +500,19 @@ export function emitHoldAndWinCSS(cfg = defaultConfig()) {
   .cell.cell--hnw-bonus-celebrate { animation: none; transform: none; }
 }
 
-/* ─── W48 BUGFIX v3 — bonus symbol celebration on H&W trigger ───────────
+/* ─── W48 BUGFIX v3 + v7 — bonus symbol celebration on H&W trigger ──────
  * Boki rule (2026-06-16, third pass): "za hold and win, mora prvo da se
  * zavrsi spin, da se prikaze animacija dobitka pa tek onda da se udje u
  * hold and win". Parallel to the FS-trigger flow: scatter celebration
- * plays for ~1500ms BEFORE the FS intro placard; the H&W flow needs the
- * same — when the trigger pile lands, pulse the bonus cells first, THEN
- * mount the intro. Reuses the scatterCelebration pattern (host class +
- * per-cell pulse keyframe) so visual cadence reads consistent between
- * trigger types. */
-.gridHost.is-hnw-bonus-celebrating .cell,
-.gridHost.is-hnw-bonus-celebrating text {
-  filter: brightness(0.55) saturate(0.7);
-  transition: filter 180ms ease;
-}
+ * plays for ~1500ms BEFORE the FS intro placard.
+ *
+ * v7 (Boki 2026-06-16, "sjebo si u base game reel spin reel land i mutne
+ * su celije"): removed the host-class dim that was painting EVERY cell
+ * with brightness 0.55 + saturate 0.7. If the host class lingered (e.g.
+ * a token-cancelled celebration), every base-game cell appeared muddy
+ * for the rest of the session. Bonus cells now stand out purely via
+ * their own bright glow + scale animation — surrounding cells stay
+ * untouched. */
 .gridHost.is-hnw-bonus-celebrating .cell.cell--hnw-bonus-celebrate,
 .gridHost.is-hnw-bonus-celebrating text.cell--hnw-bonus-celebrate {
   filter: brightness(1.45) saturate(1.25)
@@ -1431,6 +1430,25 @@ if (typeof window !== 'undefined') {
 
 if (typeof HookBus !== 'undefined' && !(typeof window !== 'undefined' && window.__hwInstalled)) {
   if (typeof window !== 'undefined') window.__hwInstalled = true;
+  /* W48 v7 — defensive preSpin cleanup: strip any leftover celebration
+   * classes so a token-cancelled or race-aborted celebration cannot leave
+   * the grid in a dim state across base-game spins. Belt-and-brace —
+   * playHwBonusCelebration's own timer normally cleans up, this is the
+   * seat-belt for the edge case Boki reported ("sjebo si u base game
+   * reel spin reel land i mutne su celije"). */
+  HookBus.on('preSpin', () => {
+    try {
+      var host = document.getElementById('gridHost');
+      if (host && host.classList) {
+        host.classList.remove('is-hnw-bonus-celebrating');
+        if (host.querySelectorAll) {
+          host.querySelectorAll('.cell--hnw-bonus-celebrate').forEach(function (c) {
+            c.classList.remove('cell--hnw-bonus-celebrate');
+          });
+        }
+      }
+    } catch (_) {}
+  }, { priority: 10 });
   HookBus.on('postSpin', () => {
     if (!HW_STATE.active) {
       hwMaybeEnter();

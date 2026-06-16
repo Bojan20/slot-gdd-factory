@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-16T11:23:43.131Z",
+  "generatedAt": "2026-06-16T11:33:11.996Z",
   "blocksDir": "src/blocks",
   "totalBlocks": 85,
   "blocks": [
@@ -1194,7 +1194,8 @@
         "onFsTrigger",
         "onSkipRequested",
         "onSpinResult",
-        "postSpin"
+        "postSpin",
+        "preSpin"
       ],
       "emittedEvents": [
         "onHoldAndWinEnd",
@@ -1235,7 +1236,7 @@
         },
         "orbTable": null
       },
-      "loc": 1487
+      "loc": 1505
     },
     {
       "name": "holdAndWinCreditBucket",
