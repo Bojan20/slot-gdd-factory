@@ -494,6 +494,81 @@ export function emitHoldAndWinCSS(cfg = defaultConfig()) {
   .hw-fullgrid__title,
   .hw-summary__cta { animation: none; transform: none; }
 }
+
+/* ─── W48 BUGFIX — H&W per-cell respin (Boki 2026-06-16) ────────────────
+ * Industry reference (template-neutral): the canonical hold-and-spin
+ * round renders the spin as INDEPENDENT per-cell CSS animations on
+ * non-orb cells, with NO parent strip transform applied. The strip
+ * itself stays still; each non-orb cell animates its own pulse + sweep,
+ * then a staggered stop reveals the new symbol per cell.
+ *
+ * Pre-existing slot-gdd-factory model translated the WHOLE strip via
+ * reel.strip.style.transform; the orb cells visually drifted with the
+ * spin even after rotateStripDown pinned their array index. The fix is
+ * to branch reelEngine.runOneBaseSpin into a dedicated per-cell respin
+ * mode when HW_STATE.active is true: each .cell (except .is-locked-bonus)
+ * gets the .hnw-cell-spinning class, a sweep + pulse plays in place, and
+ * after a stagger window each cell stops independently
+ * (.hnw-cell-stopping then .hnw-cell-stopped). The strip never translates.
+ * Locked cells get explicit suppression of any of the three per-cell
+ * classes — they stay statically rendered as orbs the entire respin. */
+.cell.hnw-cell-spinning {
+  position: relative;
+  overflow: hidden;
+  animation: hnwCellPulse 0.6s ease-in-out infinite;
+}
+.cell.hnw-cell-spinning::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(${cfg.haloColor}, 0.55) 50%,
+    transparent 100%
+  );
+  animation: hnwCellSweep 0.8s linear infinite;
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 1;
+}
+@keyframes hnwCellPulse {
+  0%, 100% { box-shadow: inset 0 0 8px  rgba(${cfg.haloColor}, 0.28); }
+  50%      { box-shadow: inset 0 0 22px rgba(${cfg.haloColor}, 0.55); }
+}
+@keyframes hnwCellSweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.cell.hnw-cell-stopping {
+  animation: hnwCellStopping 0.16s ease-out;
+}
+@keyframes hnwCellStopping {
+  0%   { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+.cell.hnw-cell-stopped {
+  animation: hnwCellLanded 0.34s cubic-bezier(.2, 1.4, .4, 1);
+}
+@keyframes hnwCellLanded {
+  0%   { transform: scale(0.82); filter: brightness(1.6); }
+  55%  { transform: scale(1.10); }
+  100% { transform: scale(1);    filter: brightness(1); }
+}
+/* Hard suppression — locked orbs NEVER take the per-cell classes even if
+ * the engine accidentally tagged them. Belt-and-brace seatbelt. */
+.cell.is-locked-bonus.hnw-cell-spinning,
+.cell.is-locked-bonus.hnw-cell-stopping,
+.cell.is-locked-bonus.hnw-cell-stopped {
+  animation: hwLocked 1600ms ease-in-out infinite !important;
+}
+.cell.is-locked-bonus.hnw-cell-spinning::after { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cell.hnw-cell-spinning,
+  .cell.hnw-cell-stopping,
+  .cell.hnw-cell-stopped { animation: none !important; }
+  .cell.hnw-cell-spinning::after { animation: none !important; display: none !important; }
+}
 `;
 }
 

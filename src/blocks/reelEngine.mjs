@@ -662,6 +662,96 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
     });
   }
 
+  /* W48 BUGFIX — H&W per-cell respin mode (Boki 2026-06-16, second pass).
+   * Industry-standard hold-and-spin renders the respin as per-cell CSS
+   * animations on non-orb cells, with NO strip transform. Locked orb
+   * cells are literally untouched for the entire respin window.
+   *
+   * The previous fix (rotateStripDown pinned-index) only fixed the array
+   * order — the parent strip kept translating, so visually the orb
+   * still drifted with the spin. This dedicated path bypasses strip
+   * transform entirely: per-cell CSS classes + symbol swap + stagger
+   * stop. Branch is taken only when window.HW_STATE.active === true. */
+  function runHnwPerCellRespin(onSettled) {
+    const turboMult = (typeof window !== 'undefined' && typeof window.__SLOT_TURBO_SPEED_MULT__ === 'number')
+      ? Math.max(0.1, Math.min(1, window.__SLOT_TURBO_SPEED_MULT__))
+      : 1.0;
+    const BASE_MS     = Math.round(900 * turboMult);
+    const STAGGER_MS  = Math.round(60  * turboMult);
+    const STOPPING_MS = 160;
+    const LANDED_MS   = 340;
+
+    const trig = (FREESPINS.triggerSymbol || 'S');
+    const forceN = FORCE_TRIGGER ? FORCE_TRIGGER.scatterCount : 0;
+
+    /* Neutralise strip transforms so locked cells never visually move
+     * with the parent strip. Done once at entry; restored implicitly by
+     * the next base spin via startSpinAll. */
+    if (RECT_REELS) {
+      RECT_REELS.forEach(reel => {
+        try { reel.strip.style.transform = ''; } catch (_) {}
+        reel.spinning = false;
+        reel.stopping = false;
+      });
+    }
+
+    /* Collect all .cell nodes, partition by lock state. */
+    const allCells = Array.from(grid.querySelectorAll('.cell'));
+    const nonLocked = allCells.filter(c => !c.classList.contains('is-locked-bonus'));
+
+    if (nonLocked.length === 0) {
+      /* Every cell is locked — full grid round; nothing to spin. Honour
+       * the lifecycle contract so listeners (postSpin pipeline, H&W
+       * harvester) still fire as if the respin completed. */
+      if (typeof HookBus !== 'undefined') {
+        HookBus.emit('onSpinResult', { duringFs: false, hwRespin: true });
+      }
+      if (typeof onSettled === 'function') setTimeout(onSettled, 200);
+      return;
+    }
+
+    /* Pre-determine the new symbol for each non-locked cell. Scatters
+     * forced by FORCE_TRIGGER are placed first to honour parity with the
+     * normal base spin path. */
+    const newSyms = nonLocked.map((_, i) =>
+      (i < forceN) ? trig : (randomSym() || '?'),
+    );
+
+    /* Add per-cell spinning class. Locked cells are NEVER touched —
+     * the .hnw-cell-spinning selector also has explicit suppression in
+     * the holdAndWin CSS to defend against rogue tagging. */
+    nonLocked.forEach(c => {
+      c.classList.remove('hnw-cell-stopped', 'hnw-cell-stopping');
+      c.classList.add('hnw-cell-spinning');
+    });
+
+    /* Stagger stop window: each cell goes spinning → stopping → stopped
+     * with the new symbol revealed in between. STAGGER_MS apart so the
+     * stop cascade is readable, not synchronised. */
+    setTimeout(() => {
+      nonLocked.forEach((cell, i) => {
+        setTimeout(() => {
+          cell.classList.remove('hnw-cell-spinning');
+          cell.classList.add('hnw-cell-stopping');
+          setTimeout(() => {
+            cell.classList.remove('hnw-cell-stopping');
+            cell.classList.add('hnw-cell-stopped');
+            cell.textContent = newSyms[i];
+            setTimeout(() => cell.classList.remove('hnw-cell-stopped'), LANDED_MS);
+          }, STOPPING_MS);
+        }, i * STAGGER_MS);
+      });
+
+      const tailMs = (nonLocked.length * STAGGER_MS) + STOPPING_MS + LANDED_MS + 80;
+      setTimeout(() => {
+        if (typeof HookBus !== 'undefined') {
+          HookBus.emit('onSpinResult', { duringFs: false, hwRespin: true });
+        }
+        if (typeof onSettled === 'function') onSettled();
+      }, tailMs);
+    }, BASE_MS);
+  }
+
   function runOneBaseSpin() {
     /* Wave T4 guard — rapid double/triple click on #spinBtn was racing:
        click 2 emitted preSpin while click 1's reels were mid-spin, the
@@ -675,10 +765,22 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
       : !!staticRerollInFlight;
     if (inFlight) return;
     cancelWinSymCycle();
+
+    /* W48 BUGFIX — H&W per-cell respin branch. When H&W is RUNNING, the
+     * player must see orb cells stay statically anchored while other
+     * cells spin individually. Branch BEFORE preSpin so feature blocks
+     * can read window.HW_STATE.active to coordinate their preSpin hooks. */
+    const hwActive = (typeof window !== 'undefined' &&
+                      window.HW_STATE && window.HW_STATE.active === true);
+
     /* HookBus: preSpin → blocks that arm per-spin state (anticipation,
        wild placement) run BEFORE the engine kicks. */
     if (typeof HookBus !== 'undefined') {
-      HookBus.emit('preSpin', { duringFs: false });
+      HookBus.emit('preSpin', { duringFs: false, hwRespin: hwActive });
+    }
+    if (hwActive && UNIFORM_REEL_KINDS.has(SHAPE.kind) && RECT_REELS) {
+      runHnwPerCellRespin(() => handlePostSpin(false));
+      return;
     }
     if (UNIFORM_REEL_KINDS.has(SHAPE.kind) && RECT_REELS) {
       startSpinAll(() => handlePostSpin(false));
