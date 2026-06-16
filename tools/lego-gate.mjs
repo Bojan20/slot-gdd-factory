@@ -156,6 +156,13 @@ const EXPECTED_EMIT_OWNERS = {
    * consumer (future H1 jurisdictionGate / regulator modal block)
    * shows the disclosure UI then re-calls autoplayStart with ack set. */
   onAutoplayDisclosureRequired: ['autoplay.mjs'],
+  /* W58.J-SE — Persistent play-time display gate per SE Spelinspektionen
+   * Föreskrifter SIFS 2018:6 §7.2 (continuous-time + net-loss display
+   * obligation). Fires ONCE at DOM ready when realityCheck block boots
+   * with requirePersistentPlayTimeDisplay=true (jurisdiction === 'SE').
+   * Downstream consumer (cert harness audit trail, telemetry) records
+   * the obligation activation. Payload: { jurisdiction, rule }. */
+  onPlayTimeDisplayRequired: ['realityCheck.mjs'],
   /* Wave H5 — Big-Win Tier ladder. Vendor-neutral 5-tier celebration
    * fired after the per-line rollup ends. tier is INT 1..5; label/
    * threshold/duration/color all GDD-driven so two games share the

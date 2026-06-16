@@ -195,8 +195,27 @@ export function defaultConfig() {
     dismissBlocksSpin: true,
     accentColor: '255,170,80',
     title: 'REALITY CHECK',
+    /* W58.J-SE — Spelinspektionen §7.2 persistent play-time display gate.
+     * SE jurisdiction requires a CONTINUOUSLY VISIBLE session-time HUD,
+     * not just a periodic interrupt. When gated active, runtime mounts
+     * a small `<div class="rc-play-time-hud">` chip that ticks every
+     * second showing elapsed mm:ss. Read-only display; no listeners,
+     * no spin pause. Emits onPlayTimeDisplayRequired once at boot for
+     * audit-trail consumers. */
+    jurisdiction: null,
+    requirePersistentPlayTimeDisplay: false,
   };
 }
+
+/* W58.J-SE — Spelinspektionen authority anchor.
+ * SGCG (Spelinspektionen) Föreskrifter SIFS 2018:6 §7.2 "Information om
+ * tid och förlust" — continuous-display obligation for player session
+ * time + net loss. Convergent obligations in other jurisdictions are
+ * cousins (UKGC RTS 12 persistent-net-loss-indicator + DGOJ Art 8),
+ * but SE's continuous-time requirement is the cleanest formulation.
+ * Whitelist export so external blocks (balanceHud HUD slot, cert
+ * harness audit trail) can introspect the obligation. */
+export const PLAY_TIME_DISPLAY_REQUIRED_JURISDICTIONS = Object.freeze(['SE']);
 
 export function resolveConfig(model = {}) {
   const cfg = defaultConfig();
@@ -238,6 +257,20 @@ export function resolveConfig(model = {}) {
     );
     if (hit) cfg.enabled = true;
   }
+
+  /* W58.J-SE — 3-key jurisdiction precedence (regulator.profile > responsibleGambling.jurisdiction > realityCheck.jurisdiction) — matches W57.A4/W58.J-UKGC/W58.J-AGCO pattern. */
+  let jurisdiction = null;
+  if (model.regulator && typeof model.regulator.profile === 'string') {
+    jurisdiction = model.regulator.profile.toUpperCase();
+  }
+  if (!jurisdiction && model.responsibleGambling && typeof model.responsibleGambling.jurisdiction === 'string') {
+    jurisdiction = model.responsibleGambling.jurisdiction.toUpperCase();
+  }
+  if (!jurisdiction && typeof m.jurisdiction === 'string') {
+    jurisdiction = m.jurisdiction.toUpperCase();
+  }
+  cfg.jurisdiction = jurisdiction;
+  cfg.requirePersistentPlayTimeDisplay = !!(jurisdiction && PLAY_TIME_DISPLAY_REQUIRED_JURISDICTIONS.indexOf(jurisdiction) !== -1);
 
   return cfg;
 }
@@ -367,6 +400,29 @@ export function emitRealityCheckCSS(cfg = defaultConfig()) {
   @media (max-width: 620px) {
     .rc-modal { padding: 1.1rem 1rem; }
     .rc-stats { grid-template-columns: 1fr; }
+  }
+  /* W58.J-SE — Persistent play-time HUD chip (SE Spelinspektionen §7.2).
+   * Continuously visible during gameplay; updates every second. Mounted
+   * by runtime only when requirePersistentPlayTimeDisplay is true. */
+  .rc-play-time-hud {
+    position: fixed;
+    top: env(safe-area-inset-top, 6px);
+    right: env(safe-area-inset-right, 6px);
+    padding: 4px 10px;
+    background: rgba(0, 0, 0, 0.55);
+    color: rgb(${cfg.accentColor});
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", monospace, sans-serif;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    border-radius: 999px;
+    z-index: 9000;
+    pointer-events: none;
+    user-select: none;
+    line-height: 1.2;
+    /* WCAG SC 2.5.5 ≥ 44×44 not required (informational badge, not control). */
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rc-play-time-hud { transition: none; }
   }
 `;
 }
@@ -799,11 +855,67 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
       window.rcResetSession = rcResetSession;
     }
 
+    /* ── W58.J-SE — Persistent play-time HUD (SE Spelinspektionen §7.2) ──
+       Continuous-display obligation: a small chip showing elapsed mm:ss
+       must be visible at all times during gameplay. Mounts once at boot
+       when requirePersistentPlayTimeDisplay is true, ticks every second
+       via setInterval. Sole-owner emit of onPlayTimeDisplayRequired so
+       audit-trail consumers (cert harness, telemetry) can record the
+       jurisdiction obligation activation. Read-only: HUD never blocks
+       spin or alters STATE.elapsedMs (it READS elapsed only). */
+    var __W58SE_REQUIRED = ${cfg.requirePersistentPlayTimeDisplay};
+    var __W58SE_JURISDICTION = ${JSON.stringify(cfg.jurisdiction || '')};
+    function _formatMMSS(ms) {
+      var s = Math.max(0, Math.floor(ms / 1000));
+      var m = Math.floor(s / 60);
+      var ss = s % 60;
+      return (m < 10 ? '0' + m : '' + m) + ':' + (ss < 10 ? '0' + ss : '' + ss);
+    }
+    function _mountPlayTimeHud() {
+      if (!__W58SE_REQUIRED) return;
+      if (typeof document === 'undefined') return;
+      if (document.getElementById('rcPlayTimeHud')) return; /* idempotent */
+      var hud = document.createElement('div');
+      hud.id = 'rcPlayTimeHud';
+      hud.className = 'rc-play-time-hud';
+      hud.setAttribute('role', 'status');
+      hud.setAttribute('aria-live', 'off'); /* polite suppression — purely visual */
+      hud.setAttribute('aria-label', 'Session time');
+      hud.textContent = '00:00';
+      document.body.appendChild(hud);
+      /* 1-second update. Stale-callback safe via id-presence check. */
+      setInterval(function () {
+        var el = document.getElementById('rcPlayTimeHud');
+        if (!el) return;
+        /* Use cumulative session elapsed; STATE.elapsedMs ticks during
+         * preSpin / autoplay listeners. For an idle-but-mounted page,
+         * also poll wall-clock fallback so the HUD doesn't freeze at
+         * 00:00 when no spin has fired yet. */
+        if (STATE.elapsedMs > 0) {
+          el.textContent = _formatMMSS(STATE.elapsedMs);
+        } else if (STATE._lastTickWall) {
+          el.textContent = _formatMMSS(_now() - STATE._lastTickWall);
+        }
+      }, 1000);
+      /* Sole-owner emit (LEGO §4 contract). */
+      if (typeof window !== 'undefined' && window.HookBus &&
+          typeof window.HookBus.emit === 'function') {
+        try {
+          window.HookBus.emit('onPlayTimeDisplayRequired', {
+            jurisdiction: __W58SE_JURISDICTION,
+            rule: 'SE-SIFS-2018:6-7.2',
+          });
+        } catch (_) {}
+      }
+    }
+
     if (typeof document !== 'undefined') {
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', _wire, { once: true });
+        document.addEventListener('DOMContentLoaded', _mountPlayTimeHud, { once: true });
       } else {
         _wire();
+        _mountPlayTimeHud();
       }
     }
 
