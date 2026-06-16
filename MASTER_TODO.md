@@ -323,7 +323,7 @@ Ako 2 domain ownera daju kontradiktoran savet:
 | **Orchestrator size** | `buildSlotHTML.mjs` 799 LOC (< 800 budget, T-slim Phase 2 closed it) |
 | **Typography floor** | **11px** (Apple HIG / WCAG min readable) enforced by Wave UQ — 16 violators fixed in single sweep (stageBadge / balanceHud / betSelector / anteBet / bonusBuy / bonusBuyDeterministic / freeSpins / holdAndWin / pathAwareMultiplier × 2 / progressiveFreeSpins / realityCheck / weightedWheelSegments / themeCSS × 4 / gridRenderer × 2) |
 
-## 🧠 W49 — ULTIMATE SLOT AGENTS KNOWLEDGE BASE (✅ T1+T2+T3 LANDED · T4 QA GREEN — 2026-06-16)
+## 🧠 W49 — ULTIMATE SLOT AGENTS KNOWLEDGE BASE (✅ T1+T2+T3+T4+T5 ALL LANDED — 2026-06-16)
 
 > Boki direktiva (2026-06-16 ~16:00 → 16:35): *"hocu da agent ima sve ove informacije moguce, svi agenti da znaju sve"* → *"ja zelim da se napravi od igt fajlova svih i od svega sto imamo moi ovde u slot gdd i na netu i po knjigama i po svemu da napravimo ultimativne agente koji ce umek u sebe da imaju info da to lokujemo i da se sve radi savrseno u svim blokovima"* → *"ajde iskoristi svaki AI koji mozes neka istrazi svu mogucu imehaniku koja postoji na svetu u IT slot indusstriji, neka reverse enginering nek mse odradi za sve moguce blokove i neka se stavi u jedan dokument, ali to mora da bude deep seek istrazivanje, do najsitnijih atoma mogucih"* → *"daj spisak sta si sve nasao a fali nam i cime sve treba da nahranimo agente svakog ponaosob da je ekpert za svoj deo"*.
 >
@@ -443,7 +443,9 @@ Ako 2 domain ownera daju kontradiktoran savet:
 | `e05a618` | SLOT_MECHANICS_ENCYCLOPEDIA + 9 research files (8 200 linija) | ✅ |
 | `6d2aa06` | **W49.D.T1+T2** — 4 RE fajla (config-parser + playa-cli + woo-reels + woo-controllers, **+4 879 linija**) + 7 SGF twin Knowledge base inject | ✅ |
 | `0144c94` (cortex) | **W49.D.T3** — 7 Cortex agent prompt + 2 wrapper (`cortex-kimi-research --igt-context` + `cortex-fable-review-last-commit` auto-on) + global memory `~/.claude/projects/-/memory/IGT-knowledge.md` | ✅ |
-| _this_ | **W49.D.T4** — ULTIMATIVNI QA 9/9 gate ZELENO (vendor leak legitimno · bash syntax · 7/7 SGF KB · 7/7 Cortex KB · LEGO 6/6 · 20/20 npm test · 85+23+anticipation block tests · LDW gate dokumentovan) | ✅ |
+| `481cc6b` | **W49.D.T4** — ULTIMATIVNI QA 9/9 gate ZELENO (vendor leak legitimno · bash syntax · 7/7 SGF KB · 7/7 Cortex KB · LEGO 6/6 · 20/20 npm test · 85+23+anticipation block tests · LDW gate dokumentovan) | ✅ |
+| `5ac77d4` | **W49.D.T5** — 4 follow-up RE landed (Kimi enc 636 l + GDD corpus 506 l + vendor patents 1 548 l + mobile/PWA/haptic 1 666 l = **+4 356 l / 292 KB**) + 11 SGF pointer rows injected across 7 agenata + npm test 4/4 + 20/20 grid fixtures ✅ | ✅ |
+| `1167c28` (cortex) | **W49.D.T5 cortex twin** — 11 cortex pointer rows mirror SGF (slot-builder +2, slot-sage-v2 +2, engine +1, feature +3, win-eval +1, ui +1, rg +1) | ✅ |
 
 ### W49.F — Boki rule sinhronizacija
 
