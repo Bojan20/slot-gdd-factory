@@ -460,6 +460,102 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## 👁 W52 — realityCheck PLAYER-PROTECTION VISIBILITY · W50 + W51 wire-up (✅ LANDED — 2026-06-16)
+
+> Boki direktiva (2026-06-16 19:07): *"kad zavrsis kreni ultimativno dalje, ultra detaljno sa svim qa ultimativnim detaljnim, da se pokrpe sve rupe i sva moguca scenatrija da se pokriju, da sve radi savrseno, sve moguce provere odradi"*.
+>
+> **Regulator anchor**: UKGC LCCP 8.3.1 + MGA Player Protection Directive §5. Reality Check modal MORA da pokaže session-cumulative činjenice koje player može da koristi za samoprocenu. W50 (LDW count + net) i W51 (winCap hits + jurisdiction) signali sad teku u Reality Check stats payload.
+
+### 1. Pre-W52 audit — rupa
+
+| Layer | Pre W52 | Rupa |
+|:--|:-:|:--|
+| `realityCheck.mjs` STATE bag | ✅ elapsedMs + spins + totalWin + totalLoss | ❌ NEMA ldwCount / ldwNet / winCapHits / winCapLastJurisdiction |
+| `realityCheck` HookBus listeners | ✅ preSpin + onAutoplayTick + onBalanceChanged + onNetThresholdCrossed | ❌ NE sluša `onLdwSuppressed` (W50) ni `onWinCapTriggered` (W51) |
+| `onRealityCheckShown` stats payload | ✅ elapsedMs/spins/totalWin/totalLoss/net | ❌ NEMA W50/W51 metrike |
+| `onRealityCheckQuit` stats payload | ✅ isto | ❌ isto |
+| `rcResetSession` | ✅ resetuje core counters | ❌ NE resetuje W52 metrike → session boundary leak |
+
+### 2. Šta je urađeno
+
+| Fajl | Promena | Linije |
+|:--|:--|:-:|
+| `src/blocks/realityCheck.mjs` | +STATE.ldwCount/ldwAwardSum/ldwBetSum/winCapHits/winCapLastJurisdiction (5 polja) + 2 HookBus listenera (`onLdwSuppressed` + `onWinCapTriggered`) + stats payload augmentation u `rcShow` + `_quit` (6 W52 polja u oba) + `rcResetSession` zatvara session boundary | +56 |
+| `tests/blocks/_realityCheckW52.test.mjs` | **NEW** — 46 testa kroz 8 sekcija (STATE deklaracije · HookBus listeners · Shown stats · Quit stats · resetSession · sandbox event simulation · JSDoc citations · vendor-neutral) | +220 |
+
+### 3. STATE bag W52 polja
+
+| Polje | Tip | Source | Reset on |
+|:--|:-:|:--|:-:|
+| `STATE.ldwCount` | int | W50 `onLdwSuppressed` emit | `rcResetSession` |
+| `STATE.ldwAwardSum` | number | W50 payload `p.award` | `rcResetSession` |
+| `STATE.ldwBetSum` | number | W50 payload `p.bet` | `rcResetSession` |
+| `STATE.winCapHits` | int | W51 `onWinCapTriggered` emit | `rcResetSession` |
+| `STATE.winCapLastJurisdiction` | string | W51 payload `p.jurisdiction` | `rcResetSession` |
+
+### 4. Stats payload (Shown + Quit)
+
+| Polje | Vrednost |
+|:--|:--|
+| `elapsedMs` | session time |
+| `spins` | session spin count |
+| `totalWin` | cumulative win |
+| `totalLoss` | cumulative loss |
+| `net` | totalWin − totalLoss |
+| **`ldwCount`** | **W52 — broj LDW-suppressed runda** |
+| **`ldwAwardSum`** | **W52 — kumulativni award u LDW rundama** |
+| **`ldwBetSum`** | **W52 — kumulativni bet u LDW rundama** |
+| **`ldwNet`** | **W52 — derived `awardSum − betSum`** |
+| **`winCapHits`** | **W52 — broj winCap pucanja** |
+| **`winCapLastJurisdiction`** | **W52 — poslednja aktivna jurisdiction profile** |
+
+### 5. Ultimate QA 6/6 ZELENO
+
+| # | Gate | Rezultat |
+|:-:|:--|:-:|
+| 1 | `_realityCheckW52.test.mjs` (NEW) | ✅ **46/0** |
+| 2 | `realityCheck.test.mjs` regression | ✅ **70/0** |
+| 3 | `_ldwCrossBlock.test.mjs` regression (W50) | ✅ 43/0 |
+| 4 | `_winCapJurisdictions.test.mjs` regression (W51) | ✅ 74/0 |
+| 5 | LEGO 6 invariants gate | ✅ **6/6** |
+| 6 | npm test (20 grid fixtures) | ✅ **20/20** |
+| **Σ** | **6 gate matrix** | **233 testa zelena / 0 fail** |
+
+### 6. Sandbox event simulation (sekcija 6)
+
+| Korak | Akcija | Provera |
+|:-:|:--|:--|
+| 6.1-6.3 | Initial state | ldwCount=0 · winCapHits=0 |
+| 6.4-6.7 | Emit 3 LDW + accumulate | count=3 · awardSum=15 · betSum=60 · net=−45 |
+| 6.8-6.9 | Emit 2 winCap | hits=2 · lastJurisdiction=MGA |
+| 6.10-6.12 | rcResetSession | sve W52 metrike → 0 / '' |
+
+### 7. Cumulative state (W50 + W51 + W52)
+
+| Wave | Gate | Testa | Owner |
+|:--|:--|:-:|:--|
+| W50 | LDW suppression (cross-block) | 232 | winPresentation + haptic + netLoss |
+| W51 | winCap (8-jurisdiction) | 96 | winCap |
+| **W52** | **realityCheck player-protection visibility** | **233** | **realityCheck** |
+| **Σ** | **3 regulator HARD gate-a closed** | **561** | — |
+
+### 8. Honest delivery
+
+| Status | Stavka |
+|:--|:--|
+| ✅ Done | 1 src dopuna + 46-test NEW + 6-gate QA + master TODO + commit + push |
+| ⏳ Out-of-scope | Modal DOM rendering W52 metrika (čeka MGA / UKGC visual-spec confirmation pre nego što dodam display rows) |
+| ⏳ Out-of-scope | sessionTimeout listener za W50/W51 (paritetno wire-up — sledeći atom kandidat) |
+| 🎯 Sledeći logičan korak | (a) sessionTimeout listener za W50/W51 paritetno; (b) modal DOM rendering W52 polja (player VISIBILITY ne samo audit emit); (c) drugo po izboru |
+
+### 9. Komiti
+
+| SHA | Šta | Push |
+|:-:|:--|:-:|
+| _TBD_ | **W52 — realityCheck W50 + W51 wire-up** (5 STATE polja + 2 listeners + stats payload aug + session reset + 46 testa) | ⏳ |
+
+---
+
 ## 🌍 W51 — winCap CROSS-JURISDICTION ENFORCEMENT (✅ LANDED — 2026-06-16)
 
 > Boki direktiva (2026-06-16 19:01): *"kad zavrsis kreni ultimativno dalje, ultra detaljno sa svim qa ultimativnim detaljnim, da se pokrpe sve rupe i sva moguca scenatrija da se pokriju, da sve radi savrseno, sve moguce provere odradi"*.

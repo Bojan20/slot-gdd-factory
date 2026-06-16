@@ -468,6 +468,23 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
       /* Focus-management bookkeeping for the regulator dialog. */
       _prevFocus:   null,
       _keydownTrap: null,
+      /* W52 — player-protection visibility counters.
+       * UKGC LCCP 8.3.1 + MGA Player Protection Directive §5 require
+       * Reality Check to surface session-cumulative facts the player can
+       * use to assess their state. W50 (LDW) + W51 (winCap) drop their
+       * audit signals here so the modal can show:
+       *   • how many "win" rounds were below stake (LDW-suppressed)
+       *   • net delta from those rounds
+       *   • whether max-win cap was hit (and under which jurisdiction)
+       *
+       * These are pure metrics (no display side-effect in the listener);
+       * they are read by rcShow / _quit when building the stats payload
+       * and the modal DOM. */
+      ldwCount:        0,
+      ldwAwardSum:     0,
+      ldwBetSum:       0,
+      winCapHits:      0,
+      winCapLastJurisdiction: '',
     };
     if (typeof window !== 'undefined') {
       window.__REALITY_PAUSE_ACTIVE__ = false;
@@ -607,6 +624,13 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
               elapsedMs: STATE.elapsedMs, spins: STATE.spins,
               totalWin: STATE.totalWin, totalLoss: STATE.totalLoss,
               net: STATE.totalWin - STATE.totalLoss,
+              /* W52 — player-protection metrics from W50 + W51 */
+              ldwCount:    STATE.ldwCount,
+              ldwAwardSum: STATE.ldwAwardSum,
+              ldwBetSum:   STATE.ldwBetSum,
+              ldwNet:      STATE.ldwAwardSum - STATE.ldwBetSum,
+              winCapHits:  STATE.winCapHits,
+              winCapLastJurisdiction: STATE.winCapLastJurisdiction,
             },
           });
         } catch (e) {
@@ -670,6 +694,13 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
         elapsedMs: STATE.elapsedMs, spins: STATE.spins,
         totalWin: STATE.totalWin, totalLoss: STATE.totalLoss,
         net: STATE.totalWin - STATE.totalLoss,
+        /* W52 — player-protection metrics from W50 + W51 */
+        ldwCount:    STATE.ldwCount,
+        ldwAwardSum: STATE.ldwAwardSum,
+        ldwBetSum:   STATE.ldwBetSum,
+        ldwNet:      STATE.ldwAwardSum - STATE.ldwBetSum,
+        winCapHits:  STATE.winCapHits,
+        winCapLastJurisdiction: STATE.winCapLastJurisdiction,
       };
       _hide();
       if (typeof window !== 'undefined' && window.HookBus && typeof window.HookBus.emit === 'function') {
@@ -700,6 +731,12 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
        * doesn't include pre-reset totals. */
       STATE._lastAutoWin  = 0;
       STATE._lastAutoLoss = 0;
+      /* W52 — reset player-protection metrics on session boundary. */
+      STATE.ldwCount    = 0;
+      STATE.ldwAwardSum = 0;
+      STATE.ldwBetSum   = 0;
+      STATE.winCapHits  = 0;
+      STATE.winCapLastJurisdiction = '';
       _renderStats();
     }
 
@@ -810,6 +847,25 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
         if (!p || !TRIGGER_LOSS_LEVEL) return;
         if (p.to === TRIGGER_LOSS_LEVEL && p.direction === 'losing') {
           rcShow('loss');
+        }
+      });
+      /* W52 — LDW (W50) audit signal. Player-protection visibility per
+       * UKGC LCCP 8.3.1: Reality Check stats must show how many rounds
+       * paid below stake (i.e. were celebrated-as-wins by legacy designs
+       * but are net losses). */
+      window.HookBus.on('onLdwSuppressed', function (p) {
+        STATE.ldwCount += 1;
+        if (p && Number.isFinite(p.award)) STATE.ldwAwardSum += p.award;
+        if (p && Number.isFinite(p.bet))   STATE.ldwBetSum   += p.bet;
+      });
+      /* W52 — winCap (W51) audit signal. Reality Check stats must show
+       * whether the session hit the regulator max-win ceiling and under
+       * which jurisdiction profile (transparency requirement under
+       * UKGC RTS 13 + MGA PP §5). */
+      window.HookBus.on('onWinCapTriggered', function (p) {
+        STATE.winCapHits += 1;
+        if (p && typeof p.jurisdiction === 'string') {
+          STATE.winCapLastJurisdiction = p.jurisdiction;
         }
       });
       return true;
