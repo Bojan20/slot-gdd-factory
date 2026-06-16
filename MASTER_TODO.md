@@ -983,6 +983,55 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## 🌍 W58.J-SE — Persistent play-time display gate (✅ LANDED — 2026-06-17)
+
+> **Regulator anchor**: Spelinspektionen Föreskrifter SIFS 2018:6 §7.2 "Information om tid och förlust" — continuous-display obligation. Cousin obligations: UKGC RTS 12 + DGOJ Art 8 (NOT YET on whitelist — shrinks-only policy, dodaju se posebnim atomom kad bude potrebno).
+> **Vezano za**: slot-gdd-factory · math-blind (čita `STATE.elapsedMs` postojeći iz realityCheck, ne računa).
+
+### 1. Šta je zatvoreno
+
+| Block | Promena | Linije |
+|:--|:--|:-:|
+| `src/blocks/realityCheck.mjs` | +`PLAY_TIME_DISPLAY_REQUIRED_JURISDICTIONS = ['SE']` frozen export · 2 nova polja u defaultConfig (`jurisdiction`, `requirePersistentPlayTimeDisplay`) · resolveConfig 3-key precedence (`regulator.profile > responsibleGambling.jurisdiction > realityCheck.jurisdiction`) sa uppercase normalization · emitCSS `.rc-play-time-hud` chip (position: fixed + safe-area-inset-top/right za iOS notch + tabular-nums + pointer-events: none + prefers-reduced-motion gated) · emitRuntime `_mountPlayTimeHud()` (idempotent getElementById guard, role="status" + aria-live="off", 1-sec setInterval, wall-clock fallback za idle) · sole-owner emit `onPlayTimeDisplayRequired{jurisdiction, rule: 'SE-SIFS-2018:6-7.2'}` jednom na DOMContentLoaded · `__W58SE_REQUIRED` flag short-circuit za non-SE (0 runtime cost) | +112 |
+| `tools/lego-gate.mjs` | +`onPlayTimeDisplayRequired: ['realityCheck.mjs']` sole-owner declaration · W58.J-SE comment sa SIFS citation · ownership 102→103 | +7 |
+| `tests/blocks/_persistentPlayTimeDisplay.test.mjs` | NEW 195 LOC: 8 sections (whitelist contract, defaultConfig, resolveConfig 3-key precedence, emitCSS HUD chip, emitRuntime mount + tick + emit + ARIA, non-SE guard short-circuit, LEGO ownership + citation, honest scope) | +195 |
+| `package.json` | test:blocks chain extends sa novim testom | +1/-1 |
+
+### 2. Ultimate QA matrix (9/9 ZELENO)
+
+| # | Gate | Verdict |
+|:-:|:--|:-:|
+| 1 | `_persistentPlayTimeDisplay.test.mjs` | ✅ **38/38** |
+| 2 | `realityCheck.test.mjs` regression | ✅ **70/70** (no breakage) |
+| 3 | LEGO 7 invariants | ✅ **7/7** (87 blokova · 103 sole-owner · 72 listener · 11 colon/dot legacy whitelisted) |
+| 4 | npm test (parser floor + grid) | ✅ 4/4 + 20/20 |
+| 5 | Vendor-neutral block source | ✅ 0 hits |
+| 6 | Honest scope cited in source | ✅ SIFS 2018:6 §7.2 referenced |
+| 7 | 3-key jurisdiction precedence | ✅ mirror W57.A4 / W58.J-UKGC / W58.J-AGCO pattern |
+| 8 | Non-SE short-circuit (0 runtime cost) | ✅ verified via test #6.1-6.2 |
+| 9 | ARIA + safe-area + reduced-motion a11y | ✅ verified via tests #4.x + #5.9-5.10 |
+
+### 3. Hash pin
+
+| SHA | Šta | Push |
+|:-:|:--|:-:|
+| `16d52f1` | **W58.J-SE** — persistent play-time HUD chip · SIFS 2018:6 §7.2 · 38/38 unit · LEGO 7/7 · 103 sole-owner events · math-blind | ✅ |
+
+### 4. Cross-jurisdiction sweep progress
+
+| Atom | Jurisdiction | Status |
+|:--|:--|:-:|
+| W58.J-UKGC | UKGC autoplay disclosure | ✅ LANDED (`3f25d57`) |
+| W58.J-AGCO | ON AGCO RTP transparency | ✅ LANDED (`837f909`) |
+| **W58.J-SE** | **SE Spelinspektionen play-time** | **✅ LANDED (`16d52f1`)** |
+| W58.J-DE | DE GlüStV §11(2) spin pace + §6e no saved state | ⏳ queued |
+| W58.J-NL | NL KSA §31 + Cruks cool-off | ⏳ queued |
+| W58.J-EU | EU AI Act Art.5 DDA detection | ⏳ queued |
+
+**3/6 jurisdiction atom LANDED · 3/6 queued (DE, NL, EU)**
+
+---
+
 ## 🌍 W58.J-AGCO — RTP transparency disclosure gate (✅ LANDED — 2026-06-17)
 
 > **Regulator anchor**: ON AGCO Standard 4.06 + UKGC RTS 8 + MGA Player Protection.
