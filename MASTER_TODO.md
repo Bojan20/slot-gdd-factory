@@ -323,10 +323,147 @@ Ako 2 domain ownera daju kontradiktoran savet:
 | **Orchestrator size** | `buildSlotHTML.mjs` 799 LOC (< 800 budget, T-slim Phase 2 closed it) |
 | **Typography floor** | **11px** (Apple HIG / WCAG min readable) enforced by Wave UQ — 16 violators fixed in single sweep (stageBadge / balanceHud / betSelector / anteBet / bonusBuy / bonusBuyDeterministic / freeSpins / holdAndWin / pathAwareMultiplier × 2 / progressiveFreeSpins / realityCheck / weightedWheelSegments / themeCSS × 4 / gridRenderer × 2) |
 
+## 🧠 W49 — ULTIMATE SLOT AGENTS KNOWLEDGE BASE (OPEN — 2026-06-16)
+
+> Boki direktiva (2026-06-16 ~16:00 → 16:35): *"hocu da agent ima sve ove informacije moguce, svi agenti da znaju sve"* → *"ja zelim da se napravi od igt fajlova svih i od svega sto imamo moi ovde u slot gdd i na netu i po knjigama i po svemu da napravimo ultimativne agente koji ce umek u sebe da imaju info da to lokujemo i da se sve radi savrseno u svim blokovima"* → *"ajde iskoristi svaki AI koji mozes neka istrazi svu mogucu imehaniku koja postoji na svetu u IT slot indusstriji, neka reverse enginering nek mse odradi za sve moguce blokove i neka se stavi u jedan dokument, ali to mora da bude deep seek istrazivanje, do najsitnijih atoma mogucih"* → *"daj spisak sta si sve nasao a fali nam i cime sve treba da nahranimo agente svakog ponaosob da je ekpert za svoj deo"*.
+>
+> **Cilj:** Svaki od 7 slot-domain agenata u `slot-gdd-factory/agents/` (+ 7 cortex twin-ova pod `~/Projects/cortex/agents/`) postaje **industry-grade ekspert** za svoj deo. Agent ne izmišlja — referencira `file:line` iz IGT-a / WoO / cross-vendor briefa, sa citation budgetom. Zatvara overhead "re-grep 288 MB IGT-a za svaki task".
+
+### W49.A — Landed izvori (commit `e05a618`, 2026-06-16 16:11)
+
+| # | Izvor | Lokacija | Linije | Repo | Status |
+|:-:|:--|:--|:-:|:--|:-:|
+| 1 | IGT · playa-core deep RE | `agents/research-pool/playa-core-RE.md` | 1 651 | **slot-gdd-factory** | ✅ |
+| 2 | IGT · playa-slot deep RE | `agents/research-pool/playa-slot-RE.md` | 1 089 | **slot-gdd-factory** | ✅ |
+| 3 | IGT · qa-tools RE | `agents/research-pool/qa-tools-RE.md` | 560 | **slot-gdd-factory** | ✅ |
+| 4 | IGT · layout_tool RE | `agents/research-pool/layout-tool-RE.md` | 998 | **slot-gdd-factory** | ✅ |
+| 5 | SGF atomic inventory | `agents/research-pool/sgf-current-state.md` | 710 | **slot-gdd-factory** | ✅ |
+| 6 | Web · mechanics universe | `agents/research-pool/web-slot-mechanics.md` | 1 623 | **slot-gdd-factory** | ✅ |
+| 7 | Web · math + RNG + regulator | `agents/research-pool/web-math-rng-regulator.md` | 910 | **slot-gdd-factory** | ✅ |
+| 8 | Books + academic (BibTeX) | `agents/research-pool/books-academic.md` | 645 | **slot-gdd-factory** | ✅ |
+| 9 | Master synthesis (11 §) | `agents/SLOT_MECHANICS_ENCYCLOPEDIA.md` | 24 KB | **slot-gdd-factory** | ✅ |
+| **Σ** | **8 izvora + master** | — | **~8 200 l** | — | **✅** |
+
+> ASCII coverage: `███████████████████░░░░░░░░░░░` **9 / 14 izvora** (64 %)
+
+### W49.B — Gap matrix (5 critical + 4 follow-up)
+
+| Prio | Gap | Repo | Razlog | Posledica |
+|:-:|:--|:--|:--|:--|
+| 🔴 | **IGT `config-parser` RE** (660 KB JSON→SQL transpiler) | **slot-gdd-factory** | Greška: prijavljeno u 16:11 chat-u kao "landed", fajl NE postoji | WinEvaluatorAgent ne zna IR shape, paytable parser blindspot |
+| 🔴 | **IGT `playa-cli` RE** (29 MB dev server + GLR replay + RGS proxy) | **slot-gdd-factory** | Isto — fajl NE postoji | SlotBuilderAgent ne zna replay format ni RGS handshake |
+| 🔴 | **Kimi pass-3 dump** (`kimi-mechanics-encyclopedia.md` = 12 l stub) | **slot-gdd-factory** | Kimi sub-agent nije završio do kraja | Encyclopedia §2.6 prazna; 5 industry patterns bez citation |
+| 🔴 | **7 SGF agent prompt-a NEMA reference na encyclopediu** (`grep -c "encyclopedia\|research-pool" agents/*.md` = 0 svaki) | **slot-gdd-factory** | Encyclopedia landovana, agent prompt-i napisani PRE landinga | Agenti i dalje "izmišljaju", knowledge nije load-bearing |
+| 🔴 | **7 Cortex slot-domain agent system_prompt-i bez pointer-a** (`~/Projects/cortex/agents/{slot-builder,slot-sage-v2,engine-architect,feature-architect,win-evaluator,ui-architect,rg-architect}`) | **cortex** | Boki rule: svi agenti znaju sve | Kimi / Fable / Gemini wrapperi startuju "naivni", token cost duplicate discovery |
+| 🟡 | **WoO RE** (`~/Projects/Wrath Of Olympus/` — Math v11.27, 96.009 % RTP) | **slot-gdd-factory** | Production-validated reference fali | Cross-validation pattern (sticky-pin, big-win tier ladder) bez konkretnog vendor-neutral primera |
+| 🟡 | **GDD corpus RE** (`~/Desktop/GDD/Gates_of_Olympus_1000`, `Huff_N_More_Puff`, `Starlight_Travellers`, `Wrath_of_Olympus`) | **slot-gdd-factory** | 4 verifikovana production GDD-a nisu mining-ovani | Parser feature coverage neispitan, force chip matrix neizverifikovan |
+| 🟡 | **Vendor patent corpus** (BTG Megaways expired 2024, Stake Engine, Lock&Win, Hold&Win) | **slot-gdd-factory** | Web brief samo površno; nema patent-level deep dive | FeatureArchitect "industry-grade" plitak, M4 variable_ways engine bez patent timeline reference |
+| 🟢 | **Mobile/PWA dvh + safe-area + haptic spec** (WCAG 2.2 AA + iOS Haptic API + Android VibrationEffect) | **slot-gdd-factory** | UI brief samo letimično | UIArchitect WCAG plitak, haptic gate bez konkretne API reference |
+| **Σ** | **5 critical + 4 follow-up** | — | — | **9 gap-ova** |
+
+### W49.C — Per-agent feeding plan (slot-gdd-factory `agents/`)
+
+> Format: ✅ ima · ➕ treba inject pointer · ❌ treba generisati novi izvor
+
+#### W49.C.1 · `agents/SLOT_BUILDER.md` (GDD → IR → runtime orchestration)
+
+| Izvor | Status | Akcija |
+|:--|:-:|:--|
+| `research-pool/sgf-current-state.md` (parser, buildSlotHTML, manifest) | ✅ | Inject pointer u prompt header |
+| `research-pool/playa-core-RE.md` (Sequencer, Stage, AssetLoader) | ✅ | Inject pointer |
+| `research-pool/playa-cli-RE.md` (dev server, GLR replay, RGS proxy) | ❌ | **Generisati** (Explore agent na `~/IGT/playa-cli`) |
+| `~/Desktop/GDD/*.pdf` × 4 (parse-test fixture) | ➕ | Probe matrix → `tests/_gdd-corpus-probe.test.mjs` |
+| Encyclopedia §3 (Bridge table 22) + §7 (HookBus 53 events) | ➕ | Inject pointer + budget: ≤ 3 file:line per emit |
+
+#### W49.C.2 · `agents/SLOT_SAGE_V2.md` (LEGO arbitration + vendor-neutral terminology)
+
+| Izvor | Status | Akcija |
+|:--|:-:|:--|
+| `research-pool/sgf-current-state.md` (svih 88 blokova + ownership map) | ✅ | Inject pointer |
+| Encyclopedia §1 (5 HARD RULES) + §8 (Glossary industry→vendor-neutral) | ➕ | Inject pointer |
+| Vendor patent corpus (BTG / Stake / Lock&Win) | 🟡 | Kimi-research deep dive |
+
+#### W49.C.3 · `agents/ENGINE_ARCHITECT.md` (6 spin engines + FSM + slam)
+
+| Izvor | Status | Akcija |
+|:--|:-:|:--|
+| `research-pool/playa-slot-RE.md` (`ReelSpinSystem`, `BaseSpinBehavior`, 5 systems) | ✅ | Inject pointer |
+| `research-pool/playa-core-RE.md` (Stage/Sequencer) | ✅ | Inject pointer |
+| WoO `reels.ts` + `timing.ts` RE | ❌ | **Generisati** (Explore na `~/Projects/Wrath Of Olympus`) |
+| Encyclopedia §5 (10 industry patterns za extract) | ➕ | Inject pointer + W3 motionOverlay reference |
+
+#### W49.C.4 · `agents/FEATURE_ARCHITECT.md` (34 feature paritet · 28 + W47.S1 +6)
+
+| Izvor | Status | Akcija |
+|:--|:-:|:--|
+| `research-pool/playa-slot-RE.md` (LockAndRespin, WheelBonus, Jackpot, Tumbling) | ✅ | Inject pointer |
+| `research-pool/web-slot-mechanics.md` (cross-vendor 1 623 l) | ✅ | Inject pointer |
+| WoO `hnwController.ts` + `bigWinController.ts` RE | ❌ | **Generisati** |
+| Encyclopedia §4 (30+ gap blokova → wave kandidati) | ➕ | Inject pointer |
+
+#### W49.C.5 · `agents/WIN_EVALUATOR.md` (paytable IR + big-win tier ladder)
+
+| Izvor | Status | Akcija |
+|:--|:-:|:--|
+| `research-pool/playa-slot-RE.md` (`Paytable.ts`, `RollupComponent`, `RollupState.STOP`) | ✅ | Inject pointer |
+| `research-pool/web-math-rng-regulator.md` (Bărboianu, Dixon, PAR sheet research) | ✅ | Inject pointer |
+| `research-pool/books-academic.md` (Kassem ch.7) | ✅ | Inject pointer |
+| `research-pool/config-parser-RE.md` (IR shape iz JSON→SQL) | ❌ | **Generisati** (Explore na `~/IGT/config-parser`) |
+
+#### W49.C.6 · `agents/UI_ARCHITECT.md` (WCAG 2.2 AA · dvh · safe-area · haptic)
+
+| Izvor | Status | Akcija |
+|:--|:-:|:--|
+| `research-pool/playa-core-RE.md` (PIXI/React UI patterns) | ✅ | Inject pointer |
+| `research-pool/sgf-current-state.md` (21 UI blokova posle W47.S1) | ✅ | Inject pointer |
+| W3C/WCAG 2.2 AA + dvh + safe-area + iOS Haptic API deep dump | 🟡 | **Kimi-research dopuna** |
+
+#### W49.C.7 · `agents/RG_ARCHITECT.md` (12 jurisdikcija regulator)
+
+| Izvor | Status | Akcija |
+|:--|:-:|:--|
+| `research-pool/web-math-rng-regulator.md` (UKGC / MGA / AGCO / NL / SE / DE / IT / ON / NJ) | ✅ | Inject pointer |
+| `research-pool/books-academic.md` (Schull "Addiction by Design", Dixon LDW papers) | ✅ | Inject pointer |
+| Encyclopedia §6 (Regulator gates matrix 12 × 25) | ➕ | Inject pointer |
+
+### W49.D — Akcioni plan (4 talasa, paralelno gde je nezavisno)
+
+| Talas | Repo | Akcija | Paralelizacija | Trajanje |
+|:-:|:--|:--|:-:|:-:|
+| **T1** | **slot-gdd-factory** | Generisati 4 RE fajla: `config-parser-RE.md`, `playa-cli-RE.md`, `woo-reels-RE.md`, `woo-controllers-RE.md` + Kimi pass-3 restart | 5 agenata istovremeno | 45-60 min |
+| **T2** | **slot-gdd-factory** | Inject encyclopedia pointer u 7 SGF agent prompt-a + GDD corpus probe matrix | sekvencijalno (mali edit-i) | 20-30 min |
+| **T3** | **cortex** | Inject encyclopedia pointer u 7 Cortex slot-domain agent `system_prompt.md` (`~/Projects/cortex/agents/{slot-builder,slot-sage-v2,engine-architect,feature-architect,win-evaluator,ui-architect,rg-architect}`) + wrapper `cortex-kimi-research` + `cortex-fable-review-last-commit` | 7 paralelno + 2 wrapper | 30 min |
+| **T4** | **slot-gdd-factory** + **cortex** | Validation probe — 5 trial pitanja po agentu (40 ukupno), agent mora odgovori `file:line` ili URL citation < 30 s | paralelno | 30-45 min |
+| **Σ** | — | **4 talasa** | — | **~2 h 30 min** |
+
+### W49.E — Hash pin
+
+| SHA | Šta | Push |
+|:-:|:--|:-:|
+| `e05a618` | SLOT_MECHANICS_ENCYCLOPEDIA + 9 research files (8 200 linija) | ✅ |
+| _TBD_ | W49.D.T1 — 4 RE fajla generisana | ⏳ |
+| _TBD_ | W49.D.T2 — 7 SGF agent prompt pointer + GDD probe | ⏳ |
+| _TBD_ | W49.D.T3 — 7 Cortex agent prompt pointer + 2 wrapper | ⏳ (cortex repo) |
+| _TBD_ | W49.D.T4 — Validation probe rezultat | ⏳ |
+
+### W49.F — Boki rule sinhronizacija
+
+| Pravilo | Primena u W49 |
+|:--|:--|
+| `rule_no_vendor_mentions` | Encyclopedia §8 Glossary: industry → vendor-neutral (LockAndRespin → hold-and-respin) |
+| `rule_no_math_unless_asked` | W49 NE dira PAR / RTP / volatility / win cap; samo presentation + ownership knowledge |
+| `rule_audio_off_until_asked` | W49 NE dira `audio.mjs` / Howler / SFX |
+| `rule_ultimate_checklist` | T1-T4 svaki ima 9-tačka gate pre commit-a |
+| `rule_master_todo_always_update` | W49 sekcija postoji u oba repa (SGF + cortex) PRE T1 commit-a |
+| `rule_master_todo_auto_commit` | Posle svake T-faze: git add + commit + push, BEZ pitanja |
+
+---
+
 ## 🚀 Recent wave timeline (newest first)
 
 | Hash | Wave | Subject |
 |---|---|---|
+| `e05a618` | **W49.A** | **ULTIMATE SLOT AGENTS KB landovan** — 9 research izvora + master `SLOT_MECHANICS_ENCYCLOPEDIA.md` (11 §, 24 KB) + 8 200 linija research-pool. 5 HARD RULES + Bridge table 22 IGT→SGF + Gap matrix 30+ + 10 industry patterns za file:line extract + Regulator gates 12 × 25 + 53 HookBus events + Glossary industry→vendor-neutral + Agent contract. **Gap audit**: 5 critical (config-parser-RE + playa-cli-RE + Kimi pass-3 stub + 7 SGF agent prompt-a bez pointer + 7 Cortex agent prompt-a bez pointer) + 4 follow-up (WoO RE + GDD corpus + vendor patent corpus + WCAG/haptic deep). T1-T4 plan ~2 h 30 min. |
 | `e300cf0` | **B64** | **`symbolUpgrade` block (Faza 3 #1)** — cascade-with-transmute level-up on tumble refill. Owns 2 HookBus events (`onSymbolUpgrade` · `onSymbolUpgradeCascade`), 4 lifecycle listeners (preSpin · onTumbleStep · postSpin · onFsEnd), Fisher–Yates fair cap selection (default ≤2 per tumble), auto-derived ladder from `SYMBOL_REGISTRY` tiers when GDD omits explicit pairs, force/QA hook `window.symbolUpgradeForceAt(col,row)` routes through real upgrade path (rule_force_buttons_real_spin), auto-disabled on tumble-incompatible shapes (wheel/hex/plinko/crash/slingo/radial). 26/26 unit + LEGO 5/5 (69 blocks · 60/60 event ownership · 57/57 listener coverage) + budget 1012/1050 + grids 20/20 + browser 24/24 + manifest 17/17. Sweep extras: `holdAndWin.mjs` vendor string purged ("Lightning Link" → "industry-standard lock-and-respin"), `anticipationUniversal.mjs` got its missing test (15/15), `onHoldAndWinPhase` / `onHoldAndWinEnd` declared in EXPECTED_EMIT_OWNERS. |
 | `6e2405f` | **P8** | **Hot-reload bez page refresh** — closes Faza 2 (P1–P8 all SHIPPED). New `tools/dev-server.mjs` (Node HTTP + SSE + `fs.watch` recursive on `samples/`, `src/`, `app.js`, `index.html`; categorize() → gdd/parser/orchestrator/block/runtime/asset; path-safe static serving; `/__dev/events` SSE, `/__dev/gdd?path=` reader, `/__dev/health`). New `src/blocks/hotReload.mjs` (EventSource client + 1.5× backoff cap, debounced full reload, in-page fast-path that calls `window.__SLOT_REPARSE__` then `HookBus.emit('onGddChange',{model,src})`; opt-in via `model.hotReload.enabled`; production builds emit a 0-byte stub; HMR badge w/ `role=status`+`aria-live=polite` honoring `prefers-reduced-motion`). 3 new HookBus events (`onHotReloadConnect`, `onHotReloadDisconnect`, `onGddChange`) wired in `EXPECTED_EMIT_OWNERS`. Manifest gen `--print` flush fix (use `process.stdout.write` + callback so 64 KB highWaterMark no longer truncates JSON). `npm run dev` script added. **Tests:** 23/23 `tests/blocks/hotReload.test.mjs` + 18/18 `tests/_dev-server.test.mjs` + 7/7 `tools/_p8-hot-reload-probe.mjs` live SSE probe + 1452/0 block regression + LEGO 5/5 (event-ownership 52/52, listener-coverage 54/54) + manifest freshness PASS |
 | `872e9b3` | **P1** | **Malformed GDD recovery** — `src/parser.mjs` `_safeExtract(label, fn, model)` harness wraps every top-level extractor; `parseGDD()` outer guard for null/undefined/non-string/JSON-malformed input. Failures recorded in `model.confidence._failures[]` (label + error) instead of throwing. New `tests/blocks/parserMalformed.test.mjs` 20/20 PASS (null / empty / unicode / 100KB random / corrupt tables / typo headers / JSON.parse fallback / 1000-row DOS guard / idempotency / schema integrity). LEGO gate 5/5 PASS, parse regression 4/4 PASS, universal GDD audit 460/461 PASS, 63 block tests all green |
