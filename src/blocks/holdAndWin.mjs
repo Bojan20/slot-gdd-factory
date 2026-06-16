@@ -76,6 +76,10 @@ export function defaultConfig() {
       jackpotShortMs: 1600,
       jackpotGrandMs: 2200,
       fullGridMs: 2600,
+      /* W48 bugfix v3 (Boki 2026-06-16) — bonus-symbol celebration window
+       * BEFORE the H&W intro placard mounts. Mirrors the scatter
+       * celebration cadence used in the FS trigger flow (~1500ms). */
+      bonusCelebrateMs: 1500,
     },
     /* Orb distribution — null = built-in Zeus' Storm table. GDD may
      * override with array of { label, weight, tier, valueX }. */
@@ -492,7 +496,34 @@ export function emitHoldAndWinCSS(cfg = defaultConfig()) {
   .hw-delta,
   .hw-jackpot__inner,
   .hw-fullgrid__title,
-  .hw-summary__cta { animation: none; transform: none; }
+  .hw-summary__cta,
+  .cell.cell--hnw-bonus-celebrate { animation: none; transform: none; }
+}
+
+/* ─── W48 BUGFIX v3 — bonus symbol celebration on H&W trigger ───────────
+ * Boki rule (2026-06-16, third pass): "za hold and win, mora prvo da se
+ * zavrsi spin, da se prikaze animacija dobitka pa tek onda da se udje u
+ * hold and win". Parallel to the FS-trigger flow: scatter celebration
+ * plays for ~1500ms BEFORE the FS intro placard; the H&W flow needs the
+ * same — when the trigger pile lands, pulse the bonus cells first, THEN
+ * mount the intro. Reuses the scatterCelebration pattern (host class +
+ * per-cell pulse keyframe) so visual cadence reads consistent between
+ * trigger types. */
+.gridHost.is-hnw-bonus-celebrating .cell,
+.gridHost.is-hnw-bonus-celebrating text {
+  filter: brightness(0.55) saturate(0.7);
+  transition: filter 180ms ease;
+}
+.gridHost.is-hnw-bonus-celebrating .cell.cell--hnw-bonus-celebrate,
+.gridHost.is-hnw-bonus-celebrating text.cell--hnw-bonus-celebrate {
+  filter: brightness(1.45) saturate(1.25)
+          drop-shadow(0 0 12px rgba(${cfg.haloColor}, 0.9));
+  animation: hwBonusCelebrate 380ms ease-in-out 4;
+  z-index: 5;
+}
+@keyframes hwBonusCelebrate {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 0  rgba(${cfg.haloColor}, 0); }
+  50%      { transform: scale(1.16); box-shadow: 0 0 24px rgba(${cfg.haloColor}, 0.85); }
 }
 
 /* ─── W48 BUGFIX — H&W per-cell respin (Boki 2026-06-16) ────────────────
@@ -651,6 +682,7 @@ const HW_T_JACKPOT_DELAY_MS  = ${cfg.timings.jackpotDelayMs};
 const HW_T_JACKPOT_SHORT_MS  = ${cfg.timings.jackpotShortMs};
 const HW_T_JACKPOT_GRAND_MS  = ${cfg.timings.jackpotGrandMs};
 const HW_T_FULLGRID_MS       = ${cfg.timings.fullGridMs};
+const HW_T_BONUS_CELEBRATE_MS = ${cfg.timings.bonusCelebrateMs};
 const HW_FORCE_SEED_DEFAULT  = Math.max(3, Math.ceil(HW_TRIGGER_COUNT / 2));
 
 /* Orb value table (weighted) — Zeus' Storm distribution, GDD-overridable. */
@@ -1032,10 +1064,48 @@ async function _hwBeginRound() {
   }
 }
 
+/* W48 bugfix v3 — bonus-symbol celebration before H&W intro.
+ *
+ * Mirrors the scatter-celebration cadence used in the FS trigger flow:
+ * find every cell currently carrying the bonus glyph (B by default),
+ * tag the gridHost + each cell with the celebration classes, await the
+ * configured window, then strip the classes. The promise resolves so
+ * the caller (postSpin listener) can sequentially mount the INTRO. */
+var _HW_BONUS_CELEBRATE_TOKEN = 0;
+
+function playHwBonusCelebration() {
+  return new Promise(function (resolve) {
+    var host = document.getElementById('gridHost');
+    if (!host) { resolve(); return; }
+    var cells = host.querySelectorAll('.cell');
+    var hits = [];
+    for (var i = 0; i < cells.length; i++) {
+      var txt = (cells[i].textContent || '').trim();
+      if (txt === HW_BONUS_SYMBOL) hits.push(cells[i]);
+    }
+    if (hits.length === 0) { resolve(); return; }
+    var myToken = ++_HW_BONUS_CELEBRATE_TOKEN;
+    host.classList.add('is-hnw-bonus-celebrating');
+    for (var j = 0; j < hits.length; j++) hits[j].classList.add('cell--hnw-bonus-celebrate');
+    setTimeout(function () {
+      if (myToken !== _HW_BONUS_CELEBRATE_TOKEN) return;
+      host.classList.remove('is-hnw-bonus-celebrating');
+      for (var k = 0; k < hits.length; k++) hits[k].classList.remove('cell--hnw-bonus-celebrate');
+      resolve();
+    }, HW_T_BONUS_CELEBRATE_MS);
+  });
+}
+
 function hwMaybeEnter() {
   if (HW_STATE.active) return false;
   if (hwCountBonusOnGrid() >= HW_TRIGGER_COUNT) {
-    _hwBeginRound();
+    /* W48 bugfix v3 — celebrate the bonus pile FIRST, then mount intro.
+     * Boki rule (2026-06-16): "mora prvo da se zavrsi spin, da se prikaze
+     * animacija dobitka pa tek onda da se udje u hold and win". The
+     * bonus-cell pulse is the "animacija dobitka" for this trigger type. */
+    playHwBonusCelebration().then(function () {
+      _hwBeginRound();
+    });
     return true;
   }
   return false;
@@ -1166,13 +1236,14 @@ function hwEnd() {
 }
 
 if (typeof window !== 'undefined') {
-  window.hwMaybeEnter   = hwMaybeEnter;
-  window.hwAfterRespin  = hwAfterRespin;
-  window.hwApplyLocks   = hwApplyLocks;
-  window.hwHarvestBonus = hwHarvestBonus;
-  window.hwForceSeed    = hwForceSeed;
-  window.hwEnd          = hwEnd;
-  window.HW_STATE       = HW_STATE;
+  window.hwMaybeEnter           = hwMaybeEnter;
+  window.hwAfterRespin          = hwAfterRespin;
+  window.hwApplyLocks           = hwApplyLocks;
+  window.hwHarvestBonus         = hwHarvestBonus;
+  window.hwForceSeed            = hwForceSeed;
+  window.hwEnd                  = hwEnd;
+  window.playHwBonusCelebration = playHwBonusCelebration;
+  window.HW_STATE               = HW_STATE;
 }
 
 if (typeof HookBus !== 'undefined' && !(typeof window !== 'undefined' && window.__hwInstalled)) {
