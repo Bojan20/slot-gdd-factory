@@ -108,8 +108,42 @@ export function defaultConfig() {
     chipTextColor: '255,255,255',
     modalBgColor:  '14,12,28',
     ariaLabel: 'Auto-spin',
+    /* W58.J-UKGC — Jurisdiction-aware autoplay regulator gate (UKGC LCCP
+     * 1.4.6: autoplay must surface a session-stop disclosure including
+     * loss + win caps before player can begin a session).
+     *
+     * jurisdiction      string  one of UKGC | MGA | SE | DE | NL | ON |
+     *                   NJ | IT | OFF — defaults '' (unset → no gate)
+     * requireDisclosure boolean derived from jurisdiction (UKGC, ON,
+     *                   MGA enforce; explicit override possible) */
+    jurisdiction: '',
+    requireDisclosure: false,
   };
 }
+
+/* W58.J-UKGC — Cross-jurisdiction autoplay disclosure matrix.
+ * Operators deploying under these regulator profiles MUST surface a
+ * stop-condition disclosure modal before autoplay starts. Mirrors
+ * winCap.mjs (W51) and bonusBuy.mjs (W57.A4) jurisdiction routing.
+ *
+ * Citations:
+ *   • UKGC LCCP 1.4.6 — autoplay disclosure mandatory
+ *   • Ontario AGCO Standard 4.06 — RTP + autoplay disclosure
+ *   • MGA Player Protection — autoplay disclosure recommended */
+const AUTOPLAY_DISCLOSURE_REQUIRED_JURISDICTIONS = Object.freeze(['UKGC', 'ON', 'MGA']);
+
+function _resolveAutoplayJurisdiction(model) {
+  const m   = (model && model.autoplay) || {};
+  const rg  = (model && model.responsibleGambling) || {};
+  const reg = (model && model.regulator) || {};
+  let j = '';
+  if (typeof m.jurisdiction   === 'string') j = m.jurisdiction.toUpperCase();
+  if (typeof rg.jurisdiction  === 'string') j = rg.jurisdiction.toUpperCase();
+  if (typeof reg.profile      === 'string') j = reg.profile.toUpperCase();
+  return j;
+}
+
+export { AUTOPLAY_DISCLOSURE_REQUIRED_JURISDICTIONS };
 
 export function resolveConfig(model = {}) {
   const cfg = defaultConfig();
@@ -179,6 +213,19 @@ export function resolveConfig(model = {}) {
     );
     if (hasAuto) cfg.enabled = true;
   }
+
+  /* W58.J-UKGC — Jurisdiction lookup MUST run last so it overrides
+   * every other path (config, feature auto-enable). Required-disclosure
+   * jurisdictions force `requireDisclosure=true`; explicit GDD
+   * `autoplay.requireDisclosure=true` honored without jurisdiction. */
+  const jurisdiction = _resolveAutoplayJurisdiction(model);
+  if (jurisdiction) {
+    cfg.jurisdiction = jurisdiction;
+    if (AUTOPLAY_DISCLOSURE_REQUIRED_JURISDICTIONS.indexOf(jurisdiction) !== -1) {
+      cfg.requireDisclosure = true;
+    }
+  }
+  if (m.requireDisclosure === true) cfg.requireDisclosure = true;
 
   return cfg;
 }
@@ -738,6 +785,28 @@ export function emitAutoplayRuntime(cfg = defaultConfig()) {
       if (STATE.active) return;
       var step = Number.isFinite(stepOverride) ? Math.round(stepOverride) : STATE.step;
       if (!STEP_VALUES.includes(step)) step = DEFAULT_STEP;
+      /* W58.J-UKGC — Disclosure gate. If jurisdiction requires it AND
+       * the player hasn't acknowledged in this session, emit
+       * onAutoplayDisclosureRequired and ABORT start. Downstream consumer
+       * (regulator modal block, future H1 jurisdictionGate) shows the
+       * disclosure UI, then re-calls autoplayStart with
+       * window.__AUTOPLAY_DISCLOSURE_ACK__ = true to bypass the gate.
+       * Citation: UKGC LCCP 1.4.6 + ON AGCO Standard 4.06 + MGA PP. */
+      var __discReq = ${cfg.requireDisclosure ? 'true' : 'false'};
+      var __discAck = (typeof window !== 'undefined' && window.__AUTOPLAY_DISCLOSURE_ACK__ === true);
+      if (__discReq && !__discAck) {
+        if (window.HookBus && typeof window.HookBus.emit === 'function') {
+          window.HookBus.emit('onAutoplayDisclosureRequired', {
+            jurisdiction: ${JSON.stringify(cfg.jurisdiction || '')},
+            step: step,
+            stopOnLossAbove:    ${cfg.stopOnLossAbove === null ? 'null' : Number(cfg.stopOnLossAbove)},
+            stopOnWinAbove:     ${cfg.stopOnWinAbove  === null ? 'null' : Number(cfg.stopOnWinAbove)},
+            stopOnBalanceBelow: ${cfg.stopOnBalanceBelow === null ? 'null' : Number(cfg.stopOnBalanceBelow)},
+            stopOnSingleWinX:   ${cfg.stopOnSingleWinX === null ? 'null' : Number(cfg.stopOnSingleWinX)},
+          });
+        }
+        return;
+      }
       STATE.active = true;
       STATE.step = step;
       STATE.remaining = step;

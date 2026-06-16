@@ -142,6 +142,13 @@ const EXPECTED_EMIT_OWNERS = {
    * and was forcibly lowered. */
   onWinCapTriggered: ['winCap.mjs'],
   onWinCapClamped:   ['winCap.mjs'],
+  /* W58.J-UKGC — Autoplay disclosure gate per UKGC LCCP 1.4.6 +
+   * ON AGCO Standard 4.06 + MGA Player Protection. Fires when player
+   * tries autoplayStart() but jurisdiction requires disclosure and
+   * window.__AUTOPLAY_DISCLOSURE_ACK__ is not yet set. Downstream
+   * consumer (future H1 jurisdictionGate / regulator modal block)
+   * shows the disclosure UI then re-calls autoplayStart with ack set. */
+  onAutoplayDisclosureRequired: ['autoplay.mjs'],
   /* Wave H5 — Big-Win Tier ladder. Vendor-neutral 5-tier celebration
    * fired after the per-line rollup ends. tier is INT 1..5; label/
    * threshold/duration/color all GDD-driven so two games share the

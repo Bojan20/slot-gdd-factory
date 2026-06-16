@@ -983,6 +983,39 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## 🌍 W58.J-UKGC — Autoplay disclosure jurisdiction gate (✅ LANDED — 2026-06-17)
+
+> **Regulator anchor**: UKGC LCCP 1.4.6 + ON AGCO Standard 4.06 + MGA Player Protection.
+> **Vezano za**: slot-gdd-factory.
+
+### 1. Šta je zatvoreno
+
+| Block | Promena | Linije |
+|:--|:--|:-:|
+| `src/blocks/autoplay.mjs` | +`AUTOPLAY_DISCLOSURE_REQUIRED_JURISDICTIONS` frozen (UKGC/ON/MGA) · jurisdiction routing kroz 3 ulaza · `requireDisclosure` config · runtime gate `onAutoplayDisclosureRequired` emit + ABORT autoplayStart kad nije ack-ovan | +51 |
+| `tools/lego-gate.mjs` | +`onAutoplayDisclosureRequired: ['autoplay.mjs']` single-owner | +7 |
+| `tests/blocks/_autoplayJurisdictionGate.test.mjs` | **NEW** — 33 testa kroz 9 sekcija | +180 |
+
+### 2. Ultimate QA 11/11 ZELENO
+
+| # | Gate | Verdict |
+|:-:|:--|:-:|
+| 1 | LEGO 7/7 invariants | ✅ (88 blokova) |
+| 2 | `_autoplayJurisdictionGate.test.mjs` (NEW) | ✅ **33/0** |
+| 3-10 | regression chain (autoplay/bonusBuy/winCap/engineDeltaCap/LDW/realityCheck/sessionTimeout/stormMultiplierReel) | ✅ 31+45+78+32+43+46+51+61 = **387/0** |
+| 11 | npm test (20 grid fixtures) | ✅ 20/20 |
+| **Σ** | — | **460 testa · 0 fail** |
+
+### 3. Honest delivery
+
+| Status | Stavka |
+|:--|:--|
+| ✅ Done | autoplay disclosure gate + 33 new tests + LEGO 7/7 |
+| ⏳ Out-of-scope | W58.J-AGCO RTP transparency · W58.J-SE play-time persistent · W58.J-DE spin pace + no saved state · W58.J-NL Cruks · W58.J-EU AI Act DDA |
+| 🎯 Sledeći logičan korak | W58.J-AGCO (RTP transparency emit u winCap) |
+
+---
+
 ## 🔬 W57 — AGENTSKI AUDIT BACKLOG (✅ A1-A7 ALL LANDED — 2026-06-17)
 
 > Boki direktiva (2026-06-16 21:26): *"pokreni sva tri redom, ultimativna overa na kraju i detaljan qa"* — pokrenuo sam **3 agenta paralelno** (`slot-sage-v2 --scope invariant`, `rg-architect --scope cross`, `engine-architect --scope perf`) sa SGF Knowledge base file:line citation budget-om. Sva tri verdict-a: **BLOCKED**. Posle verifikacije agent nalaza per `rule_no_false_positive_qa`, identifikovano **5 stvarnih 🔴 rupa + 2 🟡 medium + 1 false positive**.
