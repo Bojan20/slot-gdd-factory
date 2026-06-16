@@ -460,6 +460,56 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## 🎯 W55 — SPIN-SHARPNESS CI INTEGRATION · full 5-GDD baseline + test:all gate wire-up (✅ LANDED — 2026-06-16)
+
+> Boki direktiva (2026-06-16 ~20:20): *"?"* → Vlasnik tumači `?` per HARD RULE #2 kao "ima li nešto sledeće?" — zatvaram W54 out-of-scope: full 5-GDD baseline + CI integration. W54 je probe-ovao samo 1 GDD (crystal); 4 ostala su naslijedila ranije ručno bake-ovane brojeve. W55 osvežava sve 5 baseline-ova svežim merama + integriše probe u `npm run test:all` chain kao gate.
+
+### W55.A — Šta je landovano
+
+| Fajl | Šta | Linije |
+|:--|:--|:-:|
+| `cert/golden-spin-sharpness.json` | **Fresh 5-GDD baseline** (2026-06-16T20:21:46Z) — 159 cells / 27 surfaces / 27 overlays / **0 violations** | +1/-1 |
+| `package.json` `test:all` | **Insertovan `test:sharpness`** posle `test:no-muddy-cell` (oba presentation-invariant probe-ovi, susedna u CI) | +1/-1 |
+| `package.json` `test:blocks` | **Appendovan motionOverlay.test.mjs + winPresentationLDW.test.mjs** (33/33 + 22/22) na kraj 86-test chain-a | +1/-1 |
+
+### W55.B — Sharpness baseline (svih 5 GDDs)
+
+| GDD | Cells | Surfaces | Overlays | Mutations | Verdict |
+|:--|:-:|:-:|:-:|:-:|:-:|
+| huff | 25 | 5 | 5 | 0 | ✅ |
+| wrath | 25 | 5 | 5 | 0 | ✅ |
+| crystal | 25 | 5 | 5 | 0 | ✅ |
+| gates | 42 | 6 | 6 | 0 | ✅ |
+| midnight | 42 | 6 | 6 | 0 | ✅ |
+| **Σ** | **159** | **27** | **27** | **0** | **5/5 ✅** |
+
+### W55.C — CI gate matrix
+
+| # | Gate | Verdict |
+|:-:|:--|:-:|
+| 1 | `npm run test:sharpness` (--fail-on-violation) | ✅ 5/5 all baselines OK · 0 mutations |
+| 2 | `npm run test:motion-overlay` | ✅ 33/33 |
+| 3 | `npm run test:ldw` | ✅ 22/22 |
+| 4 | LEGO gate 6/6 invariants | ✅ (96 sole-owner · 71 listener · 86 vendor-neutral) |
+| 5 | `test:all` chain dependency order verified | ✅ test:sharpness slots after test:no-muddy-cell, before test:rmotion |
+| 6 | `test:blocks` chain dependency order verified | ✅ 2 new tests na kraju 86-test chain-a |
+| 7 | Honest scope: Wave 3.1 rectangular migration deferred | ✅ documented (knob harmonization needed) |
+| 8 | Vendor leak grep u test wiring | ✅ N/A (package.json + cert JSON) |
+| 9 | Cross-repo paritet (W55 nije cross-repo) | ✅ N/A |
+| **Σ** | **9/9** | ✅ |
+
+### W55.D — Hash pin
+
+| SHA | Šta | Push |
+|:-:|:--|:-:|
+| `40d4620` | **W55** — fresh 5-GDD sharpness baseline (159 cells / 27 surfaces / 0 mutations) + test:all CI gate wire-up + 2 W54 unit testa u test:blocks chain | ✅ |
+
+### W55.E — Honest scope marker (Wave 3.1 deferred)
+
+> **Wave 3.1 rectangular migration** → `motionOverlay` block deferred to future wave. Razlog: `reelEngineCSS.mjs` koristi default `streakAlpha: 0.04` / `shadowAlpha: 0.18` dok `motionOverlay.mjs` koristi `streakAlpha: 0.10` / `shadowAlpha: 0.22`. Tihi migration bi promenio visual rendering za sve postojeće rectangular GDD-ove bez GDD opt-in-a. Buduća iteracija mora imati explicit config-mapping layer (npr. `MOTION_OVERLAY_SURFACES` row sa per-surface knob override).
+
+---
+
 ## 🎬 W54 — SPIN-QUALITY CLOSE-OUT · motionOverlay Wave 3 + LDW gate + sharpness probe Wave 4 (✅ LANDED — 2026-06-16)
 
 > Boki direktiva (2026-06-16 ~20:10): *"sta dalje?"* → Vlasnik bira (HARD RULE #3): orphan W48 spin-quality Wave 3+4 fajlovi su sedeli u workdir-u danima (713 LOC + 5 integration izmena, nikad commitovani). Najjači sledeći potez = landing tog skupa pre nego što se bilo šta novo doda.
@@ -859,6 +909,7 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 | Hash | Wave | Subject |
 |---|---|---|
+| `40d4620` | **W55** | **Spin-sharpness CI integration · full 5-GDD baseline + test:all gate wire-up** — fresh probe na svih 5 reference GDD (huff/wrath/crystal/gates/midnight): **159 cells / 27 spinning surfaces / 27 overlays painted / 0 cell-filter mutations** (5/5 PASS). `package.json` `test:all` chain: `test:sharpness` insertovan posle `test:no-muddy-cell` (susedni presentation-invariant probe-ovi). `test:blocks` chain: motionOverlay + winPresentationLDW appendovani na kraj 86-test chain-a (33+22 = +55 assertions svaki npm test:blocks run). LEGO 6/6 + 5/5 sharpness regression + 33/33 + 22/22 unit via npm. Honest scope marker: Wave 3.1 rectangular migration → motionOverlay deferred (default knob harmonization needed: streakAlpha 0.04 vs 0.10, shadowAlpha 0.18 vs 0.22). |
 | `0355aaa` | **W54** | **Spin-quality close-out · motionOverlay Wave 3 + LDW gate + sharpness probe Wave 4** — orphan harvest 713 LOC + 5 integration izmena. New `src/blocks/motionOverlay.mjs` (shared `::after`/`::before` overlay za 5 engina, 0 JS/frame, WCAG 2.3.3) + `tests/blocks/motionOverlay.test.mjs` 33/33 + `tests/blocks/winPresentationLDW.test.mjs` 22/22 (Dixon 2010 + UKGC RTS 7C + AGCO 4.07 + UKGC 17-Jan-2025) + `tools/_spin-sharpness-probe.mjs` Wave 4 (Playwright computed-style sharpness assertion + Laplacian baseline ±15% u `cert/golden-spin-sharpness.json`). Orchestrator wires per 5 engine-a (hex/wheel/crash/plinko/slingo). Hex engine drops Wave 1 inline overlay — orchestrator's emit pokriva. 4 nova npm script-a. Ultimate QA 9/9: 33+22 unit + LEGO 6/6 (96 events sole-owner · 71 listener · 86 blokova vendor-neutral) + npm 4/4 + grid 20/20 + sharpness probe crystal 25 cells 0 mutations + 0 vendor leaks + 15 LDW citation hits + GPU-only zero-JS. |
 | _TBD_ | **W50** | **LDW (Losses Disguised as Wins) cross-block gate** — 3 src/blocks dopune (`winPresentation.mjs` presentExternalWin gate + preSpin reset; `hapticFeedback.mjs` `_ldwActive()` defense-in-depth; `netLossIndicator.mjs` `onLdwSuppressed` listener + RG metrics exposure) + new `_ldwCrossBlock.test.mjs` (43 case kroz 10 sekcija: source-of-truth, winRollup indirect, bigWinTier indirect, haptic D-i-D, netLoss listener, sandbox 6 scenarija, regulator profile precedence, EXPECTED_EMIT_OWNERS, vendor-neutral, determinism). Ultimate QA 9/9 ZELENO: 232 testova / 0 fail / LEGO 6/6 / npm 20/20 / vendor clean. Citations: Dixon 2010 + UKGC RTS 7C + AGCO 4.07 + UKGC 17-Jan-2025. |
 | `e05a618` | **W49.A** | **ULTIMATE SLOT AGENTS KB landovan** — 9 research izvora + master `SLOT_MECHANICS_ENCYCLOPEDIA.md` (11 §, 24 KB) + 8 200 linija research-pool. 5 HARD RULES + Bridge table 22 IGT→SGF + Gap matrix 30+ + 10 industry patterns za file:line extract + Regulator gates 12 × 25 + 53 HookBus events + Glossary industry→vendor-neutral + Agent contract. **Gap audit**: 5 critical (config-parser-RE + playa-cli-RE + Kimi pass-3 stub + 7 SGF agent prompt-a bez pointer + 7 Cortex agent prompt-a bez pointer) + 4 follow-up (WoO RE + GDD corpus + vendor patent corpus + WCAG/haptic deep). T1-T4 plan ~2 h 30 min. |
