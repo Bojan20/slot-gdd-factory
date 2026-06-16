@@ -460,6 +460,61 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## 🎬 W54 — SPIN-QUALITY CLOSE-OUT · motionOverlay Wave 3 + LDW gate + sharpness probe Wave 4 (✅ LANDED — 2026-06-16)
+
+> Boki direktiva (2026-06-16 ~20:10): *"sta dalje?"* → Vlasnik bira (HARD RULE #3): orphan W48 spin-quality Wave 3+4 fajlovi su sedeli u workdir-u danima (713 LOC + 5 integration izmena, nikad commitovani). Najjači sledeći potez = landing tog skupa pre nego što se bilo šta novo doda.
+
+### W54.A — Šta je landovano
+
+| Fajl | Tip | Linije | Pokriva |
+|:--|:-:|:-:|:--|
+| `src/blocks/motionOverlay.mjs` | NEW BLOCK | 236 | Wave 3 — shared `::after`/`::before` motion overlay (shadow + streaks + speed lines) za 5 engina (hex/wheel/crash/plinko/slingo). 0 JS/frame, GPU-only. WCAG 2.3.3 reduced-motion. |
+| `tests/blocks/motionOverlay.test.mjs` | NEW TEST | 106 | 33/33 unit (defaults, bounds, emit, kindKey isolation, layer override, sanitization, vendor neutrality) |
+| `tests/blocks/winPresentationLDW.test.mjs` | NEW TEST | 120 | 22/22 LDW gate sandbox (Dixon 2010 + UKGC RTS 7C + AGCO 4.07 + UKGC 17-Jan-2025) — 4 math scenarija + per-block vs regulator profile precedence |
+| `tools/_spin-sharpness-probe.mjs` | NEW TOOL | 251 | Wave 4 — headless Playwright probe za `getComputedStyle(cell).filter === 'none'` invariant + Laplacian variance baseline (±15%) u `cert/golden-spin-sharpness.json` |
+| `cert/golden-spin-sharpness.json` | NEW BASELINE | 35 | Wave 4 baseline JSON (source of truth za regression) |
+| `src/buildSlotHTML.mjs` | MODIFIED | +24 | Orchestrator wires motionOverlay per 5 engine-a (`MOTION_OVERLAY_SURFACES` frozen registry) |
+| `src/blocks/hexReelEngine.mjs` | MODIFIED | -18 | Drop inlined Wave 1 `::after` overlay — orchestrator's emit pokriva |
+| `blocks/_manifest.json` | MODIFIED | +82 -7 | motionOverlay block registered |
+| `package.json` | MODIFIED | +4 | 4 nova script-a: `test:sharpness`, `test:sharpness:bake`, `test:ldw`, `test:motion-overlay` |
+| `tools/orchestrator-loc-budget.mjs` | MODIFIED | +11 -3 | Budget update za novi block |
+| **Σ** | **10 fajlova** | **+844 / -43** | — |
+
+### W54.B — Ultimate QA matrix
+
+| # | Gate | Verdict |
+|:-:|:--|:-:|
+| 1 | motionOverlay unit (33 assertions) | ✅ 33/33 |
+| 2 | winPresentationLDW unit (22 assertions) | ✅ 22/22 |
+| 3 | LEGO gate 6/6 invariants | ✅ (96 events sole-owner · 71 listener coverage · **86 blokova** vendor-neutral) |
+| 4 | npm test full (parser floor + grid coverage) | ✅ 4/4 + 20/20 |
+| 5 | Sharpness probe (crystal GDD) | ✅ 25 cells / 0 mutations / 5 overlays / baseline OK |
+| 6 | Vendor leak grep u 2 nova bloka | ✅ 0 hits |
+| 7 | LDW gate references (Dixon/RTS/AGCO/UKGC 17-Jan-2025) u winPresentation.mjs | ✅ 15 hits |
+| 8 | Honest scope (cell layer NEVER mutated · GPU only · 0 JS/frame) | ✅ verified via probe |
+| 9 | Cross-engine isolation (kindKey sanitization, no animation collision) | ✅ tested |
+| **Σ** | **9/9 ZELENO** | ✅ |
+
+### W54.C — Hash pin
+
+| SHA | Šta | Push |
+|:-:|:--|:-:|
+| `0355aaa` | **W54** — motionOverlay Wave 3 + LDW gate + sharpness probe Wave 4 (713 LOC orphan harvest + 5 integration edit-a + golden baseline bake) | ✅ |
+
+### W54.D — Boki rule sinhronizacija
+
+| Pravilo | Primena |
+|:--|:--|
+| `rule_no_math_unless_asked` | W54 ne dira PAR / RTP / volatility — samo presentation layer + LDW regulator gate |
+| `rule_audio_off_until_asked` | W54 ne dira `audio.mjs` (haptic je tactile, ne audio API surface) |
+| `rule_no_vendor_mentions` | motionOverlay block + sharpness probe vendor-neutral · LEGO gate verifikovao |
+| `rule_force_buttons_real_spin` | N/A za ovaj wave — presentation-only layer |
+| `rule_slot_gdd_lego_blocks` | Orchestrator wires motionOverlay; engines NE importuju — single owner via `MOTION_OVERLAY_SURFACES` frozen registry |
+| `rule_ultimate_checklist` | 9-tačka gate pre commit-a (gore W54.B) |
+| `rule_master_todo_auto_commit` | Posle W54 commit-a (`0355aaa`), master TODO se update + push BEZ pitanja |
+
+---
+
 ## ⏲ W53 — sessionTimeout PARITY W50 + W51 wire-up (✅ LANDED — 2026-06-16)
 
 > Boki direktiva (2026-06-16 19:12): *"kad zavrsis kreni ultimativno dalje, ultra detaljno sa svim qa ultimativnim detaljnim, da se pokrpe sve rupe i sva moguca scenatrija da se pokriju, da sve radi savrseno, sve moguce provere odradi"*.
@@ -804,6 +859,7 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 | Hash | Wave | Subject |
 |---|---|---|
+| `0355aaa` | **W54** | **Spin-quality close-out · motionOverlay Wave 3 + LDW gate + sharpness probe Wave 4** — orphan harvest 713 LOC + 5 integration izmena. New `src/blocks/motionOverlay.mjs` (shared `::after`/`::before` overlay za 5 engina, 0 JS/frame, WCAG 2.3.3) + `tests/blocks/motionOverlay.test.mjs` 33/33 + `tests/blocks/winPresentationLDW.test.mjs` 22/22 (Dixon 2010 + UKGC RTS 7C + AGCO 4.07 + UKGC 17-Jan-2025) + `tools/_spin-sharpness-probe.mjs` Wave 4 (Playwright computed-style sharpness assertion + Laplacian baseline ±15% u `cert/golden-spin-sharpness.json`). Orchestrator wires per 5 engine-a (hex/wheel/crash/plinko/slingo). Hex engine drops Wave 1 inline overlay — orchestrator's emit pokriva. 4 nova npm script-a. Ultimate QA 9/9: 33+22 unit + LEGO 6/6 (96 events sole-owner · 71 listener · 86 blokova vendor-neutral) + npm 4/4 + grid 20/20 + sharpness probe crystal 25 cells 0 mutations + 0 vendor leaks + 15 LDW citation hits + GPU-only zero-JS. |
 | _TBD_ | **W50** | **LDW (Losses Disguised as Wins) cross-block gate** — 3 src/blocks dopune (`winPresentation.mjs` presentExternalWin gate + preSpin reset; `hapticFeedback.mjs` `_ldwActive()` defense-in-depth; `netLossIndicator.mjs` `onLdwSuppressed` listener + RG metrics exposure) + new `_ldwCrossBlock.test.mjs` (43 case kroz 10 sekcija: source-of-truth, winRollup indirect, bigWinTier indirect, haptic D-i-D, netLoss listener, sandbox 6 scenarija, regulator profile precedence, EXPECTED_EMIT_OWNERS, vendor-neutral, determinism). Ultimate QA 9/9 ZELENO: 232 testova / 0 fail / LEGO 6/6 / npm 20/20 / vendor clean. Citations: Dixon 2010 + UKGC RTS 7C + AGCO 4.07 + UKGC 17-Jan-2025. |
 | `e05a618` | **W49.A** | **ULTIMATE SLOT AGENTS KB landovan** — 9 research izvora + master `SLOT_MECHANICS_ENCYCLOPEDIA.md` (11 §, 24 KB) + 8 200 linija research-pool. 5 HARD RULES + Bridge table 22 IGT→SGF + Gap matrix 30+ + 10 industry patterns za file:line extract + Regulator gates 12 × 25 + 53 HookBus events + Glossary industry→vendor-neutral + Agent contract. **Gap audit**: 5 critical (config-parser-RE + playa-cli-RE + Kimi pass-3 stub + 7 SGF agent prompt-a bez pointer + 7 Cortex agent prompt-a bez pointer) + 4 follow-up (WoO RE + GDD corpus + vendor patent corpus + WCAG/haptic deep). T1-T4 plan ~2 h 30 min. |
 | `e300cf0` | **B64** | **`symbolUpgrade` block (Faza 3 #1)** — cascade-with-transmute level-up on tumble refill. Owns 2 HookBus events (`onSymbolUpgrade` · `onSymbolUpgradeCascade`), 4 lifecycle listeners (preSpin · onTumbleStep · postSpin · onFsEnd), Fisher–Yates fair cap selection (default ≤2 per tumble), auto-derived ladder from `SYMBOL_REGISTRY` tiers when GDD omits explicit pairs, force/QA hook `window.symbolUpgradeForceAt(col,row)` routes through real upgrade path (rule_force_buttons_real_spin), auto-disabled on tumble-incompatible shapes (wheel/hex/plinko/crash/slingo/radial). 26/26 unit + LEGO 5/5 (69 blocks · 60/60 event ownership · 57/57 listener coverage) + budget 1012/1050 + grids 20/20 + browser 24/24 + manifest 17/17. Sweep extras: `holdAndWin.mjs` vendor string purged ("Lightning Link" → "industry-standard lock-and-respin"), `anticipationUniversal.mjs` got its missing test (15/15), `onHoldAndWinPhase` / `onHoldAndWinEnd` declared in EXPECTED_EMIT_OWNERS. |
