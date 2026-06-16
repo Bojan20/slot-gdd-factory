@@ -31,6 +31,35 @@ export function defaultConfig() {
   };
 }
 
+/* W57.A4 — Cross-jurisdiction bonus-buy ban matrix.
+ *
+ * Operators deploying under any of these regulator profiles MUST NOT
+ * surface the buy-the-bonus path. Forced disable at resolveConfig time
+ * matches the same precedence pattern as winCap.mjs jurisdiction
+ * routing (regulator.profile > responsibleGambling.jurisdiction).
+ *
+ * Citations:
+ *   • UKGC LCCP — Jun-2026 bonus-buy ban
+ *   • SE Spelinspektionen — Spellag 14:6 bonus-buy ban
+ *   • DE GlüStV — §11(3) bonus-buy ban
+ *   • NL KSA — Spel-1 §31 bonus-buy ban
+ *
+ * UKGC / NL / SE / DE are HARD bans. Any other jurisdiction (MGA, ON,
+ * NJ, IT, OFF) honors the GDD's enabled flag.
+ */
+const BONUS_BUY_BANNED_JURISDICTIONS = Object.freeze(['UKGC', 'SE', 'DE', 'NL']);
+
+function _resolveBonusBuyJurisdiction(model) {
+  const m  = (model && model.bonusBuy) || {};
+  const rg = (model && model.responsibleGambling) || {};
+  const reg = (model && model.regulator) || {};
+  let j = null;
+  if (typeof m.jurisdiction   === 'string') j = m.jurisdiction.toUpperCase();
+  if (typeof rg.jurisdiction  === 'string') j = rg.jurisdiction.toUpperCase();
+  if (typeof reg.profile      === 'string') j = reg.profile.toUpperCase();
+  return j;
+}
+
 export function resolveConfig(model = {}) {
   /* Wave UD — baseline → per-kind context override → explicit GDD. */
   let cfg = applyGridProfile('bonusBuy', defaultConfig(), model);
@@ -54,8 +83,25 @@ export function resolveConfig(model = {}) {
     const ctxOverride = applyGridProfile('bonusBuy', { enabled: true }, model);
     cfg.enabled = ctxOverride.enabled !== false;
   }
+
+  /* W57.A4 — Jurisdiction gate runs LAST so it overrides every other
+   * enable path (explicit GDD flag, feature auto-detect, gridProfile).
+   * Operator deploying under UKGC / SE / DE / NL CANNOT show bonus-buy
+   * regardless of GDD intent. */
+  const jurisdiction = _resolveBonusBuyJurisdiction(model);
+  if (jurisdiction && BONUS_BUY_BANNED_JURISDICTIONS.indexOf(jurisdiction) !== -1) {
+    cfg.enabled = false;
+    cfg.jurisdiction = jurisdiction;
+    cfg.bannedByJurisdiction = true;
+  } else if (jurisdiction) {
+    cfg.jurisdiction = jurisdiction;
+    cfg.bannedByJurisdiction = false;
+  }
+
   return cfg;
 }
+
+export { BONUS_BUY_BANNED_JURISDICTIONS };
 
 export function emitBonusBuyCSS(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
