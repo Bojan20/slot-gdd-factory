@@ -49,7 +49,8 @@ block('1. JURISDICTION_CEILINGS matrix', () => {
   t('1.6 NL   = 250k× stake (Spel-1)',   JURISDICTION_CEILINGS.NL   === 250000);
   t('1.7 ON   = 250k× stake (AGCO)',     JURISDICTION_CEILINGS.ON   === 250000);
   t('1.8 NJ   = 500k× stake (upper)',    JURISDICTION_CEILINGS.NJ   === 500000);
-  t('1.9 OFF  = 1M× stake (permissive)', JURISDICTION_CEILINGS.OFF  === 1000000);
+  t('1.9 IT   = 250k× stake (ADM)',      JURISDICTION_CEILINGS.IT   === 250000);
+  t('1.10 OFF = 1M× stake (permissive)', JURISDICTION_CEILINGS.OFF  === 1000000);
 });
 
 /* ════════════════════════════════════════════════════════════════════
@@ -239,7 +240,7 @@ block('10. Vendor-neutral + deterministic emit', () => {
  * 11. Cross-jurisdiction matrix exhaustive — every jurisdiction × clamp
  * ════════════════════════════════════════════════════════════════════ */
 block('11. Exhaustive cross-jurisdiction × clamp matrix', () => {
-  const ALL = ['UKGC', 'MGA', 'SE', 'DE', 'NL', 'ON', 'NJ', 'OFF'];
+  const ALL = ['UKGC', 'MGA', 'SE', 'DE', 'NL', 'ON', 'NJ', 'IT', 'OFF'];
   for (const j of ALL) {
     const ceiling = JURISDICTION_CEILINGS[j];
 

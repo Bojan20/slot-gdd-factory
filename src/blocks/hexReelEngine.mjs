@@ -311,8 +311,22 @@ export function emitHexReelEngineRuntime(cfg = defaultConfig()) {
     /** Per-frame physics — translate each column's strip downward,
      *  rotate cells when offset exceeds cellH, stop when minRotations
      *  reached and stopAt time elapsed. */
+    /* W57.A1 — spiral-of-death guard. Tab-suspended rAF resumes with a
+     * huge wall-clock delta that would warp the now/stopAt compare and
+     * race past the visible stop window. MAX_DELTA_MS=50 caps the
+     * effective tick budget to one near-frame, matching reelEngine. */
+    var __hexLastTickWall = 0;
     function hexTickAll() {
       var now = performance.now();
+      if (__hexLastTickWall) {
+        var __hd = now - __hexLastTickWall;
+        if (__hd > 50) {
+          __hexLastTickWall = now;
+          hexTicker = requestAnimationFrame(hexTickAll);
+          return;
+        }
+      }
+      __hexLastTickWall = now;
       var anyActive = false;
       var pxPerMs = (HEX_REELS[0] ? HEX_REELS[0].cellH : 60) / 80; /* ~ one cell per 80ms */
       for (var i = 0; i < HEX_REELS.length; i++) {

@@ -100,7 +100,12 @@ const HOOK_REGISTRATION_OPT_OUT = new Set([
 /* Expected emit ownership — single source of truth for each event. */
 const EXPECTED_EMIT_OWNERS = {
   /* Core spin lifecycle (Wave A → S) */
-  preSpin:        ['reelEngine.mjs', 'freeSpins.mjs'],
+  /* W57.A2 — `freeSpins.mjs` was co-listed as a `preSpin` emitter but a
+   * source audit showed 0 `HookBus.emit('preSpin'` calls inside it
+   * (reelEngine.mjs is the sole emitter; freeSpins consumes preSpin
+   * via HookBus.on). Dropping the ghost owner so EXPECTED_EMIT_OWNERS
+   * tells the truth — gate goes from "matrix lies" to single-owner. */
+  preSpin:        ['reelEngine.mjs'],
   onSpinResult:   ['reelEngine.mjs'],
   onTumbleStep:   ['tumble.mjs'],
   postSpin:       ['postSpin.mjs'],
@@ -282,9 +287,12 @@ const EXPECTED_EMIT_OWNERS = {
    * value via onMultChange so the canonical mult owner (winPresentation)
    * reconciles the next rollup. Single-owner-emit holds because the
    * mult VALUE is owned by HookBus.setMult; this event is just a
-   * notification with source attribution. Both blocks emit it: the
-   * persistent ladder (FS round) and the multiplierOrb (per-orb hit). */
-  onMultChange: ['persistentMultiplier.mjs', 'multiplierOrb.mjs'],
+   * notification with source attribution.
+   * W57.A2 — `multiplierOrb.mjs` was co-listed but a source audit showed
+   * 0 `HookBus.emit('onMultChange'` calls inside it (only persistentMultiplier
+   * emits; multiplierOrb consumes via HookBus.on). Dropped ghost owner so
+   * EXPECTED_EMIT_OWNERS matches reality. */
+  onMultChange: ['persistentMultiplier.mjs'],
 
   /* W47.S2 (2026-06-15) — close the LEGO ownership matrix for events
    * the runtime has been emitting since AL-x but were never declared

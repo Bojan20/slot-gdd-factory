@@ -460,7 +460,27 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
     });
 
     if (!spinTicker) {
+      /* W57.A1 — spiral-of-death guard. When a tab is suspended (background
+       * throttle, OS sleep, devtools paused), the rAF loop pauses but the
+       * next frame's elapsed delta can be seconds. Without a cap the reel
+       * accumulates massive offsetPx in one tick, stop-detection misfires,
+       * symbol windows desync. Industry standard MAX_DELTA_MS = 50 ms
+       * (≈ 20 fps floor); anything longer is clamped so resume after
+       * suspension behaves like a single late frame, not catastrophic catch-up. */
+      let __reelLastTickWall = 0;
       const tick = () => {
+        const __now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        if (__reelLastTickWall) {
+          const __delta = __now - __reelLastTickWall;
+          if (__delta > 50) {
+            /* Skip this oversize frame entirely — re-arm with fresh wall
+             * clock so next rAF starts a clean elapsed window. */
+            __reelLastTickWall = __now;
+            spinTicker = requestAnimationFrame(tick);
+            return;
+          }
+        }
+        __reelLastTickWall = __now;
         const stillActive = onTickAll();
         if (stillActive) {
           spinTicker = requestAnimationFrame(tick);

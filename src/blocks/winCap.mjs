@@ -50,6 +50,13 @@ export const JURISDICTION_CEILINGS = Object.freeze({
   NL:   250000,
   ON:   250000,
   NJ:   500000,   /* upper-bound default; per-licence variance via override */
+  /* W57.A3 — IT ADM added to jurisdiction matrix per rg-architect
+   * cross-jurisdiction audit. Italian Agenzia delle Dogane e dei
+   * Monopoli (ADM) sets the technical ceiling for online slot operators
+   * licensed under the AAMS regime; the 250 000× line aligns with
+   * neighbouring EEA jurisdictions (NL, ON) that share the same cap
+   * order-of-magnitude. */
+  IT:   250000,
   OFF:  1000000,  /* dev/demo default-permissive (no jurisdiction profile) */
 });
 
