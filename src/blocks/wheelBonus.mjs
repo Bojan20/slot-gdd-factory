@@ -308,7 +308,36 @@ function wbOpen() {
 
 /* Single-owner rule: UI does NOT draw the winning segment. wbSpin
  * arms the spin and emits wheelBonus.spin; the math layer answers with
- * wheelBonus.result { segmentIndex } and wbAnimateTo runs the visual. */
+ * wheelBonus.result { segmentIndex } and wbAnimateTo runs the visual.
+ *
+ * 2026-06-16 (Boki: "Wheel bonus ne radi, ne radi spin"): the math layer
+ * is GATED in the current pre-math phase, so nobody answers wheelBonus.spin
+ * and the wheel never rotates. To keep the UI playable without breaking
+ * the single-owner contract, install a FALLBACK timer: if no wheelBonus.result
+ * arrives within WB_FALLBACK_MS, the UI draws uniformly random from the
+ * baked segments and self-animates. Math-layer integrators (when wired)
+ * will still race the fallback — their wbAnimateTo call cancels the timer. */
+var WB_FALLBACK_TIMER = null;
+var WB_FALLBACK_MS = 250;
+
+function _wbCancelFallback() {
+  if (WB_FALLBACK_TIMER) {
+    try { clearTimeout(WB_FALLBACK_TIMER); } catch (_) {}
+    WB_FALLBACK_TIMER = null;
+  }
+}
+
+function _wbFallbackDraw() {
+  WB_FALLBACK_TIMER = null;
+  if (!WB_STATE.active || !WB_STATE.spinning) return;
+  if (!Array.isArray(WB_SEGMENTS) || WB_SEGMENTS.length === 0) return;
+  var idx = Math.floor(Math.random() * WB_SEGMENTS.length);
+  if (typeof console !== 'undefined' && console.debug) {
+    try { console.debug('[wheelBonus] math layer silent; UI fallback draw idx=' + idx); } catch (_) {}
+  }
+  try { wbAnimateTo(idx); } catch (_) {}
+}
+
 function wbSpin() {
   if (!WB_STATE.active || WB_STATE.spinning) return;
   WB_STATE.spinning = true;
@@ -317,10 +346,17 @@ function wbSpin() {
   if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
     try { HookBus.emit('wheelBonus.spin', {}); } catch (_) {}
   }
+  /* Arm fallback — math layer or any other resolver has WB_FALLBACK_MS
+   * to call wbAnimateTo via wheelBonus.result. After that, UI self-draws. */
+  _wbCancelFallback();
+  WB_FALLBACK_TIMER = setTimeout(_wbFallbackDraw, WB_FALLBACK_MS);
 }
 
 function wbAnimateTo(winIdx) {
   if (!WB_STATE.active) return;
+  /* Any caller (math layer or fallback) reaching wbAnimateTo means the
+   * draw has resolved — cancel the pending fallback so we never race. */
+  _wbCancelFallback();
   if (!(Number.isInteger(winIdx) && winIdx >= 0 && winIdx < WB_SEGMENTS.length)) winIdx = 0;
   WB_STATE.spinning = true;
   const segDeg = 360 / WB_SEGMENTS.length;
@@ -358,6 +394,8 @@ function wbAnimateTo(winIdx) {
 }
 
 function wbClose() {
+  /* Cancel any pending fallback so a late timer doesn't fire after close. */
+  _wbCancelFallback();
   /* Emit collect FIRST so listeners (e.g. weightedWheelSegments) can
    * compute __WIN_AWARD__ before the overlay tears down. Payload carries
    * the current result (or null when closed without a spin) so the

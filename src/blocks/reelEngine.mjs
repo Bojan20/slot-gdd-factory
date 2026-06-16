@@ -184,28 +184,61 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
   function rotateStripDown(reel) {
     /* Pop bottom cell DOM node, unshift to top, randomize its symbol —
        mirrors the industry-standard reel.cells.pop() / unshift() rotation.
-       2026-06-10 (Boki H&W rule): if the BOTTOM cell carries .is-locked-bonus
-       (a hold-and-win locked orb), do NOT rotate it out of position.
-       In every hold-and-spin family slot, locked orbs are STATIC —
-       they don't travel with the reel during respins. Implementation:
-       walk reel.cells from bottom up, pick the FIRST non-locked cell to
-       rotate; if every cell is locked, no rotation at all. Locked cells
-       keep their original dataset.lockedSymbol text. */
-    let _popIdx = reel.cells.length - 1;
-    while (_popIdx >= 0 && reel.cells[_popIdx] && reel.cells[_popIdx].classList.contains('is-locked-bonus')) {
-      _popIdx--;
+
+       2026-06-10 (Boki H&W rule): if a cell carries .is-locked-bonus (a
+       hold-and-win locked orb), it must STAY pinned to its visible row
+       across every respin tick. Industry reference (WoO hnwController.ts
+       L735): "querySelectorAll('.hnw-cell:not(.has-orb)')" — only non-orb
+       cells participate in the per-cell spin.
+
+       2026-06-16 (Boki bug fix: "ta celija gde se nalzi taj orb…
+       je sticky i ne pomenra se dok se sve ostale celije pomeraju"):
+       previous implementation walked bottom-up to skip locked cells on
+       the splice, BUT still unshifted the popped cell to array[0]. That
+       displaces ANY locked cell sitting between the popped index and the
+       top by one slot DOWN each tick — the orb visibly drifts. Correct
+       fix: rotate only the NON-LOCKED sub-list while preserving the
+       original indices of locked cells verbatim. */
+    const cells = reel.cells;
+    const lockedIdx = [];
+    const nonLockedCells = [];
+    for (let i = 0; i < cells.length; i++) {
+      const c = cells[i];
+      if (c && c.classList && c.classList.contains('is-locked-bonus')) {
+        lockedIdx.push(i);
+      } else {
+        nonLockedCells.push(c);
+      }
     }
-    if (_popIdx < 0) {
-      /* Counter must still advance so the rotation loop can settle; visually nothing moves because all cells are locked. */
+    if (nonLockedCells.length === 0) {
+      /* Every cell is locked — no rotation possible; counter still advances
+       * so the outer settle loop can terminate. */
       reel.rotationCount++;
       return;
     }
-    const last = reel.cells.splice(_popIdx, 1)[0];
-    reel.cells.unshift(last);
+    /* Rotate the non-locked sub-list: pop bottom, unshift to top, randomize
+     * the symbol of the recycled cell. Visually this is the same rotation
+     * the player already sees on a normal reel — the difference is locked
+     * cells DO NOT participate, so they stay where they were. */
+    const last = nonLockedCells.pop();
+    nonLockedCells.unshift(last);
     var _sym = randomSym();
     /* Belt+brace — if randomSym ever returned falsy past the guard, keep the
        previous glyph instead of erasing the cell. Better stale than empty. */
     last.textContent = _sym || last.textContent || '?';
+
+    /* Reassemble the cells array: locked cells at their original index;
+     * non-locked cells fill the remaining slots in rotated order. */
+    const next = new Array(cells.length);
+    for (let k = 0; k < lockedIdx.length; k++) {
+      next[lockedIdx[k]] = cells[lockedIdx[k]];
+    }
+    let nlPtr = 0;
+    for (let i = 0; i < next.length; i++) {
+      if (next[i] === undefined) next[i] = nonLockedCells[nlPtr++];
+    }
+    reel.cells = next;
+
     /* Re-append in current order so visual DOM matches the rotated array.
        Locked cells stay where they are; non-locked cells shuffle around them. */
     for (let i = 0; i < reel.cells.length; i++) {

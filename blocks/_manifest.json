@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-16T09:26:09.664Z",
+  "generatedAt": "2026-06-16T09:54:06.047Z",
   "blocksDir": "src/blocks",
   "totalBlocks": 85,
   "blocks": [
@@ -2187,7 +2187,7 @@
         "minStepPx": 0.5,
         "accelMinFactor": 0.3
       },
-      "loc": 835
+      "loc": 868
     },
     {
       "name": "reelEngineCSS",
@@ -3318,7 +3318,7 @@
         "autoSpin": false,
         "title": "BONUS WHEEL"
       },
-      "loc": 457
+      "loc": 495
     },
     {
       "name": "wheelBonusReveal",

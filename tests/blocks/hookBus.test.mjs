@@ -80,6 +80,12 @@ t('HOOK_EVENTS canonical list (core + V intent + V5 win-present + U4 autoplay + 
     /* 2026-06-11 Wave AL-4 / Fable-4 — dailyJackpot block emits
      * onDailyJackpotAward when the per-spin random roll succeeds. */
     'onDailyJackpotAward',
+    /* Wave A5 — locale + dir lifecycle (settingsPanel→rtlLayout). */
+    'onLocaleChanged', 'onDirChanged',
+    /* Wave A8 — PWA installability lifecycle (sole-owned by pwaInstallability). */
+    'onPwaInstallable', 'onPwaInstalled', 'onPwaSwReady',
+    /* Wave HX3+HX4 — i18n + currency lifecycle (sole-owned by i18n.mjs). */
+    'onLanguagePackApplied',
   ];
   eq(HOOK_EVENTS.length, expected.length);
   for (const e of expected) ok(HOOK_EVENTS.includes(e), `missing ${e}`);

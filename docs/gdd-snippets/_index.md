@@ -3,7 +3,7 @@
 > Auto-generated from `src/blocks/<name>.mjs` `defaultConfig()`
 > exports + JSDoc header purpose lines.
 
-Total blocks: **84**.
+Total blocks: **85**.
 
 | Block | Has defaultConfig | Purpose |
 |:--|:-:|:--|
@@ -37,6 +37,7 @@ Total blocks: **84**.
 | `holdAndWinCreditBucket` | ✅ | Wave H14 — Hold-and-Win Credit Bucket extension. Industry pattern (template-neutral, vendor-neutral): The "Credit Bucket" / "Cash-On-Reels" pattern is the unive |
 | `hookBus` | ✅ | Slot GDD Factory · hookBus BLOCK THE central lifecycle bus. Every feature block registers its runtime callbacks here; the spin engine (runOneBaseSpin / handlePo |
 | `hotReload` | ✅ | Wave P8 — **Hot-Reload bez page refresh** (dev-mode feedback loop). Industry pattern (template-neutral, vendor-neutral): Modern slot-game dev tooling exposes a  |
+| `i18n` | ✅ | Wave HX3 + HX4 — Internationalization + currency formatting. Industry pattern: a slot ships to ~10 markets per release. |
 | `lightning` | ✅ | Wave P1 — Lightning random-hit feature block. On a winning spin (or with a random chance), strike N cells with lightning bolts that overlay random multiplier va |
 | `multiplierLadder` | ✅ | Wave B67 — Persistent Multiplier Ladder UI block. Industry baseline: many FS rounds expose a discrete climbing-mult ladder (e.g. 1× → 2× → 3× → 5× → 10×). |
 | `multiplierOrb` | ✅ | Wave K3 — Multiplier Orb runtime. Special "orb" symbol (`M` by default) that carries a multiplier value (e.g. 2x, 5x, 25x, 1000x). |

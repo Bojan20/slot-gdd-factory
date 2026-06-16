@@ -44,5 +44,22 @@ t('runtime exposes wbOpen', rt.includes('window.wbOpen'));
 t('runtime exposes wbSpin', rt.includes('window.wbSpin'));
 t('runtime exposes wbClose', rt.includes('window.wbClose'));
 
+/* ─── 2026-06-16 Boki fix — wheel never spins when math gated ─── */
+
+t('runtime carries WB_FALLBACK_MS timer constant', rt.includes('WB_FALLBACK_MS'));
+t('runtime defines _wbFallbackDraw helper', rt.includes('_wbFallbackDraw'));
+t('runtime arms fallback in wbSpin (setTimeout to _wbFallbackDraw)',
+  /WB_FALLBACK_TIMER\s*=\s*setTimeout\(_wbFallbackDraw/.test(rt));
+t('runtime cancels fallback on wbAnimateTo entry',
+  /function wbAnimateTo[\s\S]{0,200}_wbCancelFallback\(\)/.test(rt));
+t('runtime cancels fallback on wbClose entry',
+  /function wbClose\(\)[\s\S]{0,200}_wbCancelFallback\(\)/.test(rt));
+t('runtime fallback uses Math.random over WB_SEGMENTS',
+  /Math\.floor\(Math\.random\(\)\s*\*\s*WB_SEGMENTS\.length\)/.test(rt));
+t('runtime fallback calls wbAnimateTo with chosen idx',
+  /wbAnimateTo\(idx\)/.test(rt));
+t('runtime fallback gated by WB_STATE.active + spinning',
+  /if\s*\(!WB_STATE\.active\s*\|\|\s*!WB_STATE\.spinning\)\s*return/.test(rt));
+
 console.log('\nResult: ' + pass + ' pass / ' + fail + ' fail');
 if (fail > 0) process.exit(1);
