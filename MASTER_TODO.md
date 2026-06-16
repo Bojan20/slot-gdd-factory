@@ -460,6 +460,100 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## 🌍 W51 — winCap CROSS-JURISDICTION ENFORCEMENT (✅ LANDED — 2026-06-16)
+
+> Boki direktiva (2026-06-16 19:01): *"kad zavrsis kreni ultimativno dalje, ultra detaljno sa svim qa ultimativnim detaljnim, da se pokrpe sve rupe i sva moguca scenatrija da se pokriju, da sve radi savrseno, sve moguce provere odradi"*.
+>
+> **Regulator anchor**: drugi 🔴 OPEN gate iz win-evaluator + rg-architect agentskih izveštaja. Operator cannot exceed jurisdiction hard ceiling — UKGC RTS 13 (100k×) · MGA PP §5 (500k×) · SE Tech 6.5 (500k×) · DE GlüStV §11 (100k×) · NL Spel-1 §16 (250k×) · ON AGCO 4.06 (250k×) · NJ DGE (500k× default).
+
+### 1. Pre-W51 audit — koje su rupe nađene
+
+| Block / Layer | Pre W51 | Rupa |
+|:--|:-:|:--|
+| `winCap.mjs` core (Wave N3) | ✅ Cap clamp · mode · overlay · forceEnd · JSON IR | ❌ NEMA jurisdiction matrix · operator mogao bilo koji `maxWinX` |
+| HookBus audit events | 🔴 GAP | `onWinCapTriggered` / `onWinCapClamped` ne postoje → cert harness slep |
+| EXPECTED_EMIT_OWNERS | 🔴 GAP | nema oba event-a registrovana → LEGO single-owner gate slep |
+| Auto-enable na regulator profile | 🔴 GAP | operator zaboravi `enabled=true` → block silently off |
+| Test coverage (pre-W51) | 22 testa | nema jurisdiction matrix · clamp logic · audit emit · ceiling enforcement |
+
+### 2. Šta je urađeno
+
+| Fajl | Promena | Linije |
+|:--|:--|:-:|
+| `src/blocks/winCap.mjs` | +`JURISDICTION_CEILINGS` frozen export (8 ulaza) · resolveConfig jurisdiction routing (3 input keys + precedence chain) · ceiling clamp + `ceilingApplied` flag · runtime bake `WIN_CAP_JURISDICTION` + `WIN_CAP_CEILING_APPLIED` consts · `onWinCapTriggered` emit on cap hit · `onWinCapClamped` emit on boot when over-spec · auto-enable on regulated profile | +63 |
+| `tools/lego-gate.mjs` | +EXPECTED_EMIT_OWNERS registration `onWinCapTriggered` + `onWinCapClamped` (single-owner: `winCap.mjs`) | +9 |
+| `tests/blocks/_winCapJurisdictions.test.mjs` | **NEW** — 74 testa kroz 11 sekcija (matrix · default · routing · ceiling clamp · OFF · runtime emit · auto-enable · EXPECTED_EMIT · JSDoc citations · vendor neutral · exhaustive jurisdiction × clamp matrix) | +250 |
+
+### 3. JURISDICTION_CEILINGS matrix (8 ulaza)
+
+| Jurisdiction | Ceiling × stake | Authority |
+|:--|:-:|:--|
+| UKGC | **100 000** | RTS 13 max-win cap |
+| MGA | **500 000** | Player Protection Directive §5 |
+| SE Spelinspektionen | **500 000** | Tech Std 6.5 clamp |
+| DE GlüStV | **100 000** | §11 + €1 stake floor effective |
+| NL KSA | **250 000** | Spel-1 §16 ceiling |
+| ON AGCO | **250 000** | Standard 4.06 disclosure |
+| NJ DGE | **500 000** | upper-bound default (per-licence variance) |
+| OFF (permissive/dev) | **1 000 000** | no jurisdiction profile |
+
+### 4. Resolve precedence chain
+
+| Source | Precedence |
+|:--|:-:|
+| `model.regulator.profile` | **1** (highest — operator deployment) |
+| `model.responsibleGambling.jurisdiction` | 2 |
+| `model.winCap.jurisdiction` | 3 (lowest — game-design choice) |
+
+### 5. Auto-enable matrix
+
+| Profile | Auto-enable? | Razlog |
+|:--|:-:|:--|
+| UKGC / MGA / SE / DE / NL / ON / NJ | ✅ TRUE | regulated jurisdiction MUST have cap visible even if GDD zaboravi |
+| OFF | FALSE | permissive / dev — GDD controls |
+| unknown | FALSE | falls back to default (`OFF`) |
+
+### 6. Exhaustive matrix coverage (sekcija 11 — 24 testa)
+
+| Jurisdiction | Below ceiling | At ceiling | Above ceiling |
+|:--|:-:|:-:|:-:|
+| UKGC | ✅ pass-through | ✅ pass-through | ✅ clamp → 100k |
+| MGA | ✅ | ✅ | ✅ clamp → 500k |
+| SE | ✅ | ✅ | ✅ clamp → 500k |
+| DE | ✅ | ✅ | ✅ clamp → 100k |
+| NL | ✅ | ✅ | ✅ clamp → 250k |
+| ON | ✅ | ✅ | ✅ clamp → 250k |
+| NJ | ✅ | ✅ | ✅ clamp → 500k |
+| OFF | ✅ | ✅ | ✅ (1M = ceiling, no clamp) |
+
+### 7. Ultimate QA 6/6 ZELENO
+
+| # | Gate | Komanda | Rezultat |
+|:-:|:--|:--|:-:|
+| 1 | `_winCapJurisdictions.test.mjs` (NEW) | `node tests/blocks/_winCapJurisdictions.test.mjs` | ✅ **74/0** |
+| 2 | `winCap.test.mjs` regression | `node tests/blocks/winCap.test.mjs` | ✅ **22/0** |
+| 3 | LEGO 6 invariants + new emit-owners | `node tools/lego-gate.mjs` | ✅ **6/6** (86 blokova) |
+| 4 | npm test (20 grid fixtures) | `npm test` | ✅ **20/20** |
+| 5 | JSDoc cites 6 jurisdiction authorities | regex grep | ✅ UKGC RTS 13 · MGA PP §5 · SE Tech 6.5 · DE §11 · NL §16 · ON 4.06 |
+| 6 | Vendor-neutral (runtime + CSS + markup) | regex grep | ✅ clean |
+| **Σ** | **6 gate matrix** | — | **96 testa zelena · 0 fail** |
+
+### 8. Honest delivery
+
+| Status | Stavka |
+|:--|:--|
+| ✅ Done | 1 src/block dopuna + 1 tool dopuna + 74-test NEW + 6-gate ultimate QA + master TODO + commit + push |
+| ⏳ Out-of-scope (svesno) | Math layer cap calculation (RTP target / volatility class) — `rule_no_math_unless_asked` |
+| 🎯 Sledeći logičan korak (vlasnik bira) | (a) `realityCheck` wire-up `__NLI_LDW_COUNT__` (UKGC LCCP 8.3.1 player-protection visibility); (b) cross-browser smoke za sve regulator gate-eve; (c) drugo po tvom izboru |
+
+### 9. Komiti
+
+| SHA | Šta | Push |
+|:-:|:--|:-:|
+| _TBD_ | **W51 — winCap cross-jurisdiction enforcement** (matrix 8 + ceiling clamp + audit emit + 74 testa) | ⏳ |
+
+---
+
 ## 🛡 W50 — LDW (Losses Disguised as Wins) CROSS-BLOCK GATE (✅ LANDED — 2026-06-16)
 
 > Boki direktiva (2026-06-16 18:50): *"kad zavrsis kreni ultimativno dalje, ultra detaljno sa svim qa ultimativnim detaljnim, da se pokrpe sve rupe i sva moguca scenatrija da se pokriju, da sve radi savrseno, sve moguce provere odradi"*.

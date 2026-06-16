@@ -85,6 +85,10 @@ const HOOK_REGISTRATION_OPT_OUT = new Set([
   'pwaInstallability.mjs', // Wave A8 — emit-only PWA lifecycle (SW ready,
                         // A2HS prompt, appinstalled); listens to window
                         // events directly, never reads HookBus.
+  'motionOverlay.mjs',  // Wave 3 — pure CSS emit (per-engine ::after motion
+                        // overlay). No runtime, no lifecycle listener; the
+                        // overlay is painted by CSS and animated by the
+                        // browser when `.is-spinning` class is present.
   /* W47.S2 (2026-06-15) — spinTempo is a pure config emitter: produces a
    * static SPIN_PROFILE literal consumed by the reel engine synchronously.
    * Per its own JSDoc header — "Consumed only at build time, no runtime
@@ -118,7 +122,21 @@ const EXPECTED_EMIT_OWNERS = {
    * and downstream readers (__WIN_AWARD__, __SLOT_WIN_PRESENT_ACTIVE__
    * already set side-by-side) can branch on the visible rollup window. */
   onWinPresentationStart: ['winPresentation.mjs'],
+  /* Wave LDW (W48) — emitted when net delta ≤ 0 and celebration FX is
+   * suppressed per Dixon 2010 / UKGC RTS 7C / AGCO 4.07 / UKGC 17-Jan-
+   * 2025. Listeners (future): audio block can mute sound, haptic block
+   * can skip vibration, telemetry can log the suppressed round. */
+  onLdwSuppressed: ['winPresentation.mjs'],
   onWinPresentationEnd:   ['winPresentation.mjs'],
+  /* W51 — Win-cap audit events. Cross-jurisdiction enforcement: when
+   * cumulative win reaches per-jurisdiction ceiling (UKGC 100k× / MGA
+   * 500k× / SE 500k× / DE 100k× / NL 250k× / ON 250k× / NJ 500k×) the
+   * round terminates and downstream consumers (telemetry, audit trail,
+   * cert harness) log the hit. onWinCapClamped fires once at boot when
+   * the operator's requested maxWinX exceeded the jurisdiction ceiling
+   * and was forcibly lowered. */
+  onWinCapTriggered: ['winCap.mjs'],
+  onWinCapClamped:   ['winCap.mjs'],
   /* Wave H5 — Big-Win Tier ladder. Vendor-neutral 5-tier celebration
    * fired after the per-line rollup ends. tier is INT 1..5; label/
    * threshold/duration/color all GDD-driven so two games share the

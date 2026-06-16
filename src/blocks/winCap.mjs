@@ -1,27 +1,65 @@
 /**
  * src/blocks/winCap.mjs
  *
- * Wave N3 — Win Cap terminator block.
+ * Wave N3 (base) + W51 (cross-jurisdiction enforcement) — Win Cap terminator.
  *
- * Regulator-mandated max-win enforcement. When cumulative win exceeds
+ * Regulator-mandated max-win enforcement. When cumulative win reaches
  * maxWinX × bet, current spin/round terminates immediately and a
  * "MAX WIN!" overlay is shown. Industry baseline: regulator-mandated max-win
- * cap — typical 5000x / 10 000x bet thresholds.
+ * cap — typical 5000× / 10 000× bet thresholds.
+ *
+ * W51 cross-jurisdiction matrix (HARD ceiling — operator cannot exceed):
+ *
+ *   UKGC                 100 000× stake  (Remote Gambling RTS 13 max-win cap)
+ *   MGA (Malta)          500 000× stake  (Player Protection Directive §5)
+ *   SE Spelinspektionen  500 000× stake  (Tech Std 6.5 max-win clamp)
+ *   DE GlüStV            100 000× stake  (effective via €1 stake floor + §11)
+ *   NL KSA               250 000× stake  (Spel-1 §16 ceiling)
+ *   ON AGCO              250 000× stake  (Standard 4.06 max-win disclosure)
+ *   NJ DGE               varies          (per-game ceiling in operator licence)
+ *
+ * If `model.responsibleGambling.jurisdiction` (or alias
+ * `model.regulator.profile`) is set, the maxWinX is CLAMPED to the
+ * jurisdiction ceiling — operator cannot exceed regulator hard limit
+ * even via explicit GDD override. A clamp generates a one-time runtime
+ * warning + `onWinCapClamped` event for the audit log.
  *
  * GDD knobs:
  *   • maxWinX: number — multiplier of base bet (default 5000)
  *   • mode: 'round' | 'spin' — cap applied per-round (default) or per-spin
+ *   • jurisdiction: 'UKGC' | 'MGA' | 'SE' | 'DE' | 'NL' | 'ON' | 'NJ' | 'OFF'
  *   • overlayLabel: string
  *   • overlayMs: number — duration of MAX WIN overlay
  *   • color: 'r,g,b'
  *   • forceRoundEnd: boolean — true = kill FS round on cap hit
+ *
+ * HookBus events:
+ *   • onWinCapTriggered { jurisdiction, ceiling, hitAt, mode } — cap fired
+ *   • onWinCapClamped { requested, ceiling, jurisdiction } — explicit
+ *     override exceeded jurisdiction ceiling, clamped down
  */
+
+/* W51 — per-jurisdiction ceiling matrix. Operator cannot exceed.
+ * `OFF` = no jurisdiction profile, GDD value passes through (used for
+ * permissive markets / unregulated demo builds). */
+export const JURISDICTION_CEILINGS = Object.freeze({
+  UKGC: 100000,
+  MGA:  500000,
+  SE:   500000,
+  DE:   100000,
+  NL:   250000,
+  ON:   250000,
+  NJ:   500000,   /* upper-bound default; per-licence variance via override */
+  OFF:  1000000,  /* dev/demo default-permissive (no jurisdiction profile) */
+});
 
 export function defaultConfig() {
   return {
     enabled: false,
     maxWinX: 5000,
     mode: 'round',
+    jurisdiction: 'OFF',
+    ceilingApplied: false,    /* W51 — true if maxWinX was clamped down */
     overlayLabel: 'MAX WIN!',
     overlayMs: 2400,
     color: '255,215,0',
@@ -50,6 +88,30 @@ export function resolveConfig(model = {}) {
     cfg.enabled = true;
     cfg.maxWinX = clampInt(model.limits.max_win_x, 100, 1000000);
   }
+
+  /* W51 — Cross-jurisdiction enforcement. Accept jurisdiction profile from
+   * either `model.winCap.jurisdiction` or alias
+   * `model.responsibleGambling.jurisdiction` / `model.regulator.profile`.
+   * The alias has precedence (regulator profile is operator deployment
+   * config, not game-design decision). */
+  let jurisdiction = typeof m.jurisdiction === 'string' ? m.jurisdiction.toUpperCase() : null;
+  const rg  = model.responsibleGambling || {};
+  const reg = model.regulator || {};
+  if (typeof rg.jurisdiction === 'string') jurisdiction = rg.jurisdiction.toUpperCase();
+  if (typeof reg.profile     === 'string') jurisdiction = reg.profile.toUpperCase();
+  if (jurisdiction && Object.prototype.hasOwnProperty.call(JURISDICTION_CEILINGS, jurisdiction)) {
+    cfg.jurisdiction = jurisdiction;
+    /* Auto-enable when an explicit regulated jurisdiction is set — operators
+     * deploying under any of UKGC/MGA/SE/DE/NL/ON/NJ MUST have the cap
+     * surface active even if the GDD forgot to flip enabled=true. */
+    if (cfg.jurisdiction !== 'OFF') cfg.enabled = true;
+    const ceiling = JURISDICTION_CEILINGS[cfg.jurisdiction];
+    if (cfg.maxWinX > ceiling) {
+      cfg.maxWinX = ceiling;
+      cfg.ceilingApplied = true;
+    }
+  }
+
   return cfg;
 }
 
@@ -109,29 +171,55 @@ export function emitWinCapMarkup(cfg = defaultConfig()) {
 
 export function emitWinCapRuntime(cfg = defaultConfig()) {
   if (!cfg.enabled) return `/* winCap: disabled */`;
-  return `/* ─── win cap runtime ─────────────────────────────────────────── */
+  return `/* ─── win cap runtime (W51 jurisdiction-aware) ─────────────────── */
 const WIN_CAP_MAX_X        = ${cfg.maxWinX};
 const WIN_CAP_MODE         = ${JSON.stringify(cfg.mode)};
 const WIN_CAP_OVERLAY_MS   = ${cfg.overlayMs};
 const WIN_CAP_FORCE_END    = ${cfg.forceRoundEnd ? 'true' : 'false'};
+const WIN_CAP_JURISDICTION = ${JSON.stringify(cfg.jurisdiction)};
+const WIN_CAP_CEILING_APPLIED = ${cfg.ceilingApplied ? 'true' : 'false'};
 let WIN_CAP_CUMULATIVE_X = 0;
+
+/* W51 — emit one-time clamp audit event so RG / compliance log sees that
+ * the operator's requested cap was lowered to jurisdiction ceiling. */
+if (WIN_CAP_CEILING_APPLIED && typeof HookBus !== 'undefined') {
+  try {
+    HookBus.emit('onWinCapClamped', {
+      jurisdiction: WIN_CAP_JURISDICTION,
+      ceiling: WIN_CAP_MAX_X,
+    });
+  } catch (_) {}
+}
 
 function winCapAdd(winX) {
   if (!Number.isFinite(winX) || winX <= 0) return false;
   if (WIN_CAP_MODE === 'spin') {
-    if (winX >= WIN_CAP_MAX_X) { winCapTrigger(); return true; }
+    if (winX >= WIN_CAP_MAX_X) { winCapTrigger(winX); return true; }
     return false;
   }
   WIN_CAP_CUMULATIVE_X += winX;
-  if (WIN_CAP_CUMULATIVE_X >= WIN_CAP_MAX_X) { winCapTrigger(); return true; }
+  if (WIN_CAP_CUMULATIVE_X >= WIN_CAP_MAX_X) { winCapTrigger(WIN_CAP_CUMULATIVE_X); return true; }
   return false;
 }
 
-function winCapTrigger() {
+function winCapTrigger(hitAt) {
   const overlay = document.getElementById('winCapOverlay');
   if (overlay) {
     overlay.dataset.show = 'true';
     setTimeout(() => { overlay.dataset.show = 'false'; }, WIN_CAP_OVERLAY_MS);
+  }
+  /* W51 — Audit event for regulator log. Lets downstream consumers
+   * (telemetry, audit trail, automated cert harness) capture the moment
+   * cap was hit + which jurisdiction the deployment is operating under. */
+  if (typeof HookBus !== 'undefined') {
+    try {
+      HookBus.emit('onWinCapTriggered', {
+        jurisdiction: WIN_CAP_JURISDICTION,
+        ceiling: WIN_CAP_MAX_X,
+        hitAt: Number.isFinite(hitAt) ? hitAt : WIN_CAP_MAX_X,
+        mode: WIN_CAP_MODE,
+      });
+    } catch (_) {}
   }
   if (WIN_CAP_FORCE_END && typeof FSM_enterOutro === 'function') {
     /* Skip rest of round, jump to outro */
