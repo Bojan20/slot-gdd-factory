@@ -11,10 +11,12 @@ const ct = (s, n, m = '') => { if (!String(s).includes(n)) throw new Error(`miss
 
 console.log('— blocks/reelEngine.mjs (hot-path) —');
 
-t('defaultConfig: S-AVP cabinet defaults', () => {
+t('defaultConfig: WoO-aligned cabinet defaults (2026-06-16 retune)', () => {
+  /* Defaults brought to WoO `SPIN_PROFILE_NORMAL` (src/timing.ts L48):
+       minRotations 5, settleBreathMs 60. */
   const c = defaultConfig();
-  eq(c.minRotations, 8);
-  eq(c.settleBreathMs, 80);
+  eq(c.minRotations, 5);
+  eq(c.settleBreathMs, 60);
   eq(c.stripBufferCells, 2);
   eq(c.staticStaggerMs, 200);
   eq(c.staticHoldMs, 400);
@@ -25,9 +27,9 @@ t('defaultConfig: S-AVP cabinet defaults', () => {
 
 t('resolveConfig: bounds work', () => {
   eq(resolveConfig({ reelEngineHot: { minRotations: 12 } }).minRotations, 12);
-  eq(resolveConfig({ reelEngineHot: { minRotations: 99 } }).minRotations, 8);
+  eq(resolveConfig({ reelEngineHot: { minRotations: 99 } }).minRotations, 5);
   eq(resolveConfig({ reelEngineHot: { settleBreathMs: 200 } }).settleBreathMs, 200);
-  eq(resolveConfig({ reelEngineHot: { settleBreathMs: -1 } }).settleBreathMs, 80);
+  eq(resolveConfig({ reelEngineHot: { settleBreathMs: -1 } }).settleBreathMs, 60);
 });
 
 t('resolveConfig: float bounds', () => {

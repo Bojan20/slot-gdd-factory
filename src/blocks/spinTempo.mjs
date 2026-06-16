@@ -68,7 +68,33 @@
  *   SHOULD NOT bake reduced-motion timings into the GDD preset itself —
  *   the toggle is a runtime user preference, not a slot setting.
  */
+/* 2026-06-16 (Boki "polako i glupo, nije tako radilo. pogledaj rectangular
+   kako radi. sve je sporo gledavo, mutno i dalje"). Numbers retuned to match
+   the WoO `SPIN_PROFILE_NORMAL` benchmark (src/timing.ts L42-59):
+     accelMs    130   (was 120)   — snappy ramp-up
+     steadyMs   720   (was 830)   — short of WoO 1350 for crisper feel
+     decelMs    300   (was 350)   — efficient deceleration
+     staggerMs  180   (was 320)   — WoO match; reels stop in tight cascade
+     windupPx   42    (was 38)    — visible AAA windup pull
+     windupFrames 7   (was 6)     — ~115ms snap
+     bouncePx   6     (was 4)     — soft cushion landing
+     bounceDecay 0.3  (was 0.42)  — subtle secondary
+     bounceCount 2    (was 1)     — weighted feel
+     bounceElasticity 1.8 (was 1.7) — softer spring
+   The old "classic" alias is preserved via the PRESETS map so any GDD that
+   explicitly sets `spinTempo.preset: "classic"` continues to receive the
+   pre-retune values verbatim — only the unset default changes. */
 const DEFAULTS = Object.freeze({
+  windupMs: 100, windupFrames: 7, windupPx: 42,
+  accelMs: 130, steadyMs: 720, decelMs: 300,
+  staggerMs: 180,
+  bouncePx: 6, bounceDecay: 0.3, bounceCount: 2, bounceElasticity: 1.8,
+  decelEasingSpeed: 0.16,
+});
+
+/* Legacy pre-retune values, exposed verbatim via `preset: "classic"` so
+   existing GDDs that pinned the old feel are not silently mutated. */
+const CLASSIC_LEGACY = Object.freeze({
   windupMs: 100, windupFrames: 6, windupPx: 38,
   accelMs: 120, steadyMs: 830, decelMs: 350,
   staggerMs: 320,
@@ -77,10 +103,15 @@ const DEFAULTS = Object.freeze({
 });
 
 const PRESETS = Object.freeze({
-  'classic': DEFAULTS,
-  's-avp':   DEFAULTS, /* deprecated vendor alias — prefer "classic" */
-  'fast':  Object.freeze({ ...DEFAULTS, windupMs: 60,  accelMs:  90, steadyMs:  600, decelMs: 240, staggerMs: 220 }),
-  'slow':  Object.freeze({ ...DEFAULTS, windupMs: 140, accelMs: 150, steadyMs: 1100, decelMs: 480, staggerMs: 380 }),
+  /* "classic" = pre-retune legacy timings (kept verbatim for back-compat). */
+  'classic': CLASSIC_LEGACY,
+  's-avp':   CLASSIC_LEGACY, /* deprecated vendor alias — prefer "classic" */
+  /* "woo" = new default tuned to WoO `SPIN_PROFILE_NORMAL` (the shipping
+     reference cabinet feel). When `spinTempo` is omitted from a GDD, this
+     profile is what authors get out of the box. */
+  'woo':   DEFAULTS,
+  'fast':  Object.freeze({ ...DEFAULTS, windupMs: 60,  accelMs:  90, steadyMs:  500, decelMs: 240, staggerMs: 120 }),
+  'slow':  Object.freeze({ ...DEFAULTS, windupMs: 140, accelMs: 150, steadyMs: 1100, decelMs: 480, staggerMs: 260 }),
 });
 
 export function defaultConfig() {
@@ -122,7 +153,10 @@ export function resolveConfig(model) {
      "s-avp" key is accepted as a deprecated alias; a one-shot console
      warning nudges authors toward the neutral name without breaking
      existing GDDs. */
-  const rawPreset = typeof src.preset === 'string' ? src.preset.toLowerCase() : 'classic';
+  /* Default preset is now "woo" — when a GDD omits spinTempo entirely it
+     receives the WoO-tuned feel. Authors can pin the previous default
+     explicitly via `spinTempo.preset: "classic"`. */
+  const rawPreset = typeof src.preset === 'string' ? src.preset.toLowerCase() : 'woo';
   if (rawPreset === 's-avp' && typeof console !== 'undefined' && !resolveConfig.__sAvpWarned) {
     resolveConfig.__sAvpWarned = true;
     console.warn('[spinTempo] preset "s-avp" is deprecated; use "classic" instead.');

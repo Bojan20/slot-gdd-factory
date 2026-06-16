@@ -43,9 +43,14 @@
  *   emitReelEngineRuntime(cfg) → runtime JS string
  */
 
+/* 2026-06-16 (Boki "polako i glupo… pogledaj rectangular kako radi"). The
+   WoO `SPIN_PROFILE_NORMAL` (src/timing.ts L48) uses `minRotations: 5` —
+   "enough rotations for anticipation". The previous default 8 forced every
+   reel to walk through ~60 % more strip cells before allowing a stop, which
+   read on screen as "vrti u krug". Brought to the WoO benchmark. */
 const DEFAULTS = Object.freeze({
-  minRotations: 8,
-  settleBreathMs: 80,
+  minRotations: 5,
+  settleBreathMs: 60,
   stripBufferCells: 2,
   staticPreRollMs: 220,
   staticBlurSwapMs: 220,
@@ -438,6 +443,13 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
       reel.scheduledStopAt = performance.now() +
         (SPIN_PROFILE.windupMs + SPIN_PROFILE.accelMs +
          SPIN_PROFILE.steadyMs + idx * SPIN_PROFILE.staggerMs) * _turboMult;
+      /* 2026-06-16 (Boki "sve celije dok se reel okrece, u svakom gridu sve
+         ti glupo… mutno i dalje"). Cell-level blur is gone — defaults paint
+         a no-op rule. Instead toggle .is-spinning on the COLUMN so the
+         reelEngineCSS WoO-style motion overlay (::before speed-lines + ::after
+         streak texture) shows over a still-sharp cell stack. Cell toggle is
+         kept for any external block that still hooks the legacy selector. */
+      reel.col.classList.add("is-spinning");
       reel.cells.forEach(c => c.classList.add("is-blurring"));
 
       const initialDelay = reel.scheduledStopAt - performance.now();
@@ -537,6 +549,10 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
           reel.strip.style.transform = "translateY(" + reel.targetY + "px)";
           reel.stopping = false;
           reel.stopped = true;
+          /* 2026-06-16 — strip motion overlay the moment this reel lands.
+             Per-reel cascade match: reel 0 sheds the streak first, reel N
+             last. The cell-level legacy class is stripped in lockstep. */
+          reel.col.classList.remove("is-spinning");
           reel.cells.forEach(c => c.classList.remove("is-blurring"));
 
           if (SPIN_PROFILE.bouncePx > 0) {
@@ -602,6 +618,13 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
           if (reel.stopTimerId) { clearTimeout(reel.stopTimerId); reel.stopTimerId = null; }
           if (reel.glowTimerId) { clearTimeout(reel.glowTimerId); reel.glowTimerId = null; }
           reel.stopRequested = false;
+          /* 2026-06-16 belt-and-brace — if a previous spin aborted
+             without clearing the motion overlay (rare race during slam +
+             rapid click), wipe it before the new spin paints over a stale
+             ::after layer. */
+          if (reel.col && reel.col.classList) {
+            reel.col.classList.remove('is-spinning');
+          }
         }
       }
     }, { priority: 20 });
@@ -701,6 +724,12 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
         try { reel.strip.style.transform = ''; } catch (_) {}
         reel.spinning = false;
         reel.stopping = false;
+        /* 2026-06-16 — H&W per-cell respin never paints the strip-level
+           motion overlay (cells animate individually via .hnw-cell-*
+           classes). If the is-spinning class lingered from a previous
+           base spin it would bleed into the H&W round; strip here as
+           defense. */
+        if (reel.col && reel.col.classList) reel.col.classList.remove('is-spinning');
       });
     }
 

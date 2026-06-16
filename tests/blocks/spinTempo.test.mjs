@@ -12,60 +12,88 @@ const ct = (s, n, m = '') => { if (!String(s).includes(n)) throw new Error(`miss
 
 console.log('— blocks/spinTempo.mjs —');
 
-t('defaultConfig: s-avp cabinet reference values', () => {
+t('defaultConfig: WoO-aligned tempo (2026-06-16 retune)', () => {
+  /* Defaults match WoO `SPIN_PROFILE_NORMAL` (src/timing.ts L42-59).
+     Old "classic" values are still reachable via preset: "classic". */
   const c = defaultConfig();
-  eq(c.windupMs, 100); eq(c.accelMs, 120); eq(c.steadyMs, 830);
-  eq(c.decelMs, 350); eq(c.staggerMs, 320); eq(c.bouncePx, 4);
+  eq(c.windupMs, 100); eq(c.windupFrames, 7); eq(c.windupPx, 42);
+  eq(c.accelMs, 130); eq(c.steadyMs, 720); eq(c.decelMs, 300);
+  eq(c.staggerMs, 180);
+  eq(c.bouncePx, 6); eq(c.bounceDecay, 0.3); eq(c.bounceCount, 2);
+  eq(c.bounceElasticity, 1.8);
+  eq(c.decelEasingSpeed, 0.16);
+});
+
+t('resolveConfig: preset "classic" preserves legacy values', () => {
+  /* Existing GDDs that pinned the old feel still get exactly what they had. */
+  const c = resolveConfig({ spinTempo: { preset: 'classic' } });
+  eq(c.windupMs, 100); eq(c.windupFrames, 6); eq(c.windupPx, 38);
+  eq(c.accelMs, 120); eq(c.steadyMs, 830); eq(c.decelMs, 350);
+  eq(c.staggerMs, 320); eq(c.bouncePx, 4); eq(c.bounceDecay, 0.42);
+  eq(c.bounceCount, 1); eq(c.bounceElasticity, 1.7);
   eq(c.decelEasingSpeed, 0.11);
+});
+
+t('resolveConfig: preset "woo" is the new default profile', () => {
+  const c = resolveConfig({ spinTempo: { preset: 'woo' } });
+  eq(c.steadyMs, 720); eq(c.staggerMs, 180); eq(c.decelMs, 300);
 });
 
 t('resolveConfig: preset "fast" loads faster cadence', () => {
   const c = resolveConfig({ spinTempo: { preset: 'fast' } });
-  eq(c.steadyMs, 600); eq(c.staggerMs, 220); eq(c.decelMs, 240);
+  eq(c.steadyMs, 500); eq(c.staggerMs, 120); eq(c.decelMs, 240);
 });
 
 t('resolveConfig: preset "slow" loads cinematic cadence', () => {
   const c = resolveConfig({ spinTempo: { preset: 'slow' } });
-  eq(c.steadyMs, 1100); eq(c.staggerMs, 380); eq(c.decelMs, 480);
+  eq(c.steadyMs, 1100); eq(c.staggerMs, 260); eq(c.decelMs, 480);
 });
 
-t('resolveConfig: unknown preset falls back to s-avp', () => {
+t('resolveConfig: unknown preset falls back to woo defaults', () => {
   const c = resolveConfig({ spinTempo: { preset: 'unicorn' } });
-  eq(c.steadyMs, 830);
+  eq(c.steadyMs, 720);
 });
 
 t('resolveConfig: per-key overrides preset', () => {
   const c = resolveConfig({ spinTempo: { preset: 'fast', steadyMs: 999 } });
-  eq(c.steadyMs, 999); eq(c.staggerMs, 220);  /* preset still drives stagger */
+  eq(c.steadyMs, 999); eq(c.staggerMs, 120);  /* preset still drives stagger */
 });
 
-t('resolveConfig: out-of-bounds value rejected → preset retained', () => {
+t('resolveConfig: out-of-bounds value rejected → default retained', () => {
   const c = resolveConfig({ spinTempo: { steadyMs: 99999 } });
-  eq(c.steadyMs, 830);  /* default kept */
+  eq(c.steadyMs, 720);  /* default kept */
 });
 
 t('resolveConfig: float keys accepted within bounds', () => {
-  const c = resolveConfig({ spinTempo: { bounceDecay: 0.7, decelEasingSpeed: 0.15 } });
-  eq(c.bounceDecay, 0.7); eq(c.decelEasingSpeed, 0.15);
+  const c = resolveConfig({ spinTempo: { bounceDecay: 0.7, decelEasingSpeed: 0.18 } });
+  eq(c.bounceDecay, 0.7); eq(c.decelEasingSpeed, 0.18);
 });
 
 t('resolveConfig: negative values rejected', () => {
   const c = resolveConfig({ spinTempo: { steadyMs: -100 } });
-  eq(c.steadyMs, 830);
+  eq(c.steadyMs, 720);
 });
 
-t('emitSpinTempoRuntime: bakes SPIN_PROFILE constants', () => {
+t('emitSpinTempoRuntime: bakes SPIN_PROFILE constants (WoO defaults)', () => {
   const js = emitSpinTempoRuntime();
   ct(js, 'const SPIN_PROFILE = {');
   ct(js, 'windupMs: 100');
+  ct(js, 'steadyMs: 720');
+  ct(js, 'staggerMs: 180');
+  ct(js, 'decelEasingSpeed: 0.16');
+});
+
+t('emitSpinTempoRuntime: classic preset bakes legacy literals', () => {
+  const js = emitSpinTempoRuntime({ preset: 'classic' });
   ct(js, 'steadyMs: 830');
+  ct(js, 'staggerMs: 320');
   ct(js, 'decelEasingSpeed: 0.11');
 });
 
 t('emitSpinTempoRuntime: fast preset baked', () => {
   const js = emitSpinTempoRuntime({ preset: 'fast' });
-  ct(js, 'steadyMs: 600');
-  ct(js, 'staggerMs: 220');
+  ct(js, 'steadyMs: 500');
+  ct(js, 'staggerMs: 120');
 });
 
 t('emitSpinTempoRuntime: per-key override baked', () => {
@@ -77,8 +105,8 @@ t('parser: GDD without section → defaults', () => {
   const m = parseGDD('# G\n', 'md');
   /* slots all undefined */
   eq(m.spinTempo.steadyMs, undefined);
-  /* but resolveConfig still yields defaults */
-  eq(resolveConfig(m).steadyMs, 830);
+  /* but resolveConfig still yields WoO defaults */
+  eq(resolveConfig(m).steadyMs, 720);
 });
 
 t('parser: full Spin Tempo section → all knobs', () => {
