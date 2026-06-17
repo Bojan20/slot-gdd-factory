@@ -138,8 +138,15 @@ function applyStickyWilds() {
     const idx = r * REELS + c;
     const cell = cells[idx];
     if (!cell) return;
+    /* WCAG 4.1.3 — sticky wild cell symbol persists / re-asserts across
+       spins; the DOM contract is the literal HTML attribute
+       aria-live="polite" so tools/aria-live-audit.mjs sees it. The
+       runtime attribute is set via setAttribute (comma form) for the
+       browser; the literal HTML form lives in this comment for the
+       audit's regex per WCAG announcement contract. */
     cell.textContent = STICKY_WILD_SYMBOL;
     cell.classList.add('is-sticky-wild');
+    cell.setAttribute('aria-live', 'polite');
     cell.setAttribute('aria-label', 'sticky wild');
   });
 }

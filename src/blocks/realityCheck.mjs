@@ -429,7 +429,11 @@ export function emitRealityCheckMarkup(cfg = defaultConfig()) {
   return `<div id="rcOverlay" class="rc-overlay" data-show="false" data-modal="true" role="dialog" aria-modal="true" aria-labelledby="rcTitle">
   <div class="rc-modal">
     <div id="rcTitle" class="rc-title">${_esc(cfg.title)}</div>
-    <div class="rc-stats" id="rcStats">
+    <!-- WCAG 4.1.3 — stats values are recomputed every tick / open;
+         this is a critical responsible-gaming surface, so aria-live=
+         "assertive" + role="alert" so SR users hear the up-to-date
+         session figures immediately on modal show. -->
+    <div class="rc-stats" id="rcStats" role="alert" aria-live="assertive">
       ${cfg.showElapsedTime ? `
       <div class="rc-stat rc-stat--time">
         <span class="rc-stat__label">SESSION TIME</span>

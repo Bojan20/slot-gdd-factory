@@ -93,11 +93,32 @@ function makeSb(cellGrid) {
       return sel === '.mega-symbol-overlay' ? overlays : [];
     },
     createElement() {
-      return { _attrs: {}, _kids: [], className: '', textContent: '', style: {},
+      const el = { _attrs: {}, _kids: [], className: '', textContent: '', style: {},
         setAttribute(k, v) { this._attrs[k] = v; },
         getAttribute(k) { return this._attrs[k]; },
         appendChild(c) { this._kids.push(c); return c; },
+        /* WCAG aria-live fix uses innerHTML template; mock parses div. */
+        get firstChild() { return this._kids[0] || null; },
+        set innerHTML(html) {
+          this._kids = [];
+          const m = /^<div([^>]*)>(.*?)<\/div>$/.exec(String(html).trim());
+          if (!m) return;
+          const child = { _attrs: {}, _kids: [], className: '', textContent: m[2], style: {},
+            setAttribute(k, v) { this._attrs[k] = v; },
+            getAttribute(k) { return this._attrs[k]; },
+            appendChild(c) { this._kids.push(c); return c; },
+          };
+          const cls = /class="([^"]+)"/.exec(m[1]);
+          if (cls) child.className = cls[1];
+          const attrRe = /([a-zA-Z-]+)="([^"]*)"/g;
+          let am;
+          while ((am = attrRe.exec(m[1]))) {
+            if (am[1] !== 'class') child.setAttribute(am[1], am[2]);
+          }
+          this._kids.push(child);
+        },
       };
+      return el;
     },
     body: grid,
   };

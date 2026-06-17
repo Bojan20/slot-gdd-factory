@@ -429,9 +429,12 @@ export function emitPaytableMarkup(cfg = defaultConfig() /*, model = {} */) {
   <div id="paytableBackdrop" class="paytable-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="paytableTitle">
     <div id="paytableModal" class="paytable-modal" role="document">
       <h2 id="paytableTitle">Paytable</h2>
-      <div id="paytableContent"></div>
+      <!-- WCAG 4.1.3 — content innerHTML rewritten on every open + bet
+           change; aria-live="polite" announces the refreshed roster /
+           bet value when the modal updates. -->
+      <div id="paytableContent" aria-live="polite"></div>
       <div id="paytableBetRow" class="paytable-bet-row" hidden>
-        Current bet: <span id="paytableBetValue" class="paytable-bet-value">—</span>
+        Current bet: <span id="paytableBetValue" class="paytable-bet-value" aria-live="polite">—</span>
       </div>
       <button id="paytableCloseBtn" class="paytable-close" type="button">Close</button>
     </div>

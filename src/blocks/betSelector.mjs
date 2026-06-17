@@ -418,7 +418,9 @@ export function emitBetSelectorMarkup(cfg = defaultConfig()) {
     ${c.showStepButtons ? `<button class="bet-step" id="betStepDown" type="button" aria-label="Decrease bet">−</button>` : ''}
     <button class="bet-chip" id="betChip" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="${safeAria}">
       <span class="bet-chip__label">BET</span>
-      <span class="bet-chip__value" id="betChipValue">—</span>
+      <!-- WCAG 4.1.3 — bet value is mutated by step / panel selection; SR users
+           need aria-live="polite" so the new total is announced after change. -->
+      <span class="bet-chip__value" id="betChipValue" aria-live="polite" aria-atomic="true">—</span>
     </button>
     ${c.showStepButtons ? `<button class="bet-step" id="betStepUp" type="button" aria-label="Increase bet">+</button>` : ''}
   </div>

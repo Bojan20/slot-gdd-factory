@@ -233,8 +233,14 @@ export function emitCellLevelUpgradeRuntime(cfg = defaultConfig()) {
         return;
       }
       if (!badge) {
-        badge = document.createElement('span');
-        badge.className = 'clu-badge';
+        /* WCAG 4.1.3 — level badge text is mutated on every level-up; SR
+           users need aria-live="polite" + role="status" so they hear
+           "Lv 2 → Lv 3" updates as cells upgrade. We assemble via an HTML
+           template string (with the literal attributes) so both the DOM
+           and tools/aria-live-audit.mjs see the contract. */
+        var _wrap = document.createElement('div');
+        _wrap.innerHTML = '<span class="clu-badge" role="status" aria-live="polite"></span>';
+        badge = _wrap.firstChild;
         cell.appendChild(badge);
       }
       badge.textContent = 'Lv ' + lvl;

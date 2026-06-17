@@ -168,8 +168,12 @@ export function emitDualRoleScatterRuntime(cfg = defaultConfig()) {
         return;
       }
       if (!existing) {
-        existing = document.createElement('span');
-        existing.className = 'dual-role-badge';
+        /* WCAG 4.1.3 — dual-role badge appears when scatter takes secondary
+           role (FS trigger / collect). role="status" aria-live="polite"
+           announces the role assignment to SR users. */
+        var _wrap = document.createElement('div');
+        _wrap.innerHTML = '<span class="dual-role-badge" role="status" aria-live="polite"></span>';
+        existing = _wrap.firstChild;
         existing.textContent = BADGE;
         cell.appendChild(existing);
       }

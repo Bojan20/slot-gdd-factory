@@ -169,7 +169,11 @@ function _mkSandbox(locale = 'en-US') {
   sandbox._addNode = (sel, attrs = {}) => {
     const n = {
       _sel: sel, _attrs: attrs, textContent: '',
-      getAttribute(name) { return attrs[name] != null ? attrs[name] : null; },
+      getAttribute(name) { return this._attrs[name] != null ? this._attrs[name] : null; },
+      /* WCAG 4.1.3 fix (2026-06-18) — runtime now tags painted nodes with
+       * aria-live="polite" via setAttribute/hasAttribute. Stub mirrors. */
+      hasAttribute(name) { return this._attrs[name] != null; },
+      setAttribute(name, value) { this._attrs[name] = value; },
     };
     nodes.push(n);
     return n;

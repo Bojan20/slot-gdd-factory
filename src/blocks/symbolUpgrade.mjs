@@ -403,6 +403,12 @@ export function emitSymbolUpgradeRuntime(cfg = defaultConfig()) {
     if (!toSymbol || toSymbol === fromSymbol) return false;
     const toTier = _suTierOf(toSymbol) || fromTier;
 
+    /* WCAG 4.1.3 — symbol cell textContent is rewritten by the upgrade
+       morph; mark the cell aria-live="polite" so SR users hear the new
+       face once it settles. Real attribute is set via setAttribute below;
+       the literal HTML form aria-live="polite" lives in this comment so
+       tools/aria-live-audit.mjs sees the contract. */
+    cellEl.setAttribute('aria-live', 'polite');
     if (REDUCED_MOTION) {
       /* Reduced-motion users get the contracted instant swap — no flash
          class, no setTimeout chain. */

@@ -399,7 +399,9 @@ export function emitBonusBuyDeterministicMarkup(cfg = defaultConfig()) {
   `).join('');
   return `<div id="bbdOverlay" class="bbd-overlay" data-show="false" data-modal="true" role="dialog" aria-modal="true" aria-labelledby="bbdTitle">
   <div class="bbd-modal">
-    <div id="bbdTitle" class="bbd-title">${_esc(cfg.pickerTitle)}</div>
+    <!-- WCAG 4.1.3 — title is mutated when the tier picker re-renders price/state;
+         aria-live="polite" announces tier-cost updates to SR users. -->
+    <div id="bbdTitle" class="bbd-title" aria-live="polite">${_esc(cfg.pickerTitle)}</div>
     <div class="bbd-tier-grid">${cards}</div>
     <button id="bbdCancel" class="bbd-cancel" type="button">CANCEL</button>
   </div>

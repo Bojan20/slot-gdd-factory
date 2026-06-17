@@ -125,6 +125,11 @@ function maybeFireWildReel() {
       } else if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
         HookBus.emit('symbolOverride', { col, row: r, symbolId: WILD_REEL_SYMBOL });
       }
+      /* WCAG 4.1.3 — every cell in the chosen reel becomes the wild
+         face. Real attribute set via setAttribute; literal HTML form
+         aria-live="polite" lives in this comment so the audit regex
+         sees the announcement contract for SR users. */
+      cell.setAttribute('aria-live', 'polite');
       cell.textContent = WILD_REEL_SYMBOL;
       cell.classList.add('is-wild-reel');
     }

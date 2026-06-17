@@ -440,9 +440,13 @@ export function emitNetLossIndicatorRuntime(cfg = defaultConfig()) {
       col.id = 'balanceHudNetCol';
       col.className = 'balance-hud__col balance-hud__col--net';
       col.setAttribute('data-sign', 'zero');
+      /* WCAG 4.1.3 — net-loss value is mutated every onBalanceChanged
+         and is part of the critical-interrupt regulator surface
+         (responsible gaming). aria-live="assertive" + role="alert"
+         per audit rule 2 (isCriticalBlock = netLossIndicator). */
       col.innerHTML =
         (SHOW_LABEL ? '<div class="balance-hud__label">Net</div>' : '') +
-        '<div id="balanceHudNetValue" class="balance-hud__value">' + PREFIX + '0</div>';
+        '<div id="balanceHudNetValue" class="balance-hud__value" role="alert" aria-live="assertive" aria-atomic="true">' + PREFIX + '0</div>';
       hud.appendChild(col);
       STATE.mounted = true;
       _renderCell();

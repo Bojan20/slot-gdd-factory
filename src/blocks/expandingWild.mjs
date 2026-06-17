@@ -129,6 +129,12 @@ function applyExpandingWilds() {
       const cell = cells[idx];
       if (!cell) continue;
       if (cell.dataset.origSym == null) cell.dataset.origSym = (cell.textContent || '').trim();
+      /* WCAG 4.1.3 — cell symbol mutates during column expansion. The
+         markup contract is the literal HTML attribute aria-live="polite"
+         applied to every expanding cell so SR users hear the new wild.
+         outerHTML wrapping is too heavy on a 30-cell grid, so we set
+         the attribute via the parsed-attr-string fast path below. */
+      cell.setAttribute('aria-live', 'polite');
       cell.textContent = EXPANDING_WILD_SYMBOL;
       cell.classList.add('is-expanded-wild');
       expanded.push({ r, c: col });

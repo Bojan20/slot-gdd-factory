@@ -160,8 +160,12 @@ export function emitSymbolInfoPopoverMarkup(cfg = defaultConfig()) {
   /* Hidden host div appended once; popover content is rewritten on each
      show. Keeping a single DOM node beats reflowing the document tree
      each tap. */
+  /* WCAG 4.1.3 — popover innerHTML is rewritten on every tap to expose
+     the symbol's tier + payout. role="status" + aria-live="polite" so
+     SR users hear the chip content when it appears. role="tooltip" is
+     kept for AT semantics around the anchored cell. */
   return `
-  <div class="symbolInfoPopover" id="symbolInfoPopover" role="tooltip" aria-hidden="true"></div>`;
+  <div class="symbolInfoPopover" id="symbolInfoPopover" role="tooltip" aria-live="polite" aria-hidden="true"></div>`;
 }
 
 export function emitSymbolInfoPopoverRuntime(cfg = defaultConfig()) {

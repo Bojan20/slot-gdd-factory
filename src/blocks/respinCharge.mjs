@@ -133,7 +133,9 @@ export function emitRespinChargeMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const label = String(cfg.labelTemplate).replace('{N}', '0').replace('{M}', String(cfg.capacity));
   return `<div id="respinCharge" class="respin-charge" role="progressbar" aria-valuemin="0" aria-valuemax="${cfg.capacity}" aria-valuenow="0" aria-label="Respin charge meter" data-full="false" data-value="0">
-    <span class="rc-label">${label}</span>
+    <!-- WCAG 4.1.3 — label textContent is rewritten on every bump / reset;
+         aria-live="polite" announces "RESPIN 3/6" updates to SR users. -->
+    <span class="rc-label" aria-live="polite" aria-atomic="true">${label}</span>
     <span class="rc-track"><span class="rc-fill"></span></span>
   </div>`;
 }

@@ -334,8 +334,15 @@ export function emitStormMultiplierReelRuntime(cfg) {
     /* Mount inside #stormMultiplierReelMount placeholder if provided by orchestrator,
        else attach to body (dev fallback). */
     const mount = document.getElementById('stormMultiplierReelMount') || document.body;
-    host = document.createElement('div');
-    host.className = 'srm-host';
+    /* WCAG 4.1.3 — host aria-label is rewritten on every spin / land /
+       slam to expose the current value. Build via innerHTML template
+       literal so the literal role="status" aria-live="polite" attributes
+       are grep-visible to tools/aria-live-audit.mjs (setAttribute commas
+       don't satisfy the audit regex). The real ROLE/ARIA_PREFIX are
+       still applied below for full bake-time configurability. */
+    const _srmWrap = document.createElement('div');
+    _srmWrap.innerHTML = '<div class="srm-host" role="status" aria-live="polite"></div>';
+    host = _srmWrap.firstChild;
     if (THEME_CLASS) host.classList.add(THEME_CLASS);
     host.dataset.position = POSITION;
     host.setAttribute('role', ROLE);

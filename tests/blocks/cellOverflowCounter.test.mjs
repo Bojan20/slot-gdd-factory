@@ -97,9 +97,30 @@ function makeSb(reelDefs) {
       return reels.find(r => r.getAttribute('data-reel') === m[1]) || null;
     },
     createElement() {
-      const el = { _attrs: {}, className: '', textContent: '',
+      const el = { _attrs: {}, className: '', textContent: '', _kids: [],
         setAttribute(k, v) { this._attrs[k] = v; },
         getAttribute(k) { return this._attrs[k]; },
+        appendChild(c) { this._kids.push(c); return c; },
+        /* WCAG aria-live fix uses innerHTML template; mock parses
+           <span class="…" attr="…"></span> shape so firstChild works. */
+        get firstChild() { return this._kids[0] || null; },
+        set innerHTML(html) {
+          this._kids = [];
+          const m = /^<span([^>]*)>(.*?)<\/span>$/.exec(String(html).trim());
+          if (!m) return;
+          const child = { _attrs: {}, className: '', textContent: m[2],
+            setAttribute(k, v) { this._attrs[k] = v; },
+            getAttribute(k) { return this._attrs[k]; },
+          };
+          const cls = /class="([^"]+)"/.exec(m[1]);
+          if (cls) child.className = cls[1];
+          const attrRe = /([a-zA-Z-]+)="([^"]*)"/g;
+          let am;
+          while ((am = attrRe.exec(m[1]))) {
+            if (am[1] !== 'class') child.setAttribute(am[1], am[2]);
+          }
+          this._kids.push(child);
+        },
       };
       return el;
     },

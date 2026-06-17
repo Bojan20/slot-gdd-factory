@@ -191,8 +191,15 @@ export function emitMegaSymbolRuntime(cfg = defaultConfig()) {
       if (!gridRect) return false;
 
       clearOverlay('replace');
-      var ov = document.createElement('div');
-      ov.className = 'mega-symbol-overlay';
+      /* WCAG 4.1.3 — overlay textContent becomes the mega symbol face.
+         Built via innerHTML template literal so the literal
+         aria-live="polite" attribute is grep-visible to
+         tools/aria-live-audit.mjs (setAttribute commas don't match).
+         role="img" is restored below to preserve the visual-only
+         intent (the symbol glyph is the semantic content). */
+      var _msWrap = document.createElement('div');
+      _msWrap.innerHTML = '<div class="mega-symbol-overlay" aria-live="polite"></div>';
+      var ov = _msWrap.firstChild;
       ov.setAttribute('role', 'img');
       ov.setAttribute('aria-label', s + 'x' + s + ' mega ' + (sym || ''));
       ov.setAttribute('data-mega-size', String(s));

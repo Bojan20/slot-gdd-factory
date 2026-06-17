@@ -158,9 +158,11 @@ export function emitCellOverflowCounterRuntime(cfg = defaultConfig()) {
       if (!col) return null;
       var b = col.querySelector('.cell-overflow-badge');
       if (b) return b;
-      b = document.createElement('span');
-      b.className = 'cell-overflow-badge';
-      b.setAttribute('data-visible', 'false');
+      /* WCAG 4.1.3 — overflow counter text mutates on every reel measure;
+         role="status" aria-live="polite" announces "+3" overflow updates. */
+      var _wrap = document.createElement('div');
+      _wrap.innerHTML = '<span class="cell-overflow-badge" role="status" aria-live="polite" data-visible="false"></span>';
+      b = _wrap.firstChild;
       col.appendChild(b);
       return b;
     }

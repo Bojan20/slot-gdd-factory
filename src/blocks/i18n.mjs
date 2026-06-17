@@ -422,6 +422,12 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
       currency: DEFAULT_CURRENCY,
     };
 
+    /* WCAG 4.1.3 (Status Messages, Level AA) — every data-i18n element is a
+     * dynamic-text surface that re-paints on onLocaleChanged. Screen-reader
+     * users need a live region annotation so the locale flip is announced
+     * (e.g. "Spin", "Vrti", "Drehen" when the player switches language).
+     * We tag each painted node with aria-live="polite" — polite (not assertive)
+     * because locale change is a routine setting, not a critical interrupt. */
     function _paintNodes() {
       if (typeof document === 'undefined') return 0;
       var nodes = document.querySelectorAll('[data-i18n]');
@@ -431,6 +437,7 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
         var key = el.getAttribute('data-i18n');
         if (!key) continue;
         var fb = el.getAttribute('data-i18n-fallback');
+        if (!el.hasAttribute('aria-live')) el.setAttribute('aria-live', 'polite');
         el.textContent = _t(key, fb);
         n++;
       }
@@ -441,6 +448,7 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
         var amount = Number(mn.getAttribute('data-money'));
         if (!Number.isFinite(amount)) continue;
         var ccy = mn.getAttribute('data-money-ccy') || state.currency;
+        if (!mn.hasAttribute('aria-live')) mn.setAttribute('aria-live', 'polite');
         mn.textContent = _money(amount, ccy);
       }
       return n;

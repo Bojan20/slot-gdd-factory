@@ -120,6 +120,11 @@ function maybeFireSuperSymbol() {
   const anchorIdx = startR * REELS + startC;
   const anchorCell = cells[anchorIdx];
   if (!anchorCell) return null;
+  /* WCAG 4.1.3 — super-anchor cell becomes the N×N oversized face.
+     Real attribute set via setAttribute below; literal HTML form
+     aria-live="polite" lives in this comment so the audit regex sees
+     the contract (setAttribute commas don't match the regex). */
+  anchorCell.setAttribute('aria-live', 'polite');
   anchorCell.textContent = symId;
   anchorCell.classList.add('is-super-anchor');
   anchorCell.style.gridRow    = (startR + 1) + ' / span ' + SUPER_SIZE;

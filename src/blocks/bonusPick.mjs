@@ -180,7 +180,9 @@ export function emitBonusPickMarkup(cfg = defaultConfig()) {
   return `<div id="bpOverlay" class="bp-overlay" data-show="false" role="dialog" aria-modal="true" aria-labelledby="bpTitle">
   <div class="bp-modal">
     <div id="bpTitle" class="bp-title">${escapeHtml(cfg.title)}</div>
-    <div class="bp-status"><span>PICKS LEFT: <span id="bpLeft">${cfg.maxPicks}</span></span><span>TOTAL: <span id="bpTotal">0</span></span></div>
+    <!-- WCAG 4.1.3 — picks-left + total are mutated on every tile reveal;
+         aria-live="polite" so SR users hear "2 left, total 50" updates. -->
+    <div class="bp-status" role="status" aria-live="polite"><span>PICKS LEFT: <span id="bpLeft">${cfg.maxPicks}</span></span><span>TOTAL: <span id="bpTotal">0</span></span></div>
     <div class="bp-grid">${tiles}</div>
     <button id="bpClose" class="bp-close" data-show="false" type="button">COLLECT</button>
   </div>

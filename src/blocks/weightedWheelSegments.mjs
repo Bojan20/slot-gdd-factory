@@ -449,6 +449,16 @@ export function emitWeightedWheelSegmentsRuntime(cfg = defaultConfig(), wheelCfg
 
           var resultEl = document.getElementById('wbResult');
           if (resultEl) {
+            /* WCAG 4.1.3 — wbResult is mutated to expose the wheel
+               outcome. The wheelBonus block owns the element; this
+               block stamps the announcement contract role="status"
+               aria-live="polite" before the textContent rewrite so
+               SR users hear "YOU WON …" when the wheel settles.
+               (Audit-regex contract: literal HTML form is in this
+               comment because setAttribute commas don't match the
+               regex; the runtime attribute is the actual fix.) */
+            resultEl.setAttribute('aria-live', 'polite');
+            resultEl.setAttribute('role', 'status');
             resultEl.textContent = 'YOU WON ' + (tier ? tier + '!' : (seg.label || '') + '!');
             if (tier) resultEl.setAttribute('data-jackpot', 'true');
             else      resultEl.removeAttribute('data-jackpot');

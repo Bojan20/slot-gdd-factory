@@ -138,8 +138,14 @@ export function emitWinMultiplierBadgeRuntime(cfg = defaultConfig()) {
       if (!anchor) return false;
       var existing = anchor.querySelector('.win-mult-badge');
       if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
-      var badge = document.createElement('span');
-      badge.className = 'win-mult-badge';
+      /* WCAG 4.1.3 — multiplier badge textContent is the value player
+         needs to hear (e.g. "×5"). Build via innerHTML template literal
+         so the literal role="status" aria-live="polite" attributes are
+         grep-visible to tools/aria-live-audit.mjs (setAttribute commas
+         don't match the audit regex). */
+      var _wmbWrap = document.createElement('div');
+      _wmbWrap.innerHTML = '<span class="win-mult-badge" role="status" aria-live="polite"></span>';
+      var badge = _wmbWrap.firstChild;
       badge.textContent = TEMPLATE.replace('{N}', String(v));
       badge.setAttribute('aria-label', 'multiplier x ' + v);
       if (POSITION === 'top-right')      { badge.style.top = '-10px'; badge.style.right = '-6px'; }

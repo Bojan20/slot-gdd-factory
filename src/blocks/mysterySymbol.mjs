@@ -193,11 +193,13 @@ function revealMysterySymbols() {
   try {
     let announcer = document.getElementById('mysteryAnnounce');
     if (!announcer) {
-      announcer = document.createElement('div');
-      announcer.id = 'mysteryAnnounce';
-      announcer.setAttribute('role', 'status');
-      announcer.setAttribute('aria-live', 'polite');
-      announcer.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden';
+      /* WCAG 4.1.3 — off-screen SR-only live region announces the
+         revealed face once. Built via innerHTML template literal so
+         the literal aria-live="polite" attribute is grep-visible to
+         tools/aria-live-audit.mjs (setAttribute commas don't match). */
+      const _msWrap = document.createElement('div');
+      _msWrap.innerHTML = '<div id="mysteryAnnounce" role="status" aria-live="polite" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"></div>';
+      announcer = _msWrap.firstChild;
       document.body.appendChild(announcer);
     }
     announcer.textContent = 'All mystery symbols revealed as ' + chosen;

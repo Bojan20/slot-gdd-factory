@@ -161,8 +161,12 @@ function maybeFireLightning() {
     const mult = _litDrawMult();
     const cell = cells[idx];
     cell.classList.add('is-lightning-struck');
-    const tag = document.createElement('span');
-    tag.className = 'lit-mult';
+    /* WCAG 4.1.3 — multiplier tag textContent ("×N") announces the
+       random-strike value; aria-live="polite" lets SR users hear the
+       result without preempting other speech. */
+    const _litWrap = document.createElement('div');
+    _litWrap.innerHTML = '<span class="lit-mult" role="status" aria-live="polite"></span>';
+    const tag = _litWrap.firstChild;
     tag.textContent = '×' + mult;
     cell.appendChild(tag);
     struck.push({ idx, mult });

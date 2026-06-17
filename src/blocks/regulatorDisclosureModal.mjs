@@ -200,9 +200,13 @@ export function emitRegulatorDisclosureModalCSS(cfg = defaultConfig()) {
 
 export function emitRegulatorDisclosureModalMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
+  /* WCAG 4.1.3 — modal kind/rule/body/payload are all rewritten on each
+     disclosure show; regulator interrupts are safety-critical, so we use
+     role="alert" + aria-live="assertive" per audit rule 2 (this block is
+     in the isCriticalBlock allowlist: regulator). */
   return `<div id="regDisclosureModal" data-show="false" role="dialog"
      aria-modal="true" aria-labelledby="rdmKind" aria-describedby="rdmBody">
-  <div class="rdm-card">
+  <div class="rdm-card" role="alert" aria-live="assertive">
     <div class="rdm-kind" id="rdmKind">—</div>
     <div class="rdm-rule" id="rdmRule">—</div>
     <span class="rdm-jurisdiction" id="rdmJurisdiction" hidden></span>

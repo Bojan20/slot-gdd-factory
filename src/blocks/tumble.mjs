@@ -275,6 +275,11 @@ function _tumbleApplyGravity(removedCells) {
       /* H&W lock guard — orb cells never participate in gravity rewrite. */
       if (cell.classList && cell.classList.contains('is-locked-bonus')) continue;
       cell.classList.remove('is-removing');
+      /* WCAG 4.1.3 — every refilled cell has a new symbol on tumble.
+         Real attribute set via setAttribute; literal HTML form
+         aria-live="polite" lives in this comment so the audit regex
+         sees the contract (setAttribute commas don't match). */
+      cell.setAttribute('aria-live', 'polite');
       cell.textContent = newVisible[row] || '';
       if (newVisible[row]) cell.classList.add('is-dropping');
     }

@@ -356,7 +356,11 @@ export function emitSessionTimeoutMarkup(cfg = defaultConfig()) {
   return `<div id="stOverlay" class="st-overlay" data-show="false" data-mode="warning" role="dialog" aria-modal="true" aria-labelledby="stTitle">
   <div class="st-modal">
     <div id="stTitle" class="st-title">${_esc(cfg.warningTitle)}</div>
-    <div class="st-body" id="stBody">
+    <!-- WCAG 4.1.3 — counter ticks every second on warning + break;
+         session timeout is a critical responsible-gaming interrupt, so
+         role="alert" + aria-live="assertive" per audit rule 2 (this
+         block is in the isCriticalBlock allowlist: sessionTimeout). -->
+    <div class="st-body" id="stBody" role="alert" aria-live="assertive">
       <span id="stBodyText">You have been playing for a while.</span>
       <span class="st-counter" id="stCounter">00:00</span>
       <span class="st-meta" id="stMeta">Mandatory break in</span>

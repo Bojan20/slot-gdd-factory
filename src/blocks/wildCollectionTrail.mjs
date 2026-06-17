@@ -171,7 +171,9 @@ export function emitWildCollectionTrailMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const label = String(cfg.labelTemplate).replace('{N}', '0').replace('{M}', String(cfg.capacity));
   return `<div id="wildTrail" class="wild-trail" role="progressbar" aria-valuemin="0" aria-valuemax="${cfg.capacity}" aria-valuenow="0" aria-label="Wild collection meter" data-full="false" data-value="0">
-    <span class="wt-label">${label}</span>
+    <!-- WCAG 4.1.3 — label textContent is rewritten on every bump /
+         reset; aria-live="polite" announces "WILDS 3/10" updates. -->
+    <span class="wt-label" aria-live="polite" aria-atomic="true">${label}</span>
     <span class="wt-track"><span class="wt-fill"></span></span>
   </div>`;
 }

@@ -432,9 +432,12 @@ export function emitHoldAndWinCreditBucketRuntime(cfg = defaultConfig()) {
       if (box) return box;
       box = document.createElement('div');
       box.className = 'hw-box hw-credit-total-box';
+      /* WCAG 4.1.3 — total value mutates on every locked credit; the value
+         span carries role="status" aria-live="polite" so SR users hear
+         "Total +5.00" announcements as bucket fills. */
       box.innerHTML =
         '<span class="hw-lbl">TOTAL</span>' +
-        '<span class="hw-val" id="hwCreditTotalVal">' + PREFIX + '0</span>';
+        '<span class="hw-val" id="hwCreditTotalVal" role="status" aria-live="polite">' + PREFIX + '0</span>';
       hud.appendChild(box);
       return box;
     }

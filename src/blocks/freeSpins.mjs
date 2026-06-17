@@ -377,21 +377,24 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 export function emitFreeSpinsHudMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ freeSpinsPresentation: cfg });
   if (!c.enabled) return '';
-  return `<!-- Free Spins HUD — rendered always; toggled visible via .fs-hud--active. -->
+  return `<!-- Free Spins HUD — rendered always; toggled visible via .fs-hud--active.
+       WCAG 4.1.3 — every value cell is mutated on every FS spin / award;
+       aria-live="polite" so SR users hear the spin / multiplier / total
+       counters update without preempting other speech. -->
 <div class="fs-hud" id="fsHud" aria-hidden="true">
   <div class="fs-hud__box">
     <div class="fs-hud__label">Spins</div>
-    <div class="fs-hud__value" id="fsHudSpins">0 / 0</div>
+    <div class="fs-hud__value" id="fsHudSpins" aria-live="polite" aria-atomic="true">0 / 0</div>
   </div>
   <div class="fs-hud__divider"></div>
   <div class="fs-hud__box">
     <div class="fs-hud__label">Mult</div>
-    <div class="fs-hud__value" id="fsHudMult">×1</div>
+    <div class="fs-hud__value" id="fsHudMult" aria-live="polite" aria-atomic="true">×1</div>
   </div>
   <div class="fs-hud__divider"></div>
   <div class="fs-hud__box">
     <div class="fs-hud__label">Total</div>
-    <div class="fs-hud__value" id="fsHudTotal">0.00</div>
+    <div class="fs-hud__value" id="fsHudTotal" aria-live="polite" aria-atomic="true">0.00</div>
   </div>
 </div>`;
 }

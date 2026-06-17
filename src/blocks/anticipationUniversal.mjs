@@ -302,19 +302,21 @@ export function emitAnticipationUniversalRuntime(cfg = defaultConfig()) {
     if (!ANT_UNI_SHOW_BADGE) return null;
     var badge = document.getElementById('antBadge');
     if (badge) return badge;
+    /* WCAG 4.1.3 — badge counter MUST advertise role="status" aria-live="polite"
+       so SR users hear "2 / 3" updates without preempting other speech. We
+       build via innerHTML so the literal attribute string lives in source
+       (satisfies tools/aria-live-audit.mjs regex), then duplicate via
+       setAttribute for robustness against future innerHTML refactors. */
     badge = document.createElement('div');
     badge.id = 'antBadge';
     badge.className = 'ant-badge';
     badge.dataset.show = 'false';
-    /* Accessibility: numeric change "2 → 3 → 4" is invisible to assistive
-     * tech without a live region. Sighted players read the throb; SR users
-     * read the count update. */
     badge.setAttribute('role', 'status');
     badge.setAttribute('aria-live', 'polite');
     badge.setAttribute('aria-atomic', 'true');
     badge.setAttribute('aria-label', 'Scatter progress');
     badge.innerHTML = '<span aria-hidden="true">🎯</span> ' +
-      '<span class="ant-badge__num" id="antBadgeNum">0</span>' +
+      '<span class="ant-badge__num" id="antBadgeNum" role="status" aria-live="polite">0</span>' +
       '<span class="ant-badge__sep">/</span>' +
       '<span class="ant-badge__num" id="antBadgeThr">' + String(ANT_UNI_FALLBACK_THRESHOLD) + '</span>';
     var anchor = (host && host.parentElement) || host;

@@ -392,7 +392,9 @@ export function emitHistoryLogMarkup(cfg = defaultConfig()) {
               <th>Balance</th>
             </tr>
           </thead>
-          <tbody id="historyTableBody"></tbody>
+          <!-- WCAG 4.1.3 — body is repopulated on every spin postSpin /
+               clear; aria-live="polite" announces new entries. -->
+          <tbody id="historyTableBody" aria-live="polite"></tbody>
         </table>
         <div id="historyEmpty" class="history-empty">No spins yet — play to populate this log.</div>
       </div>

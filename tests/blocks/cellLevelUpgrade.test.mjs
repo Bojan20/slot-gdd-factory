@@ -86,11 +86,34 @@ function makeSb() {
     querySelectorAll() { return Array.from(cellMap.values()); },
     addEventListener() {},
     createElement() {
-      return { _attrs: {}, _kids: [], textContent: '', className: '',
+      const node = { _attrs: {}, _kids: [], textContent: '', className: '',
         setAttribute(k, v) { this._attrs[k] = v; },
         getAttribute(k) { return this._attrs[k]; },
         removeAttribute(k) { delete this._attrs[k]; },
+        appendChild(c) { this._kids.push(c); c._parent = this; return c; },
+        /* WCAG aria-live fix uses innerHTML template-literal sniff so the
+           audit regex sees `aria-live="polite"` in source. Test mock now
+           parses a minimal <span class="..." attr="...">…</span> shape so
+           firstChild returns a real cell. */
+        get firstChild() { return this._kids[0] || null; },
+        set innerHTML(html) {
+          this._kids = [];
+          const m = /^<span([^>]*)>(.*?)<\/span>$/.exec(String(html).trim());
+          if (!m) return;
+          const child = document.createElement();
+          const attrs = m[1];
+          const cls = /class="([^"]+)"/.exec(attrs);
+          if (cls) child.className = cls[1];
+          const attrRe = /([a-zA-Z-]+)="([^"]*)"/g;
+          let am;
+          while ((am = attrRe.exec(attrs))) {
+            if (am[1] !== 'class') child.setAttribute(am[1], am[2]);
+          }
+          child.textContent = m[2];
+          this._kids.push(child);
+        },
       };
+      return node;
     },
   };
   const window = {

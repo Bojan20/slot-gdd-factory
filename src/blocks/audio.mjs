@@ -196,7 +196,9 @@ export function emitAudioCSS(cfg = defaultConfig()) {
 
 export function emitAudioMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled || !cfg.showToggle) return '';
-  return `<button id="audioToggle" class="audio-toggle" data-muted="${cfg.muted ? 'true' : 'false'}" type="button" aria-label="Toggle audio" title="Toggle audio">🔊</button>`;
+  /* WCAG 4.1.3 — the icon glyph swaps (🔊 ↔ 🔇) when the player toggles
+     mute. SR users need aria-live="polite" so the new state is announced. */
+  return `<button id="audioToggle" class="audio-toggle" data-muted="${cfg.muted ? 'true' : 'false'}" type="button" aria-label="Toggle audio" aria-live="polite" title="Toggle audio">🔊</button>`;
 }
 
 export function emitAudioRuntime(cfg = defaultConfig()) {

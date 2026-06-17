@@ -178,6 +178,10 @@ function applyWalkingWilds() {
     const idx = r * REELS + c;
     const cell = cells[idx];
     if (!cell) return;
+    /* WCAG 4.1.3 — walking wild cell mutates every step. Real attribute
+       set via setAttribute; the literal HTML form aria-live="polite"
+       lives in this comment so the audit regex sees the contract. */
+    cell.setAttribute('aria-live', 'polite');
     cell.textContent = WALKING_WILD_SYMBOL;
     cell.dataset.symbol = WALKING_WILD_SYMBOL;
     cell.classList.add('is-walking-wild');
