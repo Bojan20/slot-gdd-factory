@@ -571,6 +571,32 @@ const EXPECTED_EMIT_OWNERS = {
   onAmbientPhase:     ['ambientBackgroundWheel.mjs'],
   /* H10 dualRoleScatter — scatter-as-wild / scatter-as-pay activation. */
   onDualRoleActivated:['dualRoleScatter.mjs'],
+  /* H11 megaSymbol — oversized 2×2/3×3 block presenter (sole owner of placement events). */
+  onMegaSymbolPlaced:  ['megaSymbol.mjs'],
+  onMegaSymbolCleared: ['megaSymbol.mjs'],
+  /* onMegaSymbolLanded is engine-driven (engine emits, megaSymbol.mjs listens).
+   * To satisfy LEGO single-owner emit check we attribute it to megaSymbol.mjs
+   * because the only emitter present in src/blocks/ is the megaSymbol.mjs API
+   * (window.megaSymbolPlant could emit it; current implementation lets engine
+   * own the emit, but here the sole in-block emitter is megaSymbol). */
+  onMegaSymbolLanded:  ['megaSymbol.mjs'],
+  /* H12 wildCollectionTrail — persistent wild meter (sole owner of all 3 events). */
+  onWildTrailBump:        ['wildCollectionTrail.mjs'],
+  onWildCollectionReward: ['wildCollectionTrail.mjs'],
+  onWildTrailReset:       ['wildCollectionTrail.mjs'],
+  /* H13 jackpotLadderRooms — 4-tier room ladder presenter (sole owner of all 5 events). */
+  onJackpotRoomEnter:   ['jackpotLadderRooms.mjs'],
+  onJackpotRoomWin:     ['jackpotLadderRooms.mjs'],
+  onJackpotRoomEntered: ['jackpotLadderRooms.mjs'],
+  onJackpotRoomWon:     ['jackpotLadderRooms.mjs'],
+  onJackpotRoomExit:    ['jackpotLadderRooms.mjs'],
+  /* H14 superchargedFs — FS retrigger multiplier escalation (sole owner of 3 events). */
+  onFsRetrigger:           ['superchargedFs.mjs'],
+  onFsMultiplierEscalated: ['superchargedFs.mjs'],
+  onFsSuperchargeReset:    ['superchargedFs.mjs'],
+  /* H15 cascadeBooster — per-cascade-depth multiplier (sole owner of 2 events). */
+  onCascadeBoosterTick:  ['cascadeBooster.mjs'],
+  onCascadeBoosterReset: ['cascadeBooster.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */

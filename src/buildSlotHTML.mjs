@@ -400,6 +400,31 @@ import {
   emitDualRoleScatterCSS, emitDualRoleScatterMarkup, emitDualRoleScatterRuntime,
   resolveConfig as resolveDualRoleScatterConfig,
 } from './blocks/dualRoleScatter.mjs';
+// Wave H11 — Mega Symbol (oversized 2×2/3×3 block presenter)
+import {
+  emitMegaSymbolCSS, emitMegaSymbolMarkup, emitMegaSymbolRuntime,
+  resolveConfig as resolveMegaSymbolConfig,
+} from './blocks/megaSymbol.mjs';
+// Wave H12 — Wild Collection Trail (persistent wild-counter meter)
+import {
+  emitWildCollectionTrailCSS, emitWildCollectionTrailMarkup, emitWildCollectionTrailRuntime,
+  resolveConfig as resolveWildCollectionTrailConfig,
+} from './blocks/wildCollectionTrail.mjs';
+// Wave H13 — Jackpot Ladder Rooms (4-tier room ladder presenter)
+import {
+  emitJackpotLadderRoomsCSS, emitJackpotLadderRoomsMarkup, emitJackpotLadderRoomsRuntime,
+  resolveConfig as resolveJackpotLadderRoomsConfig,
+} from './blocks/jackpotLadderRooms.mjs';
+// Wave H14 — Supercharged FS (retrigger multiplier escalation)
+import {
+  emitSuperchargedFsCSS, emitSuperchargedFsMarkup, emitSuperchargedFsRuntime,
+  resolveConfig as resolveSuperchargedFsConfig,
+} from './blocks/superchargedFs.mjs';
+// Wave H15 — Cascade Booster (per-cascade-depth multiplier escalation)
+import {
+  emitCascadeBoosterCSS, emitCascadeBoosterMarkup, emitCascadeBoosterRuntime,
+  resolveConfig as resolveCascadeBoosterConfig,
+} from './blocks/cascadeBooster.mjs';
 // Wave A8 — PWA installability (manifest + SW + a2hs prompt)
 import {
   emitPwaInstallabilityMarkup, emitPwaInstallabilityRuntime,
@@ -887,6 +912,12 @@ ${/* Wave H9 — Ambient Background Wheel (theme atmosphere visual). */ ''}
 ${emitAmbientBackgroundWheelCSS(resolveAmbientBackgroundWheelConfig(model))}
 ${/* Wave H10 — Dual-Role Scatter badge (★ per scatter cell). */ ''}
 ${emitDualRoleScatterCSS(resolveDualRoleScatterConfig(model))}
+${/* Wave H11-H15 — Mega Symbol / Wild Trail / Jackpot Ladder / Supercharged FS / Cascade Booster. */ ''}
+${emitMegaSymbolCSS(resolveMegaSymbolConfig(model))}
+${emitWildCollectionTrailCSS(resolveWildCollectionTrailConfig(model))}
+${emitJackpotLadderRoomsCSS(resolveJackpotLadderRoomsConfig(model))}
+${emitSuperchargedFsCSS(resolveSuperchargedFsConfig(model))}
+${emitCascadeBoosterCSS(resolveCascadeBoosterConfig(model))}
 ${/* Wave U10 — paytable modal (i-button + symbol roster + features). */ ''}
 ${emitPaytableCSS(resolvePaytableConfig(model))}
 ${emitSymbolInfoPopoverCSS(resolveSymbolInfoPopoverConfig(model))}
@@ -1063,6 +1094,12 @@ ${emitCellLevelUpgradeMarkup(resolveCellLevelUpgradeConfig(model))}
 ${emitCellOverflowCounterMarkup(resolveCellOverflowCounterConfig(model))}
 ${emitAmbientBackgroundWheelMarkup(resolveAmbientBackgroundWheelConfig(model))}
 ${emitDualRoleScatterMarkup(resolveDualRoleScatterConfig(model))}
+${/* Wave H11-H15 — markup hosts (mega overlay built at runtime, others static). */ ''}
+${emitMegaSymbolMarkup(resolveMegaSymbolConfig(model))}
+${emitWildCollectionTrailMarkup(resolveWildCollectionTrailConfig(model))}
+${emitJackpotLadderRoomsMarkup(resolveJackpotLadderRoomsConfig(model))}
+${emitSuperchargedFsMarkup(resolveSuperchargedFsConfig(model))}
+${emitCascadeBoosterMarkup(resolveCascadeBoosterConfig(model))}
 ${/* Wave P8 — hot-reload indicator host (hidden until connected). */ ''}
 ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
 
@@ -1288,6 +1325,13 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${/* Wave H10 — Dual-Role Scatter runtime (postSpin / onTumbleStep / onFsTrigger
      * decorator; sole owner of onDualRoleActivated). */ ''}
   ${emitDualRoleScatterRuntime(resolveDualRoleScatterConfig(model))}
+  ${/* Wave H11-H15 — Mega Symbol overlay / Wild Trail meter / Jackpot Ladder
+     * Rooms / Supercharged FS multiplier badge / Cascade Booster chip. */ ''}
+  ${emitMegaSymbolRuntime(resolveMegaSymbolConfig(model))}
+  ${emitWildCollectionTrailRuntime(resolveWildCollectionTrailConfig(model))}
+  ${emitJackpotLadderRoomsRuntime(resolveJackpotLadderRoomsConfig(model))}
+  ${emitSuperchargedFsRuntime(resolveSuperchargedFsConfig(model))}
+  ${emitCascadeBoosterRuntime(resolveCascadeBoosterConfig(model))}
   ${/* Wave A8 — PWA installability runtime (blob-URL SW register +
      * beforeinstallprompt + appinstalled + iOS detection). */ ''}
   ${emitPwaInstallabilityRuntime(resolvePwaInstallabilityConfig({ ...model, gameName: model.name }))}

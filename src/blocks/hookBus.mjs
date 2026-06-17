@@ -362,6 +362,53 @@ export const HOOK_EVENTS = Object.freeze([
    *   activation (role ∈ 'wild' | 'pay' | 'scatter'). Owner:
    *   dualRoleScatter.mjs. */
   'onDualRoleActivated',
+  /* Wave H11: Mega Symbol (oversized 2×2 / 3×3 block presenter)
+   * onMegaSymbolLanded {reel, row, size, sym} — engine OR force chip drives
+   *   this; megaSymbol.mjs LISTENS and renders the overlay. Engine-owned.
+   * onMegaSymbolPlaced {reel, row, size, sym, source} — fires AFTER overlay
+   *   is mounted. Owner: megaSymbol.mjs.
+   * onMegaSymbolCleared {source} — fires when overlay removed.
+   *   Owner: megaSymbol.mjs. */
+  'onMegaSymbolLanded',
+  'onMegaSymbolPlaced',
+  'onMegaSymbolCleared',
+  /* Wave H12: Wild Collection Trail (persistent wild-counter meter)
+   * onWildTrailBump {from, to, max, source} — fires per spin/cascade.
+   * onWildCollectionReward {step, total, kind} — fires when a configured
+   *   threshold (5, 10, …) is crossed; kind ∈ {fsBonus, multBump, cashBonus,
+   *   wildBoost}. Owner: wildCollectionTrail.mjs.
+   * onWildTrailReset {reason, source} — fires on auto-reset at max OR
+   *   manual API. Owner: wildCollectionTrail.mjs. */
+  'onWildTrailBump',
+  'onWildCollectionReward',
+  'onWildTrailReset',
+  /* Wave H13: Jackpot Ladder Rooms (4-tier visual presenter)
+   * onJackpotRoomEnter {tier} — engine OR API drives, presenter listens.
+   * onJackpotRoomWin   {tier, amount} — engine OR API drives.
+   * onJackpotRoomEntered {tier, label} — presenter ack. Owner: jackpotLadderRooms.mjs.
+   * onJackpotRoomWon    {tier, label, amount} — presenter ack. Owner: jackpotLadderRooms.mjs.
+   * onJackpotRoomExit   {tier, reason} — presenter ack. Owner: jackpotLadderRooms.mjs. */
+  'onJackpotRoomEnter',
+  'onJackpotRoomWin',
+  'onJackpotRoomEntered',
+  'onJackpotRoomWon',
+  'onJackpotRoomExit',
+  /* Wave H14: Supercharged FS (retrigger multiplier escalation)
+   * onFsRetrigger {} — engine drives; superchargedFs.mjs listens.
+   * onFsMultiplierEscalated {from, to, retriggerCount, ladderIdx, source}
+   *   — fires on each retrigger after badge update.
+   *   Owner: superchargedFs.mjs.
+   * onFsSuperchargeReset {reason} — fires on round end. Owner: superchargedFs.mjs. */
+  'onFsRetrigger',
+  'onFsMultiplierEscalated',
+  'onFsSuperchargeReset',
+  /* Wave H15: Cascade Booster (per-cascade-depth multiplier escalation)
+   * onCascadeBoosterTick {from, to, depth, ladderIdx, source} — fires per
+   *   bumped cascade. Owner: cascadeBooster.mjs.
+   * onCascadeBoosterReset {reason} — fires on preSpin / onFsEnd / manual.
+   *   Owner: cascadeBooster.mjs. */
+  'onCascadeBoosterTick',
+  'onCascadeBoosterReset',
 ]);
 
 /* Wave U4: canonical autoplay stop reasons. */
