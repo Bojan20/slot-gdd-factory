@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-17T00:11:58.997Z",
+  "generatedAt": "2026-06-17T00:28:36.535Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 90,
+  "totalBlocks": 91,
   "blocks": [
     {
       "name": "anteBet",
@@ -229,7 +229,7 @@
         "jurisdiction": "",
         "requireDisclosure": false
       },
-      "loc": 1137
+      "loc": 1135
     },
     {
       "name": "balanceHud",
@@ -840,7 +840,7 @@
         "jurisdiction": null,
         "declareNoAi": true
       },
-      "loc": 198
+      "loc": 193
     },
     {
       "name": "expandingWild",
@@ -1130,7 +1130,7 @@
           "__BG_"
         ]
       },
-      "loc": 237
+      "loc": 232
     },
     {
       "name": "hapticFeedback",
@@ -1489,6 +1489,30 @@
       "loc": 491
     },
     {
+      "name": "jurisdictionGate",
+      "file": "src/blocks/jurisdictionGate.mjs",
+      "testFile": "tests/blocks/jurisdictionGate.test.mjs",
+      "category": "uncategorised",
+      "description": "W59.H1 — Centralized jurisdiction-precedence resolver + audit gate.",
+      "exports": [
+        "JURISDICTION_PRECEDENCE_KEYS",
+        "defaultConfig",
+        "emitJurisdictionGateCSS",
+        "emitJurisdictionGateRuntime",
+        "resolveConfig",
+        "resolveJurisdiction",
+        "resolveJurisdictionWithSource"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onJurisdictionResolved"
+      ],
+      "defaultConfig": {
+        "enabled": true
+      },
+      "loc": 184
+    },
+    {
       "name": "lightning",
       "file": "src/blocks/lightning.mjs",
       "testFile": "tests/blocks/lightning.test.mjs",
@@ -1763,7 +1787,7 @@
         "jurisdiction": null,
         "coolOffHours": 24
       },
-      "loc": 184
+      "loc": 179
     },
     {
       "name": "netLossIndicator",
@@ -2277,7 +2301,7 @@
         "jurisdiction": null,
         "requirePersistentPlayTimeDisplay": false
       },
-      "loc": 1005
+      "loc": 1002
     },
     {
       "name": "reelEngine",
@@ -3626,7 +3650,7 @@
         "color": "255,215,0",
         "forceRoundEnd": true
       },
-      "loc": 325
+      "loc": 323
     },
     {
       "name": "winPresentation",

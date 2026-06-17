@@ -112,6 +112,12 @@ const HOOK_REGISTRATION_OPT_OUT = new Set([
    * listener — INFORMS operator session-init + cert harness of the
    * Article 5 + Article 50 obligations. */
   'euAiActComplianceGate.mjs',
+  /* W59.H1 — jurisdictionGate is the centralized precedence resolver.
+   * Sets window.__SLOT_JURISDICTION__ + fires onJurisdictionResolved
+   * once at boot. Has no spin-lifecycle listener — INFORMS downstream
+   * consumers (cert harness, telemetry) which jurisdiction the model
+   * resolved to, without forcing them to re-walk the precedence chain. */
+  'jurisdictionGate.mjs',
 ]);
 
 /* Expected emit ownership — single source of truth for each event. */
@@ -229,6 +235,14 @@ const EXPECTED_EMIT_OWNERS = {
    * member-state gates (W58.J-DE / J-NL). */
   onAiActDdaProhibited:          ['euAiActComplianceGate.mjs'],
   onAiSystemDeclarationRequired: ['euAiActComplianceGate.mjs'],
+  /* W59.H1 — Centralized jurisdiction-precedence resolver. Six per-
+   * jurisdiction gates (W57.A4 + W58.J-{UKGC,AGCO,SE,DE,NL,EU}) used
+   * to inline the same 3-key precedence chain. The chain now lives in
+   * jurisdictionGate.mjs `resolveJurisdiction(model)` helper; each
+   * downstream block imports the helper instead of re-implementing
+   * the chain. The boot-time audit event records the active jurisdiction
+   * + which precedence path it came from for cert-harness / telemetry. */
+  onJurisdictionResolved: ['jurisdictionGate.mjs'],
   /* Wave H5 — Big-Win Tier ladder. Vendor-neutral 5-tier celebration
    * fired after the per-line rollup ends. tier is INT 1..5; label/
    * threshold/duration/color all GDD-driven so two games share the

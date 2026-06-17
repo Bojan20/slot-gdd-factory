@@ -207,6 +207,11 @@ export function defaultConfig() {
   };
 }
 
+/* W59.H1 — Central jurisdiction resolver import. The realityCheck
+ * resolver is a one-line wrapper so the test's regex pinning stays
+ * stable and the central chain ships through the same call shape. */
+import { resolveJurisdiction as _rcResolveJurisdiction } from './jurisdictionGate.mjs';
+
 /* W58.J-SE — Spelinspektionen authority anchor.
  * SGCG (Spelinspektionen) Föreskrifter SIFS 2018:6 §7.2 "Information om
  * tid och förlust" — continuous-display obligation for player session
@@ -258,17 +263,9 @@ export function resolveConfig(model = {}) {
     if (hit) cfg.enabled = true;
   }
 
-  /* W58.J-SE — 3-key jurisdiction precedence (regulator.profile > responsibleGambling.jurisdiction > realityCheck.jurisdiction) — matches W57.A4/W58.J-UKGC/W58.J-AGCO pattern. */
-  let jurisdiction = null;
-  if (model.regulator && typeof model.regulator.profile === 'string') {
-    jurisdiction = model.regulator.profile.toUpperCase();
-  }
-  if (!jurisdiction && model.responsibleGambling && typeof model.responsibleGambling.jurisdiction === 'string') {
-    jurisdiction = model.responsibleGambling.jurisdiction.toUpperCase();
-  }
-  if (!jurisdiction && typeof m.jurisdiction === 'string') {
-    jurisdiction = m.jurisdiction.toUpperCase();
-  }
+  /* W59.H1 — Central jurisdiction precedence resolver (was an inline
+   * 3-guard chain). Same semantics: regulator.profile > RG > realityCheck. */
+  const jurisdiction = _rcResolveJurisdiction(model, { fallbackKey: 'realityCheck.jurisdiction' });
   cfg.jurisdiction = jurisdiction;
   cfg.requirePersistentPlayTimeDisplay = !!(jurisdiction && PLAY_TIME_DISPLAY_REQUIRED_JURISDICTIONS.indexOf(jurisdiction) !== -1);
 

@@ -62,6 +62,9 @@
  *   • prefixes       string[] (default storage prefixes to clear)
  */
 
+/* W59.H1 — Central jurisdiction precedence resolver. */
+import { resolveJurisdiction } from './jurisdictionGate.mjs';
+
 export const DE_MIN_SPIN_MS_DEFAULT = 5000;
 
 /* SGF storage prefixes — every key that starts with one of these on
@@ -119,17 +122,9 @@ export function resolveConfig(model) {
   const cfg = defaultConfig();
   const src = (model && model.germanyComplianceGate) || {};
 
-  /* 3-key jurisdiction precedence (mirror W57.A4 / W58.J-UKGC / J-AGCO / J-SE) */
-  let jurisdiction = null;
-  if (model && model.regulator && typeof model.regulator.profile === 'string') {
-    jurisdiction = model.regulator.profile.toUpperCase();
-  }
-  if (!jurisdiction && model && model.responsibleGambling && typeof model.responsibleGambling.jurisdiction === 'string') {
-    jurisdiction = model.responsibleGambling.jurisdiction.toUpperCase();
-  }
-  if (!jurisdiction && typeof src.jurisdiction === 'string') {
-    jurisdiction = src.jurisdiction.toUpperCase();
-  }
+  /* W59.H1 — Central jurisdiction precedence resolver. Same semantics:
+   * regulator.profile > RG > germanyComplianceGate.jurisdiction. */
+  const jurisdiction = resolveJurisdiction(model, { fallbackKey: 'germanyComplianceGate.jurisdiction' });
   cfg.jurisdiction = jurisdiction;
 
   /* Enabled iff GlüStV jurisdiction matched OR explicit opt-in via GDD. */

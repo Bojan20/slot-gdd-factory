@@ -39,6 +39,10 @@
  *     override exceeded jurisdiction ceiling, clamped down
  */
 
+/* W59.H1 — Central jurisdiction precedence resolver (regulator.profile
+ * > responsibleGambling.jurisdiction > winCap.jurisdiction fallback). */
+import { resolveJurisdiction } from './jurisdictionGate.mjs';
+
 /* W51 — per-jurisdiction ceiling matrix. Operator cannot exceed.
  * `OFF` = no jurisdiction profile, GDD value passes through (used for
  * permissive markets / unregulated demo builds). */
@@ -105,16 +109,10 @@ export function resolveConfig(model = {}) {
     cfg.maxWinX = clampInt(model.limits.max_win_x, 100, 1000000);
   }
 
-  /* W51 — Cross-jurisdiction enforcement. Accept jurisdiction profile from
-   * either `model.winCap.jurisdiction` or alias
-   * `model.responsibleGambling.jurisdiction` / `model.regulator.profile`.
-   * The alias has precedence (regulator profile is operator deployment
-   * config, not game-design decision). */
-  let jurisdiction = typeof m.jurisdiction === 'string' ? m.jurisdiction.toUpperCase() : null;
-  const rg  = model.responsibleGambling || {};
-  const reg = model.regulator || {};
-  if (typeof rg.jurisdiction === 'string') jurisdiction = rg.jurisdiction.toUpperCase();
-  if (typeof reg.profile     === 'string') jurisdiction = reg.profile.toUpperCase();
+  /* W59.H1 — Centralized precedence chain (was an inline last-write-wins
+   * loop). Semantics preserved: regulator.profile WINS, then RG, then
+   * winCap.jurisdiction (W51 cross-jurisdiction enforcement). */
+  const jurisdiction = resolveJurisdiction(model, { fallbackKey: 'winCap.jurisdiction' });
   if (jurisdiction && Object.prototype.hasOwnProperty.call(JURISDICTION_CEILINGS, jurisdiction)) {
     cfg.jurisdiction = jurisdiction;
     /* Auto-enable when an explicit regulated jurisdiction is set — operators

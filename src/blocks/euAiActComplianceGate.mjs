@@ -74,6 +74,9 @@
  *   • declareNoAi    bool   (default true — asserts template is AI-free)
  */
 
+/* W59.H1 — Central jurisdiction precedence resolver. */
+import { resolveJurisdiction } from './jurisdictionGate.mjs';
+
 /* Frozen list of the three Article 5 obligations this block addresses.
  * Exported for cert-harness introspection + downstream block self-checks. */
 export const EU_AI_ACT_PROHIBITED_PRACTICES = Object.freeze([
@@ -103,17 +106,9 @@ export function resolveConfig(model) {
   const cfg = defaultConfig();
   const src = (model && model.euAiActComplianceGate) || {};
 
-  /* 3-key jurisdiction precedence (mirror W57.A4 / W58.J-{UKGC,AGCO,SE,DE,NL}) */
-  let jurisdiction = null;
-  if (model && model.regulator && typeof model.regulator.profile === 'string') {
-    jurisdiction = model.regulator.profile.toUpperCase();
-  }
-  if (!jurisdiction && model && model.responsibleGambling && typeof model.responsibleGambling.jurisdiction === 'string') {
-    jurisdiction = model.responsibleGambling.jurisdiction.toUpperCase();
-  }
-  if (!jurisdiction && typeof src.jurisdiction === 'string') {
-    jurisdiction = src.jurisdiction.toUpperCase();
-  }
+  /* W59.H1 — Central jurisdiction precedence resolver. Same semantics:
+   * regulator.profile > RG > euAiActComplianceGate.jurisdiction. */
+  const jurisdiction = resolveJurisdiction(model, { fallbackKey: 'euAiActComplianceGate.jurisdiction' });
   cfg.jurisdiction = jurisdiction;
 
   if (typeof src.enabled === 'boolean') cfg.enabled = src.enabled;

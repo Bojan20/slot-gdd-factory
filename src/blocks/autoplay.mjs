@@ -132,15 +132,13 @@ export function defaultConfig() {
  *   • MGA Player Protection — autoplay disclosure recommended */
 const AUTOPLAY_DISCLOSURE_REQUIRED_JURISDICTIONS = Object.freeze(['UKGC', 'ON', 'MGA']);
 
+/* W59.H1 — Centralized precedence chain. Was an inline last-write-wins
+ * loop over m/rg/reg; the central helper expresses the same semantics
+ * (regulator.profile WINS, RG second, autoplay.jurisdiction third) as
+ * first-match-wins so the 3-key chain has a single source of truth. */
+import { resolveJurisdiction } from './jurisdictionGate.mjs';
 function _resolveAutoplayJurisdiction(model) {
-  const m   = (model && model.autoplay) || {};
-  const rg  = (model && model.responsibleGambling) || {};
-  const reg = (model && model.regulator) || {};
-  let j = '';
-  if (typeof m.jurisdiction   === 'string') j = m.jurisdiction.toUpperCase();
-  if (typeof rg.jurisdiction  === 'string') j = rg.jurisdiction.toUpperCase();
-  if (typeof reg.profile      === 'string') j = reg.profile.toUpperCase();
-  return j;
+  return resolveJurisdiction(model, { fallbackKey: 'autoplay.jurisdiction' }) || '';
 }
 
 export { AUTOPLAY_DISCLOSURE_REQUIRED_JURISDICTIONS };

@@ -73,6 +73,9 @@
  *   • coolOffHours  int    (default 24, bounds [1, 8760])
  */
 
+/* W59.H1 — Central jurisdiction precedence resolver. */
+import { resolveJurisdiction } from './jurisdictionGate.mjs';
+
 export const NL_COOL_OFF_HOURS_DEFAULT = 24;
 export const NL_COOL_OFF_HOURS_BOUNDS = Object.freeze([1, 8760]); /* 1h .. 1 year */
 
@@ -98,17 +101,9 @@ export function resolveConfig(model) {
   const cfg = defaultConfig();
   const src = (model && model.netherlandsComplianceGate) || {};
 
-  /* 3-key jurisdiction precedence (mirror W57.A4 / J-UKGC / J-AGCO / J-SE / J-DE) */
-  let jurisdiction = null;
-  if (model && model.regulator && typeof model.regulator.profile === 'string') {
-    jurisdiction = model.regulator.profile.toUpperCase();
-  }
-  if (!jurisdiction && model && model.responsibleGambling && typeof model.responsibleGambling.jurisdiction === 'string') {
-    jurisdiction = model.responsibleGambling.jurisdiction.toUpperCase();
-  }
-  if (!jurisdiction && typeof src.jurisdiction === 'string') {
-    jurisdiction = src.jurisdiction.toUpperCase();
-  }
+  /* W59.H1 — Central jurisdiction precedence resolver. Same semantics:
+   * regulator.profile > RG > netherlandsComplianceGate.jurisdiction. */
+  const jurisdiction = resolveJurisdiction(model, { fallbackKey: 'netherlandsComplianceGate.jurisdiction' });
   cfg.jurisdiction = jurisdiction;
 
   if (typeof src.enabled === 'boolean') cfg.enabled = src.enabled;

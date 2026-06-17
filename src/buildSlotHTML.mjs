@@ -417,6 +417,15 @@ import {
   emitEuAiActComplianceGateCSS, emitEuAiActComplianceGateRuntime,
   resolveConfig as resolveEuAiActComplianceGateConfig,
 } from './blocks/euAiActComplianceGate.mjs';
+// W59.H1 — Centralized jurisdiction-precedence resolver + audit gate.
+// Single source of truth for the 3-key chain (regulator.profile >
+// responsibleGambling.jurisdiction > <block>.jurisdiction). Each per-
+// gate block (autoplay, winCap, realityCheck, germany/netherlands/EU
+// gates) now imports resolveJurisdiction() instead of inlining the chain.
+import {
+  emitJurisdictionGateCSS, emitJurisdictionGateRuntime,
+  resolveConfig as resolveJurisdictionGateConfig,
+} from './blocks/jurisdictionGate.mjs';
 // Wave P8 — Hot-Reload BLOCK (dev-mode SSE → in-page re-parse or full reload).
 // Disabled by default; opt-in via model.hotReload.enabled (set by dev server
 // or by the parent page on localhost). Production builds emit a 0-byte stub.
@@ -1176,6 +1185,10 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${/* W58.J-EU — EU AI Act Art.5(1)(a) subliminal + Art.5(1)(b) DDA +
        Art.50(1) transparency. Boot-time IIFE; 0-byte when non-EU. */ ''}
   ${emitEuAiActComplianceGateRuntime(resolveEuAiActComplianceGateConfig(model))}
+  ${/* W59.H1 — Centralized jurisdiction resolver. Fires AFTER per-gate
+       blocks so the audit event records the final resolved value;
+       0-byte when no jurisdiction signal in the model. */ ''}
+  ${emitJurisdictionGateRuntime(resolveJurisdictionGateConfig(model))}
   ${/* Wave P8 — hot-reload runtime (dev-mode). Placed AFTER HookBus and
      * AFTER every other block runtime so that subscribers to onGddChange
      * are already registered when an SSE-driven re-parse fires. Disabled
