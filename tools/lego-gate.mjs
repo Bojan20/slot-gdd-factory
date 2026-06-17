@@ -106,6 +106,12 @@ const HOOK_REGISTRATION_OPT_OUT = new Set([
    * boot. Has no spin-lifecycle listener — it INFORMS the operator's
    * session-init layer of the obligation, never reads from it. */
   'netherlandsComplianceGate.mjs',
+  /* W58.J-EU — euAiActComplianceGate is an emit-only boot block. Sets
+   * three EU AI Act window flags + fires onAiActDdaProhibited +
+   * onAiSystemDeclarationRequired once at boot. Has no spin-lifecycle
+   * listener — INFORMS operator session-init + cert harness of the
+   * Article 5 + Article 50 obligations. */
+  'euAiActComplianceGate.mjs',
 ]);
 
 /* Expected emit ownership — single source of truth for each event. */
@@ -204,6 +210,25 @@ const EXPECTED_EMIT_OWNERS = {
    * and not duplicated here. */
   onCruksCheckRequired: ['netherlandsComplianceGate.mjs'],
   onCoolOffEnforced:    ['netherlandsComplianceGate.mjs'],
+  /* W58.J-EU — EU AI Act (Regulation 2024/1689) compliance gate. Three
+   * boot-time obligations fired by euAiActComplianceGate.mjs when
+   * jurisdiction === 'EU':
+   *   • Art.5(1)(a) Subliminal-manipulation prohibition — sets
+   *     window.__EU_AI_SUBLIMINAL_BANNED__ flag (when declareNoAi=true)
+   *     asserting the template contains no subliminal AI.
+   *   • Art.5(1)(b) Vulnerability-exploitation (DDA) prohibition — sets
+   *     window.__EU_AI_ACT_DDA_PROHIBITED__ flag and emits
+   *     onAiActDdaProhibited so any DDA attempt aborts. Slot-specific:
+   *     mood sensing, problem-gambler profiling, dynamic-odds tuning
+   *     are all banned.
+   *   • Art.50(1) Transparency on AI-generated content — sets
+   *     window.__EU_AI_DECLARATION_REQUIRED__ flag and emits
+   *     onAiSystemDeclarationRequired so operator session-init surfaces
+   *     the declaration UI before first spin.
+   * Bonus-buy ban not part of AI Act scope — covered by W57.A4 + per-
+   * member-state gates (W58.J-DE / J-NL). */
+  onAiActDdaProhibited:          ['euAiActComplianceGate.mjs'],
+  onAiSystemDeclarationRequired: ['euAiActComplianceGate.mjs'],
   /* Wave H5 — Big-Win Tier ladder. Vendor-neutral 5-tier celebration
    * fired after the per-line rollup ends. tier is INT 1..5; label/
    * threshold/duration/color all GDD-driven so two games share the

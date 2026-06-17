@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-17T00:07:05.363Z",
+  "generatedAt": "2026-06-17T00:11:58.997Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 89,
+  "totalBlocks": 90,
   "blocks": [
     {
       "name": "anteBet",
@@ -816,6 +816,31 @@
         "showInBase": true
       },
       "loc": 267
+    },
+    {
+      "name": "euAiActComplianceGate",
+      "file": "src/blocks/euAiActComplianceGate.mjs",
+      "testFile": "tests/blocks/euAiActComplianceGate.test.mjs",
+      "category": "uncategorised",
+      "description": "W58.J-EU — EU AI Act (Regulation 2024/1689) compliance gate.",
+      "exports": [
+        "EU_AI_ACT_PROHIBITED_PRACTICES",
+        "defaultConfig",
+        "emitEuAiActComplianceGateCSS",
+        "emitEuAiActComplianceGateRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onAiActDdaProhibited",
+        "onAiSystemDeclarationRequired"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "jurisdiction": null,
+        "declareNoAi": true
+      },
+      "loc": 198
     },
     {
       "name": "expandingWild",

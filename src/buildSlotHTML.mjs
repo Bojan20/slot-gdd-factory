@@ -409,6 +409,14 @@ import {
   emitNetherlandsComplianceGateCSS, emitNetherlandsComplianceGateRuntime,
   resolveConfig as resolveNetherlandsComplianceGateConfig,
 } from './blocks/netherlandsComplianceGate.mjs';
+// W58.J-EU — EU AI Act (Regulation 2024/1689) compliance gate.
+// Auto-enabled when jurisdiction === 'EU'. Boot-time only: sets three
+// AI Act window flags (Art.5(1)(a) subliminal + Art.5(1)(b) DDA +
+// Art.50(1) declaration) + emits 2 sole-owner audit events.
+import {
+  emitEuAiActComplianceGateCSS, emitEuAiActComplianceGateRuntime,
+  resolveConfig as resolveEuAiActComplianceGateConfig,
+} from './blocks/euAiActComplianceGate.mjs';
 // Wave P8 — Hot-Reload BLOCK (dev-mode SSE → in-page re-parse or full reload).
 // Disabled by default; opt-in via model.hotReload.enabled (set by dev server
 // or by the parent page on localhost). Production builds emit a 0-byte stub.
@@ -1165,6 +1173,9 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${/* W58.J-NL — Wet KSA §31 Cruks check + §33 cool-off floor.
        Boot-time IIFE; 0-byte side effect when jurisdiction is not NL. */ ''}
   ${emitNetherlandsComplianceGateRuntime(resolveNetherlandsComplianceGateConfig(model))}
+  ${/* W58.J-EU — EU AI Act Art.5(1)(a) subliminal + Art.5(1)(b) DDA +
+       Art.50(1) transparency. Boot-time IIFE; 0-byte when non-EU. */ ''}
+  ${emitEuAiActComplianceGateRuntime(resolveEuAiActComplianceGateConfig(model))}
   ${/* Wave P8 — hot-reload runtime (dev-mode). Placed AFTER HookBus and
      * AFTER every other block runtime so that subscribers to onGddChange
      * are already registered when an SSE-driven re-parse fires. Disabled
