@@ -49,5 +49,68 @@ t('runtime exposes winCapTrigger', rt.includes('window.winCapTrigger'));
 t('runtime exposes winCapReset', rt.includes('window.winCapReset'));
 t('runtime bakes WIN_CAP_MAX_X', rt.includes('WIN_CAP_MAX_X        = 5000'));
 
+/* ─────────────────────────────────────────────────────────────────────────
+ * Bug #3 repro / regression — winCap clamp must keep window.__WIN_AWARD__
+ * in sync with the in-place ev.payX clamp.
+ *
+ * Lifecycle order (winPresentation.mjs:752 → postSpinOrch → balanceHud:513):
+ *   1. winPresentation snapshots totalAward = sum(ev.payX) into __WIN_AWARD__
+ *   2. postSpin emits → winCap clamps ev.payX in place (priority +100)
+ *   3. balanceHud reads window.__WIN_AWARD__ on postSpin (priority -25)
+ *
+ * If winCap doesn't re-publish __WIN_AWARD__ after clamp, balanceHud credits
+ * the uncapped amount → player gets paid past the cap. THIS is the bug.
+ * ───────────────────────────────────────────────────────────────────────── */
+function runWinCapSandbox(cfg) {
+  const listeners = {};
+  const win = {
+    __WIN_AWARD__: 0,
+    addEventListener() {}, removeEventListener() {},
+  };
+  const doc = {
+    getElementById() { return { dataset: {}, style: {}, setAttribute() {} }; },
+  };
+  const HookBus = {
+    on(ev, cb /*, opts */) { (listeners[ev] = listeners[ev] || []).push(cb); },
+    emit(ev, p) { (listeners[ev] || []).forEach(fn => fn(p)); },
+  };
+  win.HookBus = HookBus;
+  const fn = new Function('window', 'document', 'HookBus', 'setTimeout', 'FSM_enterOutro',
+    emitWinCapRuntime(cfg));
+  fn(win, doc, HookBus, (cb) => 0, () => {});
+  return { win, doc, HookBus, listeners };
+}
+
+const sb = runWinCapSandbox(resolveConfig({
+  features: [{ kind: 'win_cap' }],
+  winCap: { maxWinX: 5000, mode: 'round', forceRoundEnd: false },
+}));
+
+/* Simulate winPresentation: publish uncapped total before postSpin. */
+const events1 = [{ payX: 3000 }, { payX: 4000 }];
+sb.win.__WIN_AWARD__ = events1.reduce((s, e) => s + e.payX, 0);   /* 7000 — uncapped */
+sb.HookBus.emit('postSpin', { events: events1 });
+
+/* After clamp: events should be clamped (3000 + 2000 = 5000 max), AND
+ * window.__WIN_AWARD__ should reflect that, so balanceHud credits 5000
+ * not the original 7000. */
+t('sandbox: events clamped in-place to ceiling',
+  events1[0].payX === 3000 && events1[1].payX === 2000);
+t('sandbox: __WIN_AWARD__ re-published after clamp',
+  sb.win.__WIN_AWARD__ === 5000);
+
+/* Below-ceiling spin: must NOT touch __WIN_AWARD__ if already correct. */
+const sb2 = runWinCapSandbox(resolveConfig({
+  features: [{ kind: 'win_cap' }],
+  winCap: { maxWinX: 5000, mode: 'round', forceRoundEnd: false },
+}));
+const events2 = [{ payX: 100 }, { payX: 250 }];
+sb2.win.__WIN_AWARD__ = 350;
+sb2.HookBus.emit('postSpin', { events: events2 });
+t('sandbox: under-cap spin leaves payX untouched',
+  events2[0].payX === 100 && events2[1].payX === 250);
+t('sandbox: under-cap spin leaves __WIN_AWARD__ correct',
+  sb2.win.__WIN_AWARD__ === 350);
+
 console.log('\nResult: ' + pass + ' pass / ' + fail + ' fail');
 if (fail > 0) process.exit(1);

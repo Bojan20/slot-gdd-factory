@@ -312,6 +312,22 @@ if (typeof HookBus !== 'undefined') {
       }
       if (winCapAdd(winX)) break;
     }
+    /* Bug #3 (2026-06-17, publish-sync) — winPresentation snapshots
+     * window.__WIN_AWARD__ from totalAward BEFORE postSpin fires (see
+     * winPresentation.mjs:752). The in-place ev.payX clamp above does
+     * NOT propagate to that already-published value, so balanceHud
+     * (postSpin priority -25, reads __WIN_AWARD__ at line 517) credits
+     * the player the UNCAPPED amount — players paid past ceiling.
+     * Recompute totalAward from now-clamped events and re-publish so
+     * every downstream postSpin listener sees the capped figure. */
+    if (typeof window !== 'undefined') {
+      var clampedTotal = 0;
+      for (var i = 0; i < events.length; i++) {
+        var p = events[i] ? Number(events[i].payX) : 0;
+        if (Number.isFinite(p) && p > 0) clampedTotal += p;
+      }
+      window.__WIN_AWARD__ = clampedTotal;
+    }
   }, { priority: 100 });
   HookBus.on('preSpin', () => {
     if (WIN_CAP_MODE === 'spin') winCapReset();
