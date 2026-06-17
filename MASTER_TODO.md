@@ -983,6 +983,66 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## 🇳🇱 W58.J-NL — Wet KSA compliance gate (§31 Cruks + §33 cool-off) (✅ LANDED — 2026-06-17)
+
+> **Regulator anchor**: Wet kansspelen op afstand (Wet KSA) §31 Cruks register check (Centraal Register Uitsluiting Kansspelen) + §33 Cool-off period enforcement + §31a Boni-Verbot (već zatvoren W57.A4 u bonusBuy.mjs · NE duplira se ovde).
+> **Vezano za**: slot-gdd-factory · math-blind (Cruks check je session-lifecycle gate, ne math).
+
+### 1. Šta je zatvoreno
+
+| Block | Promena | Linije |
+|:--|:--|:-:|
+| `src/blocks/netherlandsComplianceGate.mjs` | **NEW** 183 LOC vendor-neutral centralized NL gate. Exports `NL_COOL_OFF_HOURS_DEFAULT = 24` + `NL_COOL_OFF_HOURS_BOUNDS = [1, 8760]` (frozen). 3-key precedence (mirror W57.A4 / J-UKGC / J-AGCO / J-SE / J-DE) auto-enabled kad jurisdiction === 'NL'; explicit opt-in. Bounds clamp coolOffHours ∈ [1, 8760]. emitCSS no-op. emitRuntime boot-time IIFE: §31 postavi `window.__NL_CRUKS_CHECK_REQUIRED__ = true` + init `__NL_CRUKS_CHECK_PASSED__ = false` ako fali + emit `onCruksCheckRequired{jurisdiction, rule:'NL-WetKSA-§31'}`; §33 postavi `window.__NL_COOL_OFF_HOURS__ = COOL_OFF_HOURS` + emit `onCoolOffEnforced{jurisdiction, coolOffHours, rule:'NL-WetKSA-§33'}`. SSR-safe (typeof window guard + HookBus presence + try/catch around each emit). | +183 |
+| `tools/lego-gate.mjs` | +`onCruksCheckRequired: ['netherlandsComplianceGate.mjs']` + `onCoolOffEnforced: ['netherlandsComplianceGate.mjs']` sole-owner declarations (105 → **107** events). +`netherlandsComplianceGate.mjs` u HOOK_REGISTRATION_OPT_OUT (emit-only block). | +22 |
+| `src/buildSlotHTML.mjs` | Import + runtime emit slot posle germanyComplianceGate runtime-a (paralelni jurisdiction gates). 0-byte side effect kad non-NL. | +11 |
+| `blocks/_manifest.json` | Regen — 88 → **89** blocks. | +30/-3 |
+| `tests/blocks/netherlandsComplianceGate.test.mjs` | **NEW** 227 LOC: 12 sections (exports + frozen bounds, defaultConfig, 3-key precedence + auto-enable NL, coolOffHours clamping × 5 cases (1h/24h/168h/8760h/string), emitCSS no-op, emitRuntime disabled, §31 Cruks wiring + flag + init pass-flag + emit + citation, §33 cool-off wiring + flag + emit + citation + value, custom coolOffHours bake (720h=30d), SSR safety, LEGO contracts + W58.J-NL marker + Wet KSA + Cruks citation + HOOK_REGISTRATION_OPT_OUT, honest scope §31 + §33 + §31a W57.A4 + Cruks full name + rule_no_math_unless_asked + no vendor strings). | +227 |
+| `package.json` | test:blocks chain extends sa novim testom | +1/-1 |
+
+### 2. Ultimate QA matrix (9/9 ZELENO)
+
+| # | Gate | Verdict |
+|:-:|:--|:-:|
+| 1 | `netherlandsComplianceGate.test.mjs` | ✅ **46/46** |
+| 2 | LEGO 7 invariants | ✅ **7/7** (89 blokova · 107 sole-owner · 72 listener · 11 legacy whitelisted) |
+| 3 | npm test (parser floor + grid) | ✅ 4/4 + 20/20 |
+| 4 | Block manifest regen | ✅ 89 blocks |
+| 5 | Vendor-neutral source | ✅ 0 hits |
+| 6 | Math-blind invariant | ✅ rule_no_math_unless_asked cited |
+| 7 | SSR safety + try/catch around emits | ✅ verified u test #10 |
+| 8 | Non-NL short-circuit (0 runtime cost) | ✅ emitRuntime disabled → '' |
+| 9 | LEGO HOOK_REGISTRATION_OPT_OUT registration | ✅ emit-only block declared |
+
+### 3. Hash pin
+
+| SHA | Šta | Push |
+|:-:|:--|:-:|
+| `27cdc1a` | **W58.J-NL** — netherlandsComplianceGate.mjs (NEW 183 LOC) + 46/46 unit + LEGO 7/7 + 107 sole-owner events + orchestrator wire + manifest 88→89 | ✅ |
+
+### 4. Honest follow-up scope
+
+| Stavka | Status |
+|:--|:--|
+| §31 back-end Cruks API call | ⏳ Operator-side PII; out-of-scope za slot-template (block samo postavlja obligation flag) |
+| §33 cross-operator cool-off enforcement | ⏳ Regulator-side via Cruks register (block samo izlaže local minimum) |
+| Spin dispatcher Cruks-gate check | ⏳ W58.J-NL.2 atomic landing — spinControl mora čitati `__NL_CRUKS_CHECK_PASSED__` pre prvog spin-a |
+| §31a bonus-buy ban | ✅ Already covered W57.A4 (`BONUS_BUY_BANNED_JURISDICTIONS`) |
+
+### 5. Cross-jurisdiction sweep progress
+
+| Atom | Jurisdiction | Status |
+|:--|:--|:-:|
+| W58.J-UKGC | autoplay disclosure | ✅ (`3f25d57`) |
+| W58.J-AGCO | RTP transparency | ✅ (`837f909`) |
+| W58.J-SE | play-time HUD | ✅ (`16d52f1`) |
+| W58.J-DE | GlüStV §11(2)+§6e | ✅ (`c74442c`) |
+| **W58.J-NL** | **Wet KSA §31+§33** | **✅ (`27cdc1a`)** |
+| W58.J-EU | EU AI Act Art.5 DDA | ⏳ queued (poslednji u sweep-u) |
+
+**5/6 LANDED · 1/6 queued (EU AI Act Art.5 DDA)**
+
+---
+
 ## 🇩🇪 W58.J-DE — GlüStV 2021 compliance gate (§11(2) + §6e) (✅ LANDED — 2026-06-17)
 
 > **Regulator anchor**: Glücksspielstaatsvertrag 2021 §11(2) Spielpause (≥ 5 s spin floor) + §6e Speicherverbot (no persisted state) + §11(3) Boni-Verbot (već zatvoren W57.A4 u bonusBuy.mjs · NE duplira se ovde).
