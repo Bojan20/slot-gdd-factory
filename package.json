@@ -8,6 +8,7 @@
     "test": "node tests/parse-real.mjs && node tests/render-grid-all.mjs",
     "test:parse": "node tests/parse-real.mjs",
     "test:grids": "node tests/render-grid-all.mjs",
+    "gen:demos": "node tools/gen-block-demos.mjs",
     "test:browser": "node tests/render-browser-all.mjs",
     "test:qa": "node tools/render-grid-gallery.mjs && node tools/full-qa-audit.mjs",
     "test:fs": "node tools/render-grid-gallery.mjs && node tools/fs-qa-audit.mjs",
