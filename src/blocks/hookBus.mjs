@@ -451,6 +451,61 @@ export const HOOK_EVENTS = Object.freeze([
   'onHiLoChoice',
   'onHiLoResolved',
   'onHiLoCollected',
+  /* H18 infinityReels — grid grows per cascade win
+   * onInfinityReelAdded      {from, to, newReelCount, source} — Owner: infinityReels.mjs.
+   * onInfinityReelsReset     {reason, finalCount, source}     — Owner: infinityReels.mjs.
+   * onInfinityChainMilestone {count, milestoneIdx, label, source} — Owner: infinityReels.mjs. */
+  'onInfinityReelAdded',
+  'onInfinityReelsReset',
+  'onInfinityChainMilestone',
+  /* H19 collectableSymbol — sym-collector HUD meter
+   * onSymbolCollected {symbol, count, threshold, delta, source} — Owner: collectableSymbol.mjs.
+   * onCollectionFull  {symbol, count, threshold, source}        — Owner: collectableSymbol.mjs.
+   * onCollectionReset {symbol, reason, source}                  — Owner: collectableSymbol.mjs. */
+  'onSymbolCollected',
+  'onCollectionFull',
+  'onCollectionReset',
+  /* H20 retriggerMeter — FS retrigger HUD meter presenter (listens to
+   * onFsRetrigger which is owned by superchargedFs.mjs)
+   * onRetriggerMeterTick   {scattersThisSpin, scattersTotal, threshold, ratio, source} — Owner: retriggerMeter.mjs.
+   * onRetriggerMeterCommit {addedCount, newTotalFs, scattersTotal, source}             — Owner: retriggerMeter.mjs.
+   * onRetriggerMeterReset  {reason, finalTotal, source}                                — Owner: retriggerMeter.mjs. */
+  'onRetriggerMeterTick',
+  'onRetriggerMeterCommit',
+  'onRetriggerMeterReset',
+  /* Wave H21: Win Line Flash (per-line directional flash on win)
+   * onWinLineFlashStart   {lineIdx, cellCount, source} — Owner: winLineFlash.mjs.
+   * onWinLineFlashEnd     {lineIdx, source}            — Owner: winLineFlash.mjs.
+   * onWinLineFlashCleared {reason}                     — Owner: winLineFlash.mjs. */
+  'onWinLineFlashStart',
+  'onWinLineFlashEnd',
+  'onWinLineFlashCleared',
+  /* Wave H22: Near-Miss Tease (almost-won highlight)
+   * onNearMissTease   {count, trigger, deficit, source} — Owner: nearMissTease.mjs.
+   * onNearMissCleared {reason}                          — Owner: nearMissTease.mjs. */
+  'onNearMissTease',
+  'onNearMissCleared',
+  /* Wave H23: Reel Lock Hold (lock whole reels with countdown)
+   * onReelLockStart   {reel, rounds, source}            — Owner: reelLockHold.mjs.
+   * onReelLockEnd     {reel, source}                    — Owner: reelLockHold.mjs.
+   * onReelLockTick    {ended[], remaining[], source}    — Owner: reelLockHold.mjs.
+   * onReelLockCleared {reason}                          — Owner: reelLockHold.mjs. */
+  'onReelLockStart',
+  'onReelLockEnd',
+  'onReelLockTick',
+  'onReelLockCleared',
+  /* Wave H24: Cascade Path Draw (SVG chain between cluster win cells)
+   * onCascadePathDrawn   {eventIdx, points, source} — Owner: cascadePathDraw.mjs.
+   * onCascadePathCleared {reason}                    — Owner: cascadePathDraw.mjs. */
+  'onCascadePathDrawn',
+  'onCascadePathCleared',
+  /* Wave H25: Streak Bonus (N consecutive wins → bonus)
+   * onStreakBump          {from, to, threshold, source} — Owner: streakBonus.mjs.
+   * onStreakBonusEarned   {threshold, kind, source}     — Owner: streakBonus.mjs.
+   * onStreakReset         {reason}                       — Owner: streakBonus.mjs. */
+  'onStreakBump',
+  'onStreakBonusEarned',
+  'onStreakReset',
 ]);
 
 /* Wave U4: canonical autoplay stop reasons. */

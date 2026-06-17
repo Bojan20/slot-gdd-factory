@@ -446,6 +446,27 @@ import {
   emitWinMultiplierBadgeCSS, emitWinMultiplierBadgeMarkup, emitWinMultiplierBadgeRuntime,
   resolveConfig as resolveWinMultiplierBadgeConfig,
 } from './blocks/winMultiplierBadge.mjs';
+// Wave H21-H25 — Industry standard feature blocks (Wave 4)
+import {
+  emitWinLineFlashCSS, emitWinLineFlashMarkup, emitWinLineFlashRuntime,
+  resolveConfig as resolveWinLineFlashConfig,
+} from './blocks/winLineFlash.mjs';
+import {
+  emitNearMissTeaseCSS, emitNearMissTeaseMarkup, emitNearMissTeaseRuntime,
+  resolveConfig as resolveNearMissTeaseConfig,
+} from './blocks/nearMissTease.mjs';
+import {
+  emitReelLockHoldCSS, emitReelLockHoldMarkup, emitReelLockHoldRuntime,
+  resolveConfig as resolveReelLockHoldConfig,
+} from './blocks/reelLockHold.mjs';
+import {
+  emitCascadePathDrawCSS, emitCascadePathDrawMarkup, emitCascadePathDrawRuntime,
+  resolveConfig as resolveCascadePathDrawConfig,
+} from './blocks/cascadePathDraw.mjs';
+import {
+  emitStreakBonusCSS, emitStreakBonusMarkup, emitStreakBonusRuntime,
+  resolveConfig as resolveStreakBonusConfig,
+} from './blocks/streakBonus.mjs';
 // Wave A8 — PWA installability (manifest + SW + a2hs prompt)
 import {
   emitPwaInstallabilityMarkup, emitPwaInstallabilityRuntime,
@@ -945,6 +966,12 @@ ${emitNudgeReelCSS(resolveNudgeReelConfig(model))}
 ${emitRespinChargeCSS(resolveRespinChargeConfig(model))}
 ${emitSyncReelsCSS(resolveSyncReelsConfig(model))}
 ${emitWinMultiplierBadgeCSS(resolveWinMultiplierBadgeConfig(model))}
+${/* Wave H21-H25 — Win Line Flash / Near-Miss Tease / Reel Lock Hold / Cascade Path / Streak Bonus. */ ''}
+${emitWinLineFlashCSS(resolveWinLineFlashConfig(model))}
+${emitNearMissTeaseCSS(resolveNearMissTeaseConfig(model))}
+${emitReelLockHoldCSS(resolveReelLockHoldConfig(model))}
+${emitCascadePathDrawCSS(resolveCascadePathDrawConfig(model))}
+${emitStreakBonusCSS(resolveStreakBonusConfig(model))}
 ${/* Wave U10 — paytable modal (i-button + symbol roster + features). */ ''}
 ${emitPaytableCSS(resolvePaytableConfig(model))}
 ${emitSymbolInfoPopoverCSS(resolveSymbolInfoPopoverConfig(model))}
@@ -1133,6 +1160,12 @@ ${emitNudgeReelMarkup(resolveNudgeReelConfig(model))}
 ${emitRespinChargeMarkup(resolveRespinChargeConfig(model))}
 ${emitSyncReelsMarkup(resolveSyncReelsConfig(model))}
 ${emitWinMultiplierBadgeMarkup(resolveWinMultiplierBadgeConfig(model))}
+${/* Wave H21-H25 — markup hosts (most decorate-at-runtime; cascadePathDraw + streakBonus have static elements). */ ''}
+${emitWinLineFlashMarkup(resolveWinLineFlashConfig(model))}
+${emitNearMissTeaseMarkup(resolveNearMissTeaseConfig(model))}
+${emitReelLockHoldMarkup(resolveReelLockHoldConfig(model))}
+${emitCascadePathDrawMarkup(resolveCascadePathDrawConfig(model))}
+${emitStreakBonusMarkup(resolveStreakBonusConfig(model))}
 ${/* Wave P8 — hot-reload indicator host (hidden until connected). */ ''}
 ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
 
@@ -1371,6 +1404,12 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitRespinChargeRuntime(resolveRespinChargeConfig(model))}
   ${emitSyncReelsRuntime(resolveSyncReelsConfig(model))}
   ${emitWinMultiplierBadgeRuntime(resolveWinMultiplierBadgeConfig(model))}
+  ${/* Wave H21-H25 — Win Line Flash / Near-Miss Tease / Reel Lock Hold / Cascade Path / Streak Bonus */ ''}
+  ${emitWinLineFlashRuntime(resolveWinLineFlashConfig(model))}
+  ${emitNearMissTeaseRuntime(resolveNearMissTeaseConfig(model))}
+  ${emitReelLockHoldRuntime(resolveReelLockHoldConfig(model))}
+  ${emitCascadePathDrawRuntime(resolveCascadePathDrawConfig(model))}
+  ${emitStreakBonusRuntime(resolveStreakBonusConfig(model))}
   ${/* Wave A8 — PWA installability runtime (blob-URL SW register +
      * beforeinstallprompt + appinstalled + iOS detection). */ ''}
   ${emitPwaInstallabilityRuntime(resolvePwaInstallabilityConfig({ ...model, gameName: model.name }))}

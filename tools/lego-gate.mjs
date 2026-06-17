@@ -621,6 +621,38 @@ const EXPECTED_EMIT_OWNERS = {
   onHiLoChoice:          ['hiLoGamble.mjs'],
   onHiLoResolved:        ['hiLoGamble.mjs'],
   onHiLoCollected:       ['hiLoGamble.mjs'],
+  /* H18 infinityReels — grid-grows-per-cascade chain counter (sole owner of 3 events). */
+  onInfinityReelAdded:      ['infinityReels.mjs'],
+  onInfinityReelsReset:     ['infinityReels.mjs'],
+  onInfinityChainMilestone: ['infinityReels.mjs'],
+  /* H19 collectableSymbol — symbol-collector HUD meter (sole owner of 3 events). */
+  onSymbolCollected: ['collectableSymbol.mjs'],
+  onCollectionFull:  ['collectableSymbol.mjs'],
+  onCollectionReset: ['collectableSymbol.mjs'],
+  /* H20 retriggerMeter — FS retrigger HUD meter presenter (sole owner of 3 events;
+   * listens to onFsRetrigger which is owned by superchargedFs.mjs). */
+  onRetriggerMeterTick:   ['retriggerMeter.mjs'],
+  onRetriggerMeterCommit: ['retriggerMeter.mjs'],
+  onRetriggerMeterReset:  ['retriggerMeter.mjs'],
+  /* H21 winLineFlash — per-line directional flash on win (sole owner of 3 events). */
+  onWinLineFlashStart:   ['winLineFlash.mjs'],
+  onWinLineFlashEnd:     ['winLineFlash.mjs'],
+  onWinLineFlashCleared: ['winLineFlash.mjs'],
+  /* H22 nearMissTease — almost-won highlight (sole owner of 2 events). */
+  onNearMissTease:   ['nearMissTease.mjs'],
+  onNearMissCleared: ['nearMissTease.mjs'],
+  /* H23 reelLockHold — lock whole reels with countdown (sole owner of 4 events). */
+  onReelLockStart:   ['reelLockHold.mjs'],
+  onReelLockEnd:     ['reelLockHold.mjs'],
+  onReelLockTick:    ['reelLockHold.mjs'],
+  onReelLockCleared: ['reelLockHold.mjs'],
+  /* H24 cascadePathDraw — SVG chain between cluster win cells (sole owner of 2 events). */
+  onCascadePathDrawn:   ['cascadePathDraw.mjs'],
+  onCascadePathCleared: ['cascadePathDraw.mjs'],
+  /* H25 streakBonus — N consecutive wins bonus (sole owner of 3 events). */
+  onStreakBump:        ['streakBonus.mjs'],
+  onStreakBonusEarned: ['streakBonus.mjs'],
+  onStreakReset:       ['streakBonus.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */
