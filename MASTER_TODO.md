@@ -2245,6 +2245,8 @@ Playwright probe on `dist/01_rectangular_5x3_playable.html`:
 | H23 | `reelLockHold.mjs` | ✅ shipped (27/0 tests, 220 LOC, lock whole reels sa countdown) |
 | H24 | `cascadePathDraw.mjs` | ✅ shipped (24/0 tests, 195 LOC, SVG path between cluster win cells) |
 | H25 | `streakBonus.mjs` | ✅ shipped (25/0 tests, 175 LOC, N consecutive wins → bonus chip) |
+| H27 | `paylineDimmer.mjs` | ✅ shipped (24/0 tests, 168 LOC, dim non-winning cells on win) |
+| H30 | `retriggerEscalator.mjs` | ✅ shipped (27/0 tests, 197 LOC, multi-tier FS retrigger reward ladder) |
 | H5 / H5.x | `bigWinTier.mjs` | ✅ shipped |
 | H6 | `bonusClimaxReveal.mjs` | ✅ shipped (62/0 tests, 246 LOC, universal bonus-entry placard) |
 | H7 | `cellLevelUpgrade.mjs` | ✅ shipped (40/0 tests, 219 LOC, per-cell `Lv N` numeric meter) |

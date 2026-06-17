@@ -653,6 +653,12 @@ const EXPECTED_EMIT_OWNERS = {
   onStreakBump:        ['streakBonus.mjs'],
   onStreakBonusEarned: ['streakBonus.mjs'],
   onStreakReset:       ['streakBonus.mjs'],
+  /* H27 paylineDimmer — dim non-winning cells during win presentation (sole owner of 2 events). */
+  onPaylineDimmerStart:   ['paylineDimmer.mjs'],
+  onPaylineDimmerCleared: ['paylineDimmer.mjs'],
+  /* H30 retriggerEscalator — multi-tier FS retrigger reward ladder (sole owner of 2 events). */
+  onRetriggerEscalated:      ['retriggerEscalator.mjs'],
+  onRetriggerEscalatorReset: ['retriggerEscalator.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */

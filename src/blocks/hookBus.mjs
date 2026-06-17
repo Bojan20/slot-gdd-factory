@@ -506,6 +506,16 @@ export const HOOK_EVENTS = Object.freeze([
   'onStreakBump',
   'onStreakBonusEarned',
   'onStreakReset',
+  /* Wave H27: Payline Dimmer (dim non-winning cells during win presentation)
+   * onPaylineDimmerStart   {dimmedCount, source} — Owner: paylineDimmer.mjs.
+   * onPaylineDimmerCleared {reason}              — Owner: paylineDimmer.mjs. */
+  'onPaylineDimmerStart',
+  'onPaylineDimmerCleared',
+  /* Wave H30: Retrigger Escalator (multi-tier FS retrigger reward ladder)
+   * onRetriggerEscalated      {fromTier, toTier, fsAdded, totalFsAdded, source} — Owner: retriggerEscalator.mjs.
+   * onRetriggerEscalatorReset {reason}                                          — Owner: retriggerEscalator.mjs. */
+  'onRetriggerEscalated',
+  'onRetriggerEscalatorReset',
 ]);
 
 /* Wave U4: canonical autoplay stop reasons. */

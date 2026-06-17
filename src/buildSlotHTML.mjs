@@ -467,6 +467,15 @@ import {
   emitStreakBonusCSS, emitStreakBonusMarkup, emitStreakBonusRuntime,
   resolveConfig as resolveStreakBonusConfig,
 } from './blocks/streakBonus.mjs';
+// Wave H27 + H30 — Payline Dimmer + Retrigger Escalator
+import {
+  emitPaylineDimmerCSS, emitPaylineDimmerMarkup, emitPaylineDimmerRuntime,
+  resolveConfig as resolvePaylineDimmerConfig,
+} from './blocks/paylineDimmer.mjs';
+import {
+  emitRetriggerEscalatorCSS, emitRetriggerEscalatorMarkup, emitRetriggerEscalatorRuntime,
+  resolveConfig as resolveRetriggerEscalatorConfig,
+} from './blocks/retriggerEscalator.mjs';
 // Wave A8 — PWA installability (manifest + SW + a2hs prompt)
 import {
   emitPwaInstallabilityMarkup, emitPwaInstallabilityRuntime,
@@ -972,6 +981,9 @@ ${emitNearMissTeaseCSS(resolveNearMissTeaseConfig(model))}
 ${emitReelLockHoldCSS(resolveReelLockHoldConfig(model))}
 ${emitCascadePathDrawCSS(resolveCascadePathDrawConfig(model))}
 ${emitStreakBonusCSS(resolveStreakBonusConfig(model))}
+${/* Wave H27 + H30 — Payline Dimmer + Retrigger Escalator. */ ''}
+${emitPaylineDimmerCSS(resolvePaylineDimmerConfig(model))}
+${emitRetriggerEscalatorCSS(resolveRetriggerEscalatorConfig(model))}
 ${/* Wave U10 — paytable modal (i-button + symbol roster + features). */ ''}
 ${emitPaytableCSS(resolvePaytableConfig(model))}
 ${emitSymbolInfoPopoverCSS(resolveSymbolInfoPopoverConfig(model))}
@@ -1166,6 +1178,9 @@ ${emitNearMissTeaseMarkup(resolveNearMissTeaseConfig(model))}
 ${emitReelLockHoldMarkup(resolveReelLockHoldConfig(model))}
 ${emitCascadePathDrawMarkup(resolveCascadePathDrawConfig(model))}
 ${emitStreakBonusMarkup(resolveStreakBonusConfig(model))}
+${/* Wave H27 + H30 — markup hosts (Dimmer decorates runtime; Escalator has static badge). */ ''}
+${emitPaylineDimmerMarkup(resolvePaylineDimmerConfig(model))}
+${emitRetriggerEscalatorMarkup(resolveRetriggerEscalatorConfig(model))}
 ${/* Wave P8 — hot-reload indicator host (hidden until connected). */ ''}
 ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
 
@@ -1410,6 +1425,9 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitReelLockHoldRuntime(resolveReelLockHoldConfig(model))}
   ${emitCascadePathDrawRuntime(resolveCascadePathDrawConfig(model))}
   ${emitStreakBonusRuntime(resolveStreakBonusConfig(model))}
+  ${/* Wave H27 + H30 — Payline Dimmer + Retrigger Escalator */ ''}
+  ${emitPaylineDimmerRuntime(resolvePaylineDimmerConfig(model))}
+  ${emitRetriggerEscalatorRuntime(resolveRetriggerEscalatorConfig(model))}
   ${/* Wave A8 — PWA installability runtime (blob-URL SW register +
      * beforeinstallprompt + appinstalled + iOS detection). */ ''}
   ${emitPwaInstallabilityRuntime(resolvePwaInstallabilityConfig({ ...model, gameName: model.name }))}
