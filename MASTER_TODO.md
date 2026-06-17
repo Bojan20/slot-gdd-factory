@@ -983,6 +983,65 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## 🎬 W3.1 — Rectangular engine migration → shared motionOverlay block (✅ LANDED — 2026-06-17)
+
+> **Cilj**: Eliminisati duplikat inline overlay code-a između `reelEngineCSS.mjs` (rectangular grid) i `motionOverlay.mjs` (hex/wheel/crash/plinko/slingo od W54). Knob mismatch (0.04/4/0.20/0.04/150 vs 0.10/6/0.22/0.06/600) bio je W55.E deferred jer bi tihi migration vizuelno regresirao rect grid. W3.1 zatvara sa **explicit per-surface configOverride** koji pixel-exact matchuje pre-W3.1 vintage.
+
+### 1. Šta je zatvoreno
+
+| Block | Promena | Linije |
+|:--|:--|:-:|
+| `src/blocks/motionOverlay.mjs` | New `opts.configOverride` parameter za `emitMotionOverlayCSS`. Whitelisted na 5 visual knobs (shadowAlpha/streakAlpha/streakSpacingPx/speedLinesAlpha/speedLineSpeedMs) sa istim BOUNDS clamp-om koji `resolveConfig` koristi (single source of truth). Base cfg nikad mutirana (spread + new object). JSDoc dokumentuje vintage values + bounds-clamp safety. | +47 |
+| `src/buildSlotHTML.mjs` | `MOTION_OVERLAY_SURFACES` registry dobija **rect entry** na vrhu: `{ surfaceSelector: '.reelCol.is-spinning', kindKey: 'rect', configOverride: {streakAlpha: 0.04, streakSpacingPx: 4, shadowAlpha: 0.20, speedLinesAlpha: 0.04, speedLineSpeedMs: 150} }`. W3.1 marker + rationale comment. | +16 |
+| `src/blocks/reelEngineCSS.mjs` | Inline `.reelCol.is-spinning::after`, `::before`, `@keyframes reelStreakIn`, `@keyframes reelSpeedLines`, prefers-reduced-motion gate ZA OVE pseudos — sve REMOVED. JSDoc explains migration. 5 overlay knob-ova ostaju u defaultConfig + resolveConfig kao **DEPRECATED back-compat** (no-op). | -50 |
+| `tests/blocks/motionOverlay.test.mjs` | +§11 W3.1 configOverride assertions: 11.1-5 override bakes (5-knob rect vintage), 11.6-7 no-override koristi defaults (base untouched), 11.8-9 OOB / non-number values silently dropped. 33 → **42** tests. | +48 |
+| `tests/blocks/reelEngineCSS.test.mjs` | Test "contains motion overlay" → "no overlay (moved to motionOverlay)". Pinning asserts da overlay artifacts NE smeju biti u reelEngineCSS emit-u — regression detector za future refactor koji bi vratio duplikat. | +23 |
+| `tests/blocks/_wave31RectangularMigration.test.mjs` | **NEW** 152 LOC: 5 sections (reelEngineCSS overlay removal × 5, motionOverlay configOverride API contract × 6, MOTION_OVERLAY_SURFACES rect entry × 8, live emit round-trip × 9, honest scope × 3). | +152 |
+| `package.json` | test:blocks chain extends sa novim testom | +1/-1 |
+
+### 2. Knob harmonization (pre vs post W3.1)
+
+| Knob | Pre-W3.1 (rect inline) | Post-W3.1 (rect via override) | Bezbedno? |
+|:--|:-:|:-:|:-:|
+| streakAlpha | 0.04 | 0.04 | ✅ |
+| streakSpacingPx | 4 | 4 | ✅ |
+| shadowAlpha | 0.20 | 0.20 | ✅ |
+| speedLinesAlpha | 0.04 | 0.04 | ✅ |
+| speedLineSpeedMs | 150 | 150 | ✅ |
+
+**Pixel-exact parity**. Sharpness probe potvrdjuje 0 cell mutations na rectangular grids (huff/wrath/crystal).
+
+### 3. Ultimate QA matrix (9/9 ZELENO)
+
+| # | Gate | Verdict |
+|:-:|:--|:-:|
+| 1 | `_wave31RectangularMigration.test.mjs` | ✅ **31/31** |
+| 2 | `motionOverlay.test.mjs` (W3.1 extensions) | ✅ **42/42** (was 33) |
+| 3 | `reelEngineCSS.test.mjs` (overlay-removed pin) | ✅ 14/14 |
+| 4 | LEGO 7/7 invariants | ✅ 91 blokova · 112 sole-owner |
+| 5 | npm test (parser + grid) | ✅ 4/4 + 20/20 |
+| 6 | **test:sharpness** (5 GDDs · 3 RECTANGULAR + 2 6-reel) | ✅ **5/5 · 0 cell mutations** |
+| 7 | Pixel parity preserved (visual identity) | ✅ via configOverride 5-knob match |
+| 8 | a11y preserved (reduced-motion gate) | ✅ |
+| 9 | Future-proof: regression detector pins | ✅ knob values + overlay-removal pinned |
+
+### 4. Hash pin
+
+| SHA | Šta | Push |
+|:-:|:--|:-:|
+| `5b4102e` | **W3.1** — motionOverlay configOverride API + buildSlotHTML rect entry + reelEngineCSS overlay drop + 31/31 migration test + 42/42 motionOverlay ext + 14/14 reelEngineCSS regression + sharpness 5/5 · 0 mutations | ✅ |
+
+### 5. Honest follow-up scope
+
+| Stavka | Status |
+|:--|:--|
+| ✅ Pixel-exact visual parity | configOverride 5-knob match preserves pre-W3.1 vintage |
+| ✅ Sharpness regression-tested | huff/wrath/crystal rectangular grids 0 cell mutations |
+| ⏳ 5 deprecated knobs u reelEngineCSS | Ostaju u resolveConfig kao back-compat; future major-version bump može da ih ukloni nakon GDD audit-a |
+| ⏳ Migration test extensibility | Pattern za druge "deprecated-inline → shared-block" migracije |
+
+---
+
 ## 🇳🇱 W58.J-NL.2 — Wet KSA §31 Cruks-gate enforcement u reelEngine (✅ LANDED — 2026-06-17)
 
 > **Regulator anchor**: Wet KSA §31 — operator MORA da verifikuje player against Cruks (Centraal Register Uitsluiting Kansspelen) PRE prvog spin-a. W58.J-NL postavi `__NL_CRUKS_CHECK_REQUIRED__ = true` na boot ali nik nije čitao — gate bio advisory. W58.J-NL.2 zatvara petlju: reelEngine ABORT-uje spin dispatch dok operator session-init layer ne flip-uje `__NL_CRUKS_CHECK_PASSED__ = true`.
