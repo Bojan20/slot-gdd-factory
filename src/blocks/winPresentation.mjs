@@ -47,7 +47,7 @@ const DEFAULTS = Object.freeze({
   bigWinCelebMs: 800,
   /* Wave V5 — cascade-stagger mode step. Per-event delay when mode is
    * 'cascade-stagger' (vs default ~500ms for per-line cycle). Industry
-   * range 60-120 ms; the lower bound matches Hacksaw / NoLimit cascade
+   * range 60-120 ms; the lower bound matches modern fast-cascade
    * pacing where the player reads the chain in one breath instead of
    * one-by-one. Falls back to perEventMs when mode != 'cascade-stagger'. */
   staggerStepMs: 80,

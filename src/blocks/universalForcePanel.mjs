@@ -445,7 +445,7 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
 
     /* 2026-06-11 (Wave AL-2 / 4-GDD audit) — jackpot, multiplier_orb,
      * persistent_multiplier, pay_anywhere were detected by the parser
-     * for Gates / Huff / Wrath GDDs but UFP had no chip nor handler.
+     * for the 4-GDD audit corpus but UFP had no chip nor handler.
      * Each new kind below sets a deterministic flag that the engine
      * + relevant block consumes on the next runOneBaseSpin() per the
      * force-buttons-real-spin rule. */

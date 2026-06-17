@@ -239,7 +239,7 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
            celebrationTimeoutMs or we force-advance the retrigger so the FS
            round can't stall. postSpin emits after handleRetrigger so the
            round-closure signal lines up with the actual boundary. */
-        var _retrigTimeout = setTimeout(function() {
+        var _retriggerTm = setTimeout(function() {
           try {
             FSM_handleRetrigger(FREESPINS.retrigger.spins);
             _emitPostSpin(duringFs, []);
@@ -248,7 +248,7 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
           } catch (_) {}
         }, ${c.celebrationTimeoutMs});
         _celeb.then(() => {
-          clearTimeout(_retrigTimeout);
+          clearTimeout(_retriggerTm);
           FSM_handleRetrigger(FREESPINS.retrigger.spins);
           _emitPostSpin(duringFs, []);
           /* After retrigger toast — chain into next FS spin (or outro if 0). */
@@ -257,7 +257,7 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
             else FSM_runNextFsSpin();
           }, ${c.fsSpinBreathMs});
         }).catch(() => {
-          clearTimeout(_retrigTimeout);
+          clearTimeout(_retriggerTm);
           FSM_handleRetrigger(FREESPINS.retrigger.spins);
           _emitPostSpin(duringFs, []);
           setTimeout(() => {

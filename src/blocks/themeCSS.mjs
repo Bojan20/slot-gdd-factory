@@ -445,6 +445,10 @@ export function emitThemeCSS(cfg = defaultConfig()) {
     justify-content: center;
     position: relative;
   }
+
+@media (prefers-reduced-motion: reduce) {
+  .play, .force-fs, .force-bw, .force-mult, .dev-fs-btn { transition: none; }
+}
 `;
 }
 

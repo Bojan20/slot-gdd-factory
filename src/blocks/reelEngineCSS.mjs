@@ -128,5 +128,8 @@ export function emitReelEngineCSS(cfg = defaultConfig()) {
   pointer-events: none;
   filter: none;
 }
+@media (prefers-reduced-motion: reduce) {
+  .cell.is-blurring { transition: none; filter: none; }
+}
 `;
 }
