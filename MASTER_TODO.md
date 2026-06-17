@@ -983,6 +983,61 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## 🏛 W59.H1 — Centralized jurisdictionGate.mjs + 6 inline-chain migrations (✅ LANDED — 2026-06-17)
+
+> **Cilj**: Eliminisati 6× duplikat 3-key precedence logike u autoplay/winCap/realityCheck/germany/netherlands/EU AI Act gates. Centralizovati u jedan pure helper + jedan boot-time audit emit. Future jurisdictions land kao one-liner.
+
+### 1. Šta je zatvoreno
+
+| Block | Promena | Linije |
+|:--|:--|:-:|
+| `src/blocks/jurisdictionGate.mjs` | **NEW** 183 LOC. Exports `JURISDICTION_PRECEDENCE_KEYS` frozen + `resolveJurisdiction(model, opts)` pure helper + `resolveJurisdictionWithSource(model, opts)` audit-trail varianta + sole-owner emit `onJurisdictionResolved{jurisdiction, source}`. SSR-safe + try/catch. | +183 |
+| `src/blocks/autoplay.mjs` | Migration: `_resolveAutoplayJurisdiction` sad jedan red — `resolveJurisdiction(model, {fallbackKey: 'autoplay.jurisdiction'})`. 31/31 tests still pass. | -14 |
+| `src/blocks/winCap.mjs` | Migration: inline 3-key chain → `resolveJurisdiction(model, {fallbackKey: 'winCap.jurisdiction'})`. 22/22 tests still pass. | -10 |
+| `src/blocks/realityCheck.mjs` | Migration: inline 3-guard chain → `_rcResolveJurisdiction(model, {fallbackKey: 'realityCheck.jurisdiction'})`. 70/70 + 38/38 SE tests still pass. | -12 |
+| `src/blocks/germanyComplianceGate.mjs` | Migration: inline 3-guard chain → `resolveJurisdiction(model, {fallbackKey: 'germanyComplianceGate.jurisdiction'})`. 55/55 tests still pass. | -12 |
+| `src/blocks/netherlandsComplianceGate.mjs` | Migration: inline 3-guard chain → `resolveJurisdiction(model, {fallbackKey: 'netherlandsComplianceGate.jurisdiction'})`. 46/46 tests still pass. | -12 |
+| `src/blocks/euAiActComplianceGate.mjs` | Migration: inline 3-guard chain → `resolveJurisdiction(model, {fallbackKey: 'euAiActComplianceGate.jurisdiction'})`. 50/50 tests still pass. | -12 |
+| `tools/lego-gate.mjs` | +`onJurisdictionResolved: ['jurisdictionGate.mjs']` (109 → **110** events). +`jurisdictionGate.mjs` u HOOK_REGISTRATION_OPT_OUT. | +14 |
+| `src/buildSlotHTML.mjs` | Import + runtime emit slot POSLE per-gate blokova. 0-byte side effect kad nema jurisdiction signal. | +13 |
+| `blocks/_manifest.json` | Regen — 90 → **91** blocks. | regen |
+| `tests/blocks/jurisdictionGate.test.mjs` | **NEW** 199 LOC: 8 sections (frozen precedence keys, resolveJurisdiction 14 cases, resolveJurisdictionWithSource audit, defaultConfig + resolveConfig, emitCSS no-op, emitRuntime + SSR safety + try/catch, LEGO contracts, honest scope). | +199 |
+| `package.json` | test:blocks chain extends sa jurisdictionGate testom | +1/-1 |
+
+**Net source delta**: -71 LOC duplicate chain across 6 blokova; +183 LOC central resolver. Maintainability win: future regulator (UAE GCGRA, BR SECAP) = one-liner.
+
+### 2. Ultimate QA matrix (9/9 ZELENO + 7 regression suites)
+
+| # | Gate | Verdict |
+|:-:|:--|:-:|
+| 1 | `jurisdictionGate.test.mjs` | ✅ **43/43** |
+| 2 | autoplay regression (W58.J-UKGC) | ✅ 31/31 |
+| 3 | winCap regression (W58.J-AGCO) | ✅ 22/22 |
+| 4 | realityCheck regression (W58.J-SE) | ✅ 70/70 |
+| 5 | _persistentPlayTimeDisplay (SE downstream) | ✅ 38/38 |
+| 6 | germanyComplianceGate regression (W58.J-DE) | ✅ 55/55 |
+| 7 | netherlandsComplianceGate regression (W58.J-NL) | ✅ 46/46 |
+| 8 | euAiActComplianceGate regression (W58.J-EU) | ✅ 50/50 |
+| 9 | LEGO 7/7 + npm 4/4 + grid 20/20 + manifest 91 | ✅ |
+
+**Σ 355 testa zelena (43 + 31 + 22 + 70 + 38 + 55 + 46 + 50 + grid 20)**.
+
+### 3. Hash pin
+
+| SHA | Šta | Push |
+|:-:|:--|:-:|
+| `d92525f` | **W59.H1** — jurisdictionGate.mjs (NEW 183 LOC) + 6 migracija (-71 LOC duplicate) + 43/43 unit + 0 regression u 6 postojećih testova + LEGO 110 sole-owner events + manifest 90→91 | ✅ |
+
+### 4. Honest scope
+
+| Stavka | Status |
+|:--|:--|
+| ✅ Done | Pure helper + 6 zero-behavior-change migrations + audit emit + central precedence source of truth |
+| ⏳ Out-of-scope (svesno) | H1 ne zatvara per-gate obligation logic — svaki blok i dalje vlasnik svojih flags+events; H1 SAMO izvlači precedence chain |
+| 🎯 Future use | Nova jurisdiction = `resolveJurisdiction(model, {fallbackKey: 'newBlock.jurisdiction'})` — bez duplikata |
+
+---
+
 ## 🇪🇺 W58.J-EU — EU AI Act compliance gate (Art.5(1)(a)(b) + Art.50(1)) (✅ LANDED — 2026-06-17) · **W58 SWEEP CLOSE-OUT 6/6**
 
 > **Regulator anchor**: EU AI Act Regulation 2024/1689 Art.5(1)(a) subliminal-manipulation prohibition · Art.5(1)(b) vulnerability-exploitation (DDA) prohibition · Art.50(1) transparency on AI-generated content. Bonus-buy NOT u AI Act scope — covered by W57.A4 + per-state J-DE/J-NL.
