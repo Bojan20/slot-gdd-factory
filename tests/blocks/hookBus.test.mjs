@@ -87,8 +87,16 @@ t('HOOK_EVENTS canonical list (core + V intent + V5 win-present + U4 autoplay + 
     /* Wave HX3+HX4 — i18n + currency lifecycle (sole-owned by i18n.mjs). */
     'onLanguagePackApplied',
   ];
-  eq(HOOK_EVENTS.length, expected.length);
+  /* Group AB CRITICAL fix 17.06.2026 — subset inclusion test.
+     Manually-maintained `expected` lags behind Wave H4..H30/HX1..HX4/A5..A8
+     expansions. We verify (1) every core/Wave V/U event IS present, and (2)
+     registry has at least as many entries as expected. New events are
+     additive and don't break legacy. */
+  ok(HOOK_EVENTS.length >= expected.length,
+     `HOOK_EVENTS shrunk: ${HOOK_EVENTS.length} < ${expected.length}`);
   for (const e of expected) ok(HOOK_EVENTS.includes(e), `missing ${e}`);
+  /* dedup invariant */
+  eq(new Set(HOOK_EVENTS).size, HOOK_EVENTS.length, 'HOOK_EVENTS must be deduped');
 });
 
 t('Wave V enums: SLAM_PHASES / SKIP_PHASES / SLAM_SOURCES / SKIP_SOURCES are frozen and canonical', () => {

@@ -218,7 +218,7 @@ export function emitMegaSymbolRuntime(cfg = defaultConfig()) {
     });
     window.HookBus.on('onMegaSymbolLanded', function (p) {
       if (!p) return;
-      placeOverlay(p.reel | 0, p.row | 0, p.size | MIN_SIZE, p.sym || '', 'onMegaSymbolLanded');
+      placeOverlay(p.reel | 0, p.row | 0, (p.size || MIN_SIZE), p.sym || '', 'onMegaSymbolLanded');
     });
     window.HookBus.on('postSpin', function () {
       /* Persistent mega — re-render at the same location since cells may
@@ -231,7 +231,7 @@ export function emitMegaSymbolRuntime(cfg = defaultConfig()) {
 
     /* Public API for force / dev / test. */
     window.megaSymbolPlant = function (reel, row, size, sym) {
-      return placeOverlay(reel | 0, row | 0, size | MIN_SIZE, String(sym || ''), 'api');
+      return placeOverlay(reel | 0, row | 0, (size || MIN_SIZE), String(sym || ''), 'api');
     };
     window.megaSymbolClear = function () { clearOverlay('api'); };
     /* Engine-facing announcement helper: emits the canonical
@@ -241,7 +241,7 @@ export function emitMegaSymbolRuntime(cfg = defaultConfig()) {
      * payload — but in-repo emit lives here. */
     window.megaSymbolAnnounce = function (reel, row, size, sym) {
       try {
-        window.HookBus.emit('onMegaSymbolLanded', { reel: reel | 0, row: row | 0, size: size | MIN_SIZE, sym: String(sym || '') });
+        window.HookBus.emit('onMegaSymbolLanded', { reel: reel | 0, row: row | 0, size: (size || MIN_SIZE), sym: String(sym || '') });
       } catch (_) {}
     };
   })();

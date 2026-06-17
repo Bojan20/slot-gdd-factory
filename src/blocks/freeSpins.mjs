@@ -97,11 +97,17 @@ export function resolveConfig(model) {
 
   /* Strict-GDD enforcement (Boki rule): Free Spins UI must not paint when no
      free-spin-style feature lives in model.features. Explicit
-     freeSpinsPresentation.enabled=true bypasses this guard (author override). */
-  if (src.enabled == null) {
+     freeSpinsPresentation.enabled=true bypasses this guard (author override).
+
+     Direct-cfg emitter path (Group AB CRITICAL fix 17.06.2026):
+     emitFreeSpinsCSS/Markup/Runtime call resolveConfig({ freeSpinsPresentation: cfg }).
+     In that call shape `model.features` is UNDEFINED — caller is bypassing
+     orchestrator wholly and passing their own cfg. Strict-GDD enforcement
+     only applies when caller is the orchestrator (which always defines
+     `features` as an array, even if empty). */
+  if (src.enabled == null && Array.isArray(model && model.features)) {
     const FS_PATTERN = /^(free[_-]?spins?|free[_-]?games?|bonus[_-]?round|respins?)$/i;
-    const features = Array.isArray(model && model.features) ? model.features : [];
-    const detected = features.some(f => f && typeof f.kind === 'string' && FS_PATTERN.test(f.kind));
+    const detected = model.features.some(f => f && typeof f.kind === 'string' && FS_PATTERN.test(f.kind));
     if (!detected) cfg.enabled = false;
   }
 

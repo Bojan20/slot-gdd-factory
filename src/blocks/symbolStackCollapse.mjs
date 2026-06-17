@@ -88,7 +88,10 @@ const BOUNDS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return Object.freeze({ ...DEFAULTS });
+  /* Mutable fresh copy — caller may spread/mutate.
+     DEFAULTS itself stays frozen as single source of truth.
+     Group AE CRITICAL fix 17.06.2026 — removed top-level freeze. */
+  return { ...DEFAULTS };
 }
 
 function isValidRgb(s) {
@@ -344,7 +347,7 @@ export function emitSymbolStackCollapseRuntime(cfg = defaultConfig()) {
               : (c.reelIndex != null) ? Number(c.reelIndex) : NaN;
       if (!Number.isFinite(col)) continue;
       var sym = (typeof c.symbol === 'string') ? c.symbol : '?';
-      var key = col + ' ' + sym;
+      var key = col + '\x00' + sym;
       if (!groups[key]) groups[key] = { reelIndex: col, symbol: sym, count: 0, full: !!c.fullColumn, rowSpan: c.rowSpan };
       groups[key].count++;
       if (c.fullColumn === true) groups[key].full = true;

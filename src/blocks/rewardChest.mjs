@@ -42,7 +42,7 @@
  *   emitRewardChestRuntime(cfg)           → IIFE runtime
  *
  * Lifecycle (Runtime):
- *   listens : onSpinResult | onBigWinTier | onFsEnd
+ *   listens : onSpinResult | onBigWinTierEntered | onFsEnd
  *             (mode-dependent — exactly one binding active per build)
  *   emits   : onRewardChestOpen  { kind, payload, source }
  *             onRewardChestClose { kind, payload, reason }
@@ -373,7 +373,7 @@ export function emitRewardChestRuntime(cfg = defaultConfig()) {
   let triggerBinding;
   switch (cfg.triggerMode) {
     case 'big_win':
-      triggerBinding = `    HookBus.on('onBigWinTier', function (evt) {
+      triggerBinding = `    HookBus.on('onBigWinTierEntered', function (evt) {
       var tier = evt && Number(evt.toTier);
       if (!Number.isFinite(tier)) tier = evt && Number(evt.tier);
       if (Number.isFinite(tier) && tier >= RC_CFG.bigWinMinTier) {

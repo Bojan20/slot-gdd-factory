@@ -283,7 +283,7 @@ export function emitNetherlandsComplianceGateRuntime(cfg) {
       }
     }
     return ok;
-  });
+  };
 })();
 `;
 }

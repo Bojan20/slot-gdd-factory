@@ -183,7 +183,9 @@ function _esc(s) {
 }
 
 export function defaultConfig() {
-  return Object.freeze({
+  /* Mutable fresh literal — caller may mutate copy.
+     Group AD HIGH fix 17.06.2026 — removed top-level freeze. */
+  return ({
     enabled: false,
     /* 60-min hard cap — UKGC LCCP 8.3.1 default. Override per market
      * (Sweden 3 h, Spain 4 h, Ontario 1 h, demo dist 90 s). */

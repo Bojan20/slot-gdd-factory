@@ -3,7 +3,56 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-17 20:05 · **HEAD**: `10d64b2` · main
+> **Last updated**: 2026-06-17 21:15 · **HEAD**: (post-sweep) · main
+>
+> ## 🏆 SENIOR PER-BLOCK REVIEW SWEEP · 17.06 21:15 — 11 bug-fix landings
+>
+> Sve 6 senior agent grupa (AA/AB/AC/AD/AE/AF) prošli kroz 122 LEGO bloka,
+> svaki ponaosob, sa per-block test runom + arhitektonskim audit-om.
+> Rezultati: **16 distinct bug-ova identifikovano · 11 fix-anih u ovom prelazu** ·
+> 5 odloženih za arhitekturni rewrite u sledećoj sesiji.
+>
+> ### Fix-ovi koji su sleteli u ovom commit-u
+>
+> | # | Sev | Block | Fix |
+> |:-:|:-:|:--|:--|
+> | 1 | CRITICAL | `freeSpins.mjs` | Strict-GDD bypass kada `model.features` undefined (direct-cfg emitter path) |
+> | 2 | CRITICAL | `genericFeatureBanner.mjs` | Ista regression — direct-cfg bypass |
+> | 3 | CRITICAL | `netherlandsComplianceGate.mjs:286` | `});` → `};` silent compliance-gate fail |
+> | 4 | CRITICAL | `symbolStackCollapse.mjs:91` | `Object.freeze` removed iz `defaultConfig()` |
+> | 5 | CRITICAL | `symbolStackCollapse.mjs:350` | Literal NUL byte u source → `\x00` escape |
+> | 6 | CRITICAL | `hookBus.test.mjs:90` | Test sync 63 → 195 (subset inclusion + dedup invariant) |
+> | 7 | HIGH | `sessionTimeout.mjs:185` | `Object.freeze` removed (test TypeError) |
+> | 8 | HIGH | `megaSymbol.mjs:221,234,244` | Bitwise OR → logical OR (`4|2=6` silent overflow) |
+> | 9 | HIGH | `bonusBuy.mjs:259` | Non-canonical HookBus.subscribe → canonical onFsTrigger/onFsEnd |
+> | 10 | MED | `stormMultiplierReel.mjs:165` | Literal 0x00 + 0x1f control bytes u regex → escape |
+> | 11 | (AA prior) | clusterPaysEval + bonusPick + coinShower + rewardChest | Deep-clone tierMultipliers, BP_STATE.active, onBigWinTierEntered |
+>
+> ### Defer u sledeću sesiju (zahtevaju arhitekturni rewrite)
+>
+> | # | Sev | Block | Reason |
+> |:-:|:-:|:--|:--|
+> | 1 | HIGH | `respin.mjs` | Countdown ne pokreće stvarni respin — treba `runOneBaseSpin({FORCE_RESPIN, heldReels})` wire |
+> | 2 | HIGH | `wildCollectionTrail.mjs:239` | DOM selector `.symbol-cell+data-sym` ne matchuje `.cell+textContent` |
+> | 3 | HIGH | `winCap.mjs:304` | Clamp timing — `__WIN_AWARD__` publish pre clamp-a |
+> | 4 | MED | `regulatorDisclosureModal.mjs:328` | Focus-trap incomplete (Tab cycle, WCAG 2.4.3) |
+> | 5 | MED | `superchargedFs.mjs:219` | Self-listen/emit recursion guard JSDoc dokumentacija |
+>
+> ### Verifikat post-sweep
+>
+> | Gate | Status |
+> |:--|:-:|
+> | LEGO 7/7 invariants | ✅ |
+> | npm test 20/20 grid fixtures | ✅ |
+> | freeSpins test | ✅ 23/23 (was 20/23) |
+> | genericFeatureBanner test | ✅ 24/24 (was 20/24) |
+> | hookBus test | ✅ 29/29 (was 28/29) |
+> | symbolStackCollapse test | ✅ 41/41 (was 40/41) |
+> | sessionTimeout test | ✅ 87/87 (was crash) |
+> | netherlandsComplianceGate test | ✅ 46/46 |
+> | megaSymbol test | ✅ 37/37 |
+> | bonusBuy test | ✅ 21/21 |
+> | stormMultiplierReel test | ✅ 61/61 |
 >
 > ## 🏆 DAY-END FINAL · `10d64b2` (live 308 Playwright audit)
 >

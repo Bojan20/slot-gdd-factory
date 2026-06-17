@@ -51,6 +51,10 @@ export function resolveConfig(model = {}) {
     cfg.bucketMultipliers = m.bucketMultipliers.slice();
   }
   if (m.tierMultipliers && typeof m.tierMultipliers === 'object') {
+    /* Group AA agent HIGH finding: shallow spread from defaultConfig() shares
+       the SAME nested tierMultipliers object across calls. Mutating it pollutes
+       the frozen default for next resolveConfig caller. Deep-clone before write. */
+    cfg.tierMultipliers = { ...cfg.tierMultipliers };
     for (const k of ['HP', 'MP', 'LP', 'WILD']) {
       if (Number.isFinite(m.tierMultipliers[k]) && m.tierMultipliers[k] >= 0) {
         cfg.tierMultipliers[k] = m.tierMultipliers[k];

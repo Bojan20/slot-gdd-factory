@@ -124,10 +124,14 @@ export function resolveConfig(model = {}) {
   /* Strict-GDD enforcement (Boki rule): banner only paints when at least one
      declared model.features[].kind would be handled by this block. Avoids
      painting empty DOM on GDDs without any orb/multiplier/wild-style feature.
-     Explicit genericFeatureBanner.enabled=true bypasses (author override). */
-  if (src.enabled == null && cfg.enabled) {
-    const features = Array.isArray(model.features) ? model.features : [];
-    const anyHandled = features.some(f => f && typeof f.kind === 'string' && shouldHandle(cfg, f.kind));
+     Explicit genericFeatureBanner.enabled=true bypasses (author override).
+
+     Direct-cfg emitter path (Group AB CRITICAL fix 17.06.2026):
+     emitGenericFeatureBannerCSS/Markup/Runtime call resolveConfig with
+     { genericFeatureBanner: cfg } — model.features is undefined there.
+     Only enforce when caller is orchestrator (features is array). */
+  if (src.enabled == null && cfg.enabled && Array.isArray(model.features)) {
+    const anyHandled = model.features.some(f => f && typeof f.kind === 'string' && shouldHandle(cfg, f.kind));
     if (!anyHandled) cfg.enabled = false;
   }
 

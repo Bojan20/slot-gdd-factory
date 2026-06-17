@@ -323,8 +323,8 @@ export function emitBonusPickRuntime(cfg = defaultConfig()) {
      so downstream blocks (winRollup, totalsBar, etc.) can react. */
   if (typeof HookBus !== 'undefined') {
     HookBus.on('feature:bonusPick:trigger', () => { try { bpOpen(); } catch (_) {} });
-    HookBus.on('onFsTrigger', () => { if (BP_STATE.open) bpClose(); });
-    HookBus.on('onFsEnd',     () => { if (BP_STATE.open) bpClose(); });
+    HookBus.on('onFsTrigger', () => { if (BP_STATE.active) bpClose(); });
+    HookBus.on('onFsEnd',     () => { if (BP_STATE.active) bpClose(); });
     /* 2026-06-11 (Boki rule "pritisnes force dugme odradi se spin i onda
      * se dobije ishod forsa") — chip click arms pick modal for the next
      * postSpin so player sees: chip → reels spin → settle → pick modal. */

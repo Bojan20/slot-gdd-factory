@@ -31,3 +31,4 @@ tools/_qa/ultimate-html/
 # Claude Code local state
 .claude/
 *.bak
+.tmp-308/

@@ -35,7 +35,7 @@
  *   emitCoinShowerRuntime(cfg)            → IIFE runtime
  *
  * Lifecycle (Runtime):
- *   listens : onBigWinTier | onFsTrigger | onTumbleStep | onSpinResult
+ *   listens : onBigWinTierEntered | onFsTrigger | onTumbleStep | onSpinResult
  *             (mode-dependent — exactly one binding active per build)
  *   emits   : onCoinShowerStart, onCoinShowerEnd
  *
@@ -251,7 +251,7 @@ export function emitCoinShowerRuntime(cfg = defaultConfig()) {
       break;
     case 'big_win':
     default:
-      triggerBinding = `    HookBus.on('onBigWinTier', function (evt) {
+      triggerBinding = `    HookBus.on('onBigWinTierEntered', function (evt) {
       var tier = evt && Number(evt.toTier);
       if (!Number.isFinite(tier)) tier = evt && Number(evt.tier);
       if (Number.isFinite(tier) && tier >= CS_CFG.bigWinMinTier) {

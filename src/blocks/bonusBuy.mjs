@@ -256,12 +256,14 @@ const BONUS_BUY_CONFIRM = ${CONFIRM};
     btn.setAttribute('disabled', 'disabled');
     setTimeout(() => btn.removeAttribute('disabled'), REARM_MS);
   });
-  if (typeof HookBus !== 'undefined' && typeof HookBus.subscribe === 'function') {
-    HookBus.subscribe('fsm.phase.changed', (e) => {
-      if (e && e.phase === 'BASE') btn.removeAttribute('disabled');
-      else btn.setAttribute('disabled', 'disabled');
-    });
-  }
+  /* Group AA HIGH fix 17.06.2026 dropped non-canonical
+     HookBus.subscribe('fsm.phase.changed') listener:
+       (a) subscribe API does not exist on canonical HookBus (only .on)
+       (b) fsm.phase.changed uses dot-notation, not canonical onFsTrigger
+     The line-238 inline IS_BASE phase-check on click is sufficient gating;
+     no per-spin disable/enable round-trip needed. */
+  HookBus.on('onFsTrigger', () => { btn.setAttribute('disabled', 'disabled'); });
+  HookBus.on('onFsEnd',     () => { btn.removeAttribute('disabled'); });
 })();
 
 if (typeof window !== 'undefined') {
