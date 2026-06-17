@@ -860,6 +860,31 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
   }
 
   function runOneBaseSpin() {
+    /* W58.J-NL.2 — Cruks-gate enforcement (Wet KSA §31).
+     * netherlandsComplianceGate sets window.__NL_CRUKS_CHECK_REQUIRED__
+     * at boot when jurisdiction === 'NL'. Cruks (Centraal Register
+     * Uitsluiting Kansspelen) is the Dutch central self-exclusion
+     * register. The operator's session-init layer MUST verify the
+     * player against Cruks (Centraal Register Uitsluiting Kansspelen)
+     * and flip __NL_CRUKS_CHECK_PASSED__ true before the first spin
+     * is allowed. We refuse to dispatch the spin if the check is
+     * pending; sole-owner audit emit so cert-harness counts blocked
+     * dispatches per session. Idempotent: when the operator has not
+     * flipped the pass flag, every click is silently aborted with the
+     * same emit (consumer can rate-limit display). */
+    if (typeof window !== 'undefined' &&
+        window.__NL_CRUKS_CHECK_REQUIRED__ === true &&
+        window.__NL_CRUKS_CHECK_PASSED__ !== true) {
+      if (typeof HookBus !== 'undefined') {
+        try {
+          HookBus.emit('onCruksCheckPending', {
+            jurisdiction: window.__SLOT_JURISDICTION__ || 'NL',
+            rule: 'NL-WetKSA-§31',
+          });
+        } catch (_) {}
+      }
+      return;
+    }
     /* Wave T4 guard — rapid double/triple click on #spinBtn was racing:
        click 2 emitted preSpin while click 1's reels were mid-spin, the
        reelEngine preSpin listener (priority 20) clears every reel.stopTimerId,

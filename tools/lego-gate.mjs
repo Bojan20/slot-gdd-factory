@@ -252,6 +252,14 @@ const EXPECTED_EMIT_OWNERS = {
    * deferredMs, floorMs, rule }. cert-harness can count defers per
    * session to attest GlüStV compliance to the regulator. */
   onMinSpinPaceDeferred: ['autoplay.mjs'],
+  /* W58.J-NL.2 — Downstream enforcement of Wet KSA §31 Cruks check.
+   * reelEngine.runOneBaseSpin reads window.__NL_CRUKS_CHECK_REQUIRED__
+   * (set by netherlandsComplianceGate at boot) + __NL_CRUKS_CHECK_PASSED__
+   * (operator session-init MUST flip to true after Cruks verification).
+   * When the check is pending, the spin dispatch is ABORTED and this
+   * event fires so cert-harness can count blocked dispatches per session
+   * to attest Wet KSA compliance to the regulator. */
+  onCruksCheckPending: ['reelEngine.mjs'],
   /* Wave H5 — Big-Win Tier ladder. Vendor-neutral 5-tier celebration
    * fired after the per-line rollup ends. tier is INT 1..5; label/
    * threshold/duration/color all GDD-driven so two games share the
