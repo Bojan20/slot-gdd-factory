@@ -357,7 +357,7 @@ t('runtime enabled = IIFE + emits + binding', () => {
 
 t('runtime: trigger=big_win binds onBigWinTier (and ONLY that)', () => {
   const r = emitRewardChestRuntime(resolveConfig({ rewardChest: { enabled: true, triggerMode: 'big_win' } }));
-  ct(r,  "HookBus.on('onBigWinTier'", 'big_win binding');
+  ct(r,  "HookBus.on('onBigWinTierEntered'", 'big_win binding');
   nct(r, "HookBus.on('onSpinResult'", 'no other binding');
   nct(r, "HookBus.on('onFsEnd'",      'no other binding');
 });
@@ -366,7 +366,7 @@ t('runtime: trigger=fs_end binds onFsEnd (and ONLY that)', () => {
   const r = emitRewardChestRuntime(resolveConfig({ rewardChest: { enabled: true, triggerMode: 'fs_end' } }));
   ct(r,  "HookBus.on('onFsEnd'",      'fs_end binding');
   nct(r, "HookBus.on('onSpinResult'", 'no other binding');
-  nct(r, "HookBus.on('onBigWinTier'", 'no other binding');
+  nct(r, "HookBus.on('onBigWinTierEntered'", 'no other binding');
 });
 
 t('runtime: trigger=bonus_complete binds onFsEnd via bonus_complete source tag', () => {

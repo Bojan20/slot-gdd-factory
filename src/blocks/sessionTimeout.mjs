@@ -182,31 +182,35 @@ function _esc(s) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+/* Frozen single-source-of-truth. defaultConfig() returns a MUTABLE spread
+   so callers (incl. tests) can override fields without TypeError. */
+const DEFAULTS = Object.freeze({
+  enabled: false,
+  /* 60-min hard cap — UKGC LCCP 8.3.1 default. Override per market
+   * (Sweden 3 h, Spain 4 h, Ontario 1 h, demo dist 90 s). */
+  maxMs: 60 * 60 * 1000,
+  /* 60-second warning lead-time. AGCO Standard 4.07 best practice. */
+  warnMs: 60 * 1000,
+  /* 5-minute forced break — UKGC convention, MGA acceptable. */
+  breakMs: 5 * 60 * 1000,
+  /* Soft model — break ends with auto-resume. NJDGE hard-exit market
+   * sets this to true (causes onSessionLogoutRequested emit). */
+  forceLogout: false,
+  /* UKGC permits "extend session" submode (player ack of warning
+   * skips the forced break). NJDGE forbids. */
+  extendable: true,
+  pauseDuringReality: true,
+  accentColor: '255,90,90',
+  warningTitle: 'SESSION TIME WARNING',
+  breakTitle: 'TAKE A BREAK',
+  copyContinue: 'EXTEND SESSION',
+  copyQuit: 'END SESSION',
+});
+
 export function defaultConfig() {
-  /* Mutable fresh literal — caller may mutate copy.
-     Group AD HIGH fix 17.06.2026 — removed top-level freeze. */
-  return ({
-    enabled: false,
-    /* 60-min hard cap — UKGC LCCP 8.3.1 default. Override per market
-     * (Sweden 3 h, Spain 4 h, Ontario 1 h, demo dist 90 s). */
-    maxMs: 60 * 60 * 1000,
-    /* 60-second warning lead-time. AGCO Standard 4.07 best practice. */
-    warnMs: 60 * 1000,
-    /* 5-minute forced break — UKGC convention, MGA acceptable. */
-    breakMs: 5 * 60 * 1000,
-    /* Soft model — break ends with auto-resume. NJDGE hard-exit market
-     * sets this to true (causes onSessionLogoutRequested emit). */
-    forceLogout: false,
-    /* UKGC permits "extend session" submode (player ack of warning
-     * skips the forced break). NJDGE forbids. */
-    extendable: true,
-    pauseDuringReality: true,
-    accentColor: '255,90,90',
-    warningTitle: 'SESSION TIME WARNING',
-    breakTitle: 'TAKE A BREAK',
-    copyContinue: 'EXTEND SESSION',
-    copyQuit: 'END SESSION',
-  });
+  /* Mutable fresh copy — caller may mutate.
+     Group AD HIGH fix 17.06.2026 — DEFAULTS stays frozen, copy doesn't. */
+  return { ...DEFAULTS };
 }
 
 export function resolveConfig(model = {}) {

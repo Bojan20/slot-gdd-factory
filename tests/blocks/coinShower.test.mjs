@@ -209,7 +209,7 @@ t('emitCoinShowerRuntime: disabled → stub (no HookBus.on)', () => {
 t('emitCoinShowerRuntime: enabled wires HookBus.on for big_win mode', () => {
   const out = emitCoinShowerRuntime({ ...defaultConfig(), enabled: true, triggerMode: 'big_win' });
   ct(out, 'HookBus.on');
-  ct(out, "'onBigWinTier'");
+  ct(out, "'onBigWinTierEntered'");
 });
 
 t('emitCoinShowerRuntime: bonus_trigger mode wires onFsTrigger', () => {
@@ -236,7 +236,7 @@ t('emitCoinShowerRuntime: exactly one trigger binding per build', () => {
   nct(bw, "'onFsTrigger'");
 
   const aw = emitCoinShowerRuntime({ ...defaultConfig(), enabled: true, triggerMode: 'any_win' });
-  nct(aw, "'onBigWinTier'");
+  nct(aw, "'onBigWinTierEntered'");
   nct(aw, "'onTumbleStep'");
   nct(aw, "'onFsTrigger'");
 });

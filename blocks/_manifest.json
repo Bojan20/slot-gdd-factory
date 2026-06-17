@@ -678,7 +678,7 @@
         "resolveConfig"
       ],
       "lifecycleHooks": [
-        "onBigWinTier",
+        "onBigWinTierEntered",
         "onFsTrigger",
         "onSpinResult",
         "onTumbleStep"
@@ -2498,7 +2498,7 @@
         "resolveConfig"
       ],
       "lifecycleHooks": [
-        "onBigWinTier",
+        "onBigWinTierEntered",
         "onFsEnd",
         "onSpinResult"
       ],
