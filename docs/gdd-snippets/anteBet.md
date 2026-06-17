@@ -1,6 +1,6 @@
 # anteBet — GDD snippet
 
-> (no purpose blurb extracted)
+> Wave K5 — Ante Bet toggle (+25% bet, doubled trigger probability). @module anteBet Purpose: When GDD declares an `ante_bet` feature, this block emits an opt-in footer toggle (default `enabled: false`) that raises the cost-per-spin by a configured multiplier (industry baseline 1.25× = +25 %) and, in exchange, doubles the scatter/trigger probability. The toggl…
 
 ```yaml
 anteBet:

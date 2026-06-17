@@ -1,6 +1,6 @@
 # bonusBuy — GDD snippet
 
-> (no purpose blurb extracted)
+> Wave K4 — Bonus Buy button (direct purchase into FS bonus). @module bonusBuy Purpose: When GDD declares a `bonus_buy` feature, this block emits a "Buy Bonus" button in the footer (default `enabled: false`) plus a runtime click listener that forces a free-spins trigger by injecting N guaranteed scatters into the next spin. The button label carries the cost-mu…
 
 ```yaml
 bonusBuy:

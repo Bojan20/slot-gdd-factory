@@ -1,12 +1,14 @@
 # winCap — GDD snippet
 
-> Wave N3 — Win Cap terminator block. Regulator-mandated max-win enforcement.
+> Wave N3 (base) + W51 (cross-jurisdiction enforcement) — Win Cap terminator. Regulator-mandated max-win enforcement.
 
 ```yaml
 winCap:
     enabled: false
     maxWinX: 5000
     mode: round
+    jurisdiction: OFF
+    ceilingApplied: false
     overlayLabel: "MAX WIN!"
     overlayMs: 2400
     color: "255,215,0"

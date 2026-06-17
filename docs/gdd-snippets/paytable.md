@@ -1,6 +1,6 @@
 # paytable — GDD snippet
 
-> (no purpose blurb extracted)
+> Wave U10 — Paytable modal block. @module paytable Purpose: Industry-standard pattern (every certified slot ships one): an "i" / "?" button on the hub opens a full-screen modal that lists every symbol, its payout grid (3-of-a-kind / 4OAK / 5OAK), wild substitution rules, and a feature summary (FS, multiplier, gamble, hold-and-win, etc). The modal is regulator…
 
 ```yaml
 paytable:

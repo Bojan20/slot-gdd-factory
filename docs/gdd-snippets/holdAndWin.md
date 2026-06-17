@@ -28,6 +28,7 @@ holdAndWin:
       jackpotShortMs: 1600
       jackpotGrandMs: 2200
       fullGridMs: 2600
+      bonusCelebrateMs: 1500
     orbTable: null
 ```
 

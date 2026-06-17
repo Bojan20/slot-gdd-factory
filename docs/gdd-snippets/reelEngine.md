@@ -4,8 +4,8 @@
 
 ```yaml
 reelEngine:
-    minRotations: 8
-    settleBreathMs: 80
+    minRotations: 5
+    settleBreathMs: 60
     stripBufferCells: 2
     staticPreRollMs: 220
     staticBlurSwapMs: 220

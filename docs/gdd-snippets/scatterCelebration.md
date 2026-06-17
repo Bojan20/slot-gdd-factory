@@ -1,6 +1,6 @@
 # scatterCelebration — GDD snippet
 
-> (no purpose blurb extracted)
+> Wave H03 — Scatter celebration block. @module scatterCelebration Purpose: Plays AFTER all reels have settled with a trigger-count of scatters, and BEFORE the FS_INTRO placard fades in. Composable with every mechanic — pure CSS keyframes scoped to `.cell--scatter-celebrate`, triggered by JS `playScatterCelebration()` returning a Promise.
 
 ```yaml
 scatterCelebration:

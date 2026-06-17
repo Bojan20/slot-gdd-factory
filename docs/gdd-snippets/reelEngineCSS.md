@@ -1,11 +1,11 @@
 # reelEngineCSS — GDD snippet
 
-> Slot GDD Factory · reelEngineCSS BLOCK Pure CSS layer for the reel-strip engine (rectangular + every uniform column-grid shape). Defines: .reelCol — column container (overflow:hidden creates the mask) .reelStrip — translateY-driven inner strip .cell.is-blurring — motion-blur applied while a cell is spinning Engine runtime (buildReelColumns / onTickAll / star…
+> Slot GDD Factory · reelEngineCSS BLOCK Pure CSS layer for the reel-strip engine (rectangular + every uniform column-grid shape). Defines: .reelCol — column container (overflow:hidden creates the mask) .reelCol.is-spinning — WoO-style motion overlay (streak ::after + speed-line ::before).
 
 ```yaml
 reelEngineCSS:
-    blurPx: 4.5
-    blurDim: 0.88
+    blurPx: 0
+    blurDim: 1
     blurFadeMs: 80
 ```
 
