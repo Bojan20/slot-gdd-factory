@@ -554,6 +554,11 @@ const EXPECTED_EMIT_OWNERS = {
    * subscribe so they treat the overridden cells as the wild for the
    * upcoming evaluation. */
   symbolOverride:     ['wildReel.mjs'],
+  /* H4 colorblindPatterns — color-blind pattern overlay toggle (WCAG SC 1.4.1).
+   * Sole owner of the toggle event; chip click / API / settings panel all
+   * route through colorblindPatterns.mjs which is the canonical state-of-
+   * truth for `__SLOT_CB_PATTERNS_ON__`. */
+  onCbPatternsToggle: ['colorblindPatterns.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */

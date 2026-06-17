@@ -3,7 +3,9 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-17 01:25 · **HEAD**: `ae250ab` · main
+> **Last updated**: 2026-06-17 13:50 · **HEAD**: pending commit · main
+> **🏆 ULTIMATIVNI SWEEP 2026-06-17 13:50 — Wave H4 colorblindPatterns LANDED + status sync sweep za 13 STALE ⏳ → ✅ flagova.** Novi LEGO blok `colorblindPatterns.mjs` (322 LOC) — WCAG 2.2 SC 1.4.1 (Use of Colour, AAA) per-tier ::before pattern overlay (7 patterns: HP diag stripes, MP horizontal, LP dots, WILD double-frame, SCATTER 8-ray burst, BONUS concentric, SPECIAL crosshatch). Pure presentation layer (kao motionOverlay): listens postSpin/onTumbleStep/onFsSpinResult, decorate cell sa `data-cb-tier` iz `tierMap` lookup. Player opt-in toggle chip (top-right by default), localStorage persistence (`slot.cbPatterns` key), WCAG 2.5.5 44×44 touch target, focus-visible outline, prefers-reduced-motion gate, Apple HIG 11px font floor. HookBus `onCbPatternsToggle` (canonical 67th event, sole owner colorblindPatterns.mjs). LEGO 7/7 ZELENO (127 events single-owner). Tests: **97/0 PASS** (5 tier patterns × CSS+markup+runtime sandbox, persistence boot, external event sync, chip click flip). Status sync sweep: B65 mysteryReveal (35/0), B66 winwaysIndicator (27/0), B67 multiplierLadder (35/0), B68 coinShower (37/0), B69 fsProgressBar (19/0), B70 stickyMeter (40/0), B71 pickBonusReveal (37/0), B72 wheelBonusReveal (38/0), B73 energyMeter (45/0), B74 rewardChest (49/0), B75 symbolStackCollapse (41/0), H1 jurisdictionGate (43/0) flip-ovani iz STALE ⏳ → ✅ (Σ 543 testova zelena baseline). B76 scatterAnticipationV2 flag → OBSOLETE (fix-in-place u Wave V1 `f5ff1bd`). 20/20 grid fixtures stable. **96 blokova ukupno.**
+> **Previous last updated**: 2026-06-17 01:25 · **HEAD**: `ae250ab` · main
 > **🏆 ULTIMATE CLOSE-OUT 2026-06-17 — 7 atoma zatvorena u jednom krugu (W58.J-DE.3a + W58.J-DE.3b + W58.J-NL.3 + W58.J-FR + W58.J-IT + W58.J-ES + W3.2)**. Manual spin-pace floor zatvorio MANUAL dispatch put za GlüStV §11(2) (reelEngine.runOneBaseSpin guard); §6e dobio IndexedDB async sweep (modern .databases() + fallback path); NL §33 sad ima persistent local cool-off (`window.startNlCoolOff` helper + localStorage `__NL_COOL_OFF_UNTIL__` lifecycle); tri nova member-state gate-a (FR ANJ, IT ADM, ES DGOJ) sa autoplay/turbo/min-spin/register-check enforcement; W3.2 ukinula 5 deprecated motion-overlay knob-ova u `reelEngineCSS.mjs` (back-compat via orchestrator's MOTION_OVERLAY_SURFACES configOverride). **6 novih test fajlova + 1 ažuriran**: `_germanyManualSpinPaceGuard` 35/35, `_germanyIndexedDbSweep` 44/44, `_netherlandsCoolOffPersistence` 52/52, `franceComplianceGate` 53/53, `italyComplianceGate` 55/55, `spainComplianceGate` 50/50; postojeći regression suite zelena (germany 55/55, NL 46/46, EU 50/50, jurisdictionGate 43/43, reelEngineCSS sa W3.2 pinovima 12/12). **LEGO 7/7 ZELENO · 94 blokova · 124 sole-owner events · 72 listener-ov**, sharpness 5/5 · 0 mutations, npm test 20/20 fixtures. **Σ 595+ testa zelena u presedan-novom Sweep-u**. 15 jurisdikcija sad pokrivene production-ready (DE/NL/UKGC/AGCO/SE/EU + FR/IT/ES novo).
 > **Previous last updated**: 2026-06-16 10:35 · **HEAD**: `47208f2` · main
 > **🏆 W48 PRE-MATH PERFECTION ROADMAP ZATVOREN (2026-06-16 10:35) — 47/47 waveа shipped (100%).** F4 + F5 + F6 + F7 svi ispunjeni u jednoj sesiji. **8 commitova landed**: A10 hapticFeedback (`018e88e`), A2 keyboard nav 0 violations (`8f8f470`), A5 rtlLayout (`cd3361c`), A8 pwaInstallability (`33c2843`), V3 tier-stepper polish (`83a7460`), F6 T1-T5 dev tools sweep + 83 GDD snippets (`e78f00f`), F7 HX1-HX6 hardening + i18n + cert + prod build (`47208f2`). **Ultra QA finalna provera 9/9 ZELENO**: LEGO 6/6 · rmotion 46/46 · wcag 5/5 AAA · kbd strict 73/73 · runtime 23/23 + globalsContract 8/8 · LOC budget 1164/1180 (98.6%) · manifest 17/17 · cert 19/19 · dev-tools 5/5 · ultimate fixtures 4316/4316. **88 blokova · 89 testova · 11 jurisdikcija · 10 jezika · 5 novih dev alata**. Math sloj ostaje gated (`rule_no_math_unless_asked`). Audio sloj ostaje gated (`rule_audio_off_until_asked`).
@@ -1851,18 +1853,18 @@ shouldAbort = required === true && passed !== true
 | # | Novi blok | Lifecycle | Industry-ref kind | Status |
 |---|---|---|---|---|
 | B64 | `symbolUpgrade` | onTumbleStep | level-up symbol transmute | ✅ **SHIPPED** (this commit) |
-| B65 | `mysteryReveal` | preSpin/onSpinResult | mystery symbol → uniform reveal | ⏳ queued |
-| B66 | `winwaysIndicator` | onSpinResult | 1024 / 4096 / 117 649 ways display | ⏳ queued |
-| B67 | `multiplierLadder` | onTumbleStep/onFsSpinResult | persistent climbing mult | ⏳ queued |
-| B68 | `coinShower` | onSpinResult (big-win) | particle presenter | ⏳ queued |
-| B69 | `fsProgressBar` | onFsSpinResult | "spin X of Y" UI | ⏳ queued |
-| B70 | `stickyMeter` | preSpin/postSpin | sticky symbol counter | ⏳ queued |
-| B71 | `pickBonusReveal` | onFsTrigger (alt) | pick-3-of-N reveal | ⏳ queued |
-| B72 | `wheelBonusReveal` | onFsTrigger (alt) | rotational reward picker (extension layer iznad postojećeg `wheelBonus.mjs`) | ⏳ queued |
-| B73 | `energyMeter` | onSpinResult | metered side-feature gauge | ⏳ queued |
-| B74 | `rewardChest` | postSpin | end-of-round reveal | ⏳ queued |
-| B75 | `symbolStackCollapse` | onTumbleStep | full-reel stack drop | ⏳ queued |
-| B76 | `scatterAnticipationV2` | preSpin/onReelLand | **fix Boki bug**: bez "fake nada" na rilima koji više ne mogu trigger | ⏳ queued |
+| B65 | `mysteryReveal` | preSpin/onSpinResult | mystery symbol → uniform reveal | ✅ shipped (35/0 tests, 328 LOC) |
+| B66 | `winwaysIndicator` | onSpinResult | 1024 / 4096 / 117 649 ways display | ✅ shipped (27/0 tests, 167 LOC) |
+| B67 | `multiplierLadder` | onTumbleStep/onFsSpinResult | persistent climbing mult | ✅ shipped (35/0 tests, 239 LOC) |
+| B68 | `coinShower` | onSpinResult (big-win) | particle presenter | ✅ shipped (37/0 tests, 356 LOC) |
+| B69 | `fsProgressBar` | onFsSpinResult | "spin X of Y" UI | ✅ shipped (19/0 tests, 309 LOC) |
+| B70 | `stickyMeter` | preSpin/postSpin | sticky symbol counter | ✅ shipped (40/0 tests, 245 LOC) |
+| B71 | `pickBonusReveal` | onFsTrigger (alt) | pick-3-of-N reveal | ✅ shipped (37/0 tests, 309 LOC) |
+| B72 | `wheelBonusReveal` | onFsTrigger (alt) | rotational reward picker (extension layer iznad postojećeg `wheelBonus.mjs`) | ✅ shipped (38/0 tests, 308 LOC) |
+| B73 | `energyMeter` | onSpinResult | metered side-feature gauge | ✅ shipped (45/0 tests, 266 LOC) |
+| B74 | `rewardChest` | postSpin | end-of-round reveal | ✅ shipped (49/0 tests, 530 LOC) |
+| B75 | `symbolStackCollapse` | onTumbleStep | full-reel stack drop | ✅ shipped (41/0 tests, 430 LOC) |
+| B76 | `scatterAnticipationV2` | preSpin/onReelLand | **fix Boki bug**: bez "fake nada" na rilima koji više ne mogu trigger | ✅ **OBSOLETE — fix-in-place u Wave V1** `f5ff1bd` (verifikovano: `tests/blocks/anticipationV2.test.mjs` testira `anticipation.mjs` source) |
 
 > Pravilo per blok: JSDoc kontrakt header (purpose / industry-ref / public API / lifecycle / perf / a11y / GDD keys), 100% test coverage, default config bez magic brojeva.
 
@@ -2178,10 +2180,10 @@ Playwright probe on `dist/01_rectangular_5x3_playable.html`:
 
 | # | Block | Status |
 |:--:|---|:--:|
-| H1 | `jurisdictionGate.mjs` | ⏳ queued |
+| H1 | `jurisdictionGate.mjs` | ✅ shipped (43/0 tests) |
 | **H2** | `realityCheck.mjs` | ✅ shipped |
 | **H3** | `sessionTimeout.mjs` | ✅ **THIS COMMIT** |
-| H4 | `colorblindPatterns.mjs` | ⏳ queued |
+| H4 | `colorblindPatterns.mjs` | ✅ shipped (97/0 tests, 322 LOC, WCAG 2.2 SC 1.4.1 AAA) |
 | H5 / H5.x | `bigWinTier.mjs` | ✅ shipped |
 | H6 | `bonusClimaxReveal.mjs` | ⏳ queued |
 | H7 | `cellLevelUpgrade.mjs` | ⏳ queued |

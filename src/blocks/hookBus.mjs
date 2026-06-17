@@ -326,6 +326,13 @@ export const HOOK_EVENTS = Object.freeze([
    *   Consumers: audio bus (jackpot sting), historyLog (transaction row),
    *   any external HUD that wants to react to the award. */
   'onDailyJackpotAward',
+  /* Wave H4: Color-blind pattern overlay (WCAG 2.2 SC 1.4.1)
+   * onCbPatternsToggle {enabled, source} — fires when player toggles the
+   *   pattern overlay layer (chip click | settings panel | API).
+   *   `source` is 'chip' | 'api' | 'settings'. Owner: colorblindPatterns.mjs.
+   *   Consumers: settingsPanel mirrors the state row; any UI that wants to
+   *   reflect the colour-independence mode. */
+  'onCbPatternsToggle',
 ]);
 
 /* Wave U4: canonical autoplay stop reasons. */

@@ -370,6 +370,11 @@ import {
   emitRtlLayoutCSS, emitRtlLayoutRuntime,
   resolveConfig as resolveRtlLayoutConfig,
 } from './blocks/rtlLayout.mjs';
+// Wave H4 — Colour-blind pattern overlay (WCAG 2.2 SC 1.4.1)
+import {
+  emitColorblindPatternsCSS, emitColorblindPatternsMarkup, emitColorblindPatternsRuntime,
+  resolveConfig as resolveColorblindPatternsConfig,
+} from './blocks/colorblindPatterns.mjs';
 // Wave A8 — PWA installability (manifest + SW + a2hs prompt)
 import {
   emitPwaInstallabilityMarkup, emitPwaInstallabilityRuntime,
@@ -844,6 +849,9 @@ ${/* Wave U13 — settings panel (consolidated preferences modal). */ ''}
 ${emitSettingsPanelCSS(resolveSettingsPanelConfig(model))}
 ${/* Wave A5 — RTL layout (numeric isolation + html[dir=rtl] mirrors). */ ''}
 ${emitRtlLayoutCSS(resolveRtlLayoutConfig(model))}
+${/* Wave H4 — Color-blind pattern overlay (WCAG 2.2 SC 1.4.1).
+     Per-tier ::before pattern layer + chip toggle. 0-byte when disabled. */ ''}
+${emitColorblindPatternsCSS(resolveColorblindPatternsConfig(model))}
 ${/* Wave U10 — paytable modal (i-button + symbol roster + features). */ ''}
 ${emitPaytableCSS(resolvePaytableConfig(model))}
 ${emitSymbolInfoPopoverCSS(resolveSymbolInfoPopoverConfig(model))}
@@ -1011,6 +1019,8 @@ ${/* Wave B64 — symbolUpgrade has no markup (decorates existing .cell DOM). */
 ${emitSymbolUpgradeMarkup(resolveSymbolUpgradeConfig(model))}
 ${/* W56 — aux multiplier reel mount slot (block runtime ensure-mounts here when enabled). */ ''}
 <div id="stormMultiplierReelMount" aria-hidden="true"></div>
+${/* Wave H4 — Color-blind toggle chip (top-right by default). */ ''}
+${emitColorblindPatternsMarkup(resolveColorblindPatternsConfig(model))}
 ${/* Wave P8 — hot-reload indicator host (hidden until connected). */ ''}
 ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
 
@@ -1215,6 +1225,10 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${/* Wave A5 — RTL layout runtime (auto-detect from __SLOT_LOCALE__,
      * flip html[dir=rtl] / 'ltr', emit onDirChanged event). */ ''}
   ${emitRtlLayoutRuntime(resolveRtlLayoutConfig(model))}
+  ${/* Wave H4 — Color-blind pattern runtime (chip + decorate engine).
+     * Listens postSpin / onTumbleStep / onFsSpinResult to apply per-tier
+     * data-cb-tier attribute on every cell. Pure presentation layer. */ ''}
+  ${emitColorblindPatternsRuntime(resolveColorblindPatternsConfig(model))}
   ${/* Wave A8 — PWA installability runtime (blob-URL SW register +
      * beforeinstallprompt + appinstalled + iOS detection). */ ''}
   ${emitPwaInstallabilityRuntime(resolvePwaInstallabilityConfig({ ...model, gameName: model.name }))}
