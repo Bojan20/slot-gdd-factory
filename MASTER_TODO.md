@@ -1505,6 +1505,43 @@ shouldAbort = required === true && passed !== true
 
 ---
 
+## 🎨 W60 — Universal regulator disclosure modal (✅ LANDED — 2026-06-17)
+
+> **Closes the modal-DOM gap** left by 9 jurisdiction atoms (UKGC/AGCO/SE/DE/NL/EU/FR/IT/ES) — each emit-only block fires `*Required` events; W60 listens to all of them and renders ONE accessible queue-aware modal with ACK button.
+
+### 1. Šta je zatvoreno
+
+| Stavka | Implementacija |
+|:--|:--|
+| Universal modal block | `src/blocks/regulatorDisclosureModal.mjs` +371 LOC |
+| Orchestrator wire | `src/buildSlotHTML.mjs` (CSS + Markup + Runtime) |
+| 17 listened events | autoplay/RTP/playTime disclosure · pace enforced · state cleared · indexedDB cleared · Cruks/cool-off · AI Act DDA/declaration · FRJ/RUA check · autoplay/turbo banned · min spin duration · mandatory RC interval |
+| 7 ACK window flags | `__AUTOPLAY_DISCLOSURE_ACK__` · `__RTP_DISCLOSURE_ACK__` · `__PLAY_TIME_DISPLAY_ACK__` · `__NL_CRUKS_CHECK_PASSED__` · `__EU_AI_DECLARATION_ACK__` · `__FR_FRJ_CHECK_PASSED__` · `__IT_RUA_CHECK_PASSED__` |
+| 2 sole-owner envelope events | `onRegulatorDisclosureShown` · `onRegulatorDisclosureAcknowledged` |
+| LEGO register | `tools/lego-gate.mjs` +6 LOC |
+| Queue + dedup | currentDisclosure + queue dedup gate (no double-show on re-emit) |
+| a11y | ARIA dialog · aria-modal · aria-labelledby/describedby · :focus-visible · ≥44px touch · prefers-reduced-motion · safe-area-inset |
+| Test | NEW `tests/blocks/regulatorDisclosureModal.test.mjs` — 60 testa · 10 sekcija |
+
+### 2. Ultimate QA 13/13 ZELENO
+
+| # | Gate | Verdict |
+|:-:|:--|:-:|
+| 1 | LEGO 7/7 invariants | ✅ (96 blokova posle manifest regen) |
+| 2 | regulatorDisclosureModal (NEW) | ✅ **60/0** |
+| 3-12 | Regression chain (10 testova) | ✅ 22+78+28+33+45+43+46+51+32+61 = **439/0** |
+| 13 | npm test (20 grid fixtures) | ✅ 20/20 |
+| **Σ** | — | **519 testa · 0 fail** |
+
+### 3. Honest delivery
+
+| Status | Stavka |
+|:--|:--|
+| ✅ Done | Universal modal closes modal-DOM gap kroz 9 jurisdiction gate-a · accessibility complete · queue dedup verified · 60 testa pin |
+| ⏳ Out-of-scope | Math layer · audio layer (per Boki rules) |
+
+---
+
 ## 🌍 W58.J-AGCO — RTP transparency disclosure gate (✅ LANDED — 2026-06-17)
 
 > **Regulator anchor**: ON AGCO Standard 4.06 + UKGC RTS 8 + MGA Player Protection.

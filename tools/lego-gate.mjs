@@ -191,6 +191,12 @@ const EXPECTED_EMIT_OWNERS = {
    * surfaces the RTP to the player. Payload: { jurisdiction, rtp } where
    * rtp may be null when math layer gated (consumer renders placeholder). */
   onRtpDisclosureRequired: ['winCap.mjs'],
+  /* W60 — Universal regulator disclosure modal. Listens to ALL
+   * *DisclosureRequired / *Enforced / *Prohibited events from W58.J-*
+   * gates, renders one accessible queue-aware modal, emits shown/acked
+   * envelope events for cert harness + audit log. */
+  onRegulatorDisclosureShown:        ['regulatorDisclosureModal.mjs'],
+  onRegulatorDisclosureAcknowledged: ['regulatorDisclosureModal.mjs'],
   /* W58.J-UKGC — Autoplay disclosure gate per UKGC LCCP 1.4.6 +
    * ON AGCO Standard 4.06 + MGA Player Protection. Fires when player
    * tries autoplayStart() but jurisdiction requires disclosure and

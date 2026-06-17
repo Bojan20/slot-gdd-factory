@@ -320,6 +320,16 @@ import {
   emitRealityCheckRuntime,
   resolveConfig as resolveRealityCheckConfig,
 } from './blocks/realityCheck.mjs';
+// Wave W60 — Universal regulator disclosure modal (closes the modal DOM
+// gap left by W58.J-{UKGC,AGCO,SE,DE,NL,EU,FR,IT,ES} which only emit
+// *Required events; this block listens to all of them and renders one
+// accessible queue-aware modal).
+import {
+  emitRegulatorDisclosureModalCSS,
+  emitRegulatorDisclosureModalMarkup,
+  emitRegulatorDisclosureModalRuntime,
+  resolveConfig as resolveRegulatorDisclosureModalConfig,
+} from './blocks/regulatorDisclosureModal.mjs';
 // Wave H3 — Session Timeout (continuous-play cap + forced break)
 // UKGC LCCP 8.3.1 / AGCO Standard 4.07 / MGA RGF Part III
 import {
@@ -822,6 +832,7 @@ ${/* Wave H12 — Net Win/Loss Indicator (chip CSS for session-net column). */ '
 ${emitNetLossIndicatorCSS(resolveNetLossIndicatorConfig(model))}
 ${/* Wave H2 — Reality Check modal CSS (regulator player-protection popup). */ ''}
 ${emitRealityCheckCSS(resolveRealityCheckConfig(model))}
+${emitRegulatorDisclosureModalCSS(resolveRegulatorDisclosureModalConfig(model))}
 ${/* Wave H3 — Session Timeout modal CSS (continuous-play cap + forced break). */ ''}
 ${emitSessionTimeoutCSS(resolveSessionTimeoutConfig(model))}
 ${emitWinRollupCSS(resolveWinRollupConfig(model))}
@@ -926,6 +937,7 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
     ${emitBalanceHudMarkup(resolveBalanceHudConfig(model))}
     ${emitNetLossIndicatorMarkup(resolveNetLossIndicatorConfig(model))}
     ${emitRealityCheckMarkup(resolveRealityCheckConfig(model))}
+    ${emitRegulatorDisclosureModalMarkup(resolveRegulatorDisclosureModalConfig(model))}
     ${/* Wave H3 — session-timeout modal (warning + forced-break dual mode). */ ''}
     ${emitSessionTimeoutMarkup(resolveSessionTimeoutConfig(model))}
     ${/* Wave U5 — bet chip + steps + panel. */ ''}
@@ -1180,6 +1192,12 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
      * / onBalanceChanged / onNetThresholdCrossed. Emits its own
      * lifecycle events. */ ''}
   ${emitRealityCheckRuntime(resolveRealityCheckConfig(model))}
+  ${/* Wave W60 — Regulator disclosure modal runtime: subscribes to ALL
+     * onAutoplayDisclosureRequired / onRtpDisclosureRequired / on*Required
+     * / on*Enforced / on*Prohibited events from W58.J-* gates and renders
+     * one accessible queue-aware modal. Sets ACK window flags after
+     * acknowledgement so consumers (autoplay.autoplayStart guards) resume. */ ''}
+  ${emitRegulatorDisclosureModalRuntime(resolveRegulatorDisclosureModalConfig(model))}
   ${/* Wave H3 — Session Timeout runtime: subscribes to preSpin / autoplay /
      * realityCheck pause-resume. MUST follow realityCheck so realityCheck's
      * emits already exist when sessionTimeout registers its listeners. */ ''}

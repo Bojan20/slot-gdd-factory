@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-17T01:29:56.720Z",
+  "generatedAt": "2026-06-17T01:46:09.960Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 94,
+  "totalBlocks": 95,
   "blocks": [
     {
       "name": "anteBet",
@@ -2426,6 +2426,32 @@
         "blurFadeMs": 80
       },
       "loc": 133
+    },
+    {
+      "name": "regulatorDisclosureModal",
+      "file": "src/blocks/regulatorDisclosureModal.mjs",
+      "testFile": "tests/blocks/regulatorDisclosureModal.test.mjs",
+      "category": "uncategorised",
+      "description": "The 13 regulator-gate atoms from W58 sweep + W59.H1 (UKGC autoplay",
+      "exports": [
+        "defaultConfig",
+        "emitRegulatorDisclosureModalCSS",
+        "emitRegulatorDisclosureModalMarkup",
+        "emitRegulatorDisclosureModalRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onRegulatorDisclosureAcknowledged",
+        "onRegulatorDisclosureShown"
+      ],
+      "defaultConfig": {
+        "enabled": true,
+        "queueIntervalMs": 250,
+        "color": "255,170,80",
+        "ackButtonLabel": "I UNDERSTAND"
+      },
+      "loc": 480
     },
     {
       "name": "respin",
