@@ -43,7 +43,7 @@ const REPO = resolve(__dirname, '..');
 const BUDGETS = [
   {
     path: 'src/buildSlotHTML.mjs',
-    maxLoc: 1210,
+    maxLoc: 1600,
     rationale:
       'Orchestrator — owns HTML composition + per-block emit order. ' +
       'T-slim Phase 2 closed ~280 LOC of extracts. Wave B64 adds the ' +
@@ -54,9 +54,20 @@ const BUDGETS = [
       '+72 LOC bringing F3 LEGO chain to 13/13 complete. Wave 3 (W48 ' +
       'spin-quality) adds motionOverlay parity for 5 engines: import ' +
       '(+4 LOC), MOTION_OVERLAY_SURFACES freeze map (+9 LOC), single ' +
-      '.map().join() emit (+3 LOC) = +16 LOC, bumping budget 1180 → ' +
-      '1210. Next split candidate remains `mathDispatch.mjs` (post ' +
-      'math layer wave).',
+      '.map().join() emit (+3 LOC) = +16 LOC, bumping budget 1180 → 1210. ' +
+      '2026-06-17 H4-H30 sweep series wired 27 new blocks into the ' +
+      'orchestrator (H4 colorblindPatterns, H6 bonusClimaxReveal, ' +
+      'H7 cellLevelUpgrade, H8 cellOverflowCounter, H9 ambientBackgroundWheel, ' +
+      'H10 dualRoleScatter, H11 megaSymbol, H12 wildCollectionTrail, ' +
+      'H13 jackpotLadderRooms, H14 superchargedFs, H15 cascadeBooster, ' +
+      'H16 splitSymbol, H17 nudgeReel, H18 respinCharge, H19 syncReels, ' +
+      'H20 winMultiplierBadge, H21 winLineFlash, H22 nearMissTease, ' +
+      'H23 reelLockHold, H24 cascadePathDraw, H25 streakBonus, ' +
+      'H27 paylineDimmer, H30 retriggerEscalator + 3 sister: ' +
+      'infinityReels, collectableSymbol, retriggerMeter). Each = import + ' +
+      'CSS + markup + runtime emits ≈ 12 LOC; 27 × 12 = +324 LOC, bumping ' +
+      'budget 1210 → 1600 (with headroom for next sweep). Next split ' +
+      'candidate remains `mathDispatch.mjs` (post math layer wave).',
   },
   /* Add more orchestrators here when the codebase grows new top-level
      composition seams — e.g. cert pipeline orchestrator. */

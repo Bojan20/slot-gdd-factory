@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "One-button GDD upload \u2192 parsed model \u2192 playable slot in a new tab. Zero-runtime, vanilla browser.",
+  "description": "One-button GDD upload → parsed model → playable slot in a new tab. Zero-runtime, vanilla browser.",
   "scripts": {
     "test": "node tests/parse-real.mjs && node tests/render-grid-all.mjs",
     "test:parse": "node tests/parse-real.mjs",
@@ -56,6 +56,7 @@
     "prod:build": "node tools/prod-build.mjs"
   },
   "devDependencies": {
+    "axe-core": "^4.12.1",
     "playwright": "^1.60.0",
     "zod": "^4.2.1"
   },
