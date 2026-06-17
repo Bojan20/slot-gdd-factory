@@ -243,6 +243,15 @@ const EXPECTED_EMIT_OWNERS = {
    * the chain. The boot-time audit event records the active jurisdiction
    * + which precedence path it came from for cert-harness / telemetry. */
   onJurisdictionResolved: ['jurisdictionGate.mjs'],
+  /* W58.J-DE.2 — Downstream enforcement of GlüStV §11(2) spin-pace floor.
+   * autoplay tick reads window.__DE_MIN_SPIN_MS__ (set by germanyCompliance-
+   * Gate at boot) + window.__lastSpinAt__ (set by reelEngine on each spin
+   * trigger) and CLAMPS the inter-spin delay so the floor is never violated.
+   * Emits onMinSpinPaceDeferred when the floor extends the schedule
+   * beyond what autoplay config requested. Payload: { requestedMs,
+   * deferredMs, floorMs, rule }. cert-harness can count defers per
+   * session to attest GlüStV compliance to the regulator. */
+  onMinSpinPaceDeferred: ['autoplay.mjs'],
   /* Wave H5 — Big-Win Tier ladder. Vendor-neutral 5-tier celebration
    * fired after the per-line rollup ends. tier is INT 1..5; label/
    * threshold/duration/color all GDD-driven so two games share the

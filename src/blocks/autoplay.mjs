@@ -872,6 +872,35 @@ export function emitAutoplayRuntime(cfg = defaultConfig()) {
 
     function _scheduleNextSpin(delayMs) {
       if (STATE.nextSpinTimerId !== null) clearTimeout(STATE.nextSpinTimerId);
+      var rawDelay = Number.isFinite(delayMs) ? Math.max(0, delayMs) : INTER_SPIN_MS;
+      /* W58.J-DE.2 — Per-jurisdiction spin-pace floor enforcement.
+       * germanyComplianceGate sets window.__DE_MIN_SPIN_MS__ (5000) when
+       * jurisdiction === 'DE'. We must NOT schedule the next spin sooner
+       * than (lastSpinAt + floor). The clamp respects whichever delay is
+       * larger: the autoplay-config inter-spin or the regulator floor.
+       * Emits onMinSpinPaceDeferred once per defer so cert/telemetry can
+       * record how often the floor extended the schedule. */
+      var floor = (typeof window !== 'undefined' && typeof window.__DE_MIN_SPIN_MS__ === 'number')
+        ? window.__DE_MIN_SPIN_MS__ : 0;
+      var lastAt = (typeof window !== 'undefined' && typeof window.__lastSpinAt__ === 'number')
+        ? window.__lastSpinAt__ : 0;
+      var floorRemaining = 0;
+      if (floor > 0 && lastAt > 0) {
+        floorRemaining = Math.max(0, (lastAt + floor) - Date.now());
+      }
+      var finalDelay = Math.max(rawDelay, floorRemaining);
+      if (floorRemaining > rawDelay &&
+          typeof window !== 'undefined' && window.HookBus &&
+          typeof window.HookBus.emit === 'function') {
+        try {
+          window.HookBus.emit('onMinSpinPaceDeferred', {
+            requestedMs: rawDelay,
+            deferredMs: finalDelay,
+            floorMs: floor,
+            rule: 'DE-GluStV-2021-§11(2)',
+          });
+        } catch (_) {}
+      }
       STATE.nextSpinTimerId = setTimeout(function () {
         STATE.nextSpinTimerId = null;
         if (!STATE.active || STATE.paused) return;
@@ -883,7 +912,7 @@ export function emitAutoplayRuntime(cfg = defaultConfig()) {
            entry point through reelEngine.runOneBaseSpin guard. */
         var spinBtn = document.getElementById('spinBtn');
         if (spinBtn && !spinBtn.disabled) spinBtn.click();
-      }, Number.isFinite(delayMs) ? Math.max(0, delayMs) : INTER_SPIN_MS);
+      }, finalDelay);
     }
 
     function _evalStopAfterSpin() {

@@ -408,6 +408,14 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
     if (!RECT_REELS || allReelsActive) return;
     allReelsActive = true;
     spinStartTime = performance.now();
+    /* W58.J-DE.2 — Last-spin wall-clock timestamp. Downstream consumers
+     * (autoplay tick clamp, slamStop re-spin gate, future RG audit)
+     * read this to enforce per-jurisdiction spin-pace floors. We use
+     * Date.now() (not performance.now()) so the value is comparable
+     * with audit-trail timestamps across tab suspend/resume cycles. */
+    if (typeof window !== 'undefined') {
+      window.__lastSpinAt__ = Date.now();
+    }
     const spinBtn = document.getElementById("spinBtn");
     const statusEl = document.getElementById("status");
     spinBtn.classList.add("is-spinning");
