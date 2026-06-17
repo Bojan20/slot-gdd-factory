@@ -3,7 +3,47 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-17 19:25 · **HEAD**: (UCBA + mega-fix recovery, pending) · main
+> **Last updated**: 2026-06-17 20:05 · **HEAD**: `10d64b2` · main
+>
+> ## 🏆 DAY-END FINAL · `10d64b2` (live 308 Playwright audit)
+>
+> | Sloj | N | Rezultat |
+> |:--|:-:|:-:|
+> | Block strict-pattern audit | 122/122 | ✅ 1464/1464 checks |
+> | Static GDD integrity (24 baseline) | 24/24 | ✅ |
+> | Synthetic GDD static (308 PDFs) | 308/308 | ✅ |
+> | **Live Playwright (308 synthetic, 4-way parallel)** | **308/308** | ✅ **51s real run** |
+> | 4 PDF reference live | 4/4 | ✅ 0 errs |
+> | LEGO 7/7 + npm test 20/20 | — | ✅ |
+> | Vendor leaks · prefers-reduced-motion | — | ✅ 0 / all |
+>
+> **Σ ~2200+ asserts pass · 0 fail** across all audits.
+>
+> ### Današnji deliverable
+>
+> | Kategorija | Brojka |
+> |:--|:-:|
+> | Commits | **24** |
+> | Novi blokovi (97 → 122) | **+25** |
+> | LOC dodato | ~**7500** |
+> | Audit tools | **4** |
+> | Bug-fix commits | **5 kritičnih** |
+>
+> ### Audit infrastruktura
+>
+> - `cortex-eyes-block-audit.mjs` (122 blokova × 12 checks · <2s)
+> - `cortex-gdd-feature-integrity.mjs` (24 baseline · <5s)
+> - `cortex-synthetic-308-audit.mjs` (308 PDF static · ~25s)
+> - `cortex-live-308-playwright.mjs` (308 PDF live Chromium × 4 parallel · ~51s)
+>
+> ### Realne opcije za sledeću sesiju
+>
+> 1. **Math sloj** — gated (`rule_no_math_unless_asked`); ulazi tek kad kažeš "ajmo matematiku"
+> 2. **Audio sloj** — gated (`rule_audio_off_until_asked`); ulazi tek kad kažeš "ajmo audio"
+> 3. **Performance budget RAF audit** — Performance API, per-blok 16ms budget validation
+> 4. **A11y axe-core WCAG AAA sweep** — automated injection in live render
+> 5. **W46 cortex-slot-builder live test** — real PDF → cortex agent → eyes QA closed-loop
+> 6. **Block Playground (Wave Z) phase 2** — trigger preset library + iframe integration
 >
 > ## 🏆 UCBA — Ultimate Cross-Block Integration Audit (2026-06-17 19:25)
 >
