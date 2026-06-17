@@ -16,9 +16,42 @@ t('defaultConfig: 0px blur / 1.0 brightness / 80ms fade (WoO-aligned)', () => {
      default is OFF; the motion overlay on .reelCol provides the speed cue. */
   const c = defaultConfig();
   eq(c.blurPx, 0); eq(c.blurDim, 1); eq(c.blurFadeMs, 80);
-  eq(c.streakAlpha, 0.04); eq(c.streakSpacingPx, 4);
-  eq(c.shadowAlpha, 0.20); eq(c.speedLinesAlpha, 0.04);
-  eq(c.speedLineSpeedMs, 150);
+});
+
+t('W3.2 cleanup: 5 deprecated overlay knobs are removed from defaultConfig', () => {
+  /* The pre-W3.1 motion-overlay knobs (streakAlpha / streakSpacingPx /
+     shadowAlpha / speedLinesAlpha / speedLineSpeedMs) were retained as
+     no-ops through W3.1 for back-compat. W3.2 removes them. The shared
+     motionOverlay block now owns the overlay surface; rect grid's
+     visual identity is preserved by the orchestrator's per-surface
+     configOverride in MOTION_OVERLAY_SURFACES (buildSlotHTML.mjs). */
+  const c = defaultConfig();
+  if ('streakAlpha'      in c) throw new Error('W3.2 regression: streakAlpha still in defaultConfig');
+  if ('streakSpacingPx'  in c) throw new Error('W3.2 regression: streakSpacingPx still in defaultConfig');
+  if ('shadowAlpha'      in c) throw new Error('W3.2 regression: shadowAlpha still in defaultConfig');
+  if ('speedLinesAlpha'  in c) throw new Error('W3.2 regression: speedLinesAlpha still in defaultConfig');
+  if ('speedLineSpeedMs' in c) throw new Error('W3.2 regression: speedLineSpeedMs still in defaultConfig');
+});
+
+t('W3.2 cleanup: deprecated knobs in GDD model are silently ignored (back-compat)', () => {
+  /* Existing GDDs that still set these knobs must not crash the parser
+     or produce a deprecation warning. The clampNum loop in resolveConfig
+     ignores any key not in its allowlist; we just verify nothing leaks
+     onto the returned config. */
+  const c = resolveConfig({ reelEngine: {
+    streakAlpha: 0.5,
+    streakSpacingPx: 8,
+    shadowAlpha: 0.4,
+    speedLinesAlpha: 0.1,
+    speedLineSpeedMs: 250,
+    blurPx: 4,
+  }});
+  eq(c.blurPx, 4);  /* still honored */
+  if ('streakAlpha'      in c) throw new Error('deprecated knob leaked: streakAlpha');
+  if ('streakSpacingPx'  in c) throw new Error('deprecated knob leaked: streakSpacingPx');
+  if ('shadowAlpha'      in c) throw new Error('deprecated knob leaked: shadowAlpha');
+  if ('speedLinesAlpha'  in c) throw new Error('deprecated knob leaked: speedLinesAlpha');
+  if ('speedLineSpeedMs' in c) throw new Error('deprecated knob leaked: speedLineSpeedMs');
 });
 
 t('resolveConfig: blurPx bounded 0..20 (default 0)', () => {
@@ -32,14 +65,20 @@ t('resolveConfig: blurDim bounded 0..1 (default 1)', () => {
   eq(resolveConfig({ reelEngine: { blurDim: 1.5 } }).blurDim, 1);
 });
 
-t('resolveConfig: motion overlay knobs bounded', () => {
-  eq(resolveConfig({ reelEngine: { streakAlpha: 0.5 } }).streakAlpha, 0.5);
-  eq(resolveConfig({ reelEngine: { streakAlpha: 2 } }).streakAlpha, 0.04);
-  eq(resolveConfig({ reelEngine: { streakSpacingPx: 8 } }).streakSpacingPx, 8);
-  eq(resolveConfig({ reelEngine: { streakSpacingPx: 0 } }).streakSpacingPx, 4);
-  eq(resolveConfig({ reelEngine: { shadowAlpha: 0.4 } }).shadowAlpha, 0.4);
-  eq(resolveConfig({ reelEngine: { speedLineSpeedMs: 250 } }).speedLineSpeedMs, 250);
-  eq(resolveConfig({ reelEngine: { speedLineSpeedMs: 10 } }).speedLineSpeedMs, 150);
+t('W3.2 pin: motionOverlay configOverride in MOTION_OVERLAY_SURFACES preserves vintage', async () => {
+  /* The pre-W3.1 vintage values (0.04 / 4 / 0.20 / 0.04 / 150) MUST
+     still live in the orchestrator's per-surface configOverride for the
+     rect surface, otherwise the rect grid's visual identity drifts. */
+  const { readFileSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
+  const { dirname, resolve: joinPath } = await import('node:path');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const orchSrc = readFileSync(joinPath(here, '../../src/buildSlotHTML.mjs'), 'utf8');
+  ct(orchSrc, 'streakAlpha:      0.04');
+  ct(orchSrc, 'streakSpacingPx:  4');
+  ct(orchSrc, 'shadowAlpha:      0.20');
+  ct(orchSrc, 'speedLinesAlpha:  0.04');
+  ct(orchSrc, 'speedLineSpeedMs: 150');
 });
 
 t('emitReelEngineCSS: contains core column selectors (no overlay — moved to motionOverlay)', () => {

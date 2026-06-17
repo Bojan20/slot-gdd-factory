@@ -29,11 +29,17 @@
  *   blurPx               number — legacy cell-level blur               (default 0)
  *   blurDim              number — legacy cell-level brightness (0..1)  (default 1)
  *   blurFadeMs           number ms — transition into / out of blur     (default 80)
- *   streakAlpha          number — motion streak whiteness (0..1)       (default 0.04)
- *   streakSpacingPx      number px — streak stripe spacing              (default 4)
- *   shadowAlpha          number — top/bottom mask shadow alpha (0..1)  (default 0.20)
- *   speedLinesAlpha      number — vertical speed-line tint alpha (0..1)(default 0.04)
- *   speedLineSpeedMs     number ms — speed-line scroll period           (default 150)
+ *
+ * W3.2 (2026-06-17) — Pre-W3.1 this block also exposed five motion-overlay
+ * knobs (streakAlpha / streakSpacingPx / shadowAlpha / speedLinesAlpha /
+ * speedLineSpeedMs) used by the rectangular ::after / ::before overlay.
+ * W3.1 migrated that overlay to the shared motionOverlay.mjs block; the
+ * five knobs were retained as no-ops for back-compat through one release.
+ * The orchestrator's per-surface configOverride in MOTION_OVERLAY_SURFACES
+ * (buildSlotHTML.mjs) carries the literal pre-W3.1 vintage values
+ * (0.04 / 4 / 0.20 / 0.04 / 150) so the visual identity is unchanged.
+ * W3.2 removes the no-op knobs to slim the surface area; future
+ * customization happens via model.motionOverlay (the shared block).
  *
  * Public API:
  *   defaultConfig() / resolveConfig(model)
@@ -44,11 +50,6 @@ const DEFAULTS = Object.freeze({
   blurPx: 0,
   blurDim: 1,
   blurFadeMs: 80,
-  streakAlpha: 0.04,
-  streakSpacingPx: 4,
-  shadowAlpha: 0.20,
-  speedLinesAlpha: 0.04,
-  speedLineSpeedMs: 150,
 });
 
 export function defaultConfig() {
@@ -68,11 +69,6 @@ export function resolveConfig(model) {
     ['blurPx',           0, 20],
     ['blurDim',          0,  1],
     ['blurFadeMs',       0, 1000],
-    ['streakAlpha',      0,  1],
-    ['streakSpacingPx',  1, 24],
-    ['shadowAlpha',      0,  1],
-    ['speedLinesAlpha',  0,  1],
-    ['speedLineSpeedMs', 30, 2000],
   ];
   for (const [k, lo, hi] of m) {
     if (k in src) {

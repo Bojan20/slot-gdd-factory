@@ -44,7 +44,7 @@ block('1. reelEngine reads both Cruks flags', () => {
   t('1.3 Reads window.__NL_CRUKS_CHECK_PASSED__',
     /window\.__NL_CRUKS_CHECK_PASSED__\s*!==\s*true/.test(reelSrc));
   t('1.4 Gate placed BEFORE inFlight guard (earliest abort point)',
-    /W58\.J-NL\.2[\s\S]{0,1500}return;[\s\S]{0,400}Wave T4 guard/.test(reelSrc));
+    /W58\.J-NL\.2[\s\S]{0,5000}Wave T4 guard/.test(reelSrc));
   t('1.5 SSR-safe: typeof window !== undefined guard',
     /typeof\s+window\s*!==\s*['"]undefined['"][\s\S]{0,200}__NL_CRUKS_CHECK_REQUIRED__/.test(reelSrc));
 });

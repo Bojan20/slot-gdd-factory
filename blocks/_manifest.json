@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-17T00:28:36.535Z",
+  "generatedAt": "2026-06-17T01:29:56.720Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 91,
+  "totalBlocks": 94,
   "blocks": [
     {
       "name": "anteBet",
@@ -198,7 +198,8 @@
         "onAutoplayDisclosureRequired",
         "onAutoplayStart",
         "onAutoplayStop",
-        "onAutoplayTick"
+        "onAutoplayTick",
+        "onMinSpinPaceDeferred"
       ],
       "defaultConfig": {
         "enabled": true,
@@ -229,7 +230,7 @@
         "jurisdiction": "",
         "requireDisclosure": false
       },
-      "loc": 1135
+      "loc": 1164
     },
     {
       "name": "balanceHud",
@@ -910,6 +911,34 @@
       "loc": 441
     },
     {
+      "name": "franceComplianceGate",
+      "file": "src/blocks/franceComplianceGate.mjs",
+      "testFile": "tests/blocks/franceComplianceGate.test.mjs",
+      "category": "uncategorised",
+      "description": "W58.J-FR — French ANJ (Autorité nationale des jeux) compliance gate.",
+      "exports": [
+        "FR_MIN_SPIN_MS_BOUNDS",
+        "FR_MIN_SPIN_MS_DEFAULT",
+        "defaultConfig",
+        "emitFranceComplianceGateCSS",
+        "emitFranceComplianceGateRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onAutoplayBanned",
+        "onFrjCheckRequired",
+        "onMinSpinDurationEnforced",
+        "onTurboBanned"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "jurisdiction": null,
+        "minSpinMs": 3000
+      },
+      "loc": 200
+    },
+    {
       "name": "freeSpins",
       "file": "src/blocks/freeSpins.mjs",
       "testFile": "tests/blocks/freeSpins.test.mjs",
@@ -1114,6 +1143,7 @@
       "lifecycleHooks": [],
       "emittedEvents": [
         "onGameStateCleared",
+        "onIndexedDbCleared",
         "onMinSpinPaceEnforced"
       ],
       "defaultConfig": {
@@ -1130,7 +1160,7 @@
           "__BG_"
         ]
       },
-      "loc": 232
+      "loc": 340
     },
     {
       "name": "hapticFeedback",
@@ -1489,6 +1519,38 @@
       "loc": 491
     },
     {
+      "name": "italyComplianceGate",
+      "file": "src/blocks/italyComplianceGate.mjs",
+      "testFile": "tests/blocks/italyComplianceGate.test.mjs",
+      "category": "uncategorised",
+      "description": "W58.J-IT — Italian ADM (Agenzia delle Dogane e dei Monopoli, formerly",
+      "exports": [
+        "IT_MIN_SPIN_MS_BOUNDS",
+        "IT_MIN_SPIN_MS_DEFAULT",
+        "IT_REALITY_CHECK_INTERVAL_MIN_BOUNDS",
+        "IT_REALITY_CHECK_INTERVAL_MIN_DEFAULT",
+        "defaultConfig",
+        "emitItalyComplianceGateCSS",
+        "emitItalyComplianceGateRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onAutoplayBanned",
+        "onMandatoryRealityCheckIntervalEnforced",
+        "onMinSpinDurationEnforced",
+        "onRuaCheckRequired",
+        "onTurboBanned"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "jurisdiction": null,
+        "minSpinMs": 3000,
+        "realityCheckIntervalMin": 60
+      },
+      "loc": 219
+    },
+    {
       "name": "jurisdictionGate",
       "file": "src/blocks/jurisdictionGate.mjs",
       "testFile": "tests/blocks/jurisdictionGate.test.mjs",
@@ -1594,7 +1656,7 @@
         "enableStreaks": true,
         "enableSpeedLines": true
       },
-      "loc": 237
+      "loc": 282
     },
     {
       "name": "multiplierLadder",
@@ -1780,6 +1842,9 @@
       "lifecycleHooks": [],
       "emittedEvents": [
         "onCoolOffEnforced",
+        "onCoolOffPeriodActive",
+        "onCoolOffPeriodExpired",
+        "onCoolOffPeriodStarted",
         "onCruksCheckRequired"
       ],
       "defaultConfig": {
@@ -1787,7 +1852,7 @@
         "jurisdiction": null,
         "coolOffHours": 24
       },
-      "loc": 179
+      "loc": 286
     },
     {
       "name": "netLossIndicator",
@@ -2320,6 +2385,8 @@
         "preSpin"
       ],
       "emittedEvents": [
+        "onCruksCheckPending",
+        "onManualSpinPaceBlocked",
         "onSlamComplete",
         "onSpinResult",
         "preSpin"
@@ -2338,7 +2405,7 @@
         "minStepPx": 0.5,
         "accelMinFactor": 0.3
       },
-      "loc": 1069
+      "loc": 1139
     },
     {
       "name": "reelEngineCSS",
@@ -2356,14 +2423,9 @@
       "defaultConfig": {
         "blurPx": 0,
         "blurDim": 1,
-        "blurFadeMs": 80,
-        "streakAlpha": 0.04,
-        "streakSpacingPx": 4,
-        "shadowAlpha": 0.2,
-        "speedLinesAlpha": 0.04,
-        "speedLineSpeedMs": 150
+        "blurFadeMs": 80
       },
-      "loc": 183
+      "loc": 133
     },
     {
       "name": "respin",
@@ -2748,6 +2810,37 @@
         "triggerSymbolFallback": "S"
       },
       "loc": 313
+    },
+    {
+      "name": "spainComplianceGate",
+      "file": "src/blocks/spainComplianceGate.mjs",
+      "testFile": "tests/blocks/spainComplianceGate.test.mjs",
+      "category": "uncategorised",
+      "description": "W58.J-ES — Spanish DGOJ (Dirección General de Ordenación del Juego)",
+      "exports": [
+        "ES_MIN_SPIN_MS_BOUNDS",
+        "ES_MIN_SPIN_MS_DEFAULT",
+        "ES_REALITY_CHECK_INTERVAL_MIN_BOUNDS",
+        "ES_REALITY_CHECK_INTERVAL_MIN_DEFAULT",
+        "defaultConfig",
+        "emitSpainComplianceGateCSS",
+        "emitSpainComplianceGateRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onAutoplayBanned",
+        "onMandatoryRealityCheckIntervalEnforced",
+        "onMinSpinDurationEnforced",
+        "onRgiajCheckRequired"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "jurisdiction": null,
+        "minSpinMs": 3000,
+        "realityCheckIntervalMin": 60
+      },
+      "loc": 209
     },
     {
       "name": "spinControl",

@@ -885,6 +885,43 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
       }
       return;
     }
+    /* W58.J-DE.3 — Manual spin-pace floor guard (GlüStV §11(2)).
+     * W58.J-DE.2 closed the autoplay path (autoplay tick clamps inter-spin
+     * delay against __DE_MIN_SPIN_MS__). This guard closes the MANUAL path:
+     * a player who slam-stops a spin and immediately clicks the spin
+     * button could otherwise bypass the 5-second floor (autoplay-off, no
+     * inter-spin scheduler in play). The runOneBaseSpin entry point is the
+     * single funnel for every dispatch source (manual click, autoplay tick,
+     * dev force buttons, future hot-keys), so a guard here is universal.
+     *
+     * Sole-owner audit emit onManualSpinPaceBlocked distinguishes manual
+     * blocks from autoplay defers (W58.J-DE.2 already emits
+     * onMinSpinPaceDeferred). Cert-harness counts both to attest GlüStV
+     * compliance; regulator can verify floor is enforced regardless of
+     * dispatch source. Silent abort (no DOM mutation) — consumer side may
+     * rate-limit a player-facing message via the audit listener. */
+    if (typeof window !== 'undefined' &&
+        typeof window.__DE_MIN_SPIN_MS__ === 'number' &&
+        window.__DE_MIN_SPIN_MS__ > 0) {
+      var _floorMs  = window.__DE_MIN_SPIN_MS__;
+      var _lastAt   = (typeof window.__lastSpinAt__ === 'number') ? window.__lastSpinAt__ : 0;
+      var _nowMs    = Date.now();
+      var _elapsed  = _lastAt > 0 ? (_nowMs - _lastAt) : Infinity;
+      if (_elapsed < _floorMs) {
+        if (typeof HookBus !== 'undefined') {
+          try {
+            HookBus.emit('onManualSpinPaceBlocked', {
+              jurisdiction: window.__SLOT_JURISDICTION__ || 'DE',
+              floorMs: _floorMs,
+              elapsedMs: _elapsed,
+              remainingMs: _floorMs - _elapsed,
+              rule: 'DE-GluStV-2021-§11(2)',
+            });
+          } catch (_) {}
+        }
+        return;
+      }
+    }
     /* Wave T4 guard — rapid double/triple click on #spinBtn was racing:
        click 2 emitted preSpin while click 1's reels were mid-spin, the
        reelEngine preSpin listener (priority 20) clears every reel.stopTimerId,

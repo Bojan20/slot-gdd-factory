@@ -426,6 +426,28 @@ import {
   emitJurisdictionGateCSS, emitJurisdictionGateRuntime,
   resolveConfig as resolveJurisdictionGateConfig,
 } from './blocks/jurisdictionGate.mjs';
+// W58.J-FR — French ANJ compliance gate. Auto-enabled when jurisdiction
+// === 'FR'. Boot-time only: sets four window flags (autoplay banned,
+// turbo banned, min-spin duration, FRJ check required) + emits four
+// audit events.
+import {
+  emitFranceComplianceGateCSS, emitFranceComplianceGateRuntime,
+  resolveConfig as resolveFranceComplianceGateConfig,
+} from './blocks/franceComplianceGate.mjs';
+// W58.J-IT — Italian ADM compliance gate. Auto-enabled when jurisdiction
+// === 'IT'. Boot-time only: sets five window flags + emits five audit
+// events including mandatory reality-check interval.
+import {
+  emitItalyComplianceGateCSS, emitItalyComplianceGateRuntime,
+  resolveConfig as resolveItalyComplianceGateConfig,
+} from './blocks/italyComplianceGate.mjs';
+// W58.J-ES — Spanish DGOJ compliance gate. Auto-enabled when jurisdiction
+// === 'ES'. Boot-time only: sets five window flags + emits four audit
+// events including bonus-offer restriction.
+import {
+  emitSpainComplianceGateCSS, emitSpainComplianceGateRuntime,
+  resolveConfig as resolveSpainComplianceGateConfig,
+} from './blocks/spainComplianceGate.mjs';
 // Wave P8 — Hot-Reload BLOCK (dev-mode SSE → in-page re-parse or full reload).
 // Disabled by default; opt-in via model.hotReload.enabled (set by dev server
 // or by the parent page on localhost). Production builds emit a 0-byte stub.
@@ -1201,6 +1223,16 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${/* W58.J-EU — EU AI Act Art.5(1)(a) subliminal + Art.5(1)(b) DDA +
        Art.50(1) transparency. Boot-time IIFE; 0-byte when non-EU. */ ''}
   ${emitEuAiActComplianceGateRuntime(resolveEuAiActComplianceGateConfig(model))}
+  ${/* W58.J-FR — ANJ no-autoplay + no-turbo + min-spin + FRJ register
+       check. Boot-time IIFE; 0-byte when jurisdiction is not FR. */ ''}
+  ${emitFranceComplianceGateRuntime(resolveFranceComplianceGateConfig(model))}
+  ${/* W58.J-IT — ADM no-autoplay + no-turbo + min-spin + mandatory
+       reality-check interval + RUA register check. 0-byte when not IT. */ ''}
+  ${emitItalyComplianceGateRuntime(resolveItalyComplianceGateConfig(model))}
+  ${/* W58.J-ES — DGOJ no-autoplay + min-spin + mandatory reality-check
+       interval + RGIAJ register check + bonus-offer restriction flag.
+       0-byte when jurisdiction is not ES. */ ''}
+  ${emitSpainComplianceGateRuntime(resolveSpainComplianceGateConfig(model))}
   ${/* W59.H1 — Centralized jurisdiction resolver. Fires AFTER per-gate
        blocks so the audit event records the final resolved value;
        0-byte when no jurisdiction signal in the model. */ ''}

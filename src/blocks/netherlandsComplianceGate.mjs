@@ -27,6 +27,21 @@
  *     downstream RG blocks (sessionTimeout, realityCheck) can respect
  *     the local cool-off if the player triggers a session pause.
  *
+ *     W58.J-NL.3 dopuna: persistent local cool-off lifecycle. The
+ *     block exposes an idempotent helper `window.startNlCoolOff(hours)`
+ *     that operator session-init / sessionTimeout / realityCheck can
+ *     call to start a local cool-off — the deadline is written to
+ *     localStorage `__NL_COOL_OFF_UNTIL__` (ms epoch) and survives
+ *     page reload. At boot the gate checks the persisted deadline:
+ *       • If now < deadline → window.__NL_COOL_OFF_ACTIVE__ = true,
+ *         fire onCoolOffPeriodActive { jurisdiction, remainingMs }.
+ *         Spin dispatcher consumes the flag to refuse first spin.
+ *       • If now >= deadline → remove the key, fire
+ *         onCoolOffPeriodExpired { jurisdiction } so cert-harness
+ *         records the auto-clear. Cross-operator enforcement still
+ *         lives at Cruks; this only makes single-operator persistence
+ *         honest.
+ *
  *   §31a Bonus-buy ban
  *     Already enforced by bonusBuy.mjs BONUS_BUY_BANNED_JURISDICTIONS
  *     (W57.A4). This block does NOT duplicate that gate.
@@ -53,6 +68,9 @@
  * HookBus events (sole emitter contract)
  *   • onCruksCheckRequired  payload: { jurisdiction, rule }
  *   • onCoolOffEnforced     payload: { jurisdiction, coolOffHours, rule }
+ *   • onCoolOffPeriodActive  payload: { jurisdiction, remainingMs, rule } (W58.J-NL.3)
+ *   • onCoolOffPeriodExpired payload: { jurisdiction, rule } (W58.J-NL.3)
+ *   • onCoolOffPeriodStarted payload: { jurisdiction, hours, rule } (W58.J-NL.3)
  *
  * Accessibility
  *   Block is invisible to the player (boot-time DOM-free side effect).
@@ -173,6 +191,95 @@ export function emitNetherlandsComplianceGateRuntime(cfg) {
       });
     } catch (_) {}
   }
+
+  /* W58.J-NL.3 — Persistent local cool-off lifecycle.
+   *
+   * On boot we read localStorage __NL_COOL_OFF_UNTIL__ (ms epoch). If
+   * the deadline lies in the future we set window.__NL_COOL_OFF_ACTIVE__
+   * and fire onCoolOffPeriodActive so downstream spin dispatcher can
+   * refuse first-spin. If the deadline is in the past we remove the key
+   * and fire onCoolOffPeriodExpired so cert-harness records the auto-
+   * clear. localStorage may throw in private mode → silent try/catch.
+   *
+   * window.startNlCoolOff(hours) is an idempotent helper that operator
+   * session-init / sessionTimeout / realityCheck can call when the
+   * player opts into a session pause. It writes the deadline to
+   * localStorage + sets the active flag + fires onCoolOffPeriodStarted.
+   * Cross-operator enforcement still lives at Cruks; this only makes
+   * single-operator persistence honest. */
+  var COOL_OFF_KEY = '__NL_COOL_OFF_UNTIL__';
+  var _coolOffRead = function () {
+    try {
+      var raw = window.localStorage.getItem(COOL_OFF_KEY);
+      if (typeof raw !== 'string' || raw.length === 0) return 0;
+      var n = parseInt(raw, 10);
+      return (isFinite(n) && n > 0) ? n : 0;
+    } catch (_) { return 0; }
+  };
+  var _coolOffWrite = function (untilMs) {
+    try {
+      window.localStorage.setItem(COOL_OFF_KEY, String(untilMs));
+      return true;
+    } catch (_) { return false; }
+  };
+  var _coolOffClear = function () {
+    try { window.localStorage.removeItem(COOL_OFF_KEY); } catch (_) {}
+  };
+  var _coolOffHasBus = function () {
+    return window.HookBus && typeof window.HookBus.emit === 'function';
+  };
+  /* Boot-time evaluation. */
+  var _persistedUntil = _coolOffRead();
+  if (_persistedUntil > 0) {
+    var _now = Date.now();
+    if (_now < _persistedUntil) {
+      window.__NL_COOL_OFF_ACTIVE__ = true;
+      if (_coolOffHasBus()) {
+        try {
+          window.HookBus.emit('onCoolOffPeriodActive', {
+            jurisdiction: JURISDICTION,
+            remainingMs: _persistedUntil - _now,
+            rule: 'NL-WetKSA-§33',
+          });
+        } catch (_) {}
+      }
+    } else {
+      _coolOffClear();
+      if (_coolOffHasBus()) {
+        try {
+          window.HookBus.emit('onCoolOffPeriodExpired', {
+            jurisdiction: JURISDICTION,
+            rule: 'NL-WetKSA-§33',
+          });
+        } catch (_) {}
+      }
+    }
+  }
+  /* Public helper. Idempotent: re-calling with a larger window extends
+   * the deadline; calling with a smaller value never SHORTENS an
+   * existing active cool-off (regulator default). Returns true on
+   * write success, false on localStorage failure (private mode). */
+  window.startNlCoolOff = function (hours) {
+    var hrs = parseFloat(hours);
+    if (!isFinite(hrs) || hrs <= 0) hrs = COOL_OFF_HOURS;
+    var untilMs = Date.now() + Math.floor(hrs * 3600 * 1000);
+    var existing = _coolOffRead();
+    if (existing > untilMs) untilMs = existing; /* never shrink */
+    var ok = _coolOffWrite(untilMs);
+    if (ok) {
+      window.__NL_COOL_OFF_ACTIVE__ = true;
+      if (_coolOffHasBus()) {
+        try {
+          window.HookBus.emit('onCoolOffPeriodStarted', {
+            jurisdiction: JURISDICTION,
+            hours: hrs,
+            rule: 'NL-WetKSA-§33',
+          });
+        } catch (_) {}
+      }
+    }
+    return ok;
+  };
 })();
 `;
 }

@@ -118,6 +118,25 @@ const HOOK_REGISTRATION_OPT_OUT = new Set([
    * consumers (cert harness, telemetry) which jurisdiction the model
    * resolved to, without forcing them to re-walk the precedence chain. */
   'jurisdictionGate.mjs',
+  /* W58.J-FR — franceComplianceGate is an emit-only boot block. Sets
+   * four ANJ-mandated window flags (autoplay banned, turbo banned,
+   * min-spin duration, FRJ self-exclusion check required) and fires
+   * the matching audit events once at boot. Has no spin-lifecycle
+   * listener — INFORMS the autoplay / turboMode / spin dispatcher of
+   * the obligations, never reads from them. */
+  'franceComplianceGate.mjs',
+  /* W58.J-IT — italyComplianceGate is an emit-only boot block. Sets
+   * five ADM-mandated window flags (autoplay banned, turbo banned,
+   * min-spin duration, mandatory reality-check interval, RUA self-
+   * exclusion check required) and fires the matching audit events
+   * once at boot. Has no spin-lifecycle listener. */
+  'italyComplianceGate.mjs',
+  /* W58.J-ES — spainComplianceGate is an emit-only boot block. Sets
+   * five DGOJ-mandated window flags (autoplay banned, min-spin
+   * duration, mandatory reality-check interval, RGIAJ self-exclusion
+   * check required, bonus-offer restriction) and fires four audit
+   * events once at boot. Has no spin-lifecycle listener. */
+  'spainComplianceGate.mjs',
 ]);
 
 /* Expected emit ownership — single source of truth for each event. */
@@ -200,6 +219,14 @@ const EXPECTED_EMIT_OWNERS = {
    * and not duplicated here. */
   onMinSpinPaceEnforced: ['germanyComplianceGate.mjs'],
   onGameStateCleared:    ['germanyComplianceGate.mjs'],
+  /* W58.J-DE.3 — §6e IndexedDB sweep (dopuna of the localStorage /
+   * sessionStorage sweep already shipped in W58.J-DE). Modern browsers
+   * expose indexedDB.databases() which is enumerated then deleteDatabase
+   * is called on each name matching SGF prefixes. Older browsers fall
+   * back to best-effort delete-by-prefix-name. The event fires once at
+   * boot AFTER the async chain resolves so cert-harness sees the IDB
+   * sweep count distinct from the synchronous storage sweep. */
+  onIndexedDbCleared:    ['germanyComplianceGate.mjs'],
   /* W58.J-NL — NL KSA (Wet KSA — Wet kansspelen op afstand) compliance
    * gate. Two boot-time obligations fired by netherlandsComplianceGate.mjs when
    * jurisdiction === 'NL':
@@ -216,6 +243,20 @@ const EXPECTED_EMIT_OWNERS = {
    * and not duplicated here. */
   onCruksCheckRequired: ['netherlandsComplianceGate.mjs'],
   onCoolOffEnforced:    ['netherlandsComplianceGate.mjs'],
+  /* W58.J-NL.3 — Persistent local cool-off lifecycle (Wet KSA §33).
+   * netherlandsComplianceGate.mjs writes / reads localStorage key
+   * __NL_COOL_OFF_UNTIL__ (ms epoch) and exposes window.startNlCoolOff(hours)
+   * helper. Three lifecycle events:
+   *   • onCoolOffPeriodActive  — fired at boot when persisted deadline is
+   *     in the future. Spin dispatcher consumes window.__NL_COOL_OFF_ACTIVE__
+   *     to refuse first spin. Payload: { jurisdiction, remainingMs, rule }.
+   *   • onCoolOffPeriodExpired — fired at boot when persisted deadline has
+   *     passed. Auto-cleared from localStorage. Payload: { jurisdiction, rule }.
+   *   • onCoolOffPeriodStarted — fired when startNlCoolOff(hours) helper is
+   *     invoked successfully. Payload: { jurisdiction, hours, rule }. */
+  onCoolOffPeriodActive:  ['netherlandsComplianceGate.mjs'],
+  onCoolOffPeriodExpired: ['netherlandsComplianceGate.mjs'],
+  onCoolOffPeriodStarted: ['netherlandsComplianceGate.mjs'],
   /* W58.J-EU — EU AI Act (Regulation 2024/1689) compliance gate. Three
    * boot-time obligations fired by euAiActComplianceGate.mjs when
    * jurisdiction === 'EU':
@@ -235,6 +276,30 @@ const EXPECTED_EMIT_OWNERS = {
    * member-state gates (W58.J-DE / J-NL). */
   onAiActDdaProhibited:          ['euAiActComplianceGate.mjs'],
   onAiSystemDeclarationRequired: ['euAiActComplianceGate.mjs'],
+  /* W58.J-{FR,IT,ES} — Member-state compliance gates. Each fires its own
+   * runtime when its jurisdiction matches; the per-runtime ownership of
+   * these shared events is mutually exclusive (FR runtime never co-fires
+   * with IT runtime — `resolveJurisdiction` returns exactly one). The
+   * jurisdiction field on every payload identifies the emitting block.
+   *
+   * onAutoplayBanned           — FR ANJ Reco 2022-01 §3.2 / IT ADM §6.2 /
+   *                              ES RD 958/2020 Art.26
+   * onTurboBanned              — FR ANJ Reco 2022-01 §3.3 / IT ADM §6.3
+   *                              (ES does NOT ban turbo per current spec)
+   * onMinSpinDurationEnforced  — FR Decree 2019-1061 Art.4 / IT ADM §6.4 /
+   *                              ES DGOJ Tech Spec §5
+   * onMandatoryRealityCheckIntervalEnforced — IT Decreto Dignità Art.9 /
+   *                              ES RD 958/2020 Art.21
+   * onFrjCheckRequired         — FR Decree 2019-1061 Art.21 (FRJ register)
+   * onRuaCheckRequired         — IT LD 132/2020 Art.5 (RUA register)
+   * onRgiajCheckRequired       — ES RD 958/2020 Art.28 (RGIAJ register) */
+  onAutoplayBanned:              ['franceComplianceGate.mjs', 'italyComplianceGate.mjs', 'spainComplianceGate.mjs'],
+  onTurboBanned:                 ['franceComplianceGate.mjs', 'italyComplianceGate.mjs'],
+  onMinSpinDurationEnforced:     ['franceComplianceGate.mjs', 'italyComplianceGate.mjs', 'spainComplianceGate.mjs'],
+  onMandatoryRealityCheckIntervalEnforced: ['italyComplianceGate.mjs', 'spainComplianceGate.mjs'],
+  onFrjCheckRequired:            ['franceComplianceGate.mjs'],
+  onRuaCheckRequired:            ['italyComplianceGate.mjs'],
+  onRgiajCheckRequired:          ['spainComplianceGate.mjs'],
   /* W59.H1 — Centralized jurisdiction-precedence resolver. Six per-
    * jurisdiction gates (W57.A4 + W58.J-{UKGC,AGCO,SE,DE,NL,EU}) used
    * to inline the same 3-key precedence chain. The chain now lives in
@@ -260,6 +325,16 @@ const EXPECTED_EMIT_OWNERS = {
    * event fires so cert-harness can count blocked dispatches per session
    * to attest Wet KSA compliance to the regulator. */
   onCruksCheckPending: ['reelEngine.mjs'],
+  /* W58.J-DE.3 — Manual dispatch-side enforcement of GlüStV §11(2). W58.J-DE.2
+   * closed autoplay (autoplay tick clamps inter-spin delay against the floor);
+   * this closes the manual path. reelEngine.runOneBaseSpin reads
+   * __DE_MIN_SPIN_MS__ (set by germanyComplianceGate at boot) + __lastSpinAt__
+   * (set on each spin trigger) and silently aborts dispatch when the wall-clock
+   * elapsed since the prior spin is below the floor. Distinct event name
+   * (onManualSpinPaceBlocked) lets cert-harness distinguish manual blocks from
+   * autoplay defers. Payload: { jurisdiction, floorMs, elapsedMs, remainingMs,
+   * rule } so audit-trail consumers see how much time the player must wait. */
+  onManualSpinPaceBlocked: ['reelEngine.mjs'],
   /* Wave H5 — Big-Win Tier ladder. Vendor-neutral 5-tier celebration
    * fired after the per-line rollup ends. tier is INT 1..5; label/
    * threshold/duration/color all GDD-driven so two games share the

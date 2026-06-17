@@ -22,6 +22,14 @@
  *     (`__SLOT_`, `__FS_`, `__HW_`, etc.) and emits onGameStateCleared
  *     so audit-trail blocks can record the clear.
  *
+ *     W58.J-DE.3 dopuna: IndexedDB databases that match the same prefix
+ *     family are also wiped via the async indexedDB.databases() +
+ *     deleteDatabase path (with try/catch fallback for older browsers
+ *     that don't expose .databases()). A separate event
+ *     onIndexedDbCleared is fired AFTER the Promise chain resolves so
+ *     cert-harness counts the IDB sweep distinctly from the
+ *     localStorage / sessionStorage sweep.
+ *
  * §11(3) Bonus-buy ban
  *     Already enforced by bonusBuy.mjs BONUS_BUY_BANNED_JURISDICTIONS
  *     (W57.A4). This block does NOT duplicate that gate.
@@ -49,6 +57,8 @@
  * HookBus events (sole emitter contract)
  *   • onMinSpinPaceEnforced  payload: { jurisdiction, minSpinMs, rule }
  *   • onGameStateCleared     payload: { jurisdiction, prefixesCleared, count, rule }
+ *   • onIndexedDbCleared     payload: { jurisdiction, prefixesCleared, count, rule }
+ *                                       (W58.J-DE.3 §6e IDB sweep)
  *
  * Accessibility
  *   Block is invisible to the player (boot-time DOM-free side effect).
@@ -224,6 +234,104 @@ export function emitGermanyComplianceGateRuntime(cfg) {
           rule: 'DE-GluStV-2021-§6e',
         });
       } catch (_) {}
+    }
+
+    /* W58.J-DE.3 — §6e dopuna: IndexedDB databases that match the SGF
+     * prefix family must also be wiped. Modern browsers expose
+     * indexedDB.databases() which returns Promise<[{name, version}]>.
+     * Older browsers (older Safari, Firefox < 126) don't expose it; we
+     * fall back to attempting deleteDatabase on each known prefix-name
+     * (best-effort: deleteDatabase on a non-existent DB is a no-op).
+     *
+     * The whole IDB branch is fully async; we DO NOT await the result
+     * (boot-time gate must never block the rest of the page). The
+     * onIndexedDbCleared audit emit fires only AFTER the Promise chain
+     * resolves, so cert-harness sees the accurate count. */
+    if (typeof window.indexedDB !== 'undefined') {
+      var _idbPrefixMatches = function (name) {
+        if (typeof name !== 'string') return false;
+        for (var i = 0; i < PREFIXES.length; i++) {
+          if (name.indexOf(PREFIXES[i]) === 0) return true;
+        }
+        return false;
+      };
+      var _idbDelete = function (name) {
+        return new Promise(function (resolve) {
+          try {
+            var req = window.indexedDB.deleteDatabase(name);
+            req.onsuccess = function () { resolve(true); };
+            req.onerror   = function () { resolve(false); };
+            req.onblocked = function () { resolve(false); };
+          } catch (_) { resolve(false); }
+        });
+      };
+      var _idbFinalize = function (cleared) {
+        if (window.HookBus && typeof window.HookBus.emit === 'function') {
+          try {
+            window.HookBus.emit('onIndexedDbCleared', {
+              jurisdiction: JURISDICTION,
+              prefixesCleared: PREFIXES.slice(),
+              count: cleared,
+              rule: 'DE-GluStV-2021-§6e',
+            });
+          } catch (_) {}
+        }
+      };
+      var _idbAttempt = function () {
+        if (typeof window.indexedDB.databases === 'function') {
+          /* Modern path: enumerate then delete matches. */
+          try {
+            var listP = window.indexedDB.databases();
+            if (listP && typeof listP.then === 'function') {
+              listP.then(function (list) {
+                if (!Array.isArray(list) || list.length === 0) {
+                  _idbFinalize(0);
+                  return;
+                }
+                var matches = [];
+                for (var i = 0; i < list.length; i++) {
+                  if (list[i] && _idbPrefixMatches(list[i].name)) {
+                    matches.push(list[i].name);
+                  }
+                }
+                if (matches.length === 0) {
+                  _idbFinalize(0);
+                  return;
+                }
+                var deletions = [];
+                for (var k = 0; k < matches.length; k++) {
+                  deletions.push(_idbDelete(matches[k]));
+                }
+                Promise.all(deletions).then(function (results) {
+                  var ok = 0;
+                  for (var j = 0; j < results.length; j++) { if (results[j] === true) ok++; }
+                  _idbFinalize(ok);
+                }, function () { _idbFinalize(0); });
+              }, function () {
+                /* databases() rejected — fall back to prefix-name attempts. */
+                _idbAttemptFallback();
+              });
+              return;
+            }
+          } catch (_) {}
+        }
+        _idbAttemptFallback();
+      };
+      var _idbAttemptFallback = function () {
+        /* Best-effort path for browsers without .databases(). Attempt
+         * deleteDatabase on each SGF prefix as a literal DB name. A no-
+         * op for non-existent DBs; counts only successful deletions. */
+        var deletions = [];
+        for (var i = 0; i < PREFIXES.length; i++) {
+          deletions.push(_idbDelete(PREFIXES[i]));
+        }
+        Promise.all(deletions).then(function (results) {
+          var ok = 0;
+          for (var j = 0; j < results.length; j++) { if (results[j] === true) ok++; }
+          _idbFinalize(ok);
+        }, function () { _idbFinalize(0); });
+      };
+      _idbAttempt();
     }
   }
 })();
