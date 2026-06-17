@@ -99,7 +99,7 @@ function isValidRgb(s) {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.symbolStackCollapse) || {};
 
   if (src.enabled != null) cfg.enabled = !!src.enabled;
@@ -411,7 +411,7 @@ export function emitSymbolStackCollapseRuntime(cfg = defaultConfig()) {
       var perReel = _scGroupByReel(cleared || []);
       var hit = perReel[0] || null;
       _scShow(host, hit);
-    });
+    };
   }
 
   if (typeof HookBus !== 'undefined') {
