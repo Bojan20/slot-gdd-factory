@@ -74,7 +74,7 @@ export const BALANCE_REASONS = Object.freeze([
 ]);
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: true,
     /* Starting balance — industry demo-mode default 1000 (one big-win
      * worth of breathing room for a player to explore features). */
@@ -101,7 +101,7 @@ export function defaultConfig() {
     debitColor:  '255,120,120',  /* soft red for debit pulse */
     creditColor: '120,255,180',  /* soft green for credit pulse */
     ariaLabel: 'Balance HUD',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

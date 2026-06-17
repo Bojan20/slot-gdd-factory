@@ -90,7 +90,7 @@ const DEFAULTS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 function clampInt(v, lo, hi) {
@@ -229,7 +229,7 @@ export function emitHexReelEngineRuntime(cfg = defaultConfig()) {
       return function () {
         if (captured !== __hexSpinToken) return; /* stale */
         return fn.apply(this, arguments);
-      };
+      });
     }
 
     /** Randomise one cell text from POOL. Mirrors rectangular randomSym(). */

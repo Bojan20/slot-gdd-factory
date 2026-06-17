@@ -74,7 +74,7 @@ export const JURISDICTION_CEILINGS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     maxWinX: 5000,
     mode: 'round',
@@ -84,7 +84,7 @@ export function defaultConfig() {
     overlayMs: 2400,
     color: '255,215,0',
     forceRoundEnd: true,
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

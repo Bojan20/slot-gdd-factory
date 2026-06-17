@@ -24,14 +24,14 @@ const MIN_PULSE_MS = 200;
 const MAX_PULSE_MS = 5000;
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     mode: 'fs',                  // 'fs' | 'base' | 'both'
     durationSpins: 0,            // 0 = persistent through round
     wildSymbolId: 'W',
     haloColor: '255,214,110',
     pulseMs: 1400,
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

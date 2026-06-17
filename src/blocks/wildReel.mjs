@@ -23,14 +23,14 @@ const PICK_RETRY_BUDGET  = 16;
 const WILD_REEL_Z        = 2;
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     mode: 'fs',
     wildSymbolId: 'W',
     chancePerSpin: 0.18,
     maxReelsPerSpin: 1,
     haloColor: '255,180,90',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

@@ -66,7 +66,7 @@
 const INDUSTRY_STEPS = Object.freeze([10, 25, 50, 100, 250, 500, 1000]);
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     /* Industry-default ON. Autoplay is a baseline player control across
      * every modern HTML5 slot vendor; only GDDs that explicitly forbid
      * autoplay (jurisdictional restriction) flip this to false. */
@@ -118,7 +118,7 @@ export function defaultConfig() {
      *                   MGA enforce; explicit override possible) */
     jurisdiction: '',
     requireDisclosure: false,
-  };
+  });
 }
 
 /* W58.J-UKGC — Cross-jurisdiction autoplay disclosure matrix.

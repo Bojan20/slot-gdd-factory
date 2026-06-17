@@ -17,6 +17,10 @@
  * (`model.winPresentation.paylines`), it wins over the synthesised default.
  * Otherwise we fall back to the industry-standard 16/20/25-line set so a
  * fresh GDD without an explicit pool still produces correct line cycling.
+ *
+ * Wave Legacy · industry baseline (vendor-neutral). Original block predates the
+ * formal Wave Hxx naming + JSDoc kontrakt header pattern (auto-tagged by
+ * tools/cortex-block-mega-fix.mjs).
  */
 // @perf: O(reels × ~25) one-shot at config build, target < 0.1 ms / call
 

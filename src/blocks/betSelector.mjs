@@ -106,7 +106,7 @@ const MULTIPLIERS_DEFAULT = Object.freeze([1, 5, 10, 20, 50, 100]);
 const CURRENCY_VALID = /^[A-Za-z€$£¥₽₺₹₿ ]{1,4}$/;
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: true,
     coinValues: [...COIN_VALUES_DEFAULT],
     multipliers: [...MULTIPLIERS_DEFAULT],
@@ -129,7 +129,7 @@ export function defaultConfig() {
     chipColor: '255,200,80',
     chipTextColor: '20,20,20',
     ariaLabel: 'Adjust bet',
-  };
+  });
 }
 
 /* ─── helpers ───────────────────────────────────────────────────────────── */

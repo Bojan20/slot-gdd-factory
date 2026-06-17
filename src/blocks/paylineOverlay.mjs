@@ -78,7 +78,7 @@ const DEFAULTS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: DEFAULTS.enabled,
     strokeWidth: DEFAULTS.strokeWidth,
     drawInMs: DEFAULTS.drawInMs,
@@ -95,7 +95,7 @@ export function defaultConfig() {
     glow: Object.fromEntries(
       Object.entries(DEFAULTS.glow).map(([k, v]) => [k, { ...v }])
     ),
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

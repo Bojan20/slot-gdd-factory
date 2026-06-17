@@ -39,7 +39,7 @@ const DEFAULT_PATTERNS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     bigWinMinTier: 3,
     fsTrigger: true,
@@ -50,7 +50,7 @@ export function defaultConfig() {
       bigWin: DEFAULT_PATTERNS.bigWin.slice(),
       fsTrigger: DEFAULT_PATTERNS.fsTrigger.slice(),
     },
-  };
+  });
 }
 
 function _clamp(n, lo, hi) {

@@ -17,14 +17,14 @@
  */
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     mode: 'base',
     blockSize: 2,
     triggerChance: 0.18,
     symbolPool: null,    // null = use registry HP tier
     haloColor: '255,200,80',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

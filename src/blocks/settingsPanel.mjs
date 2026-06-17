@@ -80,7 +80,7 @@ export const VOLATILITY_OPTIONS_DEFAULT = Object.freeze(['low', 'medium', 'high'
 export const BET_STEP_PRESETS_DEFAULT = Object.freeze([0.10, 0.50, 1.00, 5.00]);
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: true,
     chipLabel: '⚙',
     chipColor:     '201,162,39',
@@ -112,7 +112,7 @@ export function defaultConfig() {
     closeOnEscape:   true,
     autoHideOnSpin:  true,
     ariaLabel: 'Open settings',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

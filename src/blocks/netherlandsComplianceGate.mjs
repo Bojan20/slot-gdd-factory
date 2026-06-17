@@ -89,6 +89,10 @@
  *   • enabled       bool   (default false — opt-in or auto when NL)
  *   • jurisdiction  string (3-key precedence)
  *   • coolOffHours  int    (default 24, bounds [1, 8760])
+ *
+ * Wave Legacy · industry baseline (vendor-neutral). Original block predates the
+ * formal Wave Hxx naming + JSDoc kontrakt header pattern (auto-tagged by
+ * tools/cortex-block-mega-fix.mjs).
  */
 
 /* W59.H1 — Central jurisdiction precedence resolver. */
@@ -106,7 +110,7 @@ const DEFAULTS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 function clampInt(v, lo, hi) {
@@ -279,7 +283,7 @@ export function emitNetherlandsComplianceGateRuntime(cfg) {
       }
     }
     return ok;
-  };
+  });
 })();
 `;
 }

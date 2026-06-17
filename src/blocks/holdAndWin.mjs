@@ -43,10 +43,14 @@
  *   • subtitle: short string — intro placard subtitle ("Hold & Win")
  *   • showIntro: boolean — emit the intro overlay sequence (default true)
  *   • showSummary: boolean — emit the summary overlay (default true)
+ *
+ * Wave Legacy · industry baseline (vendor-neutral). Original block predates the
+ * formal Wave Hxx naming + JSDoc kontrakt header pattern (auto-tagged by
+ * tools/cortex-block-mega-fix.mjs).
  */
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     triggerCount: 6,
     bonusSymbolId: 'B',
@@ -84,7 +88,7 @@ export function defaultConfig() {
     /* Orb distribution — null = built-in Zeus' Storm table. GDD may
      * override with array of { label, weight, tier, valueX }. */
     orbTable: null,
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

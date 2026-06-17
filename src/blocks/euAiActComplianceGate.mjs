@@ -72,6 +72,10 @@
  *   • enabled        bool   (default false — opt-in or auto when EU)
  *   • jurisdiction   string (3-key precedence)
  *   • declareNoAi    bool   (default true — asserts template is AI-free)
+ *
+ * Wave Legacy · industry baseline (vendor-neutral). Original block predates the
+ * formal Wave Hxx naming + JSDoc kontrakt header pattern (auto-tagged by
+ * tools/cortex-block-mega-fix.mjs).
  */
 
 /* W59.H1 — Central jurisdiction precedence resolver. */

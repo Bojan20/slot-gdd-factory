@@ -41,6 +41,10 @@
  * Public API:
  *   defaultConfig() / resolveConfig(model)
  *   emitReelEngineRuntime(cfg) → runtime JS string
+ *
+ * Wave Legacy · industry baseline (vendor-neutral). Original block predates the
+ * formal Wave Hxx naming + JSDoc kontrakt header pattern (auto-tagged by
+ * tools/cortex-block-mega-fix.mjs).
  */
 
 /* 2026-06-16 (Boki "polako i glupo… pogledaj rectangular kako radi"). The
@@ -88,7 +92,7 @@ const RANGES = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 function clampInt(v, lo, hi) {
@@ -446,7 +450,7 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
       return function () {
         if (captured !== window.__reelEngineSpinToken__) return; /* stale */
         return fn.apply(this, arguments);
-      };
+      });
     };
 
     /* 2026-06-09 — Boki bug: "turbo ne radi". Live turbo multiplier

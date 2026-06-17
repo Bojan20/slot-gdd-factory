@@ -23,7 +23,7 @@
 const WAYS_BOUNDS = { waysCount: [9, 999999], minRun: [2, 9], maxEvents: [1, 32] };
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     waysCount: 243,
     minRun: 3,
@@ -32,7 +32,7 @@ export function defaultConfig() {
     payCap: 50,
     waysCap: 20,
     tierMult: { HP: 1.0, MP: 0.5, WILD: 2.0, LP: 0.25 },
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

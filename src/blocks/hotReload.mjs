@@ -125,7 +125,7 @@ const LIMITS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: DEFAULTS.enabled,
     endpoint: DEFAULTS.endpoint,
     reconnectMs: DEFAULTS.reconnectMs,
@@ -135,7 +135,7 @@ export function defaultConfig() {
     fastReloadCategories: [...DEFAULTS.fastReloadCategories],
     keepalivePingMs: DEFAULTS.keepalivePingMs,
     indicator: DEFAULTS.indicator,
-  };
+  });
 }
 
 /* ─── pure validators (no I/O, fully unit-testable) ───────────────── */

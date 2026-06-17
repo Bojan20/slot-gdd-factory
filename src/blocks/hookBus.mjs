@@ -122,7 +122,7 @@ const DEFAULTS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 export function resolveConfig(model) {
@@ -516,6 +516,70 @@ export const HOOK_EVENTS = Object.freeze([
    * onRetriggerEscalatorReset {reason}                                          — Owner: retriggerEscalator.mjs. */
   'onRetriggerEscalated',
   'onRetriggerEscalatorReset',
+  /* Mega-fix sweep: legacy events that were emit-ed by blocks before the canonical HOOK_EVENTS registry existed. Auto-added by tools/cortex-block-mega-fix.mjs. Per-event owners are recorded in tools/lego-gate.mjs (EXPECTED_EMIT_OWNERS). */
+  'onAiActDdaProhibited',  // Owner: euAiActComplianceGate.mjs
+  'onAiSystemDeclarationRequired',  // Owner: euAiActComplianceGate.mjs
+  'onAnteBetChanged',  // Owner: anteBet.mjs
+  'onAutoplayBanned',  // Owner: franceComplianceGate.mjs, italyComplianceGate.mjs, spainComplianceGate.mjs
+  'onAutoplayDisclosureRequired',  // Owner: autoplay.mjs
+  'onBonusBuyRequested',  // Owner: bonusBuy.mjs
+  'onCoinShowerEnd',  // Owner: coinShower.mjs
+  'onCoinShowerStart',  // Owner: coinShower.mjs
+  'onCoolOffEnforced',  // Owner: netherlandsComplianceGate.mjs
+  'onCoolOffPeriodActive',  // Owner: netherlandsComplianceGate.mjs
+  'onCoolOffPeriodExpired',  // Owner: netherlandsComplianceGate.mjs
+  'onCoolOffPeriodStarted',  // Owner: netherlandsComplianceGate.mjs
+  'onCruksCheckPending',  // Owner: reelEngine.mjs
+  'onCruksCheckRequired',  // Owner: netherlandsComplianceGate.mjs
+  'onEnergyChange',  // Owner: energyMeter.mjs
+  'onEnergyFull',  // Owner: energyMeter.mjs
+  'onFrjCheckRequired',  // Owner: franceComplianceGate.mjs
+  'onGameStateCleared',  // Owner: germanyComplianceGate.mjs
+  'onHoldAndWinEnd',  // Owner: holdAndWin.mjs
+  'onHoldAndWinPayout',  // Owner: holdAndWin.mjs
+  'onHoldAndWinPhase',  // Owner: holdAndWin.mjs
+  'onIndexedDbCleared',  // Owner: germanyComplianceGate.mjs
+  'onJurisdictionResolved',  // Owner: jurisdictionGate.mjs
+  'onLdwSuppressed',  // Owner: winPresentation.mjs, winPresentation.mjs
+  'onMandatoryRealityCheckIntervalEnforced',  // Owner: italyComplianceGate.mjs, spainComplianceGate.mjs
+  'onManualSpinPaceBlocked',  // Owner: reelEngine.mjs
+  'onMinSpinDurationEnforced',  // Owner: franceComplianceGate.mjs, italyComplianceGate.mjs, spainComplianceGate.mjs
+  'onMinSpinPaceDeferred',  // Owner: autoplay.mjs
+  'onMinSpinPaceEnforced',  // Owner: germanyComplianceGate.mjs
+  'onMultChange',  // Owner: persistentMultiplier.mjs, persistentMultiplier.mjs
+  'onMultLadderReset',  // Owner: multiplierLadder.mjs
+  'onMultLadderStep',  // Owner: multiplierLadder.mjs
+  'onMysteryRevealEnd',  // Owner: mysteryReveal.mjs
+  'onMysteryRevealStart',  // Owner: mysteryReveal.mjs
+  'onPickRevealEnd',  // Owner: pickBonusReveal.mjs
+  'onPickRevealStart',  // Owner: pickBonusReveal.mjs
+  'onPlayTimeDisplayRequired',  // Owner: realityCheck.mjs
+  'onRegulatorDisclosureAcknowledged',  // Owner: regulatorDisclosureModal.mjs
+  'onRegulatorDisclosureShown',  // Owner: regulatorDisclosureModal.mjs
+  'onRewardChestClose',  // Owner: rewardChest.mjs
+  'onRewardChestOpen',  // Owner: rewardChest.mjs
+  'onRgiajCheckRequired',  // Owner: spainComplianceGate.mjs
+  'onRtpDisclosureRequired',  // Owner: winCap.mjs
+  'onRuaCheckRequired',  // Owner: italyComplianceGate.mjs
+  'onStackCollapseEnd',  // Owner: symbolStackCollapse.mjs
+  'onStackCollapseStart',  // Owner: symbolStackCollapse.mjs
+  'onStickyCountChange',  // Owner: stickyMeter.mjs, stickyMeter.mjs
+  'onStormMultiplierStart',  // Owner: stormMultiplierReel.mjs
+  'onStormMultiplierStop',  // Owner: stormMultiplierReel.mjs, stormMultiplierReel.mjs
+  'onSuperSymbolLand',  // Owner: superSymbol.mjs
+  'onSymbolUpgrade',  // Owner: symbolUpgrade.mjs
+  'onSymbolUpgradeCascade',  // Owner: symbolUpgrade.mjs, symbolUpgrade.mjs
+  'onTurboBanned',  // Owner: franceComplianceGate.mjs, italyComplianceGate.mjs
+  'onWheelBonusReady',  // Owner: wheelBonus.mjs
+  'onWheelCollect',  // Owner: wheelBonus.mjs
+  'onWheelModalOpened',  // Owner: wheelBonus.mjs
+  'onWheelRevealEnd',  // Owner: wheelBonusReveal.mjs
+  'onWheelRevealStart',  // Owner: wheelBonusReveal.mjs
+  'onWheelSettled',  // Owner: wheelBonus.mjs
+  'onWinCapClamped',  // Owner: winCap.mjs
+  'onWinCapTriggered',  // Owner: winCap.mjs
+  'requestRespin',  // Owner: walkingWild.mjs
+  'symbolOverride',  // Owner: wildReel.mjs
 ]);
 
 /* Wave U4: canonical autoplay stop reasons. */
@@ -681,7 +745,7 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
       getMult, setMult, addMult, resetMult, setMultBaseline,
       listenerCount,
       EVENTS,
-    };
+    });
   })();
 
   if (typeof window !== 'undefined') {

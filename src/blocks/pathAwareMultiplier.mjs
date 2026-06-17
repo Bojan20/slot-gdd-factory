@@ -162,7 +162,7 @@ function _validMultiplierMap(arr) {
 }
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     multiplierMap: DEFAULT_MULTIPLIER_MAP.map(e => ({ ...e })),
     baseMultiplier: 1,
@@ -170,7 +170,7 @@ export function defaultConfig() {
     chipColor: '120,180,255',
     showAggregateChip: true,
     awardScaleDenom: 0,         /* 0 = auto (= WAYS_COUNT) */
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

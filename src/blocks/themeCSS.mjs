@@ -51,7 +51,7 @@ const DEFAULT_PALETTE = Object.freeze({
 });
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     palette: { ...DEFAULT_PALETTE },
     cellGap: 6,
     cellRadius: 10,
@@ -61,7 +61,7 @@ export function defaultConfig() {
     spinSizeDesktop: 150,
     spinAutoSizeDesktop: 58,
     breakpoints: { ...DEFAULT_BREAKPOINTS },
-  };
+  });
 }
 
 /* Accept either `model.themeCSS.palette` or fall back to `model.theme.palette`

@@ -33,7 +33,7 @@ const WB = {
 };
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     segments: [
       { label: '×2',  value: 2,  color: '#e8c270' },
@@ -49,7 +49,7 @@ export function defaultConfig() {
     haloColor: '255,210,90',
     autoSpin: false,
     title: 'BONUS WHEEL',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

@@ -159,7 +159,7 @@ const MAX_CURRENCY_LEN     = 4;       /* currency symbol cap (e.g. "USD ") */
 export const BIG_WIN_TIER_IDS = Object.freeze([1, 2, 3, 4, 5]);
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     /* Industry-baseline ladder — every game can override.
      * 10× / 25× / 50× / 200× / 1000× — covers low-vol → high-vol slot RTP
@@ -219,7 +219,7 @@ export function defaultConfig() {
      * loops while a tier is on screen; cycle short enough to feel
      * intense, long enough to stay 60 fps friendly. */
     shakePeriodMs:           220,
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

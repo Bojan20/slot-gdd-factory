@@ -184,7 +184,7 @@ function _validJackpotMap(arr) {
 }
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     weights: null,          /* null = uniform fallback */
     jackpotMap: [
@@ -195,7 +195,7 @@ export function defaultConfig() {
     ],
     defaultTierColor: '255,80,80',
     allowFallbackToValue: true,
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

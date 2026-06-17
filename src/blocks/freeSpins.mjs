@@ -51,6 +51,10 @@
  * STAGE_FS_LABEL, STAGE_BASE_LABEL, spinButton, devFsBtn, statusElGlobal,
  * cancelWinSymCycle, applyWinHighlight, startSpinAll, runStaticReroll,
  * handlePostSpin, UNIFORM_REEL_KINDS, RECT_REELS, SHAPE.
+ *
+ * Wave Legacy · industry baseline (vendor-neutral). Original block predates the
+ * formal Wave Hxx naming + JSDoc kontrakt header pattern (auto-tagged by
+ * tools/cortex-block-mega-fix.mjs).
  */
 
 const DEFAULTS = Object.freeze({
@@ -72,7 +76,7 @@ const DEFAULTS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 function isPlainLabel(s, maxLen = 60) {
@@ -766,7 +770,7 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
         } catch (_) {}
       } catch (_) { /* defensive */ }
       return (FSM && FSM.phase) || "BASE";
-    };
+    });
   }
 
   /* Wave S LEGO conformance — freeSpins registers postSpin to react to

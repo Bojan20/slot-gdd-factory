@@ -63,7 +63,7 @@ const MAX_LABEL_SIZE = 18;
 const POSITIONS      = new Set(['top-right', 'top-left', 'bottom-right', 'bottom-left']);
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     position: 'top-right',
     barColor:      '255,210,90',   /* warm yellow — readable on dark themes */
@@ -72,7 +72,7 @@ export function defaultConfig() {
     labelTemplate: '{i} of {n}',
     showOnRetrigger: true,
     fontSizePx: 12,
-  };
+  });
 }
 
 function clampInt(v, lo, hi) {

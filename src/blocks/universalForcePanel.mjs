@@ -190,11 +190,11 @@ const DEFAULTS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     ...DEFAULTS,
     alwaysIncludeKinds: [...DEFAULTS.alwaysIncludeKinds],
     excludeKinds: [...DEFAULTS.excludeKinds],
-  };
+  });
 }
 
 function isPositiveInt(v, lo, hi) {

@@ -55,7 +55,7 @@
 const STRATEGIES = Object.freeze(['linear', 'doubling', 'fibonacci', 'ladder']);
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     /* 'linear' is the most common industry pattern (FS multiplier accrues
        by +1 every spin); 'ladder' is the second-most common (jackpot-style
@@ -75,7 +75,7 @@ export function defaultConfig() {
     resetOnRoundEnd: true,
     chipColor: '255,180,80',
     chipLabel: 'FS MULT',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

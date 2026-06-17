@@ -119,7 +119,7 @@ const LADDER_MULT_RANGE   = Object.freeze([1.1, 8]);
 /* ─── default + resolve ─────────────────────────────────────────────────── */
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     /* Both branches available by default — GDD can prune to one. */
     modes: ['card', 'ladder'],
@@ -141,7 +141,7 @@ export function defaultConfig() {
     currency: '€',
     chipColor: '180,80,80',
     chipTextColor: '255,255,255',
-  };
+  });
 }
 
 function _cleanModes(arr) {

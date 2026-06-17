@@ -98,7 +98,7 @@ const ACTIVE_SCALE         = 0.96;
 const HOOKBUS_BIND_RETRIES = 50;
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     chipLabel: 'SKIP',
     /* Distinct from slam-stop red so the player can't confuse them. */
@@ -124,7 +124,7 @@ export function defaultConfig() {
      * faster than the human eye can react. Suppress in that case. */
     minRollupMsForShow: 600,
     ariaLabel: 'Skip animation',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

@@ -18,7 +18,7 @@
  */
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     mode: 'fs',
     triggerChance: 0.22,
@@ -35,7 +35,7 @@ export function defaultConfig() {
     ],
     haloColor: '160,210,255',
     strikeDurationMs: 700,
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

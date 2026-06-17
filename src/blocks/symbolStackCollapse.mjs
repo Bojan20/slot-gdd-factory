@@ -88,7 +88,7 @@ const BOUNDS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 function isValidRgb(s) {
@@ -411,7 +411,7 @@ export function emitSymbolStackCollapseRuntime(cfg = defaultConfig()) {
       var perReel = _scGroupByReel(cleared || []);
       var hit = perReel[0] || null;
       _scShow(host, hit);
-    };
+    });
   }
 
   if (typeof HookBus !== 'undefined') {

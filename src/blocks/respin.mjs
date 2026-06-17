@@ -21,7 +21,7 @@
  */
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     mode: 'base',
     reels: 5,
@@ -30,7 +30,7 @@ export function defaultConfig() {
     holdRule: 'last-reel',
     respinsPerTrigger: 1,
     haloColor: '120,210,255',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

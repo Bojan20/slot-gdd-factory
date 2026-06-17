@@ -137,7 +137,7 @@ const MAX_ARIA_LABEL_LEN         = 64;
 const MAX_RGB_OCTET              = 255;
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 function clampInt(n, lo, hi) {
@@ -840,7 +840,7 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
           var s = STATE.current;
           if (s !== 'STOP_PRE' && s !== 'STOP_POST') return;
           _emit('onSlamRequested', { phase: (s === 'STOP_PRE') ? 'pre' : 'post', source: source || 'api' });
-        };
+        });
       }
       if (typeof window.forceSkipRequest !== 'function') {
         window.forceSkipRequest = function (source) {

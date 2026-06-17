@@ -44,13 +44,13 @@ const EW = {
 };
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     mode: 'fs',
     wildSymbolId: 'W',
     expandDurationMs: 360,
     haloColor: '255,214,110',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

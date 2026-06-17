@@ -24,7 +24,7 @@
  */
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     minCluster: 5,
     bucketEdges: [5, 8, 10, 12, 15],
@@ -35,7 +35,7 @@ export function defaultConfig() {
     paytable: null,        // null = use placeholder linear lookup
     maxEvents: 8,
     diagonal: false,
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

@@ -31,7 +31,7 @@ const LIMITS = {
 };
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     mode: 'triggered',
     tileCount: 12,
@@ -48,7 +48,7 @@ export function defaultConfig() {
     endTokens: ['POP'],
     title: 'PICK A PRIZE',
     haloColor: '255,180,60',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

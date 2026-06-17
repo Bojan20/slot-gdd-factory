@@ -74,7 +74,7 @@ const CATEGORIES = Object.freeze([
 ]);
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     masterVolume: 0.7,
     muted: false,
@@ -97,7 +97,7 @@ export function defaultConfig() {
     bigWinThresholdX: 10,
     megaWinThresholdX: 50,
     epicWinThresholdX: 250,
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

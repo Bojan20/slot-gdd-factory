@@ -14,7 +14,7 @@ import { applyGridProfile } from '../registry/gridProfile.mjs';
  */
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     /* Wave T-bonus (2026-06-04) — industry median is 50-100× current bet.
      * Default to 75× as a neutral midpoint; concrete games override via
@@ -28,7 +28,7 @@ export function defaultConfig() {
     shadowRGB: '255,80,80', // r,g,b tuple for glow; alpha applied per-state
     rearmMs: 1200,         // re-enable delay after a buy click
     confirmMessage: '',    // optional confirmation prompt; empty = no confirm
-  };
+  });
 }
 
 /* W57.A4 — Cross-jurisdiction bonus-buy ban matrix.

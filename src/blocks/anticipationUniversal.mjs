@@ -32,6 +32,10 @@
  *   defaultConfig() / resolveConfig(model)
  *   emitAnticipationUniversalCSS(cfg)
  *   emitAnticipationUniversalRuntime(cfg)
+ *
+ * Wave Legacy · industry baseline (vendor-neutral). Original block predates the
+ * formal Wave Hxx naming + JSDoc kontrakt header pattern (auto-tagged by
+ * tools/cortex-block-mega-fix.mjs).
  */
 
 const DEFAULTS = Object.freeze({

@@ -43,14 +43,14 @@ function _parseHaloColor(s) {
 }
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     mode: 'fs',
     wildSymbolId: 'W',
     direction: 'left',
     triggerRespin: true,
     haloColor: '110,255,170',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

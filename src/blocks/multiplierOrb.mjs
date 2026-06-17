@@ -22,7 +22,7 @@ const PULSE_MS_DEFAULT = 1000;
 const clampInt = (n, lo, hi) => Math.min(hi, Math.max(lo, Math.trunc(n)));
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     symbolId: 'M',
     /* Wave T-orb (2026-06-04) — neutral 6-tier distribution used as a
@@ -43,7 +43,7 @@ export function defaultConfig() {
     chipGlow: '255,200,80',   // RGB values for glow effect (opacities added in CSS)
     chipShadow: '#000',       // Shadow color for text-shadow
     pulseMs: PULSE_MS_DEFAULT,
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

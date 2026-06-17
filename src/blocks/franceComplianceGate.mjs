@@ -75,6 +75,10 @@
  *   • enabled       bool   (default false — opt-in or auto when FR)
  *   • jurisdiction  string (3-key precedence)
  *   • minSpinMs     int    (default 3000, bounds [1000, 30000])
+ *
+ * Wave Legacy · industry baseline (vendor-neutral). Original block predates the
+ * formal Wave Hxx naming + JSDoc kontrakt header pattern (auto-tagged by
+ * tools/cortex-block-mega-fix.mjs).
  */
 
 /* W59.H1 — Central jurisdiction precedence resolver. */

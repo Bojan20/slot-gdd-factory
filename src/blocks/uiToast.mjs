@@ -63,7 +63,7 @@
 const TIERS = Object.freeze(['big', 'mega', 'epic', 'feature', 'neutral']);
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     /* Tier thresholds — duplicated from audio block by design. Visual
        and auditory cues are independent blocks. */
@@ -98,7 +98,7 @@ export function defaultConfig() {
     /* Max in-flight queue length. Older toasts get dropped past this so a
        feature-spam spin doesn't leave the player staring at the queue. */
     maxQueue: 6,
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

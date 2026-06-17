@@ -70,6 +70,10 @@
  *   • minSpinMs      int    (default 5000 — §11(2) floor)
  *   • clearOnBoot    bool   (default true when DE — §6e enforcement)
  *   • prefixes       string[] (default storage prefixes to clear)
+ *
+ * Wave Legacy · industry baseline (vendor-neutral). Original block predates the
+ * formal Wave Hxx naming + JSDoc kontrakt header pattern (auto-tagged by
+ * tools/cortex-block-mega-fix.mjs).
  */
 
 /* W59.H1 — Central jurisdiction precedence resolver. */
@@ -101,10 +105,10 @@ const DEFAULTS = Object.freeze({
 const MIN_SPIN_MS_BOUNDS = Object.freeze([1000, 30000]); /* sanity clamp */
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     ...DEFAULTS,
     prefixes: STATE_CLEAR_PREFIXES.slice(), /* fresh array per call */
-  };
+  });
 }
 
 function clampInt(v, lo, hi) {

@@ -177,7 +177,7 @@ function _validPlants(arr) {
 }
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     /* 3-tier industry-baseline ladder — Standard / Premium / Super.
      * Positions assume a 5×3 base grid (rectangular default). When the
@@ -211,7 +211,7 @@ export function defaultConfig() {
     pickerTitle: 'CHOOSE YOUR BUY',
     pickerColor: '255,170,80',
     closeOnBackdrop: true,
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

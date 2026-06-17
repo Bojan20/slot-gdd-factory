@@ -269,14 +269,14 @@ export const CURRENCY_SYMBOLS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: true,
     defaultLocale: 'en-US',
     defaultCurrency: 'USD',
     extraPacks: {},
     fallbackChain: ['en-US'],
     useIntlNumberFormat: false,
-  };
+  });
 }
 
 function _isValidLocale(s) {

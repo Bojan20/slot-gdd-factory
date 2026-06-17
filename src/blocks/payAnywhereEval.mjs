@@ -30,14 +30,14 @@ const MAX_EVENTS_CEIL = 20;
 const MAX_BUCKETS = 8;
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     minWin: 8,              // industry-standard scatter-pays threshold
     bucketEdges: [10, 12],  // count >= edges[i] picks bucket[i+1]
     paytable: {},           // { symbolId: [bucket0, bucket1, bucket2] }
     maxEvents: 9,           // hard cap so cycle stays under ~5s
     noWinChance: 0,         // pay-anywhere already self-rare — no extra fakeout
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

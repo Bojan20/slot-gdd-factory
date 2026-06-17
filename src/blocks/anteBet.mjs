@@ -36,7 +36,7 @@ const ANTE_BET_TOKENS = {
 const PCT = (m) => Math.round((m - 1) * 100);
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     /* Wave T-ante (2026-06-04) — kept at the verified industry baseline
      * of +25% bet (1.25× multiplier). This is the modal value across the
@@ -46,7 +46,7 @@ export function defaultConfig() {
     triggerMultiplier: 2,   // doubles scatter probability when on (placeholder)
     label: 'ANTE BET',
     color: '#ffe066',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

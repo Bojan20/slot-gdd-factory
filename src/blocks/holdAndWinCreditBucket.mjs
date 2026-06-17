@@ -189,7 +189,7 @@ function _validJackpotMap(arr) {
 }
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     prizeMap: DEFAULT_PRIZE_MAP.map(e => ({ ...e })),
     jackpotMap: DEFAULT_JACKPOT_MAP.map(e => ({ ...e })),
@@ -198,7 +198,7 @@ export function defaultConfig() {
     jackpotColor: '255,80,80',
     currencyPrefix: '×',
     hudShowsTotal: true,
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

@@ -19,7 +19,7 @@
  */
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     mode: 'fs',
     /* Fable audit (critical): default 'M' collides with the universal
@@ -35,7 +35,7 @@ export function defaultConfig() {
     includeWild: false,
     includeScatter: false,
     haloColor: '180,120,255',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

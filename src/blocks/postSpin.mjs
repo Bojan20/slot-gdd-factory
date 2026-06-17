@@ -28,6 +28,10 @@
  *   applyWinHighlight, clearWinHighlight, playScatterCelebration,
  *   FSM_enterIntro, FSM_runNextFsSpin, FSM_handleRetrigger, FSM_enterOutro,
  *   FSM_renderHud, countTriggerSymbols, spinsForCount.
+ *
+ * Wave Legacy · industry baseline (vendor-neutral). Original block predates the
+ * formal Wave Hxx naming + JSDoc kontrakt header pattern (auto-tagged by
+ * tools/cortex-block-mega-fix.mjs).
  */
 
 const DEFAULTS = Object.freeze({

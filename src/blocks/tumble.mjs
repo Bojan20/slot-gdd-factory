@@ -33,7 +33,7 @@ const DEFAULT_CHAIN_PAUSE_MS = 180;
 const DEFAULT_MAX_CHAIN = 16;
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     removeMs: DEFAULT_REMOVE_MS,         // fade-out duration for winning symbols
     gravityMs: DEFAULT_GRAVITY_MS,       // drop animation per row of fall
@@ -41,7 +41,7 @@ export function defaultConfig() {
     chainPauseMs: DEFAULT_CHAIN_PAUSE_MS, // breath between tumbles
     maxChain: DEFAULT_MAX_CHAIN,         // safety cap on consecutive tumble iterations
     preserveOrbs: true, // multiplier orbs stay on screen across tumbles
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

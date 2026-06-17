@@ -75,7 +75,7 @@ function _sanitizeName(s) {
 }
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: true,
     name: 'Slot Game',
     shortName: '',
@@ -86,7 +86,7 @@ export function defaultConfig() {
     scope: '.',
     startUrl: '.',
     iconColor: '#c9a227',
-  };
+  });
 }
 
 const ALLOWED_DISPLAYS = new Set(['standalone', 'fullscreen', 'minimal-ui']);

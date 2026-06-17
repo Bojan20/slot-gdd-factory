@@ -67,6 +67,10 @@
  *   auditable spin outcome while collapsing the cinematic ladder. Authors
  *   SHOULD NOT bake reduced-motion timings into the GDD preset itself —
  *   the toggle is a runtime user preference, not a slot setting.
+ *
+ * Wave Legacy · industry baseline (vendor-neutral). Original block predates the
+ * formal Wave Hxx naming + JSDoc kontrakt header pattern (auto-tagged by
+ * tools/cortex-block-mega-fix.mjs).
  */
 /* 2026-06-16 (Boki "polako i glupo, nije tako radilo. pogledaj rectangular
    kako radi. sve je sporo gledavo, mutno i dalje"). Numbers retuned to match

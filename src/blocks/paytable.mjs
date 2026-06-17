@@ -65,7 +65,7 @@ const TIER_COLORS = {
  */
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     /* Industry-default ON — paytable is regulator-mandated for MGA / UKGC
      * / NJ certification (player must inspect math before wagering). The
      * floating "i" chip is the universal opt-out switch; a GDD that wires
@@ -88,7 +88,7 @@ export function defaultConfig() {
      * games where players keep reference open during play. */
     autoHideOnSpin: true,
     ariaLabel: 'Open paytable',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

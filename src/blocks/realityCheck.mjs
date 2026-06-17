@@ -180,7 +180,7 @@ function _validPauseOptions(arr) {
 }
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     /* 10-minute default for demo visibility. UKGC LCCP suggests 30/60
      * for production; GDD overrides per market. */
@@ -204,7 +204,7 @@ export function defaultConfig() {
      * audit-trail consumers. */
     jurisdiction: null,
     requirePersistentPlayTimeDisplay: false,
-  };
+  });
 }
 
 /* W59.H1 — Central jurisdiction resolver import. The realityCheck

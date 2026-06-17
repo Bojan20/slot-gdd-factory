@@ -19,7 +19,7 @@
  */
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     mode: 'fs',
     startMult: 1,
@@ -28,7 +28,7 @@ export function defaultConfig() {
     maxMult: 0,
     resetOnRoundEnd: true,
     chipColor: '255,214,110',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

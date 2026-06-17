@@ -51,6 +51,10 @@
  *   downstream block (autoplay, winCap, realityCheck, germany/netherlands/
  *   euAiAct gate) still owns its own obligation flags + events; the only
  *   responsibility extracted here is the precedence chain itself.
+ *
+ * Wave Legacy · industry baseline (vendor-neutral). Original block predates the
+ * formal Wave Hxx naming + JSDoc kontrakt header pattern (auto-tagged by
+ * tools/cortex-block-mega-fix.mjs).
  */
 
 /* Frozen list documenting the precedence chain. Order is significant:

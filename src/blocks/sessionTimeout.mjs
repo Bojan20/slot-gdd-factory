@@ -183,7 +183,7 @@ function _esc(s) {
 }
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     /* 60-min hard cap — UKGC LCCP 8.3.1 default. Override per market
      * (Sweden 3 h, Spain 4 h, Ontario 1 h, demo dist 90 s). */
@@ -204,7 +204,7 @@ export function defaultConfig() {
     breakTitle: 'TAKE A BREAK',
     copyContinue: 'EXTEND SESSION',
     copyQuit: 'END SESSION',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

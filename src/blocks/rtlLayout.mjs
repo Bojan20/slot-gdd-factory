@@ -66,12 +66,12 @@ const DEFAULT_NUMERIC_SELECTORS = Object.freeze([
 ]);
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: true,
     forceDir: null,
     numericSelectors: DEFAULT_NUMERIC_SELECTORS.slice(),
     rtlLocaleList: DEFAULT_RTL_PREFIXES.slice(),
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

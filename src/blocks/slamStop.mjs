@@ -76,7 +76,7 @@ const SLAM_CSS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     chipLabel: 'STOP',
     /* "r,g,b" — kept as comma-separated triplets like uiToast to allow rgba()
@@ -97,7 +97,7 @@ export function defaultConfig() {
     reelsClickAreaEnabled: true,
     ariaLabel: 'Stop reels',
     pulseAnimation: true,
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

@@ -69,7 +69,7 @@ const LIMITS = {
 };
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     /* Industry-default ON — the ⚡ floating chip is the universal
      * surface across modern HTML5 slot suites (most certified studios
      * expose it by default). GDDs that prefer a settings-panel toggle
@@ -91,7 +91,7 @@ export function defaultConfig() {
      * could mount it elsewhere. */
     position: 'sideHud',
     ariaLabel: 'Toggle turbo spin mode',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

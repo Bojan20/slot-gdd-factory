@@ -26,14 +26,14 @@ const COLLECT_CAP_MAX = 1_000_000;
 const STAKE_PRECISION = 100; // 2-decimal rounding
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     mode: 'color',
     maxRounds: 5,
     multiplier: 2,
     collectThresholdX: 0,
     haloColor: '200,80,80',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

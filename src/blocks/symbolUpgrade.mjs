@@ -125,10 +125,10 @@ const TUMBLE_INCOMPATIBLE_SHAPES = Object.freeze(new Set([
 ]));
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     ...DEFAULTS,
     eligibleTiers: [...DEFAULTS.eligibleTiers],
-  };
+  });
 }
 
 function _clampInt(n, lo, hi, fallback) {

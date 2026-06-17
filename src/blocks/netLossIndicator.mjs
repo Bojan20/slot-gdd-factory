@@ -157,7 +157,7 @@ function _validThresholds(arr) {
 }
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     enabled: false,
     /* Industry-baseline 3-tier loss ladder. Profit milestone is opt-in
      * (default ladder is loss-only because regulator concern is harm
@@ -176,7 +176,7 @@ export function defaultConfig() {
     neutralColor:  '200,200,210',
     resetOnSessionReset: true,
     resetOnAutoplayStart: false,
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {
