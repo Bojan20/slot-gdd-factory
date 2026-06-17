@@ -3,7 +3,48 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-17 18:30 · **HEAD**: `ed64d61` · main
+> **Last updated**: 2026-06-17 19:25 · **HEAD**: (UCBA + mega-fix recovery, pending) · main
+>
+> ## 🏆 UCBA — Ultimate Cross-Block Integration Audit (2026-06-17 19:25)
+>
+> Built new 11-phase live integration audit tool that verifies every parsed
+> GDD feature mounts a live block AND that cross-block lifecycle events fire
+> end-to-end. Tool: `tools/_ultimate-cross-block-audit.mjs`.
+> Full multi-role QA report: `reports/UCBA-multi-role-qa.md`.
+>
+> ### 4-GDD final state (post recovery sweep)
+>
+> | GDD | Mandatory blocks | Feat→block | Force chips | Base spins | Page errs | Big-win flow |
+> |:--|:-:|:-:|:-:|:-:|:-:|:-:|
+> | Gates_of_Olympus_1000 | ✅ 10/10 | ✅ 4/4 | ✅ 5/5 | ✅ 8/8 | ✅ 0 | 🔴 bug |
+> | Huff_N_More_Puff      | ✅ 10/10 | ✅ 8/8 | ✅ 8/8 | ✅ 8/8 | ✅ 0 | 🔴 bug |
+> | Starlight_Travellers  | ✅ 10/10 | ✅ 8/8 | ✅ 6/6 | ✅ 8/8 | ✅ 0 | 🔴 bug |
+> | Wrath_of_Olympus      | ✅ 10/10 | 🟡 7/8 | ✅ 6/6 | ✅ 8/8 | ✅ 0 | 🔴 bug |
+>
+> ### 9 critical bug fixes the audit surfaced (latent regressions from prior mega-fix sweep)
+>
+> | # | File | Fix |
+> |:-:|:--|:--|
+> | 1 | `src/blocks/historyLog.mjs` | restored to pre-megafix clean version (650 lines duplicate + corrupted defaultConfig body removed) |
+> | 2 | `src/blocks/pwaInstallability.mjs` | spread-clone `{ ...defaultConfig() }` for frozen config |
+> | 3 | `src/blocks/paylineOverlay.mjs` | spread-clone wrapper around `applyGridProfile()` |
+> | 4 | **115 blocks (sweep)** | unconditional `const cfg = { ...defaultConfig() }` patch |
+> | 5 | `src/blocks/hookBus.mjs:748` | `});` → `};` (extra paren broke every emit) |
+> | 6 | `src/blocks/reelEngine.mjs:453` | `});` → `};` (inner sptGuard close) |
+> | 7 | `src/blocks/hexReelEngine.mjs:232` | `});` → `};` (hex variant of same bug) |
+> | 8 | `src/blocks/spinControl.mjs:843` | `});` → `};` (slamStopRequest assign) |
+> | 9 | `src/blocks/freeSpins.mjs:773` | `});` → `};` (fsHardExit assign) |
+>
+> Before these fixes: zero of four GDDs produced a working playable preview.
+> After: all four mount cleanly with 0 page errors, 0 console errors.
+>
+> ### Real bugs surfaced by UCBA (carry-forward backlog)
+>
+> | # | Severity | Title |
+> |:-:|:-:|:--|
+> | UCBA-1 | 🔴 HIGH | `bigWinTier.mjs` doesn't emit `onBigWinTierEntered` during force-tier flow (winPresentation force-branch fires but bigWinTier listener inert) |
+> | UCBA-2 | 🟡 MED  | FS intro overlay doesn't render on cluster topology (Starlight FS chip click → no `onFsTrigger`) |
+> | UCBA-3 | 🟡 MED  | `net_loss_indicator` feature in Wrath parses but has no live signature |
 >
 > ## 🏆 DAILY MEGA-SUMMARY 2026-06-17 — 10 SWEEPOVA · 25 NOVIH BLOKOVA · 99 → 122 BLOKOVA + AUDIT INFRASTRUKTURA + 4 KRITIČNA BUG FIXA
 >

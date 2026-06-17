@@ -79,7 +79,7 @@ const MANDATORY_BLOCKS = [
   { name: 'reelEngine',           sig: () => !!document.getElementById('reelsRoot') || !!document.querySelector('.reels-cell, [data-reel], [data-block="reelEngine"]') || !!document.querySelector('.reels') },
   { name: 'hookBus',              sig: () => typeof window.HookBus === 'object' && typeof window.HookBus.emit === 'function' },
   { name: 'winPresentation',      sig: () => typeof window.cancelWinSymCycle === 'function' || typeof window.playWinSymCycle === 'function' || typeof window.applyWinHighlight === 'function' || typeof window.WIN_PRESENT_CONFIG === 'object' },
-  { name: 'bigWinTier',           sig: () => !!document.querySelector('.bwt-banner, [data-bwt], [data-block="bigWinTier"]') || typeof window.__BIG_WIN_CONFIG__ === 'object' || typeof window.BIGWIN_TIER === 'object' || typeof window.__BIGWIN_TIER_CONFIG__ === 'object' },
+  { name: 'bigWinTier',           sig: () => typeof window.__BIG_WIN_TIER__ === 'number' || !!document.querySelector('.bwt-banner, [data-bwt], [data-block="bigWinTier"]') || typeof window.__BIG_WIN_CONFIG__ === 'object' },
 ];
 
 /* Feature → live-state signature. Used in Phase C.
@@ -105,7 +105,7 @@ const FEATURE_SIG = {
   mystery_symbol:        (w, d) => !!d.querySelector('.ufp-chip[data-ufp-kind="mystery_symbol"]'),
   wild_reel:             (w, d) => !!d.querySelector('.ufp-chip[data-ufp-kind="wild_reel"]'),
   respin:                (w, d) => !!d.querySelector('.ufp-chip[data-ufp-kind="respin"]'),
-  ante_bet:              (w, d) => !!d.getElementById('anteBetBtn') || !!d.querySelector('[data-block="anteBet"]'),
+  ante_bet:              (w, d) => !!d.getElementById('anteBetBtn') || !!d.querySelector('[data-block="anteBet"], .ante-bet-btn, [class*="ante"]'),
   scatter_pay:           (w, d) => !!d.querySelector('.ufp-chip[data-ufp-kind="scatter_pay"]') || w.GAME_EVAL_KIND === 'scatter',
   pay_anywhere:          (w)    => w.GAME_EVAL_KIND === 'scatter' || w.GAME_EVAL_KIND === 'any',
   lightning:             (w, d) => !!d.querySelector('.ufp-chip[data-ufp-kind="lightning"]') || !!d.querySelector('[data-block="lightning"]'),
@@ -121,7 +121,8 @@ const FEATURE_SIG = {
   win_cap:               (w)    => typeof w.WIN_CAP_CONFIG === 'object' || typeof w.__WIN_CAP_X__ === 'number',
   reality_check:         (w, d) => !!d.querySelector('[data-block="realityCheck"]') || typeof w.REALITY_CHECK_STATE === 'object',
   session_timeout:       (w, d) => !!d.querySelector('[data-block="sessionTimeout"]') || typeof w.SESSION_TIMEOUT_STATE === 'object',
-  net_loss_indicator:    (w, d) => !!d.querySelector('[data-block="netLossIndicator"]'),
+  net_loss_indicator:    (w, d) => !!d.querySelector('[data-block="netLossIndicator"], .net-loss-hud, [class*="netLoss"], [id*="netLoss"]') || typeof w.NET_LOSS_STATE === 'object',
+  autoplay:              (w, d) => !!d.getElementById('autoBtn') || !!d.getElementById('autoplayBackdrop'),
   feature_generic:       () => true,
 };
 
@@ -318,22 +319,26 @@ for (const fx of FIXTURES) {
 
   /* ───────────────── PHASE E ───────────────── */
   console.log('  E. Base lifecycle (8 spins) …');
-  await frame.evaluate(() => { window.__GD_EMITS__ = []; });
+  /* Hard-exit any FS state left from Phase D chip presses + drain in-flight spin. */
+  await resetGameState(frame);
+  await waitForSpinReady(frame, page, 6000);
   let spinsCompleted = 0;
   let chainOk = 0;
   for (let i = 0; i < 8; i++) {
     const ready = await waitForSpinReady(frame, page, 8000);
     if (!ready) break;
+    /* Per-spin baseline — count postSpin BEFORE click, wait for exactly one new postSpin. */
+    const baselinePost = await frame.evaluate(() => window.__GD_EMITS__.filter(e => e === 'postSpin').length);
     const before = await frame.evaluate(() => window.__GD_EMITS__.length);
     await frame.evaluate(() => document.getElementById('spinBtn').click());
     const start = Date.now();
     while (Date.now() - start < 9000) {
       const post = await frame.evaluate(() => window.__GD_EMITS__.filter(e => e === 'postSpin').length);
-      if (post > (i)) break;
+      if (post > baselinePost) break;
       await page.waitForTimeout(150);
     }
-    const window_emits = await frame.evaluate(() => window.__GD_EMITS__);
-    const slice = window_emits.slice(before);
+    const emits = await frame.evaluate(() => window.__GD_EMITS__);
+    const slice = emits.slice(before);
     spinsCompleted++;
     const hasPreSpin   = slice.includes('preSpin');
     const hasOnResult  = slice.includes('onSpinResult') || slice.includes('onSpinFinalized');
@@ -347,15 +352,19 @@ for (const fx of FIXTURES) {
 
   /* ───────────────── PHASE F ───────────────── */
   console.log('  F. Win presentation flow …');
+  await resetGameState(frame);
+  await waitForSpinReady(frame, page, 6000);
   await frame.evaluate(() => {
-    window.__GD_EMITS__ = [];
     /* Force a guaranteed win on the next spin by seeding a small symbol pile
      * the engine can pay out without touching big-win-tier territory. */
-    window.FORCE_TRIGGER = { symbolPile: { count: 4, symbol: window.SYMBOL_REGISTRY?.high?.[0]?.id || 'A' } };
+    const sym = (window.SYMBOL_REGISTRY && window.SYMBOL_REGISTRY.high && window.SYMBOL_REGISTRY.high[0])
+      ? (window.SYMBOL_REGISTRY.high[0].id || window.SYMBOL_REGISTRY.high[0])
+      : 'A';
+    try { window.FORCE_TRIGGER = { symbolPile: { count: 12, symbol: sym } }; } catch (_) {}
+    window.__GD_EMITS__ = [];
   });
-  await waitForSpinReady(frame, page, 6000);
   await frame.evaluate(() => document.getElementById('spinBtn').click());
-  await page.waitForTimeout(4500);
+  await page.waitForTimeout(5500);
   v.phases.F.emits = await frame.evaluate(() => window.__GD_EMITS__.slice(0, 40));
   const fEmits = v.phases.F.emits;
   v.phases.F.sawHighlight = fEmits.includes('onWinPresentationStart') ||
@@ -374,13 +383,19 @@ for (const fx of FIXTURES) {
 
   /* ───────────────── PHASE G ───────────────── */
   console.log('  G. Big-win flow (tier 3 force) …');
-  await frame.evaluate(() => {
-    window.__GD_EMITS__ = [];
-    window.__FORCE_BIG_WIN_TIER__ = 3;
-  });
+  await resetGameState(frame);
   await waitForSpinReady(frame, page, 6000);
+  await frame.evaluate(() => {
+    /* Combine: plant a win (so winPresentation runs) + force tier 3. */
+    const sym = (window.SYMBOL_REGISTRY && window.SYMBOL_REGISTRY.high && window.SYMBOL_REGISTRY.high[0])
+      ? (window.SYMBOL_REGISTRY.high[0].id || window.SYMBOL_REGISTRY.high[0])
+      : 'A';
+    try { window.FORCE_TRIGGER = { symbolPile: { count: 12, symbol: sym } }; } catch (_) {}
+    window.__FORCE_BIG_WIN_TIER__ = 3;
+    window.__GD_EMITS__ = [];
+  });
   await frame.evaluate(() => document.getElementById('spinBtn').click());
-  await page.waitForTimeout(6000);
+  await page.waitForTimeout(7000);
   await page.screenshot({ path: resolve(OUT, `${fx.name}_bigwin.png`) });
   const gEmits = await frame.evaluate(() => window.__GD_EMITS__);
   v.phases.G.emits = gEmits.slice(0, 50);
@@ -410,9 +425,11 @@ for (const fx of FIXTURES) {
     v.phases.H = { ok: true, skipped: 'no FS in this GDD' };
     console.log('     ⊘ skipped (no FS chip)');
   } else {
+    await resetGameState(frame);
+    await waitForSpinReady(frame, page, 6000);
     await frame.evaluate(() => { window.__GD_EMITS__ = []; });
     await frame.evaluate(() => document.querySelector('.ufp-chip[data-ufp-kind="free_spins"]').click());
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(4000);
     await page.screenshot({ path: resolve(OUT, `${fx.name}_fs.png`) });
     const hEmits = await frame.evaluate(() => window.__GD_EMITS__);
     v.phases.H.emits = hEmits.slice(0, 50);
@@ -455,8 +472,9 @@ for (const fx of FIXTURES) {
     v.phases.I = { ok: true, skipped: 'no slamStop button (GDD disabled it)' };
     console.log('     ⊘ skipped (no slamStop button)');
   } else {
-    await frame.evaluate(() => { window.__GD_EMITS__ = []; });
+    await resetGameState(frame);
     await waitForSpinReady(frame, page, 6000);
+    await frame.evaluate(() => { window.__GD_EMITS__ = []; });
     await frame.evaluate(() => document.getElementById('spinBtn').click());
     /* wait briefly for spin to start so slam is meaningful */
     await page.waitForTimeout(350);
@@ -630,4 +648,28 @@ async function waitForSpinReady(frame, page, maxMs) {
     await page.waitForTimeout(150);
   }
   return false;
+}
+
+async function resetGameState(frame) {
+  /* Hard-reset any lingering FS / big-win / overlay state that earlier
+   * phases may have triggered. This is QA-only — production code never
+   * needs this. */
+  await frame.evaluate(() => {
+    try {
+      if (window.FSM && typeof window.fsHardExit === 'function' &&
+          window.FSM.phase && window.FSM.phase !== 'BASE' && window.FSM.phase !== 'IDLE') {
+        window.fsHardExit();
+      }
+    } catch (_) {}
+    /* Close any modal overlays */
+    ['wbOverlay','gambleOverlay','bpOverlay','bonusBuyOverlay','fsIntroOverlay'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.dataset.show = 'false'; el.style.display = 'none'; }
+    });
+    /* Close big-win banner */
+    const bwt = document.querySelector('.bwt-banner');
+    if (bwt) { bwt.dataset.show = 'false'; bwt.style.display = 'none'; }
+    /* Reset emit log */
+    window.__GD_EMITS__ = [];
+  });
 }
