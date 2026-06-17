@@ -168,6 +168,24 @@ function respinMaybeTrigger() {
   return respinStart();
 }
 
+/* Bug #1 (2026-06-17, runOneBaseSpin wire) — was dead UX: respinStart
+ * only flipped a flag + painted DOM classes; player saw the banner but
+ * no spin ever happened, round just ended. Per slot-gdd-factory rule
+ * "every force/feature trigger MUST drive a real spin via
+ * runOneBaseSpin()", we now schedule the actual dispatch on a microtask
+ * so the preSpin emit (from the next spin) doesn't reenter from inside
+ * the current postSpin handler. Published held-reels list so a future
+ * engine extension (per-reel hold) can consume; today's engine spins
+ * all reels and the visual hold class communicates intent to the player. */
+function _respinDispatchNextSpin() {
+  if (typeof window === 'undefined' || typeof window.runOneBaseSpin !== 'function') return;
+  window.__RESPIN_HOLD_REELS__ = Array.from(RESPIN_STATE.heldReels);
+  setTimeout(() => {
+    if (!RESPIN_STATE.active) return;       /* race: respinEnd() since schedule */
+    try { window.runOneBaseSpin(); } catch (_) {}
+  }, 0);
+}
+
 function respinStart() {
   if (!_respinPhaseAllowed()) return false;
   RESPIN_STATE.active = true;
@@ -187,6 +205,7 @@ function respinStart() {
   }
   const ban = document.getElementById('respinBanner');
   if (ban) ban.dataset.show = 'true';
+  _respinDispatchNextSpin();
   return true;
 }
 
@@ -197,6 +216,11 @@ function respinAfterSpin() {
     respinEnd();
     return { ended: true };
   }
+  /* Bug #1 (2026-06-17, chain) — countdown decremented but no follow-up
+   * spin was dispatched, so spinsLeft=2 played at most 1 spin then froze
+   * waiting for a postSpin that never came. Dispatch the next respin
+   * spin so the chain runs end-to-end. */
+  _respinDispatchNextSpin();
   return { ended: false, left: RESPIN_STATE.spinsLeft };
 }
 
