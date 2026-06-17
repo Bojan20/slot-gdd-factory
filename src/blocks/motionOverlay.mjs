@@ -146,14 +146,59 @@ export function resolveConfig(model) {
  *                                         layer that doesn't fit its
  *                                         topology (e.g. wheel skips
  *                                         vertical streaks).
+ * @param {object} [opts.configOverride] — per-surface knob override
+ *                                         (W3.1). Each key in the override
+ *                                         replaces the resolved cfg's value
+ *                                         for THIS emit only — caller cfg
+ *                                         remains untouched. Whitelisted to
+ *                                         the 5 visual knobs (shadowAlpha /
+ *                                         streakAlpha / streakSpacingPx /
+ *                                         speedLinesAlpha / speedLineSpeedMs)
+ *                                         so a typo can't silently flip an
+ *                                         enable-* flag. Out-of-bounds values
+ *                                         are dropped via the same clamp
+ *                                         resolveConfig uses, keeping the
+ *                                         contract single-source-of-truth.
+ *                                         Use case: rectangular engine
+ *                                         migration (Wave 3.1) needs the
+ *                                         pre-W54 reelEngineCSS knob
+ *                                         vintage (streakAlpha 0.04 /
+ *                                         shadowAlpha 0.20 / speedLinesAlpha
+ *                                         0.04 / speedLineSpeedMs 150 /
+ *                                         streakSpacingPx 4) so the visual
+ *                                         output of the rect grid does NOT
+ *                                         change when the inline overlay is
+ *                                         dropped from reelEngineCSS.
  * @returns {string} CSS rule block (empty string if every layer disabled)
  */
 export function emitMotionOverlayCSS(cfg, opts) {
-  const c = cfg || defaultConfig();
+  const baseCfg = cfg || defaultConfig();
   const o = opts || {};
   const sel = String(o.surfaceSelector || '').trim();
   const key = String(o.kindKey || 'overlay').replace(/[^a-zA-Z0-9_-]/g, '_');
   if (!sel) return '';
+
+  /* W3.1 — Per-surface knob override. Whitelisted to the 5 visual knobs
+   * + clamped via the same BOUNDS resolveConfig uses so typos and OOB
+   * values can't sneak past. The base cfg is NEVER mutated. */
+  const overrideRaw = (o && o.configOverride) || {};
+  const c = { ...baseCfg };
+  if (typeof overrideRaw === 'object' && overrideRaw !== null) {
+    const floatKeys = ['shadowAlpha', 'streakAlpha', 'speedLinesAlpha'];
+    const intKeys   = ['streakSpacingPx', 'speedLineSpeedMs'];
+    for (const k of floatKeys) {
+      if (k in overrideRaw) {
+        const v = clampFloat(overrideRaw[k], BOUNDS[k][0], BOUNDS[k][1]);
+        if (v !== null) c[k] = v;
+      }
+    }
+    for (const k of intKeys) {
+      if (k in overrideRaw) {
+        const v = clampInt(overrideRaw[k], BOUNDS[k][0], BOUNDS[k][1]);
+        if (v !== null) c[k] = v;
+      }
+    }
+  }
 
   const layers = o.layers || {};
   const showShadow     = c.enableShadow     && (layers.shadow     !== false);

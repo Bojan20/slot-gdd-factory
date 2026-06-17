@@ -42,14 +42,23 @@ t('resolveConfig: motion overlay knobs bounded', () => {
   eq(resolveConfig({ reelEngine: { speedLineSpeedMs: 10 } }).speedLineSpeedMs, 150);
 });
 
-t('emitReelEngineCSS: contains all selectors + motion overlay', () => {
+t('emitReelEngineCSS: contains core column selectors (no overlay — moved to motionOverlay)', () => {
+  /* W3.1 — motion overlay migrated to shared motionOverlay.mjs block.
+   * reelEngineCSS now emits only the column / strip / cell-blur surface;
+   * the ::after / ::before streak overlay + its keyframes + the reduced-
+   * motion override for those pseudos live in motionOverlay (orchestrator
+   * wires `.reelCol.is-spinning` to the shared emit with a per-surface
+   * configOverride preserving the pre-W3.1 knob vintage). */
   const css = emitReelEngineCSS();
-  ct(css, '.reelCol'); ct(css, '.reelStrip'); ct(css, '.cell.is-blurring');
-  ct(css, '.reelCol.is-spinning::after');
-  ct(css, '.reelCol.is-spinning::before');
-  ct(css, '@keyframes reelStreakIn');
-  ct(css, '@keyframes reelSpeedLines');
-  ct(css, '@media (prefers-reduced-motion: reduce)');
+  ct(css, '.reelCol');
+  ct(css, '.reelStrip');
+  ct(css, '.cell.is-blurring');
+  /* Pinning the migration: the overlay artifacts must NOT be in this
+   * block's emit any longer (would be silently duplicated against the
+   * shared block's emit if a future refactor reverts the move). */
+  if (css.includes('.reelCol.is-spinning::after')) throw new Error('Wave 3.1 regression: reelEngineCSS still emits ::after overlay (should be in motionOverlay)');
+  if (css.includes('@keyframes reelStreakIn'))     throw new Error('Wave 3.1 regression: reelEngineCSS still emits reelStreakIn keyframes');
+  if (css.includes('@keyframes reelSpeedLines'))   throw new Error('Wave 3.1 regression: reelEngineCSS still emits reelSpeedLines keyframes');
 });
 
 t('emitReelEngineCSS: cell blur defaults to a no-op (blur(0px) brightness(1))', () => {

@@ -101,6 +101,54 @@ t('kindKey sanitized leaves no quote chars', !/"/.test(cssWeird));
 const VENDORS = /(igt|pragmatic|megaways|cleopatra|buffalo|wolf[- ]run|cash[- ]eruption|netent|microgaming|l[& ]?w)/i;
 t('emit is vendor-neutral', !VENDORS.test(css1) && !VENDORS.test(css2));
 
+/* 11. W3.1 — per-surface configOverride merge */
+const cssOverride = emitMotionOverlayCSS(dflt, {
+  surfaceSelector: '.reelCol.is-spinning',
+  kindKey: 'rect',
+  configOverride: {
+    streakAlpha:      0.04,
+    streakSpacingPx:  4,
+    shadowAlpha:      0.20,
+    speedLinesAlpha:  0.04,
+    speedLineSpeedMs: 150,
+  },
+});
+t('11.1 override streakAlpha 0.04 baked in css',
+  cssOverride.includes('rgba(255,255,255,0.04)'));
+t('11.2 override shadowAlpha 0.20 baked in css',
+  cssOverride.includes('rgba(0,0,0,0.2)'));
+t('11.3 override speedLinesAlpha 0.04 baked in css',
+  cssOverride.includes('rgba(200,220,255,0.04)'));
+t('11.4 override speedLineSpeedMs 150 baked in animation duration',
+  cssOverride.includes('150ms linear infinite'));
+t('11.5 override streakSpacingPx 4 baked in repeating gradient',
+  /transparent\s+4px/.test(cssOverride));
+/* Original cfg defaults must be untouched (base cfg never mutated). */
+const cssNoOverride = emitMotionOverlayCSS(dflt, {
+  surfaceSelector: '.foo.is-spinning',
+  kindKey: 'foo',
+});
+t('11.6 no-override emit still uses cfg defaults (0.22 shadow)',
+  cssNoOverride.includes('rgba(0,0,0,0.22)'));
+t('11.7 no-override emit still uses cfg default speed 600ms',
+  cssNoOverride.includes('600ms linear infinite'));
+/* Override clamping — OOB values silently dropped, defaults preserved. */
+const cssBadOverride = emitMotionOverlayCSS(dflt, {
+  surfaceSelector: '.bar.is-spinning',
+  kindKey: 'bar',
+  configOverride: {
+    streakAlpha:      99,    /* out of bounds → drop */
+    streakSpacingPx:  0,     /* out of bounds (BOUNDS [2,12]) → drop */
+    shadowAlpha:      -1,    /* out of bounds → drop */
+    speedLinesAlpha:  'big', /* non-number → drop */
+    speedLineSpeedMs: 99999, /* out of bounds → drop */
+  },
+});
+t('11.8 OOB override values dropped; defaults retained (shadowAlpha 0.22)',
+  cssBadOverride.includes('rgba(0,0,0,0.22)'));
+t('11.9 OOB override streakAlpha dropped; default 0.10 retained',
+  cssBadOverride.includes('rgba(255,255,255,0.1)'));
+
 console.log('');
 console.log(`  pass: ${pass}   fail: ${fail}`);
 process.exit(fail > 0 ? 1 : 0);

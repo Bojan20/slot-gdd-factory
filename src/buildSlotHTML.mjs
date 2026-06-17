@@ -519,6 +519,22 @@ import {
  * semantics. Rectangular stays on legacy reelEngineCSS overlay until
  * Wave 3.1 migration. */
 const MOTION_OVERLAY_SURFACES = Object.freeze([
+  /* W3.1 — Rectangular engine migration. Pre-W54 the rectangular grid
+   * had its own inline ::after / ::before overlay inside reelEngineCSS.
+   * The defaults there (streakAlpha 0.04, streakSpacingPx 4, shadowAlpha
+   * 0.20, speedLinesAlpha 0.04, speedLineSpeedMs 150) DIFFER from the
+   * shared motionOverlay block (0.10, 6, 0.22, 0.06, 600). To preserve
+   * the rect grid's visual identity exactly, we pass the pre-W54 numbers
+   * as a per-surface configOverride. This is the only safe migration
+   * path — drop the duplicate code without changing the pixel output. */
+  { surfaceSelector: '.reelCol.is-spinning', kindKey: 'rect',
+    configOverride: {
+      streakAlpha:      0.04,
+      streakSpacingPx:  4,
+      shadowAlpha:      0.20,
+      speedLinesAlpha:  0.04,
+      speedLineSpeedMs: 150,
+    } },
   { surfaceSelector: '.hex-reel-col.is-spinning',        kindKey: 'hex' },
   { surfaceSelector: '.grid-wheel .wheel-svg.is-spinning',   kindKey: 'wheel',  layers: { streaks: false } },
   { surfaceSelector: '.grid-crash .crash-svg.is-spinning',   kindKey: 'crash',  layers: { streaks: false } },
