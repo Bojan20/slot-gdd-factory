@@ -95,8 +95,11 @@ t('emitReelEngineRuntime: bakes stripBufferCells', () => {
 t('emitReelEngineRuntime: bakes settle breath + static fallback', () => {
   const js = emitReelEngineRuntime({ settleBreathMs: 120, staticFallbackMs: 90 });
   /* settleBreathMs is the pause before invoking onSettled at the end of
-   * a successful spin tick chain. */
-  ct(js, 'setTimeout(onSettled, 120)');
+   * a successful spin tick chain. W57.A5 wrapped this setTimeout with
+   * the spinToken guard `__sptGuard(onSettled)` so a delayed-tab-resume
+   * can't fire the settle of an aborted spin on top of a fresh one. The
+   * duration literal must still bake as the configured settleBreathMs. */
+  ct(js, '__sptGuard(onSettled), 120');
   /* staticFallbackMs is the empty-grid (SVG/wheel) timeout. After Wave R
    * refactor the call goes through _settled(onSettled) wrapper, so the
    * literal we look for is the duration in the wrapped call site. */
