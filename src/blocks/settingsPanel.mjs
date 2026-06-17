@@ -74,10 +74,10 @@ export const SETTINGS_KEYS = Object.freeze([
 ]);
 
 /** @type {Readonly<string[]>} */
-export const VOLATILITY_OPTIONS_DEFAULT = Object.freeze(['low', 'medium', 'high']);
+const VOLATILITY_OPTIONS_DEFAULT = Object.freeze(['low', 'medium', 'high']);
 
 /** @type {Readonly<number[]>} industry baseline ladder (covers retail floor) */
-export const BET_STEP_PRESETS_DEFAULT = Object.freeze([0.10, 0.50, 1.00, 5.00]);
+const BET_STEP_PRESETS_DEFAULT = Object.freeze([0.10, 0.50, 1.00, 5.00]);
 
 export function defaultConfig() {
   return Object.freeze({

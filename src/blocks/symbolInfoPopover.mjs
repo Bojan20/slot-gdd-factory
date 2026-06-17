@@ -231,14 +231,30 @@ export function emitSymbolInfoPopoverRuntime(cfg = defaultConfig()) {
     const symbol = (cellEl.textContent || '').trim();
     if (!symbol) return;
     const tier = _sipTierOf(symbol);
-    const tierBadge = (${c.showTierBadge} && tier)
-      ? '<span class="sip-tier">' + tier + '</span>'
-      : '';
     const hint = _sipPayoutHint(symbol);
-    const hintHtml = hint
-      ? '<span class="sip-hint">' + hint + '</span>'
-      : '';
-    popover.innerHTML = tierBadge + '<span class="sip-label">' + symbol + '</span>' + hintHtml;
+
+    /* Security fix 2026-06-17 (agent-found XSS via symbol cell text):
+       previously concatenated symbol+tier+hint directly into innerHTML,
+       which let a malicious GDD with HTML-char symbol codes
+       (e.g. "<img onerror=…>") execute. Now build nodes via createElement
+       + textContent so untrusted strings never reach HTML parser. */
+    while (popover.firstChild) popover.removeChild(popover.firstChild);
+    if (${c.showTierBadge} && tier) {
+      const span = document.createElement('span');
+      span.className = 'sip-tier';
+      span.textContent = tier;
+      popover.appendChild(span);
+    }
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'sip-label';
+    labelSpan.textContent = symbol;
+    popover.appendChild(labelSpan);
+    if (hint) {
+      const hintSpan = document.createElement('span');
+      hintSpan.className = 'sip-hint';
+      hintSpan.textContent = hint;
+      popover.appendChild(hintSpan);
+    }
     popover.classList.add('is-open');
     popover.setAttribute('aria-hidden', 'false');
     /* Position AFTER content is rendered so popRect dimensions are valid. */
