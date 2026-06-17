@@ -209,15 +209,18 @@ export function emitCascadeBoosterRuntime(cfg = defaultConfig()) {
       try { window.HookBus.emit('onCascadeBoosterReset', { reason: reason || 'auto' }); } catch (_) {}
     }
 
-    window.HookBus.on('preSpin', function () { reset('preSpin'); });
+    /* F3 priority 30 — decorator class (multiplier accumulator peer of
+       multiplierOrb + persistentMultiplier). Mutates the cascade-depth
+       booster after payout evaluators have settled per-step wins. */
+    window.HookBus.on('preSpin', function () { reset('preSpin'); }, { priority: 30 });
     window.HookBus.on('onTumbleStep', function (p) {
       if (REQUIRE_WIN) {
         var win = p ? Number(p.stepWin || p.win || 0) : 0;
         if (win <= 0) return;
       }
       bump('onTumbleStep');
-    });
-    window.HookBus.on('onFsEnd', function () { reset('onFsEnd'); });
+    }, { priority: 30 });
+    window.HookBus.on('onFsEnd', function () { reset('onFsEnd'); }, { priority: 30 });
 
     window.cascadeBoosterBump  = function () { bump('api'); };
     window.cascadeBoosterReset = function () { reset('api'); };

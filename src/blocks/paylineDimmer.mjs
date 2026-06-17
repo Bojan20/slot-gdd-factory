@@ -139,15 +139,19 @@ export function emitPaylineDimmerRuntime(cfg = defaultConfig()) {
       }
     }
 
-    window.HookBus.on('preSpin', function () { if (CLEAR) clearAll('preSpin'); });
+    /* F3 priority 30 — decorator class. Dims non-winning cells AFTER the
+       payout evaluators have populated p.events. Decorator peer of
+       winLineFlash + multiplierOrb; specific decorator order is not race-
+       critical (they target disjoint cells / overlay layers). */
+    window.HookBus.on('preSpin', function () { if (CLEAR) clearAll('preSpin'); }, { priority: 30 });
     window.HookBus.on('onSpinResult', function (p) {
       if (!p || !Array.isArray(p.events)) return;
       dimNonWinning(p.events, 'onSpinResult');
-    });
-    window.HookBus.on('onTumbleStep', function () { clearAll('onTumbleStep'); });
-    window.HookBus.on('onWinPresentationEnd', function () { clearAll('onWinPresentationEnd'); });
-    window.HookBus.on('onFsTrigger', function () { inFs = true; });
-    window.HookBus.on('onFsEnd',     function () { inFs = false; });
+    }, { priority: 30 });
+    window.HookBus.on('onTumbleStep', function () { clearAll('onTumbleStep'); }, { priority: 30 });
+    window.HookBus.on('onWinPresentationEnd', function () { clearAll('onWinPresentationEnd'); }, { priority: 30 });
+    window.HookBus.on('onFsTrigger', function () { inFs = true; }, { priority: 30 });
+    window.HookBus.on('onFsEnd',     function () { inFs = false; }, { priority: 30 });
 
     /* Public API */
     window.paylineDimmerApply = function (events) { dimNonWinning(Array.isArray(events) ? events : [], 'api'); };

@@ -321,9 +321,13 @@ export function emitScatterCelebrationRuntime(model = {}) {
      Promise via the onFsTrigger event below. Without this the animation
      CSS exists but never plays. */
   if (typeof HookBus !== 'undefined') {
+    /* F3 priority 50 — presenter class. The celebration banner is part of
+       the win-presentation peer-group (winPresentation, bigWinTier,
+       paylineOverlay): runs after state-mutators (100) and payout
+       evaluators (80) so the trigger's award math is already final. */
     HookBus.on('onFsTrigger', () => {
       try { playScatterCelebration(); } catch (e) { /* defensive */ }
-    });
+    }, { priority: 50 });
 
     /* Wave V6 — react to force-skip during the celebration phase. Bump
        the token so any in-flight setTimeout closure bails, strip the

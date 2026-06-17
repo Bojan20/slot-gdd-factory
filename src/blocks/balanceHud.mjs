@@ -483,7 +483,11 @@ export function emitBalanceHudRuntime(cfg = defaultConfig()) {
       _initialPaint();
     }
 
-    /* HookBus wiring. */
+    /* HookBus wiring.
+     * F3 priority 0 — telemetry class (default). The postSpin listener
+     * uses -25 (even later than default telemetry) so __WIN_AWARD__ is
+     * already populated by the applyWinHighlight() in the postSpin
+     * orchestrator chain. The other handlers stay at default 0. */
     if (window.HookBus && typeof window.HookBus.on === 'function') {
 
       window.HookBus.on('preSpin', function (p) {

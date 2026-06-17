@@ -1268,6 +1268,10 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
     })();
 
     if (window.HookBus && typeof window.HookBus.on === 'function') {
+      /* F3 priority 50 — presenter class. Listens to win-presentation-end
+         to drive the big-win tier ladder banner. Runs alongside other
+         presenters (winPresentation rollup, scatterCelebration, payline overlay)
+         after state-mutators and payout evaluators have settled ev.payX. */
       window.HookBus.on('onWinPresentationEnd', function () {
         var award = (typeof window !== 'undefined' && Number.isFinite(window.__WIN_AWARD__)) ? window.__WIN_AWARD__ : 0;
         var bet   = _currentBet();
@@ -1276,7 +1280,7 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
         var tier = tierFromRatio(award / bet);
         if (tier < 1) return;
         _runCompound(tier, award);
-      });
+      }, { priority: 50 });
 
       window.HookBus.on('onSkipRequested', function (p) {
         if (!p || p.phase !== 'bigWinTier') return;

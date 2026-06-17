@@ -179,6 +179,11 @@ if (document.readyState === 'loading') {
    onMultChange so the canonical mult owner (winPresentation) reconciles —
    this block never writes HookBus.setMult directly (single-owner-emit). */
 if (typeof HookBus !== 'undefined') {
+  /* F3 priority 30 — decorator class for the multiplier accumulator.
+     Although this block mutates persistent state, the convention groups it
+     with multiplierOrb + cascadeBooster (peer multiplier-decorators) so
+     they all settle the running multiplier before telemetry observes it
+     and before presenters read HookBus.getMult() for the rollup display. */
   HookBus.on('onFsSpinResult', ({ events, totalWin } = {}) => {
     if (PM_GROW_WIN === 0) return;
     const paid = (Array.isArray(events) && events.some(e => Number(e && e.payX) > 0))
@@ -187,16 +192,16 @@ if (typeof HookBus !== 'undefined') {
     pmOnWin();
     const v = pmGet();
     if (v > 1) HookBus.emit('onMultChange', { source: 'persistent', value: v });
-  });
+  }, { priority: 30 });
   HookBus.on('onTumbleStep', ({ events } = {}) => {
     if (Array.isArray(events) && events.some(e => Number(e && e.payX) > 0)) {
       pmOnCascade();
       const v = pmGet();
       if (v > 1) HookBus.emit('onMultChange', { source: 'persistent', value: v });
     }
-  });
-  HookBus.on('onFsTrigger', () => { pmReset(); });
-  HookBus.on('onFsEnd',     () => { pmOnRoundEnd(); });
+  }, { priority: 30 });
+  HookBus.on('onFsTrigger', () => { pmReset(); }, { priority: 30 });
+  HookBus.on('onFsEnd',     () => { pmOnRoundEnd(); }, { priority: 30 });
 }
 })();
 `;

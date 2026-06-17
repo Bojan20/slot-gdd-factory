@@ -226,6 +226,9 @@ if (typeof window !== 'undefined') {
    * blocks subscribe here. Subscribed to canonical 'reels:stopped'
    * lifecycle hook so callers cannot invoke detection at wrong phase. */
   if (window.HookBus && typeof window.HookBus.on === 'function') {
+    /* F3 priority 80 — payout evaluator class. Runs AFTER state-mutators
+       (priority 100) but BEFORE presenters/decorators/telemetry so evaluated
+       wins are visible to all downstream listeners. */
     window.HookBus.on('reels:stopped', () => {
       const __t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : 0;
       const wins = detectClusterWins();
@@ -235,7 +238,7 @@ if (typeof window !== 'undefined') {
       if (typeof window.HookBus.emit === 'function') {
         window.HookBus.emit('clusterPays:evaluated', { wins });
       }
-    });
+    }, { priority: 80 });
   }
 }
 `;

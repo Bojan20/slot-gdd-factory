@@ -221,10 +221,13 @@ if (typeof window !== 'undefined') {
 if (typeof HookBus !== 'undefined' &&
     !(typeof window !== 'undefined' && window.__MULTIPLIER_ORB_WIRED__)) {
   if (typeof window !== 'undefined') window.__MULTIPLIER_ORB_WIRED__ = true;
-  /* On every settled grid (BASE + each FS spin): chip render + pulse. */
+  /* F3 priority 30 — decorator class. Orb chip rendering + multiplier
+     accumulation runs AFTER state-mutators (winCap clamp) and payout
+     evaluators have set ev.payX, but BEFORE telemetry/HUD readers consume
+     HookBus.getMult(). Decorator order among siblings is not critical. */
   HookBus.on('onSpinResult', () => {
     annotateOrbs();
-  });
+  }, { priority: 30 });
   /* On every tumble step (or single-eval step): sum visible orb values
      into the HookBus multiplier. In FS bonus-accumulate mode the result
      is the persistent BONUS_MULTIPLIER (rises across the round). */
@@ -241,13 +244,13 @@ if (typeof HookBus !== 'undefined' &&
         if (typeof FSM_renderHud === 'function') FSM_renderHud();
       }
     }
-  });
+  }, { priority: 30 });
   /* Fresh FS round → clear BONUS_MULTIPLIER so the next round starts from
      the FREESPINS.multiplier.start baseline. */
   HookBus.on('onFsTrigger', () => {
     BONUS_MULTIPLIER = 0;
     if (typeof window !== 'undefined') window.BONUS_MULTIPLIER = 0;
-  });
+  }, { priority: 30 });
 }
 `;
 }

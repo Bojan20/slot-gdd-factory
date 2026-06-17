@@ -270,12 +270,14 @@ export function emitRetriggerMeterRuntime(cfg = defaultConfig()) {
       lastNewTotalFs = 0;
     }
 
+    /* F3 priority 30 — decorator class. FS retrigger HUD meter listens to
+       FS lifecycle; sibling decorator order not race-critical. */
     window.HookBus.on('onFsTrigger', function () {
       inFs = true;
       scattersTotal = 0;
       lastNewTotalFs = 0;
       render(0);
-    });
+    }, { priority: 30 });
     window.HookBus.on('onFsSpinResult', function (p) {
       if (!inFs) return;
       var add = readScattersFromPayload(p);
@@ -286,7 +288,7 @@ export function emitRetriggerMeterRuntime(cfg = defaultConfig()) {
         render(0);
         try { window.HookBus.emit('onRetriggerMeterTick', { scattersThisSpin: add, scattersTotal: scattersTotal, threshold: PER_RET, ratio: ratio, source: 'onFsSpinResult' }); } catch (_) {}
       }
-    });
+    }, { priority: 30 });
     window.HookBus.on('onFsRetrigger', function (p) {
       if (!inFs) return;
       var added = (p && Number(p.addedCount)) || FS_PER;
@@ -295,11 +297,11 @@ export function emitRetriggerMeterRuntime(cfg = defaultConfig()) {
       lastNewTotalFs = newTotal;
       render(added);
       try { window.HookBus.emit('onRetriggerMeterCommit', { addedCount: added, newTotalFs: newTotal, scattersTotal: scattersTotal, source: 'onFsRetrigger' }); } catch (_) {}
-    });
+    }, { priority: 30 });
     window.HookBus.on('onFsEnd', function () {
       inFs = false;
       hide('onFsEnd');
-    });
+    }, { priority: 30 });
 
     /* Public API for engine + force probes. */
     window.retriggerMeterTick = function (count) {

@@ -145,7 +145,10 @@ export function emitWinLineFlashRuntime(cfg = defaultConfig()) {
       }
     }
 
-    window.HookBus.on('preSpin', function () { if (CLEAR) clearAll('preSpin'); });
+    /* F3 priority 30 — decorator class. Per-line flash overlay runs after
+       payout evaluators populate p.events; sibling decorator order with
+       paylineDimmer / multiplierOrb / retriggerMeter not race-critical. */
+    window.HookBus.on('preSpin', function () { if (CLEAR) clearAll('preSpin'); }, { priority: 30 });
     window.HookBus.on('onSpinResult', function (p) {
       if (!p || !Array.isArray(p.events)) return;
       for (var i = 0; i < p.events.length; i++) {
@@ -154,8 +157,8 @@ export function emitWinLineFlashRuntime(cfg = defaultConfig()) {
         if (e.cells.length < MIN) continue;
         flashCells(e.cells, e.lineIdx || i, 'onSpinResult');
       }
-    });
-    window.HookBus.on('onTumbleStep', function () { clearAll('onTumbleStep'); });
+    }, { priority: 30 });
+    window.HookBus.on('onTumbleStep', function () { clearAll('onTumbleStep'); }, { priority: 30 });
 
     /* Public API */
     window.winLineFlash = function (cells, lineIdx) {
