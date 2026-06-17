@@ -94,6 +94,17 @@ export function resolveConfig(model) {
   const src = (model && model.freeSpinsPresentation) || {};
 
   if (src.enabled === false) cfg.enabled = false;
+
+  /* Strict-GDD enforcement (Boki rule): Free Spins UI must not paint when no
+     free-spin-style feature lives in model.features. Explicit
+     freeSpinsPresentation.enabled=true bypasses this guard (author override). */
+  if (src.enabled == null) {
+    const FS_PATTERN = /^(free[_-]?spins?|free[_-]?games?|bonus[_-]?round|respins?)$/i;
+    const features = Array.isArray(model && model.features) ? model.features : [];
+    const detected = features.some(f => f && typeof f.kind === 'string' && FS_PATTERN.test(f.kind));
+    if (!detected) cfg.enabled = false;
+  }
+
   if (isPlainLabel(src.introLabel)) cfg.introLabel = src.introLabel;
   if (isPlainLabel(src.outroLabel)) cfg.outroLabel = src.outroLabel;
   if (isPlainLabel(src.totalWinLabel)) cfg.totalWinLabel = src.totalWinLabel;
