@@ -3,7 +3,40 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-17 17:05 · **HEAD**: pending commit · main
+> **Last updated**: 2026-06-17 17:19 · **HEAD**: `656a8e0` · main
+>
+> ## 🏆 DAILY MEGA-SUMMARY 2026-06-17 — 4 SWEEPA · 21 NOVI BLOK · 99 → 120 BLOKOVA
+>
+> Cumulative dan na slot-gdd-factory:
+>
+> | Sweep | Time | Commit | Wave | LOC src | Tests | Brojke |
+> |:--|:--|:--|:--|:-:|:-:|:--|
+> | 1 | 13:50 | `65bd9fa` | **H4** colorblindPatterns + 13 STALE flip | 322 | 97/0 | 95 → 96 blokova |
+> | 2 | 14:05 | `a082ecd` | **H6-H10** (6 blokova) | 1329 | 300/0 | 96 → 101 blokova |
+> | 3 | 14:55 | `e7aa42e` | **H11-H15** (5 blokova) | 1194 | 164/0 | 101 → 106 blokova |
+> | 4 | 16:45 | `87fa734` | **H16-H20** + hiLoGamble registry | 1005 | 143/0 | 106 → 112 blokova |
+> | 5 | 17:19 | `656a8e0` | **H21-H25** + 3 sister blokova | 930 | 119/0 | 112 → **120** blokova |
+> | **Σ** | — | 5 commits | **22 wave-a** | **4780 LOC** | **823 PASS** | **+25 blokova** |
+>
+> **LEGO 7/7 ZELENO** · 98/98 listener coverage · sve sole-owner emit ✅ · npm test 20/20 ✅ · 0 vendor leaks ✅
+>
+> ## 🆕 H stream Wave 4 (2026-06-17 17:19, `656a8e0`)
+>
+> 5 nova H21-H25 + 3 sister blokovi koji su landed u istom sweep-u:
+>
+> | ID | Blok | LOC | Tests | Industry funkcija | Sole owner events |
+> |:--|:--|:-:|:-:|:--|:--|
+> | H21 | `winLineFlash.mjs` | 175 | 21/0 | Per-line directional flash on win (ltr/rtl/both) | onWinLineFlashStart/End/Cleared |
+> | H22 | `nearMissTease.mjs` | 165 | 22/0 | "Almost-won" scatter highlight (count = trigger − deficit) | onNearMissTease/Cleared |
+> | H23 | `reelLockHold.mjs` | 220 | 27/0 | Lock whole reels sa countdown badge, autoExtendOnFs | onReelLockStart/End/Tick/Cleared |
+> | H24 | `cascadePathDraw.mjs` | 195 | 24/0 | SVG path between cluster win cells, stroke-dashoffset draw | onCascadePathDrawn/Cleared |
+> | H25 | `streakBonus.mjs` | 175 | 25/0 | N consecutive wins → bonus chip (4 rewardKind whitelist) | onStreakBump/BonusEarned/Reset |
+> | + | `infinityReels.mjs` (sister) | 278 | 52/0 | Grid grows per cascade win (window.__INFINITY_REELS_COUNT__) | onInfinityReelAdded/Reset/ChainMilestone |
+> | + | `collectableSymbol.mjs` (sister) | 273 | 57/0 | Symbol-collector HUD meter sa threshold | onSymbolCollected/CollectionFull/Reset |
+> | + | `retriggerMeter.mjs` (sister) | 324 | 58/0 | FS retrigger HUD progressbar + +N FS pop | onRetriggerMeterTick/Commit/Reset |
+>
+> Sve vendor-neutral, prefers-reduced-motion respected, Apple HIG 11px font floor, JSDoc kontrakt header.
+>
 > **🏆 ULTIMATIVNI H16-H20 PRESENTER SWEEP 2026-06-17 17:05 — 5 NOVIH industry-pattern LEGO presenter blokova (refresh wave).** 115 → **120 blokova**. Σ 1498 LOC nova source + 1064 LOC nova test = 295/0 PASS na novi rad. Per-block (LOC src / tests pass): H16 hiLoGamble (368 / 68) classic post-win HI/LO card gamble presenter — CTA chip + modal dialog (role=dialog/aria-modal/focus-trap/Escape=collect), HIGHER/LOWER/COLLECT actions, maxRounds + multiplier clamp, allowDuringFs gate, sole owner: onHiLoStart/Choice/Resolved/Collected. H17 nudgeReel (255 / 60) fruit-machine near-miss rescue CTA — reads window.__NUDGE_OFFER__ on postSpin, offerMs auto-decline timer, autoDeclineOnSpin gate, role=button + WCAG 44×44 + focus-visible, sole owner: onNudgeOffered/Accepted/Declined/Resolved. H18 infinityReels (278 / 52) cascade-grows-reel chain counter — reads window.__INFINITY_REELS_COUNT__ on onTumbleStep/onFsSpinResult, configurable startCount/capCount/milestones (deduped + sorted), role=status + aria-live=polite, sole owner: onInfinityReelAdded/onInfinityReelsReset/onInfinityChainMilestone. H19 collectableSymbol (273 / 57) symbol-collector HUD meter — grid scan for data-sym matches on postSpin/onTumbleStep/onFsSpinResult, threshold-once-fires-onCollectionFull contract, resetOn whitelist {spin/fsTrigger/fsEnd/never}, sole owner: onSymbolCollected/onCollectionFull/onCollectionReset. H20 retriggerMeter (324 / 58) FS retrigger HUD progressbar + +N FS pop — listens to canonical onFsRetrigger owned by superchargedFs.mjs (NO re-emit), payload.cells path + scan fallback, role=progressbar + aria-valuenow/min/max, sole owner: onRetriggerMeterTick/Commit/Reset. **Sve vendor-neutral** (banlist sweep clean: IGT/pragmatic/megaways/netent/microgaming/reactoonz/cleopatra/buffalo + extras passed), **prefers-reduced-motion** respected on all 5, **Apple HIG 11 px font floor**, **WCAG 2.5.5 44×44 touch target** na CTA chip-ovima, **JSDoc kontrakt header** (purpose/industry-ref/public API/lifecycle/perf/a11y/GDD keys) na svakom bloku. LEGO gate violations introduced from this sweep = **0** (pre-existing failures in cascadePathDraw/reelLockHold/streakBonus/nearMissTease/winLineFlash are unrelated). **Σ 295/0 nove tests, 9 nova HookBus event-a registered in HOOK_EVENTS + EXPECTED_EMIT_OWNERS.**
 > **Previous last updated**: 2026-06-17 16:45 · **HEAD**: pending commit · main
 > **🏆 ULTIMATIVNI H16-H20 SWEEP 2026-06-17 16:45 — 5 NOVIH industry-standard LEGO blokova zatvaraju H stream Wave 3.** 106 → **112 blokova** (sa hiLoGamble blokom dodatim usput). Σ 1005 LOC nova source + 853 LOC nova test = 143/0 PASS na novi rad. Detalji: H16 splitSymbol (30/0, oversized symbol visual divider, data-split attribute, restrictKinds whitelist, sole owner: onSplitSymbolPlaced/Cleared). H17 nudgeReel (38/0, classic fruit-machine near-miss rescue CTA — postSpin čita window.__NUDGE_OFFER__, player click → accept/decline, autoDeclineOnSpin gate, role=button + WCAG 44×44 + focus-visible, sole owner: onNudgeOffered/Accepted/Declined/Resolved). H18 respinCharge (26/0, charge counter sa trigger whitelist {loss/spin/noWin/tumbleEnd/custom}, autoRespin toggle, role=progressbar, sole owner: onRespinChargeBump/Full/Reset/Tick). H19 syncReels (25/0, N reel signature matching detector sa minReels gate, persistRound toggle, sole owner: onReelsSynced/Cleared). H20 winMultiplierBadge (24/0, × N chip placement na per-win-line ili per-cell sa minMult gate, 4 position modes, sole owner: onWinMultBadgePlaced/Cleared). Plus prep: hiLoGamble (postojeći blok) dobio canonical event registry — onHiLoStart/Choice/Resolved/Collected sole-owner. **LEGO 7/7 ZELENO (168/168 events single-owner, 90/90 listener coverage, 112 blokova all with tests). npm test 20/20 grid fixtures stable.**
@@ -2213,11 +2246,11 @@ Playwright probe on `dist/01_rectangular_5x3_playable.html`:
 | H24 | `cascadePathDraw.mjs` | ✅ shipped (24/0 tests, 195 LOC, SVG path between cluster win cells) |
 | H25 | `streakBonus.mjs` | ✅ shipped (25/0 tests, 175 LOC, N consecutive wins → bonus chip) |
 | H5 / H5.x | `bigWinTier.mjs` | ✅ shipped |
-| H6 | `bonusClimaxReveal.mjs` | ⏳ queued |
-| H7 | `cellLevelUpgrade.mjs` | ⏳ queued |
-| H8 | `cellOverflowCounter.mjs` | ⏳ queued |
-| H9 | `ambientBackgroundWheel.mjs` | ⏳ queued |
-| H10 | `dualRoleScatter.mjs` | ⏳ queued |
+| H6 | `bonusClimaxReveal.mjs` | ✅ shipped (62/0 tests, 246 LOC, universal bonus-entry placard) |
+| H7 | `cellLevelUpgrade.mjs` | ✅ shipped (40/0 tests, 219 LOC, per-cell `Lv N` numeric meter) |
+| H8 | `cellOverflowCounter.mjs` | ✅ shipped (33/0 tests, 184 LOC, "+N" stack overflow per-reel badge) |
+| H9 | `ambientBackgroundWheel.mjs` | ✅ shipped (38/0 tests, 173 LOC, 12-spoke rune dial atmosphere) |
+| H10 | `dualRoleScatter.mjs` | ✅ shipped (30/0 tests, 185 LOC, ★ scatter-as-wild/pay observer) |
 | H11 | `bonusBuyDeterministic.mjs` | ✅ shipped |
 | **H12** | `netLossIndicator.mjs` | ✅ shipped |
 | H13 | `pathAwareMultiplier.mjs` | ✅ shipped |
