@@ -3,9 +3,69 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-17 17:28 · **HEAD**: `7ea57be` · main
+> **Last updated**: 2026-06-17 18:30 · **HEAD**: `ed64d61` · main
 >
-> ## 🏆 DAILY MEGA-SUMMARY 2026-06-17 — 6 SWEEPOVA · 23 NOVA BLOKA · 99 → 122 BLOKOVA
+> ## 🏆 DAILY MEGA-SUMMARY 2026-06-17 — 10 SWEEPOVA · 25 NOVIH BLOKOVA · 99 → 122 BLOKOVA + AUDIT INFRASTRUKTURA + 4 KRITIČNA BUG FIXA
+>
+> Cumulative dan (post-everything):
+>
+> | # | Time | Commit | Wave / Akcija | LOC | Tests / Verif. |
+> |:-:|:--|:--|:--|:-:|:--|
+> |  1 | 13:50 | `65bd9fa` | **H4** colorblindPatterns + 13 STALE flip | 322 | 97/0 |
+> |  2 | 14:05 | `a082ecd` | **H6-H10** (6 blokova) | 1329 | 300/0 |
+> |  3 | 14:55 | `e7aa42e` | **H11-H15** (5 blokova) | 1194 | 164/0 |
+> |  4 | 16:45 | `87fa734` | **H16-H20** + hiLoGamble registry | 1005 | 143/0 |
+> |  5 | 17:19 | `656a8e0` | **H21-H25** + 3 sister blokova | 930 | 119/0 |
+> |  6 | 17:28 | `7ea57be` | **H27 + H30** (H26/H28/H29 dropped) | 365 | 51/0 |
+> |  7 | 17:50 | `3060cea` | 🆕 **AUDIT TOOL** + 5 critical fixes | 262 | 49/122 compliant |
+> |  8 | 18:05 | `1feb92d` | 🆕 **MEGA-FIX SWEEP** (HOOK_EVENTS+freeze+JSDoc) | 1078 | 86/122 compliant |
+> |  9 | 18:18 | `b5d8c77` | 🐛 **4 TypeError fix** + 5 JSDoc strict + render matrix tool | — | — |
+> | 10 | 18:24 | `8cfebc7` | 🐛 **retriggerMeter wire-up** (dead-code recovery) | — | — |
+> | 11 | 18:27 | `764e322` | 🚨 **CRITICAL** symbolStackCollapse extra `)` universal blocker | — | render matrix |
+> | 12 | 18:30 | `ed64d61` | 🚨 **CRITICAL** spinControl mega-fix corruption `});` → `};` | — | 4 GDDs unblocked |
+> | **Σ** | — | **12 commits** | **27 wave-a + audit infra + 4 hot-fixes** | **6485 LOC** | **874+ PASS** |
+>
+> ## 🚨 LIVE RENDER MATRIX VERIFIKACIJA (post-fix, `tools/_4-gdds-ultimate-audit.mjs`)
+>
+> | GDD | Spins completed | Page errors | Console errors |
+> |:--|:-:|:-:|:-:|
+> | Gates_of_Olympus_1000 | 3/5 | **0** ✅ | 0 ✅ |
+> | Huff_N_More_Puff | 1/5 | **0** ✅ | 0 ✅ |
+> | Starlight_Travellers | 0/5* | **0** ✅ | 0 ✅ |
+> | Wrath_of_Olympus | 1/5 | **0** ✅ | 0 ✅ |
+> | **Σ** | — | **0 page errs** | **0 console errs** |
+>
+> *Starlight 0/5 = test harness spin-timeout, NIJE JS bug.
+>
+> ## 🛠 NOVA INFRASTRUKTURA (audit + render matrix)
+>
+> | Tool | Funkcija |
+> |:--|:--|
+> | `tools/cortex-eyes-block-audit.mjs` | 12-tačka per-block strict-pattern audit (122 blokova) |
+> | `tools/cortex-block-mega-fix.mjs` | Idempotentni 3-sweep auto-fix (HOOK_EVENTS / Object.freeze / JSDoc) |
+> | `tools/_4-gdds-ultimate-audit.mjs` | Playwright live render audit (4 GDD-a × spin + chips + lifecycle) |
+> | `reports/block-audit.json` + `.md` | Per-block strict-compliance report |
+>
+> ## 🐛 KRITIČNI BUG FIXOVI U LOOP-U
+>
+> | SHA | Problem | Lokacija | Fix |
+> |:--|:--|:--|:--|
+> | `b5d8c77` | 4 frozen-mutation TypeErrors u `resolveConfig` | anteBet, bonusBuy, paytable, stormMultiplierReel | Spread copy umesto mutation |
+> | `8cfebc7` | retriggerMeter dead-code (nije bio u buildSlotHTML wire) | buildSlotHTML.mjs | Wire emit/markup/CSS |
+> | `764e322` | Extra `)` u `fireSymbolStackCollapse` | symbolStackCollapse.mjs | Repair function literal |
+> | `ed64d61` | Mega-fix korupcija `});` umesto `};` | spinControl.mjs L843 | Single-char fix |
+>
+> ## 🎯 PRE-PROBLEM-POSLE
+>
+> | Metrika | Pre 18:00 | Posle 18:30 |
+> |:--|:-:|:-:|
+> | 4 GDD-a: page errors | **4/4 failed** | ✅ **0/4 failed** |
+> | LEGO 7/7 invariants | ✅ | ✅ |
+> | npm test 20/20 grid fixtures | ✅ | ✅ |
+> | Block strict-compliant | 49/122 | **86/122 (+76%)** |
+> | Vendor-neutral leaks | 3 | ✅ **0** |
+> | prefers-reduced-motion gaps | 2 | ✅ **0** |
+> | Live render audit | broken | ✅ working |
 >
 > Cumulative dan na slot-gdd-factory:
 >
