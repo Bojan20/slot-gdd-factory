@@ -234,12 +234,18 @@ export function emitWildCollectionTrailRuntime(cfg = defaultConfig()) {
       try { window.HookBus.emit('onWildTrailReset', { reason: reason || 'manual', source: source || 'auto' }); } catch (_) {}
       render();
     }
+    /* Bug #2 (2026-06-17, DOM selector fix) — real engine renders cells as
+     * <div class="cell">SYM</div> (gridRenderer.mjs:119). Previous selector
+     * '.symbol-cell[data-sym]' matched 0 nodes → counter never bumped.
+     * Now: dual selector + dual symbol source (data-sym attr OR textContent). */
     function countWildsOnGrid() {
       if (typeof document === 'undefined') return 0;
-      var cells = document.querySelectorAll('.symbol-cell');
+      var cells = document.querySelectorAll('.symbol-cell, .cell');
       var n = 0;
       for (var i = 0; i < cells.length; i++) {
-        var s = cells[i].getAttribute && (cells[i].getAttribute('data-sym') || cells[i].getAttribute('data-symbol'));
+        var attr = cells[i].getAttribute && (cells[i].getAttribute('data-sym') || cells[i].getAttribute('data-symbol'));
+        var text = (cells[i].textContent || '').trim();
+        var s = attr || text;
         if (s === WILD) n++;
       }
       return n;

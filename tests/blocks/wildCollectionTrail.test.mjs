@@ -62,7 +62,10 @@ t('runtime emits onWildTrailReset literal',        rt.includes("HookBus.emit('on
 function makeSb(wildsOnGrid) {
   const listeners = {};
   const emits = [];
-  const cells = wildsOnGrid.map(sym => ({ getAttribute(k) { return k === 'data-sym' ? sym : null; } }));
+  const cells = wildsOnGrid.map(sym => ({
+    getAttribute(k) { return k === 'data-sym' ? sym : null; },
+    textContent: sym,
+  }));
   const host = { _attrs: {}, _children: [],
     setAttribute(k, v) { this._attrs[k] = v; },
     getAttribute(k) { return this._attrs[k]; },
@@ -74,7 +77,11 @@ function makeSb(wildsOnGrid) {
   };
   const document = {
     getElementById(id) { return id === 'wildTrail' ? host : null; },
-    querySelectorAll(sel) { return sel === '.symbol-cell' ? cells : []; },
+    /* Bug #2 (2026-06-17, dual selector) — runtime now queries
+     * '.symbol-cell, .cell' to match both block markup and real engine
+     * gridRenderer (div.cell). Stub returns cells for any selector
+     * containing 'cell' to mirror this. */
+    querySelectorAll(sel) { return (typeof sel === 'string' && sel.indexOf('cell') !== -1) ? cells : []; },
   };
   const window = {
     HookBus: {
