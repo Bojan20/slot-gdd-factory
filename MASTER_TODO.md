@@ -3,9 +3,9 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-17 17:19 · **HEAD**: `656a8e0` · main
+> **Last updated**: 2026-06-17 17:28 · **HEAD**: `7ea57be` · main
 >
-> ## 🏆 DAILY MEGA-SUMMARY 2026-06-17 — 4 SWEEPA · 21 NOVI BLOK · 99 → 120 BLOKOVA
+> ## 🏆 DAILY MEGA-SUMMARY 2026-06-17 — 6 SWEEPOVA · 23 NOVA BLOKA · 99 → 122 BLOKOVA
 >
 > Cumulative dan na slot-gdd-factory:
 >
@@ -15,8 +15,21 @@
 > | 2 | 14:05 | `a082ecd` | **H6-H10** (6 blokova) | 1329 | 300/0 | 96 → 101 blokova |
 > | 3 | 14:55 | `e7aa42e` | **H11-H15** (5 blokova) | 1194 | 164/0 | 101 → 106 blokova |
 > | 4 | 16:45 | `87fa734` | **H16-H20** + hiLoGamble registry | 1005 | 143/0 | 106 → 112 blokova |
-> | 5 | 17:19 | `656a8e0` | **H21-H25** + 3 sister blokova | 930 | 119/0 | 112 → **120** blokova |
-> | **Σ** | — | 5 commits | **22 wave-a** | **4780 LOC** | **823 PASS** | **+25 blokova** |
+> | 5 | 17:19 | `656a8e0` | **H21-H25** + 3 sister blokova | 930 | 119/0 | 112 → 120 blokova |
+> | 6 | 17:28 | `7ea57be` | **H27 + H30** (H26/H28/H29 dropped per Boki) | 365 | 51/0 | 120 → **122** blokova |
+> | **Σ** | — | 6 commits | **24 wave-a** | **5145 LOC** | **874 PASS** | **+27 blokova** |
+>
+> ## 🆕 H Stream Wave 5 (2026-06-17 17:28, `7ea57be`)
+>
+> Boki: "Izbrisi h26, 28, 29 ostalo radi" — H27 + H30 only:
+>
+> | ID | Blok | LOC | Tests | Industry funkcija | Sole owner events |
+> |:--|:--|:-:|:-:|:--|:--|
+> | H27 | `paylineDimmer.mjs` | 168 | 24/0 | Dim non-winning cells during win presentation, opacityFloor configurable, skipDuringFs gate | onPaylineDimmerStart/Cleared |
+> | H30 | `retriggerEscalator.mjs` | 197 | 27/0 | Multi-tier FS retrigger reward ladder, monotonic enforce, tier clamp at last | onRetriggerEscalated/Reset |
+> | H26 | `winCelebrationFrame` | — | — | ❌ **DROPPED** per Boki | — |
+> | H28 | `wildSweep` | — | — | ❌ **DROPPED** per Boki | — |
+> | H29 | `cellGlowDecay` | — | — | ❌ **DROPPED** per Boki | — |
 >
 > **LEGO 7/7 ZELENO** · 98/98 listener coverage · sve sole-owner emit ✅ · npm test 20/20 ✅ · 0 vendor leaks ✅
 >
