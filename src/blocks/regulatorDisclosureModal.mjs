@@ -324,16 +324,65 @@ export function emitRegulatorDisclosureModalRuntime(cfg = defaultConfig()) {
     var $ack       = function () { return document.getElementById('rdmAck'); };
     var $queueInfo = function () { return document.getElementById('rdmQueue'); };
 
+    /* Bug #4 (2026-06-17, focus-trap WCAG 2.4.3) — modal previously only
+     * set initial focus on Ack; Tab could escape the modal, Esc didn't
+     * close. Now: capture keydown while modal is open; Tab + Shift+Tab
+     * cycle through focusable descendants; Esc dismisses. */
     var prevFocus = null;
+    var FOCUSABLE_SEL = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    function _focusableEls() {
+      var modal = $modal();
+      if (!modal) return [];
+      var nodes = modal.querySelectorAll(FOCUSABLE_SEL);
+      var out = [];
+      for (var i = 0; i < nodes.length; i++) {
+        var el = nodes[i];
+        if (el.offsetParent !== null && !el.hidden) out.push(el);
+      }
+      return out;
+    }
+    function _onKeydown(e) {
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        e.preventDefault();
+        var ack = $ack();
+        if (ack && typeof ack.click === 'function') ack.click();
+        return;
+      }
+      if (e.key !== 'Tab' && e.keyCode !== 9) return;
+      var els = _focusableEls();
+      if (els.length === 0) return;
+      var first = els[0];
+      var last = els[els.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first || !modalContains(document.activeElement)) {
+          e.preventDefault();
+          try { last.focus(); } catch (_) {}
+        }
+      } else {
+        if (document.activeElement === last || !modalContains(document.activeElement)) {
+          e.preventDefault();
+          try { first.focus(); } catch (_) {}
+        }
+      }
+    }
+    function modalContains(node) {
+      var m = $modal();
+      return !!(m && node && m.contains && m.contains(node));
+    }
     function _trapFocus(on) {
       var ack = $ack();
       if (!ack) return;
       if (on) {
         prevFocus = document.activeElement;
         try { ack.focus(); } catch (_) {}
-      } else if (prevFocus && typeof prevFocus.focus === 'function') {
-        try { prevFocus.focus(); } catch (_) {}
-        prevFocus = null;
+        document.addEventListener('keydown', _onKeydown, true);
+      } else {
+        document.removeEventListener('keydown', _onKeydown, true);
+        if (prevFocus && typeof prevFocus.focus === 'function') {
+          try { prevFocus.focus(); } catch (_) {}
+          prevFocus = null;
+        }
       }
     }
 

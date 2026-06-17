@@ -140,11 +140,18 @@ block('8. Sandbox HookBus simulation', () => {
   /* Stub document.getElementById so runtime doesn't crash */
   const docStub = {
     readyState: 'complete',
+    /* Bug #4 (2026-06-17): focus-trap installs a document-level keydown
+     * listener while modal is open; sandbox must stub addEventListener /
+     * removeEventListener so the new code path doesn't crash. */
+    addEventListener: () => {},
+    removeEventListener: () => {},
     getElementById: () => ({
       dataset: {}, textContent: '', hidden: false, addEventListener: () => {},
       focus: () => {}, classList: { add(){}, remove(){} },
       firstChild: null, removeChild: () => {}, appendChild: () => {},
       setAttribute: () => {}, removeAttribute: () => {},
+      querySelectorAll: () => [], contains: () => true,
+      offsetParent: null,
       style: {},
     }),
     createElement: () => ({ textContent: '' }),
