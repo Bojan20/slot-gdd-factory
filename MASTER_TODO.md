@@ -983,6 +983,65 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## 🇪🇺 W58.J-EU — EU AI Act compliance gate (Art.5(1)(a)(b) + Art.50(1)) (✅ LANDED — 2026-06-17) · **W58 SWEEP CLOSE-OUT 6/6**
+
+> **Regulator anchor**: EU AI Act Regulation 2024/1689 Art.5(1)(a) subliminal-manipulation prohibition · Art.5(1)(b) vulnerability-exploitation (DDA) prohibition · Art.50(1) transparency on AI-generated content. Bonus-buy NOT u AI Act scope — covered by W57.A4 + per-state J-DE/J-NL.
+> **Vezano za**: slot-gdd-factory · math-blind (DDA gate je AI/personalization prohibition, ne math).
+
+### 1. Šta je zatvoreno
+
+| Block | Promena | Linije |
+|:--|:--|:-:|
+| `src/blocks/euAiActComplianceGate.mjs` | **NEW** 193 LOC. Exports `EU_AI_ACT_PROHIBITED_PRACTICES` frozen 3-entry list (5(1)(a), 5(1)(b), 50(1)) za cert-harness introspection. 3-key precedence auto-enabled kad jurisdiction === 'EU'. emitRuntime boot-time IIFE: Art.5(1)(a) → `if (DECLARE_NO_AI) window.__EU_AI_SUBLIMINAL_BANNED__ = true`; Art.5(1)(b) → `window.__EU_AI_ACT_DDA_PROHIBITED__ = true` + emit `onAiActDdaProhibited{rule:'EU-AIAct-2024/1689-Art.5(1)(b)'}`; Art.50(1) → `window.__EU_AI_DECLARATION_REQUIRED__ = true` + init `__EU_AI_DECLARATION_ACK__ = false` + emit `onAiSystemDeclarationRequired{rule:'EU-AIAct-2024/1689-Art.50(1)'}`. declareNoAi knob (default true) — false branch ostavi subliminal flag NEPOSTAVLJEN (operator mora surface Article 5 risk assessment), DDA + Art.50 emit ipak fire (absolute). SSR-safe. | +193 |
+| `tools/lego-gate.mjs` | +`onAiActDdaProhibited` + `onAiSystemDeclarationRequired` sole-owner declarations (107 → **109** events). +`euAiActComplianceGate.mjs` u HOOK_REGISTRATION_OPT_OUT. | +25 |
+| `src/buildSlotHTML.mjs` | Import + runtime emit slot posle netherlandsComplianceGate (3 jurisdiction gates u boot chain-u). 0-byte side effect kad non-EU. | +11 |
+| `blocks/_manifest.json` | Regen — 89 → **90** blocks (milestone). | regen |
+| `tests/blocks/euAiActComplianceGate.test.mjs` | **NEW** 242 LOC: 13 sections (frozen Art list × 3, defaultConfig, 3-key precedence + auto-enable EU, declareNoAi knob, emitCSS no-op, emitRuntime disabled, Art.5(1)(a) subliminal flag wiring, Art.5(1)(b) DDA flag + emit, Art.50(1) declaration flag + ACK init + emit, declareNoAi=false branch (subliminal gated, DDA + Art.50 still fire), SSR safety, LEGO contracts + W58.J-EU marker + EU AI Act + DDA citation + HOOK_REGISTRATION_OPT_OUT, honest scope: Art.5(1)(a) + Art.5(1)(b) + Art.50(1) + Reg 2024/1689 + DDA full name + rule_no_math_unless_asked). | +242 |
+| `package.json` | test:blocks chain extends sa novim testom | +1/-1 |
+
+### 2. Ultimate QA matrix (9/9 ZELENO)
+
+| # | Gate | Verdict |
+|:-:|:--|:-:|
+| 1 | `euAiActComplianceGate.test.mjs` | ✅ **50/50** |
+| 2 | LEGO 7 invariants | ✅ **7/7** (**90 blokova** · 109 sole-owner · 72 listener) |
+| 3 | npm test (parser + grid) | ✅ 4/4 + 20/20 |
+| 4 | Block manifest regen | ✅ 90 blocks (milestone) |
+| 5 | Vendor-neutral | ✅ 0 hits |
+| 6 | Math-blind | ✅ rule_no_math_unless_asked cited |
+| 7 | SSR safety + try/catch | ✅ |
+| 8 | Non-EU short-circuit | ✅ |
+| 9 | HOOK_REGISTRATION_OPT_OUT | ✅ |
+
+### 3. Hash pin
+
+| SHA | Šta | Push |
+|:-:|:--|:-:|
+| `0c2ad37` | **W58.J-EU** — euAiActComplianceGate.mjs (NEW 193 LOC) + 50/50 unit + LEGO 7/7 + 109 sole-owner events + manifest 89→90 (milestone) | ✅ |
+
+### 4. Honest follow-up scope
+
+| Stavka | Status |
+|:--|:--|
+| Art.5(1)(a) subliminal flag verification by external auditor | Operator-side risk assessment kad declareNoAi=false |
+| Art.50(1) declaration UI | Operator-side (block samo postavlja obligation flag) |
+| Member-state gates (DE/NL/FR/IT/ES) | DE + NL LANDED; FR/IT/ES dedicated gates ⏳ kad bude potrebno |
+
+### 5. W58 SWEEP CLOSE-OUT · 6/6 LANDED ✅
+
+| # | Atom | Jurisdiction | Status |
+|:-:|:--|:--|:-:|
+| 1 | W58.J-UKGC | autoplay disclosure | ✅ (`3f25d57`) |
+| 2 | W58.J-AGCO | RTP transparency | ✅ (`837f909`) |
+| 3 | W58.J-SE | play-time HUD | ✅ (`16d52f1`) |
+| 4 | W58.J-DE | GlüStV §11(2)+§6e | ✅ (`c74442c`) |
+| 5 | W58.J-NL | Wet KSA §31+§33 | ✅ (`27cdc1a`) |
+| 6 | **W58.J-EU** | **EU AI Act Art.5+50** | **✅ (`0c2ad37`)** |
+
+**🏆 Cross-jurisdiction sweep KOMPLETAN — 6/6 atoma LANDED.**
+
+---
+
 ## 🇳🇱 W58.J-NL — Wet KSA compliance gate (§31 Cruks + §33 cool-off) (✅ LANDED — 2026-06-17)
 
 > **Regulator anchor**: Wet kansspelen op afstand (Wet KSA) §31 Cruks register check (Centraal Register Uitsluiting Kansspelen) + §33 Cool-off period enforcement + §31a Boni-Verbot (već zatvoren W57.A4 u bonusBuy.mjs · NE duplira se ovde).
