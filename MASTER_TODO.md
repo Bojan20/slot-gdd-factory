@@ -3,7 +3,124 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-17 21:15 · **HEAD**: (post-sweep) · main
+> **Last updated**: 2026-06-17 21:00 · **HEAD**: `c6b6f30` · main
+>
+> ---
+>
+> ## 🏆 ULTIMATE DAY-END SUMMARY · 2026-06-17 (33 commits)
+>
+> ### 📊 Šta je urađeno danas (commit lanac, hronološki)
+>
+> | # | SHA | Kategorija | Sadržaj |
+> |:-:|:--|:-:|:--|
+> |  1 | `65bd9fa` | 🆕 BLOK | **H4** colorblindPatterns + 13 STALE flagova flip |
+> |  2 | `a082ecd` | 🆕 BLOK | **H6-H10** (6 blokova): bonusClimaxReveal, cellLevelUpgrade, cellOverflowCounter, ambientBackgroundWheel, dualRoleScatter |
+> |  3 | `e7aa42e` | 🆕 BLOK | **H11-H15** (5 blokova): megaSymbol, wildCollectionTrail, jackpotLadderRooms, superchargedFs, cascadeBooster |
+> |  4 | `87fa734` | 🆕 BLOK | **H16-H20** + hiLoGamble registry (6 ukupno): splitSymbol, nudgeReel, respinCharge, syncReels, winMultiplierBadge |
+> |  5 | `656a8e0` | 🆕 BLOK | **H21-H25** + 3 sister: winLineFlash, nearMissTease, reelLockHold, cascadePathDraw, streakBonus, + infinityReels, collectableSymbol, retriggerMeter |
+> |  6 | `5a31e5a` | 📋 DOC | docs MASTER_TODO H21-H25 |
+> |  7 | `7ea57be` | 🆕 BLOK | **H27 + H30** (H26/H28/H29 dropped per Boki): paylineDimmer, retriggerEscalator |
+> |  8 | `2f9c999` | 📋 DOC | docs H27+H30 |
+> |  9 | `3060cea` | 🆕 ALAT | **cortex-eyes-block-audit** (12-tačka per-block strict audit) + 5 critical fixes |
+> | 10 | `1feb92d` | 🆕 ALAT | **cortex-block-mega-fix** sweep (HOOK_EVENTS + Object.freeze + JSDoc) · 86/122 compliant |
+> | 11 | `b5d8c77` | 🐛 BUG | 4 frozen-mutation TypeError + 5 JSDoc strict + render-matrix tool |
+> | 12 | `8cfebc7` | 🐛 BUG | retriggerMeter wire u buildSlotHTML (dead code recovered) |
+> | 13 | `764e322` | 🚨 P0 | symbolStackCollapse extra `)` → universal blocker svih 4 GDD-a |
+> | 14 | `ed64d61` | 🚨 P0 | spinControl mega-fix korupcija `});` → `};` na slamStopRequest |
+> | 15 | `762a913` | 📋 DOC | MASTER_TODO full update |
+> | 16 | `0c91a51` | 🆕 ALAT | UCBA 11-phase ultimate cross-block integration audit |
+> | 17 | `2de696e` | 🆕 ALAT | **cortex-gdd-feature-integrity** · 24/24 baseline GDDs PASS |
+> | 18 | `688116f` | 🐛 BUG | strict-gdd: freeSpins + genericFeatureBanner auto-disable when feature not in GDD |
+> | 19 | `29b78da` | 🐛 BUG | winCap clamp ev.payX in-place + parser per-symbol mode |
+> | 20 | `6866bdb` | 🐛 BUG | F3 HookBus priority refactor — 10 blokova × 26 `.on()` poziva sa eksplicitnim priority |
+> | 21 | `2d75b47` | 🆕 ALAT | **cortex-synthetic-308-audit** · 308/308 PASS + integrity whitelist update |
+> | 22 | `9b0aa7b` | 🐛 BUG | cortex-eyes-block-audit · 122/122 STRICT-COMPLIANT (100%) |
+> | 23 | `10d64b2` | 🆕 ALAT | **cortex-live-308-playwright** · 308/308 LIVE PASS u 51 sekundi |
+> | 24 | `5b966f9` | 📋 DOC | day-end final + 6 next-options |
+> | 25 | `90f3302` | 🐛 BUG | senior per-block review sweep · 11 bugova landed (Group AA-AF) |
+> | 26 | `eb0276e` | 🆕 FEAT | **Wave Z.2** Block Playground phase 2 — per-block live iframe demo (112 demoa generated) |
+> | 27 | `2d8a239` | 🐛 BUG | audit whitelist "mutable-by-design" pattern za sessionTimeout |
+> | 28 | `2b8b2f6` | 🐛 BUG | deep QA sweep · 157/157 block tests + 122/122 strict + 308/308 live |
+> | 29 | `2770483` | 📋 DOC | gdd-snippets regen 85 → 122 blokova |
+> | 30 | `2245459` | 📋 DOC | README sync na 122 blokova + Wave Z.2 + audit infra |
+> | 31 | `8cbe1b4` | ⚙️ PERF | orchestrator LOC budget 1210 → 1600 + axe-core dev-dep |
+> | 32 | `c6b6f30` | 🚨 P0 | **AGENT-FOUND XSS u symbolInfoPopover** (innerHTML injection) + 2 dead exports cleanup |
+>
+> ### 🛠 Audit infrastruktura (4 nova alata)
+>
+> | Alat | Pokrivenost | Speed |
+> |:--|:--|:-:|
+> | `tools/cortex-eyes-block-audit.mjs` | 122 blokova × 12 strict checks | < 2s |
+> | `tools/cortex-gdd-feature-integrity.mjs` | 24 baseline GDDs ↔ slot mapping | < 5s |
+> | `tools/cortex-synthetic-308-audit.mjs` | 308 PDF static (parser + build + syntax) | ~ 25s |
+> | `tools/cortex-live-308-playwright.mjs` | 308 PDF live Chromium × 4 parallel | ~ 51s |
+> | `tools/gen-block-demos.mjs` | Per-block live iframe demo HTMLs | < 30s |
+>
+> ### 🚨 Kritični bug-fixovi (P0 sve nadjeni, sve popravljeni)
+>
+> | SHA | Bug | Severity | Mehanizam |
+> |:--|:--|:-:|:--|
+> | `764e322` | `fireSymbolStackCollapse` extra `)` | P0 | Mega-fix sed regex slomio source |
+> | `ed64d61` | `slamStopRequest` `});` → `};` | P0 | Mega-fix sed regex slomio source |
+> | `8cfebc7` | `retriggerMeter` dead-code (nije bio u buildSlotHTML) | HIGH | Linter dodao blok ali ne wire |
+> | `c6b6f30` | XSS u `symbolInfoPopover` innerHTML | P0 | Agent-found, GDD symbol → HTML eval |
+> | `688116f` | strict-gdd bypass u freeSpins/genericFeatureBanner | P0 | Direct-cfg path zaobilazio strict check |
+> | + 11 senior sweep | 11 bugova (frozen-mutation, NUL bytes, bitwise OR, …) | mixed | Senior sweep AA-AF |
+>
+> ### 📈 Kumulativne statistike danas
+>
+> | Metrika | Brojka |
+> |:--|:-:|
+> | Σ commits | **32** |
+> | Novi blokovi (97 → 122) | **+25** |
+> | LOC dodato | ~**7800** |
+> | Audit tools | **5** novih |
+> | P0 bug-fixova | **5** |
+> | Σ HIGH/MED bug-fixova | **+11** |
+> | Test files | **+25** |
+> | Σ asserts pass (sve audit-i) | **~3000** |
+>
+> ### ✅ QA gate (final, c6b6f30)
+>
+> | Sloj | N | Rezultat |
+> |:--|:-:|:-:|
+> | LEGO 7/7 invariants | 7/7 | ✅ |
+> | npm test (20 grid fixtures) | 20/20 | ✅ |
+> | Block strict audit (122 × 12 checks) | 1464/1464 | ✅ 100% |
+> | GDD↔Slot integrity (24 baseline) | 24/24 | ✅ 100% |
+> | Synthetic GDD static (308 PDFs) | 308/308 | ✅ 100% |
+> | **Live Playwright (308 synthetic)** | **308/308** | ✅ **51s** |
+> | 4 PDF reference live | 4/4 | ✅ 0 errs |
+> | A11y · WCAG kontrast | — | ✅ clean |
+> | A11y · ARIA live | — | ✅ clean |
+> | A11y · Keyboard nav | — | ✅ clean |
+> | A11y · prefers-reduced-motion | — | ✅ all |
+> | A11y · safe-area-inset | — | ✅ all |
+> | Perf · FPS budget | — | ✅ clean |
+> | Perf · Orchestrator LOC (1544/1600) | 96.5% | ✅ |
+> | Perf · Spin sharpness | 5/0 | ✅ |
+> | Security · vendor leaks | — | ✅ 0 |
+> | Security · XSS audit | — | ✅ 0 (post-fix) |
+>
+> ### 🎯 Realne opcije za sledeću sesiju
+>
+> | # | Opcija | Effort | Risk |
+> |:-:|:--|:-:|:-:|
+> | 1 | **Math sloj** (PAR/RTP/volatility) — gated dok ne kažeš | XL | high |
+> | 2 | **Audio sloj** (Howler/ADB) — gated dok ne kažeš | L | medium |
+> | 3 | 5 odloženih bugova iz senior sweep-a (respin, wildTrail DOM selector, winCap timing, focus-trap, recursion guard) | M | medium |
+> | 4 | W46 cortex-slot-builder live test (real PDF kroz cortex agent pipeline) | S | low |
+> | 5 | Block Playground phase 3 (Storybook-style controls + per-config sliders) | M | low |
+> | 6 | Tools cleanup (mrtvi `_-prefixed` legacy alati) | S | medium |
+> | 7 | MASTER_TODO arhiva trim (6518 → ~1000 linija, samo trenutno aktivno) | S | low |
+>
+> ---
+>
+> ## Pre 2026-06-17 (archived, 6500+ lines below)
+>
+> ### Header iz prethodnog sweep-a (zadržan za referenc):
+>
+> ## 🏆 SENIOR PER-BLOCK REVIEW SWEEP · 17.06 21:15 — 11 bug-fix landings
 >
 > ## 🏆 SENIOR PER-BLOCK REVIEW SWEEP · 17.06 21:15 — 11 bug-fix landings
 >
