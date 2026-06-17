@@ -56,6 +56,9 @@ const DEDICATED_BLOCK_KINDS = new Map([
   ['reality_check',      { selector: 'id="rcOverlay"' }],
   ['net_loss_indicator', { selector: 'NLI_STATE' }],
   ['win_cap',            { selector: 'id="winCapOverlay"' }],
+  ['gamble_secondary',      { selector: 'id="gsOverlay"' }],
+  ['progressive_free_spins',{ selector: 'id="pfsChip"' }],
+  ['path_aware_multiplier', { selector: 'window.PAW_STATE' }],
 ]);
 
 /* Synthetic / parser-internal kinds — NOT real features. Filter out. */
