@@ -983,6 +983,50 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## 🇩🇪 W58.J-DE.2 — GlüStV §11(2) downstream enforcement u autoplay (✅ LANDED — 2026-06-17)
+
+> **Regulator anchor**: GlüStV 2021 §11(2) Spielpause — every AUTOMATIC consecutive spin must take ≥ 5 sec wall-clock. W58.J-DE postavio `window.__DE_MIN_SPIN_MS__ = 5000` na boot, ali NIKO nije čitao — gate bio efektivno noop. W58.J-DE.2 zatvara petlju: reelEngine writes timestamp, autoplay clamps inter-spin schedule do floor-a.
+
+### 1. Šta je zatvoreno
+
+| Block | Promena | Linije |
+|:--|:--|:-:|
+| `src/blocks/reelEngine.mjs` | +`window.__lastSpinAt__ = Date.now()` na svaki spin trigger. Date.now (NE performance.now) za audit-trail comparability + survival tab-suspend cycles. SSR-safe. | +8 |
+| `src/blocks/autoplay.mjs` | `_scheduleNextSpin(delayMs)` sad CLAMPS: `rawDelay = autoplay-config; floor = window.__DE_MIN_SPIN_MS__; lastAt = window.__lastSpinAt__; floorRemaining = max(0, (lastAt + floor) - Date.now()); finalDelay = max(rawDelay, floorRemaining)`. Kad floor extend-uje delay → sole-owner emit `onMinSpinPaceDeferred{requestedMs, deferredMs, floorMs, rule:'DE-GluStV-2021-§11(2)'}` za cert-harness attestation. try/catch around emit. | +31 |
+| `tools/lego-gate.mjs` | +`onMinSpinPaceDeferred: ['autoplay.mjs']` sole-owner declaration (110 → **111** events). W58.J-DE.2 marker + §11(2) citation. | +9 |
+| `tests/blocks/_germanyMinSpinPaceEnforcement.test.mjs` | **NEW** 146 LOC: 6 sections (reelEngine timestamp + marker + Date.now design note + SSR-safe, autoplay clamp formula + reads both flags + finalDelay used, sole-owner emit + 4 payload fields + rule citation + try/catch, behavioural sandbox × 5 scenarios, LEGO contracts, honest scope). | +146 |
+| `package.json` | test:blocks chain extends sa novim testom | +1/-1 |
+
+### 2. Ultimate QA matrix (9/9 ZELENO)
+
+| # | Gate | Verdict |
+|:-:|:--|:-:|
+| 1 | `_germanyMinSpinPaceEnforcement.test.mjs` | ✅ **27/27** |
+| 2 | autoplay regression (W58.J-UKGC) | ✅ 31/31 (no breakage) |
+| 3 | germanyComplianceGate regression (W58.J-DE) | ✅ 55/55 (no breakage) |
+| 4 | LEGO 7/7 invariants | ✅ (91 blokova · **111 sole-owner**) |
+| 5 | npm test (parser + 20 grid) | ✅ 4/4 + 20/20 |
+| 6 | test:sharpness (5 GDDs) | ✅ 5/5 · 0 cell mutations |
+| 7 | Vendor-neutral source | ✅ |
+| 8 | Math-blind invariant | ✅ |
+| 9 | Behavioural clamp formula verified u sandbox-u | ✅ 5/5 scenarios |
+
+### 3. Hash pin
+
+| SHA | Šta | Push |
+|:-:|:--|:-:|
+| `1ad2664` | **W58.J-DE.2** — reelEngine __lastSpinAt__ tracker + autoplay clamp + sole-owner emit `onMinSpinPaceDeferred` + 27/27 unit + 5 behavioural scenarios + LEGO 111 sole-owner | ✅ |
+
+### 4. Honest follow-up scope
+
+| Stavka | Status |
+|:--|:--|
+| Floor enforcement aktivan SAMO kad jurisdiction === 'DE' | ✅ Non-DE → floor=0 → clamp short-circuit |
+| Manual spin click (user pressing spinBtn) | ⏳ NE klampuje se — user-initiated dispatch je njegova odluka (§11(2) targets AUTOMATIC consecutive spins) |
+| Post-slamStop cooldown enforcement | ⏳ W58.J-DE.3 candidate kad regulator audit zatraži |
+
+---
+
 ## 🏛 W59.H1 — Centralized jurisdictionGate.mjs + 6 inline-chain migrations (✅ LANDED — 2026-06-17)
 
 > **Cilj**: Eliminisati 6× duplikat 3-key precedence logike u autoplay/winCap/realityCheck/germany/netherlands/EU AI Act gates. Centralizovati u jedan pure helper + jedan boot-time audit emit. Future jurisdictions land kao one-liner.
