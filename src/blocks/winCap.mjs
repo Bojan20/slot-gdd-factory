@@ -296,13 +296,23 @@ if (typeof window !== 'undefined') {
    Without these handlers winCap is dead code (function defined but never
    called). */
 if (typeof HookBus !== 'undefined') {
+  /* F5 fix (Boki cross-block audit): winCap CLAMP ev.payX IN-PLACE so
+     downstream presenters (winPresentation, bigWinTier, paylineOverlay)
+     honor the cap. Without in-place mutation the cap flag was set but
+     the round still paid the uncapped amount.
+     Priority 100 ensures clamp runs BEFORE presenter handlers. */
   HookBus.on('postSpin', ({ events } = {}) => {
     if (!Array.isArray(events) || events.length === 0) return;
     for (const ev of events) {
       const winX = Number(ev && ev.payX);
-      if (Number.isFinite(winX) && winX > 0 && winCapAdd(winX)) break;
+      if (!Number.isFinite(winX) || winX <= 0) continue;
+      const remaining = Math.max(0, WIN_CAP_MAX_X - WIN_CAP_CUMULATIVE_X);
+      if (winX > remaining && ev) {
+        ev.payX = remaining;
+      }
+      if (winCapAdd(winX)) break;
     }
-  });
+  }, { priority: 100 });
   HookBus.on('preSpin', () => {
     if (WIN_CAP_MODE === 'spin') winCapReset();
   });

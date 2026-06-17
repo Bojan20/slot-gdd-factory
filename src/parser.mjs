@@ -1928,11 +1928,17 @@ export function extractWinPresentation(text, model) {
   const section = nextH ? tail.slice(0, nextH.index) : tail;
 
   const wp = model.winPresentation;
-  /* mode */
-  const m = section.match(/\b(?:mode|presentation)\s*[:=]\s*['"]?(per-?line|cluster|all-?at-?once)['"]?/i);
+  /* mode — F6 fix (Boki audit): add 'per-symbol' alias for scatter-pays
+     games (Gates of Olympus GDD uses this literal). Maps to 'all-at-once'
+     semantically since scatter-pays highlights all winning symbols at once. */
+  const m = section.match(/\b(?:mode|presentation)\s*[:=]\s*['"]?(per-?line|per-?symbol|cluster|all-?at-?once|ways|ways-?aware)['"]?/i);
   if (m) {
     const v = m[1].toLowerCase().replace(/\s+/g, '-');
-    wp.mode = v === 'perline' ? 'per-line' : (v === 'allatonce' ? 'all-at-once' : v);
+    if (v === 'perline') wp.mode = 'per-line';
+    else if (v === 'persymbol' || v === 'per-symbol') wp.mode = 'all-at-once';
+    else if (v === 'allatonce' || v === 'all-at-once') wp.mode = 'all-at-once';
+    else if (v === 'ways' || v === 'ways-aware' || v === 'waysaware') wp.mode = 'all-at-once';
+    else wp.mode = v;
   }
   /* per-event-ms */
   const pe = section.match(/\bper[- ]?event[- ]?ms\s*[:=]\s*(\d+|auto)/i);
