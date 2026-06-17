@@ -409,6 +409,48 @@ export const HOOK_EVENTS = Object.freeze([
    *   Owner: cascadeBooster.mjs. */
   'onCascadeBoosterTick',
   'onCascadeBoosterReset',
+  /* Wave H16: Split Symbol (one symbol divides into two)
+   * onSplitSymbolPlaced  {reel, row, sym, source} — Owner: splitSymbol.mjs.
+   * onSplitSymbolCleared {source}                  — Owner: splitSymbol.mjs. */
+  'onSplitSymbolPlaced',
+  'onSplitSymbolCleared',
+  /* Wave H17: Nudge Reel (classic fruit-machine near-miss rescue presenter)
+   * onNudgeOffered  {reel, direction, reason, source}      — Owner: nudgeReel.mjs.
+   * onNudgeAccepted {reel, direction, source}              — Owner: nudgeReel.mjs.
+   * onNudgeDeclined {reel, direction, reason, source}      — Owner: nudgeReel.mjs.
+   * onNudgeResolved {reel, direction, outcome, source}     — Owner: nudgeReel.mjs. */
+  'onNudgeOffered',
+  'onNudgeAccepted',
+  'onNudgeDeclined',
+  'onNudgeResolved',
+  /* Wave H18: Respin Charge (charges → auto-respin)
+   * onRespinChargeBump  {from, to, max, source} — Owner: respinCharge.mjs.
+   * onRespinChargeFull  {capacity, source}       — Owner: respinCharge.mjs.
+   * onRespinChargeReset {reason}                 — Owner: respinCharge.mjs.
+   * onRespinChargeTick  {delta}                  — Owner: respinCharge.mjs (engine-facing API). */
+  'onRespinChargeBump',
+  'onRespinChargeFull',
+  'onRespinChargeReset',
+  'onRespinChargeTick',
+  /* Wave H19: Sync Reels (N reels match identical stack)
+   * onReelsSynced       {reels[], count, signature, source} — Owner: syncReels.mjs.
+   * onSyncReelsCleared  {reason}                            — Owner: syncReels.mjs. */
+  'onReelsSynced',
+  'onSyncReelsCleared',
+  /* Wave H20: Win Multiplier Badge (× N chip on win lines)
+   * onWinMultBadgePlaced  {reel, row, mult, source} — Owner: winMultiplierBadge.mjs.
+   * onWinMultBadgeCleared {reason}                  — Owner: winMultiplierBadge.mjs. */
+  'onWinMultBadgePlaced',
+  'onWinMultBadgeCleared',
+  /* Hi-Lo Gamble (card hi-lo risk-it presenter)
+   * onHiLoStart     {award, source}                              — Owner: hiLoGamble.mjs.
+   * onHiLoChoice    {choice, card, source}                       — Owner: hiLoGamble.mjs.
+   * onHiLoResolved  {result, choice, card, nextCard, stake, src} — Owner: hiLoGamble.mjs.
+   * onHiLoCollected {stake, rounds, source}                      — Owner: hiLoGamble.mjs. */
+  'onHiLoStart',
+  'onHiLoChoice',
+  'onHiLoResolved',
+  'onHiLoCollected',
 ]);
 
 /* Wave U4: canonical autoplay stop reasons. */

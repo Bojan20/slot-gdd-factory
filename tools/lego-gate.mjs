@@ -597,6 +597,30 @@ const EXPECTED_EMIT_OWNERS = {
   /* H15 cascadeBooster — per-cascade-depth multiplier (sole owner of 2 events). */
   onCascadeBoosterTick:  ['cascadeBooster.mjs'],
   onCascadeBoosterReset: ['cascadeBooster.mjs'],
+  /* H16 splitSymbol — one symbol divides into two (sole owner of 2 events). */
+  onSplitSymbolPlaced:   ['splitSymbol.mjs'],
+  onSplitSymbolCleared:  ['splitSymbol.mjs'],
+  /* H17 nudgeReel — classic near-miss rescue presenter (sole owner of 4 events). */
+  onNudgeOffered:        ['nudgeReel.mjs'],
+  onNudgeAccepted:       ['nudgeReel.mjs'],
+  onNudgeDeclined:       ['nudgeReel.mjs'],
+  onNudgeResolved:       ['nudgeReel.mjs'],
+  /* H18 respinCharge — charge counter (sole owner of 4 events). */
+  onRespinChargeBump:    ['respinCharge.mjs'],
+  onRespinChargeFull:    ['respinCharge.mjs'],
+  onRespinChargeReset:   ['respinCharge.mjs'],
+  onRespinChargeTick:    ['respinCharge.mjs'],
+  /* H19 syncReels — N reels match (sole owner of 2 events). */
+  onReelsSynced:         ['syncReels.mjs'],
+  onSyncReelsCleared:    ['syncReels.mjs'],
+  /* H20 winMultiplierBadge — × N chip on win lines (sole owner of 2 events). */
+  onWinMultBadgePlaced:  ['winMultiplierBadge.mjs'],
+  onWinMultBadgeCleared: ['winMultiplierBadge.mjs'],
+  /* Hi-Lo Gamble — card-based hi-lo risk presenter (sole owner of 4 events). */
+  onHiLoStart:           ['hiLoGamble.mjs'],
+  onHiLoChoice:          ['hiLoGamble.mjs'],
+  onHiLoResolved:        ['hiLoGamble.mjs'],
+  onHiLoCollected:       ['hiLoGamble.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */

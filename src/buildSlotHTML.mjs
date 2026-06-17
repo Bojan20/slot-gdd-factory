@@ -425,6 +425,27 @@ import {
   emitCascadeBoosterCSS, emitCascadeBoosterMarkup, emitCascadeBoosterRuntime,
   resolveConfig as resolveCascadeBoosterConfig,
 } from './blocks/cascadeBooster.mjs';
+// Wave H16-H20 — Industry standard feature blocks (Wave 3)
+import {
+  emitSplitSymbolCSS, emitSplitSymbolMarkup, emitSplitSymbolRuntime,
+  resolveConfig as resolveSplitSymbolConfig,
+} from './blocks/splitSymbol.mjs';
+import {
+  emitNudgeReelCSS, emitNudgeReelMarkup, emitNudgeReelRuntime,
+  resolveConfig as resolveNudgeReelConfig,
+} from './blocks/nudgeReel.mjs';
+import {
+  emitRespinChargeCSS, emitRespinChargeMarkup, emitRespinChargeRuntime,
+  resolveConfig as resolveRespinChargeConfig,
+} from './blocks/respinCharge.mjs';
+import {
+  emitSyncReelsCSS, emitSyncReelsMarkup, emitSyncReelsRuntime,
+  resolveConfig as resolveSyncReelsConfig,
+} from './blocks/syncReels.mjs';
+import {
+  emitWinMultiplierBadgeCSS, emitWinMultiplierBadgeMarkup, emitWinMultiplierBadgeRuntime,
+  resolveConfig as resolveWinMultiplierBadgeConfig,
+} from './blocks/winMultiplierBadge.mjs';
 // Wave A8 — PWA installability (manifest + SW + a2hs prompt)
 import {
   emitPwaInstallabilityMarkup, emitPwaInstallabilityRuntime,
@@ -918,6 +939,12 @@ ${emitWildCollectionTrailCSS(resolveWildCollectionTrailConfig(model))}
 ${emitJackpotLadderRoomsCSS(resolveJackpotLadderRoomsConfig(model))}
 ${emitSuperchargedFsCSS(resolveSuperchargedFsConfig(model))}
 ${emitCascadeBoosterCSS(resolveCascadeBoosterConfig(model))}
+${/* Wave H16-H20 — Split Symbol / Nudge Reel / Respin Charge / Sync Reels / Win Mult Badge. */ ''}
+${emitSplitSymbolCSS(resolveSplitSymbolConfig(model))}
+${emitNudgeReelCSS(resolveNudgeReelConfig(model))}
+${emitRespinChargeCSS(resolveRespinChargeConfig(model))}
+${emitSyncReelsCSS(resolveSyncReelsConfig(model))}
+${emitWinMultiplierBadgeCSS(resolveWinMultiplierBadgeConfig(model))}
 ${/* Wave U10 — paytable modal (i-button + symbol roster + features). */ ''}
 ${emitPaytableCSS(resolvePaytableConfig(model))}
 ${emitSymbolInfoPopoverCSS(resolveSymbolInfoPopoverConfig(model))}
@@ -1100,6 +1127,12 @@ ${emitWildCollectionTrailMarkup(resolveWildCollectionTrailConfig(model))}
 ${emitJackpotLadderRoomsMarkup(resolveJackpotLadderRoomsConfig(model))}
 ${emitSuperchargedFsMarkup(resolveSuperchargedFsConfig(model))}
 ${emitCascadeBoosterMarkup(resolveCascadeBoosterConfig(model))}
+${/* Wave H16-H20 — markup hosts (most decorate-at-runtime; respinCharge has static meter). */ ''}
+${emitSplitSymbolMarkup(resolveSplitSymbolConfig(model))}
+${emitNudgeReelMarkup(resolveNudgeReelConfig(model))}
+${emitRespinChargeMarkup(resolveRespinChargeConfig(model))}
+${emitSyncReelsMarkup(resolveSyncReelsConfig(model))}
+${emitWinMultiplierBadgeMarkup(resolveWinMultiplierBadgeConfig(model))}
 ${/* Wave P8 — hot-reload indicator host (hidden until connected). */ ''}
 ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
 
@@ -1332,6 +1365,12 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitJackpotLadderRoomsRuntime(resolveJackpotLadderRoomsConfig(model))}
   ${emitSuperchargedFsRuntime(resolveSuperchargedFsConfig(model))}
   ${emitCascadeBoosterRuntime(resolveCascadeBoosterConfig(model))}
+  ${/* Wave H16-H20 — Split Symbol / Nudge Reel / Respin Charge / Sync Reels / Win Mult Badge */ ''}
+  ${emitSplitSymbolRuntime(resolveSplitSymbolConfig(model))}
+  ${emitNudgeReelRuntime(resolveNudgeReelConfig(model))}
+  ${emitRespinChargeRuntime(resolveRespinChargeConfig(model))}
+  ${emitSyncReelsRuntime(resolveSyncReelsConfig(model))}
+  ${emitWinMultiplierBadgeRuntime(resolveWinMultiplierBadgeConfig(model))}
   ${/* Wave A8 — PWA installability runtime (blob-URL SW register +
      * beforeinstallprompt + appinstalled + iOS detection). */ ''}
   ${emitPwaInstallabilityRuntime(resolvePwaInstallabilityConfig({ ...model, gameName: model.name }))}
