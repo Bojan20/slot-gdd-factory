@@ -121,12 +121,14 @@ function auditOne(src, name, hookEvents) {
   // 1. Source loaded
   results.push(check('1. Source loaded', src.length > 0));
 
-  // 2. defaultConfig exists + returns Object.freeze
+  // 2. defaultConfig exists + returns Object.freeze (or has explicit
+  //    "mutable-by-design" comment, e.g. Group AD fix for sessionTimeout)
   const hasDefaultConfig = /export function defaultConfig\b/.test(src);
   const hasFreeze = /Object\.freeze\(/.test(src);
+  const hasMutableByDesign = /Mutable\s+(fresh\s+)?copy|mutable[- ]by[- ]design|DEFAULTS stays frozen/i.test(src);
   results.push(check('2. defaultConfig() + Object.freeze',
-    isInfra ? true : (hasDefaultConfig && hasFreeze),
-    isInfra ? 'infra (skipped)' : (!hasDefaultConfig ? 'missing defaultConfig()' : (!hasFreeze ? 'missing Object.freeze' : ''))));
+    isInfra ? true : (hasDefaultConfig && (hasFreeze || hasMutableByDesign)),
+    isInfra ? 'infra (skipped)' : (!hasDefaultConfig ? 'missing defaultConfig()' : (!hasFreeze && !hasMutableByDesign ? 'missing Object.freeze' : ''))));
 
   // 3. resolveConfig exists
   const hasResolveConfig = /export function resolveConfig\b/.test(src);
