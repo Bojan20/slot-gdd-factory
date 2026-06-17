@@ -375,6 +375,31 @@ import {
   emitColorblindPatternsCSS, emitColorblindPatternsMarkup, emitColorblindPatternsRuntime,
   resolveConfig as resolveColorblindPatternsConfig,
 } from './blocks/colorblindPatterns.mjs';
+// Wave H6 — Bonus Climax Reveal (universal placard for bonus-entry events)
+import {
+  emitBonusClimaxRevealCSS, emitBonusClimaxRevealMarkup, emitBonusClimaxRevealRuntime,
+  resolveConfig as resolveBonusClimaxRevealConfig,
+} from './blocks/bonusClimaxReveal.mjs';
+// Wave H7 — Cell Level Upgrade (per-cell numeric meter + badge)
+import {
+  emitCellLevelUpgradeCSS, emitCellLevelUpgradeMarkup, emitCellLevelUpgradeRuntime,
+  resolveConfig as resolveCellLevelUpgradeConfig,
+} from './blocks/cellLevelUpgrade.mjs';
+// Wave H8 — Cell Overflow Counter (per-reel stack overflow badge)
+import {
+  emitCellOverflowCounterCSS, emitCellOverflowCounterMarkup, emitCellOverflowCounterRuntime,
+  resolveConfig as resolveCellOverflowCounterConfig,
+} from './blocks/cellOverflowCounter.mjs';
+// Wave H9 — Ambient Background Wheel (theme atmosphere visual)
+import {
+  emitAmbientBackgroundWheelCSS, emitAmbientBackgroundWheelMarkup, emitAmbientBackgroundWheelRuntime,
+  resolveConfig as resolveAmbientBackgroundWheelConfig,
+} from './blocks/ambientBackgroundWheel.mjs';
+// Wave H10 — Dual-Role Scatter (scatter-as-wild / scatter-as-pay observer)
+import {
+  emitDualRoleScatterCSS, emitDualRoleScatterMarkup, emitDualRoleScatterRuntime,
+  resolveConfig as resolveDualRoleScatterConfig,
+} from './blocks/dualRoleScatter.mjs';
 // Wave A8 — PWA installability (manifest + SW + a2hs prompt)
 import {
   emitPwaInstallabilityMarkup, emitPwaInstallabilityRuntime,
@@ -852,6 +877,16 @@ ${emitRtlLayoutCSS(resolveRtlLayoutConfig(model))}
 ${/* Wave H4 — Color-blind pattern overlay (WCAG 2.2 SC 1.4.1).
      Per-tier ::before pattern layer + chip toggle. 0-byte when disabled. */ ''}
 ${emitColorblindPatternsCSS(resolveColorblindPatternsConfig(model))}
+${/* Wave H6 — Bonus Climax Reveal placard (universal bonus-entry presenter). */ ''}
+${emitBonusClimaxRevealCSS(resolveBonusClimaxRevealConfig(model))}
+${/* Wave H7 — Cell Level Upgrade badge (per-cell numeric meter). */ ''}
+${emitCellLevelUpgradeCSS(resolveCellLevelUpgradeConfig(model))}
+${/* Wave H8 — Cell Overflow Counter (+N per-reel badge). */ ''}
+${emitCellOverflowCounterCSS(resolveCellOverflowCounterConfig(model))}
+${/* Wave H9 — Ambient Background Wheel (theme atmosphere visual). */ ''}
+${emitAmbientBackgroundWheelCSS(resolveAmbientBackgroundWheelConfig(model))}
+${/* Wave H10 — Dual-Role Scatter badge (★ per scatter cell). */ ''}
+${emitDualRoleScatterCSS(resolveDualRoleScatterConfig(model))}
 ${/* Wave U10 — paytable modal (i-button + symbol roster + features). */ ''}
 ${emitPaytableCSS(resolvePaytableConfig(model))}
 ${emitSymbolInfoPopoverCSS(resolveSymbolInfoPopoverConfig(model))}
@@ -1021,6 +1056,13 @@ ${/* W56 — aux multiplier reel mount slot (block runtime ensure-mounts here wh
 <div id="stormMultiplierReelMount" aria-hidden="true"></div>
 ${/* Wave H4 — Color-blind toggle chip (top-right by default). */ ''}
 ${emitColorblindPatternsMarkup(resolveColorblindPatternsConfig(model))}
+${/* Wave H6 — Bonus Climax overlay host (hidden until bonus event fires). */ ''}
+${emitBonusClimaxRevealMarkup(resolveBonusClimaxRevealConfig(model))}
+${/* Wave H7-H10 — runtime-only decorators / ambient layer host markup. */ ''}
+${emitCellLevelUpgradeMarkup(resolveCellLevelUpgradeConfig(model))}
+${emitCellOverflowCounterMarkup(resolveCellOverflowCounterConfig(model))}
+${emitAmbientBackgroundWheelMarkup(resolveAmbientBackgroundWheelConfig(model))}
+${emitDualRoleScatterMarkup(resolveDualRoleScatterConfig(model))}
 ${/* Wave P8 — hot-reload indicator host (hidden until connected). */ ''}
 ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
 
@@ -1229,6 +1271,23 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
      * Listens postSpin / onTumbleStep / onFsSpinResult to apply per-tier
      * data-cb-tier attribute on every cell. Pure presentation layer. */ ''}
   ${emitColorblindPatternsRuntime(resolveColorblindPatternsConfig(model))}
+  ${/* Wave H6 — Bonus Climax Reveal runtime (auto-wires onFsTrigger /
+     * onWheelSegmentChosen / onBonusBuyTierSelected / onCreditBucketRespinStart /
+     * onDailyJackpotAward → full-screen placard, dismissable via onSkipRequested
+     * phase=bonusClimax|any). Sole owner of onBonusClimax{Start,End}. */ ''}
+  ${emitBonusClimaxRevealRuntime(resolveBonusClimaxRevealConfig(model))}
+  ${/* Wave H7 — Cell Level Upgrade runtime (per-cell numeric meter; sole
+     * owner of onCellLevelUp + onCellLevelReset). */ ''}
+  ${emitCellLevelUpgradeRuntime(resolveCellLevelUpgradeConfig(model))}
+  ${/* Wave H8 — Cell Overflow Counter runtime (stack-overflow badge; sole
+     * owner of onCellOverflow). */ ''}
+  ${emitCellOverflowCounterRuntime(resolveCellOverflowCounterConfig(model))}
+  ${/* Wave H9 — Ambient Background Wheel runtime (preSpin spin-up + postSpin
+     * slow-down + bigWin/FS pulse; sole owner of onAmbientPhase). */ ''}
+  ${emitAmbientBackgroundWheelRuntime(resolveAmbientBackgroundWheelConfig(model))}
+  ${/* Wave H10 — Dual-Role Scatter runtime (postSpin / onTumbleStep / onFsTrigger
+     * decorator; sole owner of onDualRoleActivated). */ ''}
+  ${emitDualRoleScatterRuntime(resolveDualRoleScatterConfig(model))}
   ${/* Wave A8 — PWA installability runtime (blob-URL SW register +
      * beforeinstallprompt + appinstalled + iOS detection). */ ''}
   ${emitPwaInstallabilityRuntime(resolvePwaInstallabilityConfig({ ...model, gameName: model.name }))}

@@ -559,6 +559,18 @@ const EXPECTED_EMIT_OWNERS = {
    * route through colorblindPatterns.mjs which is the canonical state-of-
    * truth for `__SLOT_CB_PATTERNS_ON__`. */
   onCbPatternsToggle: ['colorblindPatterns.mjs'],
+  /* H6 bonusClimaxReveal — full-screen presenter for any bonus-entry event. */
+  onBonusClimaxStart: ['bonusClimaxReveal.mjs'],
+  onBonusClimaxEnd:   ['bonusClimaxReveal.mjs'],
+  /* H7 cellLevelUpgrade — per-cell numeric meter (sole owner of both events). */
+  onCellLevelUp:      ['cellLevelUpgrade.mjs'],
+  onCellLevelReset:   ['cellLevelUpgrade.mjs'],
+  /* H8 cellOverflowCounter — stack-overflow per-reel badge. */
+  onCellOverflow:     ['cellOverflowCounter.mjs'],
+  /* H9 ambientBackgroundWheel — ambient layer phase transitions. */
+  onAmbientPhase:     ['ambientBackgroundWheel.mjs'],
+  /* H10 dualRoleScatter — scatter-as-wild / scatter-as-pay activation. */
+  onDualRoleActivated:['dualRoleScatter.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */

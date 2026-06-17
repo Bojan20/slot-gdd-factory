@@ -333,6 +333,35 @@ export const HOOK_EVENTS = Object.freeze([
    *   Consumers: settingsPanel mirrors the state row; any UI that wants to
    *   reflect the colour-independence mode. */
   'onCbPatternsToggle',
+  /* Wave H6: Bonus Climax Reveal (presenter for any bonus-entry event)
+   * onBonusClimaxStart {kind, label, durationMs} — fires when the full-
+   *   screen placard appears. `kind` ∈ {free_spins, wheel, bonus_buy,
+   *   hold_and_win, jackpot, pick, generic}. Owner: bonusClimaxReveal.mjs.
+   * onBonusClimaxEnd {kind, reason} — fires when placard dismisses;
+   *   reason ∈ {natural, skipped, manual}. Owner: bonusClimaxReveal.mjs. */
+  'onBonusClimaxStart',
+  'onBonusClimaxEnd',
+  /* Wave H7: Cell Level Upgrade — per-cell numeric meter
+   * onCellLevelUp {reel, row, sym, fromLevel, toLevel, source} — fires
+   *   when a cell's tracked level increments. Owner: cellLevelUpgrade.mjs.
+   * onCellLevelReset {scope, source} — fires when the level map is
+   *   cleared (per round / FS / manual). Owner: cellLevelUpgrade.mjs. */
+  'onCellLevelUp',
+  'onCellLevelReset',
+  /* Wave H8: Cell Overflow Counter — stack overflow per reel
+   * onCellOverflow {reel, count, total} — fires per reel after settle
+   *   when the symbol stack exceeds the visible rows. Owner:
+   *   cellOverflowCounter.mjs. */
+  'onCellOverflow',
+  /* Wave H9: Ambient Background Wheel — theme atmosphere visual
+   * onAmbientPhase {phase, speedMul} — fires when ambient layer changes
+   *   speed ('idle' | 'spinning' | 'win'). Owner: ambientBackgroundWheel.mjs. */
+  'onAmbientPhase',
+  /* Wave H10: Dual-Role Scatter — scatter that doubles as wild or pay
+   * onDualRoleActivated {reel, row, sym, role} — fires per dual-role
+   *   activation (role ∈ 'wild' | 'pay' | 'scatter'). Owner:
+   *   dualRoleScatter.mjs. */
+  'onDualRoleActivated',
 ]);
 
 /* Wave U4: canonical autoplay stop reasons. */
