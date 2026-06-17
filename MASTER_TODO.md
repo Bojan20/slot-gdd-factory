@@ -985,6 +985,55 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## 🧪 W61.A — Static LEGO combination probe (✅ LANDED — 2026-06-17)
+
+> **Cilj**: `lego-gate.mjs` 7 per-block invariants ne audituje EDGE matrix između blokova (emit↔listen graph). Tihi drift (orphan declaration, dead listener, duplicate, dead subscription) ship-uje green ali korumpira runtime. W61.A statički probe 4 edges + grandfather 11 trenutnih signala (shrinks-only).
+
+### 1. Šta je zatvoreno
+
+| Fajl | Tip | Linije | Funkcija |
+|:--|:-:|:-:|:--|
+| `tools/_lego-combination-probe.mjs` | **NEW** | 364 | Static analysis (no Playwright); 4 edge checks (A1 manifest↔source parity · A2 hook universe sanity · A3 in-block duplicate · A4 canonical density); strip JSDoc komentare ali KEEPS template-string literals; writes `reports/lego-combination-probe.json` |
+| `tests/blocks/_legoCombinationProbe.test.mjs` | NEW | 117 | **25/25** (smoke + JSON report shape + canonical hook list pin + grandfathered sizes shrinks-only + honest scope) |
+| `package.json` | M | +1/-1 | test:blocks chain extends |
+
+### 2. First-run findings (11 real · 0 false-positive posle strip)
+
+| Kategorija | # | Detalji |
+|:--|:-:|:--|
+| A2 STVARNI dead listeners | 7 | onBigWinTier · onEnergyTick · onFsRetrigger · onBonusPickResolved · onBaseEnter · onRoundEnd · onSlamStop |
+| A3 in-block duplicates | 3 | holdAndWin (FSM-branch idempotent) · rewardChest (template-string conditional) · spinControl (two distinct CBs) — sve legit |
+| A1 false positive | 1 | hookBus.mjs JSDoc cite waitFor('onSpinResult') example |
+| A4 canonical density | 0 ✅ | Svi 7 spin-lifecycle hooks imaju ≥ 1 listener |
+
+### 3. Grandfather strategy (shrinks-only)
+
+Dead-hook follow-up hints (svaki ima eksplicitan path do fix-a):
+- `onBigWinTier` → rename `onBigWinTierEntered` (coinShower, rewardChest)
+- `onEnergyTick` → wire emitter or remove listener
+- `onFsRetrigger` → fold into `onFsTrigger` (fsProgressBar)
+- `onBonusPickResolved` → rename `onBonusExit` (pickBonusReveal)
+- `onBaseEnter` → add FSM phase-change broadcaster or remove
+- `onRoundEnd` → rename `postSpin` + FSM guard (stickyWild)
+- `onSlamStop` → rename `onSlamComplete` (stormMultiplierReel)
+
+### 4. Hash pin
+
+| SHA | Šta | Push |
+|:-:|:--|:-:|
+| `83fde72` | **W61.A** — static probe 364 LOC + 117 LOC test + 4 edges + 11 grandfathered + 25/25 unit | ✅ |
+
+### 5. Honest follow-up
+
+| Stavka | Status |
+|:--|:--|
+| ✅ Layer A static-only | runs u test:blocks chain |
+| ⏳ Layer B (HookBus event-order via Playwright) | wave after dead-hook list shrinks |
+| ⏳ Layer C (block-pair compatibility matrix) | wave after B baseline |
+| ⏳ 7 dead hooks → atomic landings | W61.A.fix.1-7 candidates |
+
+---
+
 ## 🏆 ULTIMATE CLOSE-OUT 2026-06-17 — 7 atoma + 6 new tests + LEGO 7/7 + sharpness 5/5
 
 > **Cilj**: Završiti u jednom krugu sve atomic follow-ups iz `~/Projects/slot-gdd-factory` backlog-a (osim math/audio gated): manual spin-pace floor (DE.3a), IndexedDB §6e sweep (DE.3b), NL §33 persistent cool-off (NL.3), 3 nova member-state gate-a (FR/IT/ES), W3.2 deprecated knobs cleanup. Sve to + ultimate QA u jednom commit-sequence-u.
