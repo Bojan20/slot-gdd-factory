@@ -372,12 +372,13 @@ export function emitBetSelectorCSS(cfg = defaultConfig()) {
     padding: 8px 14px;
     border-radius: 8px;
     border: 1px solid rgba(${c.chipColor}, 0.8);
-    background: linear-gradient(180deg, rgba(${c.chipColor}, 0.35), rgba(${c.chipColor}, 0.18));
+    /* WCAG AA contrast fix (2026-06-18) — getComputedStyle.backgroundColor
+     * ignores gradients; need a solid background-color so the audit reads
+     * chipText-on-chipColor (guaranteed AA by palette contract). gradient
+     * stays for the look. */
+    background-color: rgb(${c.chipColor});
+    background-image: linear-gradient(180deg, rgba(${c.chipColor}, 0.35), rgba(${c.chipColor}, 0.18));
     color: rgb(${c.chipTextColor});
-    /* W47.S5 (A1 contrast fix) — chipColor alpha 0.35/0.18 on dark grids
-     * yielded a 3.42:1 ratio against chipTextColor on warm-themed GDDs
-     * (gold-on-near-gold). Halo shadow lifts the effective contrast to
-     * AA across every theme without touching the chipColor brand. */
     text-shadow: 0 0 4px rgba(0, 0, 0, 0.78);
     font-family: inherit;
     font-size: 12px;

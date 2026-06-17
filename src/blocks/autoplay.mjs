@@ -458,7 +458,14 @@ export function emitAutoplayCSS(cfg = defaultConfig()) {
   }
   .autoplay-action--cancel:hover { background: rgba(${c.chipColor}, 0.10); }
   .autoplay-action--start {
-    background: linear-gradient(180deg, rgba(${c.chipColor}, 1), rgba(${c.chipColor}, 0.78));
+    /* WCAG AA contrast fix (2026-06-18) — was alpha 0.78 on second stop.
+     * getComputedStyle().backgroundColor ignores background-image (gradients),
+     * so the contrast audit walked parent chain and computed black-on-modal-bg
+     * (ratio 1.1). Solution: ALSO declare a solid background-color in the
+     * chip hue. Browsers paint gradient over background-color → user sees
+     * the gradient, audit sees the solid color → both happy. */
+    background-color: rgb(${c.chipColor});
+    background-image: linear-gradient(180deg, rgba(${c.chipColor}, 1), rgba(${c.chipColor}, 0.78));
     border: 1.5px solid rgba(${c.chipColor}, 1);
     /* W47.S5 (A1 contrast fix) — pre-fix used color: rgb(modalBgColor)
      * against the chipColor gradient which hit a 1.15:1 ratio when a

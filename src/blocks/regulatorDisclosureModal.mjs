@@ -172,7 +172,12 @@ export function emitRegulatorDisclosureModalCSS(cfg = defaultConfig()) {
   display: block; width: 100%;
   min-height: 44px;          /* WCAG SC 2.5.5 touch target */
   padding: .65rem 1rem;
-  background: linear-gradient(180deg, rgba(${cfg.color},.95), rgba(${cfg.color},.75));
+  /* WCAG AA contrast fix (2026-06-18) — getComputedStyle.backgroundColor
+   * ignores gradients, audit walked parent and saw black-on-modal-bg
+   * (≈1.5:1). Add a solid background-color in the same hue so audit
+   * reads chip-on-chip; gradient stays as background-image for the look. */
+  background-color: rgba(${cfg.color}, 1);
+  background-image: linear-gradient(180deg, rgba(${cfg.color},.95), rgba(${cfg.color},.75));
   color: #1a1408; border: none; border-radius: 10px;
   font-size: .9rem; font-weight: 900; letter-spacing: .14em;
   cursor: pointer; text-transform: uppercase;

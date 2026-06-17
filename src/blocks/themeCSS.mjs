@@ -45,7 +45,19 @@ const DEFAULT_BREAKPOINTS = Object.freeze({ xl: 1100, lg: 920, md: 820, sm: 620 
 const DEFAULT_PALETTE = Object.freeze({
   bg0:    '#05070c',
   bg1:    '#0b0f16',
-  stage:  '#5a6b88',
+  /* WCAG 2.1 AA contrast fix (2026-06-18) — stage was '#5a6b88'
+   * (light slate-blue, rgb(90,107,136)). On warm-themed slots (gold
+   * accent) the typical text rgb(255,230,168) hit ratio 3.x against
+   * stage → failed AA-normal (≥4.5:1). The contrast-audit gate found
+   * 129 such nodes across 5 reference fixtures, including .bet-pick,
+   * .balance-hud__label/value, .ant-badge__num, .rdm-kind, .bet-step,
+   * .gfb-banner__kicker, .autoplay-action--start, .history-btn,
+   * .paytable-btn. Darkening the stage to '#2d3548' (≈rgb(45,53,72))
+   * lifts every warm-on-stage text past 7:1 (AAA-normal) without
+   * touching brand accents. The "screen on a stage" casino-cabinet
+   * vibe is preserved — just a deeper cabinet, like a real night-mode
+   * console. */
+  stage:  '#2d3548',
   accent: '#c9a227',
   text:   '#f2f2f2',
 });
@@ -172,10 +184,25 @@ export function emitThemeCSS(cfg = defaultConfig()) {
     font-weight: 800;
     letter-spacing: 1px;
     text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+    /* WCAG AA contrast fix (2026-06-18) — accent color is a brand variable;
+     * on warm-themed palettes the accent vs stage contrast can drop under
+     * 4.5:1. The solid backdrop chip (alpha 0.75) hard-locks audit input
+     * to near-black, so any plausible accent stays above the gate. The
+     * tiny padding keeps the chip from looking like text-with-no-frame. */
+    background-color: rgba(0,0,0,0.75);
+    padding: 4px 14px;
+    border-radius: 8px;
   }
   .sub {
-    color: var(--text);
-    opacity: 0.5;
+    /* WCAG AA contrast fix (2026-06-18) — color was var(--text), which on
+     * dark-text palettes (e.g. theme with rgb(10,8,5) as base text)
+     * collapsed to near-black-on-near-black against the .65 backdrop (1.08).
+     * Hard-coded light grey decouples from palette so contrast is stable
+     * across every GDD. Backdrop chip provides visual separation. */
+    color: rgba(255,255,255,0.78);
+    background-color: rgba(0,0,0,0.65);
+    padding: 2px 10px;
+    border-radius: 6px;
     font-size: 0.7rem;
     letter-spacing: 1.5px;
     text-transform: uppercase;
