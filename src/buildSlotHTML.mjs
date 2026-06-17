@@ -476,6 +476,10 @@ import {
   emitRetriggerEscalatorCSS, emitRetriggerEscalatorMarkup, emitRetriggerEscalatorRuntime,
   resolveConfig as resolveRetriggerEscalatorConfig,
 } from './blocks/retriggerEscalator.mjs';
+import {
+  emitRetriggerMeterCSS, emitRetriggerMeterMarkup, emitRetriggerMeterRuntime,
+  resolveConfig as resolveRetriggerMeterConfig,
+} from './blocks/retriggerMeter.mjs';
 // Wave A8 — PWA installability (manifest + SW + a2hs prompt)
 import {
   emitPwaInstallabilityMarkup, emitPwaInstallabilityRuntime,
@@ -984,6 +988,7 @@ ${emitStreakBonusCSS(resolveStreakBonusConfig(model))}
 ${/* Wave H27 + H30 — Payline Dimmer + Retrigger Escalator. */ ''}
 ${emitPaylineDimmerCSS(resolvePaylineDimmerConfig(model))}
 ${emitRetriggerEscalatorCSS(resolveRetriggerEscalatorConfig(model))}
+${emitRetriggerMeterCSS(resolveRetriggerMeterConfig(model))}
 ${/* Wave U10 — paytable modal (i-button + symbol roster + features). */ ''}
 ${emitPaytableCSS(resolvePaytableConfig(model))}
 ${emitSymbolInfoPopoverCSS(resolveSymbolInfoPopoverConfig(model))}
@@ -1181,6 +1186,7 @@ ${emitStreakBonusMarkup(resolveStreakBonusConfig(model))}
 ${/* Wave H27 + H30 — markup hosts (Dimmer decorates runtime; Escalator has static badge). */ ''}
 ${emitPaylineDimmerMarkup(resolvePaylineDimmerConfig(model))}
 ${emitRetriggerEscalatorMarkup(resolveRetriggerEscalatorConfig(model))}
+${emitRetriggerMeterMarkup(resolveRetriggerMeterConfig(model))}
 ${/* Wave P8 — hot-reload indicator host (hidden until connected). */ ''}
 ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
 
@@ -1428,6 +1434,7 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${/* Wave H27 + H30 — Payline Dimmer + Retrigger Escalator */ ''}
   ${emitPaylineDimmerRuntime(resolvePaylineDimmerConfig(model))}
   ${emitRetriggerEscalatorRuntime(resolveRetriggerEscalatorConfig(model))}
+  ${emitRetriggerMeterRuntime(resolveRetriggerMeterConfig(model))}
   ${/* Wave A8 — PWA installability runtime (blob-URL SW register +
      * beforeinstallprompt + appinstalled + iOS detection). */ ''}
   ${emitPwaInstallabilityRuntime(resolvePwaInstallabilityConfig({ ...model, gameName: model.name }))}
