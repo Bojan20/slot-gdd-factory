@@ -1,17 +1,43 @@
-import { applyGridProfile } from '../registry/gridProfile.mjs';
 /**
  * src/blocks/bonusBuy.mjs
  *
  * Wave K4 — Bonus Buy button (direct purchase into FS bonus).
  *
- * When GDD declares a `bonus_buy` feature, this block emits:
- *   • A "Buy Bonus" button in the footer
- *   • Runtime listener that forces an FS trigger on click
- *   • Cost label baked from GDD (default 100x current bet)
+ * @module bonusBuy
  *
- * Math layer is placeholder — Phase 2 will wire real bet × cost
- * deduction. For now: click forces FORCE_TRIGGER + N scatters.
+ * Purpose:
+ *   When GDD declares a `bonus_buy` feature, this block emits a "Buy Bonus"
+ *   button in the footer (default `enabled: false`) plus a runtime click listener that forces
+ *   a free-spins trigger by injecting N guaranteed scatters into the next spin.
+ *   The button label carries the cost-multiplier baked from the GDD
+ *   (default 75× current bet — industry-median midpoint).
+ *
+ * Industry-reference (vendor-neutral):
+ *   "Bonus buy" is now a cross-vendor industry baseline feature in
+ *   non-restricted jurisdictions: a single button that costs 50-100× the
+ *   current bet and guarantees a free-spins entry on the next spin. The
+ *   block models the visual + control surface only; the math layer
+ *   (real-cash deduction, RTP rebalance) lands with PAR hot-swap in
+ *   Phase 2.
+ *
+ * Public API:
+ *   defaultConfig()                    → frozen safe defaults
+ *   resolveConfig(model)               → merge defaults with GDD override
+ *   emitBonusBuyCSS(cfg)               → CSS string (button styles)
+ *   emitBonusBuyMarkup(cfg)            → HTML string (button host)
+ *   emitBonusBuyRuntime(cfg)           → runtime JS string for orchestrator
+ *
+ * Lifecycle (HookBus contract):
+ *   subscribes:  — (none — purely user-input driven)
+ *   emits:       onBonusBuyRequested { scatterCount, costX }
+ *
+ * a11y / perf:
+ *   • Button is a real <button> with aria-label + visible focus ring.
+ *   • Optional `confirmMessage` GDD knob → confirm() before commit.
+ *   • CSS / Markup / Runtime emitters all gate on `cfg.enabled`.
+ *   • Re-arm guard (`rearmMs`) prevents double-click spam.
  */
+import { applyGridProfile } from '../registry/gridProfile.mjs';
 
 export function defaultConfig() {
   return Object.freeze({
@@ -62,7 +88,7 @@ function _resolveBonusBuyJurisdiction(model) {
 
 export function resolveConfig(model = {}) {
   /* Wave UD — baseline → per-kind context override → explicit GDD. */
-  let cfg = applyGridProfile('bonusBuy', defaultConfig(), model);
+  let cfg = { ...applyGridProfile('bonusBuy', defaultConfig(), model) };
   const m = model.bonusBuy || {};
   const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
   if (m.enabled != null) cfg.enabled = !!m.enabled;

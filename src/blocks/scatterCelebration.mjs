@@ -1,17 +1,46 @@
-import { applyGridProfile } from '../registry/gridProfile.mjs';
 /**
- * Slot GDD Factory · scatterCelebration BLOCK
+ * src/blocks/scatterCelebration.mjs
  *
- * Plays AFTER all reels have settled with a trigger-count of scatters, and
- * BEFORE the FS_INTRO placard fades in. Composable with every mechanic —
- * pure CSS keyframes scoped to `.cell--scatter-celebrate`, triggered by JS
- * `playScatterCelebration()` returning a Promise.
+ * Wave H03 — Scatter celebration block.
  *
- * Reference cadence: industry-standard scatter-celebration pace — total ~1500ms
- * = 3 pulse-glow cycles × 500ms each. Brightness pulse + soft gold drop-
- * shadow, NO transform — the scatter glyph stays strictly inside its reel
- * cell, never crossing the frame mask. Non-scatter cells dim to 0.18
- * opacity so the eye locks on the trigger via pure luminance contrast.
+ * @module scatterCelebration
+ *
+ * Purpose:
+ *   Plays AFTER all reels have settled with a trigger-count of scatters,
+ *   and BEFORE the FS_INTRO placard fades in. Composable with every
+ *   mechanic — pure CSS keyframes scoped to `.cell--scatter-celebrate`,
+ *   triggered by JS `playScatterCelebration()` returning a Promise.
+ *
+ * Industry-reference (vendor-neutral):
+ *   Industry baseline scatter-celebration pace — total ~1500ms = 3
+ *   pulse-glow cycles × 500ms each. Brightness pulse + soft gold drop-
+ *   shadow, NO transform — the scatter glyph stays strictly inside its
+ *   reel cell, never crossing the frame mask. Non-scatter cells dim to
+ *   0.18 opacity so the eye locks on the trigger via pure luminance
+ *   contrast. This pacing matches the certified vendor-neutral baseline
+ *   documented in the GDD corpus.
+ *
+ * Public API:
+ *   defaultConfig()                    → frozen safe defaults
+ *   resolveConfig(model)               → merge defaults with GDD override
+ *   emitScatterCelebrationCSS(model)   → CSS string (keyframes + classes)
+ *   emitScatterCelebrationRuntime(model)→ runtime JS string
+ *
+ * Runtime contract (after emitted JS executes):
+ *   findScatterCellsOnGrid()           → { host, cells } locator
+ *   playScatterCelebration({ durationMs? }) → Promise<void>
+ *
+ * Lifecycle (HookBus contract):
+ *   subscribes:  onSpinResult / postSpin → trigger celebration if scatters
+ *                onForceSkip            → cancel via cancellation token
+ *   emits:       — (no new events; pure UX effect)
+ *
+ * a11y / perf:
+ *   • Pure CSS keyframes (no transform, no layout thrash) — cheap paint.
+ *   • Honors prefers-reduced-motion: shortened brightness ratio + halo.
+ *   • Reduced-motion knobs (`reducedMotionPeakRatio`, etc.) exposed via
+ *     GDD config — never hardcoded.
+ *   • CSS emit gates on `cfg.enabled` (empty string when disabled).
  *
  * GDD-driven configuration (consumed from `model.scatterCelebration`):
  *   enabled       boolean                                         (default true)
@@ -45,6 +74,7 @@ import { applyGridProfile } from '../registry/gridProfile.mjs';
  * Runtime dependencies (must exist in enclosing scope):
  *   grid, FREESPINS, RECT_REELS, ROWS
  */
+import { applyGridProfile } from '../registry/gridProfile.mjs';
 
 const DEFAULTS = Object.freeze({
   enabled: true,

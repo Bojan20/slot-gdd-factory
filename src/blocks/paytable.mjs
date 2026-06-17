@@ -1,3 +1,58 @@
+/**
+ * src/blocks/paytable.mjs
+ *
+ * Wave U10 — Paytable modal block.
+ *
+ * @module paytable
+ *
+ * Purpose:
+ *   Industry-standard pattern (every certified slot ships one): an "i" / "?"
+ *   button on the hub opens a full-screen modal that lists every symbol,
+ *   its payout grid (3-of-a-kind / 4OAK / 5OAK), wild substitution rules,
+ *   and a feature summary (FS, multiplier, gamble, hold-and-win, etc).
+ *   The modal is regulator-mandated for MGA / UKGC / NJ certification —
+ *   the player must be able to inspect the math BEFORE wagering.
+ *   Real-cash payouts compose with betSelector: when bet changes, the
+ *   "X PER LINE @ €Y" column refreshes automatically (no math here —
+ *   pure display of `payout × bet` formatted as currency).
+ *
+ * Industry-reference (vendor-neutral):
+ *   The "info / paytable / help" pane is an industry baseline expectation
+ *   shared across all certified slot vendors and required by every Tier-1
+ *   regulator. This block is the vendor-neutral generalization captured as
+ *   a reference baseline; no specific vendor styling is implied.
+ *
+ * Public API:
+ *   defaultConfig()                    → frozen safe defaults
+ *   resolveConfig(model)               → merge defaults with GDD override
+ *   emitPaytableCSS(cfg)               → CSS string (modal + chip styles)
+ *   emitPaytableMarkup(cfg, model)     → HTML string (chip + modal scaffold)
+ *   emitPaytableRuntime(cfg, model)    → runtime JS string for orchestrator
+ *
+ * Runtime contract (after emitted JS executes):
+ *   paytableShow() / paytableHide() / paytableToggle() / paytableIsOpen()
+ *   PAYTABLE_STATE on window
+ *
+ * Lifecycle (HookBus contract):
+ *   subscribes:  onBetChanged    → refresh real-cash column if open
+ *                preSpin         → auto-hide if open
+ *                onFsTrigger     → auto-hide (FS overlay owns the screen)
+ *                onAutoplayStart → auto-hide (autoplay session takes over)
+ *   emits:       — (none — player-driven UI pane only)
+ *
+ * Composition contract:
+ *   • Reads `model.symbols.{high,mid,low,specials}` for the symbol roster.
+ *   • Reads `model.features[]` for the feature summary.
+ *   • Reads `model.paytable` (if present) for explicit per-symbol payouts;
+ *     falls back to a neutral linear curve when absent.
+ *   • Reads `window.__SLOT_BET__` (Wave U5 betSelector) for real-cash.
+ *
+ * a11y / perf:
+ *   • Modal exposes role="dialog" + aria-modal + aria-labelledby.
+ *   • ESC + backdrop close (configurable via cfg knobs).
+ *   • CSS / Markup / Runtime emitters all gate on `cfg.enabled`.
+ *   • Honors prefers-reduced-motion on open/close transitions.
+ */
 import { applyGridProfile } from '../registry/gridProfile.mjs';
 import { RAIL_SLOT_OFFSETS, RAIL_Z_INDEX } from '../registry/utilityRail.mjs';
 
@@ -10,59 +65,6 @@ const TIER_COLORS = {
   MP: '126,200,227',
   LP: '210,149,96',
 };
-
-/**
- * src/blocks/paytable.mjs
- *
- * Wave U10 — Paytable modal block.
- *
- * Industry-standard pattern (every certified slot ships one):
- *   • An "i" / "?" button somewhere on the hub opens a full-screen modal
- *     that lists every symbol, its payout grid (3-of-a-kind / 4OAK / 5OAK),
- *     wild substitution rules, and a feature summary (FS, multiplier,
- *     gamble, hold-and-win, etc).
- *   • The modal is regulator-mandated for MGA / UKGC / NJ certification —
- *     the player must be able to inspect the math BEFORE wagering.
- *   • Real-cash payouts compose with betSelector: when bet changes, the
- *     "X PER LINE @ €Y" column refreshes automatically (no math here —
- *     pure display of `payout × bet` formatted as currency).
- *
- * Lifecycle (HookBus contract):
- *   onBetChanged → refresh real-cash column if modal currently visible
- *   preSpin      → auto-hide if open (spinning while modal is up = bad UX)
- *   onFsTrigger  → auto-hide (FS overlay owns the screen)
- *   onAutoplayStart → auto-hide (autoplay session takes over)
- *
- * The block does NOT emit any new HookBus events — it's a player-driven UI
- * pane that composes with bet + spin lifecycle but doesn't publish intent.
- *
- * Composition contract:
- *   • Reads `model.symbols.{high,mid,low,specials}` for the symbol roster.
- *   • Reads `model.features[]` for the feature summary.
- *   • Reads `model.paytable` (if present) for explicit per-symbol payouts;
- *     falls back to a neutral linear curve when absent.
- *   • Reads `window.__SLOT_BET__` (Wave U5 betSelector) for real-cash.
- *
- * Bake-time config (resolved from `model.paytable` UI knobs; the math
- * payouts live in `model.paytable.symbols` separately if provided):
- *   { enabled, chipLabel, chipColor, chipTextColor,
- *     modalBgColor, modalAccentColor,
- *     showFeaturesList, showWildRules, showLineMap,
- *     closeOnBackdrop, closeOnEscape, autoHideOnSpin,
- *     ariaLabel }
- *
- * Public API (server-side, ES module):
- *   defaultConfig() / resolveConfig(model)
- *   emitPaytableCSS(cfg)
- *   emitPaytableMarkup(cfg, model)
- *   emitPaytableRuntime(cfg, model)
- *
- * Runtime contract (after emitted JS executes):
- *   paytableShow() / paytableHide() / paytableToggle() / paytableIsOpen()
- *   PAYTABLE_STATE on window
- *
- * Runtime dependencies: HookBus, document, requestAnimationFrame.
- */
 
 export function defaultConfig() {
   return Object.freeze({
@@ -93,7 +95,7 @@ export function defaultConfig() {
 
 export function resolveConfig(model = {}) {
   /* Wave UD — baseline → per-kind context override → explicit GDD. */
-  const cfg = applyGridProfile('paytable', defaultConfig(), model);
+  const cfg = { ...applyGridProfile('paytable', defaultConfig(), model) };
   const m = (model && model.paytable) || {};
 
   if (m.enabled != null) cfg.enabled = !!m.enabled;

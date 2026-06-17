@@ -1,17 +1,44 @@
-import { applyGridProfile } from '../registry/gridProfile.mjs';
 /**
  * src/blocks/anteBet.mjs
  *
  * Wave K5 — Ante Bet toggle (+25% bet, doubled trigger probability).
  *
- * When GDD declares an `ante_bet` feature, this block emits:
- *   • A toggle switch in the footer ("ANTE BET +25%")
- *   • Runtime state flag `window.ANTE_BET_ON`
- *   • Cost-multiplier baked from GDD (default 1.25)
+ * @module anteBet
  *
- * Math layer (real bet × 1.25, scatter weight doubling) lands with
- * PAR hot-swap injector — Phase 2. For now: toggle is visual + flag.
+ * Purpose:
+ *   When GDD declares an `ante_bet` feature, this block emits an opt-in
+ *   footer toggle (default `enabled: false`) that raises the cost-per-spin by a configured multiplier
+ *   (industry baseline 1.25× = +25 %) and, in exchange, doubles the
+ *   scatter/trigger probability. The toggle's runtime state is exposed on
+ *   `window.ANTE_BET_ON` for any downstream math layer to consume. The
+ *   visual + flag layer is complete here; real bet deduction lands with the
+ *   PAR hot-swap injector in Phase 2.
+ *
+ * Industry-reference (vendor-neutral):
+ *   "Ante bet" / "raise the stakes" is a regulator-friendly cross-vendor
+ *   pattern: a single boolean knob that multiplies the wager and doubles
+ *   the trigger weight, leaving RTP unchanged when math is recomputed
+ *   correctly. The 1.25× baseline is the modal value across the industry.
+ *
+ * Public API:
+ *   defaultConfig()                    → frozen safe defaults
+ *   resolveConfig(model)               → merge defaults with GDD override
+ *   emitAnteBetCSS(cfg)                → CSS string (toggle pill styles)
+ *   emitAnteBetMarkup(cfg)             → HTML string (toggle pill)
+ *   emitAnteBetRuntime(cfg)            → runtime JS string for orchestrator
+ *
+ * Lifecycle (HookBus contract):
+ *   subscribes:  — (none — purely user-input driven)
+ *   emits:       onAnteBetChanged { on, costMult, triggerMult }
+ *
+ * a11y / perf:
+ *   • Toggle exposes role="switch" + aria-checked + keyboard activation.
+ *   • CSS is gated by `cfg.enabled` (returns '' when disabled) so the
+ *     disabled block has zero paint cost.
+ *   • All durations / sizes hoisted into `ANTE_BET_TOKENS` (0 magic
+ *     numbers); honors prefers-reduced-motion via shared theme tokens.
  */
+import { applyGridProfile } from '../registry/gridProfile.mjs';
 
 /* Wave AL-6 — design tokens hoisted from emitted CSS (0 magic numbers). */
 const ANTE_BET_TOKENS = {
@@ -51,7 +78,7 @@ export function defaultConfig() {
 
 export function resolveConfig(model = {}) {
   /* Wave UD — baseline → per-kind context override → explicit GDD. */
-  let cfg = applyGridProfile('anteBet', defaultConfig(), model);
+  let cfg = { ...applyGridProfile('anteBet', defaultConfig(), model) };
   const m = model.anteBet || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (Number.isFinite(m.costMultiplier)) cfg.costMultiplier = clampFloat(m.costMultiplier, 1.01, 5);
