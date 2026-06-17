@@ -96,10 +96,10 @@ try {
       'hash #paytable renders detail header',
       `got "${detailName}"`);
 
-  /* 4a. Detail pane has all 7 cards (Z6 added actions card, Z5 replaced
-         the stub with a live HookBus log card) */
+  /* 4a. Detail pane has all 8 cards (Z6 added actions, Z5 added live log,
+         Z.2 added live demo iframe card) */
   const cards = await page.locator('.play-detail-grid .play-card').count();
-  log(cards === 7, 'detail pane has 7 cards (API/listens/emits/files/config/actions/live)',
+  log(cards === 8, 'detail pane has 8 cards (API/listens/emits/files/config/actions/live/demo)',
       `got ${cards}`);
 
   /* 4a.bis — Z6 quick-action buttons + Z5 live-log buttons present */
@@ -130,15 +130,19 @@ try {
       'window.BlockPlayground.listPresets() exposes canonical entries',
       `got ${presetIds.length} presets`);
 
-  /* 4a.six — preset click without HookBus shows warn pill + auto-restores */
+  /* 4a.six — preset click WITH demo iframe HookBus available (Z.2 always
+   * loads block runtime in iframe → iframe.contentWindow.HookBus exists,
+   * so playground.runPreset() falls through to that bus and NO warn pill
+   * is shown). Test asserts the happy-path: 0 warn buttons after click. */
   await page.click('button[data-preset-id="preSpinBase"]');
   await page.waitForTimeout(80);
   const warnPill = await page.locator('button.play-btn-warn').count();
-  log(warnPill === 1, 'preset click without HookBus shows ⚠ warn state',
-      `expected 1 warn button, got ${warnPill}`);
+  log(warnPill === 0,
+      'preset click with demo iframe HookBus does NOT raise warn pill',
+      `expected 0 (iframe has HookBus), got ${warnPill}`);
   await page.waitForTimeout(1700);
   const warnGone = await page.locator('button.play-btn-warn').count();
-  log(warnGone === 0, 'warn state auto-restores after 1.5s',
+  log(warnGone === 0, 'warn state cleared (or never set) after 1.5s',
       `expected 0, got ${warnGone}`);
 
   /* 4a.sev — preset round-trip with a stub HookBus → ✓ Fired pill + log row */
