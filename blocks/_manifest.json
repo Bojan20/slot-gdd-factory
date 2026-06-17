@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-16T23:26:38.719Z",
+  "generatedAt": "2026-06-17T00:07:05.363Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 88,
+  "totalBlocks": 89,
   "blocks": [
     {
       "name": "anteBet",
@@ -1713,6 +1713,32 @@
         "haloColor": "180,120,255"
       },
       "loc": 260
+    },
+    {
+      "name": "netherlandsComplianceGate",
+      "file": "src/blocks/netherlandsComplianceGate.mjs",
+      "testFile": "tests/blocks/netherlandsComplianceGate.test.mjs",
+      "category": "uncategorised",
+      "description": "W58.J-NL — NL KSA (Wet kansspelen op afstand) compliance gate.",
+      "exports": [
+        "NL_COOL_OFF_HOURS_BOUNDS",
+        "NL_COOL_OFF_HOURS_DEFAULT",
+        "defaultConfig",
+        "emitNetherlandsComplianceGateCSS",
+        "emitNetherlandsComplianceGateRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onCoolOffEnforced",
+        "onCruksCheckRequired"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "jurisdiction": null,
+        "coolOffHours": 24
+      },
+      "loc": 184
     },
     {
       "name": "netLossIndicator",

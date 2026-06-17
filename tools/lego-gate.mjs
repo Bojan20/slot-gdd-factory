@@ -100,6 +100,12 @@ const HOOK_REGISTRATION_OPT_OUT = new Set([
    * onMinSpinPaceEnforced + onGameStateCleared. Has no spin-lifecycle
    * listener — it INFORMS downstream consumers, never reads from them. */
   'germanyComplianceGate.mjs',
+  /* W58.J-NL — netherlandsComplianceGate is an emit-only boot block.
+   * Sets window.__NL_CRUKS_CHECK_REQUIRED__ + __NL_COOL_OFF_HOURS__
+   * flags and fires onCruksCheckRequired + onCoolOffEnforced once at
+   * boot. Has no spin-lifecycle listener — it INFORMS the operator's
+   * session-init layer of the obligation, never reads from it. */
+  'netherlandsComplianceGate.mjs',
 ]);
 
 /* Expected emit ownership — single source of truth for each event. */
@@ -182,6 +188,22 @@ const EXPECTED_EMIT_OWNERS = {
    * and not duplicated here. */
   onMinSpinPaceEnforced: ['germanyComplianceGate.mjs'],
   onGameStateCleared:    ['germanyComplianceGate.mjs'],
+  /* W58.J-NL — NL KSA (Wet KSA — Wet kansspelen op afstand) compliance
+   * gate. Two boot-time obligations fired by netherlandsComplianceGate.mjs when
+   * jurisdiction === 'NL':
+   *   • §31 Cruks register check obligation — sets
+   *     window.__NL_CRUKS_CHECK_REQUIRED__ flag and emits
+   *     onCruksCheckRequired once. Operator session-init layer must
+   *     verify the player against Cruks (Centraal Register Uitsluiting
+   *     Kansspelen) and flip __NL_CRUKS_CHECK_PASSED__ true before the
+   *     spin dispatcher allows first spin.
+   *   • §33 Cool-off period floor — sets window.__NL_COOL_OFF_HOURS__
+   *     (default 24h) and emits onCoolOffEnforced so downstream RG
+   *     blocks (sessionTimeout / realityCheck) respect local cool-off.
+   * §31a bonus-buy ban is already enforced by bonusBuy.mjs (W57.A4)
+   * and not duplicated here. */
+  onCruksCheckRequired: ['netherlandsComplianceGate.mjs'],
+  onCoolOffEnforced:    ['netherlandsComplianceGate.mjs'],
   /* Wave H5 — Big-Win Tier ladder. Vendor-neutral 5-tier celebration
    * fired after the per-line rollup ends. tier is INT 1..5; label/
    * threshold/duration/color all GDD-driven so two games share the

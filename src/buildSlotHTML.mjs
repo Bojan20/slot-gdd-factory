@@ -401,6 +401,14 @@ import {
   emitGermanyComplianceGateCSS, emitGermanyComplianceGateRuntime,
   resolveConfig as resolveGermanyComplianceGateConfig,
 } from './blocks/germanyComplianceGate.mjs';
+// W58.J-NL — NL KSA (Wet kansspelen op afstand) compliance gate.
+// Auto-enabled when jurisdiction === 'NL'. Boot-time only: sets
+// window.__NL_CRUKS_CHECK_REQUIRED__ + __NL_COOL_OFF_HOURS__ flags
+// + emits 2 sole-owner audit events.
+import {
+  emitNetherlandsComplianceGateCSS, emitNetherlandsComplianceGateRuntime,
+  resolveConfig as resolveNetherlandsComplianceGateConfig,
+} from './blocks/netherlandsComplianceGate.mjs';
 // Wave P8 — Hot-Reload BLOCK (dev-mode SSE → in-page re-parse or full reload).
 // Disabled by default; opt-in via model.hotReload.enabled (set by dev server
 // or by the parent page on localhost). Production builds emit a 0-byte stub.
@@ -1154,6 +1162,9 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${/* W58.J-DE — GlüStV §11(2) spin pace floor + §6e session state clear.
        Boot-time IIFE; 0-byte side effect when jurisdiction is not DE. */ ''}
   ${emitGermanyComplianceGateRuntime(resolveGermanyComplianceGateConfig(model))}
+  ${/* W58.J-NL — Wet KSA §31 Cruks check + §33 cool-off floor.
+       Boot-time IIFE; 0-byte side effect when jurisdiction is not NL. */ ''}
+  ${emitNetherlandsComplianceGateRuntime(resolveNetherlandsComplianceGateConfig(model))}
   ${/* Wave P8 — hot-reload runtime (dev-mode). Placed AFTER HookBus and
      * AFTER every other block runtime so that subscribers to onGddChange
      * are already registered when an SSE-driven re-parse fires. Disabled
