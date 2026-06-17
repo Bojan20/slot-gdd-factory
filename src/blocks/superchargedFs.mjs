@@ -215,8 +215,20 @@ export function emitSuperchargedFsRuntime(cfg = defaultConfig()) {
       try { window.HookBus.emit('onFsSuperchargeReset', { reason: reason || 'auto' }); } catch (_) {}
     }
 
+    /* Bug #5 (2026-06-17, recursion guard) — superchargedFsAnnounceRetrigger
+     * emits onFsRetrigger which this block also LISTENS to. If a downstream
+     * listener calls Announce in response to onFsMultiplierEscalated, the
+     * loop is infinite. Hard cap depth at 16. */
+    var _reentrancyDepth = 0;
+    var MAX_REENTRANCY = 16;
+
     window.HookBus.on('onFsTrigger',   function () { init('onFsTrigger'); });
-    window.HookBus.on('onFsRetrigger', function () { step('onFsRetrigger'); });
+    window.HookBus.on('onFsRetrigger', function () {
+      if (_reentrancyDepth >= MAX_REENTRANCY) return;
+      _reentrancyDepth++;
+      try { step('onFsRetrigger'); }
+      finally { _reentrancyDepth--; }
+    });
     window.HookBus.on('onFsEnd',       function () { reset('onFsEnd'); });
 
     /* Public API. */
@@ -224,8 +236,10 @@ export function emitSuperchargedFsRuntime(cfg = defaultConfig()) {
     window.superchargedFsReset  = function () { reset('api'); };
     window.superchargedFsGet    = function () { return { mult: curMult(), retriggers: retriggers, ladderIdx: ladderIdx }; };
     /* Engine-facing announcement helper: emits onFsRetrigger from this block
-     * so the canonical event has a sole owner per LEGO single-owner-emit. */
+     * so the canonical event has a sole owner per LEGO single-owner-emit.
+     * Re-entrancy guarded above. */
     window.superchargedFsAnnounceRetrigger = function () {
+      if (_reentrancyDepth >= MAX_REENTRANCY) return;
       try { window.HookBus.emit('onFsRetrigger', {}); } catch (_) {}
     };
   })();
