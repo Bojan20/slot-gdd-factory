@@ -79,7 +79,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = (model && model.progressiveFreeSpins) || {};
 
   const explicitEnabled = m.enabled != null;

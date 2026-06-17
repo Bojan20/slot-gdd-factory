@@ -41,7 +41,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = model.payAnywhereEval || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (Number.isFinite(m.minWin)) cfg.minWin = clampInt(m.minWin, MIN_WIN_FLOOR, MIN_WIN_CEIL);

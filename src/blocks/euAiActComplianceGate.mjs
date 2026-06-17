@@ -107,7 +107,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.euAiActComplianceGate) || {};
 
   /* W59.H1 — Central jurisdiction precedence resolver. Same semantics:

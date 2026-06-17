@@ -140,7 +140,7 @@ function normalizePool(raw) {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.rewardChest) || {};
 
   if (src.enabled != null) cfg.enabled = !!src.enabled;

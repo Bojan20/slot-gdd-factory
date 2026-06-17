@@ -66,7 +66,7 @@ function _validPattern(arr) {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = (model && model.hapticFeedback) || {};
 
   if (m.enabled != null) cfg.enabled = !!m.enabled;

@@ -72,7 +72,7 @@ function clampInt(v, lo, hi) {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.slingoSpinEngine) || {};
   const intMap = [
     ['perColumnSpinMs', 250, 4000],

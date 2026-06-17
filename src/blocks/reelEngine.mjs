@@ -107,7 +107,7 @@ function clampFloat(v, lo, hi) {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.reelEngineHot) || {};
   const intMap = [
     ['minRotations',      ...RANGES.minRotations],
@@ -450,7 +450,7 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
       return function () {
         if (captured !== window.__reelEngineSpinToken__) return; /* stale */
         return fn.apply(this, arguments);
-      });
+      };
     };
 
     /* 2026-06-09 — Boki bug: "turbo ne radi". Live turbo multiplier

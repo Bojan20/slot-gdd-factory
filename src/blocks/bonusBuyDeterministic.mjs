@@ -215,7 +215,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = (model && model.bonusBuyDeterministic) || {};
   const explicitDisable = m.enabled === false;
 

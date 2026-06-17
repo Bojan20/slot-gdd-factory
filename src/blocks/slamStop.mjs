@@ -101,7 +101,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = (model && model.slamStop) || {};
 
   /* Track explicit caller intent on `enabled` so the features-based

@@ -90,7 +90,7 @@ function clampMs(v, lo, hi) {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.freeSpinsPresentation) || {};
 
   if (src.enabled === false) cfg.enabled = false;
@@ -770,7 +770,7 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
         } catch (_) {}
       } catch (_) { /* defensive */ }
       return (FSM && FSM.phase) || "BASE";
-    });
+    };
   }
 
   /* Wave S LEGO conformance — freeSpins registers postSpin to react to

@@ -74,7 +74,7 @@ function clampFloat(v, lo, hi) {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.crashSpinEngine) || {};
   const intMap = [
     ['spinDurationMs', 400, 6000],

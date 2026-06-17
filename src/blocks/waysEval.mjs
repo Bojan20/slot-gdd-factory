@@ -36,7 +36,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = model.waysEval || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (Number.isFinite(m.waysCount)) cfg.waysCount = clampInt(m.waysCount, ...WAYS_BOUNDS.waysCount);

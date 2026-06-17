@@ -88,7 +88,7 @@ function isValidRgb(s) {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.coinShower) || {};
 
   if (src.enabled != null) cfg.enabled = !!src.enabled;

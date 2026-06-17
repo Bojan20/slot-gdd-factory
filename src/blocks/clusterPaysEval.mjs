@@ -39,7 +39,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = model.clusterPaysEval || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (Number.isFinite(m.minCluster)) cfg.minCluster = clampInt(m.minCluster, 2, 30);

@@ -67,7 +67,7 @@ export function defaultConfig() {
 /* Accept either `model.themeCSS.palette` or fall back to `model.theme.palette`
  * (the existing parser slot) for backward compat. */
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.themeCSS) || {};
 
   /* Pull palette from explicit themeCSS override OR from existing theme array. */

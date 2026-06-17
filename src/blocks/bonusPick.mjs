@@ -52,7 +52,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = model.bonusPick || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (m.mode === 'fs' || m.mode === 'base' || m.mode === 'both' || m.mode === 'triggered') cfg.mode = m.mode;

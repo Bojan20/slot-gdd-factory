@@ -86,7 +86,7 @@ function isRgbTriplet(s) {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = (model && model.fsProgressBar) || {};
 
   if (m.enabled != null) cfg.enabled = !!m.enabled;

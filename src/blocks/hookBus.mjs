@@ -126,7 +126,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.hookBus) || {};
   if (src.debugLog === true) cfg.debugLog = true;
   return cfg;
@@ -745,7 +745,7 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
       getMult, setMult, addMult, resetMult, setMultBaseline,
       listenerCount,
       EVENTS,
-    });
+    };
   })();
 
   if (typeof window !== 'undefined') {

@@ -92,7 +92,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = model.holdAndWin || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (Number.isFinite(m.triggerCount)) cfg.triggerCount = clampInt(m.triggerCount, 3, 30);

@@ -97,7 +97,7 @@ export function defaultConfig() {
 /* Merge defaults with model.winPresentation, accepting only known keys with
    the correct shape — defends against malformed GDD overrides. */
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.winPresentation) || {};
 
   if (

@@ -138,7 +138,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.jurisdictionGate) || {};
   if (typeof src.enabled === 'boolean') cfg.enabled = src.enabled;
   /* Stash the resolved jurisdiction + source so the runtime emit can

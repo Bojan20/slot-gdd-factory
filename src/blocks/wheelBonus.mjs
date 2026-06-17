@@ -53,7 +53,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = model.wheelBonus || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   /* Floor raised to WB.MIN_SEGMENTS (4) — CSS wedge geometry uses

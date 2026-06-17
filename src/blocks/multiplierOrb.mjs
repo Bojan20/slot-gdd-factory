@@ -47,7 +47,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = model.multiplierOrb || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (typeof m.symbolId === 'string' && /^[A-Z]{1,4}$/.test(m.symbolId)) cfg.symbolId = m.symbolId;

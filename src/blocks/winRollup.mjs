@@ -92,7 +92,7 @@ function clampNum(n, lo, hi, fallback) {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.winRollup) || {};
 
   if (src.enabled === false) cfg.enabled = false;

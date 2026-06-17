@@ -60,7 +60,7 @@ function clampFloat(v, lo, hi) {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.postSpin) || {};
   const intMap = [
     ['settlePauseMs',       0, 2000],

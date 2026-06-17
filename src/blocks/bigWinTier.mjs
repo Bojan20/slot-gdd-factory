@@ -223,7 +223,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = (model && model.bigWinTier) || {};
 
   if (m.enabled != null) cfg.enabled = !!m.enabled;

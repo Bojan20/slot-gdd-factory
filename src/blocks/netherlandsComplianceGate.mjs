@@ -120,7 +120,7 @@ function clampInt(v, lo, hi) {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.netherlandsComplianceGate) || {};
 
   /* W59.H1 — Central jurisdiction precedence resolver. Same semantics:

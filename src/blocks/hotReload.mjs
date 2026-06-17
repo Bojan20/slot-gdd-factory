@@ -159,7 +159,7 @@ function isSafePath(s) {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.hotReload) || {};
 
   if (src.enabled === true) cfg.enabled = true;

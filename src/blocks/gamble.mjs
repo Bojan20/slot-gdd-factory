@@ -37,7 +37,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = model.gamble || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (m.mode === 'color' || m.mode === 'suit' || m.mode === 'ladder') {

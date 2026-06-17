@@ -106,7 +106,7 @@ function clampInt(v, lo, hi) {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.spainComplianceGate) || {};
 
   const jurisdiction = resolveJurisdiction(model, { fallbackKey: 'spainComplianceGate.jurisdiction' });

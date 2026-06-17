@@ -74,12 +74,12 @@ const MANDATORY_BLOCKS = [
   { name: 'spinControl',          sig: () => !!document.getElementById('spinBtn') },
   { name: 'paytable',             sig: () => !!document.getElementById('paytableBtn') },
   { name: 'winRollup',            sig: () => !!document.getElementById('winRollupHost') },
-  { name: 'autoplay',             sig: () => !!document.getElementById('autoplayBtn') },
+  { name: 'autoplay',             sig: () => !!document.getElementById('autoBtn') || !!document.getElementById('autoplayBackdrop') },
   { name: 'betSelector',          sig: () => !!document.getElementById('balanceHudBetValue') },
-  { name: 'reelEngine',           sig: () => !!document.getElementById('reelsRoot') || !!document.querySelector('.reels-cell, [data-reel]') },
+  { name: 'reelEngine',           sig: () => !!document.getElementById('reelsRoot') || !!document.querySelector('.reels-cell, [data-reel], [data-block="reelEngine"]') || !!document.querySelector('.reels') },
   { name: 'hookBus',              sig: () => typeof window.HookBus === 'object' && typeof window.HookBus.emit === 'function' },
-  { name: 'winPresentation',      sig: () => typeof window.cancelWinSymCycle === 'function' || typeof window.playWinSymCycle === 'function' || typeof window.applyWinHighlight === 'function' },
-  { name: 'bigWinTier',           sig: () => typeof window.__BIG_WIN_CONFIG__ === 'object' || typeof window.BIGWIN_TIER === 'object' || !!document.querySelector('.bwt-banner, [data-bwt], [data-block="bigWinTier"]') },
+  { name: 'winPresentation',      sig: () => typeof window.cancelWinSymCycle === 'function' || typeof window.playWinSymCycle === 'function' || typeof window.applyWinHighlight === 'function' || typeof window.WIN_PRESENT_CONFIG === 'object' },
+  { name: 'bigWinTier',           sig: () => !!document.querySelector('.bwt-banner, [data-bwt], [data-block="bigWinTier"]') || typeof window.__BIG_WIN_CONFIG__ === 'object' || typeof window.BIGWIN_TIER === 'object' || typeof window.__BIGWIN_TIER_CONFIG__ === 'object' },
 ];
 
 /* Feature → live-state signature. Used in Phase C.
@@ -173,18 +173,16 @@ for (const fx of FIXTURES) {
   }
 
   const parsed = await frame.evaluate(() => {
-    const m = window.SLOT_MODEL || window.__SLOT_MODEL__ || null;
+    const features = window.__SLOT_MODEL_FEATURES__ || [];
+    const name = window.__SLOT_MODEL_NAME__ || null;
+    const sc = window.__SLOT_MODEL_SYMBOLS__ || null;
     return {
-      modelName: m ? m.name : null,
+      modelName: name,
       shape: window.SHAPE ? { kind: window.SHAPE.kind, reels: window.SHAPE.reels, rows: window.SHAPE.rows } : null,
-      paylines: m && m.topology ? m.topology.paylines : null,
-      features: m && m.features ? m.features.map(f => ({ kind: f.kind, label: f.label })) : [],
-      symbols: m && m.symbols ? {
-        hp: (m.symbols.high||[]).length,
-        mp: (m.symbols.mid||[]).length,
-        lp: (m.symbols.low||[]).length,
-        sp: (m.symbols.specials||[]).length,
-      } : null,
+      reels: window.REELS, rows: window.ROWS,
+      paylines: Array.isArray(window.PAYLINE_POOL) ? window.PAYLINE_POOL.length : null,
+      features: features.map(f => ({ kind: f.kind, label: f.label })),
+      symbols: sc ? { hp: sc.hp || 0, mp: sc.mp || 0, lp: sc.lp || 0, sp: sc.sp || 0 } : null,
       fs: window.FREESPINS ? {
         enabled: window.FREESPINS.enabled,
         triggerSymbol: window.FREESPINS.triggerSymbol,

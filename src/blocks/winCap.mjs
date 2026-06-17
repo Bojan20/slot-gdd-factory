@@ -88,7 +88,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = model.winCap || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (Number.isFinite(m.maxWinX)) cfg.maxWinX = clampInt(m.maxWinX, 100, 1000000);

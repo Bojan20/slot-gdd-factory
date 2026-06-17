@@ -111,7 +111,7 @@ function clampInt(v, lo, hi) {
  * the canonical preset the single source of truth.
  */
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.hexReelEngine) || {};
   const intMap = [
     ['spinDurationMs',     400, 6000],
@@ -229,7 +229,7 @@ export function emitHexReelEngineRuntime(cfg = defaultConfig()) {
       return function () {
         if (captured !== __hexSpinToken) return; /* stale */
         return fn.apply(this, arguments);
-      });
+      };
     }
 
     /** Randomise one cell text from POOL. Mirrors rectangular randomSym(). */

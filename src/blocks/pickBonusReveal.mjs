@@ -85,7 +85,7 @@ function isValidTemplate(s) {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.pickBonusReveal) || {};
 
   if (src.enabled != null) cfg.enabled = !!src.enabled;

@@ -57,7 +57,7 @@ function clampInt(v, lo, hi) {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.plinkoSpinEngine) || {};
   const intMap = [
     ['rowStepMs',       40,  500],

@@ -112,7 +112,7 @@ function isKindArray(arr) {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.genericFeatureBanner) || {};
 
   if (src.enabled === false) cfg.enabled = false;

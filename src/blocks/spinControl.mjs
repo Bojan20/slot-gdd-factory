@@ -153,7 +153,7 @@ function isRgbTriplet(s) {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = (model && model.spinControl) || {};
 
   if (m.enabled != null) cfg.enabled = !!m.enabled;
@@ -840,7 +840,7 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
           var s = STATE.current;
           if (s !== 'STOP_PRE' && s !== 'STOP_POST') return;
           _emit('onSlamRequested', { phase: (s === 'STOP_PRE') ? 'pre' : 'post', source: source || 'api' });
-        });
+        };
       }
       if (typeof window.forceSkipRequest !== 'function') {
         window.forceSkipRequest = function (source) {

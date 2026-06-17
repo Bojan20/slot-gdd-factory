@@ -87,7 +87,7 @@ function clampInt(v, lo, hi) {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.wheelSpinEngine) || {};
   const intMap = [
     ['spinDurationMs', 400, 8000],

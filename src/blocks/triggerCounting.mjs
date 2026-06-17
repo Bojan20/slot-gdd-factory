@@ -34,7 +34,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.triggerCounting) || {};
   if (typeof src.defaultThreshold === 'number' &&
       src.defaultThreshold >= 1 && src.defaultThreshold <= 20) {

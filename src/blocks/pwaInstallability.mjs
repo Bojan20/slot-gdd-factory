@@ -93,7 +93,7 @@ const ALLOWED_DISPLAYS = new Set(['standalone', 'fullscreen', 'minimal-ui']);
 const ALLOWED_ORIENTATIONS = new Set(['any', 'portrait', 'landscape', 'portrait-primary', 'landscape-primary']);
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = (model && model.pwaInstallability) || {};
 
   if (m.enabled != null) cfg.enabled = !!m.enabled;

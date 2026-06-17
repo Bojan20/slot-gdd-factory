@@ -133,7 +133,7 @@ function sanitizePrefixArray(arr) {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.germanyComplianceGate) || {};
 
   /* W59.H1 — Central jurisdiction precedence resolver. Same semantics:

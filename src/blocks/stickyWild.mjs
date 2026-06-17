@@ -35,7 +35,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = model.stickyWild || {};
   const enabledExplicit = m.enabled != null;
   if (enabledExplicit) cfg.enabled = !!m.enabled;

@@ -103,7 +103,7 @@ function clampInt(n, lo, hi, fallback) {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.dailyJackpot) || {};
 
   if (src.enabled === true) cfg.enabled = true;

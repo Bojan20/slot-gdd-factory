@@ -156,7 +156,7 @@ function _cleanModes(arr) {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = (model && model.gambleSecondary) || {};
 
   if (m.enabled != null) cfg.enabled = !!m.enabled;

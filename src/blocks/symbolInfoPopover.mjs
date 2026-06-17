@@ -67,7 +67,7 @@ function isValidRGB(s) {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.symbolInfoPopover) || {};
 
   if (src.enabled === false) cfg.enabled = false;

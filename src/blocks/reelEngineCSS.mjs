@@ -67,7 +67,7 @@ function clampNum(v, lo, hi) {
 }
 
 export function resolveConfig(model) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const src = (model && model.reelEngine) || {};
   const m = [
     ['blurPx',           0, 20],

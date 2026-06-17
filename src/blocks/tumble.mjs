@@ -45,7 +45,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = model.tumble || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (Number.isFinite(m.removeMs))     cfg.removeMs    = clampInt(m.removeMs, MS_MIN, MS_MAX);

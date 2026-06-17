@@ -223,7 +223,7 @@ import { resolveJurisdiction as _rcResolveJurisdiction } from './jurisdictionGat
 export const PLAY_TIME_DISPLAY_REQUIRED_JURISDICTIONS = Object.freeze(['SE']);
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = (model && model.realityCheck) || {};
 
   cfg.enabled = _coerceBool(m.enabled, cfg.enabled);

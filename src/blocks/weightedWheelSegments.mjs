@@ -199,7 +199,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = (model && model.weightedWheelSegments) || {};
 
   if (m.enabled != null) cfg.enabled = !!m.enabled;

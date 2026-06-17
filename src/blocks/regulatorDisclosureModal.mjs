@@ -94,7 +94,7 @@ export function defaultConfig() {
 }
 
 export function resolveConfig(model = {}) {
-  const cfg = defaultConfig();
+  const cfg = { ...defaultConfig() };
   const m = (model && model.regulatorDisclosureModal) || {};
   if (m.enabled === false) cfg.enabled = false;
   if (Number.isFinite(m.queueIntervalMs) && m.queueIntervalMs >= 0 && m.queueIntervalMs <= 5000) {
