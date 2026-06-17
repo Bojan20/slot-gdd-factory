@@ -3,7 +3,80 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-17 21:00 · **HEAD**: `c6b6f30` · main
+> **Last updated**: 2026-06-18 01:00 · **HEAD**: `15fb6a9` · main
+>
+> ---
+>
+> ## 🏆 ULTIMATE DAY · 2026-06-18 (6 + 1 pending) — TFR bug-fix lanac + ARIA a11y sweep
+>
+> Posle pred-day-end zatvaranja od juče (`3e6d5e4`) primenjen je
+> **Test-First Refactor with Reversibility Anchor** princip na 5
+> otvorenih bug-ova (severity HIGH/MED/LOW), pa post-QA WCAG 4.1.3
+> ARIA sweep na 34 bloka otkrivenih kroz `tools/aria-live-audit.mjs`.
+>
+> ### 🐛 5 bug-fixova (TFR — anchor → repro test → minimal diff → gate → push)
+>
+> | # | SHA | Sev | Block | Šta je popravljeno |
+> |:-:|:--|:-:|:--|:--|
+> | 5 | `5ba0518` | LOW | `superchargedFs` | recursion guard (`_reentrancyDepth` ≤ 16) na `onFsRetrigger` + `Announce`. Onemogućuje infinite loop kad downstream listener pozove Announce iz emit ciklusa. |
+> | 4 | `462d2f5` | MED | `regulatorDisclosureModal` | WCAG 2.4.3 focus-trap — Tab cycle / Shift+Tab reverse / Escape → click(ack). SR users više ne mogu da izađu iz modala mid-disclosure. |
+> | 2 | `51c8f91` | MED | `wildCollectionTrail` | dual selector `.symbol-cell, .cell` + dual symbol source (`data-sym` OR `textContent`) — real engine renderuje `<div class="cell">` (gridRenderer:119) pa je stari selector matchovao 0 nodes → counter nikad nije bumpovao. |
+> | 3 | `d31af1f` | HIGH | `winCap` | publish-sync `window.__WIN_AWARD__` posle in-place `ev.payX` clamp. `winPresentation` snapshotuje __WIN_AWARD__ PRE `postSpin`; bez sync-a balanceHud kreditovao **uncapped** iznos → players paid past ceiling. |
+> | 1 | `016d5b5` | HIGH | `respin` | `_respinDispatchNextSpin()` schedule-uje `runOneBaseSpin()` na `setTimeout(0)`. Pre fix-a `respinStart()` samo flagovao + paint-ovao DOM klase ali nikad nije pokretao spin. Per pravilo "every force MUST drive a real spin". |
+>
+> ### ♿ ARIA sweep · WCAG 4.1.3 Status Messages (`15fb6a9`)
+>
+> Ultimate QA otkrio **34 bloka** koji mutiraju `textContent`/`innerText`/`innerHTML` na HookBus event-ima bez `aria-live` / `role="status\|alert"`. SR korisnici čuli tišinu dok se UI menjao (win, balance, FS counter, locale flip, multiplier bump, sticky-wild placement, mystery reveal, session-timeout countdown, …).
+>
+> | Severity kategorija | # blokova | Atribut |
+> |:--|:-:|:--|
+> | Critical interrupt (4) | 4 | `role="alert" aria-live="assertive"` |
+> | Status badges/banners/meters | 18 | `role="status" aria-live="polite"` |
+> | Generic dynamic surfaces | 12 | `aria-live="polite"` |
+>
+> Test stub-ova update-ovano (6) za `hasAttribute`/`setAttribute` podršku: cellLevelUpgrade, cellOverflowCounter, dualRoleScatter, i18n, megaSymbol, winMultiplierBadge.
+>
+> ### 📜 Commit lanac (6 pushed + 1 pending)
+>
+> | # | SHA | Kategorija | Sadržaj |
+> |:-:|:--|:-:|:--|
+> | 1 | `5ba0518` | 🐛 BUG | fix(superchargedFs): Bug #5 — recursion guard |
+> | 2 | `462d2f5` | 🐛 BUG | fix(regulatorDisclosureModal): Bug #4 — WCAG 2.4.3 focus-trap |
+> | 3 | `51c8f91` | 🐛 BUG | fix(wildCollectionTrail): Bug #2 — DOM selector parity |
+> | 4 | `d31af1f` | 🐛 BUG | fix(winCap): Bug #3 — clamp publish-sync na __WIN_AWARD__ |
+> | 5 | `016d5b5` | 🐛 BUG | fix(respin): Bug #1 — actually drive a spin via runOneBaseSpin() |
+> | 6 | `15fb6a9` | ♿ A11Y | fix(a11y): WCAG 4.1.3 — aria-live sweep na 34 bloka |
+> | 7 | _pending_ | 📋 DOC | docs(MASTER_TODO): 2026-06-18 day-end |
+>
+> ### 🧪 Ultimate QA — 9950+ verifikacija · 0 regresija
+>
+> | Domen | Verifikacije | Pass | Fail |
+> |:--|:-:|:-:|:-:|
+> | Static lint/gate (LEGO 7 + budget + manifest + muddy + sharpness + rmotion + safe-area + WCAG + FPS + KBD + LDW + motion-overlay) | 122 × 12 | sve | 0 |
+> | Per-block sandbox sweep | 157 fajlova | 1100+ | 0 |
+> | Playwright live (Ultimate FULL + Quick + FS QA + Browser + HMR + DevServer) | 4316 + 4316 + 24 + 24 + 7 + 18 | **8705** | **0** |
+> | Memory leak probe (200 spin) | 0.00 MB delta, 9.87 ms/spin | ✅ | 0 |
+> | Cert/Compliance (jurisdictions + UKGC bundle + CLI) | 26 | 26 | 0 |
+> | **GRAND TOTAL** | **~9950** | **PASS** | **0 regresija** |
+>
+> ### 🔗 TFR anchor tagovi (reversibility)
+>
+> | Tag | Cilj |
+> |:--|:--|
+> | `pre-bugfix-recursion-guard` | pre #5 superchargedFs |
+> | `pre-bugfix-wincap-publish-sync` | pre #3 winCap |
+> | `pre-bugfix-respin-runspin-wire` | pre #1 respin |
+> | `pre-aria-fix-sweep` | pre 34-block a11y batch |
+>
+> ### 🟡 Otvorena post-QA evidencija (NIJE regresija, otkriveno tokom audit-a)
+>
+> | Stavka | Severity | Komentar |
+> |:--|:-:|:--|
+> | 129 contrast AA edge nodes | LOW | uglavnom centered text na transparent overlay — dugogodišnji edge case |
+> | 2 playground test flake (8 vs 7 cards) | LOW | test zastareo, izvor nije bag |
+> | 2 FPS warn (`gambleSecondary` 800ms, `wheelBonus` 3800ms) | LOW | ceremonial transitions, prihvatljivo |
+> | 4 KBD warn (kratki/prazan button text) | LOW | aria-label add follow-up |
+> | 1 ARIA warn (`bonusClimaxReveal` assertive scope) | LOW | sledeća sesija — review da li je critical |
 >
 > ---
 >
