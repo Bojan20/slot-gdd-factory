@@ -983,6 +983,66 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 ---
 
+## 🇳🇱 W58.J-NL.2 — Wet KSA §31 Cruks-gate enforcement u reelEngine (✅ LANDED — 2026-06-17)
+
+> **Regulator anchor**: Wet KSA §31 — operator MORA da verifikuje player against Cruks (Centraal Register Uitsluiting Kansspelen) PRE prvog spin-a. W58.J-NL postavi `__NL_CRUKS_CHECK_REQUIRED__ = true` na boot ali nik nije čitao — gate bio advisory. W58.J-NL.2 zatvara petlju: reelEngine ABORT-uje spin dispatch dok operator session-init layer ne flip-uje `__NL_CRUKS_CHECK_PASSED__ = true`.
+
+### 1. Šta je zatvoreno
+
+| Block | Promena | Linije |
+|:--|:--|:-:|
+| `src/blocks/reelEngine.mjs` | `runOneBaseSpin` na samom početku (PRE Wave T4 inFlight guard-a) proverava `window.__NL_CRUKS_CHECK_REQUIRED__ === true && window.__NL_CRUKS_CHECK_PASSED__ !== true` → sole-owner emit `onCruksCheckPending{jurisdiction, rule:'NL-WetKSA-§31'}` + return (abort). `!== true` strict comparison: samo literal boolean true clear-uje gate (safer regulator default). Fall back na "NL" kad `__SLOT_JURISDICTION__` missing (defence-in-depth). SSR-safe + try/catch. | +29 |
+| `tools/lego-gate.mjs` | +`onCruksCheckPending: ['reelEngine.mjs']` sole-owner declaration (111 → **112** events). W58.J-NL.2 marker + Wet KSA §31 citation. | +10 |
+| `tests/blocks/_netherlandsCruksGateEnforcement.test.mjs` | **NEW** 132 LOC: 6 sections (reelEngine reads both flags + marker + strict equality + gate-placed-before-inFlight + SSR-safe, abort behaviour + gate-above-preSpin position contract via source index comparison, sole-owner emit + payload + Wet KSA §31 citation + try/catch + "NL" fallback, behavioural sandbox × 7 scenarios (A-G covering required/passed boolean combinations + strict-equality edge cases), LEGO contracts, honest scope). | +132 |
+| `package.json` | test:blocks chain extends sa novim testom | +1/-1 |
+
+### 2. Predicate sandbox (verified u 7 scenarios)
+
+```js
+shouldAbort = required === true && passed !== true
+```
+
+| Scenario | required | passed | Decision |
+|:-:|:--|:--|:-:|
+| A | `true` | `undefined` | **ABORT** |
+| B | `true` | `false` | **ABORT** |
+| C | `true` | `true` | ALLOW |
+| D | `false` (non-NL) | `false` | ALLOW |
+| E | `undefined` | `false` | ALLOW |
+| F | `true` | `1` (truthy non-bool) | **ABORT** (strict) |
+| G | `true` | `'true'` (string) | **ABORT** (strict) |
+
+### 3. Ultimate QA matrix (9/9 ZELENO)
+
+| # | Gate | Verdict |
+|:-:|:--|:-:|
+| 1 | `_netherlandsCruksGateEnforcement.test.mjs` | ✅ **26/26** |
+| 2 | autoplay regression | ✅ **31/31** (no breakage) |
+| 3 | netherlandsComplianceGate regression | ✅ **46/46** (no breakage) |
+| 4 | LEGO 7/7 invariants | ✅ 91 blokova · **112 sole-owner** |
+| 5 | npm test (parser + 20 grid) | ✅ 4/4 + 20/20 |
+| 6 | test:sharpness (5 GDDs) | ✅ 5/5 · 0 cell mutations |
+| 7 | Vendor-neutral source | ✅ |
+| 8 | SSR safety + try/catch + strict equality | ✅ |
+| 9 | Behavioural predicate verified | ✅ 7/7 scenarios |
+
+### 4. Hash pin
+
+| SHA | Šta | Push |
+|:-:|:--|:-:|
+| `ffc92a1` | **W58.J-NL.2** — reelEngine Cruks-gate abort + sole-owner emit `onCruksCheckPending` + 26/26 unit + 7 behavioural scenarios + LEGO 112 sole-owner | ✅ |
+
+### 5. Honest follow-up scope
+
+| Stavka | Status |
+|:--|:--|
+| Gate aktivan SAMO kad jurisdiction === 'NL' | ✅ Non-NL → required flag se ne postavlja → predicate false → ALLOW |
+| Back-end Cruks API call | ⏳ Operator-side PII; out-of-scope za slot template |
+| §33 cool-off cross-operator enforcement | ⏳ Regulator-side via Cruks register; W58.J-NL.3 candidate kad regulator audit zatraži |
+| Repeated clicks during pending state | ✅ Idempotent silent abort + ratelimit-friendly emit (consumer decides display) |
+
+---
+
 ## 🇩🇪 W58.J-DE.2 — GlüStV §11(2) downstream enforcement u autoplay (✅ LANDED — 2026-06-17)
 
 > **Regulator anchor**: GlüStV 2021 §11(2) Spielpause — every AUTOMATIC consecutive spin must take ≥ 5 sec wall-clock. W58.J-DE postavio `window.__DE_MIN_SPIN_MS__ = 5000` na boot, ali NIKO nije čitao — gate bio efektivno noop. W58.J-DE.2 zatvara petlju: reelEngine writes timestamp, autoplay clamps inter-spin schedule do floor-a.
