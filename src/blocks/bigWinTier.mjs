@@ -963,31 +963,43 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       var totalCountMs = 0;
       for (var ti = startTier; ti <= finalTier; ti++) totalCountMs += DURATIONS[ti - 1];
 
-      /* After fade-in completes, start the linear counter ramp. Tier
-       * promotions are owned by the scheduler above — _countUpLinear
-       * only handles the money ramp. */
-      var fadeInDone = setTimeout(function () {
+      /* Polish (W47.S19 · 2026-06-18) — start the linear counter ramp
+       * at T0, NOT at T0 + FADE_MS, so the counter and the tier
+       * promotion scheduler share the same linear time origin.
+       *
+       * Before fix: counter started after the fade-in delay but tier
+       * promotions were already scheduled from T0. At every promo time
+       * the counter was lagging by FADE_MS / totalCountMs (~1.5% at
+       * 4 s/tier × 5 tiers). Visually subtle but cumulative — the
+       * climax tier mounted with the counter still at ~78.5% instead
+       * of the nominal 80%.
+       *
+       * After fix: counter starts at T0. During the first FADE_MS the
+       * counter ramps under the fade-in overlay (visually negligible
+       * because opacity 0 → 1) and from FADE_MS onward it ramps in
+       * lockstep with tier promotions. At any promo time the counter
+       * progress equals cumulative[i] / totalCountMs exactly.
+       *
+       * Tier promotions are owned by the scheduler above —
+       * _countUpLinear only handles the money ramp. */
+      _countUpLinear(0, finalAward, totalCountMs).then(function () {
         if (!STATE.walkActive) return;
-        _countUpLinear(0, finalAward, totalCountMs).then(function () {
-          if (!STATE.walkActive) return;
-          /* Hold the climax plaque at finalX for endHoldMs (4 s default —
-           * "big win end event isto cetiri sekunde"). */
-          return _delay(END_HOLD_MS);
-        }).then(function () {
-          if (!STATE.walkActive) return;
-          /* Single SR push of the final amount, fired exactly once per
-           * sequence — see _announce() for the rationale. */
-          _announce(_fmtMoney(STATE.finalX));
-          /* Single closing fade-out for the whole sequence ("da se
-           * fejdoutuje plaketa"). */
-          return _fadeOutCurrent();
-        }).then(function () {
-          if (!STATE.walkActive) return;
-          _emitExited({ tier: STATE.current, reason: 'natural' });
-          _finishSequence('natural');
-        });
-      }, FADE_MS);
-      STATE.timers.push(fadeInDone);
+        /* Hold the climax plaque at finalX for endHoldMs (4 s default —
+         * "big win end event isto cetiri sekunde"). */
+        return _delay(END_HOLD_MS);
+      }).then(function () {
+        if (!STATE.walkActive) return;
+        /* Single SR push of the final amount, fired exactly once per
+         * sequence — see _announce() for the rationale. */
+        _announce(_fmtMoney(STATE.finalX));
+        /* Single closing fade-out for the whole sequence ("da se
+         * fejdoutuje plaketa"). */
+        return _fadeOutCurrent();
+      }).then(function () {
+        if (!STATE.walkActive) return;
+        _emitExited({ tier: STATE.current, reason: 'natural' });
+        _finishSequence('natural');
+      });
     }
 
     /* _mountBannerAt — fresh banner mounted at the given tier, fade-in.
