@@ -990,9 +990,17 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
     /* W48 BUGFIX — H&W per-cell respin branch. When H&W is RUNNING, the
      * player must see orb cells stay statically anchored while other
      * cells spin individually. Branch BEFORE preSpin so feature blocks
-     * can read window.HW_STATE.active to coordinate their preSpin hooks. */
+     * can read window.HW_STATE.active to coordinate their preSpin hooks.
+     *
+     * 2026-06-18 — BUG-4 defensive: also require !duringFs. H&W and FS
+     * are mutually exclusive at the orchestrator level (FS intro disarms
+     * H&W; H&W rounds disarm FS), but a stale HW_STATE flag from a
+     * crash/recovery could otherwise route an FS spin through the
+     * per-cell path. Belt-and-brace gate. */
+    const _fsActive = (typeof FSM !== 'undefined' && FSM && FSM.phase === 'FS_ACTIVE');
     const hwActive = (typeof window !== 'undefined' &&
-                      window.HW_STATE && window.HW_STATE.active === true);
+                      window.HW_STATE && window.HW_STATE.active === true &&
+                      !_fsActive);
 
     /* HookBus: preSpin → blocks that arm per-spin state (anticipation,
        wild placement) run BEFORE the engine kicks. */

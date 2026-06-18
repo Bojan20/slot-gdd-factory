@@ -31,6 +31,22 @@ const targets = [
    * 04_variable_reel declares 117649-ways evaluation; pathAwareMultiplier
    * auto-enables on any ways topology. Vendor-neutral demo. */
   { src: 'samples/grids/04_variable_reel_GAME_GDD.md', out: 'dist/04_variable_reel_playable.html' },
+  /* 2026-06-18 — universal spin/stop/skip CTA verification (Boki rule
+   * "spin, stop, skip dugme mora da radi u svim blokovima"). All 20
+   * grid-kind playable demos must be regenerated on every spinControl
+   * touch so the static coverage probe (_universal-spin-cta-coverage.mjs)
+   * sees the latest event listeners. Previously only 12/20 were in
+   * scope; the remaining 8 are added here. */
+  { src: 'samples/grids/02_rectangular_6x4_GAME_GDD.md',           out: 'dist/02_rectangular_6x4_playable.html' },
+  { src: 'samples/grids/03_cluster_7x7_GAME_GDD.md',               out: 'dist/03_cluster_7x7_playable.html' },
+  { src: 'samples/grids/06_hexagonal_GAME_GDD.md',                 out: 'dist/06_hexagonal_playable.html' },
+  { src: 'samples/grids/11_radial_GAME_GDD.md',                    out: 'dist/11_radial_playable.html' },
+  { src: 'samples/grids/14_dual_colossal_GAME_GDD.md',             out: 'dist/14_dual_colossal_playable.html' },
+  { src: 'samples/grids/15_slingo_GAME_GDD.md',                    out: 'dist/15_slingo_playable.html' },
+  { src: 'samples/grids/16_plinko_GAME_GDD.md',                    out: 'dist/16_plinko_playable.html' },
+  { src: 'samples/grids/17_crash_GAME_GDD.md',                     out: 'dist/17_crash_playable.html' },
+  { src: 'samples/grids/18_wheel_GAME_GDD.md',                     out: 'dist/18_wheel_playable.html' },
+  { src: 'samples/grids/20_rectangular_stacked_scatter_GAME_GDD.md', out: 'dist/20_rectangular_stacked_scatter_playable.html' },
 ];
 
 /* Wave H5 — per-game Big-Win Tier label overrides. Each entry mirrors the

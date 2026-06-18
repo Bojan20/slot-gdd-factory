@@ -3,7 +3,56 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 12:35 · **HEAD**: pending push · main
+> **Last updated**: 2026-06-18 13:15 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## 🩹 SPIN/STOP/SKIP CTA deep sweep (2026-06-18 part 3)
+>
+> Boki: *"overi spin, stop skip dugme, mora da radi u svim blokovima
+> savršeno. vidi s agentima i odradi deep analizu mora da radi uvek
+> u svim blokovima"*.
+>
+> 2 paralelna agenta (code-recon + test-recon) identifikovali **8 bug-ova**
+> + 4 testing gap-a. Sve fixovano, validirano na 24 capsule (4 real GDD
+> + 20 grid-kind playable demo).
+>
+> ### Bug-ovi fixovani u `spinControl.mjs` + `reelEngine.mjs`
+>
+> | ID | Priority | Bug | Fix |
+> |:-:|:-:|:--|:--|
+> | BUG-1 | P2 | `_onReelsClick` had no `slamPendingSettle` guard → reels-area tap during pending-settle window could emit duplicate `onSlamRequested` | Added explicit `if (STATE.slamPendingSettle) return;` guard |
+> | BUG-2 | P2 | MutationObserver Space-drain fired whenever button became enabled, even after round was finalized → queued Space press leaked into next spin | Drain only when `slamPendingSettle` true; clear stale latch otherwise |
+> | BUG-3 | **P1** | spinControl was BLIND to H&W lifecycle → CTA stayed as SPIN during intro/summary placards, click dispatched per-cell respin into unexpected phase | Added 3 listeners: `onHoldAndWinIntro` (hide), `onHoldAndWinStart` (restore + SPIN), `onHoldAndWinEnd` (restore + SPIN) |
+> | BUG-4 | P3 | `runHnwPerCellRespin` branch missing `!duringFs` defensive check → stale HW_STATE from crash could route FS spin through per-cell path | Added `!_fsActive` to `hwActive` predicate |
+> | BUG-5 | **P1** | Compliance gates (NL Cruks, DE min-spin, NL cool-off, win-cap) refused dispatch → CTA stuck in STOP_PRE forever waiting for postSpin that never came | Added 6 recover listeners (`onCruksCheckPending`, `onManualSpinPaceBlocked`, `onMinSpinPaceDeferred`, `onCoolOffEnforced`, `onWinCapReached`, `onSelfExcludedBlocked`) that morph CTA back to SPIN |
+> | BUG-7 | P3 | Pending-slam timer could fire AFTER round was finalized → late `onSlamRequested` emit + `slamPendingSettle=true` left CTA disabled forever | Timer drops if `!STATE.expectsFinalize` |
+> | BUG-8 | P2 | `_onReelsClick` lacked try/finally around emit → throwing HookBus listener would permanently lock `dispatchLocked=true` | Wrapped in try/finally (mirrors `slamStop.mjs` pattern) |
+>
+> ### Testing infrastructure
+>
+> | Tool | Šta verifikuje |
+> |:--|:--|
+> | NEW `tools/_universal-spin-cta-coverage.mjs` | 21 CTA state-machine checks × 24 capsules (4 real GDD + 20 grid-kind) |
+> | EXTENDED `tools/regen-all-playable.mjs` | +10 grid-kind playable demos (02/03/06/11/14/15/16/17/18/20) — pre fix only 12/20 |
+>
+> ### Coverage rezultat
+>
+> | Capsule | Status |
+> |:--|:-:|
+> | REAL × 4 (HNP / WoO / GoO1000 / Starlight) | ✅ 21/21 × 4 |
+> | GRID-KIND × 20 (rectangular/cluster/hex/wheel/crash/slingo/plinko/...) | ✅ 21/21 × 20 |
+> | **TOTAL** | **✅ 504/504 (21 × 24)** |
+>
+> ### Gate-ovi
+>
+> | Gate | Status |
+> |:--|:-:|
+> | `test:lego` | ✅ 7/7 |
+> | `test:blocks` (spinControl 20, reelEngine all pass, _engineStaleCallbackGuard 22) | ✅ 0 fail |
+> | `test:parity` | ✅ 0 violations × 4 games |
+> | `test:cert:real` | ✅ 12/12 (4 × UKGC+MGA+DGA) |
+> | `_universal-spin-cta-coverage` | ✅ 21/21 × 24 capsules |
 >
 > ---
 >

@@ -424,6 +424,15 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
               var stNow = STATE.current;
               if (stNow !== 'STOP_PRE' && stNow !== 'STOP_POST') return;
               if (STATE.dispatchLocked) return;
+              /* 2026-06-18 — BUG-7 fix: drop the late-fired queued slam if
+               * the round was already finalized between the click and the
+               * timer firing (onSlamComplete or postSpin already disarmed
+               * expectsFinalize). Without this guard the queued slam would
+               * emit onSlamRequested into a fully-settled round; reelEngine
+               * is idempotent so no crash, but spinControl would morph SPIN
+               * → SPIN (no-op) AND set slamPendingSettle=true with no
+               * settlement emit to clear it, parking the CTA disabled. */
+              if (!STATE.expectsFinalize) return;
               STATE.dispatchLocked = true;
               var ph = (stNow === 'STOP_PRE') ? 'pre' : 'post';
               _emit('onSlamRequested', { phase: ph, source: 'button-queued' });
@@ -493,8 +502,23 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
       var s = STATE.current;
       if (s !== 'STOP_PRE' && s !== 'STOP_POST') return;
       if (STATE.dispatchLocked) return;
+      /* 2026-06-18 — BUG-1 fix (deep-recon Priority 2): reels-area click had
+       * no slamPendingSettle guard. During the ~400ms window after a slam
+       * click while reels are bouncing into final positions, the state was
+       * already morphed to 'SPIN' (button disabled) but the early-return
+       * above only matched STOP_*. If state hadn't morphed yet (10ms race
+       * window) a second emit was possible. The slamPendingSettle flag is
+       * the authoritative "in-flight settlement" signal. */
+      if (STATE.slamPendingSettle) return;
       STATE.dispatchLocked = true;
-      _emit('onSlamRequested', { phase: (s === 'STOP_PRE') ? 'pre' : 'post', source: 'reelsArea' });
+      /* 2026-06-18 — BUG-8 fix: wrap emit in try/finally so a throwing
+       * HookBus listener can never permanently lock the reels-area click
+       * dispatcher (mirrors slamStop.mjs request-button try/finally). */
+      try {
+        _emit('onSlamRequested', { phase: (s === 'STOP_PRE') ? 'pre' : 'post', source: 'reelsArea' });
+      } finally {
+        STATE.dispatchLocked = false;
+      }
     }
 
     /* DOM wiring — single click handler. Capture phase so we run BEFORE
@@ -607,9 +631,23 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
       var btn = _btn();
       if (!btn || typeof MutationObserver !== 'function') return;
       var mo = new MutationObserver(function () {
-        if (__spacePending && !btn.disabled) {
-          __spacePending = false;
-          btn.click();
+        /* 2026-06-18 — BUG-2 fix: previously this drain fired whenever the
+         * button became enabled regardless of whether the round had been
+         * finalized. If the pending-settle drain ran AFTER _finalizeRound
+         * but BEFORE the queued postSpin disarmed __spacePending, the
+         * queued click would dispatch into a fresh preSpin disguised as
+         * "Space-from-pending". Now the drain ONLY fires while we are
+         * actually mid-settle (slamPendingSettle true). After the round
+         * is finalized, any leftover __spacePending is cleared to prevent
+         * a stale press from leaking into the next spin. */
+        if (!btn.disabled && __spacePending) {
+          if (STATE.slamPendingSettle) {
+            __spacePending = false;
+            btn.click();
+          } else {
+            /* round already settled — drop stale latch */
+            __spacePending = false;
+          }
         }
       });
       mo.observe(btn, { attributes: true, attributeFilter: ['disabled'] });
@@ -822,6 +860,64 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
         if (typeof window !== 'undefined') window.__SLOT_SKIPPED__ = false;
         setState('SPIN');
       });
+
+      /* 2026-06-18 — BUG-3 fix (deep-recon Priority 1): H&W lifecycle
+       * awareness. Pre-fix spinControl was BLIND to Hold&Win phases
+       * (INTRO placard, RUNNING respins, SUMMARY plaque). Player could
+       * see CTA as plain SPIN during the intro/summary placards even
+       * though clicking would dispatch a per-cell respin into a phase
+       * the orchestrator didn't expect. Industry-standard hold-and-spin
+       * UX hides the SPIN CTA during INTRO/SUMMARY (those overlays own
+       * the screen) and re-paints it as the "respin trigger" during the
+       * RUNNING phase so the player knows what the button does.
+       *
+       * We hide the spin button during INTRO + SUMMARY placards by
+       * forcing it disabled, then restore on H&W end. RUNNING uses the
+       * normal SPIN state — clicking it dispatches a respin via the same
+       * runOneBaseSpin() funnel that the H&W per-cell branch consumes. */
+      window.HookBus.on('onHoldAndWinIntro', function () {
+        var btn = _btn(); if (btn) btn.disabled = true;
+      });
+      window.HookBus.on('onHoldAndWinStart', function () {
+        /* RUNNING phase begins — restore SPIN affordance so the player
+         * can dispatch the next respin manually if autoplay is off. */
+        var btn = _btn(); if (btn) btn.disabled = false;
+        setState('SPIN');
+      });
+      window.HookBus.on('onHoldAndWinEnd', function () {
+        /* Round closed (natural / full-grid / forced) — flush any stale
+         * morph and return to baseline so the next BASE spin starts
+         * cleanly. */
+        var btn = _btn(); if (btn) btn.disabled = false;
+        setState('SPIN');
+      });
+
+      /* 2026-06-18 — BUG-5 fix (deep-recon Priority 1): compliance gate
+       * recovery. When reelEngine.runOneBaseSpin() refuses to dispatch
+       * (NL Cruks pending, DE min-spin floor, NL cool-off active, max-win
+       * cap reached), it emits one of the dedicated audit events but
+       * never fires preSpin → settlement. Pre-fix spinControl had already
+       * morphed SPIN → STOP_PRE on the click and now sat there forever
+       * waiting for a postSpin that never came.
+       *
+       * The fix: listen to every gate-failure event and snap the CTA
+       * back to SPIN with the button re-enabled, so the player can try
+       * again once the gate clears. The emit list mirrors the gating
+       * surface in reelEngine.mjs::runOneBaseSpin + jurisdictionGate. */
+      var _gateRecover = function () {
+        var btn = _btn(); if (btn) btn.disabled = false;
+        STATE.slamPendingSettle = false;
+        STATE.expectsFinalize   = false;
+        STATE.dispatchLocked    = false;
+        STATE.pendingSlam       = false;
+        setState('SPIN');
+      };
+      window.HookBus.on('onCruksCheckPending',       _gateRecover);
+      window.HookBus.on('onManualSpinPaceBlocked',   _gateRecover);
+      window.HookBus.on('onMinSpinPaceDeferred',     _gateRecover);
+      window.HookBus.on('onCoolOffEnforced',         _gateRecover);
+      window.HookBus.on('onWinCapReached',           _gateRecover);
+      window.HookBus.on('onSelfExcludedBlocked',     _gateRecover);
     }
 
     /* __SLOT_SKIPPED__ defaults to false so animation chains that poll it
