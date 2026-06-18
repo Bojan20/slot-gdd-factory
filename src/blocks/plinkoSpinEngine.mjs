@@ -230,19 +230,10 @@ export function emitPlinkoSpinEngineRuntime(cfg = defaultConfig()) {
                 ball.classList.add('is-landed');
                 STATE.dropping = false;
                 var cb = STATE.pending; STATE.pending = null;
-                /* 2026-06-18 WASH PASS fix — plinkoSpinEngine owns the
-                 * settle moment for plinko topology. reelEngine is NOT
-                 * in the dispatch path here, so without this emit the
-                 * canonical onSpinResult lifecycle event never fires
-                 * for plinko slots, breaking 40+ downstream listeners. */
-                try {
-                  if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
-                    var duringFs = (typeof FSM !== 'undefined' && FSM && FSM.phase === 'FS_ACTIVE');
-                    HookBus.emit('onSpinResult', { duringFs: duringFs, topology: 'plinko' });
-                  }
-                } catch (e) {
-                  try { if (typeof console !== 'undefined' && console.warn) console.warn('[plinkoSpinEngine] onSpinResult emit failed', e); } catch (__) {}
-                }
+                /* WASH PASS #2 (2026-06-19) — REVERTED commit 406a63f emit.
+                 * QA confirmed DOUBLE-EMIT: reelEngine wrapper _wrappedSettled
+                 * (reelEngine.mjs:1041) ALREADY emits onSpinResult when it
+                 * calls cb. Per CLAUDE.md "reelEngine is SOLE OWNER". */
                 if (typeof cb === 'function') {
                   var cbTimer = setTimeout(cb, 0);
                   STATE.dropTimers.push(cbTimer);

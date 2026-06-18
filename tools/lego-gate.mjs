@@ -157,8 +157,12 @@ const EXPECTED_EMIT_OWNERS = {
    * slots had a silent broken lifecycle — 40+ downstream listeners
    * (multiplierOrb, mysterySymbolMultiplier, wildCollisionMultiplier,
    * stickyWild, etc.) never fired on these topologies. */
-  onSpinResult:   ['reelEngine.mjs', 'crashSpinEngine.mjs', 'plinkoSpinEngine.mjs',
-                   'hexReelEngine.mjs', 'slingoSpinEngine.mjs', 'wheelSpinEngine.mjs'],
+  /* WASH PASS #2 (2026-06-19) — REVERTED multi-owner. Commit 406a63f added
+   * 5 engines as co-owners, but reelEngine wrapper _wrappedSettled (line
+   * 1041) ALREADY emits onSpinResult when it invokes the cb that engines
+   * call. Multi-owner caused DOUBLE-EMIT regression. Restored single-owner
+   * per CLAUDE.md hard rule. */
+  onSpinResult:   ['reelEngine.mjs'],
   onTumbleStep:   ['tumble.mjs'],
   postSpin:       ['postSpin.mjs'],
   onFsTrigger:    ['freeSpins.mjs'],

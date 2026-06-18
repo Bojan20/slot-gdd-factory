@@ -259,17 +259,11 @@ export function emitCrashSpinEngineRuntime(cfg = defaultConfig()) {
          * downstream listeners (multiplierOrb, mysterySymbolMultiplier,
          * wildCollisionMultiplier, stickyWild, etc.). Emit BEFORE the
          * cb so listeners see the settled state when they run. */
-        try {
-          if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
-            var duringFs = (typeof FSM !== 'undefined' && FSM && FSM.phase === 'FS_ACTIVE');
-            HookBus.emit('onSpinResult', { duringFs: duringFs, topology: 'crash', peak: peak });
-          }
-        } catch (e) {
-          /* QA review 2026-06-18 — surface listener exceptions instead of
-           * swallowing silently. The whole reason this emit exists is to
-           * fix a silent-broken-lifecycle bug; we MUST NOT recreate one. */
-          try { if (typeof console !== 'undefined' && console.warn) console.warn('[crashSpinEngine] onSpinResult emit failed', e); } catch (__) {}
-        }
+        /* WASH PASS #2 (2026-06-19) — REVERTED commit 406a63f emit here.
+         * QA agent confirmed DOUBLE-EMIT regression: reelEngine.mjs:1041
+         * _wrappedSettled already emits onSpinResult when it calls cb.
+         * Per CLAUDE.md hard rule "reelEngine is SOLE OWNER of onSpinResult"
+         * — engine just invokes cb and the wrapper handles lifecycle. */
         if (typeof cb === 'function') setTimeout(cb, 0);
       }
       STATE.settleTimer = setTimeout(_settle, _spinDur + ${SETTLE_BUFFER_MS});
