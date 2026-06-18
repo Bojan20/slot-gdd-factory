@@ -40,6 +40,14 @@ export function parseGDD(text, ext) {
       return m;
     }
   }
+  /* Wave W47.S22 Edge-Case A — strip UTF-8 BOM (﻿) if present.
+   * MS-authored / Notion-exported markdown frequently leads with a BOM
+   * which collides with the `^#\s+` heading regex → name extraction
+   * silently fell back to "Untitled Slot". One char strip, no allocation
+   * unless BOM actually present. */
+  if (text.charCodeAt(0) === 0xFEFF) {
+    text = text.slice(1);
+  }
   if (ext === 'json') {
     try {
       return normalizeFromJSON(JSON.parse(text));
@@ -179,7 +187,23 @@ export function parseMarkdownGDD(text) {
 
   /* features */
   _safeExtract('extractFeatures', () => {
-    model.features = extractFeatures(text);
+    const raw = extractFeatures(text);
+    /* Wave W47.S22 Edge-Case C — dedupe features by kind. GDDs that
+     * mention the same feature in multiple sections (intro paragraph,
+     * features list, free-spins detail block) used to land in the
+     * model as duplicates. Dedupe by kind preserving FIRST occurrence
+     * so the label closest to the section title wins. Generic kinds
+     * (`feature_generic`) are NOT deduped — they exist precisely to
+     * carry un-classified prose snippets, each of which may legitimately
+     * mention a distinct feature the parser didn't pick up. */
+    const seen = new Set();
+    model.features = raw.filter(f => {
+      if (!f || typeof f.kind !== 'string') return false;
+      if (f.kind === 'feature_generic') return true;
+      if (seen.has(f.kind)) return false;
+      seen.add(f.kind);
+      return true;
+    });
     if (model.features.length > 0) {
       model.confidence.features = Math.min(1, model.features.length / 3);
     }
@@ -651,6 +675,38 @@ export function extractTopology(rawText, model) {
   if (lines) {
     t.paylines = parseInt(lines[1], 10);
     model.confidence.topology += 0.15;
+  } else {
+    /* Wave W47.S22 Edge-Case B — inline / prose "N paylines" fallback.
+     * Reference GDDs that don't use the table syntax still mention
+     * paylines in a sentence ("with 20 paylines" / "243 ways and
+     * 25 pay-lines" / "twenty-five paylines"). Without this fallback
+     * the parser silently returned the freshModel default (10).
+     *
+     * Numeric form: \b(\d+)\s*pay[ -]?lines?\b   — anchored on word
+     * boundary so we don't pick up "25" out of "25%".
+     *
+     * Word form: a tiny lookup for the English numerals most often
+     * used in marketing copy (5, 10, 15, 20, 25, 30, 40, 50, 75, 100,
+     * 243, 1024). Anything outside the table stays at default 10. */
+    const inline = text.match(/\b(\d+)\s*pay[\s-]?lines?\b/i);
+    if (inline) {
+      t.paylines = parseInt(inline[1], 10);
+      model.confidence.topology += 0.10;   /* lower confidence than table cell */
+    } else {
+      const WORD_NUMS = {
+        five: 5, ten: 10, fifteen: 15, twenty: 20, 'twenty-five': 25,
+        thirty: 30, forty: 40, fifty: 50, seventy: 70, 'seventy-five': 75,
+        hundred: 100, 'one hundred': 100,
+      };
+      const wordMatch = text.match(/\b(twenty-five|seventy-five|one hundred|five|ten|fifteen|twenty|thirty|forty|fifty|seventy|hundred)\s+pay[\s-]?lines?\b/i);
+      if (wordMatch) {
+        const n = WORD_NUMS[wordMatch[1].toLowerCase()];
+        if (n) {
+          t.paylines = n;
+          model.confidence.topology += 0.08;
+        }
+      }
+    }
   }
 
   /* 5. Ways count — 117649 / 46656 / 7776 / 4096 / 3125 / 1024 / 576 / 243 */
