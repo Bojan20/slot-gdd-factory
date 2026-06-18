@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-18T16:17:36.962Z",
+  "generatedAt": "2026-06-18T16:25:26.568Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 136,
+  "totalBlocks": 137,
   "blocks": [
     {
       "name": "ambientBackgroundWheel",
@@ -3491,7 +3491,7 @@
         "glowColor": "#88ccff",
         "audioCueId": null
       },
-      "loc": 384
+      "loc": 414
     },
     {
       "name": "realityCheck",
@@ -5087,6 +5087,48 @@
         "haloColor": "110,255,170"
       },
       "loc": 251
+    },
+    {
+      "name": "walkingWildStepper",
+      "file": "src/blocks/walkingWildStepper.mjs",
+      "testFile": "tests/blocks/walkingWildStepper.test.mjs",
+      "category": "wild",
+      "description": "Wave LEGO-WWS — Walking Wild Stepper with progressive multiplier.",
+      "exports": [
+        "defaultConfig",
+        "emitWalkingWildStepperCSS",
+        "emitWalkingWildStepperMarkup",
+        "emitWalkingWildStepperRuntime",
+        "nextMult",
+        "nextPosition",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsSpinResult",
+        "onFsTrigger",
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onWalkingWildExited",
+        "onWalkingWildSpawned",
+        "onWalkingWildStep"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "direction": "right",
+        "stepCells": 1,
+        "startMult": 1,
+        "growPerStep": 1,
+        "maxMult": 10,
+        "triggerProbability": 0.3,
+        "wildSymbol": "W",
+        "appliesIn": "fs",
+        "glowColor": "#aaffaa",
+        "pulseMs": 800
+      },
+      "loc": 498
     },
     {
       "name": "waysEval",

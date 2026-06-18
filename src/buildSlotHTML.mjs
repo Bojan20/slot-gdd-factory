@@ -296,6 +296,11 @@ import {
   emitRandomLightningMultiplierCSS, emitRandomLightningMultiplierMarkup, emitRandomLightningMultiplierRuntime,
   resolveConfig as resolveRandomLightningMultiplierConfig,
 } from './blocks/randomLightningMultiplier.mjs';
+/* Wave LEGO-WW (06-18) — Walking wild stepper with progressive ×N mult. */
+import {
+  emitWalkingWildStepperCSS, emitWalkingWildStepperMarkup, emitWalkingWildStepperRuntime,
+  resolveConfig as resolveWalkingWildStepperConfig,
+} from './blocks/walkingWildStepper.mjs';
 import {
   emitProgressiveFreeSpinsCSS, emitProgressiveFreeSpinsMarkup, emitProgressiveFreeSpinsRuntime,
   resolveConfig as resolveProgressiveFreeSpinsConfig,
@@ -1084,6 +1089,7 @@ ${emitProgressiveFsRetriggerLadderCSS(resolveProgressiveFsRetriggerLadderConfig(
 ${emitExpandingWildMultiplierCSS(resolveExpandingWildMultiplierConfig(model))}
 ${emitMegaWildClusterCSS(resolveMegaWildClusterConfig(model))}
 ${emitRandomLightningMultiplierCSS(resolveRandomLightningMultiplierConfig(model))}
+${emitWalkingWildStepperCSS(resolveWalkingWildStepperConfig(model))}
 ${emitLightningCSS(resolveLightningConfig(model))}
 ${emitGambleCSS(resolveGambleConfig(model))}
 ${emitSuperSymbolCSS(resolveSuperSymbolConfig(model))}
@@ -1225,6 +1231,7 @@ ${emitProgressiveFsRetriggerLadderMarkup(resolveProgressiveFsRetriggerLadderConf
 ${emitExpandingWildMultiplierMarkup(resolveExpandingWildMultiplierConfig(model))}
 ${emitMegaWildClusterMarkup(resolveMegaWildClusterConfig(model))}
 ${emitRandomLightningMultiplierMarkup(resolveRandomLightningMultiplierConfig(model))}
+${emitWalkingWildStepperMarkup(resolveWalkingWildStepperConfig(model))}
 ${emitGambleMarkup(resolveGambleConfig(model))}
 ${/* Wave U6 — secondary gamble overlay (full-screen modal). */ ''}
 ${emitGambleSecondaryMarkup(resolveGambleSecondaryConfig(model))}
@@ -1442,6 +1449,8 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitMegaWildClusterRuntime(resolveMegaWildClusterConfig(model))}
   /* Wave LEGO-L — random spin-wide multiplier strike (vendor-neutral). */
   ${emitRandomLightningMultiplierRuntime(resolveRandomLightningMultiplierConfig(model))}
+  /* Wave LEGO-WW — walking wild stepper with progressive ×N (vendor-neutral). */
+  ${emitWalkingWildStepperRuntime(resolveWalkingWildStepperConfig(model))}
   ${emitProgressiveFreeSpinsRuntime(resolveProgressiveFreeSpinsConfig(model))}
   ${/* audio runtime skipped — ADB tok, ne GDD */ ''}
   ${emitUiToastRuntime(resolveUiToastConfig(model))}

@@ -509,6 +509,10 @@ const EXPECTED_EMIT_OWNERS = {
    * (WoO §5.2 + Crystal Forge §5.2 explicit GDD demand). */
   onLightningStrike:                 ['randomLightningMultiplier.mjs'],
   onLightningStrikeMissed:           ['randomLightningMultiplier.mjs'],
+  /* Wave LEGO-WW (2026-06-18) — walking wild stepper with progressive ×N. */
+  onWalkingWildStep:                 ['walkingWildStepper.mjs'],
+  onWalkingWildSpawned:              ['walkingWildStepper.mjs'],
+  onWalkingWildExited:               ['walkingWildStepper.mjs'],
   /* 2026-06-09 — scatterCelebration owns its own lifecycle phase events.
    * spinControl listens to morph the SPIN CTA into a SKIP button during
    * the celebration window. */
