@@ -111,9 +111,11 @@ export function defaultConfig() {
       bonusCelebrateMs: 1500,
       /* 2026-06-18 (Boki: "tek onda da se udje u h&w") — explicit pause
        * between celebration end and intro placard fade-in so the player
-       * gets a clear visual cut. Default 240ms — long enough to read,
-       * short enough to feel snappy. */
-      celebrateTailMs: 240,
+       * gets a clear visual cut. Bumped 240 → 600ms after Boki reported
+       * the previous gap still read as instant transition. The player
+       * needs ~half a second between visual phases to register them as
+       * separate beats. */
+      celebrateTailMs: 600,
     },
     /* Orb distribution — null = built-in Zeus' Storm table. GDD may
      * override with array of { label, weight, tier, valueX }. */
@@ -1556,32 +1558,61 @@ function hwMaybeEnter() {
    * making the player see the placard with no preceding pulse. */
   if (HW_STATE.entering) return false;
   if (hwCountBonusOnGrid() >= HW_TRIGGER_COUNT) {
-    /* 2026-06-18 (Boki: "zelim da se animacija simbola prvo uradi, pa onda
-     * da se udje u hold end win"). Strict serial sequence:
-     *   1. Cancel any UFP H&W fallback timer that could re-fire after the
-     *      natural path completes (Boki bug C: "zavrsi se jedan h&W i
-     *      onda krene slkedeci").
-     *   2. Stash bonus cell DOM REFs via _hwStashEntryCells — the PHASE 2
-     *      apply path consumes them directly, so engine ticks between
-     *      PHASE 1 and PHASE 2 can no longer drift bonus positions
-     *      (Boki bug B: "menjaju se simboli ... p[omere se mesta").
-     *   3. Run celebration (1500ms visible pulse + N BONUS COLLECTED badge).
-     *   4. Wait HW_T_CELEBRATE_TAIL_MS so the player gets a clean cut
-     *      between the celebration peak and the intro placard fade-in
-     *      (Boki bug A: "tek onda da se udje").
-     *   5. _hwBeginRound() mounts INTRO → RUNNING. */
+    /* 2026-06-18 (Boki: "sacekaj da padne i zadnji ril, i da se napravi
+     * animacija simbola koji su pali i onda tek intro plaketa"). Strict
+     * serial sequence with explicit all-reels-stopped gate:
+     *   1. Cancel any UFP H&W fallback timer.
+     *   2. Wait until EVERY reel reports spinning=false + stopping=false
+     *      + (bouncing|undefined). Without this gate the celebration can
+     *      kick off while the last reel is still in its bounce decay
+     *      window, and the bonus glyph snapshot misses any cell that
+     *      hasn't fully committed its textContent yet.
+     *   3. Stash bonus cell DOM REFs via _hwStashEntryCells.
+     *   4. Run celebration (1500ms visible pulse + N BONUS COLLECTED).
+     *   5. Wait HW_T_CELEBRATE_TAIL_MS for a clean visual cut.
+     *   6. _hwBeginRound() mounts INTRO → RUNNING. */
     HW_STATE.entering = true;
     _hwCancelForceFallbackTimer();
-    _hwStashEntryCells();
-    playHwBonusCelebration().then(function () {
-      setTimeout(function () {
-        HW_STATE.entering = false;
-        _hwBeginRound();
-      }, HW_T_CELEBRATE_TAIL_MS);
+    _hwWaitAllReelsStopped(function () {
+      _hwStashEntryCells();
+      playHwBonusCelebration().then(function () {
+        setTimeout(function () {
+          HW_STATE.entering = false;
+          _hwBeginRound();
+        }, HW_T_CELEBRATE_TAIL_MS);
+      });
     });
     return true;
   }
   return false;
+}
+
+/* 2026-06-18 — defensive gate: poll RECT_REELS until every reel reports
+ * "fully settled" (not spinning, not stopping, not bouncing). Resolves
+ * via the supplied callback when the last reel commits its textContent
+ * + targetY snap. Caps at 1200ms so a broken engine state can't hang
+ * the H&W entry forever (the callback runs anyway at the cap). */
+function _hwWaitAllReelsStopped(cb) {
+  const START = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  const CAP_MS = 1200;
+  function _isAllStopped() {
+    if (typeof window === 'undefined' || !Array.isArray(window.RECT_REELS)) return true;
+    const reels = window.RECT_REELS;
+    for (let i = 0; i < reels.length; i++) {
+      const r = reels[i];
+      if (!r) continue;
+      if (r.spinning) return false;
+      if (r.stopping) return false;
+      if (r.bouncing === true) return false;
+    }
+    return true;
+  }
+  function _tick() {
+    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    if (_isAllStopped() || (now - START) >= CAP_MS) { cb(); return; }
+    setTimeout(_tick, 35);
+  }
+  _tick();
 }
 
 /* Helpers wired to HW_STATE — kept close to the entry path so the bug
