@@ -256,7 +256,13 @@ async function probeOneChip(page, slug, kind) {
   page.off('pageerror', onPageErr);
 
   const realErr = consoleErrors.filter(e => !/Failed to load resource|favicon|net::ERR_FILE_NOT_FOUND/i.test(e));
-  const ok = result.emit && result.flag && result.outcome && realErr.length === 0 && pageErrors.length === 0;
+  /* 2026-06-18 — `flag` (window.__FORCE_FEATURE__) is intentionally
+   * nullified by reelEngine at the single global settle gate (line ~557)
+   * to prevent a stale FORCE flag from leaking into the next base spin
+   * (Boki bug "duplo H&W"). The probe must therefore check emit + real
+   * outcome only; flag is a transient consumed value, not a stable
+   * post-spin assertion. */
+  const ok = result.emit && result.outcome && realErr.length === 0 && pageErrors.length === 0;
   return { kind, ok, ...result, consoleErrors: realErr, pageErrors };
 }
 

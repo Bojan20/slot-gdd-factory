@@ -3,7 +3,67 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 17:55 · **HEAD**: pending push · main
+> **Last updated**: 2026-06-18 18:30 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## 🏆 H&W TRIGGER-LATCH (industry-reference single-arm-per-spin)
+>
+> Boki: *"i dalje se duplo ponavlja hold and win. zavrsi se jedan, i
+> odmah drugi pocne ... pogledaj kako to IGT radi imas kod agenta za to"*.
+>
+> Subagent (Explore) prosledio industry pattern iz `agents/SLOT_MECHANICS_ENCYCLOPEDIA.md`
+> + `agents/research-pool/woo-controllers-RE.md`: lock-and-respin
+> cabinet sequencers ship a **trigger-latch** koji se čisti na round-end
+> i ponovo se ARM-uje samo na sledeći player-initiated coin-in / spin
+> button click. Mojnstaranji INTERNI gate (HW_STATE.entering) hvata
+> samo race u istom round-u, ne hvata SUMMARY → INACTIVE → odmah novi
+> postSpin na istoj reel snapshot-i.
+>
+> ### State machine (4-fazna kanonska)
+>
+> | Phase | active | entering | armed | Šta dozvoljava |
+> |:--|:-:|:-:|:-:|:--|
+> | INACTIVE | false | false | true | hwMaybeEnter može da uđe |
+> | INTRO (celebration) | true | true | false | re-entry zaključan |
+> | INTRO (placard) | true | false | false | re-entry zaključan |
+> | RUNNING (respin loop) | true | false | false | respin clicks samo |
+> | SUMMARY | true | false | false | cleanup faze |
+> | back to INACTIVE | false | false | **false** | gate held FALSE do sledećeg preSpin-a |
+>
+> ### Fix tačke
+>
+> | # | Mesto | Promena |
+> |:-:|:--|:--|
+> | 1 | HW_STATE init | `armed: true` (default-armed pri boot-u) |
+> | 2 | hwMaybeEnter | `if (HW_STATE.armed === false) return false;` + consume latch on accept |
+> | 3 | hwForceSeed | isto — armed gate + consume on accept |
+> | 4 | hwEnd | `HW_STATE.armed = false;` (HOLD until next preSpin) + nullify FORCE_TRIGGER + __FORCE_FEATURE_PENDING__ |
+> | 5 | preSpin (priority 10) | `if (phase === INACTIVE) HW_STATE.armed = true;` |
+>
+> ### Probe verifikacija
+>
+> | Probe | Detalji | Rezultat |
+> |:--|:--|:-:|
+> | `tools/_hnw-no-double-trigger-probe.mjs` (NEW) | Klik H&W chip → drive respins do hwEnd → 10s idle → assert ≤1 INTRO emit + 0 re-entry posle hwEnd-a | **2/2 ✅** |
+> | HnP run | 1 intro · end@idx=53 · 0 re-entry · 0 ce · 0 pe | ✅ |
+> | WoO run | 1 intro · end@idx=25 · 0 re-entry · 0 ce · 0 pe | ✅ |
+>
+> ### Regression gate
+>
+> | Gate | Status |
+> |:--|:-:|
+> | `test:lego` (7 invariants) | ✅ 7/7 |
+> | `holdAndWin.test.mjs` | ✅ 21/0 |
+> | `test:force-outcomes` (20 chip-outcomes) | ✅ 20/20 |
+> | `test:parity` (cross-game DOM) | ✅ 0/18 violations |
+> | `test:cert:real` (12 bundle) | ✅ 12/12 · 0 parity |
+> | Console errors svih probova | **0** |
+>
+> Probe-flag check (`window.__FORCE_FEATURE__`) skinut iz force-outcomes
+> ok-kriterijuma jer je flag intentionally nullify-an u reelEngine
+> settle gate (`reelEngine.mjs:557` — fix za HW double iz HEAD ef78fb0).
+> Probe sada gleda **emit + real outcome** only.
 >
 > ---
 >

@@ -806,6 +806,22 @@ const HW_STATE = {
    * second postSpin from re-entering through either path while the
    * bonus celebration is still playing. */
   entering: false,
+  /* 2026-06-18 (industry-reference single-arm-per-spin gate) —
+   * armed is the canonical "next postSpin may evaluate H&W trigger"
+   * signal. Set to TRUE on every preSpin while phase === INACTIVE,
+   * consumed (set FALSE) the moment hwMaybeEnter() OR hwForceSeed()
+   * accepts the trigger, and explicitly held FALSE after hwEnd() until
+   * the player initiates the next base spin.
+   *
+   * Without this gate, the postSpin that runs immediately AFTER hwEnd
+   * (when the SUMMARY placard auto-dismisses on the same reel snapshot
+   * that already accumulated a bonus pile) could re-fire H&W on the
+   * same grid → Boki bug "zavrsi se jedan, i odmah drugi pocne".
+   *
+   * Industry-standard lock-and-respin cabinet sequencers ship exactly
+   * this gate: a "trigger latch" cleared at round-end and re-armed
+   * only on the next coin-in / spin-button press. */
+  armed: true,
   respinsLeft: 0,
   respinsUsed: 0,
   totalWinX: 0,             /* accumulated × bet */
@@ -1557,7 +1573,19 @@ function hwMaybeEnter() {
    * in the middle and mount the intro before celebration completes,
    * making the player see the placard with no preceding pulse. */
   if (HW_STATE.entering) return false;
+  /* 2026-06-18 — industry-reference single-arm-per-spin gate: hwEnd()
+   * clears armed so the postSpin immediately following a round end
+   * cannot re-fire H&W on the SAME grid snapshot (bonus glyphs persist
+   * as data-symbol=B even after .is-locked-bonus stripping). Only the
+   * next player-initiated preSpin re-arms the latch, mirroring the
+   * industry-standard trigger-latch behaviour. */
+  if (HW_STATE.armed === false) return false;
   if (hwCountBonusOnGrid() >= HW_TRIGGER_COUNT) {
+    /* Consume the latch the instant we accept the trigger so any
+     * parallel postSpin / fallback timer that re-enters in the same
+     * tick is rejected here. Re-armed by next preSpin (phase=INACTIVE
+     * after this round ends → preSpin sets armed=true). */
+    HW_STATE.armed = false;
     /* 2026-06-18 (Boki: "sacekaj da padne i zadnji ril, i da se napravi
      * animacija simbola koji su pali i onda tek intro plaketa"). Strict
      * serial sequence with explicit all-reels-stopped gate:
@@ -1646,6 +1674,15 @@ function _hwStashEntryCells() {
 function hwForceSeed(orbCount) {
   if (HW_STATE.active) return false;
   if (HW_STATE.entering) return false;
+  /* 2026-06-18 — industry-reference armed-latch gate: hwEnd() clears
+   * armed and only the next player preSpin re-arms it. Force-seed
+   * fallback honours the same gate so a UFP rapid double-click (or
+   * fallback timer racing the primary plant) cannot mount a second
+   * round on top of the first. */
+  if (HW_STATE.armed === false) return false;
+  /* Consume the latch up front — see hwMaybeEnter() for the same
+   * single-arm rationale. */
+  HW_STATE.armed = false;
   /* W48 v6 — pick random VISIBLE (reel, row) coordinates from RECT_REELS,
    * not flat DOM indices. Falls back to flat picks on non-rect topology.
    * Each picked key is a 'reel,row' string matching the natural path. */
@@ -1842,6 +1879,25 @@ function hwEnd() {
     HW_STATE.respinsUsed = 0;
     HW_STATE.fullGrid = false;
     HW_STATE.jackpotsHit = [];
+    /* 2026-06-18 — industry-reference trigger-latch: hold the armed
+     * flag FALSE until the next player-initiated preSpin re-arms it.
+     * This is the gate that fixes Boki bug "zavrsi se jedan H&W, i
+     * odmah drugi pocne": without this latch, the very next postSpin
+     * (often firing on the same reel snapshot as the round just ended)
+     * could re-evaluate the grid, still see 6+ data-symbol=B cells,
+     * and immediately mount round #2. Industry-standard cabinet
+     * sequencers ship the same latch. */
+    HW_STATE.armed = false;
+    /* Double-safety FORCE_TRIGGER nullify — _hwBeginRound() already
+     * cleared it at INTRO time, but if a downstream block (autoplay,
+     * sales-loop) re-planted FORCE_TRIGGER during the running round,
+     * we wipe it here so the next spin starts from a clean slate. */
+    try {
+      if (typeof window !== 'undefined') {
+        window.FORCE_TRIGGER = null;
+        window.__FORCE_FEATURE_PENDING__ = null;
+      }
+    } catch (_) {}
     _hwEnterPhase('INACTIVE');
     if (typeof HookBus !== 'undefined') {
       try { HookBus.emit('onHoldAndWinEnd', stats); } catch (_) {}
@@ -1889,6 +1945,15 @@ if (typeof HookBus !== 'undefined' && !(typeof window !== 'undefined' && window.
        * boundary unless an H&W round is already RUNNING (in which case
        * preSpin is a respin and the flag is already false). */
       if (HW_STATE.phase === 'INACTIVE') HW_STATE.entering = false;
+      /* 2026-06-18 — industry-reference trigger-latch re-arm: when the
+       * player initiates a new base spin and we are between rounds
+       * (phase INACTIVE), the latch is re-armed so the next postSpin
+       * may evaluate H&W trigger. Inside a RUNNING round (respins),
+       * the preSpin is the respin loop and armed MUST stay whatever
+       * it currently is (false from the round-start consume) — respins
+       * must never re-arm because the postSpin after each respin must
+       * NOT re-enter as a NEW H&W round (would mean nested-round). */
+      if (HW_STATE.phase === 'INACTIVE') HW_STATE.armed = true;
     } catch (_) {}
   }, { priority: 10 });
   HookBus.on('postSpin', () => {
