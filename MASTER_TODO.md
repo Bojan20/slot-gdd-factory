@@ -3,7 +3,78 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 01:00 · **HEAD**: `15fb6a9` · main
+> **Last updated**: 2026-06-18 02:30 · **HEAD**: `88f4563` · main
+>
+> ---
+>
+> ## 🏆 ULTIMATE BACKLOG SWEEP · 2026-06-18 (13 commits) — 12-item backlog landed in single session
+>
+> Pokrenuto na Bokijev zahtev *"SVE REDOM, i kako zavrsavas qa svega
+> implementiranog, tako azuriraj master todo"*. Svih 12 backlog stavki
+> + pre-flight cleanup obrađene redom, po jedan-fix-jedan-commit kanon,
+> svaki commit kroz lokalni gate (relevantni unit testovi + audit).
+>
+> ### 📜 Commit lanac (13 push-ovanih commit-ova posle `cf9b134`)
+>
+> | # | SHA | Kategorija | Sadržaj |
+> |:-:|:--|:-:|:--|
+> | 1 | `ce61ffb` | 🧹 CHORE | qa-artifacts: contrast-html snapshots + themeCSS bg-stage sync |
+> | 2 | `344425d` | ♿ A11Y | KBD audit 4 button warns — explicit aria-label (hiLoGamble + regulatorDisclosureModal) |
+> | 3 | `62293da` | 🎯 POLISH | bigWinTier counter ramp T0 sync — eliminira FADE_MS lag protiv tier promocije |
+> | 4 | `cc2e37b` | ✨ FEATURE | freeSpins retrigger HUD pulse + glow (W47.S20) |
+> | 5 | `daf7da6` | 🧪 TOOL | tools/model-schema-validator.mjs — v2 strict (24/24 samples clean) |
+> | 6 | `e37f974` | 🐛 BUG | parser 3 edge cases — BOM strip / inline "N paylines" / feature dedupe |
+> | 7 | `0762d10` | 🎯 POLISH | tumble cascade — gravity ease-in curve + per-reel stagger (left-to-right wave) |
+> | 8 | `9778423` | 🐛 BUG | multiplierOrb lifecycle audit — onFsEnd + preSpin ghost-sweeper |
+> | 9 | `fe16525` | 🐛 BUG | wildCollectionTrail symbol-density edge guard — bump cap + re-emit dedupe |
+> | 10 | `16c1329` | ♿ A11Y | FS HUD aria-labelledby + retrigger toast polite (W47.S26) |
+> | 11 | `2889999` | ✨ FEATURE | playground block filter — name/category/hook/emit + match counter |
+> | 12 | `5329460` | 📜 DOC | JSDoc contract headers — 15 worst blocks → 7/7 (audit tool + sweep) |
+> | 13 | `88f4563` | 🔒 GATE | strict check #13 dead-render guard — 1586/1586 PASS (was 12-check, now 13) |
+>
+> ### 🎯 Backlog stavke (12) — sve ZELENE
+>
+> | # | Backlog stavka | Effort | Commit | Verifikacija |
+> |:-:|:--|:-:|:--|:--|
+> | 1 | 4 KBD warn empty button text | XS | `344425d` | keyboard-nav-audit: 113 clean, 0 warn |
+> | 2 | Win presentation polish (BW tier banner tajming) | S | `62293da` | bigWinTier: 36/36, FADE_MS lag eliminisan |
+> | 3 | FS retrigger animacija (counter pulse + glow) | S | `cc2e37b` | freeSpins: pass, RM gate active |
+> | 4 | Capsule export validator (schema v2 strict) | S | `daf7da6` | 24/24 samples clean, `--strict` mode |
+> | 5 | GDD parser edge cases (3) | S | `e37f974` | parserMalformed: 26/26 (was 21, +5 edge tests) |
+> | 6 | Tumble cascade timing tuning | S | `0762d10` | tumble: 30/30, staggerMs 0-200 GDD knob |
+> | 7 | Multiplier orb lifecycle hook audit | S | `9778423` | multiplierOrb: 24/24, +2 missing subs |
+> | 8 | Wild trail symbol-density edge guard | S | `fe16525` | wildCollectionTrail: pass, BUMP_SANITY_CAP + sig-dedupe |
+> | 9 | Free spins HUD ARIA live-region polish | S | `16c1329` | aria-live-audit: 68 clean, 0 warn |
+> | 10 | Playground GDD picker search + filter | M | `2889999` | cortex-eyes-playground: 24/24 |
+> | 11 | Block JSDoc header sweep (15) | M | `5329460` | jsdoc-contract-audit: 51 → 66 clean blocks |
+> | 12 | Strict-check #13 dead-render guard | M | `88f4563` | block-audit: 1586/1586 PASS (122 × 13) |
+>
+> ### 🔒 Final QA gate (HEAD `88f4563`)
+>
+> | Audit | Rezultat |
+> |:--|:-:|
+> | LEGO 7/7 invariants | ✅ all pass |
+> | 122 × 13 block strict audit | ✅ 1586/1586 |
+> | keyboard-nav | ✅ 113 clean |
+> | aria-live | ✅ 68 clean |
+> | contrast AA | ✅ 632/632 nodes (AAA optional, 51 fail report-only) |
+> | jsdoc-contract | ✅ 0 violations (66 clean, 34 polish-opportunity warns) |
+> | model-schema-validator | ✅ 24/24 samples clean |
+> | parserMalformed | ✅ 26/26 |
+> | tumble / bigWinTier / freeSpins / multiplierOrb / wildCollectionTrail / hiLoGamble / regulatorDisclosureModal | ✅ pass |
+>
+> ### 🆕 Novi alati u repo-u
+>
+> | Alat | Svrha |
+> |:--|:--|
+> | `tools/model-schema-validator.mjs` | ParsedModel v2 strict — top-level + topology + symbols + features |
+> | `tools/jsdoc-contract-audit.mjs` | 7-slot senior-grade JSDoc header sweep za sve blokove |
+>
+> ### 🆕 Novi GDD knob-ovi (downstream-compatible)
+>
+> | Knob | Default | Range | Block |
+> |:--|:-:|:-:|:--|
+> | `model.tumble.staggerMs` | 40 | 0–200 | tumble (W47.S23) |
 >
 > ---
 >
