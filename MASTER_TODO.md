@@ -1,6 +1,56 @@
 # Master TODO — slot-gdd-factory
 
-> **2026-06-18 evening · HEAD pending** · Wave **LEGO-FSV** landed
+> **2026-06-18 late evening · HEAD pending** · Ultimativni **WASH PASS** preko 147 blokova
+>
+> ## 🧼 ULTIMATIVNI WASH PASS (2026-06-18)
+>
+> Boki: *"Was. po agentima svih blokova i varikjacija ultimativni"*
+>
+> 5 paralelnih audit agenata (Explore) preko 5 kategorija: Multiplier (18),
+> Wild (8), FS (13), Engine+Eval+RoundCtrl (27), UI+Feature+Misc (86).
+> Ukupno ~152 blokova provereno u 6 dimenzija (vendor-neutral / JSDoc
+> 8-sekcija / HookBus emit ownership / HW guard / FSM phase guard /
+> wired-once sentinel).
+>
+> ### 6 KRITIČNIH issues sweep-ovani
+>
+> | # | Blok | Issue | Fix |
+> |:-:|:--|:--|:--|
+> | 1 | `walkingWild.mjs` | nema wired-once sentinel | added `__WALKING_WILD_WIRED__` |
+> | 2 | `persistentMultiplier.mjs` | nema wired-once sentinel | added `__PERSISTENT_MULT_WIRED__` |
+> | 3 | `winMultiplierBadge.mjs` | nema wired-once sentinel | added `__WIN_MULT_BADGE_WIRED__` |
+> | 4 | `multiplierLadder.mjs` | nema wired-once sentinel | added `__MULT_LADDER_WIRED__` |
+> | 5 | `expandingWild.mjs` | sentinel camelCase neusklađen | renamed `__EXPANDING_WILD_WIRED__` |
+> | 6 | `respin.mjs` | nema HW_STATE guard + sentinel | added HW guard + `__RESPIN_WIRED__` |
+>
+> 2 agent nalaza false-positive (wildReel sentinel postoji L158-160;
+> wildCollision.lastMult postavljen u hookBus.mjs:752) → skip.
+>
+> ### Strategic backlog (next wave-i)
+>
+> | # | Blok / family | Issue | Wave |
+> |:-:|:--|:--|:--|
+> | 1 | 5 spin enginа (wheel/hex/plinko/slingo/crash) | NE emit-uju onSpinResult/postSpin | LEGO-ENGINE-PARITY |
+> | 2 | clusterPaysEval + waysEval + payAnywhereEval | canonical event imena fale | LEGO-EVAL-EVENTS |
+> | 3 | anticipation.mjs | skipDuringFs config orphan | quick sweep |
+> | 4 | pathAwareMultiplier.mjs | monkey-patch nije idempotent | quick sweep |
+> | 5 | pickYourFs priority 35 vs freeSpins -30 | priority collision | LEGO-FSV-FOLLOWUP |
+> | 6 | lockedSymbolFs | DOM repaint 3× per FS spin | LEGO-FSV-FOLLOWUP |
+> | 7 | stageBadge + winwaysIndicator | OPT_OUT registration | quick sweep |
+>
+> ### Regression gates (sve zelene)
+>
+> | Gate | Status |
+> |:--|:-:|
+> | `test:lego` (7 invariants) | 7/7 ✅ |
+> | `test:blocks` aggregate (147 blokova) | EXIT 0 ✅ |
+> | `test:parity` cross-game | 0 violations ✅ |
+> | `_lego-combination-probe` (A1-A4) | 0 violations ✅ |
+> | Per-block tests (walking/expanding/persistent/respin/multLadder) | 13+11+18+22+35=99 ✅ |
+>
+> ---
+>
+> ## 🏆 Wave LEGO-FSV — 4 nove Free Spins varijante
 >
 > ## 🏆 Wave LEGO-FSV — 4 nove Free Spins varijante
 >

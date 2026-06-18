@@ -159,6 +159,12 @@ export function emitMultiplierLadderRuntime(cfg = defaultConfig()) {
   return `
   (function(){
     if (typeof window === 'undefined' || !window.HookBus) return;
+    /* WASH PASS (2026-06-18) — wired-once sentinel so HMR / repeated
+     * runtime bake does NOT stack the 5 listeners that this block
+     * subscribes to (onFsTrigger/onFsSpinResult/onTumbleStep/onFsEnd/
+     * onMultChange). */
+    if (window.__MULT_LADDER_WIRED__) return;
+    window.__MULT_LADDER_WIRED__ = true;
     var host = document.getElementById('multLadder');
     if (!host) return;
     var STEPS = ${stepsJson};

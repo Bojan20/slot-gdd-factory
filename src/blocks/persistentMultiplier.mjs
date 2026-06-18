@@ -201,7 +201,10 @@ if (document.readyState === 'loading') {
    only when the FS spin actually paid. Multiplier value is published via
    onMultChange so the canonical mult owner (winPresentation) reconciles —
    this block never writes HookBus.setMult directly (single-owner-emit). */
-if (typeof HookBus !== 'undefined') {
+/* WASH PASS (2026-06-18) — wired-once sentinel so HMR / repeated runtime
+ * bake does NOT stack the listeners (was firing N× per FS spin). */
+if (typeof HookBus !== 'undefined' && typeof window !== 'undefined' && !window.__PERSISTENT_MULT_WIRED__) {
+  window.__PERSISTENT_MULT_WIRED__ = true;
   /* F3 priority 30 — decorator class for the multiplier accumulator.
      Although this block mutates persistent state, the convention groups it
      with multiplierOrb + cascadeBooster (peer multiplier-decorators) so

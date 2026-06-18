@@ -231,7 +231,10 @@ if (typeof window !== 'undefined') {
    is set, emit a respin request so the chain continues. preSpin clears
    the registry only on a fresh, non-FS, non-respin spin so the chain
    survives the respin handoff. */
-if (typeof HookBus !== 'undefined') {
+/* WASH PASS (2026-06-18) — wired-once sentinel guard so HMR / repeated
+ * runtime bake does NOT stack the listeners (was firing N× per spin). */
+if (typeof HookBus !== 'undefined' && typeof window !== 'undefined' && !window.__WALKING_WILD_WIRED__) {
+  window.__WALKING_WILD_WIRED__ = true;
   HookBus.on('onSpinResult', () => {
     const stillOn = stepWalkingWilds();
     harvestWalkingWilds();

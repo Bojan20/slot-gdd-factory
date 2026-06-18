@@ -168,8 +168,11 @@ if (typeof window !== 'undefined') {
 
 /* HookBus wire-up — expanding wild fires AFTER reels settle.
    Idempotency guard prevents duplicate handlers from HMR / double-emit / test reload. */
-if (typeof HookBus !== 'undefined' && typeof window !== 'undefined' && !window.__expandingWildBound) {
-  window.__expandingWildBound = true;
+/* WASH PASS (2026-06-18) — sentinel renamed from camelCase
+ * __expandingWildBound to UPPER_SNAKE __EXPANDING_WILD_WIRED__ for
+ * consistency with every other LEGO block's wired-once naming. */
+if (typeof HookBus !== 'undefined' && typeof window !== 'undefined' && !window.__EXPANDING_WILD_WIRED__) {
+  window.__EXPANDING_WILD_WIRED__ = true;
   HookBus.on('onSpinResult', () => { applyExpandingWilds(); });
   HookBus.on('preSpin', () => { clearExpandingWilds(); });
   HookBus.on('onFsTrigger', () => { clearExpandingWilds(); });

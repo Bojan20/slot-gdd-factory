@@ -133,6 +133,11 @@ export function emitWinMultiplierBadgeRuntime(cfg = defaultConfig()) {
   /* ── winMultiplierBadge BLOCK — Wave H20 ──────────────────────────── */
   (function () {
     if (typeof window === 'undefined' || !window.HookBus) return;
+    /* WASH PASS (2026-06-18) — wired-once sentinel so HMR / repeated
+     * runtime bake does NOT stack the listeners (4 listeners would
+     * fire N× per event without this guard). */
+    if (window.__WIN_MULT_BADGE_WIRED__) return;
+    window.__WIN_MULT_BADGE_WIRED__ = true;
     var MIN = ${cfg.minMult};
     var TEMPLATE = ${JSON.stringify(cfg.labelTemplate)};
     var POSITION = ${JSON.stringify(cfg.position)};

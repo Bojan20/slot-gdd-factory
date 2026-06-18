@@ -248,8 +248,16 @@ if (typeof window !== 'undefined') {
 /* HookBus wire-up — respin maybe-triggers on postSpin (round close) when
    no respin is active, and counts down on each postSpin while active.
    Without this respin is dead code (logic defined but never called). */
-if (typeof HookBus !== 'undefined') {
+/* WASH PASS (2026-06-18) — wired-once sentinel + Hold & Win guard so
+ * respin lifecycle does NOT fire during an active H&W round (would
+ * mark cells .is-respin-hold and double-count respin counter against
+ * the orb-sacred Hold & Win cell rendering). Guard mirrors the same
+ * H&W gate pattern applied to multiplierOrb, persistent multiplier,
+ * and the rest of the round-control family. */
+if (typeof HookBus !== 'undefined' && typeof window !== 'undefined' && !window.__RESPIN_WIRED__) {
+  window.__RESPIN_WIRED__ = true;
   HookBus.on('postSpin', () => {
+    if (window.HW_STATE && window.HW_STATE.active) return;
     if (RESPIN_STATE.active) {
       respinAfterSpin();
     } else {
