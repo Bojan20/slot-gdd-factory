@@ -1334,8 +1334,61 @@ function _hwEnsureAllOrbsLocked() {
        * paths, but every base-game bonus is locked and immovable. */
     }
   }
+  /* 2026-06-18 (Boki rule "LOCKED nije tacan ... sve mora da bude
+   * sinhronizovano"): sweep (iii) above doesn't add to lockedCells map
+   * with semantic key (DOM walk has no RECT_REELS index). Result: HUD
+   * LOCKED counter (reads lockedCells.size) drifts from visible orb
+   * count. Plus stale (r,row) entries can persist if engine rotated a
+   * cell out. Reconcile rebuilds the map from the AUTHORITATIVE source
+   * — the actual is-locked-bonus DOM nodes — so map.size == visible. */
+  _hwReconcileLockedFromDOM();
+
   HW_STATE.triggerOrbCount = HW_STATE.lockedCells.size;
   _hwHudUpdate({ pulseLocked: true, pulseTotal: true });
+}
+
+/* 2026-06-18 — single source of truth synchroniser for HW_STATE.lockedCells.
+ * Walks the DOM, collects every cell with is-locked-bonus class, rebuilds
+ * the map keyed by semantic (r,row) when RECT_REELS index resolves, else
+ * by stable visited-order fallback ('dom,N'). Preserves orb metadata
+ * across the rebuild — new entries get _hwRollOrb(). Returns nothing —
+ * mutates HW_STATE. Guarantee: after this call, HW_STATE.lockedCells.size
+ * equals the number of DOM cells with is-locked-bonus, and every map
+ * entry references a currently-visible orb. */
+function _hwReconcileLockedFromDOM() {
+  if (typeof document === 'undefined') return;
+  const host = document.getElementById('gridHost') || document.querySelector('.gridHost');
+  if (!host) return;
+
+  /* Build (cell → semantic key) lookup for RECT_REELS visible rows. */
+  const cellToKey = new Map();
+  if (typeof window !== 'undefined' && Array.isArray(window.RECT_REELS)) {
+    const reels = window.RECT_REELS;
+    for (let r = 0; r < reels.length; r++) {
+      const reel = reels[r];
+      const vis = reel.visibleRows;
+      for (let row = 0; row < vis; row++) {
+        const cell = reel.cells[row + 1];
+        if (cell) cellToKey.set(cell, r + ',' + row);
+      }
+    }
+  }
+
+  const oldOrbs = new Map();
+  HW_STATE.lockedCells.forEach(function (orb, key) { oldOrbs.set(key, orb); });
+
+  const lockedNodes = host.querySelectorAll('.cell.is-locked-bonus');
+  const newMap = new Map();
+  let domFallbackIdx = 0;
+  for (const cell of lockedNodes) {
+    let key = cellToKey.get(cell);
+    if (!key) key = 'dom,' + (domFallbackIdx++);
+    let orb = oldOrbs.get(key) || null;
+    if (!orb) orb = _hwRollOrb();
+    newMap.set(key, orb);
+  }
+
+  HW_STATE.lockedCells = newMap;
 }
 
 /* W48 bugfix v3 — bonus-symbol celebration before H&W intro.
@@ -1503,6 +1556,12 @@ function _hwForceSeedMount(pickedKeys) {
 function hwAfterRespin() {
   if (!HW_STATE.active || HW_STATE.phase !== 'RUNNING') return { ended: false, allLocked: false };
   const added = hwHarvestBonus({ celebrate: true });
+  /* 2026-06-18 (Boki rule "LOCKED nije tačan ... sinhronizovano"):
+   * after each respin, rebuild lockedCells from the DOM so the HUD
+   * counter (reads lockedCells.size) always matches the visible orb
+   * pile. hwHarvestBonus may carry stale entries if a strip rotation
+   * race lost a cell between map-write and DOM commit. */
+  _hwReconcileLockedFromDOM();
   /* Re-entrance gate: a stray postSpin after the end-timer is scheduled
    * but before SUMMARY transitions in would otherwise schedule a second
    * hwEnd. If we have no respins left AND no new orb landed, this is
