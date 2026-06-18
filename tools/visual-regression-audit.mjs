@@ -49,15 +49,45 @@ import { chromium } from 'playwright';
 const __filename = fileURLToPath(import.meta.url);
 const REPO = resolve(dirname(__filename), '..');
 const DEMOS_DIR = resolve(REPO, 'blocks/demos');
-const BASELINE_PATH = resolve(REPO, 'tests/baselines/visual-regression.json');
 
 const argv = process.argv.slice(2);
 const UPDATE = argv.includes('--update-baseline');
 const FAIL_ON_DRIFT = argv.includes('--fail-on-drift');
 const QUIET = argv.includes('--quiet');
 
-const VIEWPORT = { width: 1280, height: 800 };
-const SETTLE_MS = 250;
+/**
+ * Viewport selection (Item #6).
+ * --viewport=desktop  → 1280×800 (default, original Item #4)
+ * --viewport=portrait → 375×812  (iPhone X class)
+ * --viewport=WxH      → custom
+ *
+ * Each viewport gets a separate baseline file so the same probe can
+ * gate both desktop AND portrait without one regressing the other.
+ */
+const VIEWPORT_PRESETS = {
+  desktop:  { width: 1280, height: 800 },
+  portrait: { width: 375,  height: 812 },
+};
+const viewportArg = (argv.find((a) => a.startsWith('--viewport=')) || '--viewport=desktop').slice(11);
+const VIEWPORT = VIEWPORT_PRESETS[viewportArg] || (() => {
+  const m = viewportArg.match(/^(\d+)x(\d+)$/);
+  if (m) return { width: +m[1], height: +m[2] };
+  return VIEWPORT_PRESETS.desktop;
+})();
+const VIEWPORT_LABEL = VIEWPORT_PRESETS[viewportArg] ? viewportArg : `${VIEWPORT.width}x${VIEWPORT.height}`;
+const SETTLE_MS = 400;
+
+/**
+ * Baseline path is viewport-keyed (Item #6). Desktop preserves the
+ * historical filename so existing CI / git history doesn't churn.
+ */
+const BASELINE_PATH = resolve(
+  REPO,
+  'tests/baselines',
+  VIEWPORT_LABEL === 'desktop'
+    ? 'visual-regression.json'
+    : `visual-regression-${VIEWPORT_LABEL}.json`,
+);
 
 const bar = (ch = '─', n = 90) => ch.repeat(n);
 
@@ -88,7 +118,7 @@ if (existsSync(BASELINE_PATH) && !UPDATE) {
 }
 
 log(bar('═'));
-log(`📸 Visual regression audit · ${demos.length} demo(s) · viewport ${VIEWPORT.width}×${VIEWPORT.height}`);
+log(`📸 Visual regression audit · ${demos.length} demo(s) · viewport ${VIEWPORT.width}×${VIEWPORT.height} (${VIEWPORT_LABEL})`);
 log(`   baseline: ${existsSync(BASELINE_PATH) ? 'loaded (' + Object.keys(baseline.demos || {}).length + ' entries)' : 'absent (first run)'}`);
 log(`   mode    : ${UPDATE ? 'UPDATE — rebaking' : FAIL_ON_DRIFT ? 'STRICT (fail on drift)' : 'REPORT (report drift, exit 0)'}`);
 log(bar('═'));
@@ -177,7 +207,11 @@ for (const file of demos) {
   let hash = null;
   let bytes = 0;
   try {
-    await page.goto(pathToFileURL(abs).href, { waitUntil: 'load', timeout: 8000 });
+    /* networkidle ensures all inline base64 fonts/icons resolved
+     * before we install the time freeze. Single long-settle capture
+     * is both faster (no double-screenshot) and more deterministic
+     * (we let the page reach steady-state once instead of racing). */
+    await page.goto(pathToFileURL(abs).href, { waitUntil: 'networkidle', timeout: 10000 });
     await freezeMotion(page);
     await page.waitForTimeout(SETTLE_MS);
     const png = await page.screenshot({ fullPage: true, type: 'png', animations: 'disabled' });

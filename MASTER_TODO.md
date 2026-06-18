@@ -3,7 +3,52 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 04:25 · **HEAD**: pending push · main
+> **Last updated**: 2026-06-18 04:50 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## 🆕 FUNCTIONAL ITEM #6 — Portrait visual baseline (≤ 480px) (2026-06-18)
+>
+> Item #4 baseline pokrivao samo desktop (1280×800). Item #6 proširuje
+> isti probe na portrait viewport (375×812, iPhone X klasa) i držil
+> dva nezavisna baseline-a. Svaki layout drift na mobilnom (overflow,
+> hidden CTA, kolaps grid-a) odmah pada gate.
+>
+> ### 🔧 Promene
+>
+> | Fajl | Promena |
+> |:--|:--|
+> | `tools/visual-regression-audit.mjs` | `--viewport=desktop\|portrait\|WxH` flag. Baseline path viewport-keyed (`visual-regression.json` desktop / `visual-regression-portrait.json`). networkidle goto + 400ms settle za stabilnost. |
+>
+> ### 🔬 Probe stabilizacija
+>
+> | # | Šta | Detalj |
+> |:-:|:--|:--|
+> | 1 | Portrait drift na 2 demoa (audio + nepoznat) prva passa | Single-capture race posle goto-a; nedovoljno settle vremena za inline base64 assets |
+> | 2 | Pojačan settling pipeline | `waitUntil: networkidle` (sve resource resolved) + `SETTLE_MS=400ms` (bilo 250ms) + animacije zamrznute na CSS+JS sloju (Item #4 freeze layer) |
+>
+> ### 🎯 Rezultati (desktop + portrait dual gate)
+>
+> | Viewport | Demos | DRIFT | NEW | GONE | ERROR | Verdikt |
+> |:--|:-:|:-:|:-:|:-:|:-:|:-:|
+> | desktop 1280×800 | 112 | 0 | 0 | 0 | 0 | ✅ |
+> | portrait 375×812 | 112 | 0 | 0 | 0 | 0 | ✅ |
+>
+> ### 🆕 Novi npm scripti
+>
+> | Script | Šta pokreće |
+> |:--|:--|
+> | `test:visual:portrait` | strict portrait gate |
+> | `test:visual:bake:portrait` | rebake portrait baseline |
+>
+> `test:visual` (desktop) + `test:visual:portrait` ulančani u `test:all`.
+>
+> ### 📁 Artifacts
+>
+> | Fajl | Sadržaj |
+> |:--|:--|
+> | `tests/baselines/visual-regression.json` | Desktop 1280×800 baseline (112 demos) |
+> | `tests/baselines/visual-regression-portrait.json` | Portrait 375×812 baseline (112 demos) |
 >
 > ---
 >
