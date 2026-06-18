@@ -387,11 +387,21 @@ export function emitHexReelEngineRuntime(cfg = defaultConfig()) {
         if (typeof hexOnSettled === 'function') {
           var cb = hexOnSettled;
           hexOnSettled = null;
-          /* onSpinResult is emitted by the dispatcher (reelEngine) so
-             single-owner ownership stays intact. Engine just invokes
-             the supplied settle callback.
-             W57.A5 — wrap with spinToken guard so a delayed-tab-resume
-             can't fire the settle of an aborted spin on top of a fresh one. */
+          /* 2026-06-18 WASH PASS fix — hexReelEngine owns the settle
+           * moment for hex topology. reelEngine is NOT in the dispatch
+           * path here (dispatcher is __SLOT_KIND_RUNSPIN__), so without
+           * this emit the canonical onSpinResult lifecycle event never
+           * fires for hex slots, breaking 40+ downstream listeners.
+           * W57.A5 — wrap with spinToken guard so a delayed-tab-resume
+           * can't fire the settle of an aborted spin on top of a fresh one. */
+          try {
+            if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
+              var duringFs = (typeof FSM !== 'undefined' && FSM && FSM.phase === 'FS_ACTIVE');
+              HookBus.emit('onSpinResult', { duringFs: duringFs, topology: 'hex' });
+            }
+          } catch (e) {
+            try { if (typeof console !== 'undefined' && console.warn) console.warn('[hexReelEngine] onSpinResult emit failed', e); } catch (__) {}
+          }
           setTimeout(__hexSptGuard(cb), 0);
         }
       }

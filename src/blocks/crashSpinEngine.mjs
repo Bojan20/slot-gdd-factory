@@ -252,7 +252,24 @@ export function emitCrashSpinEngineRuntime(cfg = defaultConfig()) {
         svg.classList.remove('is-spinning');
         STATE.rotating = false;
         var cb = STATE.pending; STATE.pending = null;
-        /* onSpinResult is emitted by the dispatcher (reelEngine). */
+        /* 2026-06-18 WASH PASS fix — crashSpinEngine owns the settle
+         * moment for crash topology. reelEngine is NOT in the dispatch
+         * path here, so without this emit the canonical onSpinResult
+         * lifecycle event never fires for crash slots, breaking 40+
+         * downstream listeners (multiplierOrb, mysterySymbolMultiplier,
+         * wildCollisionMultiplier, stickyWild, etc.). Emit BEFORE the
+         * cb so listeners see the settled state when they run. */
+        try {
+          if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
+            var duringFs = (typeof FSM !== 'undefined' && FSM && FSM.phase === 'FS_ACTIVE');
+            HookBus.emit('onSpinResult', { duringFs: duringFs, topology: 'crash', peak: peak });
+          }
+        } catch (e) {
+          /* QA review 2026-06-18 — surface listener exceptions instead of
+           * swallowing silently. The whole reason this emit exists is to
+           * fix a silent-broken-lifecycle bug; we MUST NOT recreate one. */
+          try { if (typeof console !== 'undefined' && console.warn) console.warn('[crashSpinEngine] onSpinResult emit failed', e); } catch (__) {}
+        }
         if (typeof cb === 'function') setTimeout(cb, 0);
       }
       STATE.settleTimer = setTimeout(_settle, _spinDur + ${SETTLE_BUFFER_MS});

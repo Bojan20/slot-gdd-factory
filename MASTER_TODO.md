@@ -1,5 +1,77 @@
 # Master TODO — slot-gdd-factory
 
+> **2026-06-18 night · HEAD pending** · Wave **LIFECYCLE-FIX** landed
+>
+> ## 🚨 LIFECYCLE INTEGRITY FIX — 5 topology engines emit onSpinResult
+>
+> Boki: *"krenim ultimativno"* — fix najvećeg WASH PASS nalaza:
+> **5 spin engina (crash, plinko, hex, slingo, wheel) NIKAD nisu
+> emit-ovali `onSpinResult`** uprkos komentaru u svakom da
+> *"onSpinResult is emitted by the dispatcher (reelEngine)"*.
+>
+> Sa istinom: na hex/wheel/slingo/plinko/crash topologijama,
+> `reelEngine` NIJE u dispatch path-u — engines se okidaju direktno
+> kroz `window.__SLOT_KIND_RUNSPIN__.<kind>`. Lifecycle chain je
+> bio prekinut: **40+ downstream listenera** (multiplierOrb,
+> mysterySymbolMultiplier, wildCollisionMultiplier, stickyWild, ...) je
+> NIKAD pucao na ovim topologijama — silent broken lifecycle.
+>
+> ### Fix u svih 5 engina
+>
+> Svaki engine sada emit-uje `onSpinResult` u svom `_settle()` PRE
+> nego što izvrši pending callback. Payload:
+>
+> | Engine | Settle path | Extra payload field |
+> |:--|:--|:--|
+> | crashSpinEngine.mjs | `_settle()` posle counter-tick | `peak: <number>` |
+> | plinkoSpinEngine.mjs | `_settleMs` setTimeout posle ball drop | — |
+> | hexReelEngine.mjs | `hexTickAll()` final iteration | — |
+> | slingoSpinEngine.mjs | `_settle()` posle column commit | `matchCount: <number>` |
+> | wheelSpinEngine.mjs | `_onTransitionEnd()` posle wheel stop | — |
+>
+> Sve emit-uju `{ duringFs, topology, ...extra }`.
+>
+> ### LEGO ownership — multi-owner per topology
+>
+> `tools/lego-gate.mjs` `onSpinResult` ownership 1 → 6: reelEngine +
+> 5 topology engines. Single-owner bi zahtevao da reelEngine zna o
+> hex/wheel/plinko što ruši LEGO inkapsulaciju. Runtime: tačno 1
+> engine ulazi u play (kind-dispatch) tako da efektivno ostaje
+> single-owner po sesiji.
+>
+> ### Multi-agent QA (general-purpose) — verdict PASS_WITH_MINORS
+>
+> 3 nalaza fix-ovana pre commit-a:
+>
+> | # | Fix |
+> |:-:|:--|
+> | 1 | `catch (_) {}` → `catch (e) { console.warn('[X] emit failed', e); }` u svih 5 (anti-silent-failure) |
+> | 2 | Konzistentnost payload-a — sve engine sada šalju `topology` field |
+> | 3 | crash dobio `topology: 'crash'` field (do tada samo `peak`) |
+>
+> Token guard race za 4 engina deferred — `STATE.pending` nullification
+> već preventuje cascade; samostalna senior-grade wave.
+>
+> ### Test gates
+>
+> | Gate | Status |
+> |:--|:-:|
+> | NEW `_engineSpinResultEmit.test.mjs` (21 source-pin testova) | ✅ 21/21 |
+> | NEW `_engine-spinresult-live-probe.mjs` (Chromium × 5 topologies) | ✅ 5/5 |
+> | `test:lego` (7 invariants) | ✅ 7/7 |
+> | `test:parse:real-pdfs` (4 GDD) | ✅ 4/4 |
+> | `test:parity` (cross-game DOM) | ✅ 0/18 violations |
+> | `test:force-outcomes` (20 chip-outcomes) | ✅ 20/20 |
+>
+> ### Impact
+>
+> Pre fix-a: bilo koji multiplier/wild/mystery LEGO blok je bio
+> **mrtav** na hex/wheel/slingo/plinko/crash slotima. Posle fix-a:
+> svi 40+ downstream listenera pucaju canonically, lifecycle chain
+> intaktna na svim 5 topologijama.
+>
+> ---
+>
 > **2026-06-18 late evening · HEAD pending** · Ultimativni **WASH PASS** preko 147 blokova
 >
 > ## 🧼 ULTIMATIVNI WASH PASS (2026-06-18)

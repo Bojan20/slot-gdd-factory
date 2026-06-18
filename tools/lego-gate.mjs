@@ -148,7 +148,17 @@ const EXPECTED_EMIT_OWNERS = {
    * via HookBus.on). Dropping the ghost owner so EXPECTED_EMIT_OWNERS
    * tells the truth — gate goes from "matrix lies" to single-owner. */
   preSpin:        ['reelEngine.mjs'],
-  onSpinResult:   ['reelEngine.mjs'],
+  /* 2026-06-18 WASH PASS fix — onSpinResult is now emitted by ANY of
+   * the topology-specific spin engines (5 engines). Each engine owns
+   * the settle moment for its own grid kind; the LEGO single-owner
+   * rule is preserved per-topology because at runtime exactly one of
+   * these engines is wired (kind-dispatch via window.__SLOT_KIND_RUNSPIN__).
+   * Without this multi-listed ownership, hex/wheel/slingo/plinko/crash
+   * slots had a silent broken lifecycle — 40+ downstream listeners
+   * (multiplierOrb, mysterySymbolMultiplier, wildCollisionMultiplier,
+   * stickyWild, etc.) never fired on these topologies. */
+  onSpinResult:   ['reelEngine.mjs', 'crashSpinEngine.mjs', 'plinkoSpinEngine.mjs',
+                   'hexReelEngine.mjs', 'slingoSpinEngine.mjs', 'wheelSpinEngine.mjs'],
   onTumbleStep:   ['tumble.mjs'],
   postSpin:       ['postSpin.mjs'],
   onFsTrigger:    ['freeSpins.mjs'],

@@ -257,7 +257,19 @@ export function emitSlingoSpinEngineRuntime(cfg = defaultConfig()) {
             ? ('Matched ' + matchCount + ' cell' + (matchCount === 1 ? '' : 's'))
             : 'No matches';
         }
-        /* onSpinResult is emitted by the dispatcher (reelEngine). */
+        /* 2026-06-18 WASH PASS fix — slingoSpinEngine owns the settle
+         * moment for slingo topology. reelEngine is NOT in the dispatch
+         * path here, so without this emit the canonical onSpinResult
+         * lifecycle event never fires for slingo slots, breaking 40+
+         * downstream listeners. */
+        try {
+          if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
+            var duringFs = (typeof FSM !== 'undefined' && FSM && FSM.phase === 'FS_ACTIVE');
+            HookBus.emit('onSpinResult', { duringFs: duringFs, topology: 'slingo', matchCount: matchCount });
+          }
+        } catch (e) {
+          try { if (typeof console !== 'undefined' && console.warn) console.warn('[slingoSpinEngine] onSpinResult emit failed', e); } catch (__) {}
+        }
         if (typeof cb === 'function') setTimeout(cb, 0);
       }
 

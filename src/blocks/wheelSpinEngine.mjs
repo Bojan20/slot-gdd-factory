@@ -246,8 +246,20 @@ export function emitWheelSpinEngineRuntime(cfg = defaultConfig()) {
         void svg.offsetWidth;
         svg.style.transition = '';
         var cb = STATE.pendingSettle; STATE.pendingSettle = null;
-        /* onSpinResult is emitted by the dispatcher (reelEngine) so
-           single-owner ownership stays intact. */
+        /* 2026-06-18 WASH PASS fix — wheelSpinEngine owns the settle
+         * moment for wheel/radial topology. reelEngine is NOT in the
+         * dispatch path here (dispatcher is __SLOT_KIND_RUNSPIN__), so
+         * without this emit the canonical onSpinResult lifecycle event
+         * never fires for wheel/radial slots, breaking 40+ downstream
+         * listeners. */
+        try {
+          if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
+            var duringFs = (typeof FSM !== 'undefined' && FSM && FSM.phase === 'FS_ACTIVE');
+            HookBus.emit('onSpinResult', { duringFs: duringFs, topology: 'wheel' });
+          }
+        } catch (e) {
+          try { if (typeof console !== 'undefined' && console.warn) console.warn('[wheelSpinEngine] onSpinResult emit failed', e); } catch (__) {}
+        }
         if (typeof cb === 'function') setTimeout(cb, 0);
       }
       svg.addEventListener('transitionend', _onTransitionEnd);
