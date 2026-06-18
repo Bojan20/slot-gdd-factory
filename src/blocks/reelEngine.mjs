@@ -821,12 +821,60 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
       return;
     }
 
-    /* Pre-determine the new symbol for each non-locked cell. Scatters
-     * forced by FORCE_TRIGGER are placed first to honour parity with the
-     * normal base spin path. */
-    const newSyms = nonLocked.map((_, i) =>
-      (i < forceN) ? trig : (randomSym() || '?'),
-    );
+    /* 2026-06-18 — Boki rule (HNP backlog "na prvi spin simboli ne smeju
+     * da menjaju mesta, moraju da ostanu na mestima gde su bili pre
+     * ulaska u Hadn W"). Industry-standard hold-and-spin pins the
+     * trigger-spin board (every non-bonus glyph stays where it landed)
+     * for the duration of the round; only NEW bonus arrivals mutate
+     * the grid. Each respin rolls a per-cell weighted bonus chance —
+     * miss → cell paints its PRE-TRIGGER symbol (snapshot taken in
+     * holdAndWin._hwBeginRound); hit → bonus glyph + the harvester
+     * upgrades it to a locked orb on postSpin.
+     *
+     * Pre-fix this path called randomSym() for every non-locked cell,
+     * so the board re-rolled on every respin — players saw a "scatter
+     * & re-fill" that violated the hold-and-spin contract.
+     *
+     * Bonus chance default 8% per cell is the industry mid-range for
+     * 5×3 hold-and-spin distribution (≈ 0.4 expected bonus arrivals
+     * per respin on a 13-cell open board, which sustains tension over
+     * the 3-respin default without trivialising the round). GDD can
+     * override via window.HW_BONUS_CHANCE_PER_CELL. */
+    const _HW_BONUS_CHANCE = (typeof window !== 'undefined' &&
+      Number.isFinite(window.HW_BONUS_CHANCE_PER_CELL) &&
+      window.HW_BONUS_CHANCE_PER_CELL >= 0 && window.HW_BONUS_CHANCE_PER_CELL <= 1)
+      ? window.HW_BONUS_CHANCE_PER_CELL
+      : 0.08;
+    const _preTriggerSyms = (typeof window !== 'undefined' &&
+                             window.HW_STATE &&
+                             window.HW_STATE.preTriggerSyms instanceof Map)
+      ? window.HW_STATE.preTriggerSyms : null;
+    const _hwRandom = (typeof window !== 'undefined' && typeof window.rng === 'function')
+      ? window.rng : Math.random;
+    const _hwBonusId = (typeof window !== 'undefined' && window.HW_STATE &&
+                       typeof window.HW_STATE.bonusSymbolId === 'string')
+      ? window.HW_STATE.bonusSymbolId.toUpperCase()
+      : 'B';
+
+    /* Pre-determine the new symbol for each non-locked cell.
+     * Precedence:
+     *   1. FORCE_TRIGGER scatter forcing (dev/test surface) — first N cells
+     *   2. Weighted bonus arrival (per industry hold-and-spin distribution)
+     *   3. Pre-trigger snapshot symbol (the position-preservation contract)
+     *   4. randomSym() fallback when no snapshot exists (edge case — e.g.
+     *      H&W entered via force-seed before the trigger spin landed, or
+     *      sandbox tests that mount bare cells without data-r/data-c). */
+    const newSyms = nonLocked.map((cell, i) => {
+      if (i < forceN) return trig;
+      const ds = (cell && cell.dataset) ? cell.dataset : null;
+      const r = ds ? ds.r : null;
+      const c = ds ? ds.c : null;
+      const key = (r != null && c != null) ? (r + ',' + c) : null;
+      const snap = (_preTriggerSyms && key) ? _preTriggerSyms.get(key) : null;
+      if (_hwRandom() < _HW_BONUS_CHANCE) return _hwBonusId;
+      if (snap) return snap;
+      return randomSym() || '?';
+    });
 
     /* Add per-cell spinning class. Locked cells are NEVER touched —
      * the .hnw-cell-spinning selector also has explicit suppression in

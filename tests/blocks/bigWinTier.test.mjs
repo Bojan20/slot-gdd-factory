@@ -32,9 +32,19 @@ t('BIG_WIN_TIER_IDS is frozen [1..5]', () => {
   for (let i = 0; i < 5; i++) eq(BIG_WIN_TIER_IDS[i], i + 1);
 });
 
-t('defaultConfig: disabled by default', () => {
+t('defaultConfig: enabled by default (2026-06-18 — universal base-game presenter)', () => {
+  /* 2026-06-18 — Boki rule (HNP backlog "nema big wina da se prikaze
+   * kada se forsuje"): big-win tier ladder is a universal base-game
+   * presenter on every rectangular slot. Default flipped to TRUE so
+   * GDDs without an explicit `feature.kind === 'big_win_tier'` row
+   * still emit the real runtime instead of STUB no-ops. Opt-out path
+   * is `bigWinTier: { enabled: false }` and is covered below. */
   const c = defaultConfig();
-  eq(c.enabled, false);
+  eq(c.enabled, true);
+});
+
+t('resolveConfig: GDD opt-out honored (regulator / minimalist UX path)', () => {
+  eq(resolveConfig({ bigWinTier: { enabled: false } }).enabled, false);
 });
 
 t('defaultConfig: 5 thresholds strictly ascending', () => {
@@ -121,8 +131,10 @@ t('defaultConfig: compound walkthrough enabled by default (WoO baseline)', () =>
   eq(c.fadeMs, 300);
 });
 
-t('emitBigWinTierCSS: disabled emits empty string', () => {
-  eq(emitBigWinTierCSS(defaultConfig()), '');
+t('emitBigWinTierCSS: opted-out emits empty string', () => {
+  /* 2026-06-18 — defaultConfig now ON; CSS still cleanly empty when the
+   * GDD opts out via `bigWinTier: { enabled: false }`. */
+  eq(emitBigWinTierCSS(resolveConfig({ bigWinTier: { enabled: false } })), '');
 });
 
 t('emitBigWinTierCSS: enabled emits banner + 5 tier accents', () => {

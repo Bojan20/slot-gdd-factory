@@ -238,8 +238,64 @@ export function emitAnticipationRuntime(cfg = defaultConfig()) {
     HookBus.on('onFsEnd',     _anticipationPreSpinReset, { priority: 10 });
   }
 
+  /* ── Universal trigger registry ──────────────────────────────────────
+   * 2026-06-18 — Boki rule (HNP backlog "nema aniticipacije kada je
+   * sketer ili bilo koji bonus sim bol"): anticipation MUST arm for
+   * ANY trigger-counting symbol on the grid, not just the FS scatter.
+   * Other blocks (hold & win, bonus pick, dual-role scatter, daily
+   * jackpot) register their own (symbolId, triggerCount, topRung)
+   * tuple here at runtime startup; maybeArmAnticipation aggregates the
+   * suspense over all of them and lights the reel for the FIRST trigger
+   * that becomes mathematically alive. Each entry is idempotent (keyed
+   * by symbolId — re-registration overwrites). */
+  if (typeof window !== 'undefined' && !Array.isArray(window.__ANT_TRIGGERS__)) {
+    window.__ANT_TRIGGERS__ = [];
+  }
+  function _antTriggers() {
+    var t = (typeof window !== 'undefined' && Array.isArray(window.__ANT_TRIGGERS__))
+      ? window.__ANT_TRIGGERS__ : [];
+    /* Seed FS scatter ladder when FREESPINS is enabled (legacy contract). */
+    var out = [];
+    if (FREESPINS && FREESPINS.enabled) {
+      var sym = (FREESPINS.triggerSymbol || "S").toUpperCase();
+      var thr = (FREESPINS.triggerCounts && FREESPINS.triggerCounts[0]) ||
+                (FREESPINS.awards && FREESPINS.awards[0] && FREESPINS.awards[0].count) || 3;
+      var top = (FREESPINS.awards || []).reduce(function (m, a) { return Math.max(m, a.count); }, thr);
+      var mode = (FREESPINS.countMode === 'any') ? 'any' : 'perReel';
+      out.push({ id: 'fs', symbol: sym, threshold: thr, topRung: top, countMode: mode });
+    }
+    /* Seed Hold & Win bonus ladder when enabled. Other blocks
+     * (bonusPick, dualRoleScatter) push to window.__ANT_TRIGGERS__
+     * directly at their runtime init. */
+    if (typeof window !== 'undefined' && window.HW_STATE && window.HW_STATE.enabled) {
+      var hwSym = (window.HW_STATE.bonusSymbolId || 'B').toUpperCase();
+      var hwThr = window.HW_STATE.triggerCount || 6;
+      out.push({ id: 'hw', symbol: hwSym, threshold: hwThr, topRung: hwThr, countMode: 'any' });
+    }
+    /* External registrations (additional triggers). */
+    for (var i = 0; i < t.length; i++) {
+      if (t[i] && typeof t[i].symbol === 'string' && Number.isFinite(t[i].threshold)) {
+        out.push({
+          id: t[i].id || ('x' + i),
+          symbol: t[i].symbol.toUpperCase(),
+          threshold: t[i].threshold,
+          topRung: Number.isFinite(t[i].topRung) ? t[i].topRung : t[i].threshold,
+          countMode: t[i].countMode === 'any' ? 'any' : 'perReel',
+        });
+      }
+    }
+    /* De-dupe by symbol (last write wins) so a GDD that uses the same
+     * sym for FS + H&W doesn't double-count. */
+    var seen = {};
+    var unique = [];
+    for (var j = out.length - 1; j >= 0; j--) {
+      if (!seen[out[j].symbol]) { seen[out[j].symbol] = 1; unique.unshift(out[j]); }
+    }
+    return unique;
+  }
+
   function maybeArmAnticipation() {
-    if (!FREESPINS.enabled || !RECT_REELS) return;
+    if (!RECT_REELS) return;
     ${c.skipDuringFs ? `/* Anticipation is a BASE-game suspense cue — skipped during FS lifecycle. */
     if (FSM && FSM.phase && FSM.phase !== 'BASE') return;` : `/* skipDuringFs disabled in GDD — anticipation also runs inside FS_*. */`}
     /* 2026-06-09 — Boki bug: clicking the UFP FS chip or BUY BONUS plants
@@ -250,70 +306,62 @@ export function emitAnticipationRuntime(cfg = defaultConfig()) {
      * entirely while FORCE_TRIGGER is engaged — force-spin is a deterministic
      * dev surface, the suspense beat is moot. */
     if (typeof FORCE_TRIGGER !== 'undefined' && FORCE_TRIGGER && FORCE_TRIGGER.scatterCount > 0) return;
-    const threshold = (FREESPINS.triggerCounts && FREESPINS.triggerCounts[0]) ||
-                      (FREESPINS.awards && FREESPINS.awards[0] && FREESPINS.awards[0].count) || 3;
-    /* Highest scatter count in the ladder — anticipation persists until
-       we can no longer reach it (so 4S and 5S awards keep the suspense). */
-    const topRung = (FREESPINS.awards || []).reduce(
-      (m, a) => Math.max(m, a.count), threshold);
 
-    const trig = (FREESPINS.triggerSymbol || "S").toUpperCase();
-    const countMode = (FREESPINS.countMode === 'any') ? 'any' : 'perReel';
-    let scattersSoFar = 0;
-    for (const r of RECT_REELS) {
-      if (r.spinning) continue;
-      let reelHits = 0;
-      const vis = r.visibleRows || ROWS;
-      for (let i = 1; i <= vis; i++) {
-        if ((r.cells[i].textContent || "").toUpperCase() === trig) reelHits++;
-      }
-      scattersSoFar += (countMode === 'any') ? reelHits : (reelHits > 0 ? 1 : 0);
-    }
+    var triggers = _antTriggers();
+    if (triggers.length === 0) return;
 
-    const stillSpinning = RECT_REELS.filter(r => r.spinning);
+    var stillSpinning = RECT_REELS.filter(function (r) { return r.spinning; });
     if (stillSpinning.length === 0) return;
+    var remaining = stillSpinning.length;
 
-    const remaining = stillSpinning.length;
-    /* Wave V1 — Boki bug fix "padne 1. ril → 2. ril → 3. ril i anticipation
-       se gasi" (MASTER_TODO V1):
-       Pre-fix: anticipationGate = max(1, threshold - 1). That demanded
-       scattersSoFar ≥ threshold-1 BEFORE arming, which silently dropped
-       the suspense the moment a mid-spin reel landed scatter-light. E.g.
-       threshold=3, 1 scatter after 3 reels stopped (2 remaining) →
-       1 ≥ 2 ? false → anticipation never armed even though mathematically
-       1 + 2 = 3 (trigger still reachable if both remaining land scatter).
-       Post-fix: anticipationGate = max(1, threshold - remaining). The
-       gate now reflects "minimum scatters needed so the remaining reels
-       can still hit threshold IF every one of them lands scatter". Combined
-       with the (scattersSoFar + remaining >= threshold) reachability check,
-       the suspense fires the moment the trigger is *mathematically alive*
-       and stays armed until either threshold or topRung is settled. */
-    const anticipationGate = Math.max(1, threshold - remaining);
-    const armed = (scattersSoFar >= anticipationGate) &&
-                  (scattersSoFar + remaining >= threshold) &&
-                  (scattersSoFar < topRung);
-    if (!armed) return;
+    /* Walk each registered trigger; the FIRST one that is "mathematically
+     * alive" (scattersSoFar + remaining >= threshold) AND not yet at
+     * topRung wins and arms the suspense. Multiple triggers cannot stack
+     * the per-reel hold timers — that would cascade infinite waits. */
+    var armedTrigger = null;
+    for (var ti = 0; ti < triggers.length; ti++) {
+      var trg = triggers[ti];
+      var scattersSoFar = 0;
+      for (var ri = 0; ri < RECT_REELS.length; ri++) {
+        var r = RECT_REELS[ri];
+        if (r.spinning) continue;
+        var reelHits = 0;
+        var vis = r.visibleRows || ROWS;
+        for (var k = 1; k <= vis; k++) {
+          if ((r.cells[k].textContent || "").toUpperCase() === trg.symbol) reelHits++;
+        }
+        scattersSoFar += (trg.countMode === 'any') ? reelHits : (reelHits > 0 ? 1 : 0);
+      }
+      /* Wave V1 gate — anticipationGate = max(1, threshold - remaining) */
+      var anticipationGate = Math.max(1, trg.threshold - remaining);
+      var alive = (scattersSoFar >= anticipationGate) &&
+                  (scattersSoFar + remaining >= trg.threshold) &&
+                  (scattersSoFar < trg.topRung);
+      if (alive) { armedTrigger = trg; break; }
+    }
+    if (!armedTrigger) return;
 
     /* Sequential per-reel anticipation hold — every anticipating reel
        glows for exactly HOLD_BASE before landing. */
-    const now = performance.now();
-    let cursor = stillSpinning.reduce(
-      (m, r) => Math.max(m, r.scheduledStopAt), now);
-    const ordered = stillSpinning
-      .filter(r => !r.anticipating)
-      .sort((a, b) => a.scheduledStopAt - b.scheduledStopAt);
-    ordered.forEach((r) => {
+    var now = performance.now();
+    var cursor = stillSpinning.reduce(
+      function (m, r) { return Math.max(m, r.scheduledStopAt); }, now);
+    var ordered = stillSpinning
+      .filter(function (r) { return !r.anticipating; })
+      .sort(function (a, b) { return a.scheduledStopAt - b.scheduledStopAt; });
+    ordered.forEach(function (r) {
       r.anticipating = true;
-      const glowStartAt = cursor;
+      r.anticipatingFor = armedTrigger.id;
+      var glowStartAt = cursor;
       cursor += HOLD_BASE;
       r.scheduledStopAt = cursor;
-      const glowDelay = Math.max(0, glowStartAt - now);
+      var glowDelay = Math.max(0, glowStartAt - now);
       if (r.glowTimerId) clearTimeout(r.glowTimerId);
-      r.glowTimerId = setTimeout(() => {
+      r.glowTimerId = setTimeout(function () {
         r.col.classList.add("reelCol--anticipating");
       }, glowDelay);
       if (r.stopTimerId) clearTimeout(r.stopTimerId);
-      r.stopTimerId = setTimeout(() => {
+      r.stopTimerId = setTimeout(function () {
         r.stopRequested = true;
         r.stopRequestTime = performance.now();
       }, r.scheduledStopAt - now);

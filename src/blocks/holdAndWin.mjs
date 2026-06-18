@@ -728,6 +728,14 @@ function _hwRng() {
 
 /* Phase machine — INACTIVE → INTRO → RUNNING → SUMMARY. */
 const HW_STATE = {
+  /* 2026-06-18 — surface enabled/triggerCount/bonusSymbolId on the live
+   * state object so external consumers (anticipation trigger registry,
+   * QA probes, dev tools) can read them without re-import. Mirrors the
+   * baked-in module constants below — never mutated at runtime. */
+  enabled:        true,
+  triggerCount:   HW_TRIGGER_COUNT,
+  bonusSymbolId:  HW_BONUS_SYMBOL,
+  respinsAwarded: HW_RESPINS_AWARD,
   phase: 'INACTIVE',
   active: false,            /* legacy back-compat — true iff phase !== INACTIVE */
   /* W48 bugfix v4 — set true between hwMaybeEnter() / hwForceSeed()
@@ -741,11 +749,19 @@ const HW_STATE = {
   fullGrid: false,
   /* 'r,c' → { label, tier, valueX } */
   lockedCells: new Map(),
+  /* 2026-06-18 — pre-trigger snapshot keyed 'r,c' → sym (filled in
+   * _hwBeginRound). reelEngine.runHnwPerCellRespin consumes this to
+   * keep non-locked cells anchored to the trigger spin across every
+   * respin (Boki rule "simboli ne smeju da menjaju mesta"). */
+  preTriggerSyms: new Map(),
   jackpotsHit: [],          /* array of tier strings, may include duplicates */
   observer: null,
   applying: false,          /* MutationObserver re-entrance guard */
   triggerOrbCount: 0,
 };
+/* Publish on window so anticipation registry + probes can read without
+ * re-importing the runtime emit. */
+if (typeof window !== 'undefined') window.HW_STATE = HW_STATE;
 
 function _hwBet() {
   try {
@@ -1176,6 +1192,29 @@ async function _hwBeginRound() {
   HW_STATE.fullGrid = false;
   HW_STATE.lockedCells.clear();
   HW_STATE.jackpotsHit = [];
+
+  /* 2026-06-18 — Boki rule (HNP backlog "na prvi spin simboli ne smeju
+   * da menjaju mesta, moraju da ostanu na mestima gde su bili pre
+   * ulaska u Hadn W"): snapshot the WHOLE pre-trigger grid sym map
+   * BEFORE PHASE 1 mutates anything. Keyed by 'r,c'. The respin engine
+   * (reelEngine.runHnwPerCellRespin) consumes this map so the first
+   * respin lands non-locked cells back on their original symbols (with
+   * a weighted bonus chance per cell so the round still pays). On every
+   * subsequent respin the same snapshot is reused — the grid stays
+   * anchored to the trigger spin and only bonus arrivals change cells. */
+  HW_STATE.preTriggerSyms = new Map();
+  try {
+    const host = document.getElementById('gridHost') || document.querySelector('.gridHost');
+    if (host) {
+      const cells = host.querySelectorAll('.cell');
+      for (let i = 0; i < cells.length; i++) {
+        const cell = cells[i];
+        const r = cell.dataset.r, c = cell.dataset.c;
+        const sym = (cell.textContent || '').trim();
+        if (r != null && c != null && sym) HW_STATE.preTriggerSyms.set(r + ',' + c, sym);
+      }
+    }
+  } catch (_) { /* defensive — snapshot is best-effort */ }
 
   /* PHASE 1 — discover only; do NOT mutate DOM. */
   hwHarvestBonus({ mapOnly: true });

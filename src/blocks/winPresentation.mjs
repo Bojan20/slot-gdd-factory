@@ -421,11 +421,20 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
            symbols. Defensive filter prevents TypeError on classList.add. */
         const cells = Array.isArray(ev && ev.cells) ? ev.cells : [];
         for (const c of cells) { if (c && c.classList) c.classList.add('cell--winsym'); }
-        /* If this event carries a lineIndex it came from detectLineWins
-           (payline mode) → draw the polyline through the matched cells.
-           Cluster-mode events (detectWinCombos) have no lineIndex and
-           skip the overlay; they rely on the per-cell pulse alone. */
-        if (typeof ev.lineIndex === 'number') drawPaylineOverlay(ev);
+        /* 2026-06-18 — Boki rule (HNP backlog "Ne prikazuju mi se win
+         * linije"): every win event MUST draw a visual line through its
+         * matched cells. Line-pays events carry lineIndex and get the
+         * canonical polyline + line-number badge. Cluster / pay_anywhere
+         * / ways events have no lineIndex — we now synthesise a virtual
+         * one so drawPaylineOverlay still walks the matched cells and
+         * the player sees the win path instead of just per-cell pulses.
+         * The virtual lineIndex is 'i' (the cycle step) so each event
+         * gets its own labelled trail even in cluster grids. */
+        if (typeof ev.lineIndex === 'number') {
+          drawPaylineOverlay(ev);
+        } else if (cells.length >= 2) {
+          drawPaylineOverlay(Object.assign({}, ev, { lineIndex: i, _virtualLine: true }));
+        }
         i++;
         setTimeout(playOne, stepMs);
       };

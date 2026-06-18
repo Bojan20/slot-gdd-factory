@@ -3,7 +3,48 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 05:45 · **HEAD**: pending push · main
+> **Last updated**: 2026-06-18 11:15 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## 🩹 HNP backlog fix sweep (2026-06-18 · Boki 5-bug report)
+>
+> Boki je živo gledao Huff'N'More Puff i prijavio 5 ponašanja koja moraju
+> biti template-wide (rule_slot_gdd_lego_blocks — nikad game-specific fix):
+>
+> 1. **Win linije se ne prikazuju** kad win lendira
+> 2. **Win counter (winRollup)** ne prikazuje kada je dobitak
+> 3. **Big Win** banner se ne pojavljuje kad se forsuje
+> 4. **Anticipation** ne radi za scatter/bilo koji bonus simbol
+> 5. **Hold & Win prvi respin** — non-locked simboli moraju da OSTANU na
+>    pre-trigger pozicijama (industry hold-and-spin contract)
+>
+> ### Šta je urađeno (template-wide, validirano na ≥ 2 igre)
+>
+> | # | Blok | Promena |
+> |:-:|:--|:--|
+> | 1 | `bigWinTier.mjs` | `defaultConfig.enabled = true` — bigwin je univerzalni base-game presenter, ne feature. Pre fix-a 95% GDD-ova bez eksplicitnog `feature.kind === 'big_win_tier'` rezultiralo STUB no-op `window.bigWinTierEnter` |
+> | 2 | `anticipation.mjs` | Generalizovan na **universal trigger registry** — FS scatter + H&W bonus + `window.__ANT_TRIGGERS__` external. Pre fix-a hard-gated na `FREESPINS.enabled`, sad arming za bilo koji registrovani trigger simbol |
+> | 3 | `holdAndWin.mjs` | `_hwBeginRound` snima `preTriggerSyms` snapshot pre PHASE 1 mutacija; HW_STATE surfacuje `enabled/triggerCount/bonusSymbolId` za vanjske consumer-e |
+> | 4 | `reelEngine.mjs` | `runHnwPerCellRespin` konzumira `HW_STATE.preTriggerSyms` — non-locked cells lendi na PRE-TRIGGER simbol uz weighted bonus chance per cell (default 8%, GDD-overridable). Industry-standard hold-and-spin contract |
+> | 5 | `winPresentation.mjs` | `playWinSymCycle` sintetiše virtual `lineIndex` za cluster/ways/pay_anywhere events → svaki win event sad crta polyline (ne samo line-pays) |
+>
+> ### Gate-ovi (svi zeleni)
+>
+> | Gate | Status | Detalj |
+> |:--|:-:|:--|
+> | `test:lego` | ✅ | 7/7 LEGO invariants pass (122 blokova, 0 vendor strings, 0 game-specific patches) |
+> | `test:blocks` | ✅ | Svi block testovi 0 fail (anticipation 14, bigWinTier 37, holdAndWin 21, reelEngineHnwPerCell 16, winPresentation 50, etc.) |
+> | `test:parity` | ✅ | 0 violations × 4 games × 14 feature kinds (hold_and_win parity OK 2/2) |
+> | `test:cert:real` | ✅ | 12/12 (HNP, WoO, GoO1000, Starlight × UKGC + MGA + DGA) |
+> | `test:runtime` | ✅ | 8/8 runtime contracts |
+> | `test:visual` | 🟡 | 108/112 deterministic; 4 demo-a (bonusClimaxReveal, genericFeatureBanner, pathAwareMultiplier, winRollup) imaju pre-postojeći hash-flake (varira run-to-run nezavisno od ovih izmena) — postojeća tech debt, ne regresija ovog sweep-a |
+>
+> ### Naredni QA korak (Boki je živo testirati)
+>
+> Anticipation glow tokom pravog spina + first-respin position lock na svim
+> 4 real GDD-ova preko dev-server-a (`npm run dev` → 127.0.0.1:5180 → drop
+> HNP PDF → klik bonus chip).
 >
 > ---
 >

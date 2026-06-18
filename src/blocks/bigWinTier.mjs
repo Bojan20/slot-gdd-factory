@@ -160,7 +160,18 @@ export const BIG_WIN_TIER_IDS = Object.freeze([1, 2, 3, 4, 5]);
 
 export function defaultConfig() {
   return Object.freeze({
-    enabled: false,
+    /* 2026-06-18 — Boki rule (HNP backlog "nema big wina da se prikaze
+     * kada se forsuje"): big-win tier ladder is a UNIVERSAL base-game
+     * presenter on every rectangular slot — same standing as winRollup
+     * (always-on counter) and paylineOverlay (always-on win line draw).
+     * Prior default `false` + regex-gated auto-enable meant every GDD
+     * without an explicit `feature.kind === 'big_win_tier'` row emitted
+     * STUB no-op functions for `window.bigWinTierEnter`, so the dev BW
+     * force button and the in-spin tier celebration silently no-op'd on
+     * 95% of real GDDs. GDDs can still opt OUT with
+     * `bigWinTier: { enabled: false }` for jurisdictions / minimalist UX
+     * (resolveConfig honors the explicit `m.enabled != null` path). */
+    enabled: true,
     /* Industry-baseline ladder — every game can override.
      * 10× / 25× / 50× / 200× / 1000× — covers low-vol → high-vol slot RTP
      * curves while keeping tier 1 reachable within a single base spin. */
@@ -228,17 +239,19 @@ export function resolveConfig(model = {}) {
 
   if (m.enabled != null) cfg.enabled = !!m.enabled;
 
-  /* Default OFF (per docstring contract). Auto-enable only when the GDD
-   * declares an explicit feature kind that maps to this block. The
-   * regulator opt-out path is the explicit { bigWinTier: { enabled: false } }
-   * branch above; the explicit { enabled: true } branch is the opt-in. */
+  /* 2026-06-18 — default is now ON (see defaultConfig docstring). The
+   * regex-gated auto-enable path is preserved as a soft confirmation
+   * signal — if a GDD explicitly lists the tier/ladder feature AND a
+   * downstream layer mistakenly sets enabled=null, we still emit the
+   * runtime. Explicit GDD opt-out (`bigWinTier: { enabled: false }`)
+   * remains honored above. */
   if (m.enabled == null) {
     const features = Array.isArray(model && model.features) ? model.features : [];
-    /* Accept "big_win", "big-win", "big_win_tier", "big-win-tier",
-     * "big_win_ladder", "big-win-ladder", or plain "win_ladder". */
     const BW_PATTERN = /^(big[_-]?win([_-]?(tier|ladder))?|win[_-]?ladder)$/i;
     const detected = features.some(f => f && typeof f.kind === 'string' && BW_PATTERN.test(f.kind));
-    cfg.enabled = detected;
+    /* Default ON; feature-detected presence only flips the case where a
+     * caller explicitly nulled cfg.enabled before resolveConfig. */
+    cfg.enabled = detected || cfg.enabled;
   }
 
   /* Threshold array — must be exactly TIER_COUNT, strictly ascending,
