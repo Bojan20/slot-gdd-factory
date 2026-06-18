@@ -3,7 +3,87 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 02:10 · **HEAD**: `a175e16` + W47.S30 · main
+> **Last updated**: 2026-06-18 04:10 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## 🆕 FUNCTIONAL ITEM #3 — Capsule export pipeline → cert ZIP (2026-06-18)
+>
+> Postojeći `tools/cert-build.mjs` (Wave C1) već producuje regulator
+> bundle iz MD/JSON GDD-a (manifest + evidence + compliance + README).
+> Item #3 zatvara dve preostale rupe:
+> 1. **PDF ulaz** — production GDD-ovi su PDF, ne MD. Sad CLI auto-
+>    detektuje `.pdf` → pdfjs extraction → `pdfTextToMarkdown` → parser.
+> 2. **Asset enrichment** — bundle sada nosi i originalni PDF i
+>    reconstructed MD u `source/`, plus built `slot.html` u `artefacts/`
+>    (auto-discovery iz `dist/real-games/<slug>/`).
+> 3. **Batch + parity probe** — `tests/cert/real-game-bundles.mjs`
+>    pokreće sve real PDF-ove × 3 jurisdikcije, validira strukturu i
+>    proverava cross-bundle schema parity.
+>
+> ### 🔧 Promene u core-u
+>
+> | Fajl | Promena |
+> |:--|:--|
+> | `tools/cert-build.mjs` | `.pdf` ekstenzija → pdfjs → pdfTextToMarkdown → parser; source/ sada nosi i originalni PDF i reconstructed MD; auto-attach `artefacts/slot.html` ako postoji u `dist/real-games/` (3-pronged slug resolution) |
+> | `src/cert/bundler.mjs` | `BundleArtefactInput` proširen sa `inlineContent` poljem — alternativa `sourcePath`-u za in-memory generisane fajlove (reconstructed MD). |
+>
+> ### 🔬 Probe `tests/cert/real-game-bundles.mjs`
+>
+> | Stage | Šta proverava |
+> |:--|:--|
+> | 1 | Za svaki (PDF × jurisdikcija) par pokrene `cert-build` u tmp dir |
+> | 2 | Exit code 0 ili 1 (nikad 2 fatal) |
+> | 3 | Bundle dir postoji, manifest/evidence/compliance/README prisutni |
+> | 4 | `source/` sadrži BOTH `<name>.pdf` (originalni) + `<name>.md` (reconstructed) |
+> | 5 | `artefacts/slot.html` prisutan (real-games auto-discovery radi) |
+> | 6 | `evidence.artefacts[].content_hash` matchuje stvarni SHA-256 fajla na disku |
+> | 7 | Cross-bundle parity: `schema_version` + manifest keys + evidence keys identični po svim bundle-ovima |
+>
+> ### 🎯 Rezultati (12/12 bundle PASS · 0 parity drift)
+>
+> | Game | UKGC | MGA | DGA |
+> |:--|:-:|:-:|:-:|
+> | Gates_of_Olympus_1000_GDD | ✅ | ✅ | ✅ |
+> | Huff_N_More_Puff_GDD | ✅ | ✅ | ✅ |
+> | Starlight_Travellers_GDD | ✅ | ✅ | ✅ |
+> | Wrath_of_Olympus_GDD | ✅ | ✅ | ✅ |
+>
+> Reference bundle: `Gates_of_Olympus_1000_GDD (UKGC)`. Manifest 11
+> keys, evidence 6 keys, `schema_version="1.0.0"`. Sve ostale bundle
+> match-uju identično.
+>
+> ### 🆕 Novi npm script
+>
+> | Script | Šta pokreće |
+> |:--|:--|
+> | `test:cert:real` | static probe (Item #1) + batch real-game cert bundles × 3 jurisdikcije |
+>
+> Ulančan u `test:all` posle `test:parity`.
+>
+> ### 📁 Bundle layout (po igri)
+>
+> ```
+> <game_id>-<version>.opkg/
+>   ├── manifest.json
+>   ├── evidence.json
+>   ├── compliance.json
+>   ├── README.txt
+>   ├── source/
+>   │   ├── <name>.pdf      ← originalni binary (auditor replay)
+>   │   └── <name>.md       ← reconstructed markdown (parser input)
+>   └── artefacts/
+>       └── slot.html       ← built deterministic render
+> ```
+>
+> ### 🔒 Regression posle promene
+>
+> | Gate | Rezultat |
+> |:--|:-:|
+> | `test:cert` (cli/manifest/evidence/bundler/jurisdictions/compliance) | ✅ 19/19 |
+> | `test:lego` invariants | ✅ 7/7 |
+> | `test:parity` cross-game DOM | ✅ 0 violations |
+> | `test:cert:real` (Item #3) | ✅ 12/12 + 0 parity |
 >
 > ---
 >

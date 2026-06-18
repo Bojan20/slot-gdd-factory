@@ -42,7 +42,9 @@ import { evidenceToJSON } from './evidencePack.mjs';
 
 /**
  * @typedef {Object} BundleArtefactInput
- * @property {string} sourcePath       — Absolute path on disk to copy from.
+ * @property {string} [sourcePath]     — Absolute path on disk to copy from.
+ * @property {string} [inlineContent]  — String content to write inline (Item #3).
+ *                                       Mutually exclusive with sourcePath; one must be set.
  * @property {string} bundlePath       — Path inside bundle (e.g. 'artefacts/spin-001.png').
  */
 
@@ -168,14 +170,25 @@ export function writeBundle(args) {
 
   const artefacts = Array.isArray(args.artefacts) ? args.artefacts : [];
   for (const a of artefacts) {
-    if (!a || typeof a.sourcePath !== 'string' || typeof a.bundlePath !== 'string') {
-      continue;
-    }
-    if (!existsSync(a.sourcePath)) continue;
+    if (!a || typeof a.bundlePath !== 'string') continue;
     const dest = join(dir, a.bundlePath);
     mkdirSync(dirname(dest), { recursive: true });
-    copyFileSync(a.sourcePath, dest);
-    files.push(dest);
+
+    if (typeof a.sourcePath === 'string') {
+      if (!existsSync(a.sourcePath)) continue;
+      copyFileSync(a.sourcePath, dest);
+      files.push(dest);
+      continue;
+    }
+    /* Item #3 — inline-content artefact path. Used by the PDF input
+     * pathway to emit the reconstructed markdown alongside the original
+     * PDF binary, so the regulator can verify what the parser saw
+     * without re-running pdfjs extraction. */
+    if (typeof a.inlineContent === 'string') {
+      writeFileSync(dest, a.inlineContent, 'utf8');
+      files.push(dest);
+      continue;
+    }
   }
 
   return { dir, files };

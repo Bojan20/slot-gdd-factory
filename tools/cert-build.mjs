@@ -22,10 +22,36 @@ import { resolve, basename, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { parseGDD } from '../src/parser.mjs';
+import { pdfTextToMarkdown } from '../src/pdfToMarkdown.mjs';
 import { buildManifest } from '../src/cert/manifest.mjs';
 import { buildEvidencePack, sha256Hex } from '../src/cert/evidencePack.mjs';
 import { writeBundle, zipBundle } from '../src/cert/bundler.mjs';
 import { listJurisdictions } from '../src/cert/jurisdictions.mjs';
+
+/**
+ * Extract raw text from a PDF file using pdfjs-dist legacy build.
+ *
+ * Returns: { md: string, raw: string } so callers can attach BOTH the
+ * raw text and the reconstructed markdown to the evidence pack — the
+ * regulator can verify the parser had the same input the auditor sees.
+ */
+async function pdfFileToMarkdown(absPath) {
+  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const buf = readFileSync(absPath);
+  const doc = await pdfjs.getDocument({
+    data: new Uint8Array(buf),
+    useSystemFonts: true,
+    verbosity: 0,
+  }).promise;
+  const pages = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p);
+    const tc = await page.getTextContent();
+    pages.push(tc.items.map((i) => ('str' in i ? i.str : '')).join(' '));
+  }
+  const raw = pages.join('\n\n');
+  return { raw, md: pdfTextToMarkdown(raw) };
+}
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const REPO_ROOT = resolve(HERE, '..');
@@ -131,12 +157,28 @@ async function main() {
   const doZip = !!opts.zip;
   const log = (...m) => { if (!quiet) console.log(...m); };
 
-  const gddText = readFileSync(gddPath, 'utf8');
+  /* Item #3 — PDF input pathway.
+   * If the input is .pdf, extract text via pdfjs + reconstruct markdown
+   * via pdfTextToMarkdown, then feed the markdown to the parser. The
+   * raw PDF binary is still attached as evidence (regulator can re-run
+   * extraction independently). */
   const ext = extname(gddPath).slice(1).toLowerCase() || 'md';
+  let gddText;
+  let parserInput;
+  let pdfRawText = null;
+  if (ext === 'pdf') {
+    const conv = await pdfFileToMarkdown(gddPath);
+    pdfRawText = conv.raw;
+    parserInput = conv.md;
+    gddText = conv.md; /* what parser saw → evidence content */
+  } else {
+    gddText = readFileSync(gddPath, 'utf8');
+    parserInput = gddText;
+  }
 
   let model;
   try {
-    model = parseGDD(gddText, ext);
+    model = parseGDD(parserInput, ext === 'pdf' ? 'md' : ext);
   } catch (err) {
     console.error('cert-build: GDD parser threw:', err.message);
     process.exit(2);
@@ -155,20 +197,79 @@ async function main() {
     process.exit(2);
   }
 
+  /* Build the artefacts list. PDF inputs get TWO entries:
+   *   1. The original .pdf binary (auditor-replay)
+   *   2. The reconstructed markdown (`source/<name>.md`) — what parser saw
+   * MD/JSON inputs get a single entry as before.
+   */
+  const sourceArtefacts = [];
+  const sourceManifest = [];
+  if (ext === 'pdf') {
+    const baseName = basename(gddPath);
+    const mdName = baseName.replace(/\.pdf$/i, '.md');
+    sourceArtefacts.push({ sourcePath: gddPath, bundlePath: `source/${baseName}` });
+    /* Inline emit the reconstructed markdown via inlineContent attachment. */
+    sourceArtefacts.push({ inlineContent: gddText, bundlePath: `source/${mdName}` });
+    sourceManifest.push({
+      path: `source/${baseName}`,
+      content_hash: sha256Hex(readFileSync(gddPath)),
+      bytes: statSync(gddPath).size,
+      kind: 'gdd_pdf_source',
+    });
+    sourceManifest.push({
+      path: `source/${mdName}`,
+      content_hash: sha256Hex(gddText),
+      bytes: Buffer.byteLength(gddText, 'utf8'),
+      kind: 'gdd_md_reconstructed',
+    });
+  } else {
+    sourceArtefacts.push({ sourcePath: gddPath, bundlePath: `source/${basename(gddPath)}` });
+    sourceManifest.push({
+      path: `source/${basename(gddPath)}`,
+      content_hash: sha256Hex(gddText),
+      bytes: statSync(gddPath).size,
+      kind: 'gdd',
+    });
+  }
+
+  /* Item #3 — auto-attach the built slot.html artifact if one exists.
+   *
+   * Slug resolution is two-pronged because the cert-side game_id (from
+   * `slugifyGameId(model.name)`) and the real-games artifact dir
+   * (slug of source PDF basename, e.g. `huff-n-more-puff-gdd`) don't
+   * always align — the PDF filename suffix `-gdd` propagates to the
+   * real-games slug but is stripped from the cert game_id.
+   *
+   * Try: 1) exact game_id   2) game_id + `-gdd`   3) source basename slug
+   */
+  const realRoot = resolve(REPO_ROOT, 'dist', 'real-games');
+  const sourceBase = basename(gddPath, extname(gddPath))
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  const slotCandidates = [
+    resolve(realRoot, manifest.game_id, 'slot.html'),
+    resolve(realRoot, `${manifest.game_id}-gdd`, 'slot.html'),
+    resolve(realRoot, sourceBase, 'slot.html'),
+  ];
+  const slotArtPath = slotCandidates.find((p) => existsSync(p));
+  if (slotArtPath) {
+    sourceArtefacts.push({ sourcePath: slotArtPath, bundlePath: 'artefacts/slot.html' });
+    sourceManifest.push({
+      path: 'artefacts/slot.html',
+      content_hash: sha256Hex(readFileSync(slotArtPath)),
+      bytes: statSync(slotArtPath).size,
+      kind: 'built_slot_html',
+    });
+  }
+
   const evidence = buildEvidencePack({
     gddSource: {
       name: basename(gddPath),
       content: gddText,
     },
     testResults: [], // ingested separately when test runner integration lands
-    artefacts: [
-      {
-        path: `source/${basename(gddPath)}`,
-        content_hash: sha256Hex(gddText),
-        bytes: statSync(gddPath).size,
-        kind: 'gdd',
-      },
-    ],
+    artefacts: sourceManifest,
     blocks: discoverBlockEvidence(),
   });
 
@@ -176,9 +277,7 @@ async function main() {
     outRoot,
     manifest,
     evidence,
-    artefacts: [
-      { sourcePath: gddPath, bundlePath: `source/${basename(gddPath)}` },
-    ],
+    artefacts: sourceArtefacts,
   });
 
   log(`cert-build: bundle written → ${dir}`);
