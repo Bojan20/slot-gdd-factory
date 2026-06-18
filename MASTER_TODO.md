@@ -3,7 +3,64 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 04:50 · **HEAD**: pending push · main
+> **Last updated**: 2026-06-18 04:55 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## 🆕 FUNCTIONAL ITEM #7 — Web Vitals budget gates (LCP/CLS/TBT/Boot) (2026-06-18)
+>
+> Postojeći `tools/fps-budget-audit.mjs` skenira IZVOR (rAF shape,
+> CSS transition duration). Item #7 dodaje **runtime** Core Web Vitals
+> merenje sa Chromium PerformanceObserver-om — pravi LCP / CLS / TBT
+> / Boot brojevi po bloku, CPU throttle 2× za regulator-realnu metriku.
+>
+> ### 🎯 Budgeti (Google CWV "good" thresholds, tightened za static demo-e)
+>
+> | Metrika | Budget | Šta meri |
+> |:--|:-:|:--|
+> | LCP (Largest Contentful Paint) | ≤ 1500 ms | vreme do glavnog paint elementa |
+> | CLS (Cumulative Layout Shift) | ≤ 0.05 | layout shift posle prvog paint-a |
+> | TBT (Total Blocking Time) | ≤ 150 ms | suma (longtask.dur − 50ms) za sve longtask-ove |
+> | Boot | ≤ 1500 ms | navigationStart → load complete |
+>
+> ### 🔬 Probe `tools/web-vitals-audit.mjs`
+>
+> | Stage | Šta radi |
+> |:--|:--|
+> | 1 | `addInitScript` instaliraju 4 PerformanceObserver-a PRE goto (paint, lcp, layout-shift, longtask) sa `buffered: true` |
+> | 2 | CPU throttle 2× preko CDP `Emulation.setCPUThrottlingRate` |
+> | 3 | `goto({waitUntil:'load'})` + 800ms idle (CLS finalizes) |
+> | 4 | `window.__vitals` evaluate → metrics |
+> | 5 | Per-metric budget compare → PASS/FAIL |
+> | 6 | Persist `dist/web-vitals/report.json` |
+>
+> ### 🎯 Rezultati (112/112 demos within budget)
+>
+> | Metrika | Breach count | Najviši izmeren | Margine |
+> |:--|:-:|:-:|:--|
+> | LCP | 0 / 112 | ~48 ms | 31× ispod budget-a |
+> | CLS | 0 / 112 | ~0.0001 | 500× ispod budget-a |
+> | TBT | 0 / 112 | 0 ms | full headroom |
+> | Boot | 0 / 112 | ~40 ms | 37× ispod budget-a |
+>
+> Static demo-i su masivno ispod thresholds — full headroom za real-game
+> runtime kompleksnost (spin engine, particle systems, FS ramp). Budget
+> možemo strict-ovati niže kad budemo merili real-game `slot.html`
+> (poseban probe, ne ovaj).
+>
+> ### 🆕 Novi npm scripti
+>
+> | Script | Mode |
+> |:--|:--|
+> | `test:vitals` | strict — `--fail-on-violation` |
+> | `test:vitals:report` | report-only |
+>
+> `test:vitals` ulančan u `test:all` posle `test:visual:portrait`.
+>
+> ### 📁 Artifacts
+>
+> `dist/web-vitals/report.json` — schema: `{ budget, generated_at, results[] }`
+> sa per-demo `lcp / cls / tbt / bootMs / checks`.
 >
 > ---
 >
