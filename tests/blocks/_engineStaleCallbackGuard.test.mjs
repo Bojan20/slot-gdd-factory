@@ -82,7 +82,11 @@ block('2. hexReelEngine.mjs spinToken guard', () => {
  * ════════════════════════════════════════════════════════════════════ */
 block('3. No-bypass invariant on critical settle paths', () => {
   /* The reel-loop end branch (where onSettled fires) must use __sptGuard. */
-  const reelSettleSection = reelSrc.match(/spinTicker\s*=\s*null;[\s\S]{0,1000}typeof\s+onSettled\s*===\s*["']function["'][\s\S]{0,400}/);
+  /* 2026-06-18 — window expanded from 1000→2000 to accommodate the
+   * FORCE_TRIGGER nullification comment block added at the settle gate
+   * (see reelEngine.mjs:547-557). The __sptGuard contract itself is
+   * unchanged; only the surrounding comment density grew. */
+  const reelSettleSection = reelSrc.match(/spinTicker\s*=\s*null;[\s\S]{0,2000}typeof\s+onSettled\s*===\s*["']function["'][\s\S]{0,400}/);
   t('3.1 reelEngine settle section uses __sptGuard around onSettled',
     reelSettleSection ? /__sptGuard/.test(reelSettleSection[0]) : false);
 

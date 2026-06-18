@@ -487,6 +487,24 @@ const EXPECTED_EMIT_OWNERS = {
   onRetriggerMultiplierBumped:     ['retriggerMultiplierBump.mjs'],
   onClusterSizeMultiplierApplied:  ['clusterSizeMultiplier.mjs'],
   onMultiplierChanged:             ['hookBus.mjs'],
+  /* Wave LEGO-H/FS/W (2026-06-18) — 8 new GDD-driven variants. Each
+   * block owns its single canonical event pair (rolled/cleared etc). */
+  onFrameMultiplierBumped:           ['holdAndWinFrameMultiplier.mjs'],
+  onFrameMultiplierFinal:            ['holdAndWinFrameMultiplier.mjs'],
+  onLockedOrbMultiplierRolled:       ['holdAndWinLockedOrbMultiplier.mjs'],
+  onLockedOrbMultiplierFinal:        ['holdAndWinLockedOrbMultiplier.mjs'],
+  onRoomPromoted:                    ['holdAndWinRoomJackpotMultiplier.mjs'],
+  onRoomJackpotFinal:                ['holdAndWinRoomJackpotMultiplier.mjs'],
+  onTumbleMultiplierGrown:           ['tumbleGrowingFsMultiplier.mjs'],
+  onTumbleMultiplierReset:           ['tumbleGrowingFsMultiplier.mjs'],
+  onExpansionWildAdded:              ['fsExpansionWilds.mjs'],
+  onExpansionWildsCleared:           ['fsExpansionWilds.mjs'],
+  onLadderRungPromoted:              ['progressiveFsRetriggerLadder.mjs'],
+  onLadderReset:                     ['progressiveFsRetriggerLadder.mjs'],
+  onExpandingWildMultRolled:         ['expandingWildMultiplier.mjs'],
+  onExpandingWildMultsCleared:       ['expandingWildMultiplier.mjs'],
+  onMegaWildClusterLanded:           ['megaWildCluster.mjs'],
+  onMegaWildClusterCleared:          ['megaWildCluster.mjs'],
   /* 2026-06-09 — scatterCelebration owns its own lifecycle phase events.
    * spinControl listens to morph the SPIN CTA into a SKIP button during
    * the celebration window. */

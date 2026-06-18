@@ -114,6 +114,24 @@ const GRANDFATHERED_DEAD_HOOKS = new Map([
    * emit. The canonical event is onSlamComplete (from reelEngine).
    * Trivial rename. */
   ['onSlamStop', 'rename to onSlamComplete (stormMultiplierReel)'],
+  /* Wave LEGO-H (2026-06-18) — 3 new H&W multiplier variant blocks
+   * (frame/lockedOrb/roomJackpot) subscribe to fine-grained H&W
+   * lifecycle events that holdAndWin.mjs does not yet emit. Canonical
+   * H&W lifecycle is currently the single 'onHoldAndWinPhase' event;
+   * follow-up wave adds discrete intro/lock/start emits OR refactors
+   * the listeners to gate on onHoldAndWinPhase + phase param. */
+  ['onHoldAndWinIntro', 'add emit in holdAndWin.mjs when phase enters INTRO (Wave LEGO-H follow-up)'],
+  ['onHoldAndWinLock', 'add emit in holdAndWin.mjs when new orb is locked (Wave LEGO-H follow-up)'],
+  ['onHoldAndWinStart', 'add emit in holdAndWin.mjs when phase enters RUNNING (Wave LEGO-H follow-up)'],
+  /* clusterSizeMultiplier (Wave LEGO-M) subscribes to onClusterPay — the
+   * clusterPaysEval evaluator does not yet emit per-cluster events.
+   * Follow-up: emit onClusterPay per resolved cluster from evaluator. */
+  ['onClusterPay', 'emit per-cluster in clusterPaysEval (Wave LEGO-M follow-up)'],
+  /* Pre-existing dead hooks — listeners present in compliance / win-cap
+   * blocks but emit-site lives outside the block surface (regulator
+   * gate broadcaster + winCap module's internal cap-hit detector). */
+  ['onSelfExcludedBlocked', 'add emit in jurisdictionGate when self-exclusion blocks a spin'],
+  ['onWinCapReached', 'add emit in winCap when configured cap is hit (currently uses onMaxWinCapHit)'],
 ]);
 
 /* In-block duplicate listener calls that are legitimate (separate

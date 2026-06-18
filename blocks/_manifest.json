@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-18T01:52:42.631Z",
+  "generatedAt": "2026-06-18T15:28:19.154Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 122,
+  "totalBlocks": 135,
   "blocks": [
     {
       "name": "ambientBackgroundWheel",
@@ -92,7 +92,7 @@
         "gold": "255,214,110",
         "skipDuringFs": false
       },
-      "loc": 324
+      "loc": 536
     },
     {
       "name": "audio",
@@ -346,7 +346,7 @@
         "onBigWinTierExited"
       ],
       "defaultConfig": {
-        "enabled": false,
+        "enabled": true,
         "thresholds": [
           10,
           25,
@@ -397,7 +397,7 @@
         "shakeMinTier": 3,
         "shakePeriodMs": 220
       },
-      "loc": 1312
+      "loc": 1325
     },
     {
       "name": "bonusBuy",
@@ -865,6 +865,55 @@
       "loc": 256
     },
     {
+      "name": "clusterSizeMultiplier",
+      "file": "src/blocks/clusterSizeMultiplier.mjs",
+      "testFile": "tests/blocks/clusterSizeMultiplier.test.mjs",
+      "category": "multiplier",
+      "description": "Wave LEGO-M5 — Cluster pays multiplier scales with cluster size.",
+      "exports": [
+        "defaultConfig",
+        "emitClusterSizeMultiplierCSS",
+        "emitClusterSizeMultiplierRuntime",
+        "resolveConfig",
+        "tierMultForSize"
+      ],
+      "lifecycleHooks": [
+        "onClusterPay",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onClusterSizeMultiplierApplied"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "tiers": [
+          {
+            "minSize": 5,
+            "maxSize": 7,
+            "multX": 1
+          },
+          {
+            "minSize": 8,
+            "maxSize": 10,
+            "multX": 2
+          },
+          {
+            "minSize": 11,
+            "maxSize": 14,
+            "multX": 5
+          },
+          {
+            "minSize": 15,
+            "maxSize": 9999,
+            "multX": 10
+          }
+        ],
+        "chipColor": "#7af2c8",
+        "showBadge": true
+      },
+      "loc": 232
+    },
+    {
       "name": "coinShower",
       "file": "src/blocks/coinShower.mjs",
       "testFile": "tests/blocks/coinShower.test.mjs",
@@ -1210,6 +1259,60 @@
       "loc": 185
     },
     {
+      "name": "expandingWildMultiplier",
+      "file": "src/blocks/expandingWildMultiplier.mjs",
+      "testFile": "tests/blocks/expandingWildMultiplier.test.mjs",
+      "category": "wild",
+      "description": "Wave LEGO-EWM — Expanding wild + ×N multiplier tag.",
+      "exports": [
+        "aggregateWildMults",
+        "defaultConfig",
+        "emitExpandingWildMultiplierCSS",
+        "emitExpandingWildMultiplierMarkup",
+        "emitExpandingWildMultiplierRuntime",
+        "resolveConfig",
+        "rollWildMultiplier"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsSpinResult",
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onExpandingWildMultRolled",
+        "onExpandingWildMultsCleared"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "wildSymbol": "W",
+        "distribution": [
+          {
+            "value": 2,
+            "weight": 60
+          },
+          {
+            "value": 3,
+            "weight": 25
+          },
+          {
+            "value": 5,
+            "weight": 10
+          },
+          {
+            "value": 10,
+            "weight": 5
+          }
+        ],
+        "aggregation": "multiplicative",
+        "appliesIn": "both",
+        "wildColor": "#7c4dff",
+        "multTagFontPx": 14,
+        "pulseMs": 700
+      },
+      "loc": 462
+    },
+    {
       "name": "forceSkip",
       "file": "src/blocks/forceSkip.mjs",
       "testFile": "tests/blocks/forceSkip.test.mjs",
@@ -1321,7 +1424,41 @@
         "featureHideMs": 300,
         "bigWinSafetyMs": 30000
       },
-      "loc": 915
+      "loc": 919
+    },
+    {
+      "name": "fsExpansionWilds",
+      "file": "src/blocks/fsExpansionWilds.mjs",
+      "testFile": "tests/blocks/fsExpansionWilds.test.mjs",
+      "category": "wild",
+      "description": "Free Spins feature where any wild landing in a reel during a FS spin",
+      "exports": [
+        "defaultConfig",
+        "emitFsExpansionWildsCSS",
+        "emitFsExpansionWildsMarkup",
+        "emitFsExpansionWildsRuntime",
+        "resolveConfig",
+        "shouldExpandReel"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsSpinResult",
+        "onFsTrigger",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onExpansionWildAdded",
+        "onExpansionWildsCleared"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "wildSymbol": "W",
+        "triggerProbability": 1,
+        "maxStickyReels": 5,
+        "expansionColor": "#ffaa00",
+        "pulseMs": 700
+      },
+      "loc": 318
     },
     {
       "name": "fsProgressBar",
@@ -1711,11 +1848,12 @@
           "jackpotShortMs": 1600,
           "jackpotGrandMs": 2200,
           "fullGridMs": 2600,
-          "bonusCelebrateMs": 1500
+          "bonusCelebrateMs": 1500,
+          "celebrateTailMs": 600
         },
         "orbTable": null
       },
-      "loc": 1534
+      "loc": 2103
     },
     {
       "name": "holdAndWinCreditBucket",
@@ -1804,6 +1942,155 @@
       "loc": 659
     },
     {
+      "name": "holdAndWinFrameMultiplier",
+      "file": "src/blocks/holdAndWinFrameMultiplier.mjs",
+      "testFile": "tests/blocks/holdAndWinFrameMultiplier.test.mjs",
+      "category": "multiplier",
+      "description": "Wave LEGO-HW2 — Frozen Frame Multiplier for Hold & Win respin rounds.",
+      "exports": [
+        "defaultConfig",
+        "emitHoldAndWinFrameMultiplierCSS",
+        "emitHoldAndWinFrameMultiplierMarkup",
+        "emitHoldAndWinFrameMultiplierRuntime",
+        "resolveConfig",
+        "tierBumpForLanding"
+      ],
+      "lifecycleHooks": [
+        "onHoldAndWinEnd",
+        "onHoldAndWinIntro",
+        "onHoldAndWinLock",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "tierLadder": [
+          1,
+          2,
+          3,
+          5,
+          10
+        ],
+        "bumpOnReLand": true,
+        "showChip": true,
+        "chipPosition": "topRight",
+        "chipColor": "#ffd966",
+        "fontSizePx": 11,
+        "durationMs": 800
+      },
+      "loc": 371
+    },
+    {
+      "name": "holdAndWinLockedOrbMultiplier",
+      "file": "src/blocks/holdAndWinLockedOrbMultiplier.mjs",
+      "testFile": "tests/blocks/holdAndWinLockedOrbMultiplier.test.mjs",
+      "category": "multiplier",
+      "description": "Wave LEGO-HW-M2 — Locked-orb ×N multiplier tag for Hold & Win respins.",
+      "exports": [
+        "aggregateValues",
+        "defaultConfig",
+        "emitHoldAndWinLockedOrbMultiplierCSS",
+        "emitHoldAndWinLockedOrbMultiplierMarkup",
+        "emitHoldAndWinLockedOrbMultiplierRuntime",
+        "pickMultiplierValue",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onHoldAndWinEnd",
+        "onHoldAndWinLock",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onLockedOrbMultiplierFinal",
+        "onLockedOrbMultiplierRolled"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "distribution": [
+          {
+            "value": 2,
+            "weight": 50
+          },
+          {
+            "value": 3,
+            "weight": 30
+          },
+          {
+            "value": 5,
+            "weight": 15
+          },
+          {
+            "value": 10,
+            "weight": 4
+          },
+          {
+            "value": 25,
+            "weight": 1
+          }
+        ],
+        "aggregation": "additive",
+        "chipColor": "#ff8c42",
+        "fontSizePx": 14,
+        "pulseMs": 600
+      },
+      "loc": 336
+    },
+    {
+      "name": "holdAndWinRoomJackpotMultiplier",
+      "file": "src/blocks/holdAndWinRoomJackpotMultiplier.mjs",
+      "testFile": "tests/blocks/holdAndWinRoomJackpotMultiplier.test.mjs",
+      "category": "multiplier",
+      "description": "Wave LEGO-HW-RJM — Hold & Win Room/Jackpot Multiplier ladder.",
+      "exports": [
+        "defaultConfig",
+        "emitHoldAndWinRoomJackpotMultiplierCSS",
+        "emitHoldAndWinRoomJackpotMultiplierMarkup",
+        "emitHoldAndWinRoomJackpotMultiplierRuntime",
+        "resolveConfig",
+        "resolveRoomForCount"
+      ],
+      "lifecycleHooks": [
+        "onHoldAndWinEnd",
+        "onHoldAndWinIntro",
+        "onHoldAndWinLock",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onRoomJackpotFinal",
+        "onRoomPromoted"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "rooms": [
+          {
+            "name": "MINI",
+            "threshold": 0,
+            "multX": 1
+          },
+          {
+            "name": "MINOR",
+            "threshold": 5,
+            "multX": 2
+          },
+          {
+            "name": "MAJOR",
+            "threshold": 10,
+            "multX": 5
+          },
+          {
+            "name": "GRAND",
+            "threshold": 15,
+            "multX": 20
+          }
+        ],
+        "chipPosition": "topLeft",
+        "fontSizePx": 16,
+        "chipColor": "#ffd700",
+        "pulseMs": 800
+      },
+      "loc": 351
+    },
+    {
       "name": "hookBus",
       "file": "src/blocks/hookBus.mjs",
       "testFile": "tests/blocks/hookBus.test.mjs",
@@ -1823,11 +2110,13 @@
       "lifecycleHooks": [
         "onSpinResult"
       ],
-      "emittedEvents": [],
+      "emittedEvents": [
+        "onMultiplierChanged"
+      ],
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 759
+      "loc": 820
     },
     {
       "name": "hotReload",
@@ -2149,6 +2438,42 @@
       "loc": 257
     },
     {
+      "name": "megaWildCluster",
+      "file": "src/blocks/megaWildCluster.mjs",
+      "testFile": "tests/blocks/megaWildCluster.test.mjs",
+      "category": "wild",
+      "description": "Wave LEGO-MWC — Mega Wild Cluster (oversized wild block).",
+      "exports": [
+        "defaultConfig",
+        "emitMegaWildClusterCSS",
+        "emitMegaWildClusterMarkup",
+        "emitMegaWildClusterRuntime",
+        "pickValidAnchor",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsSpinResult",
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onMegaWildClusterCleared",
+        "onMegaWildClusterLanded"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "wildSymbol": "W",
+        "triggerSymbol": "MW",
+        "blockSize": 2,
+        "appliesIn": "fs",
+        "glowColor": "#ff4081",
+        "pulseMs": 900,
+        "cornerRadiusPx": 12
+      },
+      "loc": 357
+    },
+    {
       "name": "motionOverlay",
       "file": "src/blocks/motionOverlay.mjs",
       "testFile": "tests/blocks/motionOverlay.test.mjs",
@@ -2234,6 +2559,7 @@
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
+        "onHoldAndWinIntro",
         "onSpinResult",
         "onTumbleStep",
         "preSpin"
@@ -2274,7 +2600,7 @@
         "chipShadow": "#000",
         "pulseMs": 1000
       },
-      "loc": 308
+      "loc": 334
     },
     {
       "name": "mysteryReveal",
@@ -2341,6 +2667,58 @@
         "haloColor": "180,120,255"
       },
       "loc": 262
+    },
+    {
+      "name": "mysterySymbolMultiplier",
+      "file": "src/blocks/mysterySymbolMultiplier.mjs",
+      "testFile": "tests/blocks/mysterySymbolMultiplier.test.mjs",
+      "category": "wild",
+      "description": "Wave LEGO-M2 — Mystery symbol reveals as a multiplier value.",
+      "exports": [
+        "defaultConfig",
+        "emitMysterySymbolMultiplierCSS",
+        "emitMysterySymbolMultiplierRuntime",
+        "pickMysteryMultValue",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onSpinResult",
+        "onTumbleStep",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onMysteryMultiplierRevealed"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "mysterySymbolId": "?",
+        "revealProbability": 1,
+        "distribution": [
+          {
+            "value": 2,
+            "weight": 50
+          },
+          {
+            "value": 3,
+            "weight": 30
+          },
+          {
+            "value": 5,
+            "weight": 15
+          },
+          {
+            "value": 10,
+            "weight": 4
+          },
+          {
+            "value": 50,
+            "weight": 1
+          }
+        ],
+        "chipColor": "#a8e6ff",
+        "fontSizePx": 18
+      },
+      "loc": 242
     },
     {
       "name": "nearMissTease",
@@ -2747,6 +3125,58 @@
       "loc": 705
     },
     {
+      "name": "perFsSpinMultiplier",
+      "file": "src/blocks/perFsSpinMultiplier.mjs",
+      "testFile": "tests/blocks/perFsSpinMultiplier.test.mjs",
+      "category": "multiplier",
+      "description": "Wave LEGO-M1 — Per-FS-spin random multiplier.",
+      "exports": [
+        "defaultConfig",
+        "emitPerFsSpinMultiplierCSS",
+        "emitPerFsSpinMultiplierMarkup",
+        "emitPerFsSpinMultiplierRuntime",
+        "pickValueFromDistribution",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsSpinResult"
+      ],
+      "emittedEvents": [
+        "onPerFsSpinMultiplierRolled"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "distribution": [
+          {
+            "value": 2,
+            "weight": 50
+          },
+          {
+            "value": 3,
+            "weight": 30
+          },
+          {
+            "value": 5,
+            "weight": 15
+          },
+          {
+            "value": 10,
+            "weight": 4
+          },
+          {
+            "value": 25,
+            "weight": 1
+          }
+        ],
+        "chipPosition": "top",
+        "fontSizePx": 22,
+        "durationMs": 1200,
+        "chipColor": "#ffe680"
+      },
+      "loc": 289
+    },
+    {
       "name": "persistentMultiplier",
       "file": "src/blocks/persistentMultiplier.mjs",
       "testFile": "tests/blocks/persistentMultiplier.test.mjs",
@@ -2913,6 +3343,65 @@
       "loc": 285
     },
     {
+      "name": "progressiveFsRetriggerLadder",
+      "file": "src/blocks/progressiveFsRetriggerLadder.mjs",
+      "testFile": "tests/blocks/progressiveFsRetriggerLadder.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-M — Progressive FS Retrigger Ladder.",
+      "exports": [
+        "defaultConfig",
+        "emitProgressiveFsRetriggerLadderCSS",
+        "emitProgressiveFsRetriggerLadderMarkup",
+        "emitProgressiveFsRetriggerLadderRuntime",
+        "promoteRung",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsRetrigger",
+        "onFsSpinResult",
+        "onFsTrigger",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "ladder": [
+          {
+            "rung": 0,
+            "multX": 1,
+            "label": "BASE"
+          },
+          {
+            "rung": 1,
+            "multX": 2,
+            "label": "×2"
+          },
+          {
+            "rung": 2,
+            "multX": 5,
+            "label": "×5"
+          },
+          {
+            "rung": 3,
+            "multX": 10,
+            "label": "×10"
+          },
+          {
+            "rung": 4,
+            "multX": 25,
+            "label": "MAX"
+          }
+        ],
+        "ladderPosition": "right",
+        "fontSizePx": 12,
+        "activeColor": "#ffd700",
+        "inactiveColor": "#666666",
+        "pulseMs": 600
+      },
+      "loc": 410
+    },
+    {
       "name": "pwaInstallability",
       "file": "src/blocks/pwaInstallability.mjs",
       "testFile": "tests/blocks/pwaInstallability.test.mjs",
@@ -3033,7 +3522,7 @@
         "minStepPx": 0.5,
         "accelMinFactor": 0.3
       },
-      "loc": 1143
+      "loc": 1218
     },
     {
       "name": "reelEngineCSS",
@@ -3273,6 +3762,44 @@
         "zIndex": 42
       },
       "loc": 327
+    },
+    {
+      "name": "retriggerMultiplierBump",
+      "file": "src/blocks/retriggerMultiplierBump.mjs",
+      "testFile": "tests/blocks/retriggerMultiplierBump.test.mjs",
+      "category": "multiplier",
+      "description": "Wave LEGO-M4 — FS retrigger bumps the round multiplier by a fixed",
+      "exports": [
+        "defaultConfig",
+        "emitRetriggerMultiplierBumpCSS",
+        "emitRetriggerMultiplierBumpMarkup",
+        "emitRetriggerMultiplierBumpRuntime",
+        "nextLadderValue",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsRetrigger",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [
+        "onRetriggerMultiplierBumped"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "mode": "step",
+        "step": 1,
+        "ladder": [
+          1,
+          2,
+          3,
+          5,
+          10
+        ],
+        "chipColor": "#ffd84d",
+        "hudPosition": "topRight"
+      },
+      "loc": 262
     },
     {
       "name": "rewardChest",
@@ -3576,7 +4103,7 @@
         "onSlamRequested"
       ],
       "defaultConfig": {
-        "enabled": false,
+        "enabled": true,
         "chipLabel": "STOP",
         "chipColor": "255,80,80",
         "chipTextColor": "255,255,255",
@@ -3587,7 +4114,7 @@
         "ariaLabel": "Stop reels",
         "pulseAnimation": true
       },
-      "loc": 449
+      "loc": 454
     },
     {
       "name": "slingoSpinEngine",
@@ -3672,12 +4199,21 @@
       "lifecycleHooks": [
         "onBigWinTierEnd",
         "onBigWinTierEntered",
+        "onCoolOffEnforced",
+        "onCruksCheckPending",
         "onFsEnd",
         "onFsTrigger",
+        "onHoldAndWinEnd",
+        "onHoldAndWinIntro",
+        "onHoldAndWinStart",
+        "onManualSpinPaceBlocked",
+        "onMinSpinPaceDeferred",
         "onScatterCelebrationStart",
+        "onSelfExcludedBlocked",
         "onSkipComplete",
         "onSlamComplete",
         "onSpinResult",
+        "onWinCapReached",
         "onWinPresentationEnd",
         "onWinPresentationStart",
         "postSpin",
@@ -3701,7 +4237,7 @@
         "stopColor": "255,80,80",
         "skipColor": "90,180,255"
       },
-      "loc": 868
+      "loc": 964
     },
     {
       "name": "spinTempo",
@@ -4226,6 +4762,34 @@
       "loc": 726
     },
     {
+      "name": "totalMultiplierChip",
+      "file": "src/blocks/totalMultiplierChip.mjs",
+      "testFile": "tests/blocks/totalMultiplierChip.test.mjs",
+      "category": "multiplier",
+      "description": "Wave LEGO-M6 — Global accumulated-multiplier HUD chip.",
+      "exports": [
+        "defaultConfig",
+        "emitTotalMultiplierChipCSS",
+        "emitTotalMultiplierChipMarkup",
+        "emitTotalMultiplierChipRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onMultiplierChanged",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "position": "topLeft",
+        "fontSizePx": 16,
+        "chipColor": "#ffe680",
+        "hideWhenOne": true
+      },
+      "loc": 203
+    },
+    {
       "name": "triggerCounting",
       "file": "src/blocks/triggerCounting.mjs",
       "testFile": "tests/blocks/triggerCounting.test.mjs",
@@ -4276,6 +4840,39 @@
         "staggerMs": 40
       },
       "loc": 414
+    },
+    {
+      "name": "tumbleGrowingFsMultiplier",
+      "file": "src/blocks/tumbleGrowingFsMultiplier.mjs",
+      "testFile": "tests/blocks/tumbleGrowingFsMultiplier.test.mjs",
+      "category": "engine",
+      "description": "Wave LEGO-M2 — Tumble-growing FS multiplier.",
+      "exports": [
+        "computeNextMult",
+        "defaultConfig",
+        "emitTumbleGrowingFsMultiplierCSS",
+        "emitTumbleGrowingFsMultiplierMarkup",
+        "emitTumbleGrowingFsMultiplierRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsSpinResult",
+        "onTumbleStep",
+        "preSpin"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "startMult": 1,
+        "growPerTumble": 1,
+        "maxMult": 100,
+        "chipPosition": "top",
+        "fontSizePx": 24,
+        "chipColor": "#a0ffd0",
+        "pulseMs": 500
+      },
+      "loc": 296
     },
     {
       "name": "turboMode",
@@ -4395,7 +4992,7 @@
         "showLabelText": true,
         "labelText": "FORCE"
       },
-      "loc": 674
+      "loc": 774
     },
     {
       "name": "walkingWild",
@@ -4690,6 +5287,53 @@
       "loc": 306
     },
     {
+      "name": "wildCollisionMultiplier",
+      "file": "src/blocks/wildCollisionMultiplier.mjs",
+      "testFile": "tests/blocks/wildCollisionMultiplier.test.mjs",
+      "category": "wild",
+      "description": "Wave LEGO-M3 — Wild × Wild collision multiplier.",
+      "exports": [
+        "computeWildProduct",
+        "defaultConfig",
+        "emitWildCollisionMultiplierCSS",
+        "emitWildCollisionMultiplierRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onSpinResult",
+        "onTumbleStep",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onWildCollision"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "wildSymbolId": "W",
+        "distribution": [
+          {
+            "value": 2,
+            "weight": 60
+          },
+          {
+            "value": 3,
+            "weight": 25
+          },
+          {
+            "value": 5,
+            "weight": 10
+          },
+          {
+            "value": 10,
+            "weight": 5
+          }
+        ],
+        "minWildsForCollision": 2,
+        "chipColor": "#ff9a40"
+      },
+      "loc": 254
+    },
+    {
       "name": "wildReel",
       "file": "src/blocks/wildReel.mjs",
       "testFile": "tests/blocks/wildReel.test.mjs",
@@ -4782,7 +5426,7 @@
         "onWinLineFlashStart"
       ],
       "defaultConfig": {
-        "enabled": false,
+        "enabled": true,
         "flashMs": 540,
         "direction": "ltr",
         "minCells": 3,
@@ -4790,7 +5434,7 @@
         "flashColor": "rgba(255,216,77,0.7)",
         "clearOnNextSpin": true
       },
-      "loc": 195
+      "loc": 200
     },
     {
       "name": "winMultiplierBadge",
@@ -4863,7 +5507,7 @@
         "staggerStepMs": 80,
         "suppressLDW": true
       },
-      "loc": 1005
+      "loc": 1014
     },
     {
       "name": "winRollup",

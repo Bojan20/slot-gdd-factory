@@ -232,6 +232,65 @@ import {
   emitPersistentMultiplierCSS, emitPersistentMultiplierMarkup, emitPersistentMultiplierRuntime,
   resolveConfig as resolvePersistentMultiplierConfig,
 } from './blocks/persistentMultiplier.mjs';
+/* Wave LEGO-M (06-18) — 6 new market multiplier variants. Each block is a
+ * self-contained LEGO atom — boot is no-op unless GDD enables it. */
+import {
+  emitPerFsSpinMultiplierCSS, emitPerFsSpinMultiplierMarkup, emitPerFsSpinMultiplierRuntime,
+  resolveConfig as resolvePerFsSpinMultiplierConfig,
+} from './blocks/perFsSpinMultiplier.mjs';
+import {
+  emitMysterySymbolMultiplierCSS, emitMysterySymbolMultiplierRuntime,
+  resolveConfig as resolveMysterySymbolMultiplierConfig,
+} from './blocks/mysterySymbolMultiplier.mjs';
+import {
+  emitWildCollisionMultiplierCSS, emitWildCollisionMultiplierRuntime,
+  resolveConfig as resolveWildCollisionMultiplierConfig,
+} from './blocks/wildCollisionMultiplier.mjs';
+import {
+  emitRetriggerMultiplierBumpCSS, emitRetriggerMultiplierBumpMarkup, emitRetriggerMultiplierBumpRuntime,
+  resolveConfig as resolveRetriggerMultiplierBumpConfig,
+} from './blocks/retriggerMultiplierBump.mjs';
+import {
+  emitClusterSizeMultiplierCSS, emitClusterSizeMultiplierRuntime,
+  resolveConfig as resolveClusterSizeMultiplierConfig,
+} from './blocks/clusterSizeMultiplier.mjs';
+import {
+  emitTotalMultiplierChipCSS, emitTotalMultiplierChipMarkup, emitTotalMultiplierChipRuntime,
+  resolveConfig as resolveTotalMultiplierChipConfig,
+} from './blocks/totalMultiplierChip.mjs';
+/* Wave LEGO-H/FS/W (06-18) — 8 new GDD-driven variants for H&W, FS, wild families. */
+import {
+  emitHoldAndWinFrameMultiplierCSS, emitHoldAndWinFrameMultiplierMarkup, emitHoldAndWinFrameMultiplierRuntime,
+  resolveConfig as resolveHoldAndWinFrameMultiplierConfig,
+} from './blocks/holdAndWinFrameMultiplier.mjs';
+import {
+  emitHoldAndWinLockedOrbMultiplierCSS, emitHoldAndWinLockedOrbMultiplierMarkup, emitHoldAndWinLockedOrbMultiplierRuntime,
+  resolveConfig as resolveHoldAndWinLockedOrbMultiplierConfig,
+} from './blocks/holdAndWinLockedOrbMultiplier.mjs';
+import {
+  emitHoldAndWinRoomJackpotMultiplierCSS, emitHoldAndWinRoomJackpotMultiplierMarkup, emitHoldAndWinRoomJackpotMultiplierRuntime,
+  resolveConfig as resolveHoldAndWinRoomJackpotMultiplierConfig,
+} from './blocks/holdAndWinRoomJackpotMultiplier.mjs';
+import {
+  emitTumbleGrowingFsMultiplierCSS, emitTumbleGrowingFsMultiplierMarkup, emitTumbleGrowingFsMultiplierRuntime,
+  resolveConfig as resolveTumbleGrowingFsMultiplierConfig,
+} from './blocks/tumbleGrowingFsMultiplier.mjs';
+import {
+  emitFsExpansionWildsCSS, emitFsExpansionWildsMarkup, emitFsExpansionWildsRuntime,
+  resolveConfig as resolveFsExpansionWildsConfig,
+} from './blocks/fsExpansionWilds.mjs';
+import {
+  emitProgressiveFsRetriggerLadderCSS, emitProgressiveFsRetriggerLadderMarkup, emitProgressiveFsRetriggerLadderRuntime,
+  resolveConfig as resolveProgressiveFsRetriggerLadderConfig,
+} from './blocks/progressiveFsRetriggerLadder.mjs';
+import {
+  emitExpandingWildMultiplierCSS, emitExpandingWildMultiplierMarkup, emitExpandingWildMultiplierRuntime,
+  resolveConfig as resolveExpandingWildMultiplierConfig,
+} from './blocks/expandingWildMultiplier.mjs';
+import {
+  emitMegaWildClusterCSS, emitMegaWildClusterMarkup, emitMegaWildClusterRuntime,
+  resolveConfig as resolveMegaWildClusterConfig,
+} from './blocks/megaWildCluster.mjs';
 import {
   emitProgressiveFreeSpinsCSS, emitProgressiveFreeSpinsMarkup, emitProgressiveFreeSpinsRuntime,
   resolveConfig as resolveProgressiveFreeSpinsConfig,
@@ -1003,6 +1062,22 @@ ${/* Wave H15 — Weighted Wheel Segments extension (jackpot tier CSS). */ ''}
 ${emitWeightedWheelSegmentsCSS(resolveWeightedWheelSegmentsConfig(model))}
 ${/* Wave H13 — Path-Aware Multiplier extension (per-path chip + HUD CSS). */ ''}
 ${emitPathAwareMultiplierCSS(resolvePathAwareMultiplierConfig(model))}
+${/* Wave LEGO-M — 6 base/FS multiplier variants. Each emits empty CSS unless GDD enables. */ ''}
+${emitPerFsSpinMultiplierCSS(resolvePerFsSpinMultiplierConfig(model))}
+${emitMysterySymbolMultiplierCSS(resolveMysterySymbolMultiplierConfig(model))}
+${emitWildCollisionMultiplierCSS(resolveWildCollisionMultiplierConfig(model))}
+${emitRetriggerMultiplierBumpCSS(resolveRetriggerMultiplierBumpConfig(model))}
+${emitClusterSizeMultiplierCSS(resolveClusterSizeMultiplierConfig(model))}
+${emitTotalMultiplierChipCSS(resolveTotalMultiplierChipConfig(model))}
+${/* Wave LEGO-H/FS/W — 8 GDD-driven variants (H&W frame/orb/room + FS tumble/expand/ladder + wild expand/mega). */ ''}
+${emitHoldAndWinFrameMultiplierCSS(resolveHoldAndWinFrameMultiplierConfig(model))}
+${emitHoldAndWinLockedOrbMultiplierCSS(resolveHoldAndWinLockedOrbMultiplierConfig(model))}
+${emitHoldAndWinRoomJackpotMultiplierCSS(resolveHoldAndWinRoomJackpotMultiplierConfig(model))}
+${emitTumbleGrowingFsMultiplierCSS(resolveTumbleGrowingFsMultiplierConfig(model))}
+${emitFsExpansionWildsCSS(resolveFsExpansionWildsConfig(model))}
+${emitProgressiveFsRetriggerLadderCSS(resolveProgressiveFsRetriggerLadderConfig(model))}
+${emitExpandingWildMultiplierCSS(resolveExpandingWildMultiplierConfig(model))}
+${emitMegaWildClusterCSS(resolveMegaWildClusterConfig(model))}
 ${emitLightningCSS(resolveLightningConfig(model))}
 ${emitGambleCSS(resolveGambleConfig(model))}
 ${emitSuperSymbolCSS(resolveSuperSymbolConfig(model))}
@@ -1131,6 +1206,18 @@ ${emitWheelBonusMarkup(resolveWheelBonusConfig(model))}
 ${emitWeightedWheelSegmentsMarkup(resolveWeightedWheelSegmentsConfig(model))}
 ${/* Wave H13 — Path-Aware Multiplier HUD container (chips appear inside cells). */ ''}
 ${emitPathAwareMultiplierMarkup(resolvePathAwareMultiplierConfig(model))}
+${/* Wave LEGO-M (6 base/FS variants) + LEGO-H/FS/W (8 GDD-driven variants) — all empty unless GDD enables. */ ''}
+${emitPerFsSpinMultiplierMarkup(resolvePerFsSpinMultiplierConfig(model))}
+${emitRetriggerMultiplierBumpMarkup(resolveRetriggerMultiplierBumpConfig(model))}
+${emitTotalMultiplierChipMarkup(resolveTotalMultiplierChipConfig(model))}
+${emitHoldAndWinFrameMultiplierMarkup(resolveHoldAndWinFrameMultiplierConfig(model))}
+${emitHoldAndWinLockedOrbMultiplierMarkup(resolveHoldAndWinLockedOrbMultiplierConfig(model))}
+${emitHoldAndWinRoomJackpotMultiplierMarkup(resolveHoldAndWinRoomJackpotMultiplierConfig(model))}
+${emitTumbleGrowingFsMultiplierMarkup(resolveTumbleGrowingFsMultiplierConfig(model))}
+${emitFsExpansionWildsMarkup(resolveFsExpansionWildsConfig(model))}
+${emitProgressiveFsRetriggerLadderMarkup(resolveProgressiveFsRetriggerLadderConfig(model))}
+${emitExpandingWildMultiplierMarkup(resolveExpandingWildMultiplierConfig(model))}
+${emitMegaWildClusterMarkup(resolveMegaWildClusterConfig(model))}
 ${emitGambleMarkup(resolveGambleConfig(model))}
 ${/* Wave U6 — secondary gamble overlay (full-screen modal). */ ''}
 ${emitGambleSecondaryMarkup(resolveGambleSecondaryConfig(model))}
@@ -1330,6 +1417,22 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
      * paints chips, aggregates additive bonus on postSpin. */ ''}
   ${emitPathAwareMultiplierRuntime(resolvePathAwareMultiplierConfig(model))}
   ${emitPersistentMultiplierRuntime(resolvePersistentMultiplierConfig(model))}
+  /* Wave LEGO-M — 6 self-contained multiplier variant runtimes. */
+  ${emitPerFsSpinMultiplierRuntime(resolvePerFsSpinMultiplierConfig(model))}
+  ${emitMysterySymbolMultiplierRuntime(resolveMysterySymbolMultiplierConfig(model))}
+  ${emitWildCollisionMultiplierRuntime(resolveWildCollisionMultiplierConfig(model))}
+  ${emitRetriggerMultiplierBumpRuntime(resolveRetriggerMultiplierBumpConfig(model))}
+  ${emitClusterSizeMultiplierRuntime(resolveClusterSizeMultiplierConfig(model))}
+  ${emitTotalMultiplierChipRuntime(resolveTotalMultiplierChipConfig(model))}
+  /* Wave LEGO-H/FS/W — 8 GDD-driven variant runtimes. */
+  ${emitHoldAndWinFrameMultiplierRuntime(resolveHoldAndWinFrameMultiplierConfig(model))}
+  ${emitHoldAndWinLockedOrbMultiplierRuntime(resolveHoldAndWinLockedOrbMultiplierConfig(model))}
+  ${emitHoldAndWinRoomJackpotMultiplierRuntime(resolveHoldAndWinRoomJackpotMultiplierConfig(model))}
+  ${emitTumbleGrowingFsMultiplierRuntime(resolveTumbleGrowingFsMultiplierConfig(model))}
+  ${emitFsExpansionWildsRuntime(resolveFsExpansionWildsConfig(model))}
+  ${emitProgressiveFsRetriggerLadderRuntime(resolveProgressiveFsRetriggerLadderConfig(model))}
+  ${emitExpandingWildMultiplierRuntime(resolveExpandingWildMultiplierConfig(model))}
+  ${emitMegaWildClusterRuntime(resolveMegaWildClusterConfig(model))}
   ${emitProgressiveFreeSpinsRuntime(resolveProgressiveFreeSpinsConfig(model))}
   ${/* audio runtime skipped — ADB tok, ne GDD */ ''}
   ${emitUiToastRuntime(resolveUiToastConfig(model))}
