@@ -306,6 +306,11 @@ import {
   emitDynamicWaysEngineCSS, emitDynamicWaysEngineMarkup, emitDynamicWaysEngineRuntime,
   resolveConfig as resolveDynamicWaysEngineConfig,
 } from './blocks/dynamicWaysEngine.mjs';
+/* Wave LEGO-INF (06-18) — Infinity reels engine (grid grows per win + ×N bump). */
+import {
+  emitInfinityReelsEngineCSS, emitInfinityReelsEngineMarkup, emitInfinityReelsEngineRuntime,
+  resolveConfig as resolveInfinityReelsEngineConfig,
+} from './blocks/infinityReelsEngine.mjs';
 import {
   emitProgressiveFreeSpinsCSS, emitProgressiveFreeSpinsMarkup, emitProgressiveFreeSpinsRuntime,
   resolveConfig as resolveProgressiveFreeSpinsConfig,
@@ -1096,6 +1101,7 @@ ${emitMegaWildClusterCSS(resolveMegaWildClusterConfig(model))}
 ${emitRandomLightningMultiplierCSS(resolveRandomLightningMultiplierConfig(model))}
 ${emitWalkingWildStepperCSS(resolveWalkingWildStepperConfig(model))}
 ${emitDynamicWaysEngineCSS(resolveDynamicWaysEngineConfig(model))}
+${emitInfinityReelsEngineCSS(resolveInfinityReelsEngineConfig(model))}
 ${emitLightningCSS(resolveLightningConfig(model))}
 ${emitGambleCSS(resolveGambleConfig(model))}
 ${emitSuperSymbolCSS(resolveSuperSymbolConfig(model))}
@@ -1239,6 +1245,7 @@ ${emitMegaWildClusterMarkup(resolveMegaWildClusterConfig(model))}
 ${emitRandomLightningMultiplierMarkup(resolveRandomLightningMultiplierConfig(model))}
 ${emitWalkingWildStepperMarkup(resolveWalkingWildStepperConfig(model))}
 ${emitDynamicWaysEngineMarkup(resolveDynamicWaysEngineConfig(model))}
+${emitInfinityReelsEngineMarkup(resolveInfinityReelsEngineConfig(model))}
 ${emitGambleMarkup(resolveGambleConfig(model))}
 ${/* Wave U6 — secondary gamble overlay (full-screen modal). */ ''}
 ${emitGambleSecondaryMarkup(resolveGambleSecondaryConfig(model))}
@@ -1460,6 +1467,8 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitWalkingWildStepperRuntime(resolveWalkingWildStepperConfig(model))}
   /* Wave LEGO-WAYS — variable rows per reel dynamic ways engine (vendor-neutral). */
   ${emitDynamicWaysEngineRuntime(resolveDynamicWaysEngineConfig(model))}
+  /* Wave LEGO-INF — infinity reels engine, grid grows on win + ×N bump (vendor-neutral). */
+  ${emitInfinityReelsEngineRuntime(resolveInfinityReelsEngineConfig(model))}
   ${emitProgressiveFreeSpinsRuntime(resolveProgressiveFreeSpinsConfig(model))}
   ${/* audio runtime skipped — ADB tok, ne GDD */ ''}
   ${emitUiToastRuntime(resolveUiToastConfig(model))}

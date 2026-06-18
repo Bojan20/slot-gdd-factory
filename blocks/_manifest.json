@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-18T16:32:43.205Z",
+  "generatedAt": "2026-06-18T16:40:35.026Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 138,
+  "totalBlocks": 139,
   "blocks": [
     {
       "name": "ambientBackgroundWheel",
@@ -1181,7 +1181,10 @@
         "onSpinResult",
         "preSpin"
       ],
-      "emittedEvents": [],
+      "emittedEvents": [
+        "onWaysResetForRound",
+        "onWaysReshaped"
+      ],
       "defaultConfig": {
         "enabled": false,
         "reelCount": 6,
@@ -1197,7 +1200,7 @@
         "fontSizePx": 16,
         "pulseMs": 500
       },
-      "loc": 486
+      "loc": 502
     },
     {
       "name": "energyMeter",
@@ -2277,6 +2280,50 @@
         "zIndex": 38
       },
       "loc": 279
+    },
+    {
+      "name": "infinityReelsEngine",
+      "file": "src/blocks/infinityReelsEngine.mjs",
+      "testFile": "tests/blocks/infinityReelsEngine.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-IRE — Infinity Reels Engine (grid grows on every win).",
+      "exports": [
+        "defaultConfig",
+        "emitInfinityReelsEngineCSS",
+        "emitInfinityReelsEngineMarkup",
+        "emitInfinityReelsEngineRuntime",
+        "nextInfinityMult",
+        "nextReelCount",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "onSpinResult",
+        "onTumbleStep",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onInfinityReelExpanded",
+        "onInfinityReelsCommit",
+        "onInfinityReelsReset"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "baseReelCount": 4,
+        "maxReels": 12,
+        "startMult": 1,
+        "growPerExpand": 1,
+        "maxMult": 20,
+        "appliesIn": "both",
+        "showHud": true,
+        "hudPosition": "topRight",
+        "hudColor": "#aaffcc",
+        "fontSizePx": 16,
+        "pulseMs": 500,
+        "expandAnimMs": 300
+      },
+      "loc": 473
     },
     {
       "name": "italyComplianceGate",

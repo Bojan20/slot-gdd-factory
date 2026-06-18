@@ -516,6 +516,12 @@ const EXPECTED_EMIT_OWNERS = {
   /* Wave LEGO-WAYS (2026-06-18) — dynamic variable rows per reel ways. */
   onWaysReshaped:                    ['dynamicWaysEngine.mjs'],
   onWaysResetForRound:               ['dynamicWaysEngine.mjs'],
+  /* Wave LEGO-INF (2026-06-18) — infinity reels grid expansion + mult bump.
+   * NOTE: event names use "InfinityEngine" prefix to avoid collision with
+   * existing H18 infinityReels.mjs ownership of onInfinityReelsReset. */
+  onInfinityEngineExpanded:          ['infinityReelsEngine.mjs'],
+  onInfinityEngineCommit:            ['infinityReelsEngine.mjs'],
+  onInfinityEngineReset:             ['infinityReelsEngine.mjs'],
   /* 2026-06-09 — scatterCelebration owns its own lifecycle phase events.
    * spinControl listens to morph the SPIN CTA into a SKIP button during
    * the celebration window. */
