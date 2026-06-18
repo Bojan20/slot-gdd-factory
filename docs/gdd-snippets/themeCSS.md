@@ -7,7 +7,7 @@ themeCSS:
     palette:
       bg0: "#05070c"
       bg1: "#0b0f16"
-      stage: "#5a6b88"
+      stage: "#2d3548"
       accent: "#c9a227"
       text: "#f2f2f2"
     cellGap: 6
