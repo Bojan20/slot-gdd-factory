@@ -311,6 +311,15 @@ import {
   emitInfinityReelsEngineCSS, emitInfinityReelsEngineMarkup, emitInfinityReelsEngineRuntime,
   resolveConfig as resolveInfinityReelsEngineConfig,
 } from './blocks/infinityReelsEngine.mjs';
+/* Wave LEGO-SS (06-18) — Super symbol family: split reveal + tier upgrade. */
+import {
+  emitSymbolSplitRevealCSS, emitSymbolSplitRevealMarkup, emitSymbolSplitRevealRuntime,
+  resolveConfig as resolveSymbolSplitRevealConfig,
+} from './blocks/symbolSplitReveal.mjs';
+import {
+  emitSuperSymbolUpgradeCSS, emitSuperSymbolUpgradeMarkup, emitSuperSymbolUpgradeRuntime,
+  resolveConfig as resolveSuperSymbolUpgradeConfig,
+} from './blocks/superSymbolUpgrade.mjs';
 import {
   emitProgressiveFreeSpinsCSS, emitProgressiveFreeSpinsMarkup, emitProgressiveFreeSpinsRuntime,
   resolveConfig as resolveProgressiveFreeSpinsConfig,
@@ -1102,6 +1111,8 @@ ${emitRandomLightningMultiplierCSS(resolveRandomLightningMultiplierConfig(model)
 ${emitWalkingWildStepperCSS(resolveWalkingWildStepperConfig(model))}
 ${emitDynamicWaysEngineCSS(resolveDynamicWaysEngineConfig(model))}
 ${emitInfinityReelsEngineCSS(resolveInfinityReelsEngineConfig(model))}
+${emitSymbolSplitRevealCSS(resolveSymbolSplitRevealConfig(model))}
+${emitSuperSymbolUpgradeCSS(resolveSuperSymbolUpgradeConfig(model))}
 ${emitLightningCSS(resolveLightningConfig(model))}
 ${emitGambleCSS(resolveGambleConfig(model))}
 ${emitSuperSymbolCSS(resolveSuperSymbolConfig(model))}
@@ -1246,6 +1257,8 @@ ${emitRandomLightningMultiplierMarkup(resolveRandomLightningMultiplierConfig(mod
 ${emitWalkingWildStepperMarkup(resolveWalkingWildStepperConfig(model))}
 ${emitDynamicWaysEngineMarkup(resolveDynamicWaysEngineConfig(model))}
 ${emitInfinityReelsEngineMarkup(resolveInfinityReelsEngineConfig(model))}
+${emitSymbolSplitRevealMarkup(resolveSymbolSplitRevealConfig(model))}
+${emitSuperSymbolUpgradeMarkup(resolveSuperSymbolUpgradeConfig(model))}
 ${emitGambleMarkup(resolveGambleConfig(model))}
 ${/* Wave U6 — secondary gamble overlay (full-screen modal). */ ''}
 ${emitGambleSecondaryMarkup(resolveGambleSecondaryConfig(model))}
@@ -1469,6 +1482,9 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitDynamicWaysEngineRuntime(resolveDynamicWaysEngineConfig(model))}
   /* Wave LEGO-INF — infinity reels engine, grid grows on win + ×N bump (vendor-neutral). */
   ${emitInfinityReelsEngineRuntime(resolveInfinityReelsEngineConfig(model))}
+  /* Wave LEGO-SS — super symbol family (split reveal + tier upgrade). */
+  ${emitSymbolSplitRevealRuntime(resolveSymbolSplitRevealConfig(model))}
+  ${emitSuperSymbolUpgradeRuntime(resolveSuperSymbolUpgradeConfig(model))}
   ${emitProgressiveFreeSpinsRuntime(resolveProgressiveFreeSpinsConfig(model))}
   ${/* audio runtime skipped — ADB tok, ne GDD */ ''}
   ${emitUiToastRuntime(resolveUiToastConfig(model))}

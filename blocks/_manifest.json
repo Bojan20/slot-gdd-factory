@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-18T16:40:35.026Z",
+  "generatedAt": "2026-06-18T16:52:59.077Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 139,
+  "totalBlocks": 141,
   "blocks": [
     {
       "name": "ambientBackgroundWheel",
@@ -2304,9 +2304,9 @@
         "preSpin"
       ],
       "emittedEvents": [
-        "onInfinityReelExpanded",
-        "onInfinityReelsCommit",
-        "onInfinityReelsReset"
+        "onInfinityEngineCommit",
+        "onInfinityEngineExpanded",
+        "onInfinityEngineReset"
       ],
       "defaultConfig": {
         "enabled": false,
@@ -4730,6 +4730,59 @@
       "loc": 209
     },
     {
+      "name": "superSymbolUpgrade",
+      "file": "src/blocks/superSymbolUpgrade.mjs",
+      "testFile": "tests/blocks/superSymbolUpgrade.test.mjs",
+      "category": "wild",
+      "description": "Wave LEGO-SSU — Super Symbol Upgrade (tumble-tier promotion).",
+      "exports": [
+        "defaultConfig",
+        "emitSuperSymbolUpgradeCSS",
+        "emitSuperSymbolUpgradeMarkup",
+        "emitSuperSymbolUpgradeRuntime",
+        "nextTier",
+        "resolveConfig",
+        "upgradeSymbol"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "onSpinResult",
+        "onTumbleStep",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onSuperSymbolUpgradeReset",
+        "onSuperSymbolUpgraded"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "superSymbol": "U",
+        "lpTiers": [
+          "10",
+          "J",
+          "Q",
+          "K",
+          "A"
+        ],
+        "mpTiers": [
+          "M1",
+          "M2",
+          "M3"
+        ],
+        "hpTiers": [
+          "H1",
+          "H2"
+        ],
+        "maxTier": 2,
+        "appliesIn": "fs",
+        "upgradeAnimMs": 700,
+        "glowColor": "#ff66cc",
+        "pulseMs": 600
+      },
+      "loc": 472
+    },
+    {
       "name": "symbolInfoPopover",
       "file": "src/blocks/symbolInfoPopover.mjs",
       "testFile": "tests/blocks/symbolInfoPopover.test.mjs",
@@ -4759,6 +4812,43 @@
         "payoutHints": {}
       },
       "loc": 319
+    },
+    {
+      "name": "symbolSplitReveal",
+      "file": "src/blocks/symbolSplitReveal.mjs",
+      "testFile": "tests/blocks/symbolSplitReveal.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-SSR — Symbol Split Reveal (oversized block → N×N small wins).",
+      "exports": [
+        "cellsInBlock",
+        "defaultConfig",
+        "emitSymbolSplitRevealCSS",
+        "emitSymbolSplitRevealMarkup",
+        "emitSymbolSplitRevealRuntime",
+        "findSuperBlocks",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsSpinResult",
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onSymbolSplitCleared",
+        "onSymbolSplitRevealed",
+        "onSymbolSplitStarted"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "blockSize": 2,
+        "appliesIn": "both",
+        "revealAnimMs": 600,
+        "splitDelayMs": 150,
+        "glowColor": "#ffcc00",
+        "pulseMs": 800
+      },
+      "loc": 454
     },
     {
       "name": "symbolStackCollapse",

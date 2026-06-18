@@ -522,6 +522,12 @@ const EXPECTED_EMIT_OWNERS = {
   onInfinityEngineExpanded:          ['infinityReelsEngine.mjs'],
   onInfinityEngineCommit:            ['infinityReelsEngine.mjs'],
   onInfinityEngineReset:             ['infinityReelsEngine.mjs'],
+  /* Wave LEGO-SS (2026-06-18) — super symbol family (split reveal + upgrade). */
+  onSymbolSplitStarted:              ['symbolSplitReveal.mjs'],
+  onSymbolSplitRevealed:             ['symbolSplitReveal.mjs'],
+  onSymbolSplitCleared:              ['symbolSplitReveal.mjs'],
+  onSuperSymbolUpgraded:             ['superSymbolUpgrade.mjs'],
+  onSuperSymbolUpgradeReset:         ['superSymbolUpgrade.mjs'],
   /* 2026-06-09 — scatterCelebration owns its own lifecycle phase events.
    * spinControl listens to morph the SPIN CTA into a SKIP button during
    * the celebration window. */
