@@ -3,7 +3,57 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 05:20 · **HEAD**: pending push · main
+> **Last updated**: 2026-06-18 05:30 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## 🆕 FUNCTIONAL ITEM #12 — CI cross-browser matrix (2026-06-18)
+>
+> Visual regression je do sad samo na Chromium. Item #12 dodaje
+> **Firefox** + **WebKit** kao zasebne engine targete sa per-engine
+> baseline-ima (svaki engine pixel-renderuje različito — AA strategy,
+> font hinting, SVG filter pipeline — pa hash-only baseline MORA biti
+> per-engine).
+>
+> ### 🔧 Promene `tools/visual-regression-audit.mjs`
+>
+> | # | Šta | Detalj |
+> |:-:|:--|:--|
+> | 1 | Import `{ chromium, firefox, webkit }` iz playwright | Sva 3 engine binary su lokalno instalirana (cache `ms-playwright/`) |
+> | 2 | `--browser={chromium\|firefox\|webkit}` flag | default chromium |
+> | 3 | Baseline filename matrix | `visual-regression[.viewport][.browser].json` |
+>
+> Resolution tabela:
+>
+> | Viewport | Browser | Baseline file |
+> |:--|:--|:--|
+> | desktop | chromium | `visual-regression.json` |
+> | portrait | chromium | `visual-regression-portrait.json` |
+> | desktop | firefox | `visual-regression-firefox.json` |
+> | portrait | webkit | `visual-regression-portrait-webkit.json` |
+>
+> ### 🔬 Smoke verifikacija (3-demo subset × 3 engine)
+>
+> | Engine | Bake | Verify | Status |
+> |:--|:-:|:-:|:-:|
+> | chromium | ✅ | ✅ | exit 0 |
+> | firefox | ✅ | ✅ | exit 0 |
+> | webkit | ✅ | ✅ | exit 0 |
+>
+> Sva 3 engine launch + screenshot + hash compare pipeline rade.
+> Full 112-demo baselines za Firefox/WebKit nisu bake-ovane u repo
+> (svaka ~5min × engine = 15min churn). CI može opt-in preko
+> `npm run test:visual:matrix:bake` posle prvog instalacije.
+>
+> ### 🆕 npm scripti
+>
+> | Script | Šta pokreće |
+> |:--|:--|
+> | `test:visual:firefox` | strict gate na Firefox baseline |
+> | `test:visual:webkit` | strict gate na WebKit baseline |
+> | `test:visual:bake:firefox` | rebake Firefox |
+> | `test:visual:bake:webkit` | rebake WebKit |
+> | `test:visual:matrix:bake` | bake sva 4 baseline-a (chromium ×2 viewport + firefox + webkit) |
 >
 > ---
 >

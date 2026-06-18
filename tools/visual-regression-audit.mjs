@@ -44,7 +44,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSy
 import { resolve, dirname, basename } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
-import { chromium } from 'playwright';
+import { chromium, firefox, webkit } from 'playwright';
 
 const __filename = fileURLToPath(import.meta.url);
 const REPO = resolve(dirname(__filename), '..');
@@ -78,16 +78,38 @@ const VIEWPORT_LABEL = VIEWPORT_PRESETS[viewportArg] ? viewportArg : `${VIEWPORT
 const SETTLE_MS = 400;
 
 /**
- * Baseline path is viewport-keyed (Item #6). Desktop preserves the
- * historical filename so existing CI / git history doesn't churn.
+ * Browser engine selection (Item #12 — CI matrix expansion).
+ * --browser=chromium (default) | firefox | webkit
+ *
+ * Each engine produces a SEPARATE baseline file because the same
+ * source pixel-renders differently per engine (AA strategy, font
+ * hinting, SVG filter pipeline). Hash-only baselines REQUIRE per-engine
+ * isolation — a chromium hash means nothing on webkit.
  */
-const BASELINE_PATH = resolve(
-  REPO,
-  'tests/baselines',
-  VIEWPORT_LABEL === 'desktop'
-    ? 'visual-regression.json'
-    : `visual-regression-${VIEWPORT_LABEL}.json`,
-);
+const BROWSER_ENGINES = { chromium, firefox, webkit };
+const browserArg = (argv.find((a) => a.startsWith('--browser=')) || '--browser=chromium').slice(10);
+const BROWSER_LAUNCHER = BROWSER_ENGINES[browserArg] || chromium;
+const BROWSER_LABEL = BROWSER_ENGINES[browserArg] ? browserArg : 'chromium';
+
+/**
+ * Baseline path is viewport-keyed (Item #6) AND browser-keyed (Item #12).
+ * Default (desktop + chromium) preserves the historical filename so
+ * existing CI / git history doesn't churn.
+ *
+ * Resolution table:
+ *   desktop  + chromium  → visual-regression.json
+ *   portrait + chromium  → visual-regression-portrait.json
+ *   desktop  + firefox   → visual-regression-firefox.json
+ *   portrait + webkit    → visual-regression-portrait-webkit.json
+ *   …
+ */
+function baselineFilename() {
+  const parts = ['visual-regression'];
+  if (VIEWPORT_LABEL !== 'desktop') parts.push(VIEWPORT_LABEL);
+  if (BROWSER_LABEL !== 'chromium') parts.push(BROWSER_LABEL);
+  return `${parts.join('-')}.json`;
+}
+const BASELINE_PATH = resolve(REPO, 'tests/baselines', baselineFilename());
 
 const bar = (ch = '─', n = 90) => ch.repeat(n);
 
@@ -118,7 +140,7 @@ if (existsSync(BASELINE_PATH) && !UPDATE) {
 }
 
 log(bar('═'));
-log(`📸 Visual regression audit · ${demos.length} demo(s) · viewport ${VIEWPORT.width}×${VIEWPORT.height} (${VIEWPORT_LABEL})`);
+log(`📸 Visual regression audit · ${demos.length} demo(s) · ${BROWSER_LABEL} @ ${VIEWPORT.width}×${VIEWPORT.height} (${VIEWPORT_LABEL})`);
 log(`   baseline: ${existsSync(BASELINE_PATH) ? 'loaded (' + Object.keys(baseline.demos || {}).length + ' entries)' : 'absent (first run)'}`);
 log(`   mode    : ${UPDATE ? 'UPDATE — rebaking' : FAIL_ON_DRIFT ? 'STRICT (fail on drift)' : 'REPORT (report drift, exit 0)'}`);
 log(bar('═'));
@@ -193,7 +215,7 @@ async function freezeMotion(page) {
   });
 }
 
-const browser = await chromium.launch({ headless: true });
+const browser = await BROWSER_LAUNCHER.launch({ headless: true });
 const ctx = await browser.newContext({ viewport: VIEWPORT });
 
 const newBaseline = { schema: 1, generated_at: new Date().toISOString(), viewport: VIEWPORT, demos: {} };
