@@ -189,10 +189,38 @@
 
     const filter = state.filter.trim().toLowerCase();
     const groups = {};
+    /* W47.S27 — multi-field filter. Match against block name, category,
+     * lifecycle subscriptions, AND emitted events so a search for
+     * "onFsTrigger" finds every block that listens to or emits that
+     * event, not just blocks whose name contains the string. Empty
+     * filter behaves identically to legacy. */
+    const matchesFilter = (b) => {
+      if (!filter) return true;
+      if (b.name && b.name.toLowerCase().includes(filter)) return true;
+      if (b.category && b.category.toLowerCase().includes(filter)) return true;
+      const subs = Array.isArray(b.lifecycleHooks) ? b.lifecycleHooks : [];
+      for (const h of subs) if (h && String(h).toLowerCase().includes(filter)) return true;
+      const emits = Array.isArray(b.emittedEvents) ? b.emittedEvents : [];
+      for (const h of emits) if (h && String(h).toLowerCase().includes(filter)) return true;
+      return false;
+    };
+    let matchCount = 0;
+    const totalBlocks = state.manifest.blocks.length;
     for (const b of state.manifest.blocks) {
-      if (filter && !b.name.toLowerCase().includes(filter)) continue;
+      if (!matchesFilter(b)) continue;
+      matchCount++;
       const c = b.category || 'uncategorised';
       (groups[c] = groups[c] || []).push(b);
+    }
+    /* W47.S27 — surface the match count in the search input via a data
+     * attribute the CSS can pick up; meta pill in the top bar gets the
+     * "X / Y blocks" text. Persisted in state so the welcome screen
+     * stays in sync if the user clears selection while filter is active. */
+    const metaCount = $('#meta-count');
+    if (metaCount) {
+      metaCount.textContent = filter
+        ? matchCount + ' / ' + totalBlocks + ' blocks'
+        : totalBlocks + ' blocks';
     }
 
     const catOrder = Object.keys(CATEGORY_META).concat(

@@ -28,7 +28,10 @@
     <!-- Sidebar — grouped block index -->
     <aside class="play-side" aria-label="Block index">
       <div class="play-side-search">
-        <input id="filter" type="search" placeholder="Filter blocks…" aria-label="Filter blocks by name">
+        <input id="filter" type="search"
+               placeholder="Filter by name, category, hook, emit…"
+               aria-label="Filter blocks by name, category, lifecycle hook or emitted event"
+               title="Match against block name, category, lifecycle subscriptions, or emitted events">
         <button id="clear" class="play-side-clear" type="button" aria-label="Clear filter">×</button>
       </div>
       <nav id="nav" class="play-side-nav" aria-label="Blocks grouped by category">
