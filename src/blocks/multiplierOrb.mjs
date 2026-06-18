@@ -254,12 +254,23 @@ if (typeof HookBus !== 'undefined' &&
      evaluators have set ev.payX, but BEFORE telemetry/HUD readers consume
      HookBus.getMult(). Decorator order among siblings is not critical. */
   HookBus.on('onSpinResult', () => {
+    /* 2026-06-18 — Boki rule "kad se udje u h&w menja se mesto multipliera
+     * na celijama. uostalom, sta ce multiplieri tu". Industry rule: base-
+     * game multiplier chips DO NOT render during Hold & Win round — H&W
+     * has its own orb-value system (1x/5x/MINI/MAJOR/GRAND). Two-chip
+     * stack on the same cell creates visual conflict and the "menja se
+     * mesto" drift Boki reported. Guard on every annotateOrbs entry. */
+    if (typeof window !== 'undefined' && window.HW_STATE && window.HW_STATE.active) return;
     annotateOrbs();
   }, { priority: 30 });
   /* On every tumble step (or single-eval step): sum visible orb values
      into the HookBus multiplier. In FS bonus-accumulate mode the result
      is the persistent BONUS_MULTIPLIER (rises across the round). */
   HookBus.on('onTumbleStep', () => {
+    /* 2026-06-18 — same H&W guard; orb mult accumulation must NOT
+     * fire during H&W round (cells are anchored bonus orbs, not
+     * tumble-step multiplier orbs). */
+    if (typeof window !== 'undefined' && window.HW_STATE && window.HW_STATE.active) return;
     const v = accumulateOrbMultiplier();
     if (v > 0) {
       /* Bonus mode → persistent accumulator (already includes prior chain).
@@ -272,6 +283,21 @@ if (typeof HookBus !== 'undefined' &&
         if (typeof FSM_renderHud === 'function') FSM_renderHud();
       }
     }
+  }, { priority: 30 });
+
+  /* 2026-06-18 — clear stale base-game multiplier orb chips when H&W
+   * intro mounts. Strictly the .cell--orb cells that AREN'T H&W lock
+   * targets (.is-locked-bonus owns the same data-orb-value attribute
+   * for its own orb chip — those must stay). */
+  HookBus.on('onHoldAndWinIntro', () => {
+    try {
+      const cells = document.querySelectorAll('.cell.cell--orb');
+      cells.forEach(c => {
+        if (c.classList.contains('is-locked-bonus')) return;
+        c.classList.remove('cell--orb');
+        c.removeAttribute('data-orb-value');
+      });
+    } catch (_) {}
   }, { priority: 30 });
   /* Fresh FS round → clear BONUS_MULTIPLIER so the next round starts from
      the FREESPINS.multiplier.start baseline. */

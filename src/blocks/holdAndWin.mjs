@@ -1620,9 +1620,27 @@ function hwMaybeEnter() {
  * via the supplied callback when the last reel commits its textContent
  * + targetY snap. Caps at 1200ms so a broken engine state can't hang
  * the H&W entry forever (the callback runs anyway at the cap). */
-function _hwWaitAllReelsStopped(cb) {
+function _hwWaitAllReelsStopped(cb, capMsOverride) {
   const START = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-  const CAP_MS = 1200;
+  /* 2026-06-18 — default cap covers a full base spin (~5s typical, up to
+   * 6s on slow turbo settings). The natural hwMaybeEnter path almost
+   * always finds reels already settled (postSpin is delayed
+   * settleBreathMs past the engine's anyActive=false transition), but
+   * the UFP fallback timer (HW_T_FORCE_FALLBACK_MS=1700ms) may invoke
+   * the gate mid-spin — it must wait through the rest of the spin.
+   * 6500ms = max-spin + 1500ms breath, configurable per call-site. */
+  const CAP_MS = (typeof capMsOverride === 'number' && capMsOverride > 0) ? capMsOverride : 6500;
+  /* 2026-06-18 — Boki "ne ceka se da se zavrse svi reel stopovi" + deep
+   * recon (agent C): the spinning/stopping/bouncing flag triad alone is
+   * race-prone. The bounce flag is set INSIDE the same rAF tick that
+   * clears stopping, so a poll catching that tick reads both as false
+   * and returns "settled" prematurely. The harden:
+   *   1. Flag triad must all be falsy.
+   *   2. Every reel must have a non-empty textContent on its top visible
+   *      cell — empty string == commitStopSymbols hasn't finished writing.
+   *   3. Two consecutive poll ticks must report settled (stability gate
+   *      ~70ms wide → strictly past the worst-case bounce frame). */
+  let consecutiveSettled = 0;
   function _isAllStopped() {
     if (typeof window === 'undefined' || !Array.isArray(window.RECT_REELS)) return true;
     const reels = window.RECT_REELS;
@@ -1632,12 +1650,23 @@ function _hwWaitAllReelsStopped(cb) {
       if (r.spinning) return false;
       if (r.stopping) return false;
       if (r.bouncing === true) return false;
+      /* textContent guard — commitStopSymbols writes synchronously per
+       * reel after the rotateStripDown pass; an empty cell means engine
+       * hasn't fully committed yet. Read row 0 (top visible) — cheap. */
+      const cell = (r.cells && r.cells[1]) ? r.cells[1] : null;
+      if (cell && (cell.textContent || '').trim() === '') return false;
     }
     return true;
   }
   function _tick() {
     const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-    if (_isAllStopped() || (now - START) >= CAP_MS) { cb(); return; }
+    if (_isAllStopped()) {
+      consecutiveSettled++;
+      if (consecutiveSettled >= 2) { cb(); return; }
+    } else {
+      consecutiveSettled = 0;
+    }
+    if ((now - START) >= CAP_MS) { cb(); return; }
     setTimeout(_tick, 35);
   }
   _tick();
@@ -1712,31 +1741,44 @@ function hwForceSeed(orbCount) {
   }
 
   /* W48 bugfix v4 — celebrate BEFORE entering INTRO. Stamp the bonus
-   * glyph on each picked cell so the celebration has visible targets. */
+   * glyph on each picked cell so the celebration has visible targets.
+   *
+   * 2026-06-18 (Boki: "ne ceka se da se zavrse svi reel stopovi i da ide
+   * animacija bonus simbola"): cortex-eyes celebration-timing probe
+   * proved this path was firing AT t≈1700ms (the fallback timer cap)
+   * while reels were still spinning until t≈4761ms — a 3-second visual
+   * desync. ROOT CAUSE: the fallback timer fires on a fixed delay
+   * regardless of spin duration, and hwForceSeed used to stamp glyphs +
+   * celebrate IMMEDIATELY on entry. FIX: gate the entire body behind
+   * _hwWaitAllReelsStopped, identical to the natural hwMaybeEnter path.
+   * The pre-gate body just flips entering=true so a parallel postSpin
+   * (natural path winning the race) returns early. */
   HW_STATE.entering = true;
   _hwCancelForceFallbackTimer();
-  pickedKeys.forEach(function (key) {
-    const parts = key.split(',');
-    let cell = null;
-    if (parts[0] === 'flat') {
-      const host = document.getElementById('gridHost');
-      if (host) cell = host.querySelectorAll('.cell')[parseInt(parts[1], 10)] || null;
-    } else {
-      cell = _hwResolveCell(parseInt(parts[0], 10), parseInt(parts[1], 10));
-    }
-    if (cell && !cell.classList.contains('is-locked-bonus')) {
-      cell.textContent = HW_BONUS_SYMBOL;
-    }
-  });
-  /* 2026-06-18 — same as the natural-entry path: stash DIRECT DOM refs
-   * after the bonus glyphs are stamped, so PHASE 2 mount applies orbs to
-   * the exact same cells the celebration painted. */
-  _hwStashEntryCells();
-  playHwBonusCelebration().then(function () {
-    setTimeout(function () {
-      HW_STATE.entering = false;
-      _hwForceSeedMount(pickedKeys);
-    }, HW_T_CELEBRATE_TAIL_MS);
+  _hwWaitAllReelsStopped(function () {
+    pickedKeys.forEach(function (key) {
+      const parts = key.split(',');
+      let cell = null;
+      if (parts[0] === 'flat') {
+        const host = document.getElementById('gridHost');
+        if (host) cell = host.querySelectorAll('.cell')[parseInt(parts[1], 10)] || null;
+      } else {
+        cell = _hwResolveCell(parseInt(parts[0], 10), parseInt(parts[1], 10));
+      }
+      if (cell && !cell.classList.contains('is-locked-bonus')) {
+        cell.textContent = HW_BONUS_SYMBOL;
+      }
+    });
+    /* 2026-06-18 — same as the natural-entry path: stash DIRECT DOM refs
+     * after the bonus glyphs are stamped, so PHASE 2 mount applies orbs
+     * to the exact same cells the celebration painted. */
+    _hwStashEntryCells();
+    playHwBonusCelebration().then(function () {
+      setTimeout(function () {
+        HW_STATE.entering = false;
+        _hwForceSeedMount(pickedKeys);
+      }, HW_T_CELEBRATE_TAIL_MS);
+    });
   });
   return true;
 }
@@ -1993,15 +2035,26 @@ if (typeof HookBus !== 'undefined' && !(typeof window !== 'undefined' && window.
      * lifecycles. The timer ID is stashed on HW_STATE so the natural-
      * entry path can cancel it the moment celebration starts (no double
      * H&W after the round ends). */
+    /* 2026-06-18 (Boki: "ne ceka se da se zavrse svi reel stopovi i da ide
+     * animacija bonus simbola"): cortex-eyes timing probe proved this
+     * fallback was firing at t=1700ms while the spin was still running
+     * (settled at t=4761ms). Result: hwForceSeed stamped bonus glyphs +
+     * played celebration WHILE the reels were visibly mid-spin — 3-second
+     * desync from the player's perspective. FIX: after the initial 1700ms
+     * defer, ALSO wait for _hwWaitAllReelsStopped before deciding. The
+     * fallback only fires when (a) every reel is fully settled AND
+     * (b) the natural plant did not engage hwMaybeEnter. */
     HW_STATE._forceFallbackTimerId = setTimeout(function () {
       HW_STATE._forceFallbackTimerId = null;
-      try {
-        if (HW_STATE.active) return;
-        if (HW_STATE.entering) return;   /* natural path already kicked off */
-        var fsActive = (typeof FSM !== 'undefined' && FSM && FSM.phase && FSM.phase !== 'BASE');
-        if (fsActive) return;
-        hwForceSeed(HW_FORCE_SEED_DEFAULT);
-      } catch (_) {}
+      _hwWaitAllReelsStopped(function () {
+        try {
+          if (HW_STATE.active) return;
+          if (HW_STATE.entering) return;   /* natural path already kicked off */
+          var fsActive = (typeof FSM !== 'undefined' && FSM && FSM.phase && FSM.phase !== 'BASE');
+          if (fsActive) return;
+          hwForceSeed(HW_FORCE_SEED_DEFAULT);
+        } catch (_) {}
+      });
     }, HW_T_FORCE_FALLBACK_MS);
   });
 }
