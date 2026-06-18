@@ -203,6 +203,57 @@ function auditOne(src, name, hookEvents) {
     isInfra && name === 'hookBus.mjs' ? true : testExists,
     !testExists ? `missing tests/blocks/${testName}` : ''));
 
+  /* W47.S29 — STRICT CHECK #13: dead-render guard.
+   *
+   * A block that emits Markup with a hosted id (visible UI) MUST have
+   * a Runtime that touches that same host (or any descendant) — either
+   * via getElementById, querySelector, the explicit id literal, or a
+   * matching class selector — otherwise the UI renders once at boot
+   * and never updates. Dead UI is worse than no UI: it implies state
+   * the player can't trust.
+   *
+   * Heuristic: extract every `id="X"` and class hook from the markup,
+   * then verify Runtime references at least one (string match against
+   * the id literal OR `getElementById('X')` OR `#X` selector OR class
+   * via `.classList.toggle('Y')` / `querySelector('.Y')`).
+   *
+   * Opt-out: block can declare `presentation-only` in its JSDoc header
+   * (decorative paint, no lifecycle binding needed — e.g. dividers,
+   * static placards). */
+  const markupIds = mkFnMatch
+    ? [...mkFnMatch[0].matchAll(/\bid=['"]([A-Za-z_][\w-]*)['"]/g)].map(m => m[1])
+    : [];
+  const markupClasses = mkFnMatch
+    ? [...mkFnMatch[0].matchAll(/\bclass=['"]([^'"]+)['"]/g)]
+        .flatMap(m => m[1].split(/\s+/).filter(Boolean))
+        .filter(c => !c.startsWith('${'))
+    : [];
+  const presentationOnly = /presentation[-\s]?only|decorative paint|no lifecycle/i.test(src);
+  const escapeRe = (s) => s.replace(/[-\\^$*+?.()|[\]{}]/g, '\\$&');
+  const runtimeTouchesHost = rtFnMatch ? (
+    markupIds.some(id =>
+      new RegExp(`getElementById\\(['"]${escapeRe(id)}['"]`).test(rtFnMatch[0]) ||
+      new RegExp(`['"\`#]${escapeRe(id)}\\b`).test(rtFnMatch[0])
+    ) ||
+    markupClasses.some(cls =>
+      /* W47.S29 — match any reference to the class name. The runtime can
+       * reach the host via querySelector('.cls'), querySelector('.cls[...]'),
+       * classList.toggle('cls'), document.querySelectorAll('.cls.child'),
+       * etc. We just require the class name to appear preceded by `.` or
+       * inside a quoted string — generous enough to avoid false positives
+       * for blocks that legitimately touch their host via children. */
+      new RegExp(`\\.${escapeRe(cls)}\\b`).test(rtFnMatch[0]) ||
+      new RegExp(`['"\`]${escapeRe(cls)}['"\`]`).test(rtFnMatch[0]) ||
+      new RegExp(`classList\\.(?:add|remove|toggle|contains)\\(['"]${escapeRe(cls)}['"]`).test(rtFnMatch[0])
+    )
+  ) : false;
+  const deadRenderOK = !hasMkFn || !hasRtFn || isInfra || isAlwaysOn
+    ? true
+    : (presentationOnly || markupIds.length === 0 || runtimeTouchesHost);
+  results.push(check('13. Dead-render guard',
+    deadRenderOK,
+    !hasMkFn ? 'no Markup' : (!hasRtFn ? 'no Runtime' : (presentationOnly ? 'presentation-only opt-out' : (deadRenderOK ? '' : `runtime never touches markup host (${markupIds.slice(0,3).join(', ')})`)))));
+
   const failed = results.filter(r => !r.pass);
   return { name, results, failed: failed.length, total: results.length };
 }
