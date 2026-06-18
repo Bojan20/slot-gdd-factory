@@ -802,12 +802,34 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
     const trig = (FREESPINS.triggerSymbol || 'S');
     const forceN = FORCE_TRIGGER ? FORCE_TRIGGER.scatterCount : 0;
 
-    /* Neutralise strip transforms so locked cells never visually move
-     * with the parent strip. Done once at entry; restored implicitly by
-     * the next base spin via startSpinAll. */
+    /* Pin strip transform to the SAME landed position as the end of the
+     * base spin (translateY(-cellStep)) so locked cells in cells[1..vis]
+     * stay EXACTLY where the player last saw them.
+     *
+     * 2026-06-18 (Boki: "pomerile su se svi simboli za jedan red nanize
+     * kad sam uso u hold and win"): the previous incarnation cleared
+     * transform to '' (== translateY(0)), which caused the buffer cell
+     * cells[0] to shift INTO the visible area and visible cells[1..vis]
+     * to slide DOWN by cellStep — the exact one-row-down drift Boki
+     * observed. FIX: anchor strip at translateY(-cellStep) — the same
+     * value the engine writes at the end of every base spin (L619/L635).
+     * Locked cells keep their pixel-perfect position; unlocked cells
+     * still animate independently via the per-cell .hnw-cell-* classes
+     * (those add transforms to the CELL, not the strip, so the parent
+     * anchor doesn't conflict). */
     if (RECT_REELS) {
       RECT_REELS.forEach(reel => {
-        try { reel.strip.style.transform = ''; } catch (_) {}
+        try {
+          /* Guard: only anchor if cellStep is a real number. In sandbox /
+           * test environments the mock reel may not carry cellStep — in
+           * that case we leave transform untouched (the mock isn't
+           * driving real visual layout anyway). */
+          if (typeof reel.cellStep === 'number' && isFinite(reel.cellStep)) {
+            reel.strip.style.transform = 'translateY(' + (-reel.cellStep) + 'px)';
+          } else {
+            reel.strip.style.transform = '';
+          }
+        } catch (_) {}
         reel.spinning = false;
         reel.stopping = false;
         /* 2026-06-16 — H&W per-cell respin never paints the strip-level
