@@ -59,7 +59,7 @@
 >
 > | # | Wave | Blokovi | GDD-ovi koji ga traže | Status |
 > |:-:|:--|:--|:--|:-:|
-> | 1 | **LEGO-L** Lightning | `randomLightningMultiplier` | WoO `§5.2`, Crystal Forge `§5.2` | ⏳ next |
+> | 1 | **LEGO-L** Lightning | `randomLightningMultiplier` | WoO `§5.2`, Crystal Forge `§5.2` | ✅ LANDED |
 > | 2 | **LEGO-WW** Walking Wild | `walkingWildStepper` | industry baseline | 📋 queued |
 > | 3 | **LEGO-WAYS** Megaways | `dynamicWaysEngine` | future | 📋 queued |
 > | 4 | **LEGO-INF** Infinity | `infinityReelsEngine` | future | 📋 queued |

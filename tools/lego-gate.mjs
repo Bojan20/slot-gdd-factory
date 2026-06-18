@@ -505,6 +505,10 @@ const EXPECTED_EMIT_OWNERS = {
   onExpandingWildMultsCleared:       ['expandingWildMultiplier.mjs'],
   onMegaWildClusterLanded:           ['megaWildCluster.mjs'],
   onMegaWildClusterCleared:          ['megaWildCluster.mjs'],
+  /* Wave LEGO-L (2026-06-18) — random spin-wide lightning multiplier
+   * (WoO §5.2 + Crystal Forge §5.2 explicit GDD demand). */
+  onLightningStrike:                 ['randomLightningMultiplier.mjs'],
+  onLightningStrikeMissed:           ['randomLightningMultiplier.mjs'],
   /* 2026-06-09 — scatterCelebration owns its own lifecycle phase events.
    * spinControl listens to morph the SPIN CTA into a SKIP button during
    * the celebration window. */

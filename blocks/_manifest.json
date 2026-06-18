@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-18T15:28:19.154Z",
+  "generatedAt": "2026-06-18T16:17:36.962Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 135,
+  "totalBlocks": 136,
   "blocks": [
     {
       "name": "ambientBackgroundWheel",
@@ -1310,7 +1310,7 @@
         "multTagFontPx": 14,
         "pulseMs": 700
       },
-      "loc": 462
+      "loc": 467
     },
     {
       "name": "forceSkip",
@@ -1458,7 +1458,7 @@
         "expansionColor": "#ffaa00",
         "pulseMs": 700
       },
-      "loc": 318
+      "loc": 323
     },
     {
       "name": "fsProgressBar",
@@ -1961,7 +1961,10 @@
         "onHoldAndWinLock",
         "preSpin"
       ],
-      "emittedEvents": [],
+      "emittedEvents": [
+        "onFrameMultiplierBumped",
+        "onFrameMultiplierFinal"
+      ],
       "defaultConfig": {
         "enabled": false,
         "tierLadder": [
@@ -1978,7 +1981,7 @@
         "fontSizePx": 11,
         "durationMs": 800
       },
-      "loc": 371
+      "loc": 379
     },
     {
       "name": "holdAndWinLockedOrbMultiplier",
@@ -2471,7 +2474,7 @@
         "pulseMs": 900,
         "cornerRadiusPx": 12
       },
-      "loc": 357
+      "loc": 362
     },
     {
       "name": "motionOverlay",
@@ -3363,7 +3366,10 @@
         "onFsTrigger",
         "preSpin"
       ],
-      "emittedEvents": [],
+      "emittedEvents": [
+        "onLadderReset",
+        "onLadderRungPromoted"
+      ],
       "defaultConfig": {
         "enabled": false,
         "ladder": [
@@ -3399,7 +3405,7 @@
         "inactiveColor": "#666666",
         "pulseMs": 600
       },
-      "loc": 410
+      "loc": 414
     },
     {
       "name": "pwaInstallability",
@@ -3432,6 +3438,60 @@
         "iconColor": "#c9a227"
       },
       "loc": 315
+    },
+    {
+      "name": "randomLightningMultiplier",
+      "file": "src/blocks/randomLightningMultiplier.mjs",
+      "testFile": "tests/blocks/randomLightningMultiplier.test.mjs",
+      "category": "multiplier",
+      "description": "Wave LEGO-M2 — Random spin-wide \"lightning\" multiplier (base game).",
+      "exports": [
+        "defaultConfig",
+        "emitRandomLightningMultiplierCSS",
+        "emitRandomLightningMultiplierMarkup",
+        "emitRandomLightningMultiplierRuntime",
+        "pickLightningMultiplier",
+        "resolveConfig",
+        "shouldStrike"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onLightningStrike",
+        "onLightningStrikeMissed"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "triggerProbability": 0.05,
+        "distribution": [
+          {
+            "value": 2,
+            "weight": 50
+          },
+          {
+            "value": 3,
+            "weight": 30
+          },
+          {
+            "value": 5,
+            "weight": 15
+          },
+          {
+            "value": 10,
+            "weight": 5
+          }
+        ],
+        "appliesOnlyOnBaseWin": true,
+        "vfxDurationMs": 1200,
+        "boltColor": "#ffffaa",
+        "glowColor": "#88ccff",
+        "audioCueId": null
+      },
+      "loc": 384
     },
     {
       "name": "realityCheck",
@@ -4861,7 +4921,10 @@
         "onTumbleStep",
         "preSpin"
       ],
-      "emittedEvents": [],
+      "emittedEvents": [
+        "onTumbleMultiplierGrown",
+        "onTumbleMultiplierReset"
+      ],
       "defaultConfig": {
         "enabled": false,
         "startMult": 1,
@@ -4872,7 +4935,7 @@
         "chipColor": "#a0ffd0",
         "pulseMs": 500
       },
-      "loc": 296
+      "loc": 300
     },
     {
       "name": "turboMode",

@@ -291,6 +291,11 @@ import {
   emitMegaWildClusterCSS, emitMegaWildClusterMarkup, emitMegaWildClusterRuntime,
   resolveConfig as resolveMegaWildClusterConfig,
 } from './blocks/megaWildCluster.mjs';
+/* Wave LEGO-L (06-18) — Random spin-wide "lightning" multiplier (WoO + CF demand). */
+import {
+  emitRandomLightningMultiplierCSS, emitRandomLightningMultiplierMarkup, emitRandomLightningMultiplierRuntime,
+  resolveConfig as resolveRandomLightningMultiplierConfig,
+} from './blocks/randomLightningMultiplier.mjs';
 import {
   emitProgressiveFreeSpinsCSS, emitProgressiveFreeSpinsMarkup, emitProgressiveFreeSpinsRuntime,
   resolveConfig as resolveProgressiveFreeSpinsConfig,
@@ -1078,6 +1083,7 @@ ${emitFsExpansionWildsCSS(resolveFsExpansionWildsConfig(model))}
 ${emitProgressiveFsRetriggerLadderCSS(resolveProgressiveFsRetriggerLadderConfig(model))}
 ${emitExpandingWildMultiplierCSS(resolveExpandingWildMultiplierConfig(model))}
 ${emitMegaWildClusterCSS(resolveMegaWildClusterConfig(model))}
+${emitRandomLightningMultiplierCSS(resolveRandomLightningMultiplierConfig(model))}
 ${emitLightningCSS(resolveLightningConfig(model))}
 ${emitGambleCSS(resolveGambleConfig(model))}
 ${emitSuperSymbolCSS(resolveSuperSymbolConfig(model))}
@@ -1218,6 +1224,7 @@ ${emitFsExpansionWildsMarkup(resolveFsExpansionWildsConfig(model))}
 ${emitProgressiveFsRetriggerLadderMarkup(resolveProgressiveFsRetriggerLadderConfig(model))}
 ${emitExpandingWildMultiplierMarkup(resolveExpandingWildMultiplierConfig(model))}
 ${emitMegaWildClusterMarkup(resolveMegaWildClusterConfig(model))}
+${emitRandomLightningMultiplierMarkup(resolveRandomLightningMultiplierConfig(model))}
 ${emitGambleMarkup(resolveGambleConfig(model))}
 ${/* Wave U6 — secondary gamble overlay (full-screen modal). */ ''}
 ${emitGambleSecondaryMarkup(resolveGambleSecondaryConfig(model))}
@@ -1433,6 +1440,8 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitProgressiveFsRetriggerLadderRuntime(resolveProgressiveFsRetriggerLadderConfig(model))}
   ${emitExpandingWildMultiplierRuntime(resolveExpandingWildMultiplierConfig(model))}
   ${emitMegaWildClusterRuntime(resolveMegaWildClusterConfig(model))}
+  /* Wave LEGO-L — random spin-wide multiplier strike (vendor-neutral). */
+  ${emitRandomLightningMultiplierRuntime(resolveRandomLightningMultiplierConfig(model))}
   ${emitProgressiveFreeSpinsRuntime(resolveProgressiveFreeSpinsConfig(model))}
   ${/* audio runtime skipped — ADB tok, ne GDD */ ''}
   ${emitUiToastRuntime(resolveUiToastConfig(model))}
