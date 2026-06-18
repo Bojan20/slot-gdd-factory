@@ -3,7 +3,61 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 13:15 · **HEAD**: pending push · main
+> **Last updated**: 2026-06-18 13:55 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## ✅ HUFF'N'MORE PUFF force-chip audit (2026-06-18 part 4)
+>
+> Boki: *"proveri huff and puff i uveri se da svaki force postoji u
+> gdd i da radi pravilno kada se izbilduje slot"*.
+>
+> NEW `tools/_huff-force-chip-audit.mjs` — 6-stage live audit:
+>
+> | Stage | Šta radi |
+> |:-:|:--|
+> | 1 | Parse HNP PDF kroz pdfjs + pdfTextToMarkdown + parseGDD |
+> | 2 | Compute EXPECTED chip set = features ∩ KNOWN_KINDS \ PAYOUT_EVALUATOR \ DEDUPE_OWNED + alwaysIncludeKinds |
+> | 3 | Headless build + render HNP → enumerate ACTUAL chips (`data-ufp-kind`) |
+> | 4 | Diff EXPECTED vs ACTUAL → flag missing / extra |
+> | 5 | Click svaki chip → capture lifecycle signal kroz HookBus.on |
+> | 6 | Per-chip PASS / FAIL report |
+>
+> ### Rezultat audit-a · HEAD `d26d58b`
+>
+> | Feature | GDD detect | Chip painted | Click → spin | onForceFeatureRequested | Verdict |
+> |:--|:-:|:-:|:-:|:-:|:-:|
+> | free_spins | ✅ | ✅ (FS) | ✅ | ✅ | ✅ |
+> | hold_and_win | ✅ | ✅ (H&W) | ✅ | ✅ | ✅ |
+> | wheel_bonus | ✅ | ✅ (WHEEL) | ✅ | ✅ | ✅ |
+> | multiplier | ✅ | ✅ (×MULT) | ✅ | ✅ | ✅ |
+> | gamble | ✅ | ✅ (GAMBLE) | ✅ | ✅ | ✅ |
+> | jackpot | ✅ | ✅ (JACKPOT) | ✅ | ✅ | ✅ |
+> | big_win | (always-include) | ✅ (BIG-WIN) | ✅ | ✅ | ✅ |
+> | bonus_buy | ✅ (parser) | — (dedupe BUY chip vlasništvo `bonusBuy.mjs`) | — | — | ✅ skipped intentionally |
+> | ways | ✅ (parser) | — (PAYOUT_EVALUATOR — eval-only, ne single-spin event) | — | — | ✅ skipped intentionally |
+>
+> ### Summary
+>
+> | Metrika | Vrednost |
+> |:--|:-:|
+> | GDD detect features | 8 |
+> | Expected chips | 7 (6 detected + 1 always-include) |
+> | Painted chips | 7/7 |
+> | Click → spin | 7/7 |
+> | onForceFeatureRequested emit | 7/7 |
+> | Console / page errors | 0 |
+> | **PASS / FAIL** | **7/0** |
+>
+> ### Gate-ovi (oba sweep-a 2026-06-18 part 3 + part 4)
+>
+> | Gate | Status |
+> |:--|:-:|
+> | `test:lego` | ✅ 7/7 |
+> | `test:parity` | ✅ 0 violations × 4 games |
+> | `test:cert:real` | ✅ 12/12 (4 × UKGC+MGA+DGA) |
+> | `_huff-force-chip-audit` | ✅ 7/7 chips × HNP |
+> | `_universal-spin-cta-coverage` | ✅ 21/21 × 24 capsules |
 >
 > ---
 >
