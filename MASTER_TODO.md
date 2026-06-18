@@ -3,7 +3,73 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 14:55 · **HEAD**: pending push · main
+> **Last updated**: 2026-06-18 15:30 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## ✅ HNP section-by-section audit (2026-06-18 part 6)
+>
+> Boki: *"aj prodji konkretno sve u huff and puff i pogledaj da li se
+> svaki deo koji je tamo trazen automatski gradi u slot"*.
+>
+> NEW `tools/_huff-section-audit.mjs` — 27-stavka matrix probe:
+> per-requirement model presence × HTML bake check.
+>
+> ### Per-sekcija rezultat
+>
+> | Sekcija | Stavka | Model | HTML | Verdict |
+> |:--|:--|:-:|:-:|:-:|
+> | A · Topology | 5×3 reels, 243 ways, lock_respin | ✅ | ✅ | ✅ |
+> | B · Symbols | W / S / B + 9 regular | ✅ | ✅ | ✅ |
+> | C1 · FS | 6+ Scatter → 10 FS + retrigger 3 → +5 | ✅ | ✅ | ✅ |
+> | **C3** · Akumulirajući multiplier u FS | progressive type | **fix** | ✅ | ✅ |
+> | D1 · Bonus Buy | 47.5x cost | ✅ | ✅ | ✅ |
+> | D2 · Bonus Buy forceScatters 4+ | scatter plant | ✅ | ✅ | ✅ |
+> | E · Hold & Win | trigger=6 bonus B | ✅ | ✅ | ✅ |
+> | F · Wheel Bonus | enabled | ✅ | ✅ | ✅ |
+> | G · Jackpot ladder | MINI / MINOR / MAJOR / GRAND | ✅ | ✅ | ✅ |
+> | H · Gamble | 2x card / coin flip | ✅ | ✅ | ✅ |
+> | I · Big Win tier | 5 tiers enabled | ✅ | ✅ | ✅ |
+> | J · Win presentation | paylineOverlay + winRollup + winLineFlash + anticipation | ✅ | ✅ | ✅ |
+> | K · Player UX | spinControl V3 + balance + paytable + history + turbo | ✅ | ✅ | ✅ |
+>
+> ### Fix #1 — parser: srpski "akumulirajući multiplier"
+>
+> HNP GDD koristi srpski tekst: *"Akumulirajuća mehanika — multiplier
+> raste tokom bonusa i primenjuje se na naredne dobitke"*. Parser
+> regex je hvatao samo engleske fraze (`progressive multiplier`,
+> `multiplier starts/increments/grows`). Rezultat: `FREESPINS.multiplier
+> = static start=1 step=0 cap=1` (akumulacija ignored).
+>
+> Posle fix-a: regex dodaje srpske sinonime
+> `akumulira(juć[ai]|na)?\s+(multiplier|mehanika)`,
+> `multiplier\s+(raste|akumulira|kumulira|gradi)`,
+> `kumulativ(ni|na)\s+multiplier`, `rastuć[ai]\s+multiplier`,
+> `multiplier ladder`. HNP sad parsuje sa `type:'progressive',
+> start:1, step:1, cap:10`.
+>
+> ### Fix #2 — audit probe regex correction
+>
+> Initial probe regex za Bonus Buy forceScatters nije match-ovao stvarni
+> emitted constant `BONUS_BUY_FORCE_SCATTERS = 4`. Constant je oduvek
+> bio u HTML-u; probe je samo gledao na pogrešnom mestu. Regex
+> proširen — sada match-uje obe varijante.
+>
+> ### Audit summary
+>
+> | Pre fix | Posle fix |
+> |:-:|:-:|
+> | 25/27 PASS, 2 WARN | **27/27 PASS, 0 WARN** |
+>
+> ### Gate-ovi
+>
+> | Gate | Status |
+> |:--|:-:|
+> | `test:lego` | ✅ 7/7 |
+> | `test:blocks` (freeSpins, bonusBuy, ...) | ✅ 0 fail |
+> | `test:parity` | ✅ 0 violations × 4 games |
+> | `test:cert:real` | ✅ 12/12 (4 × UKGC+MGA+DGA) |
+> | `_huff-section-audit` | ✅ 27/27 (svaka GDD sekcija → build) |
 >
 > ---
 >

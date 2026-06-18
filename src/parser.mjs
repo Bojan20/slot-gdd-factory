@@ -433,8 +433,13 @@ export function extractFreeSpinsConfig(text, model) {
     }
   }
 
-  /* Multiplier — "progressive", "starts at ×N", "increments by ×N", "caps at ×N" */
-  const isProgressive = /\bprogressive\s+multiplier|\bmultiplier\s+(?:starts?|increments?|grows?)\b|\bincrements?\s+by\s+[×x]?\d+/i.test(text);
+  /* Multiplier — "progressive", "starts at ×N", "increments by ×N", "caps at ×N"
+   *
+   * 2026-06-18 — Boki HNP audit: srpski "Akumulirajuća mehanika — multiplier
+   * raste tokom bonusa i primenjuje se na naredne dobitke" nije bio uhvaćen
+   * pre-fix-a (parser je fallbackovao na static start=1). Dodajemo srpske
+   * sinonime (akumulirajuć[ai], kumulativ, rast[ai]) + "ladder" pattern. */
+  const isProgressive = /\bprogressive\s+multiplier|\bmultiplier\s+(?:starts?|increments?|grows?)\b|\bincrements?\s+by\s+[×x]?\d+|\bakumulira(?:juć[ai]|jući|na|jucа|n)?\s+(?:multiplier|mehanika)|\bmultiplier\s+(?:raste|akumulira|kumulira|gradi)|\bkumulativ(?:ni|an|na|no)\s+multiplier|\brastuć[ai]\s+multiplier|\bmultiplier\s+ladder\b/i.test(text);
   if (isProgressive) {
     const startMatch = text.match(/starts?\s+at\s+[×x]?\s*(\d+)/i);
     const stepMatch  = text.match(/increments?\s+by\s+[×x]?\s*(\d+)/i);
