@@ -526,6 +526,11 @@ const EXPECTED_EMIT_OWNERS = {
   onExpandingWildMultsCleared:       ['expandingWildMultiplier.mjs'],
   onMegaWildClusterLanded:           ['megaWildCluster.mjs'],
   onMegaWildClusterCleared:          ['megaWildCluster.mjs'],
+  /* WASH PASS #3 (2026-06-19) — canonical per-cluster event so the
+   * orphan listener in clusterSizeMultiplier fires. Emitted from
+   * clusterPaysEval's 'reels:stopped' handler in parallel with the
+   * legacy clusterPays:evaluated bus event. */
+  onClusterPay:                      ['clusterPaysEval.mjs'],
   /* Wave LEGO-L (2026-06-18) — random spin-wide lightning multiplier
    * (WoO §5.2 + Crystal Forge §5.2 explicit GDD demand). */
   onLightningStrike:                 ['randomLightningMultiplier.mjs'],

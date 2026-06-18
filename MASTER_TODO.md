@@ -1,5 +1,43 @@
 # Master TODO — slot-gdd-factory
 
+> **2026-06-19 · HEAD pending** · WASH PASS #3 — backlog verification + 1 real fix
+>
+> ## 🧹 WASH PASS #3 — backlog systematic verification (2026-06-19)
+>
+> Boki: *"sve refdom, ali nemoj da mi proopustas i da radis pogresne dijagnoze.
+> nemoj da ti se desi opet slucajno. radi sve ultiamtivno sredom"*
+>
+> Posle WASH PASS #2 rollback-a, 7 items strategic backlog je dvostruko
+> verifikovan source-check pre fix-a (lesson learned: WASH PASS #1 imao
+> pogrešnu dijagnozu što je vodilo do dvostrukog emit-a). Rezultat:
+> 1 stvarni fix + 6 RESOLVED u source (nije baš bilo bag-ova).
+>
+> | # | Item | Verdikt | Evidence |
+> |:-:|:--|:--|:--|
+> | 1 | `clusterPaysEval` event mismatch | **FIX** | emit-uje legacy `clusterPays:evaluated` ali clusterSizeMultiplier slušа `onClusterPay` → orphan listener. Dodato per-cluster `onClusterPay` emit paralelno + registered u lego-gate EXPECTED_EMIT_OWNERS |
+> | 2 | `waysEval` / `payAnywhereEval` no emit | **BY DESIGN** | pure helpers, konzumenti zovu `window.detectWaysWins()` sync |
+> | 3 | `anticipation.skipDuringFs` orphan | **RESOLVED** | runtime emit ima conditional na L443-444 — knob se čita |
+> | 4 | `pathAwareMultiplier` monkey-patch idempotent | **RESOLVED** | L445 `if (STATE.patched) return;` već postoji |
+> | 5 | `pickYourFs` priority 35 vs `freeSpins` -30 | **INTENTIONAL** | 35 fires FIRST = mount BEFORE FS_INTRO (željeno) |
+> | 6 | `lockedSymbolFs` paint 3× | **INTENTIONAL** | defensive re-paint kontra engine clobber |
+> | 7 | `stageBadge` + `winwaysIndicator` OPT_OUT | **PRESENTER** | imaju `HookBus.on` listenere → gate ih ne fail-uje |
+>
+> ### Regression gates (sve zelene)
+>
+> | Gate | Status |
+> |:--|:-:|
+> | `test:lego` (7 invariants) | 7/7 ✅ |
+> | `test:blocks` aggregate (147 blokova) | EXIT 0 ✅ |
+> | `_lego-combination-probe` (A1-A4) | 0 violations ✅ |
+> | `clusterPaysEval.test.mjs` | 14/14 ✅ |
+> | `clusterSizeMultiplier.test.mjs` | pass ✅ |
+>
+> **Impact:** clusterSizeMultiplier listener (Wave LEGO-M) sada zapravo
+> fire-uje na svakom clusterPays spin-u, jer dobija canonical event sa
+> pravilnim payload shape-om (`clusterSize`, `cells`, `symbol`, `payX`).
+>
+> ---
+>
 > **2026-06-18 night · HEAD pending** · Wave **LIFECYCLE-FIX** landed
 >
 > ## 🚨 LIFECYCLE INTEGRITY FIX — 5 topology engines emit onSpinResult

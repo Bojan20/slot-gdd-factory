@@ -123,10 +123,11 @@ const GRANDFATHERED_DEAD_HOOKS = new Map([
   ['onHoldAndWinIntro', 'add emit in holdAndWin.mjs when phase enters INTRO (Wave LEGO-H follow-up)'],
   ['onHoldAndWinLock', 'add emit in holdAndWin.mjs when new orb is locked (Wave LEGO-H follow-up)'],
   ['onHoldAndWinStart', 'add emit in holdAndWin.mjs when phase enters RUNNING (Wave LEGO-H follow-up)'],
-  /* clusterSizeMultiplier (Wave LEGO-M) subscribes to onClusterPay — the
-   * clusterPaysEval evaluator does not yet emit per-cluster events.
-   * Follow-up: emit onClusterPay per resolved cluster from evaluator. */
-  ['onClusterPay', 'emit per-cluster in clusterPaysEval (Wave LEGO-M follow-up)'],
+  /* WASH PASS #3 (2026-06-19) — RESOLVED: clusterPaysEval now emits
+   * onClusterPay per-cluster in the 'reels:stopped' handler (parallel
+   * to legacy clusterPays:evaluated event). Entry KEPT here as a
+   * grandfathered ghost only if probe re-detects it as dead in some
+   * future audit. Currently fired via clusterPaysEval lifecycle. */
   /* Wave LEGO-JR (2026-06-18) — jackpot family receives explicit triggers
    * from upstream blocks (holdAndWinRoomJackpotMultiplier, bonusBuy, etc).
    * These trigger events are emitted from BLOCK-EXTERNAL code (orchestrator,

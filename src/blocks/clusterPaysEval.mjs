@@ -241,6 +241,23 @@ if (typeof window !== 'undefined') {
       }
       if (typeof window.HookBus.emit === 'function') {
         window.HookBus.emit('clusterPays:evaluated', { wins });
+        /* WASH PASS #3 (2026-06-19) — also emit canonical per-cluster
+         * onClusterPay events so clusterSizeMultiplier listener (which
+         * was previously orphaned — owns the only on('onClusterPay'…)
+         * subscription) actually fires. Payload shape mirrors what
+         * the listener reads (clusterSize / size / cells). */
+        if (Array.isArray(wins)) {
+          for (var __i = 0; __i < wins.length; __i++) {
+            var __w = wins[__i];
+            if (!__w) continue;
+            window.HookBus.emit('onClusterPay', {
+              clusterSize: (Array.isArray(__w.cells) ? __w.cells.length : 0),
+              cells: __w.cells || [],
+              symbol: __w.symbol || null,
+              payX: __w.payX || 0,
+            });
+          }
+        }
       }
     }, { priority: 80 });
   }
