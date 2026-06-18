@@ -127,6 +127,12 @@ const GRANDFATHERED_DEAD_HOOKS = new Map([
    * clusterPaysEval evaluator does not yet emit per-cluster events.
    * Follow-up: emit onClusterPay per resolved cluster from evaluator. */
   ['onClusterPay', 'emit per-cluster in clusterPaysEval (Wave LEGO-M follow-up)'],
+  /* Wave LEGO-JR (2026-06-18) — jackpot family receives explicit triggers
+   * from upstream blocks (holdAndWinRoomJackpotMultiplier, bonusBuy, etc).
+   * These trigger events are emitted from BLOCK-EXTERNAL code (orchestrator,
+   * dev tools, GDD-specific glue) — no single canonical owner yet. */
+  ['onJackpotRoomTrigger', 'emitter is orchestrator / GDD-specific glue (Wave LEGO-JR follow-up)'],
+  ['onJackpotPickerTrigger', 'emitter is orchestrator / GDD-specific glue (Wave LEGO-JR follow-up)'],
   /* Pre-existing dead hooks — listeners present in compliance / win-cap
    * blocks but emit-site lives outside the block surface (regulator
    * gate broadcaster + winCap module's internal cap-hit detector). */

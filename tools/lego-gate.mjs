@@ -528,6 +528,12 @@ const EXPECTED_EMIT_OWNERS = {
   onSymbolSplitCleared:              ['symbolSplitReveal.mjs'],
   onSuperSymbolUpgraded:             ['superSymbolUpgrade.mjs'],
   onSuperSymbolUpgradeReset:         ['superSymbolUpgrade.mjs'],
+  /* Wave LEGO-JR (2026-06-18) — jackpot room family (room reveal + pick grid). */
+  onJackpotRoomRevealed:             ['jackpotRoomReveal.mjs'],
+  onJackpotRoomDismissed:            ['jackpotRoomReveal.mjs'],
+  onJackpotPickerTileRevealed:       ['jackpotPicker.mjs'],
+  onJackpotPickerComplete:           ['jackpotPicker.mjs'],
+  onJackpotPickerDismissed:          ['jackpotPicker.mjs'],
   /* 2026-06-09 — scatterCelebration owns its own lifecycle phase events.
    * spinControl listens to morph the SPIN CTA into a SKIP button during
    * the celebration window. */

@@ -320,6 +320,15 @@ import {
   emitSuperSymbolUpgradeCSS, emitSuperSymbolUpgradeMarkup, emitSuperSymbolUpgradeRuntime,
   resolveConfig as resolveSuperSymbolUpgradeConfig,
 } from './blocks/superSymbolUpgrade.mjs';
+/* Wave LEGO-JR (06-18) — Jackpot room family: full-screen room reveal + pick grid. */
+import {
+  emitJackpotRoomRevealCSS, emitJackpotRoomRevealMarkup, emitJackpotRoomRevealRuntime,
+  resolveConfig as resolveJackpotRoomRevealConfig,
+} from './blocks/jackpotRoomReveal.mjs';
+import {
+  emitJackpotPickerCSS, emitJackpotPickerMarkup, emitJackpotPickerRuntime,
+  resolveConfig as resolveJackpotPickerConfig,
+} from './blocks/jackpotPicker.mjs';
 import {
   emitProgressiveFreeSpinsCSS, emitProgressiveFreeSpinsMarkup, emitProgressiveFreeSpinsRuntime,
   resolveConfig as resolveProgressiveFreeSpinsConfig,
@@ -1113,6 +1122,8 @@ ${emitDynamicWaysEngineCSS(resolveDynamicWaysEngineConfig(model))}
 ${emitInfinityReelsEngineCSS(resolveInfinityReelsEngineConfig(model))}
 ${emitSymbolSplitRevealCSS(resolveSymbolSplitRevealConfig(model))}
 ${emitSuperSymbolUpgradeCSS(resolveSuperSymbolUpgradeConfig(model))}
+${emitJackpotRoomRevealCSS(resolveJackpotRoomRevealConfig(model))}
+${emitJackpotPickerCSS(resolveJackpotPickerConfig(model))}
 ${emitLightningCSS(resolveLightningConfig(model))}
 ${emitGambleCSS(resolveGambleConfig(model))}
 ${emitSuperSymbolCSS(resolveSuperSymbolConfig(model))}
@@ -1259,6 +1270,8 @@ ${emitDynamicWaysEngineMarkup(resolveDynamicWaysEngineConfig(model))}
 ${emitInfinityReelsEngineMarkup(resolveInfinityReelsEngineConfig(model))}
 ${emitSymbolSplitRevealMarkup(resolveSymbolSplitRevealConfig(model))}
 ${emitSuperSymbolUpgradeMarkup(resolveSuperSymbolUpgradeConfig(model))}
+${emitJackpotRoomRevealMarkup(resolveJackpotRoomRevealConfig(model))}
+${emitJackpotPickerMarkup(resolveJackpotPickerConfig(model))}
 ${emitGambleMarkup(resolveGambleConfig(model))}
 ${/* Wave U6 — secondary gamble overlay (full-screen modal). */ ''}
 ${emitGambleSecondaryMarkup(resolveGambleSecondaryConfig(model))}
@@ -1485,6 +1498,9 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   /* Wave LEGO-SS — super symbol family (split reveal + tier upgrade). */
   ${emitSymbolSplitRevealRuntime(resolveSymbolSplitRevealConfig(model))}
   ${emitSuperSymbolUpgradeRuntime(resolveSuperSymbolUpgradeConfig(model))}
+  /* Wave LEGO-JR — jackpot room family (full-screen ladder + pick grid). */
+  ${emitJackpotRoomRevealRuntime(resolveJackpotRoomRevealConfig(model))}
+  ${emitJackpotPickerRuntime(resolveJackpotPickerConfig(model))}
   ${emitProgressiveFreeSpinsRuntime(resolveProgressiveFreeSpinsConfig(model))}
   ${/* audio runtime skipped — ADB tok, ne GDD */ ''}
   ${emitUiToastRuntime(resolveUiToastConfig(model))}

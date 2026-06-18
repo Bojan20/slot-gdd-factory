@@ -64,7 +64,7 @@
 > | 3 | **LEGO-WAYS** Variable Ways | `dynamicWaysEngine` | future | ✅ LANDED |
 > | 4 | **LEGO-INF** Infinity | `infinityReelsEngine` | future | ✅ LANDED |
 > | 5 | **LEGO-SS** Super Symbol | `symbolSplitReveal`, `superSymbolUpgrade` | industry baseline | ✅ LANDED |
-> | 6 | **LEGO-JR** Jackpot Room | `jackpotRoomReveal`, `jackpotPicker` | HnP-style room mechanics | 📋 queued |
+> | 6 | **LEGO-JR** Jackpot Room | `jackpotRoomReveal`, `jackpotPicker` | HnP-style room mechanics | ✅ LANDED |
 >
 > ---
 >
