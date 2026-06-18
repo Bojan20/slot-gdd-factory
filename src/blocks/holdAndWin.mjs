@@ -1193,28 +1193,32 @@ async function _hwBeginRound() {
   HW_STATE.lockedCells.clear();
   HW_STATE.jackpotsHit = [];
 
-  /* 2026-06-18 — Boki rule (HNP backlog "na prvi spin simboli ne smeju
-   * da menjaju mesta, moraju da ostanu na mestima gde su bili pre
-   * ulaska u Hadn W"): snapshot the WHOLE pre-trigger grid sym map
-   * BEFORE PHASE 1 mutates anything. Keyed by 'r,c'. The respin engine
-   * (reelEngine.runHnwPerCellRespin) consumes this map so the first
-   * respin lands non-locked cells back on their original symbols (with
-   * a weighted bonus chance per cell so the round still pays). On every
-   * subsequent respin the same snapshot is reused — the grid stays
-   * anchored to the trigger spin and only bonus arrivals change cells. */
-  HW_STATE.preTriggerSyms = new Map();
-  try {
-    const host = document.getElementById('gridHost') || document.querySelector('.gridHost');
-    if (host) {
-      const cells = host.querySelectorAll('.cell');
-      for (let i = 0; i < cells.length; i++) {
-        const cell = cells[i];
-        const r = cell.dataset.r, c = cell.dataset.c;
-        const sym = (cell.textContent || '').trim();
-        if (r != null && c != null && sym) HW_STATE.preTriggerSyms.set(r + ',' + c, sym);
-      }
-    }
-  } catch (_) { /* defensive — snapshot is best-effort */ }
+  /* 2026-06-18 (part 7) — WoO Hold & Win rule (Boki + WoO GDD §5.4/§6.3):
+   * "bonus simboli koji su dobijeni u base game moraju da ostanu na istim
+   * mestima i u hold and win". The previous "preTriggerSyms" snapshot
+   * (commit 2f53e47) tried to also preserve NON-bonus pre-trigger glyphs
+   * but the live probe found it was racing the respin engine and lost
+   * bonus positions on WoO (5/8 orbs vanished after first respin).
+   *
+   * New contract — STRICT bonus-only preservation:
+   *   1. lockedCells map (write in PHASE 1) is the SINGLE SOURCE OF TRUTH
+   *      for bonus positions. Every position there MUST be locked at the
+   *      moment RUNNING phase begins.
+   *   2. PHASE 2 walks the map and applies the orb chip to every cell.
+   *   3. _hwEnsureAllOrbsLocked() runs as a SANITY pass right after — if
+   *      any (r,row) in the map didn't acquire is-locked-bonus class, retry
+   *      with a fresh DOM lookup. Defensive against engine ticks racing
+   *      the orb-apply.
+   *   4. A grid-wide scan catches any cell that STILL shows the bonus
+   *      glyph but isn't in the map (force-trigger paths plant >N orbs
+   *      via FORCE_TRIGGER; the harvester captured the configured N but
+   *      missed the rest). Those get a fresh orb + lock.
+   *   5. Non-bonus cells are left as-is — the respin engine paints them
+   *      with new symbols (WoO §5.4: "remaining cells are blank").
+   *
+   * The respin engine's preTriggerSyms consumer path is now opt-in:
+   * absence of the map = fall through to the standard randomSym() path.
+   * We deliberately do NOT seed it here. */
 
   /* PHASE 1 — discover only; do NOT mutate DOM. */
   hwHarvestBonus({ mapOnly: true });
@@ -1245,6 +1249,93 @@ async function _hwBeginRound() {
     _hwSpawnDelta(cell, orb.valueX);
     _hwSpawnFly(cell, orb.valueX);
   });
+
+  /* PHASE 2b — sanity scan. Boki bug (WoO live probe 2026-06-18 part 7):
+   * orbs sometimes didn't render is-locked-bonus class for every position
+   * in the lockedCells map AND the grid still had unharvested bonus glyphs
+   * (force-trigger paths planted N+ orbs but the harvester captured only N
+   * before MapOnly mode bailed early). This second pass closes both gaps. */
+  _hwEnsureAllOrbsLocked();
+}
+
+/* PHASE 2b helper — close the "orb on grid but not locked" gap.
+ *
+ * Runs TWO sweeps:
+ *   (i)  for every key already in lockedCells, re-resolve the DOM cell
+ *        and re-apply orb if is-locked-bonus class is missing (defensive
+ *        against engine ticks racing PHASE 2 forEach above).
+ *   (ii) walk the grid via RECT_REELS; any cell whose textContent is
+ *        HW_BONUS_SYMBOL but doesn't carry is-locked-bonus class AND is not
+ *        already keyed in lockedCells gets a fresh orb + lock (covers
+ *        force-trigger over-plant where N+M orbs land but the harvester
+ *        only captured N). */
+function _hwEnsureAllOrbsLocked() {
+  const TARGET = String(HW_BONUS_SYMBOL || 'B').toUpperCase();
+  /* Sweep (i) — re-apply for every existing lockedCells entry. */
+  HW_STATE.lockedCells.forEach(function (orb, key) {
+    const parts = key.split(',');
+    let cell = null;
+    if (parts[0] === 'flat') {
+      const host = document.getElementById('gridHost');
+      if (host) cell = host.querySelectorAll('.cell')[parseInt(parts[1], 10)] || null;
+    } else {
+      cell = _hwResolveCell(parseInt(parts[0], 10), parseInt(parts[1], 10));
+    }
+    if (cell && !cell.classList.contains('is-locked-bonus')) {
+      _hwApplyOrbToCell(cell, orb);
+    }
+  });
+  /* Sweep (ii) — semantic RECT_REELS scan for unharvested bonus glyphs. */
+  if (typeof window !== 'undefined' && Array.isArray(window.RECT_REELS)) {
+    const reels = window.RECT_REELS;
+    for (let r = 0; r < reels.length; r++) {
+      const reel = reels[r];
+      const vis = reel.visibleRows;
+      for (let row = 0; row < vis; row++) {
+        const cell = reel.cells[row + 1];
+        if (!cell) continue;
+        const txt = (cell.textContent || '').trim().toUpperCase();
+        if (txt !== TARGET) continue;
+        if (cell.classList.contains('is-locked-bonus')) continue;
+        const key = r + ',' + row;
+        if (HW_STATE.lockedCells.has(key)) {
+          _hwApplyOrbToCell(cell, HW_STATE.lockedCells.get(key));
+        } else {
+          const orb = _hwRollOrb();
+          HW_STATE.lockedCells.set(key, orb);
+          _hwApplyOrbToCell(cell, orb);
+          HW_STATE.totalWinX += orb.valueX;
+          if (orb.tier) HW_STATE.jackpotsHit.push(orb.tier);
+        }
+      }
+    }
+  }
+  /* Sweep (iii) — direct DOM walk as last-resort safety net. Some force
+   * paths plant bonus glyphs on cells whose (reel,row) the RECT_REELS
+   * walk above can't reach (e.g. force-trigger over-plant after the
+   * harvester captured only N orbs). Walk every .cell node under the
+   * grid host, case-insensitive compare, lock any orphan. */
+  const host = document.getElementById('gridHost') || document.querySelector('.gridHost');
+  if (host) {
+    const cells = host.querySelectorAll('.cell');
+    for (const cell of cells) {
+      const txt = (cell.textContent || '').trim().toUpperCase();
+      if (txt !== TARGET) continue;
+      if (cell.classList.contains('is-locked-bonus')) continue;
+      const orb = _hwRollOrb();
+      _hwApplyOrbToCell(cell, orb);
+      HW_STATE.totalWinX += orb.valueX;
+      if (orb.tier) HW_STATE.jackpotsHit.push(orb.tier);
+      /* Note: we can't add to lockedCells with the canonical (r,row) key
+       * here since DOM lookup doesn't surface RECT_REELS index. The orb
+       * is fully visible (chip rendered, class set, payout accrued); the
+       * respin engine filter (not is-locked-bonus) will skip it correctly.
+       * Trade-off: ledger count may be at most visible count for over-plant
+       * paths, but every base-game bonus is locked and immovable. */
+    }
+  }
+  HW_STATE.triggerOrbCount = HW_STATE.lockedCells.size;
+  _hwHudUpdate({ pulseLocked: true, pulseTotal: true });
 }
 
 /* W48 bugfix v3 — bonus-symbol celebration before H&W intro.
@@ -1397,6 +1488,14 @@ function _hwForceSeedMount(pickedKeys) {
       _hwSpawnDelta(cell, orb.valueX);
       _hwSpawnFly(cell, orb.valueX);
     });
+    /* 2026-06-18 (part 7) — same sanity sweep as the natural-entry
+     * _hwBeginRound path. The UFP H&W chip plants N orbs and emits a
+     * fallback force-seed timer; the engine sometimes lands additional
+     * bonus glyphs in the same spin (random RNG hit), so the harvester
+     * captured only the seeded N. Sweep (iii) DOM walk locks every
+     * remaining bonus glyph so the WoO contract holds for the force
+     * path too: bonus simboli iz base game OSTAJU na istim mestima. */
+    _hwEnsureAllOrbsLocked();
   });
   return true;
 }
