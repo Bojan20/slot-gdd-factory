@@ -544,6 +544,17 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
           if (!statusEl.textContent.startsWith("FS")) {
             statusEl.textContent = "PRESS SPIN";
           }
+          /* 2026-06-18 — Boki bug "duplo se ponavlja hold and win, zavrsi
+           * se jedan i odmah drugi pocne". Root cause: FORCE_TRIGGER was
+           * consumed per-reel in commitStopSymbols but NEVER cleared
+           * post-settle. So the NEXT base spin (manual click, autoplay,
+           * H&W respin path) re-read the same { bonusCount, bonusSymbol }
+           * and planted another bonus pile → second H&W trigger
+           * immediately after the first one ended. Clear here, at the
+           * single global settle gate, so every dispatch source sees a
+           * fresh FORCE_TRIGGER === null on the next spin. */
+          try { FORCE_TRIGGER = null; } catch (_) {}
+          try { if (typeof window !== 'undefined') { window.FORCE_TRIGGER = null; window.__FORCE_FEATURE__ = null; window.__FORCE_FEATURE_PENDING__ = null; } } catch (_) {}
           /* Wave S: reelEngine owns onSpinResult emission — it's the block that
              knows the precise moment when every reel has stopped. Blocks that
              annotate the settled grid (orb chips, mystery reveal, sticky wild
