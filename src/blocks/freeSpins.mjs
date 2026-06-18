@@ -248,6 +248,32 @@ body.fs-mode-crimson .frame::after {
   font-weight: 800;
   color: #ffe6a8;
   letter-spacing: 0.4px;
+  /* W47.S20 retrigger polish — base transition lets the pulse class
+   * settle smoothly into the resting style without snapping. */
+  transition: text-shadow 260ms ease-out, transform 260ms ease-out, color 260ms ease-out;
+  transform-origin: 50% 50%;
+}
+/* W47.S20 — retrigger pulse + glow on the spins counter.
+ * Triggered by FSM_handleRetrigger via class toggle; auto-removed
+ * after ~700ms (matches the FS_RETRIGGER_TOAST_MS attack window so
+ * the counter visually "wakes up" alongside the +N toast). Pure CSS,
+ * one transform + one text-shadow ramp; no extra DOM, no extra timer
+ * beyond the cleanup setTimeout already needed for class removal. */
+.fs-hud__value--retrig {
+  animation: fs-hud-retrig-pulse 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes fs-hud-retrig-pulse {
+  0%   { transform: scale(1);    text-shadow: 0 0 0 rgba(255, 230, 168, 0); color: #ffe6a8; }
+  25%  { transform: scale(1.32); text-shadow: 0 0 22px rgba(255, 230, 168, 0.95), 0 0 44px rgba(255, 214, 110, 0.55); color: #fff6d2; }
+  60%  { transform: scale(1.08); text-shadow: 0 0 12px rgba(255, 230, 168, 0.55), 0 0 24px rgba(255, 214, 110, 0.30); color: #ffeebf; }
+  100% { transform: scale(1);    text-shadow: 0 0 0 rgba(255, 230, 168, 0); color: #ffe6a8; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Hard kill — no scale, no glow ramp. SR users still hear the
+   * aria-live counter update; motion-sensitive users see a calm
+   * value swap without any pulse. */
+  .fs-hud__value--retrig { animation: none !important; }
+  .fs-hud__value          { transition: none !important; }
 }
 .fs-hud__divider {
   width: 1px;
@@ -653,6 +679,28 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
     FSM.retrigCount++;
     FSM_renderHud();
     FSM_showToast("+" + n + " FREE SPINS", FS_RETRIGGER_TOAST_MS);
+    /* W47.S20 — pulse + glow on the spins counter so the player's eye
+     * is drawn to the HUD update simultaneously with the +N toast.
+     * Single class toggle, single cleanup timer; no extra DOM. The
+     * CSS keyframe self-resolves at 700ms but we re-add via class so
+     * back-to-back retriggers restart cleanly (animation-name swap).
+     * prefers-reduced-motion suppresses the visual via CSS gate above. */
+    if (fsHudSpins) {
+      fsHudSpins.classList.remove("fs-hud__value--retrig");
+      /* Force reflow so the animation restarts on consecutive retriggers
+       * (Chromium/Safari need a layout tick between class remove + add). */
+      void fsHudSpins.offsetWidth;
+      fsHudSpins.classList.add("fs-hud__value--retrig");
+      clearTimeout(fsHudSpins._pulseT);
+      fsHudSpins._pulseT = setTimeout(function () {
+        fsHudSpins.classList.remove("fs-hud__value--retrig");
+      }, 720);
+    }
+    /* LEGO single-owner discipline — onFsRetrigger is owned by
+     * superchargedFs.mjs via the engine-facing superchargedFsAnnounce()
+     * helper. We do NOT emit here. The visual pulse + toast are local
+     * to this block; downstream blocks subscribe to onFsRetrigger
+     * separately when the engine announces the round-level event. */
   }
 
   function FSM_enterOutro() {
