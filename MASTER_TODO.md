@@ -3,7 +3,74 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 13:55 · **HEAD**: pending push · main
+> **Last updated**: 2026-06-18 14:55 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## 🩹 Anticipation ULTIMATE FIX (2026-06-18 part 5)
+>
+> Boki: *"ne radi mi anticipacija, fiks u svakom gddu mora da radi uvek.
+> deep analiza i rešavanje problema ultimativno"*.
+>
+> Prethodni "universal trigger registry" refactor (commit `2f53e47`)
+> nije bio dovoljan — Boki je živo testirao i izvestio da ne radi. Live
+> probe + surgical probe + debug trace otkrili 3 root cause-a:
+>
+> ### Root cause 1 — STALE `stopRequested` flag (RACE)
+> `startSpinAll()` postavlja `stopTimerId` za sve reels sa stagger.
+> Kada anticipation arms reels-koji-još-spinuju, postavlja novi
+> `scheduledStopAt = cursor + HOLD_BASE` i novi `stopTimerId`, ALI
+> `reel.stopRequested = true` je VEĆ LATCH-ovan od prethodnog timer-a.
+> Sledeća `onTickAll` iteracija vidi `stopRequested=true` + minRotations
+> met → `commitStopSymbols` → reel se zaustavlja PRE nego što glow stigne.
+> **Fix**: `r.stopRequested = false` u arming bloku — novi `stopTimerId`
+> je sad autoritativni signal.
+>
+> ### Root cause 2 — Hard skip kada FORCE_TRIGGER aktivan
+> Stari guard `if (FORCE_TRIGGER.scatterCount > 0) return` blokirao
+> arming SVAKI put kad UFP FS chip planta scatter — što je TAČNO
+> scenarijo gde Boki očekuje suspense glow na ostalim reels-ima.
+> **Fix**: guard uklonjen. Stari infinite-spin bug bio je drugačiji
+> (re-arming već-anticipating reels) i već je prevenovan `r.anticipating`
+> filterom.
+>
+> ### Root cause 3 — Prazan registry kad parser ne detektuje FS/H&W
+> GoO1000 ima `FREESPINS.enabled=false` → registry prazan → no-arm.
+> **Fix**: dodaj DEFAULT FALLBACK trigger — pita `window.SYMBOL_REGISTRY.scatter`,
+> pa `FREESPINS.triggerSymbol`, pa grid-scan canonical anchors
+> (`SC` / `S` / `B` / `BONUS` / `SCATTER`). Threshold 3, topRung 5 (industry
+> baseline).
+>
+> ### Bonus — Opt-in debug trace
+> `window.__ANT_DEBUG__ = []` aktivira trace u runtime emit (zero cost u
+> production — Array.isArray check). QA probes čitaju trace da vide
+> točan momenat svake `triggers` / `stillSpinning` / `verdict` / `armed`
+> faze. Idiomatski "log za diff buduće regresije".
+>
+> ### Live verification — 4/4 RADI
+>
+> | GDD | scatter land | alive evaluated | Verdict |
+> |:--|:-:|:-:|:--|
+> | HNP | ✅ (1→2→3 across reels) | ✅ alive=true × 4 | ✅ RADI |
+> | WoO | ✅ (1→2→3→4 across reels) | ✅ alive=true × 4 | ✅ RADI |
+> | GoO1000 | (no FS feature; fallback trigger) | ✅ (fallback evaluated × 5) | ✅ RADI |
+> | Starlight | ✅ (1→2→3 across reels) | ✅ alive=true × 5 | ✅ RADI |
+>
+> ### Testing infrastructure
+>
+> | Tool | Šta radi |
+> |:--|:--|
+> | NEW `tools/_anticipation-live-probe.mjs` | 4 GDD × FS chip click × debug trace × glow class scan × verdict |
+>
+> ### Gate-ovi
+>
+> | Gate | Status |
+> |:--|:-:|
+> | `test:lego` | ✅ 7/7 |
+> | `test:blocks` (anticipation 14) | ✅ |
+> | `test:parity` | ✅ 0 violations × 4 games |
+> | `test:cert:real` | ✅ 12/12 (UKGC + MGA + DGA × 4) |
+> | `_anticipation-live-probe` | ✅ 4/4 RADI |
 >
 > ---
 >

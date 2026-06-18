@@ -272,6 +272,51 @@ export function emitAnticipationRuntime(cfg = defaultConfig()) {
       var hwThr = window.HW_STATE.triggerCount || 6;
       out.push({ id: 'hw', symbol: hwSym, threshold: hwThr, topRung: hwThr, countMode: 'any' });
     }
+    /* 2026-06-18 — Boki rule "anticipation u svakom gdd-u mora da radi
+     * uvek" (HEAD 72f3170 still failed live probe on GoO1000 which has
+     * FREESPINS.enabled=false). DEFAULT FALLBACK: when neither FS nor
+     * H&W are enabled, seed a generic scatter-style trigger from the
+     * symbol registry so the player still gets suspense feedback on
+     * any anchor symbol the GDD declared. Vendor-neutral, picks from
+     * (a) SYMBOL_REGISTRY.scatter, (b) FREESPINS.triggerSymbol even when
+     * disabled (parser fallback), (c) the canonical 'S' / 'SC' / 'B'
+     * order, in priority. Threshold defaults to 3 (industry baseline). */
+    if (out.length === 0) {
+      var fallbackSym = null;
+      try {
+        /* SYMBOL_REGISTRY lives in the outer slot IIFE scope; access via
+         * window so the anticipation IIFE doesn't depend on lexical
+         * visibility (orchestrator block ordering can drift). */
+        var REG = (typeof window !== 'undefined' && window.SYMBOL_REGISTRY) ||
+                  (typeof SYMBOL_REGISTRY !== 'undefined' ? SYMBOL_REGISTRY : null);
+        if (REG && typeof REG.scatter === 'string') {
+          fallbackSym = REG.scatter.toUpperCase();
+        } else if (FREESPINS && typeof FREESPINS.triggerSymbol === 'string') {
+          fallbackSym = FREESPINS.triggerSymbol.toUpperCase();
+        }
+      } catch (_) {}
+      if (!fallbackSym && typeof document !== 'undefined') {
+        /* Scan the grid for any cell whose textContent is a canonical
+         * trigger glyph. Last-resort discovery so we always have a
+         * symbol to suspense on. */
+        var anchors = ['SC', 'S', 'B', 'BONUS', 'SCATTER'];
+        var grid = document.querySelector('.gridHost');
+        if (grid) {
+          var seenSyms = {};
+          var cells = grid.querySelectorAll('.cell');
+          for (var ci = 0; ci < cells.length; ci++) {
+            var sv = (cells[ci].textContent || '').trim().toUpperCase();
+            if (sv) seenSyms[sv] = 1;
+          }
+          for (var ai = 0; ai < anchors.length; ai++) {
+            if (seenSyms[anchors[ai]]) { fallbackSym = anchors[ai]; break; }
+          }
+        }
+      }
+      if (fallbackSym) {
+        out.push({ id: 'fallback', symbol: fallbackSym, threshold: 3, topRung: 5, countMode: 'perReel' });
+      }
+    }
     /* External registrations (additional triggers). */
     for (var i = 0; i < t.length; i++) {
       if (t[i] && typeof t[i].symbol === 'string' && Number.isFinite(t[i].threshold)) {
@@ -296,21 +341,33 @@ export function emitAnticipationRuntime(cfg = defaultConfig()) {
 
   function maybeArmAnticipation() {
     if (!RECT_REELS) return;
+    /* 2026-06-18 — opt-in debug trace. Enable from QA tools:
+     *   window.__ANT_DEBUG__ = [];
+     * Probes can then read window.__ANT_DEBUG__ to see exactly what each
+     * arm call observed (call count, scatter scans, alive verdict). */
+    var __dbg = (typeof window !== 'undefined' && Array.isArray(window.__ANT_DEBUG__))
+      ? window.__ANT_DEBUG__ : null;
     ${c.skipDuringFs ? `/* Anticipation is a BASE-game suspense cue — skipped during FS lifecycle. */
     if (FSM && FSM.phase && FSM.phase !== 'BASE') return;` : `/* skipDuringFs disabled in GDD — anticipation also runs inside FS_*. */`}
-    /* 2026-06-09 — Boki bug: clicking the UFP FS chip or BUY BONUS plants
-     * scatter on the first N reels via FORCE_TRIGGER. With anticipation
-     * active, every reel-stop re-armed the remaining reels (scattersSoFar
-     * always crossed the gate immediately), each arm appended +HOLD_BASE
-     * to scheduledStopAt, and the spin never settled. Skip anticipation
-     * entirely while FORCE_TRIGGER is engaged — force-spin is a deterministic
-     * dev surface, the suspense beat is moot. */
-    if (typeof FORCE_TRIGGER !== 'undefined' && FORCE_TRIGGER && FORCE_TRIGGER.scatterCount > 0) return;
+    /* 2026-06-18 — Boki rule "anticipation mora da radi uvek u svakom
+     * gdd-u" — the legacy hard FORCE_TRIGGER skip is REMOVED. That
+     * guard was added 2026-06-09 because the old arming path re-armed
+     * the remaining reels on every reel-stop, with each pass appending
+     * HOLD_BASE to scheduledStopAt without checking if a reel was
+     * already anticipating — that's the actual infinite-spin bug. The
+     * fix below filters "ordered" to only NEW (non-already-anticipating)
+     * reels, so re-entry on later reel stops is a no-op. With that
+     * guard already in place, force-trigger scatter-plant (FS chip
+     * click planting 2-3 scatters) is now legitimate "live" scatter
+     * data and SHOULD drive the suspense glow on remaining reels —
+     * that's exactly what Boki demands. */
 
     var triggers = _antTriggers();
+    if (__dbg) __dbg.push({ t: performance.now(), step: 'triggers', count: triggers.length, triggers: triggers.slice() });
     if (triggers.length === 0) return;
 
     var stillSpinning = RECT_REELS.filter(function (r) { return r.spinning; });
+    if (__dbg) __dbg.push({ t: performance.now(), step: 'stillSpinning', count: stillSpinning.length });
     if (stillSpinning.length === 0) return;
     var remaining = stillSpinning.length;
 
@@ -337,9 +394,11 @@ export function emitAnticipationRuntime(cfg = defaultConfig()) {
       var alive = (scattersSoFar >= anticipationGate) &&
                   (scattersSoFar + remaining >= trg.threshold) &&
                   (scattersSoFar < trg.topRung);
+      if (__dbg) __dbg.push({ t: performance.now(), step: 'verdict', trigger: trg.id, symbol: trg.symbol, scattersSoFar: scattersSoFar, gate: anticipationGate, alive: alive });
       if (alive) { armedTrigger = trg; break; }
     }
     if (!armedTrigger) return;
+    if (__dbg) __dbg.push({ t: performance.now(), step: 'armed', triggerId: armedTrigger.id, reels: stillSpinning.map(function (r) { return RECT_REELS.indexOf(r); }) });
 
     /* Sequential per-reel anticipation hold — every anticipating reel
        glows for exactly HOLD_BASE before landing. */
@@ -355,10 +414,22 @@ export function emitAnticipationRuntime(cfg = defaultConfig()) {
       var glowStartAt = cursor;
       cursor += HOLD_BASE;
       r.scheduledStopAt = cursor;
+      /* 2026-06-18 — CRITICAL race fix (Boki "anticipacija ne radi"
+       * live-probe verdict: arms+sched-extends OK but reel still stops
+       * immediately because stopRequested=true was already latched by
+       * the initial startSpinAll stagger timer). Reset stopRequested
+       * to false here — the new stopTimerId below is the authoritative
+       * stop signal once anticipation owns the reel. Without this, the
+       * next onTickAll iteration sees stopRequested=true + minRotations
+       * met → commitStopSymbols fires → reel stops before glow class
+       * is even painted. Surgical probe confirmed maybeArmAnticipation
+       * arms reels 2/3/4 correctly; live spin lost the suspense purely
+       * because of this stale stopRequested flag. */
+      r.stopRequested = false;
       var glowDelay = Math.max(0, glowStartAt - now);
       if (r.glowTimerId) clearTimeout(r.glowTimerId);
       r.glowTimerId = setTimeout(function () {
-        r.col.classList.add("reelCol--anticipating");
+        if (r.col && r.col.classList) r.col.classList.add("reelCol--anticipating");
       }, glowDelay);
       if (r.stopTimerId) clearTimeout(r.stopTimerId);
       r.stopTimerId = setTimeout(function () {
