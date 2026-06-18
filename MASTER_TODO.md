@@ -3,7 +3,88 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 05:05 · **HEAD**: pending push · main
+> **Last updated**: 2026-06-18 05:20 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## 🆕 FUNCTIONAL ITEM #9 — Sales floor session loop (2026-06-18)
+>
+> Trade-show kiosk runs slot bez nadzora satima. Item #9 simulira tu
+> sesiju u headless Chromium: spin every CYCLE_MS, run za DURATION_MS,
+> asserts 0 pageerror / 0 console.error / grid host attached / `#bal`
+> bez NaN/Infinity bleed.
+>
+> ### 🔬 Probe `tools/sales-floor-loop.mjs`
+>
+> Per game (`dist/real-games/<slug>/slot.html`):
+> 1. Boot u Chromium
+> 2. Loop: every CYCLE_MS klikne `#spinBtn` (ako enabled)
+> 3. Capture: `#gridHost` attached + `#bal` text not NaN
+> 4. Duration timer eksterno — kad istekne, summa errors
+>
+> ### 🎯 Rezultati (4/4 · 15s × 1.5s cycle = 10 cycles/igri)
+>
+> | Igra | Cycles | pageErr | consoleErr | lostHost | nanBleed | OK |
+> |:--|:-:|:-:|:-:|:-:|:-:|:-:|
+> | gates-of-olympus-1000-gdd | 10 | 0 | 0 | 0 | 0 | ✅ |
+> | huff-n-more-puff-gdd | 10 | 0 | 0 | 0 | 0 | ✅ |
+> | starlight-travellers-gdd | 10 | 0 | 0 | 0 | 0 | ✅ |
+> | wrath-of-olympus-gdd | 10 | 0 | 0 | 0 | 0 | ✅ |
+>
+> ### 🆕 npm script
+>
+> | Script | Šta pokreće |
+> |:--|:--|
+> | `test:sales-floor` | static probe + 15s session × 4 igre |
+>
+> Configurable: `--duration=<ms> --cycle=<ms> --game=<slug>`.
+>
+> ---
+>
+> ## 🆕 FUNCTIONAL ITEM #10 — Sales one-pager generator (2026-06-18)
+>
+> Marketing/regulatory artifact koji se prilaže pri svakom igranju
+> demo-a. 1 strana, vendor-neutral, math placeholder.
+>
+> ### 🔬 Tool `tools/sales-one-pager.mjs`
+>
+> Per `dist/real-games/<slug>/model.json`:
+>
+> | Sekcija | Sadržaj |
+> |:--|:--|
+> | At a glance | grid, evaluation, paylines, theme tags, mood, palette, symbols breakdown, feature kinds |
+> | Feature mix | human-readable bullet list iz feature kind-ova |
+> | Math claims | placeholder rows (RTP / volatility / max-win / hit freq) — _per certified PAR sheet_ |
+> | Compliance & certification | objašnjenje cert pipeline outputa |
+> | Build | source slug, generator, vendor-neutrality guard status |
+>
+> ### 🚨 Vendor-neutrality guard
+>
+> Output text se skenira pre emitovanja:
+> ```
+> /\b(igt|pragmatic|cash[- ]eruption|wolf[- ]run|cleopatra|buffalo|
+>     megaways|netent|microgaming|scientific\s*games|l&w|light\s*&\s*wonder|
+>     playtech|aristocrat|nyx|big\s*time\s*gaming)\b/i
+> ```
+>
+> Bilo koji hit → exit 2, emisija ABORTED (regulator-grade fail-closed).
+>
+> ### 🎯 Rezultati (4/4 emitted, vendor guard ✓)
+>
+> | Igra | Kinds | Symbols | Warns |
+> |:--|:-:|:-:|:--|
+> | gates-of-olympus-1000-gdd | 8 | 2 | ⚠ sparse-paytable |
+> | huff-n-more-puff-gdd | 8 | 12 | — |
+> | starlight-travellers-gdd | 8 | 10 | — |
+> | wrath-of-olympus-gdd | 6 | 2 | ⚠ sparse-paytable |
+>
+> ### 🆕 npm script
+>
+> | Script | Šta pokreće |
+> |:--|:--|
+> | `sales:one-pagers` | static probe + emit `dist/sales-one-pagers/<slug>/one-pager.md` |
+>
+> Oba (Item #9 + #10) ulančana u `test:all` posle `test:seed`.
 >
 > ---
 >
