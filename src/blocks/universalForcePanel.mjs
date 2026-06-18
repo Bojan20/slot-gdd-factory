@@ -162,6 +162,25 @@ const DEDUPE_OWNED_BY_OTHER_BLOCK = Object.freeze([
   'ante_bet',    // anteBet.mjs paints its own ANTE chip
 ]);
 
+/**
+ * 2026-06-18 — Boki rule "force chips moraju da fors-uju neku radnju
+ * koja se zaista može pokrenuti". These feature kinds are PERMANENT
+ * PAYOUT EVALUATORS (how every spin pays), not single-spin events that
+ * can be forced. `ways` / `cluster_pays` / `pay_anywhere` are the
+ * evaluator kind for the whole slot (engine routes via GAME_EVAL_KIND);
+ * `scatter_pay` is the same — scatter pays as a payout rule, never a
+ * single-spin trigger. Force chips for these were no-ops and confused
+ * QA ("force WAYS šta to znači i zašto ne radi"). The panel still
+ * shows the GDD-declared evaluator as a STATUS read-only label, but
+ * no force button is painted.
+ */
+const PAYOUT_EVALUATOR_KINDS = Object.freeze([
+  'ways',
+  'cluster_pays',
+  'pay_anywhere',
+  'scatter_pay',
+]);
+
 const BOUNDS = Object.freeze({
   CHIP_HEIGHT:    Object.freeze({ min: 16, max: 48 }),
   CHIP_FONT_SIZE: Object.freeze({ min: 11, max: 20 }),
@@ -270,6 +289,13 @@ export function selectKinds(cfg, model = {}) {
   const excluded = new Set([
     ...c.excludeKinds.filter(k => ALL_KNOWN_KINDS.includes(k)),
     ...DEDUPE_OWNED_BY_OTHER_BLOCK,
+    /* 2026-06-18 — strip evaluator-only kinds so the panel only paints
+     * chips for things that can actually be FORCED on a single spin.
+     * `ways` / `cluster_pays` / `pay_anywhere` / `scatter_pay` are
+     * permanent payout-evaluator routes (engine GAME_EVAL_KIND), not
+     * single-spin events. Force chips for these were no-ops — Boki
+     * QA: "kada forsujem WAYS šta to znači i zašto ne radi". */
+    ...PAYOUT_EVALUATOR_KINDS,
   ]);
 
   return ALL_KNOWN_KINDS.filter(k => detected.has(k) && !excluded.has(k));

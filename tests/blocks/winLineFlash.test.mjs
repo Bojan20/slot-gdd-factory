@@ -19,7 +19,9 @@ console.log('winLineFlash block contract');
 
 const def = defaultConfig();
 t('defaultConfig frozen', Object.isFrozen(def));
-t('default enabled = false', def.enabled === false);
+/* 2026-06-18 — Boki rule (HNP backlog "sve sto postoji u svakom slotu radi
+ * odmah i uvek"): defaults flipped to ON. GDD opt-out path still honored. */
+t('default enabled = true (universal base-game presenter)', def.enabled === true);
 t('default direction = ltr', def.direction === 'ltr');
 t('default minCells = 3', def.minCells === 3);
 

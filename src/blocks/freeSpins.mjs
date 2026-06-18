@@ -615,9 +615,13 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
       HookBus.emit('onFsTrigger', { award: spinsAwarded, scatters: scatterCount });
     }
 
-    fsPlacardEyebrow.textContent = scatterCount
-      ? scatterCount + " SCATTERS TRIGGERED"
-      : "YOU TRIGGERED";
+    /* 2026-06-18 — Boki rule "ne želim nigde brojač koliko je scattera
+     * palo". FS intro placard eyebrow stays generic ("YOU TRIGGERED")
+     * regardless of how many scatters landed. Industry baseline leads
+     * with the AWARDED COUNT (spins granted), not the trigger ladder
+     * math — scatter count is regulator audit data, never player-facing
+     * copy. */
+    fsPlacardEyebrow.textContent = "YOU TRIGGERED";
     fsPlacardTitle.textContent   = ((FREESPINS.introLabel || FS_INTRO_LABEL) + "").toUpperCase();
     fsPlacardSpins.textContent   = String(spinsAwarded);
     fsPlacardSub.textContent     = FS_INTRO_SUB;

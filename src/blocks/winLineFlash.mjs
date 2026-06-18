@@ -55,7 +55,12 @@ function _safe(v, max, fb) {
 
 export function defaultConfig() {
   return Object.freeze({
-    enabled:        false,
+    /* 2026-06-18 — Boki rule "sve sto postoji u svakom slotu radi odmah
+     * i uvek": win-line directional flash is a universal base-game win
+     * presenter (industry baseline — every certified studio paints a LTR
+     * sweep on each line win). Default flipped to TRUE. GDD opt-out via
+     * `winLineFlash: { enabled: false }` still honored. */
+    enabled:        true,
     flashMs:        540,
     direction:      'ltr',
     minCells:       3,

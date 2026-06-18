@@ -54,8 +54,10 @@ console.log('— blocks/slamStop.mjs —');
 /* ── defaults + resolveConfig ── */
 
 t('defaultConfig: sensible industry-baseline values', () => {
+  /* 2026-06-18 — default flipped TRUE (Boki rule "sve sto postoji u
+   * svakom slotu radi odmah i uvek" — STOP is universal). */
   const d = defaultConfig();
-  eq(d.enabled, false);
+  eq(d.enabled, true);
   eq(d.chipLabel, 'STOP');
   eq(d.chipColor, '255,80,80');
   eq(d.chipTextColor, '255,255,255');
@@ -71,7 +73,11 @@ t('resolveConfig: enabled coerces truthy/falsy to boolean', () => {
   eq(resolveConfig({ slamStop: { enabled: 1 } }).enabled, true);
   eq(resolveConfig({ slamStop: { enabled: 0 } }).enabled, false);
   eq(resolveConfig({ slamStop: { enabled: 'yes' } }).enabled, true);
-  eq(resolveConfig({ slamStop: { enabled: null } }).enabled, false);
+  /* 2026-06-18 — null no longer flips the new default-true to false
+   * (it's a falsy guard, not an explicit opt-out). Explicit `false`
+   * is the opt-out path. */
+  eq(resolveConfig({ slamStop: { enabled: null } }).enabled, true);
+  eq(resolveConfig({ slamStop: { enabled: false } }).enabled, false);
 });
 
 t('resolveConfig: chipLabel length-gated (>16 rejected, empty rejected)', () => {
@@ -104,8 +110,9 @@ t('resolveConfig: auto-enable from features[].kind = slam_stop (canonical + dash
   for (const k of ['slam_stop', 'slam-stop', 'SLAM_STOP', 'quick_stop', 'quick-stop']) {
     eq(resolveConfig({ features: [{ kind: k }] }).enabled, true, k);
   }
-  /* Other kinds must not flip the switch. */
-  eq(resolveConfig({ features: [{ kind: 'free_spins' }] }).enabled, false);
+  /* 2026-06-18 — default is now TRUE; other feature kinds don't flip
+   * it back to false (only explicit `slamStop: { enabled: false }` does). */
+  eq(resolveConfig({ features: [{ kind: 'free_spins' }] }).enabled, true);
 });
 
 /* ── CSS ── */

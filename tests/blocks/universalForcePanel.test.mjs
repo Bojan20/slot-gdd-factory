@@ -86,7 +86,12 @@ t('selectKinds: features with ante_bet → excluded (owned by anteBet block)', (
   ok(!k.includes('ante_bet'), 'ante_bet should be deduped');
 });
 
-t('selectKinds: features with free_spins + multiplier + cluster → all 3 + big_win', () => {
+t('selectKinds: features with free_spins + multiplier + cluster → 2 forcible + big_win (cluster is eval-only)', () => {
+  /* 2026-06-18 — Boki rule: PAYOUT_EVALUATOR_KINDS (ways / cluster_pays /
+   * pay_anywhere / scatter_pay) are permanent evaluator routes, not
+   * single-spin events. Force chips for them would be no-ops, so the
+   * panel filters them out. free_spins + multiplier remain forcible,
+   * big_win is always-include. */
   const c = defaultConfig();
   const k = selectKinds(c, {
     features: [
@@ -97,7 +102,7 @@ t('selectKinds: features with free_spins + multiplier + cluster → all 3 + big_
   });
   ok(k.includes('free_spins'));
   ok(k.includes('multiplier'));
-  ok(k.includes('cluster_pays'));
+  ok(!k.includes('cluster_pays'), 'cluster_pays is eval-only — no force chip');
   ok(k.includes('big_win'));
 });
 

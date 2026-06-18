@@ -77,7 +77,12 @@ const SLAM_CSS = Object.freeze({
 
 export function defaultConfig() {
   return Object.freeze({
-    enabled: false,
+    /* 2026-06-18 — Boki rule "sve sto postoji u svakom slotu radi odmah
+     * i uvek": slam-stop is the universal industry baseline (every
+     * certified HTML5 slot exposes a STOP button so the player can
+     * collapse reels mid-spin). Default flipped to TRUE; GDD opt-out
+     * via `slamStop: { enabled: false }` still honored. */
+    enabled: true,
     chipLabel: 'STOP',
     /* "r,g,b" — kept as comma-separated triplets like uiToast to allow rgba()
      * with alpha modulation in CSS without re-parsing. */

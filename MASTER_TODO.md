@@ -3,7 +3,49 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 11:15 · **HEAD**: pending push · main
+> **Last updated**: 2026-06-18 12:35 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## 🩹 Universal block sweep + UX polish (2026-06-18 part 2)
+>
+> Boki: *"sve sto postoji u svakom slotu radi odmah i uvek. naboroj mi
+> lego blokove koji moraju da budu u svakom slotu"* + *"oni koji su
+> stalni svuda — uveri se da radi u svakom gdd-u, posto ne radi"* +
+> *"sta znaci force ScatterPay i WAYS"* + *"ne zelim nigde brojac koliko
+> je scattera palo"*.
+>
+> ### Šta je urađeno
+>
+> | # | Blok / fajl | Promena |
+> |:-:|:--|:--|
+> | 1 | `winLineFlash.mjs` | `enabled: false → true` — univerzalni LTR sweep flash na svaku line-win (industry baseline) |
+> | 2 | `slamStop.mjs` | `enabled: false → true` — univerzalni STOP dugme tokom spina (industry baseline) |
+> | 3 | `universalForcePanel.mjs` | Dodat `PAYOUT_EVALUATOR_KINDS` filter — `ways` / `cluster_pays` / `pay_anywhere` / `scatter_pay` više se ne paint-uju kao force chip-ovi (eval-only kinds, nemaju single-spin trigger) |
+> | 4 | `freeSpins.mjs` | FS intro placard eyebrow uvek "YOU TRIGGERED" — uklonjen `"N SCATTERS TRIGGERED"` brojač (Boki rule "ne želim nigde brojač koliko je scattera palo") |
+> | 5 | `tools/_universal-blocks-coverage.mjs` (NOVI) | Static coverage probe — verifikuje 38 universal blokova × 4 real GDD-a |
+>
+> ### Universal coverage rezultat
+>
+> | Game | Status | Coverage |
+> |:--|:-:|:-:|
+> | huff-n-more-puff | ✅ | 38/38 universal blocks present |
+> | wrath-of-olympus | ✅ | 38/38 |
+> | gates-of-olympus-1000 | ✅ | 38/38 |
+> | starlight-travellers | ✅ | 38/38 |
+>
+> Pre fix-a 6 blokova falilo u sva 4 capsule-a (`winLineFlash`, `slamStop`
+> + 4 false-positive probe tokena koji su sad ispravljeni).
+>
+> ### Gate-ovi (svi zeleni)
+>
+> | Gate | Status |
+> |:--|:-:|
+> | `test:lego` | ✅ 7/7 invariants |
+> | `test:blocks` | ✅ Svi suites 0 fail (winLineFlash 21, slamStop 35, universalForcePanel 38, freeSpins all pass) |
+> | `test:parity` | ✅ 0 violations × 4 games |
+> | `test:cert:real` | ✅ 12/12 (4 games × UKGC + MGA + DGA) |
+> | `test:universal-coverage` | ✅ 38/38 universal × 4/4 games |
 >
 > ---
 >
