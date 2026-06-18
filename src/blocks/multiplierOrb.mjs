@@ -251,6 +251,29 @@ if (typeof HookBus !== 'undefined' &&
     BONUS_MULTIPLIER = 0;
     if (typeof window !== 'undefined') window.BONUS_MULTIPLIER = 0;
   }, { priority: 30 });
+  /* W47.S24 audit fix — FS round ENDS → clear BONUS_MULTIPLIER so the
+     persisted FS bonus accumulator doesn't bleed into the next BASE
+     spin's mult readout. Without this, the FS final mult stayed in
+     window.BONUS_MULTIPLIER until the next FS trigger; any base-game
+     reader of the global saw a stale FS value. */
+  HookBus.on('onFsEnd', () => {
+    BONUS_MULTIPLIER = 0;
+    if (typeof window !== 'undefined') window.BONUS_MULTIPLIER = 0;
+  }, { priority: 30 });
+  /* W47.S24 audit fix — preSpin GHOST-orb sweeper. If the engine
+     re-paints reels mid-cycle (force-spin / fast respin / autoplay
+     stage skip), orb classes from the PRIOR spin could be re-discovered
+     on the new symbols by accumulateOrbMultiplier and stacked. Strip
+     .cell--orb / .is-pulsing / data-orb-value at preSpin so the new
+     spin's settle path is the single source of truth. */
+  HookBus.on('preSpin', () => {
+    if (typeof document === 'undefined') return;
+    document.querySelectorAll('.cell--orb, .cell.is-pulsing').forEach(c => {
+      c.classList.remove('cell--orb');
+      c.classList.remove('is-pulsing');
+      if (c.dataset) delete c.dataset.orbValue;
+    });
+  }, { priority: 30 });
 }
 `;
 }
