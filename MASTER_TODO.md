@@ -3,7 +3,60 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 03:10 · **HEAD**: pending push · main
+> **Last updated**: 2026-06-18 03:35 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## 🆕 FUNCTIONAL ITEM #2 — Cross-game parity matrix (2026-06-18)
+>
+> Lift LEGO invariant od per-block (vertikalno, 122 × 13 = 1586 checks)
+> na **cross-game (horizontalno)**: za svaki feature kind koji postoji u
+> ≥2 real-game modela, DOM contract mora biti **identičan** u svim
+> igrama. To je dokaz da smartDefaults / theme override / parser
+> inference ne uvode tihu drift između igara.
+>
+> ### 🔬 Probe `tests/cross-game-parity.mjs`
+>
+> | Stage | Šta radi |
+> |:--|:--|
+> | 1 | Load svaki `dist/real-games/<slug>/{model.json, slot.html}` |
+> | 2 | Boot svaki slot.html u headless Chromium (paralelni context) |
+> | 3 | Po (feature kind × game) izračuna **DOM signature**: `{tag, classes (sorted), aria-*, data-*}` — structural, ne textual (theme/lang ne pravi false positive) |
+> | 4 | Za svaki feature kind u ≥2 igre: ref signature = prva non-null carrier, ostali se cross-check sa ref. Bilo koja key razlika = PARITY VIOLATION |
+> | 5 | Persist `dist/cross-game-parity/{harvest,violations}.json` |
+>
+> ### 🎯 Rezultati (0/18 violations)
+>
+> | Feature kind | Carriers | Hosts checked | Parity |
+> |:--|:-:|:--|:-:|
+> | `free_spins` | 4 | `#fsHud`, `#fsToast`, `#fsProgress`, `#stageBadge` | ✅ 12/12 |
+> | `multiplier` | 4 | `#multLadder` | ✅ 3/3 |
+> | `hold_and_win` | 2 | `#hwFullgrid` | ✅ 1/1 |
+> | `bonus_buy` | 3 | `#bonusBuyBtn` | ✅ 2/2 |
+>
+> Coverage matrix (feature × game presence) printuje se kao 14×4 ASCII
+> tabela u stdout-u — `· absent` / `✓ in model` po ćeliji.
+>
+> ### 🔧 Šta se popravilo tokom rada
+>
+> | # | Šta | Detalj |
+> |:-:|:--|:--|
+> | 1 | bonus_buy selector | Stari placeholder `#bonusBuy` → kanonski `#bonusBuyBtn` (class `.bonus-buy-btn`) sa atributima `[class, role, aria-label]`. |
+> | 2 | Reference promotion | Ref game = prvi carrier čija je signature non-null (ne prvi po deklaraciji). Tako theme-conditional render ne preskače parity check. |
+>
+> ### 🆕 Novi npm script
+>
+> | Script | Šta pokreće |
+> |:--|:--|
+> | `test:parity` | static probe (Item #1) + cross-game parity matrix |
+>
+> Ulančan u `test:all` posle `test:parse:real-pdfs:live`.
+>
+> ### 📁 Artifacts
+>
+> `dist/cross-game-parity/`:
+> - `harvest.json` — full signature snapshot po (game × feature × selector)
+> - `violations.json` — empty `[]` na zelenom gate-u, populated kad parity drift udari
 >
 > ---
 >
