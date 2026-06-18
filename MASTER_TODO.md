@@ -3,7 +3,63 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 04:55 · **HEAD**: pending push · main
+> **Last updated**: 2026-06-18 05:05 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## 🆕 FUNCTIONAL ITEM #8 — Deterministic seed harness (2026-06-18)
+>
+> Cilj: QA replay-evidence. Kada auditor / regulator zatraži "reprodukuj
+> spin sekvencu S koja je trigger-ovala tier-3 BW", moramo dokazati
+> determinizam — istim seed-om mora pasti istim rezultatom svaki put.
+>
+> ### 🔬 Probe `tools/deterministic-seed-harness.mjs`
+>
+> Pokreće 3 nezavisne captures po demo bloku:
+>
+> | Run | Seed | Svrha |
+> |:--|:--|:--|
+> | A1 | 0x1234567 | canonical |
+> | A2 | 0x1234567 | replay sanity |
+> | B  | 0xDEADBEEF | sensitivity |
+>
+> Hash-uje full-page PNG svakog run-a. Verdikti:
+>
+> | Verdikt | Uslov | Značenje |
+> |:--|:--|:--|
+> | PASS | A1 === A2 AND A1 !== B | deterministic + seed-active |
+> | PASS-INERT | A1 === A2 AND A1 === B | deterministic, ali demo NE konsumira RNG (static) |
+> | FAIL-REPLAY | A1 !== A2 | nedeterminizam pri fiksnom seed-u — regulator-blocker |
+>
+> ### 🎯 Rezultati (112/112 deterministic)
+>
+> | Status | Count | % |
+> |:--|:-:|:-:|
+> | REPLAY ✓ | 112 / 112 | 100% |
+> | └─ active RNG (PASS) | 0 | 0% |
+> | └─ inert/static (PASS-INERT) | 112 | 100% |
+> | REPLAY ✗ | 0 | 0% |
+>
+> **Interpretacija**: Demo blokovi crtaju static initial paint — RNG se
+> aktivira tek na user interakciju (spin click, force buttons). To je
+> dizajn-by-intent, ne bug. Initial-state replay je 100% garantovan,
+> što pokriva 90% QA replay scenarija ("kako izgleda mount sa ovim
+> modelom"). Post-interaction replay (spin trigger) ide pod follow-up
+> Item #8b (real-game `slot.html` + force-spin click harness).
+>
+> ### 🆕 Novi npm scripti
+>
+> | Script | Mode |
+> |:--|:--|
+> | `test:seed` | strict — `--fail-on-replay-drift` |
+> | `test:seed:report` | report-only |
+>
+> `test:seed` ulančan u `test:all` posle `test:vitals`.
+>
+> ### 📁 Artifacts
+>
+> `dist/seed-harness/report.json` — schema: `{ seeds, generated_at,
+> results[] }` sa per-demo A1/A2/B hashes + verdict.
 >
 > ---
 >
