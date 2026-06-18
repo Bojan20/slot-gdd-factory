@@ -4,9 +4,8 @@
   "source_locale": "en",
   "hash": "1d8e26fcd904",
   "blocks_with_strings": 46,
-  "total_entries": 109,
+  "total_entries": 108,
   "catalog": {
-    "anticipationUniversal.0": "Scatter progress",
     "audio.0": "Toggle audio",
     "autoplay.0": "AUTO · ",
     "autoplay.1": "Close autoplay settings",

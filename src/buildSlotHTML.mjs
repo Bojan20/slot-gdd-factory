@@ -128,11 +128,6 @@ import {
   resolveConfig as resolveAnticipationConfig,
 } from './blocks/anticipation.mjs';
 import {
-  emitAnticipationUniversalCSS,
-  emitAnticipationUniversalRuntime,
-  resolveConfig as resolveAnticipationUniversalConfig,
-} from './blocks/anticipationUniversal.mjs';
-import {
   emitSpinTempoRuntime,
   resolveConfig as resolveSpinTempoConfig,
   projectSpinProfile,
@@ -898,7 +893,6 @@ ${/* Wave 3 — motion overlay parity per engine (LEGO: orchestrator wires;
      vertically → vertical streaks disabled there. */ ''}
 ${MOTION_OVERLAY_SURFACES.map(s => emitMotionOverlayCSS(resolveMotionOverlayConfig(model), s)).join('\n')}
 ${emitAnticipationCSS(resolveAnticipationConfig(model))}
-${emitAnticipationUniversalCSS(resolveAnticipationUniversalConfig(model))}
 
 ${emitWinPresentationCSS(resolveWinPresentationConfig(model))}
 
@@ -1266,7 +1260,6 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitSpinTempoRuntime(resolveSpinTempoConfig(model))}
 
   ${emitAnticipationRuntime(resolveAnticipationConfig(model))}
-  ${emitAnticipationUniversalRuntime(resolveAnticipationUniversalConfig(model))}
 
   /* User-driven SPIN button click. During FS_* phases the FSM / placard CTA
      owns the input. Wave V3 — spinControl morphs the button between SPIN /

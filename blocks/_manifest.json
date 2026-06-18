@@ -95,54 +95,6 @@
       "loc": 324
     },
     {
-      "name": "anticipationUniversal",
-      "file": "src/blocks/anticipationUniversal.mjs",
-      "testFile": "tests/blocks/anticipationUniversal.test.mjs",
-      "category": "engine",
-      "description": "2026-06-11 (Boki: \"ne radi mi anticipacija u svim gridovima. potpuno",
-      "exports": [
-        "defaultConfig",
-        "emitAnticipationUniversalCSS",
-        "emitAnticipationUniversalRuntime",
-        "resolveConfig"
-      ],
-      "lifecycleHooks": [
-        "onFsEnd",
-        "onFsTrigger",
-        "onTumbleStep",
-        "postSpin",
-        "preSpin"
-      ],
-      "emittedEvents": [],
-      "defaultConfig": {
-        "enabled": true,
-        "pulseMs": 700,
-        "gold": "255,214,110",
-        "warmCore": "255,235,178",
-        "tickMs": 140,
-        "showBadge": true,
-        "skipDuringFs": false,
-        "suppressOnForceTrigger": false,
-        "fallbackThreshold": 3,
-        "fallbackTopRung": 5,
-        "fallbackTriggerSymbol": "S",
-        "fallbackShapeKind": "rectangular",
-        "badgeInsetPx": 6,
-        "badgeRadiusPx": 14,
-        "badgeTopPx": 10,
-        "badgeRightPx": 10,
-        "badgeOffsetPx": 4,
-        "badgeScale": 0.92,
-        "transitionMs": 220,
-        "zBadge": 80,
-        "zCell": 3,
-        "zHostPulse": 1,
-        "hookBusRetries": 20,
-        "hookBusRetryMs": 50
-      },
-      "loc": 530
-    },
-    {
       "name": "audio",
       "file": "src/blocks/audio.mjs",
       "testFile": "tests/blocks/audio.test.mjs",
