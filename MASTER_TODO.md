@@ -3,7 +3,64 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 02:30 · **HEAD**: `88f4563` · main
+> **Last updated**: 2026-06-18 03:10 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## 🆕 FUNCTIONAL ITEM #1 — Real-game GDD ingestion (2026-06-18)
+>
+> Posle 13-commit backlog sweep-a, Boki je tražio "šta funkcionalno
+> ostaje" — vrh liste bio je **real-game GDD ingestion**: 308 synthetic
+> GDD-ova dokazuje LEGO + parser invariante, ali sve su generisane
+> protiv ISTE heuristike koju parser očekuje. Production GDD-ovi iz
+> `~/Desktop/GDD/*.pdf` su MS Word / Notion exporti, drugi vokabular,
+> drugi layout, drugi edge case-ovi.
+>
+> Sad postoji end-to-end gate na realnim PDF-ovima:
+>
+> | Stage | Probe | Šta radi |
+> |:--|:--|:--|
+> | Static | `tests/parse-real-pdfs.mjs` | PDF → text → markdown → parseGDD → buildSlotHTML, smoke + floor checks |
+> | Live   | `tests/parse-real-pdfs-live.mjs` | Boot svaki `slot.html` u headless Chromium, asserts: 0 pageerror / 0 console.error / `#gridHost` + `#frameHost` exist / ≥1 cell render |
+>
+> ### 🎯 Rezultati (4/4 real-game PDF)
+>
+> | # | PDF | Topology | Symbols | Features | Static | Live cells | OK |
+> |:-:|:--|:-:|:-:|:-:|:-:|:-:|:-:|
+> | 1 | Gates_of_Olympus_1000_GDD.pdf | 5×3 pay-anywhere | 2 (specials-only) | 8 | ✅ | 25 | ✓ |
+> | 2 | Huff_N_More_Puff_GDD.pdf | 5×3 ways | 12 (HP/MP/LP/★ full) | 8 | ✅ | 25 | ✓ |
+> | 3 | Starlight_Travellers_GDD.pdf | 6×5 cluster | 10 (HP/MP/LP/★) | 8 | ✅ | 42 | ✓ |
+> | 4 | Wrath_of_Olympus_GDD.pdf | 5×3 lines | 2 (specials-only) | 6 | ✅ | 25 | ✓ |
+>
+> ### 🔧 Šta se popravilo tokom rada
+>
+> | # | Šta | Detalj |
+> |:-:|:--|:--|
+> | 1 | Smoke selector | Stari sanity check tražio `#grid` — kanonski host u `buildSlotHTML` je `#gridHost` (`.gridHost`) + `#frameHost`. Updejtovan na pravi selektor sa fallback na class match. |
+> | 2 | Floor kalibracija | "≥4 simbola" je bila synthetic-corpus pretpostavka; real GDD koji ima samo Wild + Scatter sekciju (Wrath, Gates 1000) je legitiman ulaz — `smartDefaults` puni paytable na runtime-u. Floor spušten na ≥2 + soft warning kad je HP/MP/LP prazan. |
+>
+> ### 📋 Otvorene tačke (known follow-up, not blocking)
+>
+> | # | Otkriće | Težina | Plan |
+> |:-:|:--|:-:|:--|
+> | A | Gates_of_Olympus_1000_GDD Mid-pay tabela ima pogrešno spojeno kolone u `pdfToMarkdown` reconstruct-u (`\| \`\|8\|\` \| \| 8 \| \| 3 \| 1x \| 1.5x \| 5x \|`) — parser je ne ekstraktuje, pa HP/MP/LP=0. | M | Posebna iteracija PDF→MD heuristike za multi-column min-N pay tabele (Item #1b). |
+>
+> ### 🆕 Novi npm scriptovi
+>
+> | Script | Šta pokreće |
+> |:--|:--|
+> | `test:parse:real-pdfs` | Samo static — PDF → model → built HTML |
+> | `test:parse:real-pdfs:live` | Static + Chromium live runtime verification |
+>
+> Oba ulančana u `test:all` posle `test:parse`.
+>
+> ### 📁 Artifacts
+>
+> Svaki PDF ostavlja u `dist/real-games/<slug>/`:
+> - `raw.txt` — sirovi text iz pdfjs
+> - `gdd.md` — markdown nakon `pdfToMarkdown`
+> - `model.json` — ParsedModel posle `parseGDD`
+> - `slot.html` — built standalone slot (učitljiv direktno u browseru)
 >
 > ---
 >

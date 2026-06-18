@@ -7,6 +7,8 @@
   "scripts": {
     "test": "node tests/parse-real.mjs && node tests/render-grid-all.mjs",
     "test:parse": "node tests/parse-real.mjs",
+    "test:parse:real-pdfs": "node tests/parse-real-pdfs.mjs",
+    "test:parse:real-pdfs:live": "node tests/parse-real-pdfs.mjs && node tests/parse-real-pdfs-live.mjs",
     "test:grids": "node tests/render-grid-all.mjs",
     "gen:demos": "node tools/gen-block-demos.mjs",
     "test:browser": "node tests/render-browser-all.mjs",
@@ -30,7 +32,7 @@
     "test:ultimate:quick": "node tools/cortex-eyes-ultimate-qa.mjs --quick",
     "test:cert": "node tests/cert/jurisdictions.test.mjs && node tests/cert/complianceGate.test.mjs && node tests/cert/manifest.test.mjs && node tests/cert/evidencePack.test.mjs && node tests/cert/bundler.test.mjs && node tests/cert/cli.integration.test.mjs",
     "cert:build": "node tools/cert-build.mjs",
-    "test:all": "npm run test:lego && npm run test:no-muddy-cell && npm run test:sharpness && npm run test:rmotion && npm run test:safe-area && npm run test:wcag && npm run test:kbd:strict && npm run test:aria:strict && npm run test:fps && npm run test:budget && npm run test:parse && npm run test:grids && npm run test:browser && npm run test:qa && npm run test:fs && npm run test:blocks && npm run test:runtime && npm run test:dev-server && npm run test:manifest && npm run test:playground && npm run test:cert && npm run test:ultimate",
+    "test:all": "npm run test:lego && npm run test:no-muddy-cell && npm run test:sharpness && npm run test:rmotion && npm run test:safe-area && npm run test:wcag && npm run test:kbd:strict && npm run test:aria:strict && npm run test:fps && npm run test:budget && npm run test:parse && npm run test:parse:real-pdfs:live && npm run test:grids && npm run test:browser && npm run test:qa && npm run test:fs && npm run test:blocks && npm run test:runtime && npm run test:dev-server && npm run test:manifest && npm run test:playground && npm run test:cert && npm run test:ultimate",
     "serve": "node tools/static-server.mjs",
     "test:rmotion": "node tools/reduced-motion-audit.mjs",
     "test:wcag": "node tools/wcag-contrast-audit.mjs",
