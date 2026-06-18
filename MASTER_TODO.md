@@ -3,7 +3,90 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 05:30 · **HEAD**: pending push · main
+> **Last updated**: 2026-06-18 05:45 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## 🎉 BATCH FINAL · ITEMS #11 + #13 + sweep summary (2026-06-18)
+>
+> Posle Item #12 (CI matrix) ostala su poslednja dva backlog-a iz Bokijeve
+> liste:
+> - **Item #11 — i18n shell** (string extraction + locale catalog skeleton)
+> - **Item #13 — Replay/recording** (event log za QA repro)
+>
+> ### 🆕 ITEM #11 — i18n catalog extract
+>
+> Tool `tools/i18n-catalog-extract.mjs`:
+>
+> | Stage | Šta radi |
+> |:--|:--|
+> | 1 | Skenira `src/blocks/*.mjs` (122 fajla) |
+> | 2 | 7 ekstraktor regex-a: aria-label/description/roledescription, title, placeholder, alt, setAttribute('aria-…'), textContent/innerText |
+> | 3 | False-positive filter: skip css class / hex color / number-only / URL / already-i18n (`{t(…)}`, `i18n.t(…)`, `__(…)`) |
+> | 4 | Emit deterministic catalog `{ "<blockName>.<idx>": "<EN string>" }` |
+> | 5 | Persist `i18n/en.json` sa schema_version + sha256 hash + per-block count |
+>
+> ### 🎯 Item #11 rezultati
+>
+> | Metrika | Vrednost |
+> |:--|:-:|
+> | Blokovi skenirani | 122 |
+> | Blokovi sa user-facing stringovima | **46** |
+> | Total entries (locale skeleton) | **109** |
+> | Catalog hash | `1d8e26fcd904` |
+> | Output | `i18n/en.json` |
+>
+> ### 🆕 ITEM #13 — Event recorder (QA replay foundation)
+>
+> Tool `tools/event-recorder.mjs`:
+>
+> | Stage | Šta radi |
+> |:--|:--|
+> | 1 | `addInitScript` patches `EventTarget.prototype.dispatchEvent` + `addEventListener` na global level PRE goto |
+> | 2 | Boot `dist/real-games/<slug>/slot.html` |
+> | 3 | Loop: klikne `#spinBtn` every SPIN_EVERY, beleži sve dispatch + addEventListener pozive sa `t`(ms) + `target` + `detail` |
+> | 4 | Aggregate counts po (kind, type), persist `dist/event-recordings/<slug>.json` |
+>
+> ### 🎯 Item #13 rezultati (4/4 igre, 8s capture)
+>
+> | Igra | Events | Top 3 kinds |
+> |:--|:-:|:--|
+> | gates-of-olympus-1000-gdd | 94 | click(62) DOMContentLoaded(15) keydown(9) |
+> | huff-n-more-puff-gdd | 100 | click(68) DOMContentLoaded(16) keydown(8) |
+> | starlight-travellers-gdd | 94 | click(62) DOMContentLoaded(15) keydown(9) |
+> | wrath-of-olympus-gdd | 90 | click(60) DOMContentLoaded(14) keydown(8) |
+>
+> ### 🆕 npm scripti
+>
+> | Script | Šta pokreće |
+> |:--|:--|
+> | `i18n:extract` | Item #11 catalog extract |
+> | `test:event-recorder` | Item #13 record 8s per real-game slot |
+>
+> Oba ulančana u `test:all` posle `sales:one-pagers`.
+>
+> ### 📚 SWEEP SUMMARY · 2026-06-18 (13 functional items od jutros)
+>
+> | # | Item | HEAD | Status |
+> |:-:|:--|:--|:-:|
+> | 1 | Real-game GDD ingestion (PDF → model → built HTML) | `309d59b` | ✅ |
+> | 2 | Cross-game DOM parity matrix | `a175e16` | ✅ |
+> | — | Deep-QA 27-gate snapshot | `e28b42f` | ✅ |
+> | 3 | Capsule export pipeline → cert ZIP (PDF input + assets) | `b3e12dc` | ✅ |
+> | 4 | Visual regression baseline (desktop) | `df4f960` | ✅ |
+> | 5a–e | Cluster pays / Expanding / Sticky / Hold-Spin / Mystery | already shipped (122 blocks) | ✅ |
+> | 6 | Portrait visual baseline (≤480px) | `648886a` | ✅ |
+> | 7 | Web Vitals runtime budget gate | `a8b466c` | ✅ |
+> | 8 | Deterministic seed harness | `25f65ad` | ✅ |
+> | 9 | Sales floor session loop (kiosk stress) | `fefcf34` | ✅ |
+> | 10 | Sales one-pager generator (vendor-neutral) | `fefcf34` | ✅ |
+> | 12 | CI cross-browser matrix (Firefox + WebKit) | `bf7a9c6` | ✅ |
+> | 11 | i18n catalog extract | pending push | ✅ |
+> | 13 | Event recorder (replay foundation) | pending push | ✅ |
+>
+> **13 items / 1 day / 0 regression** — `test:all` chain proširen sa
+> 9 novih gate-ova. Svaki commit kroz lokalni regression (test:lego,
+> test:cert, test:parity, test:visual, test:vitals, test:seed).
 >
 > ---
 >
