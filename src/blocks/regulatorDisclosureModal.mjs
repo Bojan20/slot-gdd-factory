@@ -217,7 +217,7 @@ export function emitRegulatorDisclosureModalMarkup(cfg = defaultConfig()) {
     <span class="rdm-jurisdiction" id="rdmJurisdiction" hidden></span>
     <div class="rdm-body" id="rdmBody">—</div>
     <dl class="rdm-payload" id="rdmPayload" hidden></dl>
-    <button class="rdm-ack" id="rdmAck" type="button">${_escape(cfg.ackButtonLabel)}</button>
+    <button class="rdm-ack" id="rdmAck" type="button" aria-label="${_escape(cfg.ackButtonLabel)}">${_escape(cfg.ackButtonLabel)}</button>
     <div class="rdm-queue" id="rdmQueue" hidden></div>
   </div>
 </div>`;

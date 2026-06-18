@@ -237,9 +237,9 @@ export function emitHiLoGambleMarkup(cfg = defaultConfig()) {
       <div id="hiloTitle" style="font-weight:800;letter-spacing:.06em">${cfg.ctaLabel}</div>
       <div id="hiloCard" class="hilo-card" data-flipping="false" aria-live="polite">?</div>
       <div class="hilo-actions">
-        <button class="hilo-btn" data-kind="higher" type="button">${cfg.higherLabel}</button>
-        <button class="hilo-btn" data-kind="lower"  type="button">${cfg.lowerLabel}</button>
-        <button class="hilo-btn" data-kind="collect" type="button">${cfg.collectLabel}</button>
+        <button class="hilo-btn" data-kind="higher"  type="button" aria-label="${cfg.higherLabel}">${cfg.higherLabel}</button>
+        <button class="hilo-btn" data-kind="lower"   type="button" aria-label="${cfg.lowerLabel}">${cfg.lowerLabel}</button>
+        <button class="hilo-btn" data-kind="collect" type="button" aria-label="${cfg.collectLabel}">${cfg.collectLabel}</button>
       </div>
       <div id="hiloStatus" class="hilo-status" aria-live="polite"></div>
     </div>
