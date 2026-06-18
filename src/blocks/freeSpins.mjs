@@ -404,23 +404,39 @@ export function emitFreeSpinsHudMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ freeSpinsPresentation: cfg });
   if (!c.enabled) return '';
   return `<!-- Free Spins HUD — rendered always; toggled visible via .fs-hud--active.
-       WCAG 4.1.3 — every value cell is mutated on every FS spin / award;
-       aria-live="polite" so SR users hear the spin / multiplier / total
-       counters update without preempting other speech. -->
-<div class="fs-hud" id="fsHud" aria-hidden="true">
-  <div class="fs-hud__box">
-    <div class="fs-hud__label">Spins</div>
-    <div class="fs-hud__value" id="fsHudSpins" aria-live="polite" aria-atomic="true">0 / 0</div>
+       WCAG 4.1.3 (Status Messages) — every value cell is mutated on
+       every FS spin / award; aria-live="polite" so SR users hear the
+       spin / multiplier / total counters update without preempting
+       other speech.
+       W47.S26 polish:
+       • Each box is a role="group" with aria-labelledby pointing at
+         its label, so SR navigation lands on "Spins · 3 / 10" instead
+         of bare "3 / 10".
+       • Value cells use aria-labelledby so the announcement carries
+         the label semantically.
+       • The HUD container starts aria-hidden=true; FSM_enterIntro
+         flips it to false so the polite live regions actually announce.
+         Polite-on-hidden was a no-op pre-polish. -->
+<div class="fs-hud" id="fsHud" role="region" aria-label="Free spins status" aria-hidden="true">
+  <div class="fs-hud__box" role="group" aria-labelledby="fsHudSpinsLabel">
+    <div class="fs-hud__label" id="fsHudSpinsLabel">Spins</div>
+    <div class="fs-hud__value" id="fsHudSpins"
+         aria-live="polite" aria-atomic="true"
+         aria-labelledby="fsHudSpinsLabel fsHudSpins">0 / 0</div>
   </div>
-  <div class="fs-hud__divider"></div>
-  <div class="fs-hud__box">
-    <div class="fs-hud__label">Mult</div>
-    <div class="fs-hud__value" id="fsHudMult" aria-live="polite" aria-atomic="true">×1</div>
+  <div class="fs-hud__divider" aria-hidden="true"></div>
+  <div class="fs-hud__box" role="group" aria-labelledby="fsHudMultLabel">
+    <div class="fs-hud__label" id="fsHudMultLabel">Mult</div>
+    <div class="fs-hud__value" id="fsHudMult"
+         aria-live="polite" aria-atomic="true"
+         aria-labelledby="fsHudMultLabel fsHudMult">×1</div>
   </div>
-  <div class="fs-hud__divider"></div>
-  <div class="fs-hud__box">
-    <div class="fs-hud__label">Total</div>
-    <div class="fs-hud__value" id="fsHudTotal" aria-live="polite" aria-atomic="true">0.00</div>
+  <div class="fs-hud__divider" aria-hidden="true"></div>
+  <div class="fs-hud__box" role="group" aria-labelledby="fsHudTotalLabel">
+    <div class="fs-hud__label" id="fsHudTotalLabel">Total</div>
+    <div class="fs-hud__value" id="fsHudTotal"
+         aria-live="polite" aria-atomic="true"
+         aria-labelledby="fsHudTotalLabel fsHudTotal">0.00</div>
   </div>
 </div>`;
 }
@@ -428,8 +444,13 @@ export function emitFreeSpinsHudMarkup(cfg = defaultConfig()) {
 export function emitFreeSpinsToastMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ freeSpinsPresentation: cfg });
   if (!c.enabled) return '';
-  return `<!-- Retrigger / award toast — animates in & out on +N FS event. -->
-<div class="fs-toast" id="fsToast" aria-hidden="true">+0 FREE SPINS</div>`;
+  return `<!-- Retrigger / award toast — animates in & out on +N FS event.
+       W47.S26 — role="status" + aria-live="polite" so the +N retrigger
+       announcement queues behind the spin-result announcement instead
+       of cutting it off mid-utterance. Toast text is set via
+       .textContent in FSM_showToast which triggers the live-region
+       announce automatically. -->
+<div class="fs-toast" id="fsToast" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true">+0 FREE SPINS</div>`;
 }
 
 export function emitFreeSpinsOverlayMarkup(cfg = defaultConfig()) {

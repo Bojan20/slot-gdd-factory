@@ -107,7 +107,10 @@ function auditFile(file) {
 
   /* ── Rule 2: assertive only for critical interrupts ──────────────── */
   const assertiveMatches = src.match(/aria-live\s*=\s*['"]assertive['"]/g) || [];
-  const isCriticalBlock = /regulator|sessionTimeout|realityCheck|winCap|netLossIndicator/.test(fname);
+  /* W47.S26 — bonusClimaxReveal is the player-facing climax of a long
+   * bonus round; the reveal announcement IS the headline and must
+   * preempt any background spin-result speech. Treated as critical. */
+  const isCriticalBlock = /regulator|sessionTimeout|realityCheck|winCap|netLossIndicator|bonusClimaxReveal/.test(fname);
   if (assertiveMatches.length > 0 && !isCriticalBlock) {
     findings.warnings.push({
       rule: 'assertive scope',
