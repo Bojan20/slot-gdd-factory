@@ -9,6 +9,28 @@
  *   near the affected payline so the player understands the source of the
  *   bonus. This block owns that badge presentation.
  *
+ * Public API:
+ *   defaultConfig() / resolveConfig(model)
+ *   emitWinMultiplierBadgeCSS(cfg), emitWinMultiplierBadgeMarkup(cfg),
+ *   emitWinMultiplierBadgeRuntime(cfg)
+ *
+ * Lifecycle (HookBus):
+ *   subscribes: onWinPresentationStart (place badges per line mult),
+ *               onWinPresentationEnd (clear), preSpin (force clear)
+ *   emits (owned): onWinMultBadgePlaced, onWinMultBadgeCleared
+ *
+ * Performance budget:
+ *   ≤ 1 badge node per win line (recycled per spin); ≤ 1 listener via
+ *   wired-once sentinel; deterministic from win-event payload.
+ *
+ * a11y:
+ *   badge carries role="status" + aria-live="polite" so SR announces
+ *   "Line 3 × 5 multiplier"; prefers-reduced-motion kills the badge
+ *   pulse animation.
+ *
+ * GDD keys (consumed from model.winMultiplierBadge):
+ *   enabled, position, fontSizePx, pulseMs, zIndex, minMult, color
+ *
  * @module winMultiplierBadge
  */
 

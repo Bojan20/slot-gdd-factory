@@ -8,7 +8,30 @@
  * current value. Industry baseline: progressive FS multiplier — ×2/×4/×8/×16
  * doubling ladder or arithmetic add-per-win cap.
  *
- * GDD knobs:
+ * Purpose: persistent across-spins multiplier accumulator with HUD chip;
+ *   carries state inside a round and resets on round boundary per config.
+ *
+ * Public API:
+ *   defaultConfig() / resolveConfig(model)
+ *   emitPersistentMultiplierCSS(cfg), emitPersistentMultiplierMarkup(cfg),
+ *   emitPersistentMultiplierRuntime(cfg)
+ *
+ * Lifecycle (HookBus):
+ *   subscribes: onSpinResult / onTumbleStep (grow per win),
+ *               onFsTrigger (round-start reset), onFsEnd (round-end reset),
+ *               preSpin (HUD redraw)
+ *   emits (owned): onPersistentMultiplierGrow { from, to, source }
+ *
+ * Performance budget:
+ *   ≤ 1 listener stacked (wired-once sentinel), ≤ 1 DOM write per grow;
+ *   deterministic given identical event stream.
+ *
+ * a11y:
+ *   chip carries aria-live="polite" + aria-atomic="true" so SR users
+ *   hear "Multiplier: 4x" on each grow; prefers-reduced-motion hard-kills
+ *   the chip pulse animation.
+ *
+ * GDD knobs (consumed from model.persistentMultiplier):
  *   • mode: 'fs' | 'base' | 'both'
  *   • startMult: number — starting multiplier (default 1)
  *   • growPerWin: number — added per winning spin

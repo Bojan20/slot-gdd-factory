@@ -8,6 +8,34 @@
  *   specific event) up to a configured threshold; when reached, the next
  *   spin is automatically converted into a respin with guaranteed feature.
  *
+ * Purpose: per-round charge meter that converts the next spin into a
+ *   respin once full; presenter + HookBus emitter, math is engine-side.
+ *
+ * Public API:
+ *   defaultConfig() / resolveConfig(model)
+ *   emitRespinChargeCSS(cfg), emitRespinChargeMarkup(cfg),
+ *   emitRespinChargeRuntime(cfg)
+ *
+ * Lifecycle (HookBus):
+ *   subscribes: onSpinResult (charge tick per configured trigger),
+ *               onTumbleStep, preSpin (consume on auto-respin),
+ *               onFsEnd (round reset)
+ *   emits (owned): onRespinChargeBump, onRespinChargeFull,
+ *                  onRespinChargeReset, onRespinChargeTick
+ *
+ * Performance budget:
+ *   ≤ 1 listener per event (wired-once sentinel); ≤ 1 DOM write per
+ *   tick; deterministic on identical event stream.
+ *
+ * a11y:
+ *   meter is role="progressbar" with aria-valuenow/min/max + aria-label;
+ *   announcements via aria-live="polite"; prefers-reduced-motion kills
+ *   the flash animation.
+ *
+ * GDD keys (consumed from model.respinCharge):
+ *   enabled, capacity, position, fontSizePx, flashMs, zIndex,
+ *   trigger ('loss'|'spin'|'noWin'|'tumbleEnd'|'custom'), labelTemplate
+ *
  * @module respinCharge
  */
 

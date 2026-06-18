@@ -10,7 +10,31 @@
  *
  * Industry references: card / colour gamble (industry-standard post-win risk feature).
  *
- * GDD knobs:
+ * Purpose: post-win double-or-nothing gamble presenter — color / suit /
+ *   ladder variants with optional auto-collect cap.
+ *
+ * Public API:
+ *   defaultConfig() / resolveConfig(model)
+ *   emitGambleCSS(cfg), emitGambleMarkup(cfg), emitGambleRuntime(cfg)
+ *
+ * Lifecycle (HookBus):
+ *   subscribes: onWinPresentationEnd (reveal gamble CTA if award > 0),
+ *               preSpin (hide CTA + force-close modal), onFsTrigger
+ *               (hide CTA during FS — RG: no gamble inside bonus)
+ *   emits (owned): onGambleStart, onGambleRound, onGambleResolved,
+ *                  onGambleCollected
+ *
+ * Performance budget:
+ *   1 modal DOM tree mounted on enable; ≤ 1 listener (wired-once);
+ *   modal animation ≤ 320 ms (reduced-motion → instant snap).
+ *
+ * a11y:
+ *   modal role="dialog" + aria-modal="true" + aria-labelledby;
+ *   focus-trap on open + restoreFocus on close; Escape = collect;
+ *   buttons ≥ 44×44 px (WCAG 2.5.5); aria-live status line announces
+ *   card + result; prefers-reduced-motion disables flip/shake.
+ *
+ * GDD knobs (consumed from model.gamble):
  *   • mode: 'color' | 'suit' | 'ladder'
  *   • maxRounds: number — max consecutive gambles (default 5)
  *   • multiplier: number — payout multiplier per success (2 for color, 4 for suit)

@@ -9,6 +9,30 @@
  *   threshold detection + bonus announcement. Strictly presentation +
  *   counting — does not execute the bonus itself.
  *
+ * Public API:
+ *   defaultConfig() / resolveConfig(model)
+ *   emitStreakBonusCSS(cfg), emitStreakBonusMarkup(cfg),
+ *   emitStreakBonusRuntime(cfg)
+ *
+ * Lifecycle (HookBus):
+ *   subscribes: onSpinResult / onTumbleStep (count wins → streak),
+ *               preSpin (no-op on streak), onFsEnd (round reset)
+ *   emits (owned): onStreakBonusTick, onStreakBonusTriggered,
+ *                  onStreakBonusReset
+ *
+ * Performance budget:
+ *   ≤ 1 listener (wired-once sentinel); ≤ 1 DOM write per tick;
+ *   deterministic on identical event stream.
+ *
+ * a11y:
+ *   counter chip uses role="status" + aria-live="polite" so SR users
+ *   hear "Streak: 3 of 5" on each tick; prefers-reduced-motion kills
+ *   the pulse animation.
+ *
+ * GDD keys (consumed from model.streakBonus):
+ *   enabled, threshold, reward ('freeSpins'|'multBump'|'jackpotKey'
+ *   |'cashBonus'), fontSizePx, pulseMs, zIndex
+ *
  * @module streakBonus
  */
 

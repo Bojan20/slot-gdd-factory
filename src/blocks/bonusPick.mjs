@@ -18,6 +18,26 @@
  *
  * Perf budget: CSS ≤ 1.5 KB, markup ≤ 1 KB for tileCount=12, runtime ≤ 2 KB,
  *              open→first-paint ≤ 16ms.
+ *
+ * Purpose: classic pick-em mini-game presenter — modal with K hidden
+ *   tiles, reveal-on-click, terminator-token round end.
+ *
+ * Public API:
+ *   defaultConfig() / resolveConfig(model)
+ *   emitBonusPickCSS(cfg), emitBonusPickMarkup(cfg),
+ *   emitBonusPickRuntime(cfg)
+ *
+ * Lifecycle (HookBus):
+ *   subscribes: onBonusPickTrigger (open modal), preSpin (force close),
+ *               onFsEnd (force close if still open)
+ *   emits (owned): onBonusPickOpen, onBonusPickReveal, onBonusPickEnd
+ *
+ * a11y:
+ *   modal carries role="dialog" + aria-modal="true" + aria-labelledby
+ *   pointing at title; focus-trap on open + restoreFocus on close;
+ *   Escape closes; each tile is a <button> with aria-label;
+ *   reveal announcement via aria-live="polite";
+ *   prefers-reduced-motion kills the flip animation.
  */
 
 const LIMITS = {

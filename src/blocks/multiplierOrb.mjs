@@ -11,9 +11,37 @@
  *   • Total_Multiplier applies to the FINAL chain payout (or every FS spin
  *     when bonus-multiplier accumulation is enabled — pay-anywhere FS rule)
  *
- * Bake-time config (resolved from `model.multiplierOrb`):
+ * Industry baseline (vendor-neutral, reference standard):
+ *   Cascade / pay-anywhere slots with an accumulating-multiplier orb
+ *   symbol — orbs persist through the chain, sum each step, and apply
+ *   to the final payout. Optional FS-only persistent accumulator.
+ *
+ * Public API:
+ *   defaultConfig() / resolveConfig(model)
+ *   emitMultiplierOrbCSS(cfg), emitMultiplierOrbRuntime(cfg)
+ *   window.annotateOrbs(), window.accumulateOrbMultiplier(),
+ *   window.pickOrbValue(), window.resetBonusMultiplier()
+ *
+ * Lifecycle (HookBus):
+ *   subscribes (priority 30): onSpinResult (annotate orbs),
+ *               onTumbleStep (sum visible orb values into HookBus mult),
+ *               onFsTrigger (reset BONUS_MULTIPLIER),
+ *               onFsEnd (reset BONUS_MULTIPLIER, W47.S24),
+ *               preSpin (ghost-orb sweeper, W47.S24)
+ *
+ * Performance budget:
+ *   ≤ 0.5 ms per spin settle on 5×4 grid; ≤ 1 listener per event
+ *   (wired-once via window.__MULTIPLIER_ORB_WIRED__ sentinel so HMR
+ *   never stacks listeners and inflates RTP).
+ *
+ * a11y:
+ *   chip is decorative (rendered via ::after content) — underlying
+ *   cell semantics retained; prefers-reduced-motion kills the pulse
+ *   keyframe via media-query in the CSS emit.
+ *
+ * Bake-time config (resolved from model.multiplierOrb):
  *   { enabled, symbolId, distribution: [{value, weight}, ...],
- *     bonusAccumulate: false }
+ *     bonusAccumulate: false, chipColor, chipGlow, chipShadow, pulseMs }
  */
 
 const PULSE_MS_MIN = 100;

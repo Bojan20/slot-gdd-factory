@@ -3,10 +3,49 @@
  *
  * Wave H23 — Reel Lock Hold (lock visible reels during a respin with countdown).
  *
- * Industry baseline (vendor-neutral):
+ * Purpose: lock an entire reel column for a fixed N-spin window
+ * showing a visual "LOCKED" badge with a per-tick countdown.
+ *
+ * Industry baseline (vendor-neutral, reference standard):
  *   Different from `holdAndWin` (which locks specific bonus cells across
- *   respins until grid fills): this block locks WHOLE REELS for a fixed
- *   N-spin window, showing a visual "LOCKED" badge with countdown.
+ *   respins until the grid fills): this block locks WHOLE REELS for a
+ *   fixed N-spin window. Engine consults `window.__REEL_LOCKED__[r]`
+ *   before re-spinning each reel; locked reels skip the strip walk.
+ *
+ * Public API:
+ *   defaultConfig()                            → frozen safe defaults
+ *   resolveConfig(model)                       → merge with model.reelLockHold
+ *   emitReelLockHoldCSS(cfg)                   → badge + countdown styles
+ *   emitReelLockHoldMarkup(cfg)                → per-reel host nodes
+ *   emitReelLockHoldRuntime(cfg)               → runtime JS string
+ *   window.lockReelForRounds(reelIdx, rounds)  → programmatic lock
+ *
+ * Lifecycle (HookBus):
+ *   subscribes:
+ *     postSpin     → tick every active reel-lock; emit end for expired
+ *     onFsTrigger  → suspend locks during FS (FS owns its own state machine)
+ *     onFsEnd      → clear all locks (fresh start in base)
+ *   emits (owned):
+ *     onReelLockStart   {reel, rounds, source}
+ *     onReelLockTick    {ended, remaining, source}
+ *     onReelLockEnd     {reel, source}
+ *     onReelLockCleared {reason}
+ *
+ * Performance budget:
+ *   ≤ 1 DOM write per locked reel per spin (badge count update);
+ *   no rAF, no polling; cleanup on animationend; 0 listeners stacked
+ *   across HMR via wired-once sentinel.
+ *
+ * a11y:
+ *   badge carries `aria-live="polite"` + `aria-atomic="true"` so SR
+ *   users hear "Reel 2 locked: 2 spins remaining" on each tick.
+ *   `prefers-reduced-motion` hard-zeros the pulse animation.
+ *
+ * GDD keys (consumed from model.reelLockHold):
+ *   enabled, rounds, badgeFontPx, pulseMs, zIndex, badgeBg, badgeColor,
+ *   text (label template with {N} placeholder)
+ *
+ * Vendor-neutral. No game / studio strings.
  *
  * @module reelLockHold
  */

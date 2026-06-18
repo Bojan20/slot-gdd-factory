@@ -8,7 +8,28 @@
  * evaluation. Industry baseline: colossal-symbol pattern — N×N oversized
  * tile counting as N² individual cells for paytable evaluation.
  *
- * GDD knobs:
+ * Purpose: oversized N×N tile lands on the grid and counts as N² cells
+ *   of the same symbol for paytable evaluation; presenter + math hook.
+ *
+ * Public API:
+ *   defaultConfig() / resolveConfig(model)
+ *   emitSuperSymbolCSS(cfg), emitSuperSymbolMarkup(cfg),
+ *   emitSuperSymbolRuntime(cfg)
+ *
+ * Lifecycle (HookBus):
+ *   subscribes: preSpin (clear stale super overlay),
+ *               onSpinResult (place tile if rolled), onFsEnd (reset)
+ *   emits (owned): onSuperSymbolPlaced, onSuperSymbolCleared
+ *
+ * Performance budget:
+ *   ≤ 1 overlay node per place; deterministic with seedable RNG;
+ *   ≤ 1 listener per event via wired-once sentinel.
+ *
+ * a11y:
+ *   overlay aria-hidden=true (underlying cells retain SR semantics);
+ *   prefers-reduced-motion kills land animation.
+ *
+ * GDD knobs (consumed from model.superSymbol):
  *   • mode: 'fs' | 'base' | 'both'
  *   • blockSize: number (2,3,4)
  *   • triggerChance: number in [0,1] — auto-fire chance per spin

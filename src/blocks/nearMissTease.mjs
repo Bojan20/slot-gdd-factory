@@ -12,6 +12,27 @@
  *   Different from `anticipation` (which runs DURING reel landing) — this
  *   block fires AFTER settle when the post-spin result is detectable.
  *
+ * Public API:
+ *   defaultConfig() / resolveConfig(model)
+ *   emitNearMissTeaseCSS(cfg), emitNearMissTeaseMarkup(cfg),
+ *   emitNearMissTeaseRuntime(cfg)
+ *
+ * Lifecycle (HookBus):
+ *   subscribes: postSpin (detect & tease near-miss configurations),
+ *               preSpin (clear stale tease classes)
+ *   emits (owned): onNearMissTeased { kind, cells, source }
+ *
+ * Performance budget:
+ *   ≤ 1 detect pass per postSpin; ≤ 1 listener stacked across HMR
+ *   via wired-once sentinel; deterministic on identical grid state.
+ *
+ * a11y:
+ *   tease highlight cells are decorative (aria-hidden=true on overlay);
+ *   prefers-reduced-motion hard-kills the pulse animation.
+ *
+ * GDD keys (consumed from model.nearMissTease):
+ *   enabled, teaseMs, kind, accentColor, scatterSymbol, threshold, zIndex
+ *
  * @module nearMissTease
  */
 

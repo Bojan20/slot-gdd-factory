@@ -8,6 +8,27 @@
  *   winning combination so the player's eye is drawn cleanly to the win.
  *   This block owns that selective dimming.
  *
+ * Public API:
+ *   defaultConfig() / resolveConfig(model)
+ *   emitPaylineDimmerCSS(cfg), emitPaylineDimmerMarkup(cfg),
+ *   emitPaylineDimmerRuntime(cfg)
+ *
+ * Lifecycle (HookBus):
+ *   subscribes: onWinPresentationStart (dim non-win cells),
+ *               onWinPresentationEnd (undim), preSpin (force undim)
+ *   emits (owned): onPaylineDimStart / onPaylineDimEnd
+ *
+ * Performance budget:
+ *   ≤ 1 class toggle on the grid host; CSS does per-cell dim via
+ *   inheritance — no per-cell DOM walk; deterministic.
+ *
+ * a11y:
+ *   purely visual; no aria-hidden flip; prefers-reduced-motion
+ *   collapses dim transition to instant snap.
+ *
+ * GDD keys (consumed from model.paylineDimmer):
+ *   enabled, dimMs, opacityFloor, zIndex
+ *
  * @module paylineDimmer
  */
 

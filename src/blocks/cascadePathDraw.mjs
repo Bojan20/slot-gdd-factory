@@ -9,6 +9,25 @@
  *   cluster pays (e.g. 12-cell cluster across a 7×7 grid). This block
  *   owns the SVG path overlay.
  *
+ * Public API:
+ *   defaultConfig() / resolveConfig(model)
+ *   emitCascadePathDrawCSS(cfg), emitCascadePathDrawMarkup(cfg),
+ *   emitCascadePathDrawRuntime(cfg)
+ *
+ * Lifecycle (HookBus):
+ *   subscribes: onTumbleStep, preSpin
+ *   emits (owned): onCascadePathDrawn { eventIdx, cellCount }
+ *
+ * Performance budget:
+ *   ≤ 1 SVG re-render per tumble step; ≤ 1 listener; deterministic.
+ *
+ * a11y:
+ *   SVG marked aria-hidden=true — decorative; prefers-reduced-motion
+ *   collapses draw animation.
+ *
+ * GDD keys (consumed from model.cascadePathDraw):
+ *   enabled, drawMs, strokePx, color, glow, minCells, zIndex
+ *
  * @module cascadePathDraw
  */
 

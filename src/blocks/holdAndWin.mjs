@@ -44,6 +44,31 @@
  *   • showIntro: boolean — emit the intro overlay sequence (default true)
  *   • showSummary: boolean — emit the summary overlay (default true)
  *
+ * Public API:
+ *   defaultConfig() / resolveConfig(model)
+ *   emitHoldAndWinCSS(cfg), emitHoldAndWinMarkup(cfg),
+ *   emitHoldAndWinRuntime(cfg)
+ *
+ * Lifecycle (HookBus):
+ *   subscribes: postSpin (detect trigger / respin tick),
+ *               preSpin (clear stale .is-locked-bonus on round end),
+ *               onFsEnd (force-end if still running)
+ *   emits (owned): onHoldAndWinIntro, onHoldAndWinStart, onHoldAndWinOrb,
+ *                  onHoldAndWinJackpot, onHoldAndWinFullGrid,
+ *                  onHoldAndWinEnd
+ *
+ * Performance budget:
+ *   1 phase machine; MutationObserver with re-entrance flag for orb
+ *   protection; ≤ 1 listener per event (wired-once); 1 rAF per
+ *   intro/summary placard transition.
+ *
+ * a11y:
+ *   intro/summary placards role="dialog" + aria-modal + aria-labelledby;
+ *   HUD counters aria-live="polite" + aria-atomic; jackpot tiers
+ *   announce via aria-live="assertive" (climax interrupt is the
+ *   headline of the round); prefers-reduced-motion collapses pulse +
+ *   shake + fly animations.
+ *
  * Wave Legacy · industry baseline (vendor-neutral). Original block predates the
  * formal Wave Hxx naming + JSDoc kontrakt header pattern (auto-tagged by
  * tools/cortex-block-mega-fix.mjs).

@@ -17,6 +17,30 @@
  *   • direction: 'left' | 'right' | 'down'
  *   • triggerRespin: boolean (true = walk grants extra respin)
  *   • haloColor: 'r,g,b' (each channel clamped 0–255)
+ *
+ * Purpose: directional walking-wild presenter — moves a wild symbol one
+ *   position per spin in the configured direction and triggers a respin
+ *   until the wild walks off the grid.
+ *
+ * Public API:
+ *   defaultConfig() / resolveConfig(model)
+ *   emitWalkingWildCSS(cfg), emitWalkingWildMarkup(cfg),
+ *   emitWalkingWildRuntime(cfg)
+ *
+ * Lifecycle (HookBus):
+ *   subscribes: preSpin (snapshot wild positions), onSpinResult (place
+ *               walked wild + trigger respin if configured), onFsEnd (clear)
+ *   emits (owned): onWalkingWildPlaced, onWalkingWildRespin,
+ *                  onWalkingWildOffGrid
+ *
+ * Performance budget:
+ *   ≤ 1 listener per event (wired-once sentinel); 1 DOM write per walk
+ *   step; deterministic with seedable RNG.
+ *
+ * a11y:
+ *   walked-cell carries aria-label="Walking wild" so SR users hear the
+ *   placement; prefers-reduced-motion kills the slide animation
+ *   (instant snap to next column).
  */
 
 const WW_SHIFT_PX        = 8;

@@ -8,6 +8,30 @@
  *   right-to-left) flash along the winning cells to direct the player's
  *   eye to the source of the credit. This block owns the flash overlay.
  *
+ * Public API:
+ *   defaultConfig() / resolveConfig(model)
+ *   emitWinLineFlashCSS(cfg), emitWinLineFlashMarkup(cfg),
+ *   emitWinLineFlashRuntime(cfg)
+ *
+ * Lifecycle (HookBus):
+ *   subscribes: onWinPresentationStart (paint flash for each win line),
+ *               onWinPresentationEnd (clear), preSpin (force clear)
+ *   emits (owned): onWinLineFlashStart, onWinLineFlashEnd,
+ *                  onWinLineFlashCleared
+ *
+ * Performance budget:
+ *   1 overlay per line; ≤ 1 listener (wired-once); deterministic given
+ *   identical line events; CSS-only animation, no rAF.
+ *
+ * a11y:
+ *   flash overlay aria-hidden=true — purely visual; underlying cell
+ *   semantics retained for SR; prefers-reduced-motion drops flash to
+ *   a static highlight.
+ *
+ * GDD keys (consumed from model.winLineFlash):
+ *   enabled, flashMs, direction ('ltr'|'rtl'|'both'), color,
+ *   minCells, zIndex
+ *
  * @module winLineFlash
  */
 
