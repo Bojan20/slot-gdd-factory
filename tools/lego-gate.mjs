@@ -513,6 +513,9 @@ const EXPECTED_EMIT_OWNERS = {
   onWalkingWildStep:                 ['walkingWildStepper.mjs'],
   onWalkingWildSpawned:              ['walkingWildStepper.mjs'],
   onWalkingWildExited:               ['walkingWildStepper.mjs'],
+  /* Wave LEGO-WAYS (2026-06-18) — dynamic variable rows per reel ways. */
+  onWaysReshaped:                    ['dynamicWaysEngine.mjs'],
+  onWaysResetForRound:               ['dynamicWaysEngine.mjs'],
   /* 2026-06-09 — scatterCelebration owns its own lifecycle phase events.
    * spinControl listens to morph the SPIN CTA into a SKIP button during
    * the celebration window. */

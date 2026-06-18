@@ -301,6 +301,11 @@ import {
   emitWalkingWildStepperCSS, emitWalkingWildStepperMarkup, emitWalkingWildStepperRuntime,
   resolveConfig as resolveWalkingWildStepperConfig,
 } from './blocks/walkingWildStepper.mjs';
+/* Wave LEGO-WAYS (06-18) — Variable rows per reel dynamic ways engine. */
+import {
+  emitDynamicWaysEngineCSS, emitDynamicWaysEngineMarkup, emitDynamicWaysEngineRuntime,
+  resolveConfig as resolveDynamicWaysEngineConfig,
+} from './blocks/dynamicWaysEngine.mjs';
 import {
   emitProgressiveFreeSpinsCSS, emitProgressiveFreeSpinsMarkup, emitProgressiveFreeSpinsRuntime,
   resolveConfig as resolveProgressiveFreeSpinsConfig,
@@ -1090,6 +1095,7 @@ ${emitExpandingWildMultiplierCSS(resolveExpandingWildMultiplierConfig(model))}
 ${emitMegaWildClusterCSS(resolveMegaWildClusterConfig(model))}
 ${emitRandomLightningMultiplierCSS(resolveRandomLightningMultiplierConfig(model))}
 ${emitWalkingWildStepperCSS(resolveWalkingWildStepperConfig(model))}
+${emitDynamicWaysEngineCSS(resolveDynamicWaysEngineConfig(model))}
 ${emitLightningCSS(resolveLightningConfig(model))}
 ${emitGambleCSS(resolveGambleConfig(model))}
 ${emitSuperSymbolCSS(resolveSuperSymbolConfig(model))}
@@ -1232,6 +1238,7 @@ ${emitExpandingWildMultiplierMarkup(resolveExpandingWildMultiplierConfig(model))
 ${emitMegaWildClusterMarkup(resolveMegaWildClusterConfig(model))}
 ${emitRandomLightningMultiplierMarkup(resolveRandomLightningMultiplierConfig(model))}
 ${emitWalkingWildStepperMarkup(resolveWalkingWildStepperConfig(model))}
+${emitDynamicWaysEngineMarkup(resolveDynamicWaysEngineConfig(model))}
 ${emitGambleMarkup(resolveGambleConfig(model))}
 ${/* Wave U6 — secondary gamble overlay (full-screen modal). */ ''}
 ${emitGambleSecondaryMarkup(resolveGambleSecondaryConfig(model))}
@@ -1451,6 +1458,8 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitRandomLightningMultiplierRuntime(resolveRandomLightningMultiplierConfig(model))}
   /* Wave LEGO-WW — walking wild stepper with progressive ×N (vendor-neutral). */
   ${emitWalkingWildStepperRuntime(resolveWalkingWildStepperConfig(model))}
+  /* Wave LEGO-WAYS — variable rows per reel dynamic ways engine (vendor-neutral). */
+  ${emitDynamicWaysEngineRuntime(resolveDynamicWaysEngineConfig(model))}
   ${emitProgressiveFreeSpinsRuntime(resolveProgressiveFreeSpinsConfig(model))}
   ${/* audio runtime skipped — ADB tok, ne GDD */ ''}
   ${emitUiToastRuntime(resolveUiToastConfig(model))}

@@ -61,7 +61,7 @@
 > |:-:|:--|:--|:--|:-:|
 > | 1 | **LEGO-L** Lightning | `randomLightningMultiplier` | WoO `§5.2`, Crystal Forge `§5.2` | ✅ LANDED |
 > | 2 | **LEGO-WW** Walking Wild | `walkingWildStepper` | industry baseline | ✅ LANDED |
-> | 3 | **LEGO-WAYS** Megaways | `dynamicWaysEngine` | future | 📋 queued |
+> | 3 | **LEGO-WAYS** Variable Ways | `dynamicWaysEngine` | future | ✅ LANDED |
 > | 4 | **LEGO-INF** Infinity | `infinityReelsEngine` | future | 📋 queued |
 > | 5 | **LEGO-SS** Super Symbol | `symbolSplitReveal`, `superSymbolUpgrade` | industry baseline | 📋 queued |
 > | 6 | **LEGO-JR** Jackpot Room | `jackpotRoomReveal`, `jackpotPicker` | HnP-style room mechanics | 📋 queued |
