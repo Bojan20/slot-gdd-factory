@@ -109,6 +109,11 @@ export function defaultConfig() {
        * BEFORE the H&W intro placard mounts. Mirrors the scatter
        * celebration cadence used in the FS trigger flow (~1500ms). */
       bonusCelebrateMs: 1500,
+      /* 2026-06-18 (Boki: "tek onda da se udje u h&w") — explicit pause
+       * between celebration end and intro placard fade-in so the player
+       * gets a clear visual cut. Default 240ms — long enough to read,
+       * short enough to feel snappy. */
+      celebrateTailMs: 240,
     },
     /* Orb distribution — null = built-in Zeus' Storm table. GDD may
      * override with array of { label, weight, tier, valueX }. */
@@ -766,6 +771,7 @@ const HW_T_JACKPOT_SHORT_MS  = ${cfg.timings.jackpotShortMs};
 const HW_T_JACKPOT_GRAND_MS  = ${cfg.timings.jackpotGrandMs};
 const HW_T_FULLGRID_MS       = ${cfg.timings.fullGridMs};
 const HW_T_BONUS_CELEBRATE_MS = ${cfg.timings.bonusCelebrateMs};
+const HW_T_CELEBRATE_TAIL_MS = ${cfg.timings.celebrateTailMs || 240};
 const HW_FORCE_SEED_DEFAULT  = Math.max(3, Math.ceil(HW_TRIGGER_COUNT / 2));
 
 /* Orb value table (weighted) — Zeus' Storm distribution, GDD-overridable. */
@@ -1275,8 +1281,34 @@ async function _hwBeginRound() {
    * absence of the map = fall through to the standard randomSym() path.
    * We deliberately do NOT seed it here. */
 
-  /* PHASE 1 — discover only; do NOT mutate DOM. */
-  hwHarvestBonus({ mapOnly: true });
+  /* 2026-06-18 — clear stale force flags so the next base spin after
+   * round-end doesn't accidentally re-fire FORCE_TRIGGER and queue
+   * another H&W (Boki bug C: "zavrsi se jedan h&W i onda krene
+   * slkedeci"). Idempotent — null setters are safe. */
+  try { if (typeof window !== 'undefined') { window.FORCE_TRIGGER = null; window.__FORCE_FEATURE_PENDING__ = null; } } catch (_) {}
+
+  /* PHASE 1 — discover only; do NOT mutate DOM.
+   *
+   * 2026-06-18 — if entryCellRefs already populated (natural-entry path
+   * stashed them before celebration), use them to seed lockedCells map
+   * with the EXACT DOM nodes the player saw at trigger time. The bonus
+   * positions become drift-proof: no (r,row) lookup, no engine-tick
+   * race between celebrate-end and intro-mount can move them. */
+  if (HW_STATE.entryCellRefs && HW_STATE.entryCellRefs.size > 0) {
+    HW_STATE.entryCellRefs.forEach(function (orb, cell) {
+      /* Synthetic key — anchored to the cell ref via a private WeakMap
+       * would be ideal, but lockedCells must round-trip JSON for the
+       * summary plaque + jackpot accounting. Use 'ref,N' where N is the
+       * insertion index. The DOM ref is kept on HW_STATE.entryCellRefs
+       * Map so PHASE 2 below resolves it directly. */
+      const key = 'ref,' + HW_STATE.lockedCells.size;
+      HW_STATE.lockedCells.set(key, orb);
+      HW_STATE.totalWinX += orb.valueX;
+      if (orb.tier) HW_STATE.jackpotsHit.push(orb.tier);
+    });
+  } else {
+    hwHarvestBonus({ mapOnly: true });
+  }
   HW_STATE.triggerOrbCount = HW_STATE.lockedCells.size;
   _hwInstallObserver();
 
@@ -1286,8 +1318,23 @@ async function _hwBeginRound() {
   _hwHudUpdate();
 
   /* PHASE 2 — apply orb chips NOW. Each cell gets pop-in + delta + fly.
-   * W48 v6: lookup via _hwResolveCell (semantic reel,row) — matches the
-   * key shape that hwHarvestBonus({mapOnly:true}) wrote. */
+   *
+   * 2026-06-18 drift-proof path: if entryCellRefs was stashed, walk it
+   * directly. Otherwise fall through to the legacy (r,row) lookup. */
+  if (HW_STATE.entryCellRefs && HW_STATE.entryCellRefs.size > 0) {
+    HW_STATE.entryCellRefs.forEach(function (orb, cell) {
+      if (!cell) return;
+      _hwApplyOrbToCell(cell, orb);
+      _hwSpawnDelta(cell, orb.valueX);
+      _hwSpawnFly(cell, orb.valueX);
+    });
+    /* Sanity sweep + DOM reconcile keep HUD counter correct. */
+    _hwEnsureAllOrbsLocked();
+    HW_STATE.triggerOrbCount = HW_STATE.lockedCells.size;
+    _hwHudUpdate({ pulseLocked: true, pulseTotal: true });
+    return;
+  }
+
   HW_STATE.lockedCells.forEach(function (orb, key) {
     const parts = key.split(',');
     let cell = null;
@@ -1509,18 +1556,60 @@ function hwMaybeEnter() {
    * making the player see the placard with no preceding pulse. */
   if (HW_STATE.entering) return false;
   if (hwCountBonusOnGrid() >= HW_TRIGGER_COUNT) {
-    /* W48 bugfix v3 — celebrate the bonus pile FIRST, then mount intro.
-     * Boki rule (2026-06-16): "mora prvo da se zavrsi spin, da se prikaze
-     * animacija dobitka pa tek onda da se udje u hold and win". The
-     * bonus-cell pulse is the "animacija dobitka" for this trigger type. */
+    /* 2026-06-18 (Boki: "zelim da se animacija simbola prvo uradi, pa onda
+     * da se udje u hold end win"). Strict serial sequence:
+     *   1. Cancel any UFP H&W fallback timer that could re-fire after the
+     *      natural path completes (Boki bug C: "zavrsi se jedan h&W i
+     *      onda krene slkedeci").
+     *   2. Stash bonus cell DOM REFs via _hwStashEntryCells — the PHASE 2
+     *      apply path consumes them directly, so engine ticks between
+     *      PHASE 1 and PHASE 2 can no longer drift bonus positions
+     *      (Boki bug B: "menjaju se simboli ... p[omere se mesta").
+     *   3. Run celebration (1500ms visible pulse + N BONUS COLLECTED badge).
+     *   4. Wait HW_T_CELEBRATE_TAIL_MS so the player gets a clean cut
+     *      between the celebration peak and the intro placard fade-in
+     *      (Boki bug A: "tek onda da se udje").
+     *   5. _hwBeginRound() mounts INTRO → RUNNING. */
     HW_STATE.entering = true;
+    _hwCancelForceFallbackTimer();
+    _hwStashEntryCells();
     playHwBonusCelebration().then(function () {
-      HW_STATE.entering = false;
-      _hwBeginRound();
+      setTimeout(function () {
+        HW_STATE.entering = false;
+        _hwBeginRound();
+      }, HW_T_CELEBRATE_TAIL_MS);
     });
     return true;
   }
   return false;
+}
+
+/* Helpers wired to HW_STATE — kept close to the entry path so the bug
+ * coverage stays obvious from a single read. */
+function _hwCancelForceFallbackTimer() {
+  if (HW_STATE._forceFallbackTimerId) {
+    try { clearTimeout(HW_STATE._forceFallbackTimerId); } catch (_) {}
+    HW_STATE._forceFallbackTimerId = null;
+  }
+}
+
+/* 2026-06-18 — stash DIRECT DOM cell refs (not (r,row) coords) for every
+ * cell currently carrying the bonus glyph. PHASE 2 apply walks this map
+ * so the orb chip lands on the EXACT DOM node the player saw at trigger
+ * time, regardless of what reel.cells[] index it now holds. Eliminates
+ * the drift Boki reported ("pomere se mesta simbola u h&w"). */
+function _hwStashEntryCells() {
+  HW_STATE.entryCellRefs = new Map();
+  if (typeof document === 'undefined') return;
+  const host = document.getElementById('gridHost') || document.querySelector('.gridHost');
+  if (!host) return;
+  const TARGET = String(HW_BONUS_SYMBOL || 'B').toUpperCase();
+  const cells = host.querySelectorAll('.cell');
+  for (const cell of cells) {
+    const txt = (cell.textContent || '').trim().toUpperCase();
+    if (txt !== TARGET) continue;
+    HW_STATE.entryCellRefs.set(cell, _hwRollOrb());
+  }
 }
 
 function hwForceSeed(orbCount) {
@@ -1557,6 +1646,7 @@ function hwForceSeed(orbCount) {
   /* W48 bugfix v4 — celebrate BEFORE entering INTRO. Stamp the bonus
    * glyph on each picked cell so the celebration has visible targets. */
   HW_STATE.entering = true;
+  _hwCancelForceFallbackTimer();
   pickedKeys.forEach(function (key) {
     const parts = key.split(',');
     let cell = null;
@@ -1570,9 +1660,15 @@ function hwForceSeed(orbCount) {
       cell.textContent = HW_BONUS_SYMBOL;
     }
   });
+  /* 2026-06-18 — same as the natural-entry path: stash DIRECT DOM refs
+   * after the bonus glyphs are stamped, so PHASE 2 mount applies orbs to
+   * the exact same cells the celebration painted. */
+  _hwStashEntryCells();
   playHwBonusCelebration().then(function () {
-    HW_STATE.entering = false;
-    _hwForceSeedMount(pickedKeys);
+    setTimeout(function () {
+      HW_STATE.entering = false;
+      _hwForceSeedMount(pickedKeys);
+    }, HW_T_CELEBRATE_TAIL_MS);
   });
   return true;
 }
@@ -1586,6 +1682,8 @@ function _hwForceSeedMount(pickedKeys) {
   HW_STATE.fullGrid = false;
   HW_STATE.lockedCells.clear();
   HW_STATE.jackpotsHit = [];
+  /* 2026-06-18 — clear stale force flags (Boki bug C). */
+  try { if (typeof window !== 'undefined') { window.FORCE_TRIGGER = null; window.__FORCE_FEATURE_PENDING__ = null; } } catch (_) {}
 
   /* PHASE 1 — record positions, DO NOT mutate DOM. */
   pickedKeys.forEach(function (key) {
@@ -1786,16 +1884,24 @@ if (typeof HookBus !== 'undefined' && !(typeof window !== 'undefined' && window.
    * silent. */
   HookBus.on('onForceFeatureRequested', (payload) => {
     if (!payload || payload.kind !== 'hold_and_win') return;
+    /* 2026-06-18 — cancel any in-flight fallback timer first so a
+     * rapid second chip click doesn't queue two fallbacks (Boki bug C:
+     * "zavrsi se jedan h&W i onda krene slkedeci"). */
+    _hwCancelForceFallbackTimer();
     /* Fallback timer — wait long enough that the just-fired base spin
      * has a chance to land its bonus pile through FORCE_TRIGGER. If the
      * pile lands, hwMaybeEnter() activated the round in postSpin and
      * HW_STATE.active is already true. If the pool refused the bonus
      * symbol (no B in the natural strip) OR if FS interrupted, we no-op:
      * forcing both orbs AND FS into the same round corrupts both
-     * lifecycles. */
-    setTimeout(function () {
+     * lifecycles. The timer ID is stashed on HW_STATE so the natural-
+     * entry path can cancel it the moment celebration starts (no double
+     * H&W after the round ends). */
+    HW_STATE._forceFallbackTimerId = setTimeout(function () {
+      HW_STATE._forceFallbackTimerId = null;
       try {
         if (HW_STATE.active) return;
+        if (HW_STATE.entering) return;   /* natural path already kicked off */
         var fsActive = (typeof FSM !== 'undefined' && FSM && FSM.phase && FSM.phase !== 'BASE');
         if (fsActive) return;
         hwForceSeed(HW_FORCE_SEED_DEFAULT);
