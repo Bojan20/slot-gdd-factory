@@ -3,7 +3,57 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 15:30 · **HEAD**: pending push · main
+> **Last updated**: 2026-06-18 17:55 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## 🏆 FORCE PARITY ULTIMATIVNO (2026-06-18 part 7)
+>
+> Boki: *"samo ono sto je u GDDu, mora da bude kao force i kao blok u
+> slotu koji se gradi. ways ne znam sta je i ne treba kao force. svaki
+> fors mora da radi i mora da se ima glavno za svaki gdd. kada forsujem
+> mora da pokaze da radi, ne samo da se prikaze front end i nista."*
+>
+> Akcija:
+>
+> | # | Šta | Detalj |
+> |:-:|:--|:--|
+> | 1 | `cascade` u blacklistu | NON_FORCEABLE_MECHANIC_KINDS (always-on tumble, ne single-spin force) |
+> | 2 | Per-GDD chip rail SAMO parsed kinds | UFP `selectKinds` filter |
+> | 3 | `multiplier_orb` 3-prong force | MULT_ORB_STATE + BONUS_MULTIPLIER bump + onForceMultiplier emit + visual chip |
+> | 4 | Probe `tools/_force-real-outcome-audit.mjs` | 4 GDD × svaki chip × {emit, flag, real outcome, 0 ce} |
+> | 5 | LEGO + UFP unit test za `cascade` | 39/39 ✅ |
+> | 6 | `npm test:force-outcomes` chain | dodato u `test:all` posle event-recorder |
+>
+> ### Chip rail per GDD (po Bokijevom kontraktu)
+>
+> | GDD | Chips (UFP) | Skinuti (mehanike) |
+> |:--|:--|:--|
+> | Gates of Olympus 1000 | FS · ×MULT · ◯× · BIG-WIN | cascade · scatter_pay (· bonus_buy + ante_bet — svoji chip-ovi) |
+> | Huff N' More Puff | FS · H&W · ×MULT · WHEEL · JACKPOT · GAMBLE · BIG-WIN | ways (· bonus_buy svoj) |
+> | Starlight Travellers | FS · ×MULT · JACKPOT · BIG-WIN | cascade · cluster_pays (· bonus_buy + ante_bet svoji) |
+> | Wrath of Olympus | FS · H&W · ×MULT · JACKPOT · BIG-WIN | cascade |
+>
+> ### Probe rezultati
+>
+> | Metrika | Vrednost |
+> |:--|:-:|
+> | Chip-outcomes ukupno | **20** |
+> | PASS (emit + flag + real outcome + 0 console error) | **20/20** ✅ |
+> | FAIL | 0 |
+> | Console errors svih 4 GDD-a × svih 20 click-ova | **0** |
+> | Settle vreme po chip-u | 8.5s (spin + cascade + BW banner + FS intro window) |
+>
+> ### Gate verifikacija
+>
+> | Gate | Status |
+> |:--|:-:|
+> | `test:lego` (7 invariants) | ✅ 7/7 |
+> | `tests/blocks/universalForcePanel.test.mjs` | ✅ 39/39 |
+> | `test:parity` (cross-game DOM) | ✅ 0/18 violations |
+> | `test:parse:real-pdfs:live` (4 PDF + Chromium) | ✅ 4/4 |
+> | `test:cert:real` (12/12 cert + 0 parity) | ✅ 12/12 |
+> | `test:force-outcomes` (novi) | ✅ 20/20 |
 >
 > ---
 >

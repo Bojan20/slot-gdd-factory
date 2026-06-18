@@ -106,6 +106,26 @@ t('selectKinds: features with free_spins + multiplier + cluster → 2 forcible +
   ok(k.includes('big_win'));
 });
 
+t('selectKinds: cascade is an always-on engine mechanic → no force chip', () => {
+  /* 2026-06-18 — Boki rule: "samo ono sto je u GDDu, mora da bude kao
+   * force i kao blok u slotu". Cascade is the always-on tumble engine
+   * mechanic — every winning spin tumbles automatically; there is no
+   * single-spin "force cascade" outcome distinct from a normal win.
+   * Joined NON_FORCEABLE_MECHANIC_KINDS alongside the evaluator kinds. */
+  const c = defaultConfig();
+  const k = selectKinds(c, {
+    features: [
+      { kind: 'free_spins', label: 'FS' },
+      { kind: 'cascade',    label: 'Tumble' },
+      { kind: 'multiplier', label: 'Mult' },
+    ],
+  });
+  ok(k.includes('free_spins'));
+  ok(k.includes('multiplier'));
+  ok(!k.includes('cascade'), 'cascade is always-on engine mechanic — no force chip');
+  ok(k.includes('big_win'));
+});
+
 t('selectKinds: stable canonical order (free_spins always before multiplier)', () => {
   const c = defaultConfig();
   const k = selectKinds(c, {

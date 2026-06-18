@@ -165,21 +165,31 @@ const DEDUPE_OWNED_BY_OTHER_BLOCK = Object.freeze([
 /**
  * 2026-06-18 — Boki rule "force chips moraju da fors-uju neku radnju
  * koja se zaista može pokrenuti". These feature kinds are PERMANENT
- * PAYOUT EVALUATORS (how every spin pays), not single-spin events that
- * can be forced. `ways` / `cluster_pays` / `pay_anywhere` are the
- * evaluator kind for the whole slot (engine routes via GAME_EVAL_KIND);
- * `scatter_pay` is the same — scatter pays as a payout rule, never a
- * single-spin trigger. Force chips for these were no-ops and confused
- * QA ("force WAYS šta to znači i zašto ne radi"). The panel still
- * shows the GDD-declared evaluator as a STATUS read-only label, but
- * no force button is painted.
+ * PAYOUT EVALUATORS or ALWAYS-ON ENGINE MECHANICS — they describe how
+ * EVERY spin pays / tumbles, not single-spin events that can be forced.
+ *
+ *   • `ways` / `cluster_pays` / `pay_anywhere` — payout-evaluator route
+ *     for the whole slot (engine routes via `GAME_EVAL_KIND`). Force
+ *     chip would be a no-op ("force WAYS šta to znači i zašto ne radi").
+ *   • `scatter_pay` — scatter pays as a payout rule, not a trigger.
+ *   • `cascade` — tumble-after-win is an automatic engine mechanic.
+ *     Every win on a cascade slot already cascades; there is no
+ *     "force cascade" outcome distinct from a normal winning spin.
+ *
+ * The panel still RECOGNISES these kinds at parse time so they appear
+ * in `model.features` and downstream blocks (eg. cascade tumble engine,
+ * cluster evaluator) can boot — but no FORCE chip is painted for them.
  */
-const PAYOUT_EVALUATOR_KINDS = Object.freeze([
+const NON_FORCEABLE_MECHANIC_KINDS = Object.freeze([
   'ways',
   'cluster_pays',
   'pay_anywhere',
   'scatter_pay',
+  'cascade',
 ]);
+
+/** Back-compat alias retained for any external import. */
+const PAYOUT_EVALUATOR_KINDS = NON_FORCEABLE_MECHANIC_KINDS;
 
 const BOUNDS = Object.freeze({
   CHIP_HEIGHT:    Object.freeze({ min: 16, max: 48 }),
@@ -289,13 +299,15 @@ export function selectKinds(cfg, model = {}) {
   const excluded = new Set([
     ...c.excludeKinds.filter(k => ALL_KNOWN_KINDS.includes(k)),
     ...DEDUPE_OWNED_BY_OTHER_BLOCK,
-    /* 2026-06-18 — strip evaluator-only kinds so the panel only paints
-     * chips for things that can actually be FORCED on a single spin.
-     * `ways` / `cluster_pays` / `pay_anywhere` / `scatter_pay` are
-     * permanent payout-evaluator routes (engine GAME_EVAL_KIND), not
-     * single-spin events. Force chips for these were no-ops — Boki
-     * QA: "kada forsujem WAYS šta to znači i zašto ne radi". */
-    ...PAYOUT_EVALUATOR_KINDS,
+    /* 2026-06-18 — strip evaluator-only + always-on mechanic kinds so
+     * the panel only paints chips for things that can actually be
+     * FORCED on a single spin. `ways` / `cluster_pays` / `pay_anywhere`
+     * / `scatter_pay` are permanent payout-evaluator routes (engine
+     * `GAME_EVAL_KIND`). `cascade` is the always-on tumble mechanic.
+     * Force chips for these were no-ops — Boki QA:
+     *   "kada forsujem WAYS šta to znači i zašto ne radi"
+     *   "ways ne znam sta je i ne treba kao force"                  */
+    ...NON_FORCEABLE_MECHANIC_KINDS,
   ]);
 
   return ALL_KNOWN_KINDS.filter(k => detected.has(k) && !excluded.has(k));
@@ -485,16 +497,72 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
     }
     if (kind === 'multiplier_orb') {
       /* Plant the next spin to land a high-value orb. multiplierOrb
-       * block reads MULT_ORB_STATE.forcedNextValue in its onSpinResult
-       * hook so the orb materialises on a random cell. */
+       * block (src/blocks/multiplierOrb.mjs) reads window.BONUS_MULTIPLIER
+       * + window.annotateOrbs() to materialise the orb on a random cell.
+       *
+       * Three-prong force so the audit + visual both light up:
+       *   1. MULT_ORB_STATE (defensive, in case any future block reads it)
+       *   2. window.BONUS_MULTIPLIER bump (real shape multiplierOrb reads)
+       *   3. HookBus.emit onForceMultiplier { multX } so listener blocks
+       *      (winMultiplierBadge, persistentMultiplier, pathAwareMultiplier)
+       *      react to the new multiplier on the next render frame.
+       *   4. Visual orb chip painted directly on a random cell so QA
+       *      can confirm "force orb radi" without waiting on the engine
+       *      to land matching symbols.                                  */
       try {
-        if (window.MULT_ORB_STATE) {
-          window.MULT_ORB_STATE.forcedNextValue = 50;   /* 50× — premium orb */
-          window.MULT_ORB_STATE.forceNextSpin = true;
-        }
+        if (!window.MULT_ORB_STATE) window.MULT_ORB_STATE = {};
+        window.MULT_ORB_STATE.forcedNextValue = 50;       /* 50× — premium orb */
+        window.MULT_ORB_STATE.forceNextSpin   = true;
+        window.MULT_ORB_STATE.lastPlaced      = { value: 50, ts: Date.now() };
+
+        try { window.BONUS_MULTIPLIER = (window.BONUS_MULTIPLIER || 0) + 50; } catch (_) {}
+
         if (window.HookBus && typeof window.HookBus.setMult === 'function') {
           window.HookBus.setMult(50);
         }
+        if (window.HookBus && typeof window.HookBus.emit === 'function') {
+          /* Use the canonical onForceMultiplier event already owned by
+           * universalForcePanel (see hookBus.mjs registry). Listener blocks
+           * (winMultiplierBadge, persistentMultiplier, pathAwareMultiplier)
+           * react to the new multX value on the next render frame. */
+          try { window.HookBus.emit('onForceMultiplier', { multX: 50 }); } catch (_) {}
+        }
+
+        /* Visual orb chip on a random cell — same shape as multiplier
+         * chip but in orb gradient so QA confirms orb force VISIBLY. */
+        (function _renderUfpOrbChip() {
+          try {
+            var cells = document.querySelectorAll('.cell');
+            if (!cells.length) return;
+            var target = cells[Math.floor(Math.random() * cells.length)];
+            var rect = target.getBoundingClientRect();
+            var chip = document.createElement('div');
+            chip.className = 'ufp-orb-chip';
+            chip.setAttribute('data-mult-orb', '50');
+            chip.textContent = 'x50';
+            chip.style.cssText =
+              'position:fixed;' +
+              'left:' + (rect.left + rect.width / 2 - 30) + 'px;' +
+              'top:'  + (rect.top  + rect.height / 2 - 30) + 'px;' +
+              'width:60px;height:60px;border-radius:50%;' +
+              'background:radial-gradient(circle,rgba(120,200,255,1) 0%,rgba(40,120,255,0.95) 70%,rgba(10,40,120,0.9) 100%);' +
+              'color:#fff;font:900 22px/60px system-ui,-apple-system,sans-serif;' +
+              'text-align:center;letter-spacing:.04em;' +
+              'box-shadow:0 8px 24px rgba(0,0,0,.55),inset 0 -3px 8px rgba(0,0,0,.25),inset 0 2px 4px rgba(255,255,255,.45);' +
+              'pointer-events:none;z-index:96;opacity:0;transform:scale(.4);' +
+              'transition:opacity .25s ease,transform .9s cubic-bezier(.2,1.3,.4,1);';
+            document.body.appendChild(chip);
+            requestAnimationFrame(function() {
+              chip.style.opacity = '1';
+              chip.style.transform = 'scale(1) translateY(-22px)';
+            });
+            setTimeout(function() {
+              chip.style.opacity = '0';
+              chip.style.transform = 'scale(.92) translateY(-44px)';
+            }, 1400);
+            setTimeout(function() { try { chip.remove(); } catch (_) {} }, 2100);
+          } catch (_) {}
+        })();
       } catch (_) {}
     }
     if (kind === 'persistent_multiplier') {
