@@ -3,7 +3,64 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 19:55 · **HEAD**: `a63975c` · main
+> **Last updated**: 2026-06-18 21:30 · **HEAD**: `a056440` · main
+>
+> ---
+>
+> ## 🏁 LEGO LIBRARY GRAND CLOSE-OUT (2026-06-18)
+>
+> Boki: *"sve redom, jednopo jedno, ultimativno i azuriraj master todo
+> obavezno i sa agentima posle implementacije svake obavezno qa detaljan"*
+>
+> Sve 6 planiranih wave-a iz LEGO LIBRARY ROADMAP-a landed today,
+> sekvencijalno, sa multi-agent QA posle svake.
+>
+> ### 8 novih blokova (8 commits, sve danas)
+>
+> | # | Wave | HEAD | Blok | LOC | Tests | QA |
+> |:-:|:--|:--|:--|--:|:-:|:-:|
+> | 1 | **LEGO-L** | `b5b9804` | `randomLightningMultiplier.mjs` | 410 | 17 | ✅ READY |
+> | 2 | **LEGO-WW** | `c5ff11b` | `walkingWildStepper.mjs` | 497 | 27 | ✅ PASS |
+> | 3 | **LEGO-WAYS** | `a1531ad` | `dynamicWaysEngine.mjs` | 495 | 31 | ✅ SHIP |
+> | 4 | **LEGO-INF** | `29fb7b0` | `infinityReelsEngine.mjs` | 472 | 31 | ✅ READY |
+> | 5 | **LEGO-SS** | `fa2f88d` | `symbolSplitReveal.mjs` + `superSymbolUpgrade.mjs` | 453+471 | 23+29 | ✅ READY |
+> | 6 | **LEGO-JR** | `a056440` | `jackpotRoomReveal.mjs` + `jackpotPicker.mjs` | 502+578 | 62+23 | ✅ READY (2 blockers sweptov) |
+>
+> **Total**: 8 new blocks, **4878 LOC source + 1815 LOC test = 6693 LOC**,
+> **243 own tests pass**.
+>
+> ### Block census
+>
+> ```
+> 135 → 143 LEGO blocks
+> categories: audit=2, engine=14, evaluator=5, feature=15, fs=4,
+>             multiplier=16, round-control=8, ui=7, uncategorised=58, wild=14
+> ```
+>
+> ### Cross-wave QA gates (svi green)
+>
+> | Gate | Status |
+> |:--|:-:|
+> | `test:lego` (7 invariants) | 7/7 ✅ |
+> | `test:blocks` aggregate (143 blokova) | EXIT 0 ✅ |
+> | `test:parity` (cross-game DOM, 14 feature kinds × 4 GDD) | 0 violations ✅ |
+> | `test:parse:real-pdfs:live` (4 real PDF GDD) | 4/4 PASS ✅ |
+> | `_lego-combination-probe` (A1-A4 edges) | 0 violations ✅ |
+> | Vendor-neutral grep (12 banned terms × 8 nova bloka) | 0 hit ✅ |
+> | Independent code-review agent (svaka wave) | sve ✅ READY |
+>
+> ### Multi-agent QA workflow (zapamteno za buduće wave-i)
+>
+> Pre-implementation: kreiraj blok preko paralelnih agenata (svaki agent
+> jedan blok + test), template-driven (mirror perFsSpinMultiplier.mjs).
+> Posle implementacije: wire-in u `buildSlotHTML.mjs` + manifest regen +
+> lego-gate event ownership entry + package.json test:blocks path +
+> combination-probe grandfathered (ako orchestrator emit).
+> QA cycle: independent agent code-review (4 dim: senior-grade / vendor /
+> lifecycle / math) + vendor grep + full regression (lego/blocks/parity/
+> combination-probe) + minor sweep + commit + master TODO mark + push.
+>
+> ---
 >
 > ---
 >
