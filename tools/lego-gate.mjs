@@ -478,6 +478,15 @@ const EXPECTED_EMIT_OWNERS = {
    * mult-aware blocks (multiplierOrb, persistentMultiplier, pathAware)
    * can render visual feedback on the grid. */
   onForceMultiplier: ['universalForcePanel.mjs'],
+  /* Wave LEGO-M (2026-06-18) — six new multiplier-variant blocks, each
+   * owns its single canonical event. onMultiplierChanged is owned by
+   * hookBus.mjs itself (emitted from setMult internals). */
+  onPerFsSpinMultiplierRolled:     ['perFsSpinMultiplier.mjs'],
+  onMysteryMultiplierRevealed:     ['mysterySymbolMultiplier.mjs'],
+  onWildCollision:                 ['wildCollisionMultiplier.mjs'],
+  onRetriggerMultiplierBumped:     ['retriggerMultiplierBump.mjs'],
+  onClusterSizeMultiplierApplied:  ['clusterSizeMultiplier.mjs'],
+  onMultiplierChanged:             ['hookBus.mjs'],
   /* 2026-06-09 — scatterCelebration owns its own lifecycle phase events.
    * spinControl listens to morph the SPIN CTA into a SKIP button during
    * the celebration window. */

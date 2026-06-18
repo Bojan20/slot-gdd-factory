@@ -3,7 +3,75 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 18:30 · **HEAD**: pending push · main
+> **Last updated**: 2026-06-18 19:55 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## 🏆 LEGO-M: 6 nove multiplier-varijante (2026-06-18)
+>
+> Boki: *"meni trebaju svi moguci lego blokiovi koji postoje na trzistu i
+> da svi budu spremni zavisno od toga sta se trazi u gdd. ali i varijante
+> takodje, na primer za multiplier u base game, multiplier u fs, sve
+> varijante mora da postoje."*
+>
+> Cilj: kompletna multiplier biblioteka — svaka varijanta JE zaseban LEGO
+> blok, samostalan, JSDoc kontrakt, test, HookBus event, LEGO ownership.
+> Boot je no-op ako GDD ne traži; ne mora se brisati nikad.
+>
+> ### 6 novih blokova
+>
+> | # | Blok | Šta radi | Lifecycle | GDD key |
+> |:-:|:--|:--|:--|:--|
+> | 1 | `perFsSpinMultiplier.mjs` | Random ×N per FS spin (re-roll svake faze) | onFsSpinResult / onFsEnd | `perFsSpinMultiplier` |
+> | 2 | `mysterySymbolMultiplier.mjs` | Mystery `?` cell reveal-uje ×N umesto pay symbol | onSpinResult / onTumbleStep / preSpin | `mysterySymbolMultiplier` |
+> | 3 | `wildCollisionMultiplier.mjs` | 2+ wildova u istom payu → ×product | onSpinResult / onTumbleStep / preSpin | `wildCollisionMultiplier` |
+> | 4 | `retriggerMultiplierBump.mjs` | FS retrigger bumpuje round mult (step ili ladder) | onFsTrigger / onFsRetrigger / onFsEnd | `retriggerMultiplierBump` |
+> | 5 | `clusterSizeMultiplier.mjs` | Cluster mult prema tier-veličini (5–7 ×1, 8–10 ×2, …) | onClusterPay / preSpin | `clusterSizeMultiplier` |
+> | 6 | `totalMultiplierChip.mjs` | Global HUD chip — single source of truth za HookBus.lastMult | onMultiplierChanged / preSpin / onFsEnd | `totalMultiplierChip` |
+>
+> ### 6 novih HookBus eventova (svi single-owner, LEGO check #4 ZELENO)
+>
+> | Event | Owner | Trigger |
+> |:--|:--|:--|
+> | `onPerFsSpinMultiplierRolled` | perFsSpinMultiplier.mjs | svaki FS spin draw |
+> | `onMysteryMultiplierRevealed` | mysterySymbolMultiplier.mjs | mystery → ×N reveal |
+> | `onWildCollision` | wildCollisionMultiplier.mjs | 2+ wilds u istom payu |
+> | `onRetriggerMultiplierBumped` | retriggerMultiplierBump.mjs | FS retrigger bump |
+> | `onClusterSizeMultiplierApplied` | clusterSizeMultiplier.mjs | cluster tier mult |
+> | `onMultiplierChanged` | hookBus.mjs (setMult internals) | bus-level mult promena |
+>
+> ### Sistemska promena: `HookBus.setMult` emit-uje `onMultiplierChanged`
+>
+> Pre LEGO-M nijedan blok nije imao stabilan signal za "mult se promenio".
+> Sad setMult emit-uje canonical event svaki put kad vrednost promeni, i
+> postavlja `window.HookBus.lastMult` za stabilan read accessor. To je
+> single source of truth koji totalMultiplierChip prikazuje i koji
+> downstream presentation blokovi konzumiraju.
+>
+> ### Test coverage
+>
+> | Block | Test count | Pass |
+> |:--|:-:|:-:|
+> | perFsSpinMultiplier | 14 | ✅ |
+> | mysterySymbolMultiplier | 9 | ✅ |
+> | wildCollisionMultiplier | 10 | ✅ |
+> | retriggerMultiplierBump | 12 | ✅ |
+> | clusterSizeMultiplier | 10 | ✅ |
+> | totalMultiplierChip | 10 | ✅ |
+> | **TOTAL** | **65** | **65/65 ✅** |
+>
+> ### Regression
+>
+> | Gate | Status |
+> |:--|:-:|
+> | `test:lego` (7 invariants) | ✅ 7/7 |
+> | `holdAndWin.test.mjs` | ✅ 21/0 |
+> | `hookBus.test.mjs` (setMult onMultiplierChanged) | ✅ pass |
+> | `test:force-outcomes` | ✅ 20/20 |
+> | `test:parity` (cross-game DOM) | ✅ 0/18 violations |
+> | `test:parse:real-pdfs` (4 GDD) | ✅ 4/4 |
+>
+> **Block count**: 121 → **127 LEGO blokova** · **174 canonical HookBus events** (svi single-owner).
 >
 > ---
 >

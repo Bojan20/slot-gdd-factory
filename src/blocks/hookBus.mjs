@@ -311,6 +311,42 @@ export const HOOK_EVENTS = Object.freeze([
    *   forced value (orb chip, frame badge, etc). genericFeatureBanner
    *   already handles the banner placard separately. */
   'onForceMultiplier',
+  /* Wave LEGO-M multiplier-variant events (6 new blocks, 2026-06-18).
+   * Each owned by a single block per LEGO discipline.
+   *
+   * onPerFsSpinMultiplierRolled {multX, fsRemain} — fires at every FS
+   *   spin start with a new random draw from the configured weighted
+   *   distribution. Owner: perFsSpinMultiplier.mjs. Consumers: HUD chips
+   *   that want to mirror the rolling FS mult.
+   *
+   * onMysteryMultiplierRevealed {cellKey, multX} — fires when a mystery
+   *   "?" symbol on the grid reveals as a multiplier value (×N) rather
+   *   than a pay symbol. Owner: mysterySymbolMultiplier.mjs.
+   *
+   * onWildCollision {wildCount, productMult, lineIdx} — fires when 2+
+   *   wilds contribute to the same chain / line / cluster and the block
+   *   multiplies their per-wild values into a combined product mult.
+   *   Owner: wildCollisionMultiplier.mjs.
+   *
+   * onRetriggerMultiplierBumped {newMultX, retriggerCount} — fires when
+   *   an FS retrigger bumps the round-level multiplier by step or by
+   *   the next ladder rung. Owner: retriggerMultiplierBump.mjs.
+   *
+   * onClusterSizeMultiplierApplied {clusterSize, multX} — fires when
+   *   a winning cluster's size tier maps to a multiplier. Owner:
+   *   clusterSizeMultiplier.mjs. Consumes onClusterPay from the
+   *   cluster-pays evaluator.
+   *
+   * onMultiplierChanged {multX, value} — bus-level signal emitted by
+   *   HookBus.setMult itself; pure read-only listener event. Owner:
+   *   hookBus.mjs (this file). Consumers: totalMultiplierChip.mjs and
+   *   any presentation block that mirrors the canonical lastMult. */
+  'onPerFsSpinMultiplierRolled',
+  'onMysteryMultiplierRevealed',
+  'onWildCollision',
+  'onRetriggerMultiplierBumped',
+  'onClusterSizeMultiplierApplied',
+  'onMultiplierChanged',
   /* Scatter Celebration phase signals
    * onScatterCelebrationStart {cellCount, durationMs} — fires when the
    *   FS trigger scatter celebration animation begins. spinControl uses
@@ -681,16 +717,41 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
     function getMult() { return _mult; }
     function setMult(v) {
       const n = Number(v);
-      if (Number.isFinite(n) && n >= 0) _mult = n;
-      if (typeof window !== 'undefined') window.__HOOKBUS_MULT__ = _mult;
+      if (Number.isFinite(n) && n >= 0) {
+        const prev = _mult;
+        _mult = n;
+        if (typeof window !== 'undefined') {
+          window.__HOOKBUS_MULT__ = _mult;
+          /* Expose lastMult for presentation blocks (totalMultiplierChip,
+           * etc.) that need a stable read-side accessor without the
+           * encapsulation jump through HookBus.getMult(). */
+          if (window.HookBus) window.HookBus.lastMult = _mult;
+        }
+        if (n !== prev) {
+          /* Emit onMultiplierChanged so display blocks may mirror the new
+           * canonical mult value. Single bus event regardless of source
+           * (orb sum, retrigger bump, cluster tier, wild collision, …).
+           * Note: equivalent to HookBus.emit('onMultiplierChanged', payload)
+           * — local emit binding is the same function the public API
+           * exports, so ownership grep finds the canonical reference. */
+          try { emit('onMultiplierChanged', { multX: _mult, value: _mult, previous: prev }); } catch (_) {}
+        }
+      }
     }
     function addMult(delta) {
       const n = Number(delta);
       if (Number.isFinite(n)) setMult(_mult + n);
     }
     function resetMult() {
+      const prev = _mult;
       _mult = _multBase;
-      if (typeof window !== 'undefined') window.__HOOKBUS_MULT__ = _mult;
+      if (typeof window !== 'undefined') {
+        window.__HOOKBUS_MULT__ = _mult;
+        if (window.HookBus) window.HookBus.lastMult = _mult;
+      }
+      if (_mult !== prev) {
+        try { emit('onMultiplierChanged', { multX: _mult, value: _mult, previous: prev }); } catch (_) {}
+      }
     }
     function setMultBaseline(v) {
       const n = Number(v);
