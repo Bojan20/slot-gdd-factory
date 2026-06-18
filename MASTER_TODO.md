@@ -3,7 +3,68 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 19:55 · **HEAD**: pending push · main
+> **Last updated**: 2026-06-18 19:55 · **HEAD**: `a63975c` · main
+>
+> ---
+>
+> ## 🏆 LEGO-H/FS/W: 8 nove H&W + FS + Wild varijante (2026-06-18 · HEAD `a63975c`)
+>
+> Boki: *"to moze, ali i varijante takodje, na primer za multiplier u base
+> game, multiplier u fs, sve varijante mora da postoje."* +
+> *"nasstavi, ultimativno sa svim agentima na krajui qa proverama maksimalnim"*
+>
+> Block count: **127 → 135** (`gen-block-manifest.mjs` regenerated).
+> Total LOC dodato: **4019** (2893 source + 1126 test).
+>
+> ### 8 novih blokova (svaki samostalan, JSDoc + test + 2 HookBus eventa)
+>
+> | Family | Blok | LOC | Tests | Šta radi | GDD key |
+> |:--|:--|--:|:-:|:--|:--|
+> | H&W | `holdAndWinFrameMultiplier.mjs` | 370 | 13 ✅ | Frame tier ladder per locked cell, bump on re-land | `holdAndWinFrameMultiplier` |
+> | H&W | `holdAndWinLockedOrbMultiplier.mjs` | 335 | 16 ✅ | Numeric ×N tag na locked orb (additive/multiplicative) | `holdAndWinLockedOrbMultiplier` |
+> | H&W | `holdAndWinRoomJackpotMultiplier.mjs` | 350 | 16 ✅ | Room ladder (MINI/MINOR/MAJOR/GRAND) advancement | `holdAndWinRoomJackpotMultiplier` |
+> | FS | `tumbleGrowingFsMultiplier.mjs` | 295 | 16 ✅ | ×N raste per tumble step, reset per FS spin | `tumbleGrowingFsMultiplier` |
+> | FS | `fsExpansionWilds.mjs` | 317 | 15 ✅ | Sticky reel expansion across FS round | `fsExpansionWilds` |
+> | FS | `progressiveFsRetriggerLadder.mjs` | 409 | 16 ✅ | Stepped ladder, retrigger climbs jedan rung | `progressiveFsRetriggerLadder` |
+> | Wild | `expandingWildMultiplier.mjs` | 461 | 17 ✅ | Wild expand + ×N tag (base/fs/both) | `expandingWildMultiplier` |
+> | Wild | `megaWildCluster.mjs` | 356 | 17 ✅ | Oversized N×N wild block (2/3/4) | `megaWildCluster` |
+>
+> ### 16 new canonical HookBus events (single-owner)
+>
+> `onFrameMultiplierBumped/Final`, `onLockedOrbMultiplierRolled/Final`,
+> `onRoomPromoted`/`onRoomJackpotFinal`, `onTumbleMultiplierGrown/Reset`,
+> `onExpansionWildAdded/Cleared`, `onLadderRungPromoted/Reset`,
+> `onExpandingWildMultRolled/Cleared`, `onMegaWildClusterLanded/Cleared`.
+>
+> ### QA gates (sve zelene)
+>
+> | Gate | Rezultat |
+> |:--|:-:|
+> | 126/126 own tests | ✅ |
+> | `test:blocks` aggregate (135 blokova) | EXIT 0 ✅ |
+> | `test:lego` (7 invariants) | 7/7 ✅ |
+> | `test:parity` (cross-game DOM, 14 feature kinds × 4 GDD) | 0 violations ✅ |
+> | `test:parse:real-pdfs:live` (4 PDF GDD) | 4/4 PASS ✅ |
+> | `_lego-combination-probe` (135 blokova A1-A4 edges) | 0 violations ✅ |
+> | Vendor-neutral grep (12 banned terms × 8 nova bloka) | 0 hit ✅ |
+> | Independent code-review agent | 5/8 senior-grade, 3 minor (svedeno) ✅ |
+>
+> ---
+>
+> ## 🚧 LEGO LIBRARY ROADMAP — preostali planirani wave-i
+>
+> Sekvencijalni rad, master TODO + multi-agent QA posle SVAKE wave-e
+> (Boki: *"sve redom, jednopo jedno, ultimativno i azuriraj master todo
+> obavezno i sa agentima posle implementacije svake obavezno qa detaljan"*).
+>
+> | # | Wave | Blokovi | GDD-ovi koji ga traže | Status |
+> |:-:|:--|:--|:--|:-:|
+> | 1 | **LEGO-L** Lightning | `randomLightningMultiplier` | WoO `§5.2`, Crystal Forge `§5.2` | ⏳ next |
+> | 2 | **LEGO-WW** Walking Wild | `walkingWildStepper` | industry baseline | 📋 queued |
+> | 3 | **LEGO-WAYS** Megaways | `dynamicWaysEngine` | future | 📋 queued |
+> | 4 | **LEGO-INF** Infinity | `infinityReelsEngine` | future | 📋 queued |
+> | 5 | **LEGO-SS** Super Symbol | `symbolSplitReveal`, `superSymbolUpgrade` | industry baseline | 📋 queued |
+> | 6 | **LEGO-JR** Jackpot Room | `jackpotRoomReveal`, `jackpotPicker` | HnP-style room mechanics | 📋 queued |
 >
 > ---
 >
