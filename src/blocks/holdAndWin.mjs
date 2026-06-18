@@ -1685,7 +1685,28 @@ function _hwCancelForceFallbackTimer() {
  * cell currently carrying the bonus glyph. PHASE 2 apply walks this map
  * so the orb chip lands on the EXACT DOM node the player saw at trigger
  * time, regardless of what reel.cells[] index it now holds. Eliminates
- * the drift Boki reported ("pomere se mesta simbola u h&w"). */
+ * the drift Boki reported ("pomere se mesta simbola u h&w").
+ *
+ * 2026-06-18 ATOMIC LOCK-ON-TRIGGER (Boki: "Sad kad se padnu simboli
+ * u base game, moraju da ostanu i u hold and win"):
+ *   Deep recon (agents) proved that B glyphs were UNPROTECTED during
+ *   the 1500-2500ms window between celebration start and PHASE 2 apply.
+ *   The .is-locked-bonus class is what makes commitStopSymbols /
+ *   rotateStripDown / tumble pipelines treat a cell as locked — until
+ *   that class is present, any stray engine tick can rewrite the cell's
+ *   textContent or shift the cell.
+ *
+ *   Industry reference (agents/research-pool/woo-controllers-RE.md §1.4
+ *   line 142 + lock-and-respin cabinet patent cluster §3.2 line 255 +
+ *   WoO GDD §5.4): "the orbs lock in place" happens AT SETTLE — BEFORE
+ *   the placard, not after.
+ *
+ *   FIX: at stash time, atomically apply the lock contract:
+ *     1. .is-locked-bonus class (lock signal honoured engine-wide)
+ *     2. data-locked-symbol attribute (recovery marker for sweeps)
+ *     3. textContent pinned to HW_BONUS_SYMBOL (defence in depth)
+ *   PHASE 2 then only paints the orb chrome (label, hw-just-landed
+ *   pulse) — the lock itself is already in place. */
 function _hwStashEntryCells() {
   HW_STATE.entryCellRefs = new Map();
   if (typeof document === 'undefined') return;
@@ -1697,6 +1718,15 @@ function _hwStashEntryCells() {
     const txt = (cell.textContent || '').trim().toUpperCase();
     if (txt !== TARGET) continue;
     HW_STATE.entryCellRefs.set(cell, _hwRollOrb());
+    /* Atomic lock-on-trigger — these three writes together form the
+     * "frozen at entry" contract every downstream engine path honours.
+     * Without them the cell would be drift-prone during the entire
+     * celebration + intro window. */
+    try {
+      cell.classList.add('is-locked-bonus');
+      cell.setAttribute('data-locked-symbol', TARGET);
+      cell.textContent = TARGET;
+    } catch (_) { /* defensive — DOM mutation must not break stash */ }
   }
 }
 
