@@ -73,7 +73,76 @@ export function resolveConfig(model) {
      (matches new default); undefined → defaults wins (false = "run everywhere"). */
   if (src.skipDuringFs === true) cfg.skipDuringFs = true;
   if (src.skipDuringFs === false) cfg.skipDuringFs = false;
+  /* 2026-06-18 — derive emit-time seed triggers from model.features so
+   * the runtime IIFE pre-populates __ANT_TRIGGERS__ for every GDD-declared
+   * trigger BEFORE the first reel even spins. Eliminates the race where
+   * a feature block initialised AFTER anticipation's first call had a
+   * silent gap. */
+  cfg.seedTriggers = _extractSeedTriggers(model);
   return cfg;
+}
+
+function _extractSeedTriggers(model) {
+  if (!model || typeof model !== 'object') return [];
+  const out = [];
+  const seen = new Set();
+  function _push(id, sym, threshold, topRung, countMode) {
+    if (!sym || !Number.isFinite(threshold)) return;
+    if (seen.has(id)) return;
+    seen.add(id);
+    out.push({
+      id,
+      symbol: String(sym).toUpperCase(),
+      threshold: Math.max(1, Math.floor(threshold)),
+      topRung: Math.max(threshold, Math.floor(topRung || threshold)),
+      countMode: (countMode === 'any') ? 'any' : 'perReel',
+    });
+  }
+  const features = Array.isArray(model.features) ? model.features : [];
+  const hasFS  = features.some(f => f && (f.kind === 'free_spins' || f.kind === 'freespins'));
+  const hasHW  = features.some(f => f && f.kind === 'hold_and_win');
+  const hasPick = features.some(f => f && (f.kind === 'bonus_pick' || f.kind === 'pick_bonus'));
+  const hasDual = features.some(f => f && f.kind === 'dual_role_scatter');
+  const hasJkpt = features.some(f => f && (f.kind === 'daily_jackpot' || f.kind === 'jackpot'));
+  const hasScatterPay = features.some(f => f && f.kind === 'scatter_pay');
+
+  if (hasFS) {
+    const fs = (model.freeSpins && typeof model.freeSpins === 'object') ? model.freeSpins : {};
+    const sym = fs.triggerSymbol ||
+                (model.symbols && model.symbols.specials || []).find(s => /^S(?:CATTER)?$/i.test(s.id))?.id ||
+                'S';
+    const thr = (Array.isArray(fs.triggerCounts) && fs.triggerCounts[0]) ||
+                (Array.isArray(fs.awards) && fs.awards[0] && fs.awards[0].count) ||
+                fs.triggerCount || 3;
+    const top = (Array.isArray(fs.awards) ? fs.awards : []).reduce(
+      (m, a) => Math.max(m, (a && a.count) || 0), thr);
+    _push('fs-seed', sym, thr, top, fs.countMode);
+  }
+  if (hasHW) {
+    const hw = (model.holdAndWin && typeof model.holdAndWin === 'object') ? model.holdAndWin : {};
+    _push('hw-seed', hw.bonusSymbolId || 'B', hw.triggerCount || 6,
+      hw.triggerCount || 6, 'any');
+  }
+  if (hasPick) {
+    const f = features.find(x => x && (x.kind === 'bonus_pick' || x.kind === 'pick_bonus')) || {};
+    _push('pick-seed', f.symbol || 'P', f.triggerCount || 3, f.triggerCount || 5, 'perReel');
+  }
+  if (hasDual) {
+    const f = features.find(x => x && x.kind === 'dual_role_scatter') || {};
+    _push('dual-seed', f.symbol || 'S', f.triggerCount || 3, f.triggerCount || 5, 'perReel');
+  }
+  if (hasJkpt) {
+    const f = features.find(x => x && (x.kind === 'daily_jackpot' || x.kind === 'jackpot')) || {};
+    _push('jackpot-seed', f.symbol || 'J', f.triggerCount || 3, f.triggerCount || 6, 'any');
+  }
+  if (hasScatterPay && !hasFS) {
+    const f = features.find(x => x && x.kind === 'scatter_pay') || {};
+    const sym = f.symbol ||
+                (model.symbols && model.symbols.specials || []).find(s => /^S(?:CATTER)?$/i.test(s.id))?.id ||
+                'S';
+    _push('scatter-seed', sym, f.triggerCount || 3, f.triggerCount || 5, 'perReel');
+  }
+  return out;
 }
 
 export function emitAnticipationCSS(cfg = defaultConfig()) {
@@ -250,6 +319,30 @@ export function emitAnticipationRuntime(cfg = defaultConfig()) {
    * by symbolId — re-registration overwrites). */
   if (typeof window !== 'undefined' && !Array.isArray(window.__ANT_TRIGGERS__)) {
     window.__ANT_TRIGGERS__ = [];
+  }
+
+  /* 2026-06-18 — emit-time seed (cfg.seedTriggers from resolveConfig).
+   * Pre-seeds __ANT_TRIGGERS__ at runtime IIFE startup so anticipation
+   * KNOWS about every GDD-declared trigger (FS scatter, H&W bonus,
+   * bonus_pick, dual_role_scatter, jackpot) BEFORE the first reel even
+   * spins. Previously _antTriggers() only saw triggers seeded via
+   * window.HW_STATE.enabled / window.FREESPINS.enabled, which were
+   * race-fragile: any block whose runtime IIFE initialised AFTER
+   * anticipation's first call had a silent gap. Emit-time seeding is
+   * unconditional — if the GDD declared the feature, the seed lands. */
+  ${JSON.stringify(cfg.seedTriggers || []).replace(/^/, 'var _ANT_SEEDS = ').replace(/$/, ';')}
+  if (typeof window !== 'undefined' && Array.isArray(_ANT_SEEDS)) {
+    for (var __ai = 0; __ai < _ANT_SEEDS.length; __ai++) {
+      var __seed = _ANT_SEEDS[__ai];
+      if (!__seed || !__seed.symbol) continue;
+      /* De-dupe by id — if the same trigger was already pushed by a
+       * block's own init script, leave it alone. */
+      var __already = false;
+      for (var __aj = 0; __aj < window.__ANT_TRIGGERS__.length; __aj++) {
+        if (window.__ANT_TRIGGERS__[__aj].id === __seed.id) { __already = true; break; }
+      }
+      if (!__already) window.__ANT_TRIGGERS__.push(__seed);
+    }
   }
   function _antTriggers() {
     var t = (typeof window !== 'undefined' && Array.isArray(window.__ANT_TRIGGERS__))

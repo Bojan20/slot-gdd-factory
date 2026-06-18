@@ -319,7 +319,9 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
      * every reel up to bonusCount: top row first, then center row when
      * bonusCount exceeds the reel count. */
     if (FORCE_TRIGGER && FORCE_TRIGGER.bonusCount && FORCE_TRIGGER.bonusSymbol) {
-      const bonusSym = String(FORCE_TRIGGER.bonusSymbol);
+      /* 2026-06-18 — normalise plant sym to uppercase; harvester +
+       * anticipation registry compare against UPPER-cased trigger sym. */
+      const bonusSym = String(FORCE_TRIGGER.bonusSymbol).toUpperCase();
       const reelsCount = (typeof REELS !== 'undefined' && REELS) || 5;
       const bonusPerReel = Math.ceil(FORCE_TRIGGER.bonusCount / reelsCount);
       for (let pp = 0; pp < bonusPerReel; pp++) {

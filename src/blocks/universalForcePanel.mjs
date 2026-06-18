@@ -698,8 +698,14 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
           else if (window.HW_TRIGGER_COUNT && window.HW_TRIGGER_COUNT > 0) _hwCount = window.HW_TRIGGER_COUNT;
         } catch (_) {}
         try {
-          if (typeof HW_BONUS_SYMBOL === 'string') _hwSym = HW_BONUS_SYMBOL;
-          else if (typeof window.HW_BONUS_SYMBOL === 'string') _hwSym = window.HW_BONUS_SYMBOL;
+          /* 2026-06-18 — normalise to uppercase so downstream paths
+           * (reelEngine commitStopSymbols plant, holdAndWin harvest,
+           * anticipation registry sym compare) all see the same case.
+           * Pre-fix: lowercase 'b' from GDD leaked into the engine,
+           * the bonus pile landed as 'b' on cells, harvester case-
+           * compared against 'B' and missed every orb → no H&W round. */
+          if (typeof HW_BONUS_SYMBOL === 'string') _hwSym = HW_BONUS_SYMBOL.toUpperCase();
+          else if (typeof window.HW_BONUS_SYMBOL === 'string') _hwSym = window.HW_BONUS_SYMBOL.toUpperCase();
         } catch (_) {}
         /* Plant 'bonusSymbol' + 'bonusCount' — reelEngine commitStopSymbols
          * sprays the bonus pile so the next spin's postSpin hwMaybeEnter()

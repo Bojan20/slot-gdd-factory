@@ -121,7 +121,7 @@ export function resolveConfig(model = {}) {
   const m = model.holdAndWin || {};
   if (m.enabled != null) cfg.enabled = !!m.enabled;
   if (Number.isFinite(m.triggerCount)) cfg.triggerCount = clampInt(m.triggerCount, 3, 30);
-  if (typeof m.bonusSymbolId === 'string' && /^[A-Za-z][A-Za-z0-9_]*$/.test(m.bonusSymbolId)) cfg.bonusSymbolId = m.bonusSymbolId;
+  if (typeof m.bonusSymbolId === 'string' && /^[A-Za-z][A-Za-z0-9_]*$/.test(m.bonusSymbolId)) cfg.bonusSymbolId = m.bonusSymbolId.toUpperCase();
   if (Number.isFinite(m.respinsAwarded)) cfg.respinsAwarded = clampInt(m.respinsAwarded, 1, 12);
   if (m.resetOnNewBonus != null) cfg.resetOnNewBonus = !!m.resetOnNewBonus;
   if (typeof m.haloColor === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(m.haloColor)) cfg.haloColor = m.haloColor;
@@ -552,6 +552,61 @@ export function emitHoldAndWinCSS(cfg = defaultConfig()) {
 @keyframes hwBonusCelebrate {
   0%, 100% { transform: scale(1);    box-shadow: 0 0 0  rgba(${cfg.haloColor}, 0); }
   50%      { transform: scale(1.16); box-shadow: 0 0 24px rgba(${cfg.haloColor}, 0.85); }
+}
+
+/* 2026-06-18 — Boki rule "u base game mora da se odradi simbol win
+ * animacija da se zna da je hold end win dobijen i kolko je simbola
+ * dobijeno". Big centred badge that mounts during the 1500ms bonus
+ * celebration window so the player gets an unambiguous "you triggered
+ * Hold & Win with N bonus symbols" cue BEFORE the intro placard
+ * fades in. Pure CSS — runtime mounts/unmounts the element, this rule
+ * paints + animates the visible state. */
+.hw-bonus-count-overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.6);
+  z-index: 1900;
+  padding: clamp(18px, 4vw, 36px) clamp(28px, 6vw, 56px);
+  border-radius: 18px;
+  background: radial-gradient(circle at center,
+    rgba(${cfg.haloColor}, 0.92) 0%,
+    rgba(${cfg.haloColor}, 0.78) 45%,
+    rgba(40, 18, 0, 0.92) 100%);
+  border: 3px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 0 0 4px rgba(${cfg.haloColor}, 0.45),
+    0 18px 48px rgba(0, 0, 0, 0.65),
+    inset 0 4px 12px rgba(255, 255, 255, 0.35),
+    inset 0 -6px 16px rgba(0, 0, 0, 0.4);
+  color: #ffffff;
+  font: 900 clamp(28px, 5.2vw, 60px)/1.05 system-ui, -apple-system,
+        "SF Pro Display", "Segoe UI", sans-serif;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.65),
+    0 4px 14px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  white-space: nowrap;
+  animation: hwBonusCountIn 320ms cubic-bezier(.25, 1.45, .55, 1) forwards,
+             hwBonusCountPulse 700ms ease-in-out 350ms infinite alternate;
+}
+@keyframes hwBonusCountIn {
+  0%   { transform: translate(-50%, -50%) scale(0.6);  opacity: 0; }
+  60%  { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1);    opacity: 1; }
+}
+@keyframes hwBonusCountPulse {
+  0%   { filter: drop-shadow(0 0 0  rgba(${cfg.haloColor}, 0.7)); }
+  100% { filter: drop-shadow(0 0 22px rgba(${cfg.haloColor}, 1)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hw-bonus-count-overlay {
+    animation: none;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
 }
 
 /* ─── W48 BUGFIX — H&W per-cell respin (Boki 2026-06-16) ────────────────
@@ -1404,20 +1459,42 @@ function playHwBonusCelebration() {
   return new Promise(function (resolve) {
     var host = document.getElementById('gridHost');
     if (!host) { resolve(); return; }
+    /* 2026-06-18 — accept BOTH cases (UFP plant may have leaked
+     * lowercase 'b' on older builds; new builds always plant upper). */
+    var TARGET = String(HW_BONUS_SYMBOL || 'B').toUpperCase();
     var cells = host.querySelectorAll('.cell');
     var hits = [];
     for (var i = 0; i < cells.length; i++) {
-      var txt = (cells[i].textContent || '').trim();
-      if (txt === HW_BONUS_SYMBOL) hits.push(cells[i]);
+      var txt = (cells[i].textContent || '').trim().toUpperCase();
+      if (txt === TARGET) hits.push(cells[i]);
     }
     if (hits.length === 0) { resolve(); return; }
     var myToken = ++_HW_BONUS_CELEBRATE_TOKEN;
     host.classList.add('is-hnw-bonus-celebrating');
     for (var j = 0; j < hits.length; j++) hits[j].classList.add('cell--hnw-bonus-celebrate');
+
+    /* 2026-06-18 — Boki rule "u base game mora da se odradi simbol win
+     * animacija da se zna da je hold end win dobijen i kolko je simbola
+     * dobijeno". Mount a centred badge "N BONUS COLLECTED!" over the
+     * grid during the 1500ms celebration window so the player sees a
+     * clear "you triggered" cue BEFORE the intro placard takes over. */
+    var badge = null;
+    try {
+      badge = document.createElement('div');
+      badge.className = 'hw-bonus-count-overlay';
+      badge.setAttribute('role', 'status');
+      badge.setAttribute('aria-live', 'polite');
+      badge.textContent = hits.length + ' BONUS COLLECTED!';
+      document.body.appendChild(badge);
+    } catch (_) { /* defensive */ }
+
     setTimeout(function () {
       if (myToken !== _HW_BONUS_CELEBRATE_TOKEN) return;
       host.classList.remove('is-hnw-bonus-celebrating');
       for (var k = 0; k < hits.length; k++) hits[k].classList.remove('cell--hnw-bonus-celebrate');
+      if (badge && badge.parentNode) {
+        try { badge.parentNode.removeChild(badge); } catch (_) {}
+      }
       resolve();
     }, HW_T_BONUS_CELEBRATE_MS);
   });
@@ -1673,6 +1750,16 @@ if (typeof HookBus !== 'undefined' && !(typeof window !== 'undefined' && window.
           });
         }
       }
+      /* 2026-06-18 — Deep-recon Risk #5 fix: HW_STATE.entering was set
+       * true inside hwMaybeEnter() / hwForceSeed() to block double-mount,
+       * cleared inside the playHwBonusCelebration().then() callback. If
+       * the player slam-stops or skips DURING the 1500ms celebrate window,
+       * the .then() may run AFTER the abort but the next base spin's
+       * postSpin already saw entering=true and returned early → next H&W
+       * trigger never mounts. Defensive: clear the flag at every preSpin
+       * boundary unless an H&W round is already RUNNING (in which case
+       * preSpin is a respin and the flag is already false). */
+      if (HW_STATE.phase === 'INACTIVE') HW_STATE.entering = false;
     } catch (_) {}
   }, { priority: 10 });
   HookBus.on('postSpin', () => {

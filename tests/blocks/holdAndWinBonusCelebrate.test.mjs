@@ -169,7 +169,9 @@ function _makePlay(HW_BONUS_SYMBOL, HW_T_BONUS_CELEBRATE_MS, doc, fakeSet) {
  * the sandbox stays in sync if the emit changes. */
 t('inlined sandbox helper matches the emitted runtime shape', () => {
   ct(rt, 'host.querySelectorAll');
-  ct(rt, "if (txt === HW_BONUS_SYMBOL) hits.push");
+  /* 2026-06-18 — compare normalized: now case-insensitive against TARGET
+   * (uppercase HW_BONUS_SYMBOL) so lowercase plant glyphs still match. */
+  ct(rt, 'if (txt === TARGET) hits.push');
   ct(rt, '++_HW_BONUS_CELEBRATE_TOKEN');
   ct(rt, 'myToken !== _HW_BONUS_CELEBRATE_TOKEN');
 });
