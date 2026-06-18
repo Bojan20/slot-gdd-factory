@@ -193,7 +193,23 @@ export function emitWildCollectionTrailRuntime(cfg = defaultConfig()) {
     var RESET_FS  = ${JSON.stringify(cfg.resetOnFsEnd)};
     var TEMPLATE = ${JSON.stringify(cfg.labelTemplate)};
 
-    var state = window.__SLOT_WILD_TRAIL__ || { count: 0, max: CAP, rewardsFired: [] };
+    /* W47.S25 — symbol-density edge guard.
+     * If a single onSpinResult / onTumbleStep delivers more wilds than
+     * the meter's capacity (e.g., wild-reel feature on a 7x7 cluster
+     * with 49 cells) the meter pegs to max and immediately resets —
+     * the trail "fills" so fast the animation is invisible. Per-bump
+     * cap holds the visual cadence smooth: never more than CAP/2 in
+     * one tick so the player sees the meter sweep. Excess is dropped
+     * (player perception: "huge wild density already triggered the
+     * max-reward step, the rest doesn't matter").
+     *
+     * Also: signature-guard the same-grid re-emit. If onSpinResult
+     * fires twice on identical visible cells (force-spin race, HMR),
+     * the second emit MUST NOT double-bump. We snapshot a cheap
+     * fingerprint after each consume and short-circuit if it matches. */
+    var BUMP_SANITY_CAP = Math.max(1, Math.floor(CAP / 2));
+    var state = window.__SLOT_WILD_TRAIL__ || { count: 0, max: CAP, rewardsFired: [], lastSig: '' };
+    if (!('lastSig' in state)) state.lastSig = '';
     window.__SLOT_WILD_TRAIL__ = state;
 
     var host    = (typeof document !== 'undefined') ? document.getElementById('wildTrail') : null;
@@ -213,6 +229,8 @@ export function emitWildCollectionTrailRuntime(cfg = defaultConfig()) {
     }
     function bump(delta, source) {
       if (!Number.isFinite(delta) || delta <= 0) return;
+      /* W47.S25 sanity cap — clamp absurdly large single-tick deltas. */
+      if (delta > BUMP_SANITY_CAP) delta = BUMP_SANITY_CAP;
       var from = state.count | 0;
       var to = Math.min(CAP, from + delta);
       if (to === from) return;
@@ -241,21 +259,30 @@ export function emitWildCollectionTrailRuntime(cfg = defaultConfig()) {
      * '.symbol-cell[data-sym]' matched 0 nodes → counter never bumped.
      * Now: dual selector + dual symbol source (data-sym attr OR textContent). */
     function countWildsOnGrid() {
-      if (typeof document === 'undefined') return 0;
+      if (typeof document === 'undefined') return { n: 0, sig: '' };
       var cells = document.querySelectorAll('.symbol-cell, .cell');
       var n = 0;
+      /* W47.S25 cheap signature — concat cell-symbol firstchars per
+       * index. Same grid state → identical signature → spin-dedupe gate
+       * below will reject re-emits. Avoids allocating a full array. */
+      var sig = '';
       for (var i = 0; i < cells.length; i++) {
         var attr = cells[i].getAttribute && (cells[i].getAttribute('data-sym') || cells[i].getAttribute('data-symbol'));
         var text = (cells[i].textContent || '').trim();
         var s = attr || text;
+        sig += (s.charAt(0) || '_');
         if (s === WILD) n++;
       }
-      return n;
+      return { n: n, sig: sig };
     }
 
     window.HookBus.on('onSpinResult', function () {
-      var n = countWildsOnGrid();
-      if (n > 0) bump(n * PER, 'onSpinResult');
+      var grid = countWildsOnGrid();
+      /* W47.S25 spin-dedupe — identical visible grid since last consume
+       * means a re-emit (force-spin race, HMR) and MUST NOT re-bump. */
+      if (grid.sig && grid.sig === state.lastSig) return;
+      state.lastSig = grid.sig;
+      if (grid.n > 0) bump(grid.n * PER, 'onSpinResult');
     });
     window.HookBus.on('onTumbleStep', function (p) {
       if (p && Array.isArray(p.landed)) {
