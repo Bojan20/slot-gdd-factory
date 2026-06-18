@@ -1,6 +1,6 @@
 # reelLockHold — GDD snippet
 
-> Wave H23 — Reel Lock Hold (lock visible reels during a respin with countdown). Industry baseline (vendor-neutral): Different from `holdAndWin` (which locks specific bonus cells across respins until grid fills): this block locks WHOLE REELS for a fixed N-spin window, showing a visual "LOCKED" badge with countdown. @module reelLockHold
+> Wave H23 — Reel Lock Hold (lock visible reels during a respin with countdown). Purpose: lock an entire reel column for a fixed N-spin window showing a visual "LOCKED" badge with a per-tick countdown.
 
 ```yaml
 reelLockHold:

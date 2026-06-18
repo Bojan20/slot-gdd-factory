@@ -1,6 +1,6 @@
 # respinCharge — GDD snippet
 
-> Wave H18 — Respin Charge (collect-N-charges-for-auto-respin meter). Industry baseline (vendor-neutral): Player collects "charges" (e.g. one per losing spin, or one per specific event) up to a configured threshold; when reached, the next spin is automatically converted into a respin with guaranteed feature. @module respinCharge
+> Wave H18 — Respin Charge (collect-N-charges-for-auto-respin meter). Industry baseline (vendor-neutral): Player collects "charges" (e.g. one per losing spin, or one per specific event) up to a configured threshold; when reached, the next spin is automatically converted into a respin with guaranteed feature.
 
 ```yaml
 respinCharge:

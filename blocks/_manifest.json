@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-17T22:05:46.087Z",
+  "generatedAt": "2026-06-18T01:52:42.631Z",
   "blocksDir": "src/blocks",
   "totalBlocks": 122,
   "blocks": [
@@ -140,7 +140,7 @@
         "hookBusRetries": 20,
         "hookBusRetryMs": 50
       },
-      "loc": 528
+      "loc": 530
     },
     {
       "name": "audio",
@@ -209,7 +209,7 @@
         "megaWinThresholdX": 50,
         "epicWinThresholdX": 250
       },
-      "loc": 370
+      "loc": 372
     },
     {
       "name": "autoplay",
@@ -268,7 +268,7 @@
         "jurisdiction": "",
         "requireDisclosure": false
       },
-      "loc": 1164
+      "loc": 1171
     },
     {
       "name": "balanceHud",
@@ -367,7 +367,7 @@
         "chipTextColor": "20,20,20",
         "ariaLabel": "Adjust bet"
       },
-      "loc": 785
+      "loc": 788
     },
     {
       "name": "bigWinTier",
@@ -445,7 +445,7 @@
         "shakeMinTier": 3,
         "shakePeriodMs": 220
       },
-      "loc": 1300
+      "loc": 1312
     },
     {
       "name": "bonusBuy",
@@ -589,7 +589,7 @@
         "pickerColor": "255,170,80",
         "closeOnBackdrop": true
       },
-      "loc": 685
+      "loc": 687
     },
     {
       "name": "bonusClimaxReveal",
@@ -711,7 +711,7 @@
         "title": "PICK A PRIZE",
         "haloColor": "255,180,60"
       },
-      "loc": 354
+      "loc": 376
     },
     {
       "name": "cascadeBooster",
@@ -790,7 +790,7 @@
         "glowColor": "rgba(255,216,77,0.55)",
         "clearOnNextSpin": true
       },
-      "loc": 176
+      "loc": 195
     },
     {
       "name": "cellLevelUpgrade",
@@ -831,7 +831,7 @@
         "restrictToSymbols": [],
         "zIndex": 16
       },
-      "loc": 307
+      "loc": 313
     },
     {
       "name": "cellOverflowCounter",
@@ -866,7 +866,7 @@
         "zIndex": 18,
         "preferDataAttr": true
       },
-      "loc": 239
+      "loc": 241
     },
     {
       "name": "clusterPaysEval",
@@ -1157,7 +1157,7 @@
         "zIndex": 17,
         "emitScatterRoleOnFsTrigger": true
       },
-      "loc": 214
+      "loc": 218
     },
     {
       "name": "energyMeter",
@@ -1203,7 +1203,7 @@
         "width": 120,
         "showInBase": true
       },
-      "loc": 267
+      "loc": 269
     },
     {
       "name": "euAiActComplianceGate",
@@ -1255,7 +1255,7 @@
         "expandDurationMs": 360,
         "haloColor": "255,214,110"
       },
-      "loc": 179
+      "loc": 185
     },
     {
       "name": "forceSkip",
@@ -1369,7 +1369,7 @@
         "featureHideMs": 300,
         "bigWinSafetyMs": 30000
       },
-      "loc": 843
+      "loc": 915
     },
     {
       "name": "fsProgressBar",
@@ -1431,7 +1431,7 @@
         "collectThresholdX": 0,
         "haloColor": "200,80,80"
       },
-      "loc": 294
+      "loc": 318
     },
     {
       "name": "gambleSecondary",
@@ -1700,7 +1700,7 @@
         "winClampMax": 10000000000,
         "currency": ""
       },
-      "loc": 759
+      "loc": 761
     },
     {
       "name": "holdAndWin",
@@ -1763,7 +1763,7 @@
         },
         "orbTable": null
       },
-      "loc": 1509
+      "loc": 1534
     },
     {
       "name": "holdAndWinCreditBucket",
@@ -1849,7 +1849,7 @@
         "currencyPrefix": "×",
         "hudShowsTotal": true
       },
-      "loc": 656
+      "loc": 659
     },
     {
       "name": "hookBus",
@@ -1946,7 +1946,7 @@
         ],
         "useIntlNumberFormat": false
       },
-      "loc": 491
+      "loc": 499
     },
     {
       "name": "infinityReels",
@@ -2154,7 +2154,7 @@
         "haloColor": "160,210,255",
         "strikeDurationMs": 700
       },
-      "loc": 220
+      "loc": 224
     },
     {
       "name": "megaSymbol",
@@ -2194,7 +2194,7 @@
         "borderColor": "#ffd84d",
         "borderPx": 2
       },
-      "loc": 250
+      "loc": 257
     },
     {
       "name": "motionOverlay",
@@ -2280,9 +2280,11 @@
         "resolveConfig"
       ],
       "lifecycleHooks": [
+        "onFsEnd",
         "onFsTrigger",
         "onSpinResult",
-        "onTumbleStep"
+        "onTumbleStep",
+        "preSpin"
       ],
       "emittedEvents": [],
       "defaultConfig": {
@@ -2320,7 +2322,7 @@
         "chipShadow": "#000",
         "pulseMs": 1000
       },
-      "loc": 257
+      "loc": 308
     },
     {
       "name": "mysteryReveal",
@@ -2386,7 +2388,7 @@
         "includeScatter": false,
         "haloColor": "180,120,255"
       },
-      "loc": 260
+      "loc": 262
     },
     {
       "name": "nearMissTease",
@@ -2421,7 +2423,7 @@
         "scatterDeficit": 1,
         "skipDuringFs": true
       },
-      "loc": 150
+      "loc": 171
     },
     {
       "name": "netherlandsComplianceGate",
@@ -2504,7 +2506,7 @@
         "resetOnSessionReset": true,
         "resetOnAutoplayStart": false
       },
-      "loc": 568
+      "loc": 572
     },
     {
       "name": "nudgeReel",
@@ -2669,7 +2671,7 @@
         "clearOnNextSpin": true,
         "skipDuringFs": false
       },
-      "loc": 162
+      "loc": 183
     },
     {
       "name": "paylineOverlay",
@@ -2790,7 +2792,7 @@
         "autoHideOnSpin": true,
         "ariaLabel": "Open paytable"
       },
-      "loc": 702
+      "loc": 705
     },
     {
       "name": "persistentMultiplier",
@@ -2824,7 +2826,7 @@
         "resetOnRoundEnd": true,
         "chipColor": "255,214,110"
       },
-      "loc": 215
+      "loc": 238
     },
     {
       "name": "pickBonusReveal",
@@ -3040,7 +3042,7 @@
         "jurisdiction": null,
         "requirePersistentPlayTimeDisplay": false
       },
-      "loc": 1002
+      "loc": 1006
     },
     {
       "name": "reelEngine",
@@ -3106,7 +3108,7 @@
       "file": "src/blocks/reelLockHold.mjs",
       "testFile": "tests/blocks/reelLockHold.test.mjs",
       "category": "uncategorised",
-      "description": "Different from `holdAndWin` (which locks specific bonus cells across",
+      "description": "Purpose: lock an entire reel column for a fixed N-spin window",
       "exports": [
         "defaultConfig",
         "emitReelLockHoldCSS",
@@ -3136,7 +3138,7 @@
         "badgeLabel": "LOCKED",
         "autoExtendOnFs": true
       },
-      "loc": 199
+      "loc": 238
     },
     {
       "name": "regulatorDisclosureModal",
@@ -3162,7 +3164,7 @@
         "color": "255,170,80",
         "ackButtonLabel": "I UNDERSTAND"
       },
-      "loc": 529
+      "loc": 538
     },
     {
       "name": "respin",
@@ -3236,7 +3238,7 @@
         "fullColor": "#48d597",
         "labelTemplate": "RESPIN {N}/{M}"
       },
-      "loc": 214
+      "loc": 244
     },
     {
       "name": "retriggerEscalator",
@@ -3522,7 +3524,7 @@
         "copyContinue": "EXTEND SESSION",
         "copyQuit": "END SESSION"
       },
-      "loc": 763
+      "loc": 767
     },
     {
       "name": "settingsPanel",
@@ -3934,7 +3936,7 @@
         "haloColor": "255,214,110",
         "pulseMs": 1400
       },
-      "loc": 201
+      "loc": 208
     },
     {
       "name": "stormMultiplierReel",
@@ -3978,7 +3980,7 @@
         "role": "img",
         "ariaLabelPrefix": "Multiplier reel"
       },
-      "loc": 470
+      "loc": 477
     },
     {
       "name": "streakBonus",
@@ -4016,7 +4018,7 @@
         "resetAtThreshold": true,
         "resetOnFsEnd": true
       },
-      "loc": 180
+      "loc": 204
     },
     {
       "name": "superchargedFs",
@@ -4091,7 +4093,7 @@
         "symbolPool": null,
         "haloColor": "255,200,80"
       },
-      "loc": 183
+      "loc": 209
     },
     {
       "name": "symbolInfoPopover",
@@ -4122,7 +4124,7 @@
         "showPayoutHint": true,
         "payoutHints": {}
       },
-      "loc": 315
+      "loc": 319
     },
     {
       "name": "symbolStackCollapse",
@@ -4196,7 +4198,7 @@
         "morphMs": 220,
         "bonusAccumulate": true
       },
-      "loc": 537
+      "loc": 543
     },
     {
       "name": "syncReels",
@@ -4251,7 +4253,7 @@
         "palette": {
           "bg0": "#05070c",
           "bg1": "#0b0f16",
-          "stage": "#5a6b88",
+          "stage": "#2d3548",
           "accent": "#c9a227",
           "text": "#f2f2f2"
         },
@@ -4269,7 +4271,7 @@
           "sm": 620
         }
       },
-      "loc": 699
+      "loc": 726
     },
     {
       "name": "triggerCounting",
@@ -4318,9 +4320,10 @@
         "refillMs": 260,
         "chainPauseMs": 180,
         "maxChain": 16,
-        "preserveOrbs": true
+        "preserveOrbs": true,
+        "staggerMs": 40
       },
-      "loc": 369
+      "loc": 414
     },
     {
       "name": "turboMode",
@@ -4471,7 +4474,7 @@
         "triggerRespin": true,
         "haloColor": "110,255,170"
       },
-      "loc": 223
+      "loc": 251
     },
     {
       "name": "waysEval",
@@ -4550,7 +4553,7 @@
         "defaultTierColor": "255,80,80",
         "allowFallbackToValue": true
       },
-      "loc": 608
+      "loc": 618
     },
     {
       "name": "wheelBonus",
@@ -4732,7 +4735,7 @@
         "zIndex": 33,
         "labelTemplate": "WILDS {N}/{M}"
       },
-      "loc": 277
+      "loc": 306
     },
     {
       "name": "wildReel",
@@ -4762,7 +4765,7 @@
         "maxReelsPerSpin": 1,
         "haloColor": "255,180,90"
       },
-      "loc": 173
+      "loc": 178
     },
     {
       "name": "winCap",
@@ -4835,7 +4838,7 @@
         "flashColor": "rgba(255,216,77,0.7)",
         "clearOnNextSpin": true
       },
-      "loc": 171
+      "loc": 195
     },
     {
       "name": "winMultiplierBadge",
@@ -4872,7 +4875,7 @@
         "labelTemplate": "×{N}",
         "clearOnNextSpin": true
       },
-      "loc": 184
+      "loc": 212
     },
     {
       "name": "winPresentation",

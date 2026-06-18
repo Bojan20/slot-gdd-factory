@@ -110,7 +110,12 @@ function auditFile(file) {
   /* W47.S26 — bonusClimaxReveal is the player-facing climax of a long
    * bonus round; the reveal announcement IS the headline and must
    * preempt any background spin-result speech. Treated as critical. */
-  const isCriticalBlock = /regulator|sessionTimeout|realityCheck|winCap|netLossIndicator|bonusClimaxReveal/.test(fname);
+  /* W47.S30 — holdAndWin uses aria-live="assertive" specifically for
+   * jackpot tier announcements (MINI/MINOR/MAJOR/GRAND/FULL-GRID) which
+   * ARE the round headline; per holdAndWin JSDoc contract, they
+   * legitimately preempt spin-result speech. Whitelisted same as
+   * bonusClimaxReveal. */
+  const isCriticalBlock = /regulator|sessionTimeout|realityCheck|winCap|netLossIndicator|bonusClimaxReveal|holdAndWin/.test(fname);
   if (assertiveMatches.length > 0 && !isCriticalBlock) {
     findings.warnings.push({
       rule: 'assertive scope',

@@ -1553,18 +1553,26 @@
   animation: tumbleRemove 280ms ease-out forwards;
   pointer-events: none;
 }
+/* W47.S23 — gravity feel: cubic-bezier with stronger ease-in so the
+ * fall reads as "weight accelerating into the slot" instead of a
+ * snap-and-overshoot. Refill keeps a soft overshoot for the "click"
+ * landing of new symbols. Per-column delay is set inline via the
+ * --tumble-stagger CSS var (column index times staggerMs) so reels
+ * cascade as a left-to-right wave. */
 .cell.is-dropping {
-  animation: tumbleDrop 320ms cubic-bezier(.34,1.2,.6,1) forwards;
+  animation: tumbleDrop 320ms cubic-bezier(.42,0,.62,.98) forwards;
+  animation-delay: var(--tumble-stagger, 0ms);
   pointer-events: none;
 }
 .cell.is-refilling {
   animation: tumbleDrop 260ms cubic-bezier(.34,1.05,.6,1) forwards;
+  animation-delay: var(--tumble-stagger, 0ms);
   pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .cell.is-removing  { animation: none; opacity: 0; }
-  .cell.is-dropping  { animation: none; }
-  .cell.is-refilling { animation: none; }
+  .cell.is-dropping  { animation: none; animation-delay: 0ms; }
+  .cell.is-refilling { animation: none; animation-delay: 0ms; }
 }
 
 
@@ -3857,6 +3865,32 @@ body.fs-mode-crimson .frame::after {
   font-weight: 800;
   color: #ffe6a8;
   letter-spacing: 0.4px;
+  /* W47.S20 retrigger polish — base transition lets the pulse class
+   * settle smoothly into the resting style without snapping. */
+  transition: text-shadow 260ms ease-out, transform 260ms ease-out, color 260ms ease-out;
+  transform-origin: 50% 50%;
+}
+/* W47.S20 — retrigger pulse + glow on the spins counter.
+ * Triggered by FSM_handleRetrigger via class toggle; auto-removed
+ * after ~700ms (matches the FS_RETRIGGER_TOAST_MS attack window so
+ * the counter visually "wakes up" alongside the +N toast). Pure CSS,
+ * one transform + one text-shadow ramp; no extra DOM, no extra timer
+ * beyond the cleanup setTimeout already needed for class removal. */
+.fs-hud__value--retrig {
+  animation: fs-hud-retrig-pulse 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes fs-hud-retrig-pulse {
+  0%   { transform: scale(1);    text-shadow: 0 0 0 rgba(255, 230, 168, 0); color: #ffe6a8; }
+  25%  { transform: scale(1.32); text-shadow: 0 0 22px rgba(255, 230, 168, 0.95), 0 0 44px rgba(255, 214, 110, 0.55); color: #fff6d2; }
+  60%  { transform: scale(1.08); text-shadow: 0 0 12px rgba(255, 230, 168, 0.55), 0 0 24px rgba(255, 214, 110, 0.30); color: #ffeebf; }
+  100% { transform: scale(1);    text-shadow: 0 0 0 rgba(255, 230, 168, 0); color: #ffe6a8; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Hard kill — no scale, no glow ramp. SR users still hear the
+   * aria-live counter update; motion-sensitive users see a calm
+   * value swap without any pulse. */
+  .fs-hud__value--retrig { animation: none !important; }
+  .fs-hud__value          { transition: none !important; }
 }
 .fs-hud__divider {
   width: 1px;
@@ -4181,27 +4215,48 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 </style></head><body>
 
 <!-- Free Spins HUD — rendered always; toggled visible via .fs-hud--active.
-       WCAG 4.1.3 — every value cell is mutated on every FS spin / award;
-       aria-live="polite" so SR users hear the spin / multiplier / total
-       counters update without preempting other speech. -->
-<div class="fs-hud" id="fsHud" aria-hidden="true">
-  <div class="fs-hud__box">
-    <div class="fs-hud__label">Spins</div>
-    <div class="fs-hud__value" id="fsHudSpins" aria-live="polite" aria-atomic="true">0 / 0</div>
+       WCAG 4.1.3 (Status Messages) — every value cell is mutated on
+       every FS spin / award; aria-live="polite" so SR users hear the
+       spin / multiplier / total counters update without preempting
+       other speech.
+       W47.S26 polish:
+       • Each box is a role="group" with aria-labelledby pointing at
+         its label, so SR navigation lands on "Spins · 3 / 10" instead
+         of bare "3 / 10".
+       • Value cells use aria-labelledby so the announcement carries
+         the label semantically.
+       • The HUD container starts aria-hidden=true; FSM_enterIntro
+         flips it to false so the polite live regions actually announce.
+         Polite-on-hidden was a no-op pre-polish. -->
+<div class="fs-hud" id="fsHud" role="region" aria-label="Free spins status" aria-hidden="true">
+  <div class="fs-hud__box" role="group" aria-labelledby="fsHudSpinsLabel">
+    <div class="fs-hud__label" id="fsHudSpinsLabel">Spins</div>
+    <div class="fs-hud__value" id="fsHudSpins"
+         aria-live="polite" aria-atomic="true"
+         aria-labelledby="fsHudSpinsLabel fsHudSpins">0 / 0</div>
   </div>
-  <div class="fs-hud__divider"></div>
-  <div class="fs-hud__box">
-    <div class="fs-hud__label">Mult</div>
-    <div class="fs-hud__value" id="fsHudMult" aria-live="polite" aria-atomic="true">×1</div>
+  <div class="fs-hud__divider" aria-hidden="true"></div>
+  <div class="fs-hud__box" role="group" aria-labelledby="fsHudMultLabel">
+    <div class="fs-hud__label" id="fsHudMultLabel">Mult</div>
+    <div class="fs-hud__value" id="fsHudMult"
+         aria-live="polite" aria-atomic="true"
+         aria-labelledby="fsHudMultLabel fsHudMult">×1</div>
   </div>
-  <div class="fs-hud__divider"></div>
-  <div class="fs-hud__box">
-    <div class="fs-hud__label">Total</div>
-    <div class="fs-hud__value" id="fsHudTotal" aria-live="polite" aria-atomic="true">0.00</div>
+  <div class="fs-hud__divider" aria-hidden="true"></div>
+  <div class="fs-hud__box" role="group" aria-labelledby="fsHudTotalLabel">
+    <div class="fs-hud__label" id="fsHudTotalLabel">Total</div>
+    <div class="fs-hud__value" id="fsHudTotal"
+         aria-live="polite" aria-atomic="true"
+         aria-labelledby="fsHudTotalLabel fsHudTotal">0.00</div>
   </div>
 </div>
-<!-- Retrigger / award toast — animates in & out on +N FS event. -->
-<div class="fs-toast" id="fsToast" aria-hidden="true">+0 FREE SPINS</div>
+<!-- Retrigger / award toast — animates in & out on +N FS event.
+       W47.S26 — role="status" + aria-live="polite" so the +N retrigger
+       announcement queues behind the spin-result announcement instead
+       of cutting it off mid-utterance. Toast text is set via
+       .textContent in FSM_showToast which triggers the live-region
+       announce automatically. -->
+<div class="fs-toast" id="fsToast" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true">+0 FREE SPINS</div>
 
 <div class="stage">
   <div class="header">
@@ -4309,7 +4364,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     <span class="rdm-jurisdiction" id="rdmJurisdiction" hidden></span>
     <div class="rdm-body" id="rdmBody">—</div>
     <dl class="rdm-payload" id="rdmPayload" hidden></dl>
-    <button class="rdm-ack" id="rdmAck" type="button">I UNDERSTAND</button>
+    <button class="rdm-ack" id="rdmAck" type="button" aria-label="I UNDERSTAND">I UNDERSTAND</button>
     <div class="rdm-queue" id="rdmQueue" hidden></div>
   </div>
 </div>
@@ -8367,6 +8422,10 @@ const TUMBLE_REFILL_MS   = 260;
 const TUMBLE_CHAIN_PAUSE = 180;
 const TUMBLE_MAX_CHAIN   = 16;
 const TUMBLE_PRESERVE_ORBS = true;
+/* W47.S23 — inter-column stagger so reels cascade left→right as a wave.
+ * 0 = simultaneous (legacy behaviour). Read once into a module-level
+ * const so the JIT can constant-fold the per-cell style assignments. */
+const TUMBLE_STAGGER_MS  = 40;
 
 function _tumbleSleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -8510,7 +8569,15 @@ function _tumbleApplyGravity(removedCells) {
          sees the contract (setAttribute commas don't match). */
       cell.setAttribute('aria-live', 'polite');
       cell.textContent = newVisible[row] || '';
-      if (newVisible[row]) cell.classList.add('is-dropping');
+      if (newVisible[row]) {
+        /* W47.S23 — per-column delay so reels 0..N-1 drop as a wave.
+         * Inline style is cheaper than a class permutation because we
+         * read TUMBLE_STAGGER_MS once and write a single CSS var. */
+        if (TUMBLE_STAGGER_MS > 0) {
+          cell.style.setProperty('--tumble-stagger', (r * TUMBLE_STAGGER_MS) + 'ms');
+        }
+        cell.classList.add('is-dropping');
+      }
     }
   }
 }
@@ -8541,12 +8608,24 @@ function _tumbleRefillEmpties() {
         if (cell.classList && cell.classList.contains('is-locked-bonus')) continue;
         cell.classList.remove('is-dropping');
         cell.textContent = sym;
+        /* W47.S23 — per-column delay also on refill so the "new
+         * symbols dropping in" cascade reads as the same wave as
+         * gravity. Without this the refill snaps in flat while
+         * gravity wave is still finishing on the right reels. */
+        if (TUMBLE_STAGGER_MS > 0) {
+          cell.style.setProperty('--tumble-stagger', (r * TUMBLE_STAGGER_MS) + 'ms');
+        }
         cell.classList.add('is-refilling');
         /* Per-cell cleanup. A global setTimeout query would also strip
            animation classes off cells the next spin freshly painted. */
         const _onEnd = () => {
           cell.classList.remove('is-refilling');
           cell.classList.remove('is-dropping');
+          /* Clear the inline stagger var so a re-use of this cell
+           * during the next chain doesn't inherit the previous delay. */
+          if (TUMBLE_STAGGER_MS > 0) {
+            cell.style.removeProperty('--tumble-stagger');
+          }
           cell.removeEventListener('animationend', _onEnd);
         };
         cell.addEventListener('animationend', _onEnd, { once: true });
@@ -14831,6 +14910,28 @@ if (typeof HookBus !== 'undefined') {
     FSM.retrigCount++;
     FSM_renderHud();
     FSM_showToast("+" + n + " FREE SPINS", FS_RETRIGGER_TOAST_MS);
+    /* W47.S20 — pulse + glow on the spins counter so the player's eye
+     * is drawn to the HUD update simultaneously with the +N toast.
+     * Single class toggle, single cleanup timer; no extra DOM. The
+     * CSS keyframe self-resolves at 700ms but we re-add via class so
+     * back-to-back retriggers restart cleanly (animation-name swap).
+     * prefers-reduced-motion suppresses the visual via CSS gate above. */
+    if (fsHudSpins) {
+      fsHudSpins.classList.remove("fs-hud__value--retrig");
+      /* Force reflow so the animation restarts on consecutive retriggers
+       * (Chromium/Safari need a layout tick between class remove + add). */
+      void fsHudSpins.offsetWidth;
+      fsHudSpins.classList.add("fs-hud__value--retrig");
+      clearTimeout(fsHudSpins._pulseT);
+      fsHudSpins._pulseT = setTimeout(function () {
+        fsHudSpins.classList.remove("fs-hud__value--retrig");
+      }, 720);
+    }
+    /* LEGO single-owner discipline — onFsRetrigger is owned by
+     * superchargedFs.mjs via the engine-facing superchargedFsAnnounce()
+     * helper. We do NOT emit here. The visual pulse + toast are local
+     * to this block; downstream blocks subscribe to onFsRetrigger
+     * separately when the engine announces the round-level event. */
   }
 
   function FSM_enterOutro() {

@@ -81,7 +81,7 @@ Total blocks: **122**.
 | `realityCheck` | ✅ | Wave H2 — Reality Check player-protection modal block. Industry pattern (template-neutral, vendor-neutral): Regulator-mandated "Reality Check" popup. |
 | `reelEngine` | ✅ | Slot GDD Factory · reelEngine BLOCK (hot-path) The complete reel spin engine — column builder + tick loop + spin orchestrator + static-reroll fallback for non-u |
 | `reelEngineCSS` | ✅ | Slot GDD Factory · reelEngineCSS BLOCK Pure CSS layer for the reel-strip engine (rectangular + every uniform column-grid shape). Defines: .reelCol — column cont |
-| `reelLockHold` | ✅ | Wave H23 — Reel Lock Hold (lock visible reels during a respin with countdown). Industry baseline (vendor-neutral): Different from `holdAndWin` (which locks spec |
+| `reelLockHold` | ✅ | Wave H23 — Reel Lock Hold (lock visible reels during a respin with countdown). Purpose: lock an entire reel column for a fixed N-spin window showing a visual "L |
 | `regulatorDisclosureModal` | ✅ | Wave W60 — Universal regulator disclosure modal. The 13 regulator-gate atoms from W58 sweep + W59.H1 (UKGC autoplay disclosure / AGCO RTP transparency / SE play |
 | `respin` | ✅ | perf budget: O(reels*rows) DOM walk, ≤0.3ms @ 5×3 Accessibility: banner uses aria-live="polite" + role="status" for screen reader. Wave N2 — Respin block. |
 | `respinCharge` | ✅ | Wave H18 — Respin Charge (collect-N-charges-for-auto-respin meter). Industry baseline (vendor-neutral): Player collects "charges" (e.g. one per losing spin, or  |
