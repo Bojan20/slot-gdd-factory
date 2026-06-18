@@ -3,7 +3,72 @@
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
-> **Last updated**: 2026-06-18 04:10 · **HEAD**: pending push · main
+> **Last updated**: 2026-06-18 04:25 · **HEAD**: pending push · main
+>
+> ---
+>
+> ## 🆕 FUNCTIONAL ITEM #4 — Visual regression baseline (2026-06-18)
+>
+> Snapshot diff po bloku — 112 demo HTML fajlova u `blocks/demos/`
+> dobijaju determinističku PNG screenshot baseline. Svaka buduća promena
+> CSS/SVG/DOM strukture koja vidno menja blok mora biti **namerna**
+> (rebake baseline-a) ili je bug.
+>
+> ### 🔬 Probe `tools/visual-regression-audit.mjs`
+>
+> | Stage | Šta radi |
+> |:--|:--|
+> | 1 | Load svaki `blocks/demos/<name>.html` u headless Chromium, viewport 1280×800 |
+> | 2 | Freeze motion: `prefers-reduced-motion: reduce` + `*{animation:none!important; transition:none!important}` |
+> | 3 | Freeze nondeterminizam: `Math.random` (seeded LCG), `Date.now` (epoch 2023-11-14), `performance.now=0`, `requestAnimationFrame=noop` |
+> | 4 | 250ms settle + full-page PNG screenshot + SHA-256 |
+> | 5 | Compare protiv `tests/baselines/visual-regression.json` |
+>
+> Verdikti: `PASS` / `DRIFT` / `NEW` / `GONE` / `ERROR`.
+>
+> ### 🎯 Rezultati (112/112 stabilno preko 3 uzastopne passe)
+>
+> | Pass | DRIFT | NEW | GONE | ERROR | Verdikt |
+> |:--|:-:|:-:|:-:|:-:|:-:|
+> | Bake (first run) | — | — | — | — | baseline written |
+> | Pass 2 | 0 | 0 | 0 | 0 | ✅ stable |
+> | Pass 3 | 0 | 0 | 0 | 0 | ✅ stable |
+>
+> ### 🔧 Šta se popravilo tokom rada
+>
+> | # | Šta | Detalj |
+> |:-:|:--|:--|
+> | 1 | holdAndWin demo prvobitno drift-uje | Demo gate-uje `__lastSpinAt__ = Date.now()` u initial-paint kodu — vreme bleeduje u data-* atribut. Fix: stub-uju se `Date.now` + `performance.now` na fiksnu epohu, plus rAF noop, plus Math.random seeded LCG. |
+>
+> ### 🆕 Novi npm scripti
+>
+> | Script | Šta pokreće |
+> |:--|:--|
+> | `test:visual` | strict mode — `--fail-on-drift` |
+> | `test:visual:bake` | `--update-baseline` (re-bake posle namerne vizuelne promene) |
+>
+> `test:visual` ulančan u `test:all` posle `test:cert:real`.
+>
+> ### 📁 Artifacts
+>
+> `tests/baselines/visual-regression.json` — schema v1, 112 entries:
+>
+> ```json
+> {
+>   "schema": 1,
+>   "viewport": { "width": 1280, "height": 800 },
+>   "demos": {
+>     "<blockName>": { "hash": "<sha256>", "bytes": <pngSize>, "captured_at": "..." }
+>   }
+> }
+> ```
+>
+> ### 🔒 Regression posle promene
+>
+> | Gate | Rezultat |
+> |:--|:-:|
+> | `test:visual --fail-on-drift` × 2 uzastopno | ✅ 112/112 PASS |
+> | `test:lego` | ✅ 7/7 |
 >
 > ---
 >
