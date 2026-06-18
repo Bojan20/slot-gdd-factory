@@ -31,6 +31,12 @@ const DEFAULT_GRAVITY_MS = 320;
 const DEFAULT_REFILL_MS = 260;
 const DEFAULT_CHAIN_PAUSE_MS = 180;
 const DEFAULT_MAX_CHAIN = 16;
+/* W47.S23 — per-reel stagger. 0 = simultaneous columns (legacy).
+ * Industry reference for modern cascade: 35-55 ms inter-column delay
+ * so the drop reads as a left-to-right wave instead of a hard slab. */
+const DEFAULT_STAGGER_MS = 40;
+const STAGGER_MIN = 0;
+const STAGGER_MAX = 200;
 
 export function defaultConfig() {
   return Object.freeze({
@@ -41,6 +47,7 @@ export function defaultConfig() {
     chainPauseMs: DEFAULT_CHAIN_PAUSE_MS, // breath between tumbles
     maxChain: DEFAULT_MAX_CHAIN,         // safety cap on consecutive tumble iterations
     preserveOrbs: true, // multiplier orbs stay on screen across tumbles
+    staggerMs: DEFAULT_STAGGER_MS,       // per-reel left-to-right drop delay (0 = simultaneous)
   });
 }
 
@@ -53,6 +60,7 @@ export function resolveConfig(model = {}) {
   if (Number.isFinite(m.refillMs))     cfg.refillMs    = clampInt(m.refillMs, MS_MIN, MS_MAX);
   if (Number.isFinite(m.chainPauseMs)) cfg.chainPauseMs= clampInt(m.chainPauseMs, PAUSE_MIN, PAUSE_MAX);
   if (Number.isFinite(m.maxChain))     cfg.maxChain    = clampInt(m.maxChain, CHAIN_MIN, CHAIN_MAX_CEIL);
+  if (Number.isFinite(m.staggerMs))    cfg.staggerMs   = clampInt(m.staggerMs, STAGGER_MIN, STAGGER_MAX);
   if (m.preserveOrbs != null) cfg.preserveOrbs = !!m.preserveOrbs;
 
   // Auto-enable when GDD topology declares cascade
@@ -98,18 +106,26 @@ export function emitTumbleCSS(cfg = defaultConfig()) {
   animation: tumbleRemove ${cfg.removeMs}ms ease-out forwards;
   pointer-events: none;
 }
+/* W47.S23 — gravity feel: cubic-bezier with stronger ease-in so the
+ * fall reads as "weight accelerating into the slot" instead of a
+ * snap-and-overshoot. Refill keeps a soft overshoot for the "click"
+ * landing of new symbols. Per-column delay is set inline via the
+ * --tumble-stagger CSS var (column index times staggerMs) so reels
+ * cascade as a left-to-right wave. */
 .cell.is-dropping {
-  animation: tumbleDrop ${cfg.gravityMs}ms cubic-bezier(.34,1.2,.6,1) forwards;
+  animation: tumbleDrop ${cfg.gravityMs}ms cubic-bezier(.42,0,.62,.98) forwards;
+  animation-delay: var(--tumble-stagger, 0ms);
   pointer-events: none;
 }
 .cell.is-refilling {
   animation: tumbleDrop ${cfg.refillMs}ms cubic-bezier(.34,1.05,.6,1) forwards;
+  animation-delay: var(--tumble-stagger, 0ms);
   pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .cell.is-removing  { animation: none; opacity: 0; }
-  .cell.is-dropping  { animation: none; }
-  .cell.is-refilling { animation: none; }
+  .cell.is-dropping  { animation: none; animation-delay: 0ms; }
+  .cell.is-refilling { animation: none; animation-delay: 0ms; }
 }
 `;
 }
@@ -138,6 +154,10 @@ const TUMBLE_REFILL_MS   = ${cfg.refillMs};
 const TUMBLE_CHAIN_PAUSE = ${cfg.chainPauseMs};
 const TUMBLE_MAX_CHAIN   = ${cfg.maxChain};
 const TUMBLE_PRESERVE_ORBS = ${cfg.preserveOrbs};
+/* W47.S23 — inter-column stagger so reels cascade left→right as a wave.
+ * 0 = simultaneous (legacy behaviour). Read once into a module-level
+ * const so the JIT can constant-fold the per-cell style assignments. */
+const TUMBLE_STAGGER_MS  = ${cfg.staggerMs};
 
 function _tumbleSleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -281,7 +301,15 @@ function _tumbleApplyGravity(removedCells) {
          sees the contract (setAttribute commas don't match). */
       cell.setAttribute('aria-live', 'polite');
       cell.textContent = newVisible[row] || '';
-      if (newVisible[row]) cell.classList.add('is-dropping');
+      if (newVisible[row]) {
+        /* W47.S23 — per-column delay so reels 0..N-1 drop as a wave.
+         * Inline style is cheaper than a class permutation because we
+         * read TUMBLE_STAGGER_MS once and write a single CSS var. */
+        if (TUMBLE_STAGGER_MS > 0) {
+          cell.style.setProperty('--tumble-stagger', (r * TUMBLE_STAGGER_MS) + 'ms');
+        }
+        cell.classList.add('is-dropping');
+      }
     }
   }
 }
@@ -312,12 +340,24 @@ function _tumbleRefillEmpties() {
         if (cell.classList && cell.classList.contains('is-locked-bonus')) continue;
         cell.classList.remove('is-dropping');
         cell.textContent = sym;
+        /* W47.S23 — per-column delay also on refill so the "new
+         * symbols dropping in" cascade reads as the same wave as
+         * gravity. Without this the refill snaps in flat while
+         * gravity wave is still finishing on the right reels. */
+        if (TUMBLE_STAGGER_MS > 0) {
+          cell.style.setProperty('--tumble-stagger', (r * TUMBLE_STAGGER_MS) + 'ms');
+        }
         cell.classList.add('is-refilling');
         /* Per-cell cleanup. A global setTimeout query would also strip
            animation classes off cells the next spin freshly painted. */
         const _onEnd = () => {
           cell.classList.remove('is-refilling');
           cell.classList.remove('is-dropping');
+          /* Clear the inline stagger var so a re-use of this cell
+           * during the next chain doesn't inherit the previous delay. */
+          if (TUMBLE_STAGGER_MS > 0) {
+            cell.style.removeProperty('--tumble-stagger');
+          }
           cell.removeEventListener('animationend', _onEnd);
         };
         cell.addEventListener('animationend', _onEnd, { once: true });
