@@ -347,6 +347,30 @@ export const HOOK_EVENTS = Object.freeze([
   'onRetriggerMultiplierBumped',
   'onClusterSizeMultiplierApplied',
   'onMultiplierChanged',
+  /* Wave LEGO-FSV (Free Spins variants, 2026-06-18 evening) — 6 new
+   * events from 4 new FS-variant blocks. Each single-owner per LEGO.
+   *
+   * onFsModePicked {modeIndex, spinsCount, baseMultiplier, label} —
+   *   fires when player taps a card on the pre-FS choice overlay.
+   *   Owner: pickYourFs.mjs.
+   *
+   * onLockedSymbolFsSeeded {cellKeys, lockSymbol} — fires at FS_INTRO
+   *   after N random cells are pinned with the lock symbol for the
+   *   round. Owner: lockedSymbolFs.mjs.
+   *
+   * onTumbleOnlyFsModeEntered {chainsBudget} / onTumbleOnlyFsChainEnded
+   *   {chainsRemaining} — pair fires at FS enter + end of each tumble
+   *   chain for tumble-only FS rounds. Owner: tumbleOnlyFs.mjs.
+   *
+   * onInfiniteFsStreakBumped {streak} / onInfiniteFsModeEnded
+   *   {finalStreak} — pair fires per winning FS spin and at the first
+   *   losing FS spin. Owner: infiniteFsUntilLoss.mjs. */
+  'onFsModePicked',
+  'onLockedSymbolFsSeeded',
+  'onTumbleOnlyFsModeEntered',
+  'onTumbleOnlyFsChainEnded',
+  'onInfiniteFsStreakBumped',
+  'onInfiniteFsModeEnded',
   /* Scatter Celebration phase signals
    * onScatterCelebrationStart {cellCount, durationMs} — fires when the
    *   FS trigger scatter celebration animation begins. spinControl uses

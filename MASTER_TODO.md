@@ -1,5 +1,68 @@
 # Master TODO — slot-gdd-factory
 
+> **2026-06-18 evening · HEAD pending** · Wave **LEGO-FSV** landed
+>
+> ## 🏆 Wave LEGO-FSV — 4 nove Free Spins varijante
+>
+> Industry-popular FS-mode varijante koje su do sada falile u biblioteci.
+> Boki: *"sve redom, jednopo jedno, ultimativno"* — wave po wave, posle
+> svake multi-agent QA + master TODO update.
+>
+> ### Blokovi (143 → 147)
+>
+> | # | Blok | Šta radi | Lifecycle |
+> |:-:|:--|:--|:--|
+> | 1 | `pickYourFs.mjs` | Pre-FS overlay sa N (2-6) modes — player tap-uje karticu, FS startuje sa izabranim spinsCount + baseMultiplier | onFsTrigger → choice overlay → onFsModePicked |
+> | 2 | `lockedSymbolFs.mjs` | N (1-12) random pre-locked simbola na grid za celu FS rundu — pin-uju se na svaki spin/post-spin re-paint | onFsTrigger seed → preSpin/postSpin re-paint → onFsEnd clear |
+> | 3 | `tumbleOnlyFs.mjs` | FS budget = N tumble chains (nije classic spin count) — chain end emit + counter HUD | onTumbleStep ended-flag OR 2.2s idle timer fallback |
+> | 4 | `infiniteFsUntilLoss.mjs` | FS traje dok god je svaki spin winning — prvi loss ends round | onFsSpinResult winX gate |
+>
+> ### 6 novih HookBus eventova (svi single-owner)
+>
+> | Event | Owner |
+> |:--|:--|
+> | `onFsModePicked` | pickYourFs.mjs |
+> | `onLockedSymbolFsSeeded` | lockedSymbolFs.mjs |
+> | `onTumbleOnlyFsModeEntered` | tumbleOnlyFs.mjs |
+> | `onTumbleOnlyFsChainEnded` | tumbleOnlyFs.mjs |
+> | `onInfiniteFsStreakBumped` | infiniteFsUntilLoss.mjs |
+> | `onInfiniteFsModeEnded` | infiniteFsUntilLoss.mjs |
+>
+> ### Multi-agent QA (Explore — kratak review)
+>
+> Verdict: **PASS_WITH_MINORS** — 5 senior-grade aspekata potvrđeni
+> (clampInt, wired-once, idempotent emit, ARIA contract, prefers-reduced-
+> motion). 3 fixed pred commit:
+>
+> | # | Nalaz | Fix |
+> |:-:|:--|:--|
+> | 1 | pickYourFs: modeIndex tolerate string + float | `parseInt(modeIndex, 10) || 0` + clamp |
+> | 2 | infiniteFsUntilLoss: generic `payload.win` colliding namespace | dropped — only `winX` / `totalWinX` |
+> | 3 | tumbleOnlyFs: engines bez `ended` flag-a hang counter | 2.2s idle timer fallback + _disarm on FS end |
+>
+> Nalazi 4-5 (XSS-safe lock symbol — regex already; `<body>` fallback — minor): noted, not blocking.
+>
+> ### Test coverage (4 nova) + regression
+>
+> | Block | Tests | Status |
+> |:--|:-:|:-:|
+> | pickYourFs | 10 | ✅ |
+> | lockedSymbolFs | 10 | ✅ |
+> | tumbleOnlyFs | 9 | ✅ |
+> | infiniteFsUntilLoss | 9 | ✅ |
+> | **TOTAL nova** | **38** | **38/38 ✅** |
+> | `test:lego` 7/7 | — | ✅ |
+> | `hookBus.test.mjs` | — | ✅ |
+> | `test:parse:real-pdfs` (4 GDD) | — | ✅ 4/4 |
+> | `test:parity` (cross-game DOM) | — | ✅ 0 violations |
+> | `test:force-outcomes` | — | ✅ 20/20 |
+>
+> **Block count**: 143 → **147 LEGO blokova** · **180+ canonical HookBus events** (svi single-owner).
+>
+> ---
+>
+
+
 > Living single-source-of-truth for what's shipped, what's in progress,
 > and what's queued. Updated after every wave/feature.
 >
