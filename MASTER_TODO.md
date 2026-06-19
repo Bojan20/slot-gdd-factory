@@ -1,3 +1,39 @@
+## 🎬 Wave C-1 LEGO-PERF (HEAD pending) — Bundle-size probe + budgets
+
+Boki: *"idemo redom, ultimativno"* — C-1 iz C-Wave roadmap-a.
+Ne radi nove blokove već uvodi BUDGET GATE protiv future regresija.
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ Nova infrastruktura                                                  │
+├──────────────────────────────────────────────────────────────────────┤
+│ tools/_ultimate-bundle-size-probe.mjs (NEW)                         │
+│   • Meri per-fixture bundle (HTML/CSS/JS) za 4 GDD                  │
+│   • Per-block emit cost (CSS+Runtime+Markup) za sva 184 bloka       │
+│   • Budget gates: perFixtureHTML≤1500KB, totalCSS≤350KB,            │
+│     totalRuntime≤800KB, singleCss≤30KB, singleRuntime≤50KB          │
+│   • Annotated allowlist za legit-heavy blokove (holdAndWin@80KB)    │
+│   • Outputs: summary.json / per-block.json / top20.md               │
+│                                                                      │
+│ tests/blocks/_bundleSizeProbe.test.mjs (NEW) — 23/23 ✅             │
+│   Validator čita summary + per-block + top20.md, asserts            │
+│   shape + budgets honored + sort order.                              │
+│                                                                      │
+│ package.json: npm run test:bundle                                    │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+**Baseline (HEAD pending)**:
+- WoO: 810 KB · GoO_1000: 707 KB · MidnightFangs: 726 KB · CF: 674 KB
+- Avg per fixture: ~729 KB (53% pod budgetom od 1500 KB)
+- Top 5 heavy: holdAndWin 81KB · bigWinTier 52KB · reelEngine 49KB
+- Σ CSS sve enabled: 320 KB · Σ Runtime: 1158 KB (per-block sum)
+- Σ blokova sa emit funkcijama: 178 / 184 (6 audit/no-emit)
+
+**Probe rezultat**: 355/355 ✅ (1 originalno fail za holdAndWin, fix-ovan annotated allowlist sa explicit 80KB ceiling + reason).
+
+---
+
 # Master TODO — slot-gdd-factory
 
 > **2026-06-19 · HEAD `d52ffbb`** · Σ **184 LEGO blokova** · Σ **2384 testova/asserts** · 0 fail

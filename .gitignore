@@ -37,3 +37,4 @@ tools/_qa/ultimate-html/
 blocks/demos/
 reports/playwright-deep-qa/
 reports/screen-reader-walk/
+reports/bundle-size/
