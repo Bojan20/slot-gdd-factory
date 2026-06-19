@@ -1,6 +1,72 @@
 # Master TODO — slot-gdd-factory
 
-> **2026-06-19 · HEAD pending** · WASH PASS #3 — backlog verification + 1 real fix
+> **2026-06-19 · HEAD pending** · 🚀 LEGO LIBRARY COVERAGE-GAP ROADMAP
+>
+> ## 🗺️ COMPLETE WAVE ROADMAP — preostale industry varijante (2026-06-19)
+>
+> Boki: *"zapisi sve detaljno u master todo, da znas sta treba da radis,
+> pa pocni sa prvim wavem ultimativno lego blokove, i da sve radi saverseno"*
+>
+> Posle 5-agent coverage audit-a vs IGT/industry research-pool (vendor-
+> patents-RE, kimi-mechanics-encyclopedia, woo-controllers-RE, web-slot-
+> mechanics, gdd-corpus-RE). Trenutno **147 blokova**, target **162+**.
+>
+> ### Coverage status po kategoriji
+>
+> | Kategorija | Postoji | Industry | Pokriveno |
+> |:--|:-:|:-:|:-:|
+> | Multiplier | 18 | 23 | 100% ✅ |
+> | Wild | 8 | 13 | 77% |
+> | FS | 13 | 18 | 72% |
+> | H&W + Bonus | 16 | 20 | 80% |
+> | Engine topology | 10 | 14 | 71% |
+> | Evaluator | 6 | 9 | 67% |
+>
+> ### Sledeće wave-i — strogi redosled, jedna po jedna
+>
+> | # | Wave | Blokovi | Industry ref | Priority | Est | Status |
+> |:-:|:--|:--|:--|:-:|:-:|:-:|
+> | 1 | **LEGO-EV** Evaluator | `allWaysEval`, `bidirectionalWaysEval` | Aristocrat universal · Microgaming L↔R 243 | 🔴 | 4-5h | ⏳ next |
+> | 2 | **LEGO-W2** Wild | `cascadingWildPersistence`, `mysteryWildReveal` | Pragmatic/NetEnt cascade · IGT mystery wild | 🔴 | 3-4h | 📋 queued |
+> | 3 | **LEGO-FS2** FS | `fsSymbolUpgradeEscalation`, `fsPersistentJackpotPool` | LP→HP tier (B64) · Relax/Wazdan progressive jackpot | 🔴 | 3-4h | 📋 queued |
+> | 4 | **LEGO-HW2** Hold & Win | `wildTriggerHoldAndWin`, `holdAndWinReelExpansion` | Aristocrat Dragon Link · Yggdrasil row expand | 🟡 | 3-4h | 📋 queued |
+> | 5 | **LEGO-B2** Bonus | `matchThreeBonusReveal`, `moneyGrabGrid`, `pathBonusEngine` | Pragmatic/Relax 3×3 match · EGT/Hacksaw position | 🟡 | 5-6h | 📋 queued |
+> | 6 | **LEGO-ENG** Engine | `pyramidGridEngine`, `hexClusterEngine` | 1-2-3-4-5 reels · NetEnt hex+cluster fusion | 🟢 | 6-8h | 📋 queued |
+> | 7 | **LEGO-FS3** FS | `winBothWaysActivation`, `fsReelHeightEscalation` | FS-only L↔R · variable rows per retrigger | 🟢 | 2-3h | 📋 queued |
+>
+> ### Definicija "spreman" za svaki blok (15-tačka senior-grade checklist)
+>
+> 1. JSDoc 8-sekcija header (Purpose / Industry ref / Public API /
+>    Lifecycle / Runtime contract / GDD config keys / Perf budget / a11y)
+> 2. `defaultConfig()` Object.freeze + `resolveConfig(model)` sa bounds/clamps
+> 3. `emitXxxCSS(cfg)` + `emitXxxMarkup(cfg)` + `emitXxxRuntime(cfg)` — empty stub kad disabled
+> 4. Pure helper exportovan za testove
+> 5. Single wired-once sentinel `window.__XXX_WIRED__`
+> 6. Direct `HookBus.emit('eventName', payload)` single-quoted string literals
+> 7. HookBus events registrovani u `tools/lego-gate.mjs EXPECTED_EMIT_OWNERS`
+> 8. HW_STATE.active guard gde primenljivo
+> 9. FSM phase guard / appliesIn knob (base/fs/both)
+> 10. `prefers-reduced-motion` CSS guard
+> 11. ARIA labels gde primenljivo
+> 12. ≥ 15 unit testova (covered: defaultConfig, resolveConfig bounds + invalid, emit shape, pure helpers edge cases, lego-gate compliance, vendor-neutral)
+> 13. Wire-in u `buildSlotHTML.mjs` (import + CSS + Markup + Runtime)
+> 14. Manifest regen + i18n entry + package.json test:blocks path
+> 15. Multi-agent QA review pre commit-a (senior-grade / vendor-neutral / lifecycle / math)
+>
+> ### Multi-agent QA workflow (verifikovan kroz 8+ wave-a)
+>
+> 1. Implementation — paralelni agenti, jedan blok po agentu, template-driven
+>    (mirror `perFsSpinMultiplier.mjs` ili `walkingWildStepper.mjs`)
+> 2. Wire-in — buildSlotHTML + manifest regen + lego-gate + test:blocks +
+>    grandfathered probe events ako orchestrator-emit
+> 3. QA cycle — independent agent 4-dim review + vendor grep + full regression
+> 4. Sweep — minor issues fix-uju se na licu mesta PRE commit-a (lesson from
+>    WASH PASS #1 — UVEK source-verify pre dijagnoze)
+> 5. Commit + master TODO mark LANDED + push
+>
+> ---
+>
+> ## 🧹 WASH PASS #3 — backlog systematic verification (2026-06-19)
 >
 > ## 🧹 WASH PASS #3 — backlog systematic verification (2026-06-19)
 >
