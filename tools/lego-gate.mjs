@@ -525,6 +525,11 @@ const EXPECTED_EMIT_OWNERS = {
   onThemePickerClosed:            ['themePicker.mjs'],
   onPaletteRolled:                ['paletteRoulette.mjs'],
   onAmbientMoodChanged:           ['ambientBgVariants.mjs'],
+  /* Wave LEGO-PROG (DEF1) — player XP + level meter + achievement toast. */
+  onPlayerXpGained:               ['playerXp.mjs'],
+  onPlayerLevelUp:                ['playerXp.mjs'],
+  onAchievementToastShown:        ['achievementToast.mjs'],
+  onAchievementToastDismissed:    ['achievementToast.mjs'],
   /* 2026-06-11 — holdAndWin phase machine emits its own INACTIVE → INTRO
    * → RUNNING → SUMMARY phase signal + a final end stats payload. Both
    * are sole-owned by the block; downstream HUD / summary listeners read

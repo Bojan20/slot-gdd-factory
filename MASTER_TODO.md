@@ -1,6 +1,48 @@
 # Master TODO — slot-gdd-factory
 
-> **2026-06-19 · HEAD `pending`** · Σ **181 LEGO blokova** · Σ **2269 testova/asserts** · 0 fail
+> **2026-06-19 · HEAD `pending`** · Σ **184 LEGO blokova** · Σ **2384 testova/asserts** · 0 fail
+>
+> ## 🎬 Wave LEGO-PROG (DEF1) — Player Progression (HEAD pending) — DEFERRED → DONE
+>
+> Boki: *"ajde radi ultimativno"* (16:14) — eksplicitan zelena za
+> DEFERRED stavku. Posle objašnjenja kako matematičar/dizajner/producent
+> rade zajedno na ovom feature-u, Boki je odlučio da krene.
+> Treba imati u vidu da ovo feature ima pun smisao tek POSLE povezivanja
+> matematike (Phase 2) — sad je placeholder linear curve.
+>
+> ```
+> ┌──────────────────────────────────────────────────────────────────────┐
+> │ Novi blokovi (181 → 184) — Tri-piece progression chain               │
+> ├──────────────────────────────────────────────────────────────────────┤
+> │ playerXp.mjs              │ AWARD — XP accumulator. Per-spin (XP   │
+> │                           │ per bet unit × spin) + per-coin (XP    │
+> │                           │ per coin × cellIds.length). Anti-cheese │
+> │                           │ cap maxXpPerSpin (default 50). 5 default│
+> │                           │ levels (100/250/500/1000/2000 XP) sa   │
+> │                           │ per-level rewards: credit / fs_trigger /│
+> │                           │ multiplier / boost. window.__PLAYER_XP__│
+> │                           │ shared state contract sa getLevel +    │
+> │                           │ nextThreshold helpers.                  │
+> ├───────────────────────────┼──────────────────────────────────────────┤
+> │ sessionLevelMeter.mjs     │ DISPLAY — HUD widget pinned top-left   │
+> │                           │ (top:58, clears ante-bet+ladder dock). │
+> │                           │ role=progressbar + aria-valuetext, fill│
+> │                           │ transition, level chip + numeric label.│
+> │                           │ Flash class 600ms on onPlayerLevelUp.  │
+> ├───────────────────────────┼──────────────────────────────────────────┤
+> │ achievementToast.mjs      │ NOTIFY — top-center stack (max 3       │
+> │                           │ concurrent). role=alert + aria-live=    │
+> │                           │ assertive. Badge + title + sub. Auto-  │
+> │                           │ dismiss timer + click + Esc. Listens   │
+> │                           │ onPlayerLevelUp + onAchievementUnlocked│
+> │                           │ (external operator event). 4 reward    │
+> │                           │ kind formatters.                        │
+> └───────────────────────────┴──────────────────────────────────────────┘
+> ```
+>
+> **Test gates**: playerXp 46/46 · sessionLevelMeter 29/29 · achievementToast 40/40 · LEGO 8/8 (314 events) · cross-engine 450/450 · render-parity 190/190.
+>
+> ---
 >
 > ## 🎬 ALT-C Screen-reader walk (HEAD pending) — FULL BACKLOG CLOSEOUT
 >

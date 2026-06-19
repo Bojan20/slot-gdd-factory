@@ -1,8 +1,41 @@
 {
-  "generatedAt": "2026-06-19T15:37:16.352Z",
+  "generatedAt": "2026-06-19T16:19:06.148Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 181,
+  "totalBlocks": 184,
   "blocks": [
+    {
+      "name": "achievementToast",
+      "file": "src/blocks/achievementToast.mjs",
+      "testFile": "tests/blocks/achievementToast.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-PROG (DEF1 · 3/3) — Level-up + achievement toast popups.",
+      "exports": [
+        "defaultConfig",
+        "emitAchievementToastCSS",
+        "emitAchievementToastMarkup",
+        "emitAchievementToastRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onAchievementUnlocked",
+        "onPlayerLevelUp"
+      ],
+      "emittedEvents": [
+        "onAchievementToastDismissed",
+        "onAchievementToastShown"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "label": "LEVEL UP",
+        "visibleMs": 3500,
+        "maxQueue": 3,
+        "color": "#ffd34a",
+        "colorDark": "#a07520",
+        "haloRGB": "255,211,74",
+        "badgeEmoji": "🏆"
+      },
+      "loc": 303
+    },
     {
       "name": "allWaysEval",
       "file": "src/blocks/allWaysEval.mjs",
@@ -2830,7 +2863,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 1033
+      "loc": 1038
     },
     {
       "name": "hotReload",
@@ -4624,6 +4657,70 @@
       "loc": 364
     },
     {
+      "name": "playerXp",
+      "file": "src/blocks/playerXp.mjs",
+      "testFile": "tests/blocks/playerXp.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-PROG (DEF1 · 1/3) — XP accumulator + session levels.",
+      "exports": [
+        "defaultConfig",
+        "emitPlayerXpCSS",
+        "emitPlayerXpMarkup",
+        "emitPlayerXpRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onCoinCollected",
+        "onFsEnd",
+        "onFsTrigger",
+        "onSpinResult"
+      ],
+      "emittedEvents": [
+        "onPlayerLevelUp",
+        "onPlayerXpGained"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "xpPerBetUnit": 1,
+        "xpPerCoin": 2,
+        "maxXpPerSpin": 50,
+        "pauseDuringFs": false,
+        "levels": [
+          {
+            "id": "l1",
+            "threshold": 100,
+            "rewardKind": "credit",
+            "rewardValue": 10
+          },
+          {
+            "id": "l2",
+            "threshold": 250,
+            "rewardKind": "credit",
+            "rewardValue": 25
+          },
+          {
+            "id": "l3",
+            "threshold": 500,
+            "rewardKind": "fs_trigger",
+            "rewardValue": 5
+          },
+          {
+            "id": "l4",
+            "threshold": 1000,
+            "rewardKind": "multiplier",
+            "rewardValue": 2
+          },
+          {
+            "id": "l5",
+            "threshold": 2000,
+            "rewardKind": "boost",
+            "rewardValue": 1
+          }
+        ]
+      },
+      "loc": 252
+    },
+    {
       "name": "plinkoSpinEngine",
       "file": "src/blocks/plinkoSpinEngine.mjs",
       "testFile": "tests/blocks/plinkoSpinEngine.test.mjs",
@@ -5554,6 +5651,33 @@
         "reducedMotionHaloAlpha": 0.7
       },
       "loc": 360
+    },
+    {
+      "name": "sessionLevelMeter",
+      "file": "src/blocks/sessionLevelMeter.mjs",
+      "testFile": "tests/blocks/sessionLevelMeter.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-PROG (DEF1 · 2/3) — Visible XP / level progress meter.",
+      "exports": [
+        "defaultConfig",
+        "emitSessionLevelMeterCSS",
+        "emitSessionLevelMeterMarkup",
+        "emitSessionLevelMeterRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onPlayerLevelUp",
+        "onPlayerXpGained"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": false,
+        "label": "LVL",
+        "color": "#7fffd4",
+        "colorDark": "#205045",
+        "haloRGB": "127,255,212"
+      },
+      "loc": 242
     },
     {
       "name": "sessionTimeout",
@@ -6523,7 +6647,9 @@
         "emitThemePickerRuntime",
         "resolveConfig"
       ],
-      "lifecycleHooks": [],
+      "lifecycleHooks": [
+        "preSpin"
+      ],
       "emittedEvents": [
         "onThemeChanged",
         "onThemePickerClosed",
@@ -6554,7 +6680,7 @@
         "color": "#9aa4ff",
         "colorDark": "#3a3f7c"
       },
-      "loc": 368
+      "loc": 377
     },
     {
       "name": "totalMultiplierChip",

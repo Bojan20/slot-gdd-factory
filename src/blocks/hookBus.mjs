@@ -713,6 +713,11 @@ export const HOOK_EVENTS = Object.freeze([
   'onThemePickerClosed',  // Owner: themePicker.mjs (LEGO-THEME B-8)
   'onPaletteRolled',  // Owner: paletteRoulette.mjs (LEGO-THEME B-8)
   'onAmbientMoodChanged',  // Owner: ambientBgVariants.mjs (LEGO-THEME B-8)
+  'onPlayerXpGained',  // Owner: playerXp.mjs (LEGO-PROG DEF1)
+  'onPlayerLevelUp',  // Owner: playerXp.mjs (LEGO-PROG DEF1)
+  'onAchievementToastShown',  // Owner: achievementToast.mjs (LEGO-PROG DEF1)
+  'onAchievementToastDismissed',  // Owner: achievementToast.mjs (LEGO-PROG DEF1)
+  'onAchievementUnlocked',  // External event (operator-pushed); achievementToast subscribes
   'onCoinShowerEnd',  // Owner: coinShower.mjs
   'onCoinShowerStart',  // Owner: coinShower.mjs
   'onCoolOffEnforced',  // Owner: netherlandsComplianceGate.mjs

@@ -303,6 +303,25 @@ import {
   emitAmbientBgVariantsRuntime,
   resolveConfig as resolveAmbientBgVariantsConfig,
 } from './blocks/ambientBgVariants.mjs';
+/* Wave LEGO-PROG (DEF1) — playerXp + sessionLevelMeter + achievementToast. */
+import {
+  emitPlayerXpCSS,
+  emitPlayerXpMarkup,
+  emitPlayerXpRuntime,
+  resolveConfig as resolvePlayerXpConfig,
+} from './blocks/playerXp.mjs';
+import {
+  emitSessionLevelMeterCSS,
+  emitSessionLevelMeterMarkup,
+  emitSessionLevelMeterRuntime,
+  resolveConfig as resolveSessionLevelMeterConfig,
+} from './blocks/sessionLevelMeter.mjs';
+import {
+  emitAchievementToastCSS,
+  emitAchievementToastMarkup,
+  emitAchievementToastRuntime,
+  resolveConfig as resolveAchievementToastConfig,
+} from './blocks/achievementToast.mjs';
 /* Wave L–P — 16 detected-but-unused feature kinds, now wired as LEGO blocks */
 import {
   emitStickyWildCSS, emitStickyWildRuntime,
@@ -1179,6 +1198,10 @@ ${/* Wave LEGO-THEME (B-8) — themePicker + paletteRoulette + ambientBg. */ ''}
 ${emitThemePickerCSS(resolveThemePickerConfig(model))}
 ${emitPaletteRouletteCSS(resolvePaletteRouletteConfig(model))}
 ${emitAmbientBgVariantsCSS(resolveAmbientBgVariantsConfig(model))}
+${/* Wave LEGO-PROG (DEF1) — playerXp + sessionLevelMeter + achievementToast. */ ''}
+${emitPlayerXpCSS(resolvePlayerXpConfig(model))}
+${emitSessionLevelMeterCSS(resolveSessionLevelMeterConfig(model))}
+${emitAchievementToastCSS(resolveAchievementToastConfig(model))}
 /* Wave L–P — 16 feature blocks CSS (no-op when disabled) */
 ${emitStickyWildCSS(resolveStickyWildConfig(model))}
 ${emitExpandingWildCSS(resolveExpandingWildConfig(model))}
@@ -1435,6 +1458,10 @@ ${/* Wave LEGO-THEME (B-8) — themePicker + paletteRoulette + ambientBg markup.
 ${emitThemePickerMarkup(resolveThemePickerConfig(model))}
 ${emitPaletteRouletteMarkup(resolvePaletteRouletteConfig(model))}
 ${emitAmbientBgVariantsMarkup(resolveAmbientBgVariantsConfig(model))}
+${/* Wave LEGO-PROG (DEF1) — playerXp + sessionLevelMeter + achievementToast. */ ''}
+${emitPlayerXpMarkup(resolvePlayerXpConfig(model))}
+${emitSessionLevelMeterMarkup(resolveSessionLevelMeterConfig(model))}
+${emitAchievementToastMarkup(resolveAchievementToastConfig(model))}
 <!-- Wave L–P markup (empty strings when disabled) -->
 ${emitPersistentMultiplierMarkup(resolvePersistentMultiplierConfig(model))}
 ${emitProgressiveFreeSpinsMarkup(resolveProgressiveFreeSpinsConfig(model))}
@@ -1701,6 +1728,11 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitThemePickerRuntime(resolveThemePickerConfig(model))}
   ${emitPaletteRouletteRuntime(resolvePaletteRouletteConfig(model))}
   ${emitAmbientBgVariantsRuntime(resolveAmbientBgVariantsConfig(model))}
+  ${/* Wave LEGO-PROG (DEF1) — playerXp emit → sessionLevelMeter render
+       → achievementToast popup. Order matters for correct hydration. */ ''}
+  ${emitPlayerXpRuntime(resolvePlayerXpConfig(model))}
+  ${emitSessionLevelMeterRuntime(resolveSessionLevelMeterConfig(model))}
+  ${emitAchievementToastRuntime(resolveAchievementToastConfig(model))}
 
   /* Wave L–P — 16 feature kinds runtime (no-op stubs when disabled).
      Order: wilds first (modify the grid), then evaluators (read modified
