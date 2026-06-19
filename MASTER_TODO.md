@@ -1,6 +1,48 @@
 # Master TODO — slot-gdd-factory
 
-> **2026-06-19 · HEAD `pending`** · Σ **172 LEGO blokova** · Σ **1907 testova/asserts** · 0 fail
+> **2026-06-19 · HEAD `pending`** · Σ **178 LEGO blokova** · Σ **2110 testova/asserts** · 0 fail
+>
+> ## 🎬 TRIPLE WAVE BLITZ — B-2 + B-5 + B-7 (HEAD pending)
+>
+> Boki: *"cepaj dalje ultimativno sa svim agentima"* — autonomno cepam
+> 3 Wave-a paralelno (6 blokova, 10 novih event-a, 203 nova assertion-a).
+>
+> ```
+> ┌──────────────────────────────────────────────────────────────────────┐
+> │ Wave LEGO-REPLAY (B-2) · 2 bloka (172 → 174)                        │
+> ├──────────────────────────────────────────────────────────────────────┤
+> │ spinHistoryReplay.mjs    │ Ring buffer (last 10 spins) → visual    │
+> │                          │ frame restore. No engine re-run, no RNG │
+> │                          │ change. window.__SPIN_HISTORY__ API.    │
+> │ replayControlBar.mjs     │ ⏮ ⏯ ⏭ ■ toolbar, role=toolbar,         │
+> │                          │ ARIA disabled states, Arrow nav.        │
+> ├──────────────────────────────────────────────────────────────────────┤
+> │ Wave LEGO-SOCIAL (B-5) · 2 bloka (174 → 176)                        │
+> ├──────────────────────────────────────────────────────────────────────┤
+> │ leaderboardChip.mjs      │ Top-right chip "YOU: #4". Tap expands   │
+> │                          │ role=dialog modal sa top-N listom.      │
+> │                          │ Anonymous handles, session-scoped.      │
+> │                          │ Reads __COIN_COLLECT__ za self-rank.    │
+> │ shareReplay.mjs          │ Big-win → "SHARE WIN" button. base64    │
+> │                          │ PII-free token URL → navigator.share()  │
+> │                          │ sa clipboard fallback. 0 PII leak.      │
+> ├──────────────────────────────────────────────────────────────────────┤
+> │ Wave LEGO-SIDEBET (B-7) · 2 bloka (176 → 178)                       │
+> ├──────────────────────────────────────────────────────────────────────┤
+> │ insuranceBet.mjs         │ +20% bet → 50% refund na 0-win spin.    │
+> │                          │ role=switch, UKGC/SE/DE/NL banned.      │
+> │ prizeBoostBet.mjs        │ +50% bet → ×2 win multiplier.           │
+> │                          │ role=switch, UKGC/SE/DE/NL banned.      │
+> └──────────────────────────────────────────────────────────────────────┘
+> ```
+>
+> **Test gates**:
+> spinHistoryReplay 31/31 · replayControlBar 31/31 · leaderboardChip 33/33 ·
+> shareReplay 33/33 · insuranceBet 37/37 · prizeBoostBet 38/38 · LEGO 8/8
+> (304 events) · cross-engine 450/450 · render-parity 190/190 · parse-real
+> 4/4 · render-grid 20/20.
+>
+> ---
 >
 > ## 🎬 Wave LEGO-VOLATILITY (B-6) — Pre-spin player choice (HEAD pending)
 >

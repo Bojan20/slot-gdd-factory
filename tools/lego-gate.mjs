@@ -506,6 +506,19 @@ const EXPECTED_EMIT_OWNERS = {
    * legitimate emit sources; downstream subscribers may filter by
    * payload.source ('settings' / undefined for selector). */
   onVolatilityChanged:            ['volatilitySelector.mjs', 'settingsPanel.mjs'],
+  /* Wave LEGO-REPLAY (B-2) — spin history + control bar. */
+  onSpinReplayStart:              ['spinHistoryReplay.mjs'],
+  onSpinReplayEnd:                ['spinHistoryReplay.mjs'],
+  onSpinReplayPaused:             ['spinHistoryReplay.mjs'],
+  onReplayControlInvoked:         ['replayControlBar.mjs'],
+  /* Wave LEGO-SOCIAL (B-5) — leaderboard + share. */
+  onLeaderboardOpened:            ['leaderboardChip.mjs'],
+  onLeaderboardClosed:            ['leaderboardChip.mjs'],
+  onLeaderboardRankChanged:       ['leaderboardChip.mjs'],
+  onShareReplayInvoked:           ['shareReplay.mjs'],
+  /* Wave LEGO-SIDEBET (B-7) — insurance + prize boost. */
+  onInsuranceBetChanged:          ['insuranceBet.mjs'],
+  onPrizeBoostChanged:            ['prizeBoostBet.mjs'],
   /* 2026-06-11 — holdAndWin phase machine emits its own INACTIVE → INTRO
    * → RUNNING → SUMMARY phase signal + a final end stats payload. Both
    * are sole-owned by the block; downstream HUD / summary listeners read

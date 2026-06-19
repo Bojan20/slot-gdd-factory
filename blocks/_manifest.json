@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-19T15:16:08.390Z",
+  "generatedAt": "2026-06-19T15:30:54.397Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 172,
+  "totalBlocks": 178,
   "blocks": [
     {
       "name": "allWaysEval",
@@ -2795,7 +2795,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 1018
+      "loc": 1028
     },
     {
       "name": "hotReload",
@@ -2987,6 +2987,36 @@
         "expandAnimMs": 300
       },
       "loc": 473
+    },
+    {
+      "name": "insuranceBet",
+      "file": "src/blocks/insuranceBet.mjs",
+      "testFile": "tests/blocks/insuranceBet.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-SIDEBET (B-7 · 1/2) — Insurance side bet.",
+      "exports": [
+        "defaultConfig",
+        "emitInsuranceBetCSS",
+        "emitInsuranceBetMarkup",
+        "emitInsuranceBetRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [
+        "onInsuranceBetChanged"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "label": "INSURE",
+        "costMult": 1.2,
+        "payoutRatio": 0.5,
+        "color": "#7fbfff",
+        "colorDark": "#205080"
+      },
+      "loc": 248
     },
     {
       "name": "italyComplianceGate",
@@ -3214,6 +3244,38 @@
         "enabled": true
       },
       "loc": 188
+    },
+    {
+      "name": "leaderboardChip",
+      "file": "src/blocks/leaderboardChip.mjs",
+      "testFile": "tests/blocks/leaderboardChip.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-SOCIAL (B-5 · 1/2) — Session leaderboard chip.",
+      "exports": [
+        "defaultConfig",
+        "emitLeaderboardChipCSS",
+        "emitLeaderboardChipMarkup",
+        "emitLeaderboardChipRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onCoinCollected",
+        "onSpinResult"
+      ],
+      "emittedEvents": [
+        "onLeaderboardClosed",
+        "onLeaderboardOpened",
+        "onLeaderboardRankChanged"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "label": "RANK",
+        "topN": 10,
+        "color": "#ffaad4",
+        "colorDark": "#9a2466",
+        "haloRGB": "255,170,212"
+      },
+      "loc": 353
     },
     {
       "name": "lightning",
@@ -4516,6 +4578,36 @@
       "loc": 303
     },
     {
+      "name": "prizeBoostBet",
+      "file": "src/blocks/prizeBoostBet.mjs",
+      "testFile": "tests/blocks/prizeBoostBet.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-SIDEBET (B-7 · 2/2) — Prize boost side bet.",
+      "exports": [
+        "defaultConfig",
+        "emitPrizeBoostBetCSS",
+        "emitPrizeBoostBetMarkup",
+        "emitPrizeBoostBetRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [
+        "onPrizeBoostChanged"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "label": "BOOST",
+        "costMult": 1.5,
+        "winMult": 2,
+        "color": "#ffaa66",
+        "colorDark": "#a04020"
+      },
+      "loc": 241
+    },
+    {
       "name": "progressiveFreeSpins",
       "file": "src/blocks/progressiveFreeSpins.mjs",
       "testFile": "tests/blocks/progressiveFreeSpins.test.mjs",
@@ -4972,6 +5064,38 @@
         "ackButtonLabel": "I UNDERSTAND"
       },
       "loc": 538
+    },
+    {
+      "name": "replayControlBar",
+      "file": "src/blocks/replayControlBar.mjs",
+      "testFile": "tests/blocks/replayControlBar.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-REPLAY (B-2 · 2/2) — Player-facing replay control bar.",
+      "exports": [
+        "defaultConfig",
+        "emitReplayControlBarCSS",
+        "emitReplayControlBarMarkup",
+        "emitReplayControlBarRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "onSpinReplayEnd",
+        "onSpinReplayPaused",
+        "onSpinReplayStart",
+        "onSpinResult"
+      ],
+      "emittedEvents": [
+        "onReplayControlInvoked"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "label": "REPLAY",
+        "color": "#7fffd4",
+        "colorDark": "#205045"
+      },
+      "loc": 236
     },
     {
       "name": "respin",
@@ -5445,6 +5569,38 @@
       "loc": 1023
     },
     {
+      "name": "shareReplay",
+      "file": "src/blocks/shareReplay.mjs",
+      "testFile": "tests/blocks/shareReplay.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-SOCIAL (B-5 · 2/2) — Anonymous share-replay link generator.",
+      "exports": [
+        "defaultConfig",
+        "emitShareReplayCSS",
+        "emitShareReplayMarkup",
+        "emitShareReplayRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onBigWinTierEnter",
+        "onBigWinTierExit",
+        "onFsEnd",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [
+        "onShareReplayInvoked"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "label": "SHARE WIN",
+        "tokenHostPrefix": "https://share.example/replay#",
+        "color": "#c5a8ff",
+        "colorDark": "#5a3a9c",
+        "haloRGB": "197,168,255"
+      },
+      "loc": 281
+    },
+    {
       "name": "slamStop",
       "file": "src/blocks/slamStop.mjs",
       "testFile": "tests/blocks/slamStop.test.mjs",
@@ -5604,6 +5760,39 @@
         "skipColor": "90,180,255"
       },
       "loc": 964
+    },
+    {
+      "name": "spinHistoryReplay",
+      "file": "src/blocks/spinHistoryReplay.mjs",
+      "testFile": "tests/blocks/spinHistoryReplay.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-REPLAY (B-2 · 1/2) — Spin history buffer + replay engine.",
+      "exports": [
+        "defaultConfig",
+        "emitSpinHistoryReplayCSS",
+        "emitSpinHistoryReplayMarkup",
+        "emitSpinHistoryReplayRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "onSpinResult"
+      ],
+      "emittedEvents": [
+        "onSpinReplayEnd",
+        "onSpinReplayPaused",
+        "onSpinReplayStart"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "label": "REPLAY",
+        "maxBuffer": 10,
+        "captureFs": false,
+        "color": "#7fffd4",
+        "haloRGB": "127,255,212"
+      },
+      "loc": 268
     },
     {
       "name": "spinTempo",

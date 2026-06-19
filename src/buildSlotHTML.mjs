@@ -245,6 +245,45 @@ import {
   emitVolatilitySelectorRuntime,
   resolveConfig as resolveVolatilitySelectorConfig,
 } from './blocks/volatilitySelector.mjs';
+/* Wave LEGO-REPLAY (B-2) — spin history + control bar. */
+import {
+  emitSpinHistoryReplayCSS,
+  emitSpinHistoryReplayMarkup,
+  emitSpinHistoryReplayRuntime,
+  resolveConfig as resolveSpinHistoryReplayConfig,
+} from './blocks/spinHistoryReplay.mjs';
+import {
+  emitReplayControlBarCSS,
+  emitReplayControlBarMarkup,
+  emitReplayControlBarRuntime,
+  resolveConfig as resolveReplayControlBarConfig,
+} from './blocks/replayControlBar.mjs';
+/* Wave LEGO-SOCIAL (B-5) — leaderboard chip + share replay. */
+import {
+  emitLeaderboardChipCSS,
+  emitLeaderboardChipMarkup,
+  emitLeaderboardChipRuntime,
+  resolveConfig as resolveLeaderboardChipConfig,
+} from './blocks/leaderboardChip.mjs';
+import {
+  emitShareReplayCSS,
+  emitShareReplayMarkup,
+  emitShareReplayRuntime,
+  resolveConfig as resolveShareReplayConfig,
+} from './blocks/shareReplay.mjs';
+/* Wave LEGO-SIDEBET (B-7) — insurance + prize boost. */
+import {
+  emitInsuranceBetCSS,
+  emitInsuranceBetMarkup,
+  emitInsuranceBetRuntime,
+  resolveConfig as resolveInsuranceBetConfig,
+} from './blocks/insuranceBet.mjs';
+import {
+  emitPrizeBoostBetCSS,
+  emitPrizeBoostBetMarkup,
+  emitPrizeBoostBetRuntime,
+  resolveConfig as resolvePrizeBoostBetConfig,
+} from './blocks/prizeBoostBet.mjs';
 /* Wave L–P — 16 detected-but-unused feature kinds, now wired as LEGO blocks */
 import {
   emitStickyWildCSS, emitStickyWildRuntime,
@@ -1108,6 +1147,15 @@ ${emitCumulativeMeterCSS(resolveCumulativeMeterConfig(model))}
 ${emitCollectRevealOverlayCSS(resolveCollectRevealOverlayConfig(model))}
 ${/* Wave LEGO-VOLATILITY (B-6) — pre-spin player choice. */ ''}
 ${emitVolatilitySelectorCSS(resolveVolatilitySelectorConfig(model))}
+${/* Wave LEGO-REPLAY (B-2) — spin history + control bar. */ ''}
+${emitSpinHistoryReplayCSS(resolveSpinHistoryReplayConfig(model))}
+${emitReplayControlBarCSS(resolveReplayControlBarConfig(model))}
+${/* Wave LEGO-SOCIAL (B-5) — leaderboard + share. */ ''}
+${emitLeaderboardChipCSS(resolveLeaderboardChipConfig(model))}
+${emitShareReplayCSS(resolveShareReplayConfig(model))}
+${/* Wave LEGO-SIDEBET (B-7) — insurance + prize boost. */ ''}
+${emitInsuranceBetCSS(resolveInsuranceBetConfig(model))}
+${emitPrizeBoostBetCSS(resolvePrizeBoostBetConfig(model))}
 /* Wave L–P — 16 feature blocks CSS (no-op when disabled) */
 ${emitStickyWildCSS(resolveStickyWildConfig(model))}
 ${emitExpandingWildCSS(resolveExpandingWildConfig(model))}
@@ -1351,6 +1399,15 @@ ${emitCumulativeMeterMarkup(resolveCumulativeMeterConfig(model))}
 ${emitCollectRevealOverlayMarkup(resolveCollectRevealOverlayConfig(model))}
 ${/* Wave LEGO-VOLATILITY (B-6) — pre-spin player choice markup. */ ''}
 ${emitVolatilitySelectorMarkup(resolveVolatilitySelectorConfig(model))}
+${/* Wave LEGO-REPLAY (B-2) — spin history markup. */ ''}
+${emitSpinHistoryReplayMarkup(resolveSpinHistoryReplayConfig(model))}
+${emitReplayControlBarMarkup(resolveReplayControlBarConfig(model))}
+${/* Wave LEGO-SOCIAL (B-5) — leaderboard + share markup. */ ''}
+${emitLeaderboardChipMarkup(resolveLeaderboardChipConfig(model))}
+${emitShareReplayMarkup(resolveShareReplayConfig(model))}
+${/* Wave LEGO-SIDEBET (B-7) — insurance + prize boost markup. */ ''}
+${emitInsuranceBetMarkup(resolveInsuranceBetConfig(model))}
+${emitPrizeBoostBetMarkup(resolvePrizeBoostBetConfig(model))}
 <!-- Wave L–P markup (empty strings when disabled) -->
 ${emitPersistentMultiplierMarkup(resolvePersistentMultiplierConfig(model))}
 ${emitProgressiveFreeSpinsMarkup(resolveProgressiveFreeSpinsConfig(model))}
@@ -1602,6 +1659,15 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitCollectRevealOverlayRuntime(resolveCollectRevealOverlayConfig(model))}
   ${/* Wave LEGO-VOLATILITY (B-6) — pre-spin player choice runtime. */ ''}
   ${emitVolatilitySelectorRuntime(resolveVolatilitySelectorConfig(model))}
+  ${/* Wave LEGO-REPLAY (B-2) — spin history capture before bar wires. */ ''}
+  ${emitSpinHistoryReplayRuntime(resolveSpinHistoryReplayConfig(model))}
+  ${emitReplayControlBarRuntime(resolveReplayControlBarConfig(model))}
+  ${/* Wave LEGO-SOCIAL (B-5) — leaderboard + share. */ ''}
+  ${emitLeaderboardChipRuntime(resolveLeaderboardChipConfig(model))}
+  ${emitShareReplayRuntime(resolveShareReplayConfig(model))}
+  ${/* Wave LEGO-SIDEBET (B-7) — insurance + prize boost. */ ''}
+  ${emitInsuranceBetRuntime(resolveInsuranceBetConfig(model))}
+  ${emitPrizeBoostBetRuntime(resolvePrizeBoostBetConfig(model))}
 
   /* Wave L–P — 16 feature kinds runtime (no-op stubs when disabled).
      Order: wilds first (modify the grid), then evaluators (read modified

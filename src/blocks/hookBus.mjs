@@ -698,6 +698,16 @@ export const HOOK_EVENTS = Object.freeze([
   'onCollectRevealOpened',  // Owner: collectRevealOverlay.mjs (LEGO-COLLECT B-4)
   'onCollectRevealClaimed',  // Owner: collectRevealOverlay.mjs (LEGO-COLLECT B-4)
   'onVolatilityChanged',  // Owner: volatilitySelector.mjs (LEGO-VOLATILITY B-6)
+  'onSpinReplayStart',  // Owner: spinHistoryReplay.mjs (LEGO-REPLAY B-2)
+  'onSpinReplayEnd',  // Owner: spinHistoryReplay.mjs (LEGO-REPLAY B-2)
+  'onSpinReplayPaused',  // Owner: spinHistoryReplay.mjs (LEGO-REPLAY B-2)
+  'onReplayControlInvoked',  // Owner: replayControlBar.mjs (LEGO-REPLAY B-2)
+  'onLeaderboardOpened',  // Owner: leaderboardChip.mjs (LEGO-SOCIAL B-5)
+  'onLeaderboardClosed',  // Owner: leaderboardChip.mjs (LEGO-SOCIAL B-5)
+  'onLeaderboardRankChanged',  // Owner: leaderboardChip.mjs (LEGO-SOCIAL B-5)
+  'onShareReplayInvoked',  // Owner: shareReplay.mjs (LEGO-SOCIAL B-5)
+  'onInsuranceBetChanged',  // Owner: insuranceBet.mjs (LEGO-SIDEBET B-7)
+  'onPrizeBoostChanged',  // Owner: prizeBoostBet.mjs (LEGO-SIDEBET B-7)
   'onCoinShowerEnd',  // Owner: coinShower.mjs
   'onCoinShowerStart',  // Owner: coinShower.mjs
   'onCoolOffEnforced',  // Owner: netherlandsComplianceGate.mjs
