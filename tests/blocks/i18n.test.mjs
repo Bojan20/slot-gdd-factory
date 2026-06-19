@@ -15,10 +15,14 @@ console.log('— blocks/i18n.mjs —');
 
 /* ─── language packs ──────────────────────────────────────────────── */
 
-t('LANGUAGE_PACKS: 10 baseline locales present', () => {
-  const want = ['en-US', 'sr-Latn', 'de-DE', 'es-ES', 'fr-FR', 'it-IT', 'pt-BR', 'tr-TR', 'ru-RU', 'zh-Hans'];
+t('LANGUAGE_PACKS: 14 baseline locales present (10 original + 4 C-2 LEGO-I18N)', () => {
+  const want = [
+    'en-US', 'sr-Latn', 'de-DE', 'es-ES', 'fr-FR', 'it-IT', 'pt-BR', 'tr-TR', 'ru-RU', 'zh-Hans',
+    /* C-2 LEGO-I18N additions */
+    'sr-RS', 'pl-PL', 'nl-NL', 'ar-SA',
+  ];
   for (const loc of want) ok(LANGUAGE_PACKS[loc], `missing ${loc}`);
-  eq(Object.keys(LANGUAGE_PACKS).length, 10);
+  eq(Object.keys(LANGUAGE_PACKS).length, 14);
 });
 
 t('LANGUAGE_PACKS: every pack has the canonical baseline keys', () => {
@@ -49,8 +53,8 @@ t('LANGUAGE_PACKS: packs are frozen (defensive)', () => {
 
 /* ─── currency formats ────────────────────────────────────────────── */
 
-t('CURRENCY_FORMATS: 10 locales covered', () => {
-  eq(Object.keys(CURRENCY_FORMATS).length, 10);
+t('CURRENCY_FORMATS: 14 locales covered (10 original + 4 C-2 LEGO-I18N)', () => {
+  eq(Object.keys(CURRENCY_FORMATS).length, 14);
 });
 
 t('CURRENCY_FORMATS: US uses $ first + comma/dot', () => {
