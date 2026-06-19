@@ -516,6 +516,9 @@ const EXPECTED_EMIT_OWNERS = {
   onFsJackpotPoolBumped:             ['fsPersistentJackpotPool.mjs'],
   onFsJackpotPoolPaidOut:            ['fsPersistentJackpotPool.mjs'],
   onFsJackpotPoolEndRequested:       ['fsPersistentJackpotPool.mjs'],
+  /* Wave LEGO-HW2 (Hold & Win variants, 2026-06-19) — 2 new blocks. */
+  onWildTriggerHoldAndWinRequested:  ['wildTriggerHoldAndWin.mjs'],
+  onHoldAndWinReelExpanded:          ['holdAndWinReelExpansion.mjs'],
   /* Wave LEGO-H/FS/W (2026-06-18) — 8 new GDD-driven variants. Each
    * block owns its single canonical event pair (rolled/cleared etc). */
   onFrameMultiplierBumped:           ['holdAndWinFrameMultiplier.mjs'],

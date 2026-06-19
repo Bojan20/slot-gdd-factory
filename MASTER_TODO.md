@@ -1,5 +1,54 @@
 # Master TODO — slot-gdd-factory
 
+> **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-HW2** landed
+>
+> ## 🔒 Wave LEGO-HW2 — 2 nova H&W-varijanta bloka (153 → 155)
+>
+> Boki: *"dalje"* — sledeća wave po roadmap-u. H&W + Bonus coverage
+> raste sa 80% → ~95%.
+>
+> ### Blokovi
+>
+> | Blok | Industry pattern | Lifecycle |
+> |:--|:--|:--|
+> | `wildTriggerHoldAndWin.mjs` | N wilds u bazi → emit canonical H&W entry request (Aristocrat Dragon Link pattern) | preSpin reset · onSpinResult/onTumbleStep count wilds (onScreen ili cascade union) · skipDuringFs gate |
+> | `holdAndWinReelExpansion.mjs` | Mid-round grid expansion: N respinova ILI locked-pct threshold → dodaje novu kolonu (Yggdrasil) | onHoldAndWinPhase mount/cleanup · postSpin milestone check · onHoldAndWinRespin |
+>
+> ### HookBus events (oba single-owner)
+>
+> | Event | Owner |
+> |:--|:--|
+> | `onWildTriggerHoldAndWinRequested` | wildTriggerHoldAndWin.mjs |
+> | `onHoldAndWinReelExpanded` | holdAndWinReelExpansion.mjs |
+>
+> ### Multi-agent QA — verdict PASS_WITH_MINORS
+>
+> 3 ključna nalaza fixed pre commit-a (general-purpose subagent):
+>
+> | # | Severity | Fix |
+> |:-:|:--|:--|
+> | F1 | MAJOR | wthw `_onSpinResult` cascade mode mora UNION sa `lastTriggerCells`, ne OVERWRITE (race protection ako settle stigne posle tumble step-a) |
+> | Cross-block #1 | HIGH | wthw `hwForceSeed` defer u `setTimeout(0)` — listeners (uključujući H&W armed-latch) imaju vremena da update state PRE seeding-a |
+> | Lifecycle #2 | HIGH | hwre INACTIVE phase sad uklanja dodate "ghost" kolone iz DOM-a — sledeći base spin starta sa CISTIM gridom (reelEngine ne vidi phantom column) |
+>
+> 2 nalaza deferred to HW2.3 (hwre reelEngine adapter za live grid resize, hwre _addColumn grid-track inheritance — needs sample-cell style audit).
+>
+> ### Test coverage + regression
+>
+> | Gate | Status |
+> |:--|:-:|
+> | wildTriggerHoldAndWin (18 unit) | ✅ |
+> | holdAndWinReelExpansion (18 unit) | ✅ |
+> | **Σ new** | **36/36 ✅** |
+> | `test:lego` (7 invariants) | ✅ 7/7 |
+> | `test:parse:real-pdfs` (4 GDD) | ✅ 4/4 |
+> | `test:parity` (cross-game DOM) | ✅ 0/18 violations |
+> | `test:force-outcomes` (20 chip-outcomes) | ✅ 20/20 |
+>
+> **Block count**: 153 → **155 LEGO blokova**
+>
+> ---
+>
 > **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-FS2** landed
 >
 > ## 🎰 Wave LEGO-FS2 — 2 nova FS-varijanta bloka (151 → 153)

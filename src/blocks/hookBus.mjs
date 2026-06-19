@@ -404,6 +404,18 @@ export const HOOK_EVENTS = Object.freeze([
    * gracefully wind down on the next transition. Defensive fallback
    * (FREESPINS.remaining=0) remains in place for engines without listener. */
   'onFsJackpotPoolEndRequested',
+  /* Wave LEGO-HW2 (Hold & Win variants, 2026-06-19) — 2 new blocks.
+   *
+   * onWildTriggerHoldAndWinRequested {wildCount, threshold, mode, wildCellKeys}
+   *   — fires when wild cluster threshold is met in base game; canonical
+   *   request signal for holdAndWin.mjs to start a round via alternative
+   *   trigger path. Owner: wildTriggerHoldAndWin.mjs.
+   *
+   * onHoldAndWinReelExpanded {newColumnCount, trigger, expansionsThisRound}
+   *   — fires when mid-round H&W column expansion lands a new reel.
+   *   Owner: holdAndWinReelExpansion.mjs. */
+  'onWildTriggerHoldAndWinRequested',
+  'onHoldAndWinReelExpanded',
   /* Scatter Celebration phase signals
    * onScatterCelebrationStart {cellCount, durationMs} — fires when the
    *   FS trigger scatter celebration animation begins. spinControl uses
