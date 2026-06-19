@@ -312,21 +312,21 @@ export function emitHexClusterEngineRuntime(cfg = defaultConfig()) {
   }
 
   function _scan() {
-    /* QA fix (Wave LEGO-FS3.3.D PASS-WITH-MINORS, F5 MINOR 2026-06-19):
-     * cross-block guard with clusterPaysEval (rectangular cluster
-     * evaluator). True double-pay risk: BOTH hex cells exist AND
-     * GAME_EVAL_KIND === 'cluster' (rectangular evaluator is dispatched
-     * by winPresentation in parallel). Skip THIS hex scan because
-     * rectangular eval already iterates the entire grid (including
-     * hex cells if any are present). Pure no-hex-cells case is handled
-     * by the cells.length === 0 short-circuit below — no need to guard
-     * that here. */
+    /* FIX-3 CRITICAL #5 (deep QA 2026-06-19) — single-owner dispatch.
+     * Previous guard fired ONLY for mixed grids (both hex and non-hex
+     * cells). Pure-hex grid with GAME_EVAL_KIND === 'cluster' triggered
+     * both this hex eval AND clusterPaysEval.detectClusterWins (which
+     * iterates host.querySelectorAll('.cell') without :not(.hex) filter)
+     * → real double-pay. Hardened semantics: clusterPaysEval is the
+     * canonical owner whenever GAME_EVAL_KIND === 'cluster'; hex eval
+     * defers entirely. Hex eval owns payout only when its GDD declares
+     * a non-cluster dispatch path (typically when no clusterPaysEval
+     * lives in the build). */
     if (typeof window !== 'undefined'
         && window.GAME_EVAL_KIND === 'cluster'
-        && document.querySelector('.cell.hex')
-        && document.querySelector('.cell:not(.hex)')) {
-      /* Mixed grid: rectangular cluster evaluator owns payout; hex
-       * highlights still update for visual consistency. */
+        && document.querySelector('.cell.hex')) {
+      /* clusterPaysEval owns payout; hex highlights still update for
+       * visual consistency (no payX double-fire). */
       _clearHighlights();
       return;
     }

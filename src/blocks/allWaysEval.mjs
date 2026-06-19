@@ -220,71 +220,140 @@ export function evaluateAllWays(
   const reelCount = grid.length;
   const bothDirs = opts.evaluateBothDirections !== false;
 
-  // Aggregate per-symbol reel-presence map.
-  const presenceBySymbol = new Map();
-  const seenWildReels = new Set();
+  /* FIX-3 CRITICAL #2 (deep QA, 2026-06-19) — canonical all-ways
+   * (industry-standard reel-power semantics): ways = ∏ countOnReel(reel_i)
+   * for reels in the anchored run. Previous implementation only stored
+   * Set membership (presence/absence) so (3,2,1) and (1,1,1) stacks paid
+   * identically — that is NOT all-ways math, that is pay-anywhere.
+   *
+   * countsBySymbol[sym] = Map<reelIdx, count>
+   * wildCountsPerReel = Map<reelIdx, count of wild cells>
+   *
+   * For each run, payX = paytable[sym][runLen-minRun] * ways
+   * where ways = ∏ (counts[sym][r] + wildCounts[r]) over r in run.
+   * Wild substitution (FIX-3 MAJOR #13): a separate wild-only ways count
+   * is evaluated against paytable[wildId] and MAX(symbol_pay, wild_pay)
+   * wins, per industry baseline (player gets the larger of the two). */
+  const countsBySymbol = new Map();
+  const wildCountsPerReel = new Map();
   for (let reelIdx = 0; reelIdx < reelCount; reelIdx++) {
     const col = grid[reelIdx];
     if (!Array.isArray(col)) continue;
-    const localSyms = new Set();
+    const localCounts = new Map();
+    let localWild = 0;
     for (const cell of col) {
       const sym = (cell == null) ? '' : String(cell);
       if (!sym) continue;
       if (wildId && sym === wildId) {
-        seenWildReels.add(reelIdx);
+        localWild++;
         continue;
       }
-      localSyms.add(sym);
+      localCounts.set(sym, (localCounts.get(sym) || 0) + 1);
     }
-    for (const sym of localSyms) {
-      if (!presenceBySymbol.has(sym)) presenceBySymbol.set(sym, new Set());
-      presenceBySymbol.get(sym).add(reelIdx);
+    if (localWild > 0) wildCountsPerReel.set(reelIdx, localWild);
+    for (const [sym, n] of localCounts) {
+      if (!countsBySymbol.has(sym)) countsBySymbol.set(sym, new Map());
+      countsBySymbol.get(sym).set(reelIdx, n);
     }
   }
 
+  /* Helper — compute ways multiplier over an anchored run for a given
+   * symbol, optionally absorbing wild substitutions. */
+  function waysForRun(symCounts, run, useWild) {
+    let ways = 1;
+    for (const r of run) {
+      const symN = (symCounts && symCounts.get(r)) || 0;
+      const wildN = useWild ? (wildCountsPerReel.get(r) || 0) : 0;
+      ways *= (symN + wildN);
+      if (ways === 0) return 0;
+    }
+    return ways;
+  }
+
+  /* Helper — wild-only ways: every reel in the run must contain at least
+   * one wild cell. Used to evaluate the wild's own paytable row. */
+  function wildOnlyWays(run) {
+    let ways = 1;
+    for (const r of run) {
+      const wildN = wildCountsPerReel.get(r) || 0;
+      if (wildN === 0) return 0;
+      ways *= wildN;
+    }
+    return ways;
+  }
+
+  const wildRow = wildId ? (paytable[wildId] || paytable[String(wildId).toUpperCase()]) : null;
+  const hasWildPay = Array.isArray(wildRow) && wildRow.length > 0;
+
   const wins = [];
-  for (const [sym, reelSet] of presenceBySymbol.entries()) {
+  for (const [sym, symCounts] of countsBySymbol.entries()) {
     const row = paytable[sym] || paytable[sym.toUpperCase()];
     if (!Array.isArray(row) || row.length === 0) continue;
 
-    // Wild substitution: union with wild-bearing reels.
-    const reelsForSym = wildId
-      ? new Set([...reelSet, ...seenWildReels])
-      : reelSet;
+    /* Build sorted union of reels (sym presence + wild presence) for
+     * anchored-run detection. */
+    const sorted = [];
+    for (let r = 0; r < reelCount; r++) {
+      if (symCounts.has(r) || wildCountsPerReel.has(r)) sorted.push(r);
+    }
 
-    const sorted = [...reelsForSym].sort((a, b) => a - b);
-
-    // LTR: any run starting at reel 0 with length >= minRun.
+    /* LTR: anchored on reel 0. */
     const ltrRun = leftAnchoredRun(sorted);
     if (ltrRun.length >= minRun) {
-      const payX = lookupPayForRun(row, ltrRun.length, minRun);
-      if (payX > 0) {
-        wins.push({
-          symbol: sym,
-          reelsHit: ltrRun.slice(),
-          payX,
-          direction: 'ltr',
-          cells: [],
-        });
+      const ways = waysForRun(symCounts, ltrRun, !!wildId);
+      if (ways > 0) {
+        const baseRow = lookupPayForRun(row, ltrRun.length, minRun);
+        let payX = baseRow * ways;
+        /* Wild-substitution MAX semantics (FIX-3 MAJOR #13). */
+        if (hasWildPay) {
+          const wWays = wildOnlyWays(ltrRun);
+          if (wWays > 0) {
+            const wPay = lookupPayForRun(wildRow, ltrRun.length, minRun) * wWays;
+            if (wPay > payX) payX = wPay;
+          }
+        }
+        if (payX > 0) {
+          wins.push({
+            symbol: sym,
+            reelsHit: ltrRun.slice(),
+            payX,
+            ways,
+            direction: 'ltr',
+            cells: [],
+          });
+        }
       }
     }
 
-    // RTL: any run ending at reel reelCount-1 with length >= minRun.
+    /* RTL: anchored on last reel. Suppressed when full-reel run already
+     * paid LTR (same physical line per industry win-both-ways rule:
+     * one full-line N-of-N is one win, not two). */
     if (bothDirs) {
       const rtlRun = rightAnchoredRun(sorted, reelCount);
       if (rtlRun.length >= minRun) {
-        // Don't double-emit when LTR run already spans the entire reel set.
         const sameAsLtr = ltrRun.length === reelCount && rtlRun.length === reelCount;
         if (!sameAsLtr) {
-          const payX = lookupPayForRun(row, rtlRun.length, minRun);
-          if (payX > 0) {
-            wins.push({
-              symbol: sym,
-              reelsHit: rtlRun.slice(),
-              payX,
-              direction: 'rtl',
-              cells: [],
-            });
+          const ways = waysForRun(symCounts, rtlRun, !!wildId);
+          if (ways > 0) {
+            const baseRow = lookupPayForRun(row, rtlRun.length, minRun);
+            let payX = baseRow * ways;
+            if (hasWildPay) {
+              const wWays = wildOnlyWays(rtlRun);
+              if (wWays > 0) {
+                const wPay = lookupPayForRun(wildRow, rtlRun.length, minRun) * wWays;
+                if (wPay > payX) payX = wPay;
+              }
+            }
+            if (payX > 0) {
+              wins.push({
+                symbol: sym,
+                reelsHit: rtlRun.slice(),
+                payX,
+                ways,
+                direction: 'rtl',
+                cells: [],
+              });
+            }
           }
         }
       }

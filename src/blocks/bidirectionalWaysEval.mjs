@@ -511,15 +511,59 @@ export function emitBidirectionalWaysEvalRuntime(cfg = defaultConfig()) {
     }
   }
 
+  /* FIX-3 CRITICAL #3 + #6 (deep QA, 2026-06-19) — dedupe full-line
+   * reverse runs + MAX(ltr_per_symbol, rtl_per_symbol) instead of SUM.
+   * A symbol that reaches every reel emits one LTR run [0..N-1] AND one
+   * RTL run [N-1..0]; in industry win-both-ways semantics this is the
+   * SAME physical line, paid ONCE. Previous code summed both → 2× on
+   * 5-of-5. Per-symbol MAX also prevents same-side double-counting when
+   * a partial LTR (3) and a partial RTL (3) on different reels both pay.
+   *
+   * FS-only flag (industry pattern): when winBothWaysActivation publishes
+   * window.__WIN_BOTH_WAYS__ = true (FS phase only), allow RTL. Otherwise
+   * RTL_ENABLED is the static GDD setting; bidirectional is permanent.
+   * The block itself does NOT force FS-only — it respects whatever the
+   * GDD declares, plus an opt-in transient flag from sibling block.
+   */
+  function _normReelsHit(rh) {
+    if (!Array.isArray(rh)) return '';
+    var copy = rh.slice().sort(function(a,b){ return a-b; });
+    return copy.join(',');
+  }
+
+  function _dedupeFullLineMirror(wins, reelCount) {
+    if (!Array.isArray(wins) || wins.length < 2) return wins;
+    var seenLtrFullLine = new Map(); /* symbol → idx */
+    for (var i = 0; i < wins.length; i++) {
+      var w = wins[i];
+      if (w.direction === 'LTR' && Array.isArray(w.reelsHit) && w.reelsHit.length === reelCount) {
+        seenLtrFullLine.set(w.symbol, i);
+      }
+    }
+    var out = [];
+    for (var j = 0; j < wins.length; j++) {
+      var v = wins[j];
+      if (v.direction === 'RTL' && Array.isArray(v.reelsHit) && v.reelsHit.length === reelCount && seenLtrFullLine.has(v.symbol)) {
+        continue; /* same physical line — paid once on LTR side */
+      }
+      out.push(v);
+    }
+    return out;
+  }
+
   function _evalAll(grid) {
     var wild = _wildId();
+    var reels = (grid[0] || []).length;
+    /* FS-only flag opt-in: if GDD sets RTL_ENABLED static-true, run; else
+     * read transient window.__WIN_BOTH_WAYS__ (sole-owner winBothWays-
+     * Activation flag) to decide RTL gate. */
+    var rtlActive = !!RTL_ENABLED || (typeof window !== 'undefined' && window.__WIN_BOTH_WAYS__ === true);
     var all  = [];
     if (LTR_ENABLED) all = all.concat(_evalDir(grid, 0, 1, wild));
-    if (RTL_ENABLED) {
-      var reels = (grid[0] || []).length;
+    if (rtlActive) {
       all = all.concat(_evalDir(grid, reels - 1, -1, wild));
     }
-    return all;
+    return _dedupeFullLineMirror(all, reels);
   }
 
   function _onSpinResult() {
@@ -532,12 +576,19 @@ export function emitBidirectionalWaysEvalRuntime(cfg = defaultConfig()) {
     var wins      = _evalAll(grid);
     var ltrCount  = 0;
     var rtlCount  = 0;
-    var totalPayX = 0;
+    /* FIX-3 CRITICAL #6: per-symbol MAX of LTR vs RTL payX, then sum
+     * across symbols. Prevents same-symbol double-count when both
+     * directions land for different stack shapes. */
+    var bestPerSym = Object.create(null);
     for (var i = 0; i < wins.length; i++) {
       if (wins[i].direction === 'LTR') ltrCount++;
       else rtlCount++;
-      totalPayX += wins[i].payX || 0;
+      var s = wins[i].symbol;
+      var px = wins[i].payX || 0;
+      if (!(s in bestPerSym) || px > bestPerSym[s]) bestPerSym[s] = px;
     }
+    var totalPayX = 0;
+    for (var k in bestPerSym) totalPayX += bestPerSym[k];
     window.BIDIR_WAYS_STATE = {
       wins:      wins,
       ltrCount:  ltrCount,

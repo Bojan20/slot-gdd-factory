@@ -144,28 +144,43 @@ function detectClusterWins() {
   const SCAT = reg && reg.scatter;
 
   const visited = new Array(ROWS * REELS).fill(false);
+  /* FIX-3 CRITICAL #4 (deep QA, 2026-06-19) — wild single-claim rule.
+   * Previous implementation reset visited between symbols, so every wild
+   * cell was uncountedly absorbed into every adjacent symbol cluster:
+   * a single wild touching HP, MP, LP clusters contributed to all three.
+   * Industry baseline: a wild participates in exactly ONE cluster (the
+   * highest-paying group that can reach it, HP > MP > LP tier order).
+   * Implementation: tier-sorted regular pass; wildClaimed Set tracks
+   * which wild cells have already been absorbed; subsequent passes skip
+   * those cells during BFS expansion. */
+  const wildClaimed = new Set();
   const events = [];
   const neighbors = CLUSTER_DIAGONAL
     ? [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]
     : [[-1,0],[1,0],[0,-1],[0,1]];
 
-  /* For each non-wild, non-scatter regular symbol, flood-fill including wilds */
+  /* For each non-wild, non-scatter regular symbol, flood-fill including
+   * wilds — but skip wilds already claimed by a higher-tier symbol. */
   function floodSym(symId) {
     const found = [];
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < REELS; c++) {
         const idx = r * REELS + c;
         if (visited[idx]) continue;
-        if (grid[r][c] !== symId && grid[r][c] !== WILD) continue;
+        const cell = grid[r][c];
+        if (cell !== symId && cell !== WILD) continue;
+        if (cell === WILD && wildClaimed.has(idx)) continue;
         /* BFS */
         const stack = [[r, c]];
         const cluster = [];
         while (stack.length) {
           const [cr, cc] = stack.pop();
+          if (cr < 0 || cr >= ROWS || cc < 0 || cc >= REELS) continue;
           const ci = cr * REELS + cc;
           if (visited[ci]) continue;
-          if (cr < 0 || cr >= ROWS || cc < 0 || cc >= REELS) continue;
-          if (grid[cr][cc] !== symId && grid[cr][cc] !== WILD) continue;
+          const cv = grid[cr][cc];
+          if (cv !== symId && cv !== WILD) continue;
+          if (cv === WILD && wildClaimed.has(ci)) continue;
           visited[ci] = true;
           cluster.push({ r: cr, c: cc, idx: ci });
           for (const [dr, dc] of neighbors) stack.push([cr + dr, cc + dc]);
@@ -181,10 +196,28 @@ function detectClusterWins() {
   }
 
   const regularPay = (reg && reg.regularPay) || [];
-  for (const sym of regularPay) {
-    if (sym === WILD || sym === SCAT) continue;
+  /* FIX-3 CRITICAL #4: tier-sorted pass so HP wilds get first claim. */
+  const _tierOrder = { HP: 0, MP: 1, LP: 2, WILD: 3 };
+  const symsByTier = regularPay
+    .filter(s => s !== WILD && s !== SCAT)
+    .slice()
+    .sort((a, b) => {
+      const ta = (reg && reg.tier && reg.tier[a]) || 'LP';
+      const tb = (reg && reg.tier && reg.tier[b]) || 'LP';
+      return (_tierOrder[ta] ?? 2) - (_tierOrder[tb] ?? 2);
+    });
+  for (const sym of symsByTier) {
+    /* Reset visited per-symbol for regular cells; wildClaimed survives so
+     * a lower-tier symbol cannot reclaim a higher-tier symbols wild. */
     visited.fill(false);
     const ev = floodSym(sym);
+    /* Mark wild cells consumed by THIS pass as claimed (so the next
+     * lower-tier symbol cannot absorb them again). */
+    for (const cluster of ev) {
+      for (const cell of cluster.cells) {
+        if (grid[cell.r][cell.c] === WILD) wildClaimed.add(cell.idx);
+      }
+    }
     ev.forEach(e => {
       const bucket = _clusterBucketFor(e.count);
       const tier = (reg && reg.tier && reg.tier[sym]) || 'LP';
