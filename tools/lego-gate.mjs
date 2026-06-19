@@ -511,6 +511,11 @@ const EXPECTED_EMIT_OWNERS = {
   /* Wave LEGO-W2 (Wild variants, 2026-06-19) — 2 new wild-family blocks. */
   onCascadingWildPinned:             ['cascadingWildPersistence.mjs'],
   onMysteryWildRevealed:             ['mysteryWildReveal.mjs'],
+  /* Wave LEGO-FS2 (FS variants, 2026-06-19) — 2 new FS-family blocks. */
+  onFsSymbolUpgraded:                ['fsSymbolUpgradeEscalation.mjs'],
+  onFsJackpotPoolBumped:             ['fsPersistentJackpotPool.mjs'],
+  onFsJackpotPoolPaidOut:            ['fsPersistentJackpotPool.mjs'],
+  onFsJackpotPoolEndRequested:       ['fsPersistentJackpotPool.mjs'],
   /* Wave LEGO-H/FS/W (2026-06-18) — 8 new GDD-driven variants. Each
    * block owns its single canonical event pair (rolled/cleared etc). */
   onFrameMultiplierBumped:           ['holdAndWinFrameMultiplier.mjs'],

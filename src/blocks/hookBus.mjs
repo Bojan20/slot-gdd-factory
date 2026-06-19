@@ -382,6 +382,28 @@ export const HOOK_EVENTS = Object.freeze([
    *   mysteryWildReveal.mjs. */
   'onCascadingWildPinned',
   'onMysteryWildRevealed',
+  /* Wave LEGO-FS2 (FS variants, 2026-06-19) — 2 new FS-family blocks.
+   *
+   * onFsSymbolUpgraded {removedSymbol, remainingSymbols, tierIndex} —
+   *   fires every spinsPerUpgrade FS spin when the lowest pay symbol
+   *   is removed from the pool and tier index bumps. Owner:
+   *   fsSymbolUpgradeEscalation.mjs.
+   *
+   * onFsJackpotPoolBumped {newPoolX, deltaX, spinWinX} — fires on every
+   *   FS spin to track the carry-over pool growth. Owner:
+   *   fsPersistentJackpotPool.mjs.
+   *
+   * onFsJackpotPoolPaidOut {finalPoolX, trigger} — fires when pool pays
+   *   out (trigger ∈ {fsEnd, maxScatters}). Owner: fsPersistentJackpotPool.mjs. */
+  'onFsSymbolUpgraded',
+  'onFsJackpotPoolBumped',
+  'onFsJackpotPoolPaidOut',
+  /* onFsJackpotPoolEndRequested {reason} — fires when fsPersistentJackpotPool
+   * decides the round should end early (e.g. maxScatters trigger). Owner:
+   * fsPersistentJackpotPool.mjs. Consumer: freeSpins state machine can
+   * gracefully wind down on the next transition. Defensive fallback
+   * (FREESPINS.remaining=0) remains in place for engines without listener. */
+  'onFsJackpotPoolEndRequested',
   /* Scatter Celebration phase signals
    * onScatterCelebrationStart {cellCount, durationMs} — fires when the
    *   FS trigger scatter celebration animation begins. spinControl uses

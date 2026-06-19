@@ -1,5 +1,56 @@
 # Master TODO — slot-gdd-factory
 
+> **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-FS2** landed
+>
+> ## 🎰 Wave LEGO-FS2 — 2 nova FS-varijanta bloka (151 → 153)
+>
+> Boki: *"dalje"* — sledeća wave po roadmap-u. FS family coverage
+> raste sa 72% → ~85%.
+>
+> ### Blokovi
+>
+> | Blok | Industry pattern | Lifecycle |
+> |:--|:--|:--|
+> | `fsSymbolUpgradeEscalation.mjs` | LP→HP tier escalation: svakih N FS spina najniži simbol se uklanja iz POOL-a, tier index bumpa | onFsTrigger snapshot POOL · onFsSpinResult check milestone + upgrade · onFsEnd restore base POOL |
+> | `fsPersistentJackpotPool.mjs` | Carry-over pool: floor + deltaPerSpin + winFraction × winX po spinu, payout na `fsEnd` ili `maxScatters` | onFsTrigger init · onFsSpinResult bump · onFsEnd payout + reset |
+>
+> ### HookBus events (svi single-owner)
+>
+> | Event | Owner |
+> |:--|:--|
+> | `onFsSymbolUpgraded` | fsSymbolUpgradeEscalation.mjs |
+> | `onFsJackpotPoolBumped` | fsPersistentJackpotPool.mjs |
+> | `onFsJackpotPoolPaidOut` | fsPersistentJackpotPool.mjs |
+> | `onFsJackpotPoolEndRequested` | fsPersistentJackpotPool.mjs (graceful FS end signal) |
+>
+> ### Multi-agent QA — verdict PASS_WITH_MINORS
+>
+> 3 nalaza fixed pre commit-a (general-purpose subagent review):
+>
+> | # | Severity | Fix |
+> |:-:|:--|:--|
+> | B | MED | FS2.2 reorder: maxScatters threshold check PRE bump pool (industry standard "spin koji okine NE doprinosi") |
+> | D | HIGH | FS2.2 SRP guard: novi event `onFsJackpotPoolEndRequested` umesto direktnog mutiranja `FREESPINS.remaining` (fallback ostao non-breaking) |
+> | canonical | MED | Canonical `onFsSpinResult` payload je samo `{ chainIndex: 0 }` — added `onSpinResult` + `onScatterCelebrationStart` listeners da cache-uju winX i scatterCount za pouzdane reads |
+>
+> 2 nalaza deferred to FS2.3 (FS2.1 _doUpgrade duplira pure helper — drift risk OK; setTimeout race u auto-spin scenario).
+>
+> ### Test coverage + regression
+>
+> | Gate | Status |
+> |:--|:-:|
+> | fsSymbolUpgradeEscalation (18 unit) | ✅ |
+> | fsPersistentJackpotPool (18 unit) | ✅ |
+> | **Σ new** | **36/36 ✅** |
+> | `test:lego` (7 invariants) | ✅ 7/7 |
+> | `test:parse:real-pdfs` (4 GDD) | ✅ 4/4 |
+> | `test:parity` (cross-game DOM) | ✅ 0/18 violations |
+> | `test:force-outcomes` (20 chip-outcomes) | ✅ 20/20 |
+>
+> **Block count**: 151 → **153 LEGO blokova**
+>
+> ---
+>
 > **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-W2** landed
 >
 > ## 🐺 Wave LEGO-W2 — 2 nova Wild-varijanta bloka (149 → 151)
