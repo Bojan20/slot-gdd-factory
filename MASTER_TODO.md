@@ -1,3 +1,63 @@
+## 🏆 D-2 ULTIMATE PER-BLOCK BROWSER PROBE — 2026-06-19 · ZATVOREN
+
+Boki: *"trreba mi realan i ultiamtivan test. i to sve ti da smislis kako i da ga odradis. svaki jebeni blok"* (2026-06-19 21:25)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│ D-2 — STVARNI Playwright per-block i per-pair browser probe                         │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ D-2a  per-block isolation                       │ 154/154 PASS · 0 WARN · 0 FAIL    │
+│       (real Chromium + real spinBtn.click)      │ wall 427s · 1 spin per block      │
+│ D-2b  random pair interaction (seed=1)          │  30/30 PASS · 0 FAIL              │
+│       (real Chromium + real spinBtn.click)      │ wall  76s · 30 unique pairs       │
+│ Skipped (engine/compliance/always-on)           │ 30 blocks (justified per file)    │
+│ Σ realnih spinova u probe lancu                 │ 184 (154 single + 30 pair × 1)    │
+│ Σ realnih Chromium konteksta podignutih          │ 184 (per-block isolation)         │
+│ HookBus listener parity check                   │ manifest.lifecycleHooks vs        │
+│                                                 │  HookBus.listenerCount(event)     │
+├─────────────────────────────────────────────────┼───────────────────────────────────┤
+│ Novi fajlovi:                                                                       │
+│   tools/_ultimate-per-block-browser-probe.mjs   │ D-2a — per-block isolated probe   │
+│   tools/_ultimate-block-pair-browser-probe.mjs  │ D-2b — pair interaction probe     │
+│   tests/blocks/_perBlockBrowserProbe.test.mjs   │ D-2a wrapper test (4 sections)    │
+│   tests/blocks/_blockPairBrowserProbe.test.mjs  │ D-2b wrapper test (3 sections)    │
+│                                                                                     │
+│ Novi npm scripts:                                                                   │
+│   test:per-block-real        — quick (1 spin per block, ~7-8 min)                  │
+│   test:per-block-real:full   — extended (3 spins per block, ~22 min)               │
+│   test:block-pair-real       — 30 random pairs (seed=1, ~80s)                       │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Šta D-2 STVARNO pokriva (razlika od D-1):**
+
+```
+┌──────────────────────────────────┬────────────────────┬────────────────────────────┐
+│ Aspekt                           │ D-1 (long-run)     │ D-2 (per-block-real)       │
+├──────────────────────────────────┼────────────────────┼────────────────────────────┤
+│ Spin trigger                     │ synthetic emit     │ realan spinBtn.click()     │
+│ Block isolation                  │ sve enabled        │ jedan po jedan             │
+│ Lifecycle hook parity            │ ne meri            │ manifest vs listenerCount  │
+│ Build pipeline coverage          │ 1 build (worst-case)│ 184 build (per blok)      │
+│ Pair interaction                 │ ne                 │ 30 random parova           │
+│ Real DOM / CSS load               │ delimično          │ pun (svaki blok)           │
+│ Realan failure detection          │ V8 heap leak only  │ build/load/spin/console   │
+└──────────────────────────────────┴────────────────────┴────────────────────────────┘
+```
+
+**Realan otkriveni problem tokom probe-a:**
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│ hotReload blok puca u izolovanom probe okruženju jer pokušava EventSource → SSE    │
+│ na /api/hmr endpoint koji minimal HTTP server ne servisira. Dodato u SKIP_FORCE_   │
+│ ENABLE listu sa komentarom — pokriveno već postojećim tests/blocks/hotReload.test  │
+│ + tools/_p8-hot-reload-probe.mjs koji rade protiv pravog dev servera.              │
+└────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 TOTAL CLOSEOUT MAX REFRESH — 2026-06-19 · HEAD `53bf47c`
 
 Boki: *"prvo master todo maks azuriranje pa mi reci prvi korak nadogradnje"* (2026-06-19 21:00)
