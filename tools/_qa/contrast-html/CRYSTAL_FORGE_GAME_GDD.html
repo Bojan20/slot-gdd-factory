@@ -100,12 +100,12 @@
     border-radius: 8px;
   }
   .sub {
-    /* WCAG AA contrast fix (2026-06-18) — color was var(--text), which on
-     * dark-text palettes (e.g. theme with rgb(10,8,5) as base text)
-     * collapsed to near-black-on-near-black against the .65 backdrop (1.08).
-     * Hard-coded light grey decouples from palette so contrast is stable
-     * across every GDD. Backdrop chip provides visual separation. */
-    color: rgba(255,255,255,0.78);
+    /* WCAG AAA contrast fix (2026-06-19, F4 A1 audit) — alpha 0.78 → 0.92
+     * raises ratio from 4.8:1 (AA only) to 7.4:1 (AAA pass) against rgba black
+     * 0.65 backdrop. Original AA fix (2026-06-18) decoupled .sub from var(--text)
+     * to prevent palette-induced near-black-on-near-black collapse (1.08); A1
+     * audit then closed the remaining AA→AAA gap. */
+    color: rgba(255,255,255,0.92);
     background-color: rgba(0,0,0,0.65);
     padding: 2px 10px;
     border-radius: 6px;
@@ -351,7 +351,8 @@
   }
   .statBox__value {
     font-size: 1.05rem; font-weight: 800;
-    color: #ffe6a8;
+    /* WCAG AAA fix (F4 A1) — #ffe6a8 → #fff0c8 lifts ratio 6.2:1 → 7.5:1 on .65 gradient bg */
+    color: #fff0c8;
     text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
   }
   .statBox--status .statBox__value { font-size: 0.95rem; letter-spacing: 1.5px; }
@@ -399,14 +400,14 @@
   gap: 7px;
   padding: 3px 12px 3px 10px;
   border-radius: 999px;
-  background: rgba(15,12,10, 0.45);
+  background: rgba(15,12,10, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.08);
   /* Wave UQ — typography floor 11px (Apple HIG min readable). */
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 2.2px;
   text-transform: uppercase;
-  color: rgba(197,198,199, 0.78);
+  color: rgba(220,220,220, 1);
   backdrop-filter: blur(4px);
   pointer-events: none;
   user-select: none;
@@ -1012,6 +1013,16 @@
 
 
 
+/* pyramidGridEngine BLOCK (disabled) — no CSS */
+
+
+/* hexClusterEngine BLOCK (disabled) — no CSS */
+
+
+/* reelHeightAdapter BLOCK (disabled) — no CSS */
+
+
+
 /* motionOverlay block — surface: .reelCol.is-spinning (key: rect) */
 
 .reelCol.is-spinning::after {
@@ -1313,86 +1324,6 @@
 }
 
 
-/* ─── anticipation (universal companion) ───────────────────────────
-   Per-cell scatter glow + progress badge + whole-host pulse for shapes
-   that have no reel-column anticipation metaphor. */
-.cell.cell--anticipating-cell {
-  box-shadow: inset 0 0 0 2px rgba(255,214,110, 0.78),
-              inset 0 0 20px rgba(255,214,110, 0.5),
-              0 0 18px rgba(255,214,110, 0.65) !important;
-  animation: ant-uni-cell-pulse 700ms ease-in-out infinite !important;
-  z-index: 3;
-}
-@keyframes ant-uni-cell-pulse {
-  0%, 100% { box-shadow: inset 0 0 0 2px rgba(255,214,110, 0.7),
-                         inset 0 0 16px rgba(255,214,110, 0.4),
-                         0 0 14px rgba(255,214,110, 0.5); }
-  50%      { box-shadow: inset 0 0 0 2px rgba(255,235,178, 1),
-                         inset 0 0 26px rgba(255,214,110, 0.75),
-                         0 0 26px rgba(255,214,110, 0.8); }
-}
-.gridHost--ant-pulse {
-  position: relative;
-}
-.gridHost--ant-pulse::after {
-  content: '';
-  position: absolute;
-  inset: -6px;
-  border-radius: 14px;
-  pointer-events: none;
-  box-shadow: 0 0 0 2px rgba(255,214,110, 0.55),
-              0 0 32px rgba(255,214,110, 0.45);
-  animation: ant-uni-host-pulse 700ms ease-in-out infinite;
-  z-index: 1;
-}
-@keyframes ant-uni-host-pulse {
-  0%, 100% { box-shadow: 0 0 0 2px rgba(255,214,110, 0.5),
-                         0 0 28px rgba(255,214,110, 0.4); }
-  50%      { box-shadow: 0 0 0 3px rgba(255,235,178, 0.9),
-                         0 0 52px rgba(255,214,110, 0.75); }
-}
-.ant-badge {
-  position: absolute;
-  top: 10px; right: 10px;
-  z-index: 80;
-  background: linear-gradient(180deg, rgba(40,30,8,0.92), rgba(20,14,4,0.95));
-  border: 1px solid rgba(255,214,110, 0.85);
-  border-radius: 14px;
-  padding: 0.42rem 0.85rem;
-  color: rgba(255,214,110, 1);
-  font: 900 0.82rem/1 system-ui, -apple-system, "SF Pro Display", "Segoe UI", sans-serif;
-  letter-spacing: 0.12em;
-  text-shadow: 0 0 8px rgba(255,214,110, 0.7);
-  box-shadow: 0 0 14px rgba(255,214,110, 0.5);
-  opacity: 0;
-  transform: translateY(-4px) scale(0.92);
-  transition: opacity 220ms ease, transform 220ms cubic-bezier(.2,1.3,.4,1);
-  pointer-events: none;
-  user-select: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-.ant-badge[data-show="true"] {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-}
-.ant-badge[data-warm="true"] {
-  animation: ant-badge-warm 700ms ease-in-out infinite;
-}
-@keyframes ant-badge-warm {
-  0%, 100% { box-shadow: 0 0 14px rgba(255,214,110, 0.5); }
-  50%      { box-shadow: 0 0 26px rgba(255,214,110, 0.95); }
-}
-.ant-badge__num { font-size: 1.05rem; }
-.ant-badge__sep { opacity: 0.7; }
-@media (prefers-reduced-motion: reduce) {
-  .cell.cell--anticipating-cell,
-  .gridHost--ant-pulse::after,
-  .ant-badge[data-warm="true"] { animation: none; }
-}
-
-
 
   /* ── Placeholder win highlight — emitted by src/blocks/winPresentation.mjs
      Visual-only: winning cells stay full opacity + nudge scale, non-winning
@@ -1513,6 +1444,9 @@
 
 
 
+
+
+
 /* Wave L–P — 16 feature blocks CSS (no-op when disabled) */
 
 
@@ -1523,6 +1457,371 @@
 
 
 
+
+  /* ── bigWinTier BLOCK — emitted by src/blocks/bigWinTier.mjs ─────────
+     Banner overlay anchored to the REELS FRAME, not the viewport. Boki rule
+     05.06.2026: "big win flow responsive i u skladu sa velicinom ril frames".
+     Industry reference pattern: the big-win banner is a layout node sized +
+     positioned by the layout system — its bbox tracks the reels container,
+     not the page viewport. Bitmap text and FX scale through container
+     transforms on every layout resize.
+
+     Our HTML/CSS equivalent: host stays position:fixed (so it lives ABOVE
+     frame's overflow:hidden without being clipped), but its left/top/width/
+     height are runtime-synced to #frameHost.getBoundingClientRect() via a
+     ResizeObserver in the runtime IIFE. CSS custom properties
+       --bw-frame-x  --bw-frame-y  --bw-frame-w  --bw-frame-h
+     are written every observer tick. Banner font-size, padding, and gap
+     then derive from --bw-frame-w via clamp() math — so a 1200-px frame
+     and a 420-px frame produce visually proportionate banners with the
+     same percentage of the reels area. Viewport fallbacks (100vw/100vh)
+     activate before the first observer tick AND on browsers without
+     ResizeObserver (graceful degradation, no jank).
+
+     z-index 94 sits just under the uiToast layer (95) so a feature toast
+     can still appear on top of a tier banner if the GDD wires them
+     together. Pointer-events off so clicks pass through to the spinControl
+     CTA underneath. */
+  .big-win-tier-host {
+    position: fixed;
+    left:   var(--bw-frame-x, 0px);
+    top:    var(--bw-frame-y, 0px);
+    width:  var(--bw-frame-w, 100vw);
+    height: var(--bw-frame-h, 100vh);
+    z-index: 94;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* contain layout so banner size changes never reflow ancestors. */
+    contain: layout;
+  }
+  /* Banner = transparent vertical stack (label on top, counter below) —
+   * matches the industry-standard hero-typography bigwin layout. NO box,
+   * NO border, NO background, NO outer glow. Just two big text elements
+   * with a 3D drop-shadow depth stack so they read crisp against any
+   * reels art showing through. Boki rule 05.06.2026: "nadji counter u
+   * referentnoj igri i ubaci ga na istom mestu kao sto je tamo u igri". */
+  .big-win-tier-banner {
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Gap, padding scale with frame width so the banner keeps the same
+     * visual proportion regardless of cabinet size (Boki rule 05.06.2026
+     * "u skladu sa velicinom ril frames"). The clamp() floors guarantee
+     * legibility on the smallest portrait phone; the ceilings prevent
+     * gigantism on ultra-wide desktops. */
+    gap: clamp(8px, calc(var(--bw-frame-w, 100vw) * 0.018), 24px);
+    padding:
+      clamp(16px, calc(var(--bw-frame-w, 100vw) * 0.04), 60px)
+      clamp(20px, calc(var(--bw-frame-w, 100vw) * 0.06), 80px);
+    color: #fff;
+    font-weight: 900;
+    letter-spacing: 0.18em;
+    text-align: center;
+    opacity: 0;
+    transform: scale(0.65);
+    white-space: nowrap;
+    /* Cap banner footprint inside the frame so it never bleeds outside
+     * the reels area on tall portrait viewports — same containment the
+     * industry reference layout system gets for free via fixed pixel
+     * width on its big-win node. */
+    max-width: 96%;
+    max-height: 96%;
+    /* Smooth tier morph: when data-tier flips during the walkthrough,
+     * font-size + filter glow + color + transform-scale + text-shadow halo
+     * tween continuously. Counter never pauses. Timing is hoisted
+     * (TIER_MORPH_MS) so the runtime label-swap timer (LABEL_SWAP_MS) stays
+     * in lockstep with the CSS morph. W48.V3 polish: added transform +
+     * text-shadow to the transition list so per-tier scale/halo escalation
+     * (set via --bw-tier-scale / --bw-tier-halo-blur custom props) tweens
+     * smoothly rather than snapping. */
+    transition:
+      color 600ms ease,
+      font-size 600ms ease,
+      filter 600ms ease,
+      transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      text-shadow 600ms ease;
+  }
+  /* W48.V3 polish — per-tier rest-state banner scale ladder. Tier 1
+   * sits compact (0.85), tier 5 swells (1.15). The data-show="hold"
+   * state composes this scale (active) and the entrance/exit animations
+   * compose their own transform on top via overriding. Scale is set as
+   * CSS custom prop so it can be overridden per GDD without rewriting
+   * this rule. */
+  .big-win-tier-banner[data-show="hold"][data-tier="1"] { --bw-tier-scale: 0.85; }
+  .big-win-tier-banner[data-show="hold"][data-tier="2"] { --bw-tier-scale: 0.92; }
+  .big-win-tier-banner[data-show="hold"][data-tier="3"] { --bw-tier-scale: 1; }
+  .big-win-tier-banner[data-show="hold"][data-tier="4"] { --bw-tier-scale: 1.08; }
+  .big-win-tier-banner[data-show="hold"][data-tier="5"] { --bw-tier-scale: 1.15; }
+  .big-win-tier-banner[data-show="hold"] { transform: scale(var(--bw-tier-scale, 1.0)); }
+  /* W48.V3 polish — per-tier halo glow strength via text-shadow blur. The
+   * existing color escalation drives the halo HUE; this rule drives the
+   * REACH. Geometric ladder default 8/12/18/26/36px tracks the colors
+   * palette warmth so the climax glow feels "loud" without changing
+   * banner footprint. Halo color = currentColor (inherited from banner
+   * text color, which is already set by per-tier color rule below). */
+  .big-win-tier-banner[data-show="hold"][data-tier="1"] {
+    text-shadow: 0 0 8px currentColor, 0 4px 12px rgba(0,0,0,0.7);
+  }
+  .big-win-tier-banner[data-show="hold"][data-tier="2"] {
+    text-shadow: 0 0 12px currentColor, 0 4px 12px rgba(0,0,0,0.7);
+  }
+  .big-win-tier-banner[data-show="hold"][data-tier="3"] {
+    text-shadow: 0 0 18px currentColor, 0 5px 16px rgba(0,0,0,0.75);
+  }
+  .big-win-tier-banner[data-show="hold"][data-tier="4"] {
+    text-shadow: 0 0 26px currentColor, 0 6px 18px rgba(0,0,0,0.8);
+  }
+  .big-win-tier-banner[data-show="hold"][data-tier="5"] {
+    text-shadow: 0 0 36px currentColor, 0 7px 22px rgba(0,0,0,0.85);
+  }
+  /* W48.V3 polish — TIER ≥ tierClimaxPulseMinTier climax radial pulse.
+   * One-shot CSS animation triggered by .is-climax class which runtime
+   * adds when the final tier latches. Anti-photosensitive-epilepsy
+   * compliant: ONE expand+fade only, no loop. Disabled under
+   * prefers-reduced-motion (see @media block below). */
+  
+  .big-win-tier-banner.is-climax::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, currentColor 0%, transparent 65%);
+    opacity: 0;
+    pointer-events: none;
+    animation: bigWinTierClimaxPulse 600ms cubic-bezier(0.2, 0.6, 0.3, 1) 1 forwards;
+    z-index: -1;
+  }
+  @keyframes bigWinTierClimaxPulse {
+    0%   { opacity: 0.0; transform: scale(0.6); }
+    35%  { opacity: 0.6; }
+    100% { opacity: 0.0; transform: scale(2.4); }
+  }
+  
+  .big-win-tier-banner .big-win-tier-label {
+    display: block;
+    line-height: 1;
+    transition: opacity 220ms ease;
+  }
+  .big-win-tier-banner[data-label-swap="true"] .big-win-tier-label { opacity: 0.0; }
+  /* Skip-snap mode (Boki 05.06.2026: "Skip treba da u big winu ode na
+   * kraju big wina, a ne da presence jedan po jedan tier"). The
+   * walkthrough transitions (600 ms color/font-size/filter morph between
+   * tier classes) make a tier-2 → tier-5 jump LOOK like a sweep through
+   * tier-3 and tier-4 during the transition window. data-skip="true"
+   * collapses all transitions so the climax tier snaps instantly. */
+  .big-win-tier-banner[data-skip="true"] {
+    transition: none;
+  }
+  .big-win-tier-banner[data-skip="true"] .big-win-tier-label {
+    transition: none;
+  }
+  .big-win-tier-banner .big-win-tier-amount {
+    display: block;
+    /* Counter is 1.07× the label (industry-standard hero-typography
+     * proportion: value reads ~7% bigger than label). */
+    font-size: 1.07em;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    line-height: 1;
+    opacity: 1;
+  }
+  /* Three banner states drive the fade choreography (Wave H5.4 — Boki spec
+   * 05.06.2026 "gladak prelaz bez stajanja"):
+   *   data-show="enter" — fade-in + scale-up (FADE_MS)   — ONCE at start
+   *   data-show="hold"  — steady on screen during the entire walkthrough,
+   *                       counter ticks linearly, tier swaps in place via
+   *                       data-tier attribute morph (border/glow/font-size
+   *                       transition handles the smooth color escalation)
+   *   data-show="exit"  — fade-out + scale-down (FADE_MS) — ONCE at the end,
+   *                       after endHoldMs steady at climax amount */
+  .big-win-tier-banner[data-show="enter"] { animation: bigWinTierIn  300ms cubic-bezier(.4,1.55,.5,1) forwards; }
+  .big-win-tier-banner[data-show="hold"]  { opacity: 1; transform: scale(1); }
+  .big-win-tier-banner[data-show="exit"]  { animation: bigWinTierOut 300ms ease-in forwards; }
+  /* Tier visuals — per-tier accent color drives BOTH text fill and the
+   * 3D drop-shadow stack. Font-size escalates with frame-width (NOT
+   * viewport-width) so the banner is sized to the reels frame the way
+   * the industry reference layout system sizes its big-win node to the
+   * reels container. The percentage stops 7.5% → 11.5% × frame-w produce
+   * tier-1 ≈ 60-90 px and tier-5 ≈ 92-140 px on a reference 800-1200 px
+   * frame — matches the reels-area-relative hero typography. clamp() floors keep tier-1 ≥ 40 px on a 360 px
+   * portrait phone (legibility floor); ceilings cap tier-5 at 140 px
+   * on a 4K ultrawide so the banner never dominates the cabinet.
+   * The drop-shadow ladder produces a chunky 3D extrusion (industry-
+   * standard hero-typography filter stack — vendor-neutral colors from
+   * cfg.colors). */
+  .big-win-tier-banner[data-tier="1"] {
+    color: rgba(255,210,90,1);
+    font-size: clamp(40px, calc(var(--bw-frame-w, 100vw) * 0.075), 90px);
+    filter:
+      drop-shadow(0 2px 0 rgba(0,0,0,.55))
+      drop-shadow(0 4px 0 rgba(0,0,0,.45))
+      drop-shadow(0 8px 14px rgba(255,210,90,.55));
+  }
+  .big-win-tier-banner[data-tier="2"] {
+    color: rgba(255,170,60,1);
+    font-size: clamp(46px, calc(var(--bw-frame-w, 100vw) * 0.085), 102px);
+    filter:
+      drop-shadow(0 2px 0 rgba(0,0,0,.6))
+      drop-shadow(0 4px 0 rgba(0,0,0,.5))
+      drop-shadow(0 10px 18px rgba(255,170,60,.6));
+  }
+  .big-win-tier-banner[data-tier="3"] {
+    color: rgba(255,110,60,1);
+    font-size: clamp(52px, calc(var(--bw-frame-w, 100vw) * 0.095), 114px);
+    filter:
+      drop-shadow(0 3px 0 rgba(0,0,0,.65))
+      drop-shadow(0 5px 0 rgba(0,0,0,.55))
+      drop-shadow(0 12px 22px rgba(255,110,60,.65));
+  }
+  .big-win-tier-banner[data-tier="4"] {
+    color: rgba(230,80,170,1);
+    font-size: clamp(58px, calc(var(--bw-frame-w, 100vw) * 0.105), 126px);
+    filter:
+      drop-shadow(0 3px 0 rgba(0,0,0,.7))
+      drop-shadow(0 6px 0 rgba(0,0,0,.6))
+      drop-shadow(0 14px 26px rgba(230,80,170,.7));
+  }
+  .big-win-tier-banner[data-tier="5"] {
+    color: rgba(255,240,200,1);
+    font-size: clamp(64px, calc(var(--bw-frame-w, 100vw) * 0.115), 140px);
+    filter:
+      drop-shadow(0 4px 0 rgba(0,0,0,.75))
+      drop-shadow(0 7px 0 rgba(0,0,0,.65))
+      drop-shadow(0 16px 30px rgba(255,240,200,.78));
+  }
+  @keyframes bigWinTierIn {
+    0%   { opacity: 0; transform: scale(0.7); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes bigWinTierOut {
+    0%   { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.85); }
+  }
+  /* W47.S3 (V3 polish) — screen-shake oscillator. Three keyframes (low,
+   * mid, hi) staged so a per-tier CSS variable --bw-shake-amp drives
+   * the amplitude without forcing distinct keyframe sets per tier. The
+   * oscillator translates the WHOLE banner — not the counter alone — so
+   * the visual force tracks the celebration tier without breaking the
+   * count-up readability. Each cycle is symmetric round-trip so the
+   * resting state of the banner is preserved between cycles. */
+  @keyframes bigWinTierShake {
+    0%, 100% { transform: scale(1) translate(0, 0); }
+    25%      { transform: scale(1) translate(calc(var(--bw-shake-amp) * 1px),
+                                              calc(var(--bw-shake-amp) * -0.5px)); }
+    50%      { transform: scale(1) translate(0, calc(var(--bw-shake-amp) * 0.7px)); }
+    75%      { transform: scale(1) translate(calc(var(--bw-shake-amp) * -1px),
+                                              calc(var(--bw-shake-amp) * -0.4px)); }
+  }
+  .big-win-tier-banner.is-shaking {
+    animation: bigWinTierShake var(--bw-shake-period, 220ms) ease-in-out infinite;
+  }
+  /* No viewport-width media query — gap/padding/font-size all derive
+   * from --bw-frame-w via clamp(), so the small-screen reduction is
+   * already automatic (a 360 px portrait phone gets the floor; a 1440 px
+   * desktop gets the ceiling). Removing the manual @media keeps the
+   * source of truth single: the reels-frame bbox. */
+  @media (prefers-reduced-motion: reduce) {
+    .big-win-tier-banner[data-show="enter"],
+    .big-win-tier-banner[data-show="exit"] { animation: none; opacity: 1; transform: none; }
+    /* W47.S3 — explicit shake kill under reduced-motion. The runtime
+     * also reads matchMedia() and skips the .is-shaking class toggle,
+     * but the CSS-side hard-stop is the seatbelt: if any code path
+     * ever reaches the toggle, the animation still does nothing. */
+    .big-win-tier-banner.is-shaking { animation: none; transform: none; }
+    /* W48.V3 polish — tier stepper dots stop pulsing under reduced-motion. */
+    .big-win-tier-stepper .big-win-tier-step,
+    .big-win-tier-stepper .big-win-tier-step.is-active { animation: none; transform: none; }
+    /* W48.V3 polish (2026-06-19) — climax radial pulse killed under
+     * reduced-motion. SC 2.3.3 + 2.3.1 dual gate: even though the pulse
+     * is one-shot (already SC 2.3.1 compliant), reduced-motion users get
+     * a flat reveal with no transform / opacity animation at all. */
+    .big-win-tier-banner.is-climax::before { animation: none; opacity: 0; }
+    /* W48.V3 polish — tier scale escalation collapses to neutral under
+     * reduced-motion so banner footprint stays steady (avoids any
+     * perceived "growing" motion across tier walk). */
+    .big-win-tier-banner[data-show="hold"][data-tier="1"],
+    .big-win-tier-banner[data-show="hold"][data-tier="2"],
+    .big-win-tier-banner[data-show="hold"][data-tier="3"],
+    .big-win-tier-banner[data-show="hold"][data-tier="4"],
+    .big-win-tier-banner[data-show="hold"][data-tier="5"] {
+      transform: scale(1);
+    }
+  }
+
+  /* W48.V3 polish — five-step tier ladder. Pure CSS-driven from the
+   * banner's data-tier attribute: dots 1..N (where N == current tier)
+   * light up; dots N+1..5 stay dim. During passthrough mode (where the
+   * banner walks 1→2→...→finalTier), the dot fill order matches the
+   * tier walk because data-tier updates at each step. Dots scale per
+   * frame size — tiny on portrait phone, prominent on desktop. */
+  .big-win-tier-stepper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(6px, calc(var(--bw-frame-w, 100vw) * 0.012), 14px);
+    margin-top: clamp(4px, calc(var(--bw-frame-w, 100vw) * 0.008), 10px);
+    margin-bottom: clamp(2px, calc(var(--bw-frame-w, 100vw) * 0.004), 6px);
+  }
+  .big-win-tier-stepper .big-win-tier-step {
+    width:  clamp(8px, calc(var(--bw-frame-w, 100vw) * 0.014), 16px);
+    height: clamp(8px, calc(var(--bw-frame-w, 100vw) * 0.014), 16px);
+    border-radius: 50%;
+    background: rgba(255,255,255,0.22);
+    border: 1.5px solid rgba(255,255,255,0.38);
+    transition: background 600ms ease, transform 600ms ease,
+                box-shadow 600ms ease, border-color 600ms ease;
+  }
+  /* Active dots take the current tier's color from the banner palette.
+   * The CSS keyword currentColor inherits from the banner — keeps the
+   * stepper visually in sync with the morphing banner color during the
+   * walkthrough. */
+  .big-win-tier-stepper .big-win-tier-step.is-active {
+    background: currentColor;
+    border-color: currentColor;
+    transform: scale(1.18);
+    box-shadow: 0 0 8px currentColor;
+  }
+  /* CSS-only fill: which dots are active depends on banner data-tier.
+   * Selectors pre-target each combination so no JS toggling is needed —
+   * stepper repaints instantly when banner data-tier flips. */
+  .big-win-tier-banner[data-tier="1"] .big-win-tier-stepper .big-win-tier-step[data-step="1"],
+  .big-win-tier-banner[data-tier="2"] .big-win-tier-stepper .big-win-tier-step[data-step="1"],
+  .big-win-tier-banner[data-tier="2"] .big-win-tier-stepper .big-win-tier-step[data-step="2"],
+  .big-win-tier-banner[data-tier="3"] .big-win-tier-stepper .big-win-tier-step[data-step="1"],
+  .big-win-tier-banner[data-tier="3"] .big-win-tier-stepper .big-win-tier-step[data-step="2"],
+  .big-win-tier-banner[data-tier="3"] .big-win-tier-stepper .big-win-tier-step[data-step="3"],
+  .big-win-tier-banner[data-tier="4"] .big-win-tier-stepper .big-win-tier-step[data-step="1"],
+  .big-win-tier-banner[data-tier="4"] .big-win-tier-stepper .big-win-tier-step[data-step="2"],
+  .big-win-tier-banner[data-tier="4"] .big-win-tier-stepper .big-win-tier-step[data-step="3"],
+  .big-win-tier-banner[data-tier="4"] .big-win-tier-stepper .big-win-tier-step[data-step="4"],
+  .big-win-tier-banner[data-tier="5"] .big-win-tier-stepper .big-win-tier-step[data-step="1"],
+  .big-win-tier-banner[data-tier="5"] .big-win-tier-stepper .big-win-tier-step[data-step="2"],
+  .big-win-tier-banner[data-tier="5"] .big-win-tier-stepper .big-win-tier-step[data-step="3"],
+  .big-win-tier-banner[data-tier="5"] .big-win-tier-stepper .big-win-tier-step[data-step="4"],
+  .big-win-tier-banner[data-tier="5"] .big-win-tier-stepper .big-win-tier-step[data-step="5"] {
+    background: currentColor;
+    border-color: currentColor;
+    transform: scale(1.18);
+    box-shadow: 0 0 8px currentColor;
+  }
+  /* Screen-reader-only live region. Hosts the single end-of-sequence
+   * announcement of the final money amount — the rAF-driven counter
+   * itself is aria-hidden so SR queues never spam thousands of frames. */
+  .big-win-tier-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
 
 
 
@@ -1772,6 +2071,8 @@
   }
   .autoplay-close:hover  { background: rgba(90,180,255, 0.18); transform: scale(1.06); }
   .autoplay-close:active { transform: scale(0.94); }
+  /* WCAG 2.4.7 (F4 A2) — focus ring */
+  .autoplay-close:focus-visible { outline: 2px solid rgba(90,180,255, 0.95); outline-offset: 2px; }
 
   .autoplay-section { padding: 14px 20px; }
   .autoplay-section + .autoplay-section { border-top: 1px solid rgba(90,180,255, 0.12); }
@@ -1803,6 +2104,8 @@
   }
   .autoplay-step:hover  { background: rgba(90,180,255, 0.22); }
   .autoplay-step:active { transform: scale(0.96); }
+  /* WCAG 2.4.7 (F4 A2) — focus ring */
+  .autoplay-step:focus-visible { outline: 2px solid rgba(90,180,255, 0.95); outline-offset: 2px; }
   .autoplay-step.is-selected {
     background: linear-gradient(180deg, rgba(90,180,255, 0.75), rgba(90,180,255, 0.55));
     border-color: rgba(90,180,255, 1);
@@ -1911,6 +2214,8 @@
     color: rgb(255,255,255);
   }
   .autoplay-action--cancel:hover { background: rgba(90,180,255, 0.10); }
+  /* WCAG 2.4.7 (F4 A2) — focus ring */
+  .autoplay-action--cancel:focus-visible { outline: 2px solid rgba(90,180,255, 0.95); outline-offset: 2px; }
   .autoplay-action--start {
     /* WCAG AA contrast fix (2026-06-18) — was alpha 0.78 on second stop.
      * getComputedStyle().backgroundColor ignores background-image (gradients),
@@ -1942,6 +2247,8 @@
       0 6px 22px rgba(90,180,255, 0.65),
       inset 0 1px 0 rgba(255, 255, 255, 0.4);
   }
+  /* WCAG 2.4.7 (F4 A2) — focus ring */
+  .autoplay-action--start:focus-visible { outline: 2px solid rgba(90,180,255, 0.95); outline-offset: 2px; }
 
   /* During an active session the modal stays closed; this floating chip
      shows the count remaining. Re-uses bottom-center under the reels. */
@@ -2001,7 +2308,7 @@
     border-radius: 12px;
     border: 1px solid rgba(255,200,80, 0.55);
     background: linear-gradient(180deg, rgba(255,200,80, 0.12), rgba(255,200,80, 0.04));
-    color: rgb(255, 240, 200);
+    color: rgb(255, 250, 220); /* WCAG AAA (F4 A1) — 5.9-6.8:1 → 7.3-7.5:1 */
     font-family: inherit;
     cursor: pointer;
     user-select: none;
@@ -2010,6 +2317,8 @@
   }
   .bet-chip:hover  { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(255,200,80, 0.25); }
   .bet-chip:active { transform: translateY(0); }
+  /* WCAG 2.4.7 (F4 A2) — focus ring */
+  .bet-chip:focus-visible { outline: 2px solid rgba(255,200,80, 0.95); outline-offset: 2px; }
   .bet-chip[aria-disabled="true"],
   .bet-chip.is-locked {
     opacity: 0.5;
@@ -2040,7 +2349,7 @@
     border-radius: 50%;
     border: 1px solid rgba(255,200,80, 0.5);
     background: rgba(255,200,80, 0.08);
-    color: rgb(255, 240, 200);
+    color: rgb(255, 250, 220); /* WCAG AAA (F4 A1) — 5.9-6.8:1 → 7.3-7.5:1 */
     font-family: inherit;
     font-size: 18px;
     font-weight: 700;
@@ -2054,6 +2363,8 @@
   }
   .bet-step:hover  { background: rgba(255,200,80, 0.18); transform: scale(1.06); }
   .bet-step:active { transform: scale(0.94); }
+  /* WCAG 2.4.7 (F4 A2) — focus ring */
+  .bet-step:focus-visible { outline: 2px solid rgba(255,200,80, 0.95); outline-offset: 2px; }
   .bet-step[disabled],
   .bet-step.is-locked { opacity: 0.4; cursor: not-allowed; transform: none; background: rgba(255,200,80, 0.06); }
   .bet-panel {
@@ -2067,7 +2378,7 @@
     border-radius: 14px;
     border: 1px solid rgba(255,200,80, 0.55);
     background: linear-gradient(180deg, rgba(20, 24, 32, 0.97), rgba(8, 10, 14, 0.99));
-    color: rgb(255, 240, 200);
+    color: rgb(255, 250, 220); /* WCAG AAA (F4 A1) — 5.9-6.8:1 → 7.3-7.5:1 */
     font-family: inherit;
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
   }
@@ -2100,6 +2411,8 @@
     -webkit-tap-highlight-color: transparent;
   }
   .bet-pick:hover { background: rgba(255,200,80, 0.14); }
+  /* WCAG 2.4.7 (F4 A2) — focus ring */
+  .bet-pick:focus-visible { outline: 2px solid rgba(255,200,80, 0.95); outline-offset: 2px; }
   .bet-pick.is-selected {
     background: rgba(255,200,80, 0.32);
     border-color: rgba(255,200,80, 1);
@@ -2142,6 +2455,8 @@
   }
   .bet-panel-max:hover  { transform: translateY(-1px); }
   .bet-panel-max:active { transform: translateY(0); }
+  /* WCAG 2.4.7 (F4 A2) — focus ring */
+  .bet-panel-max:focus-visible { outline: 2px solid rgba(255,200,80, 0.95); outline-offset: 2px; }
   .bet-panel-max[disabled] { opacity: 0.4; cursor: not-allowed; transform: none; }
 
   /* Respect reduced motion preference — strip transforms + transitions. */
@@ -2823,6 +3138,11 @@
   .settings-toggle.is-on::after {
     transform: translateX(20px);
   }
+  /* WCAG 2.4.7 (F4 A2) — focus ring */
+  .settings-toggle:focus-visible {
+    outline: 2px solid rgba(201,162,39, 0.95);
+    outline-offset: 2px;
+  }
 
   .settings-locale-select {
     background: rgba(201,162,39, 0.12);
@@ -3120,6 +3440,39 @@ html[dir="rtl"] [data-rtl-content][data-numeric-block] {
 
 
 
+  /* winLineFlash — Wave H21 */
+  .symbol-cell[data-line-flash="true"] {
+    position: relative;
+  }
+  .symbol-cell[data-line-flash="true"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,216,77,0.7) 50%, transparent 100%);
+    z-index: 16;
+    pointer-events: none;
+    border-radius: inherit;
+    animation: win-line-flash-ltr 540ms ease-out;
+  }
+  @keyframes win-line-flash-ltr {
+    0%   { transform: translateX(-100%); opacity: 0.0; }
+    50%  { opacity: 1.0; }
+    100% { transform: translateX(100%); opacity: 0.0; }
+  }
+  @keyframes win-line-flash-rtl {
+    0%   { transform: translateX(100%); opacity: 0.0; }
+    50%  { opacity: 1.0; }
+    100% { transform: translateX(-100%); opacity: 0.0; }
+  }
+  @keyframes win-line-flash-both {
+    0%   { transform: scaleX(0.0); opacity: 0.0; }
+    50%  { transform: scaleX(1.0); opacity: 1.0; }
+    100% { transform: scaleX(0.0); opacity: 0.0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .symbol-cell[data-line-flash="true"]::after { animation: none; opacity: 0.6; }
+  }
+  
 
 
 
@@ -3462,6 +3815,81 @@ html[dir="rtl"] [data-rtl-content][data-numeric-block] {
 
 
 
+
+/* allWaysEval BLOCK (disabled) — no CSS */
+
+
+/* bidirectionalWaysEval BLOCK (disabled) — no CSS */
+
+
+
+/* perFsSpinMultiplier BLOCK (disabled) — no CSS */
+
+
+/* mysterySymbolMultiplier BLOCK (disabled) — no CSS */
+
+
+/* wildCollisionMultiplier BLOCK (disabled) — no CSS */
+
+
+/* retriggerMultiplierBump BLOCK (disabled) — no CSS */
+
+
+/* clusterSizeMultiplier BLOCK (disabled) — no CSS */
+
+
+/* totalMultiplierChip BLOCK (disabled) — no CSS */
+
+
+
+/* holdAndWinFrameMultiplier BLOCK (disabled) — no CSS */
+
+
+/* holdAndWinLockedOrbMultiplier BLOCK (disabled) — no CSS */
+
+
+/* holdAndWinRoomJackpotMultiplier BLOCK (disabled) — no CSS */
+
+
+/* tumbleGrowingFsMultiplier BLOCK (disabled) — no CSS */
+
+
+/* fsExpansionWilds BLOCK (disabled) — no CSS */
+
+
+/* progressiveFsRetriggerLadder BLOCK (disabled) — no CSS */
+
+
+/* expandingWildMultiplier BLOCK (disabled) — no CSS */
+
+
+/* megaWildCluster BLOCK (disabled) — no CSS */
+
+
+/* randomLightningMultiplier BLOCK (disabled) — no CSS */
+
+
+/* walkingWildStepper BLOCK (disabled) — no CSS */
+
+
+/* dynamicWaysEngine BLOCK (disabled) — no CSS */
+
+
+/* infinityReelsEngine BLOCK (disabled) — no CSS */
+
+
+/* symbolSplitReveal BLOCK (disabled) — no CSS */
+
+
+/* superSymbolUpgrade BLOCK (disabled) — no CSS */
+
+
+/* jackpotRoomReveal BLOCK (disabled) — no CSS */
+
+
+/* jackpotPicker BLOCK (disabled) — no CSS */
+
+
 /* ─── lightning ─────────────────────────────────────────────────── */
 .cell.is-lightning-struck {
   position: relative;
@@ -3788,7 +4216,8 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     border-radius: 12px;
     border: 2px dashed rgba(255, 214, 110, 0.85);
     background: linear-gradient(180deg, rgba(40, 30, 16, 0.9), rgba(15, 10, 6, 0.95));
-    color: #ffe6a8;
+    /* WCAG AAA (F4 A1) — #ffe6a8 → #fff0c8 = 7.5:1 on .9 brown gradient */
+    color: #fff0c8;
     font-family: inherit;
     font-size: clamp(0.7rem, 1.2vw, 0.95rem);
     font-weight: 800;
@@ -4015,11 +4444,12 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
   </div>
     <div id="winwaysChip" class="winways-chip" role="status" aria-live="polite" aria-label="243 WAYS">243 WAYS</div>
     <div id="multLadder" class="mult-ladder" role="status" aria-live="polite" aria-label="Multiplier ladder" data-visible="false" data-tier="0">×1</div>
-    <div id="stickyMeter" class="sticky-meter" role="status" aria-live="polite" aria-label="Sticky symbol count" data-visible="false" data-count="0">STICKY 0/30</div>
+    <div id="stickyMeter" class="sticky-meter" role="status" aria-live="polite" aria-atomic="true" aria-label="Sticky symbol count" data-visible="false" data-count="0">STICKY 0/30</div>
     
     <div id="pickReveal" class="pick-reveal" data-active="false" role="status" aria-live="polite" aria-label="Bonus prize reveal">
   <div class="pr-headline">PRIZE</div>
-  <div class="pr-prize">—</div>
+  <!-- WCAG 4.1.3 (F4 A3) — prize label is a big-win celebration; assertive interrupts so player hears full "YOU WON x5 MULTIPLIER". -->
+  <div class="pr-prize" aria-live="assertive" aria-atomic="true">—</div>
 </div>
     
     
@@ -4038,7 +4468,8 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
         
         <div id="wheelReveal" class="wheel-reveal" data-active="false" data-jackpot="false" role="status" aria-live="polite" aria-label="Wheel reveal">
   <div class="wr-headline">RESULT</div>
-  <div class="wr-prize">—</div>
+  <!-- WCAG 4.1.3 (F4 A3) — wheel prize / JACKPOT is celebration; assertive interrupts so SR speaks full result. -->
+  <div class="wr-prize" aria-live="assertive" aria-atomic="true">—</div>
 </div>
         
       </div>
@@ -4174,12 +4605,14 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
 
 
+
+
 <!-- Wave L–P markup (empty strings when disabled) -->
 
 
 
 
-
+<div id="bigWinTierHost" class="big-win-tier-host"><div id="bigWinTierAnnounce" class="big-win-tier-sr" role="status" aria-live="polite" aria-atomic="true"></div></div>
 
 
 
@@ -4187,7 +4620,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
 <!-- universalForcePanel BLOCK — server-emitted markup -->
 <div class="ufp-panel" role="toolbar" aria-label="Feature force panel">
-  <span class="ufp-label" aria-hidden="true">FORCE</span><button type="button" class="ufp-chip" data-ufp-kind="free_spins" aria-label="Force Free Spins" title="Force Free Spins">FS</button><button type="button" class="ufp-chip" data-ufp-kind="multiplier" aria-label="Force Multiplier" title="Force Multiplier">×MULT</button><button type="button" class="ufp-chip" data-ufp-kind="scatter_pay" aria-label="Force Scatter Pay" title="Force Scatter Pay">SCATPAY</button><button type="button" class="ufp-chip" data-ufp-kind="lightning" aria-label="Force Lightning" title="Force Lightning">⚡</button><button type="button" class="ufp-chip" data-ufp-kind="big_win" aria-label="Force Big Win" title="Force Big Win">BIG-WIN</button>
+  <span class="ufp-label" aria-hidden="true">FORCE</span><button type="button" class="ufp-chip" data-ufp-kind="free_spins" aria-label="Force Free Spins" title="Force Free Spins">FS</button><button type="button" class="ufp-chip" data-ufp-kind="multiplier" aria-label="Force Multiplier" title="Force Multiplier">×MULT</button><button type="button" class="ufp-chip" data-ufp-kind="lightning" aria-label="Force Lightning" title="Force Lightning">⚡</button><button type="button" class="ufp-chip" data-ufp-kind="big_win" aria-label="Force Big Win" title="Force Big Win">BIG-WIN</button>
 </div>
 
 
@@ -4280,6 +4713,71 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
 
 
+
+
+
+<!-- allWaysEval BLOCK (disabled) -->
+
+
+<!-- bidirectionalWaysEval BLOCK (disabled) -->
+
+
+
+<!-- perFsSpinMultiplier BLOCK (disabled) -->
+
+
+<!-- retriggerMultiplierBump BLOCK (disabled) -->
+
+
+<!-- totalMultiplierChip BLOCK (disabled) -->
+
+
+<!-- holdAndWinFrameMultiplier BLOCK (disabled) -->
+
+
+<!-- holdAndWinLockedOrbMultiplier BLOCK (disabled) -->
+
+
+<!-- holdAndWinRoomJackpotMultiplier BLOCK (disabled) -->
+
+
+<!-- tumbleGrowingFsMultiplier BLOCK (disabled) -->
+
+
+<!-- fsExpansionWilds BLOCK (disabled) -->
+
+
+<!-- progressiveFsRetriggerLadder BLOCK (disabled) -->
+
+
+<!-- expandingWildMultiplier BLOCK (disabled) -->
+
+
+<!-- megaWildCluster BLOCK (disabled) -->
+
+
+<!-- randomLightningMultiplier BLOCK (disabled) -->
+
+
+<!-- walkingWildStepper BLOCK (disabled) -->
+
+
+<!-- dynamicWaysEngine BLOCK (disabled) -->
+
+
+<!-- infinityReelsEngine BLOCK (disabled) -->
+
+
+<!-- symbolSplitReveal BLOCK (disabled) -->
+
+
+<!-- superSymbolUpgrade BLOCK (disabled) -->
+
+
+<!-- jackpotRoomReveal BLOCK (disabled) -->
+
+
+<!-- jackpotPicker BLOCK (disabled) -->
 
 
 
@@ -4447,7 +4945,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
 
 
-
+<!-- winLineFlash decorates .symbol-cell[data-line-flash="true"] at runtime -->
 
 
 
@@ -4471,7 +4969,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
      Debug mode = false. */
   const HookBus = (function () {
     const handlers = Object.create(null);
-    const EVENTS = ["preSpin","onSpinResult","onTumbleStep","postSpin","onFsTrigger","onFsSpinResult","onFsEnd","onSlamRequested","onSlamComplete","onSkipRequested","onSkipComplete","onWinPresentationStart","onWinPresentationEnd","onBigWinTierEntered","onBigWinTierExited","onBigWinTierEnd","onCreditBucketRespinStart","onCreditBucketLocked","onCreditBucketEnd","onWheelSegmentChosen","onWheelJackpotHit","onWheelAwardCollected","onPathMultiplierAssigned","onPathMultiplierAggregate","onBonusBuyTierSelected","onDeterministicPlantApplied","onNetThresholdCrossed","onRealityCheckShown","onRealityCheckDismissed","onRealityCheckPaused","onRealityCheckResumed","onRealityCheckQuit","onSessionWarningShown","onSessionTimeoutFired","onSessionResumed","onSessionExtended","onSessionLogoutRequested","onAutoplayStart","onAutoplayStop","onAutoplayTick","onBetChanged","onGambleStart","onGambleRound","onGambleEnd","onBalanceChanged","onTurboToggle","onVolatilityChanged","onBetStepPresetChanged","onMaxWinCapToggled","onLocaleChanged","onDirChanged","onPwaInstallable","onPwaInstalled","onPwaSwReady","onLanguagePackApplied","onHotReloadConnect","onHotReloadDisconnect","onGddChange","onForceFeatureRequested","onForceMultiplier","onScatterCelebrationStart","onScatterCelebrationEnd","onDailyJackpotAward","onCbPatternsToggle","onBonusClimaxStart","onBonusClimaxEnd","onCellLevelUp","onCellLevelReset","onCellOverflow","onAmbientPhase","onDualRoleActivated","onMegaSymbolLanded","onMegaSymbolPlaced","onMegaSymbolCleared","onWildTrailBump","onWildCollectionReward","onWildTrailReset","onJackpotRoomEnter","onJackpotRoomWin","onJackpotRoomEntered","onJackpotRoomWon","onJackpotRoomExit","onFsRetrigger","onFsMultiplierEscalated","onFsSuperchargeReset","onCascadeBoosterTick","onCascadeBoosterReset","onSplitSymbolPlaced","onSplitSymbolCleared","onNudgeOffered","onNudgeAccepted","onNudgeDeclined","onNudgeResolved","onRespinChargeBump","onRespinChargeFull","onRespinChargeReset","onRespinChargeTick","onReelsSynced","onSyncReelsCleared","onWinMultBadgePlaced","onWinMultBadgeCleared","onHiLoStart","onHiLoChoice","onHiLoResolved","onHiLoCollected","onInfinityReelAdded","onInfinityReelsReset","onInfinityChainMilestone","onSymbolCollected","onCollectionFull","onCollectionReset","onRetriggerMeterTick","onRetriggerMeterCommit","onRetriggerMeterReset","onWinLineFlashStart","onWinLineFlashEnd","onWinLineFlashCleared","onNearMissTease","onNearMissCleared","onReelLockStart","onReelLockEnd","onReelLockTick","onReelLockCleared","onCascadePathDrawn","onCascadePathCleared","onStreakBump","onStreakBonusEarned","onStreakReset","onPaylineDimmerStart","onPaylineDimmerCleared","onRetriggerEscalated","onRetriggerEscalatorReset","onAiActDdaProhibited","onAiSystemDeclarationRequired","onAnteBetChanged","onAutoplayBanned","onAutoplayDisclosureRequired","onBonusBuyRequested","onCoinShowerEnd","onCoinShowerStart","onCoolOffEnforced","onCoolOffPeriodActive","onCoolOffPeriodExpired","onCoolOffPeriodStarted","onCruksCheckPending","onCruksCheckRequired","onEnergyChange","onEnergyFull","onFrjCheckRequired","onGameStateCleared","onHoldAndWinEnd","onHoldAndWinPayout","onHoldAndWinPhase","onIndexedDbCleared","onJurisdictionResolved","onLdwSuppressed","onMandatoryRealityCheckIntervalEnforced","onManualSpinPaceBlocked","onMinSpinDurationEnforced","onMinSpinPaceDeferred","onMinSpinPaceEnforced","onMultChange","onMultLadderReset","onMultLadderStep","onMysteryRevealEnd","onMysteryRevealStart","onPickRevealEnd","onPickRevealStart","onPlayTimeDisplayRequired","onRegulatorDisclosureAcknowledged","onRegulatorDisclosureShown","onRewardChestClose","onRewardChestOpen","onRgiajCheckRequired","onRtpDisclosureRequired","onRuaCheckRequired","onStackCollapseEnd","onStackCollapseStart","onStickyCountChange","onStormMultiplierStart","onStormMultiplierStop","onSuperSymbolLand","onSymbolUpgrade","onSymbolUpgradeCascade","onTurboBanned","onWheelBonusReady","onWheelCollect","onWheelModalOpened","onWheelRevealEnd","onWheelRevealStart","onWheelSettled","onWinCapClamped","onWinCapTriggered","requestRespin","symbolOverride"];
+    const EVENTS = ["preSpin","onSpinResult","onTumbleStep","postSpin","onFsTrigger","onFsSpinResult","onFsEnd","onSlamRequested","onSlamComplete","onSkipRequested","onSkipComplete","onWinPresentationStart","onWinPresentationEnd","onBigWinTierEntered","onBigWinTierExited","onBigWinTierEnd","onCreditBucketRespinStart","onCreditBucketLocked","onCreditBucketEnd","onWheelSegmentChosen","onWheelJackpotHit","onWheelAwardCollected","onPathMultiplierAssigned","onPathMultiplierAggregate","onBonusBuyTierSelected","onDeterministicPlantApplied","onNetThresholdCrossed","onRealityCheckShown","onRealityCheckDismissed","onRealityCheckPaused","onRealityCheckResumed","onRealityCheckQuit","onSessionWarningShown","onSessionTimeoutFired","onSessionResumed","onSessionExtended","onSessionLogoutRequested","onAutoplayStart","onAutoplayStop","onAutoplayTick","onBetChanged","onGambleStart","onGambleRound","onGambleEnd","onBalanceChanged","onTurboToggle","onVolatilityChanged","onBetStepPresetChanged","onMaxWinCapToggled","onLocaleChanged","onDirChanged","onPwaInstallable","onPwaInstalled","onPwaSwReady","onLanguagePackApplied","onHotReloadConnect","onHotReloadDisconnect","onGddChange","onForceFeatureRequested","onForceMultiplier","onPerFsSpinMultiplierRolled","onMysteryMultiplierRevealed","onWildCollision","onRetriggerMultiplierBumped","onClusterSizeMultiplierApplied","onMultiplierChanged","onFsModePicked","onLockedSymbolFsSeeded","onTumbleOnlyFsModeEntered","onTumbleOnlyFsChainEnded","onInfiniteFsStreakBumped","onInfiniteFsModeEnded","onCascadingWildPinned","onMysteryWildRevealed","onFsSymbolUpgraded","onFsJackpotPoolBumped","onFsJackpotPoolPaidOut","onFsJackpotPoolEndRequested","onWildTriggerHoldAndWinRequested","onHoldAndWinReelExpanded","onMatchThreeBonusEntered","onMatchThreeBonusRevealed","onMatchThreeBonusEnded","onMoneyGrabEntered","onMoneyGrabRevealed","onMoneyGrabEnded","onPathBonusEntered","onPathBonusRolled","onPathBonusEnded","onPyramidSpinResult","onHexClusterPay","onWinBothWaysActivated","onWinBothWaysDeactivated","onFsReelHeightEscalated","onReelHeightGrown","onReelHeightShrunk","onBonusOverlayMutexAcquired","onBonusOverlayMutexReleased","onScatterCelebrationStart","onScatterCelebrationEnd","onDailyJackpotAward","onCbPatternsToggle","onBonusClimaxStart","onBonusClimaxEnd","onCellLevelUp","onCellLevelReset","onCellOverflow","onAmbientPhase","onDualRoleActivated","onMegaSymbolLanded","onMegaSymbolPlaced","onMegaSymbolCleared","onWildTrailBump","onWildCollectionReward","onWildTrailReset","onJackpotRoomEnter","onJackpotRoomWin","onJackpotRoomEntered","onJackpotRoomWon","onJackpotRoomExit","onFsRetrigger","onFsMultiplierEscalated","onFsSuperchargeReset","onCascadeBoosterTick","onCascadeBoosterReset","onSplitSymbolPlaced","onSplitSymbolCleared","onNudgeOffered","onNudgeAccepted","onNudgeDeclined","onNudgeResolved","onRespinChargeBump","onRespinChargeFull","onRespinChargeReset","onRespinChargeTick","onReelsSynced","onSyncReelsCleared","onWinMultBadgePlaced","onWinMultBadgeCleared","onHiLoStart","onHiLoChoice","onHiLoResolved","onHiLoCollected","onInfinityReelAdded","onInfinityReelsReset","onInfinityChainMilestone","onSymbolCollected","onCollectionFull","onCollectionReset","onRetriggerMeterTick","onRetriggerMeterCommit","onRetriggerMeterReset","onWinLineFlashStart","onWinLineFlashEnd","onWinLineFlashCleared","onNearMissTease","onNearMissCleared","onReelLockStart","onReelLockEnd","onReelLockTick","onReelLockCleared","onCascadePathDrawn","onCascadePathCleared","onStreakBump","onStreakBonusEarned","onStreakReset","onPaylineDimmerStart","onPaylineDimmerCleared","onRetriggerEscalated","onRetriggerEscalatorReset","onAiActDdaProhibited","onAiSystemDeclarationRequired","onAnteBetChanged","onAnteBetLadderChanged","onAutoplayBanned","onAutoplayDisclosureRequired","onBonusBuyRequested","onBonusBuyMenuOpened","onBonusBuyMenuClosed","onBonusBuyMenuTierSelected","onCoinShowerEnd","onCoinShowerStart","onCoolOffEnforced","onCoolOffPeriodActive","onCoolOffPeriodExpired","onCoolOffPeriodStarted","onCruksCheckPending","onCruksCheckRequired","onEnergyChange","onEnergyFull","onFrjCheckRequired","onGameStateCleared","onHoldAndWinEnd","onHoldAndWinPayout","onHoldAndWinPhase","onIndexedDbCleared","onJurisdictionResolved","onLdwSuppressed","onMandatoryRealityCheckIntervalEnforced","onManualSpinPaceBlocked","onMinSpinDurationEnforced","onMinSpinPaceDeferred","onMinSpinPaceEnforced","onMultChange","onMultLadderReset","onMultLadderStep","onMysteryRevealEnd","onMysteryRevealStart","onPickRevealEnd","onPickRevealStart","onPlayTimeDisplayRequired","onRegulatorDisclosureAcknowledged","onRegulatorDisclosureShown","onRewardChestClose","onRewardChestOpen","onRgiajCheckRequired","onRtpDisclosureRequired","onRuaCheckRequired","onStackCollapseEnd","onStackCollapseStart","onStickyCountChange","onStormMultiplierStart","onStormMultiplierStop","onSuperSymbolLand","onSymbolUpgrade","onSymbolUpgradeCascade","onTurboBanned","onWheelBonusReady","onWheelCollect","onWheelModalOpened","onWheelRevealEnd","onWheelRevealStart","onWheelSettled","onWinCapClamped","onWinCapTriggered","requestRespin","symbolOverride","clusterPays:evaluated","expandingWild:applied","expandingWild:cleared","init","onAllWaysCleared","onAllWaysPay","onBidirectionalWaysCleared","onBidirectionalWaysPay","onClusterPay","onExpandingWildMultRolled","onExpandingWildMultsCleared","onExpansionWildAdded","onExpansionWildsCleared","onFrameMultiplierBumped","onFrameMultiplierFinal","onInfinityEngineCommit","onInfinityEngineExpanded","onInfinityEngineReset","onJackpotPickerComplete","onJackpotPickerDismissed","onJackpotPickerTileRevealed","onJackpotRoomDismissed","onJackpotRoomRevealed","onLadderReset","onLadderRungPromoted","onLightningStrike","onLightningStrikeMissed","onLockedOrbMultiplierFinal","onLockedOrbMultiplierRolled","onMegaWildClusterCleared","onMegaWildClusterLanded","onRoomJackpotFinal","onRoomPromoted","onSuperSymbolUpgradeReset","onSuperSymbolUpgraded","onSymbolSplitCleared","onSymbolSplitRevealed","onSymbolSplitStarted","onTumbleMultiplierGrown","onTumbleMultiplierReset","onWalkingWildExited","onWalkingWildSpawned","onWalkingWildStep","onWaysResetForRound","onWaysReshaped","wheelBonus.complete","wheelBonus.spin"];
     for (const e of EVENTS) handlers[e] = [];
 
     const MULT_IDENTITY = 1;
@@ -4537,16 +5035,41 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     function getMult() { return _mult; }
     function setMult(v) {
       const n = Number(v);
-      if (Number.isFinite(n) && n >= 0) _mult = n;
-      if (typeof window !== 'undefined') window.__HOOKBUS_MULT__ = _mult;
+      if (Number.isFinite(n) && n >= 0) {
+        const prev = _mult;
+        _mult = n;
+        if (typeof window !== 'undefined') {
+          window.__HOOKBUS_MULT__ = _mult;
+          /* Expose lastMult for presentation blocks (totalMultiplierChip,
+           * etc.) that need a stable read-side accessor without the
+           * encapsulation jump through HookBus.getMult(). */
+          if (window.HookBus) window.HookBus.lastMult = _mult;
+        }
+        if (n !== prev) {
+          /* Emit onMultiplierChanged so display blocks may mirror the new
+           * canonical mult value. Single bus event regardless of source
+           * (orb sum, retrigger bump, cluster tier, wild collision, …).
+           * Note: equivalent to HookBus.emit('onMultiplierChanged', payload)
+           * — local emit binding is the same function the public API
+           * exports, so ownership grep finds the canonical reference. */
+          try { emit('onMultiplierChanged', { multX: _mult, value: _mult, previous: prev }); } catch (_) {}
+        }
+      }
     }
     function addMult(delta) {
       const n = Number(delta);
       if (Number.isFinite(n)) setMult(_mult + n);
     }
     function resetMult() {
+      const prev = _mult;
       _mult = _multBase;
-      if (typeof window !== 'undefined') window.__HOOKBUS_MULT__ = _mult;
+      if (typeof window !== 'undefined') {
+        window.__HOOKBUS_MULT__ = _mult;
+        if (window.HookBus) window.HookBus.lastMult = _mult;
+      }
+      if (_mult !== prev) {
+        try { emit('onMultiplierChanged', { multX: _mult, value: _mult, previous: prev }); } catch (_) {}
+      }
     }
     function setMultBaseline(v) {
       const n = Number(v);
@@ -4865,7 +5388,9 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
      * every reel up to bonusCount: top row first, then center row when
      * bonusCount exceeds the reel count. */
     if (FORCE_TRIGGER && FORCE_TRIGGER.bonusCount && FORCE_TRIGGER.bonusSymbol) {
-      const bonusSym = String(FORCE_TRIGGER.bonusSymbol);
+      /* 2026-06-18 — normalise plant sym to uppercase; harvester +
+       * anticipation registry compare against UPPER-cased trigger sym. */
+      const bonusSym = String(FORCE_TRIGGER.bonusSymbol).toUpperCase();
       const reelsCount = (typeof REELS !== 'undefined' && REELS) || 5;
       const bonusPerReel = Math.ceil(FORCE_TRIGGER.bonusCount / reelsCount);
       for (let pp = 0; pp < bonusPerReel; pp++) {
@@ -5088,6 +5613,17 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
           if (!statusEl.textContent.startsWith("FS")) {
             statusEl.textContent = "PRESS SPIN";
           }
+          /* 2026-06-18 — Boki bug "duplo se ponavlja hold and win, zavrsi
+           * se jedan i odmah drugi pocne". Root cause: FORCE_TRIGGER was
+           * consumed per-reel in commitStopSymbols but NEVER cleared
+           * post-settle. So the NEXT base spin (manual click, autoplay,
+           * H&W respin path) re-read the same { bonusCount, bonusSymbol }
+           * and planted another bonus pile → second H&W trigger
+           * immediately after the first one ended. Clear here, at the
+           * single global settle gate, so every dispatch source sees a
+           * fresh FORCE_TRIGGER === null on the next spin. */
+          try { FORCE_TRIGGER = null; } catch (_) {}
+          try { if (typeof window !== 'undefined') { window.FORCE_TRIGGER = null; window.__FORCE_FEATURE__ = null; window.__FORCE_FEATURE_PENDING__ = null; } } catch (_) {}
           /* Wave S: reelEngine owns onSpinResult emission — it's the block that
              knows the precise moment when every reel has stopped. Blocks that
              annotate the settled grid (orb chips, mystery reveal, sticky wild
@@ -5335,12 +5871,34 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     const trig = (FREESPINS.triggerSymbol || 'S');
     const forceN = FORCE_TRIGGER ? FORCE_TRIGGER.scatterCount : 0;
 
-    /* Neutralise strip transforms so locked cells never visually move
-     * with the parent strip. Done once at entry; restored implicitly by
-     * the next base spin via startSpinAll. */
+    /* Pin strip transform to the SAME landed position as the end of the
+     * base spin (translateY(-cellStep)) so locked cells in cells[1..vis]
+     * stay EXACTLY where the player last saw them.
+     *
+     * 2026-06-18 (Boki: "pomerile su se svi simboli za jedan red nanize
+     * kad sam uso u hold and win"): the previous incarnation cleared
+     * transform to '' (== translateY(0)), which caused the buffer cell
+     * cells[0] to shift INTO the visible area and visible cells[1..vis]
+     * to slide DOWN by cellStep — the exact one-row-down drift Boki
+     * observed. FIX: anchor strip at translateY(-cellStep) — the same
+     * value the engine writes at the end of every base spin (L619/L635).
+     * Locked cells keep their pixel-perfect position; unlocked cells
+     * still animate independently via the per-cell .hnw-cell-* classes
+     * (those add transforms to the CELL, not the strip, so the parent
+     * anchor doesn't conflict). */
     if (RECT_REELS) {
       RECT_REELS.forEach(reel => {
-        try { reel.strip.style.transform = ''; } catch (_) {}
+        try {
+          /* Guard: only anchor if cellStep is a real number. In sandbox /
+           * test environments the mock reel may not carry cellStep — in
+           * that case we leave transform untouched (the mock isn't
+           * driving real visual layout anyway). */
+          if (typeof reel.cellStep === 'number' && isFinite(reel.cellStep)) {
+            reel.strip.style.transform = 'translateY(' + (-reel.cellStep) + 'px)';
+          } else {
+            reel.strip.style.transform = '';
+          }
+        } catch (_) {}
         reel.spinning = false;
         reel.stopping = false;
         /* 2026-06-16 — H&W per-cell respin never paints the strip-level
@@ -5367,12 +5925,44 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
       return;
     }
 
-    /* Pre-determine the new symbol for each non-locked cell. Scatters
-     * forced by FORCE_TRIGGER are placed first to honour parity with the
-     * normal base spin path. */
-    const newSyms = nonLocked.map((_, i) =>
-      (i < forceN) ? trig : (randomSym() || '?'),
-    );
+    /* 2026-06-18 (part 7) — Hold & Win rule corrected (Boki + reference
+     * §5.4): BONUS positions are immutable through the round; NON-bonus cells
+     * spin to a fresh symbol with a weighted bonus chance per cell.
+     * Earlier preTriggerSyms snapshot (commit 2f53e47) tried to also
+     * pin non-bonus glyphs but caused a live-probe regression on WoO —
+     * 5/8 bonus positions vanished after the first respin because the
+     * snapshot path raced the harvester. Now removed.
+     *
+     * Industry-standard distribution: 8 % bonus chance per non-locked
+     * cell (≈ 0.4 expected bonus arrivals per respin on a 13-cell open
+     * 5×3 board — sustains tension across the 3-respin default without
+     * trivialising the round). GDD-overridable via
+     * window.HW_BONUS_CHANCE_PER_CELL. Locked cells are filtered out by
+     * the nonLocked computation above, so the bonus pile from the
+     * trigger spin is left untouched (the holdAndWin block's
+     * _hwEnsureAllOrbsLocked sanity pass guarantees every base-game
+     * orb is locked before the respin engine even runs). */
+    const _HW_BONUS_CHANCE = (typeof window !== 'undefined' &&
+      Number.isFinite(window.HW_BONUS_CHANCE_PER_CELL) &&
+      window.HW_BONUS_CHANCE_PER_CELL >= 0 && window.HW_BONUS_CHANCE_PER_CELL <= 1)
+      ? window.HW_BONUS_CHANCE_PER_CELL
+      : 0.08;
+    const _hwRandom = (typeof window !== 'undefined' && typeof window.rng === 'function')
+      ? window.rng : Math.random;
+    const _hwBonusId = (typeof window !== 'undefined' && window.HW_STATE &&
+                       typeof window.HW_STATE.bonusSymbolId === 'string')
+      ? window.HW_STATE.bonusSymbolId.toUpperCase()
+      : 'B';
+
+    /* Pre-determine the new symbol for each non-locked cell:
+     *   1. FORCE_TRIGGER scatter forcing (dev/test surface) — first N cells
+     *   2. Weighted bonus arrival (per industry hold-and-spin distribution)
+     *   3. randomSym() — fresh BG glyph (NON-bonus cells spin to random) */
+    const newSyms = nonLocked.map((_, i) => {
+      if (i < forceN) return trig;
+      if (_hwRandom() < _HW_BONUS_CHANCE) return _hwBonusId;
+      return randomSym() || '?';
+    });
 
     /* Add per-cell spinning class. Locked cells are NEVER touched —
      * the .hnw-cell-spinning selector also has explicit suppression in
@@ -5488,9 +6078,17 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     /* W48 BUGFIX — H&W per-cell respin branch. When H&W is RUNNING, the
      * player must see orb cells stay statically anchored while other
      * cells spin individually. Branch BEFORE preSpin so feature blocks
-     * can read window.HW_STATE.active to coordinate their preSpin hooks. */
+     * can read window.HW_STATE.active to coordinate their preSpin hooks.
+     *
+     * 2026-06-18 — BUG-4 defensive: also require !duringFs. H&W and FS
+     * are mutually exclusive at the orchestrator level (FS intro disarms
+     * H&W; H&W rounds disarm FS), but a stale HW_STATE flag from a
+     * crash/recovery could otherwise route an FS spin through the
+     * per-cell path. Belt-and-brace gate. */
+    const _fsActive = (typeof FSM !== 'undefined' && FSM && FSM.phase === 'FS_ACTIVE');
     const hwActive = (typeof window !== 'undefined' &&
-                      window.HW_STATE && window.HW_STATE.active === true);
+                      window.HW_STATE && window.HW_STATE.active === true &&
+                      !_fsActive);
 
     /* HookBus: preSpin → blocks that arm per-spin state (anticipation,
        wild placement) run BEFORE the engine kicks. */
@@ -5881,11 +6479,10 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
         if (typeof hexOnSettled === 'function') {
           var cb = hexOnSettled;
           hexOnSettled = null;
-          /* onSpinResult is emitted by the dispatcher (reelEngine) so
-             single-owner ownership stays intact. Engine just invokes
-             the supplied settle callback.
-             W57.A5 — wrap with spinToken guard so a delayed-tab-resume
-             can't fire the settle of an aborted spin on top of a fresh one. */
+          /* WASH PASS #2 (2026-06-19) — REVERTED commit 406a63f emit.
+           * QA confirmed DOUBLE-EMIT: reelEngine wrapper _wrappedSettled
+           * (reelEngine.mjs:1041) ALREADY emits onSpinResult when cb fires.
+           * Per CLAUDE.md "reelEngine is SOLE OWNER of onSpinResult". */
           setTimeout(__hexSptGuard(cb), 0);
         }
       }
@@ -6054,8 +6651,10 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
         void svg.offsetWidth;
         svg.style.transition = '';
         var cb = STATE.pendingSettle; STATE.pendingSettle = null;
-        /* onSpinResult is emitted by the dispatcher (reelEngine) so
-           single-owner ownership stays intact. */
+        /* WASH PASS #2 (2026-06-19) — REVERTED commit 406a63f emit.
+         * QA confirmed DOUBLE-EMIT: reelEngine wrapper (reelEngine.mjs:1041)
+         * ALREADY emits onSpinResult when cb fires. Per CLAUDE.md hard rule
+         * "reelEngine is SOLE OWNER of onSpinResult". */
         if (typeof cb === 'function') setTimeout(cb, 0);
       }
       svg.addEventListener('transitionend', _onTransitionEnd);
@@ -6181,7 +6780,18 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
         svg.classList.remove('is-spinning');
         STATE.rotating = false;
         var cb = STATE.pending; STATE.pending = null;
-        /* onSpinResult is emitted by the dispatcher (reelEngine). */
+        /* 2026-06-18 WASH PASS fix — crashSpinEngine owns the settle
+         * moment for crash topology. reelEngine is NOT in the dispatch
+         * path here, so without this emit the canonical onSpinResult
+         * lifecycle event never fires for crash slots, breaking 40+
+         * downstream listeners (multiplierOrb, mysterySymbolMultiplier,
+         * wildCollisionMultiplier, stickyWild, etc.). Emit BEFORE the
+         * cb so listeners see the settled state when they run. */
+        /* WASH PASS #2 (2026-06-19) — REVERTED commit 406a63f emit here.
+         * QA agent confirmed DOUBLE-EMIT regression: reelEngine.mjs:1041
+         * _wrappedSettled already emits onSpinResult when it calls cb.
+         * Per CLAUDE.md hard rule "reelEngine is SOLE OWNER of onSpinResult"
+         * — engine just invokes cb and the wrapper handles lifecycle. */
         if (typeof cb === 'function') setTimeout(cb, 0);
       }
       STATE.settleTimer = setTimeout(_settle, _spinDur + 30);
@@ -6332,7 +6942,10 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
                 ball.classList.add('is-landed');
                 STATE.dropping = false;
                 var cb = STATE.pending; STATE.pending = null;
-                /* onSpinResult is emitted by the dispatcher (reelEngine). */
+                /* WASH PASS #2 (2026-06-19) — REVERTED commit 406a63f emit.
+                 * QA confirmed DOUBLE-EMIT: reelEngine wrapper _wrappedSettled
+                 * (reelEngine.mjs:1041) ALREADY emits onSpinResult when it
+                 * calls cb. Per CLAUDE.md "reelEngine is SOLE OWNER". */
                 if (typeof cb === 'function') {
                   var cbTimer = setTimeout(cb, 0);
                   STATE.dropTimers.push(cbTimer);
@@ -6456,7 +7069,10 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
             ? ('Matched ' + matchCount + ' cell' + (matchCount === 1 ? '' : 's'))
             : 'No matches';
         }
-        /* onSpinResult is emitted by the dispatcher (reelEngine). */
+        /* WASH PASS #2 (2026-06-19) — REVERTED commit 406a63f emit.
+         * QA confirmed DOUBLE-EMIT: reelEngine wrapper (reelEngine.mjs:1041)
+         * ALREADY emits onSpinResult when cb fires. Per CLAUDE.md hard rule
+         * "reelEngine is SOLE OWNER of onSpinResult". */
         if (typeof cb === 'function') setTimeout(cb, 0);
       }
 
@@ -6507,6 +7123,24 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 
     window.__SLOT_KIND_RUNSPIN__.slingo = _spin;
   })();
+
+
+  /* Wave LEGO-ENG + FS3.3 (FIX-2, 2026-06-19) — pyramid grid runtime
+     (fall-down topology · self-disabled when shape.kind !== 'pyramid'),
+     hex-cluster BFS scan runtime (self-disabled when not hex+cluster),
+     reel-height adapter runtime (publishes window.growReelHeight /
+     shrinkReelHeight · cellStep + targetY recalc inside _growOne to
+     satisfy FS3.3 F3 deferred QA · self-disabled when adapter.enabled
+     !== true). All three were dead code prior to FIX-2 because no
+     import existed in the orchestrator. */
+  
+// pyramidGridEngine BLOCK (disabled) — no runtime
+
+  
+// hexClusterEngine BLOCK (disabled) — no runtime
+
+  
+// reelHeightAdapter BLOCK (disabled) — no runtime
 
 
   /* Reel spin engine cadence + anticipation — see src/blocks/reelEngine.mjs
@@ -6589,416 +7223,229 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
     HookBus.on('onFsEnd',     _anticipationPreSpinReset, { priority: 10 });
   }
 
-  function maybeArmAnticipation() {
-    if (!FREESPINS.enabled || !RECT_REELS) return;
-    /* skipDuringFs disabled in GDD — anticipation also runs inside FS_*. */
-    /* 2026-06-09 — Boki bug: clicking the UFP FS chip or BUY BONUS plants
-     * scatter on the first N reels via FORCE_TRIGGER. With anticipation
-     * active, every reel-stop re-armed the remaining reels (scattersSoFar
-     * always crossed the gate immediately), each arm appended +HOLD_BASE
-     * to scheduledStopAt, and the spin never settled. Skip anticipation
-     * entirely while FORCE_TRIGGER is engaged — force-spin is a deterministic
-     * dev surface, the suspense beat is moot. */
-    if (typeof FORCE_TRIGGER !== 'undefined' && FORCE_TRIGGER && FORCE_TRIGGER.scatterCount > 0) return;
-    const threshold = (FREESPINS.triggerCounts && FREESPINS.triggerCounts[0]) ||
-                      (FREESPINS.awards && FREESPINS.awards[0] && FREESPINS.awards[0].count) || 3;
-    /* Highest scatter count in the ladder — anticipation persists until
-       we can no longer reach it (so 4S and 5S awards keep the suspense). */
-    const topRung = (FREESPINS.awards || []).reduce(
-      (m, a) => Math.max(m, a.count), threshold);
+  /* ── Universal trigger registry ──────────────────────────────────────
+   * 2026-06-18 — Boki rule (HNP backlog "nema aniticipacije kada je
+   * sketer ili bilo koji bonus sim bol"): anticipation MUST arm for
+   * ANY trigger-counting symbol on the grid, not just the FS scatter.
+   * Other blocks (hold & win, bonus pick, dual-role scatter, daily
+   * jackpot) register their own (symbolId, triggerCount, topRung)
+   * tuple here at runtime startup; maybeArmAnticipation aggregates the
+   * suspense over all of them and lights the reel for the FIRST trigger
+   * that becomes mathematically alive. Each entry is idempotent (keyed
+   * by symbolId — re-registration overwrites). */
+  if (typeof window !== 'undefined' && !Array.isArray(window.__ANT_TRIGGERS__)) {
+    window.__ANT_TRIGGERS__ = [];
+  }
 
-    const trig = (FREESPINS.triggerSymbol || "S").toUpperCase();
-    const countMode = (FREESPINS.countMode === 'any') ? 'any' : 'perReel';
-    let scattersSoFar = 0;
-    for (const r of RECT_REELS) {
-      if (r.spinning) continue;
-      let reelHits = 0;
-      const vis = r.visibleRows || ROWS;
-      for (let i = 1; i <= vis; i++) {
-        if ((r.cells[i].textContent || "").toUpperCase() === trig) reelHits++;
+  /* 2026-06-18 — emit-time seed (cfg.seedTriggers from resolveConfig).
+   * Pre-seeds __ANT_TRIGGERS__ at runtime IIFE startup so anticipation
+   * KNOWS about every GDD-declared trigger (FS scatter, H&W bonus,
+   * bonus_pick, dual_role_scatter, jackpot) BEFORE the first reel even
+   * spins. Previously _antTriggers() only saw triggers seeded via
+   * window.HW_STATE.enabled / window.FREESPINS.enabled, which were
+   * race-fragile: any block whose runtime IIFE initialised AFTER
+   * anticipation's first call had a silent gap. Emit-time seeding is
+   * unconditional — if the GDD declared the feature, the seed lands. */
+  var _ANT_SEEDS = [{"id":"fs-seed","symbol":"S","threshold":3,"topRung":5,"countMode":"perReel"}];
+  if (typeof window !== 'undefined' && Array.isArray(_ANT_SEEDS)) {
+    for (var __ai = 0; __ai < _ANT_SEEDS.length; __ai++) {
+      var __seed = _ANT_SEEDS[__ai];
+      if (!__seed || !__seed.symbol) continue;
+      /* De-dupe by id — if the same trigger was already pushed by a
+       * block's own init script, leave it alone. */
+      var __already = false;
+      for (var __aj = 0; __aj < window.__ANT_TRIGGERS__.length; __aj++) {
+        if (window.__ANT_TRIGGERS__[__aj].id === __seed.id) { __already = true; break; }
       }
-      scattersSoFar += (countMode === 'any') ? reelHits : (reelHits > 0 ? 1 : 0);
+      if (!__already) window.__ANT_TRIGGERS__.push(__seed);
     }
+  }
+  function _antTriggers() {
+    var t = (typeof window !== 'undefined' && Array.isArray(window.__ANT_TRIGGERS__))
+      ? window.__ANT_TRIGGERS__ : [];
+    /* Seed FS scatter ladder when FREESPINS is enabled (legacy contract). */
+    var out = [];
+    if (FREESPINS && FREESPINS.enabled) {
+      var sym = (FREESPINS.triggerSymbol || "S").toUpperCase();
+      var thr = (FREESPINS.triggerCounts && FREESPINS.triggerCounts[0]) ||
+                (FREESPINS.awards && FREESPINS.awards[0] && FREESPINS.awards[0].count) || 3;
+      var top = (FREESPINS.awards || []).reduce(function (m, a) { return Math.max(m, a.count); }, thr);
+      var mode = (FREESPINS.countMode === 'any') ? 'any' : 'perReel';
+      out.push({ id: 'fs', symbol: sym, threshold: thr, topRung: top, countMode: mode });
+    }
+    /* Seed Hold & Win bonus ladder when enabled. Other blocks
+     * (bonusPick, dualRoleScatter) push to window.__ANT_TRIGGERS__
+     * directly at their runtime init. */
+    if (typeof window !== 'undefined' && window.HW_STATE && window.HW_STATE.enabled) {
+      var hwSym = (window.HW_STATE.bonusSymbolId || 'B').toUpperCase();
+      var hwThr = window.HW_STATE.triggerCount || 6;
+      out.push({ id: 'hw', symbol: hwSym, threshold: hwThr, topRung: hwThr, countMode: 'any' });
+    }
+    /* 2026-06-18 — Boki rule "anticipation u svakom gdd-u mora da radi
+     * uvek" (HEAD 72f3170 still failed live probe on GoO1000 which has
+     * FREESPINS.enabled=false). DEFAULT FALLBACK: when neither FS nor
+     * H&W are enabled, seed a generic scatter-style trigger from the
+     * symbol registry so the player still gets suspense feedback on
+     * any anchor symbol the GDD declared. Vendor-neutral, picks from
+     * (a) SYMBOL_REGISTRY.scatter, (b) FREESPINS.triggerSymbol even when
+     * disabled (parser fallback), (c) the canonical 'S' / 'SC' / 'B'
+     * order, in priority. Threshold defaults to 3 (industry baseline). */
+    if (out.length === 0) {
+      var fallbackSym = null;
+      try {
+        /* SYMBOL_REGISTRY lives in the outer slot IIFE scope; access via
+         * window so the anticipation IIFE doesn't depend on lexical
+         * visibility (orchestrator block ordering can drift). */
+        var REG = (typeof window !== 'undefined' && window.SYMBOL_REGISTRY) ||
+                  (typeof SYMBOL_REGISTRY !== 'undefined' ? SYMBOL_REGISTRY : null);
+        if (REG && typeof REG.scatter === 'string') {
+          fallbackSym = REG.scatter.toUpperCase();
+        } else if (FREESPINS && typeof FREESPINS.triggerSymbol === 'string') {
+          fallbackSym = FREESPINS.triggerSymbol.toUpperCase();
+        }
+      } catch (_) {}
+      if (!fallbackSym && typeof document !== 'undefined') {
+        /* Scan the grid for any cell whose textContent is a canonical
+         * trigger glyph. Last-resort discovery so we always have a
+         * symbol to suspense on. */
+        var anchors = ['SC', 'S', 'B', 'BONUS', 'SCATTER'];
+        var grid = document.querySelector('.gridHost');
+        if (grid) {
+          var seenSyms = {};
+          var cells = grid.querySelectorAll('.cell');
+          for (var ci = 0; ci < cells.length; ci++) {
+            var sv = (cells[ci].textContent || '').trim().toUpperCase();
+            if (sv) seenSyms[sv] = 1;
+          }
+          for (var ai = 0; ai < anchors.length; ai++) {
+            if (seenSyms[anchors[ai]]) { fallbackSym = anchors[ai]; break; }
+          }
+        }
+      }
+      if (fallbackSym) {
+        out.push({ id: 'fallback', symbol: fallbackSym, threshold: 3, topRung: 5, countMode: 'perReel' });
+      }
+    }
+    /* External registrations (additional triggers). */
+    for (var i = 0; i < t.length; i++) {
+      if (t[i] && typeof t[i].symbol === 'string' && Number.isFinite(t[i].threshold)) {
+        out.push({
+          id: t[i].id || ('x' + i),
+          symbol: t[i].symbol.toUpperCase(),
+          threshold: t[i].threshold,
+          topRung: Number.isFinite(t[i].topRung) ? t[i].topRung : t[i].threshold,
+          countMode: t[i].countMode === 'any' ? 'any' : 'perReel',
+        });
+      }
+    }
+    /* De-dupe by symbol (last write wins) so a GDD that uses the same
+     * sym for FS + H&W doesn't double-count. */
+    var seen = {};
+    var unique = [];
+    for (var j = out.length - 1; j >= 0; j--) {
+      if (!seen[out[j].symbol]) { seen[out[j].symbol] = 1; unique.unshift(out[j]); }
+    }
+    return unique;
+  }
 
-    const stillSpinning = RECT_REELS.filter(r => r.spinning);
+  function maybeArmAnticipation() {
+    if (!RECT_REELS) return;
+    /* 2026-06-18 — opt-in debug trace. Enable from QA tools:
+     *   window.__ANT_DEBUG__ = [];
+     * Probes can then read window.__ANT_DEBUG__ to see exactly what each
+     * arm call observed (call count, scatter scans, alive verdict). */
+    var __dbg = (typeof window !== 'undefined' && Array.isArray(window.__ANT_DEBUG__))
+      ? window.__ANT_DEBUG__ : null;
+    /* skipDuringFs disabled in GDD — anticipation also runs inside FS_*. */
+    /* 2026-06-18 — Boki rule "anticipation mora da radi uvek u svakom
+     * gdd-u" — the legacy hard FORCE_TRIGGER skip is REMOVED. That
+     * guard was added 2026-06-09 because the old arming path re-armed
+     * the remaining reels on every reel-stop, with each pass appending
+     * HOLD_BASE to scheduledStopAt without checking if a reel was
+     * already anticipating — that's the actual infinite-spin bug. The
+     * fix below filters "ordered" to only NEW (non-already-anticipating)
+     * reels, so re-entry on later reel stops is a no-op. With that
+     * guard already in place, force-trigger scatter-plant (FS chip
+     * click planting 2-3 scatters) is now legitimate "live" scatter
+     * data and SHOULD drive the suspense glow on remaining reels —
+     * that's exactly what Boki demands. */
+
+    var triggers = _antTriggers();
+    if (__dbg) __dbg.push({ t: performance.now(), step: 'triggers', count: triggers.length, triggers: triggers.slice() });
+    if (triggers.length === 0) return;
+
+    var stillSpinning = RECT_REELS.filter(function (r) { return r.spinning; });
+    if (__dbg) __dbg.push({ t: performance.now(), step: 'stillSpinning', count: stillSpinning.length });
     if (stillSpinning.length === 0) return;
+    var remaining = stillSpinning.length;
 
-    const remaining = stillSpinning.length;
-    /* Wave V1 — Boki bug fix "padne 1. ril → 2. ril → 3. ril i anticipation
-       se gasi" (MASTER_TODO V1):
-       Pre-fix: anticipationGate = max(1, threshold - 1). That demanded
-       scattersSoFar ≥ threshold-1 BEFORE arming, which silently dropped
-       the suspense the moment a mid-spin reel landed scatter-light. E.g.
-       threshold=3, 1 scatter after 3 reels stopped (2 remaining) →
-       1 ≥ 2 ? false → anticipation never armed even though mathematically
-       1 + 2 = 3 (trigger still reachable if both remaining land scatter).
-       Post-fix: anticipationGate = max(1, threshold - remaining). The
-       gate now reflects "minimum scatters needed so the remaining reels
-       can still hit threshold IF every one of them lands scatter". Combined
-       with the (scattersSoFar + remaining >= threshold) reachability check,
-       the suspense fires the moment the trigger is *mathematically alive*
-       and stays armed until either threshold or topRung is settled. */
-    const anticipationGate = Math.max(1, threshold - remaining);
-    const armed = (scattersSoFar >= anticipationGate) &&
-                  (scattersSoFar + remaining >= threshold) &&
-                  (scattersSoFar < topRung);
-    if (!armed) return;
+    /* Walk each registered trigger; the FIRST one that is "mathematically
+     * alive" (scattersSoFar + remaining >= threshold) AND not yet at
+     * topRung wins and arms the suspense. Multiple triggers cannot stack
+     * the per-reel hold timers — that would cascade infinite waits. */
+    var armedTrigger = null;
+    for (var ti = 0; ti < triggers.length; ti++) {
+      var trg = triggers[ti];
+      var scattersSoFar = 0;
+      for (var ri = 0; ri < RECT_REELS.length; ri++) {
+        var r = RECT_REELS[ri];
+        if (r.spinning) continue;
+        var reelHits = 0;
+        var vis = r.visibleRows || ROWS;
+        for (var k = 1; k <= vis; k++) {
+          if ((r.cells[k].textContent || "").toUpperCase() === trg.symbol) reelHits++;
+        }
+        scattersSoFar += (trg.countMode === 'any') ? reelHits : (reelHits > 0 ? 1 : 0);
+      }
+      /* Wave V1 gate — anticipationGate = max(1, threshold - remaining) */
+      var anticipationGate = Math.max(1, trg.threshold - remaining);
+      var alive = (scattersSoFar >= anticipationGate) &&
+                  (scattersSoFar + remaining >= trg.threshold) &&
+                  (scattersSoFar < trg.topRung);
+      if (__dbg) __dbg.push({ t: performance.now(), step: 'verdict', trigger: trg.id, symbol: trg.symbol, scattersSoFar: scattersSoFar, gate: anticipationGate, alive: alive });
+      if (alive) { armedTrigger = trg; break; }
+    }
+    if (!armedTrigger) return;
+    if (__dbg) __dbg.push({ t: performance.now(), step: 'armed', triggerId: armedTrigger.id, reels: stillSpinning.map(function (r) { return RECT_REELS.indexOf(r); }) });
 
     /* Sequential per-reel anticipation hold — every anticipating reel
        glows for exactly HOLD_BASE before landing. */
-    const now = performance.now();
-    let cursor = stillSpinning.reduce(
-      (m, r) => Math.max(m, r.scheduledStopAt), now);
-    const ordered = stillSpinning
-      .filter(r => !r.anticipating)
-      .sort((a, b) => a.scheduledStopAt - b.scheduledStopAt);
-    ordered.forEach((r) => {
+    var now = performance.now();
+    var cursor = stillSpinning.reduce(
+      function (m, r) { return Math.max(m, r.scheduledStopAt); }, now);
+    var ordered = stillSpinning
+      .filter(function (r) { return !r.anticipating; })
+      .sort(function (a, b) { return a.scheduledStopAt - b.scheduledStopAt; });
+    ordered.forEach(function (r) {
       r.anticipating = true;
-      const glowStartAt = cursor;
+      r.anticipatingFor = armedTrigger.id;
+      var glowStartAt = cursor;
       cursor += HOLD_BASE;
       r.scheduledStopAt = cursor;
-      const glowDelay = Math.max(0, glowStartAt - now);
+      /* 2026-06-18 — CRITICAL race fix (Boki "anticipacija ne radi"
+       * live-probe verdict: arms+sched-extends OK but reel still stops
+       * immediately because stopRequested=true was already latched by
+       * the initial startSpinAll stagger timer). Reset stopRequested
+       * to false here — the new stopTimerId below is the authoritative
+       * stop signal once anticipation owns the reel. Without this, the
+       * next onTickAll iteration sees stopRequested=true + minRotations
+       * met → commitStopSymbols fires → reel stops before glow class
+       * is even painted. Surgical probe confirmed maybeArmAnticipation
+       * arms reels 2/3/4 correctly; live spin lost the suspense purely
+       * because of this stale stopRequested flag. */
+      r.stopRequested = false;
+      var glowDelay = Math.max(0, glowStartAt - now);
       if (r.glowTimerId) clearTimeout(r.glowTimerId);
-      r.glowTimerId = setTimeout(() => {
-        r.col.classList.add("reelCol--anticipating");
+      r.glowTimerId = setTimeout(function () {
+        if (r.col && r.col.classList) r.col.classList.add("reelCol--anticipating");
       }, glowDelay);
       if (r.stopTimerId) clearTimeout(r.stopTimerId);
-      r.stopTimerId = setTimeout(() => {
+      r.stopTimerId = setTimeout(function () {
         r.stopRequested = true;
         r.stopRequestTime = performance.now();
       }, r.scheduledStopAt - now);
     });
   }
-
-  
-/* ─── anticipation (universal companion) runtime ────────────────────
- * PERF BUDGET: ≤ 0.4ms/tick @ 60 .cell, 140ms interval.
- *   • Cell-diff uses Set membership (O(n)) instead of indexOf (O(n²)).
- *   • Badge writes diff textContent/dataset before mutating to avoid
- *     style-recalc churn on idle ticks.
- *   • HookBus subscription is sentinel-gated to survive hot-reload. */
-(function () {
-  'use strict';
-  if (typeof window === 'undefined' || typeof document === 'undefined') return;
-
-  var ANT_UNI_TICK_MS = 140;
-  var ANT_UNI_SHOW_BADGE = true;
-  var ANT_UNI_SKIP_FS = false;
-  var ANT_UNI_SUPPRESS_ON_FORCE = false;
-  var ANT_UNI_FALLBACK_THRESHOLD = 3;
-  var ANT_UNI_FALLBACK_TOPRUNG   = 5;
-  var ANT_UNI_FALLBACK_TRIGSYM   = "S";
-  var ANT_UNI_FALLBACK_SHAPEKIND = "rectangular";
-  var ANT_UNI_HOOKBUS_RETRIES    = 20;
-  var ANT_UNI_HOOKBUS_RETRY_MS   = 50;
-
-  var ANT_UNI_FALLBACK_WARNED = false;
-  function _warnFallback(field) {
-    if (ANT_UNI_FALLBACK_WARNED) return;
-    ANT_UNI_FALLBACK_WARNED = true;
-    try { console.warn('[anticipationUniversal] FREESPINS schema missing/malformed — using fallback (' + field + ')'); } catch (_) {}
-  }
-
-  /* Shapes that own their suspense via engine animation (spinning pointer,
-   * climbing multiplier, falling ball). For them we skip per-cell glow
-   * (their grid often has no .cell elements anyway, e.g. wheel/radial
-   * are SVG) and emit ONLY the host pulse + badge counter. */
-  var ANT_UNI_ENGINE_PULSE_ONLY = new Set(['wheel', 'plinko', 'crash', 'radial', 'slingo']);
-
-  /* Single-owner registry for rect-reel kinds — column anticipation lives
-   * in anticipation.mjs. Read from window.__ANT_RECT_KINDS__ if that block
-   * published one; fall back so this block keeps working standalone. */
-  var ANT_UNI_RECT_KINDS = (window.__ANT_RECT_KINDS__ instanceof Set)
-    ? window.__ANT_RECT_KINDS__
-    : new Set(['rectangular','cluster','megaclusters','lock_respin','expanding','infinity','variable_reel','diamond','pyramid','cross','l_shape']);
-
-  /* ARMED gate — closed initially so idle random fillers that happen to
-   * carry the trigger symbol DON'T get a halo before any spin has even
-   * run. Industry-standard semantic: anticipation halo lives ONLY between
-   * a postSpin landing and the NEXT preSpin start — i.e. while the player
-   * is reading the just-landed scatter count. */
-  var ANT_UNI_ARMED = false;
-  var ANT_UNI_SPINNING = false;
-
-  function _canRun() {
-    if (!ANT_UNI_ARMED) return false;
-    if (ANT_UNI_SPINNING) return false;
-    if (ANT_UNI_SKIP_FS) {
-      try {
-        if (typeof window.FSM !== 'undefined' && window.FSM && window.FSM.phase &&
-            window.FSM.phase !== 'BASE') return false;
-      } catch (_) {}
-    }
-    /* Force-trigger spins are the dev/QA preview surface — only suppress
-     * the halo if the GDD explicitly opts in via suppressOnForceTrigger. */
-    if (ANT_UNI_SUPPRESS_ON_FORCE) {
-      try {
-        if (window.FORCE_TRIGGER && window.FORCE_TRIGGER.scatterCount > 0) return false;
-      } catch (_) {}
-    }
-    return true;
-  }
-
-  function _readLadder() {
-    var threshold = ANT_UNI_FALLBACK_THRESHOLD;
-    var topRung = ANT_UNI_FALLBACK_TOPRUNG;
-    var usedFallback = true;
-    try {
-      var fs = window.FREESPINS;
-      if (fs) {
-        var t = (fs.triggerCounts && fs.triggerCounts[0]) ||
-                (fs.awards && fs.awards[0] && fs.awards[0].count);
-        if (t) { threshold = t; usedFallback = false; }
-        if (Array.isArray(fs.awards) && fs.awards.length) {
-          topRung = fs.awards.reduce(function (m, a) { return Math.max(m, a.count); }, threshold);
-        }
-      }
-    } catch (_) {}
-    if (usedFallback) _warnFallback('triggerCounts/awards');
-    return { threshold: threshold, topRung: topRung };
-  }
-  function _trigSym() {
-    try {
-      var fs = window.FREESPINS;
-      if (fs && fs.triggerSymbol) return String(fs.triggerSymbol).toUpperCase();
-    } catch (_) {}
-    _warnFallback('triggerSymbol');
-    return ANT_UNI_FALLBACK_TRIGSYM;
-  }
-  function _shapeKind() {
-    try {
-      if (window.SHAPE && window.SHAPE.kind) return String(window.SHAPE.kind);
-    } catch (_) {}
-    return ANT_UNI_FALLBACK_SHAPEKIND;
-  }
-
-  function _ensureBadge(host) {
-    if (!ANT_UNI_SHOW_BADGE) return null;
-    var badge = document.getElementById('antBadge');
-    if (badge) return badge;
-    /* WCAG 4.1.3 — badge counter MUST advertise role="status" aria-live="polite"
-       so SR users hear "2 / 3" updates without preempting other speech. We
-       build via innerHTML so the literal attribute string lives in source
-       (satisfies tools/aria-live-audit.mjs regex), then duplicate via
-       setAttribute for robustness against future innerHTML refactors. */
-    badge = document.createElement('div');
-    badge.id = 'antBadge';
-    badge.className = 'ant-badge';
-    badge.dataset.show = 'false';
-    badge.setAttribute('role', 'status');
-    badge.setAttribute('aria-live', 'polite');
-    badge.setAttribute('aria-atomic', 'true');
-    badge.setAttribute('aria-label', 'Scatter progress');
-    badge.innerHTML = '<span aria-hidden="true">🎯</span> ' +
-      '<span class="ant-badge__num" id="antBadgeNum" role="status" aria-live="polite">0</span>' +
-      '<span class="ant-badge__sep">/</span>' +
-      '<span class="ant-badge__num" id="antBadgeThr">' + String(ANT_UNI_FALLBACK_THRESHOLD) + '</span>';
-    var anchor = (host && host.parentElement) || host;
-    if (anchor) {
-      try {
-        var cs = getComputedStyle(anchor);
-        if (cs.position === 'static') anchor.style.position = 'relative';
-      } catch (_) {}
-      anchor.appendChild(badge);
-    }
-    return badge;
-  }
-  function _paintBadge(scatters, threshold, warm) {
-    var host = document.getElementById('gridHost');
-    if (!host) return;
-    var badge = _ensureBadge(host);
-    if (!badge) return;
-    var n = document.getElementById('antBadgeNum');
-    var t = document.getElementById('antBadgeThr');
-    var nText = String(scatters);
-    var tText = String(threshold);
-    /* Diff before write — avoid style-recalc on idle ticks. */
-    if (n && n.textContent !== nText) n.textContent = nText;
-    if (t && t.textContent !== tText) t.textContent = tText;
-    var showVal = scatters > 0 ? 'true' : 'false';
-    var warmVal = warm ? 'true' : 'false';
-    if (badge.dataset.show !== showVal) badge.dataset.show = showVal;
-    if (badge.dataset.warm !== warmVal) badge.dataset.warm = warmVal;
-  }
-
-  function _tick() {
-    if (!_canRun()) {
-      /* Clean up state when we're in a phase that shouldn't show
-       * anticipation (FS lifecycle, opt-in force-trigger suppression). */
-      _paintBadge(0, ANT_UNI_FALLBACK_THRESHOLD, false);
-      var host0 = document.getElementById('gridHost');
-      if (host0) host0.classList.remove('gridHost--ant-pulse');
-      return;
-    }
-    var host = document.getElementById('gridHost');
-    if (!host) return;
-    var ladder = _readLadder();
-    var trig = _trigSym();
-    var kind = _shapeKind();
-
-    /* Engine-pulse-only shapes: no per-cell metaphor (SVG grids). Show
-     * the badge + host pulse based on engine signals; skip cell logic. */
-    if (ANT_UNI_ENGINE_PULSE_ONLY.has(kind)) {
-      _paintBadge(0, ladder.threshold, false);
-      host.classList.toggle('gridHost--ant-pulse', false);
-      return;
-    }
-
-    var cells = host.querySelectorAll('.cell');
-    if (cells.length === 0) {
-      /* Non-rect grid that hasn't built .cell yet — keep badge at 0. */
-      _paintBadge(0, ladder.threshold, false);
-      host.classList.remove('gridHost--ant-pulse');
-      return;
-    }
-
-    var scatterCells = [];
-    for (var i = 0; i < cells.length; i++) {
-      var txt = (cells[i].textContent || '').trim().toUpperCase();
-      if (txt === trig) scatterCells.push(cells[i]);
-    }
-    var scattersSoFar = scatterCells.length;
-
-    /* W47.S9 (B76 / scatterAnticipationV2) — mathematically-alive gate.
-     *
-     * Boki bug: "fake nada na rilima koji više ne mogu trigger". Pre-fix
-     * the halo painted on every trigger cell + warm fired whenever
-     * scattersSoFar crossed threshold-1, even when the remaining reels
-     * could no longer contribute enough scatters to hit the threshold
-     * (e.g. a 5-reel grid that already showed 0 scatters on reels 1-3
-     * with threshold=3 is impossible to win, yet the halo on the lone
-     * reel-4 scatter still teased the player).
-     *
-     * Fix: count reel columns + reels-with-a-trigger, compute the upper
-     * bound maxAchievable = scattersSoFar + (reelCols - reelsWithTrigger)
-     * (one trigger per remaining reel is the engine hard cap), and
-     * STRIP every halo + force warm=false when maxAchievable < threshold.
-     *
-     * Tick polling stays cheap: one extra .reelCol querySelectorAll +
-     * a Set membership scan per cell — O(n) once per tick, no extra
-     * DOM writes when alive, just a single classList.remove when dead.
-     * NOTE: plain ASCII quotes (no backticks) because this comment lives
-     * inside a runtime template literal — W47.S1 lesson.
-     */
-    var reelCols = host.querySelectorAll('.reelCol');
-    var reelColCount = reelCols.length;
-    var reelsWithTrigger = 0;
-    if (reelColCount > 0 && scattersSoFar > 0) {
-      var seen = new Set();
-      for (var rc = 0; rc < scatterCells.length; rc++) {
-        /* Walk up the parents until we hit a .reelCol (or null). */
-        var cur = scatterCells[rc].parentElement;
-        while (cur && !cur.classList.contains('reelCol')) cur = cur.parentElement;
-        if (cur && !seen.has(cur)) { seen.add(cur); reelsWithTrigger++; }
-      }
-    }
-    /* When the column count is unknown (non-rect grid / shape that
-     * doesn't use reel columns), fall back to the legacy behaviour by
-     * setting maxAchievable = scattersSoFar + threshold so the gate
-     * never fires. That matches pre-fix semantics for those shapes,
-     * and the cheaper, kind-specific gates (engine pulse, host pulse)
-     * still own the suspense there. */
-    var maxAchievable = (reelColCount > 0)
-      ? (scattersSoFar + Math.max(0, reelColCount - reelsWithTrigger))
-      : (scattersSoFar + ladder.threshold);
-    var mathAlive = maxAchievable >= ladder.threshold;
-
-    /* Light up every visible trigger cell — OR strip them all when the
-     * gate has decided the spin can no longer hit the threshold. */
-    if (mathAlive) {
-      for (var j = 0; j < scatterCells.length; j++) {
-        if (!scatterCells[j].classList.contains('cell--anticipating-cell')) {
-          scatterCells[j].classList.add('cell--anticipating-cell');
-        }
-      }
-      /* Strip from cells that no longer carry the trigger — O(n) via Set. */
-      var scatterSet = new Set(scatterCells);
-      var marked = host.querySelectorAll('.cell.cell--anticipating-cell');
-      for (var k = 0; k < marked.length; k++) {
-        if (!scatterSet.has(marked[k])) {
-          marked[k].classList.remove('cell--anticipating-cell');
-        }
-      }
-    } else {
-      /* Dead: clear every halo so the lone trigger doesn't tease. */
-      var dead = host.querySelectorAll('.cell.cell--anticipating-cell');
-      for (var dk = 0; dk < dead.length; dk++) {
-        dead[dk].classList.remove('cell--anticipating-cell');
-      }
-    }
-
-    var warm = mathAlive
-      && scattersSoFar >= Math.max(1, ladder.threshold - 1)
-      && scattersSoFar < ladder.topRung;
-    _paintBadge(scattersSoFar, ladder.threshold, warm);
-
-    /* Whole-host pulse for non-rect shapes — registry owned by anticipation.mjs. */
-    var useHostPulse = !ANT_UNI_RECT_KINDS.has(kind);
-    if (useHostPulse && warm) host.classList.add('gridHost--ant-pulse');
-    else host.classList.remove('gridHost--ant-pulse');
-  }
-
-  function _resetAll() {
-    var host = document.getElementById('gridHost');
-    if (!host) return;
-    host.classList.remove('gridHost--ant-pulse');
-    var marked = host.querySelectorAll('.cell.cell--anticipating-cell');
-    for (var i = 0; i < marked.length; i++) {
-      marked[i].classList.remove('cell--anticipating-cell');
-    }
-    _paintBadge(0, _readLadder().threshold, false);
-  }
-  function _disarm() {
-    /* Player just started the next spin — strip last spin's halos
-     * and close the gate until postSpin re-arms. */
-    ANT_UNI_ARMED = false;
-    ANT_UNI_SPINNING = true;
-    _resetAll();
-  }
-  function _arm() {
-    /* Spin landed. Open the gate so _tick can paint halos on the
-     * just-resolved cells. */
-    ANT_UNI_SPINNING = false;
-    ANT_UNI_ARMED = true;
-    _tick();   /* paint immediately so player sees halo on landed scatters
-                * without waiting up to ANT_UNI_TICK_MS for next interval. */
-  }
-  /* Sentinel-gated subscription — hot-reload / double-emit would otherwise
-   * stack N copies of _arm/_disarm per phase, corrupting ARMED/SPINNING. */
-  function _wireHooks() {
-    if (window.__ANT_UNI_HOOKED__) return true;
-    if (typeof HookBus === 'undefined') return false;
-    try {
-      HookBus.on('preSpin',     _disarm, { priority: 8 });
-      HookBus.on('postSpin',    _arm,    { priority: 8 });
-      HookBus.on('onTumbleStep', _arm,   { priority: 8 });
-      HookBus.on('onFsTrigger', _disarm, { priority: 8 });
-      HookBus.on('onFsEnd',     _disarm, { priority: 8 });
-      window.__ANT_UNI_HOOKED__ = true;
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-  if (!_wireHooks()) {
-    /* HookBus loaded after this block — poll briefly so we don't fall back
-     * to interval-only timing silently. */
-    var __antUniHookRetries = 0;
-    var __antUniHookRetryId = setInterval(function () {
-      __antUniHookRetries++;
-      if (_wireHooks() || __antUniHookRetries >= ANT_UNI_HOOKBUS_RETRIES) {
-        clearInterval(__antUniHookRetryId);
-        if (!window.__ANT_UNI_HOOKED__) {
-          try { console.warn('[anticipationUniversal] HookBus not available after ' + __antUniHookRetries + ' retries — interval-only timing'); } catch (_) {}
-        }
-      }
-    }, ANT_UNI_HOOKBUS_RETRY_MS);
-  }
-
-  if (window.__ANT_UNI_TICK_ID__) clearInterval(window.__ANT_UNI_TICK_ID__);
-  window.__ANT_UNI_TICK_ID__ = setInterval(_tick, ANT_UNI_TICK_MS);
-  window._antUniTick = _tick;
-})();
 
 
   /* User-driven SPIN button click. During FS_* phases the FSM / placard CTA
@@ -7402,11 +7849,20 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
            symbols. Defensive filter prevents TypeError on classList.add. */
         const cells = Array.isArray(ev && ev.cells) ? ev.cells : [];
         for (const c of cells) { if (c && c.classList) c.classList.add('cell--winsym'); }
-        /* If this event carries a lineIndex it came from detectLineWins
-           (payline mode) → draw the polyline through the matched cells.
-           Cluster-mode events (detectWinCombos) have no lineIndex and
-           skip the overlay; they rely on the per-cell pulse alone. */
-        if (typeof ev.lineIndex === 'number') drawPaylineOverlay(ev);
+        /* 2026-06-18 — Boki rule (HNP backlog "Ne prikazuju mi se win
+         * linije"): every win event MUST draw a visual line through its
+         * matched cells. Line-pays events carry lineIndex and get the
+         * canonical polyline + line-number badge. Cluster / pay_anywhere
+         * / ways events have no lineIndex — we now synthesise a virtual
+         * one so drawPaylineOverlay still walks the matched cells and
+         * the player sees the win path instead of just per-cell pulses.
+         * The virtual lineIndex is 'i' (the cycle step) so each event
+         * gets its own labelled trail even in cluster grids. */
+        if (typeof ev.lineIndex === 'number') {
+          drawPaylineOverlay(ev);
+        } else if (cells.length >= 2) {
+          drawPaylineOverlay(Object.assign({}, ev, { lineIndex: i, _virtualLine: true }));
+        }
         i++;
         setTimeout(playOne, stepMs);
       };
@@ -7481,6 +7937,39 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
         if (s === baseSym || (wildId && s === wildId)) matchLength++;
         else break;
       }
+
+      /* Wave LEGO-FS3.1 (2026-06-19) — Win Both Ways activation:
+       * when winBothWaysActivation.mjs has set the global flag (FS-only
+       * mode), also count consecutive matches from the RIGHTMOST reel
+       * inward. Take MAX(ltr, rtl) so the player gets credit for the
+       * longer chain. Industry-standard "both ways" payline semantics. */
+      if (typeof window !== 'undefined' && window.__WIN_BOTH_WAYS__ === true) {
+        /* RTL anchor: re-derive baseSym from the rightmost non-wild cell
+         * because a different baseSym may carry the right-to-left chain. */
+        let rtlBaseSym = symAtCell(pathCells[pathCells.length - 1]);
+        if (wildId && rtlBaseSym === wildId) {
+          for (let r = pathCells.length - 2; r >= 0; r--) {
+            const s = symAtCell(pathCells[r]);
+            if (s && s !== wildId) { rtlBaseSym = s; break; }
+          }
+        }
+        if (rtlBaseSym && rtlBaseSym !== scatId
+            && (regularSet.size === 0 || regularSet.has(rtlBaseSym) || rtlBaseSym === wildId)) {
+          let rtlMatchLength = 0;
+          for (let r = pathCells.length - 1; r >= 0; r--) {
+            const cell = pathCells[r];
+            if (!cell) break;
+            const s = symAtCell(cell);
+            if (s === rtlBaseSym || (wildId && s === wildId)) rtlMatchLength++;
+            else break;
+          }
+          if (rtlMatchLength > matchLength) {
+            matchLength = rtlMatchLength;
+            baseSym = rtlBaseSym;
+          }
+        }
+      }
+
       if (matchLength < 3) continue;
 
       const tier = (reg.tier && reg.tier[baseSym]) || (baseSym === wildId ? 'WILD' : 'LP');
@@ -8153,6 +8642,7 @@ function runTumbleChain(_detectFn, _opts) {
 }
 
   /* bonusBuy: disabled */
+  /* bonusBuyMenu: disabled */
   
   
   /* ── bonusBuyDeterministic BLOCK (disabled) — stubs so probes don't crash ── */
@@ -8163,6 +8653,7 @@ function runTumbleChain(_detectFn, _opts) {
   window.bbdCancelPicker    = function () {};
 
   /* anteBet: disabled */
+  /* anteBetLadder: disabled */
 
   /* Wave L–P — 16 feature kinds runtime (no-op stubs when disabled).
      Order: wilds first (modify the grid), then evaluators (read modified
@@ -8176,6 +8667,13 @@ function runTumbleChain(_detectFn, _opts) {
   /* superSymbol: disabled */
   /* clusterPaysEval: disabled */
   /* waysEval: disabled */
+  /* Wave LEGO-EV — all-ways + bidirectional ways evaluators. */
+  
+// allWaysEval BLOCK (disabled) — no runtime
+
+  
+// bidirectionalWaysEval BLOCK (disabled) — no runtime
+
   
   
   /* ── pathAwareMultiplier BLOCK (disabled) — stubs so probes don't crash ── */
@@ -8186,16 +8684,787 @@ function runTumbleChain(_detectFn, _opts) {
   window.pawReset = function () {};
 
   /* persistentMultiplier: disabled */
+  /* Wave LEGO-M — 6 self-contained multiplier variant runtimes. */
+  
+// perFsSpinMultiplier BLOCK (disabled) — no runtime
+
+  
+// mysterySymbolMultiplier BLOCK (disabled) — no runtime
+
+  
+// wildCollisionMultiplier BLOCK (disabled) — no runtime
+
+  
+// retriggerMultiplierBump BLOCK (disabled) — no runtime
+
+  
+// clusterSizeMultiplier BLOCK (disabled) — no runtime
+
+  
+// totalMultiplierChip BLOCK (disabled) — no runtime
+
+  /* Wave LEGO-H/FS/W — 8 GDD-driven variant runtimes. */
+  
+// holdAndWinFrameMultiplier BLOCK (disabled) — no runtime
+
+  
+// holdAndWinLockedOrbMultiplier BLOCK (disabled) — no runtime
+
+  
+// holdAndWinRoomJackpotMultiplier BLOCK (disabled) — no runtime
+
+  
+// tumbleGrowingFsMultiplier BLOCK (disabled) — no runtime
+
+  
+// fsExpansionWilds BLOCK (disabled) — no runtime
+
+  
+// progressiveFsRetriggerLadder BLOCK (disabled) — no runtime
+
+  
+// expandingWildMultiplier BLOCK (disabled) — no runtime
+
+  
+// megaWildCluster BLOCK (disabled) — no runtime
+
+  /* Wave LEGO-L — random spin-wide multiplier strike (vendor-neutral). */
+  
+// randomLightningMultiplier BLOCK (disabled) — no runtime
+
+  /* Wave LEGO-WW — walking wild stepper with progressive ×N (vendor-neutral). */
+  
+// walkingWildStepper BLOCK (disabled) — no runtime
+
+  /* Wave LEGO-WAYS — variable rows per reel dynamic ways engine (vendor-neutral). */
+  
+// dynamicWaysEngine BLOCK (disabled) — no runtime
+
+  /* Wave LEGO-INF — infinity reels engine, grid grows on win + ×N bump (vendor-neutral). */
+  
+// infinityReelsEngine BLOCK (disabled) — no runtime
+
+  /* Wave LEGO-SS — super symbol family (split reveal + tier upgrade). */
+  
+// symbolSplitReveal BLOCK (disabled) — no runtime
+
+  
+// superSymbolUpgrade BLOCK (disabled) — no runtime
+
+  /* Wave LEGO-JR — jackpot room family (full-screen ladder + pick grid). */
+  
+// jackpotRoomReveal BLOCK (disabled) — no runtime
+
+  
+// jackpotPicker BLOCK (disabled) — no runtime
+
   /* progressiveFreeSpins: disabled */
   
   /* uiToast: disabled */
   
   
-  /* ── bigWinTier BLOCK (disabled) — stubs so probes don't crash ─── */
-  window.__BIG_WIN_TIER__       = 0;
-  window.bigWinTierEnter        = function () {};
-  window.bigWinTierExit         = function () {};
-  window.BIG_WIN_TIER_STATE     = { enabled: false, current: 0, x: 0, label: '', timers: [] };
+  /* ── bigWinTier BLOCK — emitted by src/blocks/bigWinTier.mjs ─────────
+     Owns emit of: onBigWinTierEntered, onBigWinTierExited, onBigWinTierEnd.
+     Listens: onWinPresentationEnd, onSkipRequested(phase==='bigWinTier'),
+              preSpin (flush stale banner).
+
+     Compound walkthrough (Reference GDD §6.4 "each tier compounds"):
+       enter tier 1: fade-in → count 0..T1 → fade-out
+       enter tier 2: fade-in → count T1..T2 → fade-out
+       ...
+       enter tier N: fade-in → count T(N-1)..finalX → HOLD → fade-out
+       emit onBigWinTierEnd { tier:N, x:finalX, reason }
+     Each per-tier step emits its own onBigWinTierEntered/Exited so audio
+     and FX listeners can react per tier. Single onBigWinTierEnd at the
+     end closes the sequence. */
+  (function () {
+    var THRESHOLDS   = [10,25,50,200,1000];
+    var LABELS       = ["BIGWINTIER1","BIGWINTIER2","BIGWINTIER3","BIGWINTIER4","BIGWINTIER5"];
+    var DURATIONS    = [4000,4000,4000,4000,4000];
+    var SOUND_BUSES  = ["low","mid","high","peak","climax"];
+    var COMPOUND        = true;
+    var FADE_MS         = 300;
+    var END_HOLD_MS     = 4000;
+    var LABEL_SWAP_MS   = 220;
+    var SKIP_GLIMPSE_MS = 180;
+    var RAF_FALLBACK_MS = 16;
+    var CURRENCY        = "€";
+    var CUR_POS         = "prefix";
+    /* W47.S3 — per-tier screen-shake amplitude + oscillator period.
+     * Read by _applyShake() to drive the CSS custom properties. */
+    var SHAKE_AMP       = [0,0,2,4,6];
+    var SHAKE_PERIOD_MS = 333;
+    /* W48.V3 polish (2026-06-19) — easing + climax pulse runtime knobs.
+     * USE_EASE_OUT_CUBIC + TIER_EASE_MIN_TIER drive _countUpLinear's
+     * easing gate. CLIMAX_PULSE_* drive _runCompound's .is-climax class
+     * application on the final tier banner. */
+    var USE_EASE_OUT_CUBIC    = false;
+    var TIER_EASE_MIN_TIER    = 4;
+    var CLIMAX_PULSE_ENABLED  = true;
+    var CLIMAX_PULSE_MIN_TIER = 5;
+
+    var STATE = {
+      enabled: true,
+      current: 0,             /* 0 = no tier in flight; 1..5 = active tier */
+      finalTier: 0,           /* the highest tier this sequence will reach */
+      finalX: 0,              /* the final amount (target of the last count-up) */
+      x: 0,                   /* current per-tier start amount (for the running count-up) */
+      label: '',
+      timers: [],             /* outstanding setTimeout handles (for clean cancel) */
+      rafToken: 0,            /* count-up rAF generation token (bump on exit) */
+      walkActive: false,      /* true while a compound walkthrough is in flight */
+      thresholds: THRESHOLDS,
+      labels:     LABELS,
+      durations:  DURATIONS,
+    };
+    if (typeof window !== 'undefined') {
+      window.__BIG_WIN_TIER__   = 0;
+      window.BIG_WIN_TIER_STATE = STATE;
+    }
+
+    function _host()   { return document.getElementById('bigWinTierHost'); }
+    function _banner() { return _host() ? _host().querySelector('.big-win-tier-banner') : null; }
+
+    /* _announce — single end-of-sequence SR push. The visible counter
+     * mutates every rAF; we keep that aria-hidden and route ONE update
+     * to the dedicated polite live region after endHoldMs so SR users
+     * hear the final money amount once, not the ramp. */
+    function _announce(text) {
+      var ann = document.getElementById('bigWinTierAnnounce');
+      if (ann) ann.textContent = text;
+    }
+
+    function _clearTimers() {
+      for (var i = 0; i < STATE.timers.length; i++) {
+        try { clearTimeout(STATE.timers[i]); } catch (_) {}
+      }
+      STATE.timers.length = 0;
+    }
+
+    function _emitEntered(payload) {
+      if (window.HookBus && typeof window.HookBus.emit === 'function') {
+        try { window.HookBus.emit('onBigWinTierEntered', payload || {}); }
+        catch (e) { if (console && console.error) console.error('[bigWinTier] emit Entered failed:', e); }
+      }
+    }
+    function _emitExited(payload) {
+      if (window.HookBus && typeof window.HookBus.emit === 'function') {
+        try { window.HookBus.emit('onBigWinTierExited', payload || {}); }
+        catch (e) { if (console && console.error) console.error('[bigWinTier] emit Exited failed:', e); }
+      }
+    }
+    function _emitEnd(payload) {
+      if (window.HookBus && typeof window.HookBus.emit === 'function') {
+        try { window.HookBus.emit('onBigWinTierEnd', payload || {}); }
+        catch (e) { if (console && console.error) console.error('[bigWinTier] emit End failed:', e); }
+      }
+    }
+
+    /* tierFromRatio(x) — pure lookup. Returns 0 if no tier matches. */
+    function tierFromRatio(x) {
+      if (!Number.isFinite(x) || x <= 0) return 0;
+      var found = 0;
+      for (var i = 0; i < THRESHOLDS.length; i++) {
+        if (x >= THRESHOLDS[i]) found = i + 1;
+        else break;
+      }
+      return found;
+    }
+
+    /* _swapTier — change the banner's data-tier attribute (CSS handles the
+     * smooth color/glow morph) and replace the label text with a brief
+     * cross-fade so the swap reads as a transition, not a jump. Counter
+     * keeps running uninterrupted.
+     *
+     * W47.S3 (V3 polish) — also toggles the per-tier screen-shake class.
+     * The shake amplitude rides as a CSS custom property so a single
+     * @keyframes set scales without per-tier keyframes (see
+     * emitBigWinTierCSS). Hard gates:
+     *   1. prefers-reduced-motion → no class, no property set, no work.
+     *   2. amplitude === 0        → no class (tier 1-2 by default stay calm).
+     *   3. tier < shakeMinTier    → no class (caller-tunable gate).
+     */
+    function _swapTier(toTier) {
+      var node = _banner();
+      if (!node) return;
+      node.setAttribute('data-tier', String(toTier));
+      _applyShake(node, toTier);
+      /* W48.V3 polish — keep the stepper progressbar aria-valuenow in
+       * sync with the visible state so SR users hear "n of 5" updates
+       * exactly when the visual climbs. CSS already handles dot fill. */
+      var stepper = node.querySelector('.big-win-tier-stepper');
+      if (stepper) stepper.setAttribute('aria-valuenow', String(toTier));
+      var labelEl = node.querySelector('.big-win-tier-label');
+      if (!labelEl) return;
+      node.setAttribute('data-label-swap', 'true');
+      var swap = setTimeout(function () {
+        labelEl.textContent = LABELS[toTier - 1];
+        node.removeAttribute('data-label-swap');
+      }, LABEL_SWAP_MS);
+      STATE.timers.push(swap);
+    }
+
+    /* _applyShake (W47.S3) — translates the per-tier amplitude into a
+     * CSS custom property + class toggle. Defense in depth: the matchMedia
+     * gate here is independent of the CSS @media gate, so a partial
+     * platform support for prefers-reduced-motion still calms the
+     * banner. The function is idempotent — re-calling with the same tier
+     * is a no-op visually (animation continues on the same CSS variable). */
+    function _applyShake(node, toTier) {
+      var minTier = 3;
+      var amp = SHAKE_AMP[toTier - 1] || 0;
+      var reduceMotion = (typeof window !== 'undefined' &&
+                          typeof window.matchMedia === 'function' &&
+                          window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      if (reduceMotion || amp <= 0 || toTier < minTier) {
+        node.classList.remove('is-shaking');
+        node.style.removeProperty('--bw-shake-amp');
+        node.style.removeProperty('--bw-shake-period');
+        return;
+      }
+      node.style.setProperty('--bw-shake-amp', String(amp));
+      node.style.setProperty('--bw-shake-period', SHAKE_PERIOD_MS + 'ms');
+      node.classList.add('is-shaking');
+    }
+
+    /* _fmtMoney — currency-aware display formatter. Boki rule 05.06.2026:
+     * "counter ne treba da bude x pa counter, nego samo counter da se
+     *  broji novac, i na kraju da ostane koliko se osvojilo a ne x26".
+     * Output mirrors balanceHud._formatMoney exactly so the banner reads
+     * the same as the win column in the HUD. Always 2 decimals (industry
+     * default for fiat money UX — partial credits look wrong). */
+    function _fmtMoney(v) {
+      var n = Number(v);
+      if (!Number.isFinite(n) || n < 0) n = 0;
+      var s = n.toFixed(2);
+      return CUR_POS === 'suffix' ? (s + ' ' + CURRENCY) : (CURRENCY + s);
+    }
+
+    /* _delay — token-aware setTimeout wrapper that resolves a promise
+     * so the compound sequencer can await transition gaps without
+     * stacking setTimeout chains. */
+    function _delay(ms) {
+      return new Promise(function (resolve) {
+        var t = setTimeout(resolve, ms);
+        STATE.timers.push(t);
+      });
+    }
+
+    function _fadeOutCurrent() {
+      var node = _banner();
+      if (node) {
+        node.setAttribute('data-show', 'exit');
+        /* W47.S3 — stop shaking before exit so the fade reads as a
+         * clean settle, not a shaking ghost. The CSS-side media-query
+         * gate is a backup; this line is the deterministic path. */
+        node.classList.remove('is-shaking');
+        node.style.removeProperty('--bw-shake-amp');
+        node.style.removeProperty('--bw-shake-period');
+      }
+      return _delay(FADE_MS);
+    }
+
+    function _cleanupHost() {
+      var host = _host();
+      if (!host) return;
+      /* Remove the banner only — preserve the SR-only announce region
+       * so its end-of-sequence message survives the post-fade teardown
+       * (and so the next sequence doesn't re-mount a duplicate node). */
+      var b = host.querySelector('.big-win-tier-banner');
+      if (b) host.removeChild(b);
+    }
+
+    /* _currentBet — single source for per-spin stake. Defaults to 1 if
+     * the slot hasn't published a bet yet (defensive: bigWinTier must
+     * never blow up if called before betSelector mounts). */
+    function _currentBet() {
+      var b = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0)
+        ? window.__SLOT_BET__ : 1;
+      return b;
+    }
+
+    /* _runCompound — Boki spec 05.06.2026 (Wave H5.5):
+     *   • Each tier owns exactly DURATIONS[i] ms of counter time (default 4s).
+     *   • Counter runs LINEARLY in ABSOLUTE MONEY 0 → finalAward over
+     *     (finalTier × tierMs) ms, same speed throughout. Display is the
+     *     currency-formatted amount (€1234.56) — no "×N" ratio anywhere.
+     *   • Tier promotions trigger when ratio (current/bet) crosses each
+     *     THRESHOLDS[i] — tier ladder is still ratio-driven (vendor-neutral
+     *     math), only the player-facing counter is money.
+     *   • Single banner mounted once, fade-in only at the start. Tier name +
+     *     glow color cross-fade in place when ratio crosses each threshold
+     *     ("gladak prelaz bez stajanja"). No per-tier fade-out.
+     *   • After the counter reaches finalAward, the banner HOLDS for
+     *     endHoldMs (default 4000 ms) at climax visual + final money amount
+     *     ("na kraju countera da ostane koliko se osvojilo").
+     *   • Then a single fade-out (FADE_MS) closes the sequence, followed by
+     *     onBigWinTierEnd emit.
+     *   • Per-tier onBigWinTierEntered/Exited still fire so audio (Wave H17)
+     *     can route per-tier bus crossfades; emit happens at the crossing
+     *     moment, not gated on fade timing.
+     * Payload contract change: emitted events still carry x for backward
+     * compat with audio/test listeners, but it now represents the ABSOLUTE
+     * AWARD amount (not the ratio). The ratio can be derived as x / bet. */
+    function _runCompound(finalTier, finalAward) {
+      /* Idempotency guard — matches the contract documented on
+       * bigWinTierEnter. A double-fired onWinPresentationEnd (or a stale
+       * presentation cycle racing a fresh spin) must NOT restart the
+       * ladder mid-flight; doing so would double-emit onBigWinTierEntered
+       * and orphan the prior fade-out chain. */
+      if (STATE.walkActive) return;
+      _clearTimers();
+      STATE.walkActive = true;
+      STATE.finalTier  = finalTier;
+      STATE.finalX     = finalAward;
+
+      /* If COMPOUND is off we don't walk through lower tiers — we land on
+       * finalTier from the start. Counter still runs over finalTier × dur
+       * so total duration stays predictable per GDD intent. */
+      var startTier = COMPOUND ? 1 : finalTier;
+      STATE.current = startTier;
+      STATE.label   = LABELS[startTier - 1];
+      if (typeof window !== 'undefined') window.__BIG_WIN_TIER__ = startTier;
+
+      /* Mount banner at startTier with fade-in. Counter starts at 0. */
+      _mountBannerAt(startTier);
+      /* W48.V3 polish (2026-06-19) — climax pulse on initial mount when
+       * startTier === finalTier (compound=false OR caller jumped straight
+       * to final tier). The compound-walkthrough path applies the same
+       * class on tier promotion below; this branch covers the no-walk
+       * case so behavior is symmetric. Pulse fires once per sequence. */
+      var _startIsFinal = (startTier === finalTier);
+      if (CLIMAX_PULSE_ENABLED && _startIsFinal && startTier >= CLIMAX_PULSE_MIN_TIER) {
+        var _initBanner = _host() && _host().querySelector('.big-win-tier-banner');
+        if (_initBanner) {
+          /* Defer to next frame so the fade-in animation starts cleanly
+           * before the pulse pseudo-element layers on top. */
+          if (typeof window.requestAnimationFrame === 'function') {
+            window.requestAnimationFrame(function () {
+              if (_initBanner.parentNode) _initBanner.classList.add('is-climax');
+            });
+          } else {
+            _initBanner.classList.add('is-climax');
+          }
+        }
+      }
+      _emitEntered({
+        tier: startTier, x: finalAward, label: STATE.label,
+        durationMs: DURATIONS[startTier - 1], soundBus: SOUND_BUSES[startTier - 1],
+        isFinal: _startIsFinal,
+      });
+
+      /* Bump the cadence token so any in-flight tier-promotion timers
+       * from a stale walkthrough are invalidated when they fire. */
+      STATE.rafToken = (STATE.rafToken || 0) + 1;
+      var cadenceToken = STATE.rafToken;
+
+      /* Schedule TIME-BASED tier promotions FROM THE startTier enter
+       * (T0), NOT from fade-in completion. This keeps tier i visible
+       * for exactly DURATIONS[i-1] ms regardless of fade timing — Boki
+       * rule 05.06.2026: "sve su to blokovi sami za sebe". The block
+       * owns cadence; nothing the caller does can speed it up. */
+      var cumulative = 0;
+      for (var pi = startTier; pi < finalTier; pi++) {
+        cumulative += DURATIONS[pi - 1];
+        (function (fromT, toT, whenMs) {
+          var tid = setTimeout(function () {
+            if (cadenceToken !== STATE.rafToken) return;   /* cancelled by skip/preSpin */
+            if (!STATE.walkActive) return;
+            _emitExited({ tier: fromT, reason: 'natural' });
+            STATE.current = toT;
+            STATE.label   = LABELS[toT - 1];
+            if (typeof window !== 'undefined') window.__BIG_WIN_TIER__ = toT;
+            _swapTier(toT);
+            /* W48.V3 polish (2026-06-19) — TIER ≥ CLIMAX_PULSE_MIN_TIER
+             * triggers the one-shot radial pulse on this final tier
+             * promotion. CSS handles the actual animation (.is-climax
+             * pseudo-element); reduced-motion @media kills it. We add
+             * the class here, NOT on initial mount, so that compound
+             * walkthroughs which BYPASS a climax tier (e.g. tier 1 → 5
+             * via skip) still trigger the pulse exactly once on landing.
+             * Guarded by isFinal so mid-walk promotions don't pulse. */
+            var _isFinal = (toT === finalTier);
+            if (CLIMAX_PULSE_ENABLED && _isFinal && toT >= CLIMAX_PULSE_MIN_TIER) {
+              var _banner = _host() && _host().querySelector('.big-win-tier-banner');
+              if (_banner) _banner.classList.add('is-climax');
+            }
+            _emitEntered({
+              tier: toT, x: finalAward, label: STATE.label,
+              durationMs: DURATIONS[toT - 1],
+              soundBus: SOUND_BUSES[toT - 1],
+              isFinal: _isFinal,
+            });
+          }, whenMs);
+          STATE.timers.push(tid);
+        })(pi, pi + 1, cumulative);
+      }
+
+      /* Total count time = (#tiers walked) × per-tier duration. Linear count
+       * over this window means the player sees a steady ramp regardless of
+       * which tier is currently highlighted. */
+      var tiersWalked = (finalTier - startTier + 1);
+      var totalCountMs = 0;
+      for (var ti = startTier; ti <= finalTier; ti++) totalCountMs += DURATIONS[ti - 1];
+
+      /* Polish (W47.S19 · 2026-06-18) — start the linear counter ramp
+       * at T0, NOT at T0 + FADE_MS, so the counter and the tier
+       * promotion scheduler share the same linear time origin.
+       *
+       * Before fix: counter started after the fade-in delay but tier
+       * promotions were already scheduled from T0. At every promo time
+       * the counter was lagging by FADE_MS / totalCountMs (~1.5% at
+       * 4 s/tier × 5 tiers). Visually subtle but cumulative — the
+       * climax tier mounted with the counter still at ~78.5% instead
+       * of the nominal 80%.
+       *
+       * After fix: counter starts at T0. During the first FADE_MS the
+       * counter ramps under the fade-in overlay (visually negligible
+       * because opacity 0 → 1) and from FADE_MS onward it ramps in
+       * lockstep with tier promotions. At any promo time the counter
+       * progress equals cumulative[i] / totalCountMs exactly.
+       *
+       * Tier promotions are owned by the scheduler above —
+       * _countUpLinear only handles the money ramp. */
+      _countUpLinear(0, finalAward, totalCountMs).then(function () {
+        if (!STATE.walkActive) return;
+        /* Hold the climax plaque at finalX for endHoldMs (4 s default —
+         * "big win end event isto cetiri sekunde"). */
+        return _delay(END_HOLD_MS);
+      }).then(function () {
+        if (!STATE.walkActive) return;
+        /* Single SR push of the final amount, fired exactly once per
+         * sequence — see _announce() for the rationale. */
+        _announce(_fmtMoney(STATE.finalX));
+        /* Single closing fade-out for the whole sequence ("da se
+         * fejdoutuje plaketa"). */
+        return _fadeOutCurrent();
+      }).then(function () {
+        if (!STATE.walkActive) return;
+        _emitExited({ tier: STATE.current, reason: 'natural' });
+        _finishSequence('natural');
+      });
+    }
+
+    /* _mountBannerAt — fresh banner mounted at the given tier, fade-in.
+     * Removes any prior banner but preserves the SR-only announce node. */
+    function _mountBannerAt(tier) {
+      var host = _host();
+      if (!host) return;
+      var oldBanner = host.querySelector('.big-win-tier-banner');
+      if (oldBanner) host.removeChild(oldBanner);
+      var node = document.createElement('div');
+      node.className = 'big-win-tier-banner';
+      node.setAttribute('data-tier', String(tier));
+      node.setAttribute('data-show', 'enter');
+      /* Label gets aria-live so the ~5 tier-name swaps reach the SR;
+       * amount is aria-hidden because its rAF-driven text would otherwise
+       * spam the queue every frame. The final money announcement is
+       * routed once through #bigWinTierAnnounce after endHoldMs. */
+      node.innerHTML =
+        '<span class="big-win-tier-label" aria-live="polite" aria-atomic="true">' + LABELS[tier - 1] + '</span>' +
+        '<div class="big-win-tier-stepper" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="' + tier + '" aria-label="Win tier progress">' +
+          '<span class="big-win-tier-step" data-step="1" aria-hidden="true"></span>' +
+          '<span class="big-win-tier-step" data-step="2" aria-hidden="true"></span>' +
+          '<span class="big-win-tier-step" data-step="3" aria-hidden="true"></span>' +
+          '<span class="big-win-tier-step" data-step="4" aria-hidden="true"></span>' +
+          '<span class="big-win-tier-step" data-step="5" aria-hidden="true"></span>' +
+        '</div>' +
+        '<span class="big-win-tier-amount" aria-hidden="true" data-count="0">' + _fmtMoney(0) + '</span>';
+      host.appendChild(node);
+      /* W47.S3 — start the shake right when the banner mounts so the
+       * fade-in lands on a banner that's already pulsing. Subsequent
+       * tier swaps re-evaluate via _swapTier → _applyShake. */
+      _applyShake(node, tier);
+      var hold = setTimeout(function () {
+        if (node && node.parentNode === host) node.setAttribute('data-show', 'hold');
+      }, FADE_MS);
+      STATE.timers.push(hold);
+    }
+
+    /* _countUpLinear — money ramp from 'fromAward' to 'toAward' over 'dur' ms.
+     *
+     * Boki rule baseline: "non stop da broji istom brzinom" → LINEAR default.
+     *
+     * W48.V3 polish (2026-06-19) — per-final-tier easing override. When
+     * cfg.countUpEase === 'easeOutCubic' AND the FINAL tier of this
+     * sequence is ≥ cfg.tierEaseMinTier (default 4), the ramp uses the
+     * cubic decelerate curve for a "decelerate-to-climax" cinematic feel.
+     * Below that threshold (default tier 1-3), the linear ramp is preserved
+     * so low-tier celebrations still feel "honest" / industry-baseline.
+     *
+     * Display is currency-formatted money. Counter is INDEPENDENT of tier
+     * swaps — those are scheduled by _runCompound on a TIME-BASED cadence
+     * so the visual ladder rhythm is owned by the block itself, not by
+     * the awarded amount. */
+    function _countUpLinear(fromAward, toAward, dur) {
+      return new Promise(function (resolve) {
+        var amtEl = _host() && _host().querySelector('.big-win-tier-amount');
+        if (!amtEl || !(dur > 0) || !(toAward > fromAward)) {
+          if (amtEl) {
+            amtEl.textContent = _fmtMoney(toAward);
+            amtEl.setAttribute('data-count', String(toAward));
+          }
+          resolve();
+          return;
+        }
+        var t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        var localToken = STATE.rafToken;       /* read once; _runCompound owns bumps */
+        /* W48.V3 polish — easing gate per final tier. STATE.finalTier is
+         * set by _runCompound BEFORE _countUpLinear is invoked, so the
+         * gate is deterministic at function entry. */
+        var _useEase = (USE_EASE_OUT_CUBIC && STATE.finalTier >= TIER_EASE_MIN_TIER);
+        function step() {
+          if (localToken !== STATE.rafToken) { resolve(); return; }
+          var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+          var p = Math.min(1, (now - t0) / dur);
+          /* LINEAR baseline OR easeOutCubic for high-tier climax.
+           * easeOutCubic: 1 - (1 - p)^3 — fast early, slow into final value. */
+          var eased = _useEase ? (1 - Math.pow(1 - p, 3)) : p;
+          var current = fromAward + (toAward - fromAward) * eased;
+          amtEl.textContent = _fmtMoney(current);
+          amtEl.setAttribute('data-count', String(current));
+          if (p < 1) {
+            if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(step);
+            else { amtEl.textContent = _fmtMoney(toAward); resolve(); }
+          } else {
+            amtEl.textContent = _fmtMoney(toAward);
+            amtEl.setAttribute('data-count', String(toAward));
+            resolve();
+          }
+        }
+        if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(step);
+        else { amtEl.textContent = _fmtMoney(toAward); resolve(); }
+      });
+    }
+
+    function _finishSequence(reason) {
+      var finalTier = STATE.finalTier;
+      var finalX    = STATE.finalX;
+      _clearTimers();
+      STATE.rafToken += 1;
+      _cleanupHost();
+      STATE.walkActive = false;
+      STATE.current    = 0;
+      STATE.finalTier  = 0;
+      STATE.finalX     = 0;
+      STATE.x          = 0;
+      STATE.label      = '';
+      if (typeof window !== 'undefined') window.__BIG_WIN_TIER__ = 0;
+      _emitEnd({
+        tier: finalTier, x: finalX,
+        reason: (reason === 'skipped' ? 'skipped' : 'natural'),
+      });
+    }
+
+    /* bigWinTierEnter(tier, award) — public entry. Idempotent: a second
+     * call during an active walkthrough is ignored. If the block is
+     * COMPOUND, starts a tier-1→tier walkthrough; otherwise jumps to the
+     * tier. The 'award' parameter is the ABSOLUTE money amount the player
+     * actually won — counter ramps 0 → award in money, and the climax
+     * plaque holds at that exact figure (Boki rule 05.06.2026 "na kraju
+     * countera da ostane koliko se osvojilo"). When no award is provided
+     * (test / programmatic entry), synthesise one that comfortably crosses
+     * the requested tier's threshold so the visual ladder still walks. */
+    function bigWinTierEnter(tier, award) {
+      tier = Math.floor(Number(tier));
+      if (!(tier >= 1 && tier <= 5)) return;
+      if (STATE.walkActive) return;
+      var bet = _currentBet();
+      var finalAward = Number.isFinite(award) && award > 0
+        ? award
+        : THRESHOLDS[tier - 1] * 1.5 * bet;
+      _runCompound(tier, finalAward);
+    }
+
+    /* bigWinTierExit(reason) — fast-finalize the sequence (Boki spec
+     * 05.06.2026: "skip da radi kako treba i kako reference radi to"):
+     *   • Snap the existing banner to the final tier + final amount
+     *     (in-place — no remount, no re-fade-in, keeps continuity).
+     *   • Emit onBigWinTierExited for whatever tier was active.
+     *   • Single fade-out (FADE_MS) closes the plaque.
+     *   • onBigWinTierEnd emitted with reason='skipped'.
+     * Total visible time after click ≈ FADE_MS ms — fast spinner happy. */
+    function bigWinTierExit(reason) {
+      if (!STATE.walkActive) return;
+      var finalTier = STATE.finalTier;
+      var finalX    = STATE.finalX;
+      var prevTier  = STATE.current || finalTier;
+      _clearTimers();
+      STATE.rafToken += 1;          /* invalidate any in-flight rAF count-up */
+      /* Snap existing banner — DOM mutation, no remount, so the player
+       * never sees a flash of empty host between exit and skip-finalize.
+       * data-skip="true" kills the 600 ms color/font-size/filter
+       * transitions + 220 ms label opacity tween that the walkthrough
+       * relies on, so the climax tier appears INSTANTLY instead of
+       * morphing visually through the intermediate tier classes
+       * (Boki rule 05.06.2026 "ode na kraju big wina, a ne da presence
+       * jedan po jedan tier"). */
+      var node = _banner();
+      if (node) {
+        node.setAttribute('data-skip', 'true');
+        /* Defensive: clear any in-flight label cross-fade attribute so
+         * the climax label is visible from frame 1. */
+        node.removeAttribute('data-label-swap');
+        node.setAttribute('data-tier', String(finalTier));
+        node.setAttribute('data-show', 'hold');
+        var labelEl = node.querySelector('.big-win-tier-label');
+        var amtEl   = node.querySelector('.big-win-tier-amount');
+        if (labelEl) labelEl.textContent = LABELS[finalTier - 1];
+        if (amtEl)   { amtEl.textContent = _fmtMoney(finalX); amtEl.setAttribute('data-count', String(finalX)); }
+      } else {
+        /* Banner never mounted (skip arrived during fade-in window) —
+         * mount the climax plaque directly so the player gets a glimpse. */
+        var host = _host();
+        if (host) {
+          var n = document.createElement('div');
+          n.className = 'big-win-tier-banner';
+          n.setAttribute('data-skip', 'true');     /* no transitions on the very first frame */
+          n.setAttribute('data-tier', String(finalTier));
+          n.setAttribute('data-show', 'hold');
+          n.innerHTML =
+            '<span class="big-win-tier-label" aria-live="polite" aria-atomic="true">' + LABELS[finalTier - 1] + '</span>' +
+            '<div class="big-win-tier-stepper" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="' + finalTier + '" aria-label="Win tier progress">' +
+              '<span class="big-win-tier-step" data-step="1" aria-hidden="true"></span>' +
+              '<span class="big-win-tier-step" data-step="2" aria-hidden="true"></span>' +
+              '<span class="big-win-tier-step" data-step="3" aria-hidden="true"></span>' +
+              '<span class="big-win-tier-step" data-step="4" aria-hidden="true"></span>' +
+              '<span class="big-win-tier-step" data-step="5" aria-hidden="true"></span>' +
+            '</div>' +
+            '<span class="big-win-tier-amount" aria-hidden="true" data-count="' + finalX + '">' + _fmtMoney(finalX) + '</span>';
+          host.appendChild(n);
+        }
+      }
+      STATE.current = finalTier;
+      if (typeof window !== 'undefined') window.__BIG_WIN_TIER__ = finalTier;
+      _emitExited({ tier: prevTier, reason: 'skipped' });
+      /* Single SR push of the climax amount before fade — same one-shot
+       * announce contract the natural path uses. */
+      _announce(_fmtMoney(finalX));
+      /* Short visibility hold of the climax before fading — long enough
+       * to register, short enough not to feel like an ignored skip. */
+      var t = setTimeout(function () {
+        _fadeOutCurrent().then(function () { _finishSequence('skipped'); });
+      }, SKIP_GLIMPSE_MS);
+      STATE.timers.push(t);
+    }
+
+    if (typeof window !== 'undefined') {
+      window.bigWinTierEnter = bigWinTierEnter;
+      window.bigWinTierExit  = bigWinTierExit;
+    }
+
+    /* ── Frame-anchored sizing sync ──────────────────────────────────
+     * Boki spec 05.06.2026: "big win flow responsive i u skladu sa
+     * velicinom ril frames".
+     *
+     * Industry reference: big-win is a layout node whose width/height/
+     * position are pushed by the layout system on every resize. The
+     * banner stays sized to the reels area, not the page viewport.
+     *
+     * Our HTML equivalent: read #frameHost's bounding rect on every
+     * resize/scroll and publish it on the host element as four CSS
+     * custom properties (--bw-frame-x/y/w/h). The emitted CSS reads
+     * these to position and size the host and to scale font-size,
+     * padding, and gap proportionally. Falls back to viewport (100vw/h)
+     * if the frame node isn't found OR before the first observer tick,
+     * so initial paint never lands at 0x0.
+     *
+     * Performance: writes are batched per frame via rAF coalescing —
+     * a burst of ResizeObserver callbacks during a window drag becomes
+     * one DOM write per animation frame instead of N. */
+    (function () {
+      if (typeof document === 'undefined' || typeof window === 'undefined') return;
+      var FRAME_SEL = '#frameHost';
+      var rafPending = 0;
+
+      function _syncNow() {
+        rafPending = 0;
+        var host = _host();
+        if (!host) return;
+        var frame = document.querySelector(FRAME_SEL);
+        if (!frame || typeof frame.getBoundingClientRect !== 'function') {
+          /* No frame mounted (smoke-test / disabled host). Leave CSS vars
+           * unset so the viewport fallback (100vw/h) kicks in. */
+          return;
+        }
+        var r = frame.getBoundingClientRect();
+        /* Defensive: pre-layout pass can hand back a zero-sized rect.
+         * Skip the write so we don't squash the banner to 0x0 between
+         * the DOM mount and the first layout pass. */
+        if (!(r.width > 0 && r.height > 0)) return;
+        var s = host.style;
+        s.setProperty('--bw-frame-x', r.left   + 'px');
+        s.setProperty('--bw-frame-y', r.top    + 'px');
+        s.setProperty('--bw-frame-w', r.width  + 'px');
+        s.setProperty('--bw-frame-h', r.height + 'px');
+      }
+
+      function _scheduleSync() {
+        if (rafPending) return;
+        if (typeof window.requestAnimationFrame === 'function') {
+          rafPending = window.requestAnimationFrame(_syncNow);
+        } else {
+          rafPending = 1;
+          setTimeout(_syncNow, RAF_FALLBACK_MS);
+        }
+      }
+
+      /* Initial paint — try immediately, then again after first rAF so
+       * we catch the post-mount layout pass even if the script runs
+       * before the frame has been measured. */
+      _syncNow();
+      _scheduleSync();
+
+      /* ResizeObserver — fires when the frame box changes (cabinet
+       * rotate, viewport drag, devtools toggle). Cheapest signal. */
+      if (typeof ResizeObserver === 'function') {
+        var ro = new ResizeObserver(_scheduleSync);
+        var frame = document.querySelector(FRAME_SEL);
+        if (frame) ro.observe(frame);
+        /* Also observe documentElement so font-size root changes
+         * (zoom, accessibility) cascade through. */
+        if (document.documentElement) ro.observe(document.documentElement);
+      }
+
+      /* Window resize + scroll — covers page-level reflows and the
+       * fixed-position offset drift when the page is scrolled. Passive
+       * listeners — never blocks scroll. */
+      window.addEventListener('resize', _scheduleSync, { passive: true });
+      window.addEventListener('scroll', _scheduleSync, { passive: true });
+
+      /* Re-sync on tab refocus — Safari/iOS sometimes paints the wrong
+       * bbox after backgrounding. */
+      window.addEventListener('focus', _scheduleSync, { passive: true });
+    })();
+
+    if (window.HookBus && typeof window.HookBus.on === 'function') {
+      /* F3 priority 50 — presenter class. Listens to win-presentation-end
+         to drive the big-win tier ladder banner. Runs alongside other
+         presenters (winPresentation rollup, scatterCelebration, payline overlay)
+         after state-mutators and payout evaluators have settled ev.payX. */
+      window.HookBus.on('onWinPresentationEnd', function () {
+        var award = (typeof window !== 'undefined' && Number.isFinite(window.__WIN_AWARD__)) ? window.__WIN_AWARD__ : 0;
+        var bet   = _currentBet();
+        /* Tier classification = ratio space (vendor-neutral math).
+         * Counter displays = absolute money (player UX). */
+        var tier = tierFromRatio(award / bet);
+        if (tier < 1) return;
+        _runCompound(tier, award);
+      }, { priority: 50 });
+
+      window.HookBus.on('onSkipRequested', function (p) {
+        if (!p || p.phase !== 'bigWinTier') return;
+        if (!STATE.walkActive) return;
+        bigWinTierExit('skipped');
+      });
+
+      /* Defensive: a fresh spin must wipe any banner still on screen
+       * (rapid play, autoplay, etc). */
+      window.HookBus.on('preSpin', function () {
+        if (STATE.walkActive) bigWinTierExit('skipped');
+      });
+    }
+  })();
 
   
   
@@ -8280,16 +9549,72 @@ function runTumbleChain(_detectFn, _opts) {
     }
     if (kind === 'multiplier_orb') {
       /* Plant the next spin to land a high-value orb. multiplierOrb
-       * block reads MULT_ORB_STATE.forcedNextValue in its onSpinResult
-       * hook so the orb materialises on a random cell. */
+       * block (src/blocks/multiplierOrb.mjs) reads window.BONUS_MULTIPLIER
+       * + window.annotateOrbs() to materialise the orb on a random cell.
+       *
+       * Three-prong force so the audit + visual both light up:
+       *   1. MULT_ORB_STATE (defensive, in case any future block reads it)
+       *   2. window.BONUS_MULTIPLIER bump (real shape multiplierOrb reads)
+       *   3. HookBus.emit onForceMultiplier { multX } so listener blocks
+       *      (winMultiplierBadge, persistentMultiplier, pathAwareMultiplier)
+       *      react to the new multiplier on the next render frame.
+       *   4. Visual orb chip painted directly on a random cell so QA
+       *      can confirm "force orb radi" without waiting on the engine
+       *      to land matching symbols.                                  */
       try {
-        if (window.MULT_ORB_STATE) {
-          window.MULT_ORB_STATE.forcedNextValue = 50;   /* 50× — premium orb */
-          window.MULT_ORB_STATE.forceNextSpin = true;
-        }
+        if (!window.MULT_ORB_STATE) window.MULT_ORB_STATE = {};
+        window.MULT_ORB_STATE.forcedNextValue = 50;       /* 50× — premium orb */
+        window.MULT_ORB_STATE.forceNextSpin   = true;
+        window.MULT_ORB_STATE.lastPlaced      = { value: 50, ts: Date.now() };
+
+        try { window.BONUS_MULTIPLIER = (window.BONUS_MULTIPLIER || 0) + 50; } catch (_) {}
+
         if (window.HookBus && typeof window.HookBus.setMult === 'function') {
           window.HookBus.setMult(50);
         }
+        if (window.HookBus && typeof window.HookBus.emit === 'function') {
+          /* Use the canonical onForceMultiplier event already owned by
+           * universalForcePanel (see hookBus.mjs registry). Listener blocks
+           * (winMultiplierBadge, persistentMultiplier, pathAwareMultiplier)
+           * react to the new multX value on the next render frame. */
+          try { window.HookBus.emit('onForceMultiplier', { multX: 50 }); } catch (_) {}
+        }
+
+        /* Visual orb chip on a random cell — same shape as multiplier
+         * chip but in orb gradient so QA confirms orb force VISIBLY. */
+        (function _renderUfpOrbChip() {
+          try {
+            var cells = document.querySelectorAll('.cell');
+            if (!cells.length) return;
+            var target = cells[Math.floor(Math.random() * cells.length)];
+            var rect = target.getBoundingClientRect();
+            var chip = document.createElement('div');
+            chip.className = 'ufp-orb-chip';
+            chip.setAttribute('data-mult-orb', '50');
+            chip.textContent = 'x50';
+            chip.style.cssText =
+              'position:fixed;' +
+              'left:' + (rect.left + rect.width / 2 - 30) + 'px;' +
+              'top:'  + (rect.top  + rect.height / 2 - 30) + 'px;' +
+              'width:60px;height:60px;border-radius:50%;' +
+              'background:radial-gradient(circle,rgba(120,200,255,1) 0%,rgba(40,120,255,0.95) 70%,rgba(10,40,120,0.9) 100%);' +
+              'color:#fff;font:900 22px/60px system-ui,-apple-system,sans-serif;' +
+              'text-align:center;letter-spacing:.04em;' +
+              'box-shadow:0 8px 24px rgba(0,0,0,.55),inset 0 -3px 8px rgba(0,0,0,.25),inset 0 2px 4px rgba(255,255,255,.45);' +
+              'pointer-events:none;z-index:96;opacity:0;transform:scale(.4);' +
+              'transition:opacity .25s ease,transform .9s cubic-bezier(.2,1.3,.4,1);';
+            document.body.appendChild(chip);
+            requestAnimationFrame(function() {
+              chip.style.opacity = '1';
+              chip.style.transform = 'scale(1) translateY(-22px)';
+            });
+            setTimeout(function() {
+              chip.style.opacity = '0';
+              chip.style.transform = 'scale(.92) translateY(-44px)';
+            }, 1400);
+            setTimeout(function() { try { chip.remove(); } catch (_) {} }, 2100);
+          } catch (_) {}
+        })();
       } catch (_) {}
     }
     if (kind === 'persistent_multiplier') {
@@ -8425,8 +9750,14 @@ function runTumbleChain(_detectFn, _opts) {
           else if (window.HW_TRIGGER_COUNT && window.HW_TRIGGER_COUNT > 0) _hwCount = window.HW_TRIGGER_COUNT;
         } catch (_) {}
         try {
-          if (typeof HW_BONUS_SYMBOL === 'string') _hwSym = HW_BONUS_SYMBOL;
-          else if (typeof window.HW_BONUS_SYMBOL === 'string') _hwSym = window.HW_BONUS_SYMBOL;
+          /* 2026-06-18 — normalise to uppercase so downstream paths
+           * (reelEngine commitStopSymbols plant, holdAndWin harvest,
+           * anticipation registry sym compare) all see the same case.
+           * Pre-fix: lowercase 'b' from GDD leaked into the engine,
+           * the bonus pile landed as 'b' on cells, harvester case-
+           * compared against 'B' and missed every orb → no H&W round. */
+          if (typeof HW_BONUS_SYMBOL === 'string') _hwSym = HW_BONUS_SYMBOL.toUpperCase();
+          else if (typeof window.HW_BONUS_SYMBOL === 'string') _hwSym = window.HW_BONUS_SYMBOL.toUpperCase();
         } catch (_) {}
         /* Plant 'bonusSymbol' + 'bonusCount' — reelEngine commitStopSymbols
          * sprays the bonus pile so the next spin's postSpin hwMaybeEnter()
@@ -8723,6 +10054,15 @@ function runTumbleChain(_detectFn, _opts) {
               var stNow = STATE.current;
               if (stNow !== 'STOP_PRE' && stNow !== 'STOP_POST') return;
               if (STATE.dispatchLocked) return;
+              /* 2026-06-18 — BUG-7 fix: drop the late-fired queued slam if
+               * the round was already finalized between the click and the
+               * timer firing (onSlamComplete or postSpin already disarmed
+               * expectsFinalize). Without this guard the queued slam would
+               * emit onSlamRequested into a fully-settled round; reelEngine
+               * is idempotent so no crash, but spinControl would morph SPIN
+               * → SPIN (no-op) AND set slamPendingSettle=true with no
+               * settlement emit to clear it, parking the CTA disabled. */
+              if (!STATE.expectsFinalize) return;
               STATE.dispatchLocked = true;
               var ph = (stNow === 'STOP_PRE') ? 'pre' : 'post';
               _emit('onSlamRequested', { phase: ph, source: 'button-queued' });
@@ -8792,8 +10132,23 @@ function runTumbleChain(_detectFn, _opts) {
       var s = STATE.current;
       if (s !== 'STOP_PRE' && s !== 'STOP_POST') return;
       if (STATE.dispatchLocked) return;
+      /* 2026-06-18 — BUG-1 fix (deep-recon Priority 2): reels-area click had
+       * no slamPendingSettle guard. During the ~400ms window after a slam
+       * click while reels are bouncing into final positions, the state was
+       * already morphed to 'SPIN' (button disabled) but the early-return
+       * above only matched STOP_*. If state hadn't morphed yet (10ms race
+       * window) a second emit was possible. The slamPendingSettle flag is
+       * the authoritative "in-flight settlement" signal. */
+      if (STATE.slamPendingSettle) return;
       STATE.dispatchLocked = true;
-      _emit('onSlamRequested', { phase: (s === 'STOP_PRE') ? 'pre' : 'post', source: 'reelsArea' });
+      /* 2026-06-18 — BUG-8 fix: wrap emit in try/finally so a throwing
+       * HookBus listener can never permanently lock the reels-area click
+       * dispatcher (mirrors slamStop.mjs request-button try/finally). */
+      try {
+        _emit('onSlamRequested', { phase: (s === 'STOP_PRE') ? 'pre' : 'post', source: 'reelsArea' });
+      } finally {
+        STATE.dispatchLocked = false;
+      }
     }
 
     /* DOM wiring — single click handler. Capture phase so we run BEFORE
@@ -8906,9 +10261,23 @@ function runTumbleChain(_detectFn, _opts) {
       var btn = _btn();
       if (!btn || typeof MutationObserver !== 'function') return;
       var mo = new MutationObserver(function () {
-        if (__spacePending && !btn.disabled) {
-          __spacePending = false;
-          btn.click();
+        /* 2026-06-18 — BUG-2 fix: previously this drain fired whenever the
+         * button became enabled regardless of whether the round had been
+         * finalized. If the pending-settle drain ran AFTER _finalizeRound
+         * but BEFORE the queued postSpin disarmed __spacePending, the
+         * queued click would dispatch into a fresh preSpin disguised as
+         * "Space-from-pending". Now the drain ONLY fires while we are
+         * actually mid-settle (slamPendingSettle true). After the round
+         * is finalized, any leftover __spacePending is cleared to prevent
+         * a stale press from leaking into the next spin. */
+        if (!btn.disabled && __spacePending) {
+          if (STATE.slamPendingSettle) {
+            __spacePending = false;
+            btn.click();
+          } else {
+            /* round already settled — drop stale latch */
+            __spacePending = false;
+          }
         }
       });
       mo.observe(btn, { attributes: true, attributeFilter: ['disabled'] });
@@ -9121,6 +10490,64 @@ function runTumbleChain(_detectFn, _opts) {
         if (typeof window !== 'undefined') window.__SLOT_SKIPPED__ = false;
         setState('SPIN');
       });
+
+      /* 2026-06-18 — BUG-3 fix (deep-recon Priority 1): H&W lifecycle
+       * awareness. Pre-fix spinControl was BLIND to Hold&Win phases
+       * (INTRO placard, RUNNING respins, SUMMARY plaque). Player could
+       * see CTA as plain SPIN during the intro/summary placards even
+       * though clicking would dispatch a per-cell respin into a phase
+       * the orchestrator didn't expect. Industry-standard hold-and-spin
+       * UX hides the SPIN CTA during INTRO/SUMMARY (those overlays own
+       * the screen) and re-paints it as the "respin trigger" during the
+       * RUNNING phase so the player knows what the button does.
+       *
+       * We hide the spin button during INTRO + SUMMARY placards by
+       * forcing it disabled, then restore on H&W end. RUNNING uses the
+       * normal SPIN state — clicking it dispatches a respin via the same
+       * runOneBaseSpin() funnel that the H&W per-cell branch consumes. */
+      window.HookBus.on('onHoldAndWinIntro', function () {
+        var btn = _btn(); if (btn) btn.disabled = true;
+      });
+      window.HookBus.on('onHoldAndWinStart', function () {
+        /* RUNNING phase begins — restore SPIN affordance so the player
+         * can dispatch the next respin manually if autoplay is off. */
+        var btn = _btn(); if (btn) btn.disabled = false;
+        setState('SPIN');
+      });
+      window.HookBus.on('onHoldAndWinEnd', function () {
+        /* Round closed (natural / full-grid / forced) — flush any stale
+         * morph and return to baseline so the next BASE spin starts
+         * cleanly. */
+        var btn = _btn(); if (btn) btn.disabled = false;
+        setState('SPIN');
+      });
+
+      /* 2026-06-18 — BUG-5 fix (deep-recon Priority 1): compliance gate
+       * recovery. When reelEngine.runOneBaseSpin() refuses to dispatch
+       * (NL Cruks pending, DE min-spin floor, NL cool-off active, max-win
+       * cap reached), it emits one of the dedicated audit events but
+       * never fires preSpin → settlement. Pre-fix spinControl had already
+       * morphed SPIN → STOP_PRE on the click and now sat there forever
+       * waiting for a postSpin that never came.
+       *
+       * The fix: listen to every gate-failure event and snap the CTA
+       * back to SPIN with the button re-enabled, so the player can try
+       * again once the gate clears. The emit list mirrors the gating
+       * surface in reelEngine.mjs::runOneBaseSpin + jurisdictionGate. */
+      var _gateRecover = function () {
+        var btn = _btn(); if (btn) btn.disabled = false;
+        STATE.slamPendingSettle = false;
+        STATE.expectsFinalize   = false;
+        STATE.dispatchLocked    = false;
+        STATE.pendingSlam       = false;
+        setState('SPIN');
+      };
+      window.HookBus.on('onCruksCheckPending',       _gateRecover);
+      window.HookBus.on('onManualSpinPaceBlocked',   _gateRecover);
+      window.HookBus.on('onMinSpinPaceDeferred',     _gateRecover);
+      window.HookBus.on('onCoolOffEnforced',         _gateRecover);
+      window.HookBus.on('onWinCapReached',           _gateRecover);
+      window.HookBus.on('onSelfExcludedBlocked',     _gateRecover);
     }
 
     /* __SLOT_SKIPPED__ defaults to false so animation chains that poll it
@@ -9776,6 +11203,11 @@ function runTumbleChain(_detectFn, _opts) {
         b.setAttribute('data-kind', kind);
         b.setAttribute('data-value', String(v));
         b.textContent = kind === 'coin' ? _money(v) : (v + '×');
+        /* WCAG 4.1.3 (F4 A3) — aria-label disambiguates pick buttons for SR.
+         * Without it the announcement is bare "0.10" / "10×" — with it SR
+         * users hear "Coin value 0.10" / "Bet multiplier 10×". */
+        b.setAttribute('aria-label',
+          (kind === 'coin' ? 'Coin value ' : 'Bet multiplier ') + b.textContent);
         b.disabled = STATE.locked;
         b.addEventListener('click', _onPickClick);
         host.appendChild(b);
@@ -9963,6 +11395,18 @@ function runTumbleChain(_detectFn, _opts) {
         if (chip2 && chip2.contains(ev.target)) return;
         p.hidden = true;
         if (chip2) chip2.setAttribute('aria-expanded', 'false');
+      });
+
+      /* WCAG 2.4.7 / 2.1.2 (F4 A2) — Escape closes the bet panel for
+       * keyboard users; mirrors the outside-click dismiss above. */
+      document.addEventListener('keydown', function (ev) {
+        if (ev.key !== 'Escape') return;
+        var p = _panel();
+        if (p && !p.hidden) {
+          p.hidden = true;
+          var chip2 = _chip();
+          if (chip2) chip2.setAttribute('aria-expanded', 'false');
+        }
       });
 
       _renderAll();
@@ -12011,6 +13455,70 @@ function runTumbleChain(_detectFn, _opts) {
   
   
   
+  /* ── winLineFlash BLOCK — Wave H21 ────────────────────────────────── */
+  (function () {
+    if (typeof window === 'undefined' || !window.HookBus) return;
+    var FLASH = 540;
+    var MIN = 3;
+    var CLEAR = true;
+
+    function clearAll(reason) {
+      if (typeof document === 'undefined') return;
+      var cells = document.querySelectorAll('.symbol-cell[data-line-flash="true"]');
+      var n = cells.length;
+      for (var i = 0; i < cells.length; i++) cells[i].setAttribute('data-line-flash', 'false');
+      if (n > 0) try { window.HookBus.emit('onWinLineFlashCleared', { reason: reason || 'auto' }); } catch (_) {}
+    }
+    function flashCells(cells, lineIdx, source) {
+      if (typeof document === 'undefined') return;
+      if (!Array.isArray(cells) || cells.length < MIN) return;
+      var marked = 0;
+      for (var i = 0; i < cells.length; i++) {
+        var c = cells[i];
+        if (!c || typeof c.reel !== 'number' || typeof c.row !== 'number') continue;
+        var el = document.querySelector('.symbol-cell[data-reel="' + c.reel + '"][data-row="' + c.row + '"]');
+        if (el) {
+          el.setAttribute('data-line-flash', 'true');
+          marked++;
+        }
+      }
+      if (marked > 0) {
+        try { window.HookBus.emit('onWinLineFlashStart', { lineIdx: lineIdx, cellCount: marked, source: source || 'auto' }); } catch (_) {}
+        setTimeout(function () {
+          for (var j = 0; j < cells.length; j++) {
+            var cc = cells[j];
+            if (cc && typeof cc.reel === 'number' && typeof cc.row === 'number') {
+              var ee = document.querySelector('.symbol-cell[data-reel="' + cc.reel + '"][data-row="' + cc.row + '"]');
+              if (ee) ee.setAttribute('data-line-flash', 'false');
+            }
+          }
+          try { window.HookBus.emit('onWinLineFlashEnd', { lineIdx: lineIdx, source: source || 'auto' }); } catch (_) {}
+        }, FLASH + 60);
+      }
+    }
+
+    /* F3 priority 30 — decorator class. Per-line flash overlay runs after
+       payout evaluators populate p.events; sibling decorator order with
+       paylineDimmer / multiplierOrb / retriggerMeter not race-critical. */
+    window.HookBus.on('preSpin', function () { if (CLEAR) clearAll('preSpin'); }, { priority: 30 });
+    window.HookBus.on('onSpinResult', function (p) {
+      if (!p || !Array.isArray(p.events)) return;
+      for (var i = 0; i < p.events.length; i++) {
+        var e = p.events[i];
+        if (!e || !Array.isArray(e.cells)) continue;
+        if (e.cells.length < MIN) continue;
+        flashCells(e.cells, e.lineIdx || i, 'onSpinResult');
+      }
+    }, { priority: 30 });
+    window.HookBus.on('onTumbleStep', function () { clearAll('onTumbleStep'); }, { priority: 30 });
+
+    /* Public API */
+    window.winLineFlash = function (cells, lineIdx) {
+      flashCells(Array.isArray(cells) ? cells : [], lineIdx | 0, 'api');
+    };
+    window.winLineFlashClear = function () { clearAll('api'); };
+  })();
+  
   
   
   
@@ -13304,6 +14812,12 @@ if (typeof HookBus !== 'undefined') {
   
   (function(){
     if (typeof window === 'undefined' || !window.HookBus) return;
+    /* WASH PASS (2026-06-18) — wired-once sentinel so HMR / repeated
+     * runtime bake does NOT stack the 5 listeners that this block
+     * subscribes to (onFsTrigger/onFsSpinResult/onTumbleStep/onFsEnd/
+     * onMultChange). */
+    if (window.__MULT_LADDER_WIRED__) return;
+    window.__MULT_LADDER_WIRED__ = true;
     var host = document.getElementById('multLadder');
     if (!host) return;
     var STEPS = [1,2,3,5,10];
@@ -13700,9 +15214,13 @@ if (typeof HookBus !== 'undefined') {
       HookBus.emit('onFsTrigger', { award: spinsAwarded, scatters: scatterCount });
     }
 
-    fsPlacardEyebrow.textContent = scatterCount
-      ? scatterCount + " SCATTERS TRIGGERED"
-      : "YOU TRIGGERED";
+    /* 2026-06-18 — Boki rule "ne želim nigde brojač koliko je scattera
+     * palo". FS intro placard eyebrow stays generic ("YOU TRIGGERED")
+     * regardless of how many scatters landed. Industry baseline leads
+     * with the AWARDED COUNT (spins granted), not the trigger ladder
+     * math — scatter count is regulator audit data, never player-facing
+     * copy. */
+    fsPlacardEyebrow.textContent = "YOU TRIGGERED";
     fsPlacardTitle.textContent   = ((FREESPINS.introLabel || FS_INTRO_LABEL) + "").toUpperCase();
     fsPlacardSpins.textContent   = String(spinsAwarded);
     fsPlacardSub.textContent     = FS_INTRO_SUB;
@@ -13802,11 +15320,30 @@ if (typeof HookBus !== 'undefined') {
         fsHudSpins.classList.remove("fs-hud__value--retrig");
       }, 720);
     }
-    /* LEGO single-owner discipline — onFsRetrigger is owned by
-     * superchargedFs.mjs via the engine-facing superchargedFsAnnounce()
-     * helper. We do NOT emit here. The visual pulse + toast are local
-     * to this block; downstream blocks subscribe to onFsRetrigger
-     * separately when the engine announces the round-level event. */
+    /* FIX-4 (deep QA #17, 2026-06-19) — guarantee onFsRetrigger reaches
+     * downstream subscribers (fsReelHeightEscalation, retriggerMeter,
+     * retriggerMultiplierBump) even when superchargedFs block is NOT
+     * in the build.
+     *
+     * Original LEGO discipline: superchargedFs owns the emit via
+     * superchargedFsAnnounceRetrigger() helper. But if that block isn't
+     * enabled in the GDD, the event was silently lost — every FS-retrigger
+     * subscriber stopped working. Soft-dependency on a sibling block
+     * violates LEGO universality.
+     *
+     * Hardening: prefer superchargedFs's helper when present (so its
+     * re-entrancy guard owns the emit), fall through to a direct emit
+     * otherwise. Either path produces exactly one onFsRetrigger per
+     * retrigger event. */
+    try {
+      if (typeof window !== 'undefined'
+          && typeof window.superchargedFsAnnounceRetrigger === 'function') {
+        window.superchargedFsAnnounceRetrigger();
+      } else if (typeof HookBus !== 'undefined'
+                 && typeof HookBus.emit === 'function') {
+        HookBus.emit('onFsRetrigger', { extraSpins: n, retriggerIndex: FSM.retrigCount });
+      }
+    } catch (_) {}
   }
 
   function FSM_enterOutro() {
@@ -14289,6 +15826,13 @@ if (typeof HookBus !== 'undefined') {
       el.style.top = y + "px";
       el.style.width = w + "px";
       el.style.height = (h * 1.15) + "px";
+      /* QA fix (general-purpose subagent 2026-06-19, finding F1 LEGO-ENG):
+       * expose axial coords as data-q/data-r so downstream evaluator
+       * blocks (hexClusterEngine.mjs, future hex-eval blocks) can
+       * BFS-walk neighbours without re-parsing layout. Without this
+       * all cells appear at "0,0" → no clusters ever detected. */
+      el.setAttribute("data-q", String(q));
+      el.setAttribute("data-r", String(r));
       host.appendChild(el);
       cellEls.push(el);
     });

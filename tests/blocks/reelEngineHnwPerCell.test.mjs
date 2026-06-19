@@ -148,7 +148,7 @@ t('SANDBOX: non-locked cells get hnw-cell-spinning class, locked stay clean', ()
    * the runtime picks and just fire all timers in order. */
   const queue = [];
   const fakeSet = (fn, ms) => { queue.push({ fn, ms }); return queue.length; };
-  const fakeWindow = { __SLOT_TURBO_SPEED_MULT__: 1.0, HW_STATE: { active: true } };
+  const fakeWindow = { __SLOT_TURBO_SPEED_MULT__: 1.0, HW_STATE: { active: true }, HW_BONUS_CHANCE_PER_CELL: 0 };
 
   let settled = false;
   runner(() => { settled = true; }, fakeWindow, {}, grid, RECT_REELS, fakeHookBus, fakeFs, FORCE_TRIGGER, randomSym, fakeSet);
@@ -191,7 +191,7 @@ t('SANDBOX: all cells locked → no-op fast path + onSettled still fires', () =>
   const randomSym = () => 'X';
   const queue = [];
   const fakeSet = (fn) => queue.push({ fn });
-  const fakeWindow = { __SLOT_TURBO_SPEED_MULT__: 1.0, HW_STATE: { active: true } };
+  const fakeWindow = { __SLOT_TURBO_SPEED_MULT__: 1.0, HW_STATE: { active: true }, HW_BONUS_CHANCE_PER_CELL: 0 };
 
   const body = _extractRunner();
   const runner = new Function(

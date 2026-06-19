@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-06-18T02:30:58.060Z",
+  "generated_at": "2026-06-19T16:48:00.967Z",
   "viewport": {
     "width": 375,
     "height": 812
@@ -9,562 +9,562 @@
     "ambientBackgroundWheel": {
       "hash": "db40a8dd03492f4a00d6154e618c82b45530208eb26e97581dec1e0d648fad62",
       "bytes": 101336,
-      "captured_at": "2026-06-18T02:30:59.093Z"
+      "captured_at": "2026-06-19T16:48:01.976Z"
     },
     "anteBet": {
       "hash": "fc57466f474a59c4c8891ac61c183ea7815d9dda8c9f0c61aab392c3e8937d16",
       "bytes": 79828,
-      "captured_at": "2026-06-18T02:31:00.132Z"
+      "captured_at": "2026-06-19T16:48:02.981Z"
     },
     "anticipation": {
       "hash": "106e043fc1aca2ec08300ea6ac0da42a5213d080227bbcb32ef189e9521cbc6d",
       "bytes": 78633,
-      "captured_at": "2026-06-18T02:31:01.165Z"
+      "captured_at": "2026-06-19T16:48:03.983Z"
     },
     "anticipationUniversal": {
       "hash": "990f08b156cb14ea58eb20a3a1283f63f65829a8fcf2181586dda475482c34ec",
       "bytes": 79388,
-      "captured_at": "2026-06-18T02:31:02.198Z"
+      "captured_at": "2026-06-19T16:48:04.983Z"
     },
     "audio": {
       "hash": "88193308f59422e7b8288b268edd9968784dae3a693e5ae9b784cd269a829adf",
       "bytes": 78393,
-      "captured_at": "2026-06-18T02:31:03.231Z"
+      "captured_at": "2026-06-19T16:48:05.983Z"
     },
     "autoplay": {
       "hash": "6e13210afdf3fea0ba785975a9658693e1e2d267ffdb4e8848a4bce033ed361b",
       "bytes": 78460,
-      "captured_at": "2026-06-18T02:31:04.265Z"
+      "captured_at": "2026-06-19T16:48:06.982Z"
     },
     "balanceHud": {
       "hash": "e797dcbead4b9106b6578fc4a68bb20c4432d335d12e0550c1ee7a65a049844b",
       "bytes": 78622,
-      "captured_at": "2026-06-18T02:31:05.298Z"
+      "captured_at": "2026-06-19T16:48:07.983Z"
     },
     "betSelector": {
       "hash": "e4542ee22f68ff6fbb48aee0d5111ec0aa4fa103217b58bdbed71334b6a225eb",
       "bytes": 78825,
-      "captured_at": "2026-06-18T02:31:06.312Z"
+      "captured_at": "2026-06-19T16:48:08.981Z"
     },
     "bigWinTier": {
       "hash": "3bc48cbb6e86e90393789c0364c5f288def95d6238d4c13cba4e5a75848718a0",
       "bytes": 78580,
-      "captured_at": "2026-06-18T02:31:07.312Z"
+      "captured_at": "2026-06-19T16:48:09.982Z"
     },
     "bonusBuy": {
       "hash": "5638bff1239d1bcaa620408662abc03140d943a8143e1f6aa4d47348ba0a54f0",
       "bytes": 81509,
-      "captured_at": "2026-06-18T02:31:08.300Z"
+      "captured_at": "2026-06-19T16:48:10.983Z"
     },
     "bonusBuyDeterministic": {
       "hash": "668a5bb16e83ace50529c0e3d8201aa2fb1c9f50bb7349b5c41eccb449b87666",
       "bytes": 79591,
-      "captured_at": "2026-06-18T02:31:09.305Z"
+      "captured_at": "2026-06-19T16:48:11.977Z"
     },
     "bonusClimaxReveal": {
       "hash": "0e89423ad27fa86f1534c7707a40f2d7d9f35bdf5978aefc2107fc1f7988e953",
       "bytes": 79346,
-      "captured_at": "2026-06-18T02:31:10.338Z"
+      "captured_at": "2026-06-19T16:48:12.973Z"
     },
     "bonusPick": {
       "hash": "d85a628cd3c0587d3d91047437ce6b22d3c6b63d0513b188fbf7269d714d915c",
       "bytes": 78683,
-      "captured_at": "2026-06-18T02:31:11.372Z"
+      "captured_at": "2026-06-19T16:48:13.972Z"
     },
     "cascadeBooster": {
       "hash": "b33ecc301e36ea24b8ee89e957b8e17af19700bcd2fa25bcbe1963ce476543f0",
       "bytes": 78185,
-      "captured_at": "2026-06-18T02:31:12.405Z"
+      "captured_at": "2026-06-19T16:48:14.972Z"
     },
     "cascadePathDraw": {
       "hash": "178f53ccb6e9c8bed17d56d44978a6c9c00e973d5a69f69f5f6113adc0214c42",
       "bytes": 79388,
-      "captured_at": "2026-06-18T02:31:13.438Z"
+      "captured_at": "2026-06-19T16:48:15.972Z"
     },
     "cellLevelUpgrade": {
       "hash": "6bda69847c2134d5a41ee1ee34b8850dec8b70c6f3c4523e64bd4b23db8f9660",
       "bytes": 79131,
-      "captured_at": "2026-06-18T02:31:14.471Z"
+      "captured_at": "2026-06-19T16:48:16.973Z"
     },
     "cellOverflowCounter": {
       "hash": "f73c7d1cd3dd223c640ec7ef170972998025491bfabc5faeb8066adcde8727d8",
       "bytes": 79798,
-      "captured_at": "2026-06-18T02:31:15.506Z"
+      "captured_at": "2026-06-19T16:48:17.975Z"
     },
     "coinShower": {
       "hash": "a06906bf7db88413b2c519aeb580300551bb527b2d2e42f9cdb2cd266be187e7",
       "bytes": 78881,
-      "captured_at": "2026-06-18T02:31:16.539Z"
+      "captured_at": "2026-06-19T16:48:18.972Z"
     },
     "collectableSymbol": {
       "hash": "849d264e26fafb997eb9a7871d45eaafb164b1d48326c2ebd0e1304f52cdf76c",
       "bytes": 79455,
-      "captured_at": "2026-06-18T02:31:17.575Z"
+      "captured_at": "2026-06-19T16:48:19.973Z"
     },
     "colorblindPatterns": {
       "hash": "24bbd576bf78e61f6442dc333fdcf05883ab28784540cda695f7fde0bf19a0b8",
       "bytes": 79474,
-      "captured_at": "2026-06-18T02:31:18.606Z"
+      "captured_at": "2026-06-19T16:48:20.972Z"
     },
     "crashSpinEngine": {
       "hash": "a7185647c3e5fdc25ab371bc5475331804d6e6d005baff93edb4eb66582ca71e",
       "bytes": 79164,
-      "captured_at": "2026-06-18T02:31:19.639Z"
+      "captured_at": "2026-06-19T16:48:21.971Z"
     },
     "dailyJackpot": {
       "hash": "2eefb645d5c420964b6aeb02e9772e81b6d6eba4f36bfc29a6b28381d25307fd",
       "bytes": 78787,
-      "captured_at": "2026-06-18T02:31:20.672Z"
+      "captured_at": "2026-06-19T16:48:22.961Z"
     },
     "dualRoleScatter": {
       "hash": "1c590a37f3d3570e0577116952b8a2e399f396565bf9d4a18fddc4af0bfe6fb4",
       "bytes": 79124,
-      "captured_at": "2026-06-18T02:31:21.706Z"
+      "captured_at": "2026-06-19T16:48:23.966Z"
     },
     "energyMeter": {
       "hash": "4860eed1453b9af5144f1bf85b76270473b58fde5614b5a4305498b024ad2f7a",
       "bytes": 79454,
-      "captured_at": "2026-06-18T02:31:22.731Z"
+      "captured_at": "2026-06-19T16:48:24.965Z"
     },
     "euAiActComplianceGate": {
       "hash": "b9ec14fbce9f1614f688570d0f726cb6004c957c0eb0877fc0aa70bbcfb6bd9d",
       "bytes": 79649,
-      "captured_at": "2026-06-18T02:31:23.755Z"
+      "captured_at": "2026-06-19T16:48:25.966Z"
     },
     "expandingWild": {
       "hash": "3088db1125ad09642adf63690dd109ceaf11de9c64375d1067f8807a270859f7",
       "bytes": 78863,
-      "captured_at": "2026-06-18T02:31:24.789Z"
+      "captured_at": "2026-06-19T16:48:26.965Z"
     },
     "forceSkip": {
       "hash": "e373755c16f1aa69ee55fcee65492d0fb3633aebb244bdbb971bcffa239cae27",
       "bytes": 78744,
-      "captured_at": "2026-06-18T02:31:25.821Z"
+      "captured_at": "2026-06-19T16:48:27.965Z"
     },
     "franceComplianceGate": {
       "hash": "7ad0f46083337ef0ddfc747b5b8194202d2958f5bd9d3efa9fe7a19f8e9659e6",
       "bytes": 79707,
-      "captured_at": "2026-06-18T02:31:26.856Z"
+      "captured_at": "2026-06-19T16:48:28.956Z"
     },
     "freeSpins": {
       "hash": "2128d50ceaf353b8aa788265a310a5765783c8f623b521e363aeee56a79c270f",
       "bytes": 78575,
-      "captured_at": "2026-06-18T02:31:27.889Z"
+      "captured_at": "2026-06-19T16:48:29.955Z"
     },
     "fsProgressBar": {
       "hash": "093c6648b779982bd0d958579f69204c8f89d6113623f205ff90c93503dcda79",
       "bytes": 79277,
-      "captured_at": "2026-06-18T02:31:28.922Z"
+      "captured_at": "2026-06-19T16:48:30.948Z"
     },
     "gamble": {
       "hash": "d4a1cb3f7530eb65b20c84c03fde42f92f957b8ad641281e4e1337bacb97b5dd",
       "bytes": 78646,
-      "captured_at": "2026-06-18T02:31:29.955Z"
+      "captured_at": "2026-06-19T16:48:31.949Z"
     },
     "gambleSecondary": {
       "hash": "87ce4b961707812eadb5efa90b049de95350887024b82540dfeb2718a86632fd",
       "bytes": 79439,
-      "captured_at": "2026-06-18T02:31:30.988Z"
+      "captured_at": "2026-06-19T16:48:32.949Z"
     },
     "genericFeatureBanner": {
       "hash": "57739bd762a5d5c0c8b026251cfee1839924f3f9b48fdb740da4b4c46ffebba9",
       "bytes": 79566,
-      "captured_at": "2026-06-18T02:31:32.022Z"
+      "captured_at": "2026-06-19T16:48:33.945Z"
     },
     "germanyComplianceGate": {
       "hash": "1c4f65663960d5a4a1538fcd245771a0022051047bf26ff4c87462d0957057f4",
       "bytes": 79805,
-      "captured_at": "2026-06-18T02:31:33.056Z"
+      "captured_at": "2026-06-19T16:48:34.939Z"
     },
     "hapticFeedback": {
       "hash": "b636f2673c36fd51141ea46a9655492d61e53fbf8590af755dfe73e2f8786268",
       "bytes": 78946,
-      "captured_at": "2026-06-18T02:31:34.088Z"
+      "captured_at": "2026-06-19T16:48:35.940Z"
     },
     "hexReelEngine": {
       "hash": "e0acd6ddc9837da55d17ab9ec4ef52e77eb26a100670a3a6ff306d105cd25f9f",
       "bytes": 78789,
-      "captured_at": "2026-06-18T02:31:35.122Z"
+      "captured_at": "2026-06-19T16:48:36.940Z"
     },
     "hiLoGamble": {
       "hash": "092a2c255d2d127a927e4fdaed99a9796292018317bf0fa8ea3108ec68b56260",
       "bytes": 78569,
-      "captured_at": "2026-06-18T02:31:36.145Z"
+      "captured_at": "2026-06-19T16:48:37.940Z"
     },
     "historyLog": {
       "hash": "51d18fd102c3546220f04cc6deada5c2b84c91caa2d4f7ae97d5fa647b5179fc",
       "bytes": 78744,
-      "captured_at": "2026-06-18T02:31:37.137Z"
+      "captured_at": "2026-06-19T16:48:38.940Z"
     },
     "holdAndWin": {
       "hash": "298d7ab17037a3f07fee96b1ce0a763e6340fb72353cb7b795e2e7a0459a9cb1",
       "bytes": 78623,
-      "captured_at": "2026-06-18T02:31:38.131Z"
+      "captured_at": "2026-06-19T16:48:39.939Z"
     },
     "holdAndWinCreditBucket": {
       "hash": "7b42d59817d97edba572932ca0ead63f1f4389de7dad6e0dbec8560324aec050",
       "bytes": 79542,
-      "captured_at": "2026-06-18T02:31:39.131Z"
+      "captured_at": "2026-06-19T16:48:40.936Z"
     },
     "hotReload": {
       "hash": "f229fe11e69720aa8b3b4b66dfb180c9021d03de48d43f7110271a56f45d83c7",
       "bytes": 81033,
-      "captured_at": "2026-06-18T02:31:40.172Z"
+      "captured_at": "2026-06-19T16:48:41.964Z"
     },
     "i18n": {
       "hash": "53131bffeb0e43d2e586161574741ee920e660077a0bd38a1409415a9a12c26a",
       "bytes": 78200,
-      "captured_at": "2026-06-18T02:31:41.204Z"
+      "captured_at": "2026-06-19T16:48:42.955Z"
     },
     "infinityReels": {
       "hash": "a498fdc2fa4be20a3aafc15f710d768345e826d88ec05f8f6964e8143919ee16",
       "bytes": 78536,
-      "captured_at": "2026-06-18T02:31:42.239Z"
+      "captured_at": "2026-06-19T16:48:43.955Z"
     },
     "italyComplianceGate": {
       "hash": "b02e796b888c03a1fdf7a6c30ca101a8e717d480fabb48726fc3b6127ffbc8da",
       "bytes": 79418,
-      "captured_at": "2026-06-18T02:31:43.264Z"
+      "captured_at": "2026-06-19T16:48:44.955Z"
     },
     "jackpotLadderRooms": {
       "hash": "340a6bd5f67a3c030fd9ee3f905f7824776ba2d1ff09dc272ad4339fb5ebb8e4",
       "bytes": 83128,
-      "captured_at": "2026-06-18T02:31:44.297Z"
+      "captured_at": "2026-06-19T16:48:45.948Z"
     },
     "jurisdictionGate": {
       "hash": "66b4b8f028f6ec0a906409f328cffc3353d8144d1e2ad15b0f74479e1dbed954",
       "bytes": 79147,
-      "captured_at": "2026-06-18T02:31:45.332Z"
+      "captured_at": "2026-06-19T16:48:46.948Z"
     },
     "lightning": {
       "hash": "7c5de79c9ec720de7597fdee4ff5b7a53906f068cf8beb32edd60b07cd3321f2",
       "bytes": 78426,
-      "captured_at": "2026-06-18T02:31:46.364Z"
+      "captured_at": "2026-06-19T16:48:47.946Z"
     },
     "megaSymbol": {
       "hash": "e27c569d10478e06fc460bf04f3c5642420e0a363fac8b8834b06c2a2219cd53",
       "bytes": 78886,
-      "captured_at": "2026-06-18T02:31:47.397Z"
+      "captured_at": "2026-06-19T16:48:48.949Z"
     },
     "multiplierLadder": {
       "hash": "9e728c243d5c748a45fe1fa2c745f00478550bfb93a27fc241eedb0190fa974d",
       "bytes": 78742,
-      "captured_at": "2026-06-18T02:31:48.431Z"
+      "captured_at": "2026-06-19T16:48:49.949Z"
     },
     "multiplierOrb": {
       "hash": "0023ee478b29998812b8cc0103f123088518dbfaa0917543f385f82041fd6eae",
       "bytes": 78665,
-      "captured_at": "2026-06-18T02:31:49.464Z"
+      "captured_at": "2026-06-19T16:48:50.949Z"
     },
     "mysteryReveal": {
       "hash": "0c4906d40b36e3449604ddb6a84d52089a90990f8d9d2fa219cd40a0f06571b2",
       "bytes": 78947,
-      "captured_at": "2026-06-18T02:31:50.497Z"
+      "captured_at": "2026-06-19T16:48:51.955Z"
     },
     "mysterySymbol": {
       "hash": "6c985d147ae95a708664120411ec076130ebee70e306c58ff2ab03c08ccf2033",
       "bytes": 79063,
-      "captured_at": "2026-06-18T02:31:51.530Z"
+      "captured_at": "2026-06-19T16:48:52.955Z"
     },
     "nearMissTease": {
       "hash": "7ed537f08c17e905960fd99cbfdd1f2d1ca75a43f2cab20abd58f00c9d6834f3",
       "bytes": 79050,
-      "captured_at": "2026-06-18T02:31:52.565Z"
+      "captured_at": "2026-06-19T16:48:53.944Z"
     },
     "netLossIndicator": {
-      "hash": "5e07cd3e232415c01cec62932156039abdf1a0aaf44326bcf1acc0c2e2203683",
-      "bytes": 81174,
-      "captured_at": "2026-06-18T02:31:53.598Z"
+      "hash": "07221cd53d4dc86c0962aa61cf1af110b0e06fefd0837d0ad5d82f1262c368b1",
+      "bytes": 81193,
+      "captured_at": "2026-06-19T16:48:54.950Z"
     },
     "netherlandsComplianceGate": {
       "hash": "78893a8d6dd873a5614f8394666658c08f1eff964ed1efc1d428f2a8d6de8239",
       "bytes": 79669,
-      "captured_at": "2026-06-18T02:31:54.631Z"
+      "captured_at": "2026-06-19T16:48:55.950Z"
     },
     "nudgeReel": {
       "hash": "0fec4563f1a2f83fe81fdd3eaacf3e6c5df105937d4baaec9655af05dc7e96a1",
       "bytes": 78620,
-      "captured_at": "2026-06-18T02:31:55.665Z"
+      "captured_at": "2026-06-19T16:48:56.950Z"
     },
     "pathAwareMultiplier": {
       "hash": "b1900fab0a1d5579fc31d9f71ff9f2330e3dd4a53eb04b92b244e44d984b0ee2",
       "bytes": 79228,
-      "captured_at": "2026-06-18T02:31:56.698Z"
+      "captured_at": "2026-06-19T16:48:57.950Z"
     },
     "paylineDimmer": {
       "hash": "cf9ff2eca7aa2cf81201f7bdfa73b59db26df9365c020a11f8de574b1deed868",
       "bytes": 78650,
-      "captured_at": "2026-06-18T02:31:57.730Z"
+      "captured_at": "2026-06-19T16:48:58.950Z"
     },
     "paytable": {
       "hash": "c0f4ba46308b7ac94022eebc39ce6cabf82f2521023f3ada3700c79ea6e4748c",
       "bytes": 78710,
-      "captured_at": "2026-06-18T02:31:58.764Z"
+      "captured_at": "2026-06-19T16:48:59.945Z"
     },
     "persistentMultiplier": {
       "hash": "f1a9970231d817f8b9ee8462fa7e89cdc50fa9ca7c90e49d664992458f6b300a",
       "bytes": 79292,
-      "captured_at": "2026-06-18T02:31:59.805Z"
+      "captured_at": "2026-06-19T16:49:00.939Z"
     },
     "pickBonusReveal": {
       "hash": "211eebd7bb1b46877905b638fcfbe2e3146f11c4880918bcaa1508e0392a4d7a",
       "bytes": 79193,
-      "captured_at": "2026-06-18T02:32:00.839Z"
+      "captured_at": "2026-06-19T16:49:01.936Z"
     },
     "plinkoSpinEngine": {
       "hash": "035f5f5dc8d5622337587e9584727f026c21a073e91a0a5cd869e77f61cd3056",
       "bytes": 79024,
-      "captured_at": "2026-06-18T02:32:01.873Z"
+      "captured_at": "2026-06-19T16:49:02.932Z"
     },
     "postSpin": {
       "hash": "6ddffa57c81b0db11b5ae57595c32bf0761691be645461844dda34e46319a2d9",
       "bytes": 78788,
-      "captured_at": "2026-06-18T02:32:02.896Z"
+      "captured_at": "2026-06-19T16:49:03.932Z"
     },
     "progressiveFreeSpins": {
       "hash": "dcfbc5593af24cbae05c4d6a3f3f52fb52b1a4e79fa0bb01ad3c3c1ee0c684d6",
       "bytes": 79738,
-      "captured_at": "2026-06-18T02:32:03.922Z"
+      "captured_at": "2026-06-19T16:49:04.932Z"
     },
     "pwaInstallability": {
       "hash": "c0d30967a6c2b24f8c6ebb9447c1117abde8a2f0801ae4077445dcbb392b44c6",
       "bytes": 78993,
-      "captured_at": "2026-06-18T02:32:04.956Z"
+      "captured_at": "2026-06-19T16:49:05.932Z"
     },
     "realityCheck": {
       "hash": "3d2c3e901caa289b55e7415e61d7a1d2eefc9f07e09de1c92dcc55934b7092e2",
       "bytes": 78753,
-      "captured_at": "2026-06-18T02:32:05.976Z"
+      "captured_at": "2026-06-19T16:49:06.928Z"
     },
     "reelEngine": {
       "hash": "740b95b2b11caf689554ed20db0559f74fad01437b82e701047e6d52432afbd6",
       "bytes": 78616,
-      "captured_at": "2026-06-18T02:32:06.966Z"
+      "captured_at": "2026-06-19T16:49:07.921Z"
     },
     "reelLockHold": {
       "hash": "45af88d9cfa8d7a0f820f8d6d98bcb8548dbd8974a668c595c0ae8bdebdd8fea",
       "bytes": 78778,
-      "captured_at": "2026-06-18T02:32:07.965Z"
+      "captured_at": "2026-06-19T16:49:08.916Z"
     },
     "regulatorDisclosureModal": {
       "hash": "016189211f61d79c3c12c18bfc11f3bee9e0486d43b496b1cb1d17c47c46ec04",
       "bytes": 80106,
-      "captured_at": "2026-06-18T02:32:08.964Z"
+      "captured_at": "2026-06-19T16:49:09.913Z"
     },
     "respin": {
       "hash": "a304b83791573f9c0239efb0e3fb56838028f90771448c271e160220236e6743",
       "bytes": 78666,
-      "captured_at": "2026-06-18T02:32:09.981Z"
+      "captured_at": "2026-06-19T16:49:10.924Z"
     },
     "respinCharge": {
       "hash": "20f552f77172c5a9c4391ccee24eb888badf277fa48606babfa52790bbeed4f6",
       "bytes": 80926,
-      "captured_at": "2026-06-18T02:32:11.015Z"
+      "captured_at": "2026-06-19T16:49:11.924Z"
     },
     "retriggerEscalator": {
       "hash": "493243a94298ec3e544b0f519d398359005c2b75d7096801c76338d5308eabe2",
       "bytes": 79611,
-      "captured_at": "2026-06-18T02:32:12.047Z"
+      "captured_at": "2026-06-19T16:49:12.923Z"
     },
     "retriggerMeter": {
       "hash": "57866354ec0e2234496f8468309cd44c50273bac35a5064f514f7a54fbbd9965",
       "bytes": 79064,
-      "captured_at": "2026-06-18T02:32:13.089Z"
+      "captured_at": "2026-06-19T16:49:13.922Z"
     },
     "rewardChest": {
       "hash": "ccbe3ede964dbe4ddcafd4b2851277c21913c9610208b8b3b54ea4ec94c0ea6f",
       "bytes": 78956,
-      "captured_at": "2026-06-18T02:32:14.122Z"
+      "captured_at": "2026-06-19T16:49:14.923Z"
     },
     "rtlLayout": {
       "hash": "df76ab52ae77498414a22fd5a78168fd88aadce974ebe471ddc433ae2d64b4a4",
       "bytes": 78444,
-      "captured_at": "2026-06-18T02:32:15.154Z"
+      "captured_at": "2026-06-19T16:49:15.923Z"
     },
     "scatterCelebration": {
       "hash": "a07560085dbae700a9a248ae9ea04809b8a180b68ccdeb3d647e9af269796205",
       "bytes": 79522,
-      "captured_at": "2026-06-18T02:32:16.189Z"
+      "captured_at": "2026-06-19T16:49:16.923Z"
     },
     "sessionTimeout": {
       "hash": "1045d45e7c2a307b5b07bc28c0ad82a892998741c2b7212397b498cc0b751707",
       "bytes": 79223,
-      "captured_at": "2026-06-18T02:32:17.222Z"
+      "captured_at": "2026-06-19T16:49:17.924Z"
     },
     "settingsPanel": {
       "hash": "f5512717324f60fa02111b99831c46dc511b10e3a350d8bc9a01cd270225a297",
       "bytes": 78921,
-      "captured_at": "2026-06-18T02:32:18.247Z"
+      "captured_at": "2026-06-19T16:49:18.924Z"
     },
     "slamStop": {
       "hash": "ddd7e0451b62170a7fd3f31cc3cf356e6c99724b922917f12b8e78e7068eb6df",
       "bytes": 78673,
-      "captured_at": "2026-06-18T02:32:19.281Z"
+      "captured_at": "2026-06-19T16:49:19.924Z"
     },
     "slingoSpinEngine": {
       "hash": "c8a69ae69a760cf4db6886e8d3869917869db8e7562dc0700bc24e4b84795df5",
       "bytes": 79177,
-      "captured_at": "2026-06-18T02:32:20.314Z"
+      "captured_at": "2026-06-19T16:49:20.923Z"
     },
     "spainComplianceGate": {
       "hash": "7f8ad566266a32812c504aa6e5c41e45f6d9eb21ac342062bac0b158d018ddae",
       "bytes": 79679,
-      "captured_at": "2026-06-18T02:32:21.348Z"
+      "captured_at": "2026-06-19T16:49:21.916Z"
     },
     "spinControl": {
       "hash": "9180c8703dbdeccdf4275f3056c935b32f52994276b8c05419f93a38c0ab4351",
       "bytes": 78781,
-      "captured_at": "2026-06-18T02:32:22.381Z"
+      "captured_at": "2026-06-19T16:49:22.913Z"
     },
     "splitSymbol": {
       "hash": "66b7ac6ef1af9358cc1fe57efbb252fec610c9d1a7e349fe35e7562937f56bf1",
       "bytes": 78761,
-      "captured_at": "2026-06-18T02:32:23.414Z"
+      "captured_at": "2026-06-19T16:49:23.915Z"
     },
     "stageBadge": {
       "hash": "7d4c4550cedfac580988b84fab6429ac62cb7eca574cc7f3d679decc1eadb757",
       "bytes": 78941,
-      "captured_at": "2026-06-18T02:32:24.449Z"
+      "captured_at": "2026-06-19T16:49:24.915Z"
     },
     "stickyMeter": {
       "hash": "ec8b1d5a958a31737397170c5670874ab855191aca959c3d1538cfee199dd796",
       "bytes": 78846,
-      "captured_at": "2026-06-18T02:32:25.481Z"
+      "captured_at": "2026-06-19T16:49:25.914Z"
     },
     "stickyWild": {
       "hash": "dd46dad51c79d4b007c04e000e70c2c4fe4b5c4c12a872ab3ebdc9226ebb265d",
       "bytes": 78662,
-      "captured_at": "2026-06-18T02:32:26.515Z"
+      "captured_at": "2026-06-19T16:49:26.911Z"
     },
     "stormMultiplierReel": {
       "hash": "58260f8b0675835b028feb58b2f8c767fc7c4f437f73099763dbe735a4138417",
       "bytes": 79230,
-      "captured_at": "2026-06-18T02:32:27.548Z"
+      "captured_at": "2026-06-19T16:49:27.906Z"
     },
     "streakBonus": {
       "hash": "e6c176e1f04ca4e44f63cae22880d908720124ffdc10aa493609e53e6b511bbd",
       "bytes": 79010,
-      "captured_at": "2026-06-18T02:32:28.580Z"
+      "captured_at": "2026-06-19T16:49:28.903Z"
     },
     "superSymbol": {
       "hash": "d8fbb5a642d9a2058b1108461f89bbd14c6033d672333043b2ab7eacb53322cf",
       "bytes": 78987,
-      "captured_at": "2026-06-18T02:32:29.615Z"
+      "captured_at": "2026-06-19T16:49:29.899Z"
     },
     "superchargedFs": {
       "hash": "3f938754645b61f56cec193f3652891499d9dda61e31f218eaf80c4a6f268d74",
       "bytes": 79313,
-      "captured_at": "2026-06-18T02:32:30.648Z"
+      "captured_at": "2026-06-19T16:49:30.899Z"
     },
     "symbolInfoPopover": {
       "hash": "2adfae9e3d4a36147ad6ed8d6757094efe2bf93b70eda6e0a0ecc76f4b20a803",
       "bytes": 79507,
-      "captured_at": "2026-06-18T02:32:31.681Z"
+      "captured_at": "2026-06-19T16:49:31.899Z"
     },
     "symbolStackCollapse": {
       "hash": "4e7d60c2257623bc9d46a93d755f32c171fb71267f4b066563379e96d6dd43ea",
       "bytes": 79693,
-      "captured_at": "2026-06-18T02:32:32.713Z"
+      "captured_at": "2026-06-19T16:49:32.895Z"
     },
     "symbolUpgrade": {
       "hash": "c941f3a32665b42a6ad1d4ad90af4780544978a8e292c5ffe75e4309237bf6db",
       "bytes": 79142,
-      "captured_at": "2026-06-18T02:32:33.748Z"
+      "captured_at": "2026-06-19T16:49:33.889Z"
     },
     "syncReels": {
       "hash": "13363df2b691a7b451b0108b6f27c521b47e520e7a491a3964d9eba212522987",
       "bytes": 78797,
-      "captured_at": "2026-06-18T02:32:34.781Z"
+      "captured_at": "2026-06-19T16:49:34.882Z"
     },
     "triggerCounting": {
       "hash": "9fa5c39de93ebf38250a2012143109a25d0d0ec7ea87b511ec175732ef3d937a",
       "bytes": 79303,
-      "captured_at": "2026-06-18T02:32:35.797Z"
+      "captured_at": "2026-06-19T16:49:35.882Z"
     },
     "tumble": {
       "hash": "aef91a0f66e5857356379de761f02545cb6ac7786cf7f83b85f98a9447630b27",
       "bytes": 78500,
-      "captured_at": "2026-06-18T02:32:36.797Z"
+      "captured_at": "2026-06-19T16:49:36.882Z"
     },
     "turboMode": {
       "hash": "5bf3d8a5231dc34a2c8dc8351e8cece73c5fd4f19f6882eaeead61c1eca92576",
       "bytes": 78684,
-      "captured_at": "2026-06-18T02:32:37.786Z"
+      "captured_at": "2026-06-19T16:49:37.881Z"
     },
     "uiToast": {
       "hash": "6bcd6df4308c42ffe957180ce75f59af7d1fe310829e874adb7dd2711491c90d",
       "bytes": 78621,
-      "captured_at": "2026-06-18T02:32:38.779Z"
+      "captured_at": "2026-06-19T16:49:38.881Z"
     },
     "universalForcePanel": {
       "hash": "3f0336aa59d7c7501324d3ba62c90ce4b4743728bb5623196b0aa078dedf77e4",
       "bytes": 79396,
-      "captured_at": "2026-06-18T02:32:39.797Z"
+      "captured_at": "2026-06-19T16:49:39.880Z"
     },
     "walkingWild": {
-      "hash": "ff21b11a990fa637fb25fea794cd2d2f2879306511e3d26792535c675c78e487",
-      "bytes": 78754,
-      "captured_at": "2026-06-18T02:32:40.821Z"
+      "hash": "be2a8fe29880040e88ab2283e91f4515ba4d7c63f1af0762c273062958e63d81",
+      "bytes": 78755,
+      "captured_at": "2026-06-19T16:49:40.878Z"
     },
     "weightedWheelSegments": {
       "hash": "01bcd53f1113849c82fc8dafc74f83818853e9477d4273a5fdc903e824b56ccb",
       "bytes": 79604,
-      "captured_at": "2026-06-18T02:32:41.856Z"
+      "captured_at": "2026-06-19T16:49:41.870Z"
     },
     "wheelBonus": {
       "hash": "a90c7f64ecd51c68d8e20f4a98ea3408ccc20d3863fe135e809f01fc1b042952",
       "bytes": 78785,
-      "captured_at": "2026-06-18T02:32:42.888Z"
+      "captured_at": "2026-06-19T16:49:42.865Z"
     },
     "wheelBonusReveal": {
       "hash": "7e33a34767e097e8d9b18423501eed976481f6fe1123653cf1dd7b3102c4c9d7",
       "bytes": 79296,
-      "captured_at": "2026-06-18T02:32:43.922Z"
+      "captured_at": "2026-06-19T16:49:43.866Z"
     },
     "wheelSpinEngine": {
       "hash": "ac193f20e4b16e3c802e27e563c3a7b32f9fa6de319f8018bca997e76b85c631",
       "bytes": 78960,
-      "captured_at": "2026-06-18T02:32:44.954Z"
+      "captured_at": "2026-06-19T16:49:44.866Z"
     },
     "wildCollectionTrail": {
       "hash": "5477f10aa9eef3095ddfde19003f1178e97b461b0dca2429913078766322bafe",
       "bytes": 79253,
-      "captured_at": "2026-06-18T02:32:45.988Z"
+      "captured_at": "2026-06-19T16:49:45.865Z"
     },
     "wildReel": {
       "hash": "ae8209d52217ee470af3593c75f735ee57b7f1cc3d1031fc6a932e2d62ed44cd",
       "bytes": 78711,
-      "captured_at": "2026-06-18T02:32:47.022Z"
+      "captured_at": "2026-06-19T16:49:46.862Z"
     },
     "winCap": {
       "hash": "4b7fc54dc350e3a5296602caa5268f03016092cca25559cc05800c6eb40768c7",
       "bytes": 78604,
-      "captured_at": "2026-06-18T02:32:48.055Z"
+      "captured_at": "2026-06-19T16:49:47.856Z"
     },
     "winLineFlash": {
       "hash": "cee9ae65f6775fa48bde84e4b32bb54726c8f338c4e9c18745444928d762be48",
       "bytes": 78610,
-      "captured_at": "2026-06-18T02:32:49.088Z"
+      "captured_at": "2026-06-19T16:49:48.856Z"
     },
     "winMultiplierBadge": {
       "hash": "b22bb0231a635a4042499fd120e341efde097d1beee94d63b7d9736c1dca621b",
       "bytes": 79212,
-      "captured_at": "2026-06-18T02:32:50.122Z"
+      "captured_at": "2026-06-19T16:49:49.856Z"
     },
     "winPresentation": {
       "hash": "c8c80dd130ec935c4b8ffc7a77b9e4a32b958e3be2936ca353b543ce2d1889b2",
       "bytes": 79031,
-      "captured_at": "2026-06-18T02:32:51.156Z"
+      "captured_at": "2026-06-19T16:49:50.845Z"
     },
     "winRollup": {
       "hash": "17fdbaa9db7c840db4a70a622f9192f15a00cc1505b72202c06ee1c264dac280",
       "bytes": 78544,
-      "captured_at": "2026-06-18T02:32:52.188Z"
+      "captured_at": "2026-06-19T16:49:51.848Z"
     },
     "winwaysIndicator": {
       "hash": "8743a4671f2344943482082d2aeaa2d2846a6774cfe24ccc01b98d59835f6907",
       "bytes": 79283,
-      "captured_at": "2026-06-18T02:32:53.214Z"
+      "captured_at": "2026-06-19T16:49:52.845Z"
     }
   }
 }
