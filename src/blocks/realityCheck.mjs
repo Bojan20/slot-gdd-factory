@@ -801,6 +801,13 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
       var now = _now();
       if (!STATE._lastTickWall) { STATE._lastTickWall = now; return; }
       var delta = now - STATE._lastTickWall;
+      /* FIX-8 M5 (2026-06-19) — NTP backward clock skew tolerance.
+       * Negative delta resnaps wall reference without state corruption. */
+      if (delta < 0) {
+        try { if (typeof console !== 'undefined' && console.warn) console.warn('[realityCheck] backward clock skew detected, resnapping', { delta: delta }); } catch (_) {}
+        STATE._lastTickWall = now;
+        return;
+      }
       /* Defensive clamp — if the tab was backgrounded for hours, don't
        * fire the modal 8 times in a row. We add at most one interval per
        * tick (the player has been afk; reality-check makes no sense yet). */
@@ -906,7 +913,14 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
             jurisdiction: __W58SE_JURISDICTION,
             rule: 'SE-SIFS-2018:6-7.2',
           });
-        } catch (_) {}
+        } catch (e) {
+          /* FIX-8 M1 (2026-06-19) — regulator-hook surfaces, never swallows.
+           * SE SIFS 2018:6 §7.2 mandate must be auditable; loguj. */
+          try { if (typeof console !== 'undefined' && console.warn) console.warn('[realityCheck] SE play-time emit failed', e); } catch (_) {}
+          if (typeof window !== 'undefined' && typeof window.__telemetry !== 'undefined') {
+            try { window.__telemetry('realityCheck.SE.error', { rule: 'SE-SIFS-2018:6-7.2', message: String(e && e.message || e) }); } catch (_) {}
+          }
+        }
       }
     }
 

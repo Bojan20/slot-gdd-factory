@@ -681,6 +681,17 @@ export function emitSessionTimeoutRuntime(cfg = defaultConfig()) {
       var now = _now();
       if (!STATE.lastTickWall) { STATE.lastTickWall = now; return; }
       var delta = now - STATE.lastTickWall;
+      /* FIX-8 M5 (2026-06-19) — NTP backward clock skew tolerance.
+       * Date.now() can move BACKWARD when the OS NTP daemon corrects a
+       * drift or a user toggles timezone. delta becomes negative,
+       * sessionMs accumulates wrong, and the player gets a stale or
+       * never-firing warning. Industry baseline: ignore negative deltas
+       * (treat as zero-elapsed) and resnap the wall reference. */
+      if (delta < 0) {
+        try { if (typeof console !== 'undefined' && console.warn) console.warn('[sessionTimeout] backward clock skew detected, resnapping', { delta: delta }); } catch (_) {}
+        STATE.lastTickWall = now;
+        return;
+      }
       if (delta > TICK_DELTA_CAP) delta = TICK_DELTA_CAP;
       STATE.sessionMs += delta;
       STATE.lastTickWall = now;

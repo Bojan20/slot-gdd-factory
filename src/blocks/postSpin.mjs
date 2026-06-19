@@ -186,7 +186,16 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
              re-enable spinButton so a stalled shape can't strand the
              player. Happy path: FSM_enterIntro owns button state. */
           var _celebTimeout = setTimeout(function() {
-            try { FSM_enterIntro(award, scatters); } catch (_) {}
+            /* FIX-8 M1 (2026-06-19) — hot-path silent catch hardening.
+             * FSM_enterIntro fail must surface; tihi pad ostavlja FS
+             * trigger u limbu (player ne ulazi u FS round, scatter
+             * count gubitak). Senior-grade JSDoc contract: log + telemetry. */
+            try { FSM_enterIntro(award, scatters); } catch (e) {
+              try { if (typeof console !== 'undefined' && console.warn) console.warn('[postSpin] FSM_enterIntro failed', e); } catch (_) {}
+              if (typeof window !== 'undefined' && typeof window.__telemetry !== 'undefined') {
+                try { window.__telemetry('postSpin.FSM_enterIntro.error', { message: String(e && e.message || e) }); } catch (_) {}
+              }
+            }
             _emitPostSpin(duringFs, []);
             if (spinButton) spinButton.disabled = false;
           }, ${c.celebrationTimeoutMs});
@@ -249,7 +258,13 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
             _emitPostSpin(duringFs, []);
             if (FSM.spinsRemaining <= 0) FSM_enterOutro();
             else FSM_runNextFsSpin();
-          } catch (_) {}
+          } catch (e) {
+            /* FIX-8 M1 (2026-06-19) — hot-path silent catch hardening. */
+            try { if (typeof console !== 'undefined' && console.warn) console.warn('[postSpin] FS retrigger path failed', e); } catch (_) {}
+            if (typeof window !== 'undefined' && typeof window.__telemetry !== 'undefined') {
+              try { window.__telemetry('postSpin.FS_retrigger.error', { message: String(e && e.message || e) }); } catch (_) {}
+            }
+          }
         }, ${c.celebrationTimeoutMs});
         _celeb.then(() => {
           clearTimeout(_retriggerTm);

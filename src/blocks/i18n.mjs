@@ -548,7 +548,10 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
             locale: state.locale, currency: state.currency, count: painted,
           });
         }
-      } catch (_) {}
+      } catch (e) {
+        /* FIX-8 M1 (2026-06-19) — locale fallback path surfaces. */
+        try { if (typeof console !== 'undefined' && console.warn) console.warn('[i18n] locale apply failed, fallback to en', e); } catch (_) {}
+      }
       return true;
     }
 

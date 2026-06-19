@@ -375,7 +375,12 @@ if (typeof window !== "undefined") {
    was left running by a rapid re-spin (race against animation timers). The
    chain itself is async; this just sets a kill flag the loop honours. */
 let _TUMBLE_KILL_TOKEN = 0;
-if (typeof HookBus !== 'undefined') {
+/* FIX-8 M16 (2026-06-19) — idempotency under HMR re-bake. Sentinel guards
+ * against duplicate HookBus subscriptions when the runtime is re-emitted. */
+if (typeof window !== 'undefined' && window.__TUMBLE_WIRED__) {
+  /* already wired in a prior HMR pass — listeners stay, do nothing */
+} else if (typeof HookBus !== 'undefined') {
+  if (typeof window !== 'undefined') window.__TUMBLE_WIRED__ = true;
   HookBus.on('preSpin', () => {
     _TUMBLE_KILL_TOKEN++;
     /* Wave Z (2026-06-10): on EVERY preSpin, clear tumble animation

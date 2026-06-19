@@ -212,6 +212,21 @@ export function emitBonusOverlayMutexRuntime(cfg = defaultConfig()) {
   _bindKind('moneyGrab');
   _bindKind('pathBonus');
 
+  /* FIX-8 M9 (2026-06-19) — extensible kind registry.
+   * Late-bound bonus blocks (added in C-Wave or future LEGO waves) can
+   * register themselves at runtime through window.bonusOverlayMutexRegister
+   * (kindName, requestEvent, endedEvent). KIND_MAP_LIT is mutated in-
+   * place; subsequent _bindKind reads the new entry. Idempotent: re-
+   * registering the same kindName is a no-op. */
+  window.bonusOverlayMutexRegister = function registerBonusKind(kindName, requestEv, endedEv) {
+    if (typeof kindName !== 'string' || !kindName) return false;
+    if (KIND_MAP_LIT[kindName]) return false;  /* already registered */
+    if (typeof requestEv !== 'string' || typeof endedEv !== 'string') return false;
+    KIND_MAP_LIT[kindName] = { request: requestEv, ended: endedEv };
+    _bindKind(kindName);
+    return true;
+  };
+
   /* FIX-6 (deep QA #9, 2026-06-19) — public busy-check API. Bonus blocks
    * MUST call this in their _enter() before opening overlay so the
    * mutex enforces single-bonus-at-a-time at the DOM-write boundary,

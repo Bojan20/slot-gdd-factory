@@ -376,6 +376,16 @@ export function emitSlamStopRuntime(cfg = defaultConfig()) {
             phase: STATE.currentPhase || 'post',
             source: s,
           });
+          /* FIX-8 M8 (2026-06-19) — slam during rollup = also a skip.
+           * If a rollup or win-presentation cycle is in flight when the
+           * player slams, the rollup must collapse to final state, not
+           * play out naturally. Emit a paralel skipRequested so winRollup
+           * + winPresentation + freeSpins outro all collapse together. */
+          if (typeof window.__SLOT_WP_ACTIVE__ !== 'undefined' && window.__SLOT_WP_ACTIVE__ === true) {
+            try {
+              window.HookBus.emit('onSkipRequested', { phase: 'rollup', source: s });
+            } catch (_) {}
+          }
         } catch (e) {
           /* A listener throwing must not leave the block in a locked
            * state — re-arm so a subsequent (rare) recovery click can

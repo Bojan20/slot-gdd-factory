@@ -193,6 +193,12 @@ export function findConsecutiveRuns(symbolPositions, reelCount) {
 }
 
 /**
+ * FIX-8 M12 (2026-06-19) — topology applicability note.
+ * allWaysEval operates on RECTANGULAR grid arrays. For hex/pyramid
+ * topologies, hexClusterEngine + pyramidGridEngine own the eval surface
+ * (different adjacency rules). Rectangular slot.kind values supported:
+ * rectangular, megaclusters, lock_respin, expanding, variable_reel.
+ *
  * Pure helper — evaluate an all-ways grid for winning combinations.
  *
  * @param {Array<Array<string>>} grid   Column-major: grid[reelIdx][rowIdx].

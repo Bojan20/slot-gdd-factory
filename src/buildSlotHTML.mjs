@@ -1580,6 +1580,35 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   /* ── HookBus FIRST — every feature block registers on it. ────────── */
   ${emitHookBusRuntime(resolveHookBusConfig(model))}
 
+  /* FIX-8 M6 (2026-06-19) — sessionId monotonic token.
+   * Industry baseline (12+ regulator checkpoints): every spin needs an
+   * id that is STRICTLY increasing across all tabs of the same session.
+   * Multi-tab use case → spin orphan if id collisions occur. Solution:
+   * a monotonic counter seeded from sessionStorage + per-spin atomic
+   * increment. Idempotent re-bake guard. */
+  if (typeof window !== 'undefined' && typeof window.__slotSessionId === 'undefined') {
+    try {
+      var __SS_KEY = '__slotSessionMono';
+      var __SS_initial = 0;
+      try {
+        var raw = sessionStorage.getItem(__SS_KEY);
+        if (raw) __SS_initial = parseInt(raw, 10) || 0;
+      } catch (_) {}
+      window.__slotSessionId = function nextSessionId() {
+        var prev = Number.isFinite(window.__slotSessionId._last) ? window.__slotSessionId._last : __SS_initial;
+        var next = prev + 1;
+        window.__slotSessionId._last = next;
+        try { sessionStorage.setItem(__SS_KEY, String(next)); } catch (_) {}
+        return next;
+      };
+      window.__slotSessionId._last = __SS_initial;
+    } catch (e) {
+      /* Defensive fallback: simple in-memory counter if storage blocked. */
+      var __ssfallback = 0;
+      window.__slotSessionId = function() { return ++__ssfallback; };
+    }
+  }
+
   /* FIX-8 H4 (2026-06-19) — Shared aria-live announcer helper.
    * Any block can call window.__SR_ANNOUNCE__(message, { assertive: false })
    * to push text into the shared SR announce region. Default 'polite'

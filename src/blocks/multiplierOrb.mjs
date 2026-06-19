@@ -297,7 +297,10 @@ if (typeof HookBus !== 'undefined' &&
         c.classList.remove('cell--orb');
         c.removeAttribute('data-orb-value');
       });
-    } catch (_) {}
+    } catch (e) {
+      /* FIX-8 M1 (2026-06-19) — orb render path is UI-critical. */
+      try { if (typeof console !== 'undefined' && console.warn) console.warn('[multiplierOrb] cell render failed', e); } catch (_) {}
+    }
   }, { priority: 30 });
   /* Fresh FS round → clear BONUS_MULTIPLIER so the next round starts from
      the FREESPINS.multiplier.start baseline. */

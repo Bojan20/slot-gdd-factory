@@ -935,6 +935,17 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
     }
 
     function getMult() { return _mult; }
+    /* FIX-8 M10 (2026-06-19) — MAX-aggregate API. Multiple writers
+     * (WWS, ladder, persistentMultiplier, etc.) share the same setMult
+     * pipeline. Last-writer-wins drifts RTP. setMultMax(v) clamps to
+     * Math.max(current, v) and emits onMultiplierChanged only when
+     * the value actually grows. */
+    function setMultMax(v) {
+      const n = Number(v);
+      if (Number.isFinite(n) && n >= 0 && n > _mult) {
+        setMult(n);
+      }
+    }
     function setMult(v) {
       const n = Number(v);
       if (Number.isFinite(n) && n >= 0) {
@@ -1023,7 +1034,7 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
 
     return {
       on, off, once, emit, emitAsync, waitFor,
-      getMult, setMult, addMult, resetMult, setMultBaseline,
+      getMult, setMult, setMultMax, addMult, resetMult, setMultBaseline,
       listenerCount,
       EVENTS,
     };

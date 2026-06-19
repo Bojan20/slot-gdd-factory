@@ -427,6 +427,17 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
   var BUSY = false;
   var DEBOUNCE_MS = ${debounceMs};
 
+  /* FIX-8 M7 (2026-06-19) — FS-active guard.
+   * Force chip during an active FS round mixes BASE state with FS state.
+   * big_win tier force tokom FS = potencijalno duplo plaćanje (FS mult ×
+   * forced tier). Industry baseline: force chip is BASE-only. */
+  function _isFsActive() {
+    if (typeof window === 'undefined') return false;
+    if (window.FREESPINS && window.FREESPINS.active === true) return true;
+    if (window.FSM && (window.FSM.phase === 'FS_INTRO' || window.FSM.phase === 'FS_ACTIVE' || window.FSM.phase === 'FS_OUTRO')) return true;
+    return false;
+  }
+
   function _runSpin() {
     if (typeof window.runOneBaseSpin === 'function') { window.runOneBaseSpin(); return true; }
     if (typeof window.runSpin === 'function') { window.runSpin(); return true; }
@@ -437,6 +448,15 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
 
   function _onChipClick(kind, label, btn) {
     if (BUSY) return;
+    /* FIX-8 M7 (2026-06-19) — FS-active guard. Reject force chip when
+     * a FS round is in flight to prevent base+FS state contamination. */
+    if (_isFsActive()) {
+      try { if (typeof console !== 'undefined' && console.warn) console.warn('[UFP] force chip rejected — FS round active', { kind: kind }); } catch (_) {}
+      try { btn.setAttribute('aria-busy', 'false'); } catch (_) {}
+      /* Brief visual nudge so the player understands why the chip ignored. */
+      try { btn.classList.add('is-rejected'); setTimeout(function(){ try { btn.classList.remove('is-rejected'); } catch (_) {} }, 600); } catch (_) {}
+      return;
+    }
     BUSY = true;
     try { btn.setAttribute('aria-busy', 'true'); } catch (_) {}
 

@@ -173,7 +173,9 @@ const EXPECTED_EMIT_OWNERS = {
    * Complete event back. */
   onSlamRequested: ['slamStop.mjs'],
   onSlamComplete:  ['reelEngine.mjs'],
-  onSkipRequested: ['forceSkip.mjs'],
+  /* FIX-8 M8 (2026-06-19): slamStop emits onSkipRequested as parallel
+   * signal when slam fires during win-presentation. */
+  onSkipRequested: ['forceSkip.mjs', 'slamStop.mjs'],
   /* onSkipComplete is emitted by whichever block owns the cancelled
    * animation: winPresentation for rollup/celebration, scatterCelebration
    * for its banner phase, freeSpins for FS intro/outro. Multi-owner. */
