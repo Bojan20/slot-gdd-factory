@@ -1,28 +1,35 @@
 # Master TODO — slot-gdd-factory
 
-> **2026-06-19 · HEAD `9ab1b26`** · Σ **166 LEGO blokova** · Σ **200 testova** · 0 fail
+> **2026-06-19 · HEAD `4dff3c2`** · Σ **166 LEGO blokova** · Σ **1019 testova/asserts** · 0 fail
 >
 > ---
 >
-> ## 🟢 STANJE SADA — Live test gates (HEAD 9ab1b26)
+> ## 🟢 STANJE SADA — Live test gates (HEAD 4dff3c2)
 >
 > ```
-> ┌─────────────────────────────┬─────────┬───────────────────────────────────────┐
-> │ Gate                        │ Status  │ Detalj                                │
-> ├─────────────────────────────┼─────────┼───────────────────────────────────────┤
-> │ LEGO gate (8 invariants)    │ 8/8 ✅  │ 284 events, 0 drift, 0 ownership      │
-> │ Block test parity           │ 166/166 │ Svaki blok ima matching test fajl     │
-> │ Anti-vendor grep            │ 0 hits  │ Svuda neutral                         │
-> │ HMR full sweep (166 bl.)    │ 166/166 │ p95 12ms, max 13ms (SLA 2000ms)       │
-> │ hotReload.test.mjs          │ 23/23   │ Block unit invariants                 │
-> │ _dev-server.test.mjs        │ 18/18   │ Pure-fn safety probes                 │
-> │ _p8-hot-reload-probe        │ 7/7     │ Live SSE + endpoints                  │
-> │ Manifest sweep              │ 17/17   │ block-manifest.json fresh             │
-> │ Parse-real (4 GDD fixtures) │ 4/4     │ WoO, GoO, HnMP, Starlight             │
-> │ Render-grid (20 fixtures)   │ 20/20   │ Svi engine kind-ovi                   │
-> │ bonusBuyMenu.test.mjs (NEW) │ 57/57   │ LEGO-BUY Wave (4f40cb1)               │
-> │ anteBetLadder.test.mjs(NEW) │ 52/52   │ LEGO-BUY Wave (4f40cb1)               │
-> └─────────────────────────────┴─────────┴───────────────────────────────────────┘
+> ┌──────────────────────────────────┬───────────┬────────────────────────────────────┐
+> │ Gate                             │ Status    │ Detalj                             │
+> ├──────────────────────────────────┼───────────┼────────────────────────────────────┤
+> │ LEGO gate (8 invariants)         │ 8/8 ✅    │ 284 events, 0 drift, 0 ownership   │
+> │ Block test parity                │ 166/166   │ Svaki blok ima matching test fajl  │
+> │ Anti-vendor grep                 │ 0 hits    │ Svuda neutral                      │
+> │ HMR full sweep (166 bl.)         │ 166/166   │ p95 12ms, max 13ms (SLA 2000ms)    │
+> │ hotReload.test.mjs               │ 23/23     │ Block unit invariants              │
+> │ _dev-server.test.mjs             │ 18/18     │ Pure-fn safety probes              │
+> │ _p8-hot-reload-probe             │ 7/7       │ Live SSE + endpoints               │
+> │ Manifest sweep                   │ 17/17     │ block-manifest.json fresh          │
+> │ Parse-real (4 GDD fixtures)      │ 4/4       │ WoO, GoO, HnMP, Starlight          │
+> │ Render-grid (20 fixtures)        │ 20/20     │ Svi engine kind-ovi                │
+> │ bonusBuyMenu.test.mjs            │ 57/57     │ LEGO-BUY Wave (4f40cb1)            │
+> │ anteBetLadder.test.mjs           │ 52/52     │ LEGO-BUY Wave (4f40cb1)            │
+> │ bonusBuy regression              │ 21/21     │ Mutex sa menu radi                 │
+> │ anteBet regression               │ 23/23     │ Mutex sa ladder radi               │
+> │ gridProfile registry             │ 28/28     │ 9 novih per-kind veto entries      │
+> │ Cross-engine config parity (NEW) │ 450/450   │ ALT-D — 18 kinds × 4 blokova       │
+> │ Live HTML render parity (NEW)    │ 190/190   │ ALT-D — buildSlotHTML × 18 kinds   │
+> ├──────────────────────────────────┼───────────┼────────────────────────────────────┤
+> │ Σ                                │ 1019/1019 │ 0 fail                             │
+> └──────────────────────────────────┴───────────┴────────────────────────────────────┘
 > ```
 >
 > ---
@@ -47,10 +54,11 @@
 > │ B-8  │ LEGO-THEME               │ OTVOREN  │ themePicker + paletteRoulette   │
 > ├──────┼──────────────────────────┼──────────┼─────────────────────────────────┤
 > │ ALT-A│ Playwright deep QA       │ OTVOREN  │ Headless probe po 4 GDD-a       │
+> │      │                          │          │ → SLEDEĆI po Bokijevoj komandi  │
 > │ ALT-B│ HMR regression           │ ✅ DONE  │ HEAD 9ab1b26 — 166/166 sweep    │
 > │ ALT-C│ Screen-reader walk       │ OTVOREN  │ VoiceOver/NVDA transcript       │
-> │ ALT-D│ Cross-engine parity      │ OTVOREN  │ LEGO-BUY na hex/wheel/crash/    │
-> │      │                          │          │ plinko (zasad samo slot)        │
+> │ ALT-D│ Cross-engine parity      │ ✅ DONE  │ HEAD 4dff3c2 — 31 rupa zatvorenih│
+> │      │                          │          │ 450 config + 190 render asserts │
 > │ ALT-E│ Block-manifest docs      │ OTVOREN  │ Per-block industry-ref + GDD    │
 > │      │                          │          │ knob spec za svih 166           │
 > └──────┴──────────────────────────┴──────────┴─────────────────────────────────┘
@@ -58,18 +66,77 @@
 >
 > ---
 >
-> ## 🎬 ZADNJIH 5 COMMIT-A (chronological, novije gore)
+> ## 🎬 ZADNJIH 6 COMMIT-A (chronological, novije gore)
 >
 > ```
 > ┌──────────┬──────────────────────────────────────────────────────────────────┐
 > │ HEAD     │ Šta                                                              │
 > ├──────────┼──────────────────────────────────────────────────────────────────┤
+> │ 4dff3c2  │ fix(parity): cross-engine + render parity — 31 rupa zatvorenih  │
+> │ 9228265  │ docs(master-todo): full refresh — live status + backlog          │
 > │ 9ab1b26  │ test(hmr): ultimate hot-reload sweep — 166/166 blocks, p95 12ms  │
 > │ 21e45c2  │ docs(master-todo): defer LEGO-PROG backlog (no code)             │
 > │ f87de58  │ HARD RULE #4: audio i math OFF-LIMITS u odgovorima               │
 > │ 4f40cb1  │ feat(LEGO-BUY): multi-tier bonus buy menu + ante-bet ladder     │
-> │ 9e5b713  │ docs(CLAUDE): hard rule #3 — tables must be drawn (box ASCII)    │
 > └──────────┴──────────────────────────────────────────────────────────────────┘
+> ```
+>
+> ---
+>
+> ## 🏆 ALT-D Cross-Engine Parity Sweep (HEAD 4dff3c2 · 2026-06-19 14:55)
+>
+> Boki: *"1 ultimativno detaljno sa svim mogućim proverama"* — dubok
+> probe za Wave LEGO-BUY blokove kroz svih 18 SHAPE.kind-ova.
+>
+> ### 31 rupa otkrivenih PRE fix-a
+>
+> ```
+> ┌────────────────────────────────────────────────────────────────┬─────┐
+> │ Rupa                                                           │ N   │
+> ├────────────────────────────────────────────────────────────────┼─────┤
+> │ bonusBuyMenu.{crash,plinko,radial,wheel}                       │ 4   │
+> │ — explicit `enabled:true` topology veto bypass                 │     │
+> │ anteBetLadder.{cluster,crash,hex,lock,mega,plinko,radial,      │ 9   │
+> │ slingo,wheel} — explicit `enabled:true` topology veto bypass   │     │
+> │ anteBet.{...9 kinds} — features[] auto-enable veto bypass      │ 9   │
+> │ (PRE-EXISTING, ne LEGO-BUY uvod)                               │     │
+> │ mutex.{...9 kinds} — single-button fallback nije radio         │ 9   │
+> │ kad menu/ladder vetoed (kaskadna posledica gornjih)            │     │
+> ├────────────────────────────────────────────────────────────────┼─────┤
+> │ Σ                                                              │ 31  │
+> └────────────────────────────────────────────────────────────────┴─────┘
+> ```
+>
+> ### 7 source fajlova izmenjenih
+>
+> ```
+> ┌──────────────────────────────────────────┬────────────────────────────┐
+> │ Fajl                                     │ Promena                    │
+> ├──────────────────────────────────────────┼────────────────────────────┤
+> │ src/registry/gridProfile.mjs             │ +9 per-kind veto entries   │
+> │ src/blocks/bonusBuy.mjs                  │ explicit-enabled veto check│
+> │ src/blocks/bonusBuyMenu.mjs              │ explicit-enabled veto check│
+> │ src/blocks/anteBet.mjs                   │ 2× veto check (explicit +  │
+> │                                          │ features[] auto-enable)    │
+> │ src/blocks/anteBetLadder.mjs             │ explicit-enabled veto check│
+> │ tools/_ultimate-cross-engine-parity.mjs  │ NEW — 450 asserts          │
+> │ tools/_ultimate-render-parity.mjs        │ NEW — 190 asserts          │
+> └──────────────────────────────────────────┴────────────────────────────┘
+> ```
+>
+> ### Rezultat (PRE → POSLE)
+>
+> ```
+> ┌────────────────────────────────────┬─────────────────┬──────────────┐
+> │ Test gate                          │ Pre fix-a       │ Posle fix-a  │
+> ├────────────────────────────────────┼─────────────────┼──────────────┤
+> │ Cross-engine config parity         │ 419/450 (31×)   │ 450/450 ✅   │
+> │ Live HTML render parity            │ n/a             │ 190/190 ✅   │
+> │ Wave LEGO-BUY 2 nova bloka units   │ 109/109         │ 109/109 ✅   │
+> │ Legacy bonusBuy + anteBet units    │  44/44          │  44/44 ✅    │
+> │ LEGO gate + gridProfile + HMR      │ 202/202         │ 202/202 ✅   │
+> │ Σ                                  │ 794/825         │ 1019/1019 ✅ │
+> └────────────────────────────────────┴─────────────────┴──────────────┘
 > ```
 >
 > ---
