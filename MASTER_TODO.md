@@ -1,6 +1,6 @@
 # Master TODO — slot-gdd-factory
 
-> **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-FS3.3** landed — DEFERRED QA SWEEP
+> **2026-06-19 · HEAD `ee86503`** · 🏆 Wave **LEGO-FS3.3** landed — DEFERRED QA SWEEP
 >
 > ## 🔧 Wave LEGO-FS3.3 — Adapter wave (162 → 164)
 >
@@ -58,7 +58,7 @@
 >
 > ---
 >
-> **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-FS3** landed — ROADMAP COMPLETE 🎉
+> **2026-06-19 · HEAD `7269b7a`** · 🏆 Wave **LEGO-FS3** landed — ROADMAP COMPLETE 🎉
 >
 > ## 🔄 Wave LEGO-FS3 — 2 nova FS-varijanta bloka (160 → 162) — POSLEDNJI WAVE U ROADMAP-u
 >
@@ -112,13 +112,14 @@
 > | 4 | LEGO-HW2 (H&W variants) | wildTriggerHoldAndWin + holdAndWinReelExpansion | `de7b5ec` |
 > | 5 | LEGO-B2 (Bonus reveal variants) | matchThreeBonusReveal + moneyGrabGrid + pathBonusEngine | `19b42e5` |
 > | 6 | LEGO-ENG (Engine topology) | pyramidGridEngine + hexClusterEngine | `62e55f3` |
-> | 7 | **LEGO-FS3 (Both-ways + height escalation)** | **winBothWaysActivation + fsReelHeightEscalation** | **THIS COMMIT** |
+> | 7 | **LEGO-FS3 (Both-ways + height escalation)** | **winBothWaysActivation + fsReelHeightEscalation** | **`7269b7a`** |
+> | 8 | **LEGO-FS3.3 (Adapter — deferred QA sweep)** | **reelHeightAdapter + bonusOverlayMutex + 2 cross-block guards** | **`ee86503`** |
 >
-> Σ: 7 wave-a · **15 novih blokova** · 147 → 162 · all 7 with multi-agent QA reviews + in-place fixes.
+> Σ: 7 + 1 wave-a · **17 novih blokova** (15 roadmap + 2 adapter sweep) · 147 → **164** · all 8 with multi-agent QA reviews + in-place fixes.
 >
 > ---
 >
-> **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-ENG** landed
+> **2026-06-19 · HEAD `62e55f3`** · 🏆 Wave **LEGO-ENG** landed
 >
 > ## 🔺 Wave LEGO-ENG — 2 nova Engine-topology bloka (158 → 160)
 >
@@ -171,7 +172,7 @@
 >
 > ---
 >
-> **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-B2** landed
+> **2026-06-19 · HEAD `19b42e5`** · 🏆 Wave **LEGO-B2** landed
 >
 > ## 🎁 Wave LEGO-B2 — 3 nova Bonus-reveal bloka (155 → 158)
 >
@@ -225,7 +226,7 @@
 >
 > ---
 >
-> **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-HW2** landed
+> **2026-06-19 · HEAD `de7b5ec`** · 🏆 Wave **LEGO-HW2** landed
 >
 > ## 🔒 Wave LEGO-HW2 — 2 nova H&W-varijanta bloka (153 → 155)
 >
@@ -274,7 +275,7 @@
 >
 > ---
 >
-> **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-FS2** landed
+> **2026-06-19 · HEAD `971fb18`** · 🏆 Wave **LEGO-FS2** landed
 >
 > ## 🎰 Wave LEGO-FS2 — 2 nova FS-varijanta bloka (151 → 153)
 >
@@ -325,7 +326,7 @@
 >
 > ---
 >
-> **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-W2** landed
+> **2026-06-19 · HEAD `74b8e13`** · 🏆 Wave **LEGO-W2** landed (LEGO-EV pin: `7ac9e71`)
 >
 > ## 🐺 Wave LEGO-W2 — 2 nova Wild-varijanta bloka (149 → 151)
 >
@@ -374,7 +375,7 @@
 >
 > ---
 >
-> **2026-06-19 · HEAD pending** · 🚀 LEGO LIBRARY COVERAGE-GAP ROADMAP
+> **2026-06-19 · HEAD `8823a7a` (roadmap doc) → all 7 + 1 waves SHIPPED** · 🚀 LEGO LIBRARY COVERAGE-GAP ROADMAP — ✅ COMPLETE
 >
 > ## 🗺️ COMPLETE WAVE ROADMAP — preostale industry varijante (2026-06-19)
 >
@@ -400,13 +401,14 @@
 >
 > | # | Wave | Blokovi | Industry ref | Priority | Est | Status |
 > |:-:|:--|:--|:--|:-:|:-:|:-:|
-> | 1 | **LEGO-EV** Evaluator | `allWaysEval`, `bidirectionalWaysEval` | industry universal · 243-both-ways pattern | 🔴 | 4-5h | ✅ LANDED |
-> | 2 | **LEGO-W2** Wild | `cascadingWildPersistence`, `mysteryWildReveal` | Pragmatic/NetEnt cascade · IGT mystery wild | 🔴 | 3-4h | 📋 queued |
-> | 3 | **LEGO-FS2** FS | `fsSymbolUpgradeEscalation`, `fsPersistentJackpotPool` | LP→HP tier (B64) · Relax/Wazdan progressive jackpot | 🔴 | 3-4h | 📋 queued |
-> | 4 | **LEGO-HW2** Hold & Win | `wildTriggerHoldAndWin`, `holdAndWinReelExpansion` | Aristocrat Dragon Link · Yggdrasil row expand | 🟡 | 3-4h | 📋 queued |
-> | 5 | **LEGO-B2** Bonus | `matchThreeBonusReveal`, `moneyGrabGrid`, `pathBonusEngine` | Pragmatic/Relax 3×3 match · EGT/Hacksaw position | 🟡 | 5-6h | 📋 queued |
-> | 6 | **LEGO-ENG** Engine | `pyramidGridEngine`, `hexClusterEngine` | 1-2-3-4-5 reels · NetEnt hex+cluster fusion | 🟢 | 6-8h | 📋 queued |
-> | 7 | **LEGO-FS3** FS | `winBothWaysActivation`, `fsReelHeightEscalation` | FS-only L↔R · variable rows per retrigger | 🟢 | 2-3h | 📋 queued |
+> | 1 | **LEGO-EV** Evaluator | `allWaysEval`, `bidirectionalWaysEval` | industry universal · 243-both-ways pattern | 🔴 | 4-5h | ✅ LANDED `7ac9e71` |
+> | 2 | **LEGO-W2** Wild | `cascadingWildPersistence`, `mysteryWildReveal` | Pragmatic/NetEnt cascade · IGT mystery wild | 🔴 | 3-4h | ✅ LANDED `74b8e13` |
+> | 3 | **LEGO-FS2** FS | `fsSymbolUpgradeEscalation`, `fsPersistentJackpotPool` | LP→HP tier (B64) · Relax/Wazdan progressive jackpot | 🔴 | 3-4h | ✅ LANDED `971fb18` |
+> | 4 | **LEGO-HW2** Hold & Win | `wildTriggerHoldAndWin`, `holdAndWinReelExpansion` | Aristocrat Dragon Link · Yggdrasil row expand | 🟡 | 3-4h | ✅ LANDED `de7b5ec` |
+> | 5 | **LEGO-B2** Bonus | `matchThreeBonusReveal`, `moneyGrabGrid`, `pathBonusEngine` | Pragmatic/Relax 3×3 match · EGT/Hacksaw position | 🟡 | 5-6h | ✅ LANDED `19b42e5` |
+> | 6 | **LEGO-ENG** Engine | `pyramidGridEngine`, `hexClusterEngine` | 1-2-3-4-5 reels · NetEnt hex+cluster fusion | 🟢 | 6-8h | ✅ LANDED `62e55f3` |
+> | 7 | **LEGO-FS3** FS | `winBothWaysActivation`, `fsReelHeightEscalation` | FS-only L↔R · variable rows per retrigger | 🟢 | 2-3h | ✅ LANDED `7269b7a` |
+> | 8 | **LEGO-FS3.3** Adapter | `reelHeightAdapter`, `bonusOverlayMutex` + 2 cross-block guards | deferred QA sweep (cascading×walking guard + hex×rect anti-double-pay) | 🟡 | 2-3h | ✅ LANDED `ee86503` |
 >
 > ### Definicija "spreman" za svaki blok (15-tačka senior-grade checklist)
 >
@@ -478,7 +480,7 @@
 >
 > ---
 >
-> **2026-06-18 night · HEAD pending** · Wave **LIFECYCLE-FIX** landed
+> **2026-06-18 night · HEAD `406a63f`** · Wave **LIFECYCLE-FIX** landed
 >
 > ## 🚨 LIFECYCLE INTEGRITY FIX — 5 topology engines emit onSpinResult
 >
@@ -550,7 +552,7 @@
 >
 > ---
 >
-> **2026-06-18 late evening · HEAD pending** · Ultimativni **WASH PASS** preko 147 blokova
+> **2026-06-18 late evening · HEAD `009a203`** · Ultimativni **WASH PASS** preko 147 blokova
 >
 > ## 🧼 ULTIMATIVNI WASH PASS (2026-06-18)
 >
@@ -2827,7 +2829,7 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 | Metric | Value |
 |---|---|
-| **LEGO blocks** | **65** (engine 13 / wild 6 / multiplier 5 / fs 4 / round-control 8 / evaluator 5 / feature 12 / ui 7 / audit 2 / regulator 1 / dev-tooling 1 — hotReload joins as the first dev-tooling block from Wave P8) |
+| **LEGO blocks** | **164** (147 baseline + Wave LEGO-EV/W2/FS2/HW2/B2/ENG/FS3/FS3.3 = 7 + 1 wave-a, 17 novih blokova, 2026-06-19 roadmap COMPLETE — block families: engine topology / wild varijante / fs varijante (upgrade + jackpot pool + both-ways + height escalation) / hold-and-win varijante / bonus reveal varijante / evaluator (allWays + bidirectional) / adapter layer (reelHeight + bonusOverlay mutex) / cross-block guards) |
 | **HookBus canonical events** | **52** (sole-emitter ownership enforced by LEGO gate; +3 from Wave P8: onHotReloadConnect / onHotReloadDisconnect / onGddChange) |
 | **LEGO gate** | **5/5 PASS** — emit cleanliness · block-test parity 65/65 · vendor-neutral source · event ownership 52/52 · listener coverage 54/54 |
 | **Ultimate QA matrix** (Wave UQ) | **2574/2574 PASS** — 198 fixtures (174 synth + 4 sample + 20 grid) × 13 asserts (parse / build / load / 0 console err / 0 page err / HookBus / spin visible / preSpin / postSpin / DOM-redness / typography ≥11px / grid rendered / no SLOT-token leak); 19 grids × 26 industry patterns |
