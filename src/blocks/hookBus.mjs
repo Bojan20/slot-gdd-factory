@@ -688,6 +688,10 @@ export const HOOK_EVENTS = Object.freeze([
   'onBonusBuyMenuOpened',  // Owner: bonusBuyMenu.mjs (LEGO-BUY Wave 4)
   'onBonusBuyMenuClosed',  // Owner: bonusBuyMenu.mjs (LEGO-BUY Wave 4)
   'onBonusBuyMenuTierSelected',  // Owner: bonusBuyMenu.mjs (LEGO-BUY Wave 4)
+  'onMysteryPrizeBoxAppeared',  // Owner: mysteryPrizeBox.mjs (LEGO-RANDOM B-3)
+  'onMysteryPrizeBoxOpened',  // Owner: mysteryPrizeBox.mjs (LEGO-RANDOM B-3)
+  'onMysteryPrizeBoxDismissed',  // Owner: mysteryPrizeBox.mjs (LEGO-RANDOM B-3)
+  'onRandomWildBurstFired',  // Owner: randomWildBurst.mjs (LEGO-RANDOM B-3)
   'onCoinShowerEnd',  // Owner: coinShower.mjs
   'onCoinShowerStart',  // Owner: coinShower.mjs
   'onCoolOffEnforced',  // Owner: netherlandsComplianceGate.mjs

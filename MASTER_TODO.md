@@ -1,5 +1,33 @@
 # Master TODO — slot-gdd-factory
 
+> **2026-06-19 · HEAD `pending`** · Σ **168 LEGO blokova** · Σ **1740 testova/asserts** · 0 fail
+>
+> ## 🎬 Wave LEGO-RANDOM (B-3) — In-spin random pattern blocks (HEAD pending)
+>
+> Boki: *"idi dalje"* — autonomno biram sledeću Wave iz backlog-a (B-3).
+> 2 nova bloka u industry top-3 in-spin random pattern paleti.
+>
+> ```
+> ┌────────────────────────────────────────────────────────────────────────┐
+> │ Novi blokovi (166 → 168)                                              │
+> ├────────────────────────────────────────────────────────────────────────┤
+> │ mysteryPrizeBox.mjs    │ Random chest drop tokom spina sa weighted    │
+> │                        │ tier picker (Small/Medium/Large/Bonus).      │
+> │                        │ role=alertdialog overlay, Esc dismiss,       │
+> │                        │ auto-dismiss timer, cooldown anti-spam.      │
+> ├────────────────────────┼──────────────────────────────────────────────┤
+> │ randomWildBurst.mjs    │ Random N cells (2-6) burst u wilds posle     │
+> │                        │ onSpinResult. Fisher-Yates sampling,         │
+> │                        │ flash overlay + per-cell halo, sr-only live  │
+> │                        │ region za screen readers, math hook          │
+> │                        │ window.__RANDOM_WILD_BURST__ za PAR Phase 2. │
+> └────────────────────────┴──────────────────────────────────────────────┘
+> ```
+>
+> **Test gates**: mysteryPrizeBox 49/49 · randomWildBurst 44/44 · LEGO 8/8 (288 events registered) · cross-engine 450/450 · render-parity 190/190 · parse-real 4/4 · render-grid 20/20.
+>
+> ---
+>
 > **2026-06-19 17:25 CEST · HEAD `e91e04f`** · Σ **166 LEGO blokova** · Σ **1647 testova/asserts** · 0 fail
 >
 > ## 📊 KOMPLETAN DNEVNI PREGLED 2026-06-19 (svaki commit, sve faze)

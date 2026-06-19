@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-19T12:47:23.295Z",
+  "generatedAt": "2026-06-19T14:59:26.628Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 166,
+  "totalBlocks": 168,
   "blocks": [
     {
       "name": "allWaysEval",
@@ -136,7 +136,7 @@
         "label": "ANTE BET",
         "color": "#ffe066"
       },
-      "loc": 247
+      "loc": 271
     },
     {
       "name": "anteBetLadder",
@@ -191,7 +191,7 @@
         "color": "#ffe066",
         "colorDark": "#b08e22"
       },
-      "loc": 368
+      "loc": 379
     },
     {
       "name": "anticipation",
@@ -643,7 +643,7 @@
         "rearmMs": 1200,
         "confirmMessage": ""
       },
-      "loc": 284
+      "loc": 294
     },
     {
       "name": "bonusBuyDeterministic",
@@ -798,7 +798,7 @@
         "triggerColorDark": "#b03030",
         "triggerShadowRGB": "255,80,80"
       },
-      "loc": 488
+      "loc": 499
     },
     {
       "name": "bonusClimaxReveal",
@@ -2673,7 +2673,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 1008
+      "loc": 1012
     },
     {
       "name": "hotReload",
@@ -3510,6 +3510,72 @@
         "pulseMs": 1000
       },
       "loc": 334
+    },
+    {
+      "name": "mysteryPrizeBox",
+      "file": "src/blocks/mysteryPrizeBox.mjs",
+      "testFile": "tests/blocks/mysteryPrizeBox.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-RANDOM (B-3) — In-spin Mystery Prize Box.",
+      "exports": [
+        "defaultConfig",
+        "emitMysteryPrizeBoxCSS",
+        "emitMysteryPrizeBoxMarkup",
+        "emitMysteryPrizeBoxRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "postSpin"
+      ],
+      "emittedEvents": [
+        "onMysteryPrizeBoxAppeared",
+        "onMysteryPrizeBoxDismissed",
+        "onMysteryPrizeBoxOpened"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "label": "MYSTERY PRIZE",
+        "dropChance": 0.15,
+        "cooldownSpins": 5,
+        "autoDismissMs": 4000,
+        "revealHoldMs": 1600,
+        "tiers": [
+          {
+            "id": "small",
+            "label": "SMALL",
+            "weight": 60,
+            "awardKind": "credit",
+            "awardValue": 5
+          },
+          {
+            "id": "medium",
+            "label": "MEDIUM",
+            "weight": 25,
+            "awardKind": "credit",
+            "awardValue": 20
+          },
+          {
+            "id": "large",
+            "label": "LARGE",
+            "weight": 10,
+            "awardKind": "credit",
+            "awardValue": 100
+          },
+          {
+            "id": "bonus",
+            "label": "BONUS",
+            "weight": 5,
+            "awardKind": "fs_trigger",
+            "awardValue": 10
+          }
+        ],
+        "color": "#ffd34a",
+        "colorDark": "#a07520",
+        "haloRGB": "255,211,74"
+      },
+      "loc": 395
     },
     {
       "name": "mysteryReveal",
@@ -4549,6 +4615,39 @@
         "audioCueId": null
       },
       "loc": 414
+    },
+    {
+      "name": "randomWildBurst",
+      "file": "src/blocks/randomWildBurst.mjs",
+      "testFile": "tests/blocks/randomWildBurst.test.mjs",
+      "category": "wild",
+      "description": "Wave LEGO-RANDOM (B-3) — Random Wild Burst.",
+      "exports": [
+        "defaultConfig",
+        "emitRandomWildBurstCSS",
+        "emitRandomWildBurstMarkup",
+        "emitRandomWildBurstRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "onSpinResult"
+      ],
+      "emittedEvents": [
+        "onRandomWildBurstFired"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "burstChance": 0.07,
+        "minCells": 2,
+        "maxCells": 6,
+        "cooldownSpins": 4,
+        "flashColor": "#ffe066",
+        "haloRGB": "255,224,102",
+        "maxCellFraction": 0.4
+      },
+      "loc": 269
     },
     {
       "name": "realityCheck",

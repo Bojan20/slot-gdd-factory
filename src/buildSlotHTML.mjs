@@ -206,6 +206,19 @@ import {
   emitAnteBetLadderRuntime,
   resolveConfig as resolveAnteBetLadderConfig,
 } from './blocks/anteBetLadder.mjs';
+/* Wave LEGO-RANDOM (B-3) — in-spin random pattern blocks. */
+import {
+  emitMysteryPrizeBoxCSS,
+  emitMysteryPrizeBoxMarkup,
+  emitMysteryPrizeBoxRuntime,
+  resolveConfig as resolveMysteryPrizeBoxConfig,
+} from './blocks/mysteryPrizeBox.mjs';
+import {
+  emitRandomWildBurstCSS,
+  emitRandomWildBurstMarkup,
+  emitRandomWildBurstRuntime,
+  resolveConfig as resolveRandomWildBurstConfig,
+} from './blocks/randomWildBurst.mjs';
 /* Wave L–P — 16 detected-but-unused feature kinds, now wired as LEGO blocks */
 import {
   emitStickyWildCSS, emitStickyWildRuntime,
@@ -1060,6 +1073,9 @@ ${/* Wave H11 — Bonus Buy Deterministic Plant extension (tier picker modal CSS
 ${emitBonusBuyDeterministicCSS(resolveBonusBuyDeterministicConfig(model))}
 ${resolveAnteBetLadderConfig(model).enabled ? '' : emitAnteBetCSS(resolveAnteBetConfig(model))}
 ${emitAnteBetLadderCSS(resolveAnteBetLadderConfig(model))}
+${/* Wave LEGO-RANDOM (B-3) — in-spin random feature surfaces. */ ''}
+${emitMysteryPrizeBoxCSS(resolveMysteryPrizeBoxConfig(model))}
+${emitRandomWildBurstCSS(resolveRandomWildBurstConfig(model))}
 /* Wave L–P — 16 feature blocks CSS (no-op when disabled) */
 ${emitStickyWildCSS(resolveStickyWildConfig(model))}
 ${emitExpandingWildCSS(resolveExpandingWildConfig(model))}
@@ -1294,6 +1310,9 @@ ${emitBonusBuyMenuMarkup(resolveBonusBuyMenuConfig(model))}
 ${emitBonusBuyDeterministicMarkup(resolveBonusBuyDeterministicConfig(model))}
 ${resolveAnteBetLadderConfig(model).enabled ? '' : emitAnteBetMarkup(resolveAnteBetConfig(model))}
 ${emitAnteBetLadderMarkup(resolveAnteBetLadderConfig(model))}
+${/* Wave LEGO-RANDOM (B-3) — in-spin random surface markup. */ ''}
+${emitMysteryPrizeBoxMarkup(resolveMysteryPrizeBoxConfig(model))}
+${emitRandomWildBurstMarkup(resolveRandomWildBurstConfig(model))}
 <!-- Wave L–P markup (empty strings when disabled) -->
 ${emitPersistentMultiplierMarkup(resolvePersistentMultiplierConfig(model))}
 ${emitProgressiveFreeSpinsMarkup(resolveProgressiveFreeSpinsConfig(model))}
@@ -1534,6 +1553,9 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitBonusBuyDeterministicRuntime(resolveBonusBuyDeterministicConfig(model))}
   ${resolveAnteBetLadderConfig(model).enabled ? '' : emitAnteBetRuntime(resolveAnteBetConfig(model))}
   ${emitAnteBetLadderRuntime(resolveAnteBetLadderConfig(model))}
+  ${/* Wave LEGO-RANDOM (B-3) — in-spin random runtime. */ ''}
+  ${emitMysteryPrizeBoxRuntime(resolveMysteryPrizeBoxConfig(model))}
+  ${emitRandomWildBurstRuntime(resolveRandomWildBurstConfig(model))}
 
   /* Wave L–P — 16 feature kinds runtime (no-op stubs when disabled).
      Order: wilds first (modify the grid), then evaluators (read modified

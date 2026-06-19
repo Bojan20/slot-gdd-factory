@@ -489,6 +489,11 @@ const EXPECTED_EMIT_OWNERS = {
   onBonusBuyMenuClosed:    ['bonusBuyMenu.mjs'],
   onBonusBuyMenuTierSelected:  ['bonusBuyMenu.mjs'],
   onAnteBetLadderChanged:  ['anteBetLadder.mjs'],
+  /* Wave LEGO-RANDOM (B-3) — in-spin random pattern blocks. */
+  onMysteryPrizeBoxAppeared:   ['mysteryPrizeBox.mjs'],
+  onMysteryPrizeBoxOpened:     ['mysteryPrizeBox.mjs'],
+  onMysteryPrizeBoxDismissed:  ['mysteryPrizeBox.mjs'],
+  onRandomWildBurstFired:      ['randomWildBurst.mjs'],
   /* 2026-06-11 — holdAndWin phase machine emits its own INACTIVE → INTRO
    * → RUNNING → SUMMARY phase signal + a final end stats payload. Both
    * are sole-owned by the block; downstream HUD / summary listeners read
