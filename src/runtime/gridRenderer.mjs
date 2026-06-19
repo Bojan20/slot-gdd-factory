@@ -302,6 +302,13 @@ export function emitGridDispatchRuntime(model) {
       el.style.top = y + "px";
       el.style.width = w + "px";
       el.style.height = (h * 1.15) + "px";
+      /* QA fix (general-purpose subagent 2026-06-19, finding F1 LEGO-ENG):
+       * expose axial coords as data-q/data-r so downstream evaluator
+       * blocks (hexClusterEngine.mjs, future hex-eval blocks) can
+       * BFS-walk neighbours without re-parsing layout. Without this
+       * all cells appear at "0,0" → no clusters ever detected. */
+      el.setAttribute("data-q", String(q));
+      el.setAttribute("data-r", String(r));
       host.appendChild(el);
       cellEls.push(el);
     });

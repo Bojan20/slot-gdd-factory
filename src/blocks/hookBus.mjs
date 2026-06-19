@@ -431,6 +431,18 @@ export const HOOK_EVENTS = Object.freeze([
   'onPathBonusEntered',
   'onPathBonusRolled',
   'onPathBonusEnded',
+  /* Wave LEGO-ENG (Engine topology, 2026-06-19) — 2 new engine blocks.
+   *
+   * onPyramidSpinResult {duringFs, topology} — fires from pyramidGrid-
+   * Engine at settle, alongside canonical onSpinResult (40+ listeners).
+   * Topology field allows hex/wheel/pyramid-aware listeners to branch.
+   * Owner: pyramidGridEngine.mjs.
+   *
+   * onHexClusterPay {clusterSize, cellKeys, awardX, symbol} — fires per
+   * detected cluster from hexClusterEngine after BFS flood-fill scan.
+   * Owner: hexClusterEngine.mjs. */
+  'onPyramidSpinResult',
+  'onHexClusterPay',
   /* Scatter Celebration phase signals
    * onScatterCelebrationStart {cellCount, durationMs} — fires when the
    *   FS trigger scatter celebration animation begins. spinControl uses

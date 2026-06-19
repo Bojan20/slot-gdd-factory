@@ -1,5 +1,58 @@
 # Master TODO — slot-gdd-factory
 
+> **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-ENG** landed
+>
+> ## 🔺 Wave LEGO-ENG — 2 nova Engine-topology bloka (158 → 160)
+>
+> Boki: *"dalje"* — sledeća wave po roadmap-u. Engine topology coverage
+> 71% → ~85%.
+>
+> ### Blokovi
+>
+> | Blok | Industry pattern | Dispatcher entry |
+> |:--|:--|:--|
+> | `pyramidGridEngine.mjs` | 1-2-3-4-5 pyramid layout sa fall-down per-reel animacijom | `window.__SLOT_KIND_RUNSPIN__.pyramid` |
+> | `hexClusterEngine.mjs` | Hex topology + cluster pays fusion (BFS flood-fill sa 6-neighbor adjacency) | scans on onSpinResult/onTumbleStep |
+>
+> ### HookBus events (single-owner)
+>
+> | Event | Owner |
+> |:--|:--|
+> | `onPyramidSpinResult` | pyramidGridEngine.mjs |
+> | `onHexClusterPay` | hexClusterEngine.mjs |
+>
+> **Anti-double-emit guard**: pyramidGridEngine NE emit-uje canonical `onSpinResult` — to bi pravilo WASH PASS #1 double-emit jer reelEngine `_wrappedSettled` već emit-uje canonical event kad dispatcher pozove cb. Samo topology-specific event ide.
+>
+> ### Multi-agent QA — verdict ranije FAIL, sada 5 fixova → PASS
+>
+> 5 nalaza fixed pre commit-a (general-purpose subagent):
+>
+> | # | Severity | Fix |
+> |:-:|:--|:--|
+> | F1 | **CRITICAL** | `gridRenderer.renderHex` sad emit-uje `data-q`/`data-r` atribute. Pre fix-a SVE hex ćelije imale `data-q=0,data-r=0` po default-u → hexClusterEngine kolapsirao sve cell-ove u key `"0,0"` → nikad nije pronašao cluster. |
+> | F3 | HIGH | hexClusterEngine `_scan` clear-uje stale `.is-hex-cluster` highlights na vrhu (ne samo na preSpin). Anti-tumble stale class. |
+> | F4 | MED | pyramidGridEngine `_spin` flush-uje PREVIOUS pending FIRST pa onda nove (crashSpinEngine pattern) — anti-callback-swallow race. |
+> | F2 | HIGH | pyramidGridEngine `onPyramidSpinResult` payload sad uključuje `cells: [{reel,row,symbol}]` per JSDoc contract. |
+> | F5 | MED | hexClusterEngine default tier1.minSize=4 (aligned sa default minClusterSize=4); tier1 sad uvek reachable. |
+>
+> 1 nalaz deferred to ENG.3 (gridShape.mjs kind enum extension za `pyramid` SHAPE.kind — runtime dispatcher zna o kindu, ali parser mora da emit-uje taj kind iz GDD-a).
+>
+> ### Test coverage + regression
+>
+> | Gate | Status |
+> |:--|:-:|
+> | pyramidGridEngine (16 unit) | ✅ |
+> | hexClusterEngine (19 unit) | ✅ |
+> | **Σ new** | **35/35 ✅** |
+> | `test:lego` (7 invariants) | ✅ 7/7 |
+> | `test:parse:real-pdfs` (4 GDD) | ✅ 4/4 |
+> | `test:parity` (cross-game DOM) | ✅ 0/18 violations |
+> | `test:force-outcomes` (20 chip-outcomes) | ✅ 20/20 |
+>
+> **Block count**: 158 → **160 LEGO blokova**
+>
+> ---
+>
 > **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-B2** landed
 >
 > ## 🎁 Wave LEGO-B2 — 3 nova Bonus-reveal bloka (155 → 158)
