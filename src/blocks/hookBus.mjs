@@ -371,6 +371,17 @@ export const HOOK_EVENTS = Object.freeze([
   'onTumbleOnlyFsChainEnded',
   'onInfiniteFsStreakBumped',
   'onInfiniteFsModeEnded',
+  /* Wave LEGO-W2 (Wild variants, 2026-06-19) — 2 new wild-family blocks.
+   *
+   * onCascadingWildPinned {cellKey, totalPinned, chainStep} — fires for
+   *   each wild that gets pinned this tumble chain step. Owner:
+   *   cascadingWildPersistence.mjs.
+   *
+   * onMysteryWildRevealed {cellKey, wildSymbolId} — fires when a mystery
+   *   "?" cell reveals as wild (not as pay or mult). Owner:
+   *   mysteryWildReveal.mjs. */
+  'onCascadingWildPinned',
+  'onMysteryWildRevealed',
   /* Scatter Celebration phase signals
    * onScatterCelebrationStart {cellCount, durationMs} — fires when the
    *   FS trigger scatter celebration animation begins. spinControl uses

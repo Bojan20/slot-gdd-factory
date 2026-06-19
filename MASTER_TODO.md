@@ -1,5 +1,54 @@
 # Master TODO — slot-gdd-factory
 
+> **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-W2** landed
+>
+> ## 🐺 Wave LEGO-W2 — 2 nova Wild-varijanta bloka (149 → 151)
+>
+> Boki: *"nastavi"* — sledeća wave po roadmap-u. Wild family coverage
+> raste sa 77% → 92%.
+>
+> ### Blokovi
+>
+> | Blok | Industry pattern | Lifecycle |
+> |:--|:--|:--|
+> | `cascadingWildPersistence.mjs` | Wild pinovan tokom celog tumble chain-a (Pragmatic/NetEnt cascade) | preSpin clear → onSpinResult pin → onTumbleStep re-assert + pin new → postSpin clear |
+> | `mysteryWildReveal.mjs` | Mystery `?` reveal-uje se kao **WILD** (distinct od mysterySymbol pay-reveal i mysterySymbolMultiplier ×N-reveal) | onSpinResult/onTumbleStep scan + reveal · preSpin clear |
+>
+> ### HookBus events (oba single-owner)
+>
+> | Event | Owner |
+> |:--|:--|
+> | `onCascadingWildPinned` | cascadingWildPersistence.mjs |
+> | `onMysteryWildRevealed` | mysteryWildReveal.mjs |
+>
+> ### Multi-agent QA — verdict PASS_WITH_MINORS
+>
+> 3 nalaza fixed pre commit-a (general-purpose subagent review):
+>
+> | # | Fix |
+> |:-:|:--|
+> | 1 | CWP off-by-one `chainStep` — increment BEFORE emit, payload carries step AT pin (ne previous) |
+> | 2 | MWR DOM-reuse stale class — diff `data-symbol` vs WILD; strip reveal class ako engine refilluje cell |
+> | 3 | MWR `lastReveals` stale state — always assign (even empty array) tako da konzumenti dobijaju FRESH data per step |
+>
+> 2 nalaza dokumentovana, deferred to W2.3 (CSS position dependency edge case, cascadingWildPersistence × walkingWildStepper koegzistencija race ako oba enabled u istom GDD-u).
+>
+> ### Test coverage + regression
+>
+> | Gate | Status |
+> |:--|:-:|
+> | cascadingWildPersistence (15 unit) | ✅ |
+> | mysteryWildReveal (17 unit) | ✅ |
+> | **Σ new** | **32/32 ✅** |
+> | `test:lego` (7 invariants) | ✅ 7/7 |
+> | `test:parse:real-pdfs` (4 GDD) | ✅ 4/4 |
+> | `test:parity` (cross-game DOM) | ✅ 0/18 violations |
+> | `test:force-outcomes` (20 chip-outcomes) | ✅ 20/20 |
+>
+> **Block count**: 149 → **151 LEGO blokova**
+>
+> ---
+>
 > **2026-06-19 · HEAD pending** · 🚀 LEGO LIBRARY COVERAGE-GAP ROADMAP
 >
 > ## 🗺️ COMPLETE WAVE ROADMAP — preostale industry varijante (2026-06-19)
