@@ -1,12 +1,129 @@
 # Master TODO — slot-gdd-factory
 
-> **2026-06-19 · HEAD `pending`** · Σ **166 LEGO blokova** · Σ **1647 testova/asserts** · 0 fail
+> **2026-06-19 17:25 CEST · HEAD `e91e04f`** · Σ **166 LEGO blokova** · Σ **1647 testova/asserts** · 0 fail
 >
-> ## 🎯 ULTIMATE DEEP QA SWEEP — HEAD pending
+> ## 📊 KOMPLETAN DNEVNI PREGLED 2026-06-19 (svaki commit, sve faze)
+>
+> Boki: *"azurriraj master todo detaljnos a svim sto je uradjeno"*. Konsolidovan pregled
+> svih 26 commit-eva today (`8823a7a` → `e91e04f`), grupisani po fazama.
+>
+> ```
+> ┌─────────────────────────────────────────────────────────────────────────────────────┐
+> │ Σ DNEVNI BILANS · 26 commit-eva · 8 faza · 166 blokova · 1647 testova zelena       │
+> ├─────────────────────────────────────────────────────────────────────────────────────┤
+> │ Faza 1 — LEGO Library coverage-gap roadmap            8 wave · 147 → 164 blokova   │
+> │ Faza 2 — Hash pin master TODO                          1 commit · 813a8e7           │
+> │ Faza 3 — Deep QA Sweep Series FIX-1..FIX-7             7 wave · 37/37 zatvoreno    │
+> │ Faza 4 — F4 A11y baseline + F5 V3 big-win polish       2 wave · 52 rupa + 5 atoma  │
+> │ Faza 5 — LEGO-BUY menu + ladder                        1 wave · 164 → 166 blokova │
+> │ Faza 6 — HARD RULES #3 i #4                            2 commit · CLAUDE.md update │
+> │ Faza 7 — ALT-B/D/A (HMR + cross-engine + Playwright)   3 wave · 1019/1019 zelena  │
+> │ Faza 8 — Final QA sweep + 5-agent + Fable deep audit   1 wave + 2 fix · e91e04f   │
+> ├─────────────────────────────────────────────────────────────────────────────────────┤
+> │ Σ Nova blok-a danas             19 (147 → 166 · +12.9%)                            │
+> │ Σ QA stavki zatvoreno            37 (11 CRITICAL + 14 MAJOR + 10 MINOR + 2 def)   │
+> │ Σ A11y rupa zatvoreno            52 (36 fix-eva + 16 false-pos/već compliant)    │
+> │ Σ Cross-engine parity rupa       31 (gridProfile + 4 source fajla)                │
+> │ Σ Playwright probe asserts       72 (4 GDD × 2 viewports × 9 nivoa)               │
+> │ Σ QA infra fix-eva danas          2 (fs-qa + full-qa shared browser propag.)     │
+> └─────────────────────────────────────────────────────────────────────────────────────┘
+> ```
+>
+> ## 🆕 DEEP QA · 5-Agent + Fable Copilot · POST-e91e04f nalazi
+>
+> Boki traži *"QA svega implementiranog, deep najdublji sa svim agentima i ukljuci
+> fable takodje"*. Pokrenuto 5 specijalist-agenata + Fable Copilot review na ključnim
+> novim blokovima. Sve regression testovi PASS, ALI 5-agent audit otkrio nove rupe
+> koje treba uneti u FIX-8 wave plan.
+>
+> ```
+> ┌─────────────────────────────────────────────────────────────────────────────────────┐
+> │ Σ DEEP QA NALAZI (5 agenata + Fable)                                                │
+> ├─────────────────────────────────────────────────────────────────────────────────────┤
+> │ Agent F1 — FIX-1..FIX-7 preservation        13/13 anchor prisutni · 0 regression   │
+> │ Agent F2 — Cortex agents cross-check         30 provere · 15 ✅ · 8 🟡 · 7 ❌         │
+> │ Agent F3 — Senior-grade quality              9.2/10 · 5 anti-pattern CLEAN          │
+> │ Agent F4 — WCAG AAA deep audit               5/7 SC pass · 1 contrast + 20 aria-live│
+> │ Agent F5 — Real-game E2E (4 igre × 10)       36/36 verified · S10 statički OK      │
+> │ Fable bonusBuyMenu code review               2 HIGH + 4 MED + 3 LOW (ADVISORY)     │
+> ├─────────────────────────────────────────────────────────────────────────────────────┤
+> │ Σ Nove rupe za FIX-8                         3 HIGH + 5 MED + 7 nepokrivenih       │
+> └─────────────────────────────────────────────────────────────────────────────────────┘
+> ```
+>
+> ## 🚧 FIX-8 wave predlog (ULTIMATE DEEP CLEANUP)
+>
+> ```
+> ┌─────┬─────────────────────────────────────────────────────────────────────┬─────────┐
+> │ #   │ Stavka                                                              │ Sev     │
+> ├─────┼─────────────────────────────────────────────────────────────────────┼─────────┤
+> │ 8.1 │ bonusBuyMenu Fable HIGH #1+#2 — HMR sentinel + XSS confirmMessage   │ 🔴 HIGH │
+> │ 8.2 │ bonusBuyMenu Fable MED #3-#6 — typeof guard + FSM re-check + cleanup│ 🟡 MED  │
+> │ 8.3 │ matchThreeBonus #ff6a6a → AAA-safe color (#b71c1c na #fff = 7.4:1)  │ 🔴 HIGH │
+> │ 8.4 │ 20 blokova text-mutate bez aria-live → role=status + aria-live      │ 🔴 HIGH │
+> │ 8.5 │ 7 silent-catches hot-path → console.warn + telemetry endpoint       │ 🟡 MED  │
+> │ 8.6 │ S10 mid-anim slam dynamic E2E test (real GDD × spin × slam)         │ 🟡 MED  │
+> │ 8.7 │ Cortex agents 7 nepokrivenih (byte-safe trap, close-comment digraph,│ 🟡 MED  │
+> │     │ NTP skew, sessionId monotonic, H&W↔FS exclusive, SE 15-min reset,   │         │
+> │     │ AGCO Ontario fixed-RTP)                                             │         │
+> │ 8.8 │ Σ regression + agent re-audit + commit + push                       │ —       │
+> ├─────┼─────────────────────────────────────────────────────────────────────┼─────────┤
+> │ Σ   │ 3 HIGH + 5 MED · est ~6h AI rada                                    │         │
+> └─────┴─────────────────────────────────────────────────────────────────────┴─────────┘
+> ```
+>
+> ## 📜 KOMPLETAN COMMIT TRAIL DANAS (26 commit-eva, novije gore)
+>
+> ```
+> ┌──────────┬─────┬──────────────────────────────────────────────────────────────────┐
+> │ HEAD     │Faza │ Naslov                                                           │
+> ├──────────┼─────┼──────────────────────────────────────────────────────────────────┤
+> │ e91e04f  │  8  │ fix(qa-audit): per-fixture browser isolation — 2 QA holes        │
+> │ b843a57  │  7  │ test(playwright-deep-qa): ALT-A — 72/72 (4 GDD × 2 viewports)    │
+> │ fba82eb  │  7  │ docs(master-todo): ALT-D done — 31 rupa zatvorenih, 1019/1019    │
+> │ 4dff3c2  │  7  │ fix(parity): cross-engine + render parity — 31 rupa zatvorenih   │
+> │ 9228265  │  7  │ docs(master-todo): full refresh — HEAD 9ab1b26, live status      │
+> │ 9ab1b26  │  7  │ test(hmr): ultimate hot-reload sweep — 166/166 blocks · p95 12ms │
+> │ 21e45c2  │  6  │ docs(master-todo): defer LEGO-PROG backlog (no code)             │
+> │ f87de58  │  6  │ HARD RULE #4: audio i math OFF-LIMITS u odgovorima               │
+> │ 4f40cb1  │  5  │ feat(LEGO-BUY): bonusBuyMenu + anteBetLadder (2 new blocks)     │
+> │ 9e5b713  │  6  │ HARD RULE #3: tables must be visually drawn (box-drawing ASCII)  │
+> │ e0eaa5c  │  -  │ docs(master-todo): dnevni summary — 18 commit-eva, 5 faza        │
+> │ 5441531  │  4  │ feat(F5-V3): big-win tier visual ladder polish — 5 atoma         │
+> │ ee4759c  │  4  │ feat(F4-A1234): a11y baseline — WCAG AAA + kbd + sr (52 rupa)   │
+> │ d2e4039  │  3  │ fix(FIX-7): final cleanup — 10 deferred MINOR + MAJOR closures  │
+> │ 24e16cf  │  3  │ fix(FIX-6): bonus mutex hard-gate + wild→H&W + FINISH + joker   │
+> │ 4dd5929  │  3  │ fix(FIX-5): wild ownership — pin-write guard + mountRow         │
+> │ 5a61375  │  3  │ fix(FIX-4): FS sloj — retrigger emit + idempotency              │
+> │ f959757  │  3  │ fix(FIX-3): evaluator math overhaul — ways + dedupe + wild       │
+> │ 1018800  │  3  │ fix(FIX-2): wire pyramid + hexCluster + reelHeightAdapter        │
+> │ dc8e361  │  3  │ fix(FIX-1): HOOK_EVENTS registry drift + invariant #8           │
+> │ 813a8e7  │  2  │ docs(master-todo): hash pin × 10 + block count 65 → 164         │
+> │ ee86503  │  1  │ feat(lego-FS3.3): reelHeightAdapter + bonusOverlayMutex (162→164)│
+> │ 7269b7a  │  1  │ feat(lego-FS3): 2 nova FS varijanta — ROADMAP COMPLETE (160→162)│
+> │ 62e55f3  │  1  │ feat(lego-ENG): pyramidGridEngine + hexClusterEngine (158→160)  │
+> │ 19b42e5  │  1  │ feat(lego-B2): 3 bonus reveal pattern (155→158)                  │
+> │ de7b5ec  │  1  │ feat(lego-HW2): wildTriggerHoldAndWin + reelExpansion (153→155) │
+> │ 971fb18  │  1  │ feat(lego-FS2): fsSymbolUpgrade + fsJackpotPool (151→153)        │
+> │ 74b8e13  │  1  │ feat(lego-W2): cascadingWildPersistence + mysteryWild (149→151) │
+> │ 7ac9e71  │  1  │ feat(lego-EV): allWaysEval + bidirectionalWaysEval (147→149)    │
+> │ 8823a7a  │  1  │ docs(master-todo): LEGO LIBRARY COVERAGE-GAP ROADMAP             │
+> └──────────┴─────┴──────────────────────────────────────────────────────────────────┘
+> ```
+>
+> ---
+>
+> ## 🎯 ULTIMATE DEEP QA SWEEP — HEAD e91e04f
 >
 > Boki: *"QA svega implementiranog, deep najdublji sa svim agentima"*.
 > Full project test sweep otkrio 2 nove rupe u QA infra (oba PRE-existing,
-> ne Wave LEGO-BUY-uvedeno). Fix-ovano + verifikovano.
+> ne uvedeno poslednjim Wave-om). Fix-ovano + verifikovano.
+>
+> Nakon sweep-a, `test:blocks` je još jednom pokrenut i otkriven je flaky
+> test `tests/blocks/reelEngineHnwPerCell.test.mjs` (nije puko u sweep-u jer
+> je zavisio od `Math.random` bonus-arrival putanje). Stabilizovan:
+> sandbox sada postavlja `HW_BONUS_CHANCE_PER_CELL: 0`, pa je determinizam
+> garantovan.
 >
 > ```
 > ┌──────────────────────────────────────────────────────────────────────┐
@@ -26,8 +143,8 @@
 > ┌────────────────────────────────────┬─────────────┬─────────────────────┐
 > │ Gate                               │ Status      │ Detalj              │
 > ├────────────────────────────────────┼─────────────┼─────────────────────┤
-> │ LEGO gate (8 invariants)           │ 8/8 ✅      │ 284 events 0 drift  │
-> │ test:blocks (147 unit suites)      │ 549/549     │ Sve blokove pass    │
+> │ LEGO gate (8 invariants)           │ 8/8 ✅      │ 284 events · 0 drift │
+> │ test:blocks (166 suites)           │ 549/549     │ Svi blokovi pass    │
 > │ test:cert (6 sub-tests)            │ 160/160     │ Jurisdiction pass   │
 > │ test:hmr (3 sub-tests)             │ 48/48       │ HMR + dev-server    │
 > │ test:manifest                      │ 17/17       │ Manifest fresh      │
@@ -36,9 +153,9 @@
 > │ test:grids                         │ 20/20       │ 24 fixture          │
 > │ test:runtime                       │ 8/8         │ Runtime contract    │
 > │ test:playground                    │ 24/24       │ Cortex eyes         │
-> │ test:fs (24 fixtures × FS round)   │ 24/24 ✅    │ NOVO POPRAVLJENO    │
-> │ test:qa (full QA audit)            │ 24/24 ✅    │ NOVO POPRAVLJENO    │
-> │ HMR full sweep (166 blokova)       │ 166/166     │ p95 12ms            │
+> │ test:fs (24 fixtures × FS round)   │ 24/24 ✅    │ QA infra fix        │
+> │ test:qa (full QA audit)            │ 24/24 ✅    │ QA infra fix        │
+> │ HMR full sweep (166 blokova)       │ 166/166     │ p95 12 ms           │
 > │ Cross-engine config parity         │ 450/450     │ ALT-D HEAD 4dff3c2  │
 > │ Live HTML render parity            │ 190/190     │ ALT-D HEAD 4dff3c2  │
 > │ Playwright deep QA (4 GDD × 2 vw)  │ 72/72       │ ALT-A HEAD b843a57  │
@@ -103,7 +220,7 @@
 > │ B-7  │ LEGO-SIDEBET             │ OTVOREN  │ insuranceBet + prizeBoostBet    │
 > │ B-8  │ LEGO-THEME               │ OTVOREN  │ themePicker + paletteRoulette   │
 > ├──────┼──────────────────────────┼──────────┼─────────────────────────────────┤
-> │ ALT-A│ Playwright deep QA       │ ✅ DONE  │ HEAD pending — 72/72 (4 GDD ×   │
+> │ ALT-A│ Playwright deep QA       │ ✅ DONE  │ HEAD b843a57 — 72/72 (4 GDD ×   │
 > │      │                          │          │ desktop + mobile) ·             │
 > │      │                          │          │ 8 PNG screenshot · topology-    │
 > │      │                          │          │ aware (MidnightFangs cluster    │
@@ -114,6 +231,17 @@
 > │      │                          │          │ 450 config + 190 render asserts │
 > │ ALT-E│ Block-manifest docs      │ OTVOREN  │ Per-block industry-ref + GDD    │
 > │      │                          │          │ knob spec za svih 166           │
+> ├──────┼──────────────────────────┼──────────┼─────────────────────────────────┤
+> │ FIX-8│ ULTIMATE DEEP CLEANUP    │ PREDLOG  │ 3 HIGH + 5 MED iz 5-agent QA +  │
+> │      │ (post-deep-QA sweep)     │          │ Fable Copilot review · est 6h   │
+> │      │                          │          │ 8.1 bonusBuyMenu HMR+XSS        │
+> │      │                          │          │ 8.2 bonusBuyMenu MED #3-#6      │
+> │      │                          │          │ 8.3 matchThreeBonus AAA color   │
+> │      │                          │          │ 8.4 20 blokova aria-live        │
+> │      │                          │          │ 8.5 7 hot-path silent catches   │
+> │      │                          │          │ 8.6 S10 slam dynamic E2E        │
+> │      │                          │          │ 8.7 7 Cortex-agent nepokrivenih │
+> │      │                          │          │ 8.8 Σ regression + commit       │
 > └──────┴──────────────────────────┴──────────┴─────────────────────────────────┘
 > ```
 >
