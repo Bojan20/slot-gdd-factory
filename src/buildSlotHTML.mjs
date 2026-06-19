@@ -748,6 +748,29 @@ import {
   emitSlingoSpinEngineCSS, emitSlingoSpinEngineRuntime,
   resolveConfig as resolveSlingoSpinEngineConfig,
 } from './blocks/slingoSpinEngine.mjs';
+/* Wave LEGO-ENG (2026-06-19) — pyramid layout engine (1-2-3-4-5 fall-down).
+   Self-disables when shape.kind !== 'pyramid'; cost on rectangular = 0.
+   Wave FIX-2 (2026-06-19) wires this into the orchestrator (block was dead
+   code before — present in src/blocks/ but never imported). */
+import {
+  emitPyramidGridEngineCSS, emitPyramidGridEngineMarkup, emitPyramidGridEngineRuntime,
+  resolveConfig as resolvePyramidGridEngineConfig,
+} from './blocks/pyramidGridEngine.mjs';
+/* Wave LEGO-ENG (2026-06-19) — axial-hex cluster engine. Self-disables
+   when shape.kind !== 'hexagonal' or hexClusterEngine.enabled !== true.
+   Wave FIX-2 wires into the orchestrator (block was dead code). */
+import {
+  emitHexClusterEngineCSS, emitHexClusterEngineRuntime,
+  resolveConfig as resolveHexClusterEngineConfig,
+} from './blocks/hexClusterEngine.mjs';
+/* Wave LEGO-FS3.3 (2026-06-19) — atomic reel-height grow/shrink adapter.
+   Publishes window.growReelHeight / window.shrinkReelHeight; consumed by
+   fsReelHeightEscalation. Self-disables when reelHeightAdapter.enabled !==
+   true in the GDD. Wave FIX-2 wires into the orchestrator. */
+import {
+  emitReelHeightAdapterCSS, emitReelHeightAdapterRuntime,
+  resolveConfig as resolveReelHeightAdapterConfig,
+} from './blocks/reelHeightAdapter.mjs';
 /* Wave 3 (W48 spin-quality rollout) — shared ::after motion-overlay
    block, painted on each engine's spinning surface so the cell layer
    stays sharp on every topology (rectangular/hex/wheel/crash/plinko/
@@ -994,6 +1017,13 @@ ${emitWheelSpinEngineCSS(resolveWheelSpinEngineConfig(model))}
 ${emitCrashSpinEngineCSS(resolveCrashSpinEngineConfig(model))}
 ${emitPlinkoSpinEngineCSS(resolvePlinkoSpinEngineConfig(model))}
 ${emitSlingoSpinEngineCSS(resolveSlingoSpinEngineConfig(model))}
+${/* Wave LEGO-ENG + FS3.3 (FIX-2, 2026-06-19) — pyramid layout,
+     hex-cluster overlay, atomic reel-height adapter. Each block
+     self-disables when its GDD trigger is not set. CSS emit cost
+     on unrelated topologies = inline rule-set strings. */ ''}
+${emitPyramidGridEngineCSS(resolvePyramidGridEngineConfig(model))}
+${emitHexClusterEngineCSS(resolveHexClusterEngineConfig(model))}
+${emitReelHeightAdapterCSS(resolveReelHeightAdapterConfig(model))}
 ${/* Wave 3 — motion overlay parity per engine (LEGO: orchestrator wires;
      engines stay sharp-cell). Wheel/crash/plinko rotate or transform-non-
      vertically → vertical streaks disabled there. */ ''}
@@ -1409,6 +1439,18 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitCrashSpinEngineRuntime(resolveCrashSpinEngineConfig(model))}
   ${emitPlinkoSpinEngineRuntime(resolvePlinkoSpinEngineConfig(model))}
   ${emitSlingoSpinEngineRuntime(resolveSlingoSpinEngineConfig(model))}
+
+  /* Wave LEGO-ENG + FS3.3 (FIX-2, 2026-06-19) — pyramid grid runtime
+     (fall-down topology · self-disabled when shape.kind !== 'pyramid'),
+     hex-cluster BFS scan runtime (self-disabled when not hex+cluster),
+     reel-height adapter runtime (publishes window.growReelHeight /
+     shrinkReelHeight · cellStep + targetY recalc inside _growOne to
+     satisfy FS3.3 F3 deferred QA · self-disabled when adapter.enabled
+     !== true). All three were dead code prior to FIX-2 because no
+     import existed in the orchestrator. */
+  ${emitPyramidGridEngineRuntime(resolvePyramidGridEngineConfig(model))}
+  ${emitHexClusterEngineRuntime(resolveHexClusterEngineConfig(model))}
+  ${emitReelHeightAdapterRuntime(resolveReelHeightAdapterConfig(model))}
 
   /* Reel spin engine cadence + anticipation — see src/blocks/reelEngine.mjs
      + src/blocks/spinTempo.mjs + src/blocks/anticipation.mjs JSDoc for the
