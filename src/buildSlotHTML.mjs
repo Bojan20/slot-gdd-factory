@@ -191,6 +191,21 @@ import {
   emitAnteBetRuntime,
   resolveConfig as resolveAnteBetConfig,
 } from './blocks/anteBet.mjs';
+/* Wave LEGO-BUY (4/8) — multi-tier upgrades. Mutex with bonusBuy / anteBet:
+ * when the menu / ladder resolves enabled, the single-button block self-
+ * suppresses (orchestrator wires only the multi-tier emit). */
+import {
+  emitBonusBuyMenuCSS,
+  emitBonusBuyMenuMarkup,
+  emitBonusBuyMenuRuntime,
+  resolveConfig as resolveBonusBuyMenuConfig,
+} from './blocks/bonusBuyMenu.mjs';
+import {
+  emitAnteBetLadderCSS,
+  emitAnteBetLadderMarkup,
+  emitAnteBetLadderRuntime,
+  resolveConfig as resolveAnteBetLadderConfig,
+} from './blocks/anteBetLadder.mjs';
 /* Wave L–P — 16 detected-but-unused feature kinds, now wired as LEGO blocks */
 import {
   emitStickyWildCSS, emitStickyWildRuntime,
@@ -1035,10 +1050,16 @@ ${emitWinPresentationCSS(resolveWinPresentationConfig(model))}
 ${emitScatterCelebrationCSS(model)}
 ${emitTumbleCSS(resolveTumbleConfig(model))}
 ${emitMultiplierOrbCSS(resolveMultiplierOrbConfig(model))}
-${emitBonusBuyCSS(resolveBonusBuyConfig(model))}
+${/* Wave LEGO-BUY mutex — multi-tier menu/ladder takes precedence over
+    the single-button / single-toggle blocks. When the menu resolves
+    enabled (tiers.length >= 2), bonusBuy CSS is suppressed; same logic
+    for anteBetLadder vs anteBet. */ ''}
+${resolveBonusBuyMenuConfig(model).enabled ? '' : emitBonusBuyCSS(resolveBonusBuyConfig(model))}
+${emitBonusBuyMenuCSS(resolveBonusBuyMenuConfig(model))}
 ${/* Wave H11 — Bonus Buy Deterministic Plant extension (tier picker modal CSS). */ ''}
 ${emitBonusBuyDeterministicCSS(resolveBonusBuyDeterministicConfig(model))}
-${emitAnteBetCSS(resolveAnteBetConfig(model))}
+${resolveAnteBetLadderConfig(model).enabled ? '' : emitAnteBetCSS(resolveAnteBetConfig(model))}
+${emitAnteBetLadderCSS(resolveAnteBetLadderConfig(model))}
 /* Wave L–P — 16 feature blocks CSS (no-op when disabled) */
 ${emitStickyWildCSS(resolveStickyWildConfig(model))}
 ${emitExpandingWildCSS(resolveExpandingWildConfig(model))}
@@ -1268,9 +1289,11 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
 
 ${emitFreeSpinsOverlayMarkup(resolveFreeSpinsConfig(model))}
 
-${emitBonusBuyMarkup(resolveBonusBuyConfig(model))}
+${resolveBonusBuyMenuConfig(model).enabled ? '' : emitBonusBuyMarkup(resolveBonusBuyConfig(model))}
+${emitBonusBuyMenuMarkup(resolveBonusBuyMenuConfig(model))}
 ${emitBonusBuyDeterministicMarkup(resolveBonusBuyDeterministicConfig(model))}
-${emitAnteBetMarkup(resolveAnteBetConfig(model))}
+${resolveAnteBetLadderConfig(model).enabled ? '' : emitAnteBetMarkup(resolveAnteBetConfig(model))}
+${emitAnteBetLadderMarkup(resolveAnteBetLadderConfig(model))}
 <!-- Wave L–P markup (empty strings when disabled) -->
 ${emitPersistentMultiplierMarkup(resolvePersistentMultiplierConfig(model))}
 ${emitProgressiveFreeSpinsMarkup(resolveProgressiveFreeSpinsConfig(model))}
@@ -1503,12 +1526,14 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitMultiplierOrbRuntime(resolveMultiplierOrbConfig(model))}
   ${emitPayAnywhereEvalRuntime(resolvePayAnywhereEvalConfig(model))}
   ${emitTumbleRuntime(resolveTumbleConfig(model))}
-  ${emitBonusBuyRuntime(resolveBonusBuyConfig(model))}
+  ${resolveBonusBuyMenuConfig(model).enabled ? '' : emitBonusBuyRuntime(resolveBonusBuyConfig(model))}
+  ${emitBonusBuyMenuRuntime(resolveBonusBuyMenuConfig(model))}
   ${/* Wave H11 — Deterministic plant runtime monkey-patches #bonusBuyBtn
      * click at capture phase to open the tier picker BEFORE the original
      * Buy handler fires. Plants cells on onSpinResult. */ ''}
   ${emitBonusBuyDeterministicRuntime(resolveBonusBuyDeterministicConfig(model))}
-  ${emitAnteBetRuntime(resolveAnteBetConfig(model))}
+  ${resolveAnteBetLadderConfig(model).enabled ? '' : emitAnteBetRuntime(resolveAnteBetConfig(model))}
+  ${emitAnteBetLadderRuntime(resolveAnteBetLadderConfig(model))}
 
   /* Wave L–P — 16 feature kinds runtime (no-op stubs when disabled).
      Order: wilds first (modify the grid), then evaluators (read modified

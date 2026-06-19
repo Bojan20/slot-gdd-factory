@@ -1,5 +1,60 @@
 # Master TODO — slot-gdd-factory
 
+> **2026-06-19 · HEAD `pending`** · 🎬 Wave **LEGO-BUY (4/8)** — multi-tier bonus buy menu + ante-bet ladder
+>
+> ## 🎬 Wave LEGO-BUY (4 / 8) — Multi-tier buy ladder + ante stake escalator
+>
+> Boki: *"ajde dalje radi ultimativno"* — nastavak roadmap-a, sledeća Wave-a u Faza 1 LEGO-LIBRARY-COVERAGE-GAP plan-u: **multi-tier varijante bonus-buy & ante-bet blokova**.
+>
+> ### 2 nova LEGO bloka (sa orchestrator mutex-om)
+>
+> | # | Blok | Public API | Lifecycle events | a11y |
+> |:-:|:--|:--|:--|:--|
+> | 1 | `bonusBuyMenu.mjs` | resolveConfig + emit\*CSS/Markup/Runtime + BONUS_BUY_BANNED_JURISDICTIONS re-export | emits `onBonusBuyMenuOpened`, `onBonusBuyMenuClosed`, `onBonusBuyMenuTierSelected`; subs `onFsTrigger`, `onFsEnd` | role=menu + role=menuitem, Arrow/Home/End/Esc nav, focus trap + restore |
+> | 2 | `anteBetLadder.mjs` | resolveConfig + emit\*CSS/Markup/Runtime + 4-rung default | emits `onAnteBetLadderChanged`; subs `onFsTrigger`, `onFsEnd` (lock) | role=radiogroup + role=radio, Arrow/Home/End nav, `aria-checked` switching |
+>
+> ### Mutex sa legacy single-tier blokovima
+>
+> | Sloj | Pre Wave LEGO-BUY | Posle Wave LEGO-BUY |
+> |:--|:--|:--|
+> | bonusBuy.mjs CSS/Markup/Runtime | uvek emit-uje kad enabled | suppress-uje se kad `bonusBuyMenuConfig.enabled === true` |
+> | anteBet.mjs CSS/Markup/Runtime | uvek emit-uje kad enabled | suppress-uje se kad `anteBetLadderConfig.enabled === true` |
+> | Single-tier degeneracy | n/a | `tiers.length < 2` → menu/ladder self-disable + fallback flag (`collapsedToSingleTier`, `collapsedToSingleRung`) |
+>
+> ### Industry references (vendor-neutral)
+>
+> | Pattern | Industry baseline |
+> |:--|:--|
+> | Multi-tier buy ladder | post-2023 industry convention — 2-5 tiers (Standard 50-100× / Super 200× / Mega 500×), per-tier `fsMode` payload |
+> | Ante bet ladder | post-2024 industry pattern — 3-4 rungs (OFF / +25% / +50% / +100%), linear trigger-multiplier escalation sa PAR-side RTP normalization |
+>
+> ### Jurisdiction gate (oba bloka)
+>
+> Iste matrice ban-a kao `bonusBuy.mjs` — UKGC / SE / DE / NL hard-disable preko `BONUS_BUY_BANNED_JURISDICTIONS` (re-export iz `bonusBuyMenu`). MGA / ON / NJ / IT poštuje GDD enabled flag.
+>
+> ### Test gates
+>
+> | Gate | Pre | Posle |
+> |:--|:-:|:-:|
+> | `bonusBuyMenu.test.mjs` | n/a | **57/57 zelen** |
+> | `anteBetLadder.test.mjs` | n/a | **52/52 zelen** |
+> | `bonusBuy.test.mjs` (regression) | 21/21 | **21/21** |
+> | `anteBet.test.mjs` (regression) | 23/23 | **23/23** |
+> | `bonusBuyDeterministic.test.mjs` | 65/65 | **65/65** |
+> | LEGO gate | 8/8 | **8/8 zelen** (282 → 284 events registered, 0 drift) |
+> | `parse-real.mjs` | 4/4 | **4/4** |
+> | `render-grid-all.mjs` | 20/20 | **20/20** |
+> | Σ blokova | 164 | **166** (147 → 149 → 151 → 153 → 155 → 157 → 160 → 162 → 164 → **166**) |
+>
+> ### Wave 4 status flip u LEGO-LIBRARY-COVERAGE-GAP ROADMAP
+>
+> Wave 4 ROADMAP-a (LEGO-HW2 — H&W varijante) je već prethodno landovan
+> sa `wildTriggerHoldAndWin + holdAndWinReelExpansion`. Ovaj Wave je
+> **LEGO-BUY ekstenzija** koja sluša Boki-jevu ULTIMATIVNU direktivu —
+> coverage-gap u multi-tier buy domenu (single-button → menu/ladder).
+>
+> ---
+>
 > **2026-06-19 · HEAD `5441531`** · 🗓️ DNEVNI SUMMARY — 18 commit-eva, 5 faza, 164 blokova, 0 backlog
 >
 > ## 🗓️ DNEVNI SUMMARY 2026-06-19 — kompletan pregled (8823a7a → 5441531)

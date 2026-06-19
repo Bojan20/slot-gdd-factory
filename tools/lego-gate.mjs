@@ -482,6 +482,13 @@ const EXPECTED_EMIT_OWNERS = {
    * the legacy shape — and §4 here declares the canonical owners. */
   onAnteBetChanged:    ['anteBet.mjs'],
   onBonusBuyRequested: ['bonusBuy.mjs'],
+  /* Wave LEGO-BUY (4/8) — multi-tier menu + ladder variants. Mutually
+   * exclusive with the legacy single-button / single-toggle blocks
+   * (orchestrator wires one or the other based on tier-count). */
+  onBonusBuyMenuOpened:    ['bonusBuyMenu.mjs'],
+  onBonusBuyMenuClosed:    ['bonusBuyMenu.mjs'],
+  onBonusBuyMenuTierSelected:  ['bonusBuyMenu.mjs'],
+  onAnteBetLadderChanged:  ['anteBetLadder.mjs'],
   /* 2026-06-11 — holdAndWin phase machine emits its own INACTIVE → INTRO
    * → RUNNING → SUMMARY phase signal + a final end stats payload. Both
    * are sole-owned by the block; downstream HUD / summary listeners read

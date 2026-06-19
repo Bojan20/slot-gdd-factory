@@ -681,9 +681,13 @@ export const HOOK_EVENTS = Object.freeze([
   'onAiActDdaProhibited',  // Owner: euAiActComplianceGate.mjs
   'onAiSystemDeclarationRequired',  // Owner: euAiActComplianceGate.mjs
   'onAnteBetChanged',  // Owner: anteBet.mjs
+  'onAnteBetLadderChanged',  // Owner: anteBetLadder.mjs (LEGO-BUY Wave 4)
   'onAutoplayBanned',  // Owner: franceComplianceGate.mjs, italyComplianceGate.mjs, spainComplianceGate.mjs
   'onAutoplayDisclosureRequired',  // Owner: autoplay.mjs
   'onBonusBuyRequested',  // Owner: bonusBuy.mjs
+  'onBonusBuyMenuOpened',  // Owner: bonusBuyMenu.mjs (LEGO-BUY Wave 4)
+  'onBonusBuyMenuClosed',  // Owner: bonusBuyMenu.mjs (LEGO-BUY Wave 4)
+  'onBonusBuyMenuTierSelected',  // Owner: bonusBuyMenu.mjs (LEGO-BUY Wave 4)
   'onCoinShowerEnd',  // Owner: coinShower.mjs
   'onCoinShowerStart',  // Owner: coinShower.mjs
   'onCoolOffEnforced',  // Owner: netherlandsComplianceGate.mjs
