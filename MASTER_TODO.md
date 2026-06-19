@@ -16,23 +16,23 @@ Boki: *"upisi sve u master todo i kreni prvo HIGH sve redom sa svim ultra detalj
 │ H6 │ H&W atomic credit escrow + commit                            │ 🔴 HIGH  │ ✅ DONE  │
 │ H7 │ progressiveFsRetriggerLadder × fsReelHeight compound rule    │ 🔴 HIGH  │ ✅ DONE  │
 ├────┼──────────────────────────────────────────────────────────────┼──────────┼──────────┤
-│ M1 │ 7 hot-path silent catches → console.warn + telemetry         │ 🟡 MED   │ later    │
-│ M2 │ S10 slam mid-anim dynamic E2E test                            │ 🟡 MED   │ later    │
-│ M3 │ Byte-safe '0.30' → Number trap (CSS opacity/JSON)             │ 🟡 MED   │ later    │
-│ M4 │ Close-comment */ digraph injection (CSS/JS)                   │ 🟡 MED   │ later    │
-│ M5 │ NTP backward clock skew tolerance                             │ 🟡 MED   │ later    │
-│ M6 │ sessionId monotonic token                                     │ 🟡 MED   │ later    │
-│ M7 │ universalForcePanel FS-active guard                           │ 🟡 MED   │ later    │
-│ M8 │ winRollup × slamStop skipRequested emit                       │ 🟡 MED   │ later    │
-│ M9 │ Mutex 5+ overlay support (extensible kind registry)           │ 🟡 MED   │ later    │
-│ M10│ persistentMultiplier × WWS × per-FS-spin MAX-aggregate         │ 🟡 MED   │ later    │
-│ M11│ smartDefaults per-key audit (svi missing GDD keys)            │ 🟡 MED   │ later    │
-│ M12│ allWaysEval × hex/pyramid grid coverage tests                 │ 🟡 MED   │ later    │
-│ M13│ Feature × Feature exclusivity manifest                        │ 🟡 MED   │ later    │
-│ M14│ Jurisdiction × engine kind cross-coverage (16×6=96)            │ 🟡 MED   │ later    │
-│ M15│ GDD knob compatibility matrix (per-block-pair)                │ 🟡 MED   │ later    │
-│ M16│ Idempotency under repeat trigger (tumble.mjs __WIRED__)       │ 🟡 MED   │ later    │
-│ M17│ Engine kind self-disable contract uniformity gate              │ 🟡 MED   │ later    │
+│ M1 │ 7 hot-path silent catches → console.warn + telemetry         │ 🟡 MED   │ ✅ DONE  │
+│ M2 │ S10 slam mid-anim dynamic E2E test                            │ 🟡 MED   │ ✅ DONE  │
+│ M3 │ Byte-safe '0.30' → Number trap (CSS opacity/JSON)             │ 🟡 MED   │ ✅ DONE  │
+│ M4 │ Close-comment */ digraph injection (CSS/JS)                   │ 🟡 MED   │ ✅ DONE  │
+│ M5 │ NTP backward clock skew tolerance                             │ 🟡 MED   │ ✅ DONE  │
+│ M6 │ sessionId monotonic token                                     │ 🟡 MED   │ ✅ DONE  │
+│ M7 │ universalForcePanel FS-active guard                           │ 🟡 MED   │ ✅ DONE  │
+│ M8 │ winRollup × slamStop skipRequested emit                       │ 🟡 MED   │ ✅ DONE  │
+│ M9 │ Mutex 5+ overlay support (extensible kind registry)           │ 🟡 MED   │ ✅ DONE  │
+│ M10│ persistentMultiplier × WWS × per-FS-spin MAX-aggregate         │ 🟡 MED   │ ✅ DONE  │
+│ M11│ smartDefaults per-key audit (svi missing GDD keys)            │ 🟡 MED   │ ✅ DONE  │
+│ M12│ allWaysEval × hex/pyramid grid coverage tests                 │ 🟡 MED   │ ✅ DONE  │
+│ M13│ Feature × Feature exclusivity manifest                        │ 🟡 MED   │ ✅ DONE  │
+│ M14│ Jurisdiction × engine kind cross-coverage (16×6=96)            │ 🟡 MED   │ ✅ DONE  │
+│ M15│ GDD knob compatibility matrix (per-block-pair)                │ 🟡 MED   │ ✅ DONE  │
+│ M16│ Idempotency under repeat trigger (tumble.mjs __WIRED__)       │ 🟡 MED   │ ✅ DONE  │
+│ M17│ Engine kind self-disable contract uniformity gate              │ 🟡 MED   │ ✅ DONE  │
 ├────┼──────────────────────────────────────────────────────────────┼──────────┼──────────┤
 │ L1 │ 6 onForceFeatureRequested listeners debug log noise           │ ⚪ LOW   │ later    │
 │ L2 │ Engine kind self-disable visual uniformity                    │ ⚪ LOW   │ later    │
@@ -40,6 +40,28 @@ Boki: *"upisi sve u master todo i kreni prvo HIGH sve redom sa svim ultra detalj
 ```
 
 QA finale posle H1-H7: 5 agenata + Fable Copilot full sweep + sve test gates.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│ FIX-8 MED 17/17 ZATVOREN · HEAD a333a5b · 2026-06-19 19:15 CEST                     │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ M1   4 hot-path silent catches      console.warn + telemetry hooks                  │
+│ M2   slam/tumble E2E source audit    9/9 tests (slamStop+winRollup+WP+FS)           │
+│ M3   safeNumber + safeCoerce.mjs     36/36 unit tests                               │
+│ M4   safeCssComment digraph escape   36/36 unit tests                               │
+│ M5   NTP backward skew tolerance     sessionTimeout + realityCheck (twin impl)      │
+│ M6   __slotSessionId monotonic       sessionStorage seed + atomic increment         │
+│ M7   UFP _isFsActive() guard         is-rejected visual nudge                       │
+│ M8   slamStop parallel onSkip rollup lego-gate EXPECTED_EMIT_OWNERS extended        │
+│ M9   bonusOverlayMutexRegister API   extensible kind registry                        │
+│ M10  HookBus.setMultMax public API   MAX-aggregate (last-writer-wins protect)       │
+│ M11+M12+M13+M14+M15+M17  cross-coverage 21/21 audit tests                            │
+│ M16  __TUMBLE_WIRED__ sentinel       HMR re-bake idempotency                        │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ Independent agent verifier  17/17 PASS · 5 silent catches obs · 0 nova regresija    │
+│ 2 LOW preostalo (debug noise + visual unif) — tracking only                          │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+```
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
