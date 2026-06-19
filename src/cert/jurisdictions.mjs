@@ -232,6 +232,88 @@ const REGISTRY = Object.freeze({
     ]),
     anchor: 'Spelinspektionen Foreskrifter v2 (2024-01) — strengthened controls',
   }),
+
+  /* C-6 LEGO-CERT2 (2026-06-19) — 5 EU jurisdikcija koje već imaju
+   * dedicated compliance gate blokove ali nisu bile u cert registry. */
+  ADM: Object.freeze({
+    code: 'ADM',
+    name: 'Agenzia delle Dogane e dei Monopoli (Italy)',
+    region: 'IT',
+    required: Object.freeze([
+      'reality_check',
+      'session_timeout',
+      'net_loss_indicator',
+    ]),
+    recommended: Object.freeze([
+      'autoplay',
+      'win_cap',
+    ]),
+    anchor: 'ADM Decreto Direttoriale + AAMS/ADM 2024 — periodic notice + loss limits',
+  }),
+  ANJ: Object.freeze({
+    code: 'ANJ',
+    name: 'Autorité Nationale des Jeux (France)',
+    region: 'FR',
+    required: Object.freeze([
+      'reality_check',
+      'session_timeout',
+      'autoplay',         /* France HARD-bans autoplay — autoplay block self-disables */
+      'net_loss_indicator',
+    ]),
+    recommended: Object.freeze([
+      'win_cap',
+      'history_log',
+    ]),
+    anchor: 'ANJ Décret 2019-1061 + Loi 2020-105 — RG mandates + autoplay ban',
+  }),
+  KSA: Object.freeze({
+    code: 'KSA',
+    name: 'Kansspelautoriteit (Netherlands)',
+    region: 'NL',
+    required: Object.freeze([
+      'reality_check',
+      'session_timeout',
+      'net_loss_indicator',
+      'win_cap',          /* NL Spel-1 strict win cap */
+    ]),
+    recommended: Object.freeze([
+      'autoplay',
+      'history_log',
+    ]),
+    anchor: 'KSA Spel-1 + Wet Kansspelen op Afstand — Cruks gate + cool-off + win cap',
+  }),
+  GGL: Object.freeze({
+    code: 'GGL',
+    name: 'Gemeinsame Glücksspielbehörde der Länder (Germany)',
+    region: 'DE',
+    required: Object.freeze([
+      'reality_check',
+      'session_timeout',
+      'net_loss_indicator',
+      'win_cap',
+    ]),
+    recommended: Object.freeze([
+      'autoplay',
+      'history_log',
+    ]),
+    anchor: 'GlüStV 2021 §6h-i + GGL Min-Spin-Pace + DE-month deposit limit',
+  }),
+  ESBK: Object.freeze({
+    code: 'ESBK',
+    name: 'Eidgenössische Spielbankenkommission (Switzerland)',
+    region: 'CH',
+    required: Object.freeze([
+      'reality_check',
+      'session_timeout',
+      'net_loss_indicator',
+    ]),
+    recommended: Object.freeze([
+      'win_cap',
+      'autoplay',
+      'history_log',
+    ]),
+    anchor: 'ESBK Geldspielgesetz (BGS) Art. 76 — Sozialkonzept + Session-Daten',
+  }),
 });
 
 /**

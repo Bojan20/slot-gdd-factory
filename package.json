@@ -33,6 +33,7 @@
     "test:bundle": "node tools/_ultimate-bundle-size-probe.mjs && node tests/blocks/_bundleSizeProbe.test.mjs",
     "test:i18n:sweep": "node tools/_ultimate-i18n-locale-sweep.mjs && node tests/blocks/_i18nLocaleSweep.test.mjs",
     "test:cross-browser": "node tools/_ultimate-cross-browser-probe.mjs && node tests/blocks/_crossBrowserProbe.test.mjs",
+    "test:load": "node tools/_ultimate-load-probe.mjs && node tests/blocks/_loadProbe.test.mjs",
     "test:playground": "node tools/cortex-eyes-playground.mjs",
     "test:ultimate": "node tools/gen-synthetic-gdds.mjs && node tools/cortex-eyes-ultimate-qa.mjs",
     "test:ultimate:quick": "node tools/cortex-eyes-ultimate-qa.mjs --quick",
