@@ -519,6 +519,16 @@ const EXPECTED_EMIT_OWNERS = {
   /* Wave LEGO-HW2 (Hold & Win variants, 2026-06-19) — 2 new blocks. */
   onWildTriggerHoldAndWinRequested:  ['wildTriggerHoldAndWin.mjs'],
   onHoldAndWinReelExpanded:          ['holdAndWinReelExpansion.mjs'],
+  /* Wave LEGO-B2 (Bonus reveal variants, 2026-06-19) — 3 new blocks. */
+  onMatchThreeBonusEntered:          ['matchThreeBonusReveal.mjs'],
+  onMatchThreeBonusRevealed:         ['matchThreeBonusReveal.mjs'],
+  onMatchThreeBonusEnded:            ['matchThreeBonusReveal.mjs'],
+  onMoneyGrabEntered:                ['moneyGrabGrid.mjs'],
+  onMoneyGrabRevealed:               ['moneyGrabGrid.mjs'],
+  onMoneyGrabEnded:                  ['moneyGrabGrid.mjs'],
+  onPathBonusEntered:                ['pathBonusEngine.mjs'],
+  onPathBonusRolled:                 ['pathBonusEngine.mjs'],
+  onPathBonusEnded:                  ['pathBonusEngine.mjs'],
   /* Wave LEGO-H/FS/W (2026-06-18) — 8 new GDD-driven variants. Each
    * block owns its single canonical event pair (rolled/cleared etc). */
   onFrameMultiplierBumped:           ['holdAndWinFrameMultiplier.mjs'],

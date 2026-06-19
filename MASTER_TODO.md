@@ -1,5 +1,59 @@
 # Master TODO — slot-gdd-factory
 
+> **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-B2** landed
+>
+> ## 🎁 Wave LEGO-B2 — 3 nova Bonus-reveal bloka (155 → 158)
+>
+> Boki: *"dalje"* — sledeća wave po roadmap-u. Bonus reveal coverage
+> dodaje 3 industry-standard bonus screen pattern-a.
+>
+> ### Blokovi
+>
+> | Blok | Industry pattern | Termination |
+> |:--|:--|:--|
+> | `matchThreeBonusReveal.mjs` | 3×3 pick-and-reveal (Pragmatic/Relax) | match-3 → sum + trio×3 · STOP → sum · all 9 → sum |
+> | `moneyGrabGrid.mjs` | N×M pick-N money grab (EGT/Hacksaw) | hard cap maxPicks → Σ values |
+> | `pathBonusEngine.mjs` | Board-game path traversal (Yggdrasil) | FINISH tile ILI outOfRolls |
+>
+> ### HookBus events (svi single-owner)
+>
+> | Block | Events |
+> |:--|:--|
+> | matchThreeBonusReveal | onMatchThreeBonus{Entered,Revealed,Ended} |
+> | moneyGrabGrid | onMoneyGrab{Entered,Revealed,Ended} |
+> | pathBonusEngine | onPathBonus{Entered,Rolled,Ended} |
+>
+> Requested entry events (consumer-only) — fire from upstream trigger, ne emit-uju ovi blokovi.
+>
+> ### Multi-agent QA — verdict PASS_WITH_MINORS
+>
+> 3 ključna real-bug fixa pre commit-a (general-purpose subagent):
+>
+> | # | Severity | Fix |
+> |:-:|:--|:--|
+> | F1 | MAJOR | pathBonusEngine: clamp `to` na FINISH_IDX (ne TILE_COUNT-1) — sprečava over-shoot past custom mid-path finish |
+> | F2 | MAJOR | matchThreeBonusReveal: award na match-3 = `sum + (trioVal × 3)` (JSDoc spec), ne samo `trioVal × 3` koji ignoriše non-trio reveals |
+> | F5 | MED | matchThreeBonusReveal: require ≥1 non-STOP entry u distribution (anti-all-STOP-distribution edge case) |
+>
+> 2 nalaza deferred to B2.3 (cross-block overlay mutex za 3 paralelna bonus stack-a, API drift JSDoc → impl `(cfg, model)` signature).
+>
+> ### Test coverage + regression
+>
+> | Gate | Status |
+> |:--|:-:|
+> | matchThreeBonusReveal (15 unit) | ✅ |
+> | moneyGrabGrid (16 unit) | ✅ |
+> | pathBonusEngine (18 unit) | ✅ |
+> | **Σ new** | **49/49 ✅** |
+> | `test:lego` (7 invariants) | ✅ 7/7 |
+> | `test:parse:real-pdfs` (4 GDD) | ✅ 4/4 |
+> | `test:parity` (cross-game DOM) | ✅ 0/18 violations |
+> | `test:force-outcomes` (20 chip-outcomes) | ✅ 20/20 |
+>
+> **Block count**: 155 → **158 LEGO blokova**
+>
+> ---
+>
 > **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-HW2** landed
 >
 > ## 🔒 Wave LEGO-HW2 — 2 nova H&W-varijanta bloka (153 → 155)

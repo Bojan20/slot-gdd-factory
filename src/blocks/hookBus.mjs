@@ -416,6 +416,21 @@ export const HOOK_EVENTS = Object.freeze([
    *   Owner: holdAndWinReelExpansion.mjs. */
   'onWildTriggerHoldAndWinRequested',
   'onHoldAndWinReelExpanded',
+  /* Wave LEGO-B2 (Bonus reveal variants, 2026-06-19) — 3 new bonus blocks.
+   * Each block emits Entered/Revealed/Rolled/Ended trail events.
+   * Requested events (onMatchThreeBonusRequested etc.) are CONSUMER-only
+   * here — they are fired by an upstream trigger block (TBD per GDD)
+   * and consumed by these bonus engines; thus they intentionally have
+   * no canonical-emitter declaration. */
+  'onMatchThreeBonusEntered',
+  'onMatchThreeBonusRevealed',
+  'onMatchThreeBonusEnded',
+  'onMoneyGrabEntered',
+  'onMoneyGrabRevealed',
+  'onMoneyGrabEnded',
+  'onPathBonusEntered',
+  'onPathBonusRolled',
+  'onPathBonusEnded',
   /* Scatter Celebration phase signals
    * onScatterCelebrationStart {cellCount, durationMs} — fires when the
    *   FS trigger scatter celebration animation begins. spinControl uses
