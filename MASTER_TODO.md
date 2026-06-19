@@ -1,8 +1,80 @@
 # Master TODO — slot-gdd-factory
 
-> **2026-06-19 · HEAD `pending`** · 🎬 Wave **LEGO-BUY (4/8)** — multi-tier bonus buy menu + ante-bet ladder
+> **2026-06-19 · HEAD `9ab1b26`** · Σ **166 LEGO blokova** · Σ **200 testova** · 0 fail
 >
-> ## 🎬 Wave LEGO-BUY (4 / 8) — Multi-tier buy ladder + ante stake escalator
+> ---
+>
+> ## 🟢 STANJE SADA — Live test gates (HEAD 9ab1b26)
+>
+> ```
+> ┌─────────────────────────────┬─────────┬───────────────────────────────────────┐
+> │ Gate                        │ Status  │ Detalj                                │
+> ├─────────────────────────────┼─────────┼───────────────────────────────────────┤
+> │ LEGO gate (8 invariants)    │ 8/8 ✅  │ 284 events, 0 drift, 0 ownership      │
+> │ Block test parity           │ 166/166 │ Svaki blok ima matching test fajl     │
+> │ Anti-vendor grep            │ 0 hits  │ Svuda neutral                         │
+> │ HMR full sweep (166 bl.)    │ 166/166 │ p95 12ms, max 13ms (SLA 2000ms)       │
+> │ hotReload.test.mjs          │ 23/23   │ Block unit invariants                 │
+> │ _dev-server.test.mjs        │ 18/18   │ Pure-fn safety probes                 │
+> │ _p8-hot-reload-probe        │ 7/7     │ Live SSE + endpoints                  │
+> │ Manifest sweep              │ 17/17   │ block-manifest.json fresh             │
+> │ Parse-real (4 GDD fixtures) │ 4/4     │ WoO, GoO, HnMP, Starlight             │
+> │ Render-grid (20 fixtures)   │ 20/20   │ Svi engine kind-ovi                   │
+> │ bonusBuyMenu.test.mjs (NEW) │ 57/57   │ LEGO-BUY Wave (4f40cb1)               │
+> │ anteBetLadder.test.mjs(NEW) │ 52/52   │ LEGO-BUY Wave (4f40cb1)               │
+> └─────────────────────────────┴─────────┴───────────────────────────────────────┘
+> ```
+>
+> ---
+>
+> ## 🟡 BACKLOG — Deferred i otvorene Wave opcije (audio/math isključeni)
+>
+> ```
+> ┌──────┬──────────────────────────┬──────────┬─────────────────────────────────┐
+> │ ID   │ Wave                     │ Status   │ Razlog / Opis                   │
+> ├──────┼──────────────────────────┼──────────┼─────────────────────────────────┤
+> │ DEF1 │ LEGO-PROG                │ DEFERRED │ Boki: "ne treba sad" (2026-06-19│
+> │      │ (playerXp +              │          │ 14:39 chat). XP poeni + progres │
+> │      │ sessionLevelMeter +      │          │ bar + level-up badge. Vrati se  │
+> │      │ achievementToast)        │          │ kad bude prioritet.             │
+> ├──────┼──────────────────────────┼──────────┼─────────────────────────────────┤
+> │ B-2  │ LEGO-REPLAY              │ OTVOREN  │ spinHistoryReplay + control bar │
+> │ B-3  │ LEGO-RANDOM              │ OTVOREN  │ mysteryPrizeBox + randomWildBurst│
+> │ B-4  │ LEGO-COLLECT             │ OTVOREN  │ coinCollect + cumulativeMeter   │
+> │ B-5  │ LEGO-SOCIAL              │ OTVOREN  │ leaderboardChip + shareReplay   │
+> │ B-6  │ LEGO-VOLATILITY          │ OTVOREN  │ volatilitySelector (UI only)    │
+> │ B-7  │ LEGO-SIDEBET             │ OTVOREN  │ insuranceBet + prizeBoostBet    │
+> │ B-8  │ LEGO-THEME               │ OTVOREN  │ themePicker + paletteRoulette   │
+> ├──────┼──────────────────────────┼──────────┼─────────────────────────────────┤
+> │ ALT-A│ Playwright deep QA       │ OTVOREN  │ Headless probe po 4 GDD-a       │
+> │ ALT-B│ HMR regression           │ ✅ DONE  │ HEAD 9ab1b26 — 166/166 sweep    │
+> │ ALT-C│ Screen-reader walk       │ OTVOREN  │ VoiceOver/NVDA transcript       │
+> │ ALT-D│ Cross-engine parity      │ OTVOREN  │ LEGO-BUY na hex/wheel/crash/    │
+> │      │                          │          │ plinko (zasad samo slot)        │
+> │ ALT-E│ Block-manifest docs      │ OTVOREN  │ Per-block industry-ref + GDD    │
+> │      │                          │          │ knob spec za svih 166           │
+> └──────┴──────────────────────────┴──────────┴─────────────────────────────────┘
+> ```
+>
+> ---
+>
+> ## 🎬 ZADNJIH 5 COMMIT-A (chronological, novije gore)
+>
+> ```
+> ┌──────────┬──────────────────────────────────────────────────────────────────┐
+> │ HEAD     │ Šta                                                              │
+> ├──────────┼──────────────────────────────────────────────────────────────────┤
+> │ 9ab1b26  │ test(hmr): ultimate hot-reload sweep — 166/166 blocks, p95 12ms  │
+> │ 21e45c2  │ docs(master-todo): defer LEGO-PROG backlog (no code)             │
+> │ f87de58  │ HARD RULE #4: audio i math OFF-LIMITS u odgovorima               │
+> │ 4f40cb1  │ feat(LEGO-BUY): multi-tier bonus buy menu + ante-bet ladder     │
+> │ 9e5b713  │ docs(CLAUDE): hard rule #3 — tables must be drawn (box ASCII)    │
+> └──────────┴──────────────────────────────────────────────────────────────────┘
+> ```
+>
+> ---
+>
+> ## 🏆 WAVE LEGO-BUY (4 / 8) — Multi-tier buy ladder + ante stake escalator (HEAD 4f40cb1)
 >
 > Boki: *"ajde dalje radi ultimativno"* — nastavak roadmap-a, sledeća Wave-a u Faza 1 LEGO-LIBRARY-COVERAGE-GAP plan-u: **multi-tier varijante bonus-buy & ante-bet blokova**.
 >
