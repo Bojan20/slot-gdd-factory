@@ -232,6 +232,13 @@ export function evaluateLTR(grid, paytable, minRunLength, wildId) {
   }
 
   for (const sym of candidates) {
+    /* FIX-7.1 (deep QA #28, 2026-06-19) — explicit empty/nullish guard
+     * instead of falsy `if (!sym)`. A numeric tier id of "0" would be
+     * truthy as a string but falsy as a coerced number, so the previous
+     * generic falsy check could either accept '0' or accidentally reject
+     * a valid string-converted zero. Defensive-on-input: only skip when
+     * sym is literally empty or nullish. */
+    if (sym === '' || sym == null) continue;
     if (seen.has(sym)) continue;
     seen.add(sym);
     let ways = 0;

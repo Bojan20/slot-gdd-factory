@@ -288,7 +288,19 @@ export function emitWalkingWildStepperRuntime(cfg = defaultConfig()) {
   /* FIX-5 (deep QA #21, 2026-06-19) — runtime-baked mount row. */
   var MOUNT_ROW      = ${mountRow};
 
-  window.WWS_STATE = {
+  /* FIX-7.3 (deep QA #31, 2026-06-19) — WWS_STATE is a contract publish
+   * surface read by cascadingWildPersistence + winPresentation +
+   * external debug. Externals must NOT be able to reach in and rewrite
+   * position / currentMult — that would corrupt walker invariants.
+   * Object.seal prevents add/delete of properties; values remain
+   * mutable (the block's own _stepOrExit / _onFsTrigger must update
+   * them in-place). For full immutability we would need a getter/setter
+   * facade, but seal is sufficient to catch the common accident.
+   *
+   * Property writes happen through this initial creation; subsequent
+   * code paths reuse the same object reference (sealed) and assign to
+   * existing keys only. */
+  window.WWS_STATE = Object.seal({
     position: null,
     direction: DIRECTION_CFG === 'left' ? 'left' : 'right',
     currentMult: START_MULT,
@@ -298,7 +310,7 @@ export function emitWalkingWildStepperRuntime(cfg = defaultConfig()) {
      * can detect when walker owns wild-position mutation. Set true on
      * FS trigger, false on FS end. */
     active: false,
-  };
+  });
 
   function _rng() {
     if (window.HookBus && typeof window.HookBus.getRng === 'function') {

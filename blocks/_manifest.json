@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-19T00:28:19.189Z",
+  "generatedAt": "2026-06-19T09:56:52.055Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 149,
+  "totalBlocks": 164,
   "blocks": [
     {
       "name": "allWaysEval",
@@ -72,7 +72,7 @@
         "evaluateBothDirections": true,
         "showPayPath": true
       },
-      "loc": 643
+      "loc": 712
     },
     {
       "name": "ambientBackgroundWheel",
@@ -457,7 +457,7 @@
         "highlightLTR": "#ffaa00",
         "highlightRTL": "#00aaff"
       },
-      "loc": 573
+      "loc": 633
     },
     {
       "name": "bigWinTier",
@@ -734,6 +734,29 @@
       "loc": 281
     },
     {
+      "name": "bonusOverlayMutex",
+      "file": "src/blocks/bonusOverlayMutex.mjs",
+      "testFile": "tests/blocks/bonusOverlayMutex.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-FS3.3.B — Bonus overlay mutex / z-index manager.",
+      "exports": [
+        "defaultConfig",
+        "emitBonusOverlayMutexCSS",
+        "emitBonusOverlayMutexRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onBonusOverlayMutexAcquired",
+        "onBonusOverlayMutexReleased"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "rejectWhenBusy": false
+      },
+      "loc": 231
+    },
+    {
       "name": "bonusPick",
       "file": "src/blocks/bonusPick.mjs",
       "testFile": "tests/blocks/bonusPick.test.mjs",
@@ -883,6 +906,37 @@
       "loc": 195
     },
     {
+      "name": "cascadingWildPersistence",
+      "file": "src/blocks/cascadingWildPersistence.mjs",
+      "testFile": "tests/blocks/cascadingWildPersistence.test.mjs",
+      "category": "wild",
+      "description": "Wave LEGO-W2.1 — Cascading wild persistence.",
+      "exports": [
+        "defaultConfig",
+        "emitCascadingWildPersistenceCSS",
+        "emitCascadingWildPersistenceRuntime",
+        "resolveConfig",
+        "shouldPinCell"
+      ],
+      "lifecycleHooks": [
+        "onSpinResult",
+        "onTumbleStep",
+        "postSpin",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onCascadingWildPinned"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "wildSymbolId": "W",
+        "pinColor": "#7af2c8",
+        "showCounter": true,
+        "counterPosition": "topLeft"
+      },
+      "loc": 338
+    },
+    {
       "name": "cellLevelUpgrade",
       "file": "src/blocks/cellLevelUpgrade.mjs",
       "testFile": "tests/blocks/cellLevelUpgrade.test.mjs",
@@ -1002,7 +1056,7 @@
         "maxEvents": 8,
         "diagonal": false
       },
-      "loc": 273
+      "loc": 306
     },
     {
       "name": "clusterSizeMultiplier",
@@ -1585,6 +1639,7 @@
       ],
       "emittedEvents": [
         "onFsEnd",
+        "onFsRetrigger",
         "onFsSpinResult",
         "onFsTrigger",
         "onSkipComplete"
@@ -1606,7 +1661,7 @@
         "featureHideMs": 300,
         "bigWinSafetyMs": 30000
       },
-      "loc": 919
+      "loc": 938
     },
     {
       "name": "fsExpansionWilds",
@@ -1643,6 +1698,45 @@
       "loc": 323
     },
     {
+      "name": "fsPersistentJackpotPool",
+      "file": "src/blocks/fsPersistentJackpotPool.mjs",
+      "testFile": "tests/blocks/fsPersistentJackpotPool.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-FS2.2 — Persistent jackpot pool across FS spins.",
+      "exports": [
+        "computePoolBump",
+        "defaultConfig",
+        "emitFsPersistentJackpotPoolCSS",
+        "emitFsPersistentJackpotPoolMarkup",
+        "emitFsPersistentJackpotPoolRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsSpinResult",
+        "onFsTrigger",
+        "onScatterCelebrationStart",
+        "onSpinResult"
+      ],
+      "emittedEvents": [
+        "onFsJackpotPoolBumped",
+        "onFsJackpotPoolEndRequested",
+        "onFsJackpotPoolPaidOut"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "floorX": 10,
+        "deltaPerSpinX": 2,
+        "winFraction": 0.1,
+        "payoutTrigger": "fsEnd",
+        "chipColor": "#ffd84d",
+        "chipPosition": "topLeft",
+        "showChip": true,
+        "maxScattersThreshold": 5
+      },
+      "loc": 373
+    },
+    {
       "name": "fsProgressBar",
       "file": "src/blocks/fsProgressBar.mjs",
       "testFile": "tests/blocks/fsProgressBar.test.mjs",
@@ -1673,6 +1767,80 @@
         "fontSizePx": 12
       },
       "loc": 310
+    },
+    {
+      "name": "fsReelHeightEscalation",
+      "file": "src/blocks/fsReelHeightEscalation.mjs",
+      "testFile": "tests/blocks/fsReelHeightEscalation.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-FS3.2 — FS retrigger → reel height escalation.",
+      "exports": [
+        "computeNewRowCount",
+        "defaultConfig",
+        "emitFsReelHeightEscalationCSS",
+        "emitFsReelHeightEscalationRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsRetrigger",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [
+        "onFsReelHeightEscalated"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "rowsPerRetrigger": 1,
+        "maxRows": 8,
+        "fillSymbol": "?",
+        "chipColor": "#ffd84d",
+        "showChip": true
+      },
+      "loc": 342
+    },
+    {
+      "name": "fsSymbolUpgradeEscalation",
+      "file": "src/blocks/fsSymbolUpgradeEscalation.mjs",
+      "testFile": "tests/blocks/fsSymbolUpgradeEscalation.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-FS2.1 — FS symbol-tier escalation.",
+      "exports": [
+        "defaultConfig",
+        "emitFsSymbolUpgradeEscalationCSS",
+        "emitFsSymbolUpgradeEscalationMarkup",
+        "emitFsSymbolUpgradeEscalationRuntime",
+        "removeLowestTierSymbol",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsSpinResult",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [
+        "onFsSymbolUpgraded"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "tierOrder": [
+          "9",
+          "10",
+          "J",
+          "Q",
+          "K",
+          "A",
+          "HP1",
+          "HP2",
+          "HP3",
+          "W"
+        ],
+        "spinsPerUpgrade": 3,
+        "chipColor": "#ffb84d",
+        "chipPosition": "topRight",
+        "showChip": true
+      },
+      "loc": 333
     },
     {
       "name": "gamble",
@@ -1859,6 +2027,58 @@
       "loc": 201
     },
     {
+      "name": "hexClusterEngine",
+      "file": "src/blocks/hexClusterEngine.mjs",
+      "testFile": "tests/blocks/hexClusterEngine.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-ENG.2 — Hex grid + cluster pays evaluator fusion.",
+      "exports": [
+        "defaultConfig",
+        "emitHexClusterEngineCSS",
+        "emitHexClusterEngineRuntime",
+        "findHexClusters",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onSpinResult",
+        "onTumbleStep",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onHexClusterPay"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "minClusterSize": 4,
+        "sizeTiers": [
+          {
+            "minSize": 4,
+            "maxSize": 5,
+            "awardX": 1
+          },
+          {
+            "minSize": 6,
+            "maxSize": 8,
+            "awardX": 3
+          },
+          {
+            "minSize": 9,
+            "maxSize": 11,
+            "awardX": 10
+          },
+          {
+            "minSize": 12,
+            "maxSize": 9999,
+            "awardX": 50
+          }
+        ],
+        "sameSymRule": "exact",
+        "wildSymbolId": "W",
+        "glowColor": "#7af2c8"
+      },
+      "loc": 376
+    },
+    {
       "name": "hexReelEngine",
       "file": "src/blocks/hexReelEngine.mjs",
       "testFile": "tests/blocks/hexReelEngine.test.mjs",
@@ -1992,6 +2212,7 @@
         "onFsTrigger",
         "onSkipRequested",
         "onSpinResult",
+        "onWildTriggerHoldAndWinRequested",
         "postSpin",
         "preSpin"
       ],
@@ -2035,7 +2256,7 @@
         },
         "orbTable": null
       },
-      "loc": 2103
+      "loc": 2127
     },
     {
       "name": "holdAndWinCreditBucket",
@@ -2221,6 +2442,38 @@
       "loc": 336
     },
     {
+      "name": "holdAndWinReelExpansion",
+      "file": "src/blocks/holdAndWinReelExpansion.mjs",
+      "testFile": "tests/blocks/holdAndWinReelExpansion.test.mjs",
+      "category": "feature",
+      "description": "Wave LEGO-HW2.2 — Hold & Win reel expansion (premium tier).",
+      "exports": [
+        "defaultConfig",
+        "emitHoldAndWinReelExpansionCSS",
+        "emitHoldAndWinReelExpansionRuntime",
+        "resolveConfig",
+        "shouldExpand"
+      ],
+      "lifecycleHooks": [
+        "onHoldAndWinPhase",
+        "onHoldAndWinRespin",
+        "postSpin"
+      ],
+      "emittedEvents": [
+        "onHoldAndWinReelExpanded"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "respinTrigger": 3,
+        "lockedPctTrigger": 0.75,
+        "maxExpansions": 2,
+        "columnFillSymbol": "B",
+        "columnColor": "#7af2c8",
+        "animDurationMs": 900
+      },
+      "loc": 310
+    },
+    {
       "name": "holdAndWinRoomJackpotMultiplier",
       "file": "src/blocks/holdAndWinRoomJackpotMultiplier.mjs",
       "testFile": "tests/blocks/holdAndWinRoomJackpotMultiplier.test.mjs",
@@ -2301,7 +2554,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 844
+      "loc": 1004
     },
     {
       "name": "hotReload",
@@ -2812,6 +3065,64 @@
       "loc": 282
     },
     {
+      "name": "matchThreeBonusReveal",
+      "file": "src/blocks/matchThreeBonusReveal.mjs",
+      "testFile": "tests/blocks/matchThreeBonusReveal.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-B2.1 — 3×3 pick-and-reveal match-three bonus game.",
+      "exports": [
+        "defaultConfig",
+        "emitMatchThreeBonusRevealCSS",
+        "emitMatchThreeBonusRevealMarkup",
+        "emitMatchThreeBonusRevealRuntime",
+        "pickRevealValue",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onMatchThreeBonusRequested"
+      ],
+      "emittedEvents": [
+        "onMatchThreeBonusEnded",
+        "onMatchThreeBonusEntered",
+        "onMatchThreeBonusRevealed"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "distribution": [
+          {
+            "value": 2,
+            "weight": 30
+          },
+          {
+            "value": 5,
+            "weight": 25
+          },
+          {
+            "value": 10,
+            "weight": 18
+          },
+          {
+            "value": 25,
+            "weight": 10
+          },
+          {
+            "value": 100,
+            "weight": 4
+          },
+          {
+            "value": "STOP",
+            "weight": 13
+          }
+        ],
+        "overlayBg": "#08111d",
+        "cardColor": "#1a2840",
+        "cardRevealedColor": "#ffd84d",
+        "fontSizePx": 20
+      },
+      "loc": 493
+    },
+    {
       "name": "megaSymbol",
       "file": "src/blocks/megaSymbol.mjs",
       "testFile": "tests/blocks/megaSymbol.test.mjs",
@@ -2886,6 +3197,71 @@
         "cornerRadiusPx": 12
       },
       "loc": 362
+    },
+    {
+      "name": "moneyGrabGrid",
+      "file": "src/blocks/moneyGrabGrid.mjs",
+      "testFile": "tests/blocks/moneyGrabGrid.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-B2.2 — Pick-N-cells money grab grid.",
+      "exports": [
+        "defaultConfig",
+        "emitMoneyGrabGridCSS",
+        "emitMoneyGrabGridMarkup",
+        "emitMoneyGrabGridRuntime",
+        "pickGridValue",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onMoneyGrabRequested"
+      ],
+      "emittedEvents": [
+        "onMoneyGrabEnded",
+        "onMoneyGrabEntered",
+        "onMoneyGrabRevealed"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "rows": 4,
+        "cols": 5,
+        "maxPicks": 6,
+        "distribution": [
+          {
+            "value": 1,
+            "weight": 30
+          },
+          {
+            "value": 2,
+            "weight": 25
+          },
+          {
+            "value": 5,
+            "weight": 18
+          },
+          {
+            "value": 10,
+            "weight": 14
+          },
+          {
+            "value": 25,
+            "weight": 8
+          },
+          {
+            "value": 100,
+            "weight": 4
+          },
+          {
+            "value": 500,
+            "weight": 1
+          }
+        ],
+        "overlayBg": "#08111d",
+        "cardColor": "#1a3030",
+        "cardRevealedColor": "#7af2c8",
+        "fontSizePx": 16
+      },
+      "loc": 436
     },
     {
       "name": "motionOverlay",
@@ -3135,6 +3511,37 @@
       "loc": 242
     },
     {
+      "name": "mysteryWildReveal",
+      "file": "src/blocks/mysteryWildReveal.mjs",
+      "testFile": "tests/blocks/mysteryWildReveal.test.mjs",
+      "category": "wild",
+      "description": "Wave LEGO-W2.2 — Mystery symbol reveals as WILD.",
+      "exports": [
+        "defaultConfig",
+        "emitMysteryWildRevealCSS",
+        "emitMysteryWildRevealRuntime",
+        "resolveConfig",
+        "shouldRevealAsWild"
+      ],
+      "lifecycleHooks": [
+        "onSpinResult",
+        "onTumbleStep",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onMysteryWildRevealed"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "mysterySymbolId": "?",
+        "wildSymbolId": "W",
+        "revealProbability": 1,
+        "wildColor": "#ff9a40",
+        "fontSizePx": 22
+      },
+      "loc": 253
+    },
+    {
       "name": "nearMissTease",
       "file": "src/blocks/nearMissTease.mjs",
       "testFile": "tests/blocks/nearMissTease.test.mjs",
@@ -3354,6 +3761,46 @@
         "awardScaleDenom": 0
       },
       "loc": 595
+    },
+    {
+      "name": "pathBonusEngine",
+      "file": "src/blocks/pathBonusEngine.mjs",
+      "testFile": "tests/blocks/pathBonusEngine.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-B2.3 — Board-game path traversal bonus.",
+      "exports": [
+        "defaultConfig",
+        "emitPathBonusEngineCSS",
+        "emitPathBonusEngineMarkup",
+        "emitPathBonusEngineRuntime",
+        "resolveConfig",
+        "rollDice"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onPathBonusRequested"
+      ],
+      "emittedEvents": [
+        "onPathBonusEnded",
+        "onPathBonusEntered",
+        "onPathBonusRolled"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "tileCount": 16,
+        "startRolls": 5,
+        "maxRoll": 6,
+        "tileValueRange": {
+          "min": 1,
+          "max": 50
+        },
+        "overlayBg": "#08111d",
+        "tileColor": "#1a2840",
+        "playerColor": "#ff9a40",
+        "finishTileIdx": 15,
+        "finishBonusMult": 2
+      },
+      "loc": 473
     },
     {
       "name": "payAnywhereEval",
@@ -3897,6 +4344,40 @@
       "loc": 315
     },
     {
+      "name": "pyramidGridEngine",
+      "file": "src/blocks/pyramidGridEngine.mjs",
+      "testFile": "tests/blocks/pyramidGridEngine.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-ENG.1 — Pyramid grid topology engine.",
+      "exports": [
+        "buildPyramidShape",
+        "defaultConfig",
+        "emitPyramidGridEngineCSS",
+        "emitPyramidGridEngineMarkup",
+        "emitPyramidGridEngineRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onPyramidSpinResult"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "reelCount": 5,
+        "startRows": 1,
+        "spinDurationMs": 1600,
+        "staggerMs": 180,
+        "cellSizePx": 64,
+        "gapPx": 4,
+        "cellColor": "#1a2840",
+        "cellBorderColor": "#c9a227",
+        "fadeFallbackMs": 220
+      },
+      "loc": 354
+    },
+    {
       "name": "randomLightningMultiplier",
       "file": "src/blocks/randomLightningMultiplier.mjs",
       "testFile": "tests/blocks/randomLightningMultiplier.test.mjs",
@@ -4060,6 +4541,34 @@
         "blurFadeMs": 80
       },
       "loc": 140
+    },
+    {
+      "name": "reelHeightAdapter",
+      "file": "src/blocks/reelHeightAdapter.mjs",
+      "testFile": "tests/blocks/reelHeightAdapter.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-FS3.3.A — reelEngine grow/shrink adapter.",
+      "exports": [
+        "computeRowDelta",
+        "defaultConfig",
+        "emitReelHeightAdapterCSS",
+        "emitReelHeightAdapterRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsReelHeightEscalated"
+      ],
+      "emittedEvents": [
+        "onReelHeightGrown",
+        "onReelHeightShrunk"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "freshRowFillSymbol": "?",
+        "freshRowClass": "is-rha-fresh"
+      },
+      "loc": 305
     },
     {
       "name": "reelLockHold",
@@ -5702,9 +6211,10 @@
         "wildSymbol": "W",
         "appliesIn": "fs",
         "glowColor": "#aaffaa",
-        "pulseMs": 800
+        "pulseMs": 800,
+        "mountRow": 0
       },
-      "loc": 498
+      "loc": 523
     },
     {
       "name": "waysEval",
@@ -6045,6 +6555,67 @@
       "loc": 178
     },
     {
+      "name": "wildTriggerHoldAndWin",
+      "file": "src/blocks/wildTriggerHoldAndWin.mjs",
+      "testFile": "tests/blocks/wildTriggerHoldAndWin.test.mjs",
+      "category": "wild",
+      "description": "Wave LEGO-HW2.1 — Wild-symbol-triggered Hold & Win round.",
+      "exports": [
+        "countVisibleWilds",
+        "defaultConfig",
+        "emitWildTriggerHoldAndWinCSS",
+        "emitWildTriggerHoldAndWinRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onSpinResult",
+        "onTumbleStep",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onWildTriggerHoldAndWinRequested"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "wildSymbolId": "W",
+        "triggerThreshold": 4,
+        "mode": "onScreen",
+        "badgeColor": "#ff9a40",
+        "seedOrbsFromWilds": true,
+        "skipDuringFs": true
+      },
+      "loc": 321
+    },
+    {
+      "name": "winBothWaysActivation",
+      "file": "src/blocks/winBothWaysActivation.mjs",
+      "testFile": "tests/blocks/winBothWaysActivation.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-FS3.1 — FS-only \"win both ways\" activation.",
+      "exports": [
+        "defaultConfig",
+        "emitWinBothWaysActivationCSS",
+        "emitWinBothWaysActivationMarkup",
+        "emitWinBothWaysActivationRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [
+        "onWinBothWaysActivated",
+        "onWinBothWaysDeactivated"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "chipColor": "#7af2c8",
+        "chipPosition": "top",
+        "showChip": true
+      },
+      "loc": 210
+    },
+    {
       "name": "winCap",
       "file": "src/blocks/winCap.mjs",
       "testFile": "tests/blocks/winCap.test.mjs",
@@ -6188,7 +6759,7 @@
         "staggerStepMs": 80,
         "suppressLDW": true
       },
-      "loc": 1014
+      "loc": 1047
     },
     {
       "name": "winRollup",

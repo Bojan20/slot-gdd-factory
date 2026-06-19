@@ -261,12 +261,15 @@ export function emitCascadingWildPersistenceRuntime(cfg = defaultConfig()) {
       }
     }
 
-    /* 2026-06-19 QA fix (general-purpose agent F-lifecycle): increment
-     * chainStep BEFORE emit so the payload carries the index AT WHICH
-     * the pin was created, not the previous step. Off-by-one fix:
-     * onSpinResult emit with chainStep=0; first onTumbleStep emit with
-     * chainStep=1; consumer reads accurate "step at which pin occurred". */
-    if (isStep) window.CASCADING_WILD_STATE.chainStep += 1;
+    /* FIX-7.3 (deep QA #32, 2026-06-19) — chainStep is the LANDING
+     * step index. Previously incremented on every tumble tick regardless
+     * of whether a wild landed, so the payload broadcast a misleading
+     * "this is the step at which wild N pinned" value when in fact the
+     * pin had happened earlier and this tick was a no-op. Now: bump
+     * ONLY when at least one fresh pin was captured. Off-by-one fix
+     * from 2026-06-19 (general agent F-lifecycle) preserved — the bump
+     * still happens BEFORE emit so consumers read the landing step. */
+    if (isStep && fresh.length > 0) window.CASCADING_WILD_STATE.chainStep += 1;
 
     if (fresh.length > 0 && window.HookBus && typeof window.HookBus.emit === 'function') {
       for (var k = 0; k < fresh.length; k++) {

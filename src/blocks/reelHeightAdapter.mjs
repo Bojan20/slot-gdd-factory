@@ -161,6 +161,11 @@ export function emitReelHeightAdapterRuntime(cfg = defaultConfig()) {
     var cur = reel.visibleRows || 0;
     var delta = Math.max(0, Math.trunc(newRows) - cur);
     if (delta === 0) return;
+    /* FIX-7.5 (deep QA #25, 2026-06-19) — mid-spin guard parity with
+     * _shrinkOne (L233). Grow during animated rotation produced strip
+     * mutation race vs commitStopSymbols cell[i+1] addressing. Now
+     * grow defers when reel is spinning/stopping; caller schedules. */
+    if (reel.spinning || reel.stopping) return;
 
     var tmpl = (reel.cells && reel.cells.length > 0) ? reel.cells[reel.cells.length - 1] : null;
     if (!tmpl) return;
@@ -208,6 +213,31 @@ export function emitReelHeightAdapterRuntime(cfg = defaultConfig()) {
       }
     } catch (_) {}
 
+    /* FIX-7.5 (deep QA #27, 2026-06-19) — expand host grid-template-rows
+     * so newly grown cells get an explicit row sized at reel.side.
+     * Without this update, gridTemplateRows = repeat(ROWS, sideX px) does
+     * not contain a track for the new row → CSS engine fabricates an
+     * implicit auto-height row which mis-aligns square cell aspect.
+     * The host element typically lives at reel.col.parentNode (grid). */
+    try {
+      var host = reel.col && reel.col.parentNode;
+      if (host && reel.side > 0) {
+        /* Read current row count from gridTemplateRows; expand to new
+         * visibleRows if it grew. Other reel columns may still be at
+         * their baseline; using the MAX preserves all of them. */
+        var winRows = reel.visibleRows;
+        if (Array.isArray(window.RECT_REELS)) {
+          for (var r = 0; r < window.RECT_REELS.length; r++) {
+            var rr = window.RECT_REELS[r];
+            if (rr && Number.isFinite(rr.visibleRows) && rr.visibleRows > winRows) {
+              winRows = rr.visibleRows;
+            }
+          }
+        }
+        host.style.gridTemplateRows = 'repeat(' + winRows + ', ' + reel.side + 'px)';
+      }
+    } catch (_) {}
+
     if (window.HookBus && typeof window.HookBus.emit === 'function') {
       try {
         window.HookBus.emit('onReelHeightGrown', {
@@ -232,9 +262,19 @@ export function emitReelHeightAdapterRuntime(cfg = defaultConfig()) {
     /* Don't shrink mid-spin — safe-guard. */
     if (reel.spinning || reel.stopping) return;
 
+    /* FIX-7.5 (deep QA #26, 2026-06-19) — mirror-grow insertion point.
+     * _growOne inserts fresh cells at insertionIdx = cur + 1 (RIGHT
+     * BEFORE the bottom buffer). Shrink previously popped from the
+     * end of cells[] = the BOTTOM BUFFER cell, leaving the fresh
+     * cells in place. Over grow→shrink cycles the bottom buffer
+     * eroded while extra visible cells accumulated. Now: remove the
+     * SAME indices grow added (newRows + 1 ... cur), preserving the
+     * bottom buffer slot and keeping cells[] semantics symmetrical. */
+    var targetRows = Math.max(1, Math.trunc(newRows));
+    var removeFromIdx = targetRows + 1; /* first cell after the new visible window */
     for (var i = 0; i < delta; i++) {
-      if (reel.cells.length === 0) break;
-      var removed = reel.cells.pop();
+      if (reel.cells.length <= removeFromIdx) break;
+      var removed = reel.cells.splice(removeFromIdx, 1)[0];
       try { if (removed && removed.parentNode) removed.parentNode.removeChild(removed); } catch (_) {}
     }
 

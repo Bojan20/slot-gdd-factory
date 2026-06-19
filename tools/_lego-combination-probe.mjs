@@ -139,6 +139,16 @@ const GRANDFATHERED_DEAD_HOOKS = new Map([
    * gate broadcaster + winCap module's internal cap-hit detector). */
   ['onSelfExcludedBlocked', 'add emit in jurisdictionGate when self-exclusion blocks a spin'],
   ['onWinCapReached', 'add emit in winCap when configured cap is hit (currently uses onMaxWinCapHit)'],
+  /* FIX-7 (deep QA sweep, 2026-06-19) — orchestrator-emit-only events.
+   * Three bonus blocks (matchThreeBonusReveal, moneyGrabGrid, pathBonusEngine)
+   * + holdAndWin respin listen to *Requested triggers that the orchestrator
+   * (or GDD-specific glue) emits when the trigger condition is satisfied.
+   * Single block ownership not applicable: trigger source is the game
+   * controller, not a sibling block. */
+  ['onHoldAndWinRespin', 'emitter is orchestrator / FSM (holdAndWin internal respin counter)'],
+  ['onMatchThreeBonusRequested', 'emitter is GDD-specific trigger glue (matchThreeBonusReveal consumer-only)'],
+  ['onMoneyGrabRequested', 'emitter is GDD-specific trigger glue (moneyGrabGrid consumer-only)'],
+  ['onPathBonusRequested', 'emitter is GDD-specific trigger glue (pathBonusEngine consumer-only)'],
 ]);
 
 /* In-block duplicate listener calls that are legitimate (separate

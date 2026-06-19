@@ -91,8 +91,11 @@ block('4. Grandfathered set sizes (shrinks-only)', () => {
    * onWinCapReached) that surfaced when strict ownership audit was
    * tightened. Each new entry carries a "wire emitter" follow-up TODO
    * inline in the probe source. */
-  t('4.1 GRANDFATHERED_DEAD_HOOKS size ≤ 15 (snapshot post-Wave LEGO-JR)',
-    deadEntries <= 15);
+  /* FIX-7 (deep QA sweep, 2026-06-19): 4 orchestrator-emit-only events
+   * added (onHoldAndWinRespin + 3 *Requested triggers for bonus blocks).
+   * Snapshot bumped to ≤ 20 to accommodate. */
+  t('4.1 GRANDFATHERED_DEAD_HOOKS size ≤ 20 (snapshot post-Wave FIX-7)',
+    deadEntries <= 20);
   t('4.2 GRANDFATHERED_DEAD_HOOKS size ≥ 1 (probe has at least started cataloguing)',
     deadEntries >= 1);
 

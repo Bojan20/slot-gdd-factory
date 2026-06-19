@@ -179,9 +179,18 @@ export function emitWildTriggerHoldAndWinRuntime(cfg = defaultConfig()) {
   var SEED_ORBS  = ${seedOrbs};
   var SKIP_FS    = ${skipFs};
 
+  /* FIX-7.4 (deep QA #33, 2026-06-19) — semantic conflation split.
+   * Previously lastTriggerCells was reused both as cells that triggered
+   * THIS H&W round (UI flash) AND as the running cascade accumulator.
+   * When the trigger flash cleared lastTriggerCells, the next
+   * onSpinResult/onTumbleStep started counting from zero mid-chain so
+   * cascadeWildCount underreported. Now: dedicated cascadeUnionCells
+   * for the accumulator; lastTriggerCells stays the moment-of-trigger
+   * snapshot only. */
   window.WILD_TRIG_HW_STATE = {
     cascadeWildCount: 0,
     lastTriggerCells: [],
+    cascadeUnionCells: [],
   };
 
   function _ensureAriaSr() {
@@ -277,16 +286,14 @@ export function emitWildTriggerHoldAndWinRuntime(cfg = defaultConfig()) {
     if (MODE === 'onScreen') {
       _maybeTrigger(wilds, wilds.length);
     } else {
-      /* QA fix (general-purpose subagent 2026-06-19, finding F1):
-       * cascade mode must UNION across all chain steps, including the
-       * initial settle. Previously _onSpinResult OVERWROTE the cascade
-       * counter, losing union with onTumbleStep cells that fired
-       * before settle in an out-of-order engine path. Now we always
-       * union (de-dup by cellKey). */
-      var union = window.WILD_TRIG_HW_STATE.lastTriggerCells || [];
+      /* FIX-7.4 (deep QA #33): cascade accumulator uses cascadeUnionCells,
+       * not lastTriggerCells. The trigger flash will set lastTriggerCells
+       * when _maybeTrigger fires. */
+      var union = window.WILD_TRIG_HW_STATE.cascadeUnionCells || [];
       for (var i = 0; i < wilds.length; i++) {
         if (union.indexOf(wilds[i]) === -1) union.push(wilds[i]);
       }
+      window.WILD_TRIG_HW_STATE.cascadeUnionCells = union;
       window.WILD_TRIG_HW_STATE.cascadeWildCount = union.length;
       _maybeTrigger(union, union.length);
     }
@@ -296,11 +303,14 @@ export function emitWildTriggerHoldAndWinRuntime(cfg = defaultConfig()) {
     if (MODE !== 'cascade') return;
     if (SKIP_FS && _isFsActive()) return;
     var wilds = _gridWilds();
-    /* Union-of-cells across the chain (de-dup by cellKey). */
-    var union = window.WILD_TRIG_HW_STATE.lastTriggerCells || [];
+    /* FIX-7.4 (deep QA #33): union accumulator stays in cascadeUnionCells
+     * across chain steps; lastTriggerCells remains the moment-of-trigger
+     * snapshot only. */
+    var union = window.WILD_TRIG_HW_STATE.cascadeUnionCells || [];
     for (var i = 0; i < wilds.length; i++) {
       if (union.indexOf(wilds[i]) === -1) union.push(wilds[i]);
     }
+    window.WILD_TRIG_HW_STATE.cascadeUnionCells = union;
     window.WILD_TRIG_HW_STATE.cascadeWildCount = union.length;
     _maybeTrigger(union, union.length);
   }
@@ -308,6 +318,7 @@ export function emitWildTriggerHoldAndWinRuntime(cfg = defaultConfig()) {
   function _onPreSpin() {
     window.WILD_TRIG_HW_STATE.cascadeWildCount = 0;
     window.WILD_TRIG_HW_STATE.lastTriggerCells = [];
+    window.WILD_TRIG_HW_STATE.cascadeUnionCells = [];
   }
 
   if (window.HookBus && typeof window.HookBus.on === 'function') {

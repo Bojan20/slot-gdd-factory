@@ -242,12 +242,23 @@ function detectClusterWins() {
       /* Fable audit (critical): consult the GDD paytable first; fall
        * back to the placeholder formula only when no row matches. The
        * GDD paytable is the regulator-vetted source of truth — silently
-       * ignoring it produced math drift on every cluster-mode game. */
+       * ignoring it produced math drift on every cluster-mode game.
+       *
+       * FIX-7.2 (deep QA #30, 2026-06-19) — payX formula consistency.
+       * Both paths now apply EXACTLY ONE payX-scaling source:
+       *   GDD path:      gddPay × __bet (vendor row IS per-symbol-per-
+       *                  count; tier is already encoded into row values)
+       *   Fallback path: tierMult × count × bucketMult × __bet (placeholder
+       *                  flat formula; no GDD row available)
+       * Previously the fallback applied tierMult while the GDD path did
+       * not, so two cluster events on the same spin could be priced with
+       * different scaling rules. Documented contract; behavior unchanged
+       * because both paths are mutually exclusive per-(sym,count). */
       const gddPay = _clusterPayLookup(sym, e.count);
       const payX = gddPay != null
         ? gddPay * __bet
         : Math.min(CLUSTER_PAY_CAP, tierMult * e.count * bucketMult) * __bet;
-      events.push({ ...e, bucket, tier, payX, matchLength: e.count });
+      events.push({ ...e, bucket, tier, payX, matchLength: e.count, paySource: gddPay != null ? 'gdd' : 'fallback' });
     });
   }
 

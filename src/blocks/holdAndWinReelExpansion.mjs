@@ -199,6 +199,30 @@ export function emitHoldAndWinReelExpansionRuntime(cfg = defaultConfig()) {
     var sampleCell = host.querySelector('.cell[data-reel="0"]');
     if (!sampleCell) return null;
 
+    /* FIX-7.6 (deep QA #22, 2026-06-19) — expand host grid-template-
+     * columns BEFORE appending so the new column gets an explicit track
+     * sized identically to existing columns. Previously _addColumn relied
+     * on implicit auto-track which sized the new cell to "auto" (content
+     * width), producing a column that visually collapsed or escaped the
+     * layout grid. Read computed track size from the sample cell so the
+     * new column matches without hard-coding any side value. */
+    try {
+      var sampleStyle = window.getComputedStyle(sampleCell);
+      var sampleWidth = sampleStyle && parseFloat(sampleStyle.width);
+      if (Number.isFinite(sampleWidth) && sampleWidth > 0) {
+        var currentTpl = (host.style.gridTemplateColumns || '').trim();
+        /* If the existing template uses 'repeat(N, ...)' shape, just grow N. */
+        var repeatMatch = currentTpl.match(/^repeat\\(\\s*(\\d+)\\s*,\\s*([^)]+)\\)$/);
+        if (repeatMatch) {
+          host.style.gridTemplateColumns = 'repeat(' + (Number(repeatMatch[1]) + 1) + ', ' + repeatMatch[2].trim() + ')';
+        } else if (currentTpl) {
+          host.style.gridTemplateColumns = currentTpl + ' ' + sampleWidth + 'px';
+        } else {
+          host.style.gridTemplateColumns = 'repeat(' + (newColIdx + 1) + ', ' + sampleWidth + 'px)';
+        }
+      }
+    } catch (_) {}
+
     var addedKeys = [];
     for (var row = 0; row < dims.maxRows; row++) {
       var newCell = sampleCell.cloneNode(false);
@@ -209,6 +233,14 @@ export function emitHoldAndWinReelExpansionRuntime(cfg = defaultConfig()) {
       newCell.setAttribute('aria-label', 'Bonus column added');
       newCell.setAttribute('role', 'note');
       newCell.textContent = '';
+      /* FIX-7.6 (deep QA #22): copy computed inline sizing from sample
+       * cell so the clone matches even when CSS uses grid-area shorthand
+       * that cloneNode(false) doesn't carry. */
+      try {
+        var computed = window.getComputedStyle(sampleCell);
+        if (computed && computed.width) newCell.style.width = computed.width;
+        if (computed && computed.height) newCell.style.height = computed.height;
+      } catch (_) {}
       host.appendChild(newCell);
       addedKeys.push(newColIdx + ',' + row);
     }

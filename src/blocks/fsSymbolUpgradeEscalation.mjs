@@ -241,12 +241,26 @@ export function emitFsSymbolUpgradeEscalationRuntime(cfg = defaultConfig()) {
   }
 
   function _writePool(pool) {
+    /* FIX-7.1 (deep QA #29, 2026-06-19) — symmetric SYMBOLS fallback +
+     * console.warn surface. _snapshotPool reads window.SYMBOLS when
+     * POOL is absent, but the old _writePool silently no-op-ped in that
+     * scenario (escalation effective only on POOL-shaped games). Now
+     * both shapes are writable, and any thrown error reaches the console
+     * so silent-failure rule (JSDoc contract) is honored. */
     try {
       if (Array.isArray(window.POOL)) {
         window.POOL.length = 0;
         for (var i = 0; i < pool.length; i++) window.POOL.push(pool[i]);
+        return;
       }
-    } catch (_) {}
+      if (Array.isArray(window.SYMBOLS)) {
+        window.SYMBOLS.length = 0;
+        for (var j = 0; j < pool.length; j++) window.SYMBOLS.push(pool[j]);
+        return;
+      }
+    } catch (e) {
+      try { if (typeof console !== 'undefined' && console.warn) console.warn('[fsSymbolUpgradeEscalation] _writePool failed', e); } catch (__) {}
+    }
   }
 
   function _doUpgrade() {
