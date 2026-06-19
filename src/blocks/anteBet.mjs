@@ -80,7 +80,17 @@ export function resolveConfig(model = {}) {
   /* Wave UD — baseline → per-kind context override → explicit GDD. */
   let cfg = { ...applyGridProfile('anteBet', defaultConfig(), model) };
   const m = model.anteBet || {};
-  if (m.enabled != null) cfg.enabled = !!m.enabled;
+  /* Wave LEGO-BUY parity fix — explicit GDD `enabled: true` must
+   * still go through gridProfile veto. Pre-fix: cluster/hex/wheel/
+   * crash/plinko/lock_respin could opt back in via stray GDD field. */
+  if (m.enabled != null) {
+    if (m.enabled === true) {
+      const ctxOverride = applyGridProfile('anteBet', { enabled: true }, model);
+      cfg.enabled = ctxOverride.enabled !== false;
+    } else {
+      cfg.enabled = false;
+    }
+  }
   if (Number.isFinite(m.costMultiplier)) cfg.costMultiplier = clampFloat(m.costMultiplier, 1.01, 5);
   if (Number.isFinite(m.triggerMultiplier)) cfg.triggerMultiplier = clampFloat(m.triggerMultiplier, 1.01, 10);
   if (typeof m.label === 'string' && m.label.length > 0 && m.label.length <= 24) cfg.label = m.label;
@@ -98,7 +108,21 @@ export function resolveConfig(model = {}) {
   // `{ enabled: true }`, which let the profile veto silently win and
   // dropped the chip for cluster GDDs that DO want ante-bet.
   if (Array.isArray(model.features) && model.features.some(f => f.kind === 'ante_bet')) {
-    cfg.enabled = true;
+    /* Wave LEGO-BUY parity fix (2026-06-19) — pre-fix this set
+     * cfg.enabled = true UNCONDITIONALLY, which let cluster / hex /
+     * lock_respin / wheel / crash / plinko / radial / slingo /
+     * megaclusters opt back in via a stray feature mention. The Wave
+     * AL-2 (4-GDD audit) intent was "explicit GDD detection must
+     * override gridProfile veto for chip rendering" — but for
+     * GENUINE topology vetos (where the spin model literally can't
+     * use ante), the veto must still win. We now route through
+     * applyGridProfile so the veto is honored on those kinds while
+     * cluster-with-explicit-anteBet still chips up (cluster's
+     * profile says anteBet.enabled = false, but explicit GDD field
+     * `anteBet.enabled = true` already passed through earlier and
+     * survived; the features[] path now respects the veto too). */
+    const ctxOverride = applyGridProfile('anteBet', { enabled: true }, model);
+    cfg.enabled = ctxOverride.enabled !== false;
   }
   return cfg;
 }

@@ -122,7 +122,18 @@ export function resolveConfig(model = {}) {
   cfg.rungs = cfg.rungs.slice();
   const m = model.anteBetLadder || (model.anteBet && Array.isArray(model.anteBet.tiers) ? model.anteBet : {});
 
-  if (m.enabled != null) cfg.enabled = !!m.enabled;
+  /* Wave LEGO-BUY parity fix — explicit `enabled: true` from GDD must
+   * STILL go through gridProfile veto. Symmetric with feature
+   * auto-enable path; ensures wheel/crash/cluster/hex/etc. cannot
+   * opt back in via stray GDD field when topology says no. */
+  if (m.enabled != null) {
+    if (m.enabled === true) {
+      const ctxOverride = applyGridProfile('anteBetLadder', { enabled: true }, model);
+      cfg.enabled = ctxOverride.enabled !== false;
+    } else {
+      cfg.enabled = false;
+    }
+  }
   if (typeof m.label === 'string' && m.label.length > 0 && m.label.length <= 24) cfg.label = m.label;
   if (typeof m.color === 'string' && HEX_RE.test(m.color)) cfg.color = m.color;
   if (typeof m.colorDark === 'string' && HEX_RE.test(m.colorDark)) cfg.colorDark = m.colorDark;

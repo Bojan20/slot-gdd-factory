@@ -91,7 +91,17 @@ export function resolveConfig(model = {}) {
   let cfg = { ...applyGridProfile('bonusBuy', defaultConfig(), model) };
   const m = model.bonusBuy || {};
   const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
-  if (m.enabled != null) cfg.enabled = !!m.enabled;
+  /* Wave LEGO-BUY parity fix — explicit GDD `enabled: true` must
+   * still go through gridProfile veto. Pre-fix: wheel / crash /
+   * plinko / radial could opt back in via stray GDD field. */
+  if (m.enabled != null) {
+    if (m.enabled === true) {
+      const ctxOverride = applyGridProfile('bonusBuy', { enabled: true }, model);
+      cfg.enabled = ctxOverride.enabled !== false;
+    } else {
+      cfg.enabled = false;
+    }
+  }
   if (Number.isFinite(m.costX)) cfg.costX = clampInt(m.costX, 1, 10000);
   if (typeof m.label === 'string' && m.label.length > 0 && m.label.length <= 24) cfg.label = m.label;
   if (Number.isFinite(m.forceScatters)) cfg.forceScatters = clampInt(m.forceScatters, 3, 12);

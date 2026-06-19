@@ -113,6 +113,7 @@ export const PROFILE = Object.freeze({
        generally doesn't (the trigger condition is rare scatter
        landing, not anteable). */
     anteBet:         { enabled: false },
+    anteBetLadder:   { enabled: false }, /* Wave LEGO-BUY — mirror anteBet veto */
   }),
 
   /* ── Cluster topologies — no paylines, pure cluster-pays ── */
@@ -123,11 +124,15 @@ export const PROFILE = Object.freeze({
        common purchase but ante bet is not (the cluster trigger model
        doesn't use ante). */
     anteBet:         { enabled: false },
+    anteBetLadder:   { enabled: false }, /* Wave LEGO-BUY — mirror anteBet veto */
+    /* bonusBuyMenu is the multi-tier variant of bonusBuy — same
+     * topology decision: clusters CAN host a buy ladder. Allowed. */
   }),
   megaclusters: Object.freeze({
     paylines:        { enabled: false },
     paylineOverlay:  { enabled: false },
     anteBet:         { enabled: false },
+    anteBetLadder:   { enabled: false }, /* Wave LEGO-BUY — mirror anteBet veto */
   }),
 
   /* ── Hex topology — own engine + cluster-style scoring ── */
@@ -135,6 +140,7 @@ export const PROFILE = Object.freeze({
     paylines:        { enabled: false },
     paylineOverlay:  { enabled: false },
     anteBet:         { enabled: false },
+    anteBetLadder:   { enabled: false }, /* Wave LEGO-BUY — mirror anteBet veto */
   }),
 
   /* ── Growth topologies — variable visible window ── */
@@ -151,7 +157,9 @@ export const PROFILE = Object.freeze({
     paylines:        { enabled: false },
     paylineOverlay:  { enabled: false },
     bonusBuy:        { enabled: false }, /* wheels are themselves a bonus/scaler — no buy-into-wheel */
+    bonusBuyMenu:    { enabled: false }, /* Wave LEGO-BUY — multi-tier variant mirrors veto */
     anteBet:         { enabled: false },
+    anteBetLadder:   { enabled: false },
     scatterCelebration: { enabled: false }, /* wheel landing is its own scatter ceremony */
     paytable:        { showLineMap: false }, /* segments listed instead */
   }),
@@ -159,7 +167,9 @@ export const PROFILE = Object.freeze({
     paylines:        { enabled: false },
     paylineOverlay:  { enabled: false },
     bonusBuy:        { enabled: false },
+    bonusBuyMenu:    { enabled: false }, /* Wave LEGO-BUY — multi-tier variant mirrors veto */
     anteBet:         { enabled: false },
+    anteBetLadder:   { enabled: false },
     scatterCelebration: { enabled: false },
     paytable:        { showLineMap: false },
   }),
@@ -167,7 +177,9 @@ export const PROFILE = Object.freeze({
     paylines:        { enabled: false },
     paylineOverlay:  { enabled: false },
     bonusBuy:        { enabled: false }, /* crash is its own multiplier — no separate buy */
+    bonusBuyMenu:    { enabled: false }, /* Wave LEGO-BUY — multi-tier variant mirrors veto */
     anteBet:         { enabled: false },
+    anteBetLadder:   { enabled: false },
     scatterCelebration: { enabled: false },
     paytable:        { showLineMap: false, showFeaturesList: false }, /* peak distribution table instead */
   }),
@@ -175,7 +187,9 @@ export const PROFILE = Object.freeze({
     paylines:        { enabled: false },
     paylineOverlay:  { enabled: false },
     bonusBuy:        { enabled: false }, /* plinko is its own bucket scaler */
+    bonusBuyMenu:    { enabled: false }, /* Wave LEGO-BUY — multi-tier variant mirrors veto */
     anteBet:         { enabled: false },
+    anteBetLadder:   { enabled: false },
     scatterCelebration: { enabled: false },
     paytable:        { showLineMap: false }, /* bucket map instead */
   }),
@@ -183,7 +197,8 @@ export const PROFILE = Object.freeze({
     paylines:        { enabled: false }, /* slingo uses bingo-style row/col completion */
     paylineOverlay:  { enabled: false },
     anteBet:         { enabled: false },
-    /* bonusBuy is OK for slingo — common pattern is "buy extra strips" */
+    anteBetLadder:   { enabled: false }, /* Wave LEGO-BUY — mirror anteBet veto (ladder rungs map to ante-bet RTP rebalance which slingo card-pick model does not use) */
+    /* bonusBuy + bonusBuyMenu are OK for slingo — common pattern is "buy extra strips" */
   }),
   dual: Object.freeze({
     /* Twin / colossal — primary grid drives lines; subgrid is a mirror.

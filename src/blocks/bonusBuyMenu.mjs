@@ -145,7 +145,18 @@ export function resolveConfig(model = {}) {
   cfg.tiers = cfg.tiers.slice(); // unfreeze for working copy
   const m = model.bonusBuyMenu || {};
 
-  if (m.enabled != null) cfg.enabled = !!m.enabled;
+  /* Wave LEGO-BUY parity fix — explicit `enabled: true` from GDD must
+   * STILL go through gridProfile veto. Otherwise wheel/crash/plinko/
+   * radial would honor a misguided GDD opt-in that the topology cannot
+   * meaningfully render. Symmetric with the feature auto-enable path. */
+  if (m.enabled != null) {
+    if (m.enabled === true) {
+      const ctxOverride = applyGridProfile('bonusBuyMenu', { enabled: true }, model);
+      cfg.enabled = ctxOverride.enabled !== false;
+    } else {
+      cfg.enabled = false;
+    }
+  }
   if (typeof m.label === 'string' && m.label.length > 0 && m.label.length <= 24) cfg.label = m.label;
   if (Number.isFinite(m.rearmMs)) cfg.rearmMs = _clampInt(m.rearmMs, 100, 10000, cfg.rearmMs);
   if (typeof m.confirmMessage === 'string' && m.confirmMessage.length <= 200) cfg.confirmMessage = m.confirmMessage;
