@@ -1,6 +1,32 @@
 # Master TODO — slot-gdd-factory
 
-> **2026-06-19 · HEAD `pending`** · Σ **171 LEGO blokova** · Σ **1861 testova/asserts** · 0 fail
+> **2026-06-19 · HEAD `pending`** · Σ **172 LEGO blokova** · Σ **1907 testova/asserts** · 0 fail
+>
+> ## 🎬 Wave LEGO-VOLATILITY (B-6) — Pre-spin player choice (HEAD pending)
+>
+> Boki: *"Dalje?"* — autonomno biram sledeću Wave (B-6).
+> Single-block dodaje player-choice volatility selector — industry-
+> standard UX pattern (Low/Med/High level chooser pre-spin).
+>
+> ```
+> ┌──────────────────────────────────────────────────────────────────────┐
+> │ Novi blok (171 → 172)                                                │
+> ├──────────────────────────────────────────────────────────────────────┤
+> │ volatilitySelector.mjs   │ 3-5 tier player-choice chooser pinned    │
+> │                          │ top-left (clears ante-bet dock). role=    │
+> │                          │ radiogroup + role=radio, Arrow/Home/End   │
+> │                          │ keyboard nav, subtitle ("Frequent wins"   │
+> │                          │ vs "Rare big wins") via aria-describedby. │
+> │                          │ Math hook: window.VOLATILITY_TIER za PAR  │
+> │                          │ Phase 2. Locked during bonus rounds.      │
+> │                          │ Multi-owner sa settingsPanel (Settings →   │
+> │                          │ Volatility) za onVolatilityChanged event.  │
+> └──────────────────────────┴──────────────────────────────────────────┘
+> ```
+>
+> **Test gates**: volatilitySelector 46/46 · LEGO 8/8 (293 events) · cross-engine 450/450 · render-parity 190/190 · parse-real 4/4 · render-grid 20/20.
+>
+> ---
 >
 > ## 🎬 Wave LEGO-COLLECT (B-4) — Coin-collect meta-game trio (HEAD pending)
 >

@@ -238,6 +238,13 @@ import {
   emitCollectRevealOverlayRuntime,
   resolveConfig as resolveCollectRevealOverlayConfig,
 } from './blocks/collectRevealOverlay.mjs';
+/* Wave LEGO-VOLATILITY (B-6) — pre-spin player choice selector. */
+import {
+  emitVolatilitySelectorCSS,
+  emitVolatilitySelectorMarkup,
+  emitVolatilitySelectorRuntime,
+  resolveConfig as resolveVolatilitySelectorConfig,
+} from './blocks/volatilitySelector.mjs';
 /* Wave L–P — 16 detected-but-unused feature kinds, now wired as LEGO blocks */
 import {
   emitStickyWildCSS, emitStickyWildRuntime,
@@ -1099,6 +1106,8 @@ ${/* Wave LEGO-COLLECT (B-4) — coin-collect meta-game trio. */ ''}
 ${emitCoinCollectCSS(resolveCoinCollectConfig(model))}
 ${emitCumulativeMeterCSS(resolveCumulativeMeterConfig(model))}
 ${emitCollectRevealOverlayCSS(resolveCollectRevealOverlayConfig(model))}
+${/* Wave LEGO-VOLATILITY (B-6) — pre-spin player choice. */ ''}
+${emitVolatilitySelectorCSS(resolveVolatilitySelectorConfig(model))}
 /* Wave L–P — 16 feature blocks CSS (no-op when disabled) */
 ${emitStickyWildCSS(resolveStickyWildConfig(model))}
 ${emitExpandingWildCSS(resolveExpandingWildConfig(model))}
@@ -1340,6 +1349,8 @@ ${/* Wave LEGO-COLLECT (B-4) — coin-collect meta-game markup. */ ''}
 ${emitCoinCollectMarkup(resolveCoinCollectConfig(model))}
 ${emitCumulativeMeterMarkup(resolveCumulativeMeterConfig(model))}
 ${emitCollectRevealOverlayMarkup(resolveCollectRevealOverlayConfig(model))}
+${/* Wave LEGO-VOLATILITY (B-6) — pre-spin player choice markup. */ ''}
+${emitVolatilitySelectorMarkup(resolveVolatilitySelectorConfig(model))}
 <!-- Wave L–P markup (empty strings when disabled) -->
 ${emitPersistentMultiplierMarkup(resolvePersistentMultiplierConfig(model))}
 ${emitProgressiveFreeSpinsMarkup(resolveProgressiveFreeSpinsConfig(model))}
@@ -1589,6 +1600,8 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitCoinCollectRuntime(resolveCoinCollectConfig(model))}
   ${emitCumulativeMeterRuntime(resolveCumulativeMeterConfig(model))}
   ${emitCollectRevealOverlayRuntime(resolveCollectRevealOverlayConfig(model))}
+  ${/* Wave LEGO-VOLATILITY (B-6) — pre-spin player choice runtime. */ ''}
+  ${emitVolatilitySelectorRuntime(resolveVolatilitySelectorConfig(model))}
 
   /* Wave L–P — 16 feature kinds runtime (no-op stubs when disabled).
      Order: wilds first (modify the grid), then evaluators (read modified

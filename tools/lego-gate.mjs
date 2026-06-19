@@ -500,6 +500,12 @@ const EXPECTED_EMIT_OWNERS = {
   onCumulativeMeterReset:         ['cumulativeMeter.mjs'],
   onCollectRevealOpened:          ['collectRevealOverlay.mjs'],
   onCollectRevealClaimed:         ['collectRevealOverlay.mjs'],
+  /* Wave LEGO-VOLATILITY (B-6) — pre-spin player choice. Multi-owner
+   * with pre-existing settingsPanel.mjs (which already emitted this
+   * event from a "Settings → Volatility" knob). Both surfaces are
+   * legitimate emit sources; downstream subscribers may filter by
+   * payload.source ('settings' / undefined for selector). */
+  onVolatilityChanged:            ['volatilitySelector.mjs', 'settingsPanel.mjs'],
   /* 2026-06-11 — holdAndWin phase machine emits its own INACTIVE → INTRO
    * → RUNNING → SUMMARY phase signal + a final end stats payload. Both
    * are sole-owned by the block; downstream HUD / summary listeners read

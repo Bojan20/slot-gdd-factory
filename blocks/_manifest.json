@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-19T15:10:12.471Z",
+  "generatedAt": "2026-06-19T15:16:08.390Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 171,
+  "totalBlocks": 172,
   "blocks": [
     {
       "name": "allWaysEval",
@@ -2795,7 +2795,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 1017
+      "loc": 1018
     },
     {
       "name": "hotReload",
@@ -6481,6 +6481,52 @@
         "labelText": "FORCE"
       },
       "loc": 774
+    },
+    {
+      "name": "volatilitySelector",
+      "file": "src/blocks/volatilitySelector.mjs",
+      "testFile": "tests/blocks/volatilitySelector.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-VOLATILITY (B-6) — Pre-spin player volatility chooser.",
+      "exports": [
+        "defaultConfig",
+        "emitVolatilitySelectorCSS",
+        "emitVolatilitySelectorMarkup",
+        "emitVolatilitySelectorRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [
+        "onVolatilityChanged"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "label": "STYLE",
+        "tiers": [
+          {
+            "id": "low",
+            "label": "LOW",
+            "subtitle": "Frequent small wins"
+          },
+          {
+            "id": "medium",
+            "label": "MED",
+            "subtitle": "Balanced volatility"
+          },
+          {
+            "id": "high",
+            "label": "HIGH",
+            "subtitle": "Rare big wins"
+          }
+        ],
+        "defaultTierIndex": 1,
+        "color": "#7fbfff",
+        "colorDark": "#205080"
+      },
+      "loc": 334
     },
     {
       "name": "walkingWild",

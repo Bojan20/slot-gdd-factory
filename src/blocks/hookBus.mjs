@@ -697,6 +697,7 @@ export const HOOK_EVENTS = Object.freeze([
   'onCumulativeMeterReset',  // Owner: cumulativeMeter.mjs (LEGO-COLLECT B-4)
   'onCollectRevealOpened',  // Owner: collectRevealOverlay.mjs (LEGO-COLLECT B-4)
   'onCollectRevealClaimed',  // Owner: collectRevealOverlay.mjs (LEGO-COLLECT B-4)
+  'onVolatilityChanged',  // Owner: volatilitySelector.mjs (LEGO-VOLATILITY B-6)
   'onCoinShowerEnd',  // Owner: coinShower.mjs
   'onCoinShowerStart',  // Owner: coinShower.mjs
   'onCoolOffEnforced',  // Owner: netherlandsComplianceGate.mjs
