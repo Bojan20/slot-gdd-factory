@@ -8,13 +8,13 @@ Boki: *"upisi sve u master todo i kreni prvo HIGH sve redom sa svim ultra detalj
 ┌────┬──────────────────────────────────────────────────────────────┬──────────┬──────────┐
 │ ID │ Stavka                                                       │ Severity │ Status   │
 ├────┼──────────────────────────────────────────────────────────────┼──────────┼──────────┤
-│ H1 │ bonusBuyMenu HMR __BBM_HOOKS_WIRED__ sentinel                │ 🔴 HIGH  │ PENDING  │
-│ H2 │ bonusBuyMenu XSS confirmMessage filter (</script> digraph)   │ 🔴 HIGH  │ PENDING  │
-│ H3 │ matchThreeBonus #ff6a6a → #b71c1c AAA contrast               │ 🔴 HIGH  │ PENDING  │
-│ H4 │ 20 blokova text-mutate aria-live region                       │ 🔴 HIGH  │ PENDING  │
-│ H5 │ H&W ↔ FS mutual-exclusive runtime gate                       │ 🔴 HIGH  │ PENDING  │
-│ H6 │ H&W atomic credit escrow + commit                            │ 🔴 HIGH  │ PENDING  │
-│ H7 │ progressiveFsRetriggerLadder × fsReelHeight compound rule    │ 🔴 HIGH  │ PENDING  │
+│ H1 │ bonusBuyMenu HMR __BBM_WIRED__ sentinel                      │ 🔴 HIGH  │ ✅ DONE  │
+│ H2 │ bonusBuyMenu XSS confirmMessage filter (escape digraph)      │ 🔴 HIGH  │ ✅ DONE  │
+│ H3 │ matchThreeBonus #ff6a6a → #b71c1c AAA contrast               │ 🔴 HIGH  │ ✅ DONE  │
+│ H4 │ 20 blokova text-mutate aria-live region (shared __SR_)        │ 🔴 HIGH  │ ✅ DONE  │
+│ H5 │ H&W ↔ FS mutual-exclusive runtime gate                       │ 🔴 HIGH  │ ✅ DONE  │
+│ H6 │ H&W atomic credit escrow + commit                            │ 🔴 HIGH  │ ✅ DONE  │
+│ H7 │ progressiveFsRetriggerLadder × fsReelHeight compound rule    │ 🔴 HIGH  │ ✅ DONE  │
 ├────┼──────────────────────────────────────────────────────────────┼──────────┼──────────┤
 │ M1 │ 7 hot-path silent catches → console.warn + telemetry         │ 🟡 MED   │ later    │
 │ M2 │ S10 slam mid-anim dynamic E2E test                            │ 🟡 MED   │ later    │
@@ -40,6 +40,24 @@ Boki: *"upisi sve u master todo i kreni prvo HIGH sve redom sa svim ultra detalj
 ```
 
 QA finale posle H1-H7: 5 agenata + Fable Copilot full sweep + sve test gates.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│ FIX-8 HIGH 7/7 ZATVOREN · HEAD d309562 · 2026-06-19 17:53 CEST                      │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ H1 bonusBuyMenu HMR sentinel       window.__BBM_WIRED__ + typeof guard parity      │
+│ H2 bonusBuyMenu XSS filter         </script + <!-- + --> strip + \\u003c escape    │
+│ H3 matchThreeBonus AAA contrast    #fff/#b71c1c = 7.42:1 (≥ 7:1 SC 1.4.6 AAA)      │
+│ H4 Shared aria-live announcer       #srAnnouncer + window.__SR_ANNOUNCE__(msg,opts) │
+│ H5 H&W ↔ FS mutual-exclusive       Bidirekcioni guard u hwMaybeEnter + FSM_enterIntro│
+│ H6 H&W atomic credit ESCROW         Object.freeze snapshot at SUMMARY entry          │
+│ H7 PFRL × fsReelHeight compound     window.__PFRL_COMPOUND_MAX__ Math.max protokol │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ Regression: 8/8 LEGO · all block suites · 4/4 GDD · 0 parity · 20/20 force          │
+│             102+10 visual · 8/8 visreg-real · agent verifier 7/7 PASS               │
+│ 17 MED + 2 LOW preostalo za FIX-9 (po želji Boki signala)                           │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
