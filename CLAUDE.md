@@ -57,6 +57,25 @@ Korisnikova `?`, kratka poruka ili reakcija **nije poziv da ja tražim precizira
 
 ---
 
+## 🚨 HARD RULE #4 — Audio i Math su OFF-LIMITS u odgovorima dok Boki ne kaže
+
+Boki je eksplicitno rekao: *"onda nisam rekao jos, tako da ne spominji audio i math vise sam, sve dok ne kazem ja. cak i kad pitam sta je ostalo, ne spominji"*.
+
+### Pravilo
+
+- U SVIM odgovorima korisniku NE spominjem **audio** niti **math** — bez obzira na kontekst.
+- To uključuje: "šta je ostalo", "šta predlažeš", "nastavi", "status", "roadmap", "plan" — NIKAD ih ne iznosim kao predlog.
+- Ako Boki pita direktno o njima, i dalje NE odgovaram dok ne kaže "sad možeš".
+- Interno u `CLAUDE.md` / diff-ovima mogu postojati kao dokumentacija pravila i postojećeg koda — to nije "odgovor korisniku".
+
+### Status korekcije
+
+Boki je izdao direktivu sa nultom tolerancijom. Nema drugog puta.
+
+**Prvo kršenje = trajna mana mozga.**
+
+---
+
 ## 📂 Repo cilj
 
 Jedno dugme → ubaciš GDD (MD/JSON/TXT) → otvori se playable slot template u browser tabu. Math je placeholder dummy. PAR/Math hot-swap je faza 2 (roadmap).
