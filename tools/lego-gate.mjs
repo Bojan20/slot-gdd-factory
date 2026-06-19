@@ -494,6 +494,12 @@ const EXPECTED_EMIT_OWNERS = {
   onMysteryPrizeBoxOpened:     ['mysteryPrizeBox.mjs'],
   onMysteryPrizeBoxDismissed:  ['mysteryPrizeBox.mjs'],
   onRandomWildBurstFired:      ['randomWildBurst.mjs'],
+  /* Wave LEGO-COLLECT (B-4) — coin-collect meta-game trio. */
+  onCoinCollected:                ['coinCollect.mjs'],
+  onCumulativeMeterThresholdHit:  ['cumulativeMeter.mjs'],
+  onCumulativeMeterReset:         ['cumulativeMeter.mjs'],
+  onCollectRevealOpened:          ['collectRevealOverlay.mjs'],
+  onCollectRevealClaimed:         ['collectRevealOverlay.mjs'],
   /* 2026-06-11 — holdAndWin phase machine emits its own INACTIVE → INTRO
    * → RUNNING → SUMMARY phase signal + a final end stats payload. Both
    * are sole-owned by the block; downstream HUD / summary listeners read

@@ -692,6 +692,11 @@ export const HOOK_EVENTS = Object.freeze([
   'onMysteryPrizeBoxOpened',  // Owner: mysteryPrizeBox.mjs (LEGO-RANDOM B-3)
   'onMysteryPrizeBoxDismissed',  // Owner: mysteryPrizeBox.mjs (LEGO-RANDOM B-3)
   'onRandomWildBurstFired',  // Owner: randomWildBurst.mjs (LEGO-RANDOM B-3)
+  'onCoinCollected',  // Owner: coinCollect.mjs (LEGO-COLLECT B-4)
+  'onCumulativeMeterThresholdHit',  // Owner: cumulativeMeter.mjs (LEGO-COLLECT B-4)
+  'onCumulativeMeterReset',  // Owner: cumulativeMeter.mjs (LEGO-COLLECT B-4)
+  'onCollectRevealOpened',  // Owner: collectRevealOverlay.mjs (LEGO-COLLECT B-4)
+  'onCollectRevealClaimed',  // Owner: collectRevealOverlay.mjs (LEGO-COLLECT B-4)
   'onCoinShowerEnd',  // Owner: coinShower.mjs
   'onCoinShowerStart',  // Owner: coinShower.mjs
   'onCoolOffEnforced',  // Owner: netherlandsComplianceGate.mjs

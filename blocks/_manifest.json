@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-19T14:59:26.628Z",
+  "generatedAt": "2026-06-19T15:10:12.471Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 168,
+  "totalBlocks": 171,
   "blocks": [
     {
       "name": "allWaysEval",
@@ -1227,6 +1227,38 @@
       "loc": 232
     },
     {
+      "name": "coinCollect",
+      "file": "src/blocks/coinCollect.mjs",
+      "testFile": "tests/blocks/coinCollect.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-COLLECT (B-4 · 1/3) — Coin / Token collection mechanic.",
+      "exports": [
+        "defaultConfig",
+        "emitCoinCollectCSS",
+        "emitCoinCollectMarkup",
+        "emitCoinCollectRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "onSpinResult"
+      ],
+      "emittedEvents": [
+        "onCoinCollected"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "coinSymbolId": "COIN",
+        "defaultCoinValue": 1,
+        "pauseDuringFs": false,
+        "resetOnFsEnd": false,
+        "color": "#ffd34a",
+        "haloRGB": "255,211,74"
+      },
+      "loc": 251
+    },
+    {
       "name": "coinShower",
       "file": "src/blocks/coinShower.mjs",
       "testFile": "tests/blocks/coinShower.test.mjs",
@@ -1306,6 +1338,46 @@
         "zIndex": 40
       },
       "loc": 274
+    },
+    {
+      "name": "collectRevealOverlay",
+      "file": "src/blocks/collectRevealOverlay.mjs",
+      "testFile": "tests/blocks/collectRevealOverlay.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-COLLECT (B-4 · 3/3) — Threshold reveal choreography.",
+      "exports": [
+        "defaultConfig",
+        "emitCollectRevealOverlayCSS",
+        "emitCollectRevealOverlayMarkup",
+        "emitCollectRevealOverlayRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onCumulativeMeterThresholdHit",
+        "onFsEnd",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [
+        "onCollectRevealClaimed",
+        "onCollectRevealOpened"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "label": "COLLECT REWARD",
+        "tierNames": [
+          "BRONZE",
+          "SILVER",
+          "GOLD",
+          "PLATINUM",
+          "DIAMOND"
+        ],
+        "autoDismissMs": 0,
+        "color": "#ffd34a",
+        "colorDark": "#a07520",
+        "haloRGB": "255,211,74",
+        "ctaLabel": "CLAIM"
+      },
+      "loc": 310
     },
     {
       "name": "colorblindPatterns",
@@ -1399,6 +1471,56 @@
         "counterTickDivisor": 20
       },
       "loc": 299
+    },
+    {
+      "name": "cumulativeMeter",
+      "file": "src/blocks/cumulativeMeter.mjs",
+      "testFile": "tests/blocks/cumulativeMeter.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-COLLECT (B-4 · 2/3) — Session-cumulative HUD meter.",
+      "exports": [
+        "defaultConfig",
+        "emitCumulativeMeterCSS",
+        "emitCumulativeMeterMarkup",
+        "emitCumulativeMeterRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onCoinCollected"
+      ],
+      "emittedEvents": [
+        "onCumulativeMeterReset",
+        "onCumulativeMeterThresholdHit"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "label": "COINS",
+        "thresholds": [
+          {
+            "id": "bronze",
+            "value": 50,
+            "awardKind": "credit",
+            "awardValue": 25
+          },
+          {
+            "id": "silver",
+            "value": 200,
+            "awardKind": "credit",
+            "awardValue": 150
+          },
+          {
+            "id": "gold",
+            "value": 1000,
+            "awardKind": "fs_trigger",
+            "awardValue": 10
+          }
+        ],
+        "resetMode": "subtract",
+        "color": "#ffd34a",
+        "colorDark": "#a07520",
+        "haloRGB": "255,211,74"
+      },
+      "loc": 335
     },
     {
       "name": "dailyJackpot",
@@ -2673,7 +2795,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 1012
+      "loc": 1017
     },
     {
       "name": "hotReload",

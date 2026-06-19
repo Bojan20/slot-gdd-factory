@@ -1,6 +1,40 @@
 # Master TODO — slot-gdd-factory
 
-> **2026-06-19 · HEAD `pending`** · Σ **168 LEGO blokova** · Σ **1740 testova/asserts** · 0 fail
+> **2026-06-19 · HEAD `pending`** · Σ **171 LEGO blokova** · Σ **1861 testova/asserts** · 0 fail
+>
+> ## 🎬 Wave LEGO-COLLECT (B-4) — Coin-collect meta-game trio (HEAD pending)
+>
+> Boki: *"Dalje?"* — autonomno biram sledeću Wave (B-4) iz backlog-a.
+> 3 nova bloka koja zajedno formiraju klasičan "collect-and-claim"
+> meta-game pattern: detect → meter → reveal.
+>
+> ```
+> ┌──────────────────────────────────────────────────────────────────────────┐
+> │ Novi blokovi (168 → 171)                                                 │
+> ├──────────────────────────────────────────────────────────────────────────┤
+> │ coinCollect.mjs           │ Detect + tally — skenira grid za            │
+> │                           │ data-coin-value cells, tally u              │
+> │                           │ window.__COIN_COLLECT__.sessionTotal,       │
+> │                           │ emits onCoinCollected                       │
+> ├───────────────────────────┼──────────────────────────────────────────────┤
+> │ cumulativeMeter.mjs       │ Visible HUD widget — progress bar +         │
+> │                           │ value label, role=progressbar + aria-       │
+> │                           │ valuenow + valuetext. 3 thresholds default  │
+> │                           │ (bronze/silver/gold). resetMode: full /     │
+> │                           │ subtract / continue. Emits Threshold +      │
+> │                           │ Reset events.                                │
+> ├───────────────────────────┼──────────────────────────────────────────────┤
+> │ collectRevealOverlay.mjs  │ Celebratory full-screen reveal kad         │
+> │                           │ threshold hit. role=alertdialog, focus       │
+> │                           │ trap, Esc/Enter/Space claim, optional       │
+> │                           │ auto-dismiss. 4 award kinds: credit /        │
+> │                           │ multiplier / scatter / fs_trigger.          │
+> └───────────────────────────┴──────────────────────────────────────────────┘
+> ```
+>
+> **Test gates**: coinCollect 35/35 · cumulativeMeter 40/40 · collectRevealOverlay 46/46 · LEGO 8/8 (293 events) · cross-engine 450/450 · render-parity 190/190.
+>
+> ---
 >
 > ## 🎬 Wave LEGO-RANDOM (B-3) — In-spin random pattern blocks (HEAD pending)
 >

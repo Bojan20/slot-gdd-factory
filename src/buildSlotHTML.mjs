@@ -219,6 +219,25 @@ import {
   emitRandomWildBurstRuntime,
   resolveConfig as resolveRandomWildBurstConfig,
 } from './blocks/randomWildBurst.mjs';
+/* Wave LEGO-COLLECT (B-4) — coin-collect meta-game trio. */
+import {
+  emitCoinCollectCSS,
+  emitCoinCollectMarkup,
+  emitCoinCollectRuntime,
+  resolveConfig as resolveCoinCollectConfig,
+} from './blocks/coinCollect.mjs';
+import {
+  emitCumulativeMeterCSS,
+  emitCumulativeMeterMarkup,
+  emitCumulativeMeterRuntime,
+  resolveConfig as resolveCumulativeMeterConfig,
+} from './blocks/cumulativeMeter.mjs';
+import {
+  emitCollectRevealOverlayCSS,
+  emitCollectRevealOverlayMarkup,
+  emitCollectRevealOverlayRuntime,
+  resolveConfig as resolveCollectRevealOverlayConfig,
+} from './blocks/collectRevealOverlay.mjs';
 /* Wave L–P — 16 detected-but-unused feature kinds, now wired as LEGO blocks */
 import {
   emitStickyWildCSS, emitStickyWildRuntime,
@@ -1076,6 +1095,10 @@ ${emitAnteBetLadderCSS(resolveAnteBetLadderConfig(model))}
 ${/* Wave LEGO-RANDOM (B-3) — in-spin random feature surfaces. */ ''}
 ${emitMysteryPrizeBoxCSS(resolveMysteryPrizeBoxConfig(model))}
 ${emitRandomWildBurstCSS(resolveRandomWildBurstConfig(model))}
+${/* Wave LEGO-COLLECT (B-4) — coin-collect meta-game trio. */ ''}
+${emitCoinCollectCSS(resolveCoinCollectConfig(model))}
+${emitCumulativeMeterCSS(resolveCumulativeMeterConfig(model))}
+${emitCollectRevealOverlayCSS(resolveCollectRevealOverlayConfig(model))}
 /* Wave L–P — 16 feature blocks CSS (no-op when disabled) */
 ${emitStickyWildCSS(resolveStickyWildConfig(model))}
 ${emitExpandingWildCSS(resolveExpandingWildConfig(model))}
@@ -1313,6 +1336,10 @@ ${emitAnteBetLadderMarkup(resolveAnteBetLadderConfig(model))}
 ${/* Wave LEGO-RANDOM (B-3) — in-spin random surface markup. */ ''}
 ${emitMysteryPrizeBoxMarkup(resolveMysteryPrizeBoxConfig(model))}
 ${emitRandomWildBurstMarkup(resolveRandomWildBurstConfig(model))}
+${/* Wave LEGO-COLLECT (B-4) — coin-collect meta-game markup. */ ''}
+${emitCoinCollectMarkup(resolveCoinCollectConfig(model))}
+${emitCumulativeMeterMarkup(resolveCumulativeMeterConfig(model))}
+${emitCollectRevealOverlayMarkup(resolveCollectRevealOverlayConfig(model))}
 <!-- Wave L–P markup (empty strings when disabled) -->
 ${emitPersistentMultiplierMarkup(resolvePersistentMultiplierConfig(model))}
 ${emitProgressiveFreeSpinsMarkup(resolveProgressiveFreeSpinsConfig(model))}
@@ -1556,6 +1583,12 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${/* Wave LEGO-RANDOM (B-3) — in-spin random runtime. */ ''}
   ${emitMysteryPrizeBoxRuntime(resolveMysteryPrizeBoxConfig(model))}
   ${emitRandomWildBurstRuntime(resolveRandomWildBurstConfig(model))}
+  ${/* Wave LEGO-COLLECT (B-4) — runtime order: collect → meter → reveal
+       (downstream subs first; emit chain coinCollect → cumulativeMeter
+       → collectRevealOverlay). */ ''}
+  ${emitCoinCollectRuntime(resolveCoinCollectConfig(model))}
+  ${emitCumulativeMeterRuntime(resolveCumulativeMeterConfig(model))}
+  ${emitCollectRevealOverlayRuntime(resolveCollectRevealOverlayConfig(model))}
 
   /* Wave L–P — 16 feature kinds runtime (no-op stubs when disabled).
      Order: wilds first (modify the grid), then evaluators (read modified
