@@ -29,6 +29,24 @@ Boki me korigovao **2 puta u kratkom roku** za istu grešku. Reakcija: *"napravi
 
 ---
 
+## 🚨 HARD RULE #3 — Tabele moraju biti NACRTANE (box-drawing ASCII), ne Markdown
+
+Boki ne vidi renderovane Markdown tabele. Ako mu pošaljem `| kolona | kolona |` unutar običnog teksta ili code block-a, za njega to **nije nacrtana tabela**.
+
+### Pravilo
+
+- Svaka tabela koju prikažem mora biti **vizuelno nacrtana** pomoću box-drawing karaktera (`┌─┬─┐`, `│`, `├─┼─┤`, `└─┴─┘`).
+- NIKAD ne stavljati tabele unutar Markdown code fence-a (```) ili raw Markdown pipe tabele kao jedini odgovor.
+- Pre nego što kažem "evo tabele", proveriti da li je zaista vizuelno renderovana.
+
+### Status korekcije
+
+Boki me korigovao **3 puta** za istu grešku: stavljao sam Markdown tabele u code block-u umesto da ih nacrtam. Reakcija: *"druže nema je nacrtana tabela, nacrtaj je, ne vidim tabelu"*.
+
+**Četvrti put = trajna mana mozga. Nema više objašnjenja.**
+
+---
+
 ## 🚨 HARD RULE #2 — Ne pitam "šta ti nije jasno"
 
 Korisnikova `?`, kratka poruka ili reakcija **nije poziv da ja tražim preciziranje**.
