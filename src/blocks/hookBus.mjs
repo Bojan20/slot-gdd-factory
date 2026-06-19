@@ -443,6 +443,19 @@ export const HOOK_EVENTS = Object.freeze([
    * Owner: hexClusterEngine.mjs. */
   'onPyramidSpinResult',
   'onHexClusterPay',
+  /* Wave LEGO-FS3 (Free Spins variants tier 3, 2026-06-19) — 2 new blocks.
+   *
+   * onWinBothWaysActivated {active:true} / onWinBothWaysDeactivated
+   *   {active:false} — pair fires on FS enter/end. Sets canonical
+   *   window.__WIN_BOTH_WAYS__ flag that paylines evaluators read for
+   *   transient bidirectional pay mode. Owner: winBothWaysActivation.mjs.
+   *
+   * onFsReelHeightEscalated {newRowCount, retriggerCount, perReel}
+   *   — fires on FS retrigger when reel rows escalate by configured
+   *   delta. Owner: fsReelHeightEscalation.mjs. */
+  'onWinBothWaysActivated',
+  'onWinBothWaysDeactivated',
+  'onFsReelHeightEscalated',
   /* Scatter Celebration phase signals
    * onScatterCelebrationStart {cellCount, durationMs} — fires when the
    *   FS trigger scatter celebration animation begins. spinControl uses

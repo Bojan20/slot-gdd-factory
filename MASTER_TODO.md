@@ -1,5 +1,65 @@
 # Master TODO — slot-gdd-factory
 
+> **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-FS3** landed — ROADMAP COMPLETE 🎉
+>
+> ## 🔄 Wave LEGO-FS3 — 2 nova FS-varijanta bloka (160 → 162) — POSLEDNJI WAVE U ROADMAP-u
+>
+> Boki: *"dalje"* — poslednja wave u LEGO LIBRARY COVERAGE-GAP ROADMAP. FS family 100% pokriven.
+>
+> ### Blokovi
+>
+> | Blok | Industry pattern | Strategija |
+> |:--|:--|:--|
+> | `winBothWaysActivation.mjs` | FS-only LTR + RTL pay direction (base game stays LTR) | Postavlja `window.__WIN_BOTH_WAYS__` flag, winPresentation.detectLineWins čita flag i radi RTL pass |
+> | `fsReelHeightEscalation.mjs` | Svaki FS retrigger bumpa row count + visual chip | Signal-only — emit + RECT_REELS mutation, atomic visual restore se planira u FS3.3 sa reelEngine adapter API-jem |
+>
+> ### HookBus events (svi single-owner)
+>
+> | Event | Owner |
+> |:--|:--|
+> | `onWinBothWaysActivated` / `onWinBothWaysDeactivated` | winBothWaysActivation.mjs |
+> | `onFsReelHeightEscalated` | fsReelHeightEscalation.mjs |
+>
+> ### Multi-agent QA — FAIL → 2 CRITICAL fixes → PASS
+>
+> Agent identifikovao 2 CRITICAL nalaza koji su BLOKIRALI commit:
+>
+> | # | Severity | Original problem | Fix |
+> |:-:|:--|:--|:--|
+> | F1 | **CRITICAL** | `__WIN_BOTH_WAYS__` MRTAV FLAG — paylines.mjs ne čita, RTL pass se ne pokreće, blok je no-op | `winPresentation.detectLineWins` sad gleda flag, kalkuliše RTL match length sa fresh anchor (rightmost non-wild baseSym), takes MAX(ltr, rtl) — industry-standard both-ways semantika |
+> | F2/F3/F4 | **CRITICAL** | fsReelHeightEscalation `_addRowsToDom` cilja `.grid-rect` flat ali engine drži cells u `reel.strip` wrapper-u — DOM corruption + reel.cells[] out-of-bounds + mid-spin removeChild race | **Redizajn kao signal-only**: removed `_addRowsToDom` + `_onFsEnd` removeChild purge. Ostavljeno: state tracking + HUD chip + RECT_REELS.visibleRows mutation + canonical event emit. Atomic visual restore dolazi u FS3.3 sa `reelEngine.growReelHeight(reelIdx, newRows)` adapter API-jem. |
+>
+> ### Test coverage + regression
+>
+> | Gate | Status |
+> |:--|:-:|
+> | winBothWaysActivation (15 unit) | ✅ |
+> | fsReelHeightEscalation (19 unit) | ✅ |
+> | winPresentation.test.mjs (RTL pass not test broken) | ✅ |
+> | **Σ new** | **34/34 ✅** |
+> | `test:lego` (7 invariants) | ✅ 7/7 |
+> | `test:parse:real-pdfs` (4 GDD) | ✅ 4/4 |
+> | `test:parity` (cross-game DOM) | ✅ 0/18 violations |
+> | `test:force-outcomes` (20 chip-outcomes) | ✅ 20/20 |
+>
+> **Block count**: 160 → **162 LEGO blokova** · **LEGO LIBRARY COVERAGE-GAP ROADMAP COMPLETE**
+>
+> ### Roadmap summary (sve 7 wave-a landed danas)
+>
+> | # | Wave | Blokovi | HEAD |
+> |:-:|:--|:--|:--|
+> | 1 | LEGO-EV (Evaluator) | allWaysEval + bidirectionalWaysEval | `7ac9e71` |
+> | 2 | LEGO-W2 (Wild) | cascadingWildPersistence + mysteryWildReveal | `74b8e13` |
+> | 3 | LEGO-FS2 (FS upgrade + jackpot pool) | fsSymbolUpgradeEscalation + fsPersistentJackpotPool | `971fb18` |
+> | 4 | LEGO-HW2 (H&W variants) | wildTriggerHoldAndWin + holdAndWinReelExpansion | `de7b5ec` |
+> | 5 | LEGO-B2 (Bonus reveal variants) | matchThreeBonusReveal + moneyGrabGrid + pathBonusEngine | `19b42e5` |
+> | 6 | LEGO-ENG (Engine topology) | pyramidGridEngine + hexClusterEngine | `62e55f3` |
+> | 7 | **LEGO-FS3 (Both-ways + height escalation)** | **winBothWaysActivation + fsReelHeightEscalation** | **THIS COMMIT** |
+>
+> Σ: 7 wave-a · **15 novih blokova** · 147 → 162 · all 7 with multi-agent QA reviews + in-place fixes.
+>
+> ---
+>
 > **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-ENG** landed
 >
 > ## 🔺 Wave LEGO-ENG — 2 nova Engine-topology bloka (158 → 160)

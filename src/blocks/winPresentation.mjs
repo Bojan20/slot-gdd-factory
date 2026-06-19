@@ -509,6 +509,39 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
         if (s === baseSym || (wildId && s === wildId)) matchLength++;
         else break;
       }
+
+      /* Wave LEGO-FS3.1 (2026-06-19) — Win Both Ways activation:
+       * when winBothWaysActivation.mjs has set the global flag (FS-only
+       * mode), also count consecutive matches from the RIGHTMOST reel
+       * inward. Take MAX(ltr, rtl) so the player gets credit for the
+       * longer chain. Industry-standard "both ways" payline semantics. */
+      if (typeof window !== 'undefined' && window.__WIN_BOTH_WAYS__ === true) {
+        /* RTL anchor: re-derive baseSym from the rightmost non-wild cell
+         * because a different baseSym may carry the right-to-left chain. */
+        let rtlBaseSym = symAtCell(pathCells[pathCells.length - 1]);
+        if (wildId && rtlBaseSym === wildId) {
+          for (let r = pathCells.length - 2; r >= 0; r--) {
+            const s = symAtCell(pathCells[r]);
+            if (s && s !== wildId) { rtlBaseSym = s; break; }
+          }
+        }
+        if (rtlBaseSym && rtlBaseSym !== scatId
+            && (regularSet.size === 0 || regularSet.has(rtlBaseSym) || rtlBaseSym === wildId)) {
+          let rtlMatchLength = 0;
+          for (let r = pathCells.length - 1; r >= 0; r--) {
+            const cell = pathCells[r];
+            if (!cell) break;
+            const s = symAtCell(cell);
+            if (s === rtlBaseSym || (wildId && s === wildId)) rtlMatchLength++;
+            else break;
+          }
+          if (rtlMatchLength > matchLength) {
+            matchLength = rtlMatchLength;
+            baseSym = rtlBaseSym;
+          }
+        }
+      }
+
       if (matchLength < 3) continue;
 
       const tier = (reg.tier && reg.tier[baseSym]) || (baseSym === wildId ? 'WILD' : 'LP');
