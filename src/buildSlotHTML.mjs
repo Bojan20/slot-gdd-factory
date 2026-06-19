@@ -220,6 +220,15 @@ import {
   emitWaysEvalRuntime,
   resolveConfig as resolveWaysEvalConfig,
 } from './blocks/waysEval.mjs';
+/* Wave LEGO-EV (06-19) — All-ways + bidirectional evaluators. */
+import {
+  emitAllWaysEvalCSS, emitAllWaysEvalMarkup, emitAllWaysEvalRuntime,
+  resolveConfig as resolveAllWaysEvalConfig,
+} from './blocks/allWaysEval.mjs';
+import {
+  emitBidirectionalWaysEvalCSS, emitBidirectionalWaysEvalMarkup, emitBidirectionalWaysEvalRuntime,
+  resolveConfig as resolveBidirectionalWaysEvalConfig,
+} from './blocks/bidirectionalWaysEval.mjs';
 // Wave H13 — Path-Aware Multiplier extension (pure observer; decorates
 // ways events with per-path multiplier chip + aggregate bonus award).
 import {
@@ -1100,6 +1109,9 @@ ${/* Wave H15 — Weighted Wheel Segments extension (jackpot tier CSS). */ ''}
 ${emitWeightedWheelSegmentsCSS(resolveWeightedWheelSegmentsConfig(model))}
 ${/* Wave H13 — Path-Aware Multiplier extension (per-path chip + HUD CSS). */ ''}
 ${emitPathAwareMultiplierCSS(resolvePathAwareMultiplierConfig(model))}
+${/* Wave LEGO-EV — all-ways + bidirectional ways evaluators (pay-path overlays). */ ''}
+${emitAllWaysEvalCSS(resolveAllWaysEvalConfig(model))}
+${emitBidirectionalWaysEvalCSS(resolveBidirectionalWaysEvalConfig(model))}
 ${/* Wave LEGO-M — 6 base/FS multiplier variants. Each emits empty CSS unless GDD enables. */ ''}
 ${emitPerFsSpinMultiplierCSS(resolvePerFsSpinMultiplierConfig(model))}
 ${emitMysterySymbolMultiplierCSS(resolveMysterySymbolMultiplierConfig(model))}
@@ -1252,6 +1264,9 @@ ${emitWheelBonusMarkup(resolveWheelBonusConfig(model))}
 ${emitWeightedWheelSegmentsMarkup(resolveWeightedWheelSegmentsConfig(model))}
 ${/* Wave H13 — Path-Aware Multiplier HUD container (chips appear inside cells). */ ''}
 ${emitPathAwareMultiplierMarkup(resolvePathAwareMultiplierConfig(model))}
+${/* Wave LEGO-EV — all-ways + bidirectional evaluator overlay containers. */ ''}
+${emitAllWaysEvalMarkup(resolveAllWaysEvalConfig(model))}
+${emitBidirectionalWaysEvalMarkup(resolveBidirectionalWaysEvalConfig(model))}
 ${/* Wave LEGO-M (6 base/FS variants) + LEGO-H/FS/W (8 GDD-driven variants) — all empty unless GDD enables. */ ''}
 ${emitPerFsSpinMultiplierMarkup(resolvePerFsSpinMultiplierConfig(model))}
 ${emitRetriggerMultiplierBumpMarkup(resolveRetriggerMultiplierBumpConfig(model))}
@@ -1465,6 +1480,9 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitSuperSymbolRuntime(resolveSuperSymbolConfig(model))}
   ${emitClusterPaysEvalRuntime(resolveClusterPaysEvalConfig(model))}
   ${emitWaysEvalRuntime(resolveWaysEvalConfig(model))}
+  /* Wave LEGO-EV — all-ways + bidirectional ways evaluators. */
+  ${emitAllWaysEvalRuntime(resolveAllWaysEvalConfig(model))}
+  ${emitBidirectionalWaysEvalRuntime(resolveBidirectionalWaysEvalConfig(model))}
   ${/* Wave H13 — Path-Aware Multiplier runtime monkey-patches
      * window.detectWaysWins AFTER waysEval runtime emits it. Pure
      * observer — adds pathMultiplier/pathMultiplierLabel to each event,

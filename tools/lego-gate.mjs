@@ -531,6 +531,13 @@ const EXPECTED_EMIT_OWNERS = {
    * clusterPaysEval's 'reels:stopped' handler in parallel with the
    * legacy clusterPays:evaluated bus event. */
   onClusterPay:                      ['clusterPaysEval.mjs'],
+  /* Wave LEGO-EV (2026-06-19) — universal all-ways + bidirectional ways
+   * evaluators. Pre-Megaways industry standard (Aristocrat universal,
+   * Microgaming 243-both-ways). */
+  onAllWaysPay:                      ['allWaysEval.mjs'],
+  onAllWaysCleared:                  ['allWaysEval.mjs'],
+  onBidirectionalWaysPay:            ['bidirectionalWaysEval.mjs'],
+  onBidirectionalWaysCleared:        ['bidirectionalWaysEval.mjs'],
   /* Wave LEGO-L (2026-06-18) — random spin-wide lightning multiplier
    * (WoO §5.2 + Crystal Forge §5.2 explicit GDD demand). */
   onLightningStrike:                 ['randomLightningMultiplier.mjs'],

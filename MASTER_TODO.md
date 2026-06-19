@@ -26,7 +26,7 @@
 >
 > | # | Wave | Blokovi | Industry ref | Priority | Est | Status |
 > |:-:|:--|:--|:--|:-:|:-:|:-:|
-> | 1 | **LEGO-EV** Evaluator | `allWaysEval`, `bidirectionalWaysEval` | Aristocrat universal · Microgaming L↔R 243 | 🔴 | 4-5h | ⏳ next |
+> | 1 | **LEGO-EV** Evaluator | `allWaysEval`, `bidirectionalWaysEval` | industry universal · 243-both-ways pattern | 🔴 | 4-5h | ✅ LANDED |
 > | 2 | **LEGO-W2** Wild | `cascadingWildPersistence`, `mysteryWildReveal` | Pragmatic/NetEnt cascade · IGT mystery wild | 🔴 | 3-4h | 📋 queued |
 > | 3 | **LEGO-FS2** FS | `fsSymbolUpgradeEscalation`, `fsPersistentJackpotPool` | LP→HP tier (B64) · Relax/Wazdan progressive jackpot | 🔴 | 3-4h | 📋 queued |
 > | 4 | **LEGO-HW2** Hold & Win | `wildTriggerHoldAndWin`, `holdAndWinReelExpansion` | Aristocrat Dragon Link · Yggdrasil row expand | 🟡 | 3-4h | 📋 queued |

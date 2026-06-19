@@ -1,8 +1,79 @@
 {
-  "generatedAt": "2026-06-18T17:02:18.073Z",
+  "generatedAt": "2026-06-19T00:28:19.189Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 143,
+  "totalBlocks": 149,
   "blocks": [
+    {
+      "name": "allWaysEval",
+      "file": "src/blocks/allWaysEval.mjs",
+      "testFile": "tests/blocks/allWaysEval.test.mjs",
+      "category": "evaluator",
+      "description": "Universal \"all-ways\" win evaluator: counts a winning combination",
+      "exports": [
+        "defaultConfig",
+        "emitAllWaysEvalCSS",
+        "emitAllWaysEvalMarkup",
+        "emitAllWaysEvalRuntime",
+        "evaluateAllWays",
+        "findConsecutiveRuns",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onAllWaysCleared",
+        "onAllWaysPay"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "minRunLength": 3,
+        "paytable": {
+          "HP1": [
+            10,
+            25,
+            100,
+            500
+          ],
+          "HP2": [
+            5,
+            15,
+            50,
+            200
+          ],
+          "MP1": [
+            2,
+            8,
+            25,
+            100
+          ],
+          "MP2": [
+            1,
+            5,
+            15,
+            50
+          ],
+          "LP1": [
+            1,
+            2,
+            8,
+            25
+          ],
+          "LP2": [
+            1,
+            2,
+            5,
+            15
+          ]
+        },
+        "countWildAsAny": true,
+        "evaluateBothDirections": true,
+        "showPayPath": true
+      },
+      "loc": 643
+    },
     {
       "name": "ambientBackgroundWheel",
       "file": "src/blocks/ambientBackgroundWheel.mjs",
@@ -320,6 +391,73 @@
         "ariaLabel": "Adjust bet"
       },
       "loc": 788
+    },
+    {
+      "name": "bidirectionalWaysEval",
+      "file": "src/blocks/bidirectionalWaysEval.mjs",
+      "testFile": "tests/blocks/bidirectionalWaysEval.test.mjs",
+      "category": "evaluator",
+      "description": "Wave LEGO-BW1 — Bidirectional ways evaluator (\"win-both-ways\").",
+      "exports": [
+        "defaultConfig",
+        "emitBidirectionalWaysEvalCSS",
+        "emitBidirectionalWaysEvalMarkup",
+        "emitBidirectionalWaysEvalRuntime",
+        "evaluateLTR",
+        "evaluateRTL",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onBidirectionalWaysCleared",
+        "onBidirectionalWaysPay"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "ltrEnabled": true,
+        "rtlEnabled": true,
+        "minRunLength": 3,
+        "paytable": {
+          "H1": [
+            10,
+            25,
+            100
+          ],
+          "H2": [
+            8,
+            20,
+            75
+          ],
+          "H3": [
+            5,
+            15,
+            50
+          ],
+          "L1": [
+            2,
+            5,
+            20
+          ],
+          "L2": [
+            2,
+            5,
+            20
+          ],
+          "L3": [
+            1,
+            3,
+            10
+          ]
+        },
+        "countWildAsAny": true,
+        "highlightLTR": "#ffaa00",
+        "highlightRTL": "#00aaff"
+      },
+      "loc": 573
     },
     {
       "name": "bigWinTier",
@@ -832,7 +970,9 @@
         "resolveConfig"
       ],
       "lifecycleHooks": [],
-      "emittedEvents": [],
+      "emittedEvents": [
+        "onClusterPay"
+      ],
       "defaultConfig": {
         "enabled": false,
         "minCluster": 5,
@@ -862,7 +1002,7 @@
         "maxEvents": 8,
         "diagonal": false
       },
-      "loc": 256
+      "loc": 273
     },
     {
       "name": "clusterSizeMultiplier",
@@ -1085,7 +1225,7 @@
         "counterFlickerFloor": 0.65,
         "counterTickDivisor": 20
       },
-      "loc": 288
+      "loc": 299
     },
     {
       "name": "dailyJackpot",
@@ -1298,7 +1438,7 @@
         "expandDurationMs": 360,
         "haloColor": "255,214,110"
       },
-      "loc": 185
+      "loc": 188
     },
     {
       "name": "expandingWildMultiplier",
@@ -1743,7 +1883,7 @@
         "cushionBounceMs": 240,
         "fadeFallbackMs": 200
       },
-      "loc": 467
+      "loc": 466
     },
     {
       "name": "hiLoGamble",
@@ -2161,7 +2301,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 820
+      "loc": 844
     },
     {
       "name": "hotReload",
@@ -2233,6 +2373,35 @@
         "useIntlNumberFormat": false
       },
       "loc": 499
+    },
+    {
+      "name": "infiniteFsUntilLoss",
+      "file": "src/blocks/infiniteFsUntilLoss.mjs",
+      "testFile": "tests/blocks/infiniteFsUntilLoss.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-FSV.4 — Infinite Free Spins until first losing spin.",
+      "exports": [
+        "defaultConfig",
+        "emitInfiniteFsUntilLossCSS",
+        "emitInfiniteFsUntilLossRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsSpinResult",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [
+        "onInfiniteFsModeEnded",
+        "onInfiniteFsStreakBumped"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "sentinelCount": 999,
+        "chipColor": "#ff7a40",
+        "hudPosition": "topLeft"
+      },
+      "loc": 261
     },
     {
       "name": "infinityReels",
@@ -2463,7 +2632,7 @@
         "fontSizePx": 18,
         "autoPickMode": false
       },
-      "loc": 579
+      "loc": 603
     },
     {
       "name": "jackpotRoomReveal",
@@ -2612,6 +2781,37 @@
       "loc": 224
     },
     {
+      "name": "lockedSymbolFs",
+      "file": "src/blocks/lockedSymbolFs.mjs",
+      "testFile": "tests/blocks/lockedSymbolFs.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-FSV.2 — Free Spins start with N symbols already locked.",
+      "exports": [
+        "defaultConfig",
+        "emitLockedSymbolFsCSS",
+        "emitLockedSymbolFsRuntime",
+        "pickRandomCells",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "postSpin",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onLockedSymbolFsSeeded"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "lockSymbol": "W",
+        "lockCount": 3,
+        "lockColor": "#ffd84d",
+        "restrictToInnerReels": false
+      },
+      "loc": 282
+    },
+    {
       "name": "megaSymbol",
       "file": "src/blocks/megaSymbol.mjs",
       "testFile": "tests/blocks/megaSymbol.test.mjs",
@@ -2756,7 +2956,7 @@
         "zIndex": 33,
         "climbOnBaseTumble": false
       },
-      "loc": 240
+      "loc": 246
     },
     {
       "name": "multiplierOrb",
@@ -3422,7 +3622,7 @@
         "resetOnRoundEnd": true,
         "chipColor": "255,214,110"
       },
-      "loc": 238
+      "loc": 241
     },
     {
       "name": "pickBonusReveal",
@@ -3458,6 +3658,52 @@
       "loc": 310
     },
     {
+      "name": "pickYourFs",
+      "file": "src/blocks/pickYourFs.mjs",
+      "testFile": "tests/blocks/pickYourFs.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave LEGO-FSV.1 — Pick-Your-Free-Spins mode selector.",
+      "exports": [
+        "defaultConfig",
+        "emitPickYourFsCSS",
+        "emitPickYourFsMarkup",
+        "emitPickYourFsRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [
+        "onFsModePicked"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "modes": [
+          {
+            "label": "HIGH VOL",
+            "spinsCount": 8,
+            "baseMultiplier": 5
+          },
+          {
+            "label": "BALANCED",
+            "spinsCount": 12,
+            "baseMultiplier": 2
+          },
+          {
+            "label": "LOW VOL",
+            "spinsCount": 20,
+            "baseMultiplier": 1
+          }
+        ],
+        "overlayBg": "#08111d",
+        "cardColor": "#1a2840",
+        "cardSelectedColor": "#ffd84d",
+        "autoPickMs": 30000
+      },
+      "loc": 364
+    },
+    {
       "name": "plinkoSpinEngine",
       "file": "src/blocks/plinkoSpinEngine.mjs",
       "testFile": "tests/blocks/plinkoSpinEngine.test.mjs",
@@ -3484,7 +3730,7 @@
         "minSettleMs": 40,
         "walkBias": 0.5
       },
-      "loc": 263
+      "loc": 266
     },
     {
       "name": "postSpin",
@@ -3907,7 +4153,7 @@
         "respinsPerTrigger": 1,
         "haloColor": "120,210,255"
       },
-      "loc": 275
+      "loc": 283
     },
     {
       "name": "respinCharge",
@@ -4421,7 +4667,7 @@
         "matchOutlineColor": "#ffd76a",
         "triggerSymbolFallback": "S"
       },
-      "loc": 313
+      "loc": 316
     },
     {
       "name": "spainComplianceGate",
@@ -5239,6 +5485,35 @@
       "loc": 300
     },
     {
+      "name": "tumbleOnlyFs",
+      "file": "src/blocks/tumbleOnlyFs.mjs",
+      "testFile": "tests/blocks/tumbleOnlyFs.test.mjs",
+      "category": "engine",
+      "description": "Wave LEGO-FSV.3 — Tumble-only Free Spins (no fresh re-spin).",
+      "exports": [
+        "defaultConfig",
+        "emitTumbleOnlyFsCSS",
+        "emitTumbleOnlyFsRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger",
+        "onTumbleStep"
+      ],
+      "emittedEvents": [
+        "onTumbleOnlyFsChainEnded",
+        "onTumbleOnlyFsModeEntered"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "chainsBudget": 10,
+        "hudBadgeColor": "#a8e6ff",
+        "hudPosition": "topRight"
+      },
+      "loc": 260
+    },
+    {
       "name": "turboMode",
       "file": "src/blocks/turboMode.mjs",
       "testFile": "tests/blocks/turboMode.test.mjs",
@@ -5387,7 +5662,7 @@
         "triggerRespin": true,
         "haloColor": "110,255,170"
       },
-      "loc": 251
+      "loc": 254
     },
     {
       "name": "walkingWildStepper",
@@ -5643,7 +5918,7 @@
         "maxRevolutions": 7,
         "fadeFallbackMs": 220
       },
-      "loc": 281
+      "loc": 283
     },
     {
       "name": "wildCollectionTrail",
@@ -5877,7 +6152,7 @@
         "labelTemplate": "×{N}",
         "clearOnNextSpin": true
       },
-      "loc": 212
+      "loc": 217
     },
     {
       "name": "winPresentation",
