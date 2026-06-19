@@ -598,6 +598,17 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
   function FSM_enterIntro(spinsAwarded, scatterCount) {
     const n = Number.isFinite(spinsAwarded) ? Math.max(0, Math.floor(spinsAwarded)) : 0;
     if (n === 0) { FSM_enterBase(); return; }
+    /* FIX-8 H5 (2026-06-19) — H&W ↔ FS mutual-exclusive invariant.
+     * Industry baseline: FS cannot start while H&W is running. The
+     * H&W round owns the screen until summary; queuing FS to start
+     * after H&W ends is OUT OF SCOPE for this gate (it would require
+     * deferred-trigger semantics). The simple correct behavior is to
+     * REJECT the FS trigger; orchestrator must re-deliver after H&W
+     * ends if game design requires deferred FS. Defense-in-depth. */
+    if (typeof window !== 'undefined' && window.HW_STATE && window.HW_STATE.active === true) {
+      try { if (typeof console !== 'undefined' && console.warn) console.warn('[FS] entry rejected — H&W round is active (mutual-exclusive invariant)'); } catch (_) {}
+      return;
+    }
     FSM.phase = "FS_INTRO";
     setStageBadge("fs", STAGE_FS_LABEL);
     FSM.spinsTotal = n;

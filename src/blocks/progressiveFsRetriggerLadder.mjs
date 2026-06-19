@@ -341,8 +341,22 @@ export function emitProgressiveFsRetriggerLadderRuntime(cfg = defaultConfig()) {
   }
 
   function _applyMult(multX) {
+    /* FIX-8 H7 (2026-06-19) — compound rule for retrigger-ladder ×
+     * reel-height escalation. Both blocks subscribe to onFsRetrigger
+     * and both write to BONUS_MULTIPLIER pipeline. Industry baseline:
+     * regulator-vetted RTP target expects MAX(ladder, reelHeight)
+     * (defensive — both compound = overpay), NOT ADD.
+     *
+     * Implementation: read current registered max from
+     * window.__PFRL_COMPOUND_MAX__ (cross-block agreement key); if our
+     * candidate exceeds previous, install; HookBus.setMult always
+     * called with MAX. fsReelHeightEscalation will read the same key
+     * and follow the same MAX rule. */
     if (window.HookBus && typeof window.HookBus.setMult === 'function') {
-      window.HookBus.setMult(multX);
+      const prev = Number(window.__PFRL_COMPOUND_MAX__) || 1;
+      const next = Math.max(prev, Number(multX) || 1);
+      window.__PFRL_COMPOUND_MAX__ = next;
+      window.HookBus.setMult(next);
     }
   }
 
@@ -390,6 +404,8 @@ export function emitProgressiveFsRetriggerLadderRuntime(cfg = defaultConfig()) {
     window.PFRL_STATE.currentRung = 0;
     _paintCurrent(0, false);
     _hide();
+    /* FIX-8 H7: clear compound MAX so next FS round starts fresh. */
+    window.__PFRL_COMPOUND_MAX__ = 1;
     _applyMult(1);
     if (window.HookBus && typeof window.HookBus.emit === 'function') {
       try { window.HookBus.emit('onLadderReset', {}); } catch (_) {}

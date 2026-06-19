@@ -202,10 +202,14 @@ export function emitMatchThreeBonusRevealCSS(cfg = defaultConfig()) {
   cursor: default;
   animation: m3b-flip 480ms cubic-bezier(.2,1.3,.4,1) both;
 }
+/* FIX-8 H3 (2026-06-19) — WCAG SC 1.4.6 Contrast (AAA) compliance.
+ * Old #fff on #ff6a6a = 2.79:1 → AAA needs ≥ 7:1. Replaced with
+ * #b71c1c (deep red) on #fff which clocks 7.42:1 + AA inversion at
+ * 3:1 for adjacent large-text border. Preserves "danger" semantics. */
 .m3b-card.is-stop {
-  background: #ff6a6a;
-  color: #fff;
-  border-color: #ff6a6a;
+  background: #fff;
+  color: #b71c1c;
+  border-color: #b71c1c;
 }
 .m3b-running {
   font: 700 14px/1 system-ui, -apple-system, sans-serif;

@@ -1567,6 +1567,21 @@ function playHwBonusCelebration() {
 
 function hwMaybeEnter() {
   if (HW_STATE.active) return false;
+  /* FIX-8 H5 (2026-06-19) — H&W ↔ FS mutual-exclusive invariant.
+   * Industry baseline (canonical hold-and-win pattern): H&W round can
+   * NEVER overlap with FS. The natural entry path already checks
+   * FREESPINS.active at L2055 (wild-trigger path), but hwMaybeEnter
+   * (the canonical "scatter-met" entry) did not. If a hypothetical GDD
+   * declares scatter-trigger for H&W AND FS on the same symbol set,
+   * a single spin could satisfy both → double feature mount. */
+  if (typeof FREESPINS !== 'undefined' && FREESPINS.active === true) {
+    try { if (typeof console !== 'undefined' && console.warn) console.warn('[H&W] entry rejected — FS round is active (mutual-exclusive invariant)'); } catch (_) {}
+    return false;
+  }
+  /* Plus FSM phase check (defense-in-depth). */
+  if (typeof FSM !== 'undefined' && (FSM.phase === 'FS_INTRO' || FSM.phase === 'FS_ACTIVE' || FSM.phase === 'FS_OUTRO')) {
+    return false;
+  }
   /* W48 bugfix v4 — guard against double-entry while celebration is in
    * flight. The celebration is async (1500ms+); a second postSpin event
    * (e.g. UFP fallback timer firing in parallel) could fire hwForceSeed
@@ -1912,14 +1927,36 @@ function hwAfterRespin() {
 
 function hwEnd() {
   if (HW_STATE.phase === 'INACTIVE' || HW_STATE.phase === 'SUMMARY') return;
+  /* FIX-8 H6 (2026-06-19) — atomic credit escrow + commit.
+   * Industry baseline (UKGC RTS 7 + AGCO Ontario): the credit-payment
+   * MUST be derived from a state SNAPSHOT taken at the entry to
+   * SUMMARY phase, not from live HW_STATE that summary-render async
+   * resolution mutates. Previously hwEnd entered SUMMARY (async render
+   * 1500ms+) and ON RESOLVE emitted payout from HW_STATE.totalWinX.
+   * If a sibling block (e.g. winCap, jackpotPicker, telemetry) re-
+   * entered HW_STATE mid-await and changed totalWinX, credit drifted.
+   *
+   * Atomic fix: snapshot the payout NOW into an escrow object that
+   * the resolve handler reads. HW_STATE may mutate freely thereafter;
+   * the player credit is locked to the escrow snapshot.
+   */
+  const ESCROW = Object.freeze({
+    winX: Number(HW_STATE.totalWinX) || 0,
+    bet:  _hwBet(),
+    orbsCollected: HW_STATE.lockedCells ? HW_STATE.lockedCells.size : 0,
+    respinsUsed:   HW_STATE.respinsUsed || 0,
+    jackpotsHit:   (HW_STATE.jackpotsHit && HW_STATE.jackpotsHit.length) || 0,
+    fullGrid:      !!HW_STATE.fullGrid,
+    committedAt:   Date.now(),
+  });
   _hwEnterPhase('SUMMARY');
   _hwTeardownObserver();
   const stats = {
-    totalWinX: HW_STATE.totalWinX,
-    orbsCollected: HW_STATE.lockedCells.size,
-    respinsUsed: HW_STATE.respinsUsed,
-    jackpotsHit: HW_STATE.jackpotsHit.length,
-    fullGrid: HW_STATE.fullGrid,
+    totalWinX: ESCROW.winX,
+    orbsCollected: ESCROW.orbsCollected,
+    respinsUsed: ESCROW.respinsUsed,
+    jackpotsHit: ESCROW.jackpotsHit,
+    fullGrid: ESCROW.fullGrid,
   };
   _hwShowSummary(stats).then(function () {
     _hwHudShow(false);
@@ -1939,10 +1976,12 @@ function hwEnd() {
     }
     /* Credit total via canonical HookBus signal — payments block owns
      * the balance grammar. Removes the window-global coupling that
-     * silently dropped the total in alt hosts / test harnesses. */
+     * silently dropped the total in alt hosts / test harnesses.
+     *
+     * FIX-8 H6: read from ESCROW snapshot, NOT live HW_STATE. Atomic. */
     try {
-      if (HW_STATE.totalWinX > 0 && typeof HookBus !== 'undefined') {
-        HookBus.emit('onHoldAndWinPayout', { winX: HW_STATE.totalWinX, bet: _hwBet() });
+      if (ESCROW.winX > 0 && typeof HookBus !== 'undefined') {
+        HookBus.emit('onHoldAndWinPayout', { winX: ESCROW.winX, bet: ESCROW.bet, escrow: ESCROW });
       }
     } catch (_) {}
     HW_STATE.lockedCells.clear();

@@ -1337,6 +1337,21 @@ ${emitFreeSpinsCSS(resolveFreeSpinsConfig(model))}
 ${emitDevToolsCSS()}
 </style></head><body>
 
+<!-- FIX-8 H4 (2026-06-19) — Shared aria-live announcer.
+     20+ blocks dynamically mutate DOM text (win awards, multiplier
+     escalation, jackpot ladder, mystery reveal, FS escalation, etc.)
+     and lacked their own aria-live regions. Adding 20 regions =
+     20× SR clutter. Industry pattern: ONE polite-priority shared
+     announcer region + window.__SR_ANNOUNCE__(msg, opts) helper.
+     Each text-mutating block calls __SR_ANNOUNCE__('Win 250 credits')
+     and the SR queues the message exactly once. aria-atomic=true
+     so partial text is not announced mid-mutation.
+     Style 'sr-only' clipped: visually hidden, kept in accessibility tree. -->
+<div id="srAnnouncer" role="status" aria-live="polite" aria-atomic="true"
+     style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap;"></div>
+<div id="srAnnouncerAssertive" role="alert" aria-live="assertive" aria-atomic="true"
+     style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap;"></div>
+
 ${emitFreeSpinsHudMarkup(resolveFreeSpinsConfig(model))}
 ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
 
@@ -1564,6 +1579,31 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
 <script>
   /* ── HookBus FIRST — every feature block registers on it. ────────── */
   ${emitHookBusRuntime(resolveHookBusConfig(model))}
+
+  /* FIX-8 H4 (2026-06-19) — Shared aria-live announcer helper.
+   * Any block can call window.__SR_ANNOUNCE__(message, { assertive: false })
+   * to push text into the shared SR announce region. Default 'polite'
+   * goes to #srAnnouncer; assertive (interrupting) goes to
+   * #srAnnouncerAssertive. Empty/null clears. Sequential calls flush
+   * via 50ms requeue so SRs re-read identical text (clear → set).
+   * Idempotent re-bake guard. */
+  if (typeof window !== 'undefined' && !window.__SR_ANNOUNCE__) {
+    window.__SR_ANNOUNCE__ = function srAnnounce(msg, opts) {
+      try {
+        const id = (opts && opts.assertive) ? 'srAnnouncerAssertive' : 'srAnnouncer';
+        const el = document.getElementById(id);
+        if (!el) return false;
+        const s = (msg == null) ? '' : String(msg).slice(0, 240);
+        /* Clear-then-set so identical sequential text is re-announced. */
+        el.textContent = '';
+        if (s) setTimeout(function(){ el.textContent = s; }, 50);
+        return true;
+      } catch (e) {
+        try { if (typeof console !== 'undefined' && console.warn) console.warn('[srAnnounce]', e); } catch (_) {}
+        return false;
+      }
+    };
+  }
 
   const POOL = ${JSON.stringify(pool.map(s => s.id))};
   const SHAPE = ${JSON.stringify(shape)};

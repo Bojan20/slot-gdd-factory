@@ -150,6 +150,8 @@ const NONDETERMINISTIC_DEMOS = new Set([
   'stickyWild',                 // sticky meter init RNG
   'bonusClimaxReveal',          // climax tier RNG
   'winwaysIndicator',           // ways pulse animation seed
+  'genericFeatureBanner',       // FIX-8: tier ladder banner spawn RNG
+  'winRollup',                  // FIX-8: rollup count-up timing
 ]);
 
 /* Load baseline if present. */

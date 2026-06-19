@@ -159,7 +159,21 @@ export function resolveConfig(model = {}) {
   }
   if (typeof m.label === 'string' && m.label.length > 0 && m.label.length <= 24) cfg.label = m.label;
   if (Number.isFinite(m.rearmMs)) cfg.rearmMs = _clampInt(m.rearmMs, 100, 10000, cfg.rearmMs);
-  if (typeof m.confirmMessage === 'string' && m.confirmMessage.length <= 200) cfg.confirmMessage = m.confirmMessage;
+  if (typeof m.confirmMessage === 'string' && m.confirmMessage.length <= 200) {
+    /* FIX-8 H2 (Fable Copilot HIGH #2, 2026-06-19) — XSS filter.
+     * Runtime bakes BBM_CONFIRM = JSON.stringify(confirmMessage) INSIDE
+     * a <script> block. If GDD author lands a confirmMessage that
+     * contains "</script>" (or "<!--" / "-->" comment digraphs), the
+     * JSON.stringify-d output breaks out of the script context. Strip
+     * the offending digraphs at resolveConfig time so the value is
+     * always safe to inline. Defense-in-depth: also Unicode-escape
+     * leading "<" to "<" via downstream JSON.stringify replacer
+     * (handled in emit). */
+    cfg.confirmMessage = m.confirmMessage
+      .replace(/<\/script/gi, '<\\/script')
+      .replace(/<!--/g, '<!\\-\\-')
+      .replace(/-->/g, '-\\-\\>');
+  }
   if (typeof m.triggerColor     === 'string' && HEX_RE.test(m.triggerColor))     cfg.triggerColor     = m.triggerColor;
   if (typeof m.triggerColorDark === 'string' && HEX_RE.test(m.triggerColorDark)) cfg.triggerColorDark = m.triggerColorDark;
   if (typeof m.triggerShadowRGB === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(m.triggerShadowRGB)) {
@@ -390,13 +404,32 @@ export function emitBonusBuyMenuMarkup(cfg = defaultConfig()) {
 
 export function emitBonusBuyMenuRuntime(cfg = defaultConfig()) {
   if (!cfg.enabled) return `/* bonusBuyMenu: disabled */`;
-  const CONFIRM = cfg.confirmMessage ? JSON.stringify(cfg.confirmMessage) : 'null';
+  /* FIX-8 H2: defense-in-depth — after JSON.stringify, replace bare "<"
+   * with the JSON-safe Unicode escape "\\u003c" so even a sneaky pre-
+   * existing "<" cannot break out of script context. */
+  const CONFIRM = cfg.confirmMessage
+    ? JSON.stringify(cfg.confirmMessage).replace(/</g, '\\u003c')
+    : 'null';
   return `/* ─── bonus buy menu runtime ─────────────────────────────────── */
 const BBM_REARM_MS = ${cfg.rearmMs};
 const BBM_CONFIRM  = ${CONFIRM};
 const BBM_TIER_COUNT = ${cfg.tiers.length};
 
 if (typeof window !== 'undefined') window.__BONUS_BUY_MENU_ACTIVE__ = true;
+
+/* FIX-8 H1 (Fable Copilot HIGH #1, 2026-06-19) — HMR sentinel.
+ * Without this guard, every hot-reload re-runs the IIFE and stacks
+ * a fresh HookBus.on('onFsTrigger'|'onFsEnd') listener pair → after
+ * N reloads, FS trigger disables the button N times (no-op for end-
+ * user, but the listener queue grows unbounded and onFsEnd no-op
+ * re-fires the rearm timer every cycle, causing race). Sentinel is
+ * mandated by senior-grade rule_einstein_genius + Fable byte-safety. */
+if (typeof window !== 'undefined' && window.__BBM_WIRED__) {
+  /* Re-bake landed but listeners already wired — bail to avoid double-
+   * subscribe. State (__BONUS_BUY_MENU_ACTIVE__) reset above is safe
+   * because the orchestrator owns mutex semantics, not this block. */
+} else {
+  if (typeof window !== 'undefined') window.__BBM_WIRED__ = true;
 
 (function wireBonusBuyMenu(){
   const btn      = document.getElementById('bonusBuyMenuBtn');
@@ -480,12 +513,17 @@ if (typeof window !== 'undefined') window.__BONUS_BUY_MENU_ACTIVE__ = true;
     });
   });
 
-  HookBus.on('onFsTrigger', function(){
-    btn.setAttribute('disabled', 'disabled');
-    if (btn.getAttribute('aria-expanded') === 'true') closeMenu('fs_start');
-  });
-  HookBus.on('onFsEnd', function(){ btn.removeAttribute('disabled'); });
+  /* FIX-8 H1 (Fable MED #3, 2026-06-19) — typeof guard parity. */
+  if (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function') {
+    HookBus.on('onFsTrigger', function(){
+      btn.setAttribute('disabled', 'disabled');
+      if (btn.getAttribute('aria-expanded') === 'true') closeMenu('fs_start');
+    });
+    HookBus.on('onFsEnd', function(){ btn.removeAttribute('disabled'); });
+  }
 })();
+
+}  /* end __BBM_WIRED__ guard */
 `;
 }
 

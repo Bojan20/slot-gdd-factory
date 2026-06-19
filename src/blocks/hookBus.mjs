@@ -697,7 +697,9 @@ export const HOOK_EVENTS = Object.freeze([
   'onCumulativeMeterReset',  // Owner: cumulativeMeter.mjs (LEGO-COLLECT B-4)
   'onCollectRevealOpened',  // Owner: collectRevealOverlay.mjs (LEGO-COLLECT B-4)
   'onCollectRevealClaimed',  // Owner: collectRevealOverlay.mjs (LEGO-COLLECT B-4)
-  'onVolatilityChanged',  // Owner: volatilitySelector.mjs (LEGO-VOLATILITY B-6)
+  /* onVolatilityChanged: already declared at L271 (Wave K7 settingsPanel
+   * extension); volatilitySelector.mjs (LEGO-VOLATILITY B-6) shares the
+   * same canonical channel. De-duplicated here per LEGO single-event rule. */
   'onSpinReplayStart',  // Owner: spinHistoryReplay.mjs (LEGO-REPLAY B-2)
   'onSpinReplayEnd',  // Owner: spinHistoryReplay.mjs (LEGO-REPLAY B-2)
   'onSpinReplayPaused',  // Owner: spinHistoryReplay.mjs (LEGO-REPLAY B-2)

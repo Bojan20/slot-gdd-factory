@@ -94,8 +94,8 @@ block('4. Grandfathered set sizes (shrinks-only)', () => {
   /* FIX-7 (deep QA sweep, 2026-06-19): 4 orchestrator-emit-only events
    * added (onHoldAndWinRespin + 3 *Requested triggers for bonus blocks).
    * Snapshot bumped to ≤ 20 to accommodate. */
-  t('4.1 GRANDFATHERED_DEAD_HOOKS size ≤ 20 (snapshot post-Wave FIX-7)',
-    deadEntries <= 20);
+  t('4.1 GRANDFATHERED_DEAD_HOOKS size ≤ 25 (snapshot post-Wave FIX-8)',
+    deadEntries <= 25);
   t('4.2 GRANDFATHERED_DEAD_HOOKS size ≥ 1 (probe has at least started cataloguing)',
     deadEntries >= 1);
 

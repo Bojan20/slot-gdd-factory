@@ -103,6 +103,11 @@ const GRANDFATHERED_DEAD_HOOKS = new Map([
    * resolution today fires onBonusExit; the reveal block should subscribe
    * to that instead. */
   ['onBonusPickResolved', 'rename to onBonusExit (pickBonusReveal)'],
+  /* B-Wave + DEF1 (LEGO-PROG, LEGO-PROG B-1 chain) — orchestrator/glue
+   * emitted events that have listeners but no in-block emit owner. */
+  ['onAchievementUnlocked', 'emitter is playerXp.mjs via window helper (LEGO-PROG)'],
+  ['onBigWinTierEnter', 'rename to onBigWinTierEntered (legacy alias)'],
+  ['onBigWinTierExit',  'rename to onBigWinTierExited (legacy alias)'],
   /* stageBadge.mjs listens 'onBaseEnter' — no emit. FSM phase changes
    * don't yet broadcast over HookBus; consider an FSM-event source. */
   ['onBaseEnter', 'add FSM phase-change broadcaster or remove listener'],
