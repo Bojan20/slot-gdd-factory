@@ -225,12 +225,26 @@ export function emitCascadingWildPersistenceRuntime(cfg = defaultConfig()) {
   }
 
   function _pinWildsOnGrid(isStep) {
+    /* FIX-5 (deep QA #20, 2026-06-19) — extend WWS ownership guard from
+     * _reAssertPins down to ALL DOM-pinning writes. Previously the active-
+     * flag check lived only in the tumble re-assert path; an onSpinResult
+     * pin would over-write walking-wild ownership on the same cells
+     * before _reAssertPins ever ran. Now: any walking-active FS spin
+     * yields wild-position writes to walkingWildStepper exclusively. */
+    if (typeof window.WWS_STATE !== 'undefined'
+        && window.WWS_STATE
+        && window.WWS_STATE.active === true) {
+      return;
+    }
     var cells = document.querySelectorAll('.cell');
     var fresh = [];
     for (var i = 0; i < cells.length; i++) {
       var cell = cells[i];
       var sym = (cell.getAttribute('data-symbol') || cell.textContent || '').trim().toUpperCase();
       if (sym !== WILD_SYM) continue;
+      /* FIX-5 (deep QA #20): also skip cells already owned by walking
+       * wild paint so chained scans cannot reclaim them mid-spin. */
+      if (cell.classList.contains('walking-wild-cell')) continue;
       var key = _cellKey(cell);
       if (window.CASCADING_WILD_STATE.pinnedKeys.indexOf(key) === -1) {
         window.CASCADING_WILD_STATE.pinnedKeys.push(key);

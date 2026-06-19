@@ -104,6 +104,11 @@ export function defaultConfig() {
     appliesIn: 'fs',
     glowColor: '#aaffaa',
     pulseMs: 800,
+    /* FIX-5 (deep QA #21, 2026-06-19) — explicit mount-row config so
+     * GDDs that use non-zero base rows (e.g. layered cluster + walking
+     * combo) can declare their paint row. Defaults to row 0 (industry
+     * baseline). */
+    mountRow: 0,
   });
 }
 
@@ -149,10 +154,17 @@ export function resolveConfig(model = {}) {
     cfg.pulseMs = clampInt(src.pulseMs, PULSE_MIN_MS, PULSE_MAX_MS);
   }
 
-  /* Senior-grade invariant: startMult must never exceed maxMult. If a
-   * GDD author misconfigures startMult above maxMult, clamp down to
-   * preserve the cap-respected semantic. */
-  if (cfg.startMult > cfg.maxMult) cfg.startMult = cfg.maxMult;
+  /* FIX-5 (deep QA #21, 2026-06-19) — mountRow accepted from GDD.
+   * Clamped non-negative integer. 0 (top row) is the canonical default. */
+  if (Number.isFinite(src.mountRow) && src.mountRow >= 0) {
+    cfg.mountRow = Math.trunc(src.mountRow);
+  }
+
+  /* Senior-grade invariant: startMult must never exceed maxMult. */
+  if (cfg.startMult > cfg.maxMult) {
+    try { console.warn('[walkingWildStepper] startMult ' + cfg.startMult + ' > maxMult ' + cfg.maxMult + ', clamping to ' + cfg.maxMult); } catch (_) {}
+    cfg.startMult = cfg.maxMult;
+  }
 
   return cfg;
 }
@@ -254,6 +266,7 @@ export function emitWalkingWildStepperRuntime(cfg = defaultConfig()) {
   const triggerProbability = c.triggerProbability;
   const wildSymbol         = JSON.stringify(c.wildSymbol);
   const appliesIn          = JSON.stringify(c.appliesIn);
+  const mountRow           = c.mountRow;
 
   return `
 /* ── walkingWildStepper BLOCK runtime ── */
@@ -272,6 +285,8 @@ export function emitWalkingWildStepperRuntime(cfg = defaultConfig()) {
   var WILD_SYMBOL    = ${wildSymbol};
   var APPLIES_IN     = ${appliesIn};
   var DEFAULT_REELS  = ${DEFAULT_REEL_COUNT};
+  /* FIX-5 (deep QA #21, 2026-06-19) — runtime-baked mount row. */
+  var MOUNT_ROW      = ${mountRow};
 
   window.WWS_STATE = {
     position: null,
@@ -366,12 +381,13 @@ export function emitWalkingWildStepperRuntime(cfg = defaultConfig()) {
     var REELS = _reelCount();
     var cells = host.querySelectorAll('.cell');
     if (!cells || cells.length === 0) return;
-    /* Paint the walker on row 0 of the active reel column. Renderer
-     * convention: cells are row-major, so column "reel" on row 0 is
-     * index "reel". If the active game uses a different mount row,
-     * downstream blocks can override via a custom selector — never
-     * patched here game-specifically. */
-    var idx = reel;
+    /* FIX-5 (deep QA #21, 2026-06-19) — mountRow-aware paint with
+     * cells.length safety. Previously hard-coded idx = reel (row 0) and
+     * absent length-check could mis-paint or no-op during partial render.
+     * Now: idx = MOUNT_ROW * REELS + reel; require cells.length >= REELS
+     * * (MOUNT_ROW + 1) so we never index past partial DOM. */
+    if (cells.length < REELS * (MOUNT_ROW + 1)) return;
+    var idx = MOUNT_ROW * REELS + reel;
     if (idx < 0 || idx >= cells.length) return;
     var cell = cells[idx];
     if (!cell) return;
