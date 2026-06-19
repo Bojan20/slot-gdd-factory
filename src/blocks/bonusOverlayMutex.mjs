@@ -211,6 +211,20 @@ export function emitBonusOverlayMutexRuntime(cfg = defaultConfig()) {
   _bindKind('match3');
   _bindKind('moneyGrab');
   _bindKind('pathBonus');
+
+  /* FIX-6 (deep QA #9, 2026-06-19) — public busy-check API. Bonus blocks
+   * MUST call this in their _enter() before opening overlay so the
+   * mutex enforces single-bonus-at-a-time at the DOM-write boundary,
+   * not only at the event-emit boundary. State-only was inadequate
+   * because three overlay blocks listened at priority 33/34/35 (higher
+   * than mutex's 31), so they all opened their overlays simultaneously.
+   * Returns true when SOMEONE ELSE owns the screen — caller must
+   * defer/skip. */
+  window.bonusOverlayMutexIsBusyForKind = function (kind) {
+    var st = window.BONUS_OVERLAY_MUTEX_STATE;
+    if (!st || !st.active) return false;
+    return st.ownerKind !== kind;
+  };
 })();
 `;
 }

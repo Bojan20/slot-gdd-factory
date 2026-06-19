@@ -2041,6 +2041,30 @@ if (typeof HookBus !== 'undefined' && !(typeof window !== 'undefined' && window.
   HookBus.on('onFsTrigger', () => { hwEnd(); });
   HookBus.on('onFsEnd',     () => { hwEnd(); });
 
+  /* FIX-6 (deep QA #10, 2026-06-19) — wild-trigger H&W canonical entry.
+   * wildTriggerHoldAndWin emits 'onWildTriggerHoldAndWinRequested' as an
+   * alternative entry-path (N wilds on screen → enter H&W). Before this
+   * subscriber, the emit fired into nothing (no listener), so wild-trigger
+   * H&W was dead code. Mirrors the natural hwMaybeEnter contract:
+   * activate ONLY if not already active + not in FS. Optional preSeed
+   * payload (wild cell keys) defers to hwForceSeed for orb placement. */
+  HookBus.on('onWildTriggerHoldAndWinRequested', (payload) => {
+    if (HW_STATE.active) return;
+    /* If FS is currently active (FSM is mid-FS round), defer — let
+     * onFsEnd run first; H&W and FS cannot interleave. */
+    if (typeof FREESPINS !== 'undefined' && FREESPINS.active) return;
+    try {
+      const seedKeys = payload && Array.isArray(payload.wildCellKeys) ? payload.wildCellKeys : [];
+      if (seedKeys.length > 0 && typeof hwForceSeed === 'function') {
+        hwForceSeed(seedKeys.length);
+      } else if (typeof hwMaybeEnter === 'function') {
+        hwMaybeEnter();
+      }
+    } catch (e) {
+      try { if (typeof console !== 'undefined' && console.warn) console.warn('[holdAndWin] wildTrigger handler failed', e); } catch (_) {}
+    }
+  });
+
   /* 2026-06-11 (Boki rule "pritisnes force dugme odradi se spin i onda
    * se dobije ishod forsa") — chip click no longer seeds orbs in-place.
    * UFP plants FORCE_TRIGGER with bonusCount + bonusSymbol, the base

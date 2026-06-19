@@ -384,6 +384,13 @@ export function emitMoneyGrabGridRuntime(cfg = defaultConfig()) {
   }
 
   function _enter() {
+    /* FIX-6 (deep QA #9, 2026-06-19) — mutex hard-gate. See
+     * matchThreeBonusReveal._enter for rationale. */
+    if (typeof window !== 'undefined'
+        && typeof window.bonusOverlayMutexIsBusyForKind === 'function'
+        && window.bonusOverlayMutexIsBusyForKind('moneyGrab')) {
+      return;
+    }
     _reset();
     window.MONEY_GRAB_STATE.active = true;
     _renderHud();

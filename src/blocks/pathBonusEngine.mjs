@@ -89,6 +89,13 @@ export function defaultConfig() {
     tileColor: '#1a2840',
     playerColor: '#ff9a40',
     finishTileIdx: 15,
+    /* FIX-6 (deep QA #23, 2026-06-19) — FINISH-tile bonus award (x of
+     * accumulated total). JSDoc claims "FINISH carries the accumulated
+     * total" but previous code stored 0 → reaching FINISH paid only
+     * what was collected en-route, no bonus. Industry baseline for
+     * board-game bonus: FINISH = jackpot kicker. Default 2x = double
+     * the total accumulated. */
+    finishBonusMult: 2,
   });
 }
 
@@ -118,6 +125,9 @@ export function resolveConfig(model = {}) {
   } else {
     /* Default finish to last tile if user didn't specify and tileCount changed. */
     cfg.finishTileIdx = cfg.tileCount - 1;
+  }
+  if (Number.isFinite(src.finishBonusMult) && src.finishBonusMult >= 1) {
+    cfg.finishBonusMult = Math.min(1000, src.finishBonusMult);
   }
   return cfg;
 }
@@ -266,6 +276,7 @@ export function emitPathBonusEngineRuntime(cfg = defaultConfig()) {
   var VALUE_LO       = ${c.tileValueRange.min};
   var VALUE_HI       = ${c.tileValueRange.max};
   var FINISH_IDX     = ${c.finishTileIdx};
+  var FINISH_BONUS_MULT = ${c.finishBonusMult};
 
   window.PATH_BONUS_STATE = {
     active: false,
@@ -371,7 +382,14 @@ export function emitPathBonusEngineRuntime(cfg = defaultConfig()) {
     _renderPlayer();
     _renderHud();
 
-    if (to >= FINISH_IDX) { _end('finish'); return; }
+    if (to >= FINISH_IDX) {
+      /* FIX-6 (deep QA #23, 2026-06-19) — FINISH carries accumulated
+       * total times configurable multiplier (default 2). Previously
+       * landing on FINISH paid no bonus, contradicting JSDoc claim. */
+      st.awardX = Math.round(st.awardX * FINISH_BONUS_MULT);
+      _end('finish');
+      return;
+    }
     if (st.rollsRemaining <= 0) { _end('outOfRolls'); return; }
   }
 
@@ -410,6 +428,13 @@ export function emitPathBonusEngineRuntime(cfg = defaultConfig()) {
   }
 
   function _enter() {
+    /* FIX-6 (deep QA #9, 2026-06-19) — mutex hard-gate. See
+     * matchThreeBonusReveal._enter for rationale. */
+    if (typeof window !== 'undefined'
+        && typeof window.bonusOverlayMutexIsBusyForKind === 'function'
+        && window.bonusOverlayMutexIsBusyForKind('pathBonus')) {
+      return;
+    }
     _reset();
     window.PATH_BONUS_STATE.active = true;
     _renderHud();

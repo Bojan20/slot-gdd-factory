@@ -260,6 +260,11 @@ export function emitMatchThreeBonusRevealRuntime(cfg = defaultConfig()) {
 
   var DIST = ${distJson};
   var STOP = 'STOP';
+  /* FIX-6 (deep QA #24, 2026-06-19) — joker token. Two non-STOP cards
+   * + 1 joker satisfies match-3 industry standard ("any-trio"). When
+   * GDD does not include joker in distribution, this is dead code and
+   * counter behaves as before. */
+  var JOKER = 'JOKER';
 
   window.MATCH3_BONUS_STATE = {
     active: false,
@@ -305,13 +310,32 @@ export function emitMatchThreeBonusRevealRuntime(cfg = defaultConfig()) {
   }
 
   function _countMatchedTrio() {
+    /* FIX-6 (deep QA #24, 2026-06-19) — joker-aware trio detection.
+     * Pass 1: regular value counts (skip STOP and JOKER).
+     * Pass 2: count jokers; for each prize value, joker contributes to
+     *   its count up to N-1 (so a single joker + 1 of a value cannot
+     *   complete a trio — still need at least one natural match).
+     * Returns the prize value (number) that hits >= 3 with joker help,
+     * preferring the HIGHEST value when tie. */
     var counts = {};
+    var jokers = 0;
     var revealed = window.MATCH3_BONUS_STATE.revealed;
     for (var i = 0; i < revealed.length; i++) {
       var v = revealed[i].value;
       if (v === STOP) continue;
+      if (v === JOKER) { jokers++; continue; }
       counts[v] = (counts[v] || 0) + 1;
       if (counts[v] >= 3) return Number(v);
+    }
+    if (jokers > 0) {
+      var bestVal = null;
+      for (var key in counts) {
+        if (counts[key] >= 2 && (counts[key] + jokers) >= 3) {
+          var nval = Number(key);
+          if (bestVal === null || nval > bestVal) bestVal = nval;
+        }
+      }
+      if (bestVal !== null) return bestVal;
     }
     return null;
   }
@@ -333,10 +357,18 @@ export function emitMatchThreeBonusRevealRuntime(cfg = defaultConfig()) {
     var card = document.querySelector(cardSel);
     if (card) {
       card.classList.add('is-revealed');
-      card.textContent = value === STOP ? 'STOP' : ('x' + value);
+      /* FIX-6 (deep QA #24): JOKER visual + a11y. */
+      if (value === STOP) card.textContent = 'STOP';
+      else if (value === JOKER) card.textContent = 'JOKER';
+      else card.textContent = 'x' + value;
       card.setAttribute('aria-pressed', 'true');
-      card.setAttribute('aria-label', 'Card ' + (raw + 1) + ' revealed ' + (value === STOP ? 'STOP' : value + ' times bet'));
+      var ariaSay;
+      if (value === STOP) ariaSay = 'STOP';
+      else if (value === JOKER) ariaSay = 'Joker (wild match)';
+      else ariaSay = value + ' times bet';
+      card.setAttribute('aria-label', 'Card ' + (raw + 1) + ' revealed ' + ariaSay);
       if (value === STOP) card.classList.add('is-stop');
+      if (value === JOKER) card.classList.add('is-joker');
     }
 
     if (window.HookBus && typeof window.HookBus.emit === 'function') {
@@ -407,6 +439,16 @@ export function emitMatchThreeBonusRevealRuntime(cfg = defaultConfig()) {
   }
 
   function _enter() {
+    /* FIX-6 (deep QA #9, 2026-06-19) — mutex hard-gate at DOM write
+     * boundary. State-only mutex was inadequate (3 overlays listened at
+     * higher priority than mutex). Now: bail out if another bonus owns
+     * the screen, so this kind goes into the queue and reaches _enter
+     * later via the _viaMutex re-emit. */
+    if (typeof window !== 'undefined'
+        && typeof window.bonusOverlayMutexIsBusyForKind === 'function'
+        && window.bonusOverlayMutexIsBusyForKind('match3')) {
+      return;
+    }
     _reset();
     window.MATCH3_BONUS_STATE.active = true;
     _show();
