@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-19T09:56:52.055Z",
+  "generatedAt": "2026-06-19T12:47:23.295Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 164,
+  "totalBlocks": 166,
   "blocks": [
     {
       "name": "allWaysEval",
@@ -137,6 +137,61 @@
         "color": "#ffe066"
       },
       "loc": 247
+    },
+    {
+      "name": "anteBetLadder",
+      "file": "src/blocks/anteBetLadder.mjs",
+      "testFile": "tests/blocks/anteBetLadder.test.mjs",
+      "category": "feature",
+      "description": "Wave LEGO-BUY (4 / 8) — Multi-tier ante bet ladder (stake escalator).",
+      "exports": [
+        "defaultConfig",
+        "emitAnteBetLadderCSS",
+        "emitAnteBetLadderMarkup",
+        "emitAnteBetLadderRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [
+        "onAnteBetLadderChanged"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "label": "ANTE",
+        "rungs": [
+          {
+            "id": "off",
+            "label": "OFF",
+            "costMultiplier": 1,
+            "triggerMultiplier": 1
+          },
+          {
+            "id": "low",
+            "label": "+25%",
+            "costMultiplier": 1.25,
+            "triggerMultiplier": 1.5
+          },
+          {
+            "id": "mid",
+            "label": "+50%",
+            "costMultiplier": 1.5,
+            "triggerMultiplier": 2
+          },
+          {
+            "id": "max",
+            "label": "+100%",
+            "costMultiplier": 2,
+            "triggerMultiplier": 3
+          }
+        ],
+        "defaultRungIndex": 0,
+        "color": "#ffe066",
+        "colorDark": "#b08e22"
+      },
+      "loc": 368
     },
     {
       "name": "anticipation",
@@ -291,7 +346,7 @@
         "jurisdiction": "",
         "requireDisclosure": false
       },
-      "loc": 1171
+      "loc": 1179
     },
     {
       "name": "balanceHud",
@@ -390,7 +445,7 @@
         "chipTextColor": "20,20,20",
         "ariaLabel": "Adjust bet"
       },
-      "loc": 788
+      "loc": 813
     },
     {
       "name": "bidirectionalWaysEval",
@@ -457,7 +512,7 @@
         "highlightLTR": "#ffaa00",
         "highlightRTL": "#00aaff"
       },
-      "loc": 633
+      "loc": 640
     },
     {
       "name": "bigWinTier",
@@ -533,9 +588,29 @@
           6
         ],
         "shakeMinTier": 3,
-        "shakePeriodMs": 220
+        "shakePeriodMs": 220,
+        "tierBannerScale": [
+          0.85,
+          0.92,
+          1,
+          1.08,
+          1.15
+        ],
+        "tierHaloBlurPx": [
+          8,
+          12,
+          18,
+          26,
+          36
+        ],
+        "wcagAaaPhotoSafe": true,
+        "countUpEase": "linear",
+        "tierEaseMinTier": 4,
+        "tierClimaxPulseEnabled": true,
+        "tierClimaxPulseMs": 600,
+        "tierClimaxPulseMinTier": 5
       },
-      "loc": 1325
+      "loc": 1552
     },
     {
       "name": "bonusBuy",
@@ -682,6 +757,50 @@
       "loc": 687
     },
     {
+      "name": "bonusBuyMenu",
+      "file": "src/blocks/bonusBuyMenu.mjs",
+      "testFile": "tests/blocks/bonusBuyMenu.test.mjs",
+      "category": "feature",
+      "description": "Wave LEGO-BUY (4 / 8) — Multi-tier bonus buy menu.",
+      "exports": [
+        "defaultConfig",
+        "emitBonusBuyMenuCSS",
+        "emitBonusBuyMenuMarkup",
+        "emitBonusBuyMenuRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsTrigger"
+      ],
+      "emittedEvents": [
+        "onBonusBuyMenuClosed",
+        "onBonusBuyMenuOpened",
+        "onBonusBuyMenuTierSelected"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "label": "BUY BONUS",
+        "tiers": [
+          {
+            "id": "standard",
+            "label": "STANDARD FS",
+            "costX": 75,
+            "forceScatters": 4,
+            "fsMode": "standard",
+            "color": "#ff5050",
+            "colorDark": "#b03030"
+          }
+        ],
+        "rearmMs": 1200,
+        "confirmMessage": "",
+        "triggerColor": "#ff5050",
+        "triggerColorDark": "#b03030",
+        "triggerShadowRGB": "255,80,80"
+      },
+      "loc": 488
+    },
+    {
       "name": "bonusClimaxReveal",
       "file": "src/blocks/bonusClimaxReveal.mjs",
       "testFile": "tests/blocks/bonusClimaxReveal.test.mjs",
@@ -824,7 +943,7 @@
         "title": "PICK A PRIZE",
         "haloColor": "255,180,60"
       },
-      "loc": 376
+      "loc": 380
     },
     {
       "name": "cascadeBooster",
@@ -934,7 +1053,7 @@
         "showCounter": true,
         "counterPosition": "topLeft"
       },
-      "loc": 338
+      "loc": 341
     },
     {
       "name": "cellLevelUpgrade",
@@ -1056,7 +1175,7 @@
         "maxEvents": 8,
         "diagonal": false
       },
-      "loc": 306
+      "loc": 317
     },
     {
       "name": "clusterSizeMultiplier",
@@ -1840,7 +1959,7 @@
         "chipPosition": "topRight",
         "showChip": true
       },
-      "loc": 333
+      "loc": 347
     },
     {
       "name": "gamble",
@@ -1870,7 +1989,7 @@
         "collectThresholdX": 0,
         "haloColor": "200,80,80"
       },
-      "loc": 318
+      "loc": 322
     },
     {
       "name": "gambleSecondary",
@@ -2471,7 +2590,7 @@
         "columnColor": "#7af2c8",
         "animDurationMs": 900
       },
-      "loc": 310
+      "loc": 342
     },
     {
       "name": "holdAndWinRoomJackpotMultiplier",
@@ -2554,7 +2673,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 1004
+      "loc": 1008
     },
     {
       "name": "hotReload",
@@ -2948,7 +3067,7 @@
         "ladderGlowColor": "#ffd700",
         "fontSizePx": 32
       },
-      "loc": 503
+      "loc": 504
     },
     {
       "name": "jurisdictionGate",
@@ -3120,7 +3239,7 @@
         "cardRevealedColor": "#ffd84d",
         "fontSizePx": 20
       },
-      "loc": 493
+      "loc": 494
     },
     {
       "name": "megaSymbol",
@@ -3261,7 +3380,7 @@
         "cardRevealedColor": "#7af2c8",
         "fontSizePx": 16
       },
-      "loc": 436
+      "loc": 438
     },
     {
       "name": "motionOverlay",
@@ -4102,7 +4221,7 @@
         "messageTpl": "YOU WON {label}",
         "autoCloseMs": 700
       },
-      "loc": 310
+      "loc": 311
     },
     {
       "name": "pickYourFs",
@@ -4306,10 +4425,10 @@
         "ladderPosition": "right",
         "fontSizePx": 12,
         "activeColor": "#ffd700",
-        "inactiveColor": "#666666",
+        "inactiveColor": "#aaaaaa",
         "pulseMs": 600
       },
-      "loc": 414
+      "loc": 416
     },
     {
       "name": "pwaInstallability",
@@ -4568,7 +4687,7 @@
         "freshRowFillSymbol": "?",
         "freshRowClass": "is-rha-fresh"
       },
-      "loc": 305
+      "loc": 345
     },
     {
       "name": "reelLockHold",
@@ -4787,7 +4906,7 @@
         "popMs": 540,
         "zIndex": 42
       },
-      "loc": 327
+      "loc": 328
     },
     {
       "name": "retriggerMultiplierBump",
@@ -5102,7 +5221,7 @@
         "autoHideOnSpin": true,
         "ariaLabel": "Open settings"
       },
-      "loc": 1018
+      "loc": 1023
     },
     {
       "name": "slamStop",
@@ -5360,10 +5479,10 @@
         "pillPaddingRight": 12,
         "pillPaddingBottom": 3,
         "pillPaddingLeft": 10,
-        "mutedColor": "197,198,199",
-        "mutedColorAlpha": 0.78,
+        "mutedColor": "220,220,220",
+        "mutedColorAlpha": 1,
         "mutedBgColor": "15,12,10",
-        "mutedBgAlpha": 0.45,
+        "mutedBgAlpha": 0.85,
         "mutedBorderAlpha": 0.08,
         "blurAmount": 4,
         "dotSize": 6,
@@ -5378,7 +5497,7 @@
         "mobilePaddingRight": 10,
         "mobilePaddingLeft": 8
       },
-      "loc": 263
+      "loc": 265
     },
     {
       "name": "stickyMeter",
@@ -5420,7 +5539,7 @@
         "stickySelector": ".cell--sticky, .cell--locked, [data-sticky=\"true\"], [data-locked=\"true\"]",
         "showInBase": false
       },
-      "loc": 246
+      "loc": 247
     },
     {
       "name": "stickyWild",
@@ -5875,7 +5994,7 @@
           "sm": 620
         }
       },
-      "loc": 726
+      "loc": 728
     },
     {
       "name": "totalMultiplierChip",
@@ -5903,7 +6022,7 @@
         "chipColor": "#ffe680",
         "hideWhenOne": true
       },
-      "loc": 203
+      "loc": 209
     },
     {
       "name": "triggerCounting",
@@ -6214,7 +6333,7 @@
         "pulseMs": 800,
         "mountRow": 0
       },
-      "loc": 523
+      "loc": 535
     },
     {
       "name": "waysEval",
@@ -6369,7 +6488,7 @@
         "autoSpin": false,
         "title": "BONUS WHEEL"
       },
-      "loc": 495
+      "loc": 499
     },
     {
       "name": "wheelBonusReveal",
@@ -6403,7 +6522,7 @@
         "jackpotMessage": "JACKPOT! {label}",
         "jackpotHaloColor": "255,80,80"
       },
-      "loc": 309
+      "loc": 310
     },
     {
       "name": "wheelSpinEngine",
@@ -6584,7 +6703,7 @@
         "seedOrbsFromWilds": true,
         "skipDuringFs": true
       },
-      "loc": 321
+      "loc": 332
     },
     {
       "name": "winBothWaysActivation",
