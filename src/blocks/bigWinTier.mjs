@@ -230,6 +230,49 @@ export function defaultConfig() {
      * loops while a tier is on screen; cycle short enough to feel
      * intense, long enough to stay 60 fps friendly. */
     shakePeriodMs:           220,
+
+    /* W48.V3 polish (2026-06-19) — per-tier banner rest-state scale.
+     * Tier 1 sits compact (0.85 — "modest celebration"), tier 5 swells
+     * (1.15 — "climax presence"). Applied at .big-win-tier-banner via
+     * `--bw-tier-scale` CSS variable; banner's existing entrance/exit
+     * animation composes ON TOP (translate scale doesn't double-up).
+     * Designed for visual ladder readability: the rest-state size
+     * itself communicates tier magnitude to peripheral vision. */
+    tierBannerScale: [0.85, 0.92, 1.0, 1.08, 1.15],
+
+    /* W48.V3 polish — per-tier halo glow strength (CSS box-shadow blur
+     * radius px). Default 8/12/18/26/36 — geometric ladder. Halo color
+     * inherits from per-tier banner palette via currentColor so each
+     * tier's signature warmth scales WITH the glow. */
+    tierHaloBlurPx: [8, 12, 18, 26, 36],
+
+    /* W48.V3 polish — WCAG 2.2 SC 2.3.1 AAA defensive cap. When true,
+     * the shake oscillator period is clamped to ≥ 333 ms (≤ 3 Hz) at
+     * runtime to prevent ANY photosensitive-epilepsy trigger surface.
+     * Even though shake is positional (not luminance flash), the
+     * defense-in-depth posture matches UKGC RTS / MGA RG / AGCO
+     * jurisdictional cert expectations. Set false ONLY if your
+     * jurisdiction explicitly waives SC 2.3.1 AND you have a different
+     * mitigation in place (rare). */
+    wcagAaaPhotoSafe: true,
+
+    /* W48.V3 polish — per-tier count-up easing curve. 'linear' is the
+     * industry baseline (steady money climb). Tiers ≥ tierEaseMinTier
+     * switch to 'easeOutCubic' for a "decelerate-to-climax" feel —
+     * money ramps fast early then slows into the final number, matching
+     * the cinematic pacing of high-tier reveals. */
+    countUpEase:     'linear',         /* 'linear' | 'easeOutCubic' */
+    tierEaseMinTier: 4,                /* tier ≥ N uses easeOutCubic */
+
+    /* W48.V3 polish — TIER 5 climax single radial pulse. One-shot
+     * (NOT looping — anti-epilepsy compliant, SC 2.3.1 / 2.3.2 safe)
+     * radial expand+fade at the moment the banner reaches the final
+     * tier. Pulse duration 600 ms, opacity 0.6 → 0, scale 1 → 2.4.
+     * Disabled under prefers-reduced-motion (CSS @media guard).
+     * Triggered by .big-win-tier-banner[data-tier="5"].is-climax class. */
+    tierClimaxPulseEnabled: true,
+    tierClimaxPulseMs:      600,
+    tierClimaxPulseMinTier: 5,         /* tier ≥ N triggers climax pulse */
   });
 }
 
@@ -332,6 +375,54 @@ export function resolveConfig(model = {}) {
     cfg.shakePeriodMs = Math.min(Math.max(p, MIN_SHAKE_PERIOD_MS), MAX_SHAKE_PERIOD_MS);
   }
 
+  /* W48.V3 polish (2026-06-19) — per-tier banner rest-state scale validation.
+   * Must be TIER_COUNT long, each value in [0.5, 2.0] (sane scale range). */
+  if (Array.isArray(m.tierBannerScale) && m.tierBannerScale.length === TIER_COUNT) {
+    const ss = m.tierBannerScale.map(v => {
+      const n = Number(v);
+      if (!Number.isFinite(n)) return 1.0;
+      return Math.min(Math.max(n, 0.5), 2.0);
+    });
+    cfg.tierBannerScale = ss;
+  }
+
+  /* W48.V3 polish — per-tier halo blur px validation. [0, 64] range. */
+  if (Array.isArray(m.tierHaloBlurPx) && m.tierHaloBlurPx.length === TIER_COUNT) {
+    const bs = m.tierHaloBlurPx.map(v => {
+      const n = Number(v);
+      if (!Number.isFinite(n) || n < 0) return 0;
+      return Math.min(n, 64);
+    });
+    cfg.tierHaloBlurPx = bs;
+  }
+
+  /* W48.V3 polish — WCAG SC 2.3.1 AAA photo-safe gate. */
+  if (m.wcagAaaPhotoSafe != null) cfg.wcagAaaPhotoSafe = !!m.wcagAaaPhotoSafe;
+  /* When photo-safe is ON, hard-clamp shakePeriodMs to ≥ 333 ms (≤ 3 Hz)
+   * regardless of explicit GDD override. Defense-in-depth: even a
+   * misconfigured GDD cannot trigger photosensitive risk. */
+  if (cfg.wcagAaaPhotoSafe && cfg.shakePeriodMs < 333) {
+    cfg.shakePeriodMs = 333;
+  }
+
+  /* W48.V3 polish — per-tier count-up easing. Only 'linear' / 'easeOutCubic'
+   * are accepted (whitelist; future curves added explicitly). */
+  if (m.countUpEase === 'linear' || m.countUpEase === 'easeOutCubic') {
+    cfg.countUpEase = m.countUpEase;
+  }
+  if (Number.isFinite(m.tierEaseMinTier)) {
+    cfg.tierEaseMinTier = clampInt(Math.floor(m.tierEaseMinTier), 1, TIER_COUNT + 1);
+  }
+
+  /* W48.V3 polish — TIER 5 climax single radial pulse. */
+  if (m.tierClimaxPulseEnabled != null) cfg.tierClimaxPulseEnabled = !!m.tierClimaxPulseEnabled;
+  if (Number.isFinite(m.tierClimaxPulseMs)) {
+    cfg.tierClimaxPulseMs = clampInt(m.tierClimaxPulseMs, 200, 2000);
+  }
+  if (Number.isFinite(m.tierClimaxPulseMinTier)) {
+    cfg.tierClimaxPulseMinTier = clampInt(Math.floor(m.tierClimaxPulseMinTier), 1, TIER_COUNT + 1);
+  }
+
   return cfg;
 }
 
@@ -426,11 +517,76 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
     max-width: 96%;
     max-height: 96%;
     /* Smooth tier morph: when data-tier flips during the walkthrough,
-     * font-size + filter glow + color tween continuously. Counter never
-     * pauses. Timing is hoisted (TIER_MORPH_MS) so the runtime label-swap
-     * timer (LABEL_SWAP_MS) stays in lockstep with the CSS morph. */
-    transition: color ${TIER_MORPH_MS}ms ease, font-size ${TIER_MORPH_MS}ms ease, filter ${TIER_MORPH_MS}ms ease;
+     * font-size + filter glow + color + transform-scale + text-shadow halo
+     * tween continuously. Counter never pauses. Timing is hoisted
+     * (TIER_MORPH_MS) so the runtime label-swap timer (LABEL_SWAP_MS) stays
+     * in lockstep with the CSS morph. W48.V3 polish: added transform +
+     * text-shadow to the transition list so per-tier scale/halo escalation
+     * (set via --bw-tier-scale / --bw-tier-halo-blur custom props) tweens
+     * smoothly rather than snapping. */
+    transition:
+      color ${TIER_MORPH_MS}ms ease,
+      font-size ${TIER_MORPH_MS}ms ease,
+      filter ${TIER_MORPH_MS}ms ease,
+      transform ${TIER_MORPH_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      text-shadow ${TIER_MORPH_MS}ms ease;
   }
+  /* W48.V3 polish — per-tier rest-state banner scale ladder. Tier 1
+   * sits compact (0.85), tier 5 swells (1.15). The data-show="hold"
+   * state composes this scale (active) and the entrance/exit animations
+   * compose their own transform on top via overriding. Scale is set as
+   * CSS custom prop so it can be overridden per GDD without rewriting
+   * this rule. */
+  .big-win-tier-banner[data-show="hold"][data-tier="1"] { --bw-tier-scale: ${cfg.tierBannerScale[0]}; }
+  .big-win-tier-banner[data-show="hold"][data-tier="2"] { --bw-tier-scale: ${cfg.tierBannerScale[1]}; }
+  .big-win-tier-banner[data-show="hold"][data-tier="3"] { --bw-tier-scale: ${cfg.tierBannerScale[2]}; }
+  .big-win-tier-banner[data-show="hold"][data-tier="4"] { --bw-tier-scale: ${cfg.tierBannerScale[3]}; }
+  .big-win-tier-banner[data-show="hold"][data-tier="5"] { --bw-tier-scale: ${cfg.tierBannerScale[4]}; }
+  .big-win-tier-banner[data-show="hold"] { transform: scale(var(--bw-tier-scale, 1.0)); }
+  /* W48.V3 polish — per-tier halo glow strength via text-shadow blur. The
+   * existing color escalation drives the halo HUE; this rule drives the
+   * REACH. Geometric ladder default 8/12/18/26/36px tracks the colors
+   * palette warmth so the climax glow feels "loud" without changing
+   * banner footprint. Halo color = currentColor (inherited from banner
+   * text color, which is already set by per-tier color rule below). */
+  .big-win-tier-banner[data-show="hold"][data-tier="1"] {
+    text-shadow: 0 0 ${cfg.tierHaloBlurPx[0]}px currentColor, 0 4px 12px rgba(0,0,0,0.7);
+  }
+  .big-win-tier-banner[data-show="hold"][data-tier="2"] {
+    text-shadow: 0 0 ${cfg.tierHaloBlurPx[1]}px currentColor, 0 4px 12px rgba(0,0,0,0.7);
+  }
+  .big-win-tier-banner[data-show="hold"][data-tier="3"] {
+    text-shadow: 0 0 ${cfg.tierHaloBlurPx[2]}px currentColor, 0 5px 16px rgba(0,0,0,0.75);
+  }
+  .big-win-tier-banner[data-show="hold"][data-tier="4"] {
+    text-shadow: 0 0 ${cfg.tierHaloBlurPx[3]}px currentColor, 0 6px 18px rgba(0,0,0,0.8);
+  }
+  .big-win-tier-banner[data-show="hold"][data-tier="5"] {
+    text-shadow: 0 0 ${cfg.tierHaloBlurPx[4]}px currentColor, 0 7px 22px rgba(0,0,0,0.85);
+  }
+  /* W48.V3 polish — TIER ≥ tierClimaxPulseMinTier climax radial pulse.
+   * One-shot CSS animation triggered by .is-climax class which runtime
+   * adds when the final tier latches. Anti-photosensitive-epilepsy
+   * compliant: ONE expand+fade only, no loop. Disabled under
+   * prefers-reduced-motion (see @media block below). */
+  ${cfg.tierClimaxPulseEnabled ? `
+  .big-win-tier-banner.is-climax::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, currentColor 0%, transparent 65%);
+    opacity: 0;
+    pointer-events: none;
+    animation: bigWinTierClimaxPulse ${cfg.tierClimaxPulseMs}ms cubic-bezier(0.2, 0.6, 0.3, 1) 1 forwards;
+    z-index: -1;
+  }
+  @keyframes bigWinTierClimaxPulse {
+    0%   { opacity: 0.0; transform: scale(0.6); }
+    35%  { opacity: 0.6; }
+    100% { opacity: 0.0; transform: scale(2.4); }
+  }
+  ` : ''}
   .big-win-tier-banner .big-win-tier-label {
     display: block;
     line-height: 1;
@@ -565,6 +721,21 @@ export function emitBigWinTierCSS(cfg = defaultConfig()) {
     /* W48.V3 polish — tier stepper dots stop pulsing under reduced-motion. */
     .big-win-tier-stepper .big-win-tier-step,
     .big-win-tier-stepper .big-win-tier-step.is-active { animation: none; transform: none; }
+    /* W48.V3 polish (2026-06-19) — climax radial pulse killed under
+     * reduced-motion. SC 2.3.3 + 2.3.1 dual gate: even though the pulse
+     * is one-shot (already SC 2.3.1 compliant), reduced-motion users get
+     * a flat reveal with no transform / opacity animation at all. */
+    .big-win-tier-banner.is-climax::before { animation: none; opacity: 0; }
+    /* W48.V3 polish — tier scale escalation collapses to neutral under
+     * reduced-motion so banner footprint stays steady (avoids any
+     * perceived "growing" motion across tier walk). */
+    .big-win-tier-banner[data-show="hold"][data-tier="1"],
+    .big-win-tier-banner[data-show="hold"][data-tier="2"],
+    .big-win-tier-banner[data-show="hold"][data-tier="3"],
+    .big-win-tier-banner[data-show="hold"][data-tier="4"],
+    .big-win-tier-banner[data-show="hold"][data-tier="5"] {
+      transform: scale(1);
+    }
   }
 
   /* W48.V3 polish — five-step tier ladder. Pure CSS-driven from the
@@ -705,6 +876,14 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
      * Read by _applyShake() to drive the CSS custom properties. */
     var SHAKE_AMP       = ${JSON.stringify(cfg.shakeAmplitudePxPerTier)};
     var SHAKE_PERIOD_MS = ${cfg.shakePeriodMs};
+    /* W48.V3 polish (2026-06-19) — easing + climax pulse runtime knobs.
+     * USE_EASE_OUT_CUBIC + TIER_EASE_MIN_TIER drive _countUpLinear's
+     * easing gate. CLIMAX_PULSE_* drive _runCompound's .is-climax class
+     * application on the final tier banner. */
+    var USE_EASE_OUT_CUBIC    = ${cfg.countUpEase === 'easeOutCubic'};
+    var TIER_EASE_MIN_TIER    = ${cfg.tierEaseMinTier};
+    var CLIMAX_PULSE_ENABLED  = ${cfg.tierClimaxPulseEnabled};
+    var CLIMAX_PULSE_MIN_TIER = ${cfg.tierClimaxPulseMinTier};
 
     var STATE = {
       enabled: true,
@@ -930,10 +1109,30 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
 
       /* Mount banner at startTier with fade-in. Counter starts at 0. */
       _mountBannerAt(startTier);
+      /* W48.V3 polish (2026-06-19) — climax pulse on initial mount when
+       * startTier === finalTier (compound=false OR caller jumped straight
+       * to final tier). The compound-walkthrough path applies the same
+       * class on tier promotion below; this branch covers the no-walk
+       * case so behavior is symmetric. Pulse fires once per sequence. */
+      var _startIsFinal = (startTier === finalTier);
+      if (CLIMAX_PULSE_ENABLED && _startIsFinal && startTier >= CLIMAX_PULSE_MIN_TIER) {
+        var _initBanner = _host() && _host().querySelector('.big-win-tier-banner');
+        if (_initBanner) {
+          /* Defer to next frame so the fade-in animation starts cleanly
+           * before the pulse pseudo-element layers on top. */
+          if (typeof window.requestAnimationFrame === 'function') {
+            window.requestAnimationFrame(function () {
+              if (_initBanner.parentNode) _initBanner.classList.add('is-climax');
+            });
+          } else {
+            _initBanner.classList.add('is-climax');
+          }
+        }
+      }
       _emitEntered({
         tier: startTier, x: finalAward, label: STATE.label,
         durationMs: DURATIONS[startTier - 1], soundBus: SOUND_BUSES[startTier - 1],
-        isFinal: (startTier === finalTier),
+        isFinal: _startIsFinal,
       });
 
       /* Bump the cadence token so any in-flight tier-promotion timers
@@ -958,11 +1157,24 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
             STATE.label   = LABELS[toT - 1];
             if (typeof window !== 'undefined') window.__BIG_WIN_TIER__ = toT;
             _swapTier(toT);
+            /* W48.V3 polish (2026-06-19) — TIER ≥ CLIMAX_PULSE_MIN_TIER
+             * triggers the one-shot radial pulse on this final tier
+             * promotion. CSS handles the actual animation (.is-climax
+             * pseudo-element); reduced-motion @media kills it. We add
+             * the class here, NOT on initial mount, so that compound
+             * walkthroughs which BYPASS a climax tier (e.g. tier 1 → 5
+             * via skip) still trigger the pulse exactly once on landing.
+             * Guarded by isFinal so mid-walk promotions don't pulse. */
+            var _isFinal = (toT === finalTier);
+            if (CLIMAX_PULSE_ENABLED && _isFinal && toT >= CLIMAX_PULSE_MIN_TIER) {
+              var _banner = _host() && _host().querySelector('.big-win-tier-banner');
+              if (_banner) _banner.classList.add('is-climax');
+            }
             _emitEntered({
               tier: toT, x: finalAward, label: STATE.label,
               durationMs: DURATIONS[toT - 1],
               soundBus: SOUND_BUSES[toT - 1],
-              isFinal: (toT === finalTier),
+              isFinal: _isFinal,
             });
           }, whenMs);
           STATE.timers.push(tid);
@@ -1051,12 +1263,21 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
       STATE.timers.push(hold);
     }
 
-    /* _countUpLinear — pure linear money ramp from 'fromAward' to 'toAward'
-     * over 'dur' ms with NO easing (Boki rule "non stop da broji istom
-     * brzinom"). Display is currency-formatted money. Counter is
-     * INDEPENDENT of tier swaps — those are scheduled by _runCompound on
-     * a TIME-BASED cadence so the visual ladder rhythm is owned by the
-     * block itself, not by the awarded amount. */
+    /* _countUpLinear — money ramp from 'fromAward' to 'toAward' over 'dur' ms.
+     *
+     * Boki rule baseline: "non stop da broji istom brzinom" → LINEAR default.
+     *
+     * W48.V3 polish (2026-06-19) — per-final-tier easing override. When
+     * cfg.countUpEase === 'easeOutCubic' AND the FINAL tier of this
+     * sequence is ≥ cfg.tierEaseMinTier (default 4), the ramp uses the
+     * cubic decelerate curve for a "decelerate-to-climax" cinematic feel.
+     * Below that threshold (default tier 1-3), the linear ramp is preserved
+     * so low-tier celebrations still feel "honest" / industry-baseline.
+     *
+     * Display is currency-formatted money. Counter is INDEPENDENT of tier
+     * swaps — those are scheduled by _runCompound on a TIME-BASED cadence
+     * so the visual ladder rhythm is owned by the block itself, not by
+     * the awarded amount. */
     function _countUpLinear(fromAward, toAward, dur) {
       return new Promise(function (resolve) {
         var amtEl = _host() && _host().querySelector('.big-win-tier-amount');
@@ -1070,12 +1291,18 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
         }
         var t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
         var localToken = STATE.rafToken;       /* read once; _runCompound owns bumps */
+        /* W48.V3 polish — easing gate per final tier. STATE.finalTier is
+         * set by _runCompound BEFORE _countUpLinear is invoked, so the
+         * gate is deterministic at function entry. */
+        var _useEase = (USE_EASE_OUT_CUBIC && STATE.finalTier >= TIER_EASE_MIN_TIER);
         function step() {
           if (localToken !== STATE.rafToken) { resolve(); return; }
           var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
           var p = Math.min(1, (now - t0) / dur);
-          /* LINEAR — no easing function. Each ms == same delta money. */
-          var current = fromAward + (toAward - fromAward) * p;
+          /* LINEAR baseline OR easeOutCubic for high-tier climax.
+           * easeOutCubic: 1 - (1 - p)^3 — fast early, slow into final value. */
+          var eased = _useEase ? (1 - Math.pow(1 - p, 3)) : p;
+          var current = fromAward + (toAward - fromAward) * eased;
           amtEl.textContent = _fmtMoney(current);
           amtEl.setAttribute('data-count', String(current));
           if (p < 1) {

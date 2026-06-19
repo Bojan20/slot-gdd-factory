@@ -320,5 +320,69 @@ t('V3 polish: disabled emits no stepper', () => {
   }
 });
 
+/* ─── W48.V3 polish (2026-06-19) — 5 new acceptance gates ─── */
+
+t('V3 polish: defaultConfig exposes 5 new polish knobs', () => {
+  const c = defaultConfig();
+  ok(Array.isArray(c.tierBannerScale) && c.tierBannerScale.length === 5, 'tierBannerScale 5-tier array');
+  ok(Array.isArray(c.tierHaloBlurPx) && c.tierHaloBlurPx.length === 5, 'tierHaloBlurPx 5-tier array');
+  eq(c.wcagAaaPhotoSafe, true, 'wcagAaaPhotoSafe ON by default (defense-in-depth)');
+  ok(c.countUpEase === 'linear' || c.countUpEase === 'easeOutCubic', 'countUpEase whitelist');
+  eq(c.tierEaseMinTier, 4, 'tierEaseMinTier default 4 (climax-only easing)');
+  eq(c.tierClimaxPulseEnabled, true, 'tierClimaxPulseEnabled ON by default');
+  ok(c.tierClimaxPulseMs >= 200 && c.tierClimaxPulseMs <= 2000, 'pulse ms in safe range');
+  eq(c.tierClimaxPulseMinTier, 5, 'climax pulse fires on tier 5 only by default');
+});
+
+t('V3 polish: WCAG SC 2.3.1 AAA hard-clamps shake period ≥ 333ms (≤ 3 Hz)', () => {
+  /* Even if a GDD passes 80 ms (12.5 Hz), photo-safe gate must clamp to 333 ms. */
+  const c = resolveConfig({ bigWinTier: { shakePeriodMs: 80, wcagAaaPhotoSafe: true } });
+  ok(c.shakePeriodMs >= 333, 'expected ≥ 333 ms when photo-safe ON, got ' + c.shakePeriodMs);
+  /* When photo-safe explicitly OFF, the lower bound (MIN_SHAKE_PERIOD_MS = 80) holds. */
+  const c2 = resolveConfig({ bigWinTier: { shakePeriodMs: 80, wcagAaaPhotoSafe: false } });
+  ok(c2.shakePeriodMs === 80, 'expected raw 80 ms when photo-safe OFF, got ' + c2.shakePeriodMs);
+});
+
+t('V3 polish: per-tier banner scale + halo CSS emit', () => {
+  const css = emitBigWinTierCSS(resolveConfig({ bigWinTier: { enabled: true } }));
+  /* All 5 tier scales must be present as a CSS rule. */
+  for (let i = 1; i <= 5; i++) {
+    ct(css, `[data-tier="${i}"] { --bw-tier-scale:`, `tier ${i} scale rule`);
+  }
+  /* All 5 tier halos must be present (text-shadow + blur per tier). */
+  ct(css, 'text-shadow: 0 0 8px currentColor', 'tier 1 halo blur 8px');
+  ct(css, 'text-shadow: 0 0 36px currentColor', 'tier 5 halo blur 36px');
+});
+
+t('V3 polish: TIER5 climax pulse CSS emit + reduced-motion kill', () => {
+  const css = emitBigWinTierCSS(resolveConfig({ bigWinTier: { enabled: true } }));
+  ct(css, '.big-win-tier-banner.is-climax::before', 'climax pseudo-element');
+  ct(css, '@keyframes bigWinTierClimaxPulse', 'climax keyframes defined');
+  ct(css, 'animation: bigWinTierClimaxPulse', 'climax animation applied');
+  /* Verify reduced-motion kill is wired. */
+  ct(css, '.big-win-tier-banner.is-climax::before { animation: none', 'climax kill under reduced-motion');
+  /* Disable should drop the climax CSS entirely (no pulse leak). */
+  const css2 = emitBigWinTierCSS(resolveConfig({ bigWinTier: { enabled: true, tierClimaxPulseEnabled: false } }));
+  ne(css2, '@keyframes bigWinTierClimaxPulse', 'disabled climax does NOT emit keyframes');
+});
+
+t('V3 polish: runtime emits easing + climax knobs as JS vars', () => {
+  const r = emitBigWinTierRuntime(resolveConfig({ bigWinTier: {
+    enabled: true,
+    countUpEase: 'easeOutCubic',
+    tierEaseMinTier: 4,
+    tierClimaxPulseEnabled: true,
+    tierClimaxPulseMinTier: 5,
+  }}));
+  ct(r, 'var USE_EASE_OUT_CUBIC    = true', 'easeOutCubic flag emitted');
+  ct(r, 'var TIER_EASE_MIN_TIER    = 4', 'tier ease threshold emitted');
+  ct(r, 'var CLIMAX_PULSE_ENABLED  = true', 'climax pulse enabled emitted');
+  ct(r, 'var CLIMAX_PULSE_MIN_TIER = 5', 'climax min tier emitted');
+  /* Runtime must wire is-climax class on _runCompound final tier promotion. */
+  ct(r, "classList.add('is-climax')", 'is-climax wired in runtime');
+  /* easeOutCubic curve formula must be in the count-up function. */
+  ct(r, '1 - Math.pow(1 - p, 3)', 'easeOutCubic formula present');
+});
+
 console.log('--- summary ---\n  pass:', pass, '\n  fail:', fail);
 if (fail > 0) process.exit(1);

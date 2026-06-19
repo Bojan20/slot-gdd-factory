@@ -1,6 +1,59 @@
 # Master TODO — slot-gdd-factory
 
-> **2026-06-19 · HEAD pending** · ♿ Wave **F4-A1234** landed — A11Y BASELINE (WCAG AAA + keyboard + SR + reduced-motion)
+> **2026-06-19 · HEAD pending** · 🎬 Wave **F5-V3** landed — BIG-WIN TIER VISUAL LADDER POLISH
+>
+> ## 🎬 Wave F5 V3 — Big-win tier visual ladder polish (`bigWinTier.mjs`)
+>
+> Boki: *"nastavi"* — Pre-Math Roadmap priority 🥈 V3 polish na već-solidnom
+> `bigWinTier.mjs` (147 LOC default config + 200 LOC CSS + 500 LOC runtime).
+>
+> ### 5 polish atoma
+>
+> | # | Atom | Šta dodato | Industry baseline |
+> |:-:|:--|:--|:--|
+> | 1 | **Per-tier banner rest-state scale** | `tierBannerScale: [0.85, 0.92, 1.0, 1.08, 1.15]` — TIER1 compact, TIER5 swells; `--bw-tier-scale` CSS custom prop sa cubic-bezier(0.34, 1.56, 0.64, 1) transition | hero-typography proporcija eskalira sa tier-om |
+> | 2 | **Per-tier halo glow strength** | `tierHaloBlurPx: [8, 12, 18, 26, 36]` — geometric ladder, text-shadow blur eskalira; color = currentColor (inherits per-tier palette) | reach raste sa tier-om bez menjanja footprint-a |
+> | 3 | **WCAG SC 2.3.1 AAA hard cap** | `wcagAaaPhotoSafe: true` (default ON) — shake period clamp ≥ 333ms (≤ 3 Hz) regardless of GDD override; defense-in-depth | UKGC RTS / MGA RG / AGCO photosensitive-safe |
+> | 4 | **TIER ≥ 5 climax single radial pulse** | `tierClimaxPulseEnabled + Ms + MinTier` — one-shot `@keyframes` (0.6s expand+fade), `.is-climax` klasa applied na final tier mount; reduced-motion gate kill | anti-epilepsy compliant climax burst |
+> | 5 | **Per-tier count-up curve** | `countUpEase: 'linear' / 'easeOutCubic'` sa `tierEaseMinTier: 4` — TIER1-3 linear baseline, TIER4-5 easeOutCubic za "decelerate-to-climax" | cinematic pacing reveal |
+>
+> ### Implementation atomic
+>
+> | Sloj | Šta | LOC |
+> |:--|:--|:-:|
+> | defaultConfig | 7 nova polja + JSDoc kontrakt (svaki sa "Why" + industry-ref + GDD-overrideable note) | +35 |
+> | resolveConfig | per-knob validation + clamp + photo-safe runtime gate (shakePeriodMs ≥ 333 if active) | +45 |
+> | emitBigWinTierCSS | per-tier scale (5 rules) + per-tier halo (5 rules) + climax pseudo-element + @keyframes + reduced-motion kill (4 new rules) | +60 |
+> | emitBigWinTierRuntime | 4 nova var const (USE_EASE_OUT_CUBIC, TIER_EASE_MIN_TIER, CLIMAX_PULSE_ENABLED, CLIMAX_PULSE_MIN_TIER) + `_countUpLinear` easing gate + `_runCompound` 2 climax-pulse wire-points (mount + promotion) | +35 |
+> | tests | 5 nova acceptance gates: knobs presence, photo-safe clamp, CSS scale+halo emit, climax pulse + reduced-motion kill, runtime vars + easeOutCubic formula | +60 |
+> | **Σ** | | **+235 LOC** |
+>
+> ### Test coverage
+>
+> | Gate | Status |
+> |:--|:-:|
+> | `bigWinTier.test.mjs` (42 unit, sve V3 atoma covered) | ✅ **42/42** |
+> | `test:lego` (8 invariants) | ✅ 8/8 |
+> | `test:blocks` (164 blokova) | ✅ EXIT 0 |
+> | `test:parity` (cross-game DOM) | ✅ 0/18 violations |
+> | `test:force-outcomes` (20 chip-outcomes) | ✅ 20/20 |
+>
+> ### WCAG compliance dopuna
+>
+> | SC | Level | Status pre V3 | Status posle V3 |
+> |:-:|:-:|:-:|:-:|
+> | 2.3.1 Three Flashes (photo-safe) | AAA | ⚠️ shake period 220ms = 4.5 Hz (marginal) | ✅ hard cap 333ms = 3 Hz (defense-in-depth) |
+> | 2.3.3 Animation from Interactions | AA | ✅ | ✅ (climax pulse @media kill dodat) |
+>
+> ### Anti-vendor lock
+>
+> Sve nove rules vendor-neutral — koriste `currentColor`, palette inherit, geometric ladder constants. NIKAD vendor-locked naziv kao "epic" / "legendary" / "ultimate" per `rule_no_vendor_mentions`. Label-i ostaju `BIGWINTIER1-5`.
+>
+> **Sledeće u Pre-Math Roadmap-u**: 🥉 F6 T1-T5 dev tools (~7h)
+>
+> ---
+>
+> **2026-06-19 · HEAD `ee4759c`** · ♿ Wave **F4-A1234** landed — A11Y BASELINE (WCAG AAA + keyboard + SR + reduced-motion)
 >
 > ## ♿ Wave F4 A1-A4 — A11y baseline (post 37/37 QA close-out)
 >
