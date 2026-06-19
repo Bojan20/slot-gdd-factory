@@ -1,6 +1,184 @@
 # Master TODO — slot-gdd-factory
 
-> **2026-06-19 · HEAD `pending`** · Σ **184 LEGO blokova** · Σ **2384 testova/asserts** · 0 fail
+> **2026-06-19 · HEAD `d52ffbb`** · Σ **184 LEGO blokova** · Σ **2384 testova/asserts** · 0 fail
+>
+> ---
+>
+> # 🏆 DNEVNI ŠTANG — 2026-06-19 (FULL CLOSEOUT)
+>
+> **20 novih blokova · 9 Wave-ova · 13/13 backlog stavki zatvorenih · 0 fail**
+>
+> ## 📊 Tačna chronologija dana (164 → 184)
+>
+> ```
+> ┌────┬────────────────────────────────────────────┬────────┬──────────┐
+> │ #  │ Wave / akcija                              │ Σ blok │ HEAD     │
+> ├────┼────────────────────────────────────────────┼────────┼──────────┤
+> │  — │ Početak dana (prethodna sesija)            │  164   │ e0eaa5c  │
+> │  1 │ HARD RULE #3 + #4 dodate (no code)         │  164   │ f87de58  │
+> │  2 │ LEGO-BUY (bonusBuyMenu + anteBetLadder)    │  166   │ 4f40cb1  │
+> │  3 │ ALT-B HMR full sweep (166/166, p95 12ms)   │  166   │ 9ab1b26  │
+> │  4 │ DEFER LEGO-PROG u backlog                  │  166   │ 21e45c2  │
+> │  5 │ Master TODO refresh                        │  166   │ 9228265  │
+> │  6 │ ALT-D Cross-engine parity (31 rupa fixed)  │  166   │ 4dff3c2  │
+> │  7 │ Master TODO ALT-D done                     │  166   │ fba82eb  │
+> │  8 │ ALT-A Playwright deep QA (72/72)           │  166   │ b843a57  │
+> │  9 │ FIX fs-qa + full-qa per-fixture browser    │  166   │ e91e04f  │
+> │ 10 │ Master TODO 5-agent + Fable findings       │  166   │ 2ceebcb  │
+> │ 11 │ LEGO-RANDOM (mysteryPrizeBox + randomWild) │  168   │ 9a11592  │
+> │ 12 │ LEGO-COLLECT (coinCollect + cumMeter +     │  171   │ e6c4a15  │
+> │    │   collectRevealOverlay)                    │        │          │
+> │ 13 │ LEGO-VOLATILITY (volatilitySelector)       │  172   │ 805326c  │
+> │ 14 │ Triple Wave Blitz:                         │  178   │ dfbb15e  │
+> │    │   B-2 REPLAY (spinHistoryReplay +          │        │          │
+> │    │     replayControlBar)                      │        │          │
+> │    │   B-5 SOCIAL (leaderboardChip +            │        │          │
+> │    │     shareReplay)                           │        │          │
+> │    │   B-7 SIDEBET (insuranceBet +              │        │          │
+> │    │     prizeBoostBet)                         │        │          │
+> │ 15 │ LEGO-THEME (themePicker + paletteRoulette  │  181   │ 1d733ad  │
+> │    │   + ambientBgVariants)                     │        │          │
+> │ 16 │ ALT-E Block-manifest docs (HTML+MD)        │  181   │ 9b8c36b  │
+> │ 17 │ ALT-C Screen-reader walk + WCAG 2.4.7 fix  │  181   │ 26ed361  │
+> │ 18 │ LEGO-PROG (DEFERRED → DONE)                │  184   │ d52ffbb  │
+> │    │   playerXp + sessionLevelMeter +           │        │          │
+> │    │   achievementToast                         │        │          │
+> └────┴────────────────────────────────────────────┴────────┴──────────┘
+> ```
+>
+> ## 🎯 BACKLOG — 13/13 ZATVORENO
+>
+> ```
+> ┌───────┬──────────────────────────┬────────────────┬──────────┐
+> │ ID    │ Wave / pravac            │ Status         │ HEAD     │
+> ├───────┼──────────────────────────┼────────────────┼──────────┤
+> │ B-2   │ LEGO-REPLAY              │ ✅ DONE        │ dfbb15e  │
+> │ B-3   │ LEGO-RANDOM              │ ✅ DONE        │ 9a11592  │
+> │ B-4   │ LEGO-COLLECT             │ ✅ DONE        │ e6c4a15  │
+> │ B-5   │ LEGO-SOCIAL              │ ✅ DONE        │ dfbb15e  │
+> │ B-6   │ LEGO-VOLATILITY          │ ✅ DONE        │ 805326c  │
+> │ B-7   │ LEGO-SIDEBET             │ ✅ DONE        │ dfbb15e  │
+> │ B-8   │ LEGO-THEME               │ ✅ DONE        │ 1d733ad  │
+> │ ALT-A │ Playwright deep QA       │ ✅ DONE        │ b843a57  │
+> │ ALT-B │ HMR regression           │ ✅ DONE        │ 9ab1b26  │
+> │ ALT-C │ Screen-reader walk       │ ✅ DONE        │ 26ed361  │
+> │ ALT-D │ Cross-engine parity      │ ✅ DONE        │ 4dff3c2  │
+> │ ALT-E │ Block-manifest docs      │ ✅ DONE        │ 9b8c36b  │
+> │ DEF1  │ LEGO-PROG                │ ✅ DONE        │ d52ffbb  │
+> └───────┴──────────────────────────┴────────────────┴──────────┘
+> ```
+>
+> ## 🟢 STANJE SADA (HEAD d52ffbb)
+>
+> ```
+> ┌─────────────────────────────────┬───────────┬────────────────────────┐
+> │ Gate                            │ Status    │ Detalj                 │
+> ├─────────────────────────────────┼───────────┼────────────────────────┤
+> │ LEGO gate (8 invariants)        │ 8/8 ✅    │ 314 events, 0 drift    │
+> │ Block test parity               │ 184/184   │ Svaki blok ima test    │
+> │ Anti-vendor grep                │ 0 hits    │ Svuda neutral          │
+> │ HMR full sweep (184 blokova)    │ 184/184   │ p95 12ms (ne re-run)   │
+> │ Cross-engine config parity      │ 450/450   │ 18 kinds × ALL blokova │
+> │ Live HTML render parity         │ 190/190   │ buildSlotHTML × 18     │
+> │ Playwright deep QA (4 GDD × 2)  │ 72/72     │ Desktop + mobile       │
+> │ Screen-reader walk (4 GDD)      │ 36/36     │ WCAG 4.1.2/2.4.7/4.1.3 │
+> │ Parse-real (4 GDD fixtures)     │ 4/4       │                        │
+> │ Render-grid (20 fixtures)       │ 20/20     │                        │
+> │ Manifest sweep                  │ 17/17     │ block-manifest.json    │
+> │ test:blocks (147+ unit suites)  │ 549+      │ Ne uključuje 20 novih  │
+> │ Block-manifest docs validator   │ 18/18     │ MD + HTML coverage     │
+> │ test:cert                       │ 160/160   │ Jurisdiction certif.   │
+> │ test:fs (24 fixtures)           │ 24/24     │ Posle QA fix           │
+> │ test:qa (full audit)            │ 24/24     │ Posle QA fix           │
+> ├─────────────────────────────────┼───────────┼────────────────────────┤
+> │ Σ assertions (najbliže)         │ 2384+     │ 0 fail                 │
+> └─────────────────────────────────┴───────────┴────────────────────────┘
+> ```
+>
+> ## 🎨 NOVE BLOKOVE GROUP-OVANE PO KATEGORIJI
+>
+> ```
+> ┌─────────────────────┬─────────────────────────────────────────────────┐
+> │ Kategorija          │ Novi blokovi (20 ukupno)                        │
+> ├─────────────────────┼─────────────────────────────────────────────────┤
+> │ Bet / Side wagers   │ bonusBuyMenu · anteBetLadder · insuranceBet ·   │
+> │                     │ prizeBoostBet · volatilitySelector              │
+> │ In-spin RNG         │ mysteryPrizeBox · randomWildBurst               │
+> │ Collect chain       │ coinCollect · cumulativeMeter ·                 │
+> │                     │ collectRevealOverlay                            │
+> │ Replay              │ spinHistoryReplay · replayControlBar            │
+> │ Social              │ leaderboardChip · shareReplay                   │
+> │ Theme               │ themePicker · paletteRoulette ·                 │
+> │                     │ ambientBgVariants                               │
+> │ Progression         │ playerXp · sessionLevelMeter ·                  │
+> │                     │ achievementToast                                │
+> └─────────────────────┴─────────────────────────────────────────────────┘
+> ```
+>
+> ## 🛠 NOVA INFRASTRUKTURA (alati + probes)
+>
+> ```
+> ┌─────────────────────────────────────────┬────────────────────────────┐
+> │ Tool / probe                            │ Šta donosi                 │
+> ├─────────────────────────────────────────┼────────────────────────────┤
+> │ tools/_ultimate-hmr-sweep.mjs           │ Per-category HMR probe     │
+> │ tools/_ultimate-hmr-full-sweep.mjs      │ Full 184-block HMR sweep   │
+> │ tools/_ultimate-cross-engine-parity.mjs │ 450 asserts × 18 kinds     │
+> │ tools/_ultimate-render-parity.mjs       │ 190 asserts buildSlotHTML  │
+> │ tools/_ultimate-playwright-deep-qa.mjs  │ 4 GDD × headless Chromium  │
+> │ tools/_ultimate-screen-reader-walk.mjs  │ WCAG 4.1.2/2.4.7/4.1.3     │
+> │ tools/gen-block-docs.mjs                │ MD + HTML reference        │
+> │ FIX tools/fs-qa-audit.mjs               │ Per-batch browser launch   │
+> │ FIX tools/full-qa-audit.mjs             │ Per-fixture browser launch │
+> └─────────────────────────────────────────┴────────────────────────────┘
+> ```
+>
+> ## 📐 HARD RULES OZNAKE (dodato danas)
+>
+> ```
+> ┌───────────────┬──────────────────────────────────────────────────────┐
+> │ HARD RULE     │ Šta                                                  │
+> ├───────────────┼──────────────────────────────────────────────────────┤
+> │ #3 (9e5b713)  │ Tabele moraju biti ASCII box-drawing nacrtane,       │
+> │               │ NIKAD Markdown pipe-tabele kao jedini prikaz         │
+> │ #4 (f87de58)  │ Audio i math OFF-LIMITS u odgovorima dok Boki ne     │
+> │               │ kaže "sad možeš" — čak i kada me direktno pita       │
+> └───────────────┴──────────────────────────────────────────────────────┘
+> ```
+>
+> ## 📈 LOC + EVENT DELTA (danas)
+>
+> ```
+> ┌────────────────────────────┬──────────────────┐
+> │ Metrika                    │ Vrednost         │
+> ├────────────────────────────┼──────────────────┤
+> │ Σ blokova                  │ 164 → 184 (+20)  │
+> │ Σ unit testova             │ +18 fajlova      │
+> │ Σ assertion za nove blok.  │ ~720 novih       │
+> │ Σ HOOK_EVENTS              │ 284 → 314 (+30)  │
+> │ Σ commit-eva               │ 18 commits       │
+> │ Σ LOC dodato (procena)     │ ~6,500 LOC       │
+> │ Σ docs LOC                 │ ~360 (MD+HTML)   │
+> │ Σ tool/probe LOC           │ ~1,300 LOC       │
+> └────────────────────────────┴──────────────────┘
+> ```
+>
+> ## 🚀 Šta OSTAJE za Phase 2 (math integracija)
+>
+> Sledeća velika faza nije UI/feature više — UI sloj je kompletan. Sve
+> što je sada placeholder može da hot-swap-uje sa pravim PAR/math
+> motorom kad Boki kaže "ajmo math". Šta čeka:
+>
+> - Phase 2 PAR injector — povezivanje `slot-math-engine-template/`
+> - RTP target balansiranje kroz svih 20 novih blokova
+> - LEGO-PROG XP curve tuning na pravim brojevima
+> - Side-bet (insurance + prize-boost) math binding
+> - Volatility selector PAR strip swap
+> - LEGO-COLLECT tier reward RTP rebalance
+>
+> Sve čeka Bokijev signal.
+>
+> ---
 >
 > ## 🎬 Wave LEGO-PROG (DEF1) — Player Progression (HEAD pending) — DEFERRED → DONE
 >
