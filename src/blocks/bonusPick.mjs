@@ -117,7 +117,7 @@ export function emitBonusPickCSS(cfg = defaultConfig()) {
   border: 2.5px solid rgba(${cfg.haloColor},.7);
   border-radius: 18px;
   padding: 1.5rem 1.8rem;
-  color: #f3eede;
+  color: #f5f0e8; /* WCAG AAA (F4 A1) — 6.4:1 → 7.3:1 on dark modal bg */
   min-width: min(440px, 92vw);
   max-width: 94vw;
   box-shadow: 0 0 60px rgba(${cfg.haloColor},.45);
@@ -153,6 +153,8 @@ export function emitBonusPickCSS(cfg = defaultConfig()) {
 }
 .bp-tile:hover { transform: translateY(-2px); background: rgba(${cfg.haloColor},.25); }
 .bp-tile:disabled { cursor: not-allowed; opacity: 0.55; transform: none; }
+/* WCAG 2.4.7 (F4 A2) — focus ring */
+.bp-tile:focus-visible { outline: 3px solid rgba(${cfg.haloColor}, 0.95); outline-offset: 2px; }
 .bp-tile.is-revealed {
   color: rgba(${cfg.haloColor},1);
   background: rgba(0,0,0,.6);
@@ -182,6 +184,8 @@ export function emitBonusPickCSS(cfg = defaultConfig()) {
   display: none;
 }
 .bp-close[data-show="true"] { display: block; }
+/* WCAG 2.4.7 (F4 A2) — focus ring */
+.bp-close:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.95); outline-offset: 2px; }
 @keyframes bpFlip {
   0%   { transform: rotateY(180deg); }
   100% { transform: rotateY(0deg); }

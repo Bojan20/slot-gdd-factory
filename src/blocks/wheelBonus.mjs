@@ -179,6 +179,8 @@ export function emitWheelBonusCSS(cfg = defaultConfig()) {
   box-shadow: 0 0 16px rgba(${cfg.haloColor},.5);
 }
 .wb-spin:disabled { opacity: 0.6; cursor: not-allowed; }
+/* WCAG 2.4.7 (F4 A2) — focus ring */
+.wb-spin:focus-visible { outline: 2px solid rgba(${cfg.haloColor}, 0.95); outline-offset: 2px; }
 .wb-result {
   font-size: 1.4rem;
   font-weight: 900;
@@ -199,6 +201,8 @@ export function emitWheelBonusCSS(cfg = defaultConfig()) {
   display: none;
 }
 .wb-close[data-show="true"] { display: inline-block; }
+/* WCAG 2.4.7 (F4 A2) — focus ring */
+.wb-close:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.95); outline-offset: 2px; }
 
 /* Fable audit (critical, accessibility): vestibular users must not
  * receive the 3.8s rotation animation. Collapse all transitions and

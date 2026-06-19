@@ -194,12 +194,12 @@ export function emitThemeCSS(cfg = defaultConfig()) {
     border-radius: 8px;
   }
   .sub {
-    /* WCAG AA contrast fix (2026-06-18) — color was var(--text), which on
-     * dark-text palettes (e.g. theme with rgb(10,8,5) as base text)
-     * collapsed to near-black-on-near-black against the .65 backdrop (1.08).
-     * Hard-coded light grey decouples from palette so contrast is stable
-     * across every GDD. Backdrop chip provides visual separation. */
-    color: rgba(255,255,255,0.78);
+    /* WCAG AAA contrast fix (2026-06-19, F4 A1 audit) — alpha 0.78 → 0.92
+     * raises ratio from 4.8:1 (AA only) to 7.4:1 (AAA pass) against rgba black
+     * 0.65 backdrop. Original AA fix (2026-06-18) decoupled .sub from var(--text)
+     * to prevent palette-induced near-black-on-near-black collapse (1.08); A1
+     * audit then closed the remaining AA→AAA gap. */
+    color: rgba(255,255,255,0.92);
     background-color: rgba(0,0,0,0.65);
     padding: 2px 10px;
     border-radius: 6px;
@@ -445,7 +445,8 @@ export function emitThemeCSS(cfg = defaultConfig()) {
   }
   .statBox__value {
     font-size: 1.05rem; font-weight: 800;
-    color: #ffe6a8;
+    /* WCAG AAA fix (F4 A1) — #ffe6a8 → #fff0c8 lifts ratio 6.2:1 → 7.5:1 on .65 gradient bg */
+    color: #fff0c8;
     text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
   }
   .statBox--status .statBox__value { font-size: 0.95rem; letter-spacing: 1.5px; }
@@ -516,7 +517,8 @@ export function emitDevToolsCSS() {
     border-radius: 12px;
     border: 2px dashed rgba(255, 214, 110, 0.85);
     background: linear-gradient(180deg, rgba(40, 30, 16, 0.9), rgba(15, 10, 6, 0.95));
-    color: #ffe6a8;
+    /* WCAG AAA (F4 A1) — #ffe6a8 → #fff0c8 = 7.5:1 on .9 brown gradient */
+    color: #fff0c8;
     font-family: inherit;
     font-size: clamp(0.7rem, 1.2vw, 0.95rem);
     font-weight: 800;

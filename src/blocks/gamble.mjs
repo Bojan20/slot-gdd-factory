@@ -140,6 +140,8 @@ export function emitGambleCSS(cfg = defaultConfig()) {
 }
 .gamble-btn--alt { background: rgba(40,40,40,.95); color: #fff; }
 .gamble-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+/* WCAG 2.4.7 (F4 A2) — focus ring */
+.gamble-btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 .gamble-result {
   font-size: 1.05rem;
   font-weight: 900;
@@ -158,6 +160,8 @@ export function emitGambleCSS(cfg = defaultConfig()) {
   cursor: pointer;
   font-size: 0.85rem;
 }
+/* WCAG 2.4.7 (F4 A2) — focus ring */
+.gamble-collect:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
   .gamble-overlay { backdrop-filter: none; }
   .gamble-modal, .gamble-btn, .gamble-title { box-shadow: none; text-shadow: none; }

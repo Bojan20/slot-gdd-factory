@@ -226,7 +226,8 @@ export function emitPickBonusRevealMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   return `<div id="pickReveal" class="pick-reveal" data-active="false" role="status" aria-live="polite" aria-label="Bonus prize reveal">
   <div class="pr-headline">PRIZE</div>
-  <div class="pr-prize">—</div>
+  <!-- WCAG 4.1.3 (F4 A3) — prize label is a big-win celebration; assertive interrupts so player hears full "YOU WON x5 MULTIPLIER". -->
+  <div class="pr-prize" aria-live="assertive" aria-atomic="true">—</div>
 </div>`;
 }
 

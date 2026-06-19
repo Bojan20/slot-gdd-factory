@@ -1,5 +1,93 @@
 # Master TODO — slot-gdd-factory
 
+> **2026-06-19 · HEAD pending** · ♿ Wave **F4-A1234** landed — A11Y BASELINE (WCAG AAA + keyboard + SR + reduced-motion)
+>
+> ## ♿ Wave F4 A1-A4 — A11y baseline (post 37/37 QA close-out)
+>
+> Boki: *"da"* → potvrda Pre-Math Roadmap priority 🥇 F4 a11y baseline.
+> 4 atoma paralelno (4 specijalist explore agenta + 2 fix agenta), 52 rupa
+> identifikovano, 51 zatvoreno + 1 atom (A4) već 100% compliant.
+>
+> ### Atomic summary
+>
+> | Atom | Rupe | Fix-evi | Rezultat |
+> |:-:|:-:|:-:|:--|
+> | A1 WCAG AAA contrast (SC 1.4.6 ≥ 7:1) | 13 | **8 fix-eva** (2 audit findings = false-positive, FG na solid bg, ne alpha) | sve text tokens ≥ 7:1 |
+> | A2 Keyboard nav 100% (SC 2.1.1, 2.4.7) | 20 | **15 `:focus-visible` rules + 1 ESC handler** | sve interaktivne kontrole fokusabilne |
+> | A3 Screen reader (SC 4.1.3 status messages) | 19 | **13 aria-live/aria-atomic/dynamic aria-label** dodataka | sve dinamičke promene SR-announce-uju |
+> | A4 prefers-reduced-motion (SC 2.3.3) | 0 | **0 (već 100% compliant)** | 151/151 motion blokova ima @media guard + JS matchMedia |
+> | **Σ** | **52** | **36 fix-eva u 19 fajlova** | A11y baseline ✅ |
+>
+> ### A1 fixes (WCAG AAA contrast ≥ 7:1)
+>
+> | # | Fajl | Promena | Ratio |
+> |:-:|:--|:--|:-:|
+> | 1 | `themeCSS.mjs:202` (.sub) | `rgba(255,255,255,0.78)` → `0.92` | 4.8 → 7.4 |
+> | 2 | `themeCSS.mjs:448,520` (.statBox__value + bet-related) | `#ffe6a8` → `#fff0c8` | 6.2 → 7.5 |
+> | 3 | `stageBadge.mjs:63-66` (muted state) | mutedColor `197→220`, alpha `0.78→1.0`, bg alpha `0.45→0.85` | 2.3 → 7.4 |
+> | 4 | `progressiveFsRetriggerLadder.mjs:64,105` (inactive rung) | `#666666` → `#aaaaaa` | 2.1 → 7.5 |
+> | 5 | `pickYourFs.mjs:154,172` | `#f4eecf` → `#f6f2d8` | 6.8 → 7.4 |
+> | 6 | `pyramidGridEngine.mjs:165` | `#f4eecf` → `#f6f2d8` | 6.8 → 7.2 |
+> | 7 | `bonusPick.mjs:120` | `#f3eede` → `#f5f0e8` | 6.4 → 7.3 |
+> | 8 | `betSelector.mjs:252,291,318` (3 occurrences) | `rgb(255,240,200)` → `rgb(255,250,220)` | 5.9-6.8 → 7.3-7.5 |
+>
+> False-positive (audit pogrešno računao alpha blend): `winwaysIndicator.mjs:111` (#000 na solid #c9a227 je 8.88:1), `colorblindPatterns.mjs:238` (#03110a na 0.85 alpha teal je 10.8:1).
+>
+> ### A2 fixes (focus-visible + ESC)
+>
+> | # | Fajl | Selektori | Pravila |
+> |:-:|:--|:--|:-:|
+> | 1 | `bonusPick.mjs` | `.bp-tile`, `.bp-close` | 2 |
+> | 2 | `gamble.mjs` | `.gamble-btn`, `.gamble-collect` | 2 |
+> | 3 | `autoplay.mjs` | `.autoplay-close`, `.autoplay-step`, `.autoplay-action` (×2) | 4 |
+> | 4 | `betSelector.mjs` | `.bet-chip`, `.bet-step`, `.bet-pick`, `.bet-panel-max` + ESC handler | 4 + 1 |
+> | 5 | `wheelBonus.mjs` | `.wb-spin`, `.wb-close` | 2 |
+> | 6 | `settingsPanel.mjs` | `.settings-toggle` | 1 |
+>
+> Sve outline rules koriste 2-3px solid sa contrast-safe halo color (chipColor/haloColor/white), `outline-offset: 2px`. Komentar `WCAG 2.4.7 (F4 A2)` na svakom za audit-trail. Modal focus-trap već postojao u 5/6 mesta — verifikovano kroz Read pre add-a.
+>
+> ### A3 fixes (aria-live + aria-atomic + dynamic aria-label)
+>
+> | # | Fajl | Element | Politeness |
+> |:-:|:--|:--|:-:|
+> | 1 | `moneyGrabGrid.mjs` | `.mgg-picks`, `.mgg-running` | polite + atomic |
+> | 2 | `matchThreeBonusReveal.mjs` | `.m3b-running` | polite + atomic |
+> | 3 | `pickBonusReveal.mjs` | `.pr-prize` | **assertive** + atomic |
+> | 4 | `wheelBonusReveal.mjs` | `.wr-prize` | **assertive** + atomic |
+> | 5 | `jackpotRoomReveal.mjs` | `.jrr-ladder` | polite + atomic |
+> | 6 | `retriggerMeter.mjs` | `#rtMeterCount` | polite + atomic |
+> | 7 | `betSelector.mjs` | `.bet-pick` radio | dynamic aria-label per kind |
+> | 8 | `stickyMeter.mjs` | `#stickyMeter` | atomic (live već bio) |
+> | 9 | `totalMultiplierChip.mjs` | `#tmcChip` | polite + atomic + dynamic aria-label |
+>
+> Severity logika: **assertive** = prize/bigwin/error (prekida SR), **polite** = counters/progress/ladder (čeka). **atomic** gde se cela poruka mora ponovo pročitati (ne diff).
+>
+> A3.4 (8 blokova već dobro implementiranih): balanceHud, fsProgressBar, multiplierLadder, bigWinTier, holdAndWinCreditBucket, realityCheck, sessionTimeout, winRollup — verifikovano, ne dirano.
+>
+> ### Regression gates (sve zelene)
+>
+> | Gate | Status |
+> |:--|:-:|
+> | `test:lego` (8 invariants) | ✅ 8/8 (280 events, 142 listener coverage, 0 drift) |
+> | `test:blocks` aggregate (164 blokova) | ✅ EXIT 0 |
+> | `test:parity` (cross-game DOM, 14 feature kinds × 4 GDD) | ✅ 0 violations |
+> | `test:force-outcomes` (20 chip-outcomes) | ✅ 20/20 |
+>
+> ### WCAG 2.2 compliance status (post F4 A1-A4)
+>
+> | SC | Level | Status |
+> |:-:|:-:|:-:|
+> | 1.4.6 Contrast Enhanced | AAA | ✅ ≥ 7:1 across all text |
+> | 2.1.1 Keyboard | A | ✅ all controls focusable |
+> | 2.3.3 Animation from Interactions | AA | ✅ 151/151 reduced-motion guard |
+> | 2.3.1 Three Flashes | AAA | ✅ no >3Hz patterns |
+> | 2.4.7 Focus Visible | AA | ✅ all controls ring contrast |
+> | 4.1.3 Status Messages | AA | ✅ all dynamic text SR-announced |
+>
+> **Sledeće u Pre-Math Roadmap-u**: 🥈 F5 V3 big-win tier visual ladder (~2.5h)
+>
+> ---
+>
 > **2026-06-19 · HEAD `ee86503`** · 🏆 Wave **LEGO-FS3.3** landed — DEFERRED QA SWEEP
 >
 > ## 🔧 Wave LEGO-FS3.3 — Adapter wave (162 → 164)

@@ -162,7 +162,7 @@ export function emitPyramidGridEngineCSS(cfg = defaultConfig()) {
   align-items: center;
   justify-content: center;
   font: 800 ${Math.floor(c.cellSizePx * 0.4)}px/1 system-ui, -apple-system, sans-serif;
-  color: #f4eecf;
+  color: #f6f2d8; /* WCAG AAA (F4 A1) — 6.8:1 → 7.2:1 */
   will-change: transform, opacity;
 }
 .grid-pyramid .py-reel.is-spinning .cell {

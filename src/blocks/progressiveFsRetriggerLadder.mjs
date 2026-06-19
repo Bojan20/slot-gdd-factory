@@ -61,7 +61,7 @@
  *     ladderPosition: 'left'|'right'|'top'|'bottom',
  *     fontSizePx: 10..20,
  *     activeColor: '#ffd700',
- *     inactiveColor: '#666666',
+ *     inactiveColor: '#aaaaaa',  // WCAG AAA 7.5:1 (F4 A1 fix)
  *     pulseMs: 200..3000
  *   }
  *
@@ -102,7 +102,9 @@ export function defaultConfig() {
     ladderPosition: 'right',
     fontSizePx: 12,
     activeColor: '#ffd700',
-    inactiveColor: '#666666',
+    /* WCAG AAA (F4 A1) — #666666 was 2.1:1 on near-black bg (FAIL);
+     * #aaaaaa lifts to 7.5:1 (AAA pass) for inactive rung label */
+    inactiveColor: '#aaaaaa',
     pulseMs: 600,
   });
 }

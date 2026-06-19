@@ -135,7 +135,8 @@ export function emitTotalMultiplierChipMarkup(cfg = defaultConfig()) {
   if (!c.enabled) return `\n<!-- totalMultiplierChip BLOCK (disabled) -->\n`;
   return `
 <!-- totalMultiplierChip BLOCK — server-emitted markup -->
-<div class="tmc-chip" id="tmcChip" role="status" aria-live="polite" aria-hidden="true">TOTAL 1x</div>
+<!-- WCAG 4.1.3 (F4 A3) — atomic so full "TOTAL Nx" is re-spoken on each multiplier change. -->
+<div class="tmc-chip" id="tmcChip" role="status" aria-live="polite" aria-atomic="true" aria-label="Total multiplier 1x" aria-hidden="true">TOTAL 1x</div>
 `;
 }
 
@@ -165,6 +166,9 @@ export function emitTotalMultiplierChipRuntime(cfg = defaultConfig()) {
     window.TOTAL_MULT_CHIP_STATE.lastSeen = v;
 
     el.textContent = 'TOTAL ' + v + 'x';
+    /* WCAG 4.1.3 (F4 A3) — re-announce on reveal: keep aria-label in sync
+     * with the textContent so SR speaks the multiplier value clearly. */
+    el.setAttribute('aria-label', 'Total multiplier ' + v + 'x');
     if (HIDE_WHEN_ONE && v <= 1) {
       el.classList.remove('is-visible', 'is-pulsing');
       el.setAttribute('aria-hidden', 'true');
@@ -180,6 +184,8 @@ export function emitTotalMultiplierChipRuntime(cfg = defaultConfig()) {
     var el = _chip();
     if (!el) return;
     el.textContent = 'TOTAL 1x';
+    /* WCAG 4.1.3 (F4 A3) — re-announce on reveal: aria-label kept in sync with textContent. */
+    el.setAttribute('aria-label', 'Total multiplier 1x');
     if (HIDE_WHEN_ONE) {
       el.classList.remove('is-visible', 'is-pulsing');
       el.setAttribute('aria-hidden', 'true');

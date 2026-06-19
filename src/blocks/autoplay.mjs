@@ -318,6 +318,8 @@ export function emitAutoplayCSS(cfg = defaultConfig()) {
   }
   .autoplay-close:hover  { background: rgba(${c.chipColor}, 0.18); transform: scale(1.06); }
   .autoplay-close:active { transform: scale(0.94); }
+  /* WCAG 2.4.7 (F4 A2) — focus ring */
+  .autoplay-close:focus-visible { outline: 2px solid rgba(${c.chipColor}, 0.95); outline-offset: 2px; }
 
   .autoplay-section { padding: 14px 20px; }
   .autoplay-section + .autoplay-section { border-top: 1px solid rgba(${c.chipColor}, 0.12); }
@@ -349,6 +351,8 @@ export function emitAutoplayCSS(cfg = defaultConfig()) {
   }
   .autoplay-step:hover  { background: rgba(${c.chipColor}, 0.22); }
   .autoplay-step:active { transform: scale(0.96); }
+  /* WCAG 2.4.7 (F4 A2) — focus ring */
+  .autoplay-step:focus-visible { outline: 2px solid rgba(${c.chipColor}, 0.95); outline-offset: 2px; }
   .autoplay-step.is-selected {
     background: linear-gradient(180deg, rgba(${c.chipColor}, 0.75), rgba(${c.chipColor}, 0.55));
     border-color: rgba(${c.chipColor}, 1);
@@ -457,6 +461,8 @@ export function emitAutoplayCSS(cfg = defaultConfig()) {
     color: rgb(${c.chipTextColor});
   }
   .autoplay-action--cancel:hover { background: rgba(${c.chipColor}, 0.10); }
+  /* WCAG 2.4.7 (F4 A2) — focus ring */
+  .autoplay-action--cancel:focus-visible { outline: 2px solid rgba(${c.chipColor}, 0.95); outline-offset: 2px; }
   .autoplay-action--start {
     /* WCAG AA contrast fix (2026-06-18) — was alpha 0.78 on second stop.
      * getComputedStyle().backgroundColor ignores background-image (gradients),
@@ -488,6 +494,8 @@ export function emitAutoplayCSS(cfg = defaultConfig()) {
       0 6px 22px rgba(${c.chipColor}, 0.65),
       inset 0 1px 0 rgba(255, 255, 255, 0.4);
   }
+  /* WCAG 2.4.7 (F4 A2) — focus ring */
+  .autoplay-action--start:focus-visible { outline: 2px solid rgba(${c.chipColor}, 0.95); outline-offset: 2px; }
 
   /* During an active session the modal stays closed; this floating chip
      shows the count remaining. Re-uses bottom-center under the reels. */

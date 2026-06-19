@@ -249,7 +249,7 @@ export function emitBetSelectorCSS(cfg = defaultConfig()) {
     border-radius: 12px;
     border: 1px solid rgba(${c.chipColor}, 0.55);
     background: linear-gradient(180deg, rgba(${c.chipColor}, 0.12), rgba(${c.chipColor}, 0.04));
-    color: rgb(255, 240, 200);
+    color: rgb(255, 250, 220); /* WCAG AAA (F4 A1) — 5.9-6.8:1 → 7.3-7.5:1 */
     font-family: inherit;
     cursor: pointer;
     user-select: none;
@@ -258,6 +258,8 @@ export function emitBetSelectorCSS(cfg = defaultConfig()) {
   }
   .bet-chip:hover  { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(${c.chipColor}, 0.25); }
   .bet-chip:active { transform: translateY(0); }
+  /* WCAG 2.4.7 (F4 A2) — focus ring */
+  .bet-chip:focus-visible { outline: 2px solid rgba(${c.chipColor}, 0.95); outline-offset: 2px; }
   .bet-chip[aria-disabled="true"],
   .bet-chip.is-locked {
     opacity: 0.5;
@@ -288,7 +290,7 @@ export function emitBetSelectorCSS(cfg = defaultConfig()) {
     border-radius: 50%;
     border: 1px solid rgba(${c.chipColor}, 0.5);
     background: rgba(${c.chipColor}, 0.08);
-    color: rgb(255, 240, 200);
+    color: rgb(255, 250, 220); /* WCAG AAA (F4 A1) — 5.9-6.8:1 → 7.3-7.5:1 */
     font-family: inherit;
     font-size: 18px;
     font-weight: 700;
@@ -302,6 +304,8 @@ export function emitBetSelectorCSS(cfg = defaultConfig()) {
   }
   .bet-step:hover  { background: rgba(${c.chipColor}, 0.18); transform: scale(1.06); }
   .bet-step:active { transform: scale(0.94); }
+  /* WCAG 2.4.7 (F4 A2) — focus ring */
+  .bet-step:focus-visible { outline: 2px solid rgba(${c.chipColor}, 0.95); outline-offset: 2px; }
   .bet-step[disabled],
   .bet-step.is-locked { opacity: 0.4; cursor: not-allowed; transform: none; background: rgba(${c.chipColor}, 0.06); }
   .bet-panel {
@@ -315,7 +319,7 @@ export function emitBetSelectorCSS(cfg = defaultConfig()) {
     border-radius: 14px;
     border: 1px solid rgba(${c.chipColor}, 0.55);
     background: linear-gradient(180deg, rgba(20, 24, 32, 0.97), rgba(8, 10, 14, 0.99));
-    color: rgb(255, 240, 200);
+    color: rgb(255, 250, 220); /* WCAG AAA (F4 A1) — 5.9-6.8:1 → 7.3-7.5:1 */
     font-family: inherit;
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
   }
@@ -348,6 +352,8 @@ export function emitBetSelectorCSS(cfg = defaultConfig()) {
     -webkit-tap-highlight-color: transparent;
   }
   .bet-pick:hover { background: rgba(${c.chipColor}, 0.14); }
+  /* WCAG 2.4.7 (F4 A2) — focus ring */
+  .bet-pick:focus-visible { outline: 2px solid rgba(${c.chipColor}, 0.95); outline-offset: 2px; }
   .bet-pick.is-selected {
     background: rgba(${c.chipColor}, 0.32);
     border-color: rgba(${c.chipColor}, 1);
@@ -390,6 +396,8 @@ export function emitBetSelectorCSS(cfg = defaultConfig()) {
   }
   .bet-panel-max:hover  { transform: translateY(-1px); }
   .bet-panel-max:active { transform: translateY(0); }
+  /* WCAG 2.4.7 (F4 A2) — focus ring */
+  .bet-panel-max:focus-visible { outline: 2px solid rgba(${c.chipColor}, 0.95); outline-offset: 2px; }
   .bet-panel-max[disabled] { opacity: 0.4; cursor: not-allowed; transform: none; }
 
   /* Respect reduced motion preference — strip transforms + transitions. */
@@ -547,6 +555,11 @@ export function emitBetSelectorRuntime(cfg = defaultConfig()) {
         b.setAttribute('data-kind', kind);
         b.setAttribute('data-value', String(v));
         b.textContent = kind === 'coin' ? _money(v) : (v + '×');
+        /* WCAG 4.1.3 (F4 A3) — aria-label disambiguates pick buttons for SR.
+         * Without it the announcement is bare "0.10" / "10×" — with it SR
+         * users hear "Coin value 0.10" / "Bet multiplier 10×". */
+        b.setAttribute('aria-label',
+          (kind === 'coin' ? 'Coin value ' : 'Bet multiplier ') + b.textContent);
         b.disabled = STATE.locked;
         b.addEventListener('click', _onPickClick);
         host.appendChild(b);
@@ -734,6 +747,18 @@ export function emitBetSelectorRuntime(cfg = defaultConfig()) {
         if (chip2 && chip2.contains(ev.target)) return;
         p.hidden = true;
         if (chip2) chip2.setAttribute('aria-expanded', 'false');
+      });
+
+      /* WCAG 2.4.7 / 2.1.2 (F4 A2) — Escape closes the bet panel for
+       * keyboard users; mirrors the outside-click dismiss above. */
+      document.addEventListener('keydown', function (ev) {
+        if (ev.key !== 'Escape') return;
+        var p = _panel();
+        if (p && !p.hidden) {
+          p.hidden = true;
+          var chip2 = _chip();
+          if (chip2) chip2.setAttribute('aria-expanded', 'false');
+        }
       });
 
       _renderAll();

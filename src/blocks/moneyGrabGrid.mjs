@@ -228,10 +228,12 @@ export function emitMoneyGrabGridMarkup(cfg = defaultConfig()) {
 <!-- moneyGrabGrid BLOCK — server-emitted markup -->
 <div class="mgg-overlay" id="mggOverlay" role="dialog" aria-modal="true" aria-labelledby="mggTitle" aria-hidden="true">
   <h2 class="mgg-title" id="mggTitle">PICK ${c.maxPicks} TO COLLECT</h2>
-  <div class="mgg-picks" id="mggPicks">PICKS LEFT: ${c.maxPicks}</div>
+  <!-- WCAG 4.1.3 (F4 A3) — picks-left counter mutated on every reveal; SR re-announce. -->
+  <div class="mgg-picks" id="mggPicks" aria-live="polite" aria-atomic="true">PICKS LEFT: ${c.maxPicks}</div>
   <div class="mgg-grid" role="group" aria-label="Money grab pick grid">${cards}
   </div>
-  <div class="mgg-running" id="mggRunning" role="status" aria-live="polite">TOTAL: 0x</div>
+  <!-- WCAG 4.1.3 (F4 A3) — atomic so full "TOTAL: Nx" is re-spoken, not diff. -->
+  <div class="mgg-running" id="mggRunning" role="status" aria-live="polite" aria-atomic="true">TOTAL: 0x</div>
 </div>
 `;
 }

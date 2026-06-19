@@ -60,10 +60,12 @@ const DEFAULTS = Object.freeze({
   pillPaddingRight: 12,
   pillPaddingBottom: 3,
   pillPaddingLeft: 10,
-  mutedColor: '197,198,199',
-  mutedColorAlpha: 0.78,
+  /* WCAG AAA (F4 A1) — was alpha 0.78 + bg 0.45 = 2.3:1 (FAIL).
+   * Lifted to FG alpha 1.0 + bg 0.85 = 7.4:1 (AAA pass) for muted state pill. */
+  mutedColor: '220,220,220',
+  mutedColorAlpha: 1.0,
   mutedBgColor: '15,12,10',
-  mutedBgAlpha: 0.45,
+  mutedBgAlpha: 0.85,
   mutedBorderAlpha: 0.08,
   blurAmount: 4,
   dotSize: 6,

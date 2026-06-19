@@ -239,7 +239,8 @@ export function emitMatchThreeBonusRevealMarkup(cfg = defaultConfig()) {
   <h2 class="m3b-title" id="m3bTitle">PICK TO REVEAL — MATCH 3 OR STOP</h2>
   <div class="m3b-grid" role="group" aria-label="Match three pick grid">${cards}
   </div>
-  <div class="m3b-running" id="m3bRunning" role="status" aria-live="polite">TOTAL: 0x</div>
+  <!-- WCAG 4.1.3 (F4 A3) — atomic so full "TOTAL: Nx" is re-spoken, not diff. -->
+  <div class="m3b-running" id="m3bRunning" role="status" aria-live="polite" aria-atomic="true">TOTAL: 0x</div>
 </div>
 `;
 }

@@ -313,7 +313,8 @@ export function emitJackpotRoomRevealMarkup(cfg = defaultConfig()) {
      aria-hidden="true"
      tabindex="-1">
   <div class="jrr-title" id="jrrTitle">JACKPOT</div>
-  <div class="jrr-ladder" id="jrrLadder" aria-label="Jackpot room ladder"></div>
+  <!-- WCAG 4.1.3 (F4 A3) — innerHTML rewritten on each trigger with multiplier rungs; polite + atomic so SR reads full ladder, not just diff. -->
+  <div class="jrr-ladder" id="jrrLadder" aria-label="Jackpot room ladder" aria-live="polite" aria-atomic="true"></div>
   ${c.showCTA ? `<div class="jrr-cta" id="jrrCta">TAP TO CONTINUE</div>` : ''}
 </div>
 `;

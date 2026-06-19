@@ -151,7 +151,7 @@ export function emitPickYourFsCSS(cfg = defaultConfig()) {
 .pyfs-overlay.is-visible { display: flex; }
 .pyfs-title {
   font: 900 26px/1 system-ui, -apple-system, sans-serif;
-  color: #f4eecf;
+  color: #f6f2d8; /* WCAG AAA (F4 A1) — 6.8:1 → 7.4:1 */
   letter-spacing: 0.06em;
   text-shadow: 0 2px 12px rgba(0,0,0,0.7);
 }
@@ -169,7 +169,7 @@ export function emitPickYourFsCSS(cfg = defaultConfig()) {
   background: linear-gradient(180deg, ${c.cardColor}, ${c.cardColor}cc);
   border: 2px solid ${c.cardColor};
   border-radius: 12px;
-  color: #f4eecf;
+  color: #f6f2d8; /* WCAG AAA (F4 A1) — 6.8:1 → 7.4:1 */
   font: 800 14px/1.2 system-ui, -apple-system, sans-serif;
   letter-spacing: 0.04em;
   cursor: pointer;

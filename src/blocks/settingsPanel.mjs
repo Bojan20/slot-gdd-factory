@@ -336,6 +336,11 @@ export function emitSettingsPanelCSS(cfg = defaultConfig()) {
   .settings-toggle.is-on::after {
     transform: translateX(20px);
   }
+  /* WCAG 2.4.7 (F4 A2) — focus ring */
+  .settings-toggle:focus-visible {
+    outline: 2px solid rgba(${c.modalAccentColor}, 0.95);
+    outline-offset: 2px;
+  }
 
   .settings-locale-select {
     background: rgba(${c.modalAccentColor}, 0.12);
