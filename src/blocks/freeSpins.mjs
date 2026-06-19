@@ -721,11 +721,30 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
         fsHudSpins.classList.remove("fs-hud__value--retrig");
       }, 720);
     }
-    /* LEGO single-owner discipline — onFsRetrigger is owned by
-     * superchargedFs.mjs via the engine-facing superchargedFsAnnounce()
-     * helper. We do NOT emit here. The visual pulse + toast are local
-     * to this block; downstream blocks subscribe to onFsRetrigger
-     * separately when the engine announces the round-level event. */
+    /* FIX-4 (deep QA #17, 2026-06-19) — guarantee onFsRetrigger reaches
+     * downstream subscribers (fsReelHeightEscalation, retriggerMeter,
+     * retriggerMultiplierBump) even when superchargedFs block is NOT
+     * in the build.
+     *
+     * Original LEGO discipline: superchargedFs owns the emit via
+     * superchargedFsAnnounceRetrigger() helper. But if that block isn't
+     * enabled in the GDD, the event was silently lost — every FS-retrigger
+     * subscriber stopped working. Soft-dependency on a sibling block
+     * violates LEGO universality.
+     *
+     * Hardening: prefer superchargedFs's helper when present (so its
+     * re-entrancy guard owns the emit), fall through to a direct emit
+     * otherwise. Either path produces exactly one onFsRetrigger per
+     * retrigger event. */
+    try {
+      if (typeof window !== 'undefined'
+          && typeof window.superchargedFsAnnounceRetrigger === 'function') {
+        window.superchargedFsAnnounceRetrigger();
+      } else if (typeof HookBus !== 'undefined'
+                 && typeof HookBus.emit === 'function') {
+        HookBus.emit('onFsRetrigger', { extraSpins: n, retriggerIndex: FSM.retrigCount });
+      }
+    } catch (_) {}
   }
 
   function FSM_enterOutro() {

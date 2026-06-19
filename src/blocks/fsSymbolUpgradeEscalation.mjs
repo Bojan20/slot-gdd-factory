@@ -269,6 +269,15 @@ export function emitFsSymbolUpgradeEscalationRuntime(cfg = defaultConfig()) {
   }
 
   function _onFsTrigger() {
+    /* FIX-4 (deep QA #18, 2026-06-19) — idempotency guard. Without this,
+     * a duplicate onFsTrigger emit (e.g. retrigger code-path that fires
+     * both onFsRetrigger + onFsTrigger, or a parent-FSM bug) snapshots
+     * the already-escalated currentPool as the new basePool, then _onFsEnd
+     * restores to that DELIMICALLY escalated pool instead of the pristine
+     * pre-FS base. Result: state leak through FS into BASE game pool.
+     * Symmetric with fsReelHeightEscalation L272 and winBothWaysActivation
+     * L180 idempotency guards. */
+    if (window.FS_SYMBOL_UPGRADE_STATE.active === true) return;
     var snap = _snapshotPool();
     window.FS_SYMBOL_UPGRADE_STATE.active = true;
     window.FS_SYMBOL_UPGRADE_STATE.basePool = snap.slice();

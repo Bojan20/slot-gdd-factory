@@ -713,7 +713,12 @@ const EXPECTED_EMIT_OWNERS = {
   onJackpotRoomWon:     ['jackpotLadderRooms.mjs'],
   onJackpotRoomExit:    ['jackpotLadderRooms.mjs'],
   /* H14 superchargedFs — FS retrigger multiplier escalation (sole owner of 3 events). */
-  onFsRetrigger:           ['superchargedFs.mjs'],
+  /* FIX-4 (deep QA #17, 2026-06-19): freeSpins.FSM_handleRetrigger now
+   * emits onFsRetrigger as a fallback when superchargedFs is NOT in the
+   * build (soft-dependency was creating silent dead-event downstream).
+   * superchargedFs remains the canonical sole-owner when present (via
+   * its re-entrancy-guarded superchargedFsAnnounceRetrigger helper). */
+  onFsRetrigger:           ['superchargedFs.mjs', 'freeSpins.mjs'],
   onFsMultiplierEscalated: ['superchargedFs.mjs'],
   onFsSuperchargeReset:    ['superchargedFs.mjs'],
   /* H15 cascadeBooster — per-cascade-depth multiplier (sole owner of 2 events). */

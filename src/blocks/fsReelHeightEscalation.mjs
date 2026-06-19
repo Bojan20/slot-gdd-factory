@@ -303,12 +303,19 @@ export function emitFsReelHeightEscalationRuntime(cfg = defaultConfig()) {
   function _onFsEnd() {
     var st = window.FS_REEL_HEIGHT_STATE;
     if (!st.active) return;
-    /* QA fix (general-purpose subagent 2026-06-19, finding F4):
-     * removed DOM purge — mid-animation removeChild raced with engine
-     * commitStopSymbols writes (TypeError null textContent). The
-     * future reelEngine adapter (FS3.3 wave, growReelHeight API) is
-     * responsible for atomic restore. For now we ONLY reset RECT_REELS
-     * and state — visual restore lands when adapter wires in. */
+    /* FIX-4 (deep QA #16, 2026-06-19) — finding F4 + priority semantics.
+     * HookBus sorts handlers DESCENDING by priority (higher first), so
+     * reelHeightAdapter._onFsEnd (priority 30) runs BEFORE us (priority
+     * 29). Adapter consumes the still-escalated reel.visibleRows as its
+     * shrink target and atomically shrinks DOM nodes back to baseline.
+     * Our state-write of RECT_REELS[i].visibleRows = baselineRows that
+     * follows is idempotent (adapter already set it inside _shrinkOne).
+     *
+     * If adapter is NOT in the build (st.baselines.length === 0 → early
+     * return), DOM stays at escalated height and only our state-write
+     * brings RECT_REELS back. Visual restore in that no-adapter scenario
+     * waits for next renderRect() invocation. Documented limitation —
+     * production builds should wire the adapter. */
     if (st.baselineRows > 0 && st.currentRows > st.baselineRows) {
       _updateRectReels(st.baselineRows);
     }
