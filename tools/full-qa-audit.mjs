@@ -28,7 +28,14 @@ const fixtures = readdirSync(GALLERY)
   .filter((f) => f.endsWith('.html') && f !== 'index.html')
   .sort();
 
-const browser = await chromium.launch();
+/* Per-fixture browser ownership — pre Wave LEGO-BUY parity audit
+ * (2026-06-19), a single shared browser was used across all fixtures.
+ * When ONE fixture crashed the page (e.g. variable_reel 5×4) the
+ * underlying chromium teardown propagated to subsequent fixtures with
+ * "Target page, context or browser has been closed". Fresh launch
+ * per audited fixture isolates the fault. ~80ms startup cost per
+ * fixture is acceptable for a full-QA pass. */
+let browser = null;
 
 const audit = [];
 
@@ -37,6 +44,9 @@ for (const file of fixtures) {
   const url = 'file://' + resolve(GALLERY, file);
   const row = { slug, kind: '?', desktop: '', mobile: '', spinMid: '', spinPost: '',
                 consoleErrs: 0, ornaments: {}, spinOk: '—', notes: [] };
+  /* Fresh browser per fixture — isolates crashes (see file head). */
+  browser = await chromium.launch();
+  try {
 
   /* ─── DESKTOP ─── */
   const ctxD = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -163,11 +173,18 @@ for (const file of fixtures) {
     await ctxS.close();
   }
 
-  audit.push(row);
+    audit.push(row);
+  } catch (e) {
+    row.notes.push('fixture error: ' + String(e.message || e).slice(0, 160));
+    row.consoleErrs = row.consoleErrs + 1;
+    row.spinOk = '❌ fixture err';
+    audit.push(row);
+  } finally {
+    try { await browser.close(); } catch (_) { /* already gone */ }
+    browser = null;
+  }
   process.stdout.write(`· ${slug.padEnd(40)} kind=${row.kind.padEnd(13)} errs=${row.consoleErrs} spin=${row.spinOk}\n`);
 }
-
-await browser.close();
 
 /* ─── REPORT ─── */
 const totalFailures = audit.filter((r) =>

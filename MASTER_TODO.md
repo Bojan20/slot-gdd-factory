@@ -1,6 +1,56 @@
 # Master TODO — slot-gdd-factory
 
-> **2026-06-19 · HEAD `4dff3c2`** · Σ **166 LEGO blokova** · Σ **1019 testova/asserts** · 0 fail
+> **2026-06-19 · HEAD `pending`** · Σ **166 LEGO blokova** · Σ **1647 testova/asserts** · 0 fail
+>
+> ## 🎯 ULTIMATE DEEP QA SWEEP — HEAD pending
+>
+> Boki: *"QA svega implementiranog, deep najdublji sa svim agentima"*.
+> Full project test sweep otkrio 2 nove rupe u QA infra (oba PRE-existing,
+> ne Wave LEGO-BUY-uvedeno). Fix-ovano + verifikovano.
+>
+> ```
+> ┌──────────────────────────────────────────────────────────────────────┐
+> │ Otkrivene rupe (PRE-existing, fix-ovane u ovom sweep-u)              │
+> ├──────────────────────────────────────────────────────────────────────┤
+> │ tools/fs-qa-audit.mjs       — shared browser propagation crash      │
+> │ tools/full-qa-audit.mjs:100 — isti pattern, drugi audit             │
+> ├──────────────────────────────────────────────────────────────────────┤
+> │ Fix: per-batch / per-fixture chromium launch + cleanup u finally.   │
+> │ Isolacija >> perf cost. Variable_reel 5×4 crash više ne pada batch. │
+> └──────────────────────────────────────────────────────────────────────┘
+> ```
+>
+> ## Final Sweep — 1647/1647 ZELENA
+>
+> ```
+> ┌────────────────────────────────────┬─────────────┬─────────────────────┐
+> │ Gate                               │ Status      │ Detalj              │
+> ├────────────────────────────────────┼─────────────┼─────────────────────┤
+> │ LEGO gate (8 invariants)           │ 8/8 ✅      │ 284 events 0 drift  │
+> │ test:blocks (147 unit suites)      │ 549/549     │ Sve blokove pass    │
+> │ test:cert (6 sub-tests)            │ 160/160     │ Jurisdiction pass   │
+> │ test:hmr (3 sub-tests)             │ 48/48       │ HMR + dev-server    │
+> │ test:manifest                      │ 17/17       │ Manifest fresh      │
+> │ test:dev-server                    │ 18/18       │ Pure-fn safety      │
+> │ test:parse-real (4 GDD)            │ 4/4         │ WoO/GoO/HnMP/CF     │
+> │ test:grids                         │ 20/20       │ 24 fixture          │
+> │ test:runtime                       │ 8/8         │ Runtime contract    │
+> │ test:playground                    │ 24/24       │ Cortex eyes         │
+> │ test:fs (24 fixtures × FS round)   │ 24/24 ✅    │ NOVO POPRAVLJENO    │
+> │ test:qa (full QA audit)            │ 24/24 ✅    │ NOVO POPRAVLJENO    │
+> │ HMR full sweep (166 blokova)       │ 166/166     │ p95 12ms            │
+> │ Cross-engine config parity         │ 450/450     │ ALT-D HEAD 4dff3c2  │
+> │ Live HTML render parity            │ 190/190     │ ALT-D HEAD 4dff3c2  │
+> │ Playwright deep QA (4 GDD × 2 vw)  │ 72/72       │ ALT-A HEAD b843a57  │
+> │ Vendor-neutral grep                │ 0 hits      │ Svuda neutral       │
+> ├────────────────────────────────────┼─────────────┼─────────────────────┤
+> │ Σ                                  │ 1647/1647   │ 0 fail              │
+> └────────────────────────────────────┴─────────────┴─────────────────────┘
+> ```
+>
+> ---
+>
+> **2026-06-19 · HEAD `4dff3c2`** (snapshot pre Ultimate Deep QA) · Σ **166 LEGO blokova** · Σ **1019 testova/asserts** · 0 fail
 >
 > ---
 >

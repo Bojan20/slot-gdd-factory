@@ -40,7 +40,15 @@ const fixtures = readdirSync(GALLERY)
   .filter((f) => f.endsWith('.html') && f !== 'index.html')
   .sort();
 
-const browser = await chromium.launch();
+/* Per-batch browser ownership — pre Wave LEGO-BUY parity audit
+ * (2026-06-19), a single shared `browser` was used across all batches.
+ * When ONE fixture in batch N crashed the page badly enough to tear
+ * down the underlying chromium context, the NEXT batch's
+ * `browser.newContext` threw "Target page, context or browser has been
+ * closed", aborting the whole audit. Fix: each batch launches a fresh
+ * chromium instance and closes it at batch end. Slight startup cost
+ * (~80ms × batches) is fine; isolation guarantee >> perf. */
+let browser = null;
 
 /* Run fixtures in parallel batches — each FS round can take 30-90s, so
    serial execution is intolerable; parallel pulls it down to ~one full
@@ -263,14 +271,35 @@ async function runOne(file) {
   return row;
 }
 
-/* Batched parallel execution. */
+/* Batched parallel execution — each batch owns its own browser to
+ * prevent cross-batch teardown propagation (see comment at file head). */
 for (let i = 0; i < fixtures.length; i += BATCH) {
   const batch = fixtures.slice(i, i + BATCH);
-  const results = await Promise.all(batch.map(runOne));
-  audit.push(...results);
+  browser = await chromium.launch();
+  try {
+    const results = await Promise.all(batch.map(runOne));
+    audit.push(...results);
+  } catch (e) {
+    /* Defensive: if Promise.all throws (e.g. a runOne hits
+     * page-closed mid-evaluate without our internal guard catching it),
+     * record a synthetic row per remaining fixture in the batch so the
+     * audit always produces a complete report. */
+    process.stderr.write(`\n  ⚠ batch ${i/BATCH} threw: ${e.message}\n`);
+    for (const file of batch) {
+      const slug = file.replace(/\.html$/, '');
+      if (!audit.find(r => r.slug === slug)) {
+        audit.push({ slug, kind: '?', fsEnabled: false,
+          introOk: '❌ batch err', activeOk: '—', outroOk: '—', baseOk: '—',
+          spinsPlayed: 0, totalWin: 0, retrigCount: 0, finalMult: 1,
+          consoleErrs: 1, notes: ['batch error: ' + e.message.slice(0, 100)],
+          screens: {} });
+      }
+    }
+  } finally {
+    try { await browser.close(); } catch (_) { /* already gone */ }
+    browser = null;
+  }
 }
-
-await browser.close();
 
 const failures = audit.filter((r) =>
   r.consoleErrs > 0 ||
