@@ -1,3 +1,48 @@
+## 🎯 FIX-8 ULTIMATIVNI GDD-COVERAGE SAVRŠENSTVO (26 stavki, 7 HIGH first)
+
+Boki: *"upisi sve u master todo i kreni prvo HIGH sve redom sa svim ultra detaljnim qa na kraju implementacije"* (2026-06-19 17:31)
+
+3-nivo audit (NIVO BLOKA · KOMBINACIJA · GDD-DRIVEN ROBUSTNOST) iz 5-agent + Fable deep QA otkrio 26 preostalih rupa. Krećem HIGH redom.
+
+```
+┌────┬──────────────────────────────────────────────────────────────┬──────────┬──────────┐
+│ ID │ Stavka                                                       │ Severity │ Status   │
+├────┼──────────────────────────────────────────────────────────────┼──────────┼──────────┤
+│ H1 │ bonusBuyMenu HMR __BBM_HOOKS_WIRED__ sentinel                │ 🔴 HIGH  │ PENDING  │
+│ H2 │ bonusBuyMenu XSS confirmMessage filter (</script> digraph)   │ 🔴 HIGH  │ PENDING  │
+│ H3 │ matchThreeBonus #ff6a6a → #b71c1c AAA contrast               │ 🔴 HIGH  │ PENDING  │
+│ H4 │ 20 blokova text-mutate aria-live region                       │ 🔴 HIGH  │ PENDING  │
+│ H5 │ H&W ↔ FS mutual-exclusive runtime gate                       │ 🔴 HIGH  │ PENDING  │
+│ H6 │ H&W atomic credit escrow + commit                            │ 🔴 HIGH  │ PENDING  │
+│ H7 │ progressiveFsRetriggerLadder × fsReelHeight compound rule    │ 🔴 HIGH  │ PENDING  │
+├────┼──────────────────────────────────────────────────────────────┼──────────┼──────────┤
+│ M1 │ 7 hot-path silent catches → console.warn + telemetry         │ 🟡 MED   │ later    │
+│ M2 │ S10 slam mid-anim dynamic E2E test                            │ 🟡 MED   │ later    │
+│ M3 │ Byte-safe '0.30' → Number trap (CSS opacity/JSON)             │ 🟡 MED   │ later    │
+│ M4 │ Close-comment */ digraph injection (CSS/JS)                   │ 🟡 MED   │ later    │
+│ M5 │ NTP backward clock skew tolerance                             │ 🟡 MED   │ later    │
+│ M6 │ sessionId monotonic token                                     │ 🟡 MED   │ later    │
+│ M7 │ universalForcePanel FS-active guard                           │ 🟡 MED   │ later    │
+│ M8 │ winRollup × slamStop skipRequested emit                       │ 🟡 MED   │ later    │
+│ M9 │ Mutex 5+ overlay support (extensible kind registry)           │ 🟡 MED   │ later    │
+│ M10│ persistentMultiplier × WWS × per-FS-spin MAX-aggregate         │ 🟡 MED   │ later    │
+│ M11│ smartDefaults per-key audit (svi missing GDD keys)            │ 🟡 MED   │ later    │
+│ M12│ allWaysEval × hex/pyramid grid coverage tests                 │ 🟡 MED   │ later    │
+│ M13│ Feature × Feature exclusivity manifest                        │ 🟡 MED   │ later    │
+│ M14│ Jurisdiction × engine kind cross-coverage (16×6=96)            │ 🟡 MED   │ later    │
+│ M15│ GDD knob compatibility matrix (per-block-pair)                │ 🟡 MED   │ later    │
+│ M16│ Idempotency under repeat trigger (tumble.mjs __WIRED__)       │ 🟡 MED   │ later    │
+│ M17│ Engine kind self-disable contract uniformity gate              │ 🟡 MED   │ later    │
+├────┼──────────────────────────────────────────────────────────────┼──────────┼──────────┤
+│ L1 │ 6 onForceFeatureRequested listeners debug log noise           │ ⚪ LOW   │ later    │
+│ L2 │ Engine kind self-disable visual uniformity                    │ ⚪ LOW   │ later    │
+└────┴──────────────────────────────────────────────────────────────┴──────────┴──────────┘
+```
+
+QA finale posle H1-H7: 5 agenata + Fable Copilot full sweep + sve test gates.
+
+---
+
 ## 🎬 Wave C-1 LEGO-PERF (HEAD pending) — Bundle-size probe + budgets
 
 Boki: *"idemo redom, ultimativno"* — C-1 iz C-Wave roadmap-a.
