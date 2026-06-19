@@ -36,6 +36,7 @@
     "test:load": "node tools/_ultimate-load-probe.mjs && node tests/blocks/_loadProbe.test.mjs",
     "test:slam": "node tools/_ultimate-slam-during-cascade-probe.mjs && node tests/blocks/_slamProbe.test.mjs",
     "test:long-run": "node tools/_ultimate-long-run-probe.mjs && node tests/blocks/_longRunProbe.test.mjs",
+    "test:bundle:compress": "node tools/_ultimate-bundle-compression-probe.mjs && node tests/blocks/_bundleCompressionProbe.test.mjs",
     "test:per-block-real": "node tools/_ultimate-per-block-browser-probe.mjs --quick && node tests/blocks/_perBlockBrowserProbe.test.mjs",
     "test:per-block-real:full": "node tools/_ultimate-per-block-browser-probe.mjs && node tests/blocks/_perBlockBrowserProbe.test.mjs",
     "test:block-pair-real": "node tools/_ultimate-block-pair-browser-probe.mjs --pairs=30 --seed=1 && node tests/blocks/_blockPairBrowserProbe.test.mjs",
