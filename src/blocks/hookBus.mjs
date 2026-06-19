@@ -741,6 +741,65 @@ export const HOOK_EVENTS = Object.freeze([
   'onWinCapTriggered',  // Owner: winCap.mjs
   'requestRespin',  // Owner: walkingWild.mjs
   'symbolOverride',  // Owner: wildReel.mjs
+
+  /* ──────────────────────────────────────────────────────────────────
+   * Wave FIX-1 (2026-06-19) — 46-event registry-drift closure.
+   *
+   * Pre ovog wave-a 46 emit-ed events postojalo je u src/blocks/ ali
+   * NIJE u HOOK_EVENTS — `HookBus.on()` ih je odbijao ("unknown event")
+   * i `emit()` no-op-ovao. Cross-block coordination tih.
+   *
+   * Owner mapping mirror-uje EXPECTED_EMIT_OWNERS u tools/lego-gate.mjs.
+   * Invariant #8 u istom gate-u (parseHookEventsFromSource ⊇ all emits)
+   * sprečava regresiju.
+   * ────────────────────────────────────────────────────────────────── */
+  'clusterPays:evaluated',  // Owner: clusterPaysEval.mjs (legacy colon, W57.A7 whitelist)
+  'expandingWild:applied',  // Owner: expandingWild.mjs (legacy colon)
+  'expandingWild:cleared',  // Owner: expandingWild.mjs (legacy colon)
+  'init',  // Owner: turboMode.mjs (Wave U pre-canonical naming)
+  'onAllWaysCleared',  // Owner: allWaysEval.mjs
+  'onAllWaysPay',  // Owner: allWaysEval.mjs
+  'onBidirectionalWaysCleared',  // Owner: bidirectionalWaysEval.mjs
+  'onBidirectionalWaysPay',  // Owner: bidirectionalWaysEval.mjs
+  'onClusterPay',  // Owner: clusterPaysEval.mjs
+  'onExpandingWildMultRolled',  // Owner: expandingWildMultiplier.mjs
+  'onExpandingWildMultsCleared',  // Owner: expandingWildMultiplier.mjs
+  'onExpansionWildAdded',  // Owner: fsExpansionWilds.mjs
+  'onExpansionWildsCleared',  // Owner: fsExpansionWilds.mjs
+  'onFrameMultiplierBumped',  // Owner: holdAndWinFrameMultiplier.mjs
+  'onFrameMultiplierFinal',  // Owner: holdAndWinFrameMultiplier.mjs
+  'onInfinityEngineCommit',  // Owner: infinityReelsEngine.mjs
+  'onInfinityEngineExpanded',  // Owner: infinityReelsEngine.mjs
+  'onInfinityEngineReset',  // Owner: infinityReelsEngine.mjs
+  'onJackpotPickerComplete',  // Owner: jackpotPicker.mjs
+  'onJackpotPickerDismissed',  // Owner: jackpotPicker.mjs
+  'onJackpotPickerTileRevealed',  // Owner: jackpotPicker.mjs
+  'onJackpotRoomDismissed',  // Owner: jackpotRoomReveal.mjs
+  'onJackpotRoomRevealed',  // Owner: jackpotRoomReveal.mjs
+  'onLadderReset',  // Owner: progressiveFsRetriggerLadder.mjs
+  'onLadderRungPromoted',  // Owner: progressiveFsRetriggerLadder.mjs
+  'onLightningStrike',  // Owner: randomLightningMultiplier.mjs
+  'onLightningStrikeMissed',  // Owner: randomLightningMultiplier.mjs
+  'onLockedOrbMultiplierFinal',  // Owner: holdAndWinLockedOrbMultiplier.mjs
+  'onLockedOrbMultiplierRolled',  // Owner: holdAndWinLockedOrbMultiplier.mjs
+  'onMegaWildClusterCleared',  // Owner: megaWildCluster.mjs
+  'onMegaWildClusterLanded',  // Owner: megaWildCluster.mjs
+  'onRoomJackpotFinal',  // Owner: holdAndWinRoomJackpotMultiplier.mjs
+  'onRoomPromoted',  // Owner: holdAndWinRoomJackpotMultiplier.mjs
+  'onSuperSymbolUpgradeReset',  // Owner: superSymbolUpgrade.mjs
+  'onSuperSymbolUpgraded',  // Owner: superSymbolUpgrade.mjs
+  'onSymbolSplitCleared',  // Owner: symbolSplitReveal.mjs
+  'onSymbolSplitRevealed',  // Owner: symbolSplitReveal.mjs
+  'onSymbolSplitStarted',  // Owner: symbolSplitReveal.mjs
+  'onTumbleMultiplierGrown',  // Owner: tumbleGrowingFsMultiplier.mjs
+  'onTumbleMultiplierReset',  // Owner: tumbleGrowingFsMultiplier.mjs
+  'onWalkingWildExited',  // Owner: walkingWildStepper.mjs
+  'onWalkingWildSpawned',  // Owner: walkingWildStepper.mjs
+  'onWalkingWildStep',  // Owner: walkingWildStepper.mjs
+  'onWaysResetForRound',  // Owner: dynamicWaysEngine.mjs
+  'onWaysReshaped',  // Owner: dynamicWaysEngine.mjs
+  'wheelBonus.complete',  // Owner: wheelBonus.mjs (legacy dot, W57.A7 whitelist)
+  'wheelBonus.spin',  // Owner: wheelBonus.mjs (legacy dot, W57.A7 whitelist)
 ]);
 
 /* Wave U4: canonical autoplay stop reasons. */

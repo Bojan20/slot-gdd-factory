@@ -1087,6 +1087,86 @@ async function checkColonDotEventNames() {
   };
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+ * Invariant #8 — HOOK_EVENTS registry completeness (FIX-1 wave, 2026-06-19)
+ *
+ * Browser runtime initialiazira `handlers = {}` po svakom event-u iz
+ * HOOK_EVENTS array-a. Ako blok emit-uje event koji nije u tom array-u:
+ *   • `HookBus.on('unknownEvent', fn)` → console.warn + no-op stub
+ *   • `HookBus.emit('unknownEvent', payload)` → silent early-return
+ * → cross-block coordination tiho mrtav, EXPECTED_EMIT_OWNERS bi taj
+ * propustio jer validira ownership a NE registry membership.
+ *
+ * Ovaj invariant kompletno zatvara drift: svaki emit() poziv iz
+ * src/blocks/ MORA imati string odgovarajuću registered key u HOOK_EVENTS.
+ * ────────────────────────────────────────────────────────────────────────── */
+async function checkHookEventsRegistry() {
+  const hookBusPath = resolvePath(REPO_ROOT, 'src/blocks/hookBus.mjs');
+  const hookBusSrc = await readFile(hookBusPath, 'utf8');
+
+  /* Extract registered events from HOOK_EVENTS array (between
+   * `HOOK_EVENTS = Object.freeze([` and the matching `]);`). */
+  const startIdx = hookBusSrc.indexOf('HOOK_EVENTS = Object.freeze([');
+  if (startIdx === -1) {
+    return {
+      name: '8. HOOK_EVENTS registry completeness',
+      pass: false,
+      detail: 'Could not locate HOOK_EVENTS Object.freeze block in hookBus.mjs',
+    };
+  }
+  const endIdx = hookBusSrc.indexOf(']);', startIdx);
+  if (endIdx === -1) {
+    return {
+      name: '8. HOOK_EVENTS registry completeness',
+      pass: false,
+      detail: 'Malformed HOOK_EVENTS block — no closing ]);',
+    };
+  }
+  /* Strip block + line comments FIRST so narrative apostrophes inside JSDoc
+   * (e.g. `'natural'`, `'rollup'`, "what's") cannot leak into the registry
+   * set as false-positive entries. */
+  const registryBody = hookBusSrc.slice(startIdx, endIdx)
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*$/gm, '');
+  /* Restrict captured token to valid event-name shape so we don't catch
+   * narrative quotes that happen to survive comment stripping. */
+  const REGISTRY_TOKEN_RE = /'([a-zA-Z0-9_:.]+)'/g;
+  const registered = new Set();
+  let rm;
+  REGISTRY_TOKEN_RE.lastIndex = 0;
+  while ((rm = REGISTRY_TOKEN_RE.exec(registryBody))) registered.add(rm[1]);
+
+  /* Walk every block source, collect every `HookBus.emit('NAME'` AND every
+   * `_emit('NAME'` (internal aliases used by some blocks like turboMode). */
+  const blocks = await listBlockFiles();
+  const EMIT_RE = /(?:HookBus\.)?_?emit\s*\(\s*['"]([a-zA-Z0-9_:.]+)['"]/g;
+  const emitted = new Map(); /* event → first owner block */
+  for (const b of blocks) {
+    if (b === 'hookBus.mjs') continue; /* the bus itself defines but doesn't emit */
+    const src = await readBlockSrc(b);
+    EMIT_RE.lastIndex = 0;
+    let em;
+    while ((em = EMIT_RE.exec(src))) {
+      const name = em[1];
+      if (!emitted.has(name)) emitted.set(name, b);
+    }
+  }
+
+  const missing = [];
+  for (const [evt, owner] of emitted) {
+    if (!registered.has(evt)) missing.push(`${evt}  (emitted by ${owner})`);
+  }
+
+  const pass = missing.length === 0;
+  return {
+    name: '8. HOOK_EVENTS registry completeness',
+    pass,
+    detail: pass
+      ? `${registered.size} events registered, ${emitted.size} distinct emits scanned, 0 drift`
+      : `${missing.length} emit-ed event(s) NOT in HOOK_EVENTS:\n      ${missing.slice(0, 30).join('\n      ')}${missing.length > 30 ? `\n      ... +${missing.length - 30} more` : ''}\n      Fix: append each to HOOK_EVENTS array in src/blocks/hookBus.mjs with Owner: comment.`,
+  };
+}
+
 async function main() {
   console.log(C.bold(C.cyan('\n🔒 LEGO Gate — slot-gdd-factory')));
   console.log(C.dim('   Wave S pre-commit invariants. Fails fast if any check trips.\n'));
@@ -1099,6 +1179,7 @@ async function main() {
     await checkListenerCoverage(),
     await checkBacktickInTemplate(),
     await checkColonDotEventNames(),
+    await checkHookEventsRegistry(),
   ];
 
   let failed = 0;
