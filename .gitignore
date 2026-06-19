@@ -41,3 +41,4 @@ reports/bundle-size/
 reports/i18n-locale-sweep/
 reports/cross-browser/
 reports/load-probe/
+reports/slam-cascade/
