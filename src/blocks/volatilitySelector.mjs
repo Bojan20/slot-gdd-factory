@@ -192,7 +192,10 @@ export function emitVolatilitySelectorCSS(cfg = defaultConfig()) {
   border: none;
   background: transparent;
   color: ${cfg.color};
-  padding: 5px 9px;
+  /* D-6 WCAG 2.5.5: tap target ≥ 44 × 44 px on mobile. */
+  min-height: 44px;
+  min-width: 44px;
+  padding: 12px 14px;
   border-radius: ${T.rungRadius}px;
   font-size: ${T.fontRem}rem;
   font-weight: 800;
@@ -227,7 +230,7 @@ export function emitVolatilitySelectorCSS(cfg = defaultConfig()) {
     padding: ${T.padV}px 8px;
     font-size: ${T.fontRemMobile}rem;
   }
-  .volatility-selector .vs-tier { font-size: ${T.fontRemMobile}rem; padding: 3px 6px; }
+  .volatility-selector .vs-tier { font-size: ${T.fontRemMobile}rem; min-height: 44px; min-width: 44px; padding: 12px 12px; /* D-6 WCAG 2.5.5 */ }
   .volatility-selector .vs-subtitle {
     font-size: ${T.subFontMobile}rem;
     max-width: 120px;

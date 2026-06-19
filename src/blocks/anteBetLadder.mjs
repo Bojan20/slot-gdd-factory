@@ -57,8 +57,9 @@ const LADDER_TOKENS = Object.freeze({
   topPad:       18,
   topPadMobile: 10,
   zIndex:       60,
-  rungPadV:     6,
-  rungPadH:     10,
+  /* D-6 WCAG 2.5.5: rung total height = 12 + 12 + ~font ≈ 44px */
+  rungPadV:     12,
+  rungPadH:     14,
   rungGap:      4,
   borderRadius: 14,
   rungRadius:   10,
@@ -235,8 +236,12 @@ export function emitAnteBetLadderCSS(cfg = defaultConfig()) {
   border: none;
   background: transparent;
   color: ${cfg.color};
+  /* D-6 WCAG 2.5.5: enforce 44×44 tap target floor. */
+  min-width: 44px;
+  min-height: 44px;
   padding: ${T.rungPadV}px ${T.rungPadH}px;
   border-radius: ${T.rungRadius}px;
+  box-sizing: border-box;
   font-size: ${T.fontRem}rem;
   font-weight: 800;
   letter-spacing: 0.04em;

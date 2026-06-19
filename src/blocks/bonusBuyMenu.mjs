@@ -62,7 +62,7 @@ const MENU_TOKENS = Object.freeze({
   zIndexBackdrop: 54,
   sheetWidth:     260,
   sheetMobileVw:  92,
-  itemPadV:       10,
+  itemPadV:       16,  /* D-6 WCAG 2.5.5: row total height ≥ 44px (16+16+content) */
   itemPadH:       14,
   itemGap:        6,
   borderRadius:   14,

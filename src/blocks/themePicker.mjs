@@ -52,13 +52,13 @@ const TOKENS = Object.freeze({
   rightPadMobile: 280,
   zIndex:        58,
   zIndexMenu:    65,
-  btnSize:       36,
-  btnSizeMobile: 30,
+  btnSize:       44, /* D-6 WCAG 2.5.5 floor */
+  btnSizeMobile: 44,
   fontRem:       0.74,
   fontRemMobile: 0.66,
   menuRadius:    12,
   menuMinWidth:  160,
-  menuItemPadV:  6,
+  menuItemPadV:  14, /* D-6 WCAG 2.5.5: total height = 14+14+18 ≈ 46px */
   menuItemPadH:  12,
   fadeMs:        160,
 });

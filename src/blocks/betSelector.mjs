@@ -285,8 +285,15 @@ export function emitBetSelectorCSS(cfg = defaultConfig()) {
     gap: 6px;
   }
   .bet-step {
-    width: 32px;
-    height: 32px;
+    /* D-6 LEGO-TOUCH (2026-06-19) — WCAG 2.5.5 AAA tap target.
+     * Pre-D-6: 32×32. Mobile touch audit otkrio failing target.
+     * Visible disc je još uvek 32px (background+border-radius),
+     * ali touch hitbox je 44×44 via min-* + padding ne dodaje
+     * — ostaje preko display: inline-flex + min-* na elementu. */
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     border: 1px solid rgba(${c.chipColor}, 0.5);
     background: rgba(${c.chipColor}, 0.08);

@@ -233,9 +233,11 @@ export function emitThemeCSS(cfg = defaultConfig()) {
   .leftSpacer { grid-area: leftSpacer; pointer-events: none; visibility: hidden; }
   :root { --spin-rail: ${c.spinRailDesktop}px; --spin-size: ${c.spinSizeDesktop}px; --spin-auto-size: ${c.spinAutoSizeDesktop}px; }
   @media (max-width: ${bp.xl}px) { :root { --spin-rail: 140px; --spin-size: 120px; --spin-auto-size: 50px; } }
-  @media (max-width: ${bp.lg}px)  { :root { --spin-rail: 110px; --spin-size: 96px;  --spin-auto-size: 42px; } }
+  /* D-6 LEGO-TOUCH (2026-06-19) — WCAG 2.5.5 AAA. Bumped from 42px →
+   * 44px to clear tap target floor on mobile breakpoints. */
+  @media (max-width: ${bp.lg}px)  { :root { --spin-rail: 110px; --spin-size: 96px;  --spin-auto-size: 44px; } }
   @media (max-width: ${bp.md}px) {
-    :root { --spin-size: 88px; --spin-auto-size: 42px; }
+    :root { --spin-size: 88px; --spin-auto-size: 44px; }
     .play {
       grid-template-columns: minmax(0, 1fr);
       grid-template-rows: 1fr auto;
@@ -253,7 +255,7 @@ export function emitThemeCSS(cfg = defaultConfig()) {
     }
   }
   @media (max-width: ${bp.sm}px) {
-    :root { --spin-size: 76px; --spin-auto-size: 38px; }
+    :root { --spin-size: 76px; --spin-auto-size: 44px; /* D-6 WCAG 2.5.5 floor */ }
     .stage { padding: 6px 8px; gap: 6px; }
     .stage .title { font-size: 1rem; }
     .stage .sub { font-size: 0.7rem; }                         /* Wave UQ — ≥11px floor */
