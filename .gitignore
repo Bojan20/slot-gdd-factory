@@ -44,3 +44,4 @@ reports/load-probe/
 reports/slam-cascade/
 reports/long-run/
 reports/bundle-compression/
+reports/rng-bias/
