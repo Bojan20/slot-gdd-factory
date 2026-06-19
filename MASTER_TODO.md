@@ -1,5 +1,63 @@
 # Master TODO — slot-gdd-factory
 
+> **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-FS3.3** landed — DEFERRED QA SWEEP
+>
+> ## 🔧 Wave LEGO-FS3.3 — Adapter wave (162 → 164)
+>
+> Boki: *"sve redom pod 1"* — krećem ULTIMATIVNO sa stvar #1 iz follow-up
+> liste: FS3.3 adapter wave + bonus overlay mutex + 2 cross-block guards.
+> Zatvara 4 deferred QA findings iz prethodnih wave-a.
+>
+> ### Blokovi (2 nova) + Cross-block guards (2)
+>
+> | # | Stavka | Šta radi |
+> |:-:|:--|:--|
+> | A | `reelHeightAdapter.mjs` | Atomic grow/shrink reel column DOM. Consumes `onFsReelHeightEscalated` od fsReelHeightEscalation.mjs (FS3.2 deferred signal). Sync `reel.cells[]` array + update grid-row span. Mid-spin shrink guard. |
+> | B | `bonusOverlayMutex.mjs` | Serial queue za 3 paralelna bonus overlay-a (matchThree/moneyGrab/pathBonus). Acquire-on-Requested, queue-or-reject, release-on-Ended, re-emit za sledeći u redu sa `_viaMutex` re-entrant guard. |
+> | C | `cascadingWildPersistence` guard | `_reAssertPins` skip ako `window.WWS_STATE.active === true` (walking owns wild-position mutation) |
+> | D | `hexClusterEngine` guard | `_scan` skip ako mešani grid `(.cell.hex` + `.cell:not(.hex)` + `GAME_EVAL_KIND === 'cluster')` — anti-double-pay sa rectangular clusterPaysEval |
+>
+> Plus: `walkingWildStepper.mjs` publish `WWS_STATE.active` flag (set u `_onFsTrigger`, clear u `_onFsEnd`) — canonical signal koji cross-block guards čitaju.
+>
+> ### HookBus events (svi single-owner)
+>
+> | Event | Owner |
+> |:--|:--|
+> | `onReelHeightGrown` / `onReelHeightShrunk` | reelHeightAdapter.mjs |
+> | `onBonusOverlayMutexAcquired` / `onBonusOverlayMutexReleased` | bonusOverlayMutex.mjs |
+>
+> ### Multi-agent QA — PASS_WITH_MINORS → 4 fixes → PASS
+>
+> 4 nalaza fixed pre commit-a (general-purpose subagent):
+>
+> | # | Severity | Fix |
+> |:-:|:--|:--|
+> | F1 | **CRITICAL** | Guard #C koristi canonical `window.WWS_STATE.active` (walkingWildStepper publish-uje flag pri FS lifecycle); prethodno `WALKING_WILD_STATE` was dead-code (nigde nije postavljen) |
+> | F2 | MAJOR | reelHeightAdapter insert pre bottom buffer (cells[visibleRows+1]) sa `strip.insertBefore`, ne `appendChild` — pre fix-a fresh cells bili nevidljivi iza bottom buffer-a |
+> | F4 | MINOR | bonusOverlayMutex `KIND_MAP_LIT` extract — emit runtime size redukovan (KIND_MAP inline 2× → 1× top-level var) |
+> | F5 | MINOR | hexClusterEngine guard preciznija — mešani grid (hex + non-hex + GAME_EVAL_KIND='cluster') = clear highlights + skip; pure no-hex case već handled by `cells.length === 0` short-circuit |
+>
+> 1 nalaz deferred (F3 MAJOR): `cellStep`/`targetY` aktualizacija posle grow — teorijski risk, treba browser verification.
+>
+> ### Test coverage + regression
+>
+> | Gate | Status |
+> |:--|:-:|
+> | reelHeightAdapter.test.mjs (16 unit) | ✅ |
+> | bonusOverlayMutex.test.mjs (14 unit) | ✅ |
+> | cascadingWildPersistence.test.mjs (guard intact) | ✅ |
+> | hexClusterEngine.test.mjs (guard intact) | ✅ |
+> | walkingWildStepper.test.mjs (active flag intact) | ✅ |
+> | **Σ affected** | **91/91 ✅** |
+> | `test:lego` (7 invariants) | ✅ 7/7 |
+> | `test:parse:real-pdfs` (4 GDD) | ✅ 4/4 |
+> | `test:parity` (cross-game DOM) | ✅ 0/18 violations |
+> | `test:force-outcomes` (20 chip-outcomes) | ✅ 20/20 |
+>
+> **Block count**: 162 → **164 LEGO blokova**
+>
+> ---
+>
 > **2026-06-19 · HEAD pending** · 🏆 Wave **LEGO-FS3** landed — ROADMAP COMPLETE 🎉
 >
 > ## 🔄 Wave LEGO-FS3 — 2 nova FS-varijanta bloka (160 → 162) — POSLEDNJI WAVE U ROADMAP-u

@@ -456,6 +456,22 @@ export const HOOK_EVENTS = Object.freeze([
   'onWinBothWaysActivated',
   'onWinBothWaysDeactivated',
   'onFsReelHeightEscalated',
+  /* Wave LEGO-FS3.3 (Adapter wave, 2026-06-19) — 2 new blocks closing
+   * deferred QA findings.
+   *
+   * onReelHeightGrown {reelIdx, addedRows, newVisibleRows} /
+   * onReelHeightShrunk {reelIdx, removedRows, newVisibleRows} — pair
+   * fires per reel when adapter atomically grows or shrinks column DOM.
+   * Owner: reelHeightAdapter.mjs.
+   *
+   * onBonusOverlayMutexAcquired {ownerKind, queueLen} /
+   * onBonusOverlayMutexReleased {ownerKind, nextOwnerKind, queueLen}
+   * — pair fires when bonus overlay serial-queue grants or releases
+   * the screen-owner slot. Owner: bonusOverlayMutex.mjs. */
+  'onReelHeightGrown',
+  'onReelHeightShrunk',
+  'onBonusOverlayMutexAcquired',
+  'onBonusOverlayMutexReleased',
   /* Scatter Celebration phase signals
    * onScatterCelebrationStart {cellCount, durationMs} — fires when the
    *   FS trigger scatter celebration animation begins. spinControl uses

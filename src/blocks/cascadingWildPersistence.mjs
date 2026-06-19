@@ -272,6 +272,20 @@ export function emitCascadingWildPersistenceRuntime(cfg = defaultConfig()) {
   }
 
   function _reAssertPins() {
+    /* QA fix (Wave LEGO-FS3.3.C, 2026-06-19): cross-block guard with
+     * walkingWildStepper. Canonical state is window.WWS_STATE (set by
+     * walkingWildStepper.mjs). When walking-wild is active, it owns
+     * wild position mutation each FS spin (premešta wild iz r,c →
+     * r,c+1). cascadingWildPersistence pin-ovi tada bi se borili sa
+     * walking mutacijom → duplicate wild glyphs ili stale pin. When
+     * walking is active, defer pin re-assertion — walking will
+     * reposition the wild naturally and cascading just respects its
+     * decision. */
+    if (typeof window.WWS_STATE !== 'undefined'
+        && window.WWS_STATE
+        && window.WWS_STATE.active === true) {
+      return;
+    }
     /* Make sure already-pinned cells from previous chain step keep their
      * wild symbol if the engine refilled the cell on this tumble step. */
     var keys = window.CASCADING_WILD_STATE.pinnedKeys || [];

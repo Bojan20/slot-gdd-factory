@@ -278,6 +278,11 @@ export function emitWalkingWildStepperRuntime(cfg = defaultConfig()) {
     direction: DIRECTION_CFG === 'left' ? 'left' : 'right',
     currentMult: START_MULT,
     stepsTotal: 0,
+    /* QA fix (Wave LEGO-FS3.3, 2026-06-19): publish active flag so
+     * cross-block guards (cascadingWildPersistence x walking coexist)
+     * can detect when walker owns wild-position mutation. Set true on
+     * FS trigger, false on FS end. */
+    active: false,
   };
 
   function _rng() {
@@ -459,6 +464,8 @@ export function emitWalkingWildStepperRuntime(cfg = defaultConfig()) {
   function _onFsTrigger() {
     _clearWalkerDom();
     _resetState();
+    /* Publish active flag for cross-block guards (FS3.3 QA fix). */
+    window.WWS_STATE.active = true;
   }
 
   function _onFsSpinResult() {
@@ -468,6 +475,8 @@ export function emitWalkingWildStepperRuntime(cfg = defaultConfig()) {
   function _onFsEnd() {
     _clearWalkerDom();
     _resetState();
+    /* Clear active flag for cross-block guards (FS3.3 QA fix). */
+    window.WWS_STATE.active = false;
   }
 
   function _onPreSpin() {

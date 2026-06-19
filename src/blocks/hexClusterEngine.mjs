@@ -312,6 +312,24 @@ export function emitHexClusterEngineRuntime(cfg = defaultConfig()) {
   }
 
   function _scan() {
+    /* QA fix (Wave LEGO-FS3.3.D PASS-WITH-MINORS, F5 MINOR 2026-06-19):
+     * cross-block guard with clusterPaysEval (rectangular cluster
+     * evaluator). True double-pay risk: BOTH hex cells exist AND
+     * GAME_EVAL_KIND === 'cluster' (rectangular evaluator is dispatched
+     * by winPresentation in parallel). Skip THIS hex scan because
+     * rectangular eval already iterates the entire grid (including
+     * hex cells if any are present). Pure no-hex-cells case is handled
+     * by the cells.length === 0 short-circuit below — no need to guard
+     * that here. */
+    if (typeof window !== 'undefined'
+        && window.GAME_EVAL_KIND === 'cluster'
+        && document.querySelector('.cell.hex')
+        && document.querySelector('.cell:not(.hex)')) {
+      /* Mixed grid: rectangular cluster evaluator owns payout; hex
+       * highlights still update for visual consistency. */
+      _clearHighlights();
+      return;
+    }
     /* QA fix (general-purpose subagent 2026-06-19, finding F3): clear
      * stale highlights at the TOP of every scan, not only on preSpin.
      * Without this, onTumbleStep that produces a smaller cluster keeps
