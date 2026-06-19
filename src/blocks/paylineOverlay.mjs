@@ -226,10 +226,17 @@ export function emitPaylineOverlayRuntime(cfgOrModel = {}) {
     while (svg.firstChild) svg.removeChild(svg.firstChild);
   }
   /* Convert a DOM cell node into a center-point in gridHost-local
-     pixel coordinates. Returns null if the cell has zero bounds (off-
-     screen / unmounted). */
+     pixel coordinates. Returns null if:
+       - cell is null/undefined
+       - cell is not a DOM element (string/stale ref from cluster /
+         tumble eval where post-gravity cells got nulled or stringified)
+       - cell has zero bounds (off-screen / unmounted)
+     Wave D-3 hardening — Bokijev imperative "svaki jebeni blok": starlight
+     6×7 grid + cluster eval emits ev.cells with stale refs after gravity.
+     Defensive typeof check prevents TypeError on .getBoundingClientRect()
+     when caller passes a non-DOM object. */
   function cellCenterInGrid(cell, gridRect) {
-    if (!cell) return null;
+    if (!cell || typeof cell.getBoundingClientRect !== 'function') return null;
     const r = cell.getBoundingClientRect();
     if (!r || (r.width === 0 && r.height === 0)) return null;
     return {

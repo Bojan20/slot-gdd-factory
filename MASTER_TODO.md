@@ -1,3 +1,65 @@
+## 🏆 D-3 BLOCK STRESS REAL · 2026-06-19 22:50 · ZATVOREN
+
+Boki: *"sve istestiraj i sve noguce popravi ultimativno"* (2026-06-19 22:20)
+
+D-2 verzija stress-real probe-a (iz 21:11) imala je 3 mane: false-positive listener leak (initial→final lovio lazy-init), nevidljiv UFP sweep (pogresan selector), i nezašićena 3 `cell.getBoundingClientRect()` site-a u block runtime-u. Sve 3 popravljeno ultimativno.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│ D-3 ULTIMATE STRESS REAL — 4/4 PASS na pravom Chromium-u + 65 unit testova ✅       │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ STVARNI bug fix u block runtime-u (D-3 PAYLINE GUARD):                              │
+│   src/blocks/paylineOverlay.mjs     `typeof cell.getBoundingClientRect !== 'fn'`    │
+│   src/blocks/randomWildBurst.mjs    isto + classList guard                           │
+│   src/blocks/holdAndWin.mjs         isto na _hwSpawnDelta + _hwSpawnFly             │
+│                                                                                     │
+│ PROBE UPGRADE (D-3 BASELINE):                                                       │
+│   tools/_ultimate-block-stress-real.mjs                                              │
+│     • Warmup baseline (5 spinova) → pravi leak signal = post-warmup → final         │
+│       (vise nema "listeners grew by 116" false positive od BBM/FS lazy init)         │
+│     • Pravi UFP selector `.ufp-chip[data-ufp-kind]` (NIJE [data-force-feature])      │
+│     • attemptSpin(): tolerant retry + dismissModalsIfAny + waitSpinEnabled(6s)       │
+│       → ne break-uje na FS intro / big-win rollup / autoplay lock                    │
+│     • Heap delta isključen iz verdict-a (Chromium rounduje na 10MB)                  │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ VERIFIKACIJA:                                                                       │
+│   • v1 (initial→final → post-warmup→final) na 4 igre:    4/4 PASS, 0 page err       │
+│   • Unit tests:                                                                      │
+│       tests/blocks/paylineOverlay.test.mjs                10/10 PASS                 │
+│       tests/blocks/randomWildBurst.test.mjs               44/44 PASS                 │
+│       tests/blocks/holdAndWin.test.mjs                    21/21 PASS                 │
+│   • Audit sve 10 `.getBoundingClientRect()` call sites u src/blocks:                 │
+│       cascadePathDraw.mjs / plinkoSpinEngine.mjs — već guarded (skip+continue)       │
+│       bigWinTier.mjs / megaSymbol.mjs              — već imali typeof check          │
+│       universalForcePanel.mjs / symbolStackCollapse.mjs — DOM-queried (safe)         │
+│       symbolInfoPopover.mjs                        — user-anchored (safe)            │
+│       paylineOverlay + randomWildBurst + holdAndWin — FIXED D-3                      │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ ŠTA D-3 DETEKTUJE preko D-1 + D-2:                                                  │
+│   • DOM node leak na realnom 120-spin runu (postSpin čisti cells/overlay-e)         │
+│   • Listener growth POSLE warmup-a (pravi leak signal)                              │
+│   • Page error iz block runtime-a (D-2 nije imao 120-spin volume)                   │
+│   • Force-feature sweep coverage (svaki UFP chip kliknut → onda 20 spinova)         │
+│   • FS auto-mode / big-win rollup / autoplay lock tolerantnost (no false break)     │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Original starlight TypeError uhvaćen:**
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│ "TypeError: cell.getBoundingClientRect is not a function"                          │
+│ Izvor: cluster/tumble eval emituje ev.cells sa stale/non-DOM ref-ovima posle       │
+│  gravity pass-a u 6×5 starlight gridu. drawPaylineOverlay → cellCenterInGrid       │
+│  pre fix-a samo `!cell` → null, ali NIJE checked tip — string ili stale node      │
+│  proizveo runtime exception u inline runtime emitted code-u.                        │
+│ Posle fix-a: `typeof cell.getBoundingClientRect !== 'function' → null` blokira     │
+│  poziv pre nego što baci TypeError. Sve 4 igre 0 page-err posle re-builda.        │
+└────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-2 ULTIMATE PER-BLOCK BROWSER PROBE — 2026-06-19 · ZATVOREN
 
 Boki: *"trreba mi realan i ultiamtivan test. i to sve ti da smislis kako i da ga odradis. svaki jebeni blok"* (2026-06-19 21:25)

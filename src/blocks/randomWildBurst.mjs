@@ -217,6 +217,9 @@ const RWB_MAX_FRACTION  = ${cfg.maxCellFraction};
     /* Plant wild marker + halo per cell */
     const cellIds = [];
     picked.forEach(function(cell, idx){
+      /* D-3 guard — defensive for cluster/tumble eval that may pass stale
+         refs after gravity; visibleCells() returns DOM but we double-check. */
+      if (!cell || typeof cell.getBoundingClientRect !== 'function' || !cell.classList) return;
       cell.classList.add('is-wild', 'rwb-planted');
       cell.setAttribute('data-rwb-planted', '1');
       cellIds.push(cell.id || cell.getAttribute('data-cell-id') || ('idx' + idx));

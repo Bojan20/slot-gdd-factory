@@ -917,6 +917,9 @@ function _hwApplyOrbToCell(cell, orb) {
 
 function _hwSpawnDelta(cell, valueX) {
   if (!cell || valueX <= 0) return;
+  /* D-3 guard — defensive against stringified/stale cell refs from upstream
+     HW state restore + cluster/tumble eval after gravity pass. */
+  if (typeof cell.getBoundingClientRect !== 'function') return;
   try {
     var rect = cell.getBoundingClientRect();
     var el = document.createElement('div');
@@ -931,6 +934,8 @@ function _hwSpawnDelta(cell, valueX) {
 
 function _hwSpawnFly(cell, valueX) {
   if (!cell) return;
+  /* D-3 guard — defensive against non-DOM cell refs. */
+  if (typeof cell.getBoundingClientRect !== 'function') return;
   try {
     var totalEl = document.getElementById('hwTotal');
     if (!totalEl) return;
