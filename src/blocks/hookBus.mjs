@@ -708,6 +708,11 @@ export const HOOK_EVENTS = Object.freeze([
   'onShareReplayInvoked',  // Owner: shareReplay.mjs (LEGO-SOCIAL B-5)
   'onInsuranceBetChanged',  // Owner: insuranceBet.mjs (LEGO-SIDEBET B-7)
   'onPrizeBoostChanged',  // Owner: prizeBoostBet.mjs (LEGO-SIDEBET B-7)
+  'onThemeChanged',  // Owner: themePicker.mjs (LEGO-THEME B-8)
+  'onThemePickerOpened',  // Owner: themePicker.mjs (LEGO-THEME B-8)
+  'onThemePickerClosed',  // Owner: themePicker.mjs (LEGO-THEME B-8)
+  'onPaletteRolled',  // Owner: paletteRoulette.mjs (LEGO-THEME B-8)
+  'onAmbientMoodChanged',  // Owner: ambientBgVariants.mjs (LEGO-THEME B-8)
   'onCoinShowerEnd',  // Owner: coinShower.mjs
   'onCoinShowerStart',  // Owner: coinShower.mjs
   'onCoolOffEnforced',  // Owner: netherlandsComplianceGate.mjs

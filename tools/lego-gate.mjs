@@ -519,6 +519,12 @@ const EXPECTED_EMIT_OWNERS = {
   /* Wave LEGO-SIDEBET (B-7) — insurance + prize boost. */
   onInsuranceBetChanged:          ['insuranceBet.mjs'],
   onPrizeBoostChanged:            ['prizeBoostBet.mjs'],
+  /* Wave LEGO-THEME (B-8) — themePicker + paletteRoulette + ambientBg. */
+  onThemeChanged:                 ['themePicker.mjs'],
+  onThemePickerOpened:            ['themePicker.mjs'],
+  onThemePickerClosed:            ['themePicker.mjs'],
+  onPaletteRolled:                ['paletteRoulette.mjs'],
+  onAmbientMoodChanged:           ['ambientBgVariants.mjs'],
   /* 2026-06-11 — holdAndWin phase machine emits its own INACTIVE → INTRO
    * → RUNNING → SUMMARY phase signal + a final end stats payload. Both
    * are sole-owned by the block; downstream HUD / summary listeners read

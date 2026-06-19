@@ -1,6 +1,41 @@
 # Master TODO — slot-gdd-factory
 
-> **2026-06-19 · HEAD `pending`** · Σ **178 LEGO blokova** · Σ **2110 testova/asserts** · 0 fail
+> **2026-06-19 · HEAD `pending`** · Σ **181 LEGO blokova** · Σ **2215 testova/asserts** · 0 fail
+>
+> ## 🎬 Wave LEGO-THEME (B-8) — B-Backlog CLOSEOUT (HEAD pending)
+>
+> Boki: *"dalje iudi"* — closeout B-Wave backlog-a sa 3 bloka.
+> Posle ovog Wave-a, JEDINI otvoreni B-stavke su ALT-C/ALT-E.
+>
+> ```
+> ┌──────────────────────────────────────────────────────────────────────┐
+> │ Novi blokovi (178 → 181)                                             │
+> ├──────────────────────────────────────────────────────────────────────┤
+> │ themePicker.mjs        │ Top-right ⚙ button → role=menu dropdown.   │
+> │                        │ 3 default tema (dark/light/contrast).      │
+> │                        │ role=menuitemradio + aria-checked, Arrow   │
+> │                        │ ↑↓/Home/End/Esc/Enter/Space keyboard nav.  │
+> │                        │ localStorage persistence (storageKey       │
+> │                        │ konfigurabilan). preSpin auto-close menu.  │
+> ├────────────────────────┼──────────────────────────────────────────────┤
+> │ paletteRoulette.mjs    │ Re-roll button ↻ → weighted random palette │
+> │                        │ swap. 5 default (gold/ocean/rose/emerald/   │
+> │                        │ amethyst). Sets --pal-accent / --pal-      │
+> │                        │ accent-dark / --pal-accent-rgb CSS vars.    │
+> │                        │ Optional persistence. Re-syncs on theme    │
+> │                        │ change.                                     │
+> ├────────────────────────┼──────────────────────────────────────────────┤
+> │ ambientBgVariants.mjs  │ Body background mood: calm / tense /       │
+> │                        │ celebration / bonus. Auto-promote from     │
+> │                        │ onSpinResult (win value vs bet units) +    │
+> │                        │ onBigWinTierEnter + onFsTrigger. Re-apply  │
+> │                        │ on onThemeChanged. 0 JS-thrashed paints.   │
+> └────────────────────────┴──────────────────────────────────────────────┘
+> ```
+>
+> **Test gates**: themePicker 42/42 · paletteRoulette 30/30 · ambientBgVariants 33/33 · LEGO 8/8 (309 events) · cross-engine 450/450 · render-parity 190/190.
+>
+> ---
 >
 > ## 🎬 TRIPLE WAVE BLITZ — B-2 + B-5 + B-7 (HEAD pending)
 >

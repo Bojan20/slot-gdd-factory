@@ -284,6 +284,25 @@ import {
   emitPrizeBoostBetRuntime,
   resolveConfig as resolvePrizeBoostBetConfig,
 } from './blocks/prizeBoostBet.mjs';
+/* Wave LEGO-THEME (B-8) — themePicker + paletteRoulette + ambientBg. */
+import {
+  emitThemePickerCSS,
+  emitThemePickerMarkup,
+  emitThemePickerRuntime,
+  resolveConfig as resolveThemePickerConfig,
+} from './blocks/themePicker.mjs';
+import {
+  emitPaletteRouletteCSS,
+  emitPaletteRouletteMarkup,
+  emitPaletteRouletteRuntime,
+  resolveConfig as resolvePaletteRouletteConfig,
+} from './blocks/paletteRoulette.mjs';
+import {
+  emitAmbientBgVariantsCSS,
+  emitAmbientBgVariantsMarkup,
+  emitAmbientBgVariantsRuntime,
+  resolveConfig as resolveAmbientBgVariantsConfig,
+} from './blocks/ambientBgVariants.mjs';
 /* Wave L–P — 16 detected-but-unused feature kinds, now wired as LEGO blocks */
 import {
   emitStickyWildCSS, emitStickyWildRuntime,
@@ -1156,6 +1175,10 @@ ${emitShareReplayCSS(resolveShareReplayConfig(model))}
 ${/* Wave LEGO-SIDEBET (B-7) — insurance + prize boost. */ ''}
 ${emitInsuranceBetCSS(resolveInsuranceBetConfig(model))}
 ${emitPrizeBoostBetCSS(resolvePrizeBoostBetConfig(model))}
+${/* Wave LEGO-THEME (B-8) — themePicker + paletteRoulette + ambientBg. */ ''}
+${emitThemePickerCSS(resolveThemePickerConfig(model))}
+${emitPaletteRouletteCSS(resolvePaletteRouletteConfig(model))}
+${emitAmbientBgVariantsCSS(resolveAmbientBgVariantsConfig(model))}
 /* Wave L–P — 16 feature blocks CSS (no-op when disabled) */
 ${emitStickyWildCSS(resolveStickyWildConfig(model))}
 ${emitExpandingWildCSS(resolveExpandingWildConfig(model))}
@@ -1408,6 +1431,10 @@ ${emitShareReplayMarkup(resolveShareReplayConfig(model))}
 ${/* Wave LEGO-SIDEBET (B-7) — insurance + prize boost markup. */ ''}
 ${emitInsuranceBetMarkup(resolveInsuranceBetConfig(model))}
 ${emitPrizeBoostBetMarkup(resolvePrizeBoostBetConfig(model))}
+${/* Wave LEGO-THEME (B-8) — themePicker + paletteRoulette + ambientBg markup. */ ''}
+${emitThemePickerMarkup(resolveThemePickerConfig(model))}
+${emitPaletteRouletteMarkup(resolvePaletteRouletteConfig(model))}
+${emitAmbientBgVariantsMarkup(resolveAmbientBgVariantsConfig(model))}
 <!-- Wave L–P markup (empty strings when disabled) -->
 ${emitPersistentMultiplierMarkup(resolvePersistentMultiplierConfig(model))}
 ${emitProgressiveFreeSpinsMarkup(resolveProgressiveFreeSpinsConfig(model))}
@@ -1668,6 +1695,12 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${/* Wave LEGO-SIDEBET (B-7) — insurance + prize boost. */ ''}
   ${emitInsuranceBetRuntime(resolveInsuranceBetConfig(model))}
   ${emitPrizeBoostBetRuntime(resolvePrizeBoostBetConfig(model))}
+  ${/* Wave LEGO-THEME (B-8) — themePicker first (own theme), then
+       paletteRoulette (depends on themePicker for re-sync), then
+       ambientBgVariants (depends on themePicker for class re-apply). */ ''}
+  ${emitThemePickerRuntime(resolveThemePickerConfig(model))}
+  ${emitPaletteRouletteRuntime(resolvePaletteRouletteConfig(model))}
+  ${emitAmbientBgVariantsRuntime(resolveAmbientBgVariantsConfig(model))}
 
   /* Wave L–P — 16 feature kinds runtime (no-op stubs when disabled).
      Order: wilds first (modify the grid), then evaluators (read modified
