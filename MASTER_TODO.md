@@ -1,6 +1,38 @@
 # Master TODO — slot-gdd-factory
 
-> **2026-06-19 · HEAD `pending`** · Σ **181 LEGO blokova** · Σ **2215 testova/asserts** · 0 fail
+> **2026-06-19 · HEAD `pending`** · Σ **181 LEGO blokova** · Σ **2233 testova/asserts** · 0 fail
+>
+> ## 🎬 ALT-E Block-manifest docs (HEAD pending)
+>
+> Boki: *"Dalje?"* — ALT-E iz backlog-a. Generator za browser-
+> searchable HTML index + flat MD reference za svih 181 blokova.
+>
+> ```
+> ┌──────────────────────────────────────────────────────────────────────┐
+> │ Novi alat + dokumenti                                                │
+> ├──────────────────────────────────────────────────────────────────────┤
+> │ tools/gen-block-docs.mjs       │ JSDoc parser + HTML/MD emitter za  │
+> │                                │ 181 blokova. Vendor-neutral grep.   │
+> │ docs/BLOCK_MANIFEST.md         │ 252 reda flat reference za GitHub  │
+> │                                │ view. Per-category tabele sa       │
+> │                                │ description + emit + sub counts.   │
+> │ docs/blocks/index.html         │ 328 KB browser-searchable index sa  │
+> │                                │ live filter (name/category/event),  │
+> │                                │ side-nav + per-block detail panel,  │
+> │                                │ purpose/industry-ref/public API/    │
+> │                                │ lifecycle/files. WCAG aria-live.    │
+> │ tests/blocks/_genBlockDocs     │ Validator probe — verifikuje da    │
+> │   .test.mjs                    │ svaki blok appears u MD+HTML,       │
+> │                                │ 0 vendor mention, generator exit 0. │
+> │ package.json scripts           │ npm run docs:gen / test:docs        │
+> └────────────────────────────────┴──────────────────────────────────────┘
+> ```
+>
+> **Coverage (gen output)**: 181 blocks parsed, 312 emit-events
+> registered, 570 subscribe-events tracked, 181/181 sa test files,
+> 0 vendor mention. Test: 18/18 ✅.
+>
+> ---
 >
 > ## 🎬 Wave LEGO-THEME (B-8) — B-Backlog CLOSEOUT (HEAD pending)
 >

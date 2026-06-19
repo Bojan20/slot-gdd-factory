@@ -28,6 +28,8 @@
     "test:budget": "node tools/orchestrator-loc-budget.mjs",
     "test:runtime": "node tests/runtime/gridRenderer.test.mjs && node tests/runtime/devForceButtons.test.mjs && node tests/runtime/globalsContract.test.mjs",
     "test:manifest": "node tools/gen-block-manifest.mjs && node tests/_gen-block-manifest.test.mjs",
+    "docs:gen": "node tools/gen-block-docs.mjs",
+    "test:docs": "node tools/gen-block-docs.mjs && node tests/blocks/_genBlockDocs.test.mjs",
     "test:playground": "node tools/cortex-eyes-playground.mjs",
     "test:ultimate": "node tools/gen-synthetic-gdds.mjs && node tools/cortex-eyes-ultimate-qa.mjs",
     "test:ultimate:quick": "node tools/cortex-eyes-ultimate-qa.mjs --quick",

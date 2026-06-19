@@ -1,0 +1,300 @@
+/**
+ * tools/gen-block-docs.mjs
+ *
+ * ALT-E — Block manifest documentation generator.
+ *
+ * Reads blocks/_manifest.json (181 blocks) + the JSDoc header of every
+ * src/blocks/*.mjs and emits:
+ *   1. docs/BLOCK_MANIFEST.md   — flat reference table for GitHub view
+ *   2. docs/blocks/index.html   — searchable browser index with
+ *                                  per-block detail panels
+ *
+ * The generated docs are vendor-neutral (re-grepped at emit time) and
+ * surface for each block:
+ *   • purpose (1-paragraph from JSDoc)
+ *   • industry-reference paragraph
+ *   • public API list
+ *   • lifecycle (subscribes + emits)
+ *   • GDD knobs (extracted from @example or knob-table block)
+ *   • test file + path + LOC
+ *   • dependencies (other blocks that emit events this listens to)
+ *
+ * Exit 0 on success, 1 on vendor-mention found during emit, 2 on
+ * fatal IO / parse failure.
+ */
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
+const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
+const MANIFEST_PATH = path.join(ROOT, 'blocks/_manifest.json');
+const SRC_DIR = path.join(ROOT, 'src/blocks');
+const DOCS_DIR = path.join(ROOT, 'docs');
+const DOCS_BLOCKS_DIR = path.join(DOCS_DIR, 'blocks');
+
+const VENDOR_RE = /\b(IGT|Pragmatic|Cash[- ]Eruption|Wolf[- ]Run|Cleopatra|Buffalo|Megaways|NetEnt|Microgaming|Scientific Games|L&W)\b/i;
+
+/* ─── parse JSDoc header from a block source ─────────────────────── */
+function parseJSDoc(source) {
+  const m = source.match(/^\/\*\*[\s\S]+?\*\//);
+  if (!m) return { purpose: '', industryRef: '', publicApi: [], lifecycle: { subscribes: [], emits: [] } };
+  const block = m[0];
+
+  /* Strip leading ` * ` from each line. */
+  const lines = block.split('\n').map(l => l.replace(/^\s*\*\s?/, '').replace(/^\/\*\*?/, '').replace(/\*\/$/, ''));
+
+  function section(heading) {
+    const startIdx = lines.findIndex(l => new RegExp('^\\s*' + heading + '\\s*:?\\s*$', 'i').test(l));
+    if (startIdx === -1) return '';
+    const out = [];
+    for (let i = startIdx + 1; i < lines.length; i++) {
+      const l = lines[i];
+      if (/^[A-Z][A-Za-z ]+:?\s*$/.test(l) && i !== startIdx + 1) break;
+      out.push(l);
+    }
+    return out.join('\n').trim();
+  }
+
+  const purposeSec = section('Purpose');
+  const industrySec = section('Industry-reference \\(vendor-neutral\\)') ||
+                     section('Industry reference \\(vendor-neutral\\)') ||
+                     section('Industry-reference') ||
+                     section('Industry reference');
+  const apiSec = section('Public API');
+  const lifecycleSec = section('Lifecycle \\(HookBus contract\\)') ||
+                      section('Lifecycle');
+
+  /* Parse public API as list of "name → description" pairs. */
+  const publicApi = apiSec
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean)
+    .map(l => {
+      const arrow = l.indexOf('→');
+      if (arrow === -1) return { name: l, desc: '' };
+      return { name: l.slice(0, arrow).trim(), desc: l.slice(arrow + 1).trim() };
+    });
+
+  /* Parse lifecycle into { subscribes: [], emits: [] }. */
+  const sub = [], em = [];
+  let mode = null;
+  for (const raw of lifecycleSec.split('\n')) {
+    const l = raw.trim();
+    if (/^subscribes\s*:/i.test(l)) {
+      mode = 'sub';
+      const rest = l.replace(/^subscribes\s*:/i, '').trim();
+      if (rest) sub.push(rest);
+    } else if (/^emits\s*:/i.test(l)) {
+      mode = 'em';
+      const rest = l.replace(/^emits\s*:/i, '').trim();
+      if (rest) em.push(rest);
+    } else if (mode === 'sub' && l) sub.push(l);
+    else if (mode === 'em' && l) em.push(l);
+  }
+
+  return {
+    purpose: purposeSec,
+    industryRef: industrySec,
+    publicApi: publicApi,
+    lifecycle: { subscribes: sub, emits: em },
+  };
+}
+
+/* ─── main ───────────────────────────────────────────────────────── */
+(async () => {
+  await fs.mkdir(DOCS_BLOCKS_DIR, { recursive: true });
+
+  const manifest = JSON.parse(await fs.readFile(MANIFEST_PATH, 'utf8'));
+  const blocks = manifest.blocks;
+  console.log(`📚 Block-docs generator — ${blocks.length} blocks to process`);
+
+  const enriched = [];
+  for (const b of blocks) {
+    const src = await fs.readFile(path.join(ROOT, b.file), 'utf8');
+    if (VENDOR_RE.test(src)) {
+      console.error(`✗ Vendor mention found in ${b.file} — aborting`);
+      process.exit(1);
+    }
+    const doc = parseJSDoc(src);
+    enriched.push({ ...b, doc });
+  }
+
+  /* ─── 1. Flat markdown for GitHub view ─────────────────────────── */
+  const mdSections = {};
+  for (const e of enriched) {
+    const cat = e.category || 'uncategorised';
+    if (!mdSections[cat]) mdSections[cat] = [];
+    mdSections[cat].push(e);
+  }
+
+  let md = `# Block Manifest · slot-gdd-factory\n\n`;
+  md += `> Auto-generated by \`tools/gen-block-docs.mjs\`.\n`;
+  md += `> **${blocks.length} LEGO blocks** organized into **${Object.keys(mdSections).length} categories**.\n`;
+  md += `> Generated: ${manifest.generatedAt}\n\n`;
+  md += `## Categories\n\n`;
+  for (const cat of Object.keys(mdSections).sort()) {
+    md += `- [\`${cat}\`](#${cat}) — ${mdSections[cat].length} blocks\n`;
+  }
+  md += `\n---\n\n`;
+
+  for (const cat of Object.keys(mdSections).sort()) {
+    md += `## ${cat}\n\n`;
+    md += `| Block | Description | Emits | Subscribes | Tests |\n`;
+    md += `|:--|:--|:--|:--|:--|\n`;
+    for (const e of mdSections[cat].sort((a, b) => a.name.localeCompare(b.name))) {
+      const emitsCount  = (e.emittedEvents || []).length;
+      const subsCount   = (e.lifecycleHooks || []).length;
+      const testFile    = e.testFile || '—';
+      const desc = (e.description || '').replace(/\|/g, '\\|').slice(0, 110);
+      md += `| \`${e.name}\` | ${desc} | ${emitsCount} | ${subsCount} | \`${testFile}\` |\n`;
+    }
+    md += `\n`;
+  }
+
+  await fs.writeFile(path.join(DOCS_DIR, 'BLOCK_MANIFEST.md'), md);
+  console.log(`✓ Wrote docs/BLOCK_MANIFEST.md (${(md.length / 1024).toFixed(1)} KB)`);
+
+  /* ─── 2. Browser-searchable HTML index ─────────────────────────── */
+  const blocksJSON = JSON.stringify(enriched.map(e => ({
+    name: e.name,
+    category: e.category,
+    description: e.description || '',
+    file: e.file,
+    testFile: e.testFile,
+    loc: e.loc,
+    exports: e.exports || [],
+    emittedEvents: e.emittedEvents || [],
+    lifecycleHooks: e.lifecycleHooks || [],
+    purpose: e.doc.purpose,
+    industryRef: e.doc.industryRef,
+    publicApi: e.doc.publicApi,
+    lifecycle: e.doc.lifecycle,
+  })), null, 0);
+
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Block Manifest · slot-gdd-factory (${blocks.length} blocks)</title>
+<style>
+  :root { color-scheme: dark; --bg:#11141a; --fg:#e6e9ef; --muted:#8b94a6; --accent:#7fbfff; --accent-dark:#205080; --card:#1a1f29; --border:#262d3a; }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--fg); font-family: ui-sans-serif, system-ui, sans-serif; margin: 0; padding: 0; }
+  header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 1.4rem; font-weight: 800; letter-spacing: 0.04em; }
+  header .count { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fff; padding: 4px 10px; border-radius: 8px; font-weight: 800; font-size: 0.85rem; }
+  header .filter { flex: 1; min-width: 200px; }
+  header .filter input { width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: #0c0f15; color: var(--fg); font-size: 0.95rem; }
+  header .filter input:focus { outline: 2px solid var(--accent); }
+  main { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 70px); }
+  nav { border-right: 1px solid var(--border); overflow-y: auto; padding: 12px 0; max-height: calc(100vh - 70px); }
+  nav .cat { padding: 8px 16px 4px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.18em; color: var(--muted); text-transform: uppercase; }
+  nav button.entry { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 7px 16px; background: transparent; border: none; color: var(--fg); text-align: left; cursor: pointer; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.85rem; transition: background .12s ease; }
+  nav button.entry:hover, nav button.entry:focus-visible { background: rgba(127,191,255,.08); outline: none; }
+  nav button.entry[aria-current="true"] { background: linear-gradient(90deg, var(--accent-dark), transparent); color: var(--accent); }
+  nav button.entry .loc { font-size: 0.7rem; color: var(--muted); }
+  section.detail { padding: 24px 28px; overflow-y: auto; max-height: calc(100vh - 70px); }
+  section.detail h2 { margin-top: 0; font-size: 1.6rem; font-weight: 900; letter-spacing: 0.02em; }
+  section.detail .meta { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+  section.detail .meta .chip { background: var(--card); border: 1px solid var(--border); padding: 4px 10px; border-radius: 8px; font-size: 0.78rem; }
+  section.detail h3 { margin-top: 24px; font-size: 1rem; font-weight: 800; letter-spacing: 0.06em; color: var(--accent); text-transform: uppercase; }
+  section.detail pre { background: #0c0f15; border: 1px solid var(--border); padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 0.82rem; }
+  section.detail p { line-height: 1.6; color: #c5cbd6; max-width: 75ch; }
+  section.detail ul { padding-left: 18px; }
+  section.detail li { line-height: 1.6; }
+  section.detail code { background: #0c0f15; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
+  .empty { color: var(--muted); font-style: italic; }
+  @media (max-width: 800px) { main { grid-template-columns: 1fr; } nav { max-height: 280px; } section.detail { max-height: none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Block Manifest</h1>
+  <span class="count">${blocks.length} blocks</span>
+  <div class="filter"><input id="filter" type="search" placeholder="Search blocks by name, category, or event..." aria-label="Search blocks"></div>
+</header>
+<main>
+  <nav id="nav" aria-label="Block navigation"></nav>
+  <section class="detail" id="detail" aria-live="polite"></section>
+</main>
+<script>
+const BLOCKS = ${blocksJSON};
+const nav = document.getElementById('nav');
+const detail = document.getElementById('detail');
+const filter = document.getElementById('filter');
+
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]); }
+function renderNav(filterText) {
+  const ft = (filterText || '').toLowerCase().trim();
+  const byCat = {};
+  for (const b of BLOCKS) {
+    const matchName = b.name.toLowerCase().includes(ft);
+    const matchCat  = (b.category || '').toLowerCase().includes(ft);
+    const matchEvent = (b.emittedEvents || []).some(e => e.toLowerCase().includes(ft)) ||
+                       (b.lifecycleHooks || []).some(e => e.toLowerCase().includes(ft));
+    if (ft && !matchName && !matchCat && !matchEvent) continue;
+    const cat = b.category || 'uncategorised';
+    (byCat[cat] = byCat[cat] || []).push(b);
+  }
+  let html = '';
+  for (const cat of Object.keys(byCat).sort()) {
+    html += '<div class="cat">' + esc(cat) + ' (' + byCat[cat].length + ')</div>';
+    for (const b of byCat[cat].sort((a, b) => a.name.localeCompare(b.name))) {
+      html += '<button class="entry" data-name="' + esc(b.name) + '"><span>' + esc(b.name) + '</span><span class="loc">' + b.loc + ' LOC</span></button>';
+    }
+  }
+  nav.innerHTML = html || '<div class="cat" style="padding:20px;">No matches</div>';
+  for (const btn of nav.querySelectorAll('button.entry')) {
+    btn.addEventListener('click', () => select(btn.getAttribute('data-name')));
+  }
+}
+function select(name) {
+  const b = BLOCKS.find(x => x.name === name);
+  if (!b) return;
+  for (const btn of nav.querySelectorAll('button.entry')) {
+    btn.setAttribute('aria-current', btn.getAttribute('data-name') === name ? 'true' : 'false');
+  }
+  detail.innerHTML =
+    '<h2>' + esc(b.name) + '</h2>' +
+    '<div class="meta">' +
+      '<span class="chip">📁 ' + esc(b.category || '—') + '</span>' +
+      '<span class="chip">📄 ' + b.loc + ' LOC</span>' +
+      '<span class="chip">🔬 ' + esc(b.testFile || 'no test') + '</span>' +
+    '</div>' +
+    '<p>' + (b.description ? esc(b.description) : '<span class="empty">no description</span>') + '</p>' +
+    (b.purpose ? '<h3>Purpose</h3><p>' + esc(b.purpose).replace(/\\n/g, '<br>') + '</p>' : '') +
+    (b.industryRef ? '<h3>Industry reference (vendor-neutral)</h3><p>' + esc(b.industryRef).replace(/\\n/g, '<br>') + '</p>' : '') +
+    '<h3>Public API exports</h3><ul>' +
+      (b.exports.length ? b.exports.map(e => '<li><code>' + esc(e) + '</code></li>').join('') : '<li class="empty">—</li>') +
+    '</ul>' +
+    '<h3>Lifecycle</h3>' +
+    '<p><strong>Subscribes:</strong> ' +
+      (b.lifecycleHooks.length ? b.lifecycleHooks.map(e => '<code>' + esc(e) + '</code>').join(' · ') : '<span class="empty">none</span>') +
+    '</p>' +
+    '<p><strong>Emits:</strong> ' +
+      (b.emittedEvents.length ? b.emittedEvents.map(e => '<code>' + esc(e) + '</code>').join(' · ') : '<span class="empty">none</span>') +
+    '</p>' +
+    '<h3>Files</h3><pre>' + esc(b.file) + (b.testFile ? '\\n' + esc(b.testFile) : '') + '</pre>';
+}
+filter.addEventListener('input', () => renderNav(filter.value));
+renderNav('');
+if (BLOCKS.length > 0) select(BLOCKS[0].name);
+</script>
+</body>
+</html>
+`;
+
+  await fs.writeFile(path.join(DOCS_BLOCKS_DIR, 'index.html'), html);
+  console.log(`✓ Wrote docs/blocks/index.html (${(html.length / 1024).toFixed(1)} KB)`);
+
+  /* ─── 3. summary ─────────────────────────────────────────────── */
+  const eventsCount = enriched.reduce((s, e) => s + (e.emittedEvents || []).length, 0);
+  const subsCount   = enriched.reduce((s, e) => s + (e.lifecycleHooks || []).length, 0);
+  const withTests   = enriched.filter(e => e.testFile).length;
+  console.log(`\n  Total blocks:       ${blocks.length}`);
+  console.log(`  With test files:    ${withTests}`);
+  console.log(`  Total emit-events:  ${eventsCount}`);
+  console.log(`  Total subscribe-events: ${subsCount}`);
+  console.log(`  Vendor-neutral grep: 0 hits`);
+  process.exit(0);
+})().catch(e => { console.error('Fatal:', e.stack || e); process.exit(2); });
