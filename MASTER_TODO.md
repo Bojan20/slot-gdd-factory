@@ -1,6 +1,64 @@
 # Master TODO — slot-gdd-factory
 
-> **2026-06-19 · HEAD `pending`** · Σ **181 LEGO blokova** · Σ **2233 testova/asserts** · 0 fail
+> **2026-06-19 · HEAD `pending`** · Σ **181 LEGO blokova** · Σ **2269 testova/asserts** · 0 fail
+>
+> ## 🎬 ALT-C Screen-reader walk (HEAD pending) — FULL BACKLOG CLOSEOUT
+>
+> Boki: *"nastavi"* — ALT-C iz backlog-a. Playwright screen-reader walk
+> kroz 4 GDD fixture × Tab-walk transcript × WCAG 4.1.2/2.4.7/4.1.3
+> assertions. Otkrivena 1 rupa, fix-ovana, sve zeleno.
+>
+> ```
+> ┌─────────────────────────────────────────────────────────────────────┐
+> │ Šta urađeno                                                         │
+> ├─────────────────────────────────────────────────────────────────────┤
+> │ tools/_ultimate-screen-reader-walk.mjs (NEW) — Playwright probe     │
+> │   • Tab-walk transcript per fixture (do 60 Tab koraka)             │
+> │   • WCAG 4.1.2 (Name/Role/Value) audit                              │
+> │   • WCAG 2.4.7 (Focus Visible) audit                                │
+> │   • WCAG 4.1.3 (Status Messages) audit                              │
+> │   • role=switch/radio aria-checked check                            │
+> │   • Esc closes open menu                                             │
+> │   • Live region update after synthetic HookBus emits                 │
+> │                                                                     │
+> │ reports/screen-reader-walk/{WoO,GoO_1000,MidnightFangs,             │
+> │   CrystalForge}.txt — transcripts (gitignored, dev artifact)        │
+> │                                                                     │
+> │ OTKRIVENA RUPA + FIX:                                               │
+> │ src/blocks/themePicker.mjs .tp-item:focus-visible imala je samo    │
+> │ background change (no outline). Playwright getComputedStyle nije    │
+> │ detektovao kao "visible focus" → WCAG 2.4.7 fail. Fix: dodat       │
+> │ outline: 2px solid ${cfg.color} sa outline-offset: -2px.            │
+> │                                                                     │
+> │ REZULTAT (PRE → POSLE):                                             │
+> │ 32/36 (4 fail kroz 4 fixtures) → 36/36 ✅                          │
+> └─────────────────────────────────────────────────────────────────────┘
+> ```
+>
+> ## 🏆 BACKLOG FULL CLOSEOUT
+>
+> ```
+> ┌───────┬──────────────────────────┬────────────────┐
+> │ ID    │ Wave / pravac            │ Status         │
+> ├───────┼──────────────────────────┼────────────────┤
+> │ B-2   │ LEGO-REPLAY              │ ✅ DONE        │
+> │ B-3   │ LEGO-RANDOM              │ ✅ DONE        │
+> │ B-4   │ LEGO-COLLECT             │ ✅ DONE        │
+> │ B-5   │ LEGO-SOCIAL              │ ✅ DONE        │
+> │ B-6   │ LEGO-VOLATILITY          │ ✅ DONE        │
+> │ B-7   │ LEGO-SIDEBET             │ ✅ DONE        │
+> │ B-8   │ LEGO-THEME               │ ✅ DONE        │
+> │ ALT-A │ Playwright deep QA       │ ✅ DONE        │
+> │ ALT-B │ HMR regression           │ ✅ DONE        │
+> │ ALT-C │ Screen-reader walk       │ ✅ DONE (ovo) │
+> │ ALT-D │ Cross-engine parity      │ ✅ DONE        │
+> │ ALT-E │ Block-manifest docs      │ ✅ DONE        │
+> ├───────┼──────────────────────────┼────────────────┤
+> │ DEF1  │ LEGO-PROG                │ DEFERRED       │
+> └───────┴──────────────────────────┴────────────────┘
+> ```
+>
+> ---
 >
 > ## 🎬 ALT-E Block-manifest docs (HEAD pending)
 >

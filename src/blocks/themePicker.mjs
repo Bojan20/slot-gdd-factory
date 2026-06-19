@@ -216,8 +216,12 @@ export function emitThemePickerCSS(cfg = defaultConfig()) {
   outline: none;
   transition: background .12s ease;
 }
-.theme-picker-menu .tp-item:hover,
-.theme-picker-menu .tp-item:focus-visible { background: rgba(255,255,255,.08); }
+.theme-picker-menu .tp-item:hover { background: rgba(255,255,255,.08); }
+.theme-picker-menu .tp-item:focus-visible {
+  background: rgba(255,255,255,.08);
+  outline: 2px solid ${cfg.color};
+  outline-offset: -2px;
+}
 .theme-picker-menu .tp-item[aria-checked="true"] {
   background: linear-gradient(90deg, ${cfg.colorDark}, ${cfg.color});
 }
