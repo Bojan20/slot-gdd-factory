@@ -1,6 +1,90 @@
 # Master TODO — slot-gdd-factory
 
-> **2026-06-19 · HEAD pending** · 🎬 Wave **F5-V3** landed — BIG-WIN TIER VISUAL LADDER POLISH
+> **2026-06-19 · HEAD `5441531`** · 🗓️ DNEVNI SUMMARY — 18 commit-eva, 5 faza, 164 blokova, 0 backlog
+>
+> ## 🗓️ DNEVNI SUMMARY 2026-06-19 — kompletan pregled (8823a7a → 5441531)
+>
+> 18 commit-eva u 5 sekvencijalnih faza. Sve regression gate-ovi
+> zeleno na svakom hash-u. Anti-vendor čisto, WCAG AAA na ključnim SC.
+>
+> ### Faza 1 — LEGO LIBRARY COVERAGE-GAP ROADMAP (8 wave-a, 17 novih blokova)
+>
+> | # | Wave | HEAD | Blokovi | Σ blokova |
+> |:-:|:--|:--|:--|:-:|
+> | 1 | LEGO-EV (Evaluator) | `7ac9e71` | allWaysEval + bidirectionalWaysEval | 147 → 149 |
+> | 2 | LEGO-W2 (Wild varijante) | `74b8e13` | cascadingWildPersistence + mysteryWildReveal | 149 → 151 |
+> | 3 | LEGO-FS2 (FS upgrade + jackpot pool) | `971fb18` | fsSymbolUpgradeEscalation + fsPersistentJackpotPool | 151 → 153 |
+> | 4 | LEGO-HW2 (H&W varijante) | `de7b5ec` | wildTriggerHoldAndWin + holdAndWinReelExpansion | 153 → 155 |
+> | 5 | LEGO-B2 (Bonus reveal) | `19b42e5` | matchThreeBonusReveal + moneyGrabGrid + pathBonusEngine | 155 → 158 |
+> | 6 | LEGO-ENG (Engine topology) | `62e55f3` | pyramidGridEngine + hexClusterEngine | 158 → 160 |
+> | 7 | LEGO-FS3 (Both-ways + height escalation) | `7269b7a` | winBothWaysActivation + fsReelHeightEscalation | 160 → 162 |
+> | 8 | LEGO-FS3.3 (Adapter sweep) | `ee86503` | reelHeightAdapter + bonusOverlayMutex + 2 cross-block guards | 162 → 164 |
+>
+> Σ Faza 1: **17 novih blokova · 147 → 164 · all 8 multi-agent QA reviewed**
+>
+> ### Faza 2 — Hash pin master TODO (1 commit)
+>
+> | # | Commit | HEAD | Cilj |
+> |:-:|:--|:--|:--|
+> | 9 | docs(master-todo) | `813a8e7` | "HEAD pending" × 10 → real hash + block count 65 → 164 + roadmap status flip |
+>
+> ### Faza 3 — Deep QA Sweep Series (7 commit-eva, 37 stavki zatvoreno)
+>
+> | # | Wave | HEAD | Cilj | Σ closed |
+> |:-:|:--|:--|:--|:-:|
+> | 10 | FIX-1 HOOK_EVENTS registry | `dc8e361` | 46 emit-ed event-a u registry + invariant #8 enforcement | 3 CRITICAL |
+> | 11 | FIX-2 dispatcher imports | `1018800` | pyramid + hexCluster + reelHeightAdapter wired u orchestrator | 3 CRITICAL |
+> | 12 | FIX-3 evaluator math overhaul | `f959757` | ways multiplier + dedupe + wild claim mehanika | 5 CRITICAL + 4 MAJOR |
+> | 13 | FIX-4 FS lifecycle | `5a61375` | retrigger emit + idempotency + adapter race notes | 4 MAJOR + 2 MINOR |
+> | 14 | FIX-5 wild ownership | `4dd5929` | pin-write guard + mountRow + clamp warn | 3 MAJOR + 2 MINOR |
+> | 15 | FIX-6 bonus mutex hard-gate | `24e16cf` | wild → H&W wire + FINISH bonus + joker handling | 3 MAJOR + 3 MINOR |
+> | 16 | FIX-7 final cleanup | `d2e4039` | 10 deferred MINOR + MAJOR closures + probe sync | 3 MINOR + 2 deferred |
+>
+> Σ Faza 3: **11 CRITICAL + 14 MAJOR + 10 MINOR + 2 deferred = 37/37 (100%)**
+>
+> ### Faza 4 — Pre-Math Roadmap priority 🥇 F4 A11y baseline (1 commit, 52 rupa)
+>
+> | # | Wave | HEAD | Atom | Σ rupa | Σ fix-eva |
+> |:-:|:--|:--|:--|:-:|:-:|
+> | 17 | F4 A1-A4 a11y baseline | `ee4759c` | A1 (WCAG AAA ≥ 7:1) + A2 (keyboard nav) + A3 (screen reader) + A4 (reduced-motion) | 52 | 36 |
+>
+> A1: 13 rupa → 8 fix-eva + 2 false-positive · A2: 20 rupa → 15 `:focus-visible` + 1 ESC handler · A3: 19 rupa → 13 aria-live atributa + 1 dynamic label · A4: 0 rupa (151/151 već compliant)
+>
+> ### Faza 5 — Pre-Math Roadmap priority 🥈 F5 V3 big-win polish (1 commit, 5 atoma)
+>
+> | # | Wave | HEAD | Atom | Test gates |
+> |:-:|:--|:--|:--|:-:|
+> | 18 | F5 V3 big-win tier polish | `5441531` | Per-tier scale + halo + WCAG SC 2.3.1 AAA hard cap + climax pulse + count-up easing | 42/42 |
+>
+> ### Dnevni Σ
+>
+> | Metric | Vrednost |
+> |:--|:-:|
+> | Commit-eva | **18** |
+> | Wave-a (LEGO + FIX + F4 + F5) | **18** |
+> | Novih blokova | **17** (147 → 164) |
+> | QA stavki zatvoreno | **37 (11 CRITICAL + 14 MAJOR + 10 MINOR + 2 deferred)** |
+> | A11y rupa zatvoreno | **52 (36 fix-eva + 16 false-pos / već compliant)** |
+> | V3 polish atoma | **5** (banner scale + halo + photo-safe + climax pulse + easing) |
+> | Test gates green | **8/8 lego + 164 blocks + 0 parity + 20/20 force + 42/42 bigWinTier** |
+> | WCAG SC promoted | **AA → AAA na 1.4.6 (contrast) i 2.3.1 (photo-safe)** |
+> | LOC delta (Faza 4 + 5) | **+216 ins / -29 del** (a11y + V3 polish) |
+> | Anti-vendor grep | **0 hits** (svuda neutral) |
+> | Master TODO updates | **2** (hash pin + dnevni summary) |
+>
+> ### Otvoreni next u Pre-Math Roadmap-u
+>
+> | Prio | Wave | Atomi | Est |
+> |:-:|:--|:-:|:-:|
+> | 🥉 | **F6 dev tools** (T1-T5) | 5 | ~7h |
+> | 4 | F4 A5-A10 mobile/perf | 6 | ~9.5h |
+> | 5 | F7 HX1-HX6 cert global | 6 | ~15.5h |
+>
+> Math/PAR/RTP — svesno izvan plana dok Boki ne kaže.
+>
+> ---
+>
+> **2026-06-19 · HEAD `5441531`** · 🎬 Wave **F5-V3** landed — BIG-WIN TIER VISUAL LADDER POLISH
 >
 > ## 🎬 Wave F5 V3 — Big-win tier visual ladder polish (`bigWinTier.mjs`)
 >
