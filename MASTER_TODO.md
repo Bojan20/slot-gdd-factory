@@ -53,8 +53,11 @@
 > │ B-7  │ LEGO-SIDEBET             │ OTVOREN  │ insuranceBet + prizeBoostBet    │
 > │ B-8  │ LEGO-THEME               │ OTVOREN  │ themePicker + paletteRoulette   │
 > ├──────┼──────────────────────────┼──────────┼─────────────────────────────────┤
-> │ ALT-A│ Playwright deep QA       │ OTVOREN  │ Headless probe po 4 GDD-a       │
-> │      │                          │          │ → SLEDEĆI po Bokijevoj komandi  │
+> │ ALT-A│ Playwright deep QA       │ ✅ DONE  │ HEAD pending — 72/72 (4 GDD ×   │
+> │      │                          │          │ desktop + mobile) ·             │
+> │      │                          │          │ 8 PNG screenshot · topology-    │
+> │      │                          │          │ aware (MidnightFangs cluster    │
+> │      │                          │          │ → ladder pravilno suppressed)   │
 > │ ALT-B│ HMR regression           │ ✅ DONE  │ HEAD 9ab1b26 — 166/166 sweep    │
 > │ ALT-C│ Screen-reader walk       │ OTVOREN  │ VoiceOver/NVDA transcript       │
 > │ ALT-D│ Cross-engine parity      │ ✅ DONE  │ HEAD 4dff3c2 — 31 rupa zatvorenih│
