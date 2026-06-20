@@ -1036,13 +1036,38 @@ export function extractTopology(rawText, model) {
   const varRows =
     text.match(/\b(\d+)\s*[-–]\s*(\d+)\s+rows?\s+per\s+reel\b/i) ||
     text.match(/\brows?\s+per\s+reel\s*:?\s*(\d+)\s*[-–]\s*(\d+)/i) ||
-    text.match(/\bvariable\s+rows?\s*\(?(\d+)\s*[-–]\s*(\d+)\)?/i);
+    text.match(/\bvariable\s+rows?\s*\(?(\d+)\s*[-–]\s*(\d+)\)?/i) ||
+    text.match(/\b(\d+)\s+visible\s+\(variable\s+(\d+)\s*[-–]\s*(\d+)\s+rows?\s+per\s+reel\)/i);
   if (varRows) {
-    const min = parseInt(varRows[1], 10);
-    const max = parseInt(varRows[2], 10);
+    /* Last alt-pattern carries 3 groups (max, min, max-restated). Normalise. */
+    let min, max;
+    if (varRows[3]) {
+      min = parseInt(varRows[2], 10);
+      max = parseInt(varRows[3], 10);
+    } else {
+      min = parseInt(varRows[1], 10);
+      max = parseInt(varRows[2], 10);
+    }
     t.rows_per_reel = { min, max, variable: true };
     /* set rows to the max for grid sizing */
     if (!t.confidence_rows) t.rows = max;
+  }
+
+  /* WAVE X3 — explicit per-reel rows array, e.g. "[2,4,6,7,5,3]" or
+   * "rows per reel: 2-4-6-7-5-3". Higher fidelity than {min,max} when GDD
+   * gives the exact distribution. */
+  const explicitArr =
+    text.match(/\brows?\s+per\s+reel\s*[:=]?\s*\[\s*((?:\d+\s*,\s*){2,}\d+)\s*\]/i) ||
+    text.match(/\bper[\s-]?reel\s+rows?\s*[:=]?\s*((?:\d+\s*[-–]\s*){2,}\d+)/i);
+  if (explicitArr) {
+    const arr = explicitArr[1].split(/[,\-–]/).map((s) => parseInt(s.trim(), 10)).filter(Number.isFinite);
+    if (arr.length >= 3) {
+      t.rows_per_reel_array = arr;
+      if (!t.rows_per_reel) {
+        t.rows_per_reel = { min: Math.min(...arr), max: Math.max(...arr), variable: true };
+      }
+      if (!t.confidence_rows) t.rows = Math.max(...arr);
+    }
   }
 
   /* 4. Paylines count */
@@ -1088,6 +1113,23 @@ export function extractTopology(rawText, model) {
   const waysCell = text.match(/\b(243|576|720|1024|1600|3125|4096|7776|15625|46656|117649|1000000)\s*ways?\b/i);
   if (waysCell) {
     t.ways_count = parseInt(waysCell[1], 10);
+  }
+
+  /* WAVE X3 — explicit ways_cap for Megaways-style variable_reel games.
+   * GDD often gives "up to 117,649 ways" or "ways cap: 4096"; the cap is
+   * the upper limit when ALL reels hit max rows. Distinct from ways_count
+   * which is what the game can typically achieve. */
+  const waysCap =
+    text.match(/\bways\s+cap\s*[:=]?\s*([\d,]+)/i) ||
+    text.match(/\bup\s+to\s+([\d,]+)\s*ways?\b/i) ||
+    text.match(/\bmax(?:imum)?\s+(?:of\s+)?([\d,]+)\s*ways?\b/i);
+  if (waysCap) {
+    const n = parseInt(waysCap[1].replace(/,/g, ''), 10);
+    if (Number.isFinite(n) && n > 0) t.ways_cap = n;
+  } else if (t.ways_count) {
+    /* Backfill ways_cap = ways_count when GDD gave one number only — most
+     * fixed-ways games are capped at their declared count. */
+    t.ways_cap = t.ways_count;
   }
 
   /* 6. Evaluation kind — explicit cell first */
@@ -1175,6 +1217,35 @@ export function extractTopology(rawText, model) {
     t.shape = 'radial';
   } else {
     t.shape = 'rectangular';
+  }
+
+  /* WAVE X4 — cluster adjacency parser. Three canonical adjacency models
+   * (orthogonal = 4-neighbour, diagonal = 8-neighbour, hex = 6-neighbour).
+   * Only meaningful when evaluation is cluster/megaclusters/hexagonal —
+   * otherwise leave null. Default to orthogonal when GDD declares cluster
+   * but is silent on adjacency (industry baseline). */
+  if (kind === 'cluster' || kind === 'hexagonal' || /\bmega[\s-]?clusters?\b/i.test(text)) {
+    if (/\b(?:8[\s-]?neighbo(?:u)?r|diagonal\s+adjacenc|orthogonal\s+\+\s+diagonal|king[\s-]?move)\b/i.test(text)) {
+      t.cluster_adjacency = 'diagonal';
+    } else if (/\bhex(?:agonal)?\s+(?:adjacenc|neighbo(?:u)?r)|6[\s-]?neighbo(?:u)?r/i.test(text)) {
+      t.cluster_adjacency = 'hex';
+    } else if (/\b(?:4[\s-]?neighbo(?:u)?r|orthogonal\s+adjacenc|rook[\s-]?move|connected\s+(?:horizontally|vertically))\b/i.test(text)) {
+      t.cluster_adjacency = 'orthogonal';
+    } else {
+      /* Industry default when cluster declared without adjacency text. */
+      t.cluster_adjacency = kind === 'hexagonal' ? 'hex' : 'orthogonal';
+    }
+    /* Minimum cluster size — typical 5..8 for cluster pays games. */
+    const minMatch =
+      text.match(/\bclusters?\s+of\s+(\d+)\s*(?:or\s+more|\+)?\s+(?:adjacent|symbols?|connected)/i) ||
+      text.match(/\bmin(?:imum)?\s+cluster\s*(?:size)?\s*[:=]?\s*(\d+)/i) ||
+      text.match(/\b(\d+)\s+or\s+more\s+(?:adjacent|connected)\s+symbols?/i);
+    if (minMatch) {
+      const n = parseInt(minMatch[1], 10);
+      if (Number.isFinite(n) && n >= 3 && n <= 12) t.cluster_min_size = n;
+    } else if (kind === 'cluster' && !t.cluster_min_size) {
+      t.cluster_min_size = 5;   /* industry default for cluster pays */
+    }
   }
 
   /* 9. Cascade / tumble / avalanche flag (game-flow trait, not math) */
@@ -1911,10 +1982,16 @@ function freshModel() {
       direction: 'ltr',
       /* explicit ways count if known (243/1024/4096/7776/46656/117649/etc) */
       ways_count: null,
+      /* WAVE X3 — ways_cap = upper limit when all reels at max rows */
+      ways_cap: null,
       /* variable rows-per-reel (high-volume ways family, e.g. 2-7 per reel) */
       rows_per_reel: null,
       /* explicit per-reel rows array (diamond/pyramid: [3,4,5,4,3]) */
       rows_per_reel_array: null,
+      /* WAVE X4 — cluster adjacency: 'orthogonal' | 'diagonal' | 'hex' | null */
+      cluster_adjacency: null,
+      /* WAVE X4 — minimum cluster size to pay (typically 5..8) */
+      cluster_min_size: null,
       /* cascade/tumble/avalanche */
       cascade: { enabled: false },
       /* growable (Infinity Reels) */

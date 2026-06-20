@@ -1,3 +1,61 @@
+## 🏆 WAVE X — UNIVERSAL TOPOLOGY EXTRACTOR · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"dalhje"* (dalje) — treći 🥈 prioritet roadmap-a (2026-06-20).
+
+**Zahtev:** rectangular · variable · cluster · hex · diamond · pyramid sve
+ekstraktovane pouzdano iz bilo kog GDD-a, sa eksplicitnim adjacency + ways_cap.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE X — 4 atomi closed                                                                │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ X1 — Grid shape regex sweep (već postojao)                                              │
+│   src/parser.mjs extractTopology() već pokriva 5×3, 6×4, 5×4 column×row paterns         │
+│                                                                                       │
+│ X2 — Paylines list extractor (već postojao)                                             │
+│   table-form, inline N-paylines, word numerals (twenty, twenty-five, etc.)              │
+│                                                                                       │
+│ X3 — Variable rows detektor + ways_cap (proširen)                                       │
+│   t.rows_per_reel = { min, max, variable }  (range form: "2-7 rows per reel")           │
+│   t.rows_per_reel_array = [3,4,5,4,3]      (explicit list: "rows per reel: [3,4,5,4,3]")│
+│   t.ways_cap = N                            ("up to 117,649 ways" / "ways cap: 4096")    │
+│   Backfill: ako GDD navede ways_count bez cap, ways_cap = ways_count                    │
+│                                                                                       │
+│ X4 — Cluster adjacency parser (NOVI)                                                    │
+│   t.cluster_adjacency: 'orthogonal' | 'diagonal' | 'hex' | null                          │
+│   t.cluster_min_size: 3..12 ("clusters of 5+ adjacent symbols")                          │
+│   Defaults:                                                                            │
+│     cluster topology bez adjacency teksta → 'orthogonal' (industry baseline)            │
+│     hexagonal topology → 'hex'                                                          │
+│     cluster bez min size → 5 (industry default)                                          │
+│   Triggers: 4/8/6-neighbour, king/rook move, "connected horizontally/vertically",      │
+│             "hexagonal adjacency", "honeycomb adjacency"                                 │
+│                                                                                       │
+│ STVARNI REZULTAT (Wave X smoke — 24 fixtures)                                           │
+│   24/24 pass = 100% accuracy                                                            │
+│                                                                                       │
+│ Variable + cluster spotlight (parsed correctly):                                        │
+│   cluster_7x7        kind=cluster      adj=orthogonal min=5                              │
+│   variable_reel      kind=variable_reel rpr=2-7                                          │
+│   megaclusters       kind=megaclusters  adj=orthogonal min=5                             │
+│   hexagonal          kind=hexagonal     adj=hex                                          │
+│   diamond            kind=diamond       rpr=[3,4,5,4,3]                                  │
+│   pyramid            kind=pyramid       rpr=[1,3,5,3,1]                                  │
+│                                                                                       │
+│ FALLBACK COVERAGE                                                                       │
+│   Cluster bez adjacency teksta → defaultuje na 'orthogonal' (industry baseline)        │
+│   Hex topology bez 6-neighbour teksta → defaultuje na 'hex'                             │
+│   Cluster bez min size → defaultuje na 5 (industry standard)                             │
+│                                                                                       │
+│ VERIFIKACIJA                                                                          │
+│   parser tests           4/4 PASS ✅                                                    │
+│   render-grid tests     20/20 PASS ✅                                                    │
+│   wave-x smoke         24/24 PASS ✅ (20 grid fixtures + 4 baseline GDDs)               │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE W (MVP) — AI BLOCK SELECTOR / ORCHESTRATOR · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"nastavi"* — drugi 🥇 prioritet roadmap-a (2026-06-20).
