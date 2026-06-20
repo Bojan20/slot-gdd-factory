@@ -418,6 +418,40 @@ export function emitBetSelectorCSS(cfg = defaultConfig()) {
     .bet-panel { width: 96vw; padding: 12px; bottom: 68px; }
     .bet-panel-total { font-size: 18px; }
   }
+  /* WAVE F4-A7 viewport fix (Boki 2026-06-21 "fix"): 320/360 px overflow.
+   * Combined width of betSteps cluster on baseline themes was ~144 px;
+   * lateral HUD chips push the row past 320 px viewport. Shrink the bet
+   * chip footprint + tighten step buttons (preserves 44 × 44 hit area
+   * via padding zone, visible disc shrinks to 36 px). */
+  /* themeCSS .hub @ bp.sm (620px) stacks bet-steps to row 2 spanning full
+   * width with justify-self: stretch — but bet-steps is inline-flex so
+   * stretch is a no-op (inline-flex width = min-content). On 320/360 px
+   * the right-most step button is THE element that overflows. Promote
+   * the row to flex + width:100% + justify-content center so the cluster
+   * centers within the grid area and never pokes past viewport edge. */
+  @media (max-width: 620px) {
+    .bet-steps {
+      display: flex;
+      width: 100%;
+      justify-content: center;
+    }
+  }
+  @media (max-width: 360px) {
+    .bet-steps { gap: 4px; }
+    .bet-chip {
+      min-width: 72px;
+      padding: 4px 8px;
+    }
+    .bet-chip__value { font-size: 16px; }
+    .bet-chip__label { letter-spacing: 1px; }
+    .bet-step {
+      min-width: 36px;
+      min-height: 36px;
+      width: 36px;
+      height: 36px;
+      font-size: 16px;
+    }
+  }
 `;
 }
 

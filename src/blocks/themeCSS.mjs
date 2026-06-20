@@ -263,6 +263,14 @@ export function emitThemeCSS(cfg = defaultConfig()) {
     .stage .statBox__value { font-size: 0.85rem; }
     .sideHud { gap: 16px; }
   }
+  /* WAVE F4-A7 viewport fix (Boki 2026-06-21 "fix"): on ≤ 360px the
+   * .stage padding (8px + safe-area-inset which defaults to 0) plus the
+   * clamp gap stretches the stage past the 320px viewport edge by 4px.
+   * Tighten padding to 4px so docW lands at vpW + 0. box-sizing already
+   * border-box from CSS reset above. */
+  @media (max-width: 360px) {
+    .stage { padding: 4px; gap: 4px; }
+  }
   .frame {
     position: relative;
     background: transparent;
@@ -413,10 +421,26 @@ export function emitThemeCSS(cfg = defaultConfig()) {
       column-gap: 6px;
       padding: 8px;
     }
-    .hub > :nth-child(1) { grid-area: menu; }
-    .hub > :nth-child(2) { grid-area: balance; justify-self: center; }
-    .hub > :nth-child(3) { grid-area: bet;     justify-self: stretch; }
-    .hub > :nth-child(4) { grid-area: sound; }
+    /* WAVE F4-A7 viewport fix (Boki 2026-06-21 "fix"): nth-child selectors
+     * mapped to grid-area assumed exactly 4 hub children (menu / balance /
+     * bet / sound). Recent waves inserted invisible modals (reg disclosure,
+     * reality check, session timeout) at child positions 3..N, so the
+     * nth-child(3) mapping landed on regDisclosureModal (display:none but
+     * still occupies grid-area "bet"). The bet-steps + sound button then
+     * fell through to auto grid placement and pushed past the viewport
+     * edge by 47 px on 320 px screens.
+     *
+     * Robust fix: select grid placement by ID/class — these are the
+     * canonical owners regardless of sibling order. Modals are excluded
+     * from layout flow via display:none + position:absolute. */
+    .hub > #settingsMenuBtn { grid-area: menu;    justify-self: center; }
+    .hub > .balance-hud     { grid-area: balance; justify-self: center; }
+    .hub > .bet-steps       { grid-area: bet;     justify-self: stretch; }
+    .hub > #soundBtn        { grid-area: sound;   justify-self: center; }
+    /* Invisible modals/panels rendered as hub children must not occupy
+     * the grid — bet-panel is absolute-positioned by its own block, so
+     * its grid-area: auto is harmless; the rest set display:none and
+     * therefore consume no track. */
   }
   .iconBtn {
     /* Wave K5 — WCAG 2.5.5 / Apple HIG 44pt minimum tap target. */

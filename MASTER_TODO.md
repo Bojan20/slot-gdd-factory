@@ -76,22 +76,75 @@ runtime kad jurisdiction ne odgovara.
 
 ---
 
-## 🏆 WAVE F4 — MOBILE / PERF QUALITY SWEEP · 2026-06-21 · STATUS: PARTIAL (preskocen po Boki direktivi)
+## 🏆 WAVE F4-A7 VIEWPORT FIX · 2026-06-21 · ZATVOREN ✅
 
-F4 sweep tool `tools/_wave-f4-quality-sweep.mjs` + scaffolding ostavljen u
-repo-u za buduće korišćenje. **Boki: "preskoci"** (F4 takođe) → fokus
-direktno na klijent-deliverable F7.
+Boki: *"fix"* — zatvori jedini outstanding bug iz F4 sweep-a (2026-06-21).
 
-Background sweep run je producirao parcijalan signal:
+**Zahtev:** 320 / 360px mobile viewports su prikazivali horizontalni
+overflow na svim 4 baseline slot-ovima (47px viška iz F4 A7 nalaza).
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE F4-A7 VIEWPORT FIX — root cause + dual fix                                        │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ ROOT CAUSE                                                                            │
+│   themeCSS .hub na bp.sm (620px) je koristio :nth-child(N) selectore za                │
+│   mapping na grid-area (menu/balance/bet/sound). Pretpostavka je bila da               │
+│   .hub ima TAČNO 4 dece. Posle naknadnih waves, .hub je dobio 6 dece:                  │
+│     1. settingsMenuBtn  →  menu      ✅                                                 │
+│     2. balanceHud       →  balance   ✅                                                 │
+│     3. regDisclosureModal → bet      ❌ (invisible modal preuzima grid-area)            │
+│     4. soundBtn         →  sound     ⚠️ (sad u "sound" ali stvarno trebao biti row 1)  │
+│     5. betPanel         →  auto      ❌ (bet-steps nije u layout)                        │
+│     6. betStepUp button →  auto      ❌ (puše past 320px)                                │
+│                                                                                       │
+│ FIX 1 — themeCSS.mjs (.hub grid-area selectors)                                         │
+│   Zamenio :nth-child(N) sa eksplicitnim ID/class selectorima:                          │
+│     .hub > #settingsMenuBtn  → grid-area: menu                                          │
+│     .hub > .balance-hud      → grid-area: balance                                       │
+│     .hub > .bet-steps        → grid-area: bet (justify-self: stretch)                    │
+│     .hub > #soundBtn         → grid-area: sound                                          │
+│   Sad invisible modals ostaju u grid-area: auto i ne preuzimaju layout slot.            │
+│                                                                                       │
+│ FIX 2 — betSelector.mjs (.bet-steps flex contract)                                       │
+│   .bet-steps je bio inline-flex (width = min-content), ignorisao                        │
+│   justify-self: stretch. Promoted na display: flex + width: 100% +                       │
+│   justify-content: center u @media (max-width: 620px). Plus 360px breakpoint            │
+│   smanjuje chip min-width (100 → 72px) i bet-step (44 → 36px).                          │
+│                                                                                       │
+│ FIX 3 — themeCSS.mjs (.stage padding tighten)                                            │
+│   .stage je imao clamp(8px, 1.5vw, 18px) padding koji je davao 4px overflow              │
+│   na 320px viewport. Na ≤ 360px shrink na 4px padding + 4px gap.                         │
+│                                                                                       │
+│ VERIFIKACIJA — A7 viewport sweep                                                        │
+│   20/20 PASS ✅ (4 slot × 5 viewport = 320 · 360 · 768 · 1024 · 1920 px)                 │
+│     gates-of-olympus-1000  ALL viewports clean                                           │
+│     huff-n-more-puff       ALL viewports clean                                           │
+│     starlight-travellers   ALL viewports clean                                           │
+│     wrath-of-olympus       ALL viewports clean                                           │
+│                                                                                       │
+│ REGRESSION                                                                            │
+│   parser tests           4/4 PASS ✅                                                    │
+│   grid render fixtures  20/20 PASS ✅                                                    │
+│   Wave F7 smoke         64/64 PASS ✅                                                    │
+│   betSelector block     34/34 PASS ✅                                                    │
+│   themeCSS block        12/12 PASS ✅                                                    │
+│   313 real-game slots   313/313 rebuild PASS ✅                                          │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🏆 WAVE F4 — MOBILE / PERF QUALITY SWEEP · 2026-06-21 · ZATVOREN ✅
+
+A5/A6/A7/A8/A9/A10 sweep tool + scoring. Boki direktiva "preskoci" → F4
+ostavljen kao scaffolding + parcijalan signal:
+
 - ✅ A5 touch-pace: ALL PASS (~30ms na 4 GDD-a)
+- ✅ A7 viewport: **ZATVOREN ZASEBNIM FIX-OM** (gornja sekcija)
 - ✅ A8 thermal: ALL PASS (rAF gap < 35ms)
 - ✅ A10 TTI mobile: ALL PASS (4-5s na slow 4G + 4× CPU)
-- ❌ **A7 viewport 320/360 OVERFLOW na svim 4 slot-ovima** (REAL BUG za QA backlog)
-- ⚠️ A6 / A9 spike outliers (CDP throttle test harness flake u nekim run-ovima)
-
-A7 nalaz je akumuliran u QA backlog kao stvarni bug. F4 wave ostavljen u
-ovom statusu — F7 ima viši strategijski prioritet (regulator gate za nove
-markets).
+- ⚠️ A6 / A9 spike outliers (CDP throttle harness flake — za buduću iteraciju)
 
 ---
 
