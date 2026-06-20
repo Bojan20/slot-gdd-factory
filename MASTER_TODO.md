@@ -1,3 +1,82 @@
+## 🏆 WAVE W (MVP) — AI BLOCK SELECTOR / ORCHESTRATOR · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"nastavi"* — drugi 🥇 prioritet roadmap-a (2026-06-20).
+
+**Zahtev:** 193 blokova auto-aktivirano po GDD §-strukturi sa confidence
+scoring-om i conflict resolution-om — nikad ručna kuracija.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE W MVP — 5 atomi closed                                                            │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ W1 — Block catalog generator                                                           │
+│   tools/_wave-w-build-block-catalog.mjs                                                 │
+│   prolazi src/blocks/*.mjs JSDoc headere, izvlači purpose/gddKeys/publicApi/           │
+│   lifecycleHooks/emits/subscribes/intentStrings/featureKinds/conflictsWith               │
+│   output: src/registry/blockCatalog.json (machine) + blockCatalog.md (human)           │
+│                                                                                       │
+│   STATS prvi run:                                                                      │
+│     blocks indexed:    193                                                             │
+│     with purpose:      193 / 193                                                       │
+│     with HookBus emits: 155 / 193  (Σ 335 events)                                       │
+│     with HookBus subs:  170 / 193                                                       │
+│     with featureKinds: 147 / 193  (Σ 290 kinds — most cover 1-3)                       │
+│                                                                                       │
+│ W2 + W3 + W4 — Mapper + scorer + conflict resolver                                     │
+│   src/registry/blockMapper.mjs                                                          │
+│   Scoring formula:                                                                     │
+│     0.50 · gddDeclared       (featureKind u model.__declared / model.features[])       │
+│   + 0.25 · keywordHit        (intentStrings se podudaraju sa GDD blob)                  │
+│   + 0.15 · structuralFit     (topology.kind ↔ TOPOLOGY_BLOCK_FIT[kind])                 │
+│   + 0.10 · subscribeReadiness (block ima lifecycle hooks)                              │
+│                                                                                       │
+│   Thresholds: ≥ 0.65 auto-on · 0.35-0.65 soft · < 0.35 off                              │
+│   Always-on infra (21 blokova): hookBus, themeCSS, paytable, spinControl, ...          │
+│                                                                                       │
+│   Conflict policy: family-grouped peers (expandingWild / walkingWild / stickyWild /    │
+│   wildReel), (clusterPaysEval / waysEval / payAnywhereEval / paylines),                │
+│   (holdAndWin / respin) — winner = highest score, loser → rejected[].                  │
+│                                                                                       │
+│ W5 — Auto-config injection + smoke test                                                │
+│   tools/_wave-w-smoke.mjs                                                                │
+│   End-to-end: parse Wrath GDD → Wave V overlay (env-gated) → catalog load → mapper     │
+│                                                                                       │
+│   STVARNI REZULTAT (Wrath of Olympus):                                                  │
+│     blocks scored:    193                                                              │
+│     activated (auto): 51   (incl freeSpins 0.85, jurisdictionGate 0.633, ...)          │
+│     softMatches:      47   (cluster/compliance peers needing manual review)            │
+│     off (< 0.35):     32                                                                │
+│     conflictLosers:   63   (peer families auto-resolved)                                │
+│     avgScore:         0.614                                                            │
+│                                                                                       │
+│   Auto-config preview (Wave V → W5 injection):                                          │
+│     freeSpins:  awards=[3→14, 4→16, 5→18] (from V3 declared section)                    │
+│     holdAndWin: triggerCount=6, bonusSymbolId='B', respins=3,                            │
+│                  jackpots=[MINI,MINOR,MAJOR,GRAND], fullGridBonus=500                  │
+│     winCap:     maxWinX=5000                                                            │
+│     bigWinTier: thresholds=[10×BIG, 25×MEGA, 50×EPIC]                                   │
+│                                                                                       │
+│ COLLATERAL FIX (Wave V overlay ESM/require bug)                                         │
+│   _waveVFs bound at top-level via dynamic `import('node:fs')` — survives browser        │
+│   bundles that strip node:* and Node ESM contexts that block require().                │
+│   Pre-fix: `model.holdAndWin = {}` because overlay returned early.                     │
+│   Post-fix: overlay correctly populates 13/15 model fields from V6 delta.              │
+│                                                                                       │
+│ VERIFIKACIJA                                                                          │
+│   parser tests           4/4 PASS ✅  (regex baseline unchanged)                       │
+│   catalog generator      193 blocks indexed, 335 emit events                            │
+│   mapper smoke           51 auto-on + 47 soft + 32 off (Wrath GDD)                     │
+│                                                                                       │
+│ NASTAVAK (post-MVP atomi)                                                              │
+│   - 17/193 blocks imaju eksplicitno "GDD knobs" sekciju u JSDoc-u — proširiti za 100%   │
+│   - W5 inject: stvarni `block.config = canonicalResolveConfig(delta)` u buildSlotHTML  │
+│   - mapper output → buildSlotHTML.mjs orchestrator pass (sad je ručno)                  │
+│   - 313 sintetičkih + 4 baseline GDD-a aggregate scorecard                              │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE V (MVP) — MULTI-AGENT GDD PARSER · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"dalje3"* — krenuli sa najvišim prioritetom iz roadmap-a (2026-06-20).
