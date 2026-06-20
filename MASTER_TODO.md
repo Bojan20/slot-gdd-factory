@@ -1,3 +1,31 @@
+## 🏆 D-14.3 MANUAL-SPIN AUDIT · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"overio si da svaki blok se pravi kako treba i povezuje zavisno od gdd? da li svaka prezentacija radi pravilno itd?"* (2026-06-20)
+
+**Manual spin lifecycle — 4/4 PASS.** Pravi user flow (klik spinBtn bez force chip-a) radi besprekorno na sve 4 GDD-a.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ D-14.3 — Manual spin baseline                                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ NOVI PROBE: tools/_ultimate-manual-spin-probe.mjs                            │
+│   • Klik #spinBtn (bez force flag-ova)                                       │
+│   • Verify ceo lifecycle: preSpin → reels rolling → postSpin → settle → btn │
+│   • FS-aware verdict: spin#1 koji trigger-uje FS round (GoO, WoO) nije      │
+│     fail — FSM owns spinBtn dok FS ne završi                                │
+│                                                                             │
+│ MATRICA:                                                                    │
+│   gates-of-olympus-1000-gdd  PASS  (FS triggered on spin#1)                 │
+│   huff-n-more-puff-gdd       PASS                                            │
+│   starlight-travellers-gdd   PASS                                            │
+│   wrath-of-olympus-gdd       PASS  (FS triggered on spin#1)                 │
+│                                                                             │
+│ Sve 4 GDD: preSpin Y · reels rolling Y · postSpin Y · settle clean · btn OK │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-14.2 LIGHTNING SYNCHRONOUS MULT · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"dalje, sve mora da rdi saverseno"* (2026-06-20)
