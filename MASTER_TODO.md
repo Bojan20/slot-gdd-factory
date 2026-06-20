@@ -1,62 +1,143 @@
-## 📊 DAILY STATUS 2026-06-20 · END-OF-DAY SUMMARY
+# 🧭 MASTER TODO — `slot-gdd-factory`
 
-**HEAD:** `2bcbafb` (D-17.8 + D-17 COMPLETE) · origin/main ✅ in sync
-**Stack height:** 192 blokova · 330 sole-owner events · ~3,200+ unit assertions · 0 fail
-**LEGO gate:** 8/8 PASS · 4-gdds-ultimate-audit ✅ ALL PERFECT
+> **2026-06-20 zaključno · HEAD `2bcbafb`** · 🟢 PRODUCTION-READY · 0 unpushed · 0 regression
 
-### Sve waves shipped today (2026-06-20)
-
-| # | Wave / Atom | Commit | Status |
-|:-:|:--|:--|:-:|
-| 1 | D-9 BLOCK-GDD MATRIX (real Chromium × 184 × 4 = 736 cells) | `4133ea0` | ✅ |
-| 2 | D-9.5 v3 declared-vs-runtime canonical resolveConfig | `fbfa1d6` | ✅ |
-| 3 | D-9 refactor isActive signals | `f8b7cc9` | ✅ |
-| 4 | D-10 SYMBOL-OVERFLOW scale(1.06) + waysEval buffer-cell fix | `6014cfb` + `ad89f09` | ✅ |
-| 5 | D-11 WP-TIMING gate wpStart/bwEnter behind reels-stopped | `04a7ef4` | ✅ |
-| 6 | D-12 LIGHTNING FORCE per-value ⚡×2/×3/×5/×10 | `6c59819` | ✅ |
-| 7 | D-13.1 ALL-FORCE-CHIPS 36/36 parity (fresh page per chip) | `e39edab` | ✅ |
-| 8 | D-14 Faza 1 STATIC 308/308 synthetic | `de67de1` | ✅ |
-| 9 | D-14 multiplier baseline win + orb cycle ladder | `7d90bf3` | ✅ |
-| 10 | D-14.1 PAINT-ONLY MULT (4 HW blokova → setMultMax) | `d3a59a0` | ✅ |
-| 11 | D-14.2 LIGHTNING SYNC MULT 21/21 win-effect | `adab3c3` | ✅ |
-| 12 | D-14.3 MANUAL-SPIN AUDIT 4/4 real GDD | `4d2f501` | ✅ |
-| 13 | D-15 LEGO-SANDBOX server (127.0.0.1:5151) | `536f1f5` | ✅ |
-| 14 | D-15 dist sandbox slot HTML | `2e73cd4` | ✅ |
-| 15 | D-14.4 IGT cross-ref align (HW frame SUM + ladder reset) | `e522c65` | ✅ |
-| 16 | D-14.5 IGT presentation align (chip centering + HUD position) | `ce9bd10` | ✅ |
-| 17 | D-16 LEGO sole-owner + vendor-neutral sweep (2 LEGO Gate FAILs) | `6592373` | ✅ |
-| 18 | D-17 ROADMAP gap analiza (8 industry-standard blokova) | `f1f0b37` | ✅ |
-| 19 | D-17.1 patternWin | `776ddf2` | ✅ |
-| 20 | D-17.2 bigSymbolRender2x2 | `a8dc9d3` | ✅ |
-| 21 | D-17.3 linkedReels | `0252bea` | ✅ |
-| 22 | D-17.4 perTriggerVolatilitySet | `0165583` | ✅ |
-| 23 | D-17.5 potSymbolFireball | `9357370` | ✅ |
-| 24 | D-17.6 grandInterruptionLock | `6c472bf` | ✅ |
-| 25 | D-17.7 simultaneousFsHoldAndWinPriority | `116468e` | ✅ |
-| 26 | D-17.8 creditAwardConversion (D-17 COMPLETE 🎯) | `2bcbafb` | ✅ |
-
-**Σ 26 commits pushed · 0 regressions · 0 vendor leaks · 0 LEGO Gate FAILs**
-
-### Otvoreno (Pre-Math Roadmap, sve opt-in po Boki-jevom prioritetu)
-
-| Prio | Wave | Atomi | Opis |
-|:-:|:--|:-:|:--|
-| 🥉 | **F6 dev-tools** | 5 (T1–T5) | Inspector probes, debug overlay, HMR diagnostics |
-| 4 | **F4 mobile/perf** | 6 (A5–A10) | Touch-pace, low-end perf, viewport thermal throttle, p99 latency |
-| 5 | **F7 cert global** | 6 (HX1–HX6) | Dodatne jurisdikcije + i18n cert globala (preko EU-5) |
-| — | **Math layer** | — | GATED — Boki će kazati "ajmo na math" |
-
-### Gate-ovi (END-OF-DAY)
+## 🎯 GLOBAL STATE SNAPSHOT (current)
 
 ```
-LEGO gate                  8/8 PASS · 192 blokova · 330 events
-4-gdds-ultimate-audit      ✅ ALL GDDS PERFECT
-Vendor-neutral grep         clean (no IGT / NetEnt / Pragmatic / Microgaming / SG)
-Sole-owner events           clean (svaki event ima unique vlasnik blok)
-Synthetic 308 audit         308/308 PASS (cortex-synthetic-308-audit.mjs)
-4-real-GDD audit            4/4 PASS (cortex-eyes-4-gdds-ultimate-audit.mjs)
-Origin sync                 ✅ HEAD 2bcbafb · 0 unpushed commits
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ slot-gdd-factory · LEGO contract @ HEAD 2bcbafb (origin/main sync ✅)                 │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Σ LEGO blokova                  192   (184 baseline + 8 iz D-17)                      │
+│ Σ HOOK_EVENTS u registry        330   (313 baseline + 17 sole-owner iz D-17)          │
+│ Σ EXPECTED_EMIT_OWNERS          330   (100% pokriveno · 0 drift)                      │
+│ Σ unit + integration assertions ≈ 3,200+   (≈ 2,700 baseline + 487 novih D-17)        │
+│ Σ baseline GDD fixtures         4/4   PERFECT  (GoO · Huff · Starlight · WoO)         │
+│ Σ synthetic GDD fixtures        20/20 PERFECT                                          │
+│ Σ regression suites             30+   (LEGO, force-chips, manual-spin, sharpness,     │
+│                                        bundle, i18n, cross-browser, load, cert2, …)   │
+│ Repository sync                 ✅ origin/main · 0 unpushed commits                   │
+└──────────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+## 🟢 KRITIČNI GATE-OVI (END-OF-DAY 2026-06-20)
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ Gate                                       Verdict       Detalj                       │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ LEGO gate (8 invariants)                   8/8 PASS  ✅  192 blokova · 330 events    │
+│ 4-gdds-ultimate-audit                      PERFECT   ✅  4/4 real GDDs                │
+│ Synthetic 308 audit                        308/308   ✅                                │
+│ all-force-chips probe (4 GDD × 9 chips)    36/36     ✅                                │
+│ manual-spin lifecycle (4 GDD)              4/4       ✅                                │
+│ Vendor-neutral source                      0 hits    ✅  (IGT/NetEnt/Pragmatic/SG)    │
+│ Sole-owner emit ownership                  330/330   ✅  (0 ghost owner)              │
+│ Backtick-free template body                192 OK    ✅                                │
+│ Colon/dot event canonicalization (W57.A7)  11 wl     ✅  0 new violations             │
+│ HOOK_EVENTS registry completeness          330 reg   ✅  0 drift                       │
+│ Block test parity                          192/192   ✅                                │
+│ test:fs · test:qa · test:bundle             24+23+    ✅                                │
+│ Origin sync                                ✅         HEAD 2bcbafb · 0 unpushed       │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+## 📜 ŠIPPED DNEVNIK · 2026-06-20 (ovaj dan — 26 commit-eva)
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ DEO 1 — JUTRO: baseline + force-chip ultimate audit                                   │
+├─────┬─────────────────────────────────────────────────────────┬──────────┬───────────┤
+│ ID  │ Wave / akcija                                           │ Commit   │ Verdict    │
+├─────┼─────────────────────────────────────────────────────────┼──────────┼───────────┤
+│ D-9  │ BLOCK × GDD MATRIX  (real Chromium × 184 × 4 = 736)    │ 4133ea0  │ ✅         │
+│ D-9.5│ v3 declared-vs-runtime canonical resolveConfig         │ fbfa1d6  │ ✅         │
+│ D-9  │ refactor isActive signals                              │ f8b7cc9  │ ✅         │
+│ D-10 │ SYMBOL-OVERFLOW scale(1.06) + waysEval buffer-cell    │ 6014cfb  │ ✅         │
+│ D-11 │ WP-TIMING gate wpStart/bwEnter behind reels-stopped    │ 04a7ef4  │ ✅         │
+│ D-12 │ LIGHTNING FORCE per-value ⚡×2/×3/×5/×10                │ 6c59819  │ ✅         │
+│ D-13.1│ ALL-FORCE-CHIPS 36/36 parity (fresh page per chip)    │ e39edab  │ 36/36 PASS │
+├─────┴─────────────────────────────────────────────────────────┴──────────┴───────────┤
+│ DEO 2 — POPODNE: D-14 ultimate audit (5 stage)                                        │
+├─────┬─────────────────────────────────────────────────────────┬──────────┬───────────┤
+│ D-14 │ Faza 1 STATIC 308/308 synthetic audit                  │ de67de1  │ 308/308    │
+│ D-14 │ multiplier baseline win + orb cycle ladder              │ 7d90bf3  │ ✅         │
+│ D-14.1│ PAINT-ONLY MULT (4 HW blokova → setMultMax)            │ d3a59a0  │ ✅         │
+│ D-14.2│ LIGHTNING SYNC MULT 21/21 win-effect                    │ adab3c3  │ 21/21      │
+│ D-14.3│ MANUAL-SPIN AUDIT 4/4 real GDD                          │ 4d2f501  │ 4/4        │
+│ D-14.4│ industry-reference cross-ref (HW frame SUM + reset)    │ e522c65  │ ✅         │
+│ D-14.5│ industry presentation align (chip centering + HUD)     │ ce9bd10  │ ✅         │
+│ D-15 │ LEGO-SANDBOX server (127.0.0.1:5151)                    │ 536f1f5  │ ✅         │
+│ D-15 │ dist sandbox slot HTML (144 force-enabled blokova)     │ 2e73cd4  │ ✅         │
+├─────┴─────────────────────────────────────────────────────────┴──────────┴───────────┤
+│ DEO 3 — KAS POPODNE: D-16 quality sweep                                                │
+├─────┬─────────────────────────────────────────────────────────┬──────────┬───────────┤
+│ D-16 │ LEGO sole-owner + vendor-neutral sweep                  │ 6592373  │ 8/8 LEGO   │
+│       │ (UFP 6 emits vraćeni vlasničkim blokovima)              │          │            │
+├─────┴─────────────────────────────────────────────────────────┴──────────┴───────────┤
+│ DEO 4 — VEČE: D-17 FOUNDRY-FAMILY GAP ROADMAP (8/8 SHIPPED u jednoj sesiji 🎯)        │
+├─────┬─────────────────────────────────────────────────────────┬──────────┬───────────┤
+│ D-17.0│ ROADMAP planning + gap audit upisan u MASTER_TODO       │ f1f0b37  │ 📋         │
+│ D-17.1│ patternWin (stacked-anchor + winning-Wild detector)     │ 776ddf2  │ 70/70 PASS │
+│ D-17.2│ bigSymbolRender2x2 (oversized footprint + UNIT-count)   │ a8dc9d3  │ 58/58 PASS │
+│ D-17.3│ linkedReels (FS reel-link + repeat + unit anchors)      │ 0252bea  │ 59/59 PASS │
+│ D-17.4│ perTriggerVolatilitySet (engine-supplied tier + lock)   │ 0165583  │ 58/58 PASS │
+│ D-17.5│ potSymbolFireball (pot-tier classifier + COLLECT tally) │ 9357370  │ 65/65 PASS │
+│ D-17.6│ grandInterruptionLock (locked celebration + handpay)    │ 6c472bf  │ 63/63 PASS │
+│ D-17.7│ simultaneousFsHoldAndWinPriority (cross-feature arbiter)│ 116468e  │ 49/49 PASS │
+│ D-17.8│ creditAwardConversion (SSOT credit→money conversion)    │ 2bcbafb  │ 65/65 PASS │
+├─────┴─────────────────────────────────────────────────────────┴──────────┴───────────┤
+│ ΣD-17  8 novih blokova · 17 sole-owner events · 4,770 LOC                              │
+│        (3,190 LOC blocks + 1,580 LOC tests) · 487/487 unit tests PASS                  │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Σ DAN  26 commit-eva pushed · 184 → 192 blokova · 313 → 330 events · 0 regression     │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+## 🟢 FOUNDRY-FAMILY GDD §-BY-§ POKRIĆE (svi contracti ispunjeni)
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ GDD §  │ Rule                                  │ Blok koji to pokriva                 │
+├────────┼───────────────────────────────────────┼──────────────────────────────────────┤
+│ §04.5  │ Credit → money conversion contract    │ creditAwardConversion (D-17.8)      │
+│ §04.6  │ Max-win cap stake-invariant            │ creditAwardConversion + winCap base │
+│ §05.3  │ Pattern win evaluation order           │ patternWin (D-17.1)                  │
+│ §06.4  │ "Big" symbol render variants           │ bigSymbolRender2x2 (D-17.2)         │
+│ §07    │ Base game lifecycle                     │ reelEngine + spinControl baseline   │
+│ §07    │ Simultaneous FS + H&W edge case        │ simultaneousFsHoldAndWinPriority    │
+│ §08.2  │ FS spin economy + retrigger             │ freeSpins + progressiveFsRetrigger  │
+│ §08.3  │ FS linked reels (FS-only)               │ linkedReels (D-17.3)                 │
+│ §08.5  │ In-FS H&W trigger path                  │ wildTriggerHoldAndWin baseline      │
+│ §8.5.0 │ Big symbol unit-count basis             │ bigSymbolRender2x2 (D-17.2)         │
+│ §09    │ Hold-and-Win core lifecycle              │ holdAndWin baseline                  │
+│ §09    │ Per-trigger volatility set              │ perTriggerVolatilitySet (D-17.4)    │
+│ §10.1  │ Prize ladder MINI/MINOR/MAJOR/GRAND     │ jackpotLadderRooms + H&W pots       │
+│ §10.2  │ Pot symbols persist + value             │ potSymbolFireball (D-17.5)          │
+│ §10.5  │ GRAND celebration tier                   │ grandInterruptionLock (D-17.6)      │
+│ §10.6  │ GRAND interruption-lock + handpay       │ grandInterruptionLock (D-17.6)      │
+│ §11    │ UX / autoplay / quick-spin              │ autoplay + spinControl + betSelector│
+│ §14    │ Compliance gates                         │ jurisdictionGate + DE/NL/FR/IT/ES/EU│
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+## 📋 OTVORENO (Pre-Math Roadmap · čeka Boki-jevu komandu)
+
+```
+┌──────┬─────────────────────────┬───────┬─────────────────────────────────────────────┐
+│ Prio │ Wave                    │ Atomi │ Opis                                         │
+├──────┼─────────────────────────┼───────┼─────────────────────────────────────────────┤
+│  🥉  │ F6 dev-tools             │   5   │ Inspector probes · debug overlay ·         │
+│      │   (T1–T5)                │       │ HMR diagnostics · perf timeline · trace    │
+│  4   │ F4 mobile/perf           │   6   │ Touch-pace · low-end perf · viewport        │
+│      │   (A5–A10)               │       │ thermal · p99 latency · TTI mobile audit   │
+│  5   │ F7 cert global           │   6   │ Dodatne jurisdikcije + i18n cert globala    │
+│      │   (HX1–HX6)              │       │ preko EU-5 + 4 jezika baseline-a            │
+│  —   │ Math layer               │  —    │ GATED — Boki će kazati "ajmo na math"       │
+└──────┴─────────────────────────┴───────┴─────────────────────────────────────────────┘
+```
+
+---
 
 ---
 
