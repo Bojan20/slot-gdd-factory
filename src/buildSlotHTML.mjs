@@ -762,6 +762,13 @@ import {
   emitBigSymbolRender2x2CSS, emitBigSymbolRender2x2Runtime,
   resolveConfig as resolveBigSymbolRender2x2Config,
 } from './blocks/bigSymbolRender2x2.mjs';
+// D-17.3 — Linked-reels block (Foundry-family gap closure). Marks N
+// consecutive reels as a single linked block; target landings repeat
+// across the block emitting discrete unit anchors. FS-gated by default.
+import {
+  emitLinkedReelsCSS, emitLinkedReelsRuntime,
+  resolveConfig as resolveLinkedReelsConfig,
+} from './blocks/linkedReels.mjs';
 // W58.J-DE — GlüStV (Glücksspielstaatsvertrag 2021) compliance gate.
 // Auto-enabled when jurisdiction === 'DE'. Boot-time only: sets
 // window.__DE_MIN_SPIN_MS__ spin-pace floor (§11(2)) + clears prefixed
@@ -1310,6 +1317,8 @@ ${/* D-17.1 — pattern-win marquee overlay CSS (no-op when model.patternWin.ena
 ${emitPatternWinCSS(resolvePatternWinConfig(model))}
 ${/* D-17.2 — big-symbol oversized footprint CSS (no-op when disabled). */ ''}
 ${emitBigSymbolRender2x2CSS(resolveBigSymbolRender2x2Config(model))}
+${/* D-17.3 — linked-reels fuse CSS (no-op when disabled). */ ''}
+${emitLinkedReelsCSS(resolveLinkedReelsConfig(model))}
 ${/* Wave P8 — hot-reload indicator badge (dev-mode only). */ ''}
 ${emitHotReloadCSS(resolveHotReloadConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
@@ -2005,6 +2014,15 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
        per-unit trigger counts work on small grids. Force chip:
        window.bigSymbolForceAt(symbol, geometry, reel, row). */ ''}
   ${emitBigSymbolRender2x2Runtime(resolveBigSymbolRender2x2Config(model))}
+  ${/* D-17.3 — Linked-reels FS block. Opt-in per GDD via
+       model.linkedReels.enabled (FS-gated by default). Lifecycle:
+       onFsEnter / onFsStart → activate fuse + tag reels (emit
+       onReelsLinked active=true). onSpinResult / onFsSpinResult →
+       scan linked reels for target landings → emit onLinkUnits
+       with discrete unit anchors (same row repeat or full block
+       fill per cfg). onFsEnd → deactivate. Force chip:
+       window.linkedReelsForceSymbol(symbol, sourceReelIdx, row). */ ''}
+  ${emitLinkedReelsRuntime(resolveLinkedReelsConfig(model))}
   ${/* W58.J-DE — GlüStV §11(2) spin pace floor + §6e session state clear.
        Boot-time IIFE; 0-byte side effect when jurisdiction is not DE. */ ''}
   ${emitGermanyComplianceGateRuntime(resolveGermanyComplianceGateConfig(model))}

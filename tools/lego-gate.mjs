@@ -490,6 +490,13 @@ const EXPECTED_EMIT_OWNERS = {
    * grids (5x3 etc.). */
   onBigSymbolMounted:   ['bigSymbolRender2x2.mjs'],
   onBigSymbolUnmounted: ['bigSymbolRender2x2.mjs'],
+  /* D-17.3 — linkedReels block (Foundry-family gap closure). Marks N
+   * consecutive reels as a single linked block; a target symbol landing
+   * on any linked reel is repeated across the block as discrete UNIT
+   * instances (so 1 landing emits N unit anchors). FS-gated by default
+   * (per §08.3 + §8.5.0: center reels link during free spins only). */
+  onReelsLinked: ['linkedReels.mjs'],
+  onLinkUnits:   ['linkedReels.mjs'],
   /* W57.A7 — Canonical camelCase event names for renamed legacy events.
    * Pre-W57: 'anteBet:changed' / 'bonus.buy.requested' (colon/dot form).
    * Both were orphan-emit (no listeners) so rename is safe; legacy form

@@ -1,3 +1,75 @@
+## 🏆 D-17.3 linkedReels · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"kreni"* → default #3 linkedReels (2026-06-20)
+
+**Treći blok iz D-17 roadmap-a. FS-only reel-link + symbol repetition + unit emission.**
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ D-17.3 — linkedReels (FS reel link + cross-reel repeat + discrete unit anchors)       │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Mehanika                                                                              │
+│   • Marks N consecutive reels (cfg.linkedReelIndices) kao single linked block         │
+│   • Target landing na bilo kom linked reel-u → REPETIRA preko celog bloka             │
+│   • Default: same-row repetition (sourceRow → svi linked reels @ sourceRow)           │
+│   • repeatAcrossRows=true → fill celog linked bloka (3 reels × 3 rows = 9 units)      │
+│   • Deduplikacija anchor-a (jedan (reel,row) → max 1 unit) — overlapping landings ne  │
+│     dvostruko broje                                                                   │
+│   • linkMode 'any' (default) fires on bilo koji landing match                          │
+│   • linkMode 'specific' fires SAMO kad SVI cfg.targetSymbols presentni                │
+│                                                                                       │
+│ FS-gated default (Foundry §08.3 + §8.5.0)                                             │
+│   onlyDuringFs=true default — base-game inaktivan. Aktivacija na onFsEnter/onFsStart, │
+│   deaktivacija na onFsEnd. Mod base-game-persistent ide preko onlyDuringFs=false      │
+│   (DOMContentLoaded fallback za boot-time activation).                                │
+│                                                                                       │
+│ GDD knobs (model.linkedReels)                                                         │
+│   enabled · linkedReelIndices (dedup + sort + bounds [0..7])                          │
+│   linkMode 'any' | 'specific' · targetSymbols (string[] · dedup + safe-char strip)    │
+│   onlyDuringFs · repeatAcrossRows                                                      │
+│   fuseGlowDurationMs (200..3000) · themeClass · role · ariaLabelPrefix                │
+│                                                                                       │
+│ Lifecycle                                                                             │
+│   onFsEnter / onFsStart → setActive(true) → emit onReelsLinked active=true             │
+│   onSpinResult / onFsSpinResult → expandUnits(grid) → emit onLinkUnits                 │
+│   onFsEnd → setActive(false) → emit onReelsLinked active=false                         │
+│                                                                                       │
+│ Sole-owner events                                                                     │
+│   onReelsLinked  payload: { reelIndices, active }                                     │
+│   onLinkUnits    payload: { units: [{reel, row, symbol, sourceReel}] }                 │
+│                                                                                       │
+│ Force chip                                                                            │
+│   window.linkedReelsForceSymbol(symbol, sourceReelIdx, row)                            │
+│     → __FORCE_LINK_SYMBOL__ flag + runOneBaseSpin() (real engine path)                 │
+│                                                                                       │
+│ Accessibility                                                                          │
+│   Linked reel cells dobijaju data-linked-reel=true atribut (visual highlight)         │
+│   Fuse overlay role=presentation (decorativni, ne blokira screen-reader)              │
+│   prefers-reduced-motion → no fuse animation                                          │
+│                                                                                       │
+│ Perf budget                                                                            │
+│   O(rows × linkedReels.length) ≈ 9 cell reads na 5×3 / 3 linked reels                 │
+│   CSS-only fuse glow (lrFusePulse keyframe), 0 JS animation loop                       │
+│                                                                                       │
+│ VERIFIKACIJA                                                                          │
+│   linkedReels.test.mjs:           59/59 PASS ✅                                       │
+│     • defaults + fresh arrays · sanitizers (indices dedup+sort, symbols safe-strip)   │
+│     • bounds (fuseGlowDurationMs) · linkMode whitelist                                │
+│     • expandUnits (same-row repeat · fill mode · multi-landing dedup · specific mode  │
+│       · any-symbol mode · single-reel reject · column-per-reel orientation)           │
+│     • expandUnits ignores landings outside linked block                               │
+│     • emitCSS (disabled empty · selectors · duration · a11y guard)                    │
+│     • emitRuntime (HookBus FS/spin wiring · force chip · base-game fallback path)     │
+│     • source vendor-neutral · determinism                                             │
+│   LEGO gate:                       8/8 PASS · 187 blokova · 319 events                │
+│   4-gdds-ultimate-audit:           ✅ ALL GDDS PERFECT                                │
+│                                                                                       │
+│ Σ 186 → 187 blokova · D-17 progress: 3/8 SHIPPED                                     │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-17.2 bigSymbolRender2x2 · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"kreni"* → default #2 bigSymbolRender2x2 (2026-06-20)
@@ -129,7 +201,7 @@ Boki: *"kreni"* → default redosled #1 patternWin (2026-06-20)
 
 ---
 
-## 🟡 D-17 FOUNDRY-FAMILY GAP ROADMAP · 2026-06-20 · 2/8 SHIPPED (čeka Boki za #3)
+## 🟡 D-17 FOUNDRY-FAMILY GAP ROADMAP · 2026-06-20 · 3/8 SHIPPED (čeka Boki za #4)
 
 Boki: *"sta ika od featurea u cash eruption gdd na desktopu sto nemamo u blokove?"* → *"upisi master todo prvo detaljno"* (2026-06-20)
 
@@ -298,9 +370,10 @@ Boki: *"sta ika od featurea u cash eruption gdd na desktopu sto nemamo u blokove
 ### Status
 
 🟢 **#1 patternWin → SHIPPED** (commit 776ddf2)
-🟢 **#2 bigSymbolRender2x2 → SHIPPED** (vidi D-17.2 sekciju iznad)
-🟡 **#3–#8 OPEN** — sledeći u default chain-u: **#3 linkedReels** (zavisi od #2 za unit count na linked reel).
-Ako Boki kaže "kreni" bez broja → krećem #3 po default redosledu.
+🟢 **#2 bigSymbolRender2x2 → SHIPPED** (commit a8dc9d3)
+🟢 **#3 linkedReels → SHIPPED** (vidi D-17.3 sekciju iznad)
+🟡 **#4–#8 OPEN** — sledeći u default chain-u: **#4 perTriggerVolatilitySet** (engine-side weighted draw za H&W trigger).
+Ako Boki kaže "kreni" bez broja → krećem #4 po default redosledu.
 
 ---
 

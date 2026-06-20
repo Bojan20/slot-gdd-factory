@@ -763,6 +763,8 @@ export const HOOK_EVENTS = Object.freeze([
   'onStickyCountChange',  // Owner: stickyMeter.mjs, stickyMeter.mjs
   'onBigSymbolMounted',  // Owner: bigSymbolRender2x2.mjs
   'onBigSymbolUnmounted',  // Owner: bigSymbolRender2x2.mjs
+  'onLinkUnits',  // Owner: linkedReels.mjs
+  'onReelsLinked',  // Owner: linkedReels.mjs
   'onPatternWinTrigger',  // Owner: patternWin.mjs
   'onPatternWinPaid',  // Owner: patternWin.mjs
   'onStormMultiplierStart',  // Owner: stormMultiplierReel.mjs
