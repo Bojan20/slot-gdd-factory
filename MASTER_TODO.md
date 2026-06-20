@@ -1,3 +1,64 @@
+## 🏆 D-8 LINE-PRESENTATION TEMPLATE FIX · 2026-06-20 · ZATVOREN
+
+Boki: *"Win linije prezentracije blokovi ne rade pravilno u svako, gddu. ne prikazuju se pravilno. iskoristi agente i resi taj pronlem da u svakom mogucewm gddu radi taj blok savrseno"* (2026-06-20)
+
+3 paralelna Explorer agenta locirala root cause: svaki eval mode emituje `event.cells` u drugačijoj shape-i, a svaki presenter (paylineOverlay, winLineFlash) implementirao SVOJU shape-check logiku i tiho odbacivao sve što ne prepoznaje. Rezultat: linije se ne crtaju u cluster-pays igrama (Starlight 6×5) jer paylineOverlay ne ume da rezolviše `{r,c,idx}` metadata. Identičan problem u winLineFlash — očekivao `{reel,row}` ali line-pays mu šalju DOM elemente.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│ D-8 — CANONICAL `window.__resolveCellElement` resolver template-wide ✅             │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ NOVI HELPER (src/runtime/globalsContract.mjs):                                       │
+│   window.__resolveCellElement(cellRef) — normalizuje SVAKU shape:                    │
+│     • DOM element (line/ways/pay_anywhere)        → pass-through                     │
+│     • {reel, row}  (winLineFlash legacy)         → RECT_REELS[reel].cellAt(row)     │
+│     • {r, c, idx}  (clusterPaysEval)             → RECT_REELS[c].cellAt(r)          │
+│     • {idx} only   (linear idx fallback)         → SHAPE.reels modulo               │
+│   Pad: fallback querySelector .symbol-cell[data-reel][data-row]                      │
+│                                                                                     │
+│ PRESENTER FIX-EVI:                                                                  │
+│   src/blocks/paylineOverlay.mjs     cellCenterInGrid → resolver-first                │
+│   src/blocks/winLineFlash.mjs       _flashResolve helper + resolver-first            │
+│                                                                                     │
+│ NOVI PROBE (tools/_ultimate-line-presentation-probe.mjs ~250 LOC):                   │
+│   Za SVAKU igru × SVAKU od 4 shape (DOM/cluster/legacy/idx):                         │
+│     • čisti #paylineOverlay svg                                                      │
+│     • forsira drawPaylineOverlay({cells: forsirana shape})                           │
+│     • broji <polyline> elementi                                                      │
+│     • PASS ako >= 1 polyline za svaku shape                                          │
+│   16/16 verifikacija (4 igre × 4 shape) — sve PASS                                   │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ VERIFIKACIJA:                                                                       │
+│   D-8 probe (real Chromium):           4/4 igre PASS · 16/16 shape verifikacija ✅   │
+│   payline-overlay-spot-check 24-fix:   23/24 PASS (1 pre-postojeci variable_reel,   │
+│                                         nije regresija)                              │
+│   Unit tests paylineOverlay:            10/10 PASS                                   │
+│   Unit tests winLineFlash:              21/21 PASS                                   │
+│   Rebuild svih 4 real GDD games:       4/4 PASS (paylineOverlay fix u dist)         │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ ŠTA D-8 DETEKTUJE preko D-1/D-2/D-3:                                                │
+│   • Cluster-pays igre (Starlight 6×5) sad crtaju polyline ✅                        │
+│   • winLineFlash radi i na DOM elementima (ne samo {reel,row})                      │
+│   • Future eval blokovi mogu emitovati BILO KOJU shape — resolver hendluje          │
+│   • 0 game-specific fix u source (LEGO doctrine respected: template-wide fix)       │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Igra po igra pre vs posle:**
+
+```
+┌────────────────────────────┬──────────┬───────────┬──────────┬───────────┐
+│ Igra                       │ Eval mode│ PRE D-8   │ POSLE D-8│ Shape test│
+├────────────────────────────┼──────────┼───────────┼──────────┼───────────┤
+│ gates-of-olympus-1000-gdd  │ pay_any  │ ✅ radilo │ ✅       │ 4/4 PASS  │
+│ huff-n-more-puff-gdd       │ ways     │ ✅ radilo │ ✅       │ 4/4 PASS  │
+│ wrath-of-olympus-gdd       │ lines    │ ✅ radilo │ ✅       │ 4/4 PASS  │
+│ starlight-travellers-gdd   │ cluster  │ ❌ slomljen│ ✅ FIXED│ 4/4 PASS  │
+└────────────────────────────┴──────────┴───────────┴──────────┴───────────┘
+```
+
+---
+
 ## 🏆 D-3 BLOCK STRESS REAL · 2026-06-19 22:50 · ZATVOREN
 
 Boki: *"sve istestiraj i sve noguce popravi ultimativno"* (2026-06-19 22:20)
