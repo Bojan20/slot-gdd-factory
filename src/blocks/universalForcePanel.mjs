@@ -553,22 +553,71 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
        After the spin completes, the player sees: real spin → real win →
        Zeus strike anim → strip-meter halts on chosen value → win recomputed
        (×N) → big-win tier banner reflects the multiplied amount. */
-    if (kind === 'lightning_x2') {
-      try { window.__FORCE_BIG_WIN_TIER__ = 1;  } catch (_) {}
-      try { window.__FORCE_LIGHTNING_MULT__ = 2; } catch (_) {}
+    /* D-14.2 (Boki 2026-06-20): lightning_x* chips moraju da DIGNU
+     * payout multiplier ODMAH pri click-u, ne čekaju onSpinResult.
+     * Pre D-14.2: GDD-ovi koji nemaju model.randomLightningMultiplier
+     * (Huff, WoO) nisu dizali mult — flag je postavljen ali RLM blok
+     * je sluša samo na onSpinResult koji za neke putanje nije fired.
+     *
+     * Fix: helper koji za sve lightning_x{N} chip-ove uradi:
+     *   - postavi __FORCE_LIGHTNING_MULT__ flag (RLM ga čita za prirodan strike)
+     *   - postavi __FORCE_BIG_WIN_TIER__ = 1 (garantuj win baseline)
+     *   - HookBus.setMultMax(N) ODMAH → payout mult dignut sinhrono
+     *   - HookBus.emit('onForceMultiplier', { multX: N }) → listener blokovi
+     *   - paint visual ⚡xN chip na random ćeliji */
+    function _forceLightning(multX) {
+      try { window.__FORCE_BIG_WIN_TIER__ = 1;        } catch (_) {}
+      try { window.__FORCE_LIGHTNING_MULT__ = multX;  } catch (_) {}
+      try {
+        if (window.HookBus && typeof window.HookBus.setMultMax === 'function') {
+          window.HookBus.setMultMax(multX);
+        } else if (window.HookBus && typeof window.HookBus.setMult === 'function') {
+          window.HookBus.setMult(multX);
+        }
+      } catch (_) {}
+      try {
+        if (window.HookBus && typeof window.HookBus.emit === 'function') {
+          window.HookBus.emit('onForceMultiplier', { multX: multX });
+        }
+      } catch (_) {}
+      (function _renderLightningChip(_v) {
+        try {
+          var cells = document.querySelectorAll('.cell');
+          if (!cells.length) return;
+          var target = cells[Math.floor(Math.random() * cells.length)];
+          var rect = target.getBoundingClientRect();
+          var chip = document.createElement('div');
+          chip.className = 'ufp-lightning-chip';
+          chip.textContent = '⚡x' + _v;
+          chip.style.cssText =
+            'position:fixed;' +
+            'left:' + (rect.left + rect.width / 2 - 36) + 'px;' +
+            'top:'  + (rect.top  + rect.height / 2 - 22) + 'px;' +
+            'min-width:72px;height:44px;padding:0 12px;' +
+            'border-radius:22px;' +
+            'background:radial-gradient(circle,rgba(255,235,80,1) 0%,rgba(255,180,20,0.95) 65%,rgba(140,80,0,0.85) 100%);' +
+            'color:#1a0a00;font:900 18px/44px system-ui,-apple-system,sans-serif;' +
+            'text-align:center;letter-spacing:.04em;' +
+            'box-shadow:0 8px 24px rgba(0,0,0,.55),inset 0 -3px 8px rgba(0,0,0,.25),inset 0 2px 4px rgba(255,255,255,.45);' +
+            'pointer-events:none;z-index:97;opacity:0;transform:scale(.4) translateY(0);' +
+            'transition:opacity .25s ease,transform .9s cubic-bezier(.2,1.3,.4,1);';
+          document.body.appendChild(chip);
+          requestAnimationFrame(function() {
+            chip.style.opacity = '1';
+            chip.style.transform = 'scale(1) translateY(-28px)';
+          });
+          setTimeout(function() {
+            chip.style.opacity = '0';
+            chip.style.transform = 'scale(.92) translateY(-56px)';
+          }, 1400);
+          setTimeout(function() { try { chip.remove(); } catch (_) {} }, 2100);
+        } catch (_) {}
+      })(multX);
     }
-    if (kind === 'lightning_x3') {
-      try { window.__FORCE_BIG_WIN_TIER__ = 1;  } catch (_) {}
-      try { window.__FORCE_LIGHTNING_MULT__ = 3; } catch (_) {}
-    }
-    if (kind === 'lightning_x5') {
-      try { window.__FORCE_BIG_WIN_TIER__ = 1;  } catch (_) {}
-      try { window.__FORCE_LIGHTNING_MULT__ = 5; } catch (_) {}
-    }
-    if (kind === 'lightning_x10') {
-      try { window.__FORCE_BIG_WIN_TIER__ = 1;   } catch (_) {}
-      try { window.__FORCE_LIGHTNING_MULT__ = 10; } catch (_) {}
-    }
+    if (kind === 'lightning_x2')  _forceLightning(2);
+    if (kind === 'lightning_x3')  _forceLightning(3);
+    if (kind === 'lightning_x5')  _forceLightning(5);
+    if (kind === 'lightning_x10') _forceLightning(10);
 
     /* 2026-06-11 (Wave AL-2 / 4-GDD audit) — jackpot, multiplier_orb,
      * persistent_multiplier, pay_anywhere were detected by the parser

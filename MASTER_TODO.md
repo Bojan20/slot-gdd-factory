@@ -1,3 +1,42 @@
+## 🏆 D-14.2 LIGHTNING SYNCHRONOUS MULT · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"dalje, sve mora da rdi saverseno"* (2026-06-20)
+
+**Win-effect probe → 21/21 PASS.** Multiplier chip-ovi STVARNO podizu payout, ne samo emit-uju event.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ D-14.2 — Lightning chip-ovi mult RAISE SINHRONO pri click-u                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ROOT CAUSE: GDD-ovi bez model.randomLightningMultiplier (Huff, WoO) imali   │
+│ su lightning_x{N} chip-ove (UFP auto-detect iz model.lightning), ali RLM    │
+│ blok je čitao __FORCE_LIGHTNING_MULT__ flag SAMO na onSpinResult — za neke  │
+│ feature-trigger putanje onSpinResult nije fired, pa mult ostajao na 1.     │
+│                                                                             │
+│ FIX: _forceLightning(N) helper u UFP click handler-u:                       │
+│  • postavlja flag za RLM (prirodan strike path)                            │
+│  • postavlja __FORCE_BIG_WIN_TIER__=1 (garantuj win baseline)              │
+│  • ZOVE HookBus.setMultMax(N) ODMAH → payout mult dignut sinhrono           │
+│  • emit-uje onForceMultiplier { multX: N }                                  │
+│  • paint visual ⚡xN chip na random ćeliji                                  │
+│                                                                             │
+│ setMultMax (ne setMult) sprecava drift sa RLM blok-om koji takođe može     │
+│ da pomnozi prevMult × multX.                                                │
+│                                                                             │
+│ NOVI PROBE: tools/_ultimate-multiplier-win-effect-probe.mjs                 │
+│  • Per chip: čita HookBus.getMult() pre+posle clicka                       │
+│  • Verdict PASS = mult > 1 posle settle window-a                           │
+│  • Plus opciono paint check (informativno, ne gating)                      │
+│                                                                             │
+│ VERIFIKACIJA:                                                               │
+│  • D-14.2 win-effect probe:        21/21 PASS (4/4 igre)                   │
+│  • D-13 all-force-chips probe:    36/36 PASS (4/4 igre) očuvano            │
+│  • universalForcePanel.test.mjs:  39/39 PASS                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-14.1 PAINT-ONLY MULTIPLIER FIX · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"dalje"* (po inventory tabeli koja je pokazala 4 paint-only HW + ladder multiplier bloka)
