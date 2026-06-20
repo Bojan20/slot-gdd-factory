@@ -477,6 +477,12 @@ const EXPECTED_EMIT_OWNERS = {
    * spinResult.stormMultiplierTarget. Closes W49.T5.B GDD corpus RE gap. */
   onStormMultiplierStart: ['stormMultiplierReel.mjs'],
   onStormMultiplierStop:  ['stormMultiplierReel.mjs'],
+  /* D-17.1 — patternWin block (Foundry-family gap closure). Detects
+   * anchor-stack + winning-Wild template and signals a flat pattern
+   * multiplier on total bet. Replace-not-stack semantics via
+   * onPatternWinTrigger.replaceLineTally + optional setMultMax(payX). */
+  onPatternWinTrigger: ['patternWin.mjs'],
+  onPatternWinPaid:    ['patternWin.mjs'],
   /* W57.A7 — Canonical camelCase event names for renamed legacy events.
    * Pre-W57: 'anteBet:changed' / 'bonus.buy.requested' (colon/dot form).
    * Both were orphan-emit (no listeners) so rename is safe; legacy form

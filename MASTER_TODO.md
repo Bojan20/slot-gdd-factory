@@ -1,4 +1,67 @@
-## 🟡 D-17 FOUNDRY-FAMILY GAP ROADMAP · 2026-06-20 · OPEN (čeka Boki prioritet)
+## 🏆 D-17.1 patternWin · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"kreni"* → default redosled #1 patternWin (2026-06-20)
+
+**Prvi blok iz D-17 Foundry-family gap roadmap-a. Vendor-neutral pattern-win detektor + celebracija.**
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ D-17.1 — patternWin (stacked-anchor + winning-Wild template detector)                 │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Mehanika                                                                              │
+│   • Skenira spinResult.grid za anchor-stack na cfg.anchorReel +                       │
+│     winning-Wild presence na svakom cfg.winReels indeksu                              │
+│   • Detekcija u 2 orijentacije (row-major rows×reels i column-per-reel)               │
+│   • Hit emit-uje onPatternWinTrigger {anchor, winReels, payX, replaceLineTally}       │
+│   • postSpin → renderuje celebracijski marquee + emit onPatternWinPaid                │
+│   • Math-blind — payX iz spinResult.patternWinPayX (engine-supplied), fallback        │
+│     na cfg.payX (default 1000× total bet)                                             │
+│   • Replace-not-stack semantics: kada replaceLineTally=true → setMultMax(payX)        │
+│     da pattern award supersede-uje line tally (per GDD §05.3 + §07)                   │
+│                                                                                       │
+│ GDD knobs (model.patternWin)                                                          │
+│   enabled · anchorReel (0..7) · anchorSymbol · anchorStackHeight (1..8)              │
+│   winReels (deduped, bounds-checked) · wildSymbol · payX (1..100k)                   │
+│   replaceLineTally · celebrationLabel · celebrationDurationMs (400..6000)            │
+│   themeClass · role · ariaLabelPrefix                                                 │
+│                                                                                       │
+│ Lifecycle                                                                             │
+│   onSpinResult / onFsSpinResult → detect → trigger emit + setMultMax                  │
+│   postSpin → show celebration + paid emit                                              │
+│   onFsEnd  → clear pending                                                            │
+│                                                                                       │
+│ Sole-owner events                                                                     │
+│   onPatternWinTrigger    payload: { anchor, winReels, payX, replaceLineTally }       │
+│   onPatternWinPaid       payload: { awardCredits, payX, source }                     │
+│                                                                                       │
+│ Force chip (per rule_force_buttons_real_spin)                                         │
+│   window.patternWinForceAt() → __FORCE_PATTERN_WIN__ flag + runOneBaseSpin()         │
+│                                                                                       │
+│ Accessibility                                                                          │
+│   role=status + aria-live=polite na .pw-overlay → screen-reader anons "Pattern win    │
+│   1000x total bet"; prefers-reduced-motion → static flash (no zoom/shake)             │
+│                                                                                       │
+│ Perf budget                                                                            │
+│   Detekcija O(rows × winReels.length) ≈ 12 cell reads na default 5×3 + 4 win reels   │
+│   0 alokacija u hot path-u · CSS-only animacija · overlay element reuse               │
+│                                                                                       │
+│ VERIFIKACIJA                                                                          │
+│   patternWin.test.mjs:                70/70 PASS ✅                                   │
+│     • defaults · resolveConfig sanitizers · bounds (anchorReel/stackHeight/payX)     │
+│     • detectPattern (row-major hit/miss · col-per-reel · substring · short stack)    │
+│     • emitCSS (disabled empty · enabled markers · duration honoring · a11y guard)    │
+│     • emitRuntime (HookBus wiring · force chip · setMultMax · a11y · determinism)    │
+│     • source vendor-neutral (4 banned phrases scanned)                                │
+│   LEGO gate:                          8/8 PASS · 185 blokova · 315 events             │
+│   4-gdds-ultimate-audit:              ✅ ALL GDDS PERFECT                             │
+│                                                                                       │
+│ Σ 184 → 185 blokova · D-17 progress: 1/8 SHIPPED                                     │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🟡 D-17 FOUNDRY-FAMILY GAP ROADMAP · 2026-06-20 · 1/8 SHIPPED (čeka Boki za #2)
 
 Boki: *"sta ika od featurea u cash eruption gdd na desktopu sto nemamo u blokove?"* → *"upisi master todo prvo detaljno"* (2026-06-20)
 
@@ -166,8 +229,9 @@ Boki: *"sta ika od featurea u cash eruption gdd na desktopu sto nemamo u blokove
 
 ### Status
 
-🟡 **OPEN** — Boki bira redosled. Default predlog: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 (dependency-safe).
-Ako Boki kaže "kreni" bez broja → krećem #1 patternWin po default redosledu.
+🟢 **#1 patternWin → SHIPPED** (commit pending, vidi D-17.1 sekciju iznad)
+🟡 **#2–#8 OPEN** — sledeći u default chain-u: **#2 bigSymbolRender2x2** (foundation za #3 + #5).
+Ako Boki kaže "kreni" bez broja → krećem #2 po default redosledu.
 
 ---
 

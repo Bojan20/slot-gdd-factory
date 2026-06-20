@@ -745,6 +745,15 @@ import {
   emitStormMultiplierReelCSS, emitStormMultiplierReelRuntime,
   resolveConfig as resolveStormMultiplierReelConfig,
 } from './blocks/stormMultiplierReel.mjs';
+// D-17.1 — Pattern-Win detector (Foundry-family gap closure). Detects
+// anchor-stack on a configured reel + winning-Wild presence on N other
+// reels and signals a flat pattern multiplier on total bet. Opt-in per
+// GDD via model.patternWin.enabled. Math-blind: emits canonical events
+// and reconciles via setMultMax when GDD asks for replace-not-stack.
+import {
+  emitPatternWinCSS, emitPatternWinRuntime,
+  resolveConfig as resolvePatternWinConfig,
+} from './blocks/patternWin.mjs';
 // W58.J-DE — GlüStV (Glücksspielstaatsvertrag 2021) compliance gate.
 // Auto-enabled when jurisdiction === 'DE'. Boot-time only: sets
 // window.__DE_MIN_SPIN_MS__ spin-pace floor (§11(2)) + clears prefixed
@@ -1289,6 +1298,8 @@ ${/* Wave B64 — Symbol upgrade flash + morph keyframes (decorates .cell). */ '
 ${emitSymbolUpgradeCSS(resolveSymbolUpgradeConfig(model))}
 ${/* W56 — aux multiplier reel CSS (no-op when model.stormMultiplierReel.enabled = false). */ ''}
 ${emitStormMultiplierReelCSS(resolveStormMultiplierReelConfig(model))}
+${/* D-17.1 — pattern-win marquee overlay CSS (no-op when model.patternWin.enabled = false). */ ''}
+${emitPatternWinCSS(resolvePatternWinConfig(model))}
 ${/* Wave P8 — hot-reload indicator badge (dev-mode only). */ ''}
 ${emitHotReloadCSS(resolveHotReloadConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
@@ -1969,6 +1980,13 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
        → instant snap. Math-blind (consumes spinResult.stormMultiplierTarget
        set by engine; force chip flag override consumed once and cleared). */ ''}
   ${emitStormMultiplierReelRuntime(resolveStormMultiplierReelConfig(model))}
+  ${/* D-17.1 — Pattern-Win detector + celebration. Opt-in per GDD via
+       model.patternWin.enabled. Lifecycle: onSpinResult / onFsSpinResult
+       → detect anchor stack + winning Wilds → emit onPatternWinTrigger
+       + optional setMultMax(payX). postSpin → render celebration + emit
+       onPatternWinPaid. Math-blind (engine-supplied patternWinPayX wins
+       over cfg fallback). Force chip: window.patternWinForceAt(). */ ''}
+  ${emitPatternWinRuntime(resolvePatternWinConfig(model))}
   ${/* W58.J-DE — GlüStV §11(2) spin pace floor + §6e session state clear.
        Boot-time IIFE; 0-byte side effect when jurisdiction is not DE. */ ''}
   ${emitGermanyComplianceGateRuntime(resolveGermanyComplianceGateConfig(model))}
