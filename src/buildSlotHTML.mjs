@@ -769,6 +769,14 @@ import {
   emitLinkedReelsCSS, emitLinkedReelsRuntime,
   resolveConfig as resolveLinkedReelsConfig,
 } from './blocks/linkedReels.mjs';
+// D-17.4 — Per-trigger volatility set (Foundry-family gap closure).
+// Consumes engine-drawn tier label at hold-and-win trigger, locks it
+// for the feature duration, exposes via body[data-volatility-tier] hook.
+// Math-blind by contract; engine owns the weighted draw.
+import {
+  emitPerTriggerVolatilitySetCSS, emitPerTriggerVolatilitySetRuntime,
+  resolveConfig as resolvePerTriggerVolatilitySetConfig,
+} from './blocks/perTriggerVolatilitySet.mjs';
 // W58.J-DE — GlüStV (Glücksspielstaatsvertrag 2021) compliance gate.
 // Auto-enabled when jurisdiction === 'DE'. Boot-time only: sets
 // window.__DE_MIN_SPIN_MS__ spin-pace floor (§11(2)) + clears prefixed
@@ -1319,6 +1327,8 @@ ${/* D-17.2 — big-symbol oversized footprint CSS (no-op when disabled). */ ''}
 ${emitBigSymbolRender2x2CSS(resolveBigSymbolRender2x2Config(model))}
 ${/* D-17.3 — linked-reels fuse CSS (no-op when disabled). */ ''}
 ${emitLinkedReelsCSS(resolveLinkedReelsConfig(model))}
+${/* D-17.4 — per-trigger volatility set hook CSS (no-op when disabled). */ ''}
+${emitPerTriggerVolatilitySetCSS(resolvePerTriggerVolatilitySetConfig(model))}
 ${/* Wave P8 — hot-reload indicator badge (dev-mode only). */ ''}
 ${emitHotReloadCSS(resolveHotReloadConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
@@ -2023,6 +2033,16 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
        fill per cfg). onFsEnd → deactivate. Force chip:
        window.linkedReelsForceSymbol(symbol, sourceReelIdx, row). */ ''}
   ${emitLinkedReelsRuntime(resolveLinkedReelsConfig(model))}
+  ${/* D-17.4 — Per-trigger volatility set lock. Opt-in per GDD via
+       model.perTriggerVolatilitySet.enabled. Lifecycle:
+       onHoldAndWinTrigger → consume payload.volatilityTier (or force
+       flag) → normalize via tier whitelist + synonyms → lock + tag
+       body[data-volatility-tier] → emit onVolatilitySetLocked.
+       onHoldAndWinEnd / onFsEnd → expire + clear. Force chip:
+       window.perTriggerVolatilitySetForce(tier). Math-blind by
+       contract: engine owns the weighted draw, block only locks +
+       exposes for presentation hooks. */ ''}
+  ${emitPerTriggerVolatilitySetRuntime(resolvePerTriggerVolatilitySetConfig(model))}
   ${/* W58.J-DE — GlüStV §11(2) spin pace floor + §6e session state clear.
        Boot-time IIFE; 0-byte side effect when jurisdiction is not DE. */ ''}
   ${emitGermanyComplianceGateRuntime(resolveGermanyComplianceGateConfig(model))}

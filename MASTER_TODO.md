@@ -1,3 +1,78 @@
+## 🏆 D-17.4 perTriggerVolatilitySet · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"kreni"* → default #4 perTriggerVolatilitySet (2026-06-20)
+
+**Četvrti blok iz D-17 roadmap-a. Engine-driven volatility tier classifier wrapper + lock semantika.**
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ D-17.4 — perTriggerVolatilitySet (engine-supplied tier consumer + feature-duration   │
+│         lock)                                                                         │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Mehanika                                                                              │
+│   • Math-blind wrapper: engine pravi draw, blok SAMO konzumira label                  │
+│   • Lock-on-trigger semantika: prvi onHoldAndWinTrigger payload.volatilityTier        │
+│     ulocan za trajanje feature-a; re-roll requests IGNORISANI                         │
+│   • Normalizacija: case-insensitive direct match + sinonim mapa za standard           │
+│     tier-ove (Low/Med/High + lo/medium/mid/hi/h/l/m) — custom tier-ovi rade direct    │
+│   • Body[data-volatility-tier] tag — hook za downstream presentation blokove          │
+│   • Expire na onHoldAndWinEnd ILI onFsEnd → clear locked state + emit expired         │
+│                                                                                       │
+│ Distinkcija od volatilitySelector                                                     │
+│   volatilitySelector = PLAYER UI choice (session tier)                                │
+│   perTriggerVolatilitySet = ENGINE WEIGHTED DRAW (per-trigger tier)                   │
+│   Dva odvojena loop-a; volatilitySelector može pre-bias-ovati engine draw via         │
+│   GDD knob, ali block-ovi se ne diraju runtime.                                       │
+│                                                                                       │
+│ GDD knobs (model.perTriggerVolatilitySet)                                             │
+│   enabled · tiers (string[] · dedup + safe-strip) · defaultTier (auto-fallback        │
+│   na middle tier ako invalid) · weights (Object<tier, number 0..1000> · display-only) │
+│   lockOnTrigger · showStatusText · themeClass · role · ariaLabelPrefix                │
+│                                                                                       │
+│ Lifecycle                                                                             │
+│   onHoldAndWinTrigger → consume payload.volatilityTier ili force flag                 │
+│     → normalize → lock → tag body → emit onVolatilitySetLocked                        │
+│   onHoldAndWinEnd / onFsEnd → expire + clear + emit onVolatilitySetExpired             │
+│                                                                                       │
+│ Sole-owner events                                                                     │
+│   onVolatilitySetLocked   payload: { tier, weights, source }                         │
+│   onVolatilitySetExpired  payload: { tier, reason }                                   │
+│                                                                                       │
+│ Force chip                                                                            │
+│   window.perTriggerVolatilitySetForce(tier) → __FORCE_VOLATILITY_TIER__ flag +        │
+│     runOneBaseSpin() (real engine path)                                               │
+│   window.perTriggerVolatilitySetGet() — getter za current locked tier                  │
+│                                                                                       │
+│ Accessibility                                                                          │
+│   role=status + aria-live=polite hidden status text "Volatility set X locked"         │
+│   Visually-hidden (clip: rect 0 0 0 0) — ne lomi layout                                │
+│   prefers-reduced-motion → no ambient intensity transition                            │
+│                                                                                       │
+│ Perf budget                                                                            │
+│   0 JS per frame · pure event-driven state machine (3 transitions: idle→lock→expire) │
+│   1 hidden DOM element + body attribute tag                                           │
+│                                                                                       │
+│ VERIFIKACIJA                                                                          │
+│   perTriggerVolatilitySet.test.mjs:    58/58 PASS ✅                                  │
+│     • defaults + fresh tiers array · resolveConfig sanitizers                         │
+│     • defaultTier whitelist + auto-fallback (middle tier)                              │
+│     • weights sanitization (bounds 0..1000, all-bad → null)                            │
+│     • tiers dedupe + safe-strip                                                        │
+│     • normalizeTier: direct match (case-insens) + synonyms (lo/medium/mid/hi/h/l/m)   │
+│     • normalizeTier null cases (empty/non-string/no-allowed-list/unknown)              │
+│     • normalizeTier custom tiers ignore Low/Med/High synonym map                      │
+│     • emitCSS (disabled empty · .ptv-status · data-volatility-tier hook · a11y guard) │
+│     • emitRuntime (HookBus wiring · 2 emits · force chip · getter · body tag · a11y)  │
+│     • source vendor-neutral · determinism                                             │
+│   LEGO gate:                            8/8 PASS · 188 blokova · 321 events           │
+│   4-gdds-ultimate-audit:                ✅ ALL GDDS PERFECT                           │
+│                                                                                       │
+│ Σ 187 → 188 blokova · D-17 progress: 4/8 SHIPPED (50%)                                │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-17.3 linkedReels · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"kreni"* → default #3 linkedReels (2026-06-20)
@@ -201,7 +276,7 @@ Boki: *"kreni"* → default redosled #1 patternWin (2026-06-20)
 
 ---
 
-## 🟡 D-17 FOUNDRY-FAMILY GAP ROADMAP · 2026-06-20 · 3/8 SHIPPED (čeka Boki za #4)
+## 🟡 D-17 FOUNDRY-FAMILY GAP ROADMAP · 2026-06-20 · 4/8 SHIPPED (čeka Boki za #5)
 
 Boki: *"sta ika od featurea u cash eruption gdd na desktopu sto nemamo u blokove?"* → *"upisi master todo prvo detaljno"* (2026-06-20)
 
@@ -371,9 +446,10 @@ Boki: *"sta ika od featurea u cash eruption gdd na desktopu sto nemamo u blokove
 
 🟢 **#1 patternWin → SHIPPED** (commit 776ddf2)
 🟢 **#2 bigSymbolRender2x2 → SHIPPED** (commit a8dc9d3)
-🟢 **#3 linkedReels → SHIPPED** (vidi D-17.3 sekciju iznad)
-🟡 **#4–#8 OPEN** — sledeći u default chain-u: **#4 perTriggerVolatilitySet** (engine-side weighted draw za H&W trigger).
-Ako Boki kaže "kreni" bez broja → krećem #4 po default redosledu.
+🟢 **#3 linkedReels → SHIPPED** (commit 0252bea)
+🟢 **#4 perTriggerVolatilitySet → SHIPPED** (vidi D-17.4 sekciju iznad)
+🟡 **#5–#8 OPEN** — sledeći u default chain-u: **#5 potSymbolFireball** (pot symbols persist kroz respins kao value-units).
+Ako Boki kaže "kreni" bez broja → krećem #5 po default redosledu.
 
 ---
 

@@ -497,6 +497,14 @@ const EXPECTED_EMIT_OWNERS = {
    * (per §08.3 + §8.5.0: center reels link during free spins only). */
   onReelsLinked: ['linkedReels.mjs'],
   onLinkUnits:   ['linkedReels.mjs'],
+  /* D-17.4 — perTriggerVolatilitySet (Foundry-family gap closure).
+   * Engine-driven classifier wrapper for per-trigger weighted "set"
+   * draws (Low/Med/High). Block consumes the drawn tier from the
+   * trigger payload, locks it for feature duration (no mid-feature
+   * re-roll), exposes via body[data-volatility-tier] for downstream
+   * presentation blocks. Math-blind by contract. */
+  onVolatilitySetLocked:  ['perTriggerVolatilitySet.mjs'],
+  onVolatilitySetExpired: ['perTriggerVolatilitySet.mjs'],
   /* W57.A7 — Canonical camelCase event names for renamed legacy events.
    * Pre-W57: 'anteBet:changed' / 'bonus.buy.requested' (colon/dot form).
    * Both were orphan-emit (no listeners) so rename is safe; legacy form
