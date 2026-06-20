@@ -754,6 +754,14 @@ import {
   emitPatternWinCSS, emitPatternWinRuntime,
   resolveConfig as resolvePatternWinConfig,
 } from './blocks/patternWin.mjs';
+// D-17.2 — Big-Symbol render (2x2 / 3-high / fullReel) with UNIT-count
+// gate (Foundry-family gap closure). Opt-in per GDD via
+// model.bigSymbolRender2x2.enabled. Tags top-left cell as canonical
+// UNIT so trigger thresholds counted per-unit work on small grids.
+import {
+  emitBigSymbolRender2x2CSS, emitBigSymbolRender2x2Runtime,
+  resolveConfig as resolveBigSymbolRender2x2Config,
+} from './blocks/bigSymbolRender2x2.mjs';
 // W58.J-DE — GlüStV (Glücksspielstaatsvertrag 2021) compliance gate.
 // Auto-enabled when jurisdiction === 'DE'. Boot-time only: sets
 // window.__DE_MIN_SPIN_MS__ spin-pace floor (§11(2)) + clears prefixed
@@ -1300,6 +1308,8 @@ ${/* W56 — aux multiplier reel CSS (no-op when model.stormMultiplierReel.enabl
 ${emitStormMultiplierReelCSS(resolveStormMultiplierReelConfig(model))}
 ${/* D-17.1 — pattern-win marquee overlay CSS (no-op when model.patternWin.enabled = false). */ ''}
 ${emitPatternWinCSS(resolvePatternWinConfig(model))}
+${/* D-17.2 — big-symbol oversized footprint CSS (no-op when disabled). */ ''}
+${emitBigSymbolRender2x2CSS(resolveBigSymbolRender2x2Config(model))}
 ${/* Wave P8 — hot-reload indicator badge (dev-mode only). */ ''}
 ${emitHotReloadCSS(resolveHotReloadConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
@@ -1987,6 +1997,14 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
        onPatternWinPaid. Math-blind (engine-supplied patternWinPayX wins
        over cfg fallback). Force chip: window.patternWinForceAt(). */ ''}
   ${emitPatternWinRuntime(resolvePatternWinConfig(model))}
+  ${/* D-17.2 — Big-Symbol render + UNIT-count gate. Opt-in per GDD via
+       model.bigSymbolRender2x2.enabled. Lifecycle: onSpinResult / FS /
+       Tumble → unmount previous + detect footprints (engine tag or
+       symbol-kind match) → mount + emit onBigSymbolMounted per unit.
+       Top-left of each footprint is the canonical UNIT cell so
+       per-unit trigger counts work on small grids. Force chip:
+       window.bigSymbolForceAt(symbol, geometry, reel, row). */ ''}
+  ${emitBigSymbolRender2x2Runtime(resolveBigSymbolRender2x2Config(model))}
   ${/* W58.J-DE — GlüStV §11(2) spin pace floor + §6e session state clear.
        Boot-time IIFE; 0-byte side effect when jurisdiction is not DE. */ ''}
   ${emitGermanyComplianceGateRuntime(resolveGermanyComplianceGateConfig(model))}

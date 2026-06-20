@@ -483,6 +483,13 @@ const EXPECTED_EMIT_OWNERS = {
    * onPatternWinTrigger.replaceLineTally + optional setMultMax(payX). */
   onPatternWinTrigger: ['patternWin.mjs'],
   onPatternWinPaid:    ['patternWin.mjs'],
+  /* D-17.2 — bigSymbolRender2x2 (Foundry-family gap closure). Oversized
+   * symbol footprint renderer + UNIT-count gate. Anchors the canonical
+   * UNIT cell at the top-left of each 2x2 / 3-high / fullReel footprint
+   * so trigger thresholds counted-per-unit (not per-cell) work on small
+   * grids (5x3 etc.). */
+  onBigSymbolMounted:   ['bigSymbolRender2x2.mjs'],
+  onBigSymbolUnmounted: ['bigSymbolRender2x2.mjs'],
   /* W57.A7 — Canonical camelCase event names for renamed legacy events.
    * Pre-W57: 'anteBet:changed' / 'bonus.buy.requested' (colon/dot form).
    * Both were orphan-emit (no listeners) so rename is safe; legacy form

@@ -1,3 +1,71 @@
+## 🏆 D-17.2 bigSymbolRender2x2 · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"kreni"* → default #2 bigSymbolRender2x2 (2026-06-20)
+
+**Drugi blok iz D-17 roadmap-a. Foundation za #3 linkedReels + #5 potSymbolFireball.**
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ D-17.2 — bigSymbolRender2x2 (oversized footprint + UNIT-count gate)                   │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Mehanika                                                                              │
+│   • 3 geometrije: '2x2' · '3h' (3-high) · 'fullReel'                                  │
+│   • Detekcija u 2 prolazima: (a) engine-tagged cells sa __big__: {symbol, geometry}   │
+│     (b) literal symbol-kind match (cell text === cfg kind.symbol)                     │
+│   • Top-left cell svakog footprint-a postaje canonical UNIT (anchor)                  │
+│   • Companion ćelije markirane occupied → skipped (no double-count)                   │
+│   • countUnits(grid, cfg) helper exposed (test-only) + window.bigSymbolCountUnits     │
+│                                                                                       │
+│ Unit-vs-cell semantika (Foundry §06.4 / §8.5.0)                                       │
+│   "Threshold counted PER BIG SYMBOL INSTANCE, never per occupied cell" — neophodno    │
+│   da 9+ Big-symbol threshold radi na malim grid-ovima (5×3 = 15 ćelija; 9×4 = 36     │
+│   ne staje). countMode: 'units' (default) ili 'cells' (legacy).                      │
+│                                                                                       │
+│ GDD knobs (model.bigSymbolRender2x2)                                                  │
+│   enabled · bigSymbolKinds [{symbol, geometry}] dedup + bounds-check                  │
+│   countMode 'units' | 'cells'                                                         │
+│   mountTransitionMs (0..1200) · zIndex (1..9999)                                      │
+│   themeClass · role · ariaLabelPrefix                                                 │
+│                                                                                       │
+│ Lifecycle                                                                             │
+│   preSpin / onFsEnd → unmount svih prethodnih                                         │
+│   onSpinResult / onFsSpinResult / onTumbleStep → detect → mount + emit per unit       │
+│                                                                                       │
+│ Sole-owner events                                                                     │
+│   onBigSymbolMounted    payload: { symbol, geometry, anchorReel, anchorRow, footprint }│
+│   onBigSymbolUnmounted  payload: { symbol, geometry, anchorReel, anchorRow }          │
+│                                                                                       │
+│ Force chip                                                                            │
+│   window.bigSymbolForceAt(symbol, geometry, reel, row) → __FORCE_BIG_SYMBOL__ flag    │
+│     + runOneBaseSpin() (real engine path)                                             │
+│                                                                                       │
+│ Accessibility                                                                          │
+│   role=img + aria-label "Big <symbol>, 2 by 2" / "3 high" / "full reel"                │
+│   prefers-reduced-motion → no transition                                              │
+│   pointer-events: none (ne blokira reel click)                                        │
+│                                                                                       │
+│ Perf budget                                                                            │
+│   O(rows × reels) scan ≈ 30 reads na 5×6 grid · ≤ 12 footprint descriptora po spin   │
+│   CSS transform + grid-area span · 0 JS animation loop                                │
+│                                                                                       │
+│ VERIFIKACIJA                                                                          │
+│   bigSymbolRender2x2.test.mjs:    58/58 PASS ✅                                       │
+│     • defaults + fresh array · sanitizers (kinds dedup, geo whitelist, bad drop)      │
+│     • countMode 'cells' vs 'units' · mountTransitionMs/zIndex bounds                  │
+│     • findBigSymbolFootprints (single 2×2 · multiple 2×2 · 3-high · fullReel ·       │
+│       engine-tagged · edge-of-grid bounds-check · empty kinds)                         │
+│     • emitCSS (disabled empty · selectors · geometry rules · a11y guard)              │
+│     • emitRuntime (HookBus wiring · force chip · count helper · a11y · determinism)   │
+│     • source vendor-neutral (4 banned-phrase scan)                                    │
+│   LEGO gate:                      8/8 PASS · 186 blokova · 317 events                 │
+│   4-gdds-ultimate-audit:          ✅ ALL GDDS PERFECT                                 │
+│                                                                                       │
+│ Σ 185 → 186 blokova · D-17 progress: 2/8 SHIPPED                                     │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-17.1 patternWin · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"kreni"* → default redosled #1 patternWin (2026-06-20)
@@ -61,7 +129,7 @@ Boki: *"kreni"* → default redosled #1 patternWin (2026-06-20)
 
 ---
 
-## 🟡 D-17 FOUNDRY-FAMILY GAP ROADMAP · 2026-06-20 · 1/8 SHIPPED (čeka Boki za #2)
+## 🟡 D-17 FOUNDRY-FAMILY GAP ROADMAP · 2026-06-20 · 2/8 SHIPPED (čeka Boki za #3)
 
 Boki: *"sta ika od featurea u cash eruption gdd na desktopu sto nemamo u blokove?"* → *"upisi master todo prvo detaljno"* (2026-06-20)
 
@@ -229,9 +297,10 @@ Boki: *"sta ika od featurea u cash eruption gdd na desktopu sto nemamo u blokove
 
 ### Status
 
-🟢 **#1 patternWin → SHIPPED** (commit pending, vidi D-17.1 sekciju iznad)
-🟡 **#2–#8 OPEN** — sledeći u default chain-u: **#2 bigSymbolRender2x2** (foundation za #3 + #5).
-Ako Boki kaže "kreni" bez broja → krećem #2 po default redosledu.
+🟢 **#1 patternWin → SHIPPED** (commit 776ddf2)
+🟢 **#2 bigSymbolRender2x2 → SHIPPED** (vidi D-17.2 sekciju iznad)
+🟡 **#3–#8 OPEN** — sledeći u default chain-u: **#3 linkedReels** (zavisi od #2 za unit count na linked reel).
+Ako Boki kaže "kreni" bez broja → krećem #3 po default redosledu.
 
 ---
 

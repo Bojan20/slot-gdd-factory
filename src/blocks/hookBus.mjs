@@ -761,6 +761,8 @@ export const HOOK_EVENTS = Object.freeze([
   'onStackCollapseEnd',  // Owner: symbolStackCollapse.mjs
   'onStackCollapseStart',  // Owner: symbolStackCollapse.mjs
   'onStickyCountChange',  // Owner: stickyMeter.mjs, stickyMeter.mjs
+  'onBigSymbolMounted',  // Owner: bigSymbolRender2x2.mjs
+  'onBigSymbolUnmounted',  // Owner: bigSymbolRender2x2.mjs
   'onPatternWinTrigger',  // Owner: patternWin.mjs
   'onPatternWinPaid',  // Owner: patternWin.mjs
   'onStormMultiplierStart',  // Owner: stormMultiplierReel.mjs
