@@ -166,8 +166,24 @@ if (typeof window !== 'undefined') {
   window.resetBonusMultiplier = () => { BONUS_MULTIPLIER = 0; window.BONUS_MULTIPLIER = 0; };
 }
 
-/* Weighted-random pick from MULTIPLIER_ORB_DIST. */
+/* Weighted-random pick from MULTIPLIER_ORB_DIST. D-14 (Boki 2026-06-20):
+ * dev force chip support — when window.__FORCE_ORB_VALUE__ is set,
+ * bypass weighted pick and use the chosen value deterministically. The
+ * UFP multiplier_orb chip cycles through olympus-style [2, 5, 10, 25,
+ * 50, 100, 250, 500] so QA can verify each value renders + payout
+ * recomputes. Flag is one-shot — cleared after consume on first
+ * pickOrbValue() call so the next non-forced spin reverts to natural
+ * RNG. */
 function pickOrbValue() {
+  try {
+    if (typeof window !== 'undefined') {
+      var forced = window.__FORCE_ORB_VALUE__;
+      if (Number.isFinite(forced) && forced > 0) {
+        try { window.__FORCE_ORB_VALUE__ = null; } catch (_) {}
+        return forced;
+      }
+    }
+  } catch (_) {}
   const total = MULTIPLIER_ORB_DIST.reduce((a, e) => a + e.weight, 0);
   let r = ORB_RNG() * total;
   for (const e of MULTIPLIER_ORB_DIST) {

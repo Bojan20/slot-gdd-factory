@@ -585,41 +585,43 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
       try { window.__FORCE_JACKPOT__ = true; } catch (_) {}
     }
     if (kind === 'multiplier_orb') {
-      /* Plant the next spin to land a high-value orb. multiplierOrb
-       * block (src/blocks/multiplierOrb.mjs) reads window.BONUS_MULTIPLIER
-       * + window.annotateOrbs() to materialise the orb on a random cell.
+      /* D-14 (Boki 2026-06-20): multiplier_orb chip moraju da daju
+       * pravi vizuelni napredak + garantovan win na koji se primenjuje.
        *
-       * Three-prong force so the audit + visual both light up:
-       *   1. MULT_ORB_STATE (defensive, in case any future block reads it)
+       * Cycle ladder [2, 5, 10, 25, 50, 100, 250, 500] = olympus-style
+       * orb distribution. Force baseline win (__FORCE_BIG_WIN_TIER__=1)
+       * tako da multiplier *ima na šta da se primeni* — bez win-a
+       * Boki ne vidi efekat na payout-u, samo orb chip flash.
+       *
+       * Tri-prong force za audit + visual:
+       *   1. MULT_ORB_STATE.forcedNextValue (multiplierOrb consumer)
        *   2. window.BONUS_MULTIPLIER bump (real shape multiplierOrb reads)
-       *   3. HookBus.emit onForceMultiplier { multX } so listener blocks
-       *      (winMultiplierBadge, persistentMultiplier, pathAwareMultiplier)
-       *      react to the new multiplier on the next render frame.
-       *   4. Visual orb chip painted directly on a random cell so QA
-       *      can confirm "force orb radi" without waiting on the engine
-       *      to land matching symbols.                                  */
+       *   3. window.__FORCE_ORB_VALUE__ (per-spin override za pickOrbValue)
+       *   4. HookBus.setMult(_newMult) + emit onForceMultiplier
+       *   5. __FORCE_BIG_WIN_TIER__ = 1 garantuje base win
+       *   6. Visual orb chip na random ćeliji.                          */
       try {
-        if (!window.MULT_ORB_STATE) window.MULT_ORB_STATE = {};
-        window.MULT_ORB_STATE.forcedNextValue = 50;       /* 50× — premium orb */
-        window.MULT_ORB_STATE.forceNextSpin   = true;
-        window.MULT_ORB_STATE.lastPlaced      = { value: 50, ts: Date.now() };
+        var _orbLadder = [2, 5, 10, 25, 50, 100, 250, 500];
+        window.__UFP_ORB_IDX__ = ((window.__UFP_ORB_IDX__ || 0) + 1) % _orbLadder.length;
+        var _orbVal = _orbLadder[window.__UFP_ORB_IDX__];
 
-        try { window.BONUS_MULTIPLIER = (window.BONUS_MULTIPLIER || 0) + 50; } catch (_) {}
+        if (!window.MULT_ORB_STATE) window.MULT_ORB_STATE = {};
+        window.MULT_ORB_STATE.forcedNextValue = _orbVal;
+        window.MULT_ORB_STATE.forceNextSpin   = true;
+        window.MULT_ORB_STATE.lastPlaced      = { value: _orbVal, ts: Date.now() };
+        try { window.__FORCE_ORB_VALUE__ = _orbVal; } catch (_) {}
+
+        try { window.BONUS_MULTIPLIER = (window.BONUS_MULTIPLIER || 0) + _orbVal; } catch (_) {}
+        try { window.__FORCE_BIG_WIN_TIER__ = 1; } catch (_) {}
 
         if (window.HookBus && typeof window.HookBus.setMult === 'function') {
-          window.HookBus.setMult(50);
+          window.HookBus.setMult(_orbVal);
         }
         if (window.HookBus && typeof window.HookBus.emit === 'function') {
-          /* Use the canonical onForceMultiplier event already owned by
-           * universalForcePanel (see hookBus.mjs registry). Listener blocks
-           * (winMultiplierBadge, persistentMultiplier, pathAwareMultiplier)
-           * react to the new multX value on the next render frame. */
-          try { window.HookBus.emit('onForceMultiplier', { multX: 50 }); } catch (_) {}
+          try { window.HookBus.emit('onForceMultiplier', { multX: _orbVal }); } catch (_) {}
         }
 
-        /* Visual orb chip on a random cell — same shape as multiplier
-         * chip but in orb gradient so QA confirms orb force VISIBLY. */
-        (function _renderUfpOrbChip() {
+        (function _renderUfpOrbChip(_v) {
           try {
             var cells = document.querySelectorAll('.cell');
             if (!cells.length) return;
@@ -627,15 +629,15 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
             var rect = target.getBoundingClientRect();
             var chip = document.createElement('div');
             chip.className = 'ufp-orb-chip';
-            chip.setAttribute('data-mult-orb', '50');
-            chip.textContent = 'x50';
+            chip.setAttribute('data-mult-orb', String(_v));
+            chip.textContent = 'x' + _v;
             chip.style.cssText =
               'position:fixed;' +
               'left:' + (rect.left + rect.width / 2 - 30) + 'px;' +
               'top:'  + (rect.top  + rect.height / 2 - 30) + 'px;' +
               'width:60px;height:60px;border-radius:50%;' +
               'background:radial-gradient(circle,rgba(120,200,255,1) 0%,rgba(40,120,255,0.95) 70%,rgba(10,40,120,0.9) 100%);' +
-              'color:#fff;font:900 22px/60px system-ui,-apple-system,sans-serif;' +
+              'color:#fff;font:900 ' + (String(_v).length > 3 ? 16 : 22) + 'px/60px system-ui,-apple-system,sans-serif;' +
               'text-align:center;letter-spacing:.04em;' +
               'box-shadow:0 8px 24px rgba(0,0,0,.55),inset 0 -3px 8px rgba(0,0,0,.25),inset 0 2px 4px rgba(255,255,255,.45);' +
               'pointer-events:none;z-index:96;opacity:0;transform:scale(.4);' +
@@ -651,22 +653,29 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
             }, 1400);
             setTimeout(function() { try { chip.remove(); } catch (_) {} }, 2100);
           } catch (_) {}
-        })();
+        })(_orbVal);
       } catch (_) {}
     }
     if (kind === 'persistent_multiplier') {
       /* persistentMultiplier block bumps the carry-over multiplier
        * across spins. Force-bump by +1 and seed the next spin so the
-       * visual ratchet renders. */
+       * visual ratchet renders. D-14 (Boki 2026-06-20): garantuj win
+       * baseline tako da multiplier ima na šta da se primeni. */
       try {
-        if (window.PERSISTENT_MULT_STATE) {
-          var _cur = (window.PERSISTENT_MULT_STATE.current || 1) + 1;
-          window.PERSISTENT_MULT_STATE.current = Math.min(_cur, 100);
-          window.PERSISTENT_MULT_STATE.forceNextSpin = true;
+        if (!window.PERSISTENT_MULT_STATE) {
+          window.PERSISTENT_MULT_STATE = { current: 1, forceNextSpin: false };
         }
+        var _curPM = (window.PERSISTENT_MULT_STATE.current || 1) + 1;
+        window.PERSISTENT_MULT_STATE.current = Math.min(_curPM, 100);
+        window.PERSISTENT_MULT_STATE.forceNextSpin = true;
+        try { window.__FORCE_PERSISTENT_MULT__ = window.PERSISTENT_MULT_STATE.current; } catch (_) {}
+        try { window.__FORCE_BIG_WIN_TIER__ = 1; } catch (_) {}
+
         if (window.HookBus && typeof window.HookBus.setMult === 'function') {
-          window.HookBus.setMult(window.PERSISTENT_MULT_STATE
-            ? window.PERSISTENT_MULT_STATE.current : 2);
+          window.HookBus.setMult(window.PERSISTENT_MULT_STATE.current);
+        }
+        if (window.HookBus && typeof window.HookBus.emit === 'function') {
+          try { window.HookBus.emit('onForceMultiplier', { multX: window.PERSISTENT_MULT_STATE.current }); } catch (_) {}
         }
       } catch (_) {}
     }
@@ -697,6 +706,10 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
        mult automatski, a winPresentation primenjuje mult na payouts. */
     if (kind === 'multiplier') {
       try {
+        /* D-14 (Boki 2026-06-20): garantuj win baseline tako da
+         * multiplier ima na šta da se primeni. Bez win-a multiplier
+         * chip se prikaže ali payout se ne množi (× 0 = 0). */
+        try { window.__FORCE_BIG_WIN_TIER__ = 1; } catch (_) {}
         if (window.HookBus && typeof window.HookBus.setMult === 'function') {
           var _ladder = [2, 3, 5, 10];
           window.__UFP_MULT_IDX__ = ((window.__UFP_MULT_IDX__ || 0) + 1) % _ladder.length;
