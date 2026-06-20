@@ -335,6 +335,11 @@ export function selectKinds(cfg, model = {}) {
       superSymbol:               'super_symbol',
       jackpot:                   'jackpot',
       bigWinTier:                'big_win',
+      /* D-17 industry-standard kinds (only mapped when their canonical
+       * chip equivalents exist in ALL_KNOWN_KINDS). The custom kinds
+       * (patternWin, linkedReels, etc.) do NOT have force chips yet —
+       * they're feature gates, not single-spin force chips. Phantom
+       * chips for unrelated UFP kinds therefore won't appear. */
     };
 
     const activeFeatures = Array.isArray(model && model.__activeFeatures__)

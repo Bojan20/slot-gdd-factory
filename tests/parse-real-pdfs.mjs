@@ -202,7 +202,12 @@ for (const pdfPath of pdfs) {
     stage = 'pdfToMarkdown';
     md = pdfTextToMarkdown(raw);
     stage = 'parseGDD';
-    model = parseGDD(md, 'md');
+    /* D-18: concat raw text after md as a hidden appendix so the
+     * parser's gddMentions() keyword scan picks up features the md
+     * compressor dropped. Structured extractors only read the md head;
+     * keyword heuristic walks the whole buffer. */
+    const mdPlusRaw = md + '\n\n<!-- raw-text-appendix -->\n' + raw;
+    model = parseGDD(mdPlusRaw, 'md');
     stage = 'buildSlotHTML';
     html = buildSlotHTML(model);
     stage = 'done';

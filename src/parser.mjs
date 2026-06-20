@@ -347,6 +347,15 @@ const FEATURE_KEYWORD_MAP = Object.freeze({
   autoplay:                   /autoplay|auto\s*play/i,
   bigWinTier:                 /big\s*win|mega\s*win|epic\s*win/i,
   winCap:                     /win\s*cap|max\s*win|maximum\s*win/i,
+  /* D-17 industry-standard feature keywords (Foundry-family + similar) */
+  patternWin:                 /pattern\s*win|stacked.*reel.*1.*wild|full[\s-]?screen\s*(hit|pattern|win)/i,
+  bigSymbolRender2x2:         /big\s*(?:fireball|symbol|wild|volcano)|2\s*[x×]\s*2\s*(?:big|oversized)|3[\s-]?high\s*(?:wild|symbol)|oversized\s*symbol/i,
+  linkedReels:                /linked\s*(?:center\s*)?reels?|center\s*reels?\s*link|reel\s*link\s*(?:block|set)/i,
+  perTriggerVolatilitySet:    /volatility\s*(?:set|class|pool)|per[\s-]?trigger\s*volatility|low\s*\/?\s*med\s*\/?\s*high\s*(?:pool|weight)/i,
+  potSymbolFireball:          /(?:mini|minor|major|grand)\s*(?:pot|fireball|jackpot)|pot\s*symbols?|tiered?\s*pot\s*ladder/i,
+  grandInterruptionLock:      /grand\s*(?:celebration|jackpot|win|interruption)|handpay|attendant|full[\s-]?board\s*fill|1,?000,?000[\s-]?credit/i,
+  simultaneousFsHoldAndWinPriority: /simultaneous.*(?:fs|free\s*spins?).*hold|simultaneous.*hold.*free|cross[\s-]?feature\s*(?:trigger|priority|arbiter)/i,
+  creditAwardConversion:      /credit[\s-]?based\s*math|coin[\s_]?value\s*=\s*total[\s_]?bet|x\s*total\s*bet|absolute\s*credit/i,
 });
 
 /* D-18 helper: snapshot pre-defaults state.
@@ -524,6 +533,33 @@ function applyDeclaredFlags(model, rawText, preDefaultsSnapshot) {
           keyCount: 0,
         });
       }
+    }
+  }
+
+  /* D-18 STEP C: scan raw text for D-17 industry-standard features that
+   * may not have a top-level model key (e.g. patternWin, linkedReels,
+   * potSymbolFireball). If the GDD text strongly mentions them, add as
+   * declared even without a model.<key> stub. This is what makes a GDD
+   * that describes a "1000x pattern win" actually surface patternWin as
+   * a declared feature, even though the parser never created a
+   * model.patternWin object. */
+  const SCAN_ONLY_FEATURES = [
+    'patternWin', 'bigSymbolRender2x2', 'linkedReels',
+    'perTriggerVolatilitySet', 'potSymbolFireball', 'grandInterruptionLock',
+    'simultaneousFsHoldAndWinPriority', 'creditAwardConversion',
+  ];
+  for (const key of SCAN_ONLY_FEATURES) {
+    if (declared[key]) continue; /* already classified */
+    if (gddMentions(key)) {
+      declared[key] = 'declared';
+      declaredKeys.push(key);
+      activeFeatures.push({
+        kind: key,
+        source: 'declared',
+        hasContent: false,
+        keyCount: 0,
+        textOnly: true, /* marker: came from raw-text scan, no model stub */
+      });
     }
   }
 

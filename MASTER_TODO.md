@@ -1,3 +1,52 @@
+## 🏆 D-18.2 CASH ERUPTION + D-17 KEYWORD MAPPING · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"ajde dodaj prvo to"* (Cash Eruption feature mapping) (2026-06-20)
+
+**Proširenje D-18 keyword scan-a da pokriva 8 industry-standard D-17 features koji nemaju top-level model key.**
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ D-18.2 — Cash Eruption (Foundry) sad ima 23 declared features (sa 6 pre)              │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Parser changes (src/parser.mjs)                                                       │
+│   FEATURE_KEYWORD_MAP +8 patterns (D-17 industry-standard kinds):                     │
+│     patternWin                       /pattern win | stacked Red7 + Big Wild 2-5/      │
+│     bigSymbolRender2x2               /big fireball | 2×2 oversized | 3-high wild/     │
+│     linkedReels                      /linked center reels | reel link block/           │
+│     perTriggerVolatilitySet          /volatility set | Low/Med/High pool/              │
+│     potSymbolFireball                /MINI/MINOR/MAJOR pots | tiered pot ladder/       │
+│     grandInterruptionLock            /GRAND celebration | handpay | full-board fill/  │
+│     simultaneousFsHoldAndWinPriority /simultaneous FS hold | cross-feature arbiter/   │
+│     creditAwardConversion            /credit-based math | coin_value = total_bet/      │
+│                                                                                       │
+│   SCAN_ONLY_FEATURES post-process pass: ako keyword pattern matche 2+ puta u GDD      │
+│   text-u i nema top-level model key → dodaje feature kao declared sa textOnly=true.   │
+│                                                                                       │
+│ Parser pipeline change (tests/parse-real-pdfs.mjs)                                    │
+│   PDF → raw.txt → pdfTextToMarkdown → md (1.8KB).                                      │
+│   D-18.2: parseGDD(md + '\n<!-- raw-text-appendix -->\n' + raw, 'md').                │
+│   Strukturni extractori i dalje čitaju md head; keyword scan walk-uje ceo buffer.     │
+│                                                                                       │
+│ STVARNI REZULTAT (Cash Eruption pre vs posle)                                          │
+│   Pre  : 6  declared    · 40 inferred · 6 chip-ova                                    │
+│   Posle: 23 declared    · 34 inferred · 6 chip-ova (8 D-17 nije chip-able, gate-only) │
+│   Σ aggregate: 844 → 1,033 declared (+189)                                            │
+│                                                                                       │
+│ Force chips ostaju isti — D-17 features su gate-only (feature toggles, ne single-spin │
+│ force chip-ovi). Ali sad gddRealityCheck zna da ih očekuje + compliance scorecard     │
+│ prikazuje pravu coverage.                                                              │
+│                                                                                       │
+│ VERIFIKACIJA                                                                          │
+│   LEGO gate              8/8 PASS  ✅  (193 blokova, 331 events)                       │
+│   4-gdds-ultimate-audit  ✅ ALL GDDS PERFECT                                          │
+│   parse:real-pdfs        313/313 PASS                                                  │
+│   UFP regression          39/39 PASS                                                   │
+│   gddRealityCheck         38/38 PASS                                                   │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-18 GDD-TRUTH PIPELINE · 2026-06-20 · 4/4 SHIPPED 🎯
 
 Boki: *"kreni sve ultimativno i savrseno da radi"* (2026-06-20) — ultimativna arhitektura GDD→slot truth contract.
