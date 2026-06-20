@@ -317,6 +317,16 @@ export function emitHoldAndWinLockedOrbMultiplierRuntime(cfg = defaultConfig()) 
         });
       } catch (_) {}
     }
+    /* D-14.1 (Boki 2026-06-20): aggregate primenjen na payout multiplier.
+     * Mode 'additive' (default per defaultConfig) → koristi sum; mode
+     * 'multiplicative' → koristi product. setMultMax sprecava drift
+     * ako frame-multiplier / room-jackpot blok takodje radi na istom
+     * round-u. */
+    var aggregate = (AGGREGATION === 'multiplicative') ? prod : sum;
+    if (window.HookBus && typeof window.HookBus.setMultMax === 'function' &&
+        Number.isFinite(aggregate) && aggregate >= 1) {
+      try { window.HookBus.setMultMax(aggregate); } catch (_) {}
+    }
     _clearState();
   }
 

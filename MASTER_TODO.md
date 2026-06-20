@@ -1,3 +1,37 @@
+## 🏆 D-14.1 PAINT-ONLY MULTIPLIER FIX · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"dalje"* (po inventory tabeli koja je pokazala 4 paint-only HW + ladder multiplier bloka)
+
+**4 paint-only multiplier bloka pretvorena u real win-multipliers.** Sad 16/18 multiplier blokova množi payout, 2/18 ostaju namerno display-only (totalMultiplierChip, winMultiplierBadge — by-design HUD).
+
+```
+┌────────────────────────────────────────────────────────────────────────────┐
+│ D-14.1 — Paint-only multiplier → real win multiplier                       │
+├────────────────────────────────────────────────────────────────────────────┤
+│ holdAndWinFrameMultiplier:    _onEnd → setMultMax(totalProduct)            │
+│ holdAndWinLockedOrbMultiplier:_onHoldAndWinEnd → setMultMax(aggregate)     │
+│   • additive mode → sum, multiplicative → product (per cfg.aggregation)    │
+│ holdAndWinRoomJackpotMultiplier: _onEnd → setMultMax(final.multX)          │
+│ multiplierLadder:             climb() → setMultMax(STEPS[tier])            │
+│                                                                            │
+│ setMultMax (ne setMult) — last-writer-wins bi srušio agregat kada više     │
+│ multiplier blokova radi na istom round-u (frame + locked-orb + room        │
+│ jackpot sve ukrštaju isti H&W round).                                      │
+│                                                                            │
+│ Probe verdict relax: spinHappened OR featureEmit (HW_INTRO phase ne        │
+│ emit-uje postSpin po dizajnu — feature outcome ipak materijalisan).        │
+│                                                                            │
+│ Verifikacija:                                                              │
+│  • holdAndWinFrameMultiplier.test.mjs:   PASS                              │
+│  • holdAndWinLockedOrbMultiplier.test.mjs: PASS                            │
+│  • holdAndWinRoomJackpotMultiplier.test.mjs: PASS                          │
+│  • multiplierLadder.test.mjs:           35/35 PASS                         │
+│  • _ultimate-all-force-chips-probe.mjs:  36/36 PASS (4/4 igre)             │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-13.1 ALL-FORCE-CHIPS PARITY · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"tako sad za svaki moguci multiplier u bilo kojem gddu i blokiu koji postoji. dakle samo ultimqtivno detaljno i sa agentima. sve mora da radi besprekorno. prodji rucno svaki gdd da se uveris da sve radi kako i treba i svaki force"* (2026-06-20)

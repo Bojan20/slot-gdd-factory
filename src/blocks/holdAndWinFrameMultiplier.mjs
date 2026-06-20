@@ -356,6 +356,17 @@ export function emitHoldAndWinFrameMultiplierRuntime(cfg = defaultConfig()) {
         });
       } catch (_) {}
     }
+    /* D-14.1 (Boki 2026-06-20): "svaki multiplier mora da radi
+     * besprekorno". Pre ovog bloka HW frame multiplier je emit-ovao
+     * onFrameMultiplierFinal sa { tiers, totalProduct } ali nije
+     * podizao stvarni payout mult. Round-end product → setMultMax tako
+     * da winPresentation pomnozi H&W round payout sa ovim frame
+     * agregatom. setMultMax (ne setMult) — last-writer-wins bi srusio
+     * locked-orb / room-jackpot aggregat ako oba postoje. */
+    if (window.HookBus && typeof window.HookBus.setMultMax === 'function' &&
+        Number.isFinite(product) && product >= 1) {
+      try { window.HookBus.setMultMax(product); } catch (_) {}
+    }
     _clear();
   }
 

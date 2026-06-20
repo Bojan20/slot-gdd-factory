@@ -198,6 +198,17 @@ export function emitMultiplierLadderRuntime(cfg = defaultConfig()) {
       render(to);
       flash();
       try { window.HookBus.emit('onMultLadderStep', { from: STEPS[from], to: STEPS[to], max: STEPS[MAX] }); } catch (_) {}
+      /* D-14.1 (Boki 2026-06-20): "svaki multiplier mora da radi
+       * besprekorno". Pre ovog bloka ladder je UI mirror koji sluša
+       * onMultChange — ne podiže payout sam. Sad climb step direktno
+       * podigne HookBus.setMultMax(new tier value) tako da sledeci win
+       * stvarno bude multiplikovan tom vrednoscu. setMultMax sprecava
+       * drift sa persistentMultiplier (oba pisu na isti mult state). */
+      try {
+        if (typeof window.HookBus.setMultMax === 'function') {
+          window.HookBus.setMultMax(STEPS[to]);
+        }
+      } catch (_) {}
     }
     function reset() {
       tier = startTier;

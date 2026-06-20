@@ -332,6 +332,13 @@ export function emitHoldAndWinRoomJackpotMultiplierRuntime(cfg = defaultConfig()
         });
       } catch (_) {}
     }
+    /* D-14.1 (Boki 2026-06-20): final reached room's multiplier
+     * primenjuje se na round-end payout. setMultMax — frame-multiplier
+     * i locked-orb mult mogu istovremeno biti aktivni; veci wins. */
+    if (window.HookBus && typeof window.HookBus.setMultMax === 'function' &&
+        Number.isFinite(final.multX) && final.multX >= 1) {
+      try { window.HookBus.setMultMax(final.multX); } catch (_) {}
+    }
     _paint(false);
   }
 
