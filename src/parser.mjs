@@ -300,18 +300,31 @@ export function parseMarkdownGDD(text) {
      chips for features GDD never declared. */
   applyDeclaredFlags(model, text, preDefaultsSnapshot);
 
-  /* Wave V (Boki 2026-06-20 "dalje3") STEP C: optional multi-agent overlay.
-   * When env var WAVE_V_RECONCILE_PATH points to a v6_reconcile.json file
-   * (output of tools/_wave-v-multi-agent-parser.mjs), merge the agent-
-   * derived delta into the model. Lane owners (V1 topology · V2 symbols ·
-   * V3 features · V4 ux · V5 compliance) authoritatively override
-   * regex-baseline values; provenance is stamped into model.__waveV__.meta.
-   * Sync, env-gated, zero overhead when unset. */
+  /* Wave V (Boki 2026-06-20 "dalje3") STEP C: multi-agent overlay.
+   * Strategy (post deep-seek QA 2026-06-21):
+   *   1. Explicit env var WAVE_V_RECONCILE_PATH wins (dev override).
+   *   2. Else: auto-discover canonical cache location
+   *        tools/_wave-v-cache/<game-slug>.json
+   *      Resolved via __dirname-equivalent so this works from any caller.
+   *   3. If neither exists: baseline parse stands, no error stamped.
+   * This closes the "Wave V is dead in runtime" QA finding by making the
+   * overlay opt-out instead of opt-in — when an operator runs the multi-
+   * agent parser tool, its output is automatically picked up. */
   try {
-    const _envP = (typeof globalThis !== 'undefined' && globalThis.process &&
-        globalThis.process.env) ? globalThis.process.env.WAVE_V_RECONCILE_PATH : null;
-    if (_envP) {
-      _waveVOverlay(model, _envP);
+    let overlayPath = null;
+    if (typeof globalThis !== 'undefined' && globalThis.process &&
+        globalThis.process.env && globalThis.process.env.WAVE_V_RECONCILE_PATH) {
+      overlayPath = globalThis.process.env.WAVE_V_RECONCILE_PATH;
+    } else if (_waveVFs && model && model.name) {
+      const slug = String(model.name).toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const candidate = _resolveWaveVCachePath(slug);
+      if (candidate && _waveVFs.existsSync(candidate)) {
+        overlayPath = candidate;
+      }
+    }
+    if (overlayPath) {
+      _waveVOverlay(model, overlayPath);
     }
   } catch (e) {
     /* Stash error for diagnosis instead of swallowing — overlay must not
@@ -320,7 +333,151 @@ export function parseMarkdownGDD(text) {
     model.__waveV__ = { error: 'overlay threw: ' + (e && e.message ? e.message : String(e)) };
   }
 
+  /* Wave W (Boki 2026-06-21 "ultimativni qa") STEP D: block mapper signal.
+   * Emit a soft list of which blocks the AI selector would auto-activate
+   * for this model. Downstream buildSlotHTML can read this and downgrade
+   * unused blocks to no-op at runtime (Phase 2). For now it is a SIGNAL
+   * that surfaces declared-vs-mapped drift in gddRealityCheck. */
+  try {
+    if (_waveVFs && typeof model === 'object') {
+      _attachBlockMapperSignal(model);
+    }
+  } catch (e) {
+    model.__blockMapper__ = { error: 'mapper threw: ' + (e && e.message ? e.message : String(e)) };
+  }
+
+  /* Wave QA-2026-06-21 STEP E: symbol fallback for malformed PDFs.
+   * If GDD declares a wild-dependent feature (expandingWild, walkingWild,
+   * stickyWild, wildReel, mysterySymbol, megaWildCluster, etc.) but symbol
+   * extractor produced 0 specials, inject a synthetic wild + scatter so
+   * downstream blocks have a symbol to operate on. Stamped as default-
+   * provenance, never as declared. */
+  try {
+    _ensureMinimumSymbolRoster(model);
+  } catch (e) {
+    /* Non-fatal — baseline parse still stands. */
+  }
+
   return model;
+}
+
+/* Wave V cache resolver. Walks up from parser.mjs location to find repo
+ * root, then drills into tools/_wave-v-cache/<slug>.json. Returns null
+ * if any path component fails. */
+function _resolveWaveVCachePath(slug) {
+  try {
+    if (!_waveVFs) return null;
+    /* Module URL lives at <repo>/src/parser.mjs — strip filename to get
+     * src/, then up one to repo root. */
+    const u = new URL('./', import.meta.url);
+    const srcDir = u.pathname;
+    /* Strip trailing slash + src/ to get repo root */
+    const repoRoot = srcDir.replace(/\/src\/?$/, '/');
+    const candidate = repoRoot + 'tools/_wave-v-cache/' + slug + '.json';
+    return candidate;
+  } catch { return null; }
+}
+
+/* Wave W soft-mapper signal — attempts dynamic import of blockMapper.
+ * Failure modes are non-fatal: the mapper depends on blockCatalog.json
+ * which may not exist in stripped browser bundles. */
+function _attachBlockMapperSignal(model) {
+  /* Lazy require via dynamic import — keeps parser browser-safe. */
+  if (typeof model.__blockMapper__ !== 'undefined') return;
+  const u = new URL('./', import.meta.url);
+  const catalogPath = u.pathname.replace(/\/src\/?$/, '/') + 'src/registry/blockCatalog.json';
+  if (!_waveVFs || !_waveVFs.existsSync(catalogPath)) return;
+  try {
+    const catalog = JSON.parse(_waveVFs.readFileSync(catalogPath, 'utf8'));
+    /* Inline lite-mapper: declared features + topology kind → activated blocks.
+     * Full scorer lives in blockMapper.mjs; we surface a fast soft signal here.
+     * Catalog shape is { catalog: [...blocks] } (NOT { blocks: [...] }); accept
+     * both for resilience. */
+    const blocks = Array.isArray(catalog) ? catalog : (catalog.catalog || catalog.blocks || []);
+    const declared = (model.__activeFeatures__ || []).map(f => f.kind);
+    const declaredSet = new Set(declared);
+    const activated = [];
+    const declaredButNoBlock = [];
+    for (const b of blocks) {
+      const fks = b.featureKinds || [];
+      if (fks.some(k => declaredSet.has(k))) activated.push(b.id);
+    }
+    /* Detect declared features that map to ZERO blocks — surface for QA. */
+    for (const kind of declared) {
+      const covered = blocks.some(b => (b.featureKinds || []).includes(kind));
+      if (!covered) declaredButNoBlock.push(kind);
+    }
+    model.__blockMapper__ = {
+      activatedCount: activated.length,
+      activated,
+      declaredFeatureCount: declared.length,
+      declaredButNoBlock,
+      source: 'parser-inline-soft-mapper',
+    };
+  } catch (_) { /* non-fatal */ }
+}
+
+/* Symbol roster guard — Wave QA 2026-06-21 fix #3.
+ * If GDD declares a wild/scatter feature but parser produced 0 specials,
+ * inject synthetic placeholders so downstream blocks have something to
+ * operate on. Marked as `default` provenance via model.confidence._derivedBy. */
+/* Both camelCase (post-canonicalization) and snake_case (raw extractor) listed
+ * so the guard catches whichever flavor reached this stage. */
+const _WILD_DEPENDENT_KINDS = new Set([
+  /* camelCase (canonical) */
+  'expandingWild', 'walkingWild', 'stickyWild', 'wildReel', 'mysterySymbol',
+  'mysteryWildReveal', 'megaWildCluster', 'cascadingWildPersistence',
+  'wildTriggerHoldAndWin', 'walkingWildStepper', 'expandingWildMultiplier',
+  'patternWin', 'bigSymbolRender2x2',
+  /* snake_case (raw feature[].kind) */
+  'expanding_wild', 'walking_wild', 'sticky_wild', 'wild_reel', 'mystery_symbol',
+  'mystery_wild', 'mega_wild', 'wild_collision',
+]);
+const _SCATTER_DEPENDENT_KINDS = new Set([
+  /* camelCase */
+  'freeSpins', 'progressiveFreeSpins', 'scatterCelebration', 'progressiveFsRetrigger',
+  'progressiveFsRetriggerLadder', 'fsExpansionWilds', 'tumbleGrowingFsMultiplier',
+  'simultaneousFsHoldAndWinPriority', 'pickYourFs', 'lockedSymbolFs',
+  'tumbleOnlyFs', 'infiniteFsUntilLoss',
+  /* snake_case */
+  'free_spins', 'progressive_free_spins', 'fs_retrigger', 'scatter_celebration',
+  'tumble_growing_fs', 'pick_your_fs',
+]);
+function _ensureMinimumSymbolRoster(model) {
+  if (!model || typeof model !== 'object') return;
+  /* Use __activeFeatures__ (canonical camelCase, post-D-18) when available;
+   * fall back to features[] (raw snake_case from extractor) so the guard
+   * works regardless of upstream pipeline state. */
+  const activeKinds = Array.isArray(model.__activeFeatures__)
+    ? model.__activeFeatures__.map(f => f && f.kind).filter(Boolean)
+    : [];
+  const rawKinds = Array.isArray(model.features)
+    ? model.features.map(f => f && f.kind).filter(Boolean)
+    : [];
+  const declaredKinds = new Set([...activeKinds, ...rawKinds]);
+  if (!model.symbols) model.symbols = { high: [], mid: [], low: [], specials: [] };
+  if (!Array.isArray(model.symbols.specials)) model.symbols.specials = [];
+  const haveWild = model.symbols.specials.some(s =>
+    s && typeof s === 'object' && /wild/i.test(s.kind || s.id || s.label || ''));
+  const haveScatter = model.symbols.specials.some(s =>
+    s && typeof s === 'object' && /scatter/i.test(s.kind || s.id || s.label || ''));
+  let injected = [];
+  const needsWild = !haveWild && [...declaredKinds].some(k => _WILD_DEPENDENT_KINDS.has(k));
+  const needsScatter = !haveScatter && [...declaredKinds].some(k => _SCATTER_DEPENDENT_KINDS.has(k));
+  if (needsWild) {
+    model.symbols.specials.push({ id: 'S_WILD', label: 'Wild', kind: 'wild', _synthetic: true });
+    injected.push('S_WILD');
+  }
+  if (needsScatter) {
+    model.symbols.specials.push({ id: 'S_SCATTER', label: 'Scatter', kind: 'scatter', _synthetic: true });
+    injected.push('S_SCATTER');
+  }
+  if (injected.length) {
+    if (!model.confidence) model.confidence = { _derivedBy: {} };
+    if (!model.confidence._derivedBy) model.confidence._derivedBy = {};
+    model.confidence._derivedBy.symbols = 'qa-fallback-synthetic';
+    model.__symbolFallback__ = { injected, reason: 'feature-declares-but-roster-empty' };
+  }
 }
 
 /* Wave V overlay — synchronously read a v6_reconcile.json + merge.
