@@ -187,6 +187,13 @@ export function parseMarkdownGDD(text) {
   _safeExtract('extractSymbolBlock.mid', () => extractSymbolBlock(text, /Mid[\s-]?pay/i, model.symbols.mid), model);
   _safeExtract('extractSymbolBlock.low', () => extractSymbolBlock(text, /Low[\s-]?pay/i, model.symbols.low), model);
   _safeExtract('extractSymbolBlock.specials', () => extractSymbolBlock(text, /Specials?/i, model.symbols.specials), model);
+  /* Wave UQ (Boki 2026-06-21 "kreni ultimativno") — PROSE-MODE symbol
+   * extractor. Vendor-portfolio PDFs are written as flowing prose without
+   * structured paytable tables — the MD-table extractor above silently
+   * returns 0. Without this fallback every prose GDD lands the synthetic
+   * fallback (model.__symbolFallback__) and never carries real symbol
+   * intent. Universal — never reads vendor names, only pattern shapes. */
+  _safeExtract('extractSymbolsProseMode', () => extractSymbolsProseMode(text, model), model);
   const totalSyms =
     model.symbols.high.length +
     model.symbols.mid.length +
@@ -1573,6 +1580,120 @@ export function extractSymbolBlock(text, headingRegex, sink) {
     if (seen.has(id)) continue;
     seen.add(id);
     sink.push({ id, name });
+  }
+}
+
+/* ─── Wave UQ — prose-mode symbol extractor ─────────────────────────
+ * Boki 2026-06-21 "kreni ultimativno" — many real-world vendor-portfolio
+ * GDDs are PDFs without paytable tables (each game written as one prose
+ * paragraph). The traditional `extractSymbolBlock` finds 0 symbols and
+ * synthetic fallback fires for every fixture (29/29 in deep-seek QA).
+ *
+ * This extractor walks the raw text looking for canonical SYMBOL ROLE
+ * phrases — "<NAME> WILD", "<NAME> SCATTER", "<NAME> BONUS", named
+ * tier groups ("Premium symbols", "Low-pay symbols"), and explicit
+ * standalone wild/scatter mentions. Vendor-neutral: never reads brand
+ * names; only the role keyword + the preceding noun phrase.
+ */
+export function extractSymbolsProseMode(rawText, model) {
+  if (!rawText || !model || !model.symbols) return;
+  const specials = model.symbols.specials;
+  const seen = new Set(specials.map((s) => (s.id || '').toUpperCase()));
+  /* Track also lowercased name to prevent "Wild" being added twice as W & W1. */
+  const seenNames = new Set(specials.map((s) => (s.name || s.label || '').toLowerCase()));
+
+  function _push(id, name, kind, extra = {}) {
+    const idUC = (id || '').toUpperCase();
+    const nameLC = (name || '').toLowerCase();
+    if (idUC && seen.has(idUC)) return;
+    if (nameLC && seenNames.has(nameLC)) return;
+    seen.add(idUC);
+    seenNames.add(nameLC);
+    specials.push({ id: idUC, name, label: name, kind, _source: 'prose-mode', ...extra });
+  }
+
+  /* Pattern A — "<NAME>" + role keyword. NAME is up to 4 capitalised words
+   * (e.g. "WOLF WILD", "HARD HAT SCATTERS", "BUZZ SAW BONUS WHEEL",
+   * "MULTIPLIER ORB SYMBOL"). Role keyword ∈ {WILD, SCATTER, BONUS, MULTIPLIER}
+   * — and case-insensitive after the leading capital(s) so prose-cased
+   * "Wolf Wild" / "Hard Hat scatter" all match. */
+  /* Match up to 3 ALL-CAPS or Title-Case words immediately before the role
+   * keyword. Capture is greedy on words but bounded by a sentence-start
+   * delimiter — `.`, `:`, newline, or `>` (Markdown blockquote) — so
+   * upstream headings don't leak into the name. */
+  const ROLE_PATTERN = /(?:^|[.:>\n])\s*([A-Z][A-Za-z'’]{1,15}(?:\s+[A-Z][A-Za-z'’]{1,15}){0,2})\s+(WILD|SCATTER|SCATTERS|BONUS|MULTIPLIER|JACKPOT)S?\b/g;
+  let m;
+  while ((m = ROLE_PATTERN.exec(rawText)) !== null) {
+    let namePhrase = m[1].trim();
+    const roleRaw = m[2].toUpperCase();
+    /* Filter false positives: skip common section-header noise + standalone
+     * adjectives that happen to precede the role word. */
+    if (/^(?:The|All|Each|Every|Some|Most|Any|This|That|Of|Free|Game|Bonus|Slot|Hold|Lock|Symbol|Symbols|Reels?|Spins?|Mode|System|Round|Feature|Picks?|Core|Mechanic|Mechanics|Section|Page|Notes?)$/i.test(namePhrase)) continue;
+    if (namePhrase.length > 30) continue;
+    /* If namePhrase starts with a generic section word followed by a real
+     * subject (e.g. "Core Mechanics HARD HAT"), strip the leading generic
+     * prefix and keep just the trailing subject. */
+    namePhrase = namePhrase.replace(/^(?:Core\s+Mechanics?|Bonus\s+Features?|Game\s+Overview|Section\s+\d+|Page\s+\d+|Notes?)\s+/i, '').trim();
+    if (!namePhrase) continue;
+    /* Filter known feature-name false positives — these are mechanics
+     * (free spins, hold and win, lock it link series, etc.), not symbols
+     * carrying a role suffix. Vendor-neutral: never matches a SPECIFIC
+     * game-name, only the canonical mechanic phrasings. */
+    if (/^(?:FREE\s+SPINS?|FS|HOLD(?:\s*(?:AND|&)?\s*(?:WIN|SPIN))?|LOCK(?:\s*IT)?(?:\s*LINK)?|MEGA\s*WAYS?|CASH\s*FALLS?|LIGHTNING|RESPIN|FREE\s+GAMES?|RE-?SPIN)$/i.test(namePhrase)) continue;
+
+    let kind;
+    if (roleRaw.startsWith('WILD')) kind = 'wild';
+    else if (roleRaw.startsWith('SCATTER')) kind = 'scatter';
+    else if (roleRaw === 'BONUS') kind = 'bonus';
+    else if (roleRaw === 'MULTIPLIER') kind = 'multiplier';
+    else if (roleRaw === 'JACKPOT') kind = 'jackpot';
+    else continue;
+
+    /* Build ID from first letters: "WOLF WILD" → 'W', "HARD HAT" → 'HH'.
+     * Single letter when one word; first letters of each word otherwise. */
+    const words = namePhrase.split(/\s+/);
+    let id = words.map((w) => w[0]).join('').toUpperCase().slice(0, 4);
+    if (!id) continue;
+    if (seen.has(id)) {
+      /* Disambiguate when two symbols share the same initial letter. */
+      let i = 2;
+      while (seen.has(id + i) && i < 10) i++;
+      id = id + i;
+    }
+    _push(id, namePhrase, kind);
+  }
+
+  /* Pattern B — standalone "Wild" / "Scatter" mention with NO preceding
+   * noun phrase. Adds canonical W / S symbol when GDD only mentions the
+   * role in passing (e.g. "Wild substitutes for all paying symbols"). */
+  if (!specials.some((s) => s.kind === 'wild')) {
+    if (/\bWild\s+(?:substitutes?|symbol|replaces?|appears?\s+on|stays?\s+(?:on|sticky))/i.test(rawText)) {
+      _push('W', 'Wild', 'wild');
+    }
+  }
+  if (!specials.some((s) => s.kind === 'scatter')) {
+    if (/\bScatter\s+(?:symbol|pays?|triggers?|on\s+(?:any|reels?)|anywhere)/i.test(rawText)) {
+      _push('S', 'Scatter', 'scatter');
+    }
+  }
+  if (!specials.some((s) => s.kind === 'bonus')) {
+    if (/\bBonus\s+(?:symbol|orb|coin|triggers?\s+free|trigger)/i.test(rawText)) {
+      _push('B', 'Bonus', 'bonus');
+    }
+  }
+
+  /* Pattern C — "Hold(\s|-)?&?\s?Win" / "Hold and Spin" implies bonus-orb
+   * trigger family. If features include holdAndWin but no bonus symbol
+   * in roster yet, add a canonical orb. */
+  if (Array.isArray(model.features) &&
+      model.features.some((f) => f && (f.kind === 'holdAndWin' || f.kind === 'hold_and_win')) &&
+      !specials.some((s) => s.kind === 'bonus')) {
+    _push('B', 'Bonus Orb', 'bonus');
+  }
+
+  /* Pattern D — capture progressive jackpot tier names if mentioned. */
+  if (/\b(?:MINI|MINOR|MAJOR|GRAND)\b/.test(rawText) && !specials.some((s) => s.kind === 'jackpot')) {
+    _push('JP', 'Jackpot', 'jackpot');
   }
 }
 
