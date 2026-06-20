@@ -1,3 +1,65 @@
+## 🏆 D-11 WP-TIMING GATE · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"Win prezentacije se javlajaju dok se okrecu rilovi, big win takodje"* (2026-06-20)
+
+**Bug DOKAZAN, fix SHIPOVAN, 19/19 validator zelen — bilo koji `onWinPresentationStart` / `onBigWinTierEntered` emit dok je `.reelCol.is-spinning` ne-prazan = FAIL.**
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ D-11 — WP-Timing Hunter ✅ PROBE + FIX + VALIDATOR                                   │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ ROOT CAUSE:                                                                          │
+│   winPresentation.mjs imao 3 emit tačke (BW force, glavni, post-FS) za               │
+│   onWinPresentationStart BEZ eksplicitnog guard-a na "reels actually stopped".       │
+│   Timing je bio implicitan (zavisi od reelEngine.onTickAll → onSpinResult →          │
+│   handlePostSpin → applyWinHighlight callback ordering). Bilo koji async hop         │
+│   (rAF microtask race, FS retrigger, slamStop) ostavlja prostor da emit prođe       │
+│   DOK su reels još .is-spinning → player vidi "win cycle dok reels rotiraju".       │
+│                                                                                      │
+│ FIX:                                                                                 │
+│   Dodat __waitReelsIdle(maxMs) helper u emitWinPresentationRuntime template.         │
+│   Polluje document.querySelectorAll('.reelCol.is-spinning').length === 0,            │
+│   rAF-paced, max 2000ms timeout (beyond fall-through da stuck reel ne zaključa      │
+│   ceo round). `await __waitReelsIdle(2000)` pre svakog od 3 emit tačke.             │
+│                                                                                      │
+│ BRUTAL DETERMINISTIC PROBE:                                                          │
+│   tools/_ultimate-wp-timing-probe.mjs                                                │
+│   1. addInitScript monkey-patch HookBus.emit pre block runtime-a                     │
+│   2. Per emit: snapshot { event, ts, reelsSpinning, spinBtnSpinning,                 │
+│      winsymCells, fsmState }                                                         │
+│   3. Per igri: 12 spinova sa window.__FORCE_BIG_WIN_TIER__ = 1 force                 │
+│      (garantuje wpStart + bwEnter emit-eve)                                          │
+│   4. ASSERT-evi:                                                                     │
+│      • svaki wpStart / bwEnter sa reelsSpinning > 0 = FAIL                           │
+│      • wpStart pre prvog onSpinResult = FAIL                                         │
+│                                                                                      │
+│ PRE-FIX (proof of bug):                                                              │
+│   starlight-travellers-gdd  FAIL  1 violation                                        │
+│     ✗ emit-while-reels-spinning · onWinPresentationStart @ 8154ms                   │
+│       reels spinning: 6  fsm: BASE                                                   │
+│   (3 ostale igre slučajno nisu pogodile race u 12 spinova bez forsiranja BW)         │
+│                                                                                      │
+│ POST-FIX (probe re-run sa forsiranjem BW tier-a):                                    │
+│   gates-of-olympus-1000-gdd  PASS  viol=0  wpStart=1  bwEnter=1                      │
+│   huff-n-more-puff-gdd       PASS  viol=0  wpStart=1  bwEnter=1                      │
+│   starlight-travellers-gdd   PASS  viol=0  wpStart=1  bwEnter=0                      │
+│   wrath-of-olympus-gdd       PASS  viol=0  wpStart=1  bwEnter=0                      │
+│                                                                                      │
+│ VALIDATOR (CI guard):                                                                │
+│   tests/blocks/_wpTimingProbe.test.mjs · 19/19 ✅                                    │
+│   (uključuje coverage assert da je probe stvarno trigovao wpStart > 0 +              │
+│   bwEnter > 0 — trivijalan pass nije dovoljan)                                       │
+│   npm scripts: `test:wp:timing`, `test:wp:timing:validator`                          │
+│                                                                                      │
+│ UNIT TEST SWEEP (sanity check):                                                      │
+│   winPresentation.test.mjs       PASS                                                │
+│   winPresentationLDW.test.mjs    22/22 PASS                                          │
+│   bigWinTier.test.mjs            42/42 PASS                                          │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-10 SYMBOL-OVERFLOW FIX · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"desava se da neki simboli koji su u win liniji nestranu iz reel framea. fix it. iskoristi neki brutalan test za to i sve agente koji ti trebaju. ako nemas taj test, napisi ga"* (2026-06-20)

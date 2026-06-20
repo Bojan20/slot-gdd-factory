@@ -649,6 +649,32 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
 
      Returns Promise<events[]> so the postSpin orchestrator can read what was
      detected and emit postSpin with the right payload. */
+  /* D-11 FIX (2026-06-20, Boki "Win prezentacije se javlajaju dok se
+     okrecu rilovi, big win takodje"): hard gate before every
+     onWinPresentationStart and onBigWinTierEntered emit. Waits until
+     no .reelCol.is-spinning remains in the DOM (canonical "reels stopped"
+     proxy set/cleared by reelEngine.mjs). Max 2000ms timeout — beyond
+     that we fall through to keep the round moving so a stuck reel
+     doesn't lock the entire game. The wait is rAF-paced for cheap
+     idle polling without burning the main thread. */
+  async function __waitReelsIdle(maxMs) {
+    var deadline = (typeof performance !== 'undefined' ? performance.now() : Date.now()) + (maxMs || 2000);
+    return new Promise(function (resolve) {
+      function tick() {
+        var stillSpinning = 0;
+        try {
+          stillSpinning = document.querySelectorAll('.reelCol.is-spinning').length;
+        } catch (_) {}
+        if (stillSpinning === 0) { resolve(true); return; }
+        var now = (typeof performance !== 'undefined') ? performance.now() : Date.now();
+        if (now >= deadline) { resolve(false); return; }
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(tick);
+        else setTimeout(tick, 16);
+      }
+      tick();
+    });
+  }
+
   async function applyWinHighlight() {
     clearWinHighlight();
     /* Wave V5 — publish award=0 defensively so subscribers never read a
@@ -724,6 +750,7 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
        * use the symbol-celebration pulse, matching the reference flow
        * (SYMBOL_CELEBRATION → BIG_WIN). With synthesised forceCells the
        * 800 ms pulse is now VISIBLE on screen prior to the tier banner. */
+      await __waitReelsIdle(2000);  /* D-11 gate */
       if (typeof HookBus !== 'undefined') {
         HookBus.emit('onWinPresentationStart', { award: forcedAward, eventCount: 1, isBigWin: true });
       }
@@ -841,6 +868,7 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
       if (typeof window !== 'undefined') {
         window.__SLOT_WIN_PRESENT_ACTIVE__ = true;
       }
+      await __waitReelsIdle(2000);  /* D-11 gate */
       if (typeof HookBus !== 'undefined') {
         HookBus.emit('onWinPresentationStart', {
           award: totalAward,
@@ -939,6 +967,7 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
     }
 
     window.__SLOT_WIN_PRESENT_ACTIVE__ = true;
+    await __waitReelsIdle(2000);  /* D-11 gate */
     if (typeof HookBus !== 'undefined') {
       HookBus.emit('onWinPresentationStart', {
         award: amt,
