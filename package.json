@@ -45,6 +45,8 @@
     "test:tti:validator": "node tests/blocks/_ttiProbe.test.mjs",
     "test:wp:cross": "node tools/_ultimate-winpresentation-cross-gdd-probe.mjs",
     "test:wp:cross:validator": "node tests/blocks/_winPresentationCrossGdd.test.mjs",
+    "test:overflow": "node tools/_ultimate-symbol-overflow-probe.mjs && node tests/blocks/_symbolOverflowProbe.test.mjs",
+    "test:overflow:validator": "node tests/blocks/_symbolOverflowProbe.test.mjs",
     "test:per-block-real": "node tools/_ultimate-per-block-browser-probe.mjs --quick && node tests/blocks/_perBlockBrowserProbe.test.mjs",
     "test:per-block-real:full": "node tools/_ultimate-per-block-browser-probe.mjs && node tests/blocks/_perBlockBrowserProbe.test.mjs",
     "test:block-pair-real": "node tools/_ultimate-block-pair-browser-probe.mjs --pairs=30 --seed=1 && node tests/blocks/_blockPairBrowserProbe.test.mjs",

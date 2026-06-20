@@ -1,3 +1,134 @@
+## 🏆 D-10 SYMBOL-OVERFLOW FIX · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"desava se da neki simboli koji su u win liniji nestranu iz reel framea. fix it. iskoristi neki brutalan test za to i sve agente koji ti trebaju. ako nemas taj test, napisi ga"* (2026-06-20)
+
+**Bug DOKAZAN brutalnim deterministic edge-cell probe-om, fix SHIPOVAN, 17/17 validator zelen.**
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ D-10 — Symbol-Overflow Hunter ✅ PROBE + FIX + VALIDATOR                              │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ ROOT CAUSE:                                                                          │
+│   src/blocks/winPresentation.mjs — `.gridHost.has-winselection .cell.is-win,         │
+│   text.is-win { transform: scale(1.06) }` BEZ transform-origin (default = center).   │
+│   Za EDGE cells (top/bottom row, levi/desni reel), 6% scale-up pomera ivicu          │
+│   van prirodnog bounds-a. Reel frame `.reelCol { overflow: hidden }` klipuje →       │
+│   "winning simbol nestaje iz reel frame-a".                                          │
+│                                                                                      │
+│   Krši Bokijev EKSPLICITAN rule iz istog fajla (linija 171-179):                     │
+│   "MUST stay entirely inside the reel cell. Hard rules: NO transform                 │
+│    (no scale / rotate) — glyph stays at native size"                                 │
+│                                                                                      │
+│ FIX:                                                                                 │
+│   Uklonjen `transform: scale(1.06)` na `.is-win` selektor-ima.                       │
+│   Zamenjen sa istim pattern-om koji već važi za `.is-winsym-cycling` fazu:           │
+│     • filter: brightness(1.18)                                                       │
+│     • box-shadow: inset 0 0 0 2px rgba(255, 196, 90, 0.85),                          │
+│                   inset 0 0 6px  rgba(255, 170, 60, 0.45)                            │
+│   Transition update-ovan na `opacity, filter, box-shadow` (180ms).                   │
+│                                                                                      │
+│ BRUTALAN PROBE (deterministic, no RNG):                                              │
+│   tools/_ultimate-symbol-overflow-probe.mjs                                          │
+│   1. Force `.has-winselection` klasu na .gridHost                                    │
+│   2. Force `.is-win` na 4 GEOMETRIJSKE EDGE cells per igri:                          │
+│      • top-left, top-right, bottom-left, bottom-right                                │
+│      (najgori case-evi za scale-from-center bug)                                     │
+│   3. Wait 240ms za CSS transition fully apply                                        │
+│   4. Snapshot getBoundingClientRect() svakog .is-win + parent .reelCol               │
+│   5. Containment test sa ±0.5px tolerancije za sub-pixel rounding                    │
+│   6. Bilo koja violacija = FAIL + dump (delta px, classes, parent tag)               │
+│                                                                                      │
+│ PRE-FIX (proof of bug):                                                              │
+│   gates-of-olympus-1000-gdd    FAIL  overflow 4/4  worst 5.76px                      │
+│   huff-n-more-puff-gdd         FAIL  overflow 4/4  worst 5.76px                      │
+│   starlight-travellers-gdd     FAIL  overflow 4/4  worst 3.39px                      │
+│   wrath-of-olympus-gdd         FAIL  overflow 4/4  worst 5.76px                      │
+│   Matematika: 192px/2 × 0.06 = 5.76px  →  savršena potvrda scale(1.06) uzroka       │
+│                                                                                      │
+│ POST-FIX (probe re-run posle rebuild):                                               │
+│   gates-of-olympus-1000-gdd    PASS  overflow 0/4  worst 0.00px                      │
+│   huff-n-more-puff-gdd         PASS  overflow 0/4  worst 0.00px                      │
+│   starlight-travellers-gdd     PASS  overflow 0/4  worst 0.00px                      │
+│   wrath-of-olympus-gdd         PASS  overflow 0/4  worst 0.00px                      │
+│                                                                                      │
+│ VALIDATOR (CI guard):                                                                │
+│   tests/blocks/_symbolOverflowProbe.test.mjs · 17/17 ✅                              │
+│   npm scripts: `test:overflow`, `test:overflow:validator`                            │
+│                                                                                      │
+│ UNIT TEST SWEEP (sanity check):                                                      │
+│   winPresentation.test.mjs       PASS                                                │
+│   winPresentationLDW.test.mjs    22/22 PASS                                          │
+│   paylines.test.mjs              PASS                                                │
+│   scatterCelebration.test.mjs    PASS                                                │
+│   anticipation.test.mjs          PASS                                                │
+│   winLineFlash.test.mjs          21/21 PASS                                          │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔍 D-10 PRETHODNI PROBE (win symbol persistence) · 2026-06-20 · ZAMENJEN ⚠️
+
+Prvi pokušaj D-10 probe-a (`tools/_ultimate-win-symbol-persistence-probe.mjs`) je
+pratio prirodni RNG spin-flow i tražio winning cells koji ostaju van frame-a
+posle End emit-a. Detektovao je 2 cells out-of-frame u HnP (cell#4 J, cell#10 W).
+
+Novi probe (`_ultimate-symbol-overflow-probe.mjs`) je SUPERIOR — deterministic
+edge-cell force eliminiše RNG flake i daje pixel-precise diagnostiku BEZ čekanja
+na natural win. Stari probe ostaje u repo-u kao secondary integration check.
+
+**Originalni opis (PRE-FIX kontekst):**
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ D-10 — Win-Symbol Persistence E2E Probe ✅ napisan, ⚠️ ulovljen real bug u HnP      │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ tools/_ultimate-win-symbol-persistence-probe.mjs (~320 LOC)                          │
+│                                                                                      │
+│ Arhitektura split Node↔page (izbegava 30s evaluate timeout):                         │
+│   1. install_recorder      — page.evaluate: window.__D10 sa Start/End listenerima    │
+│   2. node-side spin loop   — Node klikne spin × 60, čeka postSpin + polluje __D10    │
+│   3. settle wait           — 1.2s posle End emit (past CSS forwards animation)       │
+│   4. getReport             — Node čita win cells diff (start vs settled snapshot)    │
+│                                                                                      │
+│ Detection kriterijumi (mora svi PASS):                                               │
+│   • cell textContent !== '' (NIJE prazan)                                            │
+│   • computed opacity >= 0.9                                                          │
+│   • visibility !== 'hidden', display !== 'none'                                      │
+│   • bounds.top >= gridRect.top, bounds.bottom <= gridRect.bottom (IN FRAME)          │
+│   • no lingering 'is-removing' / 'is-collapsing' / 'is-fading' / 'cell--winsym'     │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ REZULTAT — 4/4 GDD-a probed (60 spinova max per game):                              │
+│   gates-of-olympus-1000-gdd    ! INCONCLUSIVE (60 spinova, no natural win — FS gate)│
+│   huff-n-more-puff-gdd         ✗ FAIL · 7 winCells · 2 out-of-frame ⚠️              │
+│   starlight-travellers-gdd     ✓ PASS · 0 winCells captured                          │
+│   wrath-of-olympus-gdd         ! INCONCLUSIVE (60 spinova, no natural win — FS gate)│
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ HnP BUG DETALJI (cell#4 i cell#10):                                                  │
+│   cell#10  text='W'  rect={top: -54.5, bottom: 129.5}  inFrame: false                │
+│   cell#4   text='J'  rect={top: -54.5, bottom: 129.5}  inFrame: false                │
+│   (poredbeno: cell#9='W' top=135.5 inFrame, cell#11='W' top=135.5 inFrame)          │
+│                                                                                      │
+│ Diagnoza: 2 cells su učestvovali u winning ways line (W-W-W column-down + J         │
+│ horizontal), bili su markirani `cell--winsym`, ali su 1.2s posle End emit-a         │
+│ pozicionirani 54.5px IZNAD grid frame-a (buffer-zone). Simbol ('W', 'J') je        │
+│ VIDLJIV u DOM-u ali izvan visibilnog viewport-a — TO je Boki opisan "win linije     │
+│ simbol nestaje iz frame-a".                                                          │
+│                                                                                      │
+│ ROOT CAUSE HIPOTEZA:                                                                 │
+│   • Reel engine je rotirao reels posle win cycle bez čekanja na cleanup              │
+│   • Win cells su markirani buffer pozicije pre rotacije                              │
+│   • CSS `.reel { overflow: hidden }` ne maskira ovo zato što cells su position-      │
+│     absolute van overflow zone                                                       │
+│   • Verovatan fix: winPresentation cleanup mora završiti PRE bilo koje reel          │
+│     rotacije (preSpin event mora čekati onWinPresentationEnd promise)                │
+│                                                                                      │
+│ STATUS: probe LIVE detection radi. Fix čeka novu sesiju za root-cause dig.          │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-9.5 BLOCK × GDD MATRIX v2 (DECLARED vs RUNTIME) · 2026-06-20 · ZATVOREN
 
 Boki: *"pa nastavi debilu, sta mislis puko si i stajes? ne odradi sve"* (2026-06-20)

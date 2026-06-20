@@ -146,21 +146,26 @@ export function resolveConfig(model) {
    misuse that the senior review flagged. */
 export function emitWinPresentationCSS(cfg = defaultConfig()) {
   return `
-  /* ── Placeholder win highlight — emitted by src/blocks/winPresentation.mjs
-     Visual-only: winning cells stay full opacity + nudge scale, non-winning
-     cells dim to ~35%. No keyframes, no glow — just enough to read the
-     combo at a glance. Real win-evaluator (matched line / cluster) lands
-     with the math layer. Scoped to .gridHost so it works for both flat
-     grids and nested SVG/text grids. */
+  /* ── Win highlight — emitted by src/blocks/winPresentation.mjs
+     Visual-only: winning cells stay full opacity with a contained brightness
+     pulse + inset gold rim. Non-winning cells dim to ~32%. Boki rule
+     (2026-06-20, D-10 SYMBOL-OVERFLOW): NO transform here. Previous
+     "transform: scale(1.06)" on ".is-win" pushed edge cells past the
+     ".reelCol { overflow: hidden }" mask, so the winning symbol visibly
+     "disappeared" from the reel frame. This matches the same NO-transform
+     constraint already enforced for the ".is-winsym-cycling" phase below. */
   .gridHost.has-winselection .cell,
-  .gridHost.has-winselection text         { opacity: 0.32; transition: opacity 180ms ease, transform 180ms ease; }
+  .gridHost.has-winselection text         { opacity: 0.32; transition: opacity 180ms ease, filter 180ms ease, box-shadow 180ms ease; }
   .gridHost.has-winselection .cell.is-win,
-  .gridHost.has-winselection text.is-win  { opacity: 1;     transform: scale(1.06); }
+  .gridHost.has-winselection text.is-win  { opacity: 1;
+                                             filter: brightness(1.18);
+                                             box-shadow: inset 0 0 0 2px rgba(255, 196, 90, 0.85),
+                                                         inset 0 0 6px  rgba(255, 170, 60, 0.45); }
   @media (prefers-reduced-motion: reduce) {
     .gridHost.has-winselection .cell,
     .gridHost.has-winselection text,
     .gridHost.has-winselection .cell.is-win,
-    .gridHost.has-winselection text.is-win { transition: none; transform: none; }
+    .gridHost.has-winselection text.is-win { transition: none; }
   }
 
   /* ── Win-symbol cycle ── independent modular block ────────────────────

@@ -155,7 +155,31 @@ function detectWaysWins() {
   if (!host) return [];
   const REELS = window.REELS || 5;
   const ROWS  = window.ROWS  || 3;
-  const cells = host.querySelectorAll('.cell');
+  /* D-10 FIX (2026-06-20): Boki "simboli u win liniji nestraju iz reel framea".
+     Root cause was using host.querySelectorAll('.cell') which includes BUFFER
+     cells (1 top + 3 visible + 1 bottom = 5 per reel × 5 reels = 25 total)
+     but indexing math (r * REELS + reelIdx) assumes a flat REELS×ROWS = 15
+     array. The mismatch picked up off-frame buffer cells as winning cells
+     and marked them with cell--winsym → simboli su crtani 54px iznad frame-a.
+     Fix: build the flat array from RECT_REELS[reelIdx].cellAt(rowIdx) which
+     is the canonical visible-cell accessor (skips buffer rows). */
+  const cells = new Array(REELS * ROWS);
+  if (Array.isArray(window.RECT_REELS)) {
+    for (let reelIdx = 0; reelIdx < REELS; reelIdx++) {
+      const reel = window.RECT_REELS[reelIdx];
+      if (!reel) continue;
+      for (let r = 0; r < ROWS; r++) {
+        const el = (typeof reel.cellAt === 'function')
+          ? reel.cellAt(r)
+          : (Array.isArray(reel.cells) ? reel.cells[r + 1] : null);
+        cells[r * REELS + reelIdx] = el || null;
+      }
+    }
+  } else {
+    /* Fallback: original behavior. */
+    const flat = host.querySelectorAll('.cell');
+    for (let i = 0; i < REELS * ROWS && i < flat.length; i++) cells[i] = flat[i];
+  }
   const reg   = (typeof SYMBOL_REGISTRY !== 'undefined') ? SYMBOL_REGISTRY : null;
   const wild  = reg && reg.wild;
   const scat  = reg && reg.scatter;
