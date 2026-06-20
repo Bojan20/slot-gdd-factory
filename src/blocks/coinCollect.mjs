@@ -204,7 +204,18 @@ const CC_RESET_FS_END   = ${cfg.resetOnFsEnd};
   function tally() {
     if (suspended) return;
     const cells = scanGrid();
-    if (cells.length === 0) return;
+    /* WAVE Y6 force-guard (Boki 2026-06-20 "dalje"): UFP chip plants
+     * __FORCE_COLLECTOR_FILL__ to demo 'partial' (40%) / 'full' (100%) /
+     * 'overflow' (>100%). We synthesise a coin payload that pushes the
+     * meter to the requested fraction of CC_THRESHOLD when available,
+     * else 100/200 coin defaults. One-shot per spin. */
+    let _forcedFill = null;
+    try {
+      _forcedFill = window.__FORCE_COLLECTOR_FILL__;
+      if (_forcedFill) window.__FORCE_COLLECTOR_FILL__ = null;
+    } catch (_) {}
+
+    if (cells.length === 0 && !_forcedFill) return;
 
     let perSpinValue = 0;
     const cellIds = [];
@@ -215,6 +226,18 @@ const CC_RESET_FS_END   = ${cfg.resetOnFsEnd};
       perSpinValue += safe;
       cellIds.push(cell.id || cell.getAttribute('data-cell-id') || ('c' + cellIds.length));
       cell.classList.add('is-coin');
+    }
+
+    if (_forcedFill) {
+      const _baseThreshold = (typeof CC_THRESHOLD === 'number' && CC_THRESHOLD > 0) ? CC_THRESHOLD : 100;
+      const _fillTarget = _forcedFill === 'partial' ? _baseThreshold * 0.4
+                        : _forcedFill === 'overflow' ? _baseThreshold * 1.2
+                        : _baseThreshold;
+      const _bonus = Math.max(0, Math.round(_fillTarget - (window.__COIN_COLLECT__?.sessionTotal || 0)));
+      if (_bonus > 0) {
+        perSpinValue += _bonus;
+        cellIds.push('forced-coin:' + _forcedFill);
+      }
     }
 
     const state = window.__COIN_COLLECT__;

@@ -240,7 +240,12 @@ export function emitBonusPickRuntime(cfg = defaultConfig()) {
     }
   }
 
-  function _bpDrawPrize() {
+  function _bpDrawPrize(forcedIdx) {
+    /* WAVE Y2 force-guard (Boki 2026-06-20 "dalje"): when UFP sets
+       window.__FORCE_PICK_PATH__ = [0, 2, 4], successive picks return
+       BP_POOL[0], BP_POOL[2], BP_POOL[4] regardless of weights — gives QA
+       a deterministic reveal sequence for screenshot capture. */
+    if (Number.isInteger(forcedIdx) && BP_POOL[forcedIdx]) return BP_POOL[forcedIdx];
     let total = 0;
     for (const p of BP_POOL) total += p.weight;
     let roll = _bpRand() * total;
@@ -309,7 +314,17 @@ export function emitBonusPickRuntime(cfg = defaultConfig()) {
     if (!t || t.disabled || !BP_STATE.active) return;
     const idx = parseInt(t.dataset.bpIdx, 10);
     if (BP_STATE.revealedIdx.has(idx)) return;
-    const prize = _bpDrawPrize();
+    /* WAVE Y2 force-guard: if UFP set __FORCE_PICK_PATH__, pop the next
+       forced prize index from the path. */
+    let _forcedIdx = null;
+    try {
+      const path = window.__FORCE_PICK_PATH__;
+      if (Array.isArray(path) && path.length) {
+        _forcedIdx = path.shift();
+        if (path.length === 0) window.__FORCE_PICK_PATH__ = null;
+      }
+    } catch (_) {}
+    const prize = _bpDrawPrize(_forcedIdx);
     BP_STATE.revealedIdx.add(idx);
     t.classList.add('is-revealed');
     t.textContent = prize.label;

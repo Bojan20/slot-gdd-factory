@@ -335,7 +335,20 @@ function _wbFallbackDraw() {
   WB_FALLBACK_TIMER = null;
   if (!WB_STATE.active || !WB_STATE.spinning) return;
   if (!Array.isArray(WB_SEGMENTS) || WB_SEGMENTS.length === 0) return;
-  var idx = Math.floor(Math.random() * WB_SEGMENTS.length);
+  /* WAVE Y4 force-guard (Boki 2026-06-20 "dalje"): if UFP set
+   * __FORCE_WHEEL_SEGMENT__, land on that exact index. One-shot. */
+  var idx;
+  try {
+    var _force = window.__FORCE_WHEEL_SEGMENT__;
+    if (Number.isInteger(_force) && _force >= 0 && _force < WB_SEGMENTS.length) {
+      idx = _force;
+      window.__FORCE_WHEEL_SEGMENT__ = null;
+    } else {
+      idx = Math.floor(Math.random() * WB_SEGMENTS.length);
+    }
+  } catch (_) {
+    idx = Math.floor(Math.random() * WB_SEGMENTS.length);
+  }
   if (typeof console !== 'undefined' && console.debug) {
     try { console.debug('[wheelBonus] math layer silent; UI fallback draw idx=' + idx); } catch (_) {}
   }

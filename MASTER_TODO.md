@@ -1,3 +1,82 @@
+## 🏆 WAVE Y — EXOTIC FORCE CHIP COVERAGE 10 → 16 · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"dalje"* — četvrti 🥈 prioritet roadmap-a (2026-06-20).
+
+**Zahtev:** posle Wave U baseline 10 chip-ova, dodati industry-specific
+mehanike (gamble varianti, pick path, slingo pattern, wheel segment,
+tournament rank, bonus collector fill) sa deterministic outcome flag-ovima.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE Y — 6 atomi closed                                                                │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Y1 — Gamble outcome chip (enhanced existing gamble chip)                                │
+│   UFP cycle:    'win' → 'tier-up' → 'lose' (per successive click)                       │
+│   Flag:         window.__FORCE_GAMBLE_OUTCOME__                                         │
+│   Consumer:     gamble.mjs::_gambleResolvePick — overrides _gambleWinChance()           │
+│   One-shot:     ✅ cleared after consumption                                            │
+│                                                                                       │
+│ Y2 — Pick path chip (enhanced existing bonus_pick chip)                                 │
+│   UFP plant:    window.__FORCE_PICK_PATH__ = [0, 2, 4]                                  │
+│   Consumer:     bonusPick.mjs::_bpHandleClick — successive picks pop prize index         │
+│   One-shot:     ✅ cleared when path array exhausted                                    │
+│                                                                                       │
+│ Y3 — Slingo pattern chip (NOVI kind)                                                    │
+│   UFP plant:    window.__FORCE_SLINGO_PATTERN__ = 'full_house'                          │
+│   Consumer:     slingoSpinEngine.mjs::_randSym — replicates board symbol so every       │
+│                  strip drop matches                                                     │
+│   One-shot:     ✅ cleared on next macrotask                                            │
+│                                                                                       │
+│ Y4 — Wheel segment chip (enhanced existing wheel_bonus chip)                            │
+│   UFP cycle:    0, 1, 2, ... (segment index modulo WB_SEGMENTS.length)                  │
+│   Flag:         window.__FORCE_WHEEL_SEGMENT__                                          │
+│   Consumer:     wheelBonus.mjs::_wbFallbackDraw — uses forced idx                       │
+│   One-shot:     ✅ cleared after consumption                                            │
+│                                                                                       │
+│ Y5 — Tournament rank chip (NOVI kind)                                                   │
+│   UFP cycle:    'top-1' → 'top-10' → 'cutoff'                                           │
+│   Flag:         window.__FORCE_TOURNAMENT_RANK__                                        │
+│   Consumer:     leaderboardChip.mjs::refresh — pins rank display                        │
+│   Persistent:   sticky display until next chip click                                    │
+│                                                                                       │
+│ Y6 — Bonus collector fill chip (NOVI kind)                                              │
+│   UFP cycle:    'partial' (40%) → 'full' (100%) → 'overflow' (>100%)                    │
+│   Flag:         window.__FORCE_COLLECTOR_FILL__                                         │
+│   Consumer:     coinCollect.mjs::tally — synthesise coin bonus to push meter            │
+│   One-shot:     ✅ cleared after consumption                                            │
+│                                                                                       │
+│ UFP catalog                                                                            │
+│   ALL_KNOWN_KINDS  + slingo, tournament, bonus_collector                                 │
+│   KIND_LABELS      + SLINGO, TOURN, COLLECT                                              │
+│   KIND_FULL_LABELS + Slingo Pattern, Tournament Rank, Bonus Collector                    │
+│                                                                                       │
+│ Each Y handler in universalForcePanel.mjs:                                              │
+│   - One ujedinjeni branch po kind-u                                                     │
+│   - Cyclic state per chip (window.__<KIND>_FORCE_CYCLE__)                                │
+│   - HookBus.emit za listener blokove gde primenjivo                                      │
+│   - __FORCE_FEATURE_PENDING__ za blokove sa onForceFeatureRequested wire-up              │
+│   - __FORCE_BIG_WIN_TIER__=1 baseline win za multiplier/eval                             │
+│                                                                                       │
+│ VERIFIKACIJA                                                                          │
+│   Wave Y smoke         21/21 PASS ✅ (UFP catalog + 6 consumer flags + 5 one-shot clear) │
+│   gamble block        19/19 PASS ✅                                                     │
+│   bonusPick block     20/20 PASS ✅                                                     │
+│   wheelBonus block    27/27 PASS ✅                                                     │
+│   slingoSpinEngine     8/8  PASS ✅                                                     │
+│   coinCollect block   35/35 PASS ✅                                                     │
+│   parser tests          4/4 PASS ✅                                                     │
+│   grid render fixtures 20/20 PASS ✅                                                    │
+│                                                                                       │
+│ TOTAL CHIP COUNT                                                                       │
+│   Wave U baseline:  10 chips (FS · BW · H&W · multiplier orb · lightning x2/3/5/10 ·    │
+│                      gamble · pick · wheel · respin · mystery wild family)              │
+│   Wave Y addition:  +6 deterministic exotic chips                                       │
+│   TOTAL CHIP KINDS: 16 (+ always-on infra)                                              │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE X — UNIVERSAL TOPOLOGY EXTRACTOR · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"dalhje"* (dalje) — treći 🥈 prioritet roadmap-a (2026-06-20).

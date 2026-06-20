@@ -274,6 +274,18 @@ const LBC_TOP_N = ${cfg.topN};
     for (let i = 0; i < entries.length; i++) {
       if (entries[i].isSelf) { rank = '#' + (i + 1); break; }
     }
+    /* WAVE Y5 force-guard (Boki 2026-06-20 "dalje"): UFP tournament chip
+       pins the rendered rank via __FORCE_TOURNAMENT_RANK__.
+         'top-1'  → #1
+         'top-10' → #10 (or floor(LBC_TOP_N / 2))
+         'cutoff' → '—' (below leaderboard)
+       Persistent until next chip click. */
+    try {
+      var _forceR = window.__FORCE_TOURNAMENT_RANK__;
+      if (_forceR === 'top-1') rank = '#1';
+      else if (_forceR === 'top-10') rank = '#10';
+      else if (_forceR === 'cutoff') rank = '—';
+    } catch (_) {}
     if (rank !== lastRank) {
       if (typeof HookBus.emit === 'function') {
         HookBus.emit('onLeaderboardRankChanged', { oldRank: lastRank, newRank: rank });

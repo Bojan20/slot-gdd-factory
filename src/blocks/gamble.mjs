@@ -228,7 +228,22 @@ function gambleOpen(stakeX) {
 function _gambleResolvePick(pickToken) {
   if (!GAMBLE_STATE.active) return;
   GAMBLE_STATE.rounds++;
-  const won = Math.random() < _gambleWinChance();
+  /* WAVE Y1 force-guard (Boki 2026-06-20 "dalje"): UFP chip can pin the
+     next round's outcome via window.__FORCE_GAMBLE_OUTCOME__:
+       'win'     → guaranteed win this round
+       'lose'    → guaranteed bust
+       'tier-up' → win + advance stake one tier on the ladder gamble.
+     One-shot per round; cleared after consumption. */
+  let won;
+  try {
+    const _force = window.__FORCE_GAMBLE_OUTCOME__;
+    if (_force === 'win' || _force === 'tier-up') won = true;
+    else if (_force === 'lose') won = false;
+    else won = Math.random() < _gambleWinChance();
+    if (_force) window.__FORCE_GAMBLE_OUTCOME__ = null;
+  } catch (_) {
+    won = Math.random() < _gambleWinChance();
+  }
   const result = document.getElementById('gambleResult');
   if (won) {
     GAMBLE_STATE.stakeX = Math.round(GAMBLE_STATE.stakeX * GAMBLE_MULT * ${STAKE_PRECISION}) / ${STAKE_PRECISION};

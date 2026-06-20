@@ -104,6 +104,11 @@ const ALL_KNOWN_KINDS = Object.freeze([
   'super_symbol',
   'jackpot',
   'big_win',
+  /* WAVE Y (Boki 2026-06-20 "dalje") — 3 new exotic kinds + deterministic
+   * outcome variants for the existing modal chips. Coverage: 10 → 16. */
+  'slingo',
+  'tournament',
+  'bonus_collector',
 ]);
 
 const KIND_LABELS = Object.freeze({
@@ -136,6 +141,9 @@ const KIND_LABELS = Object.freeze({
   super_symbol:          'SUPER',
   jackpot:               'JACKPOT',
   big_win:               'BIG-WIN',
+  slingo:                'SLINGO',
+  tournament:            'TOURN',
+  bonus_collector:       'COLLECT',
 });
 
 const KIND_FULL_LABELS = Object.freeze({
@@ -168,6 +176,9 @@ const KIND_FULL_LABELS = Object.freeze({
   super_symbol:          'Super Symbol',
   jackpot:               'Jackpot',
   big_win:               'Big Win',
+  slingo:                'Slingo Pattern',
+  tournament:            'Tournament Rank',
+  bonus_collector:       'Bonus Collector',
 });
 
 /**
@@ -964,6 +975,88 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
      * settle → modal. */
     if (kind === 'wheel_bonus' || kind === 'gamble' || kind === 'bonus_pick') {
       try { window.__FORCE_FEATURE_PENDING__ = kind; } catch (_) {}
+    }
+
+    /* WAVE Y (Boki 2026-06-20 "dalje") — deterministic outcome variants.
+     * The 6 atoms below give each chip an explicit outcome flag so QA can
+     * force a SPECIFIC result instead of "the next modal that opens".
+     * Each flag is one-shot, consumed by its owning block. */
+
+    /* Y1 — Gamble outcome: 'win' (player wins next round), 'lose' (busts),
+     * 'tier-up' (advances on ladder gamble). gamble.mjs onForceFeatureRequested
+     * handler reads the flag and pins the next gamble round's outcome. */
+    if (kind === 'gamble') {
+      try {
+        if (!window.__GAMBLE_FORCE_CYCLE__) window.__GAMBLE_FORCE_CYCLE__ = 0;
+        var _gOutcomes = ['win', 'tier-up', 'lose'];
+        var _gIdx = window.__GAMBLE_FORCE_CYCLE__++ % _gOutcomes.length;
+        window.__FORCE_GAMBLE_OUTCOME__ = _gOutcomes[_gIdx];
+      } catch (_) {}
+    }
+
+    /* Y2 — Pick path: 3-of-N reveal. Deterministic indexes the picker
+     * will reveal in sequence. bonusPick.mjs reads __FORCE_PICK_PATH__
+     * and skips the RNG selection. */
+    if (kind === 'bonus_pick') {
+      try {
+        window.__FORCE_PICK_PATH__ = [0, 2, 4];   /* canonical demo pick */
+      } catch (_) {}
+    }
+
+    /* Y3 — Slingo: force pattern + line claim. slingoSpinEngine consumes
+     * __FORCE_SLINGO_PATTERN__ to land a known number set yielding 1+
+     * Slingo lines. Pattern 'full_house' aims at all-board reveal. */
+    if (kind === 'slingo') {
+      try {
+        window.__FORCE_FEATURE_PENDING__ = 'slingo';
+        window.__FORCE_SLINGO_PATTERN__  = 'full_house';
+        window.__FORCE_BIG_WIN_TIER__    = 1;
+      } catch (_) {}
+    }
+
+    /* Y4 — Wheel segment: force the wheel to land on a specific index.
+     * wheelBonus.mjs reads __FORCE_WHEEL_SEGMENT__ before spinning the wheel.
+     * Cycled across the segment range so successive clicks demo each. */
+    if (kind === 'wheel_bonus') {
+      try {
+        if (!window.__WHEEL_FORCE_CYCLE__) window.__WHEEL_FORCE_CYCLE__ = 0;
+        var _wSegs = (window.WHEEL_BONUS_SEGMENTS && window.WHEEL_BONUS_SEGMENTS.length) || 8;
+        window.__FORCE_WHEEL_SEGMENT__ = (window.__WHEEL_FORCE_CYCLE__++) % _wSegs;
+      } catch (_) {}
+    }
+
+    /* Y5 — Tournament rank: pin the leaderboard tier the next session
+     * concludes in. leaderboardChip.mjs (when present) consumes the flag
+     * to demo top-1 / top-10 / cutoff scenarios. */
+    if (kind === 'tournament') {
+      try {
+        if (!window.__TOURNAMENT_FORCE_CYCLE__) window.__TOURNAMENT_FORCE_CYCLE__ = 0;
+        var _tRanks = ['top-1', 'top-10', 'cutoff'];
+        var _tIdx = window.__TOURNAMENT_FORCE_CYCLE__++ % _tRanks.length;
+        window.__FORCE_TOURNAMENT_RANK__ = _tRanks[_tIdx];
+        window.__FORCE_FEATURE_PENDING__ = 'tournament';
+        if (window.HookBus && typeof window.HookBus.emit === 'function') {
+          window.HookBus.emit('onForceTournamentRank', { rank: _tRanks[_tIdx] });
+        }
+      } catch (_) {}
+    }
+
+    /* Y6 — Bonus collector: meter-fill scenarios. Modes:
+     * 'partial' (40%), 'full' (100% triggers feature), 'overflow' (over 100%
+     * tests carry-over math). coinCollect / collectableSymbol / cumulativeMeter
+     * read the flag at preSpin to override RNG fill. */
+    if (kind === 'bonus_collector') {
+      try {
+        if (!window.__COLLECTOR_FORCE_CYCLE__) window.__COLLECTOR_FORCE_CYCLE__ = 0;
+        var _cModes = ['partial', 'full', 'overflow'];
+        var _cIdx = window.__COLLECTOR_FORCE_CYCLE__++ % _cModes.length;
+        window.__FORCE_COLLECTOR_FILL__ = _cModes[_cIdx];
+        window.__FORCE_FEATURE_PENDING__ = 'bonus_collector';
+        window.__FORCE_BIG_WIN_TIER__ = 1;
+        if (window.HookBus && typeof window.HookBus.emit === 'function') {
+          window.HookBus.emit('onForceCollectorFill', { mode: _cModes[_cIdx] });
+        }
+      } catch (_) {}
     }
 
     if (MODAL_ONLY_KINDS.indexOf(kind) === -1) {

@@ -209,6 +209,28 @@ export function emitSlingoSpinEngineRuntime(cfg = defaultConfig()) {
 
     function _randSym() {
       var p = (typeof POOL !== 'undefined' && POOL && POOL.length) ? POOL : null;
+      /* WAVE Y3 force-guard (Boki 2026-06-20 "dalje"): if UFP set
+       * __FORCE_SLINGO_PATTERN__, return board symbols that match the
+       * pattern. 'full_house' returns whatever board symbol the strip
+       * needs to match; otherwise, RNG default. */
+      try {
+        var _pat = window.__FORCE_SLINGO_PATTERN__;
+        if (_pat === 'full_house') {
+          /* Force-match: replicate the first board symbol so every drop
+           * lands a match. Cleared after the strip finishes so the next
+           * spin starts fresh. */
+          var board = _resolveBoardCells();
+          for (var i = 0; i < board.length; i++) {
+            var s = (board[i].textContent || '').trim();
+            if (s) {
+              /* One-shot release after the strip has been drawn (cleared
+               * at next macrotask so the in-flight strip still matches). */
+              setTimeout(function() { try { window.__FORCE_SLINGO_PATTERN__ = null; } catch (_) {} }, 0);
+              return s;
+            }
+          }
+        }
+      } catch (_) {}
       return p ? p[Math.floor(Math.random() * p.length)] : ${TRIG_FALLBACK};
     }
 
