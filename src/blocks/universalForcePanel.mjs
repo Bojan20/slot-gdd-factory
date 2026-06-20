@@ -947,34 +947,35 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
     } catch (_) {}
   }
 
-  /* Closure-captured shipping for jackpot/hold_and_win/gamble. The
-   * earlier postSpin-listener attempt failed because reelEngine clears
-   * window.__FORCE_FEATURE__ / __FORCE_FEATURE_PENDING__ / FORCE_TRIGGER
-   * at the settle gate BEFORE emitting postSpin (reelEngine.mjs:557),
-   * so any window-flag read inside a postSpin handler sees null. We
-   * instead capture the kind in a closure at click time and ship the
-   * canonical event via a HookBus.on subscription that owns its own
-   * unsubscribe, so cleanup is deterministic per-click. */
+  /* D-16 LEGO sole-owner fix (2026-06-20): Previous impl emitted
+   * canonical events (onDailyJackpotAward / onJackpotRoomEntered /
+   * onHoldAndWinPhase / onHoldAndWinPayout / onGambleStart / onGambleEnd)
+   * directly from UFP — this violated the EXPECTED_EMIT_OWNERS sole-owner
+   * invariant (those events belong to dailyJackpot.mjs / jackpotLadderRooms.mjs
+   * / holdAndWin.mjs / gambleSecondary.mjs respectively).
+   *
+   * Correct flow per LEGO doctrine: the click handler already emits
+   * onForceFeatureRequested (line 507) which holdAndWin / gambleSecondary
+   * / wheelBonus / dailyJackpot / jackpotLadderRooms already subscribe to
+   * (see those blocks init hooks). The owner block drives the real
+   * feature path and emits its own canonical events.
+   *
+   * UFP keeps only the visual celebrate chip — vendor-neutral feedback
+   * that the chip was clicked. If a GDD doesn't include the owner block,
+   * the chip paints but no canonical event fires (correct: don't emit
+   * events for features that don't exist in the model). */
   function _shipForceCanonicalEvent(kind) {
     if (!window.HookBus || typeof window.HookBus.emit !== 'function') return;
-    var bet = (typeof window.__SLOT_BET__ === 'number' && window.__SLOT_BET__ > 0)
-      ? window.__SLOT_BET__ : 1;
 
     if (kind === 'jackpot') {
-      try { window.HookBus.emit('onDailyJackpotAward', { tier: 'GRAND', source: 'force-chip', award: bet * 1000 }); } catch (_) {}
-      try { window.HookBus.emit('onJackpotRoomEntered', { room: 'GRAND', source: 'force-chip' }); } catch (_) {}
       _paintCelebrateChip('JACKPOT', 'radial-gradient(circle,rgba(255,215,80,1) 0%,rgba(240,140,20,0.95) 65%,rgba(120,60,0,0.85) 100%)');
       return;
     }
     if (kind === 'hold_and_win') {
-      try { window.HookBus.emit('onHoldAndWinPhase', { phase: 'intro', source: 'force-chip' }); } catch (_) {}
-      try { window.HookBus.emit('onHoldAndWinPayout', { total: bet * 60, source: 'force-chip' }); } catch (_) {}
       _paintCelebrateChip('HOLD & WIN', 'radial-gradient(circle,rgba(255,140,40,1) 0%,rgba(220,80,20,0.95) 65%,rgba(90,30,5,0.85) 100%)');
       return;
     }
     if (kind === 'gamble') {
-      try { window.HookBus.emit('onGambleStart', { source: 'force-chip' }); } catch (_) {}
-      try { window.HookBus.emit('onGambleEnd', { outcome: 'win', award: bet * 2, source: 'force-chip' }); } catch (_) {}
       _paintCelebrateChip('GAMBLE x2', 'radial-gradient(circle,rgba(80,200,120,1) 0%,rgba(20,140,80,0.95) 65%,rgba(5,70,40,0.85) 100%)');
       return;
     }

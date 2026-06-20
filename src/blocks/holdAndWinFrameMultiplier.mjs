@@ -368,12 +368,12 @@ export function emitHoldAndWinFrameMultiplierRuntime(cfg = defaultConfig()) {
         });
       } catch (_) {}
     }
-    /* D-14.4 (Boki 2026-06-20, IGT cross-ref): Industry standard za
-     * FRAME tier pool (Mini/Minor/Major/Grand) je SUM (sabiranje
-     * fixed-tier vrednosti pri HW_END), ne PRODUCT. Earlier D-14.1
-     * impl je radio totalProduct sto bi davao apsurdne payout cap-ove
-     * (5 frame-locked cells × 10× = 100,000× bet, dok IGT standard
-     * dopusta max ~5,000× bet per H&W round). Sum je istovremeno
+    /* D-14.4 (Boki 2026-06-20, industry-reference cross-ref): Industry
+     * standard za FRAME tier pool (Mini/Minor/Major/Grand) je SUM
+     * (sabiranje fixed-tier vrednosti pri HW_END), ne PRODUCT. Earlier
+     * D-14.1 impl je radio totalProduct sto bi davao apsurdne payout
+     * cap-ove (5 frame-locked cells × 10× = 100,000× bet, dok industry
+     * reference dopusta max ~5,000× bet per H&W round). Sum je istovremeno
      * pravilo iz Skeleton Key + Wrath par sheet referenci.
      *
      * Sum (≥ 1) ide kroz setMultMax — last-writer-wins bi srusio

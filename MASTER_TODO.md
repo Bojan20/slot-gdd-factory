@@ -1,3 +1,54 @@
+## 🏆 D-16 LEGO SOLE-OWNER + VENDOR-NEUTRAL SWEEP · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"ajde radi dalje fix za slot gdd i azuriraj master todo ako je potrebno"* (2026-06-20)
+
+**LEGO Gate izbacio 2 FAIL-a posle D-14.4 land-a — oba zatvorena, gate 8/8 ✅.**
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ D-16 — LEGO Gate kvarovi posle D-14.4                                                 │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ FAIL #3 — Vendor-neutral block source:                                                │
+│   holdAndWinFrameMultiplier.mjs + multiplierLadder.mjs sadržali "IGT"                 │
+│   string u D-14.4 cross-ref komentarima. Krši rule_no_vendor_mentions.                │
+│   Patch: "IGT cross-ref" → "industry-reference cross-ref",                            │
+│          "dok IGT standard" → "dok industry reference".                               │
+│   Funkcionalan kod (SUM aggregate + reset-on-lose) ostao identičan.                   │
+│                                                                                       │
+│ FAIL #4 — Block-event ownership (sole-owner principle):                               │
+│   universalForcePanel.mjs emit-ovao 6 canonical events:                                │
+│     onGambleStart, onGambleEnd, onHoldAndWinPhase, onHoldAndWinPayout,                 │
+│     onDailyJackpotAward, onJackpotRoomEntered                                          │
+│   Svaki je SOLE-OWNED od drugog bloka (gambleSecondary / holdAndWin /                  │
+│   dailyJackpot / jackpotLadderRooms).                                                 │
+│                                                                                       │
+│   Patch: _shipForceCanonicalEvent() svedeno na VIZUELNI celebrate-chip.              │
+│   Canonical events emit-uje vlasnički blok — UFP već emit-uje                         │
+│   onForceFeatureRequested (line 507) na koji holdAndWin / gambleSecondary /            │
+│   wheelBonus / dailyJackpot / jackpotLadderRooms već subscribe-uju i sami              │
+│   driver-uju feature flow + emit canonical events (correct flow per                    │
+│   rule_force_buttons_real_spin).                                                       │
+│                                                                                       │
+│   Side-effect: ako GDD ne uključuje vlasnički blok, chip i dalje painta                │
+│   celebrate-feedback, ali se canonical event ne emit-uje (correct — ne                 │
+│   emit-uj event za feature koji ne postoji u modelu).                                  │
+│                                                                                       │
+│ FIX #6 fallout — Backtick-free template body:                                          │
+│   Inicialni D-16 komentar sadržao Markdown backtick-ove unutar                         │
+│   template-literal komentara → prerano zatvorio literal. Patch:                        │
+│   backticks uklonjeni (regular text).                                                 │
+│                                                                                       │
+│ VERIFIKACIJA:                                                                          │
+│   LEGO gate:                              8/8 PASS                                    │
+│   universalForcePanel.test.mjs:           39/39 PASS                                  │
+│   holdAndWinFrameMultiplier.test.mjs:     PASS                                        │
+│   multiplierLadder.test.mjs:              35/35 PASS                                  │
+│   4-gdds-ultimate-audit (4 GDD × 36 chips): ✅ ALL GDDS PERFECT                       │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-14.5 IGT PRESENTATION ALIGN · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"sada overi blokove multipliere u base game kako se prikazuju kako u fs kako u hold and win itd, kako kaze igt kako je pravilno tako uraid"* (2026-06-20)
