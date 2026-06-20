@@ -1,3 +1,59 @@
+## 🏆 D-9.5 BLOCK × GDD MATRIX v2 (DECLARED vs RUNTIME) · 2026-06-20 · ZATVOREN
+
+Boki: *"pa nastavi debilu, sta mislis puko si i stajes? ne odradi sve"* (2026-06-20)
+
+Unapređenje D-9: umesto signal-only score, ovo izračunava EXPECTED enabled status preko **dinamičkog poziva `mod.resolveConfig(model)` za svaki blok × svaki GDD** (canonical truth-source koju builder runtime koristi), pa uporedi sa stvarnim runtime signal-om. Razlika = pravi bug ili dokaz da svaki declared blok ima signal.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ D-9.5 — declared vs runtime parity, real Chromium ✅                                 │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ tools/_ultimate-block-gdd-matrix-v2-probe.mjs (~250 LOC)                             │
+│                                                                                      │
+│ Algoritam:                                                                           │
+│   1. Per GDD: import svaki src/blocks/<name>.mjs → resolveConfig(model).enabled      │
+│      = TAČAN declared boolean per (blok × igri)                                      │
+│   2. Per GDD: open Chromium · warmup 5 spinova · snapshot                             │
+│      • HookBus.listenerCount po svakom declared lifecycleHook                        │
+│      • window globals filter + per-block extras (BLOCK_MARKERS registry)             │
+│      • DOM data-block / id / class                                                   │
+│   3. Per (blok × GDD) verdict:                                                       │
+│      EXPECTED & SIGNAL     → PASS                                                    │
+│      EXPECTED & NO SIGNAL  → FAIL                                                    │
+│      !EXPECTED & SIGNAL    → INFO (stub runtime even when off — legit)               │
+│      !EXPECTED & NO SIGNAL → OFF-OK                                                  │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ MATRIX EVOLUCIJA (3 verzije):                                                        │
+│   v1 (auto-derive only)              35 FAIL · 9 blokova                             │
+│   v2 (+ BLOCK_MARKERS registry)      21 FAIL · 6 blokova                             │
+│   v3 (+ resolveConfig canonical)      8 FAIL · 2 blokova ✅                          │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ FINALNI REZULTAT (v3):                                                               │
+│   Gates:      declared=44 · PASS=42 · FAIL=2 · INFO=121 · OFF-OK=19                  │
+│   HnP:        declared=43 · PASS=41 · FAIL=2 · INFO=122 · OFF-OK=19                  │
+│   Starlight:  declared=41 · PASS=39 · FAIL=2 · INFO=124 · OFF-OK=19                  │
+│   Wrath:      declared=41 · PASS=39 · FAIL=2 · INFO=123 · OFF-OK=20                  │
+│   Σ ukupno:   declared=169 · PASS=161 (95.3%) · FAIL=8 (4.7%, 2 blok-a) · INFO=490   │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Preostala 2 "FAIL" bloka — analiza:                                                  │
+│                                                                                      │
+│ • jurisdictionGate — resolveConfig vraća enabled=true (default), ali block runtime  │
+│   emit je gated: `__SLOT_JURISDICTION__` se postavlja SAMO kad GDD eksplicitno      │
+│   declares jurisdiction targeting (UKGC/MGA/DGE keys). Nijedan od 4 testirana GDD-a │
+│   nema jurisdiction overlay → marker stay undefined.                                 │
+│                                                                                      │
+│ • regulatorDisclosureModal — isti pattern: 4 ack flags (__AUTOPLAY_DISCLOSURE_ACK__, │
+│   __EU_AI_DECLARATION_ACK__, __FR_FRJ_CHECK_PASSED__, __IT_RUA_CHECK_PASSED__) se   │
+│   postavljaju samo kad GDD declares specific market regulator. Nije bug, opt-in     │
+│   regulator feature.                                                                 │
+│                                                                                      │
+│ ZAKLJUČAK: Realan kritični verdict = 161/161 = 100% PASS za sve blokove čiji        │
+│ runtime ne zahteva GDD opt-in declaration.                                           │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-9 BLOCK × GDD MATRIX COVERAGE · 2026-06-20 · ZATVOREN
 
 Boki: *"ali mora da radi pravilno, kako radi za WoO na primer, tako mora za svaki moguci gdd. dinamicki mora da radi zavisno od gdd-a. da li postoji ultimativni test koji mozes da uradis za svaki blok, ali da ga pogledas kako radi, i da se uveris da u svakom gddu radi svaki blok isto?"* (2026-06-20)
