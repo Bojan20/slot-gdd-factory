@@ -793,6 +793,13 @@ import {
   emitGrandInterruptionLockCSS, emitGrandInterruptionLockRuntime,
   resolveConfig as resolveGrandInterruptionLockConfig,
 } from './blocks/grandInterruptionLock.mjs';
+// D-17.7 — Simultaneous FS + Hold-and-Win priority arbiter. When both
+// features trigger on a single spin, defer the secondary, let primary
+// resolve, then re-fire the deferred trigger.
+import {
+  emitSimultaneousFsHoldAndWinPriorityCSS, emitSimultaneousFsHoldAndWinPriorityRuntime,
+  resolveConfig as resolveSimultaneousFsHoldAndWinPriorityConfig,
+} from './blocks/simultaneousFsHoldAndWinPriority.mjs';
 // W58.J-DE — GlüStV (Glücksspielstaatsvertrag 2021) compliance gate.
 // Auto-enabled when jurisdiction === 'DE'. Boot-time only: sets
 // window.__DE_MIN_SPIN_MS__ spin-pace floor (§11(2)) + clears prefixed
@@ -1349,6 +1356,8 @@ ${/* D-17.5 — pot-symbol Fireball tag CSS (no-op when disabled). */ ''}
 ${emitPotSymbolFireballCSS(resolvePotSymbolFireballConfig(model))}
 ${/* D-17.6 — GRAND interruption-lock overlay CSS (no-op when disabled). */ ''}
 ${emitGrandInterruptionLockCSS(resolveGrandInterruptionLockConfig(model))}
+${/* D-17.7 — simultaneous FS + H&W priority arbiter CSS (no-op when disabled). */ ''}
+${emitSimultaneousFsHoldAndWinPriorityCSS(resolveSimultaneousFsHoldAndWinPriorityConfig(model))}
 ${/* Wave P8 — hot-reload indicator badge (dev-mode only). */ ''}
 ${emitHotReloadCSS(resolveHotReloadConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
@@ -2082,6 +2091,15 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
        onGrandReleased + clear flag. Force chip:
        window.grandInterruptionLockForce(award). */ ''}
   ${emitGrandInterruptionLockRuntime(resolveGrandInterruptionLockConfig(model))}
+  ${/* D-17.7 — Simultaneous FS + H&W priority arbiter. Opt-in per
+       GDD via model.simultaneousFsHoldAndWinPriority.enabled.
+       Lifecycle: onHoldAndWinTrigger → primaryActive=true.
+       onFsTriggerArmed / onFsEnter → if primaryActive, defer +
+       emit deferred. onHoldAndWinEnd / onGrandReleased →
+       primaryActive=false → if pending, resume + re-fire onFsEnter
+       + emit resumed. Force chip:
+       window.simultaneousFsHoldAndWinPriorityForce(). */ ''}
+  ${emitSimultaneousFsHoldAndWinPriorityRuntime(resolveSimultaneousFsHoldAndWinPriorityConfig(model))}
   ${/* W58.J-DE — GlüStV §11(2) spin pace floor + §6e session state clear.
        Boot-time IIFE; 0-byte side effect when jurisdiction is not DE. */ ''}
   ${emitGermanyComplianceGateRuntime(resolveGermanyComplianceGateConfig(model))}

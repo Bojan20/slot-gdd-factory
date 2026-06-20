@@ -522,6 +522,13 @@ const EXPECTED_EMIT_OWNERS = {
   onGrandLock:        ['grandInterruptionLock.mjs'],
   onGrandReleased:    ['grandInterruptionLock.mjs'],
   onHandpayRequested: ['grandInterruptionLock.mjs'],
+  /* D-17.7 — simultaneousFsHoldAndWinPriority (Foundry-family gap
+   * closure). When BOTH features trigger on a single spin, the
+   * arbiter defers the secondary (default FS), lets the primary
+   * (default H&W) resolve, then re-emits the deferred trigger so
+   * the FS award is queued, not lost. */
+  onFeaturePriorityDeferred: ['simultaneousFsHoldAndWinPriority.mjs'],
+  onFeaturePriorityResumed:  ['simultaneousFsHoldAndWinPriority.mjs'],
   /* W57.A7 — Canonical camelCase event names for renamed legacy events.
    * Pre-W57: 'anteBet:changed' / 'bonus.buy.requested' (colon/dot form).
    * Both were orphan-emit (no listeners) so rename is safe; legacy form

@@ -1,3 +1,66 @@
+## 🏆 D-17.7 simultaneousFsHoldAndWinPriority · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"kreni di kraja sve ultimativno"* → default #7 (2026-06-20)
+
+**Sedmi blok iz D-17 roadmap-a. Cross-feature trigger arbiter sa deferral semantikom.**
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ D-17.7 — simultaneousFsHoldAndWinPriority (FS + H&W same-spin arbiter, §07 Edge)      │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Mehanika                                                                              │
+│   • Detekcija: onHoldAndWinTrigger → primaryActive=true                               │
+│   • Kad primaryActive ∧ onFsTriggerArmed/onFsEnter → defer secondary trigger          │
+│   • Captured payload + queuedAt timestamp + body[data-feature-deferred=fs]            │
+│   • window.__FS_TRIGGER_DEFERRED__=true → upstream FS bails out                       │
+│   • Pri onHoldAndWinEnd ILI onGrandReleased → primaryActive=false                     │
+│   • Auto-resume preko setTimeout(0) microtask → emit resumed                          │
+│   • Clear __FS_TRIGGER_DEFERRED__ → engine sledeći onFsEnter prolazi normalno          │
+│                                                                                       │
+│ Sole-owner contract preserved                                                          │
+│   Block NE re-emit-uje onFsEnter (vlasništvo freeSpins/reelEngine). Umesto, emit-uje  │
+│   onFeaturePriorityResumed; downstream listener treba da poveže resume na canonical   │
+│   entry. Clear flag-a __FS_TRIGGER_DEFERRED__ omogućava prirodni re-armed flow.       │
+│                                                                                       │
+│ GDD knobs (model.simultaneousFsHoldAndWinPriority)                                     │
+│   enabled · primaryFeature (whitelist: holdAndWin/freeSpins/wheelBonus/bonusPick/     │
+│     gamble/jackpot) · secondaryFeature (whitelist isto) · same-primary-secondary       │
+│     fallback na defaults · order ('primaryThenSecondary' default, 'secondaryThenPrim' │
+│     inverts → no defer)                                                               │
+│   showStatusText · themeClass · role · ariaLabelPrefix                                │
+│                                                                                       │
+│ Lifecycle                                                                             │
+│   onHoldAndWinTrigger → primaryActive=true                                            │
+│   onFsTriggerArmed / onFsEnter → if primaryActive → defer + emit deferred              │
+│   onHoldAndWinEnd / onGrandReleased → primaryActive=false → auto-resume               │
+│                                                                                       │
+│ Sole-owner events                                                                     │
+│   onFeaturePriorityDeferred  payload: { feature, payload, primary }                   │
+│   onFeaturePriorityResumed   payload: { feature, payload, queuedMs }                  │
+│                                                                                       │
+│ Force chip                                                                            │
+│   window.simultaneousFsHoldAndWinPriorityForce()                                       │
+│   window.simultaneousFsHoldAndWinPriorityGet() → state snapshot                       │
+│                                                                                       │
+│ Accessibility                                                                          │
+│   role=status + aria-live=polite hidden text "Feature priority: <sec> queued,         │
+│     <prim> first" — screen reader announce na deferral                                │
+│   body[data-feature-deferred=<feature>] hint za downstream presentation               │
+│   prefers-reduced-motion → no transition                                              │
+│                                                                                       │
+│ Perf budget                                                                            │
+│   0 JS per frame · event-driven SM (4 transitions) · 1 hidden DOM + 2 captured payloads│
+│                                                                                       │
+│ VERIFIKACIJA                                                                          │
+│   simultaneousFsHoldAndWinPriority.test.mjs:    49/49 PASS ✅                         │
+│   LEGO gate:                                     8/8 PASS · 191 blokova · 328 events  │
+│                                                                                       │
+│ Σ 190 → 191 blokova · D-17 progress: 7/8 SHIPPED (87.5%)                              │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-17.6 grandInterruptionLock · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"kreni"* → default #6 grandInterruptionLock (2026-06-20)
