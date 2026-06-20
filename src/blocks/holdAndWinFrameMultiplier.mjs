@@ -344,28 +344,35 @@ export function emitHoldAndWinFrameMultiplierRuntime(cfg = defaultConfig()) {
     var tiers = window.FRAME_MULT_STATE.tiers;
     var serialized = [];
     var product = 1;
+    var sum = 0;
     tiers.forEach(function(tier, cellEl) {
       serialized.push({ cellId: _cellIdOf(cellEl), tier: tier });
       product *= (Number.isFinite(tier) && tier > 0) ? tier : 1;
+      sum     += (Number.isFinite(tier) && tier > 0) ? tier : 0;
     });
     if (window.HookBus && typeof window.HookBus.emit === 'function') {
       try {
         window.HookBus.emit('onFrameMultiplierFinal', {
           tiers: serialized,
           totalProduct: product,
+          totalSum: sum,
         });
       } catch (_) {}
     }
-    /* D-14.1 (Boki 2026-06-20): "svaki multiplier mora da radi
-     * besprekorno". Pre ovog bloka HW frame multiplier je emit-ovao
-     * onFrameMultiplierFinal sa { tiers, totalProduct } ali nije
-     * podizao stvarni payout mult. Round-end product → setMultMax tako
-     * da winPresentation pomnozi H&W round payout sa ovim frame
-     * agregatom. setMultMax (ne setMult) — last-writer-wins bi srusio
-     * locked-orb / room-jackpot aggregat ako oba postoje. */
-    if (window.HookBus && typeof window.HookBus.setMultMax === 'function' &&
-        Number.isFinite(product) && product >= 1) {
-      try { window.HookBus.setMultMax(product); } catch (_) {}
+    /* D-14.4 (Boki 2026-06-20, IGT cross-ref): Industry standard za
+     * FRAME tier pool (Mini/Minor/Major/Grand) je SUM (sabiranje
+     * fixed-tier vrednosti pri HW_END), ne PRODUCT. Earlier D-14.1
+     * impl je radio totalProduct sto bi davao apsurdne payout cap-ove
+     * (5 frame-locked cells × 10× = 100,000× bet, dok IGT standard
+     * dopusta max ~5,000× bet per H&W round). Sum je istovremeno
+     * pravilo iz Skeleton Key + Wrath par sheet referenci.
+     *
+     * Sum (≥ 1) ide kroz setMultMax — last-writer-wins bi srusio
+     * locked-orb / room-jackpot aggregat ako oba postoje na istom
+     * H&W round-u. */
+    var aggregate = (sum >= 1) ? sum : 1;
+    if (window.HookBus && typeof window.HookBus.setMultMax === 'function') {
+      try { window.HookBus.setMultMax(aggregate); } catch (_) {}
     }
     _clear();
   }

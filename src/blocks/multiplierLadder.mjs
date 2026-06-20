@@ -227,6 +227,19 @@ export function emitMultiplierLadderRuntime(cfg = defaultConfig()) {
       if (!p) return;
       var win = Number(p.award || p.win || p.tumbleWin || 0);
       if (win > 0) climb();
+      else if (win === 0) {
+        /* D-14.4 (Boki 2026-06-20, IGT cross-ref): Industry standard
+         * je da multiplier ladder RESETUJE na lose spin (win = 0),
+         * ne samo na FS_END. Earlier impl je drzao tier kroz lose
+         * spins → naredna win bi nastavila iz prethodnog tier-a.
+         * Standard pattern: consecutive-win counter koji se RESET na
+         * bilo koji lose. Same pravilo Skeleton Key Bonus tab. */
+        if (tier !== startTier) {
+          tier = startTier;
+          render(startTier);
+          try { window.HookBus.emit('onMultLadderReset'); } catch (_) {}
+        }
+      }
     });
     HookBus.on('onTumbleStep', function (p) {
       if (!climbOnBase && !fsActive) return;

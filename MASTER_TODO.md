@@ -1,3 +1,61 @@
+## 🏆 D-14.4 IGT CROSS-REF ALIGN · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"ajde proveri kako multiplier blokovi treba da rade i kada da se ukljucuju, proveri u IGT fgijlove"* → *"fix"* (2026-06-20)
+
+**2 industry-standard gap-a uskladjena sa IGT par sheet referencama (~/Desktop/ParSheets/ + slot-math-engine-template/MultiplierWildBehavior).** Lightning HW guard već ranije zatvoren.
+
+```
+┌───────────────────────────────────────────────────────────────────────────┐
+│ D-14.4 — IGT par sheet cross-reference fix                                 │
+├───────────────────────────────────────────────────────────────────────────┤
+│ FIX A — holdAndWinFrameMultiplier _onEnd:                                  │
+│   IGT standard za FRAME tier pool je SUM (sabiranje fixed-tier per-cell    │
+│   vrednosti pri HW_END), ne PRODUCT. Earlier impl je radio totalProduct    │
+│   sto bi davao apsurdne payout cap-ove (5 cells × 10× = 100,000× bet),     │
+│   dok IGT standard dopusta max ~5,000× bet per H&W round.                  │
+│                                                                            │
+│   Patch: aggregate = (sum >= 1) ? sum : 1 → setMultMax(aggregate).         │
+│   onFrameMultiplierFinal event sad nosi BOTH totalSum + totalProduct       │
+│   (consumer ima izbor).                                                    │
+│                                                                            │
+│ FIX B — multiplierLadder onFsSpinResult:                                   │
+│   IGT standard: multiplier ladder RESETUJE na lose spin (win = 0), ne      │
+│   samo na FS_END. Skeleton Key Bonus tab pattern: consecutive-win          │
+│   counter koji se RESET na bilo koji lose. Pre fix-a ladder je drzao       │
+│   tier kroz lose spins → naredna win bi nastavila iz prethodnog tier-a.    │
+│                                                                            │
+│   Patch: u onFsSpinResult listener, ako win === 0 i tier !== startTier:    │
+│     reset to startTier, render, emit onMultLadderReset.                     │
+│                                                                            │
+│ NIJE FIX-OVANO (jer već postoji):                                          │
+│   randomLightningMultiplier — _isHwActive() guard postoji na liniji 369   │
+│   _onSpinResult. Suspended u toku H&W round-a po IGT standardu.            │
+│                                                                            │
+│ REFERENCE FAJLOVI (chat-internal — vendor-neutral u code/docs):           │
+│   ~/Desktop/ParSheets/PARSheets_SkeletonKey.xlsx (PAR-Bonus FS Mystery     │
+│     Reel Set 1-6 weighted multiplier distribucije)                         │
+│   ~/Desktop/ParSheets/ParSheets_BookOfUnseen_BonusBuy.xlsx (BB cap         │
+│     163,600× coin)                                                         │
+│   ~/Desktop/ParSheets/ParSheets_FortuneCoinBoost_Classic.xlsx (Cash Boost  │
+│     CE_1-5 weighted tiers)                                                 │
+│   ~/Projects/Wrath Of Olympus/math/par-sheet/generate-par-v4.mjs           │
+│     (Lightning state machine wording)                                      │
+│   ~/Projects/slot-math-engine-template/src/behaviors/impls/                 │
+│     MultiplierSymbolBehavior.ts + MultiplierWildBehavior.ts                │
+│     (scope: line/ways/spin/session, mode: mul/add)                         │
+│                                                                            │
+│ VERIFIKACIJA:                                                              │
+│   holdAndWinFrameMultiplier.test.mjs:      PASS                            │
+│   multiplierLadder.test.mjs:               35/35 PASS                      │
+│   _ultimate-all-force-chips-probe.mjs:     36/36 PASS                      │
+│   _ultimate-multiplier-win-effect-probe.mjs: 21/21 PASS                    │
+│                                                                            │
+│ Sad svaki multiplier blok u line sa IGT par sheet pravilima.               │
+└───────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-15 SANDBOX SLOT TESTBED · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"Zelim da svaki blok iststiras, na primer uzmi rectangular ili napravi novi slot gde mogu da menjam bilo koje blokove, sve koji postoje, i onda da vidim kako koji s kojim radi i ako ima bugova, da ih tu prvo resavas i onda da ih ukljucimo u svaki gdd"* (2026-06-20)
