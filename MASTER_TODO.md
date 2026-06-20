@@ -1,3 +1,75 @@
+## 🏆 D-14.5 IGT PRESENTATION ALIGN · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"sada overi blokove multipliere u base game kako se prikazuju kako u fs kako u hold and win itd, kako kaze igt kako je pravilno tako uraid"* (2026-06-20)
+
+**Audit 11 multiplier blokova vs IGT industry baseline (Cash Eruption PAR sheet + WoO FULL PRO). 4 prezentaciona gap-a usklađena.**
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ D-14.5 — Multiplier chip positioning per industry baseline                          │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ PATTERN 1 — Multiplier orb (BASE GAME orb-on-cell):                                  │
+│   PRE:  chip bottom-right cell, 0.65em font, plain text                              │
+│   POST: DEAD-CENTER cell, 1.05em font, coin gradient (gold→bronze),                  │
+│         2px border + glow + inset shadows, uppercase letterspaced                    │
+│                                                                                      │
+│ PATTERN 2 — Persistent multiplier (FS HUD chip):                                     │
+│   PRE:  bottom-right (overlap spin btn + home-bar na notched iPhones)                │
+│   POST: TOP-RIGHT corner — per industry FS HUD baseline                              │
+│                                                                                      │
+│ PATTERN 3 — Multiplier ladder (FS side rail):                                        │
+│   PRE:  default 'top-right' — fight sa persistentMultiplier                          │
+│   POST: default 'top-left' — opposite side rail, no visual collision                 │
+│                                                                                      │
+│ PATTERN 4 — Hold-and-win frame multiplier (HW orb chip):                             │
+│   PRE:  chipPosition default 'topRight', font 11px, corner placement                 │
+│   POST: default 'center' (new option), font 14px — dead-center orb                   │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Unit tests:           multiplierOrb 24/24 · persistentMultiplier 18/18 ·             │
+│                       multiplierLadder 35/35 · holdAndWinFrameMultiplier OK          │
+│ Rebuild 4 GDD:        312/312 PASS                                                   │
+│ Vendor-neutral scrub: clean                                                          │
+│ Backwards compat:     svi corner pozicije zadržani per explicit GDD opt-in           │
+│ Commit/push:          ce9bd10 → origin/main                                          │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🏆 D-14 ULTIMATE GDD × LEGO AUDIT (FAZE 1-3) · 2026-06-20 · ZATVOREN ✅
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ Faza 1  STATIC AUDIT 308 SYNTH      308/308  PASS  (100%) · commit de67de1          │
+│ Faza 2  FORCE CHIPS  4 REAL         36/36   PASS  (100%) · 0 broken kinds           │
+│ Faza 3  LEGO MATRIX  4 GDD × 184    161/169 PASS  (95.3%, kritičnih 161/161)        │
+│                                                                                      │
+│ Ukupno verifikovano:  308 sintetičkih GDD-ova + 36 force chip-ova + 736 ćelija      │
+│ Realne rupe:           0 (sva 8 "fail" su legit opt-in regulatory gate-ovi)         │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🏆 D-15 LEGO SANDBOX TESTBED · 2026-06-20 · ZATVOREN ✅
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ tools/lego-block-sandbox.mjs (~470 LOC HTTP server, 127.0.0.1:5151)                  │
+│   • LEFT: 184 blokova × 20 kategorija + search + 6 preset combos                     │
+│   • CENTER: live preview iframe (buildSlotHTML rebuild on toggle)                    │
+│   • RIGHT: HookBus events / Errors / State JSON                                      │
+│   Toggle → 250ms debounce → re-build → SSE push → iframe reload                      │
+│                                                                                      │
+│ Plus shipped: dist/sandbox/sandbox.html (D-15 alt) — pre-built playable             │
+│ sa 144 blokova force-enabled + 21 UFP chip + force panel.                            │
+│                                                                                      │
+│ Commit:  536f1f5 (server) · 2e73cd4 (dist sandbox)                                   │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-14.4 IGT CROSS-REF ALIGN · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"ajde proveri kako multiplier blokovi treba da rade i kada da se ukljucuju, proveri u IGT fgijlove"* → *"fix"* (2026-06-20)
