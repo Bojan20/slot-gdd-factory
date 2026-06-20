@@ -1,3 +1,91 @@
+## 🏆 D-17 ROADMAP COMPLETE · 2026-06-20 · 8/8 SHIPPED 🎯
+
+Boki: *"kreni di kraja sve ultimativno"* (2026-06-20) — celokupan D-17 Foundry-family
+gap roadmap završen u jednoj sesiji.
+
+**Σ 8 novih industry-standard blokova · 184 → 192 blokova · 313 → 330 events.**
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ D-17 FOUNDRY-FAMILY GAP CLOSURE — SHIPPED SUMMARY                                     │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ #1  patternWin                       776ddf2  · 70/70 PASS · 450 LOC                  │
+│ #2  bigSymbolRender2x2              a8dc9d3  · 58/58 PASS · 440 LOC                  │
+│ #3  linkedReels                      0252bea  · 59/59 PASS · 430 LOC                  │
+│ #4  perTriggerVolatilitySet          0165583  · 58/58 PASS · 340 LOC                  │
+│ #5  potSymbolFireball                9357370  · 65/65 PASS · 450 LOC                  │
+│ #6  grandInterruptionLock            6c472bf  · 63/63 PASS · 440 LOC                  │
+│ #7  simultaneousFsHoldAndWinPriority 116468e  · 49/49 PASS · 260 LOC                  │
+│ #8  creditAwardConversion            (this)   · 65/65 PASS · 380 LOC                  │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ TOTAL unit tests:    487/487 PASS ✅                                                  │
+│ TOTAL LOC src:       ~3,190 (blocks) + ~1,580 (tests) = 4,770 LOC                     │
+│ TOTAL events added:  17 sole-owner events                                              │
+│ Regressions:         0 (4 baseline GDDs PERFECT through all 8 land-ova)              │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🏆 D-17.8 creditAwardConversion · 2026-06-20 · ZATVOREN ✅
+
+**Finalan, osmi blok D-17 roadmap-a. SSOT credit→money conversion per §04.5 + §06.1.**
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ D-17.8 — creditAwardConversion (SSOT credit→money conversion contract)                │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Mehanika                                                                              │
+│   • Canonical formula: coin_value = total_bet / fixedCoinCount (default 20)           │
+│   • Per-pay-type mode whitelist: 'xCoin' | 'xTotalBet' | 'credits'                    │
+│   • Default modes per Foundry §04.5: line=xCoin, scatter/pattern=xTotalBet,           │
+│     pot/holdAndWin/feature=credits, wheel=xTotalBet                                   │
+│   • Helper API izložen na window: creditAwardConvert · creditAwardCoinValue ·         │
+│     creditAwardSetBet · creditAwardPayTypeMode                                          │
+│   • body[data-award-unit=credits] hook za downstream presentation blokove              │
+│                                                                                       │
+│ Canonical Foundry test invariants (verifikovano u testu)                              │
+│   • 250 line credits @ bet 1.0 → 12.5 money (= 250 × 0.05)                            │
+│   • 100 scatter (= 100x bet) @ bet 1.0 → 100 money                                    │
+│   • 1000 pattern (= 1000x bet) @ bet 1.0 → 1000 money                                  │
+│   • 1,000,000 pot credits @ bet 1.0 → 50,000 money                                    │
+│   • 1,000,000 holdAndWin credits @ bet 0.20 → 10,000 money (= 50,000x bet INV)        │
+│   • 1,000,000 holdAndWin credits @ bet 40.0 → 2,000,000 money (= 50,000x bet INV)     │
+│   → GRAND multiple JE STAKE-INVARIANT, kako Foundry §04.6 zahteva                     │
+│                                                                                       │
+│ GDD knobs                                                                              │
+│   enabled · fixedCoinCount (1..1000) · payTypeModes (Object, partial overrides        │
+│   merged sa defaults) · defaultBet · emitOnBoot · bodyAttrName/Value                   │
+│                                                                                       │
+│ Lifecycle                                                                             │
+│   boot → set body attr + emit initial onCoinValueChanged (if emitOnBoot)              │
+│   onBetChanged → recompute coinValue + emit onCoinValueChanged                        │
+│                                                                                       │
+│ Sole-owner events                                                                     │
+│   onCoinValueChanged  payload: { coinValue, totalBet, fixedCoinCount }                │
+│   onAwardConverted    payload: { credits, payType, money }                            │
+│                                                                                       │
+│ Honest scope                                                                           │
+│   Block NE primoraj druge blokove da koriste helper. ONLY EXPOSES kontrakt.            │
+│   Adoption je odgovornost downstream blokova; future LEGO-gate audit može grep        │
+│   za non-helper conversions i flag drift.                                              │
+│                                                                                       │
+│ VERIFIKACIJA                                                                          │
+│   creditAwardConversion.test.mjs:   65/65 PASS ✅                                     │
+│     • defaults + fresh modes object · resolveConfig (bounds, partial overrides)       │
+│     • deriveCoinValue (canonical Foundry math 1/20 · 10/20 · 40/20 + invalid → 0)     │
+│     • convertCredits (xCoin · xTotalBet · credits modes · bet-scaling invariants)     │
+│     • emitCSS · emitRuntime (HookBus 1 listener + 2 emits + 4 helpers + body tag)     │
+│     • source vendor-neutral · determinism                                              │
+│   LEGO gate:                         8/8 PASS · 192 blokova · 330 events              │
+│   4-gdds-ultimate-audit:             ✅ ALL GDDS PERFECT                              │
+│                                                                                       │
+│ Σ 191 → 192 blokova · D-17 progress: 8/8 SHIPPED (100%) 🎯                            │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-17.7 simultaneousFsHoldAndWinPriority · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"kreni di kraja sve ultimativno"* → default #7 (2026-06-20)
@@ -493,7 +581,7 @@ Boki: *"kreni"* → default redosled #1 patternWin (2026-06-20)
 
 ---
 
-## 🟡 D-17 FOUNDRY-FAMILY GAP ROADMAP · 2026-06-20 · 6/8 SHIPPED (čeka Boki za #7)
+## 🟢 D-17 FOUNDRY-FAMILY GAP ROADMAP · 2026-06-20 · 8/8 SHIPPED ✅ COMPLETE
 
 Boki: *"sta ika od featurea u cash eruption gdd na desktopu sto nemamo u blokove?"* → *"upisi master todo prvo detaljno"* (2026-06-20)
 
@@ -666,9 +754,10 @@ Boki: *"sta ika od featurea u cash eruption gdd na desktopu sto nemamo u blokove
 🟢 **#3 linkedReels → SHIPPED** (commit 0252bea)
 🟢 **#4 perTriggerVolatilitySet → SHIPPED** (commit 0165583)
 🟢 **#5 potSymbolFireball → SHIPPED** (commit 9357370)
-🟢 **#6 grandInterruptionLock → SHIPPED** (vidi D-17.6 sekciju iznad)
-🟡 **#7–#8 OPEN** — sledeći u default chain-u: **#7 simultaneousFsHoldAndWinPriority** (cross-feature trigger arbiter).
-Ako Boki kaže "kreni" bez broja → krećem #7 po default redosledu.
+🟢 **#6 grandInterruptionLock → SHIPPED** (commit 6c472bf)
+🟢 **#7 simultaneousFsHoldAndWinPriority → SHIPPED** (commit 116468e)
+🟢 **#8 creditAwardConversion → SHIPPED** (vidi D-17.8 sekciju iznad)
+**🎯 D-17 ROADMAP 100% COMPLETE — sva 8 industry-standard blokova landed.**
 
 ---
 

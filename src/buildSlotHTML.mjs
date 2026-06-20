@@ -800,6 +800,13 @@ import {
   emitSimultaneousFsHoldAndWinPriorityCSS, emitSimultaneousFsHoldAndWinPriorityRuntime,
   resolveConfig as resolveSimultaneousFsHoldAndWinPriorityConfig,
 } from './blocks/simultaneousFsHoldAndWinPriority.mjs';
+// D-17.8 — Credit award conversion (SSOT credit→money). Centralizes the
+// canonical coin_value = total_bet / fixedCoinCount derivation + per-
+// pay-type award-unit modes so every block reads the same contract.
+import {
+  emitCreditAwardConversionCSS, emitCreditAwardConversionRuntime,
+  resolveConfig as resolveCreditAwardConversionConfig,
+} from './blocks/creditAwardConversion.mjs';
 // W58.J-DE — GlüStV (Glücksspielstaatsvertrag 2021) compliance gate.
 // Auto-enabled when jurisdiction === 'DE'. Boot-time only: sets
 // window.__DE_MIN_SPIN_MS__ spin-pace floor (§11(2)) + clears prefixed
@@ -1358,6 +1365,8 @@ ${/* D-17.6 — GRAND interruption-lock overlay CSS (no-op when disabled). */ ''
 ${emitGrandInterruptionLockCSS(resolveGrandInterruptionLockConfig(model))}
 ${/* D-17.7 — simultaneous FS + H&W priority arbiter CSS (no-op when disabled). */ ''}
 ${emitSimultaneousFsHoldAndWinPriorityCSS(resolveSimultaneousFsHoldAndWinPriorityConfig(model))}
+${/* D-17.8 — credit-award SSOT CSS (no-op when disabled). */ ''}
+${emitCreditAwardConversionCSS(resolveCreditAwardConversionConfig(model))}
 ${/* Wave P8 — hot-reload indicator badge (dev-mode only). */ ''}
 ${emitHotReloadCSS(resolveHotReloadConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
@@ -2100,6 +2109,14 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
        + emit resumed. Force chip:
        window.simultaneousFsHoldAndWinPriorityForce(). */ ''}
   ${emitSimultaneousFsHoldAndWinPriorityRuntime(resolveSimultaneousFsHoldAndWinPriorityConfig(model))}
+  ${/* D-17.8 — Credit award SSOT conversion. Opt-in per GDD via
+       model.creditAwardConversion.enabled. Lifecycle: boot →
+       set body[data-award-unit] + emit initial onCoinValueChanged.
+       onBetChanged → recompute coin_value + emit onCoinValueChanged.
+       Exposes: window.creditAwardConvert(credits, payType, ctx) ·
+       window.creditAwardCoinValue() · window.creditAwardSetBet(bet)
+       · window.creditAwardPayTypeMode(payType). */ ''}
+  ${emitCreditAwardConversionRuntime(resolveCreditAwardConversionConfig(model))}
   ${/* W58.J-DE — GlüStV §11(2) spin pace floor + §6e session state clear.
        Boot-time IIFE; 0-byte side effect when jurisdiction is not DE. */ ''}
   ${emitGermanyComplianceGateRuntime(resolveGermanyComplianceGateConfig(model))}

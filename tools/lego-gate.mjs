@@ -529,6 +529,13 @@ const EXPECTED_EMIT_OWNERS = {
    * the FS award is queued, not lost. */
   onFeaturePriorityDeferred: ['simultaneousFsHoldAndWinPriority.mjs'],
   onFeaturePriorityResumed:  ['simultaneousFsHoldAndWinPriority.mjs'],
+  /* D-17.8 — creditAwardConversion (Foundry-family gap closure).
+   * Single-source-of-truth credit→money conversion contract per
+   * Foundry §04.5 / §06.1. Exposes window.creditAwardConvert /
+   * creditAwardCoinValue / creditAwardSetBet helpers downstream
+   * blocks consume so every block reads the same award unit. */
+  onAwardConverted:    ['creditAwardConversion.mjs'],
+  onCoinValueChanged:  ['creditAwardConversion.mjs'],
   /* W57.A7 — Canonical camelCase event names for renamed legacy events.
    * Pre-W57: 'anteBet:changed' / 'bonus.buy.requested' (colon/dot form).
    * Both were orphan-emit (no listeners) so rename is safe; legacy form
