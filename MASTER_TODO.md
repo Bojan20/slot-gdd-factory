@@ -1,3 +1,65 @@
+## 📊 DAILY STATUS 2026-06-20 · END-OF-DAY SUMMARY
+
+**HEAD:** `2bcbafb` (D-17.8 + D-17 COMPLETE) · origin/main ✅ in sync
+**Stack height:** 192 blokova · 330 sole-owner events · ~3,200+ unit assertions · 0 fail
+**LEGO gate:** 8/8 PASS · 4-gdds-ultimate-audit ✅ ALL PERFECT
+
+### Sve waves shipped today (2026-06-20)
+
+| # | Wave / Atom | Commit | Status |
+|:-:|:--|:--|:-:|
+| 1 | D-9 BLOCK-GDD MATRIX (real Chromium × 184 × 4 = 736 cells) | `4133ea0` | ✅ |
+| 2 | D-9.5 v3 declared-vs-runtime canonical resolveConfig | `fbfa1d6` | ✅ |
+| 3 | D-9 refactor isActive signals | `f8b7cc9` | ✅ |
+| 4 | D-10 SYMBOL-OVERFLOW scale(1.06) + waysEval buffer-cell fix | `6014cfb` + `ad89f09` | ✅ |
+| 5 | D-11 WP-TIMING gate wpStart/bwEnter behind reels-stopped | `04a7ef4` | ✅ |
+| 6 | D-12 LIGHTNING FORCE per-value ⚡×2/×3/×5/×10 | `6c59819` | ✅ |
+| 7 | D-13.1 ALL-FORCE-CHIPS 36/36 parity (fresh page per chip) | `e39edab` | ✅ |
+| 8 | D-14 Faza 1 STATIC 308/308 synthetic | `de67de1` | ✅ |
+| 9 | D-14 multiplier baseline win + orb cycle ladder | `7d90bf3` | ✅ |
+| 10 | D-14.1 PAINT-ONLY MULT (4 HW blokova → setMultMax) | `d3a59a0` | ✅ |
+| 11 | D-14.2 LIGHTNING SYNC MULT 21/21 win-effect | `adab3c3` | ✅ |
+| 12 | D-14.3 MANUAL-SPIN AUDIT 4/4 real GDD | `4d2f501` | ✅ |
+| 13 | D-15 LEGO-SANDBOX server (127.0.0.1:5151) | `536f1f5` | ✅ |
+| 14 | D-15 dist sandbox slot HTML | `2e73cd4` | ✅ |
+| 15 | D-14.4 IGT cross-ref align (HW frame SUM + ladder reset) | `e522c65` | ✅ |
+| 16 | D-14.5 IGT presentation align (chip centering + HUD position) | `ce9bd10` | ✅ |
+| 17 | D-16 LEGO sole-owner + vendor-neutral sweep (2 LEGO Gate FAILs) | `6592373` | ✅ |
+| 18 | D-17 ROADMAP gap analiza (8 industry-standard blokova) | `f1f0b37` | ✅ |
+| 19 | D-17.1 patternWin | `776ddf2` | ✅ |
+| 20 | D-17.2 bigSymbolRender2x2 | `a8dc9d3` | ✅ |
+| 21 | D-17.3 linkedReels | `0252bea` | ✅ |
+| 22 | D-17.4 perTriggerVolatilitySet | `0165583` | ✅ |
+| 23 | D-17.5 potSymbolFireball | `9357370` | ✅ |
+| 24 | D-17.6 grandInterruptionLock | `6c472bf` | ✅ |
+| 25 | D-17.7 simultaneousFsHoldAndWinPriority | `116468e` | ✅ |
+| 26 | D-17.8 creditAwardConversion (D-17 COMPLETE 🎯) | `2bcbafb` | ✅ |
+
+**Σ 26 commits pushed · 0 regressions · 0 vendor leaks · 0 LEGO Gate FAILs**
+
+### Otvoreno (Pre-Math Roadmap, sve opt-in po Boki-jevom prioritetu)
+
+| Prio | Wave | Atomi | Opis |
+|:-:|:--|:-:|:--|
+| 🥉 | **F6 dev-tools** | 5 (T1–T5) | Inspector probes, debug overlay, HMR diagnostics |
+| 4 | **F4 mobile/perf** | 6 (A5–A10) | Touch-pace, low-end perf, viewport thermal throttle, p99 latency |
+| 5 | **F7 cert global** | 6 (HX1–HX6) | Dodatne jurisdikcije + i18n cert globala (preko EU-5) |
+| — | **Math layer** | — | GATED — Boki će kazati "ajmo na math" |
+
+### Gate-ovi (END-OF-DAY)
+
+```
+LEGO gate                  8/8 PASS · 192 blokova · 330 events
+4-gdds-ultimate-audit      ✅ ALL GDDS PERFECT
+Vendor-neutral grep         clean (no IGT / NetEnt / Pragmatic / Microgaming / SG)
+Sole-owner events           clean (svaki event ima unique vlasnik blok)
+Synthetic 308 audit         308/308 PASS (cortex-synthetic-308-audit.mjs)
+4-real-GDD audit            4/4 PASS (cortex-eyes-4-gdds-ultimate-audit.mjs)
+Origin sync                 ✅ HEAD 2bcbafb · 0 unpushed commits
+```
+
+---
+
 ## 🏆 D-17 ROADMAP COMPLETE · 2026-06-20 · 8/8 SHIPPED 🎯
 
 Boki: *"kreni di kraja sve ultimativno"* (2026-06-20) — celokupan D-17 Foundry-family
