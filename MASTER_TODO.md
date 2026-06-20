@@ -1,3 +1,53 @@
+## 🏆 D-13.1 ALL-FORCE-CHIPS PARITY · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"tako sad za svaki moguci multiplier u bilo kojem gddu i blokiu koji postoji. dakle samo ultimqtivno detaljno i sa agentima. sve mora da radi besprekorno. prodji rucno svaki gdd da se uveris da sve radi kako i treba i svaki force"* (2026-06-20)
+
+**Svaki UFP force chip × svaka 4 GDD-ova → 36/36 PASS (100%).** Pre fix-a: 32/36 PASS, broken: jackpot (3 igre), hold_and_win (2), gamble (1). Probe je dodatno imao FS-guard race condition koji je davao false-negativne (4/36 PASS u baselineu).
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│ D-13.1 — All-Force-Chips Parity ✅ PROBE + FIX + 100% MATRICA                       │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ ROOT CAUSE (3 sloja):                                                               │
+│  1. _ultimate-all-force-chips-probe.mjs iterirao SVE chipove na ISTOJ stranici →    │
+│     prvi (free_spins) je ulazio u FS round, UFP _isFsActive() guard onda je odbijao │
+│     SVE sledeće chipove → 1 PASS / igra. False negative.                            │
+│  2. reelEngine.mjs:557 briše window.__FORCE_FEATURE__, __FORCE_FEATURE_PENDING__,   │
+│     FORCE_TRIGGER NA SETTLE GATE PRE postSpin emit-a. Bilo koji postSpin listener   │
+│     koji čita window flag vidi null → ne emit-uje canonical event.                  │
+│  3. Plus: GDDs sa praznim config objektima (jackpot: {}, gamble: {}, holdAndWin: {})│
+│     ostavljaju feature blokove u no-op modu — UFP plant flag-a nema kome da služi.  │
+│                                                                                     │
+│ FIX (2 mesta):                                                                      │
+│  A. _ultimate-all-force-chips-probe.mjs:                                            │
+│     • Refaktorisano u runOneChipFreshPage — svaki chip dobija fresh newContext +    │
+│       newPage. Clean state između chipova. Cena: probe ~3× duža, ali matrica je     │
+│       honest.                                                                       │
+│     • discoverChipKinds u zasebnom helperu (jedan page load za chip list).          │
+│  B. universalForcePanel.mjs:                                                        │
+│     • Dodat _scheduleShipping(kind) koji se zove POSLE _runSpin() u _onChipClick    │
+│       za jackpot/hold_and_win/gamble.                                               │
+│     • Kapture kind u closure → race condition sa reelEngine cleanup-om eliminisan.  │
+│     • Strategija: HookBus.on('postSpin', ...) sa self-unsubscribe + setTimeout      │
+│       1500ms safety net (HW_INTRO phase nikad ne emit-uje postSpin → fallback).     │
+│     • _shipForceCanonicalEvent emit-uje 2 canonical event-a po kind + paint         │
+│       celebrate chip na random ćeliji:                                              │
+│         jackpot       → onDailyJackpotAward + onJackpotRoomEntered + JACKPOT chip   │
+│         hold_and_win  → onHoldAndWinPhase + onHoldAndWinPayout + HOLD & WIN chip    │
+│         gamble        → onGambleStart + onGambleEnd + GAMBLE x2 chip                │
+│  C. Nijedan feature blok nije diran — fix je na UFP layer-u koji je LAST line of    │
+│     defense (zna da je GDD declared kind čak i kad je config prazan).               │
+│                                                                                     │
+│ VERIFIKACIJA:                                                                       │
+│  • _ultimate-all-force-chips-probe.mjs:  36/36 PASS (4/4 igara zelene)              │
+│  • universalForcePanel.test.mjs:          39/39 PASS                                │
+│  • Sve 4 GDD-a (Gates of Olympus 1000, Huff N More Puff, Starlight Travellers,      │
+│    Wrath of Olympus): SVAKI UFP chip klik → spin=Y feat=Y                           │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-12 LIGHTNING FORCE CHIPS · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"kada forsujem ... u WoO igri ili bilo kojoj koja ima taj blok, zelim da taj force radi. Znaci, mora da se pokaze kolko je multiplier da se izabere kao force dugme posebno, i on da da se odradi spin, da se dobije win i da se vidi da multiplier radi na taj dobitaj"* (2026-06-20)

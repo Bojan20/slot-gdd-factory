@@ -819,6 +819,12 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
       _runSpin();
     }
 
+    /* D-13.1 (2026-06-20) — closure-captured shipping for kinds whose
+     * canonical event is otherwise lost when reelEngine clears
+     * window.__FORCE_FEATURE_* flags at the settle gate. No-op for
+     * other kinds. */
+    _scheduleShipping(kind);
+
     setTimeout(function() {
       BUSY = false;
       try { btn.removeAttribute('aria-busy'); } catch (_) {}
@@ -835,6 +841,114 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
         _onChipClick(kind, label, btn);
       });
     })(chips[i]);
+  }
+
+  /* D-13.1 (Boki 2026-06-20) — postSpin "shipping" listener.
+   * Closes the empty-config fail-mode for jackpot, hold_and_win, gamble
+   * force chips. When a GDD declares a feature kind at the top level
+   * but parses to an empty config object, the feature-owning block
+   * stays in no-op. UFP plants the force flag, this listener emits
+   * the canonical event after postSpin so listeners (audio, HUD,
+   * regulator log) react, paints a celebrate chip, and clears the
+   * flag. See rule_force_buttons_real_spin.md. */
+  function _paintCelebrateChip(text, gradient) {
+    try {
+      var cells = document.querySelectorAll('.cell');
+      if (!cells.length) return;
+      var target = cells[Math.floor(Math.random() * cells.length)];
+      var rect = target.getBoundingClientRect();
+      var chip = document.createElement('div');
+      chip.className = 'ufp-feature-chip';
+      chip.textContent = text;
+      chip.style.cssText =
+        'position:fixed;' +
+        'left:' + (rect.left + rect.width / 2 - 36) + 'px;' +
+        'top:'  + (rect.top  + rect.height / 2 - 22) + 'px;' +
+        'min-width:72px;height:44px;padding:0 12px;' +
+        'border-radius:22px;' +
+        'background:' + gradient + ';' +
+        'color:#fff;font:900 16px/44px system-ui,-apple-system,sans-serif;' +
+        'text-align:center;letter-spacing:.08em;' +
+        'box-shadow:0 8px 24px rgba(0,0,0,.55),inset 0 -3px 8px rgba(0,0,0,.25),inset 0 2px 4px rgba(255,255,255,.35);' +
+        'pointer-events:none;z-index:97;opacity:0;transform:scale(.4) translateY(0);' +
+        'transition:opacity .25s ease,transform .9s cubic-bezier(.2,1.3,.4,1);';
+      document.body.appendChild(chip);
+      requestAnimationFrame(function() {
+        chip.style.opacity = '1';
+        chip.style.transform = 'scale(1) translateY(-28px)';
+      });
+      setTimeout(function() {
+        chip.style.opacity = '0';
+        chip.style.transform = 'scale(.92) translateY(-56px)';
+      }, 1400);
+      setTimeout(function() { try { chip.remove(); } catch (_) {} }, 2100);
+    } catch (_) {}
+  }
+
+  /* Closure-captured shipping for jackpot/hold_and_win/gamble. The
+   * earlier postSpin-listener attempt failed because reelEngine clears
+   * window.__FORCE_FEATURE__ / __FORCE_FEATURE_PENDING__ / FORCE_TRIGGER
+   * at the settle gate BEFORE emitting postSpin (reelEngine.mjs:557),
+   * so any window-flag read inside a postSpin handler sees null. We
+   * instead capture the kind in a closure at click time and ship the
+   * canonical event via a HookBus.on subscription that owns its own
+   * unsubscribe, so cleanup is deterministic per-click. */
+  function _shipForceCanonicalEvent(kind) {
+    if (!window.HookBus || typeof window.HookBus.emit !== 'function') return;
+    var bet = (typeof window.__SLOT_BET__ === 'number' && window.__SLOT_BET__ > 0)
+      ? window.__SLOT_BET__ : 1;
+
+    if (kind === 'jackpot') {
+      try { window.HookBus.emit('onDailyJackpotAward', { tier: 'GRAND', source: 'force-chip', award: bet * 1000 }); } catch (_) {}
+      try { window.HookBus.emit('onJackpotRoomEntered', { room: 'GRAND', source: 'force-chip' }); } catch (_) {}
+      _paintCelebrateChip('JACKPOT', 'radial-gradient(circle,rgba(255,215,80,1) 0%,rgba(240,140,20,0.95) 65%,rgba(120,60,0,0.85) 100%)');
+      return;
+    }
+    if (kind === 'hold_and_win') {
+      try { window.HookBus.emit('onHoldAndWinPhase', { phase: 'intro', source: 'force-chip' }); } catch (_) {}
+      try { window.HookBus.emit('onHoldAndWinPayout', { total: bet * 60, source: 'force-chip' }); } catch (_) {}
+      _paintCelebrateChip('HOLD & WIN', 'radial-gradient(circle,rgba(255,140,40,1) 0%,rgba(220,80,20,0.95) 65%,rgba(90,30,5,0.85) 100%)');
+      return;
+    }
+    if (kind === 'gamble') {
+      try { window.HookBus.emit('onGambleStart', { source: 'force-chip' }); } catch (_) {}
+      try { window.HookBus.emit('onGambleEnd', { outcome: 'win', award: bet * 2, source: 'force-chip' }); } catch (_) {}
+      _paintCelebrateChip('GAMBLE x2', 'radial-gradient(circle,rgba(80,200,120,1) 0%,rgba(20,140,80,0.95) 65%,rgba(5,70,40,0.85) 100%)');
+      return;
+    }
+  }
+
+  /* Called from _onChipClick AFTER _runSpin(). Schedules the canonical
+   * emit via a one-shot postSpin subscription (preferred — accurate
+   * timing) PLUS a setTimeout fallback (safety net if postSpin never
+   * fires, e.g. when the spin enters an FSM phase like HW_INTRO that
+   * suppresses the settle gate). The setTimeout cancels itself if the
+   * postSpin path won. */
+  function _scheduleShipping(kind) {
+    if (kind !== 'jackpot' && kind !== 'hold_and_win' && kind !== 'gamble') return;
+    var shipped = false;
+    var fire = function() {
+      if (shipped) return;
+      shipped = true;
+      _shipForceCanonicalEvent(kind);
+    };
+    var unsub = null;
+    var bus = window.HookBus;
+    if (bus && typeof bus.on === 'function') {
+      try {
+        unsub = bus.on('postSpin', function() {
+          try { if (typeof unsub === 'function') unsub(); } catch (_) {}
+          fire();
+        });
+      } catch (_) {}
+    }
+    /* Safety net: 1500 ms gives the spin time to settle naturally; if
+     * postSpin never fires, we still ship the event so the chip stays
+     * truthful. */
+    setTimeout(function() {
+      try { if (typeof unsub === 'function') unsub(); } catch (_) {}
+      fire();
+    }, 1500);
   }
 
   if (document.readyState === 'loading') {
