@@ -1,3 +1,176 @@
+## 🟡 D-17 FOUNDRY-FAMILY GAP ROADMAP · 2026-06-20 · OPEN (čeka Boki prioritet)
+
+Boki: *"sta ika od featurea u cash eruption gdd na desktopu sto nemamo u blokove?"* → *"upisi master todo prvo detaljno"* (2026-06-20)
+
+**Audit svih feature-a u `~/Desktop/Cash_Eruption_Foundry_GDD.pdf` (69 strana, SWID 200-1637, Foundry cabinet family) vs `src/blocks/` (184 blokova). 14 feature-a već pokriveno 1:1, 8 industry-standard mehanika fali — svi opt-in default-disabled (neće lomiti postojeće 4 baseline GDD-a).**
+
+### POSTOJI (14 GDD feature-a → 17 blokova mapirano 1:1)
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ GDD feature                              §        Pokriva blok(ovi)                  │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Hold & Win + reset-on-new-symbol         §09      holdAndWin (resetTo=respinsAwarded)│
+│ Pot ladder MINI/MINOR/MAJOR/GRAND        §10.1    jackpotLadderRooms +                │
+│                                                   holdAndWinFrameMultiplier +         │
+│                                                   holdAndWinRoomJackpotMultiplier     │
+│ Volatility selector (Low/Med/High)       §09      volatilitySelector                  │
+│ FS 6 spins + retrigger +3 cap 15         §08.2    freeSpins + progressiveFreeSpins +  │
+│                                                   progressiveFsRetriggerLadder        │
+│ Expanding Wild only_if_winning           §07      expandingWild +                     │
+│                                                   expandingWildMultiplier             │
+│ Volcano scatter (3=2x, 4=15x, 5=100x)    §06.3    scatterCelebration                  │
+│ 20 fixed paylines L01-L20                §05.2    paylines                            │
+│ Bet selector 21 steps (0.20→40.00)       §05.5    betSelector                         │
+│ Big win presentation tier                §4.7     bigWinTier + winRollup +            │
+│                                                   winPresentation                     │
+│ 1,000,000 credit absolute cap            §04.6    winCap                              │
+│ H&W cell expansion                       §07      holdAndWinReelExpansion             │
+│ FS-trigger H&W path (9+ Big Fireball)    §08.5    wildTriggerHoldAndWin               │
+│ Coin collect / money-collect             §09      coinCollect + holdAndWinCreditBucket│
+│ H&W base-game safety guard               §07      holdAndWinBaseGameSafety            │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+Σ 14 GDD feature-a → 17 postojećih blokova (parity 100%)
+```
+
+### FALI (8 industry-standard mehanika)
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ #   Predlog block name                §        Mehanika                              │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ #1  patternWin                        §05.3    Generic stacked-symbol-on-reel-1      │
+│                                       §07      + expanded-Wilds-reels-2-5 → flat     │
+│                                                multiplier (default 1000× total bet). │
+│                                                REPLACES underlying line wins (no     │
+│                                                double-pay). Suppress per-line tally, │
+│                                                play one consolidated banner.         │
+│                                       GDD knobs: enabled · anchorSymbol · anchorReel │
+│                                                · anchorStack · winReels · payX       │
+│                                       Lifecycle: postSpin (own evaluation pre paint) │
+│                                       Listener: onSpinResult                          │
+│                                       Owns events: onPatternWinTrigger,               │
+│                                                    onPatternWinPaid                   │
+│                                                                                       │
+│ #2  linkedReels                       §08.3    FS-only reel link — N consecutive     │
+│                                       §08.5.0  reels REPETIRA symbol koji landa na   │
+│                                                bilo kojem linked reel-u, emituje     │
+│                                                discrete count units (NE area count). │
+│                                                Klasa Lock-It-Link / linked-spinner.  │
+│                                       GDD knobs: enabled · linkedReelIndices (e.g.   │
+│                                                [2,3,4]) · linkMode (any|specific)    │
+│                                                · onlyDuringFs (bool)                  │
+│                                       Lifecycle: preSpin (mark linked) → postSpin    │
+│                                                (repeat symbol across link)            │
+│                                       Owns events: onReelsLinked, onLinkUnits        │
+│                                                                                       │
+│ #3  bigSymbolRender2x2                §06.4    Oversized symbol render (2×2 ili     │
+│                                       §08.5.0  3-high) kao discrete UNIT — count     │
+│                                                threshold (npr "9+ Big Fireball")     │
+│                                                counts UNITS not cells. Visual rule:  │
+│                                                4 cells = 1 unit za trigger eval.     │
+│                                       GDD knobs: enabled · bigSymbolKinds (array     │
+│                                                of {symbol, geometry: '2x2'|'3h'|     │
+│                                                'fullReel'}) · countMode: 'units'     │
+│                                                                                       │
+│ #4  perTriggerVolatilitySet           §09      RANDOM weighted draw {Low/Med/High}  │
+│                                                NA H&W TRIGGER, LOCK za feature       │
+│                                                trajanja. NIJE player-choice (to je   │
+│                                                volatilitySelector), NE re-roll       │
+│                                                mid-feature. Biases coin-value pool.  │
+│                                       GDD knobs: enabled · weights {low: 0.5, med:   │
+│                                                0.35, high: 0.15} · valuePools per    │
+│                                                tier · lockOnTrigger: true             │
+│                                       Lifecycle: onHoldAndWinTrigger → draw + lock   │
+│                                                + emit onVolatilitySetLocked          │
+│                                       Owns events: onVolatilitySetLocked,             │
+│                                                    onVolatilitySetExpired            │
+│                                                                                       │
+│ #5  potSymbolFireball                 §10.2    MINI/MINOR/MAJOR pots renderuju kao  │
+│                                                special bonus symbol (NE celebracija) │
+│                                                koji persist kroz respins kao value-  │
+│                                                Fireball-ovi, RESETUJU respin counter │
+│                                                pri landing-u, count toward GRAND     │
+│                                                full-board fill.                       │
+│                                       GDD knobs: enabled · potValues {MINI,MINOR,    │
+│                                                MAJOR} · potWeights · grandOnFullFill │
+│                                                                                       │
+│ #6  simultaneousFsHoldAndWinPriority  §07      Single spin trigger-uje OBA (3+      │
+│                                                Volcano + 6+ Fireball) → resolve H&W  │
+│                                                PRVO (banks collect value), zatim     │
+│                                                enter FS sa remaining spins INTACT.   │
+│                                                FS award queue-ed, ne lost.            │
+│                                       GDD knobs: enabled · primaryFeature: 'holdAndWin'│
+│                                                · secondaryFeature: 'freeSpins'       │
+│                                                · order: 'primaryThenSecondary'       │
+│                                                                                       │
+│ #7  grandInterruptionLock             §10.5    Full-board GRAND celebracija         │
+│                                       §10.6    interruption-locked (uncancellable    │
+│                                                slam-stop), cabinet route to attendant│
+│                                                handpay per jurisdiction PRE crediting│
+│                                                balance.                               │
+│                                       GDD knobs: enabled · grandThresholdCredits     │
+│                                                · handpayJurisdictions (array) ·      │
+│                                                celebrationDurationMs (locked)        │
+│                                                                                       │
+│ #8  creditAwardConversion             §04.5    Single-source-of-truth credit→money  │
+│                                       §06.1    conversion blok. Explicit            │
+│                                                `coin_value = total_bet / N` derivation│
+│                                                gde N = fixed coin count (20 za       │
+│                                                Foundry family). Line pays × coin,    │
+│                                                scatter/pattern × total_bet,          │
+│                                                pot/H&W = absolute credits. Sprečava  │
+│                                                drift kada više blokova interpretira  │
+│                                                award unit drugačije.                 │
+│                                       GDD knobs: enabled · fixedCoinCount · awardUnit │
+│                                                Modes per pay type (line: 'xCoin',    │
+│                                                scatter: 'xTotalBet', pot: 'credits') │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+Σ 8 novih blokova · svaki opt-in default-disabled · cumulative 184 → 192
+```
+
+### Predlog prioritizacije (po dependency chain-u)
+
+```
+┌─────┬─────────────────────────────────┬────────────────────────────────────────────┐
+│ Red │ Blok                            │ Razlog                                       │
+├─────┼─────────────────────────────────┼────────────────────────────────────────────┤
+│  1  │ patternWin                      │ Independent, generic baseline, koristi     │
+│     │                                 │ se u 4+ buduća GDD-a iste familije          │
+│  2  │ bigSymbolRender2x2              │ Foundation za #3 (linkedReels) i #5         │
+│     │                                 │ (potSymbolFireball) — moraju znati šta je   │
+│     │                                 │ "unit" pre nego što count threshold radi    │
+│  3  │ linkedReels                     │ Zavisi od #2 za unit count na linked reel   │
+│  4  │ perTriggerVolatilitySet         │ Engine-side weighted draw, plug-in u H&W    │
+│  5  │ potSymbolFireball               │ Zavisi od #2 za 2×2 render, plug-in u H&W   │
+│  6  │ grandInterruptionLock           │ Plug-in u winPresentation + winCap          │
+│  7  │ simultaneousFsHoldAndWinPriority│ Cross-feature arbiter, treba i #5 i FS path │
+│  8  │ creditAwardConversion           │ Repo-wide foundation, retrofit u sve         │
+│     │                                 │ pay-emitting blokove (najveći scope)         │
+└─────┴─────────────────────────────────┴────────────────────────────────────────────┘
+```
+
+### Acceptance criteria (po blocku)
+
+- **JSDoc kontrakt header** sa purpose · industry-ref · public API · lifecycle · perf budget · a11y · GDD keys (per `rule_senior_grade_code`)
+- **Vendor-neutral source** (no game/vendor names) per `rule_no_vendor_mentions`
+- **Sole-owner emit ownership** (per LEGO Gate FAIL #4)
+- **0-byte side effect kad `enabled: false`** (opt-in default)
+- **100% unit test coverage** (`tests/blocks/<name>.test.mjs`)
+- **Lifecycle listener registered** (per LEGO Gate FAIL #5)
+- **Backtick-free template body** (per LEGO Gate FAIL #6)
+- **HOOK_EVENTS registry update** za nove emit-ovane event-ove (per FAIL #8)
+- **GDD parser update** za nove `model.*` ključeve
+- **LEGO Gate 8/8 PASS** pre commit-a
+- **all-force-chips probe re-run** sa novim chip-ovima ako se UFP proširi
+
+### Status
+
+🟡 **OPEN** — Boki bira redosled. Default predlog: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 (dependency-safe).
+Ako Boki kaže "kreni" bez broja → krećem #1 patternWin po default redosledu.
+
+---
+
 ## 🏆 D-16 LEGO SOLE-OWNER + VENDOR-NEUTRAL SWEEP · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"ajde radi dalje fix za slot gdd i azuriraj master todo ako je potrebno"* (2026-06-20)
