@@ -113,16 +113,35 @@ export function emitMultiplierOrbCSS(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   return `
 /* ─── multiplier orb ───────────────────────────────────────────── */
+/* D-14.5 PRESENTATION ALIGN (2026-06-20): industry baseline (cash-on-reels
+   orb pattern) renders the multiplier value chip DEAD-CENTER of the cell
+   (not bottom-right corner), with coin-gradient backplate and uppercase
+   letter-spaced label so it reads at a glance. The orb itself becomes a
+   "coin token" rather than a decorated normal cell. */
 .cell--orb { position: relative; }
 .cell--orb::after {
   content: attr(data-orb-value) "x";
   position: absolute;
-  bottom: 6px; right: 6px;
-  font-size: 0.65em;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 50%;
+  padding: 6% 10%;
+  font-size: 1.05em;
   font-weight: 900;
+  text-align: center;
   color: ${cfg.chipColor};
+  background: radial-gradient(circle at 50% 35%,
+    rgba(255, 220, 110, 1) 0%,
+    rgba(212, 158, 38, 1) 55%,
+    rgba(120, 78, 14, 1) 100%);
+  border: 2px solid rgba(${cfg.chipGlow}, 0.95);
+  border-radius: 999px;
+  box-shadow: 0 0 12px rgba(${cfg.chipGlow}, 0.85),
+              inset 0 2px 4px rgba(255, 240, 180, 0.55),
+              inset 0 -3px 6px rgba(0, 0, 0, 0.35);
   text-shadow: 0 0 6px rgba(${cfg.chipGlow},.9), 0 1px 0 ${cfg.chipShadow};
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   pointer-events: none;
 }
 @keyframes orbPulse {

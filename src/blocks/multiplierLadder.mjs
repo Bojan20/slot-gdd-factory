@@ -58,7 +58,12 @@ export function defaultConfig() {
     enabled:      false,
     steps:        STEPS_DEFAULT,
     startTier:    0,                // index into steps[]
-    position:     'top-right',      // top-left | top-right | bottom-left | bottom-right
+    /* D-14.5 PRESENTATION ALIGN (2026-06-20): industry baseline (progressive
+       FS multiplier ladders + side rail patterns across reference titles)
+       renders the ladder as a side rail on the TOP-LEFT — opposite side
+       from the persistent multiplier HUD chip on top-right, so the two
+       don't visually fight. */
+    position:     'top-left',       // top-left | top-right | bottom-left | bottom-right
     labelTemplate: '×{N}',          // {N} → current step value
     fontSizePx:   14,
     bgColor:      'rgba(0,0,0,0.55)',

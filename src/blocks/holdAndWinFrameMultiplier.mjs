@@ -65,7 +65,7 @@
  * No payout coupling beyond emitting the final tiers map to HookBus.
  */
 
-const CHIP_POSITIONS = Object.freeze(['topRight', 'topLeft', 'bottomRight', 'bottomLeft']);
+const CHIP_POSITIONS = Object.freeze(['center', 'topRight', 'topLeft', 'bottomRight', 'bottomLeft']);
 
 const FONT_SIZE_MIN = 8;
 const FONT_SIZE_MAX = 24;
@@ -86,9 +86,12 @@ export function defaultConfig() {
     tierLadder: DEFAULT_LADDER.slice(),
     bumpOnReLand: true,
     showChip: true,
-    chipPosition: 'topRight',
+    /* D-14.5 PRESENTATION ALIGN (2026-06-20): default center placement
+       per industry hold-and-win baseline. Corner positions stay valid
+       via explicit GDD opt-in. */
+    chipPosition: 'center',
     chipColor: '#ffd966',
-    fontSizePx: 11,
+    fontSizePx: 14,
     durationMs: 800,
   });
 }
@@ -153,12 +156,18 @@ export function tierBumpForLanding(currentTier, ladder) {
 }
 
 function positionCss(pos) {
+  /* D-14.5 PRESENTATION ALIGN (2026-06-20): industry baseline (hold-and-
+     win cash-on-reels pattern) places the multiplier value chip DEAD-
+     CENTER of the orb cell so the value reads at a glance across the
+     whole reel set. The corner positions stay supported for legacy GDDs
+     that explicitly opt into them; 'center' is the new default. */
   switch (pos) {
     case 'topLeft':     return 'top: 4px; left: 4px;';
     case 'bottomRight': return 'bottom: 4px; right: 4px;';
     case 'bottomLeft':  return 'bottom: 4px; left: 4px;';
-    case 'topRight':
-    default:            return 'top: 4px; right: 4px;';
+    case 'topRight':    return 'top: 4px; right: 4px;';
+    case 'center':
+    default:            return 'top: 50%; left: 50%; transform: translate(-50%, -50%);';
   }
 }
 

@@ -78,11 +78,13 @@ export function emitPersistentMultiplierCSS(cfg = defaultConfig()) {
 /* ─── persistent multiplier ─────────────────────────────────────── */
 .pm-chip {
   position: fixed;
-  /* W47.S8 (A9 safe-area) — was bottom: 80px / right: 22px which
-   * overlapped the home-bar on notched iPhones and the right-edge
-   * gesture zone on Android. Wrap in max(originalPx, safe-area-inset). */
-  bottom: calc(max(80px, env(safe-area-inset-bottom, 0px) + 80px));
-  right: calc(max(22px, env(safe-area-inset-right, 22px)));
+  /* D-14.5 PRESENTATION ALIGN (2026-06-20): persistent multiplier chip
+     is a HUD element per industry FS baseline. Moved from bottom-right
+     (overlapped spin button + home-bar on iPhones) to TOP-RIGHT corner
+     of the play area where players scan multiplier status. Safe-area-
+     inset still respected for notched devices. */
+  top: calc(max(12px, env(safe-area-inset-top, 0px) + 12px));
+  right: calc(max(14px, env(safe-area-inset-right, 14px)));
   z-index: 55;
   background: rgba(0,0,0,.7);
   border: 1.5px solid rgba(${cfg.chipColor},.7);
