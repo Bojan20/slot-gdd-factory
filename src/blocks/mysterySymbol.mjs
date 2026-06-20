@@ -151,6 +151,20 @@ function markMysteryCells() {
   const host = document.getElementById('gridHost');
   if (!host) return [];
   const cells = host.querySelectorAll('.cell');
+  /* WAVE U1 force-guard (Boki 2026-06-20): plant 3 mystery cells when UFP
+     chip set PENDING === 'mystery_symbol' so the reveal animation always
+     fires after the spin settles. Universal — no game-specific naming. */
+  try {
+    if (window.__FORCE_FEATURE_PENDING__ === 'mystery_symbol' && cells.length >= 3) {
+      const _step = Math.max(1, Math.floor(cells.length / 3));
+      for (let i = 0; i < 3; i++) {
+        const _idx = Math.min(cells.length - 1, i * _step);
+        const _c = cells[_idx];
+        if (_c) _c.textContent = MYSTERY_ID;
+      }
+      window.__FORCE_FEATURE_PENDING__ = null;
+    }
+  } catch (_) {}
   const marked = [];
   cells.forEach((cell, idx) => {
     const sym = (cell.textContent || '').trim();

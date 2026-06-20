@@ -1,3 +1,79 @@
+## 🏆 WAVE U — UNIVERSAL GDD CONFORMANCE · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"univerzal"* — sve tri ose u jednom prolazu (2026-06-20).
+
+**Zahtev:** (1) Univerzalan GDD ingest na bilo koji GDD, (2) sve iz GDD-a uvek vidljivo u slotu, (3) svaki force radi (real spin → real outcome).
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE U — tri ose paralelno (force / vidljivost / parser robustnost)                   │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ U1 — 7 missing force handlers (rule_force_buttons_real_spin gap)                       │
+│   Audit nalaz: 7 chips renderovani ali bez deterministic outcome                       │
+│     expanding_wild · walking_wild · sticky_wild · mystery_symbol                       │
+│     wild_reel       · respin       · super_symbol                                      │
+│   Fix: universalForcePanel.mjs +1 ujedinjeni branch                                    │
+│     window.__FORCE_FEATURE_PENDING__ = kind                                            │
+│     window.__FORCE_BIG_WIN_TIER__    = 1     (baseline win za mult/eval)               │
+│     HookBus.emit('onForceFeatureRequested', { kind })                                  │
+│     _runSpin() → real spin → block consumer force-applies feature                      │
+│   Force-guards u 7 blokova:                                                             │
+│     expandingWild.applyExpandingWilds   — plant 1 seed cell na cnt grid                │
+│     walkingWild.harvestWalkingWilds     — entry edge wild po direction                 │
+│     stickyWild.harvestStickyWilds       — plant 1 center cell                          │
+│     mysterySymbol.markMysteryCells      — plant 3 mystery cells (1/3, 2/3, 3/3)        │
+│     wildReel.maybeFireWildReel          — bypass probability gate                      │
+│     respin.respinMaybeTrigger           — bypass paid/RNG gate, force respinStart      │
+│     superSymbol.maybeFireSuperSymbol    — bypass probability gate                      │
+│   Svi PENDING flag-ovi su one-shot, čiste se posle consumption-a.                      │
+│                                                                                       │
+│   ORPHAN FLAG FIX (Boki audit gap)                                                     │
+│     persistentMultiplier.mjs — wire preSpin → consume __FORCE_PERSISTENT_MULT__        │
+│     PM_CURRENT = max(PM_CURRENT, _f), emit onMultChange (single-owner)                 │
+│                                                                                       │
+│ U2 — GDD vidljivost (paytable info modal universal expansion)                          │
+│   Audit nalaz: RTP/maxWin/volatility/FS-ladder/theme parsed-but-invisible              │
+│   Fix: paytable.mjs +_gddInfoFromModel() helper +_renderGddInfo() section              │
+│   Sad info modal prikazuje (svaki opcionalno, samo ako model carry-uje vrednost):      │
+│     Grid · Topology · Paylines · RTP · Max win · Volatility · Hit frequency            │
+│     Capsule · Free spins ladder (3S→10 · 4S→15 · 5S→20) · Retrigger · Theme            │
+│   Universal — čita SAMO canonical model keys (model.payback.rtp, model.winCap.maxWinX, │
+│   model.freeSpins.awards, model.topology.*, model.theme.*) — nikad game-specific.      │
+│                                                                                       │
+│ U3 — parser robustness (11 brittle single-phrase patterns)                             │
+│   Audit nalaz: Gamble/AnteBet/ClusterPays/ScatterPay/Respin/Wild* single-phrase fail   │
+│   Fix: src/parser.mjs FEATURE_KEYWORD_MAP — pojačani synonym sets za 18 features:      │
+│     gamble        +double-or-nothing +risk +red/black +hilo +guess card                │
+│     jackpot       +grand prize +progressive pool +jackpot ladder/room/tier             │
+│     scatterCeleb  +trigger reveal/sequence/intro +scatter intro                        │
+│     multOrb       +gold orb +coin value orb +mult orb                                  │
+│     persistMult   +carry-over +increasing +cumulative +growing                         │
+│     rndLightning  +random multiplier +zeus strike +electric bolt/spark                 │
+│     stickyWild    +stays sticky +sticky reel/symbol +locked wild                       │
+│     expandWild    +expands to fill reel +stretch wild +grow to full reel               │
+│     walkWild      +wandering +march left/right/down +walker wild                       │
+│     wildReel      +entire reel wild +reel turns wild +nudged wild reel                 │
+│     mysterySym    +hidden symbol +reveal symbol +mystery tile/prize                    │
+│     superSym      +giant/mega/oversized symbol +3×3 / 2×2 symbol                       │
+│     clusterPays   +cluster mechanic +adjacent cluster +connected cluster               │
+│     waysEval      +pay ways +adjacency pays +left-to-right ways +both-ways             │
+│     payAnywhere   +pay everywhere +8-of-a-kind anywhere                                │
+│     tumble        +drop down +rolling reels +chain reaction +symbol collapse           │
+│     anteBet       +ante mode +ante-up +bet boost +125% bet +1.25x bet                  │
+│     respin        +free-respin +paid-respin +hold-and-respin +lock-and-respin          │
+│                                                                                       │
+│ VERIFIKACIJA                                                                          │
+│   parser tests           4/4 PASS  ✅                                                  │
+│   render-grid tests     20/20 PASS  ✅                                                  │
+│   block tests (8 affected) PASS  ✅  paytable 41 · respin 22 · pm 18                    │
+│                                       6 wild + super 86                                │
+│   4-gdds-ultimate-audit   4/4 PASS  ✅  0 console errs · 0 page errs · 0 redness        │
+│                                        Verdict: ALL GDDS PERFECT                       │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-18.2 CASH ERUPTION + D-17 KEYWORD MAPPING · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"ajde dodaj prvo to"* (Cash Eruption feature mapping) (2026-06-20)

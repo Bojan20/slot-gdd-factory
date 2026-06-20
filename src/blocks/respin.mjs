@@ -159,6 +159,15 @@ function _respinHeldReels() {
 
 function respinMaybeTrigger() {
   if (!_respinPhaseAllowed() || RESPIN_STATE.active) return false;
+  /* WAVE U1 force-guard (Boki 2026-06-20): UFP chip can deterministically
+     start a respin chain regardless of paid mode or RNG roll. Per
+     rule_force_buttons_real_spin force MUST yield the feature. */
+  try {
+    if (window.__FORCE_FEATURE_PENDING__ === 'respin') {
+      window.__FORCE_FEATURE_PENDING__ = null;
+      return respinStart();
+    }
+  } catch (_) {}
   /* Fable audit (critical): paid mode must NEVER auto-fire — that would
    * silently spend the player's bet on a respin they never asked for.
    * paid mode triggers ONLY via an explicit UI handler that emits

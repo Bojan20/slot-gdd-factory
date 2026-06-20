@@ -114,6 +114,23 @@ function harvestStickyWilds() {
   const REELS = _stickyReels(host);
   if (!REELS) return;
   const cells = host.querySelectorAll('.cell');
+  /* WAVE U1 force-guard (Boki 2026-06-20): force chip plants ONE deterministic
+     sticky cell so the player witnesses the registry growth. Without this
+     guard the force chip animation showed but the sticky map stayed empty
+     when the RNG outcome had no wild. */
+  try {
+    if (window.__FORCE_FEATURE_PENDING__ === 'sticky_wild' && cells.length) {
+      const ROWS = (() => { const n = Number(host.dataset && host.dataset.rows); return Number.isFinite(n) && n > 0 ? n : Math.ceil(cells.length / REELS); })();
+      const seedR = Math.floor(ROWS / 2);
+      const seedC = Math.floor(REELS / 2);
+      const seedIdx = seedR * REELS + seedC;
+      const seedCell = cells[seedIdx];
+      if (seedCell) {
+        seedCell.textContent = STICKY_WILD_SYMBOL;
+      }
+      window.__FORCE_FEATURE_PENDING__ = null;
+    }
+  } catch (_) {}
   cells.forEach((cell, idx) => {
     const sym = (cell.textContent || '').trim();
     if (sym !== STICKY_WILD_SYMBOL) return;

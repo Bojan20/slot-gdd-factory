@@ -804,6 +804,32 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
       } catch (_) {}
     }
 
+    /* WAVE U1 (Boki 2026-06-20 — "univerzal"): 7 wild/respin force handlers.
+     * Audit gap: expanding_wild, walking_wild, sticky_wild, mystery_symbol,
+     * wild_reel, respin, super_symbol previously had NO handler — chips
+     * rendered, spin happened, but outcome was NOT forced. Per
+     * rule_force_buttons_real_spin: force MUST guarantee deterministic
+     * outcome. Pattern: chip sets PENDING + baseline win, _runSpin() fires,
+     * each block's onSpinResult listener consumes PENDING and forcibly
+     * applies its mechanic + clears the flag. UNIVERSAL — no game-specific
+     * branch, works for ANY GDD that declares the feature. */
+    if (kind === 'expanding_wild' || kind === 'walking_wild' ||
+        kind === 'sticky_wild'    || kind === 'mystery_symbol' ||
+        kind === 'wild_reel'      || kind === 'super_symbol'   ||
+        kind === 'respin') {
+      try { window.__FORCE_FEATURE_PENDING__ = kind; } catch (_) {}
+      /* Guarantee a baseline so multipliers / pay-window evals have
+       * something to operate on (per D-14 rule). Tier 1 = small win. */
+      try { window.__FORCE_BIG_WIN_TIER__ = 1; } catch (_) {}
+      /* Emit on the canonical bus so any listener block sees the request
+       * even before the spin lands. */
+      try {
+        if (window.HookBus && typeof window.HookBus.emit === 'function') {
+          window.HookBus.emit('onForceFeatureRequested', { kind: kind });
+        }
+      } catch (_) {}
+    }
+
     /* 2026-06-10 — Boki bug "multiplier force ne radi". UFP chip emit-uje
        onForceFeatureRequested + spin, ali ne postavlja stvarni mult. Pa
        spin se dešava sa default mult=1, multiplier banner se prikaže

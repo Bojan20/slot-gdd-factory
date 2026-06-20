@@ -99,7 +99,18 @@ function maybeFireWildReel() {
   /* Roll ONCE for the feature; then pick a count. Rolling per-reel
      would make E[wild reels] = chance + chance² + … and break the
      documented "probability a wild reel fires" semantics. */
-  if (_wildReelRand() >= WILD_REEL_CHANCE) return [];
+  /* WAVE U1 force-guard (Boki 2026-06-20): bypass probability gate when
+     UFP chip set PENDING === 'wild_reel'. Universal — guarantees the
+     player sees a wild reel on the next spin for ANY GDD that declares
+     the feature. Flag is one-shot; cleared after consumption. */
+  var _wrForced = false;
+  try {
+    if (window.__FORCE_FEATURE_PENDING__ === 'wild_reel') {
+      _wrForced = true;
+      window.__FORCE_FEATURE_PENDING__ = null;
+    }
+  } catch (_) {}
+  if (!_wrForced && _wildReelRand() >= WILD_REEL_CHANCE) return [];
   const n = 1 + Math.floor(_wildReelRand() * WILD_REEL_MAX);
   const fired = [];
   const REELS = window.REELS || WILD_REEL_REELS_FB;

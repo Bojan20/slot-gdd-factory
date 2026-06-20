@@ -207,6 +207,24 @@ if (document.readyState === 'loading') {
  * bake does NOT stack the listeners (was firing N× per FS spin). */
 if (typeof HookBus !== 'undefined' && typeof window !== 'undefined' && !window.__PERSISTENT_MULT_WIRED__) {
   window.__PERSISTENT_MULT_WIRED__ = true;
+  /* WAVE U1 force-consumer (Boki 2026-06-20): close the orphan flag
+     __FORCE_PERSISTENT_MULT__. UFP chip "persistent_multiplier" sets
+     this flag; without a consumer the chip relied purely on
+     HookBus.setMult(), bypassing PM_CURRENT. Now PM_CURRENT is bumped
+     to the requested value on preSpin so the next spin's win-decorator
+     applies a real persistent multiplier, the pm-chip shows the value,
+     and the canonical mult source-of-truth is single-owner. */
+  HookBus.on('preSpin', () => {
+    try {
+      var _f = window.__FORCE_PERSISTENT_MULT__;
+      if (typeof _f === 'number' && _f > PM_CURRENT) {
+        PM_CURRENT = PM_MAX > 0 ? Math.min(PM_MAX, _f) : _f;
+        _pmRenderChip(true);
+        HookBus.emit('onMultChange', { source: 'persistent', value: PM_CURRENT });
+      }
+      window.__FORCE_PERSISTENT_MULT__ = null;
+    } catch (_) {}
+  }, { priority: 30 });
   /* F3 priority 30 — decorator class for the multiplier accumulator.
      Although this block mutates persistent state, the convention groups it
      with multiplierOrb + cascadeBooster (peer multiplier-decorators) so

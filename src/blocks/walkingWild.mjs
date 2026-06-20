@@ -162,6 +162,24 @@ function harvestWalkingWilds() {
   if (!host) return;
   const REELS = window.REELS || WALKING_WILD_DEFAULT_REELS;
   const cells = host.querySelectorAll('.cell');
+  /* WAVE U1 force-guard (Boki 2026-06-20): UFP chip can request a
+     deterministic walker so the player sees the mechanic even if RNG
+     did not place a wild. We seed exactly ONE cell at the entry edge
+     opposite the walk direction, then the regular harvest registers it. */
+  try {
+    if (window.__FORCE_FEATURE_PENDING__ === 'walking_wild' && cells.length) {
+      const ROWS = window.ROWS || WALKING_WILD_DEFAULT_ROWS;
+      const entryR = WALKING_WILD_DY > 0 ? 0 : Math.floor(ROWS / 2);
+      const entryC = WALKING_WILD_DX > 0 ? 0 : WALKING_WILD_DX < 0 ? REELS - 1 : Math.floor(REELS / 2);
+      const seedIdx = entryR * REELS + entryC;
+      const seedCell = cells[seedIdx];
+      if (seedCell) {
+        seedCell.textContent = WALKING_WILD_SYMBOL;
+        seedCell.dataset.symbol = WALKING_WILD_SYMBOL;
+      }
+      window.__FORCE_FEATURE_PENDING__ = null;
+    }
+  } catch (_) {}
   cells.forEach((cell, idx) => {
     if (cell.dataset.symbol !== WALKING_WILD_SYMBOL) return;
     const r = Math.floor(idx / REELS);

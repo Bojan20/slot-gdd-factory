@@ -113,6 +113,23 @@ function applyExpandingWilds() {
   const REELS = Number.isInteger(window.REELS) ? window.REELS : EXPANDING_WILD_FALLBACK_REELS;
   const ROWS  = Number.isInteger(window.ROWS)  ? window.ROWS  : EXPANDING_WILD_FALLBACK_ROWS;
   const cells = host.querySelectorAll('.cell');
+  /* WAVE U1 force-guard (Boki 2026-06-20): if UFP chip set PENDING ===
+     'expanding_wild', GUARANTEE at least one wild seed lands so the
+     expansion has a column to grow from. Without this guard, force on a
+     no-win spin produced zero wilds → user perceived "force ne radi". */
+  try {
+    if (window.__FORCE_FEATURE_PENDING__ === 'expanding_wild' && cells.length) {
+      const _seedCol = Math.floor(REELS / 2);
+      const _seedRow = Math.floor(ROWS / 2);
+      const _seedIdx = _seedRow * REELS + _seedCol;
+      const _seedCell = cells[_seedIdx];
+      if (_seedCell) {
+        if (_seedCell.dataset.origSym == null) _seedCell.dataset.origSym = (_seedCell.textContent || '').trim();
+        _seedCell.textContent = EXPANDING_WILD_SYMBOL;
+      }
+      window.__FORCE_FEATURE_PENDING__ = null;
+    }
+  } catch (_) {}
   /* Detect which columns have any wild */
   const colsWithWild = new Set();
   cells.forEach((cell, idx) => {

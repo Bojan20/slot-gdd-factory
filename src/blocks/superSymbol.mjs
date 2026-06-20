@@ -128,7 +128,17 @@ function _superPickSymbol() {
 
 function maybeFireSuperSymbol() {
   if (!_superPhaseAllowed()) return null;
-  if (Math.random() >= SUPER_CHANCE) return null;
+  /* WAVE U1 force-guard (Boki 2026-06-20): bypass probability when UFP
+     chip set PENDING === 'super_symbol'. Universal — works for any GDD
+     that declares the feature. One-shot, cleared after consumption. */
+  var _ssForced = false;
+  try {
+    if (window.__FORCE_FEATURE_PENDING__ === 'super_symbol') {
+      _ssForced = true;
+      window.__FORCE_FEATURE_PENDING__ = null;
+    }
+  } catch (_) {}
+  if (!_ssForced && Math.random() >= SUPER_CHANCE) return null;
   const host = document.getElementById('gridHost');
   if (!host) return null;
   const REELS = window.REELS || 5;

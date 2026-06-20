@@ -197,6 +197,67 @@ function _featuresFromModel(model) {
     }));
 }
 
+/* WAVE U2 visibility helper (Boki 2026-06-20 — "univerzal") — extract
+ * top-level GDD info that EVERY GDD declares but the paytable previously
+ * left invisible: RTP, max-win cap, volatility tier label, FS trigger
+ * ladder, retrigger rule, capsule/topology, theme metadata. Universal —
+ * never reads game-specific keys, only the canonical model shape. */
+function _gddInfoFromModel(model) {
+  const m = model || {};
+  const out = {};
+  /* RTP — accept canonical, math, or theme nested forms. */
+  const rtpRaw = (m.payback && m.payback.rtp) || (m.math && m.math.rtp) || m.rtp || null;
+  if (rtpRaw != null) {
+    const rtpNum = Number(rtpRaw);
+    if (Number.isFinite(rtpNum) && rtpNum > 0) {
+      out.rtp = rtpNum > 1 ? rtpNum.toFixed(2) + '%' : (rtpNum * 100).toFixed(2) + '%';
+    }
+  }
+  /* Max-win cap — winCap.maxWinX is canonical, also fall back to math/theme. */
+  const cap = (m.winCap && m.winCap.maxWinX) ||
+              (m.math && m.math.maxWinX) ||
+              m.maxWinX || null;
+  if (cap != null) {
+    const capNum = Number(cap);
+    if (Number.isFinite(capNum) && capNum > 0) out.maxWin = capNum.toLocaleString() + '×';
+  }
+  /* Volatility tier label — theme/math/top-level. */
+  const vol = (m.theme && m.theme.volatility) || (m.math && m.math.volatility) || m.volatility || null;
+  if (vol) out.volatility = String(vol);
+  /* Hit frequency — same fall-through chain. */
+  const hf = (m.payback && m.payback.hitFrequency) || (m.math && m.math.hitFrequency) || m.hitFrequency || null;
+  if (hf != null) {
+    const hfNum = Number(hf);
+    if (Number.isFinite(hfNum) && hfNum > 0) {
+      out.hitFrequency = hfNum > 1 ? hfNum.toFixed(2) + '%' : (hfNum * 100).toFixed(2) + '%';
+    }
+  }
+  /* Free Spins trigger ladder. */
+  const fs = m.freeSpins;
+  if (fs && fs.enabled && Array.isArray(fs.awards) && fs.awards.length) {
+    out.fsAwards = fs.awards
+      .filter(a => a && a.count && a.spins)
+      .map(a => String(a.count) + (fs.scatterSymbolId || fs.scatterSymbol || 'S') + ' → ' + String(a.spins) + ' FS');
+    if (fs.retriggerSpins) out.fsRetrigger = '+' + fs.retriggerSpins + ' on retrigger';
+  }
+  /* Topology / capsule / paylines. */
+  const topo = m.topology || {};
+  if (topo.kind) out.topology = String(topo.kind);
+  if (topo.reels && topo.rows) out.grid = String(topo.reels) + '×' + String(topo.rows);
+  const lines = topo.paylines || m.paylines;
+  if (lines != null && lines !== 0) out.paylines = String(lines);
+  /* Capsule kind (math layer). */
+  if (m.capsule && m.capsule.kind) out.capsule = String(m.capsule.kind);
+  /* Theme metadata (mood / setting / genre). */
+  const th = m.theme || {};
+  const themeBits = [];
+  if (th.mood)    themeBits.push('Mood: ' + th.mood);
+  if (th.setting) themeBits.push('Setting: ' + th.setting);
+  if (th.genre)   themeBits.push('Genre: ' + th.genre);
+  if (themeBits.length) out.theme = themeBits;
+  return out;
+}
+
 export function emitPaytableCSS(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const c = resolveConfig({ paytable: cfg });
@@ -457,6 +518,7 @@ export function emitPaytableRuntime(cfg = defaultConfig(), model = {}) {
   const roster   = _rosterFromModel(model);
   const specials = _specialsFromModel(model);
   const features = _featuresFromModel(model);
+  const gddInfo  = _gddInfoFromModel(model);
 
   return `
   /* ── paytable BLOCK — emitted by src/blocks/paytable.mjs ──────────────
@@ -474,6 +536,7 @@ export function emitPaytableRuntime(cfg = defaultConfig(), model = {}) {
     var ROSTER      = ${JSON.stringify(roster)};
     var SPECIALS    = ${JSON.stringify(specials)};
     var FEATURES    = ${JSON.stringify(features)};
+    var GDD_INFO    = ${JSON.stringify(gddInfo)};
     var SHOW_FEATS  = ${c.showFeaturesList};
     var SHOW_WILD   = ${c.showWildRules};
     var CLOSE_BACKDROP = ${c.closeOnBackdrop};
@@ -566,6 +629,39 @@ export function emitPaytableRuntime(cfg = defaultConfig(), model = {}) {
       return '<h3>Features</h3><div class="paytable-features">' + chips + '</div>';
     }
 
+    /* WAVE U2 visibility (Boki 2026-06-20 — "univerzal"): render GDD
+       top-level info that ANY GDD declares (RTP, max-win, volatility,
+       FS trigger ladder, retrigger, grid, paylines, capsule, theme).
+       Universal — every key is optional, only rendered if model carries
+       a real value. Closes the parsed-but-invisible gap. */
+    function _renderGddInfo() {
+      if (!GDD_INFO) return '';
+      var rows = [];
+      if (GDD_INFO.grid)         rows.push(['Grid', GDD_INFO.grid]);
+      if (GDD_INFO.topology)     rows.push(['Topology', GDD_INFO.topology]);
+      if (GDD_INFO.paylines)     rows.push(['Paylines', GDD_INFO.paylines]);
+      if (GDD_INFO.rtp)          rows.push(['RTP', GDD_INFO.rtp]);
+      if (GDD_INFO.maxWin)       rows.push(['Max win', GDD_INFO.maxWin]);
+      if (GDD_INFO.volatility)   rows.push(['Volatility', GDD_INFO.volatility]);
+      if (GDD_INFO.hitFrequency) rows.push(['Hit frequency', GDD_INFO.hitFrequency]);
+      if (GDD_INFO.capsule)      rows.push(['Capsule', GDD_INFO.capsule]);
+      if (Array.isArray(GDD_INFO.fsAwards) && GDD_INFO.fsAwards.length) {
+        rows.push(['Free spins', GDD_INFO.fsAwards.join(' · ')]);
+      }
+      if (GDD_INFO.fsRetrigger)  rows.push(['Retrigger', GDD_INFO.fsRetrigger]);
+      if (Array.isArray(GDD_INFO.theme) && GDD_INFO.theme.length) {
+        rows.push(['Theme', GDD_INFO.theme.join(' · ')]);
+      }
+      if (rows.length === 0) return '';
+      var html = rows.map(function (r) {
+        return '<div class="paytable-feature" style="display:flex;justify-content:space-between;gap:12px;">'
+             + '<strong style="opacity:.85;">' + _escapeHtml(r[0]) + '</strong>'
+             + '<span style="text-align:right;">' + _escapeHtml(r[1]) + '</span>'
+             + '</div>';
+      }).join('');
+      return '<h3>GDD info</h3><div class="paytable-features">' + html + '</div>';
+    }
+
     function _renderWildNote() {
       if (!SHOW_WILD) return '';
       /* Some GDD parsers populate symbols.specials with id+name only
@@ -593,6 +689,7 @@ export function emitPaytableRuntime(cfg = defaultConfig(), model = {}) {
       var host = _content();
       if (!host) return;
       host.innerHTML =
+        _renderGddInfo() +
         '<h3>Symbol Payouts</h3>' + _renderSymbolGrid() +
         _renderSpecials() +
         _renderWildNote() +
