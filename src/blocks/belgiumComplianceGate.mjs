@@ -26,6 +26,11 @@
  *   AR 25/10/2018 Art.18 — Loss display in EUR
  *     Net loss must be shown in EUR (no virtual currency obfuscation).
  *
+ * Math gate
+ *   Block does NOT touch RTP / volatility / hit frequency. RTP floor and
+ *   tax math are math-layer parameters, out-of-scope per
+ *   `rule_no_math_unless_asked`.
+ *
  * HookBus events (sole emitter):
  *   onBeEpisCheckRequired, onBeUnder21CapEnforced, onBeCoolingOffRequired,
  *   onBeMinSpinPaceEnforced, onBeLossDisplayRequired
@@ -62,6 +67,10 @@ export function resolveConfig(model) {
   if (jurisdiction && BGC_JURISDICTIONS.indexOf(jurisdiction) !== -1) cfg.enabled = true;
   const ms = clampInt(src.minSpinMs, BE_MIN_SPIN_MS_BOUNDS[0], BE_MIN_SPIN_MS_BOUNDS[1]);
   if (ms !== null) cfg.minSpinMs = ms;
+  /* AR Art.8 — under-21 weekly EUR cap is operator-configurable above the
+   * 200 EUR baseline but never below it (BGC 2022 directive). */
+  const cap = clampInt(src.under21WeeklyCapEur, BE_UNDER21_CAP_EUR_DEFAULT, 100000);
+  if (cap !== null) cfg.under21WeeklyCapEur = cap;
   return cfg;
 }
 

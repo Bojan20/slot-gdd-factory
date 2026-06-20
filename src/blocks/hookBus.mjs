@@ -852,6 +852,45 @@ export const HOOK_EVENTS = Object.freeze([
   'onWalkingWildStep',  // Owner: walkingWildStepper.mjs
   'onWaysResetForRound',  // Owner: dynamicWaysEngine.mjs
   'onWaysReshaped',  // Owner: dynamicWaysEngine.mjs
+  /* Wave Y — exotic force-chip intent events (universalForcePanel.mjs) */
+  'onForceTournamentRank',  // Owner: universalForcePanel.mjs
+  'onForceCollectorFill',   // Owner: universalForcePanel.mjs
+  /* Wave F7 — UKGC (HX1) */
+  'onUkRtsSpinPaceEnforced',   // Owner: ukgcComplianceGate.mjs
+  'onUkRtpDisclosureRequired', // Owner: ukgcComplianceGate.mjs
+  'onUkNetPositionRequired',   // Owner: ukgcComplianceGate.mjs
+  'onUkRealityCheckEnforced',  // Owner: ukgcComplianceGate.mjs
+  'onUkAutoplayCapEnforced',   // Owner: ukgcComplianceGate.mjs
+  'onGamStopCheckRequired',    // Owner: ukgcComplianceGate.mjs
+  /* Wave F7 — Sweden SGA (HX2) */
+  'onSeMinSpinPaceEnforced',    // Owner: swedenComplianceGate.mjs
+  'onSeDepositLimitRequired',   // Owner: swedenComplianceGate.mjs
+  'onSeSpelpausCheckRequired',  // Owner: swedenComplianceGate.mjs
+  'onSeBonusConsentRequired',   // Owner: swedenComplianceGate.mjs
+  /* Wave F7 — Denmark DGA (HX3) */
+  'onDkRealityCheckEnforced', // Owner: denmarkComplianceGate.mjs
+  'onDkLossLimitRequired',    // Owner: denmarkComplianceGate.mjs
+  'onDkRofusCheckRequired',   // Owner: denmarkComplianceGate.mjs
+  'onDkMinSpinPaceEnforced',  // Owner: denmarkComplianceGate.mjs
+  /* Wave F7 — Belgium BGC (HX4) */
+  'onBeEpisCheckRequired',     // Owner: belgiumComplianceGate.mjs
+  'onBeUnder21CapEnforced',    // Owner: belgiumComplianceGate.mjs
+  'onBeCoolingOffRequired',    // Owner: belgiumComplianceGate.mjs
+  'onBeMinSpinPaceEnforced',   // Owner: belgiumComplianceGate.mjs
+  'onBeLossDisplayRequired',   // Owner: belgiumComplianceGate.mjs
+  /* Wave F7 — Switzerland ESBK (HX5) */
+  'onChWhitelistRequired',           // Owner: switzerlandComplianceGate.mjs
+  'onChRealityCheckEnforced',        // Owner: switzerlandComplianceGate.mjs
+  'onChLossDisplayRequired',         // Owner: switzerlandComplianceGate.mjs
+  'onChMinSpinPaceEnforced',         // Owner: switzerlandComplianceGate.mjs
+  'onChCantonRestrictionEnforced',   // Owner: switzerlandComplianceGate.mjs
+  'onChSelfExclusionCheckRequired',  // Owner: switzerlandComplianceGate.mjs
+  /* Wave F7 — Romania ONJN (HX6) */
+  'onRoWinTaxDisclosureEnforced', // Owner: romaniaComplianceGate.mjs
+  'onRoLimitsRequired',           // Owner: romaniaComplianceGate.mjs
+  'onRoOsajCheckRequired',        // Owner: romaniaComplianceGate.mjs
+  'onRoMinSpinPaceEnforced',      // Owner: romaniaComplianceGate.mjs
+  'onRoHandpayThresholdEnforced', // Owner: romaniaComplianceGate.mjs
   'wheelBonus.complete',  // Owner: wheelBonus.mjs (legacy dot, W57.A7 whitelist)
   'wheelBonus.spin',  // Owner: wheelBonus.mjs (legacy dot, W57.A7 whitelist)
 ]);

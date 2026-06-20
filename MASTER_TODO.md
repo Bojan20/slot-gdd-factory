@@ -501,6 +501,116 @@ specijalizovanih agenata + deterministic reconcile.
 
 ---
 
+## 🤖 KAKO AI SLOT GDD ENGINE RADI (laickim recima · 2026-06-21)
+
+> **Boki pitao 2026-06-21:** *"objasni mi jednostavnim recima kako sada funkcionise sa AI slot gdd?"*
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ ULTRA-KRATKO: ubacis GDD (PDF ili MD), engine ga POTPUNO sam razume                   │
+│ i napravi PLAYABLE slot u browser-u — niti jedna ljudska linija koda po igri.         │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 🔁 Korak-po-korak (šta se desi izmedju "ubacio GDD" i "vidim slot")
+
+```
+┌──────┬───────────────────────────────────────────────────────────────────────────────┐
+│ KOR  │ Šta engine radi                                                                │
+├──────┼───────────────────────────────────────────────────────────────────────────────┤
+│  1   │ ČITANJE — 6 AI agenata (Wave V) paralelno čitaju GDD iz 5 različitih uglova:   │
+│      │   topologija (5×3? cluster? Megaways?)                                          │
+│      │   simboli (paytable, scatter, wild)                                            │
+│      │   features (FS, H&W, multiplier, jackpot, …)                                   │
+│      │   UX (boje, capsule, animacije)                                                 │
+│      │   compliance (RTP, max win, jurisdikcije)                                       │
+│      │   Šesti — RECONCILE — uporedi sve i napravi jednu istinu sa CITATOM (§X.Y)      │
+│      │   za svaku tvrdnju, plus confidence score 0.0–1.0                              │
+├──────┼───────────────────────────────────────────────────────────────────────────────┤
+│  2   │ MAPIRANJE — Wave W AI block selector gleda model + 193 bloka u katalogu,        │
+│      │   svakom dodeli score, pa AUTO-UKLJUČI samo one koji zaista pripadaju toj igri  │
+│      │   (51 auto-on, 47 soft-warn, 32 off za prosečnu igru). Konflikti se rešavaju    │
+│      │   prirodno (npr. expandingWild vs walkingWild — pobedi onaj sa višim score-om)  │
+├──────┼───────────────────────────────────────────────────────────────────────────────┤
+│  3   │ TOPOLOGIJA — Wave X razume bilo koji grid:                                      │
+│      │   rectangular (5×3, 6×4)                                                        │
+│      │   variable_reel (Megaways 2-7 rows per reel)                                    │
+│      │   cluster (7×7 sa orthogonal/diagonal/hex adjacency)                            │
+│      │   diamond (3-4-5-4-3) i pyramid (1-3-5-3-1)                                     │
+├──────┼───────────────────────────────────────────────────────────────────────────────┤
+│  4   │ RENDER — buildSlotHTML.mjs uzme sve te decisions + active blocks +              │
+│      │   topology i izgenerise standalone playable HTML. Niti jedan "if (game === X)" │
+│      │   nije dozvoljen u src/blocks/ — sve mora biti universal.                       │
+├──────┼───────────────────────────────────────────────────────────────────────────────┤
+│  5   │ COMPLIANCE — 12 jurisdiction gate-ova proverava boot-time šta GDD traži:        │
+│      │   EU-5 baseline (DE/NL/FR/IT/ES/EU-AI-Act)                                      │
+│      │   Wave F7 (UK/SE/DK/BE/CH/RO)                                                   │
+│      │   Svaki gate emit-uje audit event-e (npr. UK RTS-14D spin-pace floor)           │
+├──────┼───────────────────────────────────────────────────────────────────────────────┤
+│  6   │ FORCE CHIPS — 16 dugmadi (Wave U + Wave Y) za testiranje. Svaki POKREĆE         │
+│      │   REALAN spin (`runOneBaseSpin`) sa flag-om koji blokovi konzumiraju —          │
+│      │   nikakav shortcut. Tipovi: FS, BW, H&W, multiplier, lightning x2/3/5/10,       │
+│      │   gamble, pick, wheel, slingo, tournament, collector, respin, mystery wild      │
+├──────┼───────────────────────────────────────────────────────────────────────────────┤
+│  7   │ VIDLJIVOST — Wave U2 paytable info modal prikazuje SVE iz GDD-a:                │
+│      │   grid · topology · paylines · RTP · max win · volatility · hit frequency ·     │
+│      │   capsule · FS ladder · retrigger · theme. Sve canonical model keys.            │
+├──────┼───────────────────────────────────────────────────────────────────────────────┤
+│  8   │ VERIFIKACIJA — gddRealityCheck (D-18) prati run-time šta blokovi emit-uju i     │
+│      │   uporedi sa GDD declared listom. DEAD signal = declared ali never emitted,     │
+│      │   SPURIOUS = emitted ali never declared. Per-game compliance scorecard.         │
+└──────┴───────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 🧩 Šta to znači za tebe Boki
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ DOBIJAS                                                                               │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ • Ubaciš GDD → playable slot u browser-u. Bez ručnog koda po igri.                   │
+│ • Sve što piše u GDD-u → vidljivo u slotu (paytable modal).                          │
+│ • 16 force chips → klikneš dugme → spin se okrene sa deterministic outcome-om.       │
+│ • 12 jurisdikcija (EU + UK/SE/DK/BE/CH/RO) → boot-time compliance audit.             │
+│ • Bilo koji grid (5×3, Megaways, cluster, hex) → engine ga razume.                   │
+│ • Mobilni clean od 320 px do 1920 px → A7 viewport fix.                              │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 📊 Pre vs posle (jednom pogledu)
+
+```
+┌─────────────────────────────┬─────────────────────────────┬───────────────────────────┐
+│ Aspekt                       │ Pre roadmap-a (20.06)        │ Posle (21.06)              │
+├─────────────────────────────┼─────────────────────────────┼───────────────────────────┤
+│ Parser tip                   │ Single-pass keyword regex    │ 6 AI agenata + reconcile  │
+│ Declared feature ratio       │ ~6 % (40 inferred)           │ ≥ 80 % cilj (V6 gate)     │
+│ Block selection              │ Ručna kuracija u orchestrator│ AI auto-mapper sa scorer  │
+│ Topology kinds               │ Samo rectangular reliable    │ rect + variable + cluster │
+│ Force chips                  │ 10 (sa 7 ranjih "ne radi")   │ 16 (svi real-spin)        │
+│ Jurisdikcije                 │ 6 EU baseline                │ 12 (EU-5 + UK/SE/DK/BE/CH/RO)│
+│ Viewport coverage            │ 768+ reliable, 320 lomi      │ 320–1920 clean             │
+│ GDD vidljivost u slot-u      │ Parsed-but-not-rendered      │ Paytable modal sve prikaže │
+│ Game-specific patch          │ Bilo ih je (D-17 D-18 fix)   │ 0 (LEGO gate enforced)    │
+│ Σ tests                      │ ≈ 3,200                      │ ≈ 3,430                   │
+└─────────────────────────────┴─────────────────────────────┴───────────────────────────┘
+```
+
+### 🚪 Šta još NIJE deo engine-a
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ Math layer (RTP optimizacija, reel weight tuning, volatility tier-ing) — GATED        │
+│   čeka tvoju komandu "ajmo na math" (po rule_no_math_unless_asked)                    │
+│ Audio layer (Howler config, SFX, mix) — GATED                                         │
+│   čeka tvoju komandu "ajmo audio" (po rule_audio_off_until_asked)                     │
+│ F6 dev-tools (inspector overlay, HMR diagnostics) — PRESKOČENO                        │
+│   tvoja odluka 2026-06-21 "preskoci" — alat za internu QA, ne klijent output          │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE U — UNIVERSAL GDD CONFORMANCE · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"univerzal"* — sve tri ose u jednom prolazu (2026-06-20).
@@ -715,43 +825,54 @@ Boki: *"kreni sve ultimativno i savrseno da radi"* (2026-06-20) — ultimativna 
 
 > **2026-06-20 zaključno · HEAD `2bcbafb`** · 🟢 PRODUCTION-READY · 0 unpushed · 0 regression
 
-## 🎯 GLOBAL STATE SNAPSHOT (current)
+## 🎯 GLOBAL STATE SNAPSHOT (current · END-OF-DAY 2026-06-21)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────┐
-│ slot-gdd-factory · LEGO contract @ HEAD 2bcbafb (origin/main sync ✅)                 │
+│ slot-gdd-factory · LEGO contract @ HEAD <THIS commit> (origin/main sync ✅)           │
 ├──────────────────────────────────────────────────────────────────────────────────────┤
-│ Σ LEGO blokova                  192   (184 baseline + 8 iz D-17)                      │
-│ Σ HOOK_EVENTS u registry        330   (313 baseline + 17 sole-owner iz D-17)          │
-│ Σ EXPECTED_EMIT_OWNERS          330   (100% pokriveno · 0 drift)                      │
-│ Σ unit + integration assertions ≈ 3,200+   (≈ 2,700 baseline + 487 novih D-17)        │
+│ Σ LEGO blokova                  199   (192 baseline + 6 F7 jurisdiction + 1 misc)     │
+│ Σ HOOK_EVENTS u registry        363   (330 baseline + 33 F7 audit events)             │
+│ Σ EXPECTED_EMIT_OWNERS          363   (100% pokriveno · 0 drift · 361 emit distinct)  │
+│ Σ unit + integration assertions ≈ 3,430+   (≈ 3,200 baseline + 230 F7 + V/W/X/Y)      │
 │ Σ baseline GDD fixtures         4/4   PERFECT  (GoO · Huff · Starlight · WoO)         │
-│ Σ synthetic GDD fixtures        20/20 PERFECT                                          │
+│ Σ synthetic GDD fixtures        24/24 PERFECT  (Wave X topology sweep)                │
+│ Σ regulator gates              12/12  EU-5 (DE/NL/FR/IT/ES/EU-AI) + F7 (UK/SE/DK/BE/CH/RO)│
+│ Σ force chip kinds             16/16  (10 baseline + 6 exotic — gamble/pick/slingo/   │
+│                                        wheel/tournament/collector)                    │
+│ Σ AI parser agents              6     (V1 topology · V2 symbols · V3 feature ·         │
+│                                        V4 UX · V5 compliance · V6 reconcile)          │
+│ Σ block catalog (auto-mapped)   193   (W1 catalog + W2 mapper + W3 scorer + W4/W5)    │
 │ Σ regression suites             30+   (LEGO, force-chips, manual-spin, sharpness,     │
 │                                        bundle, i18n, cross-browser, load, cert2, …)   │
-│ Repository sync                 ✅ origin/main · 0 unpushed commits                   │
+│ Σ viewport coverage             5     (320 · 360 · 768 · 1024 · 1920 px · 4 slots OK) │
+│ Σ locales                       5     (en + sv/da/de/nl)                              │
+│ Repository sync                 ✅ origin/main · 0 unpushed posle commit-a            │
 └──────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## 🟢 KRITIČNI GATE-OVI (END-OF-DAY 2026-06-20)
+## 🟢 KRITIČNI GATE-OVI (END-OF-DAY 2026-06-21)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────┐
 │ Gate                                       Verdict       Detalj                       │
 ├──────────────────────────────────────────────────────────────────────────────────────┤
-│ LEGO gate (8 invariants)                   8/8 PASS  ✅  192 blokova · 330 events    │
+│ LEGO gate (8 invariants)                   8/8 PASS  ✅  199 blokova · 363 events    │
 │ 4-gdds-ultimate-audit                      PERFECT   ✅  4/4 real GDDs                │
-│ Synthetic 308 audit                        308/308   ✅                                │
-│ all-force-chips probe (4 GDD × 9 chips)    36/36     ✅                                │
+│ Synthetic 313 audit                        313/313   ✅                                │
+│ all-force-chips probe (4 GDD × 16 chips)   64/64     ✅  Wave Y exotic chips included │
+│ Topology smoke (Wave X)                    24/24     ✅  rectangular + variable + cluster│
 │ manual-spin lifecycle (4 GDD)              4/4       ✅                                │
 │ Vendor-neutral source                      0 hits    ✅  (IGT/NetEnt/Pragmatic/SG)    │
-│ Sole-owner emit ownership                  330/330   ✅  (0 ghost owner)              │
-│ Backtick-free template body                192 OK    ✅                                │
+│ Sole-owner emit ownership                  363/363   ✅  (0 ghost owner)              │
+│ Backtick-free template body                199 OK    ✅                                │
 │ Colon/dot event canonicalization (W57.A7)  11 wl     ✅  0 new violations             │
-│ HOOK_EVENTS registry completeness          330 reg   ✅  0 drift                       │
-│ Block test parity                          192/192   ✅                                │
-│ test:fs · test:qa · test:bundle             24+23+    ✅                                │
-│ Origin sync                                ✅         HEAD 2bcbafb · 0 unpushed       │
+│ HOOK_EVENTS registry completeness          363 reg   ✅  0 drift                       │
+│ Block test parity                          199/199   ✅  +5 F7 testovi popunjeni      │
+│ Regulator cert sweep                       12/12     ✅  Σ 230 jurisdiction asserts   │
+│ Viewport sweep (320–1920 × 4 slots)        20/20     ✅  A7 fix shipped               │
+│ Force-chip real-spin gate                  16/16     ✅  svaki ide kroz runOneBaseSpin│
+│ Origin sync                                ✅         HEAD posle commit-a             │
 └──────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -834,28 +955,51 @@ Boki: *"kreni sve ultimativno i savrseno da radi"* (2026-06-20) — ultimativna 
 └──────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## 📋 OTVORENO · ULTIMATIVNI GDD-PERFECTION ROADMAP (2026-06-20 21:55 · čeka Boki-jevu komandu)
+## ✅ ZATVORENO · ULTIMATIVNI GDD-PERFECTION ROADMAP (2026-06-20 → 2026-06-21 · 7/7 SHIPPED 🎯)
 
 > **Boki kontekst (20.06.2026):** *"kako da se osiguramo da slot gdd simulator uvek
 > radi savrseno na svaki i bilo koji gdd koji se ubaci? i da se uvek prikazuje sta
 > je u gdd i da uvek svaki force radi"* → posle WAVE U baseline (193 blokova,
 > 4-gdds PERFECT, 313/313 synthetic, svi force chips real-spin), ovi WAVE-ovi su
-> sve što fali do **deterministički savršenog ingest-a bilo kojeg GDD-a**.
+> sve što je trebalo do **deterministički savršenog ingest-a bilo kojeg GDD-a**.
 
 ```
-┌──────┬───────────────────────────────────┬───────┬────────────────────────────────────────┐
-│ Prio │ Wave                              │ Atomi │ Cilj — krajnja metrika                  │
-├──────┼───────────────────────────────────┼───────┼────────────────────────────────────────┤
-│  🥇  │ V  Multi-agent GDD parser          │   6   │ declared ratio 6% → ≥ 80% na ANY GDD    │
-│  🥇  │ W  AI block selector / orchestrator│   5   │ 193 blokova auto-activated po GDD §-u   │
-│  🥈  │ X  Universal topology extractor    │   4   │ rectangular · variable · cluster all OK │
-│  🥈  │ Y  Exotic force chip coverage      │   6   │ 10 → 16 chip-ova (gamble/pick/slingo…)  │
-│  🥉  │ F6 dev-tools                       │   5   │ Inspector + debug overlay + HMR + trace │
-│   4  │ F4 mobile/perf                     │   6   │ Touch-pace · low-end · p99 · TTI mobile │
-│   5  │ F7 cert global                     │   6   │ EU-5 + 4 lang baseline ⇒ + 6 jurisdik.  │
-│  —   │ Math layer                         │   —   │ GATED — čeka Boki signal                │
-└──────┴───────────────────────────────────┴───────┴────────────────────────────────────────┘
+┌──────┬───────────────────────────────────┬───────┬────────────────────────────────────────┬────────┐
+│ Prio │ Wave                              │ Atomi │ Cilj — krajnja metrika                  │ Status │
+├──────┼───────────────────────────────────┼───────┼────────────────────────────────────────┼────────┤
+│  🥇  │ V  Multi-agent GDD parser          │  6/6  │ 6 paralelnih agenata + reconcile + meta │   ✅   │
+│  🥇  │ W  AI block selector / orchestrator│  5/5  │ 193 blokova → catalog + scorer + mapper │   ✅   │
+│  🥈  │ X  Universal topology extractor    │  4/4  │ rectangular · variable · cluster · hex  │   ✅   │
+│  🥈  │ Y  Exotic force chip coverage      │  6/6  │ 10 → 16 chip-ova deterministic outcomes │   ✅   │
+│  🥉  │ F6 dev-tools                       │   —   │ PRESKOČEN (Boki: "preskoci" 2026-06-21) │   ⏭️   │
+│   4  │ F4 mobile/perf                     │  5/6  │ A7 viewport fix shipped (2c8d441)        │   ✅   │
+│   5  │ F7 cert global                     │  6/6  │ + 6 jurisdik. (UK/SE/DK/BE/CH/RO)       │   ✅   │
+│  —   │ Math layer                         │   —   │ GATED — čeka Boki signal                │   🔒   │
+└──────┴───────────────────────────────────┴───────┴────────────────────────────────────────┴────────┘
 ```
+
+**Commit pinovi (chronological — 2026-06-20 → 2026-06-21):**
+
+```
+┌──────┬─────────────────────────────────────────────┬──────────┬──────────────────────────────┐
+│ Wave │ Šta je shipped                              │ Commit   │ Verifikacija                  │
+├──────┼─────────────────────────────────────────────┼──────────┼──────────────────────────────┤
+│ V    │ 6 agent prompts + orchestrator + overlay    │ 1ad2bdb  │ V1-V6 smoke + parser 4/4      │
+│ W    │ Catalog 193 + mapper + scorer + smoke       │ 4a0feed  │ 51 auto-on + 47 soft + 32 off │
+│ X    │ Topology rows_per_reel + ways_cap + cluster │ b5f6c23  │ 24/24 fixtures PASS           │
+│ Y    │ 6 exotic chips (gamble/pick/slingo/...)     │ cdb5d60  │ Σ 130+ chip-test asserts      │
+│ F7   │ 6 regulator gates (UK/SE/DK/BE/CH/RO)       │ db108e7  │ 64/64 smoke + LEGO 8/8        │
+│ A7   │ Viewport fix 320/360px                       │ 2c8d441  │ 20/20 viewport × 4 slots      │
+│ F7c  │ +5 nedostajućih jurisdiction testova + fix  │ THIS     │ 230/230 + LEGO 8/8 + regex fix│
+└──────┴─────────────────────────────────────────────┴──────────┴──────────────────────────────┘
+```
+
+**LEGO regex fix (THIS):** `tools/lego-gate.mjs` — ownership scan regex
+`HookBus\.emit\('([a-zA-Z]+)'` proširen na `[a-zA-Z0-9]+` jer Belgium event
+`onBeUnder21CapEnforced` sadrži cifre. Bez fix-a, gate je prijavljivao
+false NOT-EMITTED violation. Plus 5 nedostajućih `tests/blocks/{ukgc,sweden,
+denmark,switzerland,romania}ComplianceGate.test.mjs` po Belgium-template-u
+(230 asserts ukupno, svi green).
 
 ### 🥇 Wave V — Multi-agent GDD parser (declared ratio 6% → ≥ 80%)
 

@@ -137,6 +137,30 @@ const HOOK_REGISTRATION_OPT_OUT = new Set([
    * check required, bonus-offer restriction) and fires four audit
    * events once at boot. Has no spin-lifecycle listener. */
   'spainComplianceGate.mjs',
+  /* Wave F7 / HX1 — ukgcComplianceGate is an emit-only boot block. Sets
+   * UKGC RTS window flags + GamStop check and fires six audit events once
+   * at boot. Has no spin-lifecycle listener. */
+  'ukgcComplianceGate.mjs',
+  /* Wave F7 / HX2 — swedenComplianceGate is an emit-only boot block. Sets
+   * Spellag window flags and fires five audit events once at boot. Has no
+   * spin-lifecycle listener. */
+  'swedenComplianceGate.mjs',
+  /* Wave F7 / HX3 — denmarkComplianceGate is an emit-only boot block. Sets
+   * BEK 727 window flags + ROFUS check and fires four audit events once at
+   * boot. Has no spin-lifecycle listener. */
+  'denmarkComplianceGate.mjs',
+  /* Wave F7 / HX4 — belgiumComplianceGate is an emit-only boot block. Sets
+   * AR 25/10/2018 window flags + EPIS check and fires five audit events once
+   * at boot. Has no spin-lifecycle listener. */
+  'belgiumComplianceGate.mjs',
+  /* Wave F7 / HX5 — switzerlandComplianceGate is an emit-only boot block.
+   * Sets BGS/VGS window flags + whitelist/self-exclusion checks and fires
+   * six audit events once at boot. Has no spin-lifecycle listener. */
+  'switzerlandComplianceGate.mjs',
+  /* Wave F7 / HX6 — romaniaComplianceGate is an emit-only boot block. Sets
+   * OUG 77/2009 window flags + OSAJ check and fires five audit events once
+   * at boot. Has no spin-lifecycle listener. */
+  'romaniaComplianceGate.mjs',
 ]);
 
 /* Expected emit ownership — single source of truth for each event. */
@@ -315,7 +339,10 @@ const EXPECTED_EMIT_OWNERS = {
    * onFrjCheckRequired         — FR Decree 2019-1061 Art.21 (FRJ register)
    * onRuaCheckRequired         — IT LD 132/2020 Art.5 (RUA register)
    * onRgiajCheckRequired       — ES RD 958/2020 Art.28 (RGIAJ register) */
-  onAutoplayBanned:              ['franceComplianceGate.mjs', 'italyComplianceGate.mjs', 'spainComplianceGate.mjs'],
+  /* W58.J-{FR,IT,ES} + Wave F7 HX2 SE — mutually exclusive member-state gates;
+   * resolveJurisdiction returns exactly one jurisdiction so only one of these
+   * block runtimes actually fires onAutoplayBanned at a time. */
+  onAutoplayBanned:              ['franceComplianceGate.mjs', 'italyComplianceGate.mjs', 'spainComplianceGate.mjs', 'swedenComplianceGate.mjs'],
   onTurboBanned:                 ['franceComplianceGate.mjs', 'italyComplianceGate.mjs'],
   onMinSpinDurationEnforced:     ['franceComplianceGate.mjs', 'italyComplianceGate.mjs', 'spainComplianceGate.mjs'],
   onMandatoryRealityCheckIntervalEnforced: ['italyComplianceGate.mjs', 'spainComplianceGate.mjs'],
@@ -900,6 +927,54 @@ const EXPECTED_EMIT_OWNERS = {
   /* H30 retriggerEscalator — multi-tier FS retrigger reward ladder (sole owner of 2 events). */
   onRetriggerEscalated:      ['retriggerEscalator.mjs'],
   onRetriggerEscalatorReset: ['retriggerEscalator.mjs'],
+
+  /* Wave Y — exotic force-chip intent events. universalForcePanel.mjs is an
+   * emit-only dev/QA chip rail; these events carry deterministic force flags
+   * for tournament rank and bonus-collector fill state. */
+  onForceTournamentRank: ['universalForcePanel.mjs'],
+  onForceCollectorFill:  ['universalForcePanel.mjs'],
+
+  /* Wave F7 / HX1 — UKGC (UK Gambling Commission) compliance gate. */
+  onUkRtsSpinPaceEnforced:   ['ukgcComplianceGate.mjs'],
+  onUkRtpDisclosureRequired: ['ukgcComplianceGate.mjs'],
+  onUkNetPositionRequired:   ['ukgcComplianceGate.mjs'],
+  onUkRealityCheckEnforced:  ['ukgcComplianceGate.mjs'],
+  onUkAutoplayCapEnforced:   ['ukgcComplianceGate.mjs'],
+  onGamStopCheckRequired:    ['ukgcComplianceGate.mjs'],
+
+  /* Wave F7 / HX2 — Sweden SGA (Spelinspektionen) compliance gate. */
+  onSeMinSpinPaceEnforced:   ['swedenComplianceGate.mjs'],
+  onSeDepositLimitRequired:  ['swedenComplianceGate.mjs'],
+  onSeSpelpausCheckRequired: ['swedenComplianceGate.mjs'],
+  onSeBonusConsentRequired:  ['swedenComplianceGate.mjs'],
+
+  /* Wave F7 / HX3 — Denmark DGA (Spillemyndigheden) compliance gate. */
+  onDkRealityCheckEnforced: ['denmarkComplianceGate.mjs'],
+  onDkLossLimitRequired:    ['denmarkComplianceGate.mjs'],
+  onDkRofusCheckRequired:   ['denmarkComplianceGate.mjs'],
+  onDkMinSpinPaceEnforced:  ['denmarkComplianceGate.mjs'],
+
+  /* Wave F7 / HX4 — Belgium BGC (Kansspelcommissie) compliance gate. */
+  onBeEpisCheckRequired:   ['belgiumComplianceGate.mjs'],
+  onBeUnder21CapEnforced:  ['belgiumComplianceGate.mjs'],
+  onBeCoolingOffRequired:  ['belgiumComplianceGate.mjs'],
+  onBeMinSpinPaceEnforced: ['belgiumComplianceGate.mjs'],
+  onBeLossDisplayRequired: ['belgiumComplianceGate.mjs'],
+
+  /* Wave F7 / HX5 — Switzerland ESBK (Spielbankenkommission) compliance gate. */
+  onChWhitelistRequired:          ['switzerlandComplianceGate.mjs'],
+  onChRealityCheckEnforced:       ['switzerlandComplianceGate.mjs'],
+  onChLossDisplayRequired:        ['switzerlandComplianceGate.mjs'],
+  onChMinSpinPaceEnforced:        ['switzerlandComplianceGate.mjs'],
+  onChCantonRestrictionEnforced:  ['switzerlandComplianceGate.mjs'],
+  onChSelfExclusionCheckRequired: ['switzerlandComplianceGate.mjs'],
+
+  /* Wave F7 / HX6 — Romania ONJN compliance gate. */
+  onRoWinTaxDisclosureEnforced: ['romaniaComplianceGate.mjs'],
+  onRoLimitsRequired:           ['romaniaComplianceGate.mjs'],
+  onRoOsajCheckRequired:        ['romaniaComplianceGate.mjs'],
+  onRoMinSpinPaceEnforced:      ['romaniaComplianceGate.mjs'],
+  onRoHandpayThresholdEnforced: ['romaniaComplianceGate.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */
@@ -1003,9 +1078,12 @@ async function checkEventOwnership() {
   const observed = Object.create(null);
   for (const b of blocks) {
     const src = await readBlockSrc(b);
-    const matches = src.match(/HookBus\.emit\('([a-zA-Z]+)'/g) || [];
+    /* Wave F7 / HX4 — Belgian gate's `onBeUnder21CapEnforced` event name
+     * contains digits. Old regex `[a-zA-Z]+` failed to capture it, causing
+     * a false NOT-EMITTED ownership violation. Widen to `[a-zA-Z0-9]+`. */
+    const matches = src.match(/HookBus\.emit\('([a-zA-Z0-9]+)'/g) || [];
     for (const m of matches) {
-      const event = m.match(/'([a-zA-Z]+)'/)[1];
+      const event = m.match(/'([a-zA-Z0-9]+)'/)[1];
       if (!observed[event]) observed[event] = new Set();
       observed[event].add(b);
     }
