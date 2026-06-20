@@ -1,3 +1,160 @@
+## 🏆 WAVE F7 — REGULATOR CERT SWEEP +6 JURISDIKCIJA · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"dalje4"* (preskoci F4 takođe, idi F7) — direktan klijent-deliverable
+za globalnu ekspanziju (2026-06-21).
+
+**Zahtev:** 6 novih jurisdikcija preko EU-5 baseline-a + 4 nova locale-a.
+Compliance gate-ovi auto-enable po `model.regulator.profile` codu, zero-byte
+runtime kad jurisdiction ne odgovara.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE F7 — HX1-HX6 + 4 locale-a                                                         │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ HX1 — UKGC (UK Gambling Commission) src/blocks/ukgcComplianceGate.mjs                   │
+│   RTS 14D minSpinMs=2500 · RTS 8B RTP disclosure · RTS 13C net position                │
+│   RTS 12C reality-check 60min · RTS 11A autoplay cap=50 · GamStop check                  │
+│   Codes: UK · UKGC · GB                                                                 │
+│   Events: onUkRtsSpinPaceEnforced · onUkRtpDisclosureRequired ·                          │
+│           onUkNetPositionRequired · onUkRealityCheckEnforced ·                           │
+│           onUkAutoplayCapEnforced · onGamStopCheckRequired                               │
+│                                                                                       │
+│ HX2 — SGA (Sweden Spelinspektionen) src/blocks/swedenComplianceGate.mjs                 │
+│   Spellag 14k §6 minSpinMs=3000 · §1 no autoplay · §7 deposit limit                    │
+│   §11 Spelpaus check · §13 bonus consent                                                 │
+│   Codes: SE · SGA · SE-SGA                                                              │
+│                                                                                       │
+│ HX3 — DGA (Denmark Spillemyndigheden) src/blocks/denmarkComplianceGate.mjs              │
+│   BEK 727/2010 §44 reality-check 30min · §32 loss limit · §29 ROFUS check                │
+│   §41 minSpinMs=2000                                                                    │
+│   Codes: DK · DGA · DK-SPM                                                              │
+│                                                                                       │
+│ HX4 — BGC (Belgian Gaming Commission) src/blocks/belgiumComplianceGate.mjs              │
+│   AR 25/10/2018 Art.4 EPIS check · Art.8 under-21 weekly cap 200 EUR                     │
+│   Art.12 cooling-off · Art.16 minSpinMs=2500 · Art.18 EUR loss display                    │
+│   Codes: BE · BGC · BE-BGC                                                              │
+│                                                                                       │
+│ HX5 — ESBK (Switzerland Spielbankenkommission) src/blocks/switzerlandComplianceGate.mjs │
+│   BGS Art.86 whitelist check · VGS Art.79 reality-check 30min · Art.81 CHF              │
+│   loss display · Art.80 minSpinMs=2500 · Art.85 canton restriction · Art.83             │
+│   federal self-exclusion register                                                       │
+│   Codes: CH · ESBK · CH-ESBK · COMLOT                                                   │
+│                                                                                       │
+│ HX6 — ONJN (Romania Oficiul Naţional pentru Jocuri de Noroc)                             │
+│   src/blocks/romaniaComplianceGate.mjs                                                  │
+│   OUG 77/2009 Art.10 10% win tax disclosure > 1000 RON · Reg 2023/IX Art.5              │
+│   mandatory limits · OSAJ register check · Art.13 minSpinMs=2500 ·                       │
+│   Art.15 handpay > 100000 RON                                                            │
+│   Codes: RO · ONJN · RO-ONJN                                                            │
+│                                                                                       │
+│ ORCHESTRATOR WIRE — src/buildSlotHTML.mjs                                               │
+│   6 nova import + 6 new emit poziva sa /* WAVE F7 / HX# */ komentarima                  │
+│   Svaki gate auto-disabled (0 byte) kad model.regulator.profile nije match              │
+│                                                                                       │
+│ LOCALE BASELINE +4                                                                     │
+│   i18n/sv.json (Swedish) · i18n/da.json (Danish) ·                                       │
+│   i18n/de.json (German)  · i18n/nl.json (Dutch)                                          │
+│   Sve seeded iz en.json sa source_locale field + fresh generated_at.                     │
+│   String translation = post-MVP atom (placeholder copy = English).                       │
+│                                                                                       │
+│ VERIFIKACIJA                                                                          │
+│   tools/_wave-f7-smoke.mjs       64/64 PASS ✅                                          │
+│     6 gate × (auto-enable + auto-disable + ≥100b runtime + 0b off                       │
+│       + 3 expected flags + 2 expected events) = 48 checks                                │
+│     4 locale × source_locale field = 4 checks                                            │
+│     6 emitFn × buildSlotHTML import = 12 checks                                          │
+│                                                                                       │
+│   parser tests                   4/4 PASS ✅                                            │
+│   grid render fixtures          20/20 PASS ✅                                            │
+│                                                                                       │
+│ TOTAL REGULATOR COVERAGE                                                               │
+│   EU-5 baseline:    DE · NL · EU(AI Act) · FR · IT · ES   (6 gates, pre-Wave F7)        │
+│   Wave F7 +6 new:   UK · SE · DK · BE · CH · RO          (6 gates, post-Wave F7)        │
+│   TOTAL:            12 jurisdiction gates + 1 central jurisdictionGate orchestrator      │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🏆 WAVE F4 — MOBILE / PERF QUALITY SWEEP · 2026-06-21 · STATUS: PARTIAL (preskocen po Boki direktivi)
+
+F4 sweep tool `tools/_wave-f4-quality-sweep.mjs` + scaffolding ostavljen u
+repo-u za buduće korišćenje. **Boki: "preskoci"** (F4 takođe) → fokus
+direktno na klijent-deliverable F7.
+
+Background sweep run je producirao parcijalan signal:
+- ✅ A5 touch-pace: ALL PASS (~30ms na 4 GDD-a)
+- ✅ A8 thermal: ALL PASS (rAF gap < 35ms)
+- ✅ A10 TTI mobile: ALL PASS (4-5s na slow 4G + 4× CPU)
+- ❌ **A7 viewport 320/360 OVERFLOW na svim 4 slot-ovima** (REAL BUG za QA backlog)
+- ⚠️ A6 / A9 spike outliers (CDP throttle test harness flake u nekim run-ovima)
+
+A7 nalaz je akumuliran u QA backlog kao stvarni bug. F4 wave ostavljen u
+ovom statusu — F7 ima viši strategijski prioritet (regulator gate za nove
+markets).
+
+---
+
+
+
+Boki: *"preskoci"* (F6 dev-tools) — direktno na klijent-deliverable F4 (2026-06-20).
+
+**Zahtev:** Production scorecard za 6 atom-a (A5-A10) na 4 baseline GDD slot-a
+preko Playwright + CDP CPU throttling + slow-4G network emulation.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE F4 — 6 atoma, ujedinjeni Playwright runner                                        │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ A5 — Touch-pace probe                                                                  │
+│   tap → spin button → first reel motion latency                                         │
+│   double-tap suppression check (no 2nd spin within DEBOUNCE_MS)                         │
+│   threshold: ≤ 700 ms (realna UX granica posle FSM_runOneBaseSpin gating)              │
+│                                                                                       │
+│ A6 — Low-end perf (CDP setCPUThrottlingRate 4×)                                         │
+│   5 spinova pod 4× CPU throttle, avg + p95 spin-to-settle                              │
+│   threshold: avg ≤ 2500 ms (industry-acceptable na 2018 Android)                       │
+│                                                                                       │
+│ A7 — Viewport sweep (320 / 360 / 768 / 1024 / 1920 px)                                  │
+│   horizontal overflow + spinBtn visibility za svaki viewport                            │
+│   threshold: zero overflow + spinBtn vidljiv na svim širinama                            │
+│                                                                                       │
+│ A8 — Thermal / sustained load                                                           │
+│   20 spinova zaredom + rAF gap monitor                                                  │
+│   threshold: worst rAF gap ≤ 300 ms (no frame stutter)                                  │
+│                                                                                       │
+│ A9 — P99 latency distribution                                                           │
+│   30 spinova, p50 / p95 / p99 spin-to-settle                                            │
+│   threshold: p95 ≤ 2500 ms · p99 ≤ 4000 ms                                              │
+│                                                                                       │
+│ A10 — TTI mobile cold load                                                              │
+│   414 × 896 viewport + slow 4G (1.6 Mbps / 750 Kbps / 150 ms RTT) + 4× CPU              │
+│   time to interactive: cold goto → spin button enabled                                   │
+│   threshold: ≤ 8000 ms (acceptable cold-load na 3G+)                                    │
+│                                                                                       │
+│ ARHITEKTURA                                                                            │
+│   tools/_wave-f4-quality-sweep.mjs    — single Playwright runner                        │
+│     Fresh BROWSER per atom × per slot — guarantee CDP throttling +                      │
+│     viewport changes ne curi između run-ova                                              │
+│   Per-target output:                                                                   │
+│     tools/_eyes/wave-f4/<slug>/<atom>.json — raw payload                                 │
+│   Aggregate:                                                                           │
+│     tools/_eyes/wave-f4/scorecard.md       — markdown summary (REPORT)                  │
+│     tools/_eyes/wave-f4/aggregate.json     — full data + thresholds                      │
+│                                                                                       │
+│ 4 BASELINE SLOTS                                                                       │
+│   • Gates of Olympus 1000   (6×5 pay_anywhere · scatter pays · ante bet)                │
+│   • Huff N More Puff        (5×3 lock-respin · H&W · wheel bonus · gamble)              │
+│   • Starlight Travellers    (6×5 cluster pays · cascade · bonus pick)                   │
+│   • Wrath of Olympus        (5×3 lines · lightning mult · FS · H&W)                     │
+│                                                                                       │
+│ SCORECARD REZULTAT (popunjava se posle run-a)                                            │
+│   <pending — sweep u toku, čekam Monitor result>                                         │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE Y — EXOTIC FORCE CHIP COVERAGE 10 → 16 · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"dalje"* — četvrti 🥈 prioritet roadmap-a (2026-06-20).

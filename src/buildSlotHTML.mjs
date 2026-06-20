@@ -870,6 +870,33 @@ import {
   emitSpainComplianceGateCSS, emitSpainComplianceGateRuntime,
   resolveConfig as resolveSpainComplianceGateConfig,
 } from './blocks/spainComplianceGate.mjs';
+// WAVE F7 / HX1-HX6 (Boki 2026-06-20 "dalje4") — six new jurisdiction gates.
+// Each auto-enables when the resolved jurisdiction matches its country
+// code; boot-time only side effects (window flags + HookBus audit events).
+import {
+  emitUkgcComplianceGateCSS, emitUkgcComplianceGateRuntime,
+  resolveConfig as resolveUkgcComplianceGateConfig,
+} from './blocks/ukgcComplianceGate.mjs';
+import {
+  emitSwedenComplianceGateCSS, emitSwedenComplianceGateRuntime,
+  resolveConfig as resolveSwedenComplianceGateConfig,
+} from './blocks/swedenComplianceGate.mjs';
+import {
+  emitDenmarkComplianceGateCSS, emitDenmarkComplianceGateRuntime,
+  resolveConfig as resolveDenmarkComplianceGateConfig,
+} from './blocks/denmarkComplianceGate.mjs';
+import {
+  emitBelgiumComplianceGateCSS, emitBelgiumComplianceGateRuntime,
+  resolveConfig as resolveBelgiumComplianceGateConfig,
+} from './blocks/belgiumComplianceGate.mjs';
+import {
+  emitSwitzerlandComplianceGateCSS, emitSwitzerlandComplianceGateRuntime,
+  resolveConfig as resolveSwitzerlandComplianceGateConfig,
+} from './blocks/switzerlandComplianceGate.mjs';
+import {
+  emitRomaniaComplianceGateCSS, emitRomaniaComplianceGateRuntime,
+  resolveConfig as resolveRomaniaComplianceGateConfig,
+} from './blocks/romaniaComplianceGate.mjs';
 // Wave P8 — Hot-Reload BLOCK (dev-mode SSE → in-page re-parse or full reload).
 // Disabled by default; opt-in via model.hotReload.enabled (set by dev server
 // or by the parent page on localhost). Production builds emit a 0-byte stub.
@@ -2154,6 +2181,24 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
        interval + RGIAJ register check + bonus-offer restriction flag.
        0-byte when jurisdiction is not ES. */ ''}
   ${emitSpainComplianceGateRuntime(resolveSpainComplianceGateConfig(model))}
+  ${/* WAVE F7 / HX1 — UKGC RTS 8/11/12/13/14 + GamStop check.
+       0-byte when jurisdiction is not UK/UKGC/GB. */ ''}
+  ${emitUkgcComplianceGateRuntime(resolveUkgcComplianceGateConfig(model))}
+  ${/* WAVE F7 / HX2 — SGA Spellagen 2018:1138 no-autoplay + Spelpaus +
+       deposit-limit + bonus-consent. 0-byte when jurisdiction is not SE/SGA. */ ''}
+  ${emitSwedenComplianceGateRuntime(resolveSwedenComplianceGateConfig(model))}
+  ${/* WAVE F7 / HX3 — DGA BEK 727/2010 reality-check + ROFUS + loss limit.
+       0-byte when jurisdiction is not DK/DGA. */ ''}
+  ${emitDenmarkComplianceGateRuntime(resolveDenmarkComplianceGateConfig(model))}
+  ${/* WAVE F7 / HX4 — BGC AR 25/10/2018 EPIS + under-21 weekly cap +
+       cooling-off + EUR loss display. 0-byte when jurisdiction is not BE/BGC. */ ''}
+  ${emitBelgiumComplianceGateRuntime(resolveBelgiumComplianceGateConfig(model))}
+  ${/* WAVE F7 / HX5 — ESBK BGS SR 935.51 whitelist + reality-check +
+       cantonal restriction + self-exclusion register. 0-byte when not CH. */ ''}
+  ${emitSwitzerlandComplianceGateRuntime(resolveSwitzerlandComplianceGateConfig(model))}
+  ${/* WAVE F7 / HX6 — ONJN OUG 77/2009 win-tax disclosure + OSAJ +
+       handpay threshold. 0-byte when jurisdiction is not RO/ONJN. */ ''}
+  ${emitRomaniaComplianceGateRuntime(resolveRomaniaComplianceGateConfig(model))}
   ${/* W59.H1 — Centralized jurisdiction resolver. Fires AFTER per-gate
        blocks so the audit event records the final resolved value;
        0-byte when no jurisdiction signal in the model. */ ''}
