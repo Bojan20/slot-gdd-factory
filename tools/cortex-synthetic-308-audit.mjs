@@ -55,7 +55,26 @@ const C = {
   dim: s => `\x1b[2m${s}\x1b[0m`,
 };
 
-const AUTO_INJECTED = new Set(['big_win']);
+/* D-14 (2026-06-20): UFP auto-generates 4 lightning_x* chip variants
+   per any GDD that declares "lightning" or "multiplier" feature. These
+   are deterministic force-value chips (not declared as kinds in model).
+   `big_win` chip is also auto-injected as universal dev affordance.
+   Adding these to AUTO_INJECTED so they don't false-positive integrity. */
+const AUTO_INJECTED = new Set([
+  'big_win',
+  'lightning_x2', 'lightning_x3', 'lightning_x5', 'lightning_x10',
+]);
+
+/* D-14 EVAL-ONLY: features deklarisane u GDD-u koje rade kroz lifecycle
+   (preSpin/postSpin) — ne treba im poseban UFP force chip jer su
+   kontinualno aktivne (cascade) ili su evaluator-only (cluster_pays,
+   scatter_pay), ili imaju variant chip-ove (lightning → lightning_x*). */
+const EVAL_ONLY_KINDS = new Set([
+  'cascade',         // tumble runs each spin automatically
+  'cluster_pays',    // cluster eval runs in postSpin chain
+  'scatter_pay',     // scatter check runs in postSpin chain (FS trigger handles UFP)
+  'lightning',       // covered by lightning_x2/x3/x5/x10 variants
+]);
 const SYNTHETIC_KINDS = new Set(['feature_generic']);
 const DEDICATED_BLOCKS = new Map([
   ['bonus_buy',             'id="bonusBuyBtn"'],
@@ -119,6 +138,9 @@ async function auditOne(pdfPath) {
   for (const k of declared) {
     if (chipped.has(k)) continue;
     if (SYNTHETIC_KINDS.has(k)) continue;
+    if (EVAL_ONLY_KINDS.has(k)) continue;  /* D-14: eval-only, no chip needed */
+    /* D-14: lightning declared → check at least one lightning_x* exists */
+    if (k === 'lightning' && (chipped.has('lightning_x2') || chipped.has('lightning_x3') || chipped.has('lightning_x5') || chipped.has('lightning_x10'))) continue;
     if (DEDICATED_BLOCKS.has(k) && html.includes(DEDICATED_BLOCKS.get(k))) continue;
     trulyMissing.push(k);
   }
