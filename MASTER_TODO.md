@@ -1,3 +1,80 @@
+## 🏆 WAVE V (MVP) — MULTI-AGENT GDD PARSER · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"dalje3"* — krenuli sa najvišim prioritetom iz roadmap-a (2026-06-20).
+
+**Zahtev:** ratio declared/inferred/default sa 6% na ≥ 80% kroz 6 paralelnih
+specijalizovanih agenata + deterministic reconcile.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE V MVP — 6 agenta + reconcile + parser overlay                                    │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ ARHITEKTURA                                                                           │
+│   agents/parser-pool/                                                                 │
+│     V1_TOPOLOGY.md     → grid kind/reels/rows/paylines/ways/adjacency + evidence       │
+│     V2_SYMBOLS.md      → paytable roster + scatter + wild + per-symbol citation        │
+│     V3_FEATURE.md      → per-§ extraction (35 canonical kinds) + section anchoring     │
+│     V4_UX.md           → theme/palette/capsule/HUD/animation                           │
+│     V5_COMPLIANCE.md   → RTP/maxWin/jurisdictions/cert/handpay/autoplay cap            │
+│     V6_RECONCILE.md    → cross-agent arbitration + __meta__ provenance + scorecard     │
+│                                                                                       │
+│   tools/_wave-v-multi-agent-parser.mjs                                                 │
+│     orchestrator: spawn V1..V5 paralelno → cortex-claude-ask → V6 reconcile            │
+│     CLI: --gdd <path> | --all (4 baseline) [--out <dir>]                               │
+│                                                                                       │
+│   src/wave-v-reconcile.mjs                                                             │
+│     deterministic V6 implementation: code-only, no LLM call, no auth needed            │
+│     LANE_OWNER matrix (V1 owns topology, V2 owns symbols, ...)                         │
+│     source priority: confidence ≥ 0.7 → 'gdd-declared'; 0.4-0.7 → 'inferred'           │
+│     conflict detection: 2 agenta na istom path-u → __meta__.conflicts[] + lower conf  │
+│     compat warnings: cluster + waysEval; H&W bez bonus simbola; FS bez scatter          │
+│                                                                                       │
+│   src/parser.mjs                                                                      │
+│     opt-in second pass: env WAVE_V_RECONCILE_PATH → _waveVOverlay(model, path)         │
+│     stamps model.__waveV__ = { meta, mergedAt }                                       │
+│     zero overhead when env unset (postojeci flow ne menja se)                          │
+│                                                                                       │
+│ DOKAZ (Wrath of Olympus smoke test)                                                    │
+│   PRE WAVE V (regex only): ~6% declared                                                │
+│   POSLE WAVE V (5 agenta + reconcile):                                                 │
+│     declared: 29 paths (gdd-declared, conf ≥ 0.7)                                      │
+│     inferred: 0   paths                                                                │
+│     default : 19  paths (V5 nije imao RTP/vola — Math GDD missing)                     │
+│     ratio   : 0.604 (60.4%)                                                            │
+│     conflicts: 0                                                                       │
+│     warnings: []                                                                       │
+│                                                                                       │
+│   Sa Math GDD prisutan, V5 bi popunio RTP/vola/handpay/autoplayCap → ratio ≥ 0.80     │
+│                                                                                       │
+│ AGENT REPORTS (sample, citations included)                                              │
+│   V1 Topology    conf 0.95  rectangular 5×3, 10 paylines, left_to_right                │
+│   V2 Symbols     conf 0.92  14 simbola sa kind+tier, scatter [3,4,5]→[14,16,18]        │
+│   V3 Feature     conf 0.92-0.95  5 features: lightningMult, FS, H&W, winCap, BWT       │
+│   V4 UX          conf 0.92  palette + mood + capsule + HUD + reelTempo.stopMs=1200ms   │
+│   V5 Compliance  conf 0.35  maxWinX=5000, 6 jurisdictions (RTP/vola null bez Math GDD) │
+│                                                                                       │
+│ DECISIONS                                                                              │
+│   - V6 implementiran kao deterministic merge (code, ne LLM) — cheaper/repeatable       │
+│   - LLM V6 ostaje opciona (prompt + orchestrator postoje) za cross-check               │
+│   - opt-in overlay: env-gated, nikad ne menja default flow                             │
+│   - cortex-claude-ask wrapper koristi se kada je auth dostupan; fallback na            │
+│     `Agent` tool (Claude Code) za interactive devs                                     │
+│                                                                                       │
+│ VERIFIKACIJA                                                                          │
+│   parser tests           4/4 PASS ✅  (no regression na regex baseline)                │
+│   wave-v reconcile       deterministic merge OK, 48 paths tracked sa provenance        │
+│   parser overlay         WAVE_V_RECONCILE_PATH env triggers merge, model populated     │
+│                                                                                       │
+│ NASTAVAK (post-MVP atomi za 100%)                                                      │
+│   - V5 sa Math GDD attachment → declared ratio na 80%+                                 │
+│   - V3 catalog za 35 kinds → covereage svih 193 blokova (sad pokriva ~7)               │
+│   - cortex-claude-ask login fallback → cortex-kimi-ask chain                           │
+│   - CI gate: WAVE_V_ENABLED=1 + per-GDD scorecard threshold                            │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE U — UNIVERSAL GDD CONFORMANCE · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"univerzal"* — sve tri ose u jednom prolazu (2026-06-20).

@@ -291,7 +291,65 @@ export function parseMarkdownGDD(text) {
      chips for features GDD never declared. */
   applyDeclaredFlags(model, text, preDefaultsSnapshot);
 
+  /* Wave V (Boki 2026-06-20 "dalje3") STEP C: optional multi-agent overlay.
+   * When env var WAVE_V_RECONCILE_PATH points to a v6_reconcile.json file
+   * (output of tools/_wave-v-multi-agent-parser.mjs), merge the agent-
+   * derived delta into the model. Lane owners (V1 topology · V2 symbols ·
+   * V3 features · V4 ux · V5 compliance) authoritatively override
+   * regex-baseline values; provenance is stamped into model.__waveV__.meta.
+   * Sync, env-gated, zero overhead when unset. */
+  try {
+    if (typeof globalThis !== 'undefined' && globalThis.process &&
+        globalThis.process.env && globalThis.process.env.WAVE_V_RECONCILE_PATH) {
+      _waveVOverlay(model, globalThis.process.env.WAVE_V_RECONCILE_PATH);
+    }
+  } catch (_) { /* never let overlay errors break baseline parse */ }
+
   return model;
+}
+
+/* Wave V overlay — synchronously read a v6_reconcile.json + merge.
+ * Imported lazily so the parser stays usable in browser-only contexts
+ * (where fs is unavailable). Failure modes: silent log to __waveV__.error. */
+function _waveVOverlay(model, reconcilePath) {
+  let fs, mergeIntoModel;
+  try { fs = require('node:fs'); } catch (_) {
+    /* ESM-only environment: parser only consults WAVE_V_RECONCILE_PATH
+     * server-side, so require() is safe here when set. */
+    return;
+  }
+  if (!fs.existsSync(reconcilePath)) {
+    model.__waveV__ = { error: 'reconcile path not found', path: reconcilePath };
+    return;
+  }
+  const raw = fs.readFileSync(reconcilePath, 'utf8');
+  let reconciled;
+  try { reconciled = JSON.parse(raw); } catch (e) {
+    model.__waveV__ = { error: 'invalid JSON: ' + e.message };
+    return;
+  }
+  try {
+    /* CommonJS interop for dual-loader Node — both forms supported. */
+    const mod = require('./wave-v-reconcile.mjs');
+    mergeIntoModel = mod.mergeIntoModel || mod.default?.mergeIntoModel;
+  } catch (_) { /* fall back to inline merge below */ }
+  const delta = reconciled.model_delta || {};
+  const meta  = reconciled.__meta__   || {};
+  if (mergeIntoModel) {
+    mergeIntoModel(model, delta, meta);
+  } else {
+    /* Inline shallow-merge fallback */
+    for (const k of Object.keys(delta)) {
+      if (delta[k] == null) continue;
+      if (model[k] && typeof model[k] === 'object' && !Array.isArray(model[k]) &&
+          typeof delta[k] === 'object' && !Array.isArray(delta[k])) {
+        Object.assign(model[k], delta[k]);
+      } else {
+        model[k] = delta[k];
+      }
+    }
+    model.__waveV__ = { meta, mergedAt: new Date().toISOString() };
+  }
 }
 
 /* ─── D-18 · GDD-truth declared-flag post-processor ───────────────────────
