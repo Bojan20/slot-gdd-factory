@@ -88,6 +88,15 @@ const ALL_KNOWN_KINDS = Object.freeze([
   'mystery_symbol',
   'scatter_pay',
   'lightning',
+  /* D-12 (Boki 2026-06-20): per-value lightning multiplier force chips.
+     Boki rule: "mora da se pokaze kolko je multiplier da se izabere kao
+     force dugme posebno". Each chip forces THAT exact multiplier on the
+     next spin's win (combined with __FORCE_BIG_WIN_TIER__=1 to guarantee
+     a baseline win the multiplier can apply to). */
+  'lightning_x2',
+  'lightning_x3',
+  'lightning_x5',
+  'lightning_x10',
   'respin',
   'wild_reel',
   'gamble',
@@ -116,6 +125,10 @@ const KIND_LABELS = Object.freeze({
   mystery_symbol:        'MYST',
   scatter_pay:           'SCATPAY',
   lightning:             '⚡',
+  lightning_x2:          '⚡×2',
+  lightning_x3:          '⚡×3',
+  lightning_x5:          '⚡×5',
+  lightning_x10:         '⚡×10',
   respin:                'RESPIN',
   wild_reel:             'WILD-R',
   gamble:                'GAMBLE',
@@ -144,6 +157,10 @@ const KIND_FULL_LABELS = Object.freeze({
   mystery_symbol:        'Mystery Symbol',
   scatter_pay:           'Scatter Pay',
   lightning:             'Lightning',
+  lightning_x2:          'Lightning ×2',
+  lightning_x3:          'Lightning ×3',
+  lightning_x5:          'Lightning ×5',
+  lightning_x10:         'Lightning ×10',
   respin:                'Respin',
   wild_reel:             'Wild Reel',
   gamble:                'Gamble',
@@ -286,6 +303,17 @@ export function selectKinds(cfg, model = {}) {
   if (c.includeKinds === 'auto') {
     const features = Array.isArray(model && model.features) ? model.features : [];
     detected = new Set(features.map(f => f && f.kind).filter(k => ALL_KNOWN_KINDS.includes(k)));
+    /* D-12 (Boki 2026-06-20): some GDDs declare lightning at the top level
+       of the model (e.g. WoO has `lightning: {}` outside features[]),
+       not inside features array. Detect that too so the force chips
+       render for any game whose GDD references the lightning mechanic. */
+    if (model && model.lightning && typeof model.lightning === 'object') {
+      detected.add('lightning');
+    }
+    if (model && model.randomLightningMultiplier &&
+        typeof model.randomLightningMultiplier === 'object') {
+      detected.add('lightning');
+    }
   } else if (Array.isArray(c.includeKinds)) {
     detected = new Set(c.includeKinds.filter(k => ALL_KNOWN_KINDS.includes(k)));
   } else {
@@ -294,6 +322,19 @@ export function selectKinds(cfg, model = {}) {
 
   for (const k of c.alwaysIncludeKinds) {
     if (ALL_KNOWN_KINDS.includes(k)) detected.add(k);
+  }
+
+  /* D-12 (Boki 2026-06-20): when `lightning` feature is declared, auto-
+     expand to the 4 per-value force chips so the player can pick which
+     multiplier value to force. The base `lightning` chip is hidden in
+     this case (its random-pick behavior is redundant once you have the
+     deterministic per-value chips). */
+  if (detected.has('lightning')) {
+    detected.add('lightning_x2');
+    detected.add('lightning_x3');
+    detected.add('lightning_x5');
+    detected.add('lightning_x10');
+    detected.delete('lightning');
   }
 
   const excluded = new Set([
@@ -500,6 +541,34 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
       } catch (_) {}
     }
     if (kind === 'big_win') { try { window.__FORCE_BIG_WIN_TIER__ = 3; } catch (_) {} }
+
+    /* D-12 (Boki 2026-06-20): Lightning Multiplier per-value force chips.
+       Each chip sets BOTH flags atomically:
+         1. __FORCE_BIG_WIN_TIER__ = 1 — guarantees a baseline win the
+            multiplier can actually apply to (without this the lightning
+            strike never fires because _onSpinResult bails on baseWin=0)
+         2. __FORCE_LIGHTNING_MULT__ = <value> — randomLightningMultiplier
+            block consumes this in _onSpinResult to bypass RNG roll AND
+            weighted pick, using the exact chosen value deterministically.
+       After the spin completes, the player sees: real spin → real win →
+       Zeus strike anim → strip-meter halts on chosen value → win recomputed
+       (×N) → big-win tier banner reflects the multiplied amount. */
+    if (kind === 'lightning_x2') {
+      try { window.__FORCE_BIG_WIN_TIER__ = 1;  } catch (_) {}
+      try { window.__FORCE_LIGHTNING_MULT__ = 2; } catch (_) {}
+    }
+    if (kind === 'lightning_x3') {
+      try { window.__FORCE_BIG_WIN_TIER__ = 1;  } catch (_) {}
+      try { window.__FORCE_LIGHTNING_MULT__ = 3; } catch (_) {}
+    }
+    if (kind === 'lightning_x5') {
+      try { window.__FORCE_BIG_WIN_TIER__ = 1;  } catch (_) {}
+      try { window.__FORCE_LIGHTNING_MULT__ = 5; } catch (_) {}
+    }
+    if (kind === 'lightning_x10') {
+      try { window.__FORCE_BIG_WIN_TIER__ = 1;   } catch (_) {}
+      try { window.__FORCE_LIGHTNING_MULT__ = 10; } catch (_) {}
+    }
 
     /* 2026-06-11 (Wave AL-2 / 4-GDD audit) — jackpot, multiplier_orb,
      * persistent_multiplier, pay_anywhere were detected by the parser

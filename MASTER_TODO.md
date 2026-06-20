@@ -1,3 +1,64 @@
+## 🏆 D-12 LIGHTNING FORCE CHIPS · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"kada forsujem ... u WoO igri ili bilo kojoj koja ima taj blok, zelim da taj force radi. Znaci, mora da se pokaze kolko je multiplier da se izabere kao force dugme posebno, i on da da se odradi spin, da se dobije win i da se vidi da multiplier radi na taj dobitaj"* (2026-06-20)
+
+**Per-value force chip-ovi (⚡×2 · ⚡×3 · ⚡×5 · ⚡×10) — klik → real spin → garantovan win → multiplier strike vidi se na ekranu sa tačnom vrednošću. 77/77 validator zelen.**
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ D-12 — Lightning Force Hunter ✅ PROBE + FIX + VALIDATOR                             │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ ROOT CAUSE (3 sloja):                                                                │
+│  1. universalForcePanel imao SAMO generički 'lightning' chip — nema per-value izbor  │
+│  2. randomLightningMultiplier blok NIJE čitao force flag — uvek RNG roll + pick      │
+│  3. Blok je bio enabled=false za WoO jer GDD koristi top-level `lightning: {}`       │
+│     instead of `randomLightningMultiplier.enabled = true`                            │
+│                                                                                      │
+│ FIX (3 izmene):                                                                      │
+│  A. universalForcePanel.mjs:                                                         │
+│     • Dodato 4 nova kind-a: lightning_x2/x3/x5/x10                                   │
+│     • KIND_LABELS sa ⚡×2/×3/×5/×10 + KIND_FULL_LABELS                                │
+│     • Auto-expand u selectKinds: 'lightning' detected → 4 sub-chips replace          │
+│     • Chip click handler: postavi __FORCE_BIG_WIN_TIER__=1 (garantuje win baseline)  │
+│       + __FORCE_LIGHTNING_MULT__=<value> (forsuje konkretnu vrednost)                │
+│  B. randomLightningMultiplier.mjs _onSpinResult():                                   │
+│     • Čita window.__FORCE_LIGHTNING_MULT__ pre RNG roll-a                            │
+│     • Force prisutan → bypass _roll() + _pick(), koristi deterministic vrednost     │
+│     • Force one-shot: clear posle consume                                            │
+│     • baseWin fallback: window.__WIN_AWARD__ (canonical) + payload defensively       │
+│     • __hasForcedMult guard: skip "baseWin>0" check kad je force aktivan             │
+│  C. randomLightningMultiplier.mjs resolveConfig():                                   │
+│     • Treat top-level model.lightning (truthy object) kao enable signal              │
+│                                                                                      │
+│ BRUTAL DETERMINISTIC PROBE:                                                          │
+│   tools/_ultimate-lightning-force-probe.mjs                                          │
+│   1. addInitScript monkey-patch HookBus.emit + filter onLightningStrike events       │
+│   2. Per igri sa GDD-deklarisanim lightning, kliknu se SVA 4 chip-a redom             │
+│   3. Snimi { strikeCount, observedMultX, forcedFlagClearedAfter }                    │
+│   4. ASSERT: strikeCount===1 + observedMultX===forcedValue + flag cleared            │
+│                                                                                      │
+│ PRE-FIX (proof — chip-ovi NE postoje):                                               │
+│   "chip discovery: 0/4 present" — universalForcePanel nije imao per-value kind-ove   │
+│                                                                                      │
+│ POST-FIX (4 igre × 4 vrednosti = 16 deterministic strike-ova):                        │
+│   gates-of-olympus-1000-gdd  PASS  4/4 values verified  (×2/×3/×5/×10 svi tačni)     │
+│   huff-n-more-puff-gdd       PASS  4/4 values verified                               │
+│   starlight-travellers-gdd   PASS  4/4 values verified                               │
+│   wrath-of-olympus-gdd       PASS  4/4 values verified                               │
+│                                                                                      │
+│ VALIDATOR (CI guard):                                                                │
+│   tests/blocks/_lightningForceProbe.test.mjs · 77/77 ✅                              │
+│   (po-vrednost: chipClicked + strikeCount + observedMultX + forcedFlagClearedAfter)  │
+│   npm scripts: `test:lightning:force`, `test:lightning:force:validator`              │
+│                                                                                      │
+│ UNIT TEST SWEEP (no regression):                                                     │
+│   randomLightningMultiplier.test.mjs  PASS                                           │
+│   universalForcePanel.test.mjs        39/39 PASS                                     │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-11 WP-TIMING GATE · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"Win prezentacije se javlajaju dok se okrecu rilovi, big win takodje"* (2026-06-20)

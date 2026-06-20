@@ -49,6 +49,8 @@
     "test:overflow:validator": "node tests/blocks/_symbolOverflowProbe.test.mjs",
     "test:wp:timing": "node tools/_ultimate-wp-timing-probe.mjs && node tests/blocks/_wpTimingProbe.test.mjs",
     "test:wp:timing:validator": "node tests/blocks/_wpTimingProbe.test.mjs",
+    "test:lightning:force": "node tools/_ultimate-lightning-force-probe.mjs && node tests/blocks/_lightningForceProbe.test.mjs",
+    "test:lightning:force:validator": "node tests/blocks/_lightningForceProbe.test.mjs",
     "test:per-block-real": "node tools/_ultimate-per-block-browser-probe.mjs --quick && node tests/blocks/_perBlockBrowserProbe.test.mjs",
     "test:per-block-real:full": "node tools/_ultimate-per-block-browser-probe.mjs && node tests/blocks/_perBlockBrowserProbe.test.mjs",
     "test:block-pair-real": "node tools/_ultimate-block-pair-browser-probe.mjs --pairs=30 --seed=1 && node tests/blocks/_blockPairBrowserProbe.test.mjs",

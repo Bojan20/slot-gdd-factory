@@ -99,6 +99,17 @@ export function resolveConfig(model = {}) {
 
   if (src.enabled === true) cfg.enabled = true;
 
+  /* D-12 (Boki 2026-06-20): some GDDs declare the lightning mechanic
+     at top level (e.g. WoO has `lightning: {}` outside any block
+     namespace) instead of under `randomLightningMultiplier`. Treat any
+     truthy top-level `lightning` object as an enable signal so the
+     block actually emits runtime — without this, WoO's GDD-driven
+     lightning never reached the DOM and the force chips had nothing
+     to forward to. */
+  if (model && model.lightning && typeof model.lightning === 'object') {
+    cfg.enabled = true;
+  }
+
   if (Number.isFinite(src.triggerProbability)) {
     cfg.triggerProbability = clampFloat(src.triggerProbability, 0, 1);
   }
@@ -356,12 +367,41 @@ export function emitRandomLightningMultiplierRuntime(cfg = defaultConfig()) {
   function _onSpinResult(payload) {
     if (_isFsActive()) return;
     if (_isHwActive()) return;
+    /* D-12 (Boki 2026-06-20): the canonical onSpinResult payload is
+       { duringFs } (reelEngine.mjs:565) — there is no totalWin/win
+       field. The actual win for the round lands on
+       window.__WIN_AWARD__ once winPresentation has tallied events.
+       Read that as the canonical source; fall back to payload fields
+       defensively for callers that might inject them in future. */
     var baseWin = (payload && Number.isFinite(payload.totalWin)) ? payload.totalWin
                 : (payload && Number.isFinite(payload.win))      ? payload.win
+                : (typeof window !== 'undefined' && Number.isFinite(window.__WIN_AWARD__))
+                    ? window.__WIN_AWARD__
                 : 0;
-    if (!(baseWin > 0)) return;
+    /* When the dev force chip is active, allow strike even if the engine
+       hasn't tallied a win yet — the chip-driven postSpin path injects
+       the win via __FORCE_BIG_WIN_TIER__ and the multiplier visual is
+       what the player wants to see; the recompute lands on the next
+       hook tick anyway. */
+    var __hasForcedMult = (typeof window !== 'undefined' &&
+                            Number.isFinite(window.__FORCE_LIGHTNING_MULT__) &&
+                            window.__FORCE_LIGHTNING_MULT__ >= 2);
+    if (!__hasForcedMult && !(baseWin > 0)) return;
 
-    if (!_roll()) {
+    /* D-12 (Boki 2026-06-20): dev force chip support. When the universal
+       force panel set window.__FORCE_LIGHTNING_MULT__ to one of the
+       declared distribution values (2/3/5/10), bypass both the RNG
+       probability roll AND the weighted pick — use the chosen value
+       deterministically. Flag is one-shot (cleared after consume) so
+       the next non-forced spin reverts to natural RNG behavior. */
+    var __forcedMult = null;
+    try {
+      var __raw = window.__FORCE_LIGHTNING_MULT__;
+      if (Number.isFinite(__raw) && __raw >= 2) __forcedMult = __raw;
+      window.__FORCE_LIGHTNING_MULT__ = null;
+    } catch (_) {}
+
+    if (__forcedMult == null && !_roll()) {
       window.RLM_STATE.misses += 1;
       if (window.HookBus && typeof window.HookBus.emit === 'function') {
         try { window.HookBus.emit('onLightningStrikeMissed', {}); } catch (_) {}
@@ -369,7 +409,7 @@ export function emitRandomLightningMultiplierRuntime(cfg = defaultConfig()) {
       return;
     }
 
-    var multX = _pick();
+    var multX = (__forcedMult != null) ? __forcedMult : _pick();
     var prevMult = (window.HookBus && typeof window.HookBus.getMult === 'function')
                    ? (window.HookBus.getMult() || 1) : 1;
     var newMult = prevMult * multX;
