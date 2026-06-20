@@ -12,6 +12,8 @@
     "test:parity": "node tests/parse-real-pdfs.mjs && node tests/cross-game-parity.mjs",
     "test:grids": "node tests/render-grid-all.mjs",
     "gen:demos": "node tools/gen-block-demos.mjs",
+    "sandbox:build": "node tools/build-sandbox-slot.mjs",
+    "sandbox:open": "node tools/build-sandbox-slot.mjs && open dist/sandbox/sandbox.html",
     "test:browser": "node tests/render-browser-all.mjs",
     "test:qa": "node tools/render-grid-gallery.mjs && node tools/full-qa-audit.mjs",
     "test:fs": "node tools/render-grid-gallery.mjs && node tools/fs-qa-audit.mjs",

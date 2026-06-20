@@ -1,3 +1,44 @@
+## 🏆 D-15 SANDBOX SLOT TESTBED · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"Zelim da svaki blok iststiras, na primer uzmi rectangular ili napravi novi slot gde mogu da menjam bilo koje blokove, sve koji postoje, i onda da vidim kako koji s kojim radi i ako ima bugova, da ih tu prvo resavas i onda da ih ukljucimo u svaki gdd"* (2026-06-20)
+
+**Rectangular 5×3 sandbox sa 144 blokova force-enabled.** Boki može da otvori jedan HTML i da na licu mesta vidi sve interakcije + okida sve force chip-ove.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ D-15 — Sandbox Slot Testbed                                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ NPM SCRIPTS:                                                                 │
+│   npm run sandbox:build  →  dist/sandbox/sandbox.html (1.3 MB)              │
+│   npm run sandbox:open   →  build + open in default browser                 │
+│                                                                              │
+│ tools/build-sandbox-slot.mjs:                                                │
+│   • Uzima WoO model.json kao bazu                                            │
+│   • Force-enabled 144 top-level config keys (svaki blok)                    │
+│   • Substituira working default tamo gde je parser ostavio prazan { }       │
+│     (lightning, gamble, holdAndWin, jackpot — sve dobiju radne distribucije)│
+│   • Topology: 5×3 rectangular                                                │
+│   • Svi feature kindovi u features[] → UFP auto-exposes 21 chip-ova         │
+│                                                                              │
+│ INJECTED SANDBOX PANEL (#corti-sandbox-panel):                              │
+│   • Force feature dugmad: FS / BigWin / H&W / Wheel / Pick / Jackpot / Gamble│
+│   • Force multiplier ladder: ×2 / ×3 / ×5 / ×10 / ×25 / ×50 / ×100 / ×500   │
+│   • Force orb cycle: orb×2 / ×10 / ×50 / ×250 / ×500                        │
+│   • Force lightning: ⚡×2 / ×3 / ×5 / ×10                                    │
+│   • Live event stream (HookBus emit wrap) + status HUD (mult/balance/FSM)   │
+│   • Collapse/expand toggle                                                   │
+│                                                                              │
+│ SMOKE TEST:                                                                  │
+│   panel mounted=Y · UFP chips=21 · reels=5 · errors=0 · warns=0             │
+│   FSM=BASE pre i posle manual spina · spin radi besprekorno                 │
+│                                                                              │
+│ USE CASE (per Boki): otvori sandbox.html → testiraj kombinacije blokova →   │
+│ ako nađeš bug → fix-uj tu → re-bake → kada radi, dodaj u real GDD-ove.      │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-14.3 MANUAL-SPIN AUDIT · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"overio si da svaki blok se pravi kako treba i povezuje zavisno od gdd? da li svaka prezentacija radi pravilno itd?"* (2026-06-20)
