@@ -301,18 +301,76 @@ export function selectKinds(cfg, model = {}) {
 
   let detected;
   if (c.includeKinds === 'auto') {
-    const features = Array.isArray(model && model.features) ? model.features : [];
-    detected = new Set(features.map(f => f && f.kind).filter(k => ALL_KNOWN_KINDS.includes(k)));
-    /* D-12 (Boki 2026-06-20): some GDDs declare lightning at the top level
-       of the model (e.g. WoO has `lightning: {}` outside features[]),
-       not inside features array. Detect that too so the force chips
-       render for any game whose GDD references the lightning mechanic. */
-    if (model && model.lightning && typeof model.lightning === 'object') {
-      detected.add('lightning');
-    }
-    if (model && model.randomLightningMultiplier &&
-        typeof model.randomLightningMultiplier === 'object') {
-      detected.add('lightning');
+    detected = new Set();
+
+    /* D-18 (Boki 2026-06-20): canonical GDD-truth source — the parser
+       publishes `model.__activeFeatures__` (declared-flag post-process)
+       which lists ONLY the feature kinds the GDD explicitly declared.
+       This prevents phantom chips for features that exist in the
+       freshModel stub but were never extracted from GDD text. Map each
+       declared top-level model key to its UFP kind label. */
+    const featureKeyToChipKind = {
+      freeSpins:                 'free_spins',
+      bonusBuy:                  'bonus_buy',
+      holdAndWin:                'hold_and_win',
+      bonusPick:                 'bonus_pick',
+      wheelBonus:                'wheel_bonus',
+      multiplierOrb:             'multiplier_orb',
+      persistentMultiplier:      'persistent_multiplier',
+      tumble:                    'cascade',
+      clusterPaysEval:           'cluster_pays',
+      waysEval:                  'ways',
+      payAnywhereEval:           'pay_anywhere',
+      expandingWild:             'expanding_wild',
+      walkingWild:               'walking_wild',
+      stickyWild:                'sticky_wild',
+      mysterySymbol:             'mystery_symbol',
+      scatterCelebration:        'scatter_pay',
+      lightning:                 'lightning',
+      randomLightningMultiplier: 'lightning',
+      respin:                    'respin',
+      wildReel:                  'wild_reel',
+      gamble:                    'gamble',
+      anteBet:                   'ante_bet',
+      superSymbol:               'super_symbol',
+      jackpot:                   'jackpot',
+      bigWinTier:                'big_win',
+    };
+
+    const activeFeatures = Array.isArray(model && model.__activeFeatures__)
+      ? model.__activeFeatures__ : null;
+
+    if (activeFeatures) {
+      /* D-18 path: use canonical declared list. */
+      for (const f of activeFeatures) {
+        const chipKind = featureKeyToChipKind[f && f.kind];
+        if (chipKind && ALL_KNOWN_KINDS.includes(chipKind)) {
+          detected.add(chipKind);
+        }
+        /* Also accept raw kind labels (features[].kind path) */
+        if (typeof (f && f.kind) === 'string' && ALL_KNOWN_KINDS.includes(f.kind)) {
+          detected.add(f.kind);
+        }
+      }
+      /* multiplier is implicit when any *Multiplier* feature is declared */
+      const hasMultiplierFeature = activeFeatures.some(f =>
+        f && typeof f.kind === 'string' &&
+        (/multiplier/i.test(f.kind) || f.kind === 'multiplierOrb' ||
+         f.kind === 'persistentMultiplier'));
+      if (hasMultiplierFeature) detected.add('multiplier');
+    } else {
+      /* Backward-compat path: legacy features[] array + lightning fallback */
+      const features = Array.isArray(model && model.features) ? model.features : [];
+      detected = new Set(features.map(f => f && f.kind).filter(k => ALL_KNOWN_KINDS.includes(k)));
+      if (model && model.lightning && typeof model.lightning === 'object'
+          && Object.keys(model.lightning).length > 0) {
+        detected.add('lightning');
+      }
+      if (model && model.randomLightningMultiplier &&
+          typeof model.randomLightningMultiplier === 'object'
+          && Object.keys(model.randomLightningMultiplier).length > 0) {
+        detected.add('lightning');
+      }
     }
   } else if (Array.isArray(c.includeKinds)) {
     detected = new Set(c.includeKinds.filter(k => ALL_KNOWN_KINDS.includes(k)));

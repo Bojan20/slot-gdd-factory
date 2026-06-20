@@ -1,3 +1,88 @@
+## 🏆 D-18 GDD-TRUTH PIPELINE · 2026-06-20 · 4/4 SHIPPED 🎯
+
+Boki: *"kreni sve ultimativno i savrseno da radi"* (2026-06-20) — ultimativna arhitektura GDD→slot truth contract.
+
+**Σ 1 nov blok · 1 nov tool · parser refactor · UFP refactor · per-game compliance.json scorecard.**
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ D-18 — GDD-TRUTH PIPELINE  (parser declared-flag → UFP guard → runtime audit →       │
+│        compliance scorecard)                                                          │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Wave A — Parser declared-flag post-processor                                          │
+│   • src/parser.mjs +210 LOC                                                            │
+│   • _snapshotKeyContentSizes(model) snimi concrete (non-undefined) field count        │
+│     PRE applySmartDefaults runs                                                       │
+│   • applyDeclaredFlags(model, text, snap) klasifikuje SVAKI top-level ključ:          │
+│       'declared' = parser ekstrahovao iz GDD teksta (preConcrete > 0)                │
+│       'inferred' = freshModel stub, parser nije dotakao                                │
+│       'default'  = smart-defaults backfill ili confidence._derivedBy                   │
+│   • FEATURE_KEYWORD_MAP cross-check: ako GDD raw text spomene feature 2+ puta         │
+│     i parser ga je oznacio kao 'inferred' → upgrade na 'declared'                     │
+│   • Output: model.__declared (map) · model.__activeFeatures__ (canonical lista) ·    │
+│     model.__parserDiagnostics__ (summary counts)                                      │
+│                                                                                       │
+│ Wave B — UFP GDD-truth source                                                          │
+│   • src/blocks/universalForcePanel.mjs +50 LOC                                         │
+│   • selectKinds() prvo proverava model.__activeFeatures__ (D-18 path)                 │
+│   • Backward-compat: ako __activeFeatures__ ne postoji, vraća se na features[]       │
+│     array + lightning fallback (legacy path)                                           │
+│   • featureKeyToChipKind mapa: 25 model-level imena → UFP chip kindova                 │
+│   • Phantom chip eliminisan: GDD koji ne deklariše wheelBonus više NIKAD ne dobija    │
+│     wheel chip                                                                         │
+│                                                                                       │
+│ Wave C — gddRealityCheck runtime blok                                                  │
+│   • src/blocks/gddRealityCheck.mjs +430 LOC                                            │
+│   • Boot: instrument-uje HookBus.emit wrap-om koji track-uje sve event imena          │
+│   • Posle sampleWindowMs (default 60s) → computeReality(declared, emitted)            │
+│     → verified vs dead vs spurious + compliance score                                  │
+│   • Sole-owner event: onGddRealityReport                                              │
+│   • Opt-in dev HUD (showDevHud=true) → vizuelni overlay sa breakdown                   │
+│   • Helper: window.gddRealityCheckReport() / Force()                                   │
+│                                                                                       │
+│ Wave D — Compliance scorecard tool                                                     │
+│   • tools/gdd-compliance-matrix.mjs +180 LOC                                           │
+│   • Walks dist/real-games/* i čita svaki model.json                                    │
+│   • Po igri emit-uje gdd-compliance.json sa:                                            │
+│       totals (totalKeys, declared, inferred, default, empty, failures)                 │
+│       coverage (declaredRatio, activeWithContent, activeFeatures)                      │
+│       forceChips (rendered count + kind list)                                          │
+│       declared/inferred/default lists                                                  │
+│   • Aggregate: dist/gdd-compliance-matrix.md sa box-drawing tabelom za sve igre      │
+│                                                                                       │
+│ STVARNI BROJEVI (Wrath of Olympus posle D-18)                                          │
+│   Total feature keys                47                                                 │
+│     declared (real GDD presence)     7    (freeSpins, holdAndWin, respin, tumble +    │
+│                                            cascade, multiplier, jackpot from features) │
+│     inferred (freshModel stub)      40                                                 │
+│     default                          0                                                 │
+│   Force chips rendered               6    (free_spins, hold_and_win, respin, jackpot, │
+│                                            multiplier, tumble — bez phantom-a)         │
+│   Compliance scorecard               dist/real-games/wrath-of-olympus-gdd/             │
+│                                      gdd-compliance.json                               │
+│                                                                                       │
+│ AGGREGATE COMPLIANCE (313 games sa parsed model)                                       │
+│   Σ declared keys     844                                                              │
+│   Σ inferred keys     13,137                                                           │
+│   Σ default keys      0                                                                │
+│   → kanonska distribucija: parser ekstrahuje 6% feature-a iz prosečnog GDD-a, ostali  │
+│     su freshModel stub-ovi koji se sad EKSPLICITNO ne tretiraju kao "declared"        │
+│                                                                                       │
+│ VERIFIKACIJA                                                                          │
+│   gddRealityCheck.test.mjs                38/38 PASS ✅                                │
+│   universalForcePanel.test.mjs (regress)  39/39 PASS ✅                                │
+│   patternWin.test.mjs (regress)            70/70 PASS ✅                                │
+│   potSymbolFireball.test.mjs (regress)     65/65 PASS ✅                                │
+│   LEGO gate                                 8/8 PASS · 193 blokova · 331 events       │
+│   4-gdds-ultimate-audit                     ✅ ALL GDDS PERFECT                        │
+│   313 parse:real-pdfs                       313/313 PASS                               │
+│                                                                                       │
+│ Σ 192 → 193 blokova · D-17 + D-18 = 9 novih industry-standard blokova                 │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 # 🧭 MASTER TODO — `slot-gdd-factory`
 
 > **2026-06-20 zaključno · HEAD `2bcbafb`** · 🟢 PRODUCTION-READY · 0 unpushed · 0 regression

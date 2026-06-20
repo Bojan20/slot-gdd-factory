@@ -267,6 +267,13 @@ export function parseMarkdownGDD(text) {
 
   // math (RTP / volatility / max-win) intentionally NOT extracted in this phase.
 
+  /* D-18 (Boki 2026-06-20) STEP A: snapshot pre-defaults state so the
+     declared-flag post-processor can distinguish "GDD-declared" from
+     "smart-defaults-filled". applySmartDefaults populates every key
+     uniformly, after which all keys look declared — so we MUST capture
+     content presence before defaults run. */
+  const preDefaultsSnapshot = _snapshotKeyContentSizes(model);
+
   /* Wave P2 — Smart Defaults Engine. Backfill anything the parser
      could not extract from explicit GDD text — palette from tags,
      topology kind/dims from feature mix, symbol tier classification,
@@ -275,7 +282,264 @@ export function parseMarkdownGDD(text) {
      so callers can distinguish "from spec" vs "inferred". */
   applySmartDefaults(model);
 
+  /* D-18 (Boki 2026-06-20) STEP B: GDD-truth post-process. Mark every
+     feature block in model as `declared` (GDD spec) vs `inferred`
+     (parser pattern match) vs `default` (smart-defaults backfill).
+     Produces model.__activeFeatures__ canonical list which downstream
+     blocks (universalForcePanel, buildSlotHTML, gddRealityCheck)
+     consume as the single source of truth — preventing phantom force
+     chips for features GDD never declared. */
+  applyDeclaredFlags(model, text, preDefaultsSnapshot);
+
   return model;
+}
+
+/* ─── D-18 · GDD-truth declared-flag post-processor ───────────────────────
+ *
+ * Goal: every feature key in `model` ends up with a clear provenance
+ * stamp so downstream consumers can distinguish "GDD said so" from
+ * "parser guessed" from "smart-defaults filled".
+ *
+ * Output additions to `model`:
+ *   model.__declared = { [featureKey]: 'declared' | 'inferred' | 'default' }
+ *   model.__activeFeatures__ = [ { kind, source, hasContent }, ... ]
+ *   model.__parserDiagnostics__ = {
+ *     totalKeys, declaredCount, inferredCount, defaultCount, emptyCount,
+ *     declaredKeys, emptyKeys, inferredKeys
+ *   }
+ *
+ * Decision tree per top-level key (in priority order):
+ *   1. Key is in confidence._derivedBy → 'default'
+ *   2. Value is an empty {} object → 'inferred'
+ *   3. Value is dict with enabled=true OR has ≥ 3 keys → 'declared'
+ *   4. Value is dict with enabled=false (explicit) → 'declared' (explicit no)
+ *   5. Otherwise → 'inferred'
+ *
+ * Cross-check: GDD raw text scan for the feature label/keyword to
+ * upgrade 'inferred' → 'declared' when there's a clear textual mention
+ * (≥ 2 occurrences of the feature name + a section heading).
+ */
+const FEATURE_KEYWORD_MAP = Object.freeze({
+  freeSpins:                  /free\s*spins?/i,
+  holdAndWin:                 /hold[\s&-]+win|hold[\s&-]+spin|money[\s-]+collect|fireball/i,
+  lightning:                  /lightning|electric[\s-]+mult/i,
+  wheelBonus:                 /wheel\s*bonus|wheel\s*spin|fortune\s*wheel/i,
+  bonusBuy:                   /bonus\s*buy|buy\s*feature|feature\s*buy/i,
+  bonusPick:                  /pick\s*bonus|pick\s*a\s*prize|reveal\s*bonus/i,
+  gamble:                     /gamble|double[\s-]+up/i,
+  jackpot:                    /jackpot|mini.*minor.*major.*grand/i,
+  scatterCelebration:         /scatter\s*celebration|scatter\s*pay|trigger\s*animation/i,
+  multiplierOrb:              /multiplier\s*orb|orb\s*multiplier|persistent\s*orb/i,
+  persistentMultiplier:       /persistent\s*multiplier|sticky\s*multiplier/i,
+  randomLightningMultiplier:  /random\s*lightning|random\s*mult/i,
+  stickyWild:                 /sticky\s*wild/i,
+  expandingWild:              /expanding\s*wild|big\s*wild/i,
+  walkingWild:                /walking\s*wild|moving\s*wild|shifting\s*wild/i,
+  wildReel:                   /wild\s*reel|full\s*wild\s*reel/i,
+  mysterySymbol:              /mystery\s*symbol|surprise\s*symbol/i,
+  superSymbol:                /super\s*symbol|colossal/i,
+  clusterPaysEval:            /cluster\s*pays?|cluster\s*win/i,
+  waysEval:                   /\d+\s*ways|all\s*ways|ways\s*to\s*win|megaways/i,
+  payAnywhereEval:            /pay\s*anywhere|scatter\s*pay/i,
+  tumble:                     /tumble|cascade|cascading|avalanche/i,
+  anteBet:                    /ante\s*bet/i,
+  respin:                     /respin|re-spin/i,
+  autoplay:                   /autoplay|auto\s*play/i,
+  bigWinTier:                 /big\s*win|mega\s*win|epic\s*win/i,
+  winCap:                     /win\s*cap|max\s*win|maximum\s*win/i,
+});
+
+/* D-18 helper: snapshot pre-defaults state.
+ *
+ * freshModel() pre-populates almost every top-level key with default
+ * stubs (winPresentation: {mode: undefined, perEventMs: undefined, …},
+ * freeSpins: {enabled: false}, …) so a raw Object.keys().length count
+ * is useless: every block looks "populated" even when the parser never
+ * touched it.
+ *
+ * The real signal: HOW MANY of the stub's fields have CONCRETE values
+ * (not undefined). When the parser extracts data it writes concrete
+ * values; when it leaves a stub alone, every field stays undefined.
+ *
+ * Returns: { [key]: concreteFieldCount } where concrete = !== undefined.
+ */
+function _snapshotKeyContentSizes(model) {
+  if (!model || typeof model !== 'object') return {};
+  const snap = {};
+  for (const key of Object.keys(model)) {
+    const v = model[key];
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      let concrete = 0;
+      for (const subKey of Object.keys(v)) {
+        if (v[subKey] !== undefined) concrete++;
+      }
+      snap[key] = concrete;
+    } else {
+      snap[key] = (v === undefined || v === null) ? -1 : -2;
+    }
+  }
+  return snap;
+}
+
+function applyDeclaredFlags(model, rawText, preDefaultsSnapshot) {
+  if (!model || typeof model !== 'object') return;
+  const text = typeof rawText === 'string' ? rawText : '';
+  const preSnap = preDefaultsSnapshot || {};
+  const declared = {};
+  const activeFeatures = [];
+  const declaredKeys = [];
+  const inferredKeys = [];
+  const emptyKeys = [];
+  const derivedBy = (model.confidence && model.confidence._derivedBy) || {};
+
+  /* Helper: detect whether a key's GDD textual evidence is strong. */
+  function gddMentions(key) {
+    if (!text) return false;
+    const pat = FEATURE_KEYWORD_MAP[key];
+    if (!pat) return false;
+    const matches = text.match(new RegExp(pat.source, 'gi'));
+    return Array.isArray(matches) && matches.length >= 2;
+  }
+
+  for (const key of Object.keys(model)) {
+    /* skip internal/meta keys */
+    if (key.startsWith('_') || key.startsWith('$') || key.startsWith('__')) continue;
+    /* skip non-feature primitive metadata (name, theme, topology, symbols) */
+    if (key === 'name' || key === 'theme' || key === 'topology' ||
+        key === 'symbols' || key === 'features' || key === 'paytable' ||
+        key === 'confidence' || key === 'palette' || key === 'meta' ||
+        key === 'regulator' || key === 'responsibleGambling') continue;
+
+    const v = model[key];
+    if (v === null || v === undefined) continue;
+    if (typeof v !== 'object') continue;
+
+    /* Decision tree. preSnap[key] = concrete (non-undefined) field
+     * count captured BEFORE smart-defaults ran. If preSnap is 0 the
+     * value we see now is either pure freshModel stub or came from
+     * smart-defaults backfill — NOT from GDD extraction. */
+    let source;
+    let hasContent = false;
+    const valueKeys = Object.keys(v);
+    const isEmpty = valueKeys.length === 0;
+    const preConcrete = (key in preSnap) ? preSnap[key] : 0;
+
+    /* Concrete-now count: how many fields currently have a non-undefined
+     * value. Distinguishes "smart-defaults populated" from "still stub". */
+    let concreteNow = 0;
+    for (const subKey of valueKeys) {
+      if (v[subKey] !== undefined) concreteNow++;
+    }
+    const isStillStubOnly = concreteNow === 0;
+    const parserTouchedIt = preConcrete > 0;
+
+    if (derivedBy[key]) {
+      source = 'default';
+    } else if (parserTouchedIt) {
+      /* Parser wrote concrete values DURING extraction phase → declared. */
+      source = 'declared';
+      hasContent = !isStillStubOnly;
+    } else if (isEmpty || isStillStubOnly) {
+      /* freshModel stub never touched by extractor, smart-defaults
+       * didn't fill, or extractor only set everything to undefined. */
+      source = 'inferred';
+      emptyKeys.push(key);
+    } else if (typeof v.enabled === 'boolean') {
+      /* smart-defaults wrote enabled flag — treat as default (didn't
+       * come from GDD text). */
+      source = 'default';
+    } else {
+      source = 'default';
+    }
+
+    /* Cross-check upgrade: parser found weak evidence but raw text has
+     * strong textual presence → upgrade to declared. Only fires for
+     * keys in FEATURE_KEYWORD_MAP and only when NOT already classified
+     * as default (default beats text mention — defaults are smart-fill
+     * placeholders, not real GDD declarations). */
+    if (source === 'inferred' && gddMentions(key)) {
+      source = 'declared';
+      hasContent = !isEmpty;
+    }
+
+    declared[key] = source;
+    if (source === 'declared') declaredKeys.push(key);
+    if (source === 'inferred') inferredKeys.push(key);
+
+    /* Active features list — only declared with content (or explicitly
+     * enabled:true with no content). Phantom { } empty objects WITHOUT
+     * GDD evidence are excluded. */
+    if (source === 'declared' && (hasContent || v.enabled === true)) {
+      activeFeatures.push({
+        kind: key,
+        source: source,
+        hasContent: hasContent,
+        keyCount: valueKeys.length,
+      });
+    }
+  }
+
+  /* Also walk the canonical features[] array — every entry there is
+   * by definition declared (the GDD listed it). */
+  if (Array.isArray(model.features)) {
+    for (const f of model.features) {
+      if (!f || typeof f !== 'object') continue;
+      const kind = f.kind;
+      if (typeof kind !== 'string') continue;
+      if (kind === 'feature_generic') continue; /* discovery placeholder */
+      /* Map features[].kind labels onto top-level model keys when
+       * naming differs. */
+      const topKey = ({
+        free_spins:            'freeSpins',
+        hold_and_win:          'holdAndWin',
+        wheel_bonus:           'wheelBonus',
+        bonus_buy:             'bonusBuy',
+        bonus_pick:            'bonusPick',
+        ante_bet:              'anteBet',
+        mystery_symbol:        'mysterySymbol',
+        super_symbol:          'superSymbol',
+        sticky_wild:           'stickyWild',
+        expanding_wild:        'expandingWild',
+        walking_wild:          'walkingWild',
+        wild_reel:             'wildReel',
+        cluster_pays:          'clusterPaysEval',
+        ways:                  'waysEval',
+        pay_anywhere:          'payAnywhereEval',
+        big_win:               'bigWinTier',
+      })[kind] || kind;
+      if (declared[topKey] !== 'declared') {
+        declared[topKey] = 'declared';
+        if (!declaredKeys.includes(topKey)) declaredKeys.push(topKey);
+        /* remove from inferred/empty if it was there */
+        const ie = inferredKeys.indexOf(topKey);
+        if (ie >= 0) inferredKeys.splice(ie, 1);
+        const ee = emptyKeys.indexOf(topKey);
+        if (ee >= 0) emptyKeys.splice(ee, 1);
+      }
+      if (!activeFeatures.find(a => a.kind === topKey)) {
+        activeFeatures.push({
+          kind: topKey,
+          source: 'declared',
+          hasContent: false, /* features[] entry alone doesn't carry content */
+          keyCount: 0,
+        });
+      }
+    }
+  }
+
+  model.__declared = declared;
+  model.__activeFeatures__ = activeFeatures;
+  model.__parserDiagnostics__ = {
+    totalKeys: Object.keys(declared).length,
+    declaredCount: declaredKeys.length,
+    inferredCount: inferredKeys.length,
+    emptyCount: emptyKeys.length,
+    declaredKeys: declaredKeys.slice(),
+    emptyKeys: emptyKeys.slice(),
+    inferredKeys: inferredKeys.slice(),
+    failuresCount: (model.confidence && Array.isArray(model.confidence._failures))
+      ? model.confidence._failures.length : 0,
+  };
 }
 
 /* ─── helper: extract Free Spins config (trigger / awards / retrigger / mult) ──

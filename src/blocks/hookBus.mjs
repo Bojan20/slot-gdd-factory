@@ -767,6 +767,7 @@ export const HOOK_EVENTS = Object.freeze([
   'onReelsLinked',  // Owner: linkedReels.mjs
   'onAwardConverted',  // Owner: creditAwardConversion.mjs
   'onCoinValueChanged',  // Owner: creditAwardConversion.mjs
+  'onGddRealityReport',  // Owner: gddRealityCheck.mjs
   'onFeaturePriorityDeferred',  // Owner: simultaneousFsHoldAndWinPriority.mjs
   'onFeaturePriorityResumed',  // Owner: simultaneousFsHoldAndWinPriority.mjs
   'onGrandLock',  // Owner: grandInterruptionLock.mjs

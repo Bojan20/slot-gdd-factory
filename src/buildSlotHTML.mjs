@@ -807,6 +807,14 @@ import {
   emitCreditAwardConversionCSS, emitCreditAwardConversionRuntime,
   resolveConfig as resolveCreditAwardConversionConfig,
 } from './blocks/creditAwardConversion.mjs';
+// D-18 — GDD reality check (Boki ultimativna arhitektura 2026-06-20).
+// Wraps HookBus.emit and after sampleWindowMs reports verified-vs-
+// declared compliance score (dead + spurious). Opt-in per GDD via
+// model.gddRealityCheck.enabled.
+import {
+  emitGddRealityCheckCSS, emitGddRealityCheckRuntime,
+  resolveConfig as resolveGddRealityCheckConfig,
+} from './blocks/gddRealityCheck.mjs';
 // W58.J-DE — GlüStV (Glücksspielstaatsvertrag 2021) compliance gate.
 // Auto-enabled when jurisdiction === 'DE'. Boot-time only: sets
 // window.__DE_MIN_SPIN_MS__ spin-pace floor (§11(2)) + clears prefixed
@@ -1367,6 +1375,8 @@ ${/* D-17.7 — simultaneous FS + H&W priority arbiter CSS (no-op when disabled)
 ${emitSimultaneousFsHoldAndWinPriorityCSS(resolveSimultaneousFsHoldAndWinPriorityConfig(model))}
 ${/* D-17.8 — credit-award SSOT CSS (no-op when disabled). */ ''}
 ${emitCreditAwardConversionCSS(resolveCreditAwardConversionConfig(model))}
+${/* D-18 — gddRealityCheck status + optional dev HUD CSS. */ ''}
+${emitGddRealityCheckCSS(resolveGddRealityCheckConfig(model))}
 ${/* Wave P8 — hot-reload indicator badge (dev-mode only). */ ''}
 ${emitHotReloadCSS(resolveHotReloadConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
@@ -2117,6 +2127,14 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
        window.creditAwardCoinValue() · window.creditAwardSetBet(bet)
        · window.creditAwardPayTypeMode(payType). */ ''}
   ${emitCreditAwardConversionRuntime(resolveCreditAwardConversionConfig(model))}
+  ${/* D-18 — GDD Reality Check. Opt-in per GDD via
+       model.gddRealityCheck.enabled. Lifecycle: boot → instrument
+       HookBus.emit (wraps existing) to collect every emitted event
+       name. After cfg.sampleWindowMs → compute reality report
+       (verified vs dead vs spurious) + emit onGddRealityReport.
+       Exposes: window.gddRealityCheckReport() · window
+       .gddRealityCheckForceReport(). Math-blind by contract. */ ''}
+  ${emitGddRealityCheckRuntime(resolveGddRealityCheckConfig(model))}
   ${/* W58.J-DE — GlüStV §11(2) spin pace floor + §6e session state clear.
        Boot-time IIFE; 0-byte side effect when jurisdiction is not DE. */ ''}
   ${emitGermanyComplianceGateRuntime(resolveGermanyComplianceGateConfig(model))}

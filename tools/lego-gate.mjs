@@ -536,6 +536,11 @@ const EXPECTED_EMIT_OWNERS = {
    * blocks consume so every block reads the same award unit. */
   onAwardConverted:    ['creditAwardConversion.mjs'],
   onCoinValueChanged:  ['creditAwardConversion.mjs'],
+  /* D-18 — gddRealityCheck. Observes ALL HookBus.emit calls for a
+   * configurable window, then compares against model.__activeFeatures__
+   * (parser-published declared list). Emits onGddRealityReport with
+   * verified / dead / spurious + compliance score. */
+  onGddRealityReport: ['gddRealityCheck.mjs'],
   /* W57.A7 — Canonical camelCase event names for renamed legacy events.
    * Pre-W57: 'anteBet:changed' / 'bonus.buy.requested' (colon/dot form).
    * Both were orphan-emit (no listeners) so rename is safe; legacy form
