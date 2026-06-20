@@ -225,19 +225,30 @@ export function emitPaylineOverlayRuntime(cfgOrModel = {}) {
     const svg = ensurePaylineOverlay();
     while (svg.firstChild) svg.removeChild(svg.firstChild);
   }
-  /* Convert a DOM cell node into a center-point in gridHost-local
-     pixel coordinates. Returns null if:
+  /* Convert a cell ref into a center-point in gridHost-local pixel coordinates.
+     Returns null if:
        - cell is null/undefined
-       - cell is not a DOM element (string/stale ref from cluster /
-         tumble eval where post-gravity cells got nulled or stringified)
-       - cell has zero bounds (off-screen / unmounted)
-     Wave D-3 hardening — Bokijev imperative "svaki jebeni blok": starlight
-     6×7 grid + cluster eval emits ev.cells with stale refs after gravity.
-     Defensive typeof check prevents TypeError on .getBoundingClientRect()
-     when caller passes a non-DOM object. */
+       - cell cannot be resolved to a DOM element (no matching reel/row)
+       - resolved cell has zero bounds (off-screen / unmounted)
+
+     Wave D-3 hardening: defensive typeof check prevents TypeError on stale refs.
+     Wave D-8 LINE-PRESENTATION FIX: now uses the canonical
+     window.__resolveCellElement so cluster-pays games (Starlight) emit
+     {r, c, idx} metadata and still draw correctly — the resolver maps to
+     DOM via RECT_REELS. Falls back to legacy DOM-only check if globals
+     contract has not loaded yet (early-call safety). */
   function cellCenterInGrid(cell, gridRect) {
-    if (!cell || typeof cell.getBoundingClientRect !== 'function') return null;
-    const r = cell.getBoundingClientRect();
+    if (!cell) return null;
+    var el = cell;
+    if (typeof el.getBoundingClientRect !== 'function') {
+      if (typeof window !== 'undefined' && typeof window.__resolveCellElement === 'function') {
+        el = window.__resolveCellElement(cell);
+      } else {
+        el = null;
+      }
+    }
+    if (!el || typeof el.getBoundingClientRect !== 'function') return null;
+    const r = el.getBoundingClientRect();
     if (!r || (r.width === 0 && r.height === 0)) return null;
     return {
       x: (r.left + r.width  / 2) - gridRect.left,

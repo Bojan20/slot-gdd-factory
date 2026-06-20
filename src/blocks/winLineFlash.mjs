@@ -146,32 +146,44 @@ export function emitWinLineFlashRuntime(cfg = defaultConfig()) {
       for (var i = 0; i < cells.length; i++) cells[i].setAttribute('data-line-flash', 'false');
       if (n > 0) try { window.HookBus.emit('onWinLineFlashCleared', { reason: reason || 'auto' }); } catch (_) {}
     }
+    /* Wave D-8 LINE-PRESENTATION FIX: use canonical resolver so flashCells
+       works against ALL evaluator shapes (DOM elements from line/ways/
+       pay_anywhere, {r,c,idx} from cluster, {reel,row} legacy, idx-only).
+       Previously only {reel,row} was accepted → no flash on line-pays
+       (DOM cells) or cluster-pays (Starlight). */
+    function _flashResolve(c) {
+      if (!c) return null;
+      if (typeof c.getBoundingClientRect === 'function') return c;
+      if (typeof window !== 'undefined' && typeof window.__resolveCellElement === 'function') {
+        return window.__resolveCellElement(c);
+      }
+      /* Pre-globals-contract fallback — accept the historical {reel,row} */
+      if (typeof c.reel === 'number' && typeof c.row === 'number' && typeof document !== 'undefined') {
+        return document.querySelector('.symbol-cell[data-reel="' + c.reel + '"][data-row="' + c.row + '"]')
+            || document.querySelector('.cell[data-reel="' + c.reel + '"][data-row="' + c.row + '"]');
+      }
+      return null;
+    }
+
     function flashCells(cells, lineIdx, source) {
       if (typeof document === 'undefined') return;
       if (!Array.isArray(cells) || cells.length < MIN) return;
-      var marked = 0;
+      var resolved = [];
       for (var i = 0; i < cells.length; i++) {
-        var c = cells[i];
-        if (!c || typeof c.reel !== 'number' || typeof c.row !== 'number') continue;
-        var el = document.querySelector('.symbol-cell[data-reel="' + c.reel + '"][data-row="' + c.row + '"]');
-        if (el) {
-          el.setAttribute('data-line-flash', 'true');
-          marked++;
+        var el = _flashResolve(cells[i]);
+        if (el) resolved.push(el);
+      }
+      if (resolved.length === 0) return;
+      for (var k = 0; k < resolved.length; k++) {
+        resolved[k].setAttribute('data-line-flash', 'true');
+      }
+      try { window.HookBus.emit('onWinLineFlashStart', { lineIdx: lineIdx, cellCount: resolved.length, source: source || 'auto' }); } catch (_) {}
+      setTimeout(function () {
+        for (var j = 0; j < resolved.length; j++) {
+          resolved[j].setAttribute('data-line-flash', 'false');
         }
-      }
-      if (marked > 0) {
-        try { window.HookBus.emit('onWinLineFlashStart', { lineIdx: lineIdx, cellCount: marked, source: source || 'auto' }); } catch (_) {}
-        setTimeout(function () {
-          for (var j = 0; j < cells.length; j++) {
-            var cc = cells[j];
-            if (cc && typeof cc.reel === 'number' && typeof cc.row === 'number') {
-              var ee = document.querySelector('.symbol-cell[data-reel="' + cc.reel + '"][data-row="' + cc.row + '"]');
-              if (ee) ee.setAttribute('data-line-flash', 'false');
-            }
-          }
-          try { window.HookBus.emit('onWinLineFlashEnd', { lineIdx: lineIdx, source: source || 'auto' }); } catch (_) {}
-        }, FLASH + 60);
-      }
+        try { window.HookBus.emit('onWinLineFlashEnd', { lineIdx: lineIdx, source: source || 'auto' }); } catch (_) {}
+      }, FLASH + 60);
     }
 
     /* F3 priority 30 — decorator class. Per-line flash overlay runs after

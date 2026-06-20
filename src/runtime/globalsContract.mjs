@@ -74,6 +74,70 @@ export function emitGlobalsContractRuntime() {
     window.applyWinHighlight = applyWinHighlight;
     window.detectLineWins = detectLineWins;
     window.drawPaylineOverlay = drawPaylineOverlay;
+
+    /* ── Canonical cell-ref normalizer (Wave D-8 LINE-PRESENTATION FIX) ───
+       Different evaluators emit event.cells in different shapes:
+         • detectLineWins        → DOM elements (line-pays)
+         • detectWaysWins        → DOM elements (243/1024/4096 ways)
+         • detectPayAnywhereWins → DOM elements (scatter-pays)
+         • detectClusterWins     → {r, c, idx} plain objects (cluster-pays)
+         • winLineFlash legacy   → {reel, row} plain objects (line-flash)
+         • Future:               → may emit anything
+
+       Presenters (paylineOverlay, winLineFlash, badge/decorator UIs) must
+       normalize to a real DOM element before measuring geometry. Without
+       this, cluster-pays games (Starlight 6×5) silently skip the polyline
+       draw because the defensive guard returns null on plain objects.
+
+       Boki 2026-06-20: "Win linije prezentracije blokovi ne rade pravilno
+       u svakom gddu" — root cause was every presenter implementing its own
+       shape check and ignoring shapes it didn't recognize. This canonical
+       resolver eliminates that class of bug template-wide. */
+    window.__resolveCellElement = function (cellRef) {
+      if (!cellRef) return null;
+      /* Case 1: Already a DOM element */
+      if (typeof cellRef.getBoundingClientRect === 'function') return cellRef;
+      /* Case 2: Plain metadata object — extract reel + row regardless of key */
+      var reelIdx, rowIdx;
+      if (typeof cellRef.reel === 'number' && typeof cellRef.row === 'number') {
+        reelIdx = cellRef.reel; rowIdx = cellRef.row;
+      } else if (typeof cellRef.c === 'number' && typeof cellRef.r === 'number') {
+        /* cluster eval shape: {r: row, c: column, idx: r*REELS+c} */
+        reelIdx = cellRef.c; rowIdx = cellRef.r;
+      } else if (typeof cellRef.idx === 'number' && Number.isFinite(cellRef.idx)) {
+        /* Linear idx fallback — derive (r, c) from grid shape. */
+        var cols = (window.SHAPE && window.SHAPE.reels) || window.REELS || 5;
+        reelIdx = cellRef.idx % cols;
+        rowIdx = Math.floor(cellRef.idx / cols);
+      } else {
+        return null;
+      }
+      /* Resolve via RECT_REELS (canonical engine source of truth) */
+      if (Array.isArray(window.RECT_REELS)) {
+        var reel = window.RECT_REELS[reelIdx];
+        if (reel) {
+          if (typeof reel.cellAt === 'function') return reel.cellAt(rowIdx);
+          if (Array.isArray(reel.cells)) {
+            /* RECT_REELS uses 1-based cells[] (index 0 is the peek/buffer
+               row above the viewport). Probe both 1-based and 0-based for
+               topology safety — first that matches and has
+               getBoundingClientRect wins. */
+            var candA = reel.cells[rowIdx + 1];
+            if (candA && typeof candA.getBoundingClientRect === 'function') return candA;
+            var candB = reel.cells[rowIdx];
+            if (candB && typeof candB.getBoundingClientRect === 'function') return candB;
+          }
+        }
+      }
+      /* Fallback: data attribute query in light DOM */
+      if (typeof document !== 'undefined') {
+        var sel = '.symbol-cell[data-reel="' + reelIdx + '"][data-row="' + rowIdx + '"]'
+                + ', .cell[data-reel="' + reelIdx + '"][data-row="' + rowIdx + '"]';
+        var el = document.querySelector(sel);
+        if (el) return el;
+      }
+      return null;
+    };
   }
 `;
 }
