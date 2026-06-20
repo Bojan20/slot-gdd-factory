@@ -196,14 +196,17 @@ async function runOneGame(browser, gameDir, manifest) {
       if (m && typeof m.enabled === 'boolean') declared = m.enabled;
       else if (m) declared = true; // present in model
     }
+    /* ACTIVITY is determined only by block-specific signals: state marker
+       or DOM marker. Lifecycle hooks are SHARED across many blocks
+       (e.g. postSpin, onFsEnd), so listenerCount alone is NOT a reliable
+       per-block signal and must not create false positives. */
+    const isActive = hasState || hasDom;
     let score = 0;
     if (hasState) score++;
     if (hasDom) score++;
-    if (allHooked) score++;
-    /* If allHooked false but someHooked true and block declares > 1 hooks,
-       still partial signal. */
     blockScores[b.name] = {
       score,
+      isActive,
       hasState,
       hasDom,
       allHooked,
@@ -244,7 +247,7 @@ async function main() {
     try {
       const r = await runOneGame(browser, g, manifest);
       perGameResults[g] = r;
-      const active = Object.values(r.blockScores).filter(s => s.score >= 1).length;
+      const active = Object.values(r.blockScores).filter(s => s.isActive).length;
       log(`   ${active}/${manifest.blocks.length} blokova active · ${r.errors.console.length + r.errors.page.length} err · ${((Date.now()-t0)/1000).toFixed(1)}s`);
     } catch (e) {
       log('   ❌ FAILED:', String(e).slice(0, 200));
@@ -265,20 +268,20 @@ async function main() {
       if (!r || !r.blockScores) { perGdd[g] = null; continue; }
       const s = r.blockScores[b.name];
       perGdd[g] = s;
-      if (s.score >= 1) {
+      if (s.isActive) {
         activeGddCount++;
-        if (!firstActiveSignal) firstActiveSignal = { hasState: s.hasState, hasDom: s.hasDom, allHooked: s.allHooked };
+        if (!firstActiveSignal) firstActiveSignal = { hasState: s.hasState, hasDom: s.hasDom };
       }
     }
     /* Consistency check: ako je blok active u BAR jednom GDD-u, ostali sa
-       active = isti signal pattern → consistent. */
+       active = isti state+DOM signal pattern → consistent. Lifecycle hooks
+       se ignorišu jer su shared. */
     if (firstActiveSignal) {
       for (const g of games) {
         const s = perGdd[g];
-        if (s && s.score >= 1) {
+        if (s && s.isActive) {
           const same = s.hasState === firstActiveSignal.hasState
-                    && s.hasDom   === firstActiveSignal.hasDom
-                    && s.allHooked === firstActiveSignal.allHooked;
+                    && s.hasDom   === firstActiveSignal.hasDom;
           if (same) consistentGddCount++;
         }
       }
@@ -310,7 +313,7 @@ async function main() {
     if (a.activeGddCount === games.length) activeInAllGames++;
     else if (a.activeGddCount === 0) inactiveEverywhere++;
     else activeInSome++;
-    if (a.activeGddCount > 1 && a.consistentGddCount !== a.activeGddCount) inconsistent++;
+    if (a.activeGddCount >= 1 && a.consistentGddCount !== a.activeGddCount) inconsistent++;
   }
   log(`  Σ blokova ukupno:            ${totalBlocks}`);
   log(`  ✓ Active u SVIM GDD-ovima:   ${activeInAllGames}`);
@@ -327,7 +330,7 @@ async function main() {
       if (a.activeGddCount > 1 && a.consistentGddCount !== a.activeGddCount) {
         const breakdown = games.map(g => {
           const s = a.perGdd[g];
-          if (!s || s.score === 0) return `${g.slice(0,12)}=◯`;
+          if (!s || !s.isActive) return `${g.slice(0,12)}=◯`;
           const flags = (s.hasState ? 'S' : '.') + (s.hasDom ? 'D' : '.') + (s.allHooked ? 'H' : '.');
           return `${g.slice(0,12)}=${flags}`;
         }).join(' ');
@@ -345,7 +348,7 @@ async function main() {
       if (a.activeGddCount > 0 && a.activeGddCount < games.length) {
         const breakdown = games.map(g => {
           const s = a.perGdd[g];
-          return `${g.slice(0,12)}=${s && s.score >= 1 ? '✓' : '◯'}`;
+          return `${g.slice(0,12)}=${s && s.isActive ? '✓' : '◯'}`;
         }).join(' ');
         log(`     ◐ ${name.padEnd(34)} ${breakdown}`);
       }
