@@ -1,3 +1,80 @@
+## 🏆 D-17.5 potSymbolFireball · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"kreeni"* → default #5 potSymbolFireball (2026-06-20)
+
+**Peti blok iz D-17 roadmap-a. Pot-tier symbol classifier + value tag + COLLECT tally.**
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ D-17.5 — potSymbolFireball (pot-symbol klasifikator + value tag + COLLECT sum)        │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Mehanika                                                                              │
+│   • Pot symboli (MINI/MINOR/MAJOR default) klasifikuju se kao value-carrying          │
+│     cells umesto celebration overlays                                                 │
+│   • 3 putanje detekcije (priority order):                                              │
+│     1. Engine-tagged: cell.__pot__ = { tier, credits? } (engine ima auth)              │
+│     2. Prefix + tier: "POT_MINI" sa cfg.symbolPrefix=POT_                              │
+│     3. Bare tier: "MINI" (case-insens)                                                 │
+│   • Tag se mounta na .cell[data-reel][data-row] + data-pot-tier atribut               │
+│   • Collected lista se akumulira tokom feature trajanja                               │
+│   • Na onHoldAndWinEnd → sum total + breakdown po tier-u + emit + cleanup             │
+│                                                                                       │
+│ Persist + reset (upstream contract)                                                   │
+│   Blok NE radi reset-on-landing — to vlasništvo holdAndWin.mjs.                       │
+│   Blok SAMO emit-uje onPotSymbolLanded, koji upstream blok već konzumira              │
+│   kao "new value Fireball landing" → resetuje counter prirodno.                        │
+│   Pot cells persist kroz respins jer ih holdAndWin već tag-uje kao locked.            │
+│                                                                                       │
+│ GRAND interaction (out of scope)                                                       │
+│   GRAND (full-board fill) je u domenu grandInterruptionLock (D-17.6, sledeći).        │
+│   potSymbolFireball SAMO doprinosi credit-ima ka running tally — clamp na             │
+│   1,000,000 owns upstream winCap blok.                                                │
+│                                                                                       │
+│ GDD knobs (model.potSymbolFireball)                                                   │
+│   enabled · potTiers (string[] · dedupe + safe-strip)                                 │
+│   potValues (Object<tier, number 0..1e9> · partial fills from defaults)                │
+│   symbolPrefix (default 'POT_') · shimmerDurationMs (200..3000)                        │
+│   themeClass · role · ariaLabelPrefix                                                 │
+│                                                                                       │
+│ Lifecycle                                                                             │
+│   onHoldAndWinTrigger → reset session state + unmount old tags                         │
+│   onSpinResult / onFsSpinResult → classify cells → mount tag + emit landed             │
+│   onHoldAndWinEnd → sum + breakdown emit + cleanup                                     │
+│                                                                                       │
+│ Sole-owner events                                                                     │
+│   onPotSymbolLanded     payload: { tier, credits, reel, row, source }                │
+│   onPotSymbolCollected  payload: { totalPotCredits, breakdown, count }                │
+│                                                                                       │
+│ Force chip                                                                            │
+│   window.potSymbolFireballForce(tier, reel, row) → __FORCE_POT_SYMBOL__ + spin        │
+│   window.potSymbolFireballGetCollected() — getter snapshot                            │
+│                                                                                       │
+│ Accessibility                                                                          │
+│   role=img + aria-label "Pot symbol MINI, 100 credits" per pot tag                    │
+│   prefers-reduced-motion → no shimmer animacija                                       │
+│                                                                                       │
+│ Perf budget                                                                            │
+│   O(rows × reels) scan ≈ 30 cell reads na 5×6 · CSS-only shimmer · 0 JS anim loop     │
+│                                                                                       │
+│ VERIFIKACIJA                                                                          │
+│   potSymbolFireball.test.mjs:    65/65 PASS ✅                                        │
+│     • defaults + fresh arrays · sanitizers (tiers dedup, values bounds, prefix strip) │
+│     • partial value fills · custom tiers without defaults → 0 · bounds                │
+│     • classifyCell (bare tier · prefix+tier · engine-tag · custom credits override ·  │
+│       non-pot rejection · empty tiers handling)                                       │
+│     • sumLandings (empty · bad entries · sum)                                          │
+│     • emitCSS (disabled empty · selectors · tier brightness · duration · a11y)        │
+│     • emitRuntime (HookBus 4 listeners + 2 emits · force chip · getter · a11y)        │
+│     • source vendor-neutral · determinism                                              │
+│   LEGO gate:                      8/8 PASS · 189 blokova · 323 events                 │
+│   4-gdds-ultimate-audit:          ✅ ALL GDDS PERFECT                                 │
+│                                                                                       │
+│ Σ 188 → 189 blokova · D-17 progress: 5/8 SHIPPED (62.5%)                              │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-17.4 perTriggerVolatilitySet · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"kreni"* → default #4 perTriggerVolatilitySet (2026-06-20)
@@ -276,7 +353,7 @@ Boki: *"kreni"* → default redosled #1 patternWin (2026-06-20)
 
 ---
 
-## 🟡 D-17 FOUNDRY-FAMILY GAP ROADMAP · 2026-06-20 · 4/8 SHIPPED (čeka Boki za #5)
+## 🟡 D-17 FOUNDRY-FAMILY GAP ROADMAP · 2026-06-20 · 5/8 SHIPPED (čeka Boki za #6)
 
 Boki: *"sta ika od featurea u cash eruption gdd na desktopu sto nemamo u blokove?"* → *"upisi master todo prvo detaljno"* (2026-06-20)
 
@@ -447,9 +524,10 @@ Boki: *"sta ika od featurea u cash eruption gdd na desktopu sto nemamo u blokove
 🟢 **#1 patternWin → SHIPPED** (commit 776ddf2)
 🟢 **#2 bigSymbolRender2x2 → SHIPPED** (commit a8dc9d3)
 🟢 **#3 linkedReels → SHIPPED** (commit 0252bea)
-🟢 **#4 perTriggerVolatilitySet → SHIPPED** (vidi D-17.4 sekciju iznad)
-🟡 **#5–#8 OPEN** — sledeći u default chain-u: **#5 potSymbolFireball** (pot symbols persist kroz respins kao value-units).
-Ako Boki kaže "kreni" bez broja → krećem #5 po default redosledu.
+🟢 **#4 perTriggerVolatilitySet → SHIPPED** (commit 0165583)
+🟢 **#5 potSymbolFireball → SHIPPED** (vidi D-17.5 sekciju iznad)
+🟡 **#6–#8 OPEN** — sledeći u default chain-u: **#6 grandInterruptionLock** (full-board GRAND celebracija + handpay route).
+Ako Boki kaže "kreni" bez broja → krećem #6 po default redosledu.
 
 ---
 

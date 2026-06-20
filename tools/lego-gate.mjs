@@ -505,6 +505,14 @@ const EXPECTED_EMIT_OWNERS = {
    * presentation blocks. Math-blind by contract. */
   onVolatilitySetLocked:  ['perTriggerVolatilitySet.mjs'],
   onVolatilitySetExpired: ['perTriggerVolatilitySet.mjs'],
+  /* D-17.5 — potSymbolFireball (Foundry-family gap closure).
+   * Pot-tier symbol classifier + value tag + COLLECT-time tally.
+   * Emits onPotSymbolLanded per landed pot cell so upstream
+   * holdAndWin recognizes them as value-carrying cells (persist
+   * through respins, reset counter); emits onPotSymbolCollected
+   * with breakdown sum at onHoldAndWinEnd. Math-blind. */
+  onPotSymbolLanded:    ['potSymbolFireball.mjs'],
+  onPotSymbolCollected: ['potSymbolFireball.mjs'],
   /* W57.A7 — Canonical camelCase event names for renamed legacy events.
    * Pre-W57: 'anteBet:changed' / 'bonus.buy.requested' (colon/dot form).
    * Both were orphan-emit (no listeners) so rename is safe; legacy form

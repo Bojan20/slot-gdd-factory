@@ -777,6 +777,14 @@ import {
   emitPerTriggerVolatilitySetCSS, emitPerTriggerVolatilitySetRuntime,
   resolveConfig as resolvePerTriggerVolatilitySetConfig,
 } from './blocks/perTriggerVolatilitySet.mjs';
+// D-17.5 — Pot-tier Fireball symbol (Foundry-family gap closure).
+// Classifies MINI/MINOR/MAJOR pots as value-carrying cells; tags them
+// on the grid, emits landed/collected events, tracks COLLECT-time sum.
+// Math-blind; engine decides pot landings.
+import {
+  emitPotSymbolFireballCSS, emitPotSymbolFireballRuntime,
+  resolveConfig as resolvePotSymbolFireballConfig,
+} from './blocks/potSymbolFireball.mjs';
 // W58.J-DE — GlüStV (Glücksspielstaatsvertrag 2021) compliance gate.
 // Auto-enabled when jurisdiction === 'DE'. Boot-time only: sets
 // window.__DE_MIN_SPIN_MS__ spin-pace floor (§11(2)) + clears prefixed
@@ -1329,6 +1337,8 @@ ${/* D-17.3 — linked-reels fuse CSS (no-op when disabled). */ ''}
 ${emitLinkedReelsCSS(resolveLinkedReelsConfig(model))}
 ${/* D-17.4 — per-trigger volatility set hook CSS (no-op when disabled). */ ''}
 ${emitPerTriggerVolatilitySetCSS(resolvePerTriggerVolatilitySetConfig(model))}
+${/* D-17.5 — pot-symbol Fireball tag CSS (no-op when disabled). */ ''}
+${emitPotSymbolFireballCSS(resolvePotSymbolFireballConfig(model))}
 ${/* Wave P8 — hot-reload indicator badge (dev-mode only). */ ''}
 ${emitHotReloadCSS(resolveHotReloadConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
@@ -2043,6 +2053,15 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
        contract: engine owns the weighted draw, block only locks +
        exposes for presentation hooks. */ ''}
   ${emitPerTriggerVolatilitySetRuntime(resolvePerTriggerVolatilitySetConfig(model))}
+  ${/* D-17.5 — Pot-tier Fireball symbol. Opt-in per GDD via
+       model.potSymbolFireball.enabled. Lifecycle:
+       onHoldAndWinTrigger → reset session state + unmount old tags.
+       onSpinResult / onFsSpinResult → classify cells (engine __pot__
+       tag OR prefix+tier OR bare tier match) → mount overlay + emit
+       onPotSymbolLanded per pot. onHoldAndWinEnd → sum + emit
+       onPotSymbolCollected with breakdown. Force chip:
+       window.potSymbolFireballForce(tier, reel, row). */ ''}
+  ${emitPotSymbolFireballRuntime(resolvePotSymbolFireballConfig(model))}
   ${/* W58.J-DE — GlüStV §11(2) spin pace floor + §6e session state clear.
        Boot-time IIFE; 0-byte side effect when jurisdiction is not DE. */ ''}
   ${emitGermanyComplianceGateRuntime(resolveGermanyComplianceGateConfig(model))}
