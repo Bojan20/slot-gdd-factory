@@ -1,3 +1,80 @@
+## 🏆 D-17.6 grandInterruptionLock · 2026-06-20 · ZATVOREN ✅
+
+Boki: *"kreni"* → default #6 grandInterruptionLock (2026-06-20)
+
+**Šesti blok iz D-17 roadmap-a. Interruption-locked GRAND celebracija + handpay jurisdiction route.**
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ D-17.6 — grandInterruptionLock (GRAND lock + handpay route per §10.5/§10.6)           │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Mehanika                                                                              │
+│   • Detekcija: amount >= cfg.grandThresholdCredits (default 1,000,000)                │
+│   • 3 listenera kao trigger izvor: onPotSymbolCollected (D-17.5 bridge),              │
+│     onHoldAndWinEnd (upstream H&W), onFeaturePayout (engine generic)                  │
+│   • Payload reads sa precedance: totalPotCredits → awardCredits → award               │
+│   • Force flag (__FORCE_GRAND_AWARD__) override-uje detection                          │
+│   • Pri zaključavanju: body[data-grand-lock=true] + window.__SLOT_GRAND_LOCK_ACTIVE__ │
+│   • Overlay full-viewport pointer-events: auto (intercept clicks)                      │
+│   • Locked timer celebrationDurationMs (default 6000ms, ne može da se prekine)         │
+│   • Po isteku: clear flag + emit released                                              │
+│                                                                                       │
+│ Handpay route (jurisdiction-gated)                                                     │
+│   • Aktivna jurisdiction sa cfg.jurisdiction ILI window.__SLOT_JURISDICTION__         │
+│   • Match protiv cfg.handpayJurisdictions (default ['US','CA'])                       │
+│   • Pri match-u: emit onHandpayRequested PRE crediting balance                        │
+│   • Wallet/hub binding stage-uje credit dok ne dođe onGrandReleased                   │
+│   • Banner pokazuje "Attendant handpay required for <JUR>" note                       │
+│                                                                                       │
+│ GDD knobs (model.grandInterruptionLock)                                                │
+│   enabled · grandThresholdCredits (1000..1e10) ·                                       │
+│   celebrationDurationMs (1500..30000) · handpayJurisdictions (uppercase + dedup)      │
+│   jurisdiction (auto-uppercase) · interceptControls (whitelist whitelisted)            │
+│   themeClass · role · ariaLabelPrefix · bannerLabel                                   │
+│                                                                                       │
+│ Lifecycle                                                                             │
+│   onPotSymbolCollected / onHoldAndWinEnd / onFeaturePayout → maybeLock                 │
+│   maybeLock → if amount ≥ threshold → startLock + emit lock + maybe handpay            │
+│   timer expire → releaseLock + emit released + clear body flag                         │
+│                                                                                       │
+│ Sole-owner events                                                                     │
+│   onGrandLock         payload: { award, threshold, jurisdiction }                     │
+│   onGrandReleased     payload: { award, durationMs }                                  │
+│   onHandpayRequested  payload: { award, jurisdiction, attendantHint }                 │
+│                                                                                       │
+│ Force chip                                                                            │
+│   window.grandInterruptionLockForce(award) → __FORCE_GRAND_AWARD__ + spin             │
+│   window.grandInterruptionLockIsActive() — getter za current lock state                │
+│                                                                                       │
+│ Accessibility                                                                          │
+│   role=alert + aria-live=assertive (interruption-locked = immediate announce)         │
+│   body[data-grand-lock=true] hint downstream controls → aria-disabled                  │
+│   prefers-reduced-motion → static flash (no zoom/shake)                               │
+│                                                                                       │
+│ Perf budget                                                                            │
+│   0 JS per frame · pure event-driven state machine (4 transitions)                     │
+│   1 lazy-mounted overlay + body attribute tag                                          │
+│                                                                                       │
+│ VERIFIKACIJA                                                                          │
+│   grandInterruptionLock.test.mjs:    63/63 PASS ✅                                    │
+│     • defaults + fresh arrays · resolveConfig sanitizers (threshold/duration bounds)  │
+│     • handpayJurisdictions uppercase + dedupe                                          │
+│     • interceptControls whitelist (KNOWN_CONTROLS) + drop unknowns                    │
+│     • shouldLock (enabled gate, threshold compare, non-number/NaN/negative reject)    │
+│     • requiresHandpay (case-insens match, empty/non-string reject, custom list)       │
+│     • emitCSS (disabled empty · selectors · data-grand-lock · a11y guard)             │
+│     • emitRuntime (HookBus 3 listeners + 3 emits · force chip + getter · body tag ·   │
+│       __SLOT_GRAND_LOCK_ACTIVE__ flag · role/aria-live a11y)                          │
+│     • source vendor-neutral · determinism                                              │
+│   LEGO gate:                          8/8 PASS · 190 blokova · 326 events             │
+│   4-gdds-ultimate-audit:              ✅ ALL GDDS PERFECT                             │
+│                                                                                       │
+│ Σ 189 → 190 blokova · D-17 progress: 6/8 SHIPPED (75%)                                │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 D-17.5 potSymbolFireball · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"kreeni"* → default #5 potSymbolFireball (2026-06-20)
@@ -353,7 +430,7 @@ Boki: *"kreni"* → default redosled #1 patternWin (2026-06-20)
 
 ---
 
-## 🟡 D-17 FOUNDRY-FAMILY GAP ROADMAP · 2026-06-20 · 5/8 SHIPPED (čeka Boki za #6)
+## 🟡 D-17 FOUNDRY-FAMILY GAP ROADMAP · 2026-06-20 · 6/8 SHIPPED (čeka Boki za #7)
 
 Boki: *"sta ika od featurea u cash eruption gdd na desktopu sto nemamo u blokove?"* → *"upisi master todo prvo detaljno"* (2026-06-20)
 
@@ -525,9 +602,10 @@ Boki: *"sta ika od featurea u cash eruption gdd na desktopu sto nemamo u blokove
 🟢 **#2 bigSymbolRender2x2 → SHIPPED** (commit a8dc9d3)
 🟢 **#3 linkedReels → SHIPPED** (commit 0252bea)
 🟢 **#4 perTriggerVolatilitySet → SHIPPED** (commit 0165583)
-🟢 **#5 potSymbolFireball → SHIPPED** (vidi D-17.5 sekciju iznad)
-🟡 **#6–#8 OPEN** — sledeći u default chain-u: **#6 grandInterruptionLock** (full-board GRAND celebracija + handpay route).
-Ako Boki kaže "kreni" bez broja → krećem #6 po default redosledu.
+🟢 **#5 potSymbolFireball → SHIPPED** (commit 9357370)
+🟢 **#6 grandInterruptionLock → SHIPPED** (vidi D-17.6 sekciju iznad)
+🟡 **#7–#8 OPEN** — sledeći u default chain-u: **#7 simultaneousFsHoldAndWinPriority** (cross-feature trigger arbiter).
+Ako Boki kaže "kreni" bez broja → krećem #7 po default redosledu.
 
 ---
 

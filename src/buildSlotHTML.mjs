@@ -785,6 +785,14 @@ import {
   emitPotSymbolFireballCSS, emitPotSymbolFireballRuntime,
   resolveConfig as resolvePotSymbolFireballConfig,
 } from './blocks/potSymbolFireball.mjs';
+// D-17.6 — GRAND interruption-lock + handpay route. Detects award
+// >= cfg.grandThresholdCredits at COLLECT, locks controls + runs the
+// celebration to completion, emits handpay events on configured
+// jurisdictions. Math-blind: award value flows through unchanged.
+import {
+  emitGrandInterruptionLockCSS, emitGrandInterruptionLockRuntime,
+  resolveConfig as resolveGrandInterruptionLockConfig,
+} from './blocks/grandInterruptionLock.mjs';
 // W58.J-DE — GlüStV (Glücksspielstaatsvertrag 2021) compliance gate.
 // Auto-enabled when jurisdiction === 'DE'. Boot-time only: sets
 // window.__DE_MIN_SPIN_MS__ spin-pace floor (§11(2)) + clears prefixed
@@ -1339,6 +1347,8 @@ ${/* D-17.4 — per-trigger volatility set hook CSS (no-op when disabled). */ ''
 ${emitPerTriggerVolatilitySetCSS(resolvePerTriggerVolatilitySetConfig(model))}
 ${/* D-17.5 — pot-symbol Fireball tag CSS (no-op when disabled). */ ''}
 ${emitPotSymbolFireballCSS(resolvePotSymbolFireballConfig(model))}
+${/* D-17.6 — GRAND interruption-lock overlay CSS (no-op when disabled). */ ''}
+${emitGrandInterruptionLockCSS(resolveGrandInterruptionLockConfig(model))}
 ${/* Wave P8 — hot-reload indicator badge (dev-mode only). */ ''}
 ${emitHotReloadCSS(resolveHotReloadConfig(model))}
 ${emitHoldAndWinCSS(resolveHoldAndWinConfig(model))}
@@ -2062,6 +2072,16 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
        onPotSymbolCollected with breakdown. Force chip:
        window.potSymbolFireballForce(tier, reel, row). */ ''}
   ${emitPotSymbolFireballRuntime(resolvePotSymbolFireballConfig(model))}
+  ${/* D-17.6 — GRAND interruption-lock + handpay route. Opt-in per
+       GDD via model.grandInterruptionLock.enabled. Lifecycle:
+       onPotSymbolCollected / onHoldAndWinEnd / onFeaturePayout →
+       read amount → if >= grandThresholdCredits → set body
+       [data-grand-lock=true] + window.__SLOT_GRAND_LOCK_ACTIVE__ +
+       emit onGrandLock + onHandpayRequested (when jurisdiction
+       matches). Timer expires after celebrationDurationMs → emit
+       onGrandReleased + clear flag. Force chip:
+       window.grandInterruptionLockForce(award). */ ''}
+  ${emitGrandInterruptionLockRuntime(resolveGrandInterruptionLockConfig(model))}
   ${/* W58.J-DE — GlüStV §11(2) spin pace floor + §6e session state clear.
        Boot-time IIFE; 0-byte side effect when jurisdiction is not DE. */ ''}
   ${emitGermanyComplianceGateRuntime(resolveGermanyComplianceGateConfig(model))}

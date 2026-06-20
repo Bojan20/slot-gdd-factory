@@ -513,6 +513,15 @@ const EXPECTED_EMIT_OWNERS = {
    * with breakdown sum at onHoldAndWinEnd. Math-blind. */
   onPotSymbolLanded:    ['potSymbolFireball.mjs'],
   onPotSymbolCollected: ['potSymbolFireball.mjs'],
+  /* D-17.6 — grandInterruptionLock (Foundry-family gap closure).
+   * Interruption-locked GRAND celebration + handpay route. Detects
+   * award >= cfg.grandThresholdCredits, locks controls via body
+   * [data-grand-lock] + window.__SLOT_GRAND_LOCK_ACTIVE__ flag,
+   * runs celebration to completion, then releases. Handpay events
+   * emit when jurisdiction matches cfg.handpayJurisdictions. */
+  onGrandLock:        ['grandInterruptionLock.mjs'],
+  onGrandReleased:    ['grandInterruptionLock.mjs'],
+  onHandpayRequested: ['grandInterruptionLock.mjs'],
   /* W57.A7 — Canonical camelCase event names for renamed legacy events.
    * Pre-W57: 'anteBet:changed' / 'bonus.buy.requested' (colon/dot form).
    * Both were orphan-emit (no listeners) so rename is safe; legacy form

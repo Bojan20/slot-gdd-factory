@@ -765,6 +765,9 @@ export const HOOK_EVENTS = Object.freeze([
   'onBigSymbolUnmounted',  // Owner: bigSymbolRender2x2.mjs
   'onLinkUnits',  // Owner: linkedReels.mjs
   'onReelsLinked',  // Owner: linkedReels.mjs
+  'onGrandLock',  // Owner: grandInterruptionLock.mjs
+  'onGrandReleased',  // Owner: grandInterruptionLock.mjs
+  'onHandpayRequested',  // Owner: grandInterruptionLock.mjs
   'onPotSymbolLanded',  // Owner: potSymbolFireball.mjs
   'onPotSymbolCollected',  // Owner: potSymbolFireball.mjs
   'onVolatilitySetLocked',  // Owner: perTriggerVolatilitySet.mjs
