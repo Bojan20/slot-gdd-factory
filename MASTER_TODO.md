@@ -1,3 +1,60 @@
+## 🏆 WAVE UQ-AUDIT — 8 FORENSIC AUDIT FIXES ACROSS UQ-12..UQ-16 · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"resi ultimativno"* — posle nezavisne Explore agent forenzike koja je
+otkrila 8 stvarnih propusta iza verify gate-a od 10/10.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-AUDIT — 8 fix-a iz nezavisne forenzike                                         │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ 1. install-precommit.mjs — rebase/cherry-pick/amend lockup                             │
+│    Hook samo check-uje MERGE_HEAD. Sad skips: MERGE_HEAD, REBASE_HEAD,                  │
+│    CHERRY_PICK_HEAD, REVERT_HEAD, .git/rebase-merge, .git/rebase-apply.                │
+│                                                                                       │
+│ 2. verify.mjs — silent skip on missing render tool                                     │
+│    _full-corpus-render-parity.mjs missing → bio "skip" + exit 0. Sad HARD              │
+│    FAIL: gate odbija commit koji izgubio render coverage.                              │
+│                                                                                       │
+│ 3. smartDefaults.mjs::recordAutofix — race / overwrite                                 │
+│    Double-call na isti field je gazio reason. Sad early-return ako field               │
+│    već nosi tag — first reason wins (authoritativni "zašto je autofix uopšte").       │
+│                                                                                       │
+│ 4. ingest.mjs — SSRF guard on --url                                                    │
+│    fetch sledio redirects implicitno. Sad: refuses non-http(s),                          │
+│    manualno walks redirects sa cap 3, refuses redirect to non-http(s)                   │
+│    protocol mid-chain. URL hard-validated.                                             │
+│                                                                                       │
+│ 5. ingest.mjs — JSON ingest schema gate                                                │
+│    normalizeFromJSON throwing deep down. Sad shallow-check: objekat non-array          │
+│    + nosi bar jedno (topology/symbols/features/paytable/name/gameName) →               │
+│    fail fast sa jasnom porukom.                                                        │
+│                                                                                       │
+│ 6. gen-archetype-docs.mjs — localStorage key namespacing                              │
+│    'archetype-docs-theme' bio global key. Sad 'slot-gdd-factory/archetype-              │
+│    docs-theme' — co-hosted sites ne kolaboriraju.                                       │
+│                                                                                       │
+│ 7. uq16-baseline.mjs — type-drift silent                                               │
+│    JSON.stringify(44) === JSON.stringify("44") propuštalo type drift.                  │
+│    Sad typeof FIRST → typeDrift: 'number→string' recorded separately.                  │
+│                                                                                       │
+│ 8. install-precommit.mjs — no smoke test                                               │
+│    Sad tests/tools/install-precommit.test.mjs (5/5 PASS):                               │
+│    marker present · 0o755 mode · sve 4 skip refs encoded · idempotent re-run ·         │
+│    foreign hook backed up                                                              │
+│                                                                                       │
+│ VERIFY GATE: 10 → 11 gates, sve zelene u ~5s                                           │
+│ REGRESSION: svaki affected suite green                                                 │
+│   smartDefaults-autofix 10/10 · ingest 7/7 · gen-archetype-docs 7/7 ·                  │
+│   uq16-baseline 4/4 · install-precommit 5/5                                            │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   3877da6 fix(UQ-AUDIT): 8 forensic audit punch-list fixes —                           │
+│            security, race, silent-skip, isolation                                       │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-16 — VISUAL REGRESSION BASELINE (TEXT-MODE, 338 PINNED) · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"redom"*.
