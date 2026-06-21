@@ -87,3 +87,14 @@ for ANY synonym hit. If found (even at 0.5 confidence), declare with
 A low-confidence declared field always beats a silent inferred fallback,
 because the downstream parser will stamp `parser-inferred` on every null
 field anyway (driving the bucket lower).
+
+## AGENT_CALIBRATION (UQ-TRAIN 2026-06-21)
+
+Lane accuracy on baseline: 20% (1/5).
+
+Recurring miss patterns:
+- "symbol "Wild"" on Cash_Eruption_Foundry_GDD: agent said "absent", expected "present"
+- "symbol "Volcano"" on Cash_Eruption_Foundry_GDD: agent said "absent", expected "present"
+- "symbol "Fireball"" on Cash_Eruption_Foundry_GDD: agent said "absent", expected "present"
+
+When emitting JSON, double-check these fields against GDD prose. Stamp `__self_corrected__: true` if revisiting after CORRECTIONS block.

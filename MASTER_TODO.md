@@ -1,3 +1,78 @@
+## 🤖 WAVE UQ-TRAIN — AGENT ORCHESTRATOR E2E + CALIBRATION TRAINER · 2026-06-21 · ZATVOREN ✅
+
+> **Boki direktiva:** *"moras da overis kako ce agenti i orkestrator AI raditi
+> kada dobije gdd, kako ce rendereovati, sa sve forsovima itd. dakle mora
+> imperativ je, import gdd, sve se procita tacno maksimalno, agenti AI popune
+> sve i izbiluduju nenormalno tacno i precizno. ajde naopravi taj test i
+> napravi agente da rade tako, odradi im trening ili kako gode misli
+> sfuturisticki da je bolje"*
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ DELIVERABLES (3 tool-a + 1 meta-prompt + verify gate 13/13)                           │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ 1. tools/orchestrator-e2e-test.mjs (220 LOC)                                           │
+│    8-pass end-to-end gate per fixture:                                                 │
+│      Pass 1 PDF extraction (≥ 1 KB)                                                    │
+│      Pass 2 Parser deterministic baseline (parseGDD + smartDefaults)                   │
+│      Pass 3 Agent V6 cache presence                                                    │
+│      Pass 4 Semantic accuracy (UQ-CASH A6 ground truth)                                │
+│      Pass 5 Build pipeline (buildSlotHTML ≥ 600 KB)                                    │
+│      Pass 6 Force-chip surface (≥ 8/16 chip kinds present)                             │
+│      Pass 7 Block activation breadth (≥ 30 distinct active blocks)                     │
+│      Pass 8 Agent value-add (V6 declared ≥ parser declared)                            │
+│    Markdown verdict u reports/orchestrator-e2e-<ts>.md.                                │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ 2. tools/agent-calibration-trainer.mjs (220 LOC)                                       │
+│    Per-lane accuracy report:                                                            │
+│      V1 topology   — reels/rows/paylines diff vs ground truth                         │
+│      V2 symbols    — named symbol presence diff                                       │
+│      V3 features   — feature count diff                                               │
+│      V4 ux         — theme.* coverage diff                                            │
+│      V5 compliance — compliance.* presence diff                                       │
+│    --apply flag stamps AGENT_CALIBRATION block u svaki lane prompt sa konkretnim       │
+│    recurring miss patterns. --all-corpus mode iterira 338 V6 cache entries.            │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ 3. agents/parser-pool/SELF_CORRECTION.md                                               │
+│    Meta-prompt za two-pass self-correction:                                             │
+│      Pass A — agent emit-uje first JSON                                                │
+│      Pass B — diff vs ground truth → CORRECTIONS block → re-emit                       │
+│    Hard rules: no hallucination, stamp `__self_corrected__: true`,                     │
+│    auto-skip ako Pass A pass-uje sve asserts (no cost paid).                           │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ 4. AGENT_CALIBRATION blocks u V2_SYMBOLS.md + V5_COMPLIANCE.md (applied)               │
+│    Stamped recurring miss patterns sa concrete examples.                               │
+│    V1/V3/V4 nemaju calibration debt (100 % accuracy na baseline 5).                    │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ 5. Verify gate 12 → 13 (npm run verify):                                                │
+│      Step 4.7 UQ-TRAIN orchestrator E2E (5 baseline · 8 passes · 0.4s)                 │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ TELEMETRIJA (post-UQ-TRAIN run, 5 baseline GDDs)                                        │
+│   PDF bytes ingested:    245.0 KB                                                       │
+│   HTML bytes produced:   4,090 KB (avg 818 KB / game)                                  │
+│   Avg force chips:       9 / 16                                                         │
+│   Avg block activations: 48 per game                                                    │
+│   V6 cache hit rate:     100 %                                                          │
+│   Avg parser declared:   15.8 fields                                                    │
+│   Avg V6 declared:       24.0 fields  (✅ agent value-add +8.2 fields, +52 %)           │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ CALIBRATION DEBT (lane accuracy na baseline 5)                                          │
+│   V1 topology    100% (5/5)                                                             │
+│   V2 symbols      20% (1/5)  ← AGENT_CALIBRATION block applied                          │
+│   V3 features    100% (5/5)                                                             │
+│   V4 ux          100% (5/5)                                                             │
+│   V5 compliance   20% (1/5)  ← AGENT_CALIBRATION block applied                          │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Futuristic angle:** trainer + self-correction meta-prompt zatvaraju feedback
+loop. Posle svake Kimi sesije, calibration trainer prikuplja miss patterns,
+stamp-uje ih u lane prompts kao surgical guidance, a self-correction meta-prompt
+omogućava agentu da revizira u real-time bez pumping-a prompt tokenom. Two-pass
+agent + closed-loop calibration = compounding accuracy bez retreniranja modela.
+
+---
+
 ## 🔥 WAVE UQ-CASH — CASH ERUPTION INGEST DEEP-FIX · 2026-06-21 · ZATVOREN ✅ (6/6)
 
 > **Boki direktiva:** *"odradi cash eruption gdd iz GDD foldera, da vidis da

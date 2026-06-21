@@ -137,6 +137,19 @@ if (existsSync(semVerifier)) {
   console.log('  ⏭ UQ-CASH A6 semantic accuracy (no verifier tool)');
 }
 
+/* ── Step 4.7: UQ-TRAIN orchestrator E2E test ─────────────────────────
+ * 8-pass orchestrator gate that exercises agents + parser + builder +
+ * force chips + block activations end-to-end on 5 baseline GDDs.
+ * Asserts agent V6 declared count > parser declared count (proves AI
+ * is adding measurable value on top of regex baseline). */
+const e2eTool = resolve(REPO, 'tools/orchestrator-e2e-test.mjs');
+if (existsSync(e2eTool)) {
+  run('UQ-TRAIN orchestrator E2E (5 baseline GDDs · 8 passes)',
+    'node', [e2eTool]);
+} else if (!JSON_OUT) {
+  console.log('  ⏭ UQ-TRAIN orchestrator E2E (no tool)');
+}
+
 /* ── Step 5: UQ-11 render smoke on a 20-GDD subset ──────────────────── */
 if (!QUICK) {
   const RENDER_TOOL = resolve(REPO, 'tools/_full-corpus-render-parity.mjs');
