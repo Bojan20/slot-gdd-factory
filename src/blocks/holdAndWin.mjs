@@ -1246,6 +1246,15 @@ function _hwEnterPhase(p) {
   HW_STATE.active = p !== 'INACTIVE';
   if (typeof HookBus !== 'undefined') {
     try { HookBus.emit('onHoldAndWinPhase', { phase: p }); } catch (_) {}
+    /* UQ-MASTERY-2 (2026-06-21) — canonical onHoldAndWinTrigger emit
+     * so reserved listeners (simultaneousFsHoldAndWinPriority,
+     * perTriggerVolatilitySet, potSymbolFireball) receive the start
+     * signal. Fires on the FIRST non-INACTIVE transition (intro start)
+     * — downstream blocks gate on payload.phase if they need finer
+     * granularity. */
+    if (p === 'INTRO' || p === 'START' || p === 'RUNNING') {
+      try { HookBus.emit('onHoldAndWinTrigger', { phase: p }); } catch (_) {}
+    }
   }
 }
 
@@ -1987,6 +1996,11 @@ function hwEnd() {
     try {
       if (ESCROW.winX > 0 && typeof HookBus !== 'undefined') {
         HookBus.emit('onHoldAndWinPayout', { winX: ESCROW.winX, bet: ESCROW.bet, escrow: ESCROW });
+        /* UQ-MASTERY-2 (2026-06-21) — generic feature-payout alias so
+         * grandInterruptionLock (and any future block listening on the
+         * canonical feature payout signal) actually receives the event.
+         * Carries feature='holdAndWin' so listeners can route. */
+        try { HookBus.emit('onFeaturePayout', { feature: 'holdAndWin', winX: ESCROW.winX, bet: ESCROW.bet, escrow: ESCROW }); } catch (_) {}
       }
     } catch (_) {}
     HW_STATE.lockedCells.clear();

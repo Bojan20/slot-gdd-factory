@@ -1,3 +1,70 @@
+## 🏆 WAVE UQ-MASTERY-2 — 5 ORPHAN-HOOK MIGRATION · 2026-06-21 · ZATVOREN ✅
+
+Boki direktiva: *"Qa svega moguceg detaljno, implementiranog deep detaljno"*.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-MASTERY-2 — orphan-hook rupa zatvorena na canonical emit-er stranama         │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ KONTEKST                                                                              │
+│   Deep QA otkrio 5 stvarnih LEGO violations (HookBus combination probe A2):           │
+│     - onFeaturePayout      (grandInterruptionLock)                                    │
+│     - onFsEnter            (simultaneousFsHoldAndWinPriority, linkedReels)            │
+│     - onFsStart            (linkedReels)                                              │
+│     - onHoldAndWinTrigger  (simultaneousFsHoldAndWinPriority, perTriggerVolatilitySet,│
+│                             potSymbolFireball)                                        │
+│     - onFsTriggerArmed     (simultaneousFsHoldAndWinPriority)                         │
+│   Tih 5 hookova je imalo ≥1 listenera ali NIKO ih NIJE emitовao. Svi blokovi-slušaoci  │
+│   su `enabled: false` po defaultu, ali ako bi ih GDD aktivirao — niko ne bi proradio. │
+│                                                                                       │
+│ FIX (real emit-eve, ne whitelist)                                                      │
+│   1. src/blocks/freeSpins.mjs — canonical alias chain na trigger spin:                 │
+│        onFsTriggerArmed → onFsTrigger → onFsEnter → onFsStart                          │
+│      Svi sa istim payload-om { award, scatters }.                                      │
+│   2. src/blocks/holdAndWin.mjs — onHoldAndWinTrigger emit pri prvoj non-INACTIVE        │
+│      phase tranziciji (INTRO/START/RUNNING). Payload { phase }.                        │
+│   3. src/blocks/holdAndWin.mjs — onFeaturePayout alias paralelno sa onHoldAndWinPayout. │
+│      Payload { feature: 'holdAndWin', winX, bet, escrow }.                              │
+│   4. src/blocks/hookBus.mjs HOOK_EVENTS — registrovano 5 novih hookova sa Owner: koment.│
+│   5. tools/lego-gate.mjs EXPECTED_EMIT_OWNERS — registrovano 5 novih ownership rules.   │
+│   6. tests/baselines/uq16-render-baseline.json — re-bake-ovan (5 dodatnih emit-eva     │
+│      promenio htmlSha kroz svih 338 GDD-ova).                                          │
+│   7. blocks/_manifest.json + docs/BLOCK_MANIFEST.md — fresh regen (200 blokova).        │
+│                                                                                       │
+│ DEEP QA REGRESSION (sve ZELENO)                                                        │
+│   ┌────────────────────────────────────────────┬─────────────────────────────────┐    │
+│   │ Gate                                        │ Status                           │    │
+│   ├────────────────────────────────────────────┼─────────────────────────────────┤    │
+│   │ Verify gate (22 steps)                      │ 22/22 ✅ ~50s                    │    │
+│   │ Verify idempotency (Pass1 == Pass2)         │ 22/22 == 22/22 ✅                │    │
+│   │ LEGO gate (8 invariants)                    │ 8/8 ✅                           │    │
+│   │ LEGO combination probe (A1-A4 edges)        │ 0 violations ✅ (bilo 5)         │    │
+│   │ Block tests (200+ unit suites)              │ 0 fail ✅                        │    │
+│   │ parse:real-pdfs                             │ 338/338 ✅                       │    │
+│   │ parse (4 reference GDDs)                    │ 4/4 ✅                           │    │
+│   │ Cross-game parity (33 feature × 338 games)  │ 0 violations ✅                  │    │
+│   │ UQ-COVER force coverage                     │ 0 missing / 0 phantom ✅         │    │
+│   │ Orchestrator E2E (5 main × 8 passes)        │ 5/5 PASS ✅ +35.4 fields agent vol│    │
+│   │ Agent calibration trainer (V1-V5)           │ 100% / 100% / 100% / 100% / 100% │    │
+│   │ Block liveness walker (UQ-MASTERY step)     │ 156 LIVE · 44 DORMANT · 0 DEAD ✅│    │
+│   │ Runtime tests (gridRenderer/devForce/global)│ 8/8 ✅                           │    │
+│   │ Docs gen tests                              │ 18/18 ✅                         │    │
+│   │ Manifest integrity tests                    │ 17/17 ✅                         │    │
+│   └────────────────────────────────────────────┴─────────────────────────────────┘    │
+│                                                                                       │
+│ PRE-EXISTING TEHNIČKI DUG (NIJE moja regresija — pre UQ-MASTERY-2 talasa)              │
+│   • test:budget — buildSlotHTML.mjs 2272/1600 LOC (orchestrator nakupljao H4-H30 sweep) │
+│   • 3 untracked agent.md fajla iz druge sesije (AUDIT_VALIDATOR, GDD_COMPLIANCE_CHECKER,│
+│     PRESENTATION_QA) — subagent twin-ovi sa kanonom u ~/Projects/cortex/agents/        │
+│   • tools/cortex-gdd-feature-integrity.mjs modify iz druge sesije (UQ-INTEGRITY)        │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   <hash> feat(UQ-MASTERY-2): close 5 LEGO orphan-hook rupa via canonical alias emits   │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-MASTERY — ZERO-DEAD-BLOCK CONTRACT + V7/V8/V9 AGENTS · 2026-06-21 · ZATVOREN ✅
 
 Boki direktiva: *"ocu da sve gdd ove overios da li svi blokovi savrseno rade

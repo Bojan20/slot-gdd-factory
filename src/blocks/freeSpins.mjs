@@ -623,7 +623,16 @@ export function emitFreeSpinsRuntime(cfg = defaultConfig()) {
     if (typeof HookBus !== 'undefined') {
       HookBus.resetMult();
       HookBus.setMult(FSM.mult);
-      HookBus.emit('onFsTrigger', { award: spinsAwarded, scatters: scatterCount });
+      /* UQ-MASTERY-2 (2026-06-21) — canonical alias chain so reserved
+       * listeners (simultaneousFsHoldAndWinPriority, linkedReels) actually
+       * receive the start signal. Emit ARMED first so deferring blocks can
+       * intercept BEFORE the FSM commits, then ENTER + TRIGGER + START so
+       * any of the four legacy aliases routes to a real owner. All four
+       * carry the same payload — listeners can pick whichever they pinned. */
+      try { HookBus.emit('onFsTriggerArmed', { award: spinsAwarded, scatters: scatterCount }); } catch (_) {}
+      HookBus.emit('onFsTrigger',  { award: spinsAwarded, scatters: scatterCount });
+      try { HookBus.emit('onFsEnter', { award: spinsAwarded, scatters: scatterCount }); } catch (_) {}
+      try { HookBus.emit('onFsStart', { award: spinsAwarded, scatters: scatterCount }); } catch (_) {}
     }
 
     /* 2026-06-18 — Boki rule "ne želim nigde brojač koliko je scattera

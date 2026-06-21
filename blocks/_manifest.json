@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-19T16:19:06.148Z",
+  "generatedAt": "2026-06-21T19:15:21.767Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 184,
+  "totalBlocks": 200,
   "blocks": [
     {
       "name": "achievementToast",
@@ -105,7 +105,7 @@
         "evaluateBothDirections": true,
         "showPayPath": true
       },
-      "loc": 712
+      "loc": 718
     },
     {
       "name": "ambientBackgroundWheel",
@@ -259,7 +259,7 @@
         "color": "#ffe066",
         "colorDark": "#b08e22"
       },
-      "loc": 379
+      "loc": 384
     },
     {
       "name": "anticipation",
@@ -458,6 +458,36 @@
       "loc": 566
     },
     {
+      "name": "belgiumComplianceGate",
+      "file": "src/blocks/belgiumComplianceGate.mjs",
+      "testFile": "tests/blocks/belgiumComplianceGate.test.mjs",
+      "category": "uncategorised",
+      "description": "W60.J-BE (Wave F7 / HX4) — Belgian Gaming Commission (BGC / KSC) gate.",
+      "exports": [
+        "BE_MIN_SPIN_MS_BOUNDS",
+        "BE_MIN_SPIN_MS_DEFAULT",
+        "BE_UNDER21_CAP_EUR_DEFAULT",
+        "defaultConfig",
+        "emitBelgiumComplianceGateCSS",
+        "emitBelgiumComplianceGateRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onBeCoolingOffRequired",
+        "onBeEpisCheckRequired",
+        "onBeLossDisplayRequired",
+        "onBeMinSpinPaceEnforced"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "jurisdiction": null,
+        "minSpinMs": 2500,
+        "under21WeeklyCapEur": 200
+      },
+      "loc": 115
+    },
+    {
       "name": "betSelector",
       "file": "src/blocks/betSelector.mjs",
       "testFile": "tests/blocks/betSelector.test.mjs",
@@ -513,7 +543,7 @@
         "chipTextColor": "20,20,20",
         "ariaLabel": "Adjust bet"
       },
-      "loc": 813
+      "loc": 854
     },
     {
       "name": "bidirectionalWaysEval",
@@ -581,6 +611,43 @@
         "highlightRTL": "#00aaff"
       },
       "loc": 640
+    },
+    {
+      "name": "bigSymbolRender2x2",
+      "file": "src/blocks/bigSymbolRender2x2.mjs",
+      "testFile": "tests/blocks/bigSymbolRender2x2.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave D-17.2 (Foundry-family gap closure) — Oversized \"big\" symbol",
+      "exports": [
+        "countUnits",
+        "defaultConfig",
+        "emitBigSymbolRender2x2CSS",
+        "emitBigSymbolRender2x2Runtime",
+        "findBigSymbolFootprints",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsSpinResult",
+        "onSpinResult",
+        "onTumbleStep",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onBigSymbolMounted",
+        "onBigSymbolUnmounted"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "bigSymbolKinds": [],
+        "countMode": "units",
+        "themeClass": "",
+        "role": "img",
+        "ariaLabelPrefix": "Big",
+        "mountTransitionMs": 320,
+        "zIndex": 60
+      },
+      "loc": 646
     },
     {
       "name": "bigWinTier",
@@ -866,7 +933,7 @@
         "triggerColorDark": "#b03030",
         "triggerShadowRGB": "255,80,80"
       },
-      "loc": 499
+      "loc": 537
     },
     {
       "name": "bonusClimaxReveal",
@@ -941,7 +1008,7 @@
         "enabled": false,
         "rejectWhenBusy": false
       },
-      "loc": 231
+      "loc": 246
     },
     {
       "name": "bonusPick",
@@ -1011,7 +1078,7 @@
         "title": "PICK A PRIZE",
         "haloColor": "255,180,60"
       },
-      "loc": 380
+      "loc": 395
     },
     {
       "name": "cascadeBooster",
@@ -1324,7 +1391,7 @@
         "color": "#ffd34a",
         "haloRGB": "255,211,74"
       },
-      "loc": 251
+      "loc": 274
     },
     {
       "name": "coinShower",
@@ -1448,6 +1515,35 @@
       "loc": 310
     },
     {
+      "name": "collectStreakBonus",
+      "file": "src/blocks/collectStreakBonus.mjs",
+      "testFile": "tests/blocks/collectStreakBonus.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave Z2 (Boki 2026-06-21 \"automatski generise, ali neka povlaci znanje iz",
+      "exports": [
+        "defaultConfig",
+        "emitCollectStreakBonusCSS",
+        "emitCollectStreakBonusMarkup",
+        "emitCollectStreakBonusRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onSpinResult",
+        "onTumbleStep",
+        "postSpin"
+      ],
+      "emittedEvents": [
+        "onCollectStreakBonusInit"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "current": 0,
+        "threshold": 0,
+        "payload": null
+      },
+      "loc": 148
+    },
+    {
       "name": "colorblindPatterns",
       "file": "src/blocks/colorblindPatterns.mjs",
       "testFile": "tests/blocks/colorblindPatterns.test.mjs",
@@ -1541,6 +1637,46 @@
       "loc": 299
     },
     {
+      "name": "creditAwardConversion",
+      "file": "src/blocks/creditAwardConversion.mjs",
+      "testFile": "tests/blocks/creditAwardConversion.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave D-17.8 (Foundry-family gap closure) — Single-source-of-truth",
+      "exports": [
+        "convertCredits",
+        "defaultConfig",
+        "deriveCoinValue",
+        "emitCreditAwardConversionCSS",
+        "emitCreditAwardConversionRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onBetChanged"
+      ],
+      "emittedEvents": [
+        "onAwardConverted",
+        "onCoinValueChanged"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "fixedCoinCount": 20,
+        "payTypeModes": {
+          "line": "xCoin",
+          "scatter": "xTotalBet",
+          "pattern": "xTotalBet",
+          "pot": "credits",
+          "holdAndWin": "credits",
+          "feature": "credits",
+          "wheel": "xTotalBet"
+        },
+        "defaultBet": 1,
+        "emitOnBoot": true,
+        "bodyAttrName": "data-award-unit",
+        "bodyAttrValue": "credits"
+      },
+      "loc": 373
+    },
+    {
       "name": "cumulativeMeter",
       "file": "src/blocks/cumulativeMeter.mjs",
       "testFile": "tests/blocks/cumulativeMeter.test.mjs",
@@ -1627,6 +1763,37 @@
         "currencyPosition": "prefix"
       },
       "loc": 560
+    },
+    {
+      "name": "denmarkComplianceGate",
+      "file": "src/blocks/denmarkComplianceGate.mjs",
+      "testFile": "tests/blocks/denmarkComplianceGate.test.mjs",
+      "category": "uncategorised",
+      "description": "W60.J-DK (Wave F7 / HX3) — Denmark Spillemyndigheden (DGA) compliance gate.",
+      "exports": [
+        "DK_MIN_SPIN_MS_BOUNDS",
+        "DK_MIN_SPIN_MS_DEFAULT",
+        "DK_RC_BOUNDS",
+        "DK_RC_DEFAULT",
+        "defaultConfig",
+        "emitDenmarkComplianceGateCSS",
+        "emitDenmarkComplianceGateRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onDkLossLimitRequired",
+        "onDkMinSpinPaceEnforced",
+        "onDkRealityCheckEnforced",
+        "onDkRofusCheckRequired"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "jurisdiction": null,
+        "minSpinMs": 2000,
+        "realityCheckMs": 1800000
+      },
+      "loc": 101
     },
     {
       "name": "dualRoleScatter",
@@ -1801,7 +1968,7 @@
         "expandDurationMs": 360,
         "haloColor": "255,214,110"
       },
-      "loc": 188
+      "loc": 205
     },
     {
       "name": "expandingWildMultiplier",
@@ -1948,9 +2115,12 @@
       ],
       "emittedEvents": [
         "onFsEnd",
+        "onFsEnter",
         "onFsRetrigger",
         "onFsSpinResult",
+        "onFsStart",
         "onFsTrigger",
+        "onFsTriggerArmed",
         "onSkipComplete"
       ],
       "defaultConfig": {
@@ -1970,7 +2140,7 @@
         "featureHideMs": 300,
         "bigWinSafetyMs": 30000
       },
-      "loc": 938
+      "loc": 958
     },
     {
       "name": "fsExpansionWilds",
@@ -2179,7 +2349,7 @@
         "collectThresholdX": 0,
         "haloColor": "200,80,80"
       },
-      "loc": 322
+      "loc": 337
     },
     {
       "name": "gambleSecondary",
@@ -2231,6 +2401,156 @@
         "chipTextColor": "255,255,255"
       },
       "loc": 989
+    },
+    {
+      "name": "gddRealityCheck",
+      "file": "src/blocks/gddRealityCheck.mjs",
+      "testFile": "tests/blocks/gddRealityCheck.test.mjs",
+      "category": "audit",
+      "description": "Wave D-18 (Boki \"ultimativna arhitektura\" 2026-06-20) — GDD-truth",
+      "exports": [
+        "computeReality",
+        "defaultConfig",
+        "emitGddRealityCheckCSS",
+        "emitGddRealityCheckRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onGddRealityReport"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "sampleWindowMs": 60000,
+        "showDevHud": false,
+        "featureToEvents": {
+          "freeSpins": [
+            "onFsEnter",
+            "onFsEnd",
+            "onFsSpinResult"
+          ],
+          "holdAndWin": [
+            "onHoldAndWinTrigger",
+            "onHoldAndWinEnd",
+            "onHoldAndWinPhase"
+          ],
+          "bonusBuy": [
+            "onBonusBuyRequested",
+            "onBonusBuyConfirmed"
+          ],
+          "bonusPick": [
+            "onBonusPickStart",
+            "onBonusPickEnd"
+          ],
+          "wheelBonus": [
+            "onWheelBonusReady",
+            "onWheelCollect"
+          ],
+          "multiplierOrb": [
+            "onMultiplierOrbReveal"
+          ],
+          "persistentMultiplier": [
+            "onPersistentMultiplierTick"
+          ],
+          "tumble": [
+            "onTumbleStep"
+          ],
+          "clusterPaysEval": [
+            "onClusterPaysSettled"
+          ],
+          "waysEval": [
+            "onWaysSettled"
+          ],
+          "payAnywhereEval": [
+            "onPayAnywhereSettled"
+          ],
+          "expandingWild": [
+            "onExpandingWild"
+          ],
+          "walkingWild": [
+            "onWalkingWild"
+          ],
+          "stickyWild": [
+            "onStickyCountChange"
+          ],
+          "mysterySymbol": [
+            "onMysteryReveal"
+          ],
+          "scatterCelebration": [
+            "onScatterCelebrate"
+          ],
+          "lightning": [
+            "onLightningStrike"
+          ],
+          "randomLightningMultiplier": [
+            "onLightningStrike",
+            "onRandomLightningMult"
+          ],
+          "respin": [
+            "onRespinAwarded"
+          ],
+          "wildReel": [
+            "onWildReelTrigger"
+          ],
+          "gamble": [
+            "onGambleStart",
+            "onGambleEnd"
+          ],
+          "anteBet": [
+            "onAnteBetChanged"
+          ],
+          "superSymbol": [
+            "onSuperSymbolLand"
+          ],
+          "jackpot": [
+            "onDailyJackpotAward",
+            "onJackpotRoomEntered"
+          ],
+          "bigWinTier": [
+            "onBigWinTierEnter",
+            "onBigWinTierExit"
+          ],
+          "patternWin": [
+            "onPatternWinTrigger",
+            "onPatternWinPaid"
+          ],
+          "bigSymbolRender2x2": [
+            "onBigSymbolMounted",
+            "onBigSymbolUnmounted"
+          ],
+          "linkedReels": [
+            "onReelsLinked",
+            "onLinkUnits"
+          ],
+          "perTriggerVolatilitySet": [
+            "onVolatilitySetLocked",
+            "onVolatilitySetExpired"
+          ],
+          "potSymbolFireball": [
+            "onPotSymbolLanded",
+            "onPotSymbolCollected"
+          ],
+          "grandInterruptionLock": [
+            "onGrandLock",
+            "onGrandReleased",
+            "onHandpayRequested"
+          ],
+          "simultaneousFsHoldAndWinPriority": [
+            "onFeaturePriorityDeferred",
+            "onFeaturePriorityResumed"
+          ],
+          "creditAwardConversion": [
+            "onCoinValueChanged",
+            "onAwardConverted"
+          ]
+        },
+        "themeClass": "",
+        "role": "status",
+        "ariaLabelPrefix": "GDD reality"
+      },
+      "loc": 447
     },
     {
       "name": "genericFeatureBanner",
@@ -2296,6 +2616,53 @@
         ]
       },
       "loc": 344
+    },
+    {
+      "name": "grandInterruptionLock",
+      "file": "src/blocks/grandInterruptionLock.mjs",
+      "testFile": "tests/blocks/grandInterruptionLock.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave D-17.6 (Foundry-family gap closure) — GRAND interruption-lock +",
+      "exports": [
+        "defaultConfig",
+        "emitGrandInterruptionLockCSS",
+        "emitGrandInterruptionLockRuntime",
+        "requiresHandpay",
+        "resolveConfig",
+        "shouldLock"
+      ],
+      "lifecycleHooks": [
+        "onFeaturePayout",
+        "onHoldAndWinEnd",
+        "onPotSymbolCollected"
+      ],
+      "emittedEvents": [
+        "onGrandLock",
+        "onGrandReleased",
+        "onHandpayRequested"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "grandThresholdCredits": 1000000,
+        "celebrationDurationMs": 6000,
+        "handpayJurisdictions": [
+          "US",
+          "CA"
+        ],
+        "jurisdiction": "",
+        "interceptControls": [
+          "spin",
+          "autoplay",
+          "slam",
+          "quickspin",
+          "maxbet"
+        ],
+        "themeClass": "",
+        "role": "alert",
+        "ariaLabelPrefix": "Grand jackpot",
+        "bannerLabel": "GRAND"
+      },
+      "loc": 496
     },
     {
       "name": "hapticFeedback",
@@ -2526,9 +2893,11 @@
         "preSpin"
       ],
       "emittedEvents": [
+        "onFeaturePayout",
         "onHoldAndWinEnd",
         "onHoldAndWinPayout",
-        "onHoldAndWinPhase"
+        "onHoldAndWinPhase",
+        "onHoldAndWinTrigger"
       ],
       "defaultConfig": {
         "enabled": false,
@@ -2565,7 +2934,7 @@
         },
         "orbTable": null
       },
-      "loc": 2127
+      "loc": 2185
     },
     {
       "name": "holdAndWinCreditBucket",
@@ -2688,12 +3057,12 @@
         ],
         "bumpOnReLand": true,
         "showChip": true,
-        "chipPosition": "topRight",
+        "chipPosition": "center",
         "chipColor": "#ffd966",
-        "fontSizePx": 11,
+        "fontSizePx": 14,
         "durationMs": 800
       },
-      "loc": 379
+      "loc": 406
     },
     {
       "name": "holdAndWinLockedOrbMultiplier",
@@ -2748,7 +3117,7 @@
         "fontSizePx": 14,
         "pulseMs": 600
       },
-      "loc": 336
+      "loc": 346
     },
     {
       "name": "holdAndWinReelExpansion",
@@ -2835,7 +3204,7 @@
         "chipColor": "#ffd700",
         "pulseMs": 800
       },
-      "loc": 351
+      "loc": 358
     },
     {
       "name": "hookBus",
@@ -2863,7 +3232,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 1038
+      "loc": 1131
     },
     {
       "name": "hotReload",
@@ -2934,7 +3303,7 @@
         ],
         "useIntlNumberFormat": false
       },
-      "loc": 499
+      "loc": 586
     },
     {
       "name": "infiniteFsUntilLoss",
@@ -3343,7 +3712,7 @@
         "colorDark": "#9a2466",
         "haloRGB": "255,170,212"
       },
-      "loc": 353
+      "loc": 365
     },
     {
       "name": "lightning",
@@ -3403,6 +3772,48 @@
         "strikeDurationMs": 700
       },
       "loc": 224
+    },
+    {
+      "name": "linkedReels",
+      "file": "src/blocks/linkedReels.mjs",
+      "testFile": "tests/blocks/linkedReels.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave D-17.3 (Foundry-family gap closure) — Linked-reel block. Marks a",
+      "exports": [
+        "defaultConfig",
+        "emitLinkedReelsCSS",
+        "emitLinkedReelsRuntime",
+        "expandUnits",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsEnter",
+        "onFsSpinResult",
+        "onFsStart",
+        "onSpinResult"
+      ],
+      "emittedEvents": [
+        "onLinkUnits",
+        "onReelsLinked"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "linkedReelIndices": [
+          1,
+          2,
+          3
+        ],
+        "linkMode": "any",
+        "targetSymbols": [],
+        "onlyDuringFs": true,
+        "repeatAcrossRows": false,
+        "themeClass": "",
+        "role": "group",
+        "ariaLabelPrefix": "Linked reels",
+        "fuseGlowDurationMs": 720
+      },
+      "loc": 586
     },
     {
       "name": "lockedSymbolFs",
@@ -3491,7 +3902,7 @@
         "cardRevealedColor": "#ffd84d",
         "fontSizePx": 20
       },
-      "loc": 494
+      "loc": 498
     },
     {
       "name": "megaSymbol",
@@ -3693,7 +4104,7 @@
           10
         ],
         "startTier": 0,
-        "position": "top-right",
+        "position": "top-left",
         "labelTemplate": "×{N}",
         "fontSizePx": 14,
         "bgColor": "rgba(0,0,0,0.55)",
@@ -3703,7 +4114,7 @@
         "zIndex": 33,
         "climbOnBaseTumble": false
       },
-      "loc": 246
+      "loc": 275
     },
     {
       "name": "multiplierOrb",
@@ -3761,7 +4172,7 @@
         "chipShadow": "#000",
         "pulseMs": 1000
       },
-      "loc": 334
+      "loc": 372
     },
     {
       "name": "mysteryPrizeBox",
@@ -3893,7 +4304,7 @@
         "includeScatter": false,
         "haloColor": "180,120,255"
       },
-      "loc": 262
+      "loc": 276
     },
     {
       "name": "mysterySymbolMultiplier",
@@ -4309,6 +4720,51 @@
       "loc": 473
     },
     {
+      "name": "patternWin",
+      "file": "src/blocks/patternWin.mjs",
+      "testFile": "tests/blocks/patternWin.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave D-17.1 (Foundry-family gap closure) — Pattern-Win block. Detects a",
+      "exports": [
+        "defaultConfig",
+        "detectPattern",
+        "emitPatternWinCSS",
+        "emitPatternWinRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsSpinResult",
+        "onSpinResult",
+        "postSpin"
+      ],
+      "emittedEvents": [
+        "onPatternWinPaid",
+        "onPatternWinTrigger"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "anchorReel": 0,
+        "anchorSymbol": "",
+        "anchorStackHeight": 3,
+        "winReels": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "wildSymbol": "WILD",
+        "payX": 1000,
+        "replaceLineTally": true,
+        "celebrationLabel": "PATTERN WIN",
+        "celebrationDurationMs": 1800,
+        "themeClass": "",
+        "role": "status",
+        "ariaLabelPrefix": "Pattern win"
+      },
+      "loc": 581
+    },
+    {
       "name": "payAnywhereEval",
       "file": "src/blocks/payAnywhereEval.mjs",
       "testFile": "tests/blocks/payAnywhereEval.test.mjs",
@@ -4436,7 +4892,7 @@
           }
         }
       },
-      "loc": 294
+      "loc": 312
     },
     {
       "name": "paylines",
@@ -4489,7 +4945,7 @@
         "autoHideOnSpin": true,
         "ariaLabel": "Open paytable"
       },
-      "loc": 705
+      "loc": 802
     },
     {
       "name": "perFsSpinMultiplier",
@@ -4560,7 +5016,8 @@
         "onFsEnd",
         "onFsSpinResult",
         "onFsTrigger",
-        "onTumbleStep"
+        "onTumbleStep",
+        "preSpin"
       ],
       "emittedEvents": [
         "onMultChange"
@@ -4575,7 +5032,46 @@
         "resetOnRoundEnd": true,
         "chipColor": "255,214,110"
       },
-      "loc": 241
+      "loc": 261
+    },
+    {
+      "name": "perTriggerVolatilitySet",
+      "file": "src/blocks/perTriggerVolatilitySet.mjs",
+      "testFile": "tests/blocks/perTriggerVolatilitySet.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave D-17.4 (Foundry-family gap closure) — Per-trigger volatility set",
+      "exports": [
+        "defaultConfig",
+        "emitPerTriggerVolatilitySetCSS",
+        "emitPerTriggerVolatilitySetRuntime",
+        "normalizeTier",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onHoldAndWinEnd",
+        "onHoldAndWinTrigger"
+      ],
+      "emittedEvents": [
+        "onVolatilitySetExpired",
+        "onVolatilitySetLocked"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "tiers": [
+          "Low",
+          "Med",
+          "High"
+        ],
+        "weights": null,
+        "defaultTier": "Med",
+        "lockOnTrigger": true,
+        "showStatusText": true,
+        "themeClass": "",
+        "role": "status",
+        "ariaLabelPrefix": "Volatility set"
+      },
+      "loc": 399
     },
     {
       "name": "pickBonusReveal",
@@ -4776,7 +5272,51 @@
         "fakeWinMaxX": 25,
         "celebrationTimeoutMs": 5000
       },
-      "loc": 303
+      "loc": 318
+    },
+    {
+      "name": "potSymbolFireball",
+      "file": "src/blocks/potSymbolFireball.mjs",
+      "testFile": "tests/blocks/potSymbolFireball.test.mjs",
+      "category": "uncategorised",
+      "description": "Wave D-17.5 (Foundry-family gap closure) — Pot-symbol classifier",
+      "exports": [
+        "classifyCell",
+        "defaultConfig",
+        "emitPotSymbolFireballCSS",
+        "emitPotSymbolFireballRuntime",
+        "resolveConfig",
+        "sumLandings"
+      ],
+      "lifecycleHooks": [
+        "onFsSpinResult",
+        "onHoldAndWinEnd",
+        "onHoldAndWinTrigger",
+        "onSpinResult"
+      ],
+      "emittedEvents": [
+        "onPotSymbolCollected",
+        "onPotSymbolLanded"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "potValues": {
+          "MINI": 100,
+          "MINOR": 500,
+          "MAJOR": 2000
+        },
+        "potTiers": [
+          "MINI",
+          "MINOR",
+          "MAJOR"
+        ],
+        "symbolPrefix": "POT_",
+        "themeClass": "",
+        "role": "img",
+        "ariaLabelPrefix": "Pot symbol",
+        "shimmerDurationMs": 900
+      },
+      "loc": 566
     },
     {
       "name": "prizeBoostBet",
@@ -4909,7 +5449,7 @@
         "inactiveColor": "#aaaaaa",
         "pulseMs": 600
       },
-      "loc": 416
+      "loc": 432
     },
     {
       "name": "pwaInstallability",
@@ -5029,7 +5569,7 @@
         "glowColor": "#88ccff",
         "audioCueId": null
       },
-      "loc": 414
+      "loc": 454
     },
     {
       "name": "randomWildBurst",
@@ -5062,7 +5602,7 @@
         "haloRGB": "255,224,102",
         "maxCellFraction": 0.4
       },
-      "loc": 269
+      "loc": 272
     },
     {
       "name": "realityCheck",
@@ -5114,7 +5654,7 @@
         "jurisdiction": null,
         "requirePersistentPlayTimeDisplay": false
       },
-      "loc": 1006
+      "loc": 1020
     },
     {
       "name": "reelEngine",
@@ -5327,7 +5867,7 @@
         "respinsPerTrigger": 1,
         "haloColor": "120,210,255"
       },
-      "loc": 283
+      "loc": 292
     },
     {
       "name": "respinCharge",
@@ -5560,6 +6100,41 @@
       "loc": 531
     },
     {
+      "name": "romaniaComplianceGate",
+      "file": "src/blocks/romaniaComplianceGate.mjs",
+      "testFile": "tests/blocks/romaniaComplianceGate.test.mjs",
+      "category": "uncategorised",
+      "description": "W60.J-RO (Wave F7 / HX6) — Romanian ONJN (Oficiul Naţional pentru",
+      "exports": [
+        "RO_HANDPAY_RON_DEFAULT",
+        "RO_MIN_SPIN_MS_BOUNDS",
+        "RO_MIN_SPIN_MS_DEFAULT",
+        "RO_WIN_TAX_PCT_DEFAULT",
+        "RO_WIN_TAX_THRESHOLD",
+        "defaultConfig",
+        "emitRomaniaComplianceGateCSS",
+        "emitRomaniaComplianceGateRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onRoHandpayThresholdEnforced",
+        "onRoLimitsRequired",
+        "onRoMinSpinPaceEnforced",
+        "onRoOsajCheckRequired",
+        "onRoWinTaxDisclosureEnforced"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "jurisdiction": null,
+        "minSpinMs": 2500,
+        "winTaxPct": 10,
+        "winTaxThresholdRon": 1000,
+        "handpayThresholdRon": 100000
+      },
+      "loc": 109
+    },
+    {
       "name": "rtlLayout",
       "file": "src/blocks/rtlLayout.mjs",
       "testFile": "tests/blocks/rtlLayout.test.mjs",
@@ -5721,7 +6296,7 @@
         "copyContinue": "EXTEND SESSION",
         "copyQuit": "END SESSION"
       },
-      "loc": 767
+      "loc": 778
     },
     {
       "name": "settingsPanel",
@@ -5829,6 +6404,42 @@
       "loc": 281
     },
     {
+      "name": "simultaneousFsHoldAndWinPriority",
+      "file": "src/blocks/simultaneousFsHoldAndWinPriority.mjs",
+      "testFile": "tests/blocks/simultaneousFsHoldAndWinPriority.test.mjs",
+      "category": "feature",
+      "description": "Wave D-17.7 (Foundry-family gap closure) — Cross-feature trigger",
+      "exports": [
+        "defaultConfig",
+        "emitSimultaneousFsHoldAndWinPriorityCSS",
+        "emitSimultaneousFsHoldAndWinPriorityRuntime",
+        "resolveConfig",
+        "shouldDefer"
+      ],
+      "lifecycleHooks": [
+        "onFsEnter",
+        "onFsTriggerArmed",
+        "onGrandReleased",
+        "onHoldAndWinEnd",
+        "onHoldAndWinTrigger"
+      ],
+      "emittedEvents": [
+        "onFeaturePriorityDeferred",
+        "onFeaturePriorityResumed"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "primaryFeature": "holdAndWin",
+        "secondaryFeature": "freeSpins",
+        "order": "primaryThenSecondary",
+        "showStatusText": true,
+        "themeClass": "",
+        "role": "status",
+        "ariaLabelPrefix": "Feature priority"
+      },
+      "loc": 368
+    },
+    {
       "name": "slamStop",
       "file": "src/blocks/slamStop.mjs",
       "testFile": "tests/blocks/slamStop.test.mjs",
@@ -5850,6 +6461,7 @@
         "preSpin"
       ],
       "emittedEvents": [
+        "onSkipRequested",
         "onSlamRequested"
       ],
       "defaultConfig": {
@@ -5864,7 +6476,7 @@
         "ariaLabel": "Stop reels",
         "pulseAnimation": true
       },
-      "loc": 454
+      "loc": 464
     },
     {
       "name": "slingoSpinEngine",
@@ -5900,7 +6512,7 @@
         "matchOutlineColor": "#ffd76a",
         "triggerSymbolFallback": "S"
       },
-      "loc": 316
+      "loc": 338
     },
     {
       "name": "spainComplianceGate",
@@ -6207,7 +6819,7 @@
         "haloColor": "255,214,110",
         "pulseMs": 1400
       },
-      "loc": 208
+      "loc": 225
     },
     {
       "name": "stormMultiplierReel",
@@ -6364,7 +6976,7 @@
         "symbolPool": null,
         "haloColor": "255,200,80"
       },
-      "loc": 209
+      "loc": 219
     },
     {
       "name": "superSymbolUpgrade",
@@ -6418,6 +7030,68 @@
         "pulseMs": 600
       },
       "loc": 472
+    },
+    {
+      "name": "swedenComplianceGate",
+      "file": "src/blocks/swedenComplianceGate.mjs",
+      "testFile": "tests/blocks/swedenComplianceGate.test.mjs",
+      "category": "uncategorised",
+      "description": "W60.J-SE (Wave F7 / HX2) — Sweden Spelinspektionen (SGA) compliance gate.",
+      "exports": [
+        "SE_MIN_SPIN_MS_BOUNDS",
+        "SE_MIN_SPIN_MS_DEFAULT",
+        "defaultConfig",
+        "emitSwedenComplianceGateCSS",
+        "emitSwedenComplianceGateRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onAutoplayBanned",
+        "onSeBonusConsentRequired",
+        "onSeDepositLimitRequired",
+        "onSeMinSpinPaceEnforced",
+        "onSeSpelpausCheckRequired"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "jurisdiction": null,
+        "minSpinMs": 3000
+      },
+      "loc": 108
+    },
+    {
+      "name": "switzerlandComplianceGate",
+      "file": "src/blocks/switzerlandComplianceGate.mjs",
+      "testFile": "tests/blocks/switzerlandComplianceGate.test.mjs",
+      "category": "uncategorised",
+      "description": "W60.J-CH (Wave F7 / HX5) — Swiss ESBK (Eidgenössische Spielbankenkommission)",
+      "exports": [
+        "CH_MIN_SPIN_MS_BOUNDS",
+        "CH_MIN_SPIN_MS_DEFAULT",
+        "CH_RC_BOUNDS",
+        "CH_RC_DEFAULT",
+        "defaultConfig",
+        "emitSwitzerlandComplianceGateCSS",
+        "emitSwitzerlandComplianceGateRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onChCantonRestrictionEnforced",
+        "onChLossDisplayRequired",
+        "onChMinSpinPaceEnforced",
+        "onChRealityCheckEnforced",
+        "onChSelfExclusionCheckRequired",
+        "onChWhitelistRequired"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "jurisdiction": null,
+        "minSpinMs": 2500,
+        "realityCheckMs": 1800000
+      },
+      "loc": 113
     },
     {
       "name": "symbolInfoPopover",
@@ -6632,7 +7306,7 @@
           "sm": 620
         }
       },
-      "loc": 728
+      "loc": 754
     },
     {
       "name": "themePicker",
@@ -6760,7 +7434,7 @@
         "preserveOrbs": true,
         "staggerMs": 40
       },
-      "loc": 414
+      "loc": 419
     },
     {
       "name": "tumbleGrowingFsMultiplier",
@@ -6908,6 +7582,42 @@
       "loc": 410
     },
     {
+      "name": "ukgcComplianceGate",
+      "file": "src/blocks/ukgcComplianceGate.mjs",
+      "testFile": "tests/blocks/ukgcComplianceGate.test.mjs",
+      "category": "uncategorised",
+      "description": "W60.J-UK (Wave F7 / HX1) — UK Gambling Commission (UKGC) RTS compliance gate.",
+      "exports": [
+        "UK_AUTOPLAY_BOUNDS",
+        "UK_AUTOPLAY_MAX_CAP",
+        "UK_MIN_SPIN_MS_BOUNDS",
+        "UK_MIN_SPIN_MS_DEFAULT",
+        "UK_REALITY_CHECK_BOUNDS",
+        "UK_REALITY_CHECK_DEFAULT",
+        "defaultConfig",
+        "emitUkgcComplianceGateCSS",
+        "emitUkgcComplianceGateRuntime",
+        "resolveConfig"
+      ],
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onGamStopCheckRequired",
+        "onUkAutoplayCapEnforced",
+        "onUkNetPositionRequired",
+        "onUkRealityCheckEnforced",
+        "onUkRtpDisclosureRequired",
+        "onUkRtsSpinPaceEnforced"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "jurisdiction": null,
+        "minSpinMs": 2500,
+        "autoplayCap": 50,
+        "realityCheckMs": 3600000
+      },
+      "loc": 163
+    },
+    {
       "name": "universalForcePanel",
       "file": "src/blocks/universalForcePanel.mjs",
       "testFile": "tests/blocks/universalForcePanel.test.mjs",
@@ -6926,8 +7636,10 @@
       ],
       "lifecycleHooks": [],
       "emittedEvents": [
+        "onForceCollectorFill",
         "onForceFeatureRequested",
-        "onForceMultiplier"
+        "onForceMultiplier",
+        "onForceTournamentRank"
       ],
       "defaultConfig": {
         "enabled": true,
@@ -6945,7 +7657,7 @@
         "showLabelText": true,
         "labelText": "FORCE"
       },
-      "loc": 774
+      "loc": 1222
     },
     {
       "name": "volatilitySelector",
@@ -6991,7 +7703,7 @@
         "color": "#7fbfff",
         "colorDark": "#205080"
       },
-      "loc": 334
+      "loc": 337
     },
     {
       "name": "walkingWild",
@@ -7022,7 +7734,7 @@
         "triggerRespin": true,
         "haloColor": "110,255,170"
       },
-      "loc": 254
+      "loc": 272
     },
     {
       "name": "walkingWildStepper",
@@ -7095,7 +7807,7 @@
           "LP": 0.25
         }
       },
-      "loc": 195
+      "loc": 219
     },
     {
       "name": "weightedWheelSegments",
@@ -7220,7 +7932,7 @@
         "autoSpin": false,
         "title": "BONUS WHEEL"
       },
-      "loc": 499
+      "loc": 512
     },
     {
       "name": "wheelBonusReveal",
@@ -7403,7 +8115,7 @@
         "maxReelsPerSpin": 1,
         "haloColor": "255,180,90"
       },
-      "loc": 178
+      "loc": 189
     },
     {
       "name": "wildTriggerHoldAndWin",
@@ -7537,7 +8249,7 @@
         "flashColor": "rgba(255,216,77,0.7)",
         "clearOnNextSpin": true
       },
-      "loc": 200
+      "loc": 212
     },
     {
       "name": "winMultiplierBadge",
@@ -7610,7 +8322,7 @@
         "staggerStepMs": 80,
         "suppressLDW": true
       },
-      "loc": 1047
+      "loc": 1081
     },
     {
       "name": "winRollup",

@@ -141,6 +141,15 @@ export const HOOK_EVENTS = Object.freeze([
   'onFsTrigger',
   'onFsSpinResult',
   'onFsEnd',
+  /* UQ-MASTERY-2 (2026-06-21) — canonical alias chain emitted by
+   * freeSpins.mjs on the trigger spin so reserved listeners across
+   * simultaneousFsHoldAndWinPriority, linkedReels, and similar
+   * interrupt-arbiter blocks actually receive the start signal.
+   * Owner: freeSpins.mjs. All four carry the same payload —
+   * { award, scatters }. */
+  'onFsTriggerArmed',
+  'onFsEnter',
+  'onFsStart',
   /* Wave V: spin-control intent events (slam-stop + force-skip) */
   'onSlamRequested',
   'onSlamComplete',
@@ -735,6 +744,18 @@ export const HOOK_EVENTS = Object.freeze([
   'onHoldAndWinEnd',  // Owner: holdAndWin.mjs
   'onHoldAndWinPayout',  // Owner: holdAndWin.mjs
   'onHoldAndWinPhase',  // Owner: holdAndWin.mjs
+  /* UQ-MASTERY-2 (2026-06-21) — explicit start-of-feature trigger emitted
+   * by holdAndWin.mjs on the first non-INACTIVE phase transition.
+   * Reserved listeners in simultaneousFsHoldAndWinPriority,
+   * perTriggerVolatilitySet, potSymbolFireball gate on this event.
+   * Payload: { phase: 'INTRO'|'START'|'RUNNING' }. */
+  'onHoldAndWinTrigger',  // Owner: holdAndWin.mjs
+  /* UQ-MASTERY-2 (2026-06-21) — generic feature-payout alias mirrored
+   * alongside onHoldAndWinPayout so cross-feature arbiters
+   * (grandInterruptionLock) can listen to one canonical payout event
+   * regardless of which feature paid. Payload:
+   * { feature: 'holdAndWin', winX, bet, escrow }. */
+  'onFeaturePayout',  // Owner: holdAndWin.mjs
   'onIndexedDbCleared',  // Owner: germanyComplianceGate.mjs
   'onJurisdictionResolved',  // Owner: jurisdictionGate.mjs
   'onLdwSuppressed',  // Owner: winPresentation.mjs, winPresentation.mjs

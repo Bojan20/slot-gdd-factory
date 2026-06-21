@@ -192,6 +192,15 @@ const EXPECTED_EMIT_OWNERS = {
   onFsTrigger:    ['freeSpins.mjs'],
   onFsSpinResult: ['freeSpins.mjs'],
   onFsEnd:        ['freeSpins.mjs'],
+  /* UQ-MASTERY-2 (2026-06-21) — freeSpins.mjs now emits a canonical alias
+   * chain (onFsTriggerArmed → onFsTrigger → onFsEnter → onFsStart) on the
+   * trigger spin so reserved listeners in simultaneousFsHoldAndWinPriority,
+   * linkedReels, and similar interrupt-arbiter blocks actually receive the
+   * start signal. The four events carry the same payload — listeners
+   * pick whichever alias they pinned in their own block contract. */
+  onFsTriggerArmed: ['freeSpins.mjs'],
+  onFsEnter:        ['freeSpins.mjs'],
+  onFsStart:        ['freeSpins.mjs'],
   /* Wave V — spin-control intent events. The button block publishes the
    * intent; the consumer block that owns the action emits the matching
    * Complete event back. */
@@ -770,6 +779,15 @@ const EXPECTED_EMIT_OWNERS = {
    * Surfacing them in the canonical map turns LEGO gate from 3/5 to
    * 5/5 without changing block behaviour. */
   onHoldAndWinPayout: ['holdAndWin.mjs'],
+  /* UQ-MASTERY-2 (2026-06-21) — holdAndWin.mjs emits onHoldAndWinTrigger on
+   * the first non-INACTIVE phase transition so reserved listeners in
+   * simultaneousFsHoldAndWinPriority, perTriggerVolatilitySet, and
+   * potSymbolFireball receive the start signal. Plus a generic
+   * onFeaturePayout alias mirrors onHoldAndWinPayout so cross-feature
+   * arbiters (grandInterruptionLock) can subscribe to one canonical event
+   * regardless of which feature paid out. */
+  onHoldAndWinTrigger: ['holdAndWin.mjs'],
+  onFeaturePayout:     ['holdAndWin.mjs'],
   onSuperSymbolLand:  ['superSymbol.mjs'],
   /* walkingWild emits `requestRespin` as an intent — a wild that walked
    * off the visible band asks the spin engine to roll one more spin so
