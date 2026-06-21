@@ -134,6 +134,29 @@ const summary = {
   startedAt: new Date().toISOString(),
   steps: [],
 };
+/* Wave UQ-CASH A5 — parser source hash (cache invalidation key).
+ * Hashes a stable set of source files that influence the parsed model:
+ *   src/parser.mjs · src/registry/smartDefaults.mjs · src/registry/featureArchetypes.mjs
+ * Result is a hex digest stored in V6 cache entries as __parser_hash__.
+ * If any source file changes between runs, hash drifts → cache invalidates. */
+let _parserHashCache = null;
+async function _computeParserHash() {
+  if (_parserHashCache) return _parserHashCache;
+  const { createHash } = await import('node:crypto');
+  const { readFile } = await import('node:fs/promises');
+  const SOURCES = [
+    resolve(REPO, 'src/parser.mjs'),
+    resolve(REPO, 'src/registry/smartDefaults.mjs'),
+    resolve(REPO, 'src/registry/featureArchetypes.mjs'),
+  ];
+  const h = createHash('sha256');
+  for (const p of SOURCES) {
+    try { h.update(await readFile(p)); } catch (_) { /* file missing — fold null into hash */ h.update('MISSING:' + p); }
+  }
+  _parserHashCache = h.digest('hex');
+  return _parserHashCache;
+}
+
 function step(label, fn) {
   return Promise.resolve(fn()).then(
     (v) => { summary.steps.push({ label, ok: true }); log(`✓ ${label}`); return v; },
@@ -217,9 +240,29 @@ try {
   if (!noLlm) {
     await step('Kimi V1..V5 reconcile (optional)', async () => {
       const cacheFile = resolve(REPO, `tools/_wave-v-cache/${slug}.json`);
+      /* Wave UQ-CASH A5 — cache invalidation by parser source hash.
+       * When src/parser.mjs / src/registry/smartDefaults.mjs changes, the cached
+       * V6 reconcile becomes structurally outdated (it captures a snapshot of
+       * model shape from a prior parser run). We hash a stable set of source
+       * files and compare against the cached `__parser_hash__` field; mismatch
+       * → delete cache, re-run (when Kimi available) or fall through. */
+      const parserHash = await _computeParserHash();
+      const fsp = await import('node:fs/promises');
       if (existsSync(cacheFile)) {
-        log('  cache hit — skip Kimi call');
-        return;
+        try {
+          const raw = await fsp.readFile(cacheFile, 'utf8');
+          const cached = JSON.parse(raw);
+          const cachedHash = cached && cached.__parser_hash__;
+          if (cachedHash === parserHash) {
+            log('  cache hit (hash match) — skip Kimi call');
+            return;
+          }
+          log(`  cache stale (hash drift ${(cachedHash || 'none').slice(0, 8)} → ${parserHash.slice(0, 8)}) — invalidating`);
+          await fsp.unlink(cacheFile).catch(() => {});
+        } catch (e) {
+          log('  cache parse failed (' + e.message + ') — invalidating');
+          await fsp.unlink(cacheFile).catch(() => {});
+        }
       }
       /* Skip silently if Kimi binary missing — keep pipeline working offline. */
       const kimiBin = resolve(process.env.HOME || '/tmp', 'Projects/cortex/scripts/cortex-kimi-ask');
@@ -237,6 +280,16 @@ try {
         '--slug', slug,
       ], { stdio: 'inherit', cwd: REPO });
       if (r.status !== 0) throw new Error('reconcile exit ' + r.status);
+      /* Stamp parser hash so future runs detect cache staleness. */
+      if (existsSync(cacheFile)) {
+        try {
+          const cur = JSON.parse(await fsp.readFile(cacheFile, 'utf8'));
+          cur.__parser_hash__ = parserHash;
+          await fsp.writeFile(cacheFile, JSON.stringify(cur, null, 2), 'utf8');
+        } catch (e) {
+          log('  warn: could not stamp parser hash: ' + e.message);
+        }
+      }
     }).catch((e) => {
       log('  reconcile soft-fail: ' + e.message + ' (continuing without)');
     });
