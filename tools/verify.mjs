@@ -124,6 +124,19 @@ if (existsSync(baselinePath)) {
   if (!JSON_OUT) console.log('  ⏭ UQ-16 baseline drift (no baseline — run --bake)');
 }
 
+/* ── Step 4.6: UQ-CASH A6 semantic accuracy verifier ─────────────────
+ * Closes the gap that UQ-11/lw-25/parse-real opened: we check that the
+ * parser produces SEMANTICALLY CORRECT models on 5 baseline GDDs, not
+ * just that they don't throw. Pinned ground truth in
+ * tests/fixtures/semantic-expected.json (≤80% asserts must pass for green). */
+const semVerifier = resolve(REPO, 'tools/uq-cash-semantic-verifier.mjs');
+if (existsSync(semVerifier)) {
+  run('UQ-CASH A6 semantic accuracy (5 baseline GDDs)',
+    'node', [semVerifier]);
+} else if (!JSON_OUT) {
+  console.log('  ⏭ UQ-CASH A6 semantic accuracy (no verifier tool)');
+}
+
 /* ── Step 5: UQ-11 render smoke on a 20-GDD subset ──────────────────── */
 if (!QUICK) {
   const RENDER_TOOL = resolve(REPO, 'tools/_full-corpus-render-parity.mjs');

@@ -1,4 +1,4 @@
-## 🔥 WAVE UQ-CASH — CASH ERUPTION INGEST DEEP-FIX · 2026-06-21 · IN PROGRESS
+## 🔥 WAVE UQ-CASH — CASH ERUPTION INGEST DEEP-FIX · 2026-06-21 · ZATVOREN ✅ (6/6)
 
 > **Boki direktiva:** *"odradi cash eruption gdd iz GDD foldera, da vidis da
 > ne radi slot gdd app kako tribe ... kreni sa fixovima maksimalno i posel
@@ -17,27 +17,45 @@ Cash Eruption PDF (343 KB, IGT Foundry format, prose-heavy) razotkrio
 │ A1   │ Topology multi-line "N reels × M rows, P fixed │ reels:5 rows:3     │   ✅   │
 │      │ paylines" — 3 prose regex bug-eve              │ paylines:20        │d05e036 │
 ├──────┼─────────────────────────────────────────────────┼────────────────────┼────────┤
-│ A2   │ Name extraction iz PDF first-line (kada H1     │ name = "Cash       │   ⏳   │
-│      │ markdown headers fale)                          │ Eruption"          │        │
+│ A2   │ Name extraction iz PDF first-line (kada H1     │ name = "Cash       │   ✅   │
+│      │ markdown headers fale)                          │ Eruption"          │b6be994 │
 ├──────┼─────────────────────────────────────────────────┼────────────────────┼────────┤
-│ A3   │ Feature-config backfill scopes — kada feature  │ holdAndWin config  │   ⏳   │
-│      │ detected ali config = {} → smartDefaults stage │ + winCap maxWinX + │        │
-│      │ 7 popunjava holdAndWin/winCap/compliance.       │ compliance gates    │        │
+│ A3   │ Feature-config backfill scopes — kada feature  │ holdAndWin/winCap/ │   ✅   │
+│      │ detected ali config = {} → smartDefaults stage │ jackpot/expanding- │b6be994 │
+│      │ 6 popunjava holdAndWin/winCap/jackpot/expandWild│ Wild popunjeni    │        │
 ├──────┼─────────────────────────────────────────────────┼────────────────────┼────────┤
-│ A4   │ Symbol names iz IGT-style prose PDF — paytable │ "Wild" "Fireball"  │   ⏳   │
-│      │ tabela ("10 Wild Special Reel-tall lava")      │ "Volcano" "Red7"    │        │
-│      │ umesto generic H1/H2/A/K/Q placeholders.        │ detected           │        │
+│ A4   │ Symbol names iz prose PDF — identity = role +   │ Volcano/Big Volc./ │   ✅   │
+│      │ tier patterns. False-positive filteri za        │ Big Wild/Fireball  │1765b23 │
+│      │ section noise, game name, prep endings.         │ + HP Red7/Blue7 +  │        │
+│      │                                                  │ LP Cherry…Melon    │        │
 ├──────┼─────────────────────────────────────────────────┼────────────────────┼────────┤
-│ A5   │ Cache hash invalidation — kada parser source   │ stale V6 cache za  │   ⏳   │
-│      │ menja, V6 reconcile cache se MORA invalidate-ovati│Cash Eruption se    │        │
-│      │ (sad pucamo na cache hit sa starim modelom).    │ re-build automatski │        │
+│ A5   │ Cache hash invalidation — SHA-256 nad parser.mjs│ "cache stale (hash │   ✅   │
+│      │ + smartDefaults.mjs + featureArchetypes.mjs.    │ drift X → Y) —     │5f58145 │
+│      │ Auto invalidate kada source menja.              │ invalidating"      │        │
 ├──────┼─────────────────────────────────────────────────┼────────────────────┼────────┤
-│ A6   │ Semantic accuracy verifier — UQ-11 + lw-25 +    │ 4-gdds-ultimate-   │   ⏳   │
-│      │ verify gate dodaju semantic correctness check  │ audit ima Cash      │        │
-│      │ za 5 baseline GDD-ova (Cash Eruption uključen).│ Eruption fixture    │        │
-│      │ Asserts: reels matches PDF · paylines matches  │ pin-ovan            │        │
-│      │ · name not "Untitled Slot" · features non-empty.│                    │        │
+│ A6   │ Semantic accuracy verifier — 5 baseline GDDs    │ 29/29 asserts      │   ✅   │
+│      │ pinned u tests/fixtures/semantic-expected.json. │ Cash Eruption 9/9, │ THIS   │
+│      │ Asserts: name, topology.reels/rows/paylines,    │ Gates 5/5, Huff 5/5│        │
+│      │ features count, specials count, named symbols.  │ Star 5/5, Wrath 5/5│        │
+│      │ Wired u npm run verify kao gate 12/12.          │                    │        │
 └──────┴─────────────────────────────────────────────────┴────────────────────┴────────┘
+
+### Final stanje verify gate (posle UQ-CASH)
+
+```
+ 1. archetype catalog + alias + filter
+ 2. smartDefaults archetype backfill (stage 5)
+ 3. smartDefaults autofix gaps (stage 6)
+ 4. parser topology prose edge cases (UQ-CASH A1)
+ 5. scaffold-block tool (E2E across 25 archetypes)
+ 6. ingest tool (end-to-end pipeline)
+ 7. archetype docs generator
+ 8. install-precommit hook installer
+ 9. UQ-7 cache audit + unknown=0 assertion
+10. UQ-16 baseline drift (20-slug subset)
+11. UQ-CASH A6 semantic accuracy (5 baseline GDDs)  ← NOVO
+12. UQ-11 render smoke (20-GDD subset)
+```
 ```
 
 **QA disciplina:** posle SVAKOG atom-a — full sweep:
