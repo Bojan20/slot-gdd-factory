@@ -1334,10 +1334,20 @@ export function extractTopology(rawText, model) {
      * vendor-portfolio PDFs write "Reels: 5 reels, 3 rows" / "5-reel,
      * 3-row grid" in flowing prose. Without this pattern, parser ostaje
      * na topology default 5×3 (smart-defaults). Vendor-neutral pattern
-     * shapes only. */
+     * shapes only.
+     *
+     * UQ-CASH fix (Boki 2026-06-21 Cash Eruption ingest):
+     * (a) Dimensional "N×M" / "N x M" / "NxM grid|layout|slot" forms
+     *     priorityzed BEFORE the bare "N reel" form, so a "5×3" wins over
+     *     a "5.1 Reel" section heading.
+     * (b) "N reel" form tightened: must be plural OR followed by × / x /
+     *     "," AND the rest of game-spec context (rows / paylines / grid).
+     *     Section headings like "5.1 Reel Topology" no longer match. */
     text.match(/\bReels?\s*[:=]\s*(\d{1,2})\s*reels?\b/i) ||
-    text.match(/\b(\d{1,2})[\s-]?reel[\s,]/i) ||
-    text.match(/\b(\d{1,2})\s*x\s*\d{1,2}\s+(?:grid|reel\s*layout|game)\b/i);
+    text.match(/\b(\d{1,2})\s*[×x]\s*\d{1,2}\s*(?:[,\s]|grid|reel|game|slot|layout|fixed[\s-]?(?:line|payline))/i) ||
+    text.match(/\b(\d{1,2})\s+reels?\s*[×x×]\s*\d{1,2}\s+rows?\b/i) ||
+    text.match(/\b(\d{1,2})\s+reels?[,\s]+\d{1,2}\s+rows?\b/i) ||
+    text.match(/\b(\d{1,2})[\s-]?reels\b[\s,]/i);  /* must be plural "reels" */
   if (reelsCell) {
     t.reels = parseInt(reelsCell[1], 10);
     t.confidence_reels = 1;
@@ -1350,10 +1360,12 @@ export function extractTopology(rawText, model) {
     text.match(/\|\s*\*?\*?Rows\*?\*?\s*\|\s*[^|]*?(\d+)\s+visible[^|]*\|/i) ||
     text.match(/\|\s*\*?\*?Rows\*?\*?\s*\|\s*(\d+)\s*\([^|]*\|/i) ||
     text.match(/\|\s*\*?\*?(?:Primary\s+)?Rows?\*?\*?\s*\|\s*(\d+)\b/i) ||
-    /* Wave UQ-5 prose fallback for rows. */
+    /* Wave UQ-5 prose fallback for rows.
+     * UQ-CASH fix: handle the unicode multiplication sign "×" alongside
+     * ASCII "x" and "X" so "5 reels × 3 rows" lines parse cleanly. */
     text.match(/\bRows?\s*[:=]\s*(\d{1,2})\s*rows?\b/i) ||
-    text.match(/\b\d{1,2}\s*reels?[\s,]+(\d{1,2})\s*rows?\b/i) ||
-    text.match(/\b\d{1,2}\s*x\s*(\d{1,2})\s+(?:grid|reel\s*layout|game)\b/i);
+    text.match(/\b\d{1,2}\s*reels?[\s,×x]+(\d{1,2})\s*rows?\b/i) ||
+    text.match(/\b\d{1,2}\s*[×x]\s*(\d{1,2})\s*(?:[,\s]|rows?|grid|reel|game|slot|layout|fixed)/i);
   if (rowsCell) {
     t.rows = parseInt(rowsCell[1], 10);
     t.confidence_rows = 1;
@@ -1416,7 +1428,22 @@ export function extractTopology(rawText, model) {
      * Word form: a tiny lookup for the English numerals most often
      * used in marketing copy (5, 10, 15, 20, 25, 30, 40, 50, 75, 100,
      * 243, 1024). Anything outside the table stays at default 10. */
-    const inline = text.match(/\b(\d+)\s*pay[\s-]?lines?\b/i);
+    /* UQ-CASH fix: the original `(\d+)\s*pay[\s-]?lines?` allowed `\s` to
+       span newlines, which let a stray number (e.g. "Visible positions
+       15" on one line) bond with a "Paylines 20" header several lines
+       below. Restrict the gap to inline whitespace [ \t] (or hyphen) so
+       only same-line "20 paylines" / "20-paylines" / "20 pay-lines"
+       phrasings count.
+
+       UQ-CASH-2 fix: prioritize HIGH-SPECIFICITY phrasings (N-fixed-payline,
+       N fixed paylines, N-payline) BEFORE the bare "(N) paylines" form
+       because section headings like "5.2 Payline Map" produce a stray
+       "(2) Payline" match. Bare match must be plural and not after a
+       sub-section number like "X.Y". */
+    const inline = text.match(/\b(\d+)[ \t]+fixed[ \t-]?(?:pay)?lines?\b/i) ||
+                   text.match(/\b(\d+)-fixed-?(?:pay)?lines?\b/i) ||
+                   text.match(/\b(\d+)-pay[ \t-]?lines?\b/i) ||
+                   text.match(/(?<!\d\.)\b(\d+)[ \t]+paylines\b/i);
     if (inline) {
       t.paylines = parseInt(inline[1], 10);
       model.confidence.topology += 0.10;   /* lower confidence than table cell */
