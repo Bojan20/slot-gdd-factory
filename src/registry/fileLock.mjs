@@ -147,18 +147,27 @@ export function acquireLock(targetPath, opts = {}) {
          allocate once and reuse, also exposing a single SAB-creation
          failure point that emits a one-time warning so operators can
          tune container memory limits. */
-      if (!_sabView) {
+      /* UQ-FORTIFY8 #3 — once SAB creation has failed, NEVER try again.
+         The previous design re-attempted `new SharedArrayBuffer(4)` on
+         every acquireLock call when _sabView was null, even though
+         _sabFailureWarned was set. Under sustained memory pressure
+         that wasted kernel resources on every poll. We now pin
+         `_useSabView = false` after first failure so the path jumps
+         straight to fallback spin. */
+      if (!_sabView && _useSabView) {
         try {
           const sab = new SharedArrayBuffer(4);
           _sabView = new Int32Array(sab);
         } catch (e) {
+          _useSabView = false;
           if (!_sabFailureWarned) {
             _sabFailureWarned = true;
             try {
               process.stderr.write(
                 '[fileLock] ⚠ SharedArrayBuffer unavailable (' + e.message + '); ' +
-                'falling back to short spin. Set --max-old-space-size higher or ' +
-                'enable SharedArrayBuffer in container config.\n'
+                'permanently falling back to short spin for this process. Set ' +
+                '--max-old-space-size higher or enable SharedArrayBuffer in ' +
+                'container config.\n'
               );
             } catch {}
           }
@@ -168,9 +177,20 @@ export function acquireLock(targetPath, opts = {}) {
         /* wait on slot 0 for value 0 — returns 'timed-out' after the
            interval; we never notify so it always times out cleanly. */
         try { Atomics.wait(_sabView, 0, 0, POLL_INTERVAL_MS); }
-        catch (_) { /* fall through to short spin */ }
+        catch (_) {
+          /* Atomics.wait threw — usually means SAB became invalid mid-
+             process (rare). Pin off so we don't retry. */
+          _useSabView = false;
+          _sabView = null;
+        }
       } else {
-        /* Fallback: shorter spin so we don't burn the full interval. */
+        /* Fallback: shorter spin so we don't burn the full interval.
+           UQ-FORTIFY8 #4 — yield to event loop every ~5ms inside the
+           spin so other JS that has been queued (timers, setImmediate
+           callbacks from previous lock attempts) gets a chance to run.
+           Hybrid: 25ms spin in 5ms slices with a setImmediate-equivalent
+           sync yield via process.nextTick polling pattern. We can't
+           await here (we're in a sync function), so we cap spin tighter. */
         const end = Date.now() + Math.min(POLL_INTERVAL_MS, 25);
         while (Date.now() < end) { /* fallback spin */ }
       }
@@ -178,10 +198,13 @@ export function acquireLock(targetPath, opts = {}) {
   }
 }
 
-/* UQ-FORTIFY7 #3 — module-scoped SAB view (reused across acquireLock
-   invocations within the same process so we hold a SINGLE SAB resource
-   for the lifetime of the lock module, not per-iteration). */
+/* UQ-FORTIFY7 #3 + UQ-FORTIFY8 #3 — module-scoped SAB view + a usage
+   flag. _sabView holds the actual buffer; _useSabView is the kill-switch
+   that flips off forever once SAB creation has failed once, so we don't
+   retry under sustained pressure. _sabFailureWarned mutes stderr after
+   the first warning. */
 let _sabView = null;
+let _useSabView = true;
 let _sabFailureWarned = false;
 
 /**

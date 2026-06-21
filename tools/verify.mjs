@@ -41,11 +41,24 @@ const results = [];
  * Steps may declare `dependsOn: [labels]`. If any upstream dep is in
  * results with ok=false, the dependent step is SKIPPED (not run) and
  * marked as `skipped: true` in results. Prevents downstream noise when
- * a foundational step (e.g. UQ-7 audit, semantic verifier) fails. */
+ * a foundational step (e.g. UQ-7 audit, semantic verifier) fails.
+ *
+ * UQ-FORTIFY8 #1 — dependency contract pinned:
+ *   A skipped gate ALWAYS blocks its downstream because it carries
+ *   `ok: false` AND `skipped: true`. The check looks at `ok` only,
+ *   which is the conservative choice: any non-green upstream (failed
+ *   or skipped) cuts the dependency chain. A future refactor that
+ *   wants to distinguish "skipped vs failed" upstreams MUST also
+ *   update _isDepGreen to check the `skipped` flag — otherwise it
+ *   could accidentally allow a downstream to run despite a missing
+ *   upstream signal. Documented + asserted by
+ *   tests/tools/uq-fortify8-eighthtier.test.mjs. */
 function _isDepGreen(deps) {
   if (!Array.isArray(deps) || deps.length === 0) return true;
   for (const dep of deps) {
     const found = results.find(r => r.label === dep);
+    /* found.ok === false catches both hard fails AND skips (which are
+       stamped ok: false + skipped: true by the run() wrapper). */
     if (!found || found.ok === false) return false;
   }
   return true;
@@ -125,6 +138,9 @@ run('UQ-FORTIFY6 sixth-tier audit fixes',
 
 run('UQ-FORTIFY7 seventh-tier audit fixes',
   'node', ['--test', 'tests/tools/uq-fortify7-seventhtier.test.mjs']);
+
+run('UQ-FORTIFY8 eighth-tier audit fixes',
+  'node', ['--test', 'tests/tools/uq-fortify8-eighthtier.test.mjs']);
 
 /* ── Step 4: UQ-7 corpus audit (unknown must be 0) ──────────────────── */
 const auditOk = run('UQ-7 cache audit',

@@ -86,8 +86,11 @@ test('UQ-FORTIFY7 #3: fileLock pre-allocates SAB once at module scope', () => {
     'module-scoped _sabView declaration missing');
   assert.ok(/let\s+_sabFailureWarned\s*=\s*false/.test(src),
     'one-time warning flag missing');
-  /* The polling loop must check existence before re-allocating */
-  assert.ok(/if\s*\(!_sabView\)/.test(src),
+  /* The polling loop must check existence before re-allocating.
+     UQ-FORTIFY8 #3 evolved the guard from `if (!_sabView)` to
+     `if (!_sabView && _useSabView)` so the kill-switch can pin off
+     SAB allocation under sustained failure. Accept either form. */
+  assert.ok(/if\s*\(!_sabView(\s*&&\s*_useSabView)?\)/.test(src),
     'lazy alloc guard missing');
   /* Atomics.wait must use the module-scoped view, not a fresh one */
   assert.ok(/Atomics\.wait\(_sabView,\s*0,\s*0,\s*POLL_INTERVAL_MS\)/.test(src),

@@ -263,9 +263,37 @@ console.log(`Report: ${mdPath}`);
  * + miss patterns + delta-from-previous. Lets us answer "is V2 lane
  * accuracy trending up after 5 --apply runs?". */
 const historyPath = resolve(REPORTS, 'calibration-history.json');
-let history = { runs: [] };
+/* UQ-FORTIFY8 #2 — versioned history schema.
+   Every entry the trainer writes carries this schema version so future
+   readers can detect drift, migrate missing fields, and refuse to
+   silently truncate when an OLD trainer reads a NEW file. */
+const _HISTORY_SCHEMA_VERSION = 2;
+let history = { __schema_version__: _HISTORY_SCHEMA_VERSION, runs: [] };
 if (existsSync(historyPath)) {
-  try { history = JSON.parse(readFileSync(historyPath, 'utf8')); } catch (_) { history = { runs: [] }; }
+  try {
+    const raw = JSON.parse(readFileSync(historyPath, 'utf8'));
+    const onDiskVersion = Number(raw && raw.__schema_version__) || 1;
+    if (onDiskVersion > _HISTORY_SCHEMA_VERSION) {
+      /* On-disk version is NEWER than what we know about — refuse to
+         overwrite with our reduced schema. Bail out with a clear message
+         so the operator can upgrade or reset. */
+      console.error(
+        `✗ calibration-history.json on disk is schema v${onDiskVersion} but ` +
+        `this trainer only knows v${_HISTORY_SCHEMA_VERSION}. ` +
+        `Upgrade the trainer or reset history (rm reports/calibration-history.json).`
+      );
+      process.exit(2);
+    }
+    /* Migrate forward if needed: v1 had no __schema_version__ field and
+       no `__migrated_from__` markers. We accept it as-is but stamp it. */
+    history = {
+      __schema_version__: _HISTORY_SCHEMA_VERSION,
+      __migrated_from__: onDiskVersion < _HISTORY_SCHEMA_VERSION ? onDiskVersion : undefined,
+      runs: Array.isArray(raw && raw.runs) ? raw.runs : [],
+    };
+  } catch (_) {
+    history = { __schema_version__: _HISTORY_SCHEMA_VERSION, runs: [] };
+  }
 }
 const prev = history.runs.length ? history.runs[history.runs.length - 1] : null;
 const entry = {
