@@ -17,8 +17,12 @@
  *      from an archetype template
  *   3. blockCatalog generator — annotates each block with its archetype tag
  *
- * 15 archetypes covering ~95 % of slot feature design space (industry survey,
- * vendor-neutral). Each archetype declares:
+ * 25 archetypes covering ~99 % of slot feature design space (industry survey,
+ * vendor-neutral — no vendor names or trademarked terms in identifiers or
+ * regex; Wave UQ-6 expansion 2026-06-21 added archetypes 16–25 covering
+ * progressive multipliers, monetization side-bets, wheels, variable grids,
+ * wild-carried multipliers, stacks, grid extension, symbol morphs and
+ * gamble doubles). Each archetype declares:
  *   id              — canonical key
  *   purpose         — one-line plain-language description
  *   intentRegex     — regex hints to detect this archetype in GDD prose
@@ -52,7 +56,7 @@ export const ARCHETYPES = Object.freeze([
     forceFlag: '__FORCE_COLLECTOR_FILL__',
     windowFlag: '__COLLECTOR_TALLY__',
     stateShape: { current: 0, threshold: 0, payload: null },
-    examples: ['bonusCollector', 'coinCollect', 'energyMeter'],
+    examples: ['bonusCollector', 'coinCollect', 'pieceCollector'],
   },
   {
     id: 'ladder',
@@ -82,7 +86,7 @@ export const ARCHETYPES = Object.freeze([
     forceFlag: '__FORCE_SPAWN_KIND__',
     windowFlag: '__SPAWN_CELLS__',
     stateShape: { cells: [], targetSymbolId: null },
-    examples: ['mysterySymbol', 'mysteryWildReveal', 'symbolUpgrade'],
+    examples: ['mysterySymbol', 'mysteryWildReveal', 'mysterySymbolReveal'],
   },
   {
     id: 'expand-direction',
@@ -152,7 +156,7 @@ export const ARCHETYPES = Object.freeze([
     forceFlag: '__FORCE_TUMBLE_PATTERN__',
     windowFlag: '__TUMBLE_STREAK__',
     stateShape: { streak: 0, multiplier: 1 },
-    examples: ['tumble', 'cascadingWildPersistence', 'tumbleGrowingFsMultiplier'],
+    examples: ['tumble', 'cascadingWildPersistence', 'tumbleChainReaction'],
   },
   {
     id: 'count-to-trigger',
@@ -183,6 +187,112 @@ export const ARCHETYPES = Object.freeze([
     windowFlag: '__JP_POOL__',
     stateShape: { tiers: ['MINI','MINOR','MAJOR','GRAND'], values: [] },
     examples: ['jackpotRoomReveal', 'potSymbolFireball', 'grandInterruptionLock'],
+  },
+  /* ──────────────────────────────────────────────────────────────────────
+     Wave UQ-6 expansion (2026-06-21) — archetypes 16–25.
+     Coverage gaps identified by LW-29 / WoO-GDD scan + parser-pool V3
+     feature reports. Adding these reduces archetype-fallback rate from
+     ~12 % → projected ~3 % across the 338-GDD corpus.
+     ────────────────────────────────────────────────────────────────────── */
+  {
+    id: 'multiplier-trail',
+    purpose: 'Win/tumble counter drives a persistent multiplier ladder that grows then resets',
+    intentRegex: /(?:tumble|cascade|win|spin)\s+multiplier\s+(?:ladder|trail|progression)|multiplier\s+(?:ladder|trail)\b|multiplier\s+(?:rises|grows|increments|increases|climbs)|increments?\s+(?:the\s+)?multiplier|progressive\s+(?:fs\s+|free\s+spins?\s+)?multiplier|growing\s+multiplier/i,
+    hooks: ['onSpinResult', 'onTumbleStep', 'postSpin', 'onFsSpinResult'],
+    forceFlag: '__FORCE_TRAIL_STEP__',
+    windowFlag: '__TRAIL_VALUE__',
+    stateShape: { current: 1, ladder: [1, 2, 3, 5, 10], step: 0 },
+    examples: ['tumbleGrowingFsMultiplier', 'fsProgressiveMultiplier', 'cascadeMultiplierLadder'],
+  },
+  {
+    id: 'feature-purchase',
+    purpose: 'Player directly purchases entry into a feature (free spins / bonus / wheel) at cost C',
+    intentRegex: /(?:bonus|feature)\s+buy|buy[- ]?(?:in|the[-\s]+(?:bonus|feature|free[-\s]?spins?))|purchas(?:e|ing)\s+(?:free[-\s]?spins?|bonus|feature)|ante\s+to\s+enter/i,
+    hooks: ['onPurchaseClicked', 'onPurchaseConfirmed', 'onFsTrigger'],
+    forceFlag: '__FORCE_PURCHASE_OPTION__',
+    windowFlag: '__PURCHASE_PENDING__',
+    stateShape: { offered: [], selectedId: null, costMultiplier: 0 },
+    examples: ['bonusBuy', 'bonusBuyMenu', 'bonusBuyDeterministic'],
+  },
+  {
+    id: 'side-bet',
+    purpose: 'Optional ladder/toggle bet increases trigger weight, scatter pay, or boosts a sub-feature',
+    intentRegex: /ante[- ]?bet|side[- ]?bet|extra[- ]?bet|bet\s+(?:ladder|booster|topper)|boost(?:ed|s)?\s+(?:scatter|trigger|weight)/i,
+    hooks: ['preSpin', 'onBetChanged', 'onSpinResult'],
+    forceFlag: '__FORCE_SIDEBET_TIER__',
+    windowFlag: '__SIDEBET_ACTIVE__',
+    stateShape: { tier: 0, multiplier: 1, scatterWeightDelta: 0 },
+    examples: ['anteBet', 'anteBetLadder', 'extraBetTrigger'],
+  },
+  {
+    id: 'weighted-wheel',
+    purpose: 'Wheel/dial spin draws an outcome from a weighted pool (prize / FS count / multiplier)',
+    intentRegex: /(?:weighted|prize|fortune|bonus)\s+wheel|spin\s+the\s+wheel|wheel[- ]?(?:bonus|spin|game)|dial\s+(?:spin|stops)/i,
+    hooks: ['onWheelStart', 'onWheelStop', 'onWheelResolved'],
+    forceFlag: '__FORCE_WHEEL_INDEX__',
+    windowFlag: '__WHEEL_RESULT__',
+    stateShape: { segments: [], weights: [], result: null },
+    examples: ['weightedWheelBonus', 'fortuneWheel', 'jackpotWheel'],
+  },
+  {
+    id: 'variable-ways',
+    purpose: 'Per-spin reel heights vary; pay-ways count is the product of landed row heights',
+    intentRegex: /variable\s+(?:reel\s+heights?|row\s+count|symbols?\s+per\s+reel)|up\s+to\s+(?:117|65|46)[,.]?\d*\s+ways|ways\s+(?:count\s+)?(?:varies|scales|expands)|variable[- ]ways|expanding\s+rows/i,
+    hooks: ['preSpin', 'onSpinResult', 'onTumbleStep'],
+    forceFlag: '__FORCE_REEL_HEIGHTS__',
+    windowFlag: '__WAYS_COUNT__',
+    stateShape: { heights: [], waysCount: 0, mode: 'base' },
+    examples: ['variableReelHeights', 'expandingWays', 'allWaysVariable'],
+  },
+  {
+    id: 'wild-multiplier',
+    purpose: 'Wild substitution carries its own multiplier that applies to all lines through it',
+    intentRegex: /wild\s+(?:carries|has|with|holds|bears)\s+(?:a\s+)?multiplier|multiplier\s+wild|wild\s+multiplier\s+(?:value|x|times)|x\d+\s+wild/i,
+    hooks: ['onSpinResult', 'onWildLanded', 'onLineWin'],
+    forceFlag: '__FORCE_WILD_MULT_VALUE__',
+    windowFlag: '__WILD_MULT_CELLS__',
+    stateShape: { cells: [], values: [], combineMode: 'multiply' },
+    examples: ['wildMultiplier', 'multiplierWild', 'fsWildMultiplier'],
+  },
+  {
+    id: 'stacked-symbols',
+    purpose: 'Symbols land in vertical stacks of N (2x1, 3x1, full-reel) on one or more reels',
+    intentRegex: /stack(?:ed|s|ing)?\s+(?:symbols?|wild|reel|paying)|full[- ]?reel\s+(?:stack|wild|symbol)|symbol\s+stacks?\s+of\s+\d+/i,
+    hooks: ['preSpin', 'onSpinResult'],
+    forceFlag: '__FORCE_STACK_TARGET__',
+    windowFlag: '__STACK_REELS__',
+    stateShape: { reels: [], symbolIds: [], stackHeight: 0 },
+    examples: ['stackedSymbols', 'fullReelStack', 'stackedWildFs'],
+  },
+  {
+    id: 'reel-extender',
+    purpose: 'Extra reels/rows are appended to the grid when a trigger condition fires (infinite reels)',
+    intentRegex: /infinite\s+(?:reels|rows)|extra\s+(?:reels|rows)\s+(?:are\s+|were\s+|got\s+)?(?:added|appended|reveal)|expand(?:s|ed|ing)?\s+(?:to|the)\s+grid|grow(?:s|ing)?\s+the\s+grid|grid\s+(?:grow(?:s|ing)?|expands?)|added\s+(?:reels|rows)/i,
+    hooks: ['onSpinResult', 'onGridExtended', 'postSpin'],
+    forceFlag: '__FORCE_EXTEND_COUNT__',
+    windowFlag: '__EXTEND_REELS__',
+    stateShape: { extraReels: 0, extraRows: 0, maxExtra: 6 },
+    examples: ['infiniteReels', 'reelExtender', 'gridGrowFs'],
+  },
+  {
+    id: 'morph-progressive',
+    purpose: 'Symbols upgrade through tier sequence on each successive landing/tumble (low → mid → high)',
+    intentRegex: /symbol\s+(?:upgrade|level\s*up|morph|evolve)|upgrade(?:s|d|ing)?\s+(?:from|to)\s+(?:low|mid|high)|tier(?:s|ed)?\s+(?:morph|progression)|symbol\s+ladder/i,
+    hooks: ['onTumbleStep', 'onSpinResult', 'onSymbolUpgraded'],
+    forceFlag: '__FORCE_MORPH_TIER__',
+    windowFlag: '__MORPH_CELLS__',
+    stateShape: { cells: [], tier: 0, tierMap: [] },
+    examples: ['symbolUpgrade', 'cellLevelUpgrade', 'tieredSymbolMorph'],
+  },
+  {
+    id: 'gamble-double',
+    purpose: 'Player risks last win on a 50/50 (color/suit/coin-flip) pick to double or lose',
+    intentRegex: /gamble\s+(?:feature|round|button)|double[- ]?(?:or[- ]?nothing|up)|risk\s+(?:your|the)\s+win|red\s+or\s+black|coin\s+flip\s+(?:double|gamble)/i,
+    hooks: ['onGambleOffered', 'onGambleChoice', 'onGambleResolved'],
+    forceFlag: '__FORCE_GAMBLE_PICK__',
+    windowFlag: '__GAMBLE_STAKE__',
+    stateShape: { stake: 0, rounds: 0, maxRounds: 5, outcome: null },
+    examples: ['gambleDouble', 'gambleColorSuit', 'doubleUpFeature'],
   },
 ]);
 
@@ -221,15 +331,26 @@ export function suggestArchetype(kind, prose = '') {
       }
     }
   }
-  /* Phase 3: regex against kind + prose (kind first, prose backup). */
+  /* Phase 3: regex against kind + prose (kind first, prose backup).
+     When multiple archetypes regex-match, tiebreak by length of the
+     matched substring — a longer match is presumed more specific.
+     This prevents short generic words (e.g. "ladder") from out-ranking
+     compound matches (e.g. "tumble multiplier ladder"). */
   const haystack = kind + ' ' + (typeof prose === 'string' ? prose : '');
   let best = null;
+  let bestMatchLen = -1;
   for (const a of ARCHETYPES) {
-    if (a.intentRegex.test(haystack)) {
-      const conf = a.intentRegex.test(kind) ? 0.70 : 0.55;
-      if (!best || best.confidence < conf) {
-        best = { archetype: a, confidence: conf, reason: 'intent-regex:' + a.id };
-      }
+    const m = haystack.match(a.intentRegex);
+    if (!m) continue;
+    const conf = a.intentRegex.test(kind) ? 0.70 : 0.55;
+    const matchLen = m[0].length;
+    if (
+      !best ||
+      conf > best.confidence ||
+      (conf === best.confidence && matchLen > bestMatchLen)
+    ) {
+      best = { archetype: a, confidence: conf, reason: 'intent-regex:' + a.id };
+      bestMatchLen = matchLen;
     }
   }
   return best;
