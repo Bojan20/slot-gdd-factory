@@ -1,0 +1,6342 @@
+{
+  "generatedAt": "2026-06-21T09:03:48.716Z",
+  "slugCount": 338,
+  "prints": {
+    "001-rect-fs-wild-mult": {
+      "slug": "001-rect-fs-wild-mult",
+      "htmlBytes100": 723400,
+      "htmlSha": "257b9931bb7c9aba",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "002-rectstack-fs-wild-mult": {
+      "slug": "002-rectstack-fs-wild-mult",
+      "htmlBytes100": 722600,
+      "htmlSha": "23fd1bea8f3f39c7",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "003-expand-fs-wild-mult": {
+      "slug": "003-expand-fs-wild-mult",
+      "htmlBytes100": 722500,
+      "htmlSha": "65057231809bb251",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "004-dual-fs-wild-mult": {
+      "slug": "004-dual-fs-wild-mult",
+      "htmlBytes100": 723200,
+      "htmlSha": "20e5256a7680b007",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "005-lock-fs-wild-mult": {
+      "slug": "005-lock-fs-wild-mult",
+      "htmlBytes100": 722600,
+      "htmlSha": "edd9ab78672533ff",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "006-varreel-cascade-ways-persistmult-1": {
+      "slug": "006-varreel-cascade-ways-persistmult-1",
+      "htmlBytes100": 723000,
+      "htmlSha": "3d4946931a60e0f3",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "variable_rows",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "007-cluster-clusterpays-cascade-multorb": {
+      "slug": "007-cluster-clusterpays-cascade-multorb",
+      "htmlBytes100": 694400,
+      "htmlSha": "df279a5c9f828ad2",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "008-mega-clusterpays-cascade-multorb": {
+      "slug": "008-mega-clusterpays-cascade-multorb",
+      "htmlBytes100": 694100,
+      "htmlSha": "008d24bf3f503801",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "009-hex-clusterpays-cascade-multorb": {
+      "slug": "009-hex-clusterpays-cascade-multorb",
+      "htmlBytes100": 686300,
+      "htmlSha": "18602e5bced036bb",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "hex",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "01-huff-n-puff-huff-n-more-puff": {
+      "slug": "01-huff-n-puff-huff-n-more-puff",
+      "htmlBytes100": 723000,
+      "htmlSha": "9e80e64f53deaa92",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 7,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows",
+        "symbols.placeholder-roster"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "topology.paylines"
+      ]
+    },
+    "010-rect-holdandwin-respin-jackpot": {
+      "slug": "010-rect-holdandwin-respin-jackpot",
+      "htmlBytes100": 685800,
+      "htmlSha": "1479dfb4f110aa29",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "011-lock-holdandwin-respin-jackpot": {
+      "slug": "011-lock-holdandwin-respin-jackpot",
+      "htmlBytes100": 725600,
+      "htmlSha": "035c9e17413cc2d1",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "012-rect-fs-bonusbuy": {
+      "slug": "012-rect-fs-bonusbuy",
+      "htmlBytes100": 722200,
+      "htmlSha": "07da317910d18973",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "013-rectstack-fs-bonusbuy": {
+      "slug": "013-rectstack-fs-bonusbuy",
+      "htmlBytes100": 722700,
+      "htmlSha": "520ee40bef193a56",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "014-varreel-fs-bonusbuy": {
+      "slug": "014-varreel-fs-bonusbuy",
+      "htmlBytes100": 722600,
+      "htmlSha": "cb083e68200563b9",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "015-expand-fs-bonusbuy": {
+      "slug": "015-expand-fs-bonusbuy",
+      "htmlBytes100": 722300,
+      "htmlSha": "95bc8c9ac680fe3e",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "016-inf-fs-bonusbuy": {
+      "slug": "016-inf-fs-bonusbuy",
+      "htmlBytes100": 722100,
+      "htmlSha": "3168e1bee1466005",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "017-dual-fs-bonusbuy": {
+      "slug": "017-dual-fs-bonusbuy",
+      "htmlBytes100": 722400,
+      "htmlSha": "927328c6fd997dd7",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "018-cluster-fs-bonusbuy": {
+      "slug": "018-cluster-fs-bonusbuy",
+      "htmlBytes100": 730900,
+      "htmlSha": "2c933677f1bea6b6",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "019-mega-fs-bonusbuy": {
+      "slug": "019-mega-fs-bonusbuy",
+      "htmlBytes100": 730300,
+      "htmlSha": "ee438ff6b44c500f",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "02-dancing-drums-dancing-drums-explosion-prosperity": {
+      "slug": "02-dancing-drums-dancing-drums-explosion-prosperity",
+      "htmlBytes100": 825600,
+      "htmlSha": "0c7e9f1c23459e9b",
+      "buttonCount": 62,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "lock_respin",
+      "featureCount": 6,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=dragon_jade",
+        "topology.dims-snapped-to-kind",
+        "topology.kind",
+        "topology.paylines"
+      ]
+    },
+    "020-hex-fs-bonusbuy": {
+      "slug": "020-hex-fs-bonusbuy",
+      "htmlBytes100": 721300,
+      "htmlSha": "fcf9ee1627f5d761",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "hexagonal",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "021-dia-fs-bonusbuy": {
+      "slug": "021-dia-fs-bonusbuy",
+      "htmlBytes100": 722600,
+      "htmlSha": "33bc7344f03a0c96",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "022-pyr-fs-bonusbuy": {
+      "slug": "022-pyr-fs-bonusbuy",
+      "htmlBytes100": 722400,
+      "htmlSha": "82110de554b1018e",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "023-cross-fs-bonusbuy": {
+      "slug": "023-cross-fs-bonusbuy",
+      "htmlBytes100": 722600,
+      "htmlSha": "1c5660882a0dd925",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "024-lshape-fs-bonusbuy": {
+      "slug": "024-lshape-fs-bonusbuy",
+      "htmlBytes100": 722600,
+      "htmlSha": "7cd2eec1e80879e1",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "025-lock-fs-bonusbuy": {
+      "slug": "025-lock-fs-bonusbuy",
+      "htmlBytes100": 722400,
+      "htmlSha": "5cee8387d28b92b1",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "026-rect-fs-bonusbuydet": {
+      "slug": "026-rect-fs-bonusbuydet",
+      "htmlBytes100": 722300,
+      "htmlSha": "51fc0c1ffb871b46",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "027-varreel-fs-bonusbuydet": {
+      "slug": "027-varreel-fs-bonusbuydet",
+      "htmlBytes100": 743400,
+      "htmlSha": "74565d16ac0bfef5",
+      "buttonCount": 50,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "028-rect-wheelbonus-weightedwheel-jackpot": {
+      "slug": "028-rect-wheelbonus-weightedwheel-jackpot",
+      "htmlBytes100": 685900,
+      "htmlSha": "83b3dece1ccd399f",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "029-wheel-wheelbonus-weightedwheel-jackpot": {
+      "slug": "029-wheel-wheelbonus-weightedwheel-jackpot",
+      "htmlBytes100": 676500,
+      "htmlSha": "da0a35c2ac46fda1",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "wheel",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "03-88-fortunes": {
+      "slug": "03-88-fortunes",
+      "htmlBytes100": 740300,
+      "htmlSha": "0c083de12da22528",
+      "buttonCount": 61,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=dragon_jade",
+        "topology.paylines"
+      ]
+    },
+    "030-radial-wheelbonus-weightedwheel-jackpot": {
+      "slug": "030-radial-wheelbonus-weightedwheel-jackpot",
+      "htmlBytes100": 676500,
+      "htmlSha": "8dba1b0ba5bc8f85",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "wheel",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "031-rect-cascade-multorb-fs": {
+      "slug": "031-rect-cascade-multorb-fs",
+      "htmlBytes100": 722400,
+      "htmlSha": "5eb925b9619931f2",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "032-rectstack-cascade-multorb-fs": {
+      "slug": "032-rectstack-cascade-multorb-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "e5d523043e033235",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "033-varreel-cascade-multorb-fs": {
+      "slug": "033-varreel-cascade-multorb-fs",
+      "htmlBytes100": 722800,
+      "htmlSha": "8a224abe4c7d87d1",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "034-expand-cascade-multorb-fs": {
+      "slug": "034-expand-cascade-multorb-fs",
+      "htmlBytes100": 723200,
+      "htmlSha": "790231bc00aeaddd",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "035-inf-cascade-multorb-fs": {
+      "slug": "035-inf-cascade-multorb-fs",
+      "htmlBytes100": 722200,
+      "htmlSha": "aef3303713e88594",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "036-dual-cascade-multorb-fs": {
+      "slug": "036-dual-cascade-multorb-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "9ef2e776c8bb8c37",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "037-dia-cascade-multorb-fs": {
+      "slug": "037-dia-cascade-multorb-fs",
+      "htmlBytes100": 722800,
+      "htmlSha": "c8324e93d85fd75f",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "038-pyr-cascade-multorb-fs": {
+      "slug": "038-pyr-cascade-multorb-fs",
+      "htmlBytes100": 722500,
+      "htmlSha": "ded9cce2522eb775",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "039-cross-cascade-multorb-fs": {
+      "slug": "039-cross-cascade-multorb-fs",
+      "htmlBytes100": 722800,
+      "htmlSha": "c4c30e1df2f05d31",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "04-lock-it-link-night-life-diamonds-hold-onto-your-hat-eureka": {
+      "slug": "04-lock-it-link-night-life-diamonds-hold-onto-your-hat-eureka",
+      "htmlBytes100": 722300,
+      "htmlSha": "91811c2b5b8d802a",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "topology.rows"
+      ]
+    },
+    "040-lshape-cascade-multorb-fs": {
+      "slug": "040-lshape-cascade-multorb-fs",
+      "htmlBytes100": 723400,
+      "htmlSha": "1837547a13d1887f",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "041-rect-scatterpay-cascade": {
+      "slug": "041-rect-scatterpay-cascade",
+      "htmlBytes100": 722600,
+      "htmlSha": "fc05d709aed9adfa",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "042-dia-scatterpay-cascade": {
+      "slug": "042-dia-scatterpay-cascade",
+      "htmlBytes100": 722900,
+      "htmlSha": "034bd16c6e35a3db",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "043-pyr-scatterpay-cascade": {
+      "slug": "043-pyr-scatterpay-cascade",
+      "htmlBytes100": 723000,
+      "htmlSha": "ea551d75f356babf",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "044-cross-scatterpay-cascade": {
+      "slug": "044-cross-scatterpay-cascade",
+      "htmlBytes100": 722800,
+      "htmlSha": "4d1bad14a386aeb6",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "045-lshape-scatterpay-cascade": {
+      "slug": "045-lshape-scatterpay-cascade",
+      "htmlBytes100": 722900,
+      "htmlSha": "6a6c41436341dcc9",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "046-rect-fs-stickywild-wild": {
+      "slug": "046-rect-fs-stickywild-wild",
+      "htmlBytes100": 722600,
+      "htmlSha": "a4e580c70daaa7d6",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "047-rectstack-fs-stickywild-wild": {
+      "slug": "047-rectstack-fs-stickywild-wild",
+      "htmlBytes100": 722700,
+      "htmlSha": "de2a55edceef09be",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "048-varreel-fs-stickywild-wild": {
+      "slug": "048-varreel-fs-stickywild-wild",
+      "htmlBytes100": 723000,
+      "htmlSha": "1a54042cc838e1cb",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "049-expand-fs-stickywild-wild": {
+      "slug": "049-expand-fs-stickywild-wild",
+      "htmlBytes100": 722600,
+      "htmlSha": "b0075ed1db04fecf",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "05-ultimate-fire-link-china-street-olvera-street-route-66-explosion": {
+      "slug": "05-ultimate-fire-link-china-street-olvera-street-route-66-explosion",
+      "htmlBytes100": 808300,
+      "htmlSha": "28151ba505d173d2",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "expanding",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows",
+        "symbols.placeholder-roster"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=egypt_lapis"
+      ]
+    },
+    "050-inf-fs-stickywild-wild": {
+      "slug": "050-inf-fs-stickywild-wild",
+      "htmlBytes100": 722400,
+      "htmlSha": "582924d023992bc8",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "051-dual-fs-stickywild-wild": {
+      "slug": "051-dual-fs-stickywild-wild",
+      "htmlBytes100": 722700,
+      "htmlSha": "5ebb2386d15e943d",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "052-lock-fs-stickywild-wild": {
+      "slug": "052-lock-fs-stickywild-wild",
+      "htmlBytes100": 722900,
+      "htmlSha": "f15dc0daa7427dfb",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "053-rect-expandwild-fs": {
+      "slug": "053-rect-expandwild-fs",
+      "htmlBytes100": 726900,
+      "htmlSha": "cdbb9abda0b27d06",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "054-rectstack-expandwild-fs": {
+      "slug": "054-rectstack-expandwild-fs",
+      "htmlBytes100": 722700,
+      "htmlSha": "23d046363a7fddb4",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "055-varreel-expandwild-fs": {
+      "slug": "055-varreel-expandwild-fs",
+      "htmlBytes100": 727200,
+      "htmlSha": "c9870eb2e2ee80f5",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "056-expand-expandwild-fs": {
+      "slug": "056-expand-expandwild-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "5cd9d00343de4c40",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "057-inf-expandwild-fs": {
+      "slug": "057-inf-expandwild-fs",
+      "htmlBytes100": 722400,
+      "htmlSha": "9e1eab2840b6d54e",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "058-dual-expandwild-fs": {
+      "slug": "058-dual-expandwild-fs",
+      "htmlBytes100": 727100,
+      "htmlSha": "a1b9af6dcf90c91c",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "059-lock-expandwild-fs": {
+      "slug": "059-lock-expandwild-fs",
+      "htmlBytes100": 727100,
+      "htmlSha": "21e8a117a55f2938",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "06-quick-hit-platinum-black-white-diamond-etc": {
+      "slug": "06-quick-hit-platinum-black-white-diamond-etc",
+      "htmlBytes100": 697300,
+      "htmlSha": "78d7fc24ba8260f6",
+      "buttonCount": 58,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows",
+        "symbols.placeholder-roster"
+      ],
+      "derivedKeys": [
+        "topology.paylines",
+        "topology.reels",
+        "topology.rows"
+      ]
+    },
+    "060-rect-walkwild-fs": {
+      "slug": "060-rect-walkwild-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "4c30acbeb74041ed",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "061-rectstack-walkwild-fs": {
+      "slug": "061-rectstack-walkwild-fs",
+      "htmlBytes100": 722700,
+      "htmlSha": "ff42755d690b7f11",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "062-expand-walkwild-fs": {
+      "slug": "062-expand-walkwild-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "23091a9d713d4a7d",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "063-dual-walkwild-fs": {
+      "slug": "063-dual-walkwild-fs",
+      "htmlBytes100": 722700,
+      "htmlSha": "c16636e97196fb1c",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "064-lock-walkwild-fs": {
+      "slug": "064-lock-walkwild-fs",
+      "htmlBytes100": 722700,
+      "htmlSha": "24a73cf767bf221e",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "065-rect-mystery-fs": {
+      "slug": "065-rect-mystery-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "906c8a684a5159dd",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "066-rectstack-mystery-fs": {
+      "slug": "066-rectstack-mystery-fs",
+      "htmlBytes100": 722800,
+      "htmlSha": "72711f527c85340e",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "067-varreel-mystery-fs": {
+      "slug": "067-varreel-mystery-fs",
+      "htmlBytes100": 723300,
+      "htmlSha": "bc6faf026dd50823",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "068-expand-mystery-fs": {
+      "slug": "068-expand-mystery-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "21b68eac694548a1",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "069-inf-mystery-fs": {
+      "slug": "069-inf-mystery-fs",
+      "htmlBytes100": 722400,
+      "htmlSha": "430b8570910b0d78",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "07-jin-ji-bao-xi-endless-treasure-fu-dao-le-gong-xi-fa-cai": {
+      "slug": "07-jin-ji-bao-xi-endless-treasure-fu-dao-le-gong-xi-fa-cai",
+      "htmlBytes100": 771400,
+      "htmlSha": "648157e8a5e6294d",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "lock_respin",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows",
+        "symbols.placeholder-roster"
+      ],
+      "derivedKeys": [
+        "topology.dims-snapped-to-kind",
+        "topology.kind",
+        "topology.paylines"
+      ]
+    },
+    "070-dual-mystery-fs": {
+      "slug": "070-dual-mystery-fs",
+      "htmlBytes100": 722700,
+      "htmlSha": "f3309cbd12bbde37",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "071-cluster-mystery-fs": {
+      "slug": "071-cluster-mystery-fs",
+      "htmlBytes100": 731200,
+      "htmlSha": "c55cec422188fabc",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "072-mega-mystery-fs": {
+      "slug": "072-mega-mystery-fs",
+      "htmlBytes100": 730600,
+      "htmlSha": "3f778e4126bbdb8f",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "073-hex-mystery-fs": {
+      "slug": "073-hex-mystery-fs",
+      "htmlBytes100": 723000,
+      "htmlSha": "a5017847766324c8",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "hex",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "074-lock-mystery-fs": {
+      "slug": "074-lock-mystery-fs",
+      "htmlBytes100": 722700,
+      "htmlSha": "9958e9c480e21f92",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "075-rect-colsym-fs": {
+      "slug": "075-rect-colsym-fs",
+      "htmlBytes100": 722100,
+      "htmlSha": "29e04a4904d26fcb",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "076-varreel-colsym-fs": {
+      "slug": "076-varreel-colsym-fs",
+      "htmlBytes100": 722700,
+      "htmlSha": "ef12bc29beab6018",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "077-mega-colsym-fs": {
+      "slug": "077-mega-colsym-fs",
+      "htmlBytes100": 729600,
+      "htmlSha": "67dc2b01c2938f2c",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "078-rect-fs-progfs": {
+      "slug": "078-rect-fs-progfs",
+      "htmlBytes100": 722500,
+      "htmlSha": "1d91633ecef459fc",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "079-rectstack-fs-progfs": {
+      "slug": "079-rectstack-fs-progfs",
+      "htmlBytes100": 722700,
+      "htmlSha": "b3cba1f25f93edfe",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "08-rainbow-riches-original-road-to-even-more-riches": {
+      "slug": "08-rainbow-riches-original-road-to-even-more-riches",
+      "htmlBytes100": 730700,
+      "htmlSha": "36eb8d267c9c267e",
+      "buttonCount": 48,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows",
+        "symbols.placeholder-roster"
+      ],
+      "derivedKeys": [
+        "theme.palette"
+      ]
+    },
+    "080-varreel-fs-progfs": {
+      "slug": "080-varreel-fs-progfs",
+      "htmlBytes100": 728000,
+      "htmlSha": "c67fec9ccccdc198",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "081-expand-fs-progfs": {
+      "slug": "081-expand-fs-progfs",
+      "htmlBytes100": 722500,
+      "htmlSha": "e6d65a6e11b89837",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "082-inf-fs-progfs": {
+      "slug": "082-inf-fs-progfs",
+      "htmlBytes100": 722300,
+      "htmlSha": "599c26f9255c4250",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "083-dual-fs-progfs": {
+      "slug": "083-dual-fs-progfs",
+      "htmlBytes100": 722600,
+      "htmlSha": "8ba32bdf62d9b7dc",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "084-cluster-fs-progfs": {
+      "slug": "084-cluster-fs-progfs",
+      "htmlBytes100": 736400,
+      "htmlSha": "1b4a295d1eca9d62",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "085-mega-fs-progfs": {
+      "slug": "085-mega-fs-progfs",
+      "htmlBytes100": 730500,
+      "htmlSha": "abd2319b6f705fb2",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "086-hex-fs-progfs": {
+      "slug": "086-hex-fs-progfs",
+      "htmlBytes100": 721500,
+      "htmlSha": "3e0e46b21333f9d8",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "hexagonal",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "087-lock-fs-progfs": {
+      "slug": "087-lock-fs-progfs",
+      "htmlBytes100": 722700,
+      "htmlSha": "d584842cacdd6fbd",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "088-rect-lightning-fs": {
+      "slug": "088-rect-lightning-fs",
+      "htmlBytes100": 727100,
+      "htmlSha": "6b483dfb9d2e1f55",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "089-rectstack-lightning-fs": {
+      "slug": "089-rectstack-lightning-fs",
+      "htmlBytes100": 723100,
+      "htmlSha": "6ee8e068b1ae1bbd",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "09-jackpot-party-super-jackpot-party": {
+      "slug": "09-jackpot-party-super-jackpot-party",
+      "htmlBytes100": 819900,
+      "htmlSha": "aeabac3b318fcafb",
+      "buttonCount": 62,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "lock_respin",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "topology.dims-snapped-to-kind",
+        "topology.kind",
+        "topology.paylines"
+      ]
+    },
+    "090-expand-lightning-fs": {
+      "slug": "090-expand-lightning-fs",
+      "htmlBytes100": 722900,
+      "htmlSha": "9d4b84c89e2b92ce",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "091-dual-lightning-fs": {
+      "slug": "091-dual-lightning-fs",
+      "htmlBytes100": 722800,
+      "htmlSha": "5add9a66637ebcf8",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "092-dia-lightning-fs": {
+      "slug": "092-dia-lightning-fs",
+      "htmlBytes100": 723300,
+      "htmlSha": "5972bd8f01c55d71",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "093-pyr-lightning-fs": {
+      "slug": "093-pyr-lightning-fs",
+      "htmlBytes100": 723100,
+      "htmlSha": "bc6e02aeeb21dd7e",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "094-cross-lightning-fs": {
+      "slug": "094-cross-lightning-fs",
+      "htmlBytes100": 723300,
+      "htmlSha": "1ef1ff6c89632bf4",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "095-lshape-lightning-fs": {
+      "slug": "095-lshape-lightning-fs",
+      "htmlBytes100": 723000,
+      "htmlSha": "097e592db2661438",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "096-lock-lightning-fs": {
+      "slug": "096-lock-lightning-fs",
+      "htmlBytes100": 723200,
+      "htmlSha": "fb1986a0f05882b8",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "097-rect-gamble": {
+      "slug": "097-rect-gamble",
+      "htmlBytes100": 693800,
+      "htmlSha": "5b0167949e871307",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "098-rectstack-gamble": {
+      "slug": "098-rectstack-gamble",
+      "htmlBytes100": 694000,
+      "htmlSha": "f0f4763426c59dc7",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "099-varreel-gamble": {
+      "slug": "099-varreel-gamble",
+      "htmlBytes100": 694200,
+      "htmlSha": "4a55127996a66529",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "10-goldfish-goldfish-feeding-time": {
+      "slug": "10-goldfish-goldfish-feeding-time",
+      "htmlBytes100": 752000,
+      "htmlSha": "cb8fdde524fdb8a2",
+      "buttonCount": 64,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "variable_rows",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows",
+        "symbols.placeholder-roster"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=ocean_deep",
+        "topology.rows"
+      ]
+    },
+    "100-expand-gamble": {
+      "slug": "100-expand-gamble",
+      "htmlBytes100": 693800,
+      "htmlSha": "637d1f6dcabd8123",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "101-inf-gamble": {
+      "slug": "101-inf-gamble",
+      "htmlBytes100": 693700,
+      "htmlSha": "aeb3fff9777a1eaf",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "102-dual-gamble": {
+      "slug": "102-dual-gamble",
+      "htmlBytes100": 694000,
+      "htmlSha": "92ab5b6a863bcf90",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "103-cluster-gamble": {
+      "slug": "103-cluster-gamble",
+      "htmlBytes100": 702500,
+      "htmlSha": "323f13ec78944f34",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "104-mega-gamble": {
+      "slug": "104-mega-gamble",
+      "htmlBytes100": 702100,
+      "htmlSha": "8fc58a7bc79c02e0",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "105-hex-gamble": {
+      "slug": "105-hex-gamble",
+      "htmlBytes100": 692900,
+      "htmlSha": "2c151fdfb94a9b8e",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "hexagonal",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "106-dia-gamble": {
+      "slug": "106-dia-gamble",
+      "htmlBytes100": 694200,
+      "htmlSha": "60fa3b59975d1a6c",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "107-pyr-gamble": {
+      "slug": "107-pyr-gamble",
+      "htmlBytes100": 694000,
+      "htmlSha": "f1460da5e6a131a7",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "108-cross-gamble": {
+      "slug": "108-cross-gamble",
+      "htmlBytes100": 694200,
+      "htmlSha": "44d52ff603143c7a",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "109-lshape-gamble": {
+      "slug": "109-lshape-gamble",
+      "htmlBytes100": 694200,
+      "htmlSha": "f2d500fb1bd57dc3",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "11-zeus-kronos-zeus-unleashed-wms-legacy": {
+      "slug": "11-zeus-kronos-zeus-unleashed-wms-legacy",
+      "htmlBytes100": 739300,
+      "htmlSha": "031307ab30f0895e",
+      "buttonCount": 48,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "dual",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows",
+        "symbols.placeholder-roster"
+      ],
+      "derivedKeys": []
+    },
+    "110-lock-gamble": {
+      "slug": "110-lock-gamble",
+      "htmlBytes100": 694000,
+      "htmlSha": "1ef24b504bfce8d4",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "111-slingo-gamble": {
+      "slug": "111-slingo-gamble",
+      "htmlBytes100": 692800,
+      "htmlSha": "cfc055c10d64df1c",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "slingo",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "112-rect-gambleladder": {
+      "slug": "112-rect-gambleladder",
+      "htmlBytes100": 694100,
+      "htmlSha": "fcc1a6ee72a60d9f",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "113-rectstack-gambleladder": {
+      "slug": "113-rectstack-gambleladder",
+      "htmlBytes100": 694200,
+      "htmlSha": "1f153c4a2289e686",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "114-varreel-gambleladder": {
+      "slug": "114-varreel-gambleladder",
+      "htmlBytes100": 694500,
+      "htmlSha": "d4fd53452366ac4b",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "115-expand-gambleladder": {
+      "slug": "115-expand-gambleladder",
+      "htmlBytes100": 694100,
+      "htmlSha": "2a045cd2e0e85f17",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "116-inf-gambleladder": {
+      "slug": "116-inf-gambleladder",
+      "htmlBytes100": 693900,
+      "htmlSha": "6ba82ce81c9778ef",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "117-dual-gambleladder": {
+      "slug": "117-dual-gambleladder",
+      "htmlBytes100": 694200,
+      "htmlSha": "3e16fe8027df5c64",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "118-cluster-gambleladder": {
+      "slug": "118-cluster-gambleladder",
+      "htmlBytes100": 702700,
+      "htmlSha": "0937eada6e3a5a1a",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "119-mega-gambleladder": {
+      "slug": "119-mega-gambleladder",
+      "htmlBytes100": 702400,
+      "htmlSha": "1e9b0bae78017f14",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "12-bier-haus-heidi-hannahs-bier-haus": {
+      "slug": "12-bier-haus-heidi-hannahs-bier-haus",
+      "htmlBytes100": 740800,
+      "htmlSha": "b533d63575ecfb2b",
+      "buttonCount": 50,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows",
+        "symbols.placeholder-roster"
+      ],
+      "derivedKeys": [
+        "theme.palette"
+      ]
+    },
+    "120-hex-gambleladder": {
+      "slug": "120-hex-gambleladder",
+      "htmlBytes100": 694900,
+      "htmlSha": "559cfe6b7cab8680",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "121-dia-gambleladder": {
+      "slug": "121-dia-gambleladder",
+      "htmlBytes100": 694400,
+      "htmlSha": "f447e28d748d7d16",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "122-pyr-gambleladder": {
+      "slug": "122-pyr-gambleladder",
+      "htmlBytes100": 694200,
+      "htmlSha": "322789229e730218",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "123-cross-gambleladder": {
+      "slug": "123-cross-gambleladder",
+      "htmlBytes100": 694400,
+      "htmlSha": "04ceae4d999b7cec",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "124-lshape-gambleladder": {
+      "slug": "124-lshape-gambleladder",
+      "htmlBytes100": 694400,
+      "htmlSha": "7e3a5ea6ca89f57e",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "125-lock-gambleladder": {
+      "slug": "125-lock-gambleladder",
+      "htmlBytes100": 694200,
+      "htmlSha": "4c98195e3bb82cde",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "126-slingo-gambleladder": {
+      "slug": "126-slingo-gambleladder",
+      "htmlBytes100": 693000,
+      "htmlSha": "facc934e741778c0",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "slingo",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "127-rect-antebet-fs": {
+      "slug": "127-rect-antebet-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "4709835177b87cff",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "128-rectstack-antebet-fs": {
+      "slug": "128-rectstack-antebet-fs",
+      "htmlBytes100": 722400,
+      "htmlSha": "81f6e8e3a109208b",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "129-varreel-antebet-fs": {
+      "slug": "129-varreel-antebet-fs",
+      "htmlBytes100": 723000,
+      "htmlSha": "82ceb6a6c25d079f",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "13-raging-rhino": {
+      "slug": "13-raging-rhino",
+      "htmlBytes100": 729600,
+      "htmlSha": "35ecb6cf72dd4618",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=jungle_emerald",
+        "topology.paylines"
+      ]
+    },
+    "130-expand-antebet-fs": {
+      "slug": "130-expand-antebet-fs",
+      "htmlBytes100": 722300,
+      "htmlSha": "5b77768f34a6a322",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "131-inf-antebet-fs": {
+      "slug": "131-inf-antebet-fs",
+      "htmlBytes100": 722000,
+      "htmlSha": "4c15dfd9336fe30f",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "132-dual-antebet-fs": {
+      "slug": "132-dual-antebet-fs",
+      "htmlBytes100": 722400,
+      "htmlSha": "4942f03b1e3effd5",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "133-dia-antebet-fs": {
+      "slug": "133-dia-antebet-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "53453dac62afc47e",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "134-pyr-antebet-fs": {
+      "slug": "134-pyr-antebet-fs",
+      "htmlBytes100": 722400,
+      "htmlSha": "c15f1fd45697b77e",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "135-cross-antebet-fs": {
+      "slug": "135-cross-antebet-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "f8e15c3d5c2c90bc",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "136-lshape-antebet-fs": {
+      "slug": "136-lshape-antebet-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "beab83d949ad465c",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "137-lock-antebet-fs": {
+      "slug": "137-lock-antebet-fs",
+      "htmlBytes100": 722400,
+      "htmlSha": "236530a3ca5dc8ba",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "138-rect-bonuspick": {
+      "slug": "138-rect-bonuspick",
+      "htmlBytes100": 685700,
+      "htmlSha": "7891e17bbb90ee02",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "139-varreel-bonuspick": {
+      "slug": "139-varreel-bonuspick",
+      "htmlBytes100": 686100,
+      "htmlSha": "a187c3901db6ea3a",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "14-invaders-from-planet-moolah": {
+      "slug": "14-invaders-from-planet-moolah",
+      "htmlBytes100": 732100,
+      "htmlSha": "0cb5a6f7cb6b3eb2",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows",
+        "symbols.placeholder-roster"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=space_nebula"
+      ]
+    },
+    "140-lock-bonuspick": {
+      "slug": "140-lock-bonuspick",
+      "htmlBytes100": 685800,
+      "htmlSha": "2258824ad9ccd690",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "141-crash-crash": {
+      "slug": "141-crash-crash",
+      "htmlBytes100": 676400,
+      "htmlSha": "909c130688901a8c",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "crash",
+      "featureCount": 1,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "142-plinko-plinko": {
+      "slug": "142-plinko-plinko",
+      "htmlBytes100": 679000,
+      "htmlSha": "9a21ead0ea628220",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "plinko",
+      "featureCount": 1,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "143-slingo-slingo-fs": {
+      "slug": "143-slingo-slingo-fs",
+      "htmlBytes100": 721400,
+      "htmlSha": "342bffdc28a2a6d7",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "slingo",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "144-rect-wincap-scatterpay-cascade": {
+      "slug": "144-rect-wincap-scatterpay-cascade",
+      "htmlBytes100": 729600,
+      "htmlSha": "4521afbd9c1b44f0",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "145-rectstack-wincap-scatterpay-cascade": {
+      "slug": "145-rectstack-wincap-scatterpay-cascade",
+      "htmlBytes100": 722600,
+      "htmlSha": "db54dc903e025238",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "146-varreel-wincap-scatterpay-cascade": {
+      "slug": "146-varreel-wincap-scatterpay-cascade",
+      "htmlBytes100": 722700,
+      "htmlSha": "8acf6c7298994fb9",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "147-expand-wincap-scatterpay-cascade": {
+      "slug": "147-expand-wincap-scatterpay-cascade",
+      "htmlBytes100": 722300,
+      "htmlSha": "d9fde5958d97fa3c",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "148-inf-wincap-scatterpay-cascade": {
+      "slug": "148-inf-wincap-scatterpay-cascade",
+      "htmlBytes100": 729300,
+      "htmlSha": "22a57b718759efe3",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "149-dual-wincap-scatterpay-cascade": {
+      "slug": "149-dual-wincap-scatterpay-cascade",
+      "htmlBytes100": 729700,
+      "htmlSha": "423096871cddd1e6",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "15-willy-wonka-pure-imagination-world-of-wonka-dreamers-of-dreams": {
+      "slug": "15-willy-wonka-pure-imagination-world-of-wonka-dreamers-of-dreams",
+      "htmlBytes100": 733800,
+      "htmlSha": "0cb74695f4db77aa",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "dual",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=candy_pop",
+        "topology.rows"
+      ]
+    },
+    "150-dia-wincap-scatterpay-cascade": {
+      "slug": "150-dia-wincap-scatterpay-cascade",
+      "htmlBytes100": 722700,
+      "htmlSha": "3200f4af28dae605",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "151-pyr-wincap-scatterpay-cascade": {
+      "slug": "151-pyr-wincap-scatterpay-cascade",
+      "htmlBytes100": 722400,
+      "htmlSha": "812acb7d38f8eecd",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "152-cross-wincap-scatterpay-cascade": {
+      "slug": "152-cross-wincap-scatterpay-cascade",
+      "htmlBytes100": 722700,
+      "htmlSha": "410fb9ea0dc4a339",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "153-lshape-wincap-scatterpay-cascade": {
+      "slug": "153-lshape-wincap-scatterpay-cascade",
+      "htmlBytes100": 722700,
+      "htmlSha": "d5043f75b168f601",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "154-rect-fs-wild-stickywild-6": {
+      "slug": "154-rect-fs-wild-stickywild-6",
+      "htmlBytes100": 731500,
+      "htmlSha": "14ad5a45c47c3b32",
+      "buttonCount": 48,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 9,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "155-varreel-fs-wild-stickywild-6": {
+      "slug": "155-varreel-fs-wild-stickywild-6",
+      "htmlBytes100": 744100,
+      "htmlSha": "846efe3edbe4f578",
+      "buttonCount": 50,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 7,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "156-rect-mult-fs": {
+      "slug": "156-rect-mult-fs",
+      "htmlBytes100": 723000,
+      "htmlSha": "e94415fd77a4faec",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "157-rectstack-mult-fs": {
+      "slug": "157-rectstack-mult-fs",
+      "htmlBytes100": 722700,
+      "htmlSha": "afabaabfaea388db",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "158-varreel-mult-fs": {
+      "slug": "158-varreel-mult-fs",
+      "htmlBytes100": 722900,
+      "htmlSha": "c189753d83e4f1d1",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "159-expand-mult-fs": {
+      "slug": "159-expand-mult-fs",
+      "htmlBytes100": 722400,
+      "htmlSha": "cefc95fefb7330f5",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "16-monopoly-electric-wins-mega-movers-multiple-variants": {
+      "slug": "16-monopoly-electric-wins-mega-movers-multiple-variants",
+      "htmlBytes100": 702600,
+      "htmlSha": "2931947ac5367a04",
+      "buttonCount": 48,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=arctic_aurora",
+        "topology.paylines"
+      ]
+    },
+    "160-inf-mult-fs": {
+      "slug": "160-inf-mult-fs",
+      "htmlBytes100": 722800,
+      "htmlSha": "cd2300254165154c",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "161-dual-mult-fs": {
+      "slug": "161-dual-mult-fs",
+      "htmlBytes100": 722700,
+      "htmlSha": "617a5ba1fd953623",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "162-lock-mult-fs": {
+      "slug": "162-lock-mult-fs",
+      "htmlBytes100": 723200,
+      "htmlSha": "55b87d4b7afb7b2d",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "163-rect-fs-progfs": {
+      "slug": "163-rect-fs-progfs",
+      "htmlBytes100": 727800,
+      "htmlSha": "86e0b7a764ce1d8f",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "164-rectstack-fs-progfs": {
+      "slug": "164-rectstack-fs-progfs",
+      "htmlBytes100": 722600,
+      "htmlSha": "dad597f33ca807eb",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "165-varreel-fs-progfs": {
+      "slug": "165-varreel-fs-progfs",
+      "htmlBytes100": 722800,
+      "htmlSha": "e1728cb28ca41be9",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "166-expand-fs-progfs": {
+      "slug": "166-expand-fs-progfs",
+      "htmlBytes100": 722500,
+      "htmlSha": "c9fb518fb9263c66",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "167-inf-fs-progfs": {
+      "slug": "167-inf-fs-progfs",
+      "htmlBytes100": 722400,
+      "htmlSha": "36b3d2f6df1480b1",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "168-dual-fs-progfs": {
+      "slug": "168-dual-fs-progfs",
+      "htmlBytes100": 722600,
+      "htmlSha": "2921ee767599dd31",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "169-cluster-fs-progfs": {
+      "slug": "169-cluster-fs-progfs",
+      "htmlBytes100": 731200,
+      "htmlSha": "132c768a273b8a51",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "17-huff-n-more-puff-2022-1-lw-game-on-us-floor": {
+      "slug": "17-huff-n-more-puff-2022-1-lw-game-on-us-floor",
+      "htmlBytes100": 832100,
+      "htmlSha": "7cead6286d159141",
+      "buttonCount": 50,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "lock_respin",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows",
+        "symbols.placeholder-roster"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "topology.dims-snapped-to-kind",
+        "topology.kind",
+        "topology.paylines"
+      ]
+    },
+    "170-mega-fs-progfs": {
+      "slug": "170-mega-fs-progfs",
+      "htmlBytes100": 730500,
+      "htmlSha": "a296b5a7c87da0f9",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "171-hex-fs-progfs": {
+      "slug": "171-hex-fs-progfs",
+      "htmlBytes100": 736200,
+      "htmlSha": "e64889de271b77a0",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "172-lock-fs-progfs": {
+      "slug": "172-lock-fs-progfs",
+      "htmlBytes100": 722700,
+      "htmlSha": "466f6d25ff79b384",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "173-rect-mult-progfs-fs": {
+      "slug": "173-rect-mult-progfs-fs",
+      "htmlBytes100": 727600,
+      "htmlSha": "c67e16cde319dedd",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "174-rectstack-mult-progfs-fs": {
+      "slug": "174-rectstack-mult-progfs-fs",
+      "htmlBytes100": 722400,
+      "htmlSha": "34c693f7098b5bb8",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "175-varreel-mult-progfs-fs": {
+      "slug": "175-varreel-mult-progfs-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "59574d5fc3be5362",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "176-expand-mult-progfs-fs": {
+      "slug": "176-expand-mult-progfs-fs",
+      "htmlBytes100": 722300,
+      "htmlSha": "b9f8c8ea7f06063c",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "177-inf-mult-progfs-fs": {
+      "slug": "177-inf-mult-progfs-fs",
+      "htmlBytes100": 727300,
+      "htmlSha": "82db15c9be7de452",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "178-dual-mult-progfs-fs": {
+      "slug": "178-dual-mult-progfs-fs",
+      "htmlBytes100": 722500,
+      "htmlSha": "de46d87e94ffd412",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "179-lock-mult-progfs-fs": {
+      "slug": "179-lock-mult-progfs-fs",
+      "htmlBytes100": 727700,
+      "htmlSha": "4c7dedf8fa6129cd",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "18-dancing-drums-explosion-prosperity-20212023-24": {
+      "slug": "18-dancing-drums-explosion-prosperity-20212023-24",
+      "htmlBytes100": 722900,
+      "htmlSha": "0c47013558fc66b8",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "variable_rows",
+      "featureCount": 6,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows",
+        "symbols.placeholder-roster"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=dragon_jade",
+        "topology.paylines"
+      ]
+    },
+    "180-rect-mult-persistmult": {
+      "slug": "180-rect-mult-persistmult",
+      "htmlBytes100": 685700,
+      "htmlSha": "9de2dc653d50cd11",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "181-rectstack-mult-persistmult": {
+      "slug": "181-rectstack-mult-persistmult",
+      "htmlBytes100": 685900,
+      "htmlSha": "559bae991a3e451d",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "182-varreel-mult-persistmult": {
+      "slug": "182-varreel-mult-persistmult",
+      "htmlBytes100": 686100,
+      "htmlSha": "0084787777a512cd",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "183-expand-mult-persistmult": {
+      "slug": "183-expand-mult-persistmult",
+      "htmlBytes100": 685700,
+      "htmlSha": "be30964230bc53e9",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "184-inf-mult-persistmult": {
+      "slug": "184-inf-mult-persistmult",
+      "htmlBytes100": 685600,
+      "htmlSha": "153d2a7cc76d108e",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "185-dual-mult-persistmult": {
+      "slug": "185-dual-mult-persistmult",
+      "htmlBytes100": 685900,
+      "htmlSha": "4ba81f38e8889140",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "186-cluster-mult-persistmult": {
+      "slug": "186-cluster-mult-persistmult",
+      "htmlBytes100": 694400,
+      "htmlSha": "fd8f474eacabe15f",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "187-mega-mult-persistmult": {
+      "slug": "187-mega-mult-persistmult",
+      "htmlBytes100": 693700,
+      "htmlSha": "16c0072ba84ba9fa",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "188-hex-mult-persistmult": {
+      "slug": "188-hex-mult-persistmult",
+      "htmlBytes100": 686200,
+      "htmlSha": "ad9c631fcefb9ed5",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "189-rect-lightning-fs": {
+      "slug": "189-rect-lightning-fs",
+      "htmlBytes100": 727400,
+      "htmlSha": "85a97d7e602be772",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "19-coin-combo-cai-yuan-guang-jin-festival-etc": {
+      "slug": "19-coin-combo-cai-yuan-guang-jin-festival-etc",
+      "htmlBytes100": 722000,
+      "htmlSha": "e8af53e8d8417ee6",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=dragon_jade",
+        "topology.rows"
+      ]
+    },
+    "190-rectstack-lightning-fs": {
+      "slug": "190-rectstack-lightning-fs",
+      "htmlBytes100": 727600,
+      "htmlSha": "4258b3feb1ab9987",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "191-expand-lightning-fs": {
+      "slug": "191-expand-lightning-fs",
+      "htmlBytes100": 727400,
+      "htmlSha": "360a6819525dc4cb",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "192-dual-lightning-fs": {
+      "slug": "192-dual-lightning-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "f329100d9849b7b1",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "193-dia-lightning-fs": {
+      "slug": "193-dia-lightning-fs",
+      "htmlBytes100": 722800,
+      "htmlSha": "a7ba08104c432cb3",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "194-pyr-lightning-fs": {
+      "slug": "194-pyr-lightning-fs",
+      "htmlBytes100": 727400,
+      "htmlSha": "906f65cad83ab0a1",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "195-cross-lightning-fs": {
+      "slug": "195-cross-lightning-fs",
+      "htmlBytes100": 722800,
+      "htmlSha": "a42cd78c693fd855",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "196-lshape-lightning-fs": {
+      "slug": "196-lshape-lightning-fs",
+      "htmlBytes100": 727600,
+      "htmlSha": "79f3a241b880dbe8",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "197-lock-lightning-fs": {
+      "slug": "197-lock-lightning-fs",
+      "htmlBytes100": 727600,
+      "htmlSha": "6b93cb4526f01902",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "198-rect-stickywild-wild": {
+      "slug": "198-rect-stickywild-wild",
+      "htmlBytes100": 686200,
+      "htmlSha": "26324c0d2f3d0971",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "199-rectstack-stickywild-wild": {
+      "slug": "199-rectstack-stickywild-wild",
+      "htmlBytes100": 686400,
+      "htmlSha": "0c9bd850f65ea521",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "20-frankenstein-2023-1-eilers-ranking": {
+      "slug": "20-frankenstein-2023-1-eilers-ranking",
+      "htmlBytes100": 722400,
+      "htmlSha": "d1d88342071e7a77",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "topology.paylines"
+      ]
+    },
+    "200-varreel-stickywild-wild": {
+      "slug": "200-varreel-stickywild-wild",
+      "htmlBytes100": 686500,
+      "htmlSha": "c01626d62c1ab37e",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "201-expand-stickywild-wild": {
+      "slug": "201-expand-stickywild-wild",
+      "htmlBytes100": 686200,
+      "htmlSha": "d71cd181e159b920",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "202-inf-stickywild-wild": {
+      "slug": "202-inf-stickywild-wild",
+      "htmlBytes100": 686000,
+      "htmlSha": "79e664ab16689466",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "203-dual-stickywild-wild": {
+      "slug": "203-dual-stickywild-wild",
+      "htmlBytes100": 686300,
+      "htmlSha": "6ebc03c7a96d488e",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "204-lock-stickywild-wild": {
+      "slug": "204-lock-stickywild-wild",
+      "htmlBytes100": 686600,
+      "htmlSha": "bcf851af99379471",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "205-rect-wildreel-fs": {
+      "slug": "205-rect-wildreel-fs",
+      "htmlBytes100": 722300,
+      "htmlSha": "a9a621d1519ab5bc",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "206-rectstack-wildreel-fs": {
+      "slug": "206-rectstack-wildreel-fs",
+      "htmlBytes100": 722400,
+      "htmlSha": "be006709e2a47226",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "207-varreel-wildreel-fs": {
+      "slug": "207-varreel-wildreel-fs",
+      "htmlBytes100": 722700,
+      "htmlSha": "2137bbb7aaba08c4",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "208-expand-wildreel-fs": {
+      "slug": "208-expand-wildreel-fs",
+      "htmlBytes100": 722300,
+      "htmlSha": "2b963c22e25740a5",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "209-inf-wildreel-fs": {
+      "slug": "209-inf-wildreel-fs",
+      "htmlBytes100": 722100,
+      "htmlSha": "09ffbe4a78c2e48b",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "21-jin-long-888-5-treasures-2022": {
+      "slug": "21-jin-long-888-5-treasures-2022",
+      "htmlBytes100": 723000,
+      "htmlSha": "1e7981cdfa862126",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "topology.paylines"
+      ]
+    },
+    "210-dual-wildreel-fs": {
+      "slug": "210-dual-wildreel-fs",
+      "htmlBytes100": 722800,
+      "htmlSha": "6a9f4703658f6c70",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "211-lock-wildreel-fs": {
+      "slug": "211-lock-wildreel-fs",
+      "htmlBytes100": 722400,
+      "htmlSha": "7e0d037baa64c1e6",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "212-rect-walkwild-fs": {
+      "slug": "212-rect-walkwild-fs",
+      "htmlBytes100": 722500,
+      "htmlSha": "aa59fcb1c7e04528",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "213-rectstack-walkwild-fs": {
+      "slug": "213-rectstack-walkwild-fs",
+      "htmlBytes100": 722700,
+      "htmlSha": "073e450958d78e8b",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "214-expand-walkwild-fs": {
+      "slug": "214-expand-walkwild-fs",
+      "htmlBytes100": 722500,
+      "htmlSha": "45059f9e90305e83",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "215-dual-walkwild-fs": {
+      "slug": "215-dual-walkwild-fs",
+      "htmlBytes100": 722700,
+      "htmlSha": "624b672bd457c02a",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "216-lock-walkwild-fs": {
+      "slug": "216-lock-walkwild-fs",
+      "htmlBytes100": 723000,
+      "htmlSha": "0bd8a44eed9432f7",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "217-cluster-mystery-clusterpays-cascade": {
+      "slug": "217-cluster-mystery-clusterpays-cascade",
+      "htmlBytes100": 694500,
+      "htmlSha": "2d3971e4a61eb096",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "218-mega-mystery-clusterpays-cascade": {
+      "slug": "218-mega-mystery-clusterpays-cascade",
+      "htmlBytes100": 693800,
+      "htmlSha": "059ff30d39b5d5a2",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "219-hex-mystery-clusterpays-cascade": {
+      "slug": "219-hex-mystery-clusterpays-cascade",
+      "htmlBytes100": 686300,
+      "htmlSha": "414392d478ba05d4",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "22-gold-stacks-88-lightning-box-lw-online": {
+      "slug": "22-gold-stacks-88-lightning-box-lw-online",
+      "htmlBytes100": 826300,
+      "htmlSha": "b81550c072e45291",
+      "buttonCount": 62,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "lock_respin",
+      "featureCount": 6,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows",
+        "symbols.placeholder-roster"
+      ],
+      "derivedKeys": [
+        "topology.dims-snapped-to-kind",
+        "topology.kind",
+        "topology.paylines"
+      ]
+    },
+    "220-rect-colsym-fs": {
+      "slug": "220-rect-colsym-fs",
+      "htmlBytes100": 722500,
+      "htmlSha": "704d3cd3bb2d0783",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "221-varreel-colsym-fs": {
+      "slug": "221-varreel-colsym-fs",
+      "htmlBytes100": 722800,
+      "htmlSha": "3ba924dc97687886",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "222-mega-colsym-fs": {
+      "slug": "222-mega-colsym-fs",
+      "htmlBytes100": 729800,
+      "htmlSha": "d6d6017ceb40543d",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "223-rect-fs-holdandwin-respin": {
+      "slug": "223-rect-fs-holdandwin-respin",
+      "htmlBytes100": 802400,
+      "htmlSha": "9a63b05ec2d823d1",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "lock_respin",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "topology.dims-snapped-to-kind",
+        "topology.kind"
+      ]
+    },
+    "224-lock-fs-holdandwin-respin": {
+      "slug": "224-lock-fs-holdandwin-respin",
+      "htmlBytes100": 722500,
+      "htmlSha": "af69dfbae7ef7a59",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "225-rect-bonusbuy-bonusbuydet-fs-1": {
+      "slug": "225-rect-bonusbuy-bonusbuydet-fs-1",
+      "htmlBytes100": 748400,
+      "htmlSha": "dca98b068c1216a4",
+      "buttonCount": 51,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "226-varreel-bonusbuy-bonusbuydet-fs-1": {
+      "slug": "226-varreel-bonusbuy-bonusbuydet-fs-1",
+      "htmlBytes100": 723000,
+      "htmlSha": "cf5d5fd69f306075",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "227-rect-gamble": {
+      "slug": "227-rect-gamble",
+      "htmlBytes100": 694100,
+      "htmlSha": "a0ddb4811f1428d4",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "228-rectstack-gamble": {
+      "slug": "228-rectstack-gamble",
+      "htmlBytes100": 694200,
+      "htmlSha": "4fce4f1575cfddbb",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "229-varreel-gamble": {
+      "slug": "229-varreel-gamble",
+      "htmlBytes100": 694500,
+      "htmlSha": "ec84636bab333e89",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "23-cash-falls-series": {
+      "slug": "23-cash-falls-series",
+      "htmlBytes100": 813600,
+      "htmlSha": "fd8361700819393e",
+      "buttonCount": 48,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "variable_rows",
+      "featureCount": 7,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "topology.paylines",
+        "topology.rows"
+      ]
+    },
+    "230-expand-gamble": {
+      "slug": "230-expand-gamble",
+      "htmlBytes100": 694100,
+      "htmlSha": "ffc66cc7b2c32898",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "231-inf-gamble": {
+      "slug": "231-inf-gamble",
+      "htmlBytes100": 693800,
+      "htmlSha": "71d159fcaa726d85",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "232-dual-gamble": {
+      "slug": "232-dual-gamble",
+      "htmlBytes100": 694200,
+      "htmlSha": "0ee8ac815cc9224b",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "233-dia-gamble": {
+      "slug": "233-dia-gamble",
+      "htmlBytes100": 694400,
+      "htmlSha": "57f954a2ead0394e",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "234-pyr-gamble": {
+      "slug": "234-pyr-gamble",
+      "htmlBytes100": 694200,
+      "htmlSha": "de646c44852c3ba7",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "235-cross-gamble": {
+      "slug": "235-cross-gamble",
+      "htmlBytes100": 694400,
+      "htmlSha": "23e706bcf9aca875",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "236-lshape-gamble": {
+      "slug": "236-lshape-gamble",
+      "htmlBytes100": 694500,
+      "htmlSha": "5f1655247e64cea4",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "237-lock-gamble": {
+      "slug": "237-lock-gamble",
+      "htmlBytes100": 694200,
+      "htmlSha": "fd7f4b7369f58e4e",
+      "buttonCount": 47,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "238-rect-gambleladder-fs": {
+      "slug": "238-rect-gambleladder-fs",
+      "htmlBytes100": 730900,
+      "htmlSha": "2d429925736eb1c8",
+      "buttonCount": 48,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "239-rectstack-gambleladder-fs": {
+      "slug": "239-rectstack-gambleladder-fs",
+      "htmlBytes100": 731100,
+      "htmlSha": "7f21588ef7870626",
+      "buttonCount": 48,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "24-88-fortunes-megaways": {
+      "slug": "24-88-fortunes-megaways",
+      "htmlBytes100": 734800,
+      "htmlSha": "07b2fad65d36816a",
+      "buttonCount": 48,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "variable_rows",
+      "featureCount": 7,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows",
+        "symbols.placeholder-roster"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=dragon_jade",
+        "topology.paylines",
+        "topology.rows"
+      ]
+    },
+    "240-varreel-gambleladder-fs": {
+      "slug": "240-varreel-gambleladder-fs",
+      "htmlBytes100": 731300,
+      "htmlSha": "27710da0e1f29082",
+      "buttonCount": 48,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "241-expand-gambleladder-fs": {
+      "slug": "241-expand-gambleladder-fs",
+      "htmlBytes100": 730900,
+      "htmlSha": "7451555b3b0e5ea2",
+      "buttonCount": 48,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "242-inf-gambleladder-fs": {
+      "slug": "242-inf-gambleladder-fs",
+      "htmlBytes100": 730800,
+      "htmlSha": "caf330465e0bb65e",
+      "buttonCount": 48,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "243-dual-gambleladder-fs": {
+      "slug": "243-dual-gambleladder-fs",
+      "htmlBytes100": 731100,
+      "htmlSha": "c1b879449e52e876",
+      "buttonCount": 48,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "244-dia-gambleladder-fs": {
+      "slug": "244-dia-gambleladder-fs",
+      "htmlBytes100": 731300,
+      "htmlSha": "4e4679472cf22873",
+      "buttonCount": 48,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "245-pyr-gambleladder-fs": {
+      "slug": "245-pyr-gambleladder-fs",
+      "htmlBytes100": 731000,
+      "htmlSha": "4f1250cf140ab353",
+      "buttonCount": 48,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "246-cross-gambleladder-fs": {
+      "slug": "246-cross-gambleladder-fs",
+      "htmlBytes100": 731300,
+      "htmlSha": "ed1b399f911cfbec",
+      "buttonCount": 48,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "247-lshape-gambleladder-fs": {
+      "slug": "247-lshape-gambleladder-fs",
+      "htmlBytes100": 731300,
+      "htmlSha": "88370058ff4c6543",
+      "buttonCount": 48,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "248-lock-gambleladder-fs": {
+      "slug": "248-lock-gambleladder-fs",
+      "htmlBytes100": 731100,
+      "htmlSha": "f8ff002880fcdff3",
+      "buttonCount": 48,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "249-rect-pathmult-ways": {
+      "slug": "249-rect-pathmult-ways",
+      "htmlBytes100": 685700,
+      "htmlSha": "c6b5107e62a06422",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "25-rainbow-riches-online-ports-megaways-slingo-cluster": {
+      "slug": "25-rainbow-riches-online-ports-megaways-slingo-cluster",
+      "htmlBytes100": 837900,
+      "htmlSha": "eb0a1afdbd8630e4",
+      "buttonCount": 62,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "slingo",
+      "featureCount": 8,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows",
+        "symbols.placeholder-roster"
+      ],
+      "derivedKeys": [
+        "theme.palette"
+      ]
+    },
+    "250-rectstack-pathmult-ways": {
+      "slug": "250-rectstack-pathmult-ways",
+      "htmlBytes100": 685800,
+      "htmlSha": "69b7e35244652ed4",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "251-varreel-pathmult-ways": {
+      "slug": "251-varreel-pathmult-ways",
+      "htmlBytes100": 685900,
+      "htmlSha": "b4d5c06446608218",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "252-expand-pathmult-ways": {
+      "slug": "252-expand-pathmult-ways",
+      "htmlBytes100": 685700,
+      "htmlSha": "040b9f319387dd8a",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "253-inf-pathmult-ways": {
+      "slug": "253-inf-pathmult-ways",
+      "htmlBytes100": 685400,
+      "htmlSha": "5f99129b04114385",
+      "buttonCount": 43,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "254-dual-pathmult-ways": {
+      "slug": "254-dual-pathmult-ways",
+      "htmlBytes100": 685800,
+      "htmlSha": "24a8d55ca900384d",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "255-rect-wincap-fs": {
+      "slug": "255-rect-wincap-fs",
+      "htmlBytes100": 722200,
+      "htmlSha": "29060631d6f819c1",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "256-rectstack-wincap-fs": {
+      "slug": "256-rectstack-wincap-fs",
+      "htmlBytes100": 722700,
+      "htmlSha": "7f8ae51bff93a92c",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "257-varreel-wincap-fs": {
+      "slug": "257-varreel-wincap-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "dbdc9dc0ecd28f64",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "258-expand-wincap-fs": {
+      "slug": "258-expand-wincap-fs",
+      "htmlBytes100": 722200,
+      "htmlSha": "111ab7d363cc09e5",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "259-inf-wincap-fs": {
+      "slug": "259-inf-wincap-fs",
+      "htmlBytes100": 729000,
+      "htmlSha": "e0fea9783eb236b3",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "260-dual-wincap-fs": {
+      "slug": "260-dual-wincap-fs",
+      "htmlBytes100": 722400,
+      "htmlSha": "067af251e0808db6",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "261-dia-wincap-fs": {
+      "slug": "261-dia-wincap-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "51bdd288c3ca6ff8",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "262-pyr-wincap-fs": {
+      "slug": "262-pyr-wincap-fs",
+      "htmlBytes100": 722400,
+      "htmlSha": "e2ba1044d0847c2e",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "263-cross-wincap-fs": {
+      "slug": "263-cross-wincap-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "06936f26cd627288",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "264-lshape-wincap-fs": {
+      "slug": "264-lshape-wincap-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "9b02b3b54485f561",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "265-lock-wincap-fs": {
+      "slug": "265-lock-wincap-fs",
+      "htmlBytes100": 722400,
+      "htmlSha": "ae9f0e0ff4b130a7",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "266-cluster-scatterpay-cascade": {
+      "slug": "266-cluster-scatterpay-cascade",
+      "htmlBytes100": 723200,
+      "htmlSha": "92bbc84c4fef8c93",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "hex",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "267-mega-scatterpay-cascade": {
+      "slug": "267-mega-scatterpay-cascade",
+      "htmlBytes100": 722900,
+      "htmlSha": "73918fc284d469ce",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "hex",
+      "featureCount": 5,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "268-hex-scatterpay-cascade": {
+      "slug": "268-hex-scatterpay-cascade",
+      "htmlBytes100": 723000,
+      "htmlSha": "5d5c6ecce31df0e1",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "hex",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "269-rect-respin-wild": {
+      "slug": "269-rect-respin-wild",
+      "htmlBytes100": 725300,
+      "htmlSha": "0143d36a21638557",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "270-rectstack-respin-wild": {
+      "slug": "270-rectstack-respin-wild",
+      "htmlBytes100": 725400,
+      "htmlSha": "1c40186519980986",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "271-varreel-respin-wild": {
+      "slug": "271-varreel-respin-wild",
+      "htmlBytes100": 725700,
+      "htmlSha": "2cd2cb72a03a2188",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "272-expand-respin-wild": {
+      "slug": "272-expand-respin-wild",
+      "htmlBytes100": 725200,
+      "htmlSha": "2a72883db72bce99",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "273-inf-respin-wild": {
+      "slug": "273-inf-respin-wild",
+      "htmlBytes100": 725100,
+      "htmlSha": "92c391869f2ec315",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "274-dual-respin-wild": {
+      "slug": "274-dual-respin-wild",
+      "htmlBytes100": 725400,
+      "htmlSha": "7a85efd56dcb27fb",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "275-lock-respin-wild": {
+      "slug": "275-lock-respin-wild",
+      "htmlBytes100": 725400,
+      "htmlSha": "ecbe209204845ea1",
+      "buttonCount": 45,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "276-rect-cascade-fs": {
+      "slug": "276-rect-cascade-fs",
+      "htmlBytes100": 722500,
+      "htmlSha": "69ef43a3916ac4cb",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "277-rectstack-cascade-fs": {
+      "slug": "277-rectstack-cascade-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "a03607b611f67646",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "278-varreel-cascade-fs": {
+      "slug": "278-varreel-cascade-fs",
+      "htmlBytes100": 722900,
+      "htmlSha": "4575c2bc8647b793",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "279-expand-cascade-fs": {
+      "slug": "279-expand-cascade-fs",
+      "htmlBytes100": 722500,
+      "htmlSha": "06584bdf3ee9727d",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "280-inf-cascade-fs": {
+      "slug": "280-inf-cascade-fs",
+      "htmlBytes100": 722300,
+      "htmlSha": "d3ba446f271f71bd",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "281-dual-cascade-fs": {
+      "slug": "281-dual-cascade-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "1744fd1244d5ec97",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "282-dia-cascade-fs": {
+      "slug": "282-dia-cascade-fs",
+      "htmlBytes100": 722800,
+      "htmlSha": "58ba521e907f6262",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "283-pyr-cascade-fs": {
+      "slug": "283-pyr-cascade-fs",
+      "htmlBytes100": 722600,
+      "htmlSha": "17f507e038c40f34",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "284-cross-cascade-fs": {
+      "slug": "284-cross-cascade-fs",
+      "htmlBytes100": 722900,
+      "htmlSha": "659d6e8e435a26d4",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "285-lshape-cascade-fs": {
+      "slug": "285-lshape-cascade-fs",
+      "htmlBytes100": 722900,
+      "htmlSha": "3993498622c1ba4f",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 4,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "286-rect-cascade-stickywild-multorb-5": {
+      "slug": "286-rect-cascade-stickywild-multorb-5",
+      "htmlBytes100": 825100,
+      "htmlSha": "e645c2c8f42b7fa9",
+      "buttonCount": 50,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "lock_respin",
+      "featureCount": 7,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon",
+        "topology.dims-snapped-to-kind",
+        "topology.kind"
+      ]
+    },
+    "287-rect-cascade-stickywild-multorb-5-max": {
+      "slug": "287-rect-cascade-stickywild-multorb-5-max",
+      "htmlBytes100": 825100,
+      "htmlSha": "82ffc98a3d5e89c8",
+      "buttonCount": 50,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "lock_respin",
+      "featureCount": 7,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon",
+        "topology.dims-snapped-to-kind",
+        "topology.kind"
+      ]
+    },
+    "288-varreel-cascade-stickywild-multorb-5": {
+      "slug": "288-varreel-cascade-stickywild-multorb-5",
+      "htmlBytes100": 825400,
+      "htmlSha": "9f71fb71d792ee43",
+      "buttonCount": 50,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "lock_respin",
+      "featureCount": 7,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon",
+        "topology.kind"
+      ]
+    },
+    "289-varreel-cascade-stickywild-multorb-5-max": {
+      "slug": "289-varreel-cascade-stickywild-multorb-5-max",
+      "htmlBytes100": 825400,
+      "htmlSha": "c58c525e910fbf88",
+      "buttonCount": 50,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "lock_respin",
+      "featureCount": 7,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon",
+        "topology.kind"
+      ]
+    },
+    "290-rect-fs-wild-mult-min": {
+      "slug": "290-rect-fs-wild-mult-min",
+      "htmlBytes100": 722300,
+      "htmlSha": "9e96b22458132d2c",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "291-rectstack-fs-wild-mult-min": {
+      "slug": "291-rectstack-fs-wild-mult-min",
+      "htmlBytes100": 722400,
+      "htmlSha": "2d868b75092dab46",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "292-varreel-fs-wild-mult-min": {
+      "slug": "292-varreel-fs-wild-mult-min",
+      "htmlBytes100": 722700,
+      "htmlSha": "cb5d8268d075e9ec",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": []
+    },
+    "293-expand-fs-wild-mult-min": {
+      "slug": "293-expand-fs-wild-mult-min",
+      "htmlBytes100": 722300,
+      "htmlSha": "0827d7f60b8c6e2c",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "294-inf-fs-wild-mult-min": {
+      "slug": "294-inf-fs-wild-mult-min",
+      "htmlBytes100": 722600,
+      "htmlSha": "ec41ca9d887a8211",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "295-dual-fs-wild-mult-min": {
+      "slug": "295-dual-fs-wild-mult-min",
+      "htmlBytes100": 722300,
+      "htmlSha": "5fdef584e8fad561",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "296-cluster-fs-wild-mult-min": {
+      "slug": "296-cluster-fs-wild-mult-min",
+      "htmlBytes100": 731000,
+      "htmlSha": "1ae9a3b9160daa15",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "297-mega-fs-wild-mult-min": {
+      "slug": "297-mega-fs-wild-mult-min",
+      "htmlBytes100": 730300,
+      "htmlSha": "23df813700776001",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "298-hex-fs-wild-mult-min": {
+      "slug": "298-hex-fs-wild-mult-min",
+      "htmlBytes100": 731200,
+      "htmlSha": "9732de4fe365c6b3",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "299-dia-fs-wild-mult-min": {
+      "slug": "299-dia-fs-wild-mult-min",
+      "htmlBytes100": 722600,
+      "htmlSha": "d8a419d7d25fbb51",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "300-pyr-fs-wild-mult-min": {
+      "slug": "300-pyr-fs-wild-mult-min",
+      "htmlBytes100": 722400,
+      "htmlSha": "4884d832cab50a7b",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "301-cross-fs-wild-mult-min": {
+      "slug": "301-cross-fs-wild-mult-min",
+      "htmlBytes100": 723100,
+      "htmlSha": "48097c169ec240b6",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "302-lshape-fs-wild-mult-min": {
+      "slug": "302-lshape-fs-wild-mult-min",
+      "htmlBytes100": 722600,
+      "htmlSha": "5d4bad2b06c14a53",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 3,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "303-lock-fs-wild-mult-min": {
+      "slug": "303-lock-fs-wild-mult-min",
+      "htmlBytes100": 722400,
+      "htmlSha": "5af9abbdf474433c",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "304-wheel-fs-wild-mult-min": {
+      "slug": "304-wheel-fs-wild-mult-min",
+      "htmlBytes100": 713600,
+      "htmlSha": "c802421d44e17130",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "wheel",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "305-radial-fs-wild-mult-min": {
+      "slug": "305-radial-fs-wild-mult-min",
+      "htmlBytes100": 713500,
+      "htmlSha": "97cd16b78518ee6a",
+      "buttonCount": 46,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "radial",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "306-crash-fs-wild-mult-min": {
+      "slug": "306-crash-fs-wild-mult-min",
+      "htmlBytes100": 713100,
+      "htmlSha": "e5a67e950f8de0f3",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "crash",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "307-plinko-fs-wild-mult-min": {
+      "slug": "307-plinko-fs-wild-mult-min",
+      "htmlBytes100": 715700,
+      "htmlSha": "8574a62395268285",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "plinko",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "308-slingo-fs-wild-mult-min": {
+      "slug": "308-slingo-fs-wild-mult-min",
+      "htmlBytes100": 721100,
+      "htmlSha": "21d40dcf31fde5b4",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "slingo",
+      "featureCount": 2,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=cyber_neon"
+      ]
+    },
+    "cash-eruption-foundry-gdd": {
+      "slug": "cash-eruption-foundry-gdd",
+      "htmlBytes100": 854600,
+      "htmlSha": "da74d77908920f15",
+      "buttonCount": 56,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "lock_respin",
+      "featureCount": 10,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows",
+        "symbols.placeholder-roster"
+      ],
+      "derivedKeys": [
+        "topology.dims-snapped-to-kind",
+        "topology.kind"
+      ]
+    },
+    "gates-of-olympus-1000-gdd": {
+      "slug": "gates-of-olympus-1000-gdd",
+      "htmlBytes100": 734700,
+      "htmlSha": "4958b43046d5ca98",
+      "buttonCount": 44,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "rectangular",
+      "featureCount": 9,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "theme.palette",
+        "theme.paletteFamily=mythology_gold",
+        "topology.paylines"
+      ]
+    },
+    "huff-n-more-puff-gdd": {
+      "slug": "huff-n-more-puff-gdd",
+      "htmlBytes100": 879600,
+      "htmlSha": "998da1e9fab42a00",
+      "buttonCount": 63,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "lock_respin",
+      "featureCount": 11,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "topology.dims-snapped-to-kind",
+        "topology.kind",
+        "topology.paylines"
+      ]
+    },
+    "starlight-travellers-gdd": {
+      "slug": "starlight-travellers-gdd",
+      "htmlBytes100": 787300,
+      "htmlSha": "4c92287c25df35b9",
+      "buttonCount": 70,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "cluster",
+      "featureCount": 13,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "topology.paylines"
+      ]
+    },
+    "wrath-of-olympus-gdd": {
+      "slug": "wrath-of-olympus-gdd",
+      "htmlBytes100": 822600,
+      "htmlSha": "1e751467feeba9f4",
+      "buttonCount": 48,
+      "paytableRows": 0,
+      "footerPresent": true,
+      "archetypeBackfillIds": [],
+      "topologyKind": "lock_respin",
+      "featureCount": 10,
+      "autofixedKeys": [
+        "bet.defaults",
+        "paytable.placeholder-rows"
+      ],
+      "derivedKeys": [
+        "topology.dims-snapped-to-kind",
+        "topology.kind"
+      ]
+    }
+  }
+}

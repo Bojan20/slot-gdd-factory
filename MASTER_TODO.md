@@ -1,3 +1,90 @@
+## 🏆 WAVE UQ-15 — LIVE ARCHETYPE DOCS SITE · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"redom"*.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-15 — tools/gen-archetype-docs.mjs                                              │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ ŠTA RADI                                                                              │
+│   Renderuje single static HTML page direktno iz featureArchetypes.mjs.                 │
+│   Single file, zero deps, otvara offline.                                              │
+│                                                                                       │
+│ LAYOUT                                                                                │
+│   · Sticky header: 28-archetype count + search + dark mode toggle (localStorage)       │
+│   · Responsive 1/2/3 column card grid (CSS auto)                                       │
+│   · Per-card: badge#, id, purpose, forceFlag, windowFlag, hooks, examples,             │
+│     aliases pointing to this archetype, intent regex, state shape JSON                 │
+│   · Aliases section: 29-row table sinonim → arhetip                                    │
+│   · Non-archetype section: 22 kinda routed to null sa objašnjenjem                     │
+│                                                                                       │
+│ OUTPUT                                                                                │
+│   dist/docs/archetypes.html       (~46 KB, vendor-neutral, no CDN)                     │
+│   dist/docs/archetypes-meta.json  (machine-readable mirror)                            │
+│                                                                                       │
+│ TESTS (tests/tools/gen-archetype-docs.test.mjs, 7/7 PASS)                              │
+│   tool exit 0 + both files written · HTML self-contained · svih 28 archetype           │
+│   ids appear as data-id="…" cards · aliases section right count ·                      │
+│   non-archetype section right count · JSON meta mirrors catalog ·                      │
+│   vendor-trademark sweep nad generated HTML body                                       │
+│                                                                                       │
+│ VERIFY GATE + .gitignore                                                              │
+│   tools/verify.mjs: + step "archetype docs generator"                                  │
+│   .gitignore: + dist/docs/                                                             │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   8f4d057 feat(UQ-15): live archetype docs site generator                              │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🏆 WAVE UQ-14 — END-TO-END ONE-SHOT INGEST · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"redom"*.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-14 — tools/ingest.mjs                                                          │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ ŠTA RADI                                                                              │
+│   `node tools/ingest.mjs --file ./gdd.pdf` (ili --url) ide od izvora pravo do          │
+│   playable HTML-a u dist/ingest/<slug>/. Bez ručnih parser / V1-V5 / build koraka.    │
+│                                                                                       │
+│ PIPELINE                                                                              │
+│   1. Source: --file <path> ILI --url <https> (60s fetch timeout)                       │
+│   2. Extract: pdftotext -layout (pdf) | readFile (md/txt/mdx) | JSON                   │
+│   3. Parse: parseGDD(text, ext) ILI normalizeFromJSON za raw JSON                      │
+│   4. Smart defaults: full pipeline (svih 6 stages)                                     │
+│   5. Kimi reconcile: optional (default ON, --no-llm skip),                              │
+│      soft-fail ako cortex-kimi-ask nije dostupan                                       │
+│   6. Build: buildSlotHTML(model) → standalone HTML                                     │
+│   7. Write: index.html + model.json + raw.txt + ingest.log                             │
+│   8. --open auto-otvara u browseru (macOS)                                             │
+│                                                                                       │
+│ FLAGS                                                                                 │
+│   --file <path> | --url <url> | --slug <name> | --no-llm | --open | --dry-run         │
+│                                                                                       │
+│ TESTS (tests/tools/ingest.test.mjs, 7/7 PASS)                                          │
+│   missing flags → exit 2 · nonexistent file → exit 1 · unsupported ext → exit 1 ·     │
+│   real MD sample → index/model/log emitted · --no-llm honored · HTML ≥ 100 KB ·       │
+│   ingest.log captures svaki step · auto-cleanup test artifacts                         │
+│                                                                                       │
+│ LATENT FIX (otkriven live tokom PDF ingest testa)                                      │
+│   autofixGaps koristi pay-tier total (HP+MP+LP), ne ukupni broj sa specials —          │
+│   GDD često ima scatter/wild u specials ali HP/MP/LP roster missing.                   │
+│                                                                                       │
+│ LIVE RUNS                                                                             │
+│   samples/CRYSTAL_FORGE_GAME_GDD.md → 10 symbols · 6 features · 717 KB                │
+│   ~/Desktop/GDD/001__RECT__FS_Wild_Mult.pdf → 8 syms (autofix) · 705 KB                │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   5b506f3 feat(UQ-14): end-to-end one-shot GDD ingest tool                             │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-13 — SMART-DEFAULTS STAGE 6 AUTOFIX GAPS · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"idi dalje"* (next backlog stavka posle UQ-12).

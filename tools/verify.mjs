@@ -109,6 +109,15 @@ if (auditOk) {
   }
 }
 
+/* ── Step 4.5: UQ-16 baseline drift on 20-slug smoke subset ─────────── */
+const baselinePath = resolve(REPO, 'tests/baselines/uq16-render-baseline.json');
+if (existsSync(baselinePath)) {
+  run('UQ-16 baseline drift (20-slug subset)',
+    'node', ['tools/uq16-baseline.mjs', '--limit', '20']);
+} else {
+  if (!JSON_OUT) console.log('  ⏭ UQ-16 baseline drift (no baseline — run --bake)');
+}
+
 /* ── Step 5: UQ-11 render smoke on a 20-GDD subset ──────────────────── */
 if (!QUICK) {
   const RENDER_TOOL = resolve(REPO, 'tools/_full-corpus-render-parity.mjs');
