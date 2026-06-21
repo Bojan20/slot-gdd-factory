@@ -594,7 +594,20 @@ function rosterFor(kind, pattern) {
 function renderGDD(kind, pattern, idx) {
   const t = KINDS[kind];
   const sym = rosterFor(kind, pattern);
-  const paylines = t.evals.includes('lines') ? Math.min(20, Math.max(10, t.reels * t.rows)) : 0;
+  /* UQ-MASTERY-3 (2026-06-21) — industry-valid payline count. The old
+   * `Math.min(20, Math.max(10, reels * rows))` formula produced 15 for
+   * every 5×3 grid (not a real industry count — V10 spec gate flagged
+   * 220 synth fixtures). Industry baseline per grid size below. */
+  const industryPaylines = (r, ro) => {
+    if (r === 3 && ro === 3) return 5;
+    if (r === 5 && ro === 3) return 20;
+    if (r === 5 && ro === 4) return 40;
+    if (r === 6 && ro === 4) return 40;
+    if (r === 6 && ro === 5) return 50;
+    if (r === 7 && ro === 7) return 100;
+    return 20;
+  };
+  const paylines = t.evals.includes('lines') ? industryPaylines(t.reels, t.rows) : 0;
   const evalLabel = t.evals[0] === 'lines'        ? 'Lines'
                   : t.evals[0] === 'ways'         ? 'Ways'
                   : t.evals[0] === 'cluster'      ? 'Cluster'

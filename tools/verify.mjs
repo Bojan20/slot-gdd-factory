@@ -226,6 +226,19 @@ if (existsSync(coverTool)) {
     'node', [coverTool, '--limit', '60']);
 }
 
+/* ── Step 4.92: UQ-MASTERY-3 V10 Industry Compliance Spec ──────────────
+ * Encodes slot-industry ground truth (payline whitelist per grid, ways
+ * count whitelist, cluster min-size floor, jurisdiction → compliance
+ * gate enforcement, dual-colossal reels range, etc.) as a deterministic
+ * walker over every model.json. HARD violations block commit; SOFT
+ * warnings are advisory only and surface in the report. Catches any
+ * future regression that produces a non-industry-standard slot. */
+const v10Tool = resolve(REPO, 'tools/v10-industry-compliance-spec.mjs');
+if (existsSync(v10Tool)) {
+  run('UQ-MASTERY-3 V10 industry compliance spec (338 GDDs)',
+    'node', [v10Tool]);
+}
+
 /* ── Step 4.91: UQ-MASTERY block liveness audit ────────────────────────
  * Zero-DEAD-block contract. Every block flagged `defaultOn: true` in the
  * manifest MUST be mountable in at least one rendered HTML fingerprint

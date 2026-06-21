@@ -1,3 +1,69 @@
+## 🏆 WAVE UQ-MASTERY-3 — V10 INDUSTRY COMPLIANCE SPEC · 2026-06-21 · ZATVOREN ✅
+
+Boki direktiva: *"koji test još možeš da napišeš na osnovu agenata, koji
+poznaju komplet GT i slot industriju, da znamo da će sve biti uvek po
+pravilu i savršeno"*.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-MASTERY-3 — slot industry ground truth encoded as gate                         │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ KONTEKST                                                                              │
+│   Postojeća pipeline V1..V9 parsira GDD u model + verifikuje da rendered HTML matchuje │
+│   model. Nema gate-a koji pita: "da li je ovo što smo proizveli VALID INDUSTRY SLOT?". │
+│   Slot može da prođe sve gate-ove (verify 22/22, LEGO 8/8, parity 0) a da bude        │
+│   industry-neutralan nonsense (paylines=15 na 5×3, ways=7000 umesto 7776, plinko_rows  │
+│   = 99, cluster_min_size = 1, declared DE jurisdiction bez germanyComplianceGate).     │
+│                                                                                       │
+│ FIX                                                                                   │
+│   1. NEW: tools/v10-industry-compliance-spec.mjs                                       │
+│      - 17 industry rules (T1.1..T1.8 structural, T2.x math, T3.x compat, T4.x compl)   │
+│      - HARD = commit blocked (10 rules)                                                │
+│      - SOFT = advisory only (7 rules)                                                  │
+│      - Vendor-neutral konstante:                                                       │
+│         * Paylines 5×3: {10,20,25,30,40,50,100}                                        │
+│         * Ways count: {243,576,720,1024,4096,7776,15625,117649}                        │
+│         * Cluster min size ≥ 5; FS award ≥ 5; BonusBuy ∈ [30,200]                      │
+│         * Plinko rows [5,16]; Wheel segments [6,24]; Hex ring [1,4]                    │
+│         * Reels [3,8] (dual colossal max); Rows [1,8]                                  │
+│         * Jurisdiction code → matching compliance gate enabled                          │
+│   2. NEW: agents/V10_INDUSTRY_REVIEWER.md — agent contract sa rule table                │
+│   3. NEW: verify gate step 4.92 — UQ-MASTERY-3 V10 industry compliance spec             │
+│   4. FIX: tools/gen-synthetic-gdds.mjs — paylines formula sad daje industry-valid count │
+│      (5×3 → 20, ne 15). Pre fix-a generisao 220 synth GDD-ova sa paylines=15.          │
+│   5. REGEN: 308 sintetičkih MD + 308 sintetičkih PDF kopiranih u ~/Desktop/GDD/         │
+│   6. REBAKE: tests/baselines/uq16-render-baseline.json                                  │
+│                                                                                       │
+│ REZULTATI                                                                              │
+│   Pre fix-a:   237 HARD violations (220 paylines=15, 11 ways/paylines, ...)            │
+│   Posle fix-a: 0 HARD violations · 144 SOFT advisory (parser fallback indicators)      │
+│                                                                                       │
+│   ┌────────────────────────────────────────────┬─────────────────────────────────┐    │
+│   │ Gate                                        │ Status                           │    │
+│   ├────────────────────────────────────────────┼─────────────────────────────────┤    │
+│   │ Verify gate (23 steps now)                  │ 23/23 ✅ idempotent             │    │
+│   │ UQ-MASTERY-3 V10 industry spec              │ 0 HARD ✅ (338 games audited)   │    │
+│   │ UQ-MASTERY block liveness                   │ 0 DEAD ✅                       │    │
+│   │ UQ-COVER force coverage                     │ 0 missing / 0 phantom ✅        │    │
+│   │ Cross-game parity                           │ 0 violations ✅                 │    │
+│   │ parse-real-pdfs                             │ 338/338 ✅                      │    │
+│   │ Block tests                                 │ 200+ pass ✅                    │    │
+│   │ LEGO gate                                   │ 8/8 ✅                          │    │
+│   └────────────────────────────────────────────┴─────────────────────────────────┘    │
+│                                                                                       │
+│ SOFT BACKLOG (parser fallback indicators — fix lives upstream u src/parser.mjs)        │
+│   T1.3.fallback × 129  — paylines=0/1 = parser nije parsao topology iz prose          │
+│   T3.2 × 11           — ways slot sa paylines (chrome OK, ali GDD intent verifikovati) │
+│   T3.5 × 3            — plinko/slingo topology sa eval='lines' (engine OK via flag)    │
+│   T2.2 × 1            — FS max award < 5 (synth novelty ili tuning)                    │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   <hash> feat(UQ-MASTERY-3): V10 industry compliance spec + synth paylines fix + gate  │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-MASTERY-2 — 5 ORPHAN-HOOK MIGRATION · 2026-06-21 · ZATVOREN ✅
 
 Boki direktiva: *"Qa svega moguceg detaljno, implementiranog deep detaljno"*.

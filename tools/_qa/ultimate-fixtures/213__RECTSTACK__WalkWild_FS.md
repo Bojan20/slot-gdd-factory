@@ -22,7 +22,7 @@ Vibe references: retro · synthetic · QA.
 |---|---|
 | **Reels** | 5 |
 | **Rows** | 4 |
-| **Paylines** | 20 |
+| **Paylines** | 40 |
 | **Evaluation** | Lines |
 
 ## Symbols
