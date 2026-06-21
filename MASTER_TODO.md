@@ -1,3 +1,53 @@
+## 🎯 WAVE UQ-COVER — CROSS-CORPUS FORCE COVERAGE · 2026-06-21 · ZATVOREN ✅
+
+> **Boki direktiva:** *"svaka provera sa ubacenim agentima i ai orkestratorom
+> a sa svaki moguci gdd, da sve radi savrseno bezobrezira na gdde. da sve
+> bude pokriveno i forsovima koji su neophodni, i da nema nepotrebnih
+> forsova i featurea"*
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ UQ-COVER · 338 GDD ZERO missing / ZERO phantom forces                                  │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ NEW tools/cross-corpus-force-coverage.mjs (220 LOC) walks every V6 reconcile           │
+│ cache entry, builds slot HTML, and asserts:                                            │
+│   - every declared feature has its force chip painted                                   │
+│   - no phantom chips for features GDD never declared                                    │
+│ Single source of truth from src/blocks/universalForcePanel.mjs:                        │
+│   ALL_KNOWN_KINDS · NON_FORCEABLE_MECHANIC_KINDS · DEDUPE_OWNED_BY_OTHER_BLOCK          │
+│ DOM marker proxy: `data-ufp-kind="<kind>"` precise match (no string-soup noise)        │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ ROOT CAUSE FIX — src/parser.mjs normalizeFromJSON                                       │
+│   V6 reconcile cache passes through normalizeFromJSON which did NOT populate           │
+│   model.__activeFeatures__ → UFP fell back to "render every chip" mode → 20-27         │
+│   phantom forces per GDD on the JSON ingest path.                                       │
+│   Fix populates __activeFeatures__ from obj.__activeFeatures__, obj.__meta__           │
+│   entries with source='gdd-declared', and obj.features[] kinds.                         │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ CORPUS RESULT (full 338 GDD run)                                                       │
+│   buildOk:          338/338 ✅                                                          │
+│   withinTolerance:  338/338 ✅                                                          │
+│   Σ declared kinds: 2,458                                                              │
+│   Σ required forces: 574                                                                │
+│   Σ present forces:  1,002                                                              │
+│   Σ MISSING:         0                                                                  │
+│   Σ PHANTOM:         0                                                                  │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Smart filters (false-positive suppression):                                            │
+│   • ALWAYS_BASELINE chips (free_spins, multiplier, big_win) not counted as phantom    │
+│   • Lightning family (lightning + randomLightningMultiplier) → x2/x3/x5/x10            │
+│     derivative chips recognized as expected expansion                                  │
+│   • NON_FORCEABLE_MECHANIC_KINDS (ways/cluster_pays/pay_anywhere/scatter_pay/cascade)  │
+│     subtracted from required (UFP intentionally strips them)                           │
+│   • DEDUPE_OWNED_BY_OTHER_BLOCK (bonus_buy/ante_bet) subtracted from required          │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Time-series telemetry: reports/uq-cover-series.json (100-run rolling window)           │
+│ VERIFY GATE: 17 → 18 gates (UQ-COVER 60-GDD smoke u 0.5s)                              │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-FORTIFY5 — 3 FIFTH-TIER FORENSIC AUDIT FIXES · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"dalje"* — peta forensic iteracija. UQ-FORTIFY 1..4 zatvorili 37 prethodnih

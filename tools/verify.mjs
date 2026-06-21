@@ -193,6 +193,17 @@ if (existsSync(dirtyTool)) {
     'node', [dirtyTool]);
 }
 
+/* ── Step 4.9: UQ-COVER cross-corpus force coverage ────────────────
+ * Walks every V6 reconcile cache entry and asserts that every declared
+ * feature has its force chip rendered (and no phantom chips are
+ * rendered for features the GDD never declared). The 338-GDD corpus
+ * is the most realistic stress test we have. */
+const coverTool = resolve(REPO, 'tools/cross-corpus-force-coverage.mjs');
+if (existsSync(coverTool)) {
+  run('UQ-COVER cross-corpus force coverage (338 GDDs)',
+    'node', [coverTool, '--limit', '60']);
+}
+
 /* ── Step 5: UQ-11 render smoke on a 20-GDD subset ──────────────────── */
 if (!QUICK) {
   const RENDER_TOOL = resolve(REPO, 'tools/_full-corpus-render-parity.mjs');

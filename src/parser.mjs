@@ -2920,6 +2920,44 @@ export function normalizeFromJSON(obj) {
     model.freeSpins = { enabled: false };
   }
   model.confidence = { name: 1, topology: 1, symbols: 1, features: 1, _failures: [], _derivedBy: {} };
+  /* Wave UQ-COVER (Boki 2026-06-21) — populate __activeFeatures__ from V6
+   * reconcile delta so universalForcePanel's declared-only filter activates.
+   * Without this, the JSON ingest path falls back to "render every chip"
+   * mode, producing 20+ phantom forces per GDD.
+   *
+   * Priority:
+   *   1. obj.__activeFeatures__ explicit list (Wave V reconcile output)
+   *   2. obj.__meta__ entries with source='gdd-declared'
+   *   3. obj.features[] kinds (mark all as 'declared' since they came
+   *      from V6 reconciliation which considered them ground truth)
+   */
+  const activeFeatures = [];
+  const seen = new Set();
+  function _addActive(kind, source) {
+    if (!kind || typeof kind !== 'string') return;
+    if (seen.has(kind)) return;
+    seen.add(kind);
+    activeFeatures.push({ kind, source: source || 'gdd-declared', hasContent: true });
+  }
+  if (Array.isArray(obj.__activeFeatures__)) {
+    for (const f of obj.__activeFeatures__) {
+      if (f && typeof f === 'object') _addActive(f.kind, f.source);
+    }
+  }
+  if (obj.__meta__ && typeof obj.__meta__ === 'object') {
+    for (const [k, v] of Object.entries(obj.__meta__)) {
+      if (v && v.source === 'gdd-declared') {
+        /* meta keys are dotted paths like "topology.kind" — top-level segment
+         * is the feature name (or core field; UFP filter skips core fields). */
+        _addActive(k.split('.')[0], 'gdd-declared');
+      }
+    }
+  }
+  for (const f of model.features) {
+    if (f && f.kind) _addActive(f.kind, 'gdd-declared');
+  }
+  if (activeFeatures.length > 0) model.__activeFeatures__ = activeFeatures;
+
   /* Wave P2 — JSON path also routes through smart defaults so that
      pitch-deck JSON with only `name` + `theme.tags` produces a fully
      renderable model identical to the markdown happy path. */
