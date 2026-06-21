@@ -1,3 +1,54 @@
+## 🏆 WAVE UQ-FORTIFY7 — 3 SEVENTH-TIER FORENSIC AUDIT FIXES · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"dalje"* — sedma forensic iteracija. UQ-FORTIFY 1..6 + UQ-COVER zatvorili 45
+prethodnih gaps. Nezavisni Explore agent našao 3 stvarna production-load edge case-a.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-FORTIFY7 — 3 fix-a                                                              │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ #1 SIGNAL-KILLED CHILD SWALLOWED                                                       │
+│    tools/ingest.mjs: pdftotext/reconcile SIGKILL/SIGTERM/OOM-kill vraćao              │
+│    r.status=null pa originalna provera `status !== 0` PADALA i routirala na             │
+│    soft-fail exit 3. To je ostavljalo prozor da se ka parser-only model entry           │
+│    silently kešira. Sad: signal check PRE status, reconcile signal-killed bacalo        │
+│    err.hardFail=true koji outer catch escalata na exit 1 (NIKAD soft-fail 3).           │
+│                                                                                       │
+│ #2 ROLLBACK PREVCONTENT RACE                                                            │
+│    tools/agent-calibration-trainer.mjs: prevContent re-read NAKON initial src           │
+│    modifikacija. Iako pod lockom, EXTRA disk read otvarao race window. Fix:             │
+│    _originalContent = src snapshot uzet pod ISTOM lock acquisition,                     │
+│    rollback restoruje exact pre-modification content.                                   │
+│                                                                                       │
+│ #3 SAB PER-ITERATION ALLOCATION                                                         │
+│    src/registry/fileLock.mjs: raniji dizajn alocirao fresh SharedArrayBuffer(4)         │
+│    na svakoj poll cycle (~100ms). Pod 30s lock contention × 338 paralelnih ingesta      │
+│    = ~100K throwaway SAB alokacija. Sad: alocirana JEDNOM na module scope (_sabView),   │
+│    reuse kroz sve acquireLock pozive u procesu. Fallback short spin + one-time          │
+│    stderr warning ako runtime disabluje SAB.                                            │
+│                                                                                       │
+│ TESTS (tests/tools/uq-fortify7-seventhtier.test.mjs, 7/7 PASS)                          │
+│   #1 r.signal pre r.status u pdfToText + reconcile hardFail escalation                  │
+│   #2 _originalContent declaration + assignment + rollback consumption                   │
+│   #3 module-scoped _sabView + exactly-one SAB creation + warning                        │
+│   live: lock smoke + --no-llm ingest exits 0                                            │
+│                                                                                       │
+│ UQ-FORTIFY6 tests update-ovani da prihvate renamed identifiers                         │
+│ (view → _sabView, prevContent → _originalContent). Backward-compat regex.              │
+│                                                                                       │
+│ VERIFY GATE: 20/20 zelene u ~5s                                                        │
+│ UQ-16 baseline drift: 338/338 still match                                               │
+│ UQ-7 corpus coverage: 0 unknown (100 %)                                                 │
+│ UQ-COVER 338-GDD force coverage: 0 missing / 0 phantom                                  │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   612149d fix(UQ-FORTIFY7): 3 seventh-tier forensic audit fixes — signal-kill,         │
+│            rollback race, SAB pool                                                       │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-FORTIFY6 — 4 SIXTH-TIER FORENSIC AUDIT FIXES · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"sve redom"* — šesta forensic iteracija. UQ-FORTIFY 1..5 + UQ-COVER zatvorili
