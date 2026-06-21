@@ -1,3 +1,48 @@
+## 🏆 WAVE UQ-8 — SMART-DEFAULTS STAGE 5: ARCHETYPE BACKFILL · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"kreni"* (continue redom). Drugi predlog iz UQ-6 šta-dalje liste (UQ-8).
+Zatvara petlju parser → smartDefaults — unknown feature dobija punu
+forceFlag/windowFlag/hooks/state metadata BEZ dodatnog LLM poziva.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-8 — src/registry/smartDefaults.mjs::backfillFromArchetype                      │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ STAGE 5 (new, plugged u applySmartDefaults orchestrator)                              │
+│   palette → topology → symbols → featureMix → backfillArchetype → segment-reclass    │
+│                                                                                       │
+│ ŠTA RADI                                                                              │
+│   1. Čita model.__unknownFeatures__ (stamped by parser.mjs preko                       │
+│      featureArchetypes.findUnknownFeatures())                                          │
+│   2. Confidence floor 0.55 (regex tier) — sub-threshold se skipuje                     │
+│   3. Piše model._archetypeBackfill[kind] = {                                           │
+│        archetypeId, confidence, reason,                                                │
+│        forceFlag, windowFlag, hooks[], state (deep clone)                              │
+│      }                                                                                 │
+│   4. recordDerived('features.archetypeBackfill') tag za audit                          │
+│                                                                                       │
+│ INVARIANTS                                                                            │
+│   · Deep-clone state → mutation ne leak-uje u frozen catalog                           │
+│   · Idempotent — 2nd run leaves entries alone                                          │
+│   · Defensive — never throws; malformed entries skipped silently                       │
+│                                                                                       │
+│ TEST COVERAGE (tests/registry/smartDefaults-archetype-backfill.test.mjs, 10/10)        │
+│   empty/missing __unknownFeatures__ → no-op · sub-threshold skipped ·                  │
+│   valid → full record · backfill mutation NE leak-uje · idempotent ·                   │
+│   multi-feature backfill · orchestrator wired · derived-tag set ·                      │
+│   malformed entries (null/undefined/bad shape) skipped bez throw                       │
+│                                                                                       │
+│ REGRESSION                                                                            │
+│   smartDefaults.test.mjs + parserRoundTrip.test.mjs + featureArchetypes.test.mjs       │
+│   13/13 pass unchanged.                                                                │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   60a3b23 feat(UQ-8): SmartDefaults stage 5 — archetype backfill for unknown features │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE Z-2 — ARCHETYPE → BLOCK SCAFFOLDER · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"kreni"* — odmah na sledeći predlog iz UQ-6 šta-dalje liste (Z-2).
