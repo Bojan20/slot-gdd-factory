@@ -414,6 +414,62 @@ function humanizeFeatureKind(k) {
   return labels[k] || k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/* ─── stage 5: archetype backfill for unknown features ───────────────── */
+/* Wave UQ-8 (2026-06-21). When the parser has stamped
+   model.__unknownFeatures__ with archetype suggestions (via
+   src/registry/featureArchetypes.mjs::findUnknownFeatures), this stage
+   materializes a per-kind backfill record so downstream tooling
+   (buildSlotHTML, scaffold-block, capsule generator) can:
+     · know which forceFlag / windowFlag / hooks the unknown feature
+       expects without further LLM calls
+     · seed a sensible cfg.state default
+     · render a placeholder block instead of silently dropping the feature
+
+   Idempotent: skips kinds already backfilled. Defensive: never throws.
+   Confidence ≥ 0.55 floor (regex-tier matches) gates inclusion to keep
+   noise low; tighten to 0.70 if needed by toggling MIN_CONFIDENCE. */
+
+const _UQ8_MIN_CONFIDENCE = 0.55;
+
+export function backfillFromArchetype(model) {
+  if (!model || typeof model !== 'object') return model;
+  try {
+    const unknown = Array.isArray(model.__unknownFeatures__) ? model.__unknownFeatures__ : [];
+    if (unknown.length === 0) return model;
+    if (!model._archetypeBackfill || typeof model._archetypeBackfill !== 'object') {
+      model._archetypeBackfill = {};
+    }
+    let added = 0;
+    for (const entry of unknown) {
+      if (!entry || typeof entry !== 'object') continue;
+      const kind = entry.kind;
+      if (!kind || model._archetypeBackfill[kind]) continue;
+      const s = entry.suggestion;
+      if (!s || !s.archetype || typeof s.confidence !== 'number') continue;
+      if (s.confidence < _UQ8_MIN_CONFIDENCE) continue;
+      const a = s.archetype;
+      /* shallow clone so downstream mutation can't leak back into the
+         frozen catalog entry. */
+      model._archetypeBackfill[kind] = {
+        archetypeId: a.id,
+        confidence: s.confidence,
+        reason: s.reason,
+        forceFlag: a.forceFlag,
+        windowFlag: a.windowFlag,
+        hooks: Array.isArray(a.hooks) ? a.hooks.slice() : [],
+        state: a.stateShape && typeof a.stateShape === 'object'
+          ? JSON.parse(JSON.stringify(a.stateShape))
+          : {},
+      };
+      added++;
+    }
+    if (added > 0) recordDerived(model, 'features.archetypeBackfill');
+  } catch (err) {
+    recordFailure(model, 'archetypeBackfill', err);
+  }
+  return model;
+}
+
 /* ─── all-stages orchestrator ─────────────────────────────────────────── */
 
 export function applySmartDefaults(model) {
@@ -422,6 +478,11 @@ export function applySmartDefaults(model) {
   inferTopology(model);
   classifySymbolTiers(model);
   synthesizeFeatureMix(model);
+  /* Stage 5 (Wave UQ-8): backfill known archetype scaffold for unknown
+     features that the parser already stamped with a suggestion. Runs
+     AFTER synthesizeFeatureMix so explicit + synthesized features both
+     get a chance to be backfilled. */
+  backfillFromArchetype(model);
   reclassifySegmentBasedConfidence(model);
   return model;
 }
