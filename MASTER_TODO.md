@@ -1,3 +1,53 @@
+## 🏆 WAVE UQ-FORTIFY3 — 7 THIRD-TIER FORENSIC AUDIT FIXES · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"dalje ultimativno"* — treća forensic iteracija posle UQ-FORTIFY (10 prvih
+rupa) i UQ-FORTIFY2 (10 drugih). Nezavisni Explore agent našao 7 residual gaps.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-FORTIFY3 — 7 fix-ova                                                            │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ #1 KIMI RECONCILE — race-safe shared queue                                             │
+│    cursor++ → queue.shift(). Defensive za future refactor da TOCTOU ne uđe.             │
+│                                                                                       │
+│ #2 PASS B — explicit max-attempts cap + guard assertion                                │
+│    _PASS_B_MAX_ATTEMPTS=1 + runtime check + __pass_b_attempt__ counter.                 │
+│                                                                                       │
+│ #3 INGEST CACHE STAMP — durable atomic write                                            │
+│    fh.sync() + dir-sync pre rename. Crash mid-write ne ostavlja half-written.           │
+│                                                                                       │
+│ #4 SELF-CORRECTED TELEMETRY — consumer added                                            │
+│    orchestrator-e2e-test agregira __self_corrected__ + __pass_b_attempt__ u             │
+│    verdict.telemetry (v6SelfCorrected, v6PassBAttempts). Flag više nije                 │
+│    write-only.                                                                          │
+│                                                                                       │
+│ #5 AGENT_CALIBRATION — input sanitization + round-trip check                            │
+│    _sanitizeForMd strips control chars/backticks/heading sigils. Refuse-write          │
+│    asser ako sanitization proizvede > 1 heading.                                       │
+│                                                                                       │
+│ #6 INGEST EXIT CODE 3 — soft-fail semantics                                             │
+│    Kimi soft-fail → exit 3 (WARN), explicit --no-llm → exit 0. CI može                  │
+│    razlikovati od hard-fail 1.                                                          │
+│                                                                                       │
+│ #7 fileLock — PID-reuse guard                                                          │
+│    Lock payload sad stamp-uje acquiredAt epoch. Stale-check cross-references             │
+│    acquiredAt vs file mtime → PID reuse više ne može da prevari stale-check.            │
+│                                                                                       │
+│ TESTS (tests/tools/uq-fortify3-thirdtier.test.mjs, 8/8 PASS)                            │
+│   one per fix + live smoke da --no-llm exits 0 (no soft-fail kad LLM explicitno         │
+│   skipped)                                                                              │
+│                                                                                       │
+│ VERIFY GATE: 16/16 zelene u ~5s                                                        │
+│ UQ-16 baseline drift: 338/338 still match (parser output stabilan)                      │
+│ UQ-7 corpus coverage: 0 unknown (100 %)                                                 │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   eb72f7c fix(UQ-FORTIFY3): 7 third-tier forensic audit fixes                            │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🛡️ WAVE UQ-FORTIFY2 — DRUGI TIER AUDIT · 2026-06-21 · ZATVOREN ✅ (10/10)
 
 > **Boki direktiva:** *"ajde kreni ultimativnom implementacijom i detaljnim qa
