@@ -19,6 +19,8 @@ import { strict as assert } from 'node:assert';
 import {
   ARCHETYPES,
   ARCHETYPE_COUNT,
+  ARCHETYPE_ALIASES,
+  NON_ARCHETYPE_KINDS,
   suggestArchetype,
   findUnknownFeatures,
   getArchetype,
@@ -50,8 +52,8 @@ const PROSE_CASES = [
 
 /* ── Tests ──────────────────────────────────────────────────────────── */
 
-test('ARCHETYPE_COUNT equals 25 after UQ-6 expansion', () => {
-  assert.equal(ARCHETYPE_COUNT, 25, 'expected 25 archetypes (15 baseline + 10 UQ-6)');
+test('ARCHETYPE_COUNT equals 28 after UQ-9 expansion', () => {
+  assert.equal(ARCHETYPE_COUNT, 28, 'expected 28 archetypes (15 baseline + 10 UQ-6 + 3 UQ-9)');
   assert.equal(ARCHETYPES.length, ARCHETYPE_COUNT);
 });
 
@@ -154,6 +156,87 @@ test('findUnknownFeatures surfaces suggestions for unknown kinds', () => {
   const stnf = unknown.find(u => u.kind === 'someTotallyNewFeature');
   assert.ok(stnf && stnf.suggestion, 'prose-hint must yield a suggestion');
   assert.equal(stnf.suggestion.archetype.id, 'gamble-double');
+});
+
+/* ── UQ-9 coverage ──────────────────────────────────────────────────── */
+
+test('UQ-9: ARCHETYPE_ALIASES is frozen + every alias target exists in catalog', () => {
+  assert.ok(Object.isFrozen(ARCHETYPE_ALIASES));
+  for (const [alias, targetId] of Object.entries(ARCHETYPE_ALIASES)) {
+    assert.ok(getArchetype(targetId), `alias "${alias}" → unknown archetype "${targetId}"`);
+  }
+});
+
+test('UQ-9: NON_ARCHETYPE_KINDS filter — suggestArchetype returns null', () => {
+  const cases = [
+    'bigWinTier', 'big_win_tier',
+    'waysEval', 'ways_eval', 'payAnywhereEval', 'pay_anywhere_eval',
+    'clusterPaysEval', 'cluster_pays_eval',
+    'scatterPay', 'scatter_pay',
+    'autoplay', 'realityCheck', 'reality_check',
+    'featureGeneric', 'feature_generic',
+  ];
+  for (const k of cases) {
+    assert.equal(suggestArchetype(k), null, 'expected null for NON_ARCHETYPE kind: ' + k);
+  }
+});
+
+test('UQ-9: alias map routes top UQ-7 unknown kinds to right archetypes', () => {
+  const cases = [
+    ['freeSpins',               'fs-trigger'],
+    ['free_spins',              'fs-trigger'],
+    ['progressive_free_spins',  'fs-trigger'],
+    ['jackpot',                 'jackpot-pool'],
+    ['progressiveJackpot',      'jackpot-pool'],
+    ['multiplier',              'multiplier-trail'],
+    ['persistentMultiplier',    'multiplier-trail'],
+    ['path_aware_multiplier',   'multiplier-trail'],
+    ['gamble',                  'gamble-double'],
+    ['cascade',                 'cascade-collapse'],
+    ['lightning',               'boost-multiplier'],
+    ['wheelBonus',              'weighted-wheel'],
+    ['wheel_bonus',             'weighted-wheel'],
+    ['wildReel',                'sticky-state'],
+    ['wild_reel',               'sticky-state'],
+    ['ways',                    'variable-ways'],
+    ['superSymbol',             'super-symbol'],
+    ['super_symbol',            'super-symbol'],
+    ['winCap',                  'win-cap'],
+    ['win_cap',                 'win-cap'],
+  ];
+  for (const [kind, expectedId] of cases) {
+    const r = suggestArchetype(kind);
+    assert.ok(r, 'no suggestion for ' + kind);
+    assert.equal(r.archetype.id, expectedId,
+      `${kind} → ${r.archetype.id} (expected ${expectedId})`);
+    assert.ok(r.confidence >= 0.90, 'alias confidence should be ≥ 0.90, got ' + r.confidence);
+  }
+});
+
+test('UQ-9: new archetypes (fs-trigger, win-cap, super-symbol) are present + well-formed', () => {
+  for (const id of ['fs-trigger', 'win-cap', 'super-symbol']) {
+    const a = getArchetype(id);
+    assert.ok(a, 'missing UQ-9 archetype: ' + id);
+    assert.ok(a.purpose.length > 0);
+    assert.ok(a.intentRegex instanceof RegExp);
+    assert.ok(Array.isArray(a.hooks) && a.hooks.length > 0);
+    assert.ok(a.forceFlag.startsWith('__FORCE_'));
+    assert.ok(a.windowFlag.startsWith('__'));
+  }
+});
+
+test('UQ-9: prose snippets for fs-trigger / win-cap / super-symbol match', () => {
+  const cases = [
+    ['fs-trigger',   'Landing 3 scatters triggers the Free Spins round.'],
+    ['win-cap',      'Game has a max win cap of 5000x bet — feature ends when hit.'],
+    ['super-symbol', 'Reels can land a colossal symbol of 3x3 paying any position.'],
+  ];
+  for (const [archId, prose] of cases) {
+    const r = suggestArchetype('unknown_feature_kind_xyz_' + archId, prose);
+    assert.ok(r, 'no suggestion for ' + archId + ' prose: "' + prose + '"');
+    assert.equal(r.archetype.id, archId,
+      `prose for ${archId} matched ${r.archetype.id} instead`);
+  }
 });
 
 test('every archetype hook name matches HookBus naming convention (lowerCamelCase, no spaces)', () => {

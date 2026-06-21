@@ -17,12 +17,19 @@
  *      from an archetype template
  *   3. blockCatalog generator — annotates each block with its archetype tag
  *
- * 25 archetypes covering ~99 % of slot feature design space (industry survey,
+ * 28 archetypes covering ~99 % of slot feature design space (industry survey,
  * vendor-neutral — no vendor names or trademarked terms in identifiers or
- * regex; Wave UQ-6 expansion 2026-06-21 added archetypes 16–25 covering
- * progressive multipliers, monetization side-bets, wheels, variable grids,
- * wild-carried multipliers, stacks, grid extension, symbol morphs and
- * gamble doubles). Each archetype declares:
+ * regex). Lineage:
+ *   · Wave Z   (2026-06-20)  archetypes 1–15
+ *   · Wave UQ-6 (2026-06-21) archetypes 16–25  (multipliers, monetization,
+ *                            wheels, variable grids, stacks, grid extension,
+ *                            symbol morphs, gamble doubles)
+ *   · Wave UQ-9 (2026-06-21) archetypes 26–28  (fs-trigger, win-cap,
+ *                            super-symbol) PLUS ARCHETYPE_ALIASES synonym
+ *                            map + NON_ARCHETYPE_KINDS exclusion set,
+ *                            driven by UQ-7 corpus audit (338 GDDs)
+ *
+ * Each archetype declares:
  *   id              — canonical key
  *   purpose         — one-line plain-language description
  *   intentRegex     — regex hints to detect this archetype in GDD prose
@@ -166,7 +173,7 @@ export const ARCHETYPES = Object.freeze([
     forceFlag: '__FORCE_COUNT_HIT__',
     windowFlag: '__COUNT_PROGRESS__',
     stateShape: { count: 0, threshold: 0 },
-    examples: ['freeSpinsTrigger', 'fullGridBonus', 'moneyGrabGrid'],
+    examples: ['fullGridBonus', 'moneyGrabGrid', 'fullBoardCount'],
   },
   {
     id: 'boost-multiplier',
@@ -294,7 +301,123 @@ export const ARCHETYPES = Object.freeze([
     stateShape: { stake: 0, rounds: 0, maxRounds: 5, outcome: null },
     examples: ['gambleDouble', 'gambleColorSuit', 'doubleUpFeature'],
   },
+  /* ──────────────────────────────────────────────────────────────────────
+     Wave UQ-9 expansion (2026-06-21) — archetypes 26–28.
+     Driven by UQ-7 audit findings: 30 unknown kinds in cache, top hits
+     bigWinTier (254), freeSpins (181+67), jackpot (30), winCap (19),
+     persistentMultiplier (18), superSymbol (6+4). The 3 below cover
+     the real archetype-shaped gaps; eval-engine / win-presentation /
+     regulator kinds are routed via NON_ARCHETYPE_KINDS instead.
+     ────────────────────────────────────────────────────────────────────── */
+  {
+    id: 'fs-trigger',
+    purpose: 'Threshold count of scatter/trigger symbols grants entry into free spins with optional retrigger',
+    intentRegex: /free\s+spins?\s+(?:are\s+)?triggered|N\s+scatters?\s+(?:trigger|grant|award)|free\s+spins?\s+retrigger|fs\s+trigger|trigger(?:ed|s)?\s+(?:the\s+)?free[- ]?spins?|scatter\s+triggers?|landing\s+\d+\s+scatters?/i,
+    hooks: ['onSpinResult', 'onFsTrigger', 'onFsRetrigger', 'onFsEnd'],
+    forceFlag: '__FORCE_FS_TRIGGER__',
+    windowFlag: '__FS_TRIGGER_COUNT__',
+    stateShape: { triggerCount: 0, threshold: 3, retriggerBonus: 0, spinsAwarded: 0 },
+    examples: ['freeSpinsTrigger', 'scatterTrigger', 'progressiveFreeSpins', 'freeSpins'],
+  },
+  {
+    id: 'win-cap',
+    purpose: 'Maximum win cap (e.g. 5000× / 10000× bet) — terminates feature/spin chain when reached',
+    intentRegex: /win\s+cap|max(?:imum)?\s+win|cap\s+at\s+\d+x?|max\s+payout|\d{3,5}\s*x\s+bet\s+cap|hard\s+cap\s+on\s+win/i,
+    hooks: ['onSpinResult', 'onTumbleStep', 'onWinCapHit', 'postSpin'],
+    forceFlag: '__FORCE_WIN_CAP_HIT__',
+    windowFlag: '__WIN_CAP_REMAINING__',
+    stateShape: { capMultiplier: 5000, accumulated: 0, hit: false },
+    examples: ['winCap', 'maxWinCap', 'payoutCap'],
+  },
+  {
+    id: 'super-symbol',
+    purpose: 'Oversize symbol (2×2 / 3×3 / N×N block) that pays from any covered position, often a wild',
+    intentRegex: /super[- ]?symbol|colossal\s+symbol|giant\s+(?:symbol|wild)|big\s+symbol\s+\d+x\d+|mega\s+symbol|jumbo\s+(?:symbol|wild)/i,
+    hooks: ['preSpin', 'onSpinResult', 'onSuperSymbolLanded'],
+    forceFlag: '__FORCE_SUPER_LANDING__',
+    windowFlag: '__SUPER_CELLS__',
+    stateShape: { cells: [], size: 2, symbolId: null, paysAnyPosition: true },
+    examples: ['superSymbol', 'colossalSymbol', 'giantSymbol', 'megaSymbol'],
+  },
 ]);
+
+/* ─── Wave UQ-9 — synonym aliases (canonical kind → archetype id) ─────
+   Maps frequently-seen kind strings (from UQ-7 audit) to the
+   correct archetype id. suggestArchetype consults this BEFORE the
+   regex tier so common synonyms route deterministically. snake_case
+   and camelCase variants both covered; lookup normalizes whitespace,
+   underscores and dashes. */
+export const ARCHETYPE_ALIASES = Object.freeze({
+  /* free spins synonyms → fs-trigger */
+  'freespins'           : 'fs-trigger',
+  'free_spins'          : 'fs-trigger',
+  'progressivefreespins': 'fs-trigger',
+  'progressive_free_spins': 'fs-trigger',
+  'fsretrigger'         : 'fs-trigger',
+  'fs_retrigger'        : 'fs-trigger',
+  'scattertrigger'      : 'fs-trigger',
+  /* jackpot family → jackpot-pool */
+  'jackpot'             : 'jackpot-pool',
+  'jackpots'            : 'jackpot-pool',
+  'progressivejackpot'  : 'jackpot-pool',
+  'progressive_jackpot' : 'jackpot-pool',
+  /* multiplier synonyms → multiplier-trail (default growth flavor) */
+  'multiplier'          : 'multiplier-trail',
+  'persistentmultiplier': 'multiplier-trail',
+  'persistent_multiplier': 'multiplier-trail',
+  'pathawaremultiplier' : 'multiplier-trail',
+  'path_aware_multiplier': 'multiplier-trail',
+  /* gamble synonyms → gamble-double */
+  'gamble'              : 'gamble-double',
+  /* cascade synonyms → cascade-collapse */
+  'cascade'             : 'cascade-collapse',
+  'cascading'           : 'cascade-collapse',
+  /* lightning bolt → boost-multiplier */
+  'lightning'           : 'boost-multiplier',
+  /* wheel synonyms → weighted-wheel */
+  'wheelbonus'          : 'weighted-wheel',
+  'wheel_bonus'         : 'weighted-wheel',
+  /* wild reel synonyms → sticky-state (locked column) */
+  'wildreel'            : 'sticky-state',
+  'wild_reel'           : 'sticky-state',
+  /* ways synonyms → variable-ways */
+  'ways'                : 'variable-ways',
+  /* super symbol synonyms → super-symbol */
+  'supersymbol'         : 'super-symbol',
+  'super_symbol'        : 'super-symbol',
+  /* win cap synonyms */
+  'wincap'              : 'win-cap',
+  'win_cap'             : 'win-cap',
+});
+
+/* ─── Wave UQ-9 — kinds that are NOT features and should NOT receive
+   an archetype suggestion. These are eval engines, win-presentation
+   layers, regulator gates, or autoplay/UI plumbing that the parser
+   surfaces in model.features for completeness but that map to their
+   own block category. Returning null for these prevents archetype-
+   fallback noise. */
+export const NON_ARCHETYPE_KINDS = Object.freeze(new Set([
+  /* eval engines */
+  'wayseval', 'ways_eval', 'payanywhereeval', 'pay_anywhere_eval',
+  'clusterpayseval', 'cluster_pays_eval', 'cluster_pays',
+  /* pay models */
+  'scatterpay', 'scatter_pay', 'payanywhere', 'pay_anywhere',
+  /* win presentation */
+  'bigwintier', 'big_win_tier', 'scattercelebration', 'scatter_celebration',
+  /* regulator / UI plumbing */
+  'autoplay', 'realitycheck', 'reality_check', 'netlossindicator', 'net_loss_indicator',
+  /* generic / catch-all */
+  'featuregeneric', 'feature_generic',
+]));
+
+function _normalizeKindKey(kind) {
+  if (typeof kind !== 'string') return '';
+  return kind.toLowerCase().replace(/[-\s]/g, '_');
+}
+function _flattenKindKey(kind) {
+  if (typeof kind !== 'string') return '';
+  return kind.toLowerCase().replace(/[-_\s]/g, '');
+}
 
 const _ARCHETYPE_INDEX = new Map(ARCHETYPES.map(a => [a.id, a]));
 
@@ -316,11 +439,31 @@ const _ARCHETYPE_INDEX = new Map(ARCHETYPES.map(a => [a.id, a]));
 export function suggestArchetype(kind, prose = '') {
   if (!kind || typeof kind !== 'string') return null;
   const normalKind = kind.toLowerCase();
-  /* Phase 1: exact example match. */
+  const flat = _flattenKindKey(kind);
+  const snake = _normalizeKindKey(kind);
+
+  /* Phase 0: NON_ARCHETYPE_KINDS — filter out eval/UI/regulator kinds
+     before any matching. These are NOT feature archetypes. */
+  if (NON_ARCHETYPE_KINDS.has(flat) || NON_ARCHETYPE_KINDS.has(snake)) {
+    return null;
+  }
+
+  /* Phase 1: exact example match (camelCase or snake-case flat form).
+     Runs before alias so exact-catalog membership (highest signal)
+     always wins on confidence 0.95. */
   for (const a of ARCHETYPES) {
-    if (a.examples.some(e => e.toLowerCase() === normalKind)) {
+    if (a.examples.some(e => e.toLowerCase() === normalKind || _flattenKindKey(e) === flat)) {
       return { archetype: a, confidence: 0.95, reason: 'exact-example' };
     }
+  }
+
+  /* Phase 1.5: explicit alias mapping (UQ-7 audit driven). Slightly
+     lower confidence (0.90) than exact-example so an existing example
+     match outranks an alias to the same archetype. */
+  const aliasId = ARCHETYPE_ALIASES[flat] || ARCHETYPE_ALIASES[snake];
+  if (aliasId) {
+    const a = _ARCHETYPE_INDEX.get(aliasId);
+    if (a) return { archetype: a, confidence: 0.90, reason: 'alias:' + aliasId };
   }
   /* Phase 2: substring of any example or kind containing core token. */
   for (const a of ARCHETYPES) {

@@ -32,21 +32,28 @@
 import { readFile, writeFile, readdir, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ARCHETYPES } from '../src/registry/featureArchetypes.mjs';
+import {
+  ARCHETYPES,
+  ARCHETYPE_ALIASES,
+  NON_ARCHETYPE_KINDS,
+  suggestArchetype,
+} from '../src/registry/featureArchetypes.mjs';
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..');
 const REPO      = resolve(__dirname, '..');
 const CACHE_DIR = resolve(REPO, 'tools/_wave-v-cache');
 const OUT_DIR   = resolve(REPO, 'tools/_eyes/uq7-report');
 
-/* Canonical feature kinds known to the archetype catalog (any examples). */
-const KNOWN_KINDS = new Set();
-for (const a of ARCHETYPES) {
-  for (const e of a.examples) {
-    KNOWN_KINDS.add(e);
-    /* Also snake-case form, for parser-emitted kinds */
-    KNOWN_KINDS.add(e.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, ''));
-  }
+/* A kind is "covered" if any of:
+     1. It's in NON_ARCHETYPE_KINDS (eval/UI/regulator — by design)
+     2. suggestArchetype() returns non-null (catches alias, examples, regex)
+   Coverage is therefore derived live from the catalog, not from a stale
+   snapshot. */
+function isCovered(kind) {
+  const flat = String(kind || '').toLowerCase().replace(/[-_\s]/g, '');
+  const snake = String(kind || '').toLowerCase().replace(/[-\s]/g, '_');
+  if (NON_ARCHETYPE_KINDS.has(flat) || NON_ARCHETYPE_KINDS.has(snake)) return true;
+  return suggestArchetype(kind) != null;
 }
 
 function bucket(ratio) {
@@ -106,13 +113,13 @@ async function main() {
     const tk = (md.topology && md.topology.kind) || 'unknown';
     summary.topologyKinds[tk] = (summary.topologyKinds[tk] || 0) + 1;
 
-    /* Feature kind tally + unknown bucket */
+    /* Feature kind tally + unknown bucket (covered = catalog/alias/non-arch) */
     if (Array.isArray(md.features)) {
       for (const f of md.features) {
         if (!f || !f.kind) continue;
         const k = f.kind;
         summary.featureKinds[k] = (summary.featureKinds[k] || 0) + 1;
-        if (!KNOWN_KINDS.has(k)) {
+        if (!isCovered(k)) {
           summary.unknownFeatureKinds[k] = (summary.unknownFeatureKinds[k] || 0) + 1;
         }
       }
