@@ -1,3 +1,57 @@
+## 🏆 WAVE UQ-FORTIFY8 — 4 EIGHTH-TIER FORENSIC AUDIT FIXES · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"dalje"* — osma forensic iteracija. UQ-FORTIFY 1..7 + UQ-COVER zatvorili 48
+prethodnih gaps. Nezavisni Explore agent našao 4 stvarna eighth-tier edge case-a.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-FORTIFY8 — 4 fix-a                                                              │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ #1 VERIFY GATE SKIP-BLOCKS-DOWNSTREAM CONTRACT                                          │
+│    tools/verify.mjs: SKIPPED gate stamps both ok:false + skipped:true.                  │
+│    _isDepGreen proverava ok===false što JE conservative behavior (any non-green        │
+│    upstream prekida chain). Kontrakt eksplicitno dokumentovan + asertovan.              │
+│                                                                                       │
+│ #2 TRAINER HISTORY SCHEMA VERSIONING                                                    │
+│    tools/agent-calibration-trainer.mjs: __schema_version__=2 field na svaki             │
+│    write. Read detektuje drift:                                                          │
+│     · current     → load as-is                                                         │
+│     · older      → forward-migrate + stamp __migrated_from__                          │
+│     · newer      → hard exit 2 "upgrade or reset" (no silent truncation)               │
+│                                                                                       │
+│ #3 SAB PERSISTENT KILL-SWITCH                                                          │
+│    src/registry/fileLock.mjs: _useSabView flag pin-uje SAB allocation OFF              │
+│    nakon prve failure. Ranije: re-attempt new SAB(4) na svakom acquireLock              │
+│    pod sustained memory pressure. Sad: prvi fail → all future calls jump              │
+│    straight to fallback spin. Warning kaže "permanently" za jasnoću.                    │
+│                                                                                       │
+│ #4 ATOMICS.WAIT CATCH PATH RESETS BOTH FLAGS                                           │
+│    src/registry/fileLock.mjs: ako Atomics.wait throw-uje (SAB invalidated               │
+│    mid-process), catch sad null-uje _sabView I pin-uje _useSabView=false                │
+│    da se ne retry-uje stale buffer.                                                     │
+│                                                                                       │
+│ TESTS (tests/tools/uq-fortify8-eighthtier.test.mjs, 8/8 PASS)                           │
+│   #1 doc comment + _isDepGreen predicate + ok:false+skipped:true shape                  │
+│   #2 schema constant + read migration + refuse-to-downgrade LIVE test                  │
+│   #3 _useSabView flag + alloc guard + kill-switch + permanent warning                  │
+│   #4 Atomics catch resets both flags                                                    │
+│   live: full --quick verify gate exits 0                                                │
+│                                                                                       │
+│ UQ-FORTIFY7 test updated da prihvati evolved `if (!_sabView && _useSabView)` formu.     │
+│                                                                                       │
+│ VERIFY GATE: 21/21 zelene u ~6s                                                        │
+│ UQ-16 baseline drift: 338/338 still match                                               │
+│ UQ-7 corpus coverage: 0 unknown (100 %)                                                 │
+│ UQ-COVER 338-GDD force coverage: 0 missing / 0 phantom                                  │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   0b1a088 fix(UQ-FORTIFY8): 4 eighth-tier forensic audit fixes — skip contract,        │
+│            schema version, SAB kill-switch, Atomics catch                                │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-FORTIFY7 — 3 SEVENTH-TIER FORENSIC AUDIT FIXES · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"dalje"* — sedma forensic iteracija. UQ-FORTIFY 1..6 + UQ-COVER zatvorili 45
