@@ -1,3 +1,50 @@
+## 🏆 WAVE UQ-FORTIFY5 — 3 FIFTH-TIER FORENSIC AUDIT FIXES · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"dalje"* — peta forensic iteracija. UQ-FORTIFY 1..4 zatvorili 37 prethodnih
+rupa, nezavisni Explore agent našao 3 stvarna residual gap-a. Sve landed, sve
+zatvoreno.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-FORTIFY5 — 3 fix-a                                                              │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ #1 PARSER-HASH TOCTOU — lock pre hash                                                  │
+│    tools/ingest.mjs: pre-Kimi acquireLock(cacheFile) sada PREDHODI prvom               │
+│    await _computeParserHash() + _parserHashCache=null unutar locked region.            │
+│    Concurrent calibration trainer ne može više da podigne snapshot pa da prevari       │
+│    cache invalidation. Pre-lock se otpušta pre multi-min Kimi spawn-a.                  │
+│                                                                                       │
+│ #2 PASS B PROMPT-FRAME INJECTION — XML frame + strict boolean                          │
+│    tools/_wave-v-kimi-reconcile.mjs: corrections frame                                 │
+│    <CORRECTIONS pass="B">...</CORRECTIONS> umesto ===.                                  │
+│    _sanitizeForBlock strips XML markup + triple-equals from agent values.               │
+│    __self_corrected__ se piše striktno kao boolean (=true), Pass B response             │
+│    string fields runuje kroz sanitizer pre nego sto se ukešira.                         │
+│                                                                                       │
+│ #3 SERIES.JSON RACE + PID COLLISION — randomUUID + shape validation                    │
+│    tools/orchestrator-e2e-test.mjs: telemetry tmp file koristi randomUUID()             │
+│    umesto process.pid (container PID reuse je više nije problem).                       │
+│    Re-read inside lock + Array.isArray(parsed.runs) shape check +                       │
+│    explicit warn na corrupt JSON / unexpected shape (no silent history loss).           │
+│                                                                                       │
+│ TESTS (tests/tools/uq-fortify5-fifthtier.test.mjs, 8/8 PASS)                            │
+│   #1 lock-precedes-hash + pre-lock released before spawn                                │
+│   #2 XML frame + sanitizer + strict boolean + string-value sanitize                    │
+│   #3 randomUUID tmp + shape-validated read + corrupt warning                            │
+│   live: --no-llm ingest exits 0                                                         │
+│                                                                                       │
+│ VERIFY GATE: 17/17 zelene u ~5s (16 prethodnih + UQ-FORTIFY5)                          │
+│ UQ-16 baseline drift: 338/338 still match                                               │
+│ UQ-7 corpus coverage: 0 unknown (100 %)                                                 │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   790f4ff fix(UQ-FORTIFY5): 3 fifth-tier forensic audit fixes — hash TOCTOU,            │
+│            prompt injection frame, series race                                           │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🛡️ WAVE UQ-FORTIFY4 — ČETVRTI TIER AUDIT · 2026-06-21 · ZATVOREN ✅ (10/10)
 
 > **Boki direktiva:** *"dalje, sa svim dubokim qa"*
