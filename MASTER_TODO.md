@@ -1,3 +1,47 @@
+## 🏆 WAVE UQ-16 — VISUAL REGRESSION BASELINE (TEXT-MODE, 338 PINNED) · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"redom"*.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-16 — tools/uq16-baseline.mjs + tests/baselines/uq16-render-baseline.json       │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ ŠTA RADI                                                                              │
+│   Pin svake od 338 GDD-ova na deterministic build fingerprint. Future commit          │
+│   koji quietno menja build se hvata pre nego što merge-uje.                            │
+│                                                                                       │
+│ FINGERPRINT (per slug, stable + deterministic)                                         │
+│   htmlBytes100 (rounded to 100), htmlSha (16 hex of sha256),                            │
+│   buttonCount, paytableRows, footerPresent, archetypeBackfillIds (sorted),            │
+│   topologyKind, featureCount, autofixedKeys (sorted), derivedKeys (sorted)             │
+│                                                                                       │
+│ CLI                                                                                   │
+│   --bake               regen baseline → tests/baselines/uq16-…json                     │
+│   (default)            compare vs baseline, exit 1 on diff                             │
+│   --limit N            smoke subset (verify gate koristi 20)                           │
+│   --tolerance F        ≤ F % drift dozvoljen (default 0 = strict)                      │
+│   --report-only        report, no exit                                                 │
+│                                                                                       │
+│ NO-PUPPETEER CHOICE                                                                   │
+│   Text-based fingerprint umesto pixel-diff — null deps, brzo (~200ms za 20            │
+│   slugs), 100 % deterministic. Pixel-diff verzija (UQ-20+) može doći kasnije.         │
+│                                                                                       │
+│ TESTS (tests/tools/uq16-baseline.test.mjs, 4/4 PASS)                                   │
+│   baseline well-formed sa ≥ 100 slugs · compare exits 0 na 20-slug subset ·            │
+│   compare detects synthetic drift (htmlSha tampered) → exit 1 ·                        │
+│   --report-only suppresses non-zero exit                                                │
+│                                                                                       │
+│ VERIFY GATE                                                                           │
+│   tools/verify.mjs: + step "UQ-16 baseline drift (20-slug subset)" — 10 gates total    │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   a4418fc feat(UQ-16): visual regression baseline (text-mode, 338 GDD pinned) +        │
+│            MASTER_TODO sync                                                             │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-15 — LIVE ARCHETYPE DOCS SITE · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"redom"*.
