@@ -1,3 +1,39 @@
+## 📒 SESSION SNAPSHOT — 2026-06-21 (UQ ceiling streak)
+
+Jedan dan rada, 11 talasa zatvoreno, 11-gate verify aktivan, 0 unknown
+feature kinds u 338-GDD korpusu, 28 arhetipa + 29 alias-a, full corpus
+render 338/338 PASS, pre-commit hook live.
+
+```
+┌─────────┬───────────────────────────────────────────────────────┬──────────────┐
+│ Wave    │ Naslov                                                │ Commit(s)    │
+├─────────┼───────────────────────────────────────────────────────┼:────────────:┤
+│ UQ-6 (C)│ Vendor-neutral archetype expansion 15→25              │ 682aa4f      │
+│ B       │ Wave V Kimi V1-V5 reconcile bulk 338/338 (~75min bg) │ 682aa4f tool │
+│ Z-2     │ Archetype → Block scaffolder + E2E test               │ 00c76a4      │
+│ UQ-8    │ SmartDefaults stage 5 — archetype backfill            │ 60a3b23      │
+│ UQ-7    │ Post-Kimi cache audit tool + full corpus run          │ c95b4a7      │
+│ UQ-9    │ 28 archetypes + alias + non-arch filter → 100 % cov   │ 9535b83      │
+│ UQ-10/11│ V1-V5 prompt null-discipline + render parity 338/338  │ 4ba0550      │
+│ UQ-12   │ Pre-commit verify gate + install-precommit hook       │ a687289      │
+│ UQ-13   │ SmartDefaults stage 6 — autofix gaps + tag channel    │ 637c40f      │
+│ UQ-14   │ End-to-end one-shot ingest tool                       │ 5b506f3      │
+│ UQ-15   │ Live archetype docs site generator                    │ 8f4d057      │
+│ UQ-16   │ Visual regression baseline (text-mode, 338 pinned)    │ a4418fc      │
+│ UQ-AUDIT│ 8 forensic punch-list fixes (security/race/silent)    │ 3877da6      │
+├─────────┴───────────────────────────────────────────────────────┴──────────────┤
+│ Repo health snapshot                                                            │
+│   · 28 archetypes + 29 alias + 22 non-archetype kinds → 100 % corpus coverage  │
+│   · 338 GDDs render 338/338 PASS · 0 V1..V5 conflicts                          │
+│   · 11-gate verify (~5s) running on every commit (pre-commit hook live)         │
+│   · 338-slug visual-regression baseline pinned                                  │
+│   · End-to-end ingest from PDF/URL/JSON → playable HTML u 1 komandi             │
+│   · Live archetype docs site (46 KB, zero deps, vendor-neutral)                 │
+└────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-AUDIT — 8 FORENSIC AUDIT FIXES ACROSS UQ-12..UQ-16 · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"resi ultimativno"* — posle nezavisne Explore agent forenzike koja je
@@ -436,7 +472,7 @@ UQ-7 audit otkrio 30 unknown kinds, UQ-9 zatvorio sve.
 
 ---
 
-## 🏆 WAVE UQ-7 — POST-KIMI CACHE AUDIT TOOL · 2026-06-21 · TOOL ZATVOREN ✅ / FULL RUN ⏳ (čeka B)
+## 🏆 WAVE UQ-7 — POST-KIMI CACHE AUDIT TOOL + FULL CORPUS RUN · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"kreni"* — proaktivno gradim audit alat sad, full run kad B završi.
 
@@ -471,8 +507,21 @@ Boki: *"kreni"* — proaktivno gradim audit alat sad, full run kad B završi.
 │   🟡 Confidence ratio center of mass: 20-30 % bucket (96/163) →                        │
 │      prostor za V1..V5 prompt-tuning da boostuje declared/inferred ratio              │
 │                                                                                       │
+│ FULL CORPUS RUN (post-B završetka, 338/338 GDDs)                                       │
+│   Totali: 4914 declared · 16694 inferred · 1519 defaults · 0 conflicts                 │
+│   Avg declared 14.4 keys/GDD · avg ratio 20.9 %                                        │
+│   Coverage bucket center of mass: 20-30 % (204/338)                                    │
+│   30 unknown feature kinds → seed za UQ-9 archetype expansion + alias map              │
+│   Topology spread: 284 rectangular · 25 cluster · 5 variable_rows · 5 hex · 5 slingo · │
+│                   3 hexagonal · 3 wheel · 2 dual · 2 crash · 2 plinko · 1 expanding    │
+│   Audit tool koristi suggestArchetype probe — coverage je derived from catalog,        │
+│   ne stale snapshot (auto-updated kad UQ-9 alias map proširen).                        │
+│                                                                                       │
+│ POST UQ-9: 51/51 unique feature kinds covered → 100 % corpus coverage                  │
+│                                                                                       │
 │ COMMITS                                                                               │
 │   c95b4a7 feat(UQ-7): post-Kimi cache audit — aggregator over V6 reconcile cache      │
+│   (full corpus run executed natively kad je B background task završio 323/323)         │
 └──────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
