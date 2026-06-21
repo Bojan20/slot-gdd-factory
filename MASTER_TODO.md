@@ -1,3 +1,49 @@
+## 🏆 WAVE UQ-12 — PRE-COMMIT VERIFY GATE · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"idi dalje"* (posle UQ-9/10/11). P0 backlog stavka.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-12 — tools/verify.mjs + .git/hooks/pre-commit                                  │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ 5-GATE VERIFY (tools/verify.mjs)                                                       │
+│   1. featureArchetypes test            (28 arhetipa + alias + filter)                  │
+│   2. smartDefaults archetype backfill  (stage 5 plumbing)                              │
+│   3. scaffold-block E2E                (svih 25 arhetipa scaffold + load)              │
+│   4. UQ-7 corpus audit + assert        (unknownFeatureKinds === 0)                     │
+│   5. UQ-11 render smoke                (20-GDD subset, --quick skips)                  │
+│                                                                                       │
+│ CLI                                                                                   │
+│   node tools/verify.mjs              full gate (~3s)                                   │
+│   node tools/verify.mjs --quick      skip render (steps 1-4)                           │
+│   node tools/verify.mjs --json       machine-readable summary                          │
+│   npm run verify | verify:quick | precommit:install                                    │
+│                                                                                       │
+│ PRE-COMMIT HOOK (tools/install-precommit.mjs)                                          │
+│   Zero-npm-dep installer (no Husky). Piše .git/hooks/pre-commit koji                   │
+│   runs npm run verify:quick pre svakog commit-a. Foreign hook backupuje                │
+│   u pre-commit.local-backup. Marker line → idempotent re-run.                          │
+│                                                                                       │
+│ LIVE TEST (na UQ-12 commit-u)                                                          │
+│   ✓ archetype catalog + alias + filter        (0.1s)                                  │
+│   ✓ smartDefaults archetype backfill          (0.1s)                                  │
+│   ✓ scaffold-block tool E2E across 25         (2.7s)                                  │
+│   ✓ UQ-7 cache audit                          (0.1s)                                  │
+│   ✓ assert unknownFeatureKinds === 0 (got 0)                                          │
+│   ⏭ UQ-11 render smoke (--quick mode)                                                 │
+│   Total ~3s — fast enough for every commit                                             │
+│                                                                                       │
+│ UPGRADES NA POSTOJEĆI ALAT                                                            │
+│   tools/_full-corpus-render-parity.mjs: +--limit N flag (UQ-12 koristi 20)            │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   a687289 feat(UQ-12): pre-commit verify gate — archetype + audit + render-smoke       │
+│            green or no commit                                                           │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-11 — FULL CORPUS RENDER PARITY 338/338 PASS · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"jedno pa drugo ultimativno"* — UQ-11 (deterministic render gate)
