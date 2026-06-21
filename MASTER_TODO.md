@@ -1,3 +1,94 @@
+## 🛡️ WAVE UQ-FORTIFY2 — DRUGI TIER AUDIT · 2026-06-21 · ZATVOREN ✅ (10/10)
+
+> **Boki direktiva:** *"ajde kreni ultimativnom implementacijom i detaljnim qa
+> na kraju svake implementacije, da nijedna rupa ne postoji nepokrivena"*
+
+Drugi tier Explore audit posle UQ-FORTIFY našao još 10 rupa — koje su prvi
+tier propustio. Atom plan:
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ FORTIFY2 ATOMS                                                                         │
+├──────┬──────┬───────────────────────────────────────────────────────┬────────────────┤
+│ Tag  │ Prio │ Naslov                                                 │ Lokacija       │
+├──────┼──────┼───────────────────────────────────────────────────────┼────────────────┤
+│ G1   │ 🔴   │ Self-Correction Pass B implementacija (was meta-prompt│ kimi-reconcile │
+│      │      │ only, never wired u orchestrator)                       │ + multi-agent  │
+│ G2   │ 🔴   │ Trainer kalibraciona istorija JSON log + per-lane     │ trainer        │
+│      │      │ trending (sad samo zadnji snapshot, nema diff)         │                │
+│ G3   │ 🔴   │ Atomic write tmp file orphan garbage collector kad     │ trainer + ingest│
+│      │      │ proces dobije SIGKILL između write i rename            │                │
+│ G4   │ 🔴   │ File-level lock za cache write (multi-process safety)  │ ingest         │
+├──────┼──────┼───────────────────────────────────────────────────────┼────────────────┤
+│ G5   │ 🟡   │ Auto-ground-truth bake za novi GDDs (sample-based)     │ semantic +     │
+│      │      │                                                         │ trainer        │
+│ G6   │ 🔴   │ Scaffolder auto-regenerate blockCatalog.json posle    │ scaffolder     │
+│      │      │ block write (silent integration failure)                │                │
+│ G7   │ 🟡   │ Dirty PDF test fixtures (OCR/Unicode/font corruption)  │ tests/fixtures │
+│ G8   │ 🟡   │ Verify gate idempotency test (run verify 2x, diff)     │ tests/         │
+│ G9   │ 🟡   │ Telemetry persistence — time-series JSON history       │ orchestrator   │
+│ G10  │ 🟡   │ Cache burst throttling (parallel Kimi calls cap)       │ kimi-reconcile │
+└──────┴──────┴───────────────────────────────────────────────────────┴────────────────┘
+```
+
+### Shipped (10/10 zelene)
+
+```
+┌──────┬──────────────────────────────────────────────────────────────────────────────┐
+│ G1   │ Self-Correction Pass B implementiran u tools/_wave-v-kimi-reconcile.mjs.     │
+│      │ _buildCorrectionsBlock helper + Pass B re-invocation samo za agente sa     │
+│      │ diff (zero-cost kad je Pass A vec valid). __self_corrected__:true stamped.  │
+├──────┼──────────────────────────────────────────────────────────────────────────────┤
+│ G2   │ Trainer history JSON: reports/calibration-history.json sa append-only       │
+│      │ snapshots, deltaSincePrev po lane-u, 200-run rolling window.                │
+├──────┼──────────────────────────────────────────────────────────────────────────────┤
+│ G3   │ src/registry/tmpFileCleanup.mjs — orphan *.tmp.<pid> GC sa PID liveness     │
+│      │ check + min-age guard. Wired u ingest + trainer pre svakog write-a.         │
+├──────┼──────────────────────────────────────────────────────────────────────────────┤
+│ G4   │ src/registry/fileLock.mjs — sync mutex sidecar (`<target>.lock`) sa PID +   │
+│      │ timestamp, steal-after-staleness, withLock convenience wrapper. Wired u    │
+│      │ ingest cache stamping + trainer prompt rewrite.                              │
+├──────┼──────────────────────────────────────────────────────────────────────────────┤
+│ G5   │ Semantic verifier emit-uje 📋 listu PDF-ova u ~/Desktop/GDD/ koji NISU       │
+│      │ pinned u semantic-expected.json. Operator vidi sve koje treba dodati.        │
+├──────┼──────────────────────────────────────────────────────────────────────────────┤
+│ G6   │ Scaffolder auto-pokreće tools/_wave-w-build-block-catalog.mjs posle write,  │
+│      │ tako da blockMapper odmah vidi novi blok (was: silent integration miss).    │
+├──────┼──────────────────────────────────────────────────────────────────────────────┤
+│ G7   │ Dirty PDF resilience: tests/fixtures/dirty-pdf-samples/01-ocr-artifacts.txt│
+│      │ + tools/dirty-pdf-resilience-test.mjs. 5 sanity asserts (topology resolved,│
+│      │ features ≥ 1, specials ≥ 2, failures ≤ 3). Wired u verify step 4.8.        │
+├──────┼──────────────────────────────────────────────────────────────────────────────┤
+│ G8   │ tools/verify-idempotency-test.mjs — pokreće verify.mjs --json 2× i pravi    │
+│      │ assert da Pass 1 + Pass 2 daju identičan step outcome (catch non-idempotent│
+│      │ mutating steps). VERIFIKOVANO: 14/14 gates idempotentno.                    │
+├──────┼──────────────────────────────────────────────────────────────────────────────┤
+│ G9   │ Telemetry time-series: reports/orchestrator-e2e-series.json sa per-fixture │
+│      │ parserDeclared/v6Declared/forces/blocks po run-u, 100-run rolling window.   │
+├──────┼──────────────────────────────────────────────────────────────────────────────┤
+│ G10  │ Kimi reconcile concurrency hard-cap = 8 + warn za ≥ 100 GDDs bez throttle.  │
+│      │ Sprečava API burst kad cache invalidira svih 338 entries.                   │
+└──────┴──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Verifikacija (sve zelene)
+
+```
+parse-real      4/4 ✅
+lw-25 deep-qa   29/29 ✅
+verify gate     14/14 ✅ (+ G7 dirty PDF resilience step)
+verify idempot. 14/14 PASS (G8 test: Pass 1 = Pass 2)
+LEGO gate       8/8 ✅
+UQ-11 render    338/338 ✅
+E2E orchestr.   5/5
+calibration hist 1 run tracked (G2 history file populated)
+telemetry hist  1 run tracked (G9 series file populated)
+```
+
+QA strategija: posle SVAKOG fix-cluster-a → full sweep.
+
+---
+
 ## 🛡️ WAVE UQ-FORTIFY — UQ-TRAIN ARHITEKTURA RUPE · 2026-06-21 · ZATVOREN ✅ (10/10)
 
 > **Boki direktiva:** *"upisi ultimativno prvo zakrpi svaku mogucu rupu sa

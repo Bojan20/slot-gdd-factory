@@ -471,6 +471,25 @@ try {
   process.exit(1);
 }
 
+/* Wave UQ-FORTIFY2 G6 — auto-regenerate blockCatalog.json so the new
+ * block is visible to blockMapper without a manual catalog rebuild.
+ * Without this, scaffolded blocks live in `src/blocks/` but the catalog
+ * stays stale → mapper never activates them → silent integration miss. */
+try {
+  const catalogTool = resolve(REPO, 'tools/_wave-w-build-block-catalog.mjs');
+  if (existsSync(catalogTool)) {
+    const { spawnSync } = await import('node:child_process');
+    const r = spawnSync('node', [catalogTool], { stdio: 'pipe', cwd: REPO });
+    if (r.status === 0) {
+      console.log('✓ Regenerated src/registry/blockCatalog.json');
+    } else {
+      console.warn('⚠ blockCatalog regen failed (exit ' + r.status + ') — run manually');
+    }
+  }
+} catch (e) {
+  console.warn('⚠ blockCatalog auto-regen threw: ' + e.message);
+}
+
 console.log('');
 console.log('Next steps:');
 console.log(`  1. node ${testFile}                                 # run scaffold tests`);

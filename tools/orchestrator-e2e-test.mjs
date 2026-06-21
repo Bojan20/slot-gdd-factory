@@ -286,4 +286,31 @@ writeFileSync(mdPath, md.join('\n'));
 console.log('');
 console.log(`Report: ${mdPath}`);
 
+/* Wave UQ-FORTIFY2 G9 — telemetry time-series.
+ * Append a compact snapshot to reports/orchestrator-e2e-series.json so
+ * we can answer "is V6 declared trending up after N calibration runs?". */
+const seriesPath = resolve(REPORTS, 'orchestrator-e2e-series.json');
+let series = { runs: [] };
+if (existsSync(seriesPath)) {
+  try { series = JSON.parse(readFileSync(seriesPath, 'utf8')); } catch (_) { series = { runs: [] }; }
+}
+series.runs.push({
+  ts: new Date().toISOString(),
+  passCount,
+  failCount,
+  ...aggregate,
+  perFixture: results.map(r => ({
+    slug: r.slug,
+    allPass: r.allPass,
+    parserDeclared: r.telemetry.parserDeclaredCount,
+    v6Declared: r.telemetry.v6DeclaredCount,
+    forces: r.telemetry.forcesPresent,
+    blocks: r.telemetry.blockCount,
+    htmlBytes: r.telemetry.htmlBytes,
+  })),
+});
+if (series.runs.length > 100) series.runs = series.runs.slice(-100);
+writeFileSync(seriesPath, JSON.stringify(series, null, 2) + '\n');
+console.log(`Series: ${seriesPath} (${series.runs.length} runs tracked)`);
+
 process.exit(failCount > 0 ? 1 : 0);

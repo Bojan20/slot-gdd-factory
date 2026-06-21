@@ -188,6 +188,28 @@ for (const [slug, expected] of Object.entries(fixture.fixtures)) {
 console.log('═'.repeat(60));
 console.log(`Asserts: ${totalAsserts - totalFails}/${totalAsserts} passed (${totalFails} fails)`);
 
+/* Wave UQ-FORTIFY2 G5 — auto-discover GDDs missing from ground truth.
+ * Scans ~/Desktop/GDD/ for `*.pdf` files that are NOT in semantic-expected.
+ * Operator can either pin them manually OR run with UQ_BAKE_GROUND_TRUTH=1
+ * to seed minimal entries (parser baseline as "expected"). */
+try {
+  const gddDir = (process.env.HOME || '/tmp') + '/Desktop/GDD';
+  if (existsSync(gddDir)) {
+    const { readdirSync } = await import('node:fs');
+    const pinned = new Set(Object.keys(fixture.fixtures).map(k => k.toLowerCase()));
+    const allPdfs = readdirSync(gddDir).filter(f => f.toLowerCase().endsWith('.pdf'));
+    const missing = allPdfs.filter(f => !pinned.has(f.replace(/\.pdf$/i, '').toLowerCase()));
+    if (missing.length > 0) {
+      console.log('');
+      console.log(`📋 ${missing.length} PDF(s) in ~/Desktop/GDD/ have NO ground truth:`);
+      for (const m of missing.slice(0, 8)) console.log('  - ' + m);
+      if (missing.length > 8) console.log(`  … +${missing.length - 8} more`);
+      console.log('  Add them to tests/fixtures/semantic-expected.json or run with');
+      console.log('  UQ_BAKE_GROUND_TRUTH=1 to seed parser-baseline entries.');
+    }
+  }
+} catch { /* non-fatal */ }
+
 /* F10 — if UQ_BAKE_PDF_SHA=1 mode was used and at least one fixture got a
  * fresh SHA baked, write the updated fixture file back. */
 if (process.env.UQ_BAKE_PDF_SHA === '1') {

@@ -257,6 +257,45 @@ writeFileSync(mdPath, md.join('\n'));
 console.log('');
 console.log(`Report: ${mdPath}`);
 
+/* Wave UQ-FORTIFY2 G2 — persistent calibration history JSON.
+ * One file `reports/calibration-history.json` carries an append-only
+ * series of run snapshots. Each entry: timestamp, mode, per-lane accuracy
+ * + miss patterns + delta-from-previous. Lets us answer "is V2 lane
+ * accuracy trending up after 5 --apply runs?". */
+const historyPath = resolve(REPORTS, 'calibration-history.json');
+let history = { runs: [] };
+if (existsSync(historyPath)) {
+  try { history = JSON.parse(readFileSync(historyPath, 'utf8')); } catch (_) { history = { runs: [] }; }
+}
+const prev = history.runs.length ? history.runs[history.runs.length - 1] : null;
+const entry = {
+  ts: new Date().toISOString(),
+  mode: APPLY ? 'apply' : 'dry-run',
+  scope: CALIBRATE_ALL ? 'full-corpus' : 'baseline-5',
+  cacheHits,
+  fixtureCount: fixtures.length,
+  lanes: {},
+};
+for (const [code, l] of Object.entries(lanes)) {
+  const acc = l.totalCount > 0 ? +(l.correctCount / l.totalCount * 100).toFixed(2) : null;
+  const delta = (prev && prev.lanes && prev.lanes[code] && prev.lanes[code].accuracy != null && acc != null)
+    ? +(acc - prev.lanes[code].accuracy).toFixed(2) : null;
+  entry.lanes[code] = {
+    name: l.name,
+    accuracy: acc,
+    correctCount: l.correctCount,
+    totalCount: l.totalCount,
+    missCount: l.misses.length,
+    deltaSincePrev: delta,
+    topMisses: l.misses.slice(0, 5).map(m => `${m.field}:${m.agent}→${m.expected}`),
+  };
+}
+history.runs.push(entry);
+/* Cap history at 200 runs (rolling window). */
+if (history.runs.length > 200) history.runs = history.runs.slice(-200);
+writeFileSync(historyPath, JSON.stringify(history, null, 2) + '\n');
+console.log(`History: ${historyPath} (${history.runs.length} runs tracked)`);
+
 /* ── Optional --apply: stamp AGENT_CALIBRATION block into each lane file. */
 if (APPLY) {
   console.log('');
@@ -275,7 +314,17 @@ if (APPLY) {
       console.log(`  ⏭ ${laneFiles[code]} missing`);
       continue;
     }
-    let src = readFileSync(path, 'utf8');
+    /* G3 — GC orphan tmps in parser-pool before write. */
+    try {
+      const { cleanupOrphanTmps } = await import('../src/registry/tmpFileCleanup.mjs');
+      cleanupOrphanTmps([resolve(REPO, 'agents/parser-pool')]);
+    } catch (_) {}
+    /* G4 — file lock around the prompt rewrite. */
+    const { acquireLock, releaseLock } = await import('../src/registry/fileLock.mjs');
+    const _lockTok = acquireLock(path);
+    let src;
+    try {
+    src = readFileSync(path, 'utf8');
     /* Replace existing AGENT_CALIBRATION block if present, else append. */
     const calBlock = [
       '## AGENT_CALIBRATION (UQ-TRAIN ' + new Date().toISOString().slice(0, 10) + ')',
@@ -303,6 +352,9 @@ if (APPLY) {
     const { renameSync } = await import('node:fs');
     renameSync(tmpPath, path);
     console.log(`  ✓ updated ${laneFiles[code]} (${l.misses.length} miss patterns)`);
+    } finally {
+      releaseLock(_lockTok);
+    }
   }
 }
 

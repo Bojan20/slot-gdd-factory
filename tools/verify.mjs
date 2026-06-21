@@ -150,6 +150,13 @@ if (existsSync(e2eTool)) {
   console.log('  ⏭ UQ-TRAIN orchestrator E2E (no tool)');
 }
 
+/* ── Step 4.8: UQ-FORTIFY2 G7 dirty PDF resilience ────────────────── */
+const dirtyTool = resolve(REPO, 'tools/dirty-pdf-resilience-test.mjs');
+if (existsSync(dirtyTool)) {
+  run('UQ-FORTIFY2 G7 dirty PDF resilience',
+    'node', [dirtyTool]);
+}
+
 /* ── Step 5: UQ-11 render smoke on a 20-GDD subset ──────────────────── */
 if (!QUICK) {
   const RENDER_TOOL = resolve(REPO, 'tools/_full-corpus-render-parity.mjs');

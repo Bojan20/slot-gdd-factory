@@ -96,7 +96,7 @@ function _extractJson(raw) {
   try { return JSON.parse(s.slice(first, last + 1)); } catch { return null; }
 }
 
-async function _runOneAgent(agent, gddText, baseline) {
+async function _runOneAgent(agent, gddText, baseline, correctionsBlock) {
   const header = await _readPrompt(agent.file);
   const body = [
     header, '', '---', '',
@@ -104,12 +104,66 @@ async function _runOneAgent(agent, gddText, baseline) {
     '---', '',
     '## Regex-parser baseline (hint, override at will)', '',
     JSON.stringify(baseline || {}, null, 2), '',
+    /* Wave UQ-FORTIFY2 G1 — Pass B injection. When the orchestrator
+     * detects diff vs ground truth, it re-invokes this function with a
+     * CORRECTIONS block appended to the prompt. The agent should fix
+     * the listed fields and stamp __self_corrected__:true. */
+    ...(correctionsBlock ? ['---', '', correctionsBlock, ''] : []),
     '---', '',
     '## Reminder', '',
     'Return ONLY the JSON object specified in your role above. No prose.',
   ].join('\n');
   const raw = await _askKimi(body);
   return { id: agent.id, raw, parsed: _extractJson(raw) };
+}
+
+/* Wave UQ-FORTIFY2 G1 — Self-Correction Pass B helper.
+ * Given an agent response and ground truth, compute a diff string that
+ * the agent can consume to correct its output. Returns null if Pass B
+ * is not needed (no significant diff). */
+function _buildCorrectionsBlock(agentId, response, groundTruth) {
+  if (!response || !response.parsed) return null;
+  if (!groundTruth) return null;
+  const r = response.parsed;
+  const lines = [];
+  /* V1 topology fields */
+  if (agentId === 'V1_topology' && groundTruth.topology) {
+    const t = r.topology || {};
+    const g = groundTruth.topology;
+    if (Number.isFinite(g.reels) && t.reels !== g.reels) {
+      lines.push(`- topology.reels: you returned ${t.reels}, ground truth = ${g.reels}`);
+    }
+    if (Number.isFinite(g.rows) && t.rows !== g.rows) {
+      lines.push(`- topology.rows: you returned ${t.rows}, ground truth = ${g.rows}`);
+    }
+    if (g.paylines_or_ways != null) {
+      const got = t.paylines || t.ways;
+      if (got !== g.paylines_or_ways) {
+        lines.push(`- topology.paylines/ways: you returned ${got}, ground truth = ${g.paylines_or_ways}`);
+      }
+    }
+  }
+  /* V2 named symbols */
+  if (agentId === 'V2_symbols' && Array.isArray(groundTruth.namedSymbols) && groundTruth.namedSymbols.length) {
+    const allLabels = Array.isArray(r.symbols)
+      ? r.symbols.map(s => (s && (s.name || s.label || s.id) || '').toLowerCase())
+      : [];
+    for (const want of groundTruth.namedSymbols) {
+      if (!allLabels.some(l => l.includes(want.toLowerCase()))) {
+        lines.push(`- symbol "${want}" missing — GDD prose mentions this name`);
+      }
+    }
+  }
+  if (lines.length < 1) return null;
+  return [
+    '=== CORRECTIONS (Pass B) ===',
+    'Previous response had these issues:',
+    ...lines,
+    '',
+    'Re-emit the JSON. Keep correct fields, fix the listed ones. Stamp',
+    '`__self_corrected__: true` at the root of your JSON.',
+    '===',
+  ].join('\n');
 }
 
 async function _processGdd(slug) {
@@ -128,9 +182,53 @@ async function _processGdd(slug) {
 
   console.log(`  ⇄ ${slug} — fire V1..V5 in parallel via Kimi (${gddText.length} chars)`);
   const t0 = Date.now();
-  const reports = await Promise.all(
+  let reports = await Promise.all(
     AGENTS.map((a) => _runOneAgent(a, gddText, baseline).catch((e) => ({ id: a.id, raw: '', parsed: null, error: e.message }))),
   );
+
+  /* Wave UQ-FORTIFY2 G1 — Pass B self-correction.
+   * Load ground truth if a fixture matches this slug, build CORRECTIONS
+   * blocks per agent, re-invoke only the agents that have meaningful
+   * diffs (skip if Pass A already correct → 0 cost). */
+  try {
+    const gtPath = resolve(REPO, 'tests/fixtures/semantic-expected.json');
+    if (existsSync(gtPath)) {
+      const gt = JSON.parse(await readFile(gtPath, 'utf8'));
+      const gtKey = Object.keys(gt.fixtures || {}).find(k =>
+        k.toLowerCase().replace(/_/g, '-') === slug
+      );
+      if (gtKey) {
+        const expected = gt.fixtures[gtKey];
+        const agentIdToFull = { V1: 'V1_topology', V2: 'V2_symbols', V3: 'V3_feature', V4: 'V4_ux', V5: 'V5_compliance' };
+        const passBAgents = [];
+        for (const r of reports) {
+          const agentFull = agentIdToFull[r.id];
+          const corrections = _buildCorrectionsBlock(agentFull, r, expected);
+          if (corrections) passBAgents.push({ agent: AGENTS.find(a => a.id === r.id), corrections });
+        }
+        if (passBAgents.length > 0) {
+          console.log(`  ↻ Pass B re-invocation: ${passBAgents.map(p => p.agent.id).join(', ')}`);
+          const passBResults = await Promise.all(
+            passBAgents.map(({ agent, corrections }) =>
+              _runOneAgent(agent, gddText, baseline, corrections)
+                .catch(e => ({ id: agent.id, raw: '', parsed: null, error: e.message }))
+            )
+          );
+          /* Replace original reports with Pass B response if it parsed cleanly. */
+          for (const pb of passBResults) {
+            const idx = reports.findIndex(r => r.id === pb.id);
+            if (idx >= 0 && pb.parsed) {
+              pb.parsed.__self_corrected__ = true;
+              reports[idx] = pb;
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.log(`  ⚠ Pass B skipped: ${e.message}`);
+  }
+
   const dt = ((Date.now() - t0) / 1000).toFixed(1);
 
   let parsedCount = 0;
@@ -191,9 +289,19 @@ async function main() {
   }
 
   /* --concurrency N: process N slugs in parallel (each slug fires 5 Kimi calls).
-     Default 1 for backward compat. Recommended 3–5 for bulk runs. */
+     Default 1 for backward compat. Recommended 3–5 for bulk runs.
+     Wave UQ-FORTIFY2 G10 — hard cap 8 to prevent API burst.
+     Warns when bulk run (≥100 slugs) without throttle. */
   const concIdx = args.indexOf('--concurrency');
-  const CONC = concIdx >= 0 ? Math.max(1, parseInt(args[concIdx + 1], 10) || 1) : 1;
+  let CONC = concIdx >= 0 ? Math.max(1, parseInt(args[concIdx + 1], 10) || 1) : 1;
+  if (CONC > 8) {
+    console.log(`  ⚠ concurrency=${CONC} clamped to 8 (G10 burst guard)`);
+    CONC = 8;
+  }
+  if (slugs.length >= 100 && CONC === 1) {
+    console.log(`  ⚠ ${slugs.length} GDDs at concurrency=1 will take ~${Math.ceil(slugs.length * 0.5)} min.`);
+    console.log('     Consider --concurrency 3 (capped at 8). Each slug fires 5 Kimi calls.');
+  }
 
   console.log(`Wave V Kimi reconcile — ${slugs.length} GDDs · concurrency=${CONC}`);
   const results = [];

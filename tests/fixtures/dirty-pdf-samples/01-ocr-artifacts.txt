@@ -1,0 +1,23 @@
+                      Foundry Slot Demo
+              CONFIDENTIAL · DRAFT · 2026-Q1
+
+
+  Game ldentity                       Foundry Slot Demo
+                                      A 5 reels × 3 rows base game, 20 fixed pay-
+                                      lines, pays left-to-right from reel 1.
+
+  RTl                                  Target 96.l5% across three certified variants.
+
+  Symbols
+      Wild                            Substitutes for all except scatter.
+      Volcano                         Free Spins scatter, 3+ on screen triggers FS.
+      Fireball                        Cash collect / money symbol, 6+ trigger Hold-and-
+                                      Win.
+
+  Features
+      Free Spins                      Triggered by 3+ Volcano scatters.
+      Hold and Win                    Cash Eruption mechanic, locks board on trigger.
+      Expanding Wild                  Big Wild expands to a 3-high reel.
+
+  Bet model
+      20 fixed paylines, 1 coin per line, 21 bet steps.

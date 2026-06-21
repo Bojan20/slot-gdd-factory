@@ -313,16 +313,23 @@ try {
         '--slug', slug,
       ], { stdio: 'inherit', cwd: REPO });
       if (r.status !== 0) throw new Error('reconcile exit ' + r.status);
-      /* Stamp parser hash so future runs detect cache staleness.
-       * Wave UQ-FORTIFY F2 — RECOMPUTE hash right before stamp so we capture
-       * any source changes that happened DURING Kimi call (30s window).
-       * If hash drifted, we still stamp the CURRENT hash so the next run
-       * detects the drift (cache becomes valid for current source).
-       * F7 — defensive mkdir on cache dir before stamping. */
+      /* Stamp parser hash — F2 recompute + F7 mkdir + G3 orphan cleanup
+       * + G4 file lock. */
       const cacheDir = resolve(REPO, 'tools/_wave-v-cache');
       try { await fsp.mkdir(cacheDir, { recursive: true }); } catch (_) {}
+      /* G3 — opportunistically GC orphan tmps every ingest run. */
+      try {
+        const { cleanupOrphanTmps } = await import('../src/registry/tmpFileCleanup.mjs');
+        const gc = cleanupOrphanTmps([cacheDir]);
+        if (gc.deleted > 0) log(`  gc: deleted ${gc.deleted} orphan tmp file(s)`);
+      } catch (_) { /* non-fatal */ }
       if (existsSync(cacheFile)) {
+        const { acquireLock, releaseLock } = await import('../src/registry/fileLock.mjs');
+        let lockTok = null;
         try {
+          /* G4 — file lock around read-modify-write to avoid race with
+           * concurrent ingest of same slug. */
+          lockTok = acquireLock(cacheFile);
           /* Invalidate memoized hash so we re-read the (possibly changed) source. */
           _parserHashCache = null;
           const freshHash = await _computeParserHash();
@@ -332,13 +339,14 @@ try {
           const cur = JSON.parse(await fsp.readFile(cacheFile, 'utf8'));
           cur.__parser_hash__ = freshHash;
           cur.__stamped_at__ = new Date().toISOString();
-          /* Atomic write via tmp + rename so concurrent ingest runs never
-           * leave a partial cache file. */
+          /* Atomic write via tmp + rename. */
           const tmpFile = cacheFile + '.tmp.' + process.pid;
           await fsp.writeFile(tmpFile, JSON.stringify(cur, null, 2), 'utf8');
           await fsp.rename(tmpFile, cacheFile);
         } catch (e) {
           log('  warn: could not stamp parser hash: ' + e.message);
+        } finally {
+          if (lockTok) releaseLock(lockTok);
         }
       }
     }).catch((e) => {
