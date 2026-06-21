@@ -173,14 +173,17 @@ ${cards}
       c.classList.toggle('hidden', v && !hay.includes(v));
     }
   });
+  /* UQ-AUDIT fix: namespace localStorage key under the repo name so
+     hosting alongside sibling doc sites can't collide. */
+  const _LS_KEY = 'slot-gdd-factory/archetype-docs-theme';
   const btn = document.getElementById('theme');
   btn.addEventListener('click', () => {
     const cur = document.body.dataset.theme;
     document.body.dataset.theme = cur === 'dark' ? 'light' : 'dark';
-    try { localStorage.setItem('archetype-docs-theme', document.body.dataset.theme); } catch(_){}
+    try { localStorage.setItem(_LS_KEY, document.body.dataset.theme); } catch(_){}
   });
   try {
-    const saved = localStorage.getItem('archetype-docs-theme');
+    const saved = localStorage.getItem(_LS_KEY);
     if (saved) document.body.dataset.theme = saved;
   } catch(_){}
 </script>

@@ -140,9 +140,19 @@ async function main() {
       drifts.push({ slug, kind: 'build-failure' });
       continue;
     }
-    /* Diff each field. */
+    /* Diff each field.
+       UQ-AUDIT fix: compare type FIRST, then value. JSON.stringify
+       coerces 44 and "44" to the same string for non-quoted primitives
+       inside arrays; without the typeof guard a number→string drift
+       would slip through. */
     const diffFields = [];
     for (const k of Object.keys(before)) {
+      const ta = typeof before[k];
+      const tb = typeof after[k];
+      if (ta !== tb) {
+        diffFields.push({ field: k, before: before[k], after: after[k], typeDrift: ta + '→' + tb });
+        continue;
+      }
       const a = JSON.stringify(before[k]);
       const b = JSON.stringify(after[k]);
       if (a !== b) diffFields.push({ field: k, before: before[k], after: after[k] });

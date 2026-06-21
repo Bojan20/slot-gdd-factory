@@ -83,6 +83,9 @@ run('ingest tool (end-to-end pipeline)',
 run('archetype docs generator',
   'node', ['--test', 'tests/tools/gen-archetype-docs.test.mjs']);
 
+run('install-precommit hook installer',
+  'node', ['--test', 'tests/tools/install-precommit.test.mjs']);
+
 /* ── Step 4: UQ-7 corpus audit (unknown must be 0) ──────────────────── */
 const auditOk = run('UQ-7 cache audit',
   'node', ['tools/uq7-cache-audit.mjs', '--json']);
@@ -125,9 +128,12 @@ if (!QUICK) {
     run('UQ-11 render smoke (20-GDD subset)',
       'node', [RENDER_TOOL, '--limit', '20']);
   } else {
-    /* Fall back to legacy render-grid-all if UQ-11 tool missing */
-    if (!JSON_OUT) console.log('  ⏭ UQ-11 render smoke (tool not present)');
-    results.push({ label: 'UQ-11 render smoke', ok: true, exit: 0, durationS: 0, stderr: '', stdout: 'skipped (no tool)' });
+    /* UQ-12 audit fix: missing render tool is a hard FAIL, not a silent
+       skip. The gate must protect the render pipeline; if the tool
+       disappears the commit is blocked until it's restored. */
+    const msg = 'render tool missing at tools/_full-corpus-render-parity.mjs';
+    if (!JSON_OUT) console.log('  ✗ UQ-11 render smoke — ' + msg);
+    results.push({ label: 'UQ-11 render smoke', ok: false, exit: 1, durationS: 0, stderr: msg, stdout: '' });
   }
 } else if (!JSON_OUT) {
   console.log('  ⏭ UQ-11 render smoke (--quick)');

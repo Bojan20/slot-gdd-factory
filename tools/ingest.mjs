@@ -84,12 +84,34 @@ function slugify(name) {
 
 async function fetchToTmp(url) {
   log(`fetching ${url}`);
-  const ext = extname(new URL(url).pathname) || '.pdf';
+  /* UQ-AUDIT fix: refuse non-https URLs (avoid plaintext / file://) and
+     disallow redirect-chains (SSRF guard — attacker-controlled host
+     could redirect from a known-good URL through open redirects to
+     internal endpoints). Manual redirect follow with hard cap. */
+  let u;
+  try { u = new URL(url); }
+  catch (_) { throw new Error('bad URL: ' + url); }
+  if (u.protocol !== 'https:' && u.protocol !== 'http:') {
+    throw new Error('only http(s) URLs accepted (got ' + u.protocol + ')');
+  }
+  const ext = extname(u.pathname) || '.pdf';
   const tmp = resolve(tmpdir(), 'ingest-' + randomUUID() + ext);
   const ctrl = new AbortController();
   const to = setTimeout(() => ctrl.abort(), 60000);
   try {
-    const res = await fetch(url, { signal: ctrl.signal });
+    let res = await fetch(url, { signal: ctrl.signal, redirect: 'manual' });
+    let hops = 0;
+    while (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get('location');
+      if (!loc) throw new Error('redirect without Location header');
+      if (++hops > 3) throw new Error('too many redirects (>3) from ' + url);
+      const next = new URL(loc, u);
+      if (next.protocol !== 'https:' && next.protocol !== 'http:') {
+        throw new Error('redirect to non-http(s) protocol: ' + next.protocol);
+      }
+      log(`  redirect ${hops}: ${next.href}`);
+      res = await fetch(next.href, { signal: ctrl.signal, redirect: 'manual' });
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
     const buf = Buffer.from(await res.arrayBuffer());
     await writeFile(tmp, buf);
@@ -160,8 +182,22 @@ try {
   let model;
   await step('parse + smart defaults', () => {
     if (ext === 'json') {
-      try { model = normalizeFromJSON(JSON.parse(rawText)); }
+      /* UQ-AUDIT fix: validate the parsed JSON has at least one
+         field expected by normalizeFromJSON before handing it over,
+         so we fail fast with a clear message instead of an opaque
+         throw deeper in the parser. */
+      let obj;
+      try { obj = JSON.parse(rawText); }
       catch (e) { throw new Error('bad JSON: ' + e.message); }
+      if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
+        throw new Error('JSON ingest expects a top-level object');
+      }
+      const expected = ['topology', 'symbols', 'features', 'paytable', 'name', 'gameName'];
+      if (!expected.some(k => k in obj)) {
+        throw new Error('JSON missing every expected GDD field — got keys: ' +
+          Object.keys(obj).slice(0, 10).join(','));
+      }
+      model = normalizeFromJSON(obj);
     } else {
       model = parseGDD(rawText, ext);
     }

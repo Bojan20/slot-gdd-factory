@@ -31,11 +31,20 @@ ${MARKER}
 # To bypass once: \`git commit --no-verify\` (discouraged; CI runs same gate).
 set -e
 
-cd "$(git rev-parse --show-toplevel)"
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
 
-# Skip on empty commits / merge / rebase to avoid noise.
-if [ -n "$(git rev-parse -q --verify MERGE_HEAD 2>/dev/null)" ]; then
-  echo "[verify] merge commit — skipping pre-commit gate."
+# Skip during merge / rebase / cherry-pick / amend so we never block
+# an interactive workflow. (UQ-12 audit: original hook only checked
+# MERGE_HEAD, which still let rebase/cherry-pick fire the gate.)
+for ref in MERGE_HEAD REBASE_HEAD CHERRY_PICK_HEAD REVERT_HEAD; do
+  if [ -n "$(git rev-parse -q --verify "$ref" 2>/dev/null)" ]; then
+    echo "[verify] $ref present — skipping pre-commit gate."
+    exit 0
+  fi
+done
+if [ -d "$ROOT/.git/rebase-merge" ] || [ -d "$ROOT/.git/rebase-apply" ]; then
+  echo "[verify] rebase in progress — skipping pre-commit gate."
   exit 0
 fi
 

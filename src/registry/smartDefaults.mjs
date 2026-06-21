@@ -207,12 +207,19 @@ function recordDerived(model, field) {
 
 /* UQ-13 — auto-fix tag (separate channel from derived so audits can tell
    "engineer-inferred from sparse GDD" vs "auto-fix last-resort placeholder
-   because data was missing entirely"). */
+   because data was missing entirely").
+
+   UQ-AUDIT fix (post-UQ-16 forensic): if the same field has already been
+   tagged once, KEEP the original reason. A subsequent autofix call on the
+   same field is either redundant or a different code path observing
+   already-fixed data — either way the first reason is the authoritative
+   diagnostic for "why was this autofixed at all". */
 function recordAutofix(model, field, reason) {
   ensureConfidence(model);
   if (!model.confidence._autofixedBy || typeof model.confidence._autofixedBy !== 'object') {
     model.confidence._autofixedBy = {};
   }
+  if (model.confidence._autofixedBy[field]) return;
   model.confidence._autofixedBy[field] = { source: 'smartDefaults.autofix', reason: reason || 'gap' };
 }
 
