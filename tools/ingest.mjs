@@ -1,0 +1,248 @@
+#!/usr/bin/env node
+/**
+ * tools/ingest.mjs
+ *
+ * Wave UQ-14 (2026-06-21) — End-to-end one-shot GDD ingest.
+ *
+ * One command goes from "give me a PDF / URL" to "open a playable HTML
+ * slot in the browser". No manual parser / V1-V5 / buildSlotHTML steps.
+ *
+ * USAGE
+ *   node tools/ingest.mjs --file ./path/to/gdd.pdf
+ *   node tools/ingest.mjs --url https://example.com/gdd.pdf
+ *   node tools/ingest.mjs --file ./gdd.md  --slug my-game
+ *   node tools/ingest.mjs --file ./gdd.pdf --no-llm   (skip Kimi V1..V5)
+ *   node tools/ingest.mjs --file ./gdd.pdf --open     (auto-open in browser)
+ *
+ * PIPELINE
+ *   1. Resolve source
+ *      · --file → read from disk
+ *      · --url  → fetch via global fetch() with timeout
+ *   2. Extract text
+ *      · .pdf  → pdftotext -layout
+ *      · .md / .txt → read as-is
+ *      · .json → parsed directly via normalizeFromJSON
+ *   3. Parse: parseGDD(text, ext) → model
+ *   4. SmartDefaults: applySmartDefaults(model) (autofix + backfill)
+ *   5. LLM (optional, default ON): V1..V5 Kimi reconcile via existing
+ *      tools/_wave-v-kimi-reconcile.mjs pipeline (only when --no-llm
+ *      is NOT passed and the slug isn't already cached)
+ *   6. Build: buildSlotHTML(model) → standalone HTML
+ *   7. Write: dist/ingest/<slug>/{index.html, model.json, raw.txt, ingest.log}
+ *   8. (Optional --open) macOS `open` on index.html
+ *
+ * EXIT CODES
+ *   0 success
+ *   1 source/parse/build failure
+ *   2 bad CLI usage
+ */
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { resolve, basename, extname } from 'node:path';
+import { spawnSync, spawn } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { randomUUID } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = resolve(fileURLToPath(import.meta.url), '..');
+const REPO = resolve(__dirname, '..');
+const DIST = resolve(REPO, 'dist/ingest');
+
+/* ── arg parsing ──────────────────────────────────────────────────────── */
+
+const args = process.argv.slice(2);
+function flag(name) { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : null; }
+function has(name)  { return args.includes(name); }
+
+const filePath = flag('--file');
+const urlArg   = flag('--url');
+const slugArg  = flag('--slug');
+const noLlm    = has('--no-llm');
+const openAfter= has('--open');
+const dryRun   = has('--dry-run');
+
+if (!filePath && !urlArg) {
+  console.error('Usage: node tools/ingest.mjs --file <path> | --url <url>');
+  console.error('       [--slug <name>] [--no-llm] [--open] [--dry-run]');
+  process.exit(2);
+}
+
+/* ── helpers ──────────────────────────────────────────────────────────── */
+
+function log(msg) {
+  console.log(`[ingest ${new Date().toISOString().slice(11, 19)}] ${msg}`);
+}
+
+function slugify(name) {
+  return String(name || 'gdd')
+    .toLowerCase()
+    .replace(/\.[a-z0-9]+$/, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || 'gdd-' + Date.now();
+}
+
+async function fetchToTmp(url) {
+  log(`fetching ${url}`);
+  const ext = extname(new URL(url).pathname) || '.pdf';
+  const tmp = resolve(tmpdir(), 'ingest-' + randomUUID() + ext);
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), 60000);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
+    const buf = Buffer.from(await res.arrayBuffer());
+    await writeFile(tmp, buf);
+    return tmp;
+  } finally {
+    clearTimeout(to);
+  }
+}
+
+function pdfToText(pdfPath) {
+  const r = spawnSync('pdftotext', ['-layout', pdfPath, '-'], { encoding: 'utf8' });
+  if (r.status !== 0) throw new Error('pdftotext failed: ' + (r.stderr || 'no stderr'));
+  return r.stdout;
+}
+
+/* ── main ─────────────────────────────────────────────────────────────── */
+
+const summary = {
+  source: filePath || urlArg,
+  startedAt: new Date().toISOString(),
+  steps: [],
+};
+function step(label, fn) {
+  return Promise.resolve(fn()).then(
+    (v) => { summary.steps.push({ label, ok: true }); log(`✓ ${label}`); return v; },
+    (e) => { summary.steps.push({ label, ok: false, error: e.message }); throw e; }
+  );
+}
+
+try {
+  /* Step 1: resolve source */
+  const localPath = await step('resolve source', async () => {
+    if (filePath) {
+      const abs = resolve(process.cwd(), filePath);
+      if (!existsSync(abs)) throw new Error('file not found: ' + abs);
+      return abs;
+    }
+    return await fetchToTmp(urlArg);
+  });
+
+  /* Step 2: extract text */
+  const ext = extname(localPath).toLowerCase().replace(/^\./, '');
+  let rawText = '';
+  await step('extract text (' + ext + ')', async () => {
+    if (ext === 'pdf') {
+      rawText = pdfToText(localPath);
+    } else if (ext === 'md' || ext === 'txt' || ext === 'mdx') {
+      rawText = await readFile(localPath, 'utf8');
+    } else if (ext === 'json') {
+      rawText = await readFile(localPath, 'utf8');
+    } else {
+      throw new Error('unsupported extension: .' + ext);
+    }
+    if (!rawText || rawText.length < 32) {
+      throw new Error('extracted text too short (' + rawText.length + ' chars) — bad source?');
+    }
+    return rawText.length;
+  });
+
+  /* Step 3: slugify */
+  const slug = slugify(slugArg || basename(localPath));
+  log(`slug = ${slug}`);
+
+  /* Step 4: parse + smart defaults */
+  const { parseGDD, normalizeFromJSON } = await import(resolve(REPO, 'src/parser.mjs'));
+  const { applySmartDefaults } = await import(resolve(REPO, 'src/registry/smartDefaults.mjs'));
+
+  let model;
+  await step('parse + smart defaults', () => {
+    if (ext === 'json') {
+      try { model = normalizeFromJSON(JSON.parse(rawText)); }
+      catch (e) { throw new Error('bad JSON: ' + e.message); }
+    } else {
+      model = parseGDD(rawText, ext);
+    }
+    applySmartDefaults(model);
+    summary.modelStats = {
+      symbols: ((model.symbols && model.symbols.high) || []).length +
+               ((model.symbols && model.symbols.mid) || []).length +
+               ((model.symbols && model.symbols.low) || []).length,
+      features: (model.features || []).length,
+      topologyKind: (model.topology && model.topology.kind) || 'unknown',
+      autofixed: Object.keys((model.confidence || {})._autofixedBy || {}).length,
+      derived: Object.keys((model.confidence || {})._derivedBy || {}).length,
+    };
+  });
+
+  /* Step 5: optional LLM reconcile */
+  if (!noLlm) {
+    await step('Kimi V1..V5 reconcile (optional)', async () => {
+      const cacheFile = resolve(REPO, `tools/_wave-v-cache/${slug}.json`);
+      if (existsSync(cacheFile)) {
+        log('  cache hit — skip Kimi call');
+        return;
+      }
+      /* Skip silently if Kimi binary missing — keep pipeline working offline. */
+      const kimiBin = resolve(process.env.HOME || '/tmp', 'Projects/cortex/scripts/cortex-kimi-ask');
+      if (!existsSync(kimiBin)) {
+        log('  cortex-kimi-ask not found — skip Kimi step');
+        return;
+      }
+      /* Write raw.txt where the reconcile tool expects it, then invoke. */
+      const ddir = resolve(REPO, `dist/real-games/${slug}`);
+      await mkdir(ddir, { recursive: true });
+      await writeFile(resolve(ddir, 'raw.txt'), rawText, 'utf8');
+      await writeFile(resolve(ddir, 'model.json'), JSON.stringify(model, null, 2), 'utf8');
+      const r = spawnSync('node', [
+        resolve(REPO, 'tools/_wave-v-kimi-reconcile.mjs'),
+        '--slug', slug,
+      ], { stdio: 'inherit', cwd: REPO });
+      if (r.status !== 0) throw new Error('reconcile exit ' + r.status);
+    }).catch((e) => {
+      log('  reconcile soft-fail: ' + e.message + ' (continuing without)');
+    });
+  } else {
+    log('--no-llm — skipping reconcile');
+  }
+
+  /* Step 6: build HTML */
+  let html;
+  await step('buildSlotHTML', async () => {
+    const { buildSlotHTML } = await import(resolve(REPO, 'src/buildSlotHTML.mjs'));
+    html = buildSlotHTML(model);
+    summary.htmlBytes = html ? html.length : 0;
+    if (!html || html.length < 1000) throw new Error('HTML output too small: ' + (html ? html.length : 0));
+  });
+
+  /* Step 7: write outputs */
+  const outDir = resolve(DIST, slug);
+  await step('write outputs', async () => {
+    await mkdir(outDir, { recursive: true });
+    await writeFile(resolve(outDir, 'index.html'), html, 'utf8');
+    await writeFile(resolve(outDir, 'model.json'), JSON.stringify(model, null, 2), 'utf8');
+    await writeFile(resolve(outDir, 'raw.txt'), rawText, 'utf8');
+    summary.outDir = outDir;
+    summary.finishedAt = new Date().toISOString();
+    await writeFile(resolve(outDir, 'ingest.log'), JSON.stringify(summary, null, 2), 'utf8');
+  });
+
+  log('✓ done → ' + outDir);
+  log(`  ${summary.modelStats.symbols} symbols · ${summary.modelStats.features} features · ` +
+      `topology=${summary.modelStats.topologyKind} · ` +
+      `${summary.modelStats.autofixed} autofix · ${summary.modelStats.derived} derived · ` +
+      `${(summary.htmlBytes / 1024).toFixed(1)} KB`);
+
+  /* Step 8: optional open */
+  if (openAfter && !dryRun) {
+    spawn('open', [resolve(outDir, 'index.html')], { detached: true, stdio: 'ignore' }).unref();
+    log('  opened in browser');
+  }
+
+  process.exit(0);
+} catch (e) {
+  console.error('✗ ingest failed:', e.message);
+  process.exit(1);
+}

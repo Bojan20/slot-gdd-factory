@@ -530,13 +530,16 @@ const _UQ13_FEATURE_MIX_BY_TOPO = Object.freeze({
 export function autofixGaps(model) {
   if (!model || typeof model !== 'object') return model;
   try {
-    /* Symbols gap */
+    /* Symbols gap — pay-tier emptiness drives the autofix, not specials.
+       A GDD often has scatter/wild defined in `specials` but the HP/MP/LP
+       roster missing entirely. We still want a renderable roster, so we
+       autofix the pay tiers whenever they're all empty, regardless of
+       whether specials carries scatters/wilds. */
     const s = model.symbols || (model.symbols = { high: [], mid: [], low: [], specials: [] });
-    const totalSyms = (Array.isArray(s.high) ? s.high.length : 0) +
-                      (Array.isArray(s.mid)  ? s.mid.length  : 0) +
-                      (Array.isArray(s.low)  ? s.low.length  : 0) +
-                      (Array.isArray(s.specials) ? s.specials.length : 0);
-    if (totalSyms === 0) {
+    const payTierTotal = (Array.isArray(s.high) ? s.high.length : 0) +
+                         (Array.isArray(s.mid)  ? s.mid.length  : 0) +
+                         (Array.isArray(s.low)  ? s.low.length  : 0);
+    if (payTierTotal === 0) {
       s.high = []; s.mid = []; s.low = []; s.specials = s.specials || [];
       for (const sym of _UQ13_PLACEHOLDER_SYMBOLS) {
         const copy = { id: sym.id, label: sym.label, tier: sym.tier };
@@ -545,7 +548,7 @@ export function autofixGaps(model) {
         else                          s.low.push(copy);
       }
       recordAutofix(model, 'symbols.placeholder-roster',
-        'no symbols declared or inferable — generated 8-symbol placeholder roster');
+        'no pay-tier symbols declared — generated 8-symbol placeholder roster (specials preserved)');
     }
 
     /* Features gap (after synthesizeFeatureMix stage 4) */

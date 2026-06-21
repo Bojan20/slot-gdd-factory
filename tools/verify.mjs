@@ -77,6 +77,9 @@ run('smartDefaults autofix gaps (stage 6)',
 run('scaffold-block tool (E2E across 25 archetypes)',
   'node', ['--test', 'tests/tools/scaffold-block.test.mjs']);
 
+run('ingest tool (end-to-end pipeline)',
+  'node', ['--test', 'tests/tools/ingest.test.mjs']);
+
 /* ── Step 4: UQ-7 corpus audit (unknown must be 0) ──────────────────── */
 const auditOk = run('UQ-7 cache audit',
   'node', ['tools/uq7-cache-audit.mjs', '--json']);
