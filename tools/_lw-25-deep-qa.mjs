@@ -129,6 +129,15 @@ function verdictOne(buildResult) {
     v.waveVMerged   = !!(m.__waveV__ && m.__waveV__.meta);
     v.symbolFallback = !!(m.__symbolFallback__);
     v.blockMapperActivated = m.__blockMapper__ ? m.__blockMapper__.activatedCount : 0;
+    /* Wave Z surfaces */
+    v.unknownFeatures = Array.isArray(m.__unknownFeatures__) ? m.__unknownFeatures__.length : 0;
+    v.unknownWithSuggestion = Array.isArray(m.__unknownFeatures__)
+      ? m.__unknownFeatures__.filter(u => u.suggestion).length : 0;
+    v.featureCoverage = m.__featureCoverage__
+      ? Math.round(m.__featureCoverage__.coverageRatio * 100) : null;
+    v.unknownList = Array.isArray(m.__unknownFeatures__)
+      ? m.__unknownFeatures__.map(u => u.kind + (u.suggestion ? ` → ${u.suggestion.archetypeId}` : ' → ?')).slice(0, 5)
+      : [];
     v.hasFailures = !!(m.confidence && m.confidence._failures && m.confidence._failures.length);
   }
   v.htmlBytes = buildResult.html ? buildResult.html.length : 0;
@@ -148,11 +157,14 @@ function emitReport(verdicts) {
   const failed = verdicts.length - passed;
   lines.push(`Pass: ${passed}/${verdicts.length} · Fail: ${failed}`);
   lines.push('');
-  lines.push('| # | Name | Kind | Parse | Build | Topology | Symbols | Features | Declared | HTML KB | Wave V | Mapper | Fallback | Verdict |');
-  lines.push('|---|------|------|-------|-------|----------|---------|----------|----------|---------|--------|--------|----------|---------|');
+  lines.push('| # | Name | Kind | P | B | Topology | Sym | Feat | Decl | Unknown | Cov% | KB | V | Map | FB | Verdict |');
+  lines.push('|---|------|------|---|---|----------|-----|------|------|---------|------|----|---|-----|----|---------|');
   let i = 1;
   for (const v of verdicts) {
-    lines.push(`| ${i++} | ${v.name.slice(0, 30)} | ${v.kind} | ${v.parsed ? '✅' : '❌'} | ${v.built ? '✅' : '❌'} | ${v.topology || '-'} | ${v.symbolCount || 0} | ${v.featureCount || 0} | ${v.declaredCount || 0}/${(v.declaredCount || 0) + (v.inferredCount || 0) + (v.defaultCount || 0)} | ${Math.round((v.htmlBytes || 0) / 1024)} | ${v.waveVMerged ? '✅' : '—'} | ${v.blockMapperActivated || 0} | ${v.symbolFallback ? '🟡' : '—'} | ${v.pass ? '✅ PASS' : '❌ FAIL'} |`);
+    const unknownCell = v.unknownFeatures
+      ? `${v.unknownFeatures} (→${v.unknownWithSuggestion})`
+      : '0';
+    lines.push(`| ${i++} | ${v.name.slice(0, 26)} | ${v.kind} | ${v.parsed ? '✅' : '❌'} | ${v.built ? '✅' : '❌'} | ${v.topology || '-'} | ${v.symbolCount || 0} | ${v.featureCount || 0} | ${v.declaredCount || 0}/${(v.declaredCount || 0) + (v.inferredCount || 0) + (v.defaultCount || 0)} | ${unknownCell} | ${v.featureCoverage !== null ? v.featureCoverage : '-'} | ${Math.round((v.htmlBytes || 0) / 1024)} | ${v.waveVMerged ? '✅' : '—'} | ${v.blockMapperActivated || 0} | ${v.symbolFallback ? '🟡' : '—'} | ${v.pass ? '✅' : '❌'} |`);
   }
   lines.push('');
   /* Failure details */
@@ -188,7 +200,39 @@ function emitReport(verdicts) {
     ? (sumDecl / (sumDecl + sumInf + sumDef) * 100).toFixed(1)
     : 'n/a';
   lines.push(`- Declared ratio:  ${declaredRatio} %`);
+  /* Wave Z stats */
+  const sumUnknown = verdicts.reduce((a, v) => a + (v.unknownFeatures || 0), 0);
+  const sumSuggested = verdicts.reduce((a, v) => a + (v.unknownWithSuggestion || 0), 0);
+  const avgCoverage = verdicts.filter(v => v.featureCoverage !== null).reduce((a, v) => a + v.featureCoverage, 0) / Math.max(1, verdicts.filter(v => v.featureCoverage !== null).length);
+  lines.push(`- Σ unknown features: ${sumUnknown}`);
+  lines.push(`- Σ unknown w/ archetype suggestion: ${sumSuggested}`);
+  lines.push(`- Avg catalog coverage per GDD: ${avgCoverage.toFixed(1)} %`);
   lines.push('');
+  /* Top unknown kinds (frequency) */
+  const kindCount = new Map();
+  for (const v of verdicts) {
+    for (const item of (v.unknownList || [])) {
+      const k = item.split(' →')[0];
+      kindCount.set(k, (kindCount.get(k) || 0) + 1);
+    }
+  }
+  const topUnknown = [...kindCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
+  if (topUnknown.length) {
+    lines.push('## Top unknown feature kinds (by GDD frequency)');
+    lines.push('');
+    lines.push('| Kind | GDDs | Suggested archetype |');
+    lines.push('|------|------|---------------------|');
+    for (const [k, c] of topUnknown) {
+      /* Find first verdict that has this kind w/ suggestion */
+      let arch = '—';
+      for (const v of verdicts) {
+        const hit = (v.unknownList || []).find(s => s.startsWith(k + ' '));
+        if (hit && hit.includes('→')) { arch = hit.split('→')[1].trim(); break; }
+      }
+      lines.push(`| \`${k}\` | ${c} | ${arch} |`);
+    }
+    lines.push('');
+  }
   const outFile = resolve(REPORTS, `lw-25-deep-qa-${ts}.md`);
   writeFileSync(outFile, lines.join('\n'));
   console.log(`Report: ${outFile}`);

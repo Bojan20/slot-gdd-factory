@@ -366,6 +366,20 @@ export function parseMarkdownGDD(text) {
     model.__blockMapper__ = { error: 'mapper threw: ' + (e && e.message ? e.message : String(e)) };
   }
 
+  /* Wave Z (Boki 2026-06-21 "ultimativni slot gdd ... bilo koji novi feature
+   * bilo kakav gdd moci pravilno da se izgradi") STEP D2: unknown-feature
+   * detection. For every feature kind in __activeFeatures__ / features[] that
+   * is NOT covered by the block catalog featureKinds set, try to map it to
+   * one of 15 archetypes and stamp model.__unknownFeatures__ with the
+   * suggestion. Downstream scaffolder consumes this list. */
+  try {
+    if (_waveVFs) {
+      _attachUnknownFeatureReport(model);
+    }
+  } catch (e) {
+    model.__unknownFeatures__ = { error: 'archetype scan threw: ' + (e && e.message ? e.message : String(e)) };
+  }
+
   /* Wave QA-2026-06-21 STEP E: symbol fallback for malformed PDFs.
    * If GDD declares a wild-dependent feature (expandingWild, walkingWild,
    * stickyWild, wildReel, mysterySymbol, megaWildCluster, etc.) but symbol
@@ -435,6 +449,123 @@ function _attachBlockMapperSignal(model) {
       source: 'parser-inline-soft-mapper',
     };
   } catch (_) { /* non-fatal */ }
+}
+
+/* Wave Z — Unknown-feature scanner.
+ * Inspects model.__activeFeatures__ + model.features[] against the block-
+ * catalog featureKinds set; for every feature kind that is NOT covered, runs
+ * suggestArchetype() and stamps model.__unknownFeatures__.
+ *
+ * Why this matters: GDDs from new vendors / new portfolios can declare
+ * feature names that the catalog has never heard of. Today such features
+ * vanish silently into the inferred pile. Wave Z surfaces them with an
+ * archetype suggestion + confidence so the operator can either accept the
+ * scaffold or hand-tune. */
+function _attachUnknownFeatureReport(model) {
+  if (typeof model.__unknownFeatures__ !== 'undefined' && Array.isArray(model.__unknownFeatures__)) return;
+  /* Lazy dynamic import — keeps parser browser-safe (registry path may not
+   * exist in stripped bundles). */
+  const u = new URL('./', import.meta.url);
+  const archetypesPath = u.pathname.replace(/\/src\/?$/, '/') + 'src/registry/featureArchetypes.mjs';
+  const catalogPath    = u.pathname.replace(/\/src\/?$/, '/') + 'src/registry/blockCatalog.json';
+  if (!_waveVFs || !_waveVFs.existsSync(catalogPath) || !_waveVFs.existsSync(archetypesPath)) {
+    return;
+  }
+  /* Build catalog featureKinds set inline (avoid double-load with mapper). */
+  let catalogFKs = new Set();
+  try {
+    const raw = JSON.parse(_waveVFs.readFileSync(catalogPath, 'utf8'));
+    const blocks = Array.isArray(raw) ? raw : (raw.catalog || raw.blocks || []);
+    for (const b of blocks) {
+      for (const k of (b.featureKinds || [])) catalogFKs.add(k);
+    }
+  } catch (_) { return; }
+  /* Use synchronous dynamic require via createRequire so this works in CJS
+   * and ESM contexts. */
+  let mod;
+  try {
+    /* import() returns a Promise — we cannot await synchronously, but the
+     * top-level _waveVFs initializer used the same pattern. For now do a
+     * cheap fetch via JSON-only path: read the source string, look for the
+     * intentRegex literals, and compute matches inline. The scaffolder
+     * (Wave Z atom #2) does real dynamic import in an async context. */
+    const src = _waveVFs.readFileSync(archetypesPath, 'utf8');
+    /* Parse ARCHETYPES array — we only need id + intentRegex + examples. */
+    const archetypes = [];
+    const re = /\{\s*id:\s*'([^']+)'[\s\S]*?intentRegex:\s*\/((?:[^/\\]|\\.)+)\/([gimuy]*)[\s\S]*?examples:\s*\[([^\]]+)\]/g;
+    let m;
+    while ((m = re.exec(src)) !== null) {
+      const id = m[1];
+      const pattern = m[2];
+      const flags   = m[3];
+      const exList = m[4].split(',').map(s => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean);
+      try {
+        archetypes.push({ id, intentRegex: new RegExp(pattern, flags), examples: exList });
+      } catch (_) {}
+    }
+    mod = { ARCHETYPES: archetypes };
+  } catch (_) { return; }
+
+  /* Scan declared + raw feature kinds. */
+  const fromActive = (model.__activeFeatures__ || []).map(f => f && f.kind).filter(Boolean);
+  const fromRaw    = (model.features || []).map(f => f && f.kind).filter(Boolean);
+  const allKinds = [...new Set([...fromActive, ...fromRaw])];
+  /* Wave Z taxonomy refinement — these kinds ARE feature-shaped but live as
+   * core model fields (model.payback, model.theme.volatility, etc.) rather
+   * than featureKinds in the catalog. Treating them as "unknown" is noise;
+   * they are CATALOG_HIDDEN — covered by core model schema, not blocks. */
+  const _CORE_FIELDS = new Set([
+    'payback', 'ways', 'cluster_pays', 'scatter_pay', 'feature_generic',
+    'multiplier', 'reality_check', 'net_loss_indicator', 'session_timeout',
+    'jurisdiction', 'compliance', 'theme', 'topology',
+  ]);
+  const unknown = [];
+  for (const kind of allKinds) {
+    if (_CORE_FIELDS.has(kind)) continue;
+    const camel = kind.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+    if (catalogFKs.has(kind) || catalogFKs.has(camel)) continue;
+    /* Match against archetypes (lite inline scorer) */
+    const normalKind = kind.toLowerCase();
+    let bestSuggestion = null;
+    for (const a of mod.ARCHETYPES) {
+      if (a.examples.some(e => e.toLowerCase() === normalKind)) {
+        bestSuggestion = { archetypeId: a.id, confidence: 0.95, reason: 'exact-example' };
+        break;
+      }
+    }
+    if (!bestSuggestion) {
+      for (const a of mod.ARCHETYPES) {
+        for (const e of a.examples) {
+          const el = e.toLowerCase();
+          if (normalKind.includes(el) || el.includes(normalKind.replace(/[_-]/g, ''))) {
+            bestSuggestion = { archetypeId: a.id, confidence: 0.85, reason: 'example-substring:' + e };
+            break;
+          }
+        }
+        if (bestSuggestion) break;
+      }
+    }
+    if (!bestSuggestion) {
+      for (const a of mod.ARCHETYPES) {
+        if (a.intentRegex.test(kind)) {
+          bestSuggestion = { archetypeId: a.id, confidence: 0.70, reason: 'intent-regex' };
+          break;
+        }
+      }
+    }
+    unknown.push({ kind, suggestion: bestSuggestion });
+  }
+  /* Stamp results. Empty list is a feature, not a bug — means catalog fully
+   * covers this GDD. */
+  model.__unknownFeatures__ = unknown;
+  /* Coverage stat — % of declared kinds covered by catalog. */
+  const declared = fromActive.length || fromRaw.length || 1;
+  model.__featureCoverage__ = {
+    declaredCount: declared,
+    unknownCount: unknown.length,
+    coverageRatio: declared > 0 ? (1 - unknown.length / declared) : 1,
+    suggestedArchetypes: unknown.filter(u => u.suggestion).length,
+  };
 }
 
 /* Symbol roster guard — Wave QA 2026-06-21 fix #3.

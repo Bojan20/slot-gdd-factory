@@ -501,6 +501,91 @@ specijalizovanih agenata + deterministic reconcile.
 
 ---
 
+## 🌌 WAVE Z — UNIVERSAL FEATURE SYNTHESIZER (NORTH-STAR · 2026-06-21)
+
+> **Boki direktiva (21.06.2026 REM):** *"ja zelim da napravimo ultimativni slot
+> gdd, gde ce bilo koji novi ferature bilo kakav gdd moci pravilno da se izgradi.
+> tako da dalje sa tim na pameti i u kontekstu"*
+
+**Severni pol projekta:** ne više "pokrij 16 force chips" ili "podrži 44 catalog
+featureKinds" — **bilo koji GDD koji opiše bilo koji feature mora pravilno da se
+izgradi**, čak i ako engine taj feature nikad nije video.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE Z — 5 atomi (Z1 ✅ landed · Z2-Z5 planned)                                       │
+├──────┬─────────────────────────────────────────────────────────────────────────────┬─┤
+│ Atom │ Šta radi                                                                    │ S│
+├──────┼─────────────────────────────────────────────────────────────────────────────┼─┤
+│ Z1   │ Feature Archetype Library — 15 industry-standard archetypes pokrivaju ~95% │✅│
+│      │ slot design space-a:                                                        │ │
+│      │   sticky-state · accumulator · ladder · reveal · spawn ·                    │ │
+│      │   expand-direction · movement · linked-region · meter-charging ·            │ │
+│      │   aux-reel · trigger-then-respin · cascade-collapse ·                       │ │
+│      │   count-to-trigger · boost-multiplier · jackpot-pool                        │ │
+│      │ Svaki archetype deklariše: intentRegex, hooks, forceFlag, windowFlag,       │ │
+│      │ stateShape, examples. Parser surfaces model.__unknownFeatures__ +           │ │
+│      │ model.__featureCoverage__ sa archetype suggestion per unknown.              │ │
+│      │ Posle Z1: avg catalog coverage = 100 % (29/29 GDDs).                        │ │
+├──────┼─────────────────────────────────────────────────────────────────────────────┼─┤
+│ Z2   │ Archetype-to-Block Synthesizer — `tools/_wave-z-scaffold-block.mjs`         │📋│
+│      │ ulaz: { archetypeId, featureKind, prose }                                    │ │
+│      │ izlaz: `src/blocks/<synthesizedName>.mjs` + test fajl po template-u          │ │
+│      │   JSDoc header (rule_senior_grade_code §slot block contract)                 │ │
+│      │   lifecycle wireup (HookBus.on iz archetype.hooks)                           │ │
+│      │   forceFlag + windowFlag konzumacija                                         │ │
+│      │   resolveConfig + defaultConfig                                              │ │
+│      │   emit<Name>CSS + emit<Name>Runtime + emit<Name>Markup                       │ │
+│      │ Gate: LEGO 8/8 mora prolaziti posle scaffolda + lw-25 deep-qa 29/29.        │ │
+├──────┼─────────────────────────────────────────────────────────────────────────────┼─┤
+│ Z3   │ Unknown-feature CI gate — `tools/_wave-z-unknown-feature-gate.mjs`           │📋│
+│      │ Post-deep-qa hook: ako bilo koji GDD ima unknown feature sa confidence       │ │
+│      │ ≥ 0.85 a nema scaffoldovanog bloka → exit 1. Sprečava drift kada vendor      │ │
+│      │ portfolio koji budemo dodali ima neimplementiran feature.                    │ │
+├──────┼─────────────────────────────────────────────────────────────────────────────┼─┤
+│ Z4   │ Live regenerate orchestrator — `npm run synth:gdd <path>`                   │📋│
+│      │ End-to-end: parse → detect unknowns → for-each scaffold → run tests →        │ │
+│      │ register u catalog → commit. One-touch addition novog GDD-a.                 │ │
+├──────┼─────────────────────────────────────────────────────────────────────────────┼─┤
+│ Z5   │ Industry corpus indexer — `tools/_wave-z-corpus-indexer.mjs`                │📋│
+│      │ Scrape industry-standard GDD library (vendor-neutral), klasifikuj feature   │ │
+│      │ description prose patterns, prošire archetypes.intentRegex + examples.       │ │
+│      │ Periodični run: gen → diff → human review → merge. Boki guard:               │ │
+│      │ NIKAD vendor names u archetypes — strogo vendor-neutral (rule_no_vendor).   │ │
+└──────┴─────────────────────────────────────────────────────────────────────────────┴─┘
+```
+
+### Z1 telemetrija (2026-06-21 commit posle ovog update-a)
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ Σ archetypes registered     15                                                        │
+│ Σ test asserts                50/50 PASS                                              │
+│ lw-25 deep-qa                29/29 PASS                                              │
+│ Σ unknown features           0   (sa _CORE_FIELDS taxonomy refinement)               │
+│ Avg catalog coverage         100 %   (sa Z1 unknown-feature + core-fields filter)    │
+│ Regression                   LEGO 8/8 · parser 4/4 · grids 20/20 — sve green         │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Pravilo (zapamti, Boki severni pol)
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ Sva budu ći rad na engine-u meri se sa OVIM testom:                                  │
+│   "Ako Boki ubaci NOV GDD koji opisuje NOV feature koji nikad nismo videli,           │
+│    da li engine                                                                       │
+│      (a) detektuje da je feature unknown?                                             │
+│      (b) predloži archetype sa confidence?                                            │
+│      (c) generiše blok scaffold (Z2)?                                                 │
+│      (d) prolazi LEGO + lw-25 + run-time render-uje feature?"                         │
+│                                                                                       │
+│ Ako bilo koje od (a)-(d) NE — rad nije gotov.                                          │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🤖 KAKO AI SLOT GDD ENGINE RADI (laickim recima · 2026-06-21)
 
 > **Boki pitao 2026-06-21:** *"objasni mi jednostavnim recima kako sada funkcionise sa AI slot gdd?"*
