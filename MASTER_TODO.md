@@ -1,3 +1,51 @@
+## 🏆 WAVE UQ-13 — SMART-DEFAULTS STAGE 6 AUTOFIX GAPS · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"idi dalje"* (next backlog stavka posle UQ-12).
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-13 — src/registry/smartDefaults.mjs::autofixGaps                               │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ STAGE 6 (novi, posle backfillFromArchetype u applySmartDefaults orchestratoru)        │
+│   palette → topology → symbols → featureMix → backfillArch → AUTOFIX → segment-reclass │
+│                                                                                       │
+│ GAP TRIGGERS (samo kad je field i dalje prazan)                                        │
+│   · Symbols empty      → 8-symbol generic roster (3 HP + 3 MP + 2 LP)                  │
+│   · Features empty     → topology-keyed mix (11 topology kinds mapirano)               │
+│   · Bet missing       → minBet 0.10 / maxBet 100 / default 1.00 / USD                  │
+│   · Bet partial       → samo missing fields filled                                     │
+│   · Paytable missing  → 5-row stub iz postojećih symbols, _autofix flag                │
+│                                                                                       │
+│ INVARIANTS                                                                            │
+│   · Engineer-provided data NIKAD se ne prepisuje                                       │
+│   · Idempotent — 2nd run leaves data alone                                             │
+│   · Defensive — recordFailure on throw, never crashes                                  │
+│                                                                                       │
+│ AUDIT CHANNEL DESIGN                                                                  │
+│   model.confidence._derivedBy[field]   = 'smartDefaults'        (stages 1-5)           │
+│   model.confidence._autofixedBy[field] = { source, reason }     (stage 6)              │
+│   Različite shape forme namerno → regulator review može razlikovati                    │
+│   "engineer-inferred from sparse GDD" vs "placeholder because data was missing".       │
+│                                                                                       │
+│ TESTS (tests/registry/smartDefaults-autofix.test.mjs, 10/10 PASS)                      │
+│   empty symbols → 8 placeholder + tag · empty features → topology-keyed mix +          │
+│   _autofix flag · bet defaults filled · partial bet filled bez gaženja engineer-a ·    │
+│   paytable stub from symbols · idempotent · engineer data NIKAD prepisan ·             │
+│   orchestrator runs autofix kao stage 6 · autofix tag distinct from _derivedBy ·       │
+│   error inside autofix → no throw, recorded in _failures                               │
+│                                                                                       │
+│ VERIFY GATE UPGRADE                                                                   │
+│   tools/verify.mjs: + step "smartDefaults autofix gaps (stage 6)"                       │
+│   Full UQ-12 gate sad: 6/6 green u ~3s                                                 │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   637c40f feat(UQ-13): SmartDefaults stage 6 — autofix gaps for sparse GDDs +          │
+│            autofix tag channel                                                          │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-12 — PRE-COMMIT VERIFY GATE · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"idi dalje"* (posle UQ-9/10/11). P0 backlog stavka.
