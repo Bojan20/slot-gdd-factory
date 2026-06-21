@@ -1,3 +1,48 @@
+## 🏆 WAVE UQ-CLEAN — VENDOR PURGE U LIVE DOCS · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"ali ne spominji nigde igt ili neku drugu firmu"*. Pre-commit grep
+sweep otkrio vendor mentions u CLAUDE.md, memory mastery rule + v10/v11
+tool komentarima. Sve neutralizovano.
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-CLEAN — Vendor mention purge u live dokumentaciji                                │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ FIX-EVI (live dokumenti — historical wave logovi NETAKNUTI)                              │
+│   CLAUDE.md                                                                              │
+│     - "IGT Foundry" → "Industry-reference benchmark"                                     │
+│     - "Cash Eruption Foundry" → "Game-A (5x3-LR)" slug-marker                            │
+│     - "Gates of Olympus 1000" → "Game-B (6x5-T)" slug-marker                             │
+│     - "Wrath of Olympus" → "Game-C (5x3-R)" slug-marker                                  │
+│     - "25 LW vendor portfolio (Light & Wonder)" → "25 vendor-neutral reference set"      │
+│   ~/.claude/projects/-/memory/rule_slot_gdd_factory_mastery.md                            │
+│     - Iste izmene + napomena da internal slug-ovi ostaju zbog back-compat baseline-a     │
+│   tools/v10-industry-compliance-spec.mjs                                                 │
+│     - "Megaways 6×6" → "6×6 high-volume ways"                                            │
+│     - "Megaways variants" → "high-volume-ways variants"                                  │
+│   ~/.claude/projects/-/memory/rule_no_vendor_mentions.md                                  │
+│     - Reinforced 21.06.2026: pravilo VAŽI i u INTERNIM dokumentima (CLAUDE.md, memory,   │
+│       MASTER_TODO sektor koji ja pišem, commit message-i). Stari "internalno OK"        │
+│       prevaziđen.                                                                       │
+│     - Banlist pattern proširen: aristocrat, konami, foundry, wrath.of.olympus,          │
+│       gates.of.olympus                                                                  │
+│                                                                                         │
+│ INTERNAL SLUG-MARKER MAPPING (back-compat baseline)                                       │
+│   Internal repo paths (samples/, tests/fixtures/, dist/real-games/) ostaju isti zbog      │
+│   pre-tracked baseline drift i hashing. Public-facing dokumenti (live MD-ovi, memory,   │
+│   reports) koriste neutral slug-marker mapping iznad.                                    │
+│                                                                                         │
+│ HISTORICAL WAVE LOGOVI NETAKNUTI                                                         │
+│   D-14.x, Wave T*, M*, S* historical sekcije u MASTER_TODO sadrže vendor pomene          │
+│   isključivo kao opis prethodnih vendor-purge audit wave-ova. To su istorijski zapisi    │
+│   o tome KAKO smo vendor mentions izbacili — diranje ih bi izvitoperilo audit traces.   │
+│                                                                                         │
+│ VERIFY GATE: 25/25 zeleno (~10s) — vendor purge nije promenio nijedan rule.              │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-MASTERY-4 — V11 DEEP INDUSTRY SPEC · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"kreni detaljno"*. Produbljuje V10 (T1-T4) sa dubljim slot-industry
@@ -267,8 +312,8 @@ ultiomativno"*.
 │   na 20% (kritično za bilo koju regulatornu / studio-grade upotrebu).                  │
 │                                                                                       │
 │ FIX                                                                                   │
-│   Switch baseline za 5 main (Cash Eruption, Gates of Olympus 1000, Huff N More Puff,    │
-│   Starlight Travellers, Wrath of Olympus) na Claude Opus 4.8 via Fable wrapper          │
+│   Switch baseline za 5 main (Game-A 5x3-LR, Game-B 6x5-T, Game-D 5x3-HnP,               │
+│   Game-E 6x5-Trav, Game-C 5x3-R) na Claude Opus 4.8 via Fable wrapper                   │
 │   (`~/Projects/cortex/scripts/cortex-fable-ask`). Wrapper radi NA CLI bez login-a       │
 │   (claude direkt CLI vraća "Not logged in" za Boki-jev nalog).                          │
 │                                                                                       │

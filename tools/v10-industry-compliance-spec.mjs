@@ -74,7 +74,7 @@ const SOFT_AS_HARD = args.includes('--soft');
 
 /* ── Industry constants (vendor-neutral) ─────────────────────────────── */
 const VALID_LINE_COUNTS_5x3      = new Set([10, 20, 25, 30, 40, 50, 100]);
-/* Megaways 6×6 ships 7776 ways = 6^6. Industry-valid. */
+/* 6×6 high-volume ways slots ship 7776 = 6^6 ways. Industry-valid. */
 const VALID_WAYS_COUNTS          = new Set([243, 576, 720, 1024, 4096, 7776, 15625, 117649]);
 const CLUSTER_MIN_SIZE_FLOOR     = 5;
 const FS_AWARD_FLOOR             = 5;
@@ -191,7 +191,7 @@ function auditModel(slug, model) {
   }
 
   // T3.2 ways evaluation with paylines > 0 is unusual but industry-acceptable
-  // (Win-Both-Ways slots ship a payline count as chrome; Megaways variants
+  // (Win-Both-Ways slots ship a payline count as chrome; high-volume-ways variants
   // also expose a baseline payline count even though evaluation is ways).
   // SOFT only — emit advisory but don't block.
   if (evalKind === 'ways' && lines != null && lines > 0) {

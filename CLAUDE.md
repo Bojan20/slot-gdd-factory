@@ -108,19 +108,22 @@ Boki: *"napravi da ovaj slot gdd projekat bude izuzetno ultimativan i bez ijedne
 
 Ovaj odeljak je **mandatory READ** na početku svake sesije. Sadrži kompletnu memoriju projekta da Claude (ja) nikad ne kažem "nisam siguran" ili "ne znam šta radi".
 
-### 5 GLAVNIH IGARA (pinned ground truth)
+### 5 GLAVNIH IGARA (pinned ground truth — vendor-neutral)
 
 ```
-┌───┬────────────────────────────┬─────────────────┬───────────────────────┐
-│ # │ Igra                        │ Topology         │ Vendor / Mark         │
-├───┼────────────────────────────┼─────────────────┼───────────────────────┤
-│ 1 │ Cash Eruption Foundry       │ 5×3 + lock_respin│ IGT Foundry           │
-│ 2 │ Crystal Forge               │ 5×3 rectangular  │ Internal sample       │
-│ 3 │ Gates of Olympus 1000       │ 6×5 tumble       │ Industry-ref baseline │
-│ 4 │ Midnight Fangs              │ 5×3 cluster      │ Internal sample       │
-│ 5 │ Wrath of Olympus            │ 5×3 rectangular  │ Industry-ref baseline │
-└───┴────────────────────────────┴─────────────────┴───────────────────────┘
+┌───┬──────────────────┬──────────────────┬──────────────────────────────────┐
+│ # │ Slug (internal)   │ Topology         │ Mark                              │
+├───┼──────────────────┼──────────────────┼──────────────────────────────────┤
+│ 1 │ Game-A (5x3-LR)   │ 5×3 + lock_respin│ Industry-reference benchmark      │
+│ 2 │ Crystal Forge     │ 5×3 rectangular  │ Internal sample (in-house GDD)    │
+│ 3 │ Game-B (6x5-T)    │ 6×5 tumble       │ Industry-reference benchmark      │
+│ 4 │ Midnight Fangs    │ 5×3 cluster      │ Internal sample (in-house GDD)    │
+│ 5 │ Game-C (5x3-R)    │ 5×3 rectangular  │ Industry-reference benchmark      │
+└───┴──────────────────┴──────────────────┴──────────────────────────────────┘
 ```
+> Internal slug-ovi ostaju isti u repo-u (samples/, tests/fixtures/) zbog
+> back-compat sa pre-tracked baseline-ovima. Public-facing dokumenti, izveštaji
+> i komentari koriste samo neutralne marker-e iznad.
 
 ### Ulazni formati simulatora
 
@@ -143,7 +146,7 @@ Ingest CLI: `node tools/ingest.mjs --file <path> [--no-llm] [--open]`
 ┌──────────────────────────────────────────────────────────────────────────┐
 │  338 GDDs ukupno u tools/_wave-v-cache/ (svaki ima V6 Kimi reconcile)    │
 │   5 glavnih (pinned u tests/fixtures/semantic-expected.json sa SHA)      │
-│  25 LW vendor portfolio (Light & Wonder, 01-25_*.pdf u ~/Desktop/GDD/)  │
+│  25 vendor-neutral reference set (`01-25_*.pdf` u ~/Desktop/GDD/)        │
 │ 308 sintetičkih (gen-synthetic-gdds.mjs — sve grid × pattern kombinacije)│
 │ 333 untracked PDFs u ~/Desktop/GDD/ bez ground truth (operator può add) │
 └──────────────────────────────────────────────────────────────────────────┘
@@ -229,7 +232,7 @@ UQ-14 → end-to-end ingest CLI
 UQ-15 → archetype docs site
 UQ-16 → visual regression baseline
 UQ-AUDIT → 8 forensic punch-list fixes
-UQ-CASH → Cash Eruption deep-fix (6 atoms)
+UQ-CASH → Game-A deep-fix (6 atoms — lock_respin baseline parser sweep)
 UQ-TRAIN → AI orchestrator E2E + trainer + self-correction
 UQ-FORTIFY 1..5 → 30 architectural fixes (atomic / race / hash / lock / NFS)
 UQ-FORTIFY 6..8 → 11 production-grade fixes (kernel-park / SAB / schema)
