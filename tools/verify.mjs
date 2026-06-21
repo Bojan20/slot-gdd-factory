@@ -303,6 +303,31 @@ if (existsSync(v9Test)) {
     'node', [v9Test]);
 }
 
+/* ── Step 4.96: UQ-MASTERY-6 V12 DEEPER INDUSTRY SPEC ─────────────────
+ * Produbljuje V11 sa sledećim slojem GT-a:
+ *   Layer F · Paytable economics (HP/LP tier counts, symbol-name sanity,
+ *            tier monotonic, wild/scatter present)
+ *   Layer G · Free-spin economics (trigger scatter count, award range,
+ *            multiplier cap, retrigger cap)
+ *   Layer H · Bonus-buy economics (cost band, UKGC ban check, NL disclosure)
+ *   Layer J · Engine signature consistency (lock_respin 5×3, pay_anywhere
+ *            canonical sizes, cluster square-ish, variable_reel growable)
+ *   Layer K · UX presentation invariants (spinTempo range, anticipation,
+ *            bigWinTier requires winPresentation)
+ * 9 HARD + 11 SOFT rule codes. SKIP-AKO-NULL. */
+const v12Tool = resolve(REPO, 'tools/v12-deeper-industry-spec.mjs');
+if (existsSync(v12Tool)) {
+  run('UQ-MASTERY-6 V12 deeper industry spec (338 GDDs)',
+    'node', [v12Tool]);
+}
+
+/* ── Step 4.96b: UQ-MASTERY-6 V12 self-test ───────────────────── */
+const v12Test = resolve(REPO, 'tests/tools/v12-deeper-industry-spec.test.mjs');
+if (existsSync(v12Test)) {
+  run('UQ-MASTERY-6 V12 self-test (9 HARD codes + clean fixture)',
+    'node', [v12Test]);
+}
+
 /* ── Step 4.91: UQ-MASTERY block liveness audit ────────────────────────
  * Zero-DEAD-block contract. Every block flagged `defaultOn: true` in the
  * manifest MUST be mountable in at least one rendered HTML fingerprint

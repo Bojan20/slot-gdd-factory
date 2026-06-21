@@ -156,7 +156,7 @@ Ingest CLI: `node tools/ingest.mjs --file <path> [--no-llm] [--open]`
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Verify gate (29 step, idempotent, pre-commit hook live)
+### Verify gate (31 step, idempotent, pre-commit hook live)
 
 ```
  1. archetype catalog + alias + filter
@@ -186,8 +186,10 @@ Ingest CLI: `node tools/ingest.mjs --file <path> [--no-llm] [--open]`
 25. UQ-MASTERY-5 V8 self-test (engine select + mandatory + jur + stack)
 26. UQ-MASTERY-5 V9 visual QA deterministic (8 struct invariants × 338)
 27. UQ-MASTERY-5 V9 self-test (clean PASS + missing controls FAIL + WARN)
-28. UQ-MASTERY block liveness audit (0 DEAD blokova — 184 blocks × 25 HTMLs)
-29. UQ-11 render smoke (20 GDD subset)
+28. UQ-MASTERY-6 V12 deeper industry spec (9 HARD + 11 SOFT × 338)
+29. UQ-MASTERY-6 V12 self-test (9 HARD codes + clean fixture)
+30. UQ-MASTERY block liveness audit (0 DEAD blokova — 184 blocks × 25 HTMLs)
+31. UQ-11 render smoke (20 GDD subset)
 ```
 
 Komanda: `npm run verify` (~ 5s) · `node tools/verify-idempotency-test.mjs` (assert Pass 1 = Pass 2).
@@ -260,6 +262,10 @@ UQ-MASTERY-5 → V8 GAME ASSEMBLY orchestrator (rule engine + receipt:
                 kategorija) + V9 VISUAL QA deterministic (8 struct
                 invariants per slot.html, score/PASS/WARN/FAIL ladder,
                 338/338 PASS, self-test sa 5 fixture-a)
+UQ-MASTERY-6 → V12 deeper industry spec (Layer F-K: paytable economics,
+                FS economics, bonus-buy economics, engine signature,
+                UX presentation; 9 HARD + 11 SOFT codes; 338/338 PASS,
+                9-code negative + clean control self-test)
 ```
 
 ### Liveness classes (after UQ-MASTERY, 184 blocks total)

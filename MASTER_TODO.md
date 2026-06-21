@@ -1,3 +1,68 @@
+## 🏆 WAVE UQ-MASTERY-6 — V12 DEEPER INDUSTRY SPEC · 2026-06-22 · ZATVOREN ✅
+
+Boki: *"kreni redom ultimativno"* — opcija C. Produbljuje V11 sa sledećim slojem
+slot-industry GT-a (Layer F-K). 9 HARD + 11 SOFT rule codes. Vendor-neutralne
+konstante iz public GT (regulator tehnički standardi, GLI-19, MGA Class 3, UKGC RTS).
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-MASTERY-6 — V12 deeper-industry-spec walker + self-test                          │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ NOVI ALAT                                                                                │
+│   tools/v12-deeper-industry-spec.mjs (~330 LOC) — 9 HARD + 11 SOFT × 338 GDDs            │
+│                                                                                         │
+│ LAYER F · Paytable economics                                                            │
+│   I6.1 HP tier count u rangu [4, 8] (industry standard 4-7)                              │
+│   I6.2 LP tier count u rangu [3, 10] (9/10/J/Q/K/A varijante)                            │
+│   I6.3 Symbol name len u rangu [1, 80] chars                                             │
+│   I6.4 Top HP 5OAK > top LP 5OAK (tier monotonic) — SOFT                                 │
+│   I6.5 Wild ili scatter prisutan u paytable — SOFT                                       │
+│                                                                                         │
+│ LAYER G · Free-spin economics                                                            │
+│   I7.1 trigger scatter count >= 3                                                        │
+│   I7.2 FS max award range — HARD na negativno, SOFT na 1-4 ili > 100                    │
+│   I7.3 FS multiplier cap range [2, 1000]× — HARD na > 1000                              │
+│   I7.4 FS retrigger cap <= 500 spins — SOFT                                              │
+│                                                                                         │
+│ LAYER H · Bonus-buy economics                                                            │
+│   I8.1 bonusBuy.costX u rangu [30, 200]×                                                 │
+│   I8.2 UKGC declared + bonusBuy enabled = HARD (UKGC ban od 2025)                        │
+│   I8.3 NL-KSA bonusBuy bez disclosureRequired — SOFT                                     │
+│                                                                                         │
+│ LAYER J · Engine signature consistency                                                  │
+│   I9.1 lock_respin tipično 5×3 — SOFT (allowed variant)                                 │
+│   I9.2 pay_anywhere kanonski 5×3 ili 6×5 — SOFT                                          │
+│   I9.3 cluster_pays kvadratan grid (|reels-rows| <= 2) — SOFT                            │
+│   I9.4 variable_reel sa growable=true — SOFT                                             │
+│                                                                                         │
+│ LAYER K · UX presentation invariants                                                    │
+│   I10.1 spinTempo.totalMs u rangu [800, 6000]ms — SOFT                                  │
+│   I10.2 anticipation.durationMs >= 200ms — SOFT                                          │
+│   I10.3 bigWinTier.enabled => winPresentation.enabled — HARD                            │
+│                                                                                         │
+│ KORPUS REZULTAT (338 GDDs)                                                              │
+│   HARD: 0                                                                               │
+│   SOFT: 3 (I7.2 micro-bonus variant + I9.1 lock_respin sizes)                            │
+│                                                                                         │
+│ SELF-TEST (tests/tools/v12-deeper-industry-spec.test.mjs)                                │
+│   9 negative fixture-a × HARD assertion + 1 clean positive control:                      │
+│     I6.1 12-tier HP             I6.2 1-tier LP                                          │
+│     I6.3 empty symbol name      I7.1 2-scatter FS trigger                                │
+│     I7.2 negative FS award      I7.3 5000× multiplier cap                                │
+│     I8.1 500× bonus buy cost    I8.2 UKGC + bonus buy enabled                            │
+│     I10.3 bigWinTier bez winPresentation                                                 │
+│   Clean fixture exit 0 verifikovan (no false positives).                                │
+│                                                                                         │
+│ GATE INTEGRATION                                                                        │
+│   tools/verify.mjs step 4.96  → V12 walker (338 GDDs)                                    │
+│   tools/verify.mjs step 4.96b → V12 self-test (9 HARD codes + clean)                     │
+│                                                                                         │
+│ VERIFY GATE: 31/31 zeleno (~15s)                                                         │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-MASTERY-5b — V9 VISUAL QA (deterministic + self-test) · 2026-06-22 · ZATVOREN ✅
 
 Boki: *"kreni redom ultimativno"* — opcija B (V9 VISUAL QA). Implementira
