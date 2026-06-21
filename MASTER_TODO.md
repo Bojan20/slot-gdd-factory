@@ -528,15 +528,38 @@ izgradi**, čak i ako engine taj feature nikad nije video.
 │      │ model.__featureCoverage__ sa archetype suggestion per unknown.              │ │
 │      │ Posle Z1: avg catalog coverage = 100 % (29/29 GDDs).                        │ │
 ├──────┼─────────────────────────────────────────────────────────────────────────────┼─┤
-│ Z2   │ Archetype-to-Block Synthesizer — `tools/_wave-z-scaffold-block.mjs`         │📋│
-│      │ ulaz: { archetypeId, featureKind, prose }                                    │ │
-│      │ izlaz: `src/blocks/<synthesizedName>.mjs` + test fajl po template-u          │ │
-│      │   JSDoc header (rule_senior_grade_code §slot block contract)                 │ │
-│      │   lifecycle wireup (HookBus.on iz archetype.hooks)                           │ │
-│      │   forceFlag + windowFlag konzumacija                                         │ │
-│      │   resolveConfig + defaultConfig                                              │ │
-│      │   emit<Name>CSS + emit<Name>Runtime + emit<Name>Markup                       │ │
-│      │ Gate: LEGO 8/8 mora prolaziti posle scaffolda + lw-25 deep-qa 29/29.        │ │
+│ Z2   │ Agent-augmented Block Synthesizer — `tools/_wave-z-scaffold-block.mjs`     │✅│
+│      │ Boki 2026-06-21 REM direktiva: "automatski generise, ali neka povlaci      │ │
+│      │ znanje iz agenata koji su zaduzeni za te blokove. Dakle ako je matematika, │ │
+│      │ onda agent za matematiku regulise znanje, ako je blok nekog featurea, onda  │ │
+│      │ agent vezan za to."                                                         │ │
+│      │                                                                             │ │
+│      │ Synth-pool agent knowledge base (`agents/synth-pool/`):                     │ │
+│      │   _REGISTRY.md       15 archetype expertise nuggets (mental model +         │ │
+│      │                       lifecycle + state machine + pitfalls + canonical refs)│ │
+│      │   _DOMAIN_MATH.md    RTP/vola/weighted bucket/jackpot/win cap hard rules   │ │
+│      │   _DOMAIN_UX.md      WCAG/touch ≥ 44px/reduced-motion/aria-modal/focus-trap│ │
+│      │   _DOMAIN_COMPLIANCE 12-jurisdiction matrix + spin pace + handpay floors    │ │
+│      │   _DOMAIN_ENGINE.md  HookBus ownership + lifecycle + force-chip one-shot    │ │
+│      │                                                                             │ │
+│      │ Pipeline:                                                                   │ │
+│      │   1. Resolve archetype + agent owner from featureArchetypes.mjs             │ │
+│      │   2. Read archetype knowledge from _REGISTRY.md (pitfalls, refs)            │ │
+│      │   3. Read domain expertise from _DOMAIN_<owner>.md (hard rules)             │ │
+│      │   4. Compose JSDoc header + defaultConfig + resolveConfig +                 │ │
+│      │      emit<Name>{CSS,Markup,Runtime} sa archetype state shape + hooks        │ │
+│      │   5. Write src/blocks/<name>.mjs + tests/blocks/<name>.test.mjs             │ │
+│      │   6. Auto-register on<Pascal>Init event u hookBus.mjs HOOK_EVENTS           │ │
+│      │   7. Auto-register ownership u lego-gate.mjs EXPECTED_EMIT_OWNERS           │ │
+│      │   8. Self-validate via dynamic import + defaultConfig sanity check          │ │
+│      │                                                                             │ │
+│      │ Smoke test (collectStreakBonus, archetype: accumulator):                    │ │
+│      │   scaffold tests       20/20 PASS ✅                                        │ │
+│      │   LEGO 8/8             ✅ (auto-registered events + ownership)              │ │
+│      │   lw-25 deep-qa        29/29 PASS ✅ (no regression)                        │ │
+│      │                                                                             │ │
+│      │ CLI: `node tools/_wave-z-scaffold-block.mjs --kind <kind> --archetype <id>` │ │
+│      │       [--prose <text>] [--name <fileName>] [--dry-run]                      │ │
 ├──────┼─────────────────────────────────────────────────────────────────────────────┼─┤
 │ Z3   │ Unknown-feature CI gate — `tools/_wave-z-unknown-feature-gate.mjs`           │📋│
 │      │ Post-deep-qa hook: ako bilo koji GDD ima unknown feature sa confidence       │ │
@@ -575,12 +598,12 @@ izgradi**, čak i ako engine taj feature nikad nije video.
 │ Sva budu ći rad na engine-u meri se sa OVIM testom:                                  │
 │   "Ako Boki ubaci NOV GDD koji opisuje NOV feature koji nikad nismo videli,           │
 │    da li engine                                                                       │
-│      (a) detektuje da je feature unknown?                                             │
-│      (b) predloži archetype sa confidence?                                            │
-│      (c) generiše blok scaffold (Z2)?                                                 │
-│      (d) prolazi LEGO + lw-25 + run-time render-uje feature?"                         │
+│      (a) detektuje da je feature unknown?                          ← Z1 ✅            │
+│      (b) predloži archetype sa confidence?                         ← Z1 ✅            │
+│      (c) generiše blok scaffold sa AGENT knowledge?                ← Z2 ✅            │
+│      (d) prolazi LEGO + lw-25 + run-time render-uje feature?"      ← Z2 ✅            │
 │                                                                                       │
-│ Ako bilo koje od (a)-(d) NE — rad nije gotov.                                          │
+│ Ako bilo koje od (a)-(d) NE — rad nije gotov.   STANJE: 4/4 ZELENO ✅                  │
 └──────────────────────────────────────────────────────────────────────────────────────┘
 ```
 

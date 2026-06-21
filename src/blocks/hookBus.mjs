@@ -892,6 +892,8 @@ export const HOOK_EVENTS = Object.freeze([
   'onRoMinSpinPaceEnforced',      // Owner: romaniaComplianceGate.mjs
   'onRoHandpayThresholdEnforced', // Owner: romaniaComplianceGate.mjs
   'wheelBonus.complete',  // Owner: wheelBonus.mjs (legacy dot, W57.A7 whitelist)
+  /* Wave Z2 — scaffold-generated events */
+  'onCollectStreakBonusInit',  // Owner: collectStreakBonus.mjs
   'wheelBonus.spin',  // Owner: wheelBonus.mjs (legacy dot, W57.A7 whitelist)
 ]);
 

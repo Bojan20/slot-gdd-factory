@@ -975,6 +975,8 @@ const EXPECTED_EMIT_OWNERS = {
   onRoOsajCheckRequired:        ['romaniaComplianceGate.mjs'],
   onRoMinSpinPaceEnforced:      ['romaniaComplianceGate.mjs'],
   onRoHandpayThresholdEnforced: ['romaniaComplianceGate.mjs'],
+  /* Wave Z2 — scaffold-generated ownership */
+  onCollectStreakBonusInit: ['collectStreakBonus.mjs'],
 };
 
 /* Vendor / game-specific strings forbidden in src/blocks/*.mjs */
