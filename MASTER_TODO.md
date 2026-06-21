@@ -1,3 +1,56 @@
+## 🏆 WAVE UQ-FORTIFY6 — 4 SIXTH-TIER FORENSIC AUDIT FIXES · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"sve redom"* — šesta forensic iteracija. UQ-FORTIFY 1..5 + UQ-COVER zatvorili
+40+1 prethodnih rupa, nezavisni Explore agent našao 4 stvarna residual gap-a.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-FORTIFY6 — 4 fix-a                                                              │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ #1 PARSER-HASH BUNDLE — registry deps                                                  │
+│    tools/ingest.mjs: dodato src/registry/fileLock.mjs + tmpFileCleanup.mjs              │
+│    u SOURCES za cache invalidation. Live test confirms hash menja se kad fileLock       │
+│    menja se. Kritično jer UQ-FORTIFY6 #2 (Atomics.wait) bi inače silently propustio.    │
+│                                                                                       │
+│ #2 fileLock CPU BUSY-LOOP → KERNEL Atomics.wait PARK                                    │
+│    src/registry/fileLock.mjs: zameni `while(Date.now()<end)` pure spin sa              │
+│    Atomics.wait(view, 0, 0, POLL_INTERVAL_MS) na SharedArrayBuffer-u. Atomics.wait      │
+│    je jedini Node sync primitive koji stvarno parkira thread na kernel scheduler.       │
+│    Pod 338-GDD parallel ingestom raniji dizajn bi pinovao core na 100 % po procesu.     │
+│    Fallback spin retained ako Atomics nije dostupan (sandbox).                          │
+│                                                                                       │
+│ #3 PROBE INTERNAL ERROR EXIT CODE — exit 3 → exit 2                                     │
+│    9 force-chip probe-ova koristili exit(3) za internal error catch. To je              │
+│    kolidiralo sa ingest.mjs exit(3) = "soft-fail WARN reserved za LLM degradation".     │
+│    CI nije mogao da razlikuje probe crash (hard fail) od Kimi outage (soft warn).       │
+│    Konvencija pinovana:                                                                │
+│      0 = pass · 1 = test fail · 2 = config/internal error (HARD) · 3 = soft WARN (LLM) │
+│                                                                                       │
+│ #4 AGENT_CALIBRATION ROUND-TRIP READ-BACK + ROLLBACK                                    │
+│    tools/agent-calibration-trainer.mjs: posle tmp+rename atomic write, čita fajl        │
+│    NAZAD sa diska i tvrdi tačno 1 `## AGENT_CALIBRATION` heading. Ako regex-strip       │
+│    spojio dva stara block-a mid-walk, rename se rollback-uje preko fresh atomic         │
+│    tmp+rename. Trainer history tmp path takođe move-ovan sa PID na randomUUID.          │
+│                                                                                       │
+│ TESTS (tests/tools/uq-fortify6-sixthtier.test.mjs, 6/6 PASS)                            │
+│   #1 SOURCES bundle + live hash drift smoke                                             │
+│   #2 Atomics.wait active path + SharedArrayBuffer init + fallback retained              │
+│   #3 svaki od 9 probe-ova exit 2 + ingest.mjs exit(3) preserved                         │
+│   #4 randomUUID tmp + onDiskHeadingCount + rollback + previous content                  │
+│                                                                                       │
+│ VERIFY GATE: 19/19 zelene u ~5s (18 + UQ-FORTIFY6)                                     │
+│ UQ-16 baseline drift: 338/338 still match                                               │
+│ UQ-7 corpus coverage: 0 unknown (100 %)                                                 │
+│ UQ-COVER 338-GDD force coverage: 0 missing / 0 phantom                                  │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   2c1e723 fix(UQ-FORTIFY6): 4 sixth-tier forensic audit fixes — hash deps, CPU spin,    │
+│            exit codes, round-trip                                                        │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 📊 DAY SUMMARY · 2026-06-21 · 37 commits · 12 talasa zatvorenih
 
 ```
