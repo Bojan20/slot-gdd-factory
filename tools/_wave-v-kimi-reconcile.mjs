@@ -130,9 +130,17 @@ async function _runOneAgent(agent, gddText, baseline, correctionsBlock) {
 function _sanitizeForBlock(v) {
   if (v === null || v === undefined) return String(v);
   const s = String(v).slice(0, 200);
-  /* Strip any `===` (corrections block delimiter) and ASCII control chars
-   * to prevent prompt-frame breakout via injected markup. */
-  return s.replace(/={3,}/g, '==').replace(/[\x00-\x1f\x7f]/g, ' ').trim();
+  /* Strip any `===` (legacy corrections block delimiter), the new
+   * `<CORRECTIONS` / `</CORRECTIONS>` XML-style frame, and ASCII control
+   * chars to prevent prompt-frame breakout via injected markup.
+   * Note: replace literal `===` with `==` so an exact-length-3 hit is
+   * also caught (was only `={3,}` previously, missing the boundary). */
+  return s
+    .replace(/={3,}/g, '==')
+    .replace(/===/g, '==')
+    .replace(/<\/?CORRECTIONS\b[^>]*>/gi, '')
+    .replace(/[\x00-\x1f\x7f]/g, ' ')
+    .trim();
 }
 
 function _buildCorrectionsBlock(agentId, response, groundTruth) {
@@ -169,14 +177,20 @@ function _buildCorrectionsBlock(agentId, response, groundTruth) {
     }
   }
   if (lines.length < 1) return null;
+  /* UQ-FORTIFY5 #2 — unique frame delimiter that cannot occur inside any
+     JSON value the agent might return. The previous frame used `===`
+     which a buggy or adversarial agent could trivially echo back inside
+     a cached response, breaking subsequent Pass B parses. The XML-style
+     tag is reserved for our prompt framing and we additionally strip
+     it from agent-supplied values via _sanitizeForBlock. */
   return [
-    '=== CORRECTIONS (Pass B) ===',
+    '<CORRECTIONS pass="B">',
     'Previous response had these issues:',
     ...lines,
     '',
     'Re-emit the JSON. Keep correct fields, fix the listed ones. Stamp',
-    '`__self_corrected__: true` at the root of your JSON.',
-    '===',
+    '`"__self_corrected__": true` (BOOLEAN, not string) at the root of your JSON.',
+    '</CORRECTIONS>',
   ].join('\n');
 }
 
@@ -248,9 +262,23 @@ async function _processGdd(slug) {
           for (const pb of passBResults) {
             const idx = reports.findIndex(r => r.id === pb.id);
             if (idx >= 0 && pb.parsed) {
+              /* UQ-FORTIFY5 #2 — enforce strict boolean. If the agent
+                 returned `"true"` (string) or `1` (number) or anything
+                 else as the flag, we still overwrite with a real
+                 boolean before stamping so the downstream telemetry
+                 consumer never sees an injection-tainted value. */
               pb.parsed.__self_corrected__ = true;
               pb.parsed.__pass_b_attempt__ = 1;
               reports[idx] = pb;
+              /* Defensive: if the agent echoed any frame delimiters in
+                 a top-level value, strip them. Only touches string
+                 values; preserves object/array/number/boolean intact. */
+              for (const k of Object.keys(pb.parsed)) {
+                const v = pb.parsed[k];
+                if (typeof v === 'string') {
+                  pb.parsed[k] = _sanitizeForBlock(v);
+                }
+              }
             }
           }
         }

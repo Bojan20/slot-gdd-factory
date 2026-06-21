@@ -117,6 +117,9 @@ run('install-precommit hook installer',
 run('UQ-FORTIFY3 third-tier audit fixes',
   'node', ['--test', 'tests/tools/uq-fortify3-thirdtier.test.mjs']);
 
+run('UQ-FORTIFY5 fifth-tier audit fixes',
+  'node', ['--test', 'tests/tools/uq-fortify5-fifthtier.test.mjs']);
+
 /* ── Step 4: UQ-7 corpus audit (unknown must be 0) ──────────────────── */
 const auditOk = run('UQ-7 cache audit',
   'node', ['tools/uq7-cache-audit.mjs', '--json']);

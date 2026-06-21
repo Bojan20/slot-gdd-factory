@@ -294,9 +294,23 @@ try {
        * V6 reconcile becomes structurally outdated (it captures a snapshot of
        * model shape from a prior parser run). We hash a stable set of source
        * files and compare against the cached `__parser_hash__` field; mismatch
-       * → delete cache, re-run (when Kimi available) or fall through. */
-      const parserHash = await _computeParserHash();
+       * → delete cache, re-run (when Kimi available) or fall through.
+       *
+       * UQ-FORTIFY5 #1 — acquire the cache lock BEFORE the first hash
+       * computation. Previously a sibling process running the calibration
+       * trainer could rewrite V1..V5 prompts AFTER our hash snapshot but
+       * BEFORE our cache read, making the comparison stale and the
+       * invalidation incorrect. Lock ensures the hash + cache read are a
+       * single atomic moment from the perspective of any other writer. */
       const fsp = await import('node:fs/promises');
+      const cacheDir0 = resolve(REPO, 'tools/_wave-v-cache');
+      try { await fsp.mkdir(cacheDir0, { recursive: true }); } catch (_) {}
+      const { acquireLock, releaseLock } = await import('../src/registry/fileLock.mjs');
+      let preLock = null;
+      try { preLock = acquireLock(cacheFile); } catch (_) { /* lock failure → fall through */ }
+      /* Clear any stale memoization so we capture the live source set. */
+      _parserHashCache = null;
+      const parserHash = await _computeParserHash();
       if (existsSync(cacheFile)) {
         try {
           const raw = await fsp.readFile(cacheFile, 'utf8');
@@ -304,6 +318,7 @@ try {
           const cachedHash = cached && cached.__parser_hash__;
           if (cachedHash === parserHash) {
             log('  cache hit (hash match) — skip Kimi call');
+            if (preLock) releaseLock(preLock);
             return;
           }
           log(`  cache stale (hash drift ${(cachedHash || 'none').slice(0, 8)} → ${parserHash.slice(0, 8)}) — invalidating`);
@@ -313,6 +328,10 @@ try {
           await fsp.unlink(cacheFile).catch(() => {});
         }
       }
+      /* Release the pre-Kimi lock — Kimi call itself can take minutes and
+         our lock policy steals after 60s. The post-Kimi stamp re-acquires
+         (see below) for the read-modify-write of __parser_hash__. */
+      if (preLock) releaseLock(preLock);
       /* Skip silently if Kimi binary missing — keep pipeline working offline. */
       const kimiBin = resolve(process.env.HOME || '/tmp', 'Projects/cortex/scripts/cortex-kimi-ask');
       if (!existsSync(kimiBin)) {

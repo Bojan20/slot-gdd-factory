@@ -307,35 +307,60 @@ writeFileSync(mdPath, md.join('\n'));
 console.log('');
 console.log(`Report: ${mdPath}`);
 
-/* Wave UQ-FORTIFY2 G9 + FORTIFY4 H5 — telemetry time-series with
- * file lock + atomic write so concurrent E2E runs don't lose entries
- * to read-modify-write race. */
+/* Wave UQ-FORTIFY2 G9 + FORTIFY4 H5 + FORTIFY5 #3 — telemetry time-series
+ * with file lock + atomic write so concurrent E2E runs don't lose entries
+ * to read-modify-write race.
+ *
+ * UQ-FORTIFY5 #3 — randomUUID tmp suffix replaces PID.
+ * Container restarts on tight scheduling can reuse PIDs across concurrent
+ * orchestrator runs; two procs with the same PID would write to the same
+ * tmp path and clobber each other. randomUUID() removes that collision
+ * surface entirely. We also re-read INSIDE the lock so the read-modify-
+ * write is truly atomic from a foreign writer's perspective. */
 const seriesPath = resolve(REPORTS, 'orchestrator-e2e-series.json');
 const { acquireLock: _sAcq, releaseLock: _sRel } = await import('../src/registry/fileLock.mjs');
 const { renameSync: _sRename } = await import('node:fs');
+const { randomUUID: _sUuid } = await import('node:crypto');
 const _seriesTok = _sAcq(seriesPath);
 let series = { runs: [] };
-if (existsSync(seriesPath)) {
-  try { series = JSON.parse(readFileSync(seriesPath, 'utf8')); } catch (_) { series = { runs: [] }; }
-}
-series.runs.push({
-  ts: new Date().toISOString(),
-  passCount,
-  failCount,
-  ...aggregate,
-  perFixture: results.map(r => ({
-    slug: r.slug,
-    allPass: r.allPass,
-    parserDeclared: r.telemetry.parserDeclaredCount,
-    v6Declared: r.telemetry.v6DeclaredCount,
-    forces: r.telemetry.forcesPresent,
-    blocks: r.telemetry.blockCount,
-    htmlBytes: r.telemetry.htmlBytes,
-  })),
-});
-if (series.runs.length > 100) series.runs = series.runs.slice(-100);
 try {
-  const _sTmp = seriesPath + '.tmp.' + process.pid;
+  /* Re-read inside the lock — if a foreign process wrote between our
+     existsSync above and our actual read, we'd silently lose history. */
+  if (existsSync(seriesPath)) {
+    try {
+      const txt = readFileSync(seriesPath, 'utf8');
+      const parsed = JSON.parse(txt);
+      /* Defensive shape check — refuse to overwrite a healthy file with
+         an empty {runs:[]} when the parse succeeded but shape is off. */
+      if (parsed && Array.isArray(parsed.runs)) series = parsed;
+      else {
+        console.warn('  ⚠ orchestrator-e2e-series.json has unexpected shape — keeping prior runs');
+        series = { runs: Array.isArray(parsed && parsed.runs) ? parsed.runs : [] };
+      }
+    } catch (e) {
+      /* Corrupt JSON: keep going with empty runs so we don't lose THIS
+         run, but loudly warn so the operator can investigate. */
+      console.warn('  ⚠ orchestrator-e2e-series.json unparseable (' + e.message + ') — starting fresh');
+      series = { runs: [] };
+    }
+  }
+  series.runs.push({
+    ts: new Date().toISOString(),
+    passCount,
+    failCount,
+    ...aggregate,
+    perFixture: results.map(r => ({
+      slug: r.slug,
+      allPass: r.allPass,
+      parserDeclared: r.telemetry.parserDeclaredCount,
+      v6Declared: r.telemetry.v6DeclaredCount,
+      forces: r.telemetry.forcesPresent,
+      blocks: r.telemetry.blockCount,
+      htmlBytes: r.telemetry.htmlBytes,
+    })),
+  });
+  if (series.runs.length > 100) series.runs = series.runs.slice(-100);
+  const _sTmp = seriesPath + '.tmp.' + _sUuid();
   writeFileSync(_sTmp, JSON.stringify(series, null, 2) + '\n');
   _sRename(_sTmp, seriesPath);
 } finally {
