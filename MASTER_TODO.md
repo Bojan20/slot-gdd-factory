@@ -1,3 +1,65 @@
+## 🚀 WAVE UQ-6 — KIMI V1-V5 BULK + ARCHETYPE EXPANSION 15→25 · 2026-06-21 · B 🟢 RUNNING · C ✅ ZATVOREN
+
+Boki: *"b i c redom ultimativno"* → *"redom"* → *"da"* (continue background tracking)
+
+Cilj: zatvoriti dve preostale stavke sa prethodne UQ-5 ceiling iteracije
+**bez** math/audio doseza (rule_no_math_unless_asked + rule_audio_off_until_asked).
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-6 — B (Kimi bulk reconcile) + C (Archetype expansion 15→25)                    │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ B. LLM V1-V5 RECONCILE ZA 338-GDD KORPUS                                              │
+│    Status: 🟢 RUNNING (PID 36821, concurrency=5)                                      │
+│    Pre:  14 GDD u cache-u                                                              │
+│    Sad:  ~105 cache fajlova · 90/323 worker-marker done (~28 %)                       │
+│    ETA:  ~50 min preostalo · ~14 s/GDD efektivno (5 paralela × ~70 s/Kimi call)        │
+│    Tool: tools/_wave-v-kimi-reconcile.mjs                                             │
+│          · NEW: --skip-cached (preskoči slugs sa već postojećim cache.json)            │
+│          · NEW: --concurrency N (worker pool nad slug-ovima, default 1, prod 5)        │
+│          · per-slug paljaj 5 paralela Kimi poziva (V1..V5) + V6 deterministic merge   │
+│    Cache: tools/_wave-v-cache/<slug>.json (gitignored, regen-uje se na zahtev)         │
+│    Parser pickup: parser.mjs auto-merge → model.__waveV__ na sledeći parse             │
+│    Monitor: task bya2hxbzd, every-25 progress markers + final summary + PID-death     │
+│                                                                                       │
+│ C. INDUSTRY ARCHETYPE EXPANSION 15 → 25 (vendor-neutral)                              │
+│    Status: ✅ ZATVOREN                                                                 │
+│    Catalog: src/registry/featureArchetypes.mjs                                        │
+│    10 nova arhetipa (vendor-neutral, zero trademark):                                  │
+│      16. multiplier-trail   — win/tumble counter drives persistent ladder              │
+│      17. feature-purchase   — direkt buy bonus/FS/wheel za N×bet                       │
+│      18. side-bet           — opcioni ladder bet boosts trigger weight                 │
+│      19. weighted-wheel     — segmented wheel sa weighted segments                     │
+│      20. variable-ways      — per-spin reel heights variraju, ways = produkt           │
+│      21. wild-multiplier    — wild bears own multiplier on lines through it            │
+│      22. stacked-symbols    — 2x1 / 3x1 / full-reel stacks                             │
+│      23. reel-extender      — extra reels/rows appended on trigger                     │
+│      24. morph-progressive  — symbol tier upgrade per landing/tumble                   │
+│      25. gamble-double      — 50/50 color/suit pick double-or-nothing                  │
+│    suggestArchetype tiebreaker: match-length (compound > short token)                   │
+│    Sanirana 3 latentna duplikata u postojećim examples:                                │
+│      · accumulator.examples: energyMeter → pieceCollector                              │
+│      · spawn.examples: symbolUpgrade → mysterySymbolReveal                             │
+│      · cascade-collapse.examples: tumbleGrowingFsMultiplier → tumbleChainReaction      │
+│    Tests: tests/registry/featureArchetypes.test.mjs · 11/11 PASS                      │
+│      ARCHETYPE_COUNT=25 + frozen · per-archetype well-formed + unique IDs              │
+│      vendor-trademark sweep (enforce rule_no_vendor_mentions) · 0.95 exact-example     │
+│      10 vendor-neutralnih prose snippet-a → tačan archetype · findUnknownFeatures      │
+│      hook naming convention                                                            │
+│    Projection: archetype-fallback rate 12 % → ~3 % na 338-GDD korpus                  │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   682aa4f feat(UQ-6): B+C ultimativno — Kimi V1-V5 bulk reconcile + 10 archetypes    │
+│            (push pushed: e8dc012..682aa4f main → origin/main)                          │
+│                                                                                       │
+│ SKINUTO SA STOLA (per Boki "math i audio kada budem ja reka ne sad")                  │
+│   ❌ A. Math GDD attach (math)                                                         │
+│   ❌ Bilo koji audio rad (ADB, Howler, SFX, mix)                                       │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE F7 — REGULATOR CERT SWEEP +6 JURISDIKCIJA · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"dalje4"* (preskoci F4 takođe, idi F7) — direktan klijent-deliverable
