@@ -127,6 +127,11 @@ async function fetchToTmp(url) {
 
 function pdfToText(pdfPath) {
   const r = spawnSync('pdftotext', ['-layout', pdfPath, '-'], { encoding: 'utf8' });
+  /* UQ-FORTIFY7 #1 — also surface signal-killed children. r.status is
+     null when the child was killed by a signal (SIGTERM/SIGKILL/SIGSEGV);
+     the original `status !== 0` check silently treated that as failure
+     but lost the signal information. */
+  if (r.signal) throw new Error('pdftotext killed by signal ' + r.signal);
   if (r.status !== 0) throw new Error('pdftotext failed: ' + (r.stderr || 'no stderr'));
   return r.stdout;
 }
@@ -352,6 +357,20 @@ try {
         resolve(REPO, 'tools/_wave-v-kimi-reconcile.mjs'),
         '--slug', slug,
       ], { stdio: 'inherit', cwd: REPO });
+      /* UQ-FORTIFY7 #1 — signal-killed reconcile (OOM kill / CTRL-C /
+         SIGTERM) returns r.status === null, which the original
+         `status !== 0` check passed silently (null !== 0 is truthy)
+         but produced the message "reconcile exit null". That left
+         ambiguity between "tool ran and failed" and "tool was killed
+         mid-flight". A killed-mid-flight child must HARD-FAIL: never
+         leave a partial cache entry that next ingest could hit. We
+         throw a marked error so the catch above routes to hard exit 1
+         (not soft-fail exit 3) and the lock is released cleanly. */
+      if (r.signal) {
+        const err = new Error('reconcile killed by signal ' + r.signal);
+        err.hardFail = true;
+        throw err;
+      }
       if (r.status !== 0) throw new Error('reconcile exit ' + r.status);
       /* Stamp parser hash — F2 recompute + F7 mkdir + G3 orphan cleanup
        * + G4 file lock. */
@@ -408,6 +427,15 @@ try {
         }
       }
     }).catch((e) => {
+      /* UQ-FORTIFY7 #1 — escalate hard-fail (signal-killed child) to
+         the outer try/catch so the process exits 1, not soft-fail 3.
+         A SIGKILL during reconcile leaves a partial state we must NOT
+         silently accept; the next ingest would hit a stale cache and
+         permanently lock in the degraded model. */
+      if (e && e.hardFail) {
+        log('  reconcile HARD-FAIL: ' + e.message);
+        throw e;
+      }
       log('  reconcile soft-fail: ' + e.message + ' (continuing without)');
       /* UQ-FORTIFY3 #6 — record soft-fail so the final exit code is 3
          instead of 0. CI / downstream tools can decide whether to gate.

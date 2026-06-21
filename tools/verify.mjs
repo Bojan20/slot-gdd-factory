@@ -123,6 +123,9 @@ run('UQ-FORTIFY5 fifth-tier audit fixes',
 run('UQ-FORTIFY6 sixth-tier audit fixes',
   'node', ['--test', 'tests/tools/uq-fortify6-sixthtier.test.mjs']);
 
+run('UQ-FORTIFY7 seventh-tier audit fixes',
+  'node', ['--test', 'tests/tools/uq-fortify7-seventhtier.test.mjs']);
+
 /* ── Step 4: UQ-7 corpus audit (unknown must be 0) ──────────────────── */
 const auditOk = run('UQ-7 cache audit',
   'node', ['tools/uq7-cache-audit.mjs', '--json']);

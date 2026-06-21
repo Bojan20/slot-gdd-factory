@@ -77,7 +77,9 @@ test('UQ-FORTIFY6 #1: live — hash changes when fileLock changes', async () => 
 
 test('UQ-FORTIFY6 #2: fileLock uses Atomics.wait (not pure CPU spin)', () => {
   const src = readFileSync(resolve(REPO, 'src/registry/fileLock.mjs'), 'utf8');
-  assert.ok(/Atomics\.wait\(view,\s*0,\s*0,\s*POLL_INTERVAL_MS\)/.test(src),
+  /* UQ-FORTIFY7 #3 evolved the variable name from `view` to module-scoped
+     `_sabView` so accept either form. */
+  assert.ok(/Atomics\.wait\((view|_sabView),\s*0,\s*0,\s*POLL_INTERVAL_MS\)/.test(src),
     'Atomics.wait kernel-park call missing');
   assert.ok(/SharedArrayBuffer\(4\)/.test(src),
     'SharedArrayBuffer init missing');
@@ -153,7 +155,10 @@ test('UQ-FORTIFY6 #4: trainer round-trip read-back + rollback', () => {
     'on-disk heading count check missing');
   assert.ok(/rolled back/i.test(src),
     'rollback path missing');
-  /* Previous content saved BEFORE rename so rollback can restore */
-  assert.ok(/prevContent\s*=\s*readFileSync\(path/.test(src),
+  /* Previous content saved BEFORE rename so rollback can restore.
+     UQ-FORTIFY7 #2 evolved the var from `prevContent` (re-read from disk)
+     to `_originalContent` (captured under the same lock, no race) — accept
+     either form, but at least one must be present. */
+  assert.ok(/(prevContent|_originalContent)\s*=\s*(src|readFileSync\(path)/.test(src),
     'previous content snapshot missing');
 });

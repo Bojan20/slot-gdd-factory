@@ -137,17 +137,39 @@ export function acquireLock(targetPath, opts = {}) {
          The original `while (Date.now() < end)` was pure busy-loop;
          under high contention (e.g. --all-corpus 338 ingests) it would
          pin a core at 100 % for the full poll interval. Atomics.wait on
-         a throwaway SharedArrayBuffer is the only sync primitive Node
-         exposes that actually parks the thread on the kernel scheduler.
-         Falls back to a single Date.now() spin guard if Atomics is
-         disabled (older environments / sandboxed runtimes). */
-      try {
-        const sab = new SharedArrayBuffer(4);
-        const view = new Int32Array(sab);
+         a SharedArrayBuffer is the only sync primitive Node exposes
+         that actually parks the thread on the kernel scheduler.
+         UQ-FORTIFY7 #3 — pre-allocate the SAB ONCE per acquireLock
+         invocation and reuse it across poll iterations. The original
+         design allocated a fresh SAB on every poll (~100ms), which
+         under a 30s wait × 338 concurrent processes meant ~100K
+         allocations and persistent kernel-resource pressure. We now
+         allocate once and reuse, also exposing a single SAB-creation
+         failure point that emits a one-time warning so operators can
+         tune container memory limits. */
+      if (!_sabView) {
+        try {
+          const sab = new SharedArrayBuffer(4);
+          _sabView = new Int32Array(sab);
+        } catch (e) {
+          if (!_sabFailureWarned) {
+            _sabFailureWarned = true;
+            try {
+              process.stderr.write(
+                '[fileLock] ⚠ SharedArrayBuffer unavailable (' + e.message + '); ' +
+                'falling back to short spin. Set --max-old-space-size higher or ' +
+                'enable SharedArrayBuffer in container config.\n'
+              );
+            } catch {}
+          }
+        }
+      }
+      if (_sabView) {
         /* wait on slot 0 for value 0 — returns 'timed-out' after the
            interval; we never notify so it always times out cleanly. */
-        Atomics.wait(view, 0, 0, POLL_INTERVAL_MS);
-      } catch (_) {
+        try { Atomics.wait(_sabView, 0, 0, POLL_INTERVAL_MS); }
+        catch (_) { /* fall through to short spin */ }
+      } else {
         /* Fallback: shorter spin so we don't burn the full interval. */
         const end = Date.now() + Math.min(POLL_INTERVAL_MS, 25);
         while (Date.now() < end) { /* fallback spin */ }
@@ -155,6 +177,12 @@ export function acquireLock(targetPath, opts = {}) {
     }
   }
 }
+
+/* UQ-FORTIFY7 #3 — module-scoped SAB view (reused across acquireLock
+   invocations within the same process so we hold a SINGLE SAB resource
+   for the lifetime of the lock module, not per-iteration). */
+let _sabView = null;
+let _sabFailureWarned = false;
 
 /**
  * Release a previously acquired lock. Safe to call even if the lock

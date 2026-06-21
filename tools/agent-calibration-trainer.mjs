@@ -349,8 +349,17 @@ if (APPLY) {
     const { acquireLock, releaseLock } = await import('../src/registry/fileLock.mjs');
     const _lockTok = acquireLock(path);
     let src;
+    let _originalContent;
     try {
     src = readFileSync(path, 'utf8');
+    /* UQ-FORTIFY7 #2 — capture ORIGINAL content snapshot HERE, the only
+       moment we are guaranteed to be reading the pre-modification file
+       under the lock. The previous design re-read prevContent right
+       before rename, but a peer process could acquire/release the lock
+       between our read and our rename, making prevContent stale. Using
+       the locked-in original snapshot guarantees rollback restores the
+       exact pre-modification content even under concurrent contention. */
+    _originalContent = src;
     /* UQ-FORTIFY3 #5 — sanitize agent/expected/field/slug values before
        embedding into the markdown block. Without this, an agent value
        containing backtick / heading marker would corrupt block syntax
@@ -406,7 +415,9 @@ if (APPLY) {
     const tmpPath = path + '.tmp.' + _trUuid();
     writeFileSync(tmpPath, src);
     const { renameSync } = await import('node:fs');
-    const prevContent = readFileSync(path, 'utf8');
+    /* UQ-FORTIFY7 #2 — use the locked-in original snapshot (_originalContent)
+       instead of re-reading from disk, eliminating the read-modify-write
+       window where a peer write could race in between. */
     renameSync(tmpPath, path);
     const onDisk = readFileSync(path, 'utf8');
     const onDiskHeadingCount = (onDisk.match(/^## AGENT_CALIBRATION/gm) || []).length;
@@ -414,7 +425,7 @@ if (APPLY) {
       /* Roll back — restore previous content via atomic tmp+rename so
          we never ship the prompt in a corrupted state. */
       const rbTmp = path + '.tmp.' + _trUuid();
-      writeFileSync(rbTmp, prevContent);
+      writeFileSync(rbTmp, _originalContent);
       renameSync(rbTmp, path);
       throw new Error(
         `AGENT_CALIBRATION round-trip failed for ${laneFiles[code]}: ` +
