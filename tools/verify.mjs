@@ -239,6 +239,20 @@ if (existsSync(v10Tool)) {
     'node', [v10Tool]);
 }
 
+/* ── Step 4.94: UQ-MASTERY-8 V13 phantom-feature walker ────────────────
+ * Asserts every feature flagged `source: 'declared'` in
+ * __activeFeatures__ has a real anchor in the raw GDD text. Catches
+ * parser regressions that over-infer features (holdAndWin, bonusPick,
+ * wheelBonus, jackpot, expandingWild) without a matching raw anchor.
+ * Pre-fix baseline: 279 phantom across 338 GDDs (256 holdAndWin from
+ * "3+ Scatter" regex misread). Post-fix ceiling: 50 (reference-set
+ * legitimate edges that use narrower anchor patterns). */
+const v13Tool = resolve(REPO, 'tools/v13-phantom-feature-walker.mjs');
+if (existsSync(v13Tool)) {
+  run('UQ-MASTERY-8 V13 phantom-feature walker (338 GDDs, max 50)',
+    'node', [v13Tool]);
+}
+
 /* ── Step 4.93: UQ-MASTERY-4 V11 Deep Industry Spec ────────────────────
  * Produbljuje V10. Encodes deep slot-industry GT: RTP jurisdikcioni floor
  * (UKGC 85%, DE-WHG 90%, FR-ANJ 92%), jackpot tier monotonicity (MINI <

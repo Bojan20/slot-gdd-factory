@@ -2181,13 +2181,25 @@ export function extractFeatureConfigsProseMode(rawText, model) {
         }
       }
     }
-    /* triggerCount — "6+ bonus orbs", "≥ 6 hard hats trigger". */
+    /* triggerCount — "6+ bonus orbs", "≥ 6 hard hats trigger".
+     * UQ-MASTERY-8 (2026-06-22) — gate the regex on an actual H&W anchor in
+     * raw text. Without this, "3+ Scatter symbols trigger Free Spins" (which
+     * every FS GDD ships) was matching the scatter alt and writing
+     * holdAndWin.triggerCount=3 into ~256 synth fixtures that have NO hold-
+     * and-win mechanic. That phantom write then bumped __activeFeatures__
+     * to flag holdAndWin as `source: 'declared'`, polluting V8 assembly and
+     * UQ-COVER reports. The scatter alt is kept (Foundry-family HnW GDDs DO
+     * say "3+ Bonus scatters trigger HnW"), but only when raw text actually
+     * mentions hold-and-win / h&w / hnw / money-collect / fireball. */
     if (hw.triggerCount == null) {
-      const tc = rawText.match(/\b(\d{1,2})\s*\+\s*(?:bonus\s*orbs?|hard\s*hats?|scatter[s]?|coin\s*symbols?)/i) ||
-                 rawText.match(/\b(?:≥|>=|at\s*least)\s*(\d{1,2})\s*(?:bonus|coin|scatter|hat)/i);
-      if (tc) {
-        const n = parseInt(tc[1], 10);
-        if (n >= 3 && n <= 15) hw.triggerCount = n;
+      const hasHnWAnchor = /\bhold[\s&-]+(?:and[\s&-]+)?win|\bh&w\b|\bhnw\b|\bmoney[\s-]+collect|\bfireball\b/i.test(rawText);
+      if (hasHnWAnchor) {
+        const tc = rawText.match(/\b(\d{1,2})\s*\+\s*(?:bonus\s*orbs?|hard\s*hats?|scatter[s]?|coin\s*symbols?)/i) ||
+                   rawText.match(/\b(?:≥|>=|at\s*least)\s*(\d{1,2})\s*(?:bonus|coin|scatter|hat)/i);
+        if (tc) {
+          const n = parseInt(tc[1], 10);
+          if (n >= 3 && n <= 15) hw.triggerCount = n;
+        }
       }
     }
   }
@@ -2235,31 +2247,40 @@ export function extractFeatureConfigsProseMode(rawText, model) {
     }
   }
 
-  /* holdAndWin extra knobs: bonusSymbolId + respinsOnHit + jackpotSymbols. */
+  /* holdAndWin extra knobs: bonusSymbolId + respinsOnHit + jackpotSymbols.
+   * UQ-MASTERY-8 (2026-06-22) — all extra-knob extraction now gated on a
+   * real H&W anchor in raw text. Same rationale as the triggerCount gate
+   * above: without the anchor, knob writes were leaking through synth GDDs
+   * that contain neither hold-and-win nor money-collect copy. The
+   * jackpotSymbols MINI/MINOR/MAJOR/GRAND scan in particular was flagging
+   * every GDD that mentioned a "MINOR" big-win tier as H&W-declared. */
   if (model.holdAndWin) {
-    const hw = model.holdAndWin;
-    /* bonusSymbolId — derived from prose-mode symbols that have kind=bonus. */
-    if (!hw.bonusSymbolId && Array.isArray(model.symbols?.specials)) {
-      const bonusSym = model.symbols.specials.find((s) => s && s.kind === 'bonus');
-      if (bonusSym && bonusSym.id) hw.bonusSymbolId = bonusSym.id;
-    }
-    /* respinsOnHit — "3 respins", "respin counter resets to 3". */
-    if (hw.respinsOnHit == null) {
-      const rs = rawText.match(/\b(\d{1,2})\s*respins?(?:\s*(?:awarded|on\s*hit|initial|counter))/i) ||
-                 rawText.match(/respins?\s*(?:awarded|reset(?:s)?\s*to|counter\s*to)\s*(\d{1,2})/i) ||
-                 rawText.match(/\binitial\s*respins?\s*[:=]?\s*(\d{1,2})/i);
-      if (rs) {
-        const n = parseInt(rs[1], 10);
-        if (n >= 1 && n <= 20) hw.respinsOnHit = n;
+    const hasHnWAnchor = /\bhold[\s&-]+(?:and[\s&-]+)?win|\bh&w\b|\bhnw\b|\bmoney[\s-]+collect|\bfireball\b/i.test(rawText);
+    if (hasHnWAnchor) {
+      const hw = model.holdAndWin;
+      /* bonusSymbolId — derived from prose-mode symbols that have kind=bonus. */
+      if (!hw.bonusSymbolId && Array.isArray(model.symbols?.specials)) {
+        const bonusSym = model.symbols.specials.find((s) => s && s.kind === 'bonus');
+        if (bonusSym && bonusSym.id) hw.bonusSymbolId = bonusSym.id;
       }
-    }
-    /* jackpotSymbols — MINI MINOR MAJOR GRAND. */
-    if (!Array.isArray(hw.jackpotSymbols) || hw.jackpotSymbols.length === 0) {
-      const tiers = [];
-      for (const tier of ['MINI', 'MINOR', 'MAJOR', 'GRAND']) {
-        if (new RegExp('\\b' + tier + '\\b', 'i').test(rawText)) tiers.push(tier);
+      /* respinsOnHit — "3 respins", "respin counter resets to 3". */
+      if (hw.respinsOnHit == null) {
+        const rs = rawText.match(/\b(\d{1,2})\s*respins?(?:\s*(?:awarded|on\s*hit|initial|counter))/i) ||
+                   rawText.match(/respins?\s*(?:awarded|reset(?:s)?\s*to|counter\s*to)\s*(\d{1,2})/i) ||
+                   rawText.match(/\binitial\s*respins?\s*[:=]?\s*(\d{1,2})/i);
+        if (rs) {
+          const n = parseInt(rs[1], 10);
+          if (n >= 1 && n <= 20) hw.respinsOnHit = n;
+        }
       }
-      if (tiers.length >= 2) hw.jackpotSymbols = tiers;
+      /* jackpotSymbols — MINI MINOR MAJOR GRAND. */
+      if (!Array.isArray(hw.jackpotSymbols) || hw.jackpotSymbols.length === 0) {
+        const tiers = [];
+        for (const tier of ['MINI', 'MINOR', 'MAJOR', 'GRAND']) {
+          if (new RegExp('\\b' + tier + '\\b', 'i').test(rawText)) tiers.push(tier);
+        }
+        if (tiers.length >= 2) hw.jackpotSymbols = tiers;
+      }
     }
   }
 
