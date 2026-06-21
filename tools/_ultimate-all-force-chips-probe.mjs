@@ -189,8 +189,15 @@ async function runOneChipFreshPage(browser, game, kind) {
   try {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
     await page.waitForSelector('#spinBtn', { timeout: 8000 });
+    /* UQ-MASTERY-7 (2026-06-22) — specialty engines (plinko, slingo,
+     * wheel, crash, hex) don't populate RECT_REELS (they own their own
+     * kind-specific layout via __SLOT_KIND_RUNSPIN__). Wait for EITHER
+     * the rectangular reel matrix OR the kind-runspin registry so the
+     * probe is engine-agnostic. */
     await page.waitForFunction(() =>
-      Array.isArray(window.RECT_REELS) && window.RECT_REELS.length > 0,
+      (Array.isArray(window.RECT_REELS) && window.RECT_REELS.length > 0)
+        || (window.__SLOT_KIND_RUNSPIN__ && Object.keys(window.__SLOT_KIND_RUNSPIN__).length > 0)
+        || (window.SHAPE && (window.SHAPE.kind || window.SHAPE.shape)),
       { timeout: 10000 });
     await waitSpinEnabled(page, 4000);
 
@@ -281,8 +288,29 @@ async function runGame(browser, game) {
 }
 
 async function main() {
-  const games = listGames();
+  let games = listGames();
   if (!games.length) { console.error('NO GAMES'); process.exit(2); }
+  /* UQ-MASTERY-7 (2026-06-22) — sampling flags for time-bounded probes:
+     --limit=N         (take first N alphabetically)
+     --slugs=a,b,c    (pin specific game directories)
+     --baseline       (5 main pinned by liveness walker FIVE_MAIN list) */
+  const args = process.argv.slice(2);
+  const argVal = (flag) => {
+    const a = args.find(x => x === flag || x.startsWith(flag + '='));
+    return a ? (a.includes('=') ? a.split('=')[1] : args[args.indexOf(a) + 1]) : null;
+  };
+  const BASELINE_SLUGS = [
+    'cash-eruption-foundry-gdd', 'gates-of-olympus-1000-gdd',
+    'huff-n-more-puff-gdd', 'starlight-travellers-gdd', 'wrath-of-olympus-gdd',
+  ];
+  if (args.includes('--baseline')) {
+    games = games.filter(g => BASELINE_SLUGS.includes(g));
+  } else if (argVal('--slugs')) {
+    const want = new Set(argVal('--slugs').split(','));
+    games = games.filter(g => want.has(g));
+  }
+  const limit = argVal('--limit');
+  if (limit) games = games.slice(0, parseInt(limit, 10));
   log(`🎯 D-13 ALL-FORCE-CHIPS PROBE — ${games.length} igara, ~${games.length * 15} chip clicks total`);
 
   const browser = await chromium.launch({ headless: true });
