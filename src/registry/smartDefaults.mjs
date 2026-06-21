@@ -602,6 +602,107 @@ export function autofixGaps(model) {
           'no paytable declared — generated ' + stub.length + '-row stub mapping');
       }
     }
+
+    /* Wave UQ-CASH A3 — feature-config backfill for detected-but-empty
+     * configs. When parser detects a feature in `features[]` (e.g.
+     * hold_and_win, win_cap, jackpot, expanding_wild) but the corresponding
+     * config object is missing or empty, populate industry-baseline defaults
+     * so block renderers don't render empty/dead surfaces. */
+    const featureKinds = new Set(
+      (Array.isArray(model.features) ? model.features : [])
+        .map(f => f && f.kind).filter(Boolean));
+
+    /* Helper — fill only missing/undefined fields (freshModel populates the
+     * shape with `undefined` placeholders, so Object.assign(defaults, src)
+     * pattern paradoxically OVERWRITES defaults with undefined. Use field-
+     * by-field gate instead. */
+    function fillIfMissing(target, defaults) {
+      for (const [k, v] of Object.entries(defaults)) {
+        if (target[k] === undefined || target[k] === null) {
+          target[k] = v;
+        }
+      }
+    }
+    function hasMeaningfulValues(obj) {
+      if (!obj || typeof obj !== 'object') return false;
+      return Object.values(obj).some(v => v !== undefined && v !== null && v !== '');
+    }
+
+    /* hold_and_win → holdAndWin config baseline */
+    if (featureKinds.has('hold_and_win') || featureKinds.has('holdAndWin')) {
+      if (!model.holdAndWin || typeof model.holdAndWin !== 'object') {
+        model.holdAndWin = {};
+      }
+      const before = JSON.stringify(model.holdAndWin);
+      fillIfMissing(model.holdAndWin, {
+        enabled: true,
+        triggerCount: 6,
+        bonusSymbolId: 'CASH',
+        respinsOnHit: 3,
+        jackpots: ['MINI', 'MINOR', 'MAJOR', 'GRAND'],
+        gridFill: { fullGridBonus: 500 },
+      });
+      if (before !== JSON.stringify(model.holdAndWin)) {
+        recordAutofix(model, 'holdAndWin.feature-backfill',
+          'hold_and_win feature declared but config empty — industry-baseline defaults applied');
+      }
+    }
+
+    /* win_cap → winCap.maxWinX baseline */
+    if (featureKinds.has('win_cap') || featureKinds.has('winCap')) {
+      if (!model.winCap || typeof model.winCap !== 'object') {
+        model.winCap = {};
+      }
+      const before = JSON.stringify(model.winCap);
+      fillIfMissing(model.winCap, { enabled: true, maxWinX: 5000 });
+      if (before !== JSON.stringify(model.winCap)) {
+        recordAutofix(model, 'winCap.feature-backfill',
+          'win_cap feature declared but maxWinX missing — 5000× industry default');
+      }
+    }
+
+    /* jackpot → jackpot tiers baseline */
+    if (featureKinds.has('jackpot')) {
+      if (!model.jackpot || typeof model.jackpot !== 'object') {
+        model.jackpot = {};
+      }
+      const before = JSON.stringify(model.jackpot);
+      fillIfMissing(model.jackpot, {
+        enabled: true,
+        tiers: ['MINI', 'MINOR', 'MAJOR', 'GRAND'],
+        values: { MINI: 10, MINOR: 50, MAJOR: 500, GRAND: 5000 },
+      });
+      if (before !== JSON.stringify(model.jackpot)) {
+        recordAutofix(model, 'jackpot.feature-backfill',
+          'jackpot feature declared but tiers/values missing — 4-tier industry baseline');
+      }
+    }
+
+    /* expanding_wild → expandingWild config baseline */
+    if (featureKinds.has('expanding_wild') || featureKinds.has('expandingWild')) {
+      if (!model.expandingWild || typeof model.expandingWild !== 'object') {
+        model.expandingWild = {};
+      }
+      const before = JSON.stringify(model.expandingWild);
+      fillIfMissing(model.expandingWild, {
+        enabled: true,
+        direction: 'vertical',
+        appliesOnReels: [2, 3, 4, 5],
+      });
+      if (before !== JSON.stringify(model.expandingWild)) {
+        recordAutofix(model, 'expandingWild.feature-backfill',
+          'expanding_wild feature declared but config empty — industry-baseline (reels 2-5)');
+      }
+    }
+
+    /* Compliance presence — if model.compliance exists but is array, leave;
+     * if missing, default to empty list (NOT autofixed — compliance is
+     * jurisdiction-specific and ABSENT should mean "no jurisdiction set",
+     * not "fill with random gates"). */
+    if (typeof model.compliance === 'undefined') {
+      model.compliance = [];
+      /* Intentionally NOT recordAutofix — compliance absence is meaningful. */
+    }
   } catch (err) {
     recordFailure(model, 'autofixGaps', err);
   }

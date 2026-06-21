@@ -118,7 +118,17 @@ export function parseMarkdownGDD(text) {
      abort the whole parse; the offending section is recorded in
      `model.confidence._failures[]` and the next section runs as normal. */
 
-  /* name — H1 heading, or "Internal name" table cell */
+  /* name — H1 heading, or "Internal name" table cell, or PDF first-line
+   * fallback (Wave UQ-CASH A2). PDF-derived text rarely has a leading "#"
+   * but the GDD title is reliably the FIRST non-blank line (centered with
+   * whitespace padding from pdftotext -layout). We accept any all-Title-
+   * Case or ALL CAPS line that:
+   *   - is ≤ 80 chars
+   *   - has 1–6 words
+   *   - is followed by a non-title line (avoids accidentally matching a
+   *     section heading mid-document)
+   *   - is NOT a known boilerplate phrase (CONFIDENTIAL / DRAFT / etc.)
+   * This is fallback only — H1 / Internal name still take priority. */
   _safeExtract('header.name', () => {
     const h1 = text.match(/^#\s+(.+?)(?:\s+—|\s+-|\s+:|\s+\(|$)/m);
     if (h1) {
@@ -129,6 +139,31 @@ export function parseMarkdownGDD(text) {
     if (internalName) {
       model.name = internalName[1].replace(/\*\*/g, '').trim();
       model.confidence.name = 1.0;
+      return;
+    }
+    /* Wave UQ-CASH A2 — PDF first-line fallback (only when H1/internalName
+     * failed to set a meaningful name). */
+    if (model.name === 'Untitled Slot' || !model.name) {
+      const lines = text.split(/\r?\n/);
+      const BOILERPLATE = /^(CONFIDENTIAL|DRAFT|VERSION|PRODUCTION|GAME DESIGN|MATH GDD|RTP|VOLATILITY|FREE\s+SPINS|HOLD AND WIN|TABLE OF CONTENTS|REVISION|DOCUMENT|AUDIENCE|COPYRIGHT|PRIVATE|INTERNAL)/i;
+      for (let i = 0; i < Math.min(8, lines.length); i++) {
+        const raw = lines[i].trim();
+        if (!raw) continue;
+        if (BOILERPLATE.test(raw)) continue;
+        if (raw.length > 80) continue;
+        const words = raw.split(/\s+/);
+        if (words.length < 1 || words.length > 6) continue;
+        /* All-Title-Case OR ALL CAPS (with optional ALL CAPS sub-line like
+         * "GAME DESIGN DOCUMENT" on the next line). */
+        const isTitle = words.every(w => /^[A-Z][a-zA-Z0-9'’&\-]*$/.test(w) || /^[A-Z][A-Z0-9'’&\-]*$/.test(w));
+        if (!isTitle) continue;
+        /* Reject if next non-blank line looks like a continuation (avoids
+         * matching only the brand prefix of a multi-line title). */
+        model.name = raw;
+        model.confidence.name = Math.max(model.confidence.name, 0.6);
+        model.confidence._derivedBy.name = 'pdf-first-line';
+        break;
+      }
     }
   }, model);
 

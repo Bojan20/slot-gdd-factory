@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-21T09:03:48.716Z",
+  "generatedAt": "2026-06-21T09:48:06.499Z",
   "slugCount": 338,
   "prints": {
     "001-rect-fs-wild-mult": {
@@ -163,8 +163,8 @@
     },
     "01-huff-n-puff-huff-n-more-puff": {
       "slug": "01-huff-n-puff-huff-n-more-puff",
-      "htmlBytes100": 723000,
-      "htmlSha": "9e80e64f53deaa92",
+      "htmlBytes100": 814500,
+      "htmlSha": "b4462fc4497a1d15",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -173,8 +173,10 @@
       "featureCount": 7,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
         "paytable.placeholder-rows",
-        "symbols.placeholder-roster"
+        "symbols.placeholder-roster",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -183,8 +185,8 @@
     },
     "010-rect-holdandwin-respin-jackpot": {
       "slug": "010-rect-holdandwin-respin-jackpot",
-      "htmlBytes100": 685800,
-      "htmlSha": "1479dfb4f110aa29",
+      "htmlBytes100": 770700,
+      "htmlSha": "1026aa75003c81a4",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -193,6 +195,8 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -202,8 +206,8 @@
     },
     "011-lock-holdandwin-respin-jackpot": {
       "slug": "011-lock-holdandwin-respin-jackpot",
-      "htmlBytes100": 725600,
-      "htmlSha": "035c9e17413cc2d1",
+      "htmlBytes100": 810500,
+      "htmlSha": "06612a40e812f91c",
       "buttonCount": 46,
       "paytableRows": 0,
       "footerPresent": true,
@@ -212,6 +216,8 @@
       "featureCount": 4,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -368,7 +374,7 @@
     "02-dancing-drums-dancing-drums-explosion-prosperity": {
       "slug": "02-dancing-drums-dancing-drums-explosion-prosperity",
       "htmlBytes100": 825600,
-      "htmlSha": "0c7e9f1c23459e9b",
+      "htmlSha": "4b68d9d56954a5c1",
       "buttonCount": 62,
       "paytableRows": 0,
       "footerPresent": true,
@@ -377,6 +383,8 @@
       "featureCount": 6,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -548,6 +556,7 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -567,6 +576,7 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -586,6 +596,7 @@
       "featureCount": 5,
       "autofixedKeys": [
         "bet.defaults",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -606,6 +617,7 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -777,8 +789,8 @@
     },
     "04-lock-it-link-night-life-diamonds-hold-onto-your-hat-eureka": {
       "slug": "04-lock-it-link-night-life-diamonds-hold-onto-your-hat-eureka",
-      "htmlBytes100": 722300,
-      "htmlSha": "91811c2b5b8d802a",
+      "htmlBytes100": 807200,
+      "htmlSha": "a744d8f548f347b5",
       "buttonCount": 45,
       "paytableRows": 0,
       "footerPresent": true,
@@ -787,6 +799,8 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -981,7 +995,7 @@
     "05-ultimate-fire-link-china-street-olvera-street-route-66-explosion": {
       "slug": "05-ultimate-fire-link-china-street-olvera-street-route-66-explosion",
       "htmlBytes100": 808300,
-      "htmlSha": "28151ba505d173d2",
+      "htmlSha": "5d0de72bdff1c5c2",
       "buttonCount": 47,
       "paytableRows": 0,
       "footerPresent": true,
@@ -990,6 +1004,8 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows",
         "symbols.placeholder-roster"
       ],
@@ -1067,14 +1083,15 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
+        "expandingWild.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": []
     },
     "054-rectstack-expandwild-fs": {
       "slug": "054-rectstack-expandwild-fs",
-      "htmlBytes100": 722700,
-      "htmlSha": "23d046363a7fddb4",
+      "htmlBytes100": 727500,
+      "htmlSha": "7b5e235635fa5461",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1083,6 +1100,7 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
+        "expandingWild.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -1102,6 +1120,7 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
+        "expandingWild.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -1111,8 +1130,8 @@
     },
     "056-expand-expandwild-fs": {
       "slug": "056-expand-expandwild-fs",
-      "htmlBytes100": 722600,
-      "htmlSha": "5cd9d00343de4c40",
+      "htmlBytes100": 727400,
+      "htmlSha": "9f9ce41d500364ec",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1121,6 +1140,7 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
+        "expandingWild.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -1130,8 +1150,8 @@
     },
     "057-inf-expandwild-fs": {
       "slug": "057-inf-expandwild-fs",
-      "htmlBytes100": 722400,
-      "htmlSha": "9e1eab2840b6d54e",
+      "htmlBytes100": 727200,
+      "htmlSha": "c12965ef0daebe7a",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1140,6 +1160,7 @@
       "featureCount": 4,
       "autofixedKeys": [
         "bet.defaults",
+        "expandingWild.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -1159,6 +1180,7 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
+        "expandingWild.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": []
@@ -1175,6 +1197,7 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
+        "expandingWild.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -1194,6 +1217,7 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows",
         "symbols.placeholder-roster"
       ],
@@ -1390,7 +1414,7 @@
     "07-jin-ji-bao-xi-endless-treasure-fu-dao-le-gong-xi-fa-cai": {
       "slug": "07-jin-ji-bao-xi-endless-treasure-fu-dao-le-gong-xi-fa-cai",
       "htmlBytes100": 771400,
-      "htmlSha": "648157e8a5e6294d",
+      "htmlSha": "c61d351a6c18fb6c",
       "buttonCount": 45,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1399,6 +1423,8 @@
       "featureCount": 2,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows",
         "symbols.placeholder-roster"
       ],
@@ -1610,6 +1636,7 @@
       "featureCount": 4,
       "autofixedKeys": [
         "bet.defaults",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows",
         "symbols.placeholder-roster"
       ],
@@ -1807,7 +1834,7 @@
     "09-jackpot-party-super-jackpot-party": {
       "slug": "09-jackpot-party-super-jackpot-party",
       "htmlBytes100": 819900,
-      "htmlSha": "aeabac3b318fcafb",
+      "htmlSha": "f18366276853eee4",
       "buttonCount": 62,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1816,6 +1843,8 @@
       "featureCount": 5,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -2021,6 +2050,7 @@
       "featureCount": 5,
       "autofixedKeys": [
         "bet.defaults",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows",
         "symbols.placeholder-roster"
       ],
@@ -2229,6 +2259,7 @@
       "featureCount": 4,
       "autofixedKeys": [
         "bet.defaults",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows",
         "symbols.placeholder-roster"
       ],
@@ -2430,6 +2461,7 @@
       "featureCount": 4,
       "autofixedKeys": [
         "bet.defaults",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows",
         "symbols.placeholder-roster"
       ],
@@ -2924,7 +2956,7 @@
     "144-rect-wincap-scatterpay-cascade": {
       "slug": "144-rect-wincap-scatterpay-cascade",
       "htmlBytes100": 729600,
-      "htmlSha": "4521afbd9c1b44f0",
+      "htmlSha": "b74d7c880b03ef31",
       "buttonCount": 45,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2933,7 +2965,8 @@
       "featureCount": 5,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -2942,8 +2975,8 @@
     },
     "145-rectstack-wincap-scatterpay-cascade": {
       "slug": "145-rectstack-wincap-scatterpay-cascade",
-      "htmlBytes100": 722600,
-      "htmlSha": "db54dc903e025238",
+      "htmlBytes100": 729300,
+      "htmlSha": "9d28ffa894b5af11",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2952,7 +2985,8 @@
       "featureCount": 5,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -2961,8 +2995,8 @@
     },
     "146-varreel-wincap-scatterpay-cascade": {
       "slug": "146-varreel-wincap-scatterpay-cascade",
-      "htmlBytes100": 722700,
-      "htmlSha": "8acf6c7298994fb9",
+      "htmlBytes100": 729300,
+      "htmlSha": "9e9b944e83d70110",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2971,14 +3005,15 @@
       "featureCount": 4,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": []
     },
     "147-expand-wincap-scatterpay-cascade": {
       "slug": "147-expand-wincap-scatterpay-cascade",
-      "htmlBytes100": 722300,
-      "htmlSha": "d9fde5958d97fa3c",
+      "htmlBytes100": 729000,
+      "htmlSha": "41b3f071f06ac9a9",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2987,14 +3022,15 @@
       "featureCount": 4,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": []
     },
     "148-inf-wincap-scatterpay-cascade": {
       "slug": "148-inf-wincap-scatterpay-cascade",
       "htmlBytes100": 729300,
-      "htmlSha": "22a57b718759efe3",
+      "htmlSha": "12f3de819b3017f9",
       "buttonCount": 45,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3003,7 +3039,8 @@
       "featureCount": 5,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -3012,8 +3049,8 @@
     },
     "149-dual-wincap-scatterpay-cascade": {
       "slug": "149-dual-wincap-scatterpay-cascade",
-      "htmlBytes100": 729700,
-      "htmlSha": "423096871cddd1e6",
+      "htmlBytes100": 729800,
+      "htmlSha": "8a0394918b157a91",
       "buttonCount": 45,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3022,7 +3059,8 @@
       "featureCount": 5,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -3031,8 +3069,8 @@
     },
     "15-willy-wonka-pure-imagination-world-of-wonka-dreamers-of-dreams": {
       "slug": "15-willy-wonka-pure-imagination-world-of-wonka-dreamers-of-dreams",
-      "htmlBytes100": 733800,
-      "htmlSha": "0cb74695f4db77aa",
+      "htmlBytes100": 738700,
+      "htmlSha": "bf0af15017217640",
       "buttonCount": 45,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3041,6 +3079,7 @@
       "featureCount": 5,
       "autofixedKeys": [
         "bet.defaults",
+        "expandingWild.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -3051,8 +3090,8 @@
     },
     "150-dia-wincap-scatterpay-cascade": {
       "slug": "150-dia-wincap-scatterpay-cascade",
-      "htmlBytes100": 722700,
-      "htmlSha": "3200f4af28dae605",
+      "htmlBytes100": 729300,
+      "htmlSha": "acc496190fedd1c1",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3061,7 +3100,8 @@
       "featureCount": 5,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -3070,8 +3110,8 @@
     },
     "151-pyr-wincap-scatterpay-cascade": {
       "slug": "151-pyr-wincap-scatterpay-cascade",
-      "htmlBytes100": 722400,
-      "htmlSha": "812acb7d38f8eecd",
+      "htmlBytes100": 729100,
+      "htmlSha": "b7434df407581f1d",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3080,7 +3120,8 @@
       "featureCount": 5,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -3089,8 +3130,8 @@
     },
     "152-cross-wincap-scatterpay-cascade": {
       "slug": "152-cross-wincap-scatterpay-cascade",
-      "htmlBytes100": 722700,
-      "htmlSha": "410fb9ea0dc4a339",
+      "htmlBytes100": 729400,
+      "htmlSha": "4a7a6d1f2a6a7c85",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3099,7 +3140,8 @@
       "featureCount": 5,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -3108,8 +3150,8 @@
     },
     "153-lshape-wincap-scatterpay-cascade": {
       "slug": "153-lshape-wincap-scatterpay-cascade",
-      "htmlBytes100": 722700,
-      "htmlSha": "d5043f75b168f601",
+      "htmlBytes100": 729400,
+      "htmlSha": "d2a4590c48c768d0",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3118,7 +3160,8 @@
       "featureCount": 5,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -3248,6 +3291,7 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -3443,7 +3487,7 @@
     "17-huff-n-more-puff-2022-1-lw-game-on-us-floor": {
       "slug": "17-huff-n-more-puff-2022-1-lw-game-on-us-floor",
       "htmlBytes100": 832100,
-      "htmlSha": "7cead6286d159141",
+      "htmlSha": "5885d7450f640ad6",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3452,6 +3496,8 @@
       "featureCount": 5,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows",
         "symbols.placeholder-roster"
       ],
@@ -3664,6 +3710,7 @@
       "featureCount": 6,
       "autofixedKeys": [
         "bet.defaults",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows",
         "symbols.placeholder-roster"
       ],
@@ -3875,6 +3922,7 @@
       "featureCount": 5,
       "autofixedKeys": [
         "bet.defaults",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -4085,6 +4133,7 @@
       "featureCount": 4,
       "autofixedKeys": [
         "bet.defaults",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -4280,8 +4329,8 @@
     },
     "21-jin-long-888-5-treasures-2022": {
       "slug": "21-jin-long-888-5-treasures-2022",
-      "htmlBytes100": 723000,
-      "htmlSha": "1e7981cdfa862126",
+      "htmlBytes100": 807900,
+      "htmlSha": "9d673a2c02c86123",
       "buttonCount": 45,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4290,6 +4339,8 @@
       "featureCount": 5,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -4480,7 +4531,7 @@
     "22-gold-stacks-88-lightning-box-lw-online": {
       "slug": "22-gold-stacks-88-lightning-box-lw-online",
       "htmlBytes100": 826300,
-      "htmlSha": "b81550c072e45291",
+      "htmlSha": "5456a0d4232eefc3",
       "buttonCount": 62,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4489,6 +4540,8 @@
       "featureCount": 6,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows",
         "symbols.placeholder-roster"
       ],
@@ -4558,7 +4611,7 @@
     "223-rect-fs-holdandwin-respin": {
       "slug": "223-rect-fs-holdandwin-respin",
       "htmlBytes100": 802400,
-      "htmlSha": "9a63b05ec2d823d1",
+      "htmlSha": "d16d3eefb0558cfb",
       "buttonCount": 46,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4567,6 +4620,7 @@
       "featureCount": 2,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -4576,8 +4630,8 @@
     },
     "224-lock-fs-holdandwin-respin": {
       "slug": "224-lock-fs-holdandwin-respin",
-      "htmlBytes100": 722500,
-      "htmlSha": "af69dfbae7ef7a59",
+      "htmlBytes100": 807400,
+      "htmlSha": "0e7f54416228c3d1",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4586,6 +4640,7 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -4691,7 +4746,7 @@
     "23-cash-falls-series": {
       "slug": "23-cash-falls-series",
       "htmlBytes100": 813600,
-      "htmlSha": "fd8361700819393e",
+      "htmlSha": "acd41d8f56a5a52f",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4700,6 +4755,8 @@
       "featureCount": 7,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -4907,6 +4964,7 @@
       "featureCount": 7,
       "autofixedKeys": [
         "bet.defaults",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows",
         "symbols.placeholder-roster"
       ],
@@ -5110,7 +5168,7 @@
     "25-rainbow-riches-online-ports-megaways-slingo-cluster": {
       "slug": "25-rainbow-riches-online-ports-megaways-slingo-cluster",
       "htmlBytes100": 837900,
-      "htmlSha": "eb0a1afdbd8630e4",
+      "htmlSha": "7c891226eb4f7bd2",
       "buttonCount": 62,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5119,6 +5177,8 @@
       "featureCount": 8,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows",
         "symbols.placeholder-roster"
       ],
@@ -5223,8 +5283,8 @@
     },
     "255-rect-wincap-fs": {
       "slug": "255-rect-wincap-fs",
-      "htmlBytes100": 722200,
-      "htmlSha": "29060631d6f819c1",
+      "htmlBytes100": 728900,
+      "htmlSha": "e0d7a302c7ff74e0",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5233,7 +5293,8 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -5242,8 +5303,8 @@
     },
     "256-rectstack-wincap-fs": {
       "slug": "256-rectstack-wincap-fs",
-      "htmlBytes100": 722700,
-      "htmlSha": "7f8ae51bff93a92c",
+      "htmlBytes100": 729300,
+      "htmlSha": "31451c20659cb90b",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5252,14 +5313,15 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": []
     },
     "257-varreel-wincap-fs": {
       "slug": "257-varreel-wincap-fs",
-      "htmlBytes100": 722600,
-      "htmlSha": "dbdc9dc0ecd28f64",
+      "htmlBytes100": 729300,
+      "htmlSha": "ce9c44cde89d1d9c",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5268,7 +5330,8 @@
       "featureCount": 4,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -5277,8 +5340,8 @@
     },
     "258-expand-wincap-fs": {
       "slug": "258-expand-wincap-fs",
-      "htmlBytes100": 722200,
-      "htmlSha": "111ab7d363cc09e5",
+      "htmlBytes100": 728900,
+      "htmlSha": "f2f867c415cdf93f",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5287,7 +5350,8 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -5297,7 +5361,7 @@
     "259-inf-wincap-fs": {
       "slug": "259-inf-wincap-fs",
       "htmlBytes100": 729000,
-      "htmlSha": "e0fea9783eb236b3",
+      "htmlSha": "6f3c24f358cf67b9",
       "buttonCount": 45,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5306,7 +5370,8 @@
       "featureCount": 2,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -5315,8 +5380,8 @@
     },
     "260-dual-wincap-fs": {
       "slug": "260-dual-wincap-fs",
-      "htmlBytes100": 722400,
-      "htmlSha": "067af251e0808db6",
+      "htmlBytes100": 729100,
+      "htmlSha": "dd3d70720194d067",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5325,7 +5390,8 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -5334,8 +5400,8 @@
     },
     "261-dia-wincap-fs": {
       "slug": "261-dia-wincap-fs",
-      "htmlBytes100": 722600,
-      "htmlSha": "51bdd288c3ca6ff8",
+      "htmlBytes100": 729300,
+      "htmlSha": "46a9147230ffe2c7",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5344,7 +5410,8 @@
       "featureCount": 4,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -5353,8 +5420,8 @@
     },
     "262-pyr-wincap-fs": {
       "slug": "262-pyr-wincap-fs",
-      "htmlBytes100": 722400,
-      "htmlSha": "e2ba1044d0847c2e",
+      "htmlBytes100": 729000,
+      "htmlSha": "981fe5983e2f0cfc",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5363,7 +5430,8 @@
       "featureCount": 4,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -5372,8 +5440,8 @@
     },
     "263-cross-wincap-fs": {
       "slug": "263-cross-wincap-fs",
-      "htmlBytes100": 722600,
-      "htmlSha": "06936f26cd627288",
+      "htmlBytes100": 729300,
+      "htmlSha": "e865b813459d5379",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5382,7 +5450,8 @@
       "featureCount": 4,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -5391,8 +5460,8 @@
     },
     "264-lshape-wincap-fs": {
       "slug": "264-lshape-wincap-fs",
-      "htmlBytes100": 722600,
-      "htmlSha": "9b02b3b54485f561",
+      "htmlBytes100": 729300,
+      "htmlSha": "b9b8bcaace17f989",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5401,7 +5470,8 @@
       "featureCount": 4,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -5410,8 +5480,8 @@
     },
     "265-lock-wincap-fs": {
       "slug": "265-lock-wincap-fs",
-      "htmlBytes100": 722400,
-      "htmlSha": "ae9f0e0ff4b130a7",
+      "htmlBytes100": 729000,
+      "htmlSha": "685d44e181423502",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5420,7 +5490,8 @@
       "featureCount": 3,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -5803,8 +5874,8 @@
     },
     "286-rect-cascade-stickywild-multorb-5": {
       "slug": "286-rect-cascade-stickywild-multorb-5",
-      "htmlBytes100": 825100,
-      "htmlSha": "e645c2c8f42b7fa9",
+      "htmlBytes100": 825200,
+      "htmlSha": "5f3bdfc9da087fc3",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5813,6 +5884,7 @@
       "featureCount": 7,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -5825,7 +5897,7 @@
     "287-rect-cascade-stickywild-multorb-5-max": {
       "slug": "287-rect-cascade-stickywild-multorb-5-max",
       "htmlBytes100": 825100,
-      "htmlSha": "82ffc98a3d5e89c8",
+      "htmlSha": "cea7b24b5f2a9df0",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5834,6 +5906,7 @@
       "featureCount": 7,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -5845,8 +5918,8 @@
     },
     "288-varreel-cascade-stickywild-multorb-5": {
       "slug": "288-varreel-cascade-stickywild-multorb-5",
-      "htmlBytes100": 825400,
-      "htmlSha": "9f71fb71d792ee43",
+      "htmlBytes100": 825500,
+      "htmlSha": "16c97b7585cc9537",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5855,6 +5928,7 @@
       "featureCount": 7,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -5866,7 +5940,7 @@
     "289-varreel-cascade-stickywild-multorb-5-max": {
       "slug": "289-varreel-cascade-stickywild-multorb-5-max",
       "htmlBytes100": 825400,
-      "htmlSha": "c58c525e910fbf88",
+      "htmlSha": "1583754f99b23908",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5875,6 +5949,7 @@
       "featureCount": 7,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -6243,8 +6318,8 @@
     },
     "cash-eruption-foundry-gdd": {
       "slug": "cash-eruption-foundry-gdd",
-      "htmlBytes100": 854600,
-      "htmlSha": "da74d77908920f15",
+      "htmlBytes100": 854500,
+      "htmlSha": "7314c94ec9ab9762",
       "buttonCount": 56,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6253,8 +6328,11 @@
       "featureCount": 10,
       "autofixedKeys": [
         "bet.defaults",
+        "expandingWild.feature-backfill",
+        "holdAndWin.feature-backfill",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows",
-        "symbols.placeholder-roster"
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "topology.dims-snapped-to-kind",
@@ -6263,8 +6341,8 @@
     },
     "gates-of-olympus-1000-gdd": {
       "slug": "gates-of-olympus-1000-gdd",
-      "htmlBytes100": 734700,
-      "htmlSha": "4958b43046d5ca98",
+      "htmlBytes100": 741400,
+      "htmlSha": "a5802d11e5d17e61",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6273,7 +6351,8 @@
       "featureCount": 9,
       "autofixedKeys": [
         "bet.defaults",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "theme.palette",
@@ -6284,7 +6363,7 @@
     "huff-n-more-puff-gdd": {
       "slug": "huff-n-more-puff-gdd",
       "htmlBytes100": 879600,
-      "htmlSha": "998da1e9fab42a00",
+      "htmlSha": "13fdc81ad5c6f9a8",
       "buttonCount": 63,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6293,6 +6372,8 @@
       "featureCount": 11,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -6313,6 +6394,8 @@
       "featureCount": 13,
       "autofixedKeys": [
         "bet.defaults",
+        "expandingWild.feature-backfill",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [
@@ -6322,7 +6405,7 @@
     "wrath-of-olympus-gdd": {
       "slug": "wrath-of-olympus-gdd",
       "htmlBytes100": 822600,
-      "htmlSha": "1e751467feeba9f4",
+      "htmlSha": "8208e6c232561631",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6331,6 +6414,8 @@
       "featureCount": 10,
       "autofixedKeys": [
         "bet.defaults",
+        "holdAndWin.feature-backfill",
+        "jackpot.feature-backfill",
         "paytable.placeholder-rows"
       ],
       "derivedKeys": [

@@ -1,3 +1,56 @@
+## 🔥 WAVE UQ-CASH — CASH ERUPTION INGEST DEEP-FIX · 2026-06-21 · IN PROGRESS
+
+> **Boki direktiva:** *"odradi cash eruption gdd iz GDD foldera, da vidis da
+> ne radi slot gdd app kako tribe ... kreni sa fixovima maksimalno i posel
+> svakog fixa qa ultimativna provera najdublja na realnim primerima"*
+
+Cash Eruption PDF (343 KB, IGT Foundry format, prose-heavy) razotkrio
+4 stvarna propusta engine-a. Prvi (topology) fix-ovan u `d05e036`. Ostala
+3 + verifikator atoms idu redom sa full-corpus QA posle svakog.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ ATOM PLAN (1 SHIPPED · 3 TO GO · 1 META-VERIFIER)                                     │
+├──────┬─────────────────────────────────────────────────┬────────────────────┬────────┤
+│ Atom │ Naslov                                          │ Cash Eruption test │ Status │
+├──────┼─────────────────────────────────────────────────┼────────────────────┼────────┤
+│ A1   │ Topology multi-line "N reels × M rows, P fixed │ reels:5 rows:3     │   ✅   │
+│      │ paylines" — 3 prose regex bug-eve              │ paylines:20        │d05e036 │
+├──────┼─────────────────────────────────────────────────┼────────────────────┼────────┤
+│ A2   │ Name extraction iz PDF first-line (kada H1     │ name = "Cash       │   ⏳   │
+│      │ markdown headers fale)                          │ Eruption"          │        │
+├──────┼─────────────────────────────────────────────────┼────────────────────┼────────┤
+│ A3   │ Feature-config backfill scopes — kada feature  │ holdAndWin config  │   ⏳   │
+│      │ detected ali config = {} → smartDefaults stage │ + winCap maxWinX + │        │
+│      │ 7 popunjava holdAndWin/winCap/compliance.       │ compliance gates    │        │
+├──────┼─────────────────────────────────────────────────┼────────────────────┼────────┤
+│ A4   │ Symbol names iz IGT-style prose PDF — paytable │ "Wild" "Fireball"  │   ⏳   │
+│      │ tabela ("10 Wild Special Reel-tall lava")      │ "Volcano" "Red7"    │        │
+│      │ umesto generic H1/H2/A/K/Q placeholders.        │ detected           │        │
+├──────┼─────────────────────────────────────────────────┼────────────────────┼────────┤
+│ A5   │ Cache hash invalidation — kada parser source   │ stale V6 cache za  │   ⏳   │
+│      │ menja, V6 reconcile cache se MORA invalidate-ovati│Cash Eruption se    │        │
+│      │ (sad pucamo na cache hit sa starim modelom).    │ re-build automatski │        │
+├──────┼─────────────────────────────────────────────────┼────────────────────┼────────┤
+│ A6   │ Semantic accuracy verifier — UQ-11 + lw-25 +    │ 4-gdds-ultimate-   │   ⏳   │
+│      │ verify gate dodaju semantic correctness check  │ audit ima Cash      │        │
+│      │ za 5 baseline GDD-ova (Cash Eruption uključen).│ Eruption fixture    │        │
+│      │ Asserts: reels matches PDF · paylines matches  │ pin-ovan            │        │
+│      │ · name not "Untitled Slot" · features non-empty.│                    │        │
+└──────┴─────────────────────────────────────────────────┴────────────────────┴────────┘
+```
+
+**QA disciplina:** posle SVAKOG atom-a — full sweep:
+- live ingest Cash Eruption (no-cache) sa diff vs PDF
+- 4-gdds-ultimate-audit (Cash Eruption + 4 baseline)
+- lw-25 deep-qa (25 LW + 4 baseline)
+- verify gate (11/11 → 12/12 sa A6)
+- LEGO gate 8/8 sole-owner
+
+Zero "PASS" bez REAL DIFF dokaza. Boki traži ULTIMATIVNI proof.
+
+---
+
 ## 📒 SESSION SNAPSHOT — 2026-06-21 (UQ ceiling streak)
 
 Jedan dan rada, 11 talasa zatvoreno, 11-gate verify aktivan, 0 unknown
