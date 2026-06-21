@@ -201,5 +201,5 @@ try {
 } catch (e) {
   console.error('PROBE ERROR:', e.message);
   server.kill();
-  process.exit(3);
+  process.exit(2); /* UQ-FORTIFY6 #3: probe internal error → exit 2 (HARD-FAIL category, CI must not treat as soft-warn) */
 }

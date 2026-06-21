@@ -299,9 +299,11 @@ if (history.runs.length > 200) history.runs = history.runs.slice(-200);
 {
   const { acquireLock: _hAcq, releaseLock: _hRel } = await import('../src/registry/fileLock.mjs');
   const { renameSync: _hRename } = await import('node:fs');
+  const { randomUUID: _hUuid } = await import('node:crypto');
   const _hTok = _hAcq(historyPath);
   try {
-    const _hTmp = historyPath + '.tmp.' + process.pid;
+    /* UQ-FORTIFY6 #4 — randomUUID tmp (PID reuse on container restarts). */
+    const _hTmp = historyPath + '.tmp.' + _hUuid();
     writeFileSync(_hTmp, JSON.stringify(history, null, 2) + '\n');
     _hRename(_hTmp, historyPath);
   } finally {
@@ -390,11 +392,36 @@ if (APPLY) {
     src = src.replace(blockRe, '').replace(/\n{3,}/g, '\n\n');
     src = src.replace(/\n+$/, '') + '\n\n' + calBlock;
     /* F1 — atomic write via tmp + rename so concurrent --apply runs never
-     * leave a half-written prompt file. */
-    const tmpPath = path + '.tmp.' + process.pid;
+     * leave a half-written prompt file.
+     * UQ-FORTIFY6 #1 — randomUUID tmp (replace PID; container restarts
+     * reuse PIDs and would collide).
+     * UQ-FORTIFY6 #4 — round-trip read-back validation. The pre-write
+     * heading-count check only sees the BUILT calBlock, not the FINAL
+     * on-disk file. If the regex strip somehow joined two old blocks
+     * mid-walk, the final file could have more than one heading even
+     * though the new block has exactly one. Read the file BACK after
+     * rename and confirm the heading count is correct, rolling back
+     * to the previous content if not. */
+    const { randomUUID: _trUuid } = await import('node:crypto');
+    const tmpPath = path + '.tmp.' + _trUuid();
     writeFileSync(tmpPath, src);
     const { renameSync } = await import('node:fs');
+    const prevContent = readFileSync(path, 'utf8');
     renameSync(tmpPath, path);
+    const onDisk = readFileSync(path, 'utf8');
+    const onDiskHeadingCount = (onDisk.match(/^## AGENT_CALIBRATION/gm) || []).length;
+    if (onDiskHeadingCount !== 1) {
+      /* Roll back — restore previous content via atomic tmp+rename so
+         we never ship the prompt in a corrupted state. */
+      const rbTmp = path + '.tmp.' + _trUuid();
+      writeFileSync(rbTmp, prevContent);
+      renameSync(rbTmp, path);
+      throw new Error(
+        `AGENT_CALIBRATION round-trip failed for ${laneFiles[code]}: ` +
+        `expected exactly 1 heading on disk, found ${onDiskHeadingCount} — ` +
+        `rolled back.`
+      );
+    }
     console.log(`  ✓ updated ${laneFiles[code]} (${l.misses.length} miss patterns)`);
     } finally {
       releaseLock(_lockTok);

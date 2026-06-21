@@ -133,9 +133,25 @@ export function acquireLock(targetPath, opts = {}) {
       if (Date.now() - start > maxWait) {
         throw new Error('fileLock: timeout acquiring ' + lockPath);
       }
-      /* Sleep without busy loop */
-      const end = Date.now() + POLL_INTERVAL_MS;
-      while (Date.now() < end) { /* tight sleep */ }
+      /* UQ-FORTIFY6 #2 — proper kernel-level wait, NOT a CPU spin.
+         The original `while (Date.now() < end)` was pure busy-loop;
+         under high contention (e.g. --all-corpus 338 ingests) it would
+         pin a core at 100 % for the full poll interval. Atomics.wait on
+         a throwaway SharedArrayBuffer is the only sync primitive Node
+         exposes that actually parks the thread on the kernel scheduler.
+         Falls back to a single Date.now() spin guard if Atomics is
+         disabled (older environments / sandboxed runtimes). */
+      try {
+        const sab = new SharedArrayBuffer(4);
+        const view = new Int32Array(sab);
+        /* wait on slot 0 for value 0 — returns 'timed-out' after the
+           interval; we never notify so it always times out cleanly. */
+        Atomics.wait(view, 0, 0, POLL_INTERVAL_MS);
+      } catch (_) {
+        /* Fallback: shorter spin so we don't burn the full interval. */
+        const end = Date.now() + Math.min(POLL_INTERVAL_MS, 25);
+        while (Date.now() < end) { /* fallback spin */ }
+      }
     }
   }
 }

@@ -177,6 +177,11 @@ async function _computeParserHash() {
     resolve(REPO, 'src/buildSlotHTML.mjs'),
     resolve(REPO, 'src/registry/blockCatalog.json'),
     resolve(REPO, 'src/registry/blockMapper.mjs'),
+    /* UQ-FORTIFY6 #1 — multi-process safety primitives. The pipeline
+       imports these in the reconcile + cache stamp path, so changes to
+       their semantics must invalidate the V6 cache. */
+    resolve(REPO, 'src/registry/fileLock.mjs'),
+    resolve(REPO, 'src/registry/tmpFileCleanup.mjs'),
     /* Agent prompts (F6) */
     resolve(REPO, 'agents/parser-pool/V1_TOPOLOGY.md'),
     resolve(REPO, 'agents/parser-pool/V2_SYMBOLS.md'),
