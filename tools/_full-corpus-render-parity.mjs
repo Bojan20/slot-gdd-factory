@@ -107,7 +107,13 @@ function adaptV6SymbolsShape(model) {
   return model;
 }
 
-const entries = readdirSync(CACHE).filter(f => f.endsWith('.json')).sort();
+let entries = readdirSync(CACHE).filter(f => f.endsWith('.json')).sort();
+/* UQ-12: --limit N for verify smoke-subset use */
+const _limitIdx = process.argv.indexOf('--limit');
+if (_limitIdx >= 0) {
+  const n = parseInt(process.argv[_limitIdx + 1], 10);
+  if (Number.isFinite(n) && n > 0) entries = entries.slice(0, n);
+}
 console.log(`[uq11] Processing ${entries.length} cache entries…`);
 
 const verdicts = [];
