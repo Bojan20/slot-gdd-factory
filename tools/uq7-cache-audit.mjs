@@ -79,9 +79,18 @@ async function main() {
   let entries = (await readdir(CACHE_DIR)).filter(f => f.endsWith('.json')).sort();
   if (limitArg && limitArg > 0) entries = entries.slice(0, limitArg);
 
+  /* Wave UQ-FORTIFY4 H7 — stamp the live archetype catalog size so
+   * subsequent diffs can attribute drift to GDD changes vs catalog updates. */
+  let _archetypeCount = null;
+  try {
+    const m = await import('../src/registry/featureArchetypes.mjs');
+    _archetypeCount = (m.ARCHETYPES && m.ARCHETYPES.length) || m.ARCHETYPE_COUNT || null;
+  } catch (_) {}
+
   const summary = {
     runAt: new Date().toISOString(),
     cacheCount: entries.length,
+    archetypeCount: _archetypeCount,
     agentsParsedHisto: { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
     confidenceHisto: {},
     topologyKinds: {},

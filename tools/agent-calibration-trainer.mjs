@@ -293,11 +293,35 @@ for (const [code, l] of Object.entries(lanes)) {
 history.runs.push(entry);
 /* Cap history at 200 runs (rolling window). */
 if (history.runs.length > 200) history.runs = history.runs.slice(-200);
-writeFileSync(historyPath, JSON.stringify(history, null, 2) + '\n');
+/* Wave UQ-FORTIFY4 H4 — atomic write via tmp + rename so SIGKILL
+ * during writeFileSync can't corrupt the entire history file. Use
+ * fileLock to coordinate concurrent trainer runs. */
+{
+  const { acquireLock: _hAcq, releaseLock: _hRel } = await import('../src/registry/fileLock.mjs');
+  const { renameSync: _hRename } = await import('node:fs');
+  const _hTok = _hAcq(historyPath);
+  try {
+    const _hTmp = historyPath + '.tmp.' + process.pid;
+    writeFileSync(_hTmp, JSON.stringify(history, null, 2) + '\n');
+    _hRename(_hTmp, historyPath);
+  } finally {
+    _hRel(_hTok);
+  }
+}
 console.log(`History: ${historyPath} (${history.runs.length} runs tracked)`);
 
 /* ── Optional --apply: stamp AGENT_CALIBRATION block into each lane file. */
 if (APPLY) {
+  /* Wave UQ-FORTIFY4 H10 — acquire a shared "agent-pool" coordination
+   * lock at parser-pool/.calibration-coordination.lock so concurrent
+   * ingest Kimi-reconcile runs can detect we're mutating prompts mid-
+   * flight. Ingest acquires a "reader" lock on the same path; if it
+   * sees the trainer holding the writer lock, it MUST defer Kimi
+   * reconciliation until the trainer releases. */
+  const { acquireLock: _coordAcq, releaseLock: _coordRel } = await import('../src/registry/fileLock.mjs');
+  const coordPath = resolve(REPO, 'agents/parser-pool/.calibration-coordination');
+  const _coordTok = _coordAcq(coordPath, { maxAgeMs: 120 * 1000 });
+  process.on('exit', () => { try { _coordRel(_coordTok); } catch (_) {} });
   console.log('');
   console.log('--apply: stamping AGENT_CALIBRATION blocks…');
   const laneFiles = {

@@ -1,3 +1,33 @@
+## 🛡️ WAVE UQ-FORTIFY4 — ČETVRTI TIER AUDIT · 2026-06-21 · ZATVOREN ✅ (10/10)
+
+> **Boki direktiva:** *"dalje, sa svim dubokim qa"*
+
+Četvrti tier Explore audit posle FORTIFY/2/3 — našao 10 rupa koje su
+tier-1..3 propustili. Fokus: cross-system state, race conditions na
+multi-process scenarios, atomicity gaps na telemetry, prompt injection.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ FORTIFY4 ATOMS                                                                         │
+├──────┬──────┬───────────────────────────────────────────────────────┬────────────────┤
+│ Tag  │ Prio │ Naslov                                                 │ Lokacija       │
+├──────┼──────┼───────────────────────────────────────────────────────┼────────────────┤
+│ H1   │ 🔴   │ Verify gate dependency tracking — step 4 ne sme da se │ verify.mjs     │
+│      │      │ pokrene ako step 3 fail-uje                            │                │
+│ H2   │ 🟡   │ Pass B agent prompt injection sanitization             │ kimi-reconcile │
+│ H3   │ 🟡   │ NFS/Dropbox/iCloud mount detection u fileLock          │ fileLock.mjs   │
+│ H4   │ 🔴   │ History writeFileSync atomic write (tmp + rename)      │ trainer        │
+│ H5   │ 🟡   │ E2E series race protection sa file lock                │ orchestrator   │
+│ H6   │ 🟡   │ Parser hash CRLF/LF + trailing-newline normalization   │ ingest         │
+│ H7   │ 🟢   │ UQ-7 ARCHETYPES count stamp za drift tracking          │ uq7-audit      │
+│ H8   │ 🟡   │ Semantic verifier STRICT_PDF_SHA=1 hard-fail mode      │ semantic       │
+│ H9   │ 🟡   │ blockCatalog regen file lock                            │ wave-w-build   │
+│ H10  │ 🔴   │ Cross-file lock: trainer apply + ingest reconcile race │ trainer/ingest │
+└──────┴──────┴───────────────────────────────────────────────────────┴────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-FORTIFY3 — 7 THIRD-TIER FORENSIC AUDIT FIXES · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"dalje ultimativno"* — treća forensic iteracija posle UQ-FORTIFY (10 prvih

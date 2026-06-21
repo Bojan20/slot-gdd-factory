@@ -307,10 +307,13 @@ writeFileSync(mdPath, md.join('\n'));
 console.log('');
 console.log(`Report: ${mdPath}`);
 
-/* Wave UQ-FORTIFY2 G9 — telemetry time-series.
- * Append a compact snapshot to reports/orchestrator-e2e-series.json so
- * we can answer "is V6 declared trending up after N calibration runs?". */
+/* Wave UQ-FORTIFY2 G9 + FORTIFY4 H5 — telemetry time-series with
+ * file lock + atomic write so concurrent E2E runs don't lose entries
+ * to read-modify-write race. */
 const seriesPath = resolve(REPORTS, 'orchestrator-e2e-series.json');
+const { acquireLock: _sAcq, releaseLock: _sRel } = await import('../src/registry/fileLock.mjs');
+const { renameSync: _sRename } = await import('node:fs');
+const _seriesTok = _sAcq(seriesPath);
 let series = { runs: [] };
 if (existsSync(seriesPath)) {
   try { series = JSON.parse(readFileSync(seriesPath, 'utf8')); } catch (_) { series = { runs: [] }; }
@@ -331,7 +334,13 @@ series.runs.push({
   })),
 });
 if (series.runs.length > 100) series.runs = series.runs.slice(-100);
-writeFileSync(seriesPath, JSON.stringify(series, null, 2) + '\n');
+try {
+  const _sTmp = seriesPath + '.tmp.' + process.pid;
+  writeFileSync(_sTmp, JSON.stringify(series, null, 2) + '\n');
+  _sRename(_sTmp, seriesPath);
+} finally {
+  _sRel(_seriesTok);
+}
 console.log(`Series: ${seriesPath} (${series.runs.length} runs tracked)`);
 
 process.exit(failCount > 0 ? 1 : 0);

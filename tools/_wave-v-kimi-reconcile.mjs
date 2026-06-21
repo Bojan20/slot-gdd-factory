@@ -117,10 +117,24 @@ async function _runOneAgent(agent, gddText, baseline, correctionsBlock) {
   return { id: agent.id, raw, parsed: _extractJson(raw) };
 }
 
-/* Wave UQ-FORTIFY2 G1 — Self-Correction Pass B helper.
+/* Wave UQ-FORTIFY2 G1 + FORTIFY4 H2 — Self-Correction Pass B helper.
  * Given an agent response and ground truth, compute a diff string that
  * the agent can consume to correct its output. Returns null if Pass B
- * is not needed (no significant diff). */
+ * is not needed (no significant diff).
+ *
+ * H2 — sanitize agent values before interpolation. An adversarial or
+ * buggy agent could return literal `=== CORRECTIONS ===` markup that
+ * would prematurely close the block on the next Pass B invocation.
+ * We strip any `===` token from agent-returned values, cap each value
+ * to 200 chars, and reject control characters. */
+function _sanitizeForBlock(v) {
+  if (v === null || v === undefined) return String(v);
+  const s = String(v).slice(0, 200);
+  /* Strip any `===` (corrections block delimiter) and ASCII control chars
+   * to prevent prompt-frame breakout via injected markup. */
+  return s.replace(/={3,}/g, '==').replace(/[\x00-\x1f\x7f]/g, ' ').trim();
+}
+
 function _buildCorrectionsBlock(agentId, response, groundTruth) {
   if (!response || !response.parsed) return null;
   if (!groundTruth) return null;
@@ -131,15 +145,15 @@ function _buildCorrectionsBlock(agentId, response, groundTruth) {
     const t = r.topology || {};
     const g = groundTruth.topology;
     if (Number.isFinite(g.reels) && t.reels !== g.reels) {
-      lines.push(`- topology.reels: you returned ${t.reels}, ground truth = ${g.reels}`);
+      lines.push(`- topology.reels: you returned ${_sanitizeForBlock(t.reels)}, ground truth = ${_sanitizeForBlock(g.reels)}`);
     }
     if (Number.isFinite(g.rows) && t.rows !== g.rows) {
-      lines.push(`- topology.rows: you returned ${t.rows}, ground truth = ${g.rows}`);
+      lines.push(`- topology.rows: you returned ${_sanitizeForBlock(t.rows)}, ground truth = ${_sanitizeForBlock(g.rows)}`);
     }
     if (g.paylines_or_ways != null) {
       const got = t.paylines || t.ways;
       if (got !== g.paylines_or_ways) {
-        lines.push(`- topology.paylines/ways: you returned ${got}, ground truth = ${g.paylines_or_ways}`);
+        lines.push(`- topology.paylines/ways: you returned ${_sanitizeForBlock(got)}, ground truth = ${_sanitizeForBlock(g.paylines_or_ways)}`);
       }
     }
   }
@@ -150,7 +164,7 @@ function _buildCorrectionsBlock(agentId, response, groundTruth) {
       : [];
     for (const want of groundTruth.namedSymbols) {
       if (!allLabels.some(l => l.includes(want.toLowerCase()))) {
-        lines.push(`- symbol "${want}" missing — GDD prose mentions this name`);
+        lines.push(`- symbol "${_sanitizeForBlock(want)}" missing — GDD prose mentions this name`);
       }
     }
   }
@@ -318,6 +332,32 @@ async function main() {
   if (slugs.length >= 100 && CONC === 1) {
     console.log(`  ⚠ ${slugs.length} GDDs at concurrency=1 will take ~${Math.ceil(slugs.length * 0.5)} min.`);
     console.log('     Consider --concurrency 3 (capped at 8). Each slug fires 5 Kimi calls.');
+  }
+
+  /* Wave UQ-FORTIFY4 H10 — check if trainer is mid-apply on agent prompts.
+   * Lock file `.calibration-coordination.lock` is held by trainer for
+   * the duration of its --apply pass. If we see a live lock, defer
+   * (sleep + retry) up to 60s so we don't fire Kimi with stale prompts. */
+  const coordPath = resolve(REPO, 'agents/parser-pool/.calibration-coordination.lock');
+  if (existsSync(coordPath)) {
+    try {
+      const raw = await readFile(coordPath, 'utf8');
+      const meta = JSON.parse(raw);
+      let alive = false;
+      try { process.kill(meta.pid, 0); alive = true; } catch (_) {}
+      if (alive) {
+        console.log(`  ⏸  trainer apply in progress (PID ${meta.pid}) — waiting 60s for prompt sync…`);
+        const waitStart = Date.now();
+        while (Date.now() - waitStart < 60000 && existsSync(coordPath)) {
+          await new Promise(r => setTimeout(r, 1000));
+        }
+        if (existsSync(coordPath)) {
+          console.log('  ⚠ trainer apply still holding lock after 60s — proceeding with current prompts');
+        } else {
+          console.log('  ▶ trainer apply released — proceeding with fresh prompts');
+        }
+      }
+    } catch (_) { /* corrupt lock — proceed */ }
   }
 
   console.log(`Wave V Kimi reconcile — ${slugs.length} GDDs · concurrency=${CONC}`);

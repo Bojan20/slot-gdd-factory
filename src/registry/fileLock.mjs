@@ -24,6 +24,37 @@ const DEFAULT_MAX_AGE_MS = 60 * 1000; /* 60s — Kimi rarely runs longer */
 const POLL_INTERVAL_MS = 100;
 const MAX_WAIT_MS = 30 * 1000;
 
+/* Wave UQ-FORTIFY4 H3 — network/synced filesystem detection.
+ * Locks rely on `openSync(path, 'wx')` atomicity which is NOT preserved
+ * across NFS, SMB, Dropbox, iCloud, OneDrive synced trees. We probe the
+ * path against a curated list of mount-point fragments common on macOS
+ * and Linux. If detected, we emit a one-time warning on first
+ * acquireLock call so the operator can move the cache off the synced
+ * folder if needed. Lock still tries — degraded but better than blocking. */
+const _NETWORK_MOUNT_HINTS = [
+  '/Dropbox/', '/iCloud Drive/', '/Library/Mobile Documents/',
+  '/OneDrive', '/Google Drive/', '/Box/', '/Sync/',
+  '/.smb/', '/Volumes/',   /* macOS network mounts */
+  '/mnt/',                  /* Linux network mounts */
+  '/nfs/',
+];
+let _nfsWarned = false;
+function _maybeWarnNetworkMount(path) {
+  if (_nfsWarned) return;
+  for (const hint of _NETWORK_MOUNT_HINTS) {
+    if (path.includes(hint)) {
+      _nfsWarned = true;
+      try {
+        process.stderr.write(
+          `[fileLock] ⚠ path looks like a network / synced mount: ${path}\n` +
+          `[fileLock]   lock atomicity may degrade. Consider moving cache to local disk.\n`
+        );
+      } catch {}
+      return;
+    }
+  }
+}
+
 /**
  * Acquire an exclusive lock for `targetPath`. Returns a release token
  * (opaque string) that MUST be passed to releaseLock. Throws on timeout.
@@ -35,6 +66,8 @@ const MAX_WAIT_MS = 30 * 1000;
  * @returns {{ lockPath: string, pid: number }} release token
  */
 export function acquireLock(targetPath, opts = {}) {
+  /* H3 — detect synced/network filesystem and warn once. */
+  _maybeWarnNetworkMount(targetPath);
   const lockPath = targetPath + '.lock';
   const maxAge = opts.maxAgeMs || DEFAULT_MAX_AGE_MS;
   const maxWait = opts.maxWaitMs || MAX_WAIT_MS;

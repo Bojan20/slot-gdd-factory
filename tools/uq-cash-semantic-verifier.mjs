@@ -98,12 +98,22 @@ for (const [slug, expected] of Object.entries(fixture.fixtures)) {
     continue;
   }
 
-  /* Wave UQ-FORTIFY F10 — PDF SHA drift check. Non-fatal warning when the
-   * pinned __pdf_sha__ doesn't match the actual PDF — caller knows ground
-   * truth may be stale. First-time runs (no pinned SHA) bake the current. */
+  /* Wave UQ-FORTIFY F10 + FORTIFY4 H8 — PDF SHA drift check.
+   * Non-fatal warning by default; STRICT_PDF_SHA=1 turns drift into a
+   * hard assertion failure (CI mode). UQ_BAKE_PDF_SHA=1 stamps fresh. */
   const pdfSha = _sha256(pdfPath);
+  const strictPdfSha = process.env.STRICT_PDF_SHA === '1';
   if (expected.__pdf_sha__) {
     if (pdfSha !== expected.__pdf_sha__) {
+      if (strictPdfSha) {
+        console.log(`  ${slug.padEnd(40)} ❌ PDF SHA drift (STRICT_PDF_SHA=1): pinned ${expected.__pdf_sha__.slice(0, 12)} ≠ actual ${(pdfSha || 'null').slice(0, 12)}`);
+        result.asserts.push({ name: 'pdf-sha-match', pass: false, reason: 'PDF SHA mismatch in strict mode' });
+        result.failCount++;
+        totalFails++;
+        totalAsserts++;
+        results.push(result);
+        continue;
+      }
       console.log(`  ${slug.padEnd(40)} ⚠️  PDF SHA drift: pinned ${expected.__pdf_sha__.slice(0, 12)} ≠ actual ${(pdfSha || 'null').slice(0, 12)}`);
     }
   } else if (process.env.UQ_BAKE_PDF_SHA === '1') {

@@ -319,16 +319,26 @@ async function main() {
   /* Sort by id for deterministic output. */
   catalog.sort((a, b) => a.id.localeCompare(b.id));
 
-  await writeFile(
-    OUT_JSON,
-    JSON.stringify({
+  /* Wave UQ-FORTIFY4 H9 — file lock + atomic write so concurrent
+   * scaffolder + manual catalog regen don't race-overwrite each other. */
+  const { acquireLock: _cAcq, releaseLock: _cRel } = await import('../src/registry/fileLock.mjs');
+  const { renameSync: _cRename } = await import('node:fs');
+  const _catTok = _cAcq(OUT_JSON);
+  try {
+    const payload = JSON.stringify({
       generatedAt: new Date().toISOString(),
       blockCount:  catalog.length,
       catalog,
-    }, null, 2),
-    'utf8',
-  );
-  await writeFile(OUT_MD, _toMarkdown(catalog), 'utf8');
+    }, null, 2);
+    const tmpJson = OUT_JSON + '.tmp.' + process.pid;
+    await writeFile(tmpJson, payload, 'utf8');
+    _cRename(tmpJson, OUT_JSON);
+    const tmpMd = OUT_MD + '.tmp.' + process.pid;
+    await writeFile(tmpMd, _toMarkdown(catalog), 'utf8');
+    _cRename(tmpMd, OUT_MD);
+  } finally {
+    _cRel(_catTok);
+  }
 
   /* Summary stats */
   const withPurpose = catalog.filter((b) => b.purpose).length;

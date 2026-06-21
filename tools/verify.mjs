@@ -37,7 +37,32 @@ const JSON_OUT = args.includes('--json');
 
 const results = [];
 
+/* Wave UQ-FORTIFY4 H1 — verify gate dependency tracking.
+ * Steps may declare `dependsOn: [labels]`. If any upstream dep is in
+ * results with ok=false, the dependent step is SKIPPED (not run) and
+ * marked as `skipped: true` in results. Prevents downstream noise when
+ * a foundational step (e.g. UQ-7 audit, semantic verifier) fails. */
+function _isDepGreen(deps) {
+  if (!Array.isArray(deps) || deps.length === 0) return true;
+  for (const dep of deps) {
+    const found = results.find(r => r.label === dep);
+    if (!found || found.ok === false) return false;
+  }
+  return true;
+}
+
 function run(label, cmd, argv, opts = {}) {
+  /* H1 — short-circuit if dependsOn fails. */
+  if (opts.dependsOn && !_isDepGreen(opts.dependsOn)) {
+    results.push({
+      label, ok: false, exit: -1, durationS: 0,
+      stderr: 'SKIPPED — dependency failed: ' + opts.dependsOn.join(', '),
+      stdout: '',
+      skipped: true,
+    });
+    if (!JSON_OUT) console.log(`  ⏭ ${label.padEnd(45)} (dep fail: ${opts.dependsOn.join(', ')})`);
+    return false;
+  }
   const t0 = Date.now();
   const r = spawnSync(cmd, argv, { cwd: REPO, encoding: 'utf8', ...opts });
   const dt = ((Date.now() - t0) / 1000).toFixed(1);
@@ -131,11 +156,14 @@ if (existsSync(baselinePath)) {
  * Closes the gap that UQ-11/lw-25/parse-real opened: we check that the
  * parser produces SEMANTICALLY CORRECT models on 5 baseline GDDs, not
  * just that they don't throw. Pinned ground truth in
- * tests/fixtures/semantic-expected.json (≤80% asserts must pass for green). */
+ * tests/fixtures/semantic-expected.json (≤80% asserts must pass for green).
+ * H1 — depends on UQ-7 audit: if cache is broken, semantic verifier is
+ * meaningless. */
 const semVerifier = resolve(REPO, 'tools/uq-cash-semantic-verifier.mjs');
 if (existsSync(semVerifier)) {
   run('UQ-CASH A6 semantic accuracy (5 baseline GDDs)',
-    'node', [semVerifier]);
+    'node', [semVerifier],
+    { dependsOn: ['UQ-7 cache audit'] });
 } else if (!JSON_OUT) {
   console.log('  ⏭ UQ-CASH A6 semantic accuracy (no verifier tool)');
 }
@@ -144,11 +172,13 @@ if (existsSync(semVerifier)) {
  * 8-pass orchestrator gate that exercises agents + parser + builder +
  * force chips + block activations end-to-end on 5 baseline GDDs.
  * Asserts agent V6 declared count > parser declared count (proves AI
- * is adding measurable value on top of regex baseline). */
+ * is adding measurable value on top of regex baseline).
+ * H1 — depends on semantic verifier (Pass 4 mirrors A6 ground truth). */
 const e2eTool = resolve(REPO, 'tools/orchestrator-e2e-test.mjs');
 if (existsSync(e2eTool)) {
   run('UQ-TRAIN orchestrator E2E (5 baseline GDDs · 8 passes)',
-    'node', [e2eTool]);
+    'node', [e2eTool],
+    { dependsOn: ['UQ-CASH A6 semantic accuracy (5 baseline GDDs)'] });
 } else if (!JSON_OUT) {
   console.log('  ⏭ UQ-TRAIN orchestrator E2E (no tool)');
 }

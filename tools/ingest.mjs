@@ -188,7 +188,19 @@ async function _computeParserHash() {
   ];
   const h = createHash('sha256');
   for (const p of SOURCES) {
-    try { h.update(await readFile(p)); } catch (_) { /* file missing — fold null into hash */ h.update('MISSING:' + p); }
+    try {
+      const buf = await readFile(p, 'utf8');
+      /* Wave UQ-FORTIFY4 H6 — normalize whitespace before hashing.
+       * Editor settings (LF vs CRLF), trailing newlines, BOM markers
+       * trigger spurious hash drift that invalidates 338 cache entries
+       * → burst Kimi calls. Semantic content unchanged. */
+      const normalized = buf
+        .replace(/^﻿/, '')      /* strip BOM */
+        .replace(/\r\n/g, '\n')      /* CRLF → LF */
+        .replace(/[ \t]+$/gm, '')    /* strip trailing spaces per line */
+        .replace(/\n+$/, '\n');      /* collapse trailing newlines to single */
+      h.update(normalized);
+    } catch (_) { /* file missing — fold null into hash */ h.update('MISSING:' + p); }
   }
   _parserHashCache = h.digest('hex');
   return _parserHashCache;
