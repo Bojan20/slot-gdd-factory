@@ -71,6 +71,9 @@ run('archetype catalog + alias + filter',
 run('smartDefaults archetype backfill (stage 5)',
   'node', ['--test', 'tests/registry/smartDefaults-archetype-backfill.test.mjs']);
 
+run('smartDefaults autofix gaps (stage 6)',
+  'node', ['--test', 'tests/registry/smartDefaults-autofix.test.mjs']);
+
 run('scaffold-block tool (E2E across 25 archetypes)',
   'node', ['--test', 'tests/tools/scaffold-block.test.mjs']);
 

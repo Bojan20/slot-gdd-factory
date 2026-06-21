@@ -205,6 +205,17 @@ function recordDerived(model, field) {
   model.confidence._derivedBy[field] = 'smartDefaults';
 }
 
+/* UQ-13 — auto-fix tag (separate channel from derived so audits can tell
+   "engineer-inferred from sparse GDD" vs "auto-fix last-resort placeholder
+   because data was missing entirely"). */
+function recordAutofix(model, field, reason) {
+  ensureConfidence(model);
+  if (!model.confidence._autofixedBy || typeof model.confidence._autofixedBy !== 'object') {
+    model.confidence._autofixedBy = {};
+  }
+  model.confidence._autofixedBy[field] = { source: 'smartDefaults.autofix', reason: reason || 'gap' };
+}
+
 function recordFailure(model, label, error) {
   ensureConfidence(model);
   model.confidence._failures.push({
@@ -470,6 +481,123 @@ export function backfillFromArchetype(model) {
   return model;
 }
 
+/* ─── stage 6 (Wave UQ-13): autofix gaps for sparse GDDs ─────────────── */
+/* Last-resort placeholder generator. Runs AFTER all derivation stages so
+   it only fires when even the smart-defaults pipeline left a critical
+   field empty (e.g. one-pager pitch with literally no symbol roster).
+   Every autofix is tagged in confidence._autofixedBy so downstream
+   tooling (regulator review, parser audit) can distinguish engineer-
+   inferred from autofix-placeholder data.
+
+   Trigger conditions per gap:
+     · Symbols: all four lanes empty → 8-symbol generic roster
+     · Features: array empty after synthesizeFeatureMix → topology-keyed mix
+     · Bet: missing min/max/default → safe defaults
+     · Paytable: missing or empty → minimum 5-row stub mapping to HP/MP/LP
+   Idempotent — re-running sees the field is now present and skips. */
+
+const _UQ13_PLACEHOLDER_SYMBOLS = Object.freeze([
+  { id: 'A',  tier: 'high', label: 'Ace placeholder' },
+  { id: 'K',  tier: 'high', label: 'King placeholder' },
+  { id: 'Q',  tier: 'high', label: 'Queen placeholder' },
+  { id: 'M1', tier: 'mid',  label: 'Mid 1 placeholder' },
+  { id: 'M2', tier: 'mid',  label: 'Mid 2 placeholder' },
+  { id: 'M3', tier: 'mid',  label: 'Mid 3 placeholder' },
+  { id: 'L1', tier: 'low',  label: 'Low 1 placeholder' },
+  { id: 'L2', tier: 'low',  label: 'Low 2 placeholder' },
+]);
+
+const _UQ13_BET_DEFAULTS = Object.freeze({
+  minBet: 0.10, maxBet: 100, defaultBet: 1.00, currency: 'USD',
+});
+
+/* topology kind → reasonable feature mix when nothing was declared. */
+const _UQ13_FEATURE_MIX_BY_TOPO = Object.freeze({
+  rectangular:  ['free_spins', 'wild', 'multiplier'],
+  cluster:      ['cluster_pays', 'cascade', 'free_spins'],
+  hexagonal:    ['cluster_pays', 'cascade'],
+  hex:          ['cluster_pays', 'cascade'],
+  wheel:        ['wheel_bonus'],
+  slingo:       ['cluster_pays', 'free_spins'],
+  variable_rows:['ways_pay', 'free_spins', 'multiplier'],
+  expanding:    ['ways_pay', 'free_spins'],
+  dual:         ['free_spins', 'wild'],
+  crash:        ['multiplier'],
+  plinko:       ['pick_anywhere'],
+  unknown:      ['free_spins'],
+});
+
+export function autofixGaps(model) {
+  if (!model || typeof model !== 'object') return model;
+  try {
+    /* Symbols gap */
+    const s = model.symbols || (model.symbols = { high: [], mid: [], low: [], specials: [] });
+    const totalSyms = (Array.isArray(s.high) ? s.high.length : 0) +
+                      (Array.isArray(s.mid)  ? s.mid.length  : 0) +
+                      (Array.isArray(s.low)  ? s.low.length  : 0) +
+                      (Array.isArray(s.specials) ? s.specials.length : 0);
+    if (totalSyms === 0) {
+      s.high = []; s.mid = []; s.low = []; s.specials = s.specials || [];
+      for (const sym of _UQ13_PLACEHOLDER_SYMBOLS) {
+        const copy = { id: sym.id, label: sym.label, tier: sym.tier };
+        if (sym.tier === 'high') s.high.push(copy);
+        else if (sym.tier === 'mid')  s.mid.push(copy);
+        else                          s.low.push(copy);
+      }
+      recordAutofix(model, 'symbols.placeholder-roster',
+        'no symbols declared or inferable — generated 8-symbol placeholder roster');
+    }
+
+    /* Features gap (after synthesizeFeatureMix stage 4) */
+    if (!Array.isArray(model.features) || model.features.length === 0) {
+      const tkind = (model.topology && model.topology.kind) || 'unknown';
+      const mix = _UQ13_FEATURE_MIX_BY_TOPO[tkind] || _UQ13_FEATURE_MIX_BY_TOPO.unknown;
+      model.features = mix.map(k => ({ kind: k, label: k.replace(/_/g, ' '), _autofix: true }));
+      recordAutofix(model, 'features.placeholder-mix',
+        'no features declared or synthesized — using topology=' + tkind + ' default mix');
+    }
+
+    /* Bet gap */
+    if (!model.bet || typeof model.bet !== 'object') {
+      model.bet = { ..._UQ13_BET_DEFAULTS };
+      recordAutofix(model, 'bet.defaults', 'no bet config declared — using safe defaults');
+    } else {
+      const b = model.bet;
+      let touched = false;
+      for (const k of ['minBet', 'maxBet', 'defaultBet']) {
+        if (!Number.isFinite(b[k])) { b[k] = _UQ13_BET_DEFAULTS[k]; touched = true; }
+      }
+      if (typeof b.currency !== 'string' || !b.currency) { b.currency = _UQ13_BET_DEFAULTS.currency; touched = true; }
+      if (touched) recordAutofix(model, 'bet.fields-completed',
+        'partial bet config — filled missing min/max/default/currency');
+    }
+
+    /* Paytable gap — only when paytable shape exists but empty, OR missing */
+    if (!Array.isArray(model.paytable) || model.paytable.length === 0) {
+      const stub = [];
+      const sym = model.symbols || {};
+      const allTiers = []
+        .concat(sym.high || [], sym.mid || [], sym.low || [])
+        .slice(0, 5);
+      for (const sm of allTiers) {
+        stub.push({ id: sm.id, label: sm.label || sm.id,
+          tier: sm.tier || 'mid',
+          pay: { '3': 5, '4': 25, '5': 100 },
+          _autofix: true,
+        });
+      }
+      if (stub.length > 0) {
+        model.paytable = stub;
+        recordAutofix(model, 'paytable.placeholder-rows',
+          'no paytable declared — generated ' + stub.length + '-row stub mapping');
+      }
+    }
+  } catch (err) {
+    recordFailure(model, 'autofixGaps', err);
+  }
+  return model;
+}
+
 /* ─── all-stages orchestrator ─────────────────────────────────────────── */
 
 export function applySmartDefaults(model) {
@@ -483,6 +611,10 @@ export function applySmartDefaults(model) {
      AFTER synthesizeFeatureMix so explicit + synthesized features both
      get a chance to be backfilled. */
   backfillFromArchetype(model);
+  /* Stage 6 (Wave UQ-13): autofix gaps for sparse GDDs. Runs after all
+     derivation passes — only fires when fields are STILL empty so we
+     never overwrite engineer-inferred data with placeholder. */
+  autofixGaps(model);
   reclassifySegmentBasedConfidence(model);
   return model;
 }
