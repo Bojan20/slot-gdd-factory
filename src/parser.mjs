@@ -161,6 +161,9 @@ export function parseMarkdownGDD(text) {
          * matching only the brand prefix of a multi-line title). */
         model.name = raw;
         model.confidence.name = Math.max(model.confidence.name, 0.6);
+        /* Defensive init — _derivedBy may be undefined in fresh models
+         * that haven't yet hit smartDefaults / autofix stages. */
+        if (!model.confidence._derivedBy) model.confidence._derivedBy = {};
         model.confidence._derivedBy.name = 'pdf-first-line';
         break;
       }
