@@ -1,3 +1,136 @@
+## 📊 DAY SUMMARY · 2026-06-21 · 37 commits · 12 talasa zatvorenih
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ 2026-06-21 STREAK — 12 talasa, 37 commits, ~3,500 LOC, 18-gate verify aktivan         │
+├──────┬─────────────────────────────────────────────────────────┬─────┬───────────────┤
+│ Wave │ Naslov                                                  │ Fix │ HEAD          │
+├──────┼─────────────────────────────────────────────────────────┼─────┼───────────────┤
+│ UQ-12│ Pre-commit verify gate (5 step → archetype + audit +    │  1  │ a687289       │
+│      │ render-smoke, blokira commit kad pukne)                  │     │ e13b1e4       │
+│ UQ-13│ SmartDefaults stage 6 autofix — symbols/features/bet/   │  1  │ 637c40f       │
+│      │ paytable auto-stub + _autofixedBy channel                │     │ e2466ef       │
+│ UQ-14│ End-to-end one-shot ingest: PDF/MD/URL → playable HTML  │  1  │ 5b506f3       │
+│      │ jednom komandom (cli flags --file/--url/--no-llm/--open)│     │               │
+│ UQ-15│ Live archetype docs site generator (28 cards + alias +  │  1  │ 8f4d057       │
+│      │ search + dark mode, zero deps, 46 KB output)             │     │               │
+│ UQ-16│ Visual regression baseline (text-mode SHA fingerprint na│  1  │ a4418fc       │
+│      │ 338 GDDs, drift gate u verify)                          │     │ 7cb84cc       │
+│UQ-AUD│ 8 forensic punch-list fixes — security/race/silent-skip/│  8  │ 3877da6       │
+│      │ isolation kroz UQ-12..UQ-16 sloj                         │     │ ec37069       │
+│UQ-CSH│ Cash Eruption deep-fix — topology multi-line regex      │  6  │ d05e036       │
+│      │ (3 bug), name PDF first-line, feature-config backfill,   │     │ b6be994       │
+│      │ prose symbol extractor (identity+role+tier), cache hash  │     │ 1765b23       │
+│      │ invalidation, semantic verifier (5 GDD ground truth)     │     │ 5f58145       │
+│      │                                                          │     │ 244c6ae       │
+│UQ-TRN│ AI orchestrator E2E test (8-pass) + agent calibration   │  3  │ c4f27f8       │
+│      │ trainer + self-correction meta-prompt                    │     │               │
+│UQ-FT1│ 10 architecture gaps (atomic write, hash extension,      │ 10  │ becb654       │
+│      │ telescoping, force chip SSOT, PDF SHA, --all-corpus warn)│     │               │
+│UQ-FT2│ 10 second-tier gaps (Self-Correction Pass B impl,        │ 10  │ b5b35a8       │
+│      │ history JSON, orphan tmp GC, file lock, scaffolder       │     │               │
+│      │ catalog regen, dirty PDF resilience, idempotency test)   │     │               │
+│UQ-FT3│ 7 third-tier gaps (Kimi race-safe queue, Pass B cap,     │  7  │ eb72f7c       │
+│      │ fsync + dir-sync, self-corrected consumer, AGENT_CALIBR  │     │ db8489a       │
+│      │ sanitize, ingest exit 3, PID-reuse guard)                │     │               │
+│UQ-FT4│ 10 fourth-tier gaps (dependency tracking, prompt inj.    │ 10  │ bc110ee       │
+│      │ sanitize, NFS detect, atomic history, RMW race, hash     │     │               │
+│      │ whitespace norm, STRICT_PDF_SHA, blockCatalog lock,      │     │               │
+│      │ cross-file coord lock trainer↔ingest)                    │     │               │
+│UQ-FT5│ 3 fifth-tier gaps (TOCTOU race, prompt frame XML, series│  3  │ 790f4ff       │
+│      │ randomUUID + Array.isArray shape check)                  │     │ 9887844       │
+│UQ-COV│ Cross-corpus force coverage — 338/338 ZERO missing + ZERO│  1  │ 4bc9d0e       │
+│      │ phantom posle normalizeFromJSON __activeFeatures__ fix   │     │               │
+├──────┴─────────────────────────────────────────────────────────┴─────┴───────────────┤
+│ Σ fixes:         62 atomic fixes across 12 waves                                       │
+│ Σ commits:       37 pushed to origin/main                                              │
+│ Σ verify gates:  18 (svi zeleni, idempotent — Pass 1 = Pass 2)                         │
+│ Σ corpus:        338 GDDs · 4 baseline · 25 LW vendor portfolio · 309 synthetic        │
+│ Σ live tests:    parse-real 4/4 · lw-25 29/29 · UQ-11 338/338 · E2E 5/5 · LEGO 8/8     │
+│ Σ telemetry:     reports/calibration-history.json + e2e-series.json + uq-cover-series  │
+│                  (atomic write, 100-200 run rolling window)                            │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Arhitekturne garancije (post-UQ-COVER)
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ 1. AI pipeline determinizam                                                            │
+│    Svaka 338 GDD-a producira renderable HTML sa SVIM declared feature force chips      │
+│    paint-ovanim i NIJEDNIM nepotrebnim. Markdown i JSON ingest path su semantically    │
+│    equivalent (UQ-COVER root cause fix).                                                │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ 2. Multi-process bezbednost                                                           │
+│    Cache write je file-locked + atomic-tmp-rename + fsync + dir-sync. Concurrent      │
+│    ingest na istom slug-u, trainer apply tokom Kimi reconcile, scaffolder + catalog   │
+│    regen — sve koordinirano. NFS/Dropbox/iCloud mount detection warn-uje degradaciju. │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ 3. Self-correction loop                                                                │
+│    Pass A → diff vs ground truth → CORRECTIONS block (XML frame, sanitized) → Pass B  │
+│    re-invoke samo agentima sa diff. Zero-cost kad Pass A vec ok. Max attempts cap.     │
+│    __self_corrected__ flag konzumovan u E2E telemetry.                                  │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ 4. Cache invalidation precision                                                       │
+│    Hash uključuje 13 izvora (parser + build + 7 agent prompts + SELF_CORRECTION).      │
+│    Whitespace normalization (BOM, CRLF, trailing spaces) eliminiše burst false        │
+│    invalidations. STRICT_PDF_SHA=1 hard-fail mode dostupan za CI.                      │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ 5. Test infrastructure idempotency                                                    │
+│    Verify gate idempotentan (Pass 1 = Pass 2), dependency tracking između step-ova,    │
+│    fail-skip downstream kad upstream pukne. UQ-COVER step na 60 GDD u 0.5s.            │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ 6. Telemetry persistence                                                              │
+│    3 JSON history files (calibration, E2E, UQ-COVER) sa rolling window 100-200,        │
+│    atomic write sa randomUUID() tmp + lock-protected RMW.                              │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Mogući sledeći koraci (math/audio i dalje OFF-LIMITS)
+
+```
+┌──────────┬──────────────────────────────────────────────┬───────────┬──────────┐
+│ Tag      │ Naslov                                       │ Prioritet │ Trajanje │
+├──────────┼──────────────────────────────────────────────┼:─────────:┼:────────:┤
+│ UQ-REAL  │ Real-runtime browser test sa Playwright —     │   🔴 P0   │  ~1.5h   │
+│          │ headless click svaki force chip × 5 GDD × N   │           │          │
+│          │ states (idle, spinning, win-rollup, FS, BW,   │           │          │
+│          │ H&W lock) → screenshot + DOM assert. Zaista   │           │          │
+│          │ proverava da chip → spin → result chain radi. │           │          │
+├──────────┼──────────────────────────────────────────────┼:─────────:┼:────────:┤
+│ UQ-VISU  │ Visual regression pravi screenshot baseline   │   🟡 P1   │   ~2h    │
+│          │ (PNG diff sa pixelmatch tolerance 0.5%) za    │           │          │
+│          │ 60 GDD subset. UQ-16 sad pin-uje samo SHA.    │           │          │
+├──────────┼──────────────────────────────────────────────┼:─────────:┼:────────:┤
+│ UQ-DASH  │ Telemetry dashboard — statički HTML koji       │   🟡 P1   │   ~45m   │
+│          │ crta line-charts iz 3 series.json file-a.     │           │          │
+│          │ Zero dependencies, sve inline. Boki otvori    │           │          │
+│          │ reports/dashboard.html i vidi trending.       │           │          │
+├──────────┼──────────────────────────────────────────────┼:─────────:┼:────────:┤
+│ UQ-WEBUI │ Drag-drop ingest web UI — localhost server    │   🟡 P1   │   ~1h    │
+│          │ koji prima PDF/MD upload, runuje ingest u BG, │           │          │
+│          │ embed-uje rezultat u iframe. Zamena za CLI    │           │          │
+│          │ flow.                                          │           │          │
+├──────────┼──────────────────────────────────────────────┼:─────────:┼:────────:┤
+│ UQ-DIFF  │ Cross-GDD diff tool — uporedi bilo koja 2     │   🟢 P2   │   ~45m   │
+│          │ GDDs po features/topology/symbols/forces.     │           │          │
+│          │ Output HTML side-by-side sa highlight.        │           │          │
+├──────────┼──────────────────────────────────────────────┼:─────────:┼:────────:┤
+│ UQ-PROD  │ Production deployment hardening — CSP, SRI,   │   🟢 P2   │   ~1h    │
+│          │ minify, gzip output. Slot.html sad je 700-900 │           │          │
+│          │ KB inline — można smanjiti 50%+.              │           │          │
+├──────────┼──────────────────────────────────────────────┼:─────────:┼:────────:┤
+│ UQ-TIER6 │ Šesti tier audit (Explore agent) — možda       │   🟢 P2   │   ~30m   │
+│          │ pronađe još dublje rupe; možda ne (svi prvi   │           │          │
+│          │ 4 tier-a dali rezultate). Honest gamble.       │           │          │
+├──────────┼──────────────────────────────────────────────┼:─────────:┼:────────:┤
+│ MATH     │ — GATED — čeka Boki signal                    │   🔒      │    —     │
+│ AUDIO    │ — GATED — čeka Boki signal                    │   🔒      │    —     │
+└──────────┴──────────────────────────────────────────────┴───────────┴──────────┘
+```
+
+---
+
 ## 🎯 WAVE UQ-COVER — CROSS-CORPUS FORCE COVERAGE · 2026-06-21 · ZATVOREN ✅
 
 > **Boki direktiva:** *"svaka provera sa ubacenim agentima i ai orkestratorom
