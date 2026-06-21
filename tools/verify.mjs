@@ -226,6 +226,18 @@ if (existsSync(coverTool)) {
     'node', [coverTool, '--limit', '60']);
 }
 
+/* ── Step 4.91: UQ-MASTERY block liveness audit ────────────────────────
+ * Zero-DEAD-block contract. Every block flagged `defaultOn: true` in the
+ * manifest MUST be mountable in at least one rendered HTML fingerprint
+ * (block name OR exported emitXxx fn OR hand-aliased kind id). Catches
+ * any future regression where a block exists in src/blocks/ but slips
+ * out of the build pipeline (orphan block, dead UI). */
+const livenessTool = resolve(REPO, 'tools/_block-liveness-walker.mjs');
+if (existsSync(livenessTool)) {
+  run('UQ-MASTERY block liveness audit (0 DEAD blokova)',
+    'node', [livenessTool]);
+}
+
 /* ── Step 5: UQ-11 render smoke on a 20-GDD subset ──────────────────── */
 if (!QUICK) {
   const RENDER_TOOL = resolve(REPO, 'tools/_full-corpus-render-parity.mjs');

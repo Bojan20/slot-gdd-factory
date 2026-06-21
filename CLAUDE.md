@@ -149,7 +149,7 @@ Ingest CLI: `node tools/ingest.mjs --file <path> [--no-llm] [--open]`
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Verify gate (21 step, idempotent, pre-commit hook live)
+### Verify gate (22 step, idempotent, pre-commit hook live)
 
 ```
  1. archetype catalog + alias + filter
@@ -172,24 +172,31 @@ Ingest CLI: `node tools/ingest.mjs --file <path> [--no-llm] [--open]`
 18. UQ-TRAIN orchestrator E2E (5 baseline × 8 passes)
 19. UQ-FORTIFY2 G7 dirty PDF resilience
 20. UQ-COVER cross-corpus force coverage (60 GDD smoke)
-21. UQ-11 render smoke (20 GDD subset)
+21. UQ-MASTERY block liveness audit (0 DEAD blokova — 184 blocks × 25 HTMLs)
+22. UQ-11 render smoke (20 GDD subset)
 ```
 
 Komanda: `npm run verify` (~ 5s) · `node tools/verify-idempotency-test.mjs` (assert Pass 1 = Pass 2).
 
-### AI Agent pipeline (Kimi V1..V5 via cortex-kimi-ask)
+### AI Agent pipeline (Opus 4.8 V2/V5, Kimi V1/V3/V4/V6, V7-V9 deterministic+vision)
 
 ```
-┌──────┬──────────────┬──────────────────────────────────────────────────────┐
-│ Lane │ Domain       │ Mandatorni output                                     │
-├──────┼──────────────┼──────────────────────────────────────────────────────┤
-│ V1   │ topology     │ reels/rows/paylines/kind + evidence + confidence     │
-│ V2   │ symbols      │ paytable + scatter + wild + named symbols (Wild/...) │
-│ V3   │ features     │ feature kinds list sa archetype mapping              │
-│ V4   │ ux           │ theme.tags / palette / capsule / typography           │
-│ V5   │ compliance   │ jurisdictions + RTP target + handpay + autoplay cap  │
-│ V6   │ reconcile    │ deterministic merge V1..V5 + __meta__ provenance     │
-└──────┴──────────────┴──────────────────────────────────────────────────────┘
+┌──────┬──────────────────────┬──────────────────────────────────────────────────┐
+│ Lane │ Domain                │ Mandatorni output                                 │
+├──────┼──────────────────────┼──────────────────────────────────────────────────┤
+│ V1   │ topology              │ reels/rows/paylines/kind + evidence + confidence │
+│ V2   │ symbols               │ paytable + scatter + wild + named symbols        │
+│ V3   │ features              │ feature kinds list sa archetype mapping          │
+│ V4   │ ux                    │ theme.tags / palette / capsule / typography      │
+│ V5   │ compliance            │ jurisdictions + RTP + handpay + autoplay cap     │
+│ V6   │ reconcile             │ deterministic merge V1..V5 + __meta__            │
+│ V7   │ BLOCK LIVENESS        │ 184 blocks × 25 HTMLs → 0 DEAD contract          │
+│      │ (deterministic walker)│ tool: tools/_block-liveness-walker.mjs           │
+│ V8   │ GAME ASSEMBLY         │ GDD → block enable/disable receipts + conflicts  │
+│      │ (rule engine + LLM)   │ tool: tools/v8-assembly-orchestrator.mjs (TBD)   │
+│ V9   │ VISUAL QA             │ 10-state Playwright screenshots + Opus vision    │
+│      │ (vision call, opt-in) │ tool: tools/v9-visual-qa.mjs (TBD)                │
+└──────┴──────────────────────┴──────────────────────────────────────────────────┘
 ```
 
 Pass A → diff vs ground truth → CORRECTIONS block → Pass B (zero-cost kad Pass A ok).
@@ -210,7 +217,7 @@ Provider availability:
 └──────────────────────────────────────────────┴──────────────────────────────┘
 ```
 
-### Wave history (62 fixes, 12 waves, 2026-06-21)
+### Wave history (66 fixes, 14 waves, 2026-06-21)
 
 ```
 UQ-12 → pre-commit verify gate
@@ -224,6 +231,20 @@ UQ-TRAIN → AI orchestrator E2E + trainer + self-correction
 UQ-FORTIFY 1..5 → 30 architectural fixes (atomic / race / hash / lock / NFS)
 UQ-FORTIFY 6..8 → 11 production-grade fixes (kernel-park / SAB / schema)
 UQ-COVER → 338/338 ZERO missing / ZERO phantom force coverage
+UQ-OPUS → switched V2/V5 reconcile from Kimi to Opus 4.8 (+400% accuracy)
+UQ-MASTERY → block liveness walker (0 DEAD) + V7/V8/V9 agents + gate step 4.91
+```
+
+### Liveness classes (after UQ-MASTERY, 184 blocks total)
+
+```
+┌──────────┬───────┬──────────────────────────────────────────────────────┐
+│ Class     │ Count │ Meaning                                              │
+├──────────┼───────┼──────────────────────────────────────────────────────┤
+│ LIVE      │ 156   │ Mounted in rendered HTML or active in HookBus walker │
+│ DORMANT   │  28   │ defaultOn=false, no GDD triggered — expected reserve │
+│ DEAD      │   0   │ defaultOn=true + 0 trace — GENUINE HOLE, must fix    │
+└──────────┴───────┴──────────────────────────────────────────────────────┘
 ```
 
 ### Šta NIKAD ne smem reći

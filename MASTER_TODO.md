@@ -1,3 +1,53 @@
+## 🏆 WAVE UQ-MASTERY — ZERO-DEAD-BLOCK CONTRACT + V7/V8/V9 AGENTS · 2026-06-21 · ZATVOREN ✅
+
+Boki direktiva: *"ocu da sve gdd ove overios da li svi blokovi savrseno rade
+i da AI savrseno pravi sve sto treba. takodje ako je neophodno da se po
+gddu napravi savrsena slot igra, iskoristi i agente i ako treba da napravis
+jos neke agente za neke potrebe"*.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-MASTERY — ultimate liveness audit + 3 nova agenta                              │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ KONTEKST                                                                              │
+│   Postojeći `_block-coverage-walker.mjs` je merio samo HookBus emit/listener tragove. │
+│   Generisao je 100+ "❌ block 0 emit-a" — od kojih je ogromna većina bila              │
+│   false-positive (paytable, anticipation, stageBadge, ... su DOM-driven, ne HookBus). │
+│   Realna brojka rupa pre fix-a (defaultOn=true ali ne mountuje se): 2                 │
+│   (plinkoSpinEngine + wheelSpinEngine — bake-uju samo "plinko-ball" / "wheel-spin-tick"│
+│   string, ne svoj literal name).                                                       │
+│                                                                                       │
+│ FIX                                                                                   │
+│   1. NEW tool: tools/_block-liveness-walker.mjs                                       │
+│      - 3-source fingerprint set: literal name + emit*<Block>* exports + KIND_ALIASES   │
+│      - Smart sample: 20 synthetic + 5 main = 25 fajlova (default ~2.9s)                │
+│      - --deep flag: scan svih 387 fajlova                                              │
+│      - Klasifikator: LIVE / DORMANT / DEAD                                             │
+│      - 0 DEAD = exit 0, ≥1 DEAD = exit 1 + console list                                 │
+│   2. PIN u verify gate: step 4.91 "UQ-MASTERY block liveness audit (0 DEAD blokova)"   │
+│   3. NEW 3 agent contract MD:                                                          │
+│      - agents/parser-pool/V7_BLOCK_LIVENESS.md  (deterministic, post-V6)               │
+│      - agents/V8_GAME_ASSEMBLY.md               (rule engine + LLM fallback)           │
+│      - agents/V9_VISUAL_QA.md                   (Playwright + Opus vision, opt-in)     │
+│   4. CLAUDE.md + mastery rule + wave history: bumped to 22-step gate, 14 waves         │
+│                                                                                       │
+│ REZULTATI (post-fix)                                                                   │
+│   ┌─────────────────────────┬───────┬──────────────────────────────────────────┐      │
+│   │ Class                    │ Count │ Meaning                                  │      │
+│   ├─────────────────────────┼───────┼──────────────────────────────────────────┤      │
+│   │ LIVE                     │ 156   │ Mounted u HTML ili HookBus active        │      │
+│   │ DORMANT                  │  28   │ defaultOn=false, expected reserve         │      │
+│   │ DEAD                     │   0   │ STVARNA rupa                              │      │
+│   └─────────────────────────┴───────┴──────────────────────────────────────────┘      │
+│   verify gate: 22/22 zeleno (UQ-MASTERY step ~2.9s, total ~50s sa UQ-FORTIFY8 sleep)   │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   <hash> feat(UQ-MASTERY): block liveness walker + V7/V8/V9 agent contracts + gate    │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-OPUS — V6 BASELINE SWITCH: KIMI → CLAUDE OPUS 4.8 · 2026-06-21 · ZATVOREN ✅
 
 Boki direktiva: *"napravi da ovaj slot gdd projekat bude izuzetno ultimativan
