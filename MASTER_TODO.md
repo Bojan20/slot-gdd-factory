@@ -1,3 +1,78 @@
+## 🏆 WAVE UQ-MASTERY-5 — V8 GAME ASSEMBLY ORCHESTRATOR · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"kreni redom ultimativno"* — opcija A iz prethodne ponude (V8 GAME
+ASSEMBLY). Implementira contract iz `agents/V8_GAME_ASSEMBLY.md`: GDD →
+deterministička blok selekcija sa receipts. Pure rule engine, no LLM.
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-MASTERY-5 — V8 GAME ASSEMBLY orchestrator                                        │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ NOVI ALATI                                                                              │
+│   tools/v8-assembly-orchestrator.mjs (~270 LOC) — pure rule engine                       │
+│   tools/v8-assembly-rules.json — supplementary rules (80+ pravila po kategoriji)         │
+│                                                                                         │
+│ KATEGORIJE PRAVILA                                                                      │
+│   topology-engine     8 engine variants, mutually exclusive, default reelEngine          │
+│   mandatory-core      9 always-on (paytable, balanceHud, betSelector, spinControl,       │
+│                       winPresentation, audio, historyLog, settingsPanel, anticipation)    │
+│   feature-flag        25 feature-kind → block mapping (free_spins, hold_and_win, tumble, │
+│                       cluster, ways, multiplier, expanding/sticky/walking wild, mystery,  │
+│                       jackpot, lightning, bonus_buy, ante_bet, gamble, wheel/bonus_pick, │
+│                       progressive_fs, win_cap, reality_check, autoplay, super_symbol,    │
+│                       symbol_upgrade, persistent_multiplier)                              │
+│   jurisdiction-gate   7 regulator mapping (UKGC, DE-WHG, NL-KSA, FR-ANJ, IT-ADM,         │
+│                       ES-DGOJ, EU-AI)                                                    │
+│   audit-trail-pin     4 blocks koji NIKADA ne mogu biti disabled (winCap,                 │
+│                       gddRealityCheck, historyLog, audio)                                 │
+│   conflict-matrix     11 pairs koji nikad ne smeju koegzistirati (cluster vs lines/ways, │
+│                       sve engine kombinacije)                                            │
+│                                                                                         │
+│ RECEIPT (per-slug JSON)                                                                  │
+│   {                                                                                      │
+│     "wave": "UQ-MASTERY-5",                                                              │
+│     "verdict": "PASS" | "FAIL",                                                          │
+│     "assembly": {                                                                        │
+│       "enabledBlocks":  [...sorted],                                                     │
+│       "disabledBlocks": [...sorted],                                                     │
+│       "reasonByBlock":  { id: reason, ... }                                              │
+│     },                                                                                   │
+│     "conflicts":       [...],                                                            │
+│     "warnings":        [...],                                                            │
+│     "missingMandatory": [...],                                                           │
+│     "missingJurGates":  [...],                                                           │
+│     "__meta__": { ts, enabledCount, disabledCount, featuresDetected,                     │
+│                   jurisdictionsDetected, selectedEngine }                                 │
+│   }                                                                                      │
+│                                                                                         │
+│ KORPUS REZULTAT (338 GDDs, 0 LLM cost)                                                   │
+│   PASS:     338/338                                                                      │
+│   FAIL:     0                                                                            │
+│   Conflicts: 0 ukupno                                                                    │
+│   Game-A receipt: engine=reelEngine, 53 enabled, 7 disabled (other engines),             │
+│                    10 features detected (free_spins, hold_and_win, multiplier,           │
+│                    expanding_wild, bonus_buy, jackpot, scatter_pay, win_cap,             │
+│                    reality_check, autoplay), 0 conflicts                                  │
+│                                                                                         │
+│ SELF-TEST (tests/tools/v8-assembly-orchestrator.test.mjs)                                 │
+│   8 negative fixture-a × 5 kategorija assertion-a:                                       │
+│     A. topology engine selection (hex / plinko / wheel / rect default)                    │
+│     B. mandatory blocks + UKGC jurisdiction gate prisutni                                 │
+│     C. cluster eval → clusterPaysEval ON, payAnywhereEval DISABLED, 0 conflicts          │
+│     D. DE-WHG jurisdiction → germanyComplianceGate ON                                    │
+│     E. feature stack (HnW + FS + Jackpot + BonusBuy) all enabled simultano               │
+│   Sve self-cleanup-ovano (mock dist/real-games/_v8-test-*).                             │
+│                                                                                         │
+│ GATE INTEGRATION                                                                        │
+│   tools/verify.mjs step 4.94  → V8 orchestrator (338 GDDs)                              │
+│   tools/verify.mjs step 4.94b → V8 self-test (5 kategorija)                              │
+│                                                                                         │
+│ VERIFY GATE: 27/27 zeleno (~12s wall-clock)                                              │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-CLEAN — VENDOR PURGE U LIVE DOCS · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"ali ne spominji nigde igt ili neku drugu firmu"*. Pre-commit grep

@@ -261,6 +261,28 @@ if (existsSync(v11Test)) {
     'node', [v11Test]);
 }
 
+/* ── Step 4.94: UQ-MASTERY-5 V8 GAME ASSEMBLY orchestrator ────────────
+ * V8 reads parsed model (V6 output) + blockCatalog + assembly rules,
+ * deterministically decides enabledBlocks / disabledBlocks per slot,
+ * detects conflicts (mutually exclusive blocks both on), missing
+ * mandatory blocks (paytable, balanceHud, betSelector, ...), missing
+ * jurisdiction gates. Emits per-slug receipt sa `reasonByBlock` mapom.
+ * No LLM; pure rule engine (95% coverage per V8 agent contract).
+ * Verdict FAIL gate-blocks on any: conflict, missing mandatory, or
+ * missing jurisdiction gate for declared regulator. */
+const v8Tool = resolve(REPO, 'tools/v8-assembly-orchestrator.mjs');
+if (existsSync(v8Tool)) {
+  run('UQ-MASTERY-5 V8 assembly orchestrator (338 GDDs)',
+    'node', [v8Tool]);
+}
+
+/* ── Step 4.94b: UQ-MASTERY-5 V8 self-test ───────────────────────── */
+const v8Test = resolve(REPO, 'tests/tools/v8-assembly-orchestrator.test.mjs');
+if (existsSync(v8Test)) {
+  run('UQ-MASTERY-5 V8 self-test (engine select + mandatory + jur + stack)',
+    'node', [v8Test]);
+}
+
 /* ── Step 4.91: UQ-MASTERY block liveness audit ────────────────────────
  * Zero-DEAD-block contract. Every block flagged `defaultOn: true` in the
  * manifest MUST be mountable in at least one rendered HTML fingerprint

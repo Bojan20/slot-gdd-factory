@@ -156,7 +156,7 @@ Ingest CLI: `node tools/ingest.mjs --file <path> [--no-llm] [--open]`
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Verify gate (24 step, idempotent, pre-commit hook live)
+### Verify gate (27 step, idempotent, pre-commit hook live)
 
 ```
  1. archetype catalog + alias + filter
@@ -182,8 +182,10 @@ Ingest CLI: `node tools/ingest.mjs --file <path> [--no-llm] [--open]`
 21. UQ-MASTERY-3 V10 industry compliance spec (17 rules × 338 GDDs)
 22. UQ-MASTERY-4 V11 deep industry spec (17 HARD + 3 SOFT × 338 GDDs)
 23. UQ-MASTERY-4 V11 self-test (17 rule codes flagged on negative fixtures)
-24. UQ-MASTERY block liveness audit (0 DEAD blokova — 184 blocks × 25 HTMLs)
-25. UQ-11 render smoke (20 GDD subset)
+24. UQ-MASTERY-5 V8 assembly orchestrator (rule engine × 338 GDDs)
+25. UQ-MASTERY-5 V8 self-test (engine select + mandatory + jur + stack)
+26. UQ-MASTERY block liveness audit (0 DEAD blokova — 184 blocks × 25 HTMLs)
+27. UQ-11 render smoke (20 GDD subset)
 ```
 
 Komanda: `npm run verify` (~ 5s) · `node tools/verify-idempotency-test.mjs` (assert Pass 1 = Pass 2).
@@ -248,6 +250,13 @@ UQ-MASTERY-3 → V10 industry compliance spec (17 rules × 338 GDDs)
 UQ-MASTERY-4 → V11 deep industry spec (RTP jurisdiction floor, jackpot
                 monotonicity, FS ladder, autoplay caps, lifecycle pairs;
                 17 HARD + 3 SOFT codes; self-test sa positive+negative)
+UQ-CLEAN     → vendor purge u live docs (CLAUDE.md + memory + MASTER_TODO)
+UQ-CLEAN-2   → deep vendor purge (11 src/ + 6 tools/ + 3 docs files)
+UQ-MASTERY-5 → V8 GAME ASSEMBLY orchestrator (rule engine + receipt:
+                enabledBlocks/disabledBlocks/reasonByBlock/conflicts,
+                338/338 PASS, 0 conflicts, self-test verifikuje 5
+                kategorija: engine select, mandatory pin, jurisdiction
+                gate, feature stack, conflict-free)
 ```
 
 ### Liveness classes (after UQ-MASTERY, 184 blocks total)

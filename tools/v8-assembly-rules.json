@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "wave": "UQ-MASTERY-5",
+  "agent": "V8_GAME_ASSEMBLY",
+  "description": "V8 assembly rule set. Each rule fires conditionally on model.json and contributes enabledBlocks/disabledBlocks with a reason. Deterministic. No LLM. Order: topology → engines → mandatory → features → jurisdiction → conflicts → audit-trail.",
+
+  "_metaCategories": [
+    "topology-engine",
+    "mandatory-core",
+    "feature-flag",
+    "jurisdiction-gate",
+    "conflict-resolution",
+    "audit-trail-pin"
+  ],
+
+  "topologyEngines": {
+    "_doc": "Exactly one topology engine. Selecting one disables others. The 'select' value MUST equal a block id in blockCatalog. The 'others' list is auto-disabled.",
+    "engines": ["reelEngine", "hexReelEngine", "hexClusterEngine", "wheelSpinEngine", "crashSpinEngine", "slingoSpinEngine", "plinkoSpinEngine", "pyramidGridEngine"],
+    "rules": [
+      { "when": { "topology.kind": "hex" },         "select": "hexReelEngine",       "reason": "kind=hex → hex engine" },
+      { "when": { "topology.kind": "wheel" },       "select": "wheelSpinEngine",     "reason": "kind=wheel → wheel engine" },
+      { "when": { "topology.kind": "crash" },       "select": "crashSpinEngine",     "reason": "kind=crash → crash engine" },
+      { "when": { "topology.kind": "slingo" },      "select": "slingoSpinEngine",    "reason": "kind=slingo → slingo engine" },
+      { "when": { "topology.kind": "plinko" },      "select": "plinkoSpinEngine",    "reason": "kind=plinko → plinko engine" },
+      { "when": { "topology.kind": "pyramid" },     "select": "pyramidGridEngine",   "reason": "kind=pyramid → pyramid engine" },
+      { "when": { "topology.is_plinko": true },     "select": "plinkoSpinEngine",    "reason": "is_plinko flag" },
+      { "when": { "topology.is_slingo": true },     "select": "slingoSpinEngine",    "reason": "is_slingo flag" },
+      { "default": "reelEngine", "reason": "default rectangular reel engine" }
+    ]
+  },
+
+  "mandatoryCore": {
+    "_doc": "Always-on blocks (when present in catalog). Disabling them is a verdict-FAIL.",
+    "blocks": [
+      { "id": "paytable",       "reason": "every slot must expose paytable" },
+      { "id": "balanceHud",     "reason": "balance display mandatory for real-cash" },
+      { "id": "betSelector",    "reason": "bet selection mandatory" },
+      { "id": "spinControl",    "reason": "spin control mandatory" },
+      { "id": "winPresentation", "reason": "win presentation mandatory" },
+      { "id": "audio",           "reason": "audio block mandatory (gated by user mute)" },
+      { "id": "historyLog",      "reason": "history log mandatory (regulator audit)" },
+      { "id": "settingsPanel",   "reason": "settings panel mandatory" },
+      { "id": "anticipation",    "reason": "anticipation mandatory UX expectation" }
+    ]
+  },
+
+  "featureFlags": {
+    "_doc": "Activate blocks based on model.features[] or top-level feature objects. Reason cites the trigger.",
+    "rules": [
+      { "feature": "free_spins",        "enable": ["freeSpins", "freeSpinsPresentation", "fsProgressBar", "scatterCelebration"],   "reason": "features includes free_spins" },
+      { "feature": "hold_and_win",       "enable": ["holdAndWin", "holdAndWinCreditBucket", "holdAndWinBonusCelebrate", "respin"], "reason": "features includes hold_and_win" },
+      { "feature": "tumble",             "enable": ["tumble", "winRollup", "scatterCelebration", "postSpin"],                      "reason": "features includes tumble" },
+      { "feature": "cluster_pays",       "enable": ["clusterPaysEval"], "disable": ["payAnywhereEval", "waysEval"],                "reason": "cluster eval excludes lines/ways" },
+      { "feature": "ways",               "enable": ["waysEval"],         "disable": ["clusterPaysEval"],                            "reason": "ways eval excludes cluster" },
+      { "feature": "pay_anywhere",       "enable": ["payAnywhereEval"],  "disable": ["clusterPaysEval"],                            "reason": "pay_anywhere excludes cluster" },
+      { "feature": "scatter_pay",        "enable": ["scatterCelebration"],                                                          "reason": "scatter pays celebration" },
+      { "feature": "multiplier",         "enable": ["multiplierOrb", "totalMultiplierChip"],                                        "reason": "multiplier active" },
+      { "feature": "expanding_wild",     "enable": ["expandingWild", "expandingWildMultiplier"],                                    "reason": "expanding wild active" },
+      { "feature": "sticky_wild",        "enable": ["stickyWild"],                                                                  "reason": "sticky wild active" },
+      { "feature": "walking_wild",       "enable": ["walkingWild", "walkingWildStepper"],                                           "reason": "walking wild active" },
+      { "feature": "mystery_symbol",     "enable": ["mysterySymbol", "mysteryReveal", "mysterySymbolMultiplier"],                   "reason": "mystery symbol active" },
+      { "feature": "jackpot",            "enable": ["jackpotRoomReveal", "jackpotPicker"],                                          "reason": "jackpot tiers active" },
+      { "feature": "lightning",          "enable": ["lightning", "randomLightningMultiplier"],                                      "reason": "lightning multiplier active" },
+      { "feature": "bonus_buy",          "enable": ["bonusBuy", "bonusBuyDeterministic"],                                           "reason": "bonus buy active" },
+      { "feature": "ante_bet",           "enable": ["anteBet"],                                                                     "reason": "ante bet active" },
+      { "feature": "gamble",             "enable": ["gamble", "gambleSecondary"],                                                   "reason": "gamble active" },
+      { "feature": "wheel_bonus",        "enable": ["wheelBonus", "weightedWheelSegments", "wheelBonusReveal"],                     "reason": "wheel bonus active" },
+      { "feature": "bonus_pick",         "enable": ["bonusPick", "pickBonusReveal"],                                                "reason": "bonus pick active" },
+      { "feature": "progressive_fs",     "enable": ["progressiveFreeSpins", "progressiveFsRetriggerLadder"],                        "reason": "progressive free spins active" },
+      { "feature": "win_cap",            "enable": ["winCap"],                                                                      "reason": "win cap declared" },
+      { "feature": "reality_check",      "enable": ["realityCheck", "gddRealityCheck"],                                             "reason": "reality check required" },
+      { "feature": "autoplay",           "enable": ["autoplay"],                                                                    "reason": "autoplay allowed" },
+      { "feature": "persistent_multiplier", "enable": ["persistentMultiplier"],                                                     "reason": "persistent multiplier active" },
+      { "feature": "super_symbol",       "enable": ["superSymbol", "superSymbolUpgrade"],                                           "reason": "super symbol active" },
+      { "feature": "symbol_upgrade",     "enable": ["symbolUpgrade", "fsSymbolUpgradeEscalation"],                                  "reason": "symbol upgrade active" }
+    ]
+  },
+
+  "jurisdictionGates": {
+    "_doc": "Mandatory compliance gate block per declared jurisdiction code. Missing block = verdict FAIL.",
+    "rules": [
+      { "codes": ["DE", "germany", "DE-WHG"],         "enable": ["germanyComplianceGate", "_germanyMinSpinPaceEnforcement", "_germanyManualSpinPaceGuard", "_germanyIndexedDbSweep"], "reason": "DE-WHG jurisdiction" },
+      { "codes": ["NL", "netherlands", "NL-KSA"],     "enable": ["netherlandsComplianceGate", "_netherlandsCruksGateEnforcement", "_netherlandsCoolOffPersistence"],                  "reason": "NL-KSA jurisdiction" },
+      { "codes": ["FR", "france", "FR-ANJ"],          "enable": ["franceComplianceGate"],                                                                                            "reason": "FR-ANJ jurisdiction" },
+      { "codes": ["IT", "italy", "IT-ADM"],           "enable": ["italyComplianceGate"],                                                                                             "reason": "IT-ADM jurisdiction" },
+      { "codes": ["ES", "spain", "ES-DGOJ"],          "enable": ["spainComplianceGate"],                                                                                             "reason": "ES-DGOJ jurisdiction" },
+      { "codes": ["EU-AI", "euAiAct"],                "enable": ["euAiActComplianceGate"],                                                                                           "reason": "EU AI Act applicable" },
+      { "codes": ["UK", "UKGC"],                      "enable": ["jurisdictionGate"],                                                                                                 "reason": "UKGC base gate" }
+    ]
+  },
+
+  "auditTrailPins": {
+    "_doc": "Blocks that cannot be disabled by GDD signal (audit/regulator integrity).",
+    "blocks": ["winCap", "gddRealityCheck", "historyLog", "audio"]
+  },
+
+  "conflictMatrix": {
+    "_doc": "Pairs of blocks that must never co-exist. If both end up enabled, verdict FAIL + conflict reported.",
+    "pairs": [
+      ["clusterPaysEval", "payAnywhereEval"],
+      ["clusterPaysEval", "waysEval"],
+      ["reelEngine", "hexReelEngine"],
+      ["reelEngine", "wheelSpinEngine"],
+      ["reelEngine", "plinkoSpinEngine"],
+      ["reelEngine", "crashSpinEngine"],
+      ["reelEngine", "slingoSpinEngine"],
+      ["reelEngine", "pyramidGridEngine"],
+      ["hexReelEngine", "wheelSpinEngine"],
+      ["plinkoSpinEngine", "wheelSpinEngine"],
+      ["plinkoSpinEngine", "crashSpinEngine"]
+    ]
+  }
+}
