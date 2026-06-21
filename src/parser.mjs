@@ -1329,7 +1329,15 @@ export function extractTopology(rawText, model) {
     text.match(/\|\s*\*?\*?Reels\*?\*?\s*\|\s*[^|]*?(\d+)\s+columns?[^|]*\|/i) ||
     text.match(/\|\s*\*?\*?Reels\*?\*?\s*\|\s*(\d+)\s*\([^|]*\|/i) ||
     text.match(/\|\s*\*?\*?(?:Primary\s+)?Reels?\*?\*?\s*\|\s*(\d+)\b/i) ||
-    text.match(/\|\s*\*?\*?Columns?\*?\*?\s*\|\s*(\d+)/i);
+    text.match(/\|\s*\*?\*?Columns?\*?\*?\s*\|\s*(\d+)/i) ||
+    /* Wave UQ-5 PROSE FALLBACK (Boki 2026-06-21 "sve redom ultimativno"):
+     * vendor-portfolio PDFs write "Reels: 5 reels, 3 rows" / "5-reel,
+     * 3-row grid" in flowing prose. Without this pattern, parser ostaje
+     * na topology default 5×3 (smart-defaults). Vendor-neutral pattern
+     * shapes only. */
+    text.match(/\bReels?\s*[:=]\s*(\d{1,2})\s*reels?\b/i) ||
+    text.match(/\b(\d{1,2})[\s-]?reel[\s,]/i) ||
+    text.match(/\b(\d{1,2})\s*x\s*\d{1,2}\s+(?:grid|reel\s*layout|game)\b/i);
   if (reelsCell) {
     t.reels = parseInt(reelsCell[1], 10);
     t.confidence_reels = 1;
@@ -1341,7 +1349,11 @@ export function extractTopology(rawText, model) {
     text.match(/\|\s*\*?\*?Rows\*?\*?\s*\|\s*(\d+)(?:\s+visible)?\s*\|/i) ||
     text.match(/\|\s*\*?\*?Rows\*?\*?\s*\|\s*[^|]*?(\d+)\s+visible[^|]*\|/i) ||
     text.match(/\|\s*\*?\*?Rows\*?\*?\s*\|\s*(\d+)\s*\([^|]*\|/i) ||
-    text.match(/\|\s*\*?\*?(?:Primary\s+)?Rows?\*?\*?\s*\|\s*(\d+)\b/i);
+    text.match(/\|\s*\*?\*?(?:Primary\s+)?Rows?\*?\*?\s*\|\s*(\d+)\b/i) ||
+    /* Wave UQ-5 prose fallback for rows. */
+    text.match(/\bRows?\s*[:=]\s*(\d{1,2})\s*rows?\b/i) ||
+    text.match(/\b\d{1,2}\s*reels?[\s,]+(\d{1,2})\s*rows?\b/i) ||
+    text.match(/\b\d{1,2}\s*x\s*(\d{1,2})\s+(?:grid|reel\s*layout|game)\b/i);
   if (rowsCell) {
     t.rows = parseInt(rowsCell[1], 10);
     t.confidence_rows = 1;
@@ -1847,6 +1859,28 @@ export function extractSymbolsProseMode(rawText, model) {
   if (/\b(?:MINI|MINOR|MAJOR|GRAND)\b/.test(rawText) && !specials.some((s) => s.kind === 'jackpot')) {
     _push('JP', 'Jackpot', 'jackpot');
   }
+
+  /* Wave UQ-5 (Boki 2026-06-21 "sve redom ultimativno") — cash-on-reel
+   * + multiplier symbol patterns. Hold&Win family games carry credit
+   * values directly on a "cash coin" / "money symbol" / "hot hot" cell.
+   * Vendor-neutral: detected by mechanic phrasing only. */
+  if (!specials.some((s) => s.kind === 'cash_on_reel')) {
+    if (/\bcash[\s-]?on[\s-]?reels?\b|\bcoin\s+symbols?\b|\bmoney\s+symbols?\b|\bcash\s+coins?\b|\bhot\s+hot\s+symbols?\b|\bcoin\s+collect(?:s|ion)?\b/i.test(rawText)) {
+      _push('CR', 'Cash on Reel', 'cash_on_reel');
+    }
+  }
+  if (!specials.some((s) => s.kind === 'multiplier')) {
+    if (/\bmultiplier\s+symbols?\b|\bmult\s+orb\s+symbols?\b|\borb\s+with\s+(?:multiplier|value)\b|\bmultiplier\s+orbs?\b/i.test(rawText)) {
+      _push('M', 'Multiplier Symbol', 'multiplier');
+    }
+  }
+  /* Pattern E — Hard Hat / Trigger symbols (LW family) — when GDD mentions
+   * "trigger symbol" or "feature symbol" without naming it explicitly. */
+  if (!specials.some((s) => s.kind === 'scatter') && !specials.some((s) => s.kind === 'bonus')) {
+    if (/\btrigger\s+symbols?\b|\bfeature\s+symbols?\b|\bbonus\s+(?:trigger|coin|disc)\s+symbols?\b/i.test(rawText)) {
+      _push('TR', 'Trigger', 'scatter');
+    }
+  }
 }
 
 /* ─── Wave UQ-2 — prose-mode payback / volatility / max-win extractor ─
@@ -2085,6 +2119,109 @@ export function extractFeatureConfigsProseMode(rawText, model) {
         }
       }
       if (thresholds.length >= 2) bwt.thresholds = thresholds;
+    }
+  }
+
+  /* Wave UQ-5 (Boki 2026-06-21 "sve redom ultimativno") — promote 7 more
+   * features from 'inferred' to 'declared' when their canonical configs
+   * are in prose. Each extractor sets at least one concrete field so
+   * parserTouchedIt flips at applyDeclaredFlags time. */
+
+  /* anteBet.multiplier — "ante bet at 1.25x", "ante mode +25% stake". */
+  if (model.anteBet && model.anteBet.enabled !== false) {
+    const ab = model.anteBet;
+    if (ab.multiplier == null) {
+      const m = rawText.match(/\bante[\s-]?bet\b[^.]{0,40}?(\d+(?:\.\d{1,2})?)\s*[x×]/i) ||
+                rawText.match(/\b(\d+(?:\.\d{1,2})?)\s*[x×]\s*(?:bet|stake)[^.]{0,30}?\bante/i) ||
+                rawText.match(/ante[\s-]?bet[^.]{0,30}?\+(\d+)\s*%/i);
+      if (m) {
+        let n = parseFloat(m[1]);
+        if (m[0].includes('%')) n = 1 + n / 100;   /* +25% → 1.25 */
+        if (n >= 1.05 && n <= 5) ab.multiplier = n;
+      }
+    }
+  }
+
+  /* lightning.values — "lightning multipliers ×2 / ×3 / ×5 / ×10",
+   * "strike multipliers up to 100x". */
+  if (model.lightning && model.lightning.enabled !== false) {
+    const lt = model.lightning;
+    if (!Array.isArray(lt.values) || lt.values.length === 0) {
+      const m = rawText.match(/\blightning[^.]{0,80}?[x×](\d+)\s*[/,·\s]+[x×]?(\d+)\s*[/,·\s]+[x×]?(\d+)(?:\s*[/,·\s]+[x×]?(\d+))?/i);
+      if (m) {
+        const vals = [m[1], m[2], m[3], m[4]].filter(Boolean).map((v) => parseInt(v, 10)).filter((n) => n >= 2 && n <= 10000);
+        if (vals.length >= 2) lt.values = vals;
+      } else {
+        const upto = rawText.match(/\blightning[^.]{0,40}?up\s*to\s*(\d+)\s*[x×]/i);
+        if (upto) {
+          const n = parseInt(upto[1], 10);
+          if (n >= 2 && n <= 10000) lt.values = [2, 3, 5, n];
+        }
+      }
+    }
+  }
+
+  /* respin.respinsAwarded — "3 respins on hit", "1 free respin". */
+  if (model.respin && model.respin.enabled !== false) {
+    const rp = model.respin;
+    if (rp.respinsAwarded == null) {
+      const m = rawText.match(/\b(\d{1,2})\s*(?:free\s*)?respins?\b/i);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (n >= 1 && n <= 20) rp.respinsAwarded = n;
+      }
+    }
+  }
+
+  /* mysterySymbol — pool of symbols to reveal, and includeWild flag.
+   * Often described as "mystery symbol reveals any non-feature symbol". */
+  if (model.mysterySymbol && model.mysterySymbol.enabled !== false) {
+    const my = model.mysterySymbol;
+    if (my.includeWild == null) {
+      if (/mystery[^.]{0,80}?(?:reveals?|transforms?)[^.]{0,80}?(?:wild|including\s+wild)/i.test(rawText)) {
+        my.includeWild = true;
+      } else if (/mystery[^.]{0,80}?(?:reveals?|transforms?)[^.]{0,80}?(?:non[\s-]wild|paying\s+symbols?\s+only)/i.test(rawText)) {
+        my.includeWild = false;
+      }
+    }
+  }
+
+  /* stickyWild.durationSpins — "sticky wilds stay for 5 spins",
+   * "remain sticky for the duration of free spins". */
+  if (model.stickyWild && model.stickyWild.enabled !== false) {
+    const sw = model.stickyWild;
+    if (sw.durationSpins == null) {
+      const m = rawText.match(/sticky\s*wilds?[^.]{0,80}?(?:for\s+|stay[s]?\s+(?:on\s+)?)(\d{1,2})\s*spins?/i) ||
+                rawText.match(/wilds?\s+(?:remain|stay)\s+sticky[^.]{0,40}?(\d{1,2})\s*spins?/i);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (n >= 1 && n <= 50) sw.durationSpins = n;
+      } else if (/sticky\s*wilds?[^.]{0,80}?(?:duration\s+of\s+)?free\s*spins?/i.test(rawText)) {
+        sw.durationSpins = -1;   /* -1 = entire FS round */
+      }
+    }
+  }
+
+  /* walkingWild.direction — "walking wild moves left", "shifts down each spin". */
+  if (model.walkingWild && model.walkingWild.enabled !== false) {
+    const ww = model.walkingWild;
+    if (!ww.direction) {
+      if (/walking\s+wilds?[^.]{0,40}?(?:moves?|shifts?|walks?)\s+(?:to\s+the\s+)?left/i.test(rawText)) ww.direction = 'left';
+      else if (/walking\s+wilds?[^.]{0,40}?(?:moves?|shifts?|walks?)\s+(?:to\s+the\s+)?right/i.test(rawText)) ww.direction = 'right';
+      else if (/walking\s+wilds?[^.]{0,40}?(?:moves?|shifts?|walks?)\s+(?:down|downwards?)/i.test(rawText)) ww.direction = 'down';
+    }
+    if (ww.triggerRespin == null) {
+      if (/walking\s+wilds?[^.]{0,80}?(?:respin|extra\s+spin)/i.test(rawText)) ww.triggerRespin = true;
+    }
+  }
+
+  /* expandingWild.mode — "expanding wilds during free spins only", "any spin". */
+  if (model.expandingWild && model.expandingWild.enabled !== false) {
+    const ew = model.expandingWild;
+    if (!ew.mode) {
+      if (/expanding\s+wilds?[^.]{0,40}?(?:during|in|only\s+in)\s+free\s*spins?/i.test(rawText)) ew.mode = 'fs';
+      else if (/expanding\s+wilds?[^.]{0,40}?(?:any\s+spin|base\s+game)/i.test(rawText)) ew.mode = 'base';
+      else if (/expanding\s+wilds?[^.]{0,40}?(?:both|any\s+phase)/i.test(rawText)) ew.mode = 'both';
     }
   }
 
