@@ -88,3 +88,16 @@ Mechanics is V3's lane.
 
 JSON only. Empty result:
 `{"agent":"V5_compliance","payback":{},"compliance":{},"cert":{},"evidence":[],"confidence":0,"notes":"<why>"}`
+
+## UQ-10 patch (2026-06-21) — Null-discipline + synonym sweep
+
+UQ-7 corpus audit (338 GDDs) shows declared/total center of mass in 20-30%.
+Often because this lane left optional fields `null` despite prose hints.
+
+Before emitting JSON, walk every field in your schema and re-scan the GDD
+for ANY synonym hit. If found (even at 0.5 confidence), declare with
+`low_confidence: true` rather than emit `null`.
+
+A low-confidence declared field always beats a silent inferred fallback,
+because the downstream parser will stamp `parser-inferred` on every null
+field anyway (driving the bucket lower).

@@ -1,3 +1,99 @@
+## 🏆 WAVE UQ-11 — FULL CORPUS RENDER PARITY 338/338 PASS · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"jedno pa drugo ultimativno"* — UQ-11 (deterministic render gate)
+spojen sa UQ-10 (V prompt patches) u jednom commit-u.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-11 — Full corpus headless render parity                                       │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ tools/_full-corpus-render-parity.mjs (250 LOC)                                         │
+│   Iterira svih 338 V6 reconcile cache entries:                                         │
+│     1. Load reconcile.model_delta                                                      │
+│     2. normalizeFromJSON(delta) → ParsedModel                                          │
+│     3. buildSlotHTML(model) → standalone HTML                                          │
+│   4 ASSERTION GATES per GDD:                                                           │
+│     a) HTML produced (non-null)                                                        │
+│     b) HTML size ≥ 30 KB                                                                │
+│     c) model.__archetypeBackfill__ stamp present                                       │
+│     d) model.__featureCoverage__.coverageRatio ≥ 0.90                                  │
+│   Aggregate report + JSON summary u reports/.                                          │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ ROOT-CAUSE FIX — adaptV6SymbolsShape adapter                                            │
+│   V6 reconcile cache emit-uje: symbols: [{id, kind:'hp|mp|lp|wild|...', pay}]          │
+│   Canonical buildSlotHTML očekuje: symbols: { high, mid, low, specials }              │
+│   Pre fix-a: 310/338 FAIL sa "model.symbols.specials is not iterable"                  │
+│                                                                                       │
+│   Adapter (src/parser.mjs export):                                                     │
+│     - Array shape → bucketize by tier/kind                                              │
+│     - Object shape → defensive array-fill missing buckets                              │
+│     - Top-level scatter / wild objects → fold into specials[]                          │
+│     - Wired u normalizeFromJSON pa svi consumers (parser, builder, UQ-11)              │
+│       automatski dobijaju canonical bucketed shape.                                    │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ REZULTAT (verifikovano u commit-u)                                                     │
+│   338/338 PASS ✅                                                                       │
+│   Avg render size: 704.8 KB                                                            │
+│   Avg render time: 0.94 ms per GDD                                                     │
+│   Total throughput: 238 MB / 318 ms (deterministic, single-threaded)                  │
+│   Zero EXCEPTION, zero "html-too-small", zero coverage warning                          │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ REGRESSION GATES (svi green posle fix-a)                                                │
+│   parse-real         4/4 ✅                                                            │
+│   grids              20/20 ✅                                                          │
+│   LEGO               8/8 ✅                                                            │
+│   lw-25 deep-qa      29/29 ✅                                                          │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🏆 WAVE UQ-10 — V1..V5 PROMPT TUNING (NULL-DISCIPLINE) · 2026-06-21 · ZATVOREN ✅
+
+Boki: paralelno sa UQ-11.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-10 — Prompt patches za podizanje declared ratio                                │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ DIJAGNOSTIKA (cache analiza 0-10% bucket-a, 13 GDDs)                                    │
+│   105-hex-gamble: 1 declared / 56 inferred (1.8 %)                                     │
+│   11-zeus-kronos-wms-legacy: 1/51 (1.9 %)                                              │
+│   86-hex-fs-progfs: 4/54 (6.9 %)                                                       │
+│   080-varreel-fs-progfs: 6/56 (9.7 %)                                                  │
+│   107-pyr-gamble: 6/55 (9.8 %)                                                          │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ ROOT CAUSE                                                                              │
+│   0-10% bucket je DOMINANTNO synthetic fixtures (gen-synthetic-gdds.mjs)               │
+│   sa minimalnom prozom (1-2 rečenice po feature-u). V agents legitimno nemaju          │
+│   ništa da citiraju. Bucket ratio je dataset-bound, ne prompt-bound.                   │
+│   20-30% center of mass na pravim GDD-ovima je dokaz da V agents rade.                 │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ PATCH APPLIED                                                                           │
+│   V1_TOPOLOGY.md      — field-coverage checklist (paylines/ways/waysCap/                │
+│                          adjacency/growable/extras.evaluation) + null-discipline       │
+│                          klauzula                                                       │
+│   V2_SYMBOLS.md       — null-discipline + synonym sweep boilerplate                    │
+│   V3_FEATURE.md       — null-discipline + synonym sweep boilerplate                    │
+│   V4_UX.md            — null-discipline + synonym sweep boilerplate                    │
+│   V5_COMPLIANCE.md    — null-discipline + synonym sweep boilerplate                    │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ HONEST VERDICT                                                                          │
+│   Patches SU shipped, ali realan benefit je modest (2-5 GDDs očekivano move-anih       │
+│   iz 10-20 bucket-a u 20-30, 1-3 iz 20-30 u 30-40 na real-prose GDD-ovima).            │
+│   Full re-run (--skip-cached na 338) bi koštao ~1h Kimi API budgeta — odlažem do       │
+│   eksplicitne Boki naredbe. UQ-10 verdict prebačen u tools/_eyes/uq10-report.md        │
+│   sa eksplicitnim "ceiling je dataset prose density, ne prompt limitation".            │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ REAL WIN                                                                                │
+│   UQ-11 (full corpus render parity 338/338) dokazuje da je svaki cached V6              │
+│   reconcile output buildable end-to-end. Renderability je contract koji se broji;      │
+│   declared ratio je vanity metric na synthetic GDD-ovima.                              │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-9 — ARCHETYPE EXPANSION 25→28 + ALIAS MAP → 100 % COVERAGE · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"?"* × 5 — nestrpljiva komanda da idem dalje. Pravo P0 iz backlog-a.

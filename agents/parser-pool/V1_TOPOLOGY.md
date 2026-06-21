@@ -76,3 +76,29 @@ UX, compliance, and reconciliation. **Do not stray outside your lane.**
 - One JSON object, root keys exactly: agent, topology, evidence, confidence, notes.
 - If you cannot parse the GDD at all, emit:
   `{"agent":"V1_topology","topology":null,"evidence":[],"confidence":0,"notes":"<why>"}`
+
+## UQ-10 patch (2026-06-21) — Field-coverage checklist
+
+UQ-7 audit (338-GDD corpus) shows the declared/total ratio center of mass
+sits in the 20-30% bucket. Often because optional topology fields stayed
+`null` even when prose hints existed.
+
+**Before emitting the final JSON, walk this checklist and re-scan the
+GDD for ANY hint of each optional field:**
+
+- `paylines` synonyms: `lines`, `paylines`, `winlines`, `bet lines`,
+  `25 lines`, `pay lines`
+- `ways` synonyms: `ways`, `ways to win`, `243 ways`, `4096 ways`
+- `waysCap` synonyms: `up to 117,649 ways`, `dynamic ways cap`,
+  `max ways during FS`
+- `adjacency` synonyms: `pays left-to-right`, `pays any direction`,
+  `any 8 anywhere`, `cluster of 5+ adjacent`
+- `growable` synonyms: `expands during FS`, `infinity reels`,
+  `grows from 5×3 to 5×6`
+- `extras.evaluation` synonyms: `lines`, `ways`, `cluster`,
+  `pay anywhere`, `scatter pay`
+
+**Null-discipline rule:** Mark a field `null` ONLY after re-scanning ALL
+synonyms above. If you find ONE hit (even at 0.5 confidence), record it
+and stamp `low_confidence: true` in `notes`. A low-confidence declared
+field is better than a silent parser-inferred fallback.

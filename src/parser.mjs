@@ -2761,6 +2761,10 @@ export function normalizeFromJSON(obj) {
   model.theme = obj.theme || model.theme;
   model.topology = obj.topology || obj.layout || model.topology;
   model.symbols = obj.symbols || model.symbols;
+  /* Wave UQ-11 — V6 reconcile cache emits symbols as a flat array; canonical
+   * builder expects bucketed shape { high, mid, low, specials }. Adapter
+   * preserves backward compat (already-bucketed objects pass through). */
+  model.symbols = adaptV6SymbolsShape(model.symbols, obj);
   model.features = (obj.features || []).map(f => ({
     kind: f.kind || f.type || 'unknown',
     label: f.label || f.name || f.kind || 'Feature',
@@ -2781,6 +2785,65 @@ export function normalizeFromJSON(obj) {
      renderable model identical to the markdown happy path. */
   applySmartDefaults(model);
   return model;
+}
+
+/* Wave UQ-11 (Boki 2026-06-21) — V6 reconcile cache symbols adapter.
+ *
+ * Cache shape: `symbols: [{ id, name, kind: 'hp|mp|lp|wild|scatter|bonus', tier, pay }]`
+ * Canonical:   `symbols: { high: [], mid: [], low: [], specials: [] }`
+ *
+ * Why exported: tools/_full-corpus-render-parity.mjs and any consumer
+ * that feeds V6 reconcile output directly into buildSlotHTML needs
+ * this single canonicalization step. Folding scatter / wild top-level
+ * objects into specials[] is part of the same adapter.
+ *
+ * @param {object|Array} symbols
+ * @param {object} [obj] full V6 model_delta — for scatter / wild folding
+ * @returns {object} bucketed symbols shape
+ */
+export function adaptV6SymbolsShape(symbols, obj) {
+  let out;
+  if (Array.isArray(symbols)) {
+    out = { high: [], mid: [], low: [], specials: [] };
+    for (const s of symbols) {
+      if (!s || typeof s !== 'object') continue;
+      const tier = (s.tier || s.kind || '').toLowerCase();
+      const entry = {
+        id: s.id || s.name || '',
+        label: s.label || s.name || s.id || '',
+        kind: s.kind || tier || 'mp',
+        pay: s.pay || {},
+      };
+      if (s.special) entry.special = s.special;
+      if (tier === 'hp' || /^h\d/.test(entry.id)) out.high.push(entry);
+      else if (tier === 'lp') out.low.push(entry);
+      else if (['wild','scatter','bonus','special','multiplier','sticky','expanding','mystery','transform','chain_wild'].includes(entry.kind)) {
+        out.specials.push(entry);
+      } else if (tier === 'mp') {
+        out.mid.push(entry);
+      } else {
+        out.mid.push(entry);
+      }
+    }
+  } else if (symbols && typeof symbols === 'object') {
+    out = {
+      high:     Array.isArray(symbols.high)     ? symbols.high     : [],
+      mid:      Array.isArray(symbols.mid)      ? symbols.mid      : [],
+      low:      Array.isArray(symbols.low)      ? symbols.low      : [],
+      specials: Array.isArray(symbols.specials) ? symbols.specials : [],
+    };
+  } else {
+    out = { high: [], mid: [], low: [], specials: [] };
+  }
+  /* Fold top-level scatter / wild into specials when present and not already
+   * tracked (V6 cache pattern). */
+  if (obj && obj.scatter && obj.scatter.id && !out.specials.some(s => s.id === obj.scatter.id)) {
+    out.specials.push({ id: obj.scatter.id, label: obj.scatter.label || 'Scatter', kind: 'scatter', pay: {} });
+  }
+  if (obj && obj.wild && obj.wild.id && !out.specials.some(s => s.id === obj.wild.id)) {
+    out.specials.push({ id: obj.wild.id, label: obj.wild.label || 'Wild', kind: 'wild', pay: {} });
+  }
+  return out;
 }
 
 /* ─── factory ──────────────────────────────────────────────── */
