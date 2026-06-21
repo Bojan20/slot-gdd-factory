@@ -1,3 +1,45 @@
+## 🏆 WAVE UQ-7 — POST-KIMI CACHE AUDIT TOOL · 2026-06-21 · TOOL ZATVOREN ✅ / FULL RUN ⏳ (čeka B)
+
+Boki: *"kreni"* — proaktivno gradim audit alat sad, full run kad B završi.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-7 — tools/uq7-cache-audit.mjs                                                  │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ ŠTA RADI                                                                              │
+│   Čita sve fajlove iz tools/_wave-v-cache/, agregira V6 scorecards +                   │
+│   model_delta surface preko korpusa, piše:                                             │
+│     tools/_eyes/uq7-report/uq7-summary.json   (machine-readable)                       │
+│     tools/_eyes/uq7-report/uq7-report.md      (human-readable)                         │
+│                                                                                       │
+│ MARKDOWN SECTIONS                                                                     │
+│   1. Agent parse coverage   — V1..V5 hit-rate histogram                                │
+│   2. Confidence histogram   — declared / total ratio buckets                           │
+│   3. Top-20 conflict GDDs   — gde je V1..V5 reconcile najjače fight-ovao               │
+│   4. Topology kind spread   — distribucija arhetipa po korpusu                         │
+│   5. Top-30 feature kinds   — sa ✅/❌ archetype-catalog membership                    │
+│   6. Unknown feature kinds  — kandidati za UQ-9 archetype expansion                    │
+│                                                                                       │
+│ CLI                                                                                   │
+│   node tools/uq7-cache-audit.mjs              full corpus                              │
+│   node tools/uq7-cache-audit.mjs --limit 50   partial dry-run                          │
+│   node tools/uq7-cache-audit.mjs --json       stdout JSON only                         │
+│                                                                                       │
+│ PARTIAL DRY-RUN INSIGHTS (163/323 cache, B i dalje running)                            │
+│   ✅ 163/163 hit V5/5 — Kimi parse success rate = 100 %                                │
+│   ✅ 0 V1..V5 conflicts → V6 deterministic merge stable                                │
+│   📊 134 rectangular + 13 cluster + 9 ostalih topology kinds                           │
+│   🎯 25 unknown feature kinds emerged → UQ-9 seed list                                 │
+│   🟡 Confidence ratio center of mass: 20-30 % bucket (96/163) →                        │
+│      prostor za V1..V5 prompt-tuning da boostuje declared/inferred ratio              │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   c95b4a7 feat(UQ-7): post-Kimi cache audit — aggregator over V6 reconcile cache      │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-8 — SMART-DEFAULTS STAGE 5: ARCHETYPE BACKFILL · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"kreni"* (continue redom). Drugi predlog iz UQ-6 šta-dalje liste (UQ-8).
