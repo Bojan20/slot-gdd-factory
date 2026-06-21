@@ -54,3 +54,4 @@ tools/_wave-v-cache/
 
 # UQ-14 ingest output — regenerated per run.
 dist/ingest/
+dist/docs/
