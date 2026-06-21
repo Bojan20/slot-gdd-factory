@@ -194,6 +194,19 @@ export function parseMarkdownGDD(text) {
    * fallback (model.__symbolFallback__) and never carries real symbol
    * intent. Universal — never reads vendor names, only pattern shapes. */
   _safeExtract('extractSymbolsProseMode', () => extractSymbolsProseMode(text, model), model);
+  /* Wave UQ-2 (Boki 2026-06-21 "dalje i dublje do kraja") — PROSE-MODE
+   * payback / volatility / max-win extractor. Many real GDDs declare
+   * "RTP: ~96%", "Max Win: 5,000x bet", "Volatility: High" in prose
+   * paragraphs. Previously these were math-layer fields and intentionally
+   * skipped — but Wave U2 made them user-visible (paytable info modal),
+   * so they must be carried in the model. Universal pattern shapes,
+   * never vendor-specific. */
+  _safeExtract('extractPaybackProseMode', () => extractPaybackProseMode(text, model), model);
+  /* Wave UQ-3 — PROSE-MODE feature config extractor for freeSpins /
+   * holdAndWin / gamble / multiplierOrb / winCap when GDDs declare
+   * concrete values in prose ("Free Spins with 2x multiplier on each
+   * spin", "Hold & Win awards 3 respins", "Max win 5000x bet"). */
+  _safeExtract('extractFeatureConfigsProseMode', () => extractFeatureConfigsProseMode(text, model), model);
   const totalSyms =
     model.symbols.high.length +
     model.symbols.mid.length +
@@ -676,12 +689,20 @@ function applyDeclaredFlags(model, rawText, preDefaultsSnapshot) {
     const isStillStubOnly = concreteNow === 0;
     const parserTouchedIt = preConcrete > 0;
 
-    if (derivedBy[key]) {
-      source = 'default';
-    } else if (parserTouchedIt) {
-      /* Parser wrote concrete values DURING extraction phase → declared. */
+    /* Wave UQ (Boki 2026-06-21 "dalje i dublje do kraja") — promotion
+     * order inverted. Pre-fix: derivedBy check trumped parserTouchedIt,
+     * so any key that smart-defaults later filled stayed 'default' even
+     * if the parser had concrete values from the GDD text. Result: prose
+     * extractors couldn't promote keys past 'inferred' → declared ratio
+     * stuck around 14-16 %. Post-fix: parserTouchedIt wins first, so any
+     * key the prose extractors populated lands on 'declared'. */
+    if (parserTouchedIt) {
+      /* Parser wrote concrete values DURING extraction phase → declared.
+       * This beats any later smart-defaults backfill — the GDD said it. */
       source = 'declared';
       hasContent = !isStillStubOnly;
+    } else if (derivedBy[key]) {
+      source = 'default';
     } else if (isEmpty || isStillStubOnly) {
       /* freshModel stub never touched by extractor, smart-defaults
        * didn't fill, or extractor only set everything to undefined. */
@@ -1694,6 +1715,269 @@ export function extractSymbolsProseMode(rawText, model) {
   /* Pattern D — capture progressive jackpot tier names if mentioned. */
   if (/\b(?:MINI|MINOR|MAJOR|GRAND)\b/.test(rawText) && !specials.some((s) => s.kind === 'jackpot')) {
     _push('JP', 'Jackpot', 'jackpot');
+  }
+}
+
+/* ─── Wave UQ-2 — prose-mode payback / volatility / max-win extractor ─
+ * Boki 2026-06-21 "dalje i dublje do kraja". Reads RTP, max-win cap,
+ * volatility tier label, hit frequency, and bet range from prose. These
+ * are math fields strictly, but Wave U2 surfaced them in the paytable
+ * info modal (RTP / Max win / Volatility chips) — they must travel in
+ * the model so the visibility layer can render them.
+ *
+ * Only writes when GDD explicitly states a value; never invents defaults.
+ */
+export function extractPaybackProseMode(rawText, model) {
+  if (!rawText || !model) return;
+
+  /* model.payback bucket — never overwrite explicit table-derived values. */
+  if (!model.payback || typeof model.payback !== 'object') model.payback = {};
+  const p = model.payback;
+
+  /* RTP — accept "RTP: 96%", "RTP ~96%", "RTP 96.5%", "payback 96.5%",
+   * "return-to-player ~96%". Capture the first number with optional
+   * decimal point. */
+  if (p.rtp == null) {
+    const rtpMatch = rawText.match(/\b(?:RTP|return\s*to\s*player|payback(?:\s*percentage)?)\s*[:=~≈]?\s*~?\s*(\d{2,3}(?:\.\d{1,2})?)\s*%/i);
+    if (rtpMatch) {
+      const n = parseFloat(rtpMatch[1]);
+      if (Number.isFinite(n) && n >= 70 && n <= 99.99) {
+        p.rtp = n;
+      }
+    }
+  }
+
+  /* Hit frequency — "Hit frequency: 25%", "hit rate ~30%". */
+  if (p.hitFrequency == null) {
+    const hf = rawText.match(/\bhit\s*(?:frequency|rate)\s*[:=~≈]?\s*~?\s*(\d{1,3}(?:\.\d{1,2})?)\s*%/i);
+    if (hf) {
+      const n = parseFloat(hf[1]);
+      if (Number.isFinite(n) && n >= 5 && n <= 80) p.hitFrequency = n;
+    }
+  }
+
+  /* Bet range — "Bet Range: $0.10 - $100", "min $0.20, max $50",
+   * "0.20 - 100 EUR". Captures min + max. */
+  if (p.minBet == null || p.maxBet == null) {
+    const br = rawText.match(/\b(?:bet\s*range|stake\s*range|min\s*bet)\s*[:=]?\s*[\$€£]?\s*(\d+(?:\.\d{1,2})?)\s*(?:[-–to]+\s*[\$€£]?\s*(\d+(?:\.\d{1,2})?)|)/i);
+    if (br) {
+      const mn = parseFloat(br[1]);
+      const mx = br[2] ? parseFloat(br[2]) : null;
+      if (Number.isFinite(mn) && mn > 0 && mn < 10000) p.minBet = mn;
+      if (Number.isFinite(mx) && mx > 0 && mx < 100000) p.maxBet = mx;
+    }
+  }
+
+  /* Theme.volatility — "Volatility: High", "high volatility", "med-high vol". */
+  if (!model.theme) model.theme = {};
+  if (!model.theme.volatility) {
+    const vol = rawText.match(/\bvolatility\s*[:=]?\s*(very\s+high|extreme|high|med(?:ium)?[\s-]?high|med(?:ium)?[\s-]?low|medium|low[\s-]?med(?:ium)?|low)\b/i) ||
+                rawText.match(/\b(very\s+high|extreme|high|medium[\s-]?high|low[\s-]?medium|medium|low)\s+(?:volatility|variance)\b/i);
+    if (vol) {
+      let v = vol[1].toLowerCase().replace(/\s+/g, '-');
+      const canon = {
+        'low': 'low', 'low-medium': 'low-medium', 'low-med': 'low-medium',
+        'medium': 'medium', 'med': 'medium', 'medium-high': 'medium-high',
+        'med-high': 'medium-high', 'high': 'high', 'very-high': 'extreme',
+        'extreme': 'extreme',
+      };
+      model.theme.volatility = canon[v] || v;
+    }
+  }
+
+  /* WinCap — "Max Win: 5,000x bet", "Maximum win 10000x", "capped at 5000x stake". */
+  if (!model.winCap || typeof model.winCap !== 'object') model.winCap = {};
+  if (model.winCap.maxWinX == null) {
+    const cap = rawText.match(/\b(?:max(?:imum)?\s*win|win\s*cap|capped\s*at)\s*[:=]?\s*([\d,]+)\s*[x×]\s*(?:bet|stake|total\s*bet)?\b/i);
+    if (cap) {
+      const n = parseInt(cap[1].replace(/,/g, ''), 10);
+      if (Number.isFinite(n) && n >= 50 && n <= 10000000) model.winCap.maxWinX = n;
+    }
+  }
+}
+
+/* ─── Wave UQ-3 — prose-mode feature config extractor ──────────────────
+ * Pulls concrete feature-config values out of prose so the resulting
+ * model.<feature>.<knob> path is "declared" rather than "inferred". */
+export function extractFeatureConfigsProseMode(rawText, model) {
+  if (!rawText || !model) return;
+
+  /* freeSpins.multiplier — "with 2x multiplier on each spin", "5x mult during
+   * free games", "multiplier increases ×1 per spin up to ×10". */
+  if (model.freeSpins && model.freeSpins.enabled) {
+    const fs = model.freeSpins;
+    if (fs.multiplier == null) {
+      const m = rawText.match(/\bfree\s*spins?[^.]{0,80}?(\d{1,3})\s*[x×]\s*multiplier/i) ||
+                rawText.match(/\b(\d{1,3})\s*[x×]\s*multiplier[^.]{0,80}?free\s*spins?/i);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (n >= 2 && n <= 1000) fs.multiplier = n;
+      }
+    }
+    /* Progressive multiplier "starts ×1, increments by ×1 ... caps at ×10". */
+    if (!fs.progressiveMultiplier) {
+      const pm = rawText.match(/progressive\s*multiplier[^.]*?(?:starts?|begin)\s*(?:at\s*)?[x×]?(\d+)[^.]*?(?:caps?|maxim(?:um)?)\s*(?:at\s*)?[x×]?(\d+)/i);
+      if (pm) {
+        fs.progressiveMultiplier = { startValue: parseInt(pm[1], 10), cap: parseInt(pm[2], 10) };
+      }
+    }
+    /* retriggerSpins — "+5 extra spins on retrigger", "retrigger adds 10 spins". */
+    if (fs.retriggerSpins == null) {
+      const rt = rawText.match(/\bretrigger[^.]{0,40}?\+?(\d{1,3})\s*(?:extra\s*)?(?:spins?|free\s*spins?)/i) ||
+                 rawText.match(/\+\s*(\d{1,3})\s*(?:spins?|free\s*spins?)[^.]{0,40}?retrigger/i);
+      if (rt) {
+        const n = parseInt(rt[1], 10);
+        if (n >= 1 && n <= 100) fs.retriggerSpins = n;
+      }
+    }
+  }
+
+  /* holdAndWin.gridFill — "full board pays 500x", "full grid bonus 1000x". */
+  if (model.holdAndWin && (model.holdAndWin.enabled || Object.keys(model.holdAndWin).length)) {
+    const hw = model.holdAndWin;
+    if (!hw.gridFill || hw.gridFill.fullGridBonus == null) {
+      const fg = rawText.match(/\bfull[\s-](?:grid|board|screen)[\s-](?:pays?|bonus|award)\s*[:=]?\s*([\d,]+)\s*[x×]/i) ||
+                 rawText.match(/\bevery\s*cell[\s-]locked[^.]{0,40}?([\d,]+)\s*[x×]/i);
+      if (fg) {
+        const n = parseInt(fg[1].replace(/,/g, ''), 10);
+        if (n >= 50 && n <= 1000000) {
+          hw.gridFill = { ...(hw.gridFill || {}), fullGridBonus: n };
+        }
+      }
+    }
+    /* triggerCount — "6+ bonus orbs", "≥ 6 hard hats trigger". */
+    if (hw.triggerCount == null) {
+      const tc = rawText.match(/\b(\d{1,2})\s*\+\s*(?:bonus\s*orbs?|hard\s*hats?|scatter[s]?|coin\s*symbols?)/i) ||
+                 rawText.match(/\b(?:≥|>=|at\s*least)\s*(\d{1,2})\s*(?:bonus|coin|scatter|hat)/i);
+      if (tc) {
+        const n = parseInt(tc[1], 10);
+        if (n >= 3 && n <= 15) hw.triggerCount = n;
+      }
+    }
+  }
+
+  /* multiplierOrb.values — "multipliers from 2x to 100x", "orbs awarded ×2..×500". */
+  if (model.multiplierOrb && model.multiplierOrb.enabled) {
+    const mo = model.multiplierOrb;
+    if (!Array.isArray(mo.values) || mo.values.length === 0) {
+      const mv = rawText.match(/\bmultipliers?\s*(?:from|of|up\s*to|awarded|range)?\s*[x×]?(\d{1,4})\s*(?:[-–to]+|up\s*to)\s*[x×]?(\d{1,4})\s*[x×]?/i);
+      if (mv) {
+        const lo = parseInt(mv[1], 10);
+        const hi = parseInt(mv[2], 10);
+        if (lo > 0 && hi > lo && hi <= 10000) {
+          /* canonical ladder: lo, hi/2, hi (3-tier minimum). */
+          mo.values = [lo, Math.round((lo + hi) / 2), hi];
+        }
+      }
+    }
+  }
+
+  /* gamble.kind — "Red/Black gamble", "Card gamble", "Ladder gamble". */
+  if (model.gamble && model.gamble.enabled) {
+    const g = model.gamble;
+    if (!g.kind) {
+      if (/\b(?:red[\s\/]+black|colour\s*gamble|card\s*color)\b/i.test(rawText)) g.kind = 'red_black';
+      else if (/\bladder\s*gamble|gamble\s*ladder\b/i.test(rawText)) g.kind = 'ladder';
+      else if (/\bhi[\s-]?lo\b|\bhigher[\s\/]+lower/i.test(rawText)) g.kind = 'hilo';
+    }
+  }
+
+  /* Wave UQ-4 (Boki "dublje do kraja") — fill MORE knobs per feature so
+   * preDefaultsSnapshot captures more "concrete" fields → applyDeclaredFlags
+   * promotes the feature from 'inferred' to 'declared'. */
+
+  /* bonusBuy.multiplier — "Bonus Buy at 47.5x stake", "Buy feature for 100x bet". */
+  if (model.bonusBuy && model.bonusBuy.enabled) {
+    const bb = model.bonusBuy;
+    if (bb.multiplier == null) {
+      const m = rawText.match(/\b(?:bonus\s*buy|buy\s*feature)[^.]{0,60}?(\d+(?:\.\d{1,2})?)\s*[x×]\s*(?:stake|bet|total\s*bet)?\b/i) ||
+                rawText.match(/\b(\d+(?:\.\d{1,2})?)\s*[x×]\s*(?:stake|bet)[^.]{0,40}?(?:bonus\s*buy|buy)/i);
+      if (m) {
+        const n = parseFloat(m[1]);
+        if (n >= 10 && n <= 5000) bb.multiplier = n;
+      }
+    }
+  }
+
+  /* holdAndWin extra knobs: bonusSymbolId + respinsOnHit + jackpotSymbols. */
+  if (model.holdAndWin) {
+    const hw = model.holdAndWin;
+    /* bonusSymbolId — derived from prose-mode symbols that have kind=bonus. */
+    if (!hw.bonusSymbolId && Array.isArray(model.symbols?.specials)) {
+      const bonusSym = model.symbols.specials.find((s) => s && s.kind === 'bonus');
+      if (bonusSym && bonusSym.id) hw.bonusSymbolId = bonusSym.id;
+    }
+    /* respinsOnHit — "3 respins", "respin counter resets to 3". */
+    if (hw.respinsOnHit == null) {
+      const rs = rawText.match(/\b(\d{1,2})\s*respins?(?:\s*(?:awarded|on\s*hit|initial|counter))/i) ||
+                 rawText.match(/respins?\s*(?:awarded|reset(?:s)?\s*to|counter\s*to)\s*(\d{1,2})/i) ||
+                 rawText.match(/\binitial\s*respins?\s*[:=]?\s*(\d{1,2})/i);
+      if (rs) {
+        const n = parseInt(rs[1], 10);
+        if (n >= 1 && n <= 20) hw.respinsOnHit = n;
+      }
+    }
+    /* jackpotSymbols — MINI MINOR MAJOR GRAND. */
+    if (!Array.isArray(hw.jackpotSymbols) || hw.jackpotSymbols.length === 0) {
+      const tiers = [];
+      for (const tier of ['MINI', 'MINOR', 'MAJOR', 'GRAND']) {
+        if (new RegExp('\\b' + tier + '\\b', 'i').test(rawText)) tiers.push(tier);
+      }
+      if (tiers.length >= 2) hw.jackpotSymbols = tiers;
+    }
+  }
+
+  /* freeSpins extra knobs: scatterSymbolId + mode. */
+  if (model.freeSpins && model.freeSpins.enabled) {
+    const fs = model.freeSpins;
+    /* scatterSymbolId — pick first scatter from specials roster. */
+    if (!fs.scatterSymbolId && Array.isArray(model.symbols?.specials)) {
+      const sc = model.symbols.specials.find((s) => s && s.kind === 'scatter');
+      if (sc && sc.id) fs.scatterSymbolId = sc.id;
+    }
+    /* mode — "during free spins" present → 'fs'; "base game" only → 'base'. */
+    if (!fs.mode) fs.mode = 'fs';   /* default for FS configs */
+  }
+
+  /* bigWinTier.thresholds — "BIG ≥ 10× total bet", "MEGA at 25×", "EPIC at 50×". */
+  if (model.bigWinTier && typeof model.bigWinTier === 'object') {
+    const bwt = model.bigWinTier;
+    if (!Array.isArray(bwt.thresholds) || bwt.thresholds.length === 0) {
+      const labels = ['BIG', 'MEGA', 'EPIC', 'SUPER', 'ULTRA'];
+      const thresholds = [];
+      for (const label of labels) {
+        const re = new RegExp('\\b' + label + '\\b\\s*[:=]?\\s*(?:≥|>=|at(?:\\s*least)?)?\\s*(\\d{1,4})\\s*[x×]', 'i');
+        const m = rawText.match(re);
+        if (m) {
+          const n = parseInt(m[1], 10);
+          if (n >= 5 && n <= 10000) thresholds.push({ label, multX: n });
+        }
+      }
+      if (thresholds.length >= 2) bwt.thresholds = thresholds;
+    }
+  }
+
+  /* Theme metadata — mood / setting / tags / genre from prose. */
+  if (!model.theme) model.theme = {};
+  const th = model.theme;
+  if (!th.mood) {
+    const m = rawText.match(/\bMood\s*[:=]\s*([^.\n]{3,120})/i);
+    if (m) th.mood = m[1].trim().slice(0, 100);
+  }
+  if (!th.setting) {
+    const s = rawText.match(/\bSetting\s*[:=]\s*([^.\n]{3,120})/i);
+    if (s) th.setting = s[1].trim().slice(0, 100);
+  }
+  if (!th.genre) {
+    const g = rawText.match(/\bGenre\s*[:=]\s*([^.\n]{3,80})/i);
+    if (g) th.genre = g[1].trim().slice(0, 80);
+  }
+  if (!Array.isArray(th.tags) || th.tags.length === 0) {
+    const t = rawText.match(/\b(?:Theme\s*tags?|Tags?)\s*[:=]\s*([^.\n]{3,200})/i);
+    if (t) {
+      const parts = t[1].split(/[·,;\/]+/).map((s) => s.trim().toLowerCase()).filter((s) => s.length >= 2 && s.length <= 30);
+      if (parts.length) th.tags = parts.slice(0, 12);
+    }
   }
 }
 
