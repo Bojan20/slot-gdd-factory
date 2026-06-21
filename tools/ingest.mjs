@@ -32,9 +32,13 @@
  *   8. (Optional --open) macOS `open` on index.html
  *
  * EXIT CODES
- *   0 success
- *   1 source/parse/build failure
+ *   0 success — all steps green
+ *   1 source/parse/build hard failure
  *   2 bad CLI usage
+ *   3 (UQ-FORTIFY3) ingest finished but Kimi reconcile soft-failed —
+ *     parser baseline shipped but agent V6 layer is degraded.
+ *     CI should treat as WARN; downstream tools can decide whether to
+ *     gate on this or accept the parser-only output.
  */
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -339,10 +343,28 @@ try {
           const cur = JSON.parse(await fsp.readFile(cacheFile, 'utf8'));
           cur.__parser_hash__ = freshHash;
           cur.__stamped_at__ = new Date().toISOString();
-          /* Atomic write via tmp + rename. */
+          /* UQ-FORTIFY3 #3 — durable atomic write.
+             Previous design wrote tmp + rename. POSIX rename is atomic
+             when source + dest live on the same filesystem, but a power
+             loss or crash between the writeFile callback and the rename
+             can leave the on-disk bits cached. Force the data and the
+             enclosing directory through fsync before swapping so a
+             crash never resurrects a half-written file. */
           const tmpFile = cacheFile + '.tmp.' + process.pid;
-          await fsp.writeFile(tmpFile, JSON.stringify(cur, null, 2), 'utf8');
+          const fh = await fsp.open(tmpFile, 'w');
+          try {
+            await fh.writeFile(JSON.stringify(cur, null, 2), 'utf8');
+            await fh.sync();
+          } finally {
+            await fh.close();
+          }
           await fsp.rename(tmpFile, cacheFile);
+          /* fsync the parent dir so the rename itself survives crash. */
+          try {
+            const { dirname } = await import('node:path');
+            const dh = await fsp.open(dirname(cacheFile), 'r');
+            try { await dh.sync(); } finally { await dh.close(); }
+          } catch (_) { /* directory fsync best-effort */ }
         } catch (e) {
           log('  warn: could not stamp parser hash: ' + e.message);
         } finally {
@@ -351,6 +373,10 @@ try {
       }
     }).catch((e) => {
       log('  reconcile soft-fail: ' + e.message + ' (continuing without)');
+      /* UQ-FORTIFY3 #6 — record soft-fail so the final exit code is 3
+         instead of 0. CI / downstream tools can decide whether to gate.
+         Note: --no-llm explicit skip is NOT a soft-fail (operator chose). */
+      summary.softFail = { stage: 'kimi-reconcile', reason: e.message };
     });
   } else {
     log('--no-llm — skipping reconcile');
@@ -389,6 +415,12 @@ try {
     log('  opened in browser');
   }
 
+  /* UQ-FORTIFY3 #6 — distinct exit code for "finished with soft-fail" so
+     CI can WARN (3) without falsely passing (0) or hard-failing (1). */
+  if (summary.softFail) {
+    log(`⚠ exit 3 — soft-fail in ${summary.softFail.stage} (${summary.softFail.reason.slice(0, 80)})`);
+    process.exit(3);
+  }
   process.exit(0);
 } catch (e) {
   console.error('✗ ingest failed:', e.message);

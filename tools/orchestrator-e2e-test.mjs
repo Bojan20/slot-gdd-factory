@@ -125,12 +125,31 @@ for (const [slug, expected] of Object.entries(fixture.fixtures)) {
   const cachePath = resolve(REPO, `tools/_wave-v-cache/${toCacheSlug(slug)}.json`);
   const v6Cached = existsSync(cachePath);
   let v6Hash = null, v6DeclaredCount = 0, parserDeclaredCount = 0;
+  let v6SelfCorrected = false, v6PassBAttempts = 0;
   if (v6Cached) {
     try {
       const raw = JSON.parse(readFileSync(cachePath, 'utf8'));
       v6Hash = raw.__parser_hash__ || null;
       const meta = raw.__meta__ || {};
       v6DeclaredCount = Object.values(meta).filter(v => v && v.source === 'gdd-declared').length;
+      /* UQ-FORTIFY3 #4 — consume Pass B self-correction signal.
+         The reconcile tool stamps __self_corrected__ + __pass_b_attempt__
+         per agent reply. Aggregate them so the verdict telemetry shows
+         whether Pass B actually fired and was retained. Without this,
+         the flag was write-only — no observability into self-correction
+         effectiveness. */
+      const md = raw.model_delta || {};
+      for (const k of Object.keys(md)) {
+        const v = md[k];
+        if (v && typeof v === 'object' && v.__self_corrected__) {
+          v6SelfCorrected = true;
+          v6PassBAttempts += (Number(v.__pass_b_attempt__) || 1);
+        }
+      }
+      if (raw.__self_corrected__) {
+        v6SelfCorrected = true;
+        v6PassBAttempts += (Number(raw.__pass_b_attempt__) || 1);
+      }
     } catch (_) {}
   }
   const strictV6 = process.env.STRICT_V6 !== '0';
@@ -138,6 +157,8 @@ for (const [slug, expected] of Object.entries(fixture.fixtures)) {
   verdict.telemetry.v6Cached = v6Cached;
   verdict.telemetry.v6Hash = v6Hash;
   verdict.telemetry.v6DeclaredCount = v6DeclaredCount;
+  verdict.telemetry.v6SelfCorrected = v6SelfCorrected;
+  verdict.telemetry.v6PassBAttempts = v6PassBAttempts;
   if (model && model.__parserDiagnostics__) {
     parserDeclaredCount = model.__parserDiagnostics__.declaredCount || 0;
   }

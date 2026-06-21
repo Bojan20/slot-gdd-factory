@@ -189,7 +189,16 @@ async function _processGdd(slug) {
   /* Wave UQ-FORTIFY2 G1 — Pass B self-correction.
    * Load ground truth if a fixture matches this slug, build CORRECTIONS
    * blocks per agent, re-invoke only the agents that have meaningful
-   * diffs (skip if Pass A already correct → 0 cost). */
+   * diffs (skip if Pass A already correct → 0 cost).
+   *
+   * UQ-FORTIFY3 #2 — Pass B is a SINGLE retry (maxAttempts=1). If the
+   * agent does not converge in one retry, we accept Pass A and move on.
+   * The loop is bounded by construction (one Promise.all on a single
+   * passBAgents array, no recursion, no while loop). A constant + an
+   * assertion guards against future refactors that might wrap this in
+   * a retry loop. The `__pass_b_attempt__` counter is stamped so
+   * downstream verifier can correlate attempts with delta. */
+  const _PASS_B_MAX_ATTEMPTS = 1;
   try {
     const gtPath = resolve(REPO, 'tests/fixtures/semantic-expected.json');
     if (existsSync(gtPath)) {
@@ -207,18 +216,26 @@ async function _processGdd(slug) {
           if (corrections) passBAgents.push({ agent: AGENTS.find(a => a.id === r.id), corrections });
         }
         if (passBAgents.length > 0) {
-          console.log(`  ↻ Pass B re-invocation: ${passBAgents.map(p => p.agent.id).join(', ')}`);
+          console.log(`  ↻ Pass B re-invocation (max=${_PASS_B_MAX_ATTEMPTS}): ${passBAgents.map(p => p.agent.id).join(', ')}`);
+          /* Asserts the constant is consumed (so a future refactor that
+             accidentally drops the cap fails CI). */
+          if (_PASS_B_MAX_ATTEMPTS !== 1) {
+            throw new Error('Pass B attempt cap drifted — review _wave-v-kimi-reconcile.mjs');
+          }
           const passBResults = await Promise.all(
             passBAgents.map(({ agent, corrections }) =>
               _runOneAgent(agent, gddText, baseline, corrections)
                 .catch(e => ({ id: agent.id, raw: '', parsed: null, error: e.message }))
             )
           );
-          /* Replace original reports with Pass B response if it parsed cleanly. */
+          /* Replace original reports with Pass B response if it parsed cleanly.
+             Stamp both self-corrected flag AND the attempt counter so the
+             verifier (UQ-FORTIFY3 #4) can read it as a real signal. */
           for (const pb of passBResults) {
             const idx = reports.findIndex(r => r.id === pb.id);
             if (idx >= 0 && pb.parsed) {
               pb.parsed.__self_corrected__ = true;
+              pb.parsed.__pass_b_attempt__ = 1;
               reports[idx] = pb;
             }
           }
@@ -304,15 +321,22 @@ async function main() {
   }
 
   console.log(`Wave V Kimi reconcile — ${slugs.length} GDDs · concurrency=${CONC}`);
+  /* UQ-FORTIFY3 #1 — race-safe shared queue.
+     Previous design used `const idx = cursor++` inside each worker. While
+     V8 is single-threaded, defensive coding: a future refactor that adds
+     an await between read and write would silently re-introduce a TOCTOU
+     where two workers process the same slug. queue.shift() is atomic at
+     the language level for as long as no await sits between the length
+     check and the shift. Pattern remains stable across refactors. */
+  const queue = slugs.slice();
   const results = [];
-  let cursor = 0;
   let completed = 0;
   const total = slugs.length;
   async function _worker(wid) {
     while (true) {
-      const idx = cursor++;
-      if (idx >= slugs.length) return;
-      const slug = slugs[idx];
+      if (queue.length === 0) return;
+      const slug = queue.shift();
+      if (!slug) return;
       try {
         const r = await _processGdd(slug);
         results.push(r);

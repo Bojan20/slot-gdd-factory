@@ -325,6 +325,20 @@ if (APPLY) {
     let src;
     try {
     src = readFileSync(path, 'utf8');
+    /* UQ-FORTIFY3 #5 — sanitize agent/expected/field/slug values before
+       embedding into the markdown block. Without this, an agent value
+       containing backtick / heading marker would corrupt block syntax
+       on the next round-trip. Strip control chars, collapse newlines,
+       and remove markdown sigils that would prematurely close the block. */
+    function _sanitizeForMd(s) {
+      return String(s == null ? '' : s)
+        .replace(/[\r\n\t -]/g, ' ')
+        .replace(/`/g, "'")
+        .replace(/^#+\s*/, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 80);
+    }
     /* Replace existing AGENT_CALIBRATION block if present, else append. */
     const calBlock = [
       '## AGENT_CALIBRATION (UQ-TRAIN ' + new Date().toISOString().slice(0, 10) + ')',
@@ -332,11 +346,17 @@ if (APPLY) {
       `Lane accuracy on baseline: ${(l.correctCount / Math.max(1, l.totalCount) * 100).toFixed(0)}% (${l.correctCount}/${l.totalCount}).`,
       '',
       'Recurring miss patterns:',
-      ...l.misses.slice(0, 5).map(m => `- "${m.field}" on ${m.slug.slice(0, 28)}: agent said "${m.agent}", expected "${m.expected}"`),
+      ...l.misses.slice(0, 5).map(m =>
+        `- "${_sanitizeForMd(m.field)}" on ${_sanitizeForMd(m.slug).slice(0, 28)}: agent said "${_sanitizeForMd(m.agent)}", expected "${_sanitizeForMd(m.expected)}"`),
       '',
       'When emitting JSON, double-check these fields against GDD prose. Stamp `__self_corrected__: true` if revisiting after CORRECTIONS block.',
       ''
     ].join('\n');
+    /* Round-trip self-check: the block must contain exactly one
+       `## AGENT_CALIBRATION` heading after sanitization. */
+    if ((calBlock.match(/^## /gm) || []).length !== 1) {
+      throw new Error('AGENT_CALIBRATION block sanitization produced multiple headings — refusing to write');
+    }
     /* Wave UQ-FORTIFY F1 — strip ALL existing AGENT_CALIBRATION blocks
      * (not just the first match). Prevents telescoping: multiple --apply
      * runs would otherwise compound headings if old block parsing missed

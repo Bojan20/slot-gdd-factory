@@ -44,7 +44,13 @@ export function acquireLock(targetPath, opts = {}) {
     try {
       const fd = openSync(lockPath, 'wx');
       try {
-        const payload = JSON.stringify({ pid: process.pid, ts: new Date().toISOString() });
+        /* UQ-FORTIFY3 #7 — stamp acquiredAt (epoch ms) so the stale-
+           lock detector can cross-check against mtime drift. */
+        const payload = JSON.stringify({
+          pid: process.pid,
+          ts: new Date().toISOString(),
+          acquiredAt: Date.now(),
+        });
         writeFileSync(fd, payload);
       } finally {
         closeSync(fd);
@@ -58,6 +64,7 @@ export function acquireLock(targetPath, opts = {}) {
         const st = statSync(lockPath);
         const ageMs = Date.now() - st.mtimeMs;
         let holderAlive = true;
+        let pidMismatch = false;
         try {
           const raw = readFileSync(lockPath, 'utf8');
           const meta = JSON.parse(raw);
@@ -65,9 +72,26 @@ export function acquireLock(targetPath, opts = {}) {
             try { process.kill(meta.pid, 0); } catch (k) {
               if (k.code === 'ESRCH') holderAlive = false;
             }
+            /* UQ-FORTIFY3 #7 — PID-reuse guard.
+               If the PID space wraps (high-PID Linux boxes after many
+               days uptime) the old lock's PID could be reused by an
+               unrelated process. signal(0) would say "alive" but the
+               process isn't actually our lock holder. Cross-check the
+               lock-file mtime against meta.acquiredAt: if the lock is
+               older than half maxAge AND the recorded acquiredAt is
+               older than the actual file mtime by > 1s, treat the lock
+               as untrustworthy (PID likely reused by an unrelated
+               process and the original holder died before mtime drift). */
+            if (holderAlive && Number.isFinite(meta.acquiredAt)) {
+              const recordedAgeMs = Date.now() - meta.acquiredAt;
+              const mtimeMs = st.mtimeMs;
+              if (recordedAgeMs > maxAge / 2 && Math.abs(mtimeMs - meta.acquiredAt) > 1000) {
+                pidMismatch = true;
+              }
+            }
           }
         } catch { /* corrupt lock — treat as stale */ holderAlive = false; }
-        if (!holderAlive || ageMs > maxAge) {
+        if (!holderAlive || pidMismatch || ageMs > maxAge) {
           /* Steal: remove + retry */
           try { unlinkSync(lockPath); stolen = true; } catch { /* benign race */ }
         }
