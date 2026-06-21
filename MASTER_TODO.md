@@ -1,3 +1,63 @@
+## 🏆 WAVE UQ-9 — ARCHETYPE EXPANSION 25→28 + ALIAS MAP → 100 % COVERAGE · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"?"* × 5 — nestrpljiva komanda da idem dalje. Pravo P0 iz backlog-a.
+UQ-7 audit otkrio 30 unknown kinds, UQ-9 zatvorio sve.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-9 — 28 arhetipa + alias map + non-archetype filter                            │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ 3 NOVA ARHETIPA (26–28)                                                               │
+│   26. fs-trigger      — N-scatter FS trigger + retrigger     (260 hits cover)         │
+│   27. win-cap         — max-win cap sa onWinCapHit lifecycle (24 hits cover)          │
+│   28. super-symbol    — N×N symbol paying any position       (10 hits cover)          │
+│                                                                                       │
+│ ARCHETYPE_ALIASES (20 synonyms → arhetip)                                              │
+│   jackpot/progressiveJackpot     → jackpot-pool       (30 hits)                       │
+│   multiplier/persistentMultiplier → multiplier-trail  (75 hits)                       │
+│   gamble                          → gamble-double     (54 hits)                       │
+│   cascade/cascading               → cascade-collapse  (13 hits)                       │
+│   lightning                       → boost-multiplier  (7 hits)                        │
+│   wheelBonus/wheel_bonus          → weighted-wheel    (11 hits)                       │
+│   wildReel/wild_reel              → sticky-state      (14 hits)                       │
+│   ways                            → variable-ways     (8 hits)                        │
+│   superSymbol/super_symbol        → super-symbol                                       │
+│   winCap/win_cap                  → win-cap                                            │
+│   freeSpins/free_spins/etc        → fs-trigger                                         │
+│   pathAwareMultiplier             → multiplier-trail  (4 hits)                        │
+│                                                                                       │
+│ NON_ARCHETYPE_KINDS exclusion (eval/UI/regulator → suggestArchetype returns null)     │
+│   bigWinTier (254 hits, by far biggest false positive source)                         │
+│   waysEval (44) + payAnywhereEval (51) + clusterPaysEval (30) — eval engines          │
+│   scatterPay (7) — pay model                                                          │
+│   autoplay (4) + realityCheck (3) + netLossIndicator (1) — regulator/UI               │
+│   featureGeneric (11) — catch-all                                                     │
+│                                                                                       │
+│ suggestArchetype phase order (post UQ-9)                                              │
+│   0. NON_ARCHETYPE filter → null                                                       │
+│   1. exact-example match → 0.95                                                        │
+│   1.5. alias-map lookup → 0.90                                                         │
+│   2. substring of example → 0.85                                                       │
+│   3. regex against kind + prose, tiebreak by match length → 0.70/0.55                  │
+│                                                                                       │
+│ TESTS (tests/registry/featureArchetypes.test.mjs, 16/16 PASS)                          │
+│   ARCHETYPE_COUNT = 28 + frozen · existing 11 baseline + UQ-6 still green +            │
+│   5 novih UQ-9: alias frozen + valid targets · NON_ARCHETYPE null ·                    │
+│   alias map routes 20 audit kinds correctly · 3 nova well-formed ·                     │
+│   prose snippets za fs-trigger/win-cap/super-symbol match                              │
+│                                                                                       │
+│ CORPUS IMPACT (338 GDD audit, re-run post-UQ-9)                                        │
+│   Pre UQ-9 (post-UQ-6): 30 unknown / 51 unique                                         │
+│   Post UQ-9:             0 unknown / 51 unique  →  100 % COVERAGE                      │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   9535b83 feat(UQ-9): archetype expansion 25→28 + alias map + non-archetype filter    │
+│            → 100% corpus coverage                                                       │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-7 — POST-KIMI CACHE AUDIT TOOL · 2026-06-21 · TOOL ZATVOREN ✅ / FULL RUN ⏳ (čeka B)
 
 Boki: *"kreni"* — proaktivno gradim audit alat sad, full run kad B završi.
