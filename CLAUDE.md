@@ -149,7 +149,7 @@ Ingest CLI: `node tools/ingest.mjs --file <path> [--no-llm] [--open]`
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Verify gate (22 step, idempotent, pre-commit hook live)
+### Verify gate (24 step, idempotent, pre-commit hook live)
 
 ```
  1. archetype catalog + alias + filter
@@ -172,8 +172,11 @@ Ingest CLI: `node tools/ingest.mjs --file <path> [--no-llm] [--open]`
 18. UQ-TRAIN orchestrator E2E (5 baseline × 8 passes)
 19. UQ-FORTIFY2 G7 dirty PDF resilience
 20. UQ-COVER cross-corpus force coverage (60 GDD smoke)
-21. UQ-MASTERY block liveness audit (0 DEAD blokova — 184 blocks × 25 HTMLs)
-22. UQ-11 render smoke (20 GDD subset)
+21. UQ-MASTERY-3 V10 industry compliance spec (17 rules × 338 GDDs)
+22. UQ-MASTERY-4 V11 deep industry spec (17 HARD + 3 SOFT × 338 GDDs)
+23. UQ-MASTERY-4 V11 self-test (17 rule codes flagged on negative fixtures)
+24. UQ-MASTERY block liveness audit (0 DEAD blokova — 184 blocks × 25 HTMLs)
+25. UQ-11 render smoke (20 GDD subset)
 ```
 
 Komanda: `npm run verify` (~ 5s) · `node tools/verify-idempotency-test.mjs` (assert Pass 1 = Pass 2).
@@ -233,6 +236,11 @@ UQ-FORTIFY 6..8 → 11 production-grade fixes (kernel-park / SAB / schema)
 UQ-COVER → 338/338 ZERO missing / ZERO phantom force coverage
 UQ-OPUS → switched V2/V5 reconcile from Kimi to Opus 4.8 (+400% accuracy)
 UQ-MASTERY → block liveness walker (0 DEAD) + V7/V8/V9 agents + gate step 4.91
+UQ-MASTERY-2 → 5 LEGO orphan-hook rupa via canonical alias emits
+UQ-MASTERY-3 → V10 industry compliance spec (17 rules × 338 GDDs)
+UQ-MASTERY-4 → V11 deep industry spec (RTP jurisdiction floor, jackpot
+                monotonicity, FS ladder, autoplay caps, lifecycle pairs;
+                17 HARD + 3 SOFT codes; self-test sa positive+negative)
 ```
 
 ### Liveness classes (after UQ-MASTERY, 184 blocks total)

@@ -1,3 +1,70 @@
+## 🏆 WAVE UQ-MASTERY-4 — V11 DEEP INDUSTRY SPEC · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"kreni detaljno"*. Produbljuje V10 (T1-T4) sa dubljim slot-industry
+GT pravilima koje znaju regulatorni standardi (UKGC RTS, MGA Class 3, DGA,
+DE-WHG, FR-ANJ, NL-KSA, IT-ADM, ES-DGOJ) + math-feature consistency.
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-MASTERY-4 — V11 deep-industry-spec walker + self-test                            │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ NOVI ALAT                                                                                │
+│   tools/v11-deep-industry-spec.mjs — 17 HARD + 3 SOFT pravila × 338 GDDs · 0 LLM cost     │
+│                                                                                         │
+│ LAYER A · Mathematics & Payback (HARD)                                                  │
+│   I1.1  RTP ispod jurisdikcionog floor-a (UK 85, MGA 85, DGA 88, DE-WHG 90,              │
+│         FR-ANJ 92, NL-KSA 80, IT-ADM 90, ES-DGOJ 90)                                     │
+│   I1.1.cap RTP > 100% (player-positive game je nemoguć casino slot)                     │
+│   I1.2  rtpVariants per-variant floor + buy variant ≤ 100%                              │
+│   I1.3  volatilityIdx integer u rangu [1, 10]                                           │
+│   I1.4  payback.maxWinX u rangu [100, 1,000,000]                                        │
+│   I1.5  bonusBuy.costX coherency sa rtpVariants[buy]                                    │
+│                                                                                         │
+│ LAYER B · Feature Math Consistency (HARD/SOFT)                                          │
+│   I2.1  jackpot tier monotonicity (MINI < MINOR < MAJOR < GRAND)                        │
+│   I2.2  jackpot.values.GRAND u rangu [100, 1,000,000]                                   │
+│   I2.3  freeSpins.multiplier.ladder monotonic non-decreasing                            │
+│   I2.4  freeSpins.multiplier.start ≥ 1                                                  │
+│   I2.5  holdAndWin.scatterTrigger u rangu [3, 8]                                        │
+│   I2.6  anteBet.costMultiplier ∈ {1.25, 1.5, 1.75, 2.0}                                 │
+│                                                                                         │
+│ LAYER C · Jurisdiction-specific compliance (HARD)                                       │
+│   I3.1  autoplay.cap ≤ jurisdiction max (UK 100, DE 1, FR 0, NL 50, IT 50, ES 100)       │
+│   I3.2  spinTempo.totalMs ≥ jurisdiction min (DE 5000ms, NL 3000ms, FR 3000ms)         │
+│   I3.3  FR-ANJ requires manual-only spins (no autoplay)                                 │
+│   I3.4  realityCheck.intervalMs ≤ jurisdiction max (UK 60min, DGA 30min)                │
+│   I3.5  DE-WHG requires netLossIndicator enabled                                        │
+│   I3.6  IT-ADM/ES-DGOJ require depositLimitsRequired=true                               │
+│                                                                                         │
+│ LAYER D · Symbol & Paytable floors (SOFT)                                               │
+│   I4.1  top HP 5OAK pay ≥ 50× bet line                                                  │
+│   I4.2  top LP 5OAK pay ≥ 5× bet line                                                   │
+│   I4.3  wild 5OAK pay ≥ top HP 5OAK pay                                                 │
+│                                                                                         │
+│ LAYER E · Engine & Lifecycle invariants (HARD)                                          │
+│   I5.1  tumble.enabled ⇒ postSpin.enabled                                               │
+│   I5.2  holdAndWin.enabled ⇒ respin engine.enabled                                      │
+│   I5.3  anteBet.enabled ⇒ triggerMultiplier ≥ 1                                         │
+│                                                                                         │
+│ SKIP-AKO-NULL — 338/338 GDDs prošli sa 0 HARD na current pipeline. Većina               │
+│ field-ova je null (parser nije pokupio prose) — to nije industry violation.             │
+│                                                                                         │
+│ SELF-TEST (tests/tools/v11-deep-industry-spec.test.mjs)                                  │
+│   17 negative fixture-a sa namernim violations + 1 clean fixture za positive control.   │
+│   Asert: svako od 17 expected rule code-ova flag-ovano (`hardByRule[X] ≥ 1`).            │
+│   Asert: clean fixture exit 0 (no false positives).                                      │
+│   Cleanup mock dist/real-games/_v11-test-* nakon završetka.                            │
+│                                                                                         │
+│ GATE INTEGRATION                                                                        │
+│   tools/verify.mjs step 4.93  → V11 walker (338 GDDs)                                  │
+│   tools/verify.mjs step 4.93b → V11 self-test (17 codes + clean)                       │
+│                                                                                         │
+│ VERIFY GATE: 25/25 zeleno (~10s)                                                       │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-MASTERY-3 — V10 INDUSTRY COMPLIANCE SPEC · 2026-06-21 · ZATVOREN ✅
 
 Boki direktiva: *"koji test još možeš da napišeš na osnovu agenata, koji

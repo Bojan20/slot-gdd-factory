@@ -239,6 +239,28 @@ if (existsSync(v10Tool)) {
     'node', [v10Tool]);
 }
 
+/* ── Step 4.93: UQ-MASTERY-4 V11 Deep Industry Spec ────────────────────
+ * Produbljuje V10. Encodes deep slot-industry GT: RTP jurisdikcioni floor
+ * (UKGC 85%, DE-WHG 90%, FR-ANJ 92%), jackpot tier monotonicity (MINI <
+ * MINOR < MAJOR < GRAND), free-spin multiplier ladder monotonic, autoplay
+ * cap per regulator (UK 100, DE 1, FR 0), DE-WHG required netLossIndicator,
+ * tumble→postSpin lifecycle, holdAndWin→respin engine pairing, antebet
+ * cost multiplier industry set {1.25, 1.5, 1.75, 2.0}, top HP/LP 5OAK
+ * pay floors. 17 HARD + 3 SOFT rule codes. SKIP-AKO-NULL: HARD se pali
+ * samo kad polje JE deklarisano i prekršeno. */
+const v11Tool = resolve(REPO, 'tools/v11-deep-industry-spec.mjs');
+if (existsSync(v11Tool)) {
+  run('UQ-MASTERY-4 V11 deep industry spec (338 GDDs)',
+    'node', [v11Tool]);
+}
+
+/* ── Step 4.93b: UQ-MASTERY-4 V11 self-test (positive + negative) ──── */
+const v11Test = resolve(REPO, 'tests/tools/v11-deep-industry-spec.test.mjs');
+if (existsSync(v11Test)) {
+  run('UQ-MASTERY-4 V11 self-test (17 rule codes + clean fixture)',
+    'node', [v11Test]);
+}
+
 /* ── Step 4.91: UQ-MASTERY block liveness audit ────────────────────────
  * Zero-DEAD-block contract. Every block flagged `defaultOn: true` in the
  * manifest MUST be mountable in at least one rendered HTML fingerprint
