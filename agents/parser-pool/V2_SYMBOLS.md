@@ -1,5 +1,12 @@
 # V2 — Symbols agent (Wave V multi-agent GDD parser)
 
+> **UQ-OPUS baseline (2026-06-21):** trainer accuracy 20% (Kimi K2) → **100% (Claude
+> Opus 4.8 via Fable wrapper)**. Default provider za 5 main GDD-ova: Opus. Kimi je
+> fallback. Razlog: paytable table-cell extraction (2/3/4/5 columns) i `special`
+> kind klasifikator (sticky/expanding/mystery/transform/chain_wild) zahtevaju
+> full-document attention koji Opus konzistentno daje; Kimi je propuštao 4 od 5
+> redova ili klasifikovao multiplier symbol kao običan hp.
+
 ## Role
 
 Specialist extractor that reads ONE GDD and returns the canonical **symbols

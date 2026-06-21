@@ -1,3 +1,57 @@
+## 🏆 WAVE UQ-OPUS — V6 BASELINE SWITCH: KIMI → CLAUDE OPUS 4.8 · 2026-06-21 · ZATVOREN ✅
+
+Boki direktiva: *"napravi da ovaj slot gdd projekat bude izuzetno ultimativan
+i bez ijedne jedine rupe. ne sme da se desi da nesto ne znas i da nesto ne
+radi"* + *"druze tri odradi ultimqativnoza slot gdd simulatro opus cliu
+ultiomativno"*.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-OPUS — V6 reconcile baseline provider switch                                    │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ KONTEKST                                                                              │
+│   Do UQ-FORTIFY8 cache V6 (`tools/_wave-v-cache/*.json`) bio je popunjen Kimi K2.       │
+│   Kimi je davao 15.8 declared kinds avg, 16.9% ratio — tj. velika većina               │
+│   feature/symbol field-ova ostajalo `inferred` ili `default`, ne `declared`.            │
+│   To je vodilo da agent calibration trainer pokazuje V2_symbols + V5_compliance         │
+│   na 20% (kritično za bilo koju regulatornu / studio-grade upotrebu).                  │
+│                                                                                       │
+│ FIX                                                                                   │
+│   Switch baseline za 5 main (Cash Eruption, Gates of Olympus 1000, Huff N More Puff,    │
+│   Starlight Travellers, Wrath of Olympus) na Claude Opus 4.8 via Fable wrapper          │
+│   (`~/Projects/cortex/scripts/cortex-fable-ask`). Wrapper radi NA CLI bez login-a       │
+│   (claude direkt CLI vraća "Not logged in" za Boki-jev nalog).                          │
+│                                                                                       │
+│ A/B REZULTATI                                                                          │
+│   ┌──────────────────────────────────┬─────────┬───────────┬────────┐                  │
+│   │ Metric                            │ Kimi K2 │ Opus 4.8  │ Δ      │                  │
+│   ├──────────────────────────────────┼─────────┼───────────┼────────┤                  │
+│   │ Σ V6 declared kinds (avg per GDD)  │ 15.8    │ 51.2      │ +224%  │                  │
+│   │ V6 declared ratio (avg)            │ 16.9%   │ 44.9%     │ +166%  │                  │
+│   │ V1 topology trainer accuracy       │ 100%    │ 100%      │ =      │                  │
+│   │ V2 symbols trainer accuracy        │  20%    │ 100%      │ +400%  │                  │
+│   │ V3 features trainer accuracy       │ 100%    │ 100%      │ =      │                  │
+│   │ V4 ux trainer accuracy             │ 100%    │ 100%      │ =      │                  │
+│   │ V5 compliance trainer accuracy     │  20%    │ 100%      │ +400%  │                  │
+│   └──────────────────────────────────┴─────────┴───────────┴────────┘                  │
+│                                                                                       │
+│ MEMORY UPDATE                                                                          │
+│   `~/.claude/projects/-/memory/rule_slot_gdd_factory_mastery.md` upgraded:               │
+│     - Default provider: Kimi → **Claude Opus 4.8 via Fable wrapper**                   │
+│     - A/B baseline table umetnuta                                                       │
+│     - Wave history bumped: 13 waves (UQ-OPUS appended)                                  │
+│                                                                                       │
+│ TESTS (regresija nije pukla)                                                            │
+│   npm run verify  → 21/21 zeleno (~6s)                                                  │
+│   UQ-16 baseline drift: 338/338 still match (cache update lokalno, ne baseline)         │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   5a12d8d feat(UQ-OPUS): switch baseline 5 V6 reconcile from Kimi to Claude Opus 4.8    │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-FORTIFY8 — 4 EIGHTH-TIER FORENSIC AUDIT FIXES · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"dalje"* — osma forensic iteracija. UQ-FORTIFY 1..7 + UQ-COVER zatvorili 48

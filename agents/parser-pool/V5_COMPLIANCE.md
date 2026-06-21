@@ -1,5 +1,13 @@
 # V5 — Compliance agent (Wave V multi-agent GDD parser)
 
+> **UQ-OPUS baseline (2026-06-21):** trainer accuracy 20% (Kimi K2) → **100% (Claude
+> Opus 4.8 via Fable wrapper)**. Default provider za 5 main GDD-ova: Opus. Razlog:
+> RTP/volatility/handpay/autoplay-cap field-ovi su raspršeni kroz "Math" + "Compliance"
+> + "Responsible Gaming" sekcije; Kimi je doseg držao na lokalnoj sekciji i propuštao
+> jurisdikciono breakdown (UKGC vs MGA vs DGA vs AGCO). Opus iz cele dokumentacije
+> pokupi rtpVariants[] (base/ante/buy) i deposit/self-exclusion flagove. Kimi je
+> fallback samo ako Fable down.
+
 ## Role
 
 Specialist extractor that reads the GDD's **math, payback, regulatory, and
