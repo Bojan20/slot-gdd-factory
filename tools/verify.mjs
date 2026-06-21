@@ -283,6 +283,26 @@ if (existsSync(v8Test)) {
     'node', [v8Test]);
 }
 
+/* ── Step 4.95: UQ-MASTERY-5 V9 VISUAL QA deterministic smoke ─────────
+ * V9 deterministic mode: parse svaki slot.html i proveri 8+ struct
+ * invariant-a (mandatory hub controls, viewport meta, PWA manifest,
+ * CSS theme vars, paytable rows match declared symbols, engine block
+ * marker mounted, body length sanity). No browser launch, no LLM.
+ * Vision mode (--vision flag) je opt-in pre-release, NE u gate-u.
+ * Verdict FAIL na bilo kojem PASS check gate-blocks; WARN-only prolazi. */
+const v9Tool = resolve(REPO, 'tools/v9-visual-qa.mjs');
+if (existsSync(v9Tool)) {
+  run('UQ-MASTERY-5 V9 visual QA deterministic (338 GDDs)',
+    'node', [v9Tool]);
+}
+
+/* ── Step 4.95b: UQ-MASTERY-5 V9 self-test ──────────────────────── */
+const v9Test = resolve(REPO, 'tests/tools/v9-visual-qa.test.mjs');
+if (existsSync(v9Test)) {
+  run('UQ-MASTERY-5 V9 self-test (clean PASS + missing controls FAIL + WARN)',
+    'node', [v9Test]);
+}
+
 /* ── Step 4.91: UQ-MASTERY block liveness audit ────────────────────────
  * Zero-DEAD-block contract. Every block flagged `defaultOn: true` in the
  * manifest MUST be mountable in at least one rendered HTML fingerprint

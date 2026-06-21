@@ -1,3 +1,61 @@
+## 🏆 WAVE UQ-MASTERY-5b — V9 VISUAL QA (deterministic + self-test) · 2026-06-22 · ZATVOREN ✅
+
+Boki: *"kreni redom ultimativno"* — opcija B (V9 VISUAL QA). Implementira
+contract iz `agents/V9_VISUAL_QA.md`. Deterministic mode (no LLM, gate-suitable);
+vision mode opt-in pre-release (~$0.05/game) ostaje za eksplicitan flag.
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-MASTERY-5b — V9 Visual QA deterministic walker + self-test                       │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ NOVI ALAT                                                                                │
+│   tools/v9-visual-qa.mjs (~260 LOC) — 8+ structural invariants per slot.html             │
+│                                                                                         │
+│ DETERMINISTIC CHECKS (no browser, no LLM)                                                │
+│   C1   title element present + non-empty                                                 │
+│   C2   mandatory hub controls (balanceHud, betSelector, spinControl, paytableBtn)        │
+│   C3   mobile viewport meta + PWA manifest link                                          │
+│   C4   CSS theme variables set (--bg + --accent)                                         │
+│   C5   paytable row count matches declared symbol count (when both known)                │
+│   C6   body length sanity (≥ 50 KB)                                                     │
+│   C7   expected engine block marker mounted (per topology.kind / is_plinko / is_slingo)  │
+│                                                                                         │
+│ VERDICT LADDER                                                                          │
+│   PASS  — all checks PASS, score ≥ 9.0/10                                               │
+│   WARN  — no FAIL, score 7.0-8.9 (cosmetic drift)                                       │
+│   FAIL  — any check verdict=FAIL, OR score < 7.0                                        │
+│                                                                                         │
+│ VISION MODE (--vision flag, opt-in, NE u gate-u)                                         │
+│   - Hook za 10-screenshot capture via Playwright Chromium                                │
+│   - Hook za Opus 4.8 vision call (cortex-fable-ask) sa LLM prompt template iz contract-a │
+│   - Cost: ~$0.05/game, 5 main sweep ~$0.25, vreme 15-30s/game                            │
+│   - Stub-ovan u tools/v9-visual-qa.mjs:visionMode() (NOT implemented za sada — flag      │
+│     reservacija samo)                                                                   │
+│                                                                                         │
+│ KORPUS REZULTAT (338 GDDs, deterministic mode)                                          │
+│   PASS:  338                                                                            │
+│   WARN:  0                                                                              │
+│   FAIL:  0                                                                              │
+│                                                                                         │
+│ SELF-TEST (tests/tools/v9-visual-qa.test.mjs)                                            │
+│   5 fixture-a:                                                                          │
+│     clean    → verdict PASS                                                             │
+│     no-balance → balanceHud check FAIL                                                  │
+│     no-viewport → viewport meta check FAIL                                              │
+│     no-theme  → CSS theme check WARN (not FAIL)                                         │
+│     short    → body length check WARN                                                   │
+│   Walker exit 1 (FAIL present); 2 expected FAIL slugs identified.                        │
+│                                                                                         │
+│ GATE INTEGRATION                                                                        │
+│   tools/verify.mjs step 4.95  → V9 deterministic walker (338 GDDs)                       │
+│   tools/verify.mjs step 4.95b → V9 self-test (clean + 4 failure fixtures)                │
+│                                                                                         │
+│ VERIFY GATE: 29/29 zeleno (~14s)                                                         │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-MASTERY-5 — V8 GAME ASSEMBLY ORCHESTRATOR · 2026-06-21 · ZATVOREN ✅
 
 Boki: *"kreni redom ultimativno"* — opcija A iz prethodne ponude (V8 GAME
