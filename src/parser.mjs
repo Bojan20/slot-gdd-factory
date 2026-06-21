@@ -2516,8 +2516,15 @@ export function extractFeatures(rawText) {
       // "Mystery Pick", "Treasure Pick", "Selection Bonus", "pick 3 of N".
       // Vendor variants: Starlight Mystery Upgrade Selection, Pragmatic
       // Cash Pick, NetEnt Treasure Hunt.
+      /* UQ-MASTERY-9 (2026-06-22) — narrowed: dropped /mystery\s+reveal/
+       * and /mystery\s+upgrade/ which were matching "Mystery Symbol Reveal"
+       * section headers in 6 synth mystery GDDs (065-070-rect/expand/inf/...)
+       * and writing bonusPick declared. Mystery symbol reveal is its own
+       * feature (mysterySymbol + mysteryReveal) — not a bonus-pick mini-game.
+       * Kept "mystery pick" and "mystery selection" as legitimate bonus-pick
+       * triggers; both phrases need an actual pick gesture in the prose. */
       kind: 'bonus_pick',
-      re: /\bpick[\s_-]?(bonus|me)\b(?!\s*axe)|\bpick[\s_-]?and[\s_-]?reveal\b|\bpick[\s_-]?to[\s_-]?reveal\b|\bmystery\s+(?:upgrade|pick|selection|reveal)\b|\bselect(?:\s+\w+){0,2}\s+orbs?\b|\bselection\s+bonus\b|\btreasure\s+pick\b/i,
+      re: /\bpick[\s_-]?(bonus|me)\b(?!\s*axe)|\bpick[\s_-]?and[\s_-]?reveal\b|\bpick[\s_-]?to[\s_-]?reveal\b|\bmystery\s+(?:pick|selection)\b|\bselect(?:\s+\w+){0,2}\s+orbs?\b|\bselection\s+bonus\b|\btreasure\s+pick\b/i,
       label: 'Bonus Pick',
     },
     { kind: 'wheel_bonus', re: /\bwheel\s+bonus|bonus\s+wheel/i, label: 'Wheel Bonus' },

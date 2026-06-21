@@ -68,10 +68,18 @@ const ANCHORS = {
   anteBet:         /ante[\s\-_]*bet/i,
 };
 
-/* Residual phantom budget — pre-UQ-MASTERY-8 fix landed at 30. Allow
- * 50 as ceiling so a new regression of even a handful is caught while
- * the legitimate reference-set edges stay green. */
-const MAX_ALLOWED = STRICT ? 0 : 50;
+/* Residual phantom budget — UQ-MASTERY-8 closed 256 holdAndWin from
+ * "3+ Scatter" misread (279→28). UQ-MASTERY-9 closed 6 bonusPick from
+ * "Mystery Symbol Reveal" → mystery-pick misread (28→15). Remaining 15
+ * are vendor-reference set games (Dancing Drums, 88 Fortunes, Huff,
+ * Jackpot Party, Goldfish, Willy Wonka, Jin Long, Gold Stacks) that
+ * use NARROWER anchors than our regex covers: bare "Hold" + coin/cash
+ * symbol mechanics, "PROSPERITY" / "JIN LONG" / "GOLD STACKS" thematic
+ * jackpot variants. Real declared features, just not covered by the
+ * generic anchor regex. Ceiling 28 = current 15 + 13 headroom so any
+ * NEW regress of a few games is caught while the legitimate vendor
+ * residual stays green. */
+const MAX_ALLOWED = STRICT ? 0 : 28;
 
 function listSlugs() {
   if (!existsSync(DIST)) {
