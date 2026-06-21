@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-21T12:44:32.896Z",
+  "generatedAt": "2026-06-21T16:12:38.251Z",
   "slugCount": 338,
   "prints": {
     "001-rect-fs-wild-mult": {
@@ -6318,14 +6318,14 @@
     },
     "cash-eruption-foundry-gdd": {
       "slug": "cash-eruption-foundry-gdd",
-      "htmlBytes100": 854300,
-      "htmlSha": "2269161da5f71ad2",
-      "buttonCount": 52,
+      "htmlBytes100": 831300,
+      "htmlSha": "ece010083601bddb",
+      "buttonCount": 45,
       "paytableRows": 0,
       "footerPresent": true,
       "archetypeBackfillIds": [],
-      "topologyKind": "lock_respin",
-      "featureCount": 10,
+      "topologyKind": "rectangular",
+      "featureCount": 17,
       "autofixedKeys": [
         "bet.defaults",
         "expandingWild.feature-backfill",
@@ -6334,69 +6334,63 @@
         "paytable.placeholder-rows",
         "winCap.feature-backfill"
       ],
-      "derivedKeys": [
-        "topology.dims-snapped-to-kind",
-        "topology.kind"
-      ]
+      "derivedKeys": []
     },
     "gates-of-olympus-1000-gdd": {
       "slug": "gates-of-olympus-1000-gdd",
-      "htmlBytes100": 741400,
-      "htmlSha": "a60dc9c3eb0287e1",
+      "htmlBytes100": 730400,
+      "htmlSha": "b99be0491f47be21",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
       "archetypeBackfillIds": [],
       "topologyKind": "rectangular",
-      "featureCount": 9,
+      "featureCount": 10,
       "autofixedKeys": [
         "bet.defaults",
         "paytable.placeholder-rows",
         "winCap.feature-backfill"
       ],
       "derivedKeys": [
-        "theme.palette",
-        "theme.paletteFamily=mythology_gold",
         "topology.paylines"
       ]
     },
     "huff-n-more-puff-gdd": {
       "slug": "huff-n-more-puff-gdd",
-      "htmlBytes100": 879100,
-      "htmlSha": "20f2791b6f1a0f59",
-      "buttonCount": 59,
+      "htmlBytes100": 833700,
+      "htmlSha": "83c5524ac9654d21",
+      "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
       "archetypeBackfillIds": [],
-      "topologyKind": "lock_respin",
-      "featureCount": 11,
+      "topologyKind": "rectangular",
+      "featureCount": 14,
       "autofixedKeys": [
         "bet.defaults",
         "holdAndWin.feature-backfill",
         "jackpot.feature-backfill",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
-        "topology.dims-snapped-to-kind",
-        "topology.kind",
         "topology.paylines"
       ]
     },
     "starlight-travellers-gdd": {
       "slug": "starlight-travellers-gdd",
-      "htmlBytes100": 786800,
-      "htmlSha": "db049ab17e83b1c5",
-      "buttonCount": 66,
+      "htmlBytes100": 744400,
+      "htmlSha": "535424855c52c6c8",
+      "buttonCount": 47,
       "paytableRows": 0,
       "footerPresent": true,
       "archetypeBackfillIds": [],
       "topologyKind": "cluster",
-      "featureCount": 13,
+      "featureCount": 15,
       "autofixedKeys": [
         "bet.defaults",
         "expandingWild.feature-backfill",
-        "jackpot.feature-backfill",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
       "derivedKeys": [
         "topology.paylines"
@@ -6404,24 +6398,22 @@
     },
     "wrath-of-olympus-gdd": {
       "slug": "wrath-of-olympus-gdd",
-      "htmlBytes100": 822100,
-      "htmlSha": "18294b5fdb3d3bf8",
-      "buttonCount": 44,
+      "htmlBytes100": 829600,
+      "htmlSha": "5f727d498116f464",
+      "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
       "archetypeBackfillIds": [],
-      "topologyKind": "lock_respin",
-      "featureCount": 10,
+      "topologyKind": "rectangular",
+      "featureCount": 12,
       "autofixedKeys": [
         "bet.defaults",
         "holdAndWin.feature-backfill",
         "jackpot.feature-backfill",
-        "paytable.placeholder-rows"
+        "paytable.placeholder-rows",
+        "winCap.feature-backfill"
       ],
-      "derivedKeys": [
-        "topology.dims-snapped-to-kind",
-        "topology.kind"
-      ]
+      "derivedKeys": []
     }
   }
 }

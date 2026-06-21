@@ -78,7 +78,7 @@ Boki je izdao direktivu sa nultom tolerancijom. Nema drugog puta.
 
 ## 📂 Repo cilj
 
-Jedno dugme → ubaciš GDD (MD/JSON/TXT) → otvori se playable slot template u browser tabu. Math je placeholder dummy. PAR/Math hot-swap je faza 2 (roadmap).
+Jedno dugme → ubaciš GDD (MD/JSON/TXT/PDF/URL) → otvori se playable slot template u browser tabu. Math je placeholder dummy. PAR/Math hot-swap je faza 2 (roadmap, gated).
 
 ## 🔗 Vezani repoovi
 
@@ -87,10 +87,175 @@ Jedno dugme → ubaciš GDD (MD/JSON/TXT) → otvori se playable slot template u
 
 ## 🎯 GDD test fixture lista (jedini fajlovi koji idu u `samples/`)
 
-| Fajl | Status |
-|---|:--:|
-| `WRATH_OF_OLYMPUS_GAME_GDD.md` | ✅ GDD |
-| `CRYSTAL_FORGE_GAME_GDD.md` | ✅ GDD |
-| (buduća: provera 1-4 koraka iznad pre dodavanja) | — |
+```
+┌──────────────────────────────────┬─────────┐
+│ Fajl                              │ Status  │
+├──────────────────────────────────┼─────────┤
+│ WRATH_OF_OLYMPUS_GAME_GDD.md      │ ✅ GDD  │
+│ CRYSTAL_FORGE_GAME_GDD.md         │ ✅ GDD  │
+│ GATES_OF_OLYMPUS_1000_GAME_GDD.md │ ✅ GDD  │
+│ MIDNIGHT_FANGS_GAME_GDD.md        │ ✅ GDD  │
+└──────────────────────────────────┴─────────┘
+```
 
 Nikad: `*_AUDIO_*.md`, `*_ADB.md`, `*_SDD.md`, `*_SFX_*.md`.
+
+---
+
+## 🧠 PROJECT MASTERY — single source of truth (2026-06-21)
+
+Boki: *"napravi da ovaj slot gdd projekat bude izuzetno ultimativan i bez ijedne jedine rupe. ne sme da se desi da nesto ne znas i da nesto ne radi"*.
+
+Ovaj odeljak je **mandatory READ** na početku svake sesije. Sadrži kompletnu memoriju projekta da Claude (ja) nikad ne kažem "nisam siguran" ili "ne znam šta radi".
+
+### 5 GLAVNIH IGARA (pinned ground truth)
+
+```
+┌───┬────────────────────────────┬─────────────────┬───────────────────────┐
+│ # │ Igra                        │ Topology         │ Vendor / Mark         │
+├───┼────────────────────────────┼─────────────────┼───────────────────────┤
+│ 1 │ Cash Eruption Foundry       │ 5×3 + lock_respin│ IGT Foundry           │
+│ 2 │ Crystal Forge               │ 5×3 rectangular  │ Internal sample       │
+│ 3 │ Gates of Olympus 1000       │ 6×5 tumble       │ Industry-ref baseline │
+│ 4 │ Midnight Fangs              │ 5×3 cluster      │ Internal sample       │
+│ 5 │ Wrath of Olympus            │ 5×3 rectangular  │ Industry-ref baseline │
+└───┴────────────────────────────┴─────────────────┴───────────────────────┘
+```
+
+### Ulazni formati simulatora
+
+```
+┌────────┬───────────────────────────────────────────────────────────────────┐
+│ Format │ Putanja                                                            │
+├────────┼───────────────────────────────────────────────────────────────────┤
+│ PDF    │ ~/Desktop/GDD/<Game_Name>_GDD.pdf  +  pdftotext -layout           │
+│ MD     │ samples/<GAME_NAME>_GAME_GDD.md   (direct read)                   │
+│ JSON   │ V6 reconcile cache `tools/_wave-v-cache/<slug>.json`              │
+│ URL    │ HTTPS fetch sa SSRF guard (max 3 redirects, http(s) only)         │
+└────────┴───────────────────────────────────────────────────────────────────┘
+```
+
+Ingest CLI: `node tools/ingest.mjs --file <path> [--no-llm] [--open]`
+
+### Korpus
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│  338 GDDs ukupno u tools/_wave-v-cache/ (svaki ima V6 Kimi reconcile)    │
+│   5 glavnih (pinned u tests/fixtures/semantic-expected.json sa SHA)      │
+│  25 LW vendor portfolio (Light & Wonder, 01-25_*.pdf u ~/Desktop/GDD/)  │
+│ 308 sintetičkih (gen-synthetic-gdds.mjs — sve grid × pattern kombinacije)│
+│ 333 untracked PDFs u ~/Desktop/GDD/ bez ground truth (operator può add) │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+### Verify gate (21 step, idempotent, pre-commit hook live)
+
+```
+ 1. archetype catalog + alias + filter
+ 2. smartDefaults stage 5 archetype backfill
+ 3. smartDefaults stage 6 autofix gaps
+ 4. parser topology prose edge cases (UQ-CASH)
+ 5. scaffold-block tool E2E (25 archetypes)
+ 6. ingest tool E2E
+ 7. archetype docs generator
+ 8. install-precommit hook installer
+ 9. UQ-FORTIFY3 third-tier audit fixes
+10. UQ-FORTIFY5 fifth-tier audit fixes
+11. UQ-FORTIFY6 sixth-tier audit fixes
+12. UQ-FORTIFY7 seventh-tier audit fixes
+13. UQ-FORTIFY8 eighth-tier audit fixes
+14. UQ-7 cache audit
+15. unknownFeatureKinds === 0 assertion
+16. UQ-16 baseline drift (20 slug)
+17. UQ-CASH A6 semantic accuracy
+18. UQ-TRAIN orchestrator E2E (5 baseline × 8 passes)
+19. UQ-FORTIFY2 G7 dirty PDF resilience
+20. UQ-COVER cross-corpus force coverage (60 GDD smoke)
+21. UQ-11 render smoke (20 GDD subset)
+```
+
+Komanda: `npm run verify` (~ 5s) · `node tools/verify-idempotency-test.mjs` (assert Pass 1 = Pass 2).
+
+### AI Agent pipeline (Kimi V1..V5 via cortex-kimi-ask)
+
+```
+┌──────┬──────────────┬──────────────────────────────────────────────────────┐
+│ Lane │ Domain       │ Mandatorni output                                     │
+├──────┼──────────────┼──────────────────────────────────────────────────────┤
+│ V1   │ topology     │ reels/rows/paylines/kind + evidence + confidence     │
+│ V2   │ symbols      │ paytable + scatter + wild + named symbols (Wild/...) │
+│ V3   │ features     │ feature kinds list sa archetype mapping              │
+│ V4   │ ux           │ theme.tags / palette / capsule / typography           │
+│ V5   │ compliance   │ jurisdictions + RTP target + handpay + autoplay cap  │
+│ V6   │ reconcile    │ deterministic merge V1..V5 + __meta__ provenance     │
+└──────┴──────────────┴──────────────────────────────────────────────────────┘
+```
+
+Pass A → diff vs ground truth → CORRECTIONS block → Pass B (zero-cost kad Pass A ok).
+`__self_corrected__: true` stamped na agent reply.
+Provider availability:
+- **Kimi**: ✅ default (`cortex-kimi-ask`)
+- **Claude CLI direkt**: ❌ "Not logged in" — operator mora `claude /login`
+- **Fable wrapper**: ✅ fallback NA Claude Opus 4.8 via CLI (radi bez login-a)
+- **GPT**: ❌ OpenAI keychain nije postavljen
+
+### Telemetrija (atomic write + file lock + rolling window)
+
+```
+┌──────────────────────────────────────────────┬──────────────────────────────┐
+│ reports/calibration-history.json              │ 200-run trainer history      │
+│ reports/orchestrator-e2e-series.json          │ 100-run E2E series           │
+│ reports/uq-cover-series.json                  │ 100-run force coverage       │
+└──────────────────────────────────────────────┴──────────────────────────────┘
+```
+
+### Wave history (62 fixes, 12 waves, 2026-06-21)
+
+```
+UQ-12 → pre-commit verify gate
+UQ-13 → smartDefaults stage 6 autofix
+UQ-14 → end-to-end ingest CLI
+UQ-15 → archetype docs site
+UQ-16 → visual regression baseline
+UQ-AUDIT → 8 forensic punch-list fixes
+UQ-CASH → Cash Eruption deep-fix (6 atoms)
+UQ-TRAIN → AI orchestrator E2E + trainer + self-correction
+UQ-FORTIFY 1..5 → 30 architectural fixes (atomic / race / hash / lock / NFS)
+UQ-FORTIFY 6..8 → 11 production-grade fixes (kernel-park / SAB / schema)
+UQ-COVER → 338/338 ZERO missing / ZERO phantom force coverage
+```
+
+### Šta NIKAD ne smem reći
+
+```
+❌ "Nisam siguran"
+❌ "Možda ne radi"
+❌ "Trebalo bi da bude…"
+❌ "Pretpostavljam"
+✅ "Verifikovao live (X commit), rezultat Y"
+✅ "Test runuje DA/NE, log na liniji N"
+✅ "Real diff: pre = X, posle = Y, file = Z linija N"
+```
+
+### Pre svakog `gotovo` / `✅` / `dovršeno`
+
+1. `npm run verify` mora biti 21/21 zeleno
+2. `git status` — ništa untracked koje nije svesno
+3. Real diff prikaz (pre/posle vrednosti, ne "trebalo bi")
+4. Ako probe ime sadrži "ultimate" — pokrenuti pravu cilju (ne smoke)
+5. Posle commit-a: `git log --oneline -3` da potvrdim HEAD je upravo poslat
+
+### Provider zone (kada nešto delegirati)
+
+```
+┌──────────────────┬───────────────────────────────────────────────────────┐
+│ Zadatak           │ Provider                                              │
+├──────────────────┼───────────────────────────────────────────────────────┤
+│ Repo audit / fix  │ JA SAM (Claude Opus 4.8 sa direct file access)        │
+│ Live test runner  │ JA SAM (Bash tool)                                    │
+│ Web research      │ Kimi via cortex-kimi-ask                              │
+│ V1..V5 reconcile  │ Kimi default ALI Fable fallback radi za Opus path     │
+│ Trening calibr.   │ JA (čitam V6 cache vs ground truth, stamp prompts)    │
+└──────────────────┴───────────────────────────────────────────────────────┘
+```

@@ -408,6 +408,20 @@ export const NON_ARCHETYPE_KINDS = Object.freeze(new Set([
   'autoplay', 'realitycheck', 'reality_check', 'netlossindicator', 'net_loss_indicator',
   /* generic / catch-all */
   'featuregeneric', 'feature_generic',
+  /* D-17 industry-standard feature kinds (engine-level constructs that
+   * Opus V6 reconcile surfaces but that are NOT player-facing single-spin
+   * archetypes — they are math/eval/UX rule packages owned by dedicated
+   * blocks in src/blocks/). UQ-OPUS 2026-06-21 added when switching baseline
+   * from Kimi to Opus reconcile surfaced these as unknown.  */
+  /* D-17 engine-level rule packages (not single-spin archetypes; live as
+   * dedicated blocks). bigSymbolRender2x2 / linkedReels / potSymbolFireball
+   * etc. are intentionally OMITTED because they ARE listed as examples in
+   * canonical archetypes (expand-direction / linked-region / jackpot-pool)
+   * and adding them here breaks the archetype-example invariant. */
+  'patternwin', 'pattern_win',
+  'pertriggervolatilityset', 'per_trigger_volatility_set',
+  'creditawardconversion', 'credit_award_conversion',
+  'simultaneousfsholdandwinpriority', 'simultaneous_fs_hold_and_win_priority',
 ]));
 
 function _normalizeKindKey(kind) {
