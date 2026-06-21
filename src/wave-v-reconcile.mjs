@@ -316,12 +316,22 @@ export function reconcile({ baseline, v1, v2, v3, v4, v5 } = {}) {
  * @param {object} delta  model_delta from reconcile()
  * @param {object} meta   __meta__ from reconcile()
  */
+/* UQ-FORTIFY9 #2 — prototype pollution guard. V6 delta dolazi iz LLM
+ * (Kimi/Opus) reply-ja. Naivni Object.assign(model[k], delta[k]) gde
+ * delta sadrži `__proto__` ili `constructor` key korumpira Object.prototype
+ * globalno. Filter top-level i nested keys pre merge-a. */
+const PROTO_POISON_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 export function mergeIntoModel(model, delta, meta) {
   if (!model || !delta) return model;
   for (const k of Object.keys(delta)) {
+    if (PROTO_POISON_KEYS.has(k)) continue;
     if (delta[k] == null) continue;
     if (model[k] && typeof model[k] === 'object' && !Array.isArray(model[k]) && typeof delta[k] === 'object' && !Array.isArray(delta[k])) {
-      Object.assign(model[k], delta[k]);
+      for (const ck of Object.keys(delta[k])) {
+        if (PROTO_POISON_KEYS.has(ck)) continue;
+        model[k][ck] = delta[k][ck];
+      }
     } else {
       model[k] = delta[k];
     }

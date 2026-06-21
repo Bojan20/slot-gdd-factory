@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-21T22:02:12.442Z",
+  "generatedAt": "2026-06-21T22:46:31.491Z",
   "slugCount": 338,
   "prints": {
     "001-rect-fs-wild-mult": {
@@ -164,7 +164,7 @@
     "01-huff-n-puff-huff-n-more-puff": {
       "slug": "01-huff-n-puff-huff-n-more-puff",
       "htmlBytes100": 816300,
-      "htmlSha": "da7e8772249c635a",
+      "htmlSha": "651b14ac21779011",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -186,7 +186,7 @@
     "010-rect-holdandwin-respin-jackpot": {
       "slug": "010-rect-holdandwin-respin-jackpot",
       "htmlBytes100": 771300,
-      "htmlSha": "48ebae1f9c0214cc",
+      "htmlSha": "6872314c5a9d7c02",
       "buttonCount": 41,
       "paytableRows": 0,
       "footerPresent": true,
@@ -207,7 +207,7 @@
     "011-lock-holdandwin-respin-jackpot": {
       "slug": "011-lock-holdandwin-respin-jackpot",
       "htmlBytes100": 811800,
-      "htmlSha": "d154e92026b76b02",
+      "htmlSha": "8b6cfd4549335aa0",
       "buttonCount": 43,
       "paytableRows": 0,
       "footerPresent": true,
@@ -374,7 +374,7 @@
     "02-dancing-drums-dancing-drums-explosion-prosperity": {
       "slug": "02-dancing-drums-dancing-drums-explosion-prosperity",
       "htmlBytes100": 826800,
-      "htmlSha": "c80592af0d732aef",
+      "htmlSha": "01927f902ab2b010",
       "buttonCount": 58,
       "paytableRows": 0,
       "footerPresent": true,
@@ -790,7 +790,7 @@
     "04-lock-it-link-night-life-diamonds-hold-onto-your-hat-eureka": {
       "slug": "04-lock-it-link-night-life-diamonds-hold-onto-your-hat-eureka",
       "htmlBytes100": 808700,
-      "htmlSha": "4bfb7fccdab32f73",
+      "htmlSha": "fb9362debc009737",
       "buttonCount": 43,
       "paytableRows": 0,
       "footerPresent": true,
@@ -995,7 +995,7 @@
     "05-ultimate-fire-link-china-street-olvera-street-route-66-explosion": {
       "slug": "05-ultimate-fire-link-china-street-olvera-street-route-66-explosion",
       "htmlBytes100": 809500,
-      "htmlSha": "46878c0ed6e248a9",
+      "htmlSha": "ea07bd9e294846c9",
       "buttonCount": 43,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1208,7 +1208,7 @@
     "06-quick-hit-platinum-black-white-diamond-etc": {
       "slug": "06-quick-hit-platinum-black-white-diamond-etc",
       "htmlBytes100": 696800,
-      "htmlSha": "18c13ef784cfdb6e",
+      "htmlSha": "c0524f07422cee06",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1414,7 +1414,7 @@
     "07-jin-ji-bao-xi-endless-treasure-fu-dao-le-gong-xi-fa-cai": {
       "slug": "07-jin-ji-bao-xi-endless-treasure-fu-dao-le-gong-xi-fa-cai",
       "htmlBytes100": 771900,
-      "htmlSha": "3ed8f223d0693c9e",
+      "htmlSha": "3c61cb6e540a9de0",
       "buttonCount": 41,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1834,7 +1834,7 @@
     "09-jackpot-party-super-jackpot-party": {
       "slug": "09-jackpot-party-super-jackpot-party",
       "htmlBytes100": 821100,
-      "htmlSha": "7fd3b21678196275",
+      "htmlSha": "f54530f245ce7b93",
       "buttonCount": 58,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3487,7 +3487,7 @@
     "17-huff-n-more-puff-2022-1-lw-game-on-us-floor": {
       "slug": "17-huff-n-more-puff-2022-1-lw-game-on-us-floor",
       "htmlBytes100": 833300,
-      "htmlSha": "ea4e96c8fe9f2f67",
+      "htmlSha": "c63b5b12a1ac347b",
       "buttonCount": 46,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4330,7 +4330,7 @@
     "21-jin-long-888-5-treasures-2022": {
       "slug": "21-jin-long-888-5-treasures-2022",
       "htmlBytes100": 809600,
-      "htmlSha": "94d693b37a3d3084",
+      "htmlSha": "0c3c5c11914c4a3c",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4531,7 +4531,7 @@
     "22-gold-stacks-88-lightning-box-lw-online": {
       "slug": "22-gold-stacks-88-lightning-box-lw-online",
       "htmlBytes100": 827500,
-      "htmlSha": "b0866bb2fd04853e",
+      "htmlSha": "524c7ad982a6da5c",
       "buttonCount": 58,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4611,7 +4611,7 @@
     "223-rect-fs-holdandwin-respin": {
       "slug": "223-rect-fs-holdandwin-respin",
       "htmlBytes100": 803600,
-      "htmlSha": "9069269705ef2a83",
+      "htmlSha": "184ddc048a74b37f",
       "buttonCount": 42,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4631,7 +4631,7 @@
     "224-lock-fs-holdandwin-respin": {
       "slug": "224-lock-fs-holdandwin-respin",
       "htmlBytes100": 808900,
-      "htmlSha": "3fd8d55b6f944eda",
+      "htmlSha": "2bf7241a62b06fd8",
       "buttonCount": 42,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4746,7 +4746,7 @@
     "23-cash-falls-series": {
       "slug": "23-cash-falls-series",
       "htmlBytes100": 814800,
-      "htmlSha": "e4289c757d33abf2",
+      "htmlSha": "5d61d161e650a348",
       "buttonCount": 44,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5168,7 +5168,7 @@
     "25-rainbow-riches-online-ports-megaways-slingo-cluster": {
       "slug": "25-rainbow-riches-online-ports-megaways-slingo-cluster",
       "htmlBytes100": 839100,
-      "htmlSha": "b9d469c7c1916ee1",
+      "htmlSha": "10be4b3370e78cb7",
       "buttonCount": 58,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5875,7 +5875,7 @@
     "286-rect-cascade-stickywild-multorb-5": {
       "slug": "286-rect-cascade-stickywild-multorb-5",
       "htmlBytes100": 826400,
-      "htmlSha": "ea46545eead77e50",
+      "htmlSha": "94e934edbaa70ef1",
       "buttonCount": 46,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5897,7 +5897,7 @@
     "287-rect-cascade-stickywild-multorb-5-max": {
       "slug": "287-rect-cascade-stickywild-multorb-5-max",
       "htmlBytes100": 826400,
-      "htmlSha": "f1c1e688f0a25430",
+      "htmlSha": "af562c184e87953d",
       "buttonCount": 46,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5919,7 +5919,7 @@
     "288-varreel-cascade-stickywild-multorb-5": {
       "slug": "288-varreel-cascade-stickywild-multorb-5",
       "htmlBytes100": 826700,
-      "htmlSha": "d0294b14000a422b",
+      "htmlSha": "e14465144df51f62",
       "buttonCount": 46,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5940,7 +5940,7 @@
     "289-varreel-cascade-stickywild-multorb-5-max": {
       "slug": "289-varreel-cascade-stickywild-multorb-5-max",
       "htmlBytes100": 826700,
-      "htmlSha": "e6f5e87959cc2dbd",
+      "htmlSha": "978fb591a05051d5",
       "buttonCount": 46,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6319,7 +6319,7 @@
     "cash-eruption-foundry-gdd": {
       "slug": "cash-eruption-foundry-gdd",
       "htmlBytes100": 833100,
-      "htmlSha": "1af57c57a14f65d8",
+      "htmlSha": "8c18ef74ab8d542b",
       "buttonCount": 45,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6358,7 +6358,7 @@
     "huff-n-more-puff-gdd": {
       "slug": "huff-n-more-puff-gdd",
       "htmlBytes100": 835500,
-      "htmlSha": "091c548113040ebf",
+      "htmlSha": "8222678f529dc6fd",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6399,7 +6399,7 @@
     "wrath-of-olympus-gdd": {
       "slug": "wrath-of-olympus-gdd",
       "htmlBytes100": 831400,
-      "htmlSha": "1526c366d7c021b5",
+      "htmlSha": "47db7d27b13b4496",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,

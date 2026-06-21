@@ -156,7 +156,7 @@ Ingest CLI: `node tools/ingest.mjs --file <path> [--no-llm] [--open]`
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Verify gate (31 step, idempotent, pre-commit hook live)
+### Verify gate (32 step, idempotent, pre-commit hook live)
 
 ```
  1. archetype catalog + alias + filter
@@ -188,8 +188,9 @@ Ingest CLI: `node tools/ingest.mjs --file <path> [--no-llm] [--open]`
 27. UQ-MASTERY-5 V9 self-test (clean PASS + missing controls FAIL + WARN)
 28. UQ-MASTERY-6 V12 deeper industry spec (9 HARD + 11 SOFT × 338)
 29. UQ-MASTERY-6 V12 self-test (9 HARD codes + clean fixture)
-30. UQ-MASTERY block liveness audit (0 DEAD blokova — 184 blocks × 25 HTMLs)
-31. UQ-11 render smoke (20 GDD subset)
+30. UQ-FORTIFY9 ninth-tier forensic 5 fixes (XSS/proto/clock/BOM/slug)
+31. UQ-MASTERY block liveness audit (0 DEAD blokova — 184 blocks × 25 HTMLs)
+32. UQ-11 render smoke (20 GDD subset)
 ```
 
 Komanda: `npm run verify` (~ 5s) · `node tools/verify-idempotency-test.mjs` (assert Pass 1 = Pass 2).
@@ -266,6 +267,11 @@ UQ-MASTERY-6 → V12 deeper industry spec (Layer F-K: paytable economics,
                 FS economics, bonus-buy economics, engine signature,
                 UX presentation; 9 HARD + 11 SOFT codes; 338/338 PASS,
                 9-code negative + clean control self-test)
+UQ-FORTIFY9  → 5 ninth-tier forensic fixes (XSS via safeJSONInScript,
+                prototype pollution guard u mergeIntoModel + parser inline,
+                DST/NTP clock skew u fileLock, UTF-16 BOM + JSON silent
+                fallback log u parser, slug normalization unify
+                parser↔cert/manifest preko NFKD)
 ```
 
 ### Liveness classes (after UQ-MASTERY, 184 blocks total)

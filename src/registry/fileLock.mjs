@@ -121,6 +121,16 @@ export function acquireLock(targetPath, opts = {}) {
               if (recordedAgeMs > maxAge / 2 && Math.abs(mtimeMs - meta.acquiredAt) > 1000) {
                 pidMismatch = true;
               }
+              /* UQ-FORTIFY9 #3 — DST/NTP clock skew guard. Math.abs
+               * može da bude 0 pod backward time jump (NTP correction,
+               * DST fall-back). Pravilo: ako je `ageMs` (file age iz
+               * stat) > maxAge regardless of `recordedAgeMs`, lock je
+               * stale bez obzira na clock skew. Drugi check: ako je
+               * recordedAgeMs negativan (clock skok unazad), takođe
+               * tretiraj kao stale jer nemamo poverenja u clock. */
+              if (recordedAgeMs < 0 || (recordedAgeMs > maxAge && ageMs > maxAge / 4)) {
+                pidMismatch = true;  // force steal — clock untrustworthy
+              }
             }
           }
         } catch { /* corrupt lock — treat as stale */ holderAlive = false; }

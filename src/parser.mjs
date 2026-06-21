@@ -49,24 +49,35 @@ export function parseGDD(text, ext) {
       return m;
     }
   }
-  /* Wave W47.S22 Edge-Case A — strip UTF-8 BOM (﻿) if present.
-   * MS-authored / Notion-exported markdown frequently leads with a BOM
-   * which collides with the `^#\s+` heading regex → name extraction
-   * silently fell back to "Untitled Slot". One char strip, no allocation
-   * unless BOM actually present. */
+  /* Wave W47.S22 Edge-Case A + UQ-FORTIFY9 #4 — strip BOM (UTF-8 + UTF-16
+   * LE/BE + UTF-32 LE/BE) ako prisutan. Originalni fix je samo UTF-8
+   * (0xFEFF). UTF-16 BOM-ovi (0xFFFE / 0xFEFF kao 2 byte) parser videl kao
+   * encoded text i silently failed → "Untitled Slot" fallback. */
   if (text.charCodeAt(0) === 0xFEFF) {
+    text = text.slice(1);
+  }
+  /* UTF-16 LE BOM = 0xFF 0xFE; UTF-16 BE BOM = 0xFE 0xFF.
+   * Posle UTF-8 decoded String chars su ￾ ili ﻿ respectively. */
+  if (text.charCodeAt(0) === 0xFFFE) {
     text = text.slice(1);
   }
   if (ext === 'json') {
     try {
       return normalizeFromJSON(JSON.parse(text));
     } catch (err) {
-      /* JSON GDD malformed → fall through to markdown parser. Most "json"
-         uploads that fail JSON.parse are actually JS-flavored configs with
-         comments / trailing commas; the markdown extractor will still pull
-         what it can from the raw text. */
+      /* UQ-FORTIFY9 #4 — log JSON parse failure as WARN pre fall-back.
+       * Pre fix-a, JSON parse error je tonuo u markdown parser bez
+       * vidljivog signala. Sad: stderr WARN + zapis u confidence._failures
+       * + flag `__parserDiagnostics__.jsonFallback = true`. */
+      try {
+        if (typeof console !== 'undefined' && console.warn) {
+          console.warn(`[parser/UQ-FORTIFY9#4] JSON parse failed, falling back to markdown extractor: ${err && err.message}`);
+        }
+      } catch (_) { /* console may not exist in some embedded contexts */ }
       const m = parseMarkdownGDD(text);
       m.confidence._failures.unshift({ label: 'json.parse', error: String(err && err.message || err) });
+      m.__parserDiagnostics__ = m.__parserDiagnostics__ || { warnings: [], errors: [] };
+      m.__parserDiagnostics__.warnings.push({ stage: 'json.parse', reason: 'jsonFallback', error: String(err && err.message || err) });
       return m;
     }
   }
@@ -374,8 +385,19 @@ export function parseMarkdownGDD(text) {
         globalThis.process.env && globalThis.process.env.WAVE_V_RECONCILE_PATH) {
       overlayPath = globalThis.process.env.WAVE_V_RECONCILE_PATH;
     } else if (_waveVFs && model && model.name) {
-      const slug = String(model.name).toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      /* UQ-FORTIFY9 #5 — unify slug derivation sa cert/manifest.mjs.
+       * Pre fix-a, parser je radio NFD-less slug (samo toLowerCase +
+       * replace), dok cert/manifest.mjs koristi NFKD normalize + strip
+       * diacritics. Za GDD-ove sa Unicode kompatibilnim karakterima
+       * (ć/š/đ/ž/č ili tipografski "fi" ligature) ovo je davalo
+       * mismatched slug → cache miss. Sad oba puta isti algorithm. */
+      const slug = String(model.name)
+        .normalize('NFKD')
+        .replace(/[̀-ͯ]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 64);
       const candidate = _resolveWaveVCachePath(slug);
       if (candidate && _waveVFs.existsSync(candidate)) {
         overlayPath = candidate;
@@ -694,12 +716,18 @@ function _waveVOverlay(model, reconcilePath) {
   const delta = reconciled.model_delta || {};
   const meta  = reconciled.__meta__   || {};
   /* Inline shallow-merge — keeps overlay path synchronous and identical
-   * to wave-v-reconcile.mjs::mergeIntoModel. */
+   * to wave-v-reconcile.mjs::mergeIntoModel.
+   * UQ-FORTIFY9 #2 — prototype pollution guard. */
+  const PROTO_POISON_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
   for (const k of Object.keys(delta)) {
+    if (PROTO_POISON_KEYS.has(k)) continue;
     if (delta[k] == null) continue;
     if (model[k] && typeof model[k] === 'object' && !Array.isArray(model[k]) &&
         typeof delta[k] === 'object' && !Array.isArray(delta[k])) {
-      Object.assign(model[k], delta[k]);
+      for (const ck of Object.keys(delta[k])) {
+        if (PROTO_POISON_KEYS.has(ck)) continue;
+        model[k][ck] = delta[k][ck];
+      }
     } else {
       model[k] = delta[k];
     }

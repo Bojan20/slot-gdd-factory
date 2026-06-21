@@ -328,6 +328,18 @@ if (existsSync(v12Test)) {
     'node', [v12Test]);
 }
 
+/* ── Step 4.97: UQ-FORTIFY9 ninth-tier forensic 5 fixes ────────────────
+ * #1 XSS u buildSlotHTML.mjs (safeJSONInScript escape)
+ * #2 Prototype pollution u mergeIntoModel + parser inline merge
+ * #3 Clock skew u fileLock.mjs (DST/NTP)
+ * #4 BOM + JSON silent fallback u parser.mjs
+ * #5 Slug normalization unify (parser ↔ cert/manifest) */
+const uqFortify9 = resolve(REPO, 'tests/tools/uq-fortify9-ninthtier.test.mjs');
+if (existsSync(uqFortify9)) {
+  run('UQ-FORTIFY9 ninth-tier forensic 5 fixes (XSS/proto/clock/BOM/slug)',
+    'node', [uqFortify9]);
+}
+
 /* ── Step 4.91: UQ-MASTERY block liveness audit ────────────────────────
  * Zero-DEAD-block contract. Every block flagged `defaultOn: true` in the
  * manifest MUST be mountable in at least one rendered HTML fingerprint

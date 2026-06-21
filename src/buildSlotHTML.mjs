@@ -24,6 +24,23 @@
  */
 import { buildGridShape } from './gridShape.mjs';
 import { paylineConfig } from './blocks/paylines.mjs';
+
+/* ─── UQ-FORTIFY9 #1 · XSS-safe JSON encoding for inline <script> ──────
+ * JSON.stringify može da emituje string koji sadrži `</script>`,
+ * `<!--` ili `<script`. Browser HTML parser bi prekinuo script tag i
+ * izvršio sve što sledi → XSS preko GDD prose-a (model.name,
+ * features.label, symbol.name).
+ *
+ * Fix: zameni `<` `>` `&` sa JS escape sequencama. Validan JSON za
+ * runtime parser, ali browser HTML parser ne vidi `<`. */
+export function safeJSONInScript(value) {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
 import {
   emitPaylineOverlayCSS,
   emitPaylineOverlayRuntime,
@@ -1751,15 +1768,15 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
 
   const POOL = ${JSON.stringify(pool.map(s => s.id))};
   const SHAPE = ${JSON.stringify(shape)};
-  const FREESPINS = ${JSON.stringify(model.freeSpins || { enabled: false })};
+  const FREESPINS = ${safeJSONInScript(model.freeSpins || { enabled: false })};
   /* Wave AL-2 (4-GDD audit) — expose parser-detected feature kinds + name
    * + symbol tier counts as a window-side QA hook so external auditors
    * (cortex-eyes, regulator probes, dev tools) can verify parser → UI
    * parity without scraping inline scripts. Safe for production: read-only
    * snapshot of the build-time model, no runtime mutation. */
-  const __MODEL_FEATURES__ = ${JSON.stringify((model.features || []).map(f => ({ kind: f.kind, label: f.label })))};
-  const __MODEL_NAME__ = ${JSON.stringify(model.name || 'Untitled Slot')};
-  const __MODEL_SYMBOL_COUNTS__ = ${JSON.stringify({
+  const __MODEL_FEATURES__ = ${safeJSONInScript((model.features || []).map(f => ({ kind: f.kind, label: f.label })))};
+  const __MODEL_NAME__ = ${safeJSONInScript(model.name || 'Untitled Slot')};
+  const __MODEL_SYMBOL_COUNTS__ = ${safeJSONInScript({
     hp: (model.symbols && model.symbols.high) ? model.symbols.high.length : 0,
     mp: (model.symbols && model.symbols.mid)  ? model.symbols.mid.length  : 0,
     lp: (model.symbols && model.symbols.low)  ? model.symbols.low.length  : 0,
@@ -1776,7 +1793,7 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   if (typeof window !== "undefined") window.GAME_EVAL_KIND = GAME_EVAL_KIND;
   /* Per-symbol registry — drives win-cycle event generation. See
      SYMBOL_REGISTRY construction in buildSlotHTML.mjs for the source. */
-  const SYMBOL_REGISTRY = ${JSON.stringify(SYMBOL_REGISTRY)};
+  const SYMBOL_REGISTRY = ${safeJSONInScript(SYMBOL_REGISTRY)};
   /* Payline pool — int[reels] per line, value = rowIdx at reel i.
      Empty for cluster-pays grids (cluster, megaclusters, hex, etc).
      When non-empty, the win cycle runs in line-pays mode (per-line

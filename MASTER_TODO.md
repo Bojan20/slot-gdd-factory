@@ -1,3 +1,71 @@
+## 🏆 WAVE UQ-FORTIFY9 — 5 NINTH-TIER FORENSIC AUDIT FIXES · 2026-06-22 · ZATVOREN ✅
+
+Boki: *"kreni redom ultimativno"* — opcija D. Nezavisni Explore agent
+forensic audit otkrio 5 stvarnih production rupa koje su preživele
+UQ-FORTIFY 1..8 + UQ-COVER + UQ-MASTERY 1..6.
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-FORTIFY9 — 5 ninth-tier forensic fix-eva                                         │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ #1 XSS U BUILDSLOTHTML.MJS                                                              │
+│    JSON.stringify direktan u <script> bez escape. model.name sa                          │
+│    "</script><script>alert(1)</script>" → izvršen XSS u rendered slot-u.                │
+│    Fix: safeJSONInScript() helper escape-uje <, >, &, U+2028, U+2029                     │
+│    u \\u003c, \\u003e, \\u0026, \\u2028, \\u2029. Validan JSON za runtime parser,       │
+│    ali browser HTML parser ne vidi `<`. Primenjen na __MODEL_NAME__,                     │
+│    __MODEL_FEATURES__, __MODEL_SYMBOL_COUNTS__, SYMBOL_REGISTRY, FREESPINS.              │
+│                                                                                         │
+│ #2 PROTOTYPE POLLUTION U MERGEINTOMODEL + PARSER INLINE                                 │
+│    V6 delta dolazi iz LLM (Kimi/Opus). Object.assign(model[k], delta[k]) gde            │
+│    delta sadrži __proto__ ili constructor key korumpira Object.prototype globalno.      │
+│    Pre fix-a: delta={"__proto__":{"isAdmin":true}} → svaki novi {} dobija .isAdmin.     │
+│    Fix: PROTO_POISON_KEYS = {__proto__, constructor, prototype}; filter top-level       │
+│    i nested keys pre Object.assign. Implementiran u src/wave-v-reconcile.mjs            │
+│    mergeIntoModel + src/parser.mjs inline overlay merge.                                │
+│                                                                                         │
+│ #3 DST/NTP CLOCK SKEW U FILELOCK.MJS                                                    │
+│    Math.abs(mtimeMs - meta.acquiredAt) > 1000 može biti 0 pod backward time             │
+│    jump (NTP correction, DST fall-back). Lock se nikad ne kradne →                     │
+│    deadlock 338-concurrent ingest.                                                      │
+│    Fix: dodato eksplicitno pravilo "ako je recordedAgeMs negativan (clock skok          │
+│    unazad) ILI je ageMs > maxAge regardless of recordedAgeMs → force steal".            │
+│                                                                                         │
+│ #4 BOM + JSON PARSE SILENT FALLBACK U PARSER.MJS                                        │
+│    Original BOM strip rukovao samo UTF-8 (0xFEFF). UTF-16 LE BOM (0xFFFE)               │
+│    je padao kroz, parser tretirao kao text, JSON.parse failed, silent fall-             │
+│    back u markdown parser (lower fidelity) bez warning log-a.                            │
+│    Fix: dodat 0xFFFE strip. JSON parse failure sad emituje console.warn +                │
+│    __parserDiagnostics__.warnings entry sa "jsonFallback" stage marker.                  │
+│                                                                                         │
+│ #5 SLUG NORMALIZATION MISMATCH                                                          │
+│    parser.mjs koristio plain toLowerCase + replace; cert/manifest.mjs koristio          │
+│    NFKD normalize + diacritic strip. Za GDD-ove sa Unicode kompatibilnim chars          │
+│    (ć/š/đ/ž/č ili tipografski "fi" ligature) ovo je davalo mismatched slug              │
+│    → cache miss između parser cache lookup i manifest baseline.                          │
+│    Fix: parser slug derivation sada koristi isti NFKD + diacritic strip                  │
+│    algoritam kao cert/manifest.mjs.                                                     │
+│                                                                                         │
+│ SELF-TEST (tests/tools/uq-fortify9-ninthtier.test.mjs)                                   │
+│   #1 safeJSONInScript escape-uje </script>, <!--, & + round-trip preserves              │
+│   #2 mergeIntoModel ne pollutea Object.prototype (top-level + nested + constructor)     │
+│   #3 fileLock.mjs sadrži guard za recordedAgeMs < 0                                      │
+│   #4 parser.mjs sadrži UTF-16 BOM (0xFFFE) + console.warn na JSON fallback              │
+│   #5 parser.mjs slug derivation koristi .normalize('NFKD')                                │
+│                                                                                         │
+│ BASELINE REBAKE                                                                         │
+│   UQ-16 baseline drift 3 slug zbog izmenjenog buildSlotHTML.mjs HTML output-a            │
+│   (safeJSONInScript dodao escape characters). Rebake-ovan 338/338.                       │
+│                                                                                         │
+│ GATE INTEGRATION                                                                        │
+│   tools/verify.mjs step 4.97 — UQ-FORTIFY9 ninth-tier self-test                          │
+│                                                                                         │
+│ VERIFY GATE: 32/32 zeleno (~17s)                                                         │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-MASTERY-6 — V12 DEEPER INDUSTRY SPEC · 2026-06-22 · ZATVOREN ✅
 
 Boki: *"kreni redom ultimativno"* — opcija C. Produbljuje V11 sa sledećim slojem
