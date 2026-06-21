@@ -134,20 +134,53 @@ const summary = {
   startedAt: new Date().toISOString(),
   steps: [],
 };
-/* Wave UQ-CASH A5 — parser source hash (cache invalidation key).
- * Hashes a stable set of source files that influence the parsed model:
- *   src/parser.mjs · src/registry/smartDefaults.mjs · src/registry/featureArchetypes.mjs
- * Result is a hex digest stored in V6 cache entries as __parser_hash__.
- * If any source file changes between runs, hash drifts → cache invalidates. */
+/* Wave UQ-CASH A5 + UQ-FORTIFY F5+F6 — cache invalidation key.
+ * Hashes EVERY source file that influences either the parsed model or the
+ * agent-generated reconcile. Hash drift on ANY of these → cache invalidates.
+ *   Parser pipeline:
+ *     src/parser.mjs
+ *     src/registry/smartDefaults.mjs
+ *     src/registry/featureArchetypes.mjs
+ *   Build pipeline (F5):
+ *     src/buildSlotHTML.mjs
+ *     src/registry/blockCatalog.json
+ *     src/registry/blockMapper.mjs
+ *   Agent semantics (F6):
+ *     agents/parser-pool/V1_TOPOLOGY.md
+ *     agents/parser-pool/V2_SYMBOLS.md
+ *     agents/parser-pool/V3_FEATURE.md
+ *     agents/parser-pool/V4_UX.md
+ *     agents/parser-pool/V5_COMPLIANCE.md
+ *     agents/parser-pool/V6_RECONCILE.md
+ *     agents/parser-pool/SELF_CORRECTION.md  (UQ-TRAIN)
+ *
+ * Agent prompt files are bundled in because when calibration trainer
+ * stamps AGENT_CALIBRATION blocks the prompt semantics change — cached
+ * V6 responses were generated under the OLD prompt and should not be
+ * trusted after the change.
+ */
 let _parserHashCache = null;
 async function _computeParserHash() {
   if (_parserHashCache) return _parserHashCache;
   const { createHash } = await import('node:crypto');
   const { readFile } = await import('node:fs/promises');
   const SOURCES = [
+    /* Parser */
     resolve(REPO, 'src/parser.mjs'),
     resolve(REPO, 'src/registry/smartDefaults.mjs'),
     resolve(REPO, 'src/registry/featureArchetypes.mjs'),
+    /* Build (F5) */
+    resolve(REPO, 'src/buildSlotHTML.mjs'),
+    resolve(REPO, 'src/registry/blockCatalog.json'),
+    resolve(REPO, 'src/registry/blockMapper.mjs'),
+    /* Agent prompts (F6) */
+    resolve(REPO, 'agents/parser-pool/V1_TOPOLOGY.md'),
+    resolve(REPO, 'agents/parser-pool/V2_SYMBOLS.md'),
+    resolve(REPO, 'agents/parser-pool/V3_FEATURE.md'),
+    resolve(REPO, 'agents/parser-pool/V4_UX.md'),
+    resolve(REPO, 'agents/parser-pool/V5_COMPLIANCE.md'),
+    resolve(REPO, 'agents/parser-pool/V6_RECONCILE.md'),
+    resolve(REPO, 'agents/parser-pool/SELF_CORRECTION.md'),
   ];
   const h = createHash('sha256');
   for (const p of SOURCES) {
@@ -280,12 +313,30 @@ try {
         '--slug', slug,
       ], { stdio: 'inherit', cwd: REPO });
       if (r.status !== 0) throw new Error('reconcile exit ' + r.status);
-      /* Stamp parser hash so future runs detect cache staleness. */
+      /* Stamp parser hash so future runs detect cache staleness.
+       * Wave UQ-FORTIFY F2 — RECOMPUTE hash right before stamp so we capture
+       * any source changes that happened DURING Kimi call (30s window).
+       * If hash drifted, we still stamp the CURRENT hash so the next run
+       * detects the drift (cache becomes valid for current source).
+       * F7 — defensive mkdir on cache dir before stamping. */
+      const cacheDir = resolve(REPO, 'tools/_wave-v-cache');
+      try { await fsp.mkdir(cacheDir, { recursive: true }); } catch (_) {}
       if (existsSync(cacheFile)) {
         try {
+          /* Invalidate memoized hash so we re-read the (possibly changed) source. */
+          _parserHashCache = null;
+          const freshHash = await _computeParserHash();
+          if (freshHash !== parserHash) {
+            log(`  warn: parser source changed mid-Kimi (${parserHash.slice(0, 8)} → ${freshHash.slice(0, 8)})`);
+          }
           const cur = JSON.parse(await fsp.readFile(cacheFile, 'utf8'));
-          cur.__parser_hash__ = parserHash;
-          await fsp.writeFile(cacheFile, JSON.stringify(cur, null, 2), 'utf8');
+          cur.__parser_hash__ = freshHash;
+          cur.__stamped_at__ = new Date().toISOString();
+          /* Atomic write via tmp + rename so concurrent ingest runs never
+           * leave a partial cache file. */
+          const tmpFile = cacheFile + '.tmp.' + process.pid;
+          await fsp.writeFile(tmpFile, JSON.stringify(cur, null, 2), 'utf8');
+          await fsp.rename(tmpFile, cacheFile);
         } catch (e) {
           log('  warn: could not stamp parser hash: ' + e.message);
         }

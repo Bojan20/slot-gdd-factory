@@ -2,7 +2,11 @@
   "_purpose": "UQ-CASH A6 — semantic-accuracy verifier ground truth. Pinned per-GDD field expectations that the parser MUST produce (or match within tolerance). Updates require Boki approval — these are the canonical 'PDF says X, parser must say X' anchors.",
   "_schema": {
     "name": "Expected game name (non-Untitled-Slot) OR null if PDF lacks H1",
-    "topology": { "reels": "int", "rows": "int", "paylines_or_ways": "int|null" },
+    "topology": {
+      "reels": "int",
+      "rows": "int",
+      "paylines_or_ways": "int|null"
+    },
     "features.minCount": "int — minimum feature count parser should detect",
     "symbols.minSpecials": "int — at least N specials (wild+scatter+bonus etc.)",
     "namedSymbols": "[string] — at least these named symbols should appear (case-insensitive match in any tier)"
@@ -11,42 +15,91 @@
     "Cash_Eruption_Foundry_GDD": {
       "pdf": "~/Desktop/GDD/Cash_Eruption_Foundry_GDD.pdf",
       "name": "Cash Eruption",
-      "topology": { "reels": 5, "rows": 3, "paylines_or_ways": 20 },
-      "features": { "minCount": 5 },
-      "symbols": { "minSpecials": 4 },
-      "namedSymbols": ["Wild", "Volcano", "Fireball"]
+      "topology": {
+        "reels": 5,
+        "rows": 3,
+        "paylines_or_ways": 20
+      },
+      "features": {
+        "minCount": 5
+      },
+      "symbols": {
+        "minSpecials": 4
+      },
+      "namedSymbols": [
+        "Wild",
+        "Volcano",
+        "Fireball"
+      ],
+      "__pdf_sha__": "7c88752821c628149732ce510f8e152fd1e3e24d79e3eb64009b645852232e22"
     },
     "Gates_of_Olympus_1000_GDD": {
       "pdf": "~/Desktop/GDD/Gates_of_Olympus_1000_GDD.pdf",
       "name": "Gates of Olympus 1000",
-      "topology": { "reels": 6, "rows": 5, "paylines_or_ways": null },
-      "features": { "minCount": 3 },
-      "symbols": { "minSpecials": 2 },
-      "namedSymbols": []
+      "topology": {
+        "reels": 6,
+        "rows": 5,
+        "paylines_or_ways": null
+      },
+      "features": {
+        "minCount": 3
+      },
+      "symbols": {
+        "minSpecials": 2
+      },
+      "namedSymbols": [],
+      "__pdf_sha__": "bc175db6c859fbf812a42efec1605c01f9a5e9167e2ee38438698c901cf913f4"
     },
     "Huff_N_More_Puff_GDD": {
       "pdf": "~/Desktop/GDD/Huff_N_More_Puff_GDD.pdf",
       "name": null,
-      "topology": { "reels": 5, "rows": 3, "paylines_or_ways": null },
-      "features": { "minCount": 5 },
-      "symbols": { "minSpecials": 2 },
-      "namedSymbols": []
+      "topology": {
+        "reels": 5,
+        "rows": 3,
+        "paylines_or_ways": null
+      },
+      "features": {
+        "minCount": 5
+      },
+      "symbols": {
+        "minSpecials": 2
+      },
+      "namedSymbols": [],
+      "__pdf_sha__": "af44d4d13d2108d3c8e9b1d000015b1441baebbff9c9046a272d78d6710d902e"
     },
     "Starlight_Travellers_GDD": {
       "pdf": "~/Desktop/GDD/Starlight_Travellers_GDD.pdf",
       "name": null,
-      "topology": { "reels": 6, "rows": 5, "paylines_or_ways": null },
-      "features": { "minCount": 3 },
-      "symbols": { "minSpecials": 2 },
-      "namedSymbols": []
+      "topology": {
+        "reels": 6,
+        "rows": 5,
+        "paylines_or_ways": null
+      },
+      "features": {
+        "minCount": 3
+      },
+      "symbols": {
+        "minSpecials": 2
+      },
+      "namedSymbols": [],
+      "__pdf_sha__": "b7c7a520d0ceef7ee45d60c900a57f20c588bfb06a3f373fb072d807dc7dc5e4"
     },
     "Wrath_of_Olympus_GDD": {
       "pdf": "~/Desktop/GDD/Wrath_of_Olympus_GDD.pdf",
       "name": null,
-      "topology": { "reels": 5, "rows": 3, "paylines_or_ways": null },
-      "features": { "minCount": 5 },
-      "symbols": { "minSpecials": 2 },
-      "namedSymbols": []
+      "topology": {
+        "reels": 5,
+        "rows": 3,
+        "paylines_or_ways": null
+      },
+      "features": {
+        "minCount": 5
+      },
+      "symbols": {
+        "minSpecials": 2
+      },
+      "namedSymbols": [],
+      "__pdf_sha__": "29296eaf87ea66c80d593b15dffbc9245808c0825a0ff2cbc098f84c09162844"
     }
   }
 }

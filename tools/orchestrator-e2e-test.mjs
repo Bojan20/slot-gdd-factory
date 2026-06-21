@@ -49,13 +49,26 @@ function pdfToText(p) {
 
 function resolveHome(p) { return p.replace(/^~/, process.env.HOME || ''); }
 
-/* Pinned force-chip kinds from Wave U + Wave Y. */
-const FORCE_CHIP_KINDS = [
-  'FORCE_FS', 'FORCE_BW', 'FORCE_HW', 'FORCE_MULT', 'FORCE_LIGHTNING',
-  'FORCE_EXPAND', 'FORCE_WALK', 'FORCE_STICKY', 'FORCE_MYSTERY', 'FORCE_WILD_REEL',
-  'FORCE_GAMBLE_OUTCOME', 'FORCE_PICK_PATH', 'FORCE_SLINGO_PATTERN',
-  'FORCE_WHEEL_SEGMENT', 'FORCE_TOURNAMENT_RANK', 'FORCE_COLLECTOR_FILL',
-];
+/* Wave UQ-FORTIFY F4 — Force-chip kinds SSOT.
+ * Single source of truth: src/blocks/universalForcePanel.mjs#ALL_KNOWN_KINDS.
+ * The runtime sets `window.__FORCE_FEATURE__ = '<kind>'` from this list so we
+ * detect a chip by searching for the literal `'<kind>'` string in HTML.
+ * That covers both UFP click handlers AND consumer block flag reads. */
+const FORCE_CHIP_KINDS = (() => {
+  try {
+    const ufpPath = resolve(REPO, 'src/blocks/universalForcePanel.mjs');
+    const src = readFileSync(ufpPath, 'utf8');
+    const m = src.match(/const\s+ALL_KNOWN_KINDS\s*=\s*Object\.freeze\(\[([\s\S]*?)\]\)/);
+    if (m) {
+      const kinds = m[1].split(',')
+        .map(s => s.replace(/['"]/g, '').trim())
+        .filter(Boolean)
+        .filter(s => !s.startsWith('//') && !s.startsWith('*'));
+      return kinds; /* snake_case kinds — match as-is in HTML */
+    }
+  } catch (_) {}
+  return ['free_spins', 'bonus_buy', 'hold_and_win', 'wheel_bonus'];
+})();
 
 function countBlockActivations(html) {
   /* Each active block registers at least one HookBus.on listener.
@@ -68,7 +81,11 @@ function countBlockActivations(html) {
 function countForceChipsPresent(html) {
   let n = 0;
   for (const k of FORCE_CHIP_KINDS) {
-    if (html.includes(k) || html.includes('__' + k + '__')) n++;
+    /* Match literal `'<kind>'` (UFP handler emits this string) OR the
+     * snake-case kind word as a standalone token. */
+    if (html.includes("'" + k + "'") || html.includes('"' + k + '"')) {
+      n++;
+    }
   }
   return n;
 }
@@ -101,7 +118,10 @@ for (const [slug, expected] of Object.entries(fixture.fixtures)) {
   verdict.passes.parser = !!model && !parserErr;
   verdict.telemetry.parserErr = parserErr;
 
-  /* Pass 3: Agent V6 cache present */
+  /* Pass 3: Agent V6 cache present. Wave UQ-FORTIFY F8 — strict mode:
+   * V6 cache MUST exist for baseline fixtures. Soft-pass was hiding
+   * "Kimi never ran" scenarios. Use STRICT_V6=0 env to opt back into
+   * soft-pass for degraded local dev environments. */
   const cachePath = resolve(REPO, `tools/_wave-v-cache/${toCacheSlug(slug)}.json`);
   const v6Cached = existsSync(cachePath);
   let v6Hash = null, v6DeclaredCount = 0, parserDeclaredCount = 0;
@@ -113,7 +133,8 @@ for (const [slug, expected] of Object.entries(fixture.fixtures)) {
       v6DeclaredCount = Object.values(meta).filter(v => v && v.source === 'gdd-declared').length;
     } catch (_) {}
   }
-  verdict.passes.v6Cache = v6Cached || true; /* soft pass — degraded mode allowed */
+  const strictV6 = process.env.STRICT_V6 !== '0';
+  verdict.passes.v6Cache = strictV6 ? v6Cached : (v6Cached || true);
   verdict.telemetry.v6Cached = v6Cached;
   verdict.telemetry.v6Hash = v6Hash;
   verdict.telemetry.v6DeclaredCount = v6DeclaredCount;

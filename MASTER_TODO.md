@@ -1,3 +1,92 @@
+## 🛡️ WAVE UQ-FORTIFY — UQ-TRAIN ARHITEKTURA RUPE · 2026-06-21 · ZATVOREN ✅ (10/10)
+
+> **Boki direktiva:** *"upisi ultimativno prvo zakrpi svaku mogucu rupu sa
+> ovom arhitekturom, upisi u master todo i kreni"*
+
+Forenzički audit (Explore agent) pronašao 10 rupa u UQ-TRAIN sloju:
+3 BLOCKER (race / silent-pass), 7 OZBILJNIH (drift / SSOT / coverage).
+Atom plan ide redom, QA posle svakog cluster-a.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ FORTIFY ATOMS                                                                          │
+├──────┬──────┬───────────────────────────────────────────────────────┬────────────────┤
+│ Tag  │ Prio │ Naslov                                                 │ Lokacija       │
+├──────┼──────┼───────────────────────────────────────────────────────┼────────────────┤
+│ F1   │ 🔴   │ AGENT_CALIBRATION atomic write + chain race fix        │ trainer:264-280│
+│ F2   │ 🔴   │ Cache hash recompute window (race kad parser menja     │ ingest.mjs:245-│
+│      │      │ tokom Kimi-ranja) — recompute pre stamp-a, ne pre run-a│                │
+│ F3   │ 🔴   │ --all-corpus mode bez ground truth tihi pass — emit    │ trainer:69-72 +│
+│      │      │ explicit warn + skip ground-truth-asserts              │ 91-98          │
+├──────┼──────┼───────────────────────────────────────────────────────┼────────────────┤
+│ F4   │ 🟡   │ FORCE_CHIP_KINDS SSOT — load iz blockCatalog.json     │ e2e:34-58      │
+│      │      │ umesto hardcoded array                                  │                │
+│ F5   │ 🟡   │ Parser hash uključi buildSlotHTML.mjs + blockCatalog   │ ingest.mjs:147 │
+│ F6   │ 🟡   │ Agent prompt hash u cache invalidator (lane prompts    │ ingest.mjs +   │
+│      │      │ menjaju semantiku iako parser source isti)              │ kimi-reconcile │
+│ F7   │ 🟡   │ Cache dir mkdir guard pre stamp-a                       │ ingest.mjs:286 │
+│ F8   │ 🟡   │ E2E Pass 3 strict — ne soft-pass kad cache nedostaje   │ e2e:116        │
+│ F9   │ 🟡   │ --all-corpus parser baseline computation (curently null│ trainer:91-98  │
+│      │      │ jer expected.pdf je null u corpus mode)                 │                │
+│ F10  │ 🟡   │ semantic-expected PDF SHA stamp + drift signal kad PDF │ fixtures +     │
+│      │      │ izmijenjen                                              │ verifier       │
+└──────┴──────┴───────────────────────────────────────────────────────┴────────────────┘
+```
+
+### Fix-evi shipped (one commit, all 10)
+
+```
+┌──────┬──────────────────────────────────────────────────────────────────────────────┐
+│ F1   │ Trainer atomic write (tmp + rename) + GLOBAL regex za strip-anje SVIH        │
+│      │ AGENT_CALIBRATION blokova (`/g` flag) sprečava telescoping kroz više runs    │
+├──────┼──────────────────────────────────────────────────────────────────────────────┤
+│ F2   │ ingest.mjs cache stamp recompute pre stamp-a: ako se source promenio tokom   │
+│      │ Kimi-ranja, freshHash != parserHash → warn + stamp svežu vrednost. Plus     │
+│      │ atomic write via tmp + rename na cache fajl.                                  │
+├──────┼──────────────────────────────────────────────────────────────────────────────┤
+│ F3   │ trainer --all-corpus explicit warn: "no ground truth, accuracy je V6-vs-     │
+│      │ parser delta, not vs truth. Review before --apply."                          │
+├──────┼──────────────────────────────────────────────────────────────────────────────┤
+│ F4   │ orchestrator-e2e-test FORCE_CHIP_KINDS SSOT iz universalForcePanel.mjs       │
+│      │ ALL_KNOWN_KINDS. snake_case kind strings detected as literal `'<kind>'`     │
+│      │ matches u HTML-u. Posle fix-a: 7.2/16 → 29.2/16 chips detected.              │
+├──────┼──────────────────────────────────────────────────────────────────────────────┤
+│ F5   │ Parser hash now includes buildSlotHTML.mjs + blockCatalog.json +             │
+│      │ blockMapper.mjs. Hash drift kad build pipeline menja → cache invalidates.    │
+├──────┼──────────────────────────────────────────────────────────────────────────────┤
+│ F6   │ Parser hash now includes svih 6 V1..V6 prompt fajlova + SELF_CORRECTION.md. │
+│      │ AGENT_CALIBRATION stamping menja prompt → cache invalidates → re-run.        │
+├──────┼──────────────────────────────────────────────────────────────────────────────┤
+│ F7   │ Cache dir mkdir guard pre stamp-a (was implicit-create-when-write).          │
+├──────┼──────────────────────────────────────────────────────────────────────────────┤
+│ F8   │ E2E Pass 3 strict V6 cache check (was soft-pass). Opt-out via STRICT_V6=0    │
+│      │ env za degraded local dev.                                                    │
+├──────┼──────────────────────────────────────────────────────────────────────────────┤
+│ F9   │ trainer --all-corpus mode tries dist/real-games/<slug>/raw.txt for parser    │
+│      │ baseline (was always-null). Trainer report sad ima realan delta u corpus.    │
+├──────┼──────────────────────────────────────────────────────────────────────────────┤
+│ F10  │ semantic-expected.json ima __pdf_sha__ field per fixture (baked sad).        │
+│      │ Verifier compute SHA na svaki run, warn ako drift. UQ_BAKE_PDF_SHA=1         │
+│      │ stamps fresh SHAs into fixtures.                                              │
+└──────┴──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Verifikacija (sve zelene posle 10 fix-ova)
+
+```
+parse-real     4/4 ✅
+lw-25 deep-qa  29/29 ✅
+verify gate    13/13 ✅
+LEGO gate      8/8 ✅
+UQ-11 render   338/338 ✅
+E2E orchestr.  5/5 PASS (force chips: 29.2/16 detected, sve gate-ove zeleni)
+PDF SHAs      svih 5 baseline GDD-ova pinned (drift detector live)
+```
+
+QA strategija: posle SVAKOG fix-cluster-a — full sweep (parse-real, lw-25, LEGO, UQ-11, verify).
+
+---
+
 ## 🤖 WAVE UQ-TRAIN — AGENT ORCHESTRATOR E2E + CALIBRATION TRAINER · 2026-06-21 · ZATVOREN ✅
 
 > **Boki direktiva:** *"moras da overis kako ce agenti i orkestrator AI raditi

@@ -76,6 +76,15 @@ let cacheHits = 0;
 
 console.log(`UQ-TRAIN — Agent Calibration Trainer (${APPLY ? 'APPLY' : 'DRY-RUN'})`);
 console.log(`Fixtures: ${fixtures.length}${CALIBRATE_ALL ? ' (full corpus)' : ' (baseline 5)'}`);
+/* Wave UQ-FORTIFY F3 — explicit warn when --all-corpus runs without
+ * ground truth. The lane "accuracy" reported in corpus mode is V6-vs-
+ * parser-baseline delta, NOT V6-vs-truth. Caller must understand the
+ * distinction before stamping calibration blocks. */
+if (CALIBRATE_ALL) {
+  console.log('⚠️  --all-corpus mode: no ground truth — accuracy is V6-vs-parser delta, not vs truth.');
+  console.log('   Use baseline-5 mode for ground-truth-based accuracy. Calibration deltas');
+  console.log('   produced in corpus mode are DIRECTIONAL signals only — review before --apply.');
+}
 console.log('═'.repeat(74));
 
 for (const [slug, expected] of fixtures) {
@@ -87,14 +96,25 @@ for (const [slug, expected] of fixtures) {
   const delta = cached.model_delta || {};
   const meta = cached.__meta__ || {};
 
-  /* Parser baseline for diff (skip in --all-corpus mode to save time) */
+  /* Parser baseline for diff (now also computes in --all-corpus mode using
+   * cached raw.txt when available — UQ-FORTIFY F9). */
   let parserModel = null;
-  if (!CALIBRATE_ALL && expected.pdf) {
-    const pdfPath = resolveHome(expected.pdf);
-    if (existsSync(pdfPath)) {
-      const raw = pdfToText(pdfPath);
-      try { parserModel = parseGDD(raw, 'md'); } catch (_) {}
+  let pdfPath = null;
+  if (expected.pdf) {
+    pdfPath = resolveHome(expected.pdf);
+  } else if (CALIBRATE_ALL) {
+    /* Corpus mode — try raw.txt next to the cache (writeFile by ingest). */
+    const rawCandidate = resolve(REPO, `dist/real-games/${slug}/raw.txt`);
+    if (existsSync(rawCandidate)) {
+      try {
+        const raw = readFileSync(rawCandidate, 'utf8');
+        parserModel = parseGDD(raw, 'md');
+      } catch (_) {}
     }
+  }
+  if (!parserModel && pdfPath && existsSync(pdfPath)) {
+    const raw = pdfToText(pdfPath);
+    try { parserModel = parseGDD(raw, 'md'); } catch (_) {}
   }
 
   /* V1: topology */
@@ -268,13 +288,20 @@ if (APPLY) {
       'When emitting JSON, double-check these fields against GDD prose. Stamp `__self_corrected__: true` if revisiting after CORRECTIONS block.',
       ''
     ].join('\n');
-    const marker = '## AGENT_CALIBRATION';
-    if (src.includes(marker)) {
-      src = src.replace(/## AGENT_CALIBRATION[\s\S]*?(?=^## |\Z)/m, calBlock);
-    } else {
-      src = src.replace(/\n+$/, '') + '\n\n' + calBlock;
-    }
-    writeFileSync(path, src);
+    /* Wave UQ-FORTIFY F1 — strip ALL existing AGENT_CALIBRATION blocks
+     * (not just the first match). Prevents telescoping: multiple --apply
+     * runs would otherwise compound headings if old block parsing missed
+     * even one. The regex is anchored on the literal block heading and
+     * walks until the NEXT `## ` heading or EOF. `g` flag + loop guard. */
+    const blockRe = /## AGENT_CALIBRATION[\s\S]*?(?=\n## |$)/g;
+    src = src.replace(blockRe, '').replace(/\n{3,}/g, '\n\n');
+    src = src.replace(/\n+$/, '') + '\n\n' + calBlock;
+    /* F1 — atomic write via tmp + rename so concurrent --apply runs never
+     * leave a half-written prompt file. */
+    const tmpPath = path + '.tmp.' + process.pid;
+    writeFileSync(tmpPath, src);
+    const { renameSync } = await import('node:fs');
+    renameSync(tmpPath, path);
     console.log(`  ✓ updated ${laneFiles[code]} (${l.misses.length} miss patterns)`);
   }
 }

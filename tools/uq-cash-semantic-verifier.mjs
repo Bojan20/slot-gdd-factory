@@ -51,6 +51,19 @@ function pdfToText(pdfPath) {
 
 function resolveHome(p) { return p.replace(/^~/, process.env.HOME || ''); }
 
+/* Wave UQ-FORTIFY F10 — PDF SHA drift detector.
+ * Each fixture in semantic-expected.json may carry a __pdf_sha__ field.
+ * On verifier run, we recompute the SHA-256 of the actual PDF file and
+ * warn if it differs from the pinned value. Drift means the source PDF
+ * has been replaced; the ground truth may no longer apply. */
+import { createHash } from 'node:crypto';
+function _sha256(path) {
+  try {
+    const buf = readFileSync(path);
+    return createHash('sha256').update(buf).digest('hex');
+  } catch { return null; }
+}
+
 function symbolLabels(model) {
   const out = [];
   const s = (model && model.symbols) || {};
@@ -83,6 +96,20 @@ for (const [slug, expected] of Object.entries(fixture.fixtures)) {
     totalAsserts++;
     results.push(result);
     continue;
+  }
+
+  /* Wave UQ-FORTIFY F10 — PDF SHA drift check. Non-fatal warning when the
+   * pinned __pdf_sha__ doesn't match the actual PDF — caller knows ground
+   * truth may be stale. First-time runs (no pinned SHA) bake the current. */
+  const pdfSha = _sha256(pdfPath);
+  if (expected.__pdf_sha__) {
+    if (pdfSha !== expected.__pdf_sha__) {
+      console.log(`  ${slug.padEnd(40)} ⚠️  PDF SHA drift: pinned ${expected.__pdf_sha__.slice(0, 12)} ≠ actual ${(pdfSha || 'null').slice(0, 12)}`);
+    }
+  } else if (process.env.UQ_BAKE_PDF_SHA === '1') {
+    /* Operator opt-in: stamp the current SHA into the fixture file. */
+    expected.__pdf_sha__ = pdfSha;
+    console.log(`  ${slug.padEnd(40)} 📝 baked PDF SHA ${(pdfSha || '').slice(0, 12)}`);
   }
 
   const raw = pdfToText(pdfPath);
@@ -160,5 +187,13 @@ for (const [slug, expected] of Object.entries(fixture.fixtures)) {
 
 console.log('═'.repeat(60));
 console.log(`Asserts: ${totalAsserts - totalFails}/${totalAsserts} passed (${totalFails} fails)`);
+
+/* F10 — if UQ_BAKE_PDF_SHA=1 mode was used and at least one fixture got a
+ * fresh SHA baked, write the updated fixture file back. */
+if (process.env.UQ_BAKE_PDF_SHA === '1') {
+  const { writeFileSync } = await import('node:fs');
+  writeFileSync(fixturePath, JSON.stringify(fixture, null, 2) + '\n');
+  console.log(`Baked PDF SHAs into ${fixturePath}`);
+}
 
 process.exit(totalFails > 0 ? 1 : 0);
