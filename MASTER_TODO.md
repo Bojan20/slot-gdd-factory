@@ -1,3 +1,47 @@
+## 🏆 WAVE Z-2 — ARCHETYPE → BLOCK SCAFFOLDER · 2026-06-21 · ZATVOREN ✅
+
+Boki: *"kreni"* — odmah na sledeći predlog iz UQ-6 šta-dalje liste (Z-2).
+Phase 2 obećan u featureArchetypes.mjs header-u: parser sugeriše arhetip →
+scaffolder produkuje senior-grade block + test u jednoj komandi.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE Z-2 — tools/scaffold-block.mjs                                                    │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ CLI                                                                                   │
+│   --list                                  print 25 archetype ids                       │
+│   --archetype <id> --kind <camelCase>    scaffold block + test                        │
+│   --dry-run                              emit to stdout, no disk write                │
+│   --force                                overwrite existing files                     │
+│                                                                                       │
+│ GENERATED BLOCK (rule_slot_gdd_lego_blocks + rule_senior_grade_code)                  │
+│   · JSDoc contract: purpose, archetype, lifecycle, perf, a11y, security                │
+│   · defaultConfig() → Object.freeze()-d, enabled:false                                 │
+│   · resolveConfig() defensive, auto-enable on feature-kind match                       │
+│   · emit*CSS() / emit*Runtime() pure emitters                                          │
+│   · ARCHETYPE_ID / FORCE_FLAG / WINDOW_FLAG exports                                    │
+│   · HookBus subscribe stubs per archetype.hooks                                        │
+│   · State nested pod cfg.state da ne kolizira sa block-level mode field                │
+│                                                                                       │
+│ GENERATED TEST (8 contract checks)                                                    │
+│   defaultConfig frozen + enabled:false · resolveConfig defaults clone ·                │
+│   auto-enable on feature match · CSS empty-on-disabled · CSS contains id ·             │
+│   runtime disabled stub · runtime contains id · meta exports match catalog             │
+│                                                                                       │
+│ TOOL TEST (tests/tools/scaffold-block.test.mjs, 7/7 PASS)                              │
+│   --list emits svih 25 ids · missing-flags → exit 2 · unknown archetype → exit 2 ·     │
+│   bad kind (snake/Pascal/digit/space/dash) → exit 2 · --dry-run embeds tačan           │
+│   ARCHETYPE_ID + forceFlag · real-write refuses-overwrite + --force radi ·             │
+│   E2E loop: scaffold svih 25 arhetipa, import every, assert meta = catalog              │
+│                                                                                       │
+│ COMMITS                                                                               │
+│   00c76a4 feat(Z-2): Archetype → Block scaffolder — 25 archetypes generišu             │
+│            senior-grade block + test u jednoj komandi                                   │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🚀 WAVE UQ-6 — KIMI V1-V5 BULK + ARCHETYPE EXPANSION 15→25 · 2026-06-21 · B 🟢 RUNNING · C ✅ ZATVOREN
 
 Boki: *"b i c redom ultimativno"* → *"redom"* → *"da"* (continue background tracking)
