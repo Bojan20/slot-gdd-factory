@@ -156,7 +156,7 @@ Ingest CLI: `node tools/ingest.mjs --file <path> [--no-llm] [--open]`
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Verify gate (32 step, idempotent, pre-commit hook live)
+### Verify gate (33 step, idempotent, pre-commit hook live)
 
 ```
  1. archetype catalog + alias + filter
@@ -189,8 +189,9 @@ Ingest CLI: `node tools/ingest.mjs --file <path> [--no-llm] [--open]`
 28. UQ-MASTERY-6 V12 deeper industry spec (9 HARD + 11 SOFT × 338)
 29. UQ-MASTERY-6 V12 self-test (9 HARD codes + clean fixture)
 30. UQ-FORTIFY9 ninth-tier forensic 5 fixes (XSS/proto/clock/BOM/slug)
-31. UQ-MASTERY block liveness audit (0 DEAD blokova — 184 blocks × 25 HTMLs)
-32. UQ-11 render smoke (20 GDD subset)
+31. UQ-TRAIN-2 trainer V2 multi-provider (scoring matrix × N providers)
+32. UQ-MASTERY block liveness audit (0 DEAD blokova — 184 blocks × 25 HTMLs)
+33. UQ-11 render smoke (20 GDD subset)
 ```
 
 Komanda: `npm run verify` (~ 5s) · `node tools/verify-idempotency-test.mjs` (assert Pass 1 = Pass 2).
@@ -272,6 +273,9 @@ UQ-FORTIFY9  → 5 ninth-tier forensic fixes (XSS via safeJSONInScript,
                 DST/NTP clock skew u fileLock, UTF-16 BOM + JSON silent
                 fallback log u parser, slug normalization unify
                 parser↔cert/manifest preko NFKD)
+UQ-TRAIN-2   → multi-provider trainer V2 (opus/kimi/gpt/gemini matrix,
+                winner-per-lane + globalni winner, --providers / --strict
+                flags, ready za GPT/Gemini kad postanu dostupni)
 ```
 
 ### Liveness classes (after UQ-MASTERY, 184 blocks total)

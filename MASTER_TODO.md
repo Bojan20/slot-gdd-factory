@@ -1,3 +1,63 @@
+## 🏆 WAVE UQ-TRAIN-2 — MULTI-PROVIDER TRAINER V2 · 2026-06-22 · ZATVOREN ✅
+
+Boki: *"kreni redom ultimativno"* — opcija E (poslednja). Produbljuje UQ-TRAIN
+(single-provider Kimi baseline) sa A/B/C scoring matrix preko N providera.
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ WAVE UQ-TRAIN-2 — Multi-provider Agent Trainer V2                                         │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ NOVI ALAT                                                                                │
+│   tools/agent-trainer-v2-multiprovider.mjs (~200 LOC) — pure deterministic               │
+│   scoring na postojećim V6 cache snapshot-ima                                            │
+│                                                                                         │
+│ PROVIDER SNAPSHOTS                                                                       │
+│   opus   tools/_wave-v-cache/                  (Opus 4.8 baseline od UQ-OPUS)            │
+│   kimi   tools/_wave-v-cache-kimi-archive/     (placeholder, NOT u use)                  │
+│   gpt    tools/_wave-v-cache-gpt-archive/      (future)                                  │
+│   gemini tools/_wave-v-cache-gemini-archive/   (future)                                  │
+│                                                                                         │
+│ SCORING per lane                                                                         │
+│   ratioScore  = clamp01(declaredRatio)                                                   │
+│   volumeScore = clamp01(declaredCount / 80)                                              │
+│   lane_score  = 0.5 × ratioScore + 0.5 × volumeScore                                     │
+│   winner-per-lane = provider sa max avg score across 5 main slugs                        │
+│   globalni winner = provider sa najviše lane wins                                        │
+│                                                                                         │
+│ TRENUTNO STANJE                                                                          │
+│   opus      5/5 snapshots (100%)                                                         │
+│   kimi      0/5 (archive nije snimljen)                                                  │
+│   gpt       0/5 (not in use)                                                             │
+│   gemini    0/5 (not in use)                                                             │
+│   Winner per lane: opus na V1..V5 (avg score 0.544)                                      │
+│   Globalni winner: opus                                                                  │
+│                                                                                         │
+│ USAGE                                                                                    │
+│   node tools/agent-trainer-v2-multiprovider.mjs                                          │
+│   node tools/agent-trainer-v2-multiprovider.mjs --providers=opus,kimi                    │
+│   node tools/agent-trainer-v2-multiprovider.mjs --strict                                 │
+│                                                                                         │
+│ SELF-TEST (tests/tools/agent-trainer-v2.test.mjs)                                         │
+│   - 5/5 slug mapping iz fixture key-eva (FIXTURE_KEY → cache-slug-format)                 │
+│   - 4/4 availability matrix popunjen                                                     │
+│   - Winner per lane = provider sa max avg score                                          │
+│   - Global winner = provider sa najviše lane wins                                        │
+│   - --strict mode prolazi kad Opus dostupan                                              │
+│   - --providers=opus jednoprovider run OK                                                │
+│                                                                                         │
+│ READY-FOR-GPT/GEMINI                                                                     │
+│   Kad postanu dostupni, samo se snimi `_wave-v-cache-gpt-archive/<slug>.json`            │
+│   i alat ih uključi u scoring matrix bez ikakve izmene koda.                             │
+│                                                                                         │
+│ GATE INTEGRATION                                                                        │
+│   tools/verify.mjs step 4.98 — UQ-TRAIN-2 trainer V2 self-test                           │
+│                                                                                         │
+│ VERIFY GATE: 33/33 zeleno (~18s)                                                         │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 WAVE UQ-FORTIFY9 — 5 NINTH-TIER FORENSIC AUDIT FIXES · 2026-06-22 · ZATVOREN ✅
 
 Boki: *"kreni redom ultimativno"* — opcija D. Nezavisni Explore agent

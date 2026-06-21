@@ -340,6 +340,17 @@ if (existsSync(uqFortify9)) {
     'node', [uqFortify9]);
 }
 
+/* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
+ * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
+ * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
+ * tools/_wave-v-cache + opcionalnih *-archive folder-a, score-uje
+ * po lane-u, emituje winner-per-lane + globalni winner. */
+const trainerV2 = resolve(REPO, 'tests/tools/agent-trainer-v2.test.mjs');
+if (existsSync(trainerV2)) {
+  run('UQ-TRAIN-2 trainer V2 multi-provider (scoring matrix + winner-per-lane)',
+    'node', [trainerV2]);
+}
+
 /* ── Step 4.91: UQ-MASTERY block liveness audit ────────────────────────
  * Zero-DEAD-block contract. Every block flagged `defaultOn: true` in the
  * manifest MUST be mountable in at least one rendered HTML fingerprint
