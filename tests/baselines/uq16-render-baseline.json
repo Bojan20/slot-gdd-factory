@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-21T09:48:06.499Z",
+  "generatedAt": "2026-06-21T09:53:50.707Z",
   "slugCount": 338,
   "prints": {
     "001-rect-fs-wild-mult": {
@@ -6318,8 +6318,8 @@
     },
     "cash-eruption-foundry-gdd": {
       "slug": "cash-eruption-foundry-gdd",
-      "htmlBytes100": 854500,
-      "htmlSha": "7314c94ec9ab9762",
+      "htmlBytes100": 854800,
+      "htmlSha": "ec7f69a3afbc9a9b",
       "buttonCount": 56,
       "paytableRows": 0,
       "footerPresent": true,

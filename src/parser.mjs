@@ -1943,6 +1943,84 @@ export function extractSymbolsProseMode(rawText, model) {
       _push('TR', 'Trigger', 'scatter');
     }
   }
+
+  /* Wave UQ-CASH A4 — named-identity = role assignments.
+   * IGT-Foundry-format GDDs (and many narrative-driven docs) use a
+   * left-to-right "NAME = role description" form instead of paytable
+   * tables. Examples this catches:
+   *   "Volcano = Free Spins scatter"        → Volcano kind:scatter
+   *   "Fireball = cash / money-collect"     → Fireball kind:cash_on_reel
+   *   "Big Wild = 3-high expanding Wild"    → Big Wild kind:wild
+   *   "Bonus Orb = triggers free spins"     → Bonus Orb kind:bonus
+   *
+   * Pattern is strict: capitalised name (1-3 words), `=` or `—` or `is`,
+   * then role keyword anywhere in the sentence tail. Vendor-neutral. */
+  /* Resolve game name (if any) so we never treat it as a symbol. */
+  const _gameName = (model && model.name && model.name !== 'Untitled Slot')
+    ? model.name.toLowerCase() : null;
+  const IDENTITY_ROLE_PATTERN = /(?:^|[.:>\n])\s*([A-Z][A-Za-z0-9'’]{2,15}(?:\s+[A-Z][A-Za-z0-9'’]{2,15}){0,2})\s*(?:=|—|–|\bis\b)\s*([^\n.]{4,140})/g;
+  let m2;
+  while ((m2 = IDENTITY_ROLE_PATTERN.exec(rawText)) !== null) {
+    const name = m2[1].trim();
+    const desc = m2[2].toLowerCase();
+    /* Skip game name (we already know it from header.name extraction). */
+    if (_gameName && name.toLowerCase() === _gameName) continue;
+    /* Skip section / boilerplate names that get caught by greedy initial char. */
+    if (/^(?:section|page|table|figure|version|format|theme|reel|paytable|bet|note|copyright|confidential|production|paylines?|line|stake|spin|symbol|payouts?|max[\s-]?win|rtp|volatility|hit\s+frequency)\b/i.test(name)) continue;
+    if (/^(?:the|all|each|every|some|most|any|this|that|of|free|game|bonus|slot|hold|lock|symbol|symbols|reels?|spins?|mode|system|round|feature|grand|major|minor|mini)$/i.test(name)) continue;
+    /* Skip names ending with prepositions that suggest mid-sentence cuts. */
+    if (/\s+(?:for|to|with|from|on|in|at|by|of)$/i.test(name)) continue;
+    /* Determine kind from desc. Order matters — scatter beats bonus when both
+     * mentioned; cash-collect beats anything; wild last because it overlaps. */
+    let kind = null;
+    if (/\b(?:cash\s+(?:collect|symbol|value)|money[-\s]?collect|coin\s+(?:value|symbol)|credit\s+value|fireball|cash[-\s]?on[-\s]?reel)\b/i.test(desc)) kind = 'cash_on_reel';
+    else if (/\b(?:free\s+spins?\s+scatter|fs\s+scatter|scatter|trigger.*free\s+spins?)\b/i.test(desc)) kind = 'scatter';
+    else if (/\b(?:expanding\s+wild|big\s+wild|stacked\s+wild|wild)\b/i.test(desc)) kind = 'wild';
+    else if (/\b(?:bonus|jackpot\s+(?:trigger|orb))\b/i.test(desc)) kind = 'bonus';
+    else if (/\b(?:multiplier\s+(?:orb|symbol|value))\b/i.test(desc)) kind = 'multiplier';
+    else continue;
+    /* ID heuristic: first 1-3 letters of initial of each word */
+    const words = name.split(/\s+/);
+    let id = words.map(w => w[0]).join('').toUpperCase().slice(0, 4);
+    if (!id) continue;
+    /* Disambiguate clash */
+    if (seen.has(id)) {
+      let i = 2;
+      while (seen.has(id + i) && i < 10) i++;
+      id = id + i;
+    }
+    _push(id, name, kind);
+  }
+
+  /* Pattern F (A4) — explicit "<NAME>: <pay tier>" or "<NAME> — high pay"
+   * mentions populate HP/MP/LP buckets when paytable tables aren't present.
+   * Conservative: only adds when explicit tier word appears. */
+  function _pushTier(tierBucket, id, label) {
+    if (!Array.isArray(tierBucket)) return;
+    const ucId = (id || '').toUpperCase();
+    if (tierBucket.some(s => (s.id || '').toUpperCase() === ucId)) return;
+    tierBucket.push({ id: ucId, label, tier: tierBucket === model.symbols.high ? 'high' : tierBucket === model.symbols.mid ? 'mid' : 'low', _source: 'prose-mode-tier' });
+  }
+  const TIER_PATTERN = /(?:^|[.:>\n])\s*([A-Z][A-Za-z0-9'’]{2,15}(?:\s+[A-Z][A-Za-z0-9'’]{2,15}){0,2})\s*(?:=|—|–|:|is\s+(?:a|the)?\s*)?\s*((?:premium|high[-\s]?pay|hp|mid[-\s]?pay|mp|low[-\s]?pay|lp|royal|card)\b[^\n]{0,40})/gi;
+  let m3;
+  while ((m3 = TIER_PATTERN.exec(rawText)) !== null) {
+    const name = m3[1].trim();
+    const descRaw = (m3[2] || '').toLowerCase();
+    if (_gameName && name.toLowerCase() === _gameName) continue;
+    if (/^(?:section|page|table|version|format|theme|reel|paytable|bet|note|paylines?|line|stake|symbol|payouts?|rtp|volatility|material|reserve|brightest|darkest|hottest|coldest)\b/i.test(name)) continue;
+    if (/^(?:the|all|each|every|some|most|any|this|that|free|game|bonus|slot)$/i.test(name)) continue;
+    if (specials.some(s => (s.name || s.label || '').toLowerCase() === name.toLowerCase())) continue;
+    /* Skip names containing lowercase descriptive verbs (e.g. "Reserve gold for X"). */
+    if (/[a-z]\s+[a-z]/.test(name)) continue;
+    const words = name.split(/\s+/);
+    const id = words.map(w => w[0]).join('').toUpperCase().slice(0, 4);
+    if (!id) continue;
+    let bucket = null;
+    if (/\b(?:high[-\s]?pay|hp|premium)\b/.test(descRaw)) bucket = model.symbols.high;
+    else if (/\b(?:mid[-\s]?pay|mp)\b/.test(descRaw)) bucket = model.symbols.mid;
+    else if (/\b(?:low[-\s]?pay|lp|royal|card)\b/.test(descRaw)) bucket = model.symbols.low;
+    if (bucket) _pushTier(bucket, id, name);
+  }
 }
 
 /* ─── Wave UQ-2 — prose-mode payback / volatility / max-win extractor ─
