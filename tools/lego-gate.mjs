@@ -513,27 +513,27 @@ const EXPECTED_EMIT_OWNERS = {
    * spinResult.stormMultiplierTarget. Closes W49.T5.B GDD corpus RE gap. */
   onStormMultiplierStart: ['stormMultiplierReel.mjs'],
   onStormMultiplierStop:  ['stormMultiplierReel.mjs'],
-  /* D-17.1 — patternWin block (Foundry-family gap closure). Detects
+  /* D-17.1 — patternWin block (industry-reference lock_respin family gap closure). Detects
    * anchor-stack + winning-Wild template and signals a flat pattern
    * multiplier on total bet. Replace-not-stack semantics via
    * onPatternWinTrigger.replaceLineTally + optional setMultMax(payX). */
   onPatternWinTrigger: ['patternWin.mjs'],
   onPatternWinPaid:    ['patternWin.mjs'],
-  /* D-17.2 — bigSymbolRender2x2 (Foundry-family gap closure). Oversized
+  /* D-17.2 — bigSymbolRender2x2 (industry-reference lock_respin family gap closure). Oversized
    * symbol footprint renderer + UNIT-count gate. Anchors the canonical
    * UNIT cell at the top-left of each 2x2 / 3-high / fullReel footprint
    * so trigger thresholds counted-per-unit (not per-cell) work on small
    * grids (5x3 etc.). */
   onBigSymbolMounted:   ['bigSymbolRender2x2.mjs'],
   onBigSymbolUnmounted: ['bigSymbolRender2x2.mjs'],
-  /* D-17.3 — linkedReels block (Foundry-family gap closure). Marks N
+  /* D-17.3 — linkedReels block (industry-reference lock_respin family gap closure). Marks N
    * consecutive reels as a single linked block; a target symbol landing
    * on any linked reel is repeated across the block as discrete UNIT
    * instances (so 1 landing emits N unit anchors). FS-gated by default
    * (per §08.3 + §8.5.0: center reels link during free spins only). */
   onReelsLinked: ['linkedReels.mjs'],
   onLinkUnits:   ['linkedReels.mjs'],
-  /* D-17.4 — perTriggerVolatilitySet (Foundry-family gap closure).
+  /* D-17.4 — perTriggerVolatilitySet (industry-reference lock_respin family gap closure).
    * Engine-driven classifier wrapper for per-trigger weighted "set"
    * draws (Low/Med/High). Block consumes the drawn tier from the
    * trigger payload, locks it for feature duration (no mid-feature
@@ -541,7 +541,7 @@ const EXPECTED_EMIT_OWNERS = {
    * presentation blocks. Math-blind by contract. */
   onVolatilitySetLocked:  ['perTriggerVolatilitySet.mjs'],
   onVolatilitySetExpired: ['perTriggerVolatilitySet.mjs'],
-  /* D-17.5 — potSymbolFireball (Foundry-family gap closure).
+  /* D-17.5 — potSymbolFireball (industry-reference lock_respin family gap closure).
    * Pot-tier symbol classifier + value tag + COLLECT-time tally.
    * Emits onPotSymbolLanded per landed pot cell so upstream
    * holdAndWin recognizes them as value-carrying cells (persist
@@ -549,7 +549,7 @@ const EXPECTED_EMIT_OWNERS = {
    * with breakdown sum at onHoldAndWinEnd. Math-blind. */
   onPotSymbolLanded:    ['potSymbolFireball.mjs'],
   onPotSymbolCollected: ['potSymbolFireball.mjs'],
-  /* D-17.6 — grandInterruptionLock (Foundry-family gap closure).
+  /* D-17.6 — grandInterruptionLock (industry-reference lock_respin family gap closure).
    * Interruption-locked GRAND celebration + handpay route. Detects
    * award >= cfg.grandThresholdCredits, locks controls via body
    * [data-grand-lock] + window.__SLOT_GRAND_LOCK_ACTIVE__ flag,
@@ -558,16 +558,16 @@ const EXPECTED_EMIT_OWNERS = {
   onGrandLock:        ['grandInterruptionLock.mjs'],
   onGrandReleased:    ['grandInterruptionLock.mjs'],
   onHandpayRequested: ['grandInterruptionLock.mjs'],
-  /* D-17.7 — simultaneousFsHoldAndWinPriority (Foundry-family gap
-   * closure). When BOTH features trigger on a single spin, the
+  /* D-17.7 — simultaneousFsHoldAndWinPriority (industry-reference
+   * lock_respin family gap closure). When BOTH features trigger on a single spin, the
    * arbiter defers the secondary (default FS), lets the primary
    * (default H&W) resolve, then re-emits the deferred trigger so
    * the FS award is queued, not lost. */
   onFeaturePriorityDeferred: ['simultaneousFsHoldAndWinPriority.mjs'],
   onFeaturePriorityResumed:  ['simultaneousFsHoldAndWinPriority.mjs'],
-  /* D-17.8 — creditAwardConversion (Foundry-family gap closure).
+  /* D-17.8 — creditAwardConversion (industry-reference lock_respin family gap closure).
    * Single-source-of-truth credit→money conversion contract per
-   * Foundry §04.5 / §06.1. Exposes window.creditAwardConvert /
+   * industry-ref §04.5 / §06.1. Exposes window.creditAwardConvert /
    * creditAwardCoinValue / creditAwardSetBet helpers downstream
    * blocks consume so every block reads the same award unit. */
   onAwardConverted:    ['creditAwardConversion.mjs'],
@@ -715,8 +715,8 @@ const EXPECTED_EMIT_OWNERS = {
    * legacy clusterPays:evaluated bus event. */
   onClusterPay:                      ['clusterPaysEval.mjs'],
   /* Wave LEGO-EV (2026-06-19) — universal all-ways + bidirectional ways
-   * evaluators. Pre-Megaways industry standard (Aristocrat universal,
-   * Microgaming 243-both-ways). */
+   * evaluators. Pre-dynamic-ways industry standard (universal-ways +
+   * 243-both-ways patterns common across mainstream land-based estates). */
   onAllWaysPay:                      ['allWaysEval.mjs'],
   onAllWaysCleared:                  ['allWaysEval.mjs'],
   onBidirectionalWaysPay:            ['bidirectionalWaysEval.mjs'],

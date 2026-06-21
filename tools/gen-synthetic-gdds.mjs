@@ -99,8 +99,8 @@ const PATTERNS = [
     compatible: (k) => KINDS[k].evals.includes('lines'),
   },
   {
-    id: 'megaways-cascade',
-    label: 'Modern Megaways cascade',
+    id: 'dynamic-ways-cascade',
+    label: 'Modern dynamic-ways cascade',
     description: 'Variable-reel ways evaluation + cascade + escalating multiplier on each cascade step.',
     features: ['cascade', 'ways', 'persistent_multiplier', 'free_spins'],
     sections: ['## Persistent Multiplier\nstartAt: 1\nincrementOnCascade: 1\nresetOnFsEnd: true'],

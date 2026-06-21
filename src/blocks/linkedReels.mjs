@@ -1,13 +1,13 @@
 /**
  * src/blocks/linkedReels.mjs
  *
- * Wave D-17.3 (Foundry-family gap closure) — Linked-reel block. Marks a
+ * Wave D-17.3 (industry-reference lock_respin family gap closure) — Linked-reel block. Marks a
  * configurable set of reel indices as a single "linked block" inside
  * which a target symbol that lands on any one linked reel REPEATS
  * across the entire block, producing multiple discrete UNIT instances
  * from a single physical landing. Vendor-neutral generalization of the
  * "center-reels link during free spins" pattern (§08.3 + §8.5.0 of the
- * Foundry-family production GDD).
+ * industry-reference lock_respin family production GDD).
  *
  * @module linkedReels
  *

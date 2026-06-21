@@ -62,7 +62,7 @@ correct dev-force hook.)
   "wave": "UQ-MASTERY",
   "agent": "V9_VISUAL_QA",
   "verdict": "PASS" | "FAIL" | "WARN",
-  "slug": "gates-of-olympus-1000-gdd",
+  "slug": "game-b-6x5-tumble",
   "checks": [
     {
       "name": "topology matches GDD",

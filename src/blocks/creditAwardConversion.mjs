@@ -1,7 +1,7 @@
 /**
  * src/blocks/creditAwardConversion.mjs
  *
- * Wave D-17.8 (Foundry-family gap closure) — Single-source-of-truth
+ * Wave D-17.8 (industry-reference lock_respin family gap closure) — Single-source-of-truth
  * credit → money conversion contract. Centralizes the canonical
  * `coin_value = total_bet / fixedCoinCount` derivation + per-pay-type
  * award-unit modes so every block in the repo reads the same award
@@ -24,7 +24,7 @@
  * Industry reference (vendor-neutral, industry baseline):
  *   The "credits as the canonical award unit, money as a derived
  *   display value" model is the certification-standard pattern across
- *   regulated land-based + online RGS deployments. Per the Foundry
+ *   regulated land-based + online RGS deployments. Per the industry-reference
  *   §04.5 / §06.1 specification:
  *     "money = credits × coin_value, where coin_value = total_bet / 20.
  *      Line pays = x line_bet (= x 1 coin). Scatter/pattern wins =

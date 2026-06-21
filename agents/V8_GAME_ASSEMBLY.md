@@ -57,7 +57,7 @@ src/blocks/ directory unconditionally. The gap V8 closes:
 │                                      │ bonusCelebrate + framework gate      │
 │ features includes 'tumble'           │ enable tumble + winRollup +          │
 │                                      │ scatterCelebration                   │
-│ features includes 'megaways'         │ enable dynamicWaysEngine             │
+│ features includes 'dynamic_ways'     │ enable dynamicWaysEngine             │
 │ features includes 'cluster'          │ enable clusterPaysEval, disable      │
 │                                      │ paylines/payAnywhereEval             │
 │ jurisdiction.includes('DE')          │ enable germanyComplianceGate +       │

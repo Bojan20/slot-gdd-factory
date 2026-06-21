@@ -1,7 +1,7 @@
 /**
  * src/blocks/grandInterruptionLock.mjs
  *
- * Wave D-17.6 (Foundry-family gap closure) — GRAND interruption-lock +
+ * Wave D-17.6 (industry-reference lock_respin family gap closure) — GRAND interruption-lock +
  * handpay route. Detects when a hold-and-win session has reached the
  * GRAND threshold (default 1,000,000 credits), suppresses all spin /
  * autoplay / slam-stop / quick-spin controls during the celebration,
@@ -13,7 +13,7 @@
  *
  * Purpose:
  *   Provides a vendor-neutral, opt-in lock layer that enforces the
- *   GRAND celebration contract published by the Foundry-family GDD
+ *   GRAND celebration contract published by the industry-reference lock_respin family GDD
  *   §10.5 / §10.6:
  *     "GRAND celebration is interruption-locked: it plays to completion,
  *      presents the 1,000,000-credit win, and on the cabinet routes to

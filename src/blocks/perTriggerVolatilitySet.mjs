@@ -1,7 +1,7 @@
 /**
  * src/blocks/perTriggerVolatilitySet.mjs
  *
- * Wave D-17.4 (Foundry-family gap closure) — Per-trigger volatility set
+ * Wave D-17.4 (industry-reference lock_respin family gap closure) — Per-trigger volatility set
  * classifier + lock. Consumes an engine-supplied tier draw at hold-and-
  * win trigger time, locks the tier for the duration of the feature, and
  * exposes the tier label to downstream presentation blocks (lava-flow
@@ -23,7 +23,7 @@
  *   the same feature spec serves both low-vol "drip" moments (frequent
  *   small collects) and high-vol "blow-off" moments (rare big landings)
  *   without requiring two distinct features. The selection is canonical
- *   per the Foundry production GDD §09 "Per-Trigger Volatility Set":
+ *   per the industry-reference production GDD §09 "Per-Trigger Volatility Set":
  *   "On every trigger the engine draws one of three weighted value
  *   distributions before the first symbol value is assigned. This is
  *   the mechanism that lets a single feature serve both a low-vol drip

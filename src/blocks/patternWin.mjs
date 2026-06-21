@@ -1,7 +1,7 @@
 /**
  * src/blocks/patternWin.mjs
  *
- * Wave D-17.1 (Foundry-family gap closure) — Pattern-Win block. Detects a
+ * Wave D-17.1 (industry-reference lock_respin family gap closure) — Pattern-Win block. Detects a
  * named board pattern (stacked anchor symbol on a single anchor reel +
  * winning Wild presence on each non-anchor "win reel") and signals a flat
  * pattern multiplier on total bet. Vendor-neutral generalization of the
@@ -22,7 +22,7 @@
  * Industry reference (vendor-neutral, industry baseline):
  *   The "stacked anchor symbol on reel 1 + expanded Wilds reels 2–N →
  *   flat multiplier" pattern is a long-standing industry baseline (see
- *   §05.3 + §07 of the Foundry-family production GDD captured at
+ *   §05.3 + §07 of the industry-reference lock_respin family production GDD captured at
  *   ~/Desktop/ (volcano-themed reference brief). Different titles label
  *   it "pattern win" or "full-screen hit" but the structural rule is the
  *   same: anchor stack lights the leftmost reel, expanded Wilds fill
@@ -31,7 +31,7 @@
  *   structural generalization, not a clone of any one product.
  *
  * Replace-not-stack semantics
- *   GDD edge case (Foundry §05.3 / §07): "the 1000× pattern award is the
+ *   GDD edge case (industry-ref §05.3 / §07): "the 1000× pattern award is the
  *   canonical evaluation of these <anchor>/Wild lines, not an addition
  *   on top of them. Suppress overlapping line-win counters and play one
  *   consolidated banner." The block emits `onPatternWinTrigger` and the

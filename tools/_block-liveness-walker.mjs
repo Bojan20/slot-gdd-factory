@@ -97,7 +97,7 @@ if (existsSync(distRoot)) {
       const p = join(distRoot, f);
       if (statSync(p).isFile()) distHtmls.push(p);
     }
-    // top-level ground-truth standalone HTMLs (gates-of-olympus-1000.html, wrath_of_olympus.html, ...)
+    // top-level ground-truth standalone HTMLs (game-b, game-c, etc.)
     else if (DEEP && f.endsWith('.html') && f !== 'index.html') {
       const p = join(distRoot, f);
       if (statSync(p).isFile()) distHtmls.push(p);

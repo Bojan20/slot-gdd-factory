@@ -1,7 +1,7 @@
 /**
  * src/blocks/simultaneousFsHoldAndWinPriority.mjs
  *
- * Wave D-17.7 (Foundry-family gap closure) — Cross-feature trigger
+ * Wave D-17.7 (industry-reference lock_respin family gap closure) — Cross-feature trigger
  * priority arbiter. When a single spin lands BOTH a free-spins
  * scatter threshold AND a hold-and-win money-collect threshold, the
  * arbiter pauses the FS award entry, lets the hold-and-win feature
@@ -12,7 +12,7 @@
  *
  * Purpose:
  *   Provides a vendor-neutral, math-blind, opt-in arbiter that enforces
- *   the Foundry-family §07 Edge-Cases rule:
+ *   the industry-reference lock_respin family §07 Edge-Cases rule:
  *     "Simultaneous FS + Hold-and-Win trigger: if a single spin lands
  *      3+ scatters AND the H&W threshold, pay all base wins first,
  *      then resolve the signature H&W to completion, THEN enter Free

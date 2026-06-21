@@ -88,15 +88,19 @@ Jedno dugme → ubaciš GDD (MD/JSON/TXT/PDF/URL) → otvori se playable slot te
 ## 🎯 GDD test fixture lista (jedini fajlovi koji idu u `samples/`)
 
 ```
-┌──────────────────────────────────┬─────────┐
-│ Fajl                              │ Status  │
-├──────────────────────────────────┼─────────┤
-│ WRATH_OF_OLYMPUS_GAME_GDD.md      │ ✅ GDD  │
-│ CRYSTAL_FORGE_GAME_GDD.md         │ ✅ GDD  │
-│ GATES_OF_OLYMPUS_1000_GAME_GDD.md │ ✅ GDD  │
-│ MIDNIGHT_FANGS_GAME_GDD.md        │ ✅ GDD  │
-└──────────────────────────────────┴─────────┘
+┌────────────────────────────────────────┬─────────────────────────────────┐
+│ Internal fixture slug                   │ Status                           │
+├────────────────────────────────────────┼─────────────────────────────────┤
+│ Game-C (5×3 rectangular reference)      │ ✅ GDD                           │
+│ Crystal Forge (in-house sample)         │ ✅ GDD                           │
+│ Game-B (6×5 tumble reference)           │ ✅ GDD                           │
+│ Midnight Fangs (in-house sample)        │ ✅ GDD                           │
+└────────────────────────────────────────┴─────────────────────────────────┘
 ```
+
+> Stari fixture filenames (uppercase vendor-coded MD-jevi) ostaju u `samples/`
+> radi back-compat sa pre-tracked baseline hash-evima. Public-facing dokumenti
+> i komentari koriste samo neutralne marker-e iznad.
 
 Nikad: `*_AUDIO_*.md`, `*_ADB.md`, `*_SDD.md`, `*_SFX_*.md`.
 

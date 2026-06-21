@@ -1,7 +1,7 @@
 /**
  * src/blocks/potSymbolFireball.mjs
  *
- * Wave D-17.5 (Foundry-family gap closure) — Pot-symbol classifier
+ * Wave D-17.5 (industry-reference lock_respin family gap closure) — Pot-symbol classifier
  * + value tracker. Adapter block that lets the hold-and-win cell
  * persistence + reset-on-new-landing logic treat the tiered "pot"
  * symbols (MINI / MINOR / MAJOR by default) as ordinary value-carrying
@@ -23,7 +23,7 @@
  *   land as special variants of the base money-collect symbol and
  *   contribute fixed credit awards on top of the standard cell values
  *   are an industry baseline for hold-and-win-family titles. The
- *   Foundry production GDD §10.2 codifies the rule:
+ *   industry-reference production GDD §10.2 codifies the rule:
  *   "A held special Fireball carrying MINI (100), MINOR (500), or
  *   MAJOR (2000) adds that pot to the running collect total alongside
  *   standard Fireball values (pool: 20–1500 credits) and Big Fireball
@@ -46,7 +46,7 @@
  *   (D-17.6) which subscribes to holdAndWin board-fill events. This
  *   block does NOT trigger GRAND directly; it only contributes credits
  *   to the running collect tally, which the upstream block caps at
- *   1,000,000 credits per the Foundry §04.6 / §10.6 rule.
+ *   1,000,000 credits per the industry-reference §04.6 / §10.6 rule.
  *
  * Math gate
  *   Pot tier values are display defaults from cfg.potValues. The

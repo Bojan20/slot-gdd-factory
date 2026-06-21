@@ -1,7 +1,7 @@
 /**
  * src/blocks/bigSymbolRender2x2.mjs
  *
- * Wave D-17.2 (Foundry-family gap closure) — Oversized "big" symbol
+ * Wave D-17.2 (industry-reference lock_respin family gap closure) — Oversized "big" symbol
  * render + unit-count gate. Vendor-neutral generalization of the "2×2
  * Big Fireball / 3-high Big Wild" rendering rule shared across the
  * hold-and-win and full-reel-wild families.
@@ -17,7 +17,7 @@
  *   where the count basis is UNITS, not occupied cells.
  *
  * Unit-vs-cell semantics
- *   GDD §06.4 / §8.5.0 (Foundry production brief):
+ *   GDD §06.4 / §8.5.0 (industry-reference production brief):
  *   "Big Fireball renders 2×2 (4 cells) and the threshold is 9+ — is
  *    geometrically impossible on the 5×3 / 15-cell board (9 × 4 = 36
  *    cells > 15). The threshold must therefore be defined on a basis
