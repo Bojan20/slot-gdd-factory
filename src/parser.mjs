@@ -143,13 +143,47 @@ export function parseMarkdownGDD(text) {
   _safeExtract('header.name', () => {
     const h1 = text.match(/^#\s+(.+?)(?:\s+—|\s+-|\s+:|\s+\(|$)/m);
     if (h1) {
-      model.name = h1[1].trim();
-      model.confidence.name += 0.5;
+      const candidate = h1[1].trim();
+      /* ULTRA-DEEP-QA D1 (2026-06-22, P0) — Cash Eruption GDD pdftotext
+       * razbije "GRAND 1,000,000-credit top award" → H1 = "GRAND 1"
+       * (jackpot tier label, NE game name). Reject any H1 that's a known
+       * jackpot tier label (MINI/MINOR/MAJOR/GRAND followed by digits)
+       * or a single ALL-CAPS feature label; fall through to "Game Title:"
+       * extractor below. */
+      const _isJackpotLabel = /^(?:MINI|MINOR|MAJOR|GRAND|MEGA|EPIC)\s*\d/i.test(candidate);
+      if (!_isJackpotLabel) {
+        model.name = candidate;
+        model.confidence.name += 0.5;
+      }
+    }
+    /* ULTRA-DEEP-QA D1 (2026-06-22, P0) — "Game Title" Title Page table
+     * extractor. Cash Eruption §1.1 has "Field Value / Game Title Cash
+     * Eruption". Industry-standard IGT/Aristocrat/Pragmatic GDDs all
+     * have this anchor; extract before any prose fallback. */
+    /* Multi-pattern game title anchor. Accept Title-Case names up to 5 words
+     * after "Game Title" + flexible whitespace/colon. Use non-greedy capture
+     * with lookahead boundary so "Vendor"/"Family"/SWID don't get absorbed. */
+    const gameTitleM = text.match(/Game\s*Title\s*[:|]?\s+([A-Z][A-Za-z0-9'’&\-]+(?:\s+[A-Z][A-Za-z0-9'’&\-]+){0,4}?)\s+(?:Vendor|Family|SWID|Document|Format|Theme|Bet)/);
+    if (gameTitleM && (!model.name || model.name === 'Untitled Slot' || /^(?:MINI|MINOR|MAJOR|GRAND)\s*\d/i.test(model.name))) {
+      model.name = gameTitleM[1].trim();
+      model.confidence.name = 1.0;
+      if (!model.confidence._derivedBy) model.confidence._derivedBy = {};
+      model.confidence._derivedBy.name = 'game-title-anchor';
     }
     const internalName = text.match(/\|\s*\*?\*?Internal name\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
     if (internalName) {
-      model.name = internalName[1].replace(/\*\*/g, '').trim();
-      model.confidence.name = 1.0;
+      const _internal = internalName[1].replace(/\*\*/g, '').trim();
+      /* ULTRA-DEEP-QA D1.b (2026-06-22, P0) — pdfToMarkdown.mjs generates a
+       * synthetic "| Internal name | <X> |" markdown row from the first H1
+       * of the PDF prose. For Cash Eruption this captures the corrupt
+       * "GRAND 1" (jackpot tier label leaked through pdftotext layout
+       * break). Apply same jackpot-label reject as the H1 path so the
+       * earlier game-title-anchor capture survives. */
+      const _isJackpotLabel = /^(?:MINI|MINOR|MAJOR|GRAND|MEGA|EPIC)\s*\d/i.test(_internal);
+      if (!_isJackpotLabel) {
+        model.name = _internal;
+        model.confidence.name = 1.0;
+      }
       return;
     }
     /* Wave UQ-CASH A2 — PDF first-line fallback (only when H1/internalName
@@ -351,6 +385,68 @@ export function parseMarkdownGDD(text) {
      uniformly, after which all keys look declared — so we MUST capture
      content presence before defaults run. */
   const preDefaultsSnapshot = _snapshotKeyContentSizes(model);
+
+  /* ULTRA-DEEP-QA D2 (2026-06-22, P0) — extract REAL jackpot ladder
+   * from GDD prose BEFORE smartDefaults runs. Cash Eruption §10.1 + §11.6
+   * + §14.5 contain the certified ladder ("MINI 100 / MINOR 500 /
+   * MAJOR 2,000 / GRAND 1,000,000 credits"). Industry-default backfill
+   * (10/50/500/5000) is 1000× understated for premium hold-and-win
+   * titles like Cash Eruption (regulator-blocking error). Pattern:
+   * <TIER>\s+([\d,]+)\s*(?:credits?|credit)? — accept tiers across
+   * a 1.5kb window (one ladder block).
+   *
+   * ULTRA-DEEP-QA D3 (2026-06-22, P0) — negative-signal bonusBuy detector.
+   * Cash Eruption §14.3 explicit ban ("no feature-buy mechanic implemented");
+   * parser was over-eager on theme.tags = "bonus-buy" and emitted
+   * bonusBuy.enabled=true with costX=100. Search for explicit ban
+   * phrasing AFTER smartDefaults but BEFORE final assembly. */
+  _safeExtract('header.jackpot-ladder', () => {
+    const tiers = ['MINI', 'MINOR', 'MAJOR', 'GRAND'];
+    const extracted = {};
+    for (const tier of tiers) {
+      /* Find <TIER>\s+<number>\s+credits? within a tight window so
+       * we don't accidentally bind to "GRAND 1,000,000-credit cap"
+       * sentence fragments missing later context. */
+      /* Multi-form: "MINI 100", "MINI (100)", "MINI = 100", "MINI 100 /", "MINI 100,000-credit" — all valid GDD ladder forms. */
+      const re = new RegExp(`\\b${tier}\\b\\s*[=(\\s][\\s]*([\\d][\\d,]{0,10})(?=\\s*[-)\\/,]|\\s+(?:credits?|credit|pots?|jackpot|=|–))`, 'i');
+      const m = text.match(re);
+      if (m) {
+        const val = parseInt(m[1].replace(/,/g, ''), 10);
+        if (Number.isFinite(val) && val > 0) extracted[tier] = val;
+      }
+    }
+    /* Only persist if we got ≥ 2 tiers (single-tier hit is likely a
+     * false positive from a prose mention). */
+    if (Object.keys(extracted).length >= 2) {
+      if (!model.jackpot || typeof model.jackpot !== 'object') model.jackpot = {};
+      if (!model.jackpot.values || typeof model.jackpot.values !== 'object') model.jackpot.values = {};
+      Object.assign(model.jackpot.values, extracted);
+      model.jackpot.tiers = tiers.filter(t => t in model.jackpot.values);
+      model.jackpot.enabled = true;
+      if (!model.confidence._derivedBy) model.confidence._derivedBy = {};
+      model.confidence._derivedBy.jackpot = 'gdd-prose-ladder';
+    }
+  });
+
+  _safeExtract('header.bonus-buy-negative-signal', () => {
+    /* Explicit ban phrasings (case-insensitive). */
+    const banPhrases = /\b(?:no\s+(?:feature[\s-]?)?(?:buy|bonus[\s-]?buy)|bonus[\s-]?buy\s+(?:prohibited|banned|disabled|not\s+(?:implemented|available|allowed)|absent)|feature[\s-]?buy\s+(?:prohibited|banned|disabled|not\s+(?:implemented|available|allowed)))\b/i;
+    if (banPhrases.test(text)) {
+      if (!model.bonusBuy || typeof model.bonusBuy !== 'object') model.bonusBuy = {};
+      model.bonusBuy.enabled = false;
+      /* Strip cost/avg-pay/variants so downstream tools don't false-green. */
+      delete model.bonusBuy.costX;
+      delete model.bonusBuy.avgPayXBet;
+      delete model.bonusBuy.variants;
+      delete model.bonusBuy.forceScatters;
+      /* Remove bonus-buy / buy-feature theme tags if present. */
+      if (model.theme && Array.isArray(model.theme.tags)) {
+        model.theme.tags = model.theme.tags.filter(t => !/bonus[\s-]?buy|buy[\s-]?feature/i.test(t));
+      }
+      if (!model.confidence._derivedBy) model.confidence._derivedBy = {};
+      model.confidence._derivedBy.bonusBuy = 'gdd-explicit-ban-detected';
+    }
+  });
 
   /* Wave P2 — Smart Defaults Engine. Backfill anything the parser
      could not extract from explicit GDD text — palette from tags,
