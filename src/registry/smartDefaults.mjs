@@ -582,24 +582,47 @@ export function autofixGaps(model) {
         'partial bet config — filled missing min/max/default/currency');
     }
 
-    /* Paytable gap — only when paytable shape exists but empty, OR missing */
+    /* Paytable gap — only when paytable shape exists but empty, OR missing.
+     *
+     * MATH-DEEP D-8 (2026-06-22) — paytable promotion. If symbols.high/mid/
+     * low entries have real pay objects (extracted from §6.2 paytable in
+     * parser D-4 pass), promote them to top-level model.paytable rows
+     * instead of fixed-pay stub. Industry-standard regulator-grade output:
+     * paytable[] mirrors the per-symbol pay table from GDD prose, no
+     * fabricated {3:5, 4:25, 5:100} stub. */
     if (!Array.isArray(model.paytable) || model.paytable.length === 0) {
-      const stub = [];
       const sym = model.symbols || {};
       const allTiers = []
-        .concat(sym.high || [], sym.mid || [], sym.low || [])
-        .slice(0, 5);
-      for (const sm of allTiers) {
-        stub.push({ id: sm.id, label: sm.label || sm.id,
+        .concat(sym.high || [], sym.mid || [], sym.low || []);
+      /* Detect whether the roster carries real pay objects (D-4 GDD prose
+       * extraction populates entry.pay = {3,4,5}). Promote when >= 50%
+       * of entries have a non-empty pay; otherwise fall back to stub. */
+      const realPayEntries = allTiers.filter(sm => sm && sm.pay && typeof sm.pay === 'object' && Object.keys(sm.pay).length > 0);
+      if (allTiers.length > 0 && realPayEntries.length >= Math.ceil(allTiers.length / 2)) {
+        /* Promote real-pay roster to canonical paytable. */
+        model.paytable = realPayEntries.map(sm => ({
+          id: sm.id,
+          label: sm.label || sm.id,
           tier: sm.tier || 'mid',
-          pay: { '3': 5, '4': 25, '5': 100 },
-          _autofix: true,
-        });
-      }
-      if (stub.length > 0) {
-        model.paytable = stub;
-        recordAutofix(model, 'paytable.placeholder-rows',
-          'no paytable declared — generated ' + stub.length + '-row stub mapping');
+          pay: { ...sm.pay },
+        }));
+        recordAutofix(model, 'paytable.promoted-from-symbols',
+          'symbols.{high,mid,low} carry real GDD pays — promoted to top-level paytable[]');
+      } else {
+        /* Fallback stub when symbol roster lacks real pays. */
+        const stub = [];
+        for (const sm of allTiers.slice(0, 5)) {
+          stub.push({ id: sm.id, label: sm.label || sm.id,
+            tier: sm.tier || 'mid',
+            pay: { '3': 5, '4': 25, '5': 100 },
+            _autofix: true,
+          });
+        }
+        if (stub.length > 0) {
+          model.paytable = stub;
+          recordAutofix(model, 'paytable.placeholder-rows',
+            'no paytable declared — generated ' + stub.length + '-row stub mapping');
+        }
       }
     }
 
