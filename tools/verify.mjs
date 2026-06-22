@@ -574,6 +574,16 @@ if (existsSync(hyb4Test)) {
     'node', [hyb4Test]);
 }
 
+/* ── Step 4.97v: HYB-5 Universal Pipeline (end-to-end orchestrator)
+ * Single pipeline GDD+PAR -> parser -> LLM completer -> cross-check ->
+ * PAR ingest -> schema validate -> hashed receipt chain. Idempotent (same
+ * inputs -> same final_hash). Closes MATH-DEEP Grana B (HYB-1..HYB-5). */
+const hyb5Test = resolve(REPO, 'tests/tools/universal-pipeline.test.mjs');
+if (existsSync(hyb5Test)) {
+  run('MATH-DEEP HYB-5 Universal Pipeline (E2E orchestrator + receipt chain)',
+    'node', [hyb5Test]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
