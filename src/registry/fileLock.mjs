@@ -246,3 +246,5 @@ export function withLock(targetPath, fn, opts) {
   const token = acquireLock(targetPath, opts);
   try { return fn(); } finally { releaseLock(token); }
 }
+
+/* UQ-FORTIFY6 #1 test marker */

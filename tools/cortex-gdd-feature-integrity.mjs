@@ -64,6 +64,59 @@ const DEDICATED_BLOCK_KINDS = new Map([
 /* Synthetic / parser-internal kinds — NOT real features. Filter out. */
 const SYNTHETIC_KINDS = new Set(['feature_generic']);
 
+/* Wave UQ-INTEGRITY (2026-06-21) — evaluator mechanics that the
+ * universalForcePanel deliberately excludes (NON_FORCEABLE_MECHANIC_KINDS).
+ * A win evaluator is core math, not a force-able feature — UFP renders no
+ * chip for these by design. Probe must not flag them as "MISSING" or the
+ * 1:1 invariant fires on every cluster/cascade/ways game. */
+const NON_FORCEABLE_EVALUATORS = new Set([
+  'cascade', 'cluster_pays', 'pay_anywhere', 'scatter_pay', 'ways',
+]);
+
+/* Lightning is declared by parser as a single kind, but UFP expands it into
+ * per-tier chips at render time (lightning_x2, _x3, _x5, _x10). Map a tier
+ * chip to its parent kind so the "declared lightning" satisfies any of the
+ * tier chips, and tier chips don't count as EXTRA. */
+const TIER_CHIP_PARENT = new Map([
+  ['lightning_x2',  'lightning'],
+  ['lightning_x3',  'lightning'],
+  ['lightning_x5',  'lightning'],
+  ['lightning_x10', 'lightning'],
+]);
+
+/* Top-level model config objects that imply a feature even when the parser
+ * didn't push the matching kind into model.features[]. Wave UQ parser change
+ * (2026-06-21, "dalje i dublje do kraja") promotes more keys to 'declared',
+ * but model.features[] is still the canonical kind list. Treat declared
+ * status in __activeFeatures__ as equivalent to a features[] entry so the
+ * probe sees the same picture the UFP chip renderer does. Names mirror
+ * parser model keys (camelCase) and map to chip kinds (snake_case). */
+const FEATURE_CONFIG_KEYS = new Map([
+  ['freeSpins',          'free_spins'],
+  ['holdAndWin',         'hold_and_win'],
+  ['multiplierOrb',      'multiplier_orb'],
+  ['respin',             'respin'],
+  ['stickyWild',         'sticky_wild'],
+  ['superSymbol',        'super_symbol'],
+  ['expandingWild',      'expanding_wild'],
+  ['walkingWild',        'walking_wild'],
+  ['wildReel',           'wild_reel'],
+  ['mysterySymbol',      'mystery_symbol'],
+  ['bonusBuy',           'bonus_buy'],
+  ['anteBet',            'ante_bet'],
+  ['gamble',             'gamble'],
+  ['lightning',          'lightning'],
+  ['wheelBonus',         'wheel_bonus'],
+  ['progressiveFreeSpins','progressive_free_spins'],
+  ['cascadingWildPersistence','cascading_wild_persistence'],
+  ['bonusPick',          'bonus_pick'],
+  ['cascade',            'cascade'],
+  ['cluster',            'cluster_pays'],
+  ['clusterPays',        'cluster_pays'],
+  ['ways',               'ways'],
+  ['scatterCelebration', 'scatter_pay'],
+]);
+
 async function collectFixtures() {
   const out = [];
   const mainDir = resolvePath(REPO_ROOT, 'samples');
@@ -93,6 +146,25 @@ function declaredKinds(model) {
       if (f && typeof f.kind === 'string') set.add(f.kind);
     }
   }
+  /* Wave UQ-INTEGRITY — read model.__activeFeatures__ (parser-canonical
+   * declared list) and map its camelCase kinds to the snake_case chip kinds
+   * that universalForcePanel emits. Parser may extract feature data even
+   * when the matching features[] entry was never pushed (smart-defaults +
+   * promotion logic). __activeFeatures__ is the single source of truth for
+   * "what the parser declared after reading the GDD". */
+  if (Array.isArray(model.__activeFeatures__)) {
+    for (const af of model.__activeFeatures__) {
+      if (!af || af.source !== 'declared') continue;
+      const chipKind = FEATURE_CONFIG_KEYS.get(af.kind);
+      if (chipKind) set.add(chipKind);
+    }
+  }
+  /* Fallback — top-level feature config objects with .enabled=true also
+   * count as declared (older parser output shape). */
+  for (const [modelKey, kind] of FEATURE_CONFIG_KEYS) {
+    const cfg = model[modelKey];
+    if (cfg && typeof cfg === 'object' && cfg.enabled === true) set.add(kind);
+  }
   return set;
 }
 
@@ -105,19 +177,30 @@ async function auditOne(fixture) {
   const declared = declaredKinds(model);
   const chipped = extractChipKinds(html);
 
+  /* Wave UQ-INTEGRITY — collapse tier chips to their parent kind so the
+   * "declared lightning" check sees lightning_x2/3/5/10 chips as one
+   * satisfaction. Keep original tier chip set for diagnostics. */
+  const chippedNormalised = new Set();
+  for (const c of chipped) {
+    chippedNormalised.add(TIER_CHIP_PARENT.get(c) || c);
+  }
+
   /* For each "missing" candidate, check if it has a dedicated block
    * rendering its own DOM marker. If yes → satisfied (not really missing). */
   const trulyMissing = [];
   for (const k of declared) {
-    if (chipped.has(k)) continue;
+    if (chippedNormalised.has(k)) continue;
     if (SYNTHETIC_KINDS.has(k)) continue;        /* skip parser-internal */
+    if (NON_FORCEABLE_EVALUATORS.has(k)) continue; /* evaluators have no chip by design */
     if (DEDICATED_BLOCK_KINDS.has(k)) {
       const sel = DEDICATED_BLOCK_KINDS.get(k).selector;
       if (html.includes(sel)) continue;          /* dedicated block satisfied */
     }
     trulyMissing.push(k);
   }
-  const extra = [...chipped].filter(k => !declared.has(k) && !AUTO_INJECTED_KINDS.has(k));
+  /* Extra = chip kinds (collapsed to parent) the model didn't declare. Tier
+   * chips never count as extra on their own — only their parent kind does. */
+  const extra = [...chippedNormalised].filter(k => !declared.has(k) && !AUTO_INJECTED_KINDS.has(k));
 
   return {
     id: fixture.id,
