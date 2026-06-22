@@ -498,6 +498,18 @@ for (const f of ['rtp-determinism', 'hit-frequency', 'per-spin-time', 'paytable-
   }
 }
 
+/* ── Step 4.97o: MATH-PRECISION-3 RTP calibrator ────────────────────
+ * Binary-search on scatter weight dok measured RTP ≈ declared ±0.05%.
+ * Generic distribution NE konvergira na 0.05% precision band-u (pool
+ * size diskretizuje weights) — to JE intencija (surfaces gap, ne sakriva).
+ * Convergence DOSTIŽNA tek preko MATH-7 WASM oracle + real par sheet
+ * weights iz sister repo-a. */
+const calibTest = resolve(REPO, 'tests/tools/math-calibrator.test.mjs');
+if (existsSync(calibTest)) {
+  run('MATH-PRECISION-3 RTP calibrator (gap surfaces real par sheet need)',
+    'node', [calibTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
