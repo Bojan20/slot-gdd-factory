@@ -57,28 +57,41 @@ Korisnikova `?`, kratka poruka ili reakcija **nije poziv da ja tražim precizira
 
 ---
 
-## 🚨 HARD RULE #4 — Audio i Math su OFF-LIMITS u odgovorima dok Boki ne kaže
+## 🚨 HARD RULE #4 — AUDIO OFF-LIMITS · MATH UNLOCKED 2026-06-22
 
-Boki je eksplicitno rekao: *"onda nisam rekao jos, tako da ne spominji audio i math vise sam, sve dok ne kazem ja. cak i kad pitam sta je ostalo, ne spominji"*.
+### Math — UNLOCKED 2026-06-22
 
-### Pravilo
+Boki direktiva (2026-06-22): *"ajde mo matematiku. napravi detaljan azuriraj
+master todo za math. i daj mi feed back sta sve treba da radis"*.
 
-- U SVIM odgovorima korisniku NE spominjem **audio** niti **math** — bez obzira na kontekst.
-- To uključuje: "šta je ostalo", "šta predlažeš", "nastavi", "status", "roadmap", "plan" — NIKAD ih ne iznosim kao predlog.
-- Ako Boki pita direktno o njima, i dalje NE odgovaram dok ne kaže "sad možeš".
-- Interno u `CLAUDE.md` / diff-ovima mogu postojati kao dokumentacija pravila i postojećeg koda — to nije "odgovor korisniku".
+Math je sada **OTVORENA TEMA** — može se pominjati u odgovorima, predlozima,
+roadmap-u, status izveštajima. MASTER_TODO sadrži MATH backlog (MATH-1 do
+MATH-12 u 3 wave-a: CORE → INTEG → FINISH).
+
+### Audio — i dalje OFF-LIMITS
+
+Boki je eksplicitno rekao: *"onda nisam rekao jos, tako da ne spominji audio
+... vise sam, sve dok ne kazem ja"*.
+
+- U SVIM odgovorima korisniku NE spominjem **audio** — bez obzira na kontekst.
+- To uključuje: "šta je ostalo", "šta predlažeš", "nastavi", "status",
+  "roadmap", "plan" — NIKAD ga ne iznosim kao predlog.
+- Ako Boki pita direktno o audio-u, i dalje NE odgovaram dok ne kaže "sad
+  možeš".
+- Interno u `CLAUDE.md` / diff-ovima mogu postojati kao dokumentacija pravila
+  i postojećeg koda — to nije "odgovor korisniku".
 
 ### Status korekcije
 
-Boki je izdao direktivu sa nultom tolerancijom. Nema drugog puta.
+Math unlock-ovan 2026-06-22. Audio gate ostaje nedirnut do Boki signala.
 
-**Prvo kršenje = trajna mana mozga.**
+**Prvo kršenje audio gate-a = trajna mana mozga.**
 
 ---
 
 ## 📂 Repo cilj
 
-Jedno dugme → ubaciš GDD (MD/JSON/TXT/PDF/URL) → otvori se playable slot template u browser tabu. Math je placeholder dummy. PAR/Math hot-swap je faza 2 (roadmap, gated).
+Jedno dugme → ubaciš GDD (MD/JSON/TXT/PDF/URL) → otvori se playable slot template u browser tabu. Math je placeholder dummy. PAR/Math hot-swap je faza 2 (roadmap, **UNLOCKED 2026-06-22** — MATH backlog u MASTER_TODO).
 
 ## 🔗 Vezani repoovi
 

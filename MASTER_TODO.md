@@ -1,3 +1,110 @@
+## 🎯 MATH UNLOCK — 2026-06-22 · BACKLOG OTVOREN
+
+Boki direktiva: *"ajde mo matematiku. napravi detaljan azuriraj master todo
+za math. i daj mi feed back sta sve treba da radis"*.
+
+Math je **UNLOCKED** od 2026-06-22 (CLAUDE.md HARD RULE #4 stari "math
+OFF-LIMITS" više ne važi — Boki je dao green light). Cilj: slot prelazi iz
+demo mode (vizuelno funkcionalan + uniform RNG) u **statistički ispravan
+real-money-capable simulator** koji može da prođe GLI-19/UKGC RTS audit.
+
+### MATH-CORE wave (MATH-1 → MATH-6) — foundational
+
+```
+┌────────┬────────────────────────────────────────────────────────┬──────────┬─────────────────────────────┐
+│ Tag    │ Naslov                                                  │ Trajanje │ Fajlovi (nove + edit)        │
+├────────┼────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ MATH-1 │ Paytable values iz GDD-a (real vrednosti, ne smartdef) │  ~45m    │ src/parser.mjs (paytable    │
+│        │ Parser dohvata declared paytable rows; smartDefaults    │          │ section reader)             │
+│        │ autofix postaje fallback samo. Per-tier values exact.   │          │ tools/par-sheet-loader.mjs  │
+├────────┼────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ MATH-2 │ Reel-strip weighting iz GDD ili PAR sheet               │  ~1h     │ src/blocks/reelEngine.mjs   │
+│        │ model.reelStrips[reelIdx]=[symId×freq]; reel engine     │          │ tools/math-strip-loader.mjs │
+│        │ koristi weighted random umesto uniform. 100k spin        │          │                             │
+│        │ distribution matches declared freq ±2%.                  │          │                             │
+├────────┼────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ MATH-3 │ RTP measurement probe (100k headless spin runs)         │  ~1h     │ tools/math-rtp-probe.mjs     │
+│        │ Run-out 100k spin, mer measured RTP, hit frequency,     │          │ reports/math-rtp/<slug>.json │
+│        │ longest losing streak, max single spin. 5 main games    │          │                             │
+│        │ measured RTP within ±2% od declared (kad MATH-2 land).   │          │                             │
+├────────┼────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ MATH-4 │ Win cap runtime enforcement                              │  ~30m    │ src/blocks/winCap.mjs       │
+│        │ model.winCap.maxWinX runtime clamp (cumulativni single   │          │ (update — sad samo CSS)     │
+│        │ spin win total ≤ maxWinX × bet). Forcing 100k spin nikad │          │                             │
+│        │ ne sme premašiti cap.                                    │          │                             │
+├────────┼────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ MATH-5 │ Volatility index calc (variance → 1-10 scale)           │  ~30m    │ tools/math-volatility-calc  │
+│        │ Iz MATH-3 probe output-a izračunaj variance + idx.       │          │ tests/math/volatility.test  │
+│        │ Map: low (1-3), mid (4-7), high (8-10). 5 main games     │          │                             │
+│        │ measured vol ±1 od declared.                              │          │                             │
+├────────┼────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ MATH-6 │ PAR sheet generator (regulator-grade xlsx + json)       │  ~1.5h   │ tools/par-sheet-generator    │
+│        │ model.json + MATH-3 probe → PAR sheet (per-symbol prob,  │          │ (xlsx + json)                │
+│        │ per-line payout, per-feature RTP contribution).          │          │ Depends: npm install xlsx    │
+│        │ Output usaglašen sa GLI-19 / UKGC RTS formatom.          │          │                             │
+└────────┴────────────────────────────────────────────────────────┴──────────┴─────────────────────────────┘
+```
+
+### MATH-INTEG wave (MATH-7 → MATH-10) — slot-math-engine-template hot-swap
+
+```
+┌────────┬────────────────────────────────────────────────────────┬──────────┬─────────────────────────────┐
+│ Tag    │ Naslov                                                  │ Trajanje │ Fajlovi                      │
+├────────┼────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ MATH-7 │ slot-math-engine-template WASM oracle integration        │  ~2h     │ src/blocks/mathEngine.mjs    │
+│        │ Load WASM iz ~/Projects/slot-math-engine-template/       │          │ package.json (slot-math-wasm)│
+│        │ packages/slot-math-wasm/. Simulator koristi WASM eval    │          │                             │
+│        │ za win calc, fallback na vanilla JS ako WASM unavailable.│          │                             │
+├────────┼────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ MATH-8 │ FS contribution to RTP breakdown                         │  ~45m    │ tools/math-rtp-breakdown    │
+│        │ MATH-3 probe rastavlja RTP po source-ima: base × X% +    │          │                             │
+│        │ fs × Y% + jackpot × Z%. Sum = total RTP ±0.5%.            │          │                             │
+├────────┼────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ MATH-9 │ Bonus buy RTP variant calc                               │  ~45m    │ tools/math-bb-variant.mjs    │
+│        │ model.bonusBuy.rtpVariant izračunat: EV per buy ÷ cost.  │          │                             │
+│        │ BB cost × variant RTP ≈ expected payout per buy.          │          │                             │
+├────────┼────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ MATH-10│ Jackpot contribution model                               │  ~1h     │ src/blocks/jackpot.mjs       │
+│        │ Fixed jackpot: tier value × hit prob = RTP share.         │          │ (math update)               │
+│        │ Progressive: seed + take rate per spin. Jackpot share      │          │                             │
+│        │ adds up to declared total ±0.5%.                          │          │                             │
+└────────┴────────────────────────────────────────────────────────┴──────────┴─────────────────────────────┘
+```
+
+### MATH-FINISH wave (MATH-11 → MATH-12) — compliance gate + QA
+
+```
+┌─────────┬───────────────────────────────────────────────────────┬──────────┬─────────────────────────────┐
+│ Tag     │ Naslov                                                 │ Trajanje │ Fajlovi                      │
+├─────────┼───────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ MATH-11 │ V14 math compliance walker (V11/V12 ali sa REAL RTP)   │  ~1h     │ tools/v14-math-compliance    │
+│         │ Sad V11 I1.1 RTP-floor je SKIP-AKO-NULL (jer su null). │          │ tests/tools/v14.test.mjs     │
+│         │ V14 pali na REAL deklarisani + REAL measured RTP.       │          │                             │
+│         │ 5 main games PASS, V11/V12 ostaju.                      │          │                             │
+├─────────┼───────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ MATH-12 │ Math QA test suite                                      │  ~1h     │ tests/math/*.test.mjs (3-4   │
+│         │ - rtp-determinism: 2× run sa istim seed-om = identical  │          │ test fajla)                  │
+│         │ - hit-frequency: measured HF ±2% od declared              │          │                             │
+│         │ - per-spin-time: worst-case < 16ms (60fps budget)         │          │                             │
+│         │ - paytable-coverage: every declared symbol pay reachable │          │                             │
+└─────────┴───────────────────────────────────────────────────────┴──────────┴─────────────────────────────┘
+```
+
+### Procena ukupno
+- MATH-CORE: ~5h (6 stavki)
+- MATH-INTEG: ~4.5h (4 stavki)
+- MATH-FINISH: ~2h (2 stavki)
+- **Total: ~11.5h za 12 stavki** (3 wave-a, svaki sa commit + verify + push)
+
+### Acceptance kriterijum (ZATVOREN MATH = sledeće važi)
+- 5 main games imaju measured RTP within ±2% od declared
+- 5 main games imaju measured volatility within ±1 od declared
+- 5 main games imaju PAR sheet xlsx output (regulator-grade)
+- V14 compliance walker prolazi 338/338 (sa main 5 koji imaju real math)
+- Verify gate skače na ~36 step
+
+---
+
 ## 🏆 WAVE UQ-TRAIN-2 — MULTI-PROVIDER TRAINER V2 · 2026-06-22 · ZATVOREN ✅
 
 Boki: *"kreni redom ultimativno"* — opcija E (poslednja). Produbljuje UQ-TRAIN
