@@ -412,7 +412,13 @@ export function emitRandomLightningMultiplierRuntime(cfg = defaultConfig()) {
     var multX = (__forcedMult != null) ? __forcedMult : _pick();
     var prevMult = (window.HookBus && typeof window.HookBus.getMult === 'function')
                    ? (window.HookBus.getMult() || 1) : 1;
-    var newMult = prevMult * multX;
+    /* UQ-MULTIPLIER-FIX (Boki 2026-06-22): forced putanja DOUBLE-MULTIPLY bug.
+     * Pre fix-a: UFP chip click → setMultMax(2) → mult=2 → strike čita
+     * prevMult=2, forcedMult=2 → newMult = 2 × 2 = 4. Boki force ×2 ali
+     * sees ×4 effect. Posle fix-a: forced putanja postavlja newMult = forced
+     * value direktno (nije akumulativan kao natural RNG strike). Natural
+     * (non-forced) strike i dalje kompozituje prev × pick. */
+    var newMult = (__forcedMult != null) ? multX : (prevMult * multX);
 
     window.RLM_STATE.lastMultX = multX;
     window.RLM_STATE.strikes  += 1;

@@ -87,16 +87,16 @@ const ALL_KNOWN_KINDS = Object.freeze([
   'sticky_wild',
   'mystery_symbol',
   'scatter_pay',
-  'lightning',
-  /* D-12 (Boki 2026-06-20): per-value lightning multiplier force chips.
-     Boki rule: "mora da se pokaze kolko je multiplier da se izabere kao
-     force dugme posebno". Each chip forces THAT exact multiplier on the
-     next spin's win (combined with __FORCE_BIG_WIN_TIER__=1 to guarantee
-     a baseline win the multiplier can apply to). */
-  'lightning_x2',
-  'lightning_x3',
-  'lightning_x5',
-  'lightning_x10',
+  /* UQ-MULTIPLIER-FIX (Boki 2026-06-22): "lightning" je vendor-name (Lightning
+   * Link). Template mora ostati vendor-neutral. Renamed na generic
+   * 'multiplier_x*' chip family. Existing lightning runtime block ostaje na
+   * disku zbog back-compat sa starim GDD-ovima koji eksplicitno traže
+   * kind:'lightning', ALI universal force panel više ne renderuje ⚡ chip-ove
+   * — samo generic ×N multiplier chips. */
+  'multiplier_x2',
+  'multiplier_x3',
+  'multiplier_x5',
+  'multiplier_x10',
   'respin',
   'wild_reel',
   'gamble',
@@ -129,11 +129,14 @@ const KIND_LABELS = Object.freeze({
   sticky_wild:           'STICK-W',
   mystery_symbol:        'MYST',
   scatter_pay:           'SCATPAY',
-  lightning:             '⚡',
-  lightning_x2:          '⚡×2',
-  lightning_x3:          '⚡×3',
-  lightning_x5:          '⚡×5',
-  lightning_x10:         '⚡×10',
+  /* UQ-MULTIPLIER-FIX — generic multiplier chip labels. Removed legacy
+   * ⚡ bolt emoji + 'lightning' kind alias (vendor-coded). Operators see
+   * "×2 / ×3 / ×5 / ×10" with a clear "MULT" prefix so the force action
+   * is self-describing. */
+  multiplier_x2:         'MULT ×2',
+  multiplier_x3:         'MULT ×3',
+  multiplier_x5:         'MULT ×5',
+  multiplier_x10:        'MULT ×10',
   respin:                'RESPIN',
   wild_reel:             'WILD-R',
   gamble:                'GAMBLE',
@@ -164,11 +167,11 @@ const KIND_FULL_LABELS = Object.freeze({
   sticky_wild:           'Sticky Wild',
   mystery_symbol:        'Mystery Symbol',
   scatter_pay:           'Scatter Pay',
-  lightning:             'Lightning',
-  lightning_x2:          'Lightning ×2',
-  lightning_x3:          'Lightning ×3',
-  lightning_x5:          'Lightning ×5',
-  lightning_x10:         'Lightning ×10',
+  /* UQ-MULTIPLIER-FIX (2026-06-22) — vendor-neutral chip tooltip text. */
+  multiplier_x2:         'Multiplier ×2',
+  multiplier_x3:         'Multiplier ×3',
+  multiplier_x5:         'Multiplier ×5',
+  multiplier_x10:        'Multiplier ×10',
   respin:                'Respin',
   wild_reel:             'Wild Reel',
   gamble:                'Gamble',
@@ -375,17 +378,20 @@ export function selectKinds(cfg, model = {}) {
          f.kind === 'persistentMultiplier'));
       if (hasMultiplierFeature) detected.add('multiplier');
     } else {
-      /* Backward-compat path: legacy features[] array + lightning fallback */
+      /* Backward-compat path: legacy features[] array + generic multiplier
+       * fallback. UQ-MULTIPLIER-FIX (2026-06-22) — legacy 'lightning' /
+       * 'randomLightningMultiplier' model keys still detect as "multiplier"
+       * feature so old GDD-ovi see the new generic chips. */
       const features = Array.isArray(model && model.features) ? model.features : [];
       detected = new Set(features.map(f => f && f.kind).filter(k => ALL_KNOWN_KINDS.includes(k)));
       if (model && model.lightning && typeof model.lightning === 'object'
           && Object.keys(model.lightning).length > 0) {
-        detected.add('lightning');
+        detected.add('multiplier');
       }
       if (model && model.randomLightningMultiplier &&
           typeof model.randomLightningMultiplier === 'object'
           && Object.keys(model.randomLightningMultiplier).length > 0) {
-        detected.add('lightning');
+        detected.add('multiplier');
       }
     }
   } else if (Array.isArray(c.includeKinds)) {
@@ -398,17 +404,18 @@ export function selectKinds(cfg, model = {}) {
     if (ALL_KNOWN_KINDS.includes(k)) detected.add(k);
   }
 
-  /* D-12 (Boki 2026-06-20): when `lightning` feature is declared, auto-
-     expand to the 4 per-value force chips so the player can pick which
-     multiplier value to force. The base `lightning` chip is hidden in
-     this case (its random-pick behavior is redundant once you have the
-     deterministic per-value chips). */
-  if (detected.has('lightning')) {
-    detected.add('lightning_x2');
-    detected.add('lightning_x3');
-    detected.add('lightning_x5');
-    detected.add('lightning_x10');
-    detected.delete('lightning');
+  /* UQ-MULTIPLIER-FIX (Boki 2026-06-22 — "lightning ne treba nigde da bude.
+   * treba da bude samo multiplier"): when `multiplier` feature is declared,
+   * auto-expand to 4 per-value generic chips (×2/×3/×5/×10) so operator
+   * can pick exact value. The base `multiplier` chip is hidden in this
+   * case (its random-pick behavior is redundant once per-value chips are
+   * available). */
+  if (detected.has('multiplier')) {
+    detected.add('multiplier_x2');
+    detected.add('multiplier_x3');
+    detected.add('multiplier_x5');
+    detected.add('multiplier_x10');
+    detected.delete('multiplier');
   }
 
   const excluded = new Set([
@@ -627,21 +634,25 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
        After the spin completes, the player sees: real spin → real win →
        Zeus strike anim → strip-meter halts on chosen value → win recomputed
        (×N) → big-win tier banner reflects the multiplied amount. */
-    /* D-14.2 (Boki 2026-06-20): lightning_x* chips moraju da DIGNU
-     * payout multiplier ODMAH pri click-u, ne čekaju onSpinResult.
-     * Pre D-14.2: GDD-ovi koji nemaju model.randomLightningMultiplier
-     * (Huff, WoO) nisu dizali mult — flag je postavljen ali RLM blok
-     * je sluša samo na onSpinResult koji za neke putanje nije fired.
-     *
-     * Fix: helper koji za sve lightning_x{N} chip-ove uradi:
-     *   - postavi __FORCE_LIGHTNING_MULT__ flag (RLM ga čita za prirodan strike)
-     *   - postavi __FORCE_BIG_WIN_TIER__ = 1 (garantuj win baseline)
-     *   - HookBus.setMultMax(N) ODMAH → payout mult dignut sinhrono
-     *   - HookBus.emit('onForceMultiplier', { multX: N }) → listener blokovi
-     *   - paint visual ⚡xN chip na random ćeliji */
-    function _forceLightning(multX) {
-      try { window.__FORCE_BIG_WIN_TIER__ = 1;        } catch (_) {}
-      try { window.__FORCE_LIGHTNING_MULT__ = multX;  } catch (_) {}
+    /* UQ-MULTIPLIER-FIX (Boki 2026-06-22 — "mora da se pokaze ako postoi 2x
+     * multiplier, onda da kada forsujem odradi se spin, dobije se vin i
+     * multiplicira se sa tim multiplierom"). When the multiplier_x{N} chip
+     * is clicked:
+     *   1. Pin __FORCE_BIG_WIN_TIER__=1 so the spin produces a baseline
+     *      non-zero win that the multiplier has something to apply to.
+     *   2. Pin __FORCE_LIGHTNING_MULT__ legacy flag (kept for back-compat
+     *      with randomLightningMultiplier / lightning blokovi koji ga čitaju).
+     *   3. Pin __FORCE_MULTIPLIER_VALUE__=N — generic flag koji winPresentation
+     *      i clusterSizeMultiplier čitaju na postSpin za final multiply.
+     *   4. HookBus.setMultMax(N) ODMAH → mult dignut SINHRONO, ne čeka spin.
+     *   5. emit 'onForceMultiplier' i 'onMultChange' → svi multiplier listeners
+     *      (audio mult-up cue, badge chip, win mult label) fire ODMAH.
+     *   6. Paint visual ×N chip badge na random ćeliji da operator vidi da
+     *      je force registrovan vizuelno. */
+    function _forceMultiplier(multX) {
+      try { window.__FORCE_BIG_WIN_TIER__ = 1;            } catch (_) {}
+      try { window.__FORCE_LIGHTNING_MULT__ = multX;       } catch (_) {}
+      try { window.__FORCE_MULTIPLIER_VALUE__ = multX;     } catch (_) {}
       try {
         if (window.HookBus && typeof window.HookBus.setMultMax === 'function') {
           window.HookBus.setMultMax(multX);
@@ -652,17 +663,18 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
       try {
         if (window.HookBus && typeof window.HookBus.emit === 'function') {
           window.HookBus.emit('onForceMultiplier', { multX: multX });
+          window.HookBus.emit('onMultChange',      { multX: multX, source: 'force-chip' });
         }
       } catch (_) {}
-      (function _renderLightningChip(_v) {
+      (function _renderMultChip(_v) {
         try {
           var cells = document.querySelectorAll('.cell');
           if (!cells.length) return;
           var target = cells[Math.floor(Math.random() * cells.length)];
           var rect = target.getBoundingClientRect();
           var chip = document.createElement('div');
-          chip.className = 'ufp-lightning-chip';
-          chip.textContent = '⚡x' + _v;
+          chip.className = 'ufp-multiplier-chip';
+          chip.textContent = '×' + _v;
           chip.style.cssText =
             'position:fixed;' +
             'left:' + (rect.left + rect.width / 2 - 36) + 'px;' +
@@ -670,7 +682,7 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
             'min-width:72px;height:44px;padding:0 12px;' +
             'border-radius:22px;' +
             'background:radial-gradient(circle,rgba(255,235,80,1) 0%,rgba(255,180,20,0.95) 65%,rgba(140,80,0,0.85) 100%);' +
-            'color:#1a0a00;font:900 18px/44px system-ui,-apple-system,sans-serif;' +
+            'color:#1a0a00;font:900 22px/44px system-ui,-apple-system,sans-serif;' +
             'text-align:center;letter-spacing:.04em;' +
             'box-shadow:0 8px 24px rgba(0,0,0,.55),inset 0 -3px 8px rgba(0,0,0,.25),inset 0 2px 4px rgba(255,255,255,.45);' +
             'pointer-events:none;z-index:97;opacity:0;transform:scale(.4) translateY(0);' +
@@ -688,10 +700,10 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
         } catch (_) {}
       })(multX);
     }
-    if (kind === 'lightning_x2')  _forceLightning(2);
-    if (kind === 'lightning_x3')  _forceLightning(3);
-    if (kind === 'lightning_x5')  _forceLightning(5);
-    if (kind === 'lightning_x10') _forceLightning(10);
+    if (kind === 'multiplier_x2')  _forceMultiplier(2);
+    if (kind === 'multiplier_x3')  _forceMultiplier(3);
+    if (kind === 'multiplier_x5')  _forceMultiplier(5);
+    if (kind === 'multiplier_x10') _forceMultiplier(10);
 
     /* 2026-06-11 (Wave AL-2 / 4-GDD audit) — jackpot, multiplier_orb,
      * persistent_multiplier, pay_anywhere were detected by the parser

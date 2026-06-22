@@ -107,7 +107,18 @@ function _expWildPhaseAllowed() {
 }
 
 function applyExpandingWilds() {
-  if (!_expWildPhaseAllowed()) return [];
+  /* UQ-MULTIPLIER-FIX (Boki 2026-06-22 — "wild expansion ... ne radi pravilno
+   * niti priblizno"). Pre fix-a: phase guard je return-uje ranije kad mode
+   * je 'fs' a phase je 'BASE'. UFP force chip click → pending flag se setuje
+   * → applyExpandingWilds() pozove → guard vrati [] → force seed se NIKAD ne
+   * izvrši. Force chip bukvalno ne radi.
+   *
+   * Post-fix: ako UFP force chip postavi PENDING === 'expanding_wild',
+   * BYPASS phase guard. Operator force mora da radi u svakoj fazi inače
+   * QA i sales-team demo ne mogu da prikažu mehaniku u base game. */
+  const _isForcedExpand = (typeof window !== 'undefined' &&
+                          window.__FORCE_FEATURE_PENDING__ === 'expanding_wild');
+  if (!_isForcedExpand && !_expWildPhaseAllowed()) return [];
   const host = document.getElementById('gridHost');
   if (!host) return [];
   const REELS = Number.isInteger(window.REELS) ? window.REELS : EXPANDING_WILD_FALLBACK_REELS;

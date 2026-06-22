@@ -157,7 +157,13 @@ function _walkWildPhaseAllowed() {
 }
 
 function harvestWalkingWilds() {
-  if (!_walkWildPhaseAllowed()) return;
+  /* UQ-MULTIPLIER-FIX (Boki 2026-06-22 — "walking wild ... ne radi pravilno
+   * niti priblizno"). Phase guard returned rano kad mode='fs' + phase='BASE'.
+   * UFP force chip → pending flag setovan → applyExpand vraća pre seed-a.
+   * Bypass guard when force chip is active. */
+  const _isForcedWalk = (typeof window !== 'undefined' &&
+                          window.__FORCE_FEATURE_PENDING__ === 'walking_wild');
+  if (!_isForcedWalk && !_walkWildPhaseAllowed()) return;
   const host = document.getElementById('gridHost');
   if (!host) return;
   const REELS = window.REELS || WALKING_WILD_DEFAULT_REELS;

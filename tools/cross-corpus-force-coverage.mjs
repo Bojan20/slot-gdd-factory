@@ -183,25 +183,35 @@ for (const file of targets) {
    *   lightning_x2 / x3 / x5 / x10 sub-chips and drops the base chip.
    *   Treat those sub-chips as derivative, NOT phantom. */
   const ALWAYS_BASELINE = new Set(['free_spins', 'multiplier', 'big_win']);
-  /* Lightning detection covers all UFP-aliased names: `lightning`,
-   * `randomLightningMultiplier`, `random_lightning_multiplier`. UFP
-   * featureKeyToChipKind maps both to the same chip family. */
-  const hasLightningFamily =
+  /* UQ-MULTIPLIER-FIX (Boki 2026-06-22) — generic multiplier_x* chip
+   * family replaces legacy lightning_x* (vendor-name purge). Both names
+   * remain valid aliases for back-compat with archived GDDs that declare
+   * the legacy `lightning` kind. UFP expands `multiplier` declared kind
+   * into multiplier_x2/x3/x5/x10 deterministic per-value chips. */
+  const hasMultiplierFamily =
+    declared.has('multiplier') ||
     declared.has('lightning') ||
     declared.has('random_lightning_multiplier') ||
-    [...declared].some(k => /lightning/i.test(k));
-  const lightningDerivatives = hasLightningFamily
-    ? new Set(['lightning_x2', 'lightning_x3', 'lightning_x5', 'lightning_x10'])
+    [...declared].some(k => /lightning|multiplier/i.test(k));
+  const multiplierDerivatives = hasMultiplierFamily
+    ? new Set([
+        'multiplier_x2', 'multiplier_x3', 'multiplier_x5', 'multiplier_x10',
+        'lightning_x2', 'lightning_x3', 'lightning_x5', 'lightning_x10',
+      ])
     : new Set();
   const phantom = [...present].filter(k =>
-    !declared.has(k) && !ALWAYS_BASELINE.has(k) && !lightningDerivatives.has(k)
+    !declared.has(k) && !ALWAYS_BASELINE.has(k) && !multiplierDerivatives.has(k)
   );
-  /* Reciprocally, if `lightning` is declared but only the x-variants are
-   * present, that's NOT missing — it's the expected expansion. */
+  /* Reciprocally, if `multiplier` is declared but only x-variants present,
+   * NOT missing — expected expansion. Same for legacy `lightning`. */
   const missingPre = [...required].filter(k => !present.has(k));
-  const lightningVariantPresent = ['lightning_x2', 'lightning_x3', 'lightning_x5', 'lightning_x10']
-    .some(k => present.has(k));
-  const missing = missingPre.filter(k => !(k === 'lightning' && lightningVariantPresent));
+  const variantPresent = [
+    'multiplier_x2', 'multiplier_x3', 'multiplier_x5', 'multiplier_x10',
+    'lightning_x2', 'lightning_x3', 'lightning_x5', 'lightning_x10',
+  ].some(k => present.has(k));
+  const missing = missingPre.filter(k =>
+    !((k === 'lightning' || k === 'multiplier') && variantPresent)
+  );
 
   aggregate.totalDeclared += declared.size;
   aggregate.totalRequired += required.size;

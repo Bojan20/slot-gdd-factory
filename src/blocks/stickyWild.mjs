@@ -108,7 +108,14 @@ function _stickyReels(host) {
 }
 
 function harvestStickyWilds() {
-  if (!_stickyPhaseAllowed()) return;
+  /* UQ-MULTIPLIER-FIX (Boki 2026-06-22 — "sticky wild ... ne radi pravilno
+   * niti priblizno"). Phase guard early-returns when mode='fs' but phase is
+   * 'BASE' → operator force chip never plants seed. Bypass guard when UFP
+   * force chip is active so QA / sales demo can showcase the mechanic in
+   * either phase. */
+  const _isForcedSticky = (typeof window !== 'undefined' &&
+                            window.__FORCE_FEATURE_PENDING__ === 'sticky_wild');
+  if (!_isForcedSticky && !_stickyPhaseAllowed()) return;
   const host = document.getElementById('gridHost');
   if (!host) return;
   const REELS = _stickyReels(host);

@@ -553,8 +553,16 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
            * immediately after the first one ended. Clear here, at the
            * single global settle gate, so every dispatch source sees a
            * fresh FORCE_TRIGGER === null on the next spin. */
+          /* UQ-MULTIPLIER-FIX (Boki 2026-06-22) wild expansion / walking
+           * wild / sticky wild fix. Pre-fix: line below reset
+           * window.FORCE_FEATURE_PENDING PRE emit onSpinResult. Wild block
+           * listeners (expandingWild stickyWild walkingWild mysterySymbol
+           * superSymbol) gate seed kod na window.FORCE_FEATURE_PENDING
+           * value, but pending je vec null-iran kad onSpinResult handler
+           * stigne. Reorder: emit onSpinResult PRVO so listeners read +
+           * reset pending sami. Generic FORCE_TRIGGER reset stays early. */
           try { FORCE_TRIGGER = null; } catch (_) {}
-          try { if (typeof window !== 'undefined') { window.FORCE_TRIGGER = null; window.__FORCE_FEATURE__ = null; window.__FORCE_FEATURE_PENDING__ = null; } } catch (_) {}
+          try { if (typeof window !== 'undefined') { window.FORCE_TRIGGER = null; } } catch (_) {}
           /* Wave S: reelEngine owns onSpinResult emission — it's the block that
              knows the precise moment when every reel has stopped. Blocks that
              annotate the settled grid (orb chips, mystery reveal, sticky wild
@@ -564,6 +572,10 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
           if (typeof HookBus !== 'undefined') {
             HookBus.emit('onSpinResult', { duringFs });
           }
+          /* Final cleanup AFTER onSpinResult so wild listeners had a chance
+           * to read + consume the force-feature flag. Idempotent — each
+           * wild block already null-ifies the flag after its own seed plant. */
+          try { if (typeof window !== 'undefined') { window.__FORCE_FEATURE__ = null; window.__FORCE_FEATURE_PENDING__ = null; } } catch (_) {}
           if (typeof onSettled === "function") {
             /* W57.A5 — settle handoff also guarded so a tab resume after
              * the loop ended can't double-fire postSpin pipeline. */
