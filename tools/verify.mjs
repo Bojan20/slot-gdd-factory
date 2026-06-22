@@ -542,6 +542,16 @@ if (existsSync(hyb1Test)) {
     'node', [hyb1Test]);
 }
 
+/* ── Step 4.97s: HYB-2 LLM Field Completer (structured fallback Sloj 2)
+ * Dry-run self-test (no Kimi tokens burned in CI): listEmptyRequiredFields()
+ * gap detection, completeField() receipt shape, completeModel() walks empty
+ * targets, cache file atomic write, schema validation hook. */
+const hyb2Test = resolve(REPO, 'tests/tools/llm-field-completer.test.mjs');
+if (existsSync(hyb2Test)) {
+  run('MATH-DEEP HYB-2 LLM Field Completer (structured fallback, dry-run)',
+    'node', [hyb2Test]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
