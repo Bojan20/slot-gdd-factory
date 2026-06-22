@@ -510,6 +510,18 @@ if (existsSync(calibTest)) {
     'node', [calibTest]);
 }
 
+/* ── Step 4.97p: MATH-PRECISION-4 par sheet xlsx ingest + apply ───────
+ * Real par sheet ingest pipeline:
+ *   Python tools/par-sheet-xlsx-ingest.py → reports/par-sheet-ingested/
+ *   Node tools/par-sheet-apply.mjs → model.json reelStrips.par_sheet_*
+ *   Probe opt-in via --par-sheet flag
+ * Self-test asserts 12 syms × 5 reels + paytable + SWID metadata + det. */
+const parApplyTest = resolve(REPO, 'tests/tools/par-sheet-apply.test.mjs');
+if (existsSync(parApplyTest)) {
+  run('MATH-PRECISION-4 par sheet apply (12 syms × 5 reels + paytable)',
+    'node', [parApplyTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz

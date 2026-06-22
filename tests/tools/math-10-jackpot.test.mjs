@@ -40,12 +40,13 @@ try {
   assert(tiers.join(',') === 'MINI,MINOR,MAJOR,GRAND',
     `expected MINI,MINOR,MAJOR,GRAND, got ${tiers.join(',')}`);
 
-  /* (2) Tier value monotonic */
+  /* (2) Tier value monotonic. Parser extracts REAL GDD values from prose:
+   * MINI=100, MINOR=500, MAJOR=2000, GRAND=1,000,000 credits (Cash Eruption §4.6). */
   assert(s.monotonic === true, `monotonic expected true, got ${s.monotonic}`);
-  assert(s.tierStats[0].value === 10, `MINI value expected 10, got ${s.tierStats[0].value}`);
-  assert(s.tierStats[1].value === 50, `MINOR value expected 50, got ${s.tierStats[1].value}`);
-  assert(s.tierStats[2].value === 500, `MAJOR value expected 500, got ${s.tierStats[2].value}`);
-  assert(s.tierStats[3].value === 5000, `GRAND value expected 5000, got ${s.tierStats[3].value}`);
+  assert(s.tierStats[0].value === 100, `MINI value expected 100 (GDD §4.6), got ${s.tierStats[0].value}`);
+  assert(s.tierStats[1].value === 500, `MINOR value expected 500, got ${s.tierStats[1].value}`);
+  assert(s.tierStats[2].value === 2000, `MAJOR value expected 2000, got ${s.tierStats[2].value}`);
+  assert(s.tierStats[3].value === 1000000, `GRAND value expected 1,000,000 (GDD top award), got ${s.tierStats[3].value}`);
 
   /* (3) Per-tier contribution sums to total */
   const sumPct = s.tierStats.reduce((acc, t) => acc + t.contribPct, 0);
@@ -60,18 +61,18 @@ try {
   /* (5) Verdict */
   assert(s.verdict === 'PASS', `verdict expected PASS, got ${s.verdict}`);
 
-  /* (6) Tier hit prob = featureHitProb × tier share */
-  assert(s.featureHitProb === 0.02, `default featureHitProb expected 0.02, got ${s.featureHitProb}`);
-  /* MINI share 0.50 → tierHitProb = 0.02 × 0.50 = 0.01 */
+  /* (6) Default featureHitProb 0.01 (post-precision-4 fix for realistic
+   * 6+ scatter H&W trigger). MINI share 0.50 → tierHitProb 0.005. */
+  assert(s.featureHitProb === 0.01, `default featureHitProb expected 0.01, got ${s.featureHitProb}`);
   const miniProb = parseFloat(s.tierStats[0].tierHitProb);
-  assert(Math.abs(miniProb - 0.01) < 0.001,
-    `MINI tier hit prob expected 0.01, got ${miniProb}`);
+  assert(Math.abs(miniProb - 0.005) < 0.001,
+    `MINI tier hit prob expected 0.005, got ${miniProb}`);
 
-  /* (7) --feature-hit-prob override: 0.04 → contributions scale 2× */
-  const r7 = spawnSync('node', [TOOL, '--feature-hit-prob', '0.04'], { cwd: REPO, encoding: 'utf8' });
+  /* (7) --feature-hit-prob override: 0.02 → contributions scale 2× */
+  const r7 = spawnSync('node', [TOOL, '--feature-hit-prob', '0.02'], { cwd: REPO, encoding: 'utf8' });
   assert(r7.status === 0);
   const s7 = JSON.parse(readFileSync(REPORT, 'utf8'));
-  assert(s7.featureHitProb === 0.04, `featureHitProb override 0.04 not applied`);
+  assert(s7.featureHitProb === 0.02, `featureHitProb override 0.02 not applied`);
   /* With doubled trigger prob, contribution doubles. */
   assert(Math.abs(s7.totalContribPct - 2 * s.totalContribPct) < 0.5,
     `doubled trigger prob should double contribution: ${s7.totalContribPct} vs 2×${s.totalContribPct}`);

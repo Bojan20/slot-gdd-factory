@@ -75,6 +75,14 @@ const SLUG = argVal('--slug') || 'cash-eruption-foundry-gdd';
 const RUNS = _safeInt('runs',  argVal('--runs'), 100000, 1, 100_000_000);
 const BET  = _safeFloat('bet', argVal('--bet'),  1, 0.01, 100_000);
 const SEED = _safeInt('seed',  argVal('--seed'),  42, 0, 0xFFFFFFFF);
+/* MATH-PRECISION-4 — par sheet integration opt-in via --par-sheet flag.
+ * Default = false (preserves generic-distribution behavior for backward
+ * compat sa MATH-3..-12 tests). When true, probe consumes model.reelStrips.
+ * par_sheet_weights + par_sheet_paytable for per-reel weighted sampling +
+ * real per-symbol payouts. Industry HF will drop below 5% because real par
+ * sheet weights are tuned for high-volatility slot (dry base game) — that
+ * is correct behavior, not a regression. */
+const USE_PAR_SHEET = args.includes('--par-sheet');
 
 /* ── Mulberry32 deterministic RNG ───────────────────────────────────── */
 function mulberry32(seed) {
@@ -103,6 +111,32 @@ const paylines = topo.paylines || 20;
 /* Symbol pool. Build from model.symbols (hp + mp + lp + specials buckets).
  * Each symbol contributes count = floor(weight × 100) so we can sample
  * via Math.random() × poolSize index. */
+/* MATH-PRECISION-4 — per-reel par-sheet weights (one pool per reel).
+ * Returns null if par sheet not applied; probe falls back to single-pool. */
+function buildPerReelPoolsFromParSheet() {
+  const psw = model.reelStrips?.par_sheet_weights;
+  if (!psw) return null;
+  const reelKeys = ['reel0', 'reel1', 'reel2', 'reel3', 'reel4'];
+  const pools = [];
+  for (const rk of reelKeys) {
+    const wmap = psw[rk];
+    if (!wmap) return null;
+    const reelPool = [];
+    for (const [symName, weight] of Object.entries(wmap)) {
+      const w = Math.floor(Number(weight) || 0);
+      if (w <= 0) continue;
+      const wild    = /wild/i.test(symName);
+      const scatter = /volcano/i.test(symName);  /* Volcano is FS scatter in Cash Eruption */
+      const bonus   = /fireball/i.test(symName); /* Fireball triggers Hold & Win */
+      for (let i = 0; i < w; i++) {
+        reelPool.push({ id: symName, name: symName, wild, scatter, bonus });
+      }
+    }
+    pools.push(reelPool);
+  }
+  return pools;
+}
+
 function buildPool() {
   const pool = [];
   const sd = model.reelStrips?.stop_distribution || {
@@ -158,7 +192,12 @@ function buildPool() {
   return pool;
 }
 
-const pool = buildPool();
+/* MATH-PRECISION-4 — par sheet opt-in. Default = generic (legacy).
+ * --par-sheet flag activates per-reel weighted sampling + real paytable. */
+const perReelPools = USE_PAR_SHEET ? buildPerReelPoolsFromParSheet() : null;
+const pool = perReelPools ? null : buildPool();
+const usingParSheet = !!perReelPools;
+const parSheetPaytable = USE_PAR_SHEET ? (model.reelStrips?.par_sheet_paytable || null) : null;
 
 /* Per-tier payout multiplier (× line bet) — industry-default fallback
  * when paytable.symbols.<id>.pay is not explicit. */
@@ -173,15 +212,26 @@ function payForMatch(tier, runLen) {
   return 0;
 }
 
+/* MATH-PRECISION-4 — real par-sheet paytable lookup. Returns per-symbol
+ * pay (× bet) za matched run length. */
+function payFromParSheet(symName, runLen) {
+  if (!parSheetPaytable) return null;
+  const sym = parSheetPaytable[symName];
+  if (!sym) return null;
+  const pay = sym[String(runLen)];
+  return Number.isFinite(pay) ? pay : null;
+}
+
 /* ── Single spin: draw reels × rows, evaluate paylines ───────────── */
 function spin(rng) {
-  /* Drop reels × rows cells from pool. */
+  /* Drop reels × rows cells from per-reel pool (par sheet) or single pool. */
   const grid = [];
   for (let r = 0; r < reels; r++) {
     const col = [];
+    const reelPool = usingParSheet ? perReelPools[r] : pool;
     for (let y = 0; y < rows; y++) {
-      const idx = Math.floor(rng() * pool.length);
-      col.push(pool[idx]);
+      const idx = Math.floor(rng() * reelPool.length);
+      col.push(reelPool[idx]);
     }
     grid.push(col);
   }
@@ -207,7 +257,9 @@ function spin(rng) {
       if (isMatch) runLen++; else break;
     }
     if (runLen >= 3) {
-      const pay = payForMatch(tier, runLen);
+      /* MATH-PRECISION-4 — par sheet paytable lookup first; tier fallback. */
+      let pay = payFromParSheet(matchId, runLen);
+      if (pay == null) pay = payForMatch(tier, runLen);
       if (pay > 0) {
         totalWin += pay;
         hits++;
@@ -294,7 +346,10 @@ const summary = {
   maxSingleSpin,
   maxSingleSpinX: +(maxSingleSpin / BET).toFixed(2),
   winHistogram,
-  poolSize: pool.length,
+  poolSize: usingParSheet
+    ? perReelPools.reduce((acc, p) => acc + p.length, 0)
+    : (pool ? pool.length : 0),
+  usingParSheet,
   /* Boki direktiva 2026-06-22 — precision band ±0.05% (rule_math_precision_005).
    * precisionMet = true ako su measured i declared u istom 0.05% band-u.
    * Sa generic distribution, ovo će biti false dok MATH-7 WASM oracle ne

@@ -30,8 +30,10 @@ function assert(cond, msg) {
 }
 
 try {
-  /* (1) Default run */
-  const r = spawnSync('node', [TOOL], { cwd: REPO, encoding: 'utf8' });
+  /* (1) Default run. Cash Eruption GDD §12 deklariše bonusBuy out-of-scope.
+   * Tool refuses by design without --cost override. Use --cost 100 to force
+   * hypothetical variant against base RTP (industry-standard 100× buy cost). */
+  const r = spawnSync('node', [TOOL, '--cost', '100'], { cwd: REPO, encoding: 'utf8' });
   assert(r.status === 0, `tool exit ${r.status}: ${r.stderr}`);
 
   const s = JSON.parse(readFileSync(REPORT, 'utf8'));
@@ -53,7 +55,7 @@ try {
   assert(s.results.mgaPass === true,  `mgaPass expected true, got ${s.results.mgaPass}`);
   assert(s.verdict === 'PASS', `verdict expected PASS, got ${s.verdict}`);
 
-  /* (6) --cost override: cost 200 → ratio remains baseRTP × cost = 192 */
+  /* (6) --cost 200 override → ratio remains baseRTP × cost = 192 */
   const r6 = spawnSync('node', [TOOL, '--cost', '200'], { cwd: REPO, encoding: 'utf8' });
   assert(r6.status === 0);
   const s6 = JSON.parse(readFileSync(REPORT, 'utf8'));
@@ -61,19 +63,19 @@ try {
   assert(s6.inputs.bonusAvgPay === 192, `bonusAvgPay 192 expected (0.96×200), got ${s6.inputs.bonusAvgPay}`);
   assert(s6.results.variantRtpPct === 96, `variantRtpPct expected 96 (ratio identical), got ${s6.results.variantRtpPct}`);
 
-  /* (7) --tolerance 0.5 should fail UKGC (variant=base so |diff|=0, still passes at 0.5).
-   * Better: test failure when bonusAvgPay != baseRtp×cost. Use cost mismatch sa explicit
-   * bonusAvgPay via env override (model.bonusBuy.avgPayXBet). We'll just test default still passes. */
-  const r7 = spawnSync('node', [TOOL, '--tolerance', '0.5'], { cwd: REPO, encoding: 'utf8' });
+  /* (7) --tolerance 0.5 should pass since variant=base, |diff|=0 still ≤ 0.5 pp.
+   * Use --cost 100 to bypass bonusBuy.enabled guard. */
+  const r7 = spawnSync('node', [TOOL, '--cost', '100', '--tolerance', '0.5'], { cwd: REPO, encoding: 'utf8' });
   assert(r7.status === 0);
   const s7 = JSON.parse(readFileSync(REPORT, 'utf8'));
   /* diff is 0, so even 0.5pp tolerance passes (0 ≤ 0.5). */
   assert(s7.results.ukgcPass === true, `0.5pp tolerance still passes since diff=0`);
 
-  /* (8) Determinism */
-  spawnSync('node', [TOOL], { cwd: REPO });
+  /* (8) Determinism. Cash Eruption has bonusBuy out-of-scope per GDD §12 →
+   * use --cost override to force hypothetical run. */
+  spawnSync('node', [TOOL, '--cost', '100'], { cwd: REPO });
   const s8 = JSON.parse(readFileSync(REPORT, 'utf8'));
-  spawnSync('node', [TOOL], { cwd: REPO });
+  spawnSync('node', [TOOL, '--cost', '100'], { cwd: REPO });
   const s8b = JSON.parse(readFileSync(REPORT, 'utf8'));
   assert(s8.results.variantRtp === s8b.results.variantRtp, `non-deterministic variantRtp`);
 

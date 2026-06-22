@@ -84,21 +84,26 @@ const TIER_ORDER = ['MINI', 'MINOR', 'MAJOR', 'GRAND'];
  * silent, with the GRAND default lowered to 0.00193 (Cash Eruption
  * §4.6 industry-reference probability for jackpot lobby titles).
  * Operator override via --share-grand X (etc.) honored. */
+/* MATH-PRECISION-4 corrigendum (2026-06-22): GRAND probability per H&W
+ * trigger je 1.93e-5 (Cash Eruption GDD §4.6 ≈ 1 in 51,800), ne 1.93e-3.
+ * Sa value 1M credits = 50,000× bet, prethodna 1.93e-3 share producirala je
+ * GRAND contribution 193% RTP alone — apsolutno pogrešno. Sada 1.93e-5
+ * daje GRAND contrib ~1.93% RTP, realistic. */
 const _modelShare = (typeof model !== 'undefined' && model.jackpot && model.jackpot.shareWithinFeature) || {};
 const TIER_SHARE_WITHIN_FEATURE = {
   MINI:  Number.isFinite(_modelShare.MINI)  ? _modelShare.MINI  : 0.50000,
   MINOR: Number.isFinite(_modelShare.MINOR) ? _modelShare.MINOR : 0.30000,
   MAJOR: Number.isFinite(_modelShare.MAJOR) ? _modelShare.MAJOR : 0.15000,
-  GRAND: Number.isFinite(_modelShare.GRAND) ? _modelShare.GRAND : 0.00193,
+  GRAND: Number.isFinite(_modelShare.GRAND) ? _modelShare.GRAND : 1.93e-5,
 };
 
 /* Per-spin feature trigger probability. Cash Eruption HF 19.03% includes
- * line wins; H&W trigger probability is ~10× smaller. Approximate as
- * 1/50 (2%) for typical 5×3 hold-and-win slot. */
+ * line wins; H&W trigger probability is much smaller. Industry-typical
+ * 6+ scatter trigger on 5×3 ≈ 1% per spin. */
 function inferFeatureHitProb() {
   if (FEATURE_HIT_PROB_OVR != null) return FEATURE_HIT_PROB_OVR;
-  /* Default: 2% per spin (industry typical for H&W trigger). */
-  return 0.02;
+  /* Default: 1% per spin (industry typical for 6+ scatter H&W trigger). */
+  return 0.01;
 }
 
 const featureHitProb = inferFeatureHitProb();
