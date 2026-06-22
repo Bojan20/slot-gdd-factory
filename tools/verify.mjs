@@ -437,6 +437,17 @@ if (existsSync(math7Test)) {
     'node', [math7Test]);
 }
 
+/* ── Step 4.97j: MATH-8 RTP source breakdown ────────────────────────
+ * Parses RTP Contribution Breakdown section (§X.X) prose i razdvaja
+ * declared total RTP po source: base line wins, base feature collect,
+ * FS line wins, FS feature collect, jackpot, bonus pick.
+ * Cash Eruption: 4 sources, Σ = 96% = declared, Δ = 0. */
+const math8Test = resolve(REPO, 'tests/tools/math-8-rtp-breakdown.test.mjs');
+if (existsSync(math8Test)) {
+  run('MATH-8 RTP source breakdown (4 sources Σ=96% Δ=0)',
+    'node', [math8Test]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
