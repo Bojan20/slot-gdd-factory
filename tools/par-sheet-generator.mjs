@@ -74,7 +74,17 @@ const par = {
   slug: SLUG,
 
   identification: {
-    title: model.title || model.name || SLUG,
+    /* ULTRA-DEEP-QA M4-M6-1 (2026-06-22, P0 CRITICAL) — vendor-neutral
+     * regulator artefact. PAR sheet is sent to GLI/UKGC/MGA auditors; per
+     * HARD RULE #1 it MUST NOT contain vendor-coded game titles
+     * ("Cash Eruption", "Huff N' More Puff", "Gates of Olympus 1000", etc.)
+     * nor jackpot ladder labels like "GRAND 1" (which leaked through
+     * model.name fallback). Title is now the canonical SLUG (already
+     * normalized vendor-neutral via parse-real-pdfs pipeline). The original
+     * title (if any) is preserved in identification.declaredTitle for
+     * internal cross-reference but Audit-grade output reads `title`. */
+    title: SLUG,
+    declaredTitle: model.title || model.name || null,
     topology: {
       reels:    model.topology?.reels,
       rows:     model.topology?.rows,
@@ -208,5 +218,30 @@ writeFileSync(txtOut, ascii);
 console.log(ascii);
 console.log(`\nWrote: ${jsonOut}`);
 console.log(`Wrote: ${txtOut}`);
-console.log('✓ PASS — PAR sheet generated');
-process.exit(0);
+
+/* ULTRA-DEEP-QA M4-M6-2 (2026-06-22, P0) — refuse to emit a regulator-
+ * grade artefact with a structurally empty payload. A PAR sheet that
+ * has no declared RTP, no measured probe, and no volatility data is
+ * not a PAR sheet — it is a stub. Previously the tool printed
+ * "✓ PASS — PAR sheet generated" and exit 0 for Wrath / Gates main
+ * games whose model.payback was {}, creating a false-positive audit
+ * signal. Three-input gate (declared rtp, measured probe, vol calc)
+ * — pass requires all three present (≥ 2 of 3 → WARN, ≤ 1 → STUB+exit 2). */
+const declaredRtpOk = Number.isFinite(par.declared?.rtp);
+const measuredOk    = !!(par.measured && Object.keys(par.measured).length > 0);
+const volOk         = !!(par.volatility && Object.keys(par.volatility).length > 0);
+const completeness  = [declaredRtpOk, measuredOk, volOk].filter(Boolean).length;
+
+if (completeness === 3) {
+  console.log('✓ PASS — PAR sheet generated (declared + measured + vol)');
+  process.exit(0);
+} else if (completeness === 2) {
+  console.log(`⚠ WARN — PAR sheet partial (${completeness}/3 input dimensions present)`);
+  console.log(`   declared rtp: ${declaredRtpOk}  measured: ${measuredOk}  vol: ${volOk}`);
+  process.exit(0);
+} else {
+  console.error(`✗ STUB — PAR sheet has only ${completeness}/3 input dimensions; refusing to claim PASS.`);
+  console.error(`   declared rtp: ${declaredRtpOk}  measured: ${measuredOk}  vol: ${volOk}`);
+  console.error(`   Run \`node tools/math-rtp-probe.mjs --slug ${SLUG}\` + \`math-volatility-calc.mjs --slug ${SLUG}\` first.`);
+  process.exit(2);
+}

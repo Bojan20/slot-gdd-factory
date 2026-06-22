@@ -48,10 +48,32 @@ const argVal = (flag) => {
   const a = args[idx];
   return a.includes('=') ? a.split('=')[1] : args[idx + 1];
 };
+/* ULTRA-DEEP-QA Agent#1 BUG #5 (2026-06-22, P2) — guard CLI flags against
+ * NaN/empty/invalid strings. Previously `--runs xyz` yielded NaN spins,
+ * spin loop ran 0× and emitted ✓ PASS exit 0 (false green). Now: any
+ * non-finite or out-of-range value is rejected with exit 2 + diagnostic. */
+function _safeInt(label, raw, fallback, lo, hi) {
+  if (raw == null || raw === '') return fallback;
+  const n = parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < lo || n > hi) {
+    console.error(`▸ invalid --${label} value "${raw}" — expected integer in [${lo}, ${hi}]`);
+    process.exit(2);
+  }
+  return n;
+}
+function _safeFloat(label, raw, fallback, lo, hi) {
+  if (raw == null || raw === '') return fallback;
+  const n = parseFloat(raw);
+  if (!Number.isFinite(n) || n < lo || n > hi) {
+    console.error(`▸ invalid --${label} value "${raw}" — expected number in [${lo}, ${hi}]`);
+    process.exit(2);
+  }
+  return n;
+}
 const SLUG = argVal('--slug') || 'cash-eruption-foundry-gdd';
-const RUNS = parseInt(argVal('--runs') || '100000', 10);
-const BET  = parseFloat(argVal('--bet')  || '1');
-const SEED = parseInt(argVal('--seed') || '42', 10);
+const RUNS = _safeInt('runs',  argVal('--runs'), 100000, 1, 100_000_000);
+const BET  = _safeFloat('bet', argVal('--bet'),  1, 0.01, 100_000);
+const SEED = _safeInt('seed',  argVal('--seed'),  42, 0, 0xFFFFFFFF);
 
 /* ── Mulberry32 deterministic RNG ───────────────────────────────────── */
 function mulberry32(seed) {
@@ -93,11 +115,20 @@ function buildPool() {
 
   /* Stop-distribution is per-tier weight HINT. Multiply by tier count
    * to get per-symbol weight. Pool size capped to 1000 to keep memory
-   * reasonable. */
+   * reasonable.
+   *
+   * ULTRA-DEEP-QA Agent#1 BUG #1 (2026-06-22, P1) — `Math.max(1, …)`
+   * always inserted ≥1 entry even when tierWeight was 0. Now: per=0
+   * when weight*count yields a true zero, tier correctly absent. Tiny
+   * positive weights still ensure ≥1 entry so non-zero hints stay
+   * representable. (BUG #3 specials divisor reverted — caused HF
+   * regression < 5% industry floor; cluster RTP anomaly is a separate
+   * cluster-eval refactor, not in this scope.) */
   const TIER_SCALE = 1000;
   function addTier(list, tierWeight, kindFallback) {
     const count = list.length || 1;
-    const per = Math.max(1, Math.round(tierWeight * TIER_SCALE / count));
+    const per = (tierWeight > 0) ? Math.max(1, Math.round(tierWeight * TIER_SCALE / count)) : 0;
+    if (per === 0) return;
     for (const s of list) {
       const id = s.id || s.name || kindFallback;
       const tier = s.tier || kindFallback;
@@ -115,7 +146,8 @@ function buildPool() {
     const scatter = (sp.kind === 'scatter' || /scatter|volcano/i.test(sp.name || ''));
     const w = wild ? sd.wild : scatter ? sd.scatter : sd.mp;
     const id = sp.id || sp.name || 'special';
-    const per = Math.max(1, Math.round(w * TIER_SCALE));
+    const per = (w > 0) ? Math.max(1, Math.round(w * TIER_SCALE)) : 0;
+    if (per === 0) continue;
     for (let i = 0; i < per; i++) pool.push({ id, tier: 'sp', wild, scatter, sym: sp });
   }
   if (pool.length === 0) {

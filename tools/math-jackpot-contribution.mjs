@@ -75,11 +75,21 @@ const TIER_ORDER = ['MINI', 'MINOR', 'MAJOR', 'GRAND'];
  *
  * When feature trigger probability is known, per-tier contribution
  * to RTP = feature_hit_prob × tier_value × tier_share. */
+/* ULTRA-DEEP-QA B3 (2026-06-22, P0) — GRAND share was 2590× higher than
+ * the GDD reference cited in the docstring above (5% vs 0.00193%). The
+ * blanket constant produced fictitious contribution figures: GRAND
+ * contrib showed 25% RTP when the truth is ~0.0097%. Now: tool reads
+ * model.jackpot.shareWithinFeature if declared (regulator-honest path);
+ * falls back to industry-typical defaults ONLY when the model is
+ * silent, with the GRAND default lowered to 0.00193 (Cash Eruption
+ * §4.6 industry-reference probability for jackpot lobby titles).
+ * Operator override via --share-grand X (etc.) honored. */
+const _modelShare = (typeof model !== 'undefined' && model.jackpot && model.jackpot.shareWithinFeature) || {};
 const TIER_SHARE_WITHIN_FEATURE = {
-  MINI:  0.50,
-  MINOR: 0.30,
-  MAJOR: 0.15,
-  GRAND: 0.05,
+  MINI:  Number.isFinite(_modelShare.MINI)  ? _modelShare.MINI  : 0.50000,
+  MINOR: Number.isFinite(_modelShare.MINOR) ? _modelShare.MINOR : 0.30000,
+  MAJOR: Number.isFinite(_modelShare.MAJOR) ? _modelShare.MAJOR : 0.15000,
+  GRAND: Number.isFinite(_modelShare.GRAND) ? _modelShare.GRAND : 0.00193,
 };
 
 /* Per-spin feature trigger probability. Cash Eruption HF 19.03% includes

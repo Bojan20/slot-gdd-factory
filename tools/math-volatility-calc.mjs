@@ -141,7 +141,13 @@ const summary = {
   measuredTier: t.tier,
   measuredIdx:  t.idx,
   declaredTier, declaredIdx,
-  tierMatch: t.tier === declaredTier,
+  /* ULTRA-DEEP-QA M4-M6-3 (2026-06-22, P1) — guard against null===null
+   * false positive. When the probe histogram has 0 winning spins both
+   * measured tier and declared tier degrade to null → JS strict equality
+   * returns true → audit log incorrectly reports "tier match: pass" for
+   * a game with no measurable volatility sample. Require both sides to
+   * be non-null before claiming a match. */
+  tierMatch: (t.tier != null && declaredTier != null) && (t.tier === declaredTier),
   idxDelta:  (declaredIdx != null && t.idx != null) ? t.idx - declaredIdx : null,
 };
 

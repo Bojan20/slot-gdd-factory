@@ -82,7 +82,14 @@ function _jsBinomialPmfExact(n, p, k) {
 }
 
 function _jsBuyFeatureRtp(bonusAvgPay, buyCost) {
+  /* ULTRA-DEEP-QA H5 (2026-06-22, P1) — sign guard on bonusAvgPay.
+   * Previously buyFeatureRtp(-96, 100) → -0.96, which then satisfied
+   * buyFeatureMgaPass (-0.96 ≤ 0.98) producing "MGA pass" on garbage
+   * input. RTP is a non-negative ratio by definition — clamp negatives
+   * to 0 so downstream gates correctly reject. Also reject non-finite
+   * bonusAvgPay (NaN / Infinity). */
   if (!Number.isFinite(buyCost) || buyCost <= 0) return 0;
+  if (!Number.isFinite(bonusAvgPay) || bonusAvgPay < 0) return 0;
   return bonusAvgPay / buyCost;
 }
 

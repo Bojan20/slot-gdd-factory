@@ -61,6 +61,24 @@ const model = JSON.parse(readFileSync(MODEL, 'utf8'));
 const probe = existsSync(PROBE) ? JSON.parse(readFileSync(PROBE, 'utf8')) : null;
 const breakdown = existsSync(BREAKDOWN) ? JSON.parse(readFileSync(BREAKDOWN, 'utf8')) : null;
 
+/* ── ULTRA-DEEP-QA H1 (2026-06-22) — refuse FALSE-GREEN on games without
+ *    a declared bonus buy. Header contract said "exit 1 if bonusBuy not
+ *    declared" but the guard never existed; tool silently emitted
+ *    verdict PASS @ variantRtp 96 for product lines without BB feature.
+ *    Regulator risk: UKGC/MGA "compliance receipt" generated for a
+ *    feature the game does NOT support. */
+const hasBb = !!(model.bonusBuy && (
+  model.bonusBuy.enabled === true ||
+  Number.isFinite(model.bonusBuy.costX) ||
+  Number.isFinite(model.bonusBuy.avgPayXBet) ||
+  (Array.isArray(model.bonusBuy.variants) && model.bonusBuy.variants.length > 0)
+));
+if (!hasBb && COST_OVERRIDE == null) {
+  console.error(`▸ ${SLUG} has no bonusBuy declared (model.bonusBuy empty); refusing to emit compliance verdict.`);
+  console.error(`  pass --cost <X> to force a hypothetical variant calc against base RTP.`);
+  process.exit(1);
+}
+
 /* ── Determine inputs ─────────────────────────────────────────────── */
 const bb = model.bonusBuy || {};
 const buyCost = COST_OVERRIDE != null ? COST_OVERRIDE : (bb.costX || 100);

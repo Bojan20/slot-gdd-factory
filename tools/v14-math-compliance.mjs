@@ -9,7 +9,7 @@
  * null in 338/338 GDDs, so no HARD ever fired. After MATH-CORE, 5 main
  * games have real declared math; V14 finally pali on these.
  *
- * RULE GROUPS
+ * RULE GROUPS (this walker — 9 implemented inline)
  *   M1  RTP jurisdiction floor (HARD) — declared rtp meets regulator min
  *   M2  RTP variants per-variant floor (HARD)
  *   M3  maxWinX bounded [100, 1,000,000] (HARD)
@@ -18,10 +18,16 @@
  *   M6  Win frequency ≤ hit frequency (HARD; win is subset of hits)
  *   M7  reelStrips.baseSetCount > 0 if declared (HARD)
  *   M8  reelStrips.stop_distribution sums to ~1.0 when normalized (SOFT)
- *   M9  RTP source breakdown Σ ≈ declared RTP (SOFT, MATH-8)
  *   M10 Jackpot tier values monotonic (HARD, V12 I2.1 stricter)
- *   M11 Jackpot total share ≤ 55% × baseRTP (SOFT, MATH-10)
- *   M12 bonus buy variant RTP within UKGC RTS 13C tolerance (HARD, MATH-9)
+ *
+ * DELEGATED rule groups (dedicated tools, NOT enforced by this walker —
+ * keep here for cross-reference; do NOT count as walker coverage):
+ *   M9  RTP source breakdown Σ ≈ declared RTP   → tools/math-rtp-breakdown.mjs (MATH-8)
+ *   M11 Jackpot total share ≤ 55% × baseRTP    → tools/math-jackpot-contribution.mjs (MATH-10)
+ *   M12 BB variant RTP within UKGC RTS 13C tol → tools/math-bb-variant.mjs (MATH-9)
+ *
+ * Doc-string previously claimed "12 rule groups" inline — actual count
+ * is 9 inline + 3 delegated. ULTRA-DEEP-QA B1 fix (2026-06-22, P1).
  *
  * SKIP-AKO-NULL still applies for fields not yet declared (333/338 GDDs
  * imaju null math). Only games sa declared math get full enforcement.
