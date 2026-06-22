@@ -792,42 +792,14 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
          (orb accumulation, persistent mult, lightning) actually pay out. */
       const wrappedDetect = () => {
         let events = detect() || [];
-        /* UQ-MULTIPLIER-V4 (Boki 2026-06-22): __FORCE_BASELINE_WIN__
-         * generates 3 per-line win events with REAL cells iz prva 3
-         * reda grid-a tako da winSymCycle iterira event-po-event i
-         * drawPaylineOverlay prikazuje per-line credit label. Svaki
-         * event ima sopstveni payX (bet, 2×bet, sledeći ostatak) → total
-         * = 3 × bet. Mult chip primenjuje × N preko _applyMultToEvents,
-         * tako da svaka linija pokazuje multiplied vrednost. */
+        /* UQ-MULTIPLIER-V2 (2026-06-22): __FORCE_BASELINE_WIN__ guarantees
+         * mali deterministic win (3× bet) ispod BWT threshold[0]=10×. Mult
+         * chip onda primeni × N na taj baseline kroz _applyMultToEvents. */
         if (events.length === 0 && typeof window !== 'undefined'
             && window.__FORCE_BASELINE_WIN__ === true) {
           const bet = (Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : 1;
-          const allCells = grid && grid.querySelectorAll
-            ? Array.from(grid.querySelectorAll('.cell')) : [];
-          const REELS = Number.isFinite(window.REELS) ? window.REELS
-                       : Number.isFinite(window.RECT_REELS?.length) ? window.RECT_REELS.length : 5;
-          /* Take prva 3 horizontalna reda kao 3 sintetičke pay-linije. */
-          const tiers = ['HP', 'MP', 'LP'];
-          const lineCredits = [bet, bet, bet];  /* total = 3×bet */
-          for (let r = 0; r < 3; r++) {
-            const rowCells = [];
-            for (let c = 0; c < REELS; c++) {
-              const idx = r * REELS + c;
-              if (allCells[idx]) rowCells.push(allCells[idx]);
-            }
-            if (rowCells.length >= 2) {
-              events.push({
-                symbol: 'FORCE-BASE', tier: tiers[r] || 'LP',
-                matchLength: rowCells.length, payX: lineCredits[r],
-                cells: rowCells, lineIndex: r, forcedBaseline: true,
-              });
-            }
-          }
-          if (events.length === 0) {
-            /* Fallback ako grid nije queryable (npr. specialty engines). */
-            events.push({ symbol: 'FORCE-BASE', tier: 'LP', matchLength: 3,
-                          payX: 3 * bet, cells: [], forcedBaseline: true });
-          }
+          events = [{ symbol: 'FORCE-BASE', tier: 'LP', matchLength: 3,
+                       payX: 3 * bet, cells: [], forcedBaseline: true }];
           window.__FORCE_BASELINE_WIN__ = null;
         }
         _applyMultToEvents(events);
@@ -933,42 +905,6 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
       } else {
         await playWinSymCycle(allEvents);
       }
-      /* UQ-MULTIPLIER-V4 (Boki 2026-06-22) Korak 2 — total × multiplier
-       * banner POSLE per-line cycle. Boki: "kad to zavrsis onda ubaci na
-       * total win tog spina x multiplier kojiki je. mora igrac da zna
-       * kolko je dobio i zasto". Pokazuje center overlay "TOTAL X × N"
-       * tako da igrac vidi total baseline + multiplier multiplier source. */
-      try {
-        const _mul = (typeof HookBus !== 'undefined' && typeof HookBus.getMult === 'function')
-                     ? HookBus.getMult() : 1;
-        if (totalAward > 0 && _mul >= 2 && typeof document !== 'undefined') {
-          const baseline = totalAward / _mul;
-          const ovl = document.createElement('div');
-          ovl.className = 'win-mult-summary-overlay';
-          ovl.setAttribute('role', 'status');
-          ovl.setAttribute('aria-live', 'polite');
-          ovl.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);'
-            + 'background:radial-gradient(ellipse,rgba(28,18,5,.97) 0%,rgba(8,5,0,.95) 80%);'
-            + 'border:2px solid rgba(255,210,90,.85);border-radius:14px;'
-            + 'padding:18px 28px;color:#ffe79a;font:800 22px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;'
-            + 'text-align:center;letter-spacing:.04em;box-shadow:0 12px 36px rgba(0,0,0,.6),inset 0 -3px 8px rgba(0,0,0,.4);'
-            + 'pointer-events:none;z-index:96;opacity:0;transition:opacity .25s ease,transform .35s cubic-bezier(.2,1.3,.4,1);';
-          const fmt = (v) => (v === Math.floor(v) ? String(v) : v.toFixed(2));
-          ovl.innerHTML = '<div style="font-size:13px;color:#f2c14e;letter-spacing:.12em;margin-bottom:4px">TOTAL WIN</div>'
-            + '<div style="font-size:18px;color:#f9d36e">' + fmt(baseline) + ' &times; ' + _mul + '</div>'
-            + '<div style="font-size:28px;margin-top:6px;color:#fff7c8">= ' + fmt(totalAward) + '</div>';
-          document.body.appendChild(ovl);
-          requestAnimationFrame(() => {
-            ovl.style.opacity = '1';
-            ovl.style.transform = 'translate(-50%,-50%) scale(1)';
-          });
-          await new Promise(r => setTimeout(r, 1200));
-          ovl.style.opacity = '0';
-          ovl.style.transform = 'translate(-50%,-50%) scale(.9)';
-          setTimeout(() => { try { ovl.remove(); } catch (_) {} }, 300);
-          await new Promise(r => setTimeout(r, 300));
-        }
-      } catch (_) {}
       if (typeof window !== 'undefined') {
         window.__SLOT_WIN_PRESENT_ACTIVE__ = false;
       }
