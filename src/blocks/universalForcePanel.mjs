@@ -650,8 +650,13 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
      *   6. Paint visual ×N chip badge na random ćeliji da operator vidi da
      *      je force registrovan vizuelno. */
     function _forceMultiplier(multX) {
-      try { window.__FORCE_BIG_WIN_TIER__ = 1;            } catch (_) {}
-      try { window.__FORCE_LIGHTNING_MULT__ = multX;       } catch (_) {}
+      /* UQ-MULTIPLIER-V2 (Boki 2026-06-22): pre fix-a __FORCE_BIG_WIN_TIER__=1
+       * je vodio do BWT banner-a SVAKI PUT — multiplied award (10× × N) je
+       * lako prešao threshold[0]=10. Boki ne želi BWT na svakom force, samo
+       * baseline win pa multiply. Replaced sa __FORCE_BASELINE_WIN__ flag
+       * koji reelEngine čita kao "garantuj sitan, ne-BWT win" (1×-3× bet).
+       * BWT će biti firing samo ako baseWin×multX i dalje pređe prag. */
+      try { window.__FORCE_BASELINE_WIN__   = true;       } catch (_) {}
       try { window.__FORCE_MULTIPLIER_VALUE__ = multX;     } catch (_) {}
       try {
         if (window.HookBus && typeof window.HookBus.setMultMax === 'function') {

@@ -41,8 +41,8 @@
  *     • onFsTrigger    (priority 40) — guards FS entry (no strikes in FS)
  *     • onFsEnd        (priority 40) — clears state when FS ends
  *   emits:
- *     • onLightningStrike       { multX, prevMult, newMult }
- *     • onLightningStrikeMissed { }
+ *     • onMultiplierStrike       { multX, prevMult, newMult }
+ *     • onMultiplierStrikeMissed { }
  *
  * Runtime contract
  * ────────────────
@@ -182,7 +182,7 @@ export function emitRandomLightningMultiplierCSS(cfg = defaultConfig()) {
   if (!c.enabled) return `\n/* randomLightningMultiplier BLOCK (disabled) — no CSS */\n`;
   return `
 /* ── randomLightningMultiplier BLOCK — src/blocks/randomLightningMultiplier.mjs ── */
-.lightning-bolt-overlay {
+.multiplier-strike-overlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -194,10 +194,10 @@ export function emitRandomLightningMultiplierCSS(cfg = defaultConfig()) {
   mix-blend-mode: screen;
   filter: drop-shadow(0 0 18px ${c.glowColor});
 }
-.lightning-bolt-overlay.is-striking {
+.multiplier-strike-overlay.is-striking {
   animation: rlm-strike ${c.vfxDurationMs}ms ease-out forwards;
 }
-.lightning-bolt-overlay::after {
+.multiplier-strike-overlay::after {
   content: attr(data-mult);
   position: absolute;
   top: 50%;
@@ -208,7 +208,7 @@ export function emitRandomLightningMultiplierCSS(cfg = defaultConfig()) {
   text-shadow: 0 0 24px ${c.glowColor}, 0 0 8px rgba(0,0,0,0.85);
   opacity: 0;
 }
-.lightning-bolt-overlay.is-striking::after {
+.multiplier-strike-overlay.is-striking::after {
   animation: rlm-chip ${c.vfxDurationMs}ms ease-out forwards;
 }
 @keyframes rlm-strike {
@@ -226,8 +226,8 @@ export function emitRandomLightningMultiplierCSS(cfg = defaultConfig()) {
   100% { transform: translate(-50%, -50%) scale(1.1);  opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .lightning-bolt-overlay.is-striking,
-  .lightning-bolt-overlay.is-striking::after {
+  .multiplier-strike-overlay.is-striking,
+  .multiplier-strike-overlay.is-striking::after {
     animation: none;
     opacity: 1;
   }
@@ -240,7 +240,7 @@ export function emitRandomLightningMultiplierMarkup(cfg = defaultConfig()) {
   if (!c.enabled) return `\n<!-- randomLightningMultiplier BLOCK (disabled) -->\n`;
   return `
 <!-- randomLightningMultiplier BLOCK — server-emitted markup -->
-<div class="lightning-bolt-overlay" id="rlmBoltOverlay" role="img" aria-label="Multiplier strike" aria-hidden="true" data-mult=""></div>
+<div class="multiplier-strike-overlay" id="multiplierStrikeOverlay" role="img" aria-label="Multiplier strike" aria-hidden="true" data-mult=""></div>
 `;
 }
 
@@ -326,7 +326,7 @@ export function emitRandomLightningMultiplierRuntime(cfg = defaultConfig()) {
       try { clearTimeout(window.RLM_STATE._overlayTimerId); } catch (_) {}
       window.RLM_STATE._overlayTimerId = null;
     }
-    var ov = document.getElementById('rlmBoltOverlay');
+    var ov = document.getElementById('multiplierStrikeOverlay');
     if (!ov) return;
     ov.classList.remove('is-striking');
     ov.setAttribute('aria-hidden', 'true');
@@ -335,7 +335,7 @@ export function emitRandomLightningMultiplierRuntime(cfg = defaultConfig()) {
   }
 
   function _paintStrike(multX) {
-    var ov = document.getElementById('rlmBoltOverlay');
+    var ov = document.getElementById('multiplierStrikeOverlay');
     if (!ov) return;
     ov.setAttribute('data-mult', 'x' + multX);
     ov.setAttribute('aria-label', 'Multiplier strike ' + multX + 'x');
@@ -367,6 +367,17 @@ export function emitRandomLightningMultiplierRuntime(cfg = defaultConfig()) {
   function _onSpinResult(payload) {
     if (_isFsActive()) return;
     if (_isHwActive()) return;
+    /* UQ-MULTIPLIER-V2 (Boki 2026-06-22): if UFP multiplier_x* chip is
+     * active, UFP has already set HookBus.setMultMax sinhrono on click
+     * (pre-spin). RLM block must NOT run its own strike path — that
+     * would double-fire onMultiplierStrike emit, paint a redundant
+     * vendor-styled bolt overlay, and visually confuse the operator.
+     * The force chip is the sole authority for that spin. */
+    if (typeof window !== 'undefined' && Number.isFinite(window.__FORCE_MULTIPLIER_VALUE__)
+        && window.__FORCE_MULTIPLIER_VALUE__ >= 2) {
+      try { window.__FORCE_MULTIPLIER_VALUE__ = null; } catch (_) {}
+      return;
+    }
     /* D-12 (Boki 2026-06-20): the canonical onSpinResult payload is
        { duringFs } (reelEngine.mjs:565) — there is no totalWin/win
        field. The actual win for the round lands on
@@ -404,7 +415,7 @@ export function emitRandomLightningMultiplierRuntime(cfg = defaultConfig()) {
     if (__forcedMult == null && !_roll()) {
       window.RLM_STATE.misses += 1;
       if (window.HookBus && typeof window.HookBus.emit === 'function') {
-        try { window.HookBus.emit('onLightningStrikeMissed', {}); } catch (_) {}
+        try { window.HookBus.emit('onMultiplierStrikeMissed', {}); } catch (_) {}
       }
       return;
     }
@@ -428,7 +439,7 @@ export function emitRandomLightningMultiplierRuntime(cfg = defaultConfig()) {
     }
     if (window.HookBus && typeof window.HookBus.emit === 'function') {
       try {
-        window.HookBus.emit('onLightningStrike', {
+        window.HookBus.emit('onMultiplierStrike', {
           multX: multX,
           prevMult: prevMult,
           newMult: newMult,

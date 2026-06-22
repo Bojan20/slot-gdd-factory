@@ -785,7 +785,17 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
          the detector to fold HookBus.getMult into payX so escalating mults
          (orb accumulation, persistent mult, lightning) actually pay out. */
       const wrappedDetect = () => {
-        const events = detect() || [];
+        let events = detect() || [];
+        /* UQ-MULTIPLIER-V2 (2026-06-22): __FORCE_BASELINE_WIN__ guarantees
+         * mali deterministic win (3× bet) ispod BWT threshold[0]=10×. Mult
+         * chip onda primeni × N na taj baseline kroz _applyMultToEvents. */
+        if (events.length === 0 && typeof window !== 'undefined'
+            && window.__FORCE_BASELINE_WIN__ === true) {
+          const bet = (Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : 1;
+          events = [{ symbol: 'FORCE-BASE', tier: 'LP', matchLength: 3,
+                       payX: 3 * bet, cells: [], forcedBaseline: true }];
+          window.__FORCE_BASELINE_WIN__ = null;
+        }
         _applyMultToEvents(events);
         return events;
       };
@@ -795,6 +805,14 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
       /* No cascade slot — single detection. tumble's disabled stub still emits
          onTumbleStep so listeners (orb/persistent mult) react identically. */
       let events = detect() || [];
+      /* UQ-MULTIPLIER-V2 (2026-06-22): baseline win injection for force chip. */
+      if (events.length === 0 && typeof window !== 'undefined'
+          && window.__FORCE_BASELINE_WIN__ === true) {
+        const bet = (Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : 1;
+        events = [{ symbol: 'FORCE-BASE', tier: 'LP', matchLength: 3,
+                     payX: 3 * bet, cells: [], forcedBaseline: true }];
+        window.__FORCE_BASELINE_WIN__ = null;
+      }
       _applyMultToEvents(events);
       if (typeof runTumbleChain === 'function') {
         await runTumbleChain(() => events, { duringFs });
