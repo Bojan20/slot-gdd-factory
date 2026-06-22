@@ -394,6 +394,19 @@ if (existsSync(math3Test)) {
     'node', [math3Test]);
 }
 
+/* ── Step 4.97f: MATH-4 winCap runtime enforcement ──────────────────
+ * Asserts:
+ *   • Cash Eruption maxWinX === 50000 (iz GDD MATH-1, ne smartDefaults)
+ *   • winCap.mjs HookBus subscriptions (postSpin priority 100, preSpin
+ *     reset, onFsTrigger reset, onWinCapTriggered emit)
+ *   • RTP probe honors model.winCap.maxWinX clamp na single-spin total
+ *   • Cap clamping deterministic. */
+const math4Test = resolve(REPO, 'tests/tools/math-4-wincap.test.mjs');
+if (existsSync(math4Test)) {
+  run('MATH-4 winCap runtime enforcement (50000× + clamp + determinism)',
+    'node', [math4Test]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz

@@ -190,6 +190,15 @@ function spin(rng) {
     totalWin += (scatterMap[Math.min(5, scatterCount)] || 0);
     hits++;
   }
+  /* MATH-4 — runtime win cap enforcement. winCap.mode='spin' (default)
+   * clamps single-spin total at model.winCap.maxWinX × BET. Cumulative
+   * across cascades / FS rounds is handled by src/blocks/winCap.mjs in
+   * browser context; this probe is single-spin so single clamp suffices. */
+  const maxWinX = model.winCap?.maxWinX;
+  if (Number.isFinite(maxWinX) && maxWinX > 0) {
+    const cap = maxWinX * BET;
+    if (totalWin > cap) totalWin = cap;
+  }
   return { totalWin, hits };
 }
 
