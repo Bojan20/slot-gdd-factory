@@ -47,18 +47,32 @@ export function evalHoldAndWinFireball(grid, model, rng) {
     return { triggered: false, collectPay: 0, hitTier: null };
   }
 
-  /* Count Fireball / bonus symbols across whole grid. */
-  let fireballCount = 0;
-  for (const col of grid) {
-    for (const cell of col) {
-      if (cell?.bonus || /fireball/i.test(cell?.id || '')) fireballCount++;
+  /* Trigger detection. Two modes:
+   * 1. Explicit triggerProbPerSpin (regulator-certified, e.g. 0.0068 derived
+   *    from GDD §4.2 40.91% RTP / avg collect payout). Sample via rng.
+   * 2. Fireball count check (heuristic): real Big Fireball is 2x2 (4 cells
+   *    per appearance per GDD §6.2); per-cell Fireball weight ~12% gives
+   *    much lower trigger freq than declared. */
+  const explicitTriggerProb = model.holdAndWin.triggerProbPerSpin;
+  let triggered = false;
+
+  if (Number.isFinite(explicitTriggerProb) && explicitTriggerProb > 0) {
+    triggered = ((typeof rng === 'function') ? rng() : Math.random()) < explicitTriggerProb;
+  } else {
+    /* Fallback: count Fireball/bonus cells. */
+    let fireballCount = 0;
+    for (const col of grid) {
+      for (const cell of col) {
+        if (cell?.bonus || /fireball/i.test(cell?.id || '')) fireballCount++;
+      }
     }
+    const triggerThreshold = model.holdAndWin.triggerCount
+                          || model.holdAndWin.scatterTrigger
+                          || 6;
+    triggered = fireballCount >= triggerThreshold;
   }
 
-  const triggerThreshold = model.holdAndWin.triggerCount
-                        || model.holdAndWin.scatterTrigger
-                        || 6;
-  if (fireballCount < triggerThreshold) {
+  if (!triggered) {
     return { triggered: false, collectPay: 0, hitTier: null };
   }
 

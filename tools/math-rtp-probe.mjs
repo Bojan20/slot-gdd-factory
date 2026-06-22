@@ -38,6 +38,7 @@ import { evalPatternWin } from '../src/blocks/featureSimPlugins/patternWin.mjs';
 import { applyWildExpansion } from '../src/blocks/featureSimPlugins/wildExpansion.mjs';
 import { evalVolcanoScatter } from '../src/blocks/featureSimPlugins/volcanoScatter.mjs';
 import { evalHoldAndWinFireball } from '../src/blocks/featureSimPlugins/holdAndWinFireball.mjs';
+import { simulateFreeSpinsRound } from '../src/blocks/featureSimPlugins/freeSpinsRound.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -346,7 +347,17 @@ const winHistogram = { lt1x: 0, '1-5x': 0, '5-25x': 0, '25-100x': 0, '100x+': 0 
 const t0 = Date.now();
 for (let i = 0; i < RUNS; i++) {
   totalBet += BET;
-  const { totalWin: win, hits } = spin(rng);
+  const spinResult = spin(rng);
+  let win = spinResult.totalWin;
+
+  /* OPCIJA A · A-5 — Free Spins round simulation.
+   * If base spin triggered FS (≥3 Volcano), run FS round atop base spin.
+   * FS spins use base spin() x premium factor (premium-heavy FS strips). */
+  if (spinResult.fsTriggered) {
+    const fsRound = simulateFreeSpinsRound(model, rng, () => spin(rng).totalWin);
+    win += fsRound.fsRoundPay;
+  }
+
   totalWin += win;
   if (win > 0) {
     hitCount++;
