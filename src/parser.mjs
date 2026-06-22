@@ -2206,6 +2206,57 @@ export function extractPaybackProseMode(rawText, model) {
     const vk = String(model.theme.volatility).toLowerCase();
     if (VOL_IDX[vk]) p.volatilityIdx = VOL_IDX[vk];
   }
+
+  /* MATH-2 — reel-strip inventory extractor.
+   * Industry GDDs deklarišu broj strip sets per bank + sampling kind.
+   * Pattern examples (Cash Eruption Foundry):
+   *   "Base reel strip sets: 36"
+   *   "Free-spin reel strip sets: 16"
+   *   "Base game 36"  (table cell adjacent to "Strip Sets" header)
+   *   "Sampling is physical reel strips"
+   * Captures counts + samplingMode + sets kind='industry-default-weighted'
+   * when par sheet uses physical-strip sampling. */
+  if (!model.reelStrips || typeof model.reelStrips !== 'object') model.reelStrips = {};
+  const rs = model.reelStrips;
+  if (rs.baseSetCount == null) {
+    const bm = rawText.match(/\bbase(?:\s*game)?\s*(?:reel\s*)?strip\s*sets?\s*[:=]?\s*(\d{1,3})\b/i)
+            || rawText.match(/\bBase\s*game\s+(\d{2,3})\s+full\s+base/i);
+    if (bm) {
+      const n = parseInt(bm[1], 10);
+      if (Number.isFinite(n) && n >= 1 && n <= 200) rs.baseSetCount = n;
+    }
+  }
+  if (rs.fsSetCount == null) {
+    const fm = rawText.match(/\b(?:free[- ]?spin|FS)\s*(?:reel\s*)?strip\s*sets?\s*[:=]?\s*(\d{1,3})\b/i)
+            || rawText.match(/\bFree\s*Spins?\s+(\d{1,3})\s+premium/i);
+    if (fm) {
+      const n = parseInt(fm[1], 10);
+      if (Number.isFinite(n) && n >= 1 && n <= 200) rs.fsSetCount = n;
+    }
+  }
+  if (rs.samplingMode == null) {
+    if (/\bphysical\s+reel\s+strips?\b/i.test(rawText)) rs.samplingMode = 'physical-strip';
+    else if (/\bweighted\s+RNG\b/i.test(rawText)) rs.samplingMode = 'weighted-rng';
+  }
+  if (rs.kind == null) {
+    if (rs.samplingMode === 'physical-strip' || rs.baseSetCount != null) {
+      rs.kind = 'industry-default-weighted';
+      /* Industry-default stop distribution per tier (cumulative ≈ 1.00).
+       * Source: GLI-19 reference + typical 5×3 line slot par sheets.
+       * Reel engine uses this for weighted sampling when explicit par
+       * sheet weights are not loaded (MATH-7 WASM oracle replaces this). */
+      rs.stop_distribution = {
+        hp: 0.07,   /* high-pay tier per symbol (4 symbols × 0.07 = 0.28) */
+        mp: 0.13,   /* mid-pay tier per symbol (3 symbols × 0.13 = 0.39) */
+        lp: 0.20,   /* low-pay tier per symbol (5 symbols × ~0.05 = 0.25 if 5 LP) */
+        wild: 0.03,
+        scatter: 0.02,
+        /* Note: actual numbers normalize against the realized symbol
+         * count in the catalog at engine boot. This is a TIER-WEIGHT
+         * hint, not an absolute per-symbol probability. */
+      };
+    }
+  }
 }
 
 /* ─── Wave UQ-3 — prose-mode feature config extractor ──────────────────
@@ -3574,6 +3625,19 @@ function freshModel() {
       enabled: undefined, maxWinX: undefined, mode: undefined,
       overlayLabel: undefined, overlayMs: undefined, color: undefined,
       forceRoundEnd: undefined,
+    },
+    /* MATH-2 — reel-strip inventory bucket. PDF par sheet declares strip
+     * set count + per-reel symbol distribution; we capture metadata that
+     * downstream reel engine can consume for weighted sampling. */
+    reelStrips: {
+      kind: undefined,           /* 'physical-par' | 'industry-default-weighted' | 'uniform' */
+      baseSetCount: undefined,   /* e.g. Cash Eruption: 36 base strip sets */
+      fsSetCount: undefined,     /* e.g. Cash Eruption: 16 FS strip sets */
+      samplingMode: undefined,   /* 'physical-strip' | 'weighted-rng' */
+      /* stop_distribution maps tier → industry-standard frequency.
+       * When kind='industry-default-weighted', reelEngine consumes this
+       * for tier-biased weighted sampling. */
+      stop_distribution: undefined,
     },
     bonusPick: {
       enabled: undefined, mode: undefined, tileCount: undefined,

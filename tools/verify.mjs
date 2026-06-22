@@ -368,6 +368,16 @@ if (existsSync(math1Test)) {
     'node', [math1Test]);
 }
 
+/* ── Step 4.97d: MATH-2 reel-strip inventory + industry-default weighting ────
+ * Asserts Cash Eruption ima 36 base strip sets + 16 FS strip sets +
+ * physical-strip sampling mode + industry-default-weighted distribution
+ * (hp/mp/lp/wild/scatter tier weights sa proper hierarchy). */
+const math2Test = resolve(REPO, 'tests/tools/math-2-reel-strip.test.mjs');
+if (existsSync(math2Test)) {
+  run('MATH-2 reel-strip inventory + tier-weighted distribution',
+    'node', [math2Test]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
