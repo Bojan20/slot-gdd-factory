@@ -407,6 +407,15 @@ if (existsSync(math4Test)) {
     'node', [math4Test]);
 }
 
+/* ── Step 4.97g: MATH-5 volatility index calculator ─────────────────
+ * Reads MATH-3 probe output + computes variance / σ / CV / tier idx.
+ * Vendor-neutral GLI-19 mapping (CV → idx 1-10). */
+const math5Test = resolve(REPO, 'tests/tools/math-5-volatility.test.mjs');
+if (existsSync(math5Test)) {
+  run('MATH-5 volatility index calc (CV → tier idx + determinism)',
+    'node', [math5Test]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
