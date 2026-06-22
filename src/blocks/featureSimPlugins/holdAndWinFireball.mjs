@@ -108,7 +108,16 @@ export function evalHoldAndWinFireball(grid, model, rng) {
    * is the industry-typical H&W trigger rate for HIGH-volatility slot.
    *
    * Set HOLD_AND_WIN_USE_MARKOV=1 to switch to the Markov walker (kept
-   * for calibration experiments; not production default). */
+   * for calibration experiments; not production default).
+   *
+   * KNOWN CALIBRATION GAP (QA finding #8, 2026-06-22 ultra-deep audit):
+   *   Markov walker GRAND prob 1.64% overshoots declared 1.93e-5 by ~85000×.
+   *   Root cause: PER_CELL_FB_PROB=0.075 + 3-respin reset gives runaway
+   *   board-fill rate. Closing the gap requires PER_CELL_FB_PROB ~0.005
+   *   plus board-position-dependent spawn (corner cells lower than center).
+   *   Both are par-sheet-driven, not heuristic. DO NOT ENABLE Markov in
+   *   production — opt-in is for sister-repo Rust kernel calibration
+   *   handshake (FS-7 path), not a drop-in production replacement. */
   if (process.env.HOLD_AND_WIN_USE_MARKOV === '1') {
     return _simulateMarkov(model, rng);
   }
@@ -158,6 +167,16 @@ function _computeCollectScale(model) {
 const STD_FB_VALUES = [20, 40, 60, 80, 100, 200, 300, 400, 500, 1000, 1500];
 const STD_FB_PROBS  = [0.18, 0.16, 0.14, 0.12, 0.11, 0.10, 0.08, 0.05, 0.03, 0.02, 0.01];
 /* Σ = 1.000 — calibrated to match §9 distribution mean ~150 credits ≈ 7.5× bet. */
+
+/* Defensive assertion: STD_FB_PROBS must sum to exactly 1.0 — otherwise
+ * the sampling tail (rng ≈ 1.0) silently biases toward STD_FB_VALUES[last].
+ * Run-once on module load; fail loud if a future edit breaks the invariant. */
+(() => {
+  const sum = STD_FB_PROBS.reduce((a, b) => a + b, 0);
+  if (Math.abs(sum - 1.0) > 1e-6) {
+    throw new Error(`STD_FB_PROBS sum ${sum.toFixed(6)} ≠ 1.0 — adjust weights or fallback`);
+  }
+})();
 
 /* Special pot tiers (rare during collect — appear as marked Fireballs). */
 const POT_TIERS = [

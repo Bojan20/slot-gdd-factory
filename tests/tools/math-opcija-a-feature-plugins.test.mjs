@@ -69,6 +69,12 @@ try {
     const s = JSON.parse(readFileSync(REPORT, 'utf8'));
     assert(s.measuredRTP > 30,
       `post-OPCIJA-A measured RTP expected > 30 (was 11.85 pre, 68 sa A-5), got ${s.measuredRTP}`);
+    /* Upper bound guard (FS-Markov QA findng #7, 2026-06-22): fail-loud if
+     * default-off scale=1.0 gets accidentally bypassed (e.g. test fixture
+     * leaks useCalibratedScale=true). Calibrated path would jump RTP to
+     * ~96% — that's the GDD target, but it MUST be opt-in. */
+    assert(s.measuredRTP < 80,
+      `post-OPCIJA-A measured RTP expected < 80 (calibrated opt-in should be off in default probe), got ${s.measuredRTP}`);
 
     /* HF within reasonable industry band ±2 pp of declared 19.03% */
     if (s.measuredHF != null) {
