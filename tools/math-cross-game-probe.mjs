@@ -36,7 +36,11 @@
  *
  * Lifecycle
  *   - Each game's probe is independent (separate process + RNG seed for
- *     reproducibility). Reports go to reports/math-rtp/<slug>.json.
+ *     reproducibility). Per-game reports go to reports/math-rtp/<slug>.json
+ *     (shared with the single-game probe). Cross-game runs are SERIAL by
+ *     design; concurrent invocations on overlapping slug sets would race
+ *     on per-game report paths. The cross-game SUMMARY itself is timestamp-
+ *     suffixed in reports/cross-game-rtp/ (no collision risk).
  *   - Cross-game summary aggregates across all probed games.
  *   - Self-test verifies all 5 baselines parse + produce a non-zero RTP.
  *
@@ -167,24 +171,32 @@ export function generateComparativeReport(slugs, opts = {}) {
     });
   }
   const succeeded = games.filter(g => g.ok);
+  /* QA fix (Finding #4, 2026-06-22): exclude games without a declared RTP
+   * from avgDeclared / gap stats. Treating null as 0 skewed the average
+   * (e.g. 5 games [96, 96, 92.5, null, null] gave 56.9% avg declared).
+   * Now: declared-aware averaging + separate count. */
+  const withDeclared = succeeded.filter(g => Number.isFinite(g.declaredRTP) && g.declaredRTP > 0);
   const summary = {
     generatedAt: new Date().toISOString(),
     tool: 'tools/math-cross-game-probe.mjs',
     gamesProbed: games.length,
     gamesOk: succeeded.length,
     gamesFailed: games.length - succeeded.length,
+    gamesWithDeclaredRTP: withDeclared.length,
     avgMeasuredRTP: succeeded.length > 0
       ? +(succeeded.reduce((s, g) => s + g.measuredRTP, 0) / succeeded.length).toFixed(2)
       : null,
-    avgDeclaredRTP: succeeded.length > 0
-      ? +(succeeded.reduce((s, g) => s + (g.declaredRTP || 0), 0) / succeeded.length).toFixed(2)
+    /* Declared-aware averaging — excludes null-declared games. */
+    avgDeclaredRTP: withDeclared.length > 0
+      ? +(withDeclared.reduce((s, g) => s + g.declaredRTP, 0) / withDeclared.length).toFixed(2)
       : null,
-    /* Per-game stats; succeeded.length>0 guaranteed before compute. */
-    maxRTPGap: succeeded.length > 0
-      ? Math.max(...succeeded.map(g => Math.abs(g.rtpDelta || 0)))
+    /* Gap stats only over games with declared RTP (true delta is undefined
+     * without a target). Returns null when no game has declared RTP. */
+    maxRTPGap: withDeclared.length > 0
+      ? +(Math.max(...withDeclared.map(g => Math.abs(g.rtpDelta || 0)))).toFixed(2)
       : null,
-    minRTPGap: succeeded.length > 0
-      ? Math.min(...succeeded.map(g => Math.abs(g.rtpDelta || 0)))
+    minRTPGap: withDeclared.length > 0
+      ? +(Math.min(...withDeclared.map(g => Math.abs(g.rtpDelta || 0)))).toFixed(2)
       : null,
   };
   return { games, summary, exit };
@@ -213,24 +225,77 @@ function printTable(games) {
   console.log('└──────────────────────────────────────────┴──────┴────────────┴────────┴────────┴────────┴────────┴────────┘');
 }
 
+/* ── CSV + Markdown emitters ──────────────────────────────────────────── */
+
+function toCsv(games, summary) {
+  const head = 'slug,topology,topologyKind,measuredRTP,declaredRTP,rtpDelta,measuredHF,declaredHF,maxSingleSpin,longestLosingStreak,ok,error';
+  const rows = games.map(g => [
+    g.slug,
+    g.topology || '',
+    g.topologyKind || '',
+    g.measuredRTP != null ? g.measuredRTP : '',
+    g.declaredRTP != null ? g.declaredRTP : '',
+    g.rtpDelta != null ? g.rtpDelta : '',
+    g.measuredHF != null ? g.measuredHF : '',
+    g.declaredHF != null ? g.declaredHF : '',
+    g.maxSingleSpin != null ? g.maxSingleSpin : '',
+    g.longestLosingStreak != null ? g.longestLosingStreak : '',
+    g.ok ? 'true' : 'false',
+    (g.error || '').replace(/[,\n"]/g, ' '),
+  ].join(','));
+  return [head, ...rows].join('\n') + '\n';
+}
+
+function toMd(games, summary) {
+  const lines = [];
+  lines.push(`# Cross-Game RTP Report · ${summary.generatedAt}`);
+  lines.push('');
+  lines.push(`Games probed: ${summary.gamesProbed} · ok ${summary.gamesOk} · failed ${summary.gamesFailed}`);
+  lines.push(`Games with declared RTP: ${summary.gamesWithDeclaredRTP}`);
+  lines.push(`Avg measured: ${summary.avgMeasuredRTP}% · avg declared: ${summary.avgDeclaredRTP}% · max gap ${summary.maxRTPGap}pp · min gap ${summary.minRTPGap}pp`);
+  lines.push('');
+  lines.push('| Slug | Topo | Kind | Measured | Declared | Δ | HF m | HF d |');
+  lines.push('|------|------|------|---------:|---------:|---:|----:|----:|');
+  for (const g of games) {
+    if (!g.ok) {
+      lines.push(`| ${g.slug} | ERR | — | — | — | — | — | — |`);
+      continue;
+    }
+    lines.push(`| ${g.slug} | ${g.topology} | ${g.topologyKind} | ${g.measuredRTP?.toFixed(2) || '—'}% | ${g.declaredRTP != null ? g.declaredRTP + '%' : '—'} | ${g.rtpDelta != null ? g.rtpDelta.toFixed(2) : '—'} | ${g.measuredHF?.toFixed(2) || '—'} | ${g.declaredHF != null ? g.declaredHF + '%' : '—'} |`);
+  }
+  return lines.join('\n') + '\n';
+}
+
 /* ── CLI ──────────────────────────────────────────────────────────────── */
 
 if (process.argv[1]?.endsWith('math-cross-game-probe.mjs')) {
   const slugsArg = argVal('--slugs');
   const runs = parseInt(argVal('--runs') || '50000', 10);
   const seed = parseInt(argVal('--seed') || '42', 10);
+  const format = (argVal('--format') || 'json').toLowerCase();
   const slugs = slugsArg ? slugsArg.split(',').map(s => s.trim()) : BASELINE_SLUGS;
   console.log(`MATH-DEEP cross-game probe · ${slugs.length} games × ${runs} spins · seed ${seed}`);
   console.log('');
   const { games, summary, exit } = generateComparativeReport(slugs, { runs, seed });
   printTable(games);
   console.log('');
-  console.log(`Summary: ${summary.gamesOk}/${summary.gamesProbed} ok · avg measured ${summary.avgMeasuredRTP}% · avg declared ${summary.avgDeclaredRTP}% · max gap ${summary.maxRTPGap?.toFixed(2)}pp · min gap ${summary.minRTPGap?.toFixed(2)}pp`);
+  console.log(`Summary: ${summary.gamesOk}/${summary.gamesProbed} ok · ${summary.gamesWithDeclaredRTP} with declared RTP · avg measured ${summary.avgMeasuredRTP}% · avg declared ${summary.avgDeclaredRTP}% · max gap ${summary.maxRTPGap}pp · min gap ${summary.minRTPGap}pp`);
   /* Write summary report. */
   if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true });
   const ts = new Date().toISOString().replace(/[:.]/g, '-');
-  const outPath = join(OUT_DIR, `cross-game-${ts}.json`);
-  writeFileSync(outPath, JSON.stringify({ summary, games }, null, 2), 'utf8');
-  console.log(`Report: ${outPath}`);
+  const baseOut = join(OUT_DIR, `cross-game-${ts}`);
+  if (format === 'csv') {
+    const csvPath = baseOut + '.csv';
+    writeFileSync(csvPath, toCsv(games, summary), 'utf8');
+    console.log(`Report (CSV): ${csvPath}`);
+  } else if (format === 'md' || format === 'markdown') {
+    const mdPath = baseOut + '.md';
+    writeFileSync(mdPath, toMd(games, summary), 'utf8');
+    console.log(`Report (Markdown): ${mdPath}`);
+  } else {
+    const outPath = baseOut + '.json';
+    writeFileSync(outPath, JSON.stringify({ summary, games }, null, 2), 'utf8');
+    console.log(`Report (JSON): ${outPath}`);
+  }
   process.exit(exit);
 }
