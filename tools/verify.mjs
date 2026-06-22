@@ -552,6 +552,17 @@ if (existsSync(hyb2Test)) {
     'node', [hyb2Test]);
 }
 
+/* ── Step 4.97t: HYB-3 LLM Cross-Check (consistency validator Sloj 3)
+ * Dry-run self-test: validateFieldFaithful() receipt shape, populated-field
+ * walking, empty-object skip, value-hash cache key, boolean/string round-trip.
+ * Production mode: detects model values that schema-validate but contradict
+ * the source GDD prose (LLM hallucination guard via verbatim quote check). */
+const hyb3Test = resolve(REPO, 'tests/tools/llm-cross-check.test.mjs');
+if (existsSync(hyb3Test)) {
+  run('MATH-DEEP HYB-3 LLM Cross-Check (consistency validator, dry-run)',
+    'node', [hyb3Test]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
