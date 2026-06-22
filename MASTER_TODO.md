@@ -171,6 +171,99 @@ HARD RULE #4 (audio):  ✅ ne dirano u ovoj grani
 
 ---
 
+## 🏆 MATH-DEEP GRANA B — 2026-06-22 · ZATVOREN ✅ (HYB-1 → HYB-5, 5/5)
+
+**Commit chain:**
+```
+6c8c014  fix(HYB-2/3/4/5): ultra-deep QA audit fixes — atomic writes + whitespace hallucination guard + .gitignore
+c5cbe5c  feat(HYB-5): Universal Pipeline (E2E orchestrator + receipt chain) — Grana B ZATVOREN
+2da4c32  feat(HYB-4): Multi-Vendor PAR Sheet Ingest — detect + dispatch + generic CSV adapter
+4f89fa1  feat(HYB-3): LLM Consistency Validator (Sloj 3) — faithfulness audit + hallucination guard
+873fdfd  feat(HYB-2): LLM Structured Fallback (Sloj 2) — Kimi + Zod schema target
+dfc525a  feat(HYB-1): Universal Game Schema (Zod single source of truth) — 34/34 gate
+```
+
+### Cilj-po-cilj rezultat
+
+```
+┌──────┬─────────────────────────────────────────┬────────────────────────────┐
+│ Atom │ Šta dovršeno                              │ Verify gate test           │
+├──────┼─────────────────────────────────────────┼────────────────────────────┤
+│ HYB-1│ src/schema/universalGame.mjs              │ HYB-1 (17/17 + 338 corpus) │
+│      │ Zod schema · 18 sub-schemas · validateModel│                            │
+│ HYB-2│ tools/llm-field-completer.mjs             │ HYB-2 (8/8 dry-run)        │
+│      │ 30 TARGET_FIELDS · per-field receipt      │                            │
+│ HYB-3│ tools/llm-cross-check.mjs                 │ HYB-3 (7/7 dry-run)        │
+│      │ Hallucination guard · 23 audit fields    │                            │
+│ HYB-4│ tools/par-sheet-detect.mjs                │ HYB-4 (14/14)              │
+│      │ tools/par-sheet-generic-csv.mjs           │                            │
+│ HYB-5│ tools/universal-pipeline.mjs              │ HYB-5 (11/11 + idempotent) │
+│      │ 5-stage receipt chain · sha256 audit     │                            │
+└──────┴─────────────────────────────────────────┴────────────────────────────┘
+```
+
+### Sloj stack posle Grane B
+
+```
+GDD (PDF/MD) ──┐
+               ├──> Sloj 1 (parser regex)      → partial model.json
+PAR sheet    ──┘                                 │
+                                                 ▼
+                                      Sloj 2 (LLM completer + schema)
+                                                 │
+                                                 ▼
+                                      Sloj 3 (consistency validator)
+                                                 │
+                                                 ▼
+                                      Sloj 4 (PAR multi-vendor ingest)
+                                                 │
+                                                 ▼
+                                      UniversalGameSchema validate
+                                                 │
+                                                 ▼
+                                      sha256 receipt chain (5 stages)
+```
+
+### Ultra-deep QA (3 paralelnih agenta · 2026-06-22)
+
+```
+┌────────────────────────────────┬───────────────────────────────────────────┐
+│ Agent                            │ Findings                                  │
+├────────────────────────────────┼───────────────────────────────────────────┤
+│ #1 Schema + security audit       │ 2 LOW (cache atomic, whitespace guard)   │
+│ #2 Regression risk + .gitignore   │ 4 HIGH/MED (cache atomic ×3,             │
+│                                  │ .gitignore missing, adapter gaps)        │
+│ #3 Docs + acceptance criteria     │ 6 (HYB-4 placeholder adapters, JSDoc gaps)│
+└────────────────────────────────┴───────────────────────────────────────────┘
+
+Sve HIGH/MED issues FIXED u commit-u 6c8c014:
+  ✅ Cache atomic write (tmp + renameSync) na HYB-2, HYB-3, HYB-5
+  ✅ Hallucination guard whitespace-normalized
+  ✅ .gitignore za src/cert/llm-*.json + reports/{pipeline,llm-consistency}
+  ✅ HYB-4 Pragmatic/L&W xlsx adapter graceful fallback na IGT generic ingester
+```
+
+### Gate state
+
+```
+verify (38/38 step):     ✅ GREEN
+HYB-1 self-test:         ✅ 17/17 + 338 corpus
+HYB-2 self-test:         ✅ 8/8 dry-run
+HYB-3 self-test:         ✅ 7/7 dry-run
+HYB-4 self-test:         ✅ 14/14
+HYB-5 self-test:         ✅ 11/11 + idempotent
+HARD RULE #1 vendor:     ✅ no vendor names in canonical output
+HARD RULE #3 ASCII tab:  ✅ box-drawing
+HARD RULE #4 audio:      ✅ ne dirano
+```
+
+### Sledeće
+
+**Grana C (FEAT-SIM, ~10h)** — feature-faithful simulator preko sister repo
+Rust kernel-a (`~/Projects/slot-math-engine-template`) za ±0.05% RTP precision.
+
+---
+
 ## 🚀 MATH-DEEP BACKLOG — 2026-06-22 · OTVOREN
 
 Boki direktiva (2026-06-22): *"upisi u master todo detaljno sta sve treba i kreni
