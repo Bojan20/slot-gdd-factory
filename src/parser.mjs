@@ -537,6 +537,35 @@ export function parseMarkdownGDD(text) {
     }
   });
 
+  /* MATH-DEEP D-7 (2026-06-22) — Bet ladder extractor.
+   * Cash Eruption §5.5 declares "21 bet steps (0.20 → 40.00)" — multi-bet
+   * model with min/max bounds + step count. Captures the min, max, and step
+   * count when explicit phrasing matches. smartDefaults.bet object exists
+   * with generic 0.1/100/1 fallback; this writes min/max/stepCount from
+   * GDD prose so downstream engines can honor the certified bet ladder. */
+  _safeExtract('header.bet-ladder-from-gdd', () => {
+    /* Pattern: "<N> bet steps" + "min → max" range nearby.
+     * GDD §5.5 prose form: "21 bet steps (0.20 → 40.00)" */
+    const stepCountM = text.match(/(\d{1,3})\s+bet\s+steps?\s*[(\[]?\s*(\d+(?:\.\d+)?)\s*(?:→|->|to|–|—)\s*(\d+(?:\.\d+)?)/i);
+    if (!stepCountM) return;
+    const stepCount = parseInt(stepCountM[1], 10);
+    const minBet = parseFloat(stepCountM[2]);
+    const maxBet = parseFloat(stepCountM[3]);
+    if (!Number.isFinite(stepCount) || stepCount < 2 || stepCount > 100) return;
+    if (!Number.isFinite(minBet) || minBet <= 0 || minBet >= maxBet) return;
+    if (!Number.isFinite(maxBet) || maxBet > 1_000_000) return;
+    if (!model.bet || typeof model.bet !== 'object') model.bet = {};
+    model.bet.minBet = minBet;
+    model.bet.maxBet = maxBet;
+    model.bet.stepCount = stepCount;
+    if (!Number.isFinite(model.bet.defaultBet) || model.bet.defaultBet < minBet || model.bet.defaultBet > maxBet) {
+      /* Default to first step (most common industry choice for new players). */
+      model.bet.defaultBet = minBet;
+    }
+    if (!model.confidence._derivedBy) model.confidence._derivedBy = {};
+    model.confidence._derivedBy.bet = 'gdd-prose-ladder';
+  });
+
   _safeExtract('header.bonus-buy-negative-signal', () => {
     /* Explicit ban phrasings (case-insensitive). */
     const banPhrases = /\b(?:no\s+(?:feature[\s-]?)?(?:buy|bonus[\s-]?buy)|bonus[\s-]?buy\s+(?:prohibited|banned|disabled|not\s+(?:implemented|available|allowed)|absent)|feature[\s-]?buy\s+(?:prohibited|banned|disabled|not\s+(?:implemented|available|allowed)))\b/i;
