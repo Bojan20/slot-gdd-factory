@@ -426,6 +426,17 @@ if (existsSync(math6Test)) {
     'node', [math6Test]);
 }
 
+/* ── Step 4.97i: MATH-7 slot-math-engine WASM oracle wrapper ────────
+ * Lazy-loads sister repo packages/slot-math-wasm/pkg/ if available;
+ * falls back to vanilla JS for buyFeatureRtp, bothWaysRtp, binomialPmfGe,
+ * payAnywhereExpectedPay, UKGC RTS 13C + MGA RG 2021/02 compliance gates.
+ * Pure deterministic, no LLM. */
+const math7Test = resolve(REPO, 'tests/tools/math-7-engine.test.mjs');
+if (existsSync(math7Test)) {
+  run('MATH-7 math engine wrapper (WASM or JS-fallback + 9 sub-tests)',
+    'node', [math7Test]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
