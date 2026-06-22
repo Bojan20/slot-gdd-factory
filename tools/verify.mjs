@@ -584,6 +584,17 @@ if (existsSync(hyb5Test)) {
     'node', [hyb5Test]);
 }
 
+/* ── Step 4.97w: MATH-DEEP cross-game probe (5 baseline GDDs)
+ * Runs probe across topology variants (5×3 lock_respin, 6×5 cluster,
+ * 5×3 lines, etc) to catch engine regressions that single-game probe
+ * misses. Asserts probes RUN (informational only — measured RTP deltas
+ * are known issues for non-Cash-Eruption topologies). */
+const xgameTest = resolve(REPO, 'tests/tools/math-cross-game-probe.test.mjs');
+if (existsSync(xgameTest)) {
+  run('MATH-DEEP cross-game probe (5 baselines × topology variants)',
+    'node', [xgameTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
