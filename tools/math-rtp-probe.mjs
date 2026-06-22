@@ -39,6 +39,7 @@ import { applyWildExpansion } from '../src/blocks/featureSimPlugins/wildExpansio
 import { evalVolcanoScatter } from '../src/blocks/featureSimPlugins/volcanoScatter.mjs';
 import { evalHoldAndWinFireball } from '../src/blocks/featureSimPlugins/holdAndWinFireball.mjs';
 import { simulateFreeSpinsRound } from '../src/blocks/featureSimPlugins/freeSpinsRound.mjs';
+import { evalClusterPays } from '../src/blocks/featureSimPlugins/clusterEval.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -257,12 +258,25 @@ function spin(rng) {
    * then re-scores against expanded grid. */
   const paylineMapForExpansion = model.topology?.paylineMap;
   applyWildExpansion(grid, model, paylineMapForExpansion);
-  /* Evaluate paylines: assume center row (y=middle) for simplicity.
-   * Real engines walk model topology payline maps; this probe is an
-   * approximation that captures hit/RTP trends without the full LUT. */
-  const midRow = Math.floor(rows / 2);
   let totalWin = 0;
   let hits = 0;
+  /* Grana D-1 (2026-06-22) — Cluster-pays topology dispatch. Cluster games
+   * (paylines=0, evaluation='cluster') bypass line eval entirely; pay
+   * comes from orthogonal flood-fill clusters ≥ min_size. Line probe was
+   * vastly over-counting (1850pp gap on starlight-travellers).
+   *
+   * Probe shortcut: when cluster topology, skip the line-eval block and
+   * route straight to cluster evaluator. Subsequent feature plugins (wild,
+   * scatter, H&W) still fire — those mechanics are topology-orthogonal. */
+  const clusterResult = evalClusterPays(grid, model);
+  const isClusterTopo = (model.topology?.kind === 'cluster' || model.topology?.evaluation === 'cluster');
+  if (isClusterTopo) {
+    totalWin += clusterResult.totalPay;
+    if (clusterResult.fired) hits++;
+  }
+  /* Evaluate paylines (only when NOT cluster topology). */
+  const midRow = Math.floor(rows / 2);
+  if (!isClusterTopo) {
   /* MATH-PRECISION-5 — real payline map iz GDD §5.2 ako postoji.
    * Fallback: yOffset = line % rows heuristic (over-triggers — known gap). */
   const paylineMap = model.topology?.paylineMap;
@@ -297,6 +311,17 @@ function spin(rng) {
         hits++;
       }
     }
+  }
+  } /* end of !isClusterTopo line-eval block */
+  /* Grana D-1: cluster mode skips line-pay plugins (Pattern Win, line H&W,
+   * Volcano scatter pays are line-game-specific). Cluster games carry their
+   * own scatter table; for now we don't double-dip. */
+  if (isClusterTopo) {
+    return {
+      totalWin, hits,
+      fsTriggered: false,
+      scatterCount: 0,
+    };
   }
   /* OPCIJA A · A-3 — Volcano scatter plugin (GDD §6.3 pay table).
    * Pays once per spin on best count, position-independent, × total bet.

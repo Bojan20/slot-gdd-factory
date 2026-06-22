@@ -2707,7 +2707,12 @@ export function extractPaybackProseMode(rawText, model) {
    * "return-to-player ~96%". Capture the first number with optional
    * decimal point. */
   if (p.rtp == null) {
-    const rtpMatch = rawText.match(/\b(?:RTP|return\s*to\s*player|payback(?:\s*percentage)?)\s*[:=~≈]?\s*~?\s*(\d{2,3}(?:\.\d{1,2})?)\s*%/i);
+    /* Grana D-2 (2026-06-22) — multi-form RTP extractor. Cash Eruption uses
+     * "RTP 96%"; Gates uses "RTP (96.50%) | Verovatnoća" tabela form;
+     * Wrath uses "RTP target ..." (no explicit value — keep null). */
+    const rtpMatch = rawText.match(/\b(?:RTP|return\s*to\s*player|payback(?:\s*percentage)?)\s*[:=~≈]?\s*~?\s*(\d{2,3}(?:\.\d{1,2})?)\s*%/i)
+                 || rawText.match(/\bRTP\s*\(\s*(\d{2,3}(?:\.\d{1,2})?)\s*%?\s*\)/i)
+                 || rawText.match(/\bRTP\s*\|\s*(\d{2,3}(?:\.\d{1,2})?)\s*%/i);
     if (rtpMatch) {
       const n = parseFloat(rtpMatch[1]);
       if (Number.isFinite(n) && n >= 70 && n <= 99.99) {
