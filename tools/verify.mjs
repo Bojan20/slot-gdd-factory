@@ -354,6 +354,20 @@ if (existsSync(uqFortify9)) {
     'node', [uqFortify9]);
 }
 
+/* ── Step 4.97c: MATH-1 paytable extractor (RTP + variants + freq + cap) ────
+ * MATH-1 expanded extractPaybackProseMode to pull:
+ *   • rtpVariants from "<SKU>-<variant> <RTP>% <Hold>%" format
+ *   • winFrequency (distinct from hitFrequency)
+ *   • volatilityIdx (integer 1-10 from class string)
+ *   • maxWinX from "N× total bet at every step" pattern
+ * Asserts Game-A (Cash Eruption Foundry) has 3 variants + 96/95/93.1% RTPs
+ * + hf 19.03 + wf 8.94 + volIdx 8 + maxWinX 50000. */
+const math1Test = resolve(REPO, 'tests/tools/math-1-paytable-extractor.test.mjs');
+if (existsSync(math1Test)) {
+  run('MATH-1 paytable extractor (rtp + variants + freq + maxWinX)',
+    'node', [math1Test]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz

@@ -2083,6 +2083,49 @@ export function extractPaybackProseMode(rawText, model) {
     }
   }
 
+  /* MATH-1 — variant RTP table: "200-1637-001 96.00% 4.00%" format.
+   * Pattern: <SKU>-<variant>  <RTP>%  <Hold>%  where RTP + Hold = 100%.
+   * Captures all variants visible in the prose; assigns first as primary. */
+  if (p.rtpVariants == null) {
+    const variantRegex = /\b\d{2,4}-\d{3,5}-\d{3}\s+(\d{2,3}(?:\.\d{1,2})?)\s*%\s+(\d{1,3}(?:\.\d{1,2})?)\s*%/g;
+    const variants = [];
+    let mv;
+    while ((mv = variantRegex.exec(rawText)) !== null) {
+      const rtp = parseFloat(mv[1]);
+      const hold = parseFloat(mv[2]);
+      if (Number.isFinite(rtp) && rtp >= 70 && rtp <= 99.99 &&
+          Number.isFinite(hold) && hold >= 0 && hold <= 30 &&
+          Math.abs((rtp + hold) - 100) < 0.51) {
+        variants.push({ rtp, hold, label: 'variant-' + (variants.length + 1) });
+      }
+    }
+    if (variants.length >= 2) {
+      /* Dedup by (rtp, hold) — variant table often appears multiple times
+       * (executive summary + math section + cabinet info + paytable modal). */
+      const seen = new Set();
+      const uniq = [];
+      for (const v of variants) {
+        const key = `${v.rtp.toFixed(2)}-${v.hold.toFixed(2)}`;
+        if (!seen.has(key)) { seen.add(key); uniq.push(v); }
+      }
+      uniq.forEach((v, i) => { v.label = 'variant-' + (i + 1); });
+      p.rtpVariants = uniq;
+      /* Assign primary (highest RTP = online channel) if not yet set. */
+      if (p.rtp == null) p.rtp = uniq[0].rtp;
+    }
+  }
+
+  /* MATH-1 — winFrequency (distinct from hitFrequency).
+   * Industry distinguishes: hit = any pay including scatter/feature;
+   * win = line wins only. */
+  if (p.winFrequency == null) {
+    const wfm = rawText.match(/\bwin\s*(?:frequency|rate)\s*[:=~≈]?\s*~?\s*(\d{1,3}(?:\.\d{1,2})?)\s*%/i);
+    if (wfm) {
+      const n = parseFloat(wfm[1]);
+      if (Number.isFinite(n) && n >= 1 && n <= 80) p.winFrequency = n;
+    }
+  }
+
   /* Hit frequency — "Hit frequency: 25%", "hit rate ~30%". */
   if (p.hitFrequency == null) {
     const hf = rawText.match(/\bhit\s*(?:frequency|rate)\s*[:=~≈]?\s*~?\s*(\d{1,3}(?:\.\d{1,2})?)\s*%/i);
@@ -2121,14 +2164,47 @@ export function extractPaybackProseMode(rawText, model) {
     }
   }
 
-  /* WinCap — "Max Win: 5,000x bet", "Maximum win 10000x", "capped at 5000x stake". */
+  /* WinCap — "Max Win: 5,000x bet", "Maximum win 10000x", "capped at 5000x stake",
+   * "win up to 50,000× your bet", "50,000× total bet at every step". */
   if (!model.winCap || typeof model.winCap !== 'object') model.winCap = {};
   if (model.winCap.maxWinX == null) {
-    const cap = rawText.match(/\b(?:max(?:imum)?\s*win|win\s*cap|capped\s*at)\s*[:=]?\s*([\d,]+)\s*[x×]\s*(?:bet|stake|total\s*bet)?\b/i);
+    const cap = rawText.match(/\b(?:max(?:imum)?\s*win|win\s*cap|capped\s*at|win\s*up\s*to)\s*[:=]?\s*([\d,]+)\s*[x×]\s*(?:bet|stake|total\s*bet|your\s*bet)?\b/i);
     if (cap) {
       const n = parseInt(cap[1].replace(/,/g, ''), 10);
       if (Number.isFinite(n) && n >= 50 && n <= 10000000) model.winCap.maxWinX = n;
     }
+  }
+
+  /* MATH-1 — fallback maxWinX from "<N>× total bet at every step"
+   * pattern used by Cash Eruption / Foundry-style GDDs. Captures the
+   * largest such multiplier in the text (typically the GRAND cap). */
+  if (model.winCap.maxWinX == null) {
+    const multRegex = /\b([\d,]{4,12})\s*[x×]\s*total\s*bet\s+at\s+every\s+(?:step|bet\s*step)\b/gi;
+    let maxN = 0;
+    let mm;
+    while ((mm = multRegex.exec(rawText)) !== null) {
+      const n = parseInt(mm[1].replace(/,/g, ''), 10);
+      if (Number.isFinite(n) && n >= 100 && n <= 10000000 && n > maxN) maxN = n;
+    }
+    if (maxN > 0) model.winCap.maxWinX = maxN;
+  }
+
+  /* MATH-1 — also mirror to payback.maxWinX so V11/V12 industry
+   * compliance walkers can score against it. */
+  if (p.maxWinX == null && model.winCap?.maxWinX != null) {
+    p.maxWinX = model.winCap.maxWinX;
+  }
+
+  /* MATH-1 — volatility index (integer 1-10) derived from class string.
+   * Runs AFTER theme.volatility extraction above so the string is present.
+   * Industry mapping: low=3, low-med=4, medium=5, med-high=7, high=8, extreme=10. */
+  if (p.volatilityIdx == null && model.theme?.volatility) {
+    const VOL_IDX = {
+      'low': 3, 'low-medium': 4, 'medium': 5,
+      'medium-high': 7, 'high': 8, 'extreme': 10,
+    };
+    const vk = String(model.theme.volatility).toLowerCase();
+    if (VOL_IDX[vk]) p.volatilityIdx = VOL_IDX[vk];
   }
 }
 
