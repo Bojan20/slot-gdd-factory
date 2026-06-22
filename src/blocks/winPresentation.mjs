@@ -675,6 +675,39 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
     });
   }
 
+  /* UQ-MULTIPLIER-V6 (2026-06-22) — sample REAL DOM cells for the synth
+     force-baseline-win event. Without real cells the dim/highlight rule
+     pair makes every cell fade to 0.55 with no .cell--winsym targets to
+     pop back to 1.0 (player sees cells "disappearing"), and the payline
+     overlay early-bails on cells.length less than 2 so no line is drawn.
+     Strategy mirrors WoO: walk RECT_REELS first 3 reels, pick middle-row
+     cell (typical line-1 anchor). Fallback to first 3 grid .cell nodes. */
+  function __forceSampleBaselineCells() {
+    var picked = [];
+    try {
+      if (typeof RECT_REELS !== 'undefined' && Array.isArray(RECT_REELS) && RECT_REELS.length > 0) {
+        var nReels = Math.min(3, RECT_REELS.length);
+        for (var r = 0; r < nReels; r++) {
+          var reel = RECT_REELS[r];
+          if (!reel || !Array.isArray(reel.cells)) continue;
+          var vis = reel.visibleRows || (typeof ROWS !== 'undefined' ? ROWS : 3);
+          var midRow = Math.floor(vis / 2);
+          /* reel.cells layout: index 0 = above-buffer, 1..visibleRows = visible */
+          var cell = reel.cells[1 + midRow] || reel.cells[1];
+          if (cell && cell.classList) picked.push(cell);
+        }
+      }
+      if (picked.length < 2 && typeof grid !== 'undefined' && grid && grid.querySelectorAll) {
+        /* Defensive fallback — first 3 visible .cell nodes. */
+        var nodes = grid.querySelectorAll('.cell');
+        for (var i = 0; i < nodes.length && picked.length < 3; i++) {
+          if (nodes[i] && nodes[i].classList && picked.indexOf(nodes[i]) === -1) picked.push(nodes[i]);
+        }
+      }
+    } catch (_) { /* defensive — fallback to [] degrades to no-visual but still pays */ }
+    return picked;
+  }
+
   async function applyWinHighlight() {
     clearWinHighlight();
     /* Wave V5 — publish award=0 defensively so subscribers never read a
@@ -793,13 +826,19 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
       const wrappedDetect = () => {
         let events = detect() || [];
         /* UQ-MULTIPLIER-V2 (2026-06-22): __FORCE_BASELINE_WIN__ guarantees
-         * mali deterministic win (3× bet) ispod BWT threshold[0]=10×. Mult
-         * chip onda primeni × N na taj baseline kroz _applyMultToEvents. */
+           mali deterministic win (3x bet) ispod BWT threshold first slot = 10x. Mult
+           chip onda primeni x N na taj baseline kroz _applyMultToEvents.
+           UQ-MULTIPLIER-V6 (2026-06-22): synth event MORA imati realne DOM
+           cells iz prva 3 reel-a (lineIndex=0, srednji red) — bez toga
+           dim-rule prebriše sve ćelije a highlight ne pogađa nijednu (player
+           vidi kao da ćelije nestaju iz frame-a). Plus payline overlay
+           zahteva najmanje 2 cells da nacrta liniju. */
         if (events.length === 0 && typeof window !== 'undefined'
             && window.__FORCE_BASELINE_WIN__ === true) {
           const bet = (Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : 1;
-          events = [{ symbol: 'FORCE-BASE', tier: 'LP', matchLength: 3,
-                       payX: 3 * bet, cells: [], forcedBaseline: true }];
+          const __forceCells = __forceSampleBaselineCells();
+          events = [{ symbol: 'FORCE-BASE', tier: 'LP', matchLength: __forceCells.length || 3,
+                       payX: 3 * bet, cells: __forceCells, lineIndex: 0, forcedBaseline: true }];
           window.__FORCE_BASELINE_WIN__ = null;
         }
         _applyMultToEvents(events);
@@ -811,12 +850,14 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
       /* No cascade slot — single detection. tumble's disabled stub still emits
          onTumbleStep so listeners (orb/persistent mult) react identically. */
       let events = detect() || [];
-      /* UQ-MULTIPLIER-V2 (2026-06-22): baseline win injection for force chip. */
+      /* UQ-MULTIPLIER-V2 (2026-06-22): baseline win injection for force chip.
+         UQ-MULTIPLIER-V6 (2026-06-22): isti realni-cells fix kao gore. */
       if (events.length === 0 && typeof window !== 'undefined'
           && window.__FORCE_BASELINE_WIN__ === true) {
         const bet = (Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : 1;
-        events = [{ symbol: 'FORCE-BASE', tier: 'LP', matchLength: 3,
-                     payX: 3 * bet, cells: [], forcedBaseline: true }];
+        const __forceCells = __forceSampleBaselineCells();
+        events = [{ symbol: 'FORCE-BASE', tier: 'LP', matchLength: __forceCells.length || 3,
+                     payX: 3 * bet, cells: __forceCells, lineIndex: 0, forcedBaseline: true }];
         window.__FORCE_BASELINE_WIN__ = null;
       }
       _applyMultToEvents(events);
@@ -865,7 +906,14 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
      * UKGC RTS 7C + AGCO 4.07 + UKGC 17-Jan-2025. */
     var __ldwBet = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0)
       ? window.__SLOT_BET__ : 1;
-    var __ldwSuppress = ${c.suppressLDW} && (totalAward > 0) && (totalAward <= __ldwBet);
+    /* UQ-MULTIPLIER-V6 (2026-06-22) — detect forcedBaseline event so both
+       LDW suppression and BWT routing can bypass it. Force MULT chip must
+       always show per-line cycle even if baseline 3× bet ≤ current bet. */
+    var __forcedBaseline = false;
+    for (var __fbi0 = 0; __fbi0 < allEvents.length; __fbi0++) {
+      if (allEvents[__fbi0] && allEvents[__fbi0].forcedBaseline === true) { __forcedBaseline = true; break; }
+    }
+    var __ldwSuppress = ${c.suppressLDW} && (totalAward > 0) && (totalAward <= __ldwBet) && !__forcedBaseline;
     if (typeof window !== 'undefined') {
       window.__LDW_SUPPRESSED__ = !!__ldwSuppress;
     }
@@ -887,7 +935,10 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
       var __bwThreshold = (__bwState && Array.isArray(__bwState.thresholds) && __bwState.thresholds[0] > 0)
         ? __bwState.thresholds[0] : Infinity;
       var __bwEnabled  = !!(__bwState && __bwState.enabled);
-      var __isBigWin   = __bwEnabled && (totalAward / __bet) >= __bwThreshold;
+      /* UQ-MULTIPLIER-V6 (2026-06-22) — force MULT chip never routes to
+         playSymbolCelebration (no payline). __forcedBaseline detected above
+         next to LDW gate so a single sweep covers both bypasses. */
+      var __isBigWin   = __bwEnabled && (totalAward / __bet) >= __bwThreshold && !__forcedBaseline;
 
       if (typeof window !== 'undefined') {
         window.__SLOT_WIN_PRESENT_ACTIVE__ = true;
