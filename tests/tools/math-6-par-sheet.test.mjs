@@ -52,6 +52,9 @@ try {
   }
   assert(p.$schema === 'par-sheet/v1', `$schema expected 'par-sheet/v1', got ${p.$schema}`);
   assert(/GLI-19/.test(p.$standard), `$standard should reference GLI-19, got ${p.$standard}`);
+  /* Boki direktiva 2026-06-22: PAR sheet acceptance band must reference ±0.05% precision. */
+  assert(/0\.05/.test(p.audit.rtpAcceptanceBand),
+    `rtpAcceptanceBand should reference 0.05% precision (Boki direktiva), got '${p.audit.rtpAcceptanceBand}'`);
 
   /* (3) Cash Eruption declared values match MATH-1 (regression guard) */
   assert(p.declared.rtp === 96, `declared.rtp expected 96, got ${p.declared.rtp}`);

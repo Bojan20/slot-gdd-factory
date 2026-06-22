@@ -29,6 +29,7 @@ import { dirname, resolve, join } from 'node:path';
 import {
   buyFeatureRtp, buyFeatureUkgcRts13cPass, buyFeatureMgaPass, getEngineKind, loadWasm,
 } from '../src/blocks/mathEngine.mjs';
+import { MATH_PRECISION_BAND_PP, MATH_PRECISION_BAND_FRAC } from '../src/registry/mathPrecision.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -45,7 +46,8 @@ const argVal = (flag) => {
 };
 const SLUG = argVal('--slug') || 'cash-eruption-foundry-gdd';
 const COST_OVERRIDE = argVal('--cost') ? parseFloat(argVal('--cost')) : null;
-const UKGC_TOLERANCE_PP = parseFloat(argVal('--tolerance') || '2.0');
+/* Boki direktiva 2026-06-22: precision band ±0.05 pp (rule_math_precision_005). */
+const UKGC_TOLERANCE_PP = parseFloat(argVal('--tolerance') || String(MATH_PRECISION_BAND_PP));
 const MGA_CEILING = parseFloat(argVal('--ceiling') || '0.98');
 
 const MODEL = join(REPO, `dist/real-games/${SLUG}/model.json`);
@@ -123,10 +125,9 @@ const mgaPass  = await buyFeatureMgaPass(bonusAvgPay, buyCost, MGA_CEILING);
 /* Variant RTP ≤ 100% sanity (player-positive game je impossible). */
 const sanityOk = variantRtp <= 1.0;
 
-/* Industry recommendation: variant RTP should NOT exceed base game RTP
- * by more than 2 pp (sustains house edge across feature buys). */
+/* Boki direktiva 2026-06-22: house edge precision band ±0.05% = 0.0005 fraction. */
 const houseEdgeDiff = variantRtp - baseGameRtp;
-const houseEdgeOk   = Math.abs(houseEdgeDiff) <= 0.02;
+const houseEdgeOk   = Math.abs(houseEdgeDiff) <= MATH_PRECISION_BAND_FRAC;
 
 const summary = {
   generatedAt: new Date().toISOString(),
@@ -170,7 +171,7 @@ console.log('');
 console.log(`  Sanity (≤ 100%):   ${sanityOk}`);
 console.log(`  UKGC RTS 13C:      ${ukgcPass} (tolerance ${UKGC_TOLERANCE_PP} pp)`);
 console.log(`  MGA RG 2021/02:    ${mgaPass} (ceiling ${(MGA_CEILING * 100).toFixed(0)}%)`);
-console.log(`  House edge sane:   ${houseEdgeOk} (|diff| ≤ 2 pp)`);
+console.log(`  House edge sane:   ${houseEdgeOk} (|diff| ≤ ${MATH_PRECISION_BAND_PP} pp)`);
 console.log('');
 console.log(`  Verdict:           ${summary.verdict}`);
 console.log(`  Report:            ${out}`);

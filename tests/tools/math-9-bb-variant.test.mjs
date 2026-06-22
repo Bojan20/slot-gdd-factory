@@ -40,6 +40,9 @@ try {
     `engineKind expected wasm|js-fallback, got ${s.engineKind}`);
   assert(s.inputs.buyCost === 100, `default buyCost expected 100, got ${s.inputs.buyCost}`);
   assert(s.inputs.bonusAvgPay === 96, `bonusAvgPay expected 96, got ${s.inputs.bonusAvgPay}`);
+  /* Boki direktiva 2026-06-22: default tolerance moved to ±0.05 pp (rule_math_precision_005). */
+  assert(s.inputs.ukgcTolerancePp === 0.05,
+    `default UKGC tolerance expected 0.05 pp (Boki precision band), got ${s.inputs.ukgcTolerancePp}`);
 
   /* (2) Variant RTP = baseGameRtp */
   assert(s.results.variantRtpPct === 96, `variantRtpPct expected 96, got ${s.results.variantRtpPct}`);

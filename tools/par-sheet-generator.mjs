@@ -33,6 +33,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
+import { MATH_PRECISION_BAND_PCT, MATH_PRECISION_BAND_LABEL } from '../src/registry/mathPrecision.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -141,9 +142,9 @@ const par = {
       probe: existsSync(PROBE),
       vol:   existsSync(VOL),
     },
-    rtpAcceptanceBand: '±2% per MATH-CORE acceptance criteria',
-    volAcceptanceBand: '±1 idx per MATH-CORE acceptance criteria',
-    rtpPasses: probe ? Math.abs(probe.rtpDelta || 0) <= 2 : null,
+    rtpAcceptanceBand: `${MATH_PRECISION_BAND_LABEL} per Boki direktiva 2026-06-22 (rule_math_precision_005)`,
+    volAcceptanceBand: '±1 idx per MATH-CORE acceptance criteria (vol idx is discrete bucket, ±0.05% not meaningful)',
+    rtpPasses: probe ? Math.abs(probe.rtpDelta || 0) <= MATH_PRECISION_BAND_PCT : null,
     volPasses: vol   ? Math.abs(vol.idxDelta || 0)  <= 1 : null,
   },
 };
