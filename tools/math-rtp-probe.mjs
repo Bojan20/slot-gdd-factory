@@ -37,6 +37,7 @@ import { MATH_PRECISION_BAND_PCT, MATH_PRECISION_BAND_LABEL } from '../src/regis
 import { evalPatternWin } from '../src/blocks/featureSimPlugins/patternWin.mjs';
 import { applyWildExpansion } from '../src/blocks/featureSimPlugins/wildExpansion.mjs';
 import { evalVolcanoScatter } from '../src/blocks/featureSimPlugins/volcanoScatter.mjs';
+import { evalHoldAndWinFireball } from '../src/blocks/featureSimPlugins/holdAndWinFireball.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -301,6 +302,16 @@ function spin(rng) {
   const patternResult = evalPatternWin(grid, model);
   if (patternResult.patternHit) {
     totalWin += patternResult.patternPayXBet;
+    hits++;
+  }
+
+  /* OPCIJA A · A-4 — Hold & Win Fireball collect plugin.
+   * 6+ Fireball symbols → respin collect feature. Contribution FROM BASE
+   * = 40.91% RTP per GDD §4.2. Heuristic tier sampling against industry-
+   * typical distribution (collect outcomes weighted by frequency × value). */
+  const hnwResult = evalHoldAndWinFireball(grid, model, rng);
+  if (hnwResult.triggered) {
+    totalWin += hnwResult.collectPay;
     hits++;
   }
 
