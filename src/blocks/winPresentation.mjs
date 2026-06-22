@@ -766,8 +766,14 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
        Ask tumble for a 0-events tick so listeners (orb accumulate, persistent
        mult escalate-on-loss) react identically to a real lossy spin. tumble
        always exists — even disabled (single-spin slots) its stub emits the
-       onTumbleStep event. */
-    if (Math.random() < ${c.noWinChance}) {
+       onTumbleStep event.
+       UQ-MULTIPLIER-V3 (Boki 2026-06-22): kad force chip postavi
+       __FORCE_BASELINE_WIN__, BYPASS noWinChance dice — Boki force klik MORA
+       da uvek produkuje vidljiv win pa primeni multiplier. Bez ovog gate-a,
+       30% force-klika je padalo na noWinChance return [] pre nego što stigne
+       baseline injection. */
+    if (Math.random() < ${c.noWinChance}
+        && !(typeof window !== 'undefined' && window.__FORCE_BASELINE_WIN__ === true)) {
       if (typeof runTumbleChain === 'function') {
         await runTumbleChain(() => [], { duringFs });
       }
