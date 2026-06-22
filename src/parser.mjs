@@ -785,22 +785,34 @@ export function parseMarkdownGDD(text) {
   });
 
   /* MATH-DEEP D-15 (2026-06-22) — Big Fireball cash pool range.
-   * Cash Eruption §10.1 / §11.6: "Big Fireball 2×2 oversized coin; pool up to
-   * 2000 credits" / "pool 100-2000 credits". */
+   * Cash Eruption §10.1 / §11.6 prose: "Big Fireball values (pool: 100–2,000
+   * credits)" / "pool 100-2000 credits" / "pool up to 2000 credits".
+   * Two-pass: PREFER min-max range first (e.g. "100–2,000"), fall back to
+   * single max ("up to 2000"). Commas inside thousands are stripped. */
   _safeExtract('header.big-fireball-pool', () => {
-    const m = text.match(/Big\s+Fireball[^.]{0,80}?(?:pool|values?)\s*(?:up\s+to|range|\d{1,5}\s*[-–]\s*)?\s*(\d{1,5})\s*[-–]?\s*(\d{1,5})?\s*credits?/i);
-    if (m) {
-      const a = parseInt(m[1], 10);
-      const b = m[2] ? parseInt(m[2], 10) : null;
+    /* Range form: "100–2,000" / "100-2000" / "100 to 2000". Allow commas. */
+    const reRange = /Big\s+Fireball[^.]{0,140}?pool[^.\d]{0,40}?(\d{1,5}(?:,\d{3})*)\s*(?:[-–—]|to)\s*(\d{1,5}(?:,\d{3})*)\s*credits?/i;
+    const r = text.match(reRange);
+    if (r) {
+      const a = parseInt(r[1].replace(/,/g, ''), 10);
+      const b = parseInt(r[2].replace(/,/g, ''), 10);
+      if (Number.isFinite(a) && a > 0 && Number.isFinite(b) && b > a) {
+        if (!model.holdAndWin) model.holdAndWin = {};
+        if (!model.holdAndWin.cashPool) model.holdAndWin.cashPool = {};
+        model.holdAndWin.cashPool.min = a;
+        model.holdAndWin.cashPool.max = b;
+        return;
+      }
+    }
+    /* Single-value fallback (kept for GDDs that only state max). */
+    const reSingle = /Big\s+Fireball[^.]{0,120}?(?:pool|values?)\s*(?:up\s+to|max(?:imum)?)?\s*(\d{1,5}(?:,\d{3})*)\s*credits?/i;
+    const s = text.match(reSingle);
+    if (s) {
+      const a = parseInt(s[1].replace(/,/g, ''), 10);
       if (Number.isFinite(a) && a > 0) {
         if (!model.holdAndWin) model.holdAndWin = {};
         if (!model.holdAndWin.cashPool) model.holdAndWin.cashPool = {};
-        if (b != null && Number.isFinite(b) && b > a) {
-          model.holdAndWin.cashPool.min = a;
-          model.holdAndWin.cashPool.max = b;
-        } else {
-          model.holdAndWin.cashPool.max = a;
-        }
+        model.holdAndWin.cashPool.max = a;
       }
     }
   });
@@ -1794,11 +1806,16 @@ export function extractFreeSpinsConfig(text, model) {
         }
       }
     }
-    /* Hard cap on total FS played (§8.2 "Hard cap (total played) 15"). */
+    /* Hard cap on total FS played (§8.2 "Hard cap (total played) 15").
+     * STRICT context match: only fire when "Hard cap" or "total played"
+     * appear AS the cap qualifier. The naive "max N spins" pattern was
+     * matching "Autoplay Max 100 spins (UK)" in huff-n-more-puff GDD —
+     * false positive that polluted FS retrigger hardCap with autoplay
+     * jurisdiction limits. Dropped. */
     if (fs.retrigger && fs.retrigger.enabled) {
       const hardCapM = text.match(/Hard\s+cap\s*(?:\([^)]*\))?\s*[:|]?\s*(\d{1,3})/i)
-                    || text.match(/\bmax(?:imum)?\s+(\d{1,3})\s*(?:spins?|FS|total\s+played)/i)
-                    || text.match(/clamp(?:ed)?\s+to\s+(\d{1,3})\s*(?:total|spins?)/i);
+                    || text.match(/\b(?:max(?:imum)?|cap(?:ped)?)\s+(?:total|FS|free[\s-]?spins?)\s+played\s*[:|]?\s*(\d{1,3})/i)
+                    || text.match(/clamp(?:ed)?\s+to\s+(\d{1,3})\s+(?:total\s+(?:FS|spins?)|free[\s-]?spins?)/i);
       if (hardCapM) {
         const cap = parseInt(hardCapM[1], 10);
         if (Number.isFinite(cap) && cap >= 5 && cap <= 500) {
