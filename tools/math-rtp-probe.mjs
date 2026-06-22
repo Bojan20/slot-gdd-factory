@@ -36,6 +36,7 @@ import { dirname, resolve, join } from 'node:path';
 import { MATH_PRECISION_BAND_PCT, MATH_PRECISION_BAND_LABEL } from '../src/registry/mathPrecision.mjs';
 import { evalPatternWin } from '../src/blocks/featureSimPlugins/patternWin.mjs';
 import { applyWildExpansion } from '../src/blocks/featureSimPlugins/wildExpansion.mjs';
+import { evalVolcanoScatter } from '../src/blocks/featureSimPlugins/volcanoScatter.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -284,15 +285,15 @@ function spin(rng) {
       }
     }
   }
-  /* Scatter pay: count scatters across whole grid. */
-  let scatterCount = 0;
-  for (const col of grid) for (const c of col) if (c.scatter) scatterCount++;
-  if (scatterCount >= 3) {
-    /* Industry default: 3=2×, 4=15×, 5=100× total bet. */
-    const scatterMap = { 3: 2, 4: 15, 5: 100 };
-    totalWin += (scatterMap[Math.min(5, scatterCount)] || 0);
+  /* OPCIJA A · A-3 — Volcano scatter plugin (GDD §6.3 pay table).
+   * Pays once per spin on best count, position-independent, × total bet.
+   * Plus tracks FS trigger eligibility za A-5 FS round simulation. */
+  const scatterResult = evalVolcanoScatter(grid, model);
+  if (scatterResult.scatterPay > 0) {
+    totalWin += scatterResult.scatterPay;
     hits++;
   }
+  /* FS triggered flag returned via spin() output for parent loop. */
   /* OPCIJA A · A-1 — Pattern Win plugin.
    * GDD §5.2 supersedes constituent Red7/Wild line wins; we add 1000× total
    * bet WITHOUT replacing line wins (probe simplification — real engine would
@@ -302,6 +303,7 @@ function spin(rng) {
     totalWin += patternResult.patternPayXBet;
     hits++;
   }
+
   /* MATH-4 — runtime win cap enforcement. winCap.mode='spin' (default)
    * clamps single-spin total at model.winCap.maxWinX × BET. Cumulative
    * across cascades / FS rounds is handled by src/blocks/winCap.mjs in
@@ -311,7 +313,11 @@ function spin(rng) {
     const cap = maxWinX * BET;
     if (totalWin > cap) totalWin = cap;
   }
-  return { totalWin, hits };
+  return {
+    totalWin, hits,
+    fsTriggered: scatterResult.fsTriggered,
+    scatterCount: scatterResult.scatterCount,
+  };
 }
 
 /* ── Run probe ──────────────────────────────────────────────────── */

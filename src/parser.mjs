@@ -1380,6 +1380,30 @@ export function extractFreeSpinsConfig(text, model) {
     fs.triggerCounts = fs.awards.map(r => r.count);
   }
 
+  /* MATH-DEEP D-5 (2026-06-22) — FIXED-spin override (all triggers same spins).
+   * Cash Eruption §8.1 declares "Initial spins 6" + "Retrigger +3" — meaning
+   * every trigger count (3+/4+/5+ Volcano) awards 6 spins, not a 10/15/20
+   * ladder. Pattern: "Initial spins N" or "fixed at N spins" or "all award
+   * N spins" → replace ladder with [{count: x, spins: N} for all triggerCounts].
+   * Hard-pin only when explicit "Initial" / "fixed" / "all award" phrasing
+   * found; otherwise keep ladder. */
+  /* Tighter regex — require "spins" / "FS" / "regardless of scatter" context
+   * so we don't accidentally grab "fixed at 20 coins" (bet model line). */
+  const fixedSpinsM = text.match(/\bInitial\s+spins?\s*[:|]?\s*(\d{1,3})\b/i) ||
+                      text.match(/\bfixed\s+at\s+(\d{1,3})\s+(?:regardless\s+of\s+scatter|spins?|FS)\b/i) ||
+                      text.match(/\ball\s+award\s+(\d{1,3})\)?\s*(?:spins?|FS|regardless)?/i) ||
+                      text.match(/\bNagrada\s*[:|]?\s*\*?\*?(\d{1,3})\s*Free\s*Spins?/i);
+  if (fixedSpinsM) {
+    const fixedSpins = parseInt(fixedSpinsM[1], 10);
+    if (Number.isFinite(fixedSpins) && fixedSpins >= 1 && fixedSpins <= 200) {
+      /* Ensure triggerCounts exist; default to [3,4,5] if none parsed. */
+      const counts = Array.isArray(fs.triggerCounts) && fs.triggerCounts.length > 0
+        ? fs.triggerCounts : [3, 4, 5];
+      fs.awards = counts.map(c => ({ count: c, spins: fixedSpins }));
+      fs.triggerCounts = counts;
+    }
+  }
+
   /* Trigger threshold — "N+ Scatters" / "N or more". If the text says "3+",
      align triggerCounts to start at 3. */
   const thresh = text.match(/\b(\d)\s*\+?\s*(?:scatters?|bonus|S\s+symbols?)\s+(?:anywhere|trigger|on\s+(?:screen|reels))/i);
@@ -1395,8 +1419,22 @@ export function extractFreeSpinsConfig(text, model) {
    * 2026-06-18 — Boki HNP audit: srpski "Akumulirajuća mehanika — multiplier
    * raste tokom bonusa i primenjuje se na naredne dobitke" nije bio uhvaćen
    * pre-fix-a (parser je fallbackovao na static start=1). Dodajemo srpske
-   * sinonime (akumulirajuć[ai], kumulativ, rast[ai]) + "ladder" pattern. */
-  const isProgressive = /\bprogressive\s+multiplier|\bmultiplier\s+(?:starts?|increments?|grows?)\b|\bincrements?\s+by\s+[×x]?\d+|\bakumulira(?:juć[ai]|jući|na|jucа|n)?\s+(?:multiplier|mehanika)|\bmultiplier\s+(?:raste|akumulira|kumulira|gradi)|\bkumulativ(?:ni|an|na|no)\s+multiplier|\brastuć[ai]\s+multiplier|\bmultiplier\s+ladder\b/i.test(text);
+   * sinonime (akumulirajuć[ai], kumulativ, rast[ai]) + "ladder" pattern.
+   *
+   * MATH-DEEP D-6 (2026-06-22) — Cash Eruption GDD §4.8 explicitly declares
+   * "FS multiplier = NONE" (premium-heavy strips + linked center reels give
+   * the FS RTP boost, not a per-spin multiplier). pdfToMarkdown synthetic
+   * template was injecting "Akumulirajuća mehanika" markdown block into the
+   * gdd.md head, which then triggered the isProgressive regex. Now: detect
+   * explicit no-multiplier statements ("FS multiplier = NONE", "no
+   * multiplier", "without multiplier", "no FS multiplier") and gate the
+   * progressive emit on absence of negative signal. */
+  /* MATH-DEEP D-6: detect explicit no-multiplier statements + structural
+   * "premium-heavy strips" signal (industry convention for "FS payout boost
+   * comes from richer reel strips, NOT a per-spin multiplier" — Cash Eruption
+   * §4.8 + §4.9). */
+  const noMultSignal = /\b(?:fs\s+multiplier\s*[=:]\s*none|no\s+(?:fs\s+|free[\s-]?spins?\s+)?multiplier|without\s+(?:fs\s+|free[\s-]?spins?\s+)?multiplier|multiplier\s*[=:]\s*none|multiplier\s+(?:is\s+)?absent|premium[-\s]?heavy\s+strips?\s+(?:replace|instead\s+of)\s+(?:fs\s+)?multiplier|premium[-\s]?heavy[^.]{0,30}linked\s+center\s+reels|fs\s+bank.{0,30}premium)/i.test(text);
+  const isProgressive = !noMultSignal && (/\bprogressive\s+multiplier|\bmultiplier\s+(?:starts?|increments?|grows?)\b|\bincrements?\s+by\s+[×x]?\d+|\bakumulira(?:juć[ai]|jući|na|jucа|n)?\s+(?:multiplier|mehanika)|\bmultiplier\s+(?:raste|akumulira|kumulira|gradi)|\bkumulativ(?:ni|an|na|no)\s+multiplier|\brastuć[ai]\s+multiplier|\bmultiplier\s+ladder\b/i.test(text));
   if (isProgressive) {
     const startMatch = text.match(/starts?\s+at\s+[×x]?\s*(\d+)/i);
     const stepMatch  = text.match(/increments?\s+by\s+[×x]?\s*(\d+)/i);
