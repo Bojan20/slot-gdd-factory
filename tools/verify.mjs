@@ -595,6 +595,18 @@ if (existsSync(xgameTest)) {
     'node', [xgameTest]);
 }
 
+/* ── Step 4.97x: FUTURE-GDD onboarding contract test
+ * Boki direktiva (2026-06-22): "uveri se da ce bilo koji buduci gdd i math
+ * par sheet raditi savrseno". This is the production readiness gate —
+ * verifies the pipeline gracefully handles novel topologies, vendor PAR
+ * sheets with non-standard headers, unknown jurisdictions, empty/adversarial
+ * models, AND random non-baseline GDDs from the 338-game corpus. */
+const onboardingTest = resolve(REPO, 'tests/contracts/any-gdd-onboarding.test.mjs');
+if (existsSync(onboardingTest)) {
+  run('FUTURE-GDD onboarding contract (any GDD + any PAR sheet)',
+    'node', [onboardingTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
