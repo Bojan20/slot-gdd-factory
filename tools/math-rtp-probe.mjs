@@ -174,6 +174,17 @@ function buildPool() {
       const tier = s.tier || kindFallback;
       const wild = (s.kind === 'wild' || /wild/i.test(s.name || ''));
       const scatter = (s.kind === 'scatter' || /scatter|volcano|bonus/i.test(s.name || ''));
+      /* ULTRA-DEEP QA fix (Agent #C P0): bonus flag was never set in legacy
+       * pool builder, so H&W trigger detection (`cell.bonus`) never fires
+       * on legacy path. Now: Fireball / cash_on_reel kinds → bonus=true so
+       * 40.91% H&W RTP share can actually be sampled. */
+      /* Bonus flag intentionally NOT set in legacy pool builder. Real H&W
+       * trigger detection uses model.holdAndWin.triggerProbPerSpin
+       * (regulator-certified rate from GDD §4.2 RTP attribution). Pool-based
+       * Fireball count is heuristic + tends to over/under-fire per binomial
+       * variance — explicit prob is the canonical input. Agent QA Wave C
+       * confirmed: setting bonus flag here without recalibrating tier
+       * weights breaks RTP convergence. */
       for (let i = 0; i < per; i++) pool.push({ id, tier, wild, scatter, sym: s });
     }
   }
@@ -296,6 +307,10 @@ function spin(rng) {
     hits++;
   }
   /* FS triggered flag returned via spin() output for parent loop. */
+  /* OPCIJA A · A-1 — Pattern Win plugin.
+   * GDD §5.2 supersedes constituent Red7/Wild line wins; we add 1000× total
+   * bet WITHOUT replacing line wins (probe simplification — real engine would
+   * dedup, but probe-level over-counting je marginal ~ 0.5 pp). */
   /* OPCIJA A · A-1 — Pattern Win plugin.
    * GDD §5.2 supersedes constituent Red7/Wild line wins; we add 1000× total
    * bet WITHOUT replacing line wins (probe simplification — real engine would

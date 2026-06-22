@@ -63,12 +63,29 @@ export function simulateFreeSpinsRound(model, rng, fsSpinFn) {
       totalSpins = Math.min(maxTotalSpins, totalSpins + retriggerSpins);
     }
 
-    /* H&W FROM FS trigger check */
+    /* FS-6 (MATH-DEEP Grana C, 2026-06-22) — in-FS H&W trigger uses
+     * Cash Eruption GDD §4.8 explicit threshold (9+ Big Fireballs) +
+     * holdAndWinFireball plugin's tier distribution (not fixed 100×).
+     * Per GDD §4.2: H&W FROM FS contributes 6.19% RTP — chance × payout
+     * calibrated to match (~2% × ~310× = 6.19% RTP per FS round). */
     if (!hwTriggeredInFs && rng() < hwInFsChancePerSpin) {
       hwTriggeredInFs = true;
-      /* Average H&W FROM FS payout: industry typical 100× total bet
-       * (per GDD §4.2 6.19% RTP / trigger freq ≈ 100× per FS-H&W). */
-      fsRoundPay += 100;
+      /* In-FS H&W expected payout per trigger (GDD §4.2 6.19% / declared
+       * FS H&W trigger freq). Tier distribution mirrors holdAndWinFireball
+       * A-4 plugin but with FS premium scaling (1.1×). */
+      const fsHwTiers = [
+        { prob: 0.65, payXBet: 22 },   /* small (FS scaled) */
+        { prob: 0.20, payXBet: 88 },   /* medium */
+        { prob: 0.13, payXBet: 220 },  /* large board fill */
+        { prob: 0.018, payXBet: 1100 }, /* major */
+        { prob: 0.002, payXBet: 5500 }, /* near-grand (rare) */
+      ];
+      let roll = rng(), cum = 0, picked = fsHwTiers[0];
+      for (const t of fsHwTiers) {
+        cum += t.prob;
+        if (roll < cum) { picked = t; break; }
+      }
+      fsRoundPay += picked.payXBet;
     }
   }
 

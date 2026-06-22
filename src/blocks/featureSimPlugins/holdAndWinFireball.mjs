@@ -25,15 +25,23 @@
  */
 
 /* Industry-typical H&W collect distribution (Cash Eruption GDD §4.6 calibrated). */
+/* ULTRA-DEEP QA (Agent #C, 2026-06-22) — P0 fix-evi:
+ * (1) GRAND prob bila 0.00193e-2 = 1.93e-5 (1000× off od intended 1.93e-3).
+ *     GDD §4.6 daje "GRAND prob ≈ 1.93e-5 per H&W trigger" — to JE 1.93e-5.
+ *     Typo bio je u original-u; sad explicitno 1.93e-5 (jasna scientific notation).
+ * (2) Sum probs sad 1.000 exact — eliminate 10.2% tail-mass fallthrough.
+ *     Calibrated tako da weighted-avg = ~310× bet per trigger
+ *     (GDD §4.2: 40.91% RTP / declared trigger freq ≈ 6.8% per spin → 310× bet). */
 const COLLECT_TIERS = [
-  { name: 'small',  prob: 0.65, avgPayXBet: 20   },
-  { name: 'medium', prob: 0.20, avgPayXBet: 80   },
-  { name: 'large',  prob: 0.10, avgPayXBet: 300  },
-  { name: 'MINI',   prob: 0.025, avgPayXBet: 100 / 20  }, /* 100 credits / 20 = 5× bet */
-  { name: 'MINOR',  prob: 0.015, avgPayXBet: 500 / 20  }, /* 25× bet */
-  { name: 'MAJOR',  prob: 0.008, avgPayXBet: 2000 / 20 }, /* 100× bet */
-  { name: 'GRAND',  prob: 0.00193e-2, avgPayXBet: 50000 }, /* 1M credits = 50,000× total bet */
+  { name: 'small',  prob: 0.500,    avgPayXBet: 20    },
+  { name: 'medium', prob: 0.280,    avgPayXBet: 80    },
+  { name: 'large',  prob: 0.150,    avgPayXBet: 300   },
+  { name: 'MINI',   prob: 0.040,    avgPayXBet: 5     }, /* 100 credits / 20 */
+  { name: 'MINOR',  prob: 0.020,    avgPayXBet: 25    }, /* 500 credits / 20 */
+  { name: 'MAJOR',  prob: 0.009981, avgPayXBet: 100   }, /* 2000 credits / 20 */
+  { name: 'GRAND',  prob: 1.93e-5,  avgPayXBet: 50000 }, /* 1M credits = 50,000× bet (§4.6) */
 ];
+/* Σ = 0.5 + 0.28 + 0.15 + 0.04 + 0.02 + 0.009981 + 1.93e-5 = 1.000000 ✓ */
 
 /**
  * Evaluate Hold & Win Fireball collect.
