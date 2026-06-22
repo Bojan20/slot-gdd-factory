@@ -354,12 +354,17 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
       /* Sync keyframe length with the hold window so the pulse doesn't
          finish ~300 ms before cleanup on a big-win celebration. */
       grid.style.setProperty('--winsym-pulse-ms', hold + 'ms');
-      /* Highlight every distinct winning cell at once. */
+      /* Highlight every distinct winning cell at once. UQ-MULTIPLIER-V11 —
+         resolve cluster {r,c,idx} metadata to DOM via __resolveCellElement. */
+      const __resDomSC = (typeof window !== 'undefined' && typeof window.__resolveCellElement === 'function')
+        ? window.__resolveCellElement : null;
       const cellSet = new Set();
       for (const ev of events) {
         const cells = Array.isArray(ev && ev.cells) ? ev.cells : [];
         for (const c of cells) {
-          if (c && c.classList) cellSet.add(c);
+          let el = c;
+          if (el && typeof el.classList === 'undefined' && __resDomSC) el = __resDomSC(c);
+          if (el && el.classList) cellSet.add(el);
         }
       }
       for (const c of cellSet) c.classList.add('cell--winsym');
@@ -416,7 +421,20 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
          while non-win cells dim. Win line is drawn instantly with no flash. */
       const ev0 = events[0];
       const cells0 = Array.isArray(ev0 && ev0.cells) ? ev0.cells : [];
-      for (const c of cells0) { if (c && c.classList) c.classList.add('cell--winsym'); }
+      /* UQ-MULTIPLIER-V11 (2026-06-22) — cluster pays / ways / pay_anywhere
+         detectors emit cells as {r, c, idx} metadata, not DOM elements.
+         window.__resolveCellElement (canonical resolver wired by reelEngine)
+         maps metadata → DOM. Without resolution, classList.add was a no-op
+         in cluster mode → "cells nestaju" / no highlight. Resolve every
+         cell before applying the visual class. paylineOverlay already
+         uses this resolver internally so polyline is unaffected. */
+      const __resolveDom = (typeof window !== 'undefined' && typeof window.__resolveCellElement === 'function')
+        ? window.__resolveCellElement : null;
+      for (const c of cells0) {
+        let el = c;
+        if (el && typeof el.classList === 'undefined' && __resolveDom) el = __resolveDom(c);
+        if (el && el.classList) el.classList.add('cell--winsym');
+      }
       if (typeof ev0.lineIndex === 'number') {
         drawPaylineOverlay(ev0);
       } else if (cells0.length >= 2) {
@@ -458,9 +476,16 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
         const ev = events[i];
         /* Wave T4 hardening — detectors can race tumble/reroll and emit events
            with stale (null/undefined) cell refs after gravity pass shifted
-           symbols. Defensive filter prevents TypeError on classList.add. */
+           symbols. Defensive filter prevents TypeError on classList.add.
+           UQ-MULTIPLIER-V11 — resolve {r,c,idx} metadata to DOM (cluster mode). */
         const cells = Array.isArray(ev && ev.cells) ? ev.cells : [];
-        for (const c of cells) { if (c && c.classList) c.classList.add('cell--winsym'); }
+        const __resDom = (typeof window !== 'undefined' && typeof window.__resolveCellElement === 'function')
+          ? window.__resolveCellElement : null;
+        for (const c of cells) {
+          let el = c;
+          if (el && typeof el.classList === 'undefined' && __resDom) el = __resDom(c);
+          if (el && el.classList) el.classList.add('cell--winsym');
+        }
         /* 2026-06-18 — Boki rule (HNP backlog "Ne prikazuju mi se win
          * linije"): every win event MUST draw a visual line through its
          * matched cells. Line-pays events carry lineIndex and get the
@@ -755,6 +780,34 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
           for (var i = 0; i < nFb; i++) {
             if (nodes[i] && nodes[i].classList && picked.indexOf(nodes[i]) === -1) picked.push(nodes[i]);
           }
+        }
+      }
+      /* UQ-MULTIPLIER-V11 (2026-06-22) — Boki bug "na nekim igrama nestaju
+         celije": cluster pays / mega-cluster / megaways igre nemaju RECT_REELS
+         u rectangular formi i nemaju [data-row="1"] attr ni klasične .cell
+         classes — koriste SVG rect ili druge custom renderere (text nodes,
+         text.cell pattern). Posle 338-GDD cross-corpus probe, 5 igara je
+         padalo zbog ovog gap-a. Ultimate fallback C: uzmi BILO koji
+         .cell ili text.cell ili text[data-cell] node u document-u (ne samo
+         pod #gridHost — neki renderers stavljaju ćelije pod .reelsHost,
+         .svgGrid, .clusterHost). Garantuje da forcedBaseline UVEK ima ≥ 2
+         cells preko bilo kog grid renderera. */
+      if (picked.length < 2) {
+        var anyNodes = (typeof document !== 'undefined' && document.querySelectorAll)
+          ? document.querySelectorAll('.cell, text.cell, [data-cell], .cell-cluster, .clusterCell, .megaCell')
+          : [];
+        var maxPick = Math.min(5, anyNodes.length);
+        for (var ai = 0; ai < anyNodes.length && picked.length < maxPick; ai++) {
+          var n = anyNodes[ai];
+          if (!n || !n.classList) continue;
+          if (picked.indexOf(n) !== -1) continue;
+          /* Skip buffer cells (clipped strip cells above/below visible row).
+             Visible cell heuristic: bounding rect width >= 40 px. */
+          if (typeof n.getBoundingClientRect === 'function') {
+            var rect = n.getBoundingClientRect();
+            if (rect && (rect.width < 40 || rect.height < 40)) continue;
+          }
+          picked.push(n);
         }
       }
     } catch (_) { /* defensive — fallback to [] degrades to no-visual but still pays */ }

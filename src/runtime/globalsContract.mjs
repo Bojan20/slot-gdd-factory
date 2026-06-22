@@ -136,6 +136,19 @@ export function emitGlobalsContractRuntime() {
         var el = document.querySelector(sel);
         if (el) return el;
       }
+      /* UQ-MULTIPLIER-V11 (2026-06-22) — fallback for cluster/megacluster
+         renderers that don't tag cells with data-reel/data-row (e.g.
+         rainbow-riches cluster). Use linear idx if present to walk flat
+         .cell list under #gridHost. Resolves cluster {r,c,idx} → DOM
+         template-wide so winPresentation can apply cell--winsym class. */
+      if (typeof document !== 'undefined' && typeof cellRef.idx === 'number' && Number.isFinite(cellRef.idx)) {
+        var host = document.getElementById('gridHost') || document.querySelector('.gridHost');
+        if (host) {
+          var allCells = host.querySelectorAll('.cell, text.cell, [data-cell]');
+          var byIdx = allCells[cellRef.idx];
+          if (byIdx && typeof byIdx.getBoundingClientRect === 'function') return byIdx;
+        }
+      }
       return null;
     };
   }
