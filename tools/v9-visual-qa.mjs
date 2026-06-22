@@ -191,13 +191,72 @@ function verdictFromChecks(checks, score) {
 /* ── Vision mode (LLM call) ────────────────────────────────────────── */
 
 async function visionMode(slug, model, screenshotPaths) {
-  // Stub: in production this calls cortex-fable-ask with prompt template
-  // from V9 contract + 10 base64-encoded screenshots. Not implemented in
-  // gate-suitable mode (costs $$$, requires LLM availability).
+  /* V9-VISION (MASTER_TODO 2026-06-22) — Opus 4.8 vision call via Fable
+   * wrapper. Sends a concise prompt + (up to) 10 base64 screenshots and
+   * expects a JSON verdict per V9 contract.  Fails CLOSED (returns SKIP)
+   * when the wrapper is missing or non-zero, so the deterministic gate
+   * is never blocked by transient LLM availability. */
+  const { spawnSync } = await import('node:child_process');
+  const { homedir } = await import('node:os');
+  const { existsSync, readFileSync } = await import('node:fs');
+  const wrapper = `${homedir()}/Projects/cortex/scripts/cortex-fable-ask`;
+  if (!existsSync(wrapper)) {
+    return { name: 'vision-mode-llm-call', verdict: 'SKIP',
+             observed: 'Fable wrapper missing' };
+  }
+  const imgs = [];
+  for (const p of (screenshotPaths || []).slice(0, 10)) {
+    if (!existsSync(p)) continue;
+    imgs.push({ path: p, b64: readFileSync(p).toString('base64') });
+  }
+  if (imgs.length === 0) {
+    return { name: 'vision-mode-llm-call', verdict: 'SKIP',
+             observed: 'no screenshots provided (run with --launch first)' };
+  }
+  const prompt = [
+    'You are V9_VISUAL_QA per agents/V9_VISUAL_QA.md. Compare the rendered',
+    'slot screenshots against the GDD model summary below and return JSON',
+    'matching the V9 output contract.',
+    '',
+    'GDD model excerpts:',
+    `  title: ${model.name || 'unknown'}`,
+    `  topology: ${model.topology?.kind} (${model.topology?.reels}×${model.topology?.rows} ${model.topology?.evaluation})`,
+    `  theme: ${model.theme?.name || ''} palette: ${(model.theme?.palette || []).slice(0, 4).join(', ')}`,
+    `  declared features: ${(model.features || []).map(f => f.kind || f).join(', ')}`,
+    `  jurisdictions: ${(model.compliance || []).map(j => typeof j === 'string' ? j : j.code).join(', ')}`,
+    '',
+    'Output STRICT JSON only: { "verdict": "PASS"|"WARN"|"FAIL", "score": 0..10,',
+    '"checks": [{ "name": "...", "verdict": "PASS"|"FAIL", "evidence": "img-name" }] }',
+    'No prose. Industry-neutral language only (no vendor names).',
+  ].join('\n');
+  /* Fable wrapper accepts prompt on stdin; image attachments via flag.
+   * We pass --image one-per-image (the wrapper handles encoding). If the
+   * wrapper API changes, this call is intentionally narrow so the swap is
+   * one place. */
+  const argv = ['--mode', 'opus-4.8', '--max-tokens', '900'];
+  for (const img of imgs) argv.push('--image', img.path);
+  const r = spawnSync(wrapper, argv, {
+    input: prompt, encoding: 'utf-8', timeout: 60000,
+  });
+  if (r.status !== 0) {
+    return { name: 'vision-mode-llm-call', verdict: 'SKIP',
+             observed: `wrapper exit ${r.status}: ${(r.stderr || '').slice(-200)}` };
+  }
+  let parsed = null;
+  try {
+    /* Trim any markdown code fences the wrapper may add. */
+    const txt = (r.stdout || '').replace(/^```(?:json)?\s*|\s*```$/g, '').trim();
+    parsed = JSON.parse(txt);
+  } catch (e) {
+    return { name: 'vision-mode-llm-call', verdict: 'WARN',
+             observed: `non-JSON reply: ${(r.stdout || '').slice(0, 200)}` };
+  }
   return {
     name: 'vision-mode-llm-call',
-    verdict: 'SKIP',
-    observed: 'vision mode requires --vision flag + Opus availability',
+    verdict: parsed.verdict || 'WARN',
+    score: parsed.score,
+    checks: parsed.checks || [],
+    observed: `Opus 4.8 verdict ${parsed.verdict} (score ${parsed.score})`,
   };
 }
 
