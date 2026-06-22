@@ -100,6 +100,77 @@ Posle A: re-eval gap; ako ±0.5% ne dosegnemo → B (rule agent) ili C (Rust bri
 
 ---
 
+## 🏆 MATH-DEEP GRANA A — 2026-06-22 · ZATVOREN ✅ (D-4 → D-17, 14/14)
+
+**Commit chain:**
+```
+3a7df3b  fix(D-11/D-13): HIGH-risk audit fixes — bounds + symbol-table row collision
+ca1d909  fix(D-9/D-10/D-15): tighten parser regexes — kill 3 false-positives
+271d411  feat(D-9..D-17): close MATH-DEEP Grana A — Cash Eruption GDD parser parity 14/14
+3c96bb7  feat(MATH-A-6): OPCIJA A self-test + verify gate integration
+0848696  feat(MATH-A-5): FS round simulation + H&W explicit trigger prob
+d7bc871  feat(MATH-A-4): Hold & Win Fireball collect plugin (40.91% RTP gap closer)
+1008d3c  feat(D-7/D-8): bet ladder 21-step (0.20→40.00) + paytable promotion from symbols
+0e17ad9  feat(MATH-A-3): Volcano scatter plugin + parser D-5 FS fixed-spin
+161d389  feat(D-4/D-5/D-6): symbols real names + FS awards [6,6,6] + FS multiplier hallucination guard
+723a85f  feat(MATH-A-2): Wild expansion plugin (Big Wild only_if_winning)
+fdcd9b1  feat(MATH-A-1): Pattern Win plugin — first OPCIJA A feature simulator
+```
+
+### Cash Eruption · 14/14 field parity (declared GDD vs model.json):
+
+```
+┌────────┬───────────────────────────────────────┬────────────────────────────┐
+│ Tag    │ Field                                  │ Value posle (model.json)    │
+├────────┼───────────────────────────────────────┼────────────────────────────┤
+│ D-4    │ symbols.high real names                │ Red7, Blue7, Bell           │
+│ D-5    │ freeSpins.awards fixed [6,6,6]         │ [6,6,6]                     │
+│ D-6    │ freeSpins.multiplier none/no-op         │ {type:static,start:1,...}   │
+│ D-7    │ bet.steps 21-step ladder               │ 0.20→40.00 (21 koraka)      │
+│ D-8    │ paytable promotion from par_sheet      │ 9 rows                      │
+│ D-9    │ retrigger hardCap=15 strikt match      │ {count:3,spins:3,hardCap:15}│
+│ D-10   │ compliance jurisdictions               │ UKGC/MGA/Class III/iGO/ON   │
+│ D-11   │ scatter.payTable                       │ {3:2, 4:15, 5:100}          │
+│ D-12   │ patternWin.awardX                      │ 1000                        │
+│ D-13   │ holdAndWin.fsTriggerCount              │ 9                           │
+│ D-14   │ jackpot GRAND + FS avg + FS cap        │ 1.93e-5 / 6.45 / 15         │
+│ D-15   │ holdAndWin.cashPool                    │ {min:100, max:2000}         │
+│ D-16   │ expandingWild.onlyIfWinning            │ true                        │
+│ D-17   │ payback.rtpBreakdown 4-source          │ 41.90/40.91/7.00/6.19       │
+└────────┴───────────────────────────────────────┴────────────────────────────┘
+```
+
+### Ultra-deep QA (3 paralelnih agenta · 2026-06-22):
+
+```
+┌─────────────────────────┬───────────────────────────────────────────────────┐
+│ Agent                   │ Findings                                            │
+├─────────────────────────┼───────────────────────────────────────────────────┤
+│ #1 Parser audit         │ 11 risks: D-11 + D-13 HIGH (FIXED), 9 MED/LOW       │
+│ #2 Cross-game parity    │ 338/338 walked: 337 templates correctly null-      │
+│                         │ field, 1 Cash Eruption populated, NO ghosts        │
+│ #3 Regression risk      │ Block pipeline LOW risk, winCap correct, V10/V11/  │
+│                         │ V12 gate mapping OK, Cash Eruption sanity PASS     │
+└─────────────────────────┴───────────────────────────────────────────────────┘
+```
+
+### Gate state
+
+```
+verify (33/33 step):   ✅ GREEN
+test parse 338 PDFs:   ✅ 338/338 PASS
+HARD RULE #1 (vendor): ✅ model.json field values vendor-neutral
+HARD RULE #3 (tabela): ✅ ASCII box-drawing
+HARD RULE #4 (audio):  ✅ ne dirano u ovoj grani
+```
+
+### Sledeće
+
+**Grana B (HYBRID, ~12h)** ili **Grana C (FEAT-SIM, ~10h)** — Boki bira.
+9 MED/LOW audit findings su back-pocket — fixevi posle Grane B/C, ne blocking.
+
+---
+
 ## 🚀 MATH-DEEP BACKLOG — 2026-06-22 · OTVOREN
 
 Boki direktiva (2026-06-22): *"upisi u master todo detaljno sta sve treba i kreni
