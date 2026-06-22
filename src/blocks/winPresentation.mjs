@@ -184,12 +184,15 @@ export function emitWinPresentationCSS(cfg = defaultConfig()) {
      and a soft inner rim, with zero overflow. */
   .gridHost.is-winsym-cycling .cell,
   .gridHost.is-winsym-cycling text {
-    /* 2026-06-10 — Boki bug "ćelije nestaju kad se win desi". Prethodni
-       0.30 opacity izgledao kao da ćelije nestaju (premalo vidljivo).
-       Pojačano na 0.55 — još uvek jasno dim-ovano, ali igrač lako čita
-       simbole u dim-ovanim ćelijama. Winning ćelije i dalje na 1.0. */
-    opacity: 0.55;
-    transition: opacity 140ms ease;
+    /* 2026-06-22 (V8) — Boki imperativ: "celije ne smeju da nestaju!
+       odmah ide win linija". Tri prethodna pokušaja (0.30 → 0.55 → 0.55+pulse)
+       svaki su izgledali kao "cells nestaju" iz player perspektive.
+       Konačna odluka: skinemo non-win dim u potpunosti. Win cells i dalje
+       pulse preko cell--winsym (brightness 1.28 + inset gold rim 2px) +
+       polyline na svojoj win-liniji crta odmah → win cells "pop" preko
+       luminance + gold rim a non-win cells stay full opacity. */
+    opacity: 1;
+    transition: none;
   }
   .gridHost.is-winsym-cycling .cell--winsym,
   .gridHost.is-winsym-cycling text.cell--winsym {
