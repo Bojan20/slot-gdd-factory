@@ -60,7 +60,7 @@
  *   anyway), but the validator's own log lines never embed vendor names.
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, renameSync, existsSync, mkdirSync, unlinkSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
@@ -88,7 +88,15 @@ function loadCache() {
 
 function saveCache(cache) {
   if (!existsSync(CACHE_DIR)) mkdirSync(CACHE_DIR, { recursive: true });
-  writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2), 'utf8');
+  /* Atomic write: tmp + rename. */
+  const tmp = CACHE_FILE + '.tmp.' + process.pid;
+  writeFileSync(tmp, JSON.stringify(cache, null, 2), 'utf8');
+  try {
+    renameSync(tmp, CACHE_FILE);
+  } catch (e) {
+    try { unlinkSync(tmp); } catch { /* ignore */ }
+    throw e;
+  }
 }
 
 function getByPath(obj, path) {
@@ -219,10 +227,17 @@ export function validateFieldFaithful(rawGdd, fieldPath, modelValue, opts = {}) 
     duration_ms: resp.duration,
     timestamp: new Date().toISOString(),
   };
-  /* Verify quote actually appears in GDD (LLM-hallucination guard). */
-  if (receipt.faithful && receipt.gdd_quote && !rawGdd.includes(receipt.gdd_quote)) {
-    receipt.faithful = false;
-    receipt.reason = 'gdd_quote not a verbatim substring (LLM hallucination guard)';
+  /* Verify quote actually appears in GDD (LLM-hallucination guard).
+   * Whitespace-normalized comparison: GDD prose often has irregular spacing
+   * (PDF extraction artifacts, tabs vs spaces, single vs double space).
+   * Collapse all whitespace runs to single space before substring check,
+   * matching how a human reader would view the quote regardless of layout. */
+  if (receipt.faithful && receipt.gdd_quote) {
+    const norm = (s) => String(s).replace(/\s+/g, ' ').trim();
+    if (!norm(rawGdd).includes(norm(receipt.gdd_quote))) {
+      receipt.faithful = false;
+      receipt.reason = 'gdd_quote not a verbatim substring even after whitespace normalization (LLM hallucination guard)';
+    }
   }
   cache[cacheKey] = receipt;
   saveCache(cache);

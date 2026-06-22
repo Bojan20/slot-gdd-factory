@@ -77,7 +77,7 @@
  *   per field criticality. Never silently fills with garbage.
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, renameSync, existsSync, mkdirSync, unlinkSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
@@ -104,12 +104,17 @@ function loadCache() {
 
 function saveCache(cache) {
   if (!existsSync(CACHE_DIR)) mkdirSync(CACHE_DIR, { recursive: true });
-  /* Atomic write: write to tmp, fsync, rename. */
-  const tmp = CACHE_FILE + '.tmp';
+  /* Atomic write: write to tmp, then rename onto CACHE_FILE. fs.rename
+   * is atomic on POSIX (no half-written cache on crash / concurrent run). */
+  const tmp = CACHE_FILE + '.tmp.' + process.pid;
   writeFileSync(tmp, JSON.stringify(cache, null, 2), 'utf8');
-  /* fs.rename is atomic on POSIX. */
-  try { writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2), 'utf8'); }
-  finally { try { writeFileSync(tmp, ''); } catch {} }
+  try {
+    renameSync(tmp, CACHE_FILE);
+  } catch (e) {
+    /* Cleanup tmp on rename failure. */
+    try { unlinkSync(tmp); } catch { /* ignore */ }
+    throw e;
+  }
 }
 
 /**

@@ -55,3 +55,11 @@ tools/_wave-v-cache/
 # UQ-14 ingest output — regenerated per run.
 dist/ingest/
 dist/docs/
+
+# MATH-DEEP Grana B (HYB-2 / HYB-3) LLM receipt caches — local-only, regen on call.
+src/cert/llm-receipts.json
+src/cert/llm-cross-check.json
+
+# MATH-DEEP HYB-5 pipeline receipt reports — local audit trail, not committed.
+reports/pipeline-receipts/
+reports/llm-consistency/

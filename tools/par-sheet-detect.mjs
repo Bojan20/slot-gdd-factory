@@ -228,6 +228,13 @@ print(json.dumps(out))
 
 /* ── Dispatch to vendor adapter ────────────────────────────────────────── */
 
+/* Vendor adapter table. Each entry is either an existing tool path or the
+ * sentinel 'inline' (handled directly). Missing adapter files (e.g.
+ * tools/par-sheet-pragmatic.py / tools/par-sheet-lw.py — placeholder
+ * spec, not yet implemented) fall back to the IGT-style generic xlsx
+ * ingester. The fallback emits a 'fallback_to_igt_xlsx' signal in
+ * the dispatch receipt so consumers can see when a vendor-specific
+ * adapter was substituted. */
 const VENDOR_ADAPTERS = {
   igt: {
     xlsx: 'tools/par-sheet-xlsx-ingest.py',
@@ -235,17 +242,22 @@ const VENDOR_ADAPTERS = {
     json: 'inline',
   },
   pragmatic: {
-    xlsx: 'tools/par-sheet-pragmatic.py',
+    /* TODO: tools/par-sheet-pragmatic.py (Spanish Rodillo headers).
+     * Until present, falls back to IGT xlsx ingester (works for any
+     * sufficiently-similar 5-reel layout via column heuristics). */
+    xlsx: 'tools/par-sheet-xlsx-ingest.py',
     csv:  'tools/par-sheet-generic-csv.mjs',
     json: 'inline',
   },
   lw: {
-    xlsx: 'tools/par-sheet-lw.py',
+    /* TODO: tools/par-sheet-lw.py (STRIP_1..5 / Brytt patterns).
+     * Until present, falls back to IGT xlsx ingester. */
+    xlsx: 'tools/par-sheet-xlsx-ingest.py',
     csv:  'tools/par-sheet-generic-csv.mjs',
     json: 'inline',
   },
   spielo: {
-    xlsx: 'tools/par-sheet-generic-csv.mjs',
+    xlsx: 'tools/par-sheet-xlsx-ingest.py',
     csv:  'tools/par-sheet-generic-csv.mjs',
     json: 'inline',
   },

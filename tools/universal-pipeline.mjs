@@ -65,7 +65,7 @@
  *   node tools/universal-pipeline.mjs --slug=<slug> [--par=<path>] [--dry-run-llm]
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, renameSync, existsSync, mkdirSync, unlinkSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -213,12 +213,19 @@ export function runPipeline(slug, opts = {}) {
     ok_overall: parserStage.ok && schemaStage.ok && !crossStage.disagreement_count,
   };
 
-  /* ── Write report. */
+  /* ── Write report (atomic: tmp + rename). */
   if (writeReport) {
     if (!existsSync(REPORT_DIR)) mkdirSync(REPORT_DIR, { recursive: true });
     const ts = new Date().toISOString().replace(/[:.]/g, '-');
     const reportPath = join(REPORT_DIR, `${slug}-${ts}.json`);
-    writeFileSync(reportPath, JSON.stringify(receipt, null, 2), 'utf8');
+    const tmp = reportPath + '.tmp.' + process.pid;
+    writeFileSync(tmp, JSON.stringify(receipt, null, 2), 'utf8');
+    try {
+      renameSync(tmp, reportPath);
+    } catch (e) {
+      try { unlinkSync(tmp); } catch { /* ignore */ }
+      throw e;
+    }
     receipt.report_path = reportPath;
   }
   return receipt;
