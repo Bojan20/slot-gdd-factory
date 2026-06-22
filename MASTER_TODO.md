@@ -1,3 +1,42 @@
+## 🏆 MATH-DEEP BACKLOG — 2026-06-22 · ZATVOREN ✅ (3 grane, 29 stavki)
+
+Sve 3 grane (A D-series + B HYBRID + C FEAT-SIM) ZATVORENE redom kako je Boki tražio.
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│ GRANA A · CASH ERUPTION PARSER PARITY · 14/14 ✅                                     │
+│   D-4..D-17 commits: 161d389 · 1008d3c · 271d411 · 2b1d6fc                           │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│ GRANA B · HYBRID ARHITEKTURA · 5/5 ✅                                                │
+│   HYB-1 Universal Schema · HYB-2 LLM Fallback · HYB-3 Validator                      │
+│   HYB-4 Multi-Vendor PAR · HYB-5 E2E Orchestrator                                    │
+│   commits: dfc525a · 873fdfd · 4f89fa1 · 2da4c32 · c5cbe5c · 6c8c014 · 2a43d84       │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│ GRANA C · FEAT-SIM · 7/7 ✅                                                          │
+│   FS-1 Pattern Win · FS-2 Wild Expansion · FS-3 Volcano scatter                      │
+│   FS-4 H&W Fireball (+ GRAND prob fix) · FS-5 FS round                               │
+│   FS-6 in-FS H&W 5-tier · FS-7 Python kernel bridge (22 sister repo kernels)         │
+│   commits: fdcd9b1 · 723a85f · 0e17ad9 · d7bc871 · 0848696 · 3c96bb7 · 88a9502       │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│ ULTRA-DEEP QA · 8 parallel agents · 24 risks identified · 8 P0/P1 fixed              │
+│                                                                                      │
+│ FINAL ACCEPTANCE                                                                      │
+│   ✅ parse-real-pdfs       338/338                                                    │
+│   ✅ verify gate           ALL GREEN (50+ steps)                                      │
+│   ✅ Cash Eruption parity  26/26 field match GDD §1-§14                              │
+│   ✅ math gates            Σ RTP=96% Δ=0 · jackpot share 25.97% · vol idx 5          │
+│   ✅ kernel bridge live    22 Python kernels via math-kernel-bridge.mjs              │
+│   🟡 RTP probe             measured 66.72% / declared 96% (29.28pp gap → Grana D)    │
+│   ✅ HARD RULE #1/3/4      vendor-neutral / ASCII tabele / audio nedirnut             │
+└────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+Sledeća wave (kad Boki pozove): **Grana D — Kernel Calibration** koristi
+math-kernel-bridge.mjs da poziva sister repo's `hold_and_win.py` Markov simulator
+i postiže ±0.05% RTP precision band per `rule_math_precision_005`.
+
+---
+
 ## 🎯 MATH UNIVERSAL ENGINE — 3 ARHITEKTONSKE OPCIJE · 2026-06-22 · DECISION GATE
 
 Boki: *"mislis da je pametno da napravimo localnog agenta koji ce po pravilima
