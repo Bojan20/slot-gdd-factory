@@ -33,6 +33,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
+import { MATH_PRECISION_BAND_PCT, MATH_PRECISION_BAND_LABEL } from '../src/registry/mathPrecision.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -294,6 +295,16 @@ const summary = {
   maxSingleSpinX: +(maxSingleSpin / BET).toFixed(2),
   winHistogram,
   poolSize: pool.length,
+  /* Boki direktiva 2026-06-22 — precision band ±0.05% (rule_math_precision_005).
+   * precisionMet = true ako su measured i declared u istom 0.05% band-u.
+   * Sa generic distribution, ovo će biti false dok MATH-7 WASM oracle ne
+   * popuni real par sheet weights iz sister repo-a — to je intencija
+   * (gate pokazuje gap, ne sakriva ga). */
+  precisionBand: MATH_PRECISION_BAND_LABEL,
+  precisionMet: (declaredRTP != null && declaredHF != null)
+    ? (Math.abs(measuredRTP - declaredRTP) <= MATH_PRECISION_BAND_PCT &&
+       Math.abs(measuredHF  - declaredHF)  <= MATH_PRECISION_BAND_PCT)
+    : null,
 };
 
 const out = join(OUT_DIR, `${SLUG}.json`);

@@ -59,14 +59,21 @@ Korisnikova `?`, kratka poruka ili reakcija **nije poziv da ja tražim precizira
 
 ## 🚨 HARD RULE #4 — AUDIO OFF-LIMITS · MATH UNLOCKED 2026-06-22
 
-### Math — UNLOCKED 2026-06-22
+### Math — UNLOCKED 2026-06-22 · PRECISION BAND ±0.05%
 
 Boki direktiva (2026-06-22): *"ajde mo matematiku. napravi detaljan azuriraj
 master todo za math. i daj mi feed back sta sve treba da radis"*.
 
 Math je sada **OTVORENA TEMA** — može se pominjati u odgovorima, predlozima,
 roadmap-u, status izveštajima. MASTER_TODO sadrži MATH backlog (MATH-1 do
-MATH-12 u 3 wave-a: CORE → INTEG → FINISH).
+MATH-12 u 3 wave-a: CORE → INTEG → FINISH) — SVE 12 ZATVORENO.
+
+**PRECISION BAND ±0.05% (Boki 2026-06-22):** *"mora da radi seto postgo na
++- 0.05%"*. Sve math compliance gates importuju iz `src/registry/mathPrecision.mjs`
+(MATH_PRECISION_BAND_PCT / PP / FRAC). Bilo koja labavija tolerancija je
+regression. ±0.05% precision DOSTIŽNA preko MATH-7 WASM oracle + real par
+sheet weights iz sister repo-a (`slot-math-engine-template`). Generic
+distribution probe će failati gate — to JE intencija (gap surfaces clearly).
 
 ### Audio — i dalje OFF-LIMITS
 

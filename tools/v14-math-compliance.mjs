@@ -45,6 +45,7 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
+import { MATH_PRECISION_BAND_PCT, MATH_PRECISION_BAND_LABEL } from '../src/registry/mathPrecision.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -90,6 +91,31 @@ function auditModel(slug, model) {
   const hard = [], soft = [];
   const p = model.payback || {};
   const jur = jurCodes(model);
+
+  /* M0 — precision compliance gate (Boki direktiva 2026-06-22).
+   * If a probe report exists alongside this model, declared and measured
+   * RTP / HF must agree within ±0.05% (= MATH_PRECISION_BAND_PCT). This is
+   * the regulator-grade certification band; generic-distribution probe
+   * runs WILL fail this — to JE intencija (gap surfaces clearly, ne sakriva).
+   * SOFT (informational) by default; --strict gate-blocks. */
+  const probePath = join(REPO, `reports/math-rtp/${slug}.json`);
+  if (existsSync(probePath)) {
+    try {
+      const probe = JSON.parse(readFileSync(probePath, 'utf8'));
+      if (probe.rtpDelta != null && Math.abs(probe.rtpDelta) > MATH_PRECISION_BAND_PCT) {
+        soft.push({
+          slug, rule: 'M0.rtp',
+          msg: `measured RTP delta ${probe.rtpDelta} pp exceeds precision band ${MATH_PRECISION_BAND_LABEL} (needs MATH-7 WASM oracle + real par sheet weights)`
+        });
+      }
+      if (probe.hfDelta != null && Math.abs(probe.hfDelta) > MATH_PRECISION_BAND_PCT) {
+        soft.push({
+          slug, rule: 'M0.hf',
+          msg: `measured HF delta ${probe.hfDelta} pp exceeds precision band ${MATH_PRECISION_BAND_LABEL}`
+        });
+      }
+    } catch (_) { /* probe corrupt — skip */ }
+  }
 
   /* M1 — RTP jurisdiction floor (only when both rtp AND jur declared). */
   const rtp = num(p.rtp);
