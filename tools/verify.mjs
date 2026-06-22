@@ -448,6 +448,18 @@ if (existsSync(math8Test)) {
     'node', [math8Test]);
 }
 
+/* ── Step 4.97k: MATH-9 bonus buy variant RTP calc ──────────────────
+ * Uses MATH-7 WASM oracle za:
+ *   • buyFeatureRtp(avgPay, cost)
+ *   • UKGC RTS 13C compliance gate
+ *   • MGA RG 2021/02 ceiling gate
+ * Cash Eruption: variant 96%, UKGC pass, MGA pass, verdict PASS. */
+const math9Test = resolve(REPO, 'tests/tools/math-9-bb-variant.test.mjs');
+if (existsSync(math9Test)) {
+  run('MATH-9 bonus buy variant RTP (UKGC/MGA gates + verdict)',
+    'node', [math9Test]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
