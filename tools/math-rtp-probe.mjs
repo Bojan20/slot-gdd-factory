@@ -78,6 +78,35 @@ function _safeFloat(label, raw, fallback, lo, hi) {
   }
   return n;
 }
+/* QA Agent#2 finding (2026-06-23 LOW#3): --help flag for CLI completeness.
+ * Math probes auto-run with defaults when called with no args (intentional
+ * smoke-test behavior). Adding --help gives operators a discoverable usage
+ * surface without forcing a behavior change. */
+if (args.includes('--help') || args.includes('-h')) {
+  console.log(`math-rtp-probe.mjs — RTP measurement probe (MATH-3)
+
+USAGE
+  node tools/math-rtp-probe.mjs [--slug X] [--runs N] [--seed S] [--bet B] [--auto-clamp] [--par-sheet]
+
+FLAGS
+  --slug X           single game slug (default: cash-eruption-foundry-gdd)
+  --runs N           spin count [1, 100M] (default: 100000)
+  --seed S           deterministic RNG seed [0, 2^32) (default: 42)
+  --bet B            bet per spin in credits [0.01, 100k] (default: 1)
+  --auto-clamp       multiplicative RTP clamp toward declared (default: OFF)
+  --par-sheet        use real par-sheet weights (default: generic distribution)
+  --help, -h         show this message
+
+OUTPUT
+  reports/math-rtp/<slug>.json — per-spin stats + aggregate
+  stdout summary line + comparison vs declared
+
+EXIT
+  0 — probe ran successfully (measured RTP may be off target — informational)
+  1 — model unreadable / no symbols / no topology
+  2 — missing slug or invalid flag value`);
+  process.exit(0);
+}
 const SLUG = argVal('--slug') || 'cash-eruption-foundry-gdd';
 const RUNS = _safeInt('runs',  argVal('--runs'), 100000, 1, 100_000_000);
 const BET  = _safeFloat('bet', argVal('--bet'),  1, 0.01, 100_000);

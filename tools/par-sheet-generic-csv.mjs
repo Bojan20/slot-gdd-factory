@@ -118,8 +118,18 @@ function expandReelByWeight(symbols, weights) {
 export function ingestCsv(filePath) {
   if (!existsSync(filePath)) throw new Error(`file not found: ${filePath}`);
   const text = readFileSync(filePath, 'utf8');
-  const rows = parseCsvText(text);
-  if (rows.length < 2) throw new Error('CSV has < 2 rows (need header + at least one data row)');
+  const allRows = parseCsvText(text);
+  /* QA Agent#2 finding (2026-06-23 LOW#1): strip comment lines (#-prefix
+   * in column 0) BEFORE header detection so vendor-annotated CSVs parse.
+   * Example: a CSV that begins with "# Vendor: Acme PAR sheet v1.2" then
+   * the real symbol/reel header. Comment lines anywhere in the file are
+   * skipped; this matches the convention used by xlsx -> csv exports from
+   * regulator tools that prepend provenance metadata. */
+  const rows = allRows.filter(row => {
+    const first = (row[0] || '').trim();
+    return first.length > 0 && !first.startsWith('#');
+  });
+  if (rows.length < 2) throw new Error('CSV has < 2 non-comment rows (need header + at least one data row)');
   const { symIdx, reelIdx, payIdx } = detectHeader(rows[0]);
 
   const symbols = [];
@@ -129,7 +139,7 @@ export function ingestCsv(filePath) {
   for (let r = 1; r < rows.length; r++) {
     const row = rows[r];
     const sym = (row[symIdx] || '').trim();
-    if (!sym) continue;
+    if (!sym || sym.startsWith('#')) continue;
     symbols.push(sym);
     for (let k = 0; k < reelIdx.length; k++) {
       const w = parseInt((row[reelIdx[k]] || '0').trim(), 10);

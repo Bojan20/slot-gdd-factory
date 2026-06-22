@@ -410,6 +410,33 @@ export const UniversalGameSchema = z.object({
  * walker / parser receipt chains. Errors are flattened to dotted paths.
  */
 export function validateModel(obj) {
+  /* QA Agent#2 finding (2026-06-23 LOW#2): circular-reference guard.
+   * Zod's safeParse handles plain objects but doesn't natively detect cycles
+   * in the user-supplied input. A model with `model.foo = model` would
+   * later crash JSON.stringify (used by receipt-chain hash + pipeline
+   * report writer). Detect cycles up-front via WeakSet traversal; reject
+   * with structured error matching the schema-failure envelope. */
+  if (obj !== null && typeof obj === 'object') {
+    const seen = new WeakSet();
+    const cycleCheck = (node) => {
+      if (node === null || typeof node !== 'object') return false;
+      if (seen.has(node)) return true;
+      seen.add(node);
+      for (const key of Object.keys(node)) {
+        try {
+          if (cycleCheck(node[key])) return true;
+        } catch { /* getter that throws — treat as no cycle */ }
+      }
+      return false;
+    };
+    if (cycleCheck(obj)) {
+      return {
+        ok: false,
+        errors: ['<root>: circular reference detected in model object'],
+        parsed: null,
+      };
+    }
+  }
   const result = UniversalGameSchema.safeParse(obj);
   if (result.success) {
     return { ok: true, errors: [], parsed: result.data };
