@@ -428,6 +428,115 @@ export function parseMarkdownGDD(text) {
     }
   });
 
+  /* MATH-DEEP D-4 (2026-06-22) — Real GDD symbol roster extractor.
+   * Reads §3.3 / §6.2 per-symbol table (vendor-neutral abbreviated id +
+   * full label). Pattern: numbered row "<idx>  <Name>  <Tier>  <art desc>
+   * <pay-or-em-dash>" with multi-space column separators.
+   *
+   * id derivation: first-letter abbreviation (Red7→R7, Blue7→B7, Bell→BE,
+   * Melon→ME, Grapes→GR, Plum→PL, Orange→OR, Lemon→LE, Cherry→CH, Wild→W,
+   * Volcano→V, Fireball→FB, Bonus→B). Keeps model.json vendor-neutral
+   * per HARD RULE #1 while UI label preserves GDD prose name. */
+  _safeExtract('header.symbol-roster-from-gdd', () => {
+    /* Symbol roster regex — only fires for symbols matching known industry
+     * names that show up in many GDDs. Fall back is smartDefaults A/K/Q
+     * placeholder if no real names found. */
+    const known = ['Red7','Blue7','Bell','Melon','Grapes','Plum','Orange','Lemon','Cherry',
+                   'Wild','Volcano','Fireball','Bonus','Ace','King','Queen','Jack'];
+    const knownPat = known.join('|');
+    /* TWO-PATTERN approach. Section 3.3 (Per-Symbol Art) has art description
+     * + single Top-Pay column; pays are reliable for FACE list but row
+     * separator on Red7 collapses to 1-space when art desc ends without
+     * trailing whitespace. Section 6.2 (Base Game Paytable) has uniform
+     * 3-column layout: <Name> <Tier> <5OAK> <4OAK> <3OAK> — clean and
+     * regex-safe.
+     *
+     * Prefer Section 6.2 paytable when both exist (richer: 3/4/5 OAK).
+     * Fall back to Section 3.3 single-column when only 1 pay column. */
+    const seen = new Map();
+    /* Pattern A: §6.2 paytable — Symbol Tier 5OAK 4OAK 3OAK (3 numbers) */
+    const reA = new RegExp(`\\b(${knownPat})\\s+(HP|MP|LP|Special|Scatter|Cash)\\s+(\\d{1,4})\\s+(\\d{1,4})\\s+(\\d{1,4})\\b`, 'g');
+    let m;
+    while ((m = reA.exec(text)) !== null) {
+      const [, name, tierRaw, pay5, pay4, pay3] = m;
+      const tier = (tierRaw === 'Special' || tierRaw === 'Scatter' || tierRaw === 'Cash') ? tierRaw.toUpperCase() : tierRaw;
+      if (!seen.has(name)) {
+        seen.set(name, { name, tier, pay5: parseInt(pay5, 10), pay4: parseInt(pay4, 10), pay3: parseInt(pay3, 10) });
+      }
+    }
+    /* Pattern B: §3.3 art table — fall-back for symbols not in §6.2 (Wild,
+     * Volcano, Fireball, Bonus, Big variants — non-paying or em-dash). */
+    const reB = new RegExp(`\\b(${knownPat})\\s+(HP|MP|LP|Special|Scatter|Cash)\\s+(?:[^\\n]{0,160}?)\\s+(—|-|\\d{1,4})(?=\\s|$|[^\\d])`, 'g');
+    while ((m = reB.exec(text)) !== null) {
+      const [, name, tierRaw, payRaw] = m;
+      if (seen.has(name)) continue;
+      const tier = (tierRaw === 'Special' || tierRaw === 'Scatter' || tierRaw === 'Cash') ? tierRaw.toUpperCase() : tierRaw;
+      const pay5 = (payRaw === '—' || payRaw === '-') ? null : parseInt(payRaw, 10);
+      seen.set(name, { name, tier, pay5 });
+    }
+    if (seen.size === 0) return; /* no real roster → smartDefaults will populate */
+
+    /* id derivation — vendor-neutral abbreviation. */
+    const idMap = {
+      'Red7':'R7','Blue7':'B7','Bell':'BL','Melon':'ME','Grapes':'GR','Plum':'PL',
+      'Orange':'OR','Lemon':'LE','Cherry':'CH','Wild':'W','Volcano':'V','Fireball':'FB',
+      'Bonus':'B','Ace':'A','King':'K','Queen':'Q','Jack':'J',
+    };
+    const high = [], mid = [], low = [], specials = [];
+    for (const sym of seen.values()) {
+      const id = idMap[sym.name] || sym.name.slice(0, 2).toUpperCase();
+      const entry = { id, label: sym.name, tier: sym.tier };
+      if (sym.pay5 != null || sym.pay4 != null || sym.pay3 != null) {
+        entry.pay = {};
+        if (sym.pay5 != null) entry.pay['5'] = sym.pay5;
+        if (sym.pay4 != null) entry.pay['4'] = sym.pay4;
+        if (sym.pay3 != null) entry.pay['3'] = sym.pay3;
+      }
+      if (sym.tier === 'HP') high.push(entry);
+      else if (sym.tier === 'MP') mid.push(entry);
+      else if (sym.tier === 'LP') low.push(entry);
+      else {
+        /* Wild/Volcano/Fireball/Bonus → specials with kind */
+        const kind = /wild/i.test(sym.name) ? 'wild'
+                  : /volcano|scatter/i.test(sym.name) ? 'scatter'
+                  : /fireball|cash/i.test(sym.name) ? 'cash_on_reel'
+                  : /bonus/i.test(sym.name) ? 'bonus' : 'special';
+        specials.push({ id, label: sym.name, kind });
+      }
+    }
+    /* Replace placeholder roster only when we got at least 3 real symbols
+     * (avoid blowing away a partially declared GDD on a fluke single match). */
+    if (high.length + mid.length + low.length + specials.length >= 3) {
+      if (!model.symbols) model.symbols = { high: [], mid: [], low: [], specials: [] };
+      if (high.length > 0) model.symbols.high = high;
+      if (mid.length > 0)  model.symbols.mid  = mid;
+      if (low.length > 0)  model.symbols.low  = low;
+      if (specials.length > 0) {
+        /* Merge — keep existing specials (Wild/Scatter from feature autofix)
+         * but prefer prose-extracted entries with same id. Strip phantom
+         * single-letter specials (T/There, B/Bonus stub, JP synthetic) when
+         * prose extraction provided the real entry. */
+        const phantomLabels = /^(There|Trigger|Bonus|Jackpot)$/i;
+        const existingIds = new Set((model.symbols.specials || []).map(s => s.id));
+        const merged = (model.symbols.specials || []).filter(s => {
+          /* Drop synthetic single-letter scatter / fragment if prose gave us
+           * the canonical Volcano + Fireball + Big Wild + Big Fireball quadruplet. */
+          if (s && s.label && phantomLabels.test(s.label) && specials.length >= 3) {
+            return false;
+          }
+          return true;
+        });
+        for (const sp of specials) {
+          if (!existingIds.has(sp.id)) merged.push(sp);
+        }
+        model.symbols.specials = merged;
+      }
+      if (!model.confidence._derivedBy) model.confidence._derivedBy = {};
+      model.confidence._derivedBy.symbols = 'gdd-prose-roster';
+      model.confidence.symbols = 1.0;
+    }
+  });
+
   _safeExtract('header.bonus-buy-negative-signal', () => {
     /* Explicit ban phrasings (case-insensitive). */
     const banPhrases = /\b(?:no\s+(?:feature[\s-]?)?(?:buy|bonus[\s-]?buy)|bonus[\s-]?buy\s+(?:prohibited|banned|disabled|not\s+(?:implemented|available|allowed)|absent)|feature[\s-]?buy\s+(?:prohibited|banned|disabled|not\s+(?:implemented|available|allowed)))\b/i;
@@ -2094,7 +2203,7 @@ export function extractSymbolsProseMode(rawText, model) {
     if (_gameName && name.toLowerCase() === _gameName) continue;
     /* Skip section / boilerplate names that get caught by greedy initial char. */
     if (/^(?:section|page|table|figure|version|format|theme|reel|paytable|bet|note|copyright|confidential|production|paylines?|line|stake|spin|symbol|payouts?|max[\s-]?win|rtp|volatility|hit\s+frequency)\b/i.test(name)) continue;
-    if (/^(?:the|all|each|every|some|most|any|this|that|of|free|game|bonus|slot|hold|lock|symbol|symbols|reels?|spins?|mode|system|round|feature|grand|major|minor|mini)$/i.test(name)) continue;
+    if (/^(?:the|all|each|every|some|most|any|this|that|of|free|game|bonus|slot|hold|lock|symbol|symbols|reels?|spins?|mode|system|round|feature|grand|major|minor|mini|there|where|when|while|here|after|before|once|because|both|either|neither)$/i.test(name)) continue;
     /* Skip names ending with prepositions that suggest mid-sentence cuts. */
     if (/\s+(?:for|to|with|from|on|in|at|by|of)$/i.test(name)) continue;
     /* Determine kind from desc. Order matters — scatter beats bonus when both
