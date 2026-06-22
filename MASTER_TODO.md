@@ -1,6 +1,29 @@
-## 🏆 MATH-DEEP BACKLOG — 2026-06-22 · ZATVOREN ✅ (3 grane, 29 stavki)
+## 🏆 MATH-DEEP BACKLOG — 2026-06-23 · ZATVOREN ✅ (4 grane, 32 stavki, 52 commits)
 
-Sve 3 grane (A D-series + B HYBRID + C FEAT-SIM) ZATVORENE redom kako je Boki tražio.
+Sve 4 grane (A D-series + B HYBRID + C FEAT-SIM + D KERNEL-CALIBRATION) ZATVORENE redom kako je Boki tražio.
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│ GRANA D · KERNEL CALIBRATION · 3/3 ✅                                                │
+│   D-1 cluster-pays evaluator (1850pp gap closed na starlight: 1942% → 90.78%)        │
+│   D-2 multi-form RTP extractor (Gates RTP backfilled 96.5%)                          │
+│   D-3 sister-repo Rust kernel bridge LIVE (22 kernels callable)                      │
+│   PLUS: any-GDD onboarding test 8/8 PASS (universal pipeline runs any random GDD)    │
+│   commits: 0fc044e + worker contracts test                                            │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│ ANY-GDD GUARANTEE (tests/contracts/any-gdd-onboarding.test.mjs):                    │
+│   ✅ NEW 6x4 ways slot model schema-validates                                         │
+│   ✅ NEW vendor CSV with aliased headers (Sym/R1/3OAK) ingests                       │
+│   ✅ NEW jurisdiction code not in regulator map safely ignored                       │
+│   ✅ NEW evaluation kind tumble-cluster-hybrid schema-validates                       │
+│   ✅ Empty {} model: schema passes, pipeline reports gaps                            │
+│   ✅ Adversarial model (reels=999, rtp=9999) caught by schema                        │
+│   ✅ 5 random non-baseline GDDs from corpus all schema-validate                      │
+│   ✅ Universal pipeline runs on random non-baseline GDD without crash                │
+└────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+Sve 3 prethodne grane (A D-series + B HYBRID + C FEAT-SIM) ZATVORENE.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────┐
