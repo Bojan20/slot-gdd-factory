@@ -1,3 +1,172 @@
+## 🚀 MATH-DEEP BACKLOG — 2026-06-22 · OTVOREN
+
+Boki direktiva (2026-06-22): *"upisi u master todo detaljno sta sve treba i kreni
+redom"*. Iz MATH-PARSER-ULTRA-DEEP audita (commit a7b7fea, Agent #1: 24 diskrepance)
+i MATH-PRECISION-5 (commit b163359, RTP gap analysis) izvučen je deterministički
+plan kroz 3 paralelne grane.
+
+### Grana A — D-series · Cash Eruption parser drift (D4-D24)
+
+```
+┌────────┬────────────────────────────────────────────────────────────┬──────────┬─────────────────────────────┐
+│ Tag    │ Naslov                                                       │ Trajanje │ Fajlovi (nove + edit)        │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ D-4    │ symbols.high real names iz GDD §3.3 paytable tabele          │  ~1h     │ src/parser.mjs               │
+│        │ Pre: A/K/Q smartDefaults placeholderi                         │          │ (extractSymbolsTable nova    │
+│        │ Posle: Red7/Blue7/Bell + Melon/Grapes/Plum/Orange/Lemon/Cherry│          │  funkcija reads §3.3 prose   │
+│        │ + Wild/Volcano/Fireball/Bonus + 12 Big variants               │          │  numbered table)             │
+│        │ Per HARD RULE #1 keep vendor-neutral u internal output —      │          │ + reject phantom "There"     │
+│        │ samo simbol id-ovi (R7/B7/BE/...) ostaju u model.json         │          │  iz specials                 │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ D-5    │ freeSpins.awards fixed [6,6,6] iz GDD §8.1                    │  ~30m    │ src/parser.mjs               │
+│        │ Pre: [10,15,20] (default 3-row ladder)                        │          │ (FS awards extractor sa     │
+│        │ Posle: "Initial spins" + integer pattern; fall-back na ladder │          │  "Initial spins" + integer   │
+│        │ samo ako nigde u §8 nema fixed-spin claim                     │          │  hard-pin)                  │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ D-6    │ freeSpins.multiplier HALLUCINATED → none                      │  ~30m    │ src/parser.mjs               │
+│        │ Pre: progressive 1→10 (parser izmišlja)                       │          │ (only emit multiplier kad   │
+│        │ Posle: emit samo ako "multiplier" u 200 char window od        │          │  raw GDD ima eksplicitnu    │
+│        │ "free spin"; default = none/no-op                             │          │  vezu u FS sekciji)         │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ D-7    │ bet.steps 21-step ladder iz GDD §5.5                          │  ~1h     │ src/parser.mjs               │
+│        │ Pre: minBet=0.1 maxBet=100 default=1 (generic)                │          │ (extractBetLadder pasus —   │
+│        │ Posle: bet.steps array sa 21 vrednost (0.20 → 40.00); fallback│          │  hunts "Total Bet" col +    │
+│        │ samo kad 0 koraka parsirano                                   │          │  "Coin Value" col)          │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ D-8    │ paytable promotion: par_sheet_paytable → model.paytable[]     │  ~45m    │ src/parser.mjs               │
+│        │ Pre: 5-row autofix stub (A/K/Q/M1/M2)                         │          │ (assembleModel post-step:    │
+│        │ Posle: real paytable rows preuzeti iz reelStrips.par_sheet_   │          │  ako par_sheet_paytable     │
+│        │ paytable koji već postoji (par-sheet-apply.mjs ga ubaci);     │          │  postoji, ukloni autofix    │
+│        │ posljedica: symbols.high i paytable dele isti registar        │          │  + promote rows)            │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ D-9    │ retrigger fixed: spins=3, count=3, hardCap=15 (§8.2)         │  ~30m    │ src/parser.mjs               │
+│        │ Pre: spins=5/count=3 conflicts sa hard cap                    │          │ (retrigger pasus binds na   │
+│        │ Posle: bind na §8.2 row "Retrigger" + emit hardCap=15        │          │  §8.2 table)                │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ D-10   │ compliance jurisdictions array iz §14.1/14.2/14.3            │  ~1h     │ src/parser.mjs               │
+│        │ Pre: compliance = [] (empty)                                  │          │ (extractJurisdictions nova   │
+│        │ Posle: [{variant, market, rtp, hold, rules}] per §14 variant- │          │  funkcija — UK/MGA/SE/NL/   │
+│        │ → market mapping table                                        │          │  DE/ON/US table parser)     │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ D-11   │ scatterPays object: Volcano 3=2×/4=15×/5=100× bet            │  ~30m    │ src/parser.mjs               │
+│        │ Pre: scatter counts samo (no pay values)                       │          │ (scatter pay regex sa       │
+│        │ Posle: scatterPays.volcano = {3:2, 4:15, 5:100}              │          │  "N=Mx bet" pattern)        │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ D-12   │ patternWin award 1000× total bet (§2.2 + §4.8)               │  ~30m    │ src/parser.mjs               │
+│        │ Pre: patternWin textOnly (no value)                           │          │ (patternWin reader hunts    │
+│        │ Posle: patternWin.awardX = 1000                              │          │  "1000× total bet" claim)   │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ D-13   │ in-FS H&W trigger: 9+ Big Fireballs (§4.8)                    │  ~30m    │ src/parser.mjs               │
+│        │ Pre: no in-FS trigger field                                    │          │ (FS trigger detector sa     │
+│        │ Posle: model.holdAndWin.fsTriggerCount = 9                    │          │  "in-FS" / "during FS"      │
+│        │                                                                │          │  prefix)                    │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ D-14   │ GRAND prob 1.93e-5 + FS avg 6.45 + FS cap 15 fields           │  ~30m    │ src/parser.mjs               │
+│        │ Pre: missing (math-jackpot pulls iz constant)                 │          │ (extract jackpot.shareWith   │
+│        │ Posle: model.jackpot.shareWithinFeature.GRAND = 1.93e-5,     │          │  Feature + freeSpins.avg +  │
+│        │ freeSpins.avgSpinsPlayed = 6.45, freeSpins.maxCap = 15       │          │  freeSpins.maxCap)          │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ D-15   │ Big Fireball cash-pool 100-2000 credits                       │  ~30m    │ src/parser.mjs               │
+│        │ model.holdAndWin.cashPool.min=100, max=2000                  │          │                             │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ D-16   │ Wild only_if_winning flag (§4.8 expanding wild rule)          │  ~15m    │ src/parser.mjs               │
+│        │ model.expandingWild.onlyIfWinning = true                      │          │                             │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ D-17   │ rtpBreakdown field: 41.90/40.91/7.00/6.19 iz §4.2             │  ~30m    │ src/parser.mjs               │
+│        │ model.payback.rtpBreakdown.{baseLine, hwBase, fsLine, hwFs}   │          │                             │
+└────────┴────────────────────────────────────────────────────────────┴──────────┴─────────────────────────────┘
+```
+
+**D-series acceptance**: Cash Eruption GDD vs model.json 17/17 field parity (sad 16/17). HARD RULE #1 vendor-neutral output preserved.
+
+### Grana B — HYBRID arhitektura (multi-vendor support)
+
+```
+┌────────┬────────────────────────────────────────────────────────────┬──────────┬─────────────────────────────┐
+│ Tag    │ Naslov                                                       │ Trajanje │ Fajlovi                       │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ HYB-1  │ Universal Game Schema (Zod-based, single source of truth)    │  ~2h     │ src/schema/universalGame.mjs │
+│        │ Cross-vendor field shape — id, swid, topology, paytable,    │          │ tests/schema/*.test.mjs      │
+│        │ reels, features, jackpots, compliance, par_sheet sub-objekat │          │                             │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ HYB-2  │ LLM Structured Fallback (Sloj 2)                              │  ~3h     │ tools/llm-field-completer    │
+│        │ Za svaki UNFILLED required field nakon regex parse-a →       │          │ src/cert/llm-receipts.json   │
+│        │ cortex-kimi-ask sa Zod schema + 3-shot examples; output:     │          │ (cache po GDD-hash)         │
+│        │ {field, value, source_quote, confidence}                     │          │                             │
+│        │ Zod validates → retry sa stricter prompt ako fail            │          │                             │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ HYB-3  │ LLM Consistency Validator (Sloj 3)                            │  ~2h     │ tools/llm-cross-check.mjs    │
+│        │ Posle parser + fallback merge: second LLM ask "da li model. │          │ reports/llm-consistency/     │
+│        │ json faithful odražava GDD?" → {field, claim, gdd_quote,    │          │                             │
+│        │ faithful: T/F} → disagreement → human review queue           │          │                             │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ HYB-4  │ Multi-vendor PAR sheet ingest                                 │  ~3h     │ tools/par-sheet-pragmatic.py  │
+│        │ Trenutno samo IGT xlsx layout. Dodati: Pragmatic (Spanish     │          │ tools/par-sheet-lw.py        │
+│        │ headers), L&W (Brytt sheet shapes), Spielo, generic CSV/JSON │          │ tools/par-sheet-generic.py    │
+│        │ Vendor detection per workbook → adapter dispatch              │          │ tools/par-sheet-detect.mjs   │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ HYB-5  │ End-to-end orchestrator + receipts                            │  ~2h     │ tools/universal-pipeline.mjs │
+│        │ Single pipeline: GDD+PAR → universal schema → math engine →  │          │ reports/pipeline-receipts/   │
+│        │ simulator + verifier; svaki stage emit-uje hashed artifact   │          │                             │
+└────────┴────────────────────────────────────────────────────────────┴──────────┴─────────────────────────────┘
+```
+
+**HYBRID acceptance**: novi vendor GDD (npr. Pragmatic "Gates of Olympus") → parser deterministic-fills 70%+ polja, LLM fallback popunjava ostatak sa source citation, validator potvrđuje 100% faithful, full pipeline emit-uje hashed receipt chain. Verify gate +5 step.
+
+### Grana C — FEAT-SIM · feature-faithful simulator (zatvara RTP gap)
+
+```
+┌────────┬────────────────────────────────────────────────────────────┬──────────┬─────────────────────────────┐
+│ Tag    │ Naslov                                                       │ Trajanje │ Fajlovi                       │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ FS-1   │ Pattern Win (Red7 stack + 4 expanded Wilds = 1000× bet)      │  ~1h     │ tools/math-rtp-probe.mjs     │
+│        │ Probe detector za stacked HP na reel 1 + Wild expansion 2-5; │          │ + use sister repo's          │
+│        │ emit 1000× bet on hit                                         │          │  expanding_symbol kernel     │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ FS-2   │ Wild expansion: "Big Wild" only_if_winning na reels 2-5     │  ~1h     │ tools/math-rtp-probe.mjs     │
+│        │ Pre-evaluate base line; ako line hit i Wild u 2-5, expand    │          │ + sister repo expanding_wild │
+│        │ Wild 3-high → re-evaluate                                    │          │  kernel                       │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ FS-3   │ Volcano scatter pay GDD-faithful (3=2×/4=15×/5=100× bet)     │  ~30m    │ tools/math-rtp-probe.mjs     │
+│        │ Drop hardcoded TIER_PAY_5/4/3 fallback; use scatterPays      │          │                             │
+│        │ object iz D-11                                                │          │                             │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ FS-4   │ Hold & Win Fireball collect feature (40.91% RTP per §4.2)    │  ~3h     │ tools/math-rtp-probe.mjs     │
+│        │ 6+ Fireballs trigger → board lock → 3 respins (reset-to-3    │          │ + sister repo                │
+│        │ on each new Fireball) → cash pool collect → end at 0 respins │          │  hold_and_win.py +          │
+│        │ ili full 15 board                                              │          │  money_collect.py kernels    │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ FS-5   │ Free Spins round simulation (7% RTP per §4.2)                 │  ~2h     │ tools/math-rtp-probe.mjs     │
+│        │ 3+ Volcano scatter trigger → 6 spins (avg 6.45 u real play)  │          │ + sister repo state_machine  │
+│        │ → premium-heavy FS strip-set; retrigger +3 do max 15         │          │  kernel                       │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ FS-6   │ In-FS H&W trigger: 9+ Big Fireballs (6.19% RTP)              │  ~1h     │ tools/math-rtp-probe.mjs     │
+│        │ Tokom FS round-a, 9+ Big Fireballs trigger isti H&W feature  │          │                             │
+│        │ za 6.19% RTP slice                                            │          │                             │
+├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
+│ FS-7   │ Kernel bridge: Node ↔ Python kernel IPC                       │  ~2h     │ src/blocks/mathEngine.mjs    │
+│        │ math-rtp-probe child_process spawn sister repo Python kernel │          │ tools/math-kernel-bridge.mjs │
+│        │ sa JSON stdin/stdout; deterministic seed propagation         │          │                             │
+└────────┴────────────────────────────────────────────────────────────┴──────────┴─────────────────────────────┘
+```
+
+**FEAT-SIM acceptance**: Cash Eruption probe measured RTP ∈ [95.95%, 96.05%] (±0.05% per Boki direktiva). FS round + H&W collect prati real GDD §4.2 breakdown (41.90 + 40.91 + 7.00 + 6.19 = 96%). Probe je sad regulator-grade, ne heurističko.
+
+### Redosled izvršavanja (ZAVRŠAVAM REDOM)
+
+1. **D-4 → D-17** (Grana A, ~9h) — close Cash Eruption parser drift. Surgical parser.mjs edits.
+2. **HYB-1 → HYB-5** (Grana B, ~12h) — multi-vendor support. Univerzalna arhitektura.
+3. **FS-1 → FS-7** (Grana C, ~10h) — feature-faithful simulator. Sister repo kernel hookup.
+
+**Ukupno: ~31h AI rad za "any par × any GDD" full coverage.**
+
+Procena posle svake grane:
+- Posle A: 17/17 field parity Cash Eruption, deterministički put, regex-only
+- Posle B: novi vendor PDF/xlsx → 70%+ deterministic + 30% LLM fallback → 100% faithful
+- Posle C: measured RTP ±0.05% sa real feature simulation, regulator-grade
+
+---
+
 ## 🎯 MATH UNLOCK — 2026-06-22 · BACKLOG OTVOREN
 
 Boki direktiva: *"ajde mo matematiku. napravi detaljan azuriraj master todo
