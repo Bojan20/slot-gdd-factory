@@ -302,6 +302,17 @@ if (typeof HookBus !== 'undefined') {
    * forced-open path (UFP chip → spin → modal even with no real win). */
   HookBus.on('postSpin', ({ duringFs, events } = {}) => {
     if (duringFs) return; /* gamble is BASE-only — don't offer during FS */
+    /* UQ-MULTIPLIER-V10 (2026-06-22) — Boki bug "celije nestaju iz reel
+     * framea": force MULT/BW/FORCE chips emit synthetic baseline events
+     * with forcedBaseline:true. Auto-opening the gamble modal on those
+     * synthetic wins COVERS the grid mid-win-presentation, which the player
+     * reads as "cells nestaju". Force chips are visual QA utilities — the
+     * win presentation MUST stay on screen so the player can see the
+     * polyline + cell pulse + multiplier badge. Real organic wins keep
+     * auto-open unchanged. */
+    const hasForcedBaseline = Array.isArray(events)
+      && events.some(e => e && (e.forcedBaseline === true || Number.isFinite(e.forcedBigWinTier)));
+    if (hasForcedBaseline) return;
     if (Array.isArray(events) && events.length > 0) {
       const totalX = events.reduce((a, e) => a + (Number(e && e.payX) || 0), 0);
       if (totalX > 0 && !GAMBLE_STATE.active) {

@@ -940,6 +940,24 @@ export function emitGambleSecondaryRuntime(cfg = defaultConfig()) {
         if (p && p.duringFs && !SHOW_IN_FS) return;
         if (STATE.autoplayActive && !SHOW_IN_AUTOPLAY) return;
         if (STATE.phase !== 'idle') return;
+        /* UQ-MULTIPLIER-V10 (2026-06-22) — Boki bug "celije nestaju": kada
+         * force MULT/BW/FORCE chip producira synthetic win, gambleSecondary
+         * NE sme auto-open jer modal prekriva grid mid-presentation. Force
+         * chip = visual QA utility, gamble prompt mora ostati skriven dok
+         * igrač vidi polyline + cell pulse + total×mult overlay. Real wins
+         * nedirnuti. */
+        var __hasForcedBaseline = false;
+        try {
+          if (p && Array.isArray(p.events)) {
+            for (var __fbi = 0; __fbi < p.events.length; __fbi++) {
+              var __ev = p.events[__fbi];
+              if (__ev && (__ev.forcedBaseline === true || (typeof __ev.forcedBigWinTier === 'number' && isFinite(__ev.forcedBigWinTier)))) {
+                __hasForcedBaseline = true; break;
+              }
+            }
+          }
+        } catch (_) { /* defensive */ }
+        if (__hasForcedBaseline) return;
         /* Defer ~150ms so winPresentation's rollup animation has time
          * to seat the final win amount. Player still has clean focus
          * on the gamble prompt. */
