@@ -1,3 +1,105 @@
+## 🎯 MATH UNIVERSAL ENGINE — 3 ARHITEKTONSKE OPCIJE · 2026-06-22 · DECISION GATE
+
+Boki: *"mislis da je pametno da napravimo localnog agenta koji ce po pravilima
+i sa znanjem o matematici kao nas slot math agent uvek precizno koristiti slot
+matematiku i uvek precizno ubacivati matematiku iz gdda? da li je to bolje
+resenje od ovog koje imamo ili nesto trece?"* + *"upisi i to u master todo
+detaljno"*.
+
+### Trenutno stanje (MATH-PRECISION-5 zatvoren @ `b163359`)
+
+Cash Eruption probe metrics:
+- HF measured 18.70% / declared 19.03% / Δ **−0.33 pp** (45× tighter posle real payline map)
+- RTP measured 11.85% / declared 41.90% base / Δ −30 pp
+- Gap razlozi: Pattern Win + Wild expansion + Volcano scatter logic + Hold & Win Fireball collect + FS round simulation
+
+### Tri arhitektonske opcije
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│ OPCIJA A · DETERMINISTIC PROBE UPGRADE (nadogradnja postojećeg)                      │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│ ŠTA RADI                                                                             │
+│  Proširi tools/math-rtp-probe.mjs sa 5 feature plugin-a:                              │
+│   • Pattern Win plugin (Red7 stack + Big Wilds = 1000× total bet)                    │
+│   • Wild expansion (only_if_winning re-evaluate)                                     │
+│   • Volcano scatter (3=2×, 4=15×, 5=100×)                                            │
+│   • Hold & Win Fireball collect (FROM_BASE + GRAND cap)                               │
+│   • Free Spins round simulation (6 base + retrigger)                                  │
+│                                                                                      │
+│ TRAJANJE                                                                             │
+│  ~3.5h za Cash Eruption coverage; ~2× za 338 GDD universal                            │
+│                                                                                      │
+│ PRO  ✅ brz · 100% deterministic · zero LLM cost · audit-friendly                    │
+│ KONTRA  ❌ ±0.05% NIJE DOSTIŽNA · per-feature plugin rastvija codebase                │
+└────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│ OPCIJA B · LOCAL MATH AGENT (Boki-jev predlog)                                       │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│ ŠTA RADI                                                                             │
+│  Lokalan agent (rule engine + opt-in LLM fallback) koji:                              │
+│   • Prima model.json + par_sheet.json                                                │
+│   • Emituje feature_config_resolved + auto-generated sim runner                       │
+│  Stručno znanje "slot math" u agents/math-rules/<feature>.rules.md                   │
+│                                                                                      │
+│ TRAJANJE                                                                             │
+│  ~10h za production-ready agent (2h grammar + 4h per-feature rules +                  │
+│   2h orchestrator + 1h tests + 1h LLM hooks)                                          │
+│                                                                                      │
+│ PRO  ✅ TRUE univerzalnost (any GDD + any par sheet) · rules per feature kind        │
+│       (ne per game) · LLM samo za novel feature kinds                                 │
+│ KONTRA  ❌ velika investicija · rigid testing za rule changes · custom rule entries  │
+│         za edge case feature kinds (npr. Cash Eruption Fireball collect)              │
+└────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│ OPCIJA C · UNIVERSAL HOT-SWAP (sister repo Rust bridge)                              │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│ ŠTA RADI                                                                             │
+│  slot-gdd-factory NE simulira — emituje feature config za sister repo Rust sim        │
+│  (`~/Projects/slot-math-engine-template`). Rust radi GLI-19-grade math, vraća        │
+│  rezultate. WASM hot-swap u browser-u preko mathEngine.mjs.                          │
+│                                                                                      │
+│ TRAJANJE                                                                             │
+│  ~9h ali requires sister repo coordination (1h bridge spec + 3h Rust I/O +            │
+│   1h Node wrapper + 2h WASM + 2h 338-validation)                                      │
+│                                                                                      │
+│ PRO  ✅ ±0.05% precision STVARNO dostižna (certified Rust math) · single source       │
+│       of truth · regulator-grade audit trail                                          │
+│ KONTRA  ❌ cross-repo coupling · build dependency (cargo+WASM) · MVP/lite prelomi    │
+│         se · sister repo coordination overhead                                        │
+└────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Komparativna procena (honest, no preference)
+
+| Faktor                          | A: Deterministic | B: Local Agent | C: Sister Bridge |
+|:--------------------------------|:----------------:|:--------------:|:----------------:|
+| Time-to-first-result            | ⚡ ~3.5h         | 🟡 ~10h        | 🟡 ~9h           |
+| Precision ±0.05% achievable     | ❌               | 🟡 maybe       | ✅               |
+| Universal (any GDD + par sheet) | 🟡 per-feature   | ✅ rule-driven  | ✅ Rust author    |
+| Vendor-neutral                  | ✅               | ✅              | ✅                |
+| LLM cost                        | ✅ 0             | 🟡 opt-in only  | ✅ 0              |
+| Maintenance scaling             | ❌ per-feature   | ✅ per-rule     | ✅ Rust core      |
+| MVP/lite preserved              | ✅               | ✅              | ❌ deps           |
+| Audit trail                     | 🟡 probe log    | ✅ rule MDs     | ✅ Rust cert      |
+
+### Execution sequence (Boki: "kreni redom")
+
+**OPCIJA A** prvo (najkraći time-to-result, block-by-block):
+
+1. **A-1 Pattern Win plugin** — Red7 reel 1 stack + Wilds 2-5 → 1000× total bet (~30m)
+2. **A-2 Wild expansion** — only_if_winning re-evaluate (~45m)
+3. **A-3 Volcano scatter handler** — 3=2×, 4=15×, 5=100× (~20m)
+4. **A-4 H&W Fireball collect plugin** — 40.91% RTP contribution (~60m)
+5. **A-5 FS round simulation** — 6 spins + retrigger (~45m)
+6. **A-6 5-main verify + self-tests** — measure gap closure (~30m)
+
+Posle A: re-eval gap; ako ±0.5% ne dosegnemo → B (rule agent) ili C (Rust bridge).
+
+---
+
 ## 🚀 MATH-DEEP BACKLOG — 2026-06-22 · OTVOREN
 
 Boki direktiva (2026-06-22): *"upisi u master todo detaljno sta sve treba i kreni
