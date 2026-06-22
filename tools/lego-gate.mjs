@@ -721,10 +721,13 @@ const EXPECTED_EMIT_OWNERS = {
   onAllWaysCleared:                  ['allWaysEval.mjs'],
   onBidirectionalWaysPay:            ['bidirectionalWaysEval.mjs'],
   onBidirectionalWaysCleared:        ['bidirectionalWaysEval.mjs'],
-  /* Wave LEGO-L (2026-06-18) — random spin-wide lightning multiplier
-   * (WoO §5.2 + Crystal Forge §5.2 explicit GDD demand). */
-  onLightningStrike:                 ['randomLightningMultiplier.mjs'],
-  onLightningStrikeMissed:           ['randomLightningMultiplier.mjs'],
+  /* Wave LEGO-L (2026-06-18) + UQ-ULTIMATE (2026-06-22) — random spin-wide
+   * multiplier event family. randomLightningMultiplier.mjs emits
+   * onMultiplierStrike / onMultiplierStrikeMissed (canonical W57.A7 names).
+   * Legacy onLightningStrike pair removed: lightning.mjs has 0 emit sites
+   * (visual-only feature). */
+  onMultiplierStrike:                ['randomLightningMultiplier.mjs'],
+  onMultiplierStrikeMissed:          ['randomLightningMultiplier.mjs'],
   /* Wave LEGO-WW (2026-06-18) — walking wild stepper with progressive ×N. */
   onWalkingWildStep:                 ['walkingWildStepper.mjs'],
   onWalkingWildSpawned:              ['walkingWildStepper.mjs'],

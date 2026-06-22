@@ -853,8 +853,11 @@ export const HOOK_EVENTS = Object.freeze([
   'onJackpotRoomRevealed',  // Owner: jackpotRoomReveal.mjs
   'onLadderReset',  // Owner: progressiveFsRetriggerLadder.mjs
   'onLadderRungPromoted',  // Owner: progressiveFsRetriggerLadder.mjs
-  'onLightningStrike',  // Owner: randomLightningMultiplier.mjs
-  'onLightningStrikeMissed',  // Owner: randomLightningMultiplier.mjs
+  /* Wave UQ-ULTIMATE (2026-06-22) — onLightningStrike / onLightningStrikeMissed
+   * removed: lightning.mjs has 0 emit sites (visual-only feature block).
+   * randomLightningMultiplier.mjs owns the canonical W57.A7 names below. */
+  'onMultiplierStrike',         // Owner: randomLightningMultiplier.mjs (W57.A7)
+  'onMultiplierStrikeMissed',   // Owner: randomLightningMultiplier.mjs (W57.A7)
   'onLockedOrbMultiplierFinal',  // Owner: holdAndWinLockedOrbMultiplier.mjs
   'onLockedOrbMultiplierRolled',  // Owner: holdAndWinLockedOrbMultiplier.mjs
   'onMegaWildClusterCleared',  // Owner: megaWildCluster.mjs

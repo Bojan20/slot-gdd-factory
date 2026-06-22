@@ -783,7 +783,7 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
         }
       }
       /* UQ-MULTIPLIER-V11 (2026-06-22) — Boki bug "na nekim igrama nestaju
-         celije": cluster pays / mega-cluster / megaways igre nemaju RECT_REELS
+         celije": cluster pays / mega-cluster / ways-grid igre nemaju RECT_REELS
          u rectangular formi i nemaju [data-row="1"] attr ni klasične .cell
          classes — koriste SVG rect ili druge custom renderere (text nodes,
          text.cell pattern). Posle 338-GDD cross-corpus probe, 5 igara je

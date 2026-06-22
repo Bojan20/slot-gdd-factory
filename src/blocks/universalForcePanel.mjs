@@ -668,7 +668,14 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
       try {
         if (window.HookBus && typeof window.HookBus.emit === 'function') {
           window.HookBus.emit('onForceMultiplier', { multX: multX });
-          window.HookBus.emit('onMultChange',      { multX: multX, source: 'force-chip' });
+          /* UQ-ULTIMATE (2026-06-22) — single-owner discipline: persistentMultiplier
+           * is the canonical onMultChange emitter (3 sites). Force chip routes
+           * its bump via __FORCE_PERSISTENT_MULT__ flag which persistentMultiplier
+           * consumes on the next preSpin and emits onMultChange from its own
+           * owner site. Eliminates LEGO single-owner violation while preserving
+           * end-state behaviour (audio cue + chip pop + listeners all still fire,
+           * one frame later via the canonical owner). */
+          try { window.__FORCE_PERSISTENT_MULT__ = multX; } catch (_) {}
         }
       } catch (_) {}
       (function _renderMultChip(_v) {
