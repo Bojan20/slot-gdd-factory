@@ -470,6 +470,21 @@ if (existsSync(math10Test)) {
     'node', [math10Test]);
 }
 
+/* ── Step 4.97m: MATH-11 V14 math compliance walker ─────────────────
+ * Final-tier compliance walker. Gate-checks REAL math fields populated
+ * by MATH-1..10. 12 rule groups (M1-M12). Pre-MATH unlock V11/V12 used
+ * SKIP-AKO-NULL; V14 finally pali on games sa real declared math. */
+const v14Tool = resolve(REPO, 'tools/v14-math-compliance.mjs');
+if (existsSync(v14Tool)) {
+  run('MATH-11 V14 math compliance walker (338 GDDs)',
+    'node', [v14Tool]);
+}
+const math11Test = resolve(REPO, 'tests/tools/math-11-v14.test.mjs');
+if (existsSync(math11Test)) {
+  run('MATH-11 V14 self-test (8 rule codes + clean corpus + determinism)',
+    'node', [math11Test]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
