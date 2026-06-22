@@ -485,6 +485,19 @@ if (existsSync(math11Test)) {
     'node', [math11Test]);
 }
 
+/* ── Step 4.97n: MATH-12 math QA test suite ─────────────────────────
+ * 4 test fajla u tests/math/:
+ *   • rtp-determinism: seed → bit-identical RTP/HF/histogram
+ *   • hit-frequency: measured HF u industry band + tier distribution sanity
+ *   • per-spin-time: 50k spins < 16s + > 100k spin/s + < 500μs/spin
+ *   • paytable-coverage: declared symbols spawn at least once + ratio ≤ 50× */
+for (const f of ['rtp-determinism', 'hit-frequency', 'per-spin-time', 'paytable-coverage']) {
+  const t = resolve(REPO, `tests/math/${f}.test.mjs`);
+  if (existsSync(t)) {
+    run(`MATH-12 ${f}`, 'node', [t]);
+  }
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
