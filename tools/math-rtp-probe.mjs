@@ -455,12 +455,14 @@ const declaredHF = model.payback?.hitFrequency ?? null;
  * topology.evaluation === 'lines' AND (c) measured |Δ| > 5pp. Cluster
  * topology gets its own calibration path (Fix #2). Hold-and-win games
  * get kernel-grade Markov from Fix #4. */
-/* Auto-clamp activates for non-cluster topologies (lines, pay_anywhere,
- * ways, rectangular tumble) — cluster has its own calibration path. */
+/* Auto-clamp activates for ALL topologies with declared RTP (lines,
+ * pay_anywhere, ways, rectangular tumble, cluster). Uniform multiplicative
+ * scale preserves variance shape — same defense semantics across topology
+ * families. Cluster previously had its own calibration path but the
+ * minSize bump was over-aggressive (Fix #2 reverted in clusterEval.mjs). */
 const _evalKind = model.topology?.evaluation;
 const _topoKind = model.topology?.kind;
-const isClusterEval = (_evalKind === 'cluster' || _topoKind === 'cluster');
-const isLinesTopo = !isClusterEval;
+const isLinesTopo = true; /* now allow ALL topologies to enter the clamp gate */
 /* Opt-in via --auto-clamp flag OR model.payback.useAutoRtpClamp === true.
  * Default OFF preserves historical probe semantics + deterministic outputs
  * for tests (clamp factor varies seed-to-seed by design, which is fine for

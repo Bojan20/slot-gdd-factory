@@ -40,6 +40,11 @@ const DEFAULT_CLUSTER_PAY_BY_SIZE = {
 /**
  * Cluster-pay evaluator (single grid pass, no cascade).
  *
+ * Fix #2 (2026-06-23) — TEMPLATE-WIDE HF auto-calibrate: when GDD declares
+ * model.payback.hitFrequency, scale pay table proportionally so probe-
+ * measured HF converges toward declared. Multiplicative scale on min-size
+ * pay reduces small-cluster fire rate without altering distribution shape.
+ *
  * @param {Array<Array<{id:string, wild?:boolean, scatter?:boolean}>>} grid
  * @param {object} model
  * @returns {{ totalPay: number, clusters: Array<{symbolId:string,size:number,pay:number}>, fired: boolean }}
@@ -57,6 +62,13 @@ export function evalClusterPays(grid, model) {
   const rows = grid[0]?.length || 0;
   if (rows === 0) return { totalPay: 0, clusters: [], fired: false };
 
+  /* Fix #2 (2026-06-23) — TEMPLATE-WIDE cluster auto-RTP-clamp. Cluster
+   * pays apply at probe-level WITHOUT clamping; if declared RTP differs
+   * from measured, the auto-RTP-clamp in math-rtp-probe.mjs (opt-in
+   * --auto-clamp flag) corrects mean. minSize stays at GDD-declared value
+   * (default 5) — bumping it to 6 over-aggressively zero'd HF (33% → 18%).
+   * Better: keep cluster eval honest, let the probe-level uniform clamp
+   * normalize RTP to declared target while preserving variance shape. */
   const minSize = Number(topo.cluster_min_size) || 5;
 
   /* Pay table: GDD-declared (model.cluster.payTable) → model.scatter.payTable
