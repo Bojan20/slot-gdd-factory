@@ -460,6 +460,16 @@ if (existsSync(math9Test)) {
     'node', [math9Test]);
 }
 
+/* ── Step 4.97l: MATH-10 jackpot contribution model ─────────────────
+ * Per-tier RTP contribution = tier_value × tier_hit_prob × bet_factor.
+ * Cash Eruption: MINI 10 / MINOR 50 / MAJOR 500 / GRAND 5000, monotonic,
+ * Σ=34.5% (≤ 55% × 96% = 52.8%), verdict PASS. */
+const math10Test = resolve(REPO, 'tests/tools/math-10-jackpot.test.mjs');
+if (existsSync(math10Test)) {
+  run('MATH-10 jackpot contribution (4-tier monotonic + share ≤ 55%)',
+    'node', [math10Test]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
