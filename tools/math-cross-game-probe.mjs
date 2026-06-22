@@ -80,15 +80,34 @@ const argVal = (flag) => {
 
 /* ── Per-game probe ───────────────────────────────────────────────────── */
 
+/* Slug regex per UQ-FORTIFY9 NFKD normalization rule. Enforces:
+ *   - lowercase alphanumeric + dash + underscore only
+ *   - starts with alphanumeric (no leading dash/dot)
+ *   - length 2..80 chars
+ * Prevents path traversal (../etc/passwd) and shell metacharacter injection. */
+const SAFE_SLUG_RE = /^[a-z0-9][a-z0-9_-]{1,79}$/;
+
 /**
  * Run math-rtp-probe.mjs for one slug, return its report.
  *
  * Returns { ok: true, report: <json> } on success.
  * Returns { ok: false, error: <msg> } on failure.
+ *
+ * SECURITY (QA Agent#4 finding #6, 2026-06-22 ultra-deep): rejects slugs
+ * containing path traversal sequences (../) or shell metacharacters (;|`).
+ * Slug MUST match the canonical NFKD slug regex.
  */
 export function probeGame(slug, opts = {}) {
   const { runs = 50000, seed = 42, bet = 1 } = opts;
+  if (typeof slug !== 'string' || !SAFE_SLUG_RE.test(slug)) {
+    return { ok: false, error: `invalid slug "${slug}" — must match ${SAFE_SLUG_RE}` };
+  }
   const slugDir = join(REAL_GAMES, slug);
+  /* Path containment check: resolved slugDir MUST be inside REAL_GAMES. */
+  const resolvedSlugDir = resolve(slugDir);
+  if (!resolvedSlugDir.startsWith(resolve(REAL_GAMES) + '/')) {
+    return { ok: false, error: `slug ${slug} resolves outside REAL_GAMES sandbox` };
+  }
   if (!existsSync(slugDir) || !existsSync(join(slugDir, 'model.json'))) {
     return { ok: false, error: `slug ${slug} missing model.json (run parse-real-pdfs.mjs)` };
   }

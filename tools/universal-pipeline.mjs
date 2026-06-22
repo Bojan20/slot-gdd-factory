@@ -135,8 +135,15 @@ export function runPipeline(slug, opts = {}) {
   const { result: completerRes, duration_ms: cd } = timed(() => {
     return completeModel(slug, rawGdd, parserModel, { dryRun: dryRunLlm });
   });
+  /* completerStage.ok = stage RAN successfully (received valid receipts).
+   * QA Agent#1 finding #5 fix: previously ok was tied to "anything filled",
+   * which broke dry-run pipelines where all halt. The stage "ran" if it
+   * produced receipts; per-field halts are expected outcomes in dry-run.
+   * REAL production failure is when 0 receipts come back (LLM completely
+   * unreachable, no fields walked) — that flips ok=false and blocks the
+   * overall pipeline. */
   const completerStage = {
-    ok: completerRes.halts.length === completerRes.receipts.length ? false : completerRes.receipts.length > 0,
+    ok: completerRes.receipts.length > 0 || listEmptyRequiredFields(parserModel).length === 0,
     fields_attempted: completerRes.receipts.length,
     fields_filled: completerRes.receipts.filter(r => !r.halt).length,
     halts: completerRes.halts.length,
@@ -188,13 +195,26 @@ export function runPipeline(slug, opts = {}) {
     errors_sample: schemaCheck.errors.slice(0, 5),
   };
 
-  /* ── Assemble final receipt chain. */
+  /* ── Assemble final receipt chain.
+   * QA Agent#1 finding #1 (HIGH): generatedAt MUST NOT be inside the hashed
+   * finalModel — that breaks determinism (same inputs would produce different
+   * final_hash on every run). Timestamp lives at the receipt envelope level
+   * only, where it's metadata not content. */
   const finalModel = parData
     ? { ...mergedModel, par_sheet: { ...mergedModel.par_sheet, ...parData } }
     : mergedModel;
+  /* QA Agent#1 finding #5 (HIGH): ok_overall must include completerStage
+   * status. If completer halts on ALL fields (Kimi outage / schema rejection
+   * cascade), the receipt was previously emitting ok_overall=true silently.
+   * Now: completer halts MUST propagate. completerStage.ok was set to
+   * "filled.length > 0 OR halts > receipts" earlier; reuse that flag. */
+  const ok_overall = parserStage.ok
+                  && schemaStage.ok
+                  && completerStage.ok
+                  && !crossStage.disagreement_count;
   const receipt = {
     slug,
-    generatedAt: new Date().toISOString(),
+    generatedAt: new Date().toISOString(),  /* metadata, NOT hashed */
     schema_version: SCHEMA_VERSION,
     sources: {
       gdd_hash:        sha256(rawGdd),
@@ -209,8 +229,8 @@ export function runPipeline(slug, opts = {}) {
       schema:      schemaStage,
     },
     final_model: finalModel,
-    final_hash: sha256(finalModel),
-    ok_overall: parserStage.ok && schemaStage.ok && !crossStage.disagreement_count,
+    final_hash: sha256(finalModel),  /* deterministic: finalModel has no timestamp */
+    ok_overall,
   };
 
   /* ── Write report (atomic: tmp + rename). */

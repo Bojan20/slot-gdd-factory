@@ -293,14 +293,30 @@ export function dispatchIngest(filePath, opts = {}) {
       return { ok: false, error: `inline json parse: ${e.message}`, vendor: det.vendor, format: det.format, adapter };
     }
   }
-  /* External adapter — invoke. */
+  /* External adapter — invoke.
+   *
+   * SECURITY (QA Agent#4 finding #5, 2026-06-22 ultra-deep): sanitize the
+   * sheet name to reject shell metacharacters and path traversal. The
+   * adapter binary is fixed (one of VENDOR_ADAPTERS entries), so adapterPath
+   * is trusted. filePath is the input we received — caller is responsible
+   * for its provenance, but we resolve absolute to prevent relative escape. */
   const adapterPath = join(REPO, adapter);
   if (!existsSync(adapterPath)) {
     return { ok: false, error: `adapter binary not found: ${adapter}`, vendor: det.vendor, format: det.format, adapter };
   }
   const interp = adapter.endsWith('.py') ? 'python3' : 'node';
+  /* Sheet name guard: only [A-Za-z0-9_-] and dots allowed (Excel sheet
+   * names can be e.g. "PAR-001" or "Sheet1"). Reject anything else loud. */
+  if (opts.sheet != null) {
+    if (typeof opts.sheet !== 'string' || !/^[A-Za-z0-9._-]{1,80}$/.test(opts.sheet)) {
+      return { ok: false, error: `invalid --sheet "${opts.sheet}" (alphanumeric+dot+dash+underscore only)`,
+               vendor: det.vendor, format: det.format, adapter };
+    }
+  }
   const sheetArg = opts.sheet ? ['--sheet', opts.sheet] : [];
-  const r = spawnSync(interp, [adapterPath, '--xlsx', filePath, ...sheetArg, '--out', '-'],
+  /* Resolve filePath absolute to prevent shell-relative path traversal. */
+  const absFilePath = resolve(filePath);
+  const r = spawnSync(interp, [adapterPath, '--xlsx', absFilePath, ...sheetArg, '--out', '-'],
                       { encoding: 'utf8', timeout: 60_000 });
   if (r.status !== 0) {
     return { ok: false, error: `adapter exit ${r.status}: ${(r.stderr || '').slice(0, 200)}`,

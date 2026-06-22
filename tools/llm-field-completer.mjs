@@ -98,8 +98,23 @@ function sha256(s) {
 
 function loadCache() {
   if (!existsSync(CACHE_FILE)) return {};
-  try { return JSON.parse(readFileSync(CACHE_FILE, 'utf8')); }
-  catch { return {}; }
+  try {
+    const raw = JSON.parse(readFileSync(CACHE_FILE, 'utf8'));
+    /* QA Agent#4 finding #8: validate cache shape on load. A hand-edited
+     * or corrupted cache file with prototype-polluting keys or wrong
+     * receipt shape would silently bypass actual LLM calls. Reject
+     * non-plain-object and keys containing __proto__/constructor/prototype. */
+    if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return {};
+    const safe = Object.create(null);
+    for (const [k, v] of Object.entries(raw)) {
+      if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
+      if (v == null || typeof v !== 'object') continue;
+      /* Minimal receipt shape check: must have `field` string. */
+      if (typeof v.field !== 'string') continue;
+      safe[k] = v;
+    }
+    return safe;
+  } catch { return {}; }
 }
 
 function saveCache(cache) {

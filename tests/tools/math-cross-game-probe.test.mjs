@@ -50,9 +50,17 @@ test('probeGame returns structured report for Cash Eruption', () => {
 /* ── (2) Missing slug handled gracefully ──────────────────────────────── */
 
 test('probeGame returns ok=false for missing slug', () => {
-  const r = probeGame('__no-such-game-xyz__', { runs: 100 });
+  /* Use a slug that PASSES the safe-slug regex but doesn't exist. */
+  const r = probeGame('no-such-game-zzz-xyz', { runs: 100 });
   assert(r.ok === false, 'should fail for missing slug');
   assert(r.error.includes('missing'), `error message: ${r.error}`);
+});
+
+test('probeGame rejects invalid slug (path traversal guard)', () => {
+  /* QA Agent#4 finding #6 fix: malicious slug with traversal is rejected. */
+  const r = probeGame('../etc/passwd', { runs: 100 });
+  assert(r.ok === false, 'should fail for malicious slug');
+  assert(r.error.includes('invalid slug'), `expected invalid slug error, got: ${r.error}`);
 });
 
 /* ── (3) Comparative report aggregates 5 baselines ────────────────────── */
