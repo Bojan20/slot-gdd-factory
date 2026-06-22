@@ -699,23 +699,42 @@ export function parseMarkdownGDD(text) {
   /* MATH-DEEP D-11 (2026-06-22) — Scatter pay table extractor.
    * Cash Eruption §6.3: "Volcano scatter pays 3=2× / 4=15× / 5=100× total bet".
    * Generic pattern: "<scatterName> scatter pays N=Mx / N+1=Px / N+2=Qx" or
-   * inline "<Name> SCATTER N-of = Px bet". */
+   * inline "<Name> SCATTER N-of = Px bet".
+   *
+   * STRICT BOUNDS + SCATTER CONTEXT (post-audit 2026-06-22): the raw regex
+   * "3=2x, 4=15x, 5=100x" can match unrelated tabular notation (e.g. reel
+   * strip enumerations). Now:
+   *   - Require "scatter" keyword within ±60 chars of the first capture
+   *   - Bound each pay multiplier: p3 ≤ 50, p4 ≤ 200, p5 ≤ 2000 (industry
+   *     escalation ratio; >2000× single-symbol is unrealistic)
+   *   - Filter phantom symbol names (Generic / Default / Feature / Symbol). */
   _safeExtract('header.scatter-pay-table', () => {
-    /* Multi-form scatter pay regex:
-     *   "Volcano = Free Spins scatter (3=2x, 4=15x, 5=100x total bet)"
-     *   "Volcano scatter pays 3=2x / 4=15x / 5=100x bet"
-     *   "3=2x, 4=15x, 5=100x" (inline list)
-     */
     const reA = /3\s*[=:]?\s*(\d{1,4})\s*[×x]\s*,?\s*\/?\s*4\s*[=:]?\s*(\d{1,4})\s*[×x]\s*,?\s*\/?\s*5\s*[=:]?\s*(\d{1,4})\s*[×x]/i;
     const m = text.match(reA);
-    if (m) {
-      const [, p3, p4, p5] = m;
-      if (!model.scatter) model.scatter = {};
-      model.scatter.payTable = { '3': parseInt(p3, 10), '4': parseInt(p4, 10), '5': parseInt(p5, 10) };
-      /* Extract scatter symbol name from surrounding context. */
-      const nameM = text.match(/\b([A-Z][a-z]+)\s*=\s*(?:Free\s+Spins?\s+)?scatter/i)
-                 || text.match(/([A-Z][a-z]+)\s+scatter[s]?\s+pays?/i);
-      if (nameM) model.scatter.symbolName = nameM[1];
+    if (!m) return;
+    /* Require "scatter" keyword within ±80 chars (capture is a numeric trio,
+     * so context window straddles the match) to confirm this is a scatter
+     * pay table, not a reel strip or unrelated tabular notation. */
+    const idx = m.index ?? text.indexOf(m[0]);
+    const ctxStart = Math.max(0, idx - 80);
+    const ctxEnd   = Math.min(text.length, idx + m[0].length + 80);
+    const ctx = text.slice(ctxStart, ctxEnd);
+    if (!/scatter/i.test(ctx)) return;
+    const [, p3, p4, p5] = m;
+    const v3 = parseInt(p3, 10);
+    const v4 = parseInt(p4, 10);
+    const v5 = parseInt(p5, 10);
+    /* Bounds + monotonic escalation guard (3≤4≤5 — scatter pays grow). */
+    if (!(Number.isFinite(v3) && v3 >= 1 && v3 <= 50))    return;
+    if (!(Number.isFinite(v4) && v4 >= v3 && v4 <= 200))  return;
+    if (!(Number.isFinite(v5) && v5 >= v4 && v5 <= 2000)) return;
+    if (!model.scatter) model.scatter = {};
+    model.scatter.payTable = { '3': v3, '4': v4, '5': v5 };
+    /* Extract scatter symbol name from surrounding context. */
+    const nameM = text.match(/\b([A-Z][a-z]+)\s*=\s*(?:Free\s+Spins?\s+)?scatter/i)
+               || text.match(/([A-Z][a-z]+)\s+scatter[s]?\s+pays?/i);
+    if (nameM && !/^(Generic|Default|Feature|Symbol|Item|Bonus|Free)$/i.test(nameM[1])) {
+      model.scatter.symbolName = nameM[1];
     }
   });
 
@@ -738,10 +757,28 @@ export function parseMarkdownGDD(text) {
   });
 
   /* MATH-DEEP D-13 (2026-06-22) — in-FS Hold & Win trigger threshold.
-   * Cash Eruption §4.8: "9+ Big Fireballs" in FS triggers H&W (6.19% RTP). */
+   * Cash Eruption §4.8: "9+ Big Fireballs" in FS triggers H&W (6.19% RTP).
+   *
+   * STRICT FS CONTEXT REQUIREMENT (post-audit 2026-06-22): the third regex
+   * matched a symbol-table row index ("25 Big Fireball 2x2 oversized coin")
+   * → returned 25 as the trigger count. Audited fix uses four targeted
+   * patterns that pin the count to an FS-trigger phrase, not a row index:
+   *   1. "Free Spins   9+ Big Fireball"   — trigger conditions table row
+   *   2. "9+ Big Fireballs during/in FS"  — inline prose
+   *   3. "in-FS Hold & Win trigger: 9"    — explicit field
+   *   4. "9+ is the FS Hold & Win trigger" — symbol-table render notation
+   *
+   * Numeric bound is 2..30 (FS trigger threshold realism). */
   _safeExtract('header.in-fs-hw-trigger', () => {
-    const m = text.match(/(\d{1,2})\+?\s+Big\s+Fireballs?\s+(?:in|during|trigger)/i)
-           || text.match(/in[\s-]?FS\s+(?:Hold\s+&\s+Win|H&W)\s+trigger[s]?\s*[:|]?\s*(\d{1,2})/i);
+    /* ORDER MATTERS: most-specific phrases first. Pattern that captures
+     * "N is the FS Hold & Win trigger" comes BEFORE "Free Spins N+ Big
+     * Fireball" because the latter accidentally matches symbol-table row
+     * indices ("...pays 1x in free spins 25 Big Fireball 2×2..." — where
+     * 25 is the row index, not the trigger count). */
+    const m = text.match(/(\d{1,2})\+?\s+is\s+the\s+FS\s+(?:Hold\s+&\s+Win|H&W)\s+trigger/i)
+           || text.match(/(\d{1,2})\+?\s+Big\s+Fireballs?\s+(?:during|in)\s+(?:FS|free[\s-]?spins?)/i)
+           || text.match(/in[\s-]?FS\s+(?:Hold\s+&\s+Win|H&W)\s+trigger[s]?\s*[:|]?\s*(\d{1,2})/i)
+           || text.match(/Free\s+Spins?\s+(\d{1,2})\+?\s+Big\s+Fireballs?\s+\(2x?2\)\s+threshold/i);
     if (m) {
       const fsTrig = parseInt(m[1], 10);
       if (Number.isFinite(fsTrig) && fsTrig >= 2 && fsTrig <= 30) {
