@@ -563,6 +563,17 @@ if (existsSync(hyb3Test)) {
     'node', [hyb3Test]);
 }
 
+/* ── Step 4.97u: HYB-4 Multi-Vendor PAR Sheet Ingest
+ * Vendor detector (IGT / Pragmatic / L&W / Spielo / generic) + dispatch to
+ * appropriate adapter. Generic CSV adapter handles 90% of small-vendor PAR
+ * sheets that don't fit named templates. Output validates against
+ * ParSheetSchema (HYB-1). */
+const hyb4Test = resolve(REPO, 'tests/tools/par-sheet-multivendor.test.mjs');
+if (existsSync(hyb4Test)) {
+  run('MATH-DEEP HYB-4 Multi-Vendor PAR Sheet Ingest (detect + generic CSV)',
+    'node', [hyb4Test]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
