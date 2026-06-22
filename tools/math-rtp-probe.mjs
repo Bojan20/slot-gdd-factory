@@ -35,6 +35,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
 import { MATH_PRECISION_BAND_PCT, MATH_PRECISION_BAND_LABEL } from '../src/registry/mathPrecision.mjs';
 import { evalPatternWin } from '../src/blocks/featureSimPlugins/patternWin.mjs';
+import { applyWildExpansion } from '../src/blocks/featureSimPlugins/wildExpansion.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -236,6 +237,12 @@ function spin(rng) {
     }
     grid.push(col);
   }
+  /* OPCIJA A · A-2 — Wild expansion plugin runs BEFORE final line evaluation
+   * (GDD §5.3 step 6). Mutates grid in-place: Wilds contributing to wins
+   * become "Big Wild" filling all rows of their reel. Subsequent line eval
+   * then re-scores against expanded grid. */
+  const paylineMapForExpansion = model.topology?.paylineMap;
+  applyWildExpansion(grid, model, paylineMapForExpansion);
   /* Evaluate paylines: assume center row (y=middle) for simplicity.
    * Real engines walk model topology payline maps; this probe is an
    * approximation that captures hit/RTP trends without the full LUT. */
