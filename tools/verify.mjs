@@ -416,6 +416,16 @@ if (existsSync(math5Test)) {
     'node', [math5Test]);
 }
 
+/* ── Step 4.97h: MATH-6 PAR sheet generator ─────────────────────────
+ * Combines MATH-1 declared + MATH-2 reel strips + MATH-3 probe +
+ * MATH-5 volatility u JSON + ASCII tabela.
+ * Schema: par-sheet/v1, standard: GLI-19 reference (vendor-neutral). */
+const math6Test = resolve(REPO, 'tests/tools/math-6-par-sheet.test.mjs');
+if (existsSync(math6Test)) {
+  run('MATH-6 PAR sheet generator (declared+measured+vol + determinism)',
+    'node', [math6Test]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
