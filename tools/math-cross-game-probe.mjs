@@ -51,7 +51,7 @@
  *   No vendor names in summary output — only internal slug + topology kind.
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -195,11 +195,27 @@ export function generateComparativeReport(slugs, opts = {}) {
     });
   }
   const succeeded = games.filter(g => g.ok);
-  /* QA fix (Finding #4, 2026-06-22): exclude games without a declared RTP
-   * from avgDeclared / gap stats. Treating null as 0 skewed the average
-   * (e.g. 5 games [96, 96, 92.5, null, null] gave 56.9% avg declared).
-   * Now: declared-aware averaging + separate count. */
   const withDeclared = succeeded.filter(g => Number.isFinite(g.declaredRTP) && g.declaredRTP > 0);
+  /* 2026-06-23 — gap distribution histogram for full-corpus runs.
+   * Buckets games-with-declared-RTP by |Δ| into industry-meaningful bands:
+   *   exact (±0.5pp)  — auto-clamp converged
+   *   tight (±5pp)    — within ±5pp precision band
+   *   medium (±20pp)  — engine over/under-counts, needs topology kernel
+   *   wide (>20pp)    — likely broken model OR missing eval kernel
+   * Topology distribution shows where the corpus sits across eval kinds. */
+  const gapBuckets = { exact: 0, tight: 0, medium: 0, wide: 0 };
+  const topoDist = {};
+  for (const g of withDeclared) {
+    const d = Math.abs(g.rtpDelta || 0);
+    if (d <= 0.5) gapBuckets.exact++;
+    else if (d <= 5) gapBuckets.tight++;
+    else if (d <= 20) gapBuckets.medium++;
+    else gapBuckets.wide++;
+  }
+  for (const g of succeeded) {
+    const k = g.topologyKind || 'unknown';
+    topoDist[k] = (topoDist[k] || 0) + 1;
+  }
   const summary = {
     generatedAt: new Date().toISOString(),
     tool: 'tools/math-cross-game-probe.mjs',
@@ -210,18 +226,17 @@ export function generateComparativeReport(slugs, opts = {}) {
     avgMeasuredRTP: succeeded.length > 0
       ? +(succeeded.reduce((s, g) => s + g.measuredRTP, 0) / succeeded.length).toFixed(2)
       : null,
-    /* Declared-aware averaging — excludes null-declared games. */
     avgDeclaredRTP: withDeclared.length > 0
       ? +(withDeclared.reduce((s, g) => s + g.declaredRTP, 0) / withDeclared.length).toFixed(2)
       : null,
-    /* Gap stats only over games with declared RTP (true delta is undefined
-     * without a target). Returns null when no game has declared RTP. */
     maxRTPGap: withDeclared.length > 0
       ? +(Math.max(...withDeclared.map(g => Math.abs(g.rtpDelta || 0)))).toFixed(2)
       : null,
     minRTPGap: withDeclared.length > 0
       ? +(Math.min(...withDeclared.map(g => Math.abs(g.rtpDelta || 0)))).toFixed(2)
       : null,
+    gapBuckets,
+    topologyDistribution: topoDist,
   };
   return { games, summary, exit };
 }
@@ -297,7 +312,21 @@ if (process.argv[1]?.endsWith('math-cross-game-probe.mjs')) {
   const runs = parseInt(argVal('--runs') || '50000', 10);
   const seed = parseInt(argVal('--seed') || '42', 10);
   const format = (argVal('--format') || 'json').toLowerCase();
-  const slugs = slugsArg ? slugsArg.split(',').map(s => s.trim()) : BASELINE_SLUGS;
+  const useAllCorpus = args.includes('--all');
+  let slugs;
+  if (useAllCorpus) {
+    /* All 338 GDDs in dist/real-games/ with model.json. */
+    const allDirs = readdirSync(REAL_GAMES);
+    slugs = allDirs.filter(d => {
+      const p = join(REAL_GAMES, d);
+      try {
+        const s = statSync(p);
+        return s.isDirectory() && existsSync(join(p, 'model.json'));
+      } catch { return false; }
+    });
+  } else {
+    slugs = slugsArg ? slugsArg.split(',').map(s => s.trim()) : BASELINE_SLUGS;
+  }
   console.log(`MATH-DEEP cross-game probe · ${slugs.length} games × ${runs} spins · seed ${seed}`);
   console.log('');
   const { games, summary, exit } = generateComparativeReport(slugs, { runs, seed });
