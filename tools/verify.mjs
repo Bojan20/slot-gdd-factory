@@ -522,6 +522,16 @@ if (existsSync(parApplyTest)) {
     'node', [parApplyTest]);
 }
 
+/* ── Step 4.97q: OPCIJA A · 5 feature plugins (Pattern Win + Wild expansion +
+ * Volcano scatter + H&W Fireball collect + FS round simulation).
+ * Self-test verifies plugin exports + contracts + probe integration brings
+ * Cash Eruption measured RTP from 11.85% to 68% (71% of declared 96%). */
+const opcijaATest = resolve(REPO, 'tests/tools/math-opcija-a-feature-plugins.test.mjs');
+if (existsSync(opcijaATest)) {
+  run('OPCIJA A · 5 feature plugins (Pattern/Wild/Volcano/H&W/FS round)',
+    'node', [opcijaATest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
