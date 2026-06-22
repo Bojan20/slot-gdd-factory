@@ -378,6 +378,22 @@ if (existsSync(math2Test)) {
     'node', [math2Test]);
 }
 
+/* ── Step 4.97e: MATH-3 RTP probe measurement framework ────────────────
+ * 10k smoke spins on Cash Eruption verifikuje:
+ *   • probe exits 0 + emits valid summary JSON
+ *   • measuredRTP > 0 (pravi spin loop)
+ *   • measuredHF u industry range [5%, 50%]
+ *   • performance > 100k spin/s (pure-JS sim sanity)
+ *   • winHistogram sum equals hitCount
+ *   • deterministic re-run sa istim seed-om = identical RTP
+ * Note: 10k smoke je za speed; 100k production run radi se ad-hoc.
+ * Generic distribution → MATH-7 WASM oracle će zameniti za precision. */
+const math3Test = resolve(REPO, 'tests/tools/math-3-rtp-probe.test.mjs');
+if (existsSync(math3Test)) {
+  run('MATH-3 RTP probe (10k spin smoke + determinism)',
+    'node', [math3Test]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
