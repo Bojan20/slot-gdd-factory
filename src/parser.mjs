@@ -49,29 +49,29 @@ export function parseGDD(text, ext) {
       return m;
     }
   }
-  /* Fix #3 (2026-06-23) — GDD size DoS guard. Reject prose > 50MB to prevent
-   * memory exhaustion on adversarial / malformed input. Real production GDDs
-   * are < 1MB; 50MB ceiling is 50× safety margin. */
-  const MAX_GDD_SIZE_BYTES = 50 * 1024 * 1024;
-  if (text.length > MAX_GDD_SIZE_BYTES) {
-    const m = freshModel();
-    m.confidence._failures.push({
-      label: 'input',
-      error: `GDD exceeds size limit: ${text.length} bytes > ${MAX_GDD_SIZE_BYTES} (50MB DoS guard)`,
-    });
-    return m;
-  }
   /* Wave W47.S22 Edge-Case A + UQ-FORTIFY9 #4 — strip BOM (UTF-8 + UTF-16
-   * LE/BE + UTF-32 LE/BE) ako prisutan. Originalni fix je samo UTF-8
-   * (0xFEFF). UTF-16 BOM-ovi (0xFFFE / 0xFEFF kao 2 byte) parser videl kao
-   * encoded text i silently failed → "Untitled Slot" fallback. */
+   * LE/BE + UTF-32 LE/BE) PRE size guard (ultra-deep QA P1-F: 50MB+1-char
+   * file with BOM previously rejected though true payload < 50MB). */
   if (text.charCodeAt(0) === 0xFEFF) {
     text = text.slice(1);
   }
-  /* UTF-16 LE BOM = 0xFF 0xFE; UTF-16 BE BOM = 0xFE 0xFF.
-   * Posle UTF-8 decoded String chars su ￾ ili ﻿ respectively. */
   if (text.charCodeAt(0) === 0xFFFE) {
     text = text.slice(1);
+  }
+  /* Fix #3 + ultra-deep QA P1-E (2026-06-23) — GDD size DoS guard.
+   * Reject prose > 50MB to prevent memory exhaustion on adversarial /
+   * malformed input. Use Buffer.byteLength for true UTF-8 byte count
+   * (text.length is UTF-16 code units, under-counts surrogate-pair
+   * emoji-heavy PDF prose). */
+  const MAX_GDD_SIZE_BYTES = 50 * 1024 * 1024;
+  const textBytes = (typeof Buffer !== 'undefined') ? Buffer.byteLength(text, 'utf8') : text.length;
+  if (textBytes > MAX_GDD_SIZE_BYTES) {
+    const m = freshModel();
+    m.confidence._failures.push({
+      label: 'input',
+      error: `GDD exceeds size limit: ${textBytes} bytes > ${MAX_GDD_SIZE_BYTES} (50MB DoS guard)`,
+    });
+    return m;
   }
   if (ext === 'json') {
     try {

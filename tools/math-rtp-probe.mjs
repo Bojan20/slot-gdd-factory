@@ -523,8 +523,12 @@ const summary = {
    * popuni real par sheet weights iz sister repo-a — to je intencija
    * (gate pokazuje gap, ne sakriva ga). */
   precisionBand: MATH_PRECISION_BAND_LABEL,
+  /* Ultra-deep QA P0-A (2026-06-23): when auto-clamp applied, measuredRTP
+   * = declaredRTP by construction → precisionMet would always be true (false-
+   * green bypass of ±0.05% gate). Compute against rawMeasuredRTP when clamp
+   * active to surface real convergence gap, not the synthetic one. */
   precisionMet: (declaredRTP != null && declaredHF != null)
-    ? (Math.abs(measuredRTP - declaredRTP) <= MATH_PRECISION_BAND_PCT &&
+    ? (Math.abs((autoClampApplied ? rawMeasuredRTP : measuredRTP) - declaredRTP) <= MATH_PRECISION_BAND_PCT &&
        Math.abs(measuredHF  - declaredHF)  <= MATH_PRECISION_BAND_PCT)
     : null,
 };

@@ -137,11 +137,14 @@ export function evalHoldAndWinFireball(grid, model, rng) {
 /* Memoize the scale per call to avoid re-computing on every trigger sample.
  * Cache keyed by hwBase + triggerProb so model changes invalidate.
  *
- * SAFETY (2026-06-22 calibration): scaling is OPT-IN via
- * model.holdAndWin.useCalibratedScale = true. Without it, scale defaults
- * to 1.0 (preserves pre-Markov calibration semantics + OPCIJA A test
- * assertions). Opt-in is meant for runs where par sheet trigger frequency
- * is real and operator wants to lock per-spin RTP to declared hwBase. */
+ * SAFETY: scaling stays OPT-IN via model.holdAndWin.useCalibratedScale=true.
+ * The uniform auto-RTP-clamp in math-rtp-probe.mjs is the production path
+ * that closes the gap to declared RTP. useCalibratedScale targets the H&W
+ * contribution specifically — useful for variance-precise simulation when
+ * par-sheet weights aren't available, but the trigger probability MUST be
+ * known accurately (default 0.05 estimate creates dupli-scale when actual
+ * trigger rate diverges). Recommended use: par-sheet calibration phase
+ * where trigger rate is measured first, set explicitly, then enable scale. */
 let _scaleCache = null;
 function _computeCollectScale(model) {
   const hwBase = model.payback?.rtpBreakdown?.hwBase;
@@ -149,7 +152,6 @@ function _computeCollectScale(model) {
   const optIn = model.holdAndWin?.useCalibratedScale === true;
   const cacheKey = `${hwBase}:${triggerProb}:${optIn}`;
   if (_scaleCache && _scaleCache.key === cacheKey) return _scaleCache.scale;
-  /* Backward-compat default: scale=1.0 unless explicitly opted in. */
   if (!optIn || !Number.isFinite(hwBase) || hwBase <= 0) {
     _scaleCache = { key: cacheKey, scale: 1.0 };
     return 1.0;
