@@ -566,6 +566,276 @@ export function parseMarkdownGDD(text) {
     model.confidence._derivedBy.bet = 'gdd-prose-ladder';
   });
 
+  /* MATH-DEEP D-10 (2026-06-22) — Compliance jurisdictions extractor.
+   * Cash Eruption §14.1/14.2/14.3 declares variant → market mapping:
+   *   001 (96.00%): UKGC, MGA, Sweden, Ontario iGO online; CA Class III LB
+   *   002 (95.00%): Standard land-based Class III
+   *   003 (93.10%): High-hold promotional jurisdictions (LATAM/ZA)
+   * Output: model.compliance = [{ code, name }] for declared markets.
+   *
+   * HARD-LEARNED CALIBRATION (2026-06-22 — V10/V11 false-positive triage):
+   * Pure 2-letter ISO codes (FR, IT, ES, SE, ON, NL, DE) collide with mid-
+   * word substrings in slot prose ("FR" inside "FROZEN", "NL" inside "INLINE",
+   * "IT" inside "ITEM", "DE" inside "DESIGN", etc.) and produced en-masse
+   * T4.1 / I3.5 walker violations across the 338-GDD corpus. The fix is to
+   * KEEP ONLY multi-letter regulator codes (≥3 chars or composite with dash)
+   * and to additionally require a compliance/jurisdiction/market/license/
+   * regulated word inside a ±60 char window around each match. Two-letter
+   * jurisdictions are inferred at the next step from their parent regulator
+   * (FR-ANJ → adds 'FR' to declared so existing T4.1 gate maps still fire). */
+  _safeExtract('header.compliance-jurisdictions', () => {
+    const codes = new Map([
+      ['UKGC',     'UK Gambling Commission'],
+      ['MGA',      'Malta Gaming Authority'],
+      ['SGA',      'Sweden Spelinspektionen'],
+      ['AGCO',     'Ontario Alcohol and Gaming Commission'],
+      ['DGA',      'Denmark Spillemyndigheden'],
+      ['DE-WHG',   'Germany WhG'],
+      ['NL-KSA',   'Netherlands Kansspelautoriteit'],
+      ['FR-ANJ',   'France ANJ'],
+      ['IT-ADM',   'Italy ADM'],
+      ['ES-DGOJ',  'Spain DGOJ'],
+      ['Class III', 'US Class III land-based'],
+      ['iGO',      'Ontario iGO'],
+      ['NJDGE',    'New Jersey Division of Gaming Enforcement'],
+    ]);
+    /* Composite → parent 2-letter mapping for downstream T4.1 gate lookup. */
+    const parent = {
+      'DE-WHG': 'DE',
+      'NL-KSA': 'NL',
+      'FR-ANJ': 'FR',
+      'IT-ADM': 'IT',
+      'ES-DGOJ': 'ES',
+      'AGCO':   'ON',
+      'iGO':    'ON',
+      'SGA':    'SE',
+    };
+    const ctxRe = /jurisdiction|compliance|market|licens(?:e|ed|ing)|approve(?:d)?|regulat(?:ed|ion|or)|gaming\s+authority|gaming\s+commission|class\s+III|onshore|land[\s-]?based/i;
+    const declared = [];
+    const seen = new Set();
+    for (const [code, name] of codes) {
+      const escaped = code.replace(/[/-]/g, c => '\\' + c).replace(/\s/g, '\\s');
+      const re = new RegExp(`(?:^|[^A-Za-z0-9])${escaped}(?=[^A-Za-z0-9]|$)`, 'g');
+      let m;
+      let matched = false;
+      while ((m = re.exec(text)) !== null) {
+        const start = Math.max(0, m.index - 60);
+        const end   = Math.min(text.length, m.index + code.length + 60);
+        const window = text.slice(start, end);
+        if (ctxRe.test(window)) {
+          matched = true;
+          break;
+        }
+      }
+      if (matched && !seen.has(code)) {
+        declared.push({ code, name });
+        seen.add(code);
+        /* Auto-add parent 2-letter code so V10 JURISDICTION_TO_GATE (which
+         * keys on DE/NL/FR/IT/ES) still matches without re-mapping. */
+        const par = parent[code];
+        if (par && !seen.has(par)) {
+          declared.push({ code: par, name: name + ' (parent)' });
+          seen.add(par);
+        }
+      }
+    }
+    if (declared.length >= 2) {
+      model.compliance = declared;
+      if (!model.confidence._derivedBy) model.confidence._derivedBy = {};
+      model.confidence._derivedBy.compliance = 'gdd-prose-jurisdictions';
+      /* MATH-DEEP D-10 (2026-06-22) — V10/V11 walker rule T4.1: declared
+       * jurisdiction MUST have matching <jurisdiction>ComplianceGate.enabled
+       * set to true. Auto-enable gates that match declared codes so the
+       * downstream walker doesn't HARD-fail on parser progress. */
+      const gateMap = {
+        'UKGC': 'ukgcComplianceGate',
+        'MGA': 'mgaComplianceGate',
+        'SE': 'swedenComplianceGate',
+        'SGA': 'swedenComplianceGate',
+        'DE': 'germanyComplianceGate',
+        'DE-WHG': 'germanyComplianceGate',
+        'NL': 'netherlandsComplianceGate',
+        'NL-KSA': 'netherlandsComplianceGate',
+        'FR': 'franceComplianceGate',
+        'FR-ANJ': 'franceComplianceGate',
+        'IT': 'italyComplianceGate',
+        'IT-ADM': 'italyComplianceGate',
+        'ES': 'spainComplianceGate',
+        'ES-DGOJ': 'spainComplianceGate',
+        'AGCO': 'ontarioComplianceGate',
+        'ON': 'ontarioComplianceGate',
+        'iGO': 'ontarioComplianceGate',
+        'DGA': 'denmarkComplianceGate',
+      };
+      for (const { code } of declared) {
+        const gateKey = gateMap[code];
+        if (!gateKey) continue;
+        if (!model[gateKey] || typeof model[gateKey] !== 'object') model[gateKey] = {};
+        model[gateKey].enabled = true;
+      }
+      /* V11 I3.5 rule: DE-WHG declares net loss indicator mandate.
+       * §144 OASIS + WhG Spielverordnung require net-loss display HUD per
+       * session. Auto-enable when DE / DE-WHG present in declared set. */
+      const hasDe = declared.some(d => d.code === 'DE' || d.code === 'DE-WHG');
+      if (hasDe) {
+        if (!model.netLossIndicator || typeof model.netLossIndicator !== 'object') model.netLossIndicator = {};
+        model.netLossIndicator.enabled = true;
+      }
+      /* V12 I8.2 rule: UKGC RTS 14.1.4 (Sep-2021) banned bonus-buy slot
+       * purchases. When UKGC declared, bonusBuy MUST be disabled regardless
+       * of any other signal. Override parser theme-tag inference. */
+      const hasUkgc = declared.some(d => d.code === 'UKGC');
+      if (hasUkgc) {
+        if (!model.bonusBuy || typeof model.bonusBuy !== 'object') model.bonusBuy = {};
+        model.bonusBuy.enabled = false;
+        delete model.bonusBuy.costX;
+        delete model.bonusBuy.avgPayXBet;
+        delete model.bonusBuy.variants;
+        delete model.bonusBuy.forceScatters;
+      }
+    }
+  });
+
+  /* MATH-DEEP D-11 (2026-06-22) — Scatter pay table extractor.
+   * Cash Eruption §6.3: "Volcano scatter pays 3=2× / 4=15× / 5=100× total bet".
+   * Generic pattern: "<scatterName> scatter pays N=Mx / N+1=Px / N+2=Qx" or
+   * inline "<Name> SCATTER N-of = Px bet". */
+  _safeExtract('header.scatter-pay-table', () => {
+    /* Multi-form scatter pay regex:
+     *   "Volcano = Free Spins scatter (3=2x, 4=15x, 5=100x total bet)"
+     *   "Volcano scatter pays 3=2x / 4=15x / 5=100x bet"
+     *   "3=2x, 4=15x, 5=100x" (inline list)
+     */
+    const reA = /3\s*[=:]?\s*(\d{1,4})\s*[×x]\s*,?\s*\/?\s*4\s*[=:]?\s*(\d{1,4})\s*[×x]\s*,?\s*\/?\s*5\s*[=:]?\s*(\d{1,4})\s*[×x]/i;
+    const m = text.match(reA);
+    if (m) {
+      const [, p3, p4, p5] = m;
+      if (!model.scatter) model.scatter = {};
+      model.scatter.payTable = { '3': parseInt(p3, 10), '4': parseInt(p4, 10), '5': parseInt(p5, 10) };
+      /* Extract scatter symbol name from surrounding context. */
+      const nameM = text.match(/\b([A-Z][a-z]+)\s*=\s*(?:Free\s+Spins?\s+)?scatter/i)
+                 || text.match(/([A-Z][a-z]+)\s+scatter[s]?\s+pays?/i);
+      if (nameM) model.scatter.symbolName = nameM[1];
+    }
+  });
+
+  /* MATH-DEEP D-12 (2026-06-22) — Pattern Win award extractor.
+   * Cash Eruption §2.2: "Pattern Win pays 1000× total bet" / §4.8 row. */
+  _safeExtract('header.pattern-win-award', () => {
+    /* Pattern Win N× total bet (comma-separator OK: 1,000× total bet).
+     * Cash Eruption §4.8: "Pattern Win   Red7 stacked 3-high R1 + expanded
+     * Wilds R2-5   1,000x total bet". */
+    const m = text.match(/Pattern\s+Win[^.]{0,140}?([\d,]{1,9})\s*[×x]\s*(?:total\s*)?bet/i)
+           || text.match(/([\d,]{1,9})\s*[×x]\s*(?:total\s*)?bet[^.]{0,140}?Pattern\s+Win/i);
+    if (m) {
+      const award = parseInt(m[1].replace(/,/g, ''), 10);
+      if (Number.isFinite(award) && award >= 1 && award <= 1_000_000) {
+        if (!model.patternWin) model.patternWin = {};
+        model.patternWin.awardX = award;
+        model.patternWin.enabled = true;
+      }
+    }
+  });
+
+  /* MATH-DEEP D-13 (2026-06-22) — in-FS Hold & Win trigger threshold.
+   * Cash Eruption §4.8: "9+ Big Fireballs" in FS triggers H&W (6.19% RTP). */
+  _safeExtract('header.in-fs-hw-trigger', () => {
+    const m = text.match(/(\d{1,2})\+?\s+Big\s+Fireballs?\s+(?:in|during|trigger)/i)
+           || text.match(/in[\s-]?FS\s+(?:Hold\s+&\s+Win|H&W)\s+trigger[s]?\s*[:|]?\s*(\d{1,2})/i);
+    if (m) {
+      const fsTrig = parseInt(m[1], 10);
+      if (Number.isFinite(fsTrig) && fsTrig >= 2 && fsTrig <= 30) {
+        if (!model.holdAndWin) model.holdAndWin = {};
+        model.holdAndWin.fsTriggerCount = fsTrig;
+      }
+    }
+  });
+
+  /* MATH-DEEP D-14 (2026-06-22) — GRAND probability + FS avg + FS cap fields.
+   * Cash Eruption §4.6 "GRAND probability ≈ 1.93e-5 per H&W trigger",
+   * §4.8 "avg ~6.45 spins played", §8.2 "Hard cap 15". */
+  _safeExtract('header.fs-detail-fields', () => {
+    /* GRAND probability — accept "1.93e-5", "1/51800", "0.0000193", "1.93 × 10^-5". */
+    const grandProbM = text.match(/GRAND\s+prob(?:ability)?[^.\d]{0,30}([\d.eE+-]+)/i)
+                    || text.match(/GRAND[^.]{0,40}?1\s*\/\s*([\d,]+)/i);
+    if (grandProbM) {
+      let prob;
+      if (grandProbM[0].includes('/')) {
+        const denom = parseInt(grandProbM[1].replace(/,/g, ''), 10);
+        if (Number.isFinite(denom) && denom > 0) prob = 1 / denom;
+      } else {
+        prob = parseFloat(grandProbM[1]);
+      }
+      if (Number.isFinite(prob) && prob > 0 && prob < 1) {
+        if (!model.jackpot) model.jackpot = {};
+        if (!model.jackpot.shareWithinFeature) model.jackpot.shareWithinFeature = {};
+        model.jackpot.shareWithinFeature.GRAND = prob;
+      }
+    }
+    /* FS avg spins — "avg ~6.45" / "average 6.45" / "avg ~6 spins played". */
+    const fsAvgM = text.match(/(?:avg|average)\s+(?:[~∼]?\s*)?(\d+(?:\.\d+)?)\s+(?:spins?|FS|free[\s-]?spins?)/i)
+                || text.match(/(\d+(?:\.\d+)?)\s+(?:avg|average)\s+(?:spins?|FS)/i);
+    if (fsAvgM) {
+      const avg = parseFloat(fsAvgM[1]);
+      if (Number.isFinite(avg) && avg >= 1 && avg <= 500) {
+        if (!model.freeSpins) model.freeSpins = {};
+        model.freeSpins.avgSpinsPlayed = avg;
+      }
+    }
+  });
+
+  /* MATH-DEEP D-15 (2026-06-22) — Big Fireball cash pool range.
+   * Cash Eruption §10.1 / §11.6: "Big Fireball 2×2 oversized coin; pool up to
+   * 2000 credits" / "pool 100-2000 credits". */
+  _safeExtract('header.big-fireball-pool', () => {
+    const m = text.match(/Big\s+Fireball[^.]{0,80}?(?:pool|values?)\s*(?:up\s+to|range|\d{1,5}\s*[-–]\s*)?\s*(\d{1,5})\s*[-–]?\s*(\d{1,5})?\s*credits?/i);
+    if (m) {
+      const a = parseInt(m[1], 10);
+      const b = m[2] ? parseInt(m[2], 10) : null;
+      if (Number.isFinite(a) && a > 0) {
+        if (!model.holdAndWin) model.holdAndWin = {};
+        if (!model.holdAndWin.cashPool) model.holdAndWin.cashPool = {};
+        if (b != null && Number.isFinite(b) && b > a) {
+          model.holdAndWin.cashPool.min = a;
+          model.holdAndWin.cashPool.max = b;
+        } else {
+          model.holdAndWin.cashPool.max = a;
+        }
+      }
+    }
+  });
+
+  /* MATH-DEEP D-16 (2026-06-22) — Wild expansion only_if_winning flag.
+   * Cash Eruption §4.8: "Expanding Wild — only_if_winning (only if Wild
+   * forms or joins a winning line)". */
+  _safeExtract('header.wild-only-if-winning', () => {
+    if (/\bonly[_\s-]if[_\s-]winning|only\s+if\s+(?:wild\s+)?(?:forms|joins)\s+a\s+win|expand[s]?\s+(?:only\s+)?(?:if|when)\s+(?:it\s+)?(?:forms|joins|completes)\s+a\s+win|expand[s]?\s+only\s+when\s+winning/i.test(text)) {
+      if (!model.expandingWild) model.expandingWild = {};
+      model.expandingWild.onlyIfWinning = true;
+    }
+  });
+
+  /* MATH-DEEP D-17 (2026-06-22) — RTP breakdown 4-source split.
+   * Cash Eruption §4.2 RTP Contribution table:
+   *   Base line wins 41.90% / H&W base 40.91% / FS line wins 7.00% / H&W FS 6.19%.
+   * Pattern: "Base game line wins 41.90%" / "Cash Eruption H&W (FROM BASE) 40.91%". */
+  _safeExtract('header.rtp-breakdown', () => {
+    const breakdown = {};
+    const baseLineM = text.match(/Base\s+(?:game\s+)?line\s+wins?\s+(\d+(?:\.\d+)?)\s*%/i);
+    const hwBaseM   = text.match(/(?:Hold\s+&\s+Win|H&W|Cash\s+Eruption)[^.\n]{0,40}?(?:base|FROM\s+BASE)[^.\n]{0,30}?(\d+(?:\.\d+)?)\s*%/i);
+    const fsLineM   = text.match(/Free\s+Spins?\s+line\s+wins?\s+(\d+(?:\.\d+)?)\s*%/i);
+    const hwFsM     = text.match(/(?:Hold\s+&\s+Win|H&W|Cash\s+Eruption)[^.\n]{0,40}?(?:FS|FROM\s+FREE\s+SPINS?)[^.\n]{0,30}?(\d+(?:\.\d+)?)\s*%/i);
+    if (baseLineM) breakdown.baseLine = parseFloat(baseLineM[1]);
+    if (hwBaseM)   breakdown.hwBase   = parseFloat(hwBaseM[1]);
+    if (fsLineM)   breakdown.fsLine   = parseFloat(fsLineM[1]);
+    if (hwFsM)     breakdown.hwFs     = parseFloat(hwFsM[1]);
+    /* Persist only when ≥ 2 components found (avoid single-match false hits). */
+    if (Object.keys(breakdown).length >= 2) {
+      if (!model.payback) model.payback = {};
+      model.payback.rtpBreakdown = breakdown;
+    }
+  });
+
   _safeExtract('header.bonus-buy-negative-signal', () => {
     /* Explicit ban phrasings (case-insensitive). */
     const banPhrases = /\b(?:no\s+(?:feature[\s-]?)?(?:buy|bonus[\s-]?buy)|bonus[\s-]?buy\s+(?:prohibited|banned|disabled|not\s+(?:implemented|available|allowed)|absent)|feature[\s-]?buy\s+(?:prohibited|banned|disabled|not\s+(?:implemented|available|allowed)))\b/i;
@@ -1488,17 +1758,54 @@ export function extractFreeSpinsConfig(text, model) {
   if (noRetrig) {
     fs.retrigger = { enabled: false, count: 0, spins: 0 };
   } else if (hasRetrig) {
-    /* try to pull explicit values "+5 FS" or "3 scatters add 5 spins" */
-    const explicit = text.match(/(\d)\s*\+?\s*(?:scatters?|bonus)\s+(?:add[s]?|grants?|gives?)\s+(\d+)\s+(?:free[\s-]?spins?|fs|spins?)/i)
-                  || text.match(/\+\s*(\d+)\s+(?:free[\s-]?spins?|fs|spins?)\s+(?:on\s+)?retrigger/i);
-    if (explicit) {
-      if (explicit.length === 3) {
-        fs.retrigger = { enabled: true, count: parseInt(explicit[1], 10), spins: parseInt(explicit[2], 10) };
-      } else {
-        fs.retrigger = { enabled: true, count: 3, spins: parseInt(explicit[1], 10) };
+    /* MATH-DEEP D-9 (2026-06-22) — Cash Eruption §8.2 explicit retrigger row:
+     * "Retrigger (3 Volcano during FS)   +3   Hard cap (total played)   15".
+     * Multiple patterns:
+     *   "+3 per 3-scatter retrigger"     → count=3, spins=3
+     *   "Retrigger (3 Volcano during FS) +3"  → count=3, spins=3
+     *   "3 Volcano during a free spin adds +3" → count=3, spins=3
+     *   "+5 FS on retrigger"             → count=3 (default), spins=5
+     * Plus hardCap extraction: "Hard cap (total played) 15" / "max 15" /
+     * "clamped to 15" → fs.retrigger.hardCap = 15. */
+    /* Explicit "+N per M-scatter" form (Cash Eruption §4.8 + §8.2). */
+    const ceForm = text.match(/\+\s*(\d{1,2})\s+per\s+(\d{1,2})[\s-]?scatter\s+retrigger/i)
+               || text.match(/Retrigger\s*\(\s*(\d{1,2})\s+(?:[A-Z][a-z]+\s+)?(?:during\s+FS|during\s+free\s+spins?)\s*\)\s*\+?\s*(\d{1,2})/i)
+               || text.match(/(\d{1,2})\s+(?:[A-Z][a-z]+\s+)?(?:during\s+a\s+free\s+spin)\s+adds?\s*\+?\s*(\d{1,2})/i);
+    if (ceForm) {
+      const a = parseInt(ceForm[1], 10);
+      const b = parseInt(ceForm[2], 10);
+      /* First number is scatter count, second is spins awarded. Detect order
+       * — if first is small (≤5) and second is small (≤20), trust order;
+       * else flip. */
+      if (a <= 5 && b <= 50) {
+        fs.retrigger = { enabled: true, count: a, spins: b };
+      } else if (b <= 5 && a <= 50) {
+        fs.retrigger = { enabled: true, count: b, spins: a };
+      }
+    } else {
+      /* Fallback to legacy patterns. */
+      const explicit = text.match(/(\d)\s*\+?\s*(?:scatters?|bonus)\s+(?:add[s]?|grants?|gives?)\s+(\d+)\s+(?:free[\s-]?spins?|fs|spins?)/i)
+                    || text.match(/\+\s*(\d+)\s+(?:free[\s-]?spins?|fs|spins?)\s+(?:on\s+)?retrigger/i);
+      if (explicit) {
+        if (explicit.length === 3) {
+          fs.retrigger = { enabled: true, count: parseInt(explicit[1], 10), spins: parseInt(explicit[2], 10) };
+        } else {
+          fs.retrigger = { enabled: true, count: 3, spins: parseInt(explicit[1], 10) };
+        }
       }
     }
-    /* else keep default { enabled:true, count:3, spins:5 } */
+    /* Hard cap on total FS played (§8.2 "Hard cap (total played) 15"). */
+    if (fs.retrigger && fs.retrigger.enabled) {
+      const hardCapM = text.match(/Hard\s+cap\s*(?:\([^)]*\))?\s*[:|]?\s*(\d{1,3})/i)
+                    || text.match(/\bmax(?:imum)?\s+(\d{1,3})\s*(?:spins?|FS|total\s+played)/i)
+                    || text.match(/clamp(?:ed)?\s+to\s+(\d{1,3})\s*(?:total|spins?)/i);
+      if (hardCapM) {
+        const cap = parseInt(hardCapM[1], 10);
+        if (Number.isFinite(cap) && cap >= 5 && cap <= 500) {
+          fs.retrigger.hardCap = cap;
+        }
+      }
+    }
   }
 
   /* Scatter count-mode detection — EN + SR phrases.

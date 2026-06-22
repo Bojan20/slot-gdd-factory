@@ -316,15 +316,11 @@ function spin(rng) {
     hits++;
   }
 
-  /* MATH-4 — runtime win cap enforcement. winCap.mode='spin' (default)
-   * clamps single-spin total at model.winCap.maxWinX × BET. Cumulative
-   * across cascades / FS rounds is handled by src/blocks/winCap.mjs in
-   * browser context; this probe is single-spin so single clamp suffices. */
-  const maxWinX = model.winCap?.maxWinX;
-  if (Number.isFinite(maxWinX) && maxWinX > 0) {
-    const cap = maxWinX * BET;
-    if (totalWin > cap) totalWin = cap;
-  }
+  /* Note: winCap is applied AFTER FS round merge (in the outer loop below)
+   * so the cap covers base spin + FS round payouts together. Applying here
+   * would leak fsRoundPay past the cap (regression introduced when OPCIJA A
+   * A-5 FS round simulator was added). MATH-4 enforces ≤ cap on full
+   * single-spin total including any FS round that this spin triggered. */
   return {
     totalWin, hits,
     fsTriggered: scatterResult.fsTriggered,
@@ -356,6 +352,18 @@ for (let i = 0; i < RUNS; i++) {
   if (spinResult.fsTriggered) {
     const fsRound = simulateFreeSpinsRound(model, rng, () => spin(rng).totalWin);
     win += fsRound.fsRoundPay;
+  }
+
+  /* MATH-4 — runtime win cap enforcement. winCap.mode='spin' (default)
+   * clamps single-spin total at model.winCap.maxWinX × BET. Cumulative
+   * across cascades / FS rounds is handled by src/blocks/winCap.mjs in
+   * browser context; this probe applies the cap AFTER FS round merge so
+   * the cap covers base spin + FS round payouts together (a previous
+   * regression let fsRoundPay leak past the cap). */
+  const maxWinX = model.winCap?.maxWinX;
+  if (Number.isFinite(maxWinX) && maxWinX > 0) {
+    const cap = maxWinX * BET;
+    if (win > cap) win = cap;
   }
 
   totalWin += win;
