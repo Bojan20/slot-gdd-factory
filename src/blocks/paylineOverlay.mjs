@@ -183,6 +183,25 @@ export function emitPaylineOverlayCSS(cfgOrModel = {}) {
     dominant-baseline: central;
     letter-spacing: 0.5px;
   }
+  /* UQ-MULTIPLIER-V4 (Boki 2026-06-22): per-line credit chip — Boki:
+   * "mora igrac da zna kolko je dobio i zasto". Vendor-neutral gold pill
+   * sa naturom payX vrednosti pored krajnje ćelije linije. */
+  .payline-credit-bg {
+    fill: rgba(15, 12, 5, 0.92);
+    stroke: ${t.HP.stroke};
+    stroke-width: 1.5;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55));
+  }
+  .payline-credit-bg.tier-HP   { stroke: ${t.HP.stroke}; }
+  .payline-credit-bg.tier-MP   { stroke: ${t.MP.stroke}; }
+  .payline-credit-bg.tier-LP   { stroke: ${t.LP.stroke}; }
+  .payline-credit-bg.tier-WILD { stroke: ${t.WILD.stroke}; }
+  .payline-credit-text {
+    font: 700 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    fill: #f9d36e;
+    text-anchor: middle;
+    dominant-baseline: middle;
+  }
   @media (prefers-reduced-motion: reduce) {
     .payline-path { animation: none; stroke-dashoffset: 0; }
   }
@@ -305,6 +324,33 @@ export function emitPaylineOverlayRuntime(cfgOrModel = {}) {
       t.setAttribute('y', String(by));
       t.textContent = String(event.lineIndex + 1);
       svg.appendChild(t);
+    }
+    /* UQ-MULTIPLIER-V4 (Boki 2026-06-22 "mora igrac da zna koliko je
+     * dobio i zasto"). Per-line credit label: draws "WIN €X.XX" near
+     * the rightmost cell of the matched line so the player sees the
+     * per-line contribution to the total. Uses event.payX as the line
+     * credit value (already multiplier-adjusted by _applyMultToEvents).
+     * Format: integer if whole, 2-dec otherwise. Vendor-neutral. */
+    if (Number.isFinite(event.payX) && event.payX > 0) {
+      const last = pts[pts.length - 1];
+      const cx = Math.min(gridRect.width - 56, last.x + 18);
+      const cy = Math.max(20, Math.min(gridRect.height - 12, last.y));
+      const rect = document.createElementNS(ns, 'rect');
+      rect.setAttribute('class', 'payline-credit-bg tier-' + tier);
+      rect.setAttribute('x', String(cx - 4));
+      rect.setAttribute('y', String(cy - 13));
+      rect.setAttribute('width', '60');
+      rect.setAttribute('height', '20');
+      rect.setAttribute('rx', '4');
+      rect.setAttribute('ry', '4');
+      svg.appendChild(rect);
+      const lbl = document.createElementNS(ns, 'text');
+      lbl.setAttribute('class', 'payline-credit-text');
+      lbl.setAttribute('x', String(cx + 26));
+      lbl.setAttribute('y', String(cy + 2));
+      const v = event.payX;
+      lbl.textContent = (v === Math.floor(v)) ? String(v) : v.toFixed(2);
+      svg.appendChild(lbl);
     }
   }
 `;
