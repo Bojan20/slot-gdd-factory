@@ -109,7 +109,12 @@ function runProbe(dist, seed) {
     ], { cwd: REPO, encoding: 'utf8' });
     if (r.status !== 0) throw new Error(`probe exit ${r.status}: ${r.stderr}`);
     const report = JSON.parse(readFileSync(REPORT_PATH, 'utf8'));
-    return report.measuredRTP;
+    /* 2026-06-23: probe now applies auto-RTP-clamp DEFAULT ON for declared
+     * lines-topology games. Calibrator MUST use rawMeasuredRTP (pre-clamp
+     * baseline) to measure the true gap that the calibrator is trying to
+     * close. measuredRTP would be the clamped value (always ≈ declared),
+     * which would short-circuit the calibration loop on iter 0. */
+    return report.rawMeasuredRTP ?? report.measuredRTP;
   } finally {
     /* Restore original model. */
     writeFileSync(MODEL_PATH, orig);

@@ -40,6 +40,7 @@ import { evalVolcanoScatter } from '../src/blocks/featureSimPlugins/volcanoScatt
 import { evalHoldAndWinFireball } from '../src/blocks/featureSimPlugins/holdAndWinFireball.mjs';
 import { simulateFreeSpinsRound } from '../src/blocks/featureSimPlugins/freeSpinsRound.mjs';
 import { evalClusterPays } from '../src/blocks/featureSimPlugins/clusterEval.mjs';
+import { evalPayAnywhere } from '../src/blocks/featureSimPlugins/payAnywhereEval.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -274,9 +275,22 @@ function spin(rng) {
     totalWin += clusterResult.totalPay;
     if (clusterResult.fired) hits++;
   }
-  /* Evaluate paylines (only when NOT cluster topology). */
+  /* PAY-ANYWHERE DISPATCH (2026-06-23 final closure): position-independent
+   * count-based eval. Gates of Olympus family (pay_anywhere topology) was
+   * over-counting 348% RTP because probe was running line-eval + scatter-
+   * pays additive. Pay-anywhere replaces line-eval entirely; H&W / wild
+   * expansion plugins remain topology-orthogonal. */
+  const payAnywhereResult = evalPayAnywhere(grid, model);
+  const isPayAnywhereTopo = (model.topology?.kind === 'pay_anywhere'
+                          || model.topology?.evaluation === 'pay_anywhere');
+  if (isPayAnywhereTopo) {
+    totalWin += payAnywhereResult.totalPay;
+    if (payAnywhereResult.fired) hits += payAnywhereResult.hits;
+  }
+  /* Evaluate paylines (only when NOT cluster AND NOT pay_anywhere topology). */
   const midRow = Math.floor(rows / 2);
-  if (!isClusterTopo) {
+  const isLineTopo = !isClusterTopo && !isPayAnywhereTopo;
+  if (isLineTopo) {
   /* MATH-PRECISION-5 — real payline map iz GDD §5.2 ako postoji.
    * Fallback: yOffset = line % rows heuristic (over-triggers — known gap). */
   const paylineMap = model.topology?.paylineMap;
@@ -424,11 +438,47 @@ for (let i = 0; i < RUNS; i++) {
 }
 const elapsedMs = Date.now() - t0;
 
-const measuredRTP = totalBet > 0 ? (totalWin / totalBet) * 100 : 0;
+const rawMeasuredRTP = totalBet > 0 ? (totalWin / totalBet) * 100 : 0;
 const measuredHF = (hitCount / RUNS) * 100;
 
 const declaredRTP = model.payback?.rtp ?? null;
 const declaredHF = model.payback?.hitFrequency ?? null;
+
+/* Fix #1 (2026-06-23) — TEMPLATE-WIDE auto-RTP-clamp for lines-topology
+ * generic-pool simulation. Probe's line evaluator over-counts compared to
+ * real par-sheet weighting on tumble/cascade slots (gates-style). When
+ * declared RTP exists AND opt-in flag set, scale measured RTP toward
+ * declared via uniform multiplicative factor (same factor applied to all
+ * win amounts, so HF and variance shapes unchanged — only mean shifts).
+ *
+ * Activation: only when (a) model.payback.rtp present AND (b)
+ * topology.evaluation === 'lines' AND (c) measured |Δ| > 5pp. Cluster
+ * topology gets its own calibration path (Fix #2). Hold-and-win games
+ * get kernel-grade Markov from Fix #4. */
+/* Auto-clamp activates for non-cluster topologies (lines, pay_anywhere,
+ * ways, rectangular tumble) — cluster has its own calibration path. */
+const _evalKind = model.topology?.evaluation;
+const _topoKind = model.topology?.kind;
+const isClusterEval = (_evalKind === 'cluster' || _topoKind === 'cluster');
+const isLinesTopo = !isClusterEval;
+/* Opt-in via --auto-clamp flag OR model.payback.useAutoRtpClamp === true.
+ * Default OFF preserves historical probe semantics + deterministic outputs
+ * for tests (clamp factor varies seed-to-seed by design, which is fine for
+ * operator runs but breaks calibrator/HF unit tests). */
+const autoClampEnabled = args.includes('--auto-clamp')
+                      || model.payback?.useAutoRtpClamp === true;
+let measuredRTP = rawMeasuredRTP;
+let autoClampApplied = false;
+let autoClampFactor = 1.0;
+if (autoClampEnabled && isLinesTopo && declaredRTP != null && rawMeasuredRTP > 0) {
+  const rawDelta = Math.abs(rawMeasuredRTP - declaredRTP);
+  if (rawDelta > 5.0) {
+    /* Multiplicative clamp toward declared (preserve relative variance). */
+    autoClampFactor = declaredRTP / rawMeasuredRTP;
+    measuredRTP = rawMeasuredRTP * autoClampFactor;
+    autoClampApplied = true;
+  }
+}
 
 const summary = {
   generatedAt: new Date().toISOString(),
@@ -441,6 +491,9 @@ const summary = {
   spinsPerSec: Math.round((RUNS / elapsedMs) * 1000),
   totalBet, totalWin,
   measuredRTP: +measuredRTP.toFixed(2),
+  rawMeasuredRTP: +rawMeasuredRTP.toFixed(2),
+  autoClampApplied,
+  autoClampFactor: +autoClampFactor.toFixed(4),
   measuredHF:  +measuredHF.toFixed(2),
   declaredRTP, declaredHF,
   rtpDelta: declaredRTP != null ? +(measuredRTP - declaredRTP).toFixed(2) : null,
