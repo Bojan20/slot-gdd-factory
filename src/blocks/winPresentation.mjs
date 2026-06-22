@@ -388,14 +388,46 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
                       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const adaptive = ${perEventMsJS};
       const perEventMs = (opts && (opts.perEventMs || opts.perComboMs)) || adaptive;
-      const stepMs  = reduced ? 200 : perEventMs;
+      /* UQ-MULTIPLIER-V7 (2026-06-22) — forcedBaseline events (force MULT
+         chip) get a minimum 1500ms cycle so the SKIP_ROLLUP CTA is visible
+         long enough for the player to actually see and click it. With a
+         single 500ms event the SKIP morph lasted ~480ms — perceived as
+         "ne pokazuje se" by the player. Real detector wins keep their
+         normal pace (adaptive 400/500ms). */
+      var __hasForcedBaseline = false;
+      for (var __fb = 0; __fb < events.length; __fb++) {
+        if (events[__fb] && events[__fb].forcedBaseline === true) { __hasForcedBaseline = true; break; }
+      }
+      const stepMs  = reduced ? 200 :
+                      (__hasForcedBaseline ? Math.max(perEventMs, 1500) : perEventMs);
       const token = ++WINSYM_CYCLE_TOKEN;
+      /* UQ-MULTIPLIER-V7 (2026-06-22) — Boki bug "cells nestaju pa pojave":
+         pre-mark FIRST event's win cells + draw polyline BEFORE adding the
+         is-winsym-cycling class. Without this preorder, the 140ms opacity
+         transition on .gridHost.is-winsym-cycling .cell catches every cell
+         in a dim "blank" state for one paint frame before the playOne()
+         synchronous call applies .cell--winsym. Browser composites that
+         intermediate frame so player sees cells "nestaju". By pre-classing
+         the win cells, when is-winsym-cycling is applied the CSS rule for
+         .cell--winsym (opacity 1 !important) wins immediately on those cells
+         while non-win cells dim. Win line is drawn instantly with no flash. */
+      const ev0 = events[0];
+      const cells0 = Array.isArray(ev0 && ev0.cells) ? ev0.cells : [];
+      for (const c of cells0) { if (c && c.classList) c.classList.add('cell--winsym'); }
+      if (typeof ev0.lineIndex === 'number') {
+        drawPaylineOverlay(ev0);
+      } else if (cells0.length >= 2) {
+        drawPaylineOverlay(Object.assign({}, ev0, { lineIndex: 0, _virtualLine: true }));
+      }
       grid.classList.add('is-winsym-cycling');
       /* Sync keyframe length with stepMs so cascade-stagger (80 ms) and
          GDD-overridden perEventMs read as one beat per cell instead of
          overlapping or leaving dead air against a fixed 500 ms keyframe. */
       grid.style.setProperty('--winsym-pulse-ms', stepMs + 'ms');
-      let i = 0;
+      /* V7 — start cycle at i=1 since event[0] is already rendered. The
+         setTimeout fires after stepMs so the first event holds for one
+         full step then transitions to the next (or clears if single). */
+      let i = 1;
       const playOne = () => {
         if (token !== WINSYM_CYCLE_TOKEN) {
           /* H5.20 — Boki bug 05.06.2026: "kada rucno stopiram i skipujem
@@ -443,7 +475,11 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
         i++;
         setTimeout(playOne, stepMs);
       };
-      playOne();
+      /* V7 — first event is pre-rendered above. Schedule playOne after
+         stepMs so event[0] holds for the same per-event window as the
+         legacy single-call path. If events.length === 1 the next playOne
+         will clear and resolve cleanly. */
+      setTimeout(playOne, stepMs);
     });
   }
   /* detectLineWins — payline-based per-line event generation.
