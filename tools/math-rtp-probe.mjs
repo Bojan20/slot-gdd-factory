@@ -241,17 +241,22 @@ function spin(rng) {
   const midRow = Math.floor(rows / 2);
   let totalWin = 0;
   let hits = 0;
-  for (let line = 0; line < paylines; line++) {
-    /* Sample a row index per reel based on line index spread.
-     * For 20 lines on 5×3 grid, use line % rows. */
-    const yOffset = line % rows;
-    const reel0 = grid[0][yOffset];
+  /* MATH-PRECISION-5 — real payline map iz GDD §5.2 ako postoji.
+   * Fallback: yOffset = line % rows heuristic (over-triggers — known gap). */
+  const paylineMap = model.topology?.paylineMap;
+  const lineCount = Array.isArray(paylineMap) ? paylineMap.length : paylines;
+  for (let line = 0; line < lineCount; line++) {
+    /* Per-reel row index iz real payline map ili yOffset fallback. */
+    const rowMap = Array.isArray(paylineMap) ? paylineMap[line] : null;
+    const reel0row = rowMap ? rowMap[0] : (line % rows);
+    const reel0 = grid[0][reel0row];
     if (!reel0 || reel0.scatter) continue;
     const matchId = reel0.id;
     const tier = reel0.tier;
     let runLen = 1;
     for (let r = 1; r < reels; r++) {
-      const cell = grid[r][yOffset];
+      const yIdx = rowMap ? rowMap[r] : reel0row;
+      const cell = grid[r][yIdx];
       if (!cell) break;
       const isMatch = (cell.id === matchId) || (cell.wild && tier !== 'sp');
       if (isMatch) runLen++; else break;
@@ -261,7 +266,12 @@ function spin(rng) {
       let pay = payFromParSheet(matchId, runLen);
       if (pay == null) pay = payForMatch(tier, runLen);
       if (pay > 0) {
-        totalWin += pay;
+        /* MATH-PRECISION-5 — line pays su × 1 coin (1/N of total bet),
+         * NIJE × total bet. Cash Eruption GDD §6.1: "Line pays (9 symbols)
+         * × line bet = × 1 coin; coin value = total_bet / 20". Convert
+         * raw pay (coins) to × total bet by dividing by line count. */
+        const coinDenominator = paylines > 0 ? paylines : 20;
+        totalWin += (pay / coinDenominator);
         hits++;
       }
     }

@@ -2303,6 +2303,40 @@ export function extractPaybackProseMode(rawText, model) {
     if (VOL_IDX[vk]) p.volatilityIdx = VOL_IDX[vk];
   }
 
+  /* MATH-PRECISION-5 — payline map extractor (real L01-L20 row indices).
+   * GDD §5.2 publishes payline maps in tabular prose:
+   *   "L01   1   1   1   1   1"
+   *   "L02   0   0   0   0   0"
+   * Captures up to 100 lines (industry max). Result: model.topology.paylineMap
+   * = [[1,1,1,1,1], [0,0,0,0,0], ...] indexed by line number 0..N-1.
+   * Real probe payline evaluator consumes this; bez njega, probe fallback
+   * na yOffset = line % rows heuristic (over-triggers 4OAK runs). */
+  if (!model.topology) model.topology = {};
+  if (!Array.isArray(model.topology.paylineMap)) {
+    const lineRegex = /\bL(\d{1,3})\s+([0-7])\s+([0-7])\s+([0-7])\s+([0-7])\s+([0-7])\b/g;
+    const lines = [];
+    let mp;
+    while ((mp = lineRegex.exec(rawText)) !== null) {
+      const idx = parseInt(mp[1], 10);
+      if (idx < 1 || idx > 100) continue;
+      const rows = [
+        parseInt(mp[2], 10),
+        parseInt(mp[3], 10),
+        parseInt(mp[4], 10),
+        parseInt(mp[5], 10),
+        parseInt(mp[6], 10),
+      ];
+      if (rows.every(r => r >= 0 && r <= 7)) {
+        lines[idx - 1] = rows;
+      }
+    }
+    /* Compact (no holes) and assign if we got at least 5 paylines. */
+    const compact = lines.filter(Boolean);
+    if (compact.length >= 5) {
+      model.topology.paylineMap = compact;
+    }
+  }
+
   /* MATH-2 — reel-strip inventory extractor.
    * Industry GDDs deklarišu broj strip sets per bank + sampling kind.
    * Pattern examples (Cash Eruption Foundry):
