@@ -532,6 +532,16 @@ if (existsSync(opcijaATest)) {
     'node', [opcijaATest]);
 }
 
+/* ── Step 4.97r: HYB-1 Universal Game Schema (Zod single source of truth)
+ * 17-step self-test: 5 baseline GDDs PASS, 7 negative fixtures FAIL,
+ * Cash Eruption D-9..D-17 fields round-trip, vendorExtensions namespace
+ * persists, validateModel() returns structured result, 338-GDD corpus walk. */
+const hyb1Test = resolve(REPO, 'tests/schema/universalGame.test.mjs');
+if (existsSync(hyb1Test)) {
+  run('MATH-DEEP HYB-1 Universal Game Schema (Zod SSoT, 338 corpus pass)',
+    'node', [hyb1Test]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
