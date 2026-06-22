@@ -211,7 +211,21 @@ const KIMI_TIMEOUT_MS = Number(process.env.CORTEX_KIMI_TIMEOUT_MS || 30_000);
  *   - Here is the expected JSON shape (concrete example)
  *   - Output JSON only, with value + source_quote + confidence
  */
+/* GDD memory DoS guard (QA Agent#4 finding #9, 2026-06-22). Reject inputs
+ * larger than MAX_RAW_GDD_BYTES (50 MB) before any prompt construction.
+ * Even though we trim to 6000 chars for the LLM, the rawGdd variable is
+ * held in memory throughout. A 100 MB GDD would spike allocation to 200 MB+
+ * (string copy on trim). Hard cap protects the process. */
+const MAX_RAW_GDD_BYTES = 50 * 1024 * 1024;
+
+function _checkRawGddSize(rawGdd) {
+  if (typeof rawGdd === 'string' && rawGdd.length > MAX_RAW_GDD_BYTES) {
+    throw new Error(`rawGdd size ${rawGdd.length} exceeds MAX_RAW_GDD_BYTES (${MAX_RAW_GDD_BYTES}) — refuse to process`);
+  }
+}
+
 function buildPrompt(rawGdd, fieldPath, fieldDescription) {
+  _checkRawGddSize(rawGdd);
   /* Trim raw GDD to ~6000 chars to fit LLM context. Center window on
    * sections most likely to mention this field (heuristic: field path
    * contains "FS" → look for "free spin"; "rtp" → look for "RTP" or "%"
@@ -242,6 +256,13 @@ function buildPrompt(rawGdd, fieldPath, fieldDescription) {
     context = rawGdd.slice(0, 6000);
   }
 
+  /* Prompt-injection guard (QA Agent#4 finding #1, 2026-06-22).
+   * Escape any """ triple-quote in user-supplied GDD text so it can't
+   * close our docstring delimiter and inject "IGNORE PREVIOUS INSTRUCTIONS"
+   * payloads. We replace """ -> "˝˝˝ (DOUBLE ACUTE ACCENT, visually similar
+   * but won't terminate our docstring). LLM still reads the prose
+   * accurately because U+02DD is unambiguous, just not a delimiter. */
+  const safeContext = context.replace(/"""/g, '"˝˝˝');
   return `You are reading a slot game design document (GDD). Extract ONE field.
 
 FIELD PATH: ${fieldPath}
@@ -249,7 +270,7 @@ FIELD DESCRIPTION: ${fieldDescription || '(see context below)'}
 
 GDD prose (excerpt):
 """
-${context}
+${safeContext}
 """
 
 Respond ONLY with JSON in this exact shape (no preamble, no explanation):

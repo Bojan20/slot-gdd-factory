@@ -269,8 +269,17 @@ function spin(rng) {
    * Probe shortcut: when cluster topology, skip the line-eval block and
    * route straight to cluster evaluator. Subsequent feature plugins (wild,
    * scatter, H&W) still fire — those mechanics are topology-orthogonal. */
-  const clusterResult = evalClusterPays(grid, model);
-  const isClusterTopo = (model.topology?.kind === 'cluster' || model.topology?.evaluation === 'cluster');
+  /* Grid bounds validation pre-dispatch (QA Agent#1 finding #4, 2026-06-22):
+   * if model topology declares 6x5=30 cells but parser-emitted grid is 4x3=12,
+   * cluster BFS could OOB. Validate grid dimensions match topology before
+   * dispatch; on mismatch, skip cluster eval and fall through to line-eval
+   * (degraded but safe). */
+  const _gridReels = Array.isArray(grid) ? grid.length : 0;
+  const _gridRows = _gridReels > 0 && Array.isArray(grid[0]) ? grid[0].length : 0;
+  const _gridMatchesTopo = (_gridReels === reels && _gridRows === rows);
+  const clusterResult = _gridMatchesTopo ? evalClusterPays(grid, model) : { totalPay: 0, fired: false, clusters: [] };
+  const isClusterTopo = (model.topology?.kind === 'cluster' || model.topology?.evaluation === 'cluster')
+                     && _gridMatchesTopo;
   if (isClusterTopo) {
     totalWin += clusterResult.totalPay;
     if (clusterResult.fired) hits++;

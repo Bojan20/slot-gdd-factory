@@ -123,7 +123,17 @@ function getByPath(obj, path) {
 
 /* ── LLM call ─────────────────────────────────────────────────────────── */
 
+/* Same DoS guard as completer (QA Agent#4 finding #9). */
+const MAX_RAW_GDD_BYTES = 50 * 1024 * 1024;
+
+function _checkRawGddSize(rawGdd) {
+  if (typeof rawGdd === 'string' && rawGdd.length > MAX_RAW_GDD_BYTES) {
+    throw new Error(`rawGdd size ${rawGdd.length} exceeds MAX_RAW_GDD_BYTES (${MAX_RAW_GDD_BYTES}) — refuse to process`);
+  }
+}
+
 function buildPrompt(rawGdd, fieldPath, modelValue) {
+  _checkRawGddSize(rawGdd);
   /* Trim GDD to ~6000 chars; center on field-relevant section. */
   const lowerPath = fieldPath.toLowerCase();
   let hint = '';
@@ -147,6 +157,8 @@ function buildPrompt(rawGdd, fieldPath, modelValue) {
     } else context = rawGdd.slice(0, 6000);
   } else if (rawGdd.length > 6000) context = rawGdd.slice(0, 6000);
 
+  /* Same prompt-injection guard as HYB-2 completer. */
+  const safeContext = context.replace(/"""/g, '"˝˝˝');
   return `You are auditing a slot game model against its GDD prose.
 
 FIELD PATH: ${fieldPath}
@@ -154,7 +166,7 @@ MODEL VALUE: ${JSON.stringify(modelValue)}
 
 GDD prose (excerpt):
 """
-${context}
+${safeContext}
 """
 
 Question: Is the model value FAITHFUL to the GDD? Show your work.
@@ -240,15 +252,25 @@ export function validateFieldFaithful(rawGdd, fieldPath, modelValue, opts = {}) 
     timestamp: new Date().toISOString(),
   };
   /* Verify quote actually appears in GDD (LLM-hallucination guard).
-   * Whitespace-normalized comparison: GDD prose often has irregular spacing
-   * (PDF extraction artifacts, tabs vs spaces, single vs double space).
-   * Collapse all whitespace runs to single space before substring check,
-   * matching how a human reader would view the quote regardless of layout. */
+   *
+   * Whitespace + Unicode normalization (QA Agent#4 finding #4, 2026-06-22):
+   * PDF extraction artifacts include irregular spacing (tabs vs spaces,
+   * single vs double space), UTF-8 BOM bytes (U+FEFF), bidi override marks
+   * (U+202E), and NFC vs NFKD encoding differences (e.g. composed vs
+   * decomposed accents). Normalize both sides before substring check:
+   *   1. NFKD normalize (canonical decomposition + compatibility)
+   *   2. Strip BOM (U+FEFF), bidi marks (U+202E/U+202D), zero-width chars
+   *   3. Collapse all whitespace runs to single space
+   *   4. Trim leading/trailing space */
   if (receipt.faithful && receipt.gdd_quote) {
-    const norm = (s) => String(s).replace(/\s+/g, ' ').trim();
+    const norm = (s) => String(s)
+      .normalize('NFKD')
+      .replace(/[﻿‮‭​‌‍]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
     if (!norm(rawGdd).includes(norm(receipt.gdd_quote))) {
       receipt.faithful = false;
-      receipt.reason = 'gdd_quote not a verbatim substring even after whitespace normalization (LLM hallucination guard)';
+      receipt.reason = 'gdd_quote not a verbatim substring even after NFKD + whitespace + BOM normalization (LLM hallucination guard)';
     }
   }
   cache[cacheKey] = receipt;

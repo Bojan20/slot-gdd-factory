@@ -112,11 +112,16 @@ export function probeGame(slug, opts = {}) {
     return { ok: false, error: `slug ${slug} missing model.json (run parse-real-pdfs.mjs)` };
   }
   const probe = join(REPO, 'tools/math-rtp-probe.mjs');
+  /* 2026-06-23: cross-game probe always enables --auto-clamp so the
+   * comparative report shows declared-target-aligned RTP for declared
+   * games. Single-game probe defaults to raw (opt-in); cross-game wants
+   * the calibrated view by default. */
   const r = spawnSync('node', [probe,
     `--slug=${slug}`,
     `--runs=${runs}`,
     `--seed=${seed}`,
     `--bet=${bet}`,
+    '--auto-clamp',
   ], { encoding: 'utf8', timeout: 120_000 });
   if (r.status !== 0) {
     return { ok: false, error: `probe exit ${r.status}: ${(r.stderr || '').slice(0, 200)}` };
