@@ -714,19 +714,21 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
     });
   }
 
-  /* UQ-MULTIPLIER-V6 (2026-06-22) — sample REAL DOM cells for the synth
-     force-baseline-win event. Without real cells the dim/highlight rule
-     pair makes every cell fade to 0.55 with no .cell--winsym targets to
-     pop back to 1.0 (player sees cells "disappearing"), and the payline
-     overlay early-bails on cells.length less than 2 so no line is drawn.
-     Strategy mirrors WoO: walk RECT_REELS first 3 reels, pick middle-row
-     cell (typical line-1 anchor). Fallback to first 3 grid .cell nodes. */
+  /* UQ-MULTIPLIER-V9 (2026-06-22) — sample REAL DOM cells iz SVAKOG reel-a
+     u srednjem redu (CEO horizontalno). Industry "Line 1" prikazuje pravu
+     full-length pay-line preko CELOG grida, ne samo 3 cells. Boki:
+     "win linije su van okvira i ne artikulisane". Razlog je sto pre V9 smo
+     uzimali samo prvih 3 reels — polyline staje na pola grida (van okvira
+     gleda u stilu "ne pokriva ceo okvir").
+     V9: nReels = SVE reels (5 / 6 / 7 za rectangular, mega, cluster etc).
+     Triple fallback: RECT_REELS → grid querySelector po row 1 (top vis row)
+     → bilo koji srednji red cells. Tako forced baseline UVEK ima cells. */
   function __forceSampleBaselineCells() {
     var picked = [];
     try {
       if (typeof RECT_REELS !== 'undefined' && Array.isArray(RECT_REELS) && RECT_REELS.length > 0) {
-        var nReels = Math.min(3, RECT_REELS.length);
-        for (var r = 0; r < nReels; r++) {
+        /* V9 — uzmi sve reels, ne samo 3, da polyline pokriva CEO grid. */
+        for (var r = 0; r < RECT_REELS.length; r++) {
           var reel = RECT_REELS[r];
           if (!reel || !Array.isArray(reel.cells)) continue;
           var vis = reel.visibleRows || (typeof ROWS !== 'undefined' ? ROWS : 3);
@@ -736,11 +738,23 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
           if (cell && cell.classList) picked.push(cell);
         }
       }
+      /* V9 fallback A: ako RECT_REELS prazan ili daje < 2 cells, koristi
+         document.querySelector na grid → uzmi srednji red iz prvih reels. */
       if (picked.length < 2 && typeof grid !== 'undefined' && grid && grid.querySelectorAll) {
-        /* Defensive fallback — first 3 visible .cell nodes. */
-        var nodes = grid.querySelectorAll('.cell');
-        for (var i = 0; i < nodes.length && picked.length < 3; i++) {
-          if (nodes[i] && nodes[i].classList && picked.indexOf(nodes[i]) === -1) picked.push(nodes[i]);
+        /* Pokušaj prepoznati grid topologiju: data-reel + data-row atributi
+           ako su prisutni (industry-standard); inače flat slice. */
+        var midCells = grid.querySelectorAll('[data-row="1"] .cell, .cell[data-row="1"]');
+        if (midCells.length >= 2) {
+          for (var mi = 0; mi < midCells.length; mi++) {
+            if (midCells[mi] && midCells[mi].classList) picked.push(midCells[mi]);
+          }
+        } else {
+          /* Last-resort flat fallback — prvih 5 .cell nodes (jedan red od 5x3). */
+          var nodes = grid.querySelectorAll('.cell');
+          var nFb = Math.min(5, nodes.length);
+          for (var i = 0; i < nFb; i++) {
+            if (nodes[i] && nodes[i].classList && picked.indexOf(nodes[i]) === -1) picked.push(nodes[i]);
+          }
         }
       }
     } catch (_) { /* defensive — fallback to [] degrades to no-visual but still pays */ }
