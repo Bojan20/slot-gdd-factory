@@ -18,6 +18,10 @@ import { fileURLToPath } from 'node:url';
 import {
   computeExpandingSymbolKernelRtp,
   computeStickyWildsKernelRtp,
+  computeCascadeKernelRtp,
+  computeWaysEvaluatorKernelRtp,
+  computePayAnywhereKernelRtp,
+  computeStackedWildsKernelRtp,
   _resetCache,
 } from '../../src/blocks/featureSimPlugins/extraKernelBridges.mjs';
 import { detectKernelEngine } from '../../tools/math-kernel-bridge.mjs';
@@ -125,6 +129,67 @@ test('Cache hit on Sticky Wilds (2nd call fast)', async () => {
   if (r1.ok) {
     assert(d2 < d1 || d2 < 50, `cache miss? d1=${d1}ms d2=${d2}ms`);
   }
+});
+
+/* ── (6) Cascade kernel — numeric sanity ─────────────────────────────── */
+
+test('computeCascadeKernelRtp returns positive RTP for industry-typical params', async () => {
+  _resetCache();
+  const r = await computeCascadeKernelRtp();
+  if (!r.ok) {
+    const d = detectKernelEngine();
+    if (!d.available) { console.log('    (skipped)'); return; }
+    throw new Error(`failed: ${r.reason}`);
+  }
+  assert(typeof r.rtpContribution === 'number', 'rtpContribution number');
+  assert(r.rtpContribution > 0, `expected > 0, got ${r.rtpContribution}`);
+  assert(typeof r.expectedChainLength === 'number', 'expectedChainLength number');
+});
+
+/* ── (7) Ways evaluator — RTP × expected ways ≈ total ─────────────────── */
+
+test('computeWaysEvaluatorKernelRtp returns positive RTP scaled by expected ways', async () => {
+  _resetCache();
+  const r = await computeWaysEvaluatorKernelRtp({ reels: 5, perWayRtpXBet: 0.001 });
+  if (!r.ok) {
+    const d = detectKernelEngine();
+    if (!d.available) { console.log('    (skipped)'); return; }
+    throw new Error(`failed: ${r.reason}`);
+  }
+  assert(typeof r.rtpContribution === 'number', 'rtpContribution number');
+  assert(r.expectedWaysCount > 100, `expected ways > 100, got ${r.expectedWaysCount}`);
+  /* RTP ≈ per_way × E[ways]. */
+  assert(Math.abs(r.rtpContribution - 0.001 * r.expectedWaysCount) < 1e-6,
+    `rtpContribution should equal per_way × E[ways]`);
+});
+
+/* ── (8) Pay-anywhere kernel — works on starlight model ───────────────── */
+
+test('computePayAnywhereKernelRtp accepts model + returns analytical RTP', async () => {
+  const STARLIGHT = JSON.parse(readFileSync(
+    join(REPO, 'dist/real-games/starlight-travellers-gdd/model.json'), 'utf8'));
+  _resetCache();
+  const r = await computePayAnywhereKernelRtp(STARLIGHT);
+  if (!r.ok) {
+    const d = detectKernelEngine();
+    if (!d.available) { console.log('    (skipped)'); return; }
+    throw new Error(`failed: ${r.reason}`);
+  }
+  assert(typeof r.rtpContribution === 'number', 'rtpContribution number');
+  assert(typeof r.expectedLandings === 'number', 'expectedLandings number');
+});
+
+/* ── (9) Stacked Wilds — expectedStackedCount positive ───────────────── */
+
+test('computeStackedWildsKernelRtp returns expected stacked count > 0', async () => {
+  _resetCache();
+  const r = await computeStackedWildsKernelRtp(CASH_ERUPTION);
+  if (!r.ok) {
+    const d = detectKernelEngine();
+    if (!d.available) { console.log('    (skipped)'); return; }
+    throw new Error(`failed: ${r.reason}`);
+  }
+  assert(r.expectedStackedCount > 0, `expectedStackedCount > 0, got ${r.expectedStackedCount}`);
 });
 
 /* ── Result ──────────────────────────────────────────────────────────── */
