@@ -1,4 +1,4 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-23 07:36 UTC (kandidati za sledeću sesiju)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-23 10:52 UTC (kandidati za sledeću sesiju)
 
 Sve glavne grane backlog-a su zatvorene (MATH + Expert P1/P2/P3). Ovo
 su preostale **nice-to-have** stavke + nova ideja koja se kristalisala
@@ -18,9 +18,17 @@ tokom sesije. Boki bira — nije obavezna.
 │    │  - reports/gdd-one-pagers/<slug>.md + .json (5 baselines)     │        │           │
 │    │  - Test: 8/8 PASS · Verify step 4.97y20                       │        │           │
 ├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
-│ N2 │ Side-by-side compare 2 games tool                            │  ~1h   │ MED       │
-│    │ tools/compare-games.mjs <slugA> <slugB> → tabela razlika u  │        │ operator  │
-│    │ topology / RTP / kernels / features / volatility             │        │           │
+│ N2 │ Side-by-side compare 2 games tool                            │  ~1h   │ ✅ DONE   │
+│    │  - tools/compare-games.mjs --a <slugA> --b <slugB>            │        │           │
+│    │  - 6 dimenzija: basics/symbols/features/kernels/conv/compl    │        │           │
+│    │  - ASCII (box-drawing) + Markdown + JSON output               │        │           │
+│    │  - Set diff math: shared / onlyA / onlyB partition           │        │           │
+│    │  - Summary: identicalRows/differingRows/sharedFeatures/topKern │        │           │
+│    │  - Reuse buildOnePager (no re-probe, < 500ms wallclock)       │        │           │
+│    │  - reports/compare-games/<slugA>__vs__<slugB>.md + .json     │        │           │
+│    │  - Test: 11/11 PASS (symmetry, same-vs-same, missing slug,   │        │           │
+│    │    ASCII box-drawing per HARD RULE #3, summary math)         │        │           │
+│    │  - Verify gate step 4.97y21                                  │        │           │
 ├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
 │ N3 │ Web UI dashboard (single HTML index)                         │  ~3h   │ MED       │
 │    │ Servira sve reports/*.json kao live web view. Operator ne    │        │ UX        │

@@ -884,6 +884,20 @@ if (existsSync(onePagerTest)) {
     'node', [onePagerTest]);
 }
 
+/* ── Step 4.97y21: COMPARE-GAMES (N2)
+ * Side-by-side comparison of two games using one-pager data as source
+ * of truth. Emits ASCII (box-drawing) + Markdown + JSON sa 6 dimenzija
+ * (basics/symbols/features/kernels/convergence/compliance) i headline
+ * summary (identicalRows/differingRows/sharedFeatures). Operator
+ * deliverable za "how does game A differ from game B" pitanje bez
+ * potrebe za novim probe runom. Symmetric u row count, set diff
+ * provereno math (shared/onlyA/onlyB partition). */
+const compareGamesTest = resolve(REPO, 'tests/contracts/compare-games.test.mjs');
+if (existsSync(compareGamesTest)) {
+  run('COMPARE-GAMES (side-by-side diff · 6 dimensions · symmetry contract)',
+    'node', [compareGamesTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
