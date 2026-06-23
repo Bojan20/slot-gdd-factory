@@ -46,7 +46,14 @@ const EW = {
 export function defaultConfig() {
   return Object.freeze({
     enabled: false,
-    mode: 'fs',
+    /* UQ-DEEP-K fix (Boki "ne radi expanding wild u cash eruption"
+     * 2026-06-23): IGT Cash Eruption GDD spec — expanding wild fires
+     * u BASE game (reels 2-5 only) jer signature pattern win zavisi od
+     * njega. Prethodni default 'fs' je disabling-ed mehaniku u BASE
+     * phase, što je suprotno industriji. 'both' je najpermisivniji safe
+     * default — block se aktivira u obe phase ako GDD ne kaže drugačije.
+     * Parser i dalje override-uje sa mode='base'/'fs' kad GDD eksplicitno. */
+    mode: 'both',
     wildSymbolId: 'W',
     expandDurationMs: 360,
     haloColor: '255,214,110',
@@ -56,6 +63,11 @@ export function defaultConfig() {
      * already extracts model.expandingWild.onlyIfWinning; this surfaces it
      * through render so live slot.html honors the same gate. */
     onlyIfWinning: false,
+    /* UQ-DEEP-K: GDD knob za "reels 2-5 only" (Cash Eruption) tip
+     * restrikciju. Parser ekstraktuje appliesOnReels:[2,3,4,5] već.
+     * Block sad honor-uje: skip wild detection u kolonama van liste.
+     * Default null = sve kolone allowed. Spec 1-indexed jer GDD je tako. */
+    appliesOnReels: null,
   });
 }
 
@@ -68,6 +80,16 @@ export function resolveConfig(model = {}) {
   if (Number.isFinite(m.expandDurationMs)) cfg.expandDurationMs = clampInt(m.expandDurationMs, MIN_DURATION_MS, MAX_DURATION_MS);
   if (typeof m.haloColor === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(m.haloColor)) cfg.haloColor = m.haloColor;
   if (m.onlyIfWinning === true || m.onlyIfWinning === false) cfg.onlyIfWinning = m.onlyIfWinning;
+  /* UQ-DEEP-K: parse appliesOnReels — 1-indexed array from GDD prose,
+   * normalize na 0-indexed integer set za brzi membership check u
+   * runtime-u. Filter to valid integers in [1, 12] range to reject
+   * pathological GDD inputs. */
+  if (Array.isArray(m.appliesOnReels)) {
+    const reels = m.appliesOnReels
+      .map((n) => Number(n))
+      .filter((n) => Number.isInteger(n) && n >= 1 && n <= 12);
+    cfg.appliesOnReels = reels.length > 0 ? reels : null;
+  }
 
   if (Array.isArray(model.features) && model.features.some(f => f.kind === 'expanding_wild')) {
     cfg.enabled = true;
@@ -103,6 +125,12 @@ export function emitExpandingWildRuntime(cfg = defaultConfig()) {
 const EXPANDING_WILD_MODE   = ${JSON.stringify(cfg.mode)};
 const EXPANDING_WILD_SYMBOL = ${JSON.stringify(cfg.wildSymbolId)};
 const EXPANDING_WILD_ONLY_IF_WINNING = ${JSON.stringify(cfg.onlyIfWinning)};
+/* UQ-DEEP-K: GDD-declared reel restriction (1-indexed). Block normalizes
+ * to 0-indexed Set in runtime. Empty/null = no restriction (all cols). */
+const EXPANDING_WILD_APPLIES_ON_REELS_RAW = ${JSON.stringify(cfg.appliesOnReels)};
+const EXPANDING_WILD_APPLIES_ON_REELS = Array.isArray(EXPANDING_WILD_APPLIES_ON_REELS_RAW)
+  ? new Set(EXPANDING_WILD_APPLIES_ON_REELS_RAW.map((n) => n - 1))
+  : null;
 const EXPANDING_WILD_FALLBACK_REELS = ${FALLBACK_REELS};
 const EXPANDING_WILD_FALLBACK_ROWS  = ${FALLBACK_ROWS};
 
@@ -164,7 +192,16 @@ function applyExpandingWilds() {
      no-win spin produced zero wilds → user perceived "force ne radi". */
   try {
     if (window.__FORCE_FEATURE_PENDING__ === 'expanding_wild' && cells.length) {
-      const _seedCol = Math.floor(REELS / 2);
+      /* UQ-DEEP-K: force-seed must land u ALLOWED reel ako GDD declarira
+       * appliesOnReels (npr. [2,3,4,5] — reel 1 = col 0 je izuzet kod
+       * vendor-neutral spec-ova). Pick first allowed col (default mid). */
+      let _seedCol = Math.floor(REELS / 2);
+      if (EXPANDING_WILD_APPLIES_ON_REELS) {
+        if (!EXPANDING_WILD_APPLIES_ON_REELS.has(_seedCol)) {
+          const _firstAllowed = [...EXPANDING_WILD_APPLIES_ON_REELS].sort((a, b) => a - b).find((c) => c < REELS);
+          if (_firstAllowed != null) _seedCol = _firstAllowed;
+        }
+      }
       const _seedRow = Math.floor(ROWS / 2);
       const _seedIdx = _seedRow * REELS + _seedCol;
       const _seedCell = cells[_seedIdx];
@@ -175,12 +212,19 @@ function applyExpandingWilds() {
       window.__FORCE_FEATURE_PENDING__ = null;
     }
   } catch (_) {}
-  /* Detect which columns have any wild */
+  /* Detect which columns have any wild.
+   * UQ-DEEP-K: honor GDD appliesOnReels restriction. Industry spec
+   * "wild substitutes reels 2-5 only in base game" — column 0 mora
+   * da bude izuzet jer pattern win zavisi od cleane reel 1.
+   * Filtriramo i wild detection (skip excluded cols) i force-seed
+   * pozicioniranje (seed mora pasti unutar allowed kolona). */
   const colsWithWild = new Set();
   cells.forEach((cell, idx) => {
+    const col = idx % REELS;
+    if (EXPANDING_WILD_APPLIES_ON_REELS && !EXPANDING_WILD_APPLIES_ON_REELS.has(col)) return;
     const sym = (cell.textContent || '').trim();
     if (sym === EXPANDING_WILD_SYMBOL) {
-      colsWithWild.add(idx % REELS);
+      colsWithWild.add(col);
     }
   });
   /* Expand: fill column with wild symbol + class */

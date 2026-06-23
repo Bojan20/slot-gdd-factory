@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-23T22:26:44.543Z",
+  "generatedAt": "2026-06-23T22:54:19.587Z",
   "slugCount": 338,
   "prints": {
     "001-rect-fs-wild-mult": {
@@ -1073,8 +1073,8 @@
     },
     "053-rect-expandwild-fs": {
       "slug": "053-rect-expandwild-fs",
-      "htmlBytes100": 750800,
-      "htmlSha": "3c5fc51e82db2a69",
+      "htmlBytes100": 752200,
+      "htmlSha": "34e196647fd1e086",
       "buttonCount": 43,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1090,8 +1090,8 @@
     },
     "054-rectstack-expandwild-fs": {
       "slug": "054-rectstack-expandwild-fs",
-      "htmlBytes100": 751700,
-      "htmlSha": "de072772d985a2fa",
+      "htmlBytes100": 753100,
+      "htmlSha": "310fdca7b0f8621d",
       "buttonCount": 42,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1110,8 +1110,8 @@
     },
     "055-varreel-expandwild-fs": {
       "slug": "055-varreel-expandwild-fs",
-      "htmlBytes100": 751100,
-      "htmlSha": "6c617c907270fbd0",
+      "htmlBytes100": 752500,
+      "htmlSha": "5714f18dfb5bcf8b",
       "buttonCount": 43,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1130,8 +1130,8 @@
     },
     "056-expand-expandwild-fs": {
       "slug": "056-expand-expandwild-fs",
-      "htmlBytes100": 751600,
-      "htmlSha": "71c4c66dddc50b2f",
+      "htmlBytes100": 752900,
+      "htmlSha": "97c4601d72325224",
       "buttonCount": 42,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1150,8 +1150,8 @@
     },
     "057-inf-expandwild-fs": {
       "slug": "057-inf-expandwild-fs",
-      "htmlBytes100": 751400,
-      "htmlSha": "e5a92ae08c11272d",
+      "htmlBytes100": 752700,
+      "htmlSha": "2179d1a4f78ed798",
       "buttonCount": 42,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1170,8 +1170,8 @@
     },
     "058-dual-expandwild-fs": {
       "slug": "058-dual-expandwild-fs",
-      "htmlBytes100": 751000,
-      "htmlSha": "2938ef41a4930f9d",
+      "htmlBytes100": 752300,
+      "htmlSha": "0c06d46b74078894",
       "buttonCount": 43,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1187,8 +1187,8 @@
     },
     "059-lock-expandwild-fs": {
       "slug": "059-lock-expandwild-fs",
-      "htmlBytes100": 751000,
-      "htmlSha": "a3c3d6034317f3b7",
+      "htmlBytes100": 752300,
+      "htmlSha": "2a2e2f3cb5d0d8c7",
       "buttonCount": 43,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3069,8 +3069,8 @@
     },
     "15-willy-wonka-pure-imagination-world-of-wonka-dreamers-of-dreams": {
       "slug": "15-willy-wonka-pure-imagination-world-of-wonka-dreamers-of-dreams",
-      "htmlBytes100": 763100,
-      "htmlSha": "47055a32e361fe5e",
+      "htmlBytes100": 764400,
+      "htmlSha": "04a21dbaf3cf5282",
       "buttonCount": 45,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6318,8 +6318,8 @@
     },
     "cash-eruption-foundry-gdd": {
       "slug": "cash-eruption-foundry-gdd",
-      "htmlBytes100": 857200,
-      "htmlSha": "f2206fe45773a2f5",
+      "htmlBytes100": 858500,
+      "htmlSha": "c08340854568ebee",
       "buttonCount": 45,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6378,8 +6378,8 @@
     },
     "starlight-travellers-gdd": {
       "slug": "starlight-travellers-gdd",
-      "htmlBytes100": 769400,
-      "htmlSha": "6856bf5fdd12b7fd",
+      "htmlBytes100": 770700,
+      "htmlSha": "5baca9868af45705",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
