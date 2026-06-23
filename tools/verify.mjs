@@ -672,6 +672,16 @@ if (existsSync(clusterKernelBridgeTest)) {
     'node', [clusterKernelBridgeTest]);
 }
 
+/* ── Step 4.97y6.5: D+3 — Slingo evaluator (vendor-neutral pattern pay)
+ * Closes the simulator gap for slingo topology (rainbow-riches-online,
+ * 5×5 grid + per-spin reveal + pattern completion). Local closed-form
+ * (no sister-repo kernel — sister doesn't expose slingo yet). */
+const slingoEvalTest = resolve(REPO, 'tests/blocks/slingoEval.test.mjs');
+if (existsSync(slingoEvalTest)) {
+  run('D+3 — SLINGO evaluator (pattern pays + grid marking + determinism)',
+    'node', [slingoEvalTest]);
+}
+
 /* ── Step 4.97y7: HYB-4 — Vendor PAR adapters (Pragmatic + L&W)
  * Synthetic xlsx fixtures with vendor-specific headers (Spanish Rodillo,
  * STRIP_/SYM) → verify both adapters parse + emit canonical ParSheet

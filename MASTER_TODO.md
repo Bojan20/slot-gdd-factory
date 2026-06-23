@@ -1,3 +1,75 @@
+## 🏆 BACKLOG SWEEP — 2026-06-23 · 5 STAVKI ZATVORENO ✅ (cluster bridge + HF clamp + slingo + PAR + WASM)
+
+Boki direktiva: *"sve redom sa qa proverama posle implementacije"*. Lista od 10 preostalih stavki za slot-gdd-factory pregledana redom; rezultat:
+
+```
+┌────┬─────────────────────────────────────────────────────────┬───────────────┐
+│ #  │ Stavka                                                    │ Status         │
+├────┼─────────────────────────────────────────────────────────┼───────────────┤
+│ 1  │ par-sheet-pragmatic.py (Spanish Rodillo headers)          │ ✅ daemon      │
+│ 2  │ par-sheet-lw.py (STRIP_1..5 / SYM headers)                │ ✅ daemon      │
+│ 3  │ cluster_pays kernel bridge (starlight Δ-2.93pp)           │ ✅ daemon+test │
+│ 4  │ slingo evaluator (rainbow-riches Δ+2.64pp)                │ ✅ ja, 13/13   │
+│ 5  │ wrath-of-olympus parser declared RTP                      │ ⏭ requires    │
+│    │                                                           │   data signal  │
+│ 6  │ cluster HF auto-clamp (starlight 33% → 28%)                │ ✅ ja          │
+│ 7  │ 9 MED/LOW Grana B findings                                │ ✅ stale       │
+│    │                                                           │   (12 closed   │
+│    │                                                           │   via 5 prior  │
+│    │                                                           │   commits)     │
+│ 8  │ Audio block backlog                                        │ ⏭ off-limits  │
+│    │                                                           │   per HARD #4  │
+│ 9  │ Cross-product W51/W52/W53                                 │ ⏭ regulator UI│
+│    │                                                           │   (non-math)   │
+│ 10 │ WASM oracle (mathEngine.mjs)                              │ ✅ već LIVE   │
+│    │                                                           │   (9 sub-test) │
+└────┴─────────────────────────────────────────────────────────┴───────────────┘
+```
+
+**5 zatvoreno** · 3 ⏭ blocked (data / off-limits) · 2 dependsOn Boki signal
+
+### Detalji 5 ZATVORENIH
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  #3  cluster-pays kernel bridge (B++)                                          │
+│      src/blocks/featureSimPlugins/clusterEvalKernelBridge.mjs                  │
+│      tools/_kernel-cluster-pays-runner.py                                       │
+│      tests/contracts/cluster-kernel-bridge.test.mjs (6/6 PASS)                 │
+│      Wired u verify gate step 4.97y6.                                          │
+│      Starlight cluster_pays sad analytical RTP > 0 via sister-repo kernel.     │
+├──────────────────────────────────────────────────────────────────────────────┤
+│  #4  slingo evaluator (D+3)                                                    │
+│      src/blocks/featureSimPlugins/slingoEval.mjs (vendor-neutral)              │
+│      tests/blocks/slingoEval.test.mjs (13/13 PASS)                             │
+│      Wired u verify gate step 4.97y6.5.                                        │
+│      API: updateSlingoMarks / countCompletedLines / evalSlingo /                │
+│           buildSlingoGrid / rollSlingoReveals.                                  │
+│      Pattern pay table: line_1..line_5 + full_house (industry baseline ~96%).  │
+├──────────────────────────────────────────────────────────────────────────────┤
+│  #6  HF auto-clamp (template-wide, opt-in)                                     │
+│      tools/math-rtp-probe.mjs                                                  │
+│      --auto-hf-clamp flag OR model.payback.useAutoHfClamp === true.            │
+│      Multiplicative HF clamp = declaredHF / rawMeasuredHF, paralleli auto-RTP. │
+│      Default OFF (preserves deterministic tests). Starlight LIVE: 33.68% → 28%.│
+├──────────────────────────────────────────────────────────────────────────────┤
+│  #1+#2 PAR sheet vendor adapters (HYB-4)                                       │
+│      tools/par-sheet-pragmatic.py (Spanish "Rodillo" headers)                  │
+│      tools/par-sheet-lw.py        (STRIP_1..5 / SYM headers)                   │
+│      tests/contracts/vendor-par-adapters.test.mjs (6/6 PASS)                   │
+│      Wired u verify gate step 4.97y7.                                          │
+│      Closes HYB-4 placeholder TODO from commit 2da4c32.                        │
+├──────────────────────────────────────────────────────────────────────────────┤
+│  #10 WASM oracle (MATH-7) — već LIVE, ne treba dodatni rad                    │
+│      src/blocks/mathEngine.mjs · 9 sub-tests pass · engine kind: wasm.         │
+│      Sister-repo slot-math-wasm linked; JS fallback radi kad WASM missing.    │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Verify gate sad na 60+ steps · ALL GREEN
+
+---
+
 ## 🏆 PRODUCTION CONTRACTS — 2026-06-23 · A/B/C ZATVORENI ✅ (3 contract suites, 32 assertions)
 
 Boki direktiva: "biram sve redom" → A (render) → C (ingest) → B (kernel).
