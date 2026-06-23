@@ -1,3 +1,59 @@
+## 🏆 KERNEL APPLICABILITY MATRIX — 2026-06-23 · ZATVOREN ✅ (cross-game portfolio audit)
+
+Boki direktiva: *"dalje"*. Sledeća logična operator-facing stavka posle
+per-game coverage: **cross-game matrix** — koja igra koristi koji kernel
++ Σ row (kernels per game) + Σ column (games per kernel).
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  tools/kernel-applicability-matrix.mjs                                        │
+│  tests/contracts/kernel-applicability-matrix.test.mjs                        │
+│                                                                                │
+│  Exports:                                                                      │
+│    buildMatrix(slugs)  → { allKernels, games, colTotals, rowTotals, skipped } │
+│    renderMatrix(m)     → ASCII matrix (games × kernels)                       │
+│                                                                                │
+│  CLI:                                                                          │
+│    node tools/kernel-applicability-matrix.mjs              # 5 baselines      │
+│    node tools/kernel-applicability-matrix.mjs --all        # all dist/        │
+│    node tools/kernel-applicability-matrix.mjs --json       # JSON only        │
+│                                                                                │
+│  Live output (5 × 22):                                                         │
+│    cash-eruption-foundry-gdd  → 17/22 kernels                                 │
+│    wrath-of-olympus-gdd       → 18/22 kernels                                 │
+│    huff-n-more-puff-gdd       → 15/22 kernels                                 │
+│    starlight-travellers-gdd   → 13/22 kernels (+cluster_pays)                 │
+│    gates-of-olympus-1000-gdd  → 11/22 kernels (+pay_anywhere)                 │
+│                                                                                │
+│    Σ applications:   74                                                        │
+│    Avg per game:     14.80                                                     │
+│    Universal kernels: 9  (topology=any: asymmetric_paytable, buy_feature,     │
+│                          charge_meter, inverse_solver, multi_dim_*,           │
+│                          must_hit_by, pick_chain, state_machine, wheel)       │
+│    Dormant kernels:   1  (crash_kernel — needs crash-style game)              │
+│                                                                                │
+│  Contract test: 9/9 PASS                                                       │
+│    ✓ buildMatrix returns expected top-level shape                              │
+│    ✓ All 5 baselines present in games map                                      │
+│    ✓ cluster_pays applies to starlight only (1/5)                              │
+│    ✓ pay_anywhere applies to gates only (1/5)                                  │
+│    ✓ Universal kernels (topology=any) apply to all 5 games                     │
+│    ✓ Row totals match game Set sizes                                           │
+│    ✓ Column totals sum equals total applications                               │
+│    ✓ renderMatrix produces ASCII with kernels + legend + Σ row                 │
+│    ✓ Skipped games are reported (non-existent slug)                            │
+│                                                                                │
+│  Wired u verify gate step 4.97y14.                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Operator value:** portfolio-wide audit. Vidi se koji kernels su
+underutilized (dormant), koji su universal (audit/composite kategorija),
+i kako se per-game kernel coverage poredi između naslova. Identifikuje
+naslove kojima fali kernel hardening.
+
+---
+
 ## 🏆 PER-GAME KERNEL COVERAGE — 2026-06-23 · ZATVOREN ✅ (auto-discovery walker)
 
 Boki direktiva: *"cepaj do kraja sve sto ima, nemoj da stajes"*. Sledeća

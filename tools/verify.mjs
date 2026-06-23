@@ -804,6 +804,18 @@ if (existsSync(perGameCoverageTest)) {
     'node', [perGameCoverageTest]);
 }
 
+/* ── Step 4.97y14: KERNEL APPLICABILITY MATRIX (cross-game audit)
+ * Cross-game matrix: N games × 22 kernels showing which kernels apply
+ * where. Row totals = kernels per game; column totals = games per
+ * kernel. Verifies buildMatrix shape, expected per-kernel applicability
+ * counts (cluster_pays→1, pay_anywhere→1, universals→5), and ASCII
+ * renderer output. Operator-facing portfolio audit. */
+const matrixTest = resolve(REPO, 'tests/contracts/kernel-applicability-matrix.test.mjs');
+if (existsSync(matrixTest)) {
+  run('KERNEL APPLICABILITY MATRIX (cross-game 5 games × 22 kernels audit)',
+    'node', [matrixTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
