@@ -1587,6 +1587,12 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
 <span hidden id="devFsBtn" aria-hidden="true"></span>
 <span hidden id="devBwBtn" aria-hidden="true"></span>
 <span hidden id="devMultBtn" aria-hidden="true"></span>
+<!-- UQ-DEEP-J (Boki 2026-06-23): #devExpWildBtn stub for the Force
+     Expanding Wild dev chip wired in src/runtime/devForceButtons.mjs.
+     Hidden by default (universal-force-panel exposes the player-facing
+     chip); the stub keeps emitDevForceButtonsRuntime's getElementById
+     lookup successful when the host doesn't surface the legacy id. -->
+<span hidden id="devExpWildBtn" aria-hidden="true"></span>
 
 ${emitFreeSpinsOverlayMarkup(resolveFreeSpinsConfig(model))}
 

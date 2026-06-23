@@ -114,9 +114,19 @@ const EXPANDING_WILD_FALLBACK_ROWS  = ${FALLBACK_ROWS};
 function _expWildOnlyIfWinningPassed() {
   if (!EXPANDING_WILD_ONLY_IF_WINNING) return true;
   if (typeof window !== 'undefined' && window.__FORCE_FEATURE_PENDING__ === 'expanding_wild') return true;
-  if (typeof window !== 'undefined' && Number.isFinite(window.__LAST_SPIN_WIN__) && window.__LAST_SPIN_WIN__ > 0) return true;
+  /* UQ-DEEP-J fix (Boki "sve verzije wild blokova ne rade pravilno"
+   * 2026-06-23): reorder probe da DOM scan ide PRVI, ne window var.
+   * __LAST_SPIN_WIN__ je timeout-zavisno — win evaluator postavi tu
+   * vrednost POSLE applyExpandingWilds() pozive ako se priority loši
+   * (pre fix-a expandingWild subscribe-uje sa undefined priority koja
+   * je effective 0, ista kao default win evaluator → race). DOM
+   * .cell--win klasa je postavljena sinhroni-pre detect-pays callback,
+   * pa je pouzdaniji signal za "trenutni spin imao win".
+   * Plus: priority u HookBus.on niže (10) tako da subscriber pucne
+   * POSLE default-priority evaluator-a. Combined fix uklanja race. */
   const host = typeof document !== 'undefined' ? document.getElementById('gridHost') : null;
   if (host && host.querySelector('.cell--win, .is-winning, .win-line-active')) return true;
+  if (typeof window !== 'undefined' && Number.isFinite(window.__LAST_SPIN_WIN__) && window.__LAST_SPIN_WIN__ > 0) return true;
   return false;
 }
 
@@ -225,7 +235,13 @@ if (typeof window !== 'undefined') {
  * consistency with every other LEGO block's wired-once naming. */
 if (typeof HookBus !== 'undefined' && typeof window !== 'undefined' && !window.__EXPANDING_WILD_WIRED__) {
   window.__EXPANDING_WILD_WIRED__ = true;
-  HookBus.on('onSpinResult', () => { applyExpandingWilds(); });
+  /* UQ-DEEP-J fix: explicit priority 10 ensures expandingWild fires
+   * AFTER default-priority win evaluator (priority 0) and BEFORE
+   * wildCollisionMultiplier (priority 22). Order:
+   *   0 (eval) → 10 (expandingWild) → 22 (wildCollisionMult)
+   * This way collision mult sees expanded cells in correct state and
+   * only_if_winning gate reads finalized __LAST_SPIN_WIN__. */
+  HookBus.on('onSpinResult', () => { applyExpandingWilds(); }, { priority: 10 });
   HookBus.on('preSpin', () => { clearExpandingWilds(); });
   HookBus.on('onFsTrigger', () => { clearExpandingWilds(); });
 }

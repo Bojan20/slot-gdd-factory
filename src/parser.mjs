@@ -3246,9 +3246,24 @@ export function extractFeatureConfigsProseMode(rawText, model) {
   if (model.expandingWild && model.expandingWild.enabled !== false) {
     const ew = model.expandingWild;
     if (!ew.mode) {
-      if (/expanding\s+wilds?[^.]{0,40}?(?:during|in|only\s+in)\s+free\s*spins?/i.test(rawText)) ew.mode = 'fs';
-      else if (/expanding\s+wilds?[^.]{0,40}?(?:any\s+spin|base\s+game)/i.test(rawText)) ew.mode = 'base';
-      else if (/expanding\s+wilds?[^.]{0,40}?(?:both|any\s+phase)/i.test(rawText)) ew.mode = 'both';
+      /* UQ-DEEP-J fix (Boki "sve verzije wild blokova ne rade pravilno"
+       * 2026-06-23): prior regex set tested too narrow; IGT-style GDDs
+       * (Cash Eruption, Cleopatra) phrase it as "base game and free
+       * spins" → no match → fallback default 'fs' → block disabled in
+       * BASE phase even though spec says BOTH. Order tests so 'both'
+       * (most permissive) wins when both BASE + FS mentioned. */
+      const ctx = (() => {
+        const m = rawText.match(/expanding\s+wilds?[^.]{0,120}/i);
+        return m ? m[0].toLowerCase() : '';
+      })();
+      const mentionsBase = /\bbase\s*game\b|\bany\s*spin\b/i.test(ctx);
+      const mentionsFs   = /\bfree\s*spins?\b|\bfs\b|\bbonus\s*round\b/i.test(ctx);
+      if (mentionsBase && mentionsFs) ew.mode = 'both';
+      else if (/\bboth\b|\bany\s*phase\b/i.test(ctx)) ew.mode = 'both';
+      else if (/(?:during|in|only\s+in)\s+free\s*spins?/i.test(ctx)) ew.mode = 'fs';
+      else if (mentionsBase && !mentionsFs) ew.mode = 'base';
+      else if (mentionsFs) ew.mode = 'fs';
+      /* else: leave undefined → defaultConfig() default applies */
     }
   }
 

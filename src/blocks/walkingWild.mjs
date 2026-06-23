@@ -233,6 +233,28 @@ function applyWalkingWilds() {
     cell.textContent = WALKING_WILD_SYMBOL;
     cell.dataset.symbol = WALKING_WILD_SYMBOL;
     cell.classList.add('is-walking-wild');
+    /* UQ-DEEP-J fix (Boki "sve verzije wild blokova ne rade pravilno"
+       2026-06-23): walkingWild je do sada bio PAINT-ONLY — pisao samo
+       DOM cell.textContent, ali GRID model (koji win evaluator čita)
+       nije bio update-ovan, pa walking wild nije učestvovao u win
+       calculation. Sad emit symbolOverride event (isto kao wildReel
+       koristi) tako da engine zna da je cell sad wild za payout. */
+    if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
+      try {
+        HookBus.emit('symbolOverride', {
+          source: 'walkingWild',
+          reel: c,
+          row: r,
+          symbol: WALKING_WILD_SYMBOL,
+        });
+      } catch (_) { /* HookBus may not be initialized yet */ }
+    }
+    /* Also write into the engine GRID model if present so subsequent
+       win-eval reads the wild from the canonical source-of-truth. */
+    if (typeof window !== 'undefined' && window.GRID &&
+        typeof window.GRID.set === 'function') {
+      try { window.GRID.set(c, r, WALKING_WILD_SYMBOL); } catch (_) {}
+    }
   });
 }
 

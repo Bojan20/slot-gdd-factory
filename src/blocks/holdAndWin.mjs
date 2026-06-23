@@ -1316,8 +1316,21 @@ async function _hwBeginRound() {
   /* 2026-06-18 — clear stale force flags so the next base spin after
    * round-end doesn't accidentally re-fire FORCE_TRIGGER and queue
    * another H&W (Boki bug C: "zavrsi se jedan h&W i onda krene
-   * slkedeci"). Idempotent — null setters are safe. */
-  try { if (typeof window !== 'undefined') { window.FORCE_TRIGGER = null; window.__FORCE_FEATURE_PENDING__ = null; } } catch (_) {}
+   * slkedeci"). Idempotent — null setters are safe.
+   * UQ-DEEP-J fix (2026-06-23): previously this block null-ed
+   * __FORCE_FEATURE_PENDING__ unconditionally — that nuked an operator
+   * Force Expanding Wild flag set BEFORE the spin even started,
+   * because holdAndWin entry-detection runs in the same onSpinResult
+   * callback batch and gets there first. Only clear flags that THIS
+   * block owns ('hold_and_win'); leave foreign flags untouched. */
+  try {
+    if (typeof window !== 'undefined') {
+      window.FORCE_TRIGGER = null;
+      if (window.__FORCE_FEATURE_PENDING__ === 'hold_and_win') {
+        window.__FORCE_FEATURE_PENDING__ = null;
+      }
+    }
+  } catch (_) {}
 
   /* PHASE 1 — discover only; do NOT mutate DOM.
    *

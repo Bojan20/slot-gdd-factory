@@ -92,7 +92,18 @@ export function resolveDevForceButtonsConfig(model) {
   const hasMultFeature = feats.some(
     (f) => f && typeof f.kind === 'string' && MULT_FEATURE_KINDS.test(f.kind),
   );
-  return { hasMultFeature: !!hasMultFeature };
+  /* UQ-DEEP-J fix (Boki "ne zaboravi da updateujes i force dugme"
+   * 2026-06-23): detect whether the parsed model declares an
+   * expanding_wild feature so the dev panel can wire a force chip.
+   * Without this gate, the force button would be enabled on slots
+   * that have no such block emitted → click fires global flag but
+   * no listener consumes it → silent no-op confuses operator. */
+  const hasExpandingWild = feats.some(
+    (f) => f && typeof f.kind === 'string' &&
+           /^expand(?:ing)?[\s_-]?wild/i.test(f.kind),
+  ) || (m.expandingWild && m.expandingWild.enabled !== false &&
+        (Object.keys(m.expandingWild).length > 0 || m.expandingWild === true));
+  return { hasMultFeature: !!hasMultFeature, hasExpandingWild: !!hasExpandingWild };
 }
 
 /**
@@ -104,6 +115,7 @@ export function resolveDevForceButtonsConfig(model) {
 export function emitDevForceButtonsRuntime(model) {
   const cfg = resolveDevForceButtonsConfig(model);
   const hasMultJSON = JSON.stringify(cfg.hasMultFeature);
+  const hasExpandingWildJSON = JSON.stringify(cfg.hasExpandingWild);
   return `
   /* ── Dev force buttons (extracted: src/runtime/devForceButtons.mjs) ── */
 
@@ -200,6 +212,38 @@ export function emitDevForceButtonsRuntime(model) {
       };
       if (window.HookBus && typeof window.HookBus.on === 'function') window.HookBus.on('postSpin', oneShotPS);
       setTimeout(reEnableMult, 8000);
+    });
+  }
+
+  /* UQ-DEEP-J fix (Boki "ne zaboravi da updateujes i force dugme"
+   * 2026-06-23): Force Expanding Wild chip. Sets the pending flag
+   * window.__FORCE_FEATURE_PENDING__ = 'expanding_wild' so the
+   * expandingWild block's applyExpandingWilds() bypass-uje phase
+   * and only_if_winning gates (already wired in expandingWild.mjs
+   * lines 114-143). Then triggers a real base spin so the player
+   * sees the full sequence: spin → reels settle → wild expands. */
+  var devExpWildBtn = document.getElementById("devExpWildBtn");
+  if (devExpWildBtn) {
+    var HAS_EXP_WILD_FEATURE = ${hasExpandingWildJSON};
+    function _expWildFeatureLive() { return HAS_EXP_WILD_FEATURE; }
+    devExpWildBtn.disabled = !_expWildFeatureLive();
+    devExpWildBtn.addEventListener("click", function () {
+      if (!_expWildFeatureLive()) return;
+      if (FSM.phase !== "BASE") return;
+      window.__FORCE_FEATURE_PENDING__ = 'expanding_wild';
+      devExpWildBtn.disabled = true;
+      if (spinButton) spinButton.disabled = true;
+      runOneBaseSpin();
+      var reEnableExp = function () {
+        if (devExpWildBtn) devExpWildBtn.disabled = !_expWildFeatureLive();
+        try { delete window.__FORCE_FEATURE_PENDING__; } catch (_) { window.__FORCE_FEATURE_PENDING__ = null; }
+      };
+      var oneShotExp = function () {
+        if (window.HookBus && typeof window.HookBus.off === 'function') window.HookBus.off('postSpin', oneShotExp);
+        reEnableExp();
+      };
+      if (window.HookBus && typeof window.HookBus.on === 'function') window.HookBus.on('postSpin', oneShotExp);
+      setTimeout(reEnableExp, 8000);
     });
   }
 `;
