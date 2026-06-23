@@ -1103,6 +1103,38 @@ if (existsSync(parBridgeTest)) {
     'node', [parBridgeTest]);
 }
 
+/* ── Step 4.97y34: N+2 E Self-healing parser ──────────────────────────
+ * E atom (2026-06-23) — GDD-level self-healing orchestrator. When the
+ * deterministic parser produces a model with catastrophic gaps (missing
+ * topology / paytable / symbols, or pillar confidence collapse), an LLM
+ * healer is invoked with structured fix prompt, max 3 attempts, $0.15
+ * cost ceiling. Healed fields stamped sa confidence._healedBy provenance
+ * so audit trail knows which are LLM-supplied vs parser-derived.
+ *
+ *   tools/self-healing-parser.mjs                   — orchestrator
+ *     diagnoseModel(model) → severity ladder (CLEAN/WARN/CRITICAL/CATASTROPHIC)
+ *     buildFixPrompt(rawText, model, diagnosis)     → schema-grounded prompt
+ *     applyPatch(model, llmPatch)                   → whitelist + proto-guard
+ *     healModel(rawText, model, opts)               → linear max-attempt loop
+ *
+ *   tools/ingest.mjs Step 5a0                       — triggers when actionable
+ *   dist/ingest/<slug>/healing.json                 — full receipt
+ *   <meta name="self-healing" data-ok data-attempts data-initial-severity
+ *      data-final-severity data-provider data-cost-usd data-fields-repaired>
+ *
+ * Gate-importance: bez ovog wire-a, edge-case PDFs (truncated, OCR-garbage,
+ * non-English) puca pipeline sa "topology missing" error. Sa wire-om,
+ * LLM healer pokušava da popravi struct gap pre nego što build-uje HTML.
+ * Operator nikad ne vidi pad — receipt nosi `__healing__` flag tako da
+ * regulator zna koja polja su LLM-supplied. Cost gate (3 attempts × ~$0.05)
+ * sprečava runaway. Mock healer pattern u testu omogućava CI test bez
+ * stvarnog Kimi poziva. */
+const healingTest = resolve(REPO, 'tests/contracts/self-healing.test.mjs');
+if (existsSync(healingTest)) {
+  run('N+2 E Self-healing parser (diagnose + heal loop + 22 contract assertions sa mock healer)',
+    'node', [healingTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz

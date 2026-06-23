@@ -726,6 +726,63 @@ try {
     log('--no-llm — skipping reconcile');
   }
 
+  /* Step 5a0: Self-healing parser (N+2 E, 2026-06-23).
+   *
+   * After parser + smart defaults + (optional) Kimi reconcile, diagnose
+   * the model. If severity is CRITICAL/CATASTROPHIC (missing topology,
+   * paytable, or symbols), invoke LLM healer to generate a structured
+   * fix patch. Max 3 attempts, $0.15 cost ceiling, 90s wall-clock cap.
+   *
+   * Skips silently when --no-llm is set OR when healer binary is missing
+   * (Kimi unavailable). Pipeline continues with whatever the parser+
+   * smart-defaults produced. Operator sees `__healing__` flag in receipt
+   * when healing happened so audit knows which fields are LLM-supplied.
+   *
+   * Soft-fail on healer error — never blocks ingest. */
+  let healingReceipt = null;
+  if (!noLlm) {
+    await step('self-healing parser (diagnose + optional heal)', async () => {
+      const { diagnoseModel, healModel } = await import(resolve(REPO, 'tools/self-healing-parser.mjs'));
+      const diag = diagnoseModel(model);
+      if (!diag.actionable) {
+        log(`  healing skipped: severity=${diag.severity} (no critical gaps)`);
+        healingReceipt = {
+          ok: true, skipped: true, severity: diag.severity,
+          attempts: 0, fieldsRepaired: [], costEstimateUsd: 0,
+        };
+        return;
+      }
+      log(`  healing trigger: severity=${diag.severity} gaps=${diag.criticalGaps.length}`);
+      const r = await healModel(rawText, model, { maxAttempts: 3 });
+      if (r.ok) {
+        model = r.model;
+        log(`  ✓ healed in ${r.attempts} attempt(s) — fields: ${r.receipt.fieldsRepaired.join(', ') || 'none'}`);
+      } else if (r.skipped) {
+        log(`  healing skipped: ${r.reason}`);
+      } else {
+        log(`  healing inconclusive: finalSeverity=${r.receipt.finalSeverity}`);
+      }
+      healingReceipt = {
+        ok: r.ok,
+        skipped: !!r.skipped,
+        reason: r.reason,
+        attempts: r.attempts,
+        fieldsRepaired: r.receipt.fieldsRepaired,
+        costEstimateUsd: r.receipt.costEstimateUsd,
+        initialSeverity: r.receipt.initialSeverity,
+        finalSeverity: r.receipt.finalSeverity,
+        llmProvider: r.receipt.llmProvider,
+        totalDurationMs: r.receipt.totalDurationMs,
+        attemptsLog: r.receipt.attempts,
+      };
+      summary.healing = healingReceipt;
+    }).catch((e) => {
+      log(`  healing step soft-fail: ${e.message}`);
+      healingReceipt = { ok: false, skipped: false, reason: e.message, attempts: 0 };
+      summary.healing = healingReceipt;
+    });
+  }
+
   /* Step 5a: PAR ingest + calibration (deferred from Step 4.5 per
    * MED-2 audit fix — PAR is GROUND TRUTH and must be the LAST writer
    * to model.reelStrips so V6 cache reconcile cannot clobber the overlay.
@@ -812,6 +869,31 @@ try {
       const safeEngine  = String(payload.selectedEngine || '').replace(/[^A-Za-z0-9_-]/g, '');
       const metaTag = `<meta name="v8-receipt" data-verdict="${verdictSafe}" data-engine="${safeEngine}" content="${b64}">`;
       html = injectMetaIntoHead(html, metaTag);
+      summary.htmlBytes = html.length;
+    }
+
+    /* Step 6b1: embed healing meta tag (N+2 E).
+     * Allows dashboard / regulator export to see whether the model was
+     * LLM-supplemented WITHOUT re-running diagnose. */
+    if (healingReceipt) {
+      const finalSev = String(healingReceipt.finalSeverity || 'UNKNOWN')
+        .replace(/[^A-Z_]/g, '');
+      const initialSev = String(healingReceipt.initialSeverity || 'UNKNOWN')
+        .replace(/[^A-Z_]/g, '');
+      const provider = String(healingReceipt.llmProvider || 'none')
+        .replace(/[^a-z0-9_-]/gi, '');
+      const cost = Number.isFinite(healingReceipt.costEstimateUsd)
+        ? healingReceipt.costEstimateUsd.toFixed(4) : '0';
+      const repaired = (healingReceipt.fieldsRepaired || []).slice(0, 8).join(',')
+        .replace(/[^a-zA-Z0-9_,.-]/g, '');
+      const skipped = healingReceipt.skipped ? '1' : '0';
+      const healMetaTag =
+        `<meta name="self-healing" data-ok="${healingReceipt.ok ? '1' : '0'}" ` +
+        `data-skipped="${skipped}" data-attempts="${healingReceipt.attempts | 0}" ` +
+        `data-initial-severity="${initialSev}" data-final-severity="${finalSev}" ` +
+        `data-provider="${provider}" data-cost-usd="${cost}" ` +
+        `data-fields-repaired="${repaired}">`;
+      html = injectMetaIntoHead(html, healMetaTag);
       summary.htmlBytes = html.length;
     }
 
@@ -949,6 +1031,13 @@ try {
       }
       if (v9Receipt) {
         await atomicWrite(resolve(outDir, 'v9.json'), JSON.stringify(v9Receipt, null, 2));
+      }
+      /* N+2 E — Self-healing receipt (when healer ran).
+       * Even skipped path writes healing.json so operator + dashboard
+       * see the diagnosis + attempt log. */
+      if (healingReceipt) {
+        await atomicWrite(resolve(outDir, 'healing.json'),
+          JSON.stringify(healingReceipt, null, 2));
       }
       /* N+2 D — PAR + calibration receipt (when --par used).
        * Even skipped path writes par.json so operator + dashboard can

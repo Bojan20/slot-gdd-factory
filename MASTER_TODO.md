@@ -501,8 +501,8 @@ Svaki ID prolazi kroz **ISTI** ultimate workflow kao A/B/C iz N+1:
 ┌────┬──────────────────────────────────────┬───────────┬────────────────┐
 │ ID │ Stavka                                │ Status    │ Commit pin     │
 ├────┼──────────────────────────────────────┼───────────┼────────────────┤
-│ D  │ PAR sheet auto-ingest                │ ✅ DONE   │ pending HEAD   │
-│ E  │ Self-healing parser                  │ 📋 PLAN   │ —              │
+│ D  │ PAR sheet auto-ingest                │ ✅ DONE   │ 4c230ac        │
+│ E  │ Self-healing parser                  │ ✅ DONE   │ pending HEAD   │
 │ F  │ Web UI uploader                      │ 📋 PLAN   │ —              │
 │ G  │ Auto-scaffold za nov kind            │ 📋 PLAN   │ —              │
 │ H  │ CI/CD pipeline                       │ 📋 PLAN   │ —              │
@@ -550,6 +550,57 @@ Svaki ID prolazi kroz **ISTI** ultimate workflow kao A/B/C iz N+1:
 │   idempotency Pass 1=2    98/98 = 98/98                                 │
 │   contract test           20/20 PASS                                    │
 │   security smoke          /etc/hosts blocked (HIGH-1 live verified)    │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+### E atom — closeout receipt (2026-06-23 15:35 UTC)
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ Files added                                                            │
+│   tools/self-healing-parser.mjs        (diagnose + heal orchestrator)  │
+│   tests/contracts/self-healing.test.mjs (25 contract assertions)       │
+│                                                                         │
+│ Files modified                                                          │
+│   tools/ingest.mjs    (+Step 5a0 healing, healing.json write,          │
+│                        <meta name="self-healing"> meta tag)            │
+│   tools/verify.mjs    (+step 4.97y34)                                  │
+│                                                                         │
+│ Severity ladder (4 levels)                                              │
+│   CLEAN         all pillar fields present + confidence ≥ 0.5            │
+│   WARN          1 pillar confidence breach OR missing features only    │
+│   CRITICAL      1 hard structural gap OR 2 confidence breaches         │
+│   CATASTROPHIC  2+ hard gaps OR 1 gap + 3 confidence breaches          │
+│                                                                         │
+│ Healer strategy                                                         │
+│   Default     cortex-kimi-ask (~$0.003/call)                            │
+│   Fallback    cortex-fable-ask (~$0.05/call) via opts                  │
+│   Test mock   injected via opts.healerFn (zero cost)                    │
+│   Cost gate   $0.15 ceiling per heal session (3 × $0.05 fable cap)      │
+│   Time gate   30s per call, 90s wall-clock total                       │
+│   Loop        linear (not recursive), max 3 attempts default            │
+│                                                                         │
+│ Audit nalazi (parallel-agent post-impl audit, 4 nalaza FIXED)          │
+│   H-1   stampedAt timestamp = non-deterministic model.json FIXED       │
+│         → contentStamp (8-hex sha-like) of patch payload                │
+│         → same anti-pattern UQ-DEEP-A killed u v8.__meta__.ts          │
+│                                                                         │
+│   H-3   cost ceiling un-enforced (docstring aspirational) FIXED        │
+│         → DEFAULT_COST_CEILING_USD = 0.15, broken on patch + fail paths│
+│         → enforced both posle apply patch i posle healer fail          │
+│                                                                         │
+│   M-1   Infinity/NaN confidence bypass FIXED                           │
+│         → Number.isFinite + non-negative guard u safeConf helper       │
+│                                                                         │
+│   L-5   severityIndex unknown → CLEAN silent FIXED                     │
+│         → returns SEVERITY_LEVELS.length (worst) za unknown            │
+│         → diagnoseModel always emits one of 4 valid severities         │
+│                                                                         │
+│ Gate results                                                            │
+│   npm run verify         100/100 PASS                                   │
+│   idempotency Pass 1=2   100/100 = 100/100                              │
+│   contract test          25/25 PASS                                     │
+│   ingest --no-llm smoke  healing skipped gracefully                    │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
