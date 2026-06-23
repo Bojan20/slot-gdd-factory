@@ -873,6 +873,17 @@ if (existsSync(antiVendorLintTest)) {
     'node', [antiVendorLintTest]);
 }
 
+/* ── Step 4.97y20: GDD ONE-PAGER GENERATOR (N1)
+ * Per-game compliance one-pager: za dati slug emit MD/JSON sa
+ * 6 sekcija (basics, symbols, features, kernels, convergence, compliance).
+ * Production deliverable za regulator submission. Ujedinjuje sve
+ * postojeće audit tool-ove (coverage + verdict + compliance markers). */
+const onePagerTest = resolve(REPO, 'tests/contracts/gdd-one-pager.test.mjs');
+if (existsSync(onePagerTest)) {
+  run('GDD ONE-PAGER (per-game compliance deliverable · 6 sections)',
+    'node', [onePagerTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz

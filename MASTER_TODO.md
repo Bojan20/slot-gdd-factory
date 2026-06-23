@@ -8,10 +8,15 @@ tokom sesije. Boki bira — nije obavezna.
 ┌────┬─────────────────────────────────────────────────────────────┬────────┬───────────┐
 │ ID │ Stavka                                                       │ Effort │ Vrednost  │
 ├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
-│ N1 │ GDD compliance one-pager generator                           │  ~2h   │ HIGH      │
-│    │ Per igri emit single MD/PDF audit dokument za regulatora:    │        │ regulator │
-│    │ topology + RTP + kernels + verdict + compliance check        │        │           │
-│    │ Ujedinjuje audit-summary u proizvodni deliverable            │        │           │
+│ N1 │ GDD compliance one-pager generator                           │  ~2h   │ ✅ DONE   │
+│    │  - tools/gdd-one-pager.mjs (6 sections MD + JSON)             │        │           │
+│    │  - basics + symbols + features + kernels + convergence +      │        │           │
+│    │    compliance — sve u jednom MD deliverable-u                 │        │           │
+│    │  - Dual verdict: operator (clamp) + honest (pre-clamp)        │        │           │
+│    │  - Synthetic-RTP detekcija + audit-only warning               │        │           │
+│    │  - Top 3 kernels by analytical RTP per game                   │        │           │
+│    │  - reports/gdd-one-pagers/<slug>.md + .json (5 baselines)     │        │           │
+│    │  - Test: 8/8 PASS · Verify step 4.97y20                       │        │           │
 ├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
 │ N2 │ Side-by-side compare 2 games tool                            │  ~1h   │ MED       │
 │    │ tools/compare-games.mjs <slugA> <slugB> → tabela razlika u  │        │ operator  │
