@@ -181,6 +181,341 @@ Tri zone koje su bile otvorene ALI nisu bile u definisanom backlog-u
 
 ---
 
+## 🚀 N+2 ULTIMATE AUTONOMY BACKLOG — 2026-06-23 14:36 UTC · OTVOREN
+
+Boki direktiva (14:35): *"sta je ostalo za slot gdd da ga dovedes do
+ultimativne autonomnosti, a da radi sve sam i izuetno savrseno?"* + *"ajde
+to detaljno zapisi u master todo i samo to radimo detaljno dok ne bude
+savrseno"*.
+
+**Cilj:** Operator drop-uje GDD (PDF / MD / JSON / URL) **opciono uz PAR
+sheet (XLSX / CSV)** i pipeline **sam** dovrši do playable slot HTML +
+math precision band ±0.05% + V8 receipt + V9 verdict + regulator
+deliverable, **bez ručne intervencije i bez prekida** čak i kad parser
+inicijalno fail-uje.
+
+Sve stavke u ovom backlog-u rade se redom (D → J) sa
+**ultimate-level QA** (paralelni audit agenti + cortex-eye verifikacija +
+verify gate idempotency + anti-vendor lint + post-commit re-verify).
+
+```
+┌────┬─────────────────────────────────────────────────────────────┬────────┬───────────┐
+│ ID │ Stavka                                                       │ Effort │ Status    │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ D  │ PAR sheet auto-ingest pipeline                              │  ~3-4h │ 📋 PLAN   │
+│    │  CILJ: Operator pošalje GDD + opcioni PAR XLSX/CSV; pipeline │        │           │
+│    │  auto-extract paytable + reels + RTP iz PAR-a i kalibriše    │        │           │
+│    │  math layer na precision band ±0.05%.                       │        │           │
+│    │                                                              │        │           │
+│    │  ŠTA POSTOJI:                                                │        │           │
+│    │   - tools/par-sheet-xlsx-ingest.py (Python, standalone)     │        │           │
+│    │   - HYB-4 vendor PAR adapters (Pragmatic Spanish + L&W      │        │           │
+│    │     STRIP) sa generic CSV fallback                          │        │           │
+│    │   - MATH-7 WASM oracle + slot-math-engine-template sister   │        │           │
+│    │     repo (Python kernels)                                   │        │           │
+│    │                                                              │        │           │
+│    │  ŠTA TREBA:                                                 │        │           │
+│    │   1. ingest.mjs: nov flag `--par <path>` (XLSX/CSV/JSON)    │        │           │
+│    │   2. tools/par-sheet-bridge.mjs: ES module wrapper koji      │        │           │
+│    │      delegira na Python ingest tool, parsuje rezultat, vraća │        │           │
+│    │      strukturisan ParBlob { paytable, reelStrips, rtp, … }  │        │           │
+│    │   3. ingest pipeline: PAR detected → merge u model PRE       │        │           │
+│    │      buildSlotHTML; flag-uje `__par_calibrated__: true`     │        │           │
+│    │   4. tools/math-precision-calibrator.mjs: poredi declared    │        │           │
+│    │      RTP vs PAR-derived RTP, emit precision-band receipt    │        │           │
+│    │      (±0.05% gate)                                          │        │           │
+│    │   5. Receipt: dist/ingest/<slug>/par.json + meta tag         │        │           │
+│    │      <meta name="par-calibrated" data-rtp="X" data-band="Y">│        │           │
+│    │   6. Dashboard: per-game PAR panel (declared vs PAR-RTP,    │        │           │
+│    │      precision-band verdict, vendor format detected)         │        │           │
+│    │   7. Verify gate step 4.97y31                               │        │           │
+│    │   8. Contract test: 15+ assertions sa real XLSX fixture     │        │           │
+│    │      (samples/par-sample-*.xlsx) + idempotency + missing-PAR │        │           │
+│    │      fallback path (ingest bez --par i dalje radi)          │        │           │
+│    │   9. Stress test extension: --par-source <dir> walks XLSX-e │        │           │
+│    │      paired sa PDF-ovima                                     │        │           │
+│    │                                                              │        │           │
+│    │  RISK: Python wrapper subprocess (60s timeout), Python missing│        │           │
+│    │  na operator mašini (graceful skip + WARN, never block      │        │           │
+│    │  ingest), XLSX malformed (vendor-specific edge cases), unit │        │           │
+│    │  inconsistency (cents vs credits) — sve treba detect + fail-│        │           │
+│    │  soft sa actionable receipt.                                │        │           │
+│    │                                                              │        │           │
+│    │  VREDNOST: ⬆⬆ visoka — zatvara math autonomy gap, operator  │        │           │
+│    │  ne mora ručno da swap-uje PAR, pipeline sam kalibriše do   │        │           │
+│    │  ±0.05% precision band-a. To je core deliverable za RGS-   │        │           │
+│    │  integration ready state.                                    │        │           │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ E  │ Self-healing GDD parser (auto-correct loop)                 │  ~2-3h │ 📋 PLAN   │
+│    │  CILJ: Kad parser FAIL-uje (nedostaje topology / symbols /   │        │           │
+│    │  features), umesto static error-a pipeline poziva Kimi/Opus │        │           │
+│    │  strukturisani fix, re-runuje parser, i ako success — ship-uje│      │           │
+│    │  HTML. Operator nikad ne vidi pad, samo `__self_healed__`   │        │           │
+│    │  flag u receipt-u.                                          │        │           │
+│    │                                                              │        │           │
+│    │  ŠTA POSTOJI:                                                │        │           │
+│    │   - V1..V5 lane self-correction (agents/parser-pool/SELF_   │        │           │
+│    │     CORRECTION.md) — Pass A → diff → Pass B                 │        │           │
+│    │   - cortex-kimi-ask + cortex-fable-ask wrapperi              │        │           │
+│    │   - smartDefaults autofix (stage 6 backfill)                 │        │           │
+│    │                                                              │        │           │
+│    │  ŠTA TREBA:                                                 │        │           │
+│    │   1. tools/self-healing-parser.mjs:                          │        │           │
+│    │      - Detekt parser FAIL signali (model.confidence ≤        │        │           │
+│    │        threshold OR missing critical fields OR validateModel│        │           │
+│    │        errors)                                               │        │           │
+│    │      - Generate structured fix prompt (raw text + parser    │        │           │
+│    │        receipt + missing fields list)                       │        │           │
+│    │      - Call Kimi/Fable sa max-tokens cap + 30s timeout       │        │           │
+│    │      - Apply patch ka model JSON-u, re-validate              │        │           │
+│    │      - Max 3 iteration loop (linear, ne rekurzivno)         │        │           │
+│    │   2. ingest.mjs: posle Step 4 (parse + smart defaults),     │        │           │
+│    │      ako model.confidence.* < 0.6 → trigger self-healing    │        │           │
+│    │   3. Receipt: model.__healing__ = { attempts, applied,      │        │           │
+│    │      fieldsRepaired, llmProvider, cost }                    │        │           │
+│    │   4. Dashboard: per-game healing badge (kanon yellow ako    │        │           │
+│    │      attempts > 0)                                           │        │           │
+│    │   5. Verify gate step 4.97y32                               │        │           │
+│    │   6. Contract test: synthetic broken-GDD fixtures (missing  │        │           │
+│    │      topology, missing paytable, garbage text) → assert     │        │           │
+│    │      healing path kicks in + model becomes valid            │        │           │
+│    │   7. Cost gate: max 3 attempts × ~$0.05/poziv = ~$0.15/     │        │           │
+│    │      ingest, log u summary.healingCost                      │        │           │
+│    │                                                              │        │           │
+│    │  RISK: LLM hallucinacija (Kimi može da izmisli wrong        │        │           │
+│    │  paytable), runaway loop (max-attempt cap), provider        │        │           │
+│    │  unavailable (graceful skip sa WARN, ne FAIL).              │        │           │
+│    │                                                              │        │           │
+│    │  VREDNOST: ⬆⬆ visoka — production fail-safe, operator drop  │        │           │
+│    │  bilo koji PDF i pipeline RADI ili daje actionable receipt. │        │           │
+│    │  Bez ovog, edge-case PDF-ovi pucaju.                         │        │           │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ F  │ Web UI za operatera (drag-drop SPA)                         │  ~4-6h │ 📋 PLAN   │
+│    │  CILJ: Single-page UI gde operator drag-drop PDF/MD/XLSX,    │        │           │
+│    │  vidi live progress (parser → V8 → V9 → build → preview),   │        │           │
+│    │  i otvara slot u iframe-u. Sve CLI tool-ovi ostaju u igri,   │        │           │
+│    │  UI je samo facade.                                          │        │           │
+│    │                                                              │        │           │
+│    │  ŠTA POSTOJI:                                                │        │           │
+│    │   - tools/web-dashboard.mjs (static read-only view)         │        │           │
+│    │   - tools/ingest.mjs (CLI batch processor)                   │        │           │
+│    │                                                              │        │           │
+│    │  ŠTA TREBA:                                                 │        │           │
+│    │   1. tools/web-uploader-server.mjs: minimal Node HTTP server │        │           │
+│    │      (port 5181), no framework. Endpoints:                   │        │           │
+│    │      - POST /ingest (multipart): primi PDF + opcioni PAR,   │        │           │
+│    │        emit SSE stream sa per-step progress                 │        │           │
+│    │      - GET /preview/<slug>: serve dist/ingest/<slug>/        │        │           │
+│    │        index.html                                            │        │           │
+│    │      - GET /report/<slug>: V8+V9+PAR receipt JSON           │        │           │
+│    │   2. tools/web-uploader-ui.html: SPA sa drag-drop zone,     │        │           │
+│    │      progress timeline (parser/V8/V9/build), receipt panels,│        │           │
+│    │      iframe preview. Vanilla HTML/CSS/JS, bez framework-a.  │        │           │
+│    │   3. Security: only-localhost bind (127.0.0.1), no auth     │        │           │
+│    │      potrebno za local-only, max upload size 50 MB          │        │           │
+│    │   4. CSP: strict (no inline JS, no eval, file:// safe)      │        │           │
+│    │   5. Verify gate step 4.97y33                               │        │           │
+│    │   6. Contract test: spawn server na ephemeral port-u,       │        │           │
+│    │      POST real PDF, assert SSE events arrive u redu, assert │        │           │
+│    │      preview servisira valid HTML                           │        │           │
+│    │   7. Cortex-eye headless probe: real browser sesija sa      │        │           │
+│    │      drag-drop simulation (Playwright)                       │        │           │
+│    │                                                              │        │           │
+│    │  RISK: file upload streaming (multipart parser), race kod   │        │           │
+│    │  paralelnih uploadova (slug collision — koristi UUID po     │        │           │
+│    │  upload-u), SSE drop kod sporog browsera (keep-alive ping). │        │           │
+│    │                                                              │        │           │
+│    │  VREDNOST: ⏵ srednja — UX improvement za demo / sales /     │        │           │
+│    │  non-dev operator, ali CLI je već dovoljan za daily run.    │        │           │
+│    │  Ipak vredan deo "izgleda kao production product".          │        │           │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ G  │ Auto-scaffold za nov feature kind                           │  ~2-3h │ 📋 PLAN   │
+│    │  CILJ: Kad GDD navede feature kind koji NE postoji u block   │        │           │
+│    │  catalog-u, pipeline ne baca "unknownFeatureKinds" — auto-   │        │           │
+│    │  poziva scaffold-block sa pametnim default-om, generiše     │        │           │
+│    │  stub blok + test fixture, doda u backlog za code review.    │        │           │
+│    │                                                              │        │           │
+│    │  ŠTA POSTOJI:                                                │        │           │
+│    │   - tools/scaffold-block.mjs (25 archetypes, manual call)   │        │           │
+│    │   - src/registry/featureArchetypes.mjs (kind → archetype map)│        │           │
+│    │   - smartDefaults stage 5 archetype backfill                │        │           │
+│    │                                                              │        │           │
+│    │  ŠTA TREBA:                                                 │        │           │
+│    │   1. tools/auto-scaffold-detector.mjs: hook u ingest.mjs     │        │           │
+│    │      Step 4 — posle parser-a, dijagnostikuje unknown kinds   │        │           │
+│    │   2. Nepoznata kind → fuzzy-match na archetype catalog,      │        │           │
+│    │      ako match confidence ≥ 0.7 — scaffold-block sa tim     │        │           │
+│    │      archetype-om, ime stuba = `<slug>-<kind>.mjs`           │        │           │
+│    │   3. Stub blok pojavljuje u `src/blocks/_auto-scaffolded/`  │        │           │
+│    │      sa `@status STUB` u JSDoc header-u + auto-generisanim   │        │           │
+│    │      defaultConfig + emit CSS/Runtime stub                  │        │           │
+│    │   4. Backlog log: reports/auto-scaffold-pending.json       │        │           │
+│    │      lista svih stub-ova sa "needs review" flag-om           │        │           │
+│    │   5. Dashboard: alert sekcija "N nov(ih) blok(a) auto-      │        │           │
+│    │      generisanih, klikni za review"                         │        │           │
+│    │   6. Verify gate step 4.97y34                               │        │           │
+│    │   7. Contract test: synthetic GDD sa unknown kind →         │        │           │
+│    │      assert stub fajl kreiran + log entry dodaт              │        │           │
+│    │                                                              │        │           │
+│    │  RISK: explosion of stub blokova (sigurnosni cap: max 5 po  │        │           │
+│    │  ingestu, ostalo log-uje bez kreiranja); naming collision   │        │           │
+│    │  (auto-prefix `_auto_` u kind ID-u).                         │        │           │
+│    │                                                              │        │           │
+│    │  VREDNOST: ⏵ srednja — autonomy bonus, smanjuje "feature    │        │           │
+│    │  gap" izveštaje. Ali nije critical za daily run jer trenutno│        │           │
+│    │  smartDefaults već handle-uje nepoznate kinds gracefully.   │        │           │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ H  │ CI/CD pipeline (GitHub Actions)                             │  ~2h   │ 📋 PLAN   │
+│    │  CILJ: PR → verify gate auto-run. Post-merge na main →       │        │           │
+│    │  baseline portfolio rebuild + dashboard auto-deploy na       │        │           │
+│    │  GitHub Pages. Bez ručnog `npm run verify` + push.           │        │           │
+│    │                                                              │        │           │
+│    │  ŠTA POSTOJI:                                                │        │           │
+│    │   - Pre-commit hook (verify gate local)                      │        │           │
+│    │   - tools/web-dashboard.mjs (static output)                  │        │           │
+│    │                                                              │        │           │
+│    │  ŠTA TREBA:                                                 │        │           │
+│    │   1. .github/workflows/verify-pr.yml: na pull_request →     │        │           │
+│    │      checkout, setup-node, npm ci, npm run verify, npm run  │        │           │
+│    │      test, anti-vendor lint, comment PR sa rezultatima      │        │           │
+│    │   2. .github/workflows/deploy-dashboard.yml: na push:main   │        │           │
+│    │      → npm run verify, generate dashboard, upload artifact, │        │           │
+│    │      deploy-pages action                                     │        │           │
+│    │   3. README.md badge za verify status                        │        │           │
+│    │   4. Secrets: GITHUB_TOKEN (default), nikakvi external API   │        │           │
+│    │      keys (Kimi/Opus run-uje samo lokalno, ne u CI)         │        │           │
+│    │   5. Contract: CI mora da prođe ISTO što i local verify     │        │           │
+│    │      gate (idempotentnost test)                              │        │           │
+│    │                                                              │        │           │
+│    │  RISK: GitHub Actions ima Node 22 default, treba pinned     │        │           │
+│    │  setup-node version (22.x); ~/Desktop/GDD/ ne postoji u CI  │        │           │
+│    │  pa stress-test mora gracefully skip ako env=ci.            │        │           │
+│    │                                                              │        │           │
+│    │  VREDNOST: ⏵ srednja — convenience, ali ne zatvara autonomy │        │           │
+│    │  gap (lokalno već radi).                                     │        │           │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ I  │ Schema versioning + migration                               │  ~2h   │ 📋 PLAN   │
+│    │  CILJ: UniversalGameSchema je SSoT (Zod). Kad ga promenimo,  │        │           │
+│    │  stari V6 cache + dist/real-games/<slug>/model.json moraju   │        │           │
+│    │  da idu kroz upgrade.mjs(modelV1) → modelV2 bez manual       │        │           │
+│    │  re-ingest-a 338 GDD-ova.                                    │        │           │
+│    │                                                              │        │           │
+│    │  ŠTA POSTOJI:                                                │        │           │
+│    │   - src/schema/universalGame.mjs (validateModel funkcija)    │        │           │
+│    │   - parser hash cache invalidation (UQ-CASH A5)              │        │           │
+│    │                                                              │        │           │
+│    │  ŠTA TREBA:                                                 │        │           │
+│    │   1. src/schema/universalGame.mjs: dodaj `__schema_version__:│        │           │
+│    │      "v2"` polje u svaki validateModel output                │        │           │
+│    │   2. src/schema/migrations/: directory sa upgrade funkcijama │        │           │
+│    │      (v1_to_v2.mjs, v2_to_v3.mjs, …)                        │        │           │
+│    │   3. tools/migrate-models.mjs: walks dist/real-games/* +    │        │           │
+│    │      tools/_wave-v-cache/*, čita __schema_version__, lančano │        │           │
+│    │      poziva migracije do current version                     │        │           │
+│    │   4. Receipt: dist/ingest/<slug>/model.json uvek nosi      │        │           │
+│    │      current version, builder odbija starije bez upgrade    │        │           │
+│    │   5. Verify gate step 4.97y35                               │        │           │
+│    │   6. Contract test: simulate v1 → v2 migration sa real      │        │           │
+│    │      payload-om                                              │        │           │
+│    │                                                              │        │           │
+│    │  RISK: backwards-incompatible promena u korpus cache-u     │        │           │
+│    │  → burst Kimi re-call kad invalidate. Migracija mora biti   │        │           │
+│    │  pure (no LLM calls), samo restructure.                      │        │           │
+│    │                                                              │        │           │
+│    │  VREDNOST: ⏷ niska danas, ⬆ posle prve real schema promene. │        │           │
+│    │  Insurance policy.                                           │        │           │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ J  │ V9 vision mode aktivacija (cost-capped)                     │  ~3-4h │ 📋 PLAN   │
+│    │  CILJ: V9 deterministic deo hvata struct invariants ali NE   │        │           │
+│    │  CSS regression. Vision mode (Opus 4.8 image input) hvata    │        │           │
+│    │  "button overlap", "text cutoff", "low contrast" — sve što   │        │           │
+│    │  deterministic ne vidi.                                      │        │           │
+│    │                                                              │        │           │
+│    │  ŠTA POSTOJI:                                                │        │           │
+│    │   - tools/v9-visual-qa.mjs: visionMode() funkcija (već       │        │           │
+│    │     postoji, opt-in via --vision flag, SKIP-uje ako Fable   │        │           │
+│    │     wrapper missing)                                         │        │           │
+│    │   - Playwright (vec instaliran preko D-10 brutalan probe)   │        │           │
+│    │                                                              │        │           │
+│    │  ŠTA TREBA:                                                 │        │           │
+│    │   1. TCC vision=ON akcija (macOS Settings → Privacy →       │        │           │
+│    │      Screen Recording grant za terminal/iTerm) — Boki       │        │           │
+│    │      operator akcija, dokumentovati u README                │        │           │
+│    │   2. v9-visual-qa.mjs --vision: za top 10 baseline-a +      │        │           │
+│    │      svaki 10. synthetic, sample 5 screenshots/game (base    │        │           │
+│    │      idle, big win, FS intro, paytable open, settings)      │        │           │
+│    │   3. Opus vision call sa rubrikom (button overlap, text     │        │           │
+│    │      cutoff, contrast ratio ≥ 4.5, no covered hub controls) │        │           │
+│    │   4. Cost gate: max 50 vision call po sesiji (~$0.05/poziv  │        │           │
+│    │      = $2.50 cap), env CORTEX_V9_VISION_CAP override        │        │           │
+│    │   5. Receipt: v9-vision.json sa per-state findings           │        │           │
+│    │   6. Dashboard panel proširenje: vision findings sekcija    │        │           │
+│    │   7. Verify gate step 4.97y36 (skip ako TCC ne grant-ovan, │        │           │
+│    │      ne FAIL — vision je opt-in, ne mandatory)              │        │           │
+│    │                                                              │        │           │
+│    │  RISK: TCC dialog blocker (Boki mora click "Allow"), Fable │        │           │
+│    │  wrapper API drift, cost overrun (hard cap), CSS regression │        │           │
+│    │  false positive na "valid darker theme intentional".         │        │           │
+│    │                                                              │        │           │
+│    │  VREDNOST: ⏷ niska — bridge cache + manual screenshot već   │        │           │
+│    │  pokrivaju 80%. Ali catches CSS regression koju struct ne   │        │           │
+│    │  vidi (force-panel covers paytable @ 768px) — pre-release    │        │           │
+│    │  smoke.                                                     │        │           │
+└────┴─────────────────────────────────────────────────────────────┴────────┴───────────┘
+```
+
+### Redosled rada
+
+**Prioritet 1 (DO ULTIMATE AUTONOMY):**
+1. **D** — PAR auto-ingest (zatvara math autonomy gap, najvažnije)
+2. **E** — Self-healing parser (zatvara robustness gap)
+
+**Prioritet 2 (UX + ops):**
+3. **F** — Web UI (production-feel UX)
+4. **H** — CI/CD (convenience)
+
+**Prioritet 3 (insurance + bonus):**
+5. **G** — Auto-scaffold (autonomy bonus)
+6. **I** — Schema versioning (insurance)
+7. **J** — V9 vision mode (CSS catch)
+
+### Ultimate-level QA protokol (svaki D-J atom)
+
+Svaki ID prolazi kroz **ISTI** ultimate workflow kao A/B/C iz N+1:
+
+1. **Implementacija** — tool + integracija u postojeći pipeline
+2. **Contract test** — 10+ assertions, real fixtures (ne mock-ovi)
+3. **Verify gate step** — dodaje se u tools/verify.mjs
+4. **Paralelni audit agenti** — 2-3 nezavisna agenta čitaju kod + traže
+   rupe, izveštaj sa fajl+linija+simptom+fix predlog
+5. **Audit fix-evi** — sve nalaze applique-am pre commit-a
+6. **Anti-vendor lint** — grep za zabranjene vendor termine
+7. **Cortex-eye headless verifikacija** — gde primenljivo (Web UI / V9)
+8. **`npm run verify`** — 100% green pre commit
+9. **`verify-idempotency-test`** — Pass 1 = Pass 2
+10. **Commit + push + post-commit re-verify**
+
+### Status tracker
+
+```
+┌────┬──────────────────────────────────────┬───────────┬────────────────┐
+│ ID │ Stavka                                │ Status    │ Commit pin     │
+├────┼──────────────────────────────────────┼───────────┼────────────────┤
+│ D  │ PAR sheet auto-ingest                │ 📋 PLAN   │ —              │
+│ E  │ Self-healing parser                  │ 📋 PLAN   │ —              │
+│ F  │ Web UI uploader                      │ 📋 PLAN   │ —              │
+│ G  │ Auto-scaffold za nov kind            │ 📋 PLAN   │ —              │
+│ H  │ CI/CD pipeline                       │ 📋 PLAN   │ —              │
+│ I  │ Schema versioning + migration        │ 📋 PLAN   │ —              │
+│ J  │ V9 vision mode aktivacija            │ 📋 PLAN   │ —              │
+└────┴──────────────────────────────────────┴───────────┴────────────────┘
+```
+
+Boki direktiva: *"samo to radimo detaljno dok ne bude savrseno"*. Nema
+distrakcije ka drugim grangrama dok D-J nije 7/7 ✅.
+
+---
+
 ## 🎯 EXPERT RECOMMENDATION PLAN — 2026-06-23 07:08 UTC
 
 Boki pitanje: *"sta predlazes kao ekspert?"* → moje 3 stvarno vredne stvari,
