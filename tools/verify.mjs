@@ -838,6 +838,16 @@ if (existsSync(auditTest)) {
     'node', [auditTest]);
 }
 
+/* ── Step 4.97y17: AUDIT SUMMARY (one-command total rollup)
+ * Orchestrator koji programatski poziva coverage + matrix + portfolio +
+ * verdict, agregira u jedan rollup sa overallVerdict (GREEN/AMBER/RED).
+ * Single-pane-of-glass production status view za operator/regulator. */
+const auditSummaryTest = resolve(REPO, 'tests/contracts/audit-summary.test.mjs');
+if (existsSync(auditSummaryTest)) {
+  run('AUDIT SUMMARY (4-section total rollup · GREEN/AMBER/RED verdict)',
+    'node', [auditSummaryTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz

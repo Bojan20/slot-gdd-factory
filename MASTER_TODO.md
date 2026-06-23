@@ -1,3 +1,58 @@
+## 🏆 AUDIT SUMMARY — 2026-06-23 · ZATVOREN ✅ (one-command total rollup)
+
+Boki direktiva: *"dalje"*. ONE-COMMAND TOTAL AUDIT — orchestrator koji
+programatski poziva sve 4 audit alata (coverage + matrix + portfolio +
+verdict) i agregira u jedan ASCII rollup sa overallVerdict ladder-om
+(GREEN / AMBER / RED).
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  tools/audit-summary.mjs                                                      │
+│  tests/contracts/audit-summary.test.mjs                                      │
+│                                                                                │
+│  Exports:                                                                      │
+│    buildAuditSummary(slugs)  → { overallVerdict, sections: { coverage,        │
+│                                  matrix, portfolio, verdict } }               │
+│    renderAuditSummary(s)     → ASCII rollup (4 numbered sections + banner)    │
+│                                                                                │
+│  CLI:                                                                          │
+│    node tools/audit-summary.mjs              # 5 baselines, ASCII             │
+│    node tools/audit-summary.mjs --json       # JSON only                      │
+│    node tools/audit-summary.mjs --strict     # exit 1 if !== GREEN            │
+│                                                                                │
+│  Overall verdict ladder:                                                       │
+│    🟢 GREEN  — 100% coverage + verdict ok + portfolioVerdict=CONVERGED        │
+│    🟡 AMBER  — close / unknown / partial coverage / no cross-game report     │
+│    🔴 RED    — portfolioVerdict=DIVERGED (any game)                          │
+│                                                                                │
+│  Live output:                                                                  │
+│    overall verdict: 🟡 AMBER  (wrath-of-olympus declared RTP missing)        │
+│    [1] coverage:    5/5 walked, 64/74 kernels ok (86.5%)                     │
+│    [2] matrix:      5×22, 74 applications, 9 universal, 1 dormant            │
+│    [3] portfolio:   5/5 ok, avg 95.4%, Σ 38.7232× bet                        │
+│    [4] verdict:     UNKNOWN portfolio (4/5 CONVERGED + 1 UNKNOWN)            │
+│                                                                                │
+│  Contract test: 8/8 PASS                                                       │
+│    ✓ buildAuditSummary returns expected top-level shape                       │
+│    ✓ Section 1 (coverage) has all required fields                             │
+│    ✓ Section 2 (matrix) has all required fields                               │
+│    ✓ Section 3 (portfolio) has all required fields                            │
+│    ✓ Section 4 (verdict) is ok and reports portfolio verdict                  │
+│    ✓ Overall verdict GREEN only when all sections clean                       │
+│    ✓ renderAuditSummary emits 4 numbered sections + verdict banner            │
+│    ✓ All 5 baselines walk successfully in summary                             │
+│                                                                                │
+│  Wired u verify gate step 4.97y17.                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Operator value:** single-pane-of-glass production status. Regulator /
+operator dobija JEDAN verdict (GREEN/AMBER/RED) + sve 4 sekcije u
+jednom output-u. --strict flag eksitsuje 1 ako verdict !== GREEN —
+CI gating ready.
+
+---
+
 ## 🏆 DECLARED-VS-MEASURED AUDIT — 2026-06-23 · ZATVOREN ✅ (verdict ladder + portfolio aggregate)
 
 Boki direktiva: *"dalje"*. Production-grade audit: declared RTP vs
