@@ -502,8 +502,8 @@ Svaki ID prolazi kroz **ISTI** ultimate workflow kao A/B/C iz N+1:
 │ ID │ Stavka                                │ Status    │ Commit pin     │
 ├────┼──────────────────────────────────────┼───────────┼────────────────┤
 │ D  │ PAR sheet auto-ingest                │ ✅ DONE   │ 4c230ac        │
-│ E  │ Self-healing parser                  │ ✅ DONE   │ pending HEAD   │
-│ F  │ Web UI uploader                      │ 📋 PLAN   │ —              │
+│ E  │ Self-healing parser                  │ ✅ DONE   │ d4d8a2d        │
+│ F  │ Web UI uploader                      │ ✅ DONE   │ pending HEAD   │
 │ G  │ Auto-scaffold za nov kind            │ 📋 PLAN   │ —              │
 │ H  │ CI/CD pipeline                       │ 📋 PLAN   │ —              │
 │ I  │ Schema versioning + migration        │ 📋 PLAN   │ —              │
@@ -601,6 +601,63 @@ Svaki ID prolazi kroz **ISTI** ultimate workflow kao A/B/C iz N+1:
 │   idempotency Pass 1=2   100/100 = 100/100                              │
 │   contract test          25/25 PASS                                     │
 │   ingest --no-llm smoke  healing skipped gracefully                    │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+### F atom — closeout receipt (2026-06-23 15:55 UTC)
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ Files added                                                            │
+│   tools/web-uploader-server.mjs       (Node HTTP server, ~450 lines)  │
+│   tools/web-uploader-ui.html          (vanilla SPA, dark theme)        │
+│   tests/contracts/web-uploader.test.mjs (22 contract assertions)       │
+│                                                                         │
+│ Files modified                                                          │
+│   tools/verify.mjs                    (+step 4.97y35)                  │
+│                                                                         │
+│ Architecture                                                            │
+│   GET /                       serves web-uploader-ui.html              │
+│   GET /status                 server liveness + activeSessions          │
+│   POST /ingest                multipart upload + SSE stream             │
+│   GET /events/:sessionId      reattach SSE                             │
+│   GET /preview/:slug          dist/ingest/<slug>/index.html            │
+│   GET /report/:slug           aggregated v8/v9/par/healing JSON        │
+│                                                                         │
+│   Bind                        127.0.0.1 only (no LAN exposure)         │
+│   Auth                        none (single-operator localhost)         │
+│   Upload cap                  50 MB                                     │
+│   Slug regex                  [a-z0-9._-]{1,80}                        │
+│   CSP                         default-src 'self'                       │
+│   Iframe sandbox              allow-scripts (no allow-same-origin)     │
+│   Multipart                   inline RFC 7578 parser                   │
+│                                                                         │
+│ Audit nalazi (parallel-agent post-impl audit, 5 nalaza FIXED)          │
+│   C1   filename path traversal (CRITICAL) FIXED                        │
+│         → basename() + sanitize + tmp-dir resolve guard                 │
+│         → "../../etc/cron.d/x.pdf" → "pwn.pdf"                        │
+│                                                                         │
+│   H1   SSE sessions Map unbounded (HIGH) FIXED                         │
+│         → MAX_SESSIONS = 200 sa LRU evict (oldest first)               │
+│                                                                         │
+│   H2   concurrent same-slug race (HIGH) FIXED                          │
+│         → activeSlugs Set lock, 409 on duplicate slug                  │
+│         → release na child exit/error                                  │
+│                                                                         │
+│   H3   SSE stderr control-char injection (HIGH→MED) FIXED              │
+│         → strip [\x00-\x08\x0b-\x1f\x7f] pre forwarding                │
+│                                                                         │
+│   M1   iframe allow-same-origin → preview pivot risk FIXED             │
+│         → sandbox="allow-scripts" (no allow-same-origin)               │
+│                                                                         │
+│   Anti-vendor       spawn event ne echoes gddPath (uses <staged>)      │
+│                                                                         │
+│ Gate results                                                            │
+│   npm run verify         101/101 PASS                                   │
+│   contract test          22/22 PASS                                     │
+│   live SSE smoke         ingest pipe stdout → SSE → done event         │
+│   security smoke         traversal filename sanitized to basename      │
+│   port assignment        OS-assigned ephemeral port (test 1)           │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 

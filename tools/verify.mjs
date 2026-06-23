@@ -1135,6 +1135,34 @@ if (existsSync(healingTest)) {
     'node', [healingTest]);
 }
 
+/* ── Step 4.97y35: N+2 F Web UI uploader (drag-drop SPA) ───────────────
+ * F atom (2026-06-23) — localhost HTTP server + vanilla HTML SPA. Operator
+ * drag-drop GDD + opcioni PAR, vidi live SSE progress timeline, otvara
+ * receipts panel sa V8/V9/PAR/healing verdicts, preview u iframe-u.
+ *
+ *   tools/web-uploader-server.mjs       Node HTTP server (no framework)
+ *     - 127.0.0.1 bind only (no LAN exposure)
+ *     - POST /ingest multipart, spawn ingest CLI, SSE stream
+ *     - GET /preview/<slug>, GET /report/<slug>, GET /status
+ *     - Multipart parser inline (RFC 7578)
+ *     - 50 MB upload cap, CSP + nosniff + frame-options
+ *     - Slug whitelist regex + path traversal guard
+ *
+ *   tools/web-uploader-ui.html          Vanilla HTML SPA
+ *     - Drag-drop zone, file picker fallback
+ *     - Timeline (parser/V8/V9/build steps via SSE)
+ *     - Receipts panel (V8 verdict + V9 score + PAR delta + healing)
+ *     - Iframe preview sa sandbox attribute
+ *     - Dark theme, semantic HTML, no framework, no external assets
+ *
+ * Gate-importance: production-feel UX za non-CLI operator. Demo / sales /
+ * regulator review bez SSH-a u box. CLI nije eliminisan — UI je facade. */
+const webUploaderTest = resolve(REPO, 'tests/contracts/web-uploader.test.mjs');
+if (existsSync(webUploaderTest)) {
+  run('N+2 F Web UI uploader (server + multipart + SSE + iframe preview + 20 assertions)',
+    'node', [webUploaderTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz

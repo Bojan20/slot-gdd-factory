@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>slot-gdd-factory · operator uploader</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #0f172a; --fg: #e2e8f0; --muted: #94a3b8;
+    --accent: #38bdf8; --ok: #10b981; --warn: #f59e0b; --err: #ef4444;
+    --panel: #1e293b; --border: #334155;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         font-size: 14px; line-height: 1.5; }
+  header { background: var(--panel); padding: 16px 24px; border-bottom: 1px solid var(--border);
+           display: flex; justify-content: space-between; align-items: center; }
+  header h1 { margin: 0; font-size: 18px; font-weight: 600; color: var(--accent); }
+  header .meta { font-size: 12px; color: var(--muted); }
+  main { padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+         max-width: 1600px; margin: 0 auto; }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+           padding: 16px; }
+  .panel h2 { margin: 0 0 12px 0; font-size: 14px; font-weight: 600;
+              color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; }
+  .drop {
+    border: 2px dashed var(--border); border-radius: 8px; padding: 40px 24px;
+    text-align: center; cursor: pointer; transition: border-color 150ms;
+  }
+  .drop.hover { border-color: var(--accent); background: rgba(56,189,248,0.05); }
+  .drop p { margin: 8px 0; color: var(--muted); }
+  .drop strong { color: var(--fg); }
+  .file-row { display: flex; justify-content: space-between; padding: 6px 0;
+              border-top: 1px solid var(--border); font-size: 12px; }
+  .file-row:first-child { border-top: none; }
+  .btn { background: var(--accent); color: var(--bg); border: none; padding: 8px 16px;
+         border-radius: 6px; font-weight: 600; cursor: pointer; }
+  .btn:hover { opacity: 0.9; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .timeline { display: flex; flex-direction: column; gap: 6px; font-family: 'SF Mono', Monaco, monospace;
+              font-size: 12px; max-height: 320px; overflow-y: auto; }
+  .step { padding: 4px 8px; border-left: 3px solid var(--border); }
+  .step.ok { border-color: var(--ok); }
+  .step.fail { border-color: var(--err); }
+  .step.warn { border-color: var(--warn); }
+  .step .glyph { display: inline-block; width: 16px; text-align: center; margin-right: 6px; }
+  .step.ok .glyph { color: var(--ok); }
+  .step.fail .glyph { color: var(--err); }
+  .receipt { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 16px; font-size: 12px; }
+  .receipt .key { color: var(--muted); }
+  .receipt .val { font-family: 'SF Mono', monospace; }
+  .verdict { display: inline-block; padding: 2px 8px; border-radius: 4px;
+             font-size: 11px; font-weight: 600; text-transform: uppercase; }
+  .verdict.PASS { background: var(--ok); color: var(--bg); }
+  .verdict.WARN { background: var(--warn); color: var(--bg); }
+  .verdict.FAIL { background: var(--err); color: var(--bg); }
+  .verdict.NON_BINDING, .verdict.NON_BINDING_LINE_EXPANSION,
+  .verdict.CALIBRATOR_ERROR, .verdict.UNKNOWN { background: var(--border); color: var(--fg); }
+  iframe { width: 100%; height: 600px; border: 1px solid var(--border); border-radius: 4px;
+           background: white; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; font-style: italic; }
+  .badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px;
+           font-weight: 600; background: var(--border); color: var(--fg); margin-left: 6px; }
+  .row { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
+  .row label { color: var(--muted); font-size: 12px; }
+  .row input[type=text] { flex: 1; padding: 6px 10px; border-radius: 4px;
+                          border: 1px solid var(--border); background: var(--bg); color: var(--fg);
+                          font-family: 'SF Mono', monospace; }
+  details { margin-top: 12px; }
+  details summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+  pre { font-size: 11px; background: var(--bg); padding: 8px; border-radius: 4px;
+        overflow-x: auto; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>slot-gdd-factory · operator uploader</h1>
+  <div class="meta">drag-drop · local · no auth · vanilla HTML</div>
+</header>
+<main>
+  <section>
+    <div class="panel">
+      <h2>1 · upload</h2>
+      <div id="drop" class="drop">
+        <p><strong>Drop GDD here</strong> (PDF / MD / TXT / JSON)</p>
+        <p>or click to browse — optional PAR sheet (CSV / XLSX / JSON) can be added</p>
+        <p style="font-size: 11px;">max 50 MB per file</p>
+      </div>
+      <div id="files" style="margin-top: 12px;"></div>
+      <div class="row">
+        <label>slug:</label>
+        <input id="slug" type="text" placeholder="(auto from filename)">
+        <button id="go" class="btn" disabled>ingest</button>
+      </div>
+    </div>
+    <div class="panel" style="margin-top: 16px;">
+      <h2>2 · progress</h2>
+      <div id="timeline" class="timeline">
+        <div class="empty">awaiting upload…</div>
+      </div>
+    </div>
+  </section>
+  <section>
+    <div class="panel">
+      <h2>3 · receipts</h2>
+      <div id="receipts">
+        <div class="empty">no ingest yet</div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top: 16px;">
+      <h2>4 · preview</h2>
+      <div id="preview"><div class="empty">preview appears here after ingest succeeds</div></div>
+    </div>
+  </section>
+</main>
+<script>
+(function () {
+  'use strict';
+  const drop = document.getElementById('drop');
+  const filesDiv = document.getElementById('files');
+  const goBtn = document.getElementById('go');
+  const slugInput = document.getElementById('slug');
+  const timeline = document.getElementById('timeline');
+  const receiptsDiv = document.getElementById('receipts');
+  const previewDiv = document.getElementById('preview');
+
+  const state = { gdd: null, par: null };
+
+  function fmt(n) { return n.toLocaleString(); }
+
+  function renderFiles() {
+    filesDiv.innerHTML = '';
+    for (const role of ['gdd', 'par']) {
+      const f = state[role];
+      const row = document.createElement('div');
+      row.className = 'file-row';
+      if (f) {
+        row.innerHTML = '<span><strong>' + role.toUpperCase() + ':</strong> ' +
+          escapeHtml(f.name) + ' <span class="badge">' + fmt(f.size) + ' b</span></span>' +
+          '<a href="#" data-remove="' + role + '" style="color:var(--err);text-decoration:none;">×</a>';
+      } else {
+        row.innerHTML = '<span style="color:var(--muted);">no ' + role.toUpperCase() + ' selected</span><span></span>';
+      }
+      filesDiv.appendChild(row);
+    }
+    goBtn.disabled = !state.gdd;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  filesDiv.addEventListener('click', (e) => {
+    const r = e.target.getAttribute && e.target.getAttribute('data-remove');
+    if (r) { e.preventDefault(); state[r] = null; renderFiles(); }
+  });
+
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('hover'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('hover'));
+  drop.addEventListener('drop', (e) => {
+    e.preventDefault();
+    drop.classList.remove('hover');
+    for (const f of e.dataTransfer.files) acceptFile(f);
+  });
+  drop.addEventListener('click', () => {
+    const i = document.createElement('input');
+    i.type = 'file';
+    i.multiple = true;
+    i.onchange = () => { for (const f of i.files) acceptFile(f); };
+    i.click();
+  });
+
+  function acceptFile(f) {
+    const ext = (f.name.match(/\.[^.]+$/) || [''])[0].toLowerCase();
+    if (/\.(csv|xlsx|xls|json)$/.test(ext) && !state.par) {
+      state.par = f;
+    } else if (!state.gdd) {
+      state.gdd = f;
+    } else if (!state.par && /\.json$/.test(ext)) {
+      state.par = f;
+    } else {
+      state.gdd = f;
+    }
+    renderFiles();
+  }
+
+  goBtn.addEventListener('click', async () => {
+    if (!state.gdd) return;
+    goBtn.disabled = true;
+    timeline.innerHTML = '';
+    receiptsDiv.innerHTML = '<div class="empty">running…</div>';
+    previewDiv.innerHTML = '<div class="empty">waiting for ingest to finish</div>';
+    const fd = new FormData();
+    fd.append('gdd', state.gdd, state.gdd.name);
+    if (state.par) fd.append('par', state.par, state.par.name);
+    const slug = slugInput.value.trim();
+    if (slug) fd.append('slug', slug);
+    try {
+      const r = await fetch('/ingest', { method: 'POST', body: fd });
+      const json = await r.json();
+      if (!r.ok) {
+        addStep({ stage: 'error', msg: json.error || 'upload failed', ok: false });
+        goBtn.disabled = false;
+        return;
+      }
+      addStep({ stage: 'upload', msg: 'uploaded gdd=' + fmt(json.gddBytes) + 'b par=' + fmt(json.parBytes) + 'b', ok: true });
+      subscribeSSE(json.sessionId);
+    } catch (e) {
+      addStep({ stage: 'error', msg: e.message, ok: false });
+      goBtn.disabled = false;
+    }
+  });
+
+  function subscribeSSE(sessionId) {
+    const es = new EventSource('/events/' + encodeURIComponent(sessionId));
+    es.onmessage = (e) => {
+      try {
+        const evt = JSON.parse(e.data);
+        addStep(evt);
+        if (evt.stage === 'done') {
+          es.close();
+          goBtn.disabled = false;
+          loadReceiptsAndPreview(evt.slug);
+        } else if (evt.stage === 'error') {
+          es.close();
+          goBtn.disabled = false;
+        }
+      } catch {}
+    };
+    es.onerror = () => { es.close(); goBtn.disabled = false; };
+  }
+
+  function addStep(evt) {
+    if (timeline.querySelector('.empty')) timeline.innerHTML = '';
+    const div = document.createElement('div');
+    const ok = evt.ok !== false && evt.stage !== 'error' && evt.stage !== 'stderr';
+    div.className = 'step ' + (ok ? 'ok' : (evt.stage === 'stderr' ? 'warn' : 'fail'));
+    const glyph = ok ? '✓' : (evt.stage === 'stderr' ? '⚠' : '✗');
+    const label = escapeHtml(evt.msg || evt.stage || '');
+    const time = evt.elapsedMs != null ? ' <span style="color:var(--muted);">+' + evt.elapsedMs + 'ms</span>' : '';
+    div.innerHTML = '<span class="glyph">' + glyph + '</span>' + label + time;
+    timeline.appendChild(div);
+    timeline.scrollTop = timeline.scrollHeight;
+  }
+
+  async function loadReceiptsAndPreview(slug) {
+    try {
+      const r = await fetch('/report/' + encodeURIComponent(slug));
+      const rep = await r.json();
+      renderReceipts(rep);
+    } catch (e) {
+      receiptsDiv.innerHTML = '<div class="empty">report load failed: ' + escapeHtml(e.message) + '</div>';
+    }
+    /* M1 audit fix: drop allow-same-origin from sandbox. Preview iframe
+     * doesn't need fetch() to /report or /ingest (UI handles that).
+     * Without allow-same-origin, a malicious preview can't pivot to
+     * /report/<other-slug> or POST /ingest. */
+    previewDiv.innerHTML = '<iframe src="/preview/' + encodeURIComponent(slug) + '" sandbox="allow-scripts"></iframe>';
+  }
+
+  function renderReceipts(rep) {
+    const parts = [];
+    if (rep.v8) {
+      const v = rep.v8.verdict || 'UNKNOWN';
+      parts.push(
+        '<div class="receipt">' +
+          '<div class="key">V8 verdict</div><div class="val"><span class="verdict ' + v + '">' + v + '</span></div>' +
+          '<div class="key">enabled blocks</div><div class="val">' + ((rep.v8.assembly && rep.v8.assembly.enabledBlocks) || []).length + '</div>' +
+          '<div class="key">conflicts</div><div class="val">' + ((rep.v8.conflicts) || []).length + '</div>' +
+          '<div class="key">engine</div><div class="val">' + escapeHtml(rep.v8.__meta__?.selectedEngine || '—') + '</div>' +
+        '</div>');
+    }
+    if (rep.v9) {
+      const v = rep.v9.verdict || 'UNKNOWN';
+      parts.push(
+        '<div class="receipt" style="margin-top:12px;">' +
+          '<div class="key">V9 verdict</div><div class="val"><span class="verdict ' + v + '">' + v + '</span></div>' +
+          '<div class="key">score</div><div class="val">' + (rep.v9.score != null ? rep.v9.score.toFixed(2) : '—') + '</div>' +
+          '<div class="key">checks</div><div class="val">' + ((rep.v9.checks) || []).length + '</div>' +
+        '</div>');
+    }
+    if (rep.par) {
+      const cal = rep.par.calibration || {};
+      const v = cal.verdict || 'UNKNOWN';
+      parts.push(
+        '<div class="receipt" style="margin-top:12px;">' +
+          '<div class="key">PAR verdict</div><div class="val"><span class="verdict ' + v + '">' + v + '</span></div>' +
+          '<div class="key">declared RTP</div><div class="val">' + (cal.declaredRtp != null ? cal.declaredRtp.toFixed(2) + '%' : '—') + '</div>' +
+          '<div class="key">PAR oracle RTP</div><div class="val">' + (cal.parRtp != null ? cal.parRtp.toFixed(2) + '%' : '—') + '</div>' +
+          '<div class="key">delta</div><div class="val">' + (cal.deltaPct != null ? cal.deltaPct.toFixed(4) + '%' : '—') + '</div>' +
+        '</div>');
+    }
+    if (rep.healing) {
+      parts.push(
+        '<div class="receipt" style="margin-top:12px;">' +
+          '<div class="key">healing</div><div class="val">' + (rep.healing.skipped ? 'skipped' : (rep.healing.ok ? 'applied' : 'inconclusive')) + '</div>' +
+          '<div class="key">attempts</div><div class="val">' + (rep.healing.attempts || 0) + '</div>' +
+          '<div class="key">final severity</div><div class="val">' + escapeHtml(rep.healing.finalSeverity || '—') + '</div>' +
+          '<div class="key">fields repaired</div><div class="val">' + ((rep.healing.fieldsRepaired) || []).join(', ') + '</div>' +
+        '</div>');
+    }
+    parts.push('<details><summary>raw report JSON</summary><pre>' + escapeHtml(JSON.stringify(rep, null, 2)) + '</pre></details>');
+    receiptsDiv.innerHTML = parts.join('') || '<div class="empty">no receipts found</div>';
+  }
+
+  renderFiles();
+})();
+</script>
+</body>
+</html>
