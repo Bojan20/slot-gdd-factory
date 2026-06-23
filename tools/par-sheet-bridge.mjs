@@ -78,6 +78,38 @@ const REPO       = resolve(__dirname, '..');
  * @param {object} [opts]   { sheet?: string } - xlsx sheet name override
  * @returns {Promise<LoadResult>}
  */
+/* UQ-DEEP-C audit fix (D-CRIT-vendor-signals): par-sheet-detect.mjs
+ * generates debug signals like "hdr /^Reel\s+1$/ → igt" or "swid → lw".
+ * Those vendor identifiers are PAR-format routing keys (igt/pragmatic/
+ * lw/spielo), NOT vendor product names — but anti-vendor-lint scans
+ * with case-insensitive \bIGT\b and Light & Wonder patterns, so even
+ * the routing key "lw" would leak by substring. Public par.json
+ * receipts must NOT carry these tokens. Strip them before persisting.
+ *
+ * Strategy: replace all known vendor routing keys with neutral tags
+ * (`vendorA`/`vendorB`/…) so debug provenance is preserved but no
+ * banned tokens survive. Internal callers that need the raw vendor key
+ * can still read `LoadResult.vendor` (top-level field), which is the
+ * routing identifier and stays as-is for adapter dispatch. */
+const VENDOR_KEY_SANITIZE_MAP = Object.freeze({
+  igt:        'vendorA',
+  pragmatic:  'vendorB',
+  lw:         'vendorC',
+  spielo:     'vendorD',
+});
+const VENDOR_KEY_RX = /\b(igt|pragmatic|lw|spielo)\b/gi;
+
+export function sanitizeSignals(signals) {
+  if (!Array.isArray(signals)) return [];
+  return signals.map((s) => {
+    if (typeof s !== 'string') return String(s);
+    return s.replace(VENDOR_KEY_RX, (m) => {
+      const k = m.toLowerCase();
+      return VENDOR_KEY_SANITIZE_MAP[k] || 'vendorX';
+    });
+  });
+}
+
 export async function loadParSheet(parPath, opts = {}) {
   if (!parPath || typeof parPath !== 'string') {
     return { ok: false, reason: 'no PAR path provided' };
@@ -131,7 +163,11 @@ export async function loadParSheet(parPath, opts = {}) {
     vendor: res.vendor,
     format: res.format,
     adapter: res.adapter,
-    signals: res.signals || [],
+    /* D-CRIT-vendor-signals: sanitize before crossing the bridge
+     * boundary so par.json + model.reelStrips.par_sheet_source.signals
+     * (both serialized to operator-visible artifacts) never embed
+     * banned vendor routing keys. */
+    signals: sanitizeSignals(res.signals || []),
   };
 }
 
@@ -196,12 +232,19 @@ export function applyParToModel(parBlob, model, meta = {}) {
     warnings.push('PAR blob has no paytable rows — paytable overlay skipped');
   }
 
-  /* Provenance metadata — vendor code is opaque routing, not vendor name. */
+  /* Provenance metadata — vendor code is opaque routing, not vendor
+   * name, BUT routing keys (igt/pragmatic/lw/spielo) lexically collide
+   * with anti-vendor-lint patterns. D-CRIT-vendor-signals: sanitize to
+   * neutral tags so par.json + model artifacts stay clean. */
+  const rawVendor = meta.vendor || parBlob.vendor || 'unknown';
+  const sanitizedVendor = VENDOR_KEY_SANITIZE_MAP[String(rawVendor).toLowerCase()]
+    || (VENDOR_KEY_RX.test(rawVendor) ? 'vendorX' : rawVendor);
+  VENDOR_KEY_RX.lastIndex = 0; /* stateful /g regex — reset after .test() */
   next.reelStrips.par_sheet_source = {
-    vendor: meta.vendor || parBlob.vendor || 'unknown',
+    vendor: sanitizedVendor,
     format: meta.format || null,
     basename: meta.basename || null,
-    signals: Array.isArray(meta.signals) ? meta.signals : [],
+    signals: sanitizeSignals(Array.isArray(meta.signals) ? meta.signals : []),
     appliedAt: new Date().toISOString(),
   };
   appliedFields.push('reelStrips.par_sheet_source');

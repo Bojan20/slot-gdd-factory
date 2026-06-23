@@ -167,6 +167,10 @@ def extract(xlsx_path, sheet_name=None):
                 w = int(v) if v is not None else 0
             except (ValueError, TypeError):
                 w = 0
+            # UQ-DEEP-C audit fix (D-HIGH-negative): clamp negative
+            # weights to 0 (parity with par-sheet-pragmatic.py).
+            if w < 0:
+                w = 0
             weights_by_reel[k].append(w)
         combos = {}
         for cnt, pc in pay_cols.items():
@@ -180,11 +184,17 @@ def extract(xlsx_path, sheet_name=None):
         if combos:
             pay_rows.append({"symbolId": sym, "combos": combos})
 
+    # UQ-DEEP-C audit fix (D-MED-reels-dos): bounded per-reel expansion.
+    MAX_REEL_EXPANSION = 500_000
     reels = []
     for w_arr in weights_by_reel:
         strip = []
         for i, s in enumerate(symbols):
-            strip.extend([s] * w_arr[i])
+            remaining = MAX_REEL_EXPANSION - len(strip)
+            if remaining <= 0:
+                break
+            count = min(max(0, w_arr[i]), remaining)
+            strip.extend([s] * count)
         reels.append(strip)
     per_reel_weights = {}
     for idx, w_arr in enumerate(weights_by_reel):
@@ -218,6 +228,16 @@ def main():
     ap.add_argument("--sheet", help="Sheet name (auto-detect if omitted)")
     ap.add_argument("--out", default="-", help="Output path or '-' for stdout")
     args = ap.parse_args()
+
+    # UQ-DEEP-C audit fix (D-HIGH-sheet-flag-injection): whitelist sheet
+    # name input shape so a malicious caller cannot pass "--help" or
+    # other argparse flags via the sheet field. Matches the regex used
+    # by par-sheet-detect.mjs.
+    import re as _re
+    if args.sheet is not None:
+        if not _re.match(r"^[A-Za-z0-9._-]{1,80}$", args.sheet):
+            print(json.dumps({"error": f"invalid --sheet name: {args.sheet!r}"}))
+            sys.exit(2)
 
     p = Path(args.xlsx)
     if not p.exists():

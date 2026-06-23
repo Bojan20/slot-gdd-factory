@@ -253,6 +253,27 @@ export function calibrate(model, parBlob) {
     };
   }
 
+  /* UQ-DEEP-C audit fix (D-CRIT-NaN): if the oracle produced a
+   * non-finite RTP (NaN, +Infinity, -Infinity) because the underlying
+   * PAR sheet had zero column sums, division-by-zero in pHit(), or
+   * adversarial weights, the subsequent verdict ladder silently
+   * mis-classifies (NaN <= 0.05 → false, so FAIL fires with reason
+   * "drift NaN%"). Surface this explicitly as NON_BINDING so operators
+   * know the PAR file itself is malformed, not the math. */
+  if (!Number.isFinite(analytical.rtp)) {
+    return {
+      declaredRtp,
+      parRtp: analytical.rtp,
+      deltaPct: null,
+      bandPct: MATH_PRECISION_BAND_PCT,
+      verdict: 'NON_BINDING',
+      reason: `oracle produced non-finite RTP (${String(analytical.rtp)}) — PAR sheet likely has zero reel weights, division-by-zero, or adversarial values`,
+      contributions: analytical.contributions,
+      totals: analytical.totals,
+      assumptions,
+    };
+  }
+
   const deltaPct = Math.abs(declaredRtp - analytical.rtp);
   const lineExpansionGap = declaredRtp - analytical.rtp;
 

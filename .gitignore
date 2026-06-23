@@ -63,3 +63,13 @@ src/cert/llm-cross-check.json
 # MATH-DEEP HYB-5 pipeline receipt reports — local audit trail, not committed.
 reports/pipeline-receipts/
 reports/llm-consistency/
+
+# N+2 G — Auto-scaffolded STUB blocks (UQ-DEEP-C audit fix).
+# These are review-only artifacts generated per ingest; the durable audit
+# trail lives in reports/auto-scaffold-pending.json (already untracked
+# via reports/ above). Tracking the stubs would create churn on every
+# ingest and risk a stub being treated as a real block before reviewer
+# promotes it via the documented manual flow:
+#   _auto_<kind>.mjs → src/blocks/<kind>.mjs + manifest + blockMapper entry
+src/blocks/_auto-scaffolded/
+tests/blocks/_auto-scaffolded/

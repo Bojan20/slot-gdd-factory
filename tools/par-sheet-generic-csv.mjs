@@ -103,14 +103,25 @@ function detectHeader(headerRow) {
 
 /* ── Build par sheet from rows ────────────────────────────────────────── */
 
+/* UQ-DEEP-C audit fix (D-MED-reels-dos): per-reel expansion is bounded
+ * by MAX_REEL_EXPANSION to prevent a malformed/adversarial PAR sheet
+ * with weight=1_000_000 from ballooning the strip array into hundreds
+ * of MB. Real-world PARs use ≤ 200k total weight per reel, so 500k is
+ * a generous ceiling that flags abuse without breaking legitimate
+ * sheets. The `per_reel_weights` map (sparse, symbol→weight) carries
+ * the full unexpanded data for downstream RTP math, so capping the
+ * expansion never loses information needed by the calibrator. */
+const MAX_REEL_EXPANSION = 500_000;
+
 function expandReelByWeight(symbols, weights) {
-  /* If sum is large (e.g. 100000), keep weights as-is. If small (≤ 100),
-   * still keep as-is — caller decides cardinality. */
   const strip = [];
   for (let i = 0; i < symbols.length; i++) {
     const s = symbols[i];
-    const w = weights[i] | 0;
-    for (let k = 0; k < w; k++) strip.push(s);
+    const w = Math.max(0, weights[i] | 0);
+    for (let k = 0; k < w; k++) {
+      if (strip.length >= MAX_REEL_EXPANSION) return strip;
+      strip.push(s);
+    }
   }
   return strip;
 }
@@ -136,20 +147,36 @@ export function ingestCsv(filePath) {
   const weightsByReel = reelIdx.map(() => []);
   const payRows = [];
 
+  /* UQ-DEEP-C audit fix (D-HIGH-locale): European PAR sheets exported
+   * from regulator tools (EU-GLI, MGA) often use comma as the decimal
+   * separator: `0,05` instead of `0.05`. Raw `parseInt('0,05', 10)`
+   * stops at the comma and returns 0, silently truncating weights and
+   * pays to zero. Normalize to dot form before parsing.
+   *
+   * Also guard against negative weights (D-HIGH-negative parity with
+   * Python adapters) — negative weights produce nonsensical RTP and
+   * usually mean a sign-flip bug upstream. */
+  const localeNumber = (raw) => {
+    const s = String(raw || '').trim().replace(',', '.');
+    const f = parseFloat(s);
+    if (!Number.isFinite(f)) return 0;
+    if (f < 0) return 0; /* defensive — negative weights are invalid */
+    return Math.round(f);
+  };
+
   for (let r = 1; r < rows.length; r++) {
     const row = rows[r];
     const sym = (row[symIdx] || '').trim();
     if (!sym || sym.startsWith('#')) continue;
     symbols.push(sym);
     for (let k = 0; k < reelIdx.length; k++) {
-      const w = parseInt((row[reelIdx[k]] || '0').trim(), 10);
-      weightsByReel[k].push(Number.isFinite(w) ? w : 0);
+      weightsByReel[k].push(localeNumber(row[reelIdx[k]]));
     }
     if (Object.keys(payIdx).length > 0) {
       const combos = {};
       for (const [count, idx] of Object.entries(payIdx)) {
-        const v = parseInt((row[idx] || '0').trim(), 10);
-        if (Number.isFinite(v) && v > 0) combos[count] = v;
+        const v = localeNumber(row[idx]);
+        if (v > 0) combos[count] = v;
       }
       if (Object.keys(combos).length > 0) {
         payRows.push({ symbolId: sym, combos });

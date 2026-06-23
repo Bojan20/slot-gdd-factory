@@ -132,6 +132,23 @@ const COST_ESTIMATES_USD = {
  * = $0.15 (3 × $0.05 fable cap). Override via opts.costCeilingUsd. */
 const DEFAULT_COST_CEILING_USD = 0.15;
 
+/* UQ-DEEP-C audit fix (E-HIGH-backoff): exponential backoff with jitter.
+ * Attempt N waits BASE * 2^(N-1) plus up to BASE jitter (uniform random).
+ * BASE = 500ms → attempt 1→2 sleeps ~500-1000ms, 2→3 sleeps ~1000-1500ms.
+ * Tests can opt out (`opts.backoffJitter === false`) for determinism. */
+const BACKOFF_BASE_MS = 500;
+
+async function healerBackoffSleep(attempt, opts = {}) {
+  if (opts.backoffJitter === false) return;
+  const base = Number.isFinite(opts.backoffBaseMs) && opts.backoffBaseMs >= 0
+    ? opts.backoffBaseMs : BACKOFF_BASE_MS;
+  if (base === 0) return;
+  const exp = base * Math.pow(2, Math.max(0, attempt - 1));
+  const jitter = Math.random() * base;
+  const total = Math.min(exp + jitter, 30_000); /* hard cap 30s */
+  await new Promise((r) => setTimeout(r, total));
+}
+
 /* ── diagnose ────────────────────────────────────────────────────────── */
 
 /**
@@ -437,18 +454,76 @@ async function defaultHealer(prompt, opts = {}) {
   if (r.status !== 0) {
     return { ok: false, error: `exit ${r.status}: ${(r.stderr || '').slice(0, 200)}`, durationMs, provider };
   }
-  /* Extract first JSON object from stdout. */
-  const out = String(r.stdout || '').trim();
-  const m = out.match(/\{[\s\S]*\}/);
-  if (!m) {
-    return { ok: false, error: 'no JSON object in healer output', durationMs, provider };
+  /* UQ-DEEP-C audit fix (E-CRIT-greedy + E-CRIT-stderr):
+   *   Old code used /\{[\s\S]*\}/ which is GREEDY — captures from first
+   *   `{` to LAST `}`, so any trailing debug noise after a valid JSON
+   *   object corrupts the parse. Replace with a balanced-brace walker
+   *   that returns the FIRST complete JSON object, ignoring everything
+   *   after.
+   *   Also: cortex-kimi-ask --quiet should keep banners on stderr only,
+   *   but some configurations leak JSON to stderr instead of stdout
+   *   (rare CLI bug). Fall back to stderr if stdout has no balanced
+   *   object, so a misconfigured binary doesn't silently fail. */
+  const stdoutStr = String(r.stdout || '').trim();
+  const stderrStr = String(r.stderr || '').trim();
+  const jsonStr = extractFirstJsonObject(stdoutStr)
+    || extractFirstJsonObject(stderrStr);
+  if (!jsonStr) {
+    return {
+      ok: false,
+      error: 'no balanced JSON object in healer stdout or stderr',
+      durationMs,
+      provider,
+    };
   }
   let patch;
-  try { patch = JSON.parse(m[0]); }
+  try { patch = JSON.parse(jsonStr); }
   catch (e) {
     return { ok: false, error: `patch JSON parse: ${e.message}`, durationMs, provider };
   }
   return { ok: true, patch, durationMs, provider };
+}
+
+/**
+ * Extract the FIRST complete top-level JSON object from a string.
+ * Tracks brace nesting and respects string literals (so braces inside
+ * a JSON string value don't break the count). Returns null if no
+ * balanced object found.
+ *
+ * NOT a JSON parser — just finds the slice boundary. The caller is
+ * responsible for JSON.parse().
+ *
+ * @param {string} src
+ * @returns {string|null}
+ */
+export function extractFirstJsonObject(src) {
+  if (typeof src !== 'string' || !src) return null;
+  const len = src.length;
+  let start = -1;
+  for (let i = 0; i < len; i++) {
+    if (src.charCodeAt(i) === 0x7B /* { */) { start = i; break; }
+  }
+  if (start === -1) return null;
+  let depth = 0;
+  let inStr = false;
+  let escape = false;
+  for (let i = start; i < len; i++) {
+    const ch = src.charCodeAt(i);
+    if (inStr) {
+      if (escape) { escape = false; continue; }
+      if (ch === 0x5C /* \ */) { escape = true; continue; }
+      if (ch === 0x22 /* " */) { inStr = false; }
+      continue;
+    }
+    if (ch === 0x22 /* " */) { inStr = true; continue; }
+    if (ch === 0x7B /* { */) { depth++; continue; }
+    if (ch === 0x7D /* } */) {
+      depth--;
+      if (depth === 0) return src.slice(start, i + 1);
+      if (depth < 0) return null;
+    }
+  }
+  return null;
 }
 
 /* ── heal orchestrator ───────────────────────────────────────────────── */
@@ -575,6 +650,18 @@ export async function healModel(rawText, model, opts = {}) {
           provider: lastProvider,
         });
         break;
+      }
+      /* UQ-DEEP-C audit fix (E-HIGH-backoff): when a healer call fails
+       * transiently (timeout, exit !=0, transient network), the loop
+       * immediately re-fires identical prompts back-to-back. Add a
+       * jittered exponential backoff so:
+       *   - Kimi has a moment to recover between retries.
+       *   - Concurrent ingests don't thunder-herd a recovering provider.
+       *   - Skipped only when retry is the next attempt (not after the
+       *     last attempt, since the loop will exit anyway).
+       * Test-friendly: deterministic in CI when opts.backoffJitter === false. */
+      if (attempt < maxAttempts) {
+        await healerBackoffSleep(attempt, opts);
       }
       continue;
     }

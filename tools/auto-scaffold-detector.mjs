@@ -202,7 +202,21 @@ export async function planScaffolds(model, opts = {}) {
       reason: u.suggestion.reason,
     });
   }
+  /* UQ-DEEP-C audit fix (G-HIGH-cap): when the plan exceeds the
+   * MAX_SCAFFOLDS_PER_INGEST safety cap, the dropped kinds were
+   * silently swallowed (counted in `capExceeded` only as a tally).
+   * Operators reading the receipt could not tell WHICH kinds were
+   * skipped because of the cap. Now we record each dropped kind in
+   * `blocked` with an explicit reason so the audit trail is complete. */
   const capExceeded = Math.max(0, plan.length - cap);
+  for (let i = cap; i < plan.length; i++) {
+    const dropped = plan[i];
+    blocked.push({
+      kind: dropped.kind,
+      reason: `exceeds MAX_SCAFFOLDS_PER_INGEST cap (${cap}) — try again in a separate ingest or raise cap explicitly`,
+      droppedByCap: true,
+    });
+  }
   return { plan: plan.slice(0, cap), skipped, blocked, capExceeded };
 }
 

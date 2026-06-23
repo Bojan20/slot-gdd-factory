@@ -79,7 +79,7 @@ function assertEq(a, b, msg) {
 
 console.log('═══ self-healing.test.mjs ═══');
 
-const { diagnoseModel, buildFixPrompt, applyPatch, healModel } =
+const { diagnoseModel, buildFixPrompt, applyPatch, healModel, extractFirstJsonObject } =
   await import(resolve(REPO, 'tools/self-healing-parser.mjs'));
 
 /* ─── synthetic fixtures ─────────────────────────────────────────────── */
@@ -401,6 +401,112 @@ await testAsync('25. CLI: --diagnose-only emits valid Diagnosis JSON', async () 
   } finally {
     rmSync(tmpDir, { recursive: true, force: true });
   }
+});
+
+/* ─── UQ-DEEP-C audit fixes (paralel-agent E-CRIT + E-HIGH) ──────────── */
+
+/* E-CRIT-greedy: balanced JSON extractor must take FIRST complete object,
+ * not greedily span to the last `}` in the stream. Adversarial healer
+ * output with trailing debug bytes used to corrupt the parse. */
+test('UQ-DEEP-C-1: extractFirstJsonObject takes first balanced object', () => {
+  const src = '{"first":1} junk {"second":2}';
+  assertEq(extractFirstJsonObject(src), '{"first":1}');
+});
+test('UQ-DEEP-C-2: extractFirstJsonObject handles braces inside strings', () => {
+  const src = '{"text":"contains } and { inside"} trailing';
+  assertEq(extractFirstJsonObject(src), '{"text":"contains } and { inside"}');
+});
+test('UQ-DEEP-C-3: extractFirstJsonObject handles nested objects', () => {
+  const src = 'noise {"a":{"b":{"c":1}}, "d":2} more noise';
+  assertEq(extractFirstJsonObject(src), '{"a":{"b":{"c":1}}, "d":2}');
+});
+test('UQ-DEEP-C-4: extractFirstJsonObject returns null on no braces', () => {
+  assertEq(extractFirstJsonObject('no json here'), null);
+  assertEq(extractFirstJsonObject(''), null);
+  assertEq(extractFirstJsonObject(null), null);
+  assertEq(extractFirstJsonObject(undefined), null);
+});
+test('UQ-DEEP-C-5: extractFirstJsonObject returns null on unbalanced', () => {
+  assertEq(extractFirstJsonObject('{"unclosed":'), null);
+  assertEq(extractFirstJsonObject('{"a":1'), null);
+});
+test('UQ-DEEP-C-6: extractFirstJsonObject handles escaped quotes in string', () => {
+  const src = '{"esc":"he said \\"hi\\""} tail';
+  assertEq(extractFirstJsonObject(src), '{"esc":"he said \\"hi\\""}');
+});
+
+/* E-HIGH-malformed-json: healer that returns non-object patches must be
+ * rejected by applyPatch / healModel without polluting the model. */
+await testAsync('UQ-DEEP-C-7: healer returns array patch → reject', async () => {
+  const arrayHealer = async () => ({
+    ok: true, patch: [1, 2, 3], durationMs: 1, provider: 'mock',
+  });
+  const r = await healModel(RAW_TEXT, CATASTROPHIC_MODEL, {
+    healerFn: arrayHealer, maxAttempts: 1, backoffJitter: false,
+  });
+  /* Loop completes but no fields applied — model stays catastrophic. */
+  assert(r.receipt.fieldsRepaired.length === 0, 'array patch must not land');
+  assert(!Array.isArray(r.model), 'model must remain object');
+});
+
+await testAsync('UQ-DEEP-C-8: healer returns string patch → reject', async () => {
+  const stringHealer = async () => ({
+    ok: true, patch: 'not an object', durationMs: 1, provider: 'mock',
+  });
+  const r = await healModel(RAW_TEXT, CATASTROPHIC_MODEL, {
+    healerFn: stringHealer, maxAttempts: 1, backoffJitter: false,
+  });
+  assert(r.receipt.fieldsRepaired.length === 0, 'string patch must not land');
+  assert(typeof r.model === 'object', 'model must remain object');
+});
+
+/* E-HIGH-proto-pollution: applyPatch already rejects __proto__/constructor/
+ * prototype top-level keys (test #13), but verify the END-TO-END healModel
+ * loop also blocks them — a malicious healer must not pollute Object.prototype. */
+await testAsync('UQ-DEEP-C-9: proto pollution via healer patch blocked', async () => {
+  /* Sentinel: any global object should NOT acquire `polluted` field. */
+  const sentinel = {};
+  assert(!('polluted' in sentinel), 'pre-condition: no pollution');
+  const evilHealer = async () => ({
+    ok: true,
+    patch: { __proto__: { polluted: true } },
+    durationMs: 1,
+    provider: 'mock',
+  });
+  await healModel(RAW_TEXT, CATASTROPHIC_MODEL, {
+    healerFn: evilHealer, maxAttempts: 1, backoffJitter: false,
+  });
+  assert(!('polluted' in sentinel),
+    `Object.prototype polluted via healer patch — applyPatch guard broken`);
+  assert(!({}).polluted, 'fresh object polluted via prototype');
+});
+
+await testAsync('UQ-DEEP-C-10: constructor pollution via healer blocked', async () => {
+  const evilHealer = async () => ({
+    ok: true,
+    patch: { constructor: { prototype: { hijacked: true } } },
+    durationMs: 1,
+    provider: 'mock',
+  });
+  const r = await healModel(RAW_TEXT, CATASTROPHIC_MODEL, {
+    healerFn: evilHealer, maxAttempts: 1, backoffJitter: false,
+  });
+  assert(!({}).hijacked, 'constructor pollution leaked');
+  assert(r.receipt.fieldsRepaired.length === 0, 'constructor patch must not land');
+});
+
+/* E-HIGH-backoff: explicit deterministic mode (backoffJitter:false) yields
+ * zero wall-clock delay so the test suite stays fast. */
+await testAsync('UQ-DEEP-C-11: backoffJitter:false skips delay', async () => {
+  const t0 = Date.now();
+  /* 3 failing attempts = 2 inter-attempt backoffs. With BASE=500ms +
+   * jitter, real wall-clock would be ~1.5–3s. With backoffJitter:false,
+   * must be < 200ms total. */
+  await healModel(RAW_TEXT, BROKEN_MODEL, {
+    healerFn: failingHealer, maxAttempts: 3, backoffJitter: false,
+  });
+  const elapsed = Date.now() - t0;
+  assert(elapsed < 500, `backoffJitter:false should be fast, got ${elapsed}ms`);
 });
 
 /* ─── summary ─────────────────────────────────────────────────────── */
