@@ -34,6 +34,7 @@ import {
   computeStateMachineKernelRtp,
   computeBothWaysExpandingWildKernelRtp,
   solveForParam,
+  solveMultiDim,
   _resetCache,
 } from '../../src/blocks/featureSimPlugins/extraKernelBridges.mjs';
 import { detectKernelEngine } from '../../tools/math-kernel-bridge.mjs';
@@ -359,6 +360,32 @@ test('solveForParam: cache hit on identical query', async () => {
     assert(d2 < d1 || d2 < 30, `cache miss? d1=${d1}ms d2=${d2}ms`);
     assert(r1.solvedParam === r2.solvedParam, 'cached value identical');
   }
+});
+
+/* ── (23) Multi-dim solver — 2D solve shape ────────────────────────────── */
+
+test('solveMultiDim: 2D money_collect returns structured result', async () => {
+  _resetCache();
+  const r = await solveMultiDim({
+    kernel: 'money_collect',
+    solveFor: ['p_per_cell', 'trigger_count_min'],
+    targets: [0.40, 0.001],
+    initialGuess: [0.1, 6],
+    bounds: [[0.001, 0.5], [3, 10]],
+    fixed: {
+      n_cells: 15,
+      value_table: { '1': 0.5, '5': 0.3, '10': 0.15, '50': 0.05 },
+      respins_reset: 3,
+    },
+  });
+  if (!r.ok) { const d = detectKernelEngine(); if (!d.available) { console.log('    (skipped)'); return; } throw new Error(`failed: ${r.reason}`); }
+  assert(Array.isArray(r.solvedParams) && r.solvedParams.length === 2,
+    `solvedParams length 2, got ${r.solvedParams?.length}`);
+  assert(typeof r.finalNorm === 'number', 'finalNorm number');
+  assert(Array.isArray(r.finalResidual), 'finalResidual array');
+  assert(typeof r.converged === 'boolean', 'converged boolean');
+  /* Non-convergence is legitimate for discrete-mix problems — just verify
+   * the structure. */
 });
 
 /* ── Result ──────────────────────────────────────────────────────────── */

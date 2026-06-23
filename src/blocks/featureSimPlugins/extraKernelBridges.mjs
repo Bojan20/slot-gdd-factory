@@ -51,6 +51,7 @@ const _cachePick     = new Map();
 const _cacheSm       = new Map();
 const _cacheBwEw     = new Map();
 const _cacheInverse  = new Map();
+const _cacheMultiDim = new Map();
 
 /* Shared helper to invoke the universal runner with kernel name + params. */
 function _runUniversal(kernelName, params) {
@@ -571,6 +572,89 @@ export async function solveForParam(opts = {}) {
   return out;
 }
 
+/* ── Multi-dim inverse solver (Newton-Raphson n-D) ────────────────────── */
+
+/**
+ * Solve for MULTIPLE kernel params that together hit MULTIPLE targets.
+ *
+ * Example: "find (p_per_cell, trigger_count_min) that give RTP=0.40 AND
+ * trigger_p=0.001 for money_collect simultaneously".
+ *
+ *   solveMultiDim({
+ *     kernel: 'money_collect',
+ *     solveFor: ['p_per_cell', 'trigger_count_min'],
+ *     targets: [0.40, 0.001],
+ *     initialGuess: [0.1, 6],
+ *     bounds: [[0.001, 0.5], [3, 10]],
+ *     fixed: { n_cells, value_table, respins_reset }
+ *   })
+ *
+ * Returns { ok, solvedParams[], converged, iterations, finalNorm, ... }.
+ *
+ * Note: 2D+ solvers may not converge for highly discontinuous mappings
+ * (e.g. trigger_count_min is integer-discrete). converged=false is a
+ * legitimate outcome — operator inspects finalResidual + finalNorm.
+ */
+export async function solveMultiDim(opts = {}) {
+  const params = {
+    kernel:        opts.kernel        || 'money_collect',
+    solve_for:     opts.solveFor      || ['p_per_cell'],
+    targets:       opts.targets       || [0.40, 0.001],
+    initial_guess: opts.initialGuess  || [0.1, 6],
+    bounds:        opts.bounds        || null,
+    fixed:         opts.fixed         || {},
+  };
+  const key = JSON.stringify(params);
+  if (_cacheMultiDim.has(key)) return _cacheMultiDim.get(key);
+
+  const detect = detectKernelEngine();
+  if (!detect.available) {
+    const out = { ok: false, reason: `kernel unavailable: ${detect.reason}` };
+    _cacheMultiDim.set(key, out);
+    return out;
+  }
+  const tmpDir = join(tmpdir(), 'extra-kernel-bridge');
+  mkdirSync(tmpDir, { recursive: true });
+  const cfgPath = join(tmpDir, `md-${process.pid}-${Date.now()}.json`);
+  writeFileSync(cfgPath, JSON.stringify(params), 'utf8');
+  const runnerPath = resolve(REPO, 'tools/_kernel-multi-dim-solver-runner.py');
+  const env = { ...process.env, PYTHONPATH: join(detect.kernelsDir, 'src') };
+  const proc = spawnSync(detect.pythonCmd, [runnerPath, cfgPath], {
+    encoding: 'utf8', env, timeout: 30_000,
+  });
+  if (proc.status !== 0) {
+    const out = { ok: false, reason: `runner exit ${proc.status}: ${(proc.stderr || '').slice(0, 300)}` };
+    _cacheMultiDim.set(key, out);
+    return out;
+  }
+  let parsed;
+  try { parsed = JSON.parse((proc.stdout || '').trim()); }
+  catch (e) {
+    const out = { ok: false, reason: `JSON parse: ${e.message}` };
+    _cacheMultiDim.set(key, out);
+    return out;
+  }
+  if (parsed.error) {
+    const out = { ok: false, reason: parsed.error };
+    _cacheMultiDim.set(key, out);
+    return out;
+  }
+  const out = {
+    ok: true,
+    solvedParams:  parsed.solved_params,
+    finalResidual: parsed.final_residual,
+    finalNorm:     parsed.final_norm,
+    iterations:    parsed.iterations,
+    converged:     parsed.converged,
+    targets:       parsed.targets,
+    kernel:        parsed.kernel,
+    solveFor:      parsed.solve_for,
+    kernelEngine:  'python-kernel',
+  };
+  _cacheMultiDim.set(key, out);
+  return out;
+}
+
 export function _resetCache() {
   _cacheExp.clear(); _cacheSw.clear(); _cacheCascade.clear(); _cacheWays.clear();
   _cachePayAny.clear(); _cacheStacked.clear();
@@ -578,5 +662,5 @@ export function _resetCache() {
   _cacheMustHit.clear(); _cacheWheel.clear();
   _cacheAsym.clear(); _cacheCharge.clear(); _cacheCrash.clear();
   _cachePick.clear(); _cacheSm.clear(); _cacheBwEw.clear();
-  _cacheInverse.clear();
+  _cacheInverse.clear(); _cacheMultiDim.clear();
 }
