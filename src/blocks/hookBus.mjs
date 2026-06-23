@@ -742,6 +742,13 @@ export const HOOK_EVENTS = Object.freeze([
   'onFrjCheckRequired',  // Owner: franceComplianceGate.mjs
   'onGameStateCleared',  // Owner: germanyComplianceGate.mjs
   'onHoldAndWinEnd',  // Owner: holdAndWin.mjs
+  /* UQ-DEEP-H fix (Boki cash-eruption console 2026-06-23): four hold-and-win
+   * lifecycle events were emitted by holdAndWin.mjs + listened to by
+   * multiplierOrb / spinControl / room-jackpot / frame-multiplier, but never
+   * whitelisted here. HookBus.on() warned "unknown event" and silently
+   * dropped subscriptions → cross-feature coordination dead. */
+  'onHoldAndWinIntro',  // Owner: holdAndWin.mjs (INTRO phase start)
+  'onHoldAndWinStart',  // Owner: holdAndWin.mjs (RUNNING phase start)
   'onHoldAndWinPayout',  // Owner: holdAndWin.mjs
   'onHoldAndWinPhase',  // Owner: holdAndWin.mjs
   /* UQ-MASTERY-2 (2026-06-21) — explicit start-of-feature trigger emitted
@@ -813,6 +820,11 @@ export const HOOK_EVENTS = Object.freeze([
   'onWheelRevealStart',  // Owner: wheelBonusReveal.mjs
   'onWheelSettled',  // Owner: wheelBonus.mjs
   'onWinCapClamped',  // Owner: winCap.mjs
+  /* UQ-DEEP-H fix (Boki cash-eruption console 2026-06-23): spinControl
+   * gates recover on these but they were never whitelisted → unknown
+   * event warn + gate stays stuck on cap-reached / self-excluded states. */
+  'onWinCapReached',  // Owner: winCap.mjs (consumed by spinControl gate recover)
+  'onSelfExcludedBlocked',  // Owner: rgPanel/complianceGate (consumed by spinControl)
   'onWinCapTriggered',  // Owner: winCap.mjs
   'requestRespin',  // Owner: walkingWild.mjs
   'symbolOverride',  // Owner: wildReel.mjs

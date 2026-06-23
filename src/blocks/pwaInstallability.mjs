@@ -272,11 +272,24 @@ export function emitPwaInstallabilityRuntime(cfg = defaultConfig()) {
     }
 
     /* SW registration — blob URL avoids any second-file deploy. Service
-     * workers from same-origin blob URLs are permitted (spec-compliant). */
-    if (typeof navigator !== 'undefined' &&
-        navigator.serviceWorker &&
-        typeof navigator.serviceWorker.register === 'function' &&
-        (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+     * workers from same-origin blob URLs are permitted (spec-compliant).
+     * UQ-DEEP-H fix (Boki cash-eruption console 2026-06-23): even
+     * READING navigator.serviceWorker throws SecurityError inside a
+     * sandboxed iframe without allow-same-origin (e.g. the web-uploader
+     * preview iframe). Previous check used a logical-AND chain which
+     * performs property access → throws BEFORE the if-body try/catch
+     * can swallow it. Pull entire feature-detection inside try/catch
+     * so the SecurityError never escapes the block.
+     * (No backticks in this comment — surrounding string is a JS template
+     * literal that would terminate on any raw backtick character.) */
+    var _swCapable = false;
+    try {
+      _swCapable = (typeof navigator !== 'undefined') &&
+                   !!navigator.serviceWorker &&
+                   (typeof navigator.serviceWorker.register === 'function') &&
+                   (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+    } catch (_) { /* sandboxed iframe denies serviceWorker — graceful skip */ }
+    if (_swCapable) {
       try {
         var swBlob = new Blob([${JSON.stringify(swSrc)}], { type: 'application/javascript' });
         var swUrl = URL.createObjectURL(swBlob);
