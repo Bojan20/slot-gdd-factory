@@ -94,7 +94,8 @@ function listSlugs() {
   return all;
 }
 
-const slugs = listSlugs();
+/* UQ-DEEP-E audit fix (COMPL-2): sort for deterministic audit output. */
+const slugs = listSlugs().sort();
 let phantomTotal = 0;
 const perKind = {};
 const offenders = [];

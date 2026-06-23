@@ -140,6 +140,15 @@ export async function callKernel(kernelName, params = {}) {
   /* Parse stdout as JSON. CLI may emit human-readable lines BEFORE the JSON
    * payload — pick last brace-balanced JSON block. */
   const stdout = (proc.stdout || '').trim();
+  /* UQ-DEEP-E audit fix (KERNEL-3): empty stdout must NOT silently
+   * succeed. Previously `JSON.parse('')` threw, fell to regex match
+   * (no braces → no match), fell to bottom-of-function silent success
+   * with `{ result: { raw: '' } }`. Regulators consuming this as RTP
+   * number got `undefined`. Surface empty stdout as failure. */
+  if (!stdout) {
+    emit(false, 'error', 'kernel emitted no stdout');
+    return { engine: 'error', reason: 'kernel emitted no stdout', stderr: (proc.stderr || '').slice(0, 300) };
+  }
   try {
     /* Try direct JSON parse first. */
     const out = { engine: 'python-kernel', kernel: kernelName, result: JSON.parse(stdout) };
@@ -159,8 +168,19 @@ export async function callKernel(kernelName, params = {}) {
         return { engine: 'error', reason: `JSON parse failed: ${e2.message}`, raw: stdout.slice(0, 500) };
       }
     }
-    emit(true, 'python-kernel', null);
-    return { engine: 'python-kernel', kernel: kernelName, result: { raw: stdout } };
+    /* UQ-DEEP-E audit fix (KERNEL-3): the bottom-of-function path
+     * previously returned `{ engine: 'python-kernel', result: { raw:
+     * stdout } }` AND emitted success=true. Operator-facing
+     * dashboards saw `.result.rtp = undefined` as "kernel ok, no
+     * RTP" instead of "kernel failed, no parseable result". Surface
+     * as ERROR instead. */
+    emit(false, 'error', 'no parseable JSON in stdout');
+    return {
+      engine: 'error',
+      reason: 'no parseable JSON in kernel stdout',
+      raw: stdout.slice(0, 500),
+      stderr: (proc.stderr || '').slice(0, 300),
+    };
   }
 }
 

@@ -221,11 +221,19 @@ function auditModel(slug, model) {
     }
 
     // I8.2 — UKGC declared but bonus buy enabled → blocked (UKGC ban since 2025)
+    // UQ-DEEP-E audit fix (COMPL-1): normalize jurisdiction codes to
+    // upper-case before membership check, otherwise GDD declarations like
+    // `'ukgc'` or mixed-case `'Ukgc'` would silently bypass the gate.
+    // Also widen UK aliases (UK / GBR / GB) so any common spelling fires.
     const c = model.compliance;
     const jurArr = Array.isArray(c) ? c
                  : Array.isArray(c?.jurisdictions) ? c.jurisdictions : [];
-    const jurCodes = jurArr.map(j => typeof j === 'string' ? j : j?.code || j?.id).filter(Boolean);
-    if (jurCodes.includes('UKGC') || jurCodes.includes('UK')) {
+    const jurCodes = jurArr
+      .map(j => typeof j === 'string' ? j : j?.code || j?.id)
+      .filter(Boolean)
+      .map(s => String(s).toUpperCase());
+    const UK_ALIASES = new Set(['UKGC', 'UK', 'GBR', 'GB', 'UK-GREAT-BRITAIN']);
+    if (jurCodes.some(code => UK_ALIASES.has(code))) {
       hard.push({ slug, rule: 'I8.2', msg: `bonusBuy.enabled=true but UKGC declared — UKGC banned bonus buy purchases` });
     }
 
@@ -318,7 +326,8 @@ function listSlugs() {
   return all;
 }
 
-const slugs = listSlugs();
+/* UQ-DEEP-E audit fix (COMPL-2): sort for deterministic audit output. */
+const slugs = listSlugs().sort();
 if (slugs.length === 0) {
   console.error('▸ no model.json files found');
   process.exit(2);

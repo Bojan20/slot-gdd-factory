@@ -42,7 +42,14 @@
 
 import { detectKernelEngine } from '../../../tools/math-kernel-bridge.mjs';
 import { spawnSync } from 'node:child_process';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, unlinkSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
+
+/* UQ-DEEP-E audit fix (KERNEL-2): spawnSync default maxBuffer = 1 MB.
+ * Hold-and-win analytical solver can emit 5+ MB JSON for cluster games
+ * with per-tier distributions. Raise to 10 MB to prevent ENOBUFS. */
+const KERNEL_MAX_BUFFER = 10 * 1024 * 1024;
+function _safeUnlink(p) { try { unlinkSync(p); } catch { /* best-effort */ } }
 import { resolve, dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -156,7 +163,10 @@ export async function computeHoldAndWinKernelRtp(model) {
    * (4-tier mini/minor/major/grand). Total rtp_contribution is the sum. */
   const tmpDir = join(tmpdir(), 'hw-kernel-bridge');
   mkdirSync(tmpDir, { recursive: true });
-  const cfgPath = join(tmpDir, `hw-${process.pid}-${Date.now()}.json`);
+  /* UQ-DEEP-E audit fix (KERNEL-1+4): UUID-based naming +
+   * best-effort cleanup eliminates Date.now() collision and prevents
+   * unbounded /tmp accumulation. */
+  const cfgPath = join(tmpDir, `hw-${randomUUID()}.json`);
   writeFileSync(cfgPath, JSON.stringify(fullParams), 'utf8');
   const runnerPath = resolve(REPO, 'tools/_kernel-hold-and-win-runner.py');
   const env = {
@@ -164,8 +174,9 @@ export async function computeHoldAndWinKernelRtp(model) {
     PYTHONPATH: join(detect.kernelsDir, 'src'),
   };
   const proc = spawnSync(detect.pythonCmd, [runnerPath, cfgPath], {
-    encoding: 'utf8', env, timeout: 30_000,
+    encoding: 'utf8', env, timeout: 30_000, maxBuffer: KERNEL_MAX_BUFFER,
   });
+  _safeUnlink(cfgPath);
   if (proc.status !== 0) {
     const r = {
       ok: false,

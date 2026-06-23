@@ -1208,16 +1208,24 @@ export function buildSlotHTML(model) {
   const reels = shape.reels;
   const rows  = shape.rows;
 
+  /* UQ-DEEP-E audit fix (BUILD-3): palette values flow into both
+   * CSS `:root { --bg-0: ${bg0} }` and `<meta theme-color>` HTML
+   * attribute. An adversarial GDD palette value like
+   * `"red; } body { display: none "` would break out of the CSS rule.
+   * Validate strict `#RGB | #RRGGBB | #RRGGBBAA` hex before embed; fall
+   * back to safe default otherwise. */
+  const HEX_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+  const safeHex = (v, fallback) => (typeof v === 'string' && HEX_RE.test(v.trim())) ? v.trim() : fallback;
   /* Palette — use GDD palette[] if available, else reference defaults */
   const p = model.theme.palette || [];
-  const bg0    = p[0] || "#05070c";   // deep background
-  const bg1    = p[1] || "#0b0f16";   // mid background
-  const accent = p[2] || "#c9a227";   // primary accent (gold)
+  const bg0    = safeHex(p[0], "#05070c");   // deep background
+  const bg1    = safeHex(p[1], "#0b0f16");   // mid background
+  const accent = safeHex(p[2], "#c9a227");   // primary accent (gold)
   const text   = "#f2f2f2";
 
   const layoutSub = `${shape.shapeNote}${shape.paylines ? ` · ${shape.paylines} lines` : ''}${shape.wayCount ? ` · ${shape.wayCount} ways` : ''}`;
 
-  return `<!DOCTYPE html>
+  const _html = `<!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="UTF-8">
 <!--
@@ -1770,8 +1778,16 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
     };
   }
 
-  const POOL = ${JSON.stringify(pool.map(s => s.id))};
-  const SHAPE = ${JSON.stringify(shape)};
+  /* UQ-DEEP-E audit fix BUILD-2: safeJSONInScript guards against
+   * adversarial values with end-script-tag, html-comment-open,
+   * line-separator U+2028/U+2029, or CDATA-open. POOL ids come from
+   * parser (controlled) but defense-in-depth costs nothing. SHAPE
+   * includes topology eval kind which could carry adversarial GDD
+   * prose. (Backticks intentionally absent from this comment — the
+   * surrounding string is a JS template literal that would terminate
+   * on any raw backtick character.) */
+  const POOL = ${safeJSONInScript(pool.map(s => s.id))};
+  const SHAPE = ${safeJSONInScript(shape)};
   const FREESPINS = ${safeJSONInScript(model.freeSpins || { enabled: false })};
   /* Wave AL-2 (4-GDD audit) — expose parser-detected feature kinds + name
    * + symbol tier counts as a window-side QA hook so external auditors
@@ -1793,7 +1809,7 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   }
   /* Game topology hint — selects payout evaluator: 'line' (default),
      'cluster', 'ways', 'pay_anywhere'. Read by applyWinHighlight dispatch. */
-  const GAME_EVAL_KIND = ${JSON.stringify((model.topology && model.topology.evaluation) || 'line')};
+  const GAME_EVAL_KIND = ${safeJSONInScript((model.topology && model.topology.evaluation) || 'line')};
   if (typeof window !== "undefined") window.GAME_EVAL_KIND = GAME_EVAL_KIND;
   /* Per-symbol registry — drives win-cycle event generation. See
      SYMBOL_REGISTRY construction in buildSlotHTML.mjs for the source. */
@@ -1802,7 +1818,7 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
      Empty for cluster-pays grids (cluster, megaclusters, hex, etc).
      When non-empty, the win cycle runs in line-pays mode (per-line
      event). When empty, it falls back to per-symbol cluster mode. */
-  const PAYLINE_POOL = ${JSON.stringify(PAYLINE_POOL)};
+  const PAYLINE_POOL = ${safeJSONInScript(PAYLINE_POOL)};
   const REELS = SHAPE.reels;
   const ROWS  = SHAPE.rows;
 
@@ -2292,4 +2308,16 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitGridDispatchRuntime(model)}
 </script>
 </body></html>`;
+
+  /* UQ-DEEP-E audit fix (BUILD-4): hard payload cap. A pathological
+   * model (e.g. cluster game with 49 reels × 50 symbols, or 10k
+   * paylines) can balloon embedded SYMBOL_REGISTRY + PAYLINE_POOL JSON
+   * into hundreds of MB, blowing browser memory + CDN delivery limits.
+   * 15 MB is generous (real production slots cap at ~3-5 MB) and trips
+   * loud BEFORE the artifact reaches operator / browser. */
+  const _MAX_PAYLOAD_BYTES = 15 * 1024 * 1024;
+  if (_html.length > _MAX_PAYLOAD_BYTES) {
+    throw new Error(`buildSlotHTML payload ${(_html.length/1e6).toFixed(1)}MB exceeds ${_MAX_PAYLOAD_BYTES/1e6}MB cap — adversarial or pathological model`);
+  }
+  return _html;
 }

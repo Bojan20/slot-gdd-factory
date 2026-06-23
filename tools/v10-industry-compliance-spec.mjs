@@ -279,7 +279,11 @@ function listSlugs() {
   return all;
 }
 
-const slugs = listSlugs();
+/* UQ-DEEP-E audit fix (COMPL-2): sort slugs so audit output (hardSample,
+ * iteration order) is deterministic across runs. readdirSync returns
+ * filesystem-order which can shift after rebuilds, causing the report
+ * sample to vary even when violations are identical. */
+const slugs = listSlugs().sort();
 if (slugs.length === 0) {
   console.error('▸ no model.json files found for audit');
   process.exit(2);

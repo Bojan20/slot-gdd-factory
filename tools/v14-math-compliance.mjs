@@ -213,7 +213,8 @@ function listSlugs() {
   return all;
 }
 
-const slugs = listSlugs();
+/* UQ-DEEP-E audit fix (COMPL-2): sort for deterministic audit output. */
+const slugs = listSlugs().sort();
 if (slugs.length === 0) { console.error('▸ no models'); process.exit(2); }
 
 console.log(`V14 Math Compliance · auditing ${slugs.length} games...`);

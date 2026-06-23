@@ -31,7 +31,12 @@
 
 import { detectKernelEngine } from '../../../tools/math-kernel-bridge.mjs';
 import { spawnSync } from 'node:child_process';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, unlinkSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
+
+/* UQ-DEEP-E audit fix (KERNEL-1+2+4): cleanup + UUID + maxBuffer. */
+const KERNEL_MAX_BUFFER = 10 * 1024 * 1024;
+function _safeUnlink(p) { try { unlinkSync(p); } catch { /* best-effort */ } }
 import { resolve, dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -144,13 +149,14 @@ export async function computeClusterPaysKernelRtp(model, options = {}) {
 
   const tmpDir = join(tmpdir(), 'cluster-kernel-bridge');
   mkdirSync(tmpDir, { recursive: true });
-  const cfgPath = join(tmpDir, `cp-${process.pid}-${Date.now()}.json`);
+  const cfgPath = join(tmpDir, `cp-${randomUUID()}.json`);
   writeFileSync(cfgPath, JSON.stringify(params), 'utf8');
   const runnerPath = resolve(REPO, 'tools/_kernel-cluster-pays-runner.py');
   const env = { ...process.env, PYTHONPATH: join(detect.kernelsDir, 'src') };
   const proc = spawnSync(detect.pythonCmd, [runnerPath, cfgPath], {
-    encoding: 'utf8', env, timeout: 30_000,
+    encoding: 'utf8', env, timeout: 30_000, maxBuffer: KERNEL_MAX_BUFFER,
   });
+  _safeUnlink(cfgPath);
   if (proc.status !== 0) {
     const r = { ok: false, reason: `runner exit ${proc.status}: ${(proc.stderr || '').slice(0, 300)}` };
     _cache.set(key, r);

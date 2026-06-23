@@ -24,10 +24,17 @@
 
 import { detectKernelEngine } from '../../../tools/math-kernel-bridge.mjs';
 import { spawnSync } from 'node:child_process';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, unlinkSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+
+/* UQ-DEEP-E audit fix (KERNEL-2): default spawnSync maxBuffer is 1MB.
+ * Cluster / cascade / per-state distribution kernels can emit 5-50 MB
+ * JSON results, blowing ENOBUFS and crashing the bridge. 10 MB cap
+ * covers typical sister-repo kernel outputs without unbounded growth. */
+const KERNEL_MAX_BUFFER = 10 * 1024 * 1024;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -53,28 +60,45 @@ const _cacheBwEw     = new Map();
 const _cacheInverse  = new Map();
 const _cacheMultiDim = new Map();
 
+/* UQ-DEEP-E audit fix (KERNEL-1+4): tmp file cleanup (try/finally
+ * unlink) + randomUUID-based naming to eliminate Date.now()+Math.random
+ * collision under high-concurrency ingest. Without cleanup, /tmp/extra-
+ * kernel-bridge accumulates GBs over months — disk exhaustion risk. */
+function _ensureTmpDir() {
+  const dir = join(tmpdir(), 'extra-kernel-bridge');
+  mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+function _safeUnlink(p) {
+  try { unlinkSync(p); } catch { /* best-effort cleanup */ }
+}
+
 /* Shared helper to invoke the universal runner with kernel name + params. */
 function _runUniversal(kernelName, params) {
   const detect = detectKernelEngine();
   if (!detect.available) return { ok: false, reason: `kernel unavailable: ${detect.reason}` };
-  const tmpDir = join(tmpdir(), 'extra-kernel-bridge');
-  mkdirSync(tmpDir, { recursive: true });
-  const cfgPath = join(tmpDir, `cfg-${kernelName}-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.json`);
+  const tmpDir = _ensureTmpDir();
+  const cfgPath = join(tmpDir, `cfg-${kernelName}-${randomUUID()}.json`);
   writeFileSync(cfgPath, JSON.stringify(params), 'utf8');
-  const runnerPath = resolve(REPO, 'tools/_kernel-universal-runner.py');
-  const env = { ...process.env, PYTHONPATH: join(detect.kernelsDir, 'src') };
-  const proc = spawnSync(detect.pythonCmd, [runnerPath, kernelName, cfgPath], {
-    encoding: 'utf8', env, timeout: 30_000,
-  });
-  if (proc.status !== 0) {
-    return { ok: false, reason: `runner exit ${proc.status}: ${(proc.stderr || '').slice(0, 300)}` };
-  }
   try {
-    const out = JSON.parse((proc.stdout || '').trim());
-    if (out.error) return { ok: false, reason: `runner error: ${out.error}` };
-    return { ok: true, result: out };
-  } catch (e) {
-    return { ok: false, reason: `JSON parse: ${e.message}` };
+    const runnerPath = resolve(REPO, 'tools/_kernel-universal-runner.py');
+    const env = { ...process.env, PYTHONPATH: join(detect.kernelsDir, 'src') };
+    const proc = spawnSync(detect.pythonCmd, [runnerPath, kernelName, cfgPath], {
+      encoding: 'utf8', env, timeout: 30_000, maxBuffer: KERNEL_MAX_BUFFER,
+    });
+    if (proc.status !== 0) {
+      return { ok: false, reason: `runner exit ${proc.status}: ${(proc.stderr || '').slice(0, 300)}` };
+    }
+    try {
+      const out = JSON.parse((proc.stdout || '').trim());
+      if (out.error) return { ok: false, reason: `runner error: ${out.error}` };
+      return { ok: true, result: out };
+    } catch (e) {
+      return { ok: false, reason: `JSON parse: ${e.message}` };
+    }
+  } finally {
+    _safeUnlink(cfgPath);
   }
 }
 
@@ -84,24 +108,27 @@ function _runPython(runnerRelPath, params) {
   if (!detect.available) {
     return { ok: false, reason: `kernel unavailable: ${detect.reason}` };
   }
-  const tmpDir = join(tmpdir(), 'extra-kernel-bridge');
-  mkdirSync(tmpDir, { recursive: true });
-  const cfgPath = join(tmpDir, `cfg-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.json`);
+  const tmpDir = _ensureTmpDir();
+  const cfgPath = join(tmpDir, `cfg-${randomUUID()}.json`);
   writeFileSync(cfgPath, JSON.stringify(params), 'utf8');
-  const runnerPath = resolve(REPO, runnerRelPath);
-  const env = { ...process.env, PYTHONPATH: join(detect.kernelsDir, 'src') };
-  const proc = spawnSync(detect.pythonCmd, [runnerPath, cfgPath], {
-    encoding: 'utf8', env, timeout: 30_000,
-  });
-  if (proc.status !== 0) {
-    return { ok: false, reason: `runner exit ${proc.status}: ${(proc.stderr || '').slice(0, 300)}` };
-  }
   try {
-    const out = JSON.parse((proc.stdout || '').trim());
-    if (out.error) return { ok: false, reason: `runner error: ${out.error}` };
-    return { ok: true, result: out };
-  } catch (e) {
-    return { ok: false, reason: `JSON parse: ${e.message}` };
+    const runnerPath = resolve(REPO, runnerRelPath);
+    const env = { ...process.env, PYTHONPATH: join(detect.kernelsDir, 'src') };
+    const proc = spawnSync(detect.pythonCmd, [runnerPath, cfgPath], {
+      encoding: 'utf8', env, timeout: 30_000, maxBuffer: KERNEL_MAX_BUFFER,
+    });
+    if (proc.status !== 0) {
+      return { ok: false, reason: `runner exit ${proc.status}: ${(proc.stderr || '').slice(0, 300)}` };
+    }
+    try {
+      const out = JSON.parse((proc.stdout || '').trim());
+      if (out.error) return { ok: false, reason: `runner error: ${out.error}` };
+      return { ok: true, result: out };
+    } catch (e) {
+      return { ok: false, reason: `JSON parse: ${e.message}` };
+    }
+  } finally {
+    _safeUnlink(cfgPath);
   }
 }
 
@@ -529,15 +556,18 @@ export async function solveForParam(opts = {}) {
     _cacheInverse.set(key, out);
     return out;
   }
-  const tmpDir = join(tmpdir(), 'extra-kernel-bridge');
-  mkdirSync(tmpDir, { recursive: true });
-  const cfgPath = join(tmpDir, `inv-${process.pid}-${Date.now()}.json`);
+  const tmpDir = _ensureTmpDir();
+  /* UQ-DEEP-E audit fix (KERNEL-1+4): UUID + tmp cleanup at end. */
+  const cfgPath = join(tmpDir, `inv-${randomUUID()}.json`);
   writeFileSync(cfgPath, JSON.stringify(params), 'utf8');
   const runnerPath = resolve(REPO, 'tools/_kernel-inverse-solver-runner.py');
   const env = { ...process.env, PYTHONPATH: join(detect.kernelsDir, 'src') };
   const proc = spawnSync(detect.pythonCmd, [runnerPath, cfgPath], {
-    encoding: 'utf8', env, timeout: 30_000,
+    encoding: 'utf8', env, timeout: 30_000, maxBuffer: KERNEL_MAX_BUFFER,
   });
+  /* Best-effort cleanup BEFORE result branches so all early-return
+   * paths benefit (cache writes still proceed). */
+  _safeUnlink(cfgPath);
   if (proc.status !== 0) {
     const out = { ok: false, reason: `runner exit ${proc.status}: ${(proc.stderr || '').slice(0, 300)}` };
     _cacheInverse.set(key, out);
@@ -613,15 +643,16 @@ export async function solveMultiDim(opts = {}) {
     _cacheMultiDim.set(key, out);
     return out;
   }
-  const tmpDir = join(tmpdir(), 'extra-kernel-bridge');
-  mkdirSync(tmpDir, { recursive: true });
-  const cfgPath = join(tmpDir, `md-${process.pid}-${Date.now()}.json`);
+  const tmpDir = _ensureTmpDir();
+  /* UQ-DEEP-E audit fix (KERNEL-1+4): UUID + tmp cleanup. */
+  const cfgPath = join(tmpDir, `md-${randomUUID()}.json`);
   writeFileSync(cfgPath, JSON.stringify(params), 'utf8');
   const runnerPath = resolve(REPO, 'tools/_kernel-multi-dim-solver-runner.py');
   const env = { ...process.env, PYTHONPATH: join(detect.kernelsDir, 'src') };
   const proc = spawnSync(detect.pythonCmd, [runnerPath, cfgPath], {
-    encoding: 'utf8', env, timeout: 30_000,
+    encoding: 'utf8', env, timeout: 30_000, maxBuffer: KERNEL_MAX_BUFFER,
   });
+  _safeUnlink(cfgPath);
   if (proc.status !== 0) {
     const out = { ok: false, reason: `runner exit ${proc.status}: ${(proc.stderr || '').slice(0, 300)}` };
     _cacheMultiDim.set(key, out);

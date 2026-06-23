@@ -412,7 +412,8 @@ function listSlugs() {
   return all;
 }
 
-const slugs = listSlugs();
+/* UQ-DEEP-E audit fix (COMPL-2): sort for deterministic audit output. */
+const slugs = listSlugs().sort();
 if (slugs.length === 0) {
   console.error('▸ no model.json files found for audit');
   process.exit(2);
