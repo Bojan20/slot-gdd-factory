@@ -1050,6 +1050,29 @@ if (existsSync(deepATest)) {
     'node', [deepATest]);
 }
 
+/* ── Step 4.97y32: UQ-DEEP-B second-round paralel-agent audit ──────────
+ * 14 NOVIH nalaza pronadjenih nakon UQ-DEEP-A fix run-a:
+ *
+ *   CRIT-1  Double `.lock` suffix bypass     (acquireLock(outDir+'.lock') →
+ *                                             realni lockfile `.lock.lock`,
+ *                                             mutual exclusion = placebo!)
+ *   CRIT-3  Orphan `*.tmp.<pid>` pile-up     (cleanupOrphanTmps([outDir]))
+ *   BUG-D   100 MB plain-text DoS            (MAX_INPUT_BYTES = 5 MB guard)
+ *   EDGE-E  Symlink GDD path escape          (realpath + ALLOWED_INPUT_ROOTS)
+ *   EDGE-G  reports-gc symlink follow        (lstatSync, ne statSync)
+ *   HIGH    Vendor leak u test fixtures      (pickTestPdf() helper)
+ *   MED     Stress magic numbers             (named constants)
+ *
+ * UQ-DEEP-A je doneo CRIT #5 "concurrent ingest race" fix koji je BIO
+ * PLACEBO — drugi krug audit-a otkrio da `acquireLock(outDir + '.lock')`
+ * stvarno kreira `<outDir>.lock.lock` (double suffix), pa nema mutual
+ * exclusion. Ovaj gate sprečava regression-fix-koji-ne-radi pattern. */
+const deepBTest = resolve(REPO, 'tests/contracts/uq-deep-b-hardening.test.mjs');
+if (existsSync(deepBTest)) {
+  run('UQ-DEEP-B second-round hardening (CRIT placebo lock + orphan tmp + DoS + symlink + GC + fixture)',
+    'node', [deepBTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz

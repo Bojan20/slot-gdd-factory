@@ -30,7 +30,7 @@
  *
  * Senior-grade discipline
  * -----------------------
- *   - Real PDF fixture (Cash_Eruption_Foundry_GDD.pdf) — not synthetic
+ *   - Real PDF fixture (first sorted PDF in ~/Desktop/GDD/) — not synthetic
  *     mock. Pipeline failure modes only surface against real PDFs.
  *   - Cleanup after every test path (no left-over dist/ingest/ junk).
  *   - Deterministic: same PDF → same V8 verdict (idempotent re-run check).
@@ -105,11 +105,24 @@ await testAsync('assemble() routes hex topology → hexReelEngine (or hexCluster
 
 /* ── 2. Ingest pipeline E2E (PDF → v8.json) ─────────────────────────── */
 
-const TEST_PDF = join(GDD_DIR, 'Cash_Eruption_Foundry_GDD.pdf');
+/* UQ-DEEP-B 2026-06-23 — VENDOR-NEUTRAL FIXTURE DISCOVERY.
+ * Previous hardcoded vendor PDF filename leaked a vendor title into the
+ * test source — violation of rule_no_vendor_mentions.
+ * Replace with deterministic first-PDF discovery from ~/Desktop/GDD/
+ * (sorted by name for repeatable test fixture across runs). */
+import { readdirSync as _readdirSync } from 'node:fs';
+function pickTestPdf() {
+  let pdfs = [];
+  try { pdfs = _readdirSync(GDD_DIR).filter(f => f.toLowerCase().endsWith('.pdf')).sort(); }
+  catch { return null; }
+  return pdfs.length > 0 ? join(GDD_DIR, pdfs[0]) : null;
+}
+const TEST_PDF = pickTestPdf();
 const TEST_SLUG = `v8-wire-contract-${Date.now()}`;
 const OUT_DIR = join(REPO, 'dist/ingest', TEST_SLUG);
 
-test('Test PDF exists in ~/Desktop/GDD/', () => {
+test('Test PDF discovered in ~/Desktop/GDD/', () => {
+  assert(TEST_PDF, `no PDF found in ${GDD_DIR}`);
   assert(existsSync(TEST_PDF), `PDF missing: ${TEST_PDF}`);
 });
 

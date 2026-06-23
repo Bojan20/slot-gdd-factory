@@ -139,14 +139,27 @@ function mdCellEscape(s) {
 
 /* ── Slug derivation ────────────────────────────────────────────────── */
 
+/* SLUG_MAX_CHARS = 80 — generous cap that fits inside any reasonable
+ * filesystem path budget after `dist/ingest/stress-<slug>-<sha>-<pid>/`
+ * envelope (~30 chars of overhead). macOS HFS+/APFS allow 255-char
+ * filename, so 80 + ~30 = 110 leaves runway for nested writes. */
+const SLUG_MAX_CHARS = 80;
 function slugify(name) {
   return String(name || 'gdd')
     .toLowerCase()
     .replace(/\.[a-z0-9]+$/, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .slice(0, 80) || 'gdd-' + Date.now();
+    .slice(0, SLUG_MAX_CHARS) || 'gdd-' + Date.now();
 }
+
+/* MD_FAILED_PDFS_CAP = 30 — top failed PDFs shown in the Markdown report.
+ * Higher caps create unreadable tables. Operators drill into the JSON
+ * (which contains ALL receipts) for the long tail.
+ * STDERR_SNIPPET_MAX = 80 — single-line preview per failed PDF in MD
+ * table cell. Wider snippets break responsive rendering. */
+const MD_FAILED_PDFS_CAP = 30;
+const STDERR_SNIPPET_MAX = 80;
 
 /* ── Walker ─────────────────────────────────────────────────────────── */
 
@@ -374,8 +387,8 @@ const md = [
     ? '_None._'
     : ['| PDF | Exit | V8 | V9 | First error |',
        '|:--|:-:|:-:|:-:|:--|',
-       ...failedReceipts.slice(0, 30).map(r => {
-         const errSnippet = (r.stderr || '').split('\n')[0].slice(0, 80) || (r.v9?.failed?.[0] || r.v8 && r.v8.verdict === 'FAIL' ? `v8.conflicts=${r.v8.conflicts}` : '—');
+       ...failedReceipts.slice(0, MD_FAILED_PDFS_CAP).map(r => {
+         const errSnippet = (r.stderr || '').split('\n')[0].slice(0, STDERR_SNIPPET_MAX) || (r.v9?.failed?.[0] || r.v8 && r.v8.verdict === 'FAIL' ? `v8.conflicts=${r.v8.conflicts}` : '—');
          /* UQ-DEEP-A 2026-06-23 — MD CELL ESCAPE.
           * stderr can contain `|` or backticks which break table cells; mdCellEscape
           * neutralizes them so MD renderers don't go sideways on a parser error. */

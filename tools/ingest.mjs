@@ -41,7 +41,7 @@
  *     gate on this or accept the parser-only output.
  */
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync as nodeRealpathSync, statSync as nodeStatSync } from 'node:fs';
 import { resolve, basename, extname } from 'node:path';
 import { spawnSync, spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
@@ -313,12 +313,72 @@ function step(label, fn) {
   );
 }
 
+/* UQ-DEEP-B 2026-06-23 — INPUT GUARDS.
+ *
+ * Two production-scenario findings from paralel-agent audit:
+ *
+ *   BUG-D: a 100 MB plain-text `.md` ingest accepted silently, parser
+ *          produced garbage model, V8/V9 PASS-ed, raw.txt 100MB written
+ *          into dist/. DoS surface + storage poison.
+ *
+ *   EDGE-E: a symlink GDD pointing at `/etc/passwd` was followed by
+ *          ingest before pdftotext rejected it as non-PDF — SSRF analog
+ *          on the filesystem. With a symlink to a VALID PDF outside the
+ *          repo (e.g. another user's home), ingest would silently slurp
+ *          arbitrary content into dist/<slug>/raw.txt.
+ *
+ * Hard caps:
+ *   - MAX_INPUT_BYTES = 5 MB — real GDD PDFs cap at ~2 MB, text/md
+ *     equivalents stay under 500 KB. 5 MB is generous headroom; anything
+ *     larger is either adversarial or operator error.
+ *   - ALLOWED_INPUT_ROOTS — realpath of the resolved file MUST start
+ *     with one of these prefixes. Override via env CORTEX_INGEST_ROOTS
+ *     (colon-separated) for non-default operator setups.
+ */
+const MAX_INPUT_BYTES = 5 * 1024 * 1024;
+const ALLOWED_INPUT_ROOTS = (() => {
+  const env = process.env.CORTEX_INGEST_ROOTS;
+  if (env) return env.split(':').filter(Boolean).map(p => resolve(p));
+  const home = process.env.HOME || '/tmp';
+  return [
+    resolve(home, 'Desktop/GDD'),
+    resolve(home, 'Projects/slot-gdd-factory'),
+    /* /tmp/ accepted because tests use mkdtempSync(tmpdir()) for fixtures. */
+    resolve('/tmp'),
+    /* macOS resolves /tmp through /private/tmp (symlink); accept both. */
+    resolve('/private/tmp'),
+    /* Also accept /var/folders tmpdirs (os.tmpdir() expansion target). */
+    resolve('/var/folders'),
+    resolve('/private/var/folders'),
+  ];
+})();
+
+/**
+ * Resolve a user-supplied path through realpath (follows symlinks),
+ * then assert the resolved location lives under one of the allow-listed
+ * roots. Blocks SSRF-style symlink attacks where the symlink in the
+ * GDD folder points at a sensitive system file.
+ */
+function assertPathAllowed(localPath) {
+  const fs = nodeRealpathSync(localPath);
+  for (const root of ALLOWED_INPUT_ROOTS) {
+    if (fs === root || fs.startsWith(root + '/')) return fs;
+  }
+  throw new Error(
+    `symlink target outside allowed roots: ${fs} ` +
+    `(allowed: ${ALLOWED_INPUT_ROOTS.join(', ')}); ` +
+    `override with env CORTEX_INGEST_ROOTS=...`
+  );
+}
+
 try {
   /* Step 1: resolve source */
   const localPath = await step('resolve source', async () => {
     if (filePath) {
       const abs = resolve(process.cwd(), filePath);
       if (!existsSync(abs)) throw new Error('file not found: ' + abs);
+      /* Realpath + allow-list — blocks symlink-based path-escape (EDGE-E). */
+      assertPathAllowed(abs);
       return abs;
     }
     return await fetchToTmp(urlArg);
@@ -328,6 +388,17 @@ try {
   const ext = extname(localPath).toLowerCase().replace(/^\./, '');
   let rawText = '';
   await step('extract text (' + ext + ')', async () => {
+    /* UQ-DEEP-B BUG-D — pre-flight size guard.
+     * Real GDDs cap at ~2 MB PDF / ~500 KB MD; anything ≥ MAX_INPUT_BYTES
+     * is adversarial (DoS via 100 MB plain-text). For MD/TXT/JSON we
+     * stat the file directly. PDF size is enforced by pdftotext (extracted
+     * text size is far smaller than the PDF), but we also bound stdout. */
+    if (ext === 'md' || ext === 'txt' || ext === 'mdx' || ext === 'json') {
+      const sz = nodeStatSync(localPath).size;
+      if (sz > MAX_INPUT_BYTES) {
+        throw new Error(`source too large: ${sz} bytes > MAX_INPUT_BYTES ${MAX_INPUT_BYTES} (adversarial DoS guard)`);
+      }
+    }
     if (ext === 'pdf') {
       rawText = pdfToText(localPath);
     } else if (ext === 'md' || ext === 'txt' || ext === 'mdx') {
@@ -339,6 +410,10 @@ try {
     }
     if (!rawText || rawText.length < 32) {
       throw new Error('extracted text too short (' + rawText.length + ' chars) — bad source?');
+    }
+    /* Post-extraction guard — PDFs can decompress dramatically. */
+    if (rawText.length > MAX_INPUT_BYTES) {
+      throw new Error(`extracted text too large: ${rawText.length} bytes > MAX_INPUT_BYTES ${MAX_INPUT_BYTES} (adversarial DoS guard)`);
     }
     return rawText.length;
   });
@@ -666,25 +741,44 @@ try {
   /* Step 7: write outputs (atomic per-file write-then-rename).
    *
    * UQ-DEEP-A 2026-06-23 — CONCURRENT WRITE HARDENING.
-   * Two parallel `ingest --file X --slug Y` could interleave writeFile
-   * calls and leave half-V8/half-V9 meta in index.html, or torn JSON in
-   * v8.json/v9.json. Fix:
-   *   1. Acquire file lock around the OUTPUT directory (LOCKFILE next to
-   *      dist/ingest/<slug>/).
-   *   2. For every JSON/HTML write, use tmp+rename (POSIX atomic rename
-   *      on same FS) so a reader either sees the OLD file or the NEW —
-   *      never a half-written intermediate.
-   *   3. fsync the file before rename to survive a crash mid-write.
-   * Lock released after the dir is fully populated. */
+   * UQ-DEEP-B 2026-06-23 — DOUBLE-LOCK PLACEBO FIX.
+   *
+   * Previous version called `acquireLock(outDir + '.lock')`, but
+   * `fileLock.mjs:71` internally appends `.lock` to whatever path it
+   * receives — so the actual lock file was `<outDir>.lock.lock`,
+   * NOT `<outDir>.lock`. The mutual-exclusion contract was effectively
+   * placebo: two parallel ingests with the same slug each created
+   * their own distinct lock files and never serialized.
+   *
+   * The fix is one line: pass `outDir` (NOT `outDir + '.lock'`) to
+   * acquireLock — the function will create `<outDir>.lock` as documented.
+   *
+   * Defense in depth:
+   *   1. Acquire file lock keyed on `outDir`. fileLock will:
+   *      - create `<outDir>.lock` exclusively,
+   *      - steal stale locks > 60s,
+   *      - PID-liveness check the lock holder.
+   *   2. cleanupOrphanTmps([outDir]) BEFORE writes — sweep any
+   *      `*.tmp.<pid>` from a previous SIGKILL'd run in the same dir.
+   *      Without this, dead-tmp files pile up forever (UQ-DEEP-B CRIT-3).
+   *   3. tmp + fsync + rename for each file — POSIX-atomic rename on
+   *      same filesystem, fsync survives crash mid-write.
+   * Lock released after dir fully populated. */
   const outDir = resolve(DIST, slug);
   await step('write outputs', async () => {
     await mkdir(outDir, { recursive: true });
     const { acquireLock, releaseLock } = await import('../src/registry/fileLock.mjs');
+    const { cleanupOrphanTmps } = await import('../src/registry/tmpFileCleanup.mjs');
     const fsp = await import('node:fs/promises');
-    const lockPath = outDir + '.lock';
     let lockTok = null;
     try {
-      lockTok = acquireLock(lockPath);
+      /* fileLock appends `.lock` internally — pass outDir, NOT outDir+'.lock'. */
+      lockTok = acquireLock(outDir);
+      /* Sweep any orphan `*.tmp.<pid>` left by a previous crash. */
+      try {
+        const gc = cleanupOrphanTmps([outDir]);
+        if (gc.deleted > 0) log(`  gc: cleared ${gc.deleted} orphan tmp file(s) in ${outDir}`);
+      } catch (_) { /* non-fatal — orphan tmp doesn't block this run */ }
       async function atomicWrite(absPath, content) {
         const tmp = absPath + '.tmp.' + process.pid;
         const fh = await fsp.open(tmp, 'w');

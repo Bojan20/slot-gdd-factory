@@ -516,6 +516,109 @@ distrakcije ka drugim grangrama dok D-J nije 7/7 ✅.
 
 ---
 
+## 🛡 UQ-DEEP-A · PARALEL-AGENT AUDIT — 2026-06-23 13:00 UTC · ZATVOREN ✅
+
+Posle N+1 A/B/C wire (`6038cf2`), 2 paralelna nezavisna audit agenta
+pronašla 30+ nalaza koji NISU bili pokriveni happy-path testovima.
+Sve fix-ovano u commit-u `1676232` sa pin-test-om
+(`tests/contracts/uq-deep-a-hardening.test.mjs` · 13/13 PASS).
+
+```
+┌────┬──────────────────────────────────────────────┬───────────────────┐
+│Sev │ Nalaz                                         │ Fix                │
+├────┼──────────────────────────────────────────────┼───────────────────┤
+│CRIT│ #1  Pre-commit hook BYPASSED                  │ install-precommit  │
+│    │     ("foreign hook" sa `echo hi` prošo svaki  │ restored           │
+│    │     commit od 17.06)                          │                    │
+│CRIT│ #2  V8 proto-pollution DoS                    │ Object.create(null)│
+│    │     (`__proto__` feature.kind crash)          │ + hasOwn guard     │
+│CRIT│ #3  Slugify Unicode collision                 │ NFKD + SHA-1[0:8]  │
+│    │     (emoji/cyrillic → "gdd")                  │ fallback           │
+│CRIT│ #4  V9 false-PASS prose match                 │ strict class/id    │
+│    │     (sham HTML score 9.5/10)                  │ selektori          │
+│CRIT│ #5  Concurrent ingest race                    │ ⚠ PLACEBO (vidi    │
+│    │     (torn write u v8.json)                    │ UQ-DEEP-B CRIT-1)  │
+│HIGH│ #6  Parser hash drift                         │ V8/V9 u SOURCES    │
+│HIGH│ #7  Trinity silent swallow                    │ softFail propagac. │
+│HIGH│ #8  Vendor leak                               │ anti-vendor allow  │
+│HIGH│ #9  V8 receipt non-determinism                │ ts iz payload-a    │
+│HIGH│ #10 injectMetaIntoHead self-close             │ XHTML expansion    │
+│HIGH│ #11 safeVerdict whitelist                     │ toUpperCase + WL   │
+│MED │ #12 V9 verdict asymmetry                      │ sub-7.0 + 0 FAIL  │
+│    │                                                │ → WARN             │
+│MED │ #13 Stress MD pipe injection                  │ mdCellEscape       │
+│MED │ #14 Stress SIGINT cleanup                     │ signal handler     │
+│MED │ #15 Dashboard staleness                       │ TTL 30s + name inv │
+│MED │ #16 Reports balon                             │ tools/reports-gc   │
+│    │     (3.3 GB / 17k+ fajlova)                   │ → 121 MB / 640     │
+└────┴──────────────────────────────────────────────┴───────────────────┘
+```
+
+Verify gate step **4.97y31** dodat. Commit pin: `1676232`.
+
+---
+
+## 🛡 UQ-DEEP-B · DRUGI-KRUG PARALEL-AGENT AUDIT — 2026-06-23 13:40 UTC · ZATVOREN ✅
+
+3 paralelna agenta pokrenula nakon UQ-DEEP-A da provere da li su FIX-EVI
+doneli nove rupe (defenzivni kod uvodi nove failure mode-ove je tipičan
+pattern). **Pronašli 14 NOVIH nalaza** — uključujući da je CRIT #5 fix iz
+UQ-DEEP-A bio **PLACEBO** (double-lock suffix).
+
+```
+┌────┬──────────────────────────────────────────────┬───────────────────┐
+│Sev │ Nalaz                                         │ Fix                │
+├────┼──────────────────────────────────────────────┼───────────────────┤
+│CRIT│ -1 Double `.lock` suffix u atomic write       │ acquireLock(outDir)│
+│    │    `acquireLock(outDir+'.lock')` →            │ (fileLock sam      │
+│    │    realni lock = `<outDir>.lock.lock`         │ dodaje `.lock`)    │
+│    │    CRIT #5 IZ UQ-DEEP-A BIO PLACEBO!          │                    │
+│CRIT│ -3 Orphan `*.tmp.<pid>` u outDir              │ cleanupOrphanTmps  │
+│    │    se nikad ne čisti (SIGKILL leak)           │ ([outDir]) pre     │
+│    │                                                │ atomic write       │
+│BUG │ -D 100 MB plain-text DoS                      │ MAX_INPUT_BYTES =  │
+│    │    silent garbage acceptance, raw.txt 100MB   │ 5 MB pre-flight    │
+│    │    upisan, V8/V9 PASS                         │ + post-flight      │
+│EDGE│ -E Symlink GDD path escape (FS SSRF)          │ realpath +         │
+│    │    `ln -s /etc/passwd evil.pdf`                │ ALLOWED_INPUT_     │
+│    │    silent slurp van repo-a                    │ ROOTS allow-list   │
+│EDGE│ -G reports-gc follows symlinks                │ lstatSync + skip   │
+│    │    statSync info-leak na external file        │ symlinks           │
+│HIGH│    Vendor leak u v8/v9 test fixture           │ pickTestPdf()      │
+│    │    `Cash_Eruption_Foundry_GDD.pdf` hardcode   │ vendor-neutral     │
+│    │                                                │ discovery          │
+│HIGH│    MASTER_TODO neazuriran posle 1676232       │ ova sekcija        │
+│MED │    Stress magic numbers (80/30/80)            │ named constants    │
+│LOW │    `TODO:` u JSDoc sham fixture komentaru     │ false-positive,    │
+│    │                                                │ ne dira             │
+└────┴──────────────────────────────────────────────┴───────────────────┘
+```
+
+Verify gate step **4.97y32** dodat. Verifikacija sa
+`tests/contracts/uq-deep-b-hardening.test.mjs` · 11/11 PASS.
+
+### Glavni catch UQ-DEEP-B
+
+CRIT #5 fix iz UQ-DEEP-A bio je **placebo**: `acquireLock(outDir + '.lock')`
+pozivao `fileLock.mjs` koji **interno dodaje `.lock`** — realni lock fajl
+bio je `<outDir>.lock.lock`, a ne `<outDir>.lock`. Mutual exclusion NIJE
+PRESERVED jer su dva paralelna ingesta sa istim slugom oba kreirala svoj
+distinkt lock fajl. To je tačno pattern "defenzivni kod uvodi novu
+failure mode-u" koji sam predvideo u prvom krugu — drugi krug ga je
+operacionalno potvrdio.
+
+### Poreklo pravila "drugi krug audit-a OBAVEZAN"
+
+Pravilo se aktivira posle SVAKE round-a fix-eva nad audit nalazima:
+1. Krug N rešava M nalaza
+2. Krug N+1 proverava DA LI fix iz kruga N je sam dao nove rupe
+3. Nastavi do nula novih nalaza
+4. Tek tada smatraj zatvoreno
+
+Ostavlja brain trace + verify gate step kao osiguranje pre commit-a.
+
+---
+
 ## 🎯 EXPERT RECOMMENDATION PLAN — 2026-06-23 07:08 UTC
 
 Boki pitanje: *"sta predlazes kao ekspert?"* → moje 3 stvarno vredne stvari,

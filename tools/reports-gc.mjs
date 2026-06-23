@@ -38,7 +38,7 @@
  *     changes gracefully.
  */
 
-import { readdirSync, statSync, rmSync } from 'node:fs';
+import { readdirSync, statSync, lstatSync, rmSync } from 'node:fs';
 import { resolve, dirname, join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -82,20 +82,30 @@ const PER_PREFIX_KEEP = {
   'cross-game-':        KEEP_DEFAULT,
 };
 
-/* Group files in REPORTS root by leading prefix-up-to-timestamp. */
+/* Group files in REPORTS root by leading prefix-up-to-timestamp.
+ *
+ * UQ-DEEP-B EDGE-G — SYMLINK SAFETY.
+ * Previous version used `readdirSync(...withFileTypes)` whose `isFile()`
+ * follows symlinks: a symlink `reports/foo.json → /etc/hosts` was treated
+ * as a regular file, `statSync` then read the target's mtime/size (info
+ * leak), and `rmSync(force:true)` on `--apply` would unlink the symlink
+ * (not target — POSIX safe-ish) but the planner above operated on
+ * external content. Skip symlinks entirely via `lstatSync`. */
 function groupByPrefix() {
   if (!REPORTS.startsWith(REPO + '/')) {
     throw new Error('REPORTS not inside REPO — refusing to proceed (safety check)');
   }
-  const entries = readdirSync(REPORTS, { withFileTypes: true })
-    .filter(e => e.isFile() || (e.isDirectory() === false))
-    .map(e => e.name);
+  const entries = readdirSync(REPORTS);
 
-  /* Prefix extraction: anything before a date-shaped sequence */
   const groups = new Map();
   for (const name of entries) {
     if (DENY_LIST.has(name)) continue;
     if (DENY_SUFFIXES.some(s => name.endsWith(s))) continue;
+    /* lstatSync does NOT follow symlinks — symlink shows isSymbolicLink. */
+    let ls;
+    try { ls = lstatSync(join(REPORTS, name)); } catch { continue; }
+    if (ls.isSymbolicLink()) continue;  /* skip any symlink */
+    if (!ls.isFile()) continue;          /* skip dirs / FIFOs / sockets */
     const m = name.match(/^(.+?)\d{4}-\d{2}-\d{2}/);
     const prefix = m ? m[1] : name.replace(/\.(json|md|html|txt)$/, '');
     if (!groups.has(prefix)) groups.set(prefix, []);

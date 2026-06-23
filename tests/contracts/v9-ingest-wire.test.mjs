@@ -121,11 +121,21 @@ await testAsync('verifyHtml flags missing hub controls as FAIL', async () => {
 
 /* ── 2. Ingest pipeline E2E (PDF → v9.json) ─────────────────────────── */
 
-const TEST_PDF = join(GDD_DIR, 'Cash_Eruption_Foundry_GDD.pdf');
+/* UQ-DEEP-B 2026-06-23 — VENDOR-NEUTRAL FIXTURE DISCOVERY.
+ * See v8-ingest-wire.test.mjs for rationale (rule_no_vendor_mentions). */
+import { readdirSync as _readdirSync } from 'node:fs';
+function pickTestPdf() {
+  let pdfs = [];
+  try { pdfs = _readdirSync(GDD_DIR).filter(f => f.toLowerCase().endsWith('.pdf')).sort(); }
+  catch { return null; }
+  return pdfs.length > 0 ? join(GDD_DIR, pdfs[0]) : null;
+}
+const TEST_PDF = pickTestPdf();
 const TEST_SLUG = `v9-wire-contract-${Date.now()}`;
 const OUT_DIR = join(REPO, 'dist/ingest', TEST_SLUG);
 
-test('Test PDF exists in ~/Desktop/GDD/', () => {
+test('Test PDF discovered in ~/Desktop/GDD/', () => {
+  assert(TEST_PDF, `no PDF found in ${GDD_DIR}`);
   assert(existsSync(TEST_PDF), `PDF missing: ${TEST_PDF}`);
 });
 
