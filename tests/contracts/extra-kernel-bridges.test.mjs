@@ -22,6 +22,11 @@ import {
   computeWaysEvaluatorKernelRtp,
   computePayAnywhereKernelRtp,
   computeStackedWildsKernelRtp,
+  computeBothWaysKernelRtp,
+  computeBuyFeatureAudit,
+  computePersistentMultiplierKernelRtp,
+  computeMustHitByKernelRtp,
+  computeWheelKernelRtp,
   _resetCache,
 } from '../../src/blocks/featureSimPlugins/extraKernelBridges.mjs';
 import { detectKernelEngine } from '../../tools/math-kernel-bridge.mjs';
@@ -190,6 +195,54 @@ test('computeStackedWildsKernelRtp returns expected stacked count > 0', async ()
     throw new Error(`failed: ${r.reason}`);
   }
   assert(r.expectedStackedCount > 0, `expectedStackedCount > 0, got ${r.expectedStackedCount}`);
+});
+
+/* ── (10) Both ways — rtp 0.96 ltr + 0.7 share = 1.632 RTP ─────────────── */
+
+test('computeBothWaysKernelRtp returns analytical bidirectional RTP', async () => {
+  _resetCache();
+  const r = await computeBothWaysKernelRtp({ ltrOnlyRtp: 0.96, linePayShare: 0.7 });
+  if (!r.ok) { const d = detectKernelEngine(); if (!d.available) { console.log('    (skipped)'); return; } throw new Error(`failed: ${r.reason}`); }
+  assert(Math.abs(r.rtpContribution - 1.632) < 1e-6, `expected 1.632, got ${r.rtpContribution}`);
+});
+
+/* ── (11) Buy feature audit returns UKGC/MGA pass flags ───────────────── */
+
+test('computeBuyFeatureAudit returns buyRtp + UKGC/MGA pass flags', async () => {
+  _resetCache();
+  const r = await computeBuyFeatureAudit({ bonusAveragePayXBet: 100, buyCostXBet: 100 });
+  if (!r.ok) { const d = detectKernelEngine(); if (!d.available) { console.log('    (skipped)'); return; } throw new Error(`failed: ${r.reason}`); }
+  assert(r.buyRtp === 1.0, `buyRtp expected 1.0, got ${r.buyRtp}`);
+  assert(typeof r.ukgcPass === 'boolean', `ukgcPass should be boolean`);
+});
+
+/* ── (12) Persistent multiplier — averageMultiplier > 1 ────────────────── */
+
+test('computePersistentMultiplierKernelRtp returns averageMultiplier > 1', async () => {
+  _resetCache();
+  const r = await computePersistentMultiplierKernelRtp();
+  if (!r.ok) { const d = detectKernelEngine(); if (!d.available) { console.log('    (skipped)'); return; } throw new Error(`failed: ${r.reason}`); }
+  assert(r.averageMultiplier > 1, `avg mult > 1, got ${r.averageMultiplier}`);
+});
+
+/* ── (13) Must-hit-by — 3-tier jackpot ───────────────────────────────── */
+
+test('computeMustHitByKernelRtp returns 3-tier perPot array', async () => {
+  _resetCache();
+  const r = await computeMustHitByKernelRtp();
+  if (!r.ok) { const d = detectKernelEngine(); if (!d.available) { console.log('    (skipped)'); return; } throw new Error(`failed: ${r.reason}`); }
+  assert(Array.isArray(r.perPot), 'perPot array');
+  assert(r.perPot.length === 3, `3 pots, got ${r.perPot.length}`);
+});
+
+/* ── (14) Wheel — RTP × spin-again loop ──────────────────────────────── */
+
+test('computeWheelKernelRtp accounts for spin-again chain', async () => {
+  _resetCache();
+  const r = await computeWheelKernelRtp({ triggerP: 0.02, maxSpinAgain: 3 });
+  if (!r.ok) { const d = detectKernelEngine(); if (!d.available) { console.log('    (skipped)'); return; } throw new Error(`failed: ${r.reason}`); }
+  assert(r.rtpContribution > 0, `rtp > 0, got ${r.rtpContribution}`);
+  assert(r.expectedAwardPerTrigger > 20, `award/trigger > 20, got ${r.expectedAwardPerTrigger}`);
 });
 
 /* ── Result ──────────────────────────────────────────────────────────── */

@@ -39,6 +39,11 @@ const _cacheCascade = new Map();
 const _cacheWays    = new Map();
 const _cachePayAny  = new Map();
 const _cacheStacked = new Map();
+const _cacheBothWays = new Map();
+const _cacheBuy      = new Map();
+const _cachePersist  = new Map();
+const _cacheMustHit  = new Map();
+const _cacheWheel    = new Map();
 
 /* Shared helper to invoke the universal runner with kernel name + params. */
 function _runUniversal(kernelName, params) {
@@ -272,6 +277,106 @@ export async function computeStackedWildsKernelRtp(model, opts = {}) {
   return out;
 }
 
+/* ── Both ways (LTR + RTL line pay) ──────────────────────────────────── */
+
+export async function computeBothWaysKernelRtp(opts = {}) {
+  const params = {
+    ltr_only_rtp:   opts.ltrOnlyRtp   ?? 0.96,
+    line_pay_share: opts.linePayShare ?? 0.7,
+  };
+  const key = JSON.stringify(params);
+  if (_cacheBothWays.has(key)) return _cacheBothWays.get(key);
+  const r = _runUniversal('both_ways', params);
+  const out = r.ok
+    ? { ok: true, rtpContribution: r.result.rtp_contribution, bidirectionalMultiplier: r.result.bidirectional_multiplier, upliftXBet: r.result.uplift_x_bet, kernelEngine: 'python-kernel', params }
+    : { ok: false, reason: r.reason };
+  _cacheBothWays.set(key, out);
+  return out;
+}
+
+/* ── Buy feature audit ───────────────────────────────────────────────── */
+
+export async function computeBuyFeatureAudit(opts = {}) {
+  const params = {
+    bonus_average_pay_x_bet: opts.bonusAveragePayXBet ?? 100,
+    buy_cost_x_bet:          opts.buyCostXBet         ?? 100,
+    base_game_rtp:           opts.baseGameRtp         ?? 0.93,
+    target_buy_rtp:          opts.targetBuyRtp        ?? 0.96,
+  };
+  const key = JSON.stringify(params);
+  if (_cacheBuy.has(key)) return _cacheBuy.get(key);
+  const r = _runUniversal('buy_feature', params);
+  const out = r.ok
+    ? { ok: true, buyRtp: r.result.buy_rtp, fairBuyCostXBet: r.result.fair_buy_cost_x_bet, deltaPpVsBase: r.result.delta_pp_vs_base, ukgcPass: r.result.ukgc_rts13c_pass_1p0, mgaPass: r.result.mga_2021_02_pass_0p96, kernelEngine: 'python-kernel', params }
+    : { ok: false, reason: r.reason };
+  _cacheBuy.set(key, out);
+  return out;
+}
+
+/* ── Persistent multiplier (FS sticky mult) ──────────────────────────── */
+
+export async function computePersistentMultiplierKernelRtp(opts = {}) {
+  const params = {
+    fs_trigger_p:           opts.fsTriggerP          ?? 0.01,
+    fs_initial_spins:       opts.fsInitialSpins      ?? 10,
+    base_pay_per_spin_x_bet: opts.basePayPerSpinXBet ?? 0.5,
+    initial_multiplier:     opts.initialMultiplier   ?? 1,
+    bump_increment:         opts.bumpIncrement       ?? 1,
+    p_bump_per_spin:        opts.pBumpPerSpin        ?? 0.3,
+    max_multiplier:         opts.maxMultiplier       ?? null,
+  };
+  const key = JSON.stringify(params);
+  if (_cachePersist.has(key)) return _cachePersist.get(key);
+  const r = _runUniversal('persistent_multiplier', params);
+  const out = r.ok
+    ? { ok: true, rtpContribution: r.result.rtp_contribution, averageMultiplier: r.result.average_multiplier, kernelEngine: 'python-kernel', params }
+    : { ok: false, reason: r.reason };
+  _cachePersist.set(key, out);
+  return out;
+}
+
+/* ── Must-hit-by (mystery jackpot) ────────────────────────────────────── */
+
+export async function computeMustHitByKernelRtp(opts = {}) {
+  const pots = opts.pots || [
+    { name: 'mini',  seed_x_bet: 5,    contribution_x: 0.001, must_hit_by_x_bet: 50,    p_strike_per_spin: 0.01 },
+    { name: 'minor', seed_x_bet: 25,   contribution_x: 0.002, must_hit_by_x_bet: 250,   p_strike_per_spin: 0.005 },
+    { name: 'major', seed_x_bet: 100,  contribution_x: 0.003, must_hit_by_x_bet: 1000,  p_strike_per_spin: 0.001 },
+  ];
+  const params = { pots };
+  const key = JSON.stringify(params);
+  if (_cacheMustHit.has(key)) return _cacheMustHit.get(key);
+  const r = _runUniversal('must_hit_by', params);
+  const out = r.ok
+    ? { ok: true, rtpContribution: r.result.rtp_contribution, perPot: r.result.pots, kernelEngine: 'python-kernel', params }
+    : { ok: false, reason: r.reason };
+  _cacheMustHit.set(key, out);
+  return out;
+}
+
+/* ── Wheel bonus ──────────────────────────────────────────────────────── */
+
+export async function computeWheelKernelRtp(opts = {}) {
+  const params = {
+    trigger_p:      opts.triggerP ?? 0.02,
+    segments:       opts.segments || [
+      { kind: 'credit',     weight: 0.5,  value_x_bet: 10 },
+      { kind: 'credit',     weight: 0.3,  value_x_bet: 50 },
+      { kind: 'spin_again', weight: 0.15, value_x_bet: 0 },
+      { kind: 'no_win',     weight: 0.05, value_x_bet: 0 },
+    ],
+    max_spin_again: opts.maxSpinAgain ?? 3,
+  };
+  const key = JSON.stringify(params);
+  if (_cacheWheel.has(key)) return _cacheWheel.get(key);
+  const r = _runUniversal('wheel', params);
+  const out = r.ok
+    ? { ok: true, rtpContribution: r.result.rtp_contribution, expectedAwardPerTrigger: r.result.expected_award_per_trigger, kernelEngine: 'python-kernel', params }
+    : { ok: false, reason: r.reason };
+  _cacheWheel.set(key, out);
+  return out;
+}
+
 export function _resetCache() {
   _cacheExp.clear();
   _cacheSw.clear();
@@ -279,4 +384,9 @@ export function _resetCache() {
   _cacheWays.clear();
   _cachePayAny.clear();
   _cacheStacked.clear();
+  _cacheBothWays.clear();
+  _cacheBuy.clear();
+  _cachePersist.clear();
+  _cacheMustHit.clear();
+  _cacheWheel.clear();
 }
