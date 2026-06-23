@@ -102,7 +102,76 @@ COERCERS = {
     "persistent_multiplier": lambda cfg: cfg,
     "must_hit_by":           _coerce_must_hit_by,
     "wheel":                 _coerce_wheel,
+    "asymmetric_paytable":   lambda cfg: cfg,  # nested str->str->float, no coercion needed
+    "crash_kernel":          lambda cfg: cfg,
 }
+
+
+def _coerce_charge_meter(cfg):
+    from slot_math_kernels.charge_meter import ChargeTier
+    tiers = tuple(
+        ChargeTier(
+            name=str(t["name"]),
+            threshold=float(t["threshold"]),
+            award_value_x_bet=float(t["award_value_x_bet"]),
+            award_kind=str(t.get("award_kind", "credit_x_bet")),
+        )
+        for t in cfg.get("tiers", [])
+    )
+    return {**cfg, "tiers": tiers}
+
+COERCERS["charge_meter"] = _coerce_charge_meter
+
+
+def _coerce_pick_chain(cfg):
+    from slot_math_kernels.pick_chain import PickLevel
+    levels = tuple(
+        PickLevel(
+            name=str(L["name"]),
+            pool_size=int(L["pool_size"]),
+            award_distribution={float(k): int(v) for k, v in L["award_distribution"].items()},
+        )
+        for L in cfg.get("levels", [])
+    )
+    return {**cfg, "levels": levels}
+
+COERCERS["pick_chain"] = _coerce_pick_chain
+
+
+def _coerce_state_machine(cfg):
+    from slot_math_kernels.state_machine import GameState
+    states = tuple(
+        GameState(name=str(s["name"]), rtp_component=float(s["rtp_component"]))
+        for s in cfg.get("states", [])
+    )
+    transitions = tuple(tuple(float(x) for x in row) for row in cfg.get("transitions", []))
+    return {**cfg, "states": states, "transitions": transitions}
+
+COERCERS["state_machine"] = _coerce_state_machine
+
+
+def _coerce_both_ways_expanding_wild(cfg):
+    """Composite: both_ways_params + expanding_params (both nested dataclasses)."""
+    from slot_math_kernels.both_ways import BothWaysParams
+    from slot_math_kernels.expanding_symbol import ExpandingSymbolParams
+    bw_raw = cfg["both_ways_params"]
+    ex_raw = cfg["expanding_params"]
+    bw = BothWaysParams(
+        ltr_only_rtp=float(bw_raw["ltr_only_rtp"]),
+        line_pay_share=float(bw_raw["line_pay_share"]),
+    )
+    ex = ExpandingSymbolParams(
+        fs_trigger_p=float(ex_raw["fs_trigger_p"]),
+        fs_initial_spins=int(ex_raw["fs_initial_spins"]),
+        reels=int(ex_raw["reels"]),
+        rows=int(ex_raw["rows"]),
+        p_per_cell_in_fs=float(ex_raw["p_per_cell_in_fs"]),
+        pay_table={int(k): float(v) for k, v in ex_raw["pay_table"].items()},
+        symbol_name=str(ex_raw.get("symbol_name", "?")),
+    )
+    return {**cfg, "both_ways_params": bw, "expanding_params": ex}
+
+COERCERS["both_ways_expanding_wild"] = _coerce_both_ways_expanding_wild
 
 if kernel_name not in COERCERS:
     print(json.dumps({"error": f"unsupported kernel: {kernel_name}"}))
@@ -122,16 +191,28 @@ except ImportError as e:
 ENTRY_OVERRIDE = {
     "must_hit_by":   "must_hit_by_rtp",
     "buy_feature":   "buy_feature_audit",
+    "crash_kernel":  "crash_audit",
 }
 param_cls = None
 entry_fn = None
 import inspect
-# Find Params class (first dataclass).
+# Find the top-level Params dataclass. Prefer name ending in "Params"
+# (canonical) over other dataclasses defined in the module like
+# GameState / WheelSegment / etc which are SUB-components.
 for name in dir(mod):
     obj = getattr(mod, name)
     if (inspect.isclass(obj) and hasattr(obj, "__dataclass_fields__")
-            and obj.__module__ == mod.__name__ and param_cls is None):
+            and obj.__module__ == mod.__name__ and name.endswith("Params")):
         param_cls = obj
+        break
+# Fallback: any dataclass if no *Params name found.
+if param_cls is None:
+    for name in dir(mod):
+        obj = getattr(mod, name)
+        if (inspect.isclass(obj) and hasattr(obj, "__dataclass_fields__")
+                and obj.__module__ == mod.__name__):
+            param_cls = obj
+            break
 # Find entry fn — explicit override OR <kernel>_rtp OR *_rtp_contribution.
 override_name = ENTRY_OVERRIDE.get(kernel_name)
 if override_name and hasattr(mod, override_name):

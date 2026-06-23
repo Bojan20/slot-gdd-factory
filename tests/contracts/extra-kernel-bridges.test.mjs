@@ -27,6 +27,12 @@ import {
   computePersistentMultiplierKernelRtp,
   computeMustHitByKernelRtp,
   computeWheelKernelRtp,
+  computeAsymmetricPaytableKernelRtp,
+  computeChargeMeterKernelRtp,
+  computeCrashKernelAudit,
+  computePickChainKernelRtp,
+  computeStateMachineKernelRtp,
+  computeBothWaysExpandingWildKernelRtp,
   _resetCache,
 } from '../../src/blocks/featureSimPlugins/extraKernelBridges.mjs';
 import { detectKernelEngine } from '../../tools/math-kernel-bridge.mjs';
@@ -243,6 +249,69 @@ test('computeWheelKernelRtp accounts for spin-again chain', async () => {
   if (!r.ok) { const d = detectKernelEngine(); if (!d.available) { console.log('    (skipped)'); return; } throw new Error(`failed: ${r.reason}`); }
   assert(r.rtpContribution > 0, `rtp > 0, got ${r.rtpContribution}`);
   assert(r.expectedAwardPerTrigger > 20, `award/trigger > 20, got ${r.expectedAwardPerTrigger}`);
+});
+
+/* ── (15) Asymmetric paytable — sum per-symbol contributions ──────────── */
+
+test('computeAsymmetricPaytableKernelRtp returns total + perSymbolBreakdown', async () => {
+  _resetCache();
+  const r = await computeAsymmetricPaytableKernelRtp();
+  if (!r.ok) { const d = detectKernelEngine(); if (!d.available) { console.log('    (skipped)'); return; } throw new Error(`failed: ${r.reason}`); }
+  assert(r.rtpContribution > 0, `rtp > 0, got ${r.rtpContribution}`);
+  assert(Array.isArray(r.perSymbolBreakdown), 'perSymbolBreakdown array');
+});
+
+/* ── (16) Charge meter — 2-tier breakdown ─────────────────────────────── */
+
+test('computeChargeMeterKernelRtp returns 2-tier breakdown', async () => {
+  _resetCache();
+  const r = await computeChargeMeterKernelRtp();
+  if (!r.ok) { const d = detectKernelEngine(); if (!d.available) { console.log('    (skipped)'); return; } throw new Error(`failed: ${r.reason}`); }
+  assert(Array.isArray(r.tiers) && r.tiers.length === 2, 'tiers array of 2');
+});
+
+/* ── (17) Crash kernel — house edge calc ─────────────────────────────── */
+
+test('computeCrashKernelAudit returns rtp + strategy class', async () => {
+  _resetCache();
+  const r = await computeCrashKernelAudit({ houseEdge: 0.01, cashoutMultiplier: 2.0 });
+  if (!r.ok) { const d = detectKernelEngine(); if (!d.available) { console.log('    (skipped)'); return; } throw new Error(`failed: ${r.reason}`); }
+  assert(Math.abs(r.rtp - 0.99) < 0.01, `rtp ≈ 0.99, got ${r.rtp}`);
+  assert(typeof r.strategyClass === 'string', `strategyClass string, got ${r.strategyClass}`);
+});
+
+/* ── (18) Pick chain — level breakdown ───────────────────────────────── */
+
+test('computePickChainKernelRtp returns levels array', async () => {
+  _resetCache();
+  const r = await computePickChainKernelRtp();
+  if (!r.ok) { const d = detectKernelEngine(); if (!d.available) { console.log('    (skipped)'); return; } throw new Error(`failed: ${r.reason}`); }
+  assert(Array.isArray(r.levels), 'levels array');
+  assert(r.levels.length === 1, `1 level, got ${r.levels.length}`);
+});
+
+/* ── (19) State machine — stationary distribution sums to 1 ──────────── */
+
+test('computeStateMachineKernelRtp returns stationary distribution summing to 1', async () => {
+  _resetCache();
+  const r = await computeStateMachineKernelRtp();
+  if (!r.ok) { const d = detectKernelEngine(); if (!d.available) { console.log('    (skipped)'); return; } throw new Error(`failed: ${r.reason}`); }
+  assert(Array.isArray(r.stationaryDistribution), 'stationaryDistribution array');
+  const sum = r.stationaryDistribution.reduce((a, b) => a + b, 0);
+  assert(Math.abs(sum - 1.0) < 1e-6, `stationary sum 1.0, got ${sum}`);
+});
+
+/* ── (20) Both-ways expanding wild composite ─────────────────────────── */
+
+test('computeBothWaysExpandingWildKernelRtp returns composite rtp + components', async () => {
+  _resetCache();
+  const r = await computeBothWaysExpandingWildKernelRtp();
+  if (!r.ok) { const d = detectKernelEngine(); if (!d.available) { console.log('    (skipped)'); return; } throw new Error(`failed: ${r.reason}`); }
+  assert(typeof r.bothWaysComponent === 'object', 'bothWaysComponent object');
+  assert(typeof r.expandingSymbolComponent === 'object', 'expandingSymbolComponent object');
+  /* Composite = both_ways + expanding_symbol. */
+  const sum = r.bothWaysComponent.rtp_contribution + r.expandingSymbolComponent.rtp_contribution;
+  assert(Math.abs(r.rtpContribution - sum) < 1e-6, `composite ${r.rtpContribution} ≠ sum ${sum}`);
 });
 
 /* ── Result ──────────────────────────────────────────────────────────── */

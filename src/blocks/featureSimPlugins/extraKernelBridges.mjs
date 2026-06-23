@@ -44,6 +44,12 @@ const _cacheBuy      = new Map();
 const _cachePersist  = new Map();
 const _cacheMustHit  = new Map();
 const _cacheWheel    = new Map();
+const _cacheAsym     = new Map();
+const _cacheCharge   = new Map();
+const _cacheCrash    = new Map();
+const _cachePick     = new Map();
+const _cacheSm       = new Map();
+const _cacheBwEw     = new Map();
 
 /* Shared helper to invoke the universal runner with kernel name + params. */
 function _runUniversal(kernelName, params) {
@@ -377,16 +383,118 @@ export async function computeWheelKernelRtp(opts = {}) {
   return out;
 }
 
+/* ── Asymmetric paytable ─────────────────────────────────────────────── */
+
+export async function computeAsymmetricPaytableKernelRtp(opts = {}) {
+  const params = {
+    per_symbol_contributions: opts.perSymbolContributions || {
+      'HP': { 'line5': 0.5, 'line4': 0.2, 'line3': 0.05 },
+      'MP': { 'line5': 0.2, 'line4': 0.08, 'line3': 0.02 },
+    },
+  };
+  const key = JSON.stringify(params);
+  if (_cacheAsym.has(key)) return _cacheAsym.get(key);
+  const r = _runUniversal('asymmetric_paytable', params);
+  const out = r.ok ? { ok: true, rtpContribution: r.result.rtp_contribution, perSymbolBreakdown: r.result.per_symbol_breakdown, kernelEngine: 'python-kernel', params }
+                   : { ok: false, reason: r.reason };
+  _cacheAsym.set(key, out);
+  return out;
+}
+
+/* ── Charge meter ─────────────────────────────────────────────────────── */
+
+export async function computeChargeMeterKernelRtp(opts = {}) {
+  const params = {
+    expected_charge_per_spin: opts.expectedChargePerSpin ?? 0.05,
+    tiers: opts.tiers || [
+      { name: 'small', threshold: 10, award_value_x_bet: 5 },
+      { name: 'big',   threshold: 100, award_value_x_bet: 50 },
+    ],
+    persistent_across_sessions: opts.persistentAcrossSessions ?? false,
+  };
+  const key = JSON.stringify(params);
+  if (_cacheCharge.has(key)) return _cacheCharge.get(key);
+  const r = _runUniversal('charge_meter', params);
+  const out = r.ok ? { ok: true, rtpContribution: r.result.rtp_contribution, tiers: r.result.tiers, kernelEngine: 'python-kernel', params }
+                   : { ok: false, reason: r.reason };
+  _cacheCharge.set(key, out);
+  return out;
+}
+
+/* ── Crash kernel (crash-game audit) ──────────────────────────────────── */
+
+export async function computeCrashKernelAudit(opts = {}) {
+  const params = {
+    house_edge:         opts.houseEdge         ?? 0.01,
+    cashout_multiplier: opts.cashoutMultiplier ?? 2.0,
+  };
+  const key = JSON.stringify(params);
+  if (_cacheCrash.has(key)) return _cacheCrash.get(key);
+  const r = _runUniversal('crash_kernel', params);
+  const out = r.ok ? { ok: true, rtp: r.result.rtp, probabilityOfWin: r.result.probability_of_win, edgePerRound: r.result.edge_per_round, strategyClass: r.result.strategy_class, kernelEngine: 'python-kernel', params }
+                   : { ok: false, reason: r.reason };
+  _cacheCrash.set(key, out);
+  return out;
+}
+
+/* ── Pick chain (pick & click bonus) ─────────────────────────────────── */
+
+export async function computePickChainKernelRtp(opts = {}) {
+  const params = {
+    trigger_p: opts.triggerP ?? 0.02,
+    levels:    opts.levels || [
+      { name: 'L1', pool_size: 5, award_distribution: { '5': 2, '10': 2, '0.0': 1 } },
+    ],
+  };
+  const key = JSON.stringify(params);
+  if (_cachePick.has(key)) return _cachePick.get(key);
+  const r = _runUniversal('pick_chain', params);
+  const out = r.ok ? { ok: true, rtpContribution: r.result.rtp_contribution, expectedTotalAwardXBet: r.result.expected_total_award_x_bet, levels: r.result.levels, kernelEngine: 'python-kernel', params }
+                   : { ok: false, reason: r.reason };
+  _cachePick.set(key, out);
+  return out;
+}
+
+/* ── State machine (game-state Markov chain) ─────────────────────────── */
+
+export async function computeStateMachineKernelRtp(opts = {}) {
+  const params = {
+    states:      opts.states      || [{ name: 'base', rtp_component: 0.9 }, { name: 'fs', rtp_component: 1.2 }],
+    transitions: opts.transitions || [[0.99, 0.01], [0.5, 0.5]],
+  };
+  const key = JSON.stringify(params);
+  if (_cacheSm.has(key)) return _cacheSm.get(key);
+  const r = _runUniversal('state_machine', params);
+  const out = r.ok ? { ok: true, rtpContribution: r.result.rtp_contribution, stationaryDistribution: r.result.stationary_distribution, states: r.result.states, kernelEngine: 'python-kernel', params }
+                   : { ok: false, reason: r.reason };
+  _cacheSm.set(key, out);
+  return out;
+}
+
+/* ── Both-ways expanding-wild composite ───────────────────────────────── */
+
+export async function computeBothWaysExpandingWildKernelRtp(opts = {}) {
+  const params = {
+    both_ways_params:  opts.bothWaysParams  || { ltr_only_rtp: 0.5, line_pay_share: 0.7 },
+    expanding_params:  opts.expandingParams || {
+      fs_trigger_p: 0.01, fs_initial_spins: 10, reels: 5, rows: 3,
+      p_per_cell_in_fs: 0.12, pay_table: { '3': 1, '4': 5, '5': 100 }, symbol_name: 'BOOK',
+    },
+  };
+  const key = JSON.stringify(params);
+  if (_cacheBwEw.has(key)) return _cacheBwEw.get(key);
+  const r = _runUniversal('both_ways_expanding_wild', params);
+  const out = r.ok ? { ok: true, rtpContribution: r.result.rtp_contribution, bothWaysComponent: r.result.both_ways_component, expandingSymbolComponent: r.result.expanding_symbol_component, kernelEngine: 'python-kernel', params }
+                   : { ok: false, reason: r.reason };
+  _cacheBwEw.set(key, out);
+  return out;
+}
+
 export function _resetCache() {
-  _cacheExp.clear();
-  _cacheSw.clear();
-  _cacheCascade.clear();
-  _cacheWays.clear();
-  _cachePayAny.clear();
-  _cacheStacked.clear();
-  _cacheBothWays.clear();
-  _cacheBuy.clear();
-  _cachePersist.clear();
-  _cacheMustHit.clear();
-  _cacheWheel.clear();
+  _cacheExp.clear(); _cacheSw.clear(); _cacheCascade.clear(); _cacheWays.clear();
+  _cachePayAny.clear(); _cacheStacked.clear();
+  _cacheBothWays.clear(); _cacheBuy.clear(); _cachePersist.clear();
+  _cacheMustHit.clear(); _cacheWheel.clear();
+  _cacheAsym.clear(); _cacheCharge.clear(); _cacheCrash.clear();
+  _cachePick.clear(); _cacheSm.clear(); _cacheBwEw.clear();
 }
