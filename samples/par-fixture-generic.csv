@@ -1,0 +1,14 @@
+# Vendor-neutral PAR sheet fixture (D atom, 2026-06-23).
+# Synthetic 5-reel × 9-symbol PAR sheet, weights per reel sum to 100.
+# Used by tests/contracts/par-bridge.test.mjs and stress-test golden.
+# Pure file fixture — no vendor strings, no real product identifiers.
+symbol,reel1,reel2,reel3,reel4,reel5,pay3,pay4,pay5
+H1,8,7,7,6,6,40,200,1000
+H2,9,8,7,7,6,25,120,600
+H3,10,9,8,8,7,15,80,400
+M1,13,13,12,12,12,10,50,250
+M2,14,14,13,13,13,8,40,200
+M3,15,15,14,14,14,5,25,125
+L1,10,11,12,12,13,3,15,75
+L2,11,12,13,14,14,2,10,50
+L3,10,11,14,14,15,1,5,25

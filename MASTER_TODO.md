@@ -501,7 +501,7 @@ Svaki ID prolazi kroz **ISTI** ultimate workflow kao A/B/C iz N+1:
 ┌────┬──────────────────────────────────────┬───────────┬────────────────┐
 │ ID │ Stavka                                │ Status    │ Commit pin     │
 ├────┼──────────────────────────────────────┼───────────┼────────────────┤
-│ D  │ PAR sheet auto-ingest                │ 📋 PLAN   │ —              │
+│ D  │ PAR sheet auto-ingest                │ ✅ DONE   │ pending HEAD   │
 │ E  │ Self-healing parser                  │ 📋 PLAN   │ —              │
 │ F  │ Web UI uploader                      │ 📋 PLAN   │ —              │
 │ G  │ Auto-scaffold za nov kind            │ 📋 PLAN   │ —              │
@@ -509,6 +509,48 @@ Svaki ID prolazi kroz **ISTI** ultimate workflow kao A/B/C iz N+1:
 │ I  │ Schema versioning + migration        │ 📋 PLAN   │ —              │
 │ J  │ V9 vision mode aktivacija            │ 📋 PLAN   │ —              │
 └────┴──────────────────────────────────────┴───────────┴────────────────┘
+```
+
+### D atom — closeout receipt (2026-06-23 15:15 UTC)
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ Files added                                                            │
+│   tools/par-sheet-bridge.mjs            (ES module wrapper)            │
+│   tools/math-precision-calibrator.mjs   (analytical RTP oracle)        │
+│   tests/contracts/par-bridge.test.mjs   (20 contract assertions)       │
+│   samples/par-fixture-generic.csv       (5×9 vendor-neutral fixture)   │
+│                                                                         │
+│ Files modified                                                          │
+│   tools/ingest.mjs    (+--par flag, Step 5a, par.json write, meta tag) │
+│   tools/verify.mjs    (+step 4.97y33)                                  │
+│                                                                         │
+│ Verdict ladder (6 verdicts)                                             │
+│   PASS                        delta ≤ ±0.05% (precision band)          │
+│   WARN                        0.05% < delta ≤ 0.5%                     │
+│   FAIL                        delta > 0.5% AND declared ≤ oracle       │
+│   NON_BINDING_LINE_EXPANSION  declared >> oracle (real-game gap)       │
+│   NON_BINDING                 no declared RTP in model                  │
+│   CALIBRATOR_ERROR            calibrator threw (oracle unreachable)    │
+│                                                                         │
+│ Audit nalazi (parallel-agent post-impl audit, 2026-06-23)              │
+│   HIGH-1  PAR path bypass of assertPathAllowed   FIXED                 │
+│           → realpath check + MAX_INPUT_BYTES gate pre bridge poziva    │
+│   MED-2   PAR overlay clobbered by Kimi reconcile FIXED                │
+│           → Step 4.5 → Step 5a (posle Kimi, pre V8) — PAR last writer  │
+│   MED-3   CALIBRATOR_ERROR vs NON_BINDING conflation FIXED             │
+│           → distinct verdict + extended safeVerdict whitelist          │
+│   MED-4   appliedAt strip-then-compare false-pass FIXED                │
+│           → assert ISO 8601 BEFORE strip u test 18                     │
+│   LOW-2   `| 0` bitwise wrap (>2^31) FIXED                             │
+│           → Number() + isFinite + positive guard u pHit                │
+│                                                                         │
+│ Gate results                                                            │
+│   npm run verify          99/99 PASS                                    │
+│   idempotency Pass 1=2    98/98 = 98/98                                 │
+│   contract test           20/20 PASS                                    │
+│   security smoke          /etc/hosts blocked (HIGH-1 live verified)    │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 Boki direktiva: *"samo to radimo detaljno dok ne bude savrseno"*. Nema

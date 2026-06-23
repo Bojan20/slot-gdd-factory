@@ -65,10 +65,15 @@ const slugArg  = flag('--slug');
 const noLlm    = has('--no-llm');
 const openAfter= has('--open');
 const dryRun   = has('--dry-run');
+/* N+2 D — opcioni PAR sheet (XLSX/CSV/JSON). Calibrates math layer
+ * to declared RTP via single-payline oracle (±0.05% precision band). */
+const parPath  = flag('--par');
+const parSheet = flag('--par-sheet');
 
 if (!filePath && !urlArg) {
   console.error('Usage: node tools/ingest.mjs --file <path> | --url <url>');
   console.error('       [--slug <name>] [--no-llm] [--open] [--dry-run]');
+  console.error('       [--par <xlsx|csv|json>] [--par-sheet <sheetName>]');
   process.exit(2);
 }
 
@@ -460,6 +465,116 @@ try {
     };
   });
 
+  /* Step 4.5: optional PAR sheet ingest + math precision calibration.
+   *
+   * N+2 D (2026-06-23) — When `--par <path>` is provided:
+   *   1. Bridge dispatches to vendor adapter (XLSX → Python, CSV → MJS,
+   *      JSON → inline) via tools/par-sheet-bridge.mjs.
+   *   2. Applies PAR weights + paytable as additive overlay on model.
+   *   3. Runs math-precision-calibrator → emits ±0.05% verdict
+   *      (PASS / WARN / FAIL / NON_BINDING / NON_BINDING_LINE_EXPANSION).
+   *   4. Stores receipt under summary.par for downstream meta tag.
+   *
+   * NEVER blocks ingest: Python missing / file missing / adapter
+   * failure → WARN with skip flag, model continues parser-only path.
+   *
+   * Audit fixes (post-implementation paralel-agent audit 2026-06-23):
+   *   HIGH-1: PAR path passes through assertPathAllowed + MAX_INPUT_BYTES
+   *           same as the primary GDD input (EDGE-E class symlink guard).
+   *   MED-2:  Step 4.5 placed AFTER Kimi reconcile (see below) so PAR
+   *           overlay is the LAST writer to model.reelStrips and cannot
+   *           be clobbered by a stale V6 cache reconcile.
+   *   MED-3:  Calibrator soft-fail path uses CALIBRATOR_ERROR verdict
+   *           so meta-tag readers distinguish from legitimate NON_BINDING. */
+  let parReceipt = null;
+  let calibration = null;
+  /* MED-2: PAR ingest is moved to a function so it can run AFTER Kimi
+   * reconcile (Step 5b below). PAR is ground truth — must be last writer
+   * to model.reelStrips. */
+  async function runParStep() {
+    await step('PAR sheet ingest + calibration', async () => {
+      /* HIGH-1: validate PAR path through same allow-list + size cap as
+       * the primary GDD input. assertPathAllowed throws on symlink escape;
+       * size cap rejects DoS payloads BEFORE handing off to the bridge. */
+      const parAbs = resolve(process.cwd(), parPath);
+      if (!existsSync(parAbs)) throw new Error('PAR file not found: ' + parAbs);
+      try { assertPathAllowed(parAbs); }
+      catch (e) { throw new Error('PAR path blocked: ' + e.message); }
+      try {
+        const st = nodeStatSync(parAbs);
+        if (st.size > MAX_INPUT_BYTES) {
+          throw new Error(`PAR file > ${MAX_INPUT_BYTES} bytes (got ${st.size}b)`);
+        }
+      } catch (e) {
+        if (/PAR file >/.test(e.message)) throw e;
+        /* stat failures fall through to bridge for graceful skip. */
+      }
+      const { bridgeIngest } = await import(resolve(REPO, 'tools/par-sheet-bridge.mjs'));
+      const opts = parSheet ? { sheet: parSheet } : {};
+      const bridge = await bridgeIngest(parAbs, model, opts);
+      if (!bridge.ok) {
+        log(`  PAR skip: ${bridge.reason} (model continues parser-only)`);
+        parReceipt = {
+          ok: false,
+          skip: !!bridge.skip,
+          reason: bridge.reason,
+          vendor: bridge.vendor || null,
+          format: bridge.format || null,
+        };
+        return;
+      }
+      /* Swap in the PAR-merged model so downstream V8/V9/buildSlotHTML
+       * see the calibrated reels + paytable overlay. */
+      model = bridge.model;
+      parReceipt = {
+        ok: true,
+        vendor: bridge.vendor,
+        format: bridge.format,
+        adapter: bridge.adapter,
+        signals: bridge.signals,
+        appliedFields: bridge.appliedFields,
+        reelCount: bridge.reelCount,
+        symbolCount: bridge.symbolCount,
+        paytableRowCount: bridge.paytableRowCount,
+        warnings: bridge.warnings,
+      };
+      /* Calibration uses PAR blob + model; non-blocking.
+       * MED-3: distinct verdict for calibrator throw vs legitimate
+       * NON_BINDING (no declared RTP) so meta tag readers can tell apart. */
+      try {
+        const { calibrate } = await import(resolve(REPO, 'tools/math-precision-calibrator.mjs'));
+        calibration = calibrate(model, bridge.parSheet);
+        log(`  calibration verdict: ${calibration.verdict} (${calibration.reason})`);
+      } catch (e) {
+        log(`  calibration soft-fail: ${e.message}`);
+        calibration = {
+          verdict: 'CALIBRATOR_ERROR',
+          reason: `calibrator threw: ${e.message}`,
+          declaredRtp: null,
+          parRtp: null,
+          deltaPct: null,
+          bandPct: 0.05,
+        };
+      }
+      summary.par = parReceipt;
+      summary.calibration = calibration ? {
+        declaredRtp: calibration.declaredRtp,
+        parRtp: calibration.parRtp,
+        deltaPct: calibration.deltaPct,
+        bandPct: calibration.bandPct,
+        verdict: calibration.verdict,
+        reason: calibration.reason,
+      } : null;
+    }).catch((e) => {
+      /* Bridge layer is never-throws but defensive in case. */
+      log(`  PAR step soft-fail: ${e.message}`);
+      parReceipt = { ok: false, skip: false, reason: e.message };
+      summary.par = parReceipt;
+      summary.softFail = summary.softFail || { stage: 'PAR ingest', reason: e.message };
+    });
+  }
+  /* MED-2 fix: defer PAR ingest to AFTER Kimi reconcile (Step 5b below). */
+
   /* Step 5: optional LLM reconcile */
   if (!noLlm) {
     await step('Kimi V1..V5 reconcile (optional)', async () => {
@@ -611,6 +726,14 @@ try {
     log('--no-llm — skipping reconcile');
   }
 
+  /* Step 5a: PAR ingest + calibration (deferred from Step 4.5 per
+   * MED-2 audit fix — PAR is GROUND TRUTH and must be the LAST writer
+   * to model.reelStrips so V6 cache reconcile cannot clobber the overlay.
+   * Runs only when --par was provided. */
+  if (parPath) {
+    await runParStep();
+  }
+
   /* Step 5b: V8 GAME ASSEMBLY rule engine (live wire 2026-06-23).
    *
    * After smart-defaults (+ optional V6 reconcile) the model shape is
@@ -689,6 +812,34 @@ try {
       const safeEngine  = String(payload.selectedEngine || '').replace(/[^A-Za-z0-9_-]/g, '');
       const metaTag = `<meta name="v8-receipt" data-verdict="${verdictSafe}" data-engine="${safeEngine}" content="${b64}">`;
       html = injectMetaIntoHead(html, metaTag);
+      summary.htmlBytes = html.length;
+    }
+
+    /* Step 6b2: embed PAR calibration meta tag (N+2 D).
+     * Allows downstream dashboard / regulator export to read
+     * declared/par/delta/verdict WITHOUT re-running calibrator. */
+    if (parReceipt && parReceipt.ok && calibration) {
+      /* PAR calibrator uses 6-verdict ladder (PASS/WARN/FAIL +
+       * NON_BINDING + NON_BINDING_LINE_EXPANSION + CALIBRATOR_ERROR).
+       * Extend safeVerdict whitelist for this attribute only. */
+      const verdictSafe = safeVerdict(calibration.verdict,
+        ['PASS', 'WARN', 'FAIL', 'NON_BINDING', 'NON_BINDING_LINE_EXPANSION', 'CALIBRATOR_ERROR']);
+      const declared = Number.isFinite(calibration.declaredRtp)
+        ? calibration.declaredRtp.toFixed(4) : 'null';
+      const parRtp = Number.isFinite(calibration.parRtp)
+        ? calibration.parRtp.toFixed(4) : 'null';
+      const delta = Number.isFinite(calibration.deltaPct)
+        ? calibration.deltaPct.toFixed(4) : 'null';
+      const band = Number.isFinite(calibration.bandPct)
+        ? calibration.bandPct.toFixed(4) : '0.0500';
+      const vendorSafe = String(parReceipt.vendor || '').replace(/[^a-z0-9_-]/gi, '');
+      const formatSafe = String(parReceipt.format || '').replace(/[^a-z0-9_-]/gi, '');
+      const parMetaTag =
+        `<meta name="par-calibrated" data-verdict="${verdictSafe}" ` +
+        `data-declared-rtp="${declared}" data-par-rtp="${parRtp}" ` +
+        `data-delta-pct="${delta}" data-band-pct="${band}" ` +
+        `data-vendor="${vendorSafe}" data-format="${formatSafe}">`;
+      html = injectMetaIntoHead(html, parMetaTag);
       summary.htmlBytes = html.length;
     }
   });
@@ -798,6 +949,28 @@ try {
       }
       if (v9Receipt) {
         await atomicWrite(resolve(outDir, 'v9.json'), JSON.stringify(v9Receipt, null, 2));
+      }
+      /* N+2 D — PAR + calibration receipt (when --par used).
+       * Even skipped path writes par.json so operator + dashboard can
+       * see the attempt + reason (e.g. "Python missing"). */
+      if (parReceipt || calibration) {
+        const parOut = {
+          par: parReceipt,
+          calibration: calibration
+            ? {
+                declaredRtp: calibration.declaredRtp,
+                parRtp: calibration.parRtp,
+                deltaPct: calibration.deltaPct,
+                bandPct: calibration.bandPct,
+                verdict: calibration.verdict,
+                reason: calibration.reason,
+                contributions: calibration.contributions,
+                totals: calibration.totals,
+                assumptions: calibration.assumptions,
+              }
+            : null,
+        };
+        await atomicWrite(resolve(outDir, 'par.json'), JSON.stringify(parOut, null, 2));
       }
       summary.outDir = outDir;
       summary.finishedAt = new Date().toISOString();

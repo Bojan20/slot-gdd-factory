@@ -1073,6 +1073,36 @@ if (existsSync(deepBTest)) {
     'node', [deepBTest]);
 }
 
+/* ── Step 4.97y33: N+2 D PAR sheet auto-ingest pipeline ───────────────
+ * D atom (2026-06-23) — Bridge between ingest.mjs and the vendor-detect
+ * + adapter dispatcher (tools/par-sheet-detect.mjs). Operator passes
+ * `--par <xlsx|csv|json>` to ingest, pipeline auto-extracts paytable +
+ * reels + RTP, merges as additive overlay into model.reelStrips, and
+ * runs math-precision-calibrator (±0.05% gate) emitting a 5-verdict
+ * receipt (PASS / WARN / FAIL / NON_BINDING / NON_BINDING_LINE_EXPANSION).
+ *
+ *   tools/par-sheet-bridge.mjs           — ES module wrapper, lazy import
+ *   tools/math-precision-calibrator.mjs  — single-payline analytical oracle
+ *   tools/ingest.mjs (Step 4.5)          — auto-merge on --par flag
+ *   samples/par-fixture-generic.csv      — vendor-neutral test fixture
+ *
+ * Live wire: dist/ingest/<slug>/par.json + <meta name="par-calibrated">
+ * with data-verdict/declared-rtp/par-rtp/delta-pct/band-pct/vendor/format.
+ *
+ * Gate-importance: zatvara math autonomy gap. Bez ovog wire-a operator
+ * mora ručno da kalibriše PAR posle ingest-a (3 koraka, error-prone). Sa
+ * wire-om, jedan flag → calibrated math + audit receipt + meta tag za
+ * downstream dashboard / regulator export. Single-line oracle je svesno
+ * loose (real RTP = oracle × line-count × feature multiplier); calibrator
+ * surface-uje NON_BINDING_LINE_EXPANSION verdict kad declared >> oracle
+ * (real-game gap, ne bug) i FAIL verdict samo kad declared ≤ oracle by
+ * > 0.5% (PAR over-pays single-line baseline = clear arhitektonski bug). */
+const parBridgeTest = resolve(REPO, 'tests/contracts/par-bridge.test.mjs');
+if (existsSync(parBridgeTest)) {
+  run('N+2 D PAR auto-ingest (bridge + calibrator + ingest wire + 20 contract assertions)',
+    'node', [parBridgeTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
