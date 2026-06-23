@@ -201,6 +201,8 @@
       const json = await r.json();
       if (!r.ok) {
         addStep({ stage: 'error', msg: json.error || 'upload failed', ok: false });
+        receiptsDiv.innerHTML = '<div class="empty">upload failed: ' + escapeHtml(json.error || ('HTTP ' + r.status)) + '</div>';
+        previewDiv.innerHTML = '<div class="empty">no preview</div>';
         goBtn.disabled = false;
         return;
       }
@@ -214,21 +216,47 @@
 
   function subscribeSSE(sessionId) {
     const es = new EventSource('/events/' + encodeURIComponent(sessionId));
+    /* UQ-DEEP-G2 fix (Boki 2026-06-23): EventSource.onerror fires
+     * AFTER `es.close()` too (browser tears down the stream after
+     * legitimate `done`). Without this flag the user always saw the
+     * lažan "veza prekinuta" right after a SUCCESSFUL ingest. Track
+     * terminal-state and treat onerror as a no-op once we've seen
+     * `done` or `error`. */
+    let terminal = false;
     es.onmessage = (e) => {
       try {
         const evt = JSON.parse(e.data);
         addStep(evt);
         if (evt.stage === 'done') {
+          terminal = true;
           es.close();
           goBtn.disabled = false;
           loadReceiptsAndPreview(evt.slug);
         } else if (evt.stage === 'error') {
+          terminal = true;
           es.close();
           goBtn.disabled = false;
         }
       } catch {}
     };
-    es.onerror = () => { es.close(); goBtn.disabled = false; };
+    es.onerror = () => {
+      if (terminal) return;  /* normal stream close after done — ignore */
+      /* readyState 2 = CLOSED — could be momentary blip OR real drop.
+       * Wait one micro-tick to see if a message is still in flight. */
+      setTimeout(() => {
+        if (terminal) return;
+        es.close();
+        goBtn.disabled = false;
+        addStep({
+          stage: 'error',
+          msg: 'SSE veza prekinuta (server restart, network drop, ili stara sesija) — klikni ingest ponovo',
+          ok: false,
+        });
+        if (receiptsDiv.querySelector('.empty')) {
+          receiptsDiv.innerHTML = '<div class="empty">veza prekinuta — refresh stranice i ingest ponovo</div>';
+        }
+      }, 50);
+    };
   }
 
   function addStep(evt) {

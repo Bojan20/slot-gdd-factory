@@ -205,7 +205,16 @@ function pushEvent(sessionId, evt) {
   }
   s.events.push(evt);
   for (const sub of s.subscribers) {
-    try { sub.write(`event: ${evt.stage || 'message'}\ndata: ${JSON.stringify(evt)}\n\n`); }
+    /* UQ-DEEP-G2 fix (Boki 2026-06-23 real root cause): TYPED SSE events
+     * (`event: done`, `event: resolve`, etc.) go to per-type listeners
+     * (`es.addEventListener('done', ...)`), NOT to `es.onmessage`. The UI
+     * only binds onmessage → it NEVER received any of the typed events,
+     * stayed on "running…" until the server closed the stream, at which
+     * point onerror fired with the lažan "veza prekinuta" message.
+     * Drop the `event:` line so all events land on the default `message`
+     * channel where `es.onmessage` receives them. evt.stage is still in
+     * the JSON payload so dispatch logic is unchanged. */
+    try { sub.write(`data: ${JSON.stringify(evt)}\n\n`); }
     catch { /* subscriber disconnected */ }
   }
   if (evt.stage === 'done' || evt.stage === 'error') {
@@ -438,9 +447,11 @@ function handleEvents(req, res, sessionId) {
     'Connection': 'keep-alive',
     'X-Accel-Buffering': 'no',
   });
-  /* Replay existing events. */
+  /* Replay existing events. Same UQ-DEEP-G2 fix as pushEvent: drop the
+   * `event:` line so reconnecting subscribers also land on default
+   * `message` channel that the UI's onmessage handler actually listens to. */
   for (const evt of s.events) {
-    res.write(`event: ${evt.stage || 'message'}\ndata: ${JSON.stringify(evt)}\n\n`);
+    res.write(`data: ${JSON.stringify(evt)}\n\n`);
   }
   if (s.done) { res.end(); return; }
   s.subscribers.add(res);
@@ -490,6 +501,14 @@ async function dispatch(req, res) {
     const p = url.pathname;
     if (req.method === 'GET' && p === '/')       return handleIndex(req, res);
     if (req.method === 'GET' && p === '/status') return handleStatus(req, res);
+    /* UQ-DEEP-G fix (Boki 2026-06-23): browser auto-requests /favicon.ico,
+     * server was 404-ing → operator console saw "Failed to load resource:
+     * 404" noise that masked real errors. Return 204 No Content (transparent
+     * to UI, no payload, no log spam). */
+    if (req.method === 'GET' && p === '/favicon.ico') {
+      res.writeHead(204, { 'Cache-Control': 'public, max-age=86400' });
+      return res.end();
+    }
     if (req.method === 'POST' && p === '/ingest') return handleIngest(req, res);
     const evtMatch = p.match(/^\/events\/([a-f0-9-]{36})$/);
     if (req.method === 'GET' && evtMatch) return handleEvents(req, res, evtMatch[1]);
@@ -511,8 +530,17 @@ async function dispatch(req, res) {
  * @returns {Promise<{ server, port, baseUrl }>}
  */
 export function startServer(opts = {}) {
-  const port = Number(opts.port) || Number(process.env.WEB_UPLOADER_PORT) || 5181;
-  const host = opts.host || '127.0.0.1';
+  /* UQ-DEEP-G fix: `Number(opts.port) || ...` treated port:0 (ephemeral
+   * — what contract tests pass) as falsy and fell back to 5181. When the
+   * dev server already held 5181, every contract test failed with
+   * EADDRINUSE and baseUrl came back undefined. Use explicit
+   * Number.isFinite so 0 is honored. */
+  const optPort = Number(opts.port);
+  const envPort = Number(process.env.WEB_UPLOADER_PORT);
+  const port = Number.isFinite(optPort) ? optPort
+             : Number.isFinite(envPort) ? envPort
+             : 5181;
+  const host = opts.host || process.env.WEB_UPLOADER_HOST || '127.0.0.1';
   return new Promise((resolveStart, reject) => {
     const server = createServer(dispatch);
     server.on('error', reject);
@@ -529,8 +557,10 @@ export function startServer(opts = {}) {
 if (process.argv[1]?.endsWith('web-uploader-server.mjs')) {
   const args = process.argv.slice(2);
   const portFlag = args.indexOf('--port');
+  const hostFlag = args.indexOf('--host');
   const port = portFlag >= 0 ? Number(args[portFlag + 1]) : undefined;
-  startServer({ port }).then(({ baseUrl }) => {
+  const host = hostFlag >= 0 ? args[hostFlag + 1] : undefined;
+  startServer({ port, host }).then(({ baseUrl }) => {
     console.log(`▸ web-uploader listening on ${baseUrl}`);
     console.log(`▸ open ${baseUrl}/ in your browser`);
   }).catch(e => {
