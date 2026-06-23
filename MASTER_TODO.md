@@ -1,4 +1,4 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-23 11:20 UTC (kandidati za sledeću sesiju)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-23 11:32 UTC (FINAL · sve N1-N8 ✅ DONE)
 
 Sve glavne grane backlog-a su zatvorene (MATH + Expert P1/P2/P3). Ovo
 su preostale **nice-to-have** stavke + nova ideja koja se kristalisala
@@ -68,21 +68,39 @@ tokom sesije. Boki bira — nije obavezna.
 │    │    aggregate čita + ASCII summary + summary.json              │        │           │
 │    │  - Verify gate step 4.97y23                                  │        │           │
 ├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
-│ N5 │ Performance benchmark suite                                  │  ~2h   │ LOW       │
-│    │ Meri ms po kernelu, scatter "RTP vs latency". Identifikuje   │        │ dev       │
-│    │ slow kernels. Bridge cache već radi instant, ROI niži        │        │           │
+│ N5 │ Performance benchmark suite                                  │  ~2h   │ ✅ DONE   │
+│    │  - tools/perf-benchmark.mjs · 5 bench cases (onepager × 1/5,  │        │           │
+│    │    compare, loadDashboard, renderHtml)                       │        │           │
+│    │  - warmup + N-iter runner · captures min/p50/p95/max + RSS    │        │           │
+│    │    + heapDelta · ASCII box-drawing summary                    │        │           │
+│    │  - Live: sub-ms p50 across all bench cases                    │        │           │
+│    │  - Test 5/5 PASS · Verify gate step 4.97y24                   │        │           │
 ├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
-│ N6 │ Coverage diff between commits                                │  ~2h   │ LOW       │
-│    │ Git-style diff kernel coverage: A vs B commit, koje igre su  │        │ dev       │
-│    │ dobile/izgubile coverage. Pratiti regression                 │        │           │
+│ N6 │ Coverage diff between commits                                │  ~2h   │ ✅ DONE   │
+│    │  - tools/coverage-diff.mjs · git show <ref>:<path> no-checkout │        │           │
+│    │  - Set diff: okGained/okLost/appGained/appLost per slug      │        │           │
+│    │  - Portfolio total net delta + per-game ASCII table          │        │           │
+│    │  - Test 7/7 PASS · Verify gate step 4.97y25                   │        │           │
+│    │  - Note: live exits "absent-both" jer reports/ je gitignore-d │        │           │
+│    │    — tool je generic, radi za bilo koji repo gde se coverage │        │           │
+│    │    tracks (sister-repo CI artifact, future hardening)        │        │           │
 ├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
-│ N7 │ Sister-repo update checker                                   │  ~1h   │ LOW       │
-│    │ Proverava da li slot-math-engine-template ima nove kernels   │        │ maint     │
-│    │ koje treba bridge-ovati. Long-term maintenance health        │        │           │
+│ N7 │ Sister-repo update checker                                   │  ~1h   │ ✅ DONE   │
+│    │  - tools/sister-repo-checker.mjs · lista sister kernels       │        │           │
+│    │    iz slot_math_kernels/*.py · diff KNOWN_KERNELS u bridge   │        │           │
+│    │  - Reports newKernels (add), staleKernels (remove), inSync   │        │           │
+│    │  - Live: 22/22 IN SYNC ✓                                      │        │           │
+│    │  - Test 8/8 PASS · Verify gate step 4.97y26                   │        │           │
 ├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
-│ N8 │ Sanitize synth fixture slot.html titles                      │  ~30m  │ LOW       │
-│    │ 9 LOW findings iz anti-vendor lint: stari synth file-ovi sa  │        │ cleanup   │
-│    │ vendor imenima u <title>. Sanitize → "Synthetic fixture N"   │        │           │
+│ N8 │ Sanitize synth fixture slot.html titles                      │  ~30m  │ ✅ DONE   │
+│    │  - tools/sanitize-synth-titles.mjs · 3 surfaces (<title>,    │        │           │
+│    │    <div class="title">, __MODEL_NAME__ const)                │        │           │
+│    │  - Idempotent · pinned-baseline-skip · --dry-run support     │        │           │
+│    │  - Live: 006 fixture sanitized (3 changes), 03/14 ostavljen  │        │           │
+│    │    (vendor strings u gameplay data, ne 3 standard surfaces)  │        │           │
+│    │  - LOW lint count: 9 → 6 (3 sanitized · 3 pinned baseline    │        │           │
+│    │    skipped per CLAUDE.md HARD RULE · 2 gameplay data deeper) │        │           │
+│    │  - Test 11/11 PASS · Verify gate step 4.97y27                 │        │           │
 ├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
 │ X1 │ Audio backlog                                                │   —    │ 🔒 LOCKED  │
 │    │ HARD RULE #4 — Boki signal needed before touching            │        │           │

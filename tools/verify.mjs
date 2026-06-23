@@ -926,6 +926,49 @@ if (existsSync(kernelAuditTest)) {
     'node', [kernelAuditTest]);
 }
 
+/* ── Step 4.97y24: PERF BENCHMARK (N5)
+ * Reproducible bench za operator tool stack (buildOnePager, compare,
+ * loadDashboardData, renderHtml). Captures min/p50/p95/max + RSS/heap
+ * delta. Warmup-then-N-iterations runner sa percentile math contract. */
+const perfBenchTest = resolve(REPO, 'tests/contracts/perf-benchmark.test.mjs');
+if (existsSync(perfBenchTest)) {
+  run('PERF BENCHMARK (operator stack timing + memory delta · percentile math)',
+    'node', [perfBenchTest]);
+}
+
+/* ── Step 4.97y25: COVERAGE DIFF (N6)
+ * Git-style diff per-game kernel coverage A vs B commit. Reads JSON
+ * via `git show <ref>:reports/per-game-kernel-coverage/<slug>.json`.
+ * Set diff: okGained/okLost/appGained/appLost per slug + portfolio
+ * total net delta. Regression tracking across commits. */
+const coverageDiffTest = resolve(REPO, 'tests/contracts/coverage-diff.test.mjs');
+if (existsSync(coverageDiffTest)) {
+  run('COVERAGE DIFF (git-style per-game kernel coverage A vs B · set math)',
+    'node', [coverageDiffTest]);
+}
+
+/* ── Step 4.97y26: SISTER REPO CHECKER (N7)
+ * Maintenance health check: lists sister repo Python kernels
+ * (slot-math-engine-template) and diffs sa KNOWN_KERNELS const u
+ * math-kernel-bridge.mjs. Early signal kad sister-repo ima nove kernels
+ * koje treba bridge-ovati ili stale koje treba ukloniti. */
+const sisterCheckerTest = resolve(REPO, 'tests/contracts/sister-repo-checker.test.mjs');
+if (existsSync(sisterCheckerTest)) {
+  run('SISTER REPO CHECKER (bridge KNOWN_KERNELS vs sister kernels drift)',
+    'node', [sisterCheckerTest]);
+}
+
+/* ── Step 4.97y27: SANITIZE SYNTH TITLES (N8)
+ * Sanitize vendor names iz synth fixture slot.html (<title>, <div
+ * class="title">, __MODEL_NAME__). Idempotent. Pinned baselines (per
+ * CLAUDE.md HARD RULE) SKIP-ovani — back-compat sa pre-tracked SHA
+ * snapshots u tests/fixtures/semantic-expected.json. */
+const sanitizeSynthTest = resolve(REPO, 'tests/contracts/sanitize-synth-titles.test.mjs');
+if (existsSync(sanitizeSynthTest)) {
+  run('SANITIZE SYNTH TITLES (3 surfaces · idempotent · pinned-baseline-skip)',
+    'node', [sanitizeSynthTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
