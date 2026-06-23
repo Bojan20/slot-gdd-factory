@@ -649,6 +649,18 @@ if (existsSync(kernelBridgeTest)) {
     'node', [kernelBridgeTest]);
 }
 
+/* ── Step 4.97y5: B+ — H&W kernel pre-flight bridge (LIVE analytical RTP)
+ * Wraps the sister-repo money_collect kernel via custom Python runner
+ * (handles JSON string→float coercion for value_table). Computes the
+ * cash-collection RTP contribution analytically (closed-form, GLI-19
+ * grade) instead of the heuristic Markov walker. Cache-backed so
+ * repeated calls on same model are instant. */
+const hwKernelBridgeTest = resolve(REPO, 'tests/contracts/holdandwin-kernel-bridge.test.mjs');
+if (existsSync(hwKernelBridgeTest)) {
+  run('B+ — H&W KERNEL BRIDGE (money_collect analytical RTP via Python runner)',
+    'node', [hwKernelBridgeTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
