@@ -144,13 +144,22 @@ function mdCellEscape(s) {
  * envelope (~30 chars of overhead). macOS HFS+/APFS allow 255-char
  * filename, so 80 + ~30 = 110 leaves runway for nested writes. */
 const SLUG_MAX_CHARS = 80;
+/* UQ-DEEP-D regression fix (INGEST-7): fallback used Date.now() which
+ * collides when two emoji-only PDF names degenerate in the same
+ * millisecond — second ingest overwrites first's dist/stress output.
+ * Use a deterministic SHA-1 of the original name so identical inputs
+ * always produce identical slugs (idempotency) and different inputs
+ * always produce different slugs (no race collision). */
 function slugify(name) {
-  return String(name || 'gdd')
+  const ascii = String(name || 'gdd')
     .toLowerCase()
     .replace(/\.[a-z0-9]+$/, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .slice(0, SLUG_MAX_CHARS) || 'gdd-' + Date.now();
+    .slice(0, SLUG_MAX_CHARS);
+  if (ascii && ascii !== 'gdd') return ascii;
+  const hash = createHash('sha1').update(String(name || ''), 'utf8').digest('hex').slice(0, 12);
+  return `gdd-${hash}`;
 }
 
 /* MD_FAILED_PDFS_CAP = 30 — top failed PDFs shown in the Markdown report.

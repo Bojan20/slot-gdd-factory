@@ -79,8 +79,19 @@ if (!filePath && !urlArg) {
 
 /* ── helpers ──────────────────────────────────────────────────────────── */
 
+/* UQ-DEEP-D regression fix (INGEST-1): timestamp in log prefix breaks
+ * stdout determinism — two consecutive ingests of the same input would
+ * produce different log streams just by HH:MM:SS. That breaks hash-
+ * based caching, diff-based audit, and the idempotency gate (which
+ * captures ingest stdout for some flows). Honor --verbose for the
+ * timestamp; default prefix is timestamp-free. */
+const VERBOSE = process.argv.includes('--verbose');
 function log(msg) {
-  console.log(`[ingest ${new Date().toISOString().slice(11, 19)}] ${msg}`);
+  if (VERBOSE) {
+    console.log(`[ingest ${new Date().toISOString().slice(11, 19)}] ${msg}`);
+  } else {
+    console.log(`[ingest] ${msg}`);
+  }
 }
 
 /**
@@ -124,12 +135,16 @@ async function fetchToTmp(url) {
   /* UQ-AUDIT fix: refuse non-https URLs (avoid plaintext / file://) and
      disallow redirect-chains (SSRF guard — attacker-controlled host
      could redirect from a known-good URL through open redirects to
-     internal endpoints). Manual redirect follow with hard cap. */
+     internal endpoints). Manual redirect follow with hard cap.
+     UQ-DEEP-D regression fix (INGEST-3): the comment said "refuse non-
+     https" but the guard ALSO accepted http: — a coffee-shop MitM could
+     swap the PDF payload on the wire. Tighten to https: only. Same for
+     redirect chain below. */
   let u;
   try { u = new URL(url); }
   catch (_) { throw new Error('bad URL: ' + url); }
-  if (u.protocol !== 'https:' && u.protocol !== 'http:') {
-    throw new Error('only http(s) URLs accepted (got ' + u.protocol + ')');
+  if (u.protocol !== 'https:') {
+    throw new Error('only https:// URLs accepted (got ' + u.protocol + ') — plain http is MitM-vulnerable');
   }
   const ext = extname(u.pathname) || '.pdf';
   const tmp = resolve(tmpdir(), 'ingest-' + randomUUID() + ext);
@@ -143,8 +158,8 @@ async function fetchToTmp(url) {
       if (!loc) throw new Error('redirect without Location header');
       if (++hops > 3) throw new Error('too many redirects (>3) from ' + url);
       const next = new URL(loc, u);
-      if (next.protocol !== 'https:' && next.protocol !== 'http:') {
-        throw new Error('redirect to non-http(s) protocol: ' + next.protocol);
+      if (next.protocol !== 'https:') {
+        throw new Error('redirect to non-https protocol: ' + next.protocol);
       }
       log(`  redirect ${hops}: ${next.href}`);
       res = await fetch(next.href, { signal: ctrl.signal, redirect: 'manual' });
@@ -212,12 +227,31 @@ function safeVerdict(raw, allowed = ['PASS', 'WARN', 'FAIL']) {
   return allowed.includes(v) ? v : 'UNKNOWN';
 }
 
+/* UQ-DEEP-D regression fix (INGEST-4): pdftotext was previously spawned
+ * with no timeout. A malicious PDF (recursive font cycle, decompression
+ * bomb, infinite loop in Type 3 font) could hang the child forever,
+ * blocking ingest indefinitely. Real PDFs extract in < 5s; cap at 30s
+ * to leave generous headroom while killing pathological inputs. */
+const PDFTOTEXT_TIMEOUT_MS = 30_000;
+const PDFTOTEXT_MAX_BUFFER = 64 * 1024 * 1024; /* 64 MB extracted text */
+
 function pdfToText(pdfPath) {
-  const r = spawnSync('pdftotext', ['-layout', pdfPath, '-'], { encoding: 'utf8' });
+  const r = spawnSync('pdftotext', ['-layout', pdfPath, '-'], {
+    encoding: 'utf8',
+    timeout: PDFTOTEXT_TIMEOUT_MS,
+    maxBuffer: PDFTOTEXT_MAX_BUFFER,
+  });
   /* UQ-FORTIFY7 #1 — also surface signal-killed children. r.status is
      null when the child was killed by a signal (SIGTERM/SIGKILL/SIGSEGV);
      the original `status !== 0` check silently treated that as failure
      but lost the signal information. */
+  if (r.error && r.error.code === 'ETIMEDOUT') {
+    throw new Error(`pdftotext timed out after ${PDFTOTEXT_TIMEOUT_MS}ms (likely corrupted or adversarial PDF)`);
+  }
+  if (r.signal === 'SIGTERM') {
+    /* spawnSync sends SIGTERM on timeout per Node docs. */
+    throw new Error(`pdftotext SIGTERM'd after ${PDFTOTEXT_TIMEOUT_MS}ms timeout`);
+  }
   if (r.signal) throw new Error('pdftotext killed by signal ' + r.signal);
   if (r.status !== 0) throw new Error('pdftotext failed: ' + (r.stderr || 'no stderr'));
   return r.stdout;
@@ -225,8 +259,27 @@ function pdfToText(pdfPath) {
 
 /* ── main ─────────────────────────────────────────────────────────────── */
 
+/* UQ-DEEP-D regression fix (INGEST-6): full source path leaks PII
+ * (home dir, username) and potentially vendor names from operator's
+ * desktop into dist/ingest/<slug>/ingest.log. Keep only the basename
+ * for the persisted log; --verbose can restore the full path for
+ * operator debugging. Internal cache key uses the full hash so this
+ * doesn't affect collision detection. */
+function _sanitizeSource(s) {
+  if (!s) return '(unknown)';
+  if (VERBOSE) return s;
+  try {
+    /* URL: keep host + last path segment; strip credentials, query. */
+    if (/^https?:\/\//i.test(s)) {
+      const u = new URL(s);
+      return `${u.protocol}//${u.host}/${basename(u.pathname)}`;
+    }
+  } catch { /* fallthrough */ }
+  return basename(s);
+}
+
 const summary = {
-  source: filePath || urlArg,
+  source: _sanitizeSource(filePath || urlArg),
   startedAt: new Date().toISOString(),
   steps: [],
 };
@@ -507,7 +560,16 @@ try {
         }
       } catch (e) {
         if (/PAR file >/.test(e.message)) throw e;
-        /* stat failures fall through to bridge for graceful skip. */
+        /* UQ-DEEP-D regression fix (INGEST-5): only swallow ENOENT
+         * (file genuinely missing). EACCES (permission denied), EISDIR
+         * (path points to directory), EMFILE (fd exhausted) etc. were
+         * silently swallowed before — operator saw an opaque skip with
+         * no actionable diagnostic. Surface those loudly. */
+        const code = e && e.code;
+        if (code && code !== 'ENOENT') {
+          throw new Error(`PAR stat failed (${code}): ${e.message}`);
+        }
+        /* ENOENT or no code → fall through to bridge for graceful skip. */
       }
       const { bridgeIngest } = await import(resolve(REPO, 'tools/par-sheet-bridge.mjs'));
       const opts = parSheet ? { sheet: parSheet } : {};
@@ -685,7 +747,8 @@ try {
              can leave the on-disk bits cached. Force the data and the
              enclosing directory through fsync before swapping so a
              crash never resurrects a half-written file. */
-          const tmpFile = cacheFile + '.tmp.' + process.pid;
+          /* INFRA-1 — entropy-based tmp suffix (see atomicWrite comment). */
+          const tmpFile = cacheFile + '.tmp.' + (await import('node:crypto')).randomBytes(8).toString('hex');
           const fh = await fsp.open(tmpFile, 'w');
           try {
             await fh.writeFile(JSON.stringify(cur, null, 2), 'utf8');
@@ -1054,8 +1117,15 @@ try {
         const gc = cleanupOrphanTmps([outDir]);
         if (gc.deleted > 0) log(`  gc: cleared ${gc.deleted} orphan tmp file(s) in ${outDir}`);
       } catch (_) { /* non-fatal — orphan tmp doesn't block this run */ }
+      /* UQ-DEEP-D regression fix (INFRA-1): tmp suffix was
+       * `.tmp.${process.pid}` which collides after PID space wraps on
+       * long-uptime systems. If a previous crash left an orphan
+       * `.tmp.1234`, a new process 1234 truncates and reuses the same
+       * tmp file without realizing. Replace pid with crypto randomBytes
+       * — 8 hex chars = 4 bytes entropy = 2^32 space, safe against
+       * concurrent collision and PID reuse. */
       async function atomicWrite(absPath, content) {
-        const tmp = absPath + '.tmp.' + process.pid;
+        const tmp = absPath + '.tmp.' + (await import('node:crypto')).randomBytes(8).toString('hex');
         const fh = await fsp.open(tmp, 'w');
         try {
           await fh.writeFile(content, 'utf8');
@@ -1108,7 +1178,19 @@ try {
       }
       summary.outDir = outDir;
       summary.finishedAt = new Date().toISOString();
-      await atomicWrite(resolve(outDir, 'ingest.log'), JSON.stringify(summary, null, 2));
+      /* UQ-DEEP-D regression fix (INGEST-2): startedAt/finishedAt make
+       * ingest.log non-deterministic across runs (wall-clock changes
+       * every invocation). The idempotency gate hashes ingest.log to
+       * detect silent model drift — without freezing, two identical
+       * runs would falsely flag drift. Strip timestamps from the
+       * persisted artifact; keep them on the in-memory `summary` for
+       * the post-ingest console line. Restore via --verbose for
+       * operator debugging. */
+      const persistedSummary = VERBOSE
+        ? summary
+        : { ...summary, startedAt: '__omitted_for_determinism__',
+                        finishedAt: '__omitted_for_determinism__' };
+      await atomicWrite(resolve(outDir, 'ingest.log'), JSON.stringify(persistedSummary, null, 2));
     } finally {
       if (lockTok) releaseLock(lockTok);
     }

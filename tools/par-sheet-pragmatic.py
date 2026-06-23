@@ -177,7 +177,7 @@ def extract(xlsx_path, sheet_name=None):
             v = ws.cell(row=r, column=rc).value
             try:
                 w = int(v) if v is not None else 0
-            except (ValueError, TypeError):
+            except (ValueError, TypeError, OverflowError):
                 w = 0
             # UQ-DEEP-C audit fix (D-HIGH-negative): negative weights
             # corrupt pHit() math (perReelSum can become 0 or negative),
@@ -191,7 +191,7 @@ def extract(xlsx_path, sheet_name=None):
             v = ws.cell(row=r, column=pc).value
             try:
                 pay = int(v) if v is not None else 0
-            except (ValueError, TypeError):
+            except (ValueError, TypeError, OverflowError):
                 pay = 0
             if pay > 0:
                 combos[cnt] = pay

@@ -86,6 +86,14 @@ const VENDOR_PATTERNS = [
 
 const DEFAULT_TARGETS = [
   'dist/real-games/*/slot.html',
+  /* UQ-DEEP-D regression fix (REGR-3): par.json was previously
+   * unscanned, so the UQ-DEEP-C sanitizeSignals/vendor-key fix in
+   * par-sheet-bridge.mjs was defensive-only — no gate enforced it.
+   * Adding both real-games and ingest sub-trees so the operator
+   * dashboard catches any future vendor leak (igt/pragmatic/lw) that
+   * might bypass the sanitizer. */
+  'dist/real-games/*/par.json',
+  'dist/ingest/*/par.json',
   'reports/par-sheets-*.md',
   'reports/par-sheets-*.csv',
   'reports/declared-vs-measured-audit.json',

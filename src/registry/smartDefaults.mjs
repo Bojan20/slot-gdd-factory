@@ -468,13 +468,20 @@ export function backfillFromArchetype(model) {
       const a = s.archetype;
       /* shallow clone so downstream mutation can't leak back into the
          frozen catalog entry. */
+      /* UQ-DEEP-D regression fix (INFRA-2): `.slice()` only clones the
+       * outer array — hook entries (typically objects with { event,
+       * priority, handler }) were shared by reference across model
+       * instances. Downstream mutation (e.g., buildSlotHTML appending
+       * runtime metadata to a hook) leaked into the frozen catalog
+       * entry, contaminating subsequent ingests. Deep-clone via
+       * JSON serialize so each ingest gets a private copy. */
       model._archetypeBackfill[kind] = {
         archetypeId: a.id,
         confidence: s.confidence,
         reason: s.reason,
         forceFlag: a.forceFlag,
         windowFlag: a.windowFlag,
-        hooks: Array.isArray(a.hooks) ? a.hooks.slice() : [],
+        hooks: Array.isArray(a.hooks) ? JSON.parse(JSON.stringify(a.hooks)) : [],
         state: a.stateShape && typeof a.stateShape === 'object'
           ? JSON.parse(JSON.stringify(a.stateShape))
           : {},

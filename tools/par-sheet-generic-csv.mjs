@@ -153,11 +153,31 @@ export function ingestCsv(filePath) {
    * stops at the comma and returns 0, silently truncating weights and
    * pays to zero. Normalize to dot form before parsing.
    *
-   * Also guard against negative weights (D-HIGH-negative parity with
-   * Python adapters) — negative weights produce nonsensical RTP and
-   * usually mean a sign-flip bug upstream. */
+   * UQ-DEEP-D regression fix (REGR-1): the naive `.replace(',', '.')`
+   * corrupts US-format thousand separators — `"1,234.56"` would become
+   * `"1.234.56"` and `parseFloat` then yields `1.234` (off by 1000×).
+   * Detect format by counting separators:
+   *   - comma+dot present  → US "1,234.56" — strip commas (thousands)
+   *   - multiple commas    → US "1,234,567" — strip commas (thousands)
+   *   - one comma, no dot  → EU "0,05"      — comma is decimal, swap
+   *   - else               → use as-is
+   * Also clamp negative weights to 0 (parity with Python adapters). */
   const localeNumber = (raw) => {
-    const s = String(raw || '').trim().replace(',', '.');
+    let s = String(raw || '').trim();
+    if (s === '') return 0;
+    const commaCount = (s.match(/,/g) || []).length;
+    const dotCount   = (s.match(/\./g) || []).length;
+    if (commaCount >= 1 && dotCount >= 1) {
+      /* US format with thousands separator: 1,234.56 */
+      s = s.replace(/,/g, '');
+    } else if (commaCount > 1 && dotCount === 0) {
+      /* US format without decimal: 1,234,567 */
+      s = s.replace(/,/g, '');
+    } else if (commaCount === 1 && dotCount === 0) {
+      /* EU format decimal: 0,05 */
+      s = s.replace(',', '.');
+    }
+    /* else: no commas, or 0 commas + N dots — leave untouched. */
     const f = parseFloat(s);
     if (!Number.isFinite(f)) return 0;
     if (f < 0) return 0; /* defensive — negative weights are invalid */
