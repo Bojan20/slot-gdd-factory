@@ -45,16 +45,24 @@ const CASH_ERUPTION = JSON.parse(readFileSync(
 
 /* ── (1) computeHoldAndWinKernelRtp returns structured result ─────────── */
 
-test('computeHoldAndWinKernelRtp returns { ok, rtpContribution, ... } shape', async () => {
+test('computeHoldAndWinKernelRtp returns { ok, rtpContribution, money/jackpot ... } shape', async () => {
   _resetCache();
   const r = await computeHoldAndWinKernelRtp(CASH_ERUPTION);
   assert(typeof r === 'object', 'should be object');
   assert(typeof r.ok === 'boolean', 'ok should be boolean');
   if (r.ok) {
     assert(typeof r.rtpContribution === 'number', 'rtpContribution should be number');
-    assert(typeof r.triggerProb === 'number', 'triggerProb should be number');
-    assert(typeof r.expectedValuePerMoney === 'number', 'expectedValuePerMoney should be number');
-    assert(typeof r.expectedTotalPerEpisode === 'number', 'expectedTotalPerEpisode should be number');
+    /* COMPOSITE: money + jackpot components. */
+    assert(typeof r.moneyComponent === 'object', 'moneyComponent should be object');
+    assert(typeof r.moneyComponent.rtp_contribution === 'number', 'money rtp_contribution');
+    assert(typeof r.jackpotComponent === 'object', 'jackpotComponent should be object');
+    assert(typeof r.jackpotComponent.rtp_contribution === 'number', 'jackpot rtp_contribution');
+    assert(r.jackpotComponent.pots_count === 4, `jackpot 4 tiers, got ${r.jackpotComponent.pots_count}`);
+    /* Total = money + jackpot. */
+    const epsilon = 1e-9;
+    const expectedTotal = r.moneyComponent.rtp_contribution + r.jackpotComponent.rtp_contribution;
+    assert(Math.abs(r.rtpContribution - expectedTotal) < epsilon,
+      `total ${r.rtpContribution} != money+jackpot ${expectedTotal}`);
     assert(r.kernelEngine === 'python-kernel', `kernelEngine: ${r.kernelEngine}`);
   } else {
     assert(typeof r.reason === 'string', 'reason should be string when !ok');

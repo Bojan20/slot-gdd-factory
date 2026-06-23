@@ -149,14 +149,16 @@ export async function computeHoldAndWinKernelRtp(model) {
     return r;
   }
   const fullParams = _modelToKernelParams(model);
-  /* Sister-repo CLI runner does NOT coerce JSON string keys to floats for
-   * value_table. Use our custom wrapper (tools/_kernel-money-collect-runner.py)
-   * which coerces keys + invokes the kernel function directly. */
+  /* 2026-06-23 — COMPOSITE upgrade: now call the full hold_and_win kernel
+   * (money_collect + must_hit_by jackpot tiers) via the composite runner
+   * which handles nested dataclass instantiation + string-key coercion.
+   * Returns BOTH money_component (cash collection) AND jackpot_component
+   * (4-tier mini/minor/major/grand). Total rtp_contribution is the sum. */
   const tmpDir = join(tmpdir(), 'hw-kernel-bridge');
   mkdirSync(tmpDir, { recursive: true });
-  const cfgPath = join(tmpDir, `mc-${process.pid}-${Date.now()}.json`);
-  writeFileSync(cfgPath, JSON.stringify(fullParams.money_params), 'utf8');
-  const runnerPath = resolve(REPO, 'tools/_kernel-money-collect-runner.py');
+  const cfgPath = join(tmpDir, `hw-${process.pid}-${Date.now()}.json`);
+  writeFileSync(cfgPath, JSON.stringify(fullParams), 'utf8');
+  const runnerPath = resolve(REPO, 'tools/_kernel-hold-and-win-runner.py');
   const env = {
     ...process.env,
     PYTHONPATH: join(detect.kernelsDir, 'src'),
@@ -188,14 +190,17 @@ export async function computeHoldAndWinKernelRtp(model) {
   }
   const r = {
     ok: true,
-    /* money_collect returns rtp_contribution as the cash-collection share. */
+    /* hold_and_win returns total rtp_contribution = money + jackpot. */
     rtpContribution: out.rtp_contribution,
-    triggerProb: out.trigger_p,
-    expectedValuePerMoney: out.expected_value_per_money,
-    expectedTotalPerEpisode: out.expected_total_per_episode,
-    note: 'cash-collection only — jackpot tiers excluded until composite-CLI wrapper lands',
+    /* Component breakdown for audit. */
+    moneyComponent: out.money_component,
+    jackpotComponent: out.jackpot_component,
+    /* Convenience flat fields (back-compat with prior money-only API). */
+    triggerProb: out.money_component?.trigger_p,
+    expectedValuePerMoney: out.money_component?.expected_value_per_money,
+    expectedTotalPerEpisode: out.money_component?.expected_total_per_episode,
     kernelEngine: 'python-kernel',
-    params: fullParams.money_params,
+    params: fullParams,
   };
   _cache.set(key, r);
   return r;
