@@ -682,6 +682,17 @@ if (existsSync(slingoEvalTest)) {
     'node', [slingoEvalTest]);
 }
 
+/* ── Step 4.97y6.6: D+4 — Slingo closed-form analytical RTP bridge
+ * Local JS closed-form kernel (sister-repo doesn't ship slingo). Same
+ * API shape as cluster_pays + hold_and_win bridges so operators consume
+ * uniformly via --kernel-preflight. Closes "BLOCKED — sister-repo nema
+ * slingo modul" item from 020bce1 backlog sweep. */
+const slingoKernelTest = resolve(REPO, 'tests/contracts/slingo-kernel-bridge.test.mjs');
+if (existsSync(slingoKernelTest)) {
+  run('D+4 — SLINGO kernel bridge (analytical RTP closed-form)',
+    'node', [slingoKernelTest]);
+}
+
 /* ── Step 4.97y7: HYB-4 — Vendor PAR adapters (Pragmatic + L&W)
  * Synthetic xlsx fixtures with vendor-specific headers (Spanish Rodillo,
  * STRIP_/SYM) → verify both adapters parse + emit canonical ParSheet
@@ -709,6 +720,17 @@ const componentInvariantTest = resolve(REPO, 'tests/contracts/probe-component-in
 if (existsSync(componentInvariantTest)) {
   run('B++++ — PROBE component invariant (sum ≈ rawMeasuredRTP)',
     'node', [componentInvariantTest]);
+}
+
+/* ── Step 4.97y10: B+++++ — Extra sister-repo kernel bridges
+ * expanding_symbol (Book-style FS expansion) + sticky_wilds (respin chain)
+ * — both wrapped via custom Python runners that handle dict[int, float]
+ * coercion. Brings total live kernels to 5 (money_collect, hold_and_win
+ * composite, cluster_pays, expanding_symbol, sticky_wilds). */
+const extraKernelTest = resolve(REPO, 'tests/contracts/extra-kernel-bridges.test.mjs');
+if (existsSync(extraKernelTest)) {
+  run('B+++++ — EXTRA KERNEL BRIDGES (expanding_symbol + sticky_wilds)',
+    'node', [extraKernelTest]);
 }
 
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
