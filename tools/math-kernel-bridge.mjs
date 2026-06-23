@@ -39,6 +39,7 @@ import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
+import { isAuditEnabled, logKernelCall } from './kernel-audit-logger.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -86,12 +87,27 @@ export function detectKernelEngine() {
  * @returns {Promise<object>} kernel JSON output (or { engine: 'unavailable', ... })
  */
 export async function callKernel(kernelName, params = {}) {
+  /* N4 audit: zero-cost when env not set. Captured here for early-return
+   * paths too (unknown kernel, unavailable engine). */
+  const auditOn = isAuditEnabled();
+  const t0 = auditOn ? performance.now() : 0;
+  const emit = (ok, engineMode, errorReason) => {
+    if (!auditOn) return;
+    logKernelCall({
+      kernel: kernelName, params, ok, engineMode,
+      latencyMs: performance.now() - t0,
+      errorReason: errorReason || null,
+    });
+  };
+
   if (!KNOWN_KERNELS.includes(kernelName)) {
+    emit(false, 'error', `unknown kernel: ${kernelName}`);
     return { engine: 'error', reason: `unknown kernel: ${kernelName}`,
              knownKernels: KNOWN_KERNELS };
   }
   const detect = detectKernelEngine();
   if (!detect.available) {
+    emit(false, 'unavailable', detect.reason);
     return { engine: 'unavailable', reason: detect.reason };
   }
   /* Write params to temp JSON for IPC (safer than CLI arg encoding). */
@@ -114,9 +130,11 @@ export async function callKernel(kernelName, params = {}) {
     { encoding: 'utf8', env, timeout: 30_000 });
 
   if (proc.error) {
+    emit(false, 'error', `python spawn failed: ${proc.error.message}`);
     return { engine: 'error', reason: `python spawn failed: ${proc.error.message}` };
   }
   if (proc.status !== 0) {
+    emit(false, 'error', `kernel exit ${proc.status}`);
     return { engine: 'error', reason: `kernel exit ${proc.status}: ${(proc.stderr || '').slice(0, 500)}` };
   }
   /* Parse stdout as JSON. CLI may emit human-readable lines BEFORE the JSON
@@ -124,14 +142,24 @@ export async function callKernel(kernelName, params = {}) {
   const stdout = (proc.stdout || '').trim();
   try {
     /* Try direct JSON parse first. */
-    return { engine: 'python-kernel', kernel: kernelName, result: JSON.parse(stdout) };
+    const out = { engine: 'python-kernel', kernel: kernelName, result: JSON.parse(stdout) };
+    emit(true, 'python-kernel', null);
+    return out;
   } catch (_) {
     /* Find last JSON object in stdout. */
     const m = stdout.match(/\{[\s\S]*\}$/);
     if (m) {
-      try { return { engine: 'python-kernel', kernel: kernelName, result: JSON.parse(m[0]) }; }
-      catch (e2) { return { engine: 'error', reason: `JSON parse failed: ${e2.message}`, raw: stdout.slice(0, 500) }; }
+      try {
+        const out = { engine: 'python-kernel', kernel: kernelName, result: JSON.parse(m[0]) };
+        emit(true, 'python-kernel', null);
+        return out;
+      }
+      catch (e2) {
+        emit(false, 'error', `JSON parse failed: ${e2.message}`);
+        return { engine: 'error', reason: `JSON parse failed: ${e2.message}`, raw: stdout.slice(0, 500) };
+      }
     }
+    emit(true, 'python-kernel', null);
     return { engine: 'python-kernel', kernel: kernelName, result: { raw: stdout } };
   }
 }

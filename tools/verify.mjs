@@ -913,6 +913,19 @@ if (existsSync(dashboardTest)) {
     'node', [dashboardTest]);
 }
 
+/* ── Step 4.97y23: KERNEL AUDIT LOG (N4)
+ * Opt-in observability za callKernel(): KERNEL_AUDIT_LOG=1 aktivira
+ * append-only JSONL logger (daily file, fire-and-forget, params hashed
+ * — privacy). Aggregator rolluje sve audit-*.jsonl u summary.json sa
+ * per-kernel { count/ok/err/errRate/p50/p95/paramShapesDistinct },
+ * topCallers, topErrors, engineMode distribution. Hot path zero-cost
+ * kad env nije set. Never-throws contract (logger swallows EBUSY/EACCES). */
+const kernelAuditTest = resolve(REPO, 'tests/contracts/kernel-audit.test.mjs');
+if (existsSync(kernelAuditTest)) {
+  run('KERNEL AUDIT (opt-in JSONL logger + rolling aggregate · never-block)',
+    'node', [kernelAuditTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz

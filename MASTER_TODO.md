@@ -1,4 +1,4 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-23 11:01 UTC (kandidati za sledeću sesiju)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-23 11:20 UTC (kandidati za sledeću sesiju)
 
 Sve glavne grane backlog-a su zatvorene (MATH + Expert P1/P2/P3). Ovo
 su preostale **nice-to-have** stavke + nova ideja koja se kristalisala
@@ -47,9 +47,26 @@ tokom sesije. Boki bira — nije obavezna.
 │    │    escape, round-trip JSON, file size, compare picker)       │        │           │
 │    │  - Verify gate step 4.97y22                                   │        │           │
 ├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
-│ N4 │ Kernel call audit log (rolling)                              │  ~2h   │ MED       │
-│    │ Svaki bridge call → log sa input hash + output + ms +        │        │ ops       │
-│    │ result. Pratiti koje kernels su pozivani + error rates       │        │           │
+│ N4 │ Kernel call audit log (rolling)                              │  ~2h   │ ✅ DONE   │
+│    │  - tools/kernel-audit-logger.mjs — opt-in (KERNEL_AUDIT_LOG)  │        │           │
+│    │  - Hot-path zero-cost kad env nije set                       │        │           │
+│    │  - Fire-and-forget appendFile, never-throws (EBUSY/EACCES     │        │           │
+│    │    swallow), params hash-ed (sha256 12 hex — privacy)        │        │           │
+│    │  - Daily JSONL: reports/kernel-audit/audit-YYYY-MM-DD.jsonl  │        │           │
+│    │  - tools/kernel-audit-aggregate.mjs — rolluje sve fajlove    │        │           │
+│    │  - Per-kernel: count/ok/err/errRate/p50/p95/shapes/lastTs    │        │           │
+│    │  - Top callers + top errors + engineMode distribution         │        │           │
+│    │  - ASCII summary (box-drawing per HARD RULE #3) + JSON       │        │           │
+│    │  - --prune <days> housekeeping za rolling retention          │        │           │
+│    │  - Wired u math-kernel-bridge.callKernel(): early-return     │        │           │
+│    │    paths captured (unknown kernel, unavailable engine, JSON  │        │           │
+│    │    parse fail)                                                │        │           │
+│    │  - Test: 16/16 PASS (hash determinism, env gate, never-throws│        │           │
+│    │    , percentile math, errRate math, shapes count, end-to-end │        │           │
+│    │    via tmp dir, malformed JSONL skip, real JSONL write back) │        │           │
+│    │  - Live verified: 3 callKernel poziva → 3 audit entries →     │        │           │
+│    │    aggregate čita + ASCII summary + summary.json              │        │           │
+│    │  - Verify gate step 4.97y23                                  │        │           │
 ├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
 │ N5 │ Performance benchmark suite                                  │  ~2h   │ LOW       │
 │    │ Meri ms po kernelu, scatter "RTP vs latency". Identifikuje   │        │ dev       │
