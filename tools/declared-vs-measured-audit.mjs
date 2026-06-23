@@ -65,8 +65,21 @@ function findLatestReport() {
 
 /* ── Verdict classifier ──────────────────────────────────────────────── */
 
-function classify(rtpDelta) {
+/**
+ * Classify per-game RTP convergence.
+ *
+ * @param {number|null} rtpDelta — measured - declared, in pp
+ * @param {boolean} [isSynthetic=false] — true if declared came from
+ *                  synthetic-fallback (PDF lacked explicit RTP). Such
+ *                  declared is non-binding — audit should NOT classify
+ *                  as DIVERGED on this basis alone.
+ */
+function classify(rtpDelta, isSynthetic = false) {
   if (!Number.isFinite(rtpDelta)) return 'UNKNOWN';
+  /* P1 fix (2026-06-23) — synthetic-fallback declared is non-binding.
+   * Operator knows the GDD lacked explicit RTP; probe used industry
+   * baseline. Don't blame the probe for divergence vs a placeholder. */
+  if (isSynthetic) return 'NON_BINDING';
   const absDelta = Math.abs(rtpDelta);
   if (absDelta <= CONVERGED_PP) return 'CONVERGED';
   if (absDelta <= CLOSE_PP)     return 'CLOSE';
@@ -74,10 +87,11 @@ function classify(rtpDelta) {
 }
 
 const VERDICT_BADGE = {
-  CONVERGED: '✓',
-  CLOSE:     '~',
-  DIVERGED:  '✗',
-  UNKNOWN:   '?',
+  CONVERGED:   '✓',
+  CLOSE:       '~',
+  DIVERGED:    '✗',
+  UNKNOWN:     '?',
+  NON_BINDING: '◌',
 };
 
 /* ── Audit builder ───────────────────────────────────────────────────── */
@@ -87,19 +101,23 @@ function buildAudit(reportPayload, reportFile) {
   const rows = games
     .filter(g => g.ok !== false)
     .map(g => {
-      const verdict = classify(g.rtpDelta);
+      const isSynthetic = !!g.declaredRTPIsSynthetic;
+      const verdict = classify(g.rtpDelta, isSynthetic);
       return {
         slug: g.slug,
         topology: g.topology || 'unknown',
         declaredRTP: g.declaredRTP,
+        declaredRTPSource: g.declaredRTPSource ?? null,
+        declaredRTPIsSynthetic: isSynthetic,
         measuredRTP: g.measuredRTP,
         rtpDelta:    g.rtpDelta,
         verdict,
       };
     });
   /* Aggregate verdict counts. */
-  const verdictCounts = { CONVERGED: 0, CLOSE: 0, DIVERGED: 0, UNKNOWN: 0 };
+  const verdictCounts = { CONVERGED: 0, CLOSE: 0, DIVERGED: 0, UNKNOWN: 0, NON_BINDING: 0 };
   for (const r of rows) verdictCounts[r.verdict]++;
+  /* Portfolio verdict — NON_BINDING does NOT escalate (it's audit-only). */
   const portfolioVerdict = verdictCounts.DIVERGED > 0 ? 'DIVERGED'
     : verdictCounts.CLOSE > 0 ? 'CLOSE'
     : verdictCounts.UNKNOWN > 0 ? 'UNKNOWN'
@@ -120,6 +138,7 @@ function renderAudit(audit) {
   lines.push(`Declared vs Measured RTP audit (source: ${audit.reportFile})`);
   lines.push('');
   lines.push(`  Precision bands: ±${CONVERGED_PP}pp = CONVERGED · ±${CLOSE_PP}pp = CLOSE · else DIVERGED`);
+  lines.push(`  Non-binding: declared via synthetic-fallback (PDF lacked RTP) → ◌ NON_BINDING`);
   lines.push('');
   const slugCol = 28;
   lines.push('  ' + 'Game'.padEnd(slugCol) + ' │ Topology    │ Declared │ Measured │ ΔRTP   │ Verdict');
@@ -143,6 +162,9 @@ function renderAudit(audit) {
   lines.push(`    Diverged:    ${audit.verdictCounts.DIVERGED}/${audit.rows.length}`);
   if (audit.verdictCounts.UNKNOWN > 0) {
     lines.push(`    Unknown:     ${audit.verdictCounts.UNKNOWN}/${audit.rows.length} (missing delta)`);
+  }
+  if (audit.verdictCounts.NON_BINDING > 0) {
+    lines.push(`    Non-binding: ${audit.verdictCounts.NON_BINDING}/${audit.rows.length} (synthetic-fallback declared, audit-only)`);
   }
   return lines.join('\n');
 }

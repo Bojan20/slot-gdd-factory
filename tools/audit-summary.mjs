@@ -141,8 +141,10 @@ async function buildAuditSummary(slugs = BASELINE_SLUGS) {
   const matrix    = buildSection_matrix(slugs);
   const portfolio = await buildSection_portfolio(slugs);
   const verdict   = buildSection_verdict();
-  /* Overall PRODUCTION verdict: GREEN (all converged + 100% coverage ok),
-   * AMBER (close/unknown OR partial coverage), RED (any DIVERGED). */
+  /* Overall PRODUCTION verdict: GREEN (all converged or non-binding +
+   * 100% coverage ok), AMBER (close/unknown OR partial coverage), RED
+   * (any DIVERGED). NON_BINDING games (synthetic-fallback declared) do
+   * NOT escalate verdict — they're audit-only since PDF lacked RTP. */
   const overallVerdict = (() => {
     if (verdict.ok && verdict.portfolioVerdict === 'DIVERGED') return 'RED';
     if (coverage.gamesOk < coverage.gamesWalked) return 'AMBER';

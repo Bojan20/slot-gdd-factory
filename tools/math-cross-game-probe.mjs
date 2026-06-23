@@ -238,6 +238,8 @@ export function generateComparativeReport(slugs, opts = {}) {
       topologyKind: topoKind,
       measuredRTP: rep.measuredRTP,
       declaredRTP: rep.declaredRTP,
+      declaredRTPSource: rep.declaredRTPSource ?? null,
+      declaredRTPIsSynthetic: rep.declaredRTPIsSynthetic ?? false,
       rtpDelta: rep.rtpDelta,
       measuredHF: rep.measuredHF,
       declaredHF: rep.declaredHF,

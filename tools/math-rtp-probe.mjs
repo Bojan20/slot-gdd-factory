@@ -505,6 +505,24 @@ const rawMeasuredRTP = totalBet > 0 ? (totalWin / totalBet) * 100 : 0;
 
 const declaredRTP = model.payback?.rtp ?? null;
 const declaredHF = model.payback?.hitFrequency ?? null;
+/* P1 fix (2026-06-23) — surface declared RTP provenance. When parser
+ * uses synthetic-fallback (PDF lacked explicit RTP top-line), audit
+ * tools must NOT treat the fallback as a binding target — UNLESS the
+ * GDD provides corroborating real data (rtpVariants array OR a
+ * componentized rtpBreakdown). Those signals confirm the parser found
+ * REAL declared structure even if the top-line scalar was synthesized. */
+const rawSource = model.payback?.rtpSource ?? (declaredRTP != null ? 'parsed' : null);
+const hasRtpVariants = Array.isArray(model.payback?.rtpVariants) && model.payback.rtpVariants.length > 0;
+const hasRtpBreakdown = model.payback?.rtpBreakdown
+  && typeof model.payback.rtpBreakdown === 'object'
+  && Object.keys(model.payback.rtpBreakdown).length > 0;
+const corroborated = hasRtpVariants || hasRtpBreakdown;
+const declaredRTPSource = (typeof rawSource === 'string' && rawSource.startsWith('synthetic-fallback') && corroborated)
+  ? `${rawSource}+corroborated`
+  : rawSource;
+const declaredRTPIsSynthetic = typeof declaredRTPSource === 'string'
+  && declaredRTPSource.startsWith('synthetic-fallback')
+  && !corroborated;
 
 /* Fix #1 (2026-06-23) — TEMPLATE-WIDE auto-RTP-clamp for lines-topology
  * generic-pool simulation. Probe's line evaluator over-counts compared to
@@ -591,6 +609,8 @@ const summary = {
   autoHfClampApplied,
   autoHfClampFactor: +autoHfClampFactor.toFixed(4),
   declaredRTP, declaredHF,
+  declaredRTPSource,
+  declaredRTPIsSynthetic,
   rtpDelta: declaredRTP != null ? +(measuredRTP - declaredRTP).toFixed(2) : null,
   hfDelta:  declaredHF  != null ? +(measuredHFClamped - declaredHF).toFixed(2)  : null,
   longestLosingStreak,

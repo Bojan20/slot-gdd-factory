@@ -52,6 +52,15 @@ test('classify returns UNKNOWN for null/undefined/NaN', () => {
   assert(classify(NaN) === 'UNKNOWN', 'NaN → UNKNOWN');
 });
 
+test('classify returns NON_BINDING when isSynthetic=true (any delta)', () => {
+  /* Synthetic-fallback declared is non-binding — operator knows the
+   * GDD lacked explicit RTP. Audit should NOT classify as DIVERGED. */
+  assert(classify(0, true) === 'NON_BINDING', '0 + synthetic → NON_BINDING');
+  assert(classify(2.5, true) === 'NON_BINDING', '2.5 + synthetic → NON_BINDING');
+  assert(classify(-5, true) === 'NON_BINDING', '-5 + synthetic → NON_BINDING');
+  assert(classify(null, true) === 'UNKNOWN', 'null still UNKNOWN even if synthetic');
+});
+
 test('buildAudit returns expected shape', () => {
   const payload = {
     games: [
@@ -68,6 +77,33 @@ test('buildAudit returns expected shape', () => {
   assert(a.verdictCounts.CONVERGED === 1, '1 converged');
   assert(a.verdictCounts.CLOSE === 1, '1 close');
   assert(a.verdictCounts.DIVERGED === 1, '1 diverged');
+});
+
+test('buildAudit honors declaredRTPIsSynthetic → NON_BINDING', () => {
+  const payload = {
+    games: [
+      { slug: 'real',  ok: true, declaredRTP: 96, measuredRTP: 90, rtpDelta: -6, declaredRTPIsSynthetic: false },
+      { slug: 'synth', ok: true, declaredRTP: 96, measuredRTP: 90, rtpDelta: -6, declaredRTPIsSynthetic: true },
+    ],
+  };
+  const a = buildAudit(payload, 'test.json');
+  assert(a.rows[0].verdict === 'DIVERGED', 'real → DIVERGED');
+  assert(a.rows[1].verdict === 'NON_BINDING', 'synth → NON_BINDING (same delta)');
+  /* portfolioVerdict should be DIVERGED (one real diverged), not NON_BINDING. */
+  assert(a.portfolioVerdict === 'DIVERGED', 'portfolio still DIVERGED if any real');
+});
+
+test('portfolioVerdict CONVERGED when only CONVERGED + NON_BINDING rows', () => {
+  const payload = {
+    games: [
+      { slug: 'a', ok: true, declaredRTP: 96, measuredRTP: 96, rtpDelta: 0, declaredRTPIsSynthetic: false },
+      { slug: 'b', ok: true, declaredRTP: 96, measuredRTP: 90, rtpDelta: -6, declaredRTPIsSynthetic: true },
+    ],
+  };
+  const a = buildAudit(payload);
+  assert(a.portfolioVerdict === 'CONVERGED',
+    `synthetic non-binding shouldn't escalate, got ${a.portfolioVerdict}`);
+  assert(a.verdictCounts.NON_BINDING === 1, '1 non-binding');
 });
 
 test('portfolioVerdict escalates DIVERGED > CLOSE > UNKNOWN > CONVERGED', () => {

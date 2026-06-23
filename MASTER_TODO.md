@@ -1,3 +1,36 @@
+## 🎯 EXPERT RECOMMENDATION PLAN — 2026-06-23 07:08 UTC
+
+Boki pitanje: *"sta predlazes kao ekspert?"* → moje 3 stvarno vredne stvari,
+sve ostalo je kozmetika:
+
+```
+┌────┬──────────────────────────────────────────────────────────────┬───────┬───────────┐
+│  # │ Predlog                                                       │ ROI   │ Status     │
+├────┼──────────────────────────────────────────────────────────────┼───────┼───────────┤
+│ P1 │ Zatvori AMBER → GREEN: NON_BINDING verdict za synthetic       │ HIGH  │ ✅ DONE    │
+│    │  - Probe sad emit declaredRTPSource + declaredRTPIsSynthetic   │       │            │
+│    │  - Audit classifier dodao NON_BINDING bucket za synth-fallback│       │            │
+│    │  - PortfolioVerdict ne escalates na NON_BINDING                │       │            │
+│    │  - Wrath sad ◌ NON_BINDING (PDF nema RTP — honest)            │       │            │
+│    │  - Cash-eruption ✓ CONVERGED (synth-fallback corroborated     │       │            │
+│    │    sa rtpVariants/rtpBreakdown — promovisan u real declared)  │       │            │
+│    │  - Overall verdict: 🟢 GREEN                                   │       │            │
+│ P2 │ Honest convergence run u CI (bez --auto-clamp)                │ HIGH  │ 📋 NEXT    │
+│    │ — trenutno 0pp delta je artifact auto-clamp-a                  │       │            │
+│    │ — bez clamp-a vidimo pravu probe-vs-declared konvergenciju     │       │            │
+│ P3 │ Anti-vendor lint kao live verify step                          │ MED   │ 📋 NEXT    │
+│    │ — jednokratan purge urađen, sledeći leak prolazi tiho          │       │            │
+└────┴──────────────────────────────────────────────────────────────┴───────┴───────────┘
+```
+
+**Nice-to-have (low ROI, NE radim sada):**
+- GDD one-pager za regulator
+- Side-by-side compare 2 games
+- Web UI dashboard
+- Performance benchmark
+
+---
+
 ## 🧭 MASTER STATUS — 2026-06-23 07:05 UTC · slot-gdd-factory
 
 ```
@@ -8,7 +41,7 @@
 │  Sister-repo kernels: 22/22 bridged (20 forward + 2 solvers)                  │
 │  Operator-facing tools (sesija 2026-06-23): 8 new (4 audit, 1 registry,       │
 │    1 CLI, 1 coverage, 1 matrix)                                                │
-│  Audit overall verdict: 🟡 AMBER (wrath fali declared RTP — data signal)      │
+│  Audit overall verdict: 🟢 GREEN (P1 zatvoren — NON_BINDING bucket dodat)    │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
