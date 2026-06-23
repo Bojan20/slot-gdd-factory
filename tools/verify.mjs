@@ -607,6 +607,48 @@ if (existsSync(onboardingTest)) {
     'node', [onboardingTest]);
 }
 
+/* ── Step 4.97y: RENDER-INTEG-A · parser-fields → slot.html parity
+ * Wave RENDER-INTEG-A (2026-06-23): verifies MATH-DEEP D-series parser
+ * fields (compliance, rtpBreakdown, scatter.payTable, expandingWild
+ * .onlyIfWinning) actually surface in rendered slot.html via the
+ * gddRuntimeMeta block. Closes the gap where parser silently adds fields
+ * but render never propagates them. */
+const renderIntegATest = resolve(REPO, 'tests/contracts/render-parser-fields-integration.test.mjs');
+if (existsSync(renderIntegATest)) {
+  run('RENDER-INTEG-A parser-fields → slot.html (5 baselines × 6 checks)',
+    'node', [renderIntegATest]);
+}
+
+/* ── Step 4.97y2: A — render-new-fields contract (block pipeline aware)
+ * 11 sub-tests: Cash Eruption compliance/patternWin/holdAndWin/expandingWild
+ * emit, 5 baselines build, random non-baseline builds, synthetic model
+ * with full D-9..D-17 fields renders. */
+const renderTest = resolve(REPO, 'tests/contracts/render-new-fields.test.mjs');
+if (existsSync(renderTest)) {
+  run('A — RENDER new-fields contract (slot.html consumes parser additions)',
+    'node', [renderTest]);
+}
+
+/* ── Step 4.97y3: C — ingest E2E contract (PDF to playable slot.html)
+ * One-command pipeline: PDF on disk → ingest.mjs --no-llm → raw.txt +
+ * model.json (schema-valid) + index.html (renderable). Idempotent. */
+const ingestE2ETest = resolve(REPO, 'tests/contracts/ingest-e2e.test.mjs');
+if (existsSync(ingestE2ETest)) {
+  run('C — INGEST E2E contract (PDF → playable slot.html, idempotent)',
+    'node', [ingestE2ETest]);
+}
+
+/* ── Step 4.97y4: B — sister-repo Python kernel bridge handshake
+ * Verifies tools/math-kernel-bridge.mjs can reach the sister-repo
+ * (slot-math-engine-template/packages/slot-math-kernels/) and execute
+ * deterministic Python kernels via JSON IPC. Graceful skip when sister
+ * repo unavailable in CI. Live: 22 kernel modules callable. */
+const kernelBridgeTest = resolve(REPO, 'tests/contracts/math-kernel-bridge.test.mjs');
+if (existsSync(kernelBridgeTest)) {
+  run('B — MATH KERNEL BRIDGE contract (sister-repo Python kernel handshake)',
+    'node', [kernelBridgeTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
