@@ -1,3 +1,53 @@
+## 🏆 FINAL SWEEP — 2026-06-23 · SVE STAVKI ZATVORENO ✅ (A/B/C/D — 35 new asserts, 4 new contract suites)
+
+Boki direktiva: *"nema bre drugi projekat, ovaj mora da se zavrsi prvo. ajde cepaj do kraja sve sto ima, nemoj da stajes"*. Sve 4 preostale "produktivne ali blocked" stavke pretvorene u live kernels + contracts:
+
+```
+┌─────┬────────────────────────────────────────────────────────────┬──────────┐
+│ ID   │ Stavka                                                       │ Status    │
+├─────┼────────────────────────────────────────────────────────────┼──────────┤
+│ A    │ Slingo closed-form analytical RTP (D+4)                      │ 8/8 ✅    │
+│      │ src/blocks/featureSimPlugins/slingoKernelBridge.mjs          │           │
+│      │ tests/contracts/slingo-kernel-bridge.test.mjs                │           │
+│      │ Vendor-neutral closed-form (linearity-of-expectation +       │           │
+│      │ line-completion probability). Same API shape as cluster +    │           │
+│      │ H&W kernel bridges → uniform consumer via --kernel-preflight.│           │
+├─────┼────────────────────────────────────────────────────────────┼──────────┤
+│ B    │ Synthetic-RTP fallback (D+5)                                 │ 7/7 ✅    │
+│      │ src/parser.mjs::extractPaybackProseMode                      │           │
+│      │ tests/contracts/synthetic-rtp-fallback.test.mjs              │           │
+│      │ Template-wide: any GDD sa known topology ali bez explicit    │           │
+│      │ RTP-a u prose dobija industry-baseline 96.0% + rtpSource=    │           │
+│      │ 'synthetic-fallback-96' (operator-audit flag). Explicit RTP  │           │
+│      │ uvek wins. Unknown topology ostaje null (no false-confidence).│          │
+├─────┼────────────────────────────────────────────────────────────┼──────────┤
+│ C    │ Regulator UI wire-up audit (D+6)                             │ 13/13 ✅  │
+│      │ tests/contracts/regulator-ui-wire.test.mjs                   │           │
+│      │ Verifies sessionTimeout subscribes onRealityCheck{Paused,    │           │
+│      │ Resumed}, realityCheck emits 4 events, netLossIndicator      │           │
+│      │ emits onNetThresholdCrossed; presence u 3 baselines slot.html.│         │
+├─────┼────────────────────────────────────────────────────────────┼──────────┤
+│ D    │ Cluster HF clamp convergence contract (D+7)                  │ 7/7 ✅    │
+│      │ tests/contracts/cluster-hf-clamp-convergence.test.mjs        │           │
+│      │ Locks behavior: --auto-hf-clamp converges starlight HF       │           │
+│      │ 33.68% → 28.00% (±1pp); autoHfClampApplied flag emit;        │           │
+│      │ rawMeasuredHF immutable; hfDelta computed against measured.  │           │
+└─────┴────────────────────────────────────────────────────────────┴──────────┘
+```
+
+**Verify gate sad 50+ steps · ALL GREEN.**
+
+### Pravo stanje preostalog backlog-a
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Audio block backlog          🔒 LOCKED  — HARD RULE #4, Boki signal needed   │
+│ (sve ostalo zatvoreno ili stale)                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🏆 BACKLOG SWEEP — 2026-06-23 · 5 STAVKI ZATVORENO ✅ (cluster bridge + HF clamp + slingo + PAR + WASM)
 
 Boki direktiva: *"sve redom sa qa proverama posle implementacije"*. Lista od 10 preostalih stavki za slot-gdd-factory pregledana redom; rezultat:

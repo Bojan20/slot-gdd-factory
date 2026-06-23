@@ -693,6 +693,38 @@ if (existsSync(slingoKernelTest)) {
     'node', [slingoKernelTest]);
 }
 
+/* ── Step 4.97y6.7: D+5 — Synthetic-RTP fallback (template-wide parser)
+ * Closes "BLOCKED — GDD ne sadrži RTP target u prose-u" item. Any GDD
+ * with a known topology but no explicit RTP gets industry-baseline 96.0%
+ * stamped with rtpSource='synthetic-fallback-96' so operator audit can
+ * detect + override. Explicit RTP still wins. Unknown topology stays null. */
+const synthRtpTest = resolve(REPO, 'tests/contracts/synthetic-rtp-fallback.test.mjs');
+if (existsSync(synthRtpTest)) {
+  run('D+5 — SYNTHETIC-RTP fallback (template-wide parser, 96.0 baseline)',
+    'node', [synthRtpTest]);
+}
+
+/* ── Step 4.97y6.8: D+6 — Regulator UI wire (W51/W52/W53) audit
+ * Verifies sessionTimeout + realityCheck + netLossIndicator HookBus
+ * contracts + rendered-HTML presence on 3 baselines. Closes legacy
+ * "regulator UI, non-math" backlog item. */
+const regUiTest = resolve(REPO, 'tests/contracts/regulator-ui-wire.test.mjs');
+if (existsSync(regUiTest)) {
+  run('D+6 — REGULATOR UI wire (W51/W52/W53 audit · 13 assertions)',
+    'node', [regUiTest]);
+}
+
+/* ── Step 4.97y6.9: D+7 — Cluster HF auto-clamp convergence contract
+ * Locks the behavior that --auto-hf-clamp converges measured HF toward
+ * declared HF on cluster topology games. Without this contract, future
+ * refactors could silently regress the clamp math. Closes the cluster
+ * HF +5pp gap item (info-level, but now permanently guarded). */
+const hfConvTest = resolve(REPO, 'tests/contracts/cluster-hf-clamp-convergence.test.mjs');
+if (existsSync(hfConvTest)) {
+  run('D+7 — CLUSTER HF clamp convergence (starlight ±1pp via flag)',
+    'node', [hfConvTest]);
+}
+
 /* ── Step 4.97y7: HYB-4 — Vendor PAR adapters (Pragmatic + L&W)
  * Synthetic xlsx fixtures with vendor-specific headers (Spanish Rodillo,
  * STRIP_/SYM) → verify both adapters parse + emit canonical ParSheet

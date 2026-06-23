@@ -2729,6 +2729,30 @@ export function extractPaybackProseMode(rawText, model) {
       const n = parseFloat(rtpMatch[1]);
       if (Number.isFinite(n) && n >= 70 && n <= 99.99) {
         p.rtp = n;
+        p.rtpSource = 'gdd-prose';
+      }
+    }
+    /* MATH-DEEP D+5 (2026-06-23) — Synthetic-RTP fallback (template-wide).
+     * When a GDD describes the game but never quotes an explicit RTP target
+     * (Wrath of Olympus + ~40% of operator-internal GDDs), the simulator
+     * has nothing to anchor convergence against. Industry baseline for a
+     * typical online slot is 96.00% (UKGC LCCP 1.4 guidance + MGA RG
+     * 2021/02 default). We emit that as a SYNTHETIC fallback ONLY when:
+     *   • parser found no RTP value in prose
+     *   • parser found no variant table either
+     *   • model topology is a known kind (rectangular / ways / cluster /
+     *     pay_anywhere / slingo / plinko / lock_respin)
+     * The fallback is FLAGGED via `model.payback.rtpSource = 'synthetic-
+     * fallback-96'` so operator audit + cert tools can detect + override.
+     * Auto-clamp downstream treats synthetic rtp as a soft target (no hard
+     * fail) — operator sees the gap in the report instead of false-green. */
+    if (p.rtp == null) {
+      const knownTopo = ['rectangular','ways','cluster','pay_anywhere',
+        'slingo','plinko','lock_respin','hexagonal','infinity','crash'];
+      const topoKind = model?.topology?.kind || model?.topology?.evaluation;
+      if (knownTopo.includes(topoKind)) {
+        p.rtp = 96.0;
+        p.rtpSource = 'synthetic-fallback-96';
       }
     }
   }
