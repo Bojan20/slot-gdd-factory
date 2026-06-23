@@ -50,6 +50,7 @@ const _cacheCrash    = new Map();
 const _cachePick     = new Map();
 const _cacheSm       = new Map();
 const _cacheBwEw     = new Map();
+const _cacheInverse  = new Map();
 
 /* Shared helper to invoke the universal runner with kernel name + params. */
 function _runUniversal(kernelName, params) {
@@ -490,6 +491,86 @@ export async function computeBothWaysExpandingWildKernelRtp(opts = {}) {
   return out;
 }
 
+/* ── Inverse solver (target RTP → param) ─────────────────────────────── */
+
+/**
+ * Solve for a kernel parameter that achieves a target RTP contribution.
+ *
+ * Example: "what p_per_cell makes money_collect RTP = 0.40?"
+ *   solveForParam({
+ *     kernel: 'money_collect', solveFor: 'p_per_cell', targetRtp: 0.40,
+ *     paramLo: 0.001, paramHi: 0.5, method: 'bisection',
+ *     fixed: { n_cells: 15, trigger_count_min: 6, value_table: {...}, respins_reset: 3 }
+ *   })
+ *   → { solvedParam: 0.1198, achievedRtp: 0.4000, converged: true, iterations: 17 }
+ *
+ * Supported (kernel, solveFor) pairs:
+ *   - ('money_collect',    'p_per_cell')
+ *   - ('expanding_symbol', 'p_per_cell_in_fs')
+ */
+export async function solveForParam(opts = {}) {
+  const params = {
+    kernel:        opts.kernel        || 'money_collect',
+    solve_for:     opts.solveFor      || 'p_per_cell',
+    target_rtp:    opts.targetRtp     ?? 0.40,
+    initial_guess: opts.initialGuess  ?? 0.1,
+    param_lo:      opts.paramLo       ?? 0.001,
+    param_hi:      opts.paramHi       ?? 0.5,
+    method:        opts.method        || 'bisection',
+    fixed:         opts.fixed         || {},
+  };
+  const key = JSON.stringify(params);
+  if (_cacheInverse.has(key)) return _cacheInverse.get(key);
+
+  const detect = detectKernelEngine();
+  if (!detect.available) {
+    const out = { ok: false, reason: `kernel unavailable: ${detect.reason}` };
+    _cacheInverse.set(key, out);
+    return out;
+  }
+  const tmpDir = join(tmpdir(), 'extra-kernel-bridge');
+  mkdirSync(tmpDir, { recursive: true });
+  const cfgPath = join(tmpDir, `inv-${process.pid}-${Date.now()}.json`);
+  writeFileSync(cfgPath, JSON.stringify(params), 'utf8');
+  const runnerPath = resolve(REPO, 'tools/_kernel-inverse-solver-runner.py');
+  const env = { ...process.env, PYTHONPATH: join(detect.kernelsDir, 'src') };
+  const proc = spawnSync(detect.pythonCmd, [runnerPath, cfgPath], {
+    encoding: 'utf8', env, timeout: 30_000,
+  });
+  if (proc.status !== 0) {
+    const out = { ok: false, reason: `runner exit ${proc.status}: ${(proc.stderr || '').slice(0, 300)}` };
+    _cacheInverse.set(key, out);
+    return out;
+  }
+  let parsed;
+  try { parsed = JSON.parse((proc.stdout || '').trim()); }
+  catch (e) {
+    const out = { ok: false, reason: `JSON parse: ${e.message}` };
+    _cacheInverse.set(key, out);
+    return out;
+  }
+  if (parsed.error) {
+    const out = { ok: false, reason: parsed.error };
+    _cacheInverse.set(key, out);
+    return out;
+  }
+  const out = {
+    ok: true,
+    solvedParam:      parsed.solved_param,
+    achievedRtp:      parsed.achieved_rtp,
+    targetRtp:        parsed.target_rtp,
+    iterations:       parsed.iterations,
+    converged:        parsed.converged,
+    errorAtSolution:  parsed.error_at_solution,
+    method:           parsed.method,
+    kernel:           parsed.kernel,
+    solveFor:         parsed.solve_for,
+    kernelEngine:     'python-kernel',
+  };
+  _cacheInverse.set(key, out);
+  return out;
+}
+
 export function _resetCache() {
   _cacheExp.clear(); _cacheSw.clear(); _cacheCascade.clear(); _cacheWays.clear();
   _cachePayAny.clear(); _cacheStacked.clear();
@@ -497,4 +578,5 @@ export function _resetCache() {
   _cacheMustHit.clear(); _cacheWheel.clear();
   _cacheAsym.clear(); _cacheCharge.clear(); _cacheCrash.clear();
   _cachePick.clear(); _cacheSm.clear(); _cacheBwEw.clear();
+  _cacheInverse.clear();
 }

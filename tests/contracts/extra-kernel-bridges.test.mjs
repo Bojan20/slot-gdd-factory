@@ -33,6 +33,7 @@ import {
   computePickChainKernelRtp,
   computeStateMachineKernelRtp,
   computeBothWaysExpandingWildKernelRtp,
+  solveForParam,
   _resetCache,
 } from '../../src/blocks/featureSimPlugins/extraKernelBridges.mjs';
 import { detectKernelEngine } from '../../tools/math-kernel-bridge.mjs';
@@ -312,6 +313,52 @@ test('computeBothWaysExpandingWildKernelRtp returns composite rtp + components',
   /* Composite = both_ways + expanding_symbol. */
   const sum = r.bothWaysComponent.rtp_contribution + r.expandingSymbolComponent.rtp_contribution;
   assert(Math.abs(r.rtpContribution - sum) < 1e-6, `composite ${r.rtpContribution} ≠ sum ${sum}`);
+});
+
+/* ── (21) Inverse solver — money_collect target RTP → p_per_cell ──────── */
+
+test('solveForParam: money_collect target_rtp 0.40 → p_per_cell ~0.12', async () => {
+  _resetCache();
+  const r = await solveForParam({
+    kernel: 'money_collect',
+    solveFor: 'p_per_cell',
+    targetRtp: 0.40,
+    paramLo: 0.001,
+    paramHi: 0.5,
+    method: 'bisection',
+    fixed: {
+      n_cells: 15, trigger_count_min: 6,
+      value_table: { '1': 0.5, '5': 0.3, '10': 0.15, '50': 0.05 },
+      respins_reset: 3,
+    },
+  });
+  if (!r.ok) { const d = detectKernelEngine(); if (!d.available) { console.log('    (skipped)'); return; } throw new Error(`failed: ${r.reason}`); }
+  assert(r.converged === true, `should converge, got ${r.converged}`);
+  assert(Math.abs(r.achievedRtp - 0.40) < 0.001, `achievedRtp ≈ 0.40, got ${r.achievedRtp}`);
+  assert(r.solvedParam > 0.05 && r.solvedParam < 0.2,
+    `solvedParam in [0.05, 0.2], got ${r.solvedParam}`);
+});
+
+/* ── (22) Inverse solver: cache hit ──────────────────────────────────── */
+
+test('solveForParam: cache hit on identical query', async () => {
+  _resetCache();
+  const opts = {
+    kernel: 'money_collect', solveFor: 'p_per_cell',
+    targetRtp: 0.40, paramLo: 0.001, paramHi: 0.5, method: 'bisection',
+    fixed: { n_cells: 15, trigger_count_min: 6,
+             value_table: { '1': 0.5 }, respins_reset: 3 },
+  };
+  const t1 = Date.now();
+  const r1 = await solveForParam(opts);
+  const d1 = Date.now() - t1;
+  const t2 = Date.now();
+  const r2 = await solveForParam(opts);
+  const d2 = Date.now() - t2;
+  if (r1.ok) {
+    assert(d2 < d1 || d2 < 30, `cache miss? d1=${d1}ms d2=${d2}ms`);
+    assert(r1.solvedParam === r2.solvedParam, 'cached value identical');
+  }
 });
 
 /* ── Result ──────────────────────────────────────────────────────────── */
