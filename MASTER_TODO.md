@@ -1,3 +1,57 @@
+## 🗂 ŠTA MOŽE DALJE — 2026-06-23 07:36 UTC (kandidati za sledeću sesiju)
+
+Sve glavne grane backlog-a su zatvorene (MATH + Expert P1/P2/P3). Ovo
+su preostale **nice-to-have** stavke + nova ideja koja se kristalisala
+tokom sesije. Boki bira — nije obavezna.
+
+```
+┌────┬─────────────────────────────────────────────────────────────┬────────┬───────────┐
+│ ID │ Stavka                                                       │ Effort │ Vrednost  │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ N1 │ GDD compliance one-pager generator                           │  ~2h   │ HIGH      │
+│    │ Per igri emit single MD/PDF audit dokument za regulatora:    │        │ regulator │
+│    │ topology + RTP + kernels + verdict + compliance check        │        │           │
+│    │ Ujedinjuje audit-summary u proizvodni deliverable            │        │           │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ N2 │ Side-by-side compare 2 games tool                            │  ~1h   │ MED       │
+│    │ tools/compare-games.mjs <slugA> <slugB> → tabela razlika u  │        │ operator  │
+│    │ topology / RTP / kernels / features / volatility             │        │           │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ N3 │ Web UI dashboard (single HTML index)                         │  ~3h   │ MED       │
+│    │ Servira sve reports/*.json kao live web view. Operator ne    │        │ UX        │
+│    │ mora CLI. Jedan HTML + JS bez framework-a                   │        │           │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ N4 │ Kernel call audit log (rolling)                              │  ~2h   │ MED       │
+│    │ Svaki bridge call → log sa input hash + output + ms +        │        │ ops       │
+│    │ result. Pratiti koje kernels su pozivani + error rates       │        │           │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ N5 │ Performance benchmark suite                                  │  ~2h   │ LOW       │
+│    │ Meri ms po kernelu, scatter "RTP vs latency". Identifikuje   │        │ dev       │
+│    │ slow kernels. Bridge cache već radi instant, ROI niži        │        │           │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ N6 │ Coverage diff between commits                                │  ~2h   │ LOW       │
+│    │ Git-style diff kernel coverage: A vs B commit, koje igre su  │        │ dev       │
+│    │ dobile/izgubile coverage. Pratiti regression                 │        │           │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ N7 │ Sister-repo update checker                                   │  ~1h   │ LOW       │
+│    │ Proverava da li slot-math-engine-template ima nove kernels   │        │ maint     │
+│    │ koje treba bridge-ovati. Long-term maintenance health        │        │           │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ N8 │ Sanitize synth fixture slot.html titles                      │  ~30m  │ LOW       │
+│    │ 9 LOW findings iz anti-vendor lint: stari synth file-ovi sa  │        │ cleanup   │
+│    │ vendor imenima u <title>. Sanitize → "Synthetic fixture N"   │        │           │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ X1 │ Audio backlog                                                │   —    │ 🔒 LOCKED  │
+│    │ HARD RULE #4 — Boki signal needed before touching            │        │           │
+└────┴─────────────────────────────────────────────────────────────┴────────┴───────────┘
+```
+
+**Moja ekspert preporuka iz ove liste:** N1 (one-pager generator) —
+ujedinjuje sve postojeće audit alate u jedan deliverable koji se
+realno šalje regulatoru. Najveći value/effort ratio.
+
+---
+
 ## 🎯 EXPERT RECOMMENDATION PLAN — 2026-06-23 07:08 UTC
 
 Boki pitanje: *"sta predlazes kao ekspert?"* → moje 3 stvarno vredne stvari,
@@ -49,13 +103,14 @@ sve ostalo je kozmetika:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│  SVE GLAVNE GRANE BACKLOG-A: ZATVORENE ✅                                       │
-│  Verify gate: 82 steps · ALL GREEN                                              │
-│  Last commit: 561a89d (feat(audit-summary))                                    │
+│  SVE GLAVNE GRANE + EXPERT P1/P2/P3 BACKLOG: ZATVORENI ✅                       │
+│  Verify gate: 84 steps · ALL GREEN                                              │
+│  Last commit: ebc9c34 (feat(P3 anti-vendor-lint))                              │
 │  Sister-repo kernels: 22/22 bridged (20 forward + 2 solvers)                  │
-│  Operator-facing tools (sesija 2026-06-23): 8 new (4 audit, 1 registry,       │
-│    1 CLI, 1 coverage, 1 matrix)                                                │
-│  Audit overall verdict: 🟢 GREEN (P1 zatvoren — NON_BINDING bucket dodat)    │
+│  Operator-facing tools (sesija 2026-06-23): 9 new (audit + lint + CLI +       │
+│    registry + coverage + matrix + portfolio + rollup + honest-mode)            │
+│  Tests added (sesija): 92/92 PASS (across 9 new contract suites)              │
+│  Audit overall verdict: 🟢 GREEN · HONEST mode dostupan · Vendor lint HIGH=0   │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
