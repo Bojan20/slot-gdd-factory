@@ -106,6 +106,40 @@ test('portfolioVerdict CONVERGED when only CONVERGED + NON_BINDING rows', () => 
   assert(a.verdictCounts.NON_BINDING === 1, '1 non-binding');
 });
 
+test('honest mode uses rawMeasuredRTP + rawRtpDelta when available', () => {
+  const payload = {
+    games: [
+      { slug: 'clamped', ok: true,
+        declaredRTP: 96, measuredRTP: 96, rtpDelta: 0,       /* post-clamp */
+        rawMeasuredRTP: 78, rawRtpDelta: -18,                /* pre-clamp */
+        autoClampApplied: true },
+    ],
+  };
+  /* Default mode (clamp-aware): 0pp → CONVERGED. */
+  const aClamped = buildAudit(payload);
+  assert(aClamped.rows[0].verdict === 'CONVERGED',
+    `clamp-aware verdict should be CONVERGED, got ${aClamped.rows[0].verdict}`);
+  /* Honest mode: -18pp → DIVERGED. */
+  const aHonest = buildAudit(payload, 'test.json', { honest: true });
+  assert(aHonest.honestMode === true, 'honest flag echoed');
+  assert(aHonest.rows[0].verdict === 'DIVERGED',
+    `honest verdict should be DIVERGED, got ${aHonest.rows[0].verdict}`);
+  assert(aHonest.rows[0].measuredRTP === 78, 'honest uses raw measured');
+  assert(aHonest.rows[0].rtpDelta === -18, 'honest uses raw delta');
+  assert(aHonest.rows[0].usedRawMeasured === true, 'usedRawMeasured flag');
+});
+
+test('honest mode falls back to clamp-view when raw fields missing', () => {
+  const payload = {
+    games: [
+      { slug: 'legacy', ok: true, declaredRTP: 96, measuredRTP: 96, rtpDelta: 0 },
+    ],
+  };
+  const a = buildAudit(payload, 'test.json', { honest: true });
+  assert(a.rows[0].verdict === 'CONVERGED', 'fallback to clamp-view');
+  assert(a.rows[0].usedRawMeasured === false, 'usedRawMeasured=false when missing');
+});
+
 test('portfolioVerdict escalates DIVERGED > CLOSE > UNKNOWN > CONVERGED', () => {
   const all = (verdict) => ({
     games: [{ slug: 's', ok: true, declaredRTP: 96, measuredRTP: 96, rtpDelta:

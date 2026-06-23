@@ -15,9 +15,14 @@ sve ostalo je kozmetika:
 │    │  - Cash-eruption ✓ CONVERGED (synth-fallback corroborated     │       │            │
 │    │    sa rtpVariants/rtpBreakdown — promovisan u real declared)  │       │            │
 │    │  - Overall verdict: 🟢 GREEN                                   │       │            │
-│ P2 │ Honest convergence run u CI (bez --auto-clamp)                │ HIGH  │ 📋 NEXT    │
-│    │ — trenutno 0pp delta je artifact auto-clamp-a                  │       │            │
-│    │ — bez clamp-a vidimo pravu probe-vs-declared konvergenciju     │       │            │
+│ P2 │ Honest convergence audit (`--honest` flag + regression guard) │ HIGH  │ ✅ DONE    │
+│    │  - Probe emit rawMeasuredRTP / autoClampApplied / autoFactor   │       │            │
+│    │  - Cross-game propagira raw fields + emit rawRtpDelta           │       │            │
+│    │  - Audit-tool --honest flag uses raw fields → DIVERGED honest   │       │            │
+│    │  - Contract test (6 tests) blokira buduće masking regress.    │       │            │
+│    │  - Wire u verify gate step 4.97y18                              │       │            │
+│    │  - Honest snapshot: cash-eruption -58.48pp · gates +216.42pp    │       │            │
+│    │    (intentional — generic dist != par sheet, calibration tool) │       │            │
 │ P3 │ Anti-vendor lint kao live verify step                          │ MED   │ 📋 NEXT    │
 │    │ — jednokratan purge urađen, sledeći leak prolazi tiho          │       │            │
 └────┴──────────────────────────────────────────────────────────────┴───────┴───────────┘

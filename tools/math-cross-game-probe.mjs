@@ -237,10 +237,20 @@ export function generateComparativeReport(slugs, opts = {}) {
       topology: topo,
       topologyKind: topoKind,
       measuredRTP: rep.measuredRTP,
+      /* P2 honest convergence (2026-06-23): preserve raw measured RTP
+       * (pre auto-clamp) and clamp metadata so honest-audit can show
+       * the TRUE probe-vs-declared gap without clamp masking. */
+      rawMeasuredRTP: rep.rawMeasuredRTP ?? null,
+      autoClampApplied: rep.autoClampApplied ?? false,
+      autoClampFactor: rep.autoClampFactor ?? null,
       declaredRTP: rep.declaredRTP,
       declaredRTPSource: rep.declaredRTPSource ?? null,
       declaredRTPIsSynthetic: rep.declaredRTPIsSynthetic ?? false,
       rtpDelta: rep.rtpDelta,
+      /* Honest delta = rawMeasuredRTP - declaredRTP (pre-clamp). */
+      rawRtpDelta: (Number.isFinite(rep.rawMeasuredRTP) && Number.isFinite(rep.declaredRTP))
+        ? +(rep.rawMeasuredRTP - rep.declaredRTP).toFixed(2)
+        : null,
       measuredHF: rep.measuredHF,
       declaredHF: rep.declaredHF,
       hfDelta: rep.hfDelta,

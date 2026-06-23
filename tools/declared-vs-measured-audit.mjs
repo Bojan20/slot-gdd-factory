@@ -17,6 +17,7 @@
  *   node tools/declared-vs-measured-audit.mjs                  # ASCII table
  *   node tools/declared-vs-measured-audit.mjs --json           # JSON only
  *   node tools/declared-vs-measured-audit.mjs --strict         # exit 1 if any DIVERGED
+ *   node tools/declared-vs-measured-audit.mjs --honest         # use rawMeasured (pre-clamp)
  *   node tools/declared-vs-measured-audit.mjs --file <path>    # specific report
  *
  * OUTPUT
@@ -46,6 +47,7 @@ const CLOSE_PP     = 2.0;
 const args = process.argv.slice(2);
 const jsonOnly = args.includes('--json');
 const strict   = args.includes('--strict');
+const honest   = args.includes('--honest');
 const fileArg  = (() => {
   const i = args.findIndex(a => a === '--file' || a.startsWith('--file='));
   if (i === -1) return null;
@@ -96,21 +98,31 @@ const VERDICT_BADGE = {
 
 /* ── Audit builder ───────────────────────────────────────────────────── */
 
-function buildAudit(reportPayload, reportFile) {
+function buildAudit(reportPayload, reportFile, opts = {}) {
+  const honestMode = !!opts.honest;
   const games = reportPayload.games || [];
   const rows = games
     .filter(g => g.ok !== false)
     .map(g => {
       const isSynthetic = !!g.declaredRTPIsSynthetic;
-      const verdict = classify(g.rtpDelta, isSynthetic);
+      /* HONEST mode (2026-06-23 P2): use raw measured RTP (pre auto-clamp)
+       * + rawRtpDelta. Surfaces TRUE probe-vs-declared gap. */
+      const useRaw = honestMode
+        && Number.isFinite(g.rawMeasuredRTP)
+        && Number.isFinite(g.rawRtpDelta);
+      const measuredRTP = useRaw ? g.rawMeasuredRTP : g.measuredRTP;
+      const rtpDelta    = useRaw ? g.rawRtpDelta : g.rtpDelta;
+      const verdict = classify(rtpDelta, isSynthetic);
       return {
         slug: g.slug,
         topology: g.topology || 'unknown',
         declaredRTP: g.declaredRTP,
         declaredRTPSource: g.declaredRTPSource ?? null,
         declaredRTPIsSynthetic: isSynthetic,
-        measuredRTP: g.measuredRTP,
-        rtpDelta:    g.rtpDelta,
+        measuredRTP,
+        rtpDelta,
+        autoClampApplied: !!g.autoClampApplied,
+        usedRawMeasured: useRaw,
         verdict,
       };
     });
@@ -124,6 +136,7 @@ function buildAudit(reportPayload, reportFile) {
     : 'CONVERGED';
   return {
     reportFile,
+    honestMode,
     portfolioVerdict,
     verdictCounts,
     bands: { converged_pp: CONVERGED_PP, close_pp: CLOSE_PP },
@@ -135,7 +148,8 @@ function buildAudit(reportPayload, reportFile) {
 
 function renderAudit(audit) {
   const lines = [];
-  lines.push(`Declared vs Measured RTP audit (source: ${audit.reportFile})`);
+  const modeTag = audit.honestMode ? ' [HONEST mode — raw pre-clamp measured]' : '';
+  lines.push(`Declared vs Measured RTP audit${modeTag} (source: ${audit.reportFile})`);
   lines.push('');
   lines.push(`  Precision bands: ±${CONVERGED_PP}pp = CONVERGED · ±${CLOSE_PP}pp = CLOSE · else DIVERGED`);
   lines.push(`  Non-binding: declared via synthetic-fallback (PDF lacked RTP) → ◌ NON_BINDING`);
@@ -191,7 +205,7 @@ if (process.argv[1]?.endsWith('declared-vs-measured-audit.mjs')) {
     reportFile = latest.file;
   }
   const payload = JSON.parse(readFileSync(reportPath, 'utf8'));
-  const audit = buildAudit(payload, reportFile);
+  const audit = buildAudit(payload, reportFile, { honest });
   if (!jsonOnly) {
     console.log(renderAudit(audit));
   }

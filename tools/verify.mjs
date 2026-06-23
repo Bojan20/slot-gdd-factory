@@ -848,6 +848,18 @@ if (existsSync(auditSummaryTest)) {
     'node', [auditSummaryTest]);
 }
 
+/* ── Step 4.97y18: HONEST CONVERGENCE CONTRACT (P2)
+ * Regression guard: cross-game probe MUST emit rawMeasuredRTP,
+ * autoClampApplied, rawRtpDelta per game so audit-tool can produce
+ * --honest verdicts showing TRUE probe-vs-declared gap pre-clamp.
+ * Without this, auto-clamp could mask DIVERGED games behind synthetic
+ * 0pp delta — false-positive GREEN verdict. */
+const honestConvTest = resolve(REPO, 'tests/contracts/honest-convergence-contract.test.mjs');
+if (existsSync(honestConvTest)) {
+  run('HONEST CONVERGENCE CONTRACT (rawMeasuredRTP + autoClampApplied guard)',
+    'node', [honestConvTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
