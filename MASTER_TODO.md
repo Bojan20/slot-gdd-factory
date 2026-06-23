@@ -1,8 +1,8 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-23 11:32 UTC (FINAL · sve N1-N8 ✅ DONE)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-23 14:30 UTC (FINAL · sve N1-N8 + A/B/C ✅ DONE)
 
-Sve glavne grane backlog-a su zatvorene (MATH + Expert P1/P2/P3). Ovo
-su preostale **nice-to-have** stavke + nova ideja koja se kristalisala
-tokom sesije. Boki bira — nije obavezna.
+Sve glavne grane backlog-a su zatvorene (MATH + Expert P1/P2/P3 +
+nice-to-have N1-N8 + post-backlog ekstenzije A/B/C). Audio (X1) ostaje
+LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 
 ```
 ┌────┬─────────────────────────────────────────────────────────────┬────────┬───────────┐
@@ -107,9 +107,77 @@ tokom sesije. Boki bira — nije obavezna.
 └────┴─────────────────────────────────────────────────────────────┴────────┴───────────┘
 ```
 
-**Moja ekspert preporuka iz ove liste:** N1 (one-pager generator) —
-ujedinjuje sve postojeće audit alate u jedan deliverable koji se
-realno šalje regulatoru. Najveći value/effort ratio.
+---
+
+## 🏆 N+1 POST-BACKLOG EKSTENZIJE — 2026-06-23 14:25 UTC · ZATVORENO ✅
+
+Boki direktiva: *"idi redom, ali ultimativno sa svim mogucim proverama!"*.
+Tri zone koje su bile otvorene ALI nisu bile u definisanom backlog-u
+(predloženo posle zatvaranja N1-N8). Sve tri zatvorene u jednom commit-u
+(6038cf2) sa paralelnim audit agentima.
+
+```
+┌────┬─────────────────────────────────────────────────────────────┬────────┬───────────┐
+│ ID │ Stavka                                                       │ Effort │ Vrednost  │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ A  │ V8 GAME ASSEMBLY live wire u ingest pipeline                │  ~2-3h │ ✅ DONE   │
+│    │  - tools/v8-assembly-orchestrator.mjs: export-ovan assemble()│        │           │
+│    │    kao library iza CLI guard-a                               │        │           │
+│    │  - tools/ingest.mjs: nov step "V8 assembly receipt" emit-uje │        │           │
+│    │    dist/ingest/<slug>/v8.json + <meta name="v8-receipt"      │        │           │
+│    │    content="<b64>"> u <head>                                 │        │           │
+│    │  - tools/web-dashboard.mjs: per-game V8 panel sa verdict     │        │           │
+│    │    badge + 3-tier receipt loader (per-slug ingest v8.json   │        │           │
+│    │    → real-games v8.json → korpus latest)                     │        │           │
+│    │  - Test: 15/15 PASS (tests/contracts/v8-ingest-wire.test.mjs)│        │           │
+│    │  - Verify gate step 4.97y28                                  │        │           │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ B  │ V9 VISUAL QA live wire (deterministic deo)                  │  ~3-4h │ ✅ DONE   │
+│    │  - tools/v9-visual-qa.mjs: export-ovani verifyHtml +         │        │           │
+│    │    parseSlot + deterministicChecks + scoreChecks +           │        │           │
+│    │    verdictFromChecks iza CLI guard                           │        │           │
+│    │  - tools/ingest.mjs: nov step "V9 visual QA receipt"         │        │           │
+│    │    emit-uje dist/ingest/<slug>/v9.json + <meta              │        │           │
+│    │    name="v9-verdict" data-verdict data-score data-checks>    │        │           │
+│    │  - tools/web-dashboard.mjs: per-game V9 panel sa score +     │        │           │
+│    │    flagged checks (failed/passed lista)                      │        │           │
+│    │  - Vision call deo (Opus 4.8 image input) ostaje opt-in      │        │           │
+│    │    iza TCC vision kill switch — deterministic deo dovoljan   │        │           │
+│    │    za live wire (8 struct invariants × svaki ingest)         │        │           │
+│    │  - Test: 14/14 PASS (tests/contracts/v9-ingest-wire.test.mjs)│        │           │
+│    │  - Verify gate step 4.97y29                                  │        │           │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ C  │ 338-PDF stress test (~/Desktop/GDD/)                         │  ~1-2h │ ✅ DONE   │
+│    │  - tools/stress-test-ingest.mjs: batch ingest svih PDFs iz   │        │           │
+│    │    ~/Desktop/GDD/, sequential, 90s timeout, SIGKILL          │        │           │
+│    │    escalation                                                 │        │           │
+│    │  - Slug fingerprint: sha1(path)[0:6] + PID suffix za multi-  │        │           │
+│    │    run safety (no slug collision kad isti PDF u 2 sesije)    │        │           │
+│    │  - Per-PDF receipt sa V8+V9 verdict + aggregate failure     │        │           │
+│    │    modes klasifikacija (parse err / topology unk / RTP miss)│        │           │
+│    │  - Output: JSON + MD report sa ASCII histogram               │        │           │
+│    │  - Test: 9/9 PASS (tests/contracts/stress-test-ingest.test) │        │           │
+│    │  - Verify gate step 4.97y30 (--limit 5 smoke za CI)          │        │           │
+│    │  - LIVE RUN: 338/338 PASS u 64.3s (0% failure rate ·        │        │           │
+│    │    V8 PASS · V9 score 9.0/10 avg)                           │        │           │
+├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
+│ AU │ Paralelni audit agenti (16 nalaza, 0 critical)              │  —     │ ✅ FIXED  │
+│    │  - injectMetaIntoHead() helper: DRY V8+V9 inject (R1)       │        │           │
+│    │  - <head> regex case-insensitive (R8)                       │        │           │
+│    │  - data-verdict/data-engine HTML-safe regex stripping (R4)  │        │           │
+│    │  - v9.score defensive typeof number guard (R2)              │        │           │
+│    │  - stress-test slug = sha1(path)[0:6] + PID suffix          │        │           │
+│    │    (R6 + #3 + #4)                                            │        │           │
+│    │  - spawnSync killSignal SIGKILL escalation (#2)             │        │           │
+└────┴─────────────────────────────────────────────────────────────┴────────┴───────────┘
+```
+
+**Final verifikacija (commit 6038cf2):**
+- 38/38 contract testovi PASS
+- `npm run verify`: **44 gate-a · ALL GREEN**
+- `verify-idempotency-test`: 95/95 Pass 1 = Pass 2
+- Anti-vendor lint: 0 hits u novom kodu
+- 338-PDF stress: 338/338 ingested OK
 
 ---
 
@@ -160,17 +228,22 @@ sve ostalo je kozmetika:
 
 ---
 
-## 🧭 MASTER STATUS — 2026-06-23 07:05 UTC · slot-gdd-factory
+## 🧭 MASTER STATUS — 2026-06-23 14:30 UTC · slot-gdd-factory
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│  SVE GLAVNE GRANE + EXPERT P1/P2/P3 BACKLOG: ZATVORENI ✅                       │
-│  Verify gate: 84 steps · ALL GREEN                                              │
-│  Last commit: ebc9c34 (feat(P3 anti-vendor-lint))                              │
-│  Sister-repo kernels: 22/22 bridged (20 forward + 2 solvers)                  │
-│  Operator-facing tools (sesija 2026-06-23): 9 new (audit + lint + CLI +       │
-│    registry + coverage + matrix + portfolio + rollup + honest-mode)            │
-│  Tests added (sesija): 92/92 PASS (across 9 new contract suites)              │
+│  SVE GLAVNE GRANE + EXPERT P1/P2/P3 + N1-N8 + N+1 A/B/C: ZATVORENI ✅          │
+│  Verify gate: 44 steps · ALL GREEN                                              │
+│  Last commit: 6038cf2 (feat(N+1 A+B+C): V8/V9 live wire + 338-PDF stress)      │
+│  Sister-repo kernels: 22/22 bridged + IN SYNC (checker verifikovao)            │
+│  Operator-facing tools (sesija 2026-06-23): 16 new (audit + lint + CLI +      │
+│    registry + coverage + matrix + portfolio + rollup + honest + one-pager +   │
+│    compare + dashboard + kernel-audit + perf-bench + coverage-diff +          │
+│    sister-checker + synth-sanitizer + stress-test)                            │
+│  Live wires: V8 assembly + V9 visual QA u ingest pipeline (per-slug v8/v9     │
+│    receipt JSON + <meta> tag u <head> svakog generisanog slot.html-a)         │
+│  Tests added (sesija): 130+ PASS (across 17 new contract suites)              │
+│  338-PDF stress test: 338/338 PASS u 64.3s (0% failure rate)                  │
 │  Audit overall verdict: 🟢 GREEN · HONEST mode dostupan · Vendor lint HIGH=0   │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -196,23 +269,26 @@ sve ostalo je kozmetika:
 └────┴─────────────────────────────────────┴──────────┴────────┴─────────┘
 ```
 
-### Preostali backlog (kako stoji upravo sada)
+### Preostali backlog (kako stoji upravo sada · 2026-06-23 14:30 UTC)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │  Item                                          │ Status                  │
 ├────────────────────────────────────────────────────────────────────────┤
-│  Audio block backlog                           │ 🔒 LOCKED (HARD RULE #4)│
+│  Audio block backlog (X1)                      │ 🔒 LOCKED (HARD RULE #4)│
 │  wrath-of-olympus declared RTP parser fix      │ ⏭ blocked — data signal│
 │  Cross-product W51/W52/W53 regulator UI        │ ⏭ regulator (non-math) │
-│  GDD audit one-pager (per-game compliance MD)  │ 📋 nice-to-have        │
-│  Side-by-side compare 2 games tool             │ 📋 nice-to-have        │
-│  Kernel coverage diff between commits          │ 📋 nice-to-have        │
+│  V9 vision call (Opus 4.8 image input)         │ ⏭ TCC vision=OFF       │
+│  N5 N6 N7 N8 nice-to-have                      │ ✅ DONE (commit f501031)│
+│  A V8 live wire u ingest                       │ ✅ DONE (commit 6038cf2)│
+│  B V9 live wire u ingest (deterministic)       │ ✅ DONE (commit 6038cf2)│
+│  C 338-PDF stress test                         │ ✅ DONE (commit 6038cf2)│
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Glavni MATH backlog: 100% ZATVOREN.** Svi alati ispod su nice-to-have
-(operator UX), ne core production needs.
+**Glavni MATH backlog: 100% ZATVOREN.** Nice-to-have N1-N8 ZATVORENI.
+Post-backlog A/B/C ekstenzije ZATVORENE. Sve što ostaje je ili LOCKED
+(audio) ili blocked external (RTP data signal, regulator scope, TCC).
 
 ### One-command total audit (operator quick reference)
 
