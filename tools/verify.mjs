@@ -782,6 +782,16 @@ if (existsSync(kernelRegistryTest)) {
     'node', [kernelRegistryTest]);
 }
 
+/* ── Step 4.97y12: SLOT-MATH-KERNEL CLI (operator-facing)
+ * Tests tools/slot-math-kernel.mjs subcommands (list / info / call /
+ * solve / solve-nd). Verifies --help, kernel discovery via list, metadata
+ * via info, error handling for unknown kernel, live solve. */
+const slotMathKernelCliTest = resolve(REPO, 'tests/contracts/slot-math-kernel-cli.test.mjs');
+if (existsSync(slotMathKernelCliTest)) {
+  run('SLOT-MATH-KERNEL CLI (list/info/call/solve subcommands)',
+    'node', [slotMathKernelCliTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
