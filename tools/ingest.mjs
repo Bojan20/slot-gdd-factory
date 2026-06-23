@@ -400,6 +400,14 @@ const ALLOWED_INPUT_ROOTS = (() => {
   const home = process.env.HOME || '/tmp';
   return [
     resolve(home, 'Desktop/GDD'),
+    /* UQ-DEEP-L fix (Boki 2026-06-23): operator drži PAR sheets u
+     * različitim folderima na ~/Desktop (ParSheets/, Bojan/, Slot
+     * simulator  Doc/...). Pre fix-a path-allow guard je blokirao
+     * sve sem Desktop/GDD pa nije bilo moguće ingest-ovati GDD +
+     * external PAR. ~/Desktop je operator-controlled trusted root
+     * — proširujemo allow listu da pokrije sve sub-foldere bez
+     * potrebe za env CORTEX_INGEST_ROOTS override. */
+    resolve(home, 'Desktop'),
     resolve(home, 'Projects/slot-gdd-factory'),
     /* /tmp/ accepted because tests use mkdtempSync(tmpdir()) for fixtures. */
     resolve('/tmp'),

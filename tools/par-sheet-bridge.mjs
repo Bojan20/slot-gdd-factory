@@ -271,11 +271,19 @@ export function applyParToModel(parBlob, model, meta = {}) {
   const sanitizedVendor = VENDOR_KEY_SANITIZE_MAP[String(rawVendor).toLowerCase()]
     || (VENDOR_KEY_RX.test(rawVendor) ? 'vendorX' : rawVendor);
   VENDOR_KEY_RX.lastIndex = 0; /* stateful /g regex — reset after .test() */
+  /* UQ-DEEP-L fix (Boki 2026-06-23): propagate PAR-declared values
+   * (rtp, volatility, sigma) iz parBlob u par_sheet_source.declared
+   * tako da downstream calibrator + compliance walker mogu da koriste
+   * MD/XLSX PAR kao primary source-of-truth kada GDD prose ne sadrži
+   * declared RTP. Bez ovog WoO + external PAR uvek dao NON_BINDING. */
+  const parDeclared = (parBlob && typeof parBlob.declared === 'object')
+    ? parBlob.declared : null;
   next.reelStrips.par_sheet_source = {
     vendor: sanitizedVendor,
     format: meta.format || null,
     basename: meta.basename || null,
     signals: sanitizeSignals(Array.isArray(meta.signals) ? meta.signals : []),
+    declared: parDeclared,
     appliedAt: new Date().toISOString(),
   };
   appliedFields.push('reelStrips.par_sheet_source');

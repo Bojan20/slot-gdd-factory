@@ -86,10 +86,17 @@ function detectFormat(filePath) {
   if (ext === '.csv') return 'csv';
   if (ext === '.json') return 'json';
   if (ext === '.tsv') return 'tsv';
+  /* UQ-DEEP-L fix (Boki "mora simulator sve zivo da cita" 2026-06-23):
+   * regulator-grade PAR sheets ship as structured Markdown sa numbered
+   * tabs (Target RTP, Volatility, Paytable_Line, etc.). MD format
+   * je primary deliverable za vendor-neutral PAR — bez ovog detect
+   * format vraća 'unknown' i ingest skip-uje math overlay. */
+  if (ext === '.md' || ext === '.markdown') return 'md';
   /* First-byte sniff fallback. */
   try {
     const head = readFileSync(filePath, { encoding: 'utf8', flag: 'r' }).slice(0, 8);
     if (head.startsWith('{') || head.startsWith('[')) return 'json';
+    if (head.startsWith('#')) return 'md';
     if (head.includes(',')) return 'csv';
   } catch { /* binary, fall through */ }
   return 'unknown';
@@ -240,6 +247,7 @@ const VENDOR_ADAPTERS = {
     xlsx: 'tools/par-sheet-xlsx-ingest.py',
     csv:  'tools/par-sheet-generic-csv.mjs',
     json: 'inline',
+    md:   'tools/par-sheet-md-ingest.mjs',
   },
   pragmatic: {
     /* 2026-06-23: real Pragmatic adapter live. Recognizes Spanish
@@ -248,6 +256,7 @@ const VENDOR_ADAPTERS = {
     xlsx: 'tools/par-sheet-pragmatic.py',
     csv:  'tools/par-sheet-generic-csv.mjs',
     json: 'inline',
+    md:   'tools/par-sheet-md-ingest.mjs',
   },
   lw: {
     /* 2026-06-23: real L&W / Brytt adapter live. Recognizes "STRIP_1..5"
@@ -255,16 +264,23 @@ const VENDOR_ADAPTERS = {
     xlsx: 'tools/par-sheet-lw.py',
     csv:  'tools/par-sheet-generic-csv.mjs',
     json: 'inline',
+    md:   'tools/par-sheet-md-ingest.mjs',
   },
   spielo: {
     xlsx: 'tools/par-sheet-xlsx-ingest.py',
     csv:  'tools/par-sheet-generic-csv.mjs',
     json: 'inline',
+    md:   'tools/par-sheet-md-ingest.mjs',
   },
   generic: {
     xlsx: 'tools/par-sheet-xlsx-ingest.py',
     csv:  'tools/par-sheet-generic-csv.mjs',
     json: 'inline',
+    /* UQ-DEEP-L (Boki 2026-06-23): Markdown PAR adapter. Vendor-neutral
+     * regulator-grade PAR ships kao structured MD sa table sections
+     * (Target RTP, Volatility, Paytable_Line, Reel_Strip_Composition).
+     * Adapter parse-uje pipe tables i konvertuje u ParBlob shape. */
+    md:   'tools/par-sheet-md-ingest.mjs',
   },
 };
 

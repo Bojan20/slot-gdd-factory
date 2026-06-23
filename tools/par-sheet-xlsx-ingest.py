@@ -32,9 +32,24 @@ except ImportError:
 
 def extract(xlsx_path, sheet_name):
     wb = openpyxl.load_workbook(xlsx_path, data_only=True, read_only=True)
+    # UQ-DEEP-L fix (Boki 2026-06-23): Cash-vendor-style XLSX uses default
+    # sheet name 'PAR-001'. Vendor-neutral regulator-grade XLSX uses
+    # numbered tabs ('05 Reel Composition' / '05 Reel Strip Composition').
+    # If --sheet param doesn't match exactly, auto-detect first sheet whose
+    # name contains 'Reel' AND 'Comp' (or 'Strip') so the operator doesn't
+    # need to manually pass --sheet for every vendor format.
     if sheet_name not in wb.sheetnames:
-        print(f"▸ sheet {sheet_name!r} not found; available: {wb.sheetnames}", file=sys.stderr)
-        sys.exit(1)
+        import re as _re
+        candidates = [
+            s for s in wb.sheetnames
+            if _re.search(r'\breel.*(?:comp|strip)|composition|strip', s, _re.IGNORECASE)
+        ]
+        if candidates:
+            print(f"▸ sheet {sheet_name!r} not found, auto-selected {candidates[0]!r}", file=sys.stderr)
+            sheet_name = candidates[0]
+        else:
+            print(f"▸ sheet {sheet_name!r} not found; available: {wb.sheetnames}", file=sys.stderr)
+            sys.exit(1)
     ws = wb[sheet_name]
 
     title = ws.cell(row=1, column=1).value

@@ -88,12 +88,21 @@ export function declaredRtpFromModel(model) {
     return null;
   };
 
+  /* UQ-DEEP-L fix (Boki 2026-06-23): kada parser ne uspe da ekstraktuje
+   * RTP iz GDD prose (npr. WoO PDF), PAR sheet je primary source of
+   * truth — calibrator mora da povuče declared RTP iz par_sheet_source
+   * koji bridge stavi u model.reelStrips. Bez ovog, NON_BINDING verdict
+   * fire-uje na svaki ingest sa external PAR čak i kad PAR ima Cover RTP. */
+  const parSrc = model.reelStrips && model.reelStrips.par_sheet_source;
+  const parDeclared = parSrc && parSrc.declared;
   const candidates = [
     model.rtp && model.rtp.target,
     model.rtp && model.rtp.declared,
     model.rtp && model.rtp.value,
     model.compliance && model.compliance.rtp,
     model.math && model.math.rtp,
+    model.payback && model.payback.rtp,
+    parDeclared && parDeclared.rtp,
     typeof model.rtp === 'number' ? model.rtp : null,
     typeof model.rtp === 'string' ? model.rtp : null,
   ];
