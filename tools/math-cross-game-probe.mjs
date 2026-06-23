@@ -98,7 +98,7 @@ const SAFE_SLUG_RE = /^[a-z0-9][a-z0-9_-]{1,79}$/;
  * Slug MUST match the canonical NFKD slug regex.
  */
 export function probeGame(slug, opts = {}) {
-  const { runs = 50000, seed = 42, bet = 1 } = opts;
+  const { runs = 50000, seed = 42, bet = 1, kernelPreflight = false } = opts;
   if (typeof slug !== 'string' || !SAFE_SLUG_RE.test(slug)) {
     return { ok: false, error: `invalid slug "${slug}" — must match ${SAFE_SLUG_RE}` };
   }
@@ -115,14 +115,22 @@ export function probeGame(slug, opts = {}) {
   /* 2026-06-23: cross-game probe always enables --auto-clamp so the
    * comparative report shows declared-target-aligned RTP for declared
    * games. Single-game probe defaults to raw (opt-in); cross-game wants
-   * the calibrated view by default. */
-  const r = spawnSync('node', [probe,
+   * the calibrated view by default.
+   *
+   * Optional --kernel-preflight (B+++) attaches sister-repo analytical
+   * RTP per game to the comparative report. Parsed from probe stdout via
+   * the "H&W kernel:" / "Cluster kernel:" lines emitted in preflight
+   * section. */
+  const probeArgs = [
     `--slug=${slug}`,
     `--runs=${runs}`,
     `--seed=${seed}`,
     `--bet=${bet}`,
     '--auto-clamp',
-  ], { encoding: 'utf8', timeout: 120_000 });
+  ];
+  if (kernelPreflight) probeArgs.push('--kernel-preflight');
+  const r = spawnSync('node', [probe, ...probeArgs],
+    { encoding: 'utf8', timeout: 120_000 });
   if (r.status !== 0) {
     return { ok: false, error: `probe exit ${r.status}: ${(r.stderr || '').slice(0, 200)}` };
   }
@@ -132,6 +140,22 @@ export function probeGame(slug, opts = {}) {
   }
   try {
     const report = JSON.parse(readFileSync(reportPath, 'utf8'));
+    /* When --kernel-preflight was passed, parse the analytical RTP lines
+     * from probe stdout and attach to report.kernel. Regex matches both:
+     *   H&W kernel:     rtpContrib 2.9580%  (money 1.8580% + jackpot 1.1000%)
+     *   Cluster kernel: rtpContrib 6.1630× bet  (perSymbol 8 entries, ...)
+     * Result preserves raw lines + a numeric extraction. */
+    if (kernelPreflight) {
+      const kernel = { lines: [] };
+      const hwM = r.stdout.match(/H&W kernel:\s+rtpContrib\s+([\d.]+)%/);
+      if (hwM) kernel.hwRtpPct = parseFloat(hwM[1]);
+      const clM = r.stdout.match(/Cluster kernel:\s+rtpContrib\s+([\d.]+)×\s+bet/);
+      if (clM) kernel.clusterRtpXBet = parseFloat(clM[1]);
+      const stdoutLines = r.stdout.split('\n').filter(l =>
+        l.includes('H&W kernel:') || l.includes('Cluster kernel:') || l.includes('KERNEL PRE-FLIGHT'));
+      kernel.lines = stdoutLines;
+      report._kernelPreflight = kernel;
+    }
     return { ok: true, report };
   } catch (e) {
     return { ok: false, error: `report parse failed: ${e.message}` };
@@ -177,6 +201,36 @@ export function generateComparativeReport(slugs, opts = {}) {
       topo = `${model.topology?.reels || '?'}x${model.topology?.rows || '?'}`;
       topoKind = topologyKind(model);
     } catch { /* ignore */ }
+    /* Kernel comparison: ANALYTICAL component RTP from sister-repo kernels
+     * alongside MEASURED total RTP from probe. Kernels operate on SYNTHETIC
+     * percolation/value distributions (no real par-sheet data) — analytical
+     * numbers are illustrative, NOT a regression signal vs measured total.
+     * Real disagreement detection requires par-sheet-derived distributions
+     * (future enhancement when PAR upload pipeline lands per-game).
+     *
+     * For now: just stash both numbers + synthetic flag for operator review. */
+    const kernel = rep._kernelPreflight;
+    let kernelComparison = null;
+    if (kernel) {
+      if (Number.isFinite(kernel.hwRtpPct)) {
+        kernelComparison = {
+          source: 'hw',
+          analyticalPctOfComponent: kernel.hwRtpPct,
+          measuredPctOfTotalRtp: rep.measuredRTP,
+          isSyntheticDistribution: true,
+          note: 'analytical is H&W-component-only; measured is total RTP — direct subtraction not meaningful without par-sheet data',
+        };
+      } else if (Number.isFinite(kernel.clusterRtpXBet)) {
+        kernelComparison = {
+          source: 'cluster',
+          analyticalXBetTotal: kernel.clusterRtpXBet,
+          analyticalPctEquivalent: +(kernel.clusterRtpXBet * 100).toFixed(2),
+          measuredPctOfTotalRtp: rep.measuredRTP,
+          isSyntheticDistribution: true,
+          note: 'analytical from synthetic percolation approximation; supply empirical clusterCountDistribution via API for real comparison',
+        };
+      }
+    }
     games.push({
       slug,
       ok: true,
@@ -191,11 +245,22 @@ export function generateComparativeReport(slugs, opts = {}) {
       runs: rep.runs,
       spinsPerSec: rep.spinsPerSec,
       maxSingleSpin: rep.maxSingleSpinX || null,
+      kernelComparison,
       longestLosingStreak: rep.longestLosingStreak || null,
     });
   }
   const succeeded = games.filter(g => g.ok);
   const withDeclared = succeeded.filter(g => Number.isFinite(g.declaredRTP) && g.declaredRTP > 0);
+  /* Kernel preflight comparison summary (when --kernel-preflight was on).
+   * Just count games with kernel data + flag any that have non-synthetic
+   * (par-sheet-derived) distributions. Synthetic comparisons are NOT
+   * regressions — they're audit-grade analytical numbers operators use
+   * to sanity-check probe direction. */
+  const withKernel = succeeded.filter(g => g.kernelComparison);
+  const kernelPerSource = {
+    hw:      withKernel.filter(g => g.kernelComparison.source === 'hw').length,
+    cluster: withKernel.filter(g => g.kernelComparison.source === 'cluster').length,
+  };
   /* 2026-06-23 — gap distribution histogram for full-corpus runs.
    * Buckets games-with-declared-RTP by |Δ| into industry-meaningful bands:
    *   exact (±0.5pp)  — auto-clamp converged
@@ -237,6 +302,16 @@ export function generateComparativeReport(slugs, opts = {}) {
       : null,
     gapBuckets,
     topologyDistribution: topoDist,
+    /* Kernel-preflight summary (populated only when --kernel-preflight on).
+     * NOTE: synthetic distributions inflate analytical numbers; treat as
+     * informational, not regression signal. Real disagreement detection
+     * requires per-game empirical PAR data. */
+    kernelPreflight: withKernel.length > 0 ? {
+      gamesWithKernelData: withKernel.length,
+      perSource: kernelPerSource,
+      syntheticDistribution: true,
+      note: 'analytical RTPs use synthetic percolation / industry-typical pools — pass empirical par-sheet data via API for actionable disagreement detection',
+    } : null,
   };
   return { games, summary, exit };
 }
@@ -313,6 +388,7 @@ if (process.argv[1]?.endsWith('math-cross-game-probe.mjs')) {
   const seed = parseInt(argVal('--seed') || '42', 10);
   const format = (argVal('--format') || 'json').toLowerCase();
   const useAllCorpus = args.includes('--all');
+  const kernelPreflight = args.includes('--kernel-preflight');
   let slugs;
   if (useAllCorpus) {
     /* All 338 GDDs in dist/real-games/ with model.json. */
@@ -329,7 +405,7 @@ if (process.argv[1]?.endsWith('math-cross-game-probe.mjs')) {
   }
   console.log(`MATH-DEEP cross-game probe · ${slugs.length} games × ${runs} spins · seed ${seed}`);
   console.log('');
-  const { games, summary, exit } = generateComparativeReport(slugs, { runs, seed });
+  const { games, summary, exit } = generateComparativeReport(slugs, { runs, seed, kernelPreflight });
   printTable(games);
   console.log('');
   console.log(`Summary: ${summary.gamesOk}/${summary.gamesProbed} ok · ${summary.gamesWithDeclaredRTP} with declared RTP · avg measured ${summary.avgMeasuredRTP}% · avg declared ${summary.avgDeclaredRTP}% · max gap ${summary.maxRTPGap}pp · min gap ${summary.minRTPGap}pp`);
