@@ -28,6 +28,35 @@ Sva 3 suite landed sa 100% pass rate + integrated u verify gate (steps 4.97y2/y3
 
 ### Verify gate sad na 43 steps (4.97y2 = A, 4.97y3 = C, 4.97y4 = B)
 
+### RENDER-INTEG-A produbljen — manifest block + onlyIfWinning gate (2026-06-23)
+
+Posle A/B/C suite-a Corti je dodao 3 ultimativna fix-a koja zatvaraju gap između parsovanih polja i runtime sloja:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────┐
+│ Fix                                                       │ Fajl                │
+├──────────────────────────────────────────────────────────┼────────────────────┤
+│ 1. gddRuntimeMeta LEGO blok (manifest emit)               │ blocks/gdd...mjs    │
+│    Emituje __GDD_COMPLIANCE__, __GDD_RTP_BREAKDOWN__,     │                     │
+│    __GDD_SCATTER_PAY_TABLE__, __GDD_EXPANDING_WILD_       │                     │
+│    ONLY_IF_WINNING__, __GDD_META_VERSION__ + onGddMeta-   │                     │
+│    Ready event. Audit-grade math manifest u page runtime. │                     │
+├──────────────────────────────────────────────────────────┼────────────────────┤
+│ 2. expandingWild.onlyIfWinning runtime gate               │ blocks/expand...    │
+│    GDD-deklarisan flag sada živi u rendered block-u:      │                     │
+│    EXPANDING_WILD_ONLY_IF_WINNING + _expWildOnlyIfWinning │                     │
+│    Passed() gate. Force-chip path bypass-uje za operator. │                     │
+├──────────────────────────────────────────────────────────┼────────────────────┤
+│ 3. render-parser-fields-integration.test.mjs              │ tests/contracts/    │
+│    DEEP parity test: 5 baselines × 6 asercija = 30/30 ✅  │                     │
+│    Asertuje JEDNAKOST values parser→runtime, ne samo      │                     │
+│    block emit. Wired u verify gate step 4.97y.            │                     │
+└──────────────────────────────────────────────────────────┴────────────────────┘
+```
+
+UQ-16 baseline rebaked (htmlBytes100 + htmlSha shift za 338 slugs zbog
+gddRuntimeMeta runtime-meta blocka — očekivano).
+
 ### Full-corpus probe + ALL gaps closed
 
 ```

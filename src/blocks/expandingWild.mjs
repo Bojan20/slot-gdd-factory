@@ -50,6 +50,12 @@ export function defaultConfig() {
     wildSymbolId: 'W',
     expandDurationMs: 360,
     haloColor: '255,214,110',
+    /* RENDER-INTEG-A (2026-06-23): GDD-declared gate. When true, expansion
+     * only fires on spins where a paying win already landed. Mirrors GDD
+     * "Expanding Wild — only_if_winning" prose. Parser (MATH-DEEP D-16)
+     * already extracts model.expandingWild.onlyIfWinning; this surfaces it
+     * through render so live slot.html honors the same gate. */
+    onlyIfWinning: false,
   });
 }
 
@@ -61,6 +67,7 @@ export function resolveConfig(model = {}) {
   if (typeof m.wildSymbolId === 'string' && /^[A-Za-z][A-Za-z0-9_]*$/.test(m.wildSymbolId)) cfg.wildSymbolId = m.wildSymbolId;
   if (Number.isFinite(m.expandDurationMs)) cfg.expandDurationMs = clampInt(m.expandDurationMs, MIN_DURATION_MS, MAX_DURATION_MS);
   if (typeof m.haloColor === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(m.haloColor)) cfg.haloColor = m.haloColor;
+  if (m.onlyIfWinning === true || m.onlyIfWinning === false) cfg.onlyIfWinning = m.onlyIfWinning;
 
   if (Array.isArray(model.features) && model.features.some(f => f.kind === 'expanding_wild')) {
     cfg.enabled = true;
@@ -95,8 +102,23 @@ export function emitExpandingWildRuntime(cfg = defaultConfig()) {
   return `/* ─── expanding wild runtime ──────────────────────────────────── */
 const EXPANDING_WILD_MODE   = ${JSON.stringify(cfg.mode)};
 const EXPANDING_WILD_SYMBOL = ${JSON.stringify(cfg.wildSymbolId)};
+const EXPANDING_WILD_ONLY_IF_WINNING = ${JSON.stringify(cfg.onlyIfWinning)};
 const EXPANDING_WILD_FALLBACK_REELS = ${FALLBACK_REELS};
 const EXPANDING_WILD_FALLBACK_ROWS  = ${FALLBACK_ROWS};
+
+/* RENDER-INTEG-A (2026-06-23) — onlyIfWinning gate. When GDD declares the
+ * flag, refuse to expand on a no-win spin (mirrors par-sheet math contract).
+ * Read win signal from window.__LAST_SPIN_WIN__ (set by win-presentation /
+ * accounting) or fall back to scanning .cell--win class on the grid. Force
+ * chip path still bypasses (operator demo must always fire). */
+function _expWildOnlyIfWinningPassed() {
+  if (!EXPANDING_WILD_ONLY_IF_WINNING) return true;
+  if (typeof window !== 'undefined' && window.__FORCE_FEATURE_PENDING__ === 'expanding_wild') return true;
+  if (typeof window !== 'undefined' && Number.isFinite(window.__LAST_SPIN_WIN__) && window.__LAST_SPIN_WIN__ > 0) return true;
+  const host = typeof document !== 'undefined' ? document.getElementById('gridHost') : null;
+  if (host && host.querySelector('.cell--win, .is-winning, .win-line-active')) return true;
+  return false;
+}
 
 function _expWildPhaseAllowed() {
   if (typeof FSM === 'undefined') return EXPANDING_WILD_MODE !== 'fs';
@@ -119,6 +141,8 @@ function applyExpandingWilds() {
   const _isForcedExpand = (typeof window !== 'undefined' &&
                           window.__FORCE_FEATURE_PENDING__ === 'expanding_wild');
   if (!_isForcedExpand && !_expWildPhaseAllowed()) return [];
+  /* RENDER-INTEG-A (2026-06-23) — GDD only_if_winning gate. */
+  if (!_expWildOnlyIfWinningPassed()) return [];
   const host = document.getElementById('gridHost');
   if (!host) return [];
   const REELS = Number.isInteger(window.REELS) ? window.REELS : EXPANDING_WILD_FALLBACK_REELS;

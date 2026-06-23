@@ -349,6 +349,10 @@ import {
   resolveConfig as resolveExpandingWildConfig,
 } from './blocks/expandingWild.mjs';
 import {
+  emitGddRuntimeMeta,
+  resolveConfig as resolveGddRuntimeMetaConfig,
+} from './blocks/gddRuntimeMeta.mjs';
+import {
   emitWalkingWildCSS, emitWalkingWildRuntime,
   resolveConfig as resolveWalkingWildConfig,
 } from './blocks/walkingWild.mjs';
@@ -1939,6 +1943,9 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
      Order: wilds first (modify the grid), then evaluators (read modified
      grid), then round-control (consume eval results), then mini-games
      (overlay UIs, independent triggers). */
+  /* RENDER-INTEG-A (2026-06-23) — GDD math/compliance manifest. Emits
+     window.__GDD_* constants for external audit + downstream blocks. */
+  ${emitGddRuntimeMeta(resolveGddRuntimeMetaConfig(model))}
   ${emitStickyWildRuntime(resolveStickyWildConfig(model))}
   ${emitExpandingWildRuntime(resolveExpandingWildConfig(model))}
   ${emitWalkingWildRuntime(resolveWalkingWildConfig(model))}
