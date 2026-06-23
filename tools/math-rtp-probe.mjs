@@ -291,6 +291,12 @@ function spin(rng) {
   applyWildExpansion(grid, model, paylineMapForExpansion);
   let totalWin = 0;
   let hits = 0;
+  /* 2026-06-23 — per-component RTP breakdown for kernel comparison.
+   * Apples-to-apples: each plugin's contribution tracked separately so
+   * the summary can emit measuredRtpBreakdown = { line, cluster,
+   * payAnywhere, scatter, pattern, hw } alongside analytical kernel
+   * components. Eliminates the "total vs component" disagreement trap. */
+  const components = { line: 0, cluster: 0, payAnywhere: 0, scatter: 0, pattern: 0, hw: 0 };
   /* Grana D-1 (2026-06-22) — Cluster-pays topology dispatch. Cluster games
    * (paylines=0, evaluation='cluster') bypass line eval entirely; pay
    * comes from orthogonal flood-fill clusters ≥ min_size. Line probe was
@@ -312,6 +318,7 @@ function spin(rng) {
                      && _gridMatchesTopo;
   if (isClusterTopo) {
     totalWin += clusterResult.totalPay;
+    components.cluster += clusterResult.totalPay;
     if (clusterResult.fired) hits++;
   }
   /* PAY-ANYWHERE DISPATCH (2026-06-23 final closure): position-independent
@@ -324,6 +331,7 @@ function spin(rng) {
                           || model.topology?.evaluation === 'pay_anywhere');
   if (isPayAnywhereTopo) {
     totalWin += payAnywhereResult.totalPay;
+    components.payAnywhere += payAnywhereResult.totalPay;
     if (payAnywhereResult.fired) hits += payAnywhereResult.hits;
   }
   /* Evaluate paylines (only when NOT cluster AND NOT pay_anywhere topology). */
@@ -360,7 +368,9 @@ function spin(rng) {
          * × line bet = × 1 coin; coin value = total_bet / 20". Convert
          * raw pay (coins) to × total bet by dividing by line count. */
         const coinDenominator = paylines > 0 ? paylines : 20;
-        totalWin += (pay / coinDenominator);
+        const lineWin = pay / coinDenominator;
+        totalWin += lineWin;
+        components.line += lineWin;
         hits++;
       }
     }
@@ -371,7 +381,7 @@ function spin(rng) {
    * own scatter table; for now we don't double-dip. */
   if (isClusterTopo) {
     return {
-      totalWin, hits,
+      totalWin, hits, components,
       fsTriggered: false,
       scatterCount: 0,
     };
@@ -382,6 +392,7 @@ function spin(rng) {
   const scatterResult = evalVolcanoScatter(grid, model);
   if (scatterResult.scatterPay > 0) {
     totalWin += scatterResult.scatterPay;
+    components.scatter += scatterResult.scatterPay;
     hits++;
   }
   /* FS triggered flag returned via spin() output for parent loop. */
@@ -396,6 +407,7 @@ function spin(rng) {
   const patternResult = evalPatternWin(grid, model);
   if (patternResult.patternHit) {
     totalWin += patternResult.patternPayXBet;
+    components.pattern += patternResult.patternPayXBet;
     hits++;
   }
 
@@ -406,6 +418,7 @@ function spin(rng) {
   const hnwResult = evalHoldAndWinFireball(grid, model, rng);
   if (hnwResult.triggered) {
     totalWin += hnwResult.collectPay;
+    components.hw += hnwResult.collectPay;
     hits++;
   }
 
@@ -415,7 +428,7 @@ function spin(rng) {
    * A-5 FS round simulator was added). MATH-4 enforces ≤ cap on full
    * single-spin total including any FS round that this spin triggered. */
   return {
-    totalWin, hits,
+    totalWin, hits, components,
     fsTriggered: scatterResult.fsTriggered,
     scatterCount: scatterResult.scatterCount,
   };
@@ -432,12 +445,20 @@ let losingStreak = 0;
 let longestLosingStreak = 0;
 let maxSingleSpin = 0;
 const winHistogram = { lt1x: 0, '1-5x': 0, '5-25x': 0, '25-100x': 0, '100x+': 0 };
+/* Per-component accumulators (2026-06-23 — apples-to-apples kernel comparison). */
+const componentTotals = { line: 0, cluster: 0, payAnywhere: 0, scatter: 0, pattern: 0, hw: 0, fsRound: 0 };
 
 const t0 = Date.now();
 for (let i = 0; i < RUNS; i++) {
   totalBet += BET;
   const spinResult = spin(rng);
   let win = spinResult.totalWin;
+  /* Accumulate base-spin components. */
+  if (spinResult.components) {
+    for (const [k, v] of Object.entries(spinResult.components)) {
+      componentTotals[k] = (componentTotals[k] || 0) + v;
+    }
+  }
 
   /* OPCIJA A · A-5 — Free Spins round simulation.
    * If base spin triggered FS (≥3 Volcano), run FS round atop base spin.
@@ -445,6 +466,7 @@ for (let i = 0; i < RUNS; i++) {
   if (spinResult.fsTriggered) {
     const fsRound = simulateFreeSpinsRound(model, rng, () => spin(rng).totalWin);
     win += fsRound.fsRoundPay;
+    componentTotals.fsRound += fsRound.fsRoundPay;
   }
 
   /* MATH-4 — runtime win cap enforcement. winCap.mode='spin' (default)
@@ -575,6 +597,20 @@ const summary = {
   maxSingleSpin,
   maxSingleSpinX: +(maxSingleSpin / BET).toFixed(2),
   winHistogram,
+  /* 2026-06-23 — per-component measured RTP breakdown for kernel comparison.
+   * Each value is per-spin contribution percentage (0..100). Sum = total
+   * measuredRTP (within float epsilon, before auto-clamp). H&W component
+   * is directly comparable to kernel's hwRtpPct; cluster component to
+   * kernel's clusterRtpXBet × 100. Apples-to-apples. */
+  measuredRtpBreakdown: {
+    line:        +(componentTotals.line        / totalBet * 100).toFixed(4),
+    cluster:     +(componentTotals.cluster     / totalBet * 100).toFixed(4),
+    payAnywhere: +(componentTotals.payAnywhere / totalBet * 100).toFixed(4),
+    scatter:     +(componentTotals.scatter     / totalBet * 100).toFixed(4),
+    pattern:     +(componentTotals.pattern     / totalBet * 100).toFixed(4),
+    hw:          +(componentTotals.hw          / totalBet * 100).toFixed(4),
+    fsRound:     +(componentTotals.fsRound     / totalBet * 100).toFixed(4),
+  },
   poolSize: usingParSheet
     ? perReelPools.reduce((acc, p) => acc + p.length, 0)
     : (pool ? pool.length : 0),
@@ -606,6 +642,17 @@ console.log(`  Hit freq:    measured ${summary.measuredHF}%   declared ${declare
 console.log(`  Max spin:    ${summary.maxSingleSpinX}× bet`);
 console.log(`  Longest dry: ${longestLosingStreak} spins`);
 console.log(`  Win hist:    < 1×=${winHistogram.lt1x}  1-5×=${winHistogram['1-5x']}  5-25×=${winHistogram['5-25x']}  25-100×=${winHistogram['25-100x']}  100×+=${winHistogram['100x+']}`);
+/* Per-component breakdown — only emit non-zero components for legibility. */
+{
+  const br = summary.measuredRtpBreakdown;
+  const parts = [];
+  for (const [k, v] of Object.entries(br)) {
+    if (v > 0.0001) parts.push(`${k}=${v.toFixed(2)}%`);
+  }
+  if (parts.length > 0) {
+    console.log(`  Component:   ${parts.join(' · ')}`);
+  }
+}
 console.log(`  Report:      ${out}`);
 
 /* ── KERNEL PRE-FLIGHT (opt-in via --kernel-preflight) ─────────────────
@@ -627,7 +674,10 @@ if (args.includes('--kernel-preflight')) {
       const { computeHoldAndWinKernelRtp } = await import('../src/blocks/featureSimPlugins/holdAndWinKernelBridge.mjs');
       const k = await computeHoldAndWinKernelRtp(model);
       if (k.ok) {
-        kernelLines.push(`  H&W kernel:  rtpContrib ${(k.rtpContribution * 100).toFixed(4)}%  (money ${(k.moneyComponent?.rtp_contribution * 100).toFixed(4)}% + jackpot ${(k.jackpotComponent?.rtp_contribution * 100).toFixed(4)}%)`);
+        const kPct = k.rtpContribution * 100;
+        const measHw = summary.measuredRtpBreakdown.hw;
+        const delta = +(measHw - kPct).toFixed(2);
+        kernelLines.push(`  H&W kernel:  analytical ${kPct.toFixed(2)}%  vs measured(hw) ${measHw.toFixed(2)}%  Δ ${delta >= 0 ? '+' : ''}${delta}pp`);
       } else {
         kernelLines.push(`  H&W kernel:  unavailable — ${k.reason}`);
       }
@@ -640,7 +690,10 @@ if (args.includes('--kernel-preflight')) {
       const { computeClusterPaysKernelRtp } = await import('../src/blocks/featureSimPlugins/clusterEvalKernelBridge.mjs');
       const k = await computeClusterPaysKernelRtp(model);
       if (k.ok) {
-        kernelLines.push(`  Cluster kernel: rtpContrib ${k.rtpContribution.toFixed(4)}× bet  (perSymbol ${k.perSymbol?.length || 0} entries, ${k.adjacency} adjacency)`);
+        const kPct = k.rtpContribution * 100; /* x-bet → percentage */
+        const measCl = summary.measuredRtpBreakdown.cluster;
+        const delta = +(measCl - kPct).toFixed(2);
+        kernelLines.push(`  Cluster kernel: analytical ${kPct.toFixed(2)}%  vs measured(cluster) ${measCl.toFixed(2)}%  Δ ${delta >= 0 ? '+' : ''}${delta}pp`);
       } else {
         kernelLines.push(`  Cluster kernel: unavailable — ${k.reason}`);
       }
