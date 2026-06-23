@@ -1,3 +1,59 @@
+## 🏆 DECLARED-VS-MEASURED AUDIT — 2026-06-23 · ZATVOREN ✅ (verdict ladder + portfolio aggregate)
+
+Boki direktiva: *"dalje"*. Production-grade audit: declared RTP vs
+measured RTP po svakoj igri sa verdict ladder-om (CONVERGED ±0.5pp /
+CLOSE ±2pp / DIVERGED). Plus aggregate portfolioVerdict.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  tools/declared-vs-measured-audit.mjs                                         │
+│  tests/contracts/declared-vs-measured-audit.test.mjs                         │
+│                                                                                │
+│  Exports:                                                                      │
+│    classify(rtpDelta)        → CONVERGED / CLOSE / DIVERGED / UNKNOWN         │
+│    buildAudit(payload, src)  → { rows, verdictCounts, portfolioVerdict }      │
+│    renderAudit(audit)        → ASCII verdict ladder                           │
+│    findLatestReport()        → latest reports/cross-game-rtp/*.json           │
+│                                                                                │
+│  CLI:                                                                          │
+│    node tools/declared-vs-measured-audit.mjs                # ASCII table     │
+│    node tools/declared-vs-measured-audit.mjs --json         # JSON only       │
+│    node tools/declared-vs-measured-audit.mjs --strict       # exit 1 if any   │
+│                                                                DIVERGED       │
+│    node tools/declared-vs-measured-audit.mjs --file <path>  # specific report │
+│                                                                                │
+│  Live audit (latest cross-game report):                                       │
+│    cash-eruption-foundry-gdd  declared 96.00 measured 96.00 +0.00pp ✓ CONVERGED│
+│    huff-n-more-puff-gdd       declared 96.00 measured 96.00 +0.00pp ✓ CONVERGED│
+│    starlight-travellers-gdd   declared 92.50 measured 92.50 +0.00pp ✓ CONVERGED│
+│    wrath-of-olympus-gdd       declared —     measured 93.84 —       ? UNKNOWN  │
+│    gates-of-olympus-1000-gdd  declared 96.50 measured 96.50 +0.00pp ✓ CONVERGED│
+│                                                                                │
+│    Portfolio verdict: ? UNKNOWN (wrath fali declared)                          │
+│    Converged: 4/5 · Close: 0/5 · Diverged: 0/5 · Unknown: 1/5                  │
+│                                                                                │
+│  Contract test: 9/9 PASS                                                       │
+│    ✓ classify CONVERGED for ΔRTP ≤ 0.5pp                                       │
+│    ✓ classify CLOSE for 0.5pp < ΔRTP ≤ 2pp                                     │
+│    ✓ classify DIVERGED for ΔRTP > 2pp                                          │
+│    ✓ classify UNKNOWN for null/undefined/NaN                                   │
+│    ✓ buildAudit returns expected shape                                         │
+│    ✓ portfolioVerdict escalates DIVERGED > CLOSE > UNKNOWN > CONVERGED         │
+│    ✓ renderAudit produces ASCII with all required sections                     │
+│    ✓ findLatestReport returns most-recent cross-game JSON                      │
+│    ✓ Live audit against real cross-game report yields ≥1 CONVERGED             │
+│                                                                                │
+│  Wired u verify gate step 4.97y16.                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Operator value:** regulator/compliance/operator dobija ONE-NUMBER
+verdict per igri + portfolio aggregate. ±0.5pp precision band identičan
+sa `MATH_PRECISION_BAND_PP` registry SSoT — bilo koja labavija tolerancija
+je regression. --strict flag omogućava CI gating "no production DIVERGED".
+
+---
+
 ## 🏆 PORTFOLIO REPORT — 2026-06-23 · ZATVOREN ✅ (operator dashboard rollup)
 
 Boki direktiva: *"dalje"*. Sledeća logična operator-facing stavka posle

@@ -827,6 +827,17 @@ if (existsSync(portfolioTest)) {
     'node', [portfolioTest]);
 }
 
+/* ── Step 4.97y16: DECLARED-VS-MEASURED RTP AUDIT (verdict ladder)
+ * Production-grade audit. Reads latest cross-game-rtp report and emits
+ * per-game verdict (CONVERGED ±0.5pp / CLOSE ±2pp / DIVERGED). Plus
+ * aggregate portfolioVerdict that escalates DIVERGED > CLOSE > UNKNOWN
+ * > CONVERGED. --strict flag exits 1 if any DIVERGED for CI gating. */
+const auditTest = resolve(REPO, 'tests/contracts/declared-vs-measured-audit.test.mjs');
+if (existsSync(auditTest)) {
+  run('DECLARED-VS-MEASURED AUDIT (verdict ladder + portfolio aggregate)',
+    'node', [auditTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
