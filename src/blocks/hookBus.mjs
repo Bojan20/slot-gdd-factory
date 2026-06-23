@@ -742,13 +742,36 @@ export const HOOK_EVENTS = Object.freeze([
   'onFrjCheckRequired',  // Owner: franceComplianceGate.mjs
   'onGameStateCleared',  // Owner: germanyComplianceGate.mjs
   'onHoldAndWinEnd',  // Owner: holdAndWin.mjs
-  /* UQ-DEEP-H fix (Boki cash-eruption console 2026-06-23): four hold-and-win
+  /* UQ-DEEP-H fix (Boki runtime-console 2026-06-23): four hold-and-win
    * lifecycle events were emitted by holdAndWin.mjs + listened to by
    * multiplierOrb / spinControl / room-jackpot / frame-multiplier, but never
    * whitelisted here. HookBus.on() warned "unknown event" and silently
    * dropped subscriptions → cross-feature coordination dead. */
   'onHoldAndWinIntro',  // Owner: holdAndWin.mjs (INTRO phase start)
   'onHoldAndWinStart',  // Owner: holdAndWin.mjs (RUNNING phase start)
+  /* UQ-DEEP-I fix (Boki "mora da radi za bilo sta sto se uploaduje"
+   * 2026-06-23): three additional events that mass-probe across 30 slots
+   * surfaced as "unknown event" warnings — stageBadge subscribes to
+   * onBaseEnter (FSM BASE phase enter), pickBonusReveal emits
+   * onBonusPickResolved (pick-bonus end), stickyWild subscribes to
+   * onRoundEnd (round-scope clean-up). All three were broadcasting
+   * across blocks but never whitelisted → cross-block hooks silently
+   * disabled. */
+  'onBaseEnter',  // Owner: FSM (consumed by stageBadge, jurisdiction gates)
+  'onBonusPickResolved',  // Owner: pickBonusReveal.mjs / bonusBuy variants
+  'onRoundEnd',  // Owner: FSM / autoplay (consumed by stickyWild round-scope GC)
+  /* UQ-DEEP-I second pass (full 338-corpus probe surfaced 6 more dotted/
+   * colon-separated namespaces — legacy event naming convention used by
+   * wheelBonus / clusterPaysEval / bonusPick before the canonical
+   * onCamelCase migration. Whitelisting in-place rather than rewriting
+   * to avoid breaking the 338 rendered slot.html outputs that already
+   * subscribe to these strings. */
+  'wheelBonus.open',     // Owner: wheelBonus.mjs (UI open hook)
+  'wheelBonus.close',    // Owner: wheelBonus.mjs (UI close hook)
+  'wheelBonus.request',  // Owner: wheelBonus.mjs (player→engine request)
+  'wheelBonus.result',   // Owner: wheelBonus.mjs (engine→UI result)
+  'reels:stopped',       // Owner: reelEngine (consumed by clusterPaysEval)
+  'feature:bonusPick:trigger',  // Owner: bonusBuy / feature dispatcher
   'onHoldAndWinPayout',  // Owner: holdAndWin.mjs
   'onHoldAndWinPhase',  // Owner: holdAndWin.mjs
   /* UQ-MASTERY-2 (2026-06-21) — explicit start-of-feature trigger emitted
@@ -820,7 +843,7 @@ export const HOOK_EVENTS = Object.freeze([
   'onWheelRevealStart',  // Owner: wheelBonusReveal.mjs
   'onWheelSettled',  // Owner: wheelBonus.mjs
   'onWinCapClamped',  // Owner: winCap.mjs
-  /* UQ-DEEP-H fix (Boki cash-eruption console 2026-06-23): spinControl
+  /* UQ-DEEP-H fix (Boki runtime-console 2026-06-23): spinControl
    * gates recover on these but they were never whitelisted → unknown
    * event warn + gate stays stuck on cap-reached / self-excluded states. */
   'onWinCapReached',  // Owner: winCap.mjs (consumed by spinControl gate recover)

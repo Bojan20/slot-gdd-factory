@@ -273,7 +273,7 @@ export function emitPwaInstallabilityRuntime(cfg = defaultConfig()) {
 
     /* SW registration — blob URL avoids any second-file deploy. Service
      * workers from same-origin blob URLs are permitted (spec-compliant).
-     * UQ-DEEP-H fix (Boki cash-eruption console 2026-06-23): even
+     * UQ-DEEP-H fix (Boki sandbox-iframe console 2026-06-23): even
      * READING navigator.serviceWorker throws SecurityError inside a
      * sandboxed iframe without allow-same-origin (e.g. the web-uploader
      * preview iframe). Previous check used a logical-AND chain which

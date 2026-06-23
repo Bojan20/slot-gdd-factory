@@ -1875,13 +1875,13 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
      owns the input. Wave V3 — spinControl morphs the button between SPIN /
      STOP_PRE / STOP_POST / SKIP_*; this handler only fires a fresh spin
      when data-state is SPIN (otherwise spinControl emits its own intent).
-     UQ-DEEP-H fix (Boki cash-eruption console 2026-06-23): handler is
-     attached HERE but the FSM declaration runs ~11000 lines later in
-     the same script. Until that line runs, FSM is in Temporal Dead
-     Zone — if the player clicks spin BEFORE late-bundle blocks
-     finish initializing, JS throws "Cannot access FSM before
-     initialization". Route via window.FSM (set right after the
-     declaration) which is undefined during TDZ, not a throw.
+     UQ-DEEP-H fix (Boki 2026-06-23): handler is attached HERE but the
+     FSM declaration runs ~11000 lines later in the same script. Until
+     that line runs, FSM is in Temporal Dead Zone — if the player
+     clicks spin BEFORE late-bundle blocks finish initializing, JS
+     throws "Cannot access FSM before initialization". Route via
+     window.FSM (set right after the declaration) which is undefined
+     during TDZ, not a throw.
      (No backticks in this comment — surrounding string is a template
      literal that would terminate on any raw backtick.) */
   const spinButton = document.getElementById("spinBtn");
