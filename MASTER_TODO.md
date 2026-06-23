@@ -23,8 +23,17 @@ sve ostalo je kozmetika:
 │    │  - Wire u verify gate step 4.97y18                              │       │            │
 │    │  - Honest snapshot: cash-eruption -58.48pp · gates +216.42pp    │       │            │
 │    │    (intentional — generic dist != par sheet, calibration tool) │       │            │
-│ P3 │ Anti-vendor lint kao live verify step                          │ MED   │ 📋 NEXT    │
-│    │ — jednokratan purge urađen, sledeći leak prolazi tiho          │       │            │
+│ P3 │ Anti-vendor lint kao live verify step                          │ MED   │ ✅ DONE    │
+│    │  - tools/anti-vendor-lint.mjs sa severity ladder              │       │            │
+│    │  - HIGH (regulator/sales) / MEDIUM (internal slug) / LOW (HTML)│       │            │
+│    │  - --strict gate blokira HIGH only                             │       │            │
+│    │  - 13 vendor patterns: IGT, Pragmatic, Megaways, Cash Eruption,│       │            │
+│    │    Wolf Run, Cleopatra, Buffalo, NetEnt, Microgaming, L&W,    │       │            │
+│    │    Play'n Go, Novomatic                                        │       │            │
+│    │  - Allowlist: samples/, model.json, tools/_wave-v-cache,       │       │            │
+│    │    CLAUDE.md, MASTER_TODO.md, tool self                        │       │            │
+│    │  - Live: HIGH=0 (clean public surface), 14 LOW/MEDIUM info-only│       │            │
+│    │  - Wire u verify gate step 4.97y19                             │       │            │
 └────┴──────────────────────────────────────────────────────────────┴───────┴───────────┘
 ```
 

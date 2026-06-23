@@ -860,6 +860,19 @@ if (existsSync(honestConvTest)) {
     'node', [honestConvTest]);
 }
 
+/* ── Step 4.97y19: ANTI-VENDOR LINT (P3 continuous gate)
+ * Scans public-facing artifacts (rendered slot.html bodies, regulator
+ * MD, par-sheet emissions, audit JSON) for vendor leakage (IGT,
+ * Pragmatic, Megaways, Cash Eruption, NetEnt, Microgaming, L&W, etc).
+ * Severity ladder: HIGH (regulator/sales output — strict blocking) /
+ * MEDIUM (internal slug in report JSON) / LOW (test fixture HTML).
+ * Contract asserts current state HIGH=0. */
+const antiVendorLintTest = resolve(REPO, 'tests/contracts/anti-vendor-lint.test.mjs');
+if (existsSync(antiVendorLintTest)) {
+  run('ANTI-VENDOR LINT (continuous gate · HIGH=0 contract)',
+    'node', [antiVendorLintTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
