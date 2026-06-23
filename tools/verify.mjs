@@ -757,12 +757,29 @@ if (existsSync(componentInvariantTest)) {
 /* ── Step 4.97y10: B+++++ — Extra sister-repo kernel bridges
  * expanding_symbol (Book-style FS expansion) + sticky_wilds (respin chain)
  * — both wrapped via custom Python runners that handle dict[int, float]
- * coercion. Brings total live kernels to 5 (money_collect, hold_and_win
- * composite, cluster_pays, expanding_symbol, sticky_wilds). */
+ * coercion. Now covers ALL 22 sister-repo kernels:
+ *   20 forward RTP: money_collect, hold_and_win, cluster_pays,
+ *     expanding_symbol, sticky_wilds, cascade, ways_evaluator,
+ *     pay_anywhere, stacked_wilds, both_ways, buy_feature,
+ *     persistent_multiplier, must_hit_by, wheel, asymmetric_paytable,
+ *     charge_meter, crash_kernel, pick_chain, state_machine,
+ *     both_ways_expanding_wild (composite)
+ *   2 inverse solvers: inverse_solver (1D), multi_dim_inverse_solver (N-D)
+ * Total: 24/24 sub-assertions across all 22 kernels. */
 const extraKernelTest = resolve(REPO, 'tests/contracts/extra-kernel-bridges.test.mjs');
 if (existsSync(extraKernelTest)) {
-  run('B+++++ — EXTRA KERNEL BRIDGES (expanding_symbol + sticky_wilds)',
+  run('B+++++ — EXTRA KERNEL BRIDGES (22/22 sister-repo kernels + 2 solvers)',
     'node', [extraKernelTest]);
+}
+
+/* ── Step 4.97y11: KERNEL REGISTRY discovery API
+ * Verifies kernel-registry.mjs exposes all 22 sister-repo kernels with
+ * complete metadata (category, topology, bridgeFunction, etc). Tooling
+ * imports this as single source of truth for kernel discovery. */
+const kernelRegistryTest = resolve(REPO, 'tests/contracts/kernel-registry.test.mjs');
+if (existsSync(kernelRegistryTest)) {
+  run('KERNEL REGISTRY discovery (22 kernels metadata + helpers)',
+    'node', [kernelRegistryTest]);
 }
 
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
