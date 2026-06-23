@@ -792,6 +792,18 @@ if (existsSync(slotMathKernelCliTest)) {
     'node', [slotMathKernelCliTest]);
 }
 
+/* ── Step 4.97y13: PER-GAME KERNEL COVERAGE (auto-discovery)
+ * For each baseline GDD, identify ALL sister-repo kernels that apply
+ * (topology + features) and call each one. Emits per-game kernel
+ * coverage report with analytical RTP per applicable kernel. Verifies
+ * topologyHints/applicableKernels/walkGame contracts + all 5 baselines
+ * walk to ok=true with kernelsOk > 0. */
+const perGameCoverageTest = resolve(REPO, 'tests/contracts/per-game-kernel-coverage.test.mjs');
+if (existsSync(perGameCoverageTest)) {
+  run('PER-GAME KERNEL COVERAGE (auto-discovery for 22 kernels × 5 baselines)',
+    'node', [perGameCoverageTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz

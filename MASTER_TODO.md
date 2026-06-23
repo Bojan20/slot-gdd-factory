@@ -1,3 +1,62 @@
+## 🏆 PER-GAME KERNEL COVERAGE — 2026-06-23 · ZATVOREN ✅ (auto-discovery walker)
+
+Boki direktiva: *"cepaj do kraja sve sto ima, nemoj da stajes"*. Sledeća
+operator-facing tool posle slot-math-kernel CLI: **per-game kernel coverage
+walker** — za svaku baseline GDD identifikuje SVE sister-repo kernels koji
+se primenjuju (topology + features match) i poziva ih, emituje per-game
+report sa analytical RTP per applicable kernel.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  tools/per-game-kernel-coverage.mjs                                           │
+│  tests/contracts/per-game-kernel-coverage.test.mjs                           │
+│                                                                                │
+│  Exports:                                                                      │
+│    topologyHints(model)       → Set<topology-hint>                            │
+│      reads BOTH kind AND evaluation (Gates: kind=rectangular,                 │
+│      evaluation=pay_anywhere — oba seed-uju hint set)                         │
+│    applicableKernels(model)   → Array<KernelMetadata>                         │
+│    walkGame(slug)             → { ok, topology, kernelsApplicable,            │
+│                                   kernelsOk, totalAnalyticalSumXBet,          │
+│                                   kernels: [{ name, ok, rtpContribution }] } │
+│                                                                                │
+│  CLI:                                                                          │
+│    node tools/per-game-kernel-coverage.mjs                  # 5 baselines     │
+│    node tools/per-game-kernel-coverage.mjs --slug X         # single game     │
+│    node tools/per-game-kernel-coverage.mjs --slugs A,B,C    # custom set      │
+│                                                                                │
+│  OUTPUT:                                                                       │
+│    reports/per-game-kernel-coverage/<slug>.json                               │
+│    reports/per-game-kernel-coverage/_summary-<ts>.json                        │
+│                                                                                │
+│  Live run (5/5 baselines):                                                    │
+│    ✓ cash-eruption-foundry-gdd  (lock_respin, 9/11 kernels, Σ 2.90× bet)     │
+│    ✓ huff-n-more-puff-gdd       (lines,       7/9  kernels, Σ ...× bet)      │
+│    ✓ starlight-travellers-gdd   (cluster,    11/13 kernels, Σ 14.07× bet)    │
+│    ✓ wrath-of-olympus-gdd       (cluster,    11/13 kernels, Σ ...× bet)      │
+│    ✓ gates-of-olympus-1000-gdd  (rectangular,13/15 kernels, Σ 6.05× bet)     │
+│                                                                                │
+│  Contract test: 7/7 PASS                                                       │
+│    ✓ topologyHints returns Set with topology + features                       │
+│    ✓ applicableKernels(starlight model) includes cluster_pays                 │
+│    ✓ walkGame(cash-eruption) returns ok with kernelsOk > 0                    │
+│    ✓ walkGame(starlight) detects cluster topology                             │
+│    ✓ walkGame(gates) detects pay_anywhere applicability                       │
+│    ✓ walkGame() reports inverse-solver kernels as skipped, not failed         │
+│    ✓ All 5 baselines walk to ok=true                                          │
+│                                                                                │
+│  Wired u verify gate step 4.97y13.                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Operator value:** apples-to-apples audit — "za igru X, evo SVIH kernels
+koji dotiču njenu mehaniku + analytical RTP doprinos svakog". Kernels koji
+ne pripadaju topologiji (npr. cluster_pays za rectangular igru) tiho se
+filtriraju; inverse-solveri (operator-driven) eksplicitno označeni kao
+skipped sa razlogom, ne failed.
+
+---
+
 ## 🏆 FINAL SWEEP — 2026-06-23 · SVE STAVKI ZATVORENO ✅ (A/B/C/D — 35 new asserts, 4 new contract suites)
 
 Boki direktiva: *"nema bre drugi projekat, ovaj mora da se zavrsi prvo. ajde cepaj do kraja sve sto ima, nemoj da stajes"*. Sve 4 preostale "produktivne ali blocked" stavke pretvorene u live kernels + contracts:
