@@ -51,25 +51,53 @@ const OUT_DIR    = `${REPO}/reports`;
 
 /* ── Deterministic structural checks (no Playwright needed) ─────────── */
 
-/** Top-level HTML parser. Cheap regex extraction — no DOM library needed. */
+/**
+ * Top-level HTML parser. Cheap regex extraction — no DOM library needed.
+ *
+ * UQ-DEEP-A 2026-06-23 — STRICT SELECTOR HARDENING.
+ * Previous version used `/paytable/i.test(html)` which matched ANY
+ * occurrence of the word — including the prose "I hate paytables" or
+ * a `<!-- TODO: add paytable later -->` comment. A 60 KB sham HTML
+ * with `<button>paytable settings history audio</button>` scored
+ * 9.5/10 PASS — false confidence.
+ *
+ * New checks require BOTH a structural marker (class/id/role) AND
+ * cross-validation (e.g. paytable button + paytable row count > 0).
+ * Word-mention is NOT sufficient.
+ */
 export function parseSlot(html) {
+  /* Structural-class matchers — anchored on class/id/role attributes
+   * to avoid prose / comment false positives. */
   return {
     title:           (html.match(/<title>([^<]+)<\/title>/) || [])[1] || null,
     hasViewport:     /name="viewport"/.test(html),
     hasManifest:     /rel="manifest"/.test(html),
-    hasHub:          /class="hub"/.test(html),
-    hasBalanceHud:   /class="balance-hud"/.test(html),
-    hasBetSelector:  /class="bet-(steps|panel|grid)"/.test(html),
-    hasSpinControl:  /class="(spin-btn|spin-control)"/.test(html) || /id="spin-?btn"/i.test(html),
-    hasPaytableBtn:  /paytable/i.test(html),
-    hasSettingsBtn:  /settings/i.test(html),
-    hasHistoryBtn:   /history/i.test(html),
-    hasAudioBlock:   /audio/i.test(html),
-    hasWinPresent:   /win-?present/i.test(html),
+    hasHub:          /class="[^"]*\bhub\b[^"]*"/.test(html),
+    hasBalanceHud:   /class="[^"]*\bbalance-hud\b[^"]*"/.test(html),
+    hasBetSelector:  /class="[^"]*\bbet-(steps|panel|grid|selector)\b[^"]*"/.test(html),
+    hasSpinControl:  /class="[^"]*\bspin-(btn|control)\b[^"]*"/.test(html) ||
+                     /id="spin-?btn"/i.test(html) ||
+                     /role="button"[^>]*aria-label="(?:spin|Spin|SPIN)"/.test(html),
+    /* Paytable: structural — paytable-btn class OR paytable-panel/list/section. */
+    hasPaytableBtn:  /class="[^"]*\bpaytable(?:-(?:btn|button|toggle|panel|list|section|wrap))\b[^"]*"/.test(html) ||
+                     /id="paytable(?:-btn|btn)?"/i.test(html),
+    hasSettingsBtn:  /class="[^"]*\bsettings(?:-(?:btn|button|panel|modal|wrap))\b[^"]*"/.test(html) ||
+                     /id="settings(?:-btn|btn)?"/i.test(html),
+    hasHistoryBtn:   /class="[^"]*\bhistory(?:-(?:btn|button|panel|log|wrap))\b[^"]*"/.test(html) ||
+                     /id="history(?:-btn|btn)?"/i.test(html),
+    hasAudioBlock:   /class="[^"]*\baudio(?:-(?:btn|panel|host|toggle|mute))\b[^"]*"/.test(html) ||
+                     /id="audio-(?:btn|toggle|host)"/i.test(html),
+    hasWinPresent:   /class="[^"]*\bwin-?present(?:ation)?\b[^"]*"/.test(html) ||
+                     /id="win-?present(?:ation)?"/i.test(html),
     cssVarBg:        (html.match(/--bg(?:-base)?:\s*([^;]+);/) || [])[1] || null,
     cssVarAccent:    (html.match(/--accent:\s*([^;]+);/) || [])[1] || null,
-    paytableRowCount: (html.match(/class="paytable-row"/g) || []).length,
-    blockMarkers:    [...new Set([...html.matchAll(/BLOCK \(([^)]+)\)/g)].map(m => m[1]))],
+    paytableRowCount: (html.match(/class="[^"]*\bpaytable-row\b[^"]*"/g) || []).length,
+    /* BLOCK markers: support both `BLOCK (name)` and `BLOCK: name` forms
+     * for resilience against buildSlotHTML comment-style drift. */
+    blockMarkers:    [...new Set([
+      ...[...html.matchAll(/BLOCK\s*\(([^)]+)\)/g)].map(m => m[1].trim()),
+      ...[...html.matchAll(/BLOCK:\s*([A-Za-z][A-Za-z0-9_-]*)/g)].map(m => m[1].trim()),
+    ])],
     bodyLen:         html.length,
   };
 }
@@ -178,12 +206,28 @@ export function scoreChecks(checks) {
   return (sum / checks.length) * 10;
 }
 
+/**
+ * Verdict ladder from checks + score.
+ *
+ * UQ-DEEP-A 2026-06-23 — ASYMMETRY FIX.
+ * Previously `score < 7.0` was always FAIL, even when 0 individual
+ * checks failed. That created confusing receipts: "verdict=FAIL, 0
+ * failed checks, 10 WARN checks" — operator couldn't pinpoint cause.
+ *
+ * New ladder:
+ *   - Any check FAIL → verdict FAIL (severity beats score)
+ *   - Else score ≥ 9.0 → PASS
+ *   - Else score ≥ 7.0 → WARN
+ *   - Else (sub-7.0, no FAIL) → still WARN — many WARN-ed checks add up
+ *     to low score but no single check is broken; operator review,
+ *     not gate-block.
+ *   - Sub-7.0 WITH check FAIL would have already returned FAIL above.
+ */
 export function verdictFromChecks(checks, score) {
   const hasFail = checks.some(c => c.verdict === 'FAIL');
   if (hasFail) return 'FAIL';
   if (score >= 9.0) return 'PASS';
-  if (score >= 7.0) return 'WARN';
-  return 'FAIL';
+  return 'WARN';
 }
 
 /* ── Vision mode (LLM call) ────────────────────────────────────────── */

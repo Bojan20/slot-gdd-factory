@@ -45,7 +45,8 @@ import { existsSync } from 'node:fs';
 import { resolve, basename, extname } from 'node:path';
 import { spawnSync, spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash as _createHash } from 'node:crypto';
+const nodeCrypto = { createHash: _createHash };
 import { fileURLToPath } from 'node:url';
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..');
@@ -77,13 +78,40 @@ function log(msg) {
   console.log(`[ingest ${new Date().toISOString().slice(11, 19)}] ${msg}`);
 }
 
+/**
+ * Slug derivation with Unicode + collision hardening.
+ *
+ * UQ-DEEP-A 2026-06-23 — UNICODE SAFETY:
+ * Previously any non-ASCII basename (emoji / cyrillic / RTL / CJK)
+ * collapsed to the literal string "gdd" because the strip regex
+ * `[^a-z0-9]+` zapped every code point above U+007A. Two such PDFs
+ * dropped in the same session overwrote each other's `dist/ingest/gdd/`.
+ *
+ * Fix: NFKD-normalize → strip combining marks → drop extension → strip
+ * non-ASCII → if the result is empty/degenerate fall back to a SHA-1
+ * fingerprint of the ORIGINAL name (deterministic across runs, unique
+ * per distinct unicode title).
+ */
 function slugify(name) {
-  return String(name || 'gdd')
+  const raw = String(name || 'gdd');
+  /* NFKD decomposes accented chars to base+combining; the
+   * `\p{Mn}` strip then removes combining marks so "Ö" → "O". */
+  const ascii = raw
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')   /* combining marks */
     .toLowerCase()
-    .replace(/\.[a-z0-9]+$/, '')
-    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/\.[a-z0-9]+$/, '')        /* drop extension */
+    .replace(/[^a-z0-9]+/g, '-')        /* coalesce non-ASCII to `-` */
     .replace(/^-+|-+$/g, '')
-    .slice(0, 80) || 'gdd-' + Date.now();
+    .slice(0, 80);
+  if (ascii && ascii !== 'gdd') return ascii;
+  /* Degenerate result (empty after strip OR collided with the literal
+   * fallback "gdd"). Append SHA-1[0..8] of raw name → deterministic,
+   * collision-safe across emoji/CJK/cyrillic titles. */
+  // eslint-disable-next-line no-unused-vars
+  const { createHash } = nodeCrypto;
+  const fp = createHash('sha1').update(raw, 'utf8').digest('hex').slice(0, 8);
+  return ascii ? `${ascii}-${fp}` : `gdd-${fp}`;
 }
 
 async function fetchToTmp(url) {
@@ -130,15 +158,28 @@ async function fetchToTmp(url) {
  * document. Case-insensitive head match so attribute-bearing or
  * uppercase `<HEAD>` future variants don't slip the regex.
  *
+ * UQ-DEEP-A 2026-06-23 — SELF-CLOSE EXPANSION.
+ * `<head/>` self-close (XHTML-strict) previously matched the
+ * `<head\b[^>]*>` regex but the replace appended meta as a sibling of
+ * the empty head — invalid HTML5 (meta orphaned in body). Detect
+ * self-close, expand it to `<head>…<meta…></head>`.
+ *
  * Fallbacks (in order):
- *   1. `<head\b[^>]*>` — preserves any existing head attributes
- *   2. `<html\b[^>]*>` — places meta as first node after html open
- *   3. Prepend at top of document (worst-case but never throws)
+ *   1. `<head/>` self-close → expand into proper head with meta inside
+ *   2. `<head\b[^>]*>` — preserves any existing head attributes
+ *   3. `<html\b[^>]*>` — places meta as first node after html open
+ *   4. Prepend at top of document (worst-case but never throws)
  *
  * Pure function — no I/O, returns new string. DRY-shared by V8 + V9
  * receipt injection so any future regression fixes apply once.
  */
 function injectMetaIntoHead(html, metaTag) {
+  /* Self-close: `<head/>` or `<head attr="x"/>`. */
+  const headSelfClose = html.match(/<head\b[^>]*\/>/i);
+  if (headSelfClose) {
+    const opening = headSelfClose[0].replace(/\s*\/>$/, '>');
+    return html.replace(headSelfClose[0], `${opening}\n  ${metaTag}\n</head>`);
+  }
   const headOpen = html.match(/<head\b[^>]*>/i);
   if (headOpen) {
     return html.replace(headOpen[0], `${headOpen[0]}\n  ${metaTag}`);
@@ -148,6 +189,22 @@ function injectMetaIntoHead(html, metaTag) {
     return html.replace(htmlOpen[0], `${htmlOpen[0]}\n${metaTag}`);
   }
   return metaTag + '\n' + html;
+}
+
+/**
+ * Whitelist-validate a verdict string for safe injection into HTML
+ * data-* attributes.
+ *
+ * UQ-DEEP-A 2026-06-23 — VERDICT WHITELIST.
+ * Previous `String(v).replace(/[^A-Z]/g, '')` silently stripped
+ * lowercase chars — `'Pass'` → `'P'`. Future LLM path returning
+ * mixed-case would have produced single-letter verdicts in the meta
+ * tag. Whitelist + uppercase guarantees one of the known verdicts or
+ * `UNKNOWN` (never an arbitrary substring).
+ */
+function safeVerdict(raw, allowed = ['PASS', 'WARN', 'FAIL']) {
+  const v = String(raw || '').toUpperCase().trim();
+  return allowed.includes(v) ? v : 'UNKNOWN';
 }
 
 function pdfToText(pdfPath) {
@@ -220,6 +277,14 @@ async function _computeParserHash() {
     resolve(REPO, 'agents/parser-pool/V5_COMPLIANCE.md'),
     resolve(REPO, 'agents/parser-pool/V6_RECONCILE.md'),
     resolve(REPO, 'agents/parser-pool/SELF_CORRECTION.md'),
+    /* UQ-DEEP-A 2026-06-23 — V8 + V9 live wire (N+1 A/B).
+     * ingest.mjs now embeds V8 receipt + V9 verdict into HTML output.
+     * Changes to V8 rule logic, V9 selectors, or assembly rules table
+     * must invalidate the V6 cache — otherwise the cached reconcile
+     * matches the OLD V8/V9 verdict and the receipt drifts silently. */
+    resolve(REPO, 'tools/v8-assembly-orchestrator.mjs'),
+    resolve(REPO, 'tools/v8-assembly-rules.json'),
+    resolve(REPO, 'tools/v9-visual-qa.mjs'),
   ];
   const h = createHash('sha256');
   for (const p of SOURCES) {
@@ -504,6 +569,10 @@ try {
     } catch (e) {
       log('  V8 soft-fail: ' + e.message);
       summary.v8 = { error: e.message };
+      /* UQ-DEEP-A 2026-06-23 — propagate via softFail so exit code 3
+       * surfaces to CI. Without this, V8 import error silently shipped
+       * HTML without the audit receipt; operator believed pipeline OK. */
+      summary.softFail = summary.softFail || { stage: 'V8 assembly', reason: e.message };
     }
   });
 
@@ -531,12 +600,19 @@ try {
         missingMandatory: v8Receipt.missingMandatory,
         missingJurGates: v8Receipt.missingJurGates,
         selectedEngine: v8Receipt.__meta__.selectedEngine,
-        ts: v8Receipt.__meta__.ts,
+        /* UQ-DEEP-A 2026-06-23 — DETERMINISTIC PAYLOAD.
+         * `__meta__.ts` intentionally NOT embedded into the meta payload.
+         * Including it caused two ingests of the same GDD to produce
+         * different `<meta content="…">` byte streams; any upstream gate
+         * hashing the HTML for "changed?" detection would false-positive.
+         * The full receipt (with ts) still lives in `v8.json` next to the
+         * HTML for audit-trail purposes — only the embedded payload is
+         * pure content-dependent. */
       };
       const b64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
-      const safeVerdict = String(payload.verdict || '').replace(/[^A-Z]/g, '');
+      const verdictSafe = safeVerdict(payload.verdict);
       const safeEngine  = String(payload.selectedEngine || '').replace(/[^A-Za-z0-9_-]/g, '');
-      const metaTag = `<meta name="v8-receipt" data-verdict="${safeVerdict}" data-engine="${safeEngine}" content="${b64}">`;
+      const metaTag = `<meta name="v8-receipt" data-verdict="${verdictSafe}" data-engine="${safeEngine}" content="${b64}">`;
       html = injectMetaIntoHead(html, metaTag);
       summary.htmlBytes = html.length;
     }
@@ -576,40 +652,65 @@ try {
        * (today scoreChecks returns 0 on empty input, but guard keeps the
        * pipeline alive against future regressions). */
       const v9Score = typeof v9Receipt.score === 'number' ? v9Receipt.score : 0;
-      const safeV9Verdict = String(v9Receipt.verdict || '').replace(/[^A-Z]/g, '');
-      const metaTag = `<meta name="v9-verdict" data-verdict="${safeV9Verdict}" data-score="${v9Score.toFixed(2)}" data-checks="${v9Receipt.checks.length}">`;
+      const v9VerdictSafe = safeVerdict(v9Receipt.verdict);
+      const metaTag = `<meta name="v9-verdict" data-verdict="${v9VerdictSafe}" data-score="${v9Score.toFixed(2)}" data-checks="${v9Receipt.checks.length}">`;
       html = injectMetaIntoHead(html, metaTag);
       summary.htmlBytes = html.length;
     } catch (e) {
       log('  V9 soft-fail: ' + e.message);
       summary.v9 = { error: e.message };
+      summary.softFail = summary.softFail || { stage: 'V9 visual QA', reason: e.message };
     }
   });
 
-  /* Step 7: write outputs */
+  /* Step 7: write outputs (atomic per-file write-then-rename).
+   *
+   * UQ-DEEP-A 2026-06-23 — CONCURRENT WRITE HARDENING.
+   * Two parallel `ingest --file X --slug Y` could interleave writeFile
+   * calls and leave half-V8/half-V9 meta in index.html, or torn JSON in
+   * v8.json/v9.json. Fix:
+   *   1. Acquire file lock around the OUTPUT directory (LOCKFILE next to
+   *      dist/ingest/<slug>/).
+   *   2. For every JSON/HTML write, use tmp+rename (POSIX atomic rename
+   *      on same FS) so a reader either sees the OLD file or the NEW —
+   *      never a half-written intermediate.
+   *   3. fsync the file before rename to survive a crash mid-write.
+   * Lock released after the dir is fully populated. */
   const outDir = resolve(DIST, slug);
   await step('write outputs', async () => {
     await mkdir(outDir, { recursive: true });
-    await writeFile(resolve(outDir, 'index.html'), html, 'utf8');
-    await writeFile(resolve(outDir, 'model.json'), JSON.stringify(model, null, 2), 'utf8');
-    await writeFile(resolve(outDir, 'raw.txt'), rawText, 'utf8');
-    if (v8Receipt) {
-      await writeFile(
-        resolve(outDir, 'v8.json'),
-        JSON.stringify(v8Receipt, null, 2),
-        'utf8'
-      );
+    const { acquireLock, releaseLock } = await import('../src/registry/fileLock.mjs');
+    const fsp = await import('node:fs/promises');
+    const lockPath = outDir + '.lock';
+    let lockTok = null;
+    try {
+      lockTok = acquireLock(lockPath);
+      async function atomicWrite(absPath, content) {
+        const tmp = absPath + '.tmp.' + process.pid;
+        const fh = await fsp.open(tmp, 'w');
+        try {
+          await fh.writeFile(content, 'utf8');
+          await fh.sync();
+        } finally {
+          await fh.close();
+        }
+        await fsp.rename(tmp, absPath);
+      }
+      await atomicWrite(resolve(outDir, 'index.html'), html);
+      await atomicWrite(resolve(outDir, 'model.json'), JSON.stringify(model, null, 2));
+      await atomicWrite(resolve(outDir, 'raw.txt'), rawText);
+      if (v8Receipt) {
+        await atomicWrite(resolve(outDir, 'v8.json'), JSON.stringify(v8Receipt, null, 2));
+      }
+      if (v9Receipt) {
+        await atomicWrite(resolve(outDir, 'v9.json'), JSON.stringify(v9Receipt, null, 2));
+      }
+      summary.outDir = outDir;
+      summary.finishedAt = new Date().toISOString();
+      await atomicWrite(resolve(outDir, 'ingest.log'), JSON.stringify(summary, null, 2));
+    } finally {
+      if (lockTok) releaseLock(lockTok);
     }
-    if (v9Receipt) {
-      await writeFile(
-        resolve(outDir, 'v9.json'),
-        JSON.stringify(v9Receipt, null, 2),
-        'utf8'
-      );
-    }
-    summary.outDir = outDir;
-    summary.finishedAt = new Date().toISOString();
-    await writeFile(resolve(outDir, 'ingest.log'), JSON.stringify(summary, null, 2), 'utf8');
   });
 
   log('✓ done → ' + outDir);

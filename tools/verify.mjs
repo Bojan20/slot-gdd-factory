@@ -1026,6 +1026,30 @@ if (existsSync(stressTest)) {
     'node', [stressTest]);
 }
 
+/* ── Step 4.97y31: UQ-DEEP-A edge-case hardening (paralel-agent audit) ─
+ * Posle N+1 A/B/C wire, 2 paralelna audit agenta pronašla 30+ nalaza,
+ * 5 CRITICAL + 8 HIGH + 6 MEDIUM. Sve fix-ovano i pinned u test-u:
+ *
+ *   CRIT #2  V8 proto-pollution guard       (`__proto__` feature kind)
+ *   CRIT #3  Slugify Unicode collision      (emoji/cyrillic/CJK)
+ *   CRIT #4  V9 false-PASS strict selectors (prose vs structural class)
+ *   CRIT #5  Concurrent ingest atomic write (lock + tmp+rename + fsync)
+ *   HIGH #6  Parser hash V8/V9/rules.json   (cache invalidation contract)
+ *   HIGH #7  Ingest trinity softFail        (V8/V9 fail propagation)
+ *   HIGH #9  V8 receipt determinism         (ts excluded from meta payload)
+ *   HIGH #10 injectMetaIntoHead self-close  (`<head/>` XHTML expansion)
+ *   HIGH #11 safeVerdict whitelist          ('Pass' → UNKNOWN not 'P')
+ *   MED #12  V9 verdict ladder              (sub-7.0 w/ 0 FAIL → WARN)
+ *   MED #13  Stress MD pipe escape          (stderr w/ `|` chars)
+ *
+ * Pre-commit hook restored (CRIT #1), reports GC (MED #16) ran apply
+ * (3.2 GB freed). */
+const deepATest = resolve(REPO, 'tests/contracts/uq-deep-a-hardening.test.mjs');
+if (existsSync(deepATest)) {
+  run('UQ-DEEP-A edge-case hardening (5 CRIT + 6 HIGH + 2 MED + 13 invariants × paralel-agent audit)',
+    'node', [deepATest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz

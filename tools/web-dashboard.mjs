@@ -105,19 +105,34 @@ function findLatestInDir(dir, prefix) {
  *
  * Both V8 (assembly) and V9 (visual QA) corpus reports share the
  * same shape: top-level `receipts` array with one entry per slug. */
+/* UQ-DEEP-A 2026-06-23 — TTL + STALENESS INVALIDATION.
+ * Long-lived consumers (dev server importing this module) previously
+ * memoized the first corpus report read forever; new reports on disk
+ * were ignored. TTL caps cache age to 30s + remembers latest filename
+ * so a newer report invalidates. */
 function _loadCorpusReportFactory(prefix) {
   let cache = undefined;
+  let cachedAt = 0;
+  let cachedSource = null;
+  const TTL_MS = 30_000;
   return function loadCorpusReport() {
-    if (cache !== undefined) return cache;
+    const now = Date.now();
     const latest = findLatestInDir(REPORTS, prefix);
-    if (!latest) { cache = null; return null; }
+    /* Cache invalidates when: (a) TTL expired, (b) a NEWER report
+     * filename appeared since last call. */
+    const stillFresh = cache !== undefined && (now - cachedAt) < TTL_MS &&
+                       latest?.name === cachedSource;
+    if (stillFresh) return cache;
+    if (!latest) { cache = null; cachedAt = now; cachedSource = null; return null; }
     const raw = safeRead(latest.path);
-    if (!raw || !Array.isArray(raw.receipts)) { cache = null; return null; }
+    if (!raw || !Array.isArray(raw.receipts)) { cache = null; cachedAt = now; cachedSource = latest.name; return null; }
     const bySlug = {};
     for (const r of raw.receipts) {
       if (r && r.slug) bySlug[r.slug] = r;
     }
     cache = { bySlug, source: latest.name };
+    cachedAt = now;
+    cachedSource = latest.name;
     return cache;
   };
 }

@@ -104,6 +104,9 @@ const ALLOWLIST_PATTERNS = [
   /^MASTER_TODO\.md$/,
   /^tools\/anti-vendor-lint\.mjs$/,          // this tool
   /^tests\/contracts\/anti-vendor-lint/,     // its tests
+  /^tools\/web-dashboard\.mjs$/,             // BASELINE_SLUGS internal IDs
+                                              // (CLAUDE.md HARD RULE — back-compat
+                                              // sa pre-tracked baseline hash-evima)
   /^reports\/agent-calibration-/,            // dev telemetry
   /^reports\/_/,                             // internal probe dirs
 ];

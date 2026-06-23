@@ -68,7 +68,13 @@ await testAsync('V9 tool exports verifyHtml + helpers', async () => {
 
 await testAsync('verifyHtml on a healthy minimal HTML returns PASS', async () => {
   const { verifyHtml } = await import(V9_TOOL);
-  /* Minimal HTML that satisfies all 10 deterministic invariants. */
+  /* Minimal HTML that satisfies all 10 deterministic invariants.
+   *
+   * UQ-DEEP-A 2026-06-23 — UPDATED FIXTURE.
+   * After CRIT #4 (strict-selector hardening), hub controls require
+   * structural markers (class/id), NOT bare word mentions. Updated
+   * fixture uses `.paytable-btn`, `.settings-btn`, etc. to reflect
+   * the new contract. */
   const html = [
     '<!doctype html>',
     '<html lang="en">',
@@ -83,10 +89,10 @@ await testAsync('verifyHtml on a healthy minimal HTML returns PASS', async () =>
     '<div class="balance-hud"></div>',
     '<div class="bet-steps"></div>',
     '<button class="spin-btn"></button>',
-    '<button>paytable</button>',
-    '<button>settings</button>',
-    '<button>history</button>',
-    '<div class="audio"></div>',
+    '<button class="paytable-btn">Paytable</button>',
+    '<button class="settings-btn">Settings</button>',
+    '<button class="history-btn">History</button>',
+    '<div class="audio-host"></div>',
     '<div class="win-presentation"></div>',
     '<div class="paytable-row"></div>'.repeat(10),
     /* BLOCK marker for reelEngine — deterministicChecks looks for it. */

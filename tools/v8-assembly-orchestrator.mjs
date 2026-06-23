@@ -60,11 +60,21 @@ const blockSet = new Set(Object.values(catalogRaw.catalog || {}).map(b => b.id))
 /* Build feature kinds → blocks index (from catalog metadata).
  * Catalog `featureKinds: [...]` declares which feature(s) this block
  * implements. V8 uses this as the primary mapping; v8-rules.json is the
- * supplementary table for cases where catalog metadata is sparse. */
-const FEATURE_TO_BLOCKS = {};
+ * supplementary table for cases where catalog metadata is sparse.
+ *
+ * UQ-DEEP-A 2026-06-23 — PROTO-POLLUTION HARDENING.
+ * Adversarial GDD content with feature.kind = '__proto__' / 'constructor'
+ * / 'hasOwnProperty' previously triggered prototype-chain lookup that
+ * returned `Object.prototype` (truthy non-iterable). Object.create(null)
+ * eliminates the prototype chain entirely; index lookup of unknown keys
+ * cleanly returns undefined and the `|| []` fallback engages. */
+const FEATURE_TO_BLOCKS = Object.create(null);
 for (const block of Object.values(catalogRaw.catalog || {})) {
   for (const k of (block.featureKinds || [])) {
-    FEATURE_TO_BLOCKS[k] = FEATURE_TO_BLOCKS[k] || [];
+    if (typeof k !== 'string' || !k) continue;
+    if (!Object.prototype.hasOwnProperty.call(FEATURE_TO_BLOCKS, k)) {
+      FEATURE_TO_BLOCKS[k] = [];
+    }
     FEATURE_TO_BLOCKS[k].push(block.id);
   }
 }

@@ -103,7 +103,38 @@ const QUIET  = args.includes('--quiet');
 
 if (!existsSync(SOURCE)) {
   console.error(`▸ source missing: ${SOURCE}`);
+  console.error('  Hint: pass --source <dir> or place PDFs in ~/Desktop/GDD/');
   process.exit(2);
+}
+
+/**
+ * UQ-DEEP-A 2026-06-23 — SIGINT CLEANUP.
+ * On CTRL+C / SIGTERM mid-run, cleanup the CURRENT slug's dist dir so
+ * we don't leak orphan `dist/ingest/stress-<slug>-<pid>/` directories.
+ * Tracks the in-flight slug across iterations; signal handler reads
+ * latest value and rmSync if --keep was NOT passed.
+ */
+let _currentSlug = null;
+function _emergencyCleanup() {
+  if (_currentSlug && !KEEP) {
+    const p = join(REPO, 'dist/ingest', _currentSlug);
+    try { rmSync(p, { recursive: true, force: true }); } catch { /* ignore */ }
+  }
+}
+process.on('SIGINT',  () => { _emergencyCleanup(); process.exit(130); });
+process.on('SIGTERM', () => { _emergencyCleanup(); process.exit(143); });
+
+/**
+ * Escape a string for safe embedding in a single-cell of a Markdown
+ * table. Replaces `|` with `\|`, strips backticks (open them in raw,
+ * unbalanced state breaks downstream MD renderers), collapses newlines.
+ */
+function mdCellEscape(s) {
+  return String(s || '')
+    .replace(/\|/g, '\\|')
+    .replace(/`/g, 'ˋ')   /* modifier letter grave — visually similar, no MD break */
+    .replace(/[\r\n]+/g, ' ')
+    .trim();
 }
 
 /* ── Slug derivation ────────────────────────────────────────────────── */
@@ -141,8 +172,8 @@ let v9WarnCount  = 0;
 /**
  * Slug fingerprint — combines basename slugify with a short SHA-1 of
  * the full PDF path so two PDFs with identical basenames (different
- * folders) or case-insensitive collisions (`Cleopatra.pdf` vs
- * `cleopatra.pdf` on case-sensitive FS) produce DISTINCT slugs.
+ * folders) or case-insensitive collisions (`SampleTitle.pdf` vs
+ * `sampletitle.pdf` on case-sensitive FS) produce DISTINCT slugs.
  * Also serializes with `process.pid` so two concurrent stress-test
  * runs on the same machine don't write into the same `dist/ingest/<slug>/`
  * dir mid-flight (cleanup race fix — audit nalaz #3 / R6).
@@ -158,6 +189,7 @@ for (let i = 0; i < work.length; i++) {
   const pdf = work[i];
   const pdfPath = join(SOURCE, pdf);
   const slug = stressSlug(pdfPath, pdf);
+  _currentSlug = slug;
   const outDir = join(STRESS_DIR, slug);
   const t0 = Date.now();
 
@@ -344,7 +376,12 @@ const md = [
        '|:--|:-:|:-:|:-:|:--|',
        ...failedReceipts.slice(0, 30).map(r => {
          const errSnippet = (r.stderr || '').split('\n')[0].slice(0, 80) || (r.v9?.failed?.[0] || r.v8 && r.v8.verdict === 'FAIL' ? `v8.conflicts=${r.v8.conflicts}` : '—');
-         return `| \`${r.pdf}\` | ${r.exitCode} | ${r.v8?.verdict || '—'} | ${r.v9?.verdict || '—'} | ${errSnippet} |`;
+         /* UQ-DEEP-A 2026-06-23 — MD CELL ESCAPE.
+          * stderr can contain `|` or backticks which break table cells; mdCellEscape
+          * neutralizes them so MD renderers don't go sideways on a parser error. */
+         const pdfCell = mdCellEscape(r.pdf);
+         const errCell = mdCellEscape(errSnippet);
+         return `| \`${pdfCell}\` | ${r.exitCode} | ${r.v8?.verdict || '—'} | ${r.v9?.verdict || '—'} | ${errCell} |`;
        })].join('\n'),
   '',
 ].join('\n');
