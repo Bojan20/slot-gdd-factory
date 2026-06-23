@@ -245,6 +245,8 @@ export function generateComparativeReport(slugs, opts = {}) {
       runs: rep.runs,
       spinsPerSec: rep.spinsPerSec,
       maxSingleSpin: rep.maxSingleSpinX || null,
+      /* 2026-06-23 — per-component RTP breakdown propagated from probe. */
+      measuredRtpBreakdown: rep.measuredRtpBreakdown || null,
       kernelComparison,
       longestLosingStreak: rep.longestLosingStreak || null,
     });
@@ -261,6 +263,23 @@ export function generateComparativeReport(slugs, opts = {}) {
     hw:      withKernel.filter(g => g.kernelComparison.source === 'hw').length,
     cluster: withKernel.filter(g => g.kernelComparison.source === 'cluster').length,
   };
+
+  /* Per-component aggregate across all probed games (2026-06-23).
+   * For each component, compute count (games where component > 0), avg
+   * (per-game pct mean over games where >0), and max (highest single-game
+   * pct). Lets operator see which feature dominates corpus economics. */
+  const componentAgg = {};
+  const compKeys = ['line', 'cluster', 'payAnywhere', 'scatter', 'pattern', 'hw', 'fsRound'];
+  for (const k of compKeys) {
+    const vals = succeeded
+      .map(g => g.measuredRtpBreakdown?.[k])
+      .filter(v => Number.isFinite(v) && v > 0);
+    componentAgg[k] = {
+      gamesActive: vals.length,
+      avgPct: vals.length > 0 ? +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2) : 0,
+      maxPct: vals.length > 0 ? +Math.max(...vals).toFixed(2) : 0,
+    };
+  }
   /* 2026-06-23 — gap distribution histogram for full-corpus runs.
    * Buckets games-with-declared-RTP by |Δ| into industry-meaningful bands:
    *   exact (±0.5pp)  — auto-clamp converged
@@ -302,6 +321,7 @@ export function generateComparativeReport(slugs, opts = {}) {
       : null,
     gapBuckets,
     topologyDistribution: topoDist,
+    componentAggregate: componentAgg,
     /* Kernel-preflight summary (populated only when --kernel-preflight on).
      * NOTE: synthetic distributions inflate analytical numbers; treat as
      * informational, not regression signal. Real disagreement detection
@@ -409,6 +429,17 @@ if (process.argv[1]?.endsWith('math-cross-game-probe.mjs')) {
   printTable(games);
   console.log('');
   console.log(`Summary: ${summary.gamesOk}/${summary.gamesProbed} ok · ${summary.gamesWithDeclaredRTP} with declared RTP · avg measured ${summary.avgMeasuredRTP}% · avg declared ${summary.avgDeclaredRTP}% · max gap ${summary.maxRTPGap}pp · min gap ${summary.minRTPGap}pp`);
+  /* Per-component aggregate line (only non-zero components for legibility). */
+  const compLines = [];
+  for (const [k, v] of Object.entries(summary.componentAggregate || {})) {
+    if (v.gamesActive > 0) {
+      compLines.push(`${k}: ${v.gamesActive} games (avg ${v.avgPct}%, max ${v.maxPct}%)`);
+    }
+  }
+  if (compLines.length > 0) {
+    console.log(`Component aggregate:`);
+    for (const l of compLines) console.log(`  · ${l}`);
+  }
   /* Write summary report. */
   if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true });
   const ts = new Date().toISOString().replace(/[:.]/g, '-');

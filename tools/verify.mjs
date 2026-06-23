@@ -702,6 +702,15 @@ if (existsSync(probeKernelTest)) {
     'node', [probeKernelTest]);
 }
 
+/* ── Step 4.97y9: B++++ — Probe per-component RTP invariant
+ * Verifies sum(measuredRtpBreakdown) ≈ rawMeasuredRTP within 0.01pp.
+ * Foundation guard for apples-to-apples kernel comparison. */
+const componentInvariantTest = resolve(REPO, 'tests/contracts/probe-component-invariant.test.mjs');
+if (existsSync(componentInvariantTest)) {
+  run('B++++ — PROBE component invariant (sum ≈ rawMeasuredRTP)',
+    'node', [componentInvariantTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
