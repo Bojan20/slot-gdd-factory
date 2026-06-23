@@ -95,6 +95,7 @@ FLAGS
   --bet B            bet per spin in credits [0.01, 100k] (default: 1)
   --auto-clamp       multiplicative RTP clamp toward declared (default: OFF)
   --par-sheet        use real par-sheet weights (default: generic distribution)
+  --kernel-preflight call sister-repo kernels for analytical RTP (audit)
   --help, -h         show this message
 
 OUTPUT
@@ -606,6 +607,54 @@ console.log(`  Max spin:    ${summary.maxSingleSpinX}× bet`);
 console.log(`  Longest dry: ${longestLosingStreak} spins`);
 console.log(`  Win hist:    < 1×=${winHistogram.lt1x}  1-5×=${winHistogram['1-5x']}  5-25×=${winHistogram['5-25x']}  25-100×=${winHistogram['25-100x']}  100×+=${winHistogram['100x+']}`);
 console.log(`  Report:      ${out}`);
+
+/* ── KERNEL PRE-FLIGHT (opt-in via --kernel-preflight) ─────────────────
+ * Calls the sister-repo Python kernel(s) to compute analytical RTP
+ * contributions per topology + features detected in the model. Prints
+ * alongside heuristic measurement so operators can validate probe drift.
+ *
+ * H&W bridge fires when model.holdAndWin?.enabled || .triggerCount
+ * Cluster bridge fires when topology.evaluation === 'cluster'
+ *
+ * Both kernels are deterministic + cache-backed (no per-spin cost — single
+ * pre-flight call per probe run). When sister repo unavailable, graceful
+ * skip with reason logged. */
+if (args.includes('--kernel-preflight')) {
+  const kernelLines = [];
+  /* Topology-aware: only call kernels for features actually present. */
+  if (model.holdAndWin?.enabled || Number.isFinite(model.holdAndWin?.triggerCount)) {
+    try {
+      const { computeHoldAndWinKernelRtp } = await import('../src/blocks/featureSimPlugins/holdAndWinKernelBridge.mjs');
+      const k = await computeHoldAndWinKernelRtp(model);
+      if (k.ok) {
+        kernelLines.push(`  H&W kernel:  rtpContrib ${(k.rtpContribution * 100).toFixed(4)}%  (money ${(k.moneyComponent?.rtp_contribution * 100).toFixed(4)}% + jackpot ${(k.jackpotComponent?.rtp_contribution * 100).toFixed(4)}%)`);
+      } else {
+        kernelLines.push(`  H&W kernel:  unavailable — ${k.reason}`);
+      }
+    } catch (e) {
+      kernelLines.push(`  H&W kernel:  bridge error — ${e.message}`);
+    }
+  }
+  if (model.topology?.evaluation === 'cluster' || model.topology?.kind === 'cluster') {
+    try {
+      const { computeClusterPaysKernelRtp } = await import('../src/blocks/featureSimPlugins/clusterEvalKernelBridge.mjs');
+      const k = await computeClusterPaysKernelRtp(model);
+      if (k.ok) {
+        kernelLines.push(`  Cluster kernel: rtpContrib ${k.rtpContribution.toFixed(4)}× bet  (perSymbol ${k.perSymbol?.length || 0} entries, ${k.adjacency} adjacency)`);
+      } else {
+        kernelLines.push(`  Cluster kernel: unavailable — ${k.reason}`);
+      }
+    } catch (e) {
+      kernelLines.push(`  Cluster kernel: bridge error — ${e.message}`);
+    }
+  }
+  if (kernelLines.length === 0) {
+    kernelLines.push(`  Kernel:      no applicable kernel for this topology + features`);
+  }
+  console.log('  ────────── KERNEL PRE-FLIGHT (analytical, sister-repo) ──────────');
+  for (const line of kernelLines) console.log(line);
+}
+
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 console.log('✓ PASS — RTP probe finished');
 process.exit(0);

@@ -692,6 +692,16 @@ if (existsSync(vendorParTest)) {
     'node', [vendorParTest]);
 }
 
+/* ── Step 4.97y8: B+++ — Probe --kernel-preflight integration
+ * Verifies math-rtp-probe.mjs --kernel-preflight flag calls H&W +
+ * cluster kernels alongside heuristic measurement, prints analytical
+ * RTP for audit. Graceful skip when sister repo unavailable. */
+const probeKernelTest = resolve(REPO, 'tests/contracts/probe-kernel-preflight.test.mjs');
+if (existsSync(probeKernelTest)) {
+  run('B+++ — PROBE --kernel-preflight (analytical RTP alongside heuristic)',
+    'node', [probeKernelTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
