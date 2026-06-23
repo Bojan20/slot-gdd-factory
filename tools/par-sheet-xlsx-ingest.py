@@ -154,15 +154,40 @@ def main():
 
     data = extract(xlsx_path, args.sheet)
 
+    # UQ-DEEP-M fix (Boki 2026-06-23): support --out '-' za stdout mode
+    # (matches uniformni CLI shape sa par-sheet-pragmatic.py / lw.py).
+    # Stdout MORA biti čist JSON; sve progress lines idu na stderr.
+    # Plus: NORMALIZE shape u canonical ParBlob:
+    #   per_reel_weights: 'reel0' keys → '0' numeric strings (bridge expect)
+    #   paytable: dict {sym: combos} → list [{symbolId, combos}] (bridge expect)
+    if args.out == '-' or not args.out:
+        canonical = {**data}
+        # Strip 'reel' prefix from per_reel_weights keys.
+        if isinstance(data.get('per_reel_weights'), dict):
+            canonical['per_reel_weights'] = {
+                k.replace('reel', '') if k.startswith('reel') else k: v
+                for k, v in data['per_reel_weights'].items()
+            }
+        # Convert paytable dict → list of {symbolId, combos}.
+        if isinstance(data.get('paytable'), dict):
+            canonical['paytable'] = [
+                {'symbolId': sym, 'combos': combos}
+                for sym, combos in data['paytable'].items()
+                if combos
+            ]
+        sys.stdout.write(json.dumps(canonical) + '\n')
+        print(f"✓ extracted {len(data['symbols'])} symbols × 5 reels", file=sys.stderr)
+        return
+
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, 'w') as f:
         json.dump(data, f, indent=2)
 
-    print(f"✓ extracted {len(data['symbols'])} symbols × 5 reels + {sum(len(v) for v in data['paytable'].values())} paytable rows")
-    print(f"  Title: {data['title']}")
-    print(f"  SWID:  {data['swid']}")
-    print(f"  Out:   {out_path}")
+    print(f"✓ extracted {len(data['symbols'])} symbols × 5 reels + {sum(len(v) for v in data['paytable'].values())} paytable rows", file=sys.stderr)
+    print(f"  Title: {data['title']}", file=sys.stderr)
+    print(f"  SWID:  {data['swid']}", file=sys.stderr)
+    print(f"  Out:   {out_path}", file=sys.stderr)
 
 
 if __name__ == '__main__':
