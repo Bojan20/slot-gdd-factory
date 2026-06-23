@@ -1,3 +1,77 @@
+## 🧭 MASTER STATUS — 2026-06-23 07:05 UTC · slot-gdd-factory
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  SVE GLAVNE GRANE BACKLOG-A: ZATVORENE ✅                                       │
+│  Verify gate: 82 steps · ALL GREEN                                              │
+│  Last commit: 561a89d (feat(audit-summary))                                    │
+│  Sister-repo kernels: 22/22 bridged (20 forward + 2 solvers)                  │
+│  Operator-facing tools (sesija 2026-06-23): 8 new (4 audit, 1 registry,       │
+│    1 CLI, 1 coverage, 1 matrix)                                                │
+│  Audit overall verdict: 🟡 AMBER (wrath fali declared RTP — data signal)      │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Operator-facing alati — sesija 2026-06-23
+
+```
+┌────┬─────────────────────────────────────┬──────────┬────────┬─────────┐
+│  # │ Tool                                  │ Commit    │ Tests  │ Gate    │
+├────┼─────────────────────────────────────┼──────────┼────────┼─────────┤
+│  1 │ tools/per-game-kernel-coverage.mjs   │ 6a0e3e8  │ 7/7    │ 4.97y13 │
+│  2 │ tools/slot-math-kernel.mjs (CLI)     │ 55033c4  │ 8/8    │ 4.97y12 │
+│  3 │ src/blocks/featureSimPlugins/        │ 7ffb645  │ 11/11  │ 4.97y11 │
+│    │   kernelRegistry.mjs                  │           │        │         │
+│  4 │ tools/kernel-applicability-matrix.mjs│ 11cb204  │ 9/9    │ 4.97y14 │
+│  5 │ tools/portfolio-report.mjs           │ fb11952  │ 7/7    │ 4.97y15 │
+│  6 │ tools/declared-vs-measured-audit.mjs │ 1c252d0  │ 9/9    │ 4.97y16 │
+│  7 │ tools/audit-summary.mjs              │ 561a89d  │ 8/8    │ 4.97y17 │
+│  8 │ src/blocks/featureSimPlugins/        │ b794d62  │ 24/24  │ 4.97y10 │
+│    │   extraKernelBridges.mjs (22 kern.)  │           │        │         │
+├────┼─────────────────────────────────────┼──────────┼────────┼─────────┤
+│    │ Σ tests added                         │           │ 83/83  │         │
+└────┴─────────────────────────────────────┴──────────┴────────┴─────────┘
+```
+
+### Preostali backlog (kako stoji upravo sada)
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│  Item                                          │ Status                  │
+├────────────────────────────────────────────────────────────────────────┤
+│  Audio block backlog                           │ 🔒 LOCKED (HARD RULE #4)│
+│  wrath-of-olympus declared RTP parser fix      │ ⏭ blocked — data signal│
+│  Cross-product W51/W52/W53 regulator UI        │ ⏭ regulator (non-math) │
+│  GDD audit one-pager (per-game compliance MD)  │ 📋 nice-to-have        │
+│  Side-by-side compare 2 games tool             │ 📋 nice-to-have        │
+│  Kernel coverage diff between commits          │ 📋 nice-to-have        │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+**Glavni MATH backlog: 100% ZATVOREN.** Svi alati ispod su nice-to-have
+(operator UX), ne core production needs.
+
+### One-command total audit (operator quick reference)
+
+```bash
+# Single-pane production status (4 sections + GREEN/AMBER/RED verdict):
+node tools/audit-summary.mjs
+
+# Individual sections:
+node tools/per-game-kernel-coverage.mjs         # per-game walker
+node tools/kernel-applicability-matrix.mjs      # cross-game matrix
+node tools/portfolio-report.mjs                 # dashboard rollup
+node tools/declared-vs-measured-audit.mjs       # verdict ladder
+
+# Kernel-level operations:
+node tools/slot-math-kernel.mjs list            # 22 kernels discovery
+node tools/slot-math-kernel.mjs info <kernel>   # metadata
+node tools/slot-math-kernel.mjs call <k> cfg    # forward RTP call
+node tools/slot-math-kernel.mjs solve <k> cfg   # inverse solve
+```
+
+---
+
 ## 🏆 AUDIT SUMMARY — 2026-06-23 · ZATVOREN ✅ (one-command total rollup)
 
 Boki direktiva: *"dalje"*. ONE-COMMAND TOTAL AUDIT — orchestrator koji
