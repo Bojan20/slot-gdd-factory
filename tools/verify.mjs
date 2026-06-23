@@ -661,6 +661,27 @@ if (existsSync(hwKernelBridgeTest)) {
     'node', [hwKernelBridgeTest]);
 }
 
+/* ── Step 4.97y6: B++ — Cluster-pays kernel bridge contract
+ * Sister-repo cluster_pays kernel: closed-form RTP given per-symbol
+ * cluster_count_distribution + pay_table. Wraps with synthetic
+ * distribution generator (percolation approximation) when empirical PAR
+ * data unavailable; uses operator-supplied distribution when present. */
+const clusterKernelBridgeTest = resolve(REPO, 'tests/contracts/cluster-kernel-bridge.test.mjs');
+if (existsSync(clusterKernelBridgeTest)) {
+  run('B++ — CLUSTER KERNEL BRIDGE (analytical cluster RTP via Python runner)',
+    'node', [clusterKernelBridgeTest]);
+}
+
+/* ── Step 4.97y7: HYB-4 — Vendor PAR adapters (Pragmatic + L&W)
+ * Synthetic xlsx fixtures with vendor-specific headers (Spanish Rodillo,
+ * STRIP_/SYM) → verify both adapters parse + emit canonical ParSheet
+ * shape. Closes HYB-4 placeholder TODO from commit 2da4c32. */
+const vendorParTest = resolve(REPO, 'tests/contracts/vendor-par-adapters.test.mjs');
+if (existsSync(vendorParTest)) {
+  run('HYB-4 — VENDOR PAR adapters (Pragmatic Spanish + L&W STRIP)',
+    'node', [vendorParTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz

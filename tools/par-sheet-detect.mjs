@@ -242,17 +242,17 @@ const VENDOR_ADAPTERS = {
     json: 'inline',
   },
   pragmatic: {
-    /* TODO: tools/par-sheet-pragmatic.py (Spanish Rodillo headers).
-     * Until present, falls back to IGT xlsx ingester (works for any
-     * sufficiently-similar 5-reel layout via column heuristics). */
-    xlsx: 'tools/par-sheet-xlsx-ingest.py',
+    /* 2026-06-23: real Pragmatic adapter live. Recognizes Spanish
+     * "Rodillo 1..5" + "Símbolo" headers + English aliases. NFKD-norm
+     * for accent-insensitive header matching. */
+    xlsx: 'tools/par-sheet-pragmatic.py',
     csv:  'tools/par-sheet-generic-csv.mjs',
     json: 'inline',
   },
   lw: {
-    /* TODO: tools/par-sheet-lw.py (STRIP_1..5 / Brytt patterns).
-     * Until present, falls back to IGT xlsx ingester. */
-    xlsx: 'tools/par-sheet-xlsx-ingest.py',
+    /* 2026-06-23: real L&W / Brytt adapter live. Recognizes "STRIP_1..5"
+     * and "SYM" headers (legacy Bally/SG export format). */
+    xlsx: 'tools/par-sheet-lw.py',
     csv:  'tools/par-sheet-generic-csv.mjs',
     json: 'inline',
   },
