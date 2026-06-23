@@ -1,4 +1,4 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-23 10:52 UTC (kandidati za sledeću sesiju)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-23 11:01 UTC (kandidati za sledeću sesiju)
 
 Sve glavne grane backlog-a su zatvorene (MATH + Expert P1/P2/P3). Ovo
 su preostale **nice-to-have** stavke + nova ideja koja se kristalisala
@@ -30,9 +30,22 @@ tokom sesije. Boki bira — nije obavezna.
 │    │    ASCII box-drawing per HARD RULE #3, summary math)         │        │           │
 │    │  - Verify gate step 4.97y21                                  │        │           │
 ├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
-│ N3 │ Web UI dashboard (single HTML index)                         │  ~3h   │ MED       │
-│    │ Servira sve reports/*.json kao live web view. Operator ne    │        │ UX        │
-│    │ mora CLI. Jedan HTML + JS bez framework-a                   │        │           │
+│ N3 │ Web UI dashboard (single HTML index)                         │  ~3h   │ ✅ DONE   │
+│    │  - tools/web-dashboard.mjs — static single-file generator    │        │           │
+│    │  - reports/dashboard/index.html (61KB, vanilla HTML/CSS/JS,  │        │           │
+│    │    bez framework-a, bez network call-ova na otvaranju)        │        │           │
+│    │  - 4 sekcije: portfolio table · per-game cards · live        │        │           │
+│    │    compare picker (in-browser diff) · kernel matrix          │        │           │
+│    │  - Dark theme (#0f172a), accessible (semantic HTML, redundant │        │           │
+│    │    glyph+text status, contrast-checked colours)               │        │           │
+│    │  - OWASP-grade embedded JSON (</script + <!-- + <script       │        │           │
+│    │    sequences neutralised, no HTML-entity-decode trap)         │        │           │
+│    │  - Cortex eye headless verified: 5 portfolio rows · 5 game   │        │           │
+│    │    cards · 17 kernel matrix rows · 10 compare options · 0    │        │           │
+│    │    console errors · live compare renders diff + ≠ marker     │        │           │
+│    │  - Test: 12/12 PASS (struct invariants, embed safety, XSS    │        │           │
+│    │    escape, round-trip JSON, file size, compare picker)       │        │           │
+│    │  - Verify gate step 4.97y22                                   │        │           │
 ├────┼─────────────────────────────────────────────────────────────┼────────┼───────────┤
 │ N4 │ Kernel call audit log (rolling)                              │  ~2h   │ MED       │
 │    │ Svaki bridge call → log sa input hash + output + ms +        │        │ ops       │

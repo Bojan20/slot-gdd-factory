@@ -898,6 +898,21 @@ if (existsSync(compareGamesTest)) {
     'node', [compareGamesTest]);
 }
 
+/* ── Step 4.97y22: WEB DASHBOARD (N3)
+ * Single-file static HTML dashboard koji agregira sve postojeće JSON
+ * report-ove (audit-summary + portfolio + one-pagers + per-game
+ * coverage + cross-game RTP) u jedan operator/regulator view. Bez
+ * framework-a, bez network call-ova na otvaranju, embedded data kao
+ * inline JSON script tag, in-browser compare picker. Cortex eye
+ * validated: 5 portfolio rows + 5 game cards + 17 kernel matrix rows
+ * + 10 compare options + 0 console errors + live compare radi.
+ * OWASP-grade script embedding (no </script /<!-- /<script leakage). */
+const dashboardTest = resolve(REPO, 'tests/contracts/web-dashboard.test.mjs');
+if (existsSync(dashboardTest)) {
+  run('WEB DASHBOARD (4-section operator view · OWASP embed · cortex-eye verified)',
+    'node', [dashboardTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz
