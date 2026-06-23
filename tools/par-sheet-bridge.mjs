@@ -99,14 +99,27 @@ const VENDOR_KEY_SANITIZE_MAP = Object.freeze({
 });
 const VENDOR_KEY_RX = /\b(igt|pragmatic|lw|spielo)\b/gi;
 
+/* UQ-DEEP-F F-CRIT-3 fix: par-sheet-detect filename heuristic emits
+ * signals like "filename suggests igt" or "filename suggests cash eruption"
+ * which the routing-key strip catches for vendor IDs but NOT for vendor
+ * PRODUCT names. Extended product-name strip mirrors anti-vendor-lint
+ * patterns so signals can never carry banned product tokens through
+ * to par.json (operator-visible artifact). */
+const VENDOR_PRODUCT_RX = /\b(cash[\s_-]?eruption|wheel[\s_-]?of[\s_-]?fortune|gates[\s_-]?of[\s_-]?olympus|sweet[\s_-]?bonanza|eldritch|wrath[\s_-]?of[\s_-]?olympus|crystal[\s_-]?forge[\s_-]?adb|brytt|scientific[\s_-]?games|huff)\b/gi;
+
 export function sanitizeSignals(signals) {
   if (!Array.isArray(signals)) return [];
   return signals.map((s) => {
     if (typeof s !== 'string') return String(s);
-    return s.replace(VENDOR_KEY_RX, (m) => {
-      const k = m.toLowerCase();
-      return VENDOR_KEY_SANITIZE_MAP[k] || 'vendorX';
-    });
+    /* UQ-DEEP-F H8 fix: stateful /g regex with .replace() is correct
+     * (replace resets lastIndex). Strip vendor product names FIRST,
+     * then routing keys, so a signal like "filename suggests igt
+     * cash eruption" → "filename suggests vendorA vendorProduct". */
+    return s.replace(VENDOR_PRODUCT_RX, 'vendorProduct')
+            .replace(VENDOR_KEY_RX, (m) => {
+              const k = m.toLowerCase();
+              return VENDOR_KEY_SANITIZE_MAP[k] || 'vendorX';
+            });
   });
 }
 
@@ -216,16 +229,34 @@ export function applyParToModel(parBlob, model, meta = {}) {
     warnings.push('PAR blob missing per_reel_weights — weights overlay skipped');
   }
 
-  /* paytable: [{ symbolId, combos: { '3': pay, '4': pay, '5': pay } }, ...] */
+  /* paytable: [{ symbolId, combos: { '3': pay, '4': pay, '5': pay } }, ...]
+   *
+   * UQ-DEEP-F H1 fix: proto-pollution guard on symbolId. A malicious PAR
+   * JSON with symbolId='__proto__' would write through pt['__proto__'] and
+   * any downstream `for (k in paytable)` walker inherits pollution. Same
+   * guard as applyPatch whitelist (self-healing-parser.mjs). Plus reject
+   * non-string symbolIds and symbolIds containing control chars (F-MED-9). */
+  const PROTO_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
   if (Array.isArray(parBlob.paytable) && parBlob.paytable.length > 0) {
-    const pt = {};
+    const pt = Object.create(null); /* null-prototype: no inheritance surface */
     for (const row of parBlob.paytable) {
-      if (row && row.symbolId && row.combos && typeof row.combos === 'object') {
-        pt[row.symbolId] = row.combos;
+      if (!row || !row.combos || typeof row.combos !== 'object') continue;
+      const sid = row.symbolId;
+      if (typeof sid !== 'string' || sid.length === 0 || sid.length > 64) continue;
+      if (PROTO_KEYS.has(sid)) {
+        warnings.push(`paytable row rejected: proto-pollution symbolId "${sid}"`);
+        continue;
       }
+      /* Strip control chars (F-MED-9): RTL marker, newline, etc. */
+      if (/[\x00-\x1f\x7f‎‏]/.test(sid)) {
+        warnings.push(`paytable row rejected: control char in symbolId`);
+        continue;
+      }
+      pt[sid] = row.combos;
     }
     if (Object.keys(pt).length > 0) {
-      next.reelStrips.par_sheet_paytable = pt;
+      /* Convert back to plain object for JSON serialization compatibility. */
+      next.reelStrips.par_sheet_paytable = { ...pt };
       appliedFields.push('reelStrips.par_sheet_paytable');
     }
   } else {

@@ -329,7 +329,10 @@ export function verifyHtml(slug, model, html) {
     checks,
     score: +score.toFixed(2),
     summary: `${verdict} · score ${score.toFixed(1)}/10 · ${checks.filter(c => c.verdict === 'PASS').length}/${checks.length} PASS`,
-    __meta__: { ts: new Date().toISOString(), mode: 'deterministic' },
+    /* UQ-DEEP-F F-CRIT-2 fix: ts wall-clock leak. Drop ts so v9.json byte-stable
+     * across runs. CLI walker (line 404 area) stamps generatedAt for batch
+     * traceability separately. */
+    __meta__: { mode: 'deterministic' },
   };
 }
 

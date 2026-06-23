@@ -49,6 +49,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, statSync, renameSync } from 'node:fs';
 import { resolve, dirname, join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { randomBytes, createHash } from 'node:crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = resolve(__filename, '..');
@@ -65,10 +66,9 @@ const BANNED_VENDOR_RX = /eldritch|woo[\s_-]?wrath|wrath[\s_-]?of[\s_-]?olympus|
 /* ── catalog kinds discovery ─────────────────────────────────────────── */
 
 let _kindsCache = null;
-let _kindsCacheMtime = 0;
-let _kindsCacheSize = 0;
+let _kindsCacheHash = '';
 let _kindsCacheTime = 0;
-const KINDS_CACHE_TTL_MS = 30_000; /* M9: TTL bound on mtime cache */
+const KINDS_CACHE_TTL_MS = 30_000; /* M9: TTL bound on cache */
 
 /**
  * Load the set of known feature kinds from blockCatalog.json.
@@ -77,25 +77,24 @@ const KINDS_CACHE_TTL_MS = 30_000; /* M9: TTL bound on mtime cache */
  */
 export function loadCatalogKinds() {
   if (!existsSync(CATALOG)) return new Set();
-  try {
-    const st = statSync(CATALOG);
-    /* M9 audit fix: combine mtime + size + TTL. mtime alone has 1s
-     * resolution on some filesystems; size guards against in-place
-     * rewrites within the same second; TTL forces re-read every 30s
-     * to catch any case mtime + size both unchanged but content drifted. */
-    const now = Date.now();
-    if (_kindsCache &&
-        _kindsCacheMtime === st.mtimeMs &&
-        _kindsCacheSize === st.size &&
-        (now - _kindsCacheTime) < KINDS_CACHE_TTL_MS) {
-      return _kindsCache;
-    }
-    _kindsCacheMtime = st.mtimeMs;
-    _kindsCacheSize  = st.size;
-    _kindsCacheTime  = now;
-  } catch { /* stat failed — re-parse */ }
+  /* UQ-DEEP-F CRIT-1 fix: content-hash cache key (not mtime+size). mtime
+   * + size can both stay identical when a sibling rewrites the catalog
+   * with same byte count (regenerator emits same shape with diff content).
+   * SHA-1 hash is <1ms for 100KB catalog and catches any content drift. */
+  let buf;
+  try { buf = readFileSync(CATALOG); }
+  catch { return new Set(); }
+  const hash = createHash('sha1').update(buf).digest('hex').slice(0, 16);
+  const now = Date.now();
+  if (_kindsCache &&
+      _kindsCacheHash === hash &&
+      (now - _kindsCacheTime) < KINDS_CACHE_TTL_MS) {
+    return _kindsCache;
+  }
+  _kindsCacheHash = hash;
+  _kindsCacheTime = now;
   let parsed;
-  try { parsed = JSON.parse(readFileSync(CATALOG, 'utf8')); }
+  try { parsed = JSON.parse(buf.toString('utf8')); }
   catch { return new Set(); }
   const kinds = new Set();
   for (const b of (parsed.catalog || [])) {
@@ -130,7 +129,11 @@ function writePending(entries) {
   const tail = entries.slice(-200);
   try {
     mkdirSync(dirname(PENDING_JSON), { recursive: true });
-    const tmp = PENDING_JSON + '.tmp.' + process.pid;
+    /* UQ-DEEP-F F-CRIT-2 fix: PID-based tmp suffix collides on PID reuse
+     * (long-uptime systems wrap PID, two ingests get same PID, second
+     * truncates first). Same defect ingest.mjs INFRA-1 already killed —
+     * use randomBytes(8) hex like ingest.mjs:1128 + llm-cross-check etc. */
+    const tmp = PENDING_JSON + '.tmp.' + randomBytes(8).toString('hex');
     writeFileSync(tmp, JSON.stringify(tail, null, 2), 'utf8');
     renameSync(tmp, PENDING_JSON);
   } catch { /* non-fatal */ }
@@ -242,7 +245,14 @@ function toLowerCamel(s) {
  * @returns {Promise<Receipt>}
  */
 export async function runScaffolds(model, opts = {}) {
-  const ranAt = new Date().toISOString();
+  /* UQ-DEEP-F F-CRIT-3 fix: ranAt wall-clock leak makes auto-scaffold.json
+   * non-deterministic (Pass 1 ≠ Pass 2 bytes). Replace with content-derived
+   * stamp: sha1(slug + plan). For run without slug, fall back to plan-hash
+   * only. CLI/dashboard consumers should use file mtime for "when ran". */
+  const { createHash } = await import('node:crypto');
+  const ranAtSeed = JSON.stringify({ slug: opts.slug || '', planKeys: opts.dryRun ? 'dry' : 'wet' });
+  /* Defer actual stamp to AFTER plan resolution so it depends on plan content. */
+  const ranAt = createHash('sha1').update(ranAtSeed).digest('hex').slice(0, 16);
   const { plan, skipped, blocked, capExceeded } = await planScaffolds(model, opts);
   const created = [];
   const errors = [];
@@ -369,10 +379,18 @@ export async function runScaffolds(model, opts = {}) {
         }
         throw e;
       }
+      /* UQ-DEEP-F HIGH-6 fix: both-or-neither invariant. If test write
+       * fails (FS full / EACCES / etc), unlink the orphan block to keep
+       * "block exists ↔ test exists" invariant. Without this, next ingest
+       * sees block file → skips → test NEVER created → silent rot. */
       try {
         writeFileSync(testPath, testSrc, { encoding: 'utf8', flag: 'wx' });
       } catch (e) {
-        if (e.code !== 'EEXIST') throw e;
+        if (e.code !== 'EEXIST') {
+          try { const { unlinkSync } = await import('node:fs');
+                unlinkSync(blockPath); } catch { /* best-effort */ }
+          throw e;
+        }
       }
       created.push({ kind: item.kind, path: blockPath, archetype: item.archetype });
       newPendingEntries.push({

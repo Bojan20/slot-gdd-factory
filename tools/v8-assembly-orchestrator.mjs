@@ -262,17 +262,25 @@ export function assemble(slug, model) {
     assembly: {
       enabledBlocks: [...enabled.keys()].sort(),
       disabledBlocks: [...disabled.keys()].sort(),
-      reasonByBlock: Object.fromEntries([...enabled.entries(), ...disabled.entries()]),
+      /* UQ-DEEP-F F-HIGH-7 + F-MED-10 fix: sort reasonByBlock keys + featuresDetected
+       * deterministically so Map insertion-order drift doesn't rewrite v8.json bytes. */
+      reasonByBlock: Object.fromEntries(
+        [...enabled.entries(), ...disabled.entries()]
+          .sort(([a], [b]) => String(a).localeCompare(String(b)))
+      ),
     },
     conflicts,
     warnings,
     missingMandatory,
     missingJurGates,
     __meta__: {
-      ts: new Date().toISOString(),
+      /* UQ-DEEP-F F-CRIT-1 fix: ts wall-clock leak makes v8.json non-deterministic.
+       * The HTML meta payload already excludes ts (UQ-DEEP-A fix), but v8.json
+       * on disk still drifted across runs. Drop ts entirely — CLI walker (line 346
+       * area) stamps generatedAt at orchestrator-level for batch output traceability. */
       enabledCount: enabled.size,
       disabledCount: disabled.size,
-      featuresDetected: [...feats],
+      featuresDetected: [...feats].sort(),
       jurisdictionsDetected: jur,
       selectedEngine,
     },

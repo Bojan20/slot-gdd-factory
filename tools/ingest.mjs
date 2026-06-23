@@ -632,7 +632,10 @@ try {
       log(`  PAR step soft-fail: ${e.message}`);
       parReceipt = { ok: false, skip: false, reason: e.message };
       summary.par = parReceipt;
-      summary.softFail = summary.softFail || { stage: 'PAR ingest', reason: e.message };
+      /* F-HIGH-4: append to softFails array + keep legacy single field. */
+      const sf = { stage: 'PAR ingest', reason: e.message };
+      summary.softFail = summary.softFail || sf;
+      (summary.softFails = summary.softFails || []).push(sf);
     });
   }
   /* MED-2 fix: defer PAR ingest to AFTER Kimi reconcile (Step 5b below). */
@@ -783,7 +786,11 @@ try {
       /* UQ-FORTIFY3 #6 — record soft-fail so the final exit code is 3
          instead of 0. CI / downstream tools can decide whether to gate.
          Note: --no-llm explicit skip is NOT a soft-fail (operator chose). */
-      summary.softFail = { stage: 'kimi-reconcile', reason: e.message };
+      {
+        const sf = { stage: 'kimi-reconcile', reason: e.message };
+        summary.softFail = summary.softFail || sf;
+        (summary.softFails = summary.softFails || []).push(sf);
+      }
     });
   } else {
     log('--no-llm — skipping reconcile');
@@ -932,7 +939,11 @@ try {
       /* UQ-DEEP-A 2026-06-23 — propagate via softFail so exit code 3
        * surfaces to CI. Without this, V8 import error silently shipped
        * HTML without the audit receipt; operator believed pipeline OK. */
-      summary.softFail = summary.softFail || { stage: 'V8 assembly', reason: e.message };
+      {
+        const sf = { stage: 'V8 assembly', reason: e.message };
+        summary.softFail = summary.softFail || sf;
+        (summary.softFails = summary.softFails || []).push(sf);
+      }
     }
   });
 
@@ -1072,7 +1083,11 @@ try {
     } catch (e) {
       log('  V9 soft-fail: ' + e.message);
       summary.v9 = { error: e.message };
-      summary.softFail = summary.softFail || { stage: 'V9 visual QA', reason: e.message };
+      {
+        const sf = { stage: 'V9 visual QA', reason: e.message };
+        summary.softFail = summary.softFail || sf;
+        (summary.softFails = summary.softFails || []).push(sf);
+      }
     }
   });
 
@@ -1209,9 +1224,18 @@ try {
   }
 
   /* UQ-FORTIFY3 #6 — distinct exit code for "finished with soft-fail" so
-     CI can WARN (3) without falsely passing (0) or hard-failing (1). */
+   * CI can WARN (3) without falsely passing (0) or hard-failing (1).
+   *
+   * UQ-DEEP-F F-HIGH-4 fix: summary.softFail = X || X kept ONLY first
+   * soft-fail. Two soft-fails reported as one — second silently dropped.
+   * Now: maintain softFails ARRAY in addition to legacy single field for
+   * back-compat; log ALL stages in exit message. */
   if (summary.softFail) {
-    log(`⚠ exit 3 — soft-fail in ${summary.softFail.stage} (${summary.softFail.reason.slice(0, 80)})`);
+    const all = summary.softFails || [summary.softFail];
+    log(`⚠ exit 3 — soft-fail in ${all.length} stage(s):`);
+    for (const sf of all) {
+      log(`   · ${sf.stage}: ${String(sf.reason || '').slice(0, 100)}`);
+    }
     process.exit(3);
   }
   process.exit(0);

@@ -144,7 +144,12 @@ async function healerBackoffSleep(attempt, opts = {}) {
     ? opts.backoffBaseMs : BACKOFF_BASE_MS;
   if (base === 0) return;
   const exp = base * Math.pow(2, Math.max(0, attempt - 1));
-  const jitter = Math.random() * base;
+  /* UQ-DEEP-F HIGH-7 fix: Math.random() is unseeded and identical across
+   * forked workers — N parallel ingests all sleep identical jitter → THE
+   * EXACT thundering herd backoff was supposed to prevent. randomBytes(2)
+   * is cryptographic so each worker gets independent entropy. */
+  const { randomBytes } = await import('node:crypto');
+  const jitter = (randomBytes(2).readUInt16LE(0) / 65535) * base;
   const total = Math.min(exp + jitter, 30_000); /* hard cap 30s */
   await new Promise((r) => setTimeout(r, total));
 }
@@ -448,7 +453,9 @@ async function defaultHealer(prompt, opts = {}) {
       timeout: timeoutMs,
     });
   } catch (e) {
-    return { ok: false, error: `spawn threw: ${e.message}`, durationMs: Date.now() - t0, provider };
+    /* UQ-DEEP-F F-HIGH-5 fix: cap error message length so massive stack
+     * traces don't bloat healing.json receipt + meta tag. */
+    return { ok: false, error: `spawn threw: ${String(e.message || e).slice(0, 200)}`, durationMs: Date.now() - t0, provider };
   }
   const durationMs = Date.now() - t0;
   if (r.status !== 0) {
@@ -479,7 +486,7 @@ async function defaultHealer(prompt, opts = {}) {
   let patch;
   try { patch = JSON.parse(jsonStr); }
   catch (e) {
-    return { ok: false, error: `patch JSON parse: ${e.message}`, durationMs, provider };
+    return { ok: false, error: `patch JSON parse: ${String(e.message || e).slice(0, 200)}`, durationMs, provider };
   }
   return { ok: true, patch, durationMs, provider };
 }
@@ -600,7 +607,7 @@ export async function healModel(rawText, model, opts = {}) {
     try {
       healerResp = await healerFn(prompt, { timeoutMs: opts.timeoutMs });
     } catch (e) {
-      healerResp = { ok: false, error: `healer threw: ${e.message}`, durationMs: 0, provider: 'unknown' };
+      healerResp = { ok: false, error: `healer threw: ${String(e.message || e).slice(0, 200)}`, durationMs: 0, provider: 'unknown' };
     }
     lastProvider = healerResp.provider || 'unknown';
     totalCostUsd += COST_ESTIMATES_USD[lastProvider] || COST_ESTIMATES_USD.unknown;
@@ -673,7 +680,7 @@ export async function healModel(rawText, model, opts = {}) {
     } catch (e) {
       attemptsLog.push({
         attempt, severityBefore, severityAfter: severityBefore,
-        patchKeys: [], error: `applyPatch threw: ${e.message}`,
+        patchKeys: [], error: `applyPatch threw: ${String(e.message || e).slice(0, 200)}`,
         durationMs: healerResp.durationMs, provider: lastProvider,
       });
       continue;

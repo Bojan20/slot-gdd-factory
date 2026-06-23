@@ -48,7 +48,7 @@ import { resolve, dirname, basename, extname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = resolve(__filename, '..');
@@ -122,6 +122,27 @@ function safeSlug(s) {
   return s;
 }
 
+/* UQ-DEEP-F CRIT-3 + F-CRIT-1 fix: server-side slug derivation MUST
+ * mirror ingest.mjs:111 slugify so SSE `done` event's slug matches the
+ * dist/ingest/<slug>/ directory the child actually writes. Previously
+ * runIngest's auto-slug logic diverged (basename().toLowerCase) and SSE
+ * client got wrong /preview/<slug> path for non-ASCII / long uploads. */
+function serverSideSlugify(name) {
+  const raw = String(name || 'gdd');
+  const ascii = raw
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/\.[a-z0-9]+$/, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+  if (ascii && ascii !== 'gdd') return ascii;
+  /* Degenerate basename — SHA-1 fallback (matches ingest.mjs slugify). */
+  const fp = createHash('sha1').update(raw, 'utf8').digest('hex').slice(0, 8);
+  return ascii ? `${ascii}-${fp}` : `gdd-${fp}`;
+}
+
 function sendJSON(res, status, body) {
   const data = JSON.stringify(body);
   res.writeHead(status, {
@@ -153,6 +174,12 @@ const activeSlugs = new Set(); /* H2 fix: prevent concurrent same-slug ingest */
 /* H1 audit fix (HIGH): hard cap on sessions Map to prevent DoS.
  * Without cap, attacker spamming uploads filled memory until 5-min GC. */
 const MAX_SESSIONS = 200;
+/* UQ-DEEP-F CRIT-F1: per-session subscribers cap so attacker can't open
+ * 10K SSE connections to one session and DOS via write amplification. */
+const MAX_SUBSCRIBERS_PER_SESSION = 32;
+/* UQ-DEEP-F CRIT-F3: per-session events array cap so chatty stderr from
+ * a runaway ingest can't grow session footprint unbounded. */
+const MAX_EVENTS_PER_SESSION = 500;
 
 function createSession() {
   /* Evict oldest if at cap. Done sessions (completed > 5min ago) already
@@ -170,6 +197,12 @@ function createSession() {
 function pushEvent(sessionId, evt) {
   const s = sessions.get(sessionId);
   if (!s) return;
+  /* CRIT-F3: cap events array. When over cap, replace oldest event with
+   * coalesce marker so SSE replay still tells late subscribers events
+   * were truncated. */
+  if (s.events.length >= MAX_EVENTS_PER_SESSION) {
+    s.events.splice(0, 1, { stage: 'coalesce', msg: `${s.events.length} earlier events truncated (cap=${MAX_EVENTS_PER_SESSION})` });
+  }
   s.events.push(evt);
   for (const sub of s.subscribers) {
     try { sub.write(`event: ${evt.stage || 'message'}\ndata: ${JSON.stringify(evt)}\n\n`); }
@@ -232,21 +265,31 @@ async function runIngest(sessionId, gddPath, parPath, slug) {
     const cleaned = String(chunk).replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '').slice(0, 500);
     pushEvent(sessionId, { stage: 'stderr', msg: cleaned });
   });
+  /* MED-10 audit fix: hard timeout reaper (10 min cap) so a hung child
+   * doesn't lock activeSlugs forever. SIGKILL after timeout, exit handler
+   * still fires and releases slug. */
+  const reaperTimeout = setTimeout(() => {
+    try { child.kill('SIGKILL'); } catch { /* already dead */ }
+  }, 10 * 60 * 1000);
   child.on('exit', (code) => {
+    clearTimeout(reaperTimeout);
     const summary = { exitCode: code, totalMs: Date.now() - t0, lastStage };
-    /* Compute final slug from path if not explicitly provided. */
-    const finalSlug = slug || basename(gddPath).replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    /* UQ-DEEP-F F-CRIT-1 fix: slug is now ALWAYS set by caller (server-
+     * side derivation when operator omits --slug), so no divergent
+     * basename().toLowerCase() recompute. SSE done event slug matches
+     * dist/ingest/<slug>/ directory child wrote. */
     pushEvent(sessionId, {
       stage: 'done',
-      slug: finalSlug,
+      slug,
       ...summary,
     });
-    /* H2: release slug lock so future ingests of same slug can proceed. */
-    if (slug) activeSlugs.delete(slug);
+    /* H2 + CRIT-3: release slug lock so future ingests of same slug can proceed. */
+    activeSlugs.delete(slug);
   });
   child.on('error', (err) => {
+    clearTimeout(reaperTimeout);
     pushEvent(sessionId, { stage: 'error', msg: err.message });
-    if (slug) activeSlugs.delete(slug);
+    activeSlugs.delete(slug);
   });
 }
 
@@ -346,18 +389,27 @@ async function handleIngest(req, res) {
   }
   /* Slug override from form field. */
   const slugField = fields.slug ? fields.slug.data.toString('utf8').trim() : null;
-  const slug = slugField && safeSlug(slugField) ? slugField : null;
+  let slug = slugField && safeSlug(slugField) ? slugField : null;
 
-  /* H2 audit fix (HIGH): slug-level concurrency lock. Two simultaneous
-   * POST /ingest sa istim slug-om ranije bi pravili Frankenstein dist/
-   * (interleaved writes). Sad: drugi poziv → 409 dok prvi ne završi. */
-  if (slug && activeSlugs.has(slug)) {
+  /* UQ-DEEP-F CRIT-3 fix: when operator does NOT pass --slug, the slug is
+   * derived server-side (mirroring ingest.mjs:111 slugify) BEFORE spawn so
+   * activeSlugs lock covers auto-slug path too. Without this, two uploads
+   * of the same PDF filename would auto-derive identical slugs INSIDE the
+   * child, race past activeSlugs (which never sees them), and produce
+   * Frankenstein dist/<slug>/ output. */
+  if (!slug) {
+    slug = serverSideSlugify(safeName(gddField.filename, 'upload.md'));
+  }
+
+  /* H2 audit fix (HIGH): slug-level concurrency lock. */
+  if (activeSlugs.has(slug)) {
     return sendJSON(res, 409, { error: `slug "${slug}" already ingesting` });
   }
-  if (slug) activeSlugs.add(slug);
+  activeSlugs.add(slug);
   /* Kick off ingest async; respond immediately with sessionId. */
   runIngest(sessionId, gddPath, parPath, slug).catch(e => {
     pushEvent(sessionId, { stage: 'error', msg: e.message });
+    activeSlugs.delete(slug);
   });
   /* Cleanup tmp after 5 minutes. */
   setTimeout(() => { rm(tmp, { recursive: true, force: true }).catch(() => {}); }, 5 * 60 * 1000);
@@ -373,6 +425,13 @@ async function handleIngest(req, res) {
 function handleEvents(req, res, sessionId) {
   const s = sessions.get(sessionId);
   if (!s) return send404(res);
+  /* CRIT-F1: reject when subscribers cap exceeded. Without this, attacker
+   * opens N SSE connections, each pushEvent writes N times → O(N) DoS. */
+  if (s.subscribers.size >= MAX_SUBSCRIBERS_PER_SESSION) {
+    res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': '60' });
+    res.end(JSON.stringify({ error: `max ${MAX_SUBSCRIBERS_PER_SESSION} subscribers per session` }));
+    return;
+  }
   res.writeHead(200, {
     'Content-Type': 'text/event-stream; charset=utf-8',
     'Cache-Control': 'no-cache, no-transform',
