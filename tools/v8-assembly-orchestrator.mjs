@@ -25,10 +25,23 @@
  * NO LLM. Pure deterministic rule engine. LLM escalation hook lives
  * in `escalateToLLM(question, ruleDeadlock)` but is OFF by default
  * (commented out — would call cortex-fable-ask if enabled).
+ *
+ * --------------------------------------------------------------------
+ * LIBRARY MODE (N+1 LIVE WIRE 2026-06-23)
+ * --------------------------------------------------------------------
+ * Export-ovana `assemble(slug, model)` funkcija dozvoljava ingest.mjs
+ * pipeline-u (i bilo kom drugom alatu) da pozove rule engine sinhrono,
+ * bez CLI overhead-a — receipt se emit-uje direktno u memoriji za
+ * dalju serijalizaciju u `dist/ingest/<slug>/v8.json` + embed kao
+ * `<meta name="v8-receipt" content="<base64-json>">` u HTML output.
+ *
+ * CLI mod (walk-all-slugs) ostaje aktivan i ne menja ponašanje — guard
+ * `if (import.meta.url === pathToFileURL(process.argv[1]).href)` odvaja
+ * CLI od library import-a, tako da `import` ne izvršava walker.
  */
 
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, statSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -38,19 +51,8 @@ const REAL_GAMES = `${REPO}/dist/real-games`;
 const OUT_DIR    = `${REPO}/reports`;
 const RULES_FILE = `${REPO}/tools/v8-assembly-rules.json`;
 const CATALOG    = `${REPO}/src/registry/blockCatalog.json`;
-mkdirSync(OUT_DIR, { recursive: true });
 
-const args = process.argv.slice(2);
-const argVal = (flag) => {
-  const idx = args.findIndex(a => a === flag || a.startsWith(flag + '='));
-  if (idx === -1) return null;
-  const a = args[idx];
-  return a.includes('=') ? a.split('=')[1] : args[idx + 1];
-};
-const SLUG  = argVal('--slug') || null;
-const LIMIT = argVal('--limit') ? parseInt(argVal('--limit'), 10) : null;
-
-/* ── Load rules + catalog ─────────────────────────────────────────── */
+/* ── Load rules + catalog (eager; idempotent so library mode safe) ─── */
 const rules = JSON.parse(readFileSync(RULES_FILE, 'utf8'));
 const catalogRaw = JSON.parse(readFileSync(CATALOG, 'utf8'));
 const blockSet = new Set(Object.values(catalogRaw.catalog || {}).map(b => b.id));
@@ -67,8 +69,8 @@ for (const block of Object.values(catalogRaw.catalog || {})) {
   }
 }
 
-/* ── Helpers ──────────────────────────────────────────────────────── */
-function jurCodes(model) {
+/* ── Helpers (exported for library users) ─────────────────────────── */
+export function jurCodes(model) {
   const c = model.compliance;
   const arr = Array.isArray(c) ? c
             : Array.isArray(c?.jurisdictions) ? c.jurisdictions
@@ -76,7 +78,7 @@ function jurCodes(model) {
   return arr.map(j => typeof j === 'string' ? j : (j?.code || j?.id || j?.name)).filter(Boolean);
 }
 
-function featureSet(model) {
+export function featureSet(model) {
   const set = new Set();
   if (Array.isArray(model.features)) {
     for (const f of model.features) set.add(typeof f === 'string' ? f : (f?.kind || f?.id || ''));
@@ -132,8 +134,8 @@ function getPath(obj, path) {
   return path.split('.').reduce((acc, k) => (acc == null ? acc : acc[k]), obj);
 }
 
-/* ── Single-model assembly ────────────────────────────────────────── */
-function assemble(slug, model) {
+/* ── Single-model assembly (PUBLIC API — used by ingest.mjs live wire) */
+export function assemble(slug, model) {
   const enabled  = new Map();   // blockId → reason
   const disabled = new Map();   // blockId → reason
   const conflicts = [];
@@ -267,8 +269,20 @@ function assemble(slug, model) {
   };
 }
 
-/* ── Walker ────────────────────────────────────────────────────────── */
-function listSlugs() {
+/* ── CLI walker (only runs when invoked as `node tools/v8-...`) ──────
+ * Library importers (ingest.mjs, tests) do NOT execute this branch —
+ * import.meta.url match against pathToFileURL(process.argv[1]) is the
+ * canonical Node ES-module CLI guard. Without it, just importing this
+ * module from ingest would walk all 338 GDDs and exit the process. */
+const IS_CLI = (() => {
+  try {
+    return import.meta.url === pathToFileURL(process.argv[1] || '').href;
+  } catch (_) {
+    return false;
+  }
+})();
+
+function listSlugs(SLUG, LIMIT) {
   if (!existsSync(REAL_GAMES)) {
     console.error(`▸ ${REAL_GAMES} missing.`);
     process.exit(2);
@@ -282,76 +296,89 @@ function listSlugs() {
   return all;
 }
 
-const slugs = listSlugs();
-if (slugs.length === 0) {
-  console.error('▸ no model.json files found');
-  process.exit(2);
-}
+if (IS_CLI) {
+  const args = process.argv.slice(2);
+  const argVal = (flag) => {
+    const idx = args.findIndex(a => a === flag || a.startsWith(flag + '='));
+    if (idx === -1) return null;
+    const a = args[idx];
+    return a.includes('=') ? a.split('=')[1] : args[idx + 1];
+  };
+  const SLUG  = argVal('--slug') || null;
+  const LIMIT = argVal('--limit') ? parseInt(argVal('--limit'), 10) : null;
 
-console.log(`V8 Assembly Orchestrator · processing ${slugs.length} models...`);
-
-const receipts = [];
-let passCount = 0, failCount = 0, totalConflicts = 0;
-for (const slug of slugs) {
-  let model;
-  try {
-    model = JSON.parse(readFileSync(join(REAL_GAMES, slug, 'model.json'), 'utf8'));
-  } catch (e) {
-    receipts.push({ slug, verdict: 'FAIL', error: `model.json unreadable: ${e.message}` });
-    failCount++;
-    continue;
+  mkdirSync(OUT_DIR, { recursive: true });
+  const slugs = listSlugs(SLUG, LIMIT);
+  if (slugs.length === 0) {
+    console.error('▸ no model.json files found');
+    process.exit(2);
   }
-  const receipt = assemble(slug, model);
-  receipts.push(receipt);
-  if (receipt.verdict === 'PASS') passCount++; else failCount++;
-  totalConflicts += receipt.conflicts.length;
-}
 
-const ts = new Date().toISOString();
-const summary = {
-  generatedAt: ts,
-  tool: 'tools/v8-assembly-orchestrator.mjs',
-  gamesProcessed: receipts.length,
-  passCount,
-  failCount,
-  totalConflicts,
-  failedSlugs: receipts.filter(r => r.verdict === 'FAIL').slice(0, 50).map(r => ({
-    slug: r.slug,
-    error: r.error,
-    conflicts: r.conflicts,
-    missingMandatory: r.missingMandatory,
-    missingJurGates: r.missingJurGates,
-  })),
-};
+  console.log(`V8 Assembly Orchestrator · processing ${slugs.length} models...`);
 
-const reportFile = join(OUT_DIR, `v8-assembly-${ts.replace(/[:.]/g, '-')}.json`);
-writeFileSync(reportFile, JSON.stringify({ summary, receipts }, null, 2));
-
-console.log('');
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log(`V8 Assembly Orchestrator · processed ${receipts.length} games`);
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log(`  PASS: ${passCount}`);
-console.log(`  FAIL: ${failCount}`);
-console.log(`  Conflicts total: ${totalConflicts}`);
-if (failCount > 0) {
-  console.log('  First failed slugs:');
-  for (const r of receipts.filter(x => x.verdict === 'FAIL').slice(0, 5)) {
-    const detail = [
-      r.error,
-      r.conflicts?.length ? `conflicts=${JSON.stringify(r.conflicts.map(c => c.blocks))}` : '',
-      r.missingMandatory?.length ? `missingMandatory=${JSON.stringify(r.missingMandatory)}` : '',
-      r.missingJurGates?.length ? `missingJurGates=${JSON.stringify(r.missingJurGates)}` : '',
-    ].filter(Boolean).join(' · ');
-    console.log(`    - ${r.slug}: ${detail || 'unknown reason'}`);
+  const receipts = [];
+  let passCount = 0, failCount = 0, totalConflicts = 0;
+  for (const slug of slugs) {
+    let model;
+    try {
+      model = JSON.parse(readFileSync(join(REAL_GAMES, slug, 'model.json'), 'utf8'));
+    } catch (e) {
+      receipts.push({ slug, verdict: 'FAIL', error: `model.json unreadable: ${e.message}` });
+      failCount++;
+      continue;
+    }
+    const receipt = assemble(slug, model);
+    receipts.push(receipt);
+    if (receipt.verdict === 'PASS') passCount++; else failCount++;
+    totalConflicts += receipt.conflicts.length;
   }
-}
-console.log(`  Report: ${reportFile}`);
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-if (failCount > 0 || totalConflicts > 0) {
-  console.log('✗ FAIL');
-  process.exit(1);
+  const ts = new Date().toISOString();
+  const summary = {
+    generatedAt: ts,
+    tool: 'tools/v8-assembly-orchestrator.mjs',
+    gamesProcessed: receipts.length,
+    passCount,
+    failCount,
+    totalConflicts,
+    failedSlugs: receipts.filter(r => r.verdict === 'FAIL').slice(0, 50).map(r => ({
+      slug: r.slug,
+      error: r.error,
+      conflicts: r.conflicts,
+      missingMandatory: r.missingMandatory,
+      missingJurGates: r.missingJurGates,
+    })),
+  };
+
+  const reportFile = join(OUT_DIR, `v8-assembly-${ts.replace(/[:.]/g, '-')}.json`);
+  writeFileSync(reportFile, JSON.stringify({ summary, receipts }, null, 2));
+
+  console.log('');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`V8 Assembly Orchestrator · processed ${receipts.length} games`);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`  PASS: ${passCount}`);
+  console.log(`  FAIL: ${failCount}`);
+  console.log(`  Conflicts total: ${totalConflicts}`);
+  if (failCount > 0) {
+    console.log('  First failed slugs:');
+    for (const r of receipts.filter(x => x.verdict === 'FAIL').slice(0, 5)) {
+      const detail = [
+        r.error,
+        r.conflicts?.length ? `conflicts=${JSON.stringify(r.conflicts.map(c => c.blocks))}` : '',
+        r.missingMandatory?.length ? `missingMandatory=${JSON.stringify(r.missingMandatory)}` : '',
+        r.missingJurGates?.length ? `missingJurGates=${JSON.stringify(r.missingJurGates)}` : '',
+      ].filter(Boolean).join(' · ');
+      console.log(`    - ${r.slug}: ${detail || 'unknown reason'}`);
+    }
+  }
+  console.log(`  Report: ${reportFile}`);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+  if (failCount > 0 || totalConflicts > 0) {
+    console.log('✗ FAIL');
+    process.exit(1);
+  }
+  console.log('✓ PASS — 0 assembly conflicts, 0 mandatory misses');
+  process.exit(0);
 }
-console.log('✓ PASS — 0 assembly conflicts, 0 mandatory misses');
-process.exit(0);

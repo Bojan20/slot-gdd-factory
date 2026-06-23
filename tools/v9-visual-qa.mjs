@@ -26,10 +26,21 @@
  * EXIT
  *   0 — every receipt verdict ∈ {PASS, WARN}
  *   1 — ≥ 1 receipt verdict = FAIL
- */
+ *
+ * --------------------------------------------------------------------
+ * LIBRARY MODE (N+1 LIVE WIRE 2026-06-23)
+ * --------------------------------------------------------------------
+ * Export-ovana `verifyHtml(slug, model, html)` funkcija dozvoljava
+ * ingest.mjs (i bilo kom drugom alatu) da pozove deterministic check
+ * suite sinhrono, bez CLI overhead-a. Receipt se emit-uje direktno u
+ * memoriji za serijalizaciju u `dist/ingest/<slug>/v9.json` + embed
+ * kao `<meta name="v9-verdict" …>` u HTML output.
+ *
+ * CLI mod (walk-all-slugs) ostaje aktivan — guard preko
+ * `if (import.meta.url === pathToFileURL(process.argv[1]).href)`. */
 
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, statSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -37,24 +48,11 @@ const __dirname  = dirname(__filename);
 const REPO       = resolve(__dirname, '..');
 const REAL_GAMES = `${REPO}/dist/real-games`;
 const OUT_DIR    = `${REPO}/reports`;
-mkdirSync(OUT_DIR, { recursive: true });
-
-const args = process.argv.slice(2);
-const argVal = (flag) => {
-  const idx = args.findIndex(a => a === flag || a.startsWith(flag + '='));
-  if (idx === -1) return null;
-  const a = args[idx];
-  return a.includes('=') ? a.split('=')[1] : args[idx + 1];
-};
-const SLUG    = argVal('--slug') || null;
-const LIMIT   = argVal('--limit') ? parseInt(argVal('--limit'), 10) : null;
-const LAUNCH  = args.includes('--launch');
-const VISION  = args.includes('--vision');
 
 /* ── Deterministic structural checks (no Playwright needed) ─────────── */
 
 /** Top-level HTML parser. Cheap regex extraction — no DOM library needed. */
-function parseSlot(html) {
+export function parseSlot(html) {
   return {
     title:           (html.match(/<title>([^<]+)<\/title>/) || [])[1] || null,
     hasViewport:     /name="viewport"/.test(html),
@@ -78,7 +76,7 @@ function parseSlot(html) {
 
 /* V9 deterministic check suite (per V9 contract Table 'States V9 captures' +
  * Table 'Output contract'). Each check returns { name, verdict, ... }. */
-function deterministicChecks(slug, model, htmlExtract) {
+export function deterministicChecks(slug, model, htmlExtract) {
   const checks = [];
 
   // C1 — title is set
@@ -169,7 +167,7 @@ function deterministicChecks(slug, model, htmlExtract) {
   return checks;
 }
 
-function scoreChecks(checks) {
+export function scoreChecks(checks) {
   if (checks.length === 0) return 0;
   let sum = 0;
   for (const c of checks) {
@@ -180,7 +178,7 @@ function scoreChecks(checks) {
   return (sum / checks.length) * 10;
 }
 
-function verdictFromChecks(checks, score) {
+export function verdictFromChecks(checks, score) {
   const hasFail = checks.some(c => c.verdict === 'FAIL');
   if (hasFail) return 'FAIL';
   if (score >= 9.0) return 'PASS';
@@ -260,9 +258,48 @@ async function visionMode(slug, model, screenshotPaths) {
   };
 }
 
-/* ── Walker ────────────────────────────────────────────────────────── */
+/* ── High-level library API: verifyHtml(slug, model, html) ──────────
+ *
+ * Public entry point for ingest.mjs and any other live-wire consumer.
+ * Bundles parseSlot + deterministicChecks + scoreChecks +
+ * verdictFromChecks into one receipt structure matching the corpus
+ * orchestrator output. Pure (no I/O); caller persists the receipt.
+ *
+ * Returns:
+ *   {
+ *     wave, agent, slug, verdict ('PASS'|'WARN'|'FAIL'),
+ *     checks: [...], score: 0..10, summary: string,
+ *     __meta__: { ts, mode: 'deterministic' }
+ *   }
+ */
+export function verifyHtml(slug, model, html) {
+  const htmlExtract = parseSlot(html);
+  const checks = deterministicChecks(slug, model, htmlExtract);
+  const score = scoreChecks(checks);
+  const verdict = verdictFromChecks(checks, score);
+  return {
+    wave: 'UQ-MASTERY-5',
+    agent: 'V9_VISUAL_QA',
+    slug,
+    verdict,
+    checks,
+    score: +score.toFixed(2),
+    summary: `${verdict} · score ${score.toFixed(1)}/10 · ${checks.filter(c => c.verdict === 'PASS').length}/${checks.length} PASS`,
+    __meta__: { ts: new Date().toISOString(), mode: 'deterministic' },
+  };
+}
 
-function listSlugs() {
+/* ── CLI walker (only runs when invoked as `node tools/v9-…`) ──────── */
+
+const IS_CLI = (() => {
+  try {
+    return import.meta.url === pathToFileURL(process.argv[1] || '').href;
+  } catch (_) {
+    return false;
+  }
+})();
+
+function listSlugs(SLUG, LIMIT) {
   if (!existsSync(REAL_GAMES)) {
     console.error(`▸ ${REAL_GAMES} missing`);
     process.exit(2);
@@ -278,86 +315,87 @@ function listSlugs() {
   return all;
 }
 
-const slugs = listSlugs();
-if (slugs.length === 0) {
-  console.error('▸ no slot.html + model.json pairs found');
-  process.exit(2);
-}
+if (IS_CLI) {
+  const args = process.argv.slice(2);
+  const argVal = (flag) => {
+    const idx = args.findIndex(a => a === flag || a.startsWith(flag + '='));
+    if (idx === -1) return null;
+    const a = args[idx];
+    return a.includes('=') ? a.split('=')[1] : args[idx + 1];
+  };
+  const SLUG    = argVal('--slug') || null;
+  const LIMIT   = argVal('--limit') ? parseInt(argVal('--limit'), 10) : null;
+  /* LAUNCH + VISION reserved for future Playwright + Opus vision path. */
+  const VISION  = args.includes('--vision');
 
-console.log(`V9 Visual QA · processing ${slugs.length} games (${VISION ? 'VISION' : 'deterministic'} mode)...`);
-
-const receipts = [];
-let passCount = 0, warnCount = 0, failCount = 0;
-for (const slug of slugs) {
-  let model, html;
-  try {
-    model = JSON.parse(readFileSync(join(REAL_GAMES, slug, 'model.json'), 'utf8'));
-    html  = readFileSync(join(REAL_GAMES, slug, 'slot.html'), 'utf8');
-  } catch (e) {
-    receipts.push({ slug, verdict: 'FAIL', error: `read error: ${e.message}` });
-    failCount++;
-    continue;
+  mkdirSync(OUT_DIR, { recursive: true });
+  const slugs = listSlugs(SLUG, LIMIT);
+  if (slugs.length === 0) {
+    console.error('▸ no slot.html + model.json pairs found');
+    process.exit(2);
   }
 
-  const htmlExtract = parseSlot(html);
-  const checks = deterministicChecks(slug, model, htmlExtract);
-  const score = scoreChecks(checks);
-  const verdict = verdictFromChecks(checks, score);
+  console.log(`V9 Visual QA · processing ${slugs.length} games (${VISION ? 'VISION' : 'deterministic'} mode)...`);
 
-  if (verdict === 'PASS') passCount++;
-  else if (verdict === 'WARN') warnCount++;
-  else failCount++;
+  const receipts = [];
+  let passCount = 0, warnCount = 0, failCount = 0;
+  for (const slug of slugs) {
+    let model, html;
+    try {
+      model = JSON.parse(readFileSync(join(REAL_GAMES, slug, 'model.json'), 'utf8'));
+      html  = readFileSync(join(REAL_GAMES, slug, 'slot.html'), 'utf8');
+    } catch (e) {
+      receipts.push({ slug, verdict: 'FAIL', error: `read error: ${e.message}` });
+      failCount++;
+      continue;
+    }
 
-  receipts.push({
-    wave: 'UQ-MASTERY-5',
-    agent: 'V9_VISUAL_QA',
-    slug,
-    verdict,
-    checks,
-    score: +score.toFixed(2),
-    summary: `${verdict} · score ${score.toFixed(1)}/10 · ${checks.filter(c => c.verdict === 'PASS').length}/${checks.length} PASS`,
-    __meta__: { ts: new Date().toISOString(), mode: VISION ? 'vision' : 'deterministic' },
-  });
-}
-
-const ts = new Date().toISOString();
-const summary = {
-  generatedAt: ts,
-  tool: 'tools/v9-visual-qa.mjs',
-  gamesProcessed: receipts.length,
-  passCount,
-  warnCount,
-  failCount,
-  failedSlugs: receipts.filter(r => r.verdict === 'FAIL').slice(0, 20).map(r => ({
-    slug: r.slug,
-    failedChecks: (r.checks || []).filter(c => c.verdict === 'FAIL').map(c => c.name),
-    error: r.error,
-  })),
-};
-
-const reportFile = join(OUT_DIR, `v9-visual-qa-${ts.replace(/[:.]/g, '-')}.json`);
-writeFileSync(reportFile, JSON.stringify({ summary, receipts }, null, 2));
-
-console.log('');
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log(`V9 Visual QA · processed ${receipts.length} games`);
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log(`  PASS: ${passCount}`);
-console.log(`  WARN: ${warnCount}`);
-console.log(`  FAIL: ${failCount}`);
-if (failCount > 0) {
-  console.log('  First failed slugs:');
-  for (const r of receipts.filter(x => x.verdict === 'FAIL').slice(0, 5)) {
-    const f = (r.checks || []).filter(c => c.verdict === 'FAIL').map(c => c.name).join(', ');
-    console.log(`    - ${r.slug}: ${f || r.error || 'unknown'}`);
+    const receipt = verifyHtml(slug, model, html);
+    if (receipt.verdict === 'PASS') passCount++;
+    else if (receipt.verdict === 'WARN') warnCount++;
+    else failCount++;
+    receipts.push(receipt);
   }
-}
-console.log(`  Report: ${reportFile}`);
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-if (failCount > 0) {
-  console.log('✗ FAIL');
-  process.exit(1);
+  const ts = new Date().toISOString();
+  const summary = {
+    generatedAt: ts,
+    tool: 'tools/v9-visual-qa.mjs',
+    gamesProcessed: receipts.length,
+    passCount,
+    warnCount,
+    failCount,
+    failedSlugs: receipts.filter(r => r.verdict === 'FAIL').slice(0, 20).map(r => ({
+      slug: r.slug,
+      failedChecks: (r.checks || []).filter(c => c.verdict === 'FAIL').map(c => c.name),
+      error: r.error,
+    })),
+  };
+
+  const reportFile = join(OUT_DIR, `v9-visual-qa-${ts.replace(/[:.]/g, '-')}.json`);
+  writeFileSync(reportFile, JSON.stringify({ summary, receipts }, null, 2));
+
+  console.log('');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`V9 Visual QA · processed ${receipts.length} games`);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`  PASS: ${passCount}`);
+  console.log(`  WARN: ${warnCount}`);
+  console.log(`  FAIL: ${failCount}`);
+  if (failCount > 0) {
+    console.log('  First failed slugs:');
+    for (const r of receipts.filter(x => x.verdict === 'FAIL').slice(0, 5)) {
+      const f = (r.checks || []).filter(c => c.verdict === 'FAIL').map(c => c.name).join(', ');
+      console.log(`    - ${r.slug}: ${f || r.error || 'unknown'}`);
+    }
+  }
+  console.log(`  Report: ${reportFile}`);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+  if (failCount > 0) {
+    console.log('✗ FAIL');
+    process.exit(1);
+  }
+  console.log(`✓ PASS — 0 visual-QA fails (${warnCount} WARN)`);
+  process.exit(0);
 }
-console.log(`✓ PASS — 0 visual-QA fails (${warnCount} WARN)`);
-process.exit(0);

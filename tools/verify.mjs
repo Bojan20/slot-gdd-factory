@@ -969,6 +969,63 @@ if (existsSync(sanitizeSynthTest)) {
     'node', [sanitizeSynthTest]);
 }
 
+/* ── Step 4.97y28: V8 GAME ASSEMBLY LIVE WIRE (N+1 A) ─────────────────
+ * Live wiring contract: V8 orchestrator exposes assemble() as library
+ * function (CLI guard pattern), ingest.mjs --file <pdf> writes
+ * dist/ingest/<slug>/v8.json + embeds <meta name="v8-receipt"> sa
+ * base64 payload-om u index.html, web-dashboard.mjs renderuje V8
+ * Assembly panel sa verdict badge-om za svaku od 5 baseline igara.
+ *
+ * Gate-importance: bez ovog wire-a operatori bi gubili V8 audit
+ * receipt po default-u — morali bi ručno da pozovu orchestrator. Sa
+ * wire-om, svaki ingest poziv automatski emit-uje audit trail koji
+ * regulator očekuje. Round-trip integrity (meta tag ↔ v8.json) je
+ * deo testa — ako base64 encode/decode ikada divergira, receipt panel
+ * u dashboard-u će prikazati pogrešnu informaciju. */
+const v8WireTest = resolve(REPO, 'tests/contracts/v8-ingest-wire.test.mjs');
+if (existsSync(v8WireTest)) {
+  run('V8 INGEST WIRE (library export + meta tag + dashboard panel + idempotency)',
+    'node', [v8WireTest]);
+}
+
+/* ── Step 4.97y29: V9 VISUAL QA LIVE WIRE (N+1 B) ─────────────────────
+ * Live wiring contract: V9 orchestrator exposes verifyHtml() (+ helper
+ * exports) kao library funkciju, ingest.mjs --file <pdf> writes
+ * dist/ingest/<slug>/v9.json + embeds <meta name="v9-verdict">
+ * sa data-verdict/score/checks atributima u index.html,
+ * web-dashboard.mjs renderuje V9 Visual QA panel sa verdict badge +
+ * pass/warn/fail breakdown za svaku od 5 baseline igara.
+ *
+ * Gate-importance: bez ovog wire-a operatori bi ingestovali GDD i ne
+ * znali da li je generisani HTML strukturno valid (paytable rows match
+ * declared symbols, hub controls present, viewport meta, engine block
+ * marker mounted). Sa wire-om, svaki ingest emit-uje deterministic
+ * structural verdict pre nego što HTML stigne do operatora. */
+const v9WireTest = resolve(REPO, 'tests/contracts/v9-ingest-wire.test.mjs');
+if (existsSync(v9WireTest)) {
+  run('V9 INGEST WIRE (library export + meta tag + dashboard panel + clean/broken HTML fixtures)',
+    'node', [v9WireTest]);
+}
+
+/* ── Step 4.97y30: STRESS-TEST-INGEST (N+1 C) ─────────────────────────
+ * Real-world batch ingest stress test. Verifies the tool:
+ *   • Walks PDFs in ~/Desktop/GDD/ (or alt --source)
+ *   • Runs ingest --no-llm per PDF
+ *   • Captures per-PDF receipt (exit code + V8 + V9)
+ *   • Emits aggregate JSON + Markdown reports
+ *   • Cleans up dist/ingest/<slug>/ unless --keep
+ *   • Returns exit 1 on any hard-fail or V9 FAIL
+ *
+ * Gate-importance: ovo je jedina "untrusted public input" baterija —
+ * svi ostali gate-ovi rade nad kurirani dist/real-games/. Ako se
+ * regresija desi za neki budući PDF, ovaj alat je hvata. Test ide na
+ * --limit 5 (~30s) za brzu CI-prolaznost; pun 338-PDF run ide ručno. */
+const stressTest = resolve(REPO, 'tests/contracts/stress-test-ingest.test.mjs');
+if (existsSync(stressTest)) {
+  run('STRESS-TEST-INGEST (--limit 5 smoke · JSON+MD reports · cleanup contract · --keep retention)',
+    'node', [stressTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz

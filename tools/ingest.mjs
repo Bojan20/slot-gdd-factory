@@ -125,6 +125,31 @@ async function fetchToTmp(url) {
   }
 }
 
+/**
+ * Inject a `<meta>` tag into the first `<head>` element of a HTML
+ * document. Case-insensitive head match so attribute-bearing or
+ * uppercase `<HEAD>` future variants don't slip the regex.
+ *
+ * Fallbacks (in order):
+ *   1. `<head\b[^>]*>` — preserves any existing head attributes
+ *   2. `<html\b[^>]*>` — places meta as first node after html open
+ *   3. Prepend at top of document (worst-case but never throws)
+ *
+ * Pure function — no I/O, returns new string. DRY-shared by V8 + V9
+ * receipt injection so any future regression fixes apply once.
+ */
+function injectMetaIntoHead(html, metaTag) {
+  const headOpen = html.match(/<head\b[^>]*>/i);
+  if (headOpen) {
+    return html.replace(headOpen[0], `${headOpen[0]}\n  ${metaTag}`);
+  }
+  const htmlOpen = html.match(/<html\b[^>]*>/i);
+  if (htmlOpen) {
+    return html.replace(htmlOpen[0], `${htmlOpen[0]}\n${metaTag}`);
+  }
+  return metaTag + '\n' + html;
+}
+
 function pdfToText(pdfPath) {
   const r = spawnSync('pdftotext', ['-layout', pdfPath, '-'], { encoding: 'utf8' });
   /* UQ-FORTIFY7 #1 — also surface signal-killed children. r.status is
@@ -446,6 +471,42 @@ try {
     log('--no-llm — skipping reconcile');
   }
 
+  /* Step 5b: V8 GAME ASSEMBLY rule engine (live wire 2026-06-23).
+   *
+   * After smart-defaults (+ optional V6 reconcile) the model shape is
+   * frozen. We deterministically decide which blocks should mount
+   * (enabledBlocks), which are off (disabledBlocks), and why
+   * (reasonByBlock). Conflicts + missingMandatory surface verdict FAIL
+   * for operator review.
+   *
+   * Output is dual-channel:
+   *   1. `dist/ingest/<slug>/v8.json` — full receipt (audit deliverable)
+   *   2. `<meta name="v8-receipt">` injected into the final HTML so
+   *      downstream tools (web-dashboard, V9, regulator export) can
+   *      re-extract WITHOUT re-running the rule engine, by decoding
+   *      base64-JSON from the content attribute.
+   *
+   * V8 must NEVER block ingest — even a verdict FAIL ships the HTML so
+   * the operator can inspect. CI gates separately by reading v8.json. */
+  let v8Receipt = null;
+  await step('V8 assembly receipt', async () => {
+    try {
+      const { assemble } = await import(resolve(REPO, 'tools/v8-assembly-orchestrator.mjs'));
+      v8Receipt = assemble(slug, model);
+      summary.v8 = {
+        verdict: v8Receipt.verdict,
+        enabledCount: v8Receipt.assembly.enabledBlocks.length,
+        disabledCount: v8Receipt.assembly.disabledBlocks.length,
+        conflicts: v8Receipt.conflicts.length,
+        missingMandatory: v8Receipt.missingMandatory.length,
+        selectedEngine: v8Receipt.__meta__.selectedEngine,
+      };
+    } catch (e) {
+      log('  V8 soft-fail: ' + e.message);
+      summary.v8 = { error: e.message };
+    }
+  });
+
   /* Step 6: build HTML */
   let html;
   await step('buildSlotHTML', async () => {
@@ -453,6 +514,76 @@ try {
     html = buildSlotHTML(model);
     summary.htmlBytes = html ? html.length : 0;
     if (!html || html.length < 1000) throw new Error('HTML output too small: ' + (html ? html.length : 0));
+
+    /* Step 6b: embed V8 receipt as <meta> in <head>.
+     * Receipt is base64(JSON) — avoids any HTML escape edge case
+     * (`"` `<` `>` etc.) and keeps content attribute single-line.
+     * Decoder: JSON.parse(Buffer.from(content, 'base64').toString()).
+     * We inject AFTER buildSlotHTML so buildSlotHTML stays
+     * receipt-agnostic (any GDD without V8 still renders). */
+    if (v8Receipt) {
+      const payload = {
+        verdict: v8Receipt.verdict,
+        enabledBlocks: v8Receipt.assembly.enabledBlocks,
+        disabledBlocks: v8Receipt.assembly.disabledBlocks,
+        reasonByBlock: v8Receipt.assembly.reasonByBlock,
+        conflicts: v8Receipt.conflicts,
+        missingMandatory: v8Receipt.missingMandatory,
+        missingJurGates: v8Receipt.missingJurGates,
+        selectedEngine: v8Receipt.__meta__.selectedEngine,
+        ts: v8Receipt.__meta__.ts,
+      };
+      const b64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
+      const safeVerdict = String(payload.verdict || '').replace(/[^A-Z]/g, '');
+      const safeEngine  = String(payload.selectedEngine || '').replace(/[^A-Za-z0-9_-]/g, '');
+      const metaTag = `<meta name="v8-receipt" data-verdict="${safeVerdict}" data-engine="${safeEngine}" content="${b64}">`;
+      html = injectMetaIntoHead(html, metaTag);
+      summary.htmlBytes = html.length;
+    }
+  });
+
+  /* Step 6c: V9 VISUAL QA deterministic check on built HTML (live wire).
+   *
+   * Runs the SAME deterministic structural invariants the corpus
+   * orchestrator runs (parseSlot + 10 checks → score → PASS/WARN/FAIL).
+   * Verifies the *just-built* HTML actually carries the expected DOM
+   * markers (hub controls, viewport, manifest, theme vars, paytable
+   * rows, engine block marker). Catches build regressions where the
+   * pipeline produces HTML that no longer matches GDD intent.
+   *
+   * Output is dual-channel like V8:
+   *   1. `dist/ingest/<slug>/v9.json` — full deterministic receipt
+   *   2. `<meta name="v9-verdict" data-verdict data-score>` injected
+   *      into the HTML so downstream readers don't re-run the suite.
+   *
+   * Like V8, V9 never blocks ingest — even a verdict FAIL ships HTML
+   * (operator decides). CI verify gate reads v9.json separately. */
+  let v9Receipt = null;
+  await step('V9 visual QA receipt', async () => {
+    try {
+      const { verifyHtml } = await import(resolve(REPO, 'tools/v9-visual-qa.mjs'));
+      v9Receipt = verifyHtml(slug, model, html);
+      summary.v9 = {
+        verdict: v9Receipt.verdict,
+        score: v9Receipt.score,
+        passCount: v9Receipt.checks.filter(c => c.verdict === 'PASS').length,
+        warnCount: v9Receipt.checks.filter(c => c.verdict === 'WARN').length,
+        failCount: v9Receipt.checks.filter(c => c.verdict === 'FAIL').length,
+      };
+      /* Inject v9-verdict meta tag so downstream tools don't re-run.
+       * Numeric score uses fixed(2) to avoid 9.999999999 noise; defensive
+       * fallback to 0 in case verifyHtml ever returns a non-number
+       * (today scoreChecks returns 0 on empty input, but guard keeps the
+       * pipeline alive against future regressions). */
+      const v9Score = typeof v9Receipt.score === 'number' ? v9Receipt.score : 0;
+      const safeV9Verdict = String(v9Receipt.verdict || '').replace(/[^A-Z]/g, '');
+      const metaTag = `<meta name="v9-verdict" data-verdict="${safeV9Verdict}" data-score="${v9Score.toFixed(2)}" data-checks="${v9Receipt.checks.length}">`;
+      html = injectMetaIntoHead(html, metaTag);
+      summary.htmlBytes = html.length;
+    } catch (e) {
+      log('  V9 soft-fail: ' + e.message);
+      summary.v9 = { error: e.message };
+    }
   });
 
   /* Step 7: write outputs */
@@ -462,6 +593,20 @@ try {
     await writeFile(resolve(outDir, 'index.html'), html, 'utf8');
     await writeFile(resolve(outDir, 'model.json'), JSON.stringify(model, null, 2), 'utf8');
     await writeFile(resolve(outDir, 'raw.txt'), rawText, 'utf8');
+    if (v8Receipt) {
+      await writeFile(
+        resolve(outDir, 'v8.json'),
+        JSON.stringify(v8Receipt, null, 2),
+        'utf8'
+      );
+    }
+    if (v9Receipt) {
+      await writeFile(
+        resolve(outDir, 'v9.json'),
+        JSON.stringify(v9Receipt, null, 2),
+        'utf8'
+      );
+    }
     summary.outDir = outDir;
     summary.finishedAt = new Date().toISOString();
     await writeFile(resolve(outDir, 'ingest.log'), JSON.stringify(summary, null, 2), 'utf8');

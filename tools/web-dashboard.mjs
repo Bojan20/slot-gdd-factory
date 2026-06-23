@@ -97,6 +97,79 @@ function findLatestInDir(dir, prefix) {
   return entries[0] || null;
 }
 
+/* Lazy-load the most recent corpus-wide V8 or V9 report.
+ *
+ * Memoized — multiple per-slug receipt lookups don't re-scan or
+ * re-parse the multi-MB JSON each time. Returns
+ * { bySlug: { slug → receipt }, source: filename } or null.
+ *
+ * Both V8 (assembly) and V9 (visual QA) corpus reports share the
+ * same shape: top-level `receipts` array with one entry per slug. */
+function _loadCorpusReportFactory(prefix) {
+  let cache = undefined;
+  return function loadCorpusReport() {
+    if (cache !== undefined) return cache;
+    const latest = findLatestInDir(REPORTS, prefix);
+    if (!latest) { cache = null; return null; }
+    const raw = safeRead(latest.path);
+    if (!raw || !Array.isArray(raw.receipts)) { cache = null; return null; }
+    const bySlug = {};
+    for (const r of raw.receipts) {
+      if (r && r.slug) bySlug[r.slug] = r;
+    }
+    cache = { bySlug, source: latest.name };
+    return cache;
+  };
+}
+const loadV8CorpusReport = _loadCorpusReportFactory('v8-assembly-');
+const loadV9CorpusReport = _loadCorpusReportFactory('v9-visual-qa-');
+
+/* Load V8 assembly receipt for a slug.
+ *
+ * Three-tier search (cheapest + freshest first):
+ *   1. `dist/ingest/<slug>/v8.json` — fresh ingest pipeline write
+ *      (N+1 live-wire, 2026-06-23). Operators who re-run ingest see
+ *      latest receipt without re-running the corpus-wide orchestrator.
+ *   2. `dist/real-games/<slug>/v8.json` — per-slug corpus snapshot
+ *      (future extension; currently NOT written but reserved).
+ *   3. Most recent `reports/v8-assembly-*.json` receipts[slug] —
+ *      corpus orchestrator run covers all 338 slugs in one go and
+ *      is the default for the baseline dashboard view.
+ *
+ * Returns null if no tier matches — dashboard renders a placeholder. */
+function loadV8Receipt(slug) {
+  const candidates = [
+    join(REPO, 'dist/ingest', slug, 'v8.json'),
+    join(REPO, 'dist/real-games', slug, 'v8.json'),
+  ];
+  for (const p of candidates) {
+    const r = safeRead(p);
+    if (r) return { ...r, __source__: p.replace(REPO + '/', '') };
+  }
+  const corpus = loadV8CorpusReport();
+  if (corpus && corpus.bySlug[slug]) {
+    return { ...corpus.bySlug[slug], __source__: `reports/${corpus.source}` };
+  }
+  return null;
+}
+
+/* Symmetric loader for V9 receipts (per-game visual-QA verdict). */
+function loadV9Receipt(slug) {
+  const candidates = [
+    join(REPO, 'dist/ingest', slug, 'v9.json'),
+    join(REPO, 'dist/real-games', slug, 'v9.json'),
+  ];
+  for (const p of candidates) {
+    const r = safeRead(p);
+    if (r) return { ...r, __source__: p.replace(REPO + '/', '') };
+  }
+  const corpus = loadV9CorpusReport();
+  if (corpus && corpus.bySlug[slug]) {
+    return { ...corpus.bySlug[slug], __source__: `reports/${corpus.source}` };
+  }
+  return null;
+}
+
 async function loadDashboardData() {
   const auditSummary  = safeRead(join(REPORTS, 'audit-summary.json'));
   const portfolio     = safeRead(join(REPORTS, 'portfolio-report.json'));
@@ -104,9 +177,13 @@ async function loadDashboardData() {
   const crossGameJson = crossGame ? safeRead(crossGame.path) : null;
   const onePagers     = {};
   const coverage      = {};
+  const v8Receipts    = {};
+  const v9Receipts    = {};
   for (const slug of BASELINE_SLUGS) {
     onePagers[slug] = safeRead(join(REPORTS, 'gdd-one-pagers', `${slug}.json`));
     coverage[slug]  = safeRead(join(REPORTS, 'per-game-kernel-coverage', `${slug}.json`));
+    v8Receipts[slug] = loadV8Receipt(slug);
+    v9Receipts[slug] = loadV9Receipt(slug);
   }
   return {
     generatedAt: new Date().toISOString(),
@@ -117,6 +194,8 @@ async function loadDashboardData() {
     crossGameSource: crossGame?.name || null,
     onePagers,
     coverage,
+    v8Receipts,
+    v9Receipts,
     baselines: BASELINE_SLUGS,
   };
 }
@@ -134,6 +213,10 @@ const VERDICT_BADGE = {
   CLOSE:       { glyph: '🟡', label: 'CLOSE',       cls: 'badge-amber' },
   DIVERGED:    { glyph: '🔴', label: 'DIVERGED',    cls: 'badge-red' },
   NON_BINDING: { glyph: '◌',  label: 'NON_BINDING', cls: 'badge-neutral' },
+  /* V8 assembly receipt verdicts (N+1 live wire 2026-06-23). */
+  PASS:        { glyph: '🟢', label: 'PASS',        cls: 'badge-green' },
+  WARN:        { glyph: '🟡', label: 'WARN',        cls: 'badge-amber' },
+  FAIL:        { glyph: '🔴', label: 'FAIL',        cls: 'badge-red' },
   UNKNOWN:     { glyph: '?',  label: 'UNKNOWN',     cls: 'badge-neutral' },
 };
 
@@ -190,7 +273,78 @@ function renderPortfolioTable(data) {
 </section>`;
 }
 
-function renderGameCard(slug, op) {
+/* Render V8 assembly receipt panel for a single game.
+ *
+ * Shows: verdict badge, selected engine, enabled/disabled counts,
+ * conflicts (red), missing mandatory (red), top 5 enabled blocks
+ * sorted by audit-trail priority. Empty state when no receipt found.
+ *
+ * Why a per-game panel: operator + regulator need to see WHICH blocks
+ * were assembled and WHY — receipt is the assembly audit trail. Top 5
+ * keeps the card compact; full enabled list is in the embedded JSON
+ * (visible in v8.json download / browser DevTools).
+ */
+function renderV8Panel(receipt) {
+  if (!receipt) {
+    return `<h3>V8 Assembly</h3><p class="muted"><em>no receipt — run <code>node tools/ingest.mjs --file …</code></em></p>`;
+  }
+  const verdict = receipt.verdict || 'UNKNOWN';
+  const enabled = receipt.assembly?.enabledBlocks || [];
+  const disabled = receipt.assembly?.disabledBlocks || [];
+  const conflicts = receipt.conflicts || [];
+  const missing = receipt.missingMandatory || [];
+  const engine = receipt.__meta__?.selectedEngine || '—';
+  const topBlocks = enabled.slice(0, 5).map(b => `<code>${esc(b)}</code>`).join(' · ') || '<em>none</em>';
+  const conflictBlock = conflicts.length > 0
+    ? `<dt class="err">Conflicts</dt><dd class="err">${conflicts.length}: ${conflicts.slice(0, 2).map(c => `<code>${esc(c.blocks.join('+'))}</code>`).join(', ')}</dd>`
+    : '';
+  const missingBlock = missing.length > 0
+    ? `<dt class="err">Missing mandatory</dt><dd class="err">${missing.map(m => `<code>${esc(m)}</code>`).join(', ')}</dd>`
+    : '';
+  return `
+      <h3>V8 Assembly · ${badge(verdict)}</h3>
+      <dl>
+        <dt>Engine</dt><dd><code>${esc(engine)}</code></dd>
+        <dt>Enabled</dt><dd>${enabled.length} <span class="muted">blocks</span></dd>
+        <dt>Disabled</dt><dd>${disabled.length} <span class="muted">blocks</span></dd>
+        ${conflictBlock}
+        ${missingBlock}
+        <dt>Top 5</dt><dd>${topBlocks}</dd>
+      </dl>`;
+}
+
+/* Render V9 visual QA receipt panel for a single game.
+ *
+ * V9 is the deterministic structural-QA twin of V8: where V8 audits
+ * which blocks the rule engine decided to MOUNT, V9 audits whether
+ * the built HTML actually reflects those decisions (paytable rows,
+ * hub controls, viewport, manifest, engine marker). Shows verdict
+ * badge, numeric score (0..10), and any failed/warned check names so
+ * the operator can drill into the specific regression. */
+function renderV9Panel(receipt) {
+  if (!receipt) {
+    return `<h3>V9 Visual QA</h3><p class="muted"><em>no receipt — run <code>node tools/ingest.mjs --file …</code></em></p>`;
+  }
+  const verdict = receipt.verdict || 'UNKNOWN';
+  const score = typeof receipt.score === 'number' ? receipt.score.toFixed(1) : '—';
+  const checks = Array.isArray(receipt.checks) ? receipt.checks : [];
+  const pass = checks.filter(c => c.verdict === 'PASS').length;
+  const warn = checks.filter(c => c.verdict === 'WARN').length;
+  const fail = checks.filter(c => c.verdict === 'FAIL').length;
+  const flaggedNames = checks.filter(c => c.verdict !== 'PASS').map(c => c.name).slice(0, 3);
+  const flagged = flaggedNames.length > 0
+    ? `<dt>Flagged</dt><dd>${flaggedNames.map(n => `<code>${esc(n)}</code>`).join(', ')}${checks.filter(c => c.verdict !== 'PASS').length > 3 ? ' …' : ''}</dd>`
+    : '';
+  return `
+      <h3>V9 Visual QA · ${badge(verdict)}</h3>
+      <dl>
+        <dt>Score</dt><dd><strong>${score}</strong>/10</dd>
+        <dt>Checks</dt><dd>${pass} PASS · ${warn} WARN · ${fail} FAIL</dd>
+        ${flagged}
+      </dl>`;
+}
+
+function renderGameCard(slug, op, v8, v9) {
   if (!op?.ok) {
     return `<details class="game-card err"><summary><code>${esc(slug)}</code> — <span class="err">missing</span></summary></details>`;
   }
@@ -199,9 +353,11 @@ function renderGameCard(slug, op) {
     k => `<li><code>${esc(k.name)}</code> <span class="muted">${k.rtpContribution.toFixed(4)}× bet</span></li>`,
   ).join('') || '<li><em>no scoring kernels</em></li>';
   const conv = op.convergence || {};
+  const v8VerdictBadge = v8 ? ` · V8 ${badge(v8.verdict)}` : '';
+  const v9VerdictBadge = v9 ? ` · V9 ${badge(v9.verdict)}` : '';
   return `
 <details class="game-card">
-  <summary><code>${esc(slug)}</code> · ${esc(op.basics.topology)} · RTP ${esc(op.basics.declaredRTP ?? '?')}% · ${badge(conv.verdict)}</summary>
+  <summary><code>${esc(slug)}</code> · ${esc(op.basics.topology)} · RTP ${esc(op.basics.declaredRTP ?? '?')}% · ${badge(conv.verdict)}${v8VerdictBadge}${v9VerdictBadge}</summary>
   <div class="game-body">
     <div class="game-col">
       <h3>Basics</h3>
@@ -232,13 +388,15 @@ function renderGameCard(slug, op) {
         <dt>Honest</dt><dd>${badge(conv.honestVerdict)} Δ=${esc(conv.rawRtpDelta ?? '—')}pp</dd>
         <dt>Synthetic</dt><dd>${conv.isSynthetic ? '⚠ yes' : 'no'}</dd>
       </dl>
+${renderV8Panel(v8)}
+${renderV9Panel(v9)}
     </div>
   </div>
 </details>`;
 }
 
 function renderGamesSection(data) {
-  const cards = data.baselines.map(slug => renderGameCard(slug, data.onePagers[slug])).join('\n');
+  const cards = data.baselines.map(slug => renderGameCard(slug, data.onePagers[slug], data.v8Receipts?.[slug], data.v9Receipts?.[slug])).join('\n');
   return `
 <section class="card" id="games">
   <h2>2. Per-game deep-dive</h2>
