@@ -816,6 +816,17 @@ if (existsSync(matrixTest)) {
     'node', [matrixTest]);
 }
 
+/* ── Step 4.97y15: PORTFOLIO REPORT (operator dashboard rollup)
+ * Single-view portfolio dashboard: aggregates per-game kernel coverage
+ * + topology + declared RTP + top RTP-contributing kernels + topology
+ * breakdown into ONE ASCII table. Reads cached coverage reports
+ * (--refresh to regenerate). Operator's first-glance status command. */
+const portfolioTest = resolve(REPO, 'tests/contracts/portfolio-report.test.mjs');
+if (existsSync(portfolioTest)) {
+  run('PORTFOLIO REPORT (operator dashboard · 5 baselines aggregate)',
+    'node', [portfolioTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz

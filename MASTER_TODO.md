@@ -1,3 +1,61 @@
+## 🏆 PORTFOLIO REPORT — 2026-06-23 · ZATVOREN ✅ (operator dashboard rollup)
+
+Boki direktiva: *"dalje"*. Sledeća logična operator-facing stavka posle
+matrix audita: **portfolio report** — single-view dashboard koji
+agregira per-game coverage + topology + declared RTP + top
+RTP-contributing kernels + topology breakdown u JEDNU tabelu.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  tools/portfolio-report.mjs                                                   │
+│  tests/contracts/portfolio-report.test.mjs                                   │
+│                                                                                │
+│  Exports:                                                                      │
+│    buildPortfolio(slugs) → Array<{ slug, ok, topology, declaredRTP,           │
+│                                    kernelsOk, kernelsApplicable,              │
+│                                    totalAnalyticalSumXBet, topKernels[3] }>   │
+│    renderPortfolio(rows) → ASCII table + summary + topology breakdown         │
+│                                                                                │
+│  CLI:                                                                          │
+│    node tools/portfolio-report.mjs              # 5 baselines (cached)        │
+│    node tools/portfolio-report.mjs --all        # all dist/real-games         │
+│    node tools/portfolio-report.mjs --json       # JSON only                   │
+│    node tools/portfolio-report.mjs --refresh    # regenerate coverage first   │
+│                                                                                │
+│  Live output (5/5):                                                            │
+│    PORTFOLIO SUMMARY                                                           │
+│      Games:                 5 (5 ok, 0 error)                                 │
+│      Avg declared RTP:      95.40%                                            │
+│      Kernels ok / applic.:  57/67 (85.1%)                                     │
+│      Σ analytical (all):    38.7232× bet                                      │
+│      Topology breakdown:    lock_respin=2, rectangular=2, cluster=1           │
+│                                                                                │
+│  Top kernels per game (live):                                                 │
+│    cash-eruption         asymmetric_paytable=1.05×, state_machine=0.91×       │
+│    starlight             cluster_pays=6.16×, cascade=4.54×                    │
+│    wrath-of-olympus      money_collect=3.37×, hold_and_win=3.37×              │
+│    gates                 both_ways=1.63×, asymmetric_paytable=1.05×           │
+│                                                                                │
+│  Contract test: 7/7 PASS                                                       │
+│    ✓ buildPortfolio returns row per slug with expected fields                 │
+│    ✓ starlight portfolio row reflects cluster topology                        │
+│    ✓ gates portfolio row reflects rectangular topology                        │
+│    ✓ Top kernels are sorted desc by RTP contribution                          │
+│    ✓ renderPortfolio produces ASCII with table + summary                      │
+│    ✓ Error rows are handled gracefully (missing game)                         │
+│    ✓ Summary line accurately reflects ok/error counts                         │
+│                                                                                │
+│  Wired u verify gate step 4.97y15.                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Operator value:** first-glance portfolio status command. Bez čitanja
+5 separate JSON-ova, operator vidi celu sliku portfela u jednom ASCII
+view-u. Cached coverage reports ubrzavaju ponovne pozive; --refresh
+flag regenerše ako se dist/real-games promenio.
+
+---
+
 ## 🏆 KERNEL APPLICABILITY MATRIX — 2026-06-23 · ZATVOREN ✅ (cross-game portfolio audit)
 
 Boki direktiva: *"dalje"*. Sledeća logična operator-facing stavka posle
