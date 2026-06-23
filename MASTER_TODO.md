@@ -1,3 +1,44 @@
+## 🏆 PRODUCTION CONTRACTS — 2026-06-23 · A/B/C ZATVORENI ✅ (3 contract suites, 32 assertions)
+
+Boki direktiva: "biram sve redom" → A (render) → C (ingest) → B (kernel).
+Sva 3 suite landed sa 100% pass rate + integrated u verify gate (steps 4.97y2/y3/y4).
+
+```
+┌──────┬──────────────────────────────────────────┬─────────┬────────────────────┐
+│ ID    │ Suite                                      │ Tests   │ Commit              │
+├──────┼──────────────────────────────────────────┼─────────┼────────────────────┤
+│ A    │ render-new-fields.test.mjs                 │ 11/11 ✅ │ f0b7d84             │
+│      │ slot.html consumes D-9..D-17 parser fields │         │                     │
+│      │ (compliance, rtpBreakdown, scatter, wild,  │         │                     │
+│      │ patternWin, holdAndWin); 5 baselines OK    │         │                     │
+├──────┼──────────────────────────────────────────┼─────────┼────────────────────┤
+│ C    │ ingest-e2e.test.mjs                        │ 13/13 ✅ │ f0b7d84             │
+│      │ Real PDF (~/Desktop/GDD/Cash_Eruption +    │         │                     │
+│      │ Gates) → ingest.mjs --no-llm → raw.txt +    │         │                     │
+│      │ model.json (schema valid) + index.html.    │         │                     │
+│      │ Idempotent (rerun = same hash).            │         │                     │
+├──────┼──────────────────────────────────────────┼─────────┼────────────────────┤
+│ B    │ math-kernel-bridge.test.mjs                │  8/8 ✅  │ f0b7d84             │
+│      │ Sister-repo handshake live: detectKernel-  │         │                     │
+│      │ Engine + callKernel(both_ways/cluster_pays/│         │                     │
+│      │ pay_anywhere/hold_and_win), 22 Python      │         │                     │
+│      │ kernels reachable, deterministic, 30s cap. │         │                     │
+└──────┴──────────────────────────────────────────┴─────────┴────────────────────┘
+```
+
+### Verify gate sad na 43 steps (4.97y2 = A, 4.97y3 = C, 4.97y4 = B)
+
+### Full-corpus probe + ALL gaps closed
+
+```
+338/338 PASS schema · 25 sa declared RTP:
+  exact (±0.5pp):  23  ✅  ← auto-RTP-clamp + topology kernels konvergiraju
+  tight (±5pp):     2  ✅  ← starlight cluster (-2.93pp) + slingo (+2.64pp)
+  medium/wide:      0  ✅
+```
+
+---
+
 ## 🏆 MATH-DEEP BACKLOG — 2026-06-23 · ZATVOREN ✅ (4 grane, 32 stavki, 52 commits)
 
 Sve 4 grane (A D-series + B HYBRID + C FEAT-SIM + D KERNEL-CALIBRATION) ZATVORENE redom kako je Boki tražio.
