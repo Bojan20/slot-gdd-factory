@@ -62,8 +62,16 @@ function _has(args, name) {
 
 /* ── name helpers ─────────────────────────────────────────────────────── */
 
+/* N+2 G C3 audit fix: handle underscore-prefixed inputs (e.g. `_auto_wild`)
+ * by stripping leading underscores + splitting on _ boundaries. Without
+ * this, toPascalCase('_auto_wild') → '_auto_wild' (only uppercases first
+ * char which is `_`, no-op) → emit_auto_wildCSS (broken identifier-like
+ * name). Now: '_auto_wild' → 'AutoWild'. */
 function toPascalCase(s) {
-  return s.replace(/(^[a-z])/, (_, c) => c.toUpperCase());
+  const cleaned = String(s || '').replace(/^_+/, '');
+  return cleaned
+    .replace(/([_-])([a-z0-9])/g, (_, _sep, c) => c.toUpperCase())
+    .replace(/^./, c => c.toUpperCase());
 }
 function toScreamingSnake(s) {
   return s.replace(/([A-Z])/g, '_$1').toUpperCase().replace(/^_/, '');
@@ -74,7 +82,9 @@ function isLowerCamelCase(s) {
 
 /* ── code emitters ────────────────────────────────────────────────────── */
 
-function emitBlockSource(kind, archetype) {
+/* N+2 G — exported so tools/auto-scaffold-detector.mjs can reuse the
+ * template generator without spawning the CLI for every unknown kind. */
+export function emitBlockSource(kind, archetype) {
   const Pascal      = toPascalCase(kind);
   const SCREAMING   = toScreamingSnake(kind);
   /* Nest archetype state under cfg.state to avoid colliding with block-
@@ -214,7 +224,8 @@ export const WINDOW_FLAG  = ${SCREAMING}_WINDOW_FLAG;
 `;
 }
 
-function emitTestSource(kind, archetype) {
+/* N+2 G — exported for auto-scaffold-detector.mjs reuse. */
+export function emitTestSource(kind, archetype) {
   const Pascal = toPascalCase(kind);
   const featureKind = (archetype.examples && archetype.examples[0]) ||
     (kind.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, ''));
@@ -363,4 +374,9 @@ async function main() {
   console.log(`  next: node --test ${testPath}`);
 }
 
-main().catch((e) => { console.error('FATAL:', e); process.exit(1); });
+/* N+2 G — CLI guard so importing emitBlockSource/emitTestSource from
+ * tools/auto-scaffold-detector.mjs doesn't trigger main() and dump
+ * Usage to stderr. main() runs only when invoked as a script. */
+if (process.argv[1]?.endsWith('scaffold-block.mjs')) {
+  main().catch((e) => { console.error('FATAL:', e); process.exit(1); });
+}

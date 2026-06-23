@@ -1163,6 +1163,29 @@ if (existsSync(webUploaderTest)) {
     'node', [webUploaderTest]);
 }
 
+/* ── Step 4.97y36: N+2 G Auto-scaffold za nov feature kind ────────────
+ * G atom (2026-06-23) — Kad GDD navede feature kind koji NIJE u block
+ * catalog-u, detector poziva suggestArchetype i za matching ≥ 0.7
+ * confidence emit-uje STUB blok u src/blocks/_auto-scaffolded/ + test
+ * fixture + reports/auto-scaffold-pending.json entry za review backlog.
+ *
+ *   tools/auto-scaffold-detector.mjs      orchestrator (planScaffolds +
+ *                                         runScaffolds + loadCatalogKinds)
+ *   tools/scaffold-block.mjs              exports emitBlockSource/Test
+ *   tools/ingest.mjs Step 5a1             auto-trigger posle parse+heal+PAR
+ *   reports/auto-scaffold-pending.json    rolling 200-entry backlog
+ *   src/blocks/_auto-scaffolded/*.mjs     STUB blokovi (manual review)
+ *
+ * Cap: max 5 stub-ova per ingest (sigurnosni). Anti-vendor regex blokira
+ * banned-name kindove. Idempotent (existing stub → skip). NEVER blocks
+ * ingest. Banned-name guard sprečava da auto-scaffold proizvede vendor-
+ * specific kind ID-ove u src tree. */
+const autoScaffoldTest = resolve(REPO, 'tests/contracts/auto-scaffold.test.mjs');
+if (existsSync(autoScaffoldTest)) {
+  run('N+2 G Auto-scaffold detector (catalog + plan + emit + 20 contract assertions)',
+    'node', [autoScaffoldTest]);
+}
+
 /* ── Step 4.98: UQ-TRAIN-2 multi-provider trainer V2 ────────────────────
  * Produbljuje UQ-TRAIN (single-provider) sa scoring matrix preko N
  * providera (opus/kimi/gpt/gemini). Učitava V6 cache snapshot iz

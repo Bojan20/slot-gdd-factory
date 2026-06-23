@@ -791,6 +791,48 @@ try {
     await runParStep();
   }
 
+  /* Step 5a1: Auto-scaffold detector (N+2 G, 2026-06-23).
+   *
+   * Posle parse/heal/PAR, model.features može imati kind-ove koji NISU
+   * u block catalog-u. Ranije bi ovo proizvelo `unknownFeatureKinds`
+   * receipt sa nullskim ponašanjem. Sad: detektor poziva
+   * suggestArchetype i za svaki match ≥ 0.7 confidence emit-uje
+   * STUB blok u src/blocks/_auto-scaffolded/ + test, plus log entry u
+   * reports/auto-scaffold-pending.json za code review backlog.
+   *
+   * NEVER blocks ingest — every error path je soft-fail. Max 5 stub-ova
+   * per ingest (sigurnosni cap). Anti-vendor: banned-name regex blokira
+   * scaffold za sumnjive kindove. */
+  let scaffoldReceipt = null;
+  await step('auto-scaffold detector (unknown feature kinds)', async () => {
+    try {
+      const { runScaffolds } = await import(resolve(REPO, 'tools/auto-scaffold-detector.mjs'));
+      scaffoldReceipt = await runScaffolds(model, { slug });
+      const c = scaffoldReceipt.created.length;
+      const s = scaffoldReceipt.skipped.length;
+      const b = scaffoldReceipt.blocked.length;
+      if (c > 0) {
+        log(`  ✓ auto-scaffolded ${c} stub block(s): ${scaffoldReceipt.created.map(x => x.kind).join(', ')}`);
+      } else if (s + b > 0) {
+        log(`  no scaffolds (${s} skipped, ${b} blocked)`);
+      } else {
+        log(`  no unknown feature kinds`);
+      }
+      summary.autoScaffold = {
+        ok: scaffoldReceipt.ok,
+        createdCount: c,
+        skippedCount: s,
+        blockedCount: b,
+        capExceeded: scaffoldReceipt.capExceeded,
+        pendingTotal: scaffoldReceipt.pending.length,
+      };
+    } catch (e) {
+      log(`  auto-scaffold soft-fail: ${e.message}`);
+      scaffoldReceipt = { ok: false, reason: e.message };
+      summary.autoScaffold = { error: e.message };
+    }
+  });
+
   /* Step 5b: V8 GAME ASSEMBLY rule engine (live wire 2026-06-23).
    *
    * After smart-defaults (+ optional V6 reconcile) the model shape is
@@ -1032,12 +1074,15 @@ try {
       if (v9Receipt) {
         await atomicWrite(resolve(outDir, 'v9.json'), JSON.stringify(v9Receipt, null, 2));
       }
-      /* N+2 E — Self-healing receipt (when healer ran).
-       * Even skipped path writes healing.json so operator + dashboard
-       * see the diagnosis + attempt log. */
+      /* N+2 E — Self-healing receipt (when healer ran). */
       if (healingReceipt) {
         await atomicWrite(resolve(outDir, 'healing.json'),
           JSON.stringify(healingReceipt, null, 2));
+      }
+      /* N+2 G — Auto-scaffold receipt (always written for traceability). */
+      if (scaffoldReceipt) {
+        await atomicWrite(resolve(outDir, 'auto-scaffold.json'),
+          JSON.stringify(scaffoldReceipt, null, 2));
       }
       /* N+2 D — PAR + calibration receipt (when --par used).
        * Even skipped path writes par.json so operator + dashboard can

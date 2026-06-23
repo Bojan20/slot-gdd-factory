@@ -503,8 +503,8 @@ Svaki ID prolazi kroz **ISTI** ultimate workflow kao A/B/C iz N+1:
 ├────┼──────────────────────────────────────┼───────────┼────────────────┤
 │ D  │ PAR sheet auto-ingest                │ ✅ DONE   │ 4c230ac        │
 │ E  │ Self-healing parser                  │ ✅ DONE   │ d4d8a2d        │
-│ F  │ Web UI uploader                      │ ✅ DONE   │ pending HEAD   │
-│ G  │ Auto-scaffold za nov kind            │ 📋 PLAN   │ —              │
+│ F  │ Web UI uploader                      │ ✅ DONE   │ 72d41ea        │
+│ G  │ Auto-scaffold za nov kind            │ ✅ DONE   │ pending HEAD   │
 │ H  │ CI/CD pipeline                       │ 📋 PLAN   │ —              │
 │ I  │ Schema versioning + migration        │ 📋 PLAN   │ —              │
 │ J  │ V9 vision mode aktivacija            │ 📋 PLAN   │ —              │
@@ -658,6 +658,76 @@ Svaki ID prolazi kroz **ISTI** ultimate workflow kao A/B/C iz N+1:
 │   live SSE smoke         ingest pipe stdout → SSE → done event         │
 │   security smoke         traversal filename sanitized to basename      │
 │   port assignment        OS-assigned ephemeral port (test 1)           │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+### G atom — closeout receipt (2026-06-23 16:30 UTC)
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ Files added                                                            │
+│   tools/auto-scaffold-detector.mjs    (orchestrator, ~320 LOC)        │
+│   tests/contracts/auto-scaffold.test.mjs (24 contract assertions)     │
+│                                                                         │
+│ Files modified                                                          │
+│   tools/scaffold-block.mjs            (+export emitBlockSource/Test    │
+│                                        +toPascalCase fix +CLI guard)  │
+│   tools/ingest.mjs                    (+Step 5a1 auto-scaffold trigger,│
+│                                        auto-scaffold.json write)       │
+│   tools/verify.mjs                    (+step 4.97y36)                  │
+│                                                                         │
+│ Architecture                                                            │
+│   loadCatalogKinds()  → Set<string>  iz src/registry/blockCatalog.json│
+│   planScaffolds(model) → { plan, skipped, blocked, capExceeded }      │
+│   runScaffolds(model)  → Receipt + writes stubs                       │
+│                                                                         │
+│   AUTO_SCAFFOLD_THRESHOLD = 0.7      (confidence floor)               │
+│   MAX_SCAFFOLDS_PER_INGEST = 5       (safety cap)                     │
+│   BANNED_VENDOR_RX                   (vendor product name blocker)    │
+│   Non-ASCII guard                    (Unicode homoglyph defense)      │
+│   Pending JSON rolling cap = 200                                      │
+│                                                                         │
+│ Output                                                                  │
+│   src/blocks/_auto-scaffolded/_auto_<kind>.mjs   STUB block (review)  │
+│   tests/blocks/_auto-scaffolded/_auto_<kind>.test.mjs                 │
+│   reports/auto-scaffold-pending.json             rolling backlog       │
+│   dist/ingest/<slug>/auto-scaffold.json          per-ingest receipt   │
+│                                                                         │
+│ Audit nalazi (parallel-agent post-impl audit, 6 nalaza FIXED)         │
+│   C1 (CRIT)  stub kind = '_auto_X' nikad ne matchuje model.features   │
+│              → originalKind koristen u emitBlockSource, _auto_ samo   │
+│                u filename. PascalCase generator fixed za underscore.  │
+│              → emitWildCSS umesto emit_auto_wildCSS                    │
+│                                                                         │
+│   C2 (CRIT)  stubs orphan — blockMapper ne glob-uje _auto-scaffolded/ │
+│              → DOKUMENTOVANO u stub headeru: NOT RUNTIME-WIRED, stub  │
+│                je review artifact. Auto-discovery = G-followup.       │
+│                                                                         │
+│   C3 (CRIT)  toPascalCase('_auto_wild') → '_auto_wild' (no-op upper)  │
+│              → rewriten sa leading _ strip + split na _ boundaries    │
+│                                                                         │
+│   H4 (HIGH)  writePending RMW race + non-atomic                       │
+│              → tmp + renameSync POSIX-atomic                          │
+│                                                                         │
+│   H5 (HIGH)  TOCTOU race na stub create                               │
+│              → writeFileSync flag:'wx' (atomic exclusive create)      │
+│                EEXIST → "stub race: another writer created first"     │
+│                                                                         │
+│   H6 (HIGH)  Unicode homoglyph bypass (cyrillic 'е' U+0435)           │
+│              → reject ANY non-ASCII u kind ID-u                       │
+│                                                                         │
+│   M7 (MED)   archetype.purpose `*\/` injection u JSDoc                │
+│              → escape `*\/` u svim interpolated values u stub header  │
+│                                                                         │
+│   M9 (MED)   mtime cache sub-millisecond race                         │
+│              → combine mtime + size + 30s TTL                         │
+│                                                                         │
+│ Gate results                                                            │
+│   npm run verify         102/102 PASS                                   │
+│   idempotency Pass 1=2   101/101 = 101/101                             │
+│   contract test          24/24 PASS                                     │
+│   security smoke         non-ASCII kind blocked + path traversal       │
+│   race smoke             EEXIST + atomic rename verified u testu       │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
