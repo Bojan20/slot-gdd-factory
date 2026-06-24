@@ -115,6 +115,25 @@ export function resolveConfig(model = {}) {
     cfg.pulseMs = clampInt(src.pulseMs, PULSE_MIN_MS, PULSE_MAX_MS);
   }
 
+  /* UQ-DEEP-R P2 fix: features[].config inheritance. */
+  if (Array.isArray(model.features)) {
+    const f = model.features.find((x) => x && (
+      x.kind === 'fs_expansion_wilds' ||
+      x.kind === 'fs_sticky_wild' ||
+      x.kind === 'fs_expanding_wild'));
+    if (f) {
+      cfg.enabled = true;
+      const fc = f.config || f.opts || {};
+      if (typeof fc.wildSymbol === 'string' && SYMBOL_RE.test(fc.wildSymbol)
+          && src.wildSymbol == null) cfg.wildSymbol = fc.wildSymbol;
+      if (Number.isFinite(fc.triggerProbability) && src.triggerProbability == null) {
+        cfg.triggerProbability = clampFloat(fc.triggerProbability, PROB_MIN, PROB_MAX);
+      }
+      if (Number.isFinite(fc.maxStickyReels) && src.maxStickyReels == null) {
+        cfg.maxStickyReels = clampInt(fc.maxStickyReels, MAX_REELS_MIN, MAX_REELS_MAX);
+      }
+    }
+  }
   return cfg;
 }
 
@@ -235,16 +254,30 @@ export function emitFsExpansionWildsRuntime(cfg = defaultConfig()) {
   function _scanGridForWilds(grid) {
     /* grid shape: rows[][] of symbol strings OR { sym: 'W' } cells. */
     var reelsWithWild = new Set();
-    if (!Array.isArray(grid)) return reelsWithWild;
-    for (var r = 0; r < grid.length; r++) {
-      var row = grid[r];
-      if (!Array.isArray(row)) continue;
-      for (var c = 0; c < row.length; c++) {
-        var cell = row[c];
-        var sym  = (cell && typeof cell === 'object') ? (cell.sym || cell.symbol) : cell;
-        if (sym === WILD_SYMBOL) reelsWithWild.add(c);
+    if (Array.isArray(grid)) {
+      for (var r = 0; r < grid.length; r++) {
+        var row = grid[r];
+        if (!Array.isArray(row)) continue;
+        for (var c = 0; c < row.length; c++) {
+          var cell = row[c];
+          var sym  = (cell && typeof cell === 'object') ? (cell.sym || cell.symbol) : cell;
+          if (sym === WILD_SYMBOL) reelsWithWild.add(c);
+        }
       }
+      return reelsWithWild;
     }
+    /* UQ-DEEP-R P5 fix: DOM fallback when payload nema grid. reelEngine
+     * emit-uje onFsSpinResult sometimes sa samo {duringFs:true} → empty
+     * Set → block never sticks any reel in FS. Scan DOM by [data-reel]. */
+    if (typeof document === 'undefined') return reelsWithWild;
+    var allCells = document.querySelectorAll('[data-reel]');
+    allCells.forEach(function(el) {
+      var txt = (el.textContent || '').trim();
+      if (txt === WILD_SYMBOL) {
+        var ri = Number(el.getAttribute('data-reel'));
+        if (Number.isFinite(ri)) reelsWithWild.add(ri);
+      }
+    });
     return reelsWithWild;
   }
 
@@ -254,6 +287,15 @@ export function emitFsExpansionWildsRuntime(cfg = defaultConfig()) {
       el.classList.add('is-expansion-wild');
       el.textContent = WILD_SYMBOL;
       el.setAttribute('aria-label', 'Expanding wild');
+      /* UQ-DEEP-R P6 fix: data-symbol + window.GRID + symbolOverride. */
+      el.setAttribute('data-symbol', WILD_SYMBOL);
+      var rowAttr = Number(el.getAttribute('data-row'));
+      if (Number.isFinite(rowAttr) && window.GRID && typeof window.GRID.set === 'function') {
+        try { window.GRID.set(reelIdx, rowAttr, WILD_SYMBOL); } catch (_) {}
+      }
+      if (window.HookBus && typeof window.HookBus.emit === 'function') {
+        try { window.HookBus.emit('symbolOverride', { r: rowAttr, c: reelIdx, sym: WILD_SYMBOL, source: 'fsExpansionWilds' }); } catch (_) {}
+      }
     });
   }
 

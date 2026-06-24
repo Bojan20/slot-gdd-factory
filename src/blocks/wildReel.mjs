@@ -43,8 +43,22 @@ export function resolveConfig(model = {}) {
   if (Number.isFinite(m.maxReelsPerSpin)) cfg.maxReelsPerSpin = clampInt(m.maxReelsPerSpin, 1, MAX_REELS_HARD_CAP);
   if (typeof m.haloColor === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(m.haloColor)) cfg.haloColor = m.haloColor;
 
-  if (Array.isArray(model.features) && model.features.some(f => f.kind === 'wild_reel')) {
-    cfg.enabled = true;
+  /* UQ-DEEP-R P2 fix: features[].config inheritance. */
+  if (Array.isArray(model.features)) {
+    const f = model.features.find((x) => x && x.kind === 'wild_reel');
+    if (f) {
+      cfg.enabled = true;
+      const fc = f.config || f.opts || {};
+      if ((fc.mode === 'fs' || fc.mode === 'base' || fc.mode === 'both') && m.mode == null) cfg.mode = fc.mode;
+      if (typeof fc.wildSymbolId === 'string' && /^[A-Za-z][A-Za-z0-9_]*$/.test(fc.wildSymbolId)
+          && m.wildSymbolId == null) cfg.wildSymbolId = fc.wildSymbolId;
+      if (Number.isFinite(fc.chancePerSpin) && m.chancePerSpin == null) {
+        cfg.chancePerSpin = clampFloat(fc.chancePerSpin, 0, 1);
+      }
+      if (Number.isFinite(fc.maxReelsPerSpin) && m.maxReelsPerSpin == null) {
+        cfg.maxReelsPerSpin = clampInt(fc.maxReelsPerSpin, 1, MAX_REELS_HARD_CAP);
+      }
+    }
   }
   return cfg;
 }
@@ -87,10 +101,13 @@ function _wildReelRand() {
 }
 
 function _wildReelPhaseAllowed() {
-  if (typeof FSM === 'undefined') return WILD_REEL_MODE !== 'fs';
-  const ph = FSM.phase;
-  if (WILD_REEL_MODE === 'fs')   return ph === 'FS_ACTIVE';
-  if (WILD_REEL_MODE === 'base') return ph === 'BASE';
+  /* UQ-DEEP-R P4 fix: window.FSM + /^FS_/ regex (was strict 'FS_ACTIVE'). */
+  let ph = null;
+  if (typeof window !== 'undefined' && window.FSM) ph = window.FSM.phase || window.FSM.state || null;
+  else if (typeof FSM !== 'undefined' && FSM) ph = FSM.phase;
+  if (!ph) return WILD_REEL_MODE !== 'fs';
+  if (WILD_REEL_MODE === 'fs')   return /^FS_/.test(ph);
+  if (WILD_REEL_MODE === 'base') return ph === 'BASE' || ph === 'IDLE' || ph === 'SPIN';
   return true;
 }
 

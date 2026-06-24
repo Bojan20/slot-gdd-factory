@@ -114,6 +114,25 @@ export function resolveConfig(model = {}) {
     cfg.cornerRadiusPx = clampInt(src.cornerRadiusPx, CORNER_MIN_PX, CORNER_MAX_PX);
   }
 
+  /* UQ-DEEP-R P2 fix: features[].config inheritance. */
+  if (Array.isArray(model.features)) {
+    const f = model.features.find((x) => x && (
+      x.kind === 'mega_wild_cluster' ||
+      x.kind === 'mega_wild' ||
+      x.kind === 'super_wild_cluster'));
+    if (f) {
+      cfg.enabled = true;
+      const fc = f.config || f.opts || {};
+      if (typeof fc.wildSymbol === 'string' && SYMBOL_RE.test(fc.wildSymbol)
+          && src.wildSymbol == null) cfg.wildSymbol = fc.wildSymbol;
+      if (typeof fc.triggerSymbol === 'string' && SYMBOL_RE.test(fc.triggerSymbol)
+          && src.triggerSymbol == null) cfg.triggerSymbol = fc.triggerSymbol;
+      if (Number.isFinite(fc.blockSize) && BLOCK_SIZES.includes(Math.trunc(fc.blockSize))
+          && src.blockSize == null) cfg.blockSize = Math.trunc(fc.blockSize);
+      if (typeof fc.appliesIn === 'string' && APPLIES_IN.includes(fc.appliesIn)
+          && src.appliesIn == null) cfg.appliesIn = fc.appliesIn;
+    }
+  }
   return cfg;
 }
 
@@ -286,6 +305,14 @@ export function emitMegaWildClusterRuntime(cfg = defaultConfig()) {
         el.setAttribute('data-mega-wild-part', dims);
         el.setAttribute('aria-label', 'Mega wild');
         el.textContent = WILD_SYMBOL;
+        /* UQ-DEEP-R P6 fix: data-symbol + GRID + symbolOverride. */
+        el.setAttribute('data-symbol', WILD_SYMBOL);
+        if (window.GRID && typeof window.GRID.set === 'function') {
+          try { window.GRID.set(reelIdx, rowIdx, WILD_SYMBOL); } catch (_) {}
+        }
+        if (window.HookBus && typeof window.HookBus.emit === 'function') {
+          try { window.HookBus.emit('symbolOverride', { r: rowIdx, c: reelIdx, sym: WILD_SYMBOL, source: 'megaWildCluster' }); } catch (_) {}
+        }
         painted++;
       }
     }

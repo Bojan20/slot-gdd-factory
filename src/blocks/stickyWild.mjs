@@ -48,8 +48,21 @@ export function resolveConfig(model = {}) {
   }
   if (Number.isFinite(m.pulseMs)) cfg.pulseMs = clampInt(m.pulseMs, MIN_PULSE_MS, MAX_PULSE_MS);
 
-  if (!enabledExplicit && Array.isArray(model.features) && model.features.some(f => f.kind === 'sticky_wild')) {
-    cfg.enabled = true;
+  /* UQ-DEEP-R P2 fix: also inherit knobs from features[].config when
+   * parser emits canonical features[] shape. Top-level model.stickyWild.*
+   * still wins (explicit override). */
+  if (Array.isArray(model.features)) {
+    const f = model.features.find((x) => x && x.kind === 'sticky_wild');
+    if (f) {
+      if (!enabledExplicit) cfg.enabled = true;
+      const fc = f.config || f.opts || {};
+      if ((fc.mode === 'fs' || fc.mode === 'base' || fc.mode === 'both') && m.mode == null) cfg.mode = fc.mode;
+      if (Number.isFinite(fc.durationSpins) && m.durationSpins == null) {
+        cfg.durationSpins = clampInt(fc.durationSpins, 0, MAX_DURATION_SPINS);
+      }
+      if (typeof fc.wildSymbolId === 'string' && /^[A-Za-z][A-Za-z0-9_]*$/.test(fc.wildSymbolId)
+          && m.wildSymbolId == null) cfg.wildSymbolId = fc.wildSymbolId;
+    }
   }
   return cfg;
 }
@@ -95,10 +108,16 @@ const STICKY_WILD_SYMBOL    = ${JSON.stringify(cfg.wildSymbolId)};
 const STICKY_WILD_REGISTRY = new Map();
 
 function _stickyPhaseAllowed() {
-  if (typeof FSM === 'undefined') return STICKY_WILD_MODE !== 'fs';
-  const ph = FSM.phase;
-  if (STICKY_WILD_MODE === 'fs')   return ph === 'FS_ACTIVE' || ph === 'FS_INTRO';
-  if (STICKY_WILD_MODE === 'base') return ph === 'BASE';
+  /* UQ-DEEP-R P4 fix: window.FSM read + /^FS_/ regex for full FS sub-phase
+   * coverage (FS_INTRO/FS_SPIN/FS_OUTRO/FS_ACTIVE/FS_RETRIGGER). Before:
+   * exact 'FS_ACTIVE'||'FS_INTRO' missed FS_SPIN/FS_OUTRO → sticky paint
+   * silently disabled during the actual spin frames it was built for. */
+  let ph = null;
+  if (typeof window !== 'undefined' && window.FSM) ph = window.FSM.phase || window.FSM.state || null;
+  else if (typeof FSM !== 'undefined' && FSM) ph = FSM.phase;
+  if (!ph) return STICKY_WILD_MODE !== 'fs';
+  if (STICKY_WILD_MODE === 'fs')   return /^FS_/.test(ph);
+  if (STICKY_WILD_MODE === 'base') return ph === 'BASE' || ph === 'IDLE' || ph === 'SPIN';
   return true; // 'both'
 }
 
@@ -172,6 +191,17 @@ function applyStickyWilds() {
     cell.classList.add('is-sticky-wild');
     cell.setAttribute('aria-live', 'polite');
     cell.setAttribute('aria-label', 'sticky wild');
+    /* UQ-DEEP-R P6 fix: data-symbol + window.GRID + symbolOverride emit so
+     * win evaluator that reads canonical symbol source (not DOM textContent)
+     * sees sticky wild. Without this, visual sticky shows but payout uses
+     * original symbol → underpay. Mirrors walkingWild.mjs fix. */
+    cell.setAttribute('data-symbol', STICKY_WILD_SYMBOL);
+    if (typeof window !== 'undefined' && window.GRID && typeof window.GRID.set === 'function') {
+      try { window.GRID.set(c, r, STICKY_WILD_SYMBOL); } catch (_) {}
+    }
+    if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function') {
+      try { HookBus.emit('symbolOverride', { r, c, sym: STICKY_WILD_SYMBOL, source: 'stickyWild' }); } catch (_) {}
+    }
   });
 }
 

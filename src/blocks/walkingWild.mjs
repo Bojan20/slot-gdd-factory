@@ -90,8 +90,19 @@ export function resolveConfig(model = {}) {
     if (parsed) cfg.haloColor = parsed;
   }
 
-  if (Array.isArray(model.features) && model.features.some(f => f.kind === 'walking_wild')) {
-    cfg.enabled = true;
+  /* UQ-DEEP-R P2 fix: features[].config inheritance. */
+  if (Array.isArray(model.features)) {
+    const f = model.features.find((x) => x && x.kind === 'walking_wild');
+    if (f) {
+      cfg.enabled = true;
+      const fc = f.config || f.opts || {};
+      if ((fc.mode === 'fs' || fc.mode === 'base' || fc.mode === 'both') && m.mode == null) cfg.mode = fc.mode;
+      if (typeof fc.wildSymbolId === 'string' && /^[A-Za-z][A-Za-z0-9_]*$/.test(fc.wildSymbolId)
+          && m.wildSymbolId == null) cfg.wildSymbolId = fc.wildSymbolId;
+      if ((fc.direction === 'left' || fc.direction === 'right' || fc.direction === 'down')
+          && m.direction == null) cfg.direction = fc.direction;
+      if (fc.triggerRespin != null && m.triggerRespin == null) cfg.triggerRespin = !!fc.triggerRespin;
+    }
   }
   return cfg;
 }
@@ -149,10 +160,13 @@ const WALKING_WILD_DEFAULT_ROWS  = ${WW_DEFAULT_ROWS};
 const WALKING_WILD_REGISTRY      = new Map(); /* key 'r,c' → { age: int } */
 
 function _walkWildPhaseAllowed() {
-  if (typeof FSM === 'undefined') return WALKING_WILD_MODE !== 'fs';
-  const ph = FSM.phase;
-  if (WALKING_WILD_MODE === 'fs')   return ph === 'FS_ACTIVE';
-  if (WALKING_WILD_MODE === 'base') return ph === 'BASE';
+  /* UQ-DEEP-R P4 fix: window.FSM + /^FS_/ regex (was strict 'FS_ACTIVE'). */
+  let ph = null;
+  if (typeof window !== 'undefined' && window.FSM) ph = window.FSM.phase || window.FSM.state || null;
+  else if (typeof FSM !== 'undefined' && FSM) ph = FSM.phase;
+  if (!ph) return WALKING_WILD_MODE !== 'fs';
+  if (WALKING_WILD_MODE === 'fs')   return /^FS_/.test(ph);
+  if (WALKING_WILD_MODE === 'base') return ph === 'BASE' || ph === 'IDLE' || ph === 'SPIN';
   return true;
 }
 

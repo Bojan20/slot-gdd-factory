@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-24T02:14:33.448Z",
+  "generatedAt": "2026-06-24T02:30:40.493Z",
   "slugCount": 338,
   "prints": {
     "001-rect-fs-wild-mult": {
@@ -1054,8 +1054,8 @@
     },
     "052-lock-fs-stickywild-wild": {
       "slug": "052-lock-fs-stickywild-wild",
-      "htmlBytes100": 767300,
-      "htmlSha": "5d210f27f5b177db",
+      "htmlBytes100": 768500,
+      "htmlSha": "dd2cbcefce172ef2",
       "buttonCount": 47,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1073,8 +1073,8 @@
     },
     "053-rect-expandwild-fs": {
       "slug": "053-rect-expandwild-fs",
-      "htmlBytes100": 777800,
-      "htmlSha": "378cb1ea3300f22b",
+      "htmlBytes100": 778000,
+      "htmlSha": "3e37d2794239f1a7",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1110,8 +1110,8 @@
     },
     "055-varreel-expandwild-fs": {
       "slug": "055-varreel-expandwild-fs",
-      "htmlBytes100": 778100,
-      "htmlSha": "3bc9e179147332f4",
+      "htmlBytes100": 778400,
+      "htmlSha": "3822dfa4b45a845c",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1170,8 +1170,8 @@
     },
     "058-dual-expandwild-fs": {
       "slug": "058-dual-expandwild-fs",
-      "htmlBytes100": 778000,
-      "htmlSha": "27da25aeead9edbf",
+      "htmlBytes100": 778200,
+      "htmlSha": "1f1a135ab365ab45",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1187,8 +1187,8 @@
     },
     "059-lock-expandwild-fs": {
       "slug": "059-lock-expandwild-fs",
-      "htmlBytes100": 777900,
-      "htmlSha": "588cfe98898d199c",
+      "htmlBytes100": 778200,
+      "htmlSha": "aa66672c629a2d68",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1626,8 +1626,8 @@
     },
     "08-rainbow-riches-original-road-to-even-more-riches": {
       "slug": "08-rainbow-riches-original-road-to-even-more-riches",
-      "htmlBytes100": 775100,
-      "htmlSha": "c10beda3dcf9c441",
+      "htmlBytes100": 775300,
+      "htmlSha": "43f7650f7c5db5ea",
       "buttonCount": 52,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2249,8 +2249,8 @@
     },
     "11-zeus-kronos-zeus-unleashed-wms-legacy": {
       "slug": "11-zeus-kronos-zeus-unleashed-wms-legacy",
-      "htmlBytes100": 783200,
-      "htmlSha": "e4b71ee86ba983ac",
+      "htmlBytes100": 783400,
+      "htmlSha": "2afcfc996e31bde3",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3189,8 +3189,8 @@
     },
     "155-varreel-fs-wild-stickywild-6": {
       "slug": "155-varreel-fs-wild-stickywild-6",
-      "htmlBytes100": 788900,
-      "htmlSha": "677c51a517b522b9",
+      "htmlBytes100": 790100,
+      "htmlSha": "ff77a4c815b178ea",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5874,8 +5874,8 @@
     },
     "286-rect-cascade-stickywild-multorb-5": {
       "slug": "286-rect-cascade-stickywild-multorb-5",
-      "htmlBytes100": 871500,
-      "htmlSha": "68e19886a0dc96bf",
+      "htmlBytes100": 872600,
+      "htmlSha": "b5f288183952cf1c",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5896,8 +5896,8 @@
     },
     "287-rect-cascade-stickywild-multorb-5-max": {
       "slug": "287-rect-cascade-stickywild-multorb-5-max",
-      "htmlBytes100": 871500,
-      "htmlSha": "834fbd0c2af4e6da",
+      "htmlBytes100": 872600,
+      "htmlSha": "f950db95170e6ea9",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5918,8 +5918,8 @@
     },
     "288-varreel-cascade-stickywild-multorb-5": {
       "slug": "288-varreel-cascade-stickywild-multorb-5",
-      "htmlBytes100": 871800,
-      "htmlSha": "c27736180d4556b0",
+      "htmlBytes100": 872900,
+      "htmlSha": "f3b68883fd85c231",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5939,8 +5939,8 @@
     },
     "289-varreel-cascade-stickywild-multorb-5-max": {
       "slug": "289-varreel-cascade-stickywild-multorb-5-max",
-      "htmlBytes100": 871800,
-      "htmlSha": "403f5c1b09cc7772",
+      "htmlBytes100": 872900,
+      "htmlSha": "a46385cd87ae9110",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,

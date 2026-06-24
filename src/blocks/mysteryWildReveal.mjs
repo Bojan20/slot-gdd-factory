@@ -103,6 +103,22 @@ export function resolveConfig(model = {}) {
   if (typeof src.wildColor === 'string' && HEX_COLOR_RE.test(src.wildColor)) cfg.wildColor = src.wildColor;
   if (Number.isFinite(src.fontSizePx)) cfg.fontSizePx = clampInt(src.fontSizePx, FONT_SIZE_MIN, FONT_SIZE_MAX);
 
+  /* UQ-DEEP-R P2 fix: features[].config inheritance. Block was never
+   * enabling itself off GDD declared feature; only top-level reads. */
+  if (Array.isArray(model.features)) {
+    const f = model.features.find((x) => x && x.kind === 'mystery_wild_reveal');
+    if (f) {
+      cfg.enabled = true;
+      const fc = f.config || f.opts || {};
+      if (typeof fc.mysterySymbolId === 'string' && SYMBOL_ID_RE.test(fc.mysterySymbolId)
+          && src.mysterySymbolId == null) cfg.mysterySymbolId = fc.mysterySymbolId;
+      if (typeof fc.wildSymbolId === 'string' && WILD_ID_RE.test(fc.wildSymbolId)
+          && src.wildSymbolId == null) cfg.wildSymbolId = fc.wildSymbolId;
+      if (Number.isFinite(fc.revealProbability) && src.revealProbability == null) {
+        cfg.revealProbability = clampNum(fc.revealProbability, PROB_MIN, PROB_MAX);
+      }
+    }
+  }
   return cfg;
 }
 
@@ -182,6 +198,10 @@ export function emitMysteryWildRevealRuntime(cfg = defaultConfig()) {
   }
 
   function _scanAndReveal() {
+    /* UQ-DEEP-R P3 fix: H&W gate. Mystery ? reveal must defer during
+     * H&W round — locked-orb layer owns cells. */
+    if (window.HW_STATE && window.HW_STATE.active === true) return;
+    if (window.__HW_ACTIVE__ === true) return;
     var cells = document.querySelectorAll('.cell');
     var newReveals = [];
     for (var i = 0; i < cells.length; i++) {

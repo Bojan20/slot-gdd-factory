@@ -96,6 +96,19 @@ export function resolveConfig(model = {}) {
   if (typeof src.counterPosition === 'string' && POSITIONS.includes(src.counterPosition)) {
     cfg.counterPosition = src.counterPosition;
   }
+  /* UQ-DEEP-R P2 fix: features[].config inheritance. */
+  if (Array.isArray(model.features)) {
+    const f = model.features.find((x) => x && (
+      x.kind === 'cascading_wild_persistence' ||
+      x.kind === 'cascading_wild' ||
+      x.kind === 'persistent_wild'));
+    if (f) {
+      cfg.enabled = true;
+      const fc = f.config || f.opts || {};
+      if (typeof fc.wildSymbolId === 'string' && SYMBOL_ID_RE.test(fc.wildSymbolId)
+          && src.wildSymbolId == null) cfg.wildSymbolId = fc.wildSymbolId;
+    }
+  }
   return cfg;
 }
 
@@ -314,6 +327,18 @@ export function emitCascadingWildPersistenceRuntime(cfg = defaultConfig()) {
       cell.setAttribute('data-symbol', ${JSON.stringify(wildSym)});
       if (cell.textContent !== undefined) cell.textContent = ${JSON.stringify(wildSym)};
       cell.classList.add('is-cascade-pinned');
+      /* UQ-DEEP-R P6 fix: also push into window.GRID + emit symbolOverride
+       * so tumble engine that reads grid model (not DOM) sees pin. */
+      var _ri = Number(parts[0]);
+      var _row = Number(parts[1]);
+      if (Number.isFinite(_ri) && Number.isFinite(_row)) {
+        if (window.GRID && typeof window.GRID.set === 'function') {
+          try { window.GRID.set(_ri, _row, ${JSON.stringify(wildSym)}); } catch (_) {}
+        }
+        if (window.HookBus && typeof window.HookBus.emit === 'function') {
+          try { window.HookBus.emit('symbolOverride', { r: _row, c: _ri, sym: ${JSON.stringify(wildSym)}, source: 'cascadingWildPersistence' }); } catch (_) {}
+        }
+      }
     }
   }
 
@@ -329,11 +354,16 @@ export function emitCascadingWildPersistenceRuntime(cfg = defaultConfig()) {
     _renderCounter();
   }
 
+  /* UQ-DEEP-R P3 fix: H&W gate. Locked-orb layer owns cells; cascading
+   * pins must defer during H&W round to avoid double-paint conflict. */
+  function _hwActive() {
+    return !!(window.HW_STATE && window.HW_STATE.active === true);
+  }
   if (window.HookBus && typeof window.HookBus.on === 'function') {
-    window.HookBus.on('preSpin',      _clearAllPins,                       { priority: 24 });
-    window.HookBus.on('onSpinResult', function() { _pinWildsOnGrid(false); }, { priority: 24 });
-    window.HookBus.on('onTumbleStep', function() { _reAssertPins(); _pinWildsOnGrid(true); }, { priority: 24 });
-    window.HookBus.on('postSpin',     _clearAllPins,                       { priority: 24 });
+    window.HookBus.on('preSpin',      function() { if (_hwActive()) return; _clearAllPins(); }, { priority: 24 });
+    window.HookBus.on('onSpinResult', function() { if (_hwActive()) return; _pinWildsOnGrid(false); }, { priority: 24 });
+    window.HookBus.on('onTumbleStep', function() { if (_hwActive()) return; _reAssertPins(); _pinWildsOnGrid(true); }, { priority: 24 });
+    window.HookBus.on('postSpin',     function() { if (_hwActive()) return; _clearAllPins(); }, { priority: 24 });
   }
 })();
 `;

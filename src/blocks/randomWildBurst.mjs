@@ -222,6 +222,21 @@ const RWB_MAX_FRACTION  = ${cfg.maxCellFraction};
       if (!cell || typeof cell.getBoundingClientRect !== 'function' || !cell.classList) return;
       cell.classList.add('is-wild', 'rwb-planted');
       cell.setAttribute('data-rwb-planted', '1');
+      /* UQ-DEEP-R P6 fix: data-symbol + GRID + symbolOverride emit so win
+       * evaluator sees planted wild (was only visual flash + halo, no
+       * payout impact). */
+      var _wsym = (typeof window.__RANDOM_WILD_BURST_SYMBOL__ === 'string')
+                  ? window.__RANDOM_WILD_BURST_SYMBOL__ : 'W';
+      cell.setAttribute('data-symbol', _wsym);
+      var _ri = Number(cell.getAttribute('data-reel'));
+      var _row = Number(cell.getAttribute('data-row'));
+      if (Number.isFinite(_ri) && Number.isFinite(_row) && window.GRID && typeof window.GRID.set === 'function') {
+        try { window.GRID.set(_ri, _row, _wsym); } catch (_) {}
+      }
+      if (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function'
+          && Number.isFinite(_ri) && Number.isFinite(_row)) {
+        try { HookBus.emit('symbolOverride', { r: _row, c: _ri, sym: _wsym, source: 'randomWildBurst' }); } catch (_) {}
+      }
       cellIds.push(cell.id || cell.getAttribute('data-cell-id') || ('idx' + idx));
 
       const rect = cell.getBoundingClientRect();

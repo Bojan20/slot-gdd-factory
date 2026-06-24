@@ -104,6 +104,32 @@ export function resolveConfig(model = {}) {
   }
   if (typeof src.chipColor === 'string' && HEX_COLOR_RE.test(src.chipColor)) cfg.chipColor = src.chipColor;
 
+  /* UQ-DEEP-R P2 fix: features[].config inheritance. */
+  if (Array.isArray(model.features)) {
+    const f = model.features.find((x) => x && (
+      x.kind === 'wild_collision_multiplier' ||
+      x.kind === 'wild_collision' ||
+      x.kind === 'colliding_wilds'));
+    if (f) {
+      cfg.enabled = true;
+      const fc = f.config || f.opts || {};
+      if (typeof fc.wildSymbolId === 'string' && SYMBOL_ID_RE.test(fc.wildSymbolId)
+          && src.wildSymbolId == null) cfg.wildSymbolId = fc.wildSymbolId;
+      if (Array.isArray(fc.distribution) && fc.distribution.length > 0
+          && !Array.isArray(src.distribution)) {
+        const filtered = fc.distribution
+          .filter(e => Number.isFinite(e.value) && e.value > 0)
+          .map(e => {
+            const w = Number(e.weight);
+            return { value: Number(e.value), weight: Number.isFinite(w) && w > 0 ? w : 1 };
+          });
+        if (filtered.length > 0) cfg.distribution = filtered;
+      }
+      if (Number.isFinite(fc.minWildsForCollision) && src.minWildsForCollision == null) {
+        cfg.minWildsForCollision = clampInt(fc.minWildsForCollision, MIN_WILDS_FLOOR, MIN_WILDS_CEIL);
+      }
+    }
+  }
   return cfg;
 }
 
@@ -188,6 +214,12 @@ export function emitWildCollisionMultiplierRuntime(cfg = defaultConfig()) {
   }
 
   function _annotate() {
+    /* UQ-DEEP-R P3 fix: H&W gate. Locked-symbol layer (H&W) takes priority;
+     * sister wild blokovi (fsExpansionWilds, expandingWild) imali ovu gate
+     * od početka — wildCollisionMultiplier bio outlier → double-mult bug
+     * tokom H&W round-a. */
+    if (window.HW_STATE && window.HW_STATE.active === true) return;
+    if (window.__HW_ACTIVE__ === true) return;
     var cells = document.querySelectorAll('.cell');
     var wilds = [];
     for (var i = 0; i < cells.length; i++) {

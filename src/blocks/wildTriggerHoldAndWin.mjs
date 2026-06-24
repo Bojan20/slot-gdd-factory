@@ -103,6 +103,25 @@ export function resolveConfig(model = {}) {
   if (src.seedOrbsFromWilds === false) cfg.seedOrbsFromWilds = false;
   if (src.skipDuringFs === false) cfg.skipDuringFs = false;
 
+  /* UQ-DEEP-R P2 fix: features[].config inheritance. */
+  if (Array.isArray(model.features)) {
+    const f = model.features.find((x) => x && (
+      x.kind === 'wild_trigger_hold_and_win' ||
+      x.kind === 'wild_trigger_hw' ||
+      x.kind === 'wild_to_hold_and_win'));
+    if (f) {
+      cfg.enabled = true;
+      const fc = f.config || f.opts || {};
+      if (typeof fc.wildSymbolId === 'string' && SYMBOL_ID_RE.test(fc.wildSymbolId)
+          && src.wildSymbolId == null) cfg.wildSymbolId = fc.wildSymbolId;
+      if (Number.isFinite(fc.triggerThreshold) && src.triggerThreshold == null) {
+        cfg.triggerThreshold = clampInt(fc.triggerThreshold, THRESHOLD_MIN, THRESHOLD_MAX);
+      }
+      if (typeof fc.mode === 'string' && MODES.includes(fc.mode) && src.mode == null) {
+        cfg.mode = fc.mode;
+      }
+    }
+  }
   return cfg;
 }
 
