@@ -86,6 +86,12 @@ export function defaultConfig() {
     scope: '.',
     startUrl: '.',
     iconColor: '#c9a227',
+    /* UQ-DEEP-U fix: capture beforeinstallprompt only when operator has a
+     * UI surface (install button) to call __SLOT_PWA_PROMPT__. Default
+     * false → preventDefault NOT called → browser shows native banner;
+     * no "Banner not shown" console warning. Override to true if you wire
+     * a custom install CTA that triggers __SLOT_PWA_PROMPT__. */
+    captureInstallPrompt: false,
   });
 }
 
@@ -124,6 +130,7 @@ export function resolveConfig(model = {}) {
   if (typeof m.startUrl === 'string' && m.startUrl.length > 0 && m.startUrl.length < 200) {
     cfg.startUrl = m.startUrl;
   }
+  if (m.captureInstallPrompt === true) cfg.captureInstallPrompt = true;
 
   return cfg;
 }
@@ -174,6 +181,12 @@ export function emitPwaInstallabilityMarkup(cfg = defaultConfig()) {
 <!-- pwaInstallability BLOCK (Wave A8) — emitted by src/blocks/pwaInstallability.mjs -->
 <link rel="manifest" href="${dataUri}">
 <meta name="theme-color" content="${c.themeColor}">
+<!-- UQ-DEEP-U fix (Boki console warning 2026-06-24):
+     Chrome deprecation: apple-mobile-web-app-capable WITHOUT generic
+     mobile-web-app-capable triggered "deprecated" warning. Solution:
+     emit BOTH — generic (W3C standard, Chrome/Edge/Firefox) PLUS apple
+     (still required for iOS Safari which doesn't honor generic). -->
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="${c.shortName}">
@@ -299,12 +312,21 @@ export function emitPwaInstallabilityRuntime(cfg = defaultConfig()) {
       } catch (_) { /* swallow — SW is enhancement, not requirement */ }
     }
 
-    /* beforeinstallprompt — A2HS opportunity (Android Chrome / Edge). */
+    /* beforeinstallprompt — A2HS opportunity (Android Chrome / Edge).
+     * UQ-DEEP-U fix (Boki console 2026-06-24): preventDefault() bez
+     * sledeceg prompt() poziva tetera "Banner not shown: page must call
+     * prompt()" Chrome warning. Default ponasanje: NE preventDefault,
+     * pusti browser native banner. Custom install button (operator
+     * opt-in) postavlja captureInstallPrompt=true → tada blok cuva
+     * deferred event za rucnu __SLOT_PWA_PROMPT__ pozive. */
+    var CAPTURE_INSTALL_PROMPT = ${c.captureInstallPrompt ? 'true' : 'false'};
     window.addEventListener('beforeinstallprompt', function (e) {
-      e.preventDefault();
-      _deferredPrompt = e;
+      if (CAPTURE_INSTALL_PROMPT) {
+        e.preventDefault();
+        _deferredPrompt = e;
+      }
       STATE.installable = true;
-      _safeEmit('onPwaInstallable', { ready: true });
+      _safeEmit('onPwaInstallable', { ready: true, captured: CAPTURE_INSTALL_PROMPT });
     });
 
     /* appinstalled — confirms install completed. */
