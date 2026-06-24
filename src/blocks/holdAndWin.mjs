@@ -154,8 +154,42 @@ export function resolveConfig(model = {}) {
     Number.isFinite(e.weight) && Number.isFinite(e.valueX))) {
     cfg.orbTable = m.orbTable.slice();
   }
-  if (Array.isArray(model.features) && model.features.some(f => f.kind === 'hold_and_win')) {
-    cfg.enabled = true;
+  /* UQ-DEEP-S CRIT-4 fix: features[].config inheritance. Parser emits
+   * canonical `features:[{kind:'hold_and_win', config:{triggerCount,
+   * bonusSymbolId, respinsAwarded, fullGridBonusX, orbTable, ...}}]`
+   * shape. Pre fix-a only auto-enabled, never imported config payload →
+   * GDD-declared H&W tuning silently dropped. Wave-V reconciler mirrors
+   * camelCase kind 'holdAndWin' (NOT 'hold_and_win'), so this is the only
+   * path that resolves snake_case parser output. */
+  if (Array.isArray(model.features)) {
+    const f = model.features.find(x => x && (x.kind === 'hold_and_win' || x.kind === 'holdAndWin'));
+    if (f) {
+      cfg.enabled = true;
+      const fc = f.config || f.opts || {};
+      if (Number.isFinite(fc.triggerCount) && m.triggerCount == null) {
+        cfg.triggerCount = clampInt(fc.triggerCount, 3, 30);
+      }
+      if (typeof fc.bonusSymbolId === 'string' && /^[A-Za-z][A-Za-z0-9_]*$/.test(fc.bonusSymbolId)
+          && m.bonusSymbolId == null) cfg.bonusSymbolId = fc.bonusSymbolId.toUpperCase();
+      if (Number.isFinite(fc.respinsAwarded) && m.respinsAwarded == null) {
+        cfg.respinsAwarded = clampInt(fc.respinsAwarded, 1, 12);
+      }
+      if (Number.isFinite(fc.fullGridBonusX) && m.fullGridBonusX == null) {
+        cfg.fullGridBonusX = clampInt(fc.fullGridBonusX, 10, 10000);
+      }
+      if (Array.isArray(fc.orbTable) && fc.orbTable.every(e =>
+          e && typeof e.label === 'string' &&
+          Number.isFinite(e.weight) && Number.isFinite(e.valueX))
+          && !Array.isArray(m.orbTable)) {
+        cfg.orbTable = fc.orbTable.slice();
+      }
+      if (Array.isArray(fc.jackpotLabels) && fc.jackpotLabels.every(l => typeof l === 'string' && l.length <= 16)
+          && !Array.isArray(m.jackpotLabels)) {
+        cfg.jackpotLabels = fc.jackpotLabels.slice(0, 6);
+      }
+      if (typeof fc.title === 'string' && fc.title.length > 0 && fc.title.length <= 32 && !/[<>{}]/.test(fc.title)
+          && m.title == null) cfg.title = fc.title;
+    }
   }
   return cfg;
 }
@@ -1606,7 +1640,7 @@ function hwMaybeEnter() {
     return false;
   }
   /* Plus FSM phase check (defense-in-depth). */
-  if (typeof FSM !== 'undefined' && (FSM.phase === 'FS_INTRO' || FSM.phase === 'FS_ACTIVE' || FSM.phase === 'FS_OUTRO')) {
+  if (typeof FSM !== 'undefined' && /^FS_/.test(FSM.phase)) {
     return false;
   }
   /* W48 bugfix v4 — guard against double-entry while celebration is in

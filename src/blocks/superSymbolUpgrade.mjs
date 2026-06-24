@@ -440,6 +440,20 @@ export function emitSuperSymbolUpgradeRuntime(cfg = defaultConfig()) {
       var toSym = _upgradeSymbolFor(fromSym, newTier);
       if (toSym === fromSym) continue;
       cellEl.textContent = toSym;
+      /* UQ-DEEP-S P6 fix: data-symbol + GRID + symbolOverride so win
+       * evaluator vidi tier-promoted symbol. Bez ovoga visual promotion
+       * radi ali payout koristi original LP simbol → tier promotion
+       * silently doesn't pay. */
+      cellEl.setAttribute('data-symbol', toSym);
+      var _ri = Number(cellEl.getAttribute('data-reel'));
+      var _row = Number(cellEl.getAttribute('data-row'));
+      if (Number.isFinite(_ri) && Number.isFinite(_row) && window.GRID && typeof window.GRID.set === 'function') {
+        try { window.GRID.set(_ri, _row, toSym); } catch (_) {}
+      }
+      if (window.HookBus && typeof window.HookBus.emit === 'function'
+          && Number.isFinite(_ri) && Number.isFinite(_row)) {
+        try { window.HookBus.emit('symbolOverride', { r: _row, c: _ri, sym: toSym, source: 'superSymbolUpgrade' }); } catch (_) {}
+      }
       _paintUpgradedCell(cellEl, newTier);
       upgraded += 1;
     }

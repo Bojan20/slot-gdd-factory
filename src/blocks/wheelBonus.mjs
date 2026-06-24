@@ -86,8 +86,30 @@ export function resolveConfig(model = {}) {
   if (m.autoSpin != null) cfg.autoSpin = !!m.autoSpin;
   if (typeof m.title === 'string' && m.title.length > 0 && m.title.length <= WB.MAX_TITLE_LEN) cfg.title = m.title;
 
-  if (Array.isArray(model.features) && model.features.some(f => f.kind === 'wheel_bonus')) {
-    cfg.enabled = true;
+  /* UQ-DEEP-S HIGH-7 fix (P2): features[].config inheritance. Parser emit
+   * `features:[{kind:'wheel_bonus', config:{segments, spinDurationMs,
+   * title}}]` — pre fix samo auto-enable, segments/duration/title silent
+   * drop unless author writes model.wheelBonus.* explicitly. */
+  if (Array.isArray(model.features)) {
+    const f = model.features.find(x => x && (x.kind === 'wheel_bonus' || x.kind === 'wheelBonus'));
+    if (f) {
+      cfg.enabled = true;
+      const fc = f.config || f.opts || {};
+      if (Array.isArray(fc.segments) && fc.segments.length >= WB.MIN_SEGMENTS
+          && fc.segments.every(s => s && typeof s.label === 'string')
+          && !Array.isArray(m.segments)) {
+        cfg.segments = fc.segments.slice(0, WB.MAX_SEGMENTS).map(s => ({
+          label: s.label.slice(0, WB.MAX_LABEL_LEN),
+          value: Number.isFinite(s.value) ? s.value : 0,
+          color: (typeof s.color === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(s.color)) ? s.color : WB.FALLBACK_SEG_COLOR,
+        }));
+      }
+      if (Number.isFinite(fc.spinDurationMs) && m.spinDurationMs == null) {
+        cfg.spinDurationMs = clampInt(fc.spinDurationMs, WB.MIN_DUR_MS, WB.MAX_DUR_MS);
+      }
+      if (typeof fc.title === 'string' && fc.title.length > 0 && fc.title.length <= WB.MAX_TITLE_LEN
+          && m.title == null) cfg.title = fc.title;
+    }
   }
   return cfg;
 }

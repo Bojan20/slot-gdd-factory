@@ -106,6 +106,36 @@ export function resolveConfig(model = {}) {
     );
     if (hasOrb) cfg.enabled = true;
   }
+
+  /* UQ-DEEP-S HIGH-11 fix (P2): features[].config inheritance. Parser
+   * emits canonical features:[{kind:'multiplier_orb', config:{symbolId,
+   * distribution, bonusAccumulate}}] — pre fix-a samo auto-enable + top-level
+   * read, distribution silent-dropped. */
+  if (Array.isArray(model.features)) {
+    const f = model.features.find(x => x && (
+      x.kind === 'multiplier_orb' ||
+      x.kind === 'orb_multiplier' ||
+      x.kind === 'mult_orb'));
+    if (f) {
+      cfg.enabled = true;
+      const fc = f.config || f.opts || {};
+      if (typeof fc.symbolId === 'string' && /^[A-Z]{1,4}$/.test(fc.symbolId)
+          && m.symbolId == null) cfg.symbolId = fc.symbolId;
+      if (Array.isArray(fc.distribution) && fc.distribution.length > 0
+          && !Array.isArray(m.distribution)) {
+        const filtered = fc.distribution
+          .filter(e => Number.isFinite(e.value) && e.value > 0)
+          .map(e => {
+            const w = Number(e.weight);
+            return { value: Number(e.value), weight: Number.isFinite(w) && w > 0 ? w : 1 };
+          });
+        if (filtered.length > 0) cfg.distribution = filtered;
+      }
+      if (fc.bonusAccumulate != null && m.bonusAccumulate == null) {
+        cfg.bonusAccumulate = !!fc.bonusAccumulate;
+      }
+    }
+  }
   return cfg;
 }
 
@@ -255,12 +285,12 @@ function accumulateOrbMultiplier() {
     }
   }
   // FS accumulating multiplier — bonus mode adds to persistent counter
-  if (MULTIPLIER_ORB_BONUS_ACC && typeof FSM !== 'undefined' && FSM.phase === 'FS_ACTIVE' && total > 0) {
+  if (MULTIPLIER_ORB_BONUS_ACC && typeof FSM !== 'undefined' && /^FS_/.test(FSM.phase) && total > 0) {
     BONUS_MULTIPLIER += total;
     if (typeof window !== 'undefined') window.BONUS_MULTIPLIER = BONUS_MULTIPLIER;
   }
   // Bonus mode returns the persistent multiplier (applies to every subsequent win)
-  if (MULTIPLIER_ORB_BONUS_ACC && typeof FSM !== 'undefined' && FSM.phase === 'FS_ACTIVE') {
+  if (MULTIPLIER_ORB_BONUS_ACC && typeof FSM !== 'undefined' && /^FS_/.test(FSM.phase)) {
     return BONUS_MULTIPLIER;
   }
   return total;
@@ -313,7 +343,7 @@ if (typeof HookBus !== 'undefined' &&
       if (MULTIPLIER_ORB_BONUS_ACC) HookBus.setMult(v);
       else HookBus.addMult(v);
       /* Mirror into FSM.mult so the FS HUD reads the live value. */
-      if (typeof FSM !== 'undefined' && FSM.phase === 'FS_ACTIVE') {
+      if (typeof FSM !== 'undefined' && /^FS_/.test(FSM.phase)) {
         FSM.mult = HookBus.getMult();
         if (typeof FSM_renderHud === 'function') FSM_renderHud();
       }

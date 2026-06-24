@@ -393,6 +393,17 @@ export function emitSymbolSplitRevealRuntime(cfg = defaultConfig()) {
         n.textContent = entry.symbol;
         n.setAttribute("data-symbol", entry.symbol);
         n.setAttribute("aria-label", "Split reveal symbol " + entry.symbol);
+        /* UQ-DEEP-S P6 fix: also push GRID + symbolOverride za kernel
+         * evaluator koji čita grid model (ne DOM). data-symbol je već
+         * postavljen ali bez GRID/event evaluator ne vidi N×N kopije. */
+        var _ri = Number(n.getAttribute('data-reel'));
+        var _row = Number(n.getAttribute('data-row'));
+        if (Number.isFinite(_ri) && Number.isFinite(_row)) {
+          if (window.GRID && typeof window.GRID.set === 'function') {
+            try { window.GRID.set(_ri, _row, entry.symbol); } catch (_) {}
+          }
+          try { window.HookBus.emit('symbolOverride', { r: _row, c: _ri, sym: entry.symbol, source: 'symbolSplitReveal' }); } catch (_) {}
+        }
       }
       if (window.HookBus && typeof window.HookBus.emit === "function") {
         try {

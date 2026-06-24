@@ -1242,6 +1242,24 @@ export function buildSlotHTML(model) {
    * back to safe default otherwise. */
   const HEX_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
   const safeHex = (v, fallback) => (typeof v === 'string' && HEX_RE.test(v.trim())) ? v.trim() : fallback;
+
+  /* UQ-DEEP-S HIGH (E2E): anti-vendor display name scrub. Rendered HTML
+   * <title>, header div, __MODEL_NAME__ constant treba da budu
+   * vendor-neutral za regulator deliverable. Pre fix-a "Cash Eruption
+   * Foundry" leak-ovao u 5 mesta. */
+  const DISPLAY_VENDOR_RX = /\b(IGT|Pragmatic[\s\-_.]?Play|Megaways|Cash[\s\-_.]?Eruption|Wolf[\s\-_.]?Run|Cleopatra|Buffalo[\s\-_.]?(?:King|Gold)|NetEnt|Microgaming|Scientific[\s\-_.]?Games|L&W|Light[\s\-_.]*&[\s\-_.]*Wonder|Play'?n[\s\-_.]?Go|Novomatic)\b/gi;
+  const neutralDisplayName = (raw) => {
+    if (typeof raw !== 'string' || !raw.trim()) return 'Untitled Slot';
+    let out = raw;
+    /* Apply NFKD + homoglyph fold defense for unicode-bypass. */
+    try { out = out.normalize('NFKD'); } catch {}
+    out = out.replace(/[̀-ͯ​-‏﻿⁠-⁯]/g, '');
+    const tested = out.replace(DISPLAY_VENDOR_RX, '[Slot]').trim();
+    DISPLAY_VENDOR_RX.lastIndex = 0;
+    if (tested !== out) return tested || 'Untitled Slot';
+    return raw;
+  };
+  const displayName = neutralDisplayName(model.name);
   /* Palette — use GDD palette[] if available, else reference defaults */
   const p = model.theme.palette || [];
   const bg0    = safeHex(p[0], "#05070c");   // deep background
@@ -1273,9 +1291,9 @@ export function buildSlotHTML(model) {
 <meta name="format-detection" content="telephone=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>${escapeHtml(model.name)} · Base Game</title>
+<title>${escapeHtml(displayName)} · Base Game</title>
 ${/* Wave A8 — PWA installability head injection (manifest + icons + theme). */ ''}
-${emitPwaInstallabilityMarkup(resolvePwaInstallabilityConfig({ ...model, gameName: model.name }))}
+${emitPwaInstallabilityMarkup(resolvePwaInstallabilityConfig({ ...model, gameName: displayName }))}
 <style>
 ${emitThemeCSS(resolveThemeCSSConfig(model))}
 ${emitStageBadgeCSS(resolveStageBadgeConfig(model))}
@@ -1530,7 +1548,7 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
 
 <div class="stage">
   <div class="header">
-    <div class="title">${escapeHtml(model.name)}</div>
+    <div class="title">${escapeHtml(displayName)}</div>
     ${emitStageBadgeMarkup(resolveStageBadgeConfig(model))}
     ${emitFsProgressBarMarkup(resolveFsProgressBarConfig(model))}
     ${emitWinwaysIndicatorMarkup(resolveWinwaysIndicatorConfig(model))}
@@ -1835,7 +1853,7 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
    * parity without scraping inline scripts. Safe for production: read-only
    * snapshot of the build-time model, no runtime mutation. */
   const __MODEL_FEATURES__ = ${safeJSONInScript((model.features || []).map(f => ({ kind: f.kind, label: f.label })))};
-  const __MODEL_NAME__ = ${safeJSONInScript(model.name || 'Untitled Slot')};
+  const __MODEL_NAME__ = ${safeJSONInScript(displayName)};
   const __MODEL_SYMBOL_COUNTS__ = ${safeJSONInScript({
     hp: (model.symbols && model.symbols.high) ? model.symbols.high.length : 0,
     mp: (model.symbols && model.symbols.mid)  ? model.symbols.mid.length  : 0,

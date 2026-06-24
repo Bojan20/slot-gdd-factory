@@ -66,8 +66,21 @@ export function resolveConfig(model = {}) {
   if (m.resetOnRoundEnd != null) cfg.resetOnRoundEnd = !!m.resetOnRoundEnd;
   if (typeof m.chipColor === 'string' && /^\d{1,3},\d{1,3},\d{1,3}$/.test(m.chipColor)) cfg.chipColor = m.chipColor;
 
-  if (Array.isArray(model.features) && model.features.some(f => f.kind === 'persistent_multiplier')) {
-    cfg.enabled = true;
+  /* UQ-DEEP-S HIGH-10 fix (P2): features[].config inheritance. */
+  if (Array.isArray(model.features)) {
+    const f = model.features.find(x => x && (
+      x.kind === 'persistent_multiplier' ||
+      x.kind === 'persistentMultiplier' ||
+      x.kind === 'multiplier_ladder_persistent'));
+    if (f) {
+      cfg.enabled = true;
+      const fc = f.config || f.opts || {};
+      if ((fc.mode === 'fs' || fc.mode === 'base' || fc.mode === 'both') && m.mode == null) cfg.mode = fc.mode;
+      if (Number.isFinite(fc.startMult) && m.startMult == null) cfg.startMult = clampInt(fc.startMult, 1, 1000);
+      if (Number.isFinite(fc.growPerWin) && m.growPerWin == null) cfg.growPerWin = clampInt(fc.growPerWin, 0, 100);
+      if (Number.isFinite(fc.growPerCascade) && m.growPerCascade == null) cfg.growPerCascade = clampInt(fc.growPerCascade, 0, 100);
+      if (Number.isFinite(fc.maxMult) && m.maxMult == null) cfg.maxMult = clampInt(fc.maxMult, 0, 100000);
+    }
   }
   return cfg;
 }
@@ -139,10 +152,13 @@ const PM_RESET_ON_END  = ${cfg.resetOnRoundEnd ? 'true' : 'false'};
 let PM_CURRENT = PM_START;
 
 function _pmPhaseAllowed() {
-  if (typeof FSM === 'undefined') return PM_MODE !== 'fs';
-  const ph = FSM.phase;
-  if (PM_MODE === 'fs')   return ph === 'FS_ACTIVE' || ph === 'FS_INTRO';
-  if (PM_MODE === 'base') return ph === 'BASE';
+  /* UQ-DEEP-S HIGH-9 fix (P4): /^FS_/ regex + /^BASE/ + window.FSM safer read. */
+  let ph = null;
+  if (typeof window !== 'undefined' && window.FSM) ph = window.FSM.phase || window.FSM.state || null;
+  else if (typeof FSM !== 'undefined' && FSM) ph = FSM.phase;
+  if (!ph) return PM_MODE !== 'fs';
+  if (PM_MODE === 'fs')   return /^FS_/.test(ph);
+  if (PM_MODE === 'base') return /^BASE/.test(ph) || ph === 'IDLE' || ph === 'SPIN';
   return true;
 }
 

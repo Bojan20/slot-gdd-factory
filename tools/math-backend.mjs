@@ -106,7 +106,15 @@ function sanitizeObj(obj) {
   if (obj && typeof obj === 'object') {
     const out = {};
     for (const [k, v] of Object.entries(obj)) {
-      out[k] = typeof v === 'string' ? sanitizeStr(v) : sanitizeObj(v);
+      /* UQ-DEEP-S LOW (E2E): preserve client-provided keys that ne sadrže
+       * vendor data po definiciji. sessionId je echo client-supplied string
+       * koji se koristi za session correlation; scrub ga je kvario client
+       * tracking. Drugi pass-through keys: source, ref, requestId. */
+      if (typeof v === 'string' && (k === 'sessionId' || k === 'source' || k === 'ref' || k === 'requestId')) {
+        out[k] = v;
+      } else {
+        out[k] = typeof v === 'string' ? sanitizeStr(v) : sanitizeObj(v);
+      }
     }
     return out;
   }
@@ -470,7 +478,33 @@ const server = http.createServer(async (req, res) => {
       const seedRaw = Number(body.seed);
       const seed = Number.isFinite(seedRaw) ? seedRaw : 42;
       const out = await runBatchQueued(body.model || {}, spins, seed);
-      return send(res, 200, { ok: true, ...out }, origin);
+      /* UQ-DEEP-S HIGH (E2E): convergence_pass gate. Rust binary returns
+       * convergence_pass:true ali bez gate na halfwidth → operator vidi
+       * "PASS" iako Wilson CI je 7×+ ispred ±0.05% precision bound.
+       * Override convergence_pass strict: rtp within ±0.05% AND
+       * halfwidth < 0.01 (regulator precision band MATH_PRECISION_BAND). */
+      const CONVERGENCE_PRECISION_PCT = 0.0005;  /* 0.05% */
+      const CONVERGENCE_CI_HALFWIDTH = 0.01;     /* 1.0% Wilson 99% CI */
+      const measuredDelta = (typeof out.rtp === 'number' && typeof out.cf_target_rtp === 'number')
+        ? Math.abs(out.rtp - out.cf_target_rtp) : Infinity;
+      const halfwidth = (typeof out.wilson_99_halfwidth === 'number') ? out.wilson_99_halfwidth : Infinity;
+      const strictPass = (measuredDelta <= CONVERGENCE_PRECISION_PCT) && (halfwidth <= CONVERGENCE_CI_HALFWIDTH);
+      const convergenceCriterion = {
+        rtpDelta: measuredDelta,
+        rtpDeltaPct: measuredDelta * 100,
+        rtpDeltaBoundPct: CONVERGENCE_PRECISION_PCT * 100,
+        halfwidth,
+        halfwidthBound: CONVERGENCE_CI_HALFWIDTH,
+        spinsRun: spins,
+      };
+      return send(res, 200, {
+        ok: true,
+        ...out,
+        /* Override Rust-reported convergence_pass with strict gate. */
+        convergence_pass: strictPass,
+        convergence_pass_rust: out.convergence_pass,  /* preserve original for debug */
+        convergence_criterion: convergenceCriterion,
+      }, origin);
     }
 
     if (req.method === 'POST' && p === '/spin') {

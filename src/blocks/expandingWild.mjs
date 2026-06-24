@@ -46,8 +46,8 @@ const EW = {
 export function defaultConfig() {
   return Object.freeze({
     enabled: false,
-    /* UQ-DEEP-K fix (Boki "ne radi expanding wild u cash eruption"
-     * 2026-06-23): IGT Cash Eruption GDD spec — expanding wild fires
+    /* UQ-DEEP-K fix (Boki "ne radi expanding wild u [reference-slot]"
+     * 2026-06-23): [reference-slot] GDD spec — expanding wild fires
      * u BASE game (reels 2-5 only) jer signature pattern win zavisi od
      * njega. Prethodni default 'fs' je disabling-ed mehaniku u BASE
      * phase, što je suprotno industriji. 'both' je najpermisivniji safe
@@ -63,7 +63,7 @@ export function defaultConfig() {
      * already extracts model.expandingWild.onlyIfWinning; this surfaces it
      * through render so live slot.html honors the same gate. */
     onlyIfWinning: false,
-    /* UQ-DEEP-K: GDD knob za "reels 2-5 only" (Cash Eruption) tip
+    /* UQ-DEEP-K: GDD knob za "reels 2-5 only" ([reference-slot]) tip
      * restrikciju. Parser ekstraktuje appliesOnReels:[2,3,4,5] već.
      * Block sad honor-uje: skip wild detection u kolonama van liste.
      * Default null = sve kolone allowed. Spec 1-indexed jer GDD je tako. */
@@ -93,7 +93,7 @@ export function resolveConfig(model = {}) {
 
   /* UQ-DEEP-Q B2 (CRIT) fix: also inherit knobs from features[].config when
    * parser emits the feature in canonical features[] shape rather than
-   * top-level expandingWild key. Cash Eruption GDD ekstraktor emits:
+   * top-level expandingWild key. [reference-slot] GDD ekstraktor emits:
    *   features: [{ kind: 'expanding_wild',
    *                config: { appliesOnReels:[2,3,4,5], onlyIfWinning:true,
    *                          mode:'base', wildSymbolId:'W' } }]
@@ -163,7 +163,7 @@ const EXPANDING_WILD_FALLBACK_ROWS  = ${FALLBACK_ROWS};
 /* RENDER-INTEG-A (2026-06-23) — onlyIfWinning gate.
  * UQ-DEEP-Q B6 fix: pravi class koji winPresentation postavlja je
  *   .cell--winsym (NOT .cell--win) — gate je do sad UVEK vraćao false
- *   za onlyIfWinning=true igre (Cash Eruption) → expansion nikad ne fire-uje.
+ *   za onlyIfWinning=true igre ([reference-slot]) → expansion nikad ne fire-uje.
  *   Sad gleda više pravih klasa + win-line overlay DOM. */
 function _expWildOnlyIfWinningPassed() {
   if (!EXPANDING_WILD_ONLY_IF_WINNING) return true;
@@ -290,7 +290,7 @@ function applyExpandingWilds(spinPayload) {
      * BEFORE expansion at priority 0) has NOT re-evaluated the grid →
      * expanded wilds visually present but payout reflects pre-expansion
      * line wins → operator sees expansion animation but no extra credit.
-     * Industry rule (Cash Eruption GDD step 5→6→7): "Re-evaluate all 20
+     * Industry rule ([reference-slot] GDD step 5→6→7): "Re-evaluate all 20
      * lines with expanded Wilds in place; pay the recomputed result".
      *
      * Fix: emit canonical 're-eval' signal that downstream pay layers

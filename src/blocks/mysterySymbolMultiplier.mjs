@@ -213,11 +213,18 @@ export function emitMysterySymbolMultiplierRuntime(cfg = defaultConfig()) {
 
     /* Sum revealed mults into HookBus global mult so winPresentation
      * applies them on payout settle. Idempotent: only sums NEW reveals
-     * from this evaluation pass. */
-    if (newReveals.length > 0 && window.HookBus && typeof window.HookBus.setMult === 'function') {
+     * from this evaluation pass.
+     * UQ-DEEP-S CRIT-3 fix: koristi addMult() umesto setMult(getMult+sum).
+     * Stari kod čitao HookBus.lastMult (non-canonical API) i ako se
+     * scanner pucao dva puta po spin-u (onSpinResult + onTumbleStep)
+     * sum se duplo brojao. addMult() je atomska + canonical API. */
+    if (newReveals.length > 0 && window.HookBus) {
       var sum = newReveals.reduce(function(s, r) { return s + r.value; }, 0);
-      var current = (window.HookBus.lastMult || 1);
-      window.HookBus.setMult(current + sum);
+      if (typeof window.HookBus.addMult === 'function') {
+        try { window.HookBus.addMult(sum); } catch (_) {}
+      } else if (typeof window.HookBus.setMult === 'function' && typeof window.HookBus.getMult === 'function') {
+        try { window.HookBus.setMult((window.HookBus.getMult() || 1) + sum); } catch (_) {}
+      }
     }
   }
 

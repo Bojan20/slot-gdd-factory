@@ -278,6 +278,12 @@ if (typeof window !== 'undefined') {
        (priority 100) but BEFORE presenters/decorators/telemetry so evaluated
        wins are visible to all downstream listeners. */
     window.HookBus.on('reels:stopped', () => {
+      /* UQ-DEEP-S HIGH-6 fix (P3): H&W gate. During H&W round, locked-orb
+       * layer owns cells — cluster eval would produce false cluster pays
+       * iz orb pile-a. Sister bonus blokovi (holdAndWin) ovde upravljaju
+       * payout; cluster mora defer. */
+      if (window.HW_STATE && window.HW_STATE.active === true) return;
+      if (window.__HW_ACTIVE__ === true) return;
       const __t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : 0;
       const wins = detectClusterWins();
       if (typeof performance !== 'undefined' && performance.now && (performance.now() - __t0) > 1.5) {
