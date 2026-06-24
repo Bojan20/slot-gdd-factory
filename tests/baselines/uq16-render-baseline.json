@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-06-24T11:12:48.238Z",
+  "generatedAt": "2026-06-24T11:40:42.489Z",
   "slugCount": 338,
   "prints": {
     "001-rect-fs-wild-mult": {
       "slug": "001-rect-fs-wild-mult",
       "htmlBytes100": 786900,
-      "htmlSha": "205dc4e40d3c7579",
+      "htmlSha": "b1ee54a0892709f8",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -21,7 +21,7 @@
     "002-rectstack-fs-wild-mult": {
       "slug": "002-rectstack-fs-wild-mult",
       "htmlBytes100": 785800,
-      "htmlSha": "4d26e18bb6070db9",
+      "htmlSha": "681e24f010087a8d",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -40,7 +40,7 @@
     "003-expand-fs-wild-mult": {
       "slug": "003-expand-fs-wild-mult",
       "htmlBytes100": 785700,
-      "htmlSha": "b960c4b5a5f28bbf",
+      "htmlSha": "003a53b021db7432",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -56,7 +56,7 @@
     "004-dual-fs-wild-mult": {
       "slug": "004-dual-fs-wild-mult",
       "htmlBytes100": 786700,
-      "htmlSha": "e5ab4fcdb27accb9",
+      "htmlSha": "0dc08c48c0d0d642",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -72,7 +72,7 @@
     "005-lock-fs-wild-mult": {
       "slug": "005-lock-fs-wild-mult",
       "htmlBytes100": 785800,
-      "htmlSha": "db4e398f40e5ed5b",
+      "htmlSha": "c577e5741dc294f1",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -91,7 +91,7 @@
     "006-varreel-cascade-ways-persistmult-1": {
       "slug": "006-varreel-cascade-ways-persistmult-1",
       "htmlBytes100": 793400,
-      "htmlSha": "cf6cfc9dcb0cf637",
+      "htmlSha": "ecb55cf81ddd13f8",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -110,7 +110,7 @@
     "007-cluster-clusterpays-cascade-multorb": {
       "slug": "007-cluster-clusterpays-cascade-multorb",
       "htmlBytes100": 757800,
-      "htmlSha": "0fa05bf4c764f0aa",
+      "htmlSha": "2655605242cd002e",
       "buttonCount": 52,
       "paytableRows": 0,
       "footerPresent": true,
@@ -128,8 +128,8 @@
     },
     "008-mega-clusterpays-cascade-multorb": {
       "slug": "008-mega-clusterpays-cascade-multorb",
-      "htmlBytes100": 757500,
-      "htmlSha": "1a10ae97446cf988",
+      "htmlBytes100": 757400,
+      "htmlSha": "8b1e4c0579266e14",
       "buttonCount": 52,
       "paytableRows": 0,
       "footerPresent": true,
@@ -145,7 +145,7 @@
     "009-hex-clusterpays-cascade-multorb": {
       "slug": "009-hex-clusterpays-cascade-multorb",
       "htmlBytes100": 749300,
-      "htmlSha": "7981498f69ac018a",
+      "htmlSha": "fbc4ab34646ccefe",
       "buttonCount": 52,
       "paytableRows": 0,
       "footerPresent": true,
@@ -186,7 +186,7 @@
     "010-rect-holdandwin-respin-jackpot": {
       "slug": "010-rect-holdandwin-respin-jackpot",
       "htmlBytes100": 834400,
-      "htmlSha": "8815b41370b8470b",
+      "htmlSha": "5ff70b75ea5a20e9",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -207,7 +207,7 @@
     "011-lock-holdandwin-respin-jackpot": {
       "slug": "011-lock-holdandwin-respin-jackpot",
       "htmlBytes100": 875100,
-      "htmlSha": "e685108bf57b834f",
+      "htmlSha": "0eb08cd8c34e09e0",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -228,7 +228,7 @@
     "012-rect-fs-bonusbuy": {
       "slug": "012-rect-fs-bonusbuy",
       "htmlBytes100": 785400,
-      "htmlSha": "e687e5da0f2e2ca3",
+      "htmlSha": "427cf6ac04556e03",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -247,7 +247,7 @@
     "013-rectstack-fs-bonusbuy": {
       "slug": "013-rectstack-fs-bonusbuy",
       "htmlBytes100": 785900,
-      "htmlSha": "dc4eb5bd36fe9cab",
+      "htmlSha": "4737377e1ecfd902",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -263,7 +263,7 @@
     "014-varreel-fs-bonusbuy": {
       "slug": "014-varreel-fs-bonusbuy",
       "htmlBytes100": 785800,
-      "htmlSha": "0996872557b14bc9",
+      "htmlSha": "d3bccd785ec672fe",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -282,7 +282,7 @@
     "015-expand-fs-bonusbuy": {
       "slug": "015-expand-fs-bonusbuy",
       "htmlBytes100": 785400,
-      "htmlSha": "c66343628af66994",
+      "htmlSha": "bf12979ca0cf3788",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -300,8 +300,8 @@
     },
     "016-inf-fs-bonusbuy": {
       "slug": "016-inf-fs-bonusbuy",
-      "htmlBytes100": 785300,
-      "htmlSha": "33c9b949b866ad73",
+      "htmlBytes100": 785200,
+      "htmlSha": "1123f8bb1b2fba11",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -316,8 +316,8 @@
     },
     "017-dual-fs-bonusbuy": {
       "slug": "017-dual-fs-bonusbuy",
-      "htmlBytes100": 785600,
-      "htmlSha": "8b2c600462b3fe89",
+      "htmlBytes100": 785500,
+      "htmlSha": "1966e270fc3957a3",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -336,7 +336,7 @@
     "018-cluster-fs-bonusbuy": {
       "slug": "018-cluster-fs-bonusbuy",
       "htmlBytes100": 794400,
-      "htmlSha": "7e33ece5136445e4",
+      "htmlSha": "9e7da850b9c79799",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -355,7 +355,7 @@
     "019-mega-fs-bonusbuy": {
       "slug": "019-mega-fs-bonusbuy",
       "htmlBytes100": 793800,
-      "htmlSha": "e7a67ac4cfe3493e",
+      "htmlSha": "1072cd0dab392c2e",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -398,7 +398,7 @@
     "020-hex-fs-bonusbuy": {
       "slug": "020-hex-fs-bonusbuy",
       "htmlBytes100": 784400,
-      "htmlSha": "9d095dc6ee655bd4",
+      "htmlSha": "e18c04057f9ea273",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -417,7 +417,7 @@
     "021-dia-fs-bonusbuy": {
       "slug": "021-dia-fs-bonusbuy",
       "htmlBytes100": 785800,
-      "htmlSha": "deb97ae26e62b59b",
+      "htmlSha": "e9fd466b2e3b2ef4",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -435,8 +435,8 @@
     },
     "022-pyr-fs-bonusbuy": {
       "slug": "022-pyr-fs-bonusbuy",
-      "htmlBytes100": 785600,
-      "htmlSha": "05b4614f680dc99b",
+      "htmlBytes100": 785500,
+      "htmlSha": "c5ab676fa6da2e3b",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -455,7 +455,7 @@
     "023-cross-fs-bonusbuy": {
       "slug": "023-cross-fs-bonusbuy",
       "htmlBytes100": 785800,
-      "htmlSha": "ca245706d2c04fa3",
+      "htmlSha": "8506f593aa0c99fc",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -471,7 +471,7 @@
     "024-lshape-fs-bonusbuy": {
       "slug": "024-lshape-fs-bonusbuy",
       "htmlBytes100": 785800,
-      "htmlSha": "c39e51b33fcbaa97",
+      "htmlSha": "8716b41c49250978",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -490,7 +490,7 @@
     "025-lock-fs-bonusbuy": {
       "slug": "025-lock-fs-bonusbuy",
       "htmlBytes100": 785600,
-      "htmlSha": "3ead48221edae4a4",
+      "htmlSha": "a6b7268ec78718ce",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -509,7 +509,7 @@
     "026-rect-fs-bonusbuydet": {
       "slug": "026-rect-fs-bonusbuydet",
       "htmlBytes100": 785400,
-      "htmlSha": "f03ff25949c8cedc",
+      "htmlSha": "014918e70df39941",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -528,7 +528,7 @@
     "027-varreel-fs-bonusbuydet": {
       "slug": "027-varreel-fs-bonusbuydet",
       "htmlBytes100": 806400,
-      "htmlSha": "6cb881111cf0ab52",
+      "htmlSha": "cf64ae1d60d30675",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -547,7 +547,7 @@
     "028-rect-wheelbonus-weightedwheel-jackpot": {
       "slug": "028-rect-wheelbonus-weightedwheel-jackpot",
       "htmlBytes100": 765400,
-      "htmlSha": "8442a3c2cd434115",
+      "htmlSha": "7c2fb13ec5f50258",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -566,8 +566,8 @@
     },
     "029-wheel-wheelbonus-weightedwheel-jackpot": {
       "slug": "029-wheel-wheelbonus-weightedwheel-jackpot",
-      "htmlBytes100": 756000,
-      "htmlSha": "03f0aeb2000624e8",
+      "htmlBytes100": 755900,
+      "htmlSha": "f2876f3b28299705",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -587,7 +587,7 @@
     "03-88-fortunes": {
       "slug": "03-88-fortunes",
       "htmlBytes100": 803700,
-      "htmlSha": "f40dba8e387c3d92",
+      "htmlSha": "7b06633f41d77536",
       "buttonCount": 68,
       "paytableRows": 0,
       "footerPresent": true,
@@ -607,8 +607,8 @@
     },
     "030-radial-wheelbonus-weightedwheel-jackpot": {
       "slug": "030-radial-wheelbonus-weightedwheel-jackpot",
-      "htmlBytes100": 756000,
-      "htmlSha": "e691653de87cd015",
+      "htmlBytes100": 755900,
+      "htmlSha": "229fff76c7b2414c",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -628,7 +628,7 @@
     "031-rect-cascade-multorb-fs": {
       "slug": "031-rect-cascade-multorb-fs",
       "htmlBytes100": 786300,
-      "htmlSha": "98e9fbb3662112e4",
+      "htmlSha": "6d76ffcbcdb8aec3",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -647,7 +647,7 @@
     "032-rectstack-cascade-multorb-fs": {
       "slug": "032-rectstack-cascade-multorb-fs",
       "htmlBytes100": 786500,
-      "htmlSha": "d4eb340629d63bc6",
+      "htmlSha": "91518aefbd9015ed",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -666,7 +666,7 @@
     "033-varreel-cascade-multorb-fs": {
       "slug": "033-varreel-cascade-multorb-fs",
       "htmlBytes100": 786800,
-      "htmlSha": "574e4c56a4e8b434",
+      "htmlSha": "2f87bb333ffe02c4",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -685,7 +685,7 @@
     "034-expand-cascade-multorb-fs": {
       "slug": "034-expand-cascade-multorb-fs",
       "htmlBytes100": 797700,
-      "htmlSha": "cfe58a85ce14e72f",
+      "htmlSha": "1936b5880db859c9",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -701,7 +701,7 @@
     "035-inf-cascade-multorb-fs": {
       "slug": "035-inf-cascade-multorb-fs",
       "htmlBytes100": 786200,
-      "htmlSha": "90c1403954fcef55",
+      "htmlSha": "9892c7fb783eb14d",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -720,7 +720,7 @@
     "036-dual-cascade-multorb-fs": {
       "slug": "036-dual-cascade-multorb-fs",
       "htmlBytes100": 786500,
-      "htmlSha": "b6cec81f416671d0",
+      "htmlSha": "f4d7906676806a30",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -736,7 +736,7 @@
     "037-dia-cascade-multorb-fs": {
       "slug": "037-dia-cascade-multorb-fs",
       "htmlBytes100": 786800,
-      "htmlSha": "80b67b1050d98b02",
+      "htmlSha": "9650154f94d74b37",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -752,7 +752,7 @@
     "038-pyr-cascade-multorb-fs": {
       "slug": "038-pyr-cascade-multorb-fs",
       "htmlBytes100": 786500,
-      "htmlSha": "ef4aae6295c90ddc",
+      "htmlSha": "f852874f53a532f7",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -771,7 +771,7 @@
     "039-cross-cascade-multorb-fs": {
       "slug": "039-cross-cascade-multorb-fs",
       "htmlBytes100": 786700,
-      "htmlSha": "7017c4e10eafff34",
+      "htmlSha": "7eb2e9ad1a92cabd",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -811,7 +811,7 @@
     "040-lshape-cascade-multorb-fs": {
       "slug": "040-lshape-cascade-multorb-fs",
       "htmlBytes100": 798000,
-      "htmlSha": "fad11290ee24fb61",
+      "htmlSha": "6f2fa2fea22753dc",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -830,7 +830,7 @@
     "041-rect-scatterpay-cascade": {
       "slug": "041-rect-scatterpay-cascade",
       "htmlBytes100": 785800,
-      "htmlSha": "f82c6c6127374e2b",
+      "htmlSha": "46e35bba8712739e",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -849,7 +849,7 @@
     "042-dia-scatterpay-cascade": {
       "slug": "042-dia-scatterpay-cascade",
       "htmlBytes100": 786000,
-      "htmlSha": "f95228c59dc414bd",
+      "htmlSha": "6089a92911c99687",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -868,7 +868,7 @@
     "043-pyr-scatterpay-cascade": {
       "slug": "043-pyr-scatterpay-cascade",
       "htmlBytes100": 786000,
-      "htmlSha": "3f52adea54e166c8",
+      "htmlSha": "12c287b46333423e",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -887,7 +887,7 @@
     "044-cross-scatterpay-cascade": {
       "slug": "044-cross-scatterpay-cascade",
       "htmlBytes100": 786000,
-      "htmlSha": "f50a49dfcec3a0b8",
+      "htmlSha": "878c1fe8d7a0d326",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -905,8 +905,8 @@
     },
     "045-lshape-scatterpay-cascade": {
       "slug": "045-lshape-scatterpay-cascade",
-      "htmlBytes100": 786100,
-      "htmlSha": "a0a0e99934292497",
+      "htmlBytes100": 786000,
+      "htmlSha": "a21a4357d49da6da",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -925,7 +925,7 @@
     "046-rect-fs-stickywild-wild": {
       "slug": "046-rect-fs-stickywild-wild",
       "htmlBytes100": 785900,
-      "htmlSha": "d06d5c8d9eadeb46",
+      "htmlSha": "65dc587de6d6fec5",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -940,8 +940,8 @@
     },
     "047-rectstack-fs-stickywild-wild": {
       "slug": "047-rectstack-fs-stickywild-wild",
-      "htmlBytes100": 786100,
-      "htmlSha": "2cccdd70b07b5235",
+      "htmlBytes100": 786000,
+      "htmlSha": "a1eb8394ed8bc34a",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -960,7 +960,7 @@
     "048-varreel-fs-stickywild-wild": {
       "slug": "048-varreel-fs-stickywild-wild",
       "htmlBytes100": 786300,
-      "htmlSha": "4e0a2482ceb22cb8",
+      "htmlSha": "7ef1ddf4fe892f6d",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -976,7 +976,7 @@
     "049-expand-fs-stickywild-wild": {
       "slug": "049-expand-fs-stickywild-wild",
       "htmlBytes100": 785900,
-      "htmlSha": "aeff80216e4c3279",
+      "htmlSha": "8910bbedad8d4b07",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1016,8 +1016,8 @@
     },
     "050-inf-fs-stickywild-wild": {
       "slug": "050-inf-fs-stickywild-wild",
-      "htmlBytes100": 785800,
-      "htmlSha": "de91122f657d2639",
+      "htmlBytes100": 785700,
+      "htmlSha": "c10ccbc3411bf88a",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1035,8 +1035,8 @@
     },
     "051-dual-fs-stickywild-wild": {
       "slug": "051-dual-fs-stickywild-wild",
-      "htmlBytes100": 786100,
-      "htmlSha": "739fddd28f3770f3",
+      "htmlBytes100": 786000,
+      "htmlSha": "d0e71d8406e35ab7",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1055,7 +1055,7 @@
     "052-lock-fs-stickywild-wild": {
       "slug": "052-lock-fs-stickywild-wild",
       "htmlBytes100": 787600,
-      "htmlSha": "eeba867b895a676a",
+      "htmlSha": "1d20002dfbf55187",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1074,7 +1074,7 @@
     "053-rect-expandwild-fs": {
       "slug": "053-rect-expandwild-fs",
       "htmlBytes100": 804200,
-      "htmlSha": "761ebf4bf24a4940",
+      "htmlSha": "6ec3caeb2786edbb",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1091,7 +1091,7 @@
     "054-rectstack-expandwild-fs": {
       "slug": "054-rectstack-expandwild-fs",
       "htmlBytes100": 805300,
-      "htmlSha": "027fc24b64c33197",
+      "htmlSha": "9381ef538d0979b0",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1110,8 +1110,8 @@
     },
     "055-varreel-expandwild-fs": {
       "slug": "055-varreel-expandwild-fs",
-      "htmlBytes100": 805000,
-      "htmlSha": "4f260532b3bcc64d",
+      "htmlBytes100": 804900,
+      "htmlSha": "6ceedcf430e667f7",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1130,8 +1130,8 @@
     },
     "056-expand-expandwild-fs": {
       "slug": "056-expand-expandwild-fs",
-      "htmlBytes100": 805200,
-      "htmlSha": "39afdd6bca5b73e4",
+      "htmlBytes100": 805100,
+      "htmlSha": "a4e2fdb8b2f57bea",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1151,7 +1151,7 @@
     "057-inf-expandwild-fs": {
       "slug": "057-inf-expandwild-fs",
       "htmlBytes100": 805000,
-      "htmlSha": "1b46a524b8a286f8",
+      "htmlSha": "a69c85dd77bf7378",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1171,7 +1171,7 @@
     "058-dual-expandwild-fs": {
       "slug": "058-dual-expandwild-fs",
       "htmlBytes100": 804800,
-      "htmlSha": "c2331067bd32e722",
+      "htmlSha": "085ba9c5d549c656",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1188,7 +1188,7 @@
     "059-lock-expandwild-fs": {
       "slug": "059-lock-expandwild-fs",
       "htmlBytes100": 804800,
-      "htmlSha": "f3576e46224be698",
+      "htmlSha": "085ee099abf43abd",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1208,7 +1208,7 @@
     "06-quick-hit-platinum-black-white-diamond-etc": {
       "slug": "06-quick-hit-platinum-black-white-diamond-etc",
       "htmlBytes100": 759200,
-      "htmlSha": "3b60d79107b03894",
+      "htmlSha": "5a5284b27c1fe6f5",
       "buttonCount": 62,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1230,7 +1230,7 @@
     "060-rect-walkwild-fs": {
       "slug": "060-rect-walkwild-fs",
       "htmlBytes100": 785900,
-      "htmlSha": "d53eeeb51d388549",
+      "htmlSha": "7ea5316bba4aa338",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1248,8 +1248,8 @@
     },
     "061-rectstack-walkwild-fs": {
       "slug": "061-rectstack-walkwild-fs",
-      "htmlBytes100": 786100,
-      "htmlSha": "9807af7c39ad824e",
+      "htmlBytes100": 786000,
+      "htmlSha": "e1d4e8cc39f57a87",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1268,7 +1268,7 @@
     "062-expand-walkwild-fs": {
       "slug": "062-expand-walkwild-fs",
       "htmlBytes100": 785900,
-      "htmlSha": "785f6cb848eaa7c8",
+      "htmlSha": "35e2fec517e3f731",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1287,7 +1287,7 @@
     "063-dual-walkwild-fs": {
       "slug": "063-dual-walkwild-fs",
       "htmlBytes100": 786100,
-      "htmlSha": "7f30de958a15136e",
+      "htmlSha": "a412c2e46a51f332",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1305,8 +1305,8 @@
     },
     "064-lock-walkwild-fs": {
       "slug": "064-lock-walkwild-fs",
-      "htmlBytes100": 786100,
-      "htmlSha": "a26b52b25e6e5915",
+      "htmlBytes100": 786000,
+      "htmlSha": "9e2d9186404bbc68",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1322,7 +1322,7 @@
     "065-rect-mystery-fs": {
       "slug": "065-rect-mystery-fs",
       "htmlBytes100": 785900,
-      "htmlSha": "3dcbd85e6ab75f78",
+      "htmlSha": "f649049d0e2521b2",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1341,7 +1341,7 @@
     "066-rectstack-mystery-fs": {
       "slug": "066-rectstack-mystery-fs",
       "htmlBytes100": 786100,
-      "htmlSha": "0ffacfab5f27d17d",
+      "htmlSha": "600b359c7c15c530",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1360,7 +1360,7 @@
     "067-varreel-mystery-fs": {
       "slug": "067-varreel-mystery-fs",
       "htmlBytes100": 786700,
-      "htmlSha": "f722389425645c74",
+      "htmlSha": "820d4243840031d3",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1376,7 +1376,7 @@
     "068-expand-mystery-fs": {
       "slug": "068-expand-mystery-fs",
       "htmlBytes100": 785900,
-      "htmlSha": "49beac165684e862",
+      "htmlSha": "61bde071bf33f874",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1395,7 +1395,7 @@
     "069-inf-mystery-fs": {
       "slug": "069-inf-mystery-fs",
       "htmlBytes100": 785800,
-      "htmlSha": "c33210684df3487c",
+      "htmlSha": "dc1fd48b63386c28",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1414,7 +1414,7 @@
     "07-jin-ji-bao-xi-endless-treasure-fu-dao-le-gong-xi-fa-cai": {
       "slug": "07-jin-ji-bao-xi-endless-treasure-fu-dao-le-gong-xi-fa-cai",
       "htmlBytes100": 834700,
-      "htmlSha": "a5b11c25b1b526a7",
+      "htmlSha": "c0331d9e2a61b5ac",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1437,7 +1437,7 @@
     "070-dual-mystery-fs": {
       "slug": "070-dual-mystery-fs",
       "htmlBytes100": 786100,
-      "htmlSha": "16fa551fb114ed6c",
+      "htmlSha": "f18ca8d64c725548",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1456,7 +1456,7 @@
     "071-cluster-mystery-fs": {
       "slug": "071-cluster-mystery-fs",
       "htmlBytes100": 794900,
-      "htmlSha": "3ee0271d31f6352f",
+      "htmlSha": "55fdbc8a43f5ffb6",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1475,7 +1475,7 @@
     "072-mega-mystery-fs": {
       "slug": "072-mega-mystery-fs",
       "htmlBytes100": 794300,
-      "htmlSha": "719201b583becba3",
+      "htmlSha": "1a2aeb518c6a21a2",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1494,7 +1494,7 @@
     "073-hex-mystery-fs": {
       "slug": "073-hex-mystery-fs",
       "htmlBytes100": 786400,
-      "htmlSha": "fe48b6c821371c32",
+      "htmlSha": "6c882f2927ba778a",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1513,7 +1513,7 @@
     "074-lock-mystery-fs": {
       "slug": "074-lock-mystery-fs",
       "htmlBytes100": 786100,
-      "htmlSha": "3370da94f56d8817",
+      "htmlSha": "4f9de599f21da395",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1532,7 +1532,7 @@
     "075-rect-colsym-fs": {
       "slug": "075-rect-colsym-fs",
       "htmlBytes100": 785000,
-      "htmlSha": "5bbe0f71eb40afb5",
+      "htmlSha": "dc4af9b60977f1a2",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1551,7 +1551,7 @@
     "076-varreel-colsym-fs": {
       "slug": "076-varreel-colsym-fs",
       "htmlBytes100": 786000,
-      "htmlSha": "c57f88131c653a2d",
+      "htmlSha": "d13bbc8c048613a2",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1570,7 +1570,7 @@
     "077-mega-colsym-fs": {
       "slug": "077-mega-colsym-fs",
       "htmlBytes100": 792900,
-      "htmlSha": "cc015da6a398b1bc",
+      "htmlSha": "a4e258d82f52583a",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1589,7 +1589,7 @@
     "078-rect-fs-progfs": {
       "slug": "078-rect-fs-progfs",
       "htmlBytes100": 785600,
-      "htmlSha": "3ed9117bf24fd4c3",
+      "htmlSha": "4d02c759b57ebe2f",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1608,7 +1608,7 @@
     "079-rectstack-fs-progfs": {
       "slug": "079-rectstack-fs-progfs",
       "htmlBytes100": 785800,
-      "htmlSha": "0023c562d816d46b",
+      "htmlSha": "5d623282e3cae4ce",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1627,7 +1627,7 @@
     "08-rainbow-riches-original-road-to-even-more-riches": {
       "slug": "08-rainbow-riches-original-road-to-even-more-riches",
       "htmlBytes100": 794000,
-      "htmlSha": "62f577e5e26d2771",
+      "htmlSha": "526d33c70dcbe790",
       "buttonCount": 55,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1646,8 +1646,8 @@
     },
     "080-varreel-fs-progfs": {
       "slug": "080-varreel-fs-progfs",
-      "htmlBytes100": 791200,
-      "htmlSha": "3561777e4ca3ef70",
+      "htmlBytes100": 791100,
+      "htmlSha": "f85fad248a10d201",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1666,7 +1666,7 @@
     "081-expand-fs-progfs": {
       "slug": "081-expand-fs-progfs",
       "htmlBytes100": 785600,
-      "htmlSha": "5e440c9ab7b7ea26",
+      "htmlSha": "efa295befcc29dd8",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1684,8 +1684,8 @@
     },
     "082-inf-fs-progfs": {
       "slug": "082-inf-fs-progfs",
-      "htmlBytes100": 785500,
-      "htmlSha": "598c65008b0c9e6e",
+      "htmlBytes100": 785400,
+      "htmlSha": "e725743fe111e504",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1703,8 +1703,8 @@
     },
     "083-dual-fs-progfs": {
       "slug": "083-dual-fs-progfs",
-      "htmlBytes100": 785800,
-      "htmlSha": "020d105da1440b04",
+      "htmlBytes100": 785700,
+      "htmlSha": "899c7c2f63489bc6",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1723,7 +1723,7 @@
     "084-cluster-fs-progfs": {
       "slug": "084-cluster-fs-progfs",
       "htmlBytes100": 799900,
-      "htmlSha": "64527aecc0fa5e33",
+      "htmlSha": "4600952ff1a920ee",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1742,7 +1742,7 @@
     "085-mega-fs-progfs": {
       "slug": "085-mega-fs-progfs",
       "htmlBytes100": 794000,
-      "htmlSha": "3117664b7ae1b320",
+      "htmlSha": "15bab7ead4451fab",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1760,8 +1760,8 @@
     },
     "086-hex-fs-progfs": {
       "slug": "086-hex-fs-progfs",
-      "htmlBytes100": 784700,
-      "htmlSha": "fc6bc3069ea90015",
+      "htmlBytes100": 784600,
+      "htmlSha": "b205d65709a757ea",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1780,7 +1780,7 @@
     "087-lock-fs-progfs": {
       "slug": "087-lock-fs-progfs",
       "htmlBytes100": 785800,
-      "htmlSha": "55b5d1b62f6b1e2e",
+      "htmlSha": "7ea68e19d956e10f",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1799,7 +1799,7 @@
     "088-rect-lightning-fs": {
       "slug": "088-rect-lightning-fs",
       "htmlBytes100": 790900,
-      "htmlSha": "8a006fc0bc22b69b",
+      "htmlSha": "7d342d37265907f7",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1818,7 +1818,7 @@
     "089-rectstack-lightning-fs": {
       "slug": "089-rectstack-lightning-fs",
       "htmlBytes100": 786900,
-      "htmlSha": "97b7c2954521b338",
+      "htmlSha": "6330f92ea0d38a84",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1857,7 +1857,7 @@
     "090-expand-lightning-fs": {
       "slug": "090-expand-lightning-fs",
       "htmlBytes100": 786700,
-      "htmlSha": "ad5daccab7f3b1d3",
+      "htmlSha": "e24264a266f8a454",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1873,7 +1873,7 @@
     "091-dual-lightning-fs": {
       "slug": "091-dual-lightning-fs",
       "htmlBytes100": 786600,
-      "htmlSha": "24c45c6ca7aa8605",
+      "htmlSha": "a2beb91dad0fed7d",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1892,7 +1892,7 @@
     "092-dia-lightning-fs": {
       "slug": "092-dia-lightning-fs",
       "htmlBytes100": 786800,
-      "htmlSha": "6caf4685dffb560f",
+      "htmlSha": "94637ea39955ae78",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1911,7 +1911,7 @@
     "093-pyr-lightning-fs": {
       "slug": "093-pyr-lightning-fs",
       "htmlBytes100": 786600,
-      "htmlSha": "bfef70ddfa613465",
+      "htmlSha": "bb15c34df7131d14",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1930,7 +1930,7 @@
     "094-cross-lightning-fs": {
       "slug": "094-cross-lightning-fs",
       "htmlBytes100": 786800,
-      "htmlSha": "983f66dfa71f0f87",
+      "htmlSha": "7a745a196990f4bb",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1949,7 +1949,7 @@
     "095-lshape-lightning-fs": {
       "slug": "095-lshape-lightning-fs",
       "htmlBytes100": 786800,
-      "htmlSha": "1ae13dd00c46e9dc",
+      "htmlSha": "a03bfa6fb5b55e84",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1968,7 +1968,7 @@
     "096-lock-lightning-fs": {
       "slug": "096-lock-lightning-fs",
       "htmlBytes100": 786700,
-      "htmlSha": "f06da0f8e048fe76",
+      "htmlSha": "f1ab105742fc7e1c",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -1987,7 +1987,7 @@
     "097-rect-gamble": {
       "slug": "097-rect-gamble",
       "htmlBytes100": 756700,
-      "htmlSha": "69ac224e31c1d357",
+      "htmlSha": "27c709d7c40afc11",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2006,7 +2006,7 @@
     "098-rectstack-gamble": {
       "slug": "098-rectstack-gamble",
       "htmlBytes100": 756900,
-      "htmlSha": "3aa859b34778f717",
+      "htmlSha": "d173119bbcbd987e",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2021,8 +2021,8 @@
     },
     "099-varreel-gamble": {
       "slug": "099-varreel-gamble",
-      "htmlBytes100": 757200,
-      "htmlSha": "59a65fe72d3c515d",
+      "htmlBytes100": 757100,
+      "htmlSha": "fbe59ec3a32d54ae",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2041,7 +2041,7 @@
     "10-goldfish-goldfish-feeding-time": {
       "slug": "10-goldfish-goldfish-feeding-time",
       "htmlBytes100": 815300,
-      "htmlSha": "1130da9802f77b67",
+      "htmlSha": "1cb7fadf69f2d63b",
       "buttonCount": 71,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2063,7 +2063,7 @@
     "100-expand-gamble": {
       "slug": "100-expand-gamble",
       "htmlBytes100": 756700,
-      "htmlSha": "2d1e5d8254b9be37",
+      "htmlSha": "593928910ba99bfc",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2082,7 +2082,7 @@
     "101-inf-gamble": {
       "slug": "101-inf-gamble",
       "htmlBytes100": 756600,
-      "htmlSha": "48bdbb481e873559",
+      "htmlSha": "48316ea494e268e1",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2101,7 +2101,7 @@
     "102-dual-gamble": {
       "slug": "102-dual-gamble",
       "htmlBytes100": 756900,
-      "htmlSha": "e785847bd8670354",
+      "htmlSha": "b1c85f63a64dc814",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2120,7 +2120,7 @@
     "103-cluster-gamble": {
       "slug": "103-cluster-gamble",
       "htmlBytes100": 765800,
-      "htmlSha": "fb85f6de049a6e35",
+      "htmlSha": "b3e4e6e3c51e448d",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2139,7 +2139,7 @@
     "104-mega-gamble": {
       "slug": "104-mega-gamble",
       "htmlBytes100": 765400,
-      "htmlSha": "a8cbb6720d6d544d",
+      "htmlSha": "e61cf90e19995b8e",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2155,7 +2155,7 @@
     "105-hex-gamble": {
       "slug": "105-hex-gamble",
       "htmlBytes100": 755800,
-      "htmlSha": "4ce7a7c0a3a81716",
+      "htmlSha": "7607c7f38958862a",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2173,8 +2173,8 @@
     },
     "106-dia-gamble": {
       "slug": "106-dia-gamble",
-      "htmlBytes100": 757200,
-      "htmlSha": "a7598e65e8fe6867",
+      "htmlBytes100": 757100,
+      "htmlSha": "c9de6b2e7708c5b0",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2193,7 +2193,7 @@
     "107-pyr-gamble": {
       "slug": "107-pyr-gamble",
       "htmlBytes100": 756900,
-      "htmlSha": "6d0e674efbbef2dc",
+      "htmlSha": "ea017a58c6dfb728",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2211,8 +2211,8 @@
     },
     "108-cross-gamble": {
       "slug": "108-cross-gamble",
-      "htmlBytes100": 757200,
-      "htmlSha": "4111914b1b4cac10",
+      "htmlBytes100": 757100,
+      "htmlSha": "8b6c1643615821ab",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2231,7 +2231,7 @@
     "109-lshape-gamble": {
       "slug": "109-lshape-gamble",
       "htmlBytes100": 757100,
-      "htmlSha": "fc9ae240b006a5e7",
+      "htmlSha": "c18220c75e6afe59",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2250,7 +2250,7 @@
     "11-zeus-kronos-zeus-unleashed-wms-legacy": {
       "slug": "11-zeus-kronos-zeus-unleashed-wms-legacy",
       "htmlBytes100": 802100,
-      "htmlSha": "49214d4bf56ab143",
+      "htmlSha": "55e909e41c29c309",
       "buttonCount": 52,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2268,7 +2268,7 @@
     "110-lock-gamble": {
       "slug": "110-lock-gamble",
       "htmlBytes100": 756900,
-      "htmlSha": "1596b5c9e36c5e28",
+      "htmlSha": "fe8d81ee6c96c1b8",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2287,7 +2287,7 @@
     "111-slingo-gamble": {
       "slug": "111-slingo-gamble",
       "htmlBytes100": 755700,
-      "htmlSha": "c60d263bc1adc317",
+      "htmlSha": "676967946c753b67",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2306,7 +2306,7 @@
     "112-rect-gambleladder": {
       "slug": "112-rect-gambleladder",
       "htmlBytes100": 757000,
-      "htmlSha": "87fdca4b46a22af0",
+      "htmlSha": "01f92248c32946c7",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2324,8 +2324,8 @@
     },
     "113-rectstack-gambleladder": {
       "slug": "113-rectstack-gambleladder",
-      "htmlBytes100": 757200,
-      "htmlSha": "0a4987706ad0d1c1",
+      "htmlBytes100": 757100,
+      "htmlSha": "d237c45fb22dc350",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2344,7 +2344,7 @@
     "114-varreel-gambleladder": {
       "slug": "114-varreel-gambleladder",
       "htmlBytes100": 757400,
-      "htmlSha": "cd00a2625394cdf1",
+      "htmlSha": "8eb68033a7202c78",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2360,7 +2360,7 @@
     "115-expand-gambleladder": {
       "slug": "115-expand-gambleladder",
       "htmlBytes100": 756600,
-      "htmlSha": "22ae42a04c86d377",
+      "htmlSha": "9ac1b2da62978907",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2378,8 +2378,8 @@
     },
     "116-inf-gambleladder": {
       "slug": "116-inf-gambleladder",
-      "htmlBytes100": 756900,
-      "htmlSha": "615efc07d7dc426f",
+      "htmlBytes100": 756800,
+      "htmlSha": "032389631ad7aa48",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2397,8 +2397,8 @@
     },
     "117-dual-gambleladder": {
       "slug": "117-dual-gambleladder",
-      "htmlBytes100": 757200,
-      "htmlSha": "394c70d6d0d340d8",
+      "htmlBytes100": 757100,
+      "htmlSha": "7fac3b62482386b3",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2417,7 +2417,7 @@
     "118-cluster-gambleladder": {
       "slug": "118-cluster-gambleladder",
       "htmlBytes100": 766000,
-      "htmlSha": "877d1730eca8c76b",
+      "htmlSha": "1bd2e0ed981e0228",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2435,8 +2435,8 @@
     },
     "119-mega-gambleladder": {
       "slug": "119-mega-gambleladder",
-      "htmlBytes100": 765700,
-      "htmlSha": "3626f3314ca84432",
+      "htmlBytes100": 765600,
+      "htmlSha": "db17f80a3d343fd4",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2452,7 +2452,7 @@
     "12-bier-haus-heidi-hannahs-bier-haus": {
       "slug": "12-bier-haus-heidi-hannahs-bier-haus",
       "htmlBytes100": 803900,
-      "htmlSha": "fae790a965d745b7",
+      "htmlSha": "5f2439168b24cc70",
       "buttonCount": 57,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2472,7 +2472,7 @@
     "120-hex-gambleladder": {
       "slug": "120-hex-gambleladder",
       "htmlBytes100": 757800,
-      "htmlSha": "3bd431c981422bc1",
+      "htmlSha": "6b11a262dcc4d499",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2488,7 +2488,7 @@
     "121-dia-gambleladder": {
       "slug": "121-dia-gambleladder",
       "htmlBytes100": 757400,
-      "htmlSha": "f4f16ee4e6de0d2a",
+      "htmlSha": "1a63d41fcf183e00",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2507,7 +2507,7 @@
     "122-pyr-gambleladder": {
       "slug": "122-pyr-gambleladder",
       "htmlBytes100": 757100,
-      "htmlSha": "218a6c4fe0873f4e",
+      "htmlSha": "b8e74e6e846d98b6",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2526,7 +2526,7 @@
     "123-cross-gambleladder": {
       "slug": "123-cross-gambleladder",
       "htmlBytes100": 757400,
-      "htmlSha": "fe9449b51956fa94",
+      "htmlSha": "1460ee0e192fecbe",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2545,7 +2545,7 @@
     "124-lshape-gambleladder": {
       "slug": "124-lshape-gambleladder",
       "htmlBytes100": 757400,
-      "htmlSha": "5b8ff33189395bfc",
+      "htmlSha": "7cd95f07d97505b1",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2564,7 +2564,7 @@
     "125-lock-gambleladder": {
       "slug": "125-lock-gambleladder",
       "htmlBytes100": 757100,
-      "htmlSha": "7c2d160cfcdeaf67",
+      "htmlSha": "135311e311557539",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2582,8 +2582,8 @@
     },
     "126-slingo-gambleladder": {
       "slug": "126-slingo-gambleladder",
-      "htmlBytes100": 756000,
-      "htmlSha": "34b2951299c2947d",
+      "htmlBytes100": 755900,
+      "htmlSha": "017ffe6719b98ca1",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2602,7 +2602,7 @@
     "127-rect-antebet-fs": {
       "slug": "127-rect-antebet-fs",
       "htmlBytes100": 785700,
-      "htmlSha": "eda14cb90e0d9d32",
+      "htmlSha": "ce1a3a87b0c5ec34",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2618,7 +2618,7 @@
     "128-rectstack-antebet-fs": {
       "slug": "128-rectstack-antebet-fs",
       "htmlBytes100": 785500,
-      "htmlSha": "25df55bfad79bf57",
+      "htmlSha": "3b9bc1425df70cc4",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2637,7 +2637,7 @@
     "129-varreel-antebet-fs": {
       "slug": "129-varreel-antebet-fs",
       "htmlBytes100": 786100,
-      "htmlSha": "45d452291ca0b776",
+      "htmlSha": "cea1f972d1c87797",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2653,7 +2653,7 @@
     "13-raging-rhino": {
       "slug": "13-raging-rhino",
       "htmlBytes100": 793300,
-      "htmlSha": "b4f82525660b235d",
+      "htmlSha": "bf79541b9542d771",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2673,7 +2673,7 @@
     "130-expand-antebet-fs": {
       "slug": "130-expand-antebet-fs",
       "htmlBytes100": 785400,
-      "htmlSha": "a3017cdbbdc5a8be",
+      "htmlSha": "df069a26f7576aee",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2692,7 +2692,7 @@
     "131-inf-antebet-fs": {
       "slug": "131-inf-antebet-fs",
       "htmlBytes100": 785100,
-      "htmlSha": "bc3d61ed013bfccf",
+      "htmlSha": "81dd164ef23e15ec",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2711,7 +2711,7 @@
     "132-dual-antebet-fs": {
       "slug": "132-dual-antebet-fs",
       "htmlBytes100": 785500,
-      "htmlSha": "3bc75e80f60a7a6a",
+      "htmlSha": "c840a7890f30c662",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2730,7 +2730,7 @@
     "133-dia-antebet-fs": {
       "slug": "133-dia-antebet-fs",
       "htmlBytes100": 785800,
-      "htmlSha": "843ebfe18687cc59",
+      "htmlSha": "3aa78b8b30211680",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2749,7 +2749,7 @@
     "134-pyr-antebet-fs": {
       "slug": "134-pyr-antebet-fs",
       "htmlBytes100": 785500,
-      "htmlSha": "85d20e8ced44ab80",
+      "htmlSha": "3540c195bbbf056d",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2768,7 +2768,7 @@
     "135-cross-antebet-fs": {
       "slug": "135-cross-antebet-fs",
       "htmlBytes100": 785800,
-      "htmlSha": "92bb230e0e884609",
+      "htmlSha": "dd6911bd0ceb414c",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2787,7 +2787,7 @@
     "136-lshape-antebet-fs": {
       "slug": "136-lshape-antebet-fs",
       "htmlBytes100": 785800,
-      "htmlSha": "4539975d150c2df3",
+      "htmlSha": "ae0f33c6d1b974f6",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2806,7 +2806,7 @@
     "137-lock-antebet-fs": {
       "slug": "137-lock-antebet-fs",
       "htmlBytes100": 785500,
-      "htmlSha": "a36ea3a131f05e0c",
+      "htmlSha": "29c6b1e6954ae611",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2825,7 +2825,7 @@
     "138-rect-bonuspick": {
       "slug": "138-rect-bonuspick",
       "htmlBytes100": 748000,
-      "htmlSha": "da13e4f176d6c937",
+      "htmlSha": "d1702d6eeaaca9aa",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2844,7 +2844,7 @@
     "139-varreel-bonuspick": {
       "slug": "139-varreel-bonuspick",
       "htmlBytes100": 748400,
-      "htmlSha": "598c458919574b79",
+      "htmlSha": "6ec7e2ee298c1e7c",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2863,7 +2863,7 @@
     "14-invaders-from-planet-moolah": {
       "slug": "14-invaders-from-planet-moolah",
       "htmlBytes100": 795400,
-      "htmlSha": "119c48ec81932d21",
+      "htmlSha": "0c2550ddd0bf00a1",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2883,7 +2883,7 @@
     "140-lock-bonuspick": {
       "slug": "140-lock-bonuspick",
       "htmlBytes100": 748100,
-      "htmlSha": "460bb8430a59297b",
+      "htmlSha": "1a9dff92987a09a2",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2898,8 +2898,8 @@
     },
     "141-crash-crash": {
       "slug": "141-crash-crash",
-      "htmlBytes100": 739000,
-      "htmlSha": "615c41aea32c35c9",
+      "htmlBytes100": 738900,
+      "htmlSha": "405d5eeeb3754e34",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2917,8 +2917,8 @@
     },
     "142-plinko-plinko": {
       "slug": "142-plinko-plinko",
-      "htmlBytes100": 741200,
-      "htmlSha": "4574179088b3c602",
+      "htmlBytes100": 741100,
+      "htmlSha": "453e5cb55049deb4",
       "buttonCount": 47,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2937,7 +2937,7 @@
     "143-slingo-slingo-fs": {
       "slug": "143-slingo-slingo-fs",
       "htmlBytes100": 784500,
-      "htmlSha": "afb616b68ba44dc4",
+      "htmlSha": "9e60552ed4544701",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2955,8 +2955,8 @@
     },
     "144-rect-wincap-scatterpay-cascade": {
       "slug": "144-rect-wincap-scatterpay-cascade",
-      "htmlBytes100": 792700,
-      "htmlSha": "868cb54495d942b4",
+      "htmlBytes100": 792600,
+      "htmlSha": "a72a3a4f9e62e553",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2976,7 +2976,7 @@
     "145-rectstack-wincap-scatterpay-cascade": {
       "slug": "145-rectstack-wincap-scatterpay-cascade",
       "htmlBytes100": 792400,
-      "htmlSha": "6c627a3d3ce62352",
+      "htmlSha": "cd11e07d423e08e4",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -2995,8 +2995,8 @@
     },
     "146-varreel-wincap-scatterpay-cascade": {
       "slug": "146-varreel-wincap-scatterpay-cascade",
-      "htmlBytes100": 792500,
-      "htmlSha": "737a47096eff453a",
+      "htmlBytes100": 792400,
+      "htmlSha": "513dde35a2244481",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3013,7 +3013,7 @@
     "147-expand-wincap-scatterpay-cascade": {
       "slug": "147-expand-wincap-scatterpay-cascade",
       "htmlBytes100": 792100,
-      "htmlSha": "4ee128934bf27e5b",
+      "htmlSha": "46149b1e2e60df1e",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3030,7 +3030,7 @@
     "148-inf-wincap-scatterpay-cascade": {
       "slug": "148-inf-wincap-scatterpay-cascade",
       "htmlBytes100": 792400,
-      "htmlSha": "8dbd1d47f6b043f2",
+      "htmlSha": "478aece10188a90d",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3050,7 +3050,7 @@
     "149-dual-wincap-scatterpay-cascade": {
       "slug": "149-dual-wincap-scatterpay-cascade",
       "htmlBytes100": 792800,
-      "htmlSha": "202ef0ec4442721a",
+      "htmlSha": "608eee27c1c8358a",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3070,7 +3070,7 @@
     "15-willy-wonka-pure-imagination-world-of-wonka-dreamers-of-dreams": {
       "slug": "15-willy-wonka-pure-imagination-world-of-wonka-dreamers-of-dreams",
       "htmlBytes100": 833800,
-      "htmlSha": "bc7c2a644ccdb3c2",
+      "htmlSha": "fadde52347120d8e",
       "buttonCount": 55,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3091,7 +3091,7 @@
     "150-dia-wincap-scatterpay-cascade": {
       "slug": "150-dia-wincap-scatterpay-cascade",
       "htmlBytes100": 792500,
-      "htmlSha": "20c150864bdada28",
+      "htmlSha": "01a8a9fde058731f",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3111,7 +3111,7 @@
     "151-pyr-wincap-scatterpay-cascade": {
       "slug": "151-pyr-wincap-scatterpay-cascade",
       "htmlBytes100": 792300,
-      "htmlSha": "36c140d9136ff380",
+      "htmlSha": "4fbcb58d89dbb3c6",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3131,7 +3131,7 @@
     "152-cross-wincap-scatterpay-cascade": {
       "slug": "152-cross-wincap-scatterpay-cascade",
       "htmlBytes100": 792500,
-      "htmlSha": "5fddea827dbde285",
+      "htmlSha": "dacbde74760ff873",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3151,7 +3151,7 @@
     "153-lshape-wincap-scatterpay-cascade": {
       "slug": "153-lshape-wincap-scatterpay-cascade",
       "htmlBytes100": 792600,
-      "htmlSha": "95cd68f60564b932",
+      "htmlSha": "57d8e477c6b6a03d",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3171,7 +3171,7 @@
     "154-rect-fs-wild-stickywild-6": {
       "slug": "154-rect-fs-wild-stickywild-6",
       "htmlBytes100": 796600,
-      "htmlSha": "8426cda95360b55c",
+      "htmlSha": "5e41f64d36579126",
       "buttonCount": 60,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3190,7 +3190,7 @@
     "155-varreel-fs-wild-stickywild-6": {
       "slug": "155-varreel-fs-wild-stickywild-6",
       "htmlBytes100": 820400,
-      "htmlSha": "6eb6a5b0cf6ca0a9",
+      "htmlSha": "330b30f1cd109022",
       "buttonCount": 57,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3206,7 +3206,7 @@
     "156-rect-mult-fs": {
       "slug": "156-rect-mult-fs",
       "htmlBytes100": 786500,
-      "htmlSha": "e8c82040698c3735",
+      "htmlSha": "455aa7cebf57bf17",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3224,8 +3224,8 @@
     },
     "157-rectstack-mult-fs": {
       "slug": "157-rectstack-mult-fs",
-      "htmlBytes100": 793100,
-      "htmlSha": "dc2c5c8d65095112",
+      "htmlBytes100": 793000,
+      "htmlSha": "b45863dd2ecc624a",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3244,7 +3244,7 @@
     "158-varreel-mult-fs": {
       "slug": "158-varreel-mult-fs",
       "htmlBytes100": 793300,
-      "htmlSha": "dd58079cf56cb560",
+      "htmlSha": "297641b795c88a58",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3263,7 +3263,7 @@
     "159-expand-mult-fs": {
       "slug": "159-expand-mult-fs",
       "htmlBytes100": 792400,
-      "htmlSha": "1f8d231e5b08ece0",
+      "htmlSha": "8f31839fdf517646",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3282,7 +3282,7 @@
     "16-monopoly-electric-wins-mega-movers-multiple-variants": {
       "slug": "16-monopoly-electric-wins-mega-movers-multiple-variants",
       "htmlBytes100": 765000,
-      "htmlSha": "4ae8fdec13f843bd",
+      "htmlSha": "323972cfbcfb9383",
       "buttonCount": 55,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3303,7 +3303,7 @@
     "160-inf-mult-fs": {
       "slug": "160-inf-mult-fs",
       "htmlBytes100": 786200,
-      "htmlSha": "4ed7c466f99a7961",
+      "htmlSha": "40595e5175d5e499",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3322,7 +3322,7 @@
     "161-dual-mult-fs": {
       "slug": "161-dual-mult-fs",
       "htmlBytes100": 793000,
-      "htmlSha": "23d0c0f05f9d0b7e",
+      "htmlSha": "f7043de9bd604366",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3341,7 +3341,7 @@
     "162-lock-mult-fs": {
       "slug": "162-lock-mult-fs",
       "htmlBytes100": 786600,
-      "htmlSha": "78fa2a45a70cbb7b",
+      "htmlSha": "5d8e62c1690b2b72",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3360,7 +3360,7 @@
     "163-rect-fs-progfs": {
       "slug": "163-rect-fs-progfs",
       "htmlBytes100": 791300,
-      "htmlSha": "95fafd4c3955aeaf",
+      "htmlSha": "6a627af96bab849e",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3376,7 +3376,7 @@
     "164-rectstack-fs-progfs": {
       "slug": "164-rectstack-fs-progfs",
       "htmlBytes100": 785700,
-      "htmlSha": "aa57d23ff1bf2087",
+      "htmlSha": "c5f31d31a3be0bc8",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3395,7 +3395,7 @@
     "165-varreel-fs-progfs": {
       "slug": "165-varreel-fs-progfs",
       "htmlBytes100": 786000,
-      "htmlSha": "6067e158c58928f0",
+      "htmlSha": "d267148db0563b52",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3414,7 +3414,7 @@
     "166-expand-fs-progfs": {
       "slug": "166-expand-fs-progfs",
       "htmlBytes100": 785700,
-      "htmlSha": "75b2a0cf8807b7af",
+      "htmlSha": "5fba30896b4d38e6",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3433,7 +3433,7 @@
     "167-inf-fs-progfs": {
       "slug": "167-inf-fs-progfs",
       "htmlBytes100": 785500,
-      "htmlSha": "d01706e4c2ed596a",
+      "htmlSha": "c86636f4355ba9ef",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3452,7 +3452,7 @@
     "168-dual-fs-progfs": {
       "slug": "168-dual-fs-progfs",
       "htmlBytes100": 785700,
-      "htmlSha": "c201928b96b8bdc2",
+      "htmlSha": "7b3461652f4afad4",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3468,7 +3468,7 @@
     "169-cluster-fs-progfs": {
       "slug": "169-cluster-fs-progfs",
       "htmlBytes100": 794700,
-      "htmlSha": "837cef3bcc78920b",
+      "htmlSha": "e02c883377e0546c",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3511,7 +3511,7 @@
     "170-mega-fs-progfs": {
       "slug": "170-mega-fs-progfs",
       "htmlBytes100": 794000,
-      "htmlSha": "83ae7ad5c57ee0d7",
+      "htmlSha": "8e879c0f5dbde537",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3529,8 +3529,8 @@
     },
     "171-hex-fs-progfs": {
       "slug": "171-hex-fs-progfs",
-      "htmlBytes100": 799700,
-      "htmlSha": "e172019f569546f6",
+      "htmlBytes100": 799600,
+      "htmlSha": "e2c4fd66593df70f",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3549,7 +3549,7 @@
     "172-lock-fs-progfs": {
       "slug": "172-lock-fs-progfs",
       "htmlBytes100": 785800,
-      "htmlSha": "88295455415fdea0",
+      "htmlSha": "537a07f34e82ef84",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3568,7 +3568,7 @@
     "173-rect-mult-progfs-fs": {
       "slug": "173-rect-mult-progfs-fs",
       "htmlBytes100": 791000,
-      "htmlSha": "b252489bcbb918c2",
+      "htmlSha": "914680f82601ec75",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3587,7 +3587,7 @@
     "174-rectstack-mult-progfs-fs": {
       "slug": "174-rectstack-mult-progfs-fs",
       "htmlBytes100": 785500,
-      "htmlSha": "2ca92188cf63382a",
+      "htmlSha": "0010821f7a0993dd",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3606,7 +3606,7 @@
     "175-varreel-mult-progfs-fs": {
       "slug": "175-varreel-mult-progfs-fs",
       "htmlBytes100": 785700,
-      "htmlSha": "fe7dbc044d13ec09",
+      "htmlSha": "b8f43e44b916390b",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3624,8 +3624,8 @@
     },
     "176-expand-mult-progfs-fs": {
       "slug": "176-expand-mult-progfs-fs",
-      "htmlBytes100": 792700,
-      "htmlSha": "e718771f5a22347e",
+      "htmlBytes100": 792600,
+      "htmlSha": "d29a8b0174338bbb",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3643,8 +3643,8 @@
     },
     "177-inf-mult-progfs-fs": {
       "slug": "177-inf-mult-progfs-fs",
-      "htmlBytes100": 790800,
-      "htmlSha": "18de693b56e6f635",
+      "htmlBytes100": 790700,
+      "htmlSha": "e90047453654e370",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3663,7 +3663,7 @@
     "178-dual-mult-progfs-fs": {
       "slug": "178-dual-mult-progfs-fs",
       "htmlBytes100": 792800,
-      "htmlSha": "2fc89eb2b8ed24cd",
+      "htmlSha": "7e4b124a8859c298",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3682,7 +3682,7 @@
     "179-lock-mult-progfs-fs": {
       "slug": "179-lock-mult-progfs-fs",
       "htmlBytes100": 791200,
-      "htmlSha": "a39ec6fd798bf75e",
+      "htmlSha": "9f9d72d5f1d48837",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3701,7 +3701,7 @@
     "18-dancing-drums-explosion-prosperity-20212023-24": {
       "slug": "18-dancing-drums-explosion-prosperity-20212023-24",
       "htmlBytes100": 793000,
-      "htmlSha": "a223f1880ab73fb7",
+      "htmlSha": "f10f070fa39d2878",
       "buttonCount": 55,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3723,7 +3723,7 @@
     "180-rect-mult-persistmult": {
       "slug": "180-rect-mult-persistmult",
       "htmlBytes100": 755100,
-      "htmlSha": "2b6ff26f4207d03b",
+      "htmlSha": "4a8df7a9f7cc0573",
       "buttonCount": 52,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3742,7 +3742,7 @@
     "181-rectstack-mult-persistmult": {
       "slug": "181-rectstack-mult-persistmult",
       "htmlBytes100": 755200,
-      "htmlSha": "a9bc524c5fb5f682",
+      "htmlSha": "af3d7993dfb18351",
       "buttonCount": 52,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3761,7 +3761,7 @@
     "182-varreel-mult-persistmult": {
       "slug": "182-varreel-mult-persistmult",
       "htmlBytes100": 755500,
-      "htmlSha": "4173e3fab30dda40",
+      "htmlSha": "e6326f74982bcf4c",
       "buttonCount": 52,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3780,7 +3780,7 @@
     "183-expand-mult-persistmult": {
       "slug": "183-expand-mult-persistmult",
       "htmlBytes100": 755100,
-      "htmlSha": "93624fcba18eece4",
+      "htmlSha": "4582bc43d05858ca",
       "buttonCount": 52,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3799,7 +3799,7 @@
     "184-inf-mult-persistmult": {
       "slug": "184-inf-mult-persistmult",
       "htmlBytes100": 755000,
-      "htmlSha": "c486c93e996de403",
+      "htmlSha": "6f43bd2e00514113",
       "buttonCount": 52,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3817,8 +3817,8 @@
     },
     "185-dual-mult-persistmult": {
       "slug": "185-dual-mult-persistmult",
-      "htmlBytes100": 755300,
-      "htmlSha": "57bb7411820c93ca",
+      "htmlBytes100": 755200,
+      "htmlSha": "10224ea4d5c99c48",
       "buttonCount": 52,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3837,7 +3837,7 @@
     "186-cluster-mult-persistmult": {
       "slug": "186-cluster-mult-persistmult",
       "htmlBytes100": 764100,
-      "htmlSha": "2ba76ade8d31a13e",
+      "htmlSha": "e6519398509687ef",
       "buttonCount": 52,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3855,8 +3855,8 @@
     },
     "187-mega-mult-persistmult": {
       "slug": "187-mega-mult-persistmult",
-      "htmlBytes100": 763500,
-      "htmlSha": "f85da921a192e55a",
+      "htmlBytes100": 763400,
+      "htmlSha": "62b50d6e16a1bfad",
       "buttonCount": 52,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3874,8 +3874,8 @@
     },
     "188-hex-mult-persistmult": {
       "slug": "188-hex-mult-persistmult",
-      "htmlBytes100": 755600,
-      "htmlSha": "dccf166d49415837",
+      "htmlBytes100": 755500,
+      "htmlSha": "90283ea6398eb290",
       "buttonCount": 52,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3894,7 +3894,7 @@
     "189-rect-lightning-fs": {
       "slug": "189-rect-lightning-fs",
       "htmlBytes100": 790900,
-      "htmlSha": "471f857d99b436ad",
+      "htmlSha": "a28035e0222b8189",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3913,7 +3913,7 @@
     "19-coin-combo-cai-yuan-guang-jin-festival-etc": {
       "slug": "19-coin-combo-cai-yuan-guang-jin-festival-etc",
       "htmlBytes100": 802300,
-      "htmlSha": "5594d3e1590dede7",
+      "htmlSha": "3d7489131f63f67f",
       "buttonCount": 54,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3934,7 +3934,7 @@
     "190-rectstack-lightning-fs": {
       "slug": "190-rectstack-lightning-fs",
       "htmlBytes100": 791100,
-      "htmlSha": "72c9c334556a2ad1",
+      "htmlSha": "760131118edf9d2d",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3953,7 +3953,7 @@
     "191-expand-lightning-fs": {
       "slug": "191-expand-lightning-fs",
       "htmlBytes100": 790900,
-      "htmlSha": "6a214040b6ccb368",
+      "htmlSha": "6df3f91c476b73ee",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3972,7 +3972,7 @@
     "192-dual-lightning-fs": {
       "slug": "192-dual-lightning-fs",
       "htmlBytes100": 786400,
-      "htmlSha": "0beda5aa7bdf4e3c",
+      "htmlSha": "46879ffff3db18b8",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -3990,8 +3990,8 @@
     },
     "193-dia-lightning-fs": {
       "slug": "193-dia-lightning-fs",
-      "htmlBytes100": 786700,
-      "htmlSha": "f389c100c5c8d99e",
+      "htmlBytes100": 786600,
+      "htmlSha": "1721af73867d1b9d",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4010,7 +4010,7 @@
     "194-pyr-lightning-fs": {
       "slug": "194-pyr-lightning-fs",
       "htmlBytes100": 790900,
-      "htmlSha": "ad7726b1c0d5d3fe",
+      "htmlSha": "60a3e55d7bf15a78",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4028,8 +4028,8 @@
     },
     "195-cross-lightning-fs": {
       "slug": "195-cross-lightning-fs",
-      "htmlBytes100": 786700,
-      "htmlSha": "5facc246ad5d68c0",
+      "htmlBytes100": 786600,
+      "htmlSha": "a087cd626cbf7a80",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4047,8 +4047,8 @@
     },
     "196-lshape-lightning-fs": {
       "slug": "196-lshape-lightning-fs",
-      "htmlBytes100": 791200,
-      "htmlSha": "87cbb6ac6878ef71",
+      "htmlBytes100": 791100,
+      "htmlSha": "7a36df9b15827fe8",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4067,7 +4067,7 @@
     "197-lock-lightning-fs": {
       "slug": "197-lock-lightning-fs",
       "htmlBytes100": 791100,
-      "htmlSha": "648eca3985ec3467",
+      "htmlSha": "b06b1ebf76b2eb09",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4086,7 +4086,7 @@
     "198-rect-stickywild-wild": {
       "slug": "198-rect-stickywild-wild",
       "htmlBytes100": 748200,
-      "htmlSha": "10ad26e31b7d9bd9",
+      "htmlSha": "cbba7da150f79c70",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4105,7 +4105,7 @@
     "199-rectstack-stickywild-wild": {
       "slug": "199-rectstack-stickywild-wild",
       "htmlBytes100": 748400,
-      "htmlSha": "351bd165fa401a88",
+      "htmlSha": "0d9cbf1865f0dccd",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4124,7 +4124,7 @@
     "20-frankenstein-2023-1-eilers-ranking": {
       "slug": "20-frankenstein-2023-1-eilers-ranking",
       "htmlBytes100": 786300,
-      "htmlSha": "6d7a0659da58a50f",
+      "htmlSha": "ba280bd7a07e3e5b",
       "buttonCount": 56,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4142,8 +4142,8 @@
     },
     "200-varreel-stickywild-wild": {
       "slug": "200-varreel-stickywild-wild",
-      "htmlBytes100": 749000,
-      "htmlSha": "07170450704c1103",
+      "htmlBytes100": 748900,
+      "htmlSha": "2d0763d5fecccf70",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4161,8 +4161,8 @@
     },
     "201-expand-stickywild-wild": {
       "slug": "201-expand-stickywild-wild",
-      "htmlBytes100": 748600,
-      "htmlSha": "1932456e19cee300",
+      "htmlBytes100": 748500,
+      "htmlSha": "f72fb2ba397f34b6",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4181,7 +4181,7 @@
     "202-inf-stickywild-wild": {
       "slug": "202-inf-stickywild-wild",
       "htmlBytes100": 748400,
-      "htmlSha": "3bd878f7b117cc77",
+      "htmlSha": "72105287204ddcbd",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4200,7 +4200,7 @@
     "203-dual-stickywild-wild": {
       "slug": "203-dual-stickywild-wild",
       "htmlBytes100": 748700,
-      "htmlSha": "22de91971ab48cc7",
+      "htmlSha": "0b5b04a6f3bb08a1",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4219,7 +4219,7 @@
     "204-lock-stickywild-wild": {
       "slug": "204-lock-stickywild-wild",
       "htmlBytes100": 749000,
-      "htmlSha": "ba1877d8d1e51657",
+      "htmlSha": "6c28540e05c3bbfb",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4235,7 +4235,7 @@
     "205-rect-wildreel-fs": {
       "slug": "205-rect-wildreel-fs",
       "htmlBytes100": 785600,
-      "htmlSha": "0b2e2c162ca2dbf7",
+      "htmlSha": "340582062216d147",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4254,7 +4254,7 @@
     "206-rectstack-wildreel-fs": {
       "slug": "206-rectstack-wildreel-fs",
       "htmlBytes100": 785700,
-      "htmlSha": "91f4f1bee990ebfa",
+      "htmlSha": "5ea0d0a86c01c293",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4273,7 +4273,7 @@
     "207-varreel-wildreel-fs": {
       "slug": "207-varreel-wildreel-fs",
       "htmlBytes100": 786000,
-      "htmlSha": "38133c6e4108d8af",
+      "htmlSha": "3ec33f51325539a1",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4292,7 +4292,7 @@
     "208-expand-wildreel-fs": {
       "slug": "208-expand-wildreel-fs",
       "htmlBytes100": 785600,
-      "htmlSha": "f63b15360f10f059",
+      "htmlSha": "5b5eb972c960df72",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4310,8 +4310,8 @@
     },
     "209-inf-wildreel-fs": {
       "slug": "209-inf-wildreel-fs",
-      "htmlBytes100": 785100,
-      "htmlSha": "3f5c181864e17b66",
+      "htmlBytes100": 785000,
+      "htmlSha": "646662ed1c65d791",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4350,7 +4350,7 @@
     "210-dual-wildreel-fs": {
       "slug": "210-dual-wildreel-fs",
       "htmlBytes100": 785700,
-      "htmlSha": "914ab61be0dbac1a",
+      "htmlSha": "5f7ae1ef5fe7dc8d",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4366,7 +4366,7 @@
     "211-lock-wildreel-fs": {
       "slug": "211-lock-wildreel-fs",
       "htmlBytes100": 785700,
-      "htmlSha": "f0807491488f1817",
+      "htmlSha": "eacab44eee9833d2",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4385,7 +4385,7 @@
     "212-rect-walkwild-fs": {
       "slug": "212-rect-walkwild-fs",
       "htmlBytes100": 785900,
-      "htmlSha": "74aa00adf7ea8efa",
+      "htmlSha": "1d685e20424cbfd7",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4404,7 +4404,7 @@
     "213-rectstack-walkwild-fs": {
       "slug": "213-rectstack-walkwild-fs",
       "htmlBytes100": 786100,
-      "htmlSha": "a890d967c1e3837b",
+      "htmlSha": "af493f8db11b8914",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4420,7 +4420,7 @@
     "214-expand-walkwild-fs": {
       "slug": "214-expand-walkwild-fs",
       "htmlBytes100": 785400,
-      "htmlSha": "bc613443e6da40a4",
+      "htmlSha": "0fe026149bc7e5e6",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4439,7 +4439,7 @@
     "215-dual-walkwild-fs": {
       "slug": "215-dual-walkwild-fs",
       "htmlBytes100": 786000,
-      "htmlSha": "9788319e6a84cefe",
+      "htmlSha": "f941b1fe1687699b",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4458,7 +4458,7 @@
     "216-lock-walkwild-fs": {
       "slug": "216-lock-walkwild-fs",
       "htmlBytes100": 785900,
-      "htmlSha": "dbf814ae049e8d7f",
+      "htmlSha": "83664653042f9047",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4474,7 +4474,7 @@
     "217-cluster-mystery-clusterpays-cascade": {
       "slug": "217-cluster-mystery-clusterpays-cascade",
       "htmlBytes100": 757200,
-      "htmlSha": "d95461be7042bfee",
+      "htmlSha": "3e527685c27e1473",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4493,7 +4493,7 @@
     "218-mega-mystery-clusterpays-cascade": {
       "slug": "218-mega-mystery-clusterpays-cascade",
       "htmlBytes100": 756600,
-      "htmlSha": "207923a7eb216d27",
+      "htmlSha": "350a011debf9fbcd",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4512,7 +4512,7 @@
     "219-hex-mystery-clusterpays-cascade": {
       "slug": "219-hex-mystery-clusterpays-cascade",
       "htmlBytes100": 748700,
-      "htmlSha": "ac08278e7a7b676c",
+      "htmlSha": "7f5fcb0f30070464",
       "buttonCount": 48,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4554,7 +4554,7 @@
     "220-rect-colsym-fs": {
       "slug": "220-rect-colsym-fs",
       "htmlBytes100": 785800,
-      "htmlSha": "e7815cb4675aed4b",
+      "htmlSha": "bd4fc625d315ba4c",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4573,7 +4573,7 @@
     "221-varreel-colsym-fs": {
       "slug": "221-varreel-colsym-fs",
       "htmlBytes100": 785700,
-      "htmlSha": "74860c44116e327f",
+      "htmlSha": "df465e16bff73dce",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4592,7 +4592,7 @@
     "222-mega-colsym-fs": {
       "slug": "222-mega-colsym-fs",
       "htmlBytes100": 793200,
-      "htmlSha": "331b5cf4a266dde7",
+      "htmlSha": "c5427b9fcdaaf1fa",
       "buttonCount": 50,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4651,7 +4651,7 @@
     "225-rect-bonusbuy-bonusbuydet-fs-1": {
       "slug": "225-rect-bonusbuy-bonusbuydet-fs-1",
       "htmlBytes100": 811900,
-      "htmlSha": "7233cbc514f8b670",
+      "htmlSha": "19c6cb4a3ceb2780",
       "buttonCount": 58,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4669,8 +4669,8 @@
     },
     "226-varreel-bonusbuy-bonusbuydet-fs-1": {
       "slug": "226-varreel-bonusbuy-bonusbuydet-fs-1",
-      "htmlBytes100": 786200,
-      "htmlSha": "71104c46eb4dcf1a",
+      "htmlBytes100": 786100,
+      "htmlSha": "9212aa71a4f9727c",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4689,7 +4689,7 @@
     "227-rect-gamble": {
       "slug": "227-rect-gamble",
       "htmlBytes100": 757000,
-      "htmlSha": "ba5095eba92676d1",
+      "htmlSha": "8c8c8d1a92b8814c",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4708,7 +4708,7 @@
     "228-rectstack-gamble": {
       "slug": "228-rectstack-gamble",
       "htmlBytes100": 757100,
-      "htmlSha": "50c44f8251957c0d",
+      "htmlSha": "7d8bcb4077a5fb70",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4727,7 +4727,7 @@
     "229-varreel-gamble": {
       "slug": "229-varreel-gamble",
       "htmlBytes100": 757400,
-      "htmlSha": "9b9d8ce102ef75d0",
+      "htmlSha": "79aa5201f2512559",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4768,7 +4768,7 @@
     "230-expand-gamble": {
       "slug": "230-expand-gamble",
       "htmlBytes100": 757000,
-      "htmlSha": "2ad8dbc8036cee98",
+      "htmlSha": "5d4ed0561670b128",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4786,8 +4786,8 @@
     },
     "231-inf-gamble": {
       "slug": "231-inf-gamble",
-      "htmlBytes100": 756800,
-      "htmlSha": "ff6ec712be27ff5f",
+      "htmlBytes100": 756700,
+      "htmlSha": "a330c2d24458bbac",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4805,8 +4805,8 @@
     },
     "232-dual-gamble": {
       "slug": "232-dual-gamble",
-      "htmlBytes100": 757200,
-      "htmlSha": "91f8f2db288ab4d8",
+      "htmlBytes100": 757100,
+      "htmlSha": "ba0158c5cc15b5d9",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4821,8 +4821,8 @@
     },
     "233-dia-gamble": {
       "slug": "233-dia-gamble",
-      "htmlBytes100": 757400,
-      "htmlSha": "7def6b22014bbab6",
+      "htmlBytes100": 757300,
+      "htmlSha": "ac1c12f01e247ffe",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4840,8 +4840,8 @@
     },
     "234-pyr-gamble": {
       "slug": "234-pyr-gamble",
-      "htmlBytes100": 757200,
-      "htmlSha": "146bef1239b52fe3",
+      "htmlBytes100": 757100,
+      "htmlSha": "3ec3d85a495085b6",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4860,7 +4860,7 @@
     "235-cross-gamble": {
       "slug": "235-cross-gamble",
       "htmlBytes100": 757400,
-      "htmlSha": "f6ea0fe0e468786f",
+      "htmlSha": "1231eea6be1590bb",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4879,7 +4879,7 @@
     "236-lshape-gamble": {
       "slug": "236-lshape-gamble",
       "htmlBytes100": 757400,
-      "htmlSha": "b6aa60b81a7f80bd",
+      "htmlSha": "171358f8962f26a3",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4898,7 +4898,7 @@
     "237-lock-gamble": {
       "slug": "237-lock-gamble",
       "htmlBytes100": 757100,
-      "htmlSha": "1f8f8031b1a31212",
+      "htmlSha": "f68cc2667b4aea32",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4917,7 +4917,7 @@
     "238-rect-gambleladder-fs": {
       "slug": "238-rect-gambleladder-fs",
       "htmlBytes100": 794800,
-      "htmlSha": "d0885e595bc391c6",
+      "htmlSha": "65572a8118dc9914",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4935,8 +4935,8 @@
     },
     "239-rectstack-gambleladder-fs": {
       "slug": "239-rectstack-gambleladder-fs",
-      "htmlBytes100": 795000,
-      "htmlSha": "97c684eb70781b4f",
+      "htmlBytes100": 794900,
+      "htmlSha": "67319c1d55162977",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4955,7 +4955,7 @@
     "24-88-fortunes-megaways": {
       "slug": "24-88-fortunes-megaways",
       "htmlBytes100": 798000,
-      "htmlSha": "2b06dc0c27830727",
+      "htmlSha": "f4842a1277d0c230",
       "buttonCount": 55,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4978,7 +4978,7 @@
     "240-varreel-gambleladder-fs": {
       "slug": "240-varreel-gambleladder-fs",
       "htmlBytes100": 795200,
-      "htmlSha": "c48a314b33d0cc74",
+      "htmlSha": "55117a655bf3248f",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -4997,7 +4997,7 @@
     "241-expand-gambleladder-fs": {
       "slug": "241-expand-gambleladder-fs",
       "htmlBytes100": 794800,
-      "htmlSha": "da0b5f09acda0cbe",
+      "htmlSha": "046e1575b517c85e",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5016,7 +5016,7 @@
     "242-inf-gambleladder-fs": {
       "slug": "242-inf-gambleladder-fs",
       "htmlBytes100": 794700,
-      "htmlSha": "bf990b19d4642e6d",
+      "htmlSha": "916df2a9e8e3f309",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5035,7 +5035,7 @@
     "243-dual-gambleladder-fs": {
       "slug": "243-dual-gambleladder-fs",
       "htmlBytes100": 795000,
-      "htmlSha": "79bca934c322e084",
+      "htmlSha": "8c098290e445bada",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5054,7 +5054,7 @@
     "244-dia-gambleladder-fs": {
       "slug": "244-dia-gambleladder-fs",
       "htmlBytes100": 795200,
-      "htmlSha": "bf75a6ee6730f0ee",
+      "htmlSha": "198afaac1c6ea9bc",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5072,8 +5072,8 @@
     },
     "245-pyr-gambleladder-fs": {
       "slug": "245-pyr-gambleladder-fs",
-      "htmlBytes100": 795000,
-      "htmlSha": "63dc75f23f49fb1c",
+      "htmlBytes100": 794900,
+      "htmlSha": "2c328998de20fe2e",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5092,7 +5092,7 @@
     "246-cross-gambleladder-fs": {
       "slug": "246-cross-gambleladder-fs",
       "htmlBytes100": 795200,
-      "htmlSha": "ff1a10a02623199d",
+      "htmlSha": "03f82b5cc155a6c9",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5111,7 +5111,7 @@
     "247-lshape-gambleladder-fs": {
       "slug": "247-lshape-gambleladder-fs",
       "htmlBytes100": 795200,
-      "htmlSha": "7df35aacc98fbcb6",
+      "htmlSha": "9efc2df97cca224c",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5129,8 +5129,8 @@
     },
     "248-lock-gambleladder-fs": {
       "slug": "248-lock-gambleladder-fs",
-      "htmlBytes100": 795000,
-      "htmlSha": "48652b3fafd757c6",
+      "htmlBytes100": 794900,
+      "htmlSha": "4bff774d0adcbd1e",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5149,7 +5149,7 @@
     "249-rect-pathmult-ways": {
       "slug": "249-rect-pathmult-ways",
       "htmlBytes100": 748300,
-      "htmlSha": "37f64c14b2229891",
+      "htmlSha": "00d1611784d5f420",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5189,7 +5189,7 @@
     "250-rectstack-pathmult-ways": {
       "slug": "250-rectstack-pathmult-ways",
       "htmlBytes100": 748500,
-      "htmlSha": "2ea23f600f9c2183",
+      "htmlSha": "42b87560e49d8eb2",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5208,7 +5208,7 @@
     "251-varreel-pathmult-ways": {
       "slug": "251-varreel-pathmult-ways",
       "htmlBytes100": 748900,
-      "htmlSha": "53d1bc89260d8de7",
+      "htmlSha": "de5a7db49db888b1",
       "buttonCount": 52,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5226,8 +5226,8 @@
     },
     "252-expand-pathmult-ways": {
       "slug": "252-expand-pathmult-ways",
-      "htmlBytes100": 748400,
-      "htmlSha": "2d2a4046ff160243",
+      "htmlBytes100": 748300,
+      "htmlSha": "e2b2c75423237038",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5246,7 +5246,7 @@
     "253-inf-pathmult-ways": {
       "slug": "253-inf-pathmult-ways",
       "htmlBytes100": 748300,
-      "htmlSha": "bee97851cc1a2a7c",
+      "htmlSha": "16e72b203606d956",
       "buttonCount": 52,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5265,7 +5265,7 @@
     "254-dual-pathmult-ways": {
       "slug": "254-dual-pathmult-ways",
       "htmlBytes100": 748500,
-      "htmlSha": "9fe0e45c1770100e",
+      "htmlSha": "d09372d63dbe1466",
       "buttonCount": 51,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5284,7 +5284,7 @@
     "255-rect-wincap-fs": {
       "slug": "255-rect-wincap-fs",
       "htmlBytes100": 792000,
-      "htmlSha": "f3fdac78c2d646ac",
+      "htmlSha": "f48f137524695c74",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5304,7 +5304,7 @@
     "256-rectstack-wincap-fs": {
       "slug": "256-rectstack-wincap-fs",
       "htmlBytes100": 792500,
-      "htmlSha": "b8523fb8125de1ba",
+      "htmlSha": "207e3e1f5dad4c76",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5320,8 +5320,8 @@
     },
     "257-varreel-wincap-fs": {
       "slug": "257-varreel-wincap-fs",
-      "htmlBytes100": 792500,
-      "htmlSha": "f473185252c80449",
+      "htmlBytes100": 792400,
+      "htmlSha": "ceea7f4cc4741b85",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5341,7 +5341,7 @@
     "258-expand-wincap-fs": {
       "slug": "258-expand-wincap-fs",
       "htmlBytes100": 792000,
-      "htmlSha": "95b49742a9b84268",
+      "htmlSha": "f60c34e73599c9d2",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5361,7 +5361,7 @@
     "259-inf-wincap-fs": {
       "slug": "259-inf-wincap-fs",
       "htmlBytes100": 792000,
-      "htmlSha": "061dff2d5b10feb5",
+      "htmlSha": "8d5b2f9d6b39cf6f",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5381,7 +5381,7 @@
     "260-dual-wincap-fs": {
       "slug": "260-dual-wincap-fs",
       "htmlBytes100": 792200,
-      "htmlSha": "dec5c202ac341128",
+      "htmlSha": "4ef9ef0e00ba1468",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5401,7 +5401,7 @@
     "261-dia-wincap-fs": {
       "slug": "261-dia-wincap-fs",
       "htmlBytes100": 792400,
-      "htmlSha": "b51e4e3cae37a0ea",
+      "htmlSha": "424c3e4647eda75e",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5421,7 +5421,7 @@
     "262-pyr-wincap-fs": {
       "slug": "262-pyr-wincap-fs",
       "htmlBytes100": 792200,
-      "htmlSha": "38d44670f2979b88",
+      "htmlSha": "544b82529948be7e",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5441,7 +5441,7 @@
     "263-cross-wincap-fs": {
       "slug": "263-cross-wincap-fs",
       "htmlBytes100": 792400,
-      "htmlSha": "fb62c40b8969556b",
+      "htmlSha": "0ab654d541d8ed69",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5461,7 +5461,7 @@
     "264-lshape-wincap-fs": {
       "slug": "264-lshape-wincap-fs",
       "htmlBytes100": 792400,
-      "htmlSha": "b93679330a30037e",
+      "htmlSha": "e8f8d0c8d5e1da61",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5481,7 +5481,7 @@
     "265-lock-wincap-fs": {
       "slug": "265-lock-wincap-fs",
       "htmlBytes100": 792200,
-      "htmlSha": "7c001a593956dc7a",
+      "htmlSha": "b6a1fa78f84af143",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5501,7 +5501,7 @@
     "266-cluster-scatterpay-cascade": {
       "slug": "266-cluster-scatterpay-cascade",
       "htmlBytes100": 786400,
-      "htmlSha": "2954f0414b9fe2c0",
+      "htmlSha": "7b54f82892b146c8",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5520,7 +5520,7 @@
     "267-mega-scatterpay-cascade": {
       "slug": "267-mega-scatterpay-cascade",
       "htmlBytes100": 786100,
-      "htmlSha": "6b525d8c91b74e0a",
+      "htmlSha": "370d43190f8c3c3a",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5536,7 +5536,7 @@
     "268-hex-scatterpay-cascade": {
       "slug": "268-hex-scatterpay-cascade",
       "htmlBytes100": 786100,
-      "htmlSha": "5cecdcaca6317c79",
+      "htmlSha": "ce13f1a3cf5d6a30",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5555,7 +5555,7 @@
     "269-rect-respin-wild": {
       "slug": "269-rect-respin-wild",
       "htmlBytes100": 788300,
-      "htmlSha": "bde29ab5b0805379",
+      "htmlSha": "e732b9922c4b0651",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5574,7 +5574,7 @@
     "270-rectstack-respin-wild": {
       "slug": "270-rectstack-respin-wild",
       "htmlBytes100": 788400,
-      "htmlSha": "d9443890b93e805d",
+      "htmlSha": "67c88ecae7e21e5e",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5593,7 +5593,7 @@
     "271-varreel-respin-wild": {
       "slug": "271-varreel-respin-wild",
       "htmlBytes100": 788700,
-      "htmlSha": "21bb816deca50143",
+      "htmlSha": "8ed5cf2a3afd5c4c",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5611,8 +5611,8 @@
     },
     "272-expand-respin-wild": {
       "slug": "272-expand-respin-wild",
-      "htmlBytes100": 788300,
-      "htmlSha": "2121057c91b579dc",
+      "htmlBytes100": 788200,
+      "htmlSha": "59522d9dde88eabf",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5631,7 +5631,7 @@
     "273-inf-respin-wild": {
       "slug": "273-inf-respin-wild",
       "htmlBytes100": 788100,
-      "htmlSha": "c4974154160d542a",
+      "htmlSha": "3201122dae73e517",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5650,7 +5650,7 @@
     "274-dual-respin-wild": {
       "slug": "274-dual-respin-wild",
       "htmlBytes100": 788000,
-      "htmlSha": "a70e0e57ebdbd998",
+      "htmlSha": "f9346bee82cc1077",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5669,7 +5669,7 @@
     "275-lock-respin-wild": {
       "slug": "275-lock-respin-wild",
       "htmlBytes100": 788400,
-      "htmlSha": "831b7451dade3eb8",
+      "htmlSha": "2f714848c1682fa3",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5688,7 +5688,7 @@
     "276-rect-cascade-fs": {
       "slug": "276-rect-cascade-fs",
       "htmlBytes100": 785600,
-      "htmlSha": "d9aebb10629d3330",
+      "htmlSha": "a047253c87ee5c4c",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5707,7 +5707,7 @@
     "277-rectstack-cascade-fs": {
       "slug": "277-rectstack-cascade-fs",
       "htmlBytes100": 785800,
-      "htmlSha": "cc1f6cb69e622de5",
+      "htmlSha": "bcd3dd993c0e6850",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5726,7 +5726,7 @@
     "278-varreel-cascade-fs": {
       "slug": "278-varreel-cascade-fs",
       "htmlBytes100": 786100,
-      "htmlSha": "a2982c97e08696b4",
+      "htmlSha": "71e3caac93cda3a1",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5744,8 +5744,8 @@
     },
     "279-expand-cascade-fs": {
       "slug": "279-expand-cascade-fs",
-      "htmlBytes100": 785700,
-      "htmlSha": "1f9dd0b195870cfb",
+      "htmlBytes100": 785600,
+      "htmlSha": "228d8f5ed3e8433d",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5764,7 +5764,7 @@
     "280-inf-cascade-fs": {
       "slug": "280-inf-cascade-fs",
       "htmlBytes100": 785500,
-      "htmlSha": "f58ce6c5d36cd63a",
+      "htmlSha": "a6c443b950a62a0d",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5783,7 +5783,7 @@
     "281-dual-cascade-fs": {
       "slug": "281-dual-cascade-fs",
       "htmlBytes100": 785800,
-      "htmlSha": "95921d76dd93717d",
+      "htmlSha": "32ef73f6815a12e3",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5802,7 +5802,7 @@
     "282-dia-cascade-fs": {
       "slug": "282-dia-cascade-fs",
       "htmlBytes100": 786000,
-      "htmlSha": "e10552e560f44919",
+      "htmlSha": "7902d219d4eb1897",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5821,7 +5821,7 @@
     "283-pyr-cascade-fs": {
       "slug": "283-pyr-cascade-fs",
       "htmlBytes100": 785800,
-      "htmlSha": "a8429b1240148a72",
+      "htmlSha": "5fca01e8364015cb",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5840,7 +5840,7 @@
     "284-cross-cascade-fs": {
       "slug": "284-cross-cascade-fs",
       "htmlBytes100": 786000,
-      "htmlSha": "5ad4bdaf8ab4cecb",
+      "htmlSha": "59cd3aff79a5f6e0",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5855,8 +5855,8 @@
     },
     "285-lshape-cascade-fs": {
       "slug": "285-lshape-cascade-fs",
-      "htmlBytes100": 786100,
-      "htmlSha": "78fa779cb45cd6f5",
+      "htmlBytes100": 786000,
+      "htmlSha": "490dc16d2d67f4cb",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5961,7 +5961,7 @@
     "290-rect-fs-wild-mult-min": {
       "slug": "290-rect-fs-wild-mult-min",
       "htmlBytes100": 785400,
-      "htmlSha": "10771239b444d4b6",
+      "htmlSha": "bff3bd790f052c29",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5980,7 +5980,7 @@
     "291-rectstack-fs-wild-mult-min": {
       "slug": "291-rectstack-fs-wild-mult-min",
       "htmlBytes100": 785500,
-      "htmlSha": "0320d3ed4062b71c",
+      "htmlSha": "2dd41814676e6f24",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -5999,7 +5999,7 @@
     "292-varreel-fs-wild-mult-min": {
       "slug": "292-varreel-fs-wild-mult-min",
       "htmlBytes100": 785800,
-      "htmlSha": "5576807cd110d57c",
+      "htmlSha": "2e9f87930b01e43c",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6014,8 +6014,8 @@
     },
     "293-expand-fs-wild-mult-min": {
       "slug": "293-expand-fs-wild-mult-min",
-      "htmlBytes100": 785400,
-      "htmlSha": "57d582d4d0b00a96",
+      "htmlBytes100": 785300,
+      "htmlSha": "65fa34af0b5418a8",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6034,7 +6034,7 @@
     "294-inf-fs-wild-mult-min": {
       "slug": "294-inf-fs-wild-mult-min",
       "htmlBytes100": 786000,
-      "htmlSha": "0dfbd82453897c75",
+      "htmlSha": "6e7e4264da68afcb",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6053,7 +6053,7 @@
     "295-dual-fs-wild-mult-min": {
       "slug": "295-dual-fs-wild-mult-min",
       "htmlBytes100": 785100,
-      "htmlSha": "6c8913cf4a1175ee",
+      "htmlSha": "67d6ecdec703ceb1",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6071,8 +6071,8 @@
     },
     "296-cluster-fs-wild-mult-min": {
       "slug": "296-cluster-fs-wild-mult-min",
-      "htmlBytes100": 794500,
-      "htmlSha": "7c701a9ba403e422",
+      "htmlBytes100": 794400,
+      "htmlSha": "c29169e6424155e9",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6091,7 +6091,7 @@
     "297-mega-fs-wild-mult-min": {
       "slug": "297-mega-fs-wild-mult-min",
       "htmlBytes100": 793800,
-      "htmlSha": "fad1a983fb1f888c",
+      "htmlSha": "91e5b899fffe9d98",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6110,7 +6110,7 @@
     "298-hex-fs-wild-mult-min": {
       "slug": "298-hex-fs-wild-mult-min",
       "htmlBytes100": 795000,
-      "htmlSha": "2d66dd0373b93871",
+      "htmlSha": "182a41a65e5191c3",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6128,8 +6128,8 @@
     },
     "299-dia-fs-wild-mult-min": {
       "slug": "299-dia-fs-wild-mult-min",
-      "htmlBytes100": 785800,
-      "htmlSha": "1838d7ca1ae3ed84",
+      "htmlBytes100": 785700,
+      "htmlSha": "0c83ee1c73e81a99",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6148,7 +6148,7 @@
     "300-pyr-fs-wild-mult-min": {
       "slug": "300-pyr-fs-wild-mult-min",
       "htmlBytes100": 785500,
-      "htmlSha": "c472871e452f9684",
+      "htmlSha": "64c46f387d35ab5f",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6167,7 +6167,7 @@
     "301-cross-fs-wild-mult-min": {
       "slug": "301-cross-fs-wild-mult-min",
       "htmlBytes100": 786500,
-      "htmlSha": "b11f30a50bc87840",
+      "htmlSha": "49dbaef7ea9cd469",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6186,7 +6186,7 @@
     "302-lshape-fs-wild-mult-min": {
       "slug": "302-lshape-fs-wild-mult-min",
       "htmlBytes100": 785700,
-      "htmlSha": "4ba6fea01b206544",
+      "htmlSha": "75d817e28170a476",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6204,8 +6204,8 @@
     },
     "303-lock-fs-wild-mult-min": {
       "slug": "303-lock-fs-wild-mult-min",
-      "htmlBytes100": 785500,
-      "htmlSha": "f98d7af26f057de2",
+      "htmlBytes100": 785400,
+      "htmlSha": "51b57aa31fe48fd5",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6224,7 +6224,7 @@
     "304-wheel-fs-wild-mult-min": {
       "slug": "304-wheel-fs-wild-mult-min",
       "htmlBytes100": 777000,
-      "htmlSha": "3391bb433c9c316e",
+      "htmlSha": "621c49c9352083fe",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6243,7 +6243,7 @@
     "305-radial-fs-wild-mult-min": {
       "slug": "305-radial-fs-wild-mult-min",
       "htmlBytes100": 776600,
-      "htmlSha": "b1136b487ba1cab0",
+      "htmlSha": "1b4d249ee6d266a4",
       "buttonCount": 53,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6261,8 +6261,8 @@
     },
     "306-crash-fs-wild-mult-min": {
       "slug": "306-crash-fs-wild-mult-min",
-      "htmlBytes100": 776200,
-      "htmlSha": "7efc0fc69810d44b",
+      "htmlBytes100": 776100,
+      "htmlSha": "1b1bb35163d1ff7c",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6281,7 +6281,7 @@
     "307-plinko-fs-wild-mult-min": {
       "slug": "307-plinko-fs-wild-mult-min",
       "htmlBytes100": 778500,
-      "htmlSha": "1a5add7982f6ebdd",
+      "htmlSha": "925d35d357273688",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6300,7 +6300,7 @@
     "308-slingo-fs-wild-mult-min": {
       "slug": "308-slingo-fs-wild-mult-min",
       "htmlBytes100": 784200,
-      "htmlSha": "6a2e458e1bc74f21",
+      "htmlSha": "1bccea701334c596",
       "buttonCount": 49,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6339,7 +6339,7 @@
     "gates-of-olympus-1000-gdd": {
       "slug": "gates-of-olympus-1000-gdd",
       "htmlBytes100": 801100,
-      "htmlSha": "4479ab35da401db0",
+      "htmlSha": "a3c5d1f1ccbfd400",
       "buttonCount": 55,
       "paytableRows": 0,
       "footerPresent": true,
@@ -6379,7 +6379,7 @@
     "starlight-travellers-gdd": {
       "slug": "starlight-travellers-gdd",
       "htmlBytes100": 830200,
-      "htmlSha": "eaa0ee3ddff8658c",
+      "htmlSha": "b7cede6560ecf990",
       "buttonCount": 58,
       "paytableRows": 0,
       "footerPresent": true,

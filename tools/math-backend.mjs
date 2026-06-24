@@ -197,12 +197,31 @@ function buildExecutorInput(model, spins = 100000, seed = 42, overrides = null) 
     if (typeof raw !== 'number' || !Number.isFinite(raw) || raw <= 0) return 0.21;
     return raw > 1 ? raw / 100 : raw;
   })();
-  /* UQ-DEEP-AC: detect hold-and-win presence — affects GAP inference. */
+  /* UQ-DEEP-AC: detect hold-and-win presence — affects GAP inference.
+   * UQ-DEEP-AE: stricter — empty `holdAndWin: {}` from parser inference
+   * (Gates of Olympus tumble) must NOT enable. Require at least one real
+   * signal: enabled===true AND (triggerCount IS number OR features kind list). */
+  const _kinds = Array.isArray(model && model.features)
+    ? (model.features || []).map(f => f && f.kind).filter(Boolean) : [];
+  const _kindHasHnw = _kinds.includes('hold_and_win');
   const hasHoldAndWin = (() => {
-    if (hnw && (hnw.enabled === true || typeof hnw.triggerCount === 'number')) return true;
-    const kinds = Array.isArray(model && model.features)
-      ? (model.features || []).map(f => f && f.kind).filter(Boolean) : [];
-    return kinds.includes('hold_and_win');
+    if (_kindHasHnw) return true;                                /* explicit feature kind */
+    if (hnw && hnw.enabled === true && typeof hnw.triggerCount === 'number') return true;  /* real config */
+    /* UQ-DEEP-AE symmetry sa FS: declared breakdown.hwBase OR hwFs → HnW present. */
+    if ((typeof breakdown.hwBase === 'number' && breakdown.hwBase > 0)
+     || (typeof breakdown.hwFs === 'number' && breakdown.hwFs > 0)) return true;
+    return false;
+  })();
+  /* UQ-DEEP-AE: same detection for FREE SPINS — was implicitly always-on via
+   * default fs_trigger_p=0.0085, fs_session_e=23.6 → ~+20pp phantom contribution
+   * for slots that don't have FS. */
+  const _kindHasFs = _kinds.includes('free_spins');
+  const hasFreeSpins = (() => {
+    if (_kindHasFs) return true;
+    if (fs && fs.enabled === true) return true;
+    if (fs && (typeof fs.triggerProbability === 'number' || typeof fs.sessionExpectedValue === 'number')) return true;
+    if (typeof breakdown.fsLine === 'number' && breakdown.fsLine > 0) return true;
+    return false;
   })();
   return {
     spins,
@@ -223,8 +242,15 @@ function buildExecutorInput(model, spins = 100000, seed = 42, overrides = null) 
        * Cash Eruption: declared 96%, baseLine 41.9%, fsLine 7%, hnw default
        * 0.396 → total 88.5% (off 7.5pp ↓). Sa GAP inference: hnw = 47.1pp
        * → total ≈ 96.0% ✓. */
-      const fsTrigP = (typeof fs.triggerProbability === 'number') ? fs.triggerProbability : 0.0085;
-      const hnwTrigP = (typeof hnw.triggerProbability === 'number') ? hnw.triggerProbability : 0.009;
+      /* UQ-DEEP-AE: kad feature NIJE prisutan, trigger_p = 0 → Rust executor
+       * ne emituje phantom contribution. Pre fix-a: defaultni trigger_p
+       * (0.0085 FS, 0.009 HnW) i session_e (23.6 FS, 44.0 HnW) uvek bili
+       * preneti → ~+20pp FS phantom + ~+40pp HnW phantom za slotove koji
+       * ne postoje tu feature → universal coverage failed. */
+      const fsTrigP = !hasFreeSpins ? 0
+        : (typeof fs.triggerProbability === 'number') ? fs.triggerProbability : 0.0085;
+      const hnwTrigP = !hasHoldAndWin ? 0
+        : (typeof hnw.triggerProbability === 'number') ? hnw.triggerProbability : 0.009;
       const declaredHwTotal = (declaredHwBase != null || declaredHwFs != null)
         ? ((declaredHwBase || 0) + (declaredHwFs || 0))
         : null;
@@ -238,19 +264,52 @@ function buildExecutorInput(model, spins = 100000, seed = 42, overrides = null) 
         if (gap <= 0.01) return null;                     /* < 1pp gap — not a real hold contribution */
         return gap;
       })();
-      const fsSessionE = (typeof fs.sessionExpectedValue === 'number') ? fs.sessionExpectedValue
-        : (declaredFsLine != null && fsTrigP > 0 ? declaredFsLine / fsTrigP : 23.6);
-      const hnwSessionE = (typeof hnw.sessionExpectedValue === 'number') ? hnw.sessionExpectedValue
-        : (declaredHwTotal != null && hnwTrigP > 0 ? declaredHwTotal / hnwTrigP
-          : (inferredHwFromGap != null && hnwTrigP > 0 ? inferredHwFromGap / hnwTrigP : 44.0));
+      /* UQ-DEEP-AE: bez free spins → session_e=0 (Rust takođe vidi trigger_p=0).
+       * Sa FS ali bez declared → derive iz IMPLICIT 0.15 / fs_trigger_p
+       * (industry split ratio, NE generic 23.6 koji daje 0.20 contribution).
+       * Cilj: measured fs_contribution mora da match-uje implicit expectation. */
+      const fsSessionE = !hasFreeSpins ? 0
+        : (typeof fs.sessionExpectedValue === 'number') ? fs.sessionExpectedValue
+          : (declaredFsLine != null && fsTrigP > 0 ? declaredFsLine / fsTrigP
+            : (fsTrigP > 0 ? 0.15 / fsTrigP : 0));
+      const hnwSessionE = !hasHoldAndWin ? 0
+        : (typeof hnw.sessionExpectedValue === 'number') ? hnw.sessionExpectedValue
+          : (declaredHwTotal != null && hnwTrigP > 0 ? declaredHwTotal / hnwTrigP
+            : (inferredHwFromGap != null && hnwTrigP > 0 ? inferredHwFromGap / hnwTrigP
+              : (hnwTrigP > 0 ? 0.36 / hnwTrigP : 0)));
+      /* UQ-DEEP-AE: SMART BASE-RTP DERIVATION
+       * Pre fix-a: kad GDD nije deklarisao baseLine, fallback je `cfTargetRtp * 0.38`
+       * (generic 38% split) → Crystal Forge (FS-only, no HnW) bio na base=0.365 dok
+       * je total target 0.96 → measured ~57% (base+fs only). Treba:
+       *   base = total - declared.fsLine - declared.hwTotal       (kad declared sve)
+       *        = total - declared.fsLine - (impl 0.36 ako HnW)    (kad HnW impl)
+       *        = total - (impl 0.15 ako FS)  - declared.hwTotal   (kad FS impl)
+       *        = total - (impl 0.15 ako FS)  - (impl 0.36 ako HW) (kad sve impl)
+       *        = total                                              (kad ni FS ni HW)
+       */
+      const _baseRtpFinal = (() => {
+        if (declaredBase != null) return declaredBase;
+        const total = cfTargetRtp;
+        const fsExp = hasFreeSpins
+          ? (declaredFsLine != null ? declaredFsLine : 0.15)
+          : 0;
+        const hwExp = hasHoldAndWin
+          ? (declaredHwTotal != null ? declaredHwTotal
+            : (inferredHwFromGap != null ? inferredHwFromGap : 0.36))
+          : 0;
+        const derived = total - fsExp - hwExp;
+        return derived > 0.05 ? derived : total;            /* sanity floor */
+      })();
       /* Std dev: scale proportionally with sessionE (preserve CoV ≈ 1.13). */
-      const fsSessionStd = (typeof fs.sessionStdDev === 'number') ? fs.sessionStdDev : fsSessionE * 1.127;
-      const hnwSessionStd = (typeof hnw.sessionStdDev === 'number') ? hnw.sessionStdDev : hnwSessionE * 1.773;
+      const fsSessionStd = !hasFreeSpins ? 0
+        : (typeof fs.sessionStdDev === 'number') ? fs.sessionStdDev : fsSessionE * 1.127;
+      const hnwSessionStd = !hasHoldAndWin ? 0
+        : (typeof hnw.sessionStdDev === 'number') ? hnw.sessionStdDev : hnwSessionE * 1.773;
       /* UQ-DEEP-AC: iterative-tuning overrides — auto-converge może overrideovati
        * session_e/std između rounda da self-correctuje delta vs declared. */
       const ov = (overrides && typeof overrides === 'object') ? overrides : {};
       return {
-        base_rtp_per_spin: typeof ov.baseRtp === 'number' ? ov.baseRtp : baseRtp,
+        base_rtp_per_spin: typeof ov.baseRtp === 'number' ? ov.baseRtp : _baseRtpFinal,
         base_hit_freq: hitFreqNorm,
         fs_trigger_p: typeof ov.fsTrigP === 'number' ? ov.fsTrigP : fsTrigP,
         fs_session_e: typeof ov.fsSessionE === 'number' ? ov.fsSessionE : fsSessionE,
@@ -264,6 +323,7 @@ function buildExecutorInput(model, spins = 100000, seed = 42, overrides = null) 
     /* Diagnostics for /converge feedback loop. */
     _inference: {
       hasHoldAndWin,
+      hasFreeSpins,
       declaredBase, declaredFsLine, declaredHwBase, declaredHwFs,
       baseRtp, hitFreqNorm,
     },
@@ -790,12 +850,61 @@ const server = http.createServer(async (req, res) => {
         const pass = (delta != null) ? (Math.abs(deltaPct) <= tolerancePct) : null;
         return { declared: declaredVal, measured, delta, deltaPct, tolerancePct, pass };
       };
+      /* UQ-DEEP-AE: derive IMPLICIT per-feature expected when GDD ne deklariše
+       * breakdown ali feature postoji. Inače `pass:null` se silently brojao
+       * kao OK → 4/5 baseline-ova "trivially-passed" jer nemaju breakdown.
+       * Logika: ako hasFreeSpins/hasHoldAndWin AND no declared breakdown,
+       * implicit expectation = generic industry split (lines 45%, fs 15%,
+       * hnw 36%, sum ≈ 96%). To je STILL validacija — measured contribution
+       * mora biti unutar široke ±5pp tolerance, ali bar nije ignorisano. */
+      const lastInf = lastOut?._inferenceUsed || {};
+      const _hasFS = lastInf.hasFreeSpins === true;
+      const _hasHW = lastInf.hasHoldAndWin === true;
+      /* GAP-aware implicit expectations. When GDD ima PARTIAL declared
+       * (e.g. baseLine+fsLine ali ne hwBase/hwFs), HnW implicit = GAP
+       * (total - baseLine - fsLine), NE generic 0.36. */
+      const _total = declared.total != null ? declared.total : 0.96;
+      const implicitFsLine = (declared.fsLine == null && _hasFS) ? 0.15 : null;
+      const implicitHnw = (() => {
+        if (declared.hwBase != null || declared.hwFs != null) return null;
+        if (!_hasHW) return null;
+        /* GAP from partial declared. */
+        if (declared.baseLine != null || declared.fsLine != null) {
+          const gap = _total - (declared.baseLine || 0) - (declared.fsLine || (implicitFsLine || 0));
+          return gap > 0.05 ? gap : 0.36;
+        }
+        return 0.36;                                       /* generic */
+      })();
+      const implicitBaseLine = (declared.baseLine == null) ? (() => {
+        let remaining = _total;
+        if (declared.fsLine != null) remaining -= declared.fsLine;
+        else if (_hasFS) remaining -= 0.15;
+        if (declared.hwBase != null || declared.hwFs != null) {
+          remaining -= ((declared.hwBase || 0) + (declared.hwFs || 0));
+        } else if (_hasHW) {
+          remaining -= (implicitHnw != null ? implicitHnw : 0.36);
+        }
+        return Math.max(remaining, 0.1);
+      })() : null;
+      /* Wider tolerance for implicit (±5pp) vs declared (±2pp). */
+      const _featRowImplicit = (key, declaredVal, implicitVal, measuredKey) => {
+        const measured = _measuredFrac(measuredKey || key);
+        const effectiveExpected = declaredVal != null ? declaredVal : implicitVal;
+        const isImplicit = declaredVal == null && implicitVal != null;
+        const tolerancePct = isImplicit ? 5.0 : 2.0;
+        const delta = (effectiveExpected != null && measured != null) ? (measured - effectiveExpected) : null;
+        const deltaPct = (delta != null) ? delta * 100 : null;
+        const pass = (delta != null) ? (Math.abs(deltaPct) <= tolerancePct) : null;
+        return { declared: declaredVal, implicit: implicitVal, measured, delta, deltaPct, tolerancePct, pass, source: declaredVal != null ? 'declared' : (implicitVal != null ? 'implicit' : null) };
+      };
       const featureValidation = {
-        baseLine: _featRow('baseLine', declared.baseLine, 'base_lines'),
-        fsLine:   _featRow('fsLine',   declared.fsLine,   'free_spins'),
-        holdAndWin: _featRow('holdAndWin', (declared.hwBase != null || declared.hwFs != null)
-          ? ((declared.hwBase || 0) + (declared.hwFs || 0))
-          : null, 'hold_and_win'),
+        baseLine: _featRowImplicit('baseLine', declared.baseLine, implicitBaseLine, 'base_lines'),
+        fsLine:   _featRowImplicit('fsLine',   declared.fsLine,   implicitFsLine,   'free_spins'),
+        holdAndWin: _featRowImplicit('holdAndWin',
+          (declared.hwBase != null || declared.hwFs != null) ? ((declared.hwBase || 0) + (declared.hwFs || 0)) : null,
+          implicitHnw,
+          'hold_and_win'),
+        /* totalRtp ALWAYS validated when declared.total exists — independent of breakdown. */
         totalRtp: {
           declared: declared.total,
           measured: lastOut ? lastOut.rtp : null,
@@ -810,11 +919,23 @@ const server = http.createServer(async (req, res) => {
           deltaPct: (declared.hitFrequency != null && lastOut)
             ? Math.abs(lastOut.hit_rate - declared.hitFrequency) * 100 : null,
         },
+        /* UQ-DEEP-AE: phantom contribution audit — fail if feature NOT detected
+         * but Rust reports >1pp contribution (means executor still phantom-sampled). */
+        phantomAudit: {
+          fsPhantom: !_hasFS && (lastOut?.feature_breakdown?.free_spins?.rtp_contribution || 0) > 0.01,
+          hnwPhantom: !_hasHW && (lastOut?.feature_breakdown?.hold_and_win?.rtp_contribution || 0) > 0.01,
+        },
       };
-      /* All-features pass: every validated row must pass (skip rows with
-       * declared=null since GDD didn't specify). */
+      /* UQ-DEEP-AE: stricter all-features pass.
+       * 1. Every declared row must pass.
+       * 2. Every implicit row must pass (within ±5pp).
+       * 3. Total RTP must pass if declared (≤ precisionPct).
+       * 4. No phantom contributions allowed. */
       const featureRows = [featureValidation.baseLine, featureValidation.fsLine, featureValidation.holdAndWin];
-      const allFeaturesPass = featureRows.every(r => r.pass !== false);
+      const allRowsPass = featureRows.every(r => r.pass !== false);
+      const totalPass = featureValidation.totalRtp.pass !== false;
+      const noPhantom = !featureValidation.phantomAudit.fsPhantom && !featureValidation.phantomAudit.hnwPhantom;
+      const allFeaturesPass = allRowsPass && totalPass && noPhantom;
       return send(res, 200, {
         ok: true,
         passed,

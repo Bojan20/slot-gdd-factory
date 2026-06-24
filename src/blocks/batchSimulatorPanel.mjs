@@ -159,26 +159,51 @@ export function emitBatchSimulatorPanelRuntime(cfg = defaultConfig(), model = {}
    * Pre fix-a: samo payback + freeSpins → backend GAP inference NIJE imao
    * signal da hold-and-win postoji → hnw_session_e ostao na default 44.0 →
    * total 88.5% umesto 96.0% (off 7.5pp). Sada uključuje holdAndWin params
-   * + features kind list (mali wire payload, ne ceo model). */
+   * + features kind list (mali wire payload, ne ceo model).
+   *
+   * UQ-DEEP-AE (Boki 2026-06-24): stricter pruning — empty `holdAndWin:{}`
+   * od parser-stage-5 inference (Gates of Olympus tumble) ne sme da
+   * šalje enabled:true bez stvarne config (triggerCount). Backend onda
+   * vidi hasHoldAndWin=true i daje phantom +40pp HnW contribution.
+   * Sada: holdAndWin se prosleđuje SAMO ako ima triggerCount IS number
+   * OR explicit triggerProbability/sessionExpectedValue. Isto za freeSpins. */
+  const _featuresList = Array.isArray(model.features)
+    ? model.features.filter(f => f && typeof f.kind === 'string').map(f => ({ kind: f.kind }))
+    : [];
+  const _featKinds = new Set(_featuresList.map(f => f.kind));
+  const _hwHasReal = model.holdAndWin && (
+    typeof model.holdAndWin.triggerCount === 'number' ||
+    typeof model.holdAndWin.triggerProbability === 'number' ||
+    typeof model.holdAndWin.sessionExpectedValue === 'number'
+  );
+  const _fsHasReal = model.freeSpins && (
+    model.freeSpins.enabled === true ||
+    Array.isArray(model.freeSpins.triggerCounts) ||
+    typeof model.freeSpins.triggerProbability === 'number' ||
+    typeof model.freeSpins.sessionExpectedValue === 'number'
+  );
   const pruned = {
     name: typeof model.name === 'string' ? model.name : null,
     payback: model.payback || null,
-    freeSpins: model.freeSpins ? {
+    freeSpins: _fsHasReal ? {
       enabled: model.freeSpins.enabled !== false,
       triggerProbability: model.freeSpins.triggerProbability,
       sessionExpectedValue: model.freeSpins.sessionExpectedValue,
       sessionStdDev: model.freeSpins.sessionStdDev,
     } : null,
-    holdAndWin: model.holdAndWin ? {
+    holdAndWin: _hwHasReal ? {
       enabled: model.holdAndWin.enabled !== false,
       triggerCount: model.holdAndWin.triggerCount,
       triggerProbability: model.holdAndWin.triggerProbability,
       sessionExpectedValue: model.holdAndWin.sessionExpectedValue,
       sessionStdDev: model.holdAndWin.sessionStdDev,
     } : null,
-    features: Array.isArray(model.features)
-      ? model.features.filter(f => f && typeof f.kind === 'string').map(f => ({ kind: f.kind }))
-      : [],
+    /* Features list: keep only ones backed by real config OR explicit kind. */
+    features: _featuresList.filter(f => {
+      if (f.kind === 'hold_and_win') return _hwHasReal || _featKinds.has('hold_and_win');
+      if (f.kind === 'free_spins') return _fsHasReal || _featKinds.has('free_spins');
+      return true;
+    }),
   };
   return `
 /* ── batchSimulatorPanel BLOCK runtime ──────────────────────────── */

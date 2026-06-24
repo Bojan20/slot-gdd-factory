@@ -32,9 +32,11 @@ const PANEL = resolve(REPO, 'src/blocks/batchSimulatorPanel.mjs');
 
 test('UQ-DEEP-AD · panel source emits holdAndWin + features in pruned BSP_MODEL', () => {
   const src = readFileSync(PANEL, 'utf8');
-  /* Old pruning was: payback + freeSpins only. Regression guard. */
-  assert.ok(src.includes('holdAndWin: model.holdAndWin'),
-    'pruned must include holdAndWin block');
+  /* Old pruning was: payback + freeSpins only. Regression guard.
+   * UQ-DEEP-AE upgraded to stricter check via _hwHasReal/_fsHasReal helpers
+   * (empty `holdAndWin: {}` from parser inference is now dropped). */
+  assert.ok(src.includes('holdAndWin: _hwHasReal'),
+    'pruned must include holdAndWin block (via _hwHasReal gate)');
   assert.ok(src.includes('features:'),
     'pruned must include features array');
   assert.ok(src.includes("typeof f.kind === 'string'"),
