@@ -2728,7 +2728,21 @@ export function extractSymbolsProseMode(rawText, model) {
     const band = tierBucket === model.symbols.high ? 'high'
                : tierBucket === model.symbols.mid  ? 'mid' : 'low';
     const prefix = band === 'high' ? 'H' : band === 'mid' ? 'M' : 'L';
-    const nextIdx = Math.min(5, tierBucket.length + 1);
+    /* UQ-DEEP-AS J-P2-3: warn on > 5 symbols per band (IGT taxonomy
+       caps at H5/M5/L5 — silent clamp causes downstream unique-key
+       collisions). _failures is the parser's standard surfacing channel. */
+    const rawIdx = tierBucket.length + 1;
+    if (rawIdx > 5) {
+      const failures = (model.confidence && Array.isArray(model.confidence._failures))
+        ? model.confidence._failures : null;
+      if (failures) {
+        failures.push({
+          label: 'canonicalTier-overflow',
+          warning: 'tier band "' + band + '" has >5 symbols; canonicalTier clamped to ' + prefix + '5 (' + ucId + ')',
+        });
+      }
+    }
+    const nextIdx = Math.min(5, rawIdx);
     const canonicalTier = prefix + nextIdx;
     tierBucket.push({ id: ucId, label, tier: band, canonicalTier, _source: 'prose-mode-tier' });
   }

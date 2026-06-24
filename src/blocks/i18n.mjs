@@ -463,7 +463,17 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
     function _sanitizeLocaleString(s) {
       if (typeof s !== 'string') return s;
       var clean = s.replace(/[ -]/g, '');
-      if (clean.length > 240) clean = clean.slice(0, 240);
+      if (clean.length > 240) {
+        clean = clean.slice(0, 240);
+        /* UQ-DEEP-AS J-P1-1: UTF-16 surrogate-pair cleavage guard.
+           .slice cuts by code unit, not code point. If 240th unit is a
+           high surrogate (0xD800-0xDBFF), lone surrogate leaks — screen
+           reader (NVDA/VoiceOver) speaks 'object replacement'. Drop it. */
+        var lastCode = clean.charCodeAt(clean.length - 1);
+        if (lastCode >= 0xD800 && lastCode <= 0xDBFF) {
+          clean = clean.slice(0, clean.length - 1);
+        }
+      }
       return clean;
     }
     function _t(key, fb) {

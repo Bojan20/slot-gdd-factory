@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0.0",
-  "generated_at": "2026-06-25T00:00:00.000Z",
+  "generated_at": "2026-06-25T00:01:00.000Z",
   "source_locale": "sv",
-  "hash": "2ec5952f3ace",
-  "blocks_with_strings": 46,
-  "total_entries": 127,
+  "hash": "a464e37ad5f8",
+  "blocks_with_strings": 47,
+  "total_entries": 145,
   "catalog": {
     "audio.0": "Toggle audio",
     "autoplay.0": "AUTO · ",
@@ -132,6 +132,24 @@
     "betSelector.totalBet": "TOTAL BET",
     "betSelector.maxBet": "MAX BET",
     "wheelBonus.spin": "SPIN",
-    "wheelBonus.collect": "COLLECT"
+    "wheelBonus.collect": "COLLECT",
+    "common.back": "Back",
+    "common.collect": "COLLECT",
+    "autoplay.title": "Autoplay",
+    "autoplay.numberOfSpins": "Number of spins",
+    "autoplay.stopAutoplay": "Stop autoplay",
+    "autoplay.onAnyFeature": "On any feature trigger",
+    "autoplay.onAnyFeatureHint": "Stops when Free Spins or bonus is hit",
+    "autoplay.ifSingleWinExceeds": "If single win exceeds",
+    "autoplay.ifSingleWinExceedsHint": "Stops on a single spin payout above N×bet",
+    "autoplay.ifCashIncreasesBy": "If cash increases by",
+    "autoplay.ifCashIncreasesByHint": "Stops when session win meets this amount",
+    "autoplay.ifCashDecreasesBy": "If cash decreases by",
+    "autoplay.ifCashDecreasesByHint": "Stops when session loss meets this amount",
+    "autoplay.startAutoplay": "Start Autoplay",
+    "gamble.doubleOrNothing": "DOUBLE OR NOTHING",
+    "gamble.stake": "Stake:",
+    "gamble.higher": "↑ HIGHER",
+    "gamble.lower": "↓ LOWER"
   }
 }

@@ -552,74 +552,82 @@ export function emitAutoplayMarkup(cfg = defaultConfig()) {
    * footer with Back + Start CTAs. All controls are accessible
    * (role="dialog" + aria-modal, focus-trap, ESC-close) and inputs
    * use type=number with inputmode=decimal for mobile keyboards. */
+  /* UQ-DEEP-AS H-1 phase-2: data-i18n + data-i18n-aria stamping on
+     autoplay dialog. 7 aria-label + 6 textContent sites. */
   return tagBlockMarkup(`
   <div id="autoplayBackdrop" class="autoplay-backdrop" hidden role="dialog"
        aria-modal="true" aria-labelledby="autoplayTitle">
     <div id="autoplayModal" class="autoplay-modal" role="document">
       <header class="autoplay-header">
-        <h2 id="autoplayTitle" class="autoplay-title">Autoplay</h2>
+        <h2 id="autoplayTitle" class="autoplay-title" data-i18n="autoplay.title" data-i18n-fallback="Autoplay">Autoplay</h2>
         <button id="autoplayCloseBtn" class="autoplay-close" type="button"
-                aria-label="Close autoplay settings">×</button>
+                aria-label="Close autoplay settings"
+                data-i18n-aria="autoplay.1" data-i18n-aria-fallback="Close autoplay settings">×</button>
       </header>
 
       <section class="autoplay-section" aria-labelledby="autoplaySpinsTitle">
-        <div id="autoplaySpinsTitle" class="autoplay-section-title">Number of spins</div>
+        <div id="autoplaySpinsTitle" class="autoplay-section-title" data-i18n="autoplay.numberOfSpins" data-i18n-fallback="Number of spins">Number of spins</div>
         <div id="autoplaySteps" class="autoplay-steps" role="radiogroup"
-             aria-label="Number of autoplay spins"></div>
+             aria-label="Number of autoplay spins"
+             data-i18n-aria="autoplay.4" data-i18n-aria-fallback="Number of autoplay spins"></div>
       </section>
 
       <section class="autoplay-section" aria-labelledby="autoplayStopTitle">
-        <div id="autoplayStopTitle" class="autoplay-section-title">Stop autoplay</div>
+        <div id="autoplayStopTitle" class="autoplay-section-title" data-i18n="autoplay.stopAutoplay" data-i18n-fallback="Stop autoplay">Stop autoplay</div>
 
         <div class="autoplay-stop-row">
           <div class="autoplay-stop-label">
-            On any feature trigger
-            <span class="autoplay-stop-hint">Stops when Free Spins or bonus is hit</span>
+            <span data-i18n="autoplay.onAnyFeature" data-i18n-fallback="On any feature trigger">On any feature trigger</span>
+            <span class="autoplay-stop-hint" data-i18n="autoplay.onAnyFeatureHint" data-i18n-fallback="Stops when Free Spins or bonus is hit">Stops when Free Spins or bonus is hit</span>
           </div>
           <button id="autoplayStopFeatureToggle" class="autoplay-toggle" type="button"
                   role="switch" aria-checked="true" aria-pressed="true"
-                  aria-label="Stop on any feature trigger"></button>
+                  aria-label="Stop on any feature trigger"
+                  data-i18n-aria="autoplay.6" data-i18n-aria-fallback="Stop on any feature trigger"></button>
         </div>
 
         <div class="autoplay-stop-row">
           <div class="autoplay-stop-label">
-            If single win exceeds
-            <span class="autoplay-stop-hint">Stops on a single spin payout above N×bet</span>
+            <span data-i18n="autoplay.ifSingleWinExceeds" data-i18n-fallback="If single win exceeds">If single win exceeds</span>
+            <span class="autoplay-stop-hint" data-i18n="autoplay.ifSingleWinExceedsHint" data-i18n-fallback="Stops on a single spin payout above N×bet">Stops on a single spin payout above N×bet</span>
           </div>
           <div>
             <span class="autoplay-input-prefix">×</span>
             <input id="autoplayStopSingleWinX" class="autoplay-input" type="number"
                    min="0" step="1" inputmode="decimal"
-                   aria-label="Single win threshold (multiplier of bet)" />
+                   aria-label="Single win threshold (multiplier of bet)"
+                   data-i18n-aria="autoplay.5" data-i18n-aria-fallback="Single win threshold (multiplier of bet)" />
           </div>
         </div>
 
         <div class="autoplay-stop-row">
           <div class="autoplay-stop-label">
-            If cash increases by
-            <span class="autoplay-stop-hint">Stops when session win meets this amount</span>
+            <span data-i18n="autoplay.ifCashIncreasesBy" data-i18n-fallback="If cash increases by">If cash increases by</span>
+            <span class="autoplay-stop-hint" data-i18n="autoplay.ifCashIncreasesByHint" data-i18n-fallback="Stops when session win meets this amount">Stops when session win meets this amount</span>
           </div>
           <input id="autoplayStopWinAbove" class="autoplay-input" type="number"
                  min="0" step="0.01" inputmode="decimal"
-                 aria-label="Cumulative win threshold" />
+                 aria-label="Cumulative win threshold"
+                 data-i18n-aria="autoplay.3" data-i18n-aria-fallback="Cumulative win threshold" />
         </div>
 
         <div class="autoplay-stop-row">
           <div class="autoplay-stop-label">
-            If cash decreases by
-            <span class="autoplay-stop-hint">Stops when session loss meets this amount</span>
+            <span data-i18n="autoplay.ifCashDecreasesBy" data-i18n-fallback="If cash decreases by">If cash decreases by</span>
+            <span class="autoplay-stop-hint" data-i18n="autoplay.ifCashDecreasesByHint" data-i18n-fallback="Stops when session loss meets this amount">Stops when session loss meets this amount</span>
           </div>
           <input id="autoplayStopLossAbove" class="autoplay-input" type="number"
                  min="0" step="0.01" inputmode="decimal"
-                 aria-label="Cumulative loss threshold" />
+                 aria-label="Cumulative loss threshold"
+                 data-i18n-aria="autoplay.2" data-i18n-aria-fallback="Cumulative loss threshold" />
         </div>
       </section>
 
       <footer class="autoplay-actions">
         <button id="autoplayCancelBtn" class="autoplay-action autoplay-action--cancel"
-                type="button">Back</button>
+                type="button" data-i18n="common.back" data-i18n-fallback="Back">Back</button>
         <button id="autoplayStart" class="autoplay-action autoplay-action--start"
-                type="button">Start Autoplay</button>
+                type="button" data-i18n="autoplay.startAutoplay" data-i18n-fallback="Start Autoplay">Start Autoplay</button>
       </footer>
     </div>
   </div>

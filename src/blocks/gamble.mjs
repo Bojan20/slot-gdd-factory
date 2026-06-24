@@ -172,21 +172,23 @@ export function emitGambleCSS(cfg = defaultConfig()) {
 
 export function emitGambleMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
+  /* UQ-DEEP-AS H-1 phase-2: data-i18n stamping (catalog already has
+     gamble.1..6 for pick aria + gamble.7 for "Pick to continue"). */
   let buttons = '';
   if (cfg.mode === 'color') {
-    buttons = `<button class="gamble-btn" data-pick="red" aria-label="Pick red">RED</button><button class="gamble-btn gamble-btn--alt" data-pick="black" aria-label="Pick black">BLACK</button>`;
+    buttons = `<button class="gamble-btn" data-pick="red" aria-label="Pick red" data-i18n-aria="gamble.5" data-i18n-aria-fallback="Pick red">RED</button><button class="gamble-btn gamble-btn--alt" data-pick="black" aria-label="Pick black" data-i18n-aria="gamble.1" data-i18n-aria-fallback="Pick black">BLACK</button>`;
   } else if (cfg.mode === 'suit') {
-    buttons = `<button class="gamble-btn" data-pick="hearts" aria-label="Pick hearts">♥</button><button class="gamble-btn gamble-btn--alt" data-pick="spades" aria-label="Pick spades">♠</button><button class="gamble-btn" data-pick="diamonds" aria-label="Pick diamonds">♦</button><button class="gamble-btn gamble-btn--alt" data-pick="clubs" aria-label="Pick clubs">♣</button>`;
+    buttons = `<button class="gamble-btn" data-pick="hearts" aria-label="Pick hearts" data-i18n-aria="gamble.4" data-i18n-aria-fallback="Pick hearts">♥</button><button class="gamble-btn gamble-btn--alt" data-pick="spades" aria-label="Pick spades" data-i18n-aria="gamble.6" data-i18n-aria-fallback="Pick spades">♠</button><button class="gamble-btn" data-pick="diamonds" aria-label="Pick diamonds" data-i18n-aria="gamble.3" data-i18n-aria-fallback="Pick diamonds">♦</button><button class="gamble-btn gamble-btn--alt" data-pick="clubs" aria-label="Pick clubs" data-i18n-aria="gamble.2" data-i18n-aria-fallback="Pick clubs">♣</button>`;
   } else {
-    buttons = `<button class="gamble-btn" data-pick="up">↑ HIGHER</button><button class="gamble-btn gamble-btn--alt" data-pick="down">↓ LOWER</button>`;
+    buttons = `<button class="gamble-btn" data-pick="up" data-i18n="gamble.higher" data-i18n-fallback="↑ HIGHER">↑ HIGHER</button><button class="gamble-btn gamble-btn--alt" data-pick="down" data-i18n="gamble.lower" data-i18n-fallback="↓ LOWER">↓ LOWER</button>`;
   }
   return tagBlockMarkup(`<div id="gambleOverlay" class="gamble-overlay" data-show="false" role="dialog" aria-modal="true">
   <div class="gamble-modal">
-    <div class="gamble-title">DOUBLE OR NOTHING</div>
-    <div class="gamble-stake">Stake: ×<span id="gambleStake">0</span></div>
-    <div id="gambleResult" class="gamble-result" aria-live="polite">Pick to continue</div>
+    <div class="gamble-title" data-i18n="gamble.doubleOrNothing" data-i18n-fallback="DOUBLE OR NOTHING">DOUBLE OR NOTHING</div>
+    <div class="gamble-stake"><span data-i18n="gamble.stake" data-i18n-fallback="Stake:">Stake:</span> ×<span id="gambleStake">0</span></div>
+    <div id="gambleResult" class="gamble-result" aria-live="polite" data-i18n="gamble.7" data-i18n-fallback="Pick to continue">Pick to continue</div>
     <div class="gamble-buttons">${buttons}</div>
-    <button id="gambleCollect" class="gamble-collect" type="button">COLLECT</button>
+    <button id="gambleCollect" class="gamble-collect" type="button" data-i18n="common.collect" data-i18n-fallback="COLLECT">COLLECT</button>
   </div>
 </div>`, 'gamble');
 }

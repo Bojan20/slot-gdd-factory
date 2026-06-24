@@ -2663,6 +2663,13 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
       _emitSetup();
     }
     window.addEventListener('pagehide', function (ev) { _emitDestroy(ev.persisted ? 'bfcache' : 'pagehide'); });
+    /* UQ-DEEP-AS J-P1-4: bfcache restore — back-nav doesn't fire
+       DOMContentLoaded again, so onBlockSetup never re-fires after a
+       'bfcache' destroy. Bus + UI would desync (blocks think destroyed,
+       DOM is alive). pageshow.persisted=true is the bfcache restore signal. */
+    window.addEventListener('pageshow', function (ev) {
+      if (ev.persisted) _emitSetup();
+    });
   })();
 
   /* UQ-DEEP-AR I-8 — bind visualViewport resize so pinch-zoom (now

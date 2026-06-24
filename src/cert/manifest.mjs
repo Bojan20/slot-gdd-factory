@@ -284,28 +284,47 @@ export function manifestToJSON(manifest) {
 }
 
 /**
+ * UQ-DEEP-AS J-P2-2: named error class for Sentry/log-aggregator grouping.
+ * Generic Error throws all manifest mismatches into the same bucket as
+ * unrelated throws. Named class makes alerting/dashboarding tractable.
+ */
+export class ManifestSchemaError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ManifestSchemaError';
+  }
+}
+
+/**
  * UQ-DEEP-AR I-5 (Auditor I #5 — back-compat reader):
  * AP bumped MANIFEST_SCHEMA_VERSION 1.0.0 → 1.1.0 (stages + lifecycle_pairs
  * added). Pre-existing cert bundles on disk are stamped 1.0.0 and must
- * keep parsing. Reader-side check: accept any 1.x.x stream.
+ * keep parsing. Reader-side check: accept any 1.x.y stream + optional
+ * semver pre-release/build suffix (e.g. 1.2.0-rc1, 1.2.0+build5).
+ *
+ * UQ-DEEP-AS J-P2-1: explicit pre-release/build suffix support — QA
+ * pipelines stamp -rc tags before promotion, regex must accept them.
  *
  * @param {string} version - semver string from disk
  * @returns {boolean}
  */
 export function isCompatibleSchema(version) {
   if (typeof version !== 'string') return false;
-  // Accept 1.x.y (semver-ish) — major bump (2.x) would force migration.
-  return /^1\.\d+\.\d+$/.test(version);
+  // Accept 1.x.y with optional -prerelease.id / +build.id suffix.
+  // Major bump (2.x) would force migration.
+  return /^1\.\d+\.\d+(?:[-+][\w.]+)?$/.test(version);
 }
 
 /**
- * UQ-DEEP-AR I-5: throwing variant for cert audit pipelines.
+ * UQ-DEEP-AR I-5 + AS J-P2-2: throws ManifestSchemaError on mismatch.
  * @param {string} version
- * @throws {Error}
+ * @throws {ManifestSchemaError}
  */
 export function assertCompatibleSchema(version) {
   if (!isCompatibleSchema(version)) {
-    throw new Error('manifest schema_version=' + version + ' incompatible with reader ' + MANIFEST_SCHEMA_VERSION);
+    throw new ManifestSchemaError(
+      'manifest schema_version=' + version + ' incompatible with reader ' + MANIFEST_SCHEMA_VERSION
+    );
   }
 }
 

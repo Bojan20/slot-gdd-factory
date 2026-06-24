@@ -1055,21 +1055,30 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
       handlers[event] = handlers[event].filter(e => e.fn !== fn);
     }
 
-    /* UQ-DEEP-AR I-4 (Auditor I #4 — payload-size cap):
+    /* UQ-DEEP-AR I-4 + AS J-P1-2 (Auditor I #4 + Auditor J P1-2 — bounded
+       replay buffer with read-only contract):
        Shallow-copy payload + drop array fields longer than 64 entries
        so replay cache doesn't pin huge reel snapshots / win lists /
-       SAB views via closure references. Primitives + small arrays kept. */
+       SAB views via closure references. Primitives + small arrays kept.
+
+       READ-ONLY CONTRACT (J-P1-2): Late subscribers using replayLast:true
+       receive a Object.freeze()-d clone — nested objects ARE refs to the
+       original (shallow), but the TOP-LEVEL surface is immutable. Direct
+       mutation of payload.field throws in strict mode, no-ops in sloppy.
+       Replay receivers MUST treat nested objects as read-only by convention
+       (deep-freeze would be too expensive on hot path). */
     function _shallowBounded(p) {
       if (p == null || typeof p !== 'object') return p;
       if (Array.isArray(p)) {
         /* Array payloads: keep first 64 entries; if hit cap, mark truncated. */
-        if (p.length <= 64) return p.slice();
-        var trunc = p.slice(0, 64);
-        trunc._truncated = true;
-        return trunc;
+        var arr = p.length <= 64 ? p.slice() : p.slice(0, 64);
+        if (p.length > 64) arr._truncated = true;
+        try { Object.freeze(arr); } catch (_) {}
+        return arr;
       }
       var out = {};
       for (var k in p) {
+        if (!Object.prototype.hasOwnProperty.call(p, k)) continue;
         var v = p[k];
         if (Array.isArray(v) && v.length > 64) {
           out[k] = { _truncated: true, length: v.length, head: v.slice(0, 8) };
@@ -1077,6 +1086,7 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
           out[k] = v;
         }
       }
+      try { Object.freeze(out); } catch (_) {}
       return out;
     }
     function emit(event, payload) {
