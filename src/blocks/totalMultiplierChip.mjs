@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/totalMultiplierChip.mjs
  *
@@ -133,11 +134,11 @@ export function emitTotalMultiplierChipCSS(cfg = defaultConfig()) {
 export function emitTotalMultiplierChipMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ totalMultiplierChip: cfg });
   if (!c.enabled) return `\n<!-- totalMultiplierChip BLOCK (disabled) -->\n`;
-  return `
+  return tagBlockMarkup(`
 <!-- totalMultiplierChip BLOCK — server-emitted markup -->
 <!-- WCAG 4.1.3 (F4 A3) — atomic so full "TOTAL Nx" is re-spoken on each multiplier change. -->
 <div class="tmc-chip" id="tmcChip" role="status" aria-live="polite" aria-atomic="true" aria-label="Total multiplier 1x" aria-hidden="true">TOTAL 1x</div>
-`;
+`, 'totalMultiplierChip');
 }
 
 export function emitTotalMultiplierChipRuntime(cfg = defaultConfig()) {

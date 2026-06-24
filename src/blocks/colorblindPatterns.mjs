@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/colorblindPatterns.mjs
  *
@@ -274,9 +275,9 @@ export function emitColorblindPatternsMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const checked = cfg.autoActivate ? 'true' : 'false';
   const label = (cfg.chipLabel || 'CB').replace(/[<>"'`]/g, '');
-  return `<button id="cbPatternsChip" class="cb-chip" type="button"
+  return tagBlockMarkup(`<button id="cbPatternsChip" class="cb-chip" type="button"
     role="switch" aria-checked="${checked}"
-    aria-label="Toggle colour-blind pattern overlay">${label}</button>`;
+    aria-label="Toggle colour-blind pattern overlay">${label}</button>`, 'colorblindPatterns');
 }
 
 export function emitColorblindPatternsRuntime(cfg = defaultConfig()) {

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/settingsPanel.mjs
  *
@@ -509,7 +510,7 @@ export function emitSettingsPanelMarkup(cfg = defaultConfig()) {
   if (c.showBetStepPresets) {
     const presets = c.betStepPresets.map((n, i) => {
       const safe = (typeof n === 'number' && isFinite(n)) ? n.toFixed(2) : '0.00';
-      return `<button type="button" class="settings-seg" data-bet-step-idx="${i}" aria-label="Bet step ${_escape(safe)}">${_escape(safe)}</button>`;
+      return tagBlockMarkup(`<button type="button" class="settings-seg" data-bet-step-idx="${i}" aria-label="Bet step ${_escape(safe)}">${_escape(safe)}</button>`, 'settingsPanel');
     }).join('');
     rows.push(`
         <div class="settings-row settings-row--stack" data-setting="betStepPreset">
@@ -547,7 +548,7 @@ export function emitSettingsPanelMarkup(cfg = defaultConfig()) {
    * already rendered by the orchestrator inside `.hub`. The block emits
    * ONLY the modal — runtime wires its open behaviour onto the existing
    * hamburger. No duplicate floating button. */
-  return `
+  return tagBlockMarkup(`
   <div id="settingsBackdrop" class="settings-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
     <div id="settingsModal" class="settings-modal" role="document">
       <h2 id="settingsTitle">Settings</h2>
@@ -557,7 +558,7 @@ export function emitSettingsPanelMarkup(cfg = defaultConfig()) {
         <button id="settingsCloseBtn" class="settings-action" type="button">Close</button>
       </div>
     </div>
-  </div>`;
+  </div>`, 'settingsPanel');
 }
 
 export function emitSettingsPanelRuntime(cfg = defaultConfig()) {

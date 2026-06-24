@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/reelLockHold.mjs
  *
@@ -141,7 +142,7 @@ export function emitReelLockHoldCSS(cfg = defaultConfig()) {
 
 export function emitReelLockHoldMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<!-- reelLockHold decorates .reel-column[data-locked-hold="true"] at runtime -->`;
+  return tagBlockMarkup(`<!-- reelLockHold decorates .reel-column[data-locked-hold="true"] at runtime -->`, 'reelLockHold');
 }
 
 export function emitReelLockHoldRuntime(cfg = defaultConfig()) {

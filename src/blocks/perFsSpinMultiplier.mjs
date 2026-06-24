@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/perFsSpinMultiplier.mjs
  *
@@ -178,10 +179,10 @@ export function emitPerFsSpinMultiplierCSS(cfg = defaultConfig()) {
 export function emitPerFsSpinMultiplierMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ perFsSpinMultiplier: cfg });
   if (!c.enabled) return `\n<!-- perFsSpinMultiplier BLOCK (disabled) -->\n`;
-  return `
+  return tagBlockMarkup(`
 <!-- perFsSpinMultiplier BLOCK — server-emitted markup -->
 <div class="pfsm-chip" id="pfsmChip" role="status" aria-live="polite" aria-hidden="true"></div>
-`;
+`, 'perFsSpinMultiplier');
 }
 
 export function emitPerFsSpinMultiplierRuntime(cfg = defaultConfig()) {

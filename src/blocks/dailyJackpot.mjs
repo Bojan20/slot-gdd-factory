@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * Slot GDD Factory · dailyJackpot BLOCK
  *
@@ -287,12 +288,12 @@ export function emitDailyJackpotMarkup(cfg = defaultConfig()) {
    * award once when the banner appears (a single state change, no risk
    * of screen-reader spam). */
   const zero = _formatMoney(0, c.currency, c.currencyPosition);
-  return `<div id="dailyJackpotHost" class="dailyJackpot-host" data-show="false" role="status" aria-live="polite" aria-atomic="true">
+  return tagBlockMarkup(`<div id="dailyJackpotHost" class="dailyJackpot-host" data-show="false" role="status" aria-live="polite" aria-atomic="true">
       <div class="dailyJackpot-banner">
         <div class="dailyJackpot-label" id="dailyJackpotLabel">${esc(c.labelText)}</div>
         <div class="dailyJackpot-amount" id="dailyJackpotAmount" data-amount="0">${esc(zero)}</div>
       </div>
-    </div>`;
+    </div>`, 'dailyJackpot');
 }
 
 export function emitDailyJackpotRuntime(cfg = defaultConfig()) {

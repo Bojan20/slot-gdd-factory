@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/allWaysEval.mjs
  *
@@ -446,10 +447,10 @@ export function emitAllWaysEvalCSS(cfg = defaultConfig()) {
 export function emitAllWaysEvalMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ allWaysEval: cfg });
   if (!c.enabled) return `\n<!-- allWaysEval BLOCK (disabled) -->\n`;
-  return `
+  return tagBlockMarkup(`
 <!-- allWaysEval BLOCK — server-emitted markup -->
 <div class="all-ways-pay-path" id="allWaysPayPath" aria-hidden="true"></div>
-`;
+`, 'allWaysEval');
 }
 
 export function emitAllWaysEvalRuntime(cfg = defaultConfig()) {

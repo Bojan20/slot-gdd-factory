@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/multiplierLadder.mjs
  *
@@ -155,7 +156,7 @@ export function emitMultiplierLadderMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const startVal = cfg.steps[cfg.startTier] || 1;
   const label = String(cfg.labelTemplate || '×{N}').replace('{N}', String(startVal));
-  return `<div id="multLadder" class="mult-ladder" role="status" aria-live="polite" aria-label="Multiplier ladder" data-visible="false" data-tier="${cfg.startTier}">${label}</div>`;
+  return tagBlockMarkup(`<div id="multLadder" class="mult-ladder" role="status" aria-live="polite" aria-label="Multiplier ladder" data-visible="false" data-tier="${cfg.startTier}">${label}</div>`, 'multiplierLadder');
 }
 
 export function emitMultiplierLadderRuntime(cfg = defaultConfig()) {

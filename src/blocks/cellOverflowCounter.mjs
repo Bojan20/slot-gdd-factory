@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/cellOverflowCounter.mjs
  *
@@ -137,7 +138,7 @@ export function emitCellOverflowCounterCSS(cfg = defaultConfig()) {
 
 export function emitCellOverflowCounterMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<!-- cellOverflowCounter decorates reel columns at runtime -->`;
+  return tagBlockMarkup(`<!-- cellOverflowCounter decorates reel columns at runtime -->`, 'cellOverflowCounter');
 }
 
 export function emitCellOverflowCounterRuntime(cfg = defaultConfig()) {

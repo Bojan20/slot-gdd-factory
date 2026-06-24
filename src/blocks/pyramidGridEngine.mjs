@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/pyramidGridEngine.mjs
  *
@@ -197,11 +198,11 @@ export function emitPyramidGridEngineMarkup(cfg = defaultConfig()) {
       <div class="py-reel" data-reel="${r.reel}" data-rows="${r.rows}">${cells}
       </div>`;
   }
-  return `
+  return tagBlockMarkup(`
 <!-- pyramidGridEngine BLOCK — server-emitted markup -->
 <div class="grid-pyramid" role="grid" aria-label="Pyramid reels">${reels}
 </div>
-`;
+`, 'pyramidGridEngine');
 }
 
 export function emitPyramidGridEngineRuntime(cfg = defaultConfig()) {

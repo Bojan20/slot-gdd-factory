@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/universalForcePanel.mjs
  *
@@ -583,13 +584,13 @@ export function emitUniversalForcePanelMarkup(cfg = defaultConfig(), model = {})
   const chips = kinds.map(k => {
     const short = KIND_LABELS[k];
     const full  = KIND_FULL_LABELS[k];
-    return `<button type="button" class="ufp-chip" data-ufp-kind="${escAttr(k)}" `
-      + `aria-label="Force ${escAttr(full)}" title="Force ${escAttr(full)}">${escAttr(short)}</button>`;
+    return tagBlockMarkup(`<button type="button" class="ufp-chip" data-ufp-kind="${escAttr(k)}" `
+      + `aria-label="Force ${escAttr(full)}" title="Force ${escAttr(full)}">${escAttr(short)}</button>`, 'universalForcePanel');
   }).join('');
 
   /* UQ-DEEP-V (Boki 2026-06-24): dropdown wrap. Toggle button vidljiv
    * uvek (kompaktan); chip lista u .ufp-menu hidden by default. */
-  return `
+  return tagBlockMarkup(`
 <!-- universalForcePanel BLOCK — server-emitted markup (dropdown) -->
 <div class="ufp-root">
   <button type="button" class="ufp-toggle" id="ufpToggle"
@@ -603,7 +604,7 @@ export function emitUniversalForcePanelMarkup(cfg = defaultConfig(), model = {})
     ${label}${chips}
   </div>
 </div>
-`;
+`, 'universalForcePanel');
 }
 
 export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}) {

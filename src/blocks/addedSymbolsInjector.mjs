@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/addedSymbolsInjector.mjs
  *
@@ -190,7 +191,7 @@ export function emitAddedSymbolsInjectorCSS(cfg = defaultConfig()) {
 
 export function emitAddedSymbolsInjectorMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="asi-stage" class="asi-stage" aria-hidden="true"></div>`;
+  return tagBlockMarkup(`<div id="asi-stage" class="asi-stage" aria-hidden="true"></div>`, 'addedSymbolsInjector');
 }
 
 export function emitAddedSymbolsInjectorRuntime(cfg = defaultConfig()) {

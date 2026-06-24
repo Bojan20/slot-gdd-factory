@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/cascadePathDraw.mjs
  *
@@ -113,7 +114,7 @@ export function emitCascadePathDrawCSS(cfg = defaultConfig()) {
 
 export function emitCascadePathDrawMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<svg id="cascadePathSvg" aria-hidden="true"></svg>`;
+  return tagBlockMarkup(`<svg id="cascadePathSvg" aria-hidden="true"></svg>`, 'cascadePathDraw');
 }
 
 export function emitCascadePathDrawRuntime(cfg = defaultConfig()) {

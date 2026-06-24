@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/holdAndWin.mjs
  *
@@ -73,6 +74,8 @@
  * formal Wave Hxx naming + JSDoc kontrakt header pattern (auto-tagged by
  * tools/cortex-block-mega-fix.mjs).
  */
+
+import { Z } from '../registry/zIndexScale.mjs';
 
 export function defaultConfig() {
   return Object.freeze({
@@ -607,7 +610,7 @@ export function emitHoldAndWinCSS(cfg = defaultConfig()) {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) scale(0.6);
-  z-index: 1900;
+  z-index: ${Z.BONUS_MODAL};   /* UQ-DEEP-AO · AO-5 — was 1900 */
   padding: clamp(18px, 4vw, 36px) clamp(28px, 6vw, 56px);
   border-radius: 18px;
   background: radial-gradient(circle at center,
@@ -729,7 +732,7 @@ export function emitHoldAndWinCSS(cfg = defaultConfig()) {
 
 export function emitHoldAndWinMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="hwHud" class="hw-hud" data-show="false" aria-live="polite">
+  return tagBlockMarkup(`<div id="hwHud" class="hw-hud" data-show="false" aria-live="polite">
   <div class="hw-box" id="hwRespinsBox"><span class="hw-lbl">RESPINS</span><span class="hw-val" id="hwRespins">${cfg.respinsAwarded}</span></div>
   <div class="hw-box" id="hwLockedBox"><span class="hw-lbl">LOCKED</span><span class="hw-val" id="hwLocked">0</span></div>
   <div class="hw-box" id="hwTotalBox"><span class="hw-lbl">TOTAL</span><span class="hw-val" id="hwTotal">0.00</span></div>
@@ -761,7 +764,7 @@ export function emitHoldAndWinMarkup(cfg = defaultConfig()) {
     <div class="hw-summary__stats" id="hwSummaryStats">0 orbs · 0 respins used</div>
     <div class="hw-summary__cta">TAP TO COLLECT</div>
   </div>
-</div>`;
+</div>`, 'holdAndWin');
 }
 
 export function emitHoldAndWinRuntime(cfg = defaultConfig()) {

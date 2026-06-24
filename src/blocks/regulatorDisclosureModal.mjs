@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/regulatorDisclosureModal.mjs
  *
@@ -209,7 +210,7 @@ export function emitRegulatorDisclosureModalMarkup(cfg = defaultConfig()) {
      disclosure show; regulator interrupts are safety-critical, so we use
      role="alert" + aria-live="assertive" per audit rule 2 (this block is
      in the isCriticalBlock allowlist: regulator). */
-  return `<div id="regDisclosureModal" data-show="false" role="dialog"
+  return tagBlockMarkup(`<div id="regDisclosureModal" data-show="false" role="dialog"
      aria-modal="true" aria-labelledby="rdmKind" aria-describedby="rdmBody">
   <div class="rdm-card" role="alert" aria-live="assertive">
     <div class="rdm-kind" id="rdmKind">—</div>
@@ -220,7 +221,7 @@ export function emitRegulatorDisclosureModalMarkup(cfg = defaultConfig()) {
     <button class="rdm-ack" id="rdmAck" type="button" aria-label="${_escape(cfg.ackButtonLabel)}">${_escape(cfg.ackButtonLabel)}</button>
     <div class="rdm-queue" id="rdmQueue" hidden></div>
   </div>
-</div>`;
+</div>`, 'regulatorDisclosureModal');
 }
 
 export function emitRegulatorDisclosureModalRuntime(cfg = defaultConfig()) {

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/moneyGrabGrid.mjs
  *
@@ -224,7 +225,7 @@ export function emitMoneyGrabGridMarkup(cfg = defaultConfig()) {
               aria-label="Money card ${i + 1} face down"
               aria-pressed="false">?</button>`;
   }
-  return `
+  return tagBlockMarkup(`
 <!-- moneyGrabGrid BLOCK — server-emitted markup -->
 <div class="mgg-overlay" id="mggOverlay" role="dialog" aria-modal="true" aria-labelledby="mggTitle" aria-hidden="true">
   <h2 class="mgg-title" id="mggTitle">PICK ${c.maxPicks} TO COLLECT</h2>
@@ -235,7 +236,7 @@ export function emitMoneyGrabGridMarkup(cfg = defaultConfig()) {
   <!-- WCAG 4.1.3 (F4 A3) — atomic so full "TOTAL: Nx" is re-spoken, not diff. -->
   <div class="mgg-running" id="mggRunning" role="status" aria-live="polite" aria-atomic="true">TOTAL: 0x</div>
 </div>
-`;
+`, 'moneyGrabGrid');
 }
 
 export function emitMoneyGrabGridRuntime(cfg = defaultConfig()) {

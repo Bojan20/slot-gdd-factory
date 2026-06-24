@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/volatilitySelector.mjs
  *
@@ -252,14 +253,14 @@ export function emitVolatilitySelectorMarkup(cfg = defaultConfig()) {
             aria-checked="${i === di ? 'true' : 'false'}"
             aria-describedby="vsSubtitle"
             tabindex="${i === di ? '0' : '-1'}">${escapeHtml(t.label)}</button>`).join('');
-  return `<div id="volatilitySelector" class="volatility-selector"
+  return tagBlockMarkup(`<div id="volatilitySelector" class="volatility-selector"
      data-locked="false"
      role="group" aria-label="Volatility selector">
   <span class="vs-label">${escapeHtml(cfg.label)}</span>
   <div class="vs-rail" role="radiogroup" aria-label="Volatility level">${tiers}
   </div>
   <span class="vs-subtitle" id="vsSubtitle">${escapeHtml(cfg.tiers[di].subtitle || '')}</span>
-</div>`;
+</div>`, 'volatilitySelector');
 }
 
 export function emitVolatilitySelectorRuntime(cfg = defaultConfig()) {

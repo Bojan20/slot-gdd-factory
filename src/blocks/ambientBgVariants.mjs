@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/ambientBgVariants.mjs
  *
@@ -126,7 +127,7 @@ export function emitAmbientBgVariantsMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   /* sr-only status region so screen readers can hear mood changes
    * if the operator wants to surface them. By default empty. */
-  return `<div id="ambientMoodLive" class="rwb-live" role="status" aria-live="off" aria-atomic="true"></div>`;
+  return tagBlockMarkup(`<div id="ambientMoodLive" class="rwb-live" role="status" aria-live="off" aria-atomic="true"></div>`, 'ambientBgVariants');
 }
 
 export function emitAmbientBgVariantsRuntime(cfg = defaultConfig()) {

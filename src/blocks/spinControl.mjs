@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/spinControl.mjs
  *
@@ -264,7 +265,7 @@ export function emitSpinControlMarkup(cfg = defaultConfig()) {
    * SPIN  — circular two-arrow refresh glyph (industry-standard)
    * STOP  — solid square (universal media-stop glyph)
    * SKIP  — forward double-triangle (universal media-skip glyph) */
-  return `
+  return tagBlockMarkup(`
   <button class="spinBtn" id="spinBtn" type="button" data-state="SPIN" data-spin-ready="true" aria-label="${aria}">
     <svg class="spinIcon spinIcon--spin" viewBox="0 0 32 32" aria-hidden="true">
       <path d="M5.6 17.4a10.5 10.5 0 0 0 18.7 5.2"/>
@@ -279,7 +280,7 @@ export function emitSpinControlMarkup(cfg = defaultConfig()) {
       <polygon points="6,8 16,16 6,24" stroke-width="0"/>
       <polygon points="16,8 26,16 16,24" stroke-width="0"/>
     </svg>
-  </button>`;
+  </button>`, 'spinControl');
 }
 
 export function emitSpinControlRuntime(cfg = defaultConfig()) {

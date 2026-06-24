@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/slamStop.mjs
  *
@@ -251,14 +252,14 @@ export function emitSlamStopMarkup(cfg = defaultConfig()) {
   const c = cfg;
   const safeLabel = _slamEscape(c.chipLabel);
   const safeAria = _slamEscape(c.ariaLabel);
-  return `
+  return tagBlockMarkup(`
   <button
     id="slamStopBtn"
     class="slam-stop-btn"
     type="button"
     aria-label="${safeAria}"
     hidden
-  >${safeLabel}</button>`;
+  >${safeLabel}</button>`, 'slamStop');
 }
 
 export function emitSlamStopRuntime(cfg = defaultConfig()) {

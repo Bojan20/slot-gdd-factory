@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/paletteRoulette.mjs
  *
@@ -173,8 +174,8 @@ export function emitPaletteRouletteCSS(cfg = defaultConfig()) {
 
 export function emitPaletteRouletteMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<button id="paletteRouletteBtn" class="palette-roulette-btn" type="button"
-        aria-label="Roll a new color ${escapeAttr(cfg.label)}" data-rolling="false">↻</button>`;
+  return tagBlockMarkup(`<button id="paletteRouletteBtn" class="palette-roulette-btn" type="button"
+        aria-label="Roll a new color ${escapeAttr(cfg.label)}" data-rolling="false">↻</button>`, 'paletteRoulette');
 }
 
 export function emitPaletteRouletteRuntime(cfg = defaultConfig()) {

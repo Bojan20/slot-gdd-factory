@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/hotReload.mjs
  *
@@ -105,6 +106,8 @@
  *   running playable without manual reload.
  */
 
+import { Z } from '../registry/zIndexScale.mjs';
+
 const DEFAULTS = Object.freeze({
   enabled: false,
   endpoint: '/__dev/events',
@@ -187,7 +190,7 @@ export function emitHotReloadCSS(cfg = defaultConfig()) {
     position: fixed;
     bottom: max(env(safe-area-inset-bottom, 0px), 12px);
     left: max(env(safe-area-inset-left, 0px), 12px);
-    z-index: 99990;
+    z-index: ${Z.DEV_HOT_RELOAD};   /* UQ-DEEP-AO · AO-5 — was 99990 */
     display: none;
     align-items: center;
     gap: 0.4rem;
@@ -228,11 +231,11 @@ export function emitHotReloadCSS(cfg = defaultConfig()) {
 export function emitHotReloadMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ hotReload: cfg });
   if (!c.enabled || !c.indicator) return '';
-  return `
+  return tagBlockMarkup(`
   <div id="hmrBadge" class="hmr-badge" role="status" aria-live="polite" data-state="idle">
     <span class="hmr-dot" aria-hidden="true"></span>
     <span class="hmr-text">HMR</span>
-  </div>`;
+  </div>`, 'hotReload');
 }
 
 /* ─── runtime emitter ────────────────────────────────────────────── */

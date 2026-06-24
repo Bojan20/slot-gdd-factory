@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/coinCollect.mjs
  *
@@ -160,8 +161,8 @@ export function emitCoinCollectCSS(cfg = defaultConfig()) {
 
 export function emitCoinCollectMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="coinCollectLive" class="coin-collect-live"
-     role="status" aria-live="polite" aria-atomic="true"></div>`;
+  return tagBlockMarkup(`<div id="coinCollectLive" class="coin-collect-live"
+     role="status" aria-live="polite" aria-atomic="true"></div>`, 'coinCollect');
 }
 
 export function emitCoinCollectRuntime(cfg = defaultConfig()) {

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/pathBonusEngine.mjs
  *
@@ -243,7 +244,7 @@ export function emitPathBonusEngineMarkup(cfg = defaultConfig()) {
     tiles += `
       <div class="pb-tile${isFinish ? ' is-finish' : ''}" data-pb-tile="${i}">${isFinish ? 'FIN' : '?'}</div>`;
   }
-  return `
+  return tagBlockMarkup(`
 <!-- pathBonusEngine BLOCK — server-emitted markup -->
 <div class="pb-overlay" id="pbOverlay" role="dialog" aria-modal="true" aria-labelledby="pbTitle" aria-hidden="true">
   <h2 class="pb-title" id="pbTitle">ROLL TO ADVANCE — REACH FINISH</h2>
@@ -255,7 +256,7 @@ export function emitPathBonusEngineMarkup(cfg = defaultConfig()) {
   </div>
   <button type="button" class="pb-roll-btn" id="pbRollBtn" aria-label="Roll the dice">ROLL</button>
 </div>
-`;
+`, 'pathBonusEngine');
 }
 
 export function emitPathBonusEngineRuntime(cfg = defaultConfig()) {

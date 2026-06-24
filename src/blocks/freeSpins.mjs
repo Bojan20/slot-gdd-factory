@@ -1,3 +1,6 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
+import { Z } from '../registry/zIndexScale.mjs';
+
 /**
  * Slot GDD Factory · freeSpins BLOCK
  *
@@ -320,7 +323,7 @@ body.fs-mode-crimson .frame::after {
   justify-content: center;
   background: rgba(7, 5, 14, 0.55);
   backdrop-filter: blur(10px) saturate(1.1);
-  z-index: 200;
+  z-index: ${Z.HUD_BACKGROUND};   /* UQ-DEEP-AO · AO-5 — was 200 (now via registry) */
   opacity: 0;
   transition: opacity ${c.fadeMs}ms ease-out;
 }
@@ -403,7 +406,7 @@ body.fs-mode-crimson .fs-placard { box-shadow: 0 30px 100px rgba(0, 0, 0, 0.75),
 export function emitFreeSpinsHudMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ freeSpinsPresentation: cfg });
   if (!c.enabled) return '';
-  return `<!-- Free Spins HUD — rendered always; toggled visible via .fs-hud--active.
+  return tagBlockMarkup(`<!-- Free Spins HUD — rendered always; toggled visible via .fs-hud--active.
        WCAG 4.1.3 (Status Messages) — every value cell is mutated on
        every FS spin / award; aria-live="polite" so SR users hear the
        spin / multiplier / total counters update without preempting
@@ -438,25 +441,25 @@ export function emitFreeSpinsHudMarkup(cfg = defaultConfig()) {
          aria-live="polite" aria-atomic="true"
          aria-labelledby="fsHudTotalLabel fsHudTotal">0.00</div>
   </div>
-</div>`;
+</div>`, 'freeSpins');
 }
 
 export function emitFreeSpinsToastMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ freeSpinsPresentation: cfg });
   if (!c.enabled) return '';
-  return `<!-- Retrigger / award toast — animates in & out on +N FS event.
+  return tagBlockMarkup(`<!-- Retrigger / award toast — animates in & out on +N FS event.
        W47.S26 — role="status" + aria-live="polite" so the +N retrigger
        announcement queues behind the spin-result announcement instead
        of cutting it off mid-utterance. Toast text is set via
        .textContent in FSM_showToast which triggers the live-region
        announce automatically. -->
-<div class="fs-toast" id="fsToast" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true">+0 FREE SPINS</div>`;
+<div class="fs-toast" id="fsToast" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true">+0 FREE SPINS</div>`, 'freeSpins');
 }
 
 export function emitFreeSpinsOverlayMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ freeSpinsPresentation: cfg });
   if (!c.enabled) return '';
-  return `<!-- Free Spins full-stage overlay — intro & outro placards. -->
+  return tagBlockMarkup(`<!-- Free Spins full-stage overlay — intro & outro placards. -->
 <div class="fs-overlay" id="fsOverlay" role="dialog" aria-modal="true" aria-hidden="true">
   <div class="fs-placard">
     <div class="fs-placard__eyebrow" id="fsPlacardEyebrow">YOU TRIGGERED</div>
@@ -465,7 +468,7 @@ export function emitFreeSpinsOverlayMarkup(cfg = defaultConfig()) {
     <div class="fs-placard__sub" id="fsPlacardSub">${esc(c.introSub)}</div>
     <button class="fs-placard__cta" id="fsPlacardCta" type="button" aria-label="${esc(c.introCta) || 'Continue to free spins'}">${esc(c.introCta)}</button>
   </div>
-</div>`;
+</div>`, 'freeSpins');
 }
 
 export function emitFreeSpinsRuntime(cfg = defaultConfig()) {

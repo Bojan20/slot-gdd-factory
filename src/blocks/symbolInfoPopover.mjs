@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * Slot GDD Factory · symbolInfoPopover BLOCK
  *
@@ -164,8 +165,8 @@ export function emitSymbolInfoPopoverMarkup(cfg = defaultConfig()) {
      the symbol's tier + payout. role="status" + aria-live="polite" so
      SR users hear the chip content when it appears. role="tooltip" is
      kept for AT semantics around the anchored cell. */
-  return `
-  <div class="symbolInfoPopover" id="symbolInfoPopover" role="tooltip" aria-live="polite" aria-hidden="true"></div>`;
+  return tagBlockMarkup(`
+  <div class="symbolInfoPopover" id="symbolInfoPopover" role="tooltip" aria-live="polite" aria-hidden="true"></div>`, 'symbolInfoPopover');
 }
 
 export function emitSymbolInfoPopoverRuntime(cfg = defaultConfig()) {

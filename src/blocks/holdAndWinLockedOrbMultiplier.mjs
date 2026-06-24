@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/holdAndWinLockedOrbMultiplier.mjs
  *
@@ -210,10 +211,10 @@ export function emitHoldAndWinLockedOrbMultiplierMarkup(cfg = defaultConfig()) {
   if (!c.enabled) return `\n<!-- holdAndWinLockedOrbMultiplier BLOCK (disabled) -->\n`;
   /* Chips are minted at runtime per locked cell; only a marker stub
      here so static integration tools can detect the block presence. */
-  return `
+  return tagBlockMarkup(`
 <!-- holdAndWinLockedOrbMultiplier BLOCK — chips minted at runtime per locked cell -->
 <div class="hwlom-root" data-hwlom-aggregation="${c.aggregation}" aria-hidden="true" hidden></div>
-`;
+`, 'holdAndWinLockedOrbMultiplier');
 }
 
 export function emitHoldAndWinLockedOrbMultiplierRuntime(cfg = defaultConfig()) {

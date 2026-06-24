@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/fsSymbolUpgradeEscalation.mjs
  *
@@ -185,10 +186,10 @@ export function emitFsSymbolUpgradeEscalationCSS(cfg = defaultConfig()) {
 export function emitFsSymbolUpgradeEscalationMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ fsSymbolUpgradeEscalation: cfg });
   if (!c.enabled || !c.showChip) return `\n<!-- fsSymbolUpgradeEscalation BLOCK (disabled or hidden) -->\n`;
-  return `
+  return tagBlockMarkup(`
 <!-- fsSymbolUpgradeEscalation BLOCK — server-emitted markup -->
 <div class="fsse-chip" id="fsseChip" role="status" aria-live="polite" aria-hidden="true"></div>
-`;
+`, 'fsSymbolUpgradeEscalation');
 }
 
 export function emitFsSymbolUpgradeEscalationRuntime(cfg = defaultConfig()) {

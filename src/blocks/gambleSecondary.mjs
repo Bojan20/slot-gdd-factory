@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/gambleSecondary.mjs
  *
@@ -472,7 +473,7 @@ export function emitGambleSecondaryCSS(cfg = defaultConfig()) {
 
 export function emitGambleSecondaryMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `
+  return tagBlockMarkup(`
   <div class="gs-overlay" id="gsOverlay" hidden role="dialog" aria-modal="true" aria-label="Gamble feature">
     <div class="gs-prompt" id="gsPrompt" hidden>
       <h2>Gamble?</h2>
@@ -505,7 +506,7 @@ export function emitGambleSecondaryMarkup(cfg = defaultConfig()) {
       </div>
       <div class="gs-toast" id="gsLadderToast" hidden></div>
     </div>
-  </div>`;
+  </div>`, 'gambleSecondary');
 }
 
 /* ─── Runtime emission ─────────────────────────────────────────────────── */

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/randomWildBurst.mjs
  *
@@ -167,8 +168,8 @@ export function emitRandomWildBurstCSS(cfg = defaultConfig()) {
 
 export function emitRandomWildBurstMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="rwbFlash" class="rwb-flash" data-fire="false" aria-hidden="true"></div>
-<div id="rwbLive" class="rwb-live" role="status" aria-live="polite" aria-atomic="true"></div>`;
+  return tagBlockMarkup(`<div id="rwbFlash" class="rwb-flash" data-fire="false" aria-hidden="true"></div>
+<div id="rwbLive" class="rwb-live" role="status" aria-live="polite" aria-atomic="true"></div>`, 'randomWildBurst');
 }
 
 export function emitRandomWildBurstRuntime(cfg = defaultConfig()) {

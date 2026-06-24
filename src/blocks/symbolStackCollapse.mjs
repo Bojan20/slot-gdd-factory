@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/symbolStackCollapse.mjs
  *
@@ -236,10 +237,10 @@ export function emitSymbolStackCollapseCSS(cfg = defaultConfig()) {
 
 export function emitSymbolStackCollapseMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="symbolStackCollapse" class="stack-collapse" data-active="false" role="status" aria-live="polite" aria-label="Symbol stack collapse" aria-hidden="true">
+  return tagBlockMarkup(`<div id="symbolStackCollapse" class="stack-collapse" data-active="false" role="status" aria-live="polite" aria-label="Symbol stack collapse" aria-hidden="true">
     <div class="sc-flash" aria-hidden="true"></div>
     <div class="sc-label">&nbsp;</div>
-  </div>`;
+  </div>`, 'symbolStackCollapse');
 }
 
 export function emitSymbolStackCollapseRuntime(cfg = defaultConfig()) {

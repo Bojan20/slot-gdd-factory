@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/driftSentinel.mjs
  *
@@ -64,7 +65,7 @@ export function emitDriftSentinelCSS(cfg = defaultConfig()) {
 
 export function emitDriftSentinelMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div class="drift-toast" id="driftToast" role="status" aria-live="polite"><div class="dt-head" id="dtHead"></div><div class="dt-body" id="dtBody"></div></div>`;
+  return tagBlockMarkup(`<div class="drift-toast" id="driftToast" role="status" aria-live="polite"><div class="dt-head" id="dtHead"></div><div class="dt-body" id="dtBody"></div></div>`, 'driftSentinel');
 }
 
 export function emitDriftSentinelRuntime(cfg = defaultConfig()) {

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/matchThreeBonusReveal.mjs
  *
@@ -237,7 +238,7 @@ export function emitMatchThreeBonusRevealMarkup(cfg = defaultConfig()) {
               aria-label="Match card ${i + 1} face down"
               aria-pressed="false">?</button>`;
   }
-  return `
+  return tagBlockMarkup(`
 <!-- matchThreeBonusReveal BLOCK — server-emitted markup -->
 <div class="m3b-overlay" id="m3bOverlay" role="dialog" aria-modal="true" aria-labelledby="m3bTitle" aria-hidden="true">
   <h2 class="m3b-title" id="m3bTitle">PICK TO REVEAL — MATCH 3 OR STOP</h2>
@@ -246,7 +247,7 @@ export function emitMatchThreeBonusRevealMarkup(cfg = defaultConfig()) {
   <!-- WCAG 4.1.3 (F4 A3) — atomic so full "TOTAL: Nx" is re-spoken, not diff. -->
   <div class="m3b-running" id="m3bRunning" role="status" aria-live="polite" aria-atomic="true">TOTAL: 0x</div>
 </div>
-`;
+`, 'matchThreeBonusReveal');
 }
 
 export function emitMatchThreeBonusRevealRuntime(cfg = defaultConfig()) {

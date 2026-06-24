@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/syncReels.mjs
  *
@@ -82,7 +83,7 @@ export function emitSyncReelsCSS(cfg = defaultConfig()) {
 
 export function emitSyncReelsMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<!-- syncReels decorates .reel-column[data-synced="true"] at runtime -->`;
+  return tagBlockMarkup(`<!-- syncReels decorates .reel-column[data-synced="true"] at runtime -->`, 'syncReels');
 }
 
 export function emitSyncReelsRuntime(cfg = defaultConfig()) {

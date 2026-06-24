@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/cascadeBooster.mjs
  *
@@ -161,7 +162,7 @@ export function emitCascadeBoosterCSS(cfg = defaultConfig()) {
 
 export function emitCascadeBoosterMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="cbChip" class="cb-chip" role="status" aria-live="polite" aria-label="Cascade booster multiplier" data-visible="false" data-bumping="false" data-mult="1">BOOST ×1</div>`;
+  return tagBlockMarkup(`<div id="cbChip" class="cb-chip" role="status" aria-live="polite" aria-label="Cascade booster multiplier" data-visible="false" data-bumping="false" data-mult="1">BOOST ×1</div>`, 'cascadeBooster');
 }
 
 export function emitCascadeBoosterRuntime(cfg = defaultConfig()) {

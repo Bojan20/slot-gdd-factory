@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/forceSkip.mjs
  *
@@ -231,7 +232,7 @@ export function emitForceSkipMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ forceSkip: cfg });
   const safeLabel = _skipEscape(c.chipLabel);
   const safeAria = _skipEscape(c.ariaLabel);
-  return `
+  return tagBlockMarkup(`
   <button
     id="forceSkipBtn"
     class="force-skip-btn"
@@ -239,7 +240,7 @@ export function emitForceSkipMarkup(cfg = defaultConfig()) {
     aria-label="${safeAria}"
     hidden
     data-phase=""
-  >${safeLabel}</button>`;
+  >${safeLabel}</button>`, 'forceSkip');
 }
 
 export function emitForceSkipRuntime(cfg = defaultConfig()) {

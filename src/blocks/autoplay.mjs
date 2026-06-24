@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/autoplay.mjs
  *
@@ -551,7 +552,7 @@ export function emitAutoplayMarkup(cfg = defaultConfig()) {
    * footer with Back + Start CTAs. All controls are accessible
    * (role="dialog" + aria-modal, focus-trap, ESC-close) and inputs
    * use type=number with inputmode=decimal for mobile keyboards. */
-  return `
+  return tagBlockMarkup(`
   <div id="autoplayBackdrop" class="autoplay-backdrop" hidden role="dialog"
        aria-modal="true" aria-labelledby="autoplayTitle">
     <div id="autoplayModal" class="autoplay-modal" role="document">
@@ -622,7 +623,7 @@ export function emitAutoplayMarkup(cfg = defaultConfig()) {
       </footer>
     </div>
   </div>
-  <div id="autoplayCounter" class="autoplay-counter" hidden aria-live="polite"></div>`;
+  <div id="autoplayCounter" class="autoplay-counter" hidden aria-live="polite"></div>`, 'autoplay');
 }
 
 export function emitAutoplayRuntime(cfg = defaultConfig()) {

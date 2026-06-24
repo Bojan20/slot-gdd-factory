@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/inSyncReels.mjs
  *
@@ -188,7 +189,7 @@ export function emitInSyncReelsMarkup(cfg = defaultConfig()) {
    * runtime does not have to re-derive it. JSON.stringify on a plain
    * int-array produces only safe characters. */
   const groupsJson = JSON.stringify(cfg.syncGroups.map((g) => g.slice()));
-  return `<div id="isrLinkHost" class="isr-link-host" data-sync-groups='${groupsJson}' aria-hidden="true"></div>`;
+  return tagBlockMarkup(`<div id="isrLinkHost" class="isr-link-host" data-sync-groups='${groupsJson}' aria-hidden="true"></div>`, 'inSyncReels');
 }
 
 export function emitInSyncReelsRuntime(cfg = defaultConfig(), model = {}) {

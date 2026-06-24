@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/superchargedFs.mjs
  *
@@ -160,7 +161,7 @@ export function emitSuperchargedFsCSS(cfg = defaultConfig()) {
 
 export function emitSuperchargedFsMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="sfsBadge" class="sfs-badge" role="status" aria-live="polite" aria-label="Free-spins multiplier" data-visible="false" data-escalating="false" data-mult="1">FS MULT ×1</div>`;
+  return tagBlockMarkup(`<div id="sfsBadge" class="sfs-badge" role="status" aria-live="polite" aria-label="Free-spins multiplier" data-visible="false" data-escalating="false" data-mult="1">FS MULT ×1</div>`, 'superchargedFs');
 }
 
 export function emitSuperchargedFsRuntime(cfg = defaultConfig()) {

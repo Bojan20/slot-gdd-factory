@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/uiToast.mjs
  *
@@ -241,7 +242,7 @@ export function emitUiToastCSS(cfg = defaultConfig()) {
 
 export function emitUiToastMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="uiToastHost" class="ui-toast-host" aria-live="polite" aria-atomic="true"></div>`;
+  return tagBlockMarkup(`<div id="uiToastHost" class="ui-toast-host" aria-live="polite" aria-atomic="true"></div>`, 'uiToast');
 }
 
 export function emitUiToastRuntime(cfg = defaultConfig()) {

@@ -110,6 +110,8 @@
  *   • ariaLabelPrefix      string       (default 'Pattern win')
  */
 
+import { Z } from '../registry/zIndexScale.mjs';
+
 const DEFAULTS = Object.freeze({
   enabled:               false,
   anchorReel:            0,
@@ -322,7 +324,7 @@ export function emitPatternWinCSS(cfg) {
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  z-index: 9000;
+  z-index: ${Z.PATTERN_WIN};   /* UQ-DEEP-AO · AO-5 — was 9000 */
   background: radial-gradient(circle, rgba(20,10,30,0.72) 0%, rgba(0,0,0,0.55) 60%, rgba(0,0,0,0.85) 100%);
   opacity: 0;
   transition: opacity 240ms ease-out;

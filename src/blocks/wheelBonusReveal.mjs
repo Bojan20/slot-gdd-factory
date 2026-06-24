@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/wheelBonusReveal.mjs
  *
@@ -228,11 +229,11 @@ ${styleBlock}
 
 export function emitWheelBonusRevealMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="wheelReveal" class="wheel-reveal" data-active="false" data-jackpot="false" role="status" aria-live="polite" aria-label="Wheel reveal">
+  return tagBlockMarkup(`<div id="wheelReveal" class="wheel-reveal" data-active="false" data-jackpot="false" role="status" aria-live="polite" aria-label="Wheel reveal">
   <div class="wr-headline">RESULT</div>
   <!-- WCAG 4.1.3 (F4 A3) — wheel prize / JACKPOT is celebration; assertive interrupts so SR speaks full result. -->
   <div class="wr-prize" aria-live="assertive" aria-atomic="true">—</div>
-</div>`;
+</div>`, 'wheelBonusReveal');
 }
 
 export function emitWheelBonusRevealRuntime(cfg = defaultConfig()) {

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/audio.mjs
  *
@@ -198,7 +199,7 @@ export function emitAudioMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled || !cfg.showToggle) return '';
   /* WCAG 4.1.3 — the icon glyph swaps (🔊 ↔ 🔇) when the player toggles
      mute. SR users need aria-live="polite" so the new state is announced. */
-  return `<button id="audioToggle" class="audio-toggle" data-muted="${cfg.muted ? 'true' : 'false'}" type="button" aria-label="Toggle audio" aria-live="polite" title="Toggle audio">🔊</button>`;
+  return tagBlockMarkup(`<button id="audioToggle" class="audio-toggle" data-muted="${cfg.muted ? 'true' : 'false'}" type="button" aria-label="Toggle audio" aria-live="polite" title="Toggle audio">🔊</button>`, 'audio');
 }
 
 export function emitAudioRuntime(cfg = defaultConfig()) {

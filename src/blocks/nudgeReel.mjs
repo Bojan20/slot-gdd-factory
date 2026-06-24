@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/nudgeReel.mjs
  *
@@ -173,7 +174,7 @@ export function emitNudgeReelCSS(cfg = defaultConfig()) {
 
 export function emitNudgeReelMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<button id="nudgeChip" class="nudge-chip" type="button" data-visible="false" aria-label="Nudge reel" aria-live="polite"><span class="nudge-dir" aria-hidden="true">↑</span><span class="nudge-text">${cfg.chipLabel}</span></button>`;
+  return tagBlockMarkup(`<button id="nudgeChip" class="nudge-chip" type="button" data-visible="false" aria-label="Nudge reel" aria-live="polite"><span class="nudge-dir" aria-hidden="true">↑</span><span class="nudge-text">${cfg.chipLabel}</span></button>`, 'nudgeReel');
 }
 
 export function emitNudgeReelRuntime(cfg = defaultConfig()) {

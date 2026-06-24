@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/coinShower.mjs
  *
@@ -205,7 +206,7 @@ export function emitCoinShowerCSS(cfg = defaultConfig()) {
 
 export function emitCoinShowerMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="coinShower" class="coin-shower" data-active="false" aria-hidden="true"></div>`;
+  return tagBlockMarkup(`<div id="coinShower" class="coin-shower" data-active="false" aria-hidden="true"></div>`, 'coinShower');
 }
 
 export function emitCoinShowerRuntime(cfg = defaultConfig()) {

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/anteBetLadder.mjs
  *
@@ -295,11 +296,11 @@ export function emitAnteBetLadderMarkup(cfg = defaultConfig()) {
             data-rung-index="${i}"
             aria-checked="${i === di ? 'true' : 'false'}"
             tabindex="${i === di ? '0' : '-1'}">${escapeHtml(r.label)}</button>`).join('');
-  return `<div id="anteBetLadder" class="ante-bet-ladder" data-locked="false" role="group" aria-label="Ante bet ladder">
+  return tagBlockMarkup(`<div id="anteBetLadder" class="ante-bet-ladder" data-locked="false" role="group" aria-label="Ante bet ladder">
   <span class="ladder-label">${escapeHtml(cfg.label)}</span>
   <div class="ladder-rail" role="radiogroup" aria-label="Ante bet level">${rungs}
   </div>
-</div>`;
+</div>`, 'anteBetLadder');
 }
 
 export function emitAnteBetLadderRuntime(cfg = defaultConfig()) {

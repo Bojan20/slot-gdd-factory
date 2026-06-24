@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/pickYourFs.mjs
  *
@@ -217,14 +218,14 @@ export function emitPickYourFsMarkup(cfg = defaultConfig()) {
         <span class="pyfs-spins">${m.spinsCount} SPINS</span>
         <span class="pyfs-mult">×${m.baseMultiplier} MULT</span>
       </button>`).join('');
-  return `
+  return tagBlockMarkup(`
 <!-- pickYourFs BLOCK — server-emitted markup -->
 <div class="pyfs-overlay" id="pyfsOverlay" role="dialog" aria-modal="true" aria-labelledby="pyfsTitle" aria-hidden="true">
   <h2 class="pyfs-title" id="pyfsTitle">PICK YOUR FREE SPINS</h2>
   <div class="pyfs-cards" role="group" aria-label="Free spins mode selection">${cards}
   </div>
 </div>
-`;
+`, 'pickYourFs');
 }
 
 export function emitPickYourFsRuntime(cfg = defaultConfig()) {

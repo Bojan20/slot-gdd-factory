@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/bigWinTier.mjs
  *
@@ -821,7 +822,7 @@ export function emitBigWinTierMarkup(cfg = defaultConfig()) {
    * endHoldMs steady-state). The visible label gets its own aria-live so
    * the ~5 tier-name swaps reach the player; the visible amount carries
    * aria-hidden because the SR-only announce node speaks for it. */
-  return `<div id="bigWinTierHost" class="big-win-tier-host"><div id="bigWinTierAnnounce" class="big-win-tier-sr" role="status" aria-live="polite" aria-atomic="true"></div></div>`;
+  return tagBlockMarkup(`<div id="bigWinTierHost" class="big-win-tier-host"><div id="bigWinTierAnnounce" class="big-win-tier-sr" role="status" aria-live="polite" aria-atomic="true"></div></div>`, 'bigWinTier');
 }
 
 export function emitBigWinTierRuntime(cfg = defaultConfig()) {

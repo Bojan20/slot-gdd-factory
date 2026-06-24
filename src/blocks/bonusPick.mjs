@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/bonusPick.mjs
  *
@@ -201,7 +202,7 @@ export function emitBonusPickMarkup(cfg = defaultConfig()) {
   const tiles = Array.from({ length: cfg.tileCount }, (_, i) =>
     `<button class="bp-tile" data-bp-idx="${i}" type="button" aria-label="Pick ${i + 1}">?</button>`
   ).join('');
-  return `<div id="bpOverlay" class="bp-overlay" data-show="false" role="dialog" aria-modal="true" aria-labelledby="bpTitle">
+  return tagBlockMarkup(`<div id="bpOverlay" class="bp-overlay" data-show="false" role="dialog" aria-modal="true" aria-labelledby="bpTitle">
   <div class="bp-modal">
     <div id="bpTitle" class="bp-title">${escapeHtml(cfg.title)}</div>
     <!-- WCAG 4.1.3 — picks-left + total are mutated on every tile reveal;
@@ -210,7 +211,7 @@ export function emitBonusPickMarkup(cfg = defaultConfig()) {
     <div class="bp-grid">${tiles}</div>
     <button id="bpClose" class="bp-close" data-show="false" type="button">COLLECT</button>
   </div>
-</div>`;
+</div>`, 'bonusPick');
 }
 
 export function emitBonusPickRuntime(cfg = defaultConfig()) {

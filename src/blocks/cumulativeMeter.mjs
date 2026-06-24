@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/cumulativeMeter.mjs
  *
@@ -222,7 +223,7 @@ export function emitCumulativeMeterCSS(cfg = defaultConfig()) {
 export function emitCumulativeMeterMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const firstNext = cfg.thresholds[0] ? cfg.thresholds[0].value : 0;
-  return `<div id="cumulativeMeter" class="cumulative-meter"
+  return tagBlockMarkup(`<div id="cumulativeMeter" class="cumulative-meter"
      role="progressbar"
      aria-label="${escapeAttr(cfg.label)} progress meter"
      aria-valuenow="0" aria-valuemin="0" aria-valuemax="${firstNext}"
@@ -235,7 +236,7 @@ export function emitCumulativeMeterMarkup(cfg = defaultConfig()) {
     <div class="meter-fill" id="cumulativeMeterFill"></div>
   </div>
   <div class="meter-next" id="cumulativeMeterNext">Next: ${firstNext}</div>
-</div>`;
+</div>`, 'cumulativeMeter');
 }
 
 export function emitCumulativeMeterRuntime(cfg = defaultConfig()) {

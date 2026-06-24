@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/liveRtpHud.mjs
  *
@@ -39,6 +40,8 @@
  * Anti-vendor: no product names embedded, all metrics derived from
  * model.payback.rtp + backend response.
  */
+
+import { Z } from '../registry/zIndexScale.mjs';
 
 const DEFAULT_TARGET_RTP = 0.96;
 
@@ -111,7 +114,7 @@ export function emitLiveRtpHudCSS(cfg = defaultConfig()) {
 .live-rtp-hud {
   position: fixed;
   top: ${posTop}; bottom: ${posBottom}; right: ${posRight}; left: ${posLeft};
-  z-index: 60;
+  z-index: ${Z.HUD_BADGE};   /* UQ-DEEP-AO · AO-5 — was 60 (bumped for prominence) */
   background: rgba(5,7,12,0.86);
   border: 1px solid rgba(201,162,39,0.4);
   border-radius: 8px;
@@ -143,7 +146,7 @@ export function emitLiveRtpHudCSS(cfg = defaultConfig()) {
 
 export function emitLiveRtpHudMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `
+  return tagBlockMarkup(`
 <div class="live-rtp-hud" id="liveRtpHud" aria-live="polite" aria-atomic="false">
   <div class="lrh-row">
     <span class="lrh-label">RTP</span>
@@ -163,7 +166,7 @@ export function emitLiveRtpHudMarkup(cfg = defaultConfig()) {
   </div>
   ${cfg.showSparkline ? `<canvas id="lrhSpark" width="170" height="28" aria-label="RTP convergence sparkline"></canvas>` : ''}
 </div>
-`;
+`, 'liveRtpHud');
 }
 
 export function emitLiveRtpHudRuntime(cfg = defaultConfig(), model = {}) {

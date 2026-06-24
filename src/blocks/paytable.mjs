@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/paytable.mjs
  *
@@ -485,7 +486,7 @@ export function emitPaytableMarkup(cfg = defaultConfig() /*, model = {} */) {
   const c = resolveConfig({ paytable: cfg });
   const safeAria  = _escape(c.ariaLabel);
   const safeLabel = _escape(c.chipLabel);
-  return `
+  return tagBlockMarkup(`
   <button id="paytableBtn" class="paytable-btn" type="button" aria-label="${safeAria}">${safeLabel}</button>
   <div id="paytableBackdrop" class="paytable-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="paytableTitle">
     <div id="paytableModal" class="paytable-modal" role="document">
@@ -499,7 +500,7 @@ export function emitPaytableMarkup(cfg = defaultConfig() /*, model = {} */) {
       </div>
       <button id="paytableCloseBtn" class="paytable-close" type="button">Close</button>
     </div>
-  </div>`;
+  </div>`, 'paytable');
 }
 
 export function emitPaytableRuntime(cfg = defaultConfig(), model = {}) {

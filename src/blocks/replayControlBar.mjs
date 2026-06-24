@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/replayControlBar.mjs
  *
@@ -143,13 +144,13 @@ export function emitReplayControlBarCSS(cfg = defaultConfig()) {
 
 export function emitReplayControlBarMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="replayControlBar" class="replay-control-bar"
+  return tagBlockMarkup(`<div id="replayControlBar" class="replay-control-bar"
      role="toolbar" aria-label="Replay controls" data-locked="false">
   <button class="rcb-btn" type="button" id="rcbReplay" aria-label="Replay last spin">▶</button>
   <button class="rcb-btn" type="button" id="rcbPrev"   aria-label="Previous spin" aria-disabled="true">⏮</button>
   <button class="rcb-btn" type="button" id="rcbNext"   aria-label="Next spin"     aria-disabled="true">⏭</button>
   <button class="rcb-btn" type="button" id="rcbStop"   aria-label="Stop replay"   aria-disabled="true">■</button>
-</div>`;
+</div>`, 'replayControlBar');
 }
 
 export function emitReplayControlBarRuntime(cfg = defaultConfig()) {

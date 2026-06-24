@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/collectStreakBonus.mjs
  *
@@ -112,9 +113,9 @@ export function emitCollectStreakBonusMarkup(cfg) {
   const c = cfg || defaultConfig();
   if (!c.enabled) return '';
   /* Reveal/jackpot UIs MUST declare role=dialog + aria-modal (UX rule) */
-  return `<div class="collectStreakBonus-root" data-archetype="accumulator">
+  return tagBlockMarkup(`<div class="collectStreakBonus-root" data-archetype="accumulator">
     <div class="collectStreakBonus-state" aria-live="polite" aria-atomic="true"></div>
-  </div>`;
+  </div>`, 'collectStreakBonus');
 }
 
 export function emitCollectStreakBonusRuntime(cfg) {

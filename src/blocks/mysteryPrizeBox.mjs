@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/mysteryPrizeBox.mjs
  *
@@ -261,7 +262,7 @@ export function emitMysteryPrizeBoxCSS(cfg = defaultConfig()) {
 
 export function emitMysteryPrizeBoxMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<button id="mysteryPrizeChest" class="mystery-prize-chest" type="button"
+  return tagBlockMarkup(`<button id="mysteryPrizeChest" class="mystery-prize-chest" type="button"
         aria-label="Mystery prize — tap to open"
         data-visible="false" tabindex="-1"></button>
 <div id="mysteryPrizeOverlay" class="mystery-prize-overlay" data-open="false"
@@ -271,7 +272,7 @@ export function emitMysteryPrizeBoxMarkup(cfg = defaultConfig()) {
     <div class="label" id="mysteryPrizeLabel">${escapeHtml(cfg.label)}</div>
     <div class="award" id="mysteryPrizeAward"></div>
   </div>
-</div>`;
+</div>`, 'mysteryPrizeBox');
 }
 
 export function emitMysteryPrizeBoxRuntime(cfg = defaultConfig()) {

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/bidirectionalWaysEval.mjs
  *
@@ -347,10 +348,10 @@ export function emitBidirectionalWaysEvalCSS(cfg = defaultConfig()) {
 export function emitBidirectionalWaysEvalMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ bidirectionalWaysEval: cfg });
   if (!c.enabled) return `\n<!-- bidirectionalWaysEval BLOCK (disabled) -->\n`;
-  return `
+  return tagBlockMarkup(`
 <!-- bidirectionalWaysEval BLOCK — server-emitted markup -->
 <div class="bidir-ways-host" id="bidirWaysHost" role="presentation" aria-hidden="true"></div>
-`;
+`, 'bidirectionalWaysEval');
 }
 
 export function emitBidirectionalWaysEvalRuntime(cfg = defaultConfig()) {

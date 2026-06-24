@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/extendedWildCountdown.mjs
  *
@@ -216,7 +217,7 @@ export function emitExtendedWildCountdownCSS(cfg = defaultConfig()) {
 
 export function emitExtendedWildCountdownMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="ewcd-stage" class="ewcd-overlay" aria-hidden="true" data-ewcd-schema="1"></div>`;
+  return tagBlockMarkup(`<div id="ewcd-stage" class="ewcd-overlay" aria-hidden="true" data-ewcd-schema="1"></div>`, 'extendedWildCountdown');
 }
 
 export function emitExtendedWildCountdownRuntime(cfg = defaultConfig()) {

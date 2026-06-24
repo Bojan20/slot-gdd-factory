@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/holdAndWinRoomJackpotMultiplier.mjs
  *
@@ -206,10 +207,10 @@ export function emitHoldAndWinRoomJackpotMultiplierCSS(cfg = defaultConfig()) {
 export function emitHoldAndWinRoomJackpotMultiplierMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ holdAndWinRoomJackpotMultiplier: cfg });
   if (!c.enabled) return `\n<!-- holdAndWinRoomJackpotMultiplier BLOCK (disabled) -->\n`;
-  return `
+  return tagBlockMarkup(`
 <!-- holdAndWinRoomJackpotMultiplier BLOCK — server-emitted markup -->
 <div class="hwrjm-chip" id="hwrjmChip" role="status" aria-live="polite" aria-hidden="true"></div>
-`;
+`, 'holdAndWinRoomJackpotMultiplier');
 }
 
 export function emitHoldAndWinRoomJackpotMultiplierRuntime(cfg = defaultConfig()) {

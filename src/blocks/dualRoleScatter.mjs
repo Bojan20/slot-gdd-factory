@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/dualRoleScatter.mjs
  *
@@ -143,7 +144,7 @@ export function emitDualRoleScatterCSS(cfg = defaultConfig()) {
 
 export function emitDualRoleScatterMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<!-- dualRoleScatter decorates .symbol-cell at runtime -->`;
+  return tagBlockMarkup(`<!-- dualRoleScatter decorates .symbol-cell at runtime -->`, 'dualRoleScatter');
 }
 
 export function emitDualRoleScatterRuntime(cfg = defaultConfig()) {

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/tumbleGrowingFsMultiplier.mjs
  *
@@ -172,10 +173,10 @@ export function emitTumbleGrowingFsMultiplierCSS(cfg = defaultConfig()) {
 export function emitTumbleGrowingFsMultiplierMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ tumbleGrowingFsMultiplier: cfg });
   if (!c.enabled) return `\n<!-- tumbleGrowingFsMultiplier BLOCK (disabled) -->\n`;
-  return `
+  return tagBlockMarkup(`
 <!-- tumbleGrowingFsMultiplier BLOCK — server-emitted markup -->
 <div class="tgfm-chip" id="tgfmChip" role="status" aria-live="polite" aria-hidden="true"></div>
-`;
+`, 'tumbleGrowingFsMultiplier');
 }
 
 export function emitTumbleGrowingFsMultiplierRuntime(cfg = defaultConfig()) {

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/cellLevelUpgrade.mjs
  *
@@ -163,7 +164,7 @@ export function emitCellLevelUpgradeCSS(cfg = defaultConfig()) {
 export function emitCellLevelUpgradeMarkup(cfg = defaultConfig()) {
   /* Block decorates existing .symbol-cell DOM at runtime; no static markup. */
   if (!cfg.enabled) return '';
-  return `<!-- cellLevelUpgrade decorates .symbol-cell at runtime -->`;
+  return tagBlockMarkup(`<!-- cellLevelUpgrade decorates .symbol-cell at runtime -->`, 'cellLevelUpgrade');
 }
 
 export function emitCellLevelUpgradeRuntime(cfg = defaultConfig()) {

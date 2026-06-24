@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/pathAwareMultiplier.mjs
  *
@@ -297,11 +298,11 @@ export function emitPathAwareMultiplierCSS(cfg = defaultConfig()) {
 export function emitPathAwareMultiplierMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   if (!cfg.showAggregateChip) return '';
-  return `
+  return tagBlockMarkup(`
   <div id="pawHud" aria-live="polite" aria-atomic="true">
     <span class="paw-hud-label">PATH MULT</span>
     <span class="paw-hud-total" id="pawHudTotal">×0</span>
-  </div>`;
+  </div>`, 'pathAwareMultiplier');
 }
 
 export function emitPathAwareMultiplierRuntime(cfg = defaultConfig()) {

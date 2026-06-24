@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/copyWildOrchestrator.mjs
  *
@@ -238,10 +239,10 @@ export function emitCopyWildOrchestratorCSS(cfg = defaultConfig()) {
 
 export function emitCopyWildOrchestratorMarkup(cfg = defaultConfig()) {
   if (!cfg || !cfg.enabled) return '';
-  return `
+  return tagBlockMarkup(`
 <!-- copyWildOrchestrator BLOCK — propagation stage overlay -->
 <div id="cw-stage" class="cw-overlay" aria-hidden="true" data-cw-source-reels="${cfg.sourceReels.join(',')}" data-cw-target-reels="${cfg.targetReels.join(',')}"></div>
-`;
+`, 'copyWildOrchestrator');
 }
 
 export function emitCopyWildOrchestratorRuntime(cfg = defaultConfig() /*, model */) {

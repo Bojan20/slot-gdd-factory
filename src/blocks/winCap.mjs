@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/winCap.mjs
  *
@@ -194,9 +195,9 @@ export function emitWinCapCSS(cfg = defaultConfig()) {
 
 export function emitWinCapMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="winCapOverlay" class="wincap-overlay" data-show="false" role="alert">
+  return tagBlockMarkup(`<div id="winCapOverlay" class="wincap-overlay" data-show="false" role="alert">
   <div class="wc-card">${escapeHtml(cfg.overlayLabel)}</div>
-</div>`;
+</div>`, 'winCap');
 }
 
 export function emitWinCapRuntime(cfg = defaultConfig()) {

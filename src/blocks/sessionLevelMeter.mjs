@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/sessionLevelMeter.mjs
  *
@@ -168,7 +169,7 @@ export function emitSessionLevelMeterCSS(cfg = defaultConfig()) {
 
 export function emitSessionLevelMeterMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="sessionLevelMeter" class="session-level-meter"
+  return tagBlockMarkup(`<div id="sessionLevelMeter" class="session-level-meter"
      role="progressbar"
      aria-label="Session level meter"
      aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
@@ -182,7 +183,7 @@ export function emitSessionLevelMeterMarkup(cfg = defaultConfig()) {
     <div class="slm-fill" id="sessionLevelFill"></div>
   </div>
   <div class="slm-num" id="sessionLevelNum">0/100 XP</div>
-</div>`;
+</div>`, 'sessionLevelMeter');
 }
 
 export function emitSessionLevelMeterRuntime(cfg = defaultConfig()) {

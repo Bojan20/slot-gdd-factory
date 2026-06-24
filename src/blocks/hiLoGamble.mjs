@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/hiLoGamble.mjs
  *
@@ -230,7 +231,7 @@ export function emitHiLoGambleCSS(cfg = defaultConfig()) {
 
 export function emitHiLoGambleMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `
+  return tagBlockMarkup(`
   <button id="hiloCta" class="hilo-cta" type="button" aria-label="Gamble win" data-visible="false">${cfg.ctaLabel}</button>
   <div id="hiloBackdrop" class="hilo-backdrop" data-open="false" role="dialog" aria-modal="true" aria-labelledby="hiloTitle">
     <div class="hilo-modal">
@@ -243,7 +244,7 @@ export function emitHiLoGambleMarkup(cfg = defaultConfig()) {
       </div>
       <div id="hiloStatus" class="hilo-status" aria-live="polite"></div>
     </div>
-  </div>`;
+  </div>`, 'hiLoGamble');
 }
 
 export function emitHiLoGambleRuntime(cfg = defaultConfig()) {

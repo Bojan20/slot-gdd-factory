@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/fsPersistentJackpotPool.mjs
  *
@@ -194,10 +195,10 @@ export function emitFsPersistentJackpotPoolCSS(cfg = defaultConfig()) {
 export function emitFsPersistentJackpotPoolMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ fsPersistentJackpotPool: cfg });
   if (!c.enabled || !c.showChip) return `\n<!-- fsPersistentJackpotPool BLOCK (disabled or hidden) -->\n`;
-  return `
+  return tagBlockMarkup(`
 <!-- fsPersistentJackpotPool BLOCK — server-emitted markup -->
 <div class="fspjp-chip" id="fspjpChip" role="status" aria-live="polite" aria-hidden="true"></div>
-`;
+`, 'fsPersistentJackpotPool');
 }
 
 export function emitFsPersistentJackpotPoolRuntime(cfg = defaultConfig()) {

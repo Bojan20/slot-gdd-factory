@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/progressiveFreeSpins.mjs
  *
@@ -168,10 +169,10 @@ export function emitProgressiveFreeSpinsCSS(cfg = defaultConfig()) {
 
 export function emitProgressiveFreeSpinsMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="pfsChip" class="pfs-chip" data-show="false" aria-live="polite">
+  return tagBlockMarkup(`<div id="pfsChip" class="pfs-chip" data-show="false" aria-live="polite">
   <span class="pfs-lbl">${escapeHtml(cfg.chipLabel)}</span>
   <span class="pfs-val">×${cfg.startMult}</span>
-</div>`;
+</div>`, 'progressiveFreeSpins');
 }
 
 export function emitProgressiveFreeSpinsRuntime(cfg = defaultConfig()) {

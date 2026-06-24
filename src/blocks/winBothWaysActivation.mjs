@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/winBothWaysActivation.mjs
  *
@@ -138,10 +139,10 @@ export function emitWinBothWaysActivationCSS(cfg = defaultConfig()) {
 export function emitWinBothWaysActivationMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ winBothWaysActivation: cfg });
   if (!c.enabled || !c.showChip) return `\n<!-- winBothWaysActivation BLOCK (disabled or hidden) -->\n`;
-  return `
+  return tagBlockMarkup(`
 <!-- winBothWaysActivation BLOCK — server-emitted markup -->
 <div class="wbw-chip" id="wbwChip" role="status" aria-live="polite" aria-hidden="true">BOTH WAYS</div>
-`;
+`, 'winBothWaysActivation');
 }
 
 export function emitWinBothWaysActivationRuntime(cfg = defaultConfig()) {

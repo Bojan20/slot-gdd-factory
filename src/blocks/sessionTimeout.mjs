@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/sessionTimeout.mjs
  *
@@ -353,7 +354,7 @@ export function emitSessionTimeoutMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const showExtend = cfg.extendable;
   const showQuit   = cfg.forceLogout;
-  return `<div id="stOverlay" class="st-overlay" data-show="false" data-mode="warning" role="dialog" aria-modal="true" aria-labelledby="stTitle">
+  return tagBlockMarkup(`<div id="stOverlay" class="st-overlay" data-show="false" data-mode="warning" role="dialog" aria-modal="true" aria-labelledby="stTitle">
   <div class="st-modal">
     <div id="stTitle" class="st-title">${_esc(cfg.warningTitle)}</div>
     <!-- WCAG 4.1.3 — counter ticks every second on warning + break;
@@ -370,7 +371,7 @@ export function emitSessionTimeoutMarkup(cfg = defaultConfig()) {
       ${showQuit   ? `<button id="stBtnQuit"   class="st-btn st-btn--quit" type="button" aria-label="${_esc(cfg.copyQuit) || 'Quit session'}">${_esc(cfg.copyQuit)}</button>` : ''}
     </div>
   </div>
-</div>`;
+</div>`, 'sessionTimeout');
 }
 
 export function emitSessionTimeoutRuntime(cfg = defaultConfig()) {

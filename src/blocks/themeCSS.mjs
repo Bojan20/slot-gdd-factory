@@ -38,6 +38,8 @@
  *   emitThemeCSS(cfg)  → full chrome CSS as a string
  */
 
+import { Z } from '../registry/zIndexScale.mjs';
+
 const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 
 const DEFAULT_BREAKPOINTS = Object.freeze({ xl: 1100, lg: 920, md: 820, sm: 620 });
@@ -534,7 +536,7 @@ export function emitDevToolsCSS() {
     position: fixed;
     top:   max(10px, env(safe-area-inset-top, 10px));
     right: max(10px, env(safe-area-inset-right, 10px));
-    z-index: 2147483000;
+    z-index: ${Z.DEV_HOT_RELOAD};   /* UQ-DEEP-AO · AO-5 — was 2147483000 (stacking-context killer) */
     min-width: 56px;
     min-height: 34px;
     width:  clamp(56px, 5.5vw, 78px);
@@ -585,7 +587,7 @@ export function emitDevToolsCSS() {
     position: fixed;
     top:   max(10px, env(safe-area-inset-top, 10px));
     right: calc(max(10px, env(safe-area-inset-right, 10px)) + clamp(56px, 5.5vw, 78px) + 8px);
-    z-index: 2147483000;
+    z-index: ${Z.DEV_HOT_RELOAD};   /* UQ-DEEP-AO · AO-5 — was 2147483000 (stacking-context killer) */
     min-width: 56px;
     min-height: 34px;
     width:  clamp(56px, 5.5vw, 78px);
@@ -643,7 +645,7 @@ export function emitDevToolsCSS() {
     position: fixed;
     top:   max(10px, env(safe-area-inset-top, 10px));
     right: calc(max(10px, env(safe-area-inset-right, 10px)) + (clamp(56px, 5.5vw, 78px) + 8px) * 2);
-    z-index: 2147483000;
+    z-index: ${Z.DEV_HOT_RELOAD};   /* UQ-DEEP-AO · AO-5 — was 2147483000 (stacking-context killer) */
     min-width: 56px;
     min-height: 34px;
     width:  clamp(56px, 5.5vw, 78px);

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/expandingWildMultiplier.mjs
  *
@@ -298,10 +299,10 @@ export function emitExpandingWildMultiplierMarkup(cfg = defaultConfig()) {
   /* No up-front badges — paint + tag are minted at runtime when wilds
      land. A single anchor node is emitted so static integration tools
      can confirm block presence. */
-  return `
+  return tagBlockMarkup(`
 <!-- expandingWildMultiplier BLOCK — paint + tag minted at runtime per reel -->
 <div class="ewm-anchor" id="ewmAnchor" data-ewm-aggregation="${c.aggregation}" data-ewm-applies-in="${c.appliesIn}" aria-hidden="true" hidden></div>
-`;
+`, 'expandingWildMultiplier');
 }
 
 export function emitExpandingWildMultiplierRuntime(cfg = defaultConfig()) {

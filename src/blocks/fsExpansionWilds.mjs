@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/fsExpansionWilds.mjs
  *
@@ -195,10 +196,10 @@ export function emitFsExpansionWildsCSS(cfg = defaultConfig()) {
 export function emitFsExpansionWildsMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ fsExpansionWilds: cfg });
   if (!c.enabled) return `\n<!-- fsExpansionWilds BLOCK (disabled) -->\n`;
-  return `
+  return tagBlockMarkup(`
 <!-- fsExpansionWilds BLOCK — no static markup, runtime paints cells in-place -->
 <div class="fsew-anchor" id="fsewAnchor" aria-hidden="true" hidden></div>
-`;
+`, 'fsExpansionWilds');
 }
 
 export function emitFsExpansionWildsRuntime(cfg = defaultConfig()) {

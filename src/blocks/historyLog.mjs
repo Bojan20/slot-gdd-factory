@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/historyLog.mjs
  *
@@ -370,7 +371,7 @@ export function emitHistoryLogMarkup(cfg = defaultConfig()) {
   const csvBtn = c.allowCsvExport
     ? `<button id="historyExportBtn" class="history-action" type="button">Export CSV</button>`
     : '';
-  return `
+  return tagBlockMarkup(`
   <button id="historyBtn" class="history-btn" type="button" aria-label="${safeAria}">${safeLabel}</button>
   <div id="historyBackdrop" class="history-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="historyTitle">
     <div id="historyPanel" class="history-panel" role="document">
@@ -400,7 +401,7 @@ export function emitHistoryLogMarkup(cfg = defaultConfig()) {
       </div>
       <button id="historyCloseBtn" class="history-close" type="button">Close</button>
     </div>
-  </div>`;
+  </div>`, 'historyLog');
 }
 
 export function emitHistoryLogRuntime(cfg = defaultConfig()) {

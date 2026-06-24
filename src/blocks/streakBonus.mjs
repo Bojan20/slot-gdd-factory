@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/streakBonus.mjs
  *
@@ -137,7 +138,7 @@ export function emitStreakBonusCSS(cfg = defaultConfig()) {
 export function emitStreakBonusMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const label = String(cfg.labelTemplate).replace('{N}', '0').replace('{M}', String(cfg.threshold));
-  return `<div id="streakChip" class="streak-chip" role="status" aria-live="polite" aria-label="Streak counter" data-visible="false" data-full="false" data-value="0">${label}</div>`;
+  return tagBlockMarkup(`<div id="streakChip" class="streak-chip" role="status" aria-live="polite" aria-label="Streak counter" data-visible="false" data-full="false" data-value="0">${label}</div>`, 'streakBonus');
 }
 
 export function emitStreakBonusRuntime(cfg = defaultConfig()) {

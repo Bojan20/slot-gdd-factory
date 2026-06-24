@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/dynamicWaysEngine.mjs
  *
@@ -297,10 +298,10 @@ export function emitDynamicWaysEngineMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ dynamicWaysEngine: cfg });
   if (!c.enabled) return `\n<!-- dynamicWaysEngine BLOCK (disabled) -->\n`;
   if (!c.showHud) return `\n<!-- dynamicWaysEngine BLOCK (hud hidden) -->\n`;
-  return `
+  return tagBlockMarkup(`
 <!-- dynamicWaysEngine BLOCK — server-emitted markup -->
 <div class="dwe-hud" id="dweHud" role="status" aria-live="polite" aria-hidden="true"></div>
-`;
+`, 'dynamicWaysEngine');
 }
 
 export function emitDynamicWaysEngineRuntime(cfg = defaultConfig()) {

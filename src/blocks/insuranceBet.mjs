@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/insuranceBet.mjs
  *
@@ -196,13 +197,13 @@ export function emitInsuranceBetCSS(cfg = defaultConfig()) {
 export function emitInsuranceBetMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const pct = Math.round((cfg.costMult - 1) * 100);
-  return `<button id="insuranceBet" class="insurance-bet" type="button"
+  return tagBlockMarkup(`<button id="insuranceBet" class="insurance-bet" type="button"
         role="switch" aria-checked="false" data-locked="false"
         aria-label="Toggle insurance bet (+${pct}% bet)">
   <span>${escapeHtml(cfg.label)}</span>
   <span class="ib-switch" aria-hidden="true"></span>
   <span class="ib-pct">+${pct}%</span>
-</button>`;
+</button>`, 'insuranceBet');
 }
 
 export function emitInsuranceBetRuntime(cfg = defaultConfig()) {

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/retriggerMultiplierBump.mjs
  *
@@ -161,10 +162,10 @@ export function emitRetriggerMultiplierBumpCSS(cfg = defaultConfig()) {
 export function emitRetriggerMultiplierBumpMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ retriggerMultiplierBump: cfg });
   if (!c.enabled) return `\n<!-- retriggerMultiplierBump BLOCK (disabled) -->\n`;
-  return `
+  return tagBlockMarkup(`
 <!-- retriggerMultiplierBump BLOCK — server-emitted markup -->
 <div class="rmb-chip" id="rmbChip" role="status" aria-live="polite" aria-hidden="true"></div>
-`;
+`, 'retriggerMultiplierBump');
 }
 
 export function emitRetriggerMultiplierBumpRuntime(cfg = defaultConfig()) {

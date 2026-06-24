@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/jackpotPicker.mjs
  *
@@ -318,12 +319,12 @@ export function emitJackpotPickerCSS(cfg = defaultConfig()) {
 export function emitJackpotPickerMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ jackpotPicker: cfg });
   if (!c.enabled) return `\n<!-- jackpotPicker BLOCK (disabled) -->\n`;
-  return `
+  return tagBlockMarkup(`
 <!-- jackpotPicker BLOCK — server-emitted shell, tiles mounted at runtime -->
 <div class="jpk-overlay" id="jpkOverlay" role="dialog" aria-modal="true" aria-label="Jackpot picker" aria-hidden="true">
   <div class="jpk-board" id="jpkBoard"></div>
 </div>
-`;
+`, 'jackpotPicker');
 }
 
 export function emitJackpotPickerRuntime(cfg = defaultConfig()) {

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/balanceHud.mjs
  *
@@ -285,7 +286,7 @@ export function emitBalanceHudMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const c = cfg;
   const safeAria = _escape(c.ariaLabel);
-  return `
+  return tagBlockMarkup(`
   <div id="balanceHud" class="balance-hud" role="status" aria-live="polite" aria-label="${safeAria}">
     <div id="balanceHudBalanceCol" class="balance-hud__col balance-hud__col--balance">
       <div class="balance-hud__label">Balance</div>
@@ -299,7 +300,7 @@ export function emitBalanceHudMarkup(cfg = defaultConfig()) {
       <div id="balanceHudWinLabel" class="balance-hud__label">Win</div>
       <div id="balanceHudWinValue" class="balance-hud__value is-zero">—</div>
     </div>` : ''}
-  </div>`;
+  </div>`, 'balanceHud');
 }
 
 export function emitBalanceHudRuntime(cfg = defaultConfig()) {

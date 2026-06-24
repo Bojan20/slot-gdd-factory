@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/respin.mjs
  *
@@ -97,7 +98,7 @@ export function emitRespinCSS(cfg = defaultConfig()) {
 
 export function emitRespinMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="respinBanner" class="respin-banner" role="status" aria-live="polite" data-show="false">RESPIN</div>`;
+  return tagBlockMarkup(`<div id="respinBanner" class="respin-banner" role="status" aria-live="polite" data-show="false">RESPIN</div>`, 'respin');
 }
 
 export function emitRespinRuntime(cfg = defaultConfig()) {

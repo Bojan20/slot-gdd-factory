@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/retriggerMeter.mjs
  *
@@ -202,13 +203,13 @@ export function emitRetriggerMeterCSS(cfg = defaultConfig()) {
 
 export function emitRetriggerMeterMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `
+  return tagBlockMarkup(`
   <div id="rtMeter" class="rtmeter" role="progressbar" aria-label="Retrigger progress" aria-valuemin="0" aria-valuemax="${cfg.scatterPerRetrigger}" aria-valuenow="0" data-visible="false">
     <!-- WCAG 4.1.3 (F4 A3) — count textContent rewritten every onFsSpinResult; polite + atomic so SR reads full "N of M" each step. -->
     <div class="rtmeter-row"><span class="rtmeter-label">RETRIGGER</span><span id="rtMeterCount" aria-live="polite" aria-atomic="true">0/${cfg.scatterPerRetrigger}</span></div>
     <div class="rtmeter-bar"><div id="rtMeterFill" class="rtmeter-fill"></div></div>
   </div>
-  <div id="rtMeterPop" class="rtmeter-pop" role="status" aria-live="polite" data-popping="false">+${cfg.fsPerRetrigger} FS</div>`;
+  <div id="rtMeterPop" class="rtmeter-pop" role="status" aria-live="polite" data-popping="false">+${cfg.fsPerRetrigger} FS</div>`, 'retriggerMeter');
 }
 
 export function emitRetriggerMeterRuntime(cfg = defaultConfig()) {

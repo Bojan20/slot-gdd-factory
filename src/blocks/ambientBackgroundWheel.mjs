@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/ambientBackgroundWheel.mjs
  *
@@ -167,7 +168,7 @@ export function emitAmbientBackgroundWheelCSS(cfg = defaultConfig()) {
 
 export function emitAmbientBackgroundWheelMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="ambientBackgroundWheel" class="ambient-bg-wheel" aria-hidden="true" data-phase="idle"></div>`;
+  return tagBlockMarkup(`<div id="ambientBackgroundWheel" class="ambient-bg-wheel" aria-hidden="true" data-phase="idle"></div>`, 'ambientBackgroundWheel');
 }
 
 export function emitAmbientBackgroundWheelRuntime(cfg = defaultConfig()) {

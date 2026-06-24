@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/leaderboardChip.mjs
  *
@@ -206,7 +207,7 @@ export function emitLeaderboardChipCSS(cfg = defaultConfig()) {
 
 export function emitLeaderboardChipMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<button id="leaderboardChip" class="leaderboard-chip" type="button"
+  return tagBlockMarkup(`<button id="leaderboardChip" class="leaderboard-chip" type="button"
         aria-haspopup="dialog" aria-expanded="false" aria-controls="leaderboardPanel"
         aria-label="Open ${escapeAttr(cfg.label)} leaderboard">
   ${escapeHtml(cfg.label)} <span class="lb-rank" id="leaderboardChipRank">—</span>
@@ -216,7 +217,7 @@ export function emitLeaderboardChipMarkup(cfg = defaultConfig()) {
      role="dialog" aria-modal="true" aria-labelledby="leaderboardTitle">
   <h3 id="leaderboardTitle">${escapeHtml(cfg.label)} · TOP ${cfg.topN}</h3>
   <ol id="leaderboardList"></ol>
-</div>`;
+</div>`, 'leaderboardChip');
 }
 
 export function emitLeaderboardChipRuntime(cfg = defaultConfig()) {

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/turboMode.mjs
  *
@@ -230,8 +231,8 @@ export function emitTurboModeMarkup(cfg = defaultConfig()) {
   const safeAria  = _escape(c.ariaLabel);
   const safeLabel = _escape(c.chipLabel);
   /* aria-pressed reflects toggle state; runtime updates it on every change. */
-  return `
-  <button id="turboBtn" class="turbo-btn" type="button" aria-label="${safeAria}" aria-pressed="false">${safeLabel}</button>`;
+  return tagBlockMarkup(`
+  <button id="turboBtn" class="turbo-btn" type="button" aria-label="${safeAria}" aria-pressed="false">${safeLabel}</button>`, 'turboMode');
 }
 
 export function emitTurboModeRuntime(cfg = defaultConfig()) {

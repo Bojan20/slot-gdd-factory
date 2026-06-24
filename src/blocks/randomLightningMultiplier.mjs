@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/randomLightningMultiplier.mjs
  *
@@ -238,10 +239,10 @@ export function emitRandomLightningMultiplierCSS(cfg = defaultConfig()) {
 export function emitRandomLightningMultiplierMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ randomLightningMultiplier: cfg });
   if (!c.enabled) return `\n<!-- randomLightningMultiplier BLOCK (disabled) -->\n`;
-  return `
+  return tagBlockMarkup(`
 <!-- randomLightningMultiplier BLOCK — server-emitted markup -->
 <div class="multiplier-strike-overlay" id="multiplierStrikeOverlay" role="img" aria-label="Multiplier strike" aria-hidden="true" data-mult=""></div>
-`;
+`, 'randomLightningMultiplier');
 }
 
 export function emitRandomLightningMultiplierRuntime(cfg = defaultConfig()) {

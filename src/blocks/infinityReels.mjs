@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/infinityReels.mjs
  *
@@ -185,7 +186,7 @@ export function emitInfinityReelsCSS(cfg = defaultConfig()) {
 export function emitInfinityReelsMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const initial = cfg.labelTemplate.replace('{N}', String(cfg.startCount));
-  return `<div id="infReelsBadge" class="infreels-badge" role="status" aria-live="polite" aria-label="Reels count" data-count="${cfg.startCount}" data-growing="false">${initial}</div>`;
+  return tagBlockMarkup(`<div id="infReelsBadge" class="infreels-badge" role="status" aria-live="polite" aria-label="Reels count" data-count="${cfg.startCount}" data-growing="false">${initial}</div>`, 'infinityReels');
 }
 
 export function emitInfinityReelsRuntime(cfg = defaultConfig()) {

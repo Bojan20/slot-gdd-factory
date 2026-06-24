@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/themePicker.mjs
  *
@@ -257,12 +258,12 @@ export function emitThemePickerMarkup(cfg = defaultConfig()) {
       <span class="tp-swatch" style="background:${escapeAttr(t.swatch)};"></span>
       <span>${escapeHtml(t.label)}</span>
     </button>`).join('');
-  return `<button id="themePickerBtn" class="theme-picker-btn" type="button"
+  return tagBlockMarkup(`<button id="themePickerBtn" class="theme-picker-btn" type="button"
         aria-haspopup="menu" aria-expanded="false" aria-controls="themePickerMenu"
         aria-label="Open ${escapeAttr(cfg.label)} picker">⚙</button>
 <div id="themePickerMenu" class="theme-picker-menu" data-open="false"
      role="menu" aria-labelledby="themePickerBtn">${items}
-</div>`;
+</div>`, 'themePicker');
 }
 
 export function emitThemePickerRuntime(cfg = defaultConfig()) {

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/spinHistoryReplay.mjs
  *
@@ -139,9 +140,9 @@ export function emitSpinHistoryReplayCSS(cfg = defaultConfig()) {
 
 export function emitSpinHistoryReplayMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="spinReplayBanner" class="spin-replay-banner"
+  return tagBlockMarkup(`<div id="spinReplayBanner" class="spin-replay-banner"
      role="region" aria-label="Spin replay banner"
-     data-active="false">${escapeHtml(cfg.label)} <span id="spinReplayIndex">—</span></div>`;
+     data-active="false">${escapeHtml(cfg.label)} <span id="spinReplayIndex">—</span></div>`, 'spinHistoryReplay');
 }
 
 export function emitSpinHistoryReplayRuntime(cfg = defaultConfig()) {

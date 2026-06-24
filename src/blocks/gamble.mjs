@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/gamble.mjs
  *
@@ -179,7 +180,7 @@ export function emitGambleMarkup(cfg = defaultConfig()) {
   } else {
     buttons = `<button class="gamble-btn" data-pick="up">↑ HIGHER</button><button class="gamble-btn gamble-btn--alt" data-pick="down">↓ LOWER</button>`;
   }
-  return `<div id="gambleOverlay" class="gamble-overlay" data-show="false" role="dialog" aria-modal="true">
+  return tagBlockMarkup(`<div id="gambleOverlay" class="gamble-overlay" data-show="false" role="dialog" aria-modal="true">
   <div class="gamble-modal">
     <div class="gamble-title">DOUBLE OR NOTHING</div>
     <div class="gamble-stake">Stake: ×<span id="gambleStake">0</span></div>
@@ -187,7 +188,7 @@ export function emitGambleMarkup(cfg = defaultConfig()) {
     <div class="gamble-buttons">${buttons}</div>
     <button id="gambleCollect" class="gamble-collect" type="button">COLLECT</button>
   </div>
-</div>`;
+</div>`, 'gamble');
 }
 
 export function emitGambleRuntime(cfg = defaultConfig()) {

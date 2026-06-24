@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/genericFeatureBanner.mjs
  *
@@ -214,13 +215,13 @@ export function emitGenericFeatureBannerCSS(cfg = defaultConfig()) {
 export function emitGenericFeatureBannerMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ genericFeatureBanner: cfg });
   if (!c.enabled) return `\n<!-- genericFeatureBanner BLOCK (disabled) -->\n`;
-  return `
+  return tagBlockMarkup(`
 <!-- genericFeatureBanner BLOCK — server-emitted markup -->
 <div class="gfb-banner" id="gfbBanner" role="status" aria-live="polite" data-visible="false">
   <span class="gfb-banner__kicker">FEATURE TRIGGERED</span>
   <span class="gfb-banner__label" id="gfbBannerLabel">—</span>
 </div>
-`;
+`, 'genericFeatureBanner');
 }
 
 export function emitGenericFeatureBannerRuntime(cfg = defaultConfig()) {

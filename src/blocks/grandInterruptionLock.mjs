@@ -104,6 +104,8 @@
  *   • bannerLabel              string                     (default 'GRAND')
  */
 
+import { Z } from '../registry/zIndexScale.mjs';
+
 const DEFAULT_CONTROLS = Object.freeze(['spin','autoplay','slam','quickspin','maxbet']);
 const DEFAULT_HANDPAY  = Object.freeze(['US','CA']);
 
@@ -258,7 +260,7 @@ export function emitGrandInterruptionLockCSS(cfg) {
   align-items: center;
   justify-content: center;
   pointer-events: auto; /* intercept clicks; cannot dismiss */
-  z-index: 10000;
+  z-index: ${Z.GRAND_INTERRUPTION};   /* UQ-DEEP-AO · AO-5 — was 10000 */
   background: radial-gradient(circle, rgba(40,20,5,0.92) 0%,
               rgba(0,0,0,0.82) 60%, rgba(0,0,0,0.95) 100%);
   opacity: 0;

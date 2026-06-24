@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/anteBet.mjs
  *
@@ -205,11 +206,11 @@ export function emitAnteBetCSS(cfg = defaultConfig()) {
 export function emitAnteBetMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const pct = PCT(cfg.costMultiplier);
-  return `<div id="anteBetToggle" class="ante-bet" data-on="false" role="switch" aria-checked="false" tabindex="0">
+  return tagBlockMarkup(`<div id="anteBetToggle" class="ante-bet" data-on="false" role="switch" aria-checked="false" tabindex="0">
   <span>${escapeHtml(cfg.label)}</span>
   <span class="switch" aria-hidden="true"></span>
   <span class="pct">+${pct}%</span>
-</div>`;
+</div>`, 'anteBet');
 }
 
 export function emitAnteBetRuntime(cfg = defaultConfig()) {

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/winwaysIndicator.mjs
  *
@@ -133,7 +134,7 @@ function positionStyle(pos) {
 export function emitWinwaysIndicatorMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const label = String(cfg.labelTemplate || '{N} WAYS').replace('{N}', String(cfg.waysCount));
-  return `<div id="winwaysChip" class="winways-chip" role="status" aria-live="polite" aria-label="${label}">${label}</div>`;
+  return tagBlockMarkup(`<div id="winwaysChip" class="winways-chip" role="status" aria-live="polite" aria-label="${label}">${label}</div>`, 'winwaysIndicator');
 }
 
 export function emitWinwaysIndicatorRuntime(cfg = defaultConfig()) {

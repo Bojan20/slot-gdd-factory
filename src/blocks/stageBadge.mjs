@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * Slot GDD Factory · stageBadge BLOCK
  *
@@ -192,10 +193,10 @@ export function emitStageBadgeCSS(cfg = defaultConfig()) {
 export function emitStageBadgeMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ stageBadge: cfg });
   if (!c.enabled) return '';
-  return `<div class="stage-badge" id="stageBadge" data-stage="base" aria-live="polite">
+  return tagBlockMarkup(`<div class="stage-badge" id="stageBadge" data-stage="base" aria-live="polite">
       <span class="stage-badge__dot" aria-hidden="true"></span>
       <span class="stage-badge__label" id="stageBadgeLabel">${esc(c.baseLabel)}</span>
-    </div>`;
+    </div>`, 'stageBadge');
 }
 
 export function emitStageBadgeRuntime(cfg = defaultConfig()) {

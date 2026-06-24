@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/splitSymbol.mjs
  *
@@ -101,7 +102,7 @@ export function emitSplitSymbolCSS(cfg = defaultConfig()) {
 
 export function emitSplitSymbolMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<!-- splitSymbol decorates .symbol-cell[data-split="true"] at runtime -->`;
+  return tagBlockMarkup(`<!-- splitSymbol decorates .symbol-cell[data-split="true"] at runtime -->`, 'splitSymbol');
 }
 
 export function emitSplitSymbolRuntime(cfg = defaultConfig()) {

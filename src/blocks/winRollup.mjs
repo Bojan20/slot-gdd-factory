@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * Slot GDD Factory · winRollup BLOCK
  *
@@ -230,12 +231,12 @@ export function emitWinRollupMarkup(cfg = defaultConfig()) {
   if (!c.enabled) return '';
   /* aria-live polite — assistive tech announces the final amount, but
    * not every rollup tick (avoids screen-reader spam). */
-  return `<div class="win-rollup-host" id="winRollupHost">
+  return tagBlockMarkup(`<div class="win-rollup-host" id="winRollupHost">
       <div class="win-rollup-banner" id="winRollupBanner" data-show="false" aria-live="polite" aria-atomic="true">
         <span class="win-rollup-label" id="winRollupLabel">${esc(c.labelText)}</span>
         <span class="win-rollup-amount" id="winRollupAmount" data-count="0">${esc(c.currencyPosition === 'suffix' ? '0.00 ' + c.currency : c.currency + '0.00')}</span>
       </div>
-    </div>`;
+    </div>`, 'winRollup');
 }
 
 export function emitWinRollupRuntime(cfg = defaultConfig()) {

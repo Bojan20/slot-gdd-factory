@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/collectRevealOverlay.mjs
  *
@@ -204,7 +205,7 @@ export function emitCollectRevealOverlayCSS(cfg = defaultConfig()) {
 
 export function emitCollectRevealOverlayMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="collectRevealBackdrop" class="collect-reveal-backdrop"
+  return tagBlockMarkup(`<div id="collectRevealBackdrop" class="collect-reveal-backdrop"
      data-open="false" aria-hidden="true"></div>
 <div id="collectRevealCard" class="collect-reveal-card"
      data-open="false"
@@ -213,7 +214,7 @@ export function emitCollectRevealOverlayMarkup(cfg = defaultConfig()) {
   <div class="collect-reveal-tier" id="collectRevealTier">${escapeHtml(cfg.label)}</div>
   <div class="collect-reveal-award" id="collectRevealAward"></div>
   <button class="collect-reveal-cta" type="button" id="collectRevealCta">${escapeHtml(cfg.ctaLabel)}</button>
-</div>`;
+</div>`, 'collectRevealOverlay');
 }
 
 export function emitCollectRevealOverlayRuntime(cfg = defaultConfig()) {

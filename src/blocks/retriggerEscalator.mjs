@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/retriggerEscalator.mjs
  *
@@ -128,7 +129,7 @@ export function emitRetriggerEscalatorCSS(cfg = defaultConfig()) {
 
 export function emitRetriggerEscalatorMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="reBadge" class="re-badge" role="status" aria-live="polite" aria-label="Retrigger escalator" data-visible="false" data-escalating="false" data-tier="0">+0 FS</div>`;
+  return tagBlockMarkup(`<div id="reBadge" class="re-badge" role="status" aria-live="polite" aria-label="Retrigger escalator" data-visible="false" data-escalating="false" data-tier="0">+0 FS</div>`, 'retriggerEscalator');
 }
 
 export function emitRetriggerEscalatorRuntime(cfg = defaultConfig()) {

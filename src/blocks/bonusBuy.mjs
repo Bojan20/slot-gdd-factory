@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/bonusBuy.mjs
  *
@@ -236,10 +237,10 @@ export function emitBonusBuyCSS(cfg = defaultConfig()) {
 
 export function emitBonusBuyMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<button id="bonusBuyBtn" class="bonus-buy-btn" type="button" aria-label="Buy bonus feature">
+  return tagBlockMarkup(`<button id="bonusBuyBtn" class="bonus-buy-btn" type="button" aria-label="Buy bonus feature">
   ${escapeHtml(cfg.label)}
   <span class="cost">${cfg.costX}× BET</span>
-</button>`;
+</button>`, 'bonusBuy');
 }
 
 export function emitBonusBuyRuntime(cfg = defaultConfig()) {

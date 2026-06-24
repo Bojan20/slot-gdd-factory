@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/pwaInstallability.mjs
  *
@@ -177,7 +178,7 @@ export function emitPwaInstallabilityMarkup(cfg = defaultConfig()) {
   const dataUri = `data:application/manifest+json;base64,${manifestB64}`;
   const appleIcon = _iconSvgDataUri(c, 180);
 
-  return `
+  return tagBlockMarkup(`
 <!-- pwaInstallability BLOCK (Wave A8) — emitted by src/blocks/pwaInstallability.mjs -->
 <link rel="manifest" href="${dataUri}">
 <meta name="theme-color" content="${c.themeColor}">
@@ -190,7 +191,7 @@ export function emitPwaInstallabilityMarkup(cfg = defaultConfig()) {
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="${c.shortName}">
-<link rel="apple-touch-icon" href="${appleIcon}">`;
+<link rel="apple-touch-icon" href="${appleIcon}">`, 'pwaInstallability');
 }
 
 /* Service worker source — emitted as a string, later wrapped in Blob.

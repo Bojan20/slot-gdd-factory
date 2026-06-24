@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/rewardChest.mjs
  *
@@ -352,11 +353,11 @@ export function emitRewardChestCSS(cfg = defaultConfig()) {
 
 export function emitRewardChestMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="rewardChest" class="reward-chest" data-active="false" data-phase="" role="status" aria-live="polite" aria-label="Reward chest" aria-hidden="true">
+  return tagBlockMarkup(`<div id="rewardChest" class="reward-chest" data-active="false" data-phase="" role="status" aria-live="polite" aria-label="Reward chest" aria-hidden="true">
     <div class="rc-ring" aria-hidden="true"></div>
     <div class="rc-chest" aria-hidden="true"><div class="rc-lid"></div></div>
     <div class="rc-label">&nbsp;</div>
-  </div>`;
+  </div>`, 'rewardChest');
 }
 
 export function emitRewardChestRuntime(cfg = defaultConfig()) {

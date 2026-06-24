@@ -81,6 +81,8 @@
  * trigger payload. This block only reveals + dismisses.
  */
 
+import { Z } from '../registry/zIndexScale.mjs';
+
 const APPLIES_IN          = Object.freeze(['hw', 'bonus', 'both']);
 const REVEAL_ANIM_MIN_MS  = 300;
 const REVEAL_ANIM_MAX_MS  = 3000;
@@ -224,7 +226,7 @@ export function emitJackpotRoomRevealCSS(cfg = defaultConfig()) {
   justify-content: center;
   flex-direction: column;
   background: ${c.placardColor}f0;
-  z-index: 9000;
+  z-index: ${Z.JACKPOT_CELEBRATION};   /* UQ-DEEP-AO · AO-5 — was 9000 */
   font: 900 ${c.fontSizePx}px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
   color: ${c.ladderGlowColor};
   text-shadow: 0 2px 12px rgba(0,0,0,0.85), 0 0 24px ${c.ladderGlowColor}66;

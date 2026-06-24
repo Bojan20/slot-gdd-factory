@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/jackpotLadderRooms.mjs
  *
@@ -168,7 +169,7 @@ export function emitJackpotLadderRoomsMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const rooms = TIERS.map(tier => {
     const label = (cfg.labels && cfg.labels[tier]) || tier;
-    return `<div class="jp-room" role="status" aria-label="${tier} jackpot" data-tier="${tier}" data-active="false">${label}</div>`;
+    return tagBlockMarkup(`<div class="jp-room" role="status" aria-label="${tier} jackpot" data-tier="${tier}" data-active="false">${label}</div>`, 'jackpotLadderRooms');
   }).join('');
   return `<div id="jpLadder" class="jp-ladder" role="group" aria-label="Jackpot ladder">${rooms}</div>`;
 }

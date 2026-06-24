@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/winLineFlash.mjs
  *
@@ -126,7 +127,7 @@ export function emitWinLineFlashCSS(cfg = defaultConfig()) {
 
 export function emitWinLineFlashMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<!-- winLineFlash decorates .symbol-cell[data-line-flash="true"] at runtime -->`;
+  return tagBlockMarkup(`<!-- winLineFlash decorates .symbol-cell[data-line-flash="true"] at runtime -->`, 'winLineFlash');
 }
 
 export function emitWinLineFlashRuntime(cfg = defaultConfig()) {

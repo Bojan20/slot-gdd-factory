@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/nearMissTease.mjs
  *
@@ -115,7 +116,7 @@ export function emitNearMissTeaseCSS(cfg = defaultConfig()) {
 
 export function emitNearMissTeaseMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<!-- nearMissTease decorates .symbol-cell[data-near-miss="true"] at runtime -->`;
+  return tagBlockMarkup(`<!-- nearMissTease decorates .symbol-cell[data-near-miss="true"] at runtime -->`, 'nearMissTease');
 }
 
 export function emitNearMissTeaseRuntime(cfg = defaultConfig()) {

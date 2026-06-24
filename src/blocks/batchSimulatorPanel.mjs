@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/batchSimulatorPanel.mjs
  *
@@ -129,7 +130,7 @@ export function emitBatchSimulatorPanelMarkup(cfg = defaultConfig()) {
   const presetButtons = cfg.presets.map((p, i) =>
     `<button class="bsp-btn" data-spins="${p.spins}" data-label="${p.label}">${p.label}</button>`
   ).join('');
-  return `
+  return tagBlockMarkup(`
 <!-- UQ-DEEP-V (Boki 2026-06-24): batch panel sada collapsed launcher. -->
 <div class="batch-sim-root">
   <button type="button" class="batch-sim-toggle" id="bspToggle"
@@ -150,7 +151,7 @@ export function emitBatchSimulatorPanelMarkup(cfg = defaultConfig()) {
     <div class="bsp-out" id="bspOut">Click a tier to run, or 🎯 to auto-converge.</div>
   </div>
 </div>
-`;
+`, 'batchSimulatorPanel');
 }
 
 export function emitBatchSimulatorPanelRuntime(cfg = defaultConfig(), model = {}) {

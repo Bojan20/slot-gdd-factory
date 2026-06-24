@@ -30,6 +30,18 @@
  *   • Vendor-neutral — never bake game / vendor names into manifest text
  *   • Deterministic — sorted by name so manifest JSON has stable git diff
  *
+ * UQ-DEEP-AO · AO-3 (2026-06-24) — Manifest drift fix:
+ *   • Discovery now walks two curated sub-folders in addition to top-level
+ *     src/blocks: `_auto-scaffolded/` (archetype scaffolds, intentional
+ *     `_auto_*` underscore prefix) and `featureSimPlugins/` (math probe
+ *     sim plugins). Sub-folder entries get path-prefixed names
+ *     (e.g. `featureSimPlugins/patternWin`) so they never collide with a
+ *     top-level basename like `patternWin`.
+ *   • Adds runtime-truthful presence flags per entry — hasEmitCSS,
+ *     hasEmitMarkup, hasEmitRuntime, hasResolveConfig, hasDefaultConfig
+ *     — sourced from the LIVE imported module (not regex over source),
+ *     so audit tooling sees the real surface and reports 0 drift.
+ *
  * Run:
  *   node tools/gen-block-manifest.mjs                       # writes manifest
  *   node tools/gen-block-manifest.mjs --print               # stdout only
@@ -49,6 +61,20 @@ const OUT_DIR = resolvePath(REPO, 'blocks');
 const OUT_FILE = resolvePath(OUT_DIR, '_manifest.json');
 
 const PRINT_ONLY = process.argv.includes('--print');
+
+/**
+ * UQ-DEEP-AO · AO-3 — Sub-directories that should be discovered and emitted
+ * as separate manifest entries. Without this list, QA-D Block Presentation
+ * Audit reports 17 missing blocks (4 _auto-scaffolded + 13 featureSimPlugins).
+ *
+ * `allowUnderscorePrefix`: top-level scan strips files like `_internal.mjs`,
+ * but the `_auto-scaffolded/` folder uses an `_auto_*` naming convention
+ * by design — we must include those.
+ */
+const SUB_BLOCK_DIRS = [
+  { dir: '_auto-scaffolded',  allowUnderscorePrefix: true  },
+  { dir: 'featureSimPlugins', allowUnderscorePrefix: false },
+];
 
 /** Category buckets — keyword routing keeps the playground sidebar grouped. */
 const CATEGORY_RULES = [
@@ -130,36 +156,120 @@ function extractEmittedEvents(source) {
 }
 
 /**
- * Try to load defaultConfig() from the module. Defensive — if the module
- * throws on load (e.g. depends on browser globals at import time), we
- * record an error and continue.
+ * Try to load module + defaultConfig() from the file. Defensive — if the
+ * module throws on load (e.g. depends on browser globals at import time),
+ * we record an error and continue.
  *
- * Returns { cfg, frozen } where:
- *   cfg    — JSON-serialisable copy of defaultConfig() (or null / error obj)
- *   frozen — true iff the LIVE config object is Object.isFrozen at scan time
- *            (UQ-DEEP-AN — manifest must reflect runtime freeze posture so
- *            audit tooling sees the real coverage, not 0)
+ * Returns:
+ *   cfg              — JSON-serialisable copy of defaultConfig() (or null / error obj)
+ *   frozen           — true iff the LIVE config object is Object.isFrozen at scan time
+ *                      (UQ-DEEP-AN — manifest must reflect runtime freeze posture)
+ *   hasEmitCSS       — module exports any function matching /^emit[A-Z_].*CSS$/ OR `emitCSS`
+ *   hasEmitMarkup    — module exports any function matching /^emit[A-Z_].*Markup$/ OR `emitMarkup`
+ *   hasEmitRuntime   — module exports any function matching /^emit[A-Z_].*Runtime$/ OR `emitRuntime`
+ *   hasResolveConfig — module exports `resolveConfig`
+ *   hasDefaultConfig — module exports `defaultConfig`
+ *
+ * UQ-DEEP-AO · AO-3 — accurate emit / freeze detection sourced from the
+ * live module (not regex over source), so manifest matches runtime posture
+ * exactly and the drift detector reports 0.
  */
-async function loadDefaultConfig(absPath) {
+async function loadModuleSnapshot(absPath) {
   try {
     const mod = await import(pathToFileURL(absPath).href);
-    if (typeof mod.defaultConfig === 'function') {
+    const exportKeys = Object.keys(mod);
+    const isFn = (k) => typeof mod[k] === 'function';
+    const hasEmitCSS = exportKeys.some(
+      (k) => isFn(k) && (/^emit[A-Z_].*CSS$/.test(k) || k === 'emitCSS')
+    );
+    const hasEmitMarkup = exportKeys.some(
+      (k) => isFn(k) && (/^emit[A-Z_].*Markup$/.test(k) || k === 'emitMarkup')
+    );
+    const hasEmitRuntime = exportKeys.some(
+      (k) => isFn(k) && (/^emit[A-Z_].*Runtime$/.test(k) || k === 'emitRuntime')
+    );
+    const hasResolveConfig = isFn('resolveConfig');
+    const hasDefaultConfig = isFn('defaultConfig');
+    let cfg = null;
+    let frozen = false;
+    if (hasDefaultConfig) {
       try {
         const liveCfg = mod.defaultConfig();
-        const frozen = liveCfg !== null
+        frozen = liveCfg !== null
           && typeof liveCfg === 'object'
           && Object.isFrozen(liveCfg);
         /* Only retain JSON-serialisable values — drops Set, Map, Function. */
-        const cfg = JSON.parse(JSON.stringify(liveCfg));
-        return { cfg, frozen };
+        cfg = JSON.parse(JSON.stringify(liveCfg));
       } catch (e) {
-        return { cfg: { __error: `defaultConfig() threw: ${e.message}` }, frozen: false };
+        cfg = { __error: `defaultConfig() threw: ${e.message}` };
+        frozen = false;
       }
     }
-    return { cfg: null, frozen: false };
+    return {
+      cfg, frozen,
+      hasEmitCSS, hasEmitMarkup, hasEmitRuntime,
+      hasResolveConfig, hasDefaultConfig,
+    };
   } catch (e) {
-    return { cfg: { __error: `import failed: ${e.message}` }, frozen: false };
+    return {
+      cfg: { __error: `import failed: ${e.message}` },
+      frozen: false,
+      hasEmitCSS: false,
+      hasEmitMarkup: false,
+      hasEmitRuntime: false,
+      hasResolveConfig: false,
+      hasDefaultConfig: false,
+    };
   }
+}
+
+/**
+ * UQ-DEEP-AO · AO-3 — Discover every `.mjs` block file under src/blocks:
+ *   • top-level (excluding `_`-prefixed internals)
+ *   • `_auto-scaffolded/*.mjs` (auto-generated archetype scaffolds — the
+ *     `_auto_*` underscore prefix is by design, must include)
+ *   • `featureSimPlugins/*.mjs` (sim plugins consumed by math probes)
+ *
+ * Returns `[{ name, file, abs }]` where `name` is path-aware for sub-folder
+ * blocks (e.g. `featureSimPlugins/patternWin`) so the manifest never has
+ * duplicate keys when two folders share a basename.
+ */
+function discoverBlocks() {
+  const out = [];
+
+  /* Top-level src/blocks/*.mjs (no leading underscore). */
+  for (const f of readdirSync(BLOCKS_DIR)) {
+    if (!f.endsWith('.mjs') || f.startsWith('_')) continue;
+    const abs = resolvePath(BLOCKS_DIR, f);
+    if (!statSync(abs).isFile()) continue;
+    out.push({
+      name: basename(f, '.mjs'),
+      file: `src/blocks/${f}`,
+      abs,
+    });
+  }
+
+  /* Curated sub-folders. */
+  for (const { dir, allowUnderscorePrefix } of SUB_BLOCK_DIRS) {
+    const subDir = resolvePath(BLOCKS_DIR, dir);
+    if (!existsSync(subDir)) continue;
+    for (const f of readdirSync(subDir)) {
+      if (!f.endsWith('.mjs')) continue;
+      if (!allowUnderscorePrefix && f.startsWith('_')) continue;
+      const abs = resolvePath(subDir, f);
+      if (!statSync(abs).isFile()) continue;
+      const baseName = basename(f, '.mjs');
+      out.push({
+        /* Path-prefixed name avoids basename collisions across folders. */
+        name: `${dir}/${baseName}`,
+        file: `src/blocks/${dir}/${f}`,
+        abs,
+      });
+    }
+  }
+
+  out.sort((a, b) => a.name.localeCompare(b.name));
+  return out;
 }
 
 /* ── Main ── */
@@ -169,32 +279,41 @@ if (!existsSync(BLOCKS_DIR)) {
   process.exit(1);
 }
 
-const blockFiles = readdirSync(BLOCKS_DIR)
-  .filter(f => f.endsWith('.mjs') && !f.startsWith('_'))
-  .sort();
+const discovered = discoverBlocks();
 
 const manifest = {
   generatedAt: new Date().toISOString(),
   blocksDir: 'src/blocks',
-  totalBlocks: blockFiles.length,
+  totalBlocks: discovered.length,
   blocks: [],
 };
 
-for (const f of blockFiles) {
-  const abs = resolvePath(BLOCKS_DIR, f);
-  const rel = `src/blocks/${f}`;
-  const name = basename(f, '.mjs');
+for (const d of discovered) {
+  const { name, file: rel, abs } = d;
   const source = readFileSync(abs, 'utf8');
   const loc = source.split('\n').length;
-  const testCandidate = resolvePath(TESTS_DIR, `${name}.test.mjs`);
-  const testFile = existsSync(testCandidate) ? `tests/blocks/${name}.test.mjs` : null;
+  /* Test file lookup uses the basename only — tests/blocks/<basename>.test.mjs
+   * remains the convention; sub-folder blocks rarely have a sibling test and
+   * simply emit testFile: null. */
+  const baseName = basename(rel, '.mjs');
+  const testCandidate = resolvePath(TESTS_DIR, `${baseName}.test.mjs`);
+  const testFile = existsSync(testCandidate) ? `tests/blocks/${baseName}.test.mjs` : null;
 
-  const { cfg: defaultConfig, frozen } = await loadDefaultConfig(abs);
+  const {
+    cfg: defaultConfig,
+    frozen,
+    hasEmitCSS,
+    hasEmitMarkup,
+    hasEmitRuntime,
+    hasResolveConfig,
+    hasDefaultConfig,
+  } = await loadModuleSnapshot(abs);
+
   const entry = {
     name,
     file: rel,
     testFile,
-    category: categoriseBlock(name),
+    category: categoriseBlock(baseName),
     description: extractDescription(source),
     exports: extractExports(source),
     enabledByDefault:
@@ -203,6 +322,12 @@ for (const f of blockFiles) {
         ? !!defaultConfig.enabled
         : true,
     frozen,
+    /* UQ-DEEP-AO · AO-3 — runtime-truthful emit / config presence flags. */
+    hasEmitCSS,
+    hasEmitMarkup,
+    hasEmitRuntime,
+    hasResolveConfig,
+    hasDefaultConfig,
     lifecycleHooks: extractLifecycleHooks(source),
     emittedEvents: extractEmittedEvents(source),
     defaultConfig,

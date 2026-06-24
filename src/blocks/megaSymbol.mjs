@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/megaSymbol.mjs
  *
@@ -142,7 +143,7 @@ export function emitMegaSymbolCSS(cfg = defaultConfig()) {
 
 export function emitMegaSymbolMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<!-- megaSymbol overlay built at runtime; lives inside .grid -->`;
+  return tagBlockMarkup(`<!-- megaSymbol overlay built at runtime; lives inside .grid -->`, 'megaSymbol');
 }
 
 export function emitMegaSymbolRuntime(cfg = defaultConfig()) {

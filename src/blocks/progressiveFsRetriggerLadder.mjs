@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/progressiveFsRetriggerLadder.mjs
  *
@@ -255,15 +256,15 @@ export function emitProgressiveFsRetriggerLadderMarkup(cfg = defaultConfig()) {
 
   const rungs = c.ladder.map((e, i) => {
     const isCurrent = i === 0;
-    return `  <div class="pfrl-rung${isCurrent ? ' is-current' : ''}" data-rung="${i}" role="listitem"${isCurrent ? ' aria-current="true"' : ''}>${escAttr(e.label)}</div>`;
+    return tagBlockMarkup(`  <div class="pfrl-rung${isCurrent ? ' is-current' : ''}" data-rung="${i}" role="listitem"${isCurrent ? ' aria-current="true"' : ''}>${escAttr(e.label)}</div>`, 'progressiveFsRetriggerLadder');
   }).join('\n');
 
-  return `
+  return tagBlockMarkup(`
 <!-- progressiveFsRetriggerLadder BLOCK — server-emitted markup -->
 <div class="pfrl-ladder" id="pfrlLadder" role="list" aria-label="Free Spins multiplier ladder" aria-hidden="true">
 ${rungs}
 </div>
-`;
+`, 'progressiveFsRetriggerLadder');
 }
 
 export function emitProgressiveFsRetriggerLadderRuntime(cfg = defaultConfig()) {

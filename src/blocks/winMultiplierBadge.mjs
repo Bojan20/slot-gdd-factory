@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/winMultiplierBadge.mjs
  *
@@ -124,7 +125,7 @@ export function emitWinMultiplierBadgeCSS(cfg = defaultConfig()) {
 
 export function emitWinMultiplierBadgeMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<!-- winMultiplierBadge mounts badges per-win at runtime -->`;
+  return tagBlockMarkup(`<!-- winMultiplierBadge mounts badges per-win at runtime -->`, 'winMultiplierBadge');
 }
 
 export function emitWinMultiplierBadgeRuntime(cfg = defaultConfig()) {

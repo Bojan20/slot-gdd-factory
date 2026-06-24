@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/persistentMultiplier.mjs
  *
@@ -133,10 +134,10 @@ export function emitPersistentMultiplierCSS(cfg = defaultConfig()) {
 
 export function emitPersistentMultiplierMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="pmChip" class="pm-chip" data-show="false" aria-live="polite">
+  return tagBlockMarkup(`<div id="pmChip" class="pm-chip" data-show="false" aria-live="polite">
   <span>MULT</span>
   <span class="pm-val">×1</span>
-</div>`;
+</div>`, 'persistentMultiplier');
 }
 
 export function emitPersistentMultiplierRuntime(cfg = defaultConfig()) {

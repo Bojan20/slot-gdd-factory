@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/bonusClimaxReveal.mjs
  *
@@ -196,13 +197,13 @@ export function emitBonusClimaxRevealCSS(cfg = defaultConfig()) {
 
 export function emitBonusClimaxRevealMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="bonusClimaxOverlay" class="bonus-climax" role="alert" aria-live="assertive" aria-hidden="true" data-visible="false">
+  return tagBlockMarkup(`<div id="bonusClimaxOverlay" class="bonus-climax" role="alert" aria-live="assertive" aria-hidden="true" data-visible="false">
     <div class="bonus-climax-burst" aria-hidden="true"></div>
     <div>
       <span class="bonus-climax-label" id="bonusClimaxLabel">BONUS!</span>
       <span class="bonus-climax-sub"   id="bonusClimaxSub">REVEAL</span>
     </div>
-  </div>`;
+  </div>`, 'bonusClimaxReveal');
 }
 
 export function emitBonusClimaxRevealRuntime(cfg = defaultConfig()) {

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/realityCheck.mjs
  *
@@ -211,6 +212,7 @@ export function defaultConfig() {
  * resolver is a one-line wrapper so the test's regex pinning stays
  * stable and the central chain ships through the same call shape. */
 import { resolveJurisdiction as _rcResolveJurisdiction } from './jurisdictionGate.mjs';
+import { Z } from '../registry/zIndexScale.mjs';
 
 /* W58.J-SE — Spelinspektionen authority anchor.
  * SGCG (Spelinspektionen) Föreskrifter SIFS 2018:6 §7.2 "Information om
@@ -412,7 +414,7 @@ export function emitRealityCheckCSS(cfg = defaultConfig()) {
     font-size: 13px;
     font-variant-numeric: tabular-nums;
     border-radius: 999px;
-    z-index: 9000;
+    z-index: ${Z.COMPLIANCE_MODAL};   /* UQ-DEEP-AO · AO-5 — was 9000 */
     pointer-events: none;
     user-select: none;
     line-height: 1.2;
@@ -426,7 +428,7 @@ export function emitRealityCheckCSS(cfg = defaultConfig()) {
 
 export function emitRealityCheckMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="rcOverlay" class="rc-overlay" data-show="false" data-modal="true" role="dialog" aria-modal="true" aria-labelledby="rcTitle">
+  return tagBlockMarkup(`<div id="rcOverlay" class="rc-overlay" data-show="false" data-modal="true" role="dialog" aria-modal="true" aria-labelledby="rcTitle">
   <div class="rc-modal">
     <div id="rcTitle" class="rc-title">${_esc(cfg.title)}</div>
     <!-- WCAG 4.1.3 — stats values are recomputed every tick / open;
@@ -467,7 +469,7 @@ export function emitRealityCheckMarkup(cfg = defaultConfig()) {
       ${cfg.pauseOptions.map(min => `<button class="rc-pause-btn" type="button" data-pause-min="${min}" aria-label="Pause for ${min} minute${min === 1 ? '' : 's'}">${min} MIN</button>`).join('')}
     </div>
   </div>
-</div>`;
+</div>`, 'realityCheck');
 }
 
 export function emitRealityCheckRuntime(cfg = defaultConfig()) {

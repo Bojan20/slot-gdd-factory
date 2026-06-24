@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/shareReplay.mjs
  *
@@ -167,10 +168,10 @@ export function emitShareReplayCSS(cfg = defaultConfig()) {
 
 export function emitShareReplayMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<button id="shareReplayBtn" class="share-replay-btn" type="button"
+  return tagBlockMarkup(`<button id="shareReplayBtn" class="share-replay-btn" type="button"
         aria-label="Share this win" data-show="false">${escapeHtml(cfg.label)}</button>
 <div id="shareReplayToast" class="share-replay-toast" role="status" aria-live="polite"
-     aria-atomic="true" data-show="false"></div>`;
+     aria-atomic="true" data-show="false"></div>`, 'shareReplay');
 }
 
 export function emitShareReplayRuntime(cfg = defaultConfig()) {

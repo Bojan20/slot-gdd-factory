@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/prizeBoostBet.mjs
  *
@@ -189,13 +190,13 @@ export function emitPrizeBoostBetMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const pct = Math.round((cfg.costMult - 1) * 100);
   const winLabel = '×' + cfg.winMult;
-  return `<button id="prizeBoostBet" class="prize-boost-bet" type="button"
+  return tagBlockMarkup(`<button id="prizeBoostBet" class="prize-boost-bet" type="button"
         role="switch" aria-checked="false" data-locked="false"
         aria-label="Toggle prize boost (+${pct}% bet, ${winLabel} win)">
   <span>${escapeHtml(cfg.label)}</span>
   <span class="pb-switch" aria-hidden="true"></span>
   <span class="pb-pct">+${pct}%</span>
-</button>`;
+</button>`, 'prizeBoostBet');
 }
 
 export function emitPrizeBoostBetRuntime(cfg = defaultConfig()) {

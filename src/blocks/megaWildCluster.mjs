@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/megaWildCluster.mjs
  *
@@ -201,10 +202,10 @@ export function emitMegaWildClusterMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ megaWildCluster: cfg });
   if (!c.enabled) return `\n<!-- megaWildCluster BLOCK (disabled) -->\n`;
   /* No additional DOM nodes required — block decorates existing grid cells. */
-  return `
+  return tagBlockMarkup(`
 <!-- megaWildCluster BLOCK — decorates existing grid cells in-place -->
 <div class="mwc-overlay-marker" aria-hidden="true" data-mwc-block-size="${c.blockSize}"></div>
-`;
+`, 'megaWildCluster');
 }
 
 export function emitMegaWildClusterRuntime(cfg = defaultConfig()) {

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/symbolModifiers.mjs
  *
@@ -195,7 +196,7 @@ export function emitSymbolModifiersCSS(cfg = defaultConfig()) {
 
 export function emitSymbolModifiersMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="sym-mod-stage" class="sym-mod-overlay" aria-hidden="true"></div>`;
+  return tagBlockMarkup(`<div id="sym-mod-stage" class="sym-mod-overlay" aria-hidden="true"></div>`, 'symbolModifiers');
 }
 
 export function emitSymbolModifiersRuntime(cfg = defaultConfig()) {

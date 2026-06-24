@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/mysteryReveal.mjs
  *
@@ -225,9 +226,9 @@ export function emitMysteryRevealCSS(cfg = defaultConfig()) {
 
 export function emitMysteryRevealMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="mysteryReveal" class="mystery-reveal" data-active="false" role="status" aria-live="polite" aria-label="Mystery reveal" aria-hidden="true">
+  return tagBlockMarkup(`<div id="mysteryReveal" class="mystery-reveal" data-active="false" role="status" aria-live="polite" aria-label="Mystery reveal" aria-hidden="true">
     <span class="mr-label">&nbsp;</span>
-  </div>`;
+  </div>`, 'mysteryReveal');
 }
 
 export function emitMysteryRevealRuntime(cfg = defaultConfig()) {

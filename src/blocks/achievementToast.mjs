@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/achievementToast.mjs
  *
@@ -181,8 +182,8 @@ export function emitAchievementToastCSS(cfg = defaultConfig()) {
 
 export function emitAchievementToastMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="achievementToastStack" class="achievement-toast-stack"
-     role="alert" aria-live="assertive" aria-atomic="true"></div>`;
+  return tagBlockMarkup(`<div id="achievementToastStack" class="achievement-toast-stack"
+     role="alert" aria-live="assertive" aria-atomic="true"></div>`, 'achievementToast');
 }
 
 export function emitAchievementToastRuntime(cfg = defaultConfig()) {

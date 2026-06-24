@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/wheelBonus.mjs
  *
@@ -247,7 +248,7 @@ export function emitWheelBonusMarkup(cfg = defaultConfig()) {
   const skew = Math.max(0.0001, 90 - segDeg);
   const segs = cfg.segments.map((s, i) => {
     const rotate = i * segDeg;
-    return `<div class="wb-seg" style="transform: rotate(${rotate}deg) skewY(-${skew}deg); background:${s.color}"><span style="transform: skewY(${skew}deg) rotate(${segDeg / 2}deg); display:inline-block;">${escapeHtml(s.label)}</span></div>`;
+    return tagBlockMarkup(`<div class="wb-seg" style="transform: rotate(${rotate}deg) skewY(-${skew}deg); background:${s.color}"><span style="transform: skewY(${skew}deg) rotate(${segDeg / 2}deg); display:inline-block;">${escapeHtml(s.label)}</span></div>`, 'wheelBonus');
   }).join('');
   return `<div id="wbOverlay" class="wb-overlay" data-show="false" role="dialog" aria-modal="true" aria-labelledby="wbTitle">
   <div class="wb-modal">

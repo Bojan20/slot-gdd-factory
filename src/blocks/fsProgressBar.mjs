@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/fsProgressBar.mjs
  *
@@ -181,13 +182,13 @@ export function emitFsProgressBarCSS(cfg = defaultConfig()) {
 
 export function emitFsProgressBarMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `
+  return tagBlockMarkup(`
   <div id="fsProgress" class="fs-progress" role="progressbar"
        aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"
        aria-label="Free spins progress" data-show="false">
     <span id="fsProgressLabel" class="fs-progress__label" aria-live="polite">Spin 0 of 0</span>
     <span class="fs-progress__track"><span id="fsProgressFill" class="fs-progress__fill"></span></span>
-  </div>`;
+  </div>`, 'fsProgressBar');
 }
 
 export function emitFsProgressBarRuntime(cfg = defaultConfig()) {

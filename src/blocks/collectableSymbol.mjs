@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/collectableSymbol.mjs
  *
@@ -179,7 +180,7 @@ export function emitCollectableSymbolCSS(cfg = defaultConfig()) {
 export function emitCollectableSymbolMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const initial = cfg.labelTemplate.replace('{S}', cfg.symbol).replace('{N}', '0').replace('{M}', String(cfg.threshold));
-  return `<div id="collectBadge" class="collect-badge" role="status" aria-live="polite" aria-label="${cfg.symbol} collected" data-count="0" data-full="false" data-bumping="false">${initial}</div>`;
+  return tagBlockMarkup(`<div id="collectBadge" class="collect-badge" role="status" aria-live="polite" aria-label="${cfg.symbol} collected" data-count="0" data-full="false" data-bumping="false">${initial}</div>`, 'collectableSymbol');
 }
 
 export function emitCollectableSymbolRuntime(cfg = defaultConfig()) {

@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/paylineDimmer.mjs
  *
@@ -103,7 +104,7 @@ export function emitPaylineDimmerCSS(cfg = defaultConfig()) {
 
 export function emitPaylineDimmerMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<!-- paylineDimmer decorates .symbol-cell[data-dimmed="true"] at runtime -->`;
+  return tagBlockMarkup(`<!-- paylineDimmer decorates .symbol-cell[data-dimmed="true"] at runtime -->`, 'paylineDimmer');
 }
 
 export function emitPaylineDimmerRuntime(cfg = defaultConfig()) {

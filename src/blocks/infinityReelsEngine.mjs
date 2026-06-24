@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/infinityReelsEngine.mjs
  *
@@ -281,10 +282,10 @@ export function emitInfinityReelsEngineMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ infinityReelsEngine: cfg });
   if (!c.enabled) return `\n<!-- infinityReelsEngine BLOCK (disabled) -->\n`;
   if (!c.showHud) return `\n<!-- infinityReelsEngine BLOCK (hud hidden) -->\n`;
-  return `
+  return tagBlockMarkup(`
 <!-- infinityReelsEngine BLOCK — server-emitted markup -->
 <div class="ire-hud" id="ireHud" role="status" aria-live="polite" aria-hidden="true"></div>
-`;
+`, 'infinityReelsEngine');
 }
 
 export function emitInfinityReelsEngineRuntime(cfg = defaultConfig()) {

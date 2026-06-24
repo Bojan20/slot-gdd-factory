@@ -1,3 +1,4 @@
+import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
 /**
  * src/blocks/playerXp.mjs
  *
@@ -164,8 +165,8 @@ export function emitPlayerXpCSS(cfg = defaultConfig()) {
 
 export function emitPlayerXpMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return `<div id="playerXpLive" class="player-xp-live"
-     role="status" aria-live="polite" aria-atomic="true"></div>`;
+  return tagBlockMarkup(`<div id="playerXpLive" class="player-xp-live"
+     role="status" aria-live="polite" aria-atomic="true"></div>`, 'playerXp');
 }
 
 export function emitPlayerXpRuntime(cfg = defaultConfig()) {
