@@ -49,6 +49,11 @@ import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { randomUUID, createHash } from 'node:crypto';
+/* LV3-1 — auto-spawn math-backend kao child process kad uploader bootuje. */
+import { ensureBackendRunning, stopBackend } from './math-backend-spawner.mjs';
+
+let _mathBackendStatus = { spawned: false, healthOk: false, port: 9001, reason: 'not-started' };
+export function getMathBackendStatus() { return { ..._mathBackendStatus }; }
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = resolve(__filename, '..');
@@ -501,6 +506,10 @@ async function dispatch(req, res) {
     const p = url.pathname;
     if (req.method === 'GET' && p === '/')       return handleIndex(req, res);
     if (req.method === 'GET' && p === '/status') return handleStatus(req, res);
+    /* LV3-8 — backend liveness + version for UI badge. */
+    if (req.method === 'GET' && p === '/math-backend-status') {
+      return sendJSON(res, 200, getMathBackendStatus());
+    }
     /* UQ-DEEP-G fix (Boki 2026-06-23): browser auto-requests /favicon.ico,
      * server was 404-ing → operator console saw "Failed to load resource:
      * 404" noise that masked real errors. Return 204 No Content (transparent
@@ -544,13 +553,33 @@ export function startServer(opts = {}) {
   return new Promise((resolveStart, reject) => {
     const server = createServer(dispatch);
     server.on('error', reject);
-    server.listen(port, host, () => {
+    server.listen(port, host, async () => {
       const addr = server.address();
       const actualPort = typeof addr === 'object' ? addr.port : port;
+      /* LV3-1 — auto-spawn math-backend (port 9001). Fire-and-forget;
+       * uploader server bootuje odmah, backend se vrti uporedo. UI
+       * sluša /math-backend-status za live status. */
+      if (opts.spawnMathBackend !== false) {
+        ensureBackendRunning({ port: 9001 }).then((r) => {
+          _mathBackendStatus = r;
+          if (r.healthOk) {
+            console.log(`▸ math-backend ${r.spawned ? 'spawned' : 'detected'} on :${r.port} (pid ${r.pid})`);
+          } else {
+            console.log(`▸ math-backend: ${r.reason} — LV3 batch/spin will be offline`);
+          }
+        }).catch((e) => {
+          _mathBackendStatus = { spawned: false, healthOk: false, port: 9001, reason: e.message };
+        });
+      }
       resolveStart({ server, port: actualPort, baseUrl: `http://${host}:${actualPort}` });
     });
   });
 }
+
+/* Graceful shutdown — child math-backend goes with us. */
+['SIGINT', 'SIGTERM'].forEach((sig) => {
+  process.on(sig, () => { try { stopBackend(); } catch {} });
+});
 
 /* ── CLI ─────────────────────────────────────────────────────────────── */
 

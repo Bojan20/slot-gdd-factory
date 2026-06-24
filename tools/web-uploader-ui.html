@@ -76,8 +76,38 @@
 <body>
 <header>
   <h1>slot-gdd-factory · operator uploader</h1>
-  <div class="meta">drag-drop · local · no auth · vanilla HTML</div>
+  <div class="meta">
+    drag-drop · local · no auth · vanilla HTML
+    <span id="mathBackendBadge" style="margin-left: 12px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">MATH backend: probing…</span>
+  </div>
 </header>
+<script>
+/* LV3-8 — poll /math-backend-status na boot + svake 5s. Show badge. */
+(function () {
+  function paintBadge(state) {
+    var b = document.getElementById('mathBackendBadge');
+    if (!b) return;
+    if (state && state.healthOk) {
+      b.textContent = 'MATH backend: ONLINE :' + state.port;
+      b.style.background = 'rgba(56,189,124,0.25)';
+      b.style.color = '#38bd7c';
+      b.style.border = '1px solid rgba(56,189,124,0.5)';
+    } else {
+      b.textContent = 'MATH backend: OFFLINE';
+      b.style.background = 'rgba(239,68,68,0.25)';
+      b.style.color = '#ef4444';
+      b.style.border = '1px solid rgba(239,68,68,0.5)';
+      b.title = state ? state.reason : 'not started';
+    }
+  }
+  function pollBackend() {
+    fetch('/math-backend-status').then(function (r) { return r.ok ? r.json() : null; })
+      .then(paintBadge).catch(function () { paintBadge(null); });
+  }
+  pollBackend();
+  setInterval(pollBackend, 5000);
+})();
+</script>
 <main>
   <section>
     <div class="panel">

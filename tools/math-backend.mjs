@@ -44,6 +44,29 @@ if (!BINARY) {
   process.exit(1);
 }
 
+/* LV3-11 — anti-vendor sanitize. Industry-trademarked names ne smeju
+ * leak-ovati kroz backend response (Cash Eruption / Wolf Run / Cleopatra
+ * / Pragmatic Play / IGT / Light & Wonder / Megaways / NetEnt). Backend
+ * response je tehnički numeric, ali binary path + future debug fields
+ * MOGU da sadrže trademark strings ako operator drži repo u Vendor-
+ * Imenovanom folder-u. Scrub before send. */
+const VENDOR_RX = /\b(IGT|Pragmatic\s+Play|Megaways|Cash[\s-]Eruption|Wolf[\s-]Run|Cleopatra|Buffalo\s+(?:King|Gold)|NetEnt|Microgaming|Scientific\s+Games|L&W|Light\s*&\s*Wonder|Play'?n\s*Go|Novomatic)\b/gi;
+function sanitizeStr(s) {
+  if (typeof s !== 'string') return s;
+  return s.replace(VENDOR_RX, '[vendor]');
+}
+function sanitizeObj(obj) {
+  if (Array.isArray(obj)) return obj.map(sanitizeObj);
+  if (obj && typeof obj === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(obj)) {
+      out[k] = typeof v === 'string' ? sanitizeStr(v) : sanitizeObj(v);
+    }
+    return out;
+  }
+  return obj;
+}
+
 /* In-memory session cache: sessionId → [outcomes]. */
 const SESSION_CACHE = new Map();
 const CACHE_TTL_MS = 30 * 60 * 1000;  /* 30 min */
@@ -195,7 +218,9 @@ function readJsonBody(req) {
 }
 
 function send(res, code, obj) {
-  const json = JSON.stringify(obj);
+  /* LV3-11: scrub vendor names + path strings before serializing. */
+  const sanitized = sanitizeObj(obj);
+  const json = JSON.stringify(sanitized);
   res.writeHead(code, {
     'Content-Type': 'application/json; charset=utf-8',
     'Content-Length': Buffer.byteLength(json),
@@ -214,14 +239,17 @@ const server = http.createServer(async (req, res) => {
     const p = url.pathname;
 
     if (req.method === 'GET' && p === '/health') {
+      /* LV3-11: don't leak host path or username. Return basename only. */
+      const binBase = BINARY.split('/').pop();
       return send(res, 200, {
         ok: true,
         server: 'math-backend',
         version: '1.0.0-lv3',
-        binaryPath: BINARY,
+        binaryPath: binBase,
         port: server.address()?.port,
         uptimeSec: Math.floor(process.uptime()),
         sessions: SESSION_CACHE.size,
+        pid: process.pid,
       });
     }
 
