@@ -17356,3 +17356,90 @@ V4 (HookBus events) first — bez njih V1/V2 ne mogu da emit. Onda V1+V2 paralel
 | DEF-1 | LEGO-PROG | Player progression UI: `playerXp` + `sessionLevelMeter` + `achievementToast` — retention-fokus, vendor-neutral, ne dira mehaniku igre | Korisnik: *"ne treba to. za sada. stavi ga u master todo, ali ga ne radi sad"* |
 
 > Napomena: nema novog koda — samo zabeležen u TODO radi budućeg aktiviranja.
+
+---
+
+## 🚀 MATH-INTEGRATION-LV3 — full sister-repo backend (NEXT WAVE, awaiting GO)
+
+**Boki direktiva (2026-06-23 23:57):** "ako idemo L3 to znaci integracija
+potpuna math simulatora u slot gdd simulator?" → DA. Plus: math NIKAD
+ne sme AI (regulator reproducibility) — AI je samo *oko* math-a (PAR
+auto-fill / anomaly explainer / jurisdiction auto-fix — sve već wired).
+
+### Cilj
+Drag-drop GDD + PAR u factory uploader → factory parse + spawn lokalni
+Rust math binary → generated slot.html koristi backend per-spin RNG →
+playable simulator sa live RTP convergence ka declared targetu, plus
+operator-grade kontrolama (1M / 1B batch, drift sentinel, GLI-16 cert).
+
+### Arhitektura
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│ slot-gdd-factory (UI / parser / orchestrator)                             │
+│   • web-uploader-server.mjs   (port 5181)                                 │
+│   • ingest.mjs                 (PDF/MD/XLSX/CSV/JSON ingest)              │
+│   • buildSlotHTML.mjs          (renders playable slot.html)               │
+│   • src/blocks/* (~200 LEGO blokovi UX/UI/regulator-mandated)             │
+│   • parser.mjs / smartDefaults.mjs (deterministic parse)                  │
+│        │                                                                   │
+│        │ HTTP fetch (NEW path)                                             │
+│        ▼                                                                   │
+│ sister-repo slot-math-engine-template (Rust)                              │
+│   • mc_runtime_real binary     (port 9001 — HTTP server)                  │
+│   • 22 kernels (HW / cluster / cascade / charge / buy / hold / ...)       │
+│   • PCG64 RNG + HSM seed entropy                                           │
+│   • Endpoints: POST /spin, POST /batch?n=1M, GET /cert-pack               │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+### Work breakdown (~3-5 dana fokusirano)
+
+| ID | Stavka | Effort | Status |
+|---:|---|---|---|
+| LV3-1 | `tools/sister-rust-server.mjs` — spawn `mc_runtime_real` na portu 9001, health-check, graceful shutdown, port autopick | 4h | 📋 PLAN |
+| LV3-2 | Sister-repo `rust-sim/src/bin/http_server.rs` — Axum/Hyper HTTP server: `POST /spin {model}` → `{cells, payout, features, cert_hash}`, `POST /batch {model, n}` → measured RTP + Wilson CI | 1d | 📋 PLAN (sister repo) |
+| LV3-3 | `src/blocks/backendSpinEngine.mjs` — runtime blok koji zamenjuje vanilla JS `reelEngine.draw()` sa fetch poziva. Default OFF — fallback na JS ako port mrtav | 6h | 📋 PLAN |
+| LV3-4 | `src/blocks/liveRtpHud.mjs` — overlay "RTP since boot: 95.87% / target 96.00% / σ 4.51 / n=12,847" + convergence sparkline | 4h | 📋 PLAN |
+| LV3-5 | `src/blocks/batchSimulatorPanel.mjs` — "Run 1M / 10⁹" CTA-i, real-time progress, measured RTP graf, CI 95% interval | 6h | 📋 PLAN |
+| LV3-6 | `src/blocks/driftSentinel.mjs` — kontinuirani monitor measured vs declared RTP, badge "WITHIN ±0.05%" / "AMBER ±0.5%" / "RED >0.5%" | 3h | 📋 PLAN |
+| LV3-7 | `tools/cert-pack-export.mjs` — GLI-16 ZIP (HSM seed bundle, RNG 90B sample, audit chain Merkle root, jurisdiction matrix) | 4h | 📋 PLAN |
+| LV3-8 | Web uploader UI: "Backend mode" toggle u Receipts kartici, prikaže port + binary version + last health-check ts | 3h | 📋 PLAN |
+| LV3-9 | Contract test `tests/contracts/math-lv3-backend.test.mjs` — spawn server, ingest GDD, verify per-spin outcome shape, batch convergence ±0.05% nakon 10⁶ spinova | 4h | 📋 PLAN |
+| LV3-10 | E2E playwright probe `tools/_lv3-live-rtp-probe.mjs` — boot slot, spin 1000×, verify __MEASURED_RTP__ konvergira ka declared ±0.5% | 3h | 📋 PLAN |
+| LV3-11 | Anti-vendor lint shield — backend response može da sadrži debug strings, scan na vendor names pre nego što shipped | 2h | 📋 PLAN |
+| LV3-12 | Docs: `docs/math-lv3-architecture.md` — diagram, endpoint reference, ops runbook | 3h | 📋 PLAN |
+
+**Total effort:** ~3-5 dana (LV3-2 u sister repo, ostalih 11 u factory).
+
+### Acceptance criteria (LV3 done = ✅ za sve sledeće)
+
+1. ✅ Drag-drop bilo koji GDD + opcioni PAR → ingest spawn-uje Rust backend
+2. ✅ Iframe slot.html spinovi pozivaju `POST /spin` (latency ≤ 8ms loopback)
+3. ✅ Player vidi live "RTP 95.87% / target 96.00% / n=1247" HUD u real time-u
+4. ✅ "Run 1M spins" CTA završi ≤ 90s sa graf-om convergence
+5. ✅ "Run 10⁹ spins" CTA završi ≤ 60s (Mission #7 throughput) sa CI 95%
+6. ✅ "Drift sentinel" badge ažurira boju kontinuirano (green/amber/red)
+7. ✅ "GLI-16 cert pack" download radi (ZIP sa HSM + audit chain + jur)
+8. ✅ Backend NE pokvari postojeće slot UI — fallback na JS engine ako port 9001 mrtav
+9. ✅ Mass probe 338/338: 0 console error / unknown event regresija
+10. ✅ Verify gate: 102/102 GREEN sa novim contract testovima
+
+### Anti-AI guardrail (regulator požuda — NIKAD se ne krši)
+
+- ❌ Math layer NIKAD ne sme AI (GLI-19 / UKGC RTS / MGA / NJ DGE zahtevaju
+  PCG64 ili equivalent CSPRNG sa NIST SP800-22 + FIPS 140-2 prolaskom)
+- ❌ Live spin outcome NIKAD ne sme ML inference (reproducibility crisis)
+- ✅ AI samo *oko* math-a (sve već wired iz prethodnih wave-ova):
+   - **PAR auto-fill** — Kimi/Opus generišu plausible weights iz GDD
+     prose kada PAR ne postoji, bootstrap koji Rust posle kalibruje
+   - **Anomaly explainer** — Rust detektuje drift > 0.5% → AI predlaže
+     koja weight greška verovatno uzrokuje
+   - **Jurisdiction auto-fix** — Rust vrati "88% < UKGC floor 85%" →
+     AI predlaže targeted GDD edit + weight tweak
+- ✅ Već postoji infrastruktura: E atom self-healing parser (commit
+  d4d8a2d), HYB-2 LLM field completer, HYB-3 LLM cross-check
+
+### Status: 📋 ČEKA EKSPLICITAN "KRENI" SIGNAL OD BOKI-JA
+
+Nikakvi LV3 fajlovi se ne kreiraju bez direktnog odobrenja.
