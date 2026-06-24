@@ -32,9 +32,9 @@ const FALLBACK_REELS  = 5;
 const FALLBACK_ROWS   = 3;
 
 /* UQ-DEEP-X (Boki 2026-06-24): 3-stage industry-grade animation constants.
- * Source: Cash Eruption GDD §13.3 "Wild Expansion & Pattern Win" — Stage 2
+ * Source: reference lock-respin GDD GDD §13.3 "Wild Expansion & Pattern Win" — Stage 2
  * 350ms exact + top→bottom flood-fill, gold rim. Industry baseline
- * (NetEnt/industry standard/BGaming): 3 stages (anticipation → expand → hold pulse). */
+ * (reference vendor/industry standard/BGaming): 3 stages (anticipation → expand → hold pulse). */
 const EW = {
   /* Stage 1 — anticipation glow (per source cell that triggered). */
   STAGE1_MS:          180,
@@ -57,7 +57,7 @@ const EW = {
   GLOW_BASE_ALPHA:    0.7,
   /* Stage 4 — clear (preSpin). */
   STAGE4_MS:          150,
-  /* Lava gradient (Cash Eruption-class molten gold; vendor-neutral). */
+  /* Lava gradient (reference lock-respin GDD-class molten gold; vendor-neutral). */
   LAVA_COLOR_HOT:     '#FF6A1A',
   LAVA_COLOR_WARM:    '#FFB347',
   RIM_COLOR:          'rgba(255, 215, 100, 0.95)',
@@ -351,7 +351,7 @@ function applyExpandingWilds(spinPayload) {
       colsWithWild.add(col);
     }
   });
-  /* Expand: 3-stage industry-grade animation per Cash Eruption GDD §13.3.
+  /* Expand: 3-stage industry-grade animation per reference lock-respin GDD GDD §13.3.
    * Stage 1 (anticipation 180ms): glow flash na seed cell-u per kolone.
    * Stage 2 (expand 350ms, top→bottom 60ms stagger): lava column flood.
    * Stage 3 (hold 1200ms loop): subtle pulse while wild active.

@@ -183,7 +183,11 @@ export function emitBatchSimulatorPanelRuntime(cfg = defaultConfig(), model = {}
     typeof model.freeSpins.sessionExpectedValue === 'number'
   );
   const pruned = {
-    name: typeof model.name === 'string' ? model.name : null,
+    /* UQ-DEEP-AI (Boki 2026-06-24): "nema IGT ili imena bilo koje firme".
+     * model.name može sadržati vendor-trademarked product brand (Cash Eruption,
+     * Wolf Run, Cleopatra, Gates of Olympus, Buffalo King) — scrub-uj pre
+     * emit-a u runtime BSP_MODEL. Backend ne treba ime za convergence math. */
+    name: null,
     payback: model.payback || null,
     freeSpins: _fsHasReal ? {
       enabled: model.freeSpins.enabled !== false,

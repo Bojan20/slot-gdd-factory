@@ -112,7 +112,7 @@ export function resolveConfig(model = {}) {
   if (typeof m.confirmMessage === 'string' && m.confirmMessage.length <= 200) cfg.confirmMessage = m.confirmMessage;
 
   /* UQ-DEEP-Z fix (Boki 2026-06-24): "ako gdd nema bonus buy, ne prikazuj
-   * taj blok u igri." Cash Eruption GDD eksplicitno bani bonus buy, parser
+   * taj blok u igri." reference lock-respin GDD GDD eksplicitno bani bonus buy, parser
    * stampa _derivedBy.bonusBuy = 'gdd-explicit-ban-detected' i postavi
    * m.enabled = false. ALI features[] može imati 'bonus_buy' kind dodato
    * iz drugog izvora (Wave V reconcile, smart defaults), pa je auto-enable

@@ -1365,39 +1365,63 @@ export function buildSlotHTML(model) {
   const HEX_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
   const safeHex = (v, fallback) => (typeof v === 'string' && HEX_RE.test(v.trim())) ? v.trim() : fallback;
 
-  /* UQ-DEEP-AB FIX (Boki: "a šta ne piše ime igre, šta si sjebo?") —
-   * razdvoji BRAND/PROVIDER scrub od PRODUCT NAME scrub.
+  /* UQ-DEEP-AI FIX (Boki 2026-06-24): "zelim da u simulotaoru nema IGT ili
+   * imena bilo koje firme" — strict vendor scrub na rendering nivou.
    *
-   * Pre fix-a UQ-DEEP-S scrub-ovao SVAKO product ime (Cash Eruption,
-   * Wolf Run, Cleopatra, Buffalo King) → operator ingest "Cash Eruption
-   * Foundry GDD" prikazivao "[Slot] Foundry" u headeru, što je pogrešno.
-   * Operator NAMERNO drop-uje taj GDD i hoće da vidi ime svoje igre.
+   * Pre fix-a UQ-DEEP-AB pravilo "razlikuj brand od product name":
+   *   - PROVIDER (IGT, Pragmatic Play, NetEnt, …) → scrub
+   *   - PRODUCT (Cash Eruption, Wolf Run, Cleopatra, Buffalo King) → keep
+   * To je pravljeno da Boki vidi ime svoje igre u test browser-u. ALI te
+   * product nazive su VENDOR-OWNED trademarks (Cash Eruption ≡ IGT, Wolf
+   * Run ≡ IGT, Cleopatra ≡ IGT, Buffalo King ≡ Pragmatic). Public rendered
+   * HTML ne sme emit-ovati ni provider ni product — legal takedown risk.
    *
-   * Razlikovanje:
-   *   PROVIDER scrub (BRAND) — i dalje strip-uje industry standard, Pragmatic Play,
-   *     NetEnt, Microgaming, Scientific Games, Light & Wonder, Play'n Go,
-   *     Novomatic, Megaways (BTG-licensed brand). Razlog: factory ne sme
-   *     da emit-uje brand kao da je RGS partner — pravna sigurnost.
-   *   PRODUCT NAMES (Cash Eruption, Wolf Run, Cleopatra, Buffalo King) —
-   *     OSTAJU u headeru. To su game names, ne brand. Operator drag-drop
-   *     vidi pravo ime svoje igre. Sintetički probe testovi (synth-
-   *     fixtures, anti-vendor-lint) treba da ne unose product names —
-   *     to je odvojena obaveza preko BANNED_VENDOR_RX u
-   *     auto-scaffold-detector + par-sheet-bridge sanitizeSignals. */
-  const DISPLAY_VENDOR_RX = /\b(IGT|Pragmatic[\s\-_.]?Play|NetEnt|Microgaming|Scientific[\s\-_.]?Games|L&W|Light[\s\-_.]*&[\s\-_.]*Wonder|Play'?n[\s\-_.]?Go|Novomatic|Megaways)\b/gi;
+   * Sada: scrub BOTH provider i product. Smart fallback derive-uje neutralno
+   * ime iz topology + theme tags (npr. "Lock-Respin Volcano" iz topology
+   * 'lock_respin' + theme 'volcano'). Operator vidi smislen naziv koji
+   * opisuje slot mehaniku bez vendor-trademark referenc. */
+  const DISPLAY_VENDOR_RX = /\b(IGT|Pragmatic[\s\-_.]?Play|Megaways|Cash[\s\-_.]?Eruption|Wolf[\s\-_.]?Run|Cleopatra|Buffalo[\s\-_.]?(?:King|Gold)|NetEnt|Microgaming|Scientific[\s\-_.]?Games|L&W|Light[\s\-_.]*&[\s\-_.]*Wonder|Play'?n[\s\-_.]?Go|Novomatic|Gates[\s\-_.]?of[\s\-_.]?Olympus|Wrath[\s\-_.]?of[\s\-_.]?Olympus)\b/gi;
+  /* Smart neutral fallback — derive iz model topology + theme tags. */
+  const deriveNeutralName = (m) => {
+    const topo = (m && m.topology && m.topology.kind) || '';
+    const tags = (m && m.theme && Array.isArray(m.theme.tags)) ? m.theme.tags : [];
+    const TOPOLOGY_LABEL = {
+      'lock_respin': 'Lock-Respin', 'tumble': 'Tumble', 'cascade': 'Cascade',
+      'cluster': 'Cluster', 'ways': 'Ways', 'rectangular': 'Reels',
+      'megaways': 'Dynamic Ways', 'infinity': 'Infinity Reels',
+    };
+    const topoLabel = TOPOLOGY_LABEL[topo] || (topo ? topo.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Slot');
+    /* Pick first vendor-clean theme tag (already not brand-trademarked). */
+    const safeTag = tags.find(t => typeof t === 'string' && t.length > 2 && !DISPLAY_VENDOR_RX.test(t));
+    DISPLAY_VENDOR_RX.lastIndex = 0;
+    const tagPart = safeTag ? ' · ' + safeTag.charAt(0).toUpperCase() + safeTag.slice(1) : '';
+    return `${topoLabel}${tagPart}`;
+  };
   const neutralDisplayName = (raw) => {
-    if (typeof raw !== 'string' || !raw.trim()) return 'Untitled Slot';
     let out = raw;
     /* Apply NFKD + homoglyph fold defense for unicode-bypass. */
-    try { out = out.normalize('NFKD'); } catch {}
-    out = out.replace(/[̀-ͯ​-‏﻿⁠-⁯]/g, '');
-    /* Strip BRAND/PROVIDER tokens only — game product names pass through. */
-    const scrubbed = out.replace(DISPLAY_VENDOR_RX, '').trim();
-    DISPLAY_VENDOR_RX.lastIndex = 0;
-    /* Collapse whitespace from scrub. If result is empty (rare: name was
-     * ONLY a brand like "Pragmatic Play"), fall back to safe label. */
-    const cleaned = scrubbed.replace(/\s+/g, ' ').replace(/^[\s\-_.,]+|[\s\-_.,]+$/g, '').trim();
-    return cleaned || 'Untitled Slot';
+    if (typeof out === 'string' && out.trim()) {
+      try { out = out.normalize('NFKD'); } catch {}
+      out = out.replace(/[̀-ͯ​-‏﻿⁠-⁯]/g, '');
+      /* Strip BOTH brand provider tokens AND known product names. */
+      const scrubbed = out.replace(DISPLAY_VENDOR_RX, '').trim();
+      DISPLAY_VENDOR_RX.lastIndex = 0;
+      const cleaned = scrubbed.replace(/\s+/g, ' ').replace(/^[\s\-_.,]+|[\s\-_.,]+$/g, '').trim();
+      /* Reject result ako je previse kratak (<3 chars), ako je samo
+       * brojevi/punctuation (vendor remnant), ili ako još uvek matchuje
+       * vendor regex (defense in depth). Mora imati min 3 chars + bar 1 slovo. */
+      const hasLetter = /[a-zA-Z]/.test(cleaned);
+      if (cleaned.length >= 3 && hasLetter) {
+        DISPLAY_VENDOR_RX.lastIndex = 0;
+        if (!DISPLAY_VENDOR_RX.test(cleaned)) {
+          DISPLAY_VENDOR_RX.lastIndex = 0;
+          return cleaned;
+        }
+        DISPLAY_VENDOR_RX.lastIndex = 0;
+      }
+    }
+    /* Fallback: smart derivation iz topology + theme. */
+    return deriveNeutralName(model);
   };
   const displayName = neutralDisplayName(model.name);
   /* Palette — use GDD palette[] if available, else reference defaults */
@@ -2335,7 +2359,7 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitRetriggerMeterRuntime(resolveRetriggerMeterConfig(model))}
   ${/* Wave A8 — PWA installability runtime (blob-URL SW register +
      * beforeinstallprompt + appinstalled + iOS detection). */ ''}
-  ${emitPwaInstallabilityRuntime(resolvePwaInstallabilityConfig({ ...model, gameName: model.name }))}
+  ${emitPwaInstallabilityRuntime(resolvePwaInstallabilityConfig({ ...model, gameName: displayName }))}
   ${/* Wave HX3+HX4 — i18n + currency runtime (10 packs, [data-i18n]
      * + [data-money] painters, onLocaleChanged listener). */ ''}
   ${emitI18nRuntime(resolveI18nConfig(model))}
