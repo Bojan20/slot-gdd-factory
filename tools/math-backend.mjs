@@ -977,7 +977,50 @@ const server = http.createServer(async (req, res) => {
       }
       const session = await ensureSession(sidRaw, body.model || {});
       const outcome = samplePerSpin(session);
-      return send(res, 200, { ok: true, sessionId: sidRaw, ...outcome }, origin);
+      /* UQ-DEEP-AG: emit IGT-compatible GameLogicResponse envelope on opt-in.
+       * Legacy clients (existing browser BSP_MODEL) ne traže `gle:true` pa
+       * dobijaju starograno flat blob (back-compat). IGT-grade klijenti
+       * dobijaju OutcomeDetail{transactionId, stage, nextStage, gameStatus,
+       * settled, pending, payout} + paytableHash + sessionId echo. */
+      const includeGle = body.gle === true || body.emitGle === true;
+      const baseResponse = { ok: true, sessionId: sidRaw, ...outcome };
+      if (includeGle) {
+        try {
+          const { emitGleResponse } = await import('./gle-response-emitter.mjs');
+          const sessionState = {
+            sessionId: sidRaw,
+            spinIdx: outcome.spinIdx || session.spinsServed || 0,
+            stage: body.stage || 'BaseGame',
+            betX: body.betX || 1,
+            paytableHash: body.paytableHash || null,
+          };
+          baseResponse.gle = emitGleResponse(outcome, sessionState, {
+            gleVersion: '4.0',
+            includePopulation: false,                  /* requires grid + reelStrips */
+          });
+        } catch (e) {
+          baseResponse.gleError = e.message;
+        }
+      }
+      return send(res, 200, baseResponse, origin);
+    }
+
+    /* UQ-DEEP-AG · IGT-compatible serverConfig kompajler endpoint.
+     * POST /serverConfig { model } → { serverConfig, paytableHash, gleVersion }
+     * Klijent može da snima paytable hash za regulator audit i da koristi
+     * lines flatten + gain_table + special_symbols u IGT GLE handshake. */
+    if (req.method === 'POST' && p === '/serverConfig') {
+      const body = await readJsonBody(req);
+      const model = body.model || {};
+      try {
+        const { compileServerConfig } = await import('./sgs-compiler.mjs');
+        const result = compileServerConfig(model, {
+          gleVersion: body.gleVersion || '4.0',
+        });
+        return send(res, 200, { ok: true, ...result }, origin);
+      } catch (e) {
+        return send(res, 500, { ok: false, error: e.message }, origin);
+      }
     }
 
     return send(res, 404, { error: `unknown route: ${req.method} ${p}` }, origin);
