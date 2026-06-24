@@ -1055,10 +1055,34 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
       handlers[event] = handlers[event].filter(e => e.fn !== fn);
     }
 
+    /* UQ-DEEP-AR I-4 (Auditor I #4 — payload-size cap):
+       Shallow-copy payload + drop array fields longer than 64 entries
+       so replay cache doesn't pin huge reel snapshots / win lists /
+       SAB views via closure references. Primitives + small arrays kept. */
+    function _shallowBounded(p) {
+      if (p == null || typeof p !== 'object') return p;
+      if (Array.isArray(p)) {
+        /* Array payloads: keep first 64 entries; if hit cap, mark truncated. */
+        if (p.length <= 64) return p.slice();
+        var trunc = p.slice(0, 64);
+        trunc._truncated = true;
+        return trunc;
+      }
+      var out = {};
+      for (var k in p) {
+        var v = p[k];
+        if (Array.isArray(v) && v.length > 64) {
+          out[k] = { _truncated: true, length: v.length, head: v.slice(0, 8) };
+        } else {
+          out[k] = v;
+        }
+      }
+      return out;
+    }
     function emit(event, payload) {
-      /* UQ-DEEP-AP E-1: stamp last payload regardless of subscriber count
-         so late subscribers can replay. */
-      _lastPayload[event] = payload || {};
+      /* UQ-DEEP-AP E-1 + AR I-4: stamp bounded copy so late subscribers
+         can replay without retaining large objects. */
+      _lastPayload[event] = _shallowBounded(payload || {});
       _hasFired[event] = true;
       const list = handlers[event];
       if (!list || list.length === 0) return [];
@@ -1077,7 +1101,7 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
     }
 
     async function emitAsync(event, payload) {
-      _lastPayload[event] = payload || {};
+      _lastPayload[event] = _shallowBounded(payload || {});
       _hasFired[event] = true;
       const list = handlers[event];
       if (!list || list.length === 0) return [];
@@ -1100,6 +1124,20 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
     function getLastPayload(event) {
       return _hasFired[event] ? _lastPayload[event] : undefined;
     }
+    /* UQ-DEEP-AR I-4 (Auditor I #4 — bound replay buffer):
+       _lastPayload + _hasFired had no clear / no TTL. Long sessions retain
+       references to reel snapshots, win lists, RNG seeds via closures over
+       payload objects. clearReplay() drops the cache; call from session/
+       round boundary handlers. Optional event arg clears single event. */
+    function clearReplay(event) {
+      if (event && typeof event === 'string') {
+        delete _lastPayload[event];
+        delete _hasFired[event];
+        return;
+      }
+      for (var k in _lastPayload) delete _lastPayload[k];
+      for (var k2 in _hasFired) delete _hasFired[k2];
+    }
 
     function getMult() { return _mult; }
     /* FIX-8 M10 (2026-06-19) — MAX-aggregate API. Multiple writers
@@ -1113,27 +1151,29 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
         setMult(n);
       }
     }
-    /* UQ-DEEP-AP E-2 (Auditor E #2 — setMult lockdown):
+    /* UQ-DEEP-AP E-2 + UQ-DEEP-AR I-3 (Auditor I #3 — warn flood fix):
        setMultMax(v) is the canonical writer; raw setMult(v) is dangerous
        (last-writer-wins drifts RTP when multiple cascading writers fire
-       in same synchronous emit chain — multiplierOrb + cascadeBooster +
-       persistentMultiplier all share the same pipeline). We KEEP the
-       function exposed for the resetMult/internal paths but emit a
-       dev-only console.warn when an external caller invokes it with a
-       smaller value than current (the regression pattern). resetMult
-       continues to call setMult directly without warn (legitimate path). */
+       in same synchronous emit chain).
+       AR I-3: original AP guard warned on EVERY n<prev, but legitimate
+       round-boundary writers (expandingWildMultiplier:463, walkingWild-
+       Stepper:471, infinityReelsEngine:365, tumbleGrowingFsMultiplier)
+       trigger warn flood every spin. Solution: callers opt into "reset
+       intent" via _setMultAllowDecrease window flag for one call.
+       Helper: HookBus.setMultRound(v) — explicit round-boundary writer
+       that callers SHOULD use. */
     let _setMultAllowDecrease = false;
     function setMult(v) {
       const n = Number(v);
       if (Number.isFinite(n) && n >= 0) {
         const prev = _mult;
         if (n < prev && !_setMultAllowDecrease) {
-          /* External caller monotonically reduced mult — likely a drift bug.
-             Warn (no throw — historical callers may legitimately reset). */
+          /* External caller monotonically reduced mult outside opt-in path —
+             likely a drift bug. Warn (no throw — historical callers tolerated). */
           try {
             if (typeof console !== 'undefined' && console.warn) {
               console.warn('[HookBus] setMult monotonic decrease ' + prev + '→' + n +
-                ' — use setMultMax() for monotonic-up writers, resetMult() for round boundary');
+                ' — use setMultRound() for round boundary, setMultMax() for monotonic-up writers');
             }
           } catch (_) {}
         }
@@ -1174,6 +1214,14 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
     function setMultBaseline(v) {
       const n = Number(v);
       if (Number.isFinite(n) && n >= 0) _multBase = n;
+    }
+    /* UQ-DEEP-AR I-3: round-boundary opt-in writer. Sets allow-decrease
+       flag for one setMult call, then auto-clears. Use this from any
+       legitimate "reset to START_MULT on new FS round / new feature trigger"
+       path so warn flood stops. */
+    function setMultRound(v) {
+      _setMultAllowDecrease = true;
+      try { setMult(v); } finally { _setMultAllowDecrease = false; }
     }
 
     function listenerCount(event) {
@@ -1220,8 +1268,8 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
     }
 
     return {
-      on, off, once, emit, emitAsync, waitFor, getLastPayload,
-      getMult, setMult, setMultMax, addMult, resetMult, setMultBaseline,
+      on, off, once, emit, emitAsync, waitFor, getLastPayload, clearReplay,
+      getMult, setMult, setMultMax, setMultRound, addMult, resetMult, setMultBaseline,
       listenerCount,
       EVENTS,
     };

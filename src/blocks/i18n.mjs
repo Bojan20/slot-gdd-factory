@@ -451,15 +451,30 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
       return FALLBACK_CHAIN[0] || 'en-US';
     }
 
+    /* UQ-DEEP-AR I-2 (Auditor I — XSS surface on aria-label/title/placeholder):
+       _t() output is written via setAttribute() across 4 paint flavors.
+       Attacker-controlled locale pack (operator-loaded JSON, hot-reload,
+       remote endpoint) could inject control chars / oversized payload
+       into accessible name → screen-reader phishing + tooltip spoofing.
+       This sanitizer strips ASCII control chars ( – + )
+       and clamps length to 240 chars (well above any legit UI string but
+       cuts payload bombs). textContent paint stays via _t() too — defense
+       in depth, even though textContent itself is HTML-safe by browser. */
+    function _sanitizeLocaleString(s) {
+      if (typeof s !== 'string') return s;
+      var clean = s.replace(/[ -]/g, '');
+      if (clean.length > 240) clean = clean.slice(0, 240);
+      return clean;
+    }
     function _t(key, fb) {
       var loc = state.locale;
       var pack = PACKS[_bestPack(loc)];
-      if (pack && key in pack) return pack[key];
+      if (pack && key in pack) return _sanitizeLocaleString(pack[key]);
       for (var i = 0; i < FALLBACK_CHAIN.length; i++) {
         var fp = PACKS[FALLBACK_CHAIN[i]];
-        if (fp && key in fp) return fp[key];
+        if (fp && key in fp) return _sanitizeLocaleString(fp[key]);
       }
-      return fb != null ? fb : key;
+      return _sanitizeLocaleString(fb != null ? fb : key);
     }
 
     function _formatMoneyManual(n, ccy) {

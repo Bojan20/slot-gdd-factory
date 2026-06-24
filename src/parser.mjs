@@ -2717,7 +2717,20 @@ export function extractSymbolsProseMode(rawText, model) {
     if (!Array.isArray(tierBucket)) return;
     const ucId = (id || '').toUpperCase();
     if (tierBucket.some(s => (s.id || '').toUpperCase() === ucId)) return;
-    tierBucket.push({ id: ucId, label, tier: tierBucket === model.symbols.high ? 'high' : tierBucket === model.symbols.mid ? 'mid' : 'low', _source: 'prose-mode-tier' });
+    /* UQ-DEEP-AR G-6 (Auditor G #6 — canonical tier sweep):
+       Maintain back-compat `tier` field (descriptive: high/mid/low) AND
+       emit `canonicalTier` per IGT taxonomy (H1..H5 / M1..M5 / L1..L5).
+       Index assigned by bucket order — first "high" symbol → H1, 2nd → H2,
+       up to 5 per band. Symbols beyond 5 reuse the band's max (H5).
+       Schema accepts both — string field stays unchanged for V6 cache
+       compat; canonicalTier is the new closed-enum surface for V14 walker
+       strict mode. */
+    const band = tierBucket === model.symbols.high ? 'high'
+               : tierBucket === model.symbols.mid  ? 'mid' : 'low';
+    const prefix = band === 'high' ? 'H' : band === 'mid' ? 'M' : 'L';
+    const nextIdx = Math.min(5, tierBucket.length + 1);
+    const canonicalTier = prefix + nextIdx;
+    tierBucket.push({ id: ucId, label, tier: band, canonicalTier, _source: 'prose-mode-tier' });
   }
   const TIER_PATTERN = /(?:^|[.:>\n])\s*([A-Z][A-Za-z0-9'’]{2,15}(?:\s+[A-Z][A-Za-z0-9'’]{2,15}){0,2})\s*(?:=|—|–|:|is\s+(?:a|the)?\s*)?\s*((?:premium|high[-\s]?pay|hp|mid[-\s]?pay|mp|low[-\s]?pay|lp|royal|card)\b[^\n]{0,40})/gi;
   let m3;

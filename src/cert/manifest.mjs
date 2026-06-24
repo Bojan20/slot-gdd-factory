@@ -86,6 +86,48 @@ export function slugifyGameId(name) {
 }
 
 /**
+ * UQ-DEEP-AR I-7 / F-6 (Auditor F #6 — slug collision SHA-prefix assert):
+ * `slugifyGameId('Crystal-Forge')` and `slugifyGameId('Crystal Forge')`
+ * both yield `crystal-forge`. Today's curated corpus has no exploited
+ * collision, but tomorrow's drop could. This helper maintains a name→slug
+ * map and throws when 2 DIFFERENT source names normalize to the SAME slug.
+ *
+ * Usage:
+ *   const tracker = createSlugCollisionTracker();
+ *   tracker.track('Crystal-Forge');   // returns 'crystal-forge'
+ *   tracker.track('Crystal Forge');   // THROWS — collision
+ *
+ * Opt-in: not wired into pipeline by default (would break legacy back-compat
+ * where parser deliberately re-uses display name variants). Surface it from
+ * tools/ingest.mjs --strict in a follow-up.
+ *
+ * @returns {{track:(name:string)=>string, snapshot:()=>Record<string,string>}}
+ */
+export function createSlugCollisionTracker() {
+  const slugByName = Object.create(null);
+  const nameBySlug = Object.create(null);
+  return {
+    track(name) {
+      const slug = slugifyGameId(name);
+      if (slugByName[name] === slug) return slug; // idempotent re-track
+      const incumbent = nameBySlug[slug];
+      if (incumbent && incumbent !== name) {
+        throw new Error(
+          'slug collision: "' + name + '" and "' + incumbent + '" both → "' + slug + '" — ' +
+          'distinct GDDs must produce distinct slugs (cert manifest unique-key contract)'
+        );
+      }
+      slugByName[name] = slug;
+      nameBySlug[slug] = name;
+      return slug;
+    },
+    snapshot() {
+      return { ...slugByName };
+    },
+  };
+}
+
+/**
  * Defensively read the topology block off the parsed model.
  * @param {object} model
  * @returns {{reels:number|null,rows:number|null,paylines:number|null}}
@@ -239,6 +281,32 @@ export function buildManifest(args) {
  */
 export function manifestToJSON(manifest) {
   return JSON.stringify(manifest, null, 2) + '\n';
+}
+
+/**
+ * UQ-DEEP-AR I-5 (Auditor I #5 — back-compat reader):
+ * AP bumped MANIFEST_SCHEMA_VERSION 1.0.0 → 1.1.0 (stages + lifecycle_pairs
+ * added). Pre-existing cert bundles on disk are stamped 1.0.0 and must
+ * keep parsing. Reader-side check: accept any 1.x.x stream.
+ *
+ * @param {string} version - semver string from disk
+ * @returns {boolean}
+ */
+export function isCompatibleSchema(version) {
+  if (typeof version !== 'string') return false;
+  // Accept 1.x.y (semver-ish) — major bump (2.x) would force migration.
+  return /^1\.\d+\.\d+$/.test(version);
+}
+
+/**
+ * UQ-DEEP-AR I-5: throwing variant for cert audit pipelines.
+ * @param {string} version
+ * @throws {Error}
+ */
+export function assertCompatibleSchema(version) {
+  if (!isCompatibleSchema(version)) {
+    throw new Error('manifest schema_version=' + version + ' incompatible with reader ' + MANIFEST_SCHEMA_VERSION);
+  }
 }
 
 export { MANIFEST_SCHEMA_VERSION };

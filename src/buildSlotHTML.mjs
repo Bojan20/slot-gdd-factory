@@ -2620,6 +2620,66 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
        • POOL / SHAPE / REELS / ROWS (top-of-script constants)
        • grid / frame (DOM refs from top of script). */
   ${emitGridDispatchRuntime(model)}
+
+  /* UQ-DEEP-AR I-6 — wire the lifecycle pair events declared in
+     hookBus.HOOK_EVENTS (onBlockSetup / onBlockDestroy) so they aren't
+     dead. After DOMContentLoaded, walk every [data-block-name] node and
+     emit onBlockSetup with the block name. Late subscribers using
+     replayLast:true will see the cached payload of the LAST emitted
+     setup, which is enough for instrumentation. onBlockDestroy fires
+     on pagehide / beforeunload — the only deterministic teardown moment
+     for an SPA-style playable. */
+  (function _wireBlockLifecycle() {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    if (typeof window.HookBus !== 'object' || typeof window.HookBus.emit !== 'function') return;
+    function _emitSetup() {
+      try {
+        var nodes = document.querySelectorAll('[data-block-name]');
+        for (var i = 0; i < nodes.length; i++) {
+          var name = nodes[i].getAttribute('data-block-name');
+          if (name) {
+            try { window.HookBus.emit('onBlockSetup', { name: name }); } catch (_) {}
+          }
+        }
+      } catch (_) {}
+    }
+    function _emitDestroy(reason) {
+      try {
+        var nodes = document.querySelectorAll('[data-block-name]');
+        for (var i = 0; i < nodes.length; i++) {
+          var name = nodes[i].getAttribute('data-block-name');
+          if (name) {
+            try { window.HookBus.emit('onBlockDestroy', { name: name, reason: reason || 'pagehide' }); } catch (_) {}
+          }
+        }
+        if (typeof window.HookBus.clearReplay === 'function') {
+          try { window.HookBus.clearReplay(); } catch (_) {}
+        }
+      } catch (_) {}
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', _emitSetup, { once: true });
+    } else {
+      _emitSetup();
+    }
+    window.addEventListener('pagehide', function (ev) { _emitDestroy(ev.persisted ? 'bfcache' : 'pagehide'); });
+  })();
+
+  /* UQ-DEEP-AR I-8 — bind visualViewport resize so pinch-zoom (now
+     unlocked since AP H-3) re-fits the grid. iOS Safari fires
+     visualViewport.resize NOT window.resize on pinch. */
+  (function _wireVisualViewportFit() {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+    try {
+      window.visualViewport.addEventListener('resize', function () {
+        try {
+          if (typeof window.dispatchEvent === 'function') {
+            window.dispatchEvent(new Event('resize'));
+          }
+        } catch (_) {}
+      }, { passive: true });
+    } catch (_) {}
+  })();
 </script>
 </body></html>`;
 

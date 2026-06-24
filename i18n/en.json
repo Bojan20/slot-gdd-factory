@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0.0",
-  "generated_at": "2026-06-18T02:58:06.700Z",
+  "generated_at": "2026-06-25T00:00:00.000Z",
   "source_locale": "en",
-  "hash": "ap-h1-stamp-128",
+  "hash": "2ec5952f3ace",
   "blocks_with_strings": 47,
-  "total_entries": 128,
+  "total_entries": 127,
   "catalog": {
     "audio.0": "Toggle audio",
     "autoplay.0": "AUTO · ",
