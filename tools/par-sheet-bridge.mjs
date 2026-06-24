@@ -107,6 +107,20 @@ const VENDOR_KEY_RX = /\b(igt|pragmatic|lw|spielo)\b/gi;
  * to par.json (operator-visible artifact). */
 const VENDOR_PRODUCT_RX = /\b(cash[\s_-]?eruption|wheel[\s_-]?of[\s_-]?fortune|gates[\s_-]?of[\s_-]?olympus|sweet[\s_-]?bonanza|eldritch|wrath[\s_-]?of[\s_-]?olympus|crystal[\s_-]?forge[\s_-]?adb|brytt|scientific[\s_-]?games|huff)\b/gi;
 
+/* UQ-DEEP-AL FIX-A: standalone vendor-key sanitizer za par.json artifact.
+ * Pre commit-a UQ-DEEP-AL, par.json je emit-ovao raw "vendor": "igt" što
+ * je trigger-ovalo anti-vendor-lint HIGH. Sad sve par.json vendor entries
+ * idu kroz ovo, mapped na vendorA/B/C/D/X.
+ *
+ * Internal callers koji rade adapter-dispatch dalje koriste raw vendor
+ * key (route identifier, ne brand). Sanitizacija se primenjuje SAMO na
+ * operator-visible artifact (par.json). */
+export function sanitizeVendorKey(key) {
+  if (typeof key !== 'string' || !key) return 'vendorX';
+  const k = key.toLowerCase();
+  return VENDOR_KEY_SANITIZE_MAP[k] || (k === 'generic' ? 'generic' : 'vendorX');
+}
+
 export function sanitizeSignals(signals) {
   if (!Array.isArray(signals)) return [];
   return signals.map((s) => {

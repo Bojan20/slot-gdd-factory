@@ -341,13 +341,20 @@ export function emitModifiersScreenSymbols(model) {
 
 /* UQ-DEEP-AK · WAVE 2 · COMPILER F · Helper 3: emitNonLockedSymbolId
  *
- * U HnW kontekstu: integer symbolId za "blank" / non-orb simbol koji se NE
+ * UQ-DEEP-AL · FIX-B (Boki 2026-06-24): IGT runtime field je
+ *   `protected nonLockedSymbolId: string = ""`  (LockAndRespinSpinCommand)
+ * NE integer indeks. Vraćamo SYMBOL CODE STRING (npr. "L1", "sym7"), ne broj.
+ *
+ * U HnW kontekstu: string symbol code za "blank" / non-orb simbol koji se NE
  * lock-uje tokom respina. Lock predicate = cell.symbolId !== nonLockedSymbolId.
  *
- *   1. Iz model.features['holdAndWin'].config.nonLockedSymbolId (explicit)
- *   2. Inače derive iz model.symbols: najniže-tier simbol koji NIJE
- *      wild/scatter/bonus/orb (typically L1 / lowest pay)
- *   3. null ako model nema HnW feature
+ *   1. Iz model.holdAndWin.nonLockedSymbolId (explicit, string)
+ *   2. Iz model.features['holdAndWin'].config.nonLockedSymbolId (explicit, string)
+ *   3. Inače derive iz model.symbols: najniže-tier simbol koji NIJE
+ *      wild/scatter/bonus/orb (typically L1 / lowest pay) → vrati `.id` string
+ *   4. null ako model nema HnW feature
+ *
+ * Return contract: string ili null. NIKAD integer.
  */
 export function emitNonLockedSymbolId(model) {
   if (!model || typeof model !== 'object') return null;
@@ -371,20 +378,26 @@ export function emitNonLockedSymbolId(model) {
   const allSyms = Array.isArray(symbols)
     ? symbols
     : [].concat(symbols.high || [], symbols.mid || [], symbols.low || [], symbols.specials || []);
-  const symbolIdMap = {};
-  allSyms.forEach((s, idx) => {
+  /* Build set of known symbol codes (id || symbolId || code) for validation. */
+  const knownCodes = new Set();
+  allSyms.forEach(s => {
     const sid = s && (s.id || s.symbolId || s.code);
-    if (sid) symbolIdMap[sid] = idx;
+    if (sid) knownCodes.add(sid);
   });
 
-  /* (1) Explicit override. */
+  /* (1) Explicit override — STRING ONLY per IGT field type. */
   if (hnwCfg.nonLockedSymbolId !== undefined && hnwCfg.nonLockedSymbolId !== null) {
     const v = hnwCfg.nonLockedSymbolId;
-    if (typeof v === 'number') return v;
-    if (typeof v === 'string') return Number.isFinite(symbolIdMap[v]) ? symbolIdMap[v] : null;
+    if (typeof v === 'string' && v.length > 0) return v;          /* trust as-is (IGT string) */
+    /* Integer legacy fallback: resolve index → code if model has symbols. */
+    if (typeof v === 'number' && allSyms[v]) {
+      const code = allSyms[v].id || allSyms[v].symbolId || allSyms[v].code;
+      if (typeof code === 'string') return code;
+    }
+    return null;
   }
 
-  /* (2) Derive from lowest non-special symbol. */
+  /* (2) Derive from lowest non-special symbol → return its `.id` STRING. */
   const SPECIAL_KINDS = new Set(['wild', 'scatter', 'bonus', 'orb', 'special', 'jackpot']);
   const candidates = allSyms.filter(s => s && !SPECIAL_KINDS.has(s.kind));
   if (candidates.length === 0) {
@@ -399,7 +412,97 @@ export function emitNonLockedSymbolId(model) {
   candidates.sort((a, b) => payOf(a) - payOf(b));
   const lowest = candidates[0];
   const lowestId = lowest && (lowest.id || lowest.symbolId || lowest.code);
-  return Number.isFinite(symbolIdMap[lowestId]) ? symbolIdMap[lowestId] : null;
+  return typeof lowestId === 'string' && lowestId.length > 0 ? lowestId : null;
+}
+
+/* UQ-DEEP-AL · FIX-D · IGT serverConfig mandatory field gap-fillers.
+ *
+ * QA-3 IGT fidelity audit (Boki 2026-06-24) identified 5 missing mandatory
+ * IGT fields + 1 type mismatch on existing field. Per IGT spec
+ * IGT_SLOT_GAME_SETTINGS_CONTRACT.md §4 (line 124-144):
+ *
+ *   MISSING:  number_of_result_rows, number_of_normal_symbols, ways,
+ *             cascades, enable_math_recording
+ *   TYPE FIX: number_of_rows scalar int → int[] per reel
+ *
+ * Helpers below produce IGT-canonical primitives.
+ */
+
+/* Helper 1: emitNumberOfResultRows — max(rows) preko svih reels.
+ * IGT spec uses this za buffer sizing u render hot-path. */
+export function emitNumberOfResultRows(model) {
+  if (!model || typeof model !== 'object') return 3;
+  const topo = model.topology || {};
+  if (Array.isArray(topo.rowsPerReel) && topo.rowsPerReel.length > 0) {
+    const m = Math.max(...topo.rowsPerReel.filter(Number.isFinite));
+    if (Number.isFinite(m) && m > 0) return Math.round(m);
+  }
+  if (Number.isFinite(topo.rows) && topo.rows > 0) return Math.round(topo.rows);
+  return 3;
+}
+
+/* Helper 2: emitNumberOfNormalSymbols — count Normal+Wild symbols (gain_table size).
+ * IGT spec line 148: gain_table includes Wild. Scatter/bonus/special EXCLUDED. */
+export function emitNumberOfNormalSymbols(model) {
+  if (!model || typeof model !== 'object') return 0;
+  const symbols = model.symbols || {};
+  const allSyms = Array.isArray(symbols)
+    ? symbols
+    : [].concat(symbols.high || [], symbols.mid || [], symbols.low || [], symbols.specials || []);
+  if (allSyms.length === 0) return 0;
+  const NORMAL_KINDS = new Set(['high', 'mid', 'low', 'wild']);
+  let count = 0;
+  for (const s of allSyms) {
+    if (s && NORMAL_KINDS.has(s.kind)) count++;
+  }
+  /* Defensive fallback: shape isn't clear (no recognized kind) → count all. */
+  if (count === 0 && allSyms.length > 0) return allSyms.length;
+  return count;
+}
+
+/* Helper 3: emitWaysFlag — true ako topology=ways. */
+export function emitWaysFlag(model) {
+  if (!model || typeof model !== 'object') return false;
+  const topo = model.topology || {};
+  if (topo.kind === 'ways') return true;
+  if (topo.ways) return true;
+  if (typeof topo.evaluation === 'string' && topo.evaluation === 'ways') return true;
+  return false;
+}
+
+/* Helper 4: emitCascadesFlag — true ako bilo koji feature ima kind cascade/tumble. */
+export function emitCascadesFlag(model) {
+  if (!model || typeof model !== 'object') return false;
+  const CASCADE_KINDS = new Set(['cascade', 'tumble', 'cascading', 'tumbling']);
+  const isCascade = (k) => typeof k === 'string' && (
+    CASCADE_KINDS.has(k) || /cascade|tumble/i.test(k)
+  );
+  const features = model.features;
+  if (Array.isArray(features)) {
+    for (const f of features) {
+      if (f && isCascade(f.kind)) return true;
+    }
+  } else if (features && typeof features === 'object') {
+    for (const [key, f] of Object.entries(features)) {
+      if (isCascade(key)) return true;
+      if (f && isCascade(f.kind)) return true;
+    }
+  }
+  return false;
+}
+
+/* Helper 5: emitNumberOfRowsArray — per-reel rows array.
+ * IGT spec line 124 zahteva `int[]` per reel (e.g. [3,3,3,3,3] za 5×3).
+ * Variable-rows topology: koristi model.topology.rowsPerReel ako present. */
+export function emitNumberOfRowsArray(model) {
+  if (!model || typeof model !== 'object') return [3, 3, 3, 3, 3];
+  const topo = model.topology || {};
+  if (Array.isArray(topo.rowsPerReel) && topo.rowsPerReel.length > 0) {
+    return topo.rowsPerReel.map(v => Number.isFinite(v) ? Math.round(v) : 0);
+  }
+  const reelsCount = Number.isFinite(topo.reels) && topo.reels > 0 ? Math.round(topo.reels) : 5;
+  const rowsScalar = Number.isFinite(topo.rows) && topo.rows > 0 ? Math.round(topo.rows) : 3;
+  return new Array(reelsCount).fill(rowsScalar);
 }
 
 /**
@@ -415,7 +518,12 @@ export function emitNonLockedSymbolId(model) {
  *     lines: int[],
  *     number_of_lines: int,
  *     number_of_columns: int,
- *     number_of_rows: int,
+ *     number_of_rows: int[],             // UQ-DEEP-AL FIX-D: was scalar, now per-reel array
+ *     number_of_result_rows: int,        // UQ-DEEP-AL FIX-D: IGT mandatory
+ *     number_of_normal_symbols: int,     // UQ-DEEP-AL FIX-D: IGT mandatory
+ *     ways: boolean,                     // UQ-DEEP-AL FIX-D: IGT mandatory
+ *     cascades: boolean,                 // UQ-DEEP-AL FIX-D: IGT mandatory
+ *     enable_math_recording: boolean,    // UQ-DEEP-AL FIX-D: IGT mandatory (default false)
  *     wild_symbol: int|null,
  *     symbols: {id, name, kind}[],
  *     odds_megaways?: object[],          // P1-3
@@ -451,10 +559,11 @@ export function compileServerConfig(model, options = {}) {
   const gainTable = compileGainTable(allSyms, paytable);
   if (gainTable.length === 0) diagnostics.warnings.push('gain_table empty — paytable not in model');
 
-  /* reels[][] — industry spec §4 rule 2. */
+  /* reels[][] — industry spec §4 rule 2.
+   * UQ-DEEP-AL · FIX-D: `rowsCount` scalar relocated → emitNumberOfRowsArray
+   * (per-reel int[] per IGT spec). `reelsCount` still needed za paylines flatten. */
   const reelStrips = (model.reelStrips && (model.reelStrips.strips || model.reelStrips.par_sheet_strips)) || [];
   const reelsCount = (model.topology && model.topology.reels) || 5;
-  const rowsCount = (model.topology && model.topology.rows) || 3;
   const reels = compileReels(reelStrips, symbolIdMap);
   if (reels.length === 0) diagnostics.warnings.push('reels[][] empty — par_sheet_strips not in model');
 
@@ -478,7 +587,10 @@ export function compileServerConfig(model, options = {}) {
     });
   }
 
-  /* Assemble serverConfig. */
+  /* Assemble serverConfig.
+   * UQ-DEEP-AL · FIX-D: `number_of_rows` type was scalar int; IGT spec §4
+   * (line 124) zahteva `int[]` per reel. Promenjeno na array; postojeći
+   * back-compat test koji asserts scalar uzdignut na array assertion. */
   const serverConfig = {
     gle_version: gleVersion,
     gain_table: gainTable,
@@ -487,7 +599,7 @@ export function compileServerConfig(model, options = {}) {
     lines,
     number_of_lines,
     number_of_columns: reelsCount,
-    number_of_rows: rowsCount,
+    number_of_rows: emitNumberOfRowsArray(model),  /* IGT int[] per reel */
     wild_symbol: wildSymbolId,
     symbols: allSyms.map(s => ({
       id: symbolIdMap[s.id || s.symbolId || s.code] ?? -1,
@@ -497,11 +609,23 @@ export function compileServerConfig(model, options = {}) {
   };
   if (oddsMegaways) serverConfig.odds_megaways = oddsMegaways;
 
+  /* UQ-DEEP-AL · FIX-D · 5 IGT mandatory fields (QA-3 gap-fill).
+   * IGT spec IGT_SLOT_GAME_SETTINGS_CONTRACT.md §4 line 124-144. */
+  serverConfig.number_of_result_rows = emitNumberOfResultRows(model);
+  serverConfig.number_of_normal_symbols = emitNumberOfNormalSymbols(model);
+  serverConfig.ways = emitWaysFlag(model);
+  serverConfig.cascades = emitCascadesFlag(model);
+  serverConfig.enable_math_recording = false;  /* IGT default — debug flag */
+
   /* UQ-DEEP-AK · WAVE 2 · COMPILER F — IGT-canonical enum + modifier primitives.
+   * UQ-DEEP-AL · FIX-B: `nonLockedSymbolId` (camelCase, string) per IGT
+   *   `LockAndRespinSpinCommand.nonLockedSymbolId: string`. Snake_case
+   *   `non_locked_symbol_id` JE UKLONJEN — više nije emitovan.
+   *
    * Adds 3 new fields preserving back-compat sa svim postojećim polja iznad:
    *   expansion_type            — int enum (EXPANSION_TYPE)
    *   modifiers_screen_symbols  — per-symbol modifier rules array
-   *   non_locked_symbol_id      — HnW lock-predicate sentinel (int | null)
+   *   nonLockedSymbolId         — HnW lock-predicate sentinel (string | null)
    */
   let primaryExpandKind = null;
   let primaryExpandCfg = null;
@@ -521,7 +645,9 @@ export function compileServerConfig(model, options = {}) {
   }
   serverConfig.expansion_type = emitExpansionType(primaryExpandKind, primaryExpandCfg);
   serverConfig.modifiers_screen_symbols = emitModifiersScreenSymbols(model);
-  serverConfig.non_locked_symbol_id = emitNonLockedSymbolId(model);
+  /* UQ-DEEP-AL · FIX-B: camelCase + STRING per IGT
+   * `LockAndRespinSpinCommand.nonLockedSymbolId: string`. */
+  serverConfig.nonLockedSymbolId = emitNonLockedSymbolId(model);
 
   const paytableHash = computePaytableHash(serverConfig);
 

@@ -41,7 +41,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { compileServerConfig, computePaytableHash, compileGainTable, compileLines, compileSpecialSymbols } from '../../tools/sgs-compiler.mjs';
-import { emitGleResponse, emitOutcomeDetail, emitPopulationOutcome, emitErrorResponse, GLE_ERROR_CODES, STAGE, GAME_STATUS } from '../../tools/gle-response-emitter.mjs';
+import { emitGleResponse, emitOutcomeDetail, emitPopulationOutcome, emitErrorResponse, GLE_ERROR_CODES, STAGE } from '../../tools/gle-response-emitter.mjs';
 import { convertToServerValues, restoreFloatsFromServerValues, getDecimalsCountForNumber, maxDecimalsInArray } from '../../src/registry/integerWeightConvert.mjs';
 
 /* ── INTEGER WEIGHT CONVERSION ───────────────────────────────────────────── */
@@ -161,7 +161,11 @@ test('UQ-DEEP-AG · compileServerConfig emits valid industry standard envelope +
   assert.equal(r.gleVersion, '4.0');
   assert.ok(r.paytableHash && r.paytableHash.length === 64, 'paytable_hash SHA-256 hex');
   assert.equal(r.serverConfig.number_of_columns, 5);
-  assert.equal(r.serverConfig.number_of_rows, 3);
+  /* UQ-DEEP-AL · FIX-D: `number_of_rows` upgraded scalar int → int[] per IGT
+   * spec line 124 (per-reel array). Za uniform 5×3 grid → [3,3,3,3,3]. */
+  assert.ok(Array.isArray(r.serverConfig.number_of_rows),
+    'number_of_rows must be int[] per IGT spec line 124');
+  assert.deepEqual(r.serverConfig.number_of_rows, [3, 3, 3, 3, 3]);
   assert.equal(r.serverConfig.number_of_lines, 1);
   assert.equal(typeof r.serverConfig.wild_symbol, 'number');
   assert.ok(Array.isArray(r.serverConfig.gain_table));
@@ -201,11 +205,16 @@ test('UQ-DEEP-AG · paytable hash is DETERMINISTIC for same input', () => {
 
 test('UQ-DEEP-AG · emitOutcomeDetail produces transactionId UUID + stage transitions', () => {
   const spinResult = { payX: 5.0, isHit: true };
+  /* UQ-DEEP-AL FIX-E: default = IGT-aligned (state present, no gameStatus). */
   const r1 = emitOutcomeDetail(spinResult, { stage: STAGE.BASE_GAME, betX: 1 });
   assert.ok(r1.transactionId.length === 36, 'transactionId is UUID');
   assert.equal(r1.stage, STAGE.BASE_GAME);
-  assert.equal(r1.gameStatus, GAME_STATUS.PLAYED);
+  assert.equal(r1.gameStatus, undefined, 'IGT-aligned: no gameStatus enum (UQ-DEEP-AL FIX-E)');
+  assert.equal(r1.state, null, 'IGT free-form `state` present (null when unset)');
   assert.equal(r1.payout, 500, 'payout in cents (payX * betCents)');
+  /* legacy:true reinstates the pre-AL gameStatus enum for back-compat consumers. */
+  const r1Legacy = emitOutcomeDetail(spinResult, { stage: STAGE.BASE_GAME, betX: 1 }, { legacy: true });
+  assert.equal(r1Legacy.gameStatus, 'PLAYED', 'legacy mode echoes invented enum');
   /* FS trigger → next stage = FreeSpin. */
   const r2 = emitOutcomeDetail({ fsTrigger: true }, { stage: STAGE.BASE_GAME });
   assert.equal(r2.nextStage, STAGE.FREE_SPIN);
@@ -247,19 +256,27 @@ test('UQ-DEEP-AG · emitGleResponse builds full envelope sa svim subobjects', ()
     multiplier: 3,
     prizes: [{ type: 'line', amount: 5.0, count: 3, position: [0, 0, 0] }],
   };
+  /* UQ-DEEP-AL FIX-E: default = IGT-aligned Map<> shape. */
   const r = emitGleResponse(spinResult, { stage: STAGE.BASE_GAME, betX: 1, sessionId: 'test', paytableHash: 'deadbeef' });
   assert.equal(r.gle_version, '4.0');
   assert.ok(r.outcomeDetail.transactionId);
   assert.equal(r.outcomeDetail.nextStage, STAGE.FREE_SPIN);
   assert.equal(r.outcomeDetail.payout, 1050, 'cents');
   assert.equal(r.paytableHash, 'deadbeef', 'echo paytable hash');
-  assert.ok(r.freeSpinOutcome, 'FS envelope present');
-  assert.equal(r.freeSpinOutcome.spinsAwarded, 15);
-  assert.equal(r.freeSpinOutcome.multiplier, 2);
-  assert.ok(r.multiplierOutcome, 'multiplier envelope present');
-  assert.equal(r.multiplierOutcome.value, 3);
-  assert.ok(r.prizeOutcome, 'prize envelope present');
-  assert.equal(r.prizeOutcome.Prize[0].amount, 500, 'prize amount in cents');
+  /* Map<> shape: freeSpinOutcome is keyed by tag, entries use IGT field names. */
+  assert.ok(r.freeSpinOutcome['fs-main'], 'FS map keyed by fs-main');
+  assert.equal(r.freeSpinOutcome['fs-main'].fsAwarded, 15, 'IGT fsAwarded (was spinsAwarded)');
+  assert.ok(r.multiplierOutcome['global'], 'multiplier map keyed by global');
+  assert.equal(r.multiplierOutcome['global'].value, 3);
+  assert.ok(r.prizeOutcome['lines'], 'prize map keyed by lines');
+  assert.equal(r.prizeOutcome['lines'].Prize[0].pay, 500, 'IGT pay (was amount), in cents');
+  assert.equal(r.prizeOutcome['lines'].Prize[0].totalPay, 500, 'IGT totalPay = pay × multiplier × betMultiplier');
+
+  /* legacy:true reproduces the pre-AL flat shape for back-compat consumers. */
+  const rLegacy = emitGleResponse(spinResult, { stage: STAGE.BASE_GAME, betX: 1, sessionId: 'test', paytableHash: 'deadbeef' }, { legacy: true });
+  assert.equal(rLegacy.freeSpinOutcome.spinsAwarded, 15, 'legacy: spinsAwarded preserved');
+  assert.equal(rLegacy.freeSpinOutcome.multiplier, 2, 'legacy: fsMultiplier surfaced as multiplier');
+  assert.equal(rLegacy.prizeOutcome.Prize[0].amount, 500, 'legacy: prize Prize[].amount in cents');
 });
 
 test('UQ-DEEP-AG · emitErrorResponse structured envelope sa error codes', () => {

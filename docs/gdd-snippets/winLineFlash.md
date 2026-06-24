@@ -4,7 +4,7 @@
 
 ```yaml
 winLineFlash:
-    enabled: false
+    enabled: true
     flashMs: 540
     direction: ltr
     minCells: 3

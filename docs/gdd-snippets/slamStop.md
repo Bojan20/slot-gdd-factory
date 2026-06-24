@@ -4,7 +4,7 @@
 
 ```yaml
 slamStop:
-    enabled: false
+    enabled: true
     chipLabel: STOP
     chipColor: "255,80,80"
     chipTextColor: "255,255,255"

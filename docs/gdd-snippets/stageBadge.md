@@ -15,10 +15,10 @@ stageBadge:
     pillPaddingRight: 12
     pillPaddingBottom: 3
     pillPaddingLeft: 10
-    mutedColor: "197,198,199"
-    mutedColorAlpha: 0.78
+    mutedColor: "220,220,220"
+    mutedColorAlpha: 1
     mutedBgColor: "15,12,10"
-    mutedBgAlpha: 0.45
+    mutedBgAlpha: 0.85
     mutedBorderAlpha: 0.08
     blurAmount: 4
     dotSize: 6

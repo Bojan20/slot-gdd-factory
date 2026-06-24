@@ -579,7 +579,7 @@ try {
         }
         /* ENOENT or no code → fall through to bridge for graceful skip. */
       }
-      const { bridgeIngest } = await import(resolve(REPO, 'tools/par-sheet-bridge.mjs'));
+      const { bridgeIngest, sanitizeVendorKey } = await import(resolve(REPO, 'tools/par-sheet-bridge.mjs'));
       const opts = parSheet ? { sheet: parSheet } : {};
       const bridge = await bridgeIngest(parAbs, model, opts);
       if (!bridge.ok) {
@@ -588,7 +588,10 @@ try {
           ok: false,
           skip: !!bridge.skip,
           reason: bridge.reason,
-          vendor: bridge.vendor || null,
+          /* UQ-DEEP-AL FIX-A — sanitize vendor route key za par.json artifact
+           * (anti-vendor-lint HIGH cap). Internal routing keepa raw key kroz
+           * bridge.vendor; samo operator-visible par.json sanitize-ujemo. */
+          vendor: bridge.vendor ? sanitizeVendorKey(bridge.vendor) : null,
           format: bridge.format || null,
         };
         return;
@@ -598,7 +601,10 @@ try {
       model = bridge.model;
       parReceipt = {
         ok: true,
-        vendor: bridge.vendor,
+        /* UQ-DEEP-AL FIX-A — sanitize vendor route key u operator-visible
+         * par.json artifact. Internal model.reelStrips.par_sheet_source
+         * keepa raw key. */
+        vendor: bridge.vendor ? sanitizeVendorKey(bridge.vendor) : null,
         format: bridge.format,
         adapter: bridge.adapter,
         signals: bridge.signals,

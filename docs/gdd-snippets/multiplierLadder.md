@@ -7,7 +7,7 @@ multiplierLadder:
     enabled: false
     steps: [1,2,3,5,10]
     startTier: 0
-    position: top-right
+    position: top-left
     labelTemplate: "×{N}"
     fontSizePx: 14
     bgColor: "rgba(0,0,0,0.55)"

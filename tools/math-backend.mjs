@@ -229,10 +229,20 @@ function buildExecutorInput(model, spins = 100000, seed = 42, overrides = null) 
     if (typeof breakdown.fsLine === 'number' && breakdown.fsLine > 0) return true;
     return false;
   })();
+  /* UQ-DEEP-AL FIX-G — propagate rtpSource flag so audit tooling can
+   * distinguish "GDD declared 96%" (trusted target — bps gap = real fail)
+   * vs "synthetic fallback" (untrusted anchor — bps gap = info only).
+   * Parser stamps payback.rtpSource ∈ {'gdd-prose','par-sheet','synthetic-fallback-96'}.
+   * Synthetic = parser had nothing to read; downstream audit must NOT
+   * classify gap as regulator audit fail. */
+  const cfTargetRtpTrusted = !(typeof payback.rtpSource === 'string'
+    && /^synthetic/.test(payback.rtpSource));
   return {
     spins,
     seed,
     cf_target_rtp: cfTargetRtp,
+    cf_target_rtp_trusted: cfTargetRtpTrusted,
+    cf_target_rtp_source: payback.rtpSource || null,
     executor: (() => {
       /* UQ-DEEP-AA fix: calibrate session_e iz declared rtpBreakdown ako
        * postoji. Rust executor računa total = base_rtp + fs_trigger*fs_session_e
@@ -420,6 +430,11 @@ function runBatch(model, spins = 100000, seed = 42, overrides = null) {
         /* Attach inference diagnostics so callers can introspect (e.g. /converge). */
         out._inferenceUsed = input._inference || null;
         out._executorInput = input.executor;
+        /* UQ-DEEP-AL FIX-G — propagate trust flag iz buildExecutorInput
+         * tako da /converge handler može da klasifikuje synthetic-fallback
+         * targets kao INFO (not regulator FAIL). */
+        out.cf_target_rtp_trusted = input.cf_target_rtp_trusted !== false;
+        out.cf_target_rtp_source = input.cf_target_rtp_source || null;
         resolveR(out);
       } catch (e) { reject(new Error(`JSON parse: ${e.message} / stdout: ${stdout.slice(0, 200)}`)); }
     });
