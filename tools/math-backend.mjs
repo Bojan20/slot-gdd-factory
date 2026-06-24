@@ -25,6 +25,12 @@ import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve as resolvePath } from 'node:path';
 import { homedir } from 'node:os';
+/* UQ-DEEP-AJ · P1A — N-feature composer.
+ * Folds per-feature contribution declarations (cluster, cascade, multiplier,
+ * jackpot, mysterySymbol, etc.) into the legacy 2-tier (fs + hnw) Rust
+ * executor wire via a residual base_rtp adjustment. Per-feature breakdown is
+ * exposed via _inference.composer for /converge per-feature reporting. */
+import { composeFeatureContributions } from '../src/registry/featureComposer.mjs';
 
 const DEFAULT_PORT = 9001;
 const BINARY_CANDIDATES = [
@@ -287,6 +293,25 @@ function buildExecutorInput(model, spins = 100000, seed = 42, overrides = null) 
        *        = total - (impl 0.15 ako FS)  - (impl 0.36 ako HW) (kad sve impl)
        *        = total                                              (kad ni FS ni HW)
        */
+      /* UQ-DEEP-AJ · P1A — N-FEATURE COMPOSER
+       * Invoke the composer to derive contributions for ALL declared features
+       * (cluster, cascade, multiplier, jackpot, mysterySymbol, expandingWild,
+       *  bigSymbol, retrigger, scatterPays, anteBet, megaways, wheelBonus).
+       *
+       * BACK-COMPAT POLICY (preserve-existing-behavior contract):
+       *   The legacy Rust executor's `base_rtp_per_spin` ALREADY includes all
+       *   base-intrinsic mechanics (cluster, cascade, multiplier, etc.) as
+       *   part of the per-spin base payout. The executor only has 2 separately-
+       *   simulated slots: fs_session_e and hnw_session_e. Therefore the
+       *   composer's "other" feature contributions are NOT subtracted from
+       *   base — they would under-shoot the converged RTP (regression
+       *   captured in tests/contracts/universal-converge-deep-ae). The
+       *   composer output flows through `_inference.composer` for /converge
+       *   per-feature breakdown reporting and is the foundation for a future
+       *   executor that natively models N feature slots.
+       *
+       * Composer source: src/registry/featureComposer.mjs (schemaVersion='1'). */
+      const _composerResult = composeFeatureContributions(model, breakdown, { cfTargetRtp });
       const _baseRtpFinal = (() => {
         if (declaredBase != null) return declaredBase;
         const total = cfTargetRtp;
@@ -326,6 +351,23 @@ function buildExecutorInput(model, spins = 100000, seed = 42, overrides = null) 
       hasFreeSpins,
       declaredBase, declaredFsLine, declaredHwBase, declaredHwFs,
       baseRtp, hitFreqNorm,
+      /* UQ-DEEP-AJ · P1A — N-feature composer breakdown.
+       * Surfaces per-feature contribution table (kind, triggerProbability,
+       * sessionExpectedValue, contribution, source: config|declared|default)
+       * + gapInferenceUsed flag. Consumed by /converge handler for per-feature
+       * delta reporting beyond the legacy fs/hnw pair. */
+      composer: (() => {
+        try {
+          const r = composeFeatureContributions(model, breakdown, { cfTargetRtp });
+          return {
+            schemaVersion: r.schemaVersion,
+            features: r.features,
+            baseRtp: r.baseRtp,
+            totalRtp: r.totalRtp,
+            gapInferenceUsed: r.gapInferenceUsed,
+          };
+        } catch (e) { return { error: e.message }; }
+      })(),
     },
   };
 }

@@ -389,6 +389,26 @@ export function parseMarkdownGDD(text) {
   _safeExtract('extractGamble', () => extractGamble(text, model), model);
   _safeExtract('extractSuperSymbol', () => extractSuperSymbol(text, model), model);
 
+  /* UQ-DEEP-AJ · P1C — Extended wild prose detector. Captures
+   * copy_wild / extended_wild / added_symbols / in_sync / walking_wild /
+   * multiplier_wild / expanding_wild / sticky_wild_per_spin from free-form
+   * GDD prose where dedicated H2 sections aren't present. Output merged
+   * into model.wild.special with only non-null fields retained. */
+  _safeExtract('extractWildSpecial', () => {
+    const wsp = extractWildSpecial(text);
+    if (!wsp) return;
+    if (!model.wild || typeof model.wild !== 'object') model.wild = {};
+    if (!model.wild.special || typeof model.wild.special !== 'object') model.wild.special = {};
+    /* Merge only non-null fields. schemaVersion always copied so consumers
+     * can detect contract version. */
+    model.wild.special.schemaVersion = wsp.schemaVersion;
+    for (const k of ['copy_wild', 'extended_wild', 'added_symbols', 'in_sync',
+                     'walking_wild', 'multiplier_wild', 'expanding_wild',
+                     'sticky_wild_per_spin']) {
+      if (wsp[k] != null) model.wild.special[k] = wsp[k];
+    }
+  }, model);
+
   // math (RTP / volatility / max-win) intentionally NOT extracted in this phase.
 
   /* D-18 (Boki 2026-06-20) STEP A: snapshot pre-defaults state so the
@@ -4384,6 +4404,14 @@ function freshModel() {
       enabled: undefined, mode: undefined, blockSize: undefined,
       triggerChance: undefined, symbolPool: undefined, haloColor: undefined,
     },
+    /* UQ-DEEP-AJ · P1C — Extended wild parser. `wild.special` collects
+     * detection metadata for industry-standard wild variants that are
+     * mentioned in prose (not in dedicated `## XxxWild` sections that the
+     * existing extractStickyWild / extractExpandingWild / extractWalkingWild
+     * / extractWildReel handlers cover). Populated by extractWildSpecial()
+     * post-merge. Each sub-field is either an evidence-bearing object or
+     * absent (null fields are stripped before merge). */
+    wild: { special: {} },
     confidence: {
       name: 0,
       topology: 0,
@@ -5707,4 +5735,284 @@ export function extractSuperSymbol(text, model) {
   const bs = _readInt(s, 'block[- ]?size'); if (bs !== undefined) tgt.blockSize = bs;
   const tc = _readFloat(s, 'trigger[- ]?chance'); if (tc !== undefined) tgt.triggerChance = tc;
   const halo = _readStr(s, 'halo[- ]?color'); if (halo) tgt.haloColor = halo;
+}
+
+/* ── UQ-DEEP-AJ · P1C — Extended wild parser regex ───────────────────────
+ *
+ * Industry-standard wild variants that frequently show up in real GDD
+ * prose but were previously missed by the section-based extractors:
+ *
+ *   • copy_wild            "Wild on reel 3 copies to reels 2 and 4"
+ *   • extended_wild        "Wild remains for 3 additional spins"
+ *   • added_symbols        "Additional wild symbols added to reel during bonus"
+ *   • in_sync              "Reels 2-3 spin in sync" / "synchronized reels"
+ *   • walking_wild         "Wild moves one position left each spin"
+ *   • multiplier_wild      "Wild applies 2x/3x/5x to the win"
+ *   • expanding_wild       "Expanding wild covers full reel"
+ *   • sticky_wild_per_spin "Wild remains sticky during free spins only"
+ *
+ * Bilingual EN+SR. Each detected field carries an `evidence` substring
+ * (1–3 sentences, max 300 chars) — the parser audit trail. Each negative
+ * stays as `null`. The function returns a frozen object that always
+ * exposes all 8 fields + `schemaVersion: '1'`. The caller may then merge
+ * only non-null fields into model.wild.special.
+ *
+ * NB: this is INTENTIONALLY a prose-scan extractor — the 4 existing
+ * section-based handlers (extractStickyWild / extractExpandingWild /
+ * extractWalkingWild / extractWildReel) continue to own the structured
+ * `## XxxWild` configuration blocks.
+ */
+
+/* Pull the first match window (max 300 chars) as evidence for `match`.
+ * Snaps to sentence/clause boundary when possible so the snippet reads. */
+function _wildSpecialEvidence(text, match) {
+  if (!text || !match || match.index == null) return '';
+  const idx = match.index;
+  const before = Math.max(0, idx - 60);
+  const after = Math.min(text.length, idx + match[0].length + 200);
+  let snip = text.slice(before, after);
+  /* Trim to a sentence boundary if possible */
+  const trail = snip.search(/(?:[.!?][\s\n]|\n)/);
+  if (trail > 40 && trail < snip.length - 1) snip = snip.slice(0, trail + 1);
+  snip = snip.replace(/\s+/g, ' ').trim();
+  if (snip.length > 300) snip = snip.slice(0, 297) + '...';
+  return snip;
+}
+
+/* Parse a free-form reel list ("2 and 4", "2, 4", "2-4", "2 i 4") → number[]. */
+function _wildSpecialParseReels(raw) {
+  if (!raw) return [];
+  const out = new Set();
+  const cleaned = String(raw).toLowerCase()
+    .replace(/\band\b|\bi\b/g, ' ')
+    .replace(/[^\d, \-]/g, ' ');
+  /* expand "a-b" ranges */
+  cleaned.replace(/(\d+)\s*-\s*(\d+)/g, (_m, a, b) => {
+    const lo = parseInt(a, 10), hi = parseInt(b, 10);
+    if (Number.isFinite(lo) && Number.isFinite(hi) && lo <= hi && hi - lo < 20) {
+      for (let i = lo; i <= hi; i++) out.add(i);
+    }
+    return '';
+  });
+  /* individual numbers */
+  const ind = cleaned.replace(/\d+\s*-\s*\d+/g, ' ').match(/\d+/g) || [];
+  for (const n of ind) {
+    const v = parseInt(n, 10);
+    if (Number.isFinite(v) && v >= 1 && v <= 32) out.add(v);
+  }
+  return [...out].sort((a, b) => a - b);
+}
+
+/* Parse a multiplier list ("2x/3x/5x", "2, 3, 5", "2x to 5x") → number[]. */
+function _wildSpecialParseMultipliers(raw) {
+  if (!raw) return [];
+  const out = new Set();
+  /* Strip Serbian/English connectors first ("or", "and", "to", "ili", "do",
+   * "i") so the residue is just digits/x/separators. */
+  const cleaned = String(raw).toLowerCase()
+    .replace(/\b(?:or|and|to|ili|do|i)\b/g, ' ')
+    .replace(/[^\d\.x, \-]/g, ' ');
+  /* range "2x to 5x" */
+  cleaned.replace(/(\d+(?:\.\d+)?)\s*x?\s*-\s*(\d+(?:\.\d+)?)\s*x?/g, (_m, a, b) => {
+    const lo = parseFloat(a), hi = parseFloat(b);
+    if (Number.isFinite(lo) && Number.isFinite(hi) && hi - lo < 100) {
+      const step = (hi - lo) > 5 ? 1 : Math.max(0.5, (hi - lo) / 4);
+      for (let v = lo; v <= hi + 1e-9; v += step) out.add(Math.round(v * 100) / 100);
+    }
+    return '';
+  });
+  const ind = cleaned.replace(/\d+(?:\.\d+)?\s*x?\s*-\s*\d+/g, ' ').match(/\d+(?:\.\d+)?/g) || [];
+  for (const n of ind) {
+    const v = parseFloat(n);
+    if (Number.isFinite(v) && v >= 1 && v <= 10000) out.add(v);
+  }
+  return [...out].sort((a, b) => a - b);
+}
+
+export function extractWildSpecial(text /*, langHint */) {
+  const out = {
+    copy_wild:            null,
+    extended_wild:        null,
+    added_symbols:        null,
+    in_sync:              null,
+    walking_wild:         null,
+    multiplier_wild:      null,
+    expanding_wild:       null,
+    sticky_wild_per_spin: null,
+    schemaVersion:        '1',
+  };
+  if (typeof text !== 'string' || text.length === 0) {
+    return Object.freeze(out);
+  }
+
+  /* ── copy_wild ───────────────────────────────────────────────── */
+  {
+    const reEN = /wild(?:\s+symbol)?\s+on\s+reel\s+(\d{1,2})\s+(?:copies|copy|duplicates?|appears?\s+also)\s+(?:to\s+)?(?:reels?\s+)?([\d, \-andi]+)/i;
+    const reSR = /wild\s+(?:simbol\s+)?(?:na\s+)?(?:rolnu|kotur|kolutu)\s+(\d{1,2})\s+(?:kopira|prepisuje|umnozava)(?:\s+(?:na\s+)?(?:rolne|kotur(?:e|ove))?\s*([\d, \-i]+))?/i;
+    let m = text.match(reEN); let langMatched = m ? 'en' : null;
+    if (!m) { m = text.match(reSR); if (m) langMatched = 'sr'; }
+    if (m) {
+      const src = parseInt(m[1], 10);
+      const tgts = _wildSpecialParseReels(m[2] || '');
+      out.copy_wild = {
+        sourceReels: Number.isFinite(src) ? [src] : [],
+        targetReels: tgts,
+        evidence: _wildSpecialEvidence(text, m),
+        lang: langMatched,
+      };
+    }
+  }
+
+  /* ── extended_wild ───────────────────────────────────────────── */
+  {
+    const reEN = /(?:extended|persistent|recurring)\s+wild|wild\s+(?:remains|stays|persists?)\s+for\s+(\d+)\s+(?:additional\s+|extra\s+)?spins?/i;
+    const reSR = /(?:produzeni|trajni|prosireni)\s+wild|wild\s+ostaje\s+(\d+)\s+(?:dodatnih\s+)?okreta/i;
+    let m = text.match(reEN); let langMatched = m ? 'en' : null;
+    if (!m) { m = text.match(reSR); if (m) langMatched = 'sr'; }
+    if (m) {
+      const n = m[1] ? parseInt(m[1], 10) : null;
+      out.extended_wild = {
+        extraSpins: Number.isFinite(n) ? n : 0,
+        evidence: _wildSpecialEvidence(text, m),
+        lang: langMatched,
+      };
+    }
+  }
+
+  /* ── added_symbols ───────────────────────────────────────────── */
+  {
+    const reEN = /(?:additional|added|extra|new)\s+(\w+)\s+(?:symbols?\s+)?(?:added|inserted|appear)\s+(?:to|on|in)\s+(?:the\s+)?(?:reels?\s+)?(?:during\s+(\w+))?/i;
+    const reSR = /(?:dodatni|prosirenih)\s+(\w+)\s+(?:simboli\s+)?(?:dodati|umetnuti)(?:\s+(?:tokom|u)\s+(\w+))?/i;
+    let m = text.match(reEN); let langMatched = m ? 'en' : null;
+    if (!m) { m = text.match(reSR); if (m) langMatched = 'sr'; }
+    if (m) {
+      const sym = (m[1] || '').toLowerCase();
+      let scope = (m[2] || '').toLowerCase();
+      if (scope === 'free' || scope === 'fs' || /free[\s-]?spin|besplatn/.test(scope)) scope = 'freeSpins';
+      else if (scope === 'bonus' || scope === 'bonusi') scope = 'bonus';
+      else if (scope === 'base' || /base[\s-]?game|osnovn/.test(scope)) scope = 'baseGame';
+      else scope = scope || 'bonus';
+      /* Try to read a count from the surrounding window (default 1 if absent). */
+      const win = text.slice(Math.max(0, m.index - 40), m.index + m[0].length + 40);
+      const cnt = win.match(/(\d{1,3})\s+(?:additional|added|extra|new|dodatn)/i);
+      out.added_symbols = {
+        symbolId: sym,
+        count: cnt ? parseInt(cnt[1], 10) : 1,
+        addedDuring: ['baseGame', 'freeSpins', 'bonus'].includes(scope) ? scope : 'bonus',
+        evidence: _wildSpecialEvidence(text, m),
+        lang: langMatched,
+      };
+    }
+  }
+
+  /* ── in_sync ─────────────────────────────────────────────────── */
+  {
+    const reEN = /reels?\s+([\d, \-andi]+?)\s+(?:spin\s+)?(?:in\s+sync|synchronized?|together|linked)/i;
+    /* SR: numbers may be followed by free Serbian words ("su", "spin", etc.)
+     * before the sync keyword. Allow up to ~30 chars of intermediate text so
+     * "Rolne 2 i 3 su sinhronizovane" matches without over-greedy spans. */
+    const reSR = /(?:rolne|koturovi|kotur(?:i)?)\s+([\d, \-i]+?)\s+(?:[a-zćčđšž]{1,12}\s+)?(?:sinhronizovan|paralelno|zajedno|povezan)/i;
+    let m = text.match(reEN); let langMatched = m ? 'en' : null;
+    if (!m) { m = text.match(reSR); if (m) langMatched = 'sr'; }
+    if (m) {
+      const reels = _wildSpecialParseReels(m[1] || '');
+      out.in_sync = {
+        reels,
+        evidence: _wildSpecialEvidence(text, m),
+        lang: langMatched,
+      };
+    }
+  }
+
+  /* ── walking_wild ────────────────────────────────────────────── */
+  {
+    const reEN = /walking\s+wild|wild\s+(?:moves|shifts?|walks)\s+(?:one\s+)?(?:position\s+)?(left|right|up|down)/i;
+    const reSR = /(?:hodajuci|sklizajuci)\s+wild|wild\s+(?:se\s+)?(?:pomera|kreces|klizi)\s*(levo|desno|gore|dole)?/i;
+    let m = text.match(reEN); let langMatched = m ? 'en' : null;
+    if (!m) { m = text.match(reSR); if (m) langMatched = 'sr'; }
+    if (m) {
+      let dir = (m[1] || '').toLowerCase();
+      if (dir === 'levo') dir = 'left';
+      else if (dir === 'desno') dir = 'right';
+      else if (dir === 'gore') dir = 'up';
+      else if (dir === 'dole') dir = 'down';
+      if (!['left', 'right', 'up', 'down'].includes(dir)) dir = 'left';
+      /* Try to read steps-per-spin from surrounding window. */
+      const win = text.slice(Math.max(0, m.index - 30), m.index + m[0].length + 60);
+      const sm = win.match(/(\d{1,2})\s+(?:positions?|steps?|spaces?|mesta|koraka)/i);
+      out.walking_wild = {
+        direction: dir,
+        stepsPerSpin: sm ? parseInt(sm[1], 10) : 1,
+        evidence: _wildSpecialEvidence(text, m),
+        lang: langMatched,
+      };
+    }
+  }
+
+  /* ── multiplier_wild ─────────────────────────────────────────── */
+  {
+    /* Allow "or"/"to"/"and"/letters inside the multiplier list so
+     * "2x, 3x or 5x multiplier" parses cleanly. _wildSpecialParseMultipliers
+     * strips connector words downstream. */
+    const reEN = /wild\s+(?:with\s+|carries?\s+|applies?\s+)?(?:a\s+)?([\d][\dA-Za-z xX,\.\s\-\/]{0,60}?[\d xX])\s*(?:multiplier|multipliers)/i;
+    const reSR = /wild\s+(?:nosi|primenjuje|sa)\s+(?:mnozioc|multiplikator|multiplikatorom)\s+([\d][\dA-Za-zćčđšž xX,\.\s\-\/]{0,60})/i;
+    let m = text.match(reEN); let langMatched = m ? 'en' : null;
+    if (!m) { m = text.match(reSR); if (m) langMatched = 'sr'; }
+    if (m) {
+      const mults = _wildSpecialParseMultipliers(m[1] || '');
+      out.multiplier_wild = {
+        multipliers: mults,
+        evidence: _wildSpecialEvidence(text, m),
+        lang: langMatched,
+      };
+    }
+  }
+
+  /* ── expanding_wild ──────────────────────────────────────────── */
+  {
+    const reEN = /expanding\s+wild|wild\s+expands?\s+(?:to\s+)?(?:cover\s+)?(?:the\s+)?(?:full\s+)?(reel|row|cluster)/i;
+    const reSR = /(?:rastuci|rasiruci|sireci)\s+wild|wild\s+(?:popunjava|sirti|pokriva)\s*(rolnu|red|cluster)?/i;
+    let m = text.match(reEN); let langMatched = m ? 'en' : null;
+    if (!m) { m = text.match(reSR); if (m) langMatched = 'sr'; }
+    if (m) {
+      let target = (m[1] || '').toLowerCase();
+      if (target === 'rolnu') target = 'reel';
+      else if (target === 'red') target = 'row';
+      if (!['reel', 'row', 'cluster'].includes(target)) target = 'reel';
+      const win = text.slice(Math.max(0, m.index - 30), m.index + m[0].length + 120);
+      const triggers = /only\s+if\s+(?:wild\s+)?(?:forms|joins|completes)\s+a\s+win|only[_\s-]if[_\s-]winning|part\s+of\s+(?:a\s+)?win/i.test(win)
+        ? 'partOfWin' : 'always';
+      out.expanding_wild = {
+        expandTo: target,
+        triggers,
+        evidence: _wildSpecialEvidence(text, m),
+        lang: langMatched,
+      };
+    }
+  }
+
+  /* ── sticky_wild_per_spin ────────────────────────────────────── */
+  {
+    const reEN = /sticky\s+wild|wild\s+(?:remains|stays)\s+sticky\s+(?:during\s+)?(free\s+spins|bonus|base\s+game)?/i;
+    const reSR = /(?:lepljiv|lepljiva|drzeci)\s+wild|wild\s+ostaje\s+(?:tokom\s+)?(besplatni|free|bonusi|osnovne)?/i;
+    let m = text.match(reEN); let langMatched = m ? 'en' : null;
+    if (!m) { m = text.match(reSR); if (m) langMatched = 'sr'; }
+    if (m) {
+      let scope = (m[1] || '').toLowerCase().replace(/\s+/g, '');
+      if (scope === 'freespins' || scope === 'free' || scope === 'besplatni') scope = 'freeSpins';
+      else if (scope === 'bonus' || scope === 'bonusi') scope = 'bonus';
+      else if (scope === 'basegame' || scope === 'osnovne') scope = 'baseGame';
+      else scope = 'freeSpins';
+      const win = text.slice(Math.max(0, m.index - 30), m.index + m[0].length + 80);
+      const sm = win.match(/(\d{1,3})\s+(?:spins?|okreta)/i);
+      out.sticky_wild_per_spin = {
+        scope,
+        spins: sm ? parseInt(sm[1], 10) : 'unlimited',
+        evidence: _wildSpecialEvidence(text, m),
+        lang: langMatched,
+      };
+    }
+  }
+
+  return Object.freeze(out);
 }

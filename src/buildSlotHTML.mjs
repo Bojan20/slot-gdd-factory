@@ -430,6 +430,10 @@ import {
   resolveConfig as resolveMysterySymbolMultiplierConfig,
 } from './blocks/mysterySymbolMultiplier.mjs';
 import {
+  emitSymbolModifiersCSS, emitSymbolModifiersMarkup, emitSymbolModifiersRuntime,
+  resolveConfig as resolveSymbolModifiersConfig,
+} from './blocks/symbolModifiers.mjs';
+import {
   emitWildCollisionMultiplierCSS, emitWildCollisionMultiplierRuntime,
   resolveConfig as resolveWildCollisionMultiplierConfig,
 } from './blocks/wildCollisionMultiplier.mjs';
@@ -1660,6 +1664,8 @@ ${emitBidirectionalWaysEvalCSS(resolveBidirectionalWaysEvalConfig(model))}
 ${/* Wave LEGO-M — 6 base/FS multiplier variants. Each emits empty CSS unless GDD enables. */ ''}
 ${emitPerFsSpinMultiplierCSS(resolvePerFsSpinMultiplierConfig(model))}
 ${emitMysterySymbolMultiplierCSS(resolveMysterySymbolMultiplierConfig(model))}
+${/* UQ-DEEP-AJ P1B — screen-symbol modifier engine (mystery reveal, copy_wild, sticky_overlay, oddsMasks). Opt-in via GDD. */ ''}
+${emitSymbolModifiersCSS(resolveSymbolModifiersConfig(model))}
 ${emitWildCollisionMultiplierCSS(resolveWildCollisionMultiplierConfig(model))}
 ${emitRetriggerMultiplierBumpCSS(resolveRetriggerMultiplierBumpConfig(model))}
 ${emitClusterSizeMultiplierCSS(resolveClusterSizeMultiplierConfig(model))}
@@ -1915,6 +1921,8 @@ ${emitBonusClimaxRevealMarkup(resolveBonusClimaxRevealConfig(model))}
 ${/* Wave H7-H10 — runtime-only decorators / ambient layer host markup. */ ''}
 ${emitCellLevelUpgradeMarkup(resolveCellLevelUpgradeConfig(model))}
 ${emitCellOverflowCounterMarkup(resolveCellOverflowCounterConfig(model))}
+${/* UQ-DEEP-AJ P1B — empty stage div for symbolModifiers overlay (mystery reveal/copy_wild fx). */ ''}
+${emitSymbolModifiersMarkup(resolveSymbolModifiersConfig(model))}
 ${emitAmbientBackgroundWheelMarkup(resolveAmbientBackgroundWheelConfig(model))}
 ${emitDualRoleScatterMarkup(resolveDualRoleScatterConfig(model))}
 ${/* Wave H11-H15 — markup hosts (mega overlay built at runtime, others static). */ ''}
@@ -2232,6 +2240,8 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   /* Wave LEGO-M — 6 self-contained multiplier variant runtimes. */
   ${emitPerFsSpinMultiplierRuntime(resolvePerFsSpinMultiplierConfig(model))}
   ${emitMysterySymbolMultiplierRuntime(resolveMysterySymbolMultiplierConfig(model))}
+  /* UQ-DEEP-AJ P1B — screen-symbol modifier engine runtime (window.symbolModifiersAPI). */
+  ${emitSymbolModifiersRuntime(resolveSymbolModifiersConfig(model))}
   ${emitWildCollisionMultiplierRuntime(resolveWildCollisionMultiplierConfig(model))}
   ${emitRetriggerMultiplierBumpRuntime(resolveRetriggerMultiplierBumpConfig(model))}
   ${emitClusterSizeMultiplierRuntime(resolveClusterSizeMultiplierConfig(model))}
