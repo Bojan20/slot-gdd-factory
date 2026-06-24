@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0.0",
-  "generated_at": "2026-06-25T00:02:00.000Z",
+  "generated_at": "2026-06-25T00:03:00.000Z",
   "source_locale": "sv",
-  "hash": "105c23bf9a8f",
+  "hash": "6900b0f03614",
   "blocks_with_strings": 47,
-  "total_entries": 152,
+  "total_entries": 153,
   "catalog": {
     "audio.0": "Toggle audio",
     "autoplay.0": "AUTO · ",
@@ -157,6 +157,7 @@
     "realityCheck.net": "NET",
     "realityCheck.continue": "CONTINUE",
     "realityCheck.pause": "PAUSE",
-    "realityCheck.quit": "QUIT"
+    "realityCheck.quit": "QUIT",
+    "bonusClimaxReveal.bonus": "BONUS!"
   }
 }

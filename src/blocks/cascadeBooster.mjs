@@ -162,7 +162,7 @@ export function emitCascadeBoosterCSS(cfg = defaultConfig()) {
 
 export function emitCascadeBoosterMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return tagBlockMarkup(`<div id="cbChip" class="cb-chip" role="status" aria-live="polite" aria-label="Cascade booster multiplier" data-visible="false" data-bumping="false" data-mult="1">BOOST ×1</div>`, 'cascadeBooster');
+  return tagBlockMarkup(`<div id="cbChip" class="cb-chip" role="status" aria-live="polite" aria-label="Cascade booster multiplier" data-i18n-aria="cascadeBooster.0" data-i18n-aria-fallback="Cascade booster multiplier" data-dynamic-aria="true" data-visible="false" data-bumping="false" data-mult="1">BOOST ×1</div>`, 'cascadeBooster');
 }
 
 export function emitCascadeBoosterRuntime(cfg = defaultConfig()) {

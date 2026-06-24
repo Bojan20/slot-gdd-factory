@@ -168,7 +168,7 @@ export function emitStickyMeterMarkup(cfg = defaultConfig()) {
     .replace('{N}', '0')
     .replace('{M}', String(cfg.maxCap));
   /* WCAG 4.1.3 (F4 A3) — atomic so full "STICKY N/M" is re-spoken on every postSpin reCount, not diff. */
-  return tagBlockMarkup(`<div id="stickyMeter" class="sticky-meter" role="status" aria-live="polite" aria-atomic="true" aria-label="Sticky symbol count" data-visible="false" data-count="0">${label}</div>`, 'stickyMeter');
+  return tagBlockMarkup(`<div id="stickyMeter" class="sticky-meter" role="status" aria-live="polite" aria-atomic="true" aria-label="Sticky symbol count" data-i18n-aria="stickyMeter.0" data-i18n-aria-fallback="Sticky symbol count" data-dynamic-aria="true" data-visible="false" data-count="0">${label}</div>`, 'stickyMeter');
 }
 
 export function emitStickyMeterRuntime(cfg = defaultConfig()) {

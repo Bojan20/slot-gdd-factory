@@ -311,10 +311,11 @@ export class ManifestSchemaError extends Error {
 export function isCompatibleSchema(version) {
   if (typeof version !== 'string') return false;
   // Accept 1.x.y with optional -prerelease.id / +build.id suffix.
-  // UQ-DEEP-AT K-P2-1: \w = [A-Za-z0-9_] excluded dash. SemVer 2.0.0 spec
-  // allows dashed identifiers ("1.0.0-rc-1", "1.0.0-beta.2-hotfix"). Allow
-  // `-` inside the suffix block. Major bump (2.x) would force migration.
-  return /^1\.\d+\.\d+(?:[-+][\w.\-]+)?$/.test(version);
+  // UQ-DEEP-AT K-P2-1: dashed identifiers ("1.0.0-rc-1", "1.0.0-beta.2-hotfix").
+  // UQ-DEEP-AU L-P0-2 (Auditor L): SemVer 2.0.0 forbids trailing dash,
+  // double-dash leading, bare-dot suffix. Require suffix segment to start
+  // with [0-9A-Za-z] and not be empty. Major bump (2.x) forces migration.
+  return /^1\.\d+\.\d+(?:[-+][\dA-Za-z][\w.\-]*)?$/.test(version);
 }
 
 /**

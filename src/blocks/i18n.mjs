@@ -485,10 +485,14 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
         if (fp && key in fp) return _sanitizeLocaleString(fp[key]);
       }
       if (fb != null) return _sanitizeLocaleString(fb);
-      /* UQ-DEEP-AT K-P2-2 (Auditor K): humanize fallback so screen reader
-         doesn't read "autoplay dot title" when both pack + fallback fail.
-         Take last dot-notation segment, decamelCase, titlecase. */
-      var leaf = String(key).split('.').pop() || key;
+      /* UQ-DEEP-AT K-P2-2 + AU L-P1-4 (Auditors K + L): humanize fallback
+         so screen reader doesn't read "autoplay dot title" when both pack
+         + fallback fail. Empty/whitespace-only key → '…' instead of empty
+         string (empty aria-label strips accessible name from inheritor). */
+      var keyStr = String(key || '').trim();
+      if (!keyStr) return '…';
+      var leaf = keyStr.split('.').pop() || keyStr;
+      if (!leaf.trim()) return '…';
       var human = leaf.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ');
       human = human.charAt(0).toUpperCase() + human.slice(1);
       return _sanitizeLocaleString(human);
@@ -544,11 +548,14 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
       _localeExplicit: !!(typeof window !== 'undefined' && window.__SLOT_LOCALE__),
     };
     function _hydrateLocale() {
-      if (state._localeExplicit) return;
+      /* UQ-DEEP-AU L-P1-3 (Auditor L): drop the _localeExplicit guard so
+         cookie-restored locale arriving in stage-2 boot wins until an
+         explicit setLocale() call lands. Only setLocale() promotes to
+         "explicit" state — paint-time _hydrateLocale stays opportunistic. */
       if (typeof window === 'undefined' || !window.__SLOT_LOCALE__) return;
+      if (state._localeExplicit) return; // setLocale already won
       if (window.__SLOT_LOCALE__ !== state.locale) {
         state.locale = window.__SLOT_LOCALE__;
-        state._localeExplicit = true;
       }
     }
 
@@ -583,6 +590,14 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
         var aEl = ariaNodes[a];
         var aKey = aEl.getAttribute('data-i18n-aria');
         if (!aKey) continue;
+        /* UQ-DEEP-AU L-P0-1 (Auditor L): dynamic aria opt-out marker.
+           Blocks like energyMeter ("Energy meter: 3/10"), multiplierLadder
+           ("Multiplier ladder: x3"), fsProgressBar ("Spin 3 of 10") write
+           dynamic values into aria-label at runtime. Without opt-out,
+           paint() on locale flip overwrites the dynamic value back to
+           static "Energy meter" — SR users lose current count.
+           Blocks set data-dynamic-aria="true" to mark "I own this label". */
+        if (aEl.getAttribute('data-dynamic-aria') === 'true') continue;
         var aFb = aEl.getAttribute('data-i18n-aria-fallback') || aEl.getAttribute('aria-label') || '';
         aEl.setAttribute('aria-label', _t(aKey, aFb));
         n++;

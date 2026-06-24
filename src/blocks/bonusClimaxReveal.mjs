@@ -200,8 +200,8 @@ export function emitBonusClimaxRevealMarkup(cfg = defaultConfig()) {
   return tagBlockMarkup(`<div id="bonusClimaxOverlay" class="bonus-climax" role="alert" aria-live="assertive" aria-hidden="true" data-visible="false">
     <div class="bonus-climax-burst" aria-hidden="true"></div>
     <div>
-      <span class="bonus-climax-label" id="bonusClimaxLabel">BONUS!</span>
-      <span class="bonus-climax-sub"   id="bonusClimaxSub">REVEAL</span>
+      <span class="bonus-climax-label" id="bonusClimaxLabel" data-i18n="bonusClimaxReveal.bonus" data-i18n-fallback="BONUS!">BONUS!</span>
+      <span class="bonus-climax-sub"   id="bonusClimaxSub" data-i18n="bonusClimaxReveal.0" data-i18n-fallback="REVEAL">REVEAL</span>
     </div>
   </div>`, 'bonusClimaxReveal');
 }

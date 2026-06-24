@@ -237,9 +237,9 @@ export function emitBonusBuyCSS(cfg = defaultConfig()) {
 
 export function emitBonusBuyMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
-  return tagBlockMarkup(`<button id="bonusBuyBtn" class="bonus-buy-btn" type="button" aria-label="Buy bonus feature">
+  return tagBlockMarkup(`<button id="bonusBuyBtn" class="bonus-buy-btn" type="button" aria-label="Buy bonus feature" data-i18n-aria="bonusBuy.0" data-i18n-aria-fallback="Buy bonus feature">
   ${escapeHtml(cfg.label)}
-  <span class="cost">${cfg.costX}× BET</span>
+  <span class="cost">${cfg.costX}× <span data-i18n="common.bet" data-i18n-fallback="BET">BET</span></span>
 </button>`, 'bonusBuy');
 }
 
