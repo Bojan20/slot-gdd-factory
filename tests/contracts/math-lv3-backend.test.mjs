@@ -143,10 +143,15 @@ try {
     assert(r.status === 404, `expected 404, got ${r.status}`);
   });
 
-  await test('CORS headers present on /health', async () => {
-    const r = await fetch(`${BASE}/health`);
-    const ao = r.headers.get('access-control-allow-origin');
-    assert(ao === '*', `CORS origin missing or wrong: ${ao}`);
+  await test('CORS allowlist on /health (UQ-DEEP-O CRIT-2 lockdown)', async () => {
+    /* Without Origin header, no ACAO returned (lockdown). */
+    const r1 = await fetch(`${BASE}/health`);
+    assert(!r1.headers.get('access-control-allow-origin'),
+      'no-Origin request must not get ACAO header');
+    /* With allowed Origin, ACAO echoes back. */
+    const r2 = await fetch(`${BASE}/health`, { headers: { Origin: 'http://127.0.0.1:5181' } });
+    const ao2 = r2.headers.get('access-control-allow-origin');
+    assert(ao2 === 'http://127.0.0.1:5181', `allowed origin not echoed: ${ao2}`);
   });
 
 } finally {

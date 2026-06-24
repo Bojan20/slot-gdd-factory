@@ -134,11 +134,21 @@ export function emitBatchSimulatorPanelRuntime(cfg = defaultConfig(), model = {}
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ spins: spins, seed: seed, model: BSP_MODEL }),
         })
-        .then(function (r) { return r.json(); })
+        /* HIGH-P5 (UQ-DEEP-P): check r.ok before r.json() so 500/HTML
+         * doesn't throw silent SyntaxError into .catch. */
+        .then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + (r.statusText || ''));
+          return r.json();
+        })
         .then(function (j) {
           var wall = ((performance.now() - t0) / 1000).toFixed(2);
           if (!j || !j.ok) {
-            out.innerHTML = '<span class="fail">✗ ' + (j && j.error ? j.error : 'backend offline') + '</span>';
+            /* LOW-5 (UQ-DEEP-O): textContent for error path (XSS guard). */
+            var errEl = document.createElement('span');
+            errEl.className = 'fail';
+            errEl.textContent = '✗ ' + (j && j.error ? j.error : 'backend offline');
+            out.innerHTML = '';
+            out.appendChild(errEl);
             return;
           }
           var rtp = (j.rtp * 100).toFixed(4);
@@ -155,7 +165,12 @@ export function emitBatchSimulatorPanelRuntime(cfg = defaultConfig(), model = {}
             'hit <b>' + (j.hit_rate * 100).toFixed(2) + '%</b> · maxWin <b>' + (j.max_win_x != null ? Math.round(j.max_win_x) + 'x' : '?') + '</b>';
         })
         .catch(function (e) {
-          out.innerHTML = '<span class="fail">✗ ' + e.message + '</span>';
+          /* LOW-5 (UQ-DEEP-O): textContent path — e.message may carry HTML. */
+          var errEl = document.createElement('span');
+          errEl.className = 'fail';
+          errEl.textContent = '✗ ' + e.message;
+          out.innerHTML = '';
+          out.appendChild(errEl);
         })
         .finally(function () {
           panel.querySelectorAll('.bsp-btn').forEach(function (b) { b.disabled = false; });

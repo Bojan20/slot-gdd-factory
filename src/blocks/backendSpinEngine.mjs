@@ -83,7 +83,14 @@ export function emitBackendSpinEngineRuntime(cfg = defaultConfig(), model = {}) 
       sessionStdDev: model.holdAndWin.sessionStdDev,
     } : null,
   };
+  /* HIGH-5 (UQ-DEEP-O) / MED-P7 (UQ-DEEP-P): mirror per-game maxWinX in
+   * the client validator. Industry hard-cap (100000x) is OK as ceiling
+   * but per-game cap × 1.5 is the right reject threshold for honest payX. */
+  const perGameMaxX = (model.payback && Number.isFinite(model.payback.maxWinX))
+    ? Math.min(model.payback.maxWinX * 1.5, 1_000_000)
+    : 100_000;
   const modelJSON = JSON.stringify(pruned);
+  const perGameMaxXJSON = JSON.stringify(perGameMaxX);
   return `
 /* ── backendSpinEngine BLOCK runtime ─────────────────────────────── */
 (function () {
@@ -130,10 +137,10 @@ export function emitBackendSpinEngineRuntime(cfg = defaultConfig(), model = {}) 
 
   /* CRIT-3 fix (UQ-DEEP-N): validate payX bounds before trusting HUD.
    * Backend may return NaN / Infinity / negative / absurdly large value if
-   * Rust binary crashes mid-batch or session metrics corrupt. Hard reject
-   * outside [0, MAX_PAYX]; MAX_PAYX = 100000x (industry hard cap, well above
-   * 50000x max-win games). */
-  var BSE_MAX_PAYX = 100000;
+   * Rust binary crashes mid-batch or session metrics corrupt.
+   * HIGH-5 (UQ-DEEP-O) / MED-P7 (UQ-DEEP-P): cap mirrors per-game maxWinX
+   * (×1.5 honest tail), not flat industry hard-cap. */
+  var BSE_MAX_PAYX = ${perGameMaxXJSON};
   function validPayX(v) {
     return typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= BSE_MAX_PAYX;
   }

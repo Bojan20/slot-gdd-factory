@@ -33,7 +33,9 @@ export function getDebugTails() {
   return { stderr: _stderrTail, stdout: _stdoutTail };
 }
 
-function probeHealth(port, timeoutMs = 800) {
+/* HIGH-4 (UQ-DEEP-O): strict probe — require server identity + version
+ * to defeat MITM-on-port scenarios where another process answers /health. */
+function probeHealth(port, timeoutMs = 800, expectedPid = null) {
   return new Promise((resolveR) => {
     const req = http.get(`http://127.0.0.1:${port}/health`, { timeout: timeoutMs }, (res) => {
       let body = '';
@@ -41,7 +43,12 @@ function probeHealth(port, timeoutMs = 800) {
       res.on('end', () => {
         try {
           const j = JSON.parse(body);
-          resolveR(j && j.ok === true ? j : null);
+          if (!j || j.ok !== true) return resolveR(null);
+          if (j.server !== 'math-backend') return resolveR(null);
+          if (typeof j.version !== 'string' || !j.version.startsWith('1.0.')) return resolveR(null);
+          /* HIGH-P2 (UQ-DEEP-P): if caller knows expected pid, require match. */
+          if (expectedPid != null && j.pid !== expectedPid) return resolveR(null);
+          resolveR(j);
         } catch { resolveR(null); }
       });
     });
@@ -130,7 +137,9 @@ export async function ensureBackendRunning(opts = {}) {
   for (let i = 0; i < 15; i++) {
     await new Promise((r) => setTimeout(r, 200));
     for (const p of portsToProbe) {
-      const h = await probeHealth(p);
+      /* HIGH-P2: require pid match so a stale/foreign process answering
+       * /health doesn't get accepted as our spawn. */
+      const h = await probeHealth(p, 800, _childProc.pid);
       if (h) {
         _spawnedPort = p;
         return {

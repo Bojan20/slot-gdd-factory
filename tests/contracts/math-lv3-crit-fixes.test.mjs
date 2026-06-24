@@ -83,17 +83,18 @@ await test('CRIT-3: backendSpinEngine validates payX bounds', async () => {
   const src = readFileSync(resolve(REPO, 'src/blocks/backendSpinEngine.mjs'), 'utf8');
   assert(src.includes('validPayX'), 'validPayX helper missing');
   assert(src.includes('Number.isFinite'), 'Number.isFinite check missing');
-  assert(/BSE_MAX_PAYX\s*=\s*\d+/.test(src), 'BSE_MAX_PAYX cap missing');
+  /* UQ-DEEP-O HIGH-5: BSE_MAX_PAYX now per-game (template placeholder). */
+  assert(/BSE_MAX_PAYX\s*=\s*\$\{/.test(src) || /BSE_MAX_PAYX\s*=\s*\d+/.test(src),
+    'BSE_MAX_PAYX cap missing (neither template nor literal)');
   assert(src.includes('if (!validPayX(j.payX))'), 'validPayX not called on response');
 });
 
-await test('CRIT-3: cap chosen well above industry max-win (50000x)', async () => {
+await test('CRIT-3: per-game cap derives from model.payback.maxWinX (UQ-DEEP-O HIGH-5)', async () => {
   const src = readFileSync(resolve(REPO, 'src/blocks/backendSpinEngine.mjs'), 'utf8');
-  const m = src.match(/BSE_MAX_PAYX\s*=\s*(\d+)/);
-  assert(m, 'BSE_MAX_PAYX numeric value not extractable');
-  const cap = Number(m[1]);
-  assert(cap >= 50000, `cap ${cap} below industry max-win threshold 50000x`);
-  assert(cap <= 1_000_000, `cap ${cap} absurdly high (>1Mx)`);
+  assert(src.includes('perGameMaxX'), 'perGameMaxX variable missing');
+  assert(src.includes('model.payback.maxWinX'), 'maxWinX source reference missing');
+  /* Ceiling stays sane. */
+  assert(src.includes('1_000_000') || src.includes('1000000'), 'absolute ceiling missing');
 });
 
 /* ────────────────────────────────────────────────────────────────────── */
@@ -129,8 +130,10 @@ await test('CRIT-5: backend ensureSession uses deterministic seed from sessionId
   assert(src.includes('deterministicSeed'), 'deterministicSeed variable missing');
   assert(!/runBatch\(model,\s*100000,\s*Date\.now\(\)/.test(src),
     'Date.now() seed still present — must be deterministic hash of sessionId');
-  assert(/runBatch\(model,\s*100000,\s*deterministicSeed\)/.test(src),
-    'runBatch not called with deterministicSeed');
+  /* UQ-DEEP-O HIGH-2: runBatch now wrapped in runBatchQueued for concurrency cap. */
+  assert(/runBatchQueued\(model,\s*100000,\s*deterministicSeed\)/.test(src)
+      || /runBatch\(model,\s*100000,\s*deterministicSeed\)/.test(src),
+    'batch runner not called with deterministicSeed');
 });
 
 /* ────────────────────────────────────────────────────────────────────── */

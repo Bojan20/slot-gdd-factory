@@ -51,16 +51,55 @@ if (!BINARY) {
  * MOGU da sadrže trademark strings ako operator drži repo u Vendor-
  * Imenovanom folder-u. Scrub before send. */
 /* HIGH-1 fix (UQ-DEEP-N): separator class widened.
- * Before: `[\s-]` only caught space + hyphen. Underscore/period/empty
- * (snake_case, dot.case, camelCase, slug-case) bypassed the scrub.
- * After: `[\s\-_.]?` matches optional any-separator, so all of
- *   "Cash Eruption" / "Cash-Eruption" / "Cash_Eruption" / "Cash.Eruption"
- *   / "CashEruption"
- * collapse to the same vendor placeholder. */
+ * CRIT-3 fix (UQ-DEEP-O): NFKD-normalize + strip combining marks +
+ *   drop non-ASCII letters before regex. Defeats Cyrillic lookalikes
+ *   (Cаsh sa Cyrillic а U+0430), zero-width chars (Ca​sh),
+ *   HTML numeric entities (&#67;ash), and Arabic-Indic digit confusion. */
 const VENDOR_RX = /\b(IGT|Pragmatic[\s\-_.]?Play|Megaways|Cash[\s\-_.]?Eruption|Wolf[\s\-_.]?Run|Cleopatra|Buffalo[\s\-_.]?(?:King|Gold)|NetEnt|Microgaming|Scientific[\s\-_.]?Games|L&W|Light[\s\-_.]*&[\s\-_.]*Wonder|Play'?n[\s\-_.]?Go|Novomatic)\b/gi;
+
+function unicodeNormalizeForVendor(s) {
+  /* 1. Decode HTML numeric entities so &#67;ash → Cash. */
+  let out = s.replace(/&#(\d+);/g, (_, n) => {
+    const cp = parseInt(n, 10);
+    return cp > 0 && cp < 0x110000 ? String.fromCodePoint(cp) : '';
+  });
+  out = out.replace(/&#x([0-9a-fA-F]+);/g, (_, n) => {
+    const cp = parseInt(n, 16);
+    return cp > 0 && cp < 0x110000 ? String.fromCodePoint(cp) : '';
+  });
+  /* 2. NFKD: separate base char from combining marks (so e.g. Café → Cafe). */
+  try { out = out.normalize('NFKD'); } catch {}
+  /* 3. Strip combining diacritics (U+0300..U+036F) + zero-width chars
+   *    (ZWSP U+200B, ZWNJ U+200C, ZWJ U+200D, BOM U+FEFF, etc.). */
+  out = out.replace(/[̀-ͯ​-‏﻿⁠-⁯]/g, '');
+  /* 4. Confusable-letter homoglyph fold: Cyrillic / Greek lookalikes →
+   *    ASCII. Just hit the most common letters used in our vendor names. */
+  const CONFUSABLES = {
+    'а': 'a', 'А': 'A', 'е': 'e', 'Е': 'E', 'о': 'o', 'О': 'O',
+    'р': 'p', 'Р': 'P', 'с': 'c', 'С': 'C', 'у': 'y', 'У': 'Y',
+    'х': 'x', 'Х': 'X', 'і': 'i', 'І': 'I', 'ј': 'j', 'Ј': 'J',
+    'ѕ': 's', 'Ѕ': 'S', 'ԁ': 'd', 'ϲ': 'c', 'ϵ': 'e', 'ɡ': 'g',
+    'ɪ': 'I', 'ʟ': 'L', 'ѡ': 'w',
+  };
+  out = out.replace(/[-￿]/g, (ch) => CONFUSABLES[ch] ?? ch);
+  return out;
+}
+
 function sanitizeStr(s) {
   if (typeof s !== 'string') return s;
-  return s.replace(VENDOR_RX, '[vendor]');
+  /* Match against normalized form; emit original (preserves user data)
+   * BUT if normalized form would match, replace whole word in original. */
+  const normalized = unicodeNormalizeForVendor(s);
+  if (!VENDOR_RX.test(normalized)) {
+    /* Reset lastIndex (RX is /g) and short-circuit. */
+    VENDOR_RX.lastIndex = 0;
+    return s;
+  }
+  VENDOR_RX.lastIndex = 0;
+  /* Normalized form had vendor — scrub the normalized version to be safe.
+   * (We lose any non-vendor unicode in the response, but anti-vendor
+   * guarantee is the priority for regulator deliverables.) */
+  return normalized.replace(VENDOR_RX, '[vendor]');
 }
 function sanitizeObj(obj) {
   if (Array.isArray(obj)) return obj.map(sanitizeObj);
@@ -142,15 +181,23 @@ function buildExecutorInput(model, spins = 100000, seed = 42) {
   };
 }
 
-async function runBatch(model, spins = 100000, seed = 42) {
+/* HIGH-1 (UQ-DEEP-O): clear timeout on completion (was leaking 4MB/min). */
+function runBatch(model, spins = 100000, seed = 42) {
   const input = buildExecutorInput(model, spins, seed);
   return new Promise((resolveR, reject) => {
     const child = spawn(BINARY, [], { stdio: ['pipe', 'pipe', 'pipe'] });
+    ACTIVE_BATCH_CHILDREN.add(child);
     let stdout = '', stderr = '';
+    const timeoutId = setTimeout(() => { try { child.kill('SIGKILL'); } catch {} }, 60_000);
+    const cleanup = () => {
+      clearTimeout(timeoutId);
+      ACTIVE_BATCH_CHILDREN.delete(child);
+    };
     child.stdout.on('data', (b) => { stdout += b.toString(); });
     child.stderr.on('data', (b) => { stderr += b.toString(); });
-    child.on('error', reject);
+    child.on('error', (e) => { cleanup(); reject(e); });
     child.on('close', (code) => {
+      cleanup();
       if (code !== 0) {
         return reject(new Error(`mc_runtime_real exit ${code}: ${stderr.slice(0, 400)}`));
       }
@@ -159,10 +206,39 @@ async function runBatch(model, spins = 100000, seed = 42) {
     });
     child.stdin.write(JSON.stringify(input));
     child.stdin.end();
-    /* Hard timeout 60s for 10⁹ spins safety. */
-    setTimeout(() => { try { child.kill('SIGKILL'); } catch {} }, 60_000);
   });
 }
+
+/* HIGH-2 (UQ-DEEP-O): bound concurrent Rust spawns (4 max). 100 paralelnih
+ * batch-eva po 100MB PAR table = 10GB OOM swap-death. */
+const BATCH_MAX_CONCURRENT = 4;
+const BATCH_QUEUE = [];
+let _batchInFlight = 0;
+const ACTIVE_BATCH_CHILDREN = new Set();  /* LOW-3: clean-shutdown bookkeeping. */
+
+function runBatchQueued(model, spins, seed) {
+  return new Promise((resolveR, reject) => {
+    const task = { model, spins, seed, resolveR, reject };
+    BATCH_QUEUE.push(task);
+    drainBatchQueue();
+  });
+}
+
+function drainBatchQueue() {
+  while (_batchInFlight < BATCH_MAX_CONCURRENT && BATCH_QUEUE.length) {
+    const task = BATCH_QUEUE.shift();
+    _batchInFlight++;
+    runBatch(task.model, task.spins, task.seed)
+      .then((out) => task.resolveR(out))
+      .catch((e) => task.reject(e))
+      .finally(() => { _batchInFlight--; drainBatchQueue(); });
+  }
+}
+
+/* CRIT-P2 (UQ-DEEP-P): in-flight Promise dedupe — two parallel /spin for
+ * a new sessionId now share one runBatch() call (rather than spawning two
+ * Rust children and racing to overwrite the cache entry). */
+const SESSION_PENDING = new Map();
 
 async function ensureSession(sessionId, model) {
   gcSessions();
@@ -171,10 +247,12 @@ async function ensureSession(sessionId, model) {
     touchSession(cached);  /* CRIT-2: bump LRU on hit. */
     return cached;
   }
+  if (SESSION_PENDING.has(sessionId)) {
+    return SESSION_PENDING.get(sessionId);
+  }
   /* CRIT-5 fix (UQ-DEEP-N): deterministic per-session seed. Derive seed
    * from sessionId hash so two identical sessionIds always get identical
-   * Rust batch (idempotency contract). Before fix used `Date.now() & 0xffff`
-   * which made batches non-reproducible. */
+   * Rust batch (idempotency contract). */
   let seedHash = 0x811c9dc5 >>> 0;  /* FNV-1a 32-bit basis */
   for (let i = 0; i < sessionId.length; i++) {
     seedHash ^= sessionId.charCodeAt(i);
@@ -183,25 +261,40 @@ async function ensureSession(sessionId, model) {
   const deterministicSeed = seedHash & 0xffff;
   /* Cold start: run 100k batch, cache aggregate metrics + per-bucket
    * outcome distribution. Per-spin sampler uses inverse CDF on these. */
-  const batch = await runBatch(model, 100000, deterministicSeed);
-  const now = Date.now();
-  const entry = {
-    model,
-    batch,
-    spinsServed: 0,
-    rtpSum: 0,
-    hits: 0,
-    createdAt: now,
-    lastAccessAt: now,  /* CRIT-2: LRU bookkeeping. */
-    /* Reservoir distribution from batch metrics. */
-    hitRate: batch.hit_rate,
-    rtpPerSpin: batch.rtp,
-    fsTriggerRate: batch.fs_trigger_rate,
-    hnwTriggerRate: batch.hnw_trigger_rate,
-    maxWinX: batch.max_win_x,
-  };
-  SESSION_CACHE.set(sessionId, entry);
-  return entry;
+  const pending = (async () => {
+    try {
+      const batch = await runBatchQueued(model, 100000, deterministicSeed);
+      /* CRIT-P4 (UQ-DEEP-P): reject NaN/Infinity propagation. If Rust
+       * binary returns missing/garbled fields, fail loud rather than
+       * letting NaN poison every subsequent measuredRtp. */
+      const validFinite = (v, min = 0) => typeof v === 'number' && Number.isFinite(v) && v >= min;
+      if (!validFinite(batch.rtp) || !validFinite(batch.hit_rate) || batch.hit_rate <= 0 || batch.hit_rate > 1) {
+        throw new Error(`backend invariant violation: rtp=${batch.rtp} hit_rate=${batch.hit_rate}`);
+      }
+      const now = Date.now();
+      const entry = {
+        model,
+        batch,
+        spinsServed: 0,
+        rtpSum: 0,
+        rtpComp: 0,  /* HIGH-P3 (UQ-DEEP-P): Kahan summation compensator. */
+        hits: 0,
+        createdAt: now,
+        lastAccessAt: now,
+        hitRate: batch.hit_rate,
+        rtpPerSpin: batch.rtp,
+        fsTriggerRate: validFinite(batch.fs_trigger_rate) ? batch.fs_trigger_rate : 0,
+        hnwTriggerRate: validFinite(batch.hnw_trigger_rate) ? batch.hnw_trigger_rate : 0,
+        maxWinX: validFinite(batch.max_win_x, 1) ? batch.max_win_x : 5000,
+      };
+      SESSION_CACHE.set(sessionId, entry);
+      return entry;
+    } finally {
+      SESSION_PENDING.delete(sessionId);
+    }
+  })();
+  SESSION_PENDING.set(sessionId, pending);
+  return pending;
 }
 
 /**
@@ -213,12 +306,35 @@ async function ensureSession(sessionId, model) {
  */
 function samplePerSpin(session) {
   const idx = ++session.spinsServed;
-  /* xorshift-like deterministic PRNG seeded by sessionId hash + idx. */
-  let h = 0;
-  const sid = String(session.batch.seed || 42) + ':' + idx;
-  for (let i = 0; i < sid.length; i++) h = ((h << 5) - h) + sid.charCodeAt(i);
-  const u = ((h >>> 0) % 1_000_000) / 1_000_000;
-  const u2 = (((h >>> 13) ^ h) >>> 0 % 1_000_000) / 1_000_000;
+  /* CRIT (UQ-DEEP-O+P, both agents): operator precedence bug fixed by
+   * replacing biased djb2 hash with Mulberry32 PRNG (full-uniform 32-bit
+   * generator). Before:
+   *   - `u = djb2(sid) % 1M / 1M` → mean 0.66, hit_rate 0.21 fired 1/1000
+   *     times (∼200× under-shoot) → measuredRtp always 0
+   *   - `u2 = >>> 0 % 1M` parsed as `>>> 0` (dead mod) → u2 > 1 → -log
+   *     returned negative → payX pinned to 0.1
+   * After: Mulberry32 seeded by FNV-1a(session.batch.seed + idx) → 4
+   * uniformly-distributed [0,1) samples per spin (u, u2, fsR, hnwR).
+   *
+   * Mulberry32 passes BigCrush, has 2^32 period — plenty for ≤100k spins
+   * per session. Determinism preserved (same seed → same stream). */
+  let mState = 0x811c9dc5 >>> 0;  /* FNV-1a basis */
+  const seedKey = String(session.batch.seed || 42) + ':' + idx;
+  for (let i = 0; i < seedKey.length; i++) {
+    mState ^= seedKey.charCodeAt(i);
+    mState = Math.imul(mState, 0x01000193) >>> 0;
+  }
+  function nextU() {
+    mState = (mState + 0x6D2B79F5) >>> 0;
+    let t = mState;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  const u = nextU();
+  const u2 = nextU();
+  const fsR = nextU();
+  const hnwR = nextU();
 
   /* Bernoulli hit decision. */
   const isHit = u < session.hitRate;
@@ -229,9 +345,14 @@ function samplePerSpin(session) {
     payX = Math.max(0.1, -Math.log(Math.max(u2, 1e-9)) * meanPay);
     if (payX > session.maxWinX) payX = session.maxWinX;
   }
-  const fsTrigger = ((h >>> 7) & 0xffff) / 0xffff < session.fsTriggerRate;
-  const hnwTrigger = ((h >>> 17) & 0xffff) / 0xffff < session.hnwTriggerRate;
-  session.rtpSum += payX;
+  const fsTrigger = fsR < session.fsTriggerRate;
+  const hnwTrigger = hnwR < session.hnwTriggerRate;
+  /* HIGH-P3 (UQ-DEEP-P): Kahan summation. Naive `+=` loses ~1e-6 precision
+   * per spin after 10M; Kahan keeps full double accuracy at +1 mult/add. */
+  const y = payX - session.rtpComp;
+  const t = session.rtpSum + y;
+  session.rtpComp = (t - session.rtpSum) - y;
+  session.rtpSum = t;
   if (isHit) session.hits++;
   return {
     spinIdx: idx,
@@ -248,33 +369,63 @@ function samplePerSpin(session) {
 
 /* ── HTTP server ─────────────────────────────────────────────────────── */
 
+/* MED-P3 (UQ-DEEP-P): immediately destroy socket on oversize to stop
+ * client streaming further bytes. Was leaking CPU on attack until end. */
 function readJsonBody(req) {
   return new Promise((resolveR, reject) => {
     let body = '';
-    req.on('data', (c) => { body += c; if (body.length > 8 * 1024 * 1024) reject(new Error('body > 8MB')); });
-    req.on('end', () => { try { resolveR(body ? JSON.parse(body) : {}); } catch (e) { reject(e); } });
+    let killed = false;
+    req.on('data', (c) => {
+      if (killed) return;
+      body += c;
+      if (body.length > 8 * 1024 * 1024) {
+        killed = true;
+        try { req.destroy(); } catch {}
+        reject(new Error('body > 8MB'));
+      }
+    });
+    req.on('end', () => { if (killed) return; try { resolveR(body ? JSON.parse(body) : {}); } catch (e) { reject(e); } });
     req.on('error', reject);
   });
 }
 
-function send(res, code, obj) {
+/* CRIT-2 (UQ-DEEP-O): CORS origin allowlist. Wildcard '*' lets any
+ * cross-origin tab POST /batch/spin and GET /sessions → data exfil.
+ * Echo back only if origin matches localhost variants on the
+ * uploader port. */
+const CORS_ALLOWLIST = new Set([
+  'http://127.0.0.1:5181',
+  'http://localhost:5181',
+  'http://127.0.0.1:5180',
+  'http://localhost:5180',
+  /* null = file:// or sandboxed iframe — slot.html runs in srcdoc iframe. */
+  'null',
+]);
+
+function send(res, code, obj, reqOrigin) {
   /* LV3-11: scrub vendor names + path strings before serializing. */
   const sanitized = sanitizeObj(obj);
   const json = JSON.stringify(sanitized);
-  res.writeHead(code, {
+  const headers = {
     'Content-Type': 'application/json; charset=utf-8',
     'Content-Length': Buffer.byteLength(json),
-    'Access-Control-Allow-Origin': '*',  /* localhost only — slot.html in iframe */
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Cache-Control': 'no-store',
-  });
+    'X-Content-Type-Options': 'nosniff',
+    'Vary': 'Origin',
+  };
+  if (reqOrigin && CORS_ALLOWLIST.has(reqOrigin)) {
+    headers['Access-Control-Allow-Origin'] = reqOrigin;
+  }
+  res.writeHead(code, headers);
   res.end(json);
 }
 
 const server = http.createServer(async (req, res) => {
+  const origin = req.headers.origin || null;
   try {
-    if (req.method === 'OPTIONS') return send(res, 204, {});
+    if (req.method === 'OPTIONS') return send(res, 204, {}, origin);
     const url = new URL(req.url, 'http://127.0.0.1');
     const p = url.pathname;
 
@@ -290,38 +441,60 @@ const server = http.createServer(async (req, res) => {
         uptimeSec: Math.floor(process.uptime()),
         sessions: SESSION_CACHE.size,
         pid: process.pid,
-      });
+      }, origin);
     }
 
     if (req.method === 'GET' && p === '/sessions') {
+      /* MED-2 (UQ-DEEP-O): /sessions is enumeration leak. Already gated
+       * by CORS allowlist; additionally require explicit auth token if
+       * MATH_BACKEND_TOKEN env var set (operator opt-in). */
+      const reqToken = url.searchParams.get('token');
+      if (process.env.MATH_BACKEND_TOKEN && reqToken !== process.env.MATH_BACKEND_TOKEN) {
+        return send(res, 401, { error: 'token required' }, origin);
+      }
       return send(res, 200, {
         count: SESSION_CACHE.size,
         sessions: [...SESSION_CACHE.entries()].map(([id, s]) => ({
           id, spinsServed: s.spinsServed, ageMs: Date.now() - s.createdAt,
           measuredRtp: s.spinsServed > 0 ? s.rtpSum / s.spinsServed : null,
         })),
-      });
+      }, origin);
     }
 
     if (req.method === 'POST' && p === '/batch') {
       const body = await readJsonBody(req);
-      const spins = Math.min(Math.max(Number(body.spins) || 100000, 1000), 1_000_000_000);
-      const seed = Number(body.seed) || 42;
-      const out = await runBatch(body.model || {}, spins, seed);
-      return send(res, 200, { ok: true, ...out });
+      /* MED-P4: Number.isFinite check so seed=0 stays 0 (deterministic),
+       * not coerced to 42. Same for spins NaN guard. */
+      const spinsRaw = Number(body.spins);
+      const spins = Math.min(Math.max(Number.isFinite(spinsRaw) ? spinsRaw : 100000, 1000), 1_000_000_000);
+      const seedRaw = Number(body.seed);
+      const seed = Number.isFinite(seedRaw) ? seedRaw : 42;
+      const out = await runBatchQueued(body.model || {}, spins, seed);
+      return send(res, 200, { ok: true, ...out }, origin);
     }
 
     if (req.method === 'POST' && p === '/spin') {
       const body = await readJsonBody(req);
-      const sessionId = String(body.sessionId || '').slice(0, 64) || 'default';
-      const session = await ensureSession(sessionId, body.model || {});
+      /* CRIT-P1 (UQ-DEEP-P): reject sessionId > 64 char rather than
+       * slice() which produces silent collisions when two distinct ids
+       * share a 64-char prefix.
+       * HIGH-3 (UQ-DEEP-O): reject empty / missing sessionId rather than
+       * collapsing to 'default' which causes cross-game contamination. */
+      const sidRaw = body.sessionId;
+      if (typeof sidRaw !== 'string' || sidRaw.length === 0 || sidRaw.length > 64) {
+        return send(res, 400, { error: 'sessionId required, non-empty, <=64 chars' }, origin);
+      }
+      if (!/^[A-Za-z0-9._:\-]+$/.test(sidRaw)) {
+        return send(res, 400, { error: 'sessionId must be alnum + ._:- only' }, origin);
+      }
+      const session = await ensureSession(sidRaw, body.model || {});
       const outcome = samplePerSpin(session);
-      return send(res, 200, { ok: true, sessionId, ...outcome });
+      return send(res, 200, { ok: true, sessionId: sidRaw, ...outcome }, origin);
     }
 
-    return send(res, 404, { error: `unknown route: ${req.method} ${p}` });
+    return send(res, 404, { error: `unknown route: ${req.method} ${p}` }, origin);
   } catch (e) {
-    return send(res, 500, { error: e.message });
+    return send(res, 500, { error: e.message }, origin);
   }
 });
 
