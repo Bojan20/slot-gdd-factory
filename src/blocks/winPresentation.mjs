@@ -278,9 +278,24 @@ export function emitDetectWinCombosRuntime(cfg = defaultConfig()) {
          is the legacy fallback for slots without explicit eval kind;
          without payX win presentation skipped these too. */
       const __comboCount = list.length + wildCells.length;
-      const __tierMult = tier === 'HP' ? 1.0 : tier === 'MP' ? 0.5 : tier === 'WILD' ? 2.0 : 0.25;
       const __bet = (typeof window !== 'undefined' && Number.isFinite(window.__SLOT_BET__) && window.__SLOT_BET__ > 0) ? window.__SLOT_BET__ : 1;
-      const __payX = Math.min(50, __tierMult * __comboCount) * __bet;
+      /* UQ-DEEP-AB ATOM 2 (2026-06-24) — GDD-driven paytable lookup.
+       * PRIORITY 1: PAYTABLE[symbol][matchLen] when emit-ovan iz buildSlotHTML
+       * (ATOM 2 — sourced iz par_sheet_paytable > model.paytable > SymbolEntry.pay).
+       * Fallback: placeholder tierMult koji raniji code je koristio.
+       * Diamond / Jack više NE plaćaju isto — svaki simbol dobija REAL pay. */
+      let __payX;
+      const __PT = (typeof PAYTABLE !== 'undefined' && PAYTABLE) ? PAYTABLE : null;
+      const __ptRow = __PT && __PT[String(symbol).toUpperCase()];
+      const __ptVal = __ptRow && (__ptRow[String(__comboCount)] || __ptRow[__comboCount]);
+      if (Number.isFinite(__ptVal) && __ptVal > 0) {
+        /* PAR/GDD-derived pay × bet — REAL math, regulator-auditable. */
+        __payX = __ptVal * __bet;
+      } else {
+        /* Placeholder fallback — only when no PAYTABLE entry exists. */
+        const __tierMult = tier === 'HP' ? 1.0 : tier === 'MP' ? 0.5 : tier === 'WILD' ? 2.0 : 0.25;
+        __payX = Math.min(50, __tierMult * __comboCount) * __bet;
+      }
       events.push({ symbol, tier, matchLength: __comboCount, payX: __payX, cells: list.concat(wildCells) });
     }
     /* Wild-only event: if there are >= 3 wild cells and NO matching

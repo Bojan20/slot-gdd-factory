@@ -184,9 +184,22 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
      empty text — visually invisible. Guarantee a printable glyph on every
      write. The '?' fallback is the same one the constructor (makeCell) uses
      so the visual contract holds across the whole grid lifecycle. */
-  function randomSym() {
-    if (!Array.isArray(POOL) || POOL.length === 0) return '?';
-    const s = POOL[Math.floor(Math.random() * POOL.length)];
+  /* UQ-DEEP-AB ATOM 1 (2026-06-24) — randomSym now accepts optional reelIdx.
+   * When PER_REEL_POOLS is defined (PAR-driven), pick from PER_REEL_POOLS[reelIdx];
+   * fallback to global POOL when reelIdx is missing or PER_REEL_POOLS is null.
+   * Back-compat: callers without reelIdx (rotate-tick, generic fills) still
+   * work — they get the OLD behavior (uniform global pool). New callers
+   * passing reelIdx get REAL PAR weights. */
+  function randomSym(reelIdx) {
+    let pool = null;
+    if (typeof PER_REEL_POOLS !== 'undefined' && PER_REEL_POOLS &&
+        Array.isArray(PER_REEL_POOLS) && Number.isInteger(reelIdx) &&
+        reelIdx >= 0 && reelIdx < PER_REEL_POOLS.length) {
+      pool = PER_REEL_POOLS[reelIdx];
+    }
+    if (!Array.isArray(pool) || pool.length === 0) pool = POOL;
+    if (!Array.isArray(pool) || pool.length === 0) return '?';
+    const s = pool[Math.floor(Math.random() * pool.length)];
     return (s == null || s === '') ? '?' : s;
   }
 
@@ -284,7 +297,8 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
       if (reel.cells[i] && reel.cells[i].classList && reel.cells[i].classList.contains('is-locked-bonus')) {
         continue;
       }
-      var _sym = randomSym();
+      /* UQ-DEEP-AB ATOM 1: pass reelIdx so PER_REEL_POOLS apply. */
+      var _sym = randomSym(reelIdx);
       reel.cells[i].textContent = _sym || reel.cells[i].textContent || '?';
       if (_enforcePerReel && String(_sym || '').toUpperCase() === _trig) {
         if (_scattersThisReel >= 1) {
@@ -293,7 +307,7 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
              after cap, drop a literal '?' which can never be a scatter. */
           let attempts = 0;
           while (attempts < 8 && String(reel.cells[i].textContent || '').toUpperCase() === _trig) {
-            reel.cells[i].textContent = randomSym() || '?';
+            reel.cells[i].textContent = randomSym(reelIdx) || '?';
             attempts++;
           }
           if (String(reel.cells[i].textContent || '').toUpperCase() === _trig) {

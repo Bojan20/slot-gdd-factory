@@ -108,7 +108,36 @@ export function emitBackendSpinEngineRuntime(cfg = defaultConfig(), model = {}) 
     }
     return h.toString(36);
   }
-  var BSE_SESSION = 'slot-' + bseFnv1a(JSON.stringify(BSE_MODEL));
+  /* UQ-DEEP-AB ATOM 6 (2026-06-24) — Per-player session salt.
+   *
+   * Without salt: BSE_SESSION = FNV1a(model) → 2 playera istom igrom
+   * DELE ISTI session na backend-u. SESSION_CACHE akumulira spinSum/
+   * rtpSum preko playera → measured-RTP reported za playera B
+   * uključuje spinove playera A. Cross-player RTP contamination.
+   *
+   * Sad: ako window.__PLAYER_ID__ set (operator/RGS može da set-uje),
+   * salt session ID sa tim. Inače: generate per-tab unique token koji
+   * persistuje u sessionStorage (browsing session lifetime) — različiti
+   * tabovi dobijaju različite sessione čak i bez RGS-supplied player ID.
+   *
+   * Idempotency preserved: pasivni replay (same browser tab, same model)
+   * vraća isti session jer sessionStorage token is sticky. */
+  var BSE_PLAYER_SALT = '';
+  try {
+    if (typeof window !== 'undefined' && window.__PLAYER_ID__) {
+      BSE_PLAYER_SALT = String(window.__PLAYER_ID__);
+    } else if (typeof sessionStorage !== 'undefined') {
+      var KEY = '__SLOT_TAB_SALT__';
+      BSE_PLAYER_SALT = sessionStorage.getItem(KEY) || '';
+      if (!BSE_PLAYER_SALT) {
+        BSE_PLAYER_SALT = (typeof crypto !== 'undefined' && crypto.randomUUID)
+          ? crypto.randomUUID()
+          : ('tab-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10));
+        sessionStorage.setItem(KEY, BSE_PLAYER_SALT);
+      }
+    }
+  } catch (_) { /* sessionStorage may be blocked in private mode */ }
+  var BSE_SESSION = 'slot-' + bseFnv1a(JSON.stringify(BSE_MODEL) + ':' + BSE_PLAYER_SALT);
   var BSE_STATUS = 'pending';
   var BSE_ERRORS = 0;
   var BSE_INFLIGHT = false;  /* CRIT-3 helper: dedupe concurrent /spin fetches. */

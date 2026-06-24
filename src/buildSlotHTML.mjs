@@ -1189,6 +1189,128 @@ export function buildSlotHTML(model) {
     const w = _weight(sym);
     for (let i = 0; i < w; i++) pool.push(sym);
   }
+  /* UQ-DEEP-AB ATOM 1 (2026-06-24) — PAR-driven per-reel POOLS.
+   *
+   * Bokijev "RTP drasticno razlikuje" root cause: prethodno `pool` je bio
+   * jedan globalni share-d sa SINTETIČKIM weights (HP=4/MP=6/LP=9), NIKAD
+   * iz PAR sheet-a. Renderer + math layer su bili DECOUPLED — koji god
+   * PAR se ubaci, reel weights su identični.
+   *
+   * Sad: ako model.reelStrips.par_sheet_weights postoji (iz N+2 D PAR
+   * bridge), gradi PER-REEL pools sa REAL weights iz PAR-a. `symbol`
+   * lookup hoda kroz allSymsResolved da rebuild-uje SymbolEntry referenc
+   * (potreban za renderer da nadje payouts/visuals). Symbols u PAR weights
+   * keys koji nisu u model.symbols su SKIP-ovani (vendor-noise guard).
+   *
+   * Result: PER_REEL_POOLS[reelIdx] = array of SymbolEntry, expanded by
+   * REAL PAR weights. randomSym(reelIdx) u reelEngine.mjs sad bira iz
+   * PER_REEL_POOLS[reelIdx] umesto iz global POOL. POOL ostaje kao
+   * fallback za GDD bez PAR-a (back-compat sa 333 GDDs bez ParSheet-a).
+   */
+  let perReelPools = null;
+  const _parWeights = model && model.reelStrips && model.reelStrips.par_sheet_weights;
+  if (_parWeights && typeof _parWeights === 'object') {
+    /* Multi-key symbol lookup: PAR can emit symbol identifiers as id ('R7'),
+     * name ('Red7'), label ('Red7'), or even with spaces ('Big Volcano').
+     * Build aliases map covering all 4 surfaces (uppercase + alnum-only) so
+     * any reasonable adapter shape matches the model.symbols roster. */
+    const _symLookup = new Map();
+    const _addAlias = (key, sym) => {
+      if (!key) return;
+      const k1 = String(key).toUpperCase().trim();
+      _symLookup.set(k1, sym);
+      const k2 = k1.replace(/[^A-Z0-9]/g, '');
+      if (k2 && k2 !== k1) _symLookup.set(k2, sym);
+    };
+    for (const s of allSymsResolved) {
+      _addAlias(s.id, s);
+      _addAlias(s.name, s);
+      _addAlias(s.label, s);
+    }
+    const _reelKeys = Object.keys(_parWeights).sort((a, b) => Number(a) - Number(b));
+    if (_reelKeys.length > 0) {
+      perReelPools = [];
+      /* Total weight per reel u PAR-u je obično 100000 (industry standard) sa
+       * float weights koji mogu biti sub-1.0 za retke simbole. Direktan
+       * Math.floor() bi izgubio sve simbole sa weight < 1.0 → reel ostane prazan.
+       * Pravilan pristup: normalize sve weight-ove u proportional integers
+       * koji čuvaju ratio. Cilj: target ~1000-10000 entries per reel pool
+       * (dovoljno granularno, ne blowup memory). */
+      const TARGET_POOL_SIZE = 5000;
+      for (const rk of _reelKeys) {
+        const wmap = _parWeights[rk] || {};
+        const reelPool = [];
+        let totalWeight = 0;
+        for (const v of Object.values(wmap)) {
+          const w = Number(v);
+          if (Number.isFinite(w) && w > 0) totalWeight += w;
+        }
+        if (totalWeight <= 0) {
+          /* Empty reel — fallback to global pool. */
+          for (const s of pool) reelPool.push(s);
+          perReelPools.push(reelPool);
+          continue;
+        }
+        const scale = TARGET_POOL_SIZE / totalWeight;
+        for (const [sid, weight] of Object.entries(wmap)) {
+          const w = Number(weight);
+          if (!Number.isFinite(w) || w <= 0) continue;
+          const key = String(sid).toUpperCase().trim();
+          const sym = _symLookup.get(key) || _symLookup.get(key.replace(/[^A-Z0-9]/g, ''));
+          if (!sym) continue; /* PAR has symbol not in GDD roster — skip silently */
+          /* Scale weight, ensure at least 1 entry for any non-zero PAR weight
+           * so rare symbols (e.g. Wild w/ weight 0.5) still appear at proper rate.
+           * Cap absolute count at 100000 (defense vs. adversarial sheet). */
+          const scaled = Math.max(1, Math.min(Math.round(w * scale), 100000));
+          for (let i = 0; i < scaled; i++) reelPool.push(sym);
+        }
+        if (reelPool.length === 0) {
+          /* Defensive: should never hit (covered by empty wmap above). */
+          for (const s of pool) reelPool.push(s);
+        }
+        perReelPools.push(reelPool);
+      }
+    }
+  }
+  /* UQ-DEEP-AB ATOM 2 — PAR/GDD paytable → runtime PAYTABLE const.
+   *
+   * Previously: runtime win-cycle koristi tier-based __tierMult * count,
+   * IGNORIŠUĆI GDD paytable. Diamond i Jack plaćaju ISTO.
+   *
+   * Sad: izgradi PAYTABLE = { symId: { '3': pay, '4': pay, '5': pay } } iz:
+   *   1. model.reelStrips.par_sheet_paytable (PAR-derived — highest priority)
+   *   2. model.paytable[] (GDD-derived — fallback)
+   *   3. SymbolEntry.pay (per-symbol fallback)
+   * Emit u runtime kao const PAYTABLE. detectWinCombos će lookup PAYTABLE[sym][matchLen]
+   * umesto da koristi placeholder tier multiplier.
+   */
+  const RUNTIME_PAYTABLE = {};
+  /* Source 3 (lowest priority): SymbolEntry.pay */
+  for (const sym of allSymsResolved) {
+    if (sym && sym.id && sym.pay && typeof sym.pay === 'object') {
+      RUNTIME_PAYTABLE[String(sym.id).toUpperCase()] = { ...sym.pay };
+    }
+  }
+  /* Source 2: model.paytable[] overrides */
+  if (Array.isArray(model.paytable)) {
+    for (const row of model.paytable) {
+      if (!row || !row.symbolId) continue;
+      const sid = String(row.symbolId).toUpperCase();
+      if (row.combos && typeof row.combos === 'object') {
+        RUNTIME_PAYTABLE[sid] = { ...(RUNTIME_PAYTABLE[sid] || {}), ...row.combos };
+      } else if (row.pay && typeof row.pay === 'object') {
+        RUNTIME_PAYTABLE[sid] = { ...(RUNTIME_PAYTABLE[sid] || {}), ...row.pay };
+      }
+    }
+  }
+  /* Source 1 (highest priority): PAR-derived paytable */
+  const _parPaytable = model && model.reelStrips && model.reelStrips.par_sheet_paytable;
+  if (_parPaytable && typeof _parPaytable === 'object') {
+    for (const [sid, combos] of Object.entries(_parPaytable)) {
+      if (!combos || typeof combos !== 'object') continue;
+      RUNTIME_PAYTABLE[String(sid).toUpperCase()] = { ...combos };
+    }
+  }
   /* ── Symbol registry for the win-cycle module ────────────────────────
      Classifies every symbol so detectWinCombos knows:
        • regularPay — HP/MP/LP, candidates for win-lines (each unique
@@ -1845,6 +1967,24 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
    * surrounding string is a JS template literal that would terminate
    * on any raw backtick character.) */
   const POOL = ${safeJSONInScript(pool.map(s => s.id))};
+  /* UQ-DEEP-AB ATOM 1 — PER-REEL POOLS (PAR-driven).
+   * Array of arrays — PER_REEL_POOLS[reelIdx] = [sid, sid, ...] expanded
+   * by real PAR weights. null kad GDD nema ParSheet (back-compat —
+   * randomSym fallback na global POOL).
+   * Zashtita: max 5MB total payload (5 reels × 100K weight per reel =
+   * 500K entries, ~3-character SIDs → ~2MB JSON. Safely under 5MB cap). */
+  const PER_REEL_POOLS = ${safeJSONInScript(
+    perReelPools ? perReelPools.map(p => p.map(s => s.id)) : null
+  )};
+  /* UQ-DEEP-AB ATOM 2 — RUNTIME PAYTABLE (GDD + PAR derived).
+   * { 'D': { '3': 50, '4': 200, '5': 1000 }, ... }
+   * Source priority: par_sheet_paytable > model.paytable > SymbolEntry.pay
+   * detectWinCombos lookups: PAYTABLE[sym.toUpperCase()][matchLen] */
+  const PAYTABLE = ${safeJSONInScript(RUNTIME_PAYTABLE)};
+  if (typeof window !== 'undefined') {
+    window.PER_REEL_POOLS = PER_REEL_POOLS;
+    window.PAYTABLE = PAYTABLE;
+  }
   const SHAPE = ${safeJSONInScript(shape)};
   const FREESPINS = ${safeJSONInScript(model.freeSpins || { enabled: false })};
   /* Wave AL-2 (4-GDD audit) — expose parser-detected feature kinds + name

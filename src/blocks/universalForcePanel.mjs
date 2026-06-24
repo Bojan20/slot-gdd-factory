@@ -279,6 +279,24 @@ export function resolveConfig(model = {}) {
   const cfg = { ...defaultConfig() };
   const src = (model && model.universalForcePanel) || {};
 
+  /* UQ-DEEP-AB ATOM 5 (2026-06-24) — Production env gate.
+   *
+   * Force panel is DEV/QA tool — paints chips that bypass natural RNG,
+   * trigger Free Spins / Bonus Buy / Big Win on demand. Regulator-fail
+   * (GLI-11 §3.1: no player-accessible operator tools) if shipped on
+   * production build.
+   *
+   * Default = enabled (current behavior) so existing demos work.
+   * Override via env vars (build-time):
+   *   SLOT_TARGET=prod         → force enabled = false (hard prod)
+   *   SLOT_TARGET=preview      → enabled = true (review)
+   *   SLOT_FORCE_PANEL=off     → explicit kill switch
+   *
+   * Model-level src.enabled === false still wins (explicit GDD override). */
+  const _env = (typeof process !== 'undefined' && process.env) ? process.env : {};
+  if (_env.SLOT_TARGET === 'prod' || _env.SLOT_FORCE_PANEL === 'off') {
+    cfg.enabled = false;
+  }
   if (src.enabled === false) cfg.enabled = false;
   if (src.includeKinds === 'auto' || isKindArray(src.includeKinds)) {
     cfg.includeKinds = src.includeKinds;

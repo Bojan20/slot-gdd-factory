@@ -139,7 +139,15 @@
       </div>
     </div>
     <div class="panel" style="margin-top: 16px;">
-      <h2>4 · preview</h2>
+      <h2 style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+        <span>4 · preview</span>
+        <a id="previewOpen" href="#" target="_blank" rel="noopener"
+           style="display:none;font-size:11px;font-weight:600;color:var(--bg);
+                  background:var(--accent);padding:4px 10px;border-radius:4px;
+                  text-decoration:none;text-transform:none;letter-spacing:0;">
+          open slot in new tab ↗
+        </a>
+      </h2>
       <div id="preview"><div class="empty">preview appears here after ingest succeeds</div></div>
     </div>
   </section>
@@ -221,6 +229,8 @@
     timeline.innerHTML = '';
     receiptsDiv.innerHTML = '<div class="empty">running…</div>';
     previewDiv.innerHTML = '<div class="empty">waiting for ingest to finish</div>';
+    const openLinkReset = document.getElementById('previewOpen');
+    if (openLinkReset) { openLinkReset.style.display = 'none'; openLinkReset.removeAttribute('href'); }
     const fd = new FormData();
     fd.append('gdd', state.gdd, state.gdd.name);
     if (state.par) fd.append('par', state.par, state.par.name);
@@ -314,7 +324,13 @@
      * doesn't need fetch() to /report or /ingest (UI handles that).
      * Without allow-same-origin, a malicious preview can't pivot to
      * /report/<other-slug> or POST /ingest. */
-    previewDiv.innerHTML = '<iframe src="/preview/' + encodeURIComponent(slug) + '" sandbox="allow-scripts"></iframe>';
+    const slotUrl = '/preview/' + encodeURIComponent(slug);
+    previewDiv.innerHTML = '<iframe src="' + slotUrl + '" sandbox="allow-scripts"></iframe>';
+    const openLink = document.getElementById('previewOpen');
+    if (openLink) {
+      openLink.href = slotUrl;
+      openLink.style.display = 'inline-block';
+    }
   }
 
   function renderReceipts(rep) {
