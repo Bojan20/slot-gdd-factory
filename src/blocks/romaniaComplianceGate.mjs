@@ -50,7 +50,7 @@ const DEFAULTS = Object.freeze({
   handpayThresholdRon: RO_HANDPAY_RON_DEFAULT,
 });
 
-export function defaultConfig() { return { ...DEFAULTS }; }
+export function defaultConfig() { return Object.freeze({ ...DEFAULTS }); }
 
 function clampInt(v, lo, hi) {
   if (typeof v !== 'number' || !isFinite(v)) return null;

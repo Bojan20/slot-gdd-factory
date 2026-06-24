@@ -230,40 +230,40 @@ if (typeof HookBus !== 'undefined' && typeof window !== 'undefined' && !window._
      to the requested value on preSpin so the next spin's win-decorator
      applies a real persistent multiplier, the pm-chip shows the value,
      and the canonical mult source-of-truth is single-owner. */
-  HookBus.on('preSpin', () => {
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('preSpin', () => {
     try {
       var _f = window.__FORCE_PERSISTENT_MULT__;
       if (typeof _f === 'number' && _f > PM_CURRENT) {
         PM_CURRENT = PM_MAX > 0 ? Math.min(PM_MAX, _f) : _f;
         _pmRenderChip(true);
-        HookBus.emit('onMultChange', { source: 'persistent', value: PM_CURRENT });
+        (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onMultChange', { source: 'persistent', value: PM_CURRENT }) : void 0);
       }
       window.__FORCE_PERSISTENT_MULT__ = null;
     } catch (_) {}
-  }, { priority: 30 });
+  }, { priority: 30 }) : void 0);
   /* F3 priority 30 — decorator class for the multiplier accumulator.
      Although this block mutates persistent state, the convention groups it
      with multiplierOrb + cascadeBooster (peer multiplier-decorators) so
      they all settle the running multiplier before telemetry observes it
      and before presenters read HookBus.getMult() for the rollup display. */
-  HookBus.on('onFsSpinResult', ({ events, totalWin } = {}) => {
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsSpinResult', ({ events, totalWin } = {}) => {
     if (PM_GROW_WIN === 0) return;
     const paid = (Array.isArray(events) && events.some(e => Number(e && e.payX) > 0))
               || Number(totalWin) > 0;
     if (!paid) return;
     pmOnWin();
     const v = pmGet();
-    if (v > 1) HookBus.emit('onMultChange', { source: 'persistent', value: v });
-  }, { priority: 30 });
+    if (v > 1) (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onMultChange', { source: 'persistent', value: v }) : void 0);
+  }, { priority: 30 }) : void 0);
   HookBus.on('onTumbleStep', ({ events } = {}) => {
     if (Array.isArray(events) && events.some(e => Number(e && e.payX) > 0)) {
       pmOnCascade();
       const v = pmGet();
-      if (v > 1) HookBus.emit('onMultChange', { source: 'persistent', value: v });
+      if (v > 1) (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onMultChange', { source: 'persistent', value: v }) : void 0);
     }
   }, { priority: 30 });
   HookBus.on('onFsTrigger', () => { pmReset(); }, { priority: 30 });
-  HookBus.on('onFsEnd',     () => { pmOnRoundEnd(); }, { priority: 30 });
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsEnd',     () => { pmOnRoundEnd(); }, { priority: 30 }) : void 0);
 }
 })();
 `;

@@ -64,7 +64,7 @@
 export const HISTORY_MODES = Object.freeze(['base', 'fs', 'gamble']);
 
 export function defaultConfig() {
-  return {
+  return Object.freeze({
     /* Industry-default ON — transaction history is regulator-mandated
      * (MGA 10-tx minimum, UKGC/NJ 50+) for player audit. The floating ≡
      * chip is the universal opt-out switch; a GDD that wires history into
@@ -105,7 +105,7 @@ export function defaultConfig() {
      * the build is vendor-neutral across markets; a GDD or balanceHud
      * integration wires the specific symbol (e.g. '€', '£', '$'). */
     currency: '',
-  };
+  });
 }
 
 export function resolveConfig(model = {}) {

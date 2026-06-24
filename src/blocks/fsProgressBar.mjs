@@ -299,9 +299,9 @@ export function emitFsProgressBarRuntime(cfg = defaultConfig()) {
         if (total > 0 && state.total !== total) state.total = total;
         fsProgressUpdate(state.total - remaining);
       });
-      HookBus.on('onFsRetrigger', function (payload) {
+      (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsRetrigger', function (payload) {
         fsProgressRetrigger(payload && payload.award);
-      });
+      }) : void 0);
       HookBus.on('onFsEnd', function () { fsProgressHide(); });
     }
   })();

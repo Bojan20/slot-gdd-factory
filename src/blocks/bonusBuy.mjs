@@ -272,7 +272,7 @@ const BONUS_BUY_CONFIRM = ${CONFIRM};
       /* W57.A7 — canonical camelCase event name (was 'bonus.buy.requested'
        * pre-rename). LEGO gate now blocks NEW colon/dot event names;
        * legacy survivors are explicitly whitelisted in lego-gate.mjs. */
-      HookBus.emit('onBonusBuyRequested', { scatterCount: BONUS_BUY_FORCE_SCATTERS, costX: BONUS_BUY_COST_X });
+      (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onBonusBuyRequested', { scatterCount: BONUS_BUY_FORCE_SCATTERS, costX: BONUS_BUY_COST_X }) : void 0);
     }
     if (typeof runOneBaseSpin === 'function') runOneBaseSpin();
     btn.setAttribute('disabled', 'disabled');
@@ -284,7 +284,7 @@ const BONUS_BUY_CONFIRM = ${CONFIRM};
        (b) fsm.phase.changed uses dot-notation, not canonical onFsTrigger
      The line-238 inline IS_BASE phase-check on click is sufficient gating;
      no per-spin disable/enable round-trip needed. */
-  HookBus.on('onFsTrigger', () => { btn.setAttribute('disabled', 'disabled'); });
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', () => { btn.setAttribute('disabled', 'disabled'); }) : void 0);
   HookBus.on('onFsEnd',     () => { btn.removeAttribute('disabled'); });
 })();
 

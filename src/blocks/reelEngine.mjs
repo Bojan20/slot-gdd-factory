@@ -748,16 +748,16 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
        time (placeholder math), so EVERY slam is effectively post-response.
        We still honor the payload.phase contract for future server-coupled
        PAR phase work. */
-    HookBus.on('onSlamRequested', () => {
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onSlamRequested', () => {
       if (!Array.isArray(RECT_REELS) || RECT_REELS.length === 0) {
         /* SVG / non-rectangular kinds — emit immediately so UI proceeds. */
-        HookBus.emit('onSlamComplete', { duration: 0 });
+        (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onSlamComplete', { duration: 0 }) : void 0);
         return;
       }
       if (!allReelsActive) {
         /* Slam arrived after spin already settled. Defensive synthetic
            Complete so listeners (e.g. forceSkip) don't hang. */
-        HookBus.emit('onSlamComplete', { duration: 0 });
+        (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onSlamComplete', { duration: 0 }) : void 0);
         return;
       }
       const slamStart = performance.now();
@@ -792,7 +792,7 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
         if (_slamFired) return;
         _slamFired = true;
         if (_fallbackId) { clearTimeout(_fallbackId); _fallbackId = null; }
-        HookBus.emit('onSlamComplete', { duration: Math.round(performance.now() - slamStart) });
+        (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onSlamComplete', { duration: Math.round(performance.now() - slamStart) }) : void 0);
       });
       /* Hard fallback — worst-case bounce path is well under 800ms even
          on the largest rectangular grids (6×5 cluster). 1500ms is a
@@ -801,9 +801,9 @@ export function emitReelEngineRuntime(cfg = defaultConfig()) {
         if (_slamFired) return;
         _slamFired = true;
         if (typeof _disposer === 'function') _disposer();
-        HookBus.emit('onSlamComplete', { duration: Math.round(performance.now() - slamStart) });
+        (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onSlamComplete', { duration: Math.round(performance.now() - slamStart) }) : void 0);
       }, 1500);
-    });
+    }) : void 0);
   }
 
   /* W48 BUGFIX — H&W per-cell respin mode (Boki 2026-06-16, second pass).

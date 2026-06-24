@@ -100,7 +100,7 @@ const DEFAULTS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 function isPositiveInt(v, lo, hi) {
@@ -307,7 +307,7 @@ export function emitGenericFeatureBannerRuntime(cfg = defaultConfig()) {
     /* One-shot reset: clear the armed effects after the next postSpin
        completes (HookBus.getMult drops back to baseline, force flags clear).
        Without this the multiplier would persist forever after one click. */
-    HookBus.on('postSpin', function() {
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('postSpin', function() {
       if (window.__FORCE_MULT_ONESHOT__ && typeof HookBus.resetMult === 'function') {
         HookBus.resetMult();
         window.__FORCE_MULT_ONESHOT__ = false;
@@ -315,7 +315,7 @@ export function emitGenericFeatureBannerRuntime(cfg = defaultConfig()) {
       if (window.__FORCE_CASCADE_ONESHOT__) window.__FORCE_CASCADE_ONESHOT__ = false;
       if (window.__FORCE_WAYS_ONESHOT__) window.__FORCE_WAYS_ONESHOT__ = false;
       if (window.__FORCE_CLUSTER_ONESHOT__) window.__FORCE_CLUSTER_ONESHOT__ = false;
-    }, { priority: -50 });
+    }, { priority: -50 }) : void 0);
   }
 
   if (document.readyState === 'loading') {

@@ -159,16 +159,16 @@ const AB_VALID_MOODS    = ['calm','tense','celebration','bonus'];
     return 'calm';
   }
 
-  HookBus.on('onSpinResult', function(payload){
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onSpinResult', function(payload){
     if (currentMood === 'bonus') return; /* bonus dominates */
     const win = (payload && Number.isFinite(payload.totalWin)) ? payload.totalWin : 0;
     const bet = (typeof window !== 'undefined' && Number.isFinite(window.BET_UNITS)) ? window.BET_UNITS : 1;
     setMood(moodFromWin(win, bet));
-  });
-  HookBus.on('onBigWinTierEnter', function(){ setMood('celebration'); });
+  }) : void 0);
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onBigWinTierEnter', function(){ setMood('celebration'); }) : void 0);
   HookBus.on('onBigWinTierExit',  function(){ setMood('calm'); });
   HookBus.on('onFsTrigger',       function(){ setMood('bonus'); });
-  HookBus.on('onFsEnd',           function(){ setMood('calm'); });
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsEnd',           function(){ setMood('calm'); }) : void 0);
   HookBus.on('onThemeChanged',    function(){
     /* Re-apply mood class to make sure new theme picks up the var. */
     document.body.classList.add('ambient-bg');

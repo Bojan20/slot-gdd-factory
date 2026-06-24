@@ -258,17 +258,17 @@ const SR_TOKEN_HOST = ${JSON.stringify(cfg.tokenHostPrefix)};
     }
   });
 
-  HookBus.on('onBigWinTierEnter', function(){
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onBigWinTierEnter', function(){
     if (suspended) return;
     btn.setAttribute('data-show', 'true');
-  });
+  }) : void 0);
   HookBus.on('onBigWinTierExit', function(){
     btn.setAttribute('data-show', 'false');
   });
-  HookBus.on('onFsTrigger', function(){
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', function(){
     suspended = true;
     btn.setAttribute('data-show', 'false');
-  });
+  }) : void 0);
   HookBus.on('onFsEnd', function(){ suspended = false; });
 })();
 `;

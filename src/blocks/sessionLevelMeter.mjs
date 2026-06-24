@@ -222,7 +222,7 @@ export function emitSessionLevelMeterRuntime(cfg = defaultConfig()) {
     }
   }
 
-  HookBus.on('onPlayerXpGained', render);
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onPlayerXpGained', render) : void 0);
   HookBus.on('onPlayerLevelUp', function(){
     render();
     root.setAttribute('data-flash', 'true');

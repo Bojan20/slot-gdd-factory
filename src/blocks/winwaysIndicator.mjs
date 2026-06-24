@@ -158,10 +158,10 @@ export function emitWinwaysIndicatorRuntime(cfg = defaultConfig()) {
     });
 
     // Always reset on preSpin so the chip is calm at the start of the next round.
-    HookBus.on('preSpin', function () {
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('preSpin', function () {
       chip.setAttribute('data-flash', 'false');
       if (resetTimer) { clearTimeout(resetTimer); resetTimer = null; }
-    });
+    }) : void 0);
   })();
   `;
 }

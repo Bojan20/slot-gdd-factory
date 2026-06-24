@@ -321,11 +321,11 @@ export function emitPyramidGridEngineRuntime(cfg = defaultConfig()) {
             symbol: (sCell.getAttribute('data-symbol') || '').trim(),
           });
         }
-        HookBus.emit('onPyramidSpinResult', {
+        (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onPyramidSpinResult', {
           duringFs: duringFs,
           topology: 'pyramid',
           cells: settledCells,
-        });
+        }) : void 0);
       }
     } catch (e) {
       try { if (typeof console !== 'undefined' && console.warn) console.warn('[pyramidGridEngine] onPyramidSpinResult emit failed', e); } catch (__) {}

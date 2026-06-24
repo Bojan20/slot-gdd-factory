@@ -75,7 +75,7 @@ const DEFAULTS = Object.freeze({
   payload: null,
 });
 
-export function defaultConfig() { return { ...DEFAULTS }; }
+export function defaultConfig() { return Object.freeze({ ...DEFAULTS }); }
 
 export function resolveConfig(model) {
   const cfg = { ...defaultConfig() };

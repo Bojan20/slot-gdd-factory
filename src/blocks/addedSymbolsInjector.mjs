@@ -311,12 +311,12 @@ if (typeof HookBus !== 'undefined' && typeof window !== 'undefined' && !window._
     _asiState.lastInjected = [];
   });
   // priority +30 — run BEFORE evaluation hooks (which sit at default 0).
-  HookBus.on('onSpinResult', function(ctx){
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onSpinResult', function(ctx){
     let phase = null;
     if (ctx && typeof ctx === 'object' && typeof ctx.phase === 'string') phase = ctx.phase;
     injectNow(phase);
-    try { HookBus.emit('onAddedSymbolsInjected', { count: _asiState.lastInjected.length, phase: _asiState.lastPhase }); } catch (_) {}
-  }, { priority: 30 });
+    try { (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onAddedSymbolsInjected', { count: _asiState.lastInjected.length, phase: _asiState.lastPhase }) : void 0); } catch (_) {}
+  }, { priority: 30 }) : void 0);
 }
 `;
 }

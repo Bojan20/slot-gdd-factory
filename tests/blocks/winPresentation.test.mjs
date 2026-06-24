@@ -40,12 +40,13 @@ t('defaultConfig: stable shape', () => {
   assert.equal(c.winCycle, true);
 });
 
-t('defaultConfig: returns fresh copy (not the frozen source)', () => {
+t('defaultConfig: returns fresh frozen copy each call', () => {
+  /* UQ-DEEP-AM FIX-3: top-level frozen; isolation by identity. */
   const a = defaultConfig();
   const b = defaultConfig();
   assert.notEqual(a, b, 'should be separate objects');
-  a.mode = 'cluster';
-  assert.equal(b.mode, 'per-line', 'mutating one should not affect the other');
+  assert.equal(Object.isFrozen(a), true, 'defaultConfig() must return a frozen object');
+  assert.equal(a.mode, b.mode, 'distinct calls share the same default mode');
 });
 
 t('resolveConfig: empty model → defaults', () => {

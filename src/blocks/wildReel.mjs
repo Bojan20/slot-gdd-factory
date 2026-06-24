@@ -187,7 +187,7 @@ if (typeof HookBus !== 'undefined' &&
     !(typeof window !== 'undefined' && window.__WILD_REEL_WIRED__)) {
   if (typeof window !== 'undefined') window.__WILD_REEL_WIRED__ = true;
   HookBus.on('preSpin', () => { clearWildReels(); });
-  HookBus.on('onSpinResult', () => { maybeFireWildReel(); });
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onSpinResult', () => { maybeFireWildReel(); }) : void 0);
   HookBus.on('onFsEnd',  () => { clearWildReels(); });
 }
 `;

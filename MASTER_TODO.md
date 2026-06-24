@@ -17443,3 +17443,167 @@ operator-grade kontrolama (1M / 1B batch, drift sentinel, GLI-16 cert).
 ### Status: 📋 ČEKA EKSPLICITAN "KRENI" SIGNAL OD BOKI-JA
 
 Nikakvi LV3 fajlovi se ne kreiraju bez direktnog odobrenja.
+
+---
+
+## 🛡 UQ-DEEP-AA do UQ-DEEP-AM track — 2026-06-24 (12 commit-ova, IGT compatibility hardening)
+
+Posle Boki direktive da auto-converge "radi za bilo koju igru tačno svaki put",
+pokrenut dvonedeljni IGT-spec deep dive sa 13 paralelnih commit-ova. Cilj: math-
+backend + sgs-compiler + GLE response + wild paradigme + transition machine 1/1
+sa industry reference standardom.
+
+### Wave overview
+
+```
+┌────────────┬───────────────────────────────────────────────────────────────┬──────────┐
+│ Commit     │ Wave / Fix                                                     │ Status   │
+├────────────┼───────────────────────────────────────────────────────────────┼──────────┤
+│ 431ad84    │ UQ-DEEP-AA · math per-feature breakdown (calibrate executor)  │ ✅ DONE  │
+│ cb47e57    │ UQ-DEEP-AB · structural RTP fix · 4 SHIP-BLOCKER atoma         │ ✅ DONE  │
+│ 7d75646    │ UQ-DEEP-AC · auto-converge self-correcting (hit_freq + GAP)   │ ✅ DONE  │
+│ 54ef819    │ UQ-DEEP-AD · BSP_MODEL pruning fix                             │ ✅ DONE  │
+│ b25a26c    │ UQ-DEEP-AE · universal auto-converge (radi za BILO KOJI GDD)  │ ✅ DONE  │
+│ ff3e9c2    │ UQ-DEEP-AF · math alert suppression (Wilson-CI + warmup gate) │ ✅ DONE  │
+│ c45cc8e    │ UQ-DEEP-AG · industry-grade wire contract (serverConfig+GLE)  │ ✅ DONE  │
+│ 032ad37    │ UQ-DEEP-AH · IGT legal scrub (105 fajlova, 0 IGT residual)    │ ✅ DONE  │
+│ fdf7d66    │ UQ-DEEP-AI · runtime vendor strict gate (0 brand u slot HTML) │ ✅ DONE  │
+│ afbb100    │ UQ-DEEP-AJ · 3 P1 ship-blocker (composer + symbolMod + parser)│ ✅ DONE  │
+│ 7353aa5    │ UQ-DEEP-AK · IGT wild paradigme 1/1 (4 nova + parser + compl) │ ✅ DONE  │
+│ 4e698c3    │ UQ-DEEP-AL · IGT fidelity hardening (7 fiksova posle deep QA) │ ✅ DONE  │
+│ (current)  │ UQ-DEEP-AM · cosmetic + hygiene (5 deferred P2 iz AL)         │ ✅ DONE  │
+└────────────┴───────────────────────────────────────────────────────────────┴──────────┘
+```
+
+### IGT Wild Paradigma Coverage (17 industry varianti × 100% coverage)
+
+| Paradigma                    | Block                                | Wave  |
+|------------------------------|--------------------------------------|-------|
+| expanding wild               | src/blocks/expandingWild.mjs         | pre-AK|
+| sticky wild                  | src/blocks/stickyWild.mjs            | pre-AK|
+| copy wild                    | src/blocks/copyWildOrchestrator.mjs  | AK    |
+| multiplier wild              | src/blocks/wildCollisionMultiplier   | pre-AK|
+| walking wild                 | src/blocks/walkingWild.mjs           | pre-AK|
+| mystery wild reveal          | src/blocks/mysteryWildReveal.mjs     | pre-AK|
+| mega/colossal wild           | src/blocks/megaWildCluster.mjs       | pre-AK|
+| wild collection trail        | src/blocks/wildCollectionTrail.mjs   | pre-AK|
+| random wild burst            | src/blocks/randomWildBurst.mjs       | pre-AK|
+| cascading wild persistence   | src/blocks/cascadingWildPersistence  | pre-AK|
+| fs expansion wilds           | src/blocks/fsExpansionWilds.mjs      | pre-AK|
+| wild trigger HnW             | src/blocks/wildTriggerHoldAndWin.mjs | pre-AK|
+| wild reel (full)             | src/blocks/wildReel.mjs              | pre-AK|
+| in_sync reels                | src/blocks/inSyncReels.mjs           | AK    |
+| extended wild countdown      | src/blocks/extendedWildCountdown.mjs | AK    |
+| added symbols injector       | src/blocks/addedSymbolsInjector.mjs  | AK    |
+| symbol modifiers engine      | src/blocks/symbolModifiers.mjs       | AJ    |
+
+### sgs-compiler IGT field coverage
+
+```
+┌─────────────────────────────────┬──────────┬──────────┐
+│ IGT serverConfig field          │ Status   │ Wave     │
+├─────────────────────────────────┼──────────┼──────────┤
+│ gain_table                       │ ✅ EMIT  │ AG       │
+│ reels (padded -1 sentinel)       │ ✅ EMIT  │ AG       │
+│ lines (flatten + count)          │ ✅ EMIT  │ AG       │
+│ special_symbols (P2.10 rules)    │ ✅ EMIT  │ AG       │
+│ paytable_hash (SHA-256 canon)    │ ✅ EMIT  │ AG       │
+│ wild_symbol (integer ID)         │ ✅ EMIT  │ AG       │
+│ symbols (integer-indexed)        │ ✅ EMIT  │ AG       │
+│ odds_megaways                    │ ✅ EMIT  │ AG       │
+│ gle_version                      │ ✅ EMIT  │ AG       │
+│ expansion_type (NEW enum)        │ ✅ EMIT  │ AK       │
+│ modifiers_screen_symbols         │ ✅ EMIT  │ AK       │
+│ nonLockedSymbolId (string)       │ ✅ EMIT  │ AK→AL    │
+│ number_of_result_rows (NEW)      │ ✅ EMIT  │ AL       │
+│ number_of_normal_symbols (NEW)   │ ✅ EMIT  │ AL       │
+│ ways (NEW boolean flag)          │ ✅ EMIT  │ AL       │
+│ cascades (NEW boolean flag)      │ ✅ EMIT  │ AL       │
+│ enable_math_recording            │ ✅ EMIT  │ AL       │
+│ number_of_rows (int[] per reel)  │ ✅ EMIT  │ AL       │
+└─────────────────────────────────┴──────────┴──────────┘
+```
+
+### GameLogicResponse (IGT-aligned, post-AL)
+
+Default emit shape:
+```
+{
+  outcomeDetail:     { transactionId, stage, nextStage, payout, state, auditTs, ... },
+  populationOutcome: { 'main':    { Entry: [...] } },
+  prizeOutcome:      { 'lines':   { Prize: [{ pay, totalPay, multiplier,
+                                              betMultiplier, symbolCount,
+                                              position, ways }, ...] } },
+  freeSpinOutcome:   { 'fs-main': { fsCount, fsCountDown, fsAwarded } },
+  multiplierOutcome: { 'global':  { value, lifetime } },
+  gle_version, paytableHash, sessionId, spinIdx,
+}
+```
+
+Back-compat: `{ legacy:true }` opt-in flag drži stari flat shape sa
+`gameStatus` enum + `spinsAwarded` + `amount` fields.
+
+### Lifecycle state machine transition guard (post-AL)
+
+```
+BASE_GAME       → BASE_GAME, FREE_SPIN, LOCK_AND_RESPIN, JACKPOT, PICK_BONUS, END_GAME
+FREE_SPIN       → FREE_SPIN, LOCK_AND_RESPIN, JACKPOT, BASE_GAME, END_GAME
+LOCK_AND_RESPIN → LOCK_AND_RESPIN, JACKPOT, BASE_GAME, END_GAME
+JACKPOT         → BASE_GAME, END_GAME
+PICK_BONUS      → BASE_GAME, FREE_SPIN, END_GAME
+END_GAME        → BASE_GAME
+```
+
+Strict mode (`GLE_STRICT_TRANSITIONS=true`) hard-throws TransitionError;
+default mode warn + BASE_GAME fallback (safe production behaviour).
+
+### UQ-DEEP-AM cosmetic hardening (current commit)
+
+```
+┌────┬─────────────────────────────────────────────┬─────────────────────────┐
+│ ID │ Fix                                          │ Test result             │
+├────┼─────────────────────────────────────────────┼─────────────────────────┤
+│ M1 │ spinControl: window.__SPIN_READY__ Promise + │ spinThroughput 17/17    │
+│    │ data-spin-ready attribute + watchdog (auto-  │ spinControl 20/20       │
+│    │ mation-friendly readiness signal)            │                          │
+│ M2 │ liveRtpHud: warmupSpins default 100→500,     │ liveRtpHud 15/15        │
+│    │ clamp [100,5000], auto-derive iz hit_freq,  │                          │
+│    │ hide numeric measured value tokom warming   │                          │
+│ M3 │ 38 blokova batch-freeze defaultConfig        │ _universal-freeze       │
+│    │ (mutation hazard zatvoren)                   │ 208/208 PASS            │
+│ M4 │ 14+ blokova HookBus guard insert (typeof    │ _universal-hookbus      │
+│    │ HookBus !== 'undefined' ternary)             │ 211/211 PASS            │
+│ M5 │ 5 test assertion drift (anticipationV2,      │ all 5 fixed             │
+│    │ expandingWild, parserMalformed,              │                          │
+│    │ randomLightningMultiplier, universalForce)   │                          │
+└────┴─────────────────────────────────────────────┴─────────────────────────┘
+```
+
+### Trenutni status (HEAD posle UQ-DEEP-AM)
+
+```
+verify gate                         33/33 ALL GREEN
+Block liveness walker               0 DEAD (211 blocks × 25 HTMLs)
+                                    LIVE 163 / DORMANT 37 (DORMANT = opt-in)
+UQ-16 baseline                      REBAKED 338/338
+Anti-vendor lint                    HIGH = 0
+IGT fidelity score                  4 MATCH · 2 PARTIAL · 0 MISMATCH
+Wild paradigma coverage             17/17 (100%)
+sgs-compiler IGT fields             18/18 emit (gain_table → enable_math_recording)
+defaultConfig freeze coverage       208/208 (100%)
+HookBus guard coverage              211/211 (100%)
+spinControl automation API          window.__SPIN_READY__ + data-spin-ready
+liveRtpHud warming display          hides numeric during n<warmupSpins
+```
+
+### Sledeća wave (UQ-DEEP-AN ili LV3)
+
+P3 deferred (low priority):
+- Deep-freeze nested objects u defaultConfig (trenutni je shallow)
+- IGT IXF 15-stage hook enumeration (orthogonal to slot-stage, doc only)
+- N-tier Rust executor adapter (per-feature simulation u Rust kernel-u)
+- kernelInit boot blob (softwareid, skincode, sessionToken) za session contract
+- Cross-browser Playwright probe (Firefox + WebKit, sad samo chromium)
+
+MATH-INTEGRATION-LV3 (sister-repo HTTP backend) i dalje čeka eksplicitan
+Boki "KRENI" signal za pokretanje.

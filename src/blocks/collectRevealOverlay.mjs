@@ -296,7 +296,7 @@ const CRO_AUTO_DISMISS = ${cfg.autoDismissMs};
     }
   });
 
-  HookBus.on('onCumulativeMeterThresholdHit', open);
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onCumulativeMeterThresholdHit', open) : void 0);
   HookBus.on('onFsTrigger', function(){ suspended = true; });
   HookBus.on('onFsEnd', function(){ suspended = false; });
 })();

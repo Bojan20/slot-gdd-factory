@@ -96,7 +96,7 @@ const DEFAULTS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 function clampInt(v, lo, hi) {

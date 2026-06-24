@@ -64,13 +64,15 @@ t('defaultConfig: stable shape', () => {
   eq(c.haptic, false);
 });
 
-t('defaultConfig: returns isolated copy', () => {
+t('defaultConfig: returns isolated frozen copy', () => {
+  /* UQ-DEEP-AM FIX-3: top-level frozen; isolation by identity. */
   const a = defaultConfig();
   const b = defaultConfig();
-  a.enabled = true;
-  a.durationMs = 9999;
-  eq(b.enabled, false);
-  eq(b.durationMs, 1200);
+  eq(Object.isFrozen(a), true);
+  eq(Object.isFrozen(b), true);
+  eq(a !== b, true);
+  eq(a.enabled, b.enabled);
+  eq(a.durationMs, b.durationMs);
 });
 
 /* ─── resolveConfig: enable + triggerMode ─────────────────────────── */

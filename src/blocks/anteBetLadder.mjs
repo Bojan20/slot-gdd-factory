@@ -366,7 +366,7 @@ if (typeof window !== 'undefined') {
   });
 
   // Lock during bonus phase so the player can't change rungs mid-feature.
-  HookBus.on('onFsTrigger', function(){ host.setAttribute('data-locked', 'true'); });
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', function(){ host.setAttribute('data-locked', 'true'); }) : void 0);
   HookBus.on('onFsEnd',     function(){ host.setAttribute('data-locked', 'false'); });
 
   applyRung(ABL_DEFAULT_INDEX);

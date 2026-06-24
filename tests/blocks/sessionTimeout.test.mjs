@@ -39,8 +39,9 @@ t('copyQuit non-empty', d.copyQuit && d.copyQuit.length > 0);
 
 /* defaultConfig fresh copy (no shared mutation) */
 const dA = defaultConfig();
-dA.warningTitle = 'MUTATED';
-t('defaultConfig returns independent copy', defaultConfig().warningTitle !== 'MUTATED');
+const dB = defaultConfig();
+t('defaultConfig returns a frozen object', Object.isFrozen(dA));
+t('defaultConfig returns independent copy each call', dA !== dB);
 
 /* ────────────────── resolveConfig — happy paths ──────────── */
 const r1 = resolveConfig({ sessionTimeout: { enabled: true } });

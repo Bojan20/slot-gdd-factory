@@ -394,7 +394,7 @@ if (typeof window !== 'undefined' && window.__TUMBLE_WIRED__) {
         });
     }
   }, { priority: 20 });
-  HookBus.on('onFsEnd', () => {
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsEnd', () => {
     /* Reset preserve-orbs state at the FS boundary so the next BASE spin
        doesn't carry orphan orbs. */
     if (typeof document !== 'undefined') {
@@ -405,7 +405,7 @@ if (typeof window !== 'undefined' && window.__TUMBLE_WIRED__) {
           c.classList.remove('is-refilling');
         });
     }
-  }, { priority: 10 });
+  }, { priority: 10 }) : void 0);
 }
 `;
 }

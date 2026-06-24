@@ -252,20 +252,20 @@ export function emitMultiplierLadderRuntime(cfg = defaultConfig()) {
       var win = Number(p.win || p.stepWin || 0);
       if (win > 0) climb();
     });
-    HookBus.on('onFsEnd', function () {
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsEnd', function () {
       fsActive = false;
       reset();
-    });
+    }) : void 0);
     /* Synchronise to authoritative value when the canonical owner emits.
      * Idempotent — render is the only DOM mutation. */
-    HookBus.on('onMultChange', function (p) {
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onMultChange', function (p) {
       if (!p) return;
       var v = Number(p.value || p.mult || 0);
       if (!Number.isFinite(v) || v <= 0) return;
       var idx = STEPS.indexOf(v);
       if (idx < 0) return;
       render(idx);
-    });
+    }) : void 0);
 
     /* Boot: pre-render at startTier but stay hidden until FS begins. */
     render(startTier);

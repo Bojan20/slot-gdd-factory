@@ -1287,7 +1287,7 @@ function _hwEnterPhase(p) {
      * — downstream blocks gate on payload.phase if they need finer
      * granularity. */
     if (p === 'INTRO' || p === 'START' || p === 'RUNNING') {
-      try { HookBus.emit('onHoldAndWinTrigger', { phase: p }); } catch (_) {}
+      try { (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onHoldAndWinTrigger', { phase: p }) : void 0); } catch (_) {}
     }
   }
 }
@@ -2047,7 +2047,7 @@ function hwEnd() {
          * grandInterruptionLock (and any future block listening on the
          * canonical feature payout signal) actually receives the event.
          * Carries feature='holdAndWin' so listeners can route. */
-        try { HookBus.emit('onFeaturePayout', { feature: 'holdAndWin', winX: ESCROW.winX, bet: ESCROW.bet, escrow: ESCROW }); } catch (_) {}
+        try { (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onFeaturePayout', { feature: 'holdAndWin', winX: ESCROW.winX, bet: ESCROW.bet, escrow: ESCROW }) : void 0); } catch (_) {}
       }
     } catch (_) {}
     HW_STATE.lockedCells.clear();
@@ -2101,7 +2101,7 @@ if (typeof HookBus !== 'undefined' && !(typeof window !== 'undefined' && window.
    * playHwBonusCelebration's own timer normally cleans up, this is the
    * seat-belt for the edge case Boki reported ("sjebo si u base game
    * reel spin reel land i mutne su celije"). */
-  HookBus.on('preSpin', () => {
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('preSpin', () => {
     try {
       var host = document.getElementById('gridHost');
       if (host && host.classList) {
@@ -2132,17 +2132,17 @@ if (typeof HookBus !== 'undefined' && !(typeof window !== 'undefined' && window.
        * NOT re-enter as a NEW H&W round (would mean nested-round). */
       if (HW_STATE.phase === 'INACTIVE') HW_STATE.armed = true;
     } catch (_) {}
-  }, { priority: 10 });
-  HookBus.on('postSpin', () => {
+  }, { priority: 10 }) : void 0);
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('postSpin', () => {
     if (!HW_STATE.active) {
       hwMaybeEnter();
     } else if (HW_STATE.phase === 'RUNNING') {
       hwAfterRespin();
     }
-  });
-  HookBus.on('onSpinResult', () => {
+  }) : void 0);
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onSpinResult', () => {
     if (HW_STATE.active) hwApplyLocks();
-  });
+  }) : void 0);
   HookBus.on('onFsTrigger', () => { hwEnd(); });
   HookBus.on('onFsEnd',     () => { hwEnd(); });
 
@@ -2153,7 +2153,7 @@ if (typeof HookBus !== 'undefined' && !(typeof window !== 'undefined' && window.
    * H&W was dead code. Mirrors the natural hwMaybeEnter contract:
    * activate ONLY if not already active + not in FS. Optional preSeed
    * payload (wild cell keys) defers to hwForceSeed for orb placement. */
-  HookBus.on('onWildTriggerHoldAndWinRequested', (payload) => {
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onWildTriggerHoldAndWinRequested', (payload) => {
     if (HW_STATE.active) return;
     /* If FS is currently active (FSM is mid-FS round), defer — let
      * onFsEnd run first; H&W and FS cannot interleave. */
@@ -2168,7 +2168,7 @@ if (typeof HookBus !== 'undefined' && !(typeof window !== 'undefined' && window.
     } catch (e) {
       try { if (typeof console !== 'undefined' && console.warn) console.warn('[holdAndWin] wildTrigger handler failed', e); } catch (_) {}
     }
-  });
+  }) : void 0);
 
   /* 2026-06-11 (Boki rule "pritisnes force dugme odradi se spin i onda
    * se dobije ishod forsa") — chip click no longer seeds orbs in-place.
@@ -2179,7 +2179,7 @@ if (typeof HookBus !== 'undefined' && !(typeof window !== 'undefined' && window.
    * reel pool refuses to accept the symbol on a heavily-stacked grid),
    * fall back to hwForceSeed on a slight delay so the chip is never
    * silent. */
-  HookBus.on('onForceFeatureRequested', (payload) => {
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onForceFeatureRequested', (payload) => {
     if (!payload || payload.kind !== 'hold_and_win') return;
     /* 2026-06-18 — cancel any in-flight fallback timer first so a
      * rapid second chip click doesn't queue two fallbacks (Boki bug C:
@@ -2215,7 +2215,7 @@ if (typeof HookBus !== 'undefined' && !(typeof window !== 'undefined' && window.
         } catch (_) {}
       });
     }, HW_T_FORCE_FALLBACK_MS);
-  });
+  }) : void 0);
 }
 `;
 }

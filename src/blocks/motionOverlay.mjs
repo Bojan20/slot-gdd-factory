@@ -88,7 +88,7 @@ const BOUNDS = Object.freeze({
   speedLineSpeedMs:   [100,  3000],
 });
 
-export function defaultConfig() { return { ...DEFAULTS }; }
+export function defaultConfig() { return Object.freeze({ ...DEFAULTS }); }
 
 function clampFloat(v, lo, hi) {
   if (typeof v !== 'number' || !isFinite(v)) return null;

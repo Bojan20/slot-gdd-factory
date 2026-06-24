@@ -285,7 +285,7 @@ const CM_RESET_MODE = ${JSON.stringify(cfg.resetMode)};
 
   render(0);
 
-  HookBus.on('onCoinCollected', function(payload){
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onCoinCollected', function(payload){
     const total = (payload && Number.isFinite(payload.sessionTotal)) ? payload.sessionTotal :
       (window.__COIN_COLLECT__ ? window.__COIN_COLLECT__.sessionTotal : 0);
 
@@ -320,7 +320,7 @@ const CM_RESET_MODE = ${JSON.stringify(cfg.resetMode)};
       }
     }
     render(total);
-  });
+  }) : void 0);
 })();
 `;
 }

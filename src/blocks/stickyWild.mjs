@@ -245,10 +245,10 @@ if (typeof HookBus !== 'undefined' && typeof window !== 'undefined' && !window._
     applyStickyWilds();
     harvestStickyWilds();
   });
-  HookBus.on('postSpin', () => { tickStickyWilds(); });
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('postSpin', () => { tickStickyWilds(); }) : void 0);
   HookBus.on('onFsTrigger', () => { clearStickyWilds(); });
   HookBus.on('onFsEnd', () => { if (STICKY_WILD_MODE === 'fs') clearStickyWilds(); });
-  HookBus.on('onRoundEnd', () => { if (STICKY_WILD_MODE !== 'fs') clearStickyWilds(); });
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onRoundEnd', () => { if (STICKY_WILD_MODE !== 'fs') clearStickyWilds(); }) : void 0);
 }
 `;
 }

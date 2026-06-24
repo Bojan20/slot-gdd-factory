@@ -259,7 +259,7 @@ const CC_RESET_FS_END   = ${cfg.resetOnFsEnd};
     }
   }
 
-  HookBus.on('onSpinResult', tally);
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onSpinResult', tally) : void 0);
   HookBus.on('onFsTrigger', function(){ if (CC_PAUSE_FS) suspended = true; });
   HookBus.on('onFsEnd', function(){
     suspended = false;

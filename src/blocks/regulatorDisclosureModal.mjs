@@ -90,7 +90,7 @@ const DISCLOSURE_MAP = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 export function resolveConfig(model = {}) {

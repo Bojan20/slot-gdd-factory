@@ -50,7 +50,7 @@ const DEFAULTS = Object.freeze({
   under21WeeklyCapEur: BE_UNDER21_CAP_EUR_DEFAULT,
 });
 
-export function defaultConfig() { return { ...DEFAULTS }; }
+export function defaultConfig() { return Object.freeze({ ...DEFAULTS }); }
 
 function clampInt(v, lo, hi) {
   if (typeof v !== 'number' || !isFinite(v)) return null;

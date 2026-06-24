@@ -51,7 +51,7 @@ const DEFAULTS = Object.freeze({
   realityCheckMs: CH_RC_DEFAULT,
 });
 
-export function defaultConfig() { return { ...DEFAULTS }; }
+export function defaultConfig() { return Object.freeze({ ...DEFAULTS }); }
 
 function clampInt(v, lo, hi) {
   if (typeof v !== 'number' || !isFinite(v)) return null;

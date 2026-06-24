@@ -93,7 +93,7 @@ const BOUNDS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 function isValidRgb(s) {

@@ -233,9 +233,9 @@ export function emitEnergyMeterRuntime(cfg = defaultConfig()) {
     }
     function reset() { render(0); }
 
-    HookBus.on('preSpin', function () {
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('preSpin', function () {
       if (!bootShown && showInBase) show();
-    });
+    }) : void 0);
     HookBus.on('onSpinResult', function (p) {
       if (fillOn === 'spin') { bump(PER, 'spin'); return; }
       if (!p) return;
@@ -246,19 +246,19 @@ export function emitEnergyMeterRuntime(cfg = defaultConfig()) {
         if (n > 0) bump(n * PER, 'scatter');
       }
     });
-    HookBus.on('onTumbleStep', function (p) {
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onTumbleStep', function (p) {
       if (fillOn !== 'tumble') return;
       var win = p ? Number(p.win || p.stepWin || 0) : 0;
       if (win > 0) bump(PER, 'tumble');
-    });
-    HookBus.on('onEnergyTick', function (p) {
+    }) : void 0);
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onEnergyTick', function (p) {
       if (fillOn !== 'custom') return;
       var d = p ? Number(p.delta || 1) : 1;
       bump(d, 'custom');
-    });
-    HookBus.on('onFsEnd', function () {
+    }) : void 0);
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsEnd', function () {
       if (resetOnFs) reset();
-    });
+    }) : void 0);
 
     /* Boot — show immediately if BASE-game visible, otherwise wait. */
     if (showInBase) { show(); render(0); }

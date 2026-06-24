@@ -30,7 +30,7 @@ const DEFAULTS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 export function resolveConfig(model) {
@@ -138,12 +138,12 @@ export function emitTriggerCountingRuntime(cfg = defaultConfig()) {
     }, { priority: 5 });
     /* Reset on preSpin so a held cache from the previous spin can't leak
        into the new one (helps DEV FS button + Playground display). */
-    HookBus.on('preSpin', () => {
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('preSpin', () => {
       if (typeof window !== 'undefined') {
         window.__LAST_SCATTER_COUNT__ = 0;
         window.__LAST_SCATTER_AWARD__ = 0;
       }
-    }, { priority: 5 });
+    }, { priority: 5 }) : void 0);
   }
 `;
 }

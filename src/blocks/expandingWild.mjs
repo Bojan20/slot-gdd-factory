@@ -380,7 +380,7 @@ function applyExpandingWilds(spinPayload) {
     /* Stage 1: anticipation glow on seed cell. */
     if (seedCell && !reducedMotion) {
       seedCell.classList.add('is-wild-anticipation');
-      try { HookBus.emit && HookBus.emit('expandingWild:stage1:anticipation', { col, row: seedRow }); } catch (_) {}
+      try { HookBus.emit && (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('expandingWild:stage1:anticipation', { col, row: seedRow }) : void 0); } catch (_) {}
       /* Remove anticipation class after Stage 1 to allow Stage 2 paint. */
       setTimeout(() => { try { seedCell.classList.remove('is-wild-anticipation'); } catch (_) {} }, STAGE1_MS);
     }
@@ -399,7 +399,7 @@ function applyExpandingWilds(spinPayload) {
       if (window.GRID && typeof window.GRID.set === 'function') {
         try { window.GRID.set(col, r, EXPANDING_WILD_SYMBOL); } catch (_) {}
       }
-      try { HookBus.emit && HookBus.emit('symbolOverride', { r, c: col, sym: EXPANDING_WILD_SYMBOL, source: 'expandingWild' }); } catch (_) {}
+      try { HookBus.emit && (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('symbolOverride', { r, c: col, sym: EXPANDING_WILD_SYMBOL, source: 'expandingWild' }) : void 0); } catch (_) {}
       /* Legacy class persistent (back-compat). */
       cell.classList.add('is-expanded-wild');
       if (reducedMotion) {
@@ -412,7 +412,7 @@ function applyExpandingWilds(spinPayload) {
         cell.classList.add('is-wild-expanding');
         /* Per-row settle event at stage2Start + STAGE1 + rowDelay (audio sync). */
         setTimeout(() => {
-          try { HookBus.emit && HookBus.emit('expandingWild:stage2:rowSettle', { col, row: r }); } catch (_) {}
+          try { HookBus.emit && (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('expandingWild:stage2:rowSettle', { col, row: r }) : void 0); } catch (_) {}
         }, stage2Start + rowDelay + STAGE2_MS);
         /* Transition to Stage 3 hold pulse after Stage 2 complete + final stagger. */
         setTimeout(() => {
@@ -428,12 +428,12 @@ function applyExpandingWilds(spinPayload) {
     /* Stage 2 start emit. */
     if (!reducedMotion) {
       setTimeout(() => {
-        try { HookBus.emit && HookBus.emit('expandingWild:stage2:expandStart', { col, direction: 'top-down', rows: ROWS }); } catch (_) {}
+        try { HookBus.emit && (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('expandingWild:stage2:expandStart', { col, direction: 'top-down', rows: ROWS }) : void 0); } catch (_) {}
       }, stage2Start);
       /* Stage 2 complete (last row + STAGE2_MS) + Stage 3 pulse start. */
       const stage2Total = stage2Start + (ROWS - 1) * STAGE2_ROW_STAGGER_MS + STAGE2_MS;
       setTimeout(() => {
-        try { HookBus.emit && HookBus.emit('expandingWild:stage2:expandComplete', { col }); } catch (_) {}
+        try { HookBus.emit && (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('expandingWild:stage2:expandComplete', { col }) : void 0); } catch (_) {}
         try { HookBus.emit && HookBus.emit('expandingWild:stage3:pulseStart', { col }); } catch (_) {}
       }, stage2Total);
     }
@@ -461,17 +461,17 @@ function applyExpandingWilds(spinPayload) {
         window.__LAST_SPIN_GRID_MUTATED__ = { source: 'expandingWild', count: expanded.length, ts: Date.now() };
       }
       try {
-        HookBus.emit('onReelsMutated', {
+        (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onReelsMutated', {
           source: 'expandingWild',
           expanded,
           wildSymbolId: EXPANDING_WILD_SYMBOL,
-        });
+        }) : void 0);
       } catch (_) {}
       /* Re-fire onSpinResult sa reEval marker — win-calc listeners
        * koji se vežu samo na onSpinResult će sad reskenirati grid sa
        * expanded wildovima i nadoknaditi missing pay. */
       try {
-        HookBus.emit('onSpinResult', { duringFs: false, reEval: true, source: 'expandingWild' });
+        (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onSpinResult', { duringFs: false, reEval: true, source: 'expandingWild' }) : void 0);
       } catch (_) {}
     }
   }
@@ -535,14 +535,14 @@ if (typeof HookBus !== 'undefined' && typeof window !== 'undefined' && !window._
    *   0 (eval) → 10 (expandingWild) → 22 (wildCollisionMult)
    * This way collision mult sees expanded cells in correct state and
    * only_if_winning gate reads finalized __LAST_SPIN_WIN__. */
-  HookBus.on('onSpinResult', (p) => { applyExpandingWilds(p); }, { priority: 10 });
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onSpinResult', (p) => { applyExpandingWilds(p); }, { priority: 10 }) : void 0);
   HookBus.on('preSpin', () => {
     clearExpandingWilds();
     /* UQ-DEEP-Q B5: clear stale mutation flag on every preSpin so the
      * downstream layers don't treat fresh spin as re-eval. */
     if (typeof window !== 'undefined') window.__LAST_SPIN_GRID_MUTATED__ = null;
   });
-  HookBus.on('onFsTrigger', () => { clearExpandingWilds(); });
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', () => { clearExpandingWilds(); }) : void 0);
 }
 `;
 }

@@ -48,10 +48,13 @@ t('defaultConfig: stable shape', () => {
   eq(c.position, 'center');
   eq(c.haptic, false);
 });
-t('defaultConfig isolated copy', () => {
+t('defaultConfig isolated frozen copy', () => {
+  /* UQ-DEEP-AM FIX-3: top-level frozen; isolation by identity. */
   const a = defaultConfig(); const b = defaultConfig();
-  a.enabled = true; a.durationMs = 9999;
-  eq(b.enabled, false); eq(b.durationMs, 900);
+  eq(a !== b, true);
+  eq(Object.isFrozen(a), true);
+  eq(a.enabled, b.enabled);
+  eq(a.durationMs, b.durationMs);
 });
 
 /* ─── enable toggle ────────────────────────────────────────────── */

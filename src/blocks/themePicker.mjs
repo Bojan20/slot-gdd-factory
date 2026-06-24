@@ -360,9 +360,9 @@ const TP_DEFAULT_INDEX  = ${cfg.defaultThemeIndex};
   });
 
   /* Auto-close menu when a spin starts — keeps focus on the game. */
-  HookBus.on('preSpin', function(){
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('preSpin', function(){
     if (btn.getAttribute('aria-expanded') === 'true') close('spin_start');
-  });
+  }) : void 0);
 })();
 `;
 }

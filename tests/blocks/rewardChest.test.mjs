@@ -68,13 +68,14 @@ t('defaultConfig: stable shape', () => {
   eq(c.pool.length, 4, 'default pool length');
 });
 
-t('defaultConfig: returns isolated copy', () => {
+t('defaultConfig: returns isolated frozen copy', () => {
+  /* UQ-DEEP-AM FIX-3: top-level frozen; isolation by identity. */
   const a = defaultConfig();
   const b = defaultConfig();
-  a.enabled = true;
-  a.revealMs = 9999;
-  eq(b.enabled, false, 'mutation does not leak');
-  eq(b.revealMs, 1600, 'mutation does not leak');
+  eq(a !== b, true, 'distinct objects each call');
+  eq(Object.isFrozen(a), true, 'top-level frozen');
+  eq(a.enabled, b.enabled, 'shared default');
+  eq(a.revealMs, b.revealMs, 'shared default');
 });
 
 t('defaultConfig: default pool kinds are whitelisted', () => {

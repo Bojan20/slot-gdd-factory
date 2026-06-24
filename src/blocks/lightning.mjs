@@ -206,7 +206,7 @@ if (typeof HookBus !== 'undefined') {
       if (sum > 0) HookBus.addMult(sum);
     }
   });
-  HookBus.on('onFsEnd', () => { clearLightning(); });
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsEnd', () => { clearLightning(); }) : void 0);
 }
 `;
 }

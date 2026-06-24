@@ -58,6 +58,10 @@ export function defaultConfig() {
     /* Minimum spinova pre nego što HUD počne da boji band crveno/amber.
      * Pre warmup-a → "WARMING (n/min)" neutral state. */
     warmupSpinsMin: 500,
+    /* UQ-DEEP-AM FIX-2 — explicit warmupSpins default + clamp [100, 5000].
+     * Auto-derive: max(warmupSpins, ceil(5/hit_freq)) sa final clamp.
+     * Pre fix-a: HUD prikazivao 223% RTP @10 spinova bez WARMING badge-a. */
+    warmupSpins: 500,
     /* CI multiplikator — adaptive na declared hit_freq. */
     ciZ: 2.576,                                  /* 99% CI (Wilson approximation) */
     /* Tier scale factor za amber → red threshold u CI band-u. */
@@ -79,6 +83,21 @@ export function resolveConfig(model = {}) {
   if (Number.isFinite(src.sparklineWindow)) {
     c.sparklineWindow = Math.max(10, Math.min(500, Math.round(src.sparklineWindow)));
   }
+  /* UQ-DEEP-AM FIX-2 — warmupSpins clamp [100, 5000]. Non-numeric → default 500. */
+  if (Number.isFinite(src.warmupSpins)) {
+    c.warmupSpins = Math.max(100, Math.min(5000, Math.round(src.warmupSpins)));
+  } else {
+    c.warmupSpins = 500;
+  }
+  /* Auto-derive iz hit_freq ako model.payback.hitFrequency present.
+   * Formula: max(cfg.warmupSpins, ceil(5/hit_freq)) sa final clamp [100, 5000]. */
+  const hf = Number((model && model.payback && model.payback.hitFrequency));
+  if (Number.isFinite(hf) && hf > 0) {
+    const derived = Math.ceil(5 / hf);
+    c.warmupSpins = Math.max(100, Math.min(5000, Math.max(c.warmupSpins, derived)));
+  }
+  /* Keep legacy alias warmupSpinsMin u sync sa novim warmupSpins (back-compat). */
+  c.warmupSpinsMin = c.warmupSpins;
   return c;
 }
 
@@ -170,8 +189,13 @@ export function emitLiveRtpHudRuntime(cfg = defaultConfig(), model = {}) {
   const volIdx = Number.isFinite(_pb.volatilityIdx) ? Math.max(1, Math.min(10, _pb.volatilityIdx)) : 5;
   /* Max win cap drives per-spin variance σ. High-vol slot σ ≈ √(rtp × maxWin) */
   const maxWinX = Number.isFinite(_pb.maxWinX) ? _pb.maxWinX : 5000;
-  /* Compute warmup spins: ≥ 4 / hit_freq (statistical floor) ∨ cfg min. */
-  const warmupCalc = Math.max(cfg.warmupSpinsMin, Math.ceil(4 / hitFreqNorm) * 5);
+  /* UQ-DEEP-AM FIX-2 — Compute warmup spins: max(cfg.warmupSpins, ceil(5/hitFreq))
+   * sa final clamp [100, 5000]. Pre fix-a: formula 4/hf*5 = isto ali bez upper clamp,
+   * pa rare-jackpot slot (hf=0.0001) imao bi 200000 → ekstreman pseudo-warmup.
+   * Sad clamp na 5000 maksimum, što industry praksa preferira. */
+  const _warmupBase = (typeof cfg.warmupSpins === 'number' && cfg.warmupSpins > 0)
+    ? cfg.warmupSpins : cfg.warmupSpinsMin;
+  const warmupCalc = Math.max(100, Math.min(5000, Math.max(_warmupBase, Math.ceil(5 / hitFreqNorm))));
   const cfgJSON = JSON.stringify({
     bandGreenPct: cfg.bandGreenPct,
     bandAmberPct: cfg.bandAmberPct,
@@ -261,7 +285,10 @@ export function emitLiveRtpHudRuntime(cfg = defaultConfig(), model = {}) {
     var t = document.getElementById('lrhTarget');
     var d = document.getElementById('lrhDrift');
     var nEl = document.getElementById('lrhN');
-    if (m) m.textContent = isFinite(measured) ? fmt(measured) : '—';
+    /* UQ-DEEP-AM FIX-2 — sakri numerički measured value tokom warming
+     * tako da user ne vidi "WITHIN CI 223%" sa N<warmupSpins. */
+    var inWarmup = (lrh.n < LRH_CFG.warmupSpins);
+    if (m) m.textContent = (isFinite(measured) && !inWarmup) ? fmt(measured) : '—';
     if (t) t.textContent = fmt(LRH_TARGET);
     if (d) { d.className = 'lrh-badge lrh-badge--' + band; d.textContent = bandLabel; }
     if (nEl) nEl.textContent = String(lrh.n);

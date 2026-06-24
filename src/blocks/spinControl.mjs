@@ -105,6 +105,11 @@ const VALID_STATES = Object.freeze([
 
 const DEFAULTS = Object.freeze({
   enabled: true,
+  /* UQ-DEEP-AM FIX-1 — schemaVersion stamp + lockAfterSpinMs watchdog window.
+   * Default 650ms je između industry-standard 400-800ms. Watchdog garantuje
+   * window.__SPIN_READY__ resolve i u edge slučajevima kad lifecycle ne završi. */
+  schemaVersion: '1',
+  lockAfterSpinMs: 650,
   /* Minimum spin ms before STOP becomes available. Below the threshold
    * the button stays in SPIN visual (disabled) so the player perceives
    * reels actually spinning. Same rationale as slamStop V1. */
@@ -174,6 +179,10 @@ export function resolveConfig(model = {}) {
   }
   if (isRgbTriplet(m.stopColor)) cfg.stopColor = m.stopColor.replace(/\s+/g, '');
   if (isRgbTriplet(m.skipColor)) cfg.skipColor = m.skipColor.replace(/\s+/g, '');
+
+  /* UQ-DEEP-AM FIX-1 — lockAfterSpinMs clamp [200, 2000] + schemaVersion preserve. */
+  cfg.lockAfterSpinMs = clampInt(m.lockAfterSpinMs != null ? m.lockAfterSpinMs : DEFAULTS.lockAfterSpinMs, 200, 2000);
+  cfg.schemaVersion = DEFAULTS.schemaVersion;
 
   return cfg;
 }
@@ -256,7 +265,7 @@ export function emitSpinControlMarkup(cfg = defaultConfig()) {
    * STOP  — solid square (universal media-stop glyph)
    * SKIP  — forward double-triangle (universal media-skip glyph) */
   return `
-  <button class="spinBtn" id="spinBtn" type="button" data-state="SPIN" aria-label="${aria}">
+  <button class="spinBtn" id="spinBtn" type="button" data-state="SPIN" data-spin-ready="true" aria-label="${aria}">
     <svg class="spinIcon spinIcon--spin" viewBox="0 0 32 32" aria-hidden="true">
       <path d="M5.6 17.4a10.5 10.5 0 0 0 18.7 5.2"/>
       <path d="M26.4 14.6A10.5 10.5 0 0 0 7.7 9.4"/>
@@ -278,6 +287,9 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
   if (!c.enabled) {
     return `
   /* ── spinControl BLOCK (disabled) — no runtime ─────────────────── */
+  /* UQ-DEEP-AM FIX-1: disabled stub still resolves __SPIN_READY__ Promise
+     tako da automation kod koji await-uje never wedge. */
+  window.__SPIN_READY__ = Promise.resolve(true);
   window.SpinControl = { setState: function () {}, getState: function () { return null; } };
 `;
   }
@@ -301,6 +313,43 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
     var SHOW_FS_INTRO         = ${c.showDuringFsIntro};
     var SHOW_FS_OUTRO         = ${c.showDuringFsOutro};
     var SHOW_CELEBRATION      = ${c.showDuringCelebration};
+    /* UQ-DEEP-AM FIX-1 — automation-friendly readiness signal.
+       __SPIN_READY__ Promise + data-spin-ready DOM attribute let test
+       framework await deterministically umesto da poll-uje DOM. Watchdog
+       (LOCK_AFTER_SPIN_MS) garantuje resolve i ako lifecycle ne završi. */
+    var LOCK_AFTER_SPIN_MS    = ${c.lockAfterSpinMs};
+    var __spinReadyResolve = null;
+    function _resetSpinReady () {
+      window.__SPIN_READY__ = new Promise(function (res) { __spinReadyResolve = res; });
+    }
+    function _markSpinReady () {
+      var b = document.getElementById('spinBtn');
+      if (b) b.setAttribute('data-spin-ready', 'true');
+      if (typeof __spinReadyResolve === 'function') {
+        try { __spinReadyResolve(true); } catch (e) {}
+        __spinReadyResolve = null;
+      }
+    }
+    function _markSpinBusy () {
+      var b = document.getElementById('spinBtn');
+      if (b) b.setAttribute('data-spin-ready', 'false');
+      _resetSpinReady();
+    }
+    var __spinReadyWatchdogId = null;
+    function _armSpinReadyWatchdog () {
+      if (__spinReadyWatchdogId) clearTimeout(__spinReadyWatchdogId);
+      __spinReadyWatchdogId = setTimeout(_markSpinReady, LOCK_AFTER_SPIN_MS);
+    }
+    function _disarmSpinReadyWatchdog () {
+      if (__spinReadyWatchdogId) { clearTimeout(__spinReadyWatchdogId); __spinReadyWatchdogId = null; }
+    }
+    /* Initial: button is ready (idle CTA). */
+    window.__SPIN_READY__ = Promise.resolve(true);
+    if (typeof HookBus !== 'undefined' && HookBus && typeof HookBus.on === 'function') {
+      HookBus.on('preSpin', function () { _markSpinBusy(); _armSpinReadyWatchdog(); });
+      HookBus.on('postSpin', function () { _markSpinReady(); _disarmSpinReadyWatchdog(); });
+      HookBus.on('onSlamComplete', function () { _markSpinReady(); _disarmSpinReadyWatchdog(); });
+    }
     var SPIN_LABEL            = ${JSON.stringify(c.spinAriaLabel)};
     var STOP_LABEL            = ${JSON.stringify(c.stopAriaLabel)};
     var SKIP_LABEL            = ${JSON.stringify(c.skipAriaLabel)};

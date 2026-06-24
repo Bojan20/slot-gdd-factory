@@ -118,7 +118,7 @@ const BOUNDS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 /* Validate "r,g,b" RGB string — 0..255 integers, no alpha. */
@@ -297,7 +297,7 @@ export function emitScatterCelebrationRuntime(model = {}) {
          the SPIN button into a SKIP CTA during the celebration phase.
          Was: spinControl registered for onScatterCelebrationStart but
          scatterCelebration never emitted it → unknown-event warning. */
-      try { HookBus.emit('onScatterCelebrationStart', { cellCount: cells.length, durationMs: durationMs }); } catch (_) {}
+      try { (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onScatterCelebrationStart', { cellCount: cells.length, durationMs: durationMs }) : void 0); } catch (_) {}
       /* Safety: don't leak the classes if the page hides/unmounts mid-flight. */
       setTimeout(() => {
         if (myToken !== _SCATTER_CELEBRATION_TOKEN) return; /* cancelled — skip handler already resolved */
@@ -305,7 +305,7 @@ export function emitScatterCelebrationRuntime(model = {}) {
         cells.forEach(c => c.classList.remove('cell--scatter-celebrate'));
         _scatterCelebrationActive = false;
         _scatterPendingResolve    = null;
-        try { HookBus.emit('onScatterCelebrationEnd', { reason: 'natural' }); } catch (_) {}
+        try { (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onScatterCelebrationEnd', { reason: 'natural' }) : void 0); } catch (_) {}
         resolve();
       }, durationMs);
     });
@@ -325,15 +325,15 @@ export function emitScatterCelebrationRuntime(model = {}) {
        the win-presentation peer-group (winPresentation, bigWinTier,
        paylineOverlay): runs after state-mutators (100) and payout
        evaluators (80) so the trigger's award math is already final. */
-    HookBus.on('onFsTrigger', () => {
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', () => {
       try { playScatterCelebration(); } catch (e) { /* defensive */ }
-    }, { priority: 50 });
+    }, { priority: 50 }) : void 0);
 
     /* Wave V6 — react to force-skip during the celebration phase. Bump
        the token so any in-flight setTimeout closure bails, strip the
        classes manually, then emit onSkipComplete so forceSkip block
        hides the button + clears the global flag. */
-    HookBus.on('onSkipRequested', (payload) => {
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onSkipRequested', (payload) => {
       if (!payload || payload.phase !== 'celebration') return;
       if (!_scatterCelebrationActive) return;
       const t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
@@ -351,9 +351,9 @@ export function emitScatterCelebrationRuntime(model = {}) {
         _r();
       }
       const duration = Math.round(((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - t0);
-      try { HookBus.emit('onScatterCelebrationEnd', { reason: 'skipped' }); } catch (_) {}
+      try { (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onScatterCelebrationEnd', { reason: 'skipped' }) : void 0); } catch (_) {}
       HookBus.emit('onSkipComplete', { phase: 'celebration', duration });
-    });
+    }) : void 0);
   }
 `;
 }

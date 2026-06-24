@@ -282,7 +282,7 @@ const AT_DEFAULT_LABEL = ${JSON.stringify(cfg.label)};
       sub: rewardText(payload.reward),
     });
   });
-  HookBus.on('onAchievementUnlocked', function(payload){
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onAchievementUnlocked', function(payload){
     if (!payload) return;
     show({
       kind: 'achievement',
@@ -290,7 +290,7 @@ const AT_DEFAULT_LABEL = ${JSON.stringify(cfg.label)};
       sub: String(payload.sub || ''),
       badge: payload.badge,
     });
-  });
+  }) : void 0);
 
   document.addEventListener('keydown', function(e){
     if (e.key === 'Escape' && stack.children.length > 0) {

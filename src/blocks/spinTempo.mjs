@@ -119,7 +119,7 @@ const PRESETS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 /* numeric bounds per knob — defends the runtime against absurd values that

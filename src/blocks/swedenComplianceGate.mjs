@@ -48,7 +48,7 @@ const SGA_JURISDICTIONS = Object.freeze(['SE', 'SGA', 'SE-SGA']);
 
 const DEFAULTS = Object.freeze({ enabled: false, jurisdiction: null, minSpinMs: SE_MIN_SPIN_MS_DEFAULT });
 
-export function defaultConfig() { return { ...DEFAULTS }; }
+export function defaultConfig() { return Object.freeze({ ...DEFAULTS }); }
 
 function clampInt(v, lo, hi) {
   if (typeof v !== 'number' || !isFinite(v)) return null;

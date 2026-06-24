@@ -527,7 +527,7 @@ if (typeof window !== 'undefined' && window.__BBM_WIRED__) {
       btn.setAttribute('disabled', 'disabled');
       if (btn.getAttribute('aria-expanded') === 'true') closeMenu('fs_start');
     });
-    HookBus.on('onFsEnd', function(){ btn.removeAttribute('disabled'); });
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsEnd', function(){ btn.removeAttribute('disabled'); }) : void 0);
   }
 })();
 

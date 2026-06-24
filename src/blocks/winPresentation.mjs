@@ -91,7 +91,7 @@ const LIMITS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 /* Merge defaults with model.winPresentation, accepting only known keys with
@@ -1206,7 +1206,7 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
     }, { priority: -10 });
     /* Also clear on preSpin so any retrigger / static-reroll path that
        short-circuits before settle still wipes the previous cycle visuals. */
-    HookBus.on('preSpin', () => {
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('preSpin', () => {
       cancelWinSymCycle();
       /* W50 — Reset the per-round LDW suppression flag at the START of the
          next spin so a stale "true" from the previous round doesn't bleed
@@ -1241,13 +1241,13 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
           clearWinHighlight();
         }
       } catch (_) {}
-    }, { priority: -10 });
+    }, { priority: -10 }) : void 0);
 
     /* Wave V6 — react to force-skip during rollup/celebration. Same exit
        mechanism as cancelWinSymCycle (token bump → next playOne() step
        short-circuits). We're the rollup owner for the 'rollup' phase so
        we are also responsible for the matching onSkipComplete emit. */
-    HookBus.on('onSkipRequested', (payload) => {
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onSkipRequested', (payload) => {
       if (!payload || (payload.phase !== 'rollup' && payload.phase !== 'celebration')) return;
       const t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
       cancelWinSymCycle();
@@ -1259,8 +1259,8 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
         if (typeof clearPaylineOverlay === 'function') clearPaylineOverlay();
       }
       const duration = Math.round(((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - t0);
-      HookBus.emit('onSkipComplete', { phase: payload.phase, duration });
-    });
+      (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onSkipComplete', { phase: payload.phase, duration }) : void 0);
+    }) : void 0);
   }
 
   /* Expose applyWinHighlight on window so headless QA tools can poke it

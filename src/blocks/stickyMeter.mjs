@@ -231,10 +231,10 @@ export function emitStickyMeterRuntime(cfg = defaultConfig()) {
       render(0);
       show();
     });
-    HookBus.on('preSpin',      function () { prevCount = count; });
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('preSpin',      function () { prevCount = count; }) : void 0);
     HookBus.on('postSpin',     function () { reCount('postSpin'); });
     HookBus.on('onSpinResult', function () { reCount('onSpinResult'); });
-    HookBus.on('onTumbleStep', function () { reCount('onTumbleStep'); });
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onTumbleStep', function () { reCount('onTumbleStep'); }) : void 0);
     HookBus.on('onFsEnd',      function () { fsActive = false; reset(); });
 
     /* Boot — show immediately in BASE if showInBase is set; otherwise

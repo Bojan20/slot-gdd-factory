@@ -210,7 +210,7 @@ const DEFAULTS = Object.freeze({
 export function defaultConfig() {
   /* Mutable fresh copy — caller may mutate.
      Group AD HIGH fix 17.06.2026 — DEFAULTS stays frozen, copy doesn't. */
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 export function resolveConfig(model = {}) {

@@ -217,17 +217,17 @@ export function emitReplayControlBarRuntime(cfg = defaultConfig()) {
     });
   });
 
-  HookBus.on('onSpinReplayStart',  syncButtons);
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onSpinReplayStart',  syncButtons) : void 0);
   HookBus.on('onSpinReplayEnd',    syncButtons);
   HookBus.on('onSpinReplayPaused', syncButtons);
   HookBus.on('onSpinResult',       syncButtons);
-  HookBus.on('onFsTrigger', function(){
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', function(){
     bar.setAttribute('data-locked', 'true');
     if (window.__SPIN_HISTORY__ && window.__SPIN_HISTORY__.isReplaying && window.__SPIN_HISTORY__.stop) {
       window.__SPIN_HISTORY__.stop();
     }
-  });
-  HookBus.on('onFsEnd', function(){ bar.setAttribute('data-locked', 'false'); syncButtons(); });
+  }) : void 0);
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsEnd', function(){ bar.setAttribute('data-locked', 'false'); syncButtons(); }) : void 0);
 
   syncButtons();
 })();

@@ -98,7 +98,7 @@ const BOUNDS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 function isValidRgb(s) {
@@ -373,30 +373,30 @@ export function emitRewardChestRuntime(cfg = defaultConfig()) {
   let triggerBinding;
   switch (cfg.triggerMode) {
     case 'big_win':
-      triggerBinding = `    HookBus.on('onBigWinTierEntered', function (evt) {
+      triggerBinding = `    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onBigWinTierEntered', function (evt) {
       var tier = evt && Number(evt.toTier);
       if (!Number.isFinite(tier)) tier = evt && Number(evt.tier);
       if (Number.isFinite(tier) && tier >= RC_CFG.bigWinMinTier) {
         _rcReveal({ source: 'big_win', tier: tier });
       }
-    });`;
+    }) : void 0);`;
       break;
     case 'bonus_complete':
       /* Fires when bonus round finishes — onFsEnd is the closest neutral
          signal for "round completed". For non-FS bonus blocks they would
          emit onFsEnd-shaped events through the same channel by convention. */
-      triggerBinding = `    HookBus.on('onFsEnd', function (evt) {
+      triggerBinding = `    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsEnd', function (evt) {
       _rcReveal({ source: 'bonus_complete', payload: evt || null });
-    });`;
+    }) : void 0);`;
       break;
     case 'fs_end':
-      triggerBinding = `    HookBus.on('onFsEnd', function (evt) {
+      triggerBinding = `    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsEnd', function (evt) {
       _rcReveal({ source: 'fs_end', payload: evt || null });
-    });`;
+    }) : void 0);`;
       break;
     case 'special_symbol':
     default:
-      triggerBinding = `    HookBus.on('onSpinResult', function (evt) {
+      triggerBinding = `    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onSpinResult', function (evt) {
       if (!evt) return;
       var symMap = evt.specialSymbolCounts || evt.scatterCounts || null;
       if (!symMap || typeof symMap !== 'object') return;
@@ -404,7 +404,7 @@ export function emitRewardChestRuntime(cfg = defaultConfig()) {
       if (Number.isFinite(n) && n >= RC_CFG.minSpecials) {
         _rcReveal({ source: 'special_symbol', symbol: RC_CFG.specialSymbol, count: n });
       }
-    });`;
+    }) : void 0);`;
       break;
   }
 

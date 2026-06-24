@@ -318,7 +318,7 @@ if (typeof HookBus !== 'undefined' &&
      accumulation runs AFTER state-mutators (winCap clamp) and payout
      evaluators have set ev.payX, but BEFORE telemetry/HUD readers consume
      HookBus.getMult(). Decorator order among siblings is not critical. */
-  HookBus.on('onSpinResult', () => {
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onSpinResult', () => {
     /* 2026-06-18 — Boki rule "kad se udje u h&w menja se mesto multipliera
      * na celijama. uostalom, sta ce multiplieri tu". Industry rule: base-
      * game multiplier chips DO NOT render during Hold & Win round — H&W
@@ -327,11 +327,11 @@ if (typeof HookBus !== 'undefined' &&
      * mesto" drift Boki reported. Guard on every annotateOrbs entry. */
     if (typeof window !== 'undefined' && window.HW_STATE && window.HW_STATE.active) return;
     annotateOrbs();
-  }, { priority: 30 });
+  }, { priority: 30 }) : void 0);
   /* On every tumble step (or single-eval step): sum visible orb values
      into the HookBus multiplier. In FS bonus-accumulate mode the result
      is the persistent BONUS_MULTIPLIER (rises across the round). */
-  HookBus.on('onTumbleStep', () => {
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onTumbleStep', () => {
     /* 2026-06-18 — same H&W guard; orb mult accumulation must NOT
      * fire during H&W round (cells are anchored bonus orbs, not
      * tumble-step multiplier orbs). */
@@ -348,13 +348,13 @@ if (typeof HookBus !== 'undefined' &&
         if (typeof FSM_renderHud === 'function') FSM_renderHud();
       }
     }
-  }, { priority: 30 });
+  }, { priority: 30 }) : void 0);
 
   /* 2026-06-18 — clear stale base-game multiplier orb chips when H&W
    * intro mounts. Strictly the .cell--orb cells that AREN'T H&W lock
    * targets (.is-locked-bonus owns the same data-orb-value attribute
    * for its own orb chip — those must stay). */
-  HookBus.on('onHoldAndWinIntro', () => {
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onHoldAndWinIntro', () => {
     try {
       const cells = document.querySelectorAll('.cell.cell--orb');
       cells.forEach(c => {
@@ -366,36 +366,36 @@ if (typeof HookBus !== 'undefined' &&
       /* FIX-8 M1 (2026-06-19) — orb render path is UI-critical. */
       try { if (typeof console !== 'undefined' && console.warn) console.warn('[multiplierOrb] cell render failed', e); } catch (_) {}
     }
-  }, { priority: 30 });
+  }, { priority: 30 }) : void 0);
   /* Fresh FS round → clear BONUS_MULTIPLIER so the next round starts from
      the FREESPINS.multiplier.start baseline. */
-  HookBus.on('onFsTrigger', () => {
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', () => {
     BONUS_MULTIPLIER = 0;
     if (typeof window !== 'undefined') window.BONUS_MULTIPLIER = 0;
-  }, { priority: 30 });
+  }, { priority: 30 }) : void 0);
   /* W47.S24 audit fix — FS round ENDS → clear BONUS_MULTIPLIER so the
      persisted FS bonus accumulator doesn't bleed into the next BASE
      spin's mult readout. Without this, the FS final mult stayed in
      window.BONUS_MULTIPLIER until the next FS trigger; any base-game
      reader of the global saw a stale FS value. */
-  HookBus.on('onFsEnd', () => {
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsEnd', () => {
     BONUS_MULTIPLIER = 0;
     if (typeof window !== 'undefined') window.BONUS_MULTIPLIER = 0;
-  }, { priority: 30 });
+  }, { priority: 30 }) : void 0);
   /* W47.S24 audit fix — preSpin GHOST-orb sweeper. If the engine
      re-paints reels mid-cycle (force-spin / fast respin / autoplay
      stage skip), orb classes from the PRIOR spin could be re-discovered
      on the new symbols by accumulateOrbMultiplier and stacked. Strip
      .cell--orb / .is-pulsing / data-orb-value at preSpin so the new
      spin's settle path is the single source of truth. */
-  HookBus.on('preSpin', () => {
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('preSpin', () => {
     if (typeof document === 'undefined') return;
     document.querySelectorAll('.cell--orb, .cell.is-pulsing').forEach(c => {
       c.classList.remove('cell--orb');
       c.classList.remove('is-pulsing');
       if (c.dataset) delete c.dataset.orbValue;
     });
-  }, { priority: 30 });
+  }, { priority: 30 }) : void 0);
 }
 `;
 }

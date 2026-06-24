@@ -264,7 +264,7 @@ if (typeof HookBus !== 'undefined') {
       revealMysterySymbols().catch(() => {});
     }
   });
-  HookBus.on('onFsEnd', () => { clearMysteryFlags(); });
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsEnd', () => { clearMysteryFlags(); }) : void 0);
 }
 `;
 }

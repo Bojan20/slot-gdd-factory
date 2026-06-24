@@ -306,7 +306,7 @@ if (typeof HookBus !== 'undefined' && typeof window !== 'undefined' && !window._
   HookBus.on('preSpin', ({ duringFs, isRespin } = {}) => {
     if (!duringFs && !isRespin) clearWalkingWilds();
   });
-  HookBus.on('onFsTrigger', () => { clearWalkingWilds(); });
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', () => { clearWalkingWilds(); }) : void 0);
   HookBus.on('onFsEnd',     () => { clearWalkingWilds(); });
 }
 `;

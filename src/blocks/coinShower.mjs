@@ -77,7 +77,7 @@ const BOUNDS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 function isValidRgb(s) {
@@ -224,20 +224,20 @@ export function emitCoinShowerRuntime(cfg = defaultConfig()) {
   let triggerBinding;
   switch (cfg.triggerMode) {
     case 'bonus_trigger':
-      triggerBinding = `    HookBus.on('onFsTrigger', function (evt) {
+      triggerBinding = `    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', function (evt) {
       fireCoinShower({ source: 'bonus_trigger', payload: evt || null });
-    });`;
+    }) : void 0);`;
       break;
     case 'cascade_chain':
-      triggerBinding = `    HookBus.on('onTumbleStep', function (evt) {
+      triggerBinding = `    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onTumbleStep', function (evt) {
       var chain = evt && Number(evt.chainLen);
       if (Number.isFinite(chain) && chain >= CS_CFG.chainMinLen) {
         fireCoinShower({ source: 'cascade_chain', chainLen: chain });
       }
-    });`;
+    }) : void 0);`;
       break;
     case 'any_win':
-      triggerBinding = `    HookBus.on('onSpinResult', function (evt) {
+      triggerBinding = `    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onSpinResult', function (evt) {
       var totalWin = evt && Number(evt.totalWin);
       var bet      = evt && Number(evt.bet);
       if (!Number.isFinite(totalWin) || totalWin <= 0) return;
@@ -247,17 +247,17 @@ export function emitCoinShowerRuntime(cfg = defaultConfig()) {
           fireCoinShower({ source: 'any_win', xWin: xWin });
         }
       }
-    });`;
+    }) : void 0);`;
       break;
     case 'big_win':
     default:
-      triggerBinding = `    HookBus.on('onBigWinTierEntered', function (evt) {
+      triggerBinding = `    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onBigWinTierEntered', function (evt) {
       var tier = evt && Number(evt.toTier);
       if (!Number.isFinite(tier)) tier = evt && Number(evt.tier);
       if (Number.isFinite(tier) && tier >= CS_CFG.bigWinMinTier) {
         fireCoinShower({ source: 'big_win', tier: tier });
       }
-    });`;
+    }) : void 0);`;
       break;
   }
 

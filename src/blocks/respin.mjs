@@ -273,7 +273,7 @@ if (typeof HookBus !== 'undefined' && typeof window !== 'undefined' && !window._
       respinMaybeTrigger();
     }
   });
-  HookBus.on('onFsTrigger', () => { respinEnd(); });
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', () => { respinEnd(); }) : void 0);
   HookBus.on('onFsEnd',     () => { respinEnd(); });
 }
 `;

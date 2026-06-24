@@ -263,9 +263,9 @@ if (typeof HookBus !== 'undefined') {
     const v = pfsGet();
     if (v > 0) HookBus.setMult(Math.max(HookBus.getMult(), v));
   });
-  HookBus.on('onFsEnd', () => {
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsEnd', () => {
     if (PFS_RESET_END) pfsReset();
-  });
+  }) : void 0);
 }
 `;
 }

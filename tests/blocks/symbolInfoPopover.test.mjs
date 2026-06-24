@@ -49,12 +49,13 @@ t('defaultConfig: stable shape', () => {
   eq(c.showPayoutHint, true);
 });
 
-t('defaultConfig: returns fresh copy', () => {
+t('defaultConfig: returns fresh frozen copy', () => {
+  /* UQ-DEEP-AM FIX-3: top-level frozen; isolation by identity. */
   const a = defaultConfig();
   const b = defaultConfig();
   ok(a !== b, 'separate objects');
-  a.enabled = false;
-  eq(b.enabled, true, 'mutation does not leak');
+  ok(Object.isFrozen(a), 'top-level frozen');
+  eq(a.enabled, b.enabled, 'shared default');
 });
 
 t('resolveConfig: empty model → defaults', () => {

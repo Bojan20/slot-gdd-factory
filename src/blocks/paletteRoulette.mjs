@@ -230,11 +230,11 @@ const PR_STORAGE_KEY= ${JSON.stringify(cfg.storageKey)};
 
   /* On theme change, re-apply current palette so accents stay
    * consistent over the new theme background. */
-  HookBus.on('onThemeChanged', function(){
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onThemeChanged', function(){
     const current = document.documentElement.getAttribute('data-palette');
     const p = current ? PR_PALETTES.find(function(x){ return x.id === current; }) : null;
     if (p) applyPalette(p, 'theme-sync');
-  });
+  }) : void 0);
 })();
 `;
 }

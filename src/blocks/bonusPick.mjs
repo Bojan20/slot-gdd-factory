@@ -369,16 +369,16 @@ export function emitBonusPickRuntime(cfg = defaultConfig()) {
     /* 2026-06-11 (Boki rule "pritisnes force dugme odradi se spin i onda
      * se dobije ishod forsa") — chip click arms pick modal for the next
      * postSpin so player sees: chip → reels spin → settle → pick modal. */
-    HookBus.on('onForceFeatureRequested', (payload) => {
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onForceFeatureRequested', (payload) => {
       if (!payload || payload.kind !== 'bonus_pick') return;
       window.__FORCE_BONUS_PICK_OPEN__ = true;
-    });
-    HookBus.on('postSpin', (p) => {
+    }) : void 0);
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('postSpin', (p) => {
       if (!window.__FORCE_BONUS_PICK_OPEN__) return;
       if (p && p.duringFs) return;
       window.__FORCE_BONUS_PICK_OPEN__ = false;
       try { bpOpen(); } catch (_) { /* defensive */ }
-    }, { priority: -60 });
+    }, { priority: -60 }) : void 0);
   }
 })();
 `;

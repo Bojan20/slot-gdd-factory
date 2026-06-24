@@ -370,16 +370,16 @@ const MPB_TIERS         = ${tiersJSON};
     if (active && e.key === 'Escape') { e.preventDefault(); dismiss('escape'); }
   });
 
-  HookBus.on('postSpin', function(){
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('postSpin', function(){
     if (suspended || active) return;
     spinsSinceLast++;
     if (spinsSinceLast < MPB_COOLDOWN) return;
     if (Math.random() < MPB_DROP_CHANCE) showChest();
-  });
-  HookBus.on('onFsTrigger', function(){
+  }) : void 0);
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', function(){
     suspended = true;
     if (active) dismiss('fs_start');
-  });
+  }) : void 0);
   HookBus.on('onFsEnd', function(){
     suspended = false;
     spinsSinceLast = MPB_COOLDOWN; // ready again after FS

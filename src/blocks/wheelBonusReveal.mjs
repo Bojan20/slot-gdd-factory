@@ -69,7 +69,7 @@ const BOUNDS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 function isValidRgb(s) {
@@ -298,11 +298,11 @@ export function emitWheelBonusRevealRuntime(cfg = defaultConfig()) {
     /* Escalation: weightedWheelSegments.mjs separately emits
        onWheelJackpotHit when the chosen segment carries a jackpotTier
        label. Treat this as forced-jackpot regardless of value threshold. */
-    HookBus.on('onWheelJackpotHit', function (evt) {
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onWheelJackpotHit', function (evt) {
       var label = (evt && (evt.label || evt.tier || 'JACKPOT'));
       var value = Number(evt && evt.value);
       _wrFire(label, Number.isFinite(value) ? value : 0, true, evt);
-    });
+    }) : void 0);
   }
 })();
 `;

@@ -318,24 +318,24 @@ if (typeof HookBus !== 'undefined') {
   HookBus.on('onSpinResult', () => {
     audioPlay('REEL_STOP');
   });
-  HookBus.on('onTumbleStep', ({ events } = {}) => {
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onTumbleStep', ({ events } = {}) => {
     audioPlay('TUMBLE_REMOVE');
     if (Array.isArray(events) && events.length > 0 && HookBus.getMult && HookBus.getMult() > 1) {
       audioPlay('MULT_GROW');
     }
-  });
-  HookBus.on('postSpin', ({ events } = {}) => {
+  }) : void 0);
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('postSpin', ({ events } = {}) => {
     if (!Array.isArray(events) || events.length === 0) return;
     const totalX = events.reduce((a, e) => a + (Number(e && e.payX) || 0), 0);
     if (totalX >= AUDIO_EPIC_X)        audioPlay('WIN_EPIC');
     else if (totalX >= AUDIO_MEGA_X)   audioPlay('WIN_MEGA');
     else if (totalX >= AUDIO_BIG_X)    audioPlay('WIN_BIG');
     else if (totalX > 0)               audioPlay('WIN_BASE');
-  });
-  HookBus.on('onFsTrigger', () => {
+  }) : void 0);
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', () => {
     audioPlay('FS_TRIGGER');
     setTimeout(() => audioPlay('FS_INTRO'), 200);
-  });
+  }) : void 0);
   HookBus.on('onFsEnd', () => {
     audioPlay('FS_OUTRO');
   });

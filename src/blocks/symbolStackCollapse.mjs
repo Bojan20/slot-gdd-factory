@@ -91,7 +91,7 @@ export function defaultConfig() {
   /* Mutable fresh copy — caller may spread/mutate.
      DEFAULTS itself stays frozen as single source of truth.
      Group AE CRITICAL fix 17.06.2026 — removed top-level freeze. */
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 function isValidRgb(s) {

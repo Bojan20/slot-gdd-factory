@@ -447,7 +447,7 @@ if (typeof HookBus !== 'undefined' && typeof window !== 'undefined' && !window._
         g = applyTransform(g, t.kind, t.params);
       }
       window.GRID_2D = g;
-      try { HookBus.emit('onSymbolModifiersApplied', { count: SYM_MOD_TRANSFORMS.length }); } catch (_) {}
+      try { (typeof HookBus !== 'undefined' && typeof HookBus.emit === 'function' ? HookBus.emit('onSymbolModifiersApplied', { count: SYM_MOD_TRANSFORMS.length }) : void 0); } catch (_) {}
     }
   });
 }

@@ -319,7 +319,7 @@ const VS_SUBTITLES     = ${subsJSON};
     });
   });
 
-  HookBus.on('onFsTrigger', function(){ host.setAttribute('data-locked', 'true'); });
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', function(){ host.setAttribute('data-locked', 'true'); }) : void 0);
   HookBus.on('onFsEnd',     function(){ host.setAttribute('data-locked', 'false'); });
 
   applyTier(VS_DEFAULT_INDEX);

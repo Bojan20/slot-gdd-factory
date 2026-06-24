@@ -254,7 +254,7 @@ const SHR_CAPTURE_FS = ${cfg.captureFs};
   state.step = step;
   state.getBuffer = function(){ return state.buffer.slice(); };
 
-  HookBus.on('onSpinResult', captureFrame);
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onSpinResult', captureFrame) : void 0);
   HookBus.on('onFsTrigger', function(){ inBonus = true; });
   HookBus.on('onFsEnd', function(){ inBonus = false; });
 })();

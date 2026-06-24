@@ -240,11 +240,11 @@ const PXP_LEVELS      = ${levelsJSON};
     const bet = (typeof window !== 'undefined' && Number.isFinite(window.BET_UNITS)) ? window.BET_UNITS : 1;
     award(PXP_PER_BET * bet, 'spin');
   });
-  HookBus.on('onCoinCollected', function(payload){
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onCoinCollected', function(payload){
     if (!payload || !Array.isArray(payload.cellIds)) return;
     award(PXP_PER_COIN * payload.cellIds.length, 'coin');
-  });
-  HookBus.on('onFsTrigger', function(){ if (PXP_PAUSE_FS) suspended = true; });
+  }) : void 0);
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', function(){ if (PXP_PAUSE_FS) suspended = true; }) : void 0);
   HookBus.on('onFsEnd',     function(){ suspended = false; });
 })();
 `;

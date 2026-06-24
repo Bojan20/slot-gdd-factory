@@ -301,7 +301,7 @@ if (typeof HookBus !== 'undefined') {
      honor the cap. Without in-place mutation the cap flag was set but
      the round still paid the uncapped amount.
      Priority 100 ensures clamp runs BEFORE presenter handlers. */
-  HookBus.on('postSpin', ({ events } = {}) => {
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('postSpin', ({ events } = {}) => {
     if (!Array.isArray(events) || events.length === 0) return;
     for (const ev of events) {
       const winX = Number(ev && ev.payX);
@@ -328,10 +328,10 @@ if (typeof HookBus !== 'undefined') {
       }
       window.__WIN_AWARD__ = clampedTotal;
     }
-  }, { priority: 100 });
-  HookBus.on('preSpin', () => {
+  }, { priority: 100 }) : void 0);
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('preSpin', () => {
     if (WIN_CAP_MODE === 'spin') winCapReset();
-  });
+  }) : void 0);
   HookBus.on('onFsTrigger', () => { winCapReset(); });
   HookBus.on('onFsEnd',     () => { winCapReset(); });
 }

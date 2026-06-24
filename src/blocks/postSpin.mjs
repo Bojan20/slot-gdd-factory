@@ -45,7 +45,7 @@ const DEFAULTS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 function clampInt(v, lo, hi) {
@@ -123,9 +123,9 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
     }, { priority: 0 });
     /* On its own postSpin emission, cache the latest events so playground /
        inspector tools can introspect without re-running detection. */
-    HookBus.on('postSpin', (p) => {
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('postSpin', (p) => {
       window.__LAST_POSTSPIN_EVENTS__ = (p && p.events) || [];
-    }, { priority: -20 });
+    }, { priority: -20 }) : void 0);
   }
 
   async function handlePostSpin(duringFs) {

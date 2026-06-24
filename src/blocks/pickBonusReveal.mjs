@@ -70,7 +70,7 @@ const BOUNDS = Object.freeze({
 });
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 function isValidRgb(s) {
@@ -238,23 +238,23 @@ export function emitPickBonusRevealRuntime(cfg = defaultConfig()) {
   let triggerBinding;
   switch (cfg.triggerEvent) {
     case 'onFsTrigger':
-      triggerBinding = `    HookBus.on('onFsTrigger', function (evt) {
+      triggerBinding = `    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', function (evt) {
       var label = (evt && (evt.label || evt.prizeLabel)) || 'FREE SPINS';
       _prFire(label, evt);
-    });`;
+    }) : void 0);`;
       break;
     case 'onWheelAwardCollected':
-      triggerBinding = `    HookBus.on('onWheelAwardCollected', function (evt) {
+      triggerBinding = `    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onWheelAwardCollected', function (evt) {
       var label = (evt && (evt.label || evt.segmentLabel || evt.prize)) || 'PRIZE';
       _prFire(label, evt);
-    });`;
+    }) : void 0);`;
       break;
     case 'onBonusPickResolved':
     default:
-      triggerBinding = `    HookBus.on('onBonusPickResolved', function (evt) {
+      triggerBinding = `    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onBonusPickResolved', function (evt) {
       var label = (evt && (evt.label || evt.prize || evt.tileLabel)) || 'PRIZE';
       _prFire(label, evt);
-    });`;
+    }) : void 0);`;
       break;
   }
 

@@ -228,7 +228,7 @@ const PB_WIN_MULT  = ${cfg.winMult};
   btn.addEventListener('keydown', function(e){
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
   });
-  HookBus.on('onFsTrigger', function(){ btn.setAttribute('data-locked', 'true'); });
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', function(){ btn.setAttribute('data-locked', 'true'); }) : void 0);
   HookBus.on('onFsEnd',     function(){ btn.setAttribute('data-locked', 'false'); });
 })();
 `;

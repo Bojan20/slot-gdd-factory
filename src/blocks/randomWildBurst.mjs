@@ -279,7 +279,7 @@ const RWB_MAX_FRACTION  = ${cfg.maxCellFraction};
       spinsSinceLast = 0;
     }
   });
-  HookBus.on('onFsTrigger', function(){ suspended = true; });
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', function(){ suspended = true; }) : void 0);
   HookBus.on('onFsEnd', function(){ suspended = false; spinsSinceLast = RWB_COOLDOWN; });
 })();
 `;

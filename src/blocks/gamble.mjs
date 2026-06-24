@@ -325,12 +325,12 @@ if (typeof HookBus !== 'undefined') {
       try { gambleOpen(1); } catch (_) { /* defensive */ }
     }
   }, { priority: -60 });
-  HookBus.on('onFsTrigger', () => { if (GAMBLE_STATE.active) gambleCollect(); });
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', () => { if (GAMBLE_STATE.active) gambleCollect(); }) : void 0);
   HookBus.on('onFsEnd',     () => { if (GAMBLE_STATE.active) gambleCollect(); });
-  HookBus.on('onForceFeatureRequested', (payload) => {
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onForceFeatureRequested', (payload) => {
     if (!payload || payload.kind !== 'gamble') return;
     window.__FORCE_GAMBLE_OPEN__ = true;
-  });
+  }) : void 0);
 }
 `;
 }

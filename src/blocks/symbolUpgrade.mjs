@@ -516,20 +516,20 @@ export function emitSymbolUpgradeRuntime(cfg = defaultConfig()) {
       }
     }, { priority: PRIORITY_NORMAL });
 
-    HookBus.on('onTumbleStep', () => {
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onTumbleStep', () => {
       _symbolUpgradeTumbleIndex += 1;
       _symbolUpgradeStats.lastTumble = _symbolUpgradeTumbleIndex;
       _suProcessTumble();
-    }, { priority: PRIORITY_NORMAL });
+    }, { priority: PRIORITY_NORMAL }) : void 0);
 
-    HookBus.on('postSpin', () => {
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('postSpin', () => {
       /* No DOM mutation — counter only. Lets downstream HUD blocks read
          window.__SYMBOL_UPGRADE_BASE_STATS__ at the round boundary. */
-    }, { priority: PRIORITY_NORMAL });
+    }, { priority: PRIORITY_NORMAL }) : void 0);
 
-    HookBus.on('onFsEnd', () => {
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsEnd', () => {
       _symbolUpgradeFsStats.count = 0;
-    }, { priority: PRIORITY_NORMAL });
+    }, { priority: PRIORITY_NORMAL }) : void 0);
   }
 
   if (typeof window !== 'undefined') {

@@ -490,7 +490,7 @@ if (typeof HookBus !== 'undefined') {
   HookBus.on('onFsEnd',     () => { if (WB_STATE.open) wbClose(); });
   /* Canonical lifecycle — host opens/closes the modal and feeds the
    * draw result back from the math layer. */
-  HookBus.on('wheelBonus.open',  () => { try { wbOpen();  } catch (_) {} });
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('wheelBonus.open',  () => { try { wbOpen();  } catch (_) {} }) : void 0);
   HookBus.on('wheelBonus.close', () => { try { wbClose(); } catch (_) {} });
   HookBus.on('wheelBonus.request', () => {
     if (typeof HookBus.emit === 'function') {
@@ -509,16 +509,16 @@ if (typeof HookBus !== 'undefined') {
    * dobije ishod forsa") — chip click arms the modal for the next postSpin
    * instead of opening immediately. Player sees: chip → reels spin →
    * settle → wheel modal opens. */
-  HookBus.on('onForceFeatureRequested', (payload) => {
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onForceFeatureRequested', (payload) => {
     if (!payload || payload.kind !== 'wheel_bonus') return;
     window.__FORCE_WHEEL_OPEN__ = true;
-  });
-  HookBus.on('postSpin', (p) => {
+  }) : void 0);
+  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('postSpin', (p) => {
     if (!window.__FORCE_WHEEL_OPEN__) return;
     if (p && p.duringFs) return;          /* honour FS-boundary safety */
     window.__FORCE_WHEEL_OPEN__ = false;
     try { wbOpen(); } catch (_) { /* defensive */ }
-  }, { priority: -60 });
+  }, { priority: -60 }) : void 0);
 }
 `;
 }

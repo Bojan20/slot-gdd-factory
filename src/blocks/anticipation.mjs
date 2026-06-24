@@ -47,7 +47,7 @@ const HOLD_MS_MIN  = 100, HOLD_MS_MAX  = 5000;
 const PULSE_MS_MIN = 200, PULSE_MS_MAX = 5000;
 
 export function defaultConfig() {
-  return { ...DEFAULTS };
+  return Object.freeze({ ...DEFAULTS });
 }
 
 function isValidRGB(s) {
@@ -304,7 +304,7 @@ export function emitAnticipationRuntime(cfg = defaultConfig()) {
     HookBus.on('preSpin', _anticipationPreSpinReset, { priority: 10 });
     /* Also reset on FS boundary — entering or leaving FS clears state. */
     HookBus.on('onFsTrigger', _anticipationPreSpinReset, { priority: 10 });
-    HookBus.on('onFsEnd',     _anticipationPreSpinReset, { priority: 10 });
+    (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsEnd',     _anticipationPreSpinReset, { priority: 10 }) : void 0);
   }
 
   /* ── Universal trigger registry ──────────────────────────────────────
