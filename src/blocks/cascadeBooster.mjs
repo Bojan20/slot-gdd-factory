@@ -178,6 +178,9 @@ export function emitCascadeBoosterRuntime(cfg = defaultConfig()) {
     var HIDE_BASE = ${JSON.stringify(cfg.hideAtBase)};
     var idx = 0;
     var depth = 0;
+    /* UQ-DEEP-AP E-5: pulse timer id — held so reset()/render() can cancel
+       pending bump-class clear when a new round arrives mid-pulse. */
+    var _pulseT = null;
     var chip = (typeof document !== 'undefined') ? document.getElementById('cbChip') : null;
 
     function cur() { return LADDER[Math.max(0, Math.min(LADDER.length - 1, idx))] || 1; }
@@ -188,9 +191,16 @@ export function emitCascadeBoosterRuntime(cfg = defaultConfig()) {
       chip.textContent = TEMPLATE.replace('{N}', String(v));
       var visible = !(HIDE_BASE && idx === 0);
       chip.setAttribute('data-visible', visible ? 'true' : 'false');
+      /* UQ-DEEP-AP E-5: hold the pulse timer id so reset() can cancel it.
+         Was leaking — turbo + retrigger burst left data-bumping=true on the
+         NEXT cascade chip after rapid reset. */
+      if (_pulseT) { try { clearTimeout(_pulseT); } catch (_) {} _pulseT = null; }
       if (bumping) {
         chip.setAttribute('data-bumping', 'true');
-        setTimeout(function () { chip && chip.setAttribute('data-bumping', 'false'); }, PULSE + 60);
+        _pulseT = setTimeout(function () {
+          _pulseT = null;
+          if (chip) chip.setAttribute('data-bumping', 'false');
+        }, PULSE + 60);
       }
     }
     function bump(source) {
@@ -206,6 +216,9 @@ export function emitCascadeBoosterRuntime(cfg = defaultConfig()) {
     function reset(reason) {
       idx = 0;
       depth = 0;
+      /* UQ-DEEP-AP E-5: cancel pending pulse so stale chip class doesn't
+         leak into the next cascade round. */
+      if (_pulseT) { try { clearTimeout(_pulseT); } catch (_) {} _pulseT = null; }
       render(false);
       try { window.HookBus.emit('onCascadeBoosterReset', { reason: reason || 'auto' }); } catch (_) {}
     }

@@ -180,7 +180,12 @@ function detectPayAnywhereWins() {
     return b.count - a.count;
   });
 
-  if (PAY_ANYWHERE_NO_WIN > 0 && Math.random() < PAY_ANYWHERE_NO_WIN) return [];
+  /* UQ-DEEP-AP F-3: seedable RNG — was bare Math.random(), suppressed
+     wins stochastically, broke RTP replay. */
+  var _payAnyRng = (typeof window!=='undefined'&&typeof window.__rng==='function')
+    ? window.__rng()
+    : ((typeof window!=='undefined'&&typeof window.rng==='function') ? window.rng() : Math.random());
+  if (PAY_ANYWHERE_NO_WIN > 0 && _payAnyRng < PAY_ANYWHERE_NO_WIN) return [];
   return events.slice(0, PAY_ANYWHERE_MAX_EVENTS);
 }
 

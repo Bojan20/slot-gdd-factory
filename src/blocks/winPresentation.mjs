@@ -926,7 +926,13 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
        da uvek produkuje vidljiv win pa primeni multiplier. Bez ovog gate-a,
        30% force-klika je padalo na noWinChance return [] pre nego što stigne
        baseline injection. */
-    if (Math.random() < ${c.noWinChance}
+    /* UQ-DEEP-AP F-5: seedable RNG — was bare Math.random(). */
+    function _wpRng(){
+      if (typeof window!=='undefined'&&typeof window.__rng==='function') return window.__rng();
+      if (typeof window!=='undefined'&&typeof window.rng==='function') return window.rng();
+      return Math.random();
+    }
+    if (_wpRng() < ${c.noWinChance}
         && !(typeof window !== 'undefined' && window.__FORCE_BASELINE_WIN__ === true)) {
       if (typeof runTumbleChain === 'function') {
         await runTumbleChain(() => [], { duringFs });

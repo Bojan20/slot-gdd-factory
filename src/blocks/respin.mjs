@@ -174,7 +174,13 @@ function respinMaybeTrigger() {
    * paid mode triggers ONLY via an explicit UI handler that emits
    * respinPaidCharge (currency deduction) before activating. */
   if (RESPIN_MODE === 'paid') return false;
-  if (Math.random() >= RESPIN_CHANCE) return false;
+  /* UQ-DEEP-AP F-1: seedable RNG hook — was bare Math.random(), broke
+     byte-exact replay. window.__rng (primary) / window.rng (legacy) /
+     Math.random (fallback). Same pattern as tumble.mjs:363, holdAndWin.mjs:822. */
+  var _respinRoll = (typeof window!=='undefined'&&typeof window.__rng==='function')
+    ? window.__rng()
+    : ((typeof window!=='undefined'&&typeof window.rng==='function') ? window.rng() : Math.random());
+  if (_respinRoll >= RESPIN_CHANCE) return false;
   return respinStart();
 }
 

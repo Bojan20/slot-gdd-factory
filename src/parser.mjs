@@ -2764,11 +2764,15 @@ export function extractPaybackProseMode(rawText, model) {
     /* Grana D-2 (2026-06-22) — multi-form RTP extractor. Cash Eruption uses
      * "RTP 96%"; Gates uses "RTP (96.50%) | Verovatnoća" tabela form;
      * Wrath uses "RTP target ..." (no explicit value — keep null). */
-    const rtpMatch = rawText.match(/\b(?:RTP|return\s*to\s*player|payback(?:\s*percentage)?)\s*[:=~≈]?\s*~?\s*(\d{2,3}(?:\.\d{1,2})?)\s*%/i)
-                 || rawText.match(/\bRTP\s*\(\s*(\d{2,3}(?:\.\d{1,2})?)\s*%?\s*\)/i)
-                 || rawText.match(/\bRTP\s*\|\s*(\d{2,3}(?:\.\d{1,2})?)\s*%/i);
+    /* UQ-DEEP-AP F-7: accept EU-decimal comma ("RTP 96,50%") alongside
+       US-style "96.50%". Without comma support, parseFloat("96,5") → 96,
+       which silently falls within the ±0.05% band check and corrupts the
+       gate. */
+    const rtpMatch = rawText.match(/\b(?:RTP|return\s*to\s*player|payback(?:\s*percentage)?)\s*[:=~≈]?\s*~?\s*(\d{2,3}(?:[.,]\d{1,2})?)\s*%/i)
+                 || rawText.match(/\bRTP\s*\(\s*(\d{2,3}(?:[.,]\d{1,2})?)\s*%?\s*\)/i)
+                 || rawText.match(/\bRTP\s*\|\s*(\d{2,3}(?:[.,]\d{1,2})?)\s*%/i);
     if (rtpMatch) {
-      const n = parseFloat(rtpMatch[1]);
+      const n = parseFloat(String(rtpMatch[1]).replace(',', '.'));
       if (Number.isFinite(n) && n >= 70 && n <= 99.99) {
         p.rtp = n;
         p.rtpSource = 'gdd-prose';
@@ -2803,12 +2807,13 @@ export function extractPaybackProseMode(rawText, model) {
    * Pattern: <SKU>-<variant>  <RTP>%  <Hold>%  where RTP + Hold = 100%.
    * Captures all variants visible in the prose; assigns first as primary. */
   if (p.rtpVariants == null) {
-    const variantRegex = /\b\d{2,4}-\d{3,5}-\d{3}\s+(\d{2,3}(?:\.\d{1,2})?)\s*%\s+(\d{1,3}(?:\.\d{1,2})?)\s*%/g;
+    /* UQ-DEEP-AP F-7: EU-decimal comma support in variant table. */
+    const variantRegex = /\b\d{2,4}-\d{3,5}-\d{3}\s+(\d{2,3}(?:[.,]\d{1,2})?)\s*%\s+(\d{1,3}(?:[.,]\d{1,2})?)\s*%/g;
     const variants = [];
     let mv;
     while ((mv = variantRegex.exec(rawText)) !== null) {
-      const rtp = parseFloat(mv[1]);
-      const hold = parseFloat(mv[2]);
+      const rtp = parseFloat(String(mv[1]).replace(',', '.'));
+      const hold = parseFloat(String(mv[2]).replace(',', '.'));
       if (Number.isFinite(rtp) && rtp >= 70 && rtp <= 99.99 &&
           Number.isFinite(hold) && hold >= 0 && hold <= 30 &&
           Math.abs((rtp + hold) - 100) < 0.51) {
@@ -2835,18 +2840,20 @@ export function extractPaybackProseMode(rawText, model) {
    * Industry distinguishes: hit = any pay including scatter/feature;
    * win = line wins only. */
   if (p.winFrequency == null) {
-    const wfm = rawText.match(/\bwin\s*(?:frequency|rate)\s*[:=~≈]?\s*~?\s*(\d{1,3}(?:\.\d{1,2})?)\s*%/i);
+    /* UQ-DEEP-AP F-7: EU-decimal comma support. */
+    const wfm = rawText.match(/\bwin\s*(?:frequency|rate)\s*[:=~≈]?\s*~?\s*(\d{1,3}(?:[.,]\d{1,2})?)\s*%/i);
     if (wfm) {
-      const n = parseFloat(wfm[1]);
+      const n = parseFloat(String(wfm[1]).replace(',', '.'));
       if (Number.isFinite(n) && n >= 1 && n <= 80) p.winFrequency = n;
     }
   }
 
   /* Hit frequency — "Hit frequency: 25%", "hit rate ~30%". */
   if (p.hitFrequency == null) {
-    const hf = rawText.match(/\bhit\s*(?:frequency|rate)\s*[:=~≈]?\s*~?\s*(\d{1,3}(?:\.\d{1,2})?)\s*%/i);
+    /* UQ-DEEP-AP F-7: EU-decimal comma support. */
+    const hf = rawText.match(/\bhit\s*(?:frequency|rate)\s*[:=~≈]?\s*~?\s*(\d{1,3}(?:[.,]\d{1,2})?)\s*%/i);
     if (hf) {
-      const n = parseFloat(hf[1]);
+      const n = parseFloat(String(hf[1]).replace(',', '.'));
       if (Number.isFinite(n) && n >= 5 && n <= 80) p.hitFrequency = n;
     }
   }

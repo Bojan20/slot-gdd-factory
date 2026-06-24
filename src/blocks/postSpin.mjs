@@ -293,9 +293,16 @@ export function emitPostSpinRuntime(cfg = defaultConfig()) {
       FSM.mult = Math.min(FSM.mult + FREESPINS.multiplier.step, FREESPINS.multiplier.cap);
     }
     /* Placeholder per-spin "win" — pure visual filler until the math layer
-       lands. ${(c.fakeWinChance * 100).toFixed(0)}% chance, max ${c.fakeWinMaxX}× bet (weighted toward zero). */
-    const fakeWin = Math.random() < ${c.fakeWinChance}
-      ? +(Math.random() * ${c.fakeWinMaxX} * (FSM.mult || 1)).toFixed(2)
+       lands. ${(c.fakeWinChance * 100).toFixed(0)}% chance, max ${c.fakeWinMaxX}× bet (weighted toward zero).
+       UQ-DEEP-AP F-5: seedable RNG — was bare Math.random(), fake-win
+       injection broke byte-exact replay. */
+    function _psRng(){
+      if (typeof window!=='undefined'&&typeof window.__rng==='function') return window.__rng();
+      if (typeof window!=='undefined'&&typeof window.rng==='function') return window.rng();
+      return Math.random();
+    }
+    const fakeWin = _psRng() < ${c.fakeWinChance}
+      ? +(_psRng() * ${c.fakeWinMaxX} * (FSM.mult || 1)).toFixed(2)
       : 0;
     FSM.totalWin += fakeWin;
 

@@ -970,6 +970,13 @@ export const HOOK_EVENTS = Object.freeze([
   /* Wave Z2 — scaffold-generated events */
   'onCollectStreakBonusInit',  // Owner: collectStreakBonus.mjs
   'wheelBonus.spin',  // Owner: wheelBonus.mjs (legacy dot, W57.A7 whitelist)
+  /* UQ-DEEP-AP G-10 — block lifecycle pair (symmetric setup/destroy).
+   * Auditor G recommended: with AO-6 stage gating, blocks dynamically
+   * turn on/off — without a destroy hook, listeners + timers leak.
+   * onBlockSetup {name, configHash?}  — fires when block IIFE finishes setup.
+   * onBlockDestroy {name, reason}     — fires from teardown caller. */
+  'onBlockSetup',
+  'onBlockDestroy',
 ]);
 
 /* Wave U4: canonical autoplay stop reasons. */
@@ -1008,6 +1015,13 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
     const EVENTS = ${JSON.stringify(Array.from(HOOK_EVENTS))};
     for (const e of EVENTS) handlers[e] = [];
 
+    /* UQ-DEEP-AP E-1 — last-payload cache for replay. Some blocks subscribe
+       AFTER an emit fires (late-loading IIFE). Without a replay buffer they
+       silently miss the signal (e.g. onFsTrigger, onLanguagePackApplied).
+       Set on every emit; readable via on(event, fn, {replayLast:true}). */
+    const _lastPayload = Object.create(null);
+    const _hasFired = Object.create(null);
+
     const MULT_IDENTITY = 1;
     let _mult = MULT_IDENTITY;
     let _multBase = MULT_IDENTITY;
@@ -1022,10 +1036,17 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
         return () => {};
       }
       const priority = (opts && typeof opts.priority === 'number') ? opts.priority : 0;
+      const replayLast = !!(opts && opts.replayLast);
       const entry = { fn, priority };
       handlers[event].push(entry);
       /* stable insertion order within same priority; higher priority first */
       handlers[event].sort((a, b) => b.priority - a.priority);
+      /* UQ-DEEP-AP E-1: replay last payload if requested AND emit has fired. */
+      if (replayLast && _hasFired[event]) {
+        try { fn(_lastPayload[event] || {}); } catch (err) {
+          console.error('[HookBus] replay handler threw on', event, err);
+        }
+      }
       return () => off(event, fn);
     }
 
@@ -1035,6 +1056,10 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
     }
 
     function emit(event, payload) {
+      /* UQ-DEEP-AP E-1: stamp last payload regardless of subscriber count
+         so late subscribers can replay. */
+      _lastPayload[event] = payload || {};
+      _hasFired[event] = true;
       const list = handlers[event];
       if (!list || list.length === 0) return [];
       const results = [];
@@ -1052,6 +1077,8 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
     }
 
     async function emitAsync(event, payload) {
+      _lastPayload[event] = payload || {};
+      _hasFired[event] = true;
       const list = handlers[event];
       if (!list || list.length === 0) return [];
       const results = [];
@@ -1066,6 +1093,12 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
         }
       }
       return results;
+    }
+
+    /* UQ-DEEP-AP E-1 helper: explicit replay accessor for testing /
+       debugging. Returns last payload if event has fired, undefined else. */
+    function getLastPayload(event) {
+      return _hasFired[event] ? _lastPayload[event] : undefined;
     }
 
     function getMult() { return _mult; }
@@ -1167,7 +1200,7 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
     }
 
     return {
-      on, off, once, emit, emitAsync, waitFor,
+      on, off, once, emit, emitAsync, waitFor, getLastPayload,
       getMult, setMult, setMultMax, addMult, resetMult, setMultBaseline,
       listenerCount,
       EVENTS,

@@ -541,6 +541,17 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
     function setLocale(loc) {
       if (!_isValidStr(loc)) return false;
       state.locale = loc;
+      /* UQ-DEEP-AP H-4 (Auditor H, WCAG 3.1.1 Language of Page):
+         sync <html lang="..."> so screen readers (NVDA/VoiceOver/JAWS)
+         pronounce content in the right voice. Was hardcoded "en" forever. */
+      try {
+        if (typeof document !== 'undefined' && document.documentElement) {
+          var langTag = String(loc).split(/[-_]/)[0];
+          if (langTag && langTag.length >= 2 && langTag.length <= 8) {
+            document.documentElement.setAttribute('lang', langTag);
+          }
+        }
+      } catch (_) {}
       var painted = _paintNodes();
       try {
         if (window.HookBus && typeof window.HookBus.emit === 'function') {

@@ -1459,20 +1459,31 @@ export function buildSlotHTML(model) {
 <html lang="en"><head>
 <meta charset="UTF-8">
 <!--
-  Wave D3 — Mobile viewport contract.
+  Wave D3 + UQ-DEEP-AP H-3/H-4 — Mobile viewport contract.
   • width=device-width   → use the real screen, not the 980px default.
-  • initial-scale=1 + max/min=1 → lock to 1:1, kill double-tap zoom.
+  • initial-scale=1      → start at 1:1.
   • viewport-fit=cover   → respect notch / home-bar safe-area-insets.
+
+  UQ-DEEP-AP H-3 (Auditor H, WCAG 1.4.4 Resize Text):
+  REMOVED maximum-scale=1 + minimum-scale=1 — those keys block pinch-zoom
+  on Android Chrome, low-vision users can't enlarge paytable, UKGC/MGA cert
+  fails WCAG 2.1 AA. Double-tap-zoom is now mitigated by touch-action: manipulation
+  on interactive targets instead of a global viewport lock.
 
   Without this, mobile Safari/Chrome render at 980px and the layout falls
   off-screen — hub touch targets become unreachable (K5 audit 20/120 fail).
+
+  UQ-DEEP-AP H-4 (Auditor H, WCAG 3.1.1 Language of Page):
+  html lang="en" is the initial paint value; i18n runtime updates
+  document.documentElement.lang on setLocale() so screen readers pronounce
+  Arabic/Hebrew content in the right voice.
 
   NOTE: deliberately NO interactive-widget=resizes-content key. WebKit
   Safari emits a console warning on that key ("not recognized + ignored") which
   trips the K4 cross-browser zero-console-error gate even though the page
   still works. Chromium-only feature, not worth the cross-browser noise.
 -->
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="${bg0}">
 <meta name="format-detection" content="telephone=no">
 <meta name="apple-mobile-web-app-capable" content="yes">

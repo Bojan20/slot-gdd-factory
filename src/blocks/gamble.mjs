@@ -236,14 +236,21 @@ function _gambleResolvePick(pickToken) {
        'tier-up' → win + advance stake one tier on the ladder gamble.
      One-shot per round; cleared after consumption. */
   let won;
+  /* UQ-DEEP-AP F-2: seedable RNG hook — was bare Math.random(), broke
+     byte-exact replay for gamble outcomes (real-money path). */
+  function _gambleRng(){
+    if (typeof window!=='undefined'&&typeof window.__rng==='function') return window.__rng();
+    if (typeof window!=='undefined'&&typeof window.rng==='function') return window.rng();
+    return Math.random();
+  }
   try {
     const _force = window.__FORCE_GAMBLE_OUTCOME__;
     if (_force === 'win' || _force === 'tier-up') won = true;
     else if (_force === 'lose') won = false;
-    else won = Math.random() < _gambleWinChance();
+    else won = _gambleRng() < _gambleWinChance();
     if (_force) window.__FORCE_GAMBLE_OUTCOME__ = null;
   } catch (_) {
-    won = Math.random() < _gambleWinChance();
+    won = _gambleRng() < _gambleWinChance();
   }
   const result = document.getElementById('gambleResult');
   if (won) {

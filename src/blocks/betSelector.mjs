@@ -444,11 +444,16 @@ export function emitBetSelectorCSS(cfg = defaultConfig()) {
     }
     .bet-chip__value { font-size: 16px; }
     .bet-chip__label { letter-spacing: 1px; }
+    /* UQ-DEEP-AP H-5 (Auditor H, WCAG 2.5.5 Target Size AAA):
+       was width/height/min-width/min-height = 36px → sub-44px touch target
+       on iPhone SE / small Android. Keep visual disc at 36px via padding-
+       boxed inner glyph, but enforce 44×44 hit zone with min-width/height. */
     .bet-step {
-      min-width: 36px;
-      min-height: 36px;
-      width: 36px;
-      height: 36px;
+      min-width: 44px;
+      min-height: 44px;
+      width: 44px;
+      height: 44px;
+      padding: 4px;
       font-size: 16px;
     }
   }
@@ -800,6 +805,27 @@ export function emitBetSelectorRuntime(cfg = defaultConfig()) {
           var chip2 = _chip();
           if (chip2) chip2.setAttribute('aria-expanded', 'false');
         }
+      });
+
+      /* UQ-DEEP-AP H-8 (Auditor H, WCAG 2.1.1 keyboard ergonomics):
+         ArrowUp / ArrowDown on the bet chip steps bet up/down without
+         requiring 4-key Tab-Enter-Tab-Enter dance. Stepper buttons
+         remain primary; this is a power-user shortcut. */
+      document.addEventListener('keydown', function (ev) {
+        if (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown') return;
+        var chip2 = _chip();
+        if (!chip2) return;
+        var active = document.activeElement;
+        /* Only act when focus is on the chip or panel (avoid hijacking
+           page-level scroll for users not interacting with bet UI). */
+        if (active !== chip2) {
+          var p = _panel();
+          if (!p || !p.contains(active)) return;
+        }
+        ev.preventDefault();
+        if (typeof betSelectorStep !== 'function') return;
+        if (ev.key === 'ArrowUp') betSelectorStep('up');
+        else if (ev.key === 'ArrowDown') betSelectorStep('down');
       });
 
       _renderAll();

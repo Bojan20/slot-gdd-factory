@@ -538,6 +538,17 @@ export function emitBalanceHudRuntime(cfg = defaultConfig()) {
       });
 
       window.HookBus.on('onFsEnd', function (p) {
+        /* UQ-DEEP-AP E-3: idempotency token. Auditor E flagged double-credit
+           race if onFsEnd is re-emitted by an interrupt-arbiter / hot-reload.
+           Token = freeSpins round id from payload, or wall-clock fallback. */
+        var fsRoundId = (p && (p.fsRoundId || p.roundId)) || ('autocoin:' + Date.now());
+        if (STATE._lastFsCreditedRoundId === fsRoundId) {
+          if (typeof console !== 'undefined' && console.warn) {
+            console.warn('[balanceHud] onFsEnd double-fire suppressed for round', fsRoundId);
+          }
+          return;
+        }
+        STATE._lastFsCreditedRoundId = fsRoundId;
         var totalWin = (p && Number.isFinite(p.totalWin) && p.totalWin >= 0)
           ? Math.min(p.totalWin, 1e10)
           : STATE.fsTotalWin;

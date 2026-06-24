@@ -748,12 +748,18 @@ export function emitGambleSecondaryRuntime(cfg = defaultConfig()) {
       if (['R','B','H','D','C','S'].indexOf(t) === -1) return;
       if (STATE.rounds >= CARD_MAX_ROUNDS) return;
 
-      /* Determine outcome. Color mode: 50% win. Suit mode: 25% win. */
+      /* Determine outcome. Color mode: 50% win. Suit mode: 25% win.
+         UQ-DEEP-AP F-4: seedable RNG hook — was bare Math.random(). */
+      function _gsRng(){
+        if (typeof window!=='undefined'&&typeof window.__rng==='function') return window.__rng();
+        if (typeof window!=='undefined'&&typeof window.rng==='function') return window.rng();
+        return Math.random();
+      }
       var win = false;
       if (CARD_MODE === 'color') {
-        win = (t === 'R' || t === 'B') && Math.random() < 0.5;
+        win = (t === 'R' || t === 'B') && _gsRng() < 0.5;
       } else {
-        win = (t === 'H' || t === 'D' || t === 'C' || t === 'S') && Math.random() < 0.25;
+        win = (t === 'H' || t === 'D' || t === 'C' || t === 'S') && _gsRng() < 0.25;
       }
       STATE.rounds++;
       var face = _cardFace();
@@ -786,7 +792,13 @@ export function emitGambleSecondaryRuntime(cfg = defaultConfig()) {
       if (STATE.ladderRung >= LADDER_RUNGS - 1) return;
       if (STATE.rounds >= LADDER_MAX_ROUNDS) return;
       STATE.rounds++;
-      var win = Math.random() < 0.5;
+      /* UQ-DEEP-AP F-4: seedable RNG for ladder step. */
+      function _gsLadderRng(){
+        if (typeof window!=='undefined'&&typeof window.__rng==='function') return window.__rng();
+        if (typeof window!=='undefined'&&typeof window.rng==='function') return window.rng();
+        return Math.random();
+      }
+      var win = _gsLadderRng() < 0.5;
       if (win) {
         STATE.ladderRung++;
         STATE.bank = _ladderValueAt(STATE.ladderRung);

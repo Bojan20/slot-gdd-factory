@@ -34,7 +34,9 @@
 
 import { checkCompliance } from './complianceGate.mjs';
 
-const MANIFEST_SCHEMA_VERSION = '1.0.0';
+/* UQ-DEEP-AP G-5 bump: schema_version 1.1.0 — added `stages` array +
+   `lifecycle_pairs` for IGT-style stage gating contract (Auditor G #5). */
+const MANIFEST_SCHEMA_VERSION = '1.1.0';
 
 /**
  * @typedef {Object} BuildMeta
@@ -126,6 +128,48 @@ function readFeatures(model) {
 }
 
 /**
+ * UQ-DEEP-AP G-5 (Auditor G — IGT layout residual adoption):
+ * Derive canonical lifecycle stages from the model so manifest carries
+ * `stages` array (post-AO-6 stage gating contract). Stages reflect what
+ * the runtime visibility walker will reveal/hide. Stable sorted for
+ * diff-friendly cert.
+ */
+function readStages(model) {
+  const stages = new Set(['boot', 'base']);
+  const fs = model && Array.isArray(model.features) ? model.features : [];
+  for (const f of fs) {
+    const k = f && typeof f.kind === 'string' ? f.kind.toLowerCase() : '';
+    if (k.includes('freespin') || k === 'fs') stages.add('freeSpins');
+    if (k.includes('holdandwin') || k.includes('hold_and_win')) stages.add('holdAndWin');
+    if (k.includes('bonusbuy') || k.includes('bonus_buy')) stages.add('bonusBuy');
+    if (k.includes('gamble')) stages.add('gamble');
+    if (k.includes('wheel')) stages.add('wheel');
+    if (k.includes('jackpot')) stages.add('jackpot');
+    if (k.includes('respin')) stages.add('respin');
+    if (k.includes('cluster')) stages.add('cluster');
+    if (k.includes('cascade') || k.includes('tumble')) stages.add('cascade');
+  }
+  return [...stages].sort();
+}
+
+/**
+ * UQ-DEEP-AP G-5 + G-10: emit symmetric lifecycle pairs the runtime
+ * promises (setup → destroy). Cert reader can verify each setup hook
+ * has a paired destroy hook, catching memory-leak regressions.
+ */
+function readLifecyclePairs(model) {
+  /* Static canonical pair set; runtime HookBus emits onBlockSetup +
+     onBlockDestroy per block. Stages can override the default set when
+     model declares custom stages in the future. */
+  const stages = readStages(model);
+  return stages.map((s) => ({
+    stage: s,
+    setup: 'onBlockSetup',
+    destroy: 'onBlockDestroy',
+  }));
+}
+
+/**
  * Build the op-package manifest object.
  * Does NOT serialise — caller decides JSON / file shape.
  *
@@ -179,6 +223,9 @@ export function buildManifest(args) {
     topology: readTopology(model),
     theme_tags: readThemeTags(model),
     features: readFeatures(model),
+    /* UQ-DEEP-AP G-5: IGT-style stage inventory + lifecycle pair contract. */
+    stages: readStages(model),
+    lifecycle_pairs: readLifecyclePairs(model),
     math_claim: mathClaim,
     compliance,
   };
