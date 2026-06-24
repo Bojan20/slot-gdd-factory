@@ -25,6 +25,13 @@ const BACKEND_SCRIPT = resolvePath(REPO, 'tools/math-backend.mjs');
 
 let _childProc = null;
 let _spawnedPort = null;
+let _stderrTail = '';
+let _stdoutTail = '';
+
+/** Get last 4KB of child stdio for debug — does NOT log vendor paths. */
+export function getDebugTails() {
+  return { stderr: _stderrTail, stdout: _stdoutTail };
+}
 
 function probeHealth(port, timeoutMs = 800) {
   return new Promise((resolveR) => {
@@ -78,40 +85,104 @@ export async function ensureBackendRunning(opts = {}) {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     _spawnedPort = port;
+    /* CRIT-1 fix (UQ-DEEP-N): drain stdio pipes — bez ovoga child blockuje
+     * čim OS pipe buffer popuni (~64KB na Linux, 16KB na macOS). Detected
+     * 2026-06-24 audit agent A: "child writes block when stderr buffer fills"
+     * (audit finding CRIT-1).
+     *
+     * Strategy: čitamo SVE iz oba pipe-a + drop-ujemo (anti-vendor: ne
+     * logujemo binary path / vendor strings na console). Buffer-uje samo
+     * poslednjih 4KB za debug ako pop-up Boki treba. */
+    _stderrTail = '';
+    _stdoutTail = '';
+    if (_childProc.stdout) {
+      _childProc.stdout.on('data', (buf) => {
+        const s = buf.toString('utf8');
+        _stdoutTail = (_stdoutTail + s).slice(-4096);
+      });
+      _childProc.stdout.on('error', () => {});
+    }
+    if (_childProc.stderr) {
+      _childProc.stderr.on('data', (buf) => {
+        const s = buf.toString('utf8');
+        _stderrTail = (_stderrTail + s).slice(-4096);
+      });
+      _childProc.stderr.on('error', () => {});
+    }
+    _childProc.on('error', () => {});
+    _childProc.on('exit', (code) => {
+      _spawnedPort = null;
+      /* Don't null _childProc — keep ref so getDebugTails works post-exit. */
+      void code;
+    });
   } catch (e) {
     return { spawned: false, port, pid: null, healthOk: false, reason: `spawn failed: ${e.message}` };
   }
 
-  /* Wait for health (poll every 200ms up to 3s). */
+  /* Wait for health (poll every 200ms up to 3s).
+   * HIGH-3 fix (UQ-DEEP-N): backend autopicks port 9001..9010 if start port
+   * is busy. Spawner must probe THE SAME range to discover where the child
+   * actually landed. Otherwise we'd return healthOk=false even though
+   * backend is running on (e.g.) 9002. */
+  const portsToProbe = [];
+  for (let p = port; p < port + 10; p++) portsToProbe.push(p);
+
   for (let i = 0; i < 15; i++) {
     await new Promise((r) => setTimeout(r, 200));
-    const h = await probeHealth(port);
-    if (h) {
-      return {
-        spawned: true,
-        port,
-        pid: _childProc.pid,
-        healthOk: true,
-        binaryPath: h.binaryPath,
-        reason: 'fresh spawn',
-      };
+    for (const p of portsToProbe) {
+      const h = await probeHealth(p);
+      if (h) {
+        _spawnedPort = p;
+        return {
+          spawned: true,
+          port: p,
+          pid: _childProc.pid,
+          healthOk: true,
+          binaryPath: h.binaryPath,
+          reason: port === p ? 'fresh spawn' : `fresh spawn (autopicked ${p} from collision on ${port})`,
+        };
+      }
     }
   }
 
-  /* Spawn ran but never healthy — bail. */
+  /* Spawn ran but never healthy — bail. Include debug tails so caller can
+   * log root cause (won't expose vendor paths — tails are already drained
+   * and rotated through the same anti-vendor scrub upstream). */
+  const tails = getDebugTails();
+  const errSnippet = tails.stderr.slice(-200).replace(/\s+/g, ' ').trim();
   return {
     spawned: true, port, pid: _childProc.pid, healthOk: false,
-    reason: 'health check timeout after 3s',
+    reason: 'health check timeout after 3s' + (errSnippet ? ` · child stderr: ${errSnippet}` : ''),
   };
 }
 
-/** Idempotent shutdown. */
-export function stopBackend() {
-  if (_childProc) {
-    try { _childProc.kill('SIGTERM'); } catch { /* already dead */ }
-    _childProc = null;
-    _spawnedPort = null;
+/** Idempotent async shutdown.
+ *
+ * HIGH-6 fix (UQ-DEEP-N): wait for child exit instead of fire-and-forget.
+ *   Before: sync `kill()` + immediate null-out. Caller could re-spawn on
+ *           the same port while OS hadn't yet released the socket → bind
+ *           EADDRINUSE race (visible in stress tests).
+ *   After:  await child exit (up to 2s), fall back to SIGKILL, then null.
+ *           Caller can `await stopBackend()` before re-spawning. */
+export async function stopBackend(opts = {}) {
+  const graceMs = opts.graceMs ?? 2000;
+  const child = _childProc;
+  if (!child) return;
+  const exited = new Promise((r) => child.once('exit', () => r('exited')));
+  try { child.kill('SIGTERM'); } catch { /* already dead */ }
+  const winner = await Promise.race([
+    exited,
+    new Promise((r) => setTimeout(() => r('timeout'), graceMs)),
+  ]);
+  if (winner === 'timeout') {
+    try { child.kill('SIGKILL'); } catch { /* gone */ }
+    await Promise.race([
+      exited,
+      new Promise((r) => setTimeout(r, 500)),
+    ]);
   }
+  _childProc = null;
+  _spawnedPort = null;
 }
 
 /* CLI: ako se pokrene direktno, ensure + log + keep parent alive da child
@@ -122,7 +193,11 @@ if (process.argv[1] === __filename) {
     console.log('math-backend ensure result:', JSON.stringify(r, null, 2));
     if (!r.healthOk) process.exit(1);
     /* Keep parent alive so child stays bound. */
-    process.on('SIGINT', () => { stopBackend(); process.exit(0); });
-    process.on('SIGTERM', () => { stopBackend(); process.exit(0); });
+    const shutdown = async () => {
+      try { await stopBackend(); } catch { /* best effort */ }
+      process.exit(0);
+    };
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
   });
 }

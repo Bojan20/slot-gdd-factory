@@ -50,7 +50,14 @@ if (!BINARY) {
  * response je tehnički numeric, ali binary path + future debug fields
  * MOGU da sadrže trademark strings ako operator drži repo u Vendor-
  * Imenovanom folder-u. Scrub before send. */
-const VENDOR_RX = /\b(IGT|Pragmatic\s+Play|Megaways|Cash[\s-]Eruption|Wolf[\s-]Run|Cleopatra|Buffalo\s+(?:King|Gold)|NetEnt|Microgaming|Scientific\s+Games|L&W|Light\s*&\s*Wonder|Play'?n\s*Go|Novomatic)\b/gi;
+/* HIGH-1 fix (UQ-DEEP-N): separator class widened.
+ * Before: `[\s-]` only caught space + hyphen. Underscore/period/empty
+ * (snake_case, dot.case, camelCase, slug-case) bypassed the scrub.
+ * After: `[\s\-_.]?` matches optional any-separator, so all of
+ *   "Cash Eruption" / "Cash-Eruption" / "Cash_Eruption" / "Cash.Eruption"
+ *   / "CashEruption"
+ * collapse to the same vendor placeholder. */
+const VENDOR_RX = /\b(IGT|Pragmatic[\s\-_.]?Play|Megaways|Cash[\s\-_.]?Eruption|Wolf[\s\-_.]?Run|Cleopatra|Buffalo[\s\-_.]?(?:King|Gold)|NetEnt|Microgaming|Scientific[\s\-_.]?Games|L&W|Light[\s\-_.]*&[\s\-_.]*Wonder|Play'?n[\s\-_.]?Go|Novomatic)\b/gi;
 function sanitizeStr(s) {
   if (typeof s !== 'string') return s;
   return s.replace(VENDOR_RX, '[vendor]');
@@ -67,20 +74,37 @@ function sanitizeObj(obj) {
   return obj;
 }
 
-/* In-memory session cache: sessionId → [outcomes]. */
+/* In-memory session cache: sessionId → entry.
+ *
+ * CRIT-2 fix (UQ-DEEP-N audit): true LRU, not FIFO.
+ *   Before: `SESSION_CACHE.keys().next().value` returns insertion-order key
+ *           — that's FIFO, not LRU. A hot session created first but accessed
+ *           every spin would be evicted while a cold idle session survived.
+ *   After:  every read bumps `lastAccessAt`; eviction picks smallest
+ *           `lastAccessAt` across the map (O(n) scan, n ≤ 100 = trivial). */
 const SESSION_CACHE = new Map();
 const CACHE_TTL_MS = 30 * 60 * 1000;  /* 30 min */
 const CACHE_MAX_SESSIONS = 100;
+
+function touchSession(entry) {
+  entry.lastAccessAt = Date.now();
+}
 
 function gcSessions() {
   const now = Date.now();
   for (const [id, s] of SESSION_CACHE) {
     if (now - s.createdAt > CACHE_TTL_MS) SESSION_CACHE.delete(id);
   }
-  /* Hard cap: drop oldest if over limit. */
+  /* True LRU eviction: scan for entry with smallest lastAccessAt. */
   while (SESSION_CACHE.size > CACHE_MAX_SESSIONS) {
-    const first = SESSION_CACHE.keys().next().value;
-    SESSION_CACHE.delete(first);
+    let oldestId = null;
+    let oldestTs = Infinity;
+    for (const [id, s] of SESSION_CACHE) {
+      const ts = s.lastAccessAt || s.createdAt;
+      if (ts < oldestTs) { oldestTs = ts; oldestId = id; }
+    }
+    if (oldestId == null) break;
+    SESSION_CACHE.delete(oldestId);
   }
 }
 
@@ -142,17 +166,33 @@ async function runBatch(model, spins = 100000, seed = 42) {
 
 async function ensureSession(sessionId, model) {
   gcSessions();
-  if (SESSION_CACHE.has(sessionId)) return SESSION_CACHE.get(sessionId);
+  if (SESSION_CACHE.has(sessionId)) {
+    const cached = SESSION_CACHE.get(sessionId);
+    touchSession(cached);  /* CRIT-2: bump LRU on hit. */
+    return cached;
+  }
+  /* CRIT-5 fix (UQ-DEEP-N): deterministic per-session seed. Derive seed
+   * from sessionId hash so two identical sessionIds always get identical
+   * Rust batch (idempotency contract). Before fix used `Date.now() & 0xffff`
+   * which made batches non-reproducible. */
+  let seedHash = 0x811c9dc5 >>> 0;  /* FNV-1a 32-bit basis */
+  for (let i = 0; i < sessionId.length; i++) {
+    seedHash ^= sessionId.charCodeAt(i);
+    seedHash = Math.imul(seedHash, 0x01000193) >>> 0;
+  }
+  const deterministicSeed = seedHash & 0xffff;
   /* Cold start: run 100k batch, cache aggregate metrics + per-bucket
    * outcome distribution. Per-spin sampler uses inverse CDF on these. */
-  const batch = await runBatch(model, 100000, Date.now() & 0xffff);
+  const batch = await runBatch(model, 100000, deterministicSeed);
+  const now = Date.now();
   const entry = {
     model,
     batch,
     spinsServed: 0,
     rtpSum: 0,
     hits: 0,
-    createdAt: Date.now(),
+    createdAt: now,
+    lastAccessAt: now,  /* CRIT-2: LRU bookkeeping. */
     /* Reservoir distribution from batch metrics. */
     hitRate: batch.hit_rate,
     rtpPerSpin: batch.rtp,

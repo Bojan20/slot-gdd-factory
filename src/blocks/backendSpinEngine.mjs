@@ -89,9 +89,22 @@ export function emitBackendSpinEngineRuntime(cfg = defaultConfig(), model = {}) 
 (function () {
   var BSE_CFG = ${cfgJSON};
   var BSE_MODEL = ${modelJSON};
-  var BSE_SESSION = 'slot-' + Math.random().toString(36).slice(2, 10);
+  /* CRIT-5 fix (UQ-DEEP-N): deterministic sessionId. Compute FNV-1a hash
+   * of pruned model JSON so two identical models always reuse same
+   * backend session → reproducible. Random sessionId is regression vs
+   * idempotency contract (Pass 1 = Pass 2 byte-identical). */
+  function bseFnv1a(s) {
+    var h = 0x811c9dc5 >>> 0;
+    for (var i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h.toString(36);
+  }
+  var BSE_SESSION = 'slot-' + bseFnv1a(JSON.stringify(BSE_MODEL));
   var BSE_STATUS = 'pending';
   var BSE_ERRORS = 0;
+  var BSE_INFLIGHT = false;  /* CRIT-3 helper: dedupe concurrent /spin fetches. */
 
   window.__BACKEND_SESSION_ID__ = BSE_SESSION;
   window.__BACKEND_STATUS__ = BSE_STATUS;
@@ -115,8 +128,20 @@ export function emitBackendSpinEngineRuntime(cfg = defaultConfig(), model = {}) 
       .catch(function () { clearTimeout(timeoutId); setStatus('offline'); });
   }
 
+  /* CRIT-3 fix (UQ-DEEP-N): validate payX bounds before trusting HUD.
+   * Backend may return NaN / Infinity / negative / absurdly large value if
+   * Rust binary crashes mid-batch or session metrics corrupt. Hard reject
+   * outside [0, MAX_PAYX]; MAX_PAYX = 100000x (industry hard cap, well above
+   * 50000x max-win games). */
+  var BSE_MAX_PAYX = 100000;
+  function validPayX(v) {
+    return typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= BSE_MAX_PAYX;
+  }
+
   function fetchSpin() {
     if (BSE_STATUS === 'offline') return Promise.resolve(null);
+    if (BSE_INFLIGHT) return Promise.resolve(null);  /* dedupe burst. */
+    BSE_INFLIGHT = true;
     var ctrl = new AbortController();
     var timeoutId = setTimeout(function () { ctrl.abort(); }, BSE_CFG.spinTimeoutMs);
     return fetch(BSE_CFG.backendBase + '/spin', {
@@ -128,6 +153,14 @@ export function emitBackendSpinEngineRuntime(cfg = defaultConfig(), model = {}) 
     .then(function (r) { clearTimeout(timeoutId); return r.ok ? r.json() : null; })
     .then(function (j) {
       if (!j || !j.ok) {
+        BSE_ERRORS++;
+        if (BSE_ERRORS >= BSE_CFG.maxConsecutiveErrors) setStatus('offline');
+        return null;
+      }
+      /* CRIT-3: bounds check. Reject malformed payX silently (HUD shows last
+       * good value), increment error counter, but don't go offline on single
+       * bad sample — could be transient kernel hiccup. */
+      if (!validPayX(j.payX)) {
         BSE_ERRORS++;
         if (BSE_ERRORS >= BSE_CFG.maxConsecutiveErrors) setStatus('offline');
         return null;
@@ -148,7 +181,7 @@ export function emitBackendSpinEngineRuntime(cfg = defaultConfig(), model = {}) 
         } catch (_) {}
       }
       /* Auto-update liveRtpHud sa backend-sampled payX rather than browser estimate. */
-      if (typeof window.__LIVE_RTP_RECORD__ === 'function' && typeof j.payX === 'number') {
+      if (typeof window.__LIVE_RTP_RECORD__ === 'function') {
         try { window.__LIVE_RTP_RECORD__(j.payX); } catch (_) {}
       }
       return j;
@@ -158,7 +191,8 @@ export function emitBackendSpinEngineRuntime(cfg = defaultConfig(), model = {}) 
       BSE_ERRORS++;
       if (BSE_ERRORS >= BSE_CFG.maxConsecutiveErrors) setStatus('offline');
       return null;
-    });
+    })
+    .then(function (j) { BSE_INFLIGHT = false; return j; });
   }
 
   window.__BACKEND_FETCH_SPIN__ = fetchSpin;

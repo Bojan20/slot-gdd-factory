@@ -159,10 +159,19 @@ export function emitLiveRtpHudRuntime(cfg = defaultConfig(), model = {}) {
 (function () {
   var LRH_CFG = ${cfgJSON};
   var LRH_TARGET = ${target.toFixed(6)};
+  /* CRIT-5 fix (UQ-DEEP-N): deterministic sessionId derived from target. */
+  function lrhFnv1a(s) {
+    var h = 0x811c9dc5 >>> 0;
+    for (var i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h.toString(36);
+  }
   var lrh = {
     n: 0, rtpSum: 0, hits: 0,
     history: [], /* sparkline samples */
-    sessionId: 'slot-' + Math.random().toString(36).slice(2, 10),
+    sessionId: 'slot-' + lrhFnv1a('hud:' + LRH_TARGET.toFixed(6)),
     backendOk: false,
   };
   window.__LIVE_RTP_HUD__ = lrh;

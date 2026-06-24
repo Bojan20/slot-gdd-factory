@@ -576,9 +576,14 @@ export function startServer(opts = {}) {
   });
 }
 
-/* Graceful shutdown — child math-backend goes with us. */
+/* Graceful shutdown — child math-backend goes with us.
+ * HIGH-6 fix (UQ-DEEP-N): await async stopBackend so SIGTERM doesn't
+ * orphan the child between kill() and process exit. */
 ['SIGINT', 'SIGTERM'].forEach((sig) => {
-  process.on(sig, () => { try { stopBackend(); } catch {} });
+  process.on(sig, async () => {
+    try { await stopBackend(); } catch { /* best effort */ }
+    process.exit(0);
+  });
 });
 
 /* ── CLI ─────────────────────────────────────────────────────────────── */

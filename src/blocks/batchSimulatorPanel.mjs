@@ -99,6 +99,20 @@ export function emitBatchSimulatorPanelRuntime(cfg = defaultConfig(), model = {}
 (function () {
   var BSP_BASE = ${JSON.stringify(cfg.backendBase)};
   var BSP_MODEL = ${JSON.stringify(pruned)};
+  /* CRIT-4 fix (UQ-DEEP-N): in-flight guard. Klijent može da klikne 100M
+   * dugme 10 puta dok prvi response stiže → 10 paralelnih batch-eva ka Rust
+   * binary (DoS). Promise flag dedupes svaki burst, button.disabled je samo
+   * vizualni hint (može da se by-passi keyboard / programmatically). */
+  var BSP_INFLIGHT = false;
+  /* CRIT-5 helper: deterministic seed per (model, spins) pair. */
+  function bspFnv1a(s) {
+    var h = 0x811c9dc5 >>> 0;
+    for (var i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h & 0xffff;
+  }
   function $ (id) { return document.getElementById(id); }
   function bspInit() {
     var panel = $('batchSimPanel');
@@ -106,16 +120,19 @@ export function emitBatchSimulatorPanelRuntime(cfg = defaultConfig(), model = {}
     var out = $('bspOut');
     panel.querySelectorAll('.bsp-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
+        if (BSP_INFLIGHT) return;  /* dedupe spam clicks. */
         var spins = Number(btn.dataset.spins);
         var label = btn.dataset.label;
         if (!Number.isFinite(spins) || spins <= 0) return;
+        BSP_INFLIGHT = true;
         panel.querySelectorAll('.bsp-btn').forEach(function (b) { b.disabled = true; });
         out.innerHTML = '⏳ Running <b>' + label + '</b> spins via Rust kernel...';
         var t0 = performance.now();
+        var seed = bspFnv1a(JSON.stringify(BSP_MODEL) + ':' + spins);
         fetch(BSP_BASE + '/batch', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ spins: spins, seed: Date.now() & 0xffff, model: BSP_MODEL }),
+          body: JSON.stringify({ spins: spins, seed: seed, model: BSP_MODEL }),
         })
         .then(function (r) { return r.json(); })
         .then(function (j) {
@@ -142,6 +159,7 @@ export function emitBatchSimulatorPanelRuntime(cfg = defaultConfig(), model = {}
         })
         .finally(function () {
           panel.querySelectorAll('.bsp-btn').forEach(function (b) { b.disabled = false; });
+          BSP_INFLIGHT = false;
         });
       });
     });
