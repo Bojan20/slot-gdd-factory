@@ -155,12 +155,30 @@ export function emitBatchSimulatorPanelMarkup(cfg = defaultConfig()) {
 
 export function emitBatchSimulatorPanelRuntime(cfg = defaultConfig(), model = {}) {
   if (!cfg.enabled) return `/* batchSimulatorPanel: disabled */`;
+  /* UQ-DEEP-AD (Boki 2026-06-24): BSP_MODEL je pruning ka backend converge call-u.
+   * Pre fix-a: samo payback + freeSpins → backend GAP inference NIJE imao
+   * signal da hold-and-win postoji → hnw_session_e ostao na default 44.0 →
+   * total 88.5% umesto 96.0% (off 7.5pp). Sada uključuje holdAndWin params
+   * + features kind list (mali wire payload, ne ceo model). */
   const pruned = {
+    name: typeof model.name === 'string' ? model.name : null,
     payback: model.payback || null,
     freeSpins: model.freeSpins ? {
+      enabled: model.freeSpins.enabled !== false,
       triggerProbability: model.freeSpins.triggerProbability,
       sessionExpectedValue: model.freeSpins.sessionExpectedValue,
+      sessionStdDev: model.freeSpins.sessionStdDev,
     } : null,
+    holdAndWin: model.holdAndWin ? {
+      enabled: model.holdAndWin.enabled !== false,
+      triggerCount: model.holdAndWin.triggerCount,
+      triggerProbability: model.holdAndWin.triggerProbability,
+      sessionExpectedValue: model.holdAndWin.sessionExpectedValue,
+      sessionStdDev: model.holdAndWin.sessionStdDev,
+    } : null,
+    features: Array.isArray(model.features)
+      ? model.features.filter(f => f && typeof f.kind === 'string').map(f => ({ kind: f.kind }))
+      : [],
   };
   return `
 /* ── batchSimulatorPanel BLOCK runtime ──────────────────────────── */
