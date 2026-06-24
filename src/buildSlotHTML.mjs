@@ -158,6 +158,13 @@ import {
   emitFreeSpinsRuntime,
   resolveConfig as resolveFreeSpinsConfig,
 } from './blocks/freeSpins.mjs';
+/* LV3 — Live RTP HUD overlay (MATH-INTEGRATION-LV3, Boki 2026-06-24). */
+import {
+  emitLiveRtpHudCSS,
+  emitLiveRtpHudMarkup,
+  emitLiveRtpHudRuntime,
+  resolveConfig as resolveLiveRtpHudConfig,
+} from './blocks/liveRtpHud.mjs';
 import {
   emitReelEngineCSS,
   resolveConfig as resolveReelEngineConfig,
@@ -1478,6 +1485,7 @@ ${emitGambleCSS(resolveGambleConfig(model))}
 ${emitSuperSymbolCSS(resolveSuperSymbolConfig(model))}
 
 ${emitFreeSpinsCSS(resolveFreeSpinsConfig(model))}
+${emitLiveRtpHudCSS(resolveLiveRtpHudConfig(model))}
 ${emitDevToolsCSS()}
 </style></head><body>
 
@@ -1595,6 +1603,9 @@ ${emitFreeSpinsToastMarkup(resolveFreeSpinsConfig(model))}
 <span hidden id="devExpWildBtn" aria-hidden="true"></span>
 
 ${emitFreeSpinsOverlayMarkup(resolveFreeSpinsConfig(model))}
+
+${/* LV3 — Live RTP HUD overlay (MATH-INTEGRATION-LV3). */ ''}
+${emitLiveRtpHudMarkup(resolveLiveRtpHudConfig(model))}
 
 ${resolveBonusBuyMenuConfig(model).enabled ? '' : emitBonusBuyMarkup(resolveBonusBuyConfig(model))}
 ${emitBonusBuyMenuMarkup(resolveBonusBuyMenuConfig(model))}
@@ -2308,6 +2319,11 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
      already wired, after spinButton lookup, after HookBus runtime, and
      after FREESPINS / FSM / FORCE_TRIGGER are in scope. */
   ${emitDevForceButtonsRuntime(model)}
+
+  /* LV3 MATH-INTEGRATION (Boki 2026-06-24) — Live RTP HUD overlay.
+     Emit after HookBus + accounting so postSpin handler reads
+     window.__LAST_SPIN_WIN__ + window.__SLOT_BET__ correctly. */
+  ${emitLiveRtpHudRuntime(resolveLiveRtpHudConfig(model), model)}
 
   /* Wave T-slim Phase 2 — extracted ~280 LOC of inline renderRect /
      renderVariableReel / renderMaskedRect / renderHex / renderWheel /
