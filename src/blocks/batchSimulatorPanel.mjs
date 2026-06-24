@@ -336,6 +336,32 @@ export function emitBatchSimulatorPanelRuntime(cfg = defaultConfig(), model = {}
             }
             html += '</span>';
           }
+          /* UQ-DEEP-AA: per-feature breakdown delta vs declared. */
+          if (j.featureValidation) {
+            var fv = j.featureValidation;
+            var fvHtml = '<span class="ladder">';
+            var rows = [
+              { label: 'baseLine', row: fv.baseLine },
+              { label: 'fsLine',   row: fv.fsLine },
+              { label: 'holdWin',  row: fv.holdAndWin },
+              { label: 'totalRtp', row: fv.totalRtp },
+            ];
+            for (var fi = 0; fi < rows.length; fi++) {
+              var lbl = rows[fi].label;
+              var rw = rows[fi].row;
+              if (!rw || rw.declared == null) continue;
+              var rcls = rw.pass === true ? 'pass-row' : (rw.pass === false ? 'fail-row' : 'fail-row');
+              var mark = rw.pass === true ? '✓' : (rw.pass === false ? '✗' : '·');
+              fvHtml += '<span class="' + rcls + '">'
+                     + mark + ' ' + lbl.padEnd(9)
+                     + ' declared ' + (rw.declared * 100).toFixed(2) + '%'
+                     + ' · measured ' + (rw.measured != null ? (rw.measured * 100).toFixed(2) + '%' : '?')
+                     + ' · δ ' + (rw.deltaPct != null ? rw.deltaPct.toFixed(3) + 'pp' : '?')
+                     + '</span>';
+            }
+            fvHtml += '</span>';
+            html += fvHtml;
+          }
           out.innerHTML = html;
         })
         .catch(function (e) {

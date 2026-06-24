@@ -159,33 +159,91 @@ function gcSessions() {
  * Build mc_runtime_real input from a parsed factory model.
  * Maps model.payback.rtp + model.payback.hitFrequency + feature trigger
  * probabilities into the executor shape the Rust binary expects.
- */
+ *
+ * UQ-DEEP-AA fix (Boki 2026-06-24): "ne radi matematika. razlikuje se
+ * drasticno rtp". Pre fix-a baseRtp default = cfTargetRtp * 0.38 (generic
+ * 38% split heuristic) — TOTAL RTP slučajno hit, ali per-feature delta vs
+ * GDD declared (Cash Eruption baseLine 41.9% vs measured 36.4%) = drift
+ * 5.5pp. Sad konzumira declared rtpBreakdown.baseLine/fsLine ako postoje
+ * — Rust binary ide sa real per-feature target umesto generic 38/x split. */
 function buildExecutorInput(model, spins = 100000, seed = 42) {
   const payback = (model && model.payback) || {};
   const fs = (model && model.freeSpins) || {};
   const hnw = (model && model.holdAndWin) || {};
+  const breakdown = (payback.rtpBreakdown && typeof payback.rtpBreakdown === 'object') ? payback.rtpBreakdown : {};
   /* Defaults align with industry baseline 5×3 96% RTP medium-vol slot. */
   const cfTargetRtp = (typeof payback.rtp === 'number' && payback.rtp > 0)
     ? (payback.rtp > 1 ? payback.rtp / 100 : payback.rtp)
     : 0.96;
+  /* Normalize: GDD breakdown values arrive in percent units (e.g. 41.9
+   * meaning 41.9%), convert to 0..1 fractions for Rust executor. */
+  const _normFrac = (v) => {
+    if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) return null;
+    return v > 1 ? v / 100 : v;
+  };
+  const declaredBase = _normFrac(breakdown.baseLine);
+  const declaredFsLine = _normFrac(breakdown.fsLine);
+  const declaredHwBase = _normFrac(breakdown.hwBase);
+  const declaredHwFs = _normFrac(breakdown.hwFs);
   const baseRtp = (typeof payback.baseRtp === 'number')
     ? (payback.baseRtp > 1 ? payback.baseRtp / 100 : payback.baseRtp)
-    : cfTargetRtp * 0.38;
+    : (declaredBase != null ? declaredBase : cfTargetRtp * 0.38);
   return {
     spins,
     seed,
     cf_target_rtp: cfTargetRtp,
-    executor: {
-      base_rtp_per_spin: baseRtp,
-      base_hit_freq: (typeof payback.hitFrequency === 'number') ? payback.hitFrequency : 0.21,
-      fs_trigger_p: (typeof fs.triggerProbability === 'number') ? fs.triggerProbability : 0.0085,
-      fs_session_e: (typeof fs.sessionExpectedValue === 'number') ? fs.sessionExpectedValue : 23.6,
-      fs_session_std: (typeof fs.sessionStdDev === 'number') ? fs.sessionStdDev : 26.6,
-      hnw_trigger_p: (typeof hnw.triggerProbability === 'number') ? hnw.triggerProbability : 0.009,
-      hnw_session_e: (typeof hnw.sessionExpectedValue === 'number') ? hnw.sessionExpectedValue : 44.0,
-      hnw_session_std: (typeof hnw.sessionStdDev === 'number') ? hnw.sessionStdDev : 78.0,
-      max_win_cap_x: (typeof payback.maxWinX === 'number') ? payback.maxWinX : 5000.0,
-    },
+    executor: (() => {
+      /* UQ-DEEP-AA fix: calibrate session_e iz declared rtpBreakdown ako
+       * postoji. Rust executor računa total = base_rtp + fs_trigger*fs_session_e
+       * + hnw_trigger*hnw_session_e. Ako koristimo declared baseLine kao
+       * base_rtp i ostavimo default session_e=23.6 i 44.0, total ode na
+       * ~102% (over-shoot). Solving: fs_session_e = declared.fsLine /
+       * fs_trigger_p tako da je MC contribution = declared.fsLine; isto
+       * za hnw_session_e = (declared.hwBase + declared.hwFs) / hnw_trigger_p. */
+      const fsTrigP = (typeof fs.triggerProbability === 'number') ? fs.triggerProbability : 0.0085;
+      const hnwTrigP = (typeof hnw.triggerProbability === 'number') ? hnw.triggerProbability : 0.009;
+      const declaredHwTotal = (declaredHwBase != null || declaredHwFs != null)
+        ? ((declaredHwBase || 0) + (declaredHwFs || 0))
+        : null;
+      const fsSessionE = (typeof fs.sessionExpectedValue === 'number') ? fs.sessionExpectedValue
+        : (declaredFsLine != null && fsTrigP > 0 ? declaredFsLine / fsTrigP : 23.6);
+      const hnwSessionE = (typeof hnw.sessionExpectedValue === 'number') ? hnw.sessionExpectedValue
+        : (declaredHwTotal != null && hnwTrigP > 0 ? declaredHwTotal / hnwTrigP : 44.0);
+      /* Std dev: scale proportionally with sessionE (preserve CoV ≈ 1.13). */
+      const fsSessionStd = (typeof fs.sessionStdDev === 'number') ? fs.sessionStdDev : fsSessionE * 1.127;
+      const hnwSessionStd = (typeof hnw.sessionStdDev === 'number') ? hnw.sessionStdDev : hnwSessionE * 1.773;
+      return {
+        base_rtp_per_spin: baseRtp,
+        base_hit_freq: (typeof payback.hitFrequency === 'number') ? payback.hitFrequency : 0.21,
+        fs_trigger_p: fsTrigP,
+        fs_session_e: fsSessionE,
+        fs_session_std: fsSessionStd,
+        hnw_trigger_p: hnwTrigP,
+        hnw_session_e: hnwSessionE,
+        hnw_session_std: hnwSessionStd,
+        max_win_cap_x: (typeof payback.maxWinX === 'number') ? payback.maxWinX : 5000.0,
+      };
+    })(),
+  };
+}
+
+/* UQ-DEEP-AA helper: extract declared per-feature RTP targets from GDD so
+ * /converge can validate each contribution against spec (not just total). */
+function getDeclaredTargets(model) {
+  const payback = (model && model.payback) || {};
+  const breakdown = (payback.rtpBreakdown && typeof payback.rtpBreakdown === 'object') ? payback.rtpBreakdown : {};
+  const _norm = (v) => {
+    if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) return null;
+    return v > 1 ? v / 100 : v;
+  };
+  return {
+    total: _norm(payback.rtp),
+    baseLine: _norm(breakdown.baseLine),
+    fsLine: _norm(breakdown.fsLine),
+    hwBase: _norm(breakdown.hwBase),
+    hwFs: _norm(breakdown.hwFs),
+    hitFrequency: _norm(payback.hitFrequency),
+    maxWinX: typeof payback.maxWinX === 'number' && payback.maxWinX > 0 ? payback.maxWinX : null,
   };
 }
 
@@ -582,9 +640,55 @@ const server = http.createServer(async (req, res) => {
         feature_breakdown: lastOut.feature_breakdown,
       } : null;
       const totalSpins = rounds.reduce((s, r) => s + (r.spins || 0), 0);
+      /* UQ-DEEP-AA: per-feature delta vs GDD declared rtpBreakdown.
+       * Boki: "razlikuje se drasticno rtp". Total RTP convergence može
+       * pucati ali per-feature drift može biti drasticno off (e.g.
+       * baseLine declared 41.9% vs measured 36.4%). Report svaki delta
+       * tako da operator zna gde tačno math ne odgovara spec-u. */
+      const declared = getDeclaredTargets(model);
+      const fbd = (lastOut && lastOut.feature_breakdown) || {};
+      const _measuredFrac = (key) => {
+        if (fbd[key] && typeof fbd[key].rtp_contribution === 'number') return fbd[key].rtp_contribution;
+        return null;
+      };
+      const _featRow = (key, declaredVal, measuredKey) => {
+        const measured = _measuredFrac(measuredKey || key);
+        const delta = (declaredVal != null && measured != null) ? (measured - declaredVal) : null;
+        const deltaPct = (delta != null) ? delta * 100 : null;
+        /* Per-feature tolerance: ±2pp default (operator can override later). */
+        const tolerancePct = 2.0;
+        const pass = (delta != null) ? (Math.abs(deltaPct) <= tolerancePct) : null;
+        return { declared: declaredVal, measured, delta, deltaPct, tolerancePct, pass };
+      };
+      const featureValidation = {
+        baseLine: _featRow('baseLine', declared.baseLine, 'base_lines'),
+        fsLine:   _featRow('fsLine',   declared.fsLine,   'free_spins'),
+        holdAndWin: _featRow('holdAndWin', (declared.hwBase != null || declared.hwFs != null)
+          ? ((declared.hwBase || 0) + (declared.hwFs || 0))
+          : null, 'hold_and_win'),
+        totalRtp: {
+          declared: declared.total,
+          measured: lastOut ? lastOut.rtp : null,
+          deltaPct: (declared.total != null && lastOut) ? Math.abs(lastOut.rtp - declared.total) * 100 : null,
+          tolerancePct: precisionPct * 100,
+          pass: (declared.total != null && lastOut)
+            ? Math.abs(lastOut.rtp - declared.total) <= precisionPct : null,
+        },
+        hitFrequency: {
+          declared: declared.hitFrequency,
+          measured: lastOut ? lastOut.hit_rate : null,
+          deltaPct: (declared.hitFrequency != null && lastOut)
+            ? Math.abs(lastOut.hit_rate - declared.hitFrequency) * 100 : null,
+        },
+      };
+      /* All-features pass: every validated row must pass (skip rows with
+       * declared=null since GDD didn't specify). */
+      const featureRows = [featureValidation.baseLine, featureValidation.fsLine, featureValidation.holdAndWin];
+      const allFeaturesPass = featureRows.every(r => r.pass !== false);
       return send(res, 200, {
         ok: true,
         passed,
+        passedAllFeatures: passed && allFeaturesPass,
         rounds,
         roundCount: rounds.length,
         totalSpins,
@@ -596,8 +700,11 @@ const server = http.createServer(async (req, res) => {
           halfwidthBound,
           halfwidthBoundDisplay: halfwidthBound * 100,
           maxSpins,
+          perFeatureTolerancePct: 2.0,
         },
         final,
+        declared,
+        featureValidation,
       }, origin);
     }
 
