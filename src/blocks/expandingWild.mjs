@@ -31,16 +31,39 @@ const MAX_DURATION_MS = 2000;
 const FALLBACK_REELS  = 5;
 const FALLBACK_ROWS   = 3;
 
+/* UQ-DEEP-X (Boki 2026-06-24): 3-stage industry-grade animation constants.
+ * Source: Cash Eruption GDD §13.3 "Wild Expansion & Pattern Win" — Stage 2
+ * 350ms exact + top→bottom flood-fill, gold rim. Industry baseline
+ * (NetEnt/IGT/BGaming): 3 stages (anticipation → expand → hold pulse). */
 const EW = {
-  SCALE_FROM:      0.6,
-  SCALE_OVERSHOOT: 1.08,
-  BRIGHTNESS_FROM: 2,
-  BRIGHTNESS_MID:  1.4,
-  RING_PX:         1.5,
-  GLOW_PX:         16,
-  RING_ALPHA:      0.6,
-  GLOW_ALPHA:      0.5,
-  MID_STOP_PCT:    60,
+  /* Stage 1 — anticipation glow (per source cell that triggered). */
+  STAGE1_MS:          180,
+  STAGE1_SCALE_PEAK:  1.08,
+  STAGE1_GLOW_PEAK_A: 0.9,
+  /* Stage 2 — column flood-fill (top → bottom). Per-row stagger. */
+  STAGE2_MS:          350,
+  STAGE2_ROW_STAGGER_MS: 60,
+  STAGE2_SCALE_FROM:  0.85,
+  STAGE2_SCALE_OVER:  1.05,
+  /* Stage 3 — hold pulse (loops while wild is active). */
+  STAGE3_LOOP_MS:     1200,
+  STAGE3_SCALE_AMPL:  1.015,
+  STAGE3_GLOW_MIN_A:  0.5,
+  STAGE3_GLOW_MAX_A:  0.85,
+  /* Visual rim + glow. */
+  RIM_PX:             2,
+  RIM_ALPHA:          0.95,
+  GLOW_PX:            20,
+  GLOW_BASE_ALPHA:    0.7,
+  /* Stage 4 — clear (preSpin). */
+  STAGE4_MS:          150,
+  /* Lava gradient (Cash Eruption-class molten gold; vendor-neutral). */
+  LAVA_COLOR_HOT:     '#FF6A1A',
+  LAVA_COLOR_WARM:    '#FFB347',
+  RIM_COLOR:          'rgba(255, 215, 100, 0.95)',
+  /* Easing curves (Material D3 emphasized decel for flood, sine for pulse). */
+  EASE_FLOOD:         'cubic-bezier(0.2, 0, 0, 1)',
+  EASE_ANTICIPATE:    'cubic-bezier(0.4, 0, 0.6, 1)',
 };
 
 export function defaultConfig() {
@@ -126,21 +149,85 @@ export function resolveConfig(model = {}) {
 export function emitExpandingWildCSS(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   return `
-/* ─── expanding wild ────────────────────────────────────────────── */
-.cell.is-expanded-wild {
-  animation: expandWildGrow ${cfg.expandDurationMs}ms cubic-bezier(.34,1.56,.64,1);
+/* ─── expanding wild (UQ-DEEP-X 3-stage industry animation) ─────── */
+
+/* Stage 1: anticipation glow (per source cell that triggered).
+ * Single cell flash → signals "wild detected, expansion incoming". */
+.cell.is-wild-anticipation {
+  position: relative;
+  animation: ewAnticipate ${EW.STAGE1_MS}ms ${EW.EASE_ANTICIPATE};
+  z-index: 3;
+}
+@keyframes ewAnticipate {
+  0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,200,80,0); }
+  50%  { transform: scale(${EW.STAGE1_SCALE_PEAK}); box-shadow: 0 0 24px 4px rgba(255,200,80,${EW.STAGE1_GLOW_PEAK_A}); filter: brightness(1.6); }
+  100% { transform: scale(1); box-shadow: 0 0 12px 2px rgba(255,200,80,0.6); filter: brightness(1); }
+}
+
+/* Stage 2: column flood-fill, top-down stagger.
+ * Per-row CSS var --ew-row-delay = N * STAGE2_ROW_STAGGER_MS (ms).
+ * Lava gradient + gold rim. Material D3 emphasized decel. */
+.cell.is-wild-expanding {
+  position: relative;
+  animation: ewExpand ${EW.STAGE2_MS}ms ${EW.EASE_FLOOD} both;
+  animation-delay: var(--ew-row-delay, 0ms);
+  background:
+    linear-gradient(135deg, ${EW.LAVA_COLOR_HOT} 0%, ${EW.LAVA_COLOR_WARM} 100%);
+  background-blend-mode: screen;
   box-shadow:
-    0 0 0 ${EW.RING_PX}px rgba(${cfg.haloColor},${EW.RING_ALPHA}),
-    0 0 ${EW.GLOW_PX}px rgba(${cfg.haloColor},${EW.GLOW_ALPHA});
+    inset 0 0 0 ${EW.RIM_PX}px ${EW.RIM_COLOR},
+    0 0 ${EW.GLOW_PX}px rgba(255, 140, 40, ${EW.GLOW_BASE_ALPHA});
   z-index: 2;
 }
-@keyframes expandWildGrow {
-  0%   { transform: scale(${EW.SCALE_FROM}); opacity: 0; filter: brightness(${EW.BRIGHTNESS_FROM}); }
-  ${EW.MID_STOP_PCT}%  { transform: scale(${EW.SCALE_OVERSHOOT}); opacity: 1; filter: brightness(${EW.BRIGHTNESS_MID}); }
+@keyframes ewExpand {
+  0%   { transform: scale(${EW.STAGE2_SCALE_FROM}); opacity: 0; filter: brightness(1.8); }
+  60%  { transform: scale(${EW.STAGE2_SCALE_OVER}); opacity: 1; filter: brightness(1.2); }
   100% { transform: scale(1); opacity: 1; filter: brightness(1); }
 }
+
+/* Stage 3: hold pulse loop while wild active.
+ * Subtle sub-bass-like visual idle so player ostane fokusiran. */
+.cell.is-wild-hold {
+  position: relative;
+  animation: ewHoldPulse ${EW.STAGE3_LOOP_MS}ms ease-in-out infinite;
+  background:
+    linear-gradient(135deg, ${EW.LAVA_COLOR_HOT} 0%, ${EW.LAVA_COLOR_WARM} 100%);
+  background-blend-mode: screen;
+  box-shadow:
+    inset 0 0 0 ${EW.RIM_PX}px ${EW.RIM_COLOR},
+    0 0 ${EW.GLOW_PX}px rgba(255, 140, 40, ${EW.GLOW_BASE_ALPHA});
+  z-index: 2;
+}
+@keyframes ewHoldPulse {
+  0%, 100% { box-shadow: inset 0 0 0 ${EW.RIM_PX}px ${EW.RIM_COLOR}, 0 0 ${EW.GLOW_PX}px rgba(255, 140, 40, ${EW.STAGE3_GLOW_MIN_A}); transform: scale(1); }
+  50%      { box-shadow: inset 0 0 0 ${EW.RIM_PX}px ${EW.RIM_COLOR}, 0 0 ${EW.GLOW_PX + 6}px rgba(255, 140, 40, ${EW.STAGE3_GLOW_MAX_A}); transform: scale(${EW.STAGE3_SCALE_AMPL}); }
+}
+
+/* Stage 4: clear (preSpin / onFsTrigger). */
+.cell.is-wild-clearing {
+  animation: ewClear ${EW.STAGE4_MS}ms ease-in both;
+}
+@keyframes ewClear {
+  0%   { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.95); }
+}
+
+/* Legacy class kept za backward compat (any external test / selector
+ * that scrapes .is-expanded-wild still pojavljuje class — block uvek
+ * dodaje paralelno sa stage class-om). */
+.cell.is-expanded-wild { z-index: 2; }
+
+/* Reduced motion — skip stages 1 + 3 (loop), Stage 2 collapse to instant. */
 @media (prefers-reduced-motion: reduce) {
-  .cell.is-expanded-wild { animation: none; }
+  .cell.is-wild-anticipation,
+  .cell.is-wild-expanding,
+  .cell.is-wild-hold,
+  .cell.is-wild-clearing { animation: none; }
+  .cell.is-wild-expanding,
+  .cell.is-wild-hold {
+    /* Skip animation but keep visual state (gold rim + lava bg). */
+    opacity: 1; transform: scale(1);
+  }
 }
 `;
 }
@@ -264,27 +351,95 @@ function applyExpandingWilds(spinPayload) {
       colsWithWild.add(col);
     }
   });
-  /* Expand: fill column with wild symbol + class */
+  /* Expand: 3-stage industry-grade animation per Cash Eruption GDD §13.3.
+   * Stage 1 (anticipation 180ms): glow flash na seed cell-u per kolone.
+   * Stage 2 (expand 350ms, top→bottom 60ms stagger): lava column flood.
+   * Stage 3 (hold 1200ms loop): subtle pulse while wild active.
+   * UQ-DEEP-X (Boki 2026-06-24): pre fix-a samo single-keyframe scale;
+   * sad pun 3-stage timeline + per-stage HookBus events za audio sync. */
+  const STAGE1_MS = 180;
+  const STAGE2_ROW_STAGGER_MS = 60;
+  const STAGE2_MS = 350;
   const expanded = [];
+  /* Detect prefers-reduced-motion: skip stages 1 + 3 entirely, jump
+   * Stage 2 to final frame instantly. */
+  const reducedMotion = (typeof window !== 'undefined' && window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || false;
   colsWithWild.forEach((col) => {
+    /* Find the seed cell (the one that actually had wild on the grid) for
+     * Stage 1 anticipation. Falls back to middle row if multiple. */
+    let seedRow = Math.floor(ROWS / 2);
+    for (let r = 0; r < ROWS; r++) {
+      const idx = r * REELS + col;
+      const cell = cells[idx];
+      if (cell && (cell.textContent || '').trim() === EXPANDING_WILD_SYMBOL) {
+        seedRow = r; break;
+      }
+    }
+    const seedCell = cells[seedRow * REELS + col];
+    /* Stage 1: anticipation glow on seed cell. */
+    if (seedCell && !reducedMotion) {
+      seedCell.classList.add('is-wild-anticipation');
+      try { HookBus.emit && HookBus.emit('expandingWild:stage1:anticipation', { col, row: seedRow }); } catch (_) {}
+      /* Remove anticipation class after Stage 1 to allow Stage 2 paint. */
+      setTimeout(() => { try { seedCell.classList.remove('is-wild-anticipation'); } catch (_) {} }, STAGE1_MS);
+    }
+    /* Stage 2: schedule per-row fill sa stagger. */
+    const stage2Start = reducedMotion ? 0 : STAGE1_MS;
     for (let r = 0; r < ROWS; r++) {
       const idx = r * REELS + col;
       const cell = cells[idx];
       if (!cell) continue;
       if (cell.dataset.origSym == null) cell.dataset.origSym = (cell.textContent || '').trim();
-      /* WCAG 4.1.3 — cell symbol mutates during column expansion. The
-         markup contract is the literal HTML attribute aria-live="polite"
-         applied to every expanding cell so SR users hear the new wild.
-         outerHTML wrapping is too heavy on a 30-cell grid, so we set
-         the attribute via the parsed-attr-string fast path below. */
       cell.setAttribute('aria-live', 'polite');
+      cell.setAttribute('aria-label', 'Expanding wild on reel ' + (col + 1));
       cell.textContent = EXPANDING_WILD_SYMBOL;
+      /* P6 fix (UQ-DEEP-R): data-symbol + GRID + symbolOverride. */
+      cell.setAttribute('data-symbol', EXPANDING_WILD_SYMBOL);
+      if (window.GRID && typeof window.GRID.set === 'function') {
+        try { window.GRID.set(col, r, EXPANDING_WILD_SYMBOL); } catch (_) {}
+      }
+      try { HookBus.emit && HookBus.emit('symbolOverride', { r, c: col, sym: EXPANDING_WILD_SYMBOL, source: 'expandingWild' }); } catch (_) {}
+      /* Legacy class persistent (back-compat). */
       cell.classList.add('is-expanded-wild');
+      if (reducedMotion) {
+        /* Skip stagger — class hop direct to hold state. */
+        cell.classList.add('is-wild-hold');
+      } else {
+        /* CSS animation-delay via inline style (cell-row specific). */
+        const rowDelay = r * STAGE2_ROW_STAGGER_MS;
+        cell.style.setProperty('--ew-row-delay', rowDelay + 'ms');
+        cell.classList.add('is-wild-expanding');
+        /* Per-row settle event at stage2Start + STAGE1 + rowDelay (audio sync). */
+        setTimeout(() => {
+          try { HookBus.emit && HookBus.emit('expandingWild:stage2:rowSettle', { col, row: r }); } catch (_) {}
+        }, stage2Start + rowDelay + STAGE2_MS);
+        /* Transition to Stage 3 hold pulse after Stage 2 complete + final stagger. */
+        setTimeout(() => {
+          try {
+            cell.classList.remove('is-wild-expanding');
+            cell.classList.add('is-wild-hold');
+            cell.style.removeProperty('--ew-row-delay');
+          } catch (_) {}
+        }, stage2Start + rowDelay + STAGE2_MS + 30);
+      }
       expanded.push({ r, c: col });
+    }
+    /* Stage 2 start emit. */
+    if (!reducedMotion) {
+      setTimeout(() => {
+        try { HookBus.emit && HookBus.emit('expandingWild:stage2:expandStart', { col, direction: 'top-down', rows: ROWS }); } catch (_) {}
+      }, stage2Start);
+      /* Stage 2 complete (last row + STAGE2_MS) + Stage 3 pulse start. */
+      const stage2Total = stage2Start + (ROWS - 1) * STAGE2_ROW_STAGGER_MS + STAGE2_MS;
+      setTimeout(() => {
+        try { HookBus.emit && HookBus.emit('expandingWild:stage2:expandComplete', { col }); } catch (_) {}
+        try { HookBus.emit && HookBus.emit('expandingWild:stage3:pulseStart', { col }); } catch (_) {}
+      }, stage2Total);
     }
   });
   if (typeof HookBus !== 'undefined') {
-    HookBus.emit('expandingWild:applied', { expanded, mode: EXPANDING_WILD_MODE });
+    HookBus.emit('expandingWild:applied', { expanded, mode: EXPANDING_WILD_MODE, stages: 3 });
     /* UQ-DEEP-Q B5 (CRIT) fix — Boki "ne radi pravilno" root cause:
      * After mutating cells to wild symbol, the win evaluator (which ran
      * BEFORE expansion at priority 0) has NOT re-evaluated the grid →
@@ -326,15 +481,39 @@ function applyExpandingWilds(spinPayload) {
 function clearExpandingWilds() {
   const host = document.getElementById('gridHost');
   if (!host) return;
-  host.querySelectorAll('.cell.is-expanded-wild').forEach(c => {
-    if (c.dataset.origSym != null) {
-      c.textContent = c.dataset.origSym;
-      delete c.dataset.origSym;
+  /* UQ-DEEP-X Stage 4: fade-out animation pre uklanjanja class-ova.
+   * 150ms cubic-bezier ease-in. Cell vraća origSym posle fade-out-a. */
+  const STAGE4_MS = 150;
+  const targets = host.querySelectorAll('.cell.is-expanded-wild, .cell.is-wild-hold, .cell.is-wild-expanding, .cell.is-wild-anticipation');
+  const reducedMotion = (typeof window !== 'undefined' && window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || false;
+  targets.forEach(c => {
+    if (reducedMotion) {
+      /* Immediate restore. */
+      if (c.dataset.origSym != null) { c.textContent = c.dataset.origSym; delete c.dataset.origSym; }
+      c.removeAttribute('data-symbol');
+      c.removeAttribute('aria-live');
+      c.removeAttribute('aria-label');
+      c.style.removeProperty('--ew-row-delay');
+      c.classList.remove('is-expanded-wild', 'is-wild-hold', 'is-wild-expanding', 'is-wild-anticipation', 'is-wild-clearing');
+    } else {
+      /* Stage 4 fade-out then strip class-ove. */
+      c.classList.remove('is-wild-hold', 'is-wild-expanding', 'is-wild-anticipation');
+      c.classList.add('is-wild-clearing');
+      setTimeout(() => {
+        try {
+          if (c.dataset.origSym != null) { c.textContent = c.dataset.origSym; delete c.dataset.origSym; }
+          c.removeAttribute('data-symbol');
+          c.removeAttribute('aria-live');
+          c.removeAttribute('aria-label');
+          c.style.removeProperty('--ew-row-delay');
+          c.classList.remove('is-expanded-wild', 'is-wild-clearing');
+        } catch (_) {}
+      }, STAGE4_MS);
     }
-    c.classList.remove('is-expanded-wild');
   });
   if (typeof HookBus !== 'undefined') {
-    HookBus.emit('expandingWild:cleared', {});
+    HookBus.emit('expandingWild:cleared', { count: targets.length });
   }
 }
 

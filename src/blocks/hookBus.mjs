@@ -873,6 +873,14 @@ export const HOOK_EVENTS = Object.freeze([
   'clusterPays:evaluated',  // Owner: clusterPaysEval.mjs (legacy colon, W57.A7 whitelist)
   'expandingWild:applied',  // Owner: expandingWild.mjs (legacy colon)
   'expandingWild:cleared',  // Owner: expandingWild.mjs (legacy colon)
+  /* UQ-DEEP-X (Boki 2026-06-24): 3-stage animation event-i — audio engine
+   * + analytics + QA prati per-stage progress (anticipation → expand →
+   * hold pulse). Top-down stagger emit-uje rowSettle za svaku row. */
+  'expandingWild:stage1:anticipation',  // Owner: expandingWild.mjs (Stage 1 glow flash)
+  'expandingWild:stage2:expandStart',   // Owner: expandingWild.mjs (Stage 2 column flood start)
+  'expandingWild:stage2:rowSettle',     // Owner: expandingWild.mjs (Stage 2 per-row settle)
+  'expandingWild:stage2:expandComplete',// Owner: expandingWild.mjs (Stage 2 column fully painted)
+  'expandingWild:stage3:pulseStart',    // Owner: expandingWild.mjs (Stage 3 hold pulse loop begins)
   'onReelsMutated',  // Owner: expandingWild.mjs (UQ-DEEP-Q B5: post-expansion re-eval signal)
   'init',  // Owner: turboMode.mjs (Wave U pre-canonical naming)
   'onAllWaysCleared',  // Owner: allWaysEval.mjs
