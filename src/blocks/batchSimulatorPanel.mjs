@@ -39,20 +39,51 @@ export function resolveConfig(model = {}) {
 export function emitBatchSimulatorPanelCSS(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   return `
+/* UQ-DEEP-V (Boki 2026-06-24): bilo bottom-right fixed panel + preklapao
+ * spin hub/credits display. Sad bottom-LEFT collapsed launcher → klik
+ * otvara panel iznad (upward expand). Klik van panela ili Escape zatvara. */
+.batch-sim-root {
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  z-index: 61;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+}
+.batch-sim-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(180deg, rgba(56,189,248,.18), rgba(20,30,45,.95));
+  border: 1px solid rgba(56,189,248,0.5);
+  border-radius: 16px;
+  color: #38bdf8;
+  font: 700 11px/1 ui-monospace, monospace;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.batch-sim-toggle:hover { background: linear-gradient(180deg, rgba(56,189,248,.30), rgba(40,60,90,.95)); }
+.batch-sim-toggle:focus-visible { outline: 2px solid rgba(56,189,248,.85); outline-offset: 2px; }
+.batch-sim-toggle[aria-expanded="true"] { background: linear-gradient(180deg, rgba(56,189,248,.35), rgba(50,70,100,.95)); }
+.batch-sim-toggle .bsp-caret { font-size: 0.85em; transition: transform 200ms; }
+.batch-sim-toggle[aria-expanded="true"] .bsp-caret { transform: rotate(180deg); }
 .batch-sim-panel {
-  position: fixed; bottom: 12px; right: 12px; z-index: 60;
-  background: rgba(5,7,12,0.92);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  background: rgba(5,7,12,0.96);
   border: 1px solid rgba(56,189,248,0.4);
   border-radius: 8px;
   padding: 10px 12px;
-  font-family: ui-monospace, "SF Mono", Consolas, monospace;
-  font-size: 11px;
   color: #f2f2f2;
-  min-width: 240px;
+  min-width: 260px;
+  max-width: min(80vw, 360px);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.6);
 }
+.batch-sim-panel[hidden] { display: none; }
 .batch-sim-panel h4 { margin: 0 0 6px 0; font-size: 11px; color: #38bdf8; letter-spacing: 0.04em; text-transform: uppercase; }
 .batch-sim-panel .bsp-row { display: flex; gap: 4px; margin-bottom: 6px; }
 .batch-sim-panel button {
@@ -67,7 +98,10 @@ export function emitBatchSimulatorPanelCSS(cfg = defaultConfig()) {
 .batch-sim-panel .bsp-out b { color: #f2f2f2; font-weight: 700; tabular-nums: true; font-variant-numeric: tabular-nums; }
 .batch-sim-panel .bsp-out .pass { color: #38bd7c; }
 .batch-sim-panel .bsp-out .fail { color: #ef4444; }
-@media (max-width: 620px) { .batch-sim-panel { min-width: 180px; padding: 8px; } }
+@media (max-width: 620px) {
+  .batch-sim-root { bottom: 6px; left: 6px; }
+  .batch-sim-panel { min-width: 200px; padding: 8px; }
+}
 `;
 }
 
@@ -77,10 +111,19 @@ export function emitBatchSimulatorPanelMarkup(cfg = defaultConfig()) {
     `<button class="bsp-btn" data-spins="${p.spins}" data-label="${p.label}">${p.label}</button>`
   ).join('');
   return `
-<div class="batch-sim-panel" id="batchSimPanel">
-  <h4>MC Batch Simulator</h4>
-  <div class="bsp-row">${presetButtons}</div>
-  <div class="bsp-out" id="bspOut">Click a tier to run.</div>
+<!-- UQ-DEEP-V (Boki 2026-06-24): batch panel sada collapsed launcher. -->
+<div class="batch-sim-root">
+  <button type="button" class="batch-sim-toggle" id="bspToggle"
+          aria-expanded="false" aria-controls="batchSimPanel"
+          aria-label="MC Batch Simulator (${cfg.presets.length} preset tiers)">
+    <span>📊 MC Batch</span>
+    <span class="bsp-caret" aria-hidden="true">▴</span>
+  </button>
+  <div class="batch-sim-panel" id="batchSimPanel" hidden>
+    <h4>MC Batch Simulator</h4>
+    <div class="bsp-row">${presetButtons}</div>
+    <div class="bsp-out" id="bspOut">Click a tier to run.</div>
+  </div>
 </div>
 `;
 }
@@ -118,6 +161,33 @@ export function emitBatchSimulatorPanelRuntime(cfg = defaultConfig(), model = {}
     var panel = $('batchSimPanel');
     if (!panel) return;
     var out = $('bspOut');
+    /* UQ-DEEP-V (Boki 2026-06-24): toggle launcher + click-outside +
+     * Escape close. Panel default hidden — user mora kliknuti
+     * 📊 MC Batch dugme da otvori. */
+    var toggle = $('bspToggle');
+    if (toggle) {
+      function bspSetOpen(open) {
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) panel.removeAttribute('hidden');
+        else panel.setAttribute('hidden', '');
+      }
+      toggle.addEventListener('click', function (e) {
+        e.preventDefault(); e.stopPropagation();
+        var isOpen = toggle.getAttribute('aria-expanded') === 'true';
+        bspSetOpen(!isOpen);
+      });
+      document.addEventListener('click', function (e) {
+        if (toggle.getAttribute('aria-expanded') !== 'true') return;
+        if (toggle.contains(e.target) || panel.contains(e.target)) return;
+        bspSetOpen(false);
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        if (toggle.getAttribute('aria-expanded') !== 'true') return;
+        bspSetOpen(false);
+        try { toggle.focus(); } catch (_) {}
+      });
+    }
     panel.querySelectorAll('.bsp-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         if (BSP_INFLIGHT) return;  /* dedupe spam clicks. */

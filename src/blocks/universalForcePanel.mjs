@@ -449,24 +449,67 @@ export function emitUniversalForcePanelCSS(cfg = defaultConfig()) {
    chipHeight = ${c.chipHeight}px, fontSize = ${c.chipFontSize}px,
    top = ${c.panelTop}px, right = ${c.panelRight}px, gap = ${c.panelGap}px
 */
-.ufp-panel {
-  position: absolute;
+/* UQ-DEEP-V (Boki 2026-06-24): refaktor iz flex-wrap chip cluster-a
+ * u collapsible dropdown — chip-ovi preklapali HUB/HUD elemente.
+ * Default state: zatvoreno (samo launcher button vidljiv). Klik →
+ * dropdown sa svim chip-ovima u scrollable listi. Klik van menija ili
+ * Escape → zatvori. Dropdown radi i na mobile-u (max-h: 60vh). */
+.ufp-root {
+  position: fixed;
   top: ${c.panelTop}px;
-  right: ${c.panelRight}px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: ${c.panelGap}px;
-  z-index: 60;
+  right: ${c.panelRight + 200}px;  /* offset levo od liveRtpHud (top-right 12px wide ~180px) */
+  z-index: 62;
   pointer-events: auto;
-  max-width: min(60vw, 480px);
-  justify-content: flex-end;
 }
+.ufp-toggle {
+  height: ${c.chipHeight}px;
+  padding: 0 12px;
+  font: 700 ${c.chipFontSize}px / 1 system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.06em;
+  color: #f4eecf;
+  background: linear-gradient(180deg, rgba(40,46,60,.95), rgba(20,24,32,.95));
+  border: 1px solid rgba(201,162,39,0.5);
+  border-radius: ${Math.round(c.chipHeight / 2)}px;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ufp-toggle:hover { background: linear-gradient(180deg, rgba(80,68,28,.95), rgba(40,32,12,.95)); }
+.ufp-toggle:focus-visible { outline: 2px solid rgba(201,162,39,.85); outline-offset: 2px; }
+.ufp-toggle[aria-expanded="true"] { background: linear-gradient(180deg, rgba(80,68,28,.95), rgba(40,32,12,.95)); }
+.ufp-toggle .ufp-toggle-caret { font-size: 0.8em; transition: transform 200ms; }
+.ufp-toggle[aria-expanded="true"] .ufp-toggle-caret { transform: rotate(180deg); }
+.ufp-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  max-width: min(60vw, 360px);
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 8px;
+  background: rgba(10,12,18,0.96);
+  border: 1px solid rgba(201,162,39,0.4);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  gap: ${c.panelGap}px;
+}
+.ufp-menu[hidden] { display: none; }
+/* Backwards compat: legacy .ufp-panel selector still alive — points to menu
+ * for any sibling block / test that scrapes by .ufp-panel. */
+.ufp-panel { display: contents; }
 .ufp-label {
   font-size: ${Math.max(BOUNDS.CHIP_FONT_SIZE.min, c.chipFontSize - 1)}px;
   letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.55);
-  align-self: center;
-  padding: 0 4px;
+  color: rgba(255,255,255,0.6);
+  padding: 4px 6px 2px;
+  text-transform: uppercase;
   user-select: none;
 }
 .ufp-chip {
@@ -481,9 +524,11 @@ export function emitUniversalForcePanelCSS(cfg = defaultConfig()) {
   border-radius: ${Math.round(c.chipHeight / 2)}px;
   cursor: pointer;
   transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  text-align: left;
+  width: 100%;
 }
 .ufp-chip:hover { background: linear-gradient(180deg, rgba(80,68,28,.95), rgba(40,32,12,.95)); }
 .ufp-chip:active { transform: scale(0.95); }
@@ -501,8 +546,8 @@ export function emitUniversalForcePanelCSS(cfg = defaultConfig()) {
   .ufp-chip:active { transform: none; }
 }
 @media (max-width: 620px) {
-  .ufp-panel { max-width: 92vw; right: 6px; top: 6px; gap: 4px; }
-  .ufp-label { display: none; }
+  .ufp-root { right: 6px; top: 6px; }
+  .ufp-menu { max-width: 92vw; gap: 4px; }
 }
 `;
 }
@@ -524,10 +569,21 @@ export function emitUniversalForcePanelMarkup(cfg = defaultConfig(), model = {})
       + `aria-label="Force ${escAttr(full)}" title="Force ${escAttr(full)}">${escAttr(short)}</button>`;
   }).join('');
 
+  /* UQ-DEEP-V (Boki 2026-06-24): dropdown wrap. Toggle button vidljiv
+   * uvek (kompaktan); chip lista u .ufp-menu hidden by default. */
   return `
-<!-- universalForcePanel BLOCK — server-emitted markup -->
-<div class="ufp-panel" role="toolbar" aria-label="${escAttr(c.ariaLabel)}">
-  ${label}${chips}
+<!-- universalForcePanel BLOCK — server-emitted markup (dropdown) -->
+<div class="ufp-root">
+  <button type="button" class="ufp-toggle" id="ufpToggle"
+          aria-expanded="false" aria-controls="ufpMenu"
+          aria-label="${escAttr(c.ariaLabel)} (${kinds.length} force chips)">
+    <span class="ufp-toggle-text">⚙ Forces · ${kinds.length}</span>
+    <span class="ufp-toggle-caret" aria-hidden="true">▾</span>
+  </button>
+  <div class="ufp-panel ufp-menu" id="ufpMenu" role="toolbar"
+       aria-label="${escAttr(c.ariaLabel)}" hidden>
+    ${label}${chips}
+  </div>
 </div>
 `;
 }
@@ -1109,6 +1165,36 @@ export function emitUniversalForcePanelRuntime(cfg = defaultConfig(), model = {}
         _onChipClick(kind, label, btn);
       });
     })(chips[i]);
+    /* UQ-DEEP-V (Boki 2026-06-24): dropdown toggle + click-outside +
+     * Escape close. Toggle attribute aria-expanded mirrored to .ufp-menu
+     * hidden flag (single source of truth for CSS chevron rotation). */
+    var toggle = document.getElementById('ufpToggle');
+    var menu = document.getElementById('ufpMenu');
+    if (!toggle || !menu) return;
+    function setOpen(open) {
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) menu.removeAttribute('hidden');
+      else menu.setAttribute('hidden', '');
+    }
+    toggle.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var open = toggle.getAttribute('aria-expanded') === 'true';
+      setOpen(!open);
+    });
+    /* Click outside → close. */
+    document.addEventListener('click', function(e) {
+      if (toggle.getAttribute('aria-expanded') !== 'true') return;
+      if (toggle.contains(e.target) || menu.contains(e.target)) return;
+      setOpen(false);
+    });
+    /* Escape → close + focus toggle. */
+    document.addEventListener('keydown', function(e) {
+      if (e.key !== 'Escape') return;
+      if (toggle.getAttribute('aria-expanded') !== 'true') return;
+      setOpen(false);
+      try { toggle.focus(); } catch (_) {}
+    });
   }
 
   /* D-13.1 (Boki 2026-06-20) — postSpin "shipping" listener.
