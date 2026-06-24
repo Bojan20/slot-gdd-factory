@@ -2728,15 +2728,17 @@ export function extractSymbolsProseMode(rawText, model) {
     const band = tierBucket === model.symbols.high ? 'high'
                : tierBucket === model.symbols.mid  ? 'mid' : 'low';
     const prefix = band === 'high' ? 'H' : band === 'mid' ? 'M' : 'L';
-    /* UQ-DEEP-AS J-P2-3: warn on > 5 symbols per band (IGT taxonomy
-       caps at H5/M5/L5 — silent clamp causes downstream unique-key
-       collisions). _failures is the parser's standard surfacing channel. */
+    /* UQ-DEEP-AS J-P2-3 + AT K-P0-2 (Auditor J + K):
+       Warn on > 5 symbols per band (IGT taxonomy caps at H5/M5/L5).
+       Push to confidence._warnings (benign-info channel) — was going
+       into _failures which UQ-FORTIFY2 gate treats as HARD ERROR
+       (≤3 cap), polluting cert pipeline with taxonomy hints. */
     const rawIdx = tierBucket.length + 1;
     if (rawIdx > 5) {
-      const failures = (model.confidence && Array.isArray(model.confidence._failures))
-        ? model.confidence._failures : null;
-      if (failures) {
-        failures.push({
+      const warnings = (model.confidence && Array.isArray(model.confidence._warnings))
+        ? model.confidence._warnings : null;
+      if (warnings) {
+        warnings.push({
           label: 'canonicalTier-overflow',
           warning: 'tier band "' + band + '" has >5 symbols; canonicalTier clamped to ' + prefix + '5 (' + ucId + ')',
         });
@@ -3904,7 +3906,7 @@ export function normalizeFromJSON(obj) {
   } else {
     model.freeSpins = { enabled: false };
   }
-  model.confidence = { name: 1, topology: 1, symbols: 1, features: 1, _failures: [], _derivedBy: {} };
+  model.confidence = { name: 1, topology: 1, symbols: 1, features: 1, _failures: [], _warnings: [], _derivedBy: {} };
   /* Wave UQ-COVER (Boki 2026-06-21) — populate __activeFeatures__ from V6
    * reconcile delta so universalForcePanel's declared-only filter activates.
    * Without this, the JSON ingest path falls back to "render every chip"
@@ -4478,6 +4480,12 @@ function freshModel() {
          Empty array == zero structural failures. Downstream UI / probes can
          surface a "partial parse" badge by checking `confidence._failures.length`. */
       _failures: [],
+      /* UQ-DEEP-AT K-P0-2 (Auditor K): warnings sibling channel.
+         _failures is HARD ERROR semantics — UQ-FORTIFY2 gate fails at
+         length > 3. AS pushed canonicalTier overflow into _failures
+         which polluted the gate. _warnings is benign-info channel for
+         taxonomy hints, deprecation surfaces, future migration cues. */
+      _warnings: [],
     },
   };
 }

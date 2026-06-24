@@ -123,11 +123,17 @@ for (const file of blocks) {
 }
 
 mkdirSync(OUT_DIR, { recursive: true });
+/* UQ-DEEP-AT K-P0-1 (Auditor K): deterministic catalog hash.
+   Was: JSON.stringify(catalog) — preserves insertion order which depends
+   on readdirSync FS order (Linux ext4 ≠ macOS APFS) → different hash in
+   CI vs local for identical content → false drift FAIL.
+   Fix: pass sorted keys array as replacer so emitted JSON is canonical. */
+const canonicalCatalogJSON = JSON.stringify(catalog, Object.keys(catalog).sort());
 const out = {
   schema_version: '1.0.0',
   generated_at: new Date().toISOString(),
   source_locale: 'en',
-  hash: createHash('sha256').update(JSON.stringify(catalog)).digest('hex').slice(0, 12),
+  hash: createHash('sha256').update(canonicalCatalogJSON).digest('hex').slice(0, 12),
   blocks_with_strings: Object.keys(perBlock).length,
   total_entries: total,
   catalog,

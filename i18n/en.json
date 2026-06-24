@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0.0",
-  "generated_at": "2026-06-25T00:01:00.000Z",
+  "generated_at": "2026-06-25T00:02:00.000Z",
   "source_locale": "en",
-  "hash": "a464e37ad5f8",
+  "hash": "105c23bf9a8f",
   "blocks_with_strings": 47,
-  "total_entries": 145,
+  "total_entries": 152,
   "catalog": {
     "audio.0": "Toggle audio",
     "autoplay.0": "AUTO · ",
@@ -150,6 +150,13 @@
     "gamble.doubleOrNothing": "DOUBLE OR NOTHING",
     "gamble.stake": "Stake:",
     "gamble.higher": "↑ HIGHER",
-    "gamble.lower": "↓ LOWER"
+    "gamble.lower": "↓ LOWER",
+    "realityCheck.sessionTime": "SESSION TIME",
+    "realityCheck.spins": "SPINS",
+    "realityCheck.loss": "LOSS",
+    "realityCheck.net": "NET",
+    "realityCheck.continue": "CONTINUE",
+    "realityCheck.pause": "PAUSE",
+    "realityCheck.quit": "QUIT"
   }
 }

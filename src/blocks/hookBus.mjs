@@ -1041,9 +1041,11 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
       handlers[event].push(entry);
       /* stable insertion order within same priority; higher priority first */
       handlers[event].sort((a, b) => b.priority - a.priority);
-      /* UQ-DEEP-AP E-1: replay last payload if requested AND emit has fired. */
+      /* UQ-DEEP-AP E-1 + AT K-P1-3: replay last payload if requested AND
+         emit has fired. Hand handler a fresh shallow clone so two replay
+         handlers don't see each other's stamps. */
       if (replayLast && _hasFired[event]) {
-        try { fn(_lastPayload[event] || {}); } catch (err) {
+        try { fn(_cloneForReplay(_lastPayload[event] || {})); } catch (err) {
           console.error('[HookBus] replay handler threw on', event, err);
         }
       }
@@ -1055,25 +1057,23 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
       handlers[event] = handlers[event].filter(e => e.fn !== fn);
     }
 
-    /* UQ-DEEP-AR I-4 + AS J-P1-2 (Auditor I #4 + Auditor J P1-2 — bounded
-       replay buffer with read-only contract):
-       Shallow-copy payload + drop array fields longer than 64 entries
-       so replay cache doesn't pin huge reel snapshots / win lists /
-       SAB views via closure references. Primitives + small arrays kept.
+    /* UQ-DEEP-AR I-4 + AS J-P1-2 + AT K-P1-3 (Auditors I/J/K — bounded
+       replay buffer + per-replay clone):
+       Shallow-copy payload + drop array fields longer than 64 entries so
+       replay cache doesn't pin huge reel snapshots / win lists / SAB
+       views via closure references. Primitives + small arrays kept.
 
-       READ-ONLY CONTRACT (J-P1-2): Late subscribers using replayLast:true
-       receive a Object.freeze()-d clone — nested objects ARE refs to the
-       original (shallow), but the TOP-LEVEL surface is immutable. Direct
-       mutation of payload.field throws in strict mode, no-ops in sloppy.
-       Replay receivers MUST treat nested objects as read-only by convention
-       (deep-freeze would be too expensive on hot path). */
+       K-P1-3 reverts the Object.freeze() from J-P1-2: future replay
+       handlers may legitimately stamp payload._processedBy for debug
+       trace, and frozen objects throw silently in module strict mode
+       (.mjs is always strict). Solution: cache stays unfrozen, but
+       on() with replayLast:true hands the handler a FRESH shallow CLONE
+       so each receiver gets its own mutable surface. */
     function _shallowBounded(p) {
       if (p == null || typeof p !== 'object') return p;
       if (Array.isArray(p)) {
-        /* Array payloads: keep first 64 entries; if hit cap, mark truncated. */
         var arr = p.length <= 64 ? p.slice() : p.slice(0, 64);
         if (p.length > 64) arr._truncated = true;
-        try { Object.freeze(arr); } catch (_) {}
         return arr;
       }
       var out = {};
@@ -1086,7 +1086,17 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
           out[k] = v;
         }
       }
-      try { Object.freeze(out); } catch (_) {}
+      return out;
+    }
+    /* UQ-DEEP-AT K-P1-3: clone for replay so each replayLast handler gets
+       its own mutable shallow surface. */
+    function _cloneForReplay(p) {
+      if (p == null || typeof p !== 'object') return p;
+      if (Array.isArray(p)) return p.slice();
+      var out = {};
+      for (var k in p) {
+        if (Object.prototype.hasOwnProperty.call(p, k)) out[k] = p[k];
+      }
       return out;
     }
     function emit(event, payload) {

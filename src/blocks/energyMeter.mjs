@@ -179,7 +179,7 @@ export function emitEnergyMeterMarkup(cfg = defaultConfig()) {
   const label = String(cfg.labelTemplate || 'ENERGY {N}/{M}')
     .replace('{N}', '0')
     .replace('{M}', String(cfg.capacity));
-  return tagBlockMarkup(`<div id="energyMeter" class="energy-meter" role="progressbar" aria-valuemin="0" aria-valuemax="${cfg.capacity}" aria-valuenow="0" aria-label="Energy meter" data-visible="false" data-value="0" data-full="false">
+  return tagBlockMarkup(`<div id="energyMeter" class="energy-meter" role="progressbar" aria-valuemin="0" aria-valuemax="${cfg.capacity}" aria-valuenow="0" aria-label="Energy meter" data-i18n-aria="energyMeter.0" data-i18n-aria-fallback="Energy meter" data-visible="false" data-value="0" data-full="false">
     <!-- WCAG 4.1.3 — em-label textContent is rewritten on every bump / reset.
          aria-live="polite" announces "ENERGY 3/10" updates to SR users. -->
     <span class="em-label" aria-live="polite" aria-atomic="true">${label}</span>

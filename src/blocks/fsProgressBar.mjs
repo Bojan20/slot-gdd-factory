@@ -182,10 +182,11 @@ export function emitFsProgressBarCSS(cfg = defaultConfig()) {
 
 export function emitFsProgressBarMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
+  /* UQ-DEEP-AT H-1 phase-3: aria-label localized via data-i18n-aria. */
   return tagBlockMarkup(`
   <div id="fsProgress" class="fs-progress" role="progressbar"
        aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"
-       aria-label="Free spins progress" data-show="false">
+       aria-label="Free spins progress" data-i18n-aria="fsProgressBar.0" data-i18n-aria-fallback="Free spins progress" data-show="false">
     <span id="fsProgressLabel" class="fs-progress__label" aria-live="polite">Spin 0 of 0</span>
     <span class="fs-progress__track"><span id="fsProgressFill" class="fs-progress__fill"></span></span>
   </div>`, 'fsProgressBar');

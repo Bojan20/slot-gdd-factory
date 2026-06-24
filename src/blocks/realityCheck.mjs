@@ -438,32 +438,32 @@ export function emitRealityCheckMarkup(cfg = defaultConfig()) {
     <div class="rc-stats" id="rcStats" role="alert" aria-live="assertive">
       ${cfg.showElapsedTime ? `
       <div class="rc-stat rc-stat--time">
-        <span class="rc-stat__label">SESSION TIME</span>
+        <span class="rc-stat__label" data-i18n="realityCheck.sessionTime" data-i18n-fallback="SESSION TIME">SESSION TIME</span>
         <span class="rc-stat__value" id="rcStatTime">0:00</span>
       </div>` : ''}
       ${cfg.showSpinCount ? `
       <div class="rc-stat rc-stat--spins">
-        <span class="rc-stat__label">SPINS</span>
+        <span class="rc-stat__label" data-i18n="realityCheck.spins" data-i18n-fallback="SPINS">SPINS</span>
         <span class="rc-stat__value" id="rcStatSpins">0</span>
       </div>` : ''}
       ${cfg.showNetSummary ? `
       <div class="rc-stat rc-stat--win">
-        <span class="rc-stat__label">WIN</span>
+        <span class="rc-stat__label" data-i18n="common.win" data-i18n-fallback="WIN">WIN</span>
         <span class="rc-stat__value" id="rcStatWin">${_esc(cfg.currencyPrefix)}0</span>
       </div>
       <div class="rc-stat rc-stat--loss">
-        <span class="rc-stat__label">LOSS</span>
+        <span class="rc-stat__label" data-i18n="realityCheck.loss" data-i18n-fallback="LOSS">LOSS</span>
         <span class="rc-stat__value" id="rcStatLoss">${_esc(cfg.currencyPrefix)}0</span>
       </div>
       <div class="rc-stat rc-stat--net" id="rcStatNetBox">
-        <span class="rc-stat__label">NET</span>
+        <span class="rc-stat__label" data-i18n="realityCheck.net" data-i18n-fallback="NET">NET</span>
         <span class="rc-stat__value" id="rcStatNet">${_esc(cfg.currencyPrefix)}0</span>
       </div>` : ''}
     </div>
     <div class="rc-actions">
-      <button id="rcBtnContinue" class="rc-btn" type="button">CONTINUE</button>
-      <button id="rcBtnPause" class="rc-btn" type="button">PAUSE</button>
-      <button id="rcBtnQuit" class="rc-btn rc-btn--quit" type="button">QUIT</button>
+      <button id="rcBtnContinue" class="rc-btn" type="button" data-i18n="realityCheck.continue" data-i18n-fallback="CONTINUE">CONTINUE</button>
+      <button id="rcBtnPause" class="rc-btn" type="button" data-i18n="realityCheck.pause" data-i18n-fallback="PAUSE">PAUSE</button>
+      <button id="rcBtnQuit" class="rc-btn rc-btn--quit" type="button" data-i18n="realityCheck.quit" data-i18n-fallback="QUIT">QUIT</button>
     </div>
     <div id="rcPauseOptions" class="rc-pause-options" data-show="false">
       ${cfg.pauseOptions.map(min => `<button class="rc-pause-btn" type="button" data-pause-min="${min}" aria-label="Pause for ${min} minute${min === 1 ? '' : 's'}">${min} MIN</button>`).join('')}

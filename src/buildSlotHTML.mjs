@@ -2632,7 +2632,12 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   (function _wireBlockLifecycle() {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
     if (typeof window.HookBus !== 'object' || typeof window.HookBus.emit !== 'function') return;
+    /* UQ-DEEP-AT K-P1-2 (Auditor K): dedupe re-emit. iOS Safari + Firefox
+       fire pageshow{persisted:true} twice on WebView focus restore. Without
+       dedupe, onBlockSetup fires 2× per block; bonusOverlayMutex counter
+       inflates → next overlay request silently dropped by mutex contention. */
     function _emitSetup() {
+      if (window._sgBlocksSetup) return;
       try {
         var nodes = document.querySelectorAll('[data-block-name]');
         for (var i = 0; i < nodes.length; i++) {
@@ -2641,6 +2646,7 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
             try { window.HookBus.emit('onBlockSetup', { name: name }); } catch (_) {}
           }
         }
+        window._sgBlocksSetup = true;
       } catch (_) {}
     }
     function _emitDestroy(reason) {
@@ -2655,6 +2661,8 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
         if (typeof window.HookBus.clearReplay === 'function') {
           try { window.HookBus.clearReplay(); } catch (_) {}
         }
+        /* UQ-DEEP-AT K-P1-2: clear setup flag so pageshow can re-emit. */
+        window._sgBlocksSetup = false;
       } catch (_) {}
     }
     if (document.readyState === 'loading') {

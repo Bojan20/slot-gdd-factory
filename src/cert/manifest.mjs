@@ -311,8 +311,10 @@ export class ManifestSchemaError extends Error {
 export function isCompatibleSchema(version) {
   if (typeof version !== 'string') return false;
   // Accept 1.x.y with optional -prerelease.id / +build.id suffix.
-  // Major bump (2.x) would force migration.
-  return /^1\.\d+\.\d+(?:[-+][\w.]+)?$/.test(version);
+  // UQ-DEEP-AT K-P2-1: \w = [A-Za-z0-9_] excluded dash. SemVer 2.0.0 spec
+  // allows dashed identifiers ("1.0.0-rc-1", "1.0.0-beta.2-hotfix"). Allow
+  // `-` inside the suffix block. Major bump (2.x) would force migration.
+  return /^1\.\d+\.\d+(?:[-+][\w.\-]+)?$/.test(version);
 }
 
 /**

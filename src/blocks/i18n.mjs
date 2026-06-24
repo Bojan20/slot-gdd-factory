@@ -484,7 +484,14 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
         var fp = PACKS[FALLBACK_CHAIN[i]];
         if (fp && key in fp) return _sanitizeLocaleString(fp[key]);
       }
-      return _sanitizeLocaleString(fb != null ? fb : key);
+      if (fb != null) return _sanitizeLocaleString(fb);
+      /* UQ-DEEP-AT K-P2-2 (Auditor K): humanize fallback so screen reader
+         doesn't read "autoplay dot title" when both pack + fallback fail.
+         Take last dot-notation segment, decamelCase, titlecase. */
+      var leaf = String(key).split('.').pop() || key;
+      var human = leaf.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ');
+      human = human.charAt(0).toUpperCase() + human.slice(1);
+      return _sanitizeLocaleString(human);
     }
 
     function _formatMoneyManual(n, ccy) {
@@ -526,10 +533,24 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
       return USE_INTL ? _formatMoneyIntl(n, c) : _formatMoneyManual(n, c);
     }
 
+    /* UQ-DEEP-AT K-P1-1 (Auditor K): lazy locale re-read.
+       state.locale captures window.__SLOT_LOCALE__ at IIFE exec; if
+       settingsPanel IIFE writes it AFTER i18n IIFE, initial paints are
+       English. _hydrateLocale() re-reads on first paint if no explicit
+       setLocale() landed yet. */
     var state = {
       locale: (typeof window !== 'undefined' && window.__SLOT_LOCALE__) || DEFAULT_LOCALE,
       currency: DEFAULT_CURRENCY,
+      _localeExplicit: !!(typeof window !== 'undefined' && window.__SLOT_LOCALE__),
     };
+    function _hydrateLocale() {
+      if (state._localeExplicit) return;
+      if (typeof window === 'undefined' || !window.__SLOT_LOCALE__) return;
+      if (window.__SLOT_LOCALE__ !== state.locale) {
+        state.locale = window.__SLOT_LOCALE__;
+        state._localeExplicit = true;
+      }
+    }
 
     /* WCAG 4.1.3 (Status Messages, Level AA) — every data-i18n element is a
      * dynamic-text surface that re-paints on onLocaleChanged. Screen-reader
@@ -539,6 +560,8 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
      * because locale change is a routine setting, not a critical interrupt. */
     function _paintNodes() {
       if (typeof document === 'undefined') return 0;
+      /* UQ-DEEP-AT K-P1-1: lazy locale re-read before first paint. */
+      _hydrateLocale();
       /* data-i18n="key" → set textContent. */
       var nodes = document.querySelectorAll('[data-i18n]');
       var n = 0;
@@ -600,6 +623,7 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
     function setLocale(loc) {
       if (!_isValidStr(loc)) return false;
       state.locale = loc;
+      state._localeExplicit = true;
       /* UQ-DEEP-AP H-4 (Auditor H, WCAG 3.1.1 Language of Page):
          sync <html lang="..."> so screen readers (NVDA/VoiceOver/JAWS)
          pronounce content in the right voice. Was hardcoded "en" forever. */

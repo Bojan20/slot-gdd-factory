@@ -156,7 +156,7 @@ export function emitMultiplierLadderMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const startVal = cfg.steps[cfg.startTier] || 1;
   const label = String(cfg.labelTemplate || '×{N}').replace('{N}', String(startVal));
-  return tagBlockMarkup(`<div id="multLadder" class="mult-ladder" role="status" aria-live="polite" aria-label="Multiplier ladder" data-visible="false" data-tier="${cfg.startTier}">${label}</div>`, 'multiplierLadder');
+  return tagBlockMarkup(`<div id="multLadder" class="mult-ladder" role="status" aria-live="polite" aria-label="Multiplier ladder" data-i18n-aria="multiplierLadder.0" data-i18n-aria-fallback="Multiplier ladder" data-visible="false" data-tier="${cfg.startTier}">${label}</div>`, 'multiplierLadder');
 }
 
 export function emitMultiplierLadderRuntime(cfg = defaultConfig()) {
