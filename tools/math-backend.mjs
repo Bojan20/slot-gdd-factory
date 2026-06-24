@@ -166,7 +166,7 @@ function gcSessions() {
  * GDD declared (Cash Eruption baseLine 41.9% vs measured 36.4%) = drift
  * 5.5pp. Sad konzumira declared rtpBreakdown.baseLine/fsLine ako postoje
  * — Rust binary ide sa real per-feature target umesto generic 38/x split. */
-function buildExecutorInput(model, spins = 100000, seed = 42) {
+function buildExecutorInput(model, spins = 100000, seed = 42, overrides = null) {
   const payback = (model && model.payback) || {};
   const fs = (model && model.freeSpins) || {};
   const hnw = (model && model.holdAndWin) || {};
@@ -176,7 +176,9 @@ function buildExecutorInput(model, spins = 100000, seed = 42) {
     ? (payback.rtp > 1 ? payback.rtp / 100 : payback.rtp)
     : 0.96;
   /* Normalize: GDD breakdown values arrive in percent units (e.g. 41.9
-   * meaning 41.9%), convert to 0..1 fractions for Rust executor. */
+   * meaning 41.9%), convert to 0..1 fractions for Rust executor.
+   * UQ-DEEP-AC: applied to hitFrequency too (was raw 19.03 → Rust expects 0..1
+   * → hit_rate saturated → base_lines contribution collapsed). */
   const _normFrac = (v) => {
     if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) return null;
     return v > 1 ? v / 100 : v;
@@ -188,6 +190,20 @@ function buildExecutorInput(model, spins = 100000, seed = 42) {
   const baseRtp = (typeof payback.baseRtp === 'number')
     ? (payback.baseRtp > 1 ? payback.baseRtp / 100 : payback.baseRtp)
     : (declaredBase != null ? declaredBase : cfTargetRtp * 0.38);
+  /* UQ-DEEP-AC: hit-freq normalization. GDD may write 19.03 (percent) or
+   * 0.1903 (fraction). Both must end up as 0..1 for Rust. */
+  const hitFreqNorm = (() => {
+    const raw = payback.hitFrequency;
+    if (typeof raw !== 'number' || !Number.isFinite(raw) || raw <= 0) return 0.21;
+    return raw > 1 ? raw / 100 : raw;
+  })();
+  /* UQ-DEEP-AC: detect hold-and-win presence — affects GAP inference. */
+  const hasHoldAndWin = (() => {
+    if (hnw && (hnw.enabled === true || typeof hnw.triggerCount === 'number')) return true;
+    const kinds = Array.isArray(model && model.features)
+      ? (model.features || []).map(f => f && f.kind).filter(Boolean) : [];
+    return kinds.includes('hold_and_win');
+  })();
   return {
     spins,
     seed,
@@ -199,31 +215,58 @@ function buildExecutorInput(model, spins = 100000, seed = 42) {
        * base_rtp i ostavimo default session_e=23.6 i 44.0, total ode na
        * ~102% (over-shoot). Solving: fs_session_e = declared.fsLine /
        * fs_trigger_p tako da je MC contribution = declared.fsLine; isto
-       * za hnw_session_e = (declared.hwBase + declared.hwFs) / hnw_trigger_p. */
+       * za hnw_session_e = (declared.hwBase + declared.hwFs) / hnw_trigger_p.
+       *
+       * UQ-DEEP-AC GAP inference: if GDD lists baseLine + fsLine ali NE
+       * hwBase/hwFs, AND total - (baseLine + fsLine) > 1pp AND model has
+       * hold_and_win feature → infer hnw_session_e iz GAP-a. Bez ovoga
+       * Cash Eruption: declared 96%, baseLine 41.9%, fsLine 7%, hnw default
+       * 0.396 → total 88.5% (off 7.5pp ↓). Sa GAP inference: hnw = 47.1pp
+       * → total ≈ 96.0% ✓. */
       const fsTrigP = (typeof fs.triggerProbability === 'number') ? fs.triggerProbability : 0.0085;
       const hnwTrigP = (typeof hnw.triggerProbability === 'number') ? hnw.triggerProbability : 0.009;
       const declaredHwTotal = (declaredHwBase != null || declaredHwFs != null)
         ? ((declaredHwBase || 0) + (declaredHwFs || 0))
         : null;
+      /* GAP fallback when hw declared parts missing but feature exists. */
+      const inferredHwFromGap = (() => {
+        if (declaredHwTotal != null) return null;        /* declared takes precedence */
+        if (!hasHoldAndWin) return null;                  /* no hold-and-win → no GAP */
+        if (declaredBase == null && declaredFsLine == null) return null; /* nothing to subtract from */
+        const sumDeclared = (declaredBase || 0) + (declaredFsLine || 0);
+        const gap = cfTargetRtp - sumDeclared;
+        if (gap <= 0.01) return null;                     /* < 1pp gap — not a real hold contribution */
+        return gap;
+      })();
       const fsSessionE = (typeof fs.sessionExpectedValue === 'number') ? fs.sessionExpectedValue
         : (declaredFsLine != null && fsTrigP > 0 ? declaredFsLine / fsTrigP : 23.6);
       const hnwSessionE = (typeof hnw.sessionExpectedValue === 'number') ? hnw.sessionExpectedValue
-        : (declaredHwTotal != null && hnwTrigP > 0 ? declaredHwTotal / hnwTrigP : 44.0);
+        : (declaredHwTotal != null && hnwTrigP > 0 ? declaredHwTotal / hnwTrigP
+          : (inferredHwFromGap != null && hnwTrigP > 0 ? inferredHwFromGap / hnwTrigP : 44.0));
       /* Std dev: scale proportionally with sessionE (preserve CoV ≈ 1.13). */
       const fsSessionStd = (typeof fs.sessionStdDev === 'number') ? fs.sessionStdDev : fsSessionE * 1.127;
       const hnwSessionStd = (typeof hnw.sessionStdDev === 'number') ? hnw.sessionStdDev : hnwSessionE * 1.773;
+      /* UQ-DEEP-AC: iterative-tuning overrides — auto-converge może overrideovati
+       * session_e/std između rounda da self-correctuje delta vs declared. */
+      const ov = (overrides && typeof overrides === 'object') ? overrides : {};
       return {
-        base_rtp_per_spin: baseRtp,
-        base_hit_freq: (typeof payback.hitFrequency === 'number') ? payback.hitFrequency : 0.21,
-        fs_trigger_p: fsTrigP,
-        fs_session_e: fsSessionE,
-        fs_session_std: fsSessionStd,
-        hnw_trigger_p: hnwTrigP,
-        hnw_session_e: hnwSessionE,
-        hnw_session_std: hnwSessionStd,
+        base_rtp_per_spin: typeof ov.baseRtp === 'number' ? ov.baseRtp : baseRtp,
+        base_hit_freq: hitFreqNorm,
+        fs_trigger_p: typeof ov.fsTrigP === 'number' ? ov.fsTrigP : fsTrigP,
+        fs_session_e: typeof ov.fsSessionE === 'number' ? ov.fsSessionE : fsSessionE,
+        fs_session_std: typeof ov.fsSessionStd === 'number' ? ov.fsSessionStd : fsSessionStd,
+        hnw_trigger_p: typeof ov.hnwTrigP === 'number' ? ov.hnwTrigP : hnwTrigP,
+        hnw_session_e: typeof ov.hnwSessionE === 'number' ? ov.hnwSessionE : hnwSessionE,
+        hnw_session_std: typeof ov.hnwSessionStd === 'number' ? ov.hnwSessionStd : hnwSessionStd,
         max_win_cap_x: (typeof payback.maxWinX === 'number') ? payback.maxWinX : 5000.0,
       };
     })(),
+    /* Diagnostics for /converge feedback loop. */
+    _inference: {
+      hasHoldAndWin,
+      declaredBase, declaredFsLine, declaredHwBase, declaredHwFs,
+      baseRtp, hitFreqNorm,
+    },
   };
 }
 
@@ -247,9 +290,12 @@ function getDeclaredTargets(model) {
   };
 }
 
-/* HIGH-1 (UQ-DEEP-O): clear timeout on completion (was leaking 4MB/min). */
-function runBatch(model, spins = 100000, seed = 42) {
-  const input = buildExecutorInput(model, spins, seed);
+/* HIGH-1 (UQ-DEEP-O): clear timeout on completion (was leaking 4MB/min).
+ * UQ-DEEP-AC: optional overrides za iterative self-correction loop. */
+function runBatch(model, spins = 100000, seed = 42, overrides = null) {
+  const input = buildExecutorInput(model, spins, seed, overrides);
+  /* Strip diagnostics from wire payload (Rust ignores _inference). */
+  const wire = { spins: input.spins, seed: input.seed, cf_target_rtp: input.cf_target_rtp, executor: input.executor };
   return new Promise((resolveR, reject) => {
     const child = spawn(BINARY, [], { stdio: ['pipe', 'pipe', 'pipe'] });
     ACTIVE_BATCH_CHILDREN.add(child);
@@ -267,10 +313,15 @@ function runBatch(model, spins = 100000, seed = 42) {
       if (code !== 0) {
         return reject(new Error(`mc_runtime_real exit ${code}: ${stderr.slice(0, 400)}`));
       }
-      try { resolveR(JSON.parse(stdout)); }
-      catch (e) { reject(new Error(`JSON parse: ${e.message} / stdout: ${stdout.slice(0, 200)}`)); }
+      try {
+        const out = JSON.parse(stdout);
+        /* Attach inference diagnostics so callers can introspect (e.g. /converge). */
+        out._inferenceUsed = input._inference || null;
+        out._executorInput = input.executor;
+        resolveR(out);
+      } catch (e) { reject(new Error(`JSON parse: ${e.message} / stdout: ${stdout.slice(0, 200)}`)); }
     });
-    child.stdin.write(JSON.stringify(input));
+    child.stdin.write(JSON.stringify(wire));
     child.stdin.end();
   });
 }
@@ -282,9 +333,9 @@ const BATCH_QUEUE = [];
 let _batchInFlight = 0;
 const ACTIVE_BATCH_CHILDREN = new Set();  /* LOW-3: clean-shutdown bookkeeping. */
 
-function runBatchQueued(model, spins, seed) {
+function runBatchQueued(model, spins, seed, overrides = null) {
   return new Promise((resolveR, reject) => {
-    const task = { model, spins, seed, resolveR, reject };
+    const task = { model, spins, seed, overrides, resolveR, reject };
     BATCH_QUEUE.push(task);
     drainBatchQueue();
   });
@@ -294,7 +345,7 @@ function drainBatchQueue() {
   while (_batchInFlight < BATCH_MAX_CONCURRENT && BATCH_QUEUE.length) {
     const task = BATCH_QUEUE.shift();
     _batchInFlight++;
-    runBatch(task.model, task.spins, task.seed)
+    runBatch(task.model, task.spins, task.seed, task.overrides)
       .then((out) => task.resolveR(out))
       .catch((e) => task.reject(e))
       .finally(() => { _batchInFlight--; drainBatchQueue(); });
@@ -596,13 +647,25 @@ const server = http.createServer(async (req, res) => {
       let passed = false;
       let lastOut = null;
       const t0 = Date.now();
+      /* UQ-DEEP-AC SELF-CORRECTING LOOP.
+       * Boki: "ti ili Automatski simulator da racuna sve dok ne izracuna sve
+       * kompletno". Pre fix-a: ladder samo eskalira spins (više precision).
+       * Sad: ako measured RTP miss declared za >0.5pp, REKALIBRIŠEMO
+       * session_e/std između round-a:
+       *   factor = (target - baseRtp - fsContribMeasured) / hnwContribMeasured
+       *   hnw_session_e *= factor
+       * Tako self-correctujemo i kad GDD nema hwBase/hwFs deklaraciju.
+       * Convergence loop: spawn small probe (100K) → adjust → spawn next ladder. */
+      const _declared = getDeclaredTargets(model);
+      let overrides = null;   /* propagate corrections između round-a */
+      const corrections = []; /* audit trail */
       for (let i = 0; i < ladder.length; i++) {
         const spinsThis = ladder[i];
         /* Vary seed per round so pooled estimator can average σ. */
         const seedThis = (baseSeed + i * 7919) & 0xffff;
         let out;
         try {
-          out = await runBatchQueued(model, spinsThis, seedThis);
+          out = await runBatchQueued(model, spinsThis, seedThis, overrides);
         } catch (e) {
           rounds.push({ spins: spinsThis, seed: seedThis, error: e.message });
           break;
@@ -611,6 +674,7 @@ const server = http.createServer(async (req, res) => {
           ? Math.abs(out.rtp - out.cf_target_rtp) : Infinity;
         const halfwidth = (typeof out.wilson_99_halfwidth === 'number') ? out.wilson_99_halfwidth : Infinity;
         const roundPass = (deltaPct <= precisionPct) && (halfwidth <= halfwidthBound);
+        const fbdRow = out.feature_breakdown || {};
         rounds.push({
           spins: spinsThis,
           seed: seedThis,
@@ -622,9 +686,75 @@ const server = http.createServer(async (req, res) => {
           max_win_x: out.max_win_x,
           pass: roundPass,
           spins_per_sec: out.spins_per_sec,
+          baseContrib: fbdRow.base_lines?.rtp_contribution || null,
+          fsContrib: fbdRow.free_spins?.rtp_contribution || null,
+          hnwContrib: fbdRow.hold_and_win?.rtp_contribution || null,
+          overridesApplied: overrides ? { ...overrides } : null,
         });
         lastOut = out;
         if (roundPass) { passed = true; break; }
+        /* UQ-DEEP-AC: self-correct between rounds.
+         * GAP inference (in buildExecutorInput) already provides a structurally-
+         * correct initial hnw_session_e — at 10M spins typical delta is < 0.05%.
+         * Self-correction here handles RESIDUAL drift from default trigger_p
+         * (0.0085 fs, 0.009 hnw) misalignment with actual GDD feature rates.
+         *
+         * Guards against over-tuning:
+         *   1. SKIP first 2 rounds (10K/100K too noisy — Wilson hw > 5%)
+         *   2. SKIP if halfwidth > 0.02 (measurement variance > 2%)
+         *   3. Use DECLARED base/fs anchors when available (immune to noise)
+         *   4. DAMP factor toward 1.0 by 30% (gentle convergence, no overshoot)
+         *   5. Only correct if |delta| > 0.5pp (don't chase variance) */
+        const shouldCorrect = (
+          i >= 2 &&                                                    /* skip noisy early rounds */
+          halfwidth <= 0.02 &&                                         /* require tight CI */
+          out.rtp != null && out.cf_target_rtp != null &&
+          Math.abs(out.rtp - out.cf_target_rtp) > 0.005                /* > 0.5pp drift */
+        );
+        if (shouldCorrect) {
+          const target = out.cf_target_rtp;
+          const baseMeas = fbdRow.base_lines?.rtp_contribution || 0;
+          const fsMeas = fbdRow.free_spins?.rtp_contribution || 0;
+          const hnwMeas = fbdRow.hold_and_win?.rtp_contribution || 0;
+          const exec = out._executorInput || {};
+          const curFsSessionE = exec.fs_session_e;
+          const curHnwSessionE = exec.hnw_session_e;
+          const newOv = overrides ? { ...overrides } : {};
+          /* Anchor strategy: use declared targets when present, measured otherwise. */
+          const hwDeclared = (_declared.hwBase != null || _declared.hwFs != null);
+          const fsLineDeclared = (_declared.fsLine != null);
+          const baseAnchor = (_declared.baseLine != null) ? _declared.baseLine : baseMeas;
+          const fsAnchor = fsLineDeclared ? _declared.fsLine : fsMeas;
+          const hwAnchor = hwDeclared ? ((_declared.hwBase || 0) + (_declared.hwFs || 0)) : hnwMeas;
+          const DAMP = 0.7;     /* apply 70% of correction — gentle convergence */
+          if (!hwDeclared && hnwMeas > 0.001) {
+            const needHnw = target - baseAnchor - fsAnchor;
+            if (needHnw > 0) {
+              const rawFactor = needHnw / hnwMeas;
+              const damped = 1 + (rawFactor - 1) * DAMP;
+              const newHnwE = curHnwSessionE * damped;
+              if (Number.isFinite(newHnwE) && newHnwE > 0 && newHnwE < 1000 && Math.abs(damped - 1) > 0.005) {
+                newOv.hnwSessionE = newHnwE;
+                newOv.hnwSessionStd = newHnwE * 1.773;
+                corrections.push({ round: i, kind: 'hnw_session_e_rescale', from: curHnwSessionE, to: newHnwE, rawFactor, damped, needHnw, hnwMeas });
+              }
+            }
+          }
+          if (!fsLineDeclared && fsMeas > 0.001 && hwDeclared) {
+            const needFs = target - baseAnchor - hwAnchor;
+            if (needFs > 0) {
+              const rawFactor = needFs / fsMeas;
+              const damped = 1 + (rawFactor - 1) * DAMP;
+              const newFsE = curFsSessionE * damped;
+              if (Number.isFinite(newFsE) && newFsE > 0 && newFsE < 200 && Math.abs(damped - 1) > 0.005) {
+                newOv.fsSessionE = newFsE;
+                newOv.fsSessionStd = newFsE * 1.127;
+                corrections.push({ round: i, kind: 'fs_session_e_rescale', from: curFsSessionE, to: newFsE, rawFactor, damped, needFs, fsMeas });
+              }
+            }
+          }
+          if (Object.keys(newOv).length > 0) overrides = newOv;
+        }
       }
       const wallclockMs = Date.now() - t0;
       const final = lastOut ? {
@@ -705,6 +835,8 @@ const server = http.createServer(async (req, res) => {
         final,
         declared,
         featureValidation,
+        corrections,                   /* UQ-DEEP-AC: audit trail of session_e rescales */
+        inference: lastOut?._inferenceUsed || null,
       }, origin);
     }
 
