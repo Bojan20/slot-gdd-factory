@@ -468,34 +468,39 @@ export function emitBetSelectorMarkup(cfg = defaultConfig()) {
   const safeAria = _escape(c.ariaLabel);
   /* The chip is a button so keyboard users can open the panel via
    * Enter/Space without bespoke key handling. */
+  /* UQ-DEEP-AQ H-1 — data-i18n-aria / data-i18n attributes stamp the
+     i18n keys (catalog keys from i18n/en.json). i18n paint loop reads
+     these on init + on setLocale() and updates aria-label / textContent.
+     Fallback to the literal English string keeps screen-reader output
+     stable when the locale pack hasn't loaded yet. */
   return `
-  <div class="bet-steps" role="group" aria-label="Bet controls">
-    ${c.showStepButtons ? `<button class="bet-step" id="betStepDown" type="button" aria-label="Decrease bet">−</button>` : ''}
+  <div class="bet-steps" role="group" aria-label="Bet controls" data-i18n-aria="betSelector.1" data-i18n-aria-fallback="Bet controls">
+    ${c.showStepButtons ? `<button class="bet-step" id="betStepDown" type="button" aria-label="Decrease bet" data-i18n-aria="betSelector.4" data-i18n-aria-fallback="Decrease bet">−</button>` : ''}
     <button class="bet-chip" id="betChip" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="${safeAria}">
-      <span class="bet-chip__label">BET</span>
+      <span class="bet-chip__label" data-i18n="betSelector.bet" data-i18n-fallback="BET">BET</span>
       <!-- WCAG 4.1.3 — bet value is mutated by step / panel selection; SR users
            need aria-live="polite" so the new total is announced after change. -->
       <span class="bet-chip__value" id="betChipValue" aria-live="polite" aria-atomic="true">—</span>
     </button>
-    ${c.showStepButtons ? `<button class="bet-step" id="betStepUp" type="button" aria-label="Increase bet">+</button>` : ''}
+    ${c.showStepButtons ? `<button class="bet-step" id="betStepUp" type="button" aria-label="Increase bet" data-i18n-aria="betSelector.5" data-i18n-aria-fallback="Increase bet">+</button>` : ''}
   </div>
-  <div class="bet-panel" id="betPanel" hidden role="dialog" aria-modal="false" aria-label="Bet configuration">
+  <div class="bet-panel" id="betPanel" hidden role="dialog" aria-modal="false" aria-label="Bet configuration" data-i18n-aria="betSelector.0" data-i18n-aria-fallback="Bet configuration">
     ${c.showCoinPicker ? `
     <div class="bet-panel-group">
-      <h4>Coin</h4>
-      <div class="bet-grid" id="betCoinGrid" role="radiogroup" aria-label="Coin value"></div>
+      <h4 data-i18n="betSelector.coin" data-i18n-fallback="Coin">Coin</h4>
+      <div class="bet-grid" id="betCoinGrid" role="radiogroup" aria-label="Coin value" data-i18n-aria="betSelector.3" data-i18n-aria-fallback="Coin value"></div>
     </div>` : ''}
     ${c.showMultiplierPicker ? `
     <div class="bet-panel-group">
-      <h4>Bet multiplier</h4>
-      <div class="bet-grid" id="betMultiplierGrid" role="radiogroup" aria-label="Bet multiplier"></div>
+      <h4 data-i18n="betSelector.2" data-i18n-fallback="Bet multiplier">Bet multiplier</h4>
+      <div class="bet-grid" id="betMultiplierGrid" role="radiogroup" aria-label="Bet multiplier" data-i18n-aria="betSelector.2" data-i18n-aria-fallback="Bet multiplier"></div>
     </div>` : ''}
     <div class="bet-panel-row">
       <div>
-        <div class="bet-chip__label">TOTAL BET</div>
+        <div class="bet-chip__label" data-i18n="betSelector.totalBet" data-i18n-fallback="TOTAL BET">TOTAL BET</div>
         <div class="bet-panel-total" id="betPanelTotal">—</div>
       </div>
-      ${c.maxBetButton ? `<button class="bet-panel-max" id="betMaxBtn" type="button" aria-label="Max bet">MAX BET</button>` : ''}
+      ${c.maxBetButton ? `<button class="bet-panel-max" id="betMaxBtn" type="button" aria-label="Max bet" data-i18n-aria="betSelector.6" data-i18n-aria-fallback="Max bet" data-i18n="betSelector.maxBet" data-i18n-fallback="MAX BET">MAX BET</button>` : ''}
     </div>
   </div>`;
 }

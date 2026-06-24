@@ -116,12 +116,27 @@ const PaySchema = z.object({
   '6': z.number().int().min(0).max(5_000_000).optional(),
 }).partial();
 
+/* UQ-DEEP-AQ G-6 (Auditor G #6 — canonical symbol tier enum):
+ * IGT-style spec demands closed tier taxonomy. Open string ("high"/"hp")
+ * blocked V14 walker completeness checks. We define the canonical token
+ * set + a normalizer (descriptive → canonical) so legacy V6 cache entries
+ * keep parsing. Schema accepts EITHER token form (legacy synonyms or
+ * canonical) — normalize-on-read happens in the parser, not the schema. */
+export const SYMBOL_TIER_CANONICAL = Object.freeze([
+  'H1', 'H2', 'H3', 'H4', 'H5',
+  'M1', 'M2', 'M3', 'M4', 'M5',
+  'L1', 'L2', 'L3', 'L4', 'L5',
+  'WILD', 'SCATTER', 'BONUS', 'JACKPOT', 'CASH', 'SPECIAL',
+  'HP', 'MP', 'LP',  // legacy short-form retained for back-compat
+]);
+
 const SymbolEntrySchema = z.object({
   id: SymIdSchema,
   label: z.string().min(1).max(40).optional(),
-  /* Tier: canonical set is HP/MP/LP/SPECIAL/SCATTER/CASH/WILD/BONUS, but
-   * parser also emits descriptive strings ("high", "mid"). Accept any
-   * 1..20 char string — V14 walker enforces canonical taxonomy when needed. */
+  /* Tier: canonical set is SYMBOL_TIER_CANONICAL. Schema stays string-based
+   * (1..20 char) because legacy V6 cache entries emit descriptive aliases
+   * ("high"/"mid"/"low") that the parser normalizes elsewhere. V14 walker
+   * enforces canonical taxonomy when run with --strict. */
   tier: z.string().min(1).max(20).optional(),
   pay: PaySchema.optional(),
 });
@@ -262,7 +277,22 @@ const BetSchema = z.object({
 
 /* ── Par sheet sub-object ─────────────────────────────────────────────── */
 
-const ReelStripSchema = z.array(SymIdSchema);
+/* UQ-DEEP-AQ G-7 (Auditor G #7 — reel strip weight union):
+ * IGT par sheet has per-symbol-stop weights ([{symbol:"H1", weight:8}, ...])
+ * which the runtime+MATH-7 WASM oracle already consume via
+ * `par_sheet_weights`. Schema was flat `array<SymId>` — shape drift.
+ * Accept BOTH forms:
+ *   • legacy: ["H1", "L1", "H1", "WILD"]          (positional flat)
+ *   • weighted: [{symbol:"H1", weight:8}, ...]    (canonical IGT shape)
+ * Parser bridges either form into `par_sheet_weights`. */
+const ReelStripWeightedEntrySchema = z.object({
+  symbol: SymIdSchema,
+  weight: z.number().int().min(1).max(10_000_000),
+});
+const ReelStripSchema = z.union([
+  z.array(SymIdSchema),
+  z.array(ReelStripWeightedEntrySchema),
+]);
 
 export const ParSheetSchema = z.object({
   reels: z.array(ReelStripSchema).optional(),

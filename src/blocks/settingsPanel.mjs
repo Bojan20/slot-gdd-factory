@@ -548,14 +548,15 @@ export function emitSettingsPanelMarkup(cfg = defaultConfig()) {
    * already rendered by the orchestrator inside `.hub`. The block emits
    * ONLY the modal — runtime wires its open behaviour onto the existing
    * hamburger. No duplicate floating button. */
+  /* UQ-DEEP-AQ H-1: data-i18n stamping on dialog controls. */
   return tagBlockMarkup(`
   <div id="settingsBackdrop" class="settings-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
     <div id="settingsModal" class="settings-modal" role="document">
-      <h2 id="settingsTitle">Settings</h2>
+      <h2 id="settingsTitle" data-i18n="settingsPanel.title" data-i18n-fallback="Settings">Settings</h2>
       <div id="settingsRows">${rows.join('')}</div>
       <div class="settings-actions">
-        <button id="settingsResetBtn" class="settings-action settings-action--reset" type="button">Reset</button>
-        <button id="settingsCloseBtn" class="settings-action" type="button">Close</button>
+        <button id="settingsResetBtn" class="settings-action settings-action--reset" type="button" data-i18n="common.reset" data-i18n-fallback="Reset">Reset</button>
+        <button id="settingsCloseBtn" class="settings-action" type="button" data-i18n="common.close" data-i18n-fallback="Close">Close</button>
       </div>
     </div>
   </div>`, 'settingsPanel');

@@ -486,19 +486,22 @@ export function emitPaytableMarkup(cfg = defaultConfig() /*, model = {} */) {
   const c = resolveConfig({ paytable: cfg });
   const safeAria  = _escape(c.ariaLabel);
   const safeLabel = _escape(c.chipLabel);
+  /* UQ-DEEP-AQ H-1: data-i18n + data-i18n-aria stamping. Localizes title,
+     close button, and current-bet prefix. Fallback English keeps screen-
+     reader output stable before locale pack loads. */
   return tagBlockMarkup(`
-  <button id="paytableBtn" class="paytable-btn" type="button" aria-label="${safeAria}">${safeLabel}</button>
+  <button id="paytableBtn" class="paytable-btn" type="button" aria-label="${safeAria}" data-i18n-aria="paytable.title" data-i18n-aria-fallback="${safeAria}">${safeLabel}</button>
   <div id="paytableBackdrop" class="paytable-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="paytableTitle">
     <div id="paytableModal" class="paytable-modal" role="document">
-      <h2 id="paytableTitle">Paytable</h2>
+      <h2 id="paytableTitle" data-i18n="paytable.title" data-i18n-fallback="Paytable">Paytable</h2>
       <!-- WCAG 4.1.3 — content innerHTML rewritten on every open + bet
            change; aria-live="polite" announces the refreshed roster /
            bet value when the modal updates. -->
       <div id="paytableContent" aria-live="polite"></div>
       <div id="paytableBetRow" class="paytable-bet-row" hidden>
-        Current bet: <span id="paytableBetValue" class="paytable-bet-value" aria-live="polite">—</span>
+        <span data-i18n="paytable.currentBet" data-i18n-fallback="Current bet:">Current bet:</span> <span id="paytableBetValue" class="paytable-bet-value" aria-live="polite">—</span>
       </div>
-      <button id="paytableCloseBtn" class="paytable-close" type="button">Close</button>
+      <button id="paytableCloseBtn" class="paytable-close" type="button" data-i18n="common.close" data-i18n-fallback="Close">Close</button>
     </div>
   </div>`, 'paytable');
 }

@@ -514,6 +514,7 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
      * because locale change is a routine setting, not a critical interrupt. */
     function _paintNodes() {
       if (typeof document === 'undefined') return 0;
+      /* data-i18n="key" → set textContent. */
       var nodes = document.querySelectorAll('[data-i18n]');
       var n = 0;
       for (var i = 0; i < nodes.length; i++) {
@@ -523,6 +524,39 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
         var fb = el.getAttribute('data-i18n-fallback');
         if (!el.hasAttribute('aria-live')) el.setAttribute('aria-live', 'polite');
         el.textContent = _t(key, fb);
+        n++;
+      }
+      /* UQ-DEEP-AQ H-1 (Auditor H, WCAG 4.1.2 Name, Role, Value):
+         data-i18n-aria="key" → set aria-label. Many interactive controls
+         (bet-step buttons, paytable toggle, close X) only carry an aria-
+         label as their accessible name; that label must localize too. */
+      var ariaNodes = document.querySelectorAll('[data-i18n-aria]');
+      for (var a = 0; a < ariaNodes.length; a++) {
+        var aEl = ariaNodes[a];
+        var aKey = aEl.getAttribute('data-i18n-aria');
+        if (!aKey) continue;
+        var aFb = aEl.getAttribute('data-i18n-aria-fallback') || aEl.getAttribute('aria-label') || '';
+        aEl.setAttribute('aria-label', _t(aKey, aFb));
+        n++;
+      }
+      /* UQ-DEEP-AQ H-1 — data-i18n-title="key" → set title attribute (tooltip). */
+      var titleNodes = document.querySelectorAll('[data-i18n-title]');
+      for (var ti = 0; ti < titleNodes.length; ti++) {
+        var tEl = titleNodes[ti];
+        var tKey = tEl.getAttribute('data-i18n-title');
+        if (!tKey) continue;
+        var tFb = tEl.getAttribute('data-i18n-title-fallback') || tEl.getAttribute('title') || '';
+        tEl.setAttribute('title', _t(tKey, tFb));
+        n++;
+      }
+      /* UQ-DEEP-AQ H-1 — data-i18n-placeholder="key" → set placeholder (forms). */
+      var phNodes = document.querySelectorAll('[data-i18n-placeholder]');
+      for (var ph = 0; ph < phNodes.length; ph++) {
+        var pEl = phNodes[ph];
+        var pKey = pEl.getAttribute('data-i18n-placeholder');
+        if (!pKey) continue;
+        var pFb = pEl.getAttribute('data-i18n-placeholder-fallback') || pEl.getAttribute('placeholder') || '';
+        pEl.setAttribute('placeholder', _t(pKey, pFb));
         n++;
       }
       /* Money spans — opt-in via data-money attribute. */

@@ -368,18 +368,19 @@ export function emitHistoryLogMarkup(cfg = defaultConfig()) {
   const c = resolveConfig({ historyLog: cfg });
   const safeAria  = _escape(c.ariaLabel);
   const safeLabel = _escape(c.chipLabel);
+  /* UQ-DEEP-AQ H-1: data-i18n stamping. */
   const csvBtn = c.allowCsvExport
-    ? `<button id="historyExportBtn" class="history-action" type="button">Export CSV</button>`
+    ? `<button id="historyExportBtn" class="history-action" type="button" data-i18n="historyLog.exportCsv" data-i18n-fallback="Export CSV">Export CSV</button>`
     : '';
   return tagBlockMarkup(`
-  <button id="historyBtn" class="history-btn" type="button" aria-label="${safeAria}">${safeLabel}</button>
+  <button id="historyBtn" class="history-btn" type="button" aria-label="${safeAria}" data-i18n-aria="historyLog.title" data-i18n-aria-fallback="${safeAria}">${safeLabel}</button>
   <div id="historyBackdrop" class="history-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="historyTitle">
     <div id="historyPanel" class="history-panel" role="document">
       <header>
-        <h2 id="historyTitle">Session History</h2>
+        <h2 id="historyTitle" data-i18n="historyLog.title" data-i18n-fallback="Session History">Session History</h2>
         <div class="history-actions">
           ${csvBtn}
-          <button id="historyClearBtn" class="history-action" type="button">Clear</button>
+          <button id="historyClearBtn" class="history-action" type="button" data-i18n="historyLog.clear" data-i18n-fallback="Clear">Clear</button>
         </div>
       </header>
       <div class="history-table-wrap">
@@ -387,19 +388,19 @@ export function emitHistoryLogMarkup(cfg = defaultConfig()) {
           <thead>
             <tr>
               <th class="left">#</th>
-              ${c.showTime ? '<th class="left">Time</th>' : ''}
-              <th>Bet</th>
-              <th>Win</th>
-              <th>Balance</th>
+              ${c.showTime ? '<th class="left" data-i18n="historyLog.time" data-i18n-fallback="Time">Time</th>' : ''}
+              <th data-i18n="common.bet" data-i18n-fallback="Bet">Bet</th>
+              <th data-i18n="common.win" data-i18n-fallback="Win">Win</th>
+              <th data-i18n="common.balance" data-i18n-fallback="Balance">Balance</th>
             </tr>
           </thead>
           <!-- WCAG 4.1.3 — body is repopulated on every spin postSpin /
                clear; aria-live="polite" announces new entries. -->
           <tbody id="historyTableBody" aria-live="polite"></tbody>
         </table>
-        <div id="historyEmpty" class="history-empty">No spins yet — play to populate this log.</div>
+        <div id="historyEmpty" class="history-empty" data-i18n="historyLog.empty" data-i18n-fallback="No spins yet — play to populate this log.">No spins yet — play to populate this log.</div>
       </div>
-      <button id="historyCloseBtn" class="history-close" type="button">Close</button>
+      <button id="historyCloseBtn" class="history-close" type="button" data-i18n="common.close" data-i18n-fallback="Close">Close</button>
     </div>
   </div>`, 'historyLog');
 }

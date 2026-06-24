@@ -1113,10 +1113,30 @@ export function emitHookBusRuntime(cfg = defaultConfig()) {
         setMult(n);
       }
     }
+    /* UQ-DEEP-AP E-2 (Auditor E #2 — setMult lockdown):
+       setMultMax(v) is the canonical writer; raw setMult(v) is dangerous
+       (last-writer-wins drifts RTP when multiple cascading writers fire
+       in same synchronous emit chain — multiplierOrb + cascadeBooster +
+       persistentMultiplier all share the same pipeline). We KEEP the
+       function exposed for the resetMult/internal paths but emit a
+       dev-only console.warn when an external caller invokes it with a
+       smaller value than current (the regression pattern). resetMult
+       continues to call setMult directly without warn (legitimate path). */
+    let _setMultAllowDecrease = false;
     function setMult(v) {
       const n = Number(v);
       if (Number.isFinite(n) && n >= 0) {
         const prev = _mult;
+        if (n < prev && !_setMultAllowDecrease) {
+          /* External caller monotonically reduced mult — likely a drift bug.
+             Warn (no throw — historical callers may legitimately reset). */
+          try {
+            if (typeof console !== 'undefined' && console.warn) {
+              console.warn('[HookBus] setMult monotonic decrease ' + prev + '→' + n +
+                ' — use setMultMax() for monotonic-up writers, resetMult() for round boundary');
+            }
+          } catch (_) {}
+        }
         _mult = n;
         if (typeof window !== 'undefined') {
           window.__HOOKBUS_MULT__ = _mult;

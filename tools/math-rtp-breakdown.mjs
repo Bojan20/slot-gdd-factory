@@ -118,7 +118,17 @@ if (sources.length === 0) {
   }
 }
 
-const sumShare = sources.reduce((acc, s) => acc + s.sharePct, 0);
+/* UQ-DEEP-AQ F-9 (Auditor F #9): sort descending before reduce.
+   Floating-point summation is non-associative — different input orders
+   give ±1ulp drift. Inside the ±0.05% MATH_PRECISION_BAND, this can flip
+   PASS↔FAIL near the boundary. Sorting biggest-first keeps the running
+   accumulator at a similar magnitude scale and minimises catastrophic
+   cancellation. (Full Kahan adds complexity for marginal gain at these
+   magnitudes; descending-sort is the industry-standard cheap fix.) */
+const sumShare = sources
+  .map((s) => Number(s.sharePct) || 0)
+  .sort((a, b) => b - a)
+  .reduce((acc, x) => acc + x, 0);
 
 const summary = {
   generatedAt: new Date().toISOString(),

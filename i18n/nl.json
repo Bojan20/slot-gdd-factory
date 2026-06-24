@@ -2,9 +2,9 @@
   "schema_version": "1.0.0",
   "generated_at": "2026-06-20T22:25:38.140Z",
   "source_locale": "nl",
-  "hash": "1d8e26fcd904",
+  "hash": "ap-h1-stamp-128",
   "blocks_with_strings": 46,
-  "total_entries": 108,
+  "total_entries": 127,
   "catalog": {
     "audio.0": "Toggle audio",
     "autoplay.0": "AUTO · ",
@@ -113,6 +113,25 @@
     "wheelBonus.0": "YOU WON ",
     "wheelBonusReveal.0": "Wheel reveal",
     "wildCollectionTrail.0": "Wild collection meter",
-    "winMultiplierBadge.0": "multiplier x "
+    "winMultiplierBadge.0": "multiplier x ",
+    "common.close": "Close",
+    "common.reset": "Reset",
+    "common.bet": "Bet",
+    "common.win": "Win",
+    "common.balance": "Balance",
+    "paytable.title": "Paytable",
+    "paytable.currentBet": "Current bet:",
+    "historyLog.title": "Session History",
+    "historyLog.clear": "Clear",
+    "historyLog.exportCsv": "Export CSV",
+    "historyLog.time": "Time",
+    "historyLog.empty": "No spins yet — play to populate this log.",
+    "settingsPanel.title": "Settings",
+    "betSelector.coin": "Coin",
+    "betSelector.bet": "BET",
+    "betSelector.totalBet": "TOTAL BET",
+    "betSelector.maxBet": "MAX BET",
+    "wheelBonus.spin": "SPIN",
+    "wheelBonus.collect": "COLLECT"
   }
 }

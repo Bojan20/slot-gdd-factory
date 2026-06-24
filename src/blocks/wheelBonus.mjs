@@ -258,8 +258,8 @@ export function emitWheelBonusMarkup(cfg = defaultConfig()) {
       <div id="wbWheel" class="wb-wheel" style="--wb-dur:${cfg.spinDurationMs}ms;">${segs}</div>
     </div>
     <div id="wbResult" class="wb-result" aria-live="polite"></div>
-    <button id="wbSpin" class="wb-spin" type="button">SPIN</button>
-    <button id="wbClose" class="wb-close" data-show="false" type="button">COLLECT</button>
+    <button id="wbSpin" class="wb-spin" type="button" data-i18n="wheelBonus.spin" data-i18n-fallback="SPIN">SPIN</button>
+    <button id="wbClose" class="wb-close" data-show="false" type="button" data-i18n="wheelBonus.collect" data-i18n-fallback="COLLECT">COLLECT</button>
   </div>
 </div>`;
 }
