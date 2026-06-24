@@ -3,12 +3,15 @@
  *
  * UQ-DEEP-AK · WAVE 2 · COMPILER F — sgs-compiler IGT enums extension (Boki 2026-06-24).
  * UQ-DEEP-AL · FIX-B — `nonLockedSymbolId` type/name align (string + camelCase).
+ * UQ-DEEP-AN · AN-4 — EXPANSION_TYPE enum extension (6 → 11 values).
  *
  * Validates 3 new helpers + compileServerConfig integration u tools/sgs-compiler.mjs:
  *
  *   1. emitExpansionType(featureKind, featureConfig) → int (EXPANSION_TYPE enum)
- *      Mapping: expandingWild/{reel,cluster,row,partOfWin}, fsExpansionWilds,
- *      megaWildCluster, unknown.
+ *      Baseline mapping: expandingWild/{reel,cluster,row,partOfWin},
+ *      fsExpansionWilds, megaWildCluster, unknown.
+ *      UQ-DEEP-AN extensions: scatterFill, symbolReplace/mysteryRevealAll,
+ *      randomCellExpand, adjacentCopy, diagonalLine.
  *
  *   2. emitModifiersScreenSymbols(model) → [{symbolId, modifierKind,
  *      screencountGains, weight}]  (integers po regulator spec).
@@ -23,11 +26,14 @@
  * paytable_hash, wild_symbol, symbols, odds_megaways, gle_version).
  * Snake_case `non_locked_symbol_id` MORA biti odsutno (eliminated by UQ-DEEP-AL).
  *
- * 22 PASS targets total (20 baseline + 2 UQ-DEEP-AL gate cases).
+ * 50 PASS targets total: 32 baseline + 18 UQ-DEEP-AN extension cases (33..50).
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 import {
   emitExpansionType,
   EXPANSION_TYPE,
@@ -40,6 +46,9 @@ import {
   emitNumberOfRowsArray,
   compileServerConfig,
 } from '../../tools/sgs-compiler.mjs';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SGS_COMPILER_SOURCE_PATH = resolve(__dirname, '../../tools/sgs-compiler.mjs');
 
 /* ── emitExpansionType (7 cases) ─────────────────────────────────────────── */
 
@@ -540,4 +549,200 @@ test('UQ-DEEP-AL · serverConfig MUST NOT emit snake_case non_locked_symbol_id (
   const r2 = compileServerConfig(modelNoHnw);
   assert.equal(Object.prototype.hasOwnProperty.call(r2.serverConfig, 'non_locked_symbol_id'), false);
   assert.equal(Object.prototype.hasOwnProperty.call(r2.serverConfig, 'nonLockedSymbolId'), true);
+});
+
+/* ── UQ-DEEP-AN · AN-4 · EXPANSION_TYPE enum extension (cases 33-50) ────────
+ *
+ * Extends 6 baseline values (0..5) sa 5 industry-pattern values (6..10):
+ *   6  SCATTER_FILL      — scatter triggers symbol fill across grid
+ *   7  SYMBOL_REPLACE    — all instances of one symbol → another
+ *   8  RANDOM_CELLS      — random N cells expand
+ *   9  ADJACENT_COPY     — expands to adjacent cells
+ *  10  DIAGONAL_LINE     — diagonal fill
+ *
+ * Source: cross-reference sister-repo (slot-math-engine-template) potvrdjuje
+ * vendor-neutral status (no canonical EXPANSION_TYPE enum tamo). Naša lista
+ * derived iz 338 GDD korpus analize.
+ */
+
+/* Case 33: enum has 11 keys. */
+test('UQ-DEEP-AN · EXPANSION_TYPE has 11 keys (6 baseline + 5 industry extensions)', () => {
+  const keys = Object.keys(EXPANSION_TYPE);
+  assert.equal(keys.length, 11, `expected 11 keys, got ${keys.length}: ${keys.join(',')}`);
+});
+
+/* Case 34: SCATTER_FILL = 6. */
+test('UQ-DEEP-AN · EXPANSION_TYPE.SCATTER_FILL === 6', () => {
+  assert.equal(EXPANSION_TYPE.SCATTER_FILL, 6);
+});
+
+/* Case 35: SYMBOL_REPLACE = 7. */
+test('UQ-DEEP-AN · EXPANSION_TYPE.SYMBOL_REPLACE === 7', () => {
+  assert.equal(EXPANSION_TYPE.SYMBOL_REPLACE, 7);
+});
+
+/* Case 36: RANDOM_CELLS = 8. */
+test('UQ-DEEP-AN · EXPANSION_TYPE.RANDOM_CELLS === 8', () => {
+  assert.equal(EXPANSION_TYPE.RANDOM_CELLS, 8);
+});
+
+/* Case 37: ADJACENT_COPY = 9. */
+test('UQ-DEEP-AN · EXPANSION_TYPE.ADJACENT_COPY === 9', () => {
+  assert.equal(EXPANSION_TYPE.ADJACENT_COPY, 9);
+});
+
+/* Case 38: DIAGONAL_LINE = 10. */
+test('UQ-DEEP-AN · EXPANSION_TYPE.DIAGONAL_LINE === 10', () => {
+  assert.equal(EXPANSION_TYPE.DIAGONAL_LINE, 10);
+});
+
+/* Case 39: emitExpansionType('scatterFill') → 6. */
+test("UQ-DEEP-AN · emitExpansionType('scatterFill', {}) → 6 SCATTER_FILL", () => {
+  assert.equal(emitExpansionType('scatterFill', {}), 6);
+  assert.equal(emitExpansionType('scatterFill', {}), EXPANSION_TYPE.SCATTER_FILL);
+});
+
+/* Case 40: emitExpansionType('symbolReplace') → 7. */
+test("UQ-DEEP-AN · emitExpansionType('symbolReplace', {}) → 7 SYMBOL_REPLACE", () => {
+  assert.equal(emitExpansionType('symbolReplace', {}), 7);
+  assert.equal(emitExpansionType('symbolReplace', {}), EXPANSION_TYPE.SYMBOL_REPLACE);
+});
+
+/* Case 41: emitExpansionType('mysteryRevealAll') → 7 (alias). */
+test("UQ-DEEP-AN · emitExpansionType('mysteryRevealAll', {}) → 7 SYMBOL_REPLACE (alias)", () => {
+  assert.equal(emitExpansionType('mysteryRevealAll', {}), 7);
+  assert.equal(emitExpansionType('mysteryRevealAll', {}), EXPANSION_TYPE.SYMBOL_REPLACE);
+});
+
+/* Case 42: emitExpansionType('randomCellExpand') → 8. */
+test("UQ-DEEP-AN · emitExpansionType('randomCellExpand', {}) → 8 RANDOM_CELLS", () => {
+  assert.equal(emitExpansionType('randomCellExpand', {}), 8);
+  assert.equal(emitExpansionType('randomCellExpand', {}), EXPANSION_TYPE.RANDOM_CELLS);
+});
+
+/* Case 43: emitExpansionType('adjacentCopy') → 9. */
+test("UQ-DEEP-AN · emitExpansionType('adjacentCopy', {}) → 9 ADJACENT_COPY", () => {
+  assert.equal(emitExpansionType('adjacentCopy', {}), 9);
+  assert.equal(emitExpansionType('adjacentCopy', {}), EXPANSION_TYPE.ADJACENT_COPY);
+});
+
+/* Case 44: emitExpansionType('diagonalLine') → 10. */
+test("UQ-DEEP-AN · emitExpansionType('diagonalLine', {}) → 10 DIAGONAL_LINE", () => {
+  assert.equal(emitExpansionType('diagonalLine', {}), 10);
+  assert.equal(emitExpansionType('diagonalLine', {}), EXPANSION_TYPE.DIAGONAL_LINE);
+});
+
+/* Case 45: Enum frozen — write attempt has no effect (strict mode would throw,
+ * non-strict silently no-ops). Either way: Object.isFrozen must be true. */
+test('UQ-DEEP-AN · EXPANSION_TYPE Object.isFrozen === true (immutability gate)', () => {
+  assert.equal(Object.isFrozen(EXPANSION_TYPE), true,
+    'EXPANSION_TYPE must be frozen — operator-side tampering forbidden');
+  /* Even strict mode write fails — verify defineProperty also rejects. */
+  assert.throws(() => {
+    Object.defineProperty(EXPANSION_TYPE, 'INJECTED', { value: 99, writable: true });
+  }, /Cannot|read.?only|frozen/i);
+});
+
+/* Case 46: Existing 6 mappings preserved (back-compat sa UQ-DEEP-AK). */
+test('UQ-DEEP-AN · Existing 6 mappings preserved (REEL_FULL/CLUSTER/ROW/PART_OF_WIN/ANCHOR/NONE)', () => {
+  assert.equal(emitExpansionType('expandingWild', { expandTo: 'reel' }), 1);
+  assert.equal(emitExpansionType('expandingWild', { expandTo: 'cluster' }), 2);
+  assert.equal(emitExpansionType('expandingWild', { expandTo: 'row' }), 3);
+  assert.equal(emitExpansionType('expandingWild', { triggers: 'partOfWin' }), 4);
+  assert.equal(emitExpansionType('fsExpansionWilds', {}), 5);
+  assert.equal(emitExpansionType('megaWildCluster', {}), 2);
+  assert.equal(emitExpansionType(null, null), 0);
+});
+
+/* Case 47: Unknown feature kind → NONE (0). */
+test('UQ-DEEP-AN · Unknown feature kind → 0 NONE (safe degradation invariant)', () => {
+  assert.equal(emitExpansionType('totallyUnknownKindXYZ', {}), 0);
+  assert.equal(emitExpansionType('paylines', {}), 0);
+  assert.equal(emitExpansionType('', {}), 0);
+  assert.equal(emitExpansionType(undefined, undefined), 0);
+});
+
+/* Case 48: Header comment u source documents vendor-neutral extension. */
+test('UQ-DEEP-AN · sgs-compiler.mjs header comment documents vendor-neutral extension', () => {
+  const src = readFileSync(SGS_COMPILER_SOURCE_PATH, 'utf8');
+  /* Must contain vendor-neutral documentation. */
+  assert.ok(/vendor-neutral/i.test(src),
+    'source must document vendor-neutral status');
+  assert.ok(/EXPANSION_TYPE/.test(src),
+    'source must reference EXPANSION_TYPE enum');
+  /* Must reference operator-side categorization (not IGT-canonical). */
+  assert.ok(/operator-side/i.test(src),
+    'source must clarify operator-side categorization (not IGT-canonical)');
+  /* Must reference UQ-DEEP-AN extension marker. */
+  assert.ok(/UQ-DEEP-AN/.test(src),
+    'source must reference UQ-DEEP-AN extension lineage');
+});
+
+/* Case 49: compileServerConfig output expansion_type accepts 0..10 range. */
+test('UQ-DEEP-AN · compileServerConfig expansion_type covers full 0..10 range (sweep)', () => {
+  const seen = new Set();
+  /* Per-pattern probe — each kind → distinct expansion_type. */
+  const probes = [
+    { kind: null, expected: 0 },                                       /* NONE */
+    { kind: 'expandingWild', cfg: { expandTo: 'reel' }, expected: 1 }, /* REEL_FULL */
+    { kind: 'megaWildCluster', cfg: {}, expected: 2 },                 /* CLUSTER */
+    { kind: 'expandingWild', cfg: { expandTo: 'row' }, expected: 3 },  /* ROW */
+    { kind: 'expandingWild', cfg: { triggers: 'partOfWin' }, expected: 4 }, /* PART_OF_WIN */
+    { kind: 'fsExpansionWilds', cfg: {}, expected: 5 },                /* ANCHOR */
+    { kind: 'scatterFill', cfg: {}, expected: 6 },                     /* SCATTER_FILL */
+    { kind: 'symbolReplace', cfg: {}, expected: 7 },                   /* SYMBOL_REPLACE */
+    { kind: 'randomCellExpand', cfg: {}, expected: 8 },                /* RANDOM_CELLS */
+    { kind: 'adjacentCopy', cfg: {}, expected: 9 },                    /* ADJACENT_COPY */
+    { kind: 'diagonalLine', cfg: {}, expected: 10 },                   /* DIAGONAL_LINE */
+  ];
+  for (const p of probes) {
+    const features = p.kind ? [{ kind: p.kind, config: p.cfg || {} }] : [];
+    const model = {
+      topology: { reels: 5, rows: 3, paylines: [[1, 1, 1, 1, 1]] },
+      symbols: {
+        high: [{ id: 'D', kind: 'high' }],
+        specials: [{ id: 'W', kind: 'wild' }],
+      },
+      paytable: { D: { 5: 500 } },
+      reelStrips: { strips: [['D', 'W'], ['D', 'W']] },
+      features,
+    };
+    const r = compileServerConfig(model);
+    seen.add(r.serverConfig.expansion_type);
+    assert.equal(r.serverConfig.expansion_type, p.expected,
+      `kind=${p.kind} expected expansion_type=${p.expected}, got ${r.serverConfig.expansion_type}`);
+  }
+  /* Confirm every 0..10 value reachable. */
+  for (let i = 0; i <= 10; i++) {
+    assert.ok(seen.has(i), `expansion_type value ${i} never emitted by sweep`);
+  }
+});
+
+/* Case 50: compileServerConfig validates expansion_type ≥ 0 ≤ 10 invariant. */
+test('UQ-DEEP-AN · compileServerConfig expansion_type ∈ [0..10] invariant (across all known kinds)', () => {
+  const knownKinds = [
+    'expandingWild', 'fsExpansionWilds', 'megaWildCluster',
+    'scatterFill', 'symbolReplace', 'mysteryRevealAll',
+    'randomCellExpand', 'adjacentCopy', 'diagonalLine',
+    /* Plus unknowns → 0. */
+    'totallyUnknown', 'xyz', '',
+  ];
+  for (const kind of knownKinds) {
+    const model = {
+      topology: { reels: 5, rows: 3, paylines: [[1, 1, 1, 1, 1]] },
+      symbols: {
+        high: [{ id: 'D', kind: 'high' }],
+        specials: [{ id: 'W', kind: 'wild' }],
+      },
+      paytable: { D: { 5: 500 } },
+      reelStrips: { strips: [['D', 'W'], ['D', 'W']] },
+      features: kind ? [{ kind, config: {} }] : [],
+    };
+    const r = compileServerConfig(model);
+    const et = r.serverConfig.expansion_type;
+    assert.equal(Number.isInteger(et), true,
+      `expansion_type must be int (kind=${kind}, got ${et})`);
+    assert.ok(et >= 0 && et <= 10,
+      `expansion_type ∈ [0..10] invariant violated (kind=${kind}, value=${et})`);
+  }
 });

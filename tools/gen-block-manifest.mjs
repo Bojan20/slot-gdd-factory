@@ -133,22 +133,32 @@ function extractEmittedEvents(source) {
  * Try to load defaultConfig() from the module. Defensive — if the module
  * throws on load (e.g. depends on browser globals at import time), we
  * record an error and continue.
+ *
+ * Returns { cfg, frozen } where:
+ *   cfg    — JSON-serialisable copy of defaultConfig() (or null / error obj)
+ *   frozen — true iff the LIVE config object is Object.isFrozen at scan time
+ *            (UQ-DEEP-AN — manifest must reflect runtime freeze posture so
+ *            audit tooling sees the real coverage, not 0)
  */
 async function loadDefaultConfig(absPath) {
   try {
     const mod = await import(pathToFileURL(absPath).href);
     if (typeof mod.defaultConfig === 'function') {
       try {
-        const cfg = mod.defaultConfig();
+        const liveCfg = mod.defaultConfig();
+        const frozen = liveCfg !== null
+          && typeof liveCfg === 'object'
+          && Object.isFrozen(liveCfg);
         /* Only retain JSON-serialisable values — drops Set, Map, Function. */
-        return JSON.parse(JSON.stringify(cfg));
+        const cfg = JSON.parse(JSON.stringify(liveCfg));
+        return { cfg, frozen };
       } catch (e) {
-        return { __error: `defaultConfig() threw: ${e.message}` };
+        return { cfg: { __error: `defaultConfig() threw: ${e.message}` }, frozen: false };
       }
     }
-    return null;
+    return { cfg: null, frozen: false };
   } catch (e) {
-    return { __error: `import failed: ${e.message}` };
+    return { cfg: { __error: `import failed: ${e.message}` }, frozen: false };
   }
 }
 
@@ -179,6 +189,7 @@ for (const f of blockFiles) {
   const testCandidate = resolvePath(TESTS_DIR, `${name}.test.mjs`);
   const testFile = existsSync(testCandidate) ? `tests/blocks/${name}.test.mjs` : null;
 
+  const { cfg: defaultConfig, frozen } = await loadDefaultConfig(abs);
   const entry = {
     name,
     file: rel,
@@ -186,9 +197,15 @@ for (const f of blockFiles) {
     category: categoriseBlock(name),
     description: extractDescription(source),
     exports: extractExports(source),
+    enabledByDefault:
+      defaultConfig && typeof defaultConfig === 'object' && !defaultConfig.__error
+        && 'enabled' in defaultConfig
+        ? !!defaultConfig.enabled
+        : true,
+    frozen,
     lifecycleHooks: extractLifecycleHooks(source),
     emittedEvents: extractEmittedEvents(source),
-    defaultConfig: await loadDefaultConfig(abs),
+    defaultConfig,
     loc,
   };
   manifest.blocks.push(entry);
@@ -226,8 +243,10 @@ for (const b of manifest.blocks) {
   byCat[b.category] = (byCat[b.category] || 0) + 1;
 }
 const cats = Object.keys(byCat).sort();
+const frozenCount = manifest.blocks.filter(b => b.frozen === true).length;
 console.log(`✓ Wrote ${OUT_FILE}`);
 console.log(`  Total blocks: ${manifest.blocks.length}`);
+console.log(`  Frozen      : ${frozenCount}/${manifest.blocks.length} (UQ-DEEP-AN drift gate)`);
 console.log(`  Categories  : ${cats.map(c => `${c}=${byCat[c]}`).join(', ')}`);
 const blocksWithErrors = manifest.blocks.filter(b => b.defaultConfig && b.defaultConfig.__error);
 if (blocksWithErrors.length) {

@@ -31,6 +31,8 @@ import { homedir } from 'node:os';
  * executor wire via a residual base_rtp adjustment. Per-feature breakdown is
  * exposed via _inference.composer for /converge per-feature reporting. */
 import { composeFeatureContributions } from '../src/registry/featureComposer.mjs';
+/* UQ-DEEP-AN AN-1 audit trail */
+import { AUDIT_LOG_SCHEMA_VERSION, buildAuditEntry, validateAuditEntry } from '../src/registry/auditTrail.mjs';
 
 const DEFAULT_PORT = 9001;
 const BINARY_CANDIDATES = [
@@ -48,6 +50,30 @@ if (!BINARY) {
   console.error('▸ mc_runtime_real binary not found. Run: cargo build --release --bin mc_runtime_real');
   console.error('  Searched:', BINARY_CANDIDATES.join('\n            '));
   process.exit(1);
+}
+
+/* UQ-DEEP-AN · AN-2 — STRICT_MATH env var fail-fast gate.
+ * When STRICT_MATH=true, /converge /spin /batch endpoints refuse to run
+ * against synthetic-fallback (untrusted) RTP targets. UQ-DEEP-AL FIX-G
+ * already stamps payback.rtpSource ∈ {'gdd-prose','par-sheet','synthetic-fallback-96'}.
+ * Strict mode flips synthetic → HTTP 422 with remediation, while audit-only
+ * endpoints (/audit, /serverConfig, /health) keep working independent of RTP
+ * trust because they validate compilation/structure, not RTP convergence. */
+const STRICT_MATH = process.env.STRICT_MATH === 'true';
+
+function strictMathGuard(model) {
+  if (!STRICT_MATH) return null;
+  const payback = (model && model.payback) || {};
+  const rtpSource = payback.rtpSource;
+  if (typeof rtpSource === 'string' && /^synthetic/.test(rtpSource)) {
+    return {
+      error: 'STRICT_MATH_UNTRUSTED_RTP',
+      reason: `rtpSource ${rtpSource} nije regulator-grade target; commit declared RTP u GDD prose ili PAR sheet pre run-a u strict mode-u`,
+      rtpSource,
+      remediation: "Edit GDD: add 'RTP target: 96.00%' line, ili --par flag sa real PAR sheet",
+    };
+  }
+  return null;
 }
 
 /* LV3-11 — anti-vendor sanitize. Vendor-trademarked names ne smeju
@@ -474,6 +500,23 @@ function drainBatchQueue() {
  * Rust children and racing to overwrite the cache entry). */
 const SESSION_PENDING = new Map();
 
+/* UQ-DEEP-AN · AN-1 — bounded in-memory audit store.
+ *   AUDIT_STORE: Map<sessionId, audit-entry[]>
+ *   AUDIT_MAX_PER_SESSION: 1000 (FIFO roll-over, ~few MB total cap).
+ * Bounded per-session, not globally. Explicit POST /audit may outlive its
+ * parent session — operators wanting long retention should persist out-of-
+ * band via a sink (file/DB/KMS sign service). */
+const AUDIT_STORE = new Map();
+const AUDIT_MAX_PER_SESSION = 1000;
+
+function appendAuditEntry(sessionId, entry) {
+  if (typeof sessionId !== 'string' || sessionId.length === 0) return;
+  let bucket = AUDIT_STORE.get(sessionId);
+  if (!bucket) { bucket = []; AUDIT_STORE.set(sessionId, bucket); }
+  bucket.push(entry);
+  while (bucket.length > AUDIT_MAX_PER_SESSION) bucket.shift();
+}
+
 async function ensureSession(sessionId, model) {
   gcSessions();
   if (SESSION_CACHE.has(sessionId)) {
@@ -697,6 +740,9 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'POST' && p === '/batch') {
       const body = await readJsonBody(req);
+      /* UQ-DEEP-AN · AN-2 — STRICT_MATH fail-fast on synthetic RTP. */
+      const _sg = strictMathGuard(body.model || {});
+      if (_sg) return send(res, 422, _sg, origin);
       /* MED-P4: Number.isFinite check so seed=0 stays 0 (deterministic),
        * not coerced to 42. Same for spins NaN guard. */
       const spinsRaw = Number(body.spins);
@@ -741,6 +787,9 @@ const server = http.createServer(async (req, res) => {
        * cap 4) — koristi isti deterministic seed iz model hash. */
       const body = await readJsonBody(req);
       const model = body.model || {};
+      /* UQ-DEEP-AN · AN-2 — STRICT_MATH fail-fast on synthetic RTP. */
+      const _sg = strictMathGuard(model);
+      if (_sg) return send(res, 422, _sg, origin);
       /* Budget kapovi: hard cap 100M, soft start 10K. */
       const maxSpinsRaw = Number(body.maxSpins);
       const maxSpins = Math.min(Math.max(Number.isFinite(maxSpinsRaw) ? maxSpinsRaw : 10_000_000, 10_000), 100_000_000);
@@ -1020,6 +1069,9 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'POST' && p === '/spin') {
       const body = await readJsonBody(req);
+      /* UQ-DEEP-AN · AN-2 — STRICT_MATH fail-fast on synthetic RTP. */
+      const _sg = strictMathGuard(body.model || {});
+      if (_sg) return send(res, 422, _sg, origin);
       /* CRIT-P1 (UQ-DEEP-P): reject sessionId > 64 char rather than
        * slice() which produces silent collisions when two distinct ids
        * share a 64-char prefix.
@@ -1059,7 +1111,93 @@ const server = http.createServer(async (req, res) => {
           baseResponse.gleError = e.message;
         }
       }
+      /* UQ-DEEP-AN · AN-1 — auto-stamp regulator audit entry per /spin success.
+       * Operator can read back via GET /audit/<sid> or /audit/<sid>/<spinIdx>.
+       * Non-fatal — backend never blocks response on audit-store contention. */
+      try {
+        const auditEntry = buildAuditEntry({
+          sessionId: sidRaw,
+          spinIdx: outcome.spinIdx || session.spinsServed || 0,
+          model: body.model || {},
+          executor: session.batch?._executorInput || null,
+          outcome: {
+            transactionId: `txn-${sidRaw}-${outcome.spinIdx || 0}`,
+            payX: outcome.payX,
+            measuredRtp: outcome.measuredRtp,
+            measuredHitRate: outcome.measuredHitRate,
+            fsTrigger: outcome.fsTrigger,
+            hnwTrigger: outcome.hnwTrigger,
+            stage: body.stage || 'BaseGame',
+            gameStatus: 'settled',
+            convergencePass: typeof outcome.measuredRtp === 'number'
+              && typeof outcome.targetRtp === 'number'
+              && Math.abs(outcome.measuredRtp - outcome.targetRtp) <= 0.005,
+          },
+          rng: { seed: session.batch?.seed || 42 },
+          target: {
+            declaredRtp: ((body.model || {}).payback || {}).rtp,
+            hitFrequency: outcome.measuredHitRate,
+          },
+        });
+        appendAuditEntry(sidRaw, auditEntry);
+      } catch (e) {
+        baseResponse.auditError = e.message;
+      }
       return send(res, 200, baseResponse, origin);
+    }
+
+    /* UQ-DEEP-AN · AN-1 · regulator-grade audit endpoints.
+     *   POST /audit                       → write new audit entry
+     *   GET  /audit/<sessionId>           → list all entries for session
+     *   GET  /audit/<sessionId>/<spinIdx> → fetch single entry
+     * Storage: in-memory Map<sessionId, audit[]>, bounded 1000/session
+     * with FIFO roll-over. Schema enforced via validateAuditEntry. */
+    if (req.method === 'POST' && p === '/audit') {
+      const body = await readJsonBody(req);
+      const entry = (body && body.auditLog) ? body : buildAuditEntry(body || {});
+      const v = validateAuditEntry(entry);
+      if (!v.ok) {
+        return send(res, 400, { ok: false, error: 'invalid audit entry', errors: v.errors }, origin);
+      }
+      const sid = entry.auditLog.sessionId;
+      appendAuditEntry(sid, entry);
+      return send(res, 200, {
+        ok: true,
+        sessionId: sid,
+        spinIdx: entry.auditLog.spinIdx,
+        schemaVersion: AUDIT_LOG_SCHEMA_VERSION,
+        stored: AUDIT_STORE.get(sid)?.length || 0,
+      }, origin);
+    }
+
+    if (req.method === 'GET' && p.startsWith('/audit/')) {
+      const parts = p.split('/').filter(Boolean);
+      if (parts.length < 2) {
+        return send(res, 400, { error: 'sessionId required in path' }, origin);
+      }
+      const sid = decodeURIComponent(parts[1]);
+      const bucket = AUDIT_STORE.get(sid);
+      if (!bucket || bucket.length === 0) {
+        return send(res, 404, { error: 'sessionId not found', sessionId: sid }, origin);
+      }
+      if (parts.length >= 3) {
+        const idxN = Number(parts[2]);
+        if (!Number.isFinite(idxN)) {
+          return send(res, 400, { error: 'spinIdx must be number' }, origin);
+        }
+        const found = bucket.find((e) => e.auditLog && e.auditLog.spinIdx === idxN);
+        if (!found) {
+          return send(res, 404, { error: 'spinIdx not found', sessionId: sid, spinIdx: idxN }, origin);
+        }
+        return send(res, 200, {
+          ok: true, sessionId: sid, spinIdx: idxN, entry: found,
+          schemaVersion: AUDIT_LOG_SCHEMA_VERSION,
+        }, origin);
+      }
+      return send(res, 200, {
+        ok: true, sessionId: sid, count: bucket.length, entries: bucket,
+        schemaVersion: AUDIT_LOG_SCHEMA_VERSION,
+      }, origin);
     }
 
     /* UQ-DEEP-AG · wire-compatible serverConfig kompajler endpoint.
@@ -1098,6 +1236,8 @@ function tryListen(port, host = '127.0.0.1') {
     server.once('listening', () => {
       console.log(`▸ math-backend listening on http://${host}:${port}`);
       console.log(`  binary: ${BINARY}`);
+      /* UQ-DEEP-AN · AN-2 — operator visibility on strict mode. */
+      console.log(`  STRICT_MATH=${STRICT_MATH ? 'true' : 'false'}${STRICT_MATH ? ' (synthetic-fallback RTP → HTTP 422)' : ' (soft warning only)'}`);
       resolveR(port);
     });
     server.listen(port, host);

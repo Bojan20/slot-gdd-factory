@@ -159,6 +159,33 @@ const TUMBLE_PRESERVE_ORBS = ${cfg.preserveOrbs};
  * const so the JIT can constant-fold the per-cell style assignments. */
 const TUMBLE_STAGGER_MS  = ${cfg.staggerMs};
 
+/* UQ-DEEP-AN · AN-3 — Cascade depth guard (anti-infinite-loop).
+ * Hard ceiling baked from src/registry/cascadeLimits.mjs so a pathological
+ * RNG / adversarial reel strip cannot drive the chain to infinity. The
+ * per-game TUMBLE_MAX_CHAIN above (1..64) is the SOFT visual budget — this
+ * is the HARD runtime safety net at 100. Reset per spin via preSpin.
+ * Warning band at 50 logs but continues; >= 100 forces finalize + emits
+ * onCascadeHalted with reason 'MAX_DEPTH'. */
+const CASCADE_HARD_MAX_DEPTH = 100;
+const CASCADE_HARD_WARN_AT   = 50;
+let __cascadeDepth = 0;
+function _cascadeDepthReset() { __cascadeDepth = 0; }
+function _cascadeDepthTick() {
+  __cascadeDepth++;
+  if (__cascadeDepth >= 100) {
+    try { console.warn('[cascade] halted at depth ' + __cascadeDepth); } catch (_) {}
+    if (typeof HookBus !== 'undefined' && HookBus && typeof HookBus.emit === 'function') {
+      try { HookBus.emit('onCascadeHalted', { depth: __cascadeDepth, reason: 'MAX_DEPTH' }); } catch (_) {}
+    }
+    return 'halt';
+  }
+  if (__cascadeDepth >= CASCADE_HARD_WARN_AT) {
+    try { console.warn('[cascade] depth warning ' + __cascadeDepth); } catch (_) {}
+    return 'warn';
+  }
+  return 'ok';
+}
+
 function _tumbleSleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 /* Run a full tumble chain.
@@ -186,6 +213,11 @@ async function runTumbleChain(detectFn, opts) {
 
   while (chain < TUMBLE_MAX_CHAIN) {
     if (myToken !== _TUMBLE_KILL_TOKEN) break;
+    /* UQ-DEEP-AN · AN-3 — Hard cascade depth ceiling. Independent from the
+     * per-game soft TUMBLE_MAX_CHAIN budget; this is the IGT-grade anti-
+     * infinite-loop net. Tick BEFORE detect so a runaway chain (e.g. orb
+     * preservation + perpetual win events) cannot starve the bail check. */
+    if (_cascadeDepthTick() === 'halt') break;
     const events = (typeof detectFn === 'function') ? (detectFn() || []) : [];
     /* LEGO rule (Wave S): tumble block emits onTumbleStep itself, NOT the
        caller. Listeners (multiplier orb accumulator, persistent mult,
@@ -383,6 +415,9 @@ if (typeof window !== 'undefined' && window.__TUMBLE_WIRED__) {
   if (typeof window !== 'undefined') window.__TUMBLE_WIRED__ = true;
   HookBus.on('preSpin', () => {
     _TUMBLE_KILL_TOKEN++;
+    /* UQ-DEEP-AN · AN-3 — Reset cascade depth counter at every preSpin so
+     * the hard ceiling (100) is per-spin, not cumulative across spins. */
+    _cascadeDepthReset();
     /* Wave Z (2026-06-10): on EVERY preSpin, clear tumble animation
        classes so a previous orphan never bleeds into the new spin. */
     if (typeof document !== 'undefined') {

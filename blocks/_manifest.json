@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-21T21:54:30.928Z",
+  "generatedAt": "2026-06-24T18:46:54.471Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 200,
+  "totalBlocks": 211,
   "blocks": [
     {
       "name": "achievementToast",
@@ -16,6 +16,8 @@
         "emitAchievementToastRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onAchievementUnlocked",
         "onPlayerLevelUp"
@@ -37,6 +39,40 @@
       "loc": 303
     },
     {
+      "name": "addedSymbolsInjector",
+      "file": "src/blocks/addedSymbolsInjector.mjs",
+      "testFile": "tests/blocks/addedSymbolsInjector.test.mjs",
+      "category": "uncategorised",
+      "description": "UQ-DEEP-AK · WAVE 1 · BLOCK D — ADDED SYMBOLS INJECTOR.",
+      "exports": [
+        "defaultConfig",
+        "emitAddedSymbolsInjectorCSS",
+        "emitAddedSymbolsInjectorMarkup",
+        "emitAddedSymbolsInjectorRuntime",
+        "emitCSS",
+        "emitMarkup",
+        "emitRuntime",
+        "resolveConfig"
+      ],
+      "enabledByDefault": false,
+      "frozen": true,
+      "lifecycleHooks": [
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onAddedSymbolsInjected"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "injections": [],
+        "haloRGB": "255,214,110",
+        "injectionMs": 280,
+        "schemaVersion": "1"
+      },
+      "loc": 328
+    },
+    {
       "name": "allWaysEval",
       "file": "src/blocks/allWaysEval.mjs",
       "testFile": "tests/blocks/allWaysEval.test.mjs",
@@ -51,6 +87,8 @@
         "findConsecutiveRuns",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onSpinResult",
@@ -120,6 +158,8 @@
         "emitAmbientBackgroundWheelRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onBigWinTierEntered",
         "onFsTrigger",
@@ -158,6 +198,8 @@
         "emitAmbientBgVariantsRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onBigWinTierEnter",
         "onBigWinTierExit",
@@ -193,6 +235,8 @@
         "emitAnteBetRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onAnteBetChanged"
@@ -219,6 +263,8 @@
         "emitAnteBetLadderRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger"
@@ -273,6 +319,8 @@
         "emitAnticipationRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -286,7 +334,7 @@
         "gold": "255,214,110",
         "skipDuringFs": false
       },
-      "loc": 536
+      "loc": 544
     },
     {
       "name": "audio",
@@ -302,6 +350,8 @@
         "emitAudioRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -370,6 +420,8 @@
         "emitAutoplayRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onBigWinTierEnd",
         "onFsEnd",
@@ -417,6 +469,35 @@
       "loc": 1179
     },
     {
+      "name": "backendSpinEngine",
+      "file": "src/blocks/backendSpinEngine.mjs",
+      "testFile": null,
+      "category": "uncategorised",
+      "description": "LV3-3 — Backend spin engine adapter (MATH-INTEGRATION-LV3 · Boki",
+      "exports": [
+        "defaultConfig",
+        "emitBackendSpinEngineRuntime",
+        "resolveConfig"
+      ],
+      "enabledByDefault": true,
+      "frozen": true,
+      "lifecycleHooks": [
+        "postSpin"
+      ],
+      "emittedEvents": [
+        "onBackendSpinSampled",
+        "onBackendStatusChanged"
+      ],
+      "defaultConfig": {
+        "enabled": true,
+        "backendBase": "http://127.0.0.1:9001",
+        "probeTimeoutMs": 1500,
+        "spinTimeoutMs": 3000,
+        "maxConsecutiveErrors": 3
+      },
+      "loc": 258
+    },
+    {
       "name": "balanceHud",
       "file": "src/blocks/balanceHud.mjs",
       "testFile": "tests/blocks/balanceHud.test.mjs",
@@ -430,6 +511,8 @@
         "emitBalanceHudRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onBetChanged",
         "onFsEnd",
@@ -458,6 +541,51 @@
       "loc": 566
     },
     {
+      "name": "batchSimulatorPanel",
+      "file": "src/blocks/batchSimulatorPanel.mjs",
+      "testFile": null,
+      "category": "uncategorised",
+      "description": "LV3-5 — Batch simulator panel (MATH-INTEGRATION-LV3 · Boki 2026-06-24).",
+      "exports": [
+        "defaultConfig",
+        "emitBatchSimulatorPanelCSS",
+        "emitBatchSimulatorPanelMarkup",
+        "emitBatchSimulatorPanelRuntime",
+        "resolveConfig"
+      ],
+      "enabledByDefault": true,
+      "frozen": true,
+      "lifecycleHooks": [],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": true,
+        "backendBase": "http://127.0.0.1:9001",
+        "presets": [
+          {
+            "label": "10K",
+            "spins": 10000
+          },
+          {
+            "label": "100K",
+            "spins": 100000
+          },
+          {
+            "label": "1M",
+            "spins": 1000000
+          },
+          {
+            "label": "10M",
+            "spins": 10000000
+          },
+          {
+            "label": "100M",
+            "spins": 100000000
+          }
+        ]
+      },
+      "loc": 434
+    },
+    {
       "name": "belgiumComplianceGate",
       "file": "src/blocks/belgiumComplianceGate.mjs",
       "testFile": "tests/blocks/belgiumComplianceGate.test.mjs",
@@ -472,6 +600,8 @@
         "emitBelgiumComplianceGateRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onBeCoolingOffRequired",
@@ -500,6 +630,8 @@
         "emitBetSelectorRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onAutoplayStart",
         "onAutoplayStop",
@@ -560,6 +692,8 @@
         "evaluateRTL",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onSpinResult",
@@ -617,7 +751,7 @@
       "file": "src/blocks/bigSymbolRender2x2.mjs",
       "testFile": "tests/blocks/bigSymbolRender2x2.test.mjs",
       "category": "uncategorised",
-      "description": "Wave D-17.2 (Foundry-family gap closure) — Oversized \"big\" symbol",
+      "description": "Wave D-17.2 (industry-reference lock_respin family gap closure) — Oversized \"big\" symbol",
       "exports": [
         "countUnits",
         "defaultConfig",
@@ -626,6 +760,8 @@
         "findBigSymbolFootprints",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsSpinResult",
@@ -663,6 +799,8 @@
         "emitBigWinTierRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onSkipRequested",
         "onWinPresentationEnd",
@@ -760,6 +898,8 @@
         "emitBonusBuyRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger"
@@ -778,7 +918,7 @@
         "rearmMs": 1200,
         "confirmMessage": ""
       },
-      "loc": 294
+      "loc": 306
     },
     {
       "name": "bonusBuyDeterministic",
@@ -793,6 +933,8 @@
         "emitBonusBuyDeterministicRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -889,7 +1031,7 @@
         "pickerColor": "255,170,80",
         "closeOnBackdrop": true
       },
-      "loc": 687
+      "loc": 694
     },
     {
       "name": "bonusBuyMenu",
@@ -904,6 +1046,8 @@
         "emitBonusBuyMenuRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger"
@@ -933,7 +1077,7 @@
         "triggerColorDark": "#b03030",
         "triggerShadowRGB": "255,80,80"
       },
-      "loc": 537
+      "loc": 545
     },
     {
       "name": "bonusClimaxReveal",
@@ -948,6 +1092,8 @@
         "emitBonusClimaxRevealRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onBonusBuyTierSelected",
         "onCreditBucketRespinStart",
@@ -999,6 +1145,8 @@
         "emitBonusOverlayMutexRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onBonusOverlayMutexAcquired",
@@ -1023,6 +1171,8 @@
         "emitBonusPickRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onForceFeatureRequested",
         "onFsEnd",
@@ -1093,6 +1243,8 @@
         "emitCascadeBoosterRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onTumbleStep",
@@ -1138,6 +1290,8 @@
         "emitCascadePathDrawRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onSpinResult",
         "onTumbleStep",
@@ -1172,6 +1326,8 @@
         "resolveConfig",
         "shouldPinCell"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onSpinResult",
         "onTumbleStep",
@@ -1179,7 +1335,8 @@
         "preSpin"
       ],
       "emittedEvents": [
-        "onCascadingWildPinned"
+        "onCascadingWildPinned",
+        "symbolOverride"
       ],
       "defaultConfig": {
         "enabled": false,
@@ -1188,7 +1345,7 @@
         "showCounter": true,
         "counterPosition": "topLeft"
       },
-      "loc": 341
+      "loc": 371
     },
     {
       "name": "cellLevelUpgrade",
@@ -1203,6 +1360,8 @@
         "emitCellLevelUpgradeRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -1244,6 +1403,8 @@
         "emitCellOverflowCounterRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsSpinResult",
         "onTumbleStep",
@@ -1277,6 +1438,8 @@
         "emitClusterPaysEvalRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onClusterPay"
@@ -1310,7 +1473,7 @@
         "maxEvents": 8,
         "diagonal": false
       },
-      "loc": 317
+      "loc": 323
     },
     {
       "name": "clusterSizeMultiplier",
@@ -1325,6 +1488,8 @@
         "resolveConfig",
         "tierMultForSize"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onClusterPay",
         "preSpin"
@@ -1374,6 +1539,8 @@
         "emitCoinCollectRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -1406,6 +1573,8 @@
         "emitCoinShowerRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onBigWinTierEntered",
         "onFsTrigger",
@@ -1444,6 +1613,8 @@
         "emitCollectableSymbolRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsSpinResult",
@@ -1487,6 +1658,8 @@
         "emitCollectRevealOverlayRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onCumulativeMeterThresholdHit",
         "onFsEnd",
@@ -1527,6 +1700,8 @@
         "emitCollectStreakBonusRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onSpinResult",
         "onTumbleStep",
@@ -1556,6 +1731,8 @@
         "emitColorblindPatternsRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onCbPatternsToggle",
         "onFsSpinResult",
@@ -1605,6 +1782,43 @@
       "loc": 391
     },
     {
+      "name": "copyWildOrchestrator",
+      "file": "src/blocks/copyWildOrchestrator.mjs",
+      "testFile": "tests/blocks/copyWildOrchestrator.test.mjs",
+      "category": "wild",
+      "description": "UQ-DEEP-AK · WAVE 1 · BLOCK A — Copy Wild Orchestrator.",
+      "exports": [
+        "defaultConfig",
+        "emitCopyWildOrchestratorCSS",
+        "emitCopyWildOrchestratorMarkup",
+        "emitCopyWildOrchestratorRuntime",
+        "resolveConfig"
+      ],
+      "enabledByDefault": false,
+      "frozen": true,
+      "lifecycleHooks": [
+        "onFsSpinResult",
+        "onSpinResult"
+      ],
+      "emittedEvents": [
+        "onCopyWildPropagated",
+        "symbolOverride"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "sourceReels": [],
+        "targetReels": [],
+        "wildSymbolId": "W",
+        "copyOnHit": true,
+        "copyOnWin": false,
+        "propagationMs": 340,
+        "haloRGB": "255,214,110",
+        "mode": "both",
+        "schemaVersion": "1"
+      },
+      "loc": 425
+    },
+    {
       "name": "crashSpinEngine",
       "file": "src/blocks/crashSpinEngine.mjs",
       "testFile": "tests/blocks/crashSpinEngine.test.mjs",
@@ -1616,6 +1830,8 @@
         "emitCrashSpinEngineRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "preSpin"
       ],
@@ -1641,7 +1857,7 @@
       "file": "src/blocks/creditAwardConversion.mjs",
       "testFile": "tests/blocks/creditAwardConversion.test.mjs",
       "category": "uncategorised",
-      "description": "Wave D-17.8 (Foundry-family gap closure) — Single-source-of-truth",
+      "description": "Wave D-17.8 (industry-reference lock_respin family gap closure) — Single-source-of-truth",
       "exports": [
         "convertCredits",
         "defaultConfig",
@@ -1650,6 +1866,8 @@
         "emitCreditAwardConversionRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onBetChanged"
       ],
@@ -1689,6 +1907,8 @@
         "emitCumulativeMeterRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onCoinCollected"
       ],
@@ -1739,6 +1959,8 @@
         "emitDailyJackpotRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onBigWinTierEntered",
         "onBigWinTierExited",
@@ -1780,6 +2002,8 @@
         "emitDenmarkComplianceGateRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onDkLossLimitRequired",
@@ -1796,6 +2020,33 @@
       "loc": 101
     },
     {
+      "name": "driftSentinel",
+      "file": "src/blocks/driftSentinel.mjs",
+      "testFile": null,
+      "category": "uncategorised",
+      "description": "LV3-6 — Drift sentinel (MATH-INTEGRATION-LV3 · Boki 2026-06-24).",
+      "exports": [
+        "defaultConfig",
+        "emitDriftSentinelCSS",
+        "emitDriftSentinelMarkup",
+        "emitDriftSentinelRuntime",
+        "resolveConfig"
+      ],
+      "enabledByDefault": true,
+      "frozen": true,
+      "lifecycleHooks": [
+        "onDriftAlert"
+      ],
+      "emittedEvents": [],
+      "defaultConfig": {
+        "enabled": true,
+        "warmupSpins": 500,
+        "cooldownMs": 30000,
+        "autoDismissMs": 8000
+      },
+      "loc": 125
+    },
+    {
       "name": "dualRoleScatter",
       "file": "src/blocks/dualRoleScatter.mjs",
       "testFile": "tests/blocks/dualRoleScatter.test.mjs",
@@ -1808,6 +2059,8 @@
         "emitDualRoleScatterRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsTrigger",
         "onTumbleStep",
@@ -1845,6 +2098,8 @@
         "resolveConfig",
         "rollRowsPerReel"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -1885,6 +2140,8 @@
         "emitEnergyMeterRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onEnergyTick",
         "onFsEnd",
@@ -1931,6 +2188,8 @@
         "emitEuAiActComplianceGateRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onAiActDdaProhibited",
@@ -1955,20 +2214,28 @@
         "emitExpandingWildRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsTrigger",
         "onSpinResult",
         "preSpin"
       ],
-      "emittedEvents": [],
+      "emittedEvents": [
+        "onReelsMutated",
+        "onSpinResult",
+        "symbolOverride"
+      ],
       "defaultConfig": {
         "enabled": false,
-        "mode": "fs",
+        "mode": "both",
         "wildSymbolId": "W",
         "expandDurationMs": 360,
-        "haloColor": "255,214,110"
+        "haloColor": "255,214,110",
+        "onlyIfWinning": false,
+        "appliesOnReels": null
       },
-      "loc": 205
+      "loc": 555
     },
     {
       "name": "expandingWildMultiplier",
@@ -1985,6 +2252,8 @@
         "resolveConfig",
         "rollWildMultiplier"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsSpinResult",
@@ -2022,7 +2291,45 @@
         "multTagFontPx": 14,
         "pulseMs": 700
       },
-      "loc": 467
+      "loc": 532
+    },
+    {
+      "name": "extendedWildCountdown",
+      "file": "src/blocks/extendedWildCountdown.mjs",
+      "testFile": "tests/blocks/extendedWildCountdown.test.mjs",
+      "category": "wild",
+      "description": "UQ-DEEP-AK · WAVE 1 · BLOCK C — EXTENDED WILD COUNTDOWN.",
+      "exports": [
+        "defaultConfig",
+        "emitExtendedWildCountdownCSS",
+        "emitExtendedWildCountdownMarkup",
+        "emitExtendedWildCountdownRuntime",
+        "resolveConfig"
+      ],
+      "enabledByDefault": false,
+      "frozen": true,
+      "lifecycleHooks": [
+        "onPhaseChange",
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onExtendedWildExpired",
+        "onExtendedWildRegistered"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "extraSpins": 3,
+        "wildSymbolId": "W",
+        "countdownColor": "#ffcc00",
+        "countdownFontPx": 14,
+        "pulseMs": 420,
+        "mode": "both",
+        "crossPhase": true,
+        "decrementOn": "spinComplete",
+        "schemaVersion": "1"
+      },
+      "loc": 404
     },
     {
       "name": "forceSkip",
@@ -2037,6 +2344,8 @@
         "emitForceSkipRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -2078,6 +2387,8 @@
         "emitFranceComplianceGateRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onAutoplayBanned",
@@ -2107,6 +2418,8 @@
         "emitFreeSpinsToastMarkup",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onBigWinTierEnd",
         "onFsTrigger",
@@ -2156,6 +2469,8 @@
         "resolveConfig",
         "shouldExpandReel"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsSpinResult",
@@ -2164,7 +2479,8 @@
       ],
       "emittedEvents": [
         "onExpansionWildAdded",
-        "onExpansionWildsCleared"
+        "onExpansionWildsCleared",
+        "symbolOverride"
       ],
       "defaultConfig": {
         "enabled": false,
@@ -2174,7 +2490,7 @@
         "expansionColor": "#ffaa00",
         "pulseMs": 700
       },
-      "loc": 323
+      "loc": 365
     },
     {
       "name": "fsPersistentJackpotPool",
@@ -2190,6 +2506,8 @@
         "emitFsPersistentJackpotPoolRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsSpinResult",
@@ -2228,6 +2546,8 @@
         "emitFsProgressBarRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsRetrigger",
@@ -2260,6 +2580,8 @@
         "emitFsReelHeightEscalationRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsRetrigger",
@@ -2292,6 +2614,8 @@
         "removeLowestTierSymbol",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsSpinResult",
@@ -2334,6 +2658,8 @@
         "emitGambleRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onForceFeatureRequested",
         "onFsEnd",
@@ -2349,7 +2675,7 @@
         "collectThresholdX": 0,
         "haloColor": "200,80,80"
       },
-      "loc": 337
+      "loc": 348
     },
     {
       "name": "gambleSecondary",
@@ -2364,6 +2690,8 @@
         "emitGambleSecondaryRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onAutoplayStart",
         "onAutoplayStop",
@@ -2400,7 +2728,7 @@
         "chipColor": "180,80,80",
         "chipTextColor": "255,255,255"
       },
-      "loc": 989
+      "loc": 1007
     },
     {
       "name": "gddRealityCheck",
@@ -2415,6 +2743,8 @@
         "emitGddRealityCheckRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "preSpin"
       ],
@@ -2553,6 +2883,32 @@
       "loc": 447
     },
     {
+      "name": "gddRuntimeMeta",
+      "file": "src/blocks/gddRuntimeMeta.mjs",
+      "testFile": null,
+      "category": "uncategorised",
+      "description": "Wave RENDER-INTEG-A (2026-06-23) — GDD runtime meta-emit block.",
+      "exports": [
+        "defaultConfig",
+        "emitGddRuntimeMeta",
+        "resolveConfig"
+      ],
+      "enabledByDefault": true,
+      "frozen": true,
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onGddMetaReady"
+      ],
+      "defaultConfig": {
+        "enabled": true,
+        "emitCompliance": true,
+        "emitRtpBreakdown": true,
+        "emitScatterPayTable": true,
+        "emitExpandingWildOnlyIfWinning": true
+      },
+      "loc": 150
+    },
+    {
       "name": "genericFeatureBanner",
       "file": "src/blocks/genericFeatureBanner.mjs",
       "testFile": "tests/blocks/genericFeatureBanner.test.mjs",
@@ -2567,6 +2923,8 @@
         "resolveConfig",
         "shouldHandle"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onForceFeatureRequested",
         "postSpin"
@@ -2595,6 +2953,8 @@
         "emitGermanyComplianceGateRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onGameStateCleared",
@@ -2622,7 +2982,7 @@
       "file": "src/blocks/grandInterruptionLock.mjs",
       "testFile": "tests/blocks/grandInterruptionLock.test.mjs",
       "category": "uncategorised",
-      "description": "Wave D-17.6 (Foundry-family gap closure) — GRAND interruption-lock +",
+      "description": "Wave D-17.6 (industry-reference lock_respin family gap closure) — GRAND interruption-lock +",
       "exports": [
         "defaultConfig",
         "emitGrandInterruptionLockCSS",
@@ -2631,6 +2991,8 @@
         "resolveConfig",
         "shouldLock"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFeaturePayout",
         "onHoldAndWinEnd",
@@ -2675,6 +3037,8 @@
         "emitHapticFeedbackRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onBigWinTierEntered",
         "onFsTrigger"
@@ -2715,6 +3079,8 @@
         "findHexClusters",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onSpinResult",
         "onTumbleStep",
@@ -2766,6 +3132,8 @@
         "emitHexReelEngineRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "preSpin"
       ],
@@ -2794,6 +3162,8 @@
         "emitHiLoGambleRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -2838,6 +3208,8 @@
         "emitHistoryLogRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onAutoplayStart",
         "onBalanceChanged",
@@ -2882,6 +3254,8 @@
         "emitHoldAndWinRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onForceFeatureRequested",
         "onFsEnd",
@@ -2934,7 +3308,7 @@
         },
         "orbTable": null
       },
-      "loc": 2185
+      "loc": 2232
     },
     {
       "name": "holdAndWinCreditBucket",
@@ -2949,6 +3323,8 @@
         "emitHoldAndWinCreditBucketRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -3036,6 +3412,8 @@
         "resolveConfig",
         "tierBumpForLanding"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onHoldAndWinEnd",
         "onHoldAndWinIntro",
@@ -3079,6 +3457,8 @@
         "pickMultiplierValue",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onHoldAndWinEnd",
         "onHoldAndWinLock",
@@ -3132,6 +3512,8 @@
         "resolveConfig",
         "shouldExpand"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onHoldAndWinPhase",
         "onHoldAndWinRespin",
@@ -3165,6 +3547,8 @@
         "resolveConfig",
         "resolveRoomForCount"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onHoldAndWinEnd",
         "onHoldAndWinIntro",
@@ -3223,6 +3607,8 @@
         "emitHookBusRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onSpinResult"
       ],
@@ -3232,7 +3618,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 1131
+      "loc": 1185
     },
     {
       "name": "hotReload",
@@ -3247,6 +3633,8 @@
         "emitHotReloadRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onGddChange",
@@ -3287,6 +3675,8 @@
         "emitI18nRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onLocaleChanged"
       ],
@@ -3317,6 +3707,8 @@
         "emitInfiniteFsUntilLossRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsSpinResult",
@@ -3347,6 +3739,8 @@
         "emitInfinityReelsRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsSpinResult",
         "onFsTrigger",
@@ -3396,6 +3790,8 @@
         "nextReelCount",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -3438,6 +3834,8 @@
         "emitInsuranceBetRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger"
@@ -3456,6 +3854,42 @@
       "loc": 248
     },
     {
+      "name": "inSyncReels",
+      "file": "src/blocks/inSyncReels.mjs",
+      "testFile": "tests/blocks/inSyncReels.test.mjs",
+      "category": "uncategorised",
+      "description": "UQ-DEEP-AK · WAVE 1 · BLOCK B — Synchronized Reels presentation + state.",
+      "exports": [
+        "defaultConfig",
+        "emitInSyncReelsCSS",
+        "emitInSyncReelsMarkup",
+        "emitInSyncReelsRuntime",
+        "resolveConfig"
+      ],
+      "enabledByDefault": false,
+      "frozen": true,
+      "lifecycleHooks": [
+        "onFsEnd",
+        "onFsSpinResult",
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onReelsSynced"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "syncGroups": [],
+        "mode": "both",
+        "highlightColor": "#5dd2ff",
+        "linkBarMs": 240,
+        "mirrorStops": true,
+        "mirrorSymbols": true,
+        "schemaVersion": "1"
+      },
+      "loc": 320
+    },
+    {
       "name": "italyComplianceGate",
       "file": "src/blocks/italyComplianceGate.mjs",
       "testFile": "tests/blocks/italyComplianceGate.test.mjs",
@@ -3471,6 +3905,8 @@
         "emitItalyComplianceGateRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onAutoplayBanned",
@@ -3500,6 +3936,8 @@
         "emitJackpotLadderRoomsRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onJackpotRoomEnter",
         "onJackpotRoomWin",
@@ -3548,6 +3986,8 @@
         "pickTierFromDistribution",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onJackpotPickerTrigger",
         "onSkipRequested",
@@ -3610,6 +4050,8 @@
         "resolveRoomForCount",
         "validateRoomLadder"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onHoldAndWinEnd",
         "onJackpotRoomTrigger",
@@ -3673,6 +4115,8 @@
         "resolveJurisdiction",
         "resolveJurisdictionWithSource"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onJurisdictionResolved"
@@ -3695,6 +4139,8 @@
         "emitLeaderboardChipRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onCoinCollected",
         "onSpinResult"
@@ -3726,6 +4172,8 @@
         "emitLightningRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onSpinResult",
@@ -3778,7 +4226,7 @@
       "file": "src/blocks/linkedReels.mjs",
       "testFile": "tests/blocks/linkedReels.test.mjs",
       "category": "uncategorised",
-      "description": "Wave D-17.3 (Foundry-family gap closure) — Linked-reel block. Marks a",
+      "description": "Wave D-17.3 (industry-reference lock_respin family gap closure) — Linked-reel block. Marks a",
       "exports": [
         "defaultConfig",
         "emitLinkedReelsCSS",
@@ -3786,6 +4234,8 @@
         "expandUnits",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsEnter",
@@ -3816,6 +4266,44 @@
       "loc": 586
     },
     {
+      "name": "liveRtpHud",
+      "file": "src/blocks/liveRtpHud.mjs",
+      "testFile": "tests/blocks/liveRtpHud.test.mjs",
+      "category": "uncategorised",
+      "description": "LV3 — Live RTP HUD block (MATH-INTEGRATION-LV3 · Boki 2026-06-24).",
+      "exports": [
+        "defaultConfig",
+        "emitLiveRtpHudCSS",
+        "emitLiveRtpHudMarkup",
+        "emitLiveRtpHudRuntime",
+        "resolveConfig"
+      ],
+      "enabledByDefault": true,
+      "frozen": true,
+      "lifecycleHooks": [
+        "postSpin"
+      ],
+      "emittedEvents": [
+        "onDriftAlert",
+        "onLiveRtpUpdate"
+      ],
+      "defaultConfig": {
+        "enabled": true,
+        "position": "top-right",
+        "showSparkline": true,
+        "sparklineWindow": 60,
+        "bandGreenPct": 0.05,
+        "bandAmberPct": 0.5,
+        "warmupSpinsMin": 500,
+        "warmupSpins": 500,
+        "ciZ": 2.576,
+        "ciAmberScale": 1,
+        "ciRedScale": 2,
+        "idleRefreshMs": 2000
+      },
+      "loc": 419
+    },
+    {
       "name": "lockedSymbolFs",
       "file": "src/blocks/lockedSymbolFs.mjs",
       "testFile": "tests/blocks/lockedSymbolFs.test.mjs",
@@ -3828,6 +4316,8 @@
         "pickRandomCells",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -3860,6 +4350,8 @@
         "pickRevealValue",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onMatchThreeBonusRequested"
@@ -3905,6 +4397,29 @@
       "loc": 498
     },
     {
+      "name": "mathEngine",
+      "file": "src/blocks/mathEngine.mjs",
+      "testFile": null,
+      "category": "uncategorised",
+      "description": "MATH-7 — slot-math-engine-template WASM oracle wrapper.",
+      "exports": [
+        "binomialPmfGe",
+        "bothWaysRtp",
+        "buyFeatureMgaPass",
+        "buyFeatureRtp",
+        "buyFeatureUkgcRts13cPass",
+        "getEngineKind",
+        "loadWasm",
+        "payAnywhereExpectedPay"
+      ],
+      "enabledByDefault": true,
+      "frozen": false,
+      "lifecycleHooks": [],
+      "emittedEvents": [],
+      "defaultConfig": null,
+      "loc": 189
+    },
+    {
       "name": "megaSymbol",
       "file": "src/blocks/megaSymbol.mjs",
       "testFile": "tests/blocks/megaSymbol.test.mjs",
@@ -3917,6 +4432,8 @@
         "emitMegaSymbolRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onMegaSymbolLanded",
@@ -3958,6 +4475,8 @@
         "pickValidAnchor",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsSpinResult",
@@ -3966,7 +4485,8 @@
       ],
       "emittedEvents": [
         "onMegaWildClusterCleared",
-        "onMegaWildClusterLanded"
+        "onMegaWildClusterLanded",
+        "symbolOverride"
       ],
       "defaultConfig": {
         "enabled": false,
@@ -3978,7 +4498,7 @@
         "pulseMs": 900,
         "cornerRadiusPx": 12
       },
-      "loc": 362
+      "loc": 389
     },
     {
       "name": "moneyGrabGrid",
@@ -3994,6 +4514,8 @@
         "pickGridValue",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onMoneyGrabRequested"
@@ -4056,6 +4578,8 @@
         "emitMotionOverlayCSS",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [],
       "defaultConfig": {
@@ -4083,6 +4607,8 @@
         "emitMultiplierLadderRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsSpinResult",
@@ -4128,6 +4654,8 @@
         "emitMultiplierOrbRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -4172,7 +4700,7 @@
         "chipShadow": "#000",
         "pulseMs": 1000
       },
-      "loc": 372
+      "loc": 402
     },
     {
       "name": "mysteryPrizeBox",
@@ -4187,6 +4715,8 @@
         "emitMysteryPrizeBoxRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -4253,6 +4783,8 @@
         "emitMysteryRevealRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onSpinResult"
       ],
@@ -4287,6 +4819,8 @@
         "emitMysterySymbolRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onSpinResult",
@@ -4319,6 +4853,8 @@
         "pickMysteryMultValue",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onSpinResult",
         "onTumbleStep",
@@ -4356,7 +4892,7 @@
         "chipColor": "#a8e6ff",
         "fontSizePx": 18
       },
-      "loc": 242
+      "loc": 249
     },
     {
       "name": "mysteryWildReveal",
@@ -4371,6 +4907,8 @@
         "resolveConfig",
         "shouldRevealAsWild"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onSpinResult",
         "onTumbleStep",
@@ -4387,7 +4925,7 @@
         "wildColor": "#ff9a40",
         "fontSizePx": 22
       },
-      "loc": 253
+      "loc": 273
     },
     {
       "name": "nearMissTease",
@@ -4402,6 +4940,8 @@
         "emitNearMissTeaseRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -4438,6 +4978,8 @@
         "emitNetherlandsComplianceGateRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onCoolOffEnforced",
@@ -4466,6 +5008,8 @@
         "emitNetLossIndicatorRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onAutoplayStart",
         "onBalanceChanged",
@@ -4520,6 +5064,8 @@
         "emitNudgeReelRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -4560,6 +5106,8 @@
         "emitPaletteRouletteRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onThemeChanged"
       ],
@@ -4629,6 +5177,8 @@
         "emitPathAwareMultiplierRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -4693,6 +5243,8 @@
         "resolveConfig",
         "rollDice"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onPathBonusRequested"
@@ -4724,7 +5276,7 @@
       "file": "src/blocks/patternWin.mjs",
       "testFile": "tests/blocks/patternWin.test.mjs",
       "category": "uncategorised",
-      "description": "Wave D-17.1 (Foundry-family gap closure) — Pattern-Win block. Detects a",
+      "description": "Wave D-17.1 (industry-reference lock_respin family gap closure) — Pattern-Win block. Detects a",
       "exports": [
         "defaultConfig",
         "detectPattern",
@@ -4732,6 +5284,8 @@
         "emitPatternWinRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsSpinResult",
@@ -4775,6 +5329,8 @@
         "emitPayAnywhereEvalRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [],
       "defaultConfig": {
@@ -4803,6 +5359,8 @@
         "emitPaylineDimmerRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -4838,6 +5396,8 @@
         "emitPaylineOverlayRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [],
       "defaultConfig": {
@@ -4905,6 +5465,8 @@
         "buildStandardPaylines",
         "paylineConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": false,
       "lifecycleHooks": [],
       "emittedEvents": [],
       "defaultConfig": null,
@@ -4923,6 +5485,8 @@
         "emitPaytableRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onAutoplayStart",
         "onBetChanged",
@@ -4961,6 +5525,8 @@
         "pickValueFromDistribution",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsSpinResult"
@@ -5012,6 +5578,8 @@
         "emitPersistentMultiplierRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsSpinResult",
@@ -5032,14 +5600,14 @@
         "resetOnRoundEnd": true,
         "chipColor": "255,214,110"
       },
-      "loc": 261
+      "loc": 277
     },
     {
       "name": "perTriggerVolatilitySet",
       "file": "src/blocks/perTriggerVolatilitySet.mjs",
       "testFile": "tests/blocks/perTriggerVolatilitySet.test.mjs",
       "category": "uncategorised",
-      "description": "Wave D-17.4 (Foundry-family gap closure) — Per-trigger volatility set",
+      "description": "Wave D-17.4 (industry-reference lock_respin family gap closure) — Per-trigger volatility set",
       "exports": [
         "defaultConfig",
         "emitPerTriggerVolatilitySetCSS",
@@ -5047,6 +5615,8 @@
         "normalizeTier",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onHoldAndWinEnd",
@@ -5086,6 +5656,8 @@
         "emitPickBonusRevealRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onBonusPickResolved",
         "onFsTrigger",
@@ -5119,6 +5691,8 @@
         "emitPickYourFsRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger"
@@ -5165,6 +5739,8 @@
         "emitPlayerXpRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onCoinCollected",
         "onFsEnd",
@@ -5228,6 +5804,8 @@
         "emitPlinkoSpinEngineRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "preSpin"
       ],
@@ -5256,6 +5834,8 @@
         "emitPostSpinRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "postSpin",
         "preSpin"
@@ -5279,7 +5859,7 @@
       "file": "src/blocks/potSymbolFireball.mjs",
       "testFile": "tests/blocks/potSymbolFireball.test.mjs",
       "category": "uncategorised",
-      "description": "Wave D-17.5 (Foundry-family gap closure) — Pot-symbol classifier",
+      "description": "Wave D-17.5 (industry-reference lock_respin family gap closure) — Pot-symbol classifier",
       "exports": [
         "classifyCell",
         "defaultConfig",
@@ -5288,6 +5868,8 @@
         "resolveConfig",
         "sumLandings"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsSpinResult",
         "onHoldAndWinEnd",
@@ -5331,6 +5913,8 @@
         "emitPrizeBoostBetRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger"
@@ -5361,6 +5945,8 @@
         "emitProgressiveFreeSpinsRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsSpinResult",
@@ -5403,6 +5989,8 @@
         "promoteRung",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsRetrigger",
@@ -5463,6 +6051,8 @@
         "emitPwaInstallabilityRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onPwaInstallable",
@@ -5479,9 +6069,10 @@
         "backgroundColor": "#0b0f16",
         "scope": ".",
         "startUrl": ".",
-        "iconColor": "#c9a227"
+        "iconColor": "#c9a227",
+        "captureInstallPrompt": false
       },
-      "loc": 315
+      "loc": 350
     },
     {
       "name": "pyramidGridEngine",
@@ -5497,6 +6088,8 @@
         "emitPyramidGridEngineRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "preSpin"
       ],
@@ -5532,6 +6125,8 @@
         "resolveConfig",
         "shouldStrike"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -5539,8 +6134,8 @@
         "preSpin"
       ],
       "emittedEvents": [
-        "onLightningStrike",
-        "onLightningStrikeMissed"
+        "onMultiplierStrike",
+        "onMultiplierStrikeMissed"
       ],
       "defaultConfig": {
         "enabled": false,
@@ -5569,7 +6164,7 @@
         "glowColor": "#88ccff",
         "audioCueId": null
       },
-      "loc": 454
+      "loc": 471
     },
     {
       "name": "randomWildBurst",
@@ -5584,13 +6179,16 @@
         "emitRandomWildBurstRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
         "onSpinResult"
       ],
       "emittedEvents": [
-        "onRandomWildBurstFired"
+        "onRandomWildBurstFired",
+        "symbolOverride"
       ],
       "defaultConfig": {
         "enabled": false,
@@ -5602,7 +6200,7 @@
         "haloRGB": "255,224,102",
         "maxCellFraction": 0.4
       },
-      "loc": 272
+      "loc": 287
     },
     {
       "name": "realityCheck",
@@ -5618,6 +6216,8 @@
         "emitRealityCheckRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onAutoplayTick",
         "onBalanceChanged",
@@ -5667,6 +6267,8 @@
         "emitReelEngineRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onSlamRequested",
         "onSpinResult",
@@ -5693,7 +6295,7 @@
         "minStepPx": 0.5,
         "accelMinFactor": 0.3
       },
-      "loc": 1218
+      "loc": 1244
     },
     {
       "name": "reelEngineCSS",
@@ -5706,6 +6308,8 @@
         "emitReelEngineCSS",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [],
       "defaultConfig": {
@@ -5728,6 +6332,8 @@
         "emitReelHeightAdapterRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsReelHeightEscalated"
@@ -5756,6 +6362,8 @@
         "emitReelLockHoldRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -5793,6 +6401,8 @@
         "emitRegulatorDisclosureModalRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onRegulatorDisclosureAcknowledged",
@@ -5819,6 +6429,8 @@
         "emitReplayControlBarRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -5851,6 +6463,8 @@
         "emitRespinRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -5882,6 +6496,8 @@
         "emitRespinChargeRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onRespinChargeTick",
@@ -5925,6 +6541,8 @@
         "emitRetriggerEscalatorRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsRetrigger",
@@ -5967,6 +6585,8 @@
         "emitRetriggerMeterRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsRetrigger",
@@ -6008,6 +6628,8 @@
         "nextLadderValue",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsRetrigger",
@@ -6045,6 +6667,8 @@
         "emitRewardChestRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onBigWinTierEntered",
         "onFsEnd",
@@ -6116,6 +6740,8 @@
         "emitRomaniaComplianceGateRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onRoHandpayThresholdEnforced",
@@ -6146,6 +6772,8 @@
         "emitRtlLayoutRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onLocaleChanged"
       ],
@@ -6197,6 +6825,8 @@
         "emitScatterCelebrationRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsTrigger",
         "onSkipRequested"
@@ -6240,6 +6870,8 @@
         "emitSessionLevelMeterRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onPlayerLevelUp",
         "onPlayerXpGained"
@@ -6267,6 +6899,8 @@
         "emitSessionTimeoutRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onAutoplayTick",
         "onLdwSuppressed",
@@ -6312,6 +6946,8 @@
         "emitSettingsPanelRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onAutoplayStart",
         "onFsTrigger",
@@ -6384,6 +7020,8 @@
         "emitShareReplayRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onBigWinTierEnter",
         "onBigWinTierExit",
@@ -6408,7 +7046,7 @@
       "file": "src/blocks/simultaneousFsHoldAndWinPriority.mjs",
       "testFile": "tests/blocks/simultaneousFsHoldAndWinPriority.test.mjs",
       "category": "feature",
-      "description": "Wave D-17.7 (Foundry-family gap closure) — Cross-feature trigger",
+      "description": "Wave D-17.7 (industry-reference lock_respin family gap closure) — Cross-feature trigger",
       "exports": [
         "defaultConfig",
         "emitSimultaneousFsHoldAndWinPriorityCSS",
@@ -6416,6 +7054,8 @@
         "resolveConfig",
         "shouldDefer"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnter",
         "onFsTriggerArmed",
@@ -6452,6 +7092,8 @@
         "emitSlamStopRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -6490,6 +7132,8 @@
         "emitSlingoSpinEngineRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "preSpin"
       ],
@@ -6530,6 +7174,8 @@
         "emitSpainComplianceGateRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onAutoplayBanned",
@@ -6558,6 +7204,8 @@
         "emitSpinControlRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onBigWinTierEnd",
         "onBigWinTierEntered",
@@ -6584,6 +7232,8 @@
       "emittedEvents": [],
       "defaultConfig": {
         "enabled": true,
+        "schemaVersion": "1",
+        "lockAfterSpinMs": 650,
         "requireMinSpinMs": 250,
         "hideOnTurbo": true,
         "hideOnAutoSpin": true,
@@ -6599,7 +7249,7 @@
         "stopColor": "255,80,80",
         "skipColor": "90,180,255"
       },
-      "loc": 964
+      "loc": 1013
     },
     {
       "name": "spinHistoryReplay",
@@ -6614,6 +7264,8 @@
         "emitSpinHistoryReplayRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -6647,6 +7299,8 @@
         "projectSpinTempoIntoEngines",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [],
       "defaultConfig": {
@@ -6678,6 +7332,8 @@
         "emitSplitSymbolRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsSpinResult",
         "onSpinResult",
@@ -6712,6 +7368,8 @@
         "emitStageBadgeRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onBaseEnter",
         "onFsTrigger"
@@ -6762,6 +7420,8 @@
         "emitStickyMeterRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -6803,6 +7463,8 @@
         "emitStickyWildRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -6810,7 +7472,9 @@
         "onSpinResult",
         "postSpin"
       ],
-      "emittedEvents": [],
+      "emittedEvents": [
+        "symbolOverride"
+      ],
       "defaultConfig": {
         "enabled": false,
         "mode": "fs",
@@ -6819,7 +7483,7 @@
         "haloColor": "255,214,110",
         "pulseMs": 1400
       },
-      "loc": 225
+      "loc": 262
     },
     {
       "name": "stormMultiplierReel",
@@ -6833,6 +7497,8 @@
         "emitStormMultiplierReelRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onSlamStop",
         "onSpinResult",
@@ -6878,6 +7544,8 @@
         "emitStreakBonusRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onSpinResult"
@@ -6916,6 +7584,8 @@
         "emitSuperchargedFsRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsRetrigger",
@@ -6960,6 +7630,8 @@
         "emitSuperSymbolRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onSpinResult",
@@ -6993,6 +7665,8 @@
         "resolveConfig",
         "upgradeSymbol"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -7002,7 +7676,8 @@
       ],
       "emittedEvents": [
         "onSuperSymbolUpgradeReset",
-        "onSuperSymbolUpgraded"
+        "onSuperSymbolUpgraded",
+        "symbolOverride"
       ],
       "defaultConfig": {
         "enabled": false,
@@ -7029,7 +7704,7 @@
         "glowColor": "#ff66cc",
         "pulseMs": 600
       },
-      "loc": 472
+      "loc": 486
     },
     {
       "name": "swedenComplianceGate",
@@ -7045,6 +7720,8 @@
         "emitSwedenComplianceGateRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onAutoplayBanned",
@@ -7076,6 +7753,8 @@
         "emitSwitzerlandComplianceGateRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onChCantonRestrictionEnforced",
@@ -7106,6 +7785,8 @@
         "emitSymbolInfoPopoverRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -7125,6 +7806,38 @@
       "loc": 319
     },
     {
+      "name": "symbolModifiers",
+      "file": "src/blocks/symbolModifiers.mjs",
+      "testFile": "tests/blocks/symbolModifiers.test.mjs",
+      "category": "uncategorised",
+      "description": "UQ-DEEP-AJ · P1B — SYMBOL MODIFIERS SCREEN LAYER.",
+      "exports": [
+        "defaultConfig",
+        "emitSymbolModifiersCSS",
+        "emitSymbolModifiersMarkup",
+        "emitSymbolModifiersRuntime",
+        "resolveConfig"
+      ],
+      "enabledByDefault": false,
+      "frozen": true,
+      "lifecycleHooks": [
+        "onSpinResult",
+        "preSpin"
+      ],
+      "emittedEvents": [
+        "onSymbolModifiersApplied"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "transforms": [],
+        "oddsMasks": [],
+        "mysteryRevealMode": "collective",
+        "copyWildDirection": "horizontal",
+        "schemaVersion": "1"
+      },
+      "loc": 456
+    },
+    {
       "name": "symbolSplitReveal",
       "file": "src/blocks/symbolSplitReveal.mjs",
       "testFile": "tests/blocks/symbolSplitReveal.test.mjs",
@@ -7139,6 +7852,8 @@
         "findSuperBlocks",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsSpinResult",
@@ -7148,7 +7863,8 @@
       "emittedEvents": [
         "onSymbolSplitCleared",
         "onSymbolSplitRevealed",
-        "onSymbolSplitStarted"
+        "onSymbolSplitStarted",
+        "symbolOverride"
       ],
       "defaultConfig": {
         "enabled": false,
@@ -7159,7 +7875,7 @@
         "glowColor": "#ffcc00",
         "pulseMs": 800
       },
-      "loc": 454
+      "loc": 465
     },
     {
       "name": "symbolStackCollapse",
@@ -7174,6 +7890,8 @@
         "emitSymbolStackCollapseRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onTumbleStep"
       ],
@@ -7209,6 +7927,8 @@
         "emitSymbolUpgradeRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onTumbleStep",
@@ -7248,6 +7968,8 @@
         "emitSyncReelsRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsSpinResult",
         "onSpinResult",
@@ -7282,6 +8004,8 @@
         "emitThemeCSS",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [],
       "defaultConfig": {
@@ -7321,6 +8045,8 @@
         "emitThemePickerRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "preSpin"
       ],
@@ -7369,6 +8095,8 @@
         "emitTotalMultiplierChipRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onMultiplierChanged",
@@ -7395,6 +8123,8 @@
         "emitTriggerCountingRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onSpinResult",
         "preSpin"
@@ -7417,11 +8147,14 @@
         "emitTumbleRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "preSpin"
       ],
       "emittedEvents": [
+        "onCascadeHalted",
         "onTumbleStep"
       ],
       "defaultConfig": {
@@ -7434,7 +8167,7 @@
         "preserveOrbs": true,
         "staggerMs": 40
       },
-      "loc": 419
+      "loc": 454
     },
     {
       "name": "tumbleGrowingFsMultiplier",
@@ -7450,6 +8183,8 @@
         "emitTumbleGrowingFsMultiplierRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsSpinResult",
@@ -7484,6 +8219,8 @@
         "emitTumbleOnlyFsRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -7514,6 +8251,8 @@
         "emitTurboModeRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "preSpin"
       ],
@@ -7547,6 +8286,8 @@
         "emitUiToastRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -7599,6 +8340,8 @@
         "emitUkgcComplianceGateRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onGamStopCheckRequired",
@@ -7634,6 +8377,8 @@
         "resolveConfig",
         "selectKinds"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [
         "onForceCollectorFill",
@@ -7657,7 +8402,7 @@
         "showLabelText": true,
         "labelText": "FORCE"
       },
-      "loc": 1222
+      "loc": 1350
     },
     {
       "name": "volatilitySelector",
@@ -7672,6 +8417,8 @@
         "emitVolatilitySelectorRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger"
@@ -7717,6 +8464,8 @@
         "emitWalkingWildRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -7724,7 +8473,8 @@
         "preSpin"
       ],
       "emittedEvents": [
-        "requestRespin"
+        "requestRespin",
+        "symbolOverride"
       ],
       "defaultConfig": {
         "enabled": false,
@@ -7734,7 +8484,7 @@
         "triggerRespin": true,
         "haloColor": "110,255,170"
       },
-      "loc": 272
+      "loc": 314
     },
     {
       "name": "walkingWildStepper",
@@ -7751,6 +8501,8 @@
         "nextPosition",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsSpinResult",
@@ -7777,7 +8529,7 @@
         "pulseMs": 800,
         "mountRow": 0
       },
-      "loc": 535
+      "loc": 571
     },
     {
       "name": "waysEval",
@@ -7790,6 +8542,8 @@
         "emitWaysEvalRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [],
       "emittedEvents": [],
       "defaultConfig": {
@@ -7822,6 +8576,8 @@
         "emitWeightedWheelSegmentsRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -7871,6 +8627,8 @@
         "emitWheelBonusRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onForceFeatureRequested",
         "onFsEnd",
@@ -7932,7 +8690,7 @@
         "autoSpin": false,
         "title": "BONUS WHEEL"
       },
-      "loc": 512
+      "loc": 534
     },
     {
       "name": "wheelBonusReveal",
@@ -7947,6 +8705,8 @@
         "emitWheelBonusRevealRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onWheelJackpotHit",
         "onWheelSettled"
@@ -7980,6 +8740,8 @@
         "emitWheelSpinEngineRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "preSpin"
       ],
@@ -8006,6 +8768,8 @@
         "emitWildCollectionTrailRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onSpinResult",
@@ -8053,6 +8817,8 @@
         "emitWildCollisionMultiplierRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onSpinResult",
         "onTumbleStep",
@@ -8085,7 +8851,7 @@
         "minWildsForCollision": 2,
         "chipColor": "#ff9a40"
       },
-      "loc": 254
+      "loc": 286
     },
     {
       "name": "wildReel",
@@ -8099,6 +8865,8 @@
         "emitWildReelRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onSpinResult",
@@ -8115,7 +8883,7 @@
         "maxReelsPerSpin": 1,
         "haloColor": "255,180,90"
       },
-      "loc": 189
+      "loc": 206
     },
     {
       "name": "wildTriggerHoldAndWin",
@@ -8130,6 +8898,8 @@
         "emitWildTriggerHoldAndWinRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onSpinResult",
         "onTumbleStep",
@@ -8147,7 +8917,7 @@
         "seedOrbsFromWilds": true,
         "skipDuringFs": true
       },
-      "loc": 332
+      "loc": 351
     },
     {
       "name": "winBothWaysActivation",
@@ -8162,6 +8932,8 @@
         "emitWinBothWaysActivationRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger"
@@ -8193,6 +8965,8 @@
         "emitWinCapRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onFsTrigger",
@@ -8230,6 +9004,8 @@
         "emitWinLineFlashRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onSpinResult",
         "onTumbleStep",
@@ -8264,6 +9040,8 @@
         "emitWinMultiplierBadgeRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onFsEnd",
         "onPathMultiplierAssigned",
@@ -8301,6 +9079,8 @@
         "emitWinPresentationRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onSkipRequested",
         "onSpinResult",
@@ -8322,7 +9102,7 @@
         "staggerStepMs": 80,
         "suppressLDW": true
       },
-      "loc": 1081
+      "loc": 1277
     },
     {
       "name": "winRollup",
@@ -8337,6 +9117,8 @@
         "emitWinRollupRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": true,
+      "frozen": true,
       "lifecycleHooks": [
         "onBigWinTierEntered",
         "onFsEnd",
@@ -8373,6 +9155,8 @@
         "emitWinwaysIndicatorRuntime",
         "resolveConfig"
       ],
+      "enabledByDefault": false,
+      "frozen": true,
       "lifecycleHooks": [
         "onSpinResult",
         "preSpin"

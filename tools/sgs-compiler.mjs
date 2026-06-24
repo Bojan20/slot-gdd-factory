@@ -36,21 +36,39 @@ const SCATTER_FEATURE_TYPE = 'scatter';
 const FREESPIN_FEATURE_TYPE = 'free_spin';
 const HOLD_AND_WIN_FEATURE_TYPE = 'hold_and_win';
 
-/* UQ-DEEP-AK · WAVE 2 · COMPILER F — IGT-canonical enum primitives.
+/* EXPANSION_TYPE enum
  *
- * industry serverConfig očekuje numeric `expansion_type` enum koji opisuje
- * KAKO wild/expand feature interaguje sa gridom. Mapping je iz IGT runtime
- * docs (Boki) — 6 values; 0 = NONE (no expand feature).
+ * Vendor-neutral industry extension. Captures most-common expand
+ * paradigme observed across slot industry; original 6 vrednosti su
+ * baseline (UQ-DEEP-AK), 5 novih (UQ-DEEP-AN) cover scatter-fill,
+ * symbol-replace, random-cells, adjacent-copy, diagonal-line patterns.
+ *
+ * NOT byte-for-byte IGT — IGT spec ne lists explicit enum; ovaj je
+ * operator-side categorization za sgs-compiler emit. Cross-reference
+ * sister-repo (slot-math-engine-template) potvrdjuje da reference enum
+ * ne postoji ni tamo (no EXPANSION_TYPE string match) — ovo je naš
+ * canonical operator-side mapping derived iz 338 GDD korpus analize.
+ *
+ * UQ-DEEP-AN · AN-4 (Boki 2026-06-24): proširen sa 5 industry-pattern
+ * vrednosti (6..10) za pokrivanje češćih expand kategorija (scatter-fill,
+ * symbol-replace mystery, random cell expand, adjacent copy, diagonal
+ * line fill).
  *
  * Bilo koji unknown / missing feature → 0 (NONE) za safe runtime degradation.
  */
 export const EXPANSION_TYPE = Object.freeze({
   NONE: 0,
-  REEL_FULL: 1,
-  CLUSTER: 2,
-  ROW: 3,
-  PART_OF_WIN: 4,
-  ANCHOR_FROM_TRIGGER: 5,
+  REEL_FULL: 1,           /* expanding wild covers full reel column */
+  CLUSTER: 2,             /* cluster pattern fill */
+  ROW: 3,                 /* expanding wild covers full row */
+  PART_OF_WIN: 4,         /* expands only kad sleti u winning line */
+  ANCHOR_FROM_TRIGGER: 5, /* sticky/anchor from FS trigger */
+  /* UQ-DEEP-AN: industry pattern values (vendor-neutral extension): */
+  SCATTER_FILL: 6,        /* scatter triggers symbol fill across grid */
+  SYMBOL_REPLACE: 7,      /* all instances of one symbol → another */
+  RANDOM_CELLS: 8,        /* random N cells expand */
+  ADJACENT_COPY: 9,       /* expands to adjacent cells */
+  DIAGONAL_LINE: 10,      /* diagonal fill */
 });
 
 /* industry contract §4 rule 1: gain_table = za svaki simbol gde je
@@ -202,8 +220,9 @@ export function computePaytableHash(serverConfig) {
 }
 
 /* UQ-DEEP-AK · WAVE 2 · COMPILER F · Helper 1: emitExpansionType
+ * UQ-DEEP-AN · AN-4 — extended sa 5 industry-pattern mappings.
  *
- * Maps (featureKind, featureConfig) → EXPANSION_TYPE int per IGT spec.
+ * Maps (featureKind, featureConfig) → EXPANSION_TYPE int per industry spec.
  *
  *   expandingWild + expandTo='reel'      → 1 REEL_FULL
  *   expandingWild + expandTo='cluster'   → 2 CLUSTER
@@ -211,6 +230,11 @@ export function computePaytableHash(serverConfig) {
  *   expandingWild + triggers='partOfWin' → 4 PART_OF_WIN
  *   fsExpansionWilds (default)            → 5 ANCHOR_FROM_TRIGGER
  *   megaWildCluster                       → 2 CLUSTER
+ *   scatterFill                           → 6 SCATTER_FILL          (UQ-DEEP-AN)
+ *   symbolReplace / mysteryRevealAll      → 7 SYMBOL_REPLACE        (UQ-DEEP-AN)
+ *   randomCellExpand                      → 8 RANDOM_CELLS          (UQ-DEEP-AN)
+ *   adjacentCopy                          → 9 ADJACENT_COPY         (UQ-DEEP-AN)
+ *   diagonalLine                          → 10 DIAGONAL_LINE        (UQ-DEEP-AN)
  *   unknown / missing                     → 0 NONE
  *
  * triggers='partOfWin' takes precedence over expandTo (regulator wording:
@@ -229,6 +253,14 @@ export function emitExpansionType(featureKind, featureConfig) {
   }
   if (featureKind === 'fsExpansionWilds') return EXPANSION_TYPE.ANCHOR_FROM_TRIGGER;
   if (featureKind === 'megaWildCluster') return EXPANSION_TYPE.CLUSTER;
+  /* UQ-DEEP-AN · AN-4: 5 industry-pattern extensions. */
+  if (featureKind === 'scatterFill') return EXPANSION_TYPE.SCATTER_FILL;
+  if (featureKind === 'symbolReplace' || featureKind === 'mysteryRevealAll') {
+    return EXPANSION_TYPE.SYMBOL_REPLACE;
+  }
+  if (featureKind === 'randomCellExpand') return EXPANSION_TYPE.RANDOM_CELLS;
+  if (featureKind === 'adjacentCopy') return EXPANSION_TYPE.ADJACENT_COPY;
+  if (featureKind === 'diagonalLine') return EXPANSION_TYPE.DIAGONAL_LINE;
   return EXPANSION_TYPE.NONE;
 }
 
@@ -627,13 +659,20 @@ export function compileServerConfig(model, options = {}) {
    *   modifiers_screen_symbols  — per-symbol modifier rules array
    *   nonLockedSymbolId         — HnW lock-predicate sentinel (string | null)
    */
+  /* UQ-DEEP-AN · AN-4: extended set of recognized expand-emitting feature kinds.
+   * Baseline 3 (UQ-DEEP-AK) + 5 new industry patterns (UQ-DEEP-AN). */
+  const EXPAND_FEATURE_KINDS = new Set([
+    'expandingWild', 'fsExpansionWilds', 'megaWildCluster',
+    'scatterFill', 'symbolReplace', 'mysteryRevealAll',
+    'randomCellExpand', 'adjacentCopy', 'diagonalLine',
+  ]);
   let primaryExpandKind = null;
   let primaryExpandCfg = null;
   const featList = model && model.features;
   const visitFeat = (key, feat) => {
     if (primaryExpandKind || !feat) return;
     const k = feat.kind || key;
-    if (k === 'expandingWild' || k === 'fsExpansionWilds' || k === 'megaWildCluster') {
+    if (EXPAND_FEATURE_KINDS.has(k)) {
       primaryExpandKind = k;
       primaryExpandCfg = feat.config || feat;
     }
