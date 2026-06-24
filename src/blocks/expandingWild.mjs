@@ -91,8 +91,34 @@ export function resolveConfig(model = {}) {
     cfg.appliesOnReels = reels.length > 0 ? reels : null;
   }
 
-  if (Array.isArray(model.features) && model.features.some(f => f.kind === 'expanding_wild')) {
-    cfg.enabled = true;
+  /* UQ-DEEP-Q B2 (CRIT) fix: also inherit knobs from features[].config when
+   * parser emits the feature in canonical features[] shape rather than
+   * top-level expandingWild key. Cash Eruption GDD ekstraktor emits:
+   *   features: [{ kind: 'expanding_wild',
+   *                config: { appliesOnReels:[2,3,4,5], onlyIfWinning:true,
+   *                          mode:'base', wildSymbolId:'W' } }]
+   * Before this fix, only `model.expandingWild.*` was read → reel
+   * restriction + only_if_winning + base-mode preference all silently
+   * dropped → wild expanded on reel 1 with no winning-line gate. */
+  if (Array.isArray(model.features)) {
+    const ewFeature = model.features.find((f) => f && f.kind === 'expanding_wild');
+    if (ewFeature) {
+      cfg.enabled = true;
+      const fc = ewFeature.config || ewFeature.opts || {};
+      if (cfg.appliesOnReels == null && Array.isArray(fc.appliesOnReels)) {
+        const reels = fc.appliesOnReels
+          .map((n) => Number(n))
+          .filter((n) => Number.isInteger(n) && n >= 1 && n <= 12);
+        if (reels.length > 0) cfg.appliesOnReels = reels;
+      }
+      if ((fc.mode === 'fs' || fc.mode === 'base' || fc.mode === 'both')
+          && m.mode == null) cfg.mode = fc.mode;
+      if (typeof fc.wildSymbolId === 'string'
+          && /^[A-Za-z][A-Za-z0-9_]*$/.test(fc.wildSymbolId)
+          && m.wildSymbolId == null) cfg.wildSymbolId = fc.wildSymbolId;
+      if ((fc.onlyIfWinning === true || fc.onlyIfWinning === false)
+          && m.onlyIfWinning == null) cfg.onlyIfWinning = fc.onlyIfWinning;
+    }
   }
   return cfg;
 }
@@ -134,50 +160,61 @@ const EXPANDING_WILD_APPLIES_ON_REELS = Array.isArray(EXPANDING_WILD_APPLIES_ON_
 const EXPANDING_WILD_FALLBACK_REELS = ${FALLBACK_REELS};
 const EXPANDING_WILD_FALLBACK_ROWS  = ${FALLBACK_ROWS};
 
-/* RENDER-INTEG-A (2026-06-23) — onlyIfWinning gate. When GDD declares the
- * flag, refuse to expand on a no-win spin (mirrors par-sheet math contract).
- * Read win signal from window.__LAST_SPIN_WIN__ (set by win-presentation /
- * accounting) or fall back to scanning .cell--win class on the grid. Force
- * chip path still bypasses (operator demo must always fire). */
+/* RENDER-INTEG-A (2026-06-23) — onlyIfWinning gate.
+ * UQ-DEEP-Q B6 fix: pravi class koji winPresentation postavlja je
+ *   .cell--winsym (NOT .cell--win) — gate je do sad UVEK vraćao false
+ *   za onlyIfWinning=true igre (Cash Eruption) → expansion nikad ne fire-uje.
+ *   Sad gleda više pravih klasa + win-line overlay DOM. */
 function _expWildOnlyIfWinningPassed() {
   if (!EXPANDING_WILD_ONLY_IF_WINNING) return true;
   if (typeof window !== 'undefined' && window.__FORCE_FEATURE_PENDING__ === 'expanding_wild') return true;
-  /* UQ-DEEP-J fix (Boki "sve verzije wild blokova ne rade pravilno"
-   * 2026-06-23): reorder probe da DOM scan ide PRVI, ne window var.
-   * __LAST_SPIN_WIN__ je timeout-zavisno — win evaluator postavi tu
-   * vrednost POSLE applyExpandingWilds() pozive ako se priority loši
-   * (pre fix-a expandingWild subscribe-uje sa undefined priority koja
-   * je effective 0, ista kao default win evaluator → race). DOM
-   * .cell--win klasa je postavljena sinhroni-pre detect-pays callback,
-   * pa je pouzdaniji signal za "trenutni spin imao win".
-   * Plus: priority u HookBus.on niže (10) tako da subscriber pucne
-   * POSLE default-priority evaluator-a. Combined fix uklanja race. */
-  const host = typeof document !== 'undefined' ? document.getElementById('gridHost') : null;
-  if (host && host.querySelector('.cell--win, .is-winning, .win-line-active')) return true;
+  /* Prefer numeric win signal if winPresentation publishes one. */
   if (typeof window !== 'undefined' && Number.isFinite(window.__LAST_SPIN_WIN__) && window.__LAST_SPIN_WIN__ > 0) return true;
+  const host = typeof document !== 'undefined' ? document.getElementById('gridHost') : null;
+  if (host && host.querySelector('.cell--winsym, .cell--win, .is-winning, .win-line-active, .payline-active')) return true;
+  /* Win-line overlay (paylineOverlay block) creates SVG paths with class .payline-line.active. */
+  if (typeof document !== 'undefined' && document.querySelector('.payline-line.active, .payline-segment.active')) return true;
   return false;
 }
 
+/* UQ-DEEP-Q B3 fix: FSM phase check unified sa sister blocks
+ *   (expandingWildMultiplier, fsExpansionWilds) — use regex /^FS_/ tako da
+ *   FS_INTRO / FS_SPIN / FS_OUTRO / FS_RETRIGGER svi pucaju. Pre: samo
+ *   exact 'FS_ACTIVE' match → expansion u 1/4 FS sub-phaza.
+ * UQ-DEEP-Q also: read FSM via window.FSM (safer in browser sandbox). */
 function _expWildPhaseAllowed() {
-  if (typeof FSM === 'undefined') return EXPANDING_WILD_MODE !== 'fs';
-  const ph = FSM.phase;
-  if (EXPANDING_WILD_MODE === 'fs')   return ph === 'FS_ACTIVE';
-  if (EXPANDING_WILD_MODE === 'base') return ph === 'BASE';
-  return true;
+  let ph = null;
+  if (typeof window !== 'undefined' && window.FSM) ph = window.FSM.phase || window.FSM.state || null;
+  else if (typeof FSM !== 'undefined' && FSM) ph = FSM.phase;
+  /* No FSM available: default to allow except pure 'fs' mode. */
+  if (!ph) return EXPANDING_WILD_MODE !== 'fs';
+  if (EXPANDING_WILD_MODE === 'fs')   return /^FS_/.test(ph);
+  if (EXPANDING_WILD_MODE === 'base') return ph === 'BASE' || ph === 'IDLE' || ph === 'SPIN';
+  /* both */ return true;
 }
 
-function applyExpandingWilds() {
+/* UQ-DEEP-Q B4 fix: H&W gate — sister blocks (expandingWildMultiplier L420,
+ * fsExpansionWilds L284) gate-uju kad je Hold & Win round active. Ovaj blok
+ * je bio outlier. Industry convention (BGaming/Pragmatic mechanics doc):
+ * locked-symbol layer takes priority over reel-paint layers. */
+function _expWildHwActive() {
+  if (typeof window === 'undefined') return false;
+  if (window.HW_STATE && window.HW_STATE.active === true) return true;
+  if (window.__HW_ACTIVE__ === true) return true;
+  return false;
+}
+
+function applyExpandingWilds(spinPayload) {
+  /* UQ-DEEP-Q B5 anti-recursion: if onSpinResult was re-fired by us
+   * (reEval marker), don't expand again — that would infinite-loop. */
+  if (spinPayload && spinPayload.reEval === true && spinPayload.source === 'expandingWild') return [];
   /* UQ-MULTIPLIER-FIX (Boki 2026-06-22 — "wild expansion ... ne radi pravilno
-   * niti priblizno"). Pre fix-a: phase guard je return-uje ranije kad mode
-   * je 'fs' a phase je 'BASE'. UFP force chip click → pending flag se setuje
-   * → applyExpandingWilds() pozove → guard vrati [] → force seed se NIKAD ne
-   * izvrši. Force chip bukvalno ne radi.
-   *
-   * Post-fix: ako UFP force chip postavi PENDING === 'expanding_wild',
-   * BYPASS phase guard. Operator force mora da radi u svakoj fazi inače
-   * QA i sales-team demo ne mogu da prikažu mehaniku u base game. */
+   * niti priblizno"). Force chip click bypasses phase guard. */
   const _isForcedExpand = (typeof window !== 'undefined' &&
                           window.__FORCE_FEATURE_PENDING__ === 'expanding_wild');
+  /* UQ-DEEP-Q B4 fix: Hold & Win takes priority — column-paint layers
+   * must defer dok H&W round nije gotov (locked-symbol layer owns cells). */
+  if (!_isForcedExpand && _expWildHwActive()) return [];
   if (!_isForcedExpand && !_expWildPhaseAllowed()) return [];
   /* RENDER-INTEG-A (2026-06-23) — GDD only_if_winning gate. */
   if (!_expWildOnlyIfWinningPassed()) return [];
@@ -248,6 +285,40 @@ function applyExpandingWilds() {
   });
   if (typeof HookBus !== 'undefined') {
     HookBus.emit('expandingWild:applied', { expanded, mode: EXPANDING_WILD_MODE });
+    /* UQ-DEEP-Q B5 (CRIT) fix — Boki "ne radi pravilno" root cause:
+     * After mutating cells to wild symbol, the win evaluator (which ran
+     * BEFORE expansion at priority 0) has NOT re-evaluated the grid →
+     * expanded wilds visually present but payout reflects pre-expansion
+     * line wins → operator sees expansion animation but no extra credit.
+     * Industry rule (Cash Eruption GDD step 5→6→7): "Re-evaluate all 20
+     * lines with expanded Wilds in place; pay the recomputed result".
+     *
+     * Fix: emit canonical 're-eval' signal that downstream pay layers
+     * subscribe to. Three channels for max compat with diverse evaluators:
+     *  1. window.__LAST_SPIN_GRID_MUTATED__ flag (sync read by next eval)
+     *  2. HookBus 'onReelsMutated' event (clean subscribe channel)
+     *  3. Re-fire 'onSpinResult' with reEval:true marker so existing
+     *     win-calc listeners pick it up without code changes
+     * Idempotency: reEval:true marker prevents infinite loop (block
+     * itself ignores reEval-marked onSpinResult). */
+    if (expanded.length > 0) {
+      if (typeof window !== 'undefined') {
+        window.__LAST_SPIN_GRID_MUTATED__ = { source: 'expandingWild', count: expanded.length, ts: Date.now() };
+      }
+      try {
+        HookBus.emit('onReelsMutated', {
+          source: 'expandingWild',
+          expanded,
+          wildSymbolId: EXPANDING_WILD_SYMBOL,
+        });
+      } catch (_) {}
+      /* Re-fire onSpinResult sa reEval marker — win-calc listeners
+       * koji se vežu samo na onSpinResult će sad reskenirati grid sa
+       * expanded wildovima i nadoknaditi missing pay. */
+      try {
+        HookBus.emit('onSpinResult', { duringFs: false, reEval: true, source: 'expandingWild' });
+      } catch (_) {}
+    }
   }
   return expanded;
 }
@@ -285,8 +356,13 @@ if (typeof HookBus !== 'undefined' && typeof window !== 'undefined' && !window._
    *   0 (eval) → 10 (expandingWild) → 22 (wildCollisionMult)
    * This way collision mult sees expanded cells in correct state and
    * only_if_winning gate reads finalized __LAST_SPIN_WIN__. */
-  HookBus.on('onSpinResult', () => { applyExpandingWilds(); }, { priority: 10 });
-  HookBus.on('preSpin', () => { clearExpandingWilds(); });
+  HookBus.on('onSpinResult', (p) => { applyExpandingWilds(p); }, { priority: 10 });
+  HookBus.on('preSpin', () => {
+    clearExpandingWilds();
+    /* UQ-DEEP-Q B5: clear stale mutation flag on every preSpin so the
+     * downstream layers don't treat fresh spin as re-eval. */
+    if (typeof window !== 'undefined') window.__LAST_SPIN_GRID_MUTATED__ = null;
+  });
   HookBus.on('onFsTrigger', () => { clearExpandingWilds(); });
 }
 `;

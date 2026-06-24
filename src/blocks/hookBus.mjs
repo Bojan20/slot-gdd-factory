@@ -873,6 +873,7 @@ export const HOOK_EVENTS = Object.freeze([
   'clusterPays:evaluated',  // Owner: clusterPaysEval.mjs (legacy colon, W57.A7 whitelist)
   'expandingWild:applied',  // Owner: expandingWild.mjs (legacy colon)
   'expandingWild:cleared',  // Owner: expandingWild.mjs (legacy colon)
+  'onReelsMutated',  // Owner: expandingWild.mjs (UQ-DEEP-Q B5: post-expansion re-eval signal)
   'init',  // Owner: turboMode.mjs (Wave U pre-canonical naming)
   'onAllWaysCleared',  // Owner: allWaysEval.mjs
   'onAllWaysPay',  // Owner: allWaysEval.mjs

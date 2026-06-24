@@ -160,6 +160,36 @@ export function resolveConfig(model = {}) {
     cfg.pulseMs = clampInt(src.pulseMs, PULSE_MIN_MS, PULSE_MAX_MS);
   }
 
+  /* UQ-DEEP-Q B10 (MED) fix: features[].config inheritance for cases
+   * where parser emits canonical features[] shape rather than top-level
+   * expandingWildMultiplier key. */
+  if (Array.isArray(model.features)) {
+    const ewmFeature = model.features.find((f) => f && (
+      f.kind === 'expanding_wild_multiplier' ||
+      f.kind === 'expanding_wild_mult' ||
+      f.kind === 'wild_mult_expand'));
+    if (ewmFeature) {
+      cfg.enabled = true;
+      const fc = ewmFeature.config || ewmFeature.opts || {};
+      if (typeof fc.appliesIn === 'string' && APPLIES_IN.includes(fc.appliesIn)
+          && src.appliesIn == null) cfg.appliesIn = fc.appliesIn;
+      if (typeof fc.aggregation === 'string' && AGGREGATIONS.includes(fc.aggregation)
+          && src.aggregation == null) cfg.aggregation = fc.aggregation;
+      if (typeof fc.wildSymbol === 'string' && SYMBOL_RE.test(fc.wildSymbol)
+          && src.wildSymbol == null) cfg.wildSymbol = fc.wildSymbol;
+      if (Array.isArray(fc.distribution) && fc.distribution.length > 0
+          && !Array.isArray(src.distribution)) {
+        const filtered = fc.distribution
+          .filter(e => Number.isFinite(e.value) && e.value > 0)
+          .map(e => {
+            const w = Number(e.weight);
+            return { value: Number(e.value), weight: Number.isFinite(w) && w > 0 ? w : 1 };
+          });
+        if (filtered.length > 0) cfg.distribution = filtered;
+      }
+    }
+  }
+
   return cfg;
 }
 
@@ -341,16 +371,36 @@ export function emitExpandingWildMultiplierRuntime(cfg = defaultConfig()) {
 
   function _scanGridForWildReels(grid) {
     var reels = new Set();
-    if (!Array.isArray(grid)) return reels;
-    for (var r = 0; r < grid.length; r++) {
-      var row = grid[r];
-      if (!Array.isArray(row)) continue;
-      for (var c = 0; c < row.length; c++) {
-        var cell = row[c];
-        var sym  = (cell && typeof cell === 'object') ? (cell.sym || cell.symbol) : cell;
-        if (sym === WILD_SYMBOL) reels.add(c);
+    /* UQ-DEEP-Q B8 (CRIT) fix — Boki "ne radi pravilno" partial cause:
+     * reelEngine emits onSpinResult sa { duringFs } ONLY (no grid field).
+     * Stari _scanGridForWildReels(grid=undefined) → empty Set → painting
+     * never triggers u base game. Sister block fsExpansionWilds ima isti
+     * bug ali se aktivira u FS only gde drugi payload-i nose grid.
+     *
+     * Fix: kad grid prop missing, fall back na DOM scan koristeći
+     * [data-reel] atribut (canonical layout selector u factory blocks). */
+    if (Array.isArray(grid)) {
+      for (var r = 0; r < grid.length; r++) {
+        var row = grid[r];
+        if (!Array.isArray(row)) continue;
+        for (var c = 0; c < row.length; c++) {
+          var cell = row[c];
+          var sym  = (cell && typeof cell === 'object') ? (cell.sym || cell.symbol) : cell;
+          if (sym === WILD_SYMBOL) reels.add(c);
+        }
       }
+      return reels;
     }
+    /* DOM fallback. */
+    if (typeof document === 'undefined') return reels;
+    var allCells = document.querySelectorAll('[data-reel]');
+    allCells.forEach(function(el) {
+      var txt = (el.textContent || '').trim();
+      if (txt === WILD_SYMBOL) {
+        var ri = Number(el.getAttribute('data-reel'));
+        if (Number.isFinite(ri)) reels.add(ri);
+      }
+    });
     return reels;
   }
 
@@ -435,11 +485,26 @@ export function emitExpandingWildMultiplierRuntime(cfg = defaultConfig()) {
   }
 
   function _onPreSpin() {
-    /* QA sweep (2026-06-18): HW guard — if the H&W round is active,
-     * skip clear so we don't publish a stale setMult(1) that could
-     * overwrite a concurrent H&W multiplier publisher. Mirrors guards
-     * elsewhere in this block. */
-    if (_isHwActive()) return;
+    /* UQ-DEEP-Q B9 (HIGH) fix — Boki audit: under H&W we previously
+     * skipped the clear entirely, leaving stale activeReels Map across
+     * H&W boundary. Next post-H&W base spin would then republish stale
+     * mult to setMult() → wrong payout. New behavior: ALWAYS clear DOM
+     * paint + activeReels Map; only skip the setMult(1) republish
+     * while H&W is owning multiplier publisher. */
+    if (_isHwActive()) {
+      /* Soft clear — drop DOM paint + state but don't touch setMult so
+       * H&W mult publisher stays sovereign. */
+      var painted = document.querySelectorAll('.is-mult-wild');
+      painted.forEach(function(el) {
+        el.classList.remove('is-mult-wild');
+        el.removeAttribute('data-mult-x');
+        el.removeAttribute('aria-label');
+        var tag = el.querySelector('.ewm-tag');
+        if (tag) tag.remove();
+      });
+      window.EWM_STATE.activeReels = new Map();
+      return;
+    }
     _clearAll();
   }
 
