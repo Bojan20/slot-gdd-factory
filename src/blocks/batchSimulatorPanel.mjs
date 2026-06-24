@@ -94,6 +94,25 @@ export function emitBatchSimulatorPanelCSS(cfg = defaultConfig()) {
 }
 .batch-sim-panel button:hover:not(:disabled) { background: rgba(56,189,248,0.25); }
 .batch-sim-panel button:disabled { opacity: 0.4; cursor: not-allowed; }
+.batch-sim-panel .bsp-row--converge { margin-top: 4px; }
+.batch-sim-panel .bsp-converge-btn {
+  flex: 1; padding: 6px 8px;
+  background: linear-gradient(180deg, rgba(201,162,39,.25), rgba(180,140,30,.15));
+  border: 1px solid rgba(201,162,39,0.6);
+  color: #f4eecf;
+  font-family: inherit; font-size: 10px; font-weight: 700; cursor: pointer;
+  border-radius: 4px; letter-spacing: 0.04em;
+}
+.batch-sim-panel .bsp-converge-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(201,162,39,.45), rgba(180,140,30,.30));
+}
+.batch-sim-panel .bsp-converge-btn:disabled { opacity: 0.5; cursor: progress; }
+.batch-sim-panel .bsp-out .ladder {
+  display: block; margin-top: 4px; font-size: 9px; color: #999;
+  font-variant-numeric: tabular-nums; line-height: 1.5;
+}
+.batch-sim-panel .bsp-out .ladder .pass-row { color: #38bd7c; }
+.batch-sim-panel .bsp-out .ladder .fail-row { color: #999; }
 .batch-sim-panel .bsp-out { font-size: 10px; line-height: 1.5; color: #ccc; min-height: 60px; }
 .batch-sim-panel .bsp-out b { color: #f2f2f2; font-weight: 700; tabular-nums: true; font-variant-numeric: tabular-nums; }
 .batch-sim-panel .bsp-out .pass { color: #38bd7c; }
@@ -122,7 +141,13 @@ export function emitBatchSimulatorPanelMarkup(cfg = defaultConfig()) {
   <div class="batch-sim-panel" id="batchSimPanel" hidden>
     <h4>MC Batch Simulator</h4>
     <div class="bsp-row">${presetButtons}</div>
-    <div class="bsp-out" id="bspOut">Click a tier to run.</div>
+    <div class="bsp-row bsp-row--converge">
+      <button class="bsp-converge-btn" id="bspConverge"
+              aria-label="Auto-converge to target RTP (escalates 10K→100K→1M→10M→100M)">
+        🎯 Auto-Converge to Target RTP
+      </button>
+    </div>
+    <div class="bsp-out" id="bspOut">Click a tier to run, or 🎯 to auto-converge.</div>
   </div>
 </div>
 `;
@@ -248,6 +273,84 @@ export function emitBatchSimulatorPanelRuntime(cfg = defaultConfig(), model = {}
         });
       });
     });
+
+    /* UQ-DEEP-W (Boki 2026-06-24): Auto-Converge handler.
+     * Klik → POST /converge → escalates 10K → 100K → 1M → 10M → 100M
+     * Backend salje rounds[] sa per-round delta/halfwidth/pass status.
+     * UI prikazuje ladder progress + final verdict. */
+    var convergeBtn = $('bspConverge');
+    if (convergeBtn) {
+      convergeBtn.addEventListener('click', function () {
+        if (BSP_INFLIGHT) return;
+        BSP_INFLIGHT = true;
+        panel.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+        out.innerHTML = '🎯 Auto-Converge starting... eskaliracemo 10K → 100K → 1M → 10M → 100M dok ne postigne target.';
+        var tcv = performance.now();
+        fetch(BSP_BASE + '/converge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: BSP_MODEL,
+            maxSpins: 100_000_000,
+            precisionPct: 0.005,     /* 0.5% RTP band */
+            halfwidthBound: 0.01,    /* 1% Wilson 99% CI */
+          }),
+        })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (j) {
+          var wall = ((performance.now() - tcv) / 1000).toFixed(2);
+          if (!j || !j.ok) {
+            var errEl = document.createElement('span');
+            errEl.className = 'fail';
+            errEl.textContent = '✗ ' + (j && j.error ? j.error : 'converge failed');
+            out.innerHTML = '';
+            out.appendChild(errEl);
+            return;
+          }
+          var verdict = j.passed
+            ? '<span class="pass">✓ CONVERGED</span>'
+            : '<span class="fail">✗ DID NOT CONVERGE</span>';
+          var html = '<b>Auto-Converge</b> ' + verdict + ' · wall <b>' + wall + 's</b><br>'
+                   + 'total <b>' + Math.round(j.totalSpins/1000).toLocaleString() + 'K</b> spins · '
+                   + 'final batch <b>' + Math.round(j.finalSpins/1000).toLocaleString() + 'K</b><br>';
+          if (j.final) {
+            html += 'measured <b>' + (j.final.rtp * 100).toFixed(4) + '%</b> · '
+                  + 'target <b>' + (j.final.cf_target_rtp * 100).toFixed(4) + '%</b> · '
+                  + 'δ <b>' + (j.final.delta_bps != null ? j.final.delta_bps.toFixed(2) : '?') + ' bps</b><br>'
+                  + 'CI 99% ± <b>' + (j.final.wilson_99_halfwidth * 100).toFixed(4) + '%</b> · '
+                  + 'hit <b>' + (j.final.hit_rate * 100).toFixed(2) + '%</b>';
+          }
+          /* Ladder breakdown. */
+          if (Array.isArray(j.rounds) && j.rounds.length > 0) {
+            html += '<span class="ladder">';
+            for (var i = 0; i < j.rounds.length; i++) {
+              var r = j.rounds[i];
+              var k = (r.spins >= 1e6) ? (r.spins/1e6).toFixed(0) + 'M' : (r.spins/1e3).toFixed(0) + 'K';
+              var cls = r.pass ? 'pass-row' : 'fail-row';
+              html += '<span class="' + cls + '">'
+                    + (r.pass ? '✓' : '·') + ' ' + k.padStart(4)
+                    + ' · rtp ' + (r.rtp != null ? (r.rtp*100).toFixed(2) + '%' : '?')
+                    + ' · δ ' + (r.deltaPct != null ? (r.deltaPct*100).toFixed(3) + '%' : '?')
+                    + ' · CI ± ' + (r.halfwidth != null ? (r.halfwidth*100).toFixed(2) + '%' : '?')
+                    + '</span>';
+            }
+            html += '</span>';
+          }
+          out.innerHTML = html;
+        })
+        .catch(function (e) {
+          var errEl = document.createElement('span');
+          errEl.className = 'fail';
+          errEl.textContent = '✗ ' + e.message;
+          out.innerHTML = '';
+          out.appendChild(errEl);
+        })
+        .finally(function () {
+          panel.querySelectorAll('button').forEach(function (b) { b.disabled = false; });
+          BSP_INFLIGHT = false;
+        });
+      });
+    }
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', bspInit, { once: true });

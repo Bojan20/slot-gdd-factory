@@ -507,6 +507,100 @@ const server = http.createServer(async (req, res) => {
       }, origin);
     }
 
+    if (req.method === 'POST' && p === '/converge') {
+      /* UQ-DEEP-W (Boki 2026-06-24): auto-converge endpoint.
+       * Eskalira batch size 10K → 100K → 1M → 10M → 100M dok pass=true
+       * ili maxSpins iscrpljen. Vraća JSON sa rounds[] history + final
+       * verdict. Per-round Rust spawn unutar runBatchQueued (concurrency
+       * cap 4) — koristi isti deterministic seed iz model hash. */
+      const body = await readJsonBody(req);
+      const model = body.model || {};
+      /* Budget kapovi: hard cap 100M, soft start 10K. */
+      const maxSpinsRaw = Number(body.maxSpins);
+      const maxSpins = Math.min(Math.max(Number.isFinite(maxSpinsRaw) ? maxSpinsRaw : 10_000_000, 10_000), 100_000_000);
+      /* Precision overrides — Boki može da labavi za high-vol slots. */
+      const precisionPctRaw = Number(body.precisionPct);
+      const precisionPct = Number.isFinite(precisionPctRaw) && precisionPctRaw > 0 ? precisionPctRaw : 0.005;  /* 0.5% default — high-vol slot realistic */
+      const halfwidthBoundRaw = Number(body.halfwidthBound);
+      const halfwidthBound = Number.isFinite(halfwidthBoundRaw) && halfwidthBoundRaw > 0 ? halfwidthBoundRaw : 0.01;  /* 1% Wilson CI */
+      /* Ladder of batch sizes — geometric escalation. */
+      const ladder = [10_000, 100_000, 1_000_000, 10_000_000, 100_000_000].filter((n) => n <= maxSpins);
+      if (ladder[ladder.length - 1] !== maxSpins && maxSpins > 10_000) ladder.push(maxSpins);
+      /* Seed: deterministic per model hash. */
+      let seedHash = 0x811c9dc5 >>> 0;
+      const seedStr = JSON.stringify(model);
+      for (let i = 0; i < seedStr.length; i++) {
+        seedHash ^= seedStr.charCodeAt(i);
+        seedHash = Math.imul(seedHash, 0x01000193) >>> 0;
+      }
+      const baseSeed = seedHash & 0xffff;
+      const rounds = [];
+      let passed = false;
+      let lastOut = null;
+      const t0 = Date.now();
+      for (let i = 0; i < ladder.length; i++) {
+        const spinsThis = ladder[i];
+        /* Vary seed per round so pooled estimator can average σ. */
+        const seedThis = (baseSeed + i * 7919) & 0xffff;
+        let out;
+        try {
+          out = await runBatchQueued(model, spinsThis, seedThis);
+        } catch (e) {
+          rounds.push({ spins: spinsThis, seed: seedThis, error: e.message });
+          break;
+        }
+        const deltaPct = (typeof out.rtp === 'number' && typeof out.cf_target_rtp === 'number')
+          ? Math.abs(out.rtp - out.cf_target_rtp) : Infinity;
+        const halfwidth = (typeof out.wilson_99_halfwidth === 'number') ? out.wilson_99_halfwidth : Infinity;
+        const roundPass = (deltaPct <= precisionPct) && (halfwidth <= halfwidthBound);
+        rounds.push({
+          spins: spinsThis,
+          seed: seedThis,
+          rtp: out.rtp,
+          delta_bps: typeof out.delta_bps === 'number' ? out.delta_bps : null,
+          deltaPct,
+          halfwidth,
+          hit_rate: out.hit_rate,
+          max_win_x: out.max_win_x,
+          pass: roundPass,
+          spins_per_sec: out.spins_per_sec,
+        });
+        lastOut = out;
+        if (roundPass) { passed = true; break; }
+      }
+      const wallclockMs = Date.now() - t0;
+      const final = lastOut ? {
+        rtp: lastOut.rtp,
+        cf_target_rtp: lastOut.cf_target_rtp,
+        delta_bps: lastOut.delta_bps,
+        wilson_99_halfwidth: lastOut.wilson_99_halfwidth,
+        hit_rate: lastOut.hit_rate,
+        fs_trigger_rate: lastOut.fs_trigger_rate,
+        hnw_trigger_rate: lastOut.hnw_trigger_rate,
+        max_win_x: lastOut.max_win_x,
+        spins_per_sec: lastOut.spins_per_sec,
+        feature_breakdown: lastOut.feature_breakdown,
+      } : null;
+      const totalSpins = rounds.reduce((s, r) => s + (r.spins || 0), 0);
+      return send(res, 200, {
+        ok: true,
+        passed,
+        rounds,
+        roundCount: rounds.length,
+        totalSpins,
+        finalSpins: rounds.length > 0 ? rounds[rounds.length - 1].spins : 0,
+        wallclockMs,
+        criterion: {
+          precisionPct,
+          precisionPctDisplay: precisionPct * 100,
+          halfwidthBound,
+          halfwidthBoundDisplay: halfwidthBound * 100,
+          maxSpins,
+        },
+        final,
+      }, origin);
+    }
+
     if (req.method === 'POST' && p === '/spin') {
       const body = await readJsonBody(req);
       /* CRIT-P1 (UQ-DEEP-P): reject sessionId > 64 char rather than
