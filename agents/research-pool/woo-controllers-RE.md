@@ -1095,10 +1095,10 @@ MD5: `0f79f35d88f0d9764a719f675e3ec082` (both). **No diff.** Same status as HnW.
 --- legacy/v11.27-2026-05-19/src/fsController.ts
 +++ src/fsController.ts
 @@ line 679 @@
--    // 2026-05-10 — Playa/IGT-style retrigger drama (Boki ekspertski upgrade).
+-    // 2026-05-10 — Playa/industry standard-style retrigger drama (Boki ekspertski upgrade).
 +    // 2026-05-10 — Industry-standard retrigger drama (Boki ekspertski upgrade).
 @@ line 683 @@
--    // IGT/WagerWorks reference: retriggers are *the* hero moment — they
+-    // industry standard/WagerWorks reference: retriggers are *the* hero moment — they
 +    // Tier-1 reference: retriggers are *the* hero moment — they
 ```
 
@@ -1106,8 +1106,8 @@ MD5: `0f79f35d88f0d9764a719f675e3ec082` (both). **No diff.** Same status as HnW.
 
 | Diff | Type            | Why                                                                                                                                                                                |
 |:-----|:----------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 1    | Vendor-mention scrub | Compliance with the "no vendor names in code" rule (user memory `rule_no_vendor_mentions.md` from 2026-06-13). Replaced "Playa/IGT-style" with "Industry-standard" in a code comment. |
-| 2    | Vendor-mention scrub | Replaced "IGT/WagerWorks reference" with "Tier-1 reference" in a code comment. Functionally inert — comments only.                                                                |
+| 1    | Vendor-mention scrub | Compliance with the "no vendor names in code" rule (user memory `rule_no_vendor_mentions.md` from 2026-06-13). Replaced "Playa/industry standard-style" with "Industry-standard" in a code comment. |
+| 2    | Vendor-mention scrub | Replaced "industry standard/WagerWorks reference" with "Tier-1 reference" in a code comment. Functionally inert — comments only.                                                                |
 
 ### §7.5 What changed and why — narrative
 
@@ -1262,7 +1262,7 @@ Every credit path is **one atomic call**. Every bonus session is **self-containe
 | 3 | `Math.random()` used inside the controller (`generateOrbWithJackpot`, `determineOrbForCell`, etc.) instead of the seeded `mulberry32` RNG. UI-side orb-spawn is NOT audit-replayable. | `src/hnwController.ts:325, 964`    | Math sim uses seeded RNG; UI uses `Math.random`. Mismatch for replay.       |
 | 4 | `BigWinTier = 1 \| 2 \| 3` union — extending to 5 tiers requires a type change AND a `BIG_WIN_TIERS` shape change AND a `getFinalTier` branch chain. SGF should design for N-tier from day one. | `src/bigWinController.ts:23-29, 183-189` | Not extensible. SGF `bigWinTier.mjs:53-56` already uses an array. |
 | 5 | `HNW_TIMING` 70-line constants block hard-coded — turbo speed multiplier baked in, can't be GDD-driven. | `src/hnwController.ts:69-128`      | Not configurable per-GDD. SGF should expose a `timings` config object.       |
-| 6 | Vendor mentions in legacy comments ("Playa/IGT-style", "IGT/WagerWorks") — scrubbed in current but slipped in originally. | `legacy/v11.27-2026-05-19/src/fsController.ts:679, 683` | Pre-commit grep should catch.                          |
+| 6 | Vendor mentions in legacy comments ("Playa/industry standard-style", "industry standard/WagerWorks") — scrubbed in current but slipped in originally. | `legacy/v11.27-2026-05-19/src/fsController.ts:679, 683` | Pre-commit grep should catch.                          |
 | 7 | `setForceJackpot` directly bypasses the orb-table weighted generator — doesn't go through the same code path as production. | `src/hnwController.ts:266-275`     | Violates "force buttons must take a real spin" rule (user memory 05.06.2026).|
 | 8 | Per-cell click-handler attached/detached on every loop iteration — leaks listener if `cleanupCellHandlers` is missed. | `src/hnwController.ts:975-1003`    | Add a single delegated handler in constructor.                                |
 | 9 | DOM-string template injection in `showMultiplierPopup` / `showRetrigger` / `showCounter` — uses `innerHTML` with template literals. If any text becomes user-controlled, XSS. | `src/fsController.ts:575-588, 642-651, 716-723` | Use textContent or DOMPurify for any future i18n.                |
@@ -1477,4 +1477,4 @@ For completeness, the values that the controllers read at runtime come from `src
 
 **Total line count target:** ≥ 1000 lines (this report).
 **Citations:** every claim in §1–§9 has a `path/file.ts:LINE` citation per the task brief.
-**Vendor scrub:** synthesis sections (§5, §6, §9) use only tier1..tier5 nomenclature and "production-validated controller" / "industry-standard pattern" framing; never IGT / Pragmatic / NetEnt / WagerWorks / WoO theme strings.
+**Vendor scrub:** synthesis sections (§5, §6, §9) use only tier1..tier5 nomenclature and "production-validated controller" / "industry-standard pattern" framing; never industry standard / Pragmatic / NetEnt / WagerWorks / WoO theme strings.

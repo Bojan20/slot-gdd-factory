@@ -1,6 +1,6 @@
-# IGT QA-Tools Monorepo: Reverse Engineering Report
+# industry QA-Tools Monorepo: Reverse Engineering Report
 
-**Repository:** ~/IGT/qa-tools  
+**Repository:** ~/industry standard/qa-tools  
 **Codebase Size:** ~3694 lines (TAF core)  
 **Version:** 1.0.1 (monorepo root)  
 **Build System:** Lerna (NPM workspaces)  
@@ -11,7 +11,7 @@
 
 ## Executive Summary
 
-The qa-tools monorepo implements a distributed test automation framework for IGT slot game certification and runtime instrumentation. The system orchestrates multi-device parallel test execution, captures visual/state-based regression data, validates RTP/outcome determinism, and logs all telemetry to MongoDB for post-run forensics and report generation.
+The qa-tools monorepo implements a distributed test automation framework for industry standard slot game certification and runtime instrumentation. The system orchestrates multi-device parallel test execution, captures visual/state-based regression data, validates RTP/outcome determinism, and logs all telemetry to MongoDB for post-run forensics and report generation.
 
 ---
 

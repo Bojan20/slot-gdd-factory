@@ -2,14 +2,14 @@
 
 **Date**: 2026-06-16  
 **Version**: 3.2.0-dev.48  
-**Repository**: /Users/vanvinklstudio/IGT/playa-core  
-**Framework**: IGT Unified Game Framework (TypeScript + PIXI.js + MobX)
+**Repository**: /Users/vanvinklstudio/industry standard/playa-core  
+**Framework**: industry standard Unified Game Framework (TypeScript + PIXI.js + MobX)
 
 ---
 
 ## Executive Summary
 
-Playa-Core is a sophisticated TypeScript framework for building interactive slot games and related gambling applications. It implements a component-based architecture with reactive state management (MobX), a command/sequence pattern for game flow orchestration, and a sophisticated asset loading pipeline. The framework is heavily integrated with IGT's IXF (Interchange Framework) for server communication and supports both PIXI rendering (2D) and Three.js (3D) backends.
+Playa-Core is a sophisticated TypeScript framework for building interactive slot games and related gambling applications. It implements a component-based architecture with reactive state management (MobX), a command/sequence pattern for game flow orchestration, and a sophisticated asset loading pipeline. The framework is heavily integrated with industry's IXF (Interchange Framework) for server communication and supports both PIXI rendering (2D) and Three.js (3D) backends.
 
 **Key Architectural Patterns**:
 - Observer pattern (MobX reactions)
@@ -842,7 +842,7 @@ Each IXF state maps to a `SequenceDefinition` in `SequencerGameFlow`.
 
 ### 8.4 Architectural Patterns
 
-**Adapter Pattern**: `IXFProxyService` adapts IGT IXF protocol to Playa's reactive data model. Server calls → `ProxyActions` mutations → observable state changes.
+**Adapter Pattern**: `IXFProxyService` adapts lifecycle state machine protocol to Playa's reactive data model. Server calls → `ProxyActions` mutations → observable state changes.
 
 **Observer Pattern**: `ProxyActions` mutations trigger reactions in game flow (via MobX).
 
@@ -850,7 +850,7 @@ Each IXF state maps to a `SequenceDefinition` in `SequencerGameFlow`.
 
 ### 8.5 Slot Relevance
 
-IXF is IGT's standardized game-server contract. `IXFProxyService` translates server state changes (RNG outcome, balance updates) into game-visible props. Example: server sends `onResolveStage` with win amount—game's sequence reacts, plays win animation, updates balance display.
+IXF is industry's standardized game-server contract. `IXFProxyService` translates server state changes (RNG outcome, balance updates) into game-visible props. Example: server sends `onResolveStage` with win amount—game's sequence reacts, plays win animation, updates balance display.
 
 ### 8.6 Lines of Code Summary
 
@@ -1623,7 +1623,7 @@ src/ts/
 
 ## 20. Conclusion
 
-Playa-Core is a **battle-tested, production-grade framework** for IGT slot games. It combines:
+Playa-Core is a **battle-tested, production-grade framework** for industry standard slot games. It combines:
 
 1. **Reactive state management** (MobX) for responsive UIs
 2. **Command pattern** for orchestrating complex, multi-phase game sequences

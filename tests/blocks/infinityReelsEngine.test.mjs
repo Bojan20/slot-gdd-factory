@@ -296,7 +296,7 @@ t('emit Runtime: direct HookBus.emit string literals (no helper indirection)', (
 
 t('vendor-neutral guard: no banned vendor / product strings in any emit', () => {
   /* Hard repo rule: vendor names never leak into source or emitted
-   * artefacts (CLAUDE.md HARD RULE — Megaways, IGT, etc forbidden). */
+   * artefacts (CLAUDE.md HARD RULE — Megaways, industry standard, etc forbidden). */
   const enabled = { ...defaultConfig(), enabled: true };
   const css = emitInfinityReelsEngineCSS(enabled);
   const md  = emitInfinityReelsEngineMarkup(enabled);

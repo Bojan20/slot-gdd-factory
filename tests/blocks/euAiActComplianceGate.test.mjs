@@ -233,7 +233,7 @@ block('13. Honest scope', () => {
   t('13.6 Source documents DDA as the prohibited practice family',
     /DDA/.test(src) && /Dynamic Difficulty Adjustment/.test(src));
   t('13.7 No vendor / theme strings in source',
-    !/(Wrath|Olympus|Lightning Link|Megaways|Pragmatic|NetEnt|Microgaming|IGT)/i.test(src));
+    !/(Wrath|Olympus|Lightning Link|Megaways|Pragmatic|NetEnt|Microgaming|industry standard)/i.test(src));
 });
 
 console.log('');

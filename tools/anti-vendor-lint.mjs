@@ -66,7 +66,7 @@ const pathsArg = (() => {
  * possible. Multi-word vendors expressed as RegExp.
  */
 const VENDOR_PATTERNS = [
-  { pattern: /\bIGT\b/i,                  label: 'IGT' },
+  { pattern: /\bIGT\b/i,                  label: 'industry standard' },
   { pattern: /\bpragmatic\s+play\b/i,     label: 'Pragmatic Play' },
   { pattern: /\bmegaways\b/i,             label: 'Megaways' },
   { pattern: /\bcash[\s-]eruption\b/i,    label: 'Cash Eruption' },

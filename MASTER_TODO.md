@@ -868,7 +868,7 @@ sve ostalo je kozmetika:
 │    │  - tools/anti-vendor-lint.mjs sa severity ladder              │       │            │
 │    │  - HIGH (regulator/sales) / MEDIUM (internal slug) / LOW (HTML)│       │            │
 │    │  - --strict gate blokira HIGH only                             │       │            │
-│    │  - 13 vendor patterns: IGT, Pragmatic, Megaways, Cash Eruption,│       │            │
+│    │  - 13 vendor patterns: industry standard, Pragmatic, Megaways, Cash Eruption,│       │            │
 │    │    Wolf Run, Cleopatra, Buffalo, NetEnt, Microgaming, L&W,    │       │            │
 │    │    Play'n Go, Novomatic                                        │       │            │
 │    │  - Allowlist: samples/, model.json, tools/_wave-v-cache,       │       │            │
@@ -1749,7 +1749,7 @@ Sve HIGH/MED issues FIXED u commit-u 6c8c014:
   ✅ Cache atomic write (tmp + renameSync) na HYB-2, HYB-3, HYB-5
   ✅ Hallucination guard whitespace-normalized
   ✅ .gitignore za src/cert/llm-*.json + reports/{pipeline,llm-consistency}
-  ✅ HYB-4 Pragmatic/L&W xlsx adapter graceful fallback na IGT generic ingester
+  ✅ HYB-4 Pragmatic/L&W xlsx adapter graceful fallback na industry standard generic ingester
 ```
 
 ### Gate state
@@ -1876,7 +1876,7 @@ plan kroz 3 paralelne grane.
 │        │ faithful: T/F} → disagreement → human review queue           │          │                             │
 ├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
 │ HYB-4  │ Multi-vendor PAR sheet ingest                                 │  ~3h     │ tools/par-sheet-pragmatic.py  │
-│        │ Trenutno samo IGT xlsx layout. Dodati: Pragmatic (Spanish     │          │ tools/par-sheet-lw.py        │
+│        │ Trenutno samo industry standard xlsx layout. Dodati: Pragmatic (Spanish     │          │ tools/par-sheet-lw.py        │
 │        │ headers), L&W (Brytt sheet shapes), Spielo, generic CSV/JSON │          │ tools/par-sheet-generic.py    │
 │        │ Vendor detection per workbook → adapter dispatch              │          │ tools/par-sheet-detect.mjs   │
 ├────────┼────────────────────────────────────────────────────────────┼:────────:┼─────────────────────────────┤
@@ -2387,7 +2387,7 @@ tool komentarima. Sve neutralizovano.
 ├────────────────────────────────────────────────────────────────────────────────────────┤
 │ FIX-EVI (live dokumenti — historical wave logovi NETAKNUTI)                              │
 │   CLAUDE.md                                                                              │
-│     - "IGT Foundry" → "Industry-reference benchmark"                                     │
+│     - "industry standard Foundry" → "Industry-reference benchmark"                                     │
 │     - "Cash Eruption Foundry" → "Game-A (5x3-LR)" slug-marker                            │
 │     - "Gates of Olympus 1000" → "Game-B (6x5-T)" slug-marker                             │
 │     - "Wrath of Olympus" → "Game-C (5x3-R)" slug-marker                                  │
@@ -3453,7 +3453,7 @@ agent + closed-loop calibration = compounding accuracy bez retreniranja modela.
 > ne radi slot gdd app kako tribe ... kreni sa fixovima maksimalno i posel
 > svakog fixa qa ultimativna provera najdublja na realnim primerima"*
 
-Cash Eruption PDF (343 KB, IGT Foundry format, prose-heavy) razotkrio
+Cash Eruption PDF (343 KB, industry standard Foundry format, prose-heavy) razotkrio
 4 stvarna propusta engine-a. Prvi (topology) fix-ovan u `d05e036`. Ostala
 3 + verifikator atoms idu redom sa full-corpus QA posle svakog.
 
@@ -5171,7 +5171,7 @@ Boki: *"kreni sve ultimativno i savrseno da radi"* (2026-06-20) — ultimativna 
 │ all-force-chips probe (4 GDD × 16 chips)   64/64     ✅  Wave Y exotic chips included │
 │ Topology smoke (Wave X)                    24/24     ✅  rectangular + variable + cluster│
 │ manual-spin lifecycle (4 GDD)              4/4       ✅                                │
-│ Vendor-neutral source                      0 hits    ✅  (IGT/NetEnt/Pragmatic/SG)    │
+│ Vendor-neutral source                      0 hits    ✅  (industry standard/NetEnt/Pragmatic/SG)    │
 │ Sole-owner emit ownership                  363/363   ✅  (0 ghost owner)              │
 │ Backtick-free template body                199 OK    ✅                                │
 │ Colon/dot event canonicalization (W57.A7)  11 wl     ✅  0 new violations             │
@@ -6258,10 +6258,10 @@ Boki: *"ajde radi dalje fix za slot gdd i azuriraj master todo ako je potrebno"*
 │ D-16 — LEGO Gate kvarovi posle D-14.4                                                 │
 ├──────────────────────────────────────────────────────────────────────────────────────┤
 │ FAIL #3 — Vendor-neutral block source:                                                │
-│   holdAndWinFrameMultiplier.mjs + multiplierLadder.mjs sadržali "IGT"                 │
+│   holdAndWinFrameMultiplier.mjs + multiplierLadder.mjs sadržali "industry standard"                 │
 │   string u D-14.4 cross-ref komentarima. Krši rule_no_vendor_mentions.                │
-│   Patch: "IGT cross-ref" → "industry-reference cross-ref",                            │
-│          "dok IGT standard" → "dok industry reference".                               │
+│   Patch: "industry standard cross-ref" → "industry-reference cross-ref",                            │
+│          "dok industry standard" → "dok industry reference".                               │
 │   Funkcionalan kod (SUM aggregate + reset-on-lose) ostao identičan.                   │
 │                                                                                       │
 │ FAIL #4 — Block-event ownership (sole-owner principle):                               │
@@ -6298,11 +6298,11 @@ Boki: *"ajde radi dalje fix za slot gdd i azuriraj master todo ako je potrebno"*
 
 ---
 
-## 🏆 D-14.5 IGT PRESENTATION ALIGN · 2026-06-20 · ZATVOREN ✅
+## 🏆 D-14.5 industry standard PRESENTATION ALIGN · 2026-06-20 · ZATVOREN ✅
 
 Boki: *"sada overi blokove multipliere u base game kako se prikazuju kako u fs kako u hold and win itd, kako kaze igt kako je pravilno tako uraid"* (2026-06-20)
 
-**Audit 11 multiplier blokova vs IGT industry baseline (Cash Eruption PAR sheet + WoO FULL PRO). 4 prezentaciona gap-a usklađena.**
+**Audit 11 multiplier blokova vs industry standard industry baseline (Cash Eruption PAR sheet + WoO FULL PRO). 4 prezentaciona gap-a usklađena.**
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────┐
@@ -6370,28 +6370,28 @@ Boki: *"sada overi blokove multipliere u base game kako se prikazuju kako u fs k
 
 ---
 
-## 🏆 D-14.4 IGT CROSS-REF ALIGN · 2026-06-20 · ZATVOREN ✅
+## 🏆 D-14.4 industry standard CROSS-REF ALIGN · 2026-06-20 · ZATVOREN ✅
 
-Boki: *"ajde proveri kako multiplier blokovi treba da rade i kada da se ukljucuju, proveri u IGT fgijlove"* → *"fix"* (2026-06-20)
+Boki: *"ajde proveri kako multiplier blokovi treba da rade i kada da se ukljucuju, proveri u industry standard fgijlove"* → *"fix"* (2026-06-20)
 
-**2 industry-standard gap-a uskladjena sa IGT par sheet referencama (~/Desktop/ParSheets/ + slot-math-engine-template/MultiplierWildBehavior).** Lightning HW guard već ranije zatvoren.
+**2 industry-standard gap-a uskladjena sa industry standard par sheet referencama (~/Desktop/ParSheets/ + slot-math-engine-template/MultiplierWildBehavior).** Lightning HW guard već ranije zatvoren.
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────┐
-│ D-14.4 — IGT par sheet cross-reference fix                                 │
+│ D-14.4 — industry standard par sheet cross-reference fix                                 │
 ├───────────────────────────────────────────────────────────────────────────┤
 │ FIX A — holdAndWinFrameMultiplier _onEnd:                                  │
-│   IGT standard za FRAME tier pool je SUM (sabiranje fixed-tier per-cell    │
+│   industry standard za FRAME tier pool je SUM (sabiranje fixed-tier per-cell    │
 │   vrednosti pri HW_END), ne PRODUCT. Earlier impl je radio totalProduct    │
 │   sto bi davao apsurdne payout cap-ove (5 cells × 10× = 100,000× bet),     │
-│   dok IGT standard dopusta max ~5,000× bet per H&W round.                  │
+│   dok industry standard dopusta max ~5,000× bet per H&W round.                  │
 │                                                                            │
 │   Patch: aggregate = (sum >= 1) ? sum : 1 → setMultMax(aggregate).         │
 │   onFrameMultiplierFinal event sad nosi BOTH totalSum + totalProduct       │
 │   (consumer ima izbor).                                                    │
 │                                                                            │
 │ FIX B — multiplierLadder onFsSpinResult:                                   │
-│   IGT standard: multiplier ladder RESETUJE na lose spin (win = 0), ne      │
+│   industry standard: multiplier ladder RESETUJE na lose spin (win = 0), ne      │
 │   samo na FS_END. Skeleton Key Bonus tab pattern: consecutive-win          │
 │   counter koji se RESET na bilo koji lose. Pre fix-a ladder je drzao       │
 │   tier kroz lose spins → naredna win bi nastavila iz prethodnog tier-a.    │
@@ -6401,7 +6401,7 @@ Boki: *"ajde proveri kako multiplier blokovi treba da rade i kada da se ukljucuj
 │                                                                            │
 │ NIJE FIX-OVANO (jer već postoji):                                          │
 │   randomLightningMultiplier — _isHwActive() guard postoji na liniji 369   │
-│   _onSpinResult. Suspended u toku H&W round-a po IGT standardu.            │
+│   _onSpinResult. Suspended u toku H&W round-a po industry standard standardu.            │
 │                                                                            │
 │ REFERENCE FAJLOVI (chat-internal — vendor-neutral u code/docs):           │
 │   ~/Desktop/ParSheets/PARSheets_SkeletonKey.xlsx (PAR-Bonus FS Mystery     │
@@ -6422,7 +6422,7 @@ Boki: *"ajde proveri kako multiplier blokovi treba da rade i kada da se ukljucuj
 │   _ultimate-all-force-chips-probe.mjs:     36/36 PASS                      │
 │   _ultimate-multiplier-win-effect-probe.mjs: 21/21 PASS                    │
 │                                                                            │
-│ Sad svaki multiplier blok u line sa IGT par sheet pravilima.               │
+│ Sad svaki multiplier blok u line sa industry standard par sheet pravilima.               │
 └───────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -8945,7 +8945,7 @@ Ne radi nove blokove već uvodi BUDGET GATE protiv future regresija.
 > Boki: *"zapisi sve detaljno u master todo, da znas sta treba da radis,
 > pa pocni sa prvim wavem ultimativno lego blokove, i da sve radi saverseno"*
 >
-> Posle 5-agent coverage audit-a vs IGT/industry research-pool (vendor-
+> Posle 5-agent coverage audit-a vs industry standard/industry research-pool (vendor-
 > patents-RE, kimi-mechanics-encyclopedia, woo-controllers-RE, web-slot-
 > mechanics, gdd-corpus-RE). Trenutno **147 blokova**, target **162+**.
 >
@@ -8965,7 +8965,7 @@ Ne radi nove blokove već uvodi BUDGET GATE protiv future regresija.
 > | # | Wave | Blokovi | Industry ref | Priority | Est | Status |
 > |:-:|:--|:--|:--|:-:|:-:|:-:|
 > | 1 | **LEGO-EV** Evaluator | `allWaysEval`, `bidirectionalWaysEval` | industry universal · 243-both-ways pattern | 🔴 | 4-5h | ✅ LANDED `7ac9e71` |
-> | 2 | **LEGO-W2** Wild | `cascadingWildPersistence`, `mysteryWildReveal` | Pragmatic/NetEnt cascade · IGT mystery wild | 🔴 | 3-4h | ✅ LANDED `74b8e13` |
+> | 2 | **LEGO-W2** Wild | `cascadingWildPersistence`, `mysteryWildReveal` | Pragmatic/NetEnt cascade · industry standard mystery wild | 🔴 | 3-4h | ✅ LANDED `74b8e13` |
 > | 3 | **LEGO-FS2** FS | `fsSymbolUpgradeEscalation`, `fsPersistentJackpotPool` | LP→HP tier (B64) · Relax/Wazdan progressive jackpot | 🔴 | 3-4h | ✅ LANDED `971fb18` |
 > | 4 | **LEGO-HW2** Hold & Win | `wildTriggerHoldAndWin`, `holdAndWinReelExpansion` | Aristocrat Dragon Link · Yggdrasil row expand | 🟡 | 3-4h | ✅ LANDED `de7b5ec` |
 > | 5 | **LEGO-B2** Bonus | `matchThreeBonusReveal`, `moneyGrabGrid`, `pathBonusEngine` | Pragmatic/Relax 3×3 match · EGT/Hacksaw position | 🟡 | 5-6h | ✅ LANDED `19b42e5` |
@@ -9424,7 +9424,7 @@ Ne radi nove blokove već uvodi BUDGET GATE protiv future regresija.
 > ## 🏆 H&W TRIGGER-LATCH (industry-reference single-arm-per-spin)
 >
 > Boki: *"i dalje se duplo ponavlja hold and win. zavrsi se jedan, i
-> odmah drugi pocne ... pogledaj kako to IGT radi imas kod agenta za to"*.
+> odmah drugi pocne ... pogledaj kako to industry standard radi imas kod agenta za to"*.
 >
 > Subagent (Explore) prosledio industry pattern iz `agents/SLOT_MECHANICS_ENCYCLOPEDIA.md`
 > + `agents/research-pool/woo-controllers-RE.md`: lock-and-respin
@@ -11072,7 +11072,7 @@ Ne radi nove blokove već uvodi BUDGET GATE protiv future regresija.
 >
 > Sve vendor-neutral, prefers-reduced-motion respected, Apple HIG 11px font floor, JSDoc kontrakt header.
 >
-> **🏆 ULTIMATIVNI H16-H20 PRESENTER SWEEP 2026-06-17 17:05 — 5 NOVIH industry-pattern LEGO presenter blokova (refresh wave).** 115 → **120 blokova**. Σ 1498 LOC nova source + 1064 LOC nova test = 295/0 PASS na novi rad. Per-block (LOC src / tests pass): H16 hiLoGamble (368 / 68) classic post-win HI/LO card gamble presenter — CTA chip + modal dialog (role=dialog/aria-modal/focus-trap/Escape=collect), HIGHER/LOWER/COLLECT actions, maxRounds + multiplier clamp, allowDuringFs gate, sole owner: onHiLoStart/Choice/Resolved/Collected. H17 nudgeReel (255 / 60) fruit-machine near-miss rescue CTA — reads window.__NUDGE_OFFER__ on postSpin, offerMs auto-decline timer, autoDeclineOnSpin gate, role=button + WCAG 44×44 + focus-visible, sole owner: onNudgeOffered/Accepted/Declined/Resolved. H18 infinityReels (278 / 52) cascade-grows-reel chain counter — reads window.__INFINITY_REELS_COUNT__ on onTumbleStep/onFsSpinResult, configurable startCount/capCount/milestones (deduped + sorted), role=status + aria-live=polite, sole owner: onInfinityReelAdded/onInfinityReelsReset/onInfinityChainMilestone. H19 collectableSymbol (273 / 57) symbol-collector HUD meter — grid scan for data-sym matches on postSpin/onTumbleStep/onFsSpinResult, threshold-once-fires-onCollectionFull contract, resetOn whitelist {spin/fsTrigger/fsEnd/never}, sole owner: onSymbolCollected/onCollectionFull/onCollectionReset. H20 retriggerMeter (324 / 58) FS retrigger HUD progressbar + +N FS pop — listens to canonical onFsRetrigger owned by superchargedFs.mjs (NO re-emit), payload.cells path + scan fallback, role=progressbar + aria-valuenow/min/max, sole owner: onRetriggerMeterTick/Commit/Reset. **Sve vendor-neutral** (banlist sweep clean: IGT/pragmatic/megaways/netent/microgaming/reactoonz/cleopatra/buffalo + extras passed), **prefers-reduced-motion** respected on all 5, **Apple HIG 11 px font floor**, **WCAG 2.5.5 44×44 touch target** na CTA chip-ovima, **JSDoc kontrakt header** (purpose/industry-ref/public API/lifecycle/perf/a11y/GDD keys) na svakom bloku. LEGO gate violations introduced from this sweep = **0** (pre-existing failures in cascadePathDraw/reelLockHold/streakBonus/nearMissTease/winLineFlash are unrelated). **Σ 295/0 nove tests, 9 nova HookBus event-a registered in HOOK_EVENTS + EXPECTED_EMIT_OWNERS.**
+> **🏆 ULTIMATIVNI H16-H20 PRESENTER SWEEP 2026-06-17 17:05 — 5 NOVIH industry-pattern LEGO presenter blokova (refresh wave).** 115 → **120 blokova**. Σ 1498 LOC nova source + 1064 LOC nova test = 295/0 PASS na novi rad. Per-block (LOC src / tests pass): H16 hiLoGamble (368 / 68) classic post-win HI/LO card gamble presenter — CTA chip + modal dialog (role=dialog/aria-modal/focus-trap/Escape=collect), HIGHER/LOWER/COLLECT actions, maxRounds + multiplier clamp, allowDuringFs gate, sole owner: onHiLoStart/Choice/Resolved/Collected. H17 nudgeReel (255 / 60) fruit-machine near-miss rescue CTA — reads window.__NUDGE_OFFER__ on postSpin, offerMs auto-decline timer, autoDeclineOnSpin gate, role=button + WCAG 44×44 + focus-visible, sole owner: onNudgeOffered/Accepted/Declined/Resolved. H18 infinityReels (278 / 52) cascade-grows-reel chain counter — reads window.__INFINITY_REELS_COUNT__ on onTumbleStep/onFsSpinResult, configurable startCount/capCount/milestones (deduped + sorted), role=status + aria-live=polite, sole owner: onInfinityReelAdded/onInfinityReelsReset/onInfinityChainMilestone. H19 collectableSymbol (273 / 57) symbol-collector HUD meter — grid scan for data-sym matches on postSpin/onTumbleStep/onFsSpinResult, threshold-once-fires-onCollectionFull contract, resetOn whitelist {spin/fsTrigger/fsEnd/never}, sole owner: onSymbolCollected/onCollectionFull/onCollectionReset. H20 retriggerMeter (324 / 58) FS retrigger HUD progressbar + +N FS pop — listens to canonical onFsRetrigger owned by superchargedFs.mjs (NO re-emit), payload.cells path + scan fallback, role=progressbar + aria-valuenow/min/max, sole owner: onRetriggerMeterTick/Commit/Reset. **Sve vendor-neutral** (banlist sweep clean: industry standard/pragmatic/megaways/netent/microgaming/reactoonz/cleopatra/buffalo + extras passed), **prefers-reduced-motion** respected on all 5, **Apple HIG 11 px font floor**, **WCAG 2.5.5 44×44 touch target** na CTA chip-ovima, **JSDoc kontrakt header** (purpose/industry-ref/public API/lifecycle/perf/a11y/GDD keys) na svakom bloku. LEGO gate violations introduced from this sweep = **0** (pre-existing failures in cascadePathDraw/reelLockHold/streakBonus/nearMissTease/winLineFlash are unrelated). **Σ 295/0 nove tests, 9 nova HookBus event-a registered in HOOK_EVENTS + EXPECTED_EMIT_OWNERS.**
 > **Previous last updated**: 2026-06-17 16:45 · **HEAD**: pending commit · main
 > **🏆 ULTIMATIVNI H16-H20 SWEEP 2026-06-17 16:45 — 5 NOVIH industry-standard LEGO blokova zatvaraju H stream Wave 3.** 106 → **112 blokova** (sa hiLoGamble blokom dodatim usput). Σ 1005 LOC nova source + 853 LOC nova test = 143/0 PASS na novi rad. Detalji: H16 splitSymbol (30/0, oversized symbol visual divider, data-split attribute, restrictKinds whitelist, sole owner: onSplitSymbolPlaced/Cleared). H17 nudgeReel (38/0, classic fruit-machine near-miss rescue CTA — postSpin čita window.__NUDGE_OFFER__, player click → accept/decline, autoDeclineOnSpin gate, role=button + WCAG 44×44 + focus-visible, sole owner: onNudgeOffered/Accepted/Declined/Resolved). H18 respinCharge (26/0, charge counter sa trigger whitelist {loss/spin/noWin/tumbleEnd/custom}, autoRespin toggle, role=progressbar, sole owner: onRespinChargeBump/Full/Reset/Tick). H19 syncReels (25/0, N reel signature matching detector sa minReels gate, persistRound toggle, sole owner: onReelsSynced/Cleared). H20 winMultiplierBadge (24/0, × N chip placement na per-win-line ili per-cell sa minMult gate, 4 position modes, sole owner: onWinMultBadgePlaced/Cleared). Plus prep: hiLoGamble (postojeći blok) dobio canonical event registry — onHiLoStart/Choice/Resolved/Collected sole-owner. **LEGO 7/7 ZELENO (168/168 events single-owner, 90/90 listener coverage, 112 blokova all with tests). npm test 20/20 grid fixtures stable.**
 > **Previous last updated**: 2026-06-17 14:55 · **HEAD**: `e7aa42e` · main
@@ -11142,7 +11142,7 @@ Ne radi nove blokove već uvodi BUDGET GATE protiv future regresija.
 | Adversarial gate | `cortex-slot-builder --adversarial` | A emit → B red-team attack → C judge ruling |
 | Vote feedback | `cortex-agent-vote <call_id> +1\|-1` | 👍/👎 → agent_score → prompt-doctor auto-improvement (1st of month) |
 | JSON envelope | `cortex-slot-builder --json` | Structured handshake za downstream pipelines |
-| Vendor leak guard | runtime grep on every emit | Blokira IGT/Pragmatic/Megaways/itd u outputu (HARD RULE #1 enforced kroz runtime ne samo prompt) |
+| Vendor leak guard | runtime grep on every emit | Blokira industry standard/Pragmatic/Megaways/itd u outputu (HARD RULE #1 enforced kroz runtime ne samo prompt) |
 
 ### Live integration smoke (2026-06-15)
 
@@ -11248,7 +11248,7 @@ Plus postojeći (out-of-band za slot math, oba dele subagent twin):
 | F4 | **Council of Models (light)** | 3-model paralelni vote za hard decisions; synthesis arbiter glasa po confidence × diversity. Final answer = bolji od svakog single modela. | W46.S7 |
 | F5 | **Adversarial gate** | Agent A emit-uje → Agent B napada output (red-team) → Agent C sudi. Strukturni red-team pre commit-a. | W46.S8 |
 | F6 | **Streaming partial output** | Sve agent putanje streaming → UI Provider Telemetry panel pokazuje real-time token tok + cost rolling. Backend infrastruktura iz Cortex W44.S13 + W45.S1 već postoji. | W46.S9 |
-| F7 | **Vector RAG sa Qdrant** | Lokalna vector baza za sve corpus-e (Slot Sage index, IGT public folderi, knjige iz E.1, vendor GDD-ovi). Trenutni `index.md` plain-text grep zameni semantic search-om. Brže + tačnije recall. | W46.S10 |
+| F7 | **Vector RAG sa Qdrant** | Lokalna vector baza za sve corpus-e (Slot Sage index, industry standard public folderi, knjige iz E.1, vendor GDD-ovi). Trenutni `index.md` plain-text grep zameni semantic search-om. Brže + tačnije recall. | W46.S10 |
 | F8 | **Live regulator feed** | RSS + web scraper za UKGC / MGA / SE Spelinspektionen / DE GlüNeuRStV / Ontario AGCO. Promena → telemetry event → rg-architect notifikuje. | W46.S11 |
 | F9 | **Reinforcement loop** | Boki klikne 👍/👎 na agent output → ulazi u `provider_call_log` + `agent_score` → router uči koji agent za koji domen radi bolje. Cortex `cortex tool-stats` infrastruktura već postoji. | W46.S12 |
 | F10 | **Self-improving prompt** | Mesečni meta-agent čita `provider_call_log` failure rows → predlaže izmenu system_prompt-a → Boki approves → diff commit-uje. Self-evolving promptovi. | W46.S13 |
@@ -11407,16 +11407,16 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 > Boki direktiva (2026-06-16 ~16:00 → 16:35): *"hocu da agent ima sve ove informacije moguce, svi agenti da znaju sve"* → *"ja zelim da se napravi od igt fajlova svih i od svega sto imamo moi ovde u slot gdd i na netu i po knjigama i po svemu da napravimo ultimativne agente koji ce umek u sebe da imaju info da to lokujemo i da se sve radi savrseno u svim blokovima"* → *"ajde iskoristi svaki AI koji mozes neka istrazi svu mogucu imehaniku koja postoji na svetu u IT slot indusstriji, neka reverse enginering nek mse odradi za sve moguce blokove i neka se stavi u jedan dokument, ali to mora da bude deep seek istrazivanje, do najsitnijih atoma mogucih"* → *"daj spisak sta si sve nasao a fali nam i cime sve treba da nahranimo agente svakog ponaosob da je ekpert za svoj deo"*.
 >
-> **Cilj:** Svaki od 7 slot-domain agenata u `slot-gdd-factory/agents/` (+ 7 cortex twin-ova pod `~/Projects/cortex/agents/`) postaje **industry-grade ekspert** za svoj deo. Agent ne izmišlja — referencira `file:line` iz IGT-a / WoO / cross-vendor briefa, sa citation budgetom. Zatvara overhead "re-grep 288 MB IGT-a za svaki task".
+> **Cilj:** Svaki od 7 slot-domain agenata u `slot-gdd-factory/agents/` (+ 7 cortex twin-ova pod `~/Projects/cortex/agents/`) postaje **industry-grade ekspert** za svoj deo. Agent ne izmišlja — referencira `file:line` iz industry standard-a / WoO / cross-vendor briefa, sa citation budgetom. Zatvara overhead "re-grep 288 MB industry standard-a za svaki task".
 
 ### W49.A — Landed izvori (commit `e05a618`, 2026-06-16 16:11)
 
 | # | Izvor | Lokacija | Linije | Repo | Status |
 |:-:|:--|:--|:-:|:--|:-:|
-| 1 | IGT · playa-core deep RE | `agents/research-pool/playa-core-RE.md` | 1 651 | **slot-gdd-factory** | ✅ |
-| 2 | IGT · playa-slot deep RE | `agents/research-pool/playa-slot-RE.md` | 1 089 | **slot-gdd-factory** | ✅ |
-| 3 | IGT · qa-tools RE | `agents/research-pool/qa-tools-RE.md` | 560 | **slot-gdd-factory** | ✅ |
-| 4 | IGT · layout_tool RE | `agents/research-pool/layout-tool-RE.md` | 998 | **slot-gdd-factory** | ✅ |
+| 1 | industry standard · playa-core deep RE | `agents/research-pool/playa-core-RE.md` | 1 651 | **slot-gdd-factory** | ✅ |
+| 2 | industry standard · playa-slot deep RE | `agents/research-pool/playa-slot-RE.md` | 1 089 | **slot-gdd-factory** | ✅ |
+| 3 | industry standard · qa-tools RE | `agents/research-pool/qa-tools-RE.md` | 560 | **slot-gdd-factory** | ✅ |
+| 4 | industry standard · layout_tool RE | `agents/research-pool/layout-tool-RE.md` | 998 | **slot-gdd-factory** | ✅ |
 | 5 | SGF atomic inventory | `agents/research-pool/sgf-current-state.md` | 710 | **slot-gdd-factory** | ✅ |
 | 6 | Web · mechanics universe | `agents/research-pool/web-slot-mechanics.md` | 1 623 | **slot-gdd-factory** | ✅ |
 | 7 | Web · math + RNG + regulator | `agents/research-pool/web-math-rng-regulator.md` | 910 | **slot-gdd-factory** | ✅ |
@@ -11430,8 +11430,8 @@ Ako 2 domain ownera daju kontradiktoran savet:
 
 | Prio | Gap | Repo | Razlog | Posledica |
 |:-:|:--|:--|:--|:--|
-| 🔴 | **IGT `config-parser` RE** (660 KB JSON→SQL transpiler) | **slot-gdd-factory** | Greška: prijavljeno u 16:11 chat-u kao "landed", fajl NE postoji | WinEvaluatorAgent ne zna IR shape, paytable parser blindspot |
-| 🔴 | **IGT `playa-cli` RE** (29 MB dev server + GLR replay + RGS proxy) | **slot-gdd-factory** | Isto — fajl NE postoji | SlotBuilderAgent ne zna replay format ni RGS handshake |
+| 🔴 | **industry standard `config-parser` RE** (660 KB JSON→SQL transpiler) | **slot-gdd-factory** | Greška: prijavljeno u 16:11 chat-u kao "landed", fajl NE postoji | WinEvaluatorAgent ne zna IR shape, paytable parser blindspot |
+| 🔴 | **industry standard `playa-cli` RE** (29 MB dev server + GLR replay + RGS proxy) | **slot-gdd-factory** | Isto — fajl NE postoji | SlotBuilderAgent ne zna replay format ni RGS handshake |
 | 🔴 | **Kimi pass-3 dump** (`kimi-mechanics-encyclopedia.md` = 12 l stub) | **slot-gdd-factory** | Kimi sub-agent nije završio do kraja | Encyclopedia §2.6 prazna; 5 industry patterns bez citation |
 | 🔴 | **7 SGF agent prompt-a NEMA reference na encyclopediu** (`grep -c "encyclopedia\|research-pool" agents/*.md` = 0 svaki) | **slot-gdd-factory** | Encyclopedia landovana, agent prompt-i napisani PRE landinga | Agenti i dalje "izmišljaju", knowledge nije load-bearing |
 | 🔴 | **7 Cortex slot-domain agent system_prompt-i bez pointer-a** (`~/Projects/cortex/agents/{slot-builder,slot-sage-v2,engine-architect,feature-architect,win-evaluator,ui-architect,rg-architect}`) | **cortex** | Boki rule: svi agenti znaju sve | Kimi / Fable / Gemini wrapperi startuju "naivni", token cost duplicate discovery |
@@ -11451,7 +11451,7 @@ Ako 2 domain ownera daju kontradiktoran savet:
 |:--|:-:|:--|
 | `research-pool/sgf-current-state.md` (parser, buildSlotHTML, manifest) | ✅ | Inject pointer u prompt header |
 | `research-pool/playa-core-RE.md` (Sequencer, Stage, AssetLoader) | ✅ | Inject pointer |
-| `research-pool/playa-cli-RE.md` (dev server, GLR replay, RGS proxy) | ❌ | **Generisati** (Explore agent na `~/IGT/playa-cli`) |
+| `research-pool/playa-cli-RE.md` (dev server, GLR replay, RGS proxy) | ❌ | **Generisati** (Explore agent na `~/industry standard/playa-cli`) |
 | `~/Desktop/GDD/*.pdf` × 4 (parse-test fixture) | ➕ | Probe matrix → `tests/_gdd-corpus-probe.test.mjs` |
 | Encyclopedia §3 (Bridge table 22) + §7 (HookBus 53 events) | ➕ | Inject pointer + budget: ≤ 3 file:line per emit |
 
@@ -11488,7 +11488,7 @@ Ako 2 domain ownera daju kontradiktoran savet:
 | `research-pool/playa-slot-RE.md` (`Paytable.ts`, `RollupComponent`, `RollupState.STOP`) | ✅ | Inject pointer |
 | `research-pool/web-math-rng-regulator.md` (Bărboianu, Dixon, PAR sheet research) | ✅ | Inject pointer |
 | `research-pool/books-academic.md` (Kassem ch.7) | ✅ | Inject pointer |
-| `research-pool/config-parser-RE.md` (IR shape iz JSON→SQL) | ❌ | **Generisati** (Explore na `~/IGT/config-parser`) |
+| `research-pool/config-parser-RE.md` (IR shape iz JSON→SQL) | ❌ | **Generisati** (Explore na `~/industry standard/config-parser`) |
 
 #### W49.C.6 · `agents/UI_ARCHITECT.md` (WCAG 2.2 AA · dvh · safe-area · haptic)
 
@@ -11522,7 +11522,7 @@ Ako 2 domain ownera daju kontradiktoran savet:
 |:-:|:--|:-:|
 | `e05a618` | SLOT_MECHANICS_ENCYCLOPEDIA + 9 research files (8 200 linija) | ✅ |
 | `6d2aa06` | **W49.D.T1+T2** — 4 RE fajla (config-parser + playa-cli + woo-reels + woo-controllers, **+4 879 linija**) + 7 SGF twin Knowledge base inject | ✅ |
-| `0144c94` (cortex) | **W49.D.T3** — 7 Cortex agent prompt + 2 wrapper (`cortex-kimi-research --igt-context` + `cortex-fable-review-last-commit` auto-on) + global memory `~/.claude/projects/-/memory/IGT-knowledge.md` | ✅ |
+| `0144c94` (cortex) | **W49.D.T3** — 7 Cortex agent prompt + 2 wrapper (`cortex-kimi-research --igt-context` + `cortex-fable-review-last-commit` auto-on) + global memory `~/.claude/projects/-/memory/industry standard-knowledge.md` | ✅ |
 | `481cc6b` | **W49.D.T4** — ULTIMATIVNI QA 9/9 gate ZELENO (vendor leak legitimno · bash syntax · 7/7 SGF KB · 7/7 Cortex KB · LEGO 6/6 · 20/20 npm test · 85+23+anticipation block tests · LDW gate dokumentovan) | ✅ |
 | `5ac77d4` | **W49.D.T5** — 4 follow-up RE landed (Kimi enc 636 l + GDD corpus 506 l + vendor patents 1 548 l + mobile/PWA/haptic 1 666 l = **+4 356 l / 292 KB**) + 11 SGF pointer rows injected across 7 agenata + npm test 4/4 + 20/20 grid fixtures ✅ | ✅ |
 | `1167c28` (cortex) | **W49.D.T5 cortex twin** — 11 cortex pointer rows mirror SGF (slot-builder +2, slot-sage-v2 +2, engine +1, feature +3, win-eval +1, ui +1, rg +1) | ✅ |
@@ -11583,7 +11583,7 @@ Ako 2 domain ownera daju kontradiktoran savet:
 | 2 | LEGO gate 6/6 invariants | ✅ (98 sole-owner · 72 listener · 87 vendor-neutral · backtick-free template body) |
 | 3 | npm test (parser floor + grid fixtures) | ✅ 4/4 + 20/20 |
 | 4 | `test:sharpness` CI gate (5 GDDs) | ✅ 5/5 baseline:ok · 0 cell mutations (no regression posle integration) |
-| 5 | Vendor leak grep u block + CSS | ✅ 0 hits (Wrath / Lightning / IGT / Pragmatic / NetEnt clean) |
+| 5 | Vendor leak grep u block + CSS | ✅ 0 hits (Wrath / Lightning / industry standard / Pragmatic / NetEnt clean) |
 | 6 | Force chip routes kroz `runOneBaseSpin` (NE direct stopSpin shortcut) | ✅ verified u test #16 |
 | 7 | Math-blind invariant (NO internal RNG) | ✅ verified u test #18 (grep no `Math.random`/weighted/cumulative) |
 | 8 | Force chip flag CONSUMED after one use (no spin-to-spin leak) | ✅ verified u test #17 |
@@ -12860,14 +12860,14 @@ shouldAbort = required === true && passed !== true
 
 | Hash | Wave | Subject |
 |---|---|---|
-| `32b4515` | **W56** | **Aux multiplier reel · stormMultiplierReel block (closes W49.T5.B GDD corpus RE gap + closes Pre-Math Faza 3)** — vendor-neutral 440-LOC blok (`srm-` CSS prefix, NO Wrath/Lightning/IGT strings) sa GDD knobs (enabled/values/position left-right-top-bottom/itemSizePx/spinSpeed/landingMs/themeClass/ARIA), 2 nova HookBus events sole-owned (onStormMultiplierStart/Stop · 96 → 98), force chip `window.stormMultiplierForceAt(value)` routes kroz `runOneBaseSpin()` (per rule_force_buttons_real_spin), math-blind (0 internal RNG — engine populates `spinResult.stormMultiplierTarget`), opt-in default (enabled=false → 0-byte side effect). Lifecycle: preSpin→start, onSpinResult→consume target + force-flag override + flag-consume-after-use, postSpin→stop, onSlamStop→snap. 61/61 unit + LEGO 6/6 (98 sole-owner · 72 listener · 87 vendor-neutral) + npm 4/4 + grid 20/20 + sharpness 5/5 0 mutations + manifest 86→87. **Pre-Math Faza 3 = 13/13 closed (12 shipped + B76 OBSOLETE via Wave V1 fix-in-place)**. |
+| `32b4515` | **W56** | **Aux multiplier reel · stormMultiplierReel block (closes W49.T5.B GDD corpus RE gap + closes Pre-Math Faza 3)** — vendor-neutral 440-LOC blok (`srm-` CSS prefix, NO Wrath/Lightning/industry standard strings) sa GDD knobs (enabled/values/position left-right-top-bottom/itemSizePx/spinSpeed/landingMs/themeClass/ARIA), 2 nova HookBus events sole-owned (onStormMultiplierStart/Stop · 96 → 98), force chip `window.stormMultiplierForceAt(value)` routes kroz `runOneBaseSpin()` (per rule_force_buttons_real_spin), math-blind (0 internal RNG — engine populates `spinResult.stormMultiplierTarget`), opt-in default (enabled=false → 0-byte side effect). Lifecycle: preSpin→start, onSpinResult→consume target + force-flag override + flag-consume-after-use, postSpin→stop, onSlamStop→snap. 61/61 unit + LEGO 6/6 (98 sole-owner · 72 listener · 87 vendor-neutral) + npm 4/4 + grid 20/20 + sharpness 5/5 0 mutations + manifest 86→87. **Pre-Math Faza 3 = 13/13 closed (12 shipped + B76 OBSOLETE via Wave V1 fix-in-place)**. |
 | `b220779` | **W57.A7** | **Colon/dot event canonicalization + LEGO §7 gate** — `anteBet:changed`→`onAnteBetChanged`, `bonus.buy.requested`→`onBonusBuyRequested` (oba bili orphan-emit, grep-verified pre-rename safe). New LEGO §7 (`checkColonDotEventNames`) bloku NEW colon/dot eventove; 11 legacy survivors (expandingWild × 2 + reels:stopped + clusterPays:evaluated + wheelBonus × 6 + feature:bonusPick:trigger) na shrinks-only whitelist (svaki sa W57.A7.2-A7.5 deferred plan). EXPECTED_EMIT_OWNERS extends 98→100 sole-owner. LEGO 6→**7 invariants**. 23/23 unit + LEGO 7/7 + npm 4/4 + grid 20/20. |
 | `fd5568e` | **W57.A5** | **Two-tier spinToken stale-callback guard u reelEngine + hexReelEngine** — pattern source `agents/research-pool/woo-reels-RE.md §8.3` + engine-architect HIGH severity verdict. reelEngine: `window.__reelEngineSpinToken__` counter + `__spinToken` const capture + `__sptGuard` helper wrappping `reel.stopTimerId` setTimeout + onSettled handoff setTimeout. hexReelEngine: outer-engine-scope `__hexSpinToken` + `__hexSptGuard` function (hexTickAll closure can see it) wrapping hexOnSettled handoff. State machine STAYS INTACT — captured-vs-current comparison silently drops stale callbacks. 4 secondary engines (wheel/crash/plinko/slingo) deferred to W57.A5.2. 22/22 unit + sandbox drift-detector verifies stale-drop + fresh-execute. |
 | `81f5b12` | **W57.A6** | **prefers-reduced-motion runtime gate u 3 rAF engina (WCAG 2.3.3)** — every rAF-driven engine (reelEngine + hexReelEngine + crashSpinEngine) inspects `matchMedia('(prefers-reduced-motion: reduce)')` at spin trigger i collapses time-axis tako da spin resolves u ≤1 rAF tick. State machine STAYS INTACT: collapse time axis (`scheduledStopAt → now` / `stopAt → hexSpinStart` / `startedAt -= _spinDur`), NE engine logic. SSR-safe (`typeof matchMedia === 'function'` guard). 32/32 unit (proširili _engineDeltaCap test sa §5-§8 RM coverage). |
 | `40d4620` | **W55** | **Spin-sharpness CI integration · full 5-GDD baseline + test:all gate wire-up** — fresh probe na svih 5 reference GDD (huff/wrath/crystal/gates/midnight): **159 cells / 27 spinning surfaces / 27 overlays painted / 0 cell-filter mutations** (5/5 PASS). `package.json` `test:all` chain: `test:sharpness` insertovan posle `test:no-muddy-cell` (susedni presentation-invariant probe-ovi). `test:blocks` chain: motionOverlay + winPresentationLDW appendovani na kraj 86-test chain-a (33+22 = +55 assertions svaki npm test:blocks run). LEGO 6/6 + 5/5 sharpness regression + 33/33 + 22/22 unit via npm. Honest scope marker: Wave 3.1 rectangular migration → motionOverlay deferred (default knob harmonization needed: streakAlpha 0.04 vs 0.10, shadowAlpha 0.18 vs 0.22). |
 | `0355aaa` | **W54** | **Spin-quality close-out · motionOverlay Wave 3 + LDW gate + sharpness probe Wave 4** — orphan harvest 713 LOC + 5 integration izmena. New `src/blocks/motionOverlay.mjs` (shared `::after`/`::before` overlay za 5 engina, 0 JS/frame, WCAG 2.3.3) + `tests/blocks/motionOverlay.test.mjs` 33/33 + `tests/blocks/winPresentationLDW.test.mjs` 22/22 (Dixon 2010 + UKGC RTS 7C + AGCO 4.07 + UKGC 17-Jan-2025) + `tools/_spin-sharpness-probe.mjs` Wave 4 (Playwright computed-style sharpness assertion + Laplacian baseline ±15% u `cert/golden-spin-sharpness.json`). Orchestrator wires per 5 engine-a (hex/wheel/crash/plinko/slingo). Hex engine drops Wave 1 inline overlay — orchestrator's emit pokriva. 4 nova npm script-a. Ultimate QA 9/9: 33+22 unit + LEGO 6/6 (96 events sole-owner · 71 listener · 86 blokova vendor-neutral) + npm 4/4 + grid 20/20 + sharpness probe crystal 25 cells 0 mutations + 0 vendor leaks + 15 LDW citation hits + GPU-only zero-JS. |
 | _TBD_ | **W50** | **LDW (Losses Disguised as Wins) cross-block gate** — 3 src/blocks dopune (`winPresentation.mjs` presentExternalWin gate + preSpin reset; `hapticFeedback.mjs` `_ldwActive()` defense-in-depth; `netLossIndicator.mjs` `onLdwSuppressed` listener + RG metrics exposure) + new `_ldwCrossBlock.test.mjs` (43 case kroz 10 sekcija: source-of-truth, winRollup indirect, bigWinTier indirect, haptic D-i-D, netLoss listener, sandbox 6 scenarija, regulator profile precedence, EXPECTED_EMIT_OWNERS, vendor-neutral, determinism). Ultimate QA 9/9 ZELENO: 232 testova / 0 fail / LEGO 6/6 / npm 20/20 / vendor clean. Citations: Dixon 2010 + UKGC RTS 7C + AGCO 4.07 + UKGC 17-Jan-2025. |
-| `e05a618` | **W49.A** | **ULTIMATE SLOT AGENTS KB landovan** — 9 research izvora + master `SLOT_MECHANICS_ENCYCLOPEDIA.md` (11 §, 24 KB) + 8 200 linija research-pool. 5 HARD RULES + Bridge table 22 IGT→SGF + Gap matrix 30+ + 10 industry patterns za file:line extract + Regulator gates 12 × 25 + 53 HookBus events + Glossary industry→vendor-neutral + Agent contract. **Gap audit**: 5 critical (config-parser-RE + playa-cli-RE + Kimi pass-3 stub + 7 SGF agent prompt-a bez pointer + 7 Cortex agent prompt-a bez pointer) + 4 follow-up (WoO RE + GDD corpus + vendor patent corpus + WCAG/haptic deep). T1-T4 plan ~2 h 30 min. |
+| `e05a618` | **W49.A** | **ULTIMATE SLOT AGENTS KB landovan** — 9 research izvora + master `SLOT_MECHANICS_ENCYCLOPEDIA.md` (11 §, 24 KB) + 8 200 linija research-pool. 5 HARD RULES + Bridge table 22 industry standard→SGF + Gap matrix 30+ + 10 industry patterns za file:line extract + Regulator gates 12 × 25 + 53 HookBus events + Glossary industry→vendor-neutral + Agent contract. **Gap audit**: 5 critical (config-parser-RE + playa-cli-RE + Kimi pass-3 stub + 7 SGF agent prompt-a bez pointer + 7 Cortex agent prompt-a bez pointer) + 4 follow-up (WoO RE + GDD corpus + vendor patent corpus + WCAG/haptic deep). T1-T4 plan ~2 h 30 min. |
 | `e300cf0` | **B64** | **`symbolUpgrade` block (Faza 3 #1)** — cascade-with-transmute level-up on tumble refill. Owns 2 HookBus events (`onSymbolUpgrade` · `onSymbolUpgradeCascade`), 4 lifecycle listeners (preSpin · onTumbleStep · postSpin · onFsEnd), Fisher–Yates fair cap selection (default ≤2 per tumble), auto-derived ladder from `SYMBOL_REGISTRY` tiers when GDD omits explicit pairs, force/QA hook `window.symbolUpgradeForceAt(col,row)` routes through real upgrade path (rule_force_buttons_real_spin), auto-disabled on tumble-incompatible shapes (wheel/hex/plinko/crash/slingo/radial). 26/26 unit + LEGO 5/5 (69 blocks · 60/60 event ownership · 57/57 listener coverage) + budget 1012/1050 + grids 20/20 + browser 24/24 + manifest 17/17. Sweep extras: `holdAndWin.mjs` vendor string purged ("Lightning Link" → "industry-standard lock-and-respin"), `anticipationUniversal.mjs` got its missing test (15/15), `onHoldAndWinPhase` / `onHoldAndWinEnd` declared in EXPECTED_EMIT_OWNERS. |
 | `6e2405f` | **P8** | **Hot-reload bez page refresh** — closes Faza 2 (P1–P8 all SHIPPED). New `tools/dev-server.mjs` (Node HTTP + SSE + `fs.watch` recursive on `samples/`, `src/`, `app.js`, `index.html`; categorize() → gdd/parser/orchestrator/block/runtime/asset; path-safe static serving; `/__dev/events` SSE, `/__dev/gdd?path=` reader, `/__dev/health`). New `src/blocks/hotReload.mjs` (EventSource client + 1.5× backoff cap, debounced full reload, in-page fast-path that calls `window.__SLOT_REPARSE__` then `HookBus.emit('onGddChange',{model,src})`; opt-in via `model.hotReload.enabled`; production builds emit a 0-byte stub; HMR badge w/ `role=status`+`aria-live=polite` honoring `prefers-reduced-motion`). 3 new HookBus events (`onHotReloadConnect`, `onHotReloadDisconnect`, `onGddChange`) wired in `EXPECTED_EMIT_OWNERS`. Manifest gen `--print` flush fix (use `process.stdout.write` + callback so 64 KB highWaterMark no longer truncates JSON). `npm run dev` script added. **Tests:** 23/23 `tests/blocks/hotReload.test.mjs` + 18/18 `tests/_dev-server.test.mjs` + 7/7 `tools/_p8-hot-reload-probe.mjs` live SSE probe + 1452/0 block regression + LEGO 5/5 (event-ownership 52/52, listener-coverage 54/54) + manifest freshness PASS |
 | `872e9b3` | **P1** | **Malformed GDD recovery** — `src/parser.mjs` `_safeExtract(label, fn, model)` harness wraps every top-level extractor; `parseGDD()` outer guard for null/undefined/non-string/JSON-malformed input. Failures recorded in `model.confidence._failures[]` (label + error) instead of throwing. New `tests/blocks/parserMalformed.test.mjs` 20/20 PASS (null / empty / unicode / 100KB random / corrupt tables / typo headers / JSON.parse fallback / 1000-row DOS guard / idempotency / schema integrity). LEGO gate 5/5 PASS, parse regression 4/4 PASS, universal GDD audit 460/461 PASS, 63 block tests all green |
@@ -15960,7 +15960,7 @@ on onSkipRequested{phase:'bigWinTier'}:
 | Live tier enter/exit sanity (Playwright) | `bigWinTierEnter(3, 67.5)` → STATE.current=3, label='TIER 3', x=67.5; `bigWinTierExit('skipped')` → STATE.current=0. ✅ |
 | Visual tier banner screenshot (T1–T5) | `/tmp/cortex-bigwin/tier-N.png` — banner centered, per-tier accent color, ×amount block, exit anim ok |
 | dist regen 3 demos | rectangular 256 KB · WoO 286 KB · GoO 278 KB |
-| Vendor grep `src/blocks/bigWinTier.mjs` | **0 hits** (IGT / PlayCore / playa-slot / pragmatic / megaways / NetEnt / Wolf / Cleopatra / Buffalo / Olympus) |
+| Vendor grep `src/blocks/bigWinTier.mjs` | **0 hits** (industry standard / PlayCore / playa-slot / pragmatic / megaways / NetEnt / Wolf / Cleopatra / Buffalo / Olympus) |
 
 ### Out of scope for H5 — landing in V5.3 + H17 + per-game GDDs
 
@@ -16299,7 +16299,7 @@ Without V5, the template is a "look-at-me" slot — animations play out at their
 | S11 | `npm run test:lego` wired in `package.json` + integrated into `test:all`. CI gate auto-fires before integration suite. | `package.json` | ✅ |
 | S12 | Cortex Eyes verification — `tools/cortex-eyes-wave-s.mjs` runs base spin across GoO + WoO + CF (0 console errors, all 4 base-lifecycle events fire); `tools/cortex-eyes-wave-s-fs.mjs` runs full WoO FS round (intro → 9 active spins → outro). Result: 7/7 lifecycle events emit with positive listener count, 0 console errors. | tools / verification | ✅ |
 | S13 | Engine-tier LEGO conformance — `reelEngine` (preSpin: clear timers), `postSpin` (preSpin: clear events cache; postSpin self-listen to cache events), `tumble` (preSpin: kill chain; onFsEnd: clear DOM classes), `freeSpins` (postSpin: react to winCap trip + onFsTrigger telemetry). 25 / 25 non-infrastructure blocks register at least one lifecycle hook. | engine-tier blocks | ✅ |
-| S14 | Vendor neutralization in 18 blocks — replaced `Gates of Olympus`, `WoO reference`, `Reactoonz`, `Sweet Bonanza`, `Sugar Rush`, `Megaways`, `NetEnt`, `Microgaming`, `Pragmatic`, `Lightning Link`, `Cleopatra`, `Buffalo`, `IGT`, `Cash Eruption`, `Wrath of Olympus` with industry-baseline / pay-anywhere / cluster-pays / line-pays references. lego-gate check #3 enforced. | 18 × `src/blocks/*.mjs` | ✅ |
+| S14 | Vendor neutralization in 18 blocks — replaced `Gates of Olympus`, `WoO reference`, `Reactoonz`, `Sweet Bonanza`, `Sugar Rush`, `Megaways`, `NetEnt`, `Microgaming`, `Pragmatic`, `Lightning Link`, `Cleopatra`, `Buffalo`, `industry standard`, `Cash Eruption`, `Wrath of Olympus` with industry-baseline / pay-anywhere / cluster-pays / line-pays references. lego-gate check #3 enforced. | 18 × `src/blocks/*.mjs` | ✅ |
 
 ### Wave R — HookBus lifecycle wiring + paylineOverlay test (commit `0978e33`)
 
@@ -16941,7 +16941,7 @@ Without V5, the template is a "look-at-me" slot — animations play out at their
 
 > **Trigger** (04.06.2026, Boki): *"ajde overi u playa slot kako radi spin slam
 > skip dugme, detaljno"* → industry-reference audit `playa-slot/src/ts/uicontrols/commands/`
-> (IGT internal). Tri komande, jedan button group. Trenutni template ima samo
+> (industry standard internal). Tri komande, jedan button group. Trenutni template ima samo
 > `#spinBtn` — fale **slam-stop** (skip motion-blur tokom rotacije) i
 > **force-skip** (skip win-presentation rollup/FS intro). Bez ovoga slot UX
 > izgleda nedovršeno; rapid-play players ne mogu da "izgaze" animaciju.

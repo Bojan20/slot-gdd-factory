@@ -564,7 +564,7 @@ if (existsSync(hyb3Test)) {
 }
 
 /* ── Step 4.97u: HYB-4 Multi-Vendor PAR Sheet Ingest
- * Vendor detector (IGT / Pragmatic / L&W / Spielo / generic) + dispatch to
+ * Vendor detector (industry standard / Pragmatic / L&W / Spielo / generic) + dispatch to
  * appropriate adapter. Generic CSV adapter handles 90% of small-vendor PAR
  * sheets that don't fit named templates. Output validates against
  * ParSheetSchema (HYB-1). */
@@ -862,7 +862,7 @@ if (existsSync(honestConvTest)) {
 
 /* ── Step 4.97y19: ANTI-VENDOR LINT (P3 continuous gate)
  * Scans public-facing artifacts (rendered slot.html bodies, regulator
- * MD, par-sheet emissions, audit JSON) for vendor leakage (IGT,
+ * MD, par-sheet emissions, audit JSON) for vendor leakage (industry standard,
  * Pragmatic, Megaways, Cash Eruption, NetEnt, Microgaming, L&W, etc).
  * Severity ladder: HIGH (regulator/sales output — strict blocking) /
  * MEDIUM (internal slug in report JSON) / LOW (test fixture HTML).

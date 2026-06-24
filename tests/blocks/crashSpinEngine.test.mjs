@@ -63,7 +63,7 @@ t('emitCrashSpinEngineRuntime: registers crash + listens preSpin', () => {
 
 t('vendor neutrality', () => {
   const blob = emitCrashSpinEngineCSS(defaultConfig()) + emitCrashSpinEngineRuntime(defaultConfig());
-  for (const v of ['IGT','Pragmatic','Cleopatra','Megaways','Olympus','playa-slot']) {
+  for (const v of ['industry standard','Pragmatic','Cleopatra','Megaways','Olympus','playa-slot']) {
     nct(blob, v, `vendor leak: ${v}`);
   }
 });

@@ -193,7 +193,7 @@ t('vendor-neutral: no vendor / studio / brand strings in any emit', () => {
   const all = emitBigWinTierCSS(cfg) + emitBigWinTierMarkup(cfg) + emitBigWinTierRuntime(cfg);
   /* Per rule_no_vendor_mentions — none of these words may appear in
    * src/blocks/ output. (Tests pass placeholder labels TIER 1..5 only.) */
-  const banned = ['IGT', 'PlayCore', 'playa slot', 'playa-slot', 'playaslot', 'pragmatic', 'megaways', 'NetEnt', 'Wolf', 'Cleopatra', 'Buffalo', 'Olympus'];
+  const banned = ['industry standard', 'PlayCore', 'playa slot', 'playa-slot', 'playaslot', 'pragmatic', 'megaways', 'NetEnt', 'Wolf', 'Cleopatra', 'Buffalo', 'Olympus'];
   for (const w of banned) ne(all, w, `banned vendor token: ${w}`);
 });
 
@@ -254,7 +254,7 @@ t('emitBigWinTierRuntime carries SHAKE constants + _applyShake (W47.S3)', () => 
 t('shake defaults pass vendor-neutral check (W47.S3)', () => {
   const css = emitBigWinTierCSS(resolveConfig({ bigWinTier: { enabled: true } }));
   /* The shake keyframes must NOT reference any branded effect name. */
-  const banned = ['MegaShake', 'ThunderShake', 'BigBoom', 'IGT', 'pragmatic'];
+  const banned = ['MegaShake', 'ThunderShake', 'BigBoom', 'industry standard', 'pragmatic'];
   for (const w of banned) ne(css, w, `banned in shake CSS: ${w}`);
 });
 

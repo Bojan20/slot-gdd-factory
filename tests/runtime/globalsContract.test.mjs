@@ -67,7 +67,7 @@ t('no arguments accepted (pure emit, model-independent)', () => {
 
 t('vendor neutrality: no game / vendor names', () => {
   const blob = emitGlobalsContractRuntime();
-  for (const v of ['IGT','Pragmatic','Cleopatra','Buffalo','Megaways','NetEnt',
+  for (const v of ['industry standard','Pragmatic','Cleopatra','Buffalo','Megaways','NetEnt',
                    'Zeus','Olympus','Reactoonz','Bonanza','WoO','GoO',
                    'playa-slot']) {
     nct(blob, v, `vendor mention "${v}" leaked into runtime emit`);

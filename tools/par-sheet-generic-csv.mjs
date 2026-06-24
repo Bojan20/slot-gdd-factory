@@ -7,7 +7,7 @@
  * Purpose
  *   Read a vendor-neutral PAR sheet CSV (or TSV) and emit the canonical
  *   ParSheetSchema shape. This adapter handles 90% of small-vendor or
- *   internally-authored PAR sheets that don't fit IGT/Pragmatic/L&W
+ *   internally-authored PAR sheets that don't fit industry standard/Pragmatic/L&W
  *   templates.
  *
  * Expected CSV layout

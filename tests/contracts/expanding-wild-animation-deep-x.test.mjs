@@ -62,7 +62,7 @@ await test('CSS: lava gradient + gold rim present', async () => {
   assert(css.includes('linear-gradient(135deg'), 'lava gradient missing');
 });
 
-await test('CSS: stage durations match IGT spec', async () => {
+await test('CSS: stage durations match industry standard spec', async () => {
   const mod = await import(resolve(REPO, 'src/blocks/expandingWild.mjs'));
   const css = mod.emitExpandingWildCSS({ ...mod.defaultConfig(), enabled: true });
   /* Stage 2 duration 350ms = Cash Eruption GDD §13.3 exact. */

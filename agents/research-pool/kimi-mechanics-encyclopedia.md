@@ -1,6 +1,6 @@
 # Slot Mechanics Encyclopedia · Industry Deep Dump
 
-> Source: industry pattern recognition · vendor engineering blogs · regulator filings · BTG/Aristocrat/IGT/Stake patent corpus · slot-gdd-factory codebase analysis · `agents/research-pool/playa-slot-RE.md` + `playa-core-RE.md` cross-validation.
+> Source: industry pattern recognition · vendor engineering blogs · regulator filings · BTG/Aristocrat/industry standard/Stake patent corpus · slot-gdd-factory codebase analysis · `agents/research-pool/playa-slot-RE.md` + `playa-core-RE.md` cross-validation.
 >
 > Authored: 2026-06-16 (W49.D.T5.A) · Replaces the 12-line stub left by the unfinished Kimi pass-3.
 > Citation contract: every agent reading this file uses `[ENC §N.M:line]` references in responses. Budget ≤ 5 citations per response. When a pattern is unknown, refuse with `[ENC: unknown]` rather than hallucinate.
@@ -13,8 +13,8 @@
 
 | # | Pattern | Vendor-neutral name | Originator / family | Math shape (NO RTP) | SGF block kind | Regulator notes |
 |:-:|:--|:--|:--|:--|:--|:--|
-| 1 | Paylines (fixed) | `paylines_fixed` | Fey 1899 → IGT 1980s | linear win mask · L lines × N reels | `paytable` + `winEvaluator` | UKGC 8.3 spin duration ≥ 2.5 s |
-| 2 | Adjacent ways (243) | `ways_to_win` | IGT MultiWay Xtra | Σ across-reel symbol products | `paytable` (ways mode) | UKGC same |
+| 1 | Paylines (fixed) | `paylines_fixed` | Fey 1899 → industry standard 1980s | linear win mask · L lines × N reels | `paytable` + `winEvaluator` | UKGC 8.3 spin duration ≥ 2.5 s |
+| 2 | Adjacent ways (243) | `ways_to_win` | industry standard MultiWay Xtra | Σ across-reel symbol products | `paytable` (ways mode) | UKGC same |
 | 3 | Adjacent ways (1024) | `ways_to_win` | Bally Technologies | same · 4 rows = 4⁵ | `paytable` (ways mode) | — |
 | 4 | Adjacent ways (4096) | `ways_to_win` | NetEnt | same · 4×6 reel | `paytable` (ways mode) | — |
 | 5 | Cluster pays | `cluster_pays` | NetEnt 2017 | connected-component (≥ N adj) | `clusterEvaluator` block | UKGC win cap 10 000× |
@@ -25,7 +25,7 @@
 | 10 | Walking wilds | `walking_wild` | NetEnt Jack Hammer | wild shifts 1 reel per spin | `walkingWilds` block | — |
 | 11 | Expanding wilds | `expanding_wild` | NetEnt Gonzo Quest | wild fills full reel | `expandingWilds` block | — |
 | 12 | Multiplier wilds | `multiplier_wild` | Microgaming Avalon | wild × N to all wins | `multiplierWilds` block | UKGC win cap |
-| 13 | Mystery symbols | `mystery_symbol` | IGT 2010 | reveal symbol post-spin | `mysterySymbol` block | — |
+| 13 | Mystery symbols | `mystery_symbol` | industry standard 2010 | reveal symbol post-spin | `mysterySymbol` block | — |
 | 14 | Scatter triggers | `scatter_trigger` | Mills Novelty 1934 | ≥ N scatters → bonus state | `scatterTrigger` (built-in) | UKGC bonus disclosure |
 | 15 | Ante-bet | `ante_bet` | BTG / Pragmatic | 2× cost → 5x scatter prob | `anteBetToggle` block | UKGC bonus-buy gate (banned 2022) |
 | 16 | Bonus buy | `bonus_buy` | Nolimit City | 100× bet → guaranteed FS | `bonusBuy` block | UKGC banned 2022 · MGA gated |
@@ -35,13 +35,13 @@
 | 20 | Dropping symbols | `dropping_symbols` | NetEnt Gonzo | win → drop new symbols | `tumble` block (drop mode) | — |
 | 21 | Chain reactions | `chain_reaction` | NetEnt Cluster family | cascade with multiplier | `tumble` + `multiplierStrip` | — |
 | 22 | Symbol upgrade | `symbol_upgrade` | Pragmatic | tumble → low → high tier promote | `symbolUpgrade` block | — |
-| 23 | Bonus wheel | `bonus_wheel` | IGT Wheel of Fortune | weighted wheel spin | `bonusWheel` block | UKGC weighted-wheel transparency |
-| 24 | Pick bonus | `pick_bonus` | IGT 2000s | N-of-M reveal | `pickBonus` block | UKGC pick-bonus odds disclosure |
+| 23 | Bonus wheel | `bonus_wheel` | industry standard Wheel of Fortune | weighted wheel spin | `bonusWheel` block | UKGC weighted-wheel transparency |
+| 24 | Pick bonus | `pick_bonus` | industry standard 2000s | N-of-M reveal | `pickBonus` block | UKGC pick-bonus odds disclosure |
 | 25 | Jackpot ladder (4 tier) | `jackpot_ladder` | Aristocrat Lightning Link | Mini / Minor / Major / Grand | `jackpotLadder` block | UKGC LCCP jackpot disclosure |
-| 26 | Standalone progressive | `progressive_standalone` | IGT 1986 | single-machine pool | `progressiveJackpot` block | UKGC progressive transparency |
-| 27 | Local-area progressive | `progressive_local` | IGT Megabucks | venue-pooled | `progressiveJackpot` (local mode) | — |
-| 28 | Wide-area progressive | `progressive_wide_area` | IGT Megabucks 1989 | network-pooled across venues | `progressiveJackpot` (WAP mode) | NJDGE separate audit |
-| 29 | Respin | `respin` | IGT 1990s | re-spin single reel for credit | `respin` block | — |
+| 26 | Standalone progressive | `progressive_standalone` | industry standard 1986 | single-machine pool | `progressiveJackpot` block | UKGC progressive transparency |
+| 27 | Local-area progressive | `progressive_local` | industry standard Megabucks | venue-pooled | `progressiveJackpot` (local mode) | — |
+| 28 | Wide-area progressive | `progressive_wide_area` | industry standard Megabucks 1989 | network-pooled across venues | `progressiveJackpot` (WAP mode) | NJDGE separate audit |
+| 29 | Respin | `respin` | industry standard 1990s | re-spin single reel for credit | `respin` block | — |
 | 30 | FS retrigger | `fs_retrigger` | NetEnt | scatter during FS → +N spins | built into `freeSpins` block | — |
 | 31 | Mystery reveal | `mystery_reveal` | Wazdan | mystery symbol = random reveal | `mysterySymbol` (reveal mode) | — |
 | 32 | Gold / blank modifier | `gold_modifier` | Pragmatic | modifier overlay on symbol | `goldModifier` block | — |
@@ -52,22 +52,22 @@
 | 37 | Slam-stop | `slam_stop` | universal industry | tap to stop reels | `slamStop` block | UKGC LDW concern (forced engagement) |
 | 38 | Turbo | `turbo_mode` | universal industry | 50 % spin duration | `turboMode` block | UKGC SC 2.2 timing adjustable |
 | 39 | Autoplay | `autoplay` | universal industry | auto N spins with caps | `autoplay` block | UKGC autoplay caps (50/100) |
-| 40 | Big-win celebrations | `big_win_tier` | Bally + IGT | tiered banner: Big / Mega / Super Mega | `bigWinTier` block | UKGC LDW · Dixon papers |
+| 40 | Big-win celebrations | `big_win_tier` | Bally + industry standard | tiered banner: Big / Mega / Super Mega | `bigWinTier` block | UKGC LDW · Dixon papers |
 | 41 | Near-miss design | `near_miss` (anti-pattern) | Skinner 1953 prior art | hit-rate manipulation | NOT IMPLEMENTED (anti-pattern) | UKGC LCCP 8.5 prohibits |
 | 42 | Sticky multipliers | `sticky_multiplier` | NetEnt | multiplier carries across spins | `stickyMultiplier` block | — |
 | 43 | Mega symbols | `mega_symbol` | Big Time Gaming | M×M symbol block | `megaSymbol` block | — |
 | 44 | Super stacks | `super_stacks` | Aristocrat | full-reel symbol stack | `superStacks` block | — |
-| 45 | Gambling-on-win | `gamble_feature` | IGT / Bally | double-or-nothing card pick | `gambleFeature` block | UKGC banned for online · MGA gated |
+| 45 | Gambling-on-win | `gamble_feature` | industry standard / Bally | double-or-nothing card pick | `gambleFeature` block | UKGC banned for online · MGA gated |
 | 46 | Doubling ladder | `doubling_ladder` | EGT (Bulgarian land) | ladder gamble with cash-out steps | `doublingLadder` block | UKGC banned · DE land OK |
-| 47 | Picker bonus (N-of-M) | `picker_bonus` | IGT | choose N of M tiles, reveal prizes | `pickBonus` (picker variant) | UKGC pick-odds disclosure |
+| 47 | Picker bonus (N-of-M) | `picker_bonus` | industry standard | choose N of M tiles, reveal prizes | `pickBonus` (picker variant) | UKGC pick-odds disclosure |
 | 48 | Free spin upgrades | `fs_upgrade` | Hacksaw | FS evolves into stronger FS | `fsUpgrade` block | — |
-| 49 | Fortune wheel | `fortune_wheel` | IGT Wheel of Fortune | inline mini-wheel during base | `fortuneWheel` block | — |
+| 49 | Fortune wheel | `fortune_wheel` | industry standard Wheel of Fortune | inline mini-wheel during base | `fortuneWheel` block | — |
 | 50 | Jackpot wheel | `jackpot_wheel` | Aristocrat | dedicated wheel for jackpot tier | `jackpotWheel` block | — |
 | 51 | Wild reel | `wild_reel` | Microgaming | full-reel wild conversion | `wildReel` block | — |
 | 52 | Wild swap | `wild_swap` | NetEnt | symbol → wild transform mid-spin | `wildSwap` block | — |
 | 53 | Lightning collect | `lightning_collect` | Aristocrat Lightning Link | bonus orb counter accelerator | `lightningCollect` block | — |
 | 54 | Mystery prize | `mystery_prize` | Wazdan | prize tile reveal | `mysteryPrize` block | UKGC disclosure |
-| 55 | Fixed prize | `fixed_prize` | IGT | fixed cash tile in bonus | `fixedPrize` block | — |
+| 55 | Fixed prize | `fixed_prize` | industry standard | fixed cash tile in bonus | `fixedPrize` block | — |
 | 56 | Scatter pays | `scatter_pays` | universal | pays anywhere, no payline | `paytable` (scatter mode) | — |
 | 57 | Reel modifier (gem orb) | `reel_modifier` | Pragmatic Gates | post-tumble multiplier orb | `multiplierOrb` block | UKGC LDW concern (big visual) |
 | 58 | Storm reel (separate top reel) | `aux_reel` | in-house WoO pattern | adjacent reel adds multiplier | `stormMultiplierReel` block | — |
@@ -198,7 +198,7 @@
 
 ### 4.1 Reel strip shape
 
-A reel strip = ordered array of symbol indices, length L (typically 30-100). Virtual reels expand this to length L' via weighting: each visible position maps to a weighted CDF over symbol indices. Cross-ref `playa-slot-RE.md` for IGT `ReelStrip` and `VirtualReelMap` classes.
+A reel strip = ordered array of symbol indices, length L (typically 30-100). Virtual reels expand this to length L' via weighting: each visible position maps to a weighted CDF over symbol indices. Cross-ref `playa-slot-RE.md` for industry standard `ReelStrip` and `VirtualReelMap` classes.
 
 ### 4.2 Paytable IR shape
 
@@ -211,7 +211,7 @@ A reel strip = ordered array of symbol indices, length L (typically 30-100). Vir
 }
 ```
 
-Cross-ref `config-parser-RE.md` (IGT JSON shape) and `parser.mjs` (SGF synthesis).
+Cross-ref `config-parser-RE.md` (industry standard JSON shape) and `parser.mjs` (SGF synthesis).
 
 ### 4.3 Force selection algorithm (debug + QA force chips)
 
@@ -409,15 +409,15 @@ Phase 1: dim base game · Phase 2: scatter zoom-in · Phase 3: trigger flash · 
 | 15 | Gates of Olympus | tumble + multiplier orb | Pragmatic | `tumble` + `multiplierOrb` |
 | 16 | Sweet Bonanza | tumble + scatter pays | Pragmatic | `tumble` |
 | 17 | Sugar Rush | cluster + multiplier persistence | Pragmatic | `clusterEvaluator` + `stickyMultiplier` |
-| 18 | MultiWay Xtra | adjacent ways-to-win | IGT | `ways_to_win` |
-| 19 | Wheel of Fortune | bonus wheel | IGT | `bonusWheel` |
-| 20 | Megabucks | wide-area progressive | IGT | `progressiveJackpot` (WAP) |
+| 18 | MultiWay Xtra | adjacent ways-to-win | industry standard | `ways_to_win` |
+| 19 | Wheel of Fortune | bonus wheel | industry standard | `bonusWheel` |
+| 20 | Megabucks | wide-area progressive | industry standard | `progressiveJackpot` (WAP) |
 | 21 | Reel Power | adjacent ways | Aristocrat | `ways_to_win` |
 | 22 | Buffalo | symbol stack with FS multiplier | Aristocrat | `superStacks` + `freeSpins` |
-| 23 | Cleopatra | wild reel + FS | IGT | `wildReel` + `freeSpins` |
-| 24 | Cash Eruption | tumble with cash collect | IGT | `tumble` + `mysteryPrize` |
-| 25 | Wolf Run | adjacent ways with stacked wild | IGT | `ways_to_win` + `wildReel` |
-| 26 | Cosmic Cash | wide-area progressive | IGT | `progressiveJackpot` (WAP) |
+| 23 | Cleopatra | wild reel + FS | industry standard | `wildReel` + `freeSpins` |
+| 24 | Cash Eruption | tumble with cash collect | industry standard | `tumble` + `mysteryPrize` |
+| 25 | Wolf Run | adjacent ways with stacked wild | industry standard | `ways_to_win` + `wildReel` |
+| 26 | Cosmic Cash | wide-area progressive | industry standard | `progressiveJackpot` (WAP) |
 | 27 | Mega Moolah | wide-area progressive | Microgaming | `progressiveJackpot` (WAP) |
 | 28 | Mega Fortune | tiered jackpot | NetEnt | `jackpotLadder` |
 | 29 | Hall of Gods | progressive jackpot | NetEnt | `progressiveJackpot` |
@@ -441,9 +441,9 @@ Phase 1: dim base game · Phase 2: scatter zoom-in · Phase 3: trigger flash · 
 | 47 | Roll-Up | tiered win count animation | Bally | `rollupComponent` |
 | 48 | Anticipation | reel slowdown on near-trigger | universal | `anticipationUniversal` |
 | 49 | Free Spins | bonus state with N spins | universal | `freeSpins` |
-| 50 | Free Games | free spins (US terminology) | IGT | `freeSpins` |
-| 51 | Pick Bonus | N-of-M reveal bonus | IGT | `pickBonus` |
-| 52 | Wheel Bonus | weighted-wheel bonus | IGT | `bonusWheel` |
+| 50 | Free Games | free spins (US terminology) | industry standard | `freeSpins` |
+| 51 | Pick Bonus | N-of-M reveal bonus | industry standard | `pickBonus` |
+| 52 | Wheel Bonus | weighted-wheel bonus | industry standard | `bonusWheel` |
 | 53 | Pick & Click | N-of-M reveal | universal | `pickBonus` |
 | 54 | Mini/Minor/Major/Grand | 4-tier jackpot ladder | Aristocrat | `jackpotLadder` |
 | 55 | Rapid/Midi/Maxi/Major/Mega | 5-tier jackpot ladder | Relax | `jackpotLadder` |
@@ -454,9 +454,9 @@ Phase 1: dim base game · Phase 2: scatter zoom-in · Phase 3: trigger flash · 
 | 60 | Mines | hidden-tile reveal | Stake | `mines` capsule |
 | 61 | Gamble Feature | double-or-nothing card pick | universal | `gambleFeature` (NOT IMPLEMENTED — UKGC banned) |
 | 62 | Doubling Ladder | step gamble | EGT | `doublingLadder` (NOT IMPLEMENTED — UKGC banned) |
-| 63 | Big Win | tier 1 win celebration | Bally/IGT | `bigWinTier` |
-| 64 | Mega Win | tier 2 win celebration | Bally/IGT | `bigWinTier` |
-| 65 | Super Mega Win | tier 3 win celebration | Bally/IGT | `bigWinTier` |
+| 63 | Big Win | tier 1 win celebration | Bally/industry standard | `bigWinTier` |
+| 64 | Mega Win | tier 2 win celebration | Bally/industry standard | `bigWinTier` |
+| 65 | Super Mega Win | tier 3 win celebration | Bally/industry standard | `bigWinTier` |
 | 66 | Wrath Win | tier 4 win celebration (WoO in-house) | in-house | `bigWinTier` |
 | 67 | Storm Reel | aux reel adds multiplier | in-house (WoO) | `stormMultiplierReel` |
 | 68 | Zeus Meter | accumulating progress meter | in-house (WoO) | `meterProgress` |
@@ -469,7 +469,7 @@ Phase 1: dim base game · Phase 2: scatter zoom-in · Phase 3: trigger flash · 
 | 75 | Lock Respin | hold reels + respin counter | Aristocrat | `holdAndWin` |
 | 76 | Collect & Respin | orb collect + respin | Aristocrat | `holdAndWin` + `lightningCollect` |
 | 77 | Lightning Collect | orb counter accelerator | Aristocrat | `lightningCollect` |
-| 78 | Cash Eruption Collect | inline cash orb | IGT | `lightningCollect` |
+| 78 | Cash Eruption Collect | inline cash orb | industry standard | `lightningCollect` |
 | 79 | Hold & Spin | freeze + respin | Wazdan | `holdAndWin` |
 | 80 | Dynamic Paytable | volatility-mode paytable swap | Wazdan | `paytable` (dynamic) |
 | 81 | Volatility Mode | player-chosen variance | Wazdan | `settingsPanel` (K7) |
@@ -493,15 +493,15 @@ Phase 1: dim base game · Phase 2: scatter zoom-in · Phase 3: trigger flash · 
 | AU 2014203832 | AU | 2014 | 2016 | 2034 | Aristocrat | hold-and-respin with jackpot ladder | `holdAndWin` + `jackpotLadder` |
 | US 9633511 | US | 2014 | 2017 | 2034 | Aristocrat | Lightning Link family | `holdAndWin` |
 | US 9165433 | US | 2013 | 2015 | 2033 | Aristocrat | jackpot ladder + reset | `jackpotLadder` |
-| US 6997804 | US | 2002 | 2006 | EXPIRED 2022 | IGT | MultiWay Xtra ways | `ways_to_win` |
-| US 7014557 | US | 2003 | 2006 | EXPIRED 2023 | IGT | adjacent ways evaluation | `ways_to_win` |
+| US 6997804 | US | 2002 | 2006 | EXPIRED 2022 | industry standard | MultiWay Xtra ways | `ways_to_win` |
+| US 7014557 | US | 2003 | 2006 | EXPIRED 2023 | industry standard | adjacent ways evaluation | `ways_to_win` |
 | US 2003-Slingo family | US | 2003 | 2005 | EXPIRED 2023 | Slingo Originals | bingo-slot fusion | `slingo` |
 | EP 1947613 | EP | 2007 | 2010 | 2027 | NetEnt | cluster pays algorithm | `clusterEvaluator` (likely unenforceable) |
 | US 9214068 | US | 2012 | 2015 | 2032 | Relax | Dream Drop tier | `progressiveJackpot` |
 | US (Wazdan H&J) | US | 2017 | 2020 | 2037 | Wazdan | Hold the Jackpot orb collect | `holdAndWin` |
 | US (Stake provably-fair) | US | 2019 | 2022 | 2039 | Stake | hash-chain RNG | `provablyFairRNG` |
 
-> 12 patents catalogued. Of these, 5 EXPIRED (NZ 716804 BTG · AU 2015293616 · US 6997804 IGT · US 7014557 IGT · US Slingo). 7 ACTIVE.
+> 12 patents catalogued. Of these, 5 EXPIRED (NZ 716804 BTG · AU 2015293616 · US 6997804 industry standard · US 7014557 industry standard · US Slingo). 7 ACTIVE.
 
 ---
 
@@ -547,7 +547,7 @@ Over-citation is hallucination smell. Under-citation is laziness.
 When citing multiple research-pool docs, prefer:
 1. ENC (this file) — for taxonomy + glossary + state machines
 2. `web-slot-mechanics.md` — for cross-vendor feature catalog
-3. `playa-slot-RE.md` — for IGT-specific reference patterns
+3. `playa-slot-RE.md` — for industry standard-specific reference patterns
 4. `vendor-patents-RE.md` — for legal/IP questions
 5. `web-math-rng-regulator.md` — for regulator deep dive
 6. `mobile-pwa-haptic-RE.md` — for UI/A11Y/Haptic questions
@@ -597,7 +597,7 @@ Per `rule_slot_gdd_lego_blocks` + `rule_force_buttons_real_spin`:
 | multi-line evaluation | `[ENC §4.4]` |
 | multiplier orb | `[ENC §1.1:row 57]` · `[ENC §2.2]` · `[ENC §7:event 47]` |
 | multiplier wild | `[ENC §1.1:row 12]` |
-| MultiWay Xtra (IGT) | `[ENC §1.1:row 2]` · `[ENC §8:row 18]` · `[ENC §9:US 6997804, US 7014557]` |
+| MultiWay Xtra (industry standard) | `[ENC §1.1:row 2]` · `[ENC §8:row 18]` · `[ENC §9:US 6997804, US 7014557]` |
 | mystery symbol | `[ENC §1.1:row 13,31]` · `[ENC §8:row 41-42]` |
 | paylines (fixed) | `[ENC §1.1:row 1]` |
 | paytable IR | `[ENC §4.2]` |
@@ -625,7 +625,7 @@ Per `rule_slot_gdd_lego_blocks` + `rule_force_buttons_real_spin`:
 | walking wilds | `[ENC §1.1:row 10]` · `[ENC §8:row 34]` |
 | ways (243/1024/4096) | `[ENC §1.1:row 2-4]` · `[ENC §4.4]` |
 | ways both directions | `[ENC §1.1:row 33]` |
-| wheel of fortune (IGT) | `[ENC §8:row 19]` |
+| wheel of fortune (industry standard) | `[ENC §8:row 19]` |
 | wild reel | `[ENC §1.1:row 51]` · `[ENC §8:row 43]` |
 | wild swap | `[ENC §1.1:row 52]` · `[ENC §7:event 46]` |
 

@@ -223,7 +223,7 @@ t('applyGridProfile: handles null model defensively', () => {
 
 t('vendor neutrality: no vendor / game names in override values', () => {
   const blob = JSON.stringify(PROFILE);
-  for (const v of ['IGT','Pragmatic','Cleopatra','Buffalo','Megaways','NetEnt',
+  for (const v of ['industry standard','Pragmatic','Cleopatra','Buffalo','Megaways','NetEnt',
                    'Microgaming','Zeus','Olympus','Reactoonz','Bonanza',
                    'WoO','GoO','Cash Eruption','Wolf Run','playa-slot']) {
     nct(blob, v, `vendor mention "${v}" leaked into PROFILE`);

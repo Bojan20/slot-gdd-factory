@@ -29,11 +29,11 @@ Tier badge thresholds (5×/15×/50×/250×/1000×). Cap per jurisdiction
 
 | Source | Path | Lines | Use for |
 |:--|:--|:-:|:--|
-| IGT playa-slot RE | `agents/research-pool/playa-slot-RE.md` | 1 089 | `Paytable.ts` IR shape · `RollupComponent.ts` + `RollupState.STOP` gate · `ShowCommand.ts` tier reveal |
+| industry standard playa-slot RE | `agents/research-pool/playa-slot-RE.md` | 1 089 | `Paytable.ts` IR shape · `RollupComponent.ts` + `RollupState.STOP` gate · `ShowCommand.ts` tier reveal |
 | Web math + RNG + regulator | `agents/research-pool/web-math-rng-regulator.md` | 910 | Bărboianu (Mathematics of Slot Machines) · Dixon (PAR sheet research + LDW) · 12 jurisdikcija cap matrix |
 | Books + academic | `agents/research-pool/books-academic.md` | 645 | Kassem ch.7 (paytable math) · 21 verified BibTeX |
 | WoO controllers RE | `agents/research-pool/woo-controllers-RE.md` | 1 480 | bigWinController tier thresholds (3-tier WoO production: 10×/25×/50×) |
-| IGT config-parser RE | `agents/research-pool/config-parser-RE.md` | 1 148 | IR scope correction — manifest emitter, NOT full math IR |
+| industry standard config-parser RE | `agents/research-pool/config-parser-RE.md` | 1 148 | IR scope correction — manifest emitter, NOT full math IR |
 | **GDD corpus production RE** (W49.T5.B) | `agents/research-pool/gdd-corpus-RE.md` | 506 | **4 prod GDD paytable shapes** (paylines / scatter-pays / variable-ways / cluster) — NO RTP numbers per `rule_no_math_unless_asked` |
 
 ### Tier ladder reality check
@@ -55,7 +55,7 @@ Tier badge thresholds (5×/15×/50×/250×/1000×). Cap per jurisdiction
 
 | Gap | Status |
 |:-:|:--|
-| IGT config-parser does NOT carry math IR — looking for shape from `playa-slot 1.3.0` (not present in `~/IGT/`) | ✅ documented `config-parser-RE.md` §7 follow-up |
+| industry standard config-parser does NOT carry math IR — looking for shape from `playa-slot 1.3.0` (not present in `~/industry standard/`) | ✅ documented `config-parser-RE.md` §7 follow-up |
 | Math layer (PAR / RTP / volatility / win cap) GATED per `rule_no_math_unless_asked` | ✅ |
 | Kimi pass-3 deep math literature | 🔄 background |
 

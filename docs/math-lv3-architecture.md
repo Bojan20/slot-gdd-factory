@@ -175,7 +175,7 @@ node tools/cert-pack-export.mjs --slug <SLUG> [--out <FILE.zip>]
 
 ## Anti-vendor compliance
 
-- LV3-11: math-backend response sanitize-uje vendor tokens (IGT / Pragmatic
+- LV3-11: math-backend response sanitize-uje vendor tokens (industry standard / Pragmatic
   Play / Megaways / Cash Eruption / Wolf Run / Cleopatra / NetEnt / etc.)
 - Cert pack scrub-uje cover.json, par_sheet.json, mc_results.json pre
   serializacije

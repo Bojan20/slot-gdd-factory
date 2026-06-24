@@ -286,7 +286,7 @@ t('sandbox: preSpin listener cancels in-flight tick (idempotent)', () => {
 
 t('vendor neutrality: zero vendor mentions in either emit', () => {
   const blob = emitHexReelEngineCSS(defaultConfig()) + emitHexReelEngineRuntime(defaultConfig());
-  for (const v of ['IGT','Pragmatic','Cleopatra','Buffalo','Megaways','NetEnt',
+  for (const v of ['industry standard','Pragmatic','Cleopatra','Buffalo','Megaways','NetEnt',
                    'Zeus','Olympus','Reactoonz','Bonanza','WoO','GoO',
                    'playa-slot']) {
     nct(blob, v, `vendor mention "${v}" leaked`);

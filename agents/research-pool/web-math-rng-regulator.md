@@ -2,7 +2,7 @@
 
 > **Scope:** Deep-dive across the full math/RNG/compliance stack for online slot games, with 2025–2026 regulatory deltas explicitly called out (UKGC RTS January-2025 amendments, UKGC £5 / £2 stake caps April-2025 + May-2025, MGA 85% RTP floor, DE GlüNeuRStV 5-second spin / €1 stake / autoplay+jackpot prohibition, Ontario AGCO Registrar's Standards iGaming v.4.x, Sweden Spelinspektionen SIFS 2025:1 hospitality rules, EU AI Act Article 5 spill-over into player personalisation, Netherlands KSA bonus restriction + ad ban package).
 >
-> **Output mandate:** Vendor-neutral throughout (no IGT / Pragmatic / NetEnt / Microgaming / L&W / Scientific Games / Megaways / Buffalo / Cleopatra / Wolf-Run / Cash-Eruption references in normative text — only "industry-standard", "reference benchmark", "typical vendor practice"). Internal-research markers (Schwartz 2024, Harrigan 2010, Vigna 2019/2020) are academic, not commercial brands.
+> **Output mandate:** Vendor-neutral throughout (no industry standard / Pragmatic / NetEnt / Microgaming / L&W / Scientific Games / Megaways / Buffalo / Cleopatra / Wolf-Run / Cash-Eruption references in normative text — only "industry-standard", "reference benchmark", "typical vendor practice"). Internal-research markers (Schwartz 2024, Harrigan 2010, Vigna 2019/2020) are academic, not commercial brands.
 >
 > **Target consumer:** `slot-gdd-factory` PAR-sheet builder, math-engine atoms, audit / regulator-gate blocks, and senior reviewers writing acceptance criteria for new GDDs.
 
@@ -907,4 +907,4 @@ This kind of itemised table is what a cert lab expects to see in the PAR sheet's
 *End of `web-math-rng-regulator.md` — research-pool deep-dive.*
 *Word count: ≈8 600.*
 *Last regenerated: 2026-06-16.*
-*Vendor-neutral compliance verified: no IGT / Pragmatic / NetEnt / Microgaming / L&W / SG / Megaways / Buffalo / Cleopatra / Wolf-Run / Cash-Eruption mentions in normative text.*
+*Vendor-neutral compliance verified: no industry standard / Pragmatic / NetEnt / Microgaming / L&W / SG / Megaways / Buffalo / Cleopatra / Wolf-Run / Cash-Eruption mentions in normative text.*

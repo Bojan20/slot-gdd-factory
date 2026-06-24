@@ -2,19 +2,19 @@
 /**
  * tools/sgs-compiler.mjs
  *
- * UQ-DEEP-AG · IGT-grade `serverConfig` kompajler (Boki 2026-06-24).
+ * UQ-DEEP-AG · industry-grade `serverConfig` kompajler (Boki 2026-06-24).
  *
  * Boki: "overi detaljno jedan po jedan fajl i uporedi sa nasim slot gdd blokovima
  * ... da rtadi automatizn=ovano i izuzetno tacno ama bas svaki jebeni put!"
  *
- * Senior audit identified: math/server pipeline ne emit-uje IGT-compatible
+ * Senior audit identified: math/server pipeline ne emit-uje wire-compatible
  * serverConfig (gain_table, reels[][], special_symbols, lines flatten, integer
- * weights). To je P0 ship-blocker contract iz IGT GLE handshake-a.
+ * weights). To je P0 ship-blocker contract iz industry math handshake-a.
  *
  * Ovaj compiler uzima parsed model + paytable + reel-strip set, i emit-uje
- * IGT-compatible serverConfig + paytable_hash + gle_version field.
+ * wire-compatible serverConfig + paytable_hash + gle_version field.
  *
- * IGT izvor: `IGT_SLOT_GAME_SETTINGS_CONTRACT.md` §4 (rule 1-8) + P2.3.
+ * Industry spec: `industry-settings-contract.md` §4 (rule 1-8) + P2.3.
  * Naš equivalent: pre fix-a — `tools/math-backend.mjs:169` (buildExecutorInput)
  * išao direktno iz `model.payback.rtpBreakdown` → MC executor bez flat math
  * model-a u sredini.
@@ -25,7 +25,7 @@
  *   compileSpecialSymbols(model) → IServerSpecialSymbol[]
  *   compileLines(paylines) → { lines: int[], number_of_lines: int }
  *
- * Vendor-neutral: no IGT brand strings in output, only the wire contract.
+ * Vendor-neutral: no vendor brand strings in output, only the wire contract.
  */
 
 import { createHash } from 'node:crypto';
@@ -36,7 +36,7 @@ const SCATTER_FEATURE_TYPE = 'scatter';
 const FREESPIN_FEATURE_TYPE = 'free_spin';
 const HOLD_AND_WIN_FEATURE_TYPE = 'hold_and_win';
 
-/* IGT contract §4 rule 1: gain_table = za svaki simbol gde je
+/* industry contract §4 rule 1: gain_table = za svaki simbol gde je
  * symbolType ∈ {Normal, Wild} → concat(symbolStrip.payouts).
  * Redosled = redosled u symbols[]. Special symbols (scatter etc) NE ulaze
  * u gain_table — one idu u special_symbols[].
@@ -52,7 +52,7 @@ export function compileGainTable(symbols, paytable) {
     if (symType === 'scatter' || symType === 'bonus' || symType === 'special') continue;
     /* Per-symbol payout vector iz paytable mape. Format: {3: 50, 4: 200, 5: 1000}. */
     const payoutMap = (paytable && paytable[symId]) || {};
-    /* IGT redosled: 0, 1, 2, 3, 4, 5 (kick count); ako fali pay za N → 0. */
+    /* industry order: 0, 1, 2, 3, 4, 5 (kick count); ako fali pay za N → 0. */
     for (let k = 0; k <= 5; k++) {
       result.push(typeof payoutMap[k] === 'number' ? Math.round(payoutMap[k]) : 0);
     }
@@ -60,8 +60,8 @@ export function compileGainTable(symbols, paytable) {
   return result;
 }
 
-/* IGT contract §4 rule 4: special_symbols[] schema.
- * Mandatorna polja per IGT_SLOT_GAME_SETTINGS_CONTRACT.md:157:
+/* industry contract §4 rule 4: special_symbols[] schema.
+ * Mandatorna polja per industry-settings-contract.md:157:
  *   {feature_type, name, id, screencount_gains, trigger_count,
  *    odds_freespins?, num_respins?, has_empty_cells?, number_of_rows?, reels?}
  */
@@ -75,7 +75,7 @@ export function compileSpecialSymbols(model) {
   /* Scatter symbol. */
   const scatter = allSyms.find(s => s && (s.kind === 'scatter' || s.kind === 'special' && /scatter/i.test(s.label || '')));
   if (scatter && (model.scatter || model.freeSpins)) {
-    /* IGT trigger_count rule (P2.10): scatter = first_nonzero_payout_index + 1. */
+    /* industry trigger_count rule (P2.10): scatter = first_nonzero_payout_index + 1. */
     const payouts = scatter.payouts || (scatter.pay && Object.values(scatter.pay)) || [];
     let firstNonzero = -1;
     for (let i = 0; i < payouts.length; i++) {
@@ -93,7 +93,7 @@ export function compileSpecialSymbols(model) {
   /* Free spins trigger. */
   const fs = (model && model.freeSpins) || null;
   if (fs && fs.enabled !== false) {
-    /* IGT trigger_count rule (P2.10): FS = min(triggerCounts[]). */
+    /* industry trigger_count rule (P2.10): FS = min(triggerCounts[]). */
     const triggerCounts = Array.isArray(fs.triggerCounts) ? fs.triggerCounts
       : (Array.isArray(fs.awards) ? fs.awards.map(a => a.count).filter(Number.isFinite) : []);
     const minTrigger = triggerCounts.length > 0 ? Math.min(...triggerCounts) : 3;
@@ -117,7 +117,7 @@ export function compileSpecialSymbols(model) {
   /* Hold-and-win. */
   const hnw = (model && model.holdAndWin) || null;
   if (hnw && hnw.enabled === true) {
-    /* IGT trigger_count rule (P2.10): H&W = direct (model.holdAndWin.triggerCount). */
+    /* industry trigger_count rule (P2.10): H&W = direct (model.holdAndWin.triggerCount). */
     out.push({
       feature_type: HOLD_AND_WIN_FEATURE_TYPE,
       name: hnw.label || 'Hold & Win',
@@ -126,7 +126,7 @@ export function compileSpecialSymbols(model) {
       trigger_count: Number.isFinite(hnw.triggerCount) ? hnw.triggerCount : 6,
       num_respins: Number.isFinite(hnw.respinsOnHit) ? hnw.respinsOnHit : 3,
       /* P0 symbol audit (UQ-DEEP-AG): nonLockedSymbolId + has_empty_cells.
-       * Lock predicate per IGT: cell.symbolId !== nonLockedSymbolId. */
+       * Lock predicate per industry standard: cell.symbolId !== nonLockedSymbolId. */
       non_locked_symbol: hnw.nonLockedSymbolId || null,
       has_empty_cells: hnw.hasEmptyCells === true,
     });
@@ -135,7 +135,7 @@ export function compileSpecialSymbols(model) {
   return out;
 }
 
-/* IGT contract §4 rule 3: lines flatten — `[1,1,1,1,1, 0,0,0,0,0, ...]`
+/* industry contract §4 rule 3: lines flatten — `[1,1,1,1,1, 0,0,0,0,0, ...]`
  * (svi line patterns flatten u jedan niz). number_of_lines = paylines.length. */
 export function compileLines(paylines, reelsCount) {
   if (!Array.isArray(paylines)) return { lines: [], number_of_lines: 0 };
@@ -149,7 +149,7 @@ export function compileLines(paylines, reelsCount) {
   return { lines: flat, number_of_lines: paylines.length };
 }
 
-/* IGT contract §4 rule 2: reels[][] padded to max length with -1 (sentinel).
+/* industry contract §4 rule 2: reels[][] padded to max length with -1 (sentinel).
  * Per-reel symbol-ID list (game-strip indexed). */
 export function compileReels(reelStrips, symbolIdMap) {
   if (!Array.isArray(reelStrips) || reelStrips.length === 0) return [];
@@ -170,7 +170,7 @@ export function compileReels(reelStrips, symbolIdMap) {
   });
 }
 
-/* IGT contract §4 rule 5: paytable_hash = SHA-256 of canonical serverConfig
+/* industry contract §4 rule 5: paytable_hash = SHA-256 of canonical serverConfig
  * JSON (sorted keys). Regulator certifikat zahteva da je hash isti za isti
  * paytable preko sessions. */
 function canonicalJSON(obj) {
@@ -185,7 +185,7 @@ export function computePaytableHash(serverConfig) {
 }
 
 /**
- * Main entry: compile parsed model → IGT-compatible serverConfig.
+ * Main entry: compile parsed model → wire-compatible serverConfig.
  *
  * @param {object} model — parser output (src/parser.mjs ParsedModel shape)
  * @param {object} options — { gleVersion?, paytableSource? }
@@ -217,37 +217,37 @@ export function compileServerConfig(model, options = {}) {
     ? symbols
     : [].concat(symbols.high || [], symbols.mid || [], symbols.low || [], symbols.specials || []);
 
-  /* Symbol-ID → integer index map (IGT integer arithmetic). */
+  /* Symbol-ID → integer index map (integer arithmetic). */
   const symbolIdMap = {};
   allSyms.forEach((s, idx) => {
     const sid = s && (s.id || s.symbolId || s.code);
     if (sid) symbolIdMap[sid] = idx;
   });
 
-  /* Identify wild symbol (single — IGT default; multi-wild via P1 extension). */
+  /* Identify wild symbol (single — industry default; multi-wild via P1 extension). */
   const wildSym = allSyms.find(s => s && (s.kind === 'wild' || s.id === 'W'));
   const wildSymbolId = wildSym ? symbolIdMap[wildSym.id || wildSym.symbolId] : null;
 
-  /* gain_table — IGT §4 rule 1. */
+  /* gain_table — industry spec §4 rule 1. */
   const paytable = (model.par_sheet_paytable) || (model.paytable) || {};
   const gainTable = compileGainTable(allSyms, paytable);
   if (gainTable.length === 0) diagnostics.warnings.push('gain_table empty — paytable not in model');
 
-  /* reels[][] — IGT §4 rule 2. */
+  /* reels[][] — industry spec §4 rule 2. */
   const reelStrips = (model.reelStrips && (model.reelStrips.strips || model.reelStrips.par_sheet_strips)) || [];
   const reelsCount = (model.topology && model.topology.reels) || 5;
   const rowsCount = (model.topology && model.topology.rows) || 3;
   const reels = compileReels(reelStrips, symbolIdMap);
   if (reels.length === 0) diagnostics.warnings.push('reels[][] empty — par_sheet_strips not in model');
 
-  /* lines flatten — IGT §4 rule 3. */
+  /* lines flatten — industry spec §4 rule 3. */
   const paylines = (model.topology && model.topology.paylines) || [];
   const { lines, number_of_lines } = compileLines(paylines, reelsCount);
 
-  /* special_symbols — IGT §4 rule 4. */
+  /* special_symbols — industry spec §4 rule 4. */
   const specialSymbols = compileSpecialSymbols(model);
 
-  /* IGT contract §4 rule 6: odds_megaways (P1-3 placeholder — emit only when topology=ways).
+  /* industry contract §4 rule 6: odds_megaways (P1-3 placeholder — emit only when topology=ways).
    * Per-column {weights, values} sa 100-sum prepend. */
   let oddsMegaways = null;
   if (model.topology && model.topology.kind === 'ways' && Array.isArray(model.topology.dynamicRows)) {

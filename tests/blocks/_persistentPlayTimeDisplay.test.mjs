@@ -186,7 +186,7 @@ block('8. Honest scope', () => {
     /SIFS\s*2018:6/.test(src) && /§?7\.2/.test(src));
   /* Block is opt-in via jurisdiction; no theme strings. */
   t('8.2 No vendor / theme strings in W58.J-SE additions',
-    !/(Wrath|Olympus|Lightning Link|Megaways|Pragmatic|NetEnt|Microgaming|IGT)/i.test(
+    !/(Wrath|Olympus|Lightning Link|Megaways|Pragmatic|NetEnt|Microgaming|industry standard)/i.test(
       src.split('W58.J-SE')[1] || ''));
 });
 

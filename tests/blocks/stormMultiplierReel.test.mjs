@@ -149,7 +149,7 @@ t('emitRuntime consumes __FORCE_STORM_MULTIPLIER__ flag after use',
 t('emitRuntime has NO internal RNG / probability draw',
   !/Math\.random|weightedDraw|cumulative.*prob|drawValue/i.test(rt));
 
-/* 19. emitRuntime — vendor neutrality (NO Wrath / Olympus / IGT / Lightning Link string) */
+/* 19. emitRuntime — vendor neutrality (NO Wrath / Olympus / industry standard / Lightning Link string) */
 const VENDORS = /(wrath\s*of\s*olympus|lightning\s*link|igt|pragmatic|aristocrat|netent|microgaming)/i;
 t('emitRuntime vendor-neutral', !VENDORS.test(rt));
 t('emitCSS vertical vendor-neutral', !VENDORS.test(cssVert));

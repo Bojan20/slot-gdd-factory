@@ -1,9 +1,9 @@
 /**
  * tools/gle-response-emitter.mjs
  *
- * UQ-DEEP-AG · IGT-grade `GameLogicResponse` envelope emitter (Boki 2026-06-24).
+ * UQ-DEEP-AG · industry-grade `GameLogicResponse` envelope emitter (Boki 2026-06-24).
  *
- * IGT izvor: `IGT_PLAYA_RUNTIME.md` §3 + §8:
+ * Industry spec: `industry-runtime-spec.md` §3 + §8:
  *   PopulationOutcome/Entry/Cell{stripIndex, symbolId}
  *   PrizeOutcome/Prize{type, amount, count, position}
  *   FreeSpinOutcome{spinsAwarded, multiplier, ...}
@@ -12,7 +12,7 @@
  *
  * Naš equivalent pre fix-a: `tools/math-backend.mjs:484` (samplePerSpin) vraćao
  * `{payX, isHit, fsTrigger}` — flat metric blob bez ijednog GLE field-a.
- * Sada: math-backend /spin može da emit-uje IGT-compatible envelope na zahtev.
+ * Sada: math-backend /spin može da emit-uje wire-compatible envelope na zahtev.
  *
  * Public API
  *   emitGleResponse(spinResult, sessionState, options) → GameLogicResponse
@@ -24,7 +24,7 @@
 
 import { randomUUID, createHash } from 'node:crypto';
 
-/* IGT contract: gameStatus enum. */
+/* industry contract: gameStatus enum. */
 const GAME_STATUS = Object.freeze({
   READY: 'READY',
   PLAYED: 'PLAYED',
@@ -33,7 +33,7 @@ const GAME_STATUS = Object.freeze({
   ERROR: 'ERROR',
 });
 
-/* IGT IXF state machine: 15 stage transitions. Spin completion → next stage. */
+/* lifecycle state machine: 15 stage transitions. Spin completion → next stage. */
 const STAGE = Object.freeze({
   BASE_GAME: 'BaseGame',
   FREE_SPIN: 'FreeSpin',
@@ -43,7 +43,7 @@ const STAGE = Object.freeze({
   END_GAME: 'EndGame',
 });
 
-/* IGT contract: error code enum (regulator certifikat). */
+/* industry contract: error code enum (regulator certifikat). */
 export const GLE_ERROR_CODES = Object.freeze({
   INSUFFICIENT_BALANCE: 'INSUFFICIENT_BALANCE',
   SESSION_EXPIRED: 'SESSION_EXPIRED',
@@ -54,7 +54,7 @@ export const GLE_ERROR_CODES = Object.freeze({
 });
 
 /* Determine next stage based on spin outcome + current state.
- * IGT IXF: state transitions are deterministic per spin outcome. */
+ * lifecycle state machine: state transitions are deterministic per spin outcome. */
 function computeNextStage(spinResult, currentStage) {
   if (!spinResult) return STAGE.BASE_GAME;
   /* If currently in FS and spins remaining → stay in FS. */
@@ -73,10 +73,10 @@ function computeNextStage(spinResult, currentStage) {
 }
 
 /**
- * Emit `OutcomeDetail` envelope per IGT contract (`IGT_PLAYA_RUNTIME.md:106`):
+ * Emit `OutcomeDetail` envelope per industry contract (`industry-runtime-spec.md:106`):
  *   { transactionId, stage, nextStage, gameStatus, settled, pending, payout }
  *
- * `payout` u CENTAMA (integer arithmetic), ne dolarima — IGT GLE contract.
+ * `payout` u CENTAMA (integer arithmetic), ne dolarima — industry math engine contract.
  */
 export function emitOutcomeDetail(spinResult, sessionState = {}) {
   const txId = randomUUID();                                  /* UQ-DEEP-AG P1-1 fix */
@@ -84,7 +84,7 @@ export function emitOutcomeDetail(spinResult, sessionState = {}) {
   const nextStage = computeNextStage(spinResult, currentStage);
   const settled = nextStage === STAGE.BASE_GAME || nextStage === STAGE.END_GAME;
   const pending = !settled;
-  /* IGT payout u centima — integer-grade audit trail. */
+  /* industry standard payout u centima — integer-grade audit trail. */
   const betCents = Math.round((sessionState.betX || 1) * 100);
   const payoutCents = Math.round((spinResult.payX || 0) * betCents);
   return {
@@ -101,7 +101,7 @@ export function emitOutcomeDetail(spinResult, sessionState = {}) {
 }
 
 /**
- * Emit `PopulationOutcome` envelope per IGT contract:
+ * Emit `PopulationOutcome` envelope per industry contract:
  *   {
  *     Entry: [
  *       {
@@ -211,7 +211,7 @@ export function emitGleResponse(spinResult, sessionState = {}, options = {}) {
 }
 
 /**
- * Build error envelope per IGT contract — structured error codes.
+ * Build error envelope per industry contract — structured error codes.
  */
 export function emitErrorResponse(code, message, options = {}) {
   if (!Object.values(GLE_ERROR_CODES).includes(code)) {

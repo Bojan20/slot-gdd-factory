@@ -73,3 +73,7 @@ reports/llm-consistency/
 #   _auto_<kind>.mjs → src/blocks/<kind>.mjs + manifest + blockMapper entry
 src/blocks/_auto-scaffolded/
 tests/blocks/_auto-scaffolded/
+
+# UQ-DEEP-AH (Boki 2026-06-24): IGT material legal safety —
+# private audit dump must NEVER go public (trademark/IP).
+IGT_*

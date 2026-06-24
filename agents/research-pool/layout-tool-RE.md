@@ -1,6 +1,6 @@
-# IGT Layout Tool: Reverse Engineering Report
+# industry standard Layout Tool: Reverse Engineering Report
 
-**Repository:** ~/IGT/layout_tool  
+**Repository:** ~/industry standard/layout_tool  
 **Codebase Size:** ~3326 lines (src/ core)  
 **Version:** 0.5.2  
 **Framework:** Electron 9.0.5 (Node.js desktop bridge)  

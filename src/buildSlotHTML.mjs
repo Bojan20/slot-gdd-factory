@@ -1365,21 +1365,39 @@ export function buildSlotHTML(model) {
   const HEX_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
   const safeHex = (v, fallback) => (typeof v === 'string' && HEX_RE.test(v.trim())) ? v.trim() : fallback;
 
-  /* UQ-DEEP-S HIGH (E2E): anti-vendor display name scrub. Rendered HTML
-   * <title>, header div, __MODEL_NAME__ constant treba da budu
-   * vendor-neutral za regulator deliverable. Pre fix-a "Cash Eruption
-   * Foundry" leak-ovao u 5 mesta. */
-  const DISPLAY_VENDOR_RX = /\b(IGT|Pragmatic[\s\-_.]?Play|Megaways|Cash[\s\-_.]?Eruption|Wolf[\s\-_.]?Run|Cleopatra|Buffalo[\s\-_.]?(?:King|Gold)|NetEnt|Microgaming|Scientific[\s\-_.]?Games|L&W|Light[\s\-_.]*&[\s\-_.]*Wonder|Play'?n[\s\-_.]?Go|Novomatic)\b/gi;
+  /* UQ-DEEP-AB FIX (Boki: "a šta ne piše ime igre, šta si sjebo?") —
+   * razdvoji BRAND/PROVIDER scrub od PRODUCT NAME scrub.
+   *
+   * Pre fix-a UQ-DEEP-S scrub-ovao SVAKO product ime (Cash Eruption,
+   * Wolf Run, Cleopatra, Buffalo King) → operator ingest "Cash Eruption
+   * Foundry GDD" prikazivao "[Slot] Foundry" u headeru, što je pogrešno.
+   * Operator NAMERNO drop-uje taj GDD i hoće da vidi ime svoje igre.
+   *
+   * Razlikovanje:
+   *   PROVIDER scrub (BRAND) — i dalje strip-uje industry standard, Pragmatic Play,
+   *     NetEnt, Microgaming, Scientific Games, Light & Wonder, Play'n Go,
+   *     Novomatic, Megaways (BTG-licensed brand). Razlog: factory ne sme
+   *     da emit-uje brand kao da je RGS partner — pravna sigurnost.
+   *   PRODUCT NAMES (Cash Eruption, Wolf Run, Cleopatra, Buffalo King) —
+   *     OSTAJU u headeru. To su game names, ne brand. Operator drag-drop
+   *     vidi pravo ime svoje igre. Sintetički probe testovi (synth-
+   *     fixtures, anti-vendor-lint) treba da ne unose product names —
+   *     to je odvojena obaveza preko BANNED_VENDOR_RX u
+   *     auto-scaffold-detector + par-sheet-bridge sanitizeSignals. */
+  const DISPLAY_VENDOR_RX = /\b(IGT|Pragmatic[\s\-_.]?Play|NetEnt|Microgaming|Scientific[\s\-_.]?Games|L&W|Light[\s\-_.]*&[\s\-_.]*Wonder|Play'?n[\s\-_.]?Go|Novomatic|Megaways)\b/gi;
   const neutralDisplayName = (raw) => {
     if (typeof raw !== 'string' || !raw.trim()) return 'Untitled Slot';
     let out = raw;
     /* Apply NFKD + homoglyph fold defense for unicode-bypass. */
     try { out = out.normalize('NFKD'); } catch {}
     out = out.replace(/[̀-ͯ​-‏﻿⁠-⁯]/g, '');
-    const tested = out.replace(DISPLAY_VENDOR_RX, '[Slot]').trim();
+    /* Strip BRAND/PROVIDER tokens only — game product names pass through. */
+    const scrubbed = out.replace(DISPLAY_VENDOR_RX, '').trim();
     DISPLAY_VENDOR_RX.lastIndex = 0;
-    if (tested !== out) return tested || 'Untitled Slot';
-    return raw;
+    /* Collapse whitespace from scrub. If result is empty (rare: name was
+     * ONLY a brand like "Pragmatic Play"), fall back to safe label. */
+    const cleaned = scrubbed.replace(/\s+/g, ' ').replace(/^[\s\-_.,]+|[\s\-_.,]+$/g, '').trim();
+    return cleaned || 'Untitled Slot';
   };
   const displayName = neutralDisplayName(model.name);
   /* Palette — use GDD palette[] if available, else reference defaults */

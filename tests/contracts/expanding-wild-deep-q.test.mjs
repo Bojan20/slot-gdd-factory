@@ -4,7 +4,7 @@
  *
  * UQ-DEEP-Q regression suite — pins fixes from Boki's report
  * "expanding wild ne radoi pravilno" (2026-06-24) verified across two
- * parallel agents (local IGT spec discovery + web research + code audit).
+ * parallel agents (local industry standard spec discovery + web research + code audit).
  *
  * Coverage (8 stamps):
  *   • B2 CRIT — appliesOnReels inherited from features[].config

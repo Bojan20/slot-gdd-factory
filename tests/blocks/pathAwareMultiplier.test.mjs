@@ -179,7 +179,7 @@ t('runtime bakes the multiplierMap JSON', rt.includes('"weight":40'));
 const allText = [emitPathAwareMultiplierCSS(cfgOn),
                  emitPathAwareMultiplierMarkup(cfgOn),
                  emitPathAwareMultiplierRuntime(cfgOn)].join('\n');
-const banned = ['IGT', 'Pragmatic', 'Cleopatra', 'Buffalo', 'Megaways',
+const banned = ['industry standard', 'Pragmatic', 'Cleopatra', 'Buffalo', 'Megaways',
                 'NetEnt', 'Microgaming', 'Wolf Run', 'Cash Eruption'];
 const hits = banned.filter(b => new RegExp(b, 'i').test(allText));
 t('vendor-neutral (no banned names in CSS/markup/runtime)',

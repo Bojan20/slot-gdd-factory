@@ -23,7 +23,7 @@ Sintetizovana je iz **5 nezavisnih izvora**:
 
 | # | Izvor | Šta donosi | Veličina |
 |:-:|:--|:--|:-:|
-| 1 | **IGT internal stack** (`~/IGT/`, 288MB, 6 git repoa) | playa-core/slot/cli/qa-tools/layout_tool/config-parser — production-grade industry reference | 22,743 reči RE |
+| 1 | **industry standard internal stack** (`~/industry standard/`, 288MB, 6 git repoa) | playa-core/slot/cli/qa-tools/layout_tool/config-parser — production-grade industry reference | 22,743 reči RE |
 | 2 | **Naš repo** (`~/Projects/slot-gdd-factory`) | 85 blokova, 96 testova, parser IR, 53 HookBus eventa, 4 reference GDD | 7,521 reči atomic inventory |
 | 3 | **Web research — slot mechanics 2020-2026** | 36 feature mechanika, 11 reel topologija, 8 payway types, 11 presentation patterns | 15,506 reči |
 | 4 | **Web research — math/RNG/regulator 2025-2026** | GLI-19 v3, UKGC RTS 17-Jan-2025, AGCO 4.07, MGA tech standards, EU AI Act spillover | 8,446 reči |
@@ -38,7 +38,7 @@ Sintetizovana je iz **5 nezavisnih izvora**:
 
 | # | Pravilo | Posledica |
 |:-:|:--|:--|
-| H1 | **Vendor names ZABRANJENI** u `src/` (IGT/Pragmatic/Megaways/Aristocrat/L&W/NetEnt/Microgaming) — samo u research notes je OK kao citation | Pre-commit grep gate u `tests/blocks/_no-vendor-mention.test.mjs`; svaki commit prolazi |
+| H1 | **Vendor names ZABRANJENI** u `src/` (industry standard/Pragmatic/Megaways/Aristocrat/L&W/NetEnt/Microgaming) — samo u research notes je OK kao citation | Pre-commit grep gate u `tests/blocks/_no-vendor-mention.test.mjs`; svaki commit prolazi |
 | H2 | **ADB ≠ GDD** — Audio Designer Brief je odvojen tok od Game Design Document; mešanje = trajna mana mozga | Pred svaki pomen fajla u GDD/parser/builder kontekstu: STOP, proveri naziv |
 | H3 | **LEGO discipline** — sve je modularan blok u `src/blocks/<name>.mjs`, NIKAD game-specific `if (game === 'X')`, single-owner emit, listener registracija | LEGO gate `tools/lego-gate.mjs` 6 invariants, mora biti 6/6 pre commit |
 | H4 | **Cell never mutated during motion** — motion legibility per industry standard ide preko `::after` overlay-a na koloni, NIKAD `filter: blur` na `.cell` | Build-time lint `tests/blocks/_no-muddy-cell.test.mjs` (W48 W1) |
@@ -70,7 +70,7 @@ Atomic detalji u: [`research-pool/sgf-current-state.md`](research-pool/sgf-curre
 **Tools**: 164 scripts (probe / audit / report / build / cert)
 **Orchestrator LOC budget**: 1171/1180 (99.2% posle Wave 2)
 
-### 2.2 IGT stack (referenca, vendor-neutral mining target)
+### 2.2 industry standard stack (referenca, vendor-neutral mining target)
 
 Atomic detalji u 4 fajla:
 
@@ -129,9 +129,9 @@ Atomic detalji u: [`research-pool/books-academic.md`](research-pool/books-academ
 
 ---
 
-## 3. Bridge tabela — IGT pattern → naš blok
+## 3. Bridge tabela — industry standard pattern → naš blok
 
-| IGT layer | Naš ekvivalent | Status | Šta nedostaje |
+| industry standard layer | Naš ekvivalent | Status | Šta nedostaje |
 |:--|:--|:-:|:--|
 | `playa-core/sequencer/Command` + MobX `addWhen()` | `src/blocks/hookBus.mjs` (Observer Pattern) | 🟡 partial | Deferred-completion pattern (await state via MobxUtils.addWhen) za eliminaciju `setTimeout` race-eva — Wave 4 candidate |
 | `playa-core/component/BaseStore/BaseView/BaseAction` | naša lazy IIFE per blok | 🟡 ekvivalent na drugom nivou | Mogli bismo extract `baseStore.mjs` mixin za state observability |
@@ -171,7 +171,7 @@ Cross-reference: `research-pool/web-slot-mechanics.md` + `sgf-current-state.md`.
 | E2 | **Megaways-style variable row count** (BTG license expired 2024 — vendor-neutral OK) | Each reel 2-7 symbols, ways recalculated post-spin | M4 (high-prio, post BTG patent expiry) |
 | E3 | **Colossal symbols** (2×2, 3×3, 4×4 stacked) | Single mega-symbol occupies multiple cells | M5 |
 | E4 | **Dual/multi-grid sync engine** (split-screen mirror) | Two parallel grids share outcome | L1 |
-| E5 | **SelectiveStackingReelSpinSystem** (substitution per schema) | IGT pattern — wild substitution mid-spin | M6 |
+| E5 | **SelectiveStackingReelSpinSystem** (substitution per schema) | industry standard pattern — wild substitution mid-spin | M6 |
 | E6 | **IndependentReelSpinSystem** (per-cell respin) | Each cell can re-roll independently | M7 |
 
 ### 4.2 Win domain (9 blokova → potencijalno 12)
@@ -217,15 +217,15 @@ Cross-reference: `research-pool/web-slot-mechanics.md` + `sgf-current-state.md`.
 | # | Šta nemamo | Wave kandidat |
 |:-:|:--|:-:|
 | D1 | **Network latency simulator** (UKGC RTS 6: handle disconnect gracefully) | M19 |
-| D2 | **RNG seed replay** (industry pattern from IGT SymbolWeightService) | post-Math |
+| D2 | **RNG seed replay** (industry pattern from industry standard SymbolWeightService) | post-Math |
 | D3 | **A/B variant picker** (presentation-only DDA — never outcome) | M20 |
-| D4 | **Deep-diff baseline assertion** (IGT qa-client-tools pattern) | M21 |
+| D4 | **Deep-diff baseline assertion** (industry standard qa-client-tools pattern) | M21 |
 
 ---
 
-## 5. Industry-grade patterns za **direktan extract** (vendor-neutral, sa file:line iz IGT-a)
+## 5. Industry-grade patterns za **direktan extract** (vendor-neutral, sa file:line iz industry standard-a)
 
-| # | Pattern | Iz (IGT) | U (naš) |
+| # | Pattern | Iz (industry standard) | U (naš) |
 |:-:|:--|:--|:--|
 | 1 | **Tier-mapped win rollup sa state-gated overlay** | `playa-slot/src/ts/rollup/RollupComponent.ts:30-100` | `winRollup.mjs` + `bigWinTier.mjs` — dodati `MobX-like deferred completion` umesto setTimeout race |
 | 2 | **Velocity ramp + bounce easing + cell add/remove threshold** | `playa-slot/src/ts/behaviors/spinBehavior/BaseSpinBehavior.ts:40-78` | `reelEngine.mjs` rotation — već imamo, Wave 2 projection dovršila |
@@ -347,13 +347,13 @@ Pun BibTeX u: [`research-pool/books-academic.md`](research-pool/books-academic.m
 Svaki Cortex agent (Plan, Explore, general-purpose, slot-domain) **prvo pročita ovaj fajl** pre task-a:
 
 1. Pogleda §2 — šta već postoji
-2. Pogleda §3 — šta IGT ima ekvivalentno
+2. Pogleda §3 — šta industry standard ima ekvivalentno
 3. Pogleda §4 — gap analizu, šta nedostaje
 4. Pogleda §5 — koje patterns su kandidat za extract
 5. Pogleda §6 — regulator gates za jurisdiction u pitanju
 6. Cite-uje izvore iz §9 u commit poruci / PR opisu
 
-Ovo eliminiše "ponovo grep-uj 288MB IGT-a" overhead — agent dolazi sa **gotovom mapom**.
+Ovo eliminiše "ponovo grep-uj 288MB industry standard-a" overhead — agent dolazi sa **gotovom mapom**.
 
 ---
 

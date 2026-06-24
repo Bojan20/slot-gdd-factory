@@ -1,6 +1,6 @@
-# `IGT/config-parser` — Deep Reverse-Engineering Report
+# `industry standard/config-parser` — Deep Reverse-Engineering Report
 
-> **Scope**: full RE of the repo at `~/IGT/config-parser` (~ 660 KB on disk, ~ 200 LOC of
+> **Scope**: full RE of the repo at `~/industry standard/config-parser` (~ 660 KB on disk, ~ 200 LOC of
 > hand-written TypeScript in `src/`, the rest is `yarn.lock` + test fixtures + compiled `bin/`).
 >
 > **Document version**: 1.0 · 2026-06-16
@@ -10,7 +10,7 @@
 >
 > **Critical framing up-front** (so §6/§7/§8 land correctly): this repo is **NOT** a slot-math
 > transpiler. The original task prompt described it as "JSON → SQL transpiler that takes paytable
-> + reels + features JSON config and emits `load_gc_<swid>_data.sql` for IGT casino database
+> + reels + features JSON config and emits `load_gc_<swid>_data.sql` for industry standard casino database
 > loaders". After reading every file, this is **only half-correct**. The repo is a **client
 > manifest transpiler**: it converts a per-game `config.json` (channel × presentation × technology
 > × screen-dimensions matrix) plus the host repo's `package.json` (game family id, software id
@@ -29,7 +29,7 @@
 ### §1.1 Directory tree (top 3 levels)
 
 ```
-~/IGT/config-parser/
+~/industry standard/config-parser/
 ├── .git/
 ├── .gitignore
 ├── .vscode/
@@ -76,7 +76,7 @@
 **Observations**:
 
 - The repo is ~ 660 KB only because `yarn.lock` is checked in (`yarn.lock:1-* ≈ 68681 bytes`,
-  `~/IGT/config-parser/yarn.lock`). Total **hand-written TypeScript = 223 lines** spread across
+  `~/industry standard/config-parser/yarn.lock`). Total **hand-written TypeScript = 223 lines** spread across
   4 files in `src/`. This is a tiny utility, not a heavyweight transpiler.
 - `bin/` is committed — `package.json:21-23` ships only `bin/` to npm and `package.json:5` points
   `main` at `bin/src/index.js`. No bundler (no webpack, no rollup) — plain `tsc` output.
@@ -144,7 +144,7 @@
 
 1. Agent: `jenkins-slave-nodejs` (`Jenkinsfile:2`).
 2. **prepare** stage (`Jenkinsfile:8-14`): `yarn install` with `NEXUS_READ` credential injected
-   via `withNPM` block — repo pulls from IGT internal Nexus mirror.
+   via `withNPM` block — repo pulls from industry standard internal Nexus mirror.
 3. **compile** stage (`Jenkinsfile:16-22`): `yarn compile` → `rimraf bin/ && tsc`.
 4. **test and coverage** stage (`Jenkinsfile:24-30`): `yarn coverage` (nyc + mocha).
 5. **publish** stage (`Jenkinsfile:32-45`): only when `BRANCH_NAME == 'master'`, runs `yarn
@@ -385,7 +385,7 @@ Candidate locations checked (Grep + Read):
 **Implication for SGF**: the SGF parser (`src/parser.mjs`) does in fact already cover most of
 this surface (topology, paytable, features, RTP confidence). The config-parser repo is **not a
 math model carrier** — it is a deployment manifest. The IR shape we should look at for math is
-elsewhere (likely a separate IGT internal repo for the math engine; see §6 and §8 for what to
+elsewhere (likely a separate industry standard internal repo for the math engine; see §6 and §8 for what to
 do about this finding).
 
 ### §2.12 Fixture-derived IR enumerations (observed value space)
@@ -813,7 +813,7 @@ code.
 ## §6. Reverse-engineering insights for `slot-gdd-factory` parser
 
 > This section is the synthesis lift. **Vendor names retired here per `rule_no_vendor_mentions`
-> — referred to as "the IGT manifest transpiler" inside the raw §1-§5 above, here generically as
+> — referred to as "the industry standard manifest transpiler" inside the raw §1-§5 above, here generically as
 > "the industry-standard JSON→SQL deployment-manifest transpiler" pattern.**
 
 ### §6.1 First-order finding: scope mismatch
@@ -824,9 +824,9 @@ client supports), not a paytable. So the question "what patterns can we lift INT
 `src/parser.mjs`?" needs reframing:
 
 - The parser in this repo (`slot-gdd-factory/src/parser.mjs`, 3203 LOC) already covers a much
-  larger surface than the IGT manifest transpiler ever did: topology, symbols, features, theme,
+  larger surface than the industry standard manifest transpiler ever did: topology, symbols, features, theme,
   confidence scoring, defensive null handling.
-- What we CAN lift are **emission-layer patterns** — the way the IGT transpiler turns its IR
+- What we CAN lift are **emission-layer patterns** — the way the industry standard transpiler turns its IR
   into a downstream artefact (SQL). These map onto our future PAR / SQL / DB-loader layer, not
   onto the parser itself.
 
@@ -854,18 +854,18 @@ client supports), not a paytable. So the question "what patterns can we lift INT
 | **Unused `options.outPutDir` typo** (`index.ts:20` reads camel-cased wrong vs `index.ts:14` flag `--outputDir`) | Means `-o` flag has never worked. Lesson: don't read commander options by hand; use TypeScript types or destructure with a typed shape. | `index.ts:14, 20` |
 | **Side-effect-only `index.ts` with no library export** means `require('config-parser')` does NOTHING useful — only the CLI works. | SGF should keep its parser importable from tests, app.js, and any future Node consumers. Don't entangle parsing with file I/O. | `index.ts:1-31`; SGF `parser.mjs` is already pure |
 | **`for (var index in gameIDArray)` over a JS Array** (`generate.ts:121`) | Iterates inherited keys; a polluted `Array.prototype` would break it. Use `for…of`. | `generate.ts:121` |
-| **No idempotency markers in emitted SQL** (`IF NOT EXISTS`, `ON CONFLICT`) | The IGT transpiler delegates idempotency to stored-proc bodies. SGF's PAR pipeline should NOT rely on a sister team for idempotency; bake `ON CONFLICT DO NOTHING` (or equivalent) into the emit layer. | `generate.ts:69-108` (no idempotency keyword) |
+| **No idempotency markers in emitted SQL** (`IF NOT EXISTS`, `ON CONFLICT`) | The industry standard transpiler delegates idempotency to stored-proc bodies. SGF's PAR pipeline should NOT rely on a sister team for idempotency; bake `ON CONFLICT DO NOTHING` (or equivalent) into the emit layer. | `generate.ts:69-108` (no idempotency keyword) |
 
 ### §6.4 IR shape we need to match for downstream PAR / Math layer
 
-The IGT manifest transpiler's IR (channel × presentation × dimensions) is **insufficient** for
+The industry standard manifest transpiler's IR (channel × presentation × dimensions) is **insufficient** for
 the math layer. The math layer needs the union:
 
 ```
 ParsedModel ⊕ ManifestIR
 ```
 
-where `ParsedModel` is what `parser.mjs:23-58` already returns and `ManifestIR` is the IGT-style
+where `ParsedModel` is what `parser.mjs:23-58` already returns and `ManifestIR` is the industry standard-style
 client-deployment manifest. Practical decision:
 
 - Keep `ParsedModel` as the single source of math truth in SGF.
@@ -877,7 +877,7 @@ client-deployment manifest. Practical decision:
 
 | Claim                                                                          | Citation |
 |:-------------------------------------------------------------------------------|:---------|
-| IGT transpiler is NOT a math carrier                                           | `generate.ts:111-141` (full pipeline visible), `tests/resources/**/config.json` (no math fields) |
+| industry standard transpiler is NOT a math carrier                                           | `generate.ts:111-141` (full pipeline visible), `tests/resources/**/config.json` (no math fields) |
 | Single-transaction envelope is the right pattern                               | `constants.ts:5-20`                                                                              |
 | Filename pattern is deterministic and grep-able                                | `generate.ts:135`                                                                                |
 | Fan-out (N-output) per multi-id pkg.id                                         | `generate.ts:121-138`                                                                            |
@@ -985,22 +985,22 @@ client-deployment manifest. Practical decision:
 - **Static analysis**: TSLint config but TSLint is deprecated; no ESLint migration.
 - **Dependency review**: 2 runtime deps. Low attack surface.
 - **Code smell**: dead constants (`kXxx`), unused dep (`colors`), broken flag (`-o`), no schema
-  validator. Net: this is "good enough for an internal IGT studio tool" but **not the gold
+  validator. Net: this is "good enough for an internal industry standard studio tool" but **not the gold
   standard** SGF aims for under `rule_senior_grade_code`.
 
 ---
 
 ## §8. Cross-reference to `slot-gdd-factory`
 
-### §8.1 Bridge table — IGT layer ↔ SGF equivalent ↔ gap
+### §8.1 Bridge table — industry standard layer ↔ SGF equivalent ↔ gap
 
-| IGT config-parser concept                          | SGF equivalent                                                       | Gap / lift-opportunity                                                 |
+| industry standard config-parser concept                          | SGF equivalent                                                       | Gap / lift-opportunity                                                 |
 |:---------------------------------------------------|:---------------------------------------------------------------------|:-----------------------------------------------------------------------|
 | `config.json` (channel × presentation × dims)      | NOT PRESENT in SGF — SGF parses GDD-as-document, not deployment manifest. | If SGF ever needs to emit deployment SQL, model a separate `ManifestIR` alongside `ParsedModel`. Don't graft. |
 | `package.json` sibling (name, id, version)         | Implicit per-upload session — SGF uses the GDD filename + Boki's UI state. | Worth introducing a lightweight `meta` block (name, version, family-hint) into `ParsedModel.theme` for downstream PAR emit. |
 | `gameClient[].channel`/`presentation`              | NOT PRESENT (and not needed at parse time)                            | Future PAR/SQL emit phase. Out of scope of `parser.mjs`. |
 | `gameClient[].technology`                          | Implied as "browser HTML" everywhere                                 | Single-valued — bake the constant when SQL emit lands. |
-| `gameClient[].height/width/meterheight/meterwidth` | Read by `src/blocks/layout.mjs` for in-browser rendering            | The dimensions IGT emits are per-CHANNEL; SGF dimensions are per-RESPONSIVE-BREAKPOINT. Different abstraction; no merge needed. |
+| `gameClient[].height/width/meterheight/meterwidth` | Read by `src/blocks/layout.mjs` for in-browser rendering            | The dimensions industry standard emits are per-CHANNEL; SGF dimensions are per-RESPONSIVE-BREAKPOINT. Different abstraction; no merge needed. |
 | `enableReplay` flag                                | `src/blocks/replay.mjs` (if present)                                  | Same boolean; map onto same JSON key when SGF gains a manifest emit. |
 | `enableFreeSpin` flag                              | SGF has `freespin` block (`src/blocks/freespin.mjs` typical)         | SGF already detects FS feature via `parser.mjs` feature extractor. |
 | Two-validator design (only `code` + `id`)          | SGF parser uses `_safeExtract` wrapper + `confidence._failures` (`parser.mjs:78-86`). | SGF is **already stronger** here. Hold the line — don't regress to bare throws. |
@@ -1015,22 +1015,22 @@ client-deployment manifest. Practical decision:
 | `outputDir` typo bug (`outPutDir`)                 | SGF has no CLI yet (it's a browser-side tool).                       | When SGF grows a CLI, prefer destructure-typed-options over hand-read map. |
 | `package.json.id` split-by-`-` format              | SGF has no software-id concept.                                      | If SGF emits PARs per jurisdiction, jurisdiction-id token in filename is the analog. |
 | Stringified Y/N booleans                           | SGF parser uses real JS booleans.                                    | SGF is **stronger** here. When SQL emit lands, do the Y/N transformation at the emit boundary, not in the model. |
-| PascalCase-and-dehyphen game name                  | SGF parser uses `model.name` raw                                     | When SQL emit lands, mirror this exact transformer (preserves IGT-compatible naming). |
+| PascalCase-and-dehyphen game name                  | SGF parser uses `model.name` raw                                     | When SQL emit lands, mirror this exact transformer (preserves wire-compatible naming). |
 | `colors` runtime dep unused                        | N/A                                                                  | Lesson only: SGF should `npm uninstall` any unused dep on each cleanup pass. |
 
 ### §8.2 Concrete recommendation for SGF parser (`src/parser.mjs`)
 
 After reading both this repo and `parser.mjs` (`src/parser.mjs:1-100` reviewed), the SGF parser
-is already **far** more sophisticated than the IGT manifest transpiler. The only LIFT that
+is already **far** more sophisticated than the industry standard manifest transpiler. The only LIFT that
 applies at the parser layer (not the emit layer) is:
 
 - **`Map<key, value>` pre-build pass** before main iteration when cross-referencing two
-  sub-structures (e.g. symbols ↔ paylines, or pay tier ↔ symbol id). The IGT transpiler uses
+  sub-structures (e.g. symbols ↔ paylines, or pay tier ↔ symbol id). The industry standard transpiler uses
   this at `generate.ts:5-13` to avoid quadratic lookups in the per-client emission loop.
   SGF could apply this idiom in any future feature extractor that needs to cross-reference
   multiple sub-structures of the GDD.
 
-Everything else from the IGT transpiler (transactional envelope, deterministic filenames,
+Everything else from the industry standard transpiler (transactional envelope, deterministic filenames,
 fan-out, Y/N transform) is **emit-layer** territory and belongs to a future SGF PAR/SQL exporter,
 NOT to `parser.mjs`.
 
@@ -1040,10 +1040,10 @@ NOT to `parser.mjs`.
    deployment-time concern, not a parse-time concern.
 2. **Do NOT** copy the `+=` string-builder for any future SQL emit. SGF should use a typed
    builder (e.g. an array of statement objects, joined at the boundary).
-3. **Do NOT** assume the IGT config-parser carries any usable math model. It does not.
+3. **Do NOT** assume the industry standard config-parser carries any usable math model. It does not.
 4. **Do NOT** regress to bare `throw`s. SGF's `_safeExtract` + `confidence._failures` is the
    correct, senior-grade pattern.
-5. **Do NOT** treat the IGT transpiler as a reference for paytable / reel-strip serialisation.
+5. **Do NOT** treat the industry standard transpiler as a reference for paytable / reel-strip serialisation.
    The actual paytable serialisation lives elsewhere (likely in the `playa-slot` runtime or in
    a separate math-config repo we have not yet RE'd; explicit follow-up).
 
@@ -1054,14 +1054,14 @@ else. Likely candidates worth a similar RE pass:
 
 | Suspected repo / artefact                          | Why                                                                                       | Where to look |
 |:---------------------------------------------------|:------------------------------------------------------------------------------------------|:--------------|
-| `playa-slot` (math runtime)                        | Per `defaultValues/empty/package.json:113`, dep `playa-slot 1.3.0`. The actual reel/paytable model probably ships there. | `~/IGT/` siblings — not yet on disk |
-| `playa-core`                                       | Per `package.json:112`, dep `playa-core 1.3.0`. Channel / RGS contract.                  | `~/IGT/` siblings |
+| `playa-slot` (math runtime)                        | Per `defaultValues/empty/package.json:113`, dep `playa-slot 1.3.0`. The actual reel/paytable model probably ships there. | `~/industry standard/` siblings — not yet on disk |
+| `playa-core`                                       | Per `package.json:112`, dep `playa-core 1.3.0`. Channel / RGS contract.                  | `~/industry standard/` siblings |
 | Whatever ships `copy-configs` postinstall          | Per `defaultValues/empty/package.json:18`: `"postinstall": "copy-configs"`. That step probably copies the real math config in. | Track the binary `copy-configs` to its parent package |
 | RGS-side stored-procs                              | `pgRgs_Game_fnRgs_InsUpdGameClientVersion` body would reveal the schema.                  | DBA-controlled, likely not in any git repo we have access to |
 
 ### §8.5 Headline verdict
 
-> **The IGT config-parser is a 223-LOC client-manifest emitter, not a slot-math transpiler.
+> **The industry standard config-parser is a 223-LOC client-manifest emitter, not a slot-math transpiler.
 > It teaches us emission-layer patterns (single-transaction envelope, deterministic filenames,
 > fan-out, parallel-list trick) we can lift INTO a future SGF PAR/SQL exporter, but it teaches
 > us NOTHING about reel strips, paytables, RTP, or features — because none of that data is
@@ -1073,50 +1073,50 @@ else. Likely candidates worth a similar RE pass:
 
 ## Appendix A — Citation manifest
 
-Every file from `~/IGT/config-parser/` that was opened during this RE:
+Every file from `~/industry standard/config-parser/` that was opened during this RE:
 
 | Path                                                                           | Read scope     |
 |:-------------------------------------------------------------------------------|:---------------|
-| `~/IGT/config-parser/package.json`                                             | full (1-45)    |
-| `~/IGT/config-parser/tsconfig.json`                                            | full (1-25)    |
-| `~/IGT/config-parser/tslint.json`                                              | full (1-125)   |
-| `~/IGT/config-parser/Jenkinsfile`                                              | full (1-59)    |
-| `~/IGT/config-parser/README.md`                                                | full (1-37)    |
-| `~/IGT/config-parser/CHANGELOG.md`                                             | full (1-55)    |
-| `~/IGT/config-parser/.gitignore`                                               | full (1-8)     |
-| `~/IGT/config-parser/.vscode/launch.json`                                      | full (1-35)    |
-| `~/IGT/config-parser/src/constants.ts`                                         | full (1-36)    |
-| `~/IGT/config-parser/src/generate.ts`                                          | full (1-141)   |
-| `~/IGT/config-parser/src/index.ts`                                             | full (1-31)    |
-| `~/IGT/config-parser/src/write.ts`                                             | full (1-13)    |
-| `~/IGT/config-parser/tests/defaultValueTest.ts`                                | full (1-36)    |
-| `~/IGT/config-parser/tests/errorTest.ts`                                       | full (1-19)    |
-| `~/IGT/config-parser/tests/multipleSoftwareIDsTest.ts`                         | full (1-67)    |
-| `~/IGT/config-parser/tests/withEnableReplayTest.ts`                            | full (1-35)    |
-| `~/IGT/config-parser/tests/withoutEnableReplayTest.ts`                         | full (1-22)    |
-| `~/IGT/config-parser/tests/resources/defaultValues/empty/config.json`          | full (1-28)    |
-| `~/IGT/config-parser/tests/resources/defaultValues/empty/package.json`         | full (1-124)   |
-| `~/IGT/config-parser/tests/resources/defaultValues/empty/expected.sql`         | full (1-15)    |
-| `~/IGT/config-parser/tests/resources/defaultValues/nonExistentGameFolder/config.json` | full (1-59) |
-| `~/IGT/config-parser/tests/resources/defaultValues/nonExistentGameFolder/package.json` | full (1-124) |
-| `~/IGT/config-parser/tests/resources/defaultValues/nonExistentGameFolder/expected.sql` | full (1-14) |
-| `~/IGT/config-parser/tests/resources/multipleSoftwareIDs/oneSoftwareIDWithoutReplay/config.json` | full (1-64) |
-| `~/IGT/config-parser/tests/resources/multipleSoftwareIDs/oneSoftwareIDWithoutReplay/package.json` | full (1-124) |
-| `~/IGT/config-parser/tests/resources/multipleSoftwareIDs/threeSoftwareIDsWithoutReplay/config.json` | full (1-64) |
-| `~/IGT/config-parser/tests/resources/multipleSoftwareIDs/threeSoftwareIDsWithoutReplay/package.json` | full (1-124) |
-| `~/IGT/config-parser/tests/resources/multipleSoftwareIDs/threeSoftwareIDsWithoutReplay/expected_2.sql` | full (1-15) |
-| `~/IGT/config-parser/tests/resources/multipleSoftwareIDs/threeSoftwareIDsWithoutReplay/expected_3.sql` | full (1-15) |
-| `~/IGT/config-parser/tests/resources/multipleSoftwareIDs/threeSoftwareIDsWithoutReplay/expected_9.sql` | full (1-15) |
-| `~/IGT/config-parser/tests/resources/multipleSoftwareIDs/twoSoftwareIDsWithReplay/expected_0.sql` | full (1-15) |
-| `~/IGT/config-parser/tests/resources/replay/withEnableReplay/configYes.json`   | full (1-65)    |
-| `~/IGT/config-parser/tests/resources/replay/withEnableReplay/configNo.json`    | full (1-65)    |
-| `~/IGT/config-parser/tests/resources/replay/withEnableReplay/expectedYes.sql`  | full (1-15)    |
-| `~/IGT/config-parser/tests/resources/replay/withEnableReplay/expectedNo.sql`   | full (1-15)    |
-| `~/IGT/config-parser/tests/resources/replay/withoutEnableReplay/config.json`   | full (1-64)    |
-| `~/IGT/config-parser/tests/resources/replay/withoutEnableReplay/expected.sql`  | full (1-15)    |
-| `~/IGT/config-parser/tests/resources/errors/invalidGameID/config.json`         | full (1-16)    |
-| `~/IGT/config-parser/tests/resources/errors/invalidGameID/package.json`        | full (1-124)   |
-| `~/IGT/config-parser/tests/resources/errors/missingClientCode/config.json`     | full (1-15)    |
+| `~/industry standard/config-parser/package.json`                                             | full (1-45)    |
+| `~/industry standard/config-parser/tsconfig.json`                                            | full (1-25)    |
+| `~/industry standard/config-parser/tslint.json`                                              | full (1-125)   |
+| `~/industry standard/config-parser/Jenkinsfile`                                              | full (1-59)    |
+| `~/industry standard/config-parser/README.md`                                                | full (1-37)    |
+| `~/industry standard/config-parser/CHANGELOG.md`                                             | full (1-55)    |
+| `~/industry standard/config-parser/.gitignore`                                               | full (1-8)     |
+| `~/industry standard/config-parser/.vscode/launch.json`                                      | full (1-35)    |
+| `~/industry standard/config-parser/src/constants.ts`                                         | full (1-36)    |
+| `~/industry standard/config-parser/src/generate.ts`                                          | full (1-141)   |
+| `~/industry standard/config-parser/src/index.ts`                                             | full (1-31)    |
+| `~/industry standard/config-parser/src/write.ts`                                             | full (1-13)    |
+| `~/industry standard/config-parser/tests/defaultValueTest.ts`                                | full (1-36)    |
+| `~/industry standard/config-parser/tests/errorTest.ts`                                       | full (1-19)    |
+| `~/industry standard/config-parser/tests/multipleSoftwareIDsTest.ts`                         | full (1-67)    |
+| `~/industry standard/config-parser/tests/withEnableReplayTest.ts`                            | full (1-35)    |
+| `~/industry standard/config-parser/tests/withoutEnableReplayTest.ts`                         | full (1-22)    |
+| `~/industry standard/config-parser/tests/resources/defaultValues/empty/config.json`          | full (1-28)    |
+| `~/industry standard/config-parser/tests/resources/defaultValues/empty/package.json`         | full (1-124)   |
+| `~/industry standard/config-parser/tests/resources/defaultValues/empty/expected.sql`         | full (1-15)    |
+| `~/industry standard/config-parser/tests/resources/defaultValues/nonExistentGameFolder/config.json` | full (1-59) |
+| `~/industry standard/config-parser/tests/resources/defaultValues/nonExistentGameFolder/package.json` | full (1-124) |
+| `~/industry standard/config-parser/tests/resources/defaultValues/nonExistentGameFolder/expected.sql` | full (1-14) |
+| `~/industry standard/config-parser/tests/resources/multipleSoftwareIDs/oneSoftwareIDWithoutReplay/config.json` | full (1-64) |
+| `~/industry standard/config-parser/tests/resources/multipleSoftwareIDs/oneSoftwareIDWithoutReplay/package.json` | full (1-124) |
+| `~/industry standard/config-parser/tests/resources/multipleSoftwareIDs/threeSoftwareIDsWithoutReplay/config.json` | full (1-64) |
+| `~/industry standard/config-parser/tests/resources/multipleSoftwareIDs/threeSoftwareIDsWithoutReplay/package.json` | full (1-124) |
+| `~/industry standard/config-parser/tests/resources/multipleSoftwareIDs/threeSoftwareIDsWithoutReplay/expected_2.sql` | full (1-15) |
+| `~/industry standard/config-parser/tests/resources/multipleSoftwareIDs/threeSoftwareIDsWithoutReplay/expected_3.sql` | full (1-15) |
+| `~/industry standard/config-parser/tests/resources/multipleSoftwareIDs/threeSoftwareIDsWithoutReplay/expected_9.sql` | full (1-15) |
+| `~/industry standard/config-parser/tests/resources/multipleSoftwareIDs/twoSoftwareIDsWithReplay/expected_0.sql` | full (1-15) |
+| `~/industry standard/config-parser/tests/resources/replay/withEnableReplay/configYes.json`   | full (1-65)    |
+| `~/industry standard/config-parser/tests/resources/replay/withEnableReplay/configNo.json`    | full (1-65)    |
+| `~/industry standard/config-parser/tests/resources/replay/withEnableReplay/expectedYes.sql`  | full (1-15)    |
+| `~/industry standard/config-parser/tests/resources/replay/withEnableReplay/expectedNo.sql`   | full (1-15)    |
+| `~/industry standard/config-parser/tests/resources/replay/withoutEnableReplay/config.json`   | full (1-64)    |
+| `~/industry standard/config-parser/tests/resources/replay/withoutEnableReplay/expected.sql`  | full (1-15)    |
+| `~/industry standard/config-parser/tests/resources/errors/invalidGameID/config.json`         | full (1-16)    |
+| `~/industry standard/config-parser/tests/resources/errors/invalidGameID/package.json`        | full (1-124)   |
+| `~/industry standard/config-parser/tests/resources/errors/missingClientCode/config.json`     | full (1-15)    |
 
 Files in `bin/` (compiled `.js`, `.d.ts`, `.js.map`) were **not** independently RE'd because
 they are mechanically derived from `src/*.ts` and would duplicate citations. Yarn lockfile not

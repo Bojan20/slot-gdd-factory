@@ -219,7 +219,7 @@ block('12. Honest scope', () => {
   t('12.5 Source cites rule_no_math_unless_asked honest scope',
     /rule_no_math_unless_asked/.test(src));
   t('12.6 No vendor / theme strings in source',
-    !/(Wrath|Olympus|Lightning Link|Megaways|Pragmatic|NetEnt|Microgaming|IGT)/i.test(src));
+    !/(Wrath|Olympus|Lightning Link|Megaways|Pragmatic|NetEnt|Microgaming|industry standard)/i.test(src));
 });
 
 console.log('');

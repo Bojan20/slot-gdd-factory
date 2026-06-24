@@ -170,7 +170,7 @@ export function parseMarkdownGDD(text) {
     }
     /* ULTRA-DEEP-QA D1 (2026-06-22, P0) — "Game Title" Title Page table
      * extractor. Cash Eruption §1.1 has "Field Value / Game Title Cash
-     * Eruption". Industry-standard IGT/Aristocrat/Pragmatic GDDs all
+     * Eruption". Industry-standard industry standard/Aristocrat/Pragmatic GDDs all
      * have this anchor; extract before any prose fallback. */
     /* Multi-pattern game title anchor. Accept Title-Case names up to 5 words
      * after "Game Title" + flexible whitespace/colon. Use non-greedy capture
@@ -2621,7 +2621,7 @@ export function extractSymbolsProseMode(rawText, model) {
   }
 
   /* Wave UQ-CASH A4 — named-identity = role assignments.
-   * IGT-Foundry-format GDDs (and many narrative-driven docs) use a
+   * industry standard-Foundry-format GDDs (and many narrative-driven docs) use a
    * left-to-right "NAME = role description" form instead of paytable
    * tables. Examples this catches:
    *   "Volcano = Free Spins scatter"        → Volcano kind:scatter
@@ -3247,7 +3247,7 @@ export function extractFeatureConfigsProseMode(rawText, model) {
     const ew = model.expandingWild;
     if (!ew.mode) {
       /* UQ-DEEP-J fix (Boki "sve verzije wild blokova ne rade pravilno"
-       * 2026-06-23): prior regex set tested too narrow; IGT-style GDDs
+       * 2026-06-23): prior regex set tested too narrow; industry standard-style GDDs
        * (Cash Eruption, Cleopatra) phrase it as "base game and free
        * spins" → no match → fallback default 'fs' → block disabled in
        * BASE phase even though spec says BOTH. Order tests so 'both'

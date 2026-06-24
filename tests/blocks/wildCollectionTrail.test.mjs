@@ -135,7 +135,7 @@ t('sandbox: onFsEnd reset when resetOnFsEnd=true', sb4.window.__SLOT_WILD_TRAIL_
 
 /* Vendor neutrality */
 const src = readFileSync(SRC_PATH, 'utf8');
-const VENDORS = /(IGT|pragmatic|megaways|netent|microgaming|reactoonz|olympus|wrath|cleopatra|buffalo|sugar rush|sweet bonanza|wolf run|cash eruption|playson|hacksaw|nolimit|btg|wazdan|playngo|yggdrasil|relax gaming|push gaming|stakelogic)/i;
+const VENDORS = /(industry standard|pragmatic|megaways|netent|microgaming|reactoonz|olympus|wrath|cleopatra|buffalo|sugar rush|sweet bonanza|wolf run|cash eruption|playson|hacksaw|nolimit|btg|wazdan|playngo|yggdrasil|relax gaming|push gaming|stakelogic)/i;
 t('source: vendor-neutral', !VENDORS.test(src));
 
 console.log('--- summary ---');

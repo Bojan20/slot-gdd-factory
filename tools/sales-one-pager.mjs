@@ -11,7 +11,7 @@
  * The one-pager is the artifact a sales lead hands to a regulator,
  * casino procurement, or trade-show booth. It must:
  *   - Summarise the game in ≤ 1 printed page (≤ 500 words).
- *   - Be VENDOR-NEUTRAL — no IGT / Pragmatic / NetEnt / Microgaming /
+ *   - Be VENDOR-NEUTRAL — no industry standard / Pragmatic / NetEnt / Microgaming /
  *     L&W / Cleopatra / Buffalo / Megaways / Cash Eruption etc.
  *     mention. (rule_no_vendor_mentions.)
  *   - Surface only mechanics + theme tags + feature kinds + topology

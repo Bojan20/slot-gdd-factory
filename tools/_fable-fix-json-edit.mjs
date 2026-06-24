@@ -98,7 +98,7 @@ HARD RULES
 ----------
 1. AUDIO BLOCK SKIP: this project forbids edits to audio.mjs. If the block
    name is "audio", reply with exactly "AUDIO BLOCK SKIPPED" and nothing else.
-2. NO VENDOR NAMES: never mention IGT, Pragmatic, NetEnt, Megaways, Cleopatra,
+2. NO VENDOR NAMES: never mention industry standard, Pragmatic, NetEnt, Megaways, Cleopatra,
    Buffalo, Wolf Run, Cash Eruption, etc. Use vendor-neutral language ONLY.
 3. MINIMAL EDITS: address every review ISSUE but never refactor unrelated code.
    Preserve existing names, indentation, and style.

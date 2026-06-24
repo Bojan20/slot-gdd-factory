@@ -1,5 +1,5 @@
 /**
- * UQ-DEEP-AG · IGT GLE wire contract test (Boki 2026-06-24)
+ * UQ-DEEP-AG · industry math engine wire contract test (Boki 2026-06-24)
  *
  * Boki: "overi detaljno jedan po jedan fajl i uporedi sa nasim slot gdd
  * blokovima, sa nasom matematikom vidi sta ultimativno fali, sta treba
@@ -10,7 +10,7 @@
  * preko 3 ose (math, server contracts, symbol engineering). Ovaj commit
  * zatvara najtransformativniji core:
  *
- * 1. IGT serverConfig kompajler (tools/sgs-compiler.mjs)
+ * 1. industry standard serverConfig kompajler (tools/sgs-compiler.mjs)
  *    - gain_table (per-symbol payout concat, §4 rule 1)
  *    - reels[][] padded sa -1 sentinel (§4 rule 2)
  *    - lines flatten + number_of_lines (§4 rule 3)
@@ -18,7 +18,7 @@
  *    - paytable_hash SHA-256 canonical JSON (regulator integrity)
  *    - wild_symbol ID + symbols[] (integer index)
  *
- * 2. IGT GameLogicResponse envelope (tools/gle-response-emitter.mjs)
+ * 2. industry standard GameLogicResponse envelope (tools/gle-response-emitter.mjs)
  *    - OutcomeDetail{transactionId UUID, stage, nextStage, gameStatus,
  *      settled, pending, payout cents}
  *    - PopulationOutcome{Entry[].Cell[].stripIndex} (server-authoritative)
@@ -28,14 +28,14 @@
  *      GLE_TIMEOUT, RNG_RESEED_REQUIRED, INVALID_BET, PAYTABLE_HASH_MISMATCH)
  *
  * 3. Integer-weight conversion (src/registry/integerWeightConvert.mjs)
- *    - convertToServerValues(arr) per-element 10^k scale (IGT GLE INTEGER-ONLY)
- *    - getDecimalsCountForNumber preserves IGT scientific-notation quirk
+ *    - convertToServerValues(arr) per-element 10^k scale (industry math engine INTEGER-ONLY)
+ *    - getDecimalsCountForNumber preserves industry standard scientific-notation quirk
  *
  * 4. math-backend integration:
  *    - POST /spin sa `gle: true` → vraća OutcomeDetail envelope
- *    - POST /serverConfig → emit-uje IGT-compatible serverConfig + hash
+ *    - POST /serverConfig → emit-uje wire-compatible serverConfig + hash
  *
- * Vendor-neutral: nijedan IGT brand string u outputu, samo wire contract.
+ * Vendor-neutral: nijedan industry standard brand string u outputu, samo wire contract.
  */
 
 import { test } from 'node:test';
@@ -96,7 +96,7 @@ test('UQ-DEEP-AG · compileGainTable concatenates per-symbol payouts in symbols[
     S: { 3: 0, 4: 5, 5: 25 },                          /* skipped */
   };
   const gt = compileGainTable(symbols, paytable);
-  /* IGT order: each symbol contributes [pay0, pay1, pay2, pay3, pay4, pay5]. */
+  /* industry standard order: each symbol contributes [pay0, pay1, pay2, pay3, pay4, pay5]. */
   /* D: [0,0,0,50,200,1000]; J: [0,0,0,5,25,100]; W: [0,0,0,0,0,500] */
   assert.deepEqual(gt, [
     0, 0, 0, 50, 200, 1000,
@@ -112,7 +112,7 @@ test('UQ-DEEP-AG · compileLines flattens 2D paylines into 1D', () => {
   assert.equal(r.number_of_lines, 3);
 });
 
-test('UQ-DEEP-AG · compileSpecialSymbols emits scatter + FS + HnW per IGT P2.10', () => {
+test('UQ-DEEP-AG · compileSpecialSymbols emits scatter + FS + HnW per industry spec P2.10', () => {
   const model = {
     symbols: {
       specials: [
@@ -125,7 +125,7 @@ test('UQ-DEEP-AG · compileSpecialSymbols emits scatter + FS + HnW per IGT P2.10
                   bonusSymbolId: 'B', respinsOnHit: 3, nonLockedSymbolId: 'BLANK', hasEmptyCells: true },
   };
   const specials = compileSpecialSymbols(model);
-  /* IGT P2.10 trigger_count rules:
+  /* industry spec P2.10 trigger_count rules:
    *   Scatter: first_nonzero_payout_index + 1 → index 2 (val 5) + 1 = 3
    *   FS: min(triggerCounts) → 3
    *   HnW: direct → 6
@@ -140,11 +140,11 @@ test('UQ-DEEP-AG · compileSpecialSymbols emits scatter + FS + HnW per IGT P2.10
   const hnw = specials.find(s => s.feature_type === 'hold_and_win');
   assert.ok(hnw, 'hold_and_win special emitted');
   assert.equal(hnw.trigger_count, 6, 'HnW trigger_count = direct');
-  assert.equal(hnw.non_locked_symbol, 'BLANK', 'IGT lock predicate field');
-  assert.equal(hnw.has_empty_cells, true, 'IGT empty cells field');
+  assert.equal(hnw.non_locked_symbol, 'BLANK', 'industry standard lock predicate field');
+  assert.equal(hnw.has_empty_cells, true, 'industry standard empty cells field');
 });
 
-test('UQ-DEEP-AG · compileServerConfig emits valid IGT envelope + paytable hash', () => {
+test('UQ-DEEP-AG · compileServerConfig emits valid industry standard envelope + paytable hash', () => {
   const model = {
     topology: { reels: 5, rows: 3, paylines: [[1, 1, 1, 1, 1]] },
     symbols: {
@@ -278,7 +278,7 @@ test('UQ-DEEP-AG · emitErrorResponse structured envelope sa error codes', () =>
 
 /* ── LIVE E2E sa math-backend ───────────────────────────────────────────── */
 
-test('UQ-DEEP-AG · live POST /serverConfig endpoint returns IGT envelope', async () => {
+test('UQ-DEEP-AG · live POST /serverConfig endpoint returns industry standard envelope', async () => {
   const model = {
     name: 'Test Slot',
     topology: { reels: 5, rows: 3, paylines: [[1, 1, 1, 1, 1]] },
@@ -315,7 +315,7 @@ test('UQ-DEEP-AG · live POST /spin sa gle:true vraća OutcomeDetail envelope', 
   assert.equal(j1.ok, true);
   assert.equal(j1.gle, undefined, 'legacy mode (gle field absent)');
 
-  /* Second spin sa gle:true → IGT envelope. */
+  /* Second spin sa gle:true → industry standard envelope. */
   const r2 = await fetch('http://127.0.0.1:9001/spin', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sessionId: 'test_session_2', model, gle: true, betX: 1, paytableHash: 'abc123' }),

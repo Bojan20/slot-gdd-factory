@@ -153,7 +153,7 @@ t('emitDevForceButtonsRuntime: defensive guard on every button (if (btn))', () =
 
 t('vendor neutrality: no game / vendor names emitted', () => {
   const blob = emitDevForceButtonsRuntime({ features: [{ kind: 'multiplier' }] });
-  for (const v of ['IGT','Pragmatic','Cleopatra','Buffalo','Megaways','NetEnt',
+  for (const v of ['industry standard','Pragmatic','Cleopatra','Buffalo','Megaways','NetEnt',
                    'Zeus','Olympus','Reactoonz','Bonanza','WoO','GoO',
                    'playa-slot']) {
     nct(blob, v, `vendor mention "${v}" leaked into runtime emit`);

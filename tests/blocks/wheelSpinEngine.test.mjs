@@ -71,7 +71,7 @@ t('emitWheelSpinEngineRuntime: HookBus preSpin listener registered', () => {
 
 t('vendor neutrality: zero leaked mentions', () => {
   const blob = emitWheelSpinEngineCSS(defaultConfig()) + emitWheelSpinEngineRuntime(defaultConfig());
-  for (const v of ['IGT','Pragmatic','Cleopatra','Buffalo','Megaways','Olympus','Zeus','Reactoonz','playa-slot']) {
+  for (const v of ['industry standard','Pragmatic','Cleopatra','Buffalo','Megaways','Olympus','Zeus','Reactoonz','playa-slot']) {
     nct(blob, v, `vendor leak: ${v}`);
   }
 });

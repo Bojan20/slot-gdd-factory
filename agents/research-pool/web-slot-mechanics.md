@@ -4,7 +4,7 @@
 **Date compiled:** 2026-06-16
 **Scope:** Exhaustive catalog of every reel-topology, payway, feature, presentation, regulator and math construct shipped in modern online slots between 2020 and 2026, with first-ship attribution, state machine, RTP/volatility footprint, UI affordance and regulator footprint per mechanic.
 **Audience:** `slot-gdd-factory` builder/parser maintainers, GDD authors, math designers, QA, regulator submission writers.
-**Constraint reminder (CLAUDE.md HARD RULE #1 — slot-gdd-factory source code):** vendor brand names (Aristocrat, BTG, NetEnt, Pragmatic, IGT, Yggdrasil, Microgaming, ReelPlay, Push Gaming, Spribe, Gaming Realms, Light & Wonder, Playson, Relax, BGaming, 3 Oaks, Blueprint, Evolution) and trademarked mechanic names (Megaways, InfinityReels, Hold and Spin, Lightning Link, Avalanche, Cluster Pays, Hold the Jackpot, Wonder 4, GEMS, Splitz, Gigablox, MultiMax) MUST NOT appear in `src/` of slot-gdd-factory or in regulator-facing PAR/IR/one-pager output. They appear in **this research note only** as academic citations to demonstrate first-ship and prior art. Internal builder/blocks remap them to vendor-neutral kinds: `cascade`, `infinity_expand`, `hold_and_win`, `cluster_pays`, `megaways_topology` (or `variable_height_ways`), etc. The tier nomenclature also drops marketing names — internal blocks use `tier1..tier5`, not "Mega/Epic/Legendary".
+**Constraint reminder (CLAUDE.md HARD RULE #1 — slot-gdd-factory source code):** vendor brand names (Aristocrat, BTG, NetEnt, Pragmatic, industry standard, Yggdrasil, Microgaming, ReelPlay, Push Gaming, Spribe, Gaming Realms, Light & Wonder, Playson, Relax, BGaming, 3 Oaks, Blueprint, Evolution) and trademarked mechanic names (Megaways, InfinityReels, Hold and Spin, Lightning Link, Avalanche, Cluster Pays, Hold the Jackpot, Wonder 4, GEMS, Splitz, Gigablox, MultiMax) MUST NOT appear in `src/` of slot-gdd-factory or in regulator-facing PAR/IR/one-pager output. They appear in **this research note only** as academic citations to demonstrate first-ship and prior art. Internal builder/blocks remap them to vendor-neutral kinds: `cascade`, `infinity_expand`, `hold_and_win`, `cluster_pays`, `megaways_topology` (or `variable_height_ways`), etc. The tier nomenclature also drops marketing names — internal blocks use `tier1..tier5`, not "Mega/Epic/Legendary".
 
 This document is intentionally long. It is meant to be the single canonical sweep that a parser/builder author reads to know "what shapes exist in the wild." It is not meant to be a marketing guide.
 
@@ -38,7 +38,7 @@ Reel topology = the geometry of the symbol grid and the rule for how cells map t
 |:--|:--|
 | Mechanic | Rectangular fixed grid (3×3, 5×3, 5×4, 5×5, 6×4, 6×5, 7×7) |
 | Industry name + ≥3 synonyms | Fixed grid; classic reel; matrix reels; rect grid |
-| First-ship vendor + year | Mills Liberty Bell (1899) for 3×1, Bally Money Honey (1963) for 3×3 electromechanical, IGT for 5×3 video (1996) |
+| First-ship vendor + year | Mills Liberty Bell (1899) for 3×1, Bally Money Honey (1963) for 3×3 electromechanical, industry standard for 5×3 video (1996) |
 | Topology | Reels × rows, fixed; columns = reels, rows = cell height; addressable as `(reelIndex, rowIndex)` |
 | State machine phases | `idle → spinStart → reelStops[] → resolve → payout → idle` |
 | RTP impact | Neutral — topology is independent of RTP; classic 5×3 ranges 88–98 % per jurisdiction |
@@ -82,7 +82,7 @@ Implementation note for parser: hex topology must store axial `(q, r)` for clust
 |:--|:--|
 | Mechanic | Wheel reel / wheel bonus / fortune wheel |
 | Synonyms | Wheel of Fortune topology; segmented dial; carousel reel |
-| First-ship vendor + year | IGT Wheel of Fortune (1996 land cabinet, 2010 online); Aristocrat Wonder Wheel (2014); Pragmatic Megawheel (2022) |
+| First-ship vendor + year | industry standard Wheel of Fortune (1996 land cabinet, 2010 online); Aristocrat Wonder Wheel (2014); Pragmatic Megawheel (2022) |
 | Topology | Single rotating ring with `N` segments (typical 24 or 36); each segment carries prize/multiplier/jackpot tier |
 | State machine | `enterWheel → wheelSpin → wheelDecel → wheelLand → resolveSegment → exitWheel` |
 | RTP impact | Wheel return engineered into segment weights; usually 30–60 % of total RTP in wheel-centric titles |
@@ -174,14 +174,14 @@ Implementation note for parser: hex topology must store axial `(q, r)` for clust
 |:--|:--|
 | Mechanic | Symbols that occupy multiple cells (2×2, 3×3, 4×4, 5×5) and act as one logical symbol |
 | Synonyms | Colossal symbols; mega symbols; giant symbols; super-stacked; bloc symbol |
-| First-ship vendor + year | IGT Super Stacks (2009 land); Bally Ocean's Glory (2013); WMS Colossal Reels (2011) |
+| First-ship vendor + year | industry standard Super Stacks (2009 land); Bally Ocean's Glory (2013); WMS Colossal Reels (2011) |
 | Topology | Standard rectangular grid with `bigSymbol` mask covering K×K cells; placement on snap-to-grid coordinate |
 | State machine | `spinStart → drawSymbols → resolveBigSymbolMask → expandToWaysCount → payResolve` |
 | RTP impact | Neutral — big symbols engineered into reel-strip weighting |
 | Volatility | Medium-high; big symbols on payway create heavier tail |
 | UI affordance | Per-symbol mask is one rendered sprite; reels can scroll big symbol as one unit |
 | Regulator notes | UKGC RTS 7 — bigSymbol contribution to ways/lines must be in game rules |
-| Reference titles | Super Stacks (IGT); Colossal Reels (WMS); Jungle Giants (Playtech) |
+| Reference titles | Super Stacks (industry standard); Colossal Reels (WMS); Jungle Giants (Playtech) |
 
 ### 1.10 Dual / multi-grid (split-screen, mirror, parallel)
 
@@ -189,7 +189,7 @@ Implementation note for parser: hex topology must store axial `(q, r)` for clust
 |:--|:--|
 | Mechanic | Two or more independent grids share one spin button or one symbol stream |
 | Synonyms | Dual reels; multi-screen; parallel reels; mirror reels; quad-reels |
-| First-ship vendor + year | Aristocrat Wonder 4 (2014 land cabinet, 2018 online) is the prototypical four-grid; IGT Super Times Pay (2007 dual) |
+| First-ship vendor + year | Aristocrat Wonder 4 (2014 land cabinet, 2018 online) is the prototypical four-grid; industry standard Super Times Pay (2007 dual) |
 | Topology | `N` independent rectangular grids (often 2–4) on one screen; one shared spin event triggers all |
 | State machine | `idle → spin → resolveGrid[0..N-1] in parallel → aggregatePay → idle` |
 | RTP impact | Each grid carries its own RTP; aggregate is weighted mean; can engineer split (e.g. 95.5 % per grid → 95.5 % aggregate) |
@@ -225,7 +225,7 @@ Payway = the rule that maps reel-result to win amount. This is independent of to
 |:--|:--|
 | Mechanic | Fixed paylines — left-to-right combos along predefined zig-zag paths |
 | Synonyms | Fixed lines; paylines; lines pay; classic lines |
-| First-ship vendor + year | Mills Liberty Bell (1899) single line; Bally Five Line (1966); IGT 9-line / 20-line / 25-line video (1990s) |
+| First-ship vendor + year | Mills Liberty Bell (1899) single line; Bally Five Line (1966); industry standard 9-line / 20-line / 25-line video (1990s) |
 | Topology | Pairs with rectangular grids; line list is `[ [(r0,c0), (r1,c1), ...], ... ]` |
 | State machine | `resolveLines → highlightWinningLines → payout` |
 | RTP impact | RTP independent; lines just discretise the win check |
@@ -240,7 +240,7 @@ Payway = the rule that maps reel-result to win amount. This is independent of to
 |:--|:--|
 | Mechanic | Player chooses how many of the available lines to play; bet scales accordingly |
 | Synonyms | Selectable lines; pay-per-line; coin-per-line |
-| First-ship vendor + year | IGT Multi-line video (early 1990s land); online ports late 1990s |
+| First-ship vendor + year | industry standard Multi-line video (early 1990s land); online ports late 1990s |
 | Topology | Same as fixed lines, but per-line bet flag |
 | State machine | `betPanel.changeLineCount → spin → resolveActiveLines → payout` |
 | RTP impact | RTP unchanged but jurisdictions (UK, DE) increasingly require all-lines-on |
@@ -255,7 +255,7 @@ Payway = the rule that maps reel-result to win amount. This is independent of to
 |:--|:--|
 | Mechanic | Lines pay in both directions; effectively doubles line-coverage |
 | Synonyms | Bothways; pay-both-ways; bi-directional; left-and-right |
-| First-ship vendor + year | NetEnt Starburst (2012); IGT Wolf Run (2010 land) |
+| First-ship vendor + year | NetEnt Starburst (2012); industry standard Wolf Run (2010 land) |
 | Topology | Standard 5×3 with 10 lines; bothways doubles effective hit count |
 | State machine | `spin → resolve LTR + RTL on same line set → aggregate → payout` |
 | RTP impact | Engineered into reel-strip weights; total RTP unchanged |
@@ -315,7 +315,7 @@ Payway = the rule that maps reel-result to win amount. This is independent of to
 |:--|:--|
 | Mechanic | Specific scatter symbol pays independently of payline / ways / adjacency, anywhere on the grid |
 | Synonyms | Scatter pay; bonus scatter; trigger symbol; free-spin scatter |
-| First-ship vendor + year | Industry-standard since 1980s electromechanical; first explicit "scatter" symbol attributed to IGT 1980s |
+| First-ship vendor + year | Industry-standard since 1980s electromechanical; first explicit "scatter" symbol attributed to industry standard 1980s |
 | Topology | Any |
 | State machine | `spin → count scatters → if ≥ T trigger feature OR pay scatter table → resolve` |
 | RTP impact | Typically 5–15 % of total RTP routes via scatter / bonus-trigger logic |
@@ -348,7 +348,7 @@ Each feature is one self-contained `src/blocks/<name>.mjs` in factory terms. The
 |:--|:--|
 | Mechanic | Award `N` extra spins on bonus-trigger; usually with a multiplier or replaced reel strip |
 | Synonyms | Free spins; bonus spins; free games; FS |
-| First-ship vendor + year | IGT Cleopatra (1998) — credited with popularising the modern free-spin feature |
+| First-ship vendor + year | industry standard Cleopatra (1998) — credited with popularising the modern free-spin feature |
 | Topology | Inherits base topology |
 | State machine | `baseSpin → triggerCheck (≥T scatters) → enterFS → loop FS spins → onFsEnd → returnToBase` |
 | RTP impact | Often 30–60 % of total RTP routed through FS |
@@ -438,7 +438,7 @@ Each feature is one self-contained `src/blocks/<name>.mjs` in factory terms. The
 |:--|:--|
 | Mechanic | Spin a segmented wheel; lands on prize / multiplier / jackpot tier |
 | Synonyms | Wheel bonus; bonus wheel; fortune wheel; mystery wheel |
-| First-ship vendor + year | IGT Wheel of Fortune (1996 land); online port 2010+; Aristocrat Wonder 4 Wonder Wheel (2014) |
+| First-ship vendor + year | industry standard Wheel of Fortune (1996 land); online port 2010+; Aristocrat Wonder 4 Wonder Wheel (2014) |
 | Topology | 24- or 36-segment ring overlay |
 | State machine | `enterWheel → spinWheel → decel → landSegment → resolveTier → exitWheel` |
 | RTP impact | Wheel return engineered into segment weights (typically 30–60 % of bonus RTP) |
@@ -528,7 +528,7 @@ Each feature is one self-contained `src/blocks/<name>.mjs` in factory terms. The
 |:--|:--|
 | Mechanic | Entire reel becomes wild on trigger; equivalent to expanding-wild for whole reel |
 | Synonyms | Full reel wild; wild reel; reel wild |
-| First-ship vendor + year | IGT Wheel of Fortune Triple Spin (2009 land); online ports since |
+| First-ship vendor + year | industry standard Wheel of Fortune Triple Spin (2009 land); online ports since |
 | Topology | Inherits |
 | State machine | `triggerEvent → markReelAsWild → resolveLines/ways with reel wildcard → pay` |
 | RTP impact | High concentrated; wild-reel triggers often 5–10 % of FS RTP |
@@ -558,7 +558,7 @@ Each feature is one self-contained `src/blocks/<name>.mjs` in factory terms. The
 |:--|:--|
 | Mechanic | One logical symbol occupies multiple cells (2×2, 3×3, 4×4) on the grid |
 | Synonyms | Super symbol; mega symbol; giant symbol; colossal symbol; block symbol |
-| First-ship vendor + year | IGT Super Stacks (2009); Bally Cash Wave (2010); WMS Colossal Reels (2011) |
+| First-ship vendor + year | industry standard Super Stacks (2009); Bally Cash Wave (2010); WMS Colossal Reels (2011) |
 | Topology | Inherits rectangular |
 | State machine | `spin → drawBigSymbolFromStrip → renderMask → expandToCellsForWaysCount → pay` |
 | RTP impact | Engineered into reel weights |
@@ -663,7 +663,7 @@ Each feature is one self-contained `src/blocks/<name>.mjs` in factory terms. The
 |:--|:--|
 | Mechanic | When `≥T-1` scatters have already landed and remaining reels are still spinning, those reels slow and pulse to build tension |
 | Synonyms | Reel pulse; anticipation reel; slow reel; scatter teaser; near-miss reel |
-| First-ship vendor + year | IGT MegaJackpots (2005 land); industry-standard since |
+| First-ship vendor + year | industry standard MegaJackpots (2005 land); industry-standard since |
 | Topology | Inherits |
 | State machine | `reelStops[k] → if scatterCount(0..k) ≥ T-1: extendSpinDuration for reels[k+1..N-1] → addPulseEffect` |
 | RTP impact | None; purely presentation |
@@ -678,7 +678,7 @@ Each feature is one self-contained `src/blocks/<name>.mjs` in factory terms. The
 |:--|:--|
 | Mechanic | Threshold-based win celebration tiers (industry vernacular: Nice / Big / Epic / Mega / Legendary / Ultimate; **factory internal: tier1..tier5** per CLAUDE.md HARD RULE) |
 | Synonyms | Win tiers; big-win banner; placard tier; win celebration tier |
-| First-ship vendor + year | IGT MegaJackpots celebration framework (2004 land); industry-standard since |
+| First-ship vendor + year | industry standard MegaJackpots celebration framework (2004 land); industry-standard since |
 | Topology | Independent of topology |
 | State machine | `winResolved → totalWin/totalBet ratio → mapToTier → enterTierAnimation → rollUp → exitTier → idle` |
 | RTP impact | None; purely presentation |
@@ -733,7 +733,7 @@ Each feature is one self-contained `src/blocks/<name>.mjs` in factory terms. The
 |:--|:--|
 | Mechanic | Jackpot pool grows with every wager (network or local seed); seeded at floor on hit |
 | Synonyms | Progressive jackpot; growing jackpot; pooled progressive |
-| First-ship vendor + year | IGT Megabucks (1986 land); Microgaming Cash Splash (1998 first online progressive); Mega Moolah (2006) |
+| First-ship vendor + year | industry standard Megabucks (1986 land); Microgaming Cash Splash (1998 first online progressive); Mega Moolah (2006) |
 | Topology | Independent; can be tied to any base game |
 | State machine | `everyWager → poolIncrement = bet × contribRate → onTrigger: payPool, resetToSeed` |
 | RTP impact | Contrib rate (typ 0.5–2 %) part of RTP; player-visible RTP excludes jackpot portion |
@@ -778,7 +778,7 @@ Each feature is one self-contained `src/blocks/<name>.mjs` in factory terms. The
 |:--|:--|
 | Mechanic | Jackpot pool aggregated across many operators / sites / players |
 | Synonyms | Network jackpot; wide-area progressive; WAP; pooled jackpot |
-| First-ship vendor + year | IGT Megabucks (1986 — first WAP); Microgaming Mega Moolah (2006 first network-wide online) |
+| First-ship vendor + year | industry standard Megabucks (1986 — first WAP); Microgaming Mega Moolah (2006 first network-wide online) |
 | Topology | Independent |
 | State machine | Same as progressive but contrib aggregates across N operators via central jackpot service |
 | RTP impact | RTP slice contributed by each operator; can be 0.5–2 % |
@@ -916,7 +916,7 @@ Each feature is one self-contained `src/blocks/<name>.mjs` in factory terms. The
 |:--|:--|
 | Mechanic | Per-reel motion profile composed of distinct phases for cinematic feel |
 | Synonyms | Spin curve; reel choreography; motion profile; spin tempo |
-| First-ship vendor + year | IGT s2000 cabinet (2003); standardised since |
+| First-ship vendor + year | industry standard s2000 cabinet (2003); standardised since |
 | State machine | `spinStart → windup (50–150 ms) → accel (100–250 ms) → steady (200–600 ms) → decel (150–300 ms) → stagger between reels (60–120 ms each) → settleBounce (60–120 ms) → idle` |
 | RTP impact | None |
 | Volatility | None |
@@ -958,7 +958,7 @@ Each feature is one self-contained `src/blocks/<name>.mjs` in factory terms. The
 |:--|:--|
 | Mechanic | Visible line drawn through winning symbols on the payline |
 | Synonyms | Line draw; payline trace; win line animation |
-| First-ship vendor + year | IGT video-slot era |
+| First-ship vendor + year | industry standard video-slot era |
 | State machine | `winResolved → for each winLine: drawSegmented(line, durationByLineLength) → clear after rollup` |
 | RTP impact | None |
 | Volatility | None |
@@ -972,7 +972,7 @@ Each feature is one self-contained `src/blocks/<name>.mjs` in factory terms. The
 |:--|:--|
 | Mechanic | Full-screen overlay celebrating tier-N win (see 3.23) |
 | Synonyms | Big-win banner; placard; celebration overlay; full-screen win |
-| First-ship vendor + year | IGT MegaJackpots (2004) reference |
+| First-ship vendor + year | industry standard MegaJackpots (2004) reference |
 | State machine | See 3.23 |
 | RTP impact | None |
 | Volatility | None |
@@ -1440,7 +1440,7 @@ Minimum fields per GDD for each mechanic in this catalog:
 The following names are BANNED in `slot-gdd-factory/src/**/*.mjs` (allowed in research notes such as this one and in `samples/` GDD fixtures only when the GDD is a vendor's own document):
 
 - "Megaways", "InfinityReels", "Wonder Wheel", "Cleopatra", "Buffalo", "Bonanza", "Gonzo's Quest"
-- "Aristocrat", "BTG", "Big Time Gaming", "NetEnt", "Pragmatic", "IGT", "Microgaming", "Yggdrasil", "ReelPlay", "Push Gaming", "Spribe", "Gaming Realms", "Light & Wonder", "Playson", "Relax", "BGaming", "3 Oaks", "Blueprint", "Evolution", "WMS", "Bally", "Novomatic"
+- "Aristocrat", "BTG", "Big Time Gaming", "NetEnt", "Pragmatic", "industry standard", "Microgaming", "Yggdrasil", "ReelPlay", "Push Gaming", "Spribe", "Gaming Realms", "Light & Wonder", "Playson", "Relax", "BGaming", "3 Oaks", "Blueprint", "Evolution", "WMS", "Bally", "Novomatic"
 - "Hold the Jackpot", "Drops & Wins", "Lightning Link", "Cash Express", "Dragon Link"
 - "Avalanche", "Cluster Pays" (trademark), "Splitz", "Gigablox", "MultiMax", "xWays", "GEMS"
 - "Nice / Big / Epic / Mega / Legendary / Ultimate" — use `tier1..tier5`

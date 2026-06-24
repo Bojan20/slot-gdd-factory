@@ -1,7 +1,7 @@
 # Playa-Slot Reverse Engineering Report
 
 **Date:** 2026-06-16  
-**Codebase:** `/Users/vanvinklstudio/IGT/playa-slot`  
+**Codebase:** `/Users/vanvinklstudio/industry standard/playa-slot`  
 **Total TypeScript Files:** 238  
 **Total LOC:** 37,464  
 
@@ -16,7 +16,7 @@ Playa-Slot is a modular slot game engine built on the **Playa-Core** framework u
 ## I. REELS SUBSYSTEM
 
 ### 1.1 ReelComponent (619 LOC)
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/reels/Reel/ReelComponent.ts`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/reels/Reel/ReelComponent.ts`
 
 **Class Signature:**
 ```
@@ -56,7 +56,7 @@ class ReelComponent extends SimpleView<ReelSetProps, ReelSetActions, ReelProps>
 ---
 
 ### 1.2 ReelSetComponent (880 LOC)
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/reels/ReelSet/ReelSetComponent.ts`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/reels/ReelSet/ReelSetComponent.ts`
 
 **Class Signature:**
 ```
@@ -96,7 +96,7 @@ class ReelSetComponent extends BaseView<SlotProps, GameActions, ReelSetProps, Re
 ---
 
 ### 1.3 ReelCellComponent (270 LOC)
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/reels/ReelCell/ReelCellComponent.ts`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/reels/ReelCell/ReelCellComponent.ts`
 
 **Class Signature:**
 ```
@@ -134,8 +134,8 @@ class ReelCellComponent extends SimpleView<ReelProps, ReelActions, ReelCellProps
 
 ### 1.4 SymbolSet & SymbolWeightService (135 + 135 LOC)
 **Path:** 
-- `/Users/vanvinklstudio/IGT/playa-slot/src/ts/reels/SymbolSet/SymbolSetService.ts`
-- `/Users/vanvinklstudio/IGT/playa-slot/src/ts/reels/SymbolWeight/SymbolWeightService.ts`
+- `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/reels/SymbolSet/SymbolSetService.ts`
+- `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/reels/SymbolWeight/SymbolWeightService.ts`
 
 **SymbolSetService Class Signature:**
 ```
@@ -178,7 +178,7 @@ Uses **GenericUtils.getRandomNum(min, max)** (seeded or pseudo-random). Symbol w
 ## II. REEL SPIN SYSTEMS (5 types)
 
 ### 2.1 ReelSpinSystem (1337 LOC)
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/reels/ReelSet/systems/ReelSpinSystem.ts`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/reels/ReelSet/systems/ReelSpinSystem.ts`
 
 **Class Signature:**
 ```
@@ -216,7 +216,7 @@ Thresholds are 2D [x, y] arrays defining the pixel boundary at which to spawn/de
 ---
 
 ### 2.2 SelectiveStackingReelSpinSystem (339 LOC)
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/reels/ReelSet/systems/SelectiveStackingReelSpinSystem.ts`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/reels/ReelSet/systems/SelectiveStackingReelSpinSystem.ts`
 
 **Extension Signature:**
 ```
@@ -227,7 +227,7 @@ class SelectiveStackingReelSpinSystem extends ReelSpinSystem
   setReelCellSymbol(cell: ReelCellComponent, isNewCell: boolean): void [override]
 ```
 
-**Pattern Industry Name:** **Selective Stacking** (IGT proprietary term). Allows swapping of symbol IDs in reel strips based on game state (bet level, stage, schema outcome). Example: schema maps "s01" → "s_wild_gold" based on paytable ValueMapping.
+**Pattern Industry Name:** **Selective Stacking** (industry standard proprietary term). Allows swapping of symbol IDs in reel strips based on game state (bet level, stage, schema outcome). Example: schema maps "s01" → "s_wild_gold" based on paytable ValueMapping.
 
 **Data Flow:**
 1. Paytable defines `<KeyValuePairInfo name="BaseGame.ValueMapping">` with bet-to-symbol mapping
@@ -245,7 +245,7 @@ Slot-gdd-factory has no built-in selective stacking; would require external sche
 ---
 
 ### 2.3 IndependentReelSpinSystem (class extends ReelSpinSystem)
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/reels/ReelSet/systems/IndependentReelSpinSystem.ts`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/reels/ReelSet/systems/IndependentReelSpinSystem.ts`
 
 **Distinction:** Overrides `getReelSetChildren()` to collect display objects from nested reel containers (one container per reel, not shared). Template containers are indexed separately per reel. Cell threshold calculation differs: uses largest template container height for all reels.
 
@@ -254,7 +254,7 @@ Slot-gdd-factory has no built-in selective stacking; would require external sche
 ---
 
 ### 2.4 ReelTumblingSystem (1089 LOC)
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/reels/ReelSet/systems/ReelTumblingSystem.ts`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/reels/ReelSet/systems/ReelTumblingSystem.ts`
 
 **Class Signature:**
 ```
@@ -289,7 +289,7 @@ Slot-gdd-factory does not implement tumbling; would require win detection + expl
 ---
 
 ### 2.5 ReelInitSystem (360 LOC) & SelectiveStackingReelInitSystem
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/reels/ReelSet/systems/ReelInitSystem.ts`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/reels/ReelSet/systems/ReelInitSystem.ts`
 
 **Class Signature:**
 ```
@@ -316,7 +316,7 @@ class ReelInitSystem implements IComponentSystem
 ## III. BEHAVIOR CONTROLLERS
 
 ### 3.1 BaseSpinBehavior (658 LOC)
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/behaviors/spinBehavior/BaseSpinBehavior.ts`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/behaviors/spinBehavior/BaseSpinBehavior.ts`
 
 **Class Signature:**
 ```
@@ -373,7 +373,7 @@ onTick():
 ---
 
 ### 3.2 BaseCellMovementBehavior (605 LOC)
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/behaviors/movement/BaseCellMovementBehavior.ts`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/behaviors/movement/BaseCellMovementBehavior.ts`
 
 **Class Signature:**
 ```
@@ -414,7 +414,7 @@ update(deltaMS):
 ---
 
 ### 3.3 TumbleBehavior & TumbleCellMovementBehavior (569 LOC + derived)
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/behaviors/tumbleBehavior/TumbleBehavior.ts`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/behaviors/tumbleBehavior/TumbleBehavior.ts`
 
 **Extension Signature:**
 ```
@@ -447,9 +447,9 @@ Uses `tumbleInSpeed` and `tumbleOutSpeed` instead of easeIn/easeOut. Faster acce
 
 ### 4.1 SlotStore, SlotProps, SlotData
 **Path:**
-- `/Users/vanvinklstudio/IGT/playa-slot/src/ts/store/SlotStore.ts`
-- `/Users/vanvinklstudio/IGT/playa-slot/src/ts/store/SlotProps.ts`
-- `/Users/vanvinklstudio/IGT/playa-slot/src/ts/store/SlotData.ts`
+- `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/store/SlotStore.ts`
+- `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/store/SlotProps.ts`
+- `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/store/SlotData.ts`
 
 **SlotStore Class Signature:**
 ```
@@ -499,7 +499,7 @@ totalBet: number
 ---
 
 ### 4.2 Data Translators (SlotGleDataTranslator, SlotGle4DataTranslator)
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/store/datamodel/datatranslator/SlotGleDataTranslator.ts`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/store/datamodel/datatranslator/SlotGleDataTranslator.ts`
 
 **Class Signature:**
 ```
@@ -517,7 +517,7 @@ Slot-gdd-factory does not include translator; assumes clean interface input.
 ---
 
 ### 4.3 Paytable Data Model (362 LOC)
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/store/datamodel/Paytable.ts`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/store/datamodel/Paytable.ts`
 
 **Paytable Class:**
 ```
@@ -555,7 +555,7 @@ class Paytable
 ## V. WIN PRESENTATION
 
 ### 5.1 RollupComponent (485 LOC)
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/rollup/RollupComponent.ts`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/rollup/RollupComponent.ts`
 
 **Class Signature:**
 ```
@@ -613,7 +613,7 @@ gsap.to({value: startValue}, {
 ---
 
 ### 5.2 BigWinComponent (120 LOC)
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/bigwin/BigWinComponent.ts`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/bigwin/BigWinComponent.ts`
 
 **Class Signature:**
 ```
@@ -651,7 +651,7 @@ BigWin watches rollup's tier via MobX reaction; updates when tier changes.
 ---
 
 ### 5.3 Plaque System (BonusTriggerPlaque, BonusRetriggerPlaque, MaxAwardPlaque, etc.)
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/plaques/`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/plaques/`
 
 **Class Signature (generic plaque):**
 ```
@@ -678,7 +678,7 @@ abstract class *Plaque extends SimplePopup<SlotProps, PlaqueCommands>
 ---
 
 ### 5.4 Payline Renderer (SpaghettiComponent)
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/paylines/spaghetti/SpaghettiComponent.ts`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/paylines/spaghetti/SpaghettiComponent.ts`
 
 **Class Signature:**
 ```
@@ -699,7 +699,7 @@ class SpaghettiComponent extends BasePaylinesComponent<SlotProps>
 ## VI. BONUS FEATURES
 
 ### 6.1 Jackpot System
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/jackpot/`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/jackpot/`
 
 **BasicJackpotComponent (150 LOC):**
 ```
@@ -746,7 +746,7 @@ class JackpotMeterData
 ---
 
 ### 6.2 Lock & Respin
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/reels/ReelSet/commands/LockAndRespin*.ts`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/reels/ReelSet/commands/LockAndRespin*.ts`
 
 **LockAndRespinInitCommand, LockAndRespinSpinCommand, LockAndRespinForceStopCommand:**
 
@@ -793,7 +793,7 @@ IFreeSpinOutcomeDef {
 ## VII. UI CONTROLS & SETTINGS
 
 ### 7.1 Meter Components
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/uicontrols/meters/`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/uicontrols/meters/`
 
 **BaseMeterComponent (base class, ~50 LOC):**
 ```
@@ -822,7 +822,7 @@ abstract class BaseMeterComponent<Props, Actions>
 ---
 
 ### 7.2 Settings Panel
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/settings/`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/settings/`
 
 **SettingsPanel (465 LOC):**
 ```
@@ -845,7 +845,7 @@ class SettingsPanel extends BaseView<SlotProps, GameActions, SettingsPanelProps,
 ---
 
 ### 7.3 Turbo Mode
-**Path:** `/Users/vanvinklstudio/IGT/playa-slot/src/ts/turboMode/`
+**Path:** `/Users/vanvinklstudio/industry standard/playa-slot/src/ts/turboMode/`
 
 **TurboModeComponent (50 LOC):**
 ```

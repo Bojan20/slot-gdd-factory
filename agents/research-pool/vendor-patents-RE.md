@@ -15,7 +15,7 @@
 | 1  | Patent Methodology                                          | n/a                            |
 | 2  | Big Time Gaming · Megaways                                  | `variableWays`                 |
 | 3  | Aristocrat · Lightning Link / Hyperlink                     | `holdAndRespin`                |
-| 4  | IGT · MultiWay Xtra / Stinkin' Rich                         | `multiwayStack`                |
+| 4  | industry standard · MultiWay Xtra / Stinkin' Rich                         | `multiwayStack`                |
 | 5  | Scientific Games · Stepper / Reel Power                     | `allWaysEvaluator`             |
 | 6  | WMS · Adaptive Gaming / Personality Game                    | `adaptiveFeatureTrigger`       |
 | 7  | NetEnt · Cluster Pays                                       | `clusterPays`                  |
@@ -147,7 +147,7 @@ A clean-room implementation must:
 
 | Element                                  | Safe?                                                  | Reasoning                                                                |
 |:-----------------------------------------|:-------------------------------------------------------|:-------------------------------------------------------------------------|
-| Fixed-positions ways engine              | Yes                                                    | Pre-dates patent (IGT 243-ways).                                         |
+| Fixed-positions ways engine              | Yes                                                    | Pre-dates patent (industry standard 243-ways).                                         |
 | Variable-positions ways engine, post-expiration | Yes (post-June 2024)                            | Patent expired.                                                          |
 | Calling it "Megaways" without license    | No                                                     | Trademark, separate from patent.                                         |
 | Calling it "variable-ways" / "shifting-ways" | Yes                                                | Generic descriptive term.                                                |
@@ -159,7 +159,7 @@ A mystery symbol is a placeholder that, when revealed, transforms into a chosen 
 
 | Element                  | Patent coverage gist                                                              | Safe to clone?                          |
 |:-------------------------|:----------------------------------------------------------------------------------|:----------------------------------------|
-| Mystery placeholder      | Generic, pre-existing prior art (e.g. older IGT mystery wilds).                   | Yes.                                    |
+| Mystery placeholder      | Generic, pre-existing prior art (e.g. older industry standard mystery wilds).                   | Yes.                                    |
 | One-symbol-per-spin reveal | Covered as a dependent claim in the Megaways family.                            | Post-expiration: yes.                   |
 | Mystery as a wild        | Pre-existing; not unique to Megaways.                                            | Yes.                                    |
 
@@ -267,7 +267,7 @@ The skeleton above does not include the carriage reel or the cascading multiplie
 
 ### 3.4 Claim Cluster (c) Progressive Ladder
 
-The mini/minor/major/grand ladder pattern is old prior art (IGT MegaJackpots, WMS, late 1990s). Aristocrat's defensible scope is the **combination** of ladder + collect-orbs + reset-respins.
+The mini/minor/major/grand ladder pattern is old prior art (industry standard MegaJackpots, WMS, late 1990s). Aristocrat's defensible scope is the **combination** of ladder + collect-orbs + reset-respins.
 
 ### 3.5 Claim Cluster (d) Re-Spin Trigger Condition
 
@@ -279,7 +279,7 @@ The mini/minor/major/grand ladder pattern is old prior art (IGT MegaJackpots, WM
 
 ### 3.6 Lock-and-Respin Generic Pattern
 
-A lock-and-respin pattern is generic and pre-existing (IGT held earlier patents on hold-and-spin from the early 2000s). The Aristocrat patents do **not** cover lock-and-respin generically. They cover specific combinations with the collect/orb mechanic, reset-on-land, and tier-ladder reveal.
+A lock-and-respin pattern is generic and pre-existing (industry standard held earlier patents on hold-and-spin from the early 2000s). The Aristocrat patents do **not** cover lock-and-respin generically. They cover specific combinations with the collect/orb mechanic, reset-on-land, and tier-ladder reveal.
 
 ### 3.7 Defensible vs. Inventive Scope
 
@@ -334,9 +334,9 @@ export default {
 
 ---
 
-## 4. IGT · MultiWay Xtra / Stinkin' Rich expansion
+## 4. industry standard · MultiWay Xtra / Stinkin' Rich expansion
 
-**Vendor:** IGT (generic: multi-symbol-per-reel ways evaluator).
+**Vendor:** industry standard (generic: multi-symbol-per-reel ways evaluator).
 **Block-kind impacted:** `multiwayStack`.
 
 ### 4.1 Patent Family
@@ -371,20 +371,20 @@ MultiWay Xtra's distinguishing element is the **multi-symbol contribution per re
 |:---------------------|:---------------|:------------------------|:------------------------------|
 | Classic 243-ways     | 3              | 243                     | Generic — old prior art.      |
 | 1024-ways            | 4              | 1024                    | Generic — old prior art.      |
-| MultiWay Xtra        | 4              | 1024 (with stacking math)| IGT family in §4.1.          |
+| MultiWay Xtra        | 4              | 1024 (with stacking math)| industry standard family in §4.1.          |
 | Megaways (BTG)       | 2..7 variable  | 117,649                 | Separate family — see §2.     |
 
 ### 4.4 Stack-Based Payout Calculation
 
-The IGT engine multiplies the **count of matching symbols on each reel** rather than awarding one win per payline. This dramatically changes presentation:
+The industry standard engine multiplies the **count of matching symbols on each reel** rather than awarding one win per payline. This dramatically changes presentation:
 
 - Multiple wins per reel-strip rather than per-line.
 - "Each way" of a pay is counted separately and summed.
 - Display of "ways won" rather than "lines won".
 
-### 4.5 Where IGT Licenses vs. Independent Invention
+### 4.5 Where industry standard Licenses vs. Independent Invention
 
-IGT broadly licenses MultiWay Xtra for land-based products. Online catalogues commonly avoid the patent by:
+industry standard broadly licenses MultiWay Xtra for land-based products. Online catalogues commonly avoid the patent by:
 
 - Implementing 243/1024-ways (generic) and skipping stack-aware multipliers.
 - Implementing variable-ways (Megaways family) and licensing/using-after-expiration.
@@ -423,7 +423,7 @@ This implementation uses ways-product math — the same arithmetic used by the g
 
 | Question                                                                       | Why it matters                                          |
 |:-------------------------------------------------------------------------------|:--------------------------------------------------------|
-| Has US 6997804 entered terminal disclaimer territory with later IGT filings?   | Would reset expiration.                                 |
+| Has US 6997804 entered terminal disclaimer territory with later industry standard filings?   | Would reset expiration.                                 |
 | What is the EPO family member number?                                          | EU market exposure.                                     |
 | Does "stack" include 2x1 mega-symbols, or only 3+ positions?                   | Determines whether mega-symbol layouts infringe.        |
 
@@ -700,7 +700,7 @@ Tiered progressive pools are generic prior art. The Dream Drop family allegedly 
 | Cross-game pool (multiple game IDs feed same pool).                                            |
 | Triggering mechanic uses dedicated symbol distinct from regular bonus.                         |
 
-The cross-game pool is the most defensible inventive step. Generic per-game tiered jackpots are old prior art (IGT MegaJackpots, WMS, etc.).
+The cross-game pool is the most defensible inventive step. Generic per-game tiered jackpots are old prior art (industry standard MegaJackpots, WMS, etc.).
 
 ### 9.3 Bonus-Buy + Jackpot Interaction
 
@@ -942,7 +942,7 @@ Hold-and-respin patterns have multiple prior art roots:
 | Source                                  | Approximate date      | Description                                          |
 |:----------------------------------------|:----------------------|:-----------------------------------------------------|
 | Land-based "hold" buttons               | 1970s–80s (UK AWP)    | Player presses "hold" to lock a reel.                |
-| IGT respin variants                     | Early 2000s           | Mystery feature lock-and-respin.                     |
+| industry standard respin variants                     | Early 2000s           | Mystery feature lock-and-respin.                     |
 | Konami respin variants                  | Mid-2000s             | Trigger-symbol lock with respin counter.             |
 | WMS respin variants                     | Mid-2000s             | Various lock-and-spin themes.                        |
 | Aristocrat Lightning Link               | 2014+                 | The specific orb-collect + reset-on-land pattern.    |
@@ -1006,8 +1006,8 @@ export default {
 | 3   | `[Patent: AU 2014203832]`  | 2014    | 2016+   | ~2034          | Aristocrat           | AU           | `holdAndRespin`            | `[unverified]` |
 | 3   | `[Patent: US 9633511]`     | ~2013   | 2017    | ~2033          | Aristocrat           | US           | `holdAndRespin`            | `[unverified]` |
 | 3   | `[Patent: US 9165433]`     | ~2013   | 2015    | ~2033          | Aristocrat           | US           | `holdAndRespin`            | `[unverified]` |
-| 4   | `[Patent: US 6997804]`     | ~2002   | 2006    | ~2022 (EXPIRED) | IGT                 | US           | `multiwayStack`            | `[unverified]` |
-| 4   | `[Patent: US 7014557]`     | ~2003   | 2006    | ~2023 (EXPIRED) | IGT                 | US           | `multiwayStack`            | `[unverified]` |
+| 4   | `[Patent: US 6997804]`     | ~2002   | 2006    | ~2022 (EXPIRED) | industry standard                 | US           | `multiwayStack`            | `[unverified]` |
+| 4   | `[Patent: US 7014557]`     | ~2003   | 2006    | ~2023 (EXPIRED) | industry standard                 | US           | `multiwayStack`            | `[unverified]` |
 | 5   | `[Patent: unknown — needs lookup]` | — | — | — | Scientific Games / Aristocrat | — | `allWaysEvaluator` | `[unverified]` |
 | 6   | `[Patent: unknown — needs lookup]` | — | — | — | WMS / Light & Wonder | — | `adaptiveFeatureTrigger`   | `[unverified]` |
 | 7   | `[Patent: unknown — needs lookup]` | — | — | — | NetEnt              | EU           | `clusterPays`              | `[unverified]` |
@@ -1031,8 +1031,8 @@ The factory should treat the expiration column as **indicative only**. Counsel m
 
 | Year    | Event (likely)                                                                                |
 |:--------|:----------------------------------------------------------------------------------------------|
-| 2022    | Some early IGT MultiWay patents enter end-of-term.                                            |
-| 2023    | IGT US 7014557 likely expired.                                                                |
+| 2022    | Some early industry standard MultiWay patents enter end-of-term.                                            |
+| 2023    | industry standard US 7014557 likely expired.                                                                |
 | 2024 H1 | **Big Time Gaming NZ 716804 expires (June 2024).** Major industry pivot.                       |
 | 2025–28 | NetEnt cluster family early members likely approach expiration.                                |
 | 2030+   | Aristocrat Lightning Link family early members approach expiration.                            |
@@ -1061,9 +1061,9 @@ The factory should treat the expiration column as **indicative only**. Counsel m
 | Orb-collect symbol pattern                         | Conditional (counsel)          | Combined with reset-on-land = high risk.                       |
 | Reset-on-land respin counter                       | No                             | Core inventive step; avoid.                                    |
 | Tier-ladder reveal (mini/minor/major/grand)        | Conditional                    | Combined with orb-collect = high risk.                         |
-| Cross-terminal jackpot pool                        | Yes                            | Old prior art (IGT MegaJackpots-era).                          |
+| Cross-terminal jackpot pool                        | Yes                            | Old prior art (industry standard MegaJackpots-era).                          |
 
-### 15.3 §4 IGT · MultiWay Xtra
+### 15.3 §4 industry standard · MultiWay Xtra
 
 | Element                                            | Safe?                          | Notes                                                          |
 |:---------------------------------------------------|:-------------------------------|:---------------------------------------------------------------|
@@ -1289,7 +1289,7 @@ Next mandatory review: 2027-06-16 (one year from creation).
 |:----------------------------|:---------------------|:-----------------------------------------------------------|:-----------------------------------------------------------|
 | `variableWays`              | §2                   | Low (expired NZ 716804).                                   | `cascadeEngine`, `unlimitedMultiplier`, `carriageReel`.    |
 | `holdAndRespin`             | §3, §13              | High when combined with reset-on-land + tier reveal.       | `bonusOrbCollect`, `progressiveDropJackpot`.               |
-| `multiwayStack`             | §4                   | Low to medium (some IGT US patents expired).               | `wildSubstitution`, `cascadeEngine`.                       |
+| `multiwayStack`             | §4                   | Low to medium (some industry standard US patents expired).               | `wildSubstitution`, `cascadeEngine`.                       |
 | `allWaysEvaluator`          | §5                   | Low (generic).                                             | `anchoredWildReel`, `adjacencyMode`.                       |
 | `adaptiveFeatureTrigger`    | §6                   | Banned in regulated markets.                               | None (do not implement).                                   |
 | `clusterPays`               | §7                   | Medium (vendor families active).                           | `cascadeEngine`, `cascadeMultiplier`.                      |
@@ -1390,7 +1390,7 @@ Before any agent emits a GDD section citing this file, verify:
 | Malta          | Aristocrat, NetEnt, Yggdrasil, Relax.                                       | MGA aligns with UK on profile.                     |
 | New Jersey     | All vendor families; strong enforcement.                                    | DGE-approved RNG required.                         |
 | Australia      | Aristocrat (home jurisdiction), Light & Wonder.                             | Hardest market for clones.                         |
-| Canada (ON)    | Aristocrat, Light & Wonder, IGT.                                            | AGCO-aligned; vendor IP enforced.                  |
+| Canada (ON)    | Aristocrat, Light & Wonder, industry standard.                                            | AGCO-aligned; vendor IP enforced.                  |
 | Sweden         | NetEnt (home), Yggdrasil (home).                                            | Spelinspektionen RNG certification required.       |
 | Curacao        | Provably-fair acceptable; vendor patent enforcement low.                    | Highest tolerance for clones.                      |
 

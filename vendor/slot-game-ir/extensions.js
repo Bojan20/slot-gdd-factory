@@ -15,7 +15,7 @@
  *   15.A.9  ReelSetSelector        — weighted reel-set variant selection
  *   15.A.10 ExtrasBag              — ad-hoc forward-compat key/value storage
  *
- * Naming policy: every exported identifier is engine-generic (no IGT,
+ * Naming policy: every exported identifier is engine-generic (no industry standard,
  * Aristocrat, BTG, NetEnt, or Pragmatic vendor terms). Validators are
  * Zod-based for runtime safety and produce structured error reports
  * suitable for jurisdiction reviewers.

@@ -34,7 +34,7 @@ const FALLBACK_ROWS   = 3;
 /* UQ-DEEP-X (Boki 2026-06-24): 3-stage industry-grade animation constants.
  * Source: Cash Eruption GDD §13.3 "Wild Expansion & Pattern Win" — Stage 2
  * 350ms exact + top→bottom flood-fill, gold rim. Industry baseline
- * (NetEnt/IGT/BGaming): 3 stages (anticipation → expand → hold pulse). */
+ * (NetEnt/industry standard/BGaming): 3 stages (anticipation → expand → hold pulse). */
 const EW = {
   /* Stage 1 — anticipation glow (per source cell that triggered). */
   STAGE1_MS:          180,

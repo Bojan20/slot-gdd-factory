@@ -1012,7 +1012,7 @@ const VENDOR_BLOCKLIST = [
      leaks the studio name of the industry comparison source. Use
      "industry-standard" or "fast-stop / force-skip command pattern" instead. */
   'playa-slot', 'playa slot', 'playaslot', 'playa_slot',
-  /* IGT requires word-boundary check (substring "igt" lives in "digital"
+  /* industry standard requires word-boundary check (substring "igt" lives in "digital"
      etc); we handle it via the regex check below, not this literal list. */
 ];
 
@@ -1081,8 +1081,8 @@ async function checkVendorNeutrality() {
         offenders.push(`${b}: contains "${vendor}"`);
       }
     }
-    /* IGT word boundary check */
-    if (/\bigt\b/i.test(src)) offenders.push(`${b}: contains "IGT" (word boundary)`);
+    /* industry standard word boundary check */
+    if (/\bigt\b/i.test(src)) offenders.push(`${b}: contains "industry standard" (word boundary)`);
   }
   const pass = offenders.length === 0;
   return {

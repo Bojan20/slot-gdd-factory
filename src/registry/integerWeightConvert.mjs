@@ -1,24 +1,24 @@
 /**
  * src/registry/integerWeightConvert.mjs
  *
- * UQ-DEEP-AG · IGT-grade integer-weight conversion (Boki 2026-06-24).
+ * UQ-DEEP-AG · industry-grade integer-weight conversion (Boki 2026-06-24).
  *
- * IGT math server (GLE) is INTEGER-ONLY. Float probabilities cause:
+ * industry math server (GLE) is INTEGER-ONLY. Float probabilities cause:
  *   • Silent rejection by SGS validator (`cmd=113`)
  *   • Rounding drift in stop-distribution sampler (±0.05% RTP)
  *   • Non-reproducible runs across architectures
  *
- * IGT contract (`IGT_SLOT_GAME_SETTINGS_CONTRACT.md` §4.8 + P2.1):
+ * industry contract (`industry-settings-contract.md` §4.8 + P2.1):
  *   Per-element scale by 10^k where k = max(decimals across all elements).
  *   Decimal count via Number.toString() (preserves "1e-7" scientific notation
- *   footgun — IGT QA tools rely on this exact quirk).
+ *   footgun — industry QA tools rely on this exact quirk).
  *
- * Vendor-neutral implementation — no IGT symbol references in output, only
+ * Vendor-neutral implementation — no symbol references in output, only
  * the math contract.
  */
 
-/* IGT-equivalent of `getDecimalsCountForNumber(n)`. JavaScript toString()
- * may yield "0.0000001" for 1e-7 or "1e-7" depending on magnitude. IGT
+/* wire-equivalent of `getDecimalsCountForNumber(n)`. JavaScript toString()
+ * may yield "0.0000001" for 1e-7 or "1e-7" depending on magnitude. industry standard
  * QA accepts both via this branch logic — we reproduce it byte-for-byte. */
 export function getDecimalsCountForNumber(n) {
   if (typeof n !== 'number' || !Number.isFinite(n)) return 0;
@@ -51,7 +51,7 @@ export function maxDecimalsInArray(arr) {
 }
 
 /**
- * UQ-DEEP-AG · IGT `convertToServerValues(arr)` byte-equivalent.
+ * UQ-DEEP-AG · industry standard `convertToServerValues(arr)` byte-equivalent.
  *
  * For an array of floats (probabilities/weights), find the maximum decimal
  * count and multiply every element by 10^maxDecimals to get an integer

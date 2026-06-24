@@ -44,9 +44,9 @@ if (!BINARY) {
   process.exit(1);
 }
 
-/* LV3-11 — anti-vendor sanitize. Industry-trademarked names ne smeju
+/* LV3-11 — anti-vendor sanitize. Vendor-trademarked names ne smeju
  * leak-ovati kroz backend response (Cash Eruption / Wolf Run / Cleopatra
- * / Pragmatic Play / IGT / Light & Wonder / Megaways / NetEnt). Backend
+ * / Pragmatic Play / industry standard / Light & Wonder / Megaways / NetEnt). Backend
  * response je tehnički numeric, ali binary path + future debug fields
  * MOGU da sadrže trademark strings ako operator drži repo u Vendor-
  * Imenovanom folder-u. Scrub before send. */
@@ -977,9 +977,9 @@ const server = http.createServer(async (req, res) => {
       }
       const session = await ensureSession(sidRaw, body.model || {});
       const outcome = samplePerSpin(session);
-      /* UQ-DEEP-AG: emit IGT-compatible GameLogicResponse envelope on opt-in.
+      /* UQ-DEEP-AG: emit wire-compatible GameLogicResponse envelope on opt-in.
        * Legacy clients (existing browser BSP_MODEL) ne traže `gle:true` pa
-       * dobijaju starograno flat blob (back-compat). IGT-grade klijenti
+       * dobijaju starograno flat blob (back-compat). industry-grade klijenti
        * dobijaju OutcomeDetail{transactionId, stage, nextStage, gameStatus,
        * settled, pending, payout} + paytableHash + sessionId echo. */
       const includeGle = body.gle === true || body.emitGle === true;
@@ -1005,10 +1005,10 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, baseResponse, origin);
     }
 
-    /* UQ-DEEP-AG · IGT-compatible serverConfig kompajler endpoint.
+    /* UQ-DEEP-AG · wire-compatible serverConfig kompajler endpoint.
      * POST /serverConfig { model } → { serverConfig, paytableHash, gleVersion }
      * Klijent može da snima paytable hash za regulator audit i da koristi
-     * lines flatten + gain_table + special_symbols u IGT GLE handshake. */
+     * lines flatten + gain_table + special_symbols u industry math handshake. */
     if (req.method === 'POST' && p === '/serverConfig') {
       const body = await readJsonBody(req);
       const model = body.model || {};

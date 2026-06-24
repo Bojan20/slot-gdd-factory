@@ -23,7 +23,7 @@ agent that explains *why* a violation matters and *where* to fix it.
   `onSpinResult` / `onTumbleStep` / `onFsTrigger` / `onFsSpinResult` /
   `onFsEnd`) is flagged.
 - Enforce **vendor-neutral language** across `src/`, `agents/`, GDD
-  templates, PAR sheets, sales output — banned tokens: IGT, Pragmatic,
+  templates, PAR sheets, sales output — banned tokens: industry standard, Pragmatic,
   Cash Eruption, Wolf Run, Cleopatra, Buffalo, Megaways, L&W,
   NetEnt, Microgaming, Scientific Games, plus title-name leakage in
   comments.

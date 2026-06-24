@@ -50,7 +50,7 @@ t('emitSlingoSpinEngineRuntime: registers slingo + listens preSpin', () => {
 
 t('vendor neutrality', () => {
   const blob = emitSlingoSpinEngineCSS(defaultConfig()) + emitSlingoSpinEngineRuntime(defaultConfig());
-  for (const v of ['IGT','Pragmatic','Cleopatra','Megaways','Olympus','playa-slot']) {
+  for (const v of ['industry standard','Pragmatic','Cleopatra','Megaways','Olympus','playa-slot']) {
     nct(blob, v, `vendor leak: ${v}`);
   }
 });

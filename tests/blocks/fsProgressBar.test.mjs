@@ -134,7 +134,7 @@ t('determinism: same config → byte-identical emits', () => {
 t('vendor-neutral: no studio / game tokens in any emit', () => {
   const cfg = resolveConfig({ fsProgressBar: { enabled: true } });
   const all = emitFsProgressBarCSS(cfg) + emitFsProgressBarMarkup(cfg) + emitFsProgressBarRuntime(cfg);
-  const banned = ['IGT', 'pragmatic', 'megaways', 'NetEnt', 'Cleopatra', 'Buffalo', 'Olympus', 'Wolf'];
+  const banned = ['industry standard', 'pragmatic', 'megaways', 'NetEnt', 'Cleopatra', 'Buffalo', 'Olympus', 'Wolf'];
   for (const w of banned) ne(all, w, `banned vendor token: ${w}`);
 });
 

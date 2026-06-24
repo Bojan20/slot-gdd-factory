@@ -1,0 +1,147 @@
+{
+  "source": "/Users/vanvinklstudio/Desktop/ParSheets/ParSheets_CashEruption 1.xlsx",
+  "sheet": "PAR-001",
+  "title": "Cash Eruption ",
+  "topology": "3x5 Reels / 20 Lines",
+  "swid": "200-1637-001",
+  "symbols": [
+    "Wild",
+    "Red7",
+    "Blue7",
+    "Bell",
+    "Melon",
+    "Grapes",
+    "Plum",
+    "Orange",
+    "Lemon",
+    "Cherry",
+    "Volcano",
+    "Fireball"
+  ],
+  "per_reel_weights": {
+    "reel0": {
+      "Wild": 0.0,
+      "Red7": 10392.9115,
+      "Blue7": 6040.6045,
+      "Bell": 8878.8033,
+      "Melon": 6731.2587,
+      "Grapes": 8789.8752,
+      "Plum": 12603.4082,
+      "Orange": 11510.1942,
+      "Lemon": 10657.5314,
+      "Cherry": 11162.5724,
+      "Volcano": 1855.6238,
+      "Fireball": 11377.2168
+    },
+    "reel1": {
+      "Wild": 3445.6697,
+      "Red7": 9389.6353,
+      "Blue7": 8306.2753,
+      "Bell": 5687.9852,
+      "Melon": 7677.8438,
+      "Grapes": 8635.4619,
+      "Plum": 9846.2817,
+      "Orange": 9292.7456,
+      "Lemon": 14065.7888,
+      "Cherry": 9853.1336,
+      "Volcano": 1541.396,
+      "Fireball": 12257.783
+    },
+    "reel2": {
+      "Wild": 1969.5362,
+      "Red7": 8575.212,
+      "Blue7": 8127.2023,
+      "Bell": 6112.9378,
+      "Melon": 5860.5776,
+      "Grapes": 12965.2825,
+      "Plum": 10009.4663,
+      "Orange": 10538.1209,
+      "Lemon": 9956.5429,
+      "Cherry": 10262.2184,
+      "Volcano": 1893.696,
+      "Fireball": 13729.2071
+    },
+    "reel3": {
+      "Wild": 2699.5809,
+      "Red7": 7991.4276,
+      "Blue7": 6285.6027,
+      "Bell": 6464.8654,
+      "Melon": 8275.9642,
+      "Grapes": 8552.128,
+      "Plum": 9254.7195,
+      "Orange": 10423.4443,
+      "Lemon": 12378.4957,
+      "Cherry": 10575.2635,
+      "Volcano": 1926.114,
+      "Fireball": 15172.3942
+    },
+    "reel4": {
+      "Wild": 1765.8118,
+      "Red7": 9017.885,
+      "Blue7": 8391.1702,
+      "Bell": 6959.4055,
+      "Melon": 7922.032,
+      "Grapes": 12269.8471,
+      "Plum": 12558.4683,
+      "Orange": 11864.9925,
+      "Lemon": 11798.7649,
+      "Cherry": 12231.0852,
+      "Volcano": 1888.0778,
+      "Fireball": 3332.4597
+    }
+  },
+  "per_reel_totals": {
+    "reel0": 100000.0,
+    "reel1": 100000.0,
+    "reel2": 100000.0,
+    "reel3": 100000.0,
+    "reel4": 100000.0
+  },
+  "paytable": {
+    "Red7": {
+      "5": 250,
+      "4": 50,
+      "3": 10
+    },
+    "Blue7": {
+      "5": 200,
+      "4": 30,
+      "3": 10
+    },
+    "Bell": {
+      "5": 100,
+      "4": 25,
+      "3": 10
+    },
+    "Melon": {
+      "5": 100,
+      "4": 25,
+      "3": 10
+    },
+    "Grapes": {
+      "5": 75,
+      "4": 20,
+      "3": 5
+    },
+    "Plum": {
+      "5": 50,
+      "4": 15,
+      "3": 5
+    },
+    "Orange": {
+      "5": 50,
+      "4": 15,
+      "3": 5
+    },
+    "Lemon": {
+      "5": 40,
+      "4": 10,
+      "3": 5
+    },
+    "Cherry": {
+      "5": 40,
+      "4": 10,
+      "3": 5
+    }
+  }
+}

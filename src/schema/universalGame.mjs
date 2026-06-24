@@ -35,7 +35,7 @@
  *
  * HARD RULE #1 (vendor-neutral)
  *   No vendor product name appears in field names or enum literals. Vendor
- *   marks (IGT/Pragmatic/L&W/Microgaming) only appear in commentary, never
+ *   marks (industry standard/Pragmatic/L&W/Microgaming) only appear in commentary, never
  *   in `.shape` exports. PAR sheet vendor adapters convert into this shape.
  *
  * Public API

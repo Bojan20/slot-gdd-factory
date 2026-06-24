@@ -61,7 +61,7 @@ Senior-grade contract (rule_senior_grade_code from this repo):
 - 100% test coverage of public API
 - performance budget stated
 - accessibility default-on (prefers-reduced-motion, ARIA)
-- vendor-neutral (no IGT/Pragmatic/NetEnt/etc strings)
+- vendor-neutral (no industry standard/Pragmatic/NetEnt/etc strings)
 - byte-identical CSS / runtime determinism
 
 LEGO discipline (rule_slot_gdd_lego_blocks):

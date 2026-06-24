@@ -93,7 +93,7 @@ test('Severity: plain MD report → HIGH', () => {
   const line = 'This slot is similar to IGT Cleopatra.';
   const findings = scanContent(line, 'reports/regulator-one-pager.md');
   /* IGT match should be HIGH (plain report MD, no fixture markers). */
-  const igtFinding = findings.find(f => f.label === 'IGT');
+  const igtFinding = findings.find(f => f.label === 'industry standard');
   assert(igtFinding, 'IGT detected');
   assert(igtFinding.severity === 'HIGH', `HIGH for plain MD, got ${igtFinding.severity}`);
 });

@@ -61,7 +61,7 @@
 | 6×(2–8) | Megaways extended | various licensees | up to 200 704 |
 | 6×(2–8) + top reel | Megaways + horizontal | various | up to 248 832 |
 | 6×(2–8) | Trueways | BGaming | up to 262 144 |
-| [3,4,5,4,3] | Diamond / MultiWay Xtra | IGT | 720 both-ways |
+| [3,4,5,4,3] | Diamond / MultiWay Xtra | industry standard | 720 both-ways |
 | [3,4,5,7,5,4,3] | Wider diamond | bespoke | varies |
 | [1,3,5,3,1] | Pyramid / trapezoid | bespoke | 9–27 lines |
 

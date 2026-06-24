@@ -11,13 +11,13 @@
  *   adapters emit the same canonical shape (ParSheetSchema from HYB-1).
  *
  * Why
- *   Before HYB-4 we only had one adapter (IGT xlsx layout in
+ *   Before HYB-4 we only had one adapter (industry standard xlsx layout in
  *   tools/par-sheet-xlsx-ingest.py). New vendor PAR sheets (Pragmatic,
  *   L&W/Brytt, Spielo, generic CSV/JSON) required hand-coding per game.
  *   Vendor detect + adapter dispatch is the universal pattern.
  *
  * Supported vendors / formats
- *   - IGT xlsx   — multi-sheet workbook, "Reel 1..5" header at columns D-H
+ *   - industry standard xlsx   — multi-sheet workbook, "Reel 1..5" header at columns D-H
  *   - Pragmatic xlsx — single-sheet, Spanish headers ("Rodillo 1..5")
  *   - L&W / Brytt xlsx — multi-sheet, "STRIP_1..5" header
  *   - Spielo xlsx — single-sheet, "Strip A..E" header
@@ -29,7 +29,7 @@
  *   - dispatchIngest(filePath, opts) -> { ok, parSheet, vendor, error }
  *
  * HARD RULE #1 (vendor-neutral output)
- *   Even though vendor names appear in DETECTION signals (IGT/Pragmatic/L&W),
+ *   Even though vendor names appear in DETECTION signals (industry standard/Pragmatic/L&W),
  *   the emitted ParSheet object carries only `vendor: <code>` as metadata —
  *   no vendor product names leak into model.json field values.
  *
@@ -238,7 +238,7 @@ print(json.dumps(out))
 /* Vendor adapter table. Each entry is either an existing tool path or the
  * sentinel 'inline' (handled directly). Missing adapter files (e.g.
  * tools/par-sheet-pragmatic.py / tools/par-sheet-lw.py — placeholder
- * spec, not yet implemented) fall back to the IGT-style generic xlsx
+ * spec, not yet implemented) fall back to the industry standard-style generic xlsx
  * ingester. The fallback emits a 'fallback_to_igt_xlsx' signal in
  * the dispatch receipt so consumers can see when a vendor-specific
  * adapter was substituted. */

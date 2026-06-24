@@ -1,6 +1,6 @@
 # playa-cli — Deep Reverse-Engineering Report
 
-> Source: `~/IGT/playa-cli` @ `version 1.8.21-PLAYAUF-6314` (package.json:3).
+> Source: `~/industry standard/playa-cli` @ `version 1.8.21-PLAYAUF-6314` (package.json:3).
 > Repo size: 29 MB. Tech: Node 14+, Express 4, JSDOM 22, body-parser, express-session, cors, yargs, open.
 > Purpose: Local dev server that boots a compiled HTML5 slot game, proxies (or replaces) the live Remote Game Server (RGS), records/replays game log records (GLR), and configures the in-page kernel that talks to the RGS.
 > Generated 2026-06-16.
@@ -160,7 +160,7 @@ When `--organization=<name>` is set, the boot finishes in `app/launchRemote.js:3
 </script>
 ```
 
-This is how IGT routes locally-launched games through the dev cloud SSO portal — the redirect carries the full param map straight from `launchRemote.js:7-24`.
+This is how industry standard routes locally-launched games through the dev cloud SSO portal — the redirect carries the full param map straight from `launchRemote.js:7-24`.
 
 ---
 
@@ -337,7 +337,7 @@ The in-page kernel posts every RGS call under `clientConfig.serverConfig.server 
 | `/notify` | POST | `clientservice.js:6559` | UKRC notification command. |
 | `/additionalgameinfo` | POST/Beacon | `clientservice.js:6594-6596` | Misc analytics events. |
 
-The "skb" prefix appears in `rgsRouter.js:15` and is the IGT account-skin code — "skb" is hard-coded for this build (the prefix is also referenced in `app/launchRemote.js:11`).
+The "skb" prefix appears in `rgsRouter.js:15` and is the industry standard account-skin code — "skb" is hard-coded for this build (the prefix is also referenced in `app/launchRemote.js:11`).
 
 ### §3.4 Server-determined outcome injection
 
@@ -571,7 +571,7 @@ It is **NOT** used to:
 - Step the game's state machine for record/replay.
 - Snapshot DOM for visual diffing.
 
-The README's framing of "playa-cli launches a game in JSDOM" is misleading. The browser is what runs the game. JSDOM only exists so the Node-side `clientConfig` builder can scrape JSON out of upstream HTML responses (the legacy IGT gateway returns HTML, not JSON, for clientConfig).
+The README's framing of "playa-cli launches a game in JSDOM" is misleading. The browser is what runs the game. JSDOM only exists so the Node-side `clientConfig` builder can scrape JSON out of upstream HTML responses (the legacy industry standard gateway returns HTML, not JSON, for clientConfig).
 
 ### §5.4 Browser API polyfills
 
@@ -688,9 +688,9 @@ If SGF's emitted game obeys (1)-(6), an industry-standard dev server / replay to
 
 ### §7.2 What SGF currently lacks vs. what it should adopt
 
-Bridge table — IGT layer → SGF equivalent → gap:
+Bridge table — industry standard layer → SGF equivalent → gap:
 
-| IGT layer | SGF equivalent today | Gap |
+| industry standard layer | SGF equivalent today | Gap |
 |:--|:--|:--|
 | `bin/cli.js` + `bin/args.js` (yargs CLI with `launch` subcommand) | `src/cli/` partial: `sgf-build.mjs`, `sgf-emit.mjs`, no `sgf-launch`. | **Missing**: a `sgf launch <game>` cmd that boots the just-emitted HTML directly. Today user opens `dist/<game>.html` manually. |
 | `app/main.js` (Express + static `/game`, `/platform`, `/console`, `/skins`) | No SGF dev server — output is a single self-contained HTML. | **Missing**: dev server that serves the emitted HTML + sidecar assets + a mock RGS. SGF currently bundles everything inline, which works but blocks GLR record/replay. |
@@ -699,8 +699,8 @@ Bridge table — IGT layer → SGF equivalent → gap:
 | `app/glrPlayer.js` + `app/glrRecorder.js` (record/replay as JSON-per-call files) | None. | **Missing**: SGF currently has internal "force outcome" via `forceData/*` URL params but no portable GLR equivalent that can be diffed/archived. |
 | `app/replayBuffer.js` (last-N ring buffer + readline prompt) | None. | **Missing**: useful for QA — "I just saw a bug at spin N, save the last 30 spins as a GLR". |
 | `console/skins/replay/STD/INT/skin.html` (replay UI with pause / play / fast / share) | None. | **Missing**: a "playback chrome" overlay that visibly says "REPLAY MODE • 12/30 outcomes". Regulator and QA both benefit. |
-| `platform/js/kernel.js` (~574 KB minified runtime that boots the iframe) | SGF inlines everything in the emitted HTML. | Architectural choice — SGF's all-in-one HTML is simpler; the IGT split (kernel ⇄ game iframe) is heavier but allows console-skin chrome. |
-| `app/skinsRouter.js` + `/skins/forceData/*` proxy | URL-param-based force in some SGF blocks. | **Gap**: SGF's force-data is per-block ad-hoc strings. The IGT model uses an HTTP endpoint family that a separate UI ("gaffTool") consumes; this is more composable. |
+| `platform/js/kernel.js` (~574 KB minified runtime that boots the iframe) | SGF inlines everything in the emitted HTML. | Architectural choice — SGF's all-in-one HTML is simpler; the industry standard split (kernel ⇄ game iframe) is heavier but allows console-skin chrome. |
+| `app/skinsRouter.js` + `/skins/forceData/*` proxy | URL-param-based force in some SGF blocks. | **Gap**: SGF's force-data is per-block ad-hoc strings. The industry standard model uses an HTTP endpoint family that a separate UI ("gaffTool") consumes; this is more composable. |
 | `app/mergeParams.js` (CLI ▸ session ▸ URL-query precedence) | URL-query precedence exists in some blocks. | **Gap**: SGF should formalize a 3-tier merge so URL params can override everything during QA. |
 | JSDOM for parsing legacy HTML clientConfig | N/A (SGF emits, doesn't consume legacy HTML) | Not needed. |
 | `keys/localhost.{crt,key}` self-signed cert | N/A | Likely not needed unless SGF gains HTTPS dev server. |
@@ -713,14 +713,14 @@ Bridge table — IGT layer → SGF equivalent → gap:
 3. **Implement a record/replay router pair.** Mirror `glrRecorder.js:33-47` (write per-action) and `glrPlayer.js:25-32` (read with mod-N cycle). Total ~100 lines.
 4. **Emit a "replay-aware" runtime flag** in the SGF block bus. When `playMode === 'replay'`, blocks should skip side-effects (balance writes, telemetry POSTs, autoplay decisions). Mirror `clientservice.js:6424-6427`.
 5. **Add a `--force-outcome <path>` flag** that surfaces an in-page panel (`/__sgf/gaff`) for forcing specific reels/wins from a JSON file. Mirror the `app/skinsRouter.js:12-28` injection pattern.
-6. **Don't adopt JSDOM.** It's only there in IGT because they have to parse legacy upstream HTML. SGF emits clean JSON config — no parser needed.
-7. **Don't adopt the JSP template scrubber.** `config/removals.js:1-9` is a fossil of the old IGT Java-pipeline. SGF should keep its own clean Mustache/template system.
+6. **Don't adopt JSDOM.** It's only there in industry standard because they have to parse legacy upstream HTML. SGF emits clean JSON config — no parser needed.
+7. **Don't adopt the JSP template scrubber.** `config/removals.js:1-9` is a fossil of the old industry standard Java-pipeline. SGF should keep its own clean Mustache/template system.
 
 ### §7.3 The architectural difference to keep
 
-SGF's "all-in-one HTML" is a *better* deliverable than IGT's "kernel iframe + many static services" for these reasons:
+SGF's "all-in-one HTML" is a *better* deliverable than industry's "kernel iframe + many static services" for these reasons:
 
-| Property | IGT layered | SGF inline |
+| Property | industry standard layered | SGF inline |
 |:--|:-:|:-:|
 | Servable from disk via `file://` | ✗ | ✓ |
 | Inspectable in any browser without Express | ✗ | ✓ |
@@ -786,7 +786,7 @@ This should be `zlib.inflateSync` — they're decoding a deflate-compressed resp
 
 ### §8.3 Force-outcomes need the gaff tool — which is not shipped
 
-`app/skinsRouter.js:12` references `../console/skins/gaffTool/gaffTool.html` but the file does not exist in this repo (`Bash:find console/skins -type f -name 'gaffTool*'` returns nothing). The full gaff tool ships in a sibling private repo (the IGT `gaffTool` extension). So `playa launch` without that sibling cannot actually force outcomes via the gaff-tool path — the only force path that works out-of-the-box is **server-side force-data through `--server`** (`app/skinsRouter.js:30`).
+`app/skinsRouter.js:12` references `../console/skins/gaffTool/gaffTool.html` but the file does not exist in this repo (`Bash:find console/skins -type f -name 'gaffTool*'` returns nothing). The full gaff tool ships in a sibling private repo (the industry standard `gaffTool` extension). So `playa launch` without that sibling cannot actually force outcomes via the gaff-tool path — the only force path that works out-of-the-box is **server-side force-data through `--server`** (`app/skinsRouter.js:30`).
 
 ### §8.4 Auto-cycling replays mask "did we exit the GLR" bugs
 
@@ -1007,7 +1007,7 @@ The repo is best understood as a **three-layer onion**:
 
 The CLI's *only* moving parts are layer 0 + layer 1. Layer 2 is opaque blobs (the `platform/js/*.js` files), which playa-cli simply serves. The replay magic (GLR) lives at layer 1 and is intentionally network-level so that layer 2 — and the game inside it — sees identical bytes between recording and replay.
 
-For SGF: the lift is to add a **layer-1-equivalent** in front of the emitted HTML, with a GLR record/replay router. SGF's emitted HTML is already its layer-2-equivalent (the kernel + game collapsed into one file). It does not need to clone the IGT layer-2 architecture.
+For SGF: the lift is to add a **layer-1-equivalent** in front of the emitted HTML, with a GLR record/replay router. SGF's emitted HTML is already its layer-2-equivalent (the kernel + game collapsed into one file). It does not need to clone the industry standard layer-2 architecture.
 
 ---
 
