@@ -409,6 +409,28 @@ export function parseMarkdownGDD(text) {
     }
   }, model);
 
+  /* UQ-DEEP-AK · WAVE 2 · PARSER E — IGT-canonical wild substitution matrix
+   * + reel-restriction extractor. Captures `wild.substitution` (substitutes-
+   * for-list + excludesScatter/excludesBonus/excludesWild/excludesSymbols)
+   * and `wild.reelRestriction` (appearsOnReels / excludesReels) from free-
+   * form GDD prose. Renderer + sgs-compiler consume these to honor IGT
+   * scatter-exclusion semantics (prevents wild → scatter substitution which
+   * would inflate RTP). Non-null outputs only — back-compat preserved when
+   * the GDD has no wild prose. */
+  _safeExtract('extractWildSubstitution', () => {
+    const ws = extractWildSubstitution(text);
+    if (!ws) return;
+    if (!model.wild || typeof model.wild !== 'object') model.wild = {};
+    model.wild.substitution = ws;
+  }, model);
+
+  _safeExtract('extractWildReelRestriction', () => {
+    const wr = extractWildReelRestriction(text);
+    if (!wr) return;
+    if (!model.wild || typeof model.wild !== 'object') model.wild = {};
+    model.wild.reelRestriction = wr;
+  }, model);
+
   // math (RTP / volatility / max-win) intentionally NOT extracted in this phase.
 
   /* D-18 (Boki 2026-06-20) STEP A: snapshot pre-defaults state so the
@@ -6015,4 +6037,217 @@ export function extractWildSpecial(text /*, langHint */) {
   }
 
   return Object.freeze(out);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * UQ-DEEP-AK · WAVE 2 · PARSER E — IGT-canonical wild substitution matrix
+ * + reel-restriction extractors.
+ *
+ * IGT slot game-settings split wild semantics into TWO distinct atoms:
+ *
+ *   1. `wild_substitution_matrix` — what the wild substitutes FOR plus a
+ *      formal excludesScatter / excludesBonus / excludesWild gate. The
+ *      renderer + sgs-compiler use this to honor scatter-exclusion (a wild
+ *      that substitutes for a scatter would inflate RTP and break the
+ *      certified math envelope).
+ *
+ *   2. `wild_appears_on_strips` — reel-restriction (e.g. "wild only on
+ *      reels 2, 3, 4"). Used by reel-strip placement + by visual QA to
+ *      ensure the wild art slot doesn't render on cosmetic-only reels.
+ *
+ * Both extractors are prose-scan (regex-driven), bilingual EN+SR, return
+ * a frozen object on positive match and `null` on no match. Evidence
+ * snippet ≤ 300 chars (snapped to sentence boundary by
+ * `_wildSpecialEvidence`).
+ * ───────────────────────────────────────────────────────────────────── */
+
+/* Pick up everything inside the "except …" tail-clause for substitution
+ * exclusions. Returns lowercase tokens (split on commas/and/i/&). Filters
+ * out the literal words "scatter"/"bonus"/"wild" so caller can fold them
+ * into the typed booleans; remaining tokens are returned uppercase as
+ * candidate symbolIds. */
+function _wildExceptTokens(tail) {
+  if (typeof tail !== 'string' || !tail) return [];
+  const SKIP = new Set(['scatter', 'scatters', 'bonus', 'bonuses', 'wild', 'wilds',
+                         'the', 'and', 'i', 'or', 'ili']);
+  /* Strip trailing prose past sentence/clause boundary. */
+  const cut = tail.search(/[.!?\n;]/);
+  const slice = cut >= 0 ? tail.slice(0, cut) : tail;
+  const parts = slice
+    .replace(/[&\/]/g, ',')
+    .split(/[,\s]+/)
+    .map(s => s.trim())
+    .filter(Boolean);
+  const out = [];
+  for (const raw of parts) {
+    const low = raw.toLowerCase().replace(/[^\p{L}\p{N}_-]+/gu, '');
+    if (!low || SKIP.has(low)) continue;
+    /* Accept either Upper/MixedCase symbolIds (H1, MID, A, K) OR known
+     * tier keywords (high/mid/low) — keep originals for IGT canonical
+     * tokens. */
+    if (/^(?:high|mid|low|highpay|midpay|lowpay)$/i.test(low)) {
+      out.push(low.replace(/pay$/i, ''));
+    } else if (/^[A-Z][A-Z0-9_-]{0,15}$/.test(raw)) {
+      out.push(raw);
+    }
+  }
+  /* Dedupe in order */
+  const seen = new Set();
+  return out.filter(t => seen.has(t) ? false : (seen.add(t), true));
+}
+
+/**
+ * extractWildSubstitution(text, langHint?) — IGT wild substitution matrix.
+ *
+ * Returns:
+ *   {
+ *     substitutesFor: string[],     // tier or symbolId tokens wild replaces
+ *     excludesScatter: boolean,     // must NOT substitute scatter (RTP guard)
+ *     excludesBonus:   boolean,     // must NOT substitute bonus
+ *     excludesWild:    boolean,     // wild does not stack onto wild (default true)
+ *     excludesSymbols: string[],    // additional excluded symbolIds
+ *     evidence: string,             // ≤300 char audit trail
+ *     schemaVersion: '1'
+ *   }
+ *   | null when no wild-substitution prose is found.
+ *
+ * Bilingual EN + SR. The function never throws — caller (_safeExtract)
+ * isolates regex faults regardless.
+ */
+export function extractWildSubstitution(text /*, langHint */) {
+  if (typeof text !== 'string' || text.length === 0) return null;
+
+  /* Primary "wild substitutes for …" anchor — EN + SR. The trailing
+   * non-greedy capture eats up to ~140 chars of the substitution-list
+   * prose so the except-tail parser can extract symbol exclusions. */
+  const reSubEN = /wild\s+(?:symbol\s+)?(?:substitutes?\s+for\s+|replaces?\s+)(?:all\s+)?(?:other\s+)?(?:symbols?\s*)?([^.\n]{0,160})/i;
+  const reSubSR = /wild\s+(?:simbol\s+)?(?:zamenjuje|menja|zamjenjuje)\s+(?:sve\s+)?(?:ostale\s+)?(?:simbole\s*)?([^.\n]{0,160})/i;
+
+  let mSub = text.match(reSubEN); let langMatched = mSub ? 'en' : null;
+  if (!mSub) { mSub = text.match(reSubSR); if (mSub) langMatched = 'sr'; }
+
+  /* Independent exclusion sentinels — these can fire EVEN when the primary
+   * "wild substitutes for …" anchor doesn't (e.g. dedicated rule line like
+   * "The wild does not substitute the scatter symbol."). */
+  const reExclScatterEN = /wild\s+(?:does\s+not|doesn'?t|cannot|will\s+not|may\s+not)\s+(?:substitute|replace)\s+(?:the\s+)?scatter|except\s+(?:the\s+|for\s+)?scatter|excludes?\s+scatter/i;
+  const reExclScatterSR = /wild\s+(?:ne\s+)?(?:zamenjuje|menja|zamjenjuje)\s+(?:scatter|skater)|osim\s+(?:scatter|skater)|izuzev\s+(?:scatter|skater)/i;
+  /* The bonus exclusion may appear inside a conjoined "except X and Y" tail
+   * (e.g. "except scatter and bonus") so we also accept any "except …
+   * bonus" clause up to 60 chars apart. */
+  const reExclBonusEN   = /except\s+(?:[^.\n]{0,60}\s+(?:and|or|,)\s+)?(?:the\s+|for\s+)?bonus|excludes?\s+bonus|wild\s+(?:does\s+not|doesn'?t|cannot|will\s+not|may\s+not)\s+(?:substitute|replace)\s+(?:the\s+)?bonus/i;
+  const reExclBonusSR   = /wild\s+(?:ne\s+)?(?:zamenjuje|menja|zamjenjuje)\s+(?:bonus|bonusi)|osim\s+(?:[^.\n]{0,60}\s+i\s+)?(?:bonus|bonusi)|izuzev\s+(?:bonus|bonusi)/i;
+  /* Explicit override — "wild substitutes wild" / "wild may substitute wild" */
+  const reWildOnWildEN  = /wild\s+(?:may\s+|can\s+)?substitutes?\s+(?:for\s+)?(?:other\s+|another\s+)?wilds?/i;
+
+  const mExclScatter = text.match(reExclScatterEN) || text.match(reExclScatterSR);
+  const mExclBonus   = text.match(reExclBonusEN)   || text.match(reExclBonusSR);
+  const mWildOnWild  = text.match(reWildOnWildEN);
+
+  /* Nothing matched at all → return null so caller skips the merge. */
+  if (!mSub && !mExclScatter && !mExclBonus) return null;
+
+  /* Decide which match drives the evidence snippet — prefer the primary
+   * substitution anchor; fall back to the first excludes sentinel. */
+  const evidenceMatch = mSub || mExclScatter || mExclBonus;
+
+  /* substitutesFor — heuristic: if prose contains "all symbols" anchor we
+   * default to ['high','mid','low']; otherwise scan the tail after the
+   * anchor for explicit tier/symbolId tokens. */
+  let substitutesFor = [];
+  if (mSub) {
+    const tail = (mSub[1] || '').trim();
+    /* "all (other) symbols" anchor → high/mid/low tier shorthand */
+    if (/all\b|sve\b/i.test(tail) || /^|except|osim/i.test(tail)) {
+      substitutesFor = ['high', 'mid', 'low'];
+    }
+    /* Pick up explicit tier tokens or symbolIds in the tail (anything
+     * BEFORE the "except"/"osim" boundary). */
+    const exceptIdx = tail.search(/\b(?:except|excluding|excludes|but\s+not|other\s+than|osim|izuzev)\b/i);
+    const preExcept = exceptIdx >= 0 ? tail.slice(0, exceptIdx) : tail;
+    const explicit  = _wildExceptTokens(preExcept);
+    if (explicit.length > 0) {
+      const seen = new Set(substitutesFor);
+      for (const t of explicit) if (!seen.has(t)) { seen.add(t); substitutesFor.push(t); }
+    }
+    /* Fallback default when nothing parsed — wild typically subs all paying
+     * tiers per industry standard. */
+    if (substitutesFor.length === 0) substitutesFor = ['high', 'mid', 'low'];
+  }
+
+  /* excludesSymbols — pick up tokens AFTER an "except"/"osim" boundary in
+   * the substitution-anchor tail. */
+  let excludesSymbols = [];
+  if (mSub) {
+    const tail = (mSub[1] || '');
+    const excM = tail.match(/(?:except|excluding|excludes|but\s+not|other\s+than|osim|izuzev)\s+([^.\n]{0,120})/i);
+    if (excM) excludesSymbols = _wildExceptTokens(excM[1] || '');
+  }
+
+  return Object.freeze({
+    substitutesFor,
+    excludesScatter: !!mExclScatter,
+    excludesBonus:   !!mExclBonus,
+    /* Default true — IGT-canonical; only flip to false if prose explicitly
+     * states wild substitutes for another wild. */
+    excludesWild:    !mWildOnWild,
+    excludesSymbols,
+    evidence:        _wildSpecialEvidence(text, evidenceMatch),
+    schemaVersion:   '1',
+    lang:            langMatched,
+  });
+}
+
+/**
+ * extractWildReelRestriction(text, langHint?) — IGT wild reel placement.
+ *
+ * Returns:
+ *   {
+ *     appearsOnReels: number[],   // 1-indexed reels where wild can appear
+ *     excludesReels:  number[],   // 1-indexed reels where wild is forbidden
+ *     evidence: string,           // ≤300 char audit trail
+ *     schemaVersion: '1'
+ *   }
+ *   | null when no reel-restriction prose is found.
+ *
+ * If both `appearsOnReels` and `excludesReels` are non-empty the caller can
+ * still consume them — they describe complementary placement intent. The
+ * one fires when prose uses the positive anchor ("wild appears only on
+ * reels …"); the other on the negative anchor ("wild does not appear on
+ * reels …").
+ */
+export function extractWildReelRestriction(text /*, langHint */) {
+  if (typeof text !== 'string' || text.length === 0) return null;
+
+  /* Positive anchor — "wild appears (only) on reels X, Y, Z" */
+  const reAppearsEN = /wild\s+(?:symbol\s+)?(?:only\s+)?appears?\s+(?:only\s+)?on\s+reels?\s+([\d, \-andi]+)/i;
+  const reAppearsSR = /wild\s+(?:simbol\s+)?(?:se\s+)?(?:pojavljuje|javlja)\s+(?:samo\s+)?na\s+(?:rolnama|rolnu|rolne|koturovima|koturu|koturima)\s+([\d, \-i]+)/i;
+
+  /* Negative anchor — "wild does not appear on reels X" / "no wild on reels X" */
+  const reExclEN = /wild\s+(?:does\s+not|doesn'?t|cannot|will\s+not|may\s+not)\s+appear\s+on\s+reels?\s+([\d, \-andi]+)|no\s+wild\s+on\s+reels?\s+([\d, \-andi]+)/i;
+  const reExclSR = /wild\s+(?:se\s+)?(?:ne\s+)?(?:pojavljuje|javlja)\s+na\s+(?:rolnama|rolnu|rolne|koturovima|koturu|koturima)\s+([\d, \-i]+)|nema\s+wild\s+(?:simbola\s+)?na\s+(?:rolnama|rolnu|rolne|koturovima|koturu|koturima)\s+([\d, \-i]+)/i;
+
+  let mApp = text.match(reAppearsEN); let langMatched = mApp ? 'en' : null;
+  if (!mApp) { mApp = text.match(reAppearsSR); if (mApp) langMatched = 'sr'; }
+
+  let mExc = text.match(reExclEN);
+  if (!mExc) { mExc = text.match(reExclSR); if (mExc && !langMatched) langMatched = 'sr'; }
+  else if (!langMatched) langMatched = 'en';
+
+  if (!mApp && !mExc) return null;
+
+  const appearsOnReels = mApp ? _wildSpecialParseReels(mApp[1] || '') : [];
+  const excludesReels  = mExc
+    ? _wildSpecialParseReels(mExc[1] || mExc[2] || '')
+    : [];
+
+  /* Evidence snippet — prefer positive anchor when available. */
+  const evidenceMatch = mApp || mExc;
+
+  return Object.freeze({
+    appearsOnReels,
+    excludesReels,
+    evidence:      _wildSpecialEvidence(text, evidenceMatch),
+    schemaVersion: '1',
+    lang:          langMatched,
+  });
 }

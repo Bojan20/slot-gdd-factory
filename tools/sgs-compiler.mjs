@@ -36,6 +36,23 @@ const SCATTER_FEATURE_TYPE = 'scatter';
 const FREESPIN_FEATURE_TYPE = 'free_spin';
 const HOLD_AND_WIN_FEATURE_TYPE = 'hold_and_win';
 
+/* UQ-DEEP-AK · WAVE 2 · COMPILER F — IGT-canonical enum primitives.
+ *
+ * industry serverConfig očekuje numeric `expansion_type` enum koji opisuje
+ * KAKO wild/expand feature interaguje sa gridom. Mapping je iz IGT runtime
+ * docs (Boki) — 6 values; 0 = NONE (no expand feature).
+ *
+ * Bilo koji unknown / missing feature → 0 (NONE) za safe runtime degradation.
+ */
+export const EXPANSION_TYPE = Object.freeze({
+  NONE: 0,
+  REEL_FULL: 1,
+  CLUSTER: 2,
+  ROW: 3,
+  PART_OF_WIN: 4,
+  ANCHOR_FROM_TRIGGER: 5,
+});
+
 /* industry contract §4 rule 1: gain_table = za svaki simbol gde je
  * symbolType ∈ {Normal, Wild} → concat(symbolStrip.payouts).
  * Redosled = redosled u symbols[]. Special symbols (scatter etc) NE ulaze
@@ -184,6 +201,207 @@ export function computePaytableHash(serverConfig) {
   return createHash('sha256').update(canonicalJSON(serverConfig)).digest('hex');
 }
 
+/* UQ-DEEP-AK · WAVE 2 · COMPILER F · Helper 1: emitExpansionType
+ *
+ * Maps (featureKind, featureConfig) → EXPANSION_TYPE int per IGT spec.
+ *
+ *   expandingWild + expandTo='reel'      → 1 REEL_FULL
+ *   expandingWild + expandTo='cluster'   → 2 CLUSTER
+ *   expandingWild + expandTo='row'       → 3 ROW
+ *   expandingWild + triggers='partOfWin' → 4 PART_OF_WIN
+ *   fsExpansionWilds (default)            → 5 ANCHOR_FROM_TRIGGER
+ *   megaWildCluster                       → 2 CLUSTER
+ *   unknown / missing                     → 0 NONE
+ *
+ * triggers='partOfWin' takes precedence over expandTo (regulator wording:
+ * "expand only when symbol is part of a paying win line").
+ */
+export function emitExpansionType(featureKind, featureConfig) {
+  if (!featureKind) return EXPANSION_TYPE.NONE;
+  const cfg = featureConfig || {};
+  if (featureKind === 'expandingWild') {
+    if (cfg.triggers === 'partOfWin') return EXPANSION_TYPE.PART_OF_WIN;
+    if (cfg.expandTo === 'reel') return EXPANSION_TYPE.REEL_FULL;
+    if (cfg.expandTo === 'cluster') return EXPANSION_TYPE.CLUSTER;
+    if (cfg.expandTo === 'row') return EXPANSION_TYPE.ROW;
+    /* Unspecified expandTo on expandingWild → default REEL_FULL (industry default). */
+    return EXPANSION_TYPE.REEL_FULL;
+  }
+  if (featureKind === 'fsExpansionWilds') return EXPANSION_TYPE.ANCHOR_FROM_TRIGGER;
+  if (featureKind === 'megaWildCluster') return EXPANSION_TYPE.CLUSTER;
+  return EXPANSION_TYPE.NONE;
+}
+
+/* UQ-DEEP-AK · WAVE 2 · COMPILER F · Helper 2: emitModifiersScreenSymbols
+ *
+ * Walks model.wild.special / model.symbolModifiers / model.features za
+ * transform-emitting blocks i emit-uje array sa per-symbol modifier rules.
+ *
+ *   modifierKind ∈ 'sticky' | 'expanding' | 'copy' | 'transform' | 'multiplier'
+ *   screencountGains[] = integer payout per N screen-occurrences
+ *   weight = integer probability weight
+ *
+ * Empty array kad nemamo modifier features.
+ */
+export function emitModifiersScreenSymbols(model) {
+  if (!model || typeof model !== 'object') return [];
+  const out = [];
+
+  const symbols = model.symbols || {};
+  const allSyms = Array.isArray(symbols)
+    ? symbols
+    : [].concat(symbols.high || [], symbols.mid || [], symbols.low || [], symbols.specials || []);
+
+  const symbolIdMap = {};
+  allSyms.forEach((s, idx) => {
+    const sid = s && (s.id || s.symbolId || s.code);
+    if (sid) symbolIdMap[sid] = idx;
+  });
+
+  /* Round helper — regulator integer constraint. */
+  const toInt = (v, fallback) => (Number.isFinite(v) ? Math.round(v) : fallback);
+  const toIntArr = (arr) => (Array.isArray(arr) ? arr.map(v => toInt(v, 0)) : []);
+
+  const resolveId = (sym) => {
+    if (typeof sym === 'number') return sym;
+    if (typeof sym === 'string') return Number.isFinite(symbolIdMap[sym]) ? symbolIdMap[sym] : 0;
+    return 0;
+  };
+
+  /* (a) model.wild.special — {kind, symbolId, screencountGains?, weight?}. */
+  const wildSpecial = model.wild && model.wild.special;
+  if (Array.isArray(wildSpecial)) {
+    for (const ws of wildSpecial) {
+      if (!ws || !ws.kind) continue;
+      out.push({
+        symbolId: resolveId(ws.symbolId ?? ws.id),
+        modifierKind: ws.kind,
+        screencountGains: toIntArr(ws.screencountGains || ws.payouts),
+        weight: toInt(ws.weight, 1),
+      });
+    }
+  } else if (wildSpecial && typeof wildSpecial === 'object' && wildSpecial.kind) {
+    out.push({
+      symbolId: resolveId(wildSpecial.symbolId ?? wildSpecial.id),
+      modifierKind: wildSpecial.kind,
+      screencountGains: toIntArr(wildSpecial.screencountGains || wildSpecial.payouts),
+      weight: toInt(wildSpecial.weight, 1),
+    });
+  }
+
+  /* (b) model.symbolModifiers[] — explicit modifier rules. */
+  const symMods = model.symbolModifiers;
+  if (Array.isArray(symMods)) {
+    for (const sm of symMods) {
+      if (!sm || !sm.kind) continue;
+      out.push({
+        symbolId: resolveId(sm.symbolId ?? sm.id),
+        modifierKind: sm.kind,
+        screencountGains: toIntArr(sm.screencountGains || sm.payouts),
+        weight: toInt(sm.weight, 1),
+      });
+    }
+  }
+
+  /* (c) model.features[] — transform-emitting blocks. */
+  const features = model.features;
+  const transformKinds = new Set([
+    'stickyWild', 'sticky_wild', 'expandingWild', 'expanding_wild',
+    'copyWild', 'copy_wild', 'copyWildOrchestrator',
+    'mysterySymbol', 'mystery_symbol', 'symbolUpgrade', 'symbol_upgrade',
+    'multiplier', 'multiplierOrb', 'transform',
+  ]);
+  const kindToModifier = (k) => {
+    if (!k) return 'transform';
+    if (/sticky/i.test(k)) return 'sticky';
+    if (/expand/i.test(k)) return 'expanding';
+    if (/copy/i.test(k)) return 'copy';
+    if (/multiplier/i.test(k)) return 'multiplier';
+    return 'transform';
+  };
+  const collectFromFeature = (key, feat) => {
+    if (!feat) return;
+    const cfg = feat.config || feat;
+    if (!transformKinds.has(key) && !transformKinds.has(feat.kind)) return;
+    out.push({
+      symbolId: resolveId(cfg.symbolId ?? cfg.targetSymbol ?? cfg.symbol ?? 0),
+      modifierKind: kindToModifier(feat.kind || key),
+      screencountGains: toIntArr(cfg.screencountGains || cfg.payouts),
+      weight: toInt(cfg.weight, 1),
+    });
+  };
+  if (Array.isArray(features)) {
+    for (const f of features) collectFromFeature(f && f.kind, f);
+  } else if (features && typeof features === 'object') {
+    for (const [key, f] of Object.entries(features)) collectFromFeature(key, f);
+  }
+
+  return out;
+}
+
+/* UQ-DEEP-AK · WAVE 2 · COMPILER F · Helper 3: emitNonLockedSymbolId
+ *
+ * U HnW kontekstu: integer symbolId za "blank" / non-orb simbol koji se NE
+ * lock-uje tokom respina. Lock predicate = cell.symbolId !== nonLockedSymbolId.
+ *
+ *   1. Iz model.features['holdAndWin'].config.nonLockedSymbolId (explicit)
+ *   2. Inače derive iz model.symbols: najniže-tier simbol koji NIJE
+ *      wild/scatter/bonus/orb (typically L1 / lowest pay)
+ *   3. null ako model nema HnW feature
+ */
+export function emitNonLockedSymbolId(model) {
+  if (!model || typeof model !== 'object') return null;
+
+  /* Detect HnW presence. */
+  let hnwCfg = null;
+  if (model.holdAndWin && model.holdAndWin.enabled !== false) {
+    hnwCfg = model.holdAndWin;
+  }
+  const features = model.features;
+  if (Array.isArray(features)) {
+    const f = features.find(x => x && (x.kind === 'holdAndWin' || x.kind === 'hold_and_win'));
+    if (f) hnwCfg = (f.config || f);
+  } else if (features && typeof features === 'object') {
+    if (features.holdAndWin) hnwCfg = features.holdAndWin.config || features.holdAndWin;
+    else if (features.hold_and_win) hnwCfg = features.hold_and_win.config || features.hold_and_win;
+  }
+  if (!hnwCfg) return null;
+
+  const symbols = model.symbols || {};
+  const allSyms = Array.isArray(symbols)
+    ? symbols
+    : [].concat(symbols.high || [], symbols.mid || [], symbols.low || [], symbols.specials || []);
+  const symbolIdMap = {};
+  allSyms.forEach((s, idx) => {
+    const sid = s && (s.id || s.symbolId || s.code);
+    if (sid) symbolIdMap[sid] = idx;
+  });
+
+  /* (1) Explicit override. */
+  if (hnwCfg.nonLockedSymbolId !== undefined && hnwCfg.nonLockedSymbolId !== null) {
+    const v = hnwCfg.nonLockedSymbolId;
+    if (typeof v === 'number') return v;
+    if (typeof v === 'string') return Number.isFinite(symbolIdMap[v]) ? symbolIdMap[v] : null;
+  }
+
+  /* (2) Derive from lowest non-special symbol. */
+  const SPECIAL_KINDS = new Set(['wild', 'scatter', 'bonus', 'orb', 'special', 'jackpot']);
+  const candidates = allSyms.filter(s => s && !SPECIAL_KINDS.has(s.kind));
+  if (candidates.length === 0) {
+    /* (3) Only specials → null. */
+    return null;
+  }
+  /* Sort by lowest pay vector (sum of payouts) — lowest tier first. */
+  const payOf = (s) => {
+    const p = s.payouts || (s.pay && Object.values(s.pay)) || [];
+    return Array.isArray(p) ? p.reduce((a, b) => a + (Number.isFinite(b) ? b : 0), 0) : 0;
+  };
+  candidates.sort((a, b) => payOf(a) - payOf(b));
+  const lowest = candidates[0];
+  const lowestId = lowest && (lowest.id || lowest.symbolId || lowest.code);
+  return Number.isFinite(symbolIdMap[lowestId]) ? symbolIdMap[lowestId] : null;
+}
+
 /**
  * Main entry: compile parsed model → wire-compatible serverConfig.
  *
@@ -278,6 +496,32 @@ export function compileServerConfig(model, options = {}) {
     })),
   };
   if (oddsMegaways) serverConfig.odds_megaways = oddsMegaways;
+
+  /* UQ-DEEP-AK · WAVE 2 · COMPILER F — IGT-canonical enum + modifier primitives.
+   * Adds 3 new fields preserving back-compat sa svim postojećim polja iznad:
+   *   expansion_type            — int enum (EXPANSION_TYPE)
+   *   modifiers_screen_symbols  — per-symbol modifier rules array
+   *   non_locked_symbol_id      — HnW lock-predicate sentinel (int | null)
+   */
+  let primaryExpandKind = null;
+  let primaryExpandCfg = null;
+  const featList = model && model.features;
+  const visitFeat = (key, feat) => {
+    if (primaryExpandKind || !feat) return;
+    const k = feat.kind || key;
+    if (k === 'expandingWild' || k === 'fsExpansionWilds' || k === 'megaWildCluster') {
+      primaryExpandKind = k;
+      primaryExpandCfg = feat.config || feat;
+    }
+  };
+  if (Array.isArray(featList)) {
+    for (const f of featList) visitFeat(f && f.kind, f);
+  } else if (featList && typeof featList === 'object') {
+    for (const [k, f] of Object.entries(featList)) visitFeat(k, f);
+  }
+  serverConfig.expansion_type = emitExpansionType(primaryExpandKind, primaryExpandCfg);
+  serverConfig.modifiers_screen_symbols = emitModifiersScreenSymbols(model);
+  serverConfig.non_locked_symbol_id = emitNonLockedSymbolId(model);
 
   const paytableHash = computePaytableHash(serverConfig);
 

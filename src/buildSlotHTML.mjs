@@ -433,6 +433,24 @@ import {
   emitSymbolModifiersCSS, emitSymbolModifiersMarkup, emitSymbolModifiersRuntime,
   resolveConfig as resolveSymbolModifiersConfig,
 } from './blocks/symbolModifiers.mjs';
+/* UQ-DEEP-AK · WAVE 1 — 4 IGT-canonical wild blokova (parser-detected,
+ * sad i renderer-mounted). */
+import {
+  emitCopyWildOrchestratorCSS, emitCopyWildOrchestratorMarkup, emitCopyWildOrchestratorRuntime,
+  resolveConfig as resolveCopyWildOrchestratorConfig,
+} from './blocks/copyWildOrchestrator.mjs';
+import {
+  emitInSyncReelsCSS, emitInSyncReelsMarkup, emitInSyncReelsRuntime,
+  resolveConfig as resolveInSyncReelsConfig,
+} from './blocks/inSyncReels.mjs';
+import {
+  emitExtendedWildCountdownCSS, emitExtendedWildCountdownMarkup, emitExtendedWildCountdownRuntime,
+  resolveConfig as resolveExtendedWildCountdownConfig,
+} from './blocks/extendedWildCountdown.mjs';
+import {
+  emitAddedSymbolsInjectorCSS, emitAddedSymbolsInjectorMarkup, emitAddedSymbolsInjectorRuntime,
+  resolveConfig as resolveAddedSymbolsInjectorConfig,
+} from './blocks/addedSymbolsInjector.mjs';
 import {
   emitWildCollisionMultiplierCSS, emitWildCollisionMultiplierRuntime,
   resolveConfig as resolveWildCollisionMultiplierConfig,
@@ -1666,6 +1684,11 @@ ${emitPerFsSpinMultiplierCSS(resolvePerFsSpinMultiplierConfig(model))}
 ${emitMysterySymbolMultiplierCSS(resolveMysterySymbolMultiplierConfig(model))}
 ${/* UQ-DEEP-AJ P1B — screen-symbol modifier engine (mystery reveal, copy_wild, sticky_overlay, oddsMasks). Opt-in via GDD. */ ''}
 ${emitSymbolModifiersCSS(resolveSymbolModifiersConfig(model))}
+${/* UQ-DEEP-AK WAVE 1 — 4 industry-canonical wild blokova. Auto-mount kad parser detektuje. */ ''}
+${emitCopyWildOrchestratorCSS(resolveCopyWildOrchestratorConfig(model))}
+${emitInSyncReelsCSS(resolveInSyncReelsConfig(model))}
+${emitExtendedWildCountdownCSS(resolveExtendedWildCountdownConfig(model))}
+${emitAddedSymbolsInjectorCSS(resolveAddedSymbolsInjectorConfig(model))}
 ${emitWildCollisionMultiplierCSS(resolveWildCollisionMultiplierConfig(model))}
 ${emitRetriggerMultiplierBumpCSS(resolveRetriggerMultiplierBumpConfig(model))}
 ${emitClusterSizeMultiplierCSS(resolveClusterSizeMultiplierConfig(model))}
@@ -1923,6 +1946,11 @@ ${emitCellLevelUpgradeMarkup(resolveCellLevelUpgradeConfig(model))}
 ${emitCellOverflowCounterMarkup(resolveCellOverflowCounterConfig(model))}
 ${/* UQ-DEEP-AJ P1B — empty stage div for symbolModifiers overlay (mystery reveal/copy_wild fx). */ ''}
 ${emitSymbolModifiersMarkup(resolveSymbolModifiersConfig(model))}
+${/* UQ-DEEP-AK WAVE 1 — 4 wild block markup overlay stages. */ ''}
+${emitCopyWildOrchestratorMarkup(resolveCopyWildOrchestratorConfig(model))}
+${emitInSyncReelsMarkup(resolveInSyncReelsConfig(model))}
+${emitExtendedWildCountdownMarkup(resolveExtendedWildCountdownConfig(model))}
+${emitAddedSymbolsInjectorMarkup(resolveAddedSymbolsInjectorConfig(model))}
 ${emitAmbientBackgroundWheelMarkup(resolveAmbientBackgroundWheelConfig(model))}
 ${emitDualRoleScatterMarkup(resolveDualRoleScatterConfig(model))}
 ${/* Wave H11-H15 — markup hosts (mega overlay built at runtime, others static). */ ''}
@@ -2242,6 +2270,11 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
   ${emitMysterySymbolMultiplierRuntime(resolveMysterySymbolMultiplierConfig(model))}
   /* UQ-DEEP-AJ P1B — screen-symbol modifier engine runtime (window.symbolModifiersAPI). */
   ${emitSymbolModifiersRuntime(resolveSymbolModifiersConfig(model))}
+  /* UQ-DEEP-AK WAVE 1 — 4 industry-canonical wild block runtimes. */
+  ${emitCopyWildOrchestratorRuntime(resolveCopyWildOrchestratorConfig(model))}
+  ${emitInSyncReelsRuntime(resolveInSyncReelsConfig(model), model)}
+  ${emitExtendedWildCountdownRuntime(resolveExtendedWildCountdownConfig(model))}
+  ${emitAddedSymbolsInjectorRuntime(resolveAddedSymbolsInjectorConfig(model))}
   ${emitWildCollisionMultiplierRuntime(resolveWildCollisionMultiplierConfig(model))}
   ${emitRetriggerMultiplierBumpRuntime(resolveRetriggerMultiplierBumpConfig(model))}
   ${emitClusterSizeMultiplierRuntime(resolveClusterSizeMultiplierConfig(model))}
