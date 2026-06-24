@@ -482,8 +482,16 @@ export function emitAnticipationRuntime(cfg = defaultConfig()) {
         }
         scattersSoFar += (trg.countMode === 'any') ? reelHits : (reelHits > 0 ? 1 : 0);
       }
-      /* Wave V1 gate — anticipationGate = max(1, threshold - remaining) */
-      var anticipationGate = Math.max(1, trg.threshold - remaining);
+      /* UQ-DEEP-Y fix (Boki 2026-06-24): anticipationGate = threshold - 1.
+       * Pre fix-a: Math.max(1, trg.threshold - remaining). Sa 4 reels
+       * spinning + threshold=3 → gate=max(1,-1)=1 → anticipation startuje
+       * POSLE PRVOG scatter-a. Boki spec: "Mora 2+ scatter simbola da bi se
+       * uklucila anticipacija, ako gdd zahteva 3+ scatter za bonus."
+       * Pravilo: anticipacija je suspense "jos jedan i imamo bonus" → kreće
+       * tek kad ima (threshold - 1) scatter-a već land-ovan. Plus zadržavam
+       * scattersSoFar + remaining >= threshold check jer ako je matematički
+       * već nemoguće (npr. 1 scatter, 1 reel spinning, threshold 3) → no glow. */
+      var anticipationGate = Math.max(1, trg.threshold - 1);
       var alive = (scattersSoFar >= anticipationGate) &&
                   (scattersSoFar + remaining >= trg.threshold) &&
                   (scattersSoFar < trg.topRung);
