@@ -48,9 +48,21 @@ export function defaultConfig() {
     position: 'top-right',  /* top-right | top-left | bottom-right | bottom-left */
     showSparkline: true,
     sparklineWindow: 60,    /* last N spins in graph */
-    /* Drift band tiers (deltaPct = |measured - target| × 100). */
-    bandGreenPct: 0.05,
+    /* UQ-DEEP-AF (Boki 2026-06-24): Drift band sada koristi Wilson 99% CI
+     * adaptive band, NE apsolutni deltaPct band. Za high-vol slot (volIdx 8,
+     * hit_freq 19%) jedan-spin variance je ±400%, pa apsolutni 0.5pp band
+     * statistički nemoguć ispod N≈2000. Pre fix-a: ALERT badge crveno već
+     * od prvog spina. Boki: "alert za matematiku. mora to jos ultiamtivnije". */
+    bandGreenPct: 0.05,                          /* fallback za N preko warmup-a */
     bandAmberPct: 0.5,
+    /* Minimum spinova pre nego što HUD počne da boji band crveno/amber.
+     * Pre warmup-a → "WARMING (n/min)" neutral state. */
+    warmupSpinsMin: 500,
+    /* CI multiplikator — adaptive na declared hit_freq. */
+    ciZ: 2.576,                                  /* 99% CI (Wilson approximation) */
+    /* Tier scale factor za amber → red threshold u CI band-u. */
+    ciAmberScale: 1.0,                           /* 1× CI half-width = amber */
+    ciRedScale: 2.0,                             /* 2× CI half-width = red */
     /* Per-tick poll interval if no spin events fire (idle refresh). */
     idleRefreshMs: 2000,
   });
@@ -104,6 +116,7 @@ export function emitLiveRtpHudCSS(cfg = defaultConfig()) {
 .live-rtp-hud .lrh-badge--amber { background: rgba(245,158,11,0.25); color: #f59e0b; border: 1px solid rgba(245,158,11,0.5); }
 .live-rtp-hud .lrh-badge--red   { background: rgba(239,68,68,0.25); color: #ef4444; border: 1px solid rgba(239,68,68,0.5); }
 .live-rtp-hud .lrh-badge--off   { background: rgba(100,100,100,0.25); color: #aaa; border: 1px solid rgba(100,100,100,0.5); }
+.live-rtp-hud .lrh-badge--warming { background: rgba(96,165,250,0.18); color: #93c5fd; border: 1px solid rgba(96,165,250,0.45); }
 .live-rtp-hud canvas { display: block; width: 100%; height: 28px; margin-top: 4px; background: rgba(0,0,0,0.3); border-radius: 3px; }
 @media (max-width: 620px) { .live-rtp-hud { font-size: 10px; min-width: 140px; padding: 6px 8px; } }
 `;
@@ -147,12 +160,31 @@ export function emitLiveRtpHudRuntime(cfg = defaultConfig(), model = {}) {
     }
     return DEFAULT_TARGET_RTP;
   })();
+  /* UQ-DEEP-AF: extract hit_freq + volatility za adaptive CI band. */
+  const _pb = (model && model.payback) || {};
+  const hitFreqNorm = (() => {
+    const raw = _pb.hitFrequency;
+    if (typeof raw !== 'number' || !Number.isFinite(raw) || raw <= 0) return 0.21;
+    return raw > 1 ? raw / 100 : raw;
+  })();
+  const volIdx = Number.isFinite(_pb.volatilityIdx) ? Math.max(1, Math.min(10, _pb.volatilityIdx)) : 5;
+  /* Max win cap drives per-spin variance σ. High-vol slot σ ≈ √(rtp × maxWin) */
+  const maxWinX = Number.isFinite(_pb.maxWinX) ? _pb.maxWinX : 5000;
+  /* Compute warmup spins: ≥ 4 / hit_freq (statistical floor) ∨ cfg min. */
+  const warmupCalc = Math.max(cfg.warmupSpinsMin, Math.ceil(4 / hitFreqNorm) * 5);
   const cfgJSON = JSON.stringify({
     bandGreenPct: cfg.bandGreenPct,
     bandAmberPct: cfg.bandAmberPct,
     sparklineWindow: cfg.sparklineWindow,
     showSparkline: cfg.showSparkline,
     idleRefreshMs: cfg.idleRefreshMs,
+    warmupSpins: warmupCalc,
+    ciZ: cfg.ciZ,
+    ciAmberScale: cfg.ciAmberScale,
+    ciRedScale: cfg.ciRedScale,
+    hitFreq: hitFreqNorm,
+    volIdx: volIdx,
+    maxWinX: maxWinX,
   });
   return `
 /* ── liveRtpHud BLOCK runtime ─────────────────────────────────────── */
@@ -182,10 +214,32 @@ export function emitLiveRtpHudRuntime(cfg = defaultConfig(), model = {}) {
     return (v * 100).toFixed(places || 2) + '%';
   }
 
-  function bandClass(deltaPct) {
-    if (!isFinite(deltaPct)) return 'off';
-    if (deltaPct <= LRH_CFG.bandGreenPct) return 'green';
-    if (deltaPct <= LRH_CFG.bandAmberPct) return 'amber';
+  /* UQ-DEEP-AF: Wilson-CI-aware band computation.
+   * Old apsolutni 0.5pp band bio statistički nemoguć za high-vol slot.
+   * Sada: per-spin payX variance scales sa volIdx + maxWinX. Wilson CI
+   * half-width = z × σ / √N. Measured u CI → neutral. Van CI scale → amber/red. */
+  function bandClass(deltaAbs, n) {
+    if (!isFinite(deltaAbs)) return 'off';
+    if (n < LRH_CFG.warmupSpins) return 'warming';
+    /* Approximate per-spin σ from declared variance model. */
+    var pHit = LRH_CFG.hitFreq;
+    var maxWin = LRH_CFG.maxWinX;
+    /* Volatility-aware σ: high-vol = √(2 × E[payX²]) ≈ √(maxWin × rtp × pHit).
+     * Conservative: σ² ≈ rtp × (avgWinX given hit)². avgWinX ≈ rtp/pHit. */
+    var avgWinIfHit = LRH_TARGET / Math.max(pHit, 0.01);
+    /* Second moment lower bound: E[payX²] ≈ pHit × avgWinIfHit² × varFactor, where
+     * varFactor scales with vol (CV² ≈ vol/3 — empirical). */
+    var varFactor = Math.max(1, LRH_CFG.volIdx / 3);
+    var sigma2 = pHit * avgWinIfHit * avgWinIfHit * varFactor;
+    var sigma = Math.sqrt(sigma2);
+    /* Cap σ at maxWin/2 (sanity). */
+    if (maxWin > 0) sigma = Math.min(sigma, maxWin * 0.5);
+    var halfWidth = LRH_CFG.ciZ * sigma / Math.sqrt(n);                 /* 99% CI half-width */
+    /* Compare absolute delta vs scaled CI. */
+    var amberThresh = halfWidth * LRH_CFG.ciAmberScale;
+    var redThresh = halfWidth * LRH_CFG.ciRedScale;
+    if (deltaAbs <= amberThresh) return 'green';
+    if (deltaAbs <= redThresh) return 'amber';
     return 'red';
   }
 
@@ -193,10 +247,12 @@ export function emitLiveRtpHudRuntime(cfg = defaultConfig(), model = {}) {
     var el = document.getElementById('liveRtpHud');
     if (!el) return;
     var measured = lrh.n > 0 ? (lrh.rtpSum / lrh.n) : NaN;
-    var deltaPct = isFinite(measured) ? Math.abs(measured - LRH_TARGET) * 100 : NaN;
-    var band = bandClass(deltaPct);
+    var deltaAbs = isFinite(measured) ? Math.abs(measured - LRH_TARGET) : NaN;
+    var deltaPct = isFinite(deltaAbs) ? deltaAbs * 100 : NaN;
+    var band = bandClass(deltaAbs, lrh.n);
     var bandLabel = lrh.backendOk
-      ? (band === 'green' ? 'WITHIN ±' + LRH_CFG.bandGreenPct + '%'
+      ? (band === 'warming' ? 'WARMING ' + lrh.n + '/' + LRH_CFG.warmupSpins
+         : band === 'green' ? 'WITHIN CI ' + deltaPct.toFixed(2) + '%'
          : band === 'amber' ? 'DRIFT ' + deltaPct.toFixed(2) + '%'
          : band === 'red' ? 'ALERT ' + deltaPct.toFixed(2) + '%'
          : 'WARMING')
@@ -242,21 +298,39 @@ export function emitLiveRtpHudRuntime(cfg = defaultConfig(), model = {}) {
     if (window.HookBus && typeof window.HookBus.emit === 'function') {
       try {
         window.HookBus.emit('onLiveRtpUpdate', { measured: measured, target: LRH_TARGET, deltaPct: deltaPct, n: lrh.n });
-        if (lrh.n > 50 && lrh.backendOk) {
+        /* UQ-DEEP-AF: onDriftAlert emit SAMO posle warmup-a AND samo red band.
+         * Pre fix-a: n>50 hardkodovan, badge crveni od prvog spina (statistički nemoguć). */
+        if (lrh.n >= LRH_CFG.warmupSpins && lrh.backendOk && band === 'red') {
           window.HookBus.emit('onDriftAlert', { level: band, deltaPct: deltaPct });
         }
       } catch (_) {}
     }
   }
 
-  function recordSpin(payX) {
-    lrh.n++;
+  /* UQ-DEEP-AF: dedup postSpin u istoj rundi (tumble/cascade/FS internal step
+   * može da fire-uje više postSpin event-ova po jednom finalizovanom spinu).
+   * Bind round-close samo: koristi roundId iz event-a ili __ROUND_ID__ globala. */
+  var lastRoundId = -1;
+  function recordSpin(payX, meta) {
+    /* Dedup po roundId — ako isti round već zabrojen, samo update payX (sum). */
+    var rid = (meta && typeof meta.roundId === 'number') ? meta.roundId
+      : (typeof window.__ROUND_ID__ === 'number') ? window.__ROUND_ID__
+      : lrh.n;                                          /* fallback: monotonic */
+    var sameRound = (rid === lastRoundId);
+    if (!sameRound) {
+      lrh.n++;
+      lastRoundId = rid;
+    }
     if (typeof payX === 'number' && isFinite(payX)) {
       lrh.rtpSum += payX;
-      if (payX > 0) lrh.hits++;
+      if (payX > 0 && !sameRound) lrh.hits++;
       var measured = lrh.rtpSum / lrh.n;
-      lrh.history.push(measured);
-      if (lrh.history.length > LRH_CFG.sparklineWindow) lrh.history.shift();
+      if (sameRound && lrh.history.length > 0) {
+        lrh.history[lrh.history.length - 1] = measured;  /* update last sample */
+      } else {
+        lrh.history.push(measured);
+        if (lrh.history.length > LRH_CFG.sparklineWindow) lrh.history.shift();
+      }
     }
     paint();
   }

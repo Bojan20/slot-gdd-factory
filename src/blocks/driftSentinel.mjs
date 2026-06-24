@@ -14,8 +14,11 @@
 export function defaultConfig() {
   return Object.freeze({
     enabled: true,
-    /* Min spins before sentinel emits alerts (avoids noise during cold start). */
-    warmupSpins: 100,
+    /* UQ-DEEP-AF (Boki 2026-06-24): warmup podignut na 500 da match-uje
+     * liveRtpHud.warmupSpinsMin. Pre fix-a: 100 spinova warmup zaglavio na
+     * desync sa HUD (50) + statistički neutemeljeno za high-vol slotove.
+     * Sad: HUD i sentinel dele isti warmup minimum. */
+    warmupSpins: 500,
     /* Alert cooldown — same level alerts suppressed within N ms. */
     cooldownMs: 30_000,
     /* Auto-dismiss toast after N ms. */
