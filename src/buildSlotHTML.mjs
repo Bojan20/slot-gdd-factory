@@ -165,6 +165,25 @@ import {
   emitLiveRtpHudRuntime,
   resolveConfig as resolveLiveRtpHudConfig,
 } from './blocks/liveRtpHud.mjs';
+/* LV3-3 — Backend spin engine shim (per-spin fetch ka math-backend). */
+import {
+  emitBackendSpinEngineRuntime,
+  resolveConfig as resolveBackendSpinEngineConfig,
+} from './blocks/backendSpinEngine.mjs';
+/* LV3-5 — Batch simulator panel ('Run 1M' CTAs). */
+import {
+  emitBatchSimulatorPanelCSS,
+  emitBatchSimulatorPanelMarkup,
+  emitBatchSimulatorPanelRuntime,
+  resolveConfig as resolveBatchSimulatorPanelConfig,
+} from './blocks/batchSimulatorPanel.mjs';
+/* LV3-6 — Drift sentinel toast (amber/red alerts). */
+import {
+  emitDriftSentinelCSS,
+  emitDriftSentinelMarkup,
+  emitDriftSentinelRuntime,
+  resolveConfig as resolveDriftSentinelConfig,
+} from './blocks/driftSentinel.mjs';
 import {
   emitReelEngineCSS,
   resolveConfig as resolveReelEngineConfig,
@@ -1486,6 +1505,8 @@ ${emitSuperSymbolCSS(resolveSuperSymbolConfig(model))}
 
 ${emitFreeSpinsCSS(resolveFreeSpinsConfig(model))}
 ${emitLiveRtpHudCSS(resolveLiveRtpHudConfig(model))}
+${emitBatchSimulatorPanelCSS(resolveBatchSimulatorPanelConfig(model))}
+${emitDriftSentinelCSS(resolveDriftSentinelConfig(model))}
 ${emitDevToolsCSS()}
 </style></head><body>
 
@@ -1606,6 +1627,8 @@ ${emitFreeSpinsOverlayMarkup(resolveFreeSpinsConfig(model))}
 
 ${/* LV3 — Live RTP HUD overlay (MATH-INTEGRATION-LV3). */ ''}
 ${emitLiveRtpHudMarkup(resolveLiveRtpHudConfig(model))}
+${emitBatchSimulatorPanelMarkup(resolveBatchSimulatorPanelConfig(model))}
+${emitDriftSentinelMarkup(resolveDriftSentinelConfig(model))}
 
 ${resolveBonusBuyMenuConfig(model).enabled ? '' : emitBonusBuyMarkup(resolveBonusBuyConfig(model))}
 ${emitBonusBuyMenuMarkup(resolveBonusBuyMenuConfig(model))}
@@ -2320,10 +2343,15 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
      after FREESPINS / FSM / FORCE_TRIGGER are in scope. */
   ${emitDevForceButtonsRuntime(model)}
 
-  /* LV3 MATH-INTEGRATION (Boki 2026-06-24) — Live RTP HUD overlay.
-     Emit after HookBus + accounting so postSpin handler reads
-     window.__LAST_SPIN_WIN__ + window.__SLOT_BET__ correctly. */
+  /* LV3 MATH-INTEGRATION (Boki 2026-06-24) — sva 4 LV3 runtime block-a.
+     Order: liveRtpHud (HUD subscribe) → batchPanel (CTA wire) →
+     driftSentinel (alert listener) → backendSpinEngine (fetch shim).
+     Backend engine je POSLEDNJI tako da subscribe-uje postSpin sa
+     priority -200 i može da ažurira HUD preko __LIVE_RTP_RECORD__. */
   ${emitLiveRtpHudRuntime(resolveLiveRtpHudConfig(model), model)}
+  ${emitBatchSimulatorPanelRuntime(resolveBatchSimulatorPanelConfig(model), model)}
+  ${emitDriftSentinelRuntime(resolveDriftSentinelConfig(model))}
+  ${emitBackendSpinEngineRuntime(resolveBackendSpinEngineConfig(model), model)}
 
   /* Wave T-slim Phase 2 — extracted ~280 LOC of inline renderRect /
      renderVariableReel / renderMaskedRect / renderHex / renderWheel /

@@ -772,6 +772,13 @@ export const HOOK_EVENTS = Object.freeze([
   'wheelBonus.result',   // Owner: wheelBonus.mjs (engine→UI result)
   'reels:stopped',       // Owner: reelEngine (consumed by clusterPaysEval)
   'feature:bonusPick:trigger',  // Owner: bonusBuy / feature dispatcher
+  /* LV3 — MATH-INTEGRATION-LV3 (Boki 2026-06-24): live RTP HUD +
+   * backend spin engine + drift sentinel emit ova 3 cross-cutting
+   * events koje liveRtpHud / driftSentinel / backendSpinEngine slušaju. */
+  'onLiveRtpUpdate',         // Owner: liveRtpHud.mjs
+  'onDriftAlert',            // Owner: liveRtpHud.mjs → driftSentinel.mjs consumer
+  'onBackendSpinSampled',    // Owner: backendSpinEngine.mjs → liveRtpHud feed
+  'onBackendStatusChanged',  // Owner: backendSpinEngine.mjs (online/offline/pending)
   'onHoldAndWinPayout',  // Owner: holdAndWin.mjs
   'onHoldAndWinPhase',  // Owner: holdAndWin.mjs
   /* UQ-MASTERY-2 (2026-06-21) — explicit start-of-feature trigger emitted
