@@ -221,8 +221,15 @@ export function resolveConfig(model = {}) {
 
   if (m.enabled != null) cfg.enabled = !!m.enabled;
 
+  /* UQ-DEEP-Z fix (Boki 2026-06-24): ban-precedence — ako GDD eksplicitno
+   * bani bonus buy, ni deterministic plant extension ne sme. Mirror
+   * bonusBuy.mjs + bonusBuyMenu.mjs fix. */
+  const banDetected = !!(model.confidence && model.confidence._derivedBy &&
+                         model.confidence._derivedBy.bonusBuy === 'gdd-explicit-ban-detected');
+  if (banDetected) cfg.enabled = false;
+
   /* Hard requirement — bonusBuy must be enabled (it's the host CTA). */
-  const buyEnabled = !!(model.bonusBuy && (
+  const buyEnabled = !banDetected && !!(model.bonusBuy && (
     model.bonusBuy.enabled === true ||
     (Array.isArray(model.features) && model.features.some(f => f && f.kind === 'bonus_buy'))
   ));

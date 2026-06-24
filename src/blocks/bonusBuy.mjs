@@ -111,11 +111,23 @@ export function resolveConfig(model = {}) {
   if (Number.isFinite(m.rearmMs)) cfg.rearmMs = clampInt(m.rearmMs, 100, 10000);
   if (typeof m.confirmMessage === 'string' && m.confirmMessage.length <= 200) cfg.confirmMessage = m.confirmMessage;
 
-  // Auto-enable when bonus_buy feature is detected (but only when the
-  // grid topology supports buy-in — wheel / crash / plinko / radial
-  // self-disable via gridProfile and an explicit feature mention should
-  // NOT override that topology-level decision).
-  if (Array.isArray(model.features) && model.features.some(f => f.kind === 'bonus_buy')) {
+  /* UQ-DEEP-Z fix (Boki 2026-06-24): "ako gdd nema bonus buy, ne prikazuj
+   * taj blok u igri." Cash Eruption GDD eksplicitno bani bonus buy, parser
+   * stampa _derivedBy.bonusBuy = 'gdd-explicit-ban-detected' i postavi
+   * m.enabled = false. ALI features[] može imati 'bonus_buy' kind dodato
+   * iz drugog izvora (Wave V reconcile, smart defaults), pa je auto-enable
+   * brisao ban. Hard precedence: ako je ban detected ili m.enabled
+   * eksplicitno false → blok ostaje OFF, ignoriši features array. */
+  const banDetected = !!(model.confidence && model.confidence._derivedBy &&
+                         model.confidence._derivedBy.bonusBuy === 'gdd-explicit-ban-detected');
+  const explicitDisabled = (m.enabled === false);
+  if (banDetected || explicitDisabled) {
+    cfg.enabled = false;
+  } else if (Array.isArray(model.features) && model.features.some(f => f.kind === 'bonus_buy')) {
+    // Auto-enable when bonus_buy feature is detected (but only when the
+    // grid topology supports buy-in — wheel / crash / plinko / radial
+    // self-disable via gridProfile and an explicit feature mention should
+    // NOT override that topology-level decision).
     const ctxOverride = applyGridProfile('bonusBuy', { enabled: true }, model);
     cfg.enabled = ctxOverride.enabled !== false;
   }

@@ -193,10 +193,18 @@ export function resolveConfig(model = {}) {
     if (out.length > 0) cfg.tiers = out;
   }
 
+  /* UQ-DEEP-Z fix (Boki 2026-06-24): ban-precedence — ako GDD eksplicitno
+   * bani bonus buy, ni menu varijanta ne sme da pucanje. Mirror bonusBuy.mjs
+   * fix. */
+  const banDetected = !!(model.confidence && model.confidence._derivedBy &&
+                         model.confidence._derivedBy.bonusBuy === 'gdd-explicit-ban-detected');
+  if (banDetected || m.enabled === false) {
+    cfg.enabled = false;
+  }
   /* Auto-enable when GDD declares the feature OR a bonus_buy feature
    * arrives with a tiers[] array (modern multi-mode GDD). Wheel / crash /
    * plinko / radial veto via gridProfile is honored. */
-  if (Array.isArray(model.features)) {
+  if (!banDetected && m.enabled !== false && Array.isArray(model.features)) {
     const hasMenu = model.features.some(f =>
       f.kind === 'bonus_buy_menu' ||
       (f.kind === 'bonus_buy' && Array.isArray(f.tiers) && f.tiers.length >= 2)
