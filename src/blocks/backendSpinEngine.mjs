@@ -59,12 +59,21 @@ export function defaultConfig() {
 function _isAllowedBackendHost(urlStr) {
   try {
     const u = new URL(urlStr);
-    const host = u.hostname;
+    /* UQ-DEEP-AW O-P1-3 (Auditor O): unicode-confusable + punycode guard.
+       URL().hostname returns ASCII (xn--…) form for IDN. Operator could
+       put a unicode-rendered "localhost" in allowlist; attacker registers
+       punycode that decodes to visually-identical string. Reject any
+       xn-- prefix by default; normalize NFKC + lowercase for compare. */
+    const host = String(u.hostname || '').normalize('NFKC').toLowerCase();
+    if (host.startsWith('xn--')) return false;
     if (host === '127.0.0.1' || host === 'localhost' || host === '::1' || host === '[::1]') return true;
     if (typeof globalThis !== 'undefined' && globalThis.window
-        && Array.isArray(globalThis.window.__BACKEND_ALLOWLIST__)
-        && globalThis.window.__BACKEND_ALLOWLIST__.includes(host)) return true;
-    if (typeof globalThis !== 'undefined' && globalThis.location && host === globalThis.location.hostname) return true;
+        && Array.isArray(globalThis.window.__BACKEND_ALLOWLIST__)) {
+      const allow = globalThis.window.__BACKEND_ALLOWLIST__.map((h) => String(h).normalize('NFKC').toLowerCase());
+      if (allow.includes(host)) return true;
+    }
+    if (typeof globalThis !== 'undefined' && globalThis.location
+        && String(globalThis.location.hostname || '').normalize('NFKC').toLowerCase() === host) return true;
     return false;
   } catch (_) { return false; }
 }

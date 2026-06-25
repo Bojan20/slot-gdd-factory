@@ -310,11 +310,16 @@ export class ManifestSchemaError extends Error {
  */
 export function isCompatibleSchema(version) {
   if (typeof version !== 'string') return false;
+  /* UQ-DEEP-AW O-P0-1 (Auditor O): ReDoS guard. Pre-bound length, then
+     SemVer 2.0.0 regex sa MUTUALLY-EXCLUSIVE alternative — was
+     `[1-9]\\d*|\\d` (both match "1") → catastrophic backtracking on
+     adversarial input "1.0.0-1.1.1.1.1...!". Now `0|[1-9]\\d*` disjoint.
+     Length cap je 120 chars (real cert versions stay < 60). */
+  if (version.length > 120) return false;
   // Accept 1.x.y with optional -prerelease.id / +build.id suffix.
-  // UQ-DEEP-AV M-P0-2 (Auditor M): SemVer 2.0.0 §9/§10 strict compliance.
-  // Identifier alphabet is [0-9A-Za-z-] (NO underscore). Numeric prerelease
-  // identifiers must NOT have leading zero. Use full SemVer 2.0.0 regex.
-  if (!/^1\.\d+\.\d+(?:-(?:[1-9]\d*|\d|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:[1-9]\d*|\d|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.test(version)) {
+  // Identifier alphabet [0-9A-Za-z-] (NO underscore). Numeric prerelease
+  // identifiers must NOT have leading zero. SemVer 2.0.0 §9/§10.
+  if (!/^1\.\d+\.\d+(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.test(version)) {
     return false;
   }
   return true;

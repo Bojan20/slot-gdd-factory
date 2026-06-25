@@ -266,7 +266,7 @@ export function emitSpinControlMarkup(cfg = defaultConfig()) {
    * STOP  — solid square (universal media-stop glyph)
    * SKIP  — forward double-triangle (universal media-skip glyph) */
   return tagBlockMarkup(`
-  <button class="spinBtn" id="spinBtn" type="button" data-state="SPIN" data-spin-ready="true" aria-label="${aria}">
+  <button class="spinBtn" id="spinBtn" type="button" data-state="SPIN" data-spin-ready="true" aria-label="${aria}" data-i18n-aria="spinControl.label" data-i18n-aria-fallback="${aria}" data-dynamic-aria="true">
     <svg class="spinIcon spinIcon--spin" viewBox="0 0 32 32" aria-hidden="true">
       <path d="M5.6 17.4a10.5 10.5 0 0 0 18.7 5.2"/>
       <path d="M26.4 14.6A10.5 10.5 0 0 0 7.7 9.4"/>

@@ -171,7 +171,7 @@ export function emitJackpotLadderRoomsMarkup(cfg = defaultConfig()) {
     const label = (cfg.labels && cfg.labels[tier]) || tier;
     return tagBlockMarkup(`<div class="jp-room" role="status" aria-label="${tier} jackpot" data-tier="${tier}" data-active="false">${label}</div>`, 'jackpotLadderRooms');
   }).join('');
-  return `<div id="jpLadder" class="jp-ladder" role="group" aria-label="Jackpot ladder">${rooms}</div>`;
+  return `<div id="jpLadder" class="jp-ladder" role="group" aria-label="Jackpot ladder" data-i18n-aria="jackpotLadderRooms.0" data-i18n-aria-fallback="Jackpot ladder">${rooms}</div>`;
 }
 
 export function emitJackpotLadderRoomsRuntime(cfg = defaultConfig()) {
