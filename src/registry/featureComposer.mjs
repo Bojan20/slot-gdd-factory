@@ -247,7 +247,13 @@ export function defaultConfig() {
     defaultTriggerP: DEFAULT_TRIGGER_P,
     defaultContribution: DEFAULT_CONTRIBUTION,
     baseRtpFloor: 0.30,
-    baseRtpCeiling: 0.95,
+    /* UQ-U-7 atom #4 (Boki 2026-06-25 audit #2 P1 VERIFIED): was 0.95
+       but clampBaseRtp uses 0.99 internally (raised so classic line slots
+       with zero features pass the gate). The defaultConfig export was
+       stale, causing downstream consumers reading cfg for tolerance
+       checks to reject base values in (0.95, 0.99] as "out of range"
+       while composer happily returned them. Now sync to clamp ceiling. */
+    baseRtpCeiling: 0.99,
   });
 }
 

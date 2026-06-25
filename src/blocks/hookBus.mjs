@@ -977,6 +977,21 @@ export const HOOK_EVENTS = Object.freeze([
    * onBlockDestroy {name, reason}     — fires from teardown caller. */
   'onBlockSetup',
   'onBlockDestroy',
+
+  /* UQ-U-7 atom #3 (Boki 2026-06-25 audit #1 P0 VERIFIED): close the
+   * lego-gate HOOK_EVENTS missing-emit gap so the LEGO walker becomes
+   * a hard CI gate (per ci.yml roadmap line 47). These 8 events were
+   * emit-ed by blocks but never registered, so HookBus.on() silently
+   * dropped subscribers and emit() no-op'd. Owner mapping mirrors the
+   * EXPECTED_EMIT_OWNERS table in tools/lego-gate.mjs. */
+  'onAddedSymbolsInjected',     // Owner: addedSymbolsInjector.mjs (or any block that injects extra cells)
+  'onCopyWildPropagated',       // Owner: copyWildOrchestrator.mjs
+  'onExtendedWildRegistered',   // Owner: extendedWild.mjs
+  'onExtendedWildExpired',      // Owner: extendedWild.mjs (countdown=0)
+  'onGddMetaReady',             // Owner: gddRuntimeMeta.mjs (window.__GDD_*__ stamped)
+  'onKernelInitReady',          // Owner: kernelInit.mjs (P3-P4 — window.__KERNEL_INIT__ frozen)
+  'onSymbolModifiersApplied',   // Owner: symbolModifiers.mjs (multipliers / wilds / sticky transforms)
+  'onCascadeHalted',            // Owner: cascadeLimits.mjs (max-depth guard fires)
 ]);
 
 /* Wave U4: canonical autoplay stop reasons. */

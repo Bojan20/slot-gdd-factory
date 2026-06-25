@@ -43,15 +43,28 @@ import { parseGDD } from '../src/parser.mjs';
 
 let pass = 0;
 let fail = 0;
-function t(name, fn) {
+/* UQ-U-7 atom #14 (Boki 2026-06-25 audit #8 P1 VERIFIED): t() now runs
+   fn() inside try/finally so an optional `cleanup` arg always fires —
+   even when fn throws. Eliminates the cross-test contamination risk
+   where a BFS / migration test would leave _registry mutated for any
+   subsequent in-process test if the assert.throws regex mismatched. */
+function t(name, fn, cleanup) {
   try {
-    fn();
-    console.log(`  ✓ ${name}`);
-    pass++;
-  } catch (err) {
-    console.log(`  ✗ ${name}`);
-    console.log(`      ${err.message}`);
-    fail++;
+    try {
+      fn();
+      console.log(`  ✓ ${name}`);
+      pass++;
+    } catch (err) {
+      console.log(`  ✗ ${name}`);
+      console.log(`      ${err.message}`);
+      fail++;
+    }
+  } finally {
+    if (typeof cleanup === 'function') {
+      try { cleanup(); } catch (cleanupErr) {
+        console.log(`      (cleanup failed: ${cleanupErr.message})`);
+      }
+    }
   }
 }
 
@@ -233,16 +246,12 @@ t('parseSemver strict mode throws on garbage', () => {
 
 /* ─── UQ-U-2 atom #10 (BFS planner) ─────────────────────────────────── */
 t('planMigration BFS finds shortest path through multi-hop chain', () => {
-  /* UQ-U-3 atom #8: reset registry to baseline first so test starts
-     from known state regardless of prior contamination. */
   _resetRegistryForTests();
   register('1.0.0', '1.1.0', (m) => ({ ...m, __schema__: { version: '1.1.0' } }));
   register('1.1.0', '1.2.0', (m) => ({ ...m, __schema__: { version: '1.2.0' } }));
   const chain = planMigration('1.0.0', '1.2.0');
   assert.deepEqual(chain, ['1.0.0->1.1.0', '1.1.0->1.2.0']);
-  /* Cleanup so subsequent tests in same process see canonical registry. */
-  _resetRegistryForTests();
-});
+}, _resetRegistryForTests);
 
 /* ─── UQ-U-3 atom #10: planMigration cycle / no-path detection ──────── */
 t('planMigration throws clearly when no path exists', () => {
@@ -252,7 +261,7 @@ t('planMigration throws clearly when no path exists', () => {
     () => planMigration('0.0.0', '5.0.0'),
     /no path|visited/,
   );
-});
+}, _resetRegistryForTests);
 
 t('migrate detects fn that returns wrong __schema__.version', () => {
   _resetRegistryForTests();
@@ -264,8 +273,7 @@ t('migrate detects fn that returns wrong __schema__.version', () => {
     () => migrate(legacy, '1.1.0'),
     /produced model\.__schema__\.version=0\.9\.0, expected 1\.1\.0/,
   );
-  _resetRegistryForTests();
-});
+}, _resetRegistryForTests);
 
 console.log(`\nResult: ${pass} pass / ${fail} fail`);
 if (fail > 0) process.exit(1);

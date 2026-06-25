@@ -288,8 +288,22 @@ function visionCall(model, screenshotPaths, opts = {}) {
   if ((st.mode & 0o002) !== 0) {
     return { verdict: 'SKIP', observed: `wrapper world-writable (insecure): ${wrapperAbs}`, estUsd: 0 };
   }
+  /* UQ-U-7 atom #2 (Boki 2026-06-25 audit #2 P0 VERIFIED): when HOME is
+     unset / empty (CI sandboxes, restricted accounts), `resolve('', 'Projects')`
+     returns `<cwd>/Projects`, which widens the allow-list to ANY wrapper
+     binary under the working directory — a security regression. Now we
+     SKIP loud if HOME is missing rather than synthesize a permissive
+     root. Operator must export HOME explicitly to enable vision mode. */
+  const homeDir = (process.env.HOME || '').trim();
+  if (!homeDir) {
+    return {
+      verdict: 'SKIP',
+      observed: 'HOME env unset/empty — vision wrapper allow-list cannot be safely derived',
+      estUsd: 0,
+    };
+  }
   const allowedRoots = [
-    resolve(process.env.HOME || '', 'Projects') + sep,
+    resolve(homeDir, 'Projects') + sep,
     '/usr/local/bin' + sep,
     '/opt' + sep,
     /* Tests inject mock wrappers via mkdtemp under $TMPDIR — allow os.tmpdir() */

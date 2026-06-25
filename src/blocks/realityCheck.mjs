@@ -289,12 +289,26 @@ export function resolveConfig(model = {}) {
      If a jurisdiction floor exists AND (a) GDD did not author intervalMs
      OR (b) authored value is below the floor → clamp UP to floor. This
      closes the "demo 10-min default ships to UK production" gap without
-     blocking GDD authors from running LONGER intervals if they want. */
+     blocking GDD authors from running LONGER intervals if they want.
+
+     UQ-U-7 atom #13 (Boki 2026-06-25 audit #3 P1 VERIFIED): UNKNOWN
+     jurisdiction (e.g. 'BR', 'AR', 'ZA') previously fell through to
+     demo 10-min default. Regulator-conservative fallback now applies
+     the GLOBAL_FLOOR_UNKNOWN_MS (30 min — matches strictest known
+     jurisdiction) whenever jurisdiction is truthy but no specific
+     floor is registered. Authoring a longer intervalMs still wins. */
+  const GLOBAL_FLOOR_UNKNOWN_MS = 30 * 60 * 1000;
   if (jurisdiction && JURISDICTION_RC_INTERVAL_FLOOR_MS[jurisdiction]) {
     const floor = JURISDICTION_RC_INTERVAL_FLOOR_MS[jurisdiction];
     if (!Number.isFinite(m.intervalMs) || cfg.intervalMs < floor) {
       cfg.intervalMs = floor;
       cfg.jurisdictionFloorApplied = true;
+    }
+  } else if (jurisdiction) {
+    if (!Number.isFinite(m.intervalMs) || cfg.intervalMs < GLOBAL_FLOOR_UNKNOWN_MS) {
+      cfg.intervalMs = GLOBAL_FLOOR_UNKNOWN_MS;
+      cfg.jurisdictionFloorApplied = true;
+      cfg.unknownJurisdictionFallback = true;
     }
   }
 

@@ -211,9 +211,20 @@ export function createGuard(overrides = {}) {
     };
   }
 
+  /* UQ-U-7 atom #6 (Boki 2026-06-25 audit #5 P1): full reset NOW
+     re-reads env defaults via resolveConfig so a long-living defaultGuard
+     picks up post-spawn V9_MAX_VISION_* env updates between test runs.
+     Tests that override via createGuard({...}) still keep their override
+     because we preserve the snapshot captured at construction time. */
+  const _origOverrides = { ...overrides };
   function reset() {
     calls = 0;
     usdMicroCents = 0n;
+    /* Re-derive cfg from current env + original overrides. */
+    const refreshed = resolveConfig();
+    cfg.maxCalls = _clamp(_origOverrides.maxCalls, refreshed.maxCalls, 0, 10_000);
+    cfg.maxUsd = _clamp(_origOverrides.maxUsd, refreshed.maxUsd, 0, 10_000);
+    cfg.estUsdPerCall = _clamp(_origOverrides.estUsdPerCall, refreshed.estUsdPerCall, 0, 100);
   }
 
   return { shouldCallVision, recordCall, report, reset };

@@ -47,15 +47,30 @@
 const CONF_AUTO_ON = 0.65;
 const CONF_WARN    = 0.35;
 
+/* UQ-U-7 atom #1 (Boki 2026-06-25 audit #1 P0 VERIFIED): keys MUST match
+ * gridProfile.listKinds() canonical names. Old keys had:
+ *   - `variable_rows` (should be `variable_reel`)
+ *   - `hex`           (should be `hexagonal`)
+ *   - `lshape`        (should be `l_shape`)
+ *   - missing `megaclusters` entry entirely
+ * Drift meant structuralFit=0 for ALL variable_reel/hexagonal/l_shape/
+ * megaclusters topologies, dropping their auto-on score below threshold.
+ *
+ * Canonical kinds (synced from gridProfile.listKinds()):
+ *   cluster, crash, cross, diamond, dual, expanding, hexagonal, infinity,
+ *   l_shape, lock_respin, megaclusters, plinko, pyramid, radial,
+ *   rectangular, slingo, variable_reel, wheel
+ */
 const TOPOLOGY_BLOCK_FIT = Object.freeze({
   rectangular:    ['paylines', 'paytable', 'reelEngine', 'tumble', 'cascadeBooster'],
   cluster:        ['clusterPaysEval', 'tumble', 'clusterSizeMultiplier'],
-  variable_rows:  ['waysEval', 'dynamicWaysEngine'],
-  hex:            ['hexReelEngine', 'hexClusterEngine'],
+  megaclusters:   ['clusterPaysEval', 'symbolSplit', 'tumble', 'clusterSizeMultiplier'],
+  variable_reel:  ['waysEval', 'dynamicWaysEngine'],
+  hexagonal:      ['hexReelEngine', 'hexClusterEngine'],
   pyramid:        ['pyramidGridEngine'],
   diamond:        ['pyramidGridEngine'],
   cross:          ['paylines'],
-  lshape:         ['paylines'],
+  l_shape:        ['paylines'],
   radial:         ['wheelSpinEngine', 'wheelBonus', 'weightedWheelSegments'],
   infinity:       ['infinityReels', 'infinityReelsEngine'],
   expanding:      ['expandingWild', 'reelHeightAdapter'],

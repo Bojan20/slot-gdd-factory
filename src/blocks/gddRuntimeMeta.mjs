@@ -128,12 +128,27 @@ export function emitGddRuntimeMeta(cfg = defaultConfig()) {
   return `/* ─── GDD runtime meta (RENDER-INTEG-A) ──────────────────────── */
 (function(){
   if (typeof window === 'undefined') return;
+  /* UQ-U-7 atom #12 (Boki 2026-06-25 audit #2 P1 VERIFIED): regulator-grade
+     math manifest MUST be tamper-proof at runtime. Plain assignment lets
+     any script clobber the value post-boot — defeats the "audit trail
+     fingerprint" use case. Switch to defineProperty with writable:false +
+     configurable:false so reassignment throws in strict mode and is
+     silently ignored in sloppy. Existing properties are skipped (re-emit
+     under hot-reload preserves the original stamp). */
+  function _def(k, v) {
+    if (Object.prototype.hasOwnProperty.call(window, k)) return;
+    try {
+      Object.defineProperty(window, k, { value: v, writable: false, configurable: false, enumerable: true });
+    } catch (_) {
+      try { window[k] = v; } catch (__) {}
+    }
+  }
   try {
-    window.__GDD_META_VERSION__ = ${JSON.stringify(META_VERSION)};
-    window.__GDD_COMPLIANCE__ = ${JSON.stringify(p.compliance)};
-    window.__GDD_RTP_BREAKDOWN__ = ${JSON.stringify(p.rtpBreakdown)};
-    window.__GDD_SCATTER_PAY_TABLE__ = ${JSON.stringify(p.scatterPayTable)};
-    window.__GDD_EXPANDING_WILD_ONLY_IF_WINNING__ = ${JSON.stringify(p.expandingWildOnlyIfWinning)};
+    _def('__GDD_META_VERSION__', ${JSON.stringify(META_VERSION)});
+    _def('__GDD_COMPLIANCE__', ${JSON.stringify(p.compliance)});
+    _def('__GDD_RTP_BREAKDOWN__', ${JSON.stringify(p.rtpBreakdown)});
+    _def('__GDD_SCATTER_PAY_TABLE__', ${JSON.stringify(p.scatterPayTable)});
+    _def('__GDD_EXPANDING_WILD_ONLY_IF_WINNING__', ${JSON.stringify(p.expandingWildOnlyIfWinning)});
     if (typeof HookBus !== 'undefined' && !window.__GDD_META_EMITTED__) {
       window.__GDD_META_EMITTED__ = true;
       try { HookBus.emit('onGddMetaReady', {
