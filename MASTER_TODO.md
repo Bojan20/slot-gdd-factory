@@ -1,10 +1,10 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-25 10:55 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BA ✅ DONE)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-25 11:10 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB ✅ DONE)
 
 Sve glavne grane backlog-a su zatvorene (MATH + Expert P1/P2/P3 +
 nice-to-have N1-N8 + post-backlog ekstenzije A/B/C). Posle toga
-**29 UQ-DEEP wave-ova (AA → BA)** zatvoreno sa ukupno **~106 P0/P1 atoma**
-(detalji u dnu fajla, "UQ-DEEP-AN do UQ-DEEP-BA track" sekcija).
-HEAD: BA (post-commit će popuniti SHA).
+**30 UQ-DEEP wave-ova (AA → BB)** zatvoreno sa ukupno **~108 P0/P1 atoma**
+(detalji u dnu fajla, "UQ-DEEP-AN do UQ-DEEP-BB track" sekcija).
+HEAD: BB (post-commit će popuniti SHA).
 Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 
 ### 🎯 Trenutni snapshot — posle UQ-DEEP-AY (2026-06-25)
@@ -26,12 +26,14 @@ Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 │ data-block-name coverage                     │ 95%+ (114 markup tagged)     │
 │ defaultConfig freeze coverage                │ 209/211 (98.6%, 2 exempt)    │
 │ MATH precision band                          │ ±0.05% (PRECISION-3+4 wired) │
-│ UQ-DEEP track total commits                  │ 29 (AA → BA)                  │
-│ UQ-DEEP track total atoms                    │ ~106 P0/P1                    │
+│ UQ-DEEP track total commits                  │ 30 (AA → BB)                  │
+│ UQ-DEEP track total atoms                    │ ~108 P0/P1                    │
 │ 4-paralel auditor R sweep                    │ 2 fix (P0 + P1), 2 false-pos  │
 │ 5-paralel auditor S sweep                    │ 3 fix + P2 backlog cleanup    │
+│ 5-paralel auditor T sweep                    │ 2 P1 fix, 4 domena čista       │
 │ i18n catalog (post-BA)                       │ 166 entries × 5 locales       │
 │ Regulator gates (post-BA)                    │ gamble + realityCheck + buy   │
+│ Backend/deploy/cache/upload (T-1..T-4)      │ verifikovano čisto             │
 └─────────────────────────────────────────────┴──────────────────────────────┘
 ```
 
@@ -17681,15 +17683,16 @@ Boki "KRENI" signal za pokretanje.
 
 ---
 
-## 🛡 UQ-DEEP-AN do UQ-DEEP-BA track — 2026-06-25 (14 commit-ova posle AM)
+## 🛡 UQ-DEEP-AN do UQ-DEEP-BB track — 2026-06-25 (15 commit-ova posle AM)
 
 Posle UQ-DEEP-AM cosmetic hardening, nastavljen je nezadrživi sweep:
-19 paralelnih auditora (I, J, K, L, M, N, O, P, Q + 4× R + 5× S + 4 multi-axis)
+24 paralelnih auditora (I, J, K, L, M, N, O, P, Q + 4×R + 5×S + 5×T + 4 multi-axis)
 prošli post-AM regresiju + IGT corpus + real-time GDD audit + memory/race/
 determinism + XSS/security/race hardening + bfcache lifecycle + import path
-escape defense + regulator jurisdiction gates + P2 i18n backlog cleanup.
+escape defense + regulator jurisdiction gates + P2 i18n backlog cleanup +
+backend spin engine + deployment + cache integrity + web uploader + perf/memory.
 
-### Wave overview (UQ-DEEP-AN..BA)
+### Wave overview (UQ-DEEP-AN..BB)
 
 ```
 ┌────────────┬───────────────────────────────────────────────────────────────┬──────────┐
@@ -17708,14 +17711,60 @@ escape defense + regulator jurisdiction gates + P2 i18n backlog cleanup.
 │ 0c61190    │ UQ-DEEP-AX · Auditor P · 4 XSS/race/NaN/idempotent-wire fix   │ 4 P0/P1  │
 │ 6bfbab5    │ UQ-DEEP-AY · Auditor Q · 5 XSS/path-traversal/SSE/i18n fix    │ 5 P0/P1  │
 │ 046c2c0    │ UQ-DEEP-AZ · 4-paralel Auditor R · bfcache + WASM-import path │ 2 P0/P1  │
-│ (current)  │ UQ-DEEP-BA · 5-paralel Auditor S · regulator gates + i18n P2  │ 4 + P2-12│
+│ cde0f7b    │ UQ-DEEP-BA · 5-paralel Auditor S · regulator gates + i18n P2  │ 4 + P2-12│
+│ (current)  │ UQ-DEEP-BB · 5-paralel Auditor T · winPresentation timer leak │ 2 P1     │
 └────────────┴───────────────────────────────────────────────────────────────┴──────────┘
 
-  Total UQ-DEEP track (AA → BA): 29 commit-ova zatvoreno
-  Total atoma rešeno: ~106 (6+7+11+6+10+7+8+8+16+6+4+5+2+4 + 18 iz AA-AM)
+  Total UQ-DEEP track (AA → BB): 30 commit-ova zatvoreno
+  Total atoma rešeno: ~108 (6+7+11+6+10+7+8+8+16+6+4+5+2+4+2 + 18 iz AA-AM)
 ```
 
-### UQ-DEEP-BA (current commit) — 5-paralel Auditor S sweep + P2 i18n cleanup
+### UQ-DEEP-BB (current commit) — 5-paralel Auditor T sweep (fresh domains)
+
+5 paralelnih auditora pokrenuti na NOVIM domeni (nisu pokriveni A-S):
+
+```
+┌───────┬─────────────────────────────────────┬────────────────────────────┐
+│ Aud.  │ Domen (sveža oblast)                 │ Verdict (post-verification) │
+├───────┼─────────────────────────────────────┼────────────────────────────┤
+│ T-1   │ backend spin engine + RTP parity     │ 0 nove rupe — čist          │
+│ T-2   │ deployment + cert-build + manifest   │ 0 nove rupe — čist          │
+│ T-3   │ cache layer + fileLock idempotency   │ 0 nove rupe — čist          │
+│ T-4   │ web uploader + SSE + iframe sandbox  │ 0 nove rupe — čist          │
+│ T-5   │ performance + memory profile         │ 2 P1 (winPresent timer leak)│
+└───────┴─────────────────────────────────────┴────────────────────────────┘
+
+Verdict: 4/5 domena potpuno čisti. T-5 pronašao dve setTimeout bez
+clearTimeout u winPresentation cancel path — verifikovano u izvoru.
+```
+
+```
+┌──────┬──────────────────────────────────────────────┬────────────────────────┐
+│ ID   │ Fix                                           │ File                   │
+├──────┼──────────────────────────────────────────────┼────────────────────────┤
+│ T-P1-1│ playSymbolCelebration setTimeout tracked     │ src/blocks/winPresent… │
+│       │ + cleared on cancelWinSymCycle (closures     │   .mjs:386-393         │
+│       │ više ne drže ev.cells refs preko cancel-a)   │                        │
+│ T-P1-2│ playWinSymCycle 2× setTimeout (per-step +    │ src/blocks/winPresent… │
+│       │ initial schedule) tracked + cleared on cancel│   .mjs:519, 525        │
+│       │ (turbo-click više ne stack-uje N dangling    │                        │
+│       │  callback closures)                          │                        │
+│ +infra│ WINSYM_CYCLE_TIMERS Set + _winsymTimerAdd/   │ src/blocks/winPresent… │
+│       │ _winsymTimerDone helpers (centralized tracker)│   .mjs:346-360         │
+├──────┼──────────────────────────────────────────────┼────────────────────────┤
+│ 4 domena čista (post-verification):                                          │
+│  T-1 backend spin engine — SSRF allowlist + sessionId FNV-1a + payX bound   │
+│       + audit trail SHA-256 + INFLIGHT dedupe — sve verified                 │
+│  T-2 deployment pipeline — SHA-256 manifest + ZIP DOS_TIME deterministic    │
+│       + cert-pack PII scrub + npm audit 0 vulnerabilities                    │
+│  T-3 cache + fileLock — __parser_hash__ invalidation + atomicWrite + PID    │
+│       stale recovery + symlink guard + JSON BOM fallback — sve UQ-FORTIFY    │
+│  T-4 web uploader — 50MB cap + basename guard + ext whitelist + iframe       │
+│       sandbox (no allow-same-origin) + CSP + SSE origin allowlist (Q-P1-5)  │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### UQ-DEEP-BA — 5-paralel Auditor S sweep + P2 i18n cleanup
 
 5 paralelnih auditora (S-1 parser · S-2 HookBus · S-3 verify-gate ·
 S-4 CSS/a11y · S-5 regulator) pokrenuti na disjoint domene. Rezultat
@@ -17829,7 +17878,7 @@ Locale parity verified: 5×5 (158 entries × en/de/nl/da/sv) — 0 drift.
 └──────┴──────────────────────────────────────────────┴────────────────────────┘
 ```
 
-### Trenutni status (HEAD posle UQ-DEEP-BA)
+### Trenutni status (HEAD posle UQ-DEEP-BB)
 
 ```
 verify gate                         33/33 ALL GREEN
@@ -17876,9 +17925,16 @@ bonusBuy cost-X cap matrix           MGA 500× / ON-IT-ES 250× / NJ 500× (BA)
 settingsPanel i18n stamping          10 aria-label × 5 locales = 50 entries (BA)
 i18n catalog                         166 entries × 5 locales (parity 100%)
 5-paralel Auditor S sweep            S-1/S-2 čisti, S-3 false-pos, S-4/S-5 fix
+winPresentation timer tracker        WINSYM_CYCLE_TIMERS Set + cancel cleanup (BB)
+playSymbolCelebration / WinSymCycle  setTimeout handle tracked + clearTimeout (BB)
+5-paralel Auditor T sweep            T-1/T-2/T-3/T-4 čisti, T-5 timer-leak fix
+backend spin engine                  0 nove rupe — SSRF + payX bound + audit OK
+deployment pipeline                  0 nove rupe — SHA-256 + cert-pack + npm OK
+cache + fileLock                     0 nove rupe — UQ-FORTIFY 1-9 LOCKED
+web uploader N+2 F                   0 nove rupe — multipart + SSE + iframe OK
 ```
 
-### Sledeća wave (UQ-DEEP-BB ili LV3)
+### Sledeća wave (UQ-DEEP-BC ili LV3)
 
 P3 deferred (low priority):
 - Deep-freeze nested objects u defaultConfig (trenutni je shallow)

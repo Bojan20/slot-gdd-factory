@@ -344,8 +344,18 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
      the next spin bumps the token, any pending cycle frame sees the
      mismatch and bails out without touching the DOM. */
   let WINSYM_CYCLE_TOKEN = 0;
+  /* UQ-DEEP-BB T-P1-1 (Auditor T-5): track in-flight setTimeout handles so
+     cancelWinSymCycle can clearTimeout them. Pre-fix, turbo-clicking spins
+     could queue N dangling setTimeouts whose closures retained refs to the
+     events[] + grid + ev.cells payload. Token check made them no-op when
+     finally firing, but in-event-loop queue + closure memory still grew. */
+  const WINSYM_CYCLE_TIMERS = new Set();
+  function _winsymTimerAdd(id) { WINSYM_CYCLE_TIMERS.add(id); return id; }
+  function _winsymTimerDone(id) { WINSYM_CYCLE_TIMERS.delete(id); }
   function cancelWinSymCycle() {
     WINSYM_CYCLE_TOKEN++;
+    WINSYM_CYCLE_TIMERS.forEach(function (id) { try { clearTimeout(id); } catch (_) {} });
+    WINSYM_CYCLE_TIMERS.clear();
     clearWinHighlight();
     clearPaylineOverlay();
   }
@@ -383,13 +393,16 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
         }
       }
       for (const c of cellSet) c.classList.add('cell--winsym');
-      setTimeout(() => {
+      /* UQ-DEEP-BB T-P1-1: track timer so cancelWinSymCycle can clear. */
+      const _celebTid = setTimeout(() => {
+        _winsymTimerDone(_celebTid);
         if (token !== WINSYM_CYCLE_TOKEN) { resolve(); return; }   /* cancelled */
         grid.querySelectorAll('.cell--winsym, text.cell--winsym')
           .forEach(c => c.classList.remove('cell--winsym'));
         grid.classList.remove('is-winsym-cycling');
         resolve();
       }, hold);
+      _winsymTimerAdd(_celebTid);
     });
   }
   /* Win-symbol cycle — cycles through detected win events one-by-one.
@@ -516,13 +529,22 @@ export function emitWinPresentationRuntime(cfg = defaultConfig()) {
           drawPaylineOverlay(Object.assign({}, ev, { lineIndex: i, _virtualLine: true }));
         }
         i++;
-        setTimeout(playOne, stepMs);
+        /* UQ-DEEP-BB T-P1-2: track timer; cancelWinSymCycle clears. */
+        const _stepTid = setTimeout(function () {
+          _winsymTimerDone(_stepTid);
+          playOne();
+        }, stepMs);
+        _winsymTimerAdd(_stepTid);
       };
       /* V7 — first event is pre-rendered above. Schedule playOne after
          stepMs so event[0] holds for the same per-event window as the
          legacy single-call path. If events.length === 1 the next playOne
          will clear and resolve cleanly. */
-      setTimeout(playOne, stepMs);
+      const _firstTid = setTimeout(function () {
+        _winsymTimerDone(_firstTid);
+        playOne();
+      }, stepMs);
+      _winsymTimerAdd(_firstTid);
     });
   }
   /* detectLineWins — payline-based per-line event generation.
