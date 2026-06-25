@@ -1,4 +1,7 @@
 import { applySmartDefaults } from './registry/smartDefaults.mjs';
+/* N+2-I (Boki 2026-06-25) — top-level model.json schema stamp.
+   See src/registry/modelSchemaVersion.mjs for the semver policy. */
+import { buildSchemaEnvelope } from './registry/modelSchemaVersion.mjs';
 /* Optional Node-only handle for Wave V overlay. Top-level dynamic import
  * happens once at module load. The import is wrapped so a browser bundle
  * that strips `node:*` still loads the parser. */
@@ -4014,6 +4017,12 @@ export function adaptV6SymbolsShape(symbols, obj) {
 /* ─── factory ──────────────────────────────────────────────── */
 function freshModel() {
   return {
+    /* N+2-I — top-level schema envelope. Every parser output (success
+       or partial-failure) gets stamped so cached/persisted models can
+       be routed through `modelMigrations.migrate()` deterministically.
+       Field is non-enumerable-safe (regular key) so JSON.stringify keeps
+       it on the wire. See src/registry/modelSchemaVersion.mjs. */
+    __schema__: buildSchemaEnvelope(),
     name: 'Untitled Slot',
     theme: {
       tags: [],

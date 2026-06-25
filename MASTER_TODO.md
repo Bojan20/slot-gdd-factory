@@ -1,13 +1,13 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-25 14:50 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB + N+2 D-G ✅ DONE)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-25 17:05 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB + N+2 D-I ✅ DONE)
 
 Sve glavne grane backlog-a su zatvorene (Expert P1/P2/P3 +
-nice-to-have N1-N8 + post-backlog ekstenzije A/B/C + N+2 atomi D/E/F/G).
+nice-to-have N1-N8 + post-backlog ekstenzije A/B/C + N+2 atomi D/E/F/G/H/I).
 Posle toga **30 UQ-DEEP wave-ova (AA → BB)** zatvoreno sa ukupno
 **~108 P0/P1 atoma** (detalji u dnu fajla, "UQ-DEEP-AN do UQ-DEEP-BB track" sekcija).
-HEAD: `881a5a7` (UQ-DEEP-BB · 5-paralel Auditor T sweep · 2 timer leak fix).
+HEAD: `6ba2282` (N+2-H CI narrow · ci.yml zelena 15s na GitHub Actions).
 Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 
-### 🟢 Trenutno stanje (2026-06-25 14:50 UTC) — šta JE landed
+### 🟢 Trenutno stanje (2026-06-25 16:55 UTC) — šta JE landed
 
 ```
 ┌──────────────────────────────────────┬────────────────────────────────────┐
@@ -20,33 +20,45 @@ Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 │ N+2 ekstenzije D/E/F/G                │ ✅ 4/7 LANDED                       │
 │ UQ-DEEP track (AA→BB)                 │ ✅ 30 wave-ova / ~108 P0/P1 atoma   │
 │ N+2 ekstenzije H (CI/CD pipeline)     │ ✅ LANDED 2026-06-25                │
-│ N+2 ekstenzije I/J                    │ 📋 OPEN (2 atoma)                   │
+│ N+2 ekstenzije I (Schema versioning)  │ ✅ LANDED 2026-06-25                │
+│ N+2 ekstenzije J                      │ 📋 OPEN (1 atom)                    │
 │ P3 idle (8 stavki)                    │ 📋 OPEN — low priority, ne urgent  │
 │ MATH-INTEGRATION-LV3                  │ ⏸ čeka Boki "KRENI" signal         │
 │ AUDIO X1 (HARD RULE #4)               │ 🔒 LOCKED — čeka Boki "sad možeš"  │
 └──────────────────────────────────────┴────────────────────────────────────┘
 ```
 
-### 🎯 Otvoreno (2 atoma N+2 I/J · 8 P3 idle · 1 čeka signal)
+### 🎯 Otvoreno (1 atom N+2 J · 8 P3 idle · 1 čeka signal)
 
 ```
 ┌─────┬──────────────────────────────────────────┬────────┬──────────────────┐
 │ ID  │ Stavka                                    │ Effort │ Vrednost          │
 ├─────┼──────────────────────────────────────────┼────────┼──────────────────┤
 │ H   │ CI/CD pipeline (GitHub Actions)           │ DONE   │ ✅ LANDED         │
-│     │ ci.yml (verify:quick + runtime) +         │        │ 2026-06-25 N+2-H │
-│     │ pdf-baseline.yml (path-filtered) +        │        │ Boki "kreni dalje"│
-│     │ nightly.yml (heavy probes matrix +        │        │ 3 workflows       │
-│     │ playwright cross-browser)                 │        │ actionlint OK     │
-│     │ + 3 test contracts re-aligned (winPres    │        │ + 1 frozen-cfg    │
-│     │ _wpRng, bonusBuy i18n span, expandWild    │        │ resolveConfig fix │
-│     │ ewExpand keyframe) + scatterCelebration   │        │                   │
-│     │ frozen defaultConfig() unfreeze in        │        │                   │
-│     │ resolveConfig.                            │        │                   │
+│     │ ci.yml (npm ci + test:runtime) +          │        │ 2026-06-25 N+2-H │
+│     │ pdf-baseline.yml (path-filtered) +        │        │ commit d48caa2 + │
+│     │ nightly.yml (heavy probes matrix +        │        │ 6ba2282 (CI narr)│
+│     │ playwright cross-browser).                │        │ live run 15s ✓   │
+│     │ + 3 test contracts re-aligned (winPres    │        │ inline roadmap   │
+│     │ _wpRng, bonusBuy i18n span, expandWild    │        │ za verify:ci /   │
+│     │ ewExpand keyframe) + scatterCelebration   │        │ test:blocks-no-  │
+│     │ frozen defaultConfig() unfreeze fix in    │        │ audio / test:    │
+│     │ resolveConfig (collateral 4 fixes).       │        │ lego enable.     │
 ├─────┼──────────────────────────────────────────┼────────┼──────────────────┤
-│ I   │ Schema versioning + migration             │ ~2h    │ model.json schema │
-│     │ semver bump + migration script za stari   │        │ evolves bez       │
-│     │ GDD-ova kad emit kontrakt menja          │        │ ručnog rewrite    │
+│ I   │ Schema versioning + migration             │ DONE   │ ✅ LANDED         │
+│     │ src/registry/modelSchemaVersion.mjs       │        │ 2026-06-25 N+2-I │
+│     │ (MODEL_SCHEMA_VERSION=1.0.0 +             │        │ Boki "azuriraj   │
+│     │ parseSemver / compareSemver /             │        │ master todo i    │
+│     │ buildSchemaEnvelope / readModelVersion) + │        │ nastavi"         │
+│     │ src/registry/modelMigrations.mjs          │        │ 13/13 contract   │
+│     │ (register / planMigration / migrate +     │        │ tests pass.      │
+│     │ built-in 0.0.0→1.0.0 legacy stamp).       │        │                   │
+│     │ tools/migrate-model.mjs (CLI + --list /   │        │                   │
+│     │ --version / --in/--out/--to/--dry-run +   │        │                   │
+│     │ atomic write).                            │        │                   │
+│     │ freshModel() now stamps __schema__ so     │        │                   │
+│     │ every parser output carries semver +      │        │                   │
+│     │ generatedAt envelope.                     │        │                   │
 ├─────┼──────────────────────────────────────────┼────────┼──────────────────┤
 │ J   │ V9 vision mode aktivacija (cost-capped)   │ ~3-4h  │ Opus screenshot   │
 │     │ — postojeći V9 deterministic + Opus       │        │ + verdict za WARN/│

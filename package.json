@@ -7,6 +7,7 @@
   "scripts": {
     "test": "node tests/parse-real.mjs && node tests/render-grid-all.mjs",
     "test:parse": "node tests/parse-real.mjs",
+    "test:model-schema": "node tests/_modelSchema.test.mjs",
     "test:parse:real-pdfs": "node tests/parse-real-pdfs.mjs",
     "test:parse:real-pdfs:live": "node tests/parse-real-pdfs.mjs && node tests/parse-real-pdfs-live.mjs",
     "test:parity": "node tests/parse-real-pdfs.mjs && node tests/cross-game-parity.mjs",
