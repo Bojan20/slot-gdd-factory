@@ -189,5 +189,76 @@ t('mixed shape frozen at correct depths', () => {
   assert.equal(isDeepFrozen(o), true);
 });
 
+/* ─── UQ-U-4 fix verification ───────────────────────────────────────── */
+
+/* 16 — UQ-U-4 #1: shallow-frozen wrapper around mutable subtree */
+t('UQ-U-4 #1: deepFreeze recurses through SHALLOW-frozen wrapper', () => {
+  const inner = { b: 1 };
+  const outer = Object.freeze({ a: inner });
+  /* Pre-fix: deepFreeze short-circuited on Object.isFrozen(outer) === true,
+     leaving `inner` mutable. Post-fix: recursion continues, inner gets
+     frozen. */
+  deepFreeze(outer);
+  assert.ok(Object.isFrozen(inner), 'inner subtree must be frozen after deepFreeze');
+  assert.equal(isDeepFrozen(outer), true);
+});
+
+/* 17 — UQ-U-4 #2: Symbol-keyed properties recursed */
+t('UQ-U-4 #2: deepFreeze recurses into Symbol-keyed nested objects', () => {
+  const SYM = Symbol('nested');
+  const o = { [SYM]: { secret: 'mutable' } };
+  deepFreeze(o);
+  assert.ok(Object.isFrozen(o[SYM]), 'Symbol-keyed nested must be frozen');
+});
+
+/* 18 — UQ-U-4 #2: non-enumerable own property recursed */
+t('UQ-U-4 #2: deepFreeze recurses into non-enumerable own properties', () => {
+  const inner = { x: 1 };
+  const o = {};
+  Object.defineProperty(o, 'hidden', {
+    value: inner,
+    enumerable: false,
+    writable: true,
+    configurable: true,
+  });
+  deepFreeze(o);
+  assert.ok(Object.isFrozen(inner), 'non-enumerable nested must be frozen');
+});
+
+/* 19 — UQ-U-4 #3: isDeepFrozen catches mutable-in-cycle */
+t('UQ-U-4 #3: isDeepFrozen returns false for mutable child in a cycle', () => {
+  const A = {};
+  const B = {};
+  A.next = B;
+  B.back = A;
+  Object.freeze(A); /* A frozen at top — but B is NOT frozen */
+  /* Pre-fix: visited heuristic could short-circuit true. Post-fix:
+     B's own frozenness check catches the mutable node. */
+  assert.equal(isDeepFrozen(A), false, 'mutable B in cycle must yield false');
+});
+
+/* 20 — UQ-U-4 #6: function frozen but still callable */
+t('UQ-U-4 #6: deepFreeze freezes function AND it stays callable', () => {
+  const fn = () => 42;
+  deepFreeze(fn);
+  assert.ok(Object.isFrozen(fn), 'function must be frozen');
+  assert.equal(fn(), 42, 'function must remain callable');
+  /* And writes to function properties throw in strict mode */
+  assert.throws(() => { fn.extra = 'X'; }, TypeError);
+});
+
+/* 21 — UQ-U-4 #8: Object.create(parent) treated as opaque (documented carve-out) */
+t('UQ-U-4 #8: object with non-plain proto frozen at top, children untouched', () => {
+  const parent = { inherited: 'value' };
+  const child = Object.create(parent);
+  child.own = { nested: 'mutable' };
+  deepFreeze(child);
+  assert.ok(Object.isFrozen(child), 'child must be frozen at top');
+  /* By design (documented carve-out): child.own is NOT recursed into
+     because child's prototype is not Object.prototype. Users wanting
+     deep coverage must use a plain object literal. */
+  assert.ok(!Object.isFrozen(child.own), 'non-plain-proto carve-out: nested not recursed');
+});
+
 console.log(`\nResult: ${pass} pass / ${fail} fail`);
 if (fail > 0) process.exit(1);

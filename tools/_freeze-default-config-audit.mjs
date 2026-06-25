@@ -34,9 +34,17 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const blocksDir = resolve(__dirname, '..', 'src', 'blocks');
 
 const argv = process.argv;
-const mode = argv.includes('--static') ? 'static'
-            : argv.includes('--deep')   ? 'deep'
-            : 'runtime';
+/* UQ-U-4 #4 (Boki 2026-06-25): mutually-exclusive mode flags. The
+   previous silent-precedence ladder hid mistakes — passing both
+   `--static` and `--deep` quietly ran static. Explicit conflict
+   check + helpful error. */
+const _wantStatic = argv.includes('--static');
+const _wantDeep   = argv.includes('--deep');
+if (_wantStatic && _wantDeep) {
+  process.stderr.write('error: --static and --deep are mutually exclusive\n');
+  process.exit(2);
+}
+const mode = _wantStatic ? 'static' : _wantDeep ? 'deep' : 'runtime';
 
 const blocks = readdirSync(blocksDir).filter(f =>
   f.endsWith('.mjs') && !f.startsWith('_')
@@ -86,11 +94,22 @@ if (mode === 'static') {
   }
 }
 
-console.log('\n--- freeze-default-config-audit (' + mode + ') ---');
-console.log('  pass    :', pass);
-console.log('  fail    :', fail);
-console.log('  skipped :', skipped, '(no defaultConfig export)');
-console.log('  total   :', blocks.length);
+/* UQ-U-4 #5 (Boki 2026-06-25): rename labels in --deep mode so an
+   operator skimming CI logs doesn't mistake "fail: 69" for a hard gate
+   failure. --deep is REPORT-ONLY (current contract is shallow). */
+if (mode === 'deep') {
+  console.log('\n--- freeze-default-config-audit (deep · REPORT-ONLY, no gate) ---');
+  console.log('  pass-deep    :', pass);
+  console.log('  not-deep-yet :', fail, '(migration candidates)');
+  console.log('  skipped      :', skipped, '(no defaultConfig export)');
+  console.log('  total        :', blocks.length);
+} else {
+  console.log('\n--- freeze-default-config-audit (' + mode + ') ---');
+  console.log('  pass    :', pass);
+  console.log('  fail    :', fail);
+  console.log('  skipped :', skipped, '(no defaultConfig export)');
+  console.log('  total   :', blocks.length);
+}
 
 if (offenders.length) {
   const label = mode === 'deep'
@@ -100,7 +119,5 @@ if (offenders.length) {
   for (const f of offenders) console.log('    -', f);
 }
 
-/* `--deep` is REPORT-ONLY — see header docstring. Other modes still gate
-   on shallow contract. */
 if (mode === 'deep') process.exit(0);
 process.exit(fail === 0 ? 0 : 1);
