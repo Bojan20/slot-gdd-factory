@@ -1,28 +1,42 @@
 #!/usr/bin/env node
 /**
  * tools/_freeze-default-config-audit.mjs — UQ-DEEP-AM FIX-3
+ *                                          + P3-P1 deep-freeze report
  *
  * Scans src/blocks/*.mjs for `defaultConfig()` exports and verifies that
  * the returned object is shallow-frozen (Object.isFrozen === true).
  *
- * Two pass modes:
- *   --static : regex scan of source (checks `Object.freeze` in function body)
- *   --runtime: imports each block and asserts Object.isFrozen(defaultConfig())
+ * Modes:
+ *   --static  : regex scan of source (checks `Object.freeze` in function body)
+ *   --runtime : imports each block and asserts Object.isFrozen(defaultConfig())
+ *   --deep    : imports each block and asserts isDeepFrozen(defaultConfig())
  *
- * Default = runtime (definitive contract check).
+ * Default = runtime (definitive shallow contract check).
  *
- * Exit 0 when every block freezes its defaultConfig() return value.
- * Exit 1 with offender list otherwise.
+ * `--deep` is REPORT-ONLY (does not exit non-zero on non-deep-frozen): the
+ * current contract is "shallow", and migrating every block to deep freeze
+ * requires per-block resolveConfig refactor (nested writes throw post
+ * deep-freeze). The deep report tells the operator HOW MANY blocks already
+ * pass deep freeze for free (no nested mutation in defaults) and which
+ * candidates are next for safe migration.
+ *
+ * Exit 0 when every block freezes its defaultConfig() return value
+ * (under the active mode's contract).
+ * Exit 1 with offender list otherwise (shallow modes only).
  */
 
 import { readdirSync, readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { isDeepFrozen } from '../src/registry/deepFreeze.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const blocksDir = resolve(__dirname, '..', 'src', 'blocks');
 
-const mode = process.argv.includes('--static') ? 'static' : 'runtime';
+const argv = process.argv;
+const mode = argv.includes('--static') ? 'static'
+            : argv.includes('--deep')   ? 'deep'
+            : 'runtime';
 
 const blocks = readdirSync(blocksDir).filter(f =>
   f.endsWith('.mjs') && !f.startsWith('_')
@@ -61,7 +75,13 @@ if (mode === 'static') {
       offenders.push(f);
       continue;
     }
-    if (Object.isFrozen(cfg)) { pass++; }
+    /* `--deep` reports without failing the gate. The shallow contract
+       is still the project's hard rule today. */
+    const okShallow = Object.isFrozen(cfg);
+    if (mode === 'deep') {
+      if (isDeepFrozen(cfg)) { pass++; }
+      else { fail++; offenders.push(f); }
+    } else if (okShallow) { pass++; }
     else { fail++; offenders.push(f); }
   }
 }
@@ -73,8 +93,14 @@ console.log('  skipped :', skipped, '(no defaultConfig export)');
 console.log('  total   :', blocks.length);
 
 if (offenders.length) {
-  console.log('\n  UNFROZEN defaultConfig() in:');
+  const label = mode === 'deep'
+    ? 'NOT-DEEP-FROZEN defaultConfig() in (P3-P1 migration candidates):'
+    : 'UNFROZEN defaultConfig() in:';
+  console.log('\n  ' + label);
   for (const f of offenders) console.log('    -', f);
 }
 
+/* `--deep` is REPORT-ONLY — see header docstring. Other modes still gate
+   on shallow contract. */
+if (mode === 'deep') process.exit(0);
 process.exit(fail === 0 ? 0 : 1);

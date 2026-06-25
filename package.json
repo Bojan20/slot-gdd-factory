@@ -9,6 +9,8 @@
     "test:parse": "node tests/parse-real.mjs",
     "test:model-schema": "node tests/_modelSchema.test.mjs",
     "test:vision-guard": "node tests/_visionCostGuard.test.mjs",
+    "test:deep-freeze": "node tests/_deepFreeze.test.mjs",
+    "audit:freeze:deep": "node tools/_freeze-default-config-audit.mjs --deep",
     "v9:vision": "node tools/v9-vision-orchestrator.mjs",
     "test:parse:real-pdfs": "node tests/parse-real-pdfs.mjs",
     "test:parse:real-pdfs:live": "node tests/parse-real-pdfs.mjs && node tests/parse-real-pdfs-live.mjs",

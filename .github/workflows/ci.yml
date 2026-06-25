@@ -137,3 +137,10 @@ jobs:
 
       - name: Vision cost-guard contract suite
         run: npm run test:vision-guard
+
+      # P3-P1 (Boki 2026-06-25) — Recursive freeze utility contract.
+      # 15 cases, sub-100ms, pure-Node. Wired into CI so any regression
+      # in deepFreeze (cycle handling, class-instance opacity, idempotent
+      # short-circuit) surfaces on the PR.
+      - name: Deep-freeze utility contract suite
+        run: npm run test:deep-freeze
