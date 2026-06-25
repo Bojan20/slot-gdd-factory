@@ -485,12 +485,16 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
         if (fp && key in fp) return _sanitizeLocaleString(fp[key]);
       }
       if (fb != null) return _sanitizeLocaleString(fb);
-      /* UQ-DEEP-AT K-P2-2 + AU L-P1-4 (Auditors K + L): humanize fallback
-         so screen reader doesn't read "autoplay dot title" when both pack
-         + fallback fail. Empty/whitespace-only key → '…' instead of empty
-         string (empty aria-label strips accessible name from inheritor). */
+      /* UQ-DEEP-AT K-P2-2 + AU L-P1-4 + AV M-P1-5 (Auditors K/L/M):
+         humanize fallback so screen reader doesn't read "autoplay dot
+         title" when both pack + fallback fail. Empty/whitespace-only key
+         → '…' aria-label (passes WCAG 4.1.2 non-empty), AND emit
+         console.warn so the typo is loud-not-quiet. */
       var keyStr = String(key || '').trim();
-      if (!keyStr) return '…';
+      if (!keyStr) {
+        try { if (typeof console !== 'undefined' && console.warn) console.warn('[i18n] empty key — typo? defaulting to ellipsis'); } catch (_) {}
+        return '…';
+      }
       var leaf = keyStr.split('.').pop() || keyStr;
       if (!leaf.trim()) return '…';
       var human = leaf.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ');
@@ -548,14 +552,21 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
       _localeExplicit: !!(typeof window !== 'undefined' && window.__SLOT_LOCALE__),
     };
     function _hydrateLocale() {
-      /* UQ-DEEP-AU L-P1-3 (Auditor L): drop the _localeExplicit guard so
-         cookie-restored locale arriving in stage-2 boot wins until an
-         explicit setLocale() call lands. Only setLocale() promotes to
-         "explicit" state — paint-time _hydrateLocale stays opportunistic. */
+      /* UQ-DEEP-AU L-P1-3 + AV M-P1-4 (Auditors L + M):
+         drop the _localeExplicit guard so cookie-restored locale arriving
+         in stage-2 boot wins until an explicit setLocale() call lands.
+         M-P1-4: hydrate MUST go through setLocale() not raw state.locale
+         assign — otherwise <html lang> sync + onLanguagePackApplied emit
+         are skipped (AP H-4 regression: SR pronounces FR text in EN voice). */
       if (typeof window === 'undefined' || !window.__SLOT_LOCALE__) return;
       if (state._localeExplicit) return; // setLocale already won
       if (window.__SLOT_LOCALE__ !== state.locale) {
-        state.locale = window.__SLOT_LOCALE__;
+        /* Pass through setLocale for full side-effects (html lang + event)
+           — but use a re-entry guard so _paintNodes (caller) doesn't loop. */
+        if (state._hydrating) return;
+        state._hydrating = true;
+        try { setLocale(window.__SLOT_LOCALE__); }
+        finally { state._hydrating = false; }
       }
     }
 

@@ -237,9 +237,14 @@ export function emitBonusBuyCSS(cfg = defaultConfig()) {
 
 export function emitBonusBuyMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
+  /* UQ-DEEP-AV M-P0-1 (Auditor M): catalog "common.bet" = "Bet" (table-
+     header register). Button needs UPPERCASE "BET". Removed data-i18n
+     binding from cost span — fallback "BET" keeps static; betSelector
+     uses dedicated "betSelector.bet"="BET" key. Avoids single-key dual-
+     register casing regression. */
   return tagBlockMarkup(`<button id="bonusBuyBtn" class="bonus-buy-btn" type="button" aria-label="Buy bonus feature" data-i18n-aria="bonusBuy.0" data-i18n-aria-fallback="Buy bonus feature">
   ${escapeHtml(cfg.label)}
-  <span class="cost">${cfg.costX}× <span data-i18n="common.bet" data-i18n-fallback="BET">BET</span></span>
+  <span class="cost">${cfg.costX}× <span data-i18n="betSelector.bet" data-i18n-fallback="BET">BET</span></span>
 </button>`, 'bonusBuy');
 }
 

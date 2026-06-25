@@ -420,7 +420,7 @@ export function emitFreeSpinsHudMarkup(cfg = defaultConfig()) {
        • The HUD container starts aria-hidden=true; FSM_enterIntro
          flips it to false so the polite live regions actually announce.
          Polite-on-hidden was a no-op pre-polish. -->
-<div class="fs-hud" id="fsHud" role="region" aria-label="Free spins status" aria-hidden="true">
+<div class="fs-hud" id="fsHud" role="region" aria-label="Free spins status" data-i18n-aria="freeSpins.4" data-i18n-aria-fallback="Free spins status" aria-hidden="true">
   <div class="fs-hud__box" role="group" aria-labelledby="fsHudSpinsLabel">
     <div class="fs-hud__label" id="fsHudSpinsLabel">Spins</div>
     <div class="fs-hud__value" id="fsHudSpins"

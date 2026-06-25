@@ -232,7 +232,7 @@ export function emitTurboModeMarkup(cfg = defaultConfig()) {
   const safeLabel = _escape(c.chipLabel);
   /* aria-pressed reflects toggle state; runtime updates it on every change. */
   return tagBlockMarkup(`
-  <button id="turboBtn" class="turbo-btn" type="button" aria-label="${safeAria}" aria-pressed="false">${safeLabel}</button>`, 'turboMode');
+  <button id="turboBtn" class="turbo-btn" type="button" aria-label="${safeAria}" data-i18n-aria="turboMode.label" data-i18n-aria-fallback="${safeAria}" aria-pressed="false">${safeLabel}</button>`, 'turboMode');
 }
 
 export function emitTurboModeRuntime(cfg = defaultConfig()) {

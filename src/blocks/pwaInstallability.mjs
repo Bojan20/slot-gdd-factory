@@ -84,7 +84,10 @@ export function defaultConfig() {
     orientation: 'any',
     themeColor: '#05070c',
     backgroundColor: '#0b0f16',
-    scope: '.',
+    /* UQ-DEEP-AV N-P1-5 (Auditor N): explicit "./" scope so SW doesn't
+       MITM sibling pages under same dir. Was '.' which resolves to script
+       dir → wider than slot's start_url. */
+    scope: './',
     startUrl: '.',
     iconColor: '#c9a227',
     /* UQ-DEEP-U fix: capture beforeinstallprompt only when operator has a

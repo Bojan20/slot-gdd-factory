@@ -253,6 +253,17 @@ function audioPlay(category, opts) {
     /* opts.rate honors playbackRate when caller wants a tempo cue
        (e.g. anticipation slowdown plays at 0.85). */
     if (opts && Number.isFinite(opts.rate) && opts.rate > 0) node.playbackRate = opts.rate;
+    /* UQ-DEEP-AV N-P1-3 (Auditor N): release decoded audio buffer after
+       playback. Without cleanup, Safari leaks ~80-200KB per clone; 1000-spin
+       session × 3 SFX = ~3000 zombie HTMLAudioElements. */
+    const _cleanup = function () {
+      try { node.pause(); } catch (_) {}
+      try { node.src = ''; } catch (_) {}
+      try { node.removeEventListener('ended', _cleanup); } catch (_) {}
+      try { node.removeEventListener('error', _cleanup); } catch (_) {}
+    };
+    node.addEventListener('ended', _cleanup, { once: true });
+    node.addEventListener('error', _cleanup, { once: true });
     const p = node.play();
     if (p && typeof p.catch === 'function') p.catch(() => {}); // user-gesture gate
     return true;

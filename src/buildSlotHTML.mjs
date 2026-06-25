@@ -1484,6 +1484,14 @@ export function buildSlotHTML(model) {
   still works. Chromium-only feature, not worth the cross-browser noise.
 -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- UQ-DEEP-AV N-P1-6 (Auditor N): defense-in-depth CSP. Slot template
+     embeds inline <script> + inline style (legitimate self-contained
+     artifact), so 'unsafe-inline' must be allowed; but external script
+     loading, frame embedding, and data: img scheme are tightened. Any
+     malicious GDD-derived XSS payload now blocked by external-source
+     restriction. -->
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://127.0.0.1:9001 https://127.0.0.1:9001 ws://127.0.0.1:9001 wss://127.0.0.1:9001; frame-ancestors 'self'; base-uri 'self'; form-action 'self'">
 <meta name="theme-color" content="${bg0}">
 <meta name="format-detection" content="telephone=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2660,6 +2668,14 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
         }
         if (typeof window.HookBus.clearReplay === 'function') {
           try { window.HookBus.clearReplay(); } catch (_) {}
+        }
+        /* UQ-DEEP-AV N-P0-1/2 (Auditor N): clear known long-lived timers
+           so bfcache re-mount doesn't stack additional ticks. Each block
+           owns its own __sgTimer* slot; we sweep them centrally here. */
+        var timerKeys = ['__rcPlayTimeTick', '__lrhIdleTick'];
+        for (var t = 0; t < timerKeys.length; t++) {
+          var tk = timerKeys[t];
+          if (window[tk]) { try { clearInterval(window[tk]); } catch (_) {} window[tk] = null; }
         }
         /* UQ-DEEP-AT K-P1-2: clear setup flag so pageshow can re-emit. */
         window._sgBlocksSetup = false;

@@ -412,9 +412,11 @@ export function emitLiveRtpHudRuntime(cfg = defaultConfig(), model = {}) {
     setTimeout(function () { clearInterval(checkInterval); }, 10000);
   }
 
-  /* Idle refresh — keeps HUD visible even if no spins for a while. */
-  if (LRH_CFG.idleRefreshMs > 0) {
-    setInterval(paint, LRH_CFG.idleRefreshMs);
+  /* Idle refresh — keeps HUD visible even if no spins for a while.
+     UQ-DEEP-AV N-P0-2 (Auditor N): hold interval handle so bfcache
+     pageshow re-mount doesn't stack paints. */
+  if (LRH_CFG.idleRefreshMs > 0 && !window.__lrhIdleTick) {
+    window.__lrhIdleTick = setInterval(paint, LRH_CFG.idleRefreshMs);
   }
 })();
 `;

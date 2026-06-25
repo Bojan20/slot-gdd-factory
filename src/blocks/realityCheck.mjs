@@ -893,8 +893,12 @@ export function emitRealityCheckRuntime(cfg = defaultConfig()) {
       hud.setAttribute('aria-label', 'Session time');
       hud.textContent = '00:00';
       document.body.appendChild(hud);
+      /* UQ-DEEP-AV N-P0-1 (Auditor N): hold interval handle on window so
+         bfcache pageshow re-mount doesn't stack additional 1Hz timers.
+         If already running (re-setup after bfcache restore), short-circuit. */
+      if (window.__rcPlayTimeTick) return;
       /* 1-second update. Stale-callback safe via id-presence check. */
-      setInterval(function () {
+      window.__rcPlayTimeTick = setInterval(function () {
         var el = document.getElementById('rcPlayTimeHud');
         if (!el) return;
         /* Use cumulative session elapsed; STATE.elapsedMs ticks during

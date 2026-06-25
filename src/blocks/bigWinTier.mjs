@@ -1245,7 +1245,7 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
        * routed once through #bigWinTierAnnounce after endHoldMs. */
       node.innerHTML =
         '<span class="big-win-tier-label" aria-live="polite" aria-atomic="true">' + LABELS[tier - 1] + '</span>' +
-        '<div class="big-win-tier-stepper" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="' + tier + '" aria-label="Win tier progress" data-i18n-aria="bigWinTier.0" data-i18n-aria-fallback="Win tier progress" data-dynamic-aria="true">' +
+        '<div class="big-win-tier-stepper" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="' + tier + '" aria-label="Win tier progress" data-i18n-aria="bigWinTier.0" data-i18n-aria-fallback="Win tier progress">' +
           '<span class="big-win-tier-step" data-step="1" aria-hidden="true"></span>' +
           '<span class="big-win-tier-step" data-step="2" aria-hidden="true"></span>' +
           '<span class="big-win-tier-step" data-step="3" aria-hidden="true"></span>' +
@@ -1406,7 +1406,7 @@ export function emitBigWinTierRuntime(cfg = defaultConfig()) {
           n.setAttribute('data-show', 'hold');
           n.innerHTML =
             '<span class="big-win-tier-label" aria-live="polite" aria-atomic="true">' + LABELS[finalTier - 1] + '</span>' +
-            '<div class="big-win-tier-stepper" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="' + finalTier + '" aria-label="Win tier progress" data-i18n-aria="bigWinTier.0" data-i18n-aria-fallback="Win tier progress" data-dynamic-aria="true">' +
+            '<div class="big-win-tier-stepper" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="' + finalTier + '" aria-label="Win tier progress" data-i18n-aria="bigWinTier.0" data-i18n-aria-fallback="Win tier progress">' +
               '<span class="big-win-tier-step" data-step="1" aria-hidden="true"></span>' +
               '<span class="big-win-tier-step" data-step="2" aria-hidden="true"></span>' +
               '<span class="big-win-tier-step" data-step="3" aria-hidden="true"></span>' +

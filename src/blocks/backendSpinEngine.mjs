@@ -50,12 +50,34 @@ export function defaultConfig() {
   });
 }
 
+/* UQ-DEEP-AV N-P1-4 (Auditor N — SSRF guard):
+ * GDD-supplied backendBase is attacker-controlled if MD/JSON ingest reads
+ * untrusted file. Without host allowlist, attacker can exfiltrate /spin
+ * payload (session id, model fingerprint) via http://attacker.example/x.
+ * Allowlist: localhost variants + same-origin only. Operator can opt
+ * into custom hosts via window.__BACKEND_ALLOWLIST__ (cert-time decision). */
+function _isAllowedBackendHost(urlStr) {
+  try {
+    const u = new URL(urlStr);
+    const host = u.hostname;
+    if (host === '127.0.0.1' || host === 'localhost' || host === '::1' || host === '[::1]') return true;
+    if (typeof globalThis !== 'undefined' && globalThis.window
+        && Array.isArray(globalThis.window.__BACKEND_ALLOWLIST__)
+        && globalThis.window.__BACKEND_ALLOWLIST__.includes(host)) return true;
+    if (typeof globalThis !== 'undefined' && globalThis.location && host === globalThis.location.hostname) return true;
+    return false;
+  } catch (_) { return false; }
+}
+
 export function resolveConfig(model = {}) {
   const c = { ...defaultConfig() };
   const src = (model && model.backendSpinEngine) || {};
   if (src.enabled === false) c.enabled = false;
   if (typeof src.backendBase === 'string' && /^https?:\/\//.test(src.backendBase)) {
-    c.backendBase = src.backendBase;
+    /* UQ-DEEP-AV N-P1-4: gate via allowlist. */
+    if (_isAllowedBackendHost(src.backendBase)) {
+      c.backendBase = src.backendBase;
+    }
   }
   return c;
 }
