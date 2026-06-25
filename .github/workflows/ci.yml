@@ -1,0 +1,81 @@
+# slot-gdd-factory — CI / pre-merge gate
+#
+# N+2 atom H (MASTER_TODO) — CI/CD pipeline for every push & PR.
+#
+# What this gate guarantees on `main`:
+#   1. `npm ci`                  — lockfile-honest install on Linux (cleanest baseline)
+#   2. `npm run verify:quick`    — 100 sub-step `verify` orchestrator (~50s on CI)
+#   3. `npm run test:runtime`    — orchestrator runtime probes (grid renderer, force, globals)
+#
+# Why these three and not the full 33-step `verify` here:
+#   - `verify:quick` already encodes the 100 sub-step pre-commit gate Boki uses
+#     locally; reproducing it in CI keeps Boki's local mental model and CI in lockstep.
+#   - `test:runtime` covers the orchestrator probes (gridRenderer, devForceButtons,
+#     globals contract) that the quick gate doesn't sweep directly.
+#   - Heavy probes (cross-browser, load, long-run, full UQ-11 corpus render)
+#     run in `nightly.yml` so PR latency stays under 6 minutes wallclock.
+#
+# Why `test:blocks` is intentionally NOT in this gate:
+#   The block contract suite is Boki's local pre-commit surface. The `verify`
+#   orchestrator's 100 sub-step gate already exercises the aggregated block
+#   contracts through V7/V8/UQ-MASTERY checks, so test:blocks would be
+#   double-coverage on CI without adding regression-catch value. It also
+#   contains the audio block tests which are LOCKED for this repo until the
+#   audio unlock signal lands; CI gate would have to depend on a maintainer
+#   keeping the audio test in sync without being allowed to touch it.
+#
+# Why `test:lego` is intentionally NOT in this gate (for now):
+#   The LEGO invariant walker has a pre-existing 7/8 failure on `main` (HOOK_EVENTS
+#   missing onGddMetaReady / onSymbolModifiersApplied / onCascadeHalted registrations).
+#   Adding it before that regression is closed would land CI permanently red on
+#   day one. Enable this step in a follow-up PR after the HOOK_EVENTS gap is sealed.
+#
+# Node version pin: 20 (LTS as of 2026-Q1) — local Node 25 is fine but CI
+# pins to LTS so a 25→26 breaking change can't kill main without warning.
+#
+# Concurrency group: PRs supersede their own previous run; main pushes
+# always finish.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: verify:quick + runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history so any tool that does `git log` (block-liveness
+          # walker has a fallback heuristic, anti-vendor lint reads commit
+          # author for whitelist) has something to read.
+          fetch-depth: 0
+
+      - name: Setup Node 20 (LTS pin)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install deps (npm ci)
+        run: npm ci
+
+      - name: Verify (quick · 100 sub-step orchestrator)
+        run: npm run verify:quick
+
+      - name: Runtime probes
+        run: npm run test:runtime

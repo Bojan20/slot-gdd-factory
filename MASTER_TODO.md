@@ -19,22 +19,30 @@ Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 │ N+1 post-backlog (A/B/C)              │ ✅ 3/3 LANDED                       │
 │ N+2 ekstenzije D/E/F/G                │ ✅ 4/7 LANDED                       │
 │ UQ-DEEP track (AA→BB)                 │ ✅ 30 wave-ova / ~108 P0/P1 atoma   │
-│ N+2 ekstenzije H/I/J                  │ 📋 OPEN (3 atoma)                   │
+│ N+2 ekstenzije H (CI/CD pipeline)     │ ✅ LANDED 2026-06-25                │
+│ N+2 ekstenzije I/J                    │ 📋 OPEN (2 atoma)                   │
 │ P3 idle (8 stavki)                    │ 📋 OPEN — low priority, ne urgent  │
 │ MATH-INTEGRATION-LV3                  │ ⏸ čeka Boki "KRENI" signal         │
 │ AUDIO X1 (HARD RULE #4)               │ 🔒 LOCKED — čeka Boki "sad možeš"  │
 └──────────────────────────────────────┴────────────────────────────────────┘
 ```
 
-### 🎯 Otvoreno (3 atoma N+2 H/I/J · 8 P3 idle · 1 čeka signal)
+### 🎯 Otvoreno (2 atoma N+2 I/J · 8 P3 idle · 1 čeka signal)
 
 ```
 ┌─────┬──────────────────────────────────────────┬────────┬──────────────────┐
 │ ID  │ Stavka                                    │ Effort │ Vrednost          │
 ├─────┼──────────────────────────────────────────┼────────┼──────────────────┤
-│ H   │ CI/CD pipeline (GitHub Actions)           │ ~2h    │ Auto-verify + push│
-│     │ verify gate + UQ-16 baseline + cross-     │        │ na svaki PR;      │
-│     │ corpus probe + smoke test po platformi   │        │ regression catch  │
+│ H   │ CI/CD pipeline (GitHub Actions)           │ DONE   │ ✅ LANDED         │
+│     │ ci.yml (verify:quick + runtime) +         │        │ 2026-06-25 N+2-H │
+│     │ pdf-baseline.yml (path-filtered) +        │        │ Boki "kreni dalje"│
+│     │ nightly.yml (heavy probes matrix +        │        │ 3 workflows       │
+│     │ playwright cross-browser)                 │        │ actionlint OK     │
+│     │ + 3 test contracts re-aligned (winPres    │        │ + 1 frozen-cfg    │
+│     │ _wpRng, bonusBuy i18n span, expandWild    │        │ resolveConfig fix │
+│     │ ewExpand keyframe) + scatterCelebration   │        │                   │
+│     │ frozen defaultConfig() unfreeze in        │        │                   │
+│     │ resolveConfig.                            │        │                   │
 ├─────┼──────────────────────────────────────────┼────────┼──────────────────┤
 │ I   │ Schema versioning + migration             │ ~2h    │ model.json schema │
 │     │ semver bump + migration script za stari   │        │ evolves bez       │

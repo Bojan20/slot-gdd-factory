@@ -50,7 +50,15 @@ t('CSS bakes color', css.includes('#ff5050'));
 const markup = emitBonusBuyMarkup(resolveConfig({ features: [{ kind: 'bonus_buy', label: 'X' }] }));
 t('markup has button#bonusBuyBtn', markup.includes('id="bonusBuyBtn"'));
 t('markup has BUY BONUS label', markup.includes('BUY BONUS'));
-t('markup has 75× BET cost label (Wave T-bonus)', markup.includes('75× BET'));
+// N+2-H (Boki 2026-06-25) — markup gained an i18n <span> wrapper around
+// "BET" so the betSelector fallback can swap labels without touching the
+// cost span (src/blocks/bonusBuy.mjs:268). The "75× BET" substring is no
+// longer literal — there is `75× <span ...>BET</span>` instead. The
+// architectural intent of the original test (cost number + BET label
+// both present on the button) is preserved by checking both pieces
+// independently against the rendered markup.
+t('markup has 75× cost (Wave T-bonus)', markup.includes('75×'));
+t('markup carries BET label (i18n-wrapped)', />BET</.test(markup));
 
 const stub = emitBonusBuyRuntime(defaultConfig());
 t('runtime stub empty/comment when disabled', stub.includes('disabled'));

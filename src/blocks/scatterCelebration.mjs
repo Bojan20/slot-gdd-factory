@@ -134,7 +134,18 @@ function isValidGlow(s) {
    Wave UD: gridProfile contextual override sits between baseline and
    the explicit GDD entry. */
 export function resolveConfig(model) {
-  const cfg = applyGridProfile('scatterCelebration', defaultConfig(), model);
+  // N+2-H (Boki 2026-06-25) — `defaultConfig()` returns a frozen object
+  // (immutability contract for non-resolver consumers). `applyGridProfile`
+  // returns the baseline as-is when no profile override matches, which
+  // means `cfg` is the frozen default. The mutations below (`cfg.enabled
+  // = false`, `cfg[key] = …`) would then throw `Cannot assign to read
+  // only property` in strict mode (test bin runs ESM = implicit strict).
+  // Shallow-clone here so we own a mutable working copy without touching
+  // the gridProfile or defaultConfig contracts that other consumers rely
+  // on. deepMerge inside applyGridProfile already produces a fresh
+  // object when an override exists, so the clone is only paying when we
+  // didn't already pay; either way the cost is one object spread.
+  const cfg = { ...applyGridProfile('scatterCelebration', defaultConfig(), model) };
   const src = (model && model.scatterCelebration) || {};
 
   if (src.enabled === false) cfg.enabled = false;

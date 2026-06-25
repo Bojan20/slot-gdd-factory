@@ -1,0 +1,78 @@
+# slot-gdd-factory — PDF parser + render baseline
+#
+# Runs on PRs that touch parser, blocks, or PDF-corpus tooling. Skipped
+# on docs-only / workflow-only PRs because parsing the live PDF corpus
+# is ~3–5× slower than the quick gate and we don't want to burn that
+# cost on a typo PR.
+#
+# Why a separate workflow:
+#   - The `tests/parse-real-pdfs.mjs` suite needs the live `~/Desktop/GDD/`
+#     corpus on Boki's mac. On GitHub-hosted Linux runners the PDF corpus
+#     isn't present, so this workflow uses the repo-bundled `tests/fixtures/`
+#     PDF set (committed) — same 338 baseline files, deterministic shasum.
+#   - Render parity is heavy (full UQ-11 339-game grid). Putting it on a
+#     path-filtered workflow keeps PR feedback fast.
+#
+# Path filter: triggered only when src/blocks/*, src/parser/*, tests/*,
+# tools/_full-corpus-render-parity.mjs, or tools/uq16-baseline.mjs change.
+
+name: pdf-baseline
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/blocks/**'
+      - 'src/parser/**'
+      - 'src/parsers/**'
+      - 'src/buildSlotHTML.mjs'
+      - 'tests/parse-real-pdfs.mjs'
+      - 'tools/_full-corpus-render-parity.mjs'
+      - 'tools/uq16-baseline.mjs'
+      - 'tools/lego-gate.mjs'
+      - 'package.json'
+
+concurrency:
+  group: pdf-baseline-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  parse-corpus:
+    name: parse-real-pdfs (full 338 corpus)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      # Only run if the fixture corpus is committed. Soft-skip if not, so
+      # this workflow doesn't become a permanent red wall when fixtures
+      # are absent on a fork.
+      - name: Detect PDF fixture corpus
+        id: detect
+        run: |
+          if [ -d tests/fixtures ] && [ -n "$(find tests/fixtures -name '*.pdf' -print -quit)" ]; then
+            echo "have_corpus=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "have_corpus=false" >> "$GITHUB_OUTPUT"
+            echo "::notice ::tests/fixtures has no PDFs — parse-real-pdfs skipped (run manually on a corpus host)"
+          fi
+
+      - name: parse-real-pdfs
+        if: steps.detect.outputs.have_corpus == 'true'
+        run: npm run test:parse:real-pdfs
+
+      - name: cross-game-parity
+        if: steps.detect.outputs.have_corpus == 'true'
+        run: npm run test:parity

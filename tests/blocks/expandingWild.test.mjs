@@ -23,7 +23,14 @@ t('override expandDurationMs', r2.expandDurationMs === 800);
 t('CSS empty when disabled', emitExpandingWildCSS(defaultConfig()) === '');
 const css = emitExpandingWildCSS(r);
 t('CSS has is-expanded-wild', css.includes('.cell.is-expanded-wild'));
-t('CSS has expandWildGrow keyframe', css.includes('@keyframes expandWildGrow'));
+// N+2-H (Boki 2026-06-25) — block was refactored to emit a four-phase
+// keyframe set (`ewAnticipate` → `ewExpand` → `ewHoldPulse` → `ewClear`)
+// instead of a single `expandWildGrow` keyframe. The intent of the test
+// is still "the grow animation is emitted as a CSS keyframe"; pinning
+// to the new `ewExpand` keyframe preserves that contract. If the block
+// is ever refactored back to a single keyframe the test will catch
+// that drift too.
+t('CSS has ewExpand keyframe (grow phase)', css.includes('@keyframes ewExpand'));
 
 t('runtime stub when disabled', emitExpandingWildRuntime(defaultConfig()).includes('disabled'));
 const rt = emitExpandingWildRuntime(r);

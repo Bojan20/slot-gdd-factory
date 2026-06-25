@@ -141,8 +141,15 @@ t('emitWinPresentationRuntime: bakes maxEvents as literal', () => {
 });
 
 t('emitWinPresentationRuntime: bakes noWinChance as literal', () => {
+  // N+2-H (Boki 2026-06-25) — test followed an older contract that used
+  // raw Math.random(). The block was refactored to wrap RNG in `_wpRng()`
+  // (deterministic seed support for replay / probe tests). The bake-as-
+  // literal contract is unchanged — the dice expression still embeds the
+  // exact noWinChance float — only the RNG identifier moved. Asserting
+  // against the new identifier so CI catches future drift on the float
+  // baking (which is what the test is actually defending).
   const src = emitWinPresentationRuntime({ noWinChance: 0.5 });
-  assert.ok(src.includes('Math.random() < 0.5'), 'noWinChance not baked');
+  assert.ok(src.includes('_wpRng() < 0.5'), 'noWinChance not baked');
 });
 
 t('emitWinPresentationRuntime: auto perEventMs → adaptive expression', () => {

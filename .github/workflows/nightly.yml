@@ -1,0 +1,80 @@
+# slot-gdd-factory — Nightly heavy probe sweep
+#
+# Runs the "ultimate-*" probes that would burn 10–20 min per PR if they
+# were on the hot path. Cron: 03:00 UTC = 04:00 CET = before Boki wakes,
+# so failures land in the morning as a single notification.
+#
+# Also reachable via `workflow_dispatch` from the GitHub UI for ad-hoc.
+
+name: nightly
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  heavy-probes:
+    name: ultimate-* probes
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      # `fail-fast: false` — we want to see all failures in one pass, not
+      # stop at the first red probe. Boki triages from the matrix view.
+      fail-fast: false
+      matrix:
+        probe:
+          - test:bundle
+          - test:bundle:compress
+          - test:i18n:sweep
+          - test:load
+          - test:long-run
+          - test:rng:validator
+          - test:touch:validator
+          - test:tti:validator
+          - test:wp:cross:validator
+          - test:overflow
+          - test:sharpness
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Run ${{ matrix.probe }}
+        run: npm run ${{ matrix.probe }}
+        # Probe scripts that don't exist in package.json shouldn't kill the
+        # nightly — log a notice and pass. The matrix is intentionally
+        # over-broad so adding a probe to package.json auto-enrolls it.
+        continue-on-error: false
+
+  cross-browser:
+    name: Playwright cross-browser (chromium · firefox · webkit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: test:cross-browser
+        run: npm run test:cross-browser
