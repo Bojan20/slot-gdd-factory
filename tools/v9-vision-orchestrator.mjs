@@ -171,29 +171,39 @@ function listSlugs(slug, limit) {
  * @returns {Promise<string[]>}
  */
 async function captureScreenshots(slug, runDir) {
+  /* UQ-U-8 P0 #3 (Boki 2026-06-25, observability U-8-C #3): the previous
+     blanket catches returned [] silently on Playwright import failure,
+     browser launch failure, screenshot failure, and browser close — the
+     orchestrator then attached `vision: { verdict: 'SKIP', observed:
+     'no screenshots' }` with NO root cause. Operator running a failed
+     overnight sweep had to grep stderr for nothing. Now: capture the
+     first-error reason and attach it as `captureSkipReason` so the
+     orchestrator can surface it in the receipt. Returns
+     `{paths, skipReason}` instead of bare paths array. */
   let chromium;
   try {
     ({ chromium } = await import('playwright'));
-  } catch (_) {
-    return [];
+  } catch (e) {
+    return { paths: [], skipReason: `playwright import failed: ${e.message}` };
   }
 
   /* Wave U-1 P0-4 — defence in depth: re-validate the slug name AND
      resolve the html path stays within REAL_GAMES even if a future
      refactor routes around listSlugs. */
-  if (!isSafeSlug(slug)) return [];
+  if (!isSafeSlug(slug)) return { paths: [], skipReason: 'unsafe slug rejected' };
   const htmlPath = _resolveInRealGames(slug, 'slot.html');
-  if (!htmlPath || !existsSync(htmlPath)) return [];
+  if (!htmlPath || !existsSync(htmlPath)) return { paths: [], skipReason: 'slot.html missing' };
   const url = pathToFileURL(htmlPath).href;
 
   let browser;
   try {
     browser = await chromium.launch({ headless: true });
-  } catch (_) {
-    return [];
+  } catch (e) {
+    return { paths: [], skipReason: `chromium launch failed: ${e.message}` };
   }
 
   const paths = [];
+  let captureError = null;
   try {
     const ctx  = await browser.newContext({ viewport: { width: 1280, height: 720 } });
     const page = await ctx.newPage();
@@ -230,10 +240,17 @@ async function captureScreenshots(slug, runDir) {
         await page.waitForTimeout(600);
       }
     }
+  } catch (e) {
+    captureError = e.message;
   } finally {
-    try { await browser.close(); } catch (_) { /* ignore */ }
+    try { await browser.close(); } catch (e) {
+      /* UQ-U-8 P0 #3 — log but don't override a primary capture error. */
+      if (!captureError) captureError = `browser.close failed: ${e.message}`;
+    }
   }
-  return paths;
+  return paths.length > 0
+    ? { paths, skipReason: null }
+    : { paths: [], skipReason: captureError || 'no screenshots captured (all states failed)' };
 }
 
 /* ── vision call (LLM wrapper, mockable for tests) ─────────────────── */
@@ -417,7 +434,23 @@ export async function processSlug({
     return receipt;
   }
 
-  const paths = await capture(slug);
+  /* UQ-U-8 P0 #3 — `capture()` may now return either an array of paths
+     (test mocks) OR `{paths, skipReason}` (CI/real captureScreenshots).
+     Normalise both shapes so the call site stays simple. */
+  const captureResult = await capture(slug);
+  const paths = Array.isArray(captureResult) ? captureResult : captureResult.paths;
+  const skipReason = Array.isArray(captureResult) ? null : captureResult.skipReason;
+
+  if (paths.length === 0) {
+    /* Screenshot capture failed before vision call — surface the root
+       cause instead of silently SKIPping with no info. */
+    receipt.vision = {
+      verdict: 'SKIP',
+      reason: skipReason || 'capture returned no screenshots',
+    };
+    return receipt;
+  }
+
   const visionReceipt = await visionFn(model, paths);
   guard.recordCall({ usd: visionReceipt.estUsd });
   receipt.vision = visionReceipt;

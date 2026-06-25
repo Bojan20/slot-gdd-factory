@@ -245,6 +245,28 @@ export function migrate(model, toVersion = MODEL_SCHEMA_VERSION) {
   return cur;
 }
 
+/**
+ * UQ-U-8 P1 (Boki 2026-06-25, observability U-8-C #5): same as `migrate`
+ * but returns `{model, chain}` so a programmatic consumer (e.g. the
+ * audit walker doing 338-file bulk migration) can log WHICH steps
+ * fired per file. Operators previously had no visibility into the
+ * applied chain because only the CLI runner printed it; bulk callers
+ * silently transformed entire corpora.
+ *
+ * @param {object} model
+ * @param {string} [toVersion]
+ * @returns {{ model: object, chain: string[] }}
+ */
+export function migrateWithReceipt(model, toVersion = MODEL_SCHEMA_VERSION) {
+  if (!model || typeof model !== 'object') {
+    throw new TypeError('migrateWithReceipt: model must be an object');
+  }
+  const fromVersion = readModelVersion(model);
+  const chain = planMigration(fromVersion, toVersion);
+  const result = migrate(model, toVersion);
+  return { model: result, chain };
+}
+
 /* ────────────────────────────────────────────────────────────────────
    Built-in migrations
    ──────────────────────────────────────────────────────────────────── */

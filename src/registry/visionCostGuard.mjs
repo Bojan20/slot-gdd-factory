@@ -162,8 +162,23 @@ export function createGuard(overrides = {}) {
         remaining: { calls: Math.max(0, cfg.maxCalls - calls), usd: 0 },
       };
     }
+    /* UQ-U-8 P1 (Boki 2026-06-25, observability U-8-C #4): operator
+       advance warning at 80% of either cap. Prior to this, the guard
+       would let an overnight sweep run normally and hit a hard SKIP
+       at 100% — operator saw "no calls fired in last hour" with no
+       warning at the 80% boundary. Now `decision.warning` carries a
+       string when EITHER cap crosses 0.8× threshold; orchestrator
+       can print it once per run without breaking the `ok: true` flow. */
+    const callsPct = cfg.maxCalls > 0 ? calls / cfg.maxCalls : 0;
+    const usdPct = cfg.maxUsd > 0 ? FROM_MC(usdMicroCents) / cfg.maxUsd : 0;
+    let warning = null;
+    if (callsPct >= 0.8 || usdPct >= 0.8) {
+      const pct = Math.round(Math.max(callsPct, usdPct) * 100);
+      warning = `approaching cap: ${pct}% of ${callsPct >= usdPct ? 'calls' : '$$'} budget consumed (${calls}/${cfg.maxCalls} calls · $${FROM_MC(usdMicroCents).toFixed(2)}/$${cfg.maxUsd})`;
+    }
     return {
       ok: true,
+      warning,
       remaining: {
         calls: cfg.maxCalls - calls,
         usd: cfg.maxUsd - FROM_MC(usdMicroCents),

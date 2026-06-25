@@ -290,10 +290,19 @@ try {
   try {
     const dirFd = openSync(dirname(outPath), 'r');
     try { fsyncSync(dirFd); } finally { closeSync(dirFd); }
-  } catch (_) {
-    /* Some platforms refuse fsync on a directory (Windows, some FUSE
-       mounts). The rename itself is still durable — directory fsync
-       is best-effort hardening. */
+  } catch (e) {
+    /* UQ-U-8 P0 #1 (Boki 2026-06-25, observability U-8-C #1): the previous
+       blanket swallow marketed durable rename in the header but silently
+       hid Linux-specific dir-fsync failures. Now we log a one-line warn
+       to stderr so an operator running `migrate-model` and seeing exit 0
+       still has visibility into a non-fatal hardening failure (Windows /
+       some FUSE mounts refuse fsync on a directory — that's expected and
+       still gets logged). The rename itself is durable regardless. */
+    if (!args.quiet) {
+      process.stderr.write(
+        `migrate-model: warn: directory fsync failed (rename is durable; this is best-effort): ${e.message}\n`,
+      );
+    }
   }
 } catch (err) {
   /* Clean up tmp so we don't accumulate `*.migrate-tmp.PID` litter

@@ -149,6 +149,14 @@ function walkCaches() {
   let scanned = 0;
   const entries = readdirSync(CACHE_DIR, { withFileTypes: true });
   const files = [];
+  /* UQ-U-8 P0 #2 (Boki 2026-06-25, observability U-8-C #2): the previous
+     blanket swallow on subdir readdir hid permission errors / symlink
+     loops / EMFILE — the walker would silently report `scanned: N` lower
+     than truth and `--strict` could exit 0 while drift hid in an
+     unreadable subdir. Now we track unreadable subdirs as a first-class
+     `broken` category so JSON output exposes them and an operator sees
+     "unreadable-dir: <name> (<reason>)" in the human report. */
+  const unreadableDirs = [];
   for (const e of entries) {
     if (e.isFile() && e.name.endsWith('.json')) {
       files.push(join(CACHE_DIR, e.name));
@@ -160,7 +168,9 @@ function walkCaches() {
             files.push(join(CACHE_DIR, e.name, s.name));
           }
         }
-      } catch (_) { /* ignore */ }
+      } catch (err) {
+        unreadableDirs.push({ subdir: e.name, error: err.message });
+      }
     }
   }
   for (const p of files) {
@@ -192,7 +202,7 @@ function walkCaches() {
       });
     }
   }
-  return { scanned, broken, missing: false };
+  return { scanned, broken, unreadableDirs, missing: false };
 }
 
 const real = walkRealGames();
@@ -235,10 +245,18 @@ if (JSONOUT) {
         log(`    - ${b.file} → ${b.kind}`);
       }
     }
+    /* UQ-U-8 P0 #2 — surface unreadable subdirs (used to be silent). */
+    const unr = cache.unreadableDirs || [];
+    if (unr.length > 0) {
+      log(`  ⚠ ${unr.length} unreadable subdir(s) — coverage incomplete:`);
+      for (const u of unr.slice(0, 10)) {
+        log(`    - ${u.subdir}: ${u.error}`);
+      }
+    }
   }
 }
 
-const driftCount  = real.drift.length + cache.broken.length;
+const driftCount  = real.drift.length + cache.broken.length + ((cache.unreadableDirs || []).length);
 if (MIGRATE && driftCount > 0) {
   log('');
   log(`▸ --migrate stamped ${real.drift.length} model.json file(s) in-place`);

@@ -97,6 +97,14 @@ jobs:
       - name: Install deps (npm ci)
         run: npm ci
 
+      # UQ-U-8 P1 (Boki 2026-06-25, observability U-8-C #11+12) — on
+      # any failed gate, upload the reports/ directory + write a
+      # GITHUB_STEP_SUMMARY block listing which step failed. Previously
+      # a red ci.yml gave the reviewer raw scrollback only; with these,
+      # the PR conversation surfaces a clean summary + a downloadable
+      # artifact for postmortem (reports/ holds verify --json output,
+      # baseline diffs, V9 vision telemetry, etc).
+      #
       # UQ-U-2 atom #14 (Boki 2026-06-25): actionlint as a first-class
       # CI step. Catches YAML/syntax/shellcheck issues in workflows
       # BEFORE the rest of the gate runs (so a mistyped matrix value
@@ -179,3 +187,31 @@ jobs:
 
       - name: RectTransform layout primitive contract suite
         run: npm run test:rect-transform
+
+      # UQ-U-8 P1 — on failure, write a step-summary block listing the
+      # job + commit + which step failed (GitHub picks up automatically
+      # via the linked step result). Plus upload reports/ as artifact
+      # so a maintainer can pull telemetry locally.
+      - name: Emit failure summary
+        if: failure()
+        run: |
+          {
+            echo "## ❌ ci gate failed"
+            echo ""
+            echo "| field | value |"
+            echo "|:--|:--|"
+            echo "| commit | \`${{ github.sha }}\` |"
+            echo "| event  | ${{ github.event_name }} |"
+            echo "| ref    | ${{ github.ref }} |"
+            echo ""
+            echo "See the failed step above for stderr/stdout tail. Reports artifact has full traces."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload reports artifact (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-reports-${{ github.sha }}
+          path: reports/
+          if-no-files-found: ignore
+          retention-days: 14
