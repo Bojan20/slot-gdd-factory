@@ -19,25 +19,28 @@
 └────┴─────────────────────────────────────────────────────────────┴───────────┘
 ```
 
-**Preostalo iz LV3 — 12 atoma za sledeće sesije:**
+**LV3 status posle ove sesije — 11 atoma LANDED, 2 otvoreno:**
 
 ```
-┌──────┬──────────────────────────────────────────────────────────┬──────┐
-│  ID   │ Stavka                                                    │ Eff. │
-├──────┼──────────────────────────────────────────────────────────┼──────┤
-│LV3-2 │ sister rust-sim/http_server.rs (Axum + /spin /batch)      │ 1d   │
-│LV3-3 │ backendSpinEngine.mjs ★ (već landed, treba wire)          │ 6h   │
-│LV3-4 │ liveRtpHud.mjs ★ (već landed, treba live data feed)       │ 4h   │
-│LV3-5 │ batchSimulatorPanel.mjs ★ (već landed)                    │ 6h   │
-│LV3-6 │ driftSentinel.mjs ★ (već landed)                          │ 3h   │
-│LV3-7 │ tools/cert-pack-export.mjs (GLI-16 ZIP)                   │ 4h   │
-│LV3-8 │ Web uploader "Backend mode" toggle UI                     │ 3h   │
-│LV3-9 │ Contract test math-lv3-backend.test.mjs                   │ 4h   │
-│LV3-10│ E2E live-rtp-probe (1000 spin convergence verify)         │ 3h   │
-│LV3-11│ Anti-vendor lint shield za backend response               │ 2h   │
-│LV3-12│ docs/math-lv3-architecture.md (runbook)                   │ 3h   │
-│LV3-14│ src/blocks/convergenceHud.mjs (live UI overlay)           │ 4h   │
-└──────┴──────────────────────────────────────────────────────────┴──────┘
+┌──────┬──────────────────────────────────────────────────────────┬──────────┐
+│  ID   │ Stavka                                                    │ Status    │
+├──────┼──────────────────────────────────────────────────────────┼──────────┤
+│LV3-2 │ sister rust-sim/http_server.rs (Axum + /spin /batch)      │ 📋 sister│
+│LV3-3 │ backendSpinEngine.mjs                                     │ ✅ LANDED │
+│LV3-4 │ liveRtpHud.mjs (423 LOC, live feed)                       │ ✅ LANDED │
+│LV3-5 │ batchSimulatorPanel.mjs (434 LOC, 1M/10M/100M CTA)        │ ✅ LANDED │
+│LV3-6 │ driftSentinel.mjs (±0.05% guard)                          │ ✅ LANDED │
+│LV3-7 │ tools/cert-pack-export.mjs (GLI-16 ZIP, 384 LOC)          │ ✅ LANDED │
+│LV3-8 │ Web uploader "Backend mode" toggle UI                     │ 📋 OPEN  │
+│LV3-9 │ Contract test math-lv3-backend.test.mjs (169 LOC)         │ ✅ LANDED │
+│LV3-10│ E2E live-rtp-probe (tools/_lv3-live-rtp-probe.mjs)        │ ✅ LANDED │
+│LV3-11│ Anti-vendor shield (src/registry/antiVendorShield.mjs)    │ ✅ LANDED │
+│LV3-12│ docs/math-lv3-architecture.md (runbook, 182 LOC)          │ ✅ LANDED │
+│LV3-14│ src/blocks/convergenceHud.mjs (live UI overlay)           │ 📋 OPEN  │
+└──────┴──────────────────────────────────────────────────────────┴──────────┘
+
+LV3 today: LV3-10 + LV3-11 — E2E RTP probe + shared anti-vendor
+sanitization registry sa 12-case contract test.
 ```
 
 ★ = blok-ovi postoje (1274 LOC ukupno), treba samo wire ka novoj LV3-1

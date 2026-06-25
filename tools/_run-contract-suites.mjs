@@ -56,6 +56,7 @@ const SUITES = [
   { id: 'kernel-init',    path: 'tests/blocks/kernelInit.test.mjs' },
   { id: 'rect-transform', path: 'tests/_rectTransform.test.mjs' },
   { id: 'parser-cache',   path: 'tests/_parserCache.test.mjs' },
+  { id: 'anti-vendor',    path: 'tests/_antiVendorShield.test.mjs' },
 ];
 
 const args = process.argv.slice(2);
