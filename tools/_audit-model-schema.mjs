@@ -42,7 +42,20 @@
  * sweep; after that, CI can opt into `--strict`.
  */
 
-import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'node:fs';
+import {
+  readFileSync,
+  writeFileSync,
+  readdirSync,
+  existsSync,
+  statSync,
+  openSync,
+  writeSync,
+  fsyncSync,
+  closeSync,
+  renameSync,
+  unlinkSync,
+} from 'node:fs';
+import { randomBytes } from 'node:crypto';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -96,7 +109,25 @@ function walkRealGames() {
       if (MIGRATE) {
         try {
           const next = migrate(model);
-          writeFileSync(p, JSON.stringify(next, null, 2) + '\n', 'utf8');
+          /* UQ-U-3 atom #7 (security agent #9): atomic write — write to
+             unique-name tmp + fsync + rename. Previously `writeFileSync`
+             non-atomic → crash mid-write corrupts the cache JSON, which
+             then breaks every downstream tool that reads the cache.
+             Same pattern as `tools/migrate-model.mjs` U-1 P0-5. */
+          const tmp = `${p}.tmp-${process.pid}-${randomBytes(6).toString('hex')}`;
+          const fd = openSync(tmp, 'w', 0o644);
+          try {
+            writeSync(fd, JSON.stringify(next, null, 2) + '\n', 0, 'utf8');
+            fsyncSync(fd);
+          } finally {
+            closeSync(fd);
+          }
+          try {
+            renameSync(tmp, p);
+          } catch (renameErr) {
+            try { unlinkSync(tmp); } catch (_) {}
+            throw renameErr;
+          }
         } catch (e) {
           drift.push({ slug, kind: 'migrate-failed', error: e.message });
         }

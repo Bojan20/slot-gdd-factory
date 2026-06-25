@@ -76,9 +76,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # Full history so any tool that does `git log` has something
-          # to read (anti-vendor lint reads commit author for whitelist).
-          fetch-depth: 0
+          # UQ-U-3 atom #10 (security agent #3): fetch-depth REDUCED from
+          # 0 (full history) → 1 (single commit) for pull_request events.
+          # Anti-vendor lint reads commit author from THE CURRENT HEAD only;
+          # it does NOT need to walk history. Full history on PRs exposed
+          # the entire historical commit set in CI logs to fork-PR authors —
+          # if any commit ever leaked a secret, that history was reachable.
+          # Push-to-main events still get full history because the anti-
+          # vendor lint occasionally cross-references the last N commits.
+          fetch-depth: ${{ github.event_name == 'pull_request' && 1 || 0 }}
 
       - name: Setup Node 22 (current GitHub-hosted Ubuntu default)
         uses: actions/setup-node@v4
@@ -94,20 +100,23 @@ jobs:
       # UQ-U-2 atom #14 (Boki 2026-06-25): actionlint as a first-class
       # CI step. Catches YAML/syntax/shellcheck issues in workflows
       # BEFORE the rest of the gate runs (so a mistyped matrix value
-      # or unquoted shell var in `run:` fails fast). actionlint is
-      # vendored by the rhysd/actionlint action which pulls the latest
-      # binary on the runner — no install footprint in repo.
+      # or unquoted shell var in `run:` fails fast).
       #
-      # UQ-U-2 atom #15 — SHA pin decision: rhysd/actionlint@v1 + the
-      # actions/checkout@v4 + actions/setup-node@v4 are LEFT AT TAG
-      # because (a) they are first-party / well-known maintained,
-      # (b) GitHub displays the tag → commit SHA mapping in the
-      # workflow viewer, (c) full SHA pinning needs a periodic
-      # refresh dance (dependabot or manual quarterly sweep) which
-      # this repo doesn't yet have set up. Document the decision so
-      # the next audit doesn't repeat the finding without context.
+      # UQ-U-3 atom #9 (security agent #1): SHA-pin third-party
+      # `reviewdog/action-actionlint` — tag `@v1` is mutable, a future
+      # malicious release tag mutation could land arbitrary code in CI.
+      # Pinned to commit dereferenced from `v1` tag on 2026-06-25.
+      # To refresh:
+      #   TAG_OBJ=$(gh api repos/reviewdog/action-actionlint/git/refs/tags/v1 --jq .object.sha)
+      #   gh api repos/reviewdog/action-actionlint/git/tags/$TAG_OBJ --jq .object.sha
+      # then update the SHA below + bump the comment date.
+      #
+      # SHA-pin scope decision (still acknowledged): actions/checkout@v4 +
+      # actions/setup-node@v4 stay at tag because they're first-party
+      # GitHub-maintained with quarterly rotation already in their release
+      # discipline. Third-party action SHA-pin is the higher-risk surface.
       - name: Lint workflows (actionlint)
-        uses: reviewdog/action-actionlint@v1
+        uses: reviewdog/action-actionlint@6fb7acc99f4a1008869fa8a0f09cfca740837d9d # v1 @ 2026-06-25
         with:
           # reviewdog 2025 rename: fail_on_error → fail_level (string,
           # one of: none/any/info/warning/error). 'error' = fail on real

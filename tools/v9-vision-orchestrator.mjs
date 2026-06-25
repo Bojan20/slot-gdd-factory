@@ -51,7 +51,7 @@
  *     gate path.
  */
 
-import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, readdirSync, existsSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, readdirSync, existsSync, rmSync, statSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, resolve, join, sep } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -261,6 +261,44 @@ function visionCall(model, screenshotPaths, opts = {}) {
   if (!existsSync(wrapper)) {
     return { verdict: 'SKIP', observed: 'wrapper missing', estUsd: 0 };
   }
+  /* UQ-U-3 atom #2 (Boki 2026-06-25, security agent #5): the wrapper is
+     spawned with spawnSync — V9_VISION_WRAPPER is an arbitrary-execve
+     primitive. Without validation, anyone with write to the env (CI
+     secrets misconfig, branch-protection bypass) gets RCE. Guard:
+       - resolve to abs path (no ../ traversal)
+       - MUST be a regular file
+       - MUST NOT be world-writable (others write bit clear)
+       - MUST live under one of the allowed roots:
+           $HOME/Projects/  (developer + CI checkout layout)
+           /usr/local/bin/  (sysadmin-managed)
+           /opt/            (sysadmin-managed)
+     Anything else → SKIP with a clear reason. */
+  const wrapperAbs = resolve(wrapper);
+  let st;
+  try { st = statSync(wrapperAbs); } catch (_) {
+    return { verdict: 'SKIP', observed: `wrapper stat failed: ${wrapperAbs}`, estUsd: 0 };
+  }
+  if (!st.isFile()) {
+    return { verdict: 'SKIP', observed: `wrapper not a regular file: ${wrapperAbs}`, estUsd: 0 };
+  }
+  if ((st.mode & 0o002) !== 0) {
+    return { verdict: 'SKIP', observed: `wrapper world-writable (insecure): ${wrapperAbs}`, estUsd: 0 };
+  }
+  const allowedRoots = [
+    resolve(process.env.HOME || '', 'Projects') + sep,
+    '/usr/local/bin' + sep,
+    '/opt' + sep,
+    /* Tests inject mock wrappers via mkdtemp under $TMPDIR — allow os.tmpdir() */
+    resolve(tmpdir()) + sep,
+  ];
+  const underAllowedRoot = allowedRoots.some((r) => wrapperAbs.startsWith(r));
+  if (!underAllowedRoot) {
+    return {
+      verdict: 'SKIP',
+      observed: `wrapper outside allowed roots: ${wrapperAbs}`,
+      estUsd: 0,
+    };
+  }
   if (!Array.isArray(screenshotPaths) || screenshotPaths.length === 0) {
     return { verdict: 'SKIP', observed: 'no screenshots', estUsd: 0 };
   }
@@ -289,20 +327,21 @@ function visionCall(model, screenshotPaths, opts = {}) {
   }
   let parsed = null;
   try {
-    /* UQ-U-2 atom #3 (Boki 2026-06-25): multi-line code fence strip.
-       Old regex matched ONLY single-line ``` at start/end. Opus 4.8
-       reply often arrives as:
-         ```json\n{ ... }\n```
-       with newline AFTER the opening fence. The old `\s*` after ```
-       didn't consume `\n` in default regex flags (in JS `\s` does
-       include \n, BUT the original `^```...$` anchored at line head
-       only matched first-line fence — the closing ``` on its own line
-       was never stripped). New regex uses `^```...?\r?\n` then `\r?\n?```\s*$`
-       and the `m` flag so anchors match line boundaries. Empty fence
-       block also handled. */
+    /* UQ-U-2 atom #3 (Boki 2026-06-25) + UQ-U-3 atom #3 widening:
+       Opus 4.8 emits fence in several shapes — we now strip ALL of:
+           ```json\n{...}\n```
+           ```\njson\n{...}\n```      (rare, but seen)
+           ``` json\n{...}\n```       (space-separated lang tag — VERIFIED bug)
+           ```JSON\n{...}\n```        (upper-case)
+           ```\n{...}\n```            (no lang tag at all)
+       Regex now eats:
+         opening: leading whitespace + ``` + (optional whitespace + lang
+                  tag {json|JSON}) + trailing whitespace + optional newline
+         closing: optional newline + trailing whitespace + ``` + trailing whitespace
+       Falls back to JSON.parse on raw if not fenced. */
     let txt = (r.stdout || '').trim();
-    txt = txt.replace(/^```(?:json|JSON)?\s*\r?\n?/, '');
-    txt = txt.replace(/\r?\n?```\s*$/, '');
+    txt = txt.replace(/^```\s*(?:json|JSON)?\s*\r?\n?/, '');
+    txt = txt.replace(/\r?\n?\s*```\s*$/, '');
     parsed = JSON.parse(txt.trim());
   } catch (e) {
     return {

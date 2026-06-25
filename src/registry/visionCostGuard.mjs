@@ -108,7 +108,24 @@ export function resolveConfig(env = process.env) {
  * }}
  */
 export function createGuard(overrides = {}) {
-  const cfg = { ...resolveConfig(), ...overrides };
+  /* UQ-U-3 atom #6 (Boki 2026-06-25, contract agent #1): overrides used
+     to BYPASS the resolveConfig clamp (max 10_000 calls, max $10K).
+     `createGuard({maxUsd: 1e20})` would silently set $1e20 cap → never
+     triggers. Re-validate every override field through the same range
+     check so the contract holds regardless of where the config came from. */
+  const _clamp = (raw, fallback, min, max) => {
+    if (raw === undefined || raw === null) return fallback;
+    if (typeof raw === 'string' && raw.trim() === '') return fallback;
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n < min || n > max) return fallback;
+    return n;
+  };
+  const base = resolveConfig();
+  const cfg = {
+    maxCalls: _clamp(overrides.maxCalls, base.maxCalls, 0, 10_000),
+    maxUsd: _clamp(overrides.maxUsd, base.maxUsd, 0, 10_000),
+    estUsdPerCall: _clamp(overrides.estUsdPerCall, base.estUsdPerCall, 0, 100),
+  };
   let calls = 0;
   /* UQ-U-2 atom #2 (Boki 2026-06-25): float drift. 100 × 0.05 in IEEE-754
      does NOT equal 5.0 (real result: 5.000000000000007). With cap $5 and
@@ -158,11 +175,29 @@ export function createGuard(overrides = {}) {
     calls += 1;
     /* Allow the caller to pass an observed cost (e.g. parsed from the
        wrapper's token-count line). When absent we fall back to the
-       est-per-call so the accumulator still moves. */
-    const inc =
+       est-per-call so the accumulator still moves.
+     *
+     * UQ-U-3 atom #1 (Boki 2026-06-25, security agent #6 VERIFIED): a
+     * malicious / corrupted wrapper output like {"estUsd": 1e20} would
+     * pre-fix poison the accumulator and make cap permanently inert.
+     * Now we clamp observed cost to a sane ceiling (10× est-per-call,
+     * or $10, whichever larger). Anything above the clamp is logged AND
+     * truncated to the clamp; we still account SOMETHING so the cap
+     * triggers fast on the next call, but we don't trust the wrapper. */
+    const observed =
       typeof opts.usd === 'number' && Number.isFinite(opts.usd) && opts.usd >= 0
         ? opts.usd
         : cfg.estUsdPerCall;
+    const SANE_CEILING = Math.max(10, cfg.estUsdPerCall * 10);
+    const inc = observed > SANE_CEILING ? SANE_CEILING : observed;
+    if (observed > SANE_CEILING) {
+      try {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `visionCostGuard: clamped suspicious observed cost \$${observed} → \$${SANE_CEILING}`,
+        );
+      } catch (_) {}
+    }
     usdMicroCents += TO_MC(inc);
   }
 

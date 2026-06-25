@@ -1,4 +1,35 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-25 18:25 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB + N+2 D-J + UQ-U-1/U-2 ✅ DONE)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-25 19:00 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB + N+2 D-J + UQ-U-1/U-2/U-3 ✅ DONE)
+
+### 🛡 UQ-U-3 ULTRA-DEEP SWEEP — 10 ATOMA LANDED (2026-06-25 19:00 UTC)
+
+```
+┌────┬─────────────────────────────────────────────────────────────┬───────────┐
+│ #  │ U-3 atom                                                     │ Status     │
+├────┼─────────────────────────────────────────────────────────────┼───────────┤
+│  1 │ recordCall: clamp suspicious cost 1e20 → SANE_CEILING ($10)  │ ✅ FIXED   │
+│  2 │ V9_VISION_WRAPPER path validation (file+mode+allowed roots)  │ ✅ FIXED   │
+│  3 │ Multi-line fence regex: space-separated lang tag (\`\`\` json)│ ✅ FIXED   │
+│  4 │ migrate(): structuredClone try/catch + JSON-clone fallback   │ ✅ FIXED   │
+│  5 │ migrate(): post-fn assert __schema__.version === expectedTo  │ ✅ FIXED   │
+│  6 │ createGuard(overrides) clamps via same range as resolveConfig│ ✅ FIXED   │
+│  7 │ _audit-model-schema --migrate: atomic write tmp+fsync+rename │ ✅ FIXED   │
+│  8 │ Test contamination: _resetRegistryForTests() export + use    │ ✅ FIXED   │
+│  9 │ reviewdog/action-actionlint SHA-pin (v1@6fb7acc...)          │ ✅ FIXED   │
+│ 10 │ ci.yml fetch-depth=1 na pull_request (history exposure fix)  │ ✅ FIXED   │
+└────┴─────────────────────────────────────────────────────────────┴───────────┘
+
+2-paralel ultra-deep audit (contracts + security): 24 nalaza total →
+12 verified actionable → 10 fixed (P0+P1) + 12 skip/defer (advisory).
+
+Test gates posle U-3:
+  test:model-schema     16 → 18 pass / 0 fail  (+2: no-path + version-mismatch)
+  test:vision-guard     18 → 20 pass / 0 fail  (+2: 1e20 clamp + override range)
+  test:runtime           8 / 0
+  verify:quick         ALL GATES GREEN
+  actionlint            0 errors (reviewdog SHA-pinned v1@6fb7acc)
+```
+
+---
 
 ### 🛡 UQ-U-2 P1 BATCH — 15 ATOMA LANDED (2026-06-25 18:25 UTC)
 

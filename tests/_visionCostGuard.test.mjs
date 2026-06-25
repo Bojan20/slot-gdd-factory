@@ -304,6 +304,32 @@ await t('createGuard: 100 × 0.05 calls do NOT trip $5 cap due to float drift', 
   assert.equal(final.ok, false);
 });
 
+/* ─── UQ-U-3 atom #1 (recordCall accepts malicious 1e20 → poisons cap) ─ */
+await t('recordCall: clamps suspicious observed cost (1e20 wrapper output)', async () => {
+  /* Pre-fix: malicious wrapper returns {estUsd: 1e20} → BigInt(1e20*1e6)
+     poisons accumulator → cap silently inert forever. */
+  const guard = createGuard({ maxCalls: 100, maxUsd: 5, estUsdPerCall: 0.05 });
+  guard.recordCall({ usd: 1e20 });
+  const r = guard.report();
+  /* Sane ceiling = max(10, 0.05*10) = 10 — clamped to $10 not $1e20. */
+  assert.ok(r.usd <= 10.0, `expected clamp to <= \$10, got \$${r.usd}`);
+  /* Cap fires immediately on next pre-check ($10 already > $5 maxUsd). */
+  const d = guard.shouldCallVision();
+  assert.equal(d.ok, false, 'cap MUST trip after malicious clamp');
+});
+
+/* ─── UQ-U-3 atom #6 (createGuard overrides bypass resolveConfig clamp) ─ */
+await t('createGuard: overrides also clamped to safe range', async () => {
+  /* Pre-fix: createGuard({maxUsd: 1e20}) bypassed env clamp → silent cap=$1e20.
+     Post-fix: overrides go through same range guard. */
+  const guard = createGuard({ maxUsd: 1e20, maxCalls: 1e10 });
+  const r = guard.report();
+  /* Clamps: maxUsd ∈ [0, 10_000], maxCalls ∈ [0, 10_000] — both should
+     fall back to env defaults since 1e20 / 1e10 fail the range check. */
+  assert.equal(r.maxUsd, 2.5, `maxUsd must clamp to default, got ${r.maxUsd}`);
+  assert.equal(r.maxCalls, 20, `maxCalls must clamp to default, got ${r.maxCalls}`);
+});
+
 /* cleanup */
 rmSync(TMP, { recursive: true, force: true });
 

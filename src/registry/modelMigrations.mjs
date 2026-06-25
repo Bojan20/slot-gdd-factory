@@ -82,6 +82,28 @@ export function listMigrations() {
 }
 
 /**
+ * Test-only — remove every migration EXCEPT the built-in `0.0.0->1.0.0`
+ * baseline. Lets test suites that register probe migrations clean up so
+ * later tests in the same process see the canonical registry. NOT for
+ * production use (it would orphan future bumped versions).
+ *
+ * UQ-U-3 atom #8 (contract agent #10): test contamination — the BFS test
+ * registered `1.0.0->1.1.0` + `1.1.0->1.2.0` and these survived for any
+ * subsequent in-process consumer. Now tests can call this in cleanup.
+ *
+ * @returns {string[]} keys removed
+ */
+export function _resetRegistryForTests(keepBuiltins = true) {
+  const removed = [];
+  for (const key of Array.from(_registry.keys())) {
+    if (keepBuiltins && key === '0.0.0->1.0.0') continue;
+    _registry.delete(key);
+    removed.push(key);
+  }
+  return removed;
+}
+
+/**
  * Plan the migration chain from `fromVersion` to `toVersion`. Returns
  * an array of `${from}->${to}` keys to apply in order. Throws if no
  * path exists. The planner uses a simple linear walk because the
@@ -165,12 +187,43 @@ export function migrate(model, toVersion = MODEL_SCHEMA_VERSION) {
      with the caller's input. A future MAJOR migration that touches
      a nested key (e.g. `m.topology.kind = 'X'`) would mutate the
      caller's original object. We deep-clone the input ONCE here so
-     every registered migration starts from a fully owned copy. The
-     contract that migrations "MUST NOT mutate input" then holds
-     transitively even if a future engineer writes a sloppy migration.
-     `structuredClone` is in Node since 17 and handles every shape
-     that survives JSON round-trip plus Date/Map/Set. */
-  let cur = chain.length > 0 ? structuredClone(model) : model;
+     every registered migration starts from a fully owned copy.
+
+     UQ-U-3 atom #4 (contract agent #4 VERIFIED): structuredClone throws
+     DataCloneError on Function / Symbol / WeakRef fields. The official
+     contract says "JSON+Date/Map/Set", but defensive coding now
+     try/catches and falls back to JSON-roundtrip clone (loses Map/Set
+     but preserves shape — strictly better than throwing on a foreign
+     field that no current parser produces). The fallback emits a
+     tracing warning so production hits are visible. */
+  let cur;
+  if (chain.length > 0) {
+    try {
+      cur = structuredClone(model);
+    } catch (cloneErr) {
+      try {
+        cur = JSON.parse(JSON.stringify(model));
+        // eslint-disable-next-line no-console
+        console.warn(
+          `migrate: structuredClone failed (${cloneErr.message}); fell back to JSON-clone (Map/Set/Date demoted to plain)`,
+        );
+      } catch (jsonErr) {
+        throw new Error(
+          `migrate: model is uncloneable (structuredClone: ${cloneErr.message}; JSON: ${jsonErr.message})`,
+        );
+      }
+    }
+  } else {
+    cur = model;
+  }
+
+  /* UQ-U-3 atom #5 (contract agent #5): after EACH migration fn we
+     re-read the __schema__.version stamp and assert it matches the
+     `to` part of the migration key. A sloppy fn that forgets to bump
+     the version would silently leave the model "looking" old and the
+     planMigration runner would think more steps are needed (loop) or
+     the final consumer would see stale envelope. Hard-fail with the
+     actual vs expected stamp so the broken migration is obvious. */
   for (const key of chain) {
     const fn = _registry.get(key);
     /* planMigration only emits keys it found in the registry, so this
@@ -180,6 +233,13 @@ export function migrate(model, toVersion = MODEL_SCHEMA_VERSION) {
     cur = fn(cur);
     if (!cur || typeof cur !== 'object') {
       throw new Error(`migrate: ${key} returned non-object`);
+    }
+    const expectedTo = key.split('->')[1];
+    const actualVer = readModelVersion(cur);
+    if (compareSemver(actualVer, expectedTo) !== 0) {
+      throw new Error(
+        `migrate: ${key} produced model.__schema__.version=${actualVer}, expected ${expectedTo}`,
+      );
     }
   }
   return cur;

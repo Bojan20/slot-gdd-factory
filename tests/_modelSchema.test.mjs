@@ -37,6 +37,7 @@ import {
   planMigration,
   listMigrations,
   register,
+  _resetRegistryForTests,
 } from '../src/registry/modelMigrations.mjs';
 import { parseGDD } from '../src/parser.mjs';
 
@@ -232,12 +233,38 @@ t('parseSemver strict mode throws on garbage', () => {
 
 /* ─── UQ-U-2 atom #10 (BFS planner) ─────────────────────────────────── */
 t('planMigration BFS finds shortest path through multi-hop chain', () => {
-  /* Re-register fixtures so test is hermetic. The runner allows
-     re-registration so this is safe in-process. */
+  /* UQ-U-3 atom #8: reset registry to baseline first so test starts
+     from known state regardless of prior contamination. */
+  _resetRegistryForTests();
   register('1.0.0', '1.1.0', (m) => ({ ...m, __schema__: { version: '1.1.0' } }));
   register('1.1.0', '1.2.0', (m) => ({ ...m, __schema__: { version: '1.2.0' } }));
   const chain = planMigration('1.0.0', '1.2.0');
   assert.deepEqual(chain, ['1.0.0->1.1.0', '1.1.0->1.2.0']);
+  /* Cleanup so subsequent tests in same process see canonical registry. */
+  _resetRegistryForTests();
+});
+
+/* ─── UQ-U-3 atom #10: planMigration cycle / no-path detection ──────── */
+t('planMigration throws clearly when no path exists', () => {
+  _resetRegistryForTests();
+  /* Registry has 0.0.0->1.0.0 only; target 5.0.0 is unreachable. */
+  assert.throws(
+    () => planMigration('0.0.0', '5.0.0'),
+    /no path|visited/,
+  );
+});
+
+t('migrate detects fn that returns wrong __schema__.version', () => {
+  _resetRegistryForTests();
+  /* Register a deliberately broken migration that "claims" 1.0.0->1.1.0
+     but stamps the wrong version. UQ-U-3 atom #5 must catch this. */
+  register('1.0.0', '1.1.0', (m) => ({ ...m, __schema__: { version: '0.9.0' } }));
+  const legacy = { name: 'X', __schema__: { version: '1.0.0' } };
+  assert.throws(
+    () => migrate(legacy, '1.1.0'),
+    /produced model\.__schema__\.version=0\.9\.0, expected 1\.1\.0/,
+  );
+  _resetRegistryForTests();
 });
 
 console.log(`\nResult: ${pass} pass / ${fail} fail`);
