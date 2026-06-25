@@ -17610,14 +17610,14 @@ Boki "KRENI" signal za pokretanje.
 
 ---
 
-## 🛡 UQ-DEEP-AN do UQ-DEEP-AX track — 2026-06-25 (11 commit-ova posle AM)
+## 🛡 UQ-DEEP-AN do UQ-DEEP-AY track — 2026-06-25 (12 commit-ova posle AM)
 
 Posle UQ-DEEP-AM cosmetic hardening, nastavljen je nezadrživi sweep:
-12 paralelnih auditora (I, J, K, L, M, N, O, P + 4 multi-axis) prošli
+13 paralelnih auditora (I, J, K, L, M, N, O, P, Q + 4 multi-axis) prošli
 post-AM regresiju + IGT corpus + real-time GDD audit + memory/race/
 determinism + XSS/security/race hardening.
 
-### Wave overview (UQ-DEEP-AN..AX)
+### Wave overview (UQ-DEEP-AN..AY)
 
 ```
 ┌────────────┬───────────────────────────────────────────────────────────────┬──────────┐
@@ -17633,31 +17633,41 @@ determinism + XSS/security/race hardening.
 │ d57b899    │ UQ-DEEP-AU · Auditor L + H-1 phase-4 (bonusBuy/cascadeBoost)  │ 8        │
 │ 1e3a68f    │ UQ-DEEP-AV · ULTIMATIVNO Auditor M+N + H-1 phase-5            │ 16       │
 │ 5779ad2    │ UQ-DEEP-AW · Auditor O + H-1 phase-6 (ReDoS/NUL/Punycode/CSP) │ 6        │
-│ (current)  │ UQ-DEEP-AX · Auditor P · 4 XSS/race/NaN/idempotent-wire fix   │ 4 P0/P1  │
+│ 0c61190    │ UQ-DEEP-AX · Auditor P · 4 XSS/race/NaN/idempotent-wire fix   │ 4 P0/P1  │
+│ (current)  │ UQ-DEEP-AY · Auditor Q · 5 XSS/path-traversal/SSE/i18n fix    │ 5 P0/P1  │
 └────────────┴───────────────────────────────────────────────────────────────┴──────────┘
 
-  Total UQ-DEEP track (AA → AX): 26 commit-ova zatvoreno
-  Total atoma rešeno: ~95 (6+7+11+6+10+7+8+8+16+6+4 + 18 iz AA-AM)
+  Total UQ-DEEP track (AA → AY): 27 commit-ova zatvoreno
+  Total atoma rešeno: ~100 (6+7+11+6+10+7+8+8+16+6+4+5 + 18 iz AA-AM)
 ```
 
-### UQ-DEEP-AX (current commit) — Auditor P 4 nove rupe
+### UQ-DEEP-AY (current commit) — Auditor Q 5 novih rupa
 
 ```
 ┌──────┬──────────────────────────────────────────────┬────────────────────────┐
 │ ID   │ Fix                                           │ File                   │
 ├──────┼──────────────────────────────────────────────┼────────────────────────┤
-│ P-P0-1│ jackpotRoomReveal XSS escape r.name          │ src/blocks/jackpot…    │
-│       │ (GDD-derived room name → innerHTML XSS)     │   Reveal.mjs:395-410   │
-│ P-P0-2│ leaderboardChip XSS escape e.score           │ src/blocks/leaderbd…   │
-│       │ (network payload → innerHTML XSS)            │   .mjs:299-310         │
-│ P-P1-3│ mathEngine input guards (NaN propagation)    │ src/blocks/mathEng…    │
-│       │ (payAnywhereExpectedPay + binomialPmfGe)    │   .mjs:152, 199        │
-│ P-P1-4│ audio.mjs idempotent HookBus wire            │ src/blocks/audio.mjs   │
-│       │ (bfcache pageshow / hotReload re-arm)        │   :326-354             │
+│ Q-P0-1│ pwaInstallability name sanitizer hardened    │ src/blocks/pwaInst…    │
+│       │ (HTML escape + C0/DEL/C1 + CR/LF strip;     │   .mjs:_sanitizeName   │
+│       │  HTTP header injection / & XSS gap closed)  │                        │
+│ Q-P0-2│ spinHistoryReplay DOMParser (NOT innerHTML)  │ src/blocks/spinHist…   │
+│       │ <img onerror>/<svg onload> attribute XSS    │   .mjs:194-244         │
+│       │  on replay frame restore now inert          │                        │
+│ Q-P1-3│ jackpotRoomReveal HEX_COLOR_RE strict        │ src/blocks/jackpot…    │
+│       │ (3/6/8-only, reject 4/5/7 invalid forms)    │   .mjs:91-96           │
+│ Q-P1-4│ pwaInstallability scope/startUrl traversal   │ src/blocks/pwaInst…    │
+│       │ (..-segment + abs-path + protocol reject)   │   .mjs:_isSafeRel…     │
+│ Q-P1-5│ hotReload SSE origin allowlist               │ src/blocks/hotReload   │
+│       │ (sibling iframe / browser-ext spoof reject) │   .mjs:onmessage       │
+│ +bonus│ i18n stamping: colorblindPatterns cb-chip,   │ 5× i18n/*.json +       │
+│       │ wheelBonusReveal aria + RESULT label key    │ colorblindPatterns,    │
+│       │                                              │ wheelBonusReveal       │
+│ +regr.│ tumble.mjs "IGT-grade" comment → "production-│ src/blocks/tumble.mjs  │
+│       │ grade" (anti-vendor HIGH=0 contract restored)│ :217                   │
 └──────┴──────────────────────────────────────────────┴────────────────────────┘
 ```
 
-### Trenutni status (HEAD posle UQ-DEEP-AX)
+### Trenutni status (HEAD posle UQ-DEEP-AY)
 
 ```
 verify gate                         33/33 ALL GREEN
@@ -17688,9 +17698,16 @@ SSRF host allowlist                 backendSpinEngine localhost only
 realityCheck bfcache stacking      setInterval idempotent guard
 liveRtpHud bfcache stacking         setInterval idempotent guard
 audio.mjs bfcache wire re-arm      __audioHooksWired idempotent (AX)
+pwaInstallability name sanitizer    HTML-escape + C0/DEL/C1 + CR/LF (AY)
+pwaInstallability scope traversal   .. segments + abs-path + scheme reject (AY)
+spinHistoryReplay DOMParser path    inert restore (no attr-handler XSS) (AY)
+jackpotRoomReveal hex 3/6/8-only    rejects 4/5/7 invalid color literals (AY)
+hotReload SSE origin allowlist      same-origin enforced, spoof rejected (AY)
+i18n catalog                        156 entries (RESULT key + cb-chip aria)
+tumble cascade comment               vendor-neutral ("production-grade")
 ```
 
-### Sledeća wave (UQ-DEEP-AY ili LV3)
+### Sledeća wave (UQ-DEEP-AZ ili LV3)
 
 P3 deferred (low priority):
 - Deep-freeze nested objects u defaultConfig (trenutni je shallow)

@@ -71,8 +71,37 @@ function _isHex(s) {
   return typeof s === 'string' && /^#[0-9a-f]{3,8}$/i.test(s);
 }
 
+/* UQ-DEEP-AY Q-P1-4: relative-path safety check for SW scope / start_url. */
+function _isSafeRelativePath(s) {
+  if (typeof s !== 'string' || s.length === 0 || s.length >= 200) return false;
+  // Reject protocol (https://, javascript:, data:)
+  if (/^[a-z][a-z0-9+.\-]*:/i.test(s)) return false;
+  // Reject root-relative absolute paths
+  if (s.startsWith('/')) return false;
+  // Reject any segment containing ..
+  if (/(^|\/)\.\.(\/|$)/.test(s)) return false;
+  // Reject control chars (C0 + DEL + C1) + backslash (path-separator confusion)
+  if (/[\x00-\x1f\x7f-\x9f\\]/.test(s)) return false;
+  return true;
+}
+
+/* UQ-DEEP-AY Q-P0-1 (Auditor Q): pwaInstallability name sanitizer
+   strengthened. Was strip-only <>"'` — left ampersand, newlines, control
+   chars, NULL bytes. Now: HTML-escape + strip control chars (C0+DEL+C1) +
+   strip CR/LF (HTTP-header injection if name ever reaches header context). */
 function _sanitizeName(s) {
-  return String(s || '').replace(/[<>"'`]/g, '').slice(0, 60).trim();
+  const raw = String(s || '');
+  // Strip C0 controls + DEL + C1 controls + CR/LF
+  const noCtrl = raw.replace(/[\x00-\x1f\x7f-\x9f]/g, '');
+  // HTML-escape remaining special chars
+  const escaped = noCtrl
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/`/g, '&#96;');
+  return escaped.slice(0, 60).trim();
 }
 
 export function defaultConfig() {
@@ -128,10 +157,15 @@ export function resolveConfig(model = {}) {
   if (_isHex(m.backgroundColor)) cfg.backgroundColor = m.backgroundColor.toLowerCase();
   if (_isHex(m.iconColor)) cfg.iconColor = m.iconColor.toLowerCase();
 
-  if (typeof m.scope === 'string' && m.scope.length > 0 && m.scope.length < 200) {
+  /* UQ-DEEP-AY Q-P1-4 (Auditor Q): path-traversal guard. Malicious GDD
+     scope="../../" registers SW that intercepts parent-path fetch →
+     cache poisoning of sibling apps on same origin. Reject any `..`
+     segment + reject absolute paths + reject protocol scheme. Only
+     dot-relative or sub-path-relative accepted. */
+  if (typeof m.scope === 'string' && _isSafeRelativePath(m.scope)) {
     cfg.scope = m.scope;
   }
-  if (typeof m.startUrl === 'string' && m.startUrl.length > 0 && m.startUrl.length < 200) {
+  if (typeof m.startUrl === 'string' && _isSafeRelativePath(m.startUrl)) {
     cfg.startUrl = m.startUrl;
   }
   if (m.captureInstallPrompt === true) cfg.captureInstallPrompt = true;

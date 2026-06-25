@@ -194,14 +194,21 @@ const SHR_CAPTURE_FS = ${cfg.captureFs};
       savedHTML = host ? host.outerHTML : null;
     }
 
-    /* Restore the captured DOM */
+    /* Restore the captured DOM.
+       UQ-DEEP-AY Q-P0-2 (Auditor Q): DOMParser instead of innerHTML so
+       any embedded <img onerror> / <svg onload> attribute payload doesn't
+       execute on assignment. innerHTML triggers attribute event handlers
+       on parse; DOMParser → document.body.children clone is inert. */
     const host = document.getElementById('gridHost') ||
                  document.querySelector('.grid, .reels, .gameArea');
     if (host && host.parentNode) {
-      const wrap = document.createElement('div');
-      wrap.innerHTML = frame.gridHTML;
-      const newHost = wrap.firstElementChild;
-      if (newHost) host.parentNode.replaceChild(newHost, host);
+      try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString('<div>' + frame.gridHTML + '</div>', 'text/html');
+        const wrap = doc.body.firstElementChild;
+        const newHost = wrap && wrap.firstElementChild;
+        if (newHost) host.parentNode.replaceChild(document.importNode(newHost, true), host);
+      } catch (_) { /* parse fail → leave DOM intact */ }
     }
 
     state.currentIndex = targetIdx;
@@ -222,10 +229,14 @@ const SHR_CAPTURE_FS = ${cfg.captureFs};
       const host = document.getElementById('gridHost') ||
                    document.querySelector('.grid, .reels, .gameArea');
       if (host && host.parentNode) {
-        const wrap = document.createElement('div');
-        wrap.innerHTML = savedHTML;
-        const newHost = wrap.firstElementChild;
-        if (newHost) host.parentNode.replaceChild(newHost, host);
+        /* UQ-DEEP-AY Q-P0-2: DOMParser path (same as restore above). */
+        try {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString('<div>' + savedHTML + '</div>', 'text/html');
+          const wrap = doc.body.firstElementChild;
+          const newHost = wrap && wrap.firstElementChild;
+          if (newHost) host.parentNode.replaceChild(document.importNode(newHost, true), host);
+        } catch (_) { /* parse fail → leave DOM */ }
       }
       savedHTML = null;
     }

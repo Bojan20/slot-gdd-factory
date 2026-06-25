@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0.0",
-  "generated_at": "2026-06-25T00:50:00.000Z",
+  "generated_at": "2026-06-25T08:30:00.000Z",
   "source_locale": "de",
-  "hash": "bce511248b16",
+  "hash": "373cfa59f4f6",
   "blocks_with_strings": 48,
-  "total_entries": 155,
+  "total_entries": 156,
   "catalog": {
     "audio.0": "Toggle audio",
     "autoplay.0": "AUTO · ",
@@ -160,6 +160,7 @@
     "realityCheck.quit": "QUIT",
     "bonusClimaxReveal.bonus": "BONUS!",
     "turboMode.label": "Turbo mode toggle",
-    "spinControl.label": "Spin"
+    "spinControl.label": "Spin",
+    "wheelBonusReveal.result": "RESULT"
   }
 }

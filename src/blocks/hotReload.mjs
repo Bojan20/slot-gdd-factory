@@ -385,6 +385,19 @@ export function emitHotReloadRuntime(cfg = defaultConfig()) {
         scheduleReconnect();
       };
       es.onmessage = function (ev) {
+        /* UQ-DEEP-AY Q-P1-5 (Auditor Q): origin allowlist for SSE message.
+           Even though EventSource is same-origin by default, postMessage
+           from sibling iframe or browser-ext content script could spoof.
+           Reject any ev.origin that doesn't match endpoint origin. */
+        try {
+          if (ev.origin && CFG.endpoint && !CFG.endpoint.startsWith('/')) {
+            var endpointOrigin = new URL(CFG.endpoint, location.href).origin;
+            if (ev.origin !== endpointOrigin) {
+              if (typeof console !== 'undefined' && console.warn) console.warn('[hotReload] origin mismatch suppressed:', ev.origin);
+              return;
+            }
+          }
+        } catch (_) {}
         var data = parseJSON(ev.data);
         if (!data) return;
         if (data.type === 'ping') return; /* keep-alive */

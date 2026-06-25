@@ -277,7 +277,7 @@ export function emitColorblindPatternsMarkup(cfg = defaultConfig()) {
   const label = (cfg.chipLabel || 'CB').replace(/[<>"'`]/g, '');
   return tagBlockMarkup(`<button id="cbPatternsChip" class="cb-chip" type="button"
     role="switch" aria-checked="${checked}"
-    aria-label="Toggle colour-blind pattern overlay">${label}</button>`, 'colorblindPatterns');
+    aria-label="Toggle colour-blind pattern overlay" data-i18n-aria="colorblindPatterns.0" data-i18n-aria-fallback="Toggle colour-blind pattern overlay">${label}</button>`, 'colorblindPatterns');
 }
 
 export function emitColorblindPatternsRuntime(cfg = defaultConfig()) {

@@ -91,7 +91,10 @@ const AUTO_DISMISS_MAX_MS = 10000;
 const FONT_SIZE_MIN_PX    = 16;
 const FONT_SIZE_MAX_PX    = 64;
 
-const HEX_COLOR_RE        = /^#[0-9a-fA-F]{3,8}$/;
+/* UQ-DEEP-AY Q-P1-3 (Auditor Q): hex 3/6/8 only — exclude 4/5/7 which
+   yield invalid CSS when concatenated with alpha suffix downstream
+   (`${c.placardColor}f0` → "#abcf0" if input was 3-char "#abc"). */
+const HEX_COLOR_RE        = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 
 const clampInt = (n, lo, hi) => Math.min(hi, Math.max(lo, Math.trunc(n)));
 

@@ -214,8 +214,8 @@ async function runTumbleChain(detectFn, opts) {
   while (chain < TUMBLE_MAX_CHAIN) {
     if (myToken !== _TUMBLE_KILL_TOKEN) break;
     /* UQ-DEEP-AN · AN-3 — Hard cascade depth ceiling. Independent from the
-     * per-game soft TUMBLE_MAX_CHAIN budget; this is the IGT-grade anti-
-     * infinite-loop net. Tick BEFORE detect so a runaway chain (e.g. orb
+     * per-game soft TUMBLE_MAX_CHAIN budget; this is the production-grade
+     * anti-infinite-loop net. Tick BEFORE detect so a runaway chain (e.g. orb
      * preservation + perpetual win events) cannot starve the bail check. */
     if (_cascadeDepthTick() === 'halt') break;
     const events = (typeof detectFn === 'function') ? (detectFn() || []) : [];
