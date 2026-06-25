@@ -1,7 +1,8 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-25 17:05 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB + N+2 D-I ✅ DONE)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-25 17:25 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB + N+2 D-J ✅ DONE)
 
 Sve glavne grane backlog-a su zatvorene (Expert P1/P2/P3 +
-nice-to-have N1-N8 + post-backlog ekstenzije A/B/C + N+2 atomi D/E/F/G/H/I).
+nice-to-have N1-N8 + post-backlog ekstenzije A/B/C + N+2 atomi D/E/F/G/H/I/J).
+**N+2 grane KOMPLETNO ZATVORENE** — ostaje samo P3 idle + Boki "KRENI" / "audio sad možeš" signali.
 Posle toga **30 UQ-DEEP wave-ova (AA → BB)** zatvoreno sa ukupno
 **~108 P0/P1 atoma** (detalji u dnu fajla, "UQ-DEEP-AN do UQ-DEEP-BB track" sekcija).
 HEAD: `6ba2282` (N+2-H CI narrow · ci.yml zelena 15s na GitHub Actions).
@@ -21,14 +22,14 @@ Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 │ UQ-DEEP track (AA→BB)                 │ ✅ 30 wave-ova / ~108 P0/P1 atoma   │
 │ N+2 ekstenzije H (CI/CD pipeline)     │ ✅ LANDED 2026-06-25                │
 │ N+2 ekstenzije I (Schema versioning)  │ ✅ LANDED 2026-06-25                │
-│ N+2 ekstenzije J                      │ 📋 OPEN (1 atom)                    │
+│ N+2 ekstenzije J (V9 vision capped)   │ ✅ LANDED 2026-06-25                │
 │ P3 idle (8 stavki)                    │ 📋 OPEN — low priority, ne urgent  │
 │ MATH-INTEGRATION-LV3                  │ ⏸ čeka Boki "KRENI" signal         │
 │ AUDIO X1 (HARD RULE #4)               │ 🔒 LOCKED — čeka Boki "sad možeš"  │
 └──────────────────────────────────────┴────────────────────────────────────┘
 ```
 
-### 🎯 Otvoreno (1 atom N+2 J · 8 P3 idle · 1 čeka signal)
+### 🎯 Otvoreno (0 atoma N+2 · 8 P3 idle · 1 čeka signal) — **N+2 H/I/J SVE LANDED**
 
 ```
 ┌─────┬──────────────────────────────────────────┬────────┬──────────────────┐
@@ -60,9 +61,20 @@ Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 │     │ every parser output carries semver +      │        │                   │
 │     │ generatedAt envelope.                     │        │                   │
 ├─────┼──────────────────────────────────────────┼────────┼──────────────────┤
-│ J   │ V9 vision mode aktivacija (cost-capped)   │ ~3-4h  │ Opus screenshot   │
-│     │ — postojeći V9 deterministic + Opus       │        │ + verdict za WARN/│
-│     │ vision call sa $$ guard                   │        │ FAIL cases        │
+│ J   │ V9 vision mode aktivacija (cost-capped)   │ DONE   │ ✅ LANDED         │
+│     │ src/registry/visionCostGuard.mjs          │        │ 2026-06-25 N+2-J │
+│     │ (createGuard/resolveConfig/shouldCallVis  │        │ Boki "dalje"     │
+│     │ ion/recordCall/report/reset +             │        │ 16/16 contract   │
+│     │ defaultGuard module-level instance) +     │        │ tests pass.      │
+│     │ tools/v9-vision-orchestrator.mjs          │        │                   │
+│     │ (processSlug library API + CLI walker +   │        │                   │
+│     │ Playwright captureScreenshots +           │        │                   │
+│     │ Opus 4.8 visionCall via Fable wrapper +   │        │                   │
+│     │ env knobs V9_MAX_VISION_CALLS=20 /        │        │                   │
+│     │ V9_MAX_VISION_USD=2.50 /                  │        │                   │
+│     │ V9_EST_USD_PER_CALL=0.05).                │        │                   │
+│     │ PASS never fires vision; WARN/FAIL gate   │        │                   │
+│     │ by cost cap.                              │        │                   │
 └─────┴──────────────────────────────────────────┴────────┴──────────────────┘
 ```
 
