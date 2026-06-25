@@ -1,8 +1,75 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-23 14:30 UTC (FINAL · sve N1-N8 + A/B/C ✅ DONE)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-25 10:35 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→AY ✅ DONE)
 
 Sve glavne grane backlog-a su zatvorene (MATH + Expert P1/P2/P3 +
-nice-to-have N1-N8 + post-backlog ekstenzije A/B/C). Audio (X1) ostaje
-LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
+nice-to-have N1-N8 + post-backlog ekstenzije A/B/C). Posle toga
+**27 UQ-DEEP wave-ova (AA → AY)** zatvoreno sa ukupno **~100 P0/P1 atoma**
+(detalji u dnu fajla, "UQ-DEEP-AN do UQ-DEEP-AY track" sekcija).
+HEAD: `6bfbab5` (origin/main, push ✓).
+Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
+
+### 🎯 Trenutni snapshot — posle UQ-DEEP-AY (2026-06-25)
+
+```
+┌─────────────────────────────────────────────┬──────────────────────────────┐
+│ Indikator                                    │ Vrednost                      │
+├─────────────────────────────────────────────┼──────────────────────────────┤
+│ HEAD commit                                  │ 6bfbab5 (UQ-DEEP-AY)         │
+│ Verify gate                                  │ 33/33 + 100 sub-step GREEN   │
+│ Block liveness walker                        │ 0 DEAD (229 × 25 HTMLs)       │
+│ Anti-vendor lint HIGH                        │ 0 (contract restored)        │
+│ UQ-16 render baseline                        │ REBAKED 339/339              │
+│ Real-game PDF render                         │ 338/338 PASS                  │
+│ IGT fidelity score                           │ 6 MATCH · 2 PARTIAL · 0 MISS │
+│ i18n catalog                                 │ 156 entries × 5 locales      │
+│ H-1 a11y stamping                            │ 155 entries (6 phases)       │
+│ HookBus guard coverage                       │ 211/211 (100%)               │
+│ data-block-name coverage                     │ 95%+ (114 markup tagged)     │
+│ defaultConfig freeze coverage                │ 209/211 (98.6%, 2 exempt)    │
+│ MATH precision band                          │ ±0.05% (PRECISION-3+4 wired) │
+│ UQ-DEEP track total commits                  │ 27 (AA → AY)                  │
+│ UQ-DEEP track total atoms                    │ ~100 P0/P1                    │
+└─────────────────────────────────────────────┴──────────────────────────────┘
+```
+
+### 📋 Aktivni gate-ovi (sve zelene)
+
+```
+┌────────────────────────────────────────┬──────────────────────────────────┐
+│ Gate                                    │ Last verdict                      │
+├────────────────────────────────────────┼──────────────────────────────────┤
+│ npm run verify (full)                   │ ✅ 33/33                          │
+│ npm run verify --quick (pre-commit)     │ ✅ 100 sub-step (~50s)            │
+│ tests/parse-real-pdfs.mjs               │ ✅ 338/338                        │
+│ tools/anti-vendor-lint --scan dist/     │ ✅ HIGH=0 (MED=5 LOW=3 info-only)│
+│ tools/_full-corpus-render-parity        │ ✅ 339/339 (UQ-11 corpus)         │
+│ tools/_block-liveness-walker            │ ✅ 0 DEAD (229 × 25)              │
+│ tools/uq16-baseline (drift)             │ ✅ 0 drift on rebake             │
+│ MATH-PRECISION-3 RTP calibrator         │ ✅ band ±0.05%                    │
+└────────────────────────────────────────┴──────────────────────────────────┘
+```
+
+### ⏭️ Sledeće (nema obaveznih wave-ova — sve P0/P1 čisto)
+
+```
+┌──────────┬─────────────────────────────────────────────────────────────────┐
+│ Prio      │ Stavka                                                          │
+├──────────┼─────────────────────────────────────────────────────────────────┤
+│ ↪ čeka   │ MATH-INTEGRATION-LV3 (sister-repo HTTP backend) — Boki "KRENI"  │
+│ ↪ čeka   │ AUDIO X1 — Boki "sad možeš" (HARD RULE #4)                       │
+│ P3 idle  │ Deep-freeze nested objects u defaultConfig (shallow → recursive) │
+│ P3 idle  │ IGT IXF 15-stage hook enumeration (doc-only orthogonal)          │
+│ P3 idle  │ N-tier Rust executor adapter (per-feature sim u Rust kernel-u)   │
+│ P3 idle  │ kernelInit boot blob (softwareid/skincode/sessionToken)          │
+│ P3 idle  │ Cross-browser Playwright (Firefox + WebKit; sad samo chromium)   │
+│ P3 idle  │ RectTransform responsive anchor/pivot — IGT layout P1            │
+│ P3 idle  │ Pixi atlas pipeline + texture packer — IGT layout P2             │
+│ P3 idle  │ GSAP tween + timeline + FSM binding — IGT layout P2              │
+│ P3 idle  │ Spine importer + skeleton runtime — IGT layout P2                │
+│ P3 idle  │ Particle emitter system (@pixi/particle-emitter) — IGT layout P2 │
+└──────────┴─────────────────────────────────────────────────────────────────┘
+```
+
+---
 
 ```
 ┌────┬─────────────────────────────────────────────────────────────┬────────┬───────────┐
