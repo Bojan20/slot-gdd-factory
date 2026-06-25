@@ -97,13 +97,17 @@ Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 │ UQ-U-1 ultra-audit (P0)               │ ✅ 8/8 LANDED ba03291               │
 │ UQ-U-2 P1 batch                       │ ✅ 15/15 LANDED 9b28a40             │
 │ UQ-U-3 2-paralel deep audit           │ ✅ 10/10 LANDED 94180b7             │
-│ P3 idle (8 stavki)                    │ 📋 OPEN — low priority, ne urgent  │
+│ P3-P1 deep-freeze utility + audit     │ ✅ LANDED b0e53a6                   │
+│ UQ-U-4 deepFreeze hardening (post P1) │ ✅ 8/8 LANDED c4d52cb               │
+│ P3-P2 IXF 15-stage hook enumeration   │ ✅ LANDED ovaj commit               │
+│ P3-P5 Cross-browser (chrome+ff+webkit)│ ✅ već LIVE (nightly + tool)       │
+│ P3 idle (preostalo)                   │ 📋 7 stavki — low priority         │
 │ MATH-INTEGRATION-LV3                  │ ⏸ čeka Boki "KRENI" signal         │
 │ AUDIO X1 (HARD RULE #4)               │ 🔒 LOCKED — čeka Boki "sad možeš"  │
 └──────────────────────────────────────┴────────────────────────────────────┘
 ```
 
-### 🎯 Otvoreno (0 N+2 · 0 UQ-U-1 P0 · 0 UQ-U-2 P1 · 0 UQ-U-3 · 8 P3 idle · 1 čeka signal) — **N+2 + UQ-U-1/U-2/U-3 ZATVORENO**
+### 🎯 Otvoreno (0 N+2 · 0 UQ-U-* · 7 P3 idle · 1 čeka signal) — **+ P3-P1/P2/P5 + UQ-U-4 ZATVORENI**
 
 ### 🛡 UQ-U-1 — Ultra-deep QA posle N+2-H/I/J (4-paralel auditor sweep, 2026-06-25)
 
