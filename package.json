@@ -14,6 +14,7 @@
     "test:rust-executor": "node tests/_rustExecutorAdapter.test.mjs",
     "test:kernel-init": "node tests/blocks/kernelInit.test.mjs",
     "test:rect-transform": "node tests/_rectTransform.test.mjs",
+    "test:parser-cache": "node tests/_parserCache.test.mjs",
     "test:contracts": "node tools/_run-contract-suites.mjs",
     "test:blocks:fast": "node tools/_run-block-tests.mjs --skip-audio",
     "test:blocks:fast:quiet": "node tools/_run-block-tests.mjs --quiet --skip-audio",

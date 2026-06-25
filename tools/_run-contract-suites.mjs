@@ -55,6 +55,7 @@ const SUITES = [
   { id: 'rust-executor',  path: 'tests/_rustExecutorAdapter.test.mjs' },
   { id: 'kernel-init',    path: 'tests/blocks/kernelInit.test.mjs' },
   { id: 'rect-transform', path: 'tests/_rectTransform.test.mjs' },
+  { id: 'parser-cache',   path: 'tests/_parserCache.test.mjs' },
 ];
 
 const args = process.argv.slice(2);

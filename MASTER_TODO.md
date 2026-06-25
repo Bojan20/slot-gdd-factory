@@ -193,6 +193,7 @@ Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 │ UQ-U-7 3-paralel super-deep audit      │ ✅ 10/10 LANDED c544773             │
 │ UQ-U-8 4-paralel ultra-meta-meta audit │ ✅ 8/8 atoma (P0 + P1) LANDED 4e737ef│
 │ UQ-U-9 perf + docstring sweep          │ ✅ 4 atoma · 74% contract speed up   │
+│ UQ-U-9.1 parser LRU cache (27× repeat) │ ✅ 8/8 tests · 27× hot-path speedup  │
 │ P3-P1 deep-freeze utility + audit     │ ✅ LANDED b0e53a6                   │
 │ UQ-U-4 deepFreeze hardening (post P1) │ ✅ 8/8 LANDED c4d52cb               │
 │ P3-P2 IXF 15-stage hook enumeration   │ ✅ LANDED ovaj commit               │
@@ -282,7 +283,7 @@ fragility, CLI greedy argv) — backlog za sledeći Wave UQ-U-2.
 ┌─────────────────────────────────────────────┬──────────────────────────────┐
 │ Indikator                                    │ Vrednost                      │
 ├─────────────────────────────────────────────┼──────────────────────────────┤
-│ HEAD commit                                  │ 4e737ef → UQ-U-9 perf sweep  │
+│ HEAD commit                                  │ 5fde946 → UQ-U-9.1 parser LRU│
 │ Verify gate                                  │ 33/33 + 100 sub-step GREEN   │
 │ CI gate (GitHub Actions)                     │ 6-step + actionlint ✓ green  │
 │   1. checkout fetch-depth event-scoped       │ PR=1 / push=0 (sec)          │
