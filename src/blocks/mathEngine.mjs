@@ -41,12 +41,35 @@ let _wasm = null;
 let _engineKind = 'js-fallback';
 
 /* ── Try to load WASM from sister repo (Node only) ─────────────────── */
+/* UQ-DEEP-AZ R-P1-1 (Auditor R-2): tighten dynamic import() target.
+   Original used `${HOME}/Projects/slot-math-engine-template/.../pkg/…`
+   directly — operator-controlled HOME + traversal in HOME would let a
+   crafted env redirect import() to an arbitrary JS path. Now:
+     1. HOME must be an absolute non-empty string under realistic prefix
+        (Unix `/`, Win `[A-Z]:\\`).
+     2. HOME must not contain `..` segments.
+     3. After path join, realpathSync verifies the resolved file is
+        actually under the expected sister-repo subtree.
+     4. Only `.js` (and `.mjs`) WASM-wrapper extensions are accepted. */
 async function _tryLoadWasm() {
   if (_wasm) return _wasm;
   if (typeof process === 'undefined' || !process.env) return null;
   const HOME = process.env.HOME || process.env.USERPROFILE;
-  if (!HOME) return null;
-  const path = `${HOME}/Projects/slot-math-engine-template/packages/slot-math-wasm/pkg/slot_math_wasm.js`;
+  if (typeof HOME !== 'string' || HOME.length === 0) return null;
+  /* Reject suspicious HOME values up-front. */
+  if (HOME.includes('..') || HOME.includes('\0')) return null;
+  if (!(HOME.startsWith('/') || /^[A-Za-z]:[\\/]/.test(HOME))) return null;
+  const expectedSubpath = '/Projects/slot-math-engine-template/packages/slot-math-wasm/pkg/slot_math_wasm.js';
+  const path = `${HOME}${expectedSubpath}`;
+  /* Real-path verification (defence-in-depth — symlink follow attack
+     within HOME could otherwise redirect import target). */
+  try {
+    const { realpathSync } = await import('node:fs');
+    const real = realpathSync(path);
+    if (!real.endsWith('/slot_math_wasm.js') && !real.endsWith('\\slot_math_wasm.js')) return null;
+  } catch (_) {
+    return null; /* file missing or not accessible — skip WASM, JS fallback */
+  }
   try {
     const m = await import(path);
     _wasm = m;

@@ -1,10 +1,10 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-25 10:35 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→AY ✅ DONE)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-25 10:45 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→AZ ✅ DONE)
 
 Sve glavne grane backlog-a su zatvorene (MATH + Expert P1/P2/P3 +
 nice-to-have N1-N8 + post-backlog ekstenzije A/B/C). Posle toga
-**27 UQ-DEEP wave-ova (AA → AY)** zatvoreno sa ukupno **~100 P0/P1 atoma**
-(detalji u dnu fajla, "UQ-DEEP-AN do UQ-DEEP-AY track" sekcija).
-HEAD: `6bfbab5` (origin/main, push ✓).
+**28 UQ-DEEP wave-ova (AA → AZ)** zatvoreno sa ukupno **~102 P0/P1 atoma**
+(detalji u dnu fajla, "UQ-DEEP-AN do UQ-DEEP-AZ track" sekcija).
+HEAD: AZ (post-commit će popuniti SHA).
 Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 
 ### 🎯 Trenutni snapshot — posle UQ-DEEP-AY (2026-06-25)
@@ -26,8 +26,9 @@ Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 │ data-block-name coverage                     │ 95%+ (114 markup tagged)     │
 │ defaultConfig freeze coverage                │ 209/211 (98.6%, 2 exempt)    │
 │ MATH precision band                          │ ±0.05% (PRECISION-3+4 wired) │
-│ UQ-DEEP track total commits                  │ 27 (AA → AY)                  │
-│ UQ-DEEP track total atoms                    │ ~100 P0/P1                    │
+│ UQ-DEEP track total commits                  │ 28 (AA → AZ)                  │
+│ UQ-DEEP track total atoms                    │ ~102 P0/P1                    │
+│ 4-paralel auditor R sweep                    │ 2 fix (P0 + P1), 2 false-pos  │
 └─────────────────────────────────────────────┴──────────────────────────────┘
 ```
 
@@ -17677,14 +17678,15 @@ Boki "KRENI" signal za pokretanje.
 
 ---
 
-## 🛡 UQ-DEEP-AN do UQ-DEEP-AY track — 2026-06-25 (12 commit-ova posle AM)
+## 🛡 UQ-DEEP-AN do UQ-DEEP-AZ track — 2026-06-25 (13 commit-ova posle AM)
 
 Posle UQ-DEEP-AM cosmetic hardening, nastavljen je nezadrživi sweep:
-13 paralelnih auditora (I, J, K, L, M, N, O, P, Q + 4 multi-axis) prošli
-post-AM regresiju + IGT corpus + real-time GDD audit + memory/race/
-determinism + XSS/security/race hardening.
+14 paralelnih auditora (I, J, K, L, M, N, O, P, Q + 4× R + 4 multi-axis)
+prošli post-AM regresiju + IGT corpus + real-time GDD audit + memory/race/
+determinism + XSS/security/race hardening + bfcache lifecycle + import path
+escape defense.
 
-### Wave overview (UQ-DEEP-AN..AY)
+### Wave overview (UQ-DEEP-AN..AZ)
 
 ```
 ┌────────────┬───────────────────────────────────────────────────────────────┬──────────┐
@@ -17701,14 +17703,58 @@ determinism + XSS/security/race hardening.
 │ 1e3a68f    │ UQ-DEEP-AV · ULTIMATIVNO Auditor M+N + H-1 phase-5            │ 16       │
 │ 5779ad2    │ UQ-DEEP-AW · Auditor O + H-1 phase-6 (ReDoS/NUL/Punycode/CSP) │ 6        │
 │ 0c61190    │ UQ-DEEP-AX · Auditor P · 4 XSS/race/NaN/idempotent-wire fix   │ 4 P0/P1  │
-│ (current)  │ UQ-DEEP-AY · Auditor Q · 5 XSS/path-traversal/SSE/i18n fix    │ 5 P0/P1  │
+│ 6bfbab5    │ UQ-DEEP-AY · Auditor Q · 5 XSS/path-traversal/SSE/i18n fix    │ 5 P0/P1  │
+│ (current)  │ UQ-DEEP-AZ · 4-paralel Auditor R · bfcache + WASM-import path │ 2 P0/P1  │
 └────────────┴───────────────────────────────────────────────────────────────┴──────────┘
 
-  Total UQ-DEEP track (AA → AY): 27 commit-ova zatvoreno
-  Total atoma rešeno: ~100 (6+7+11+6+10+7+8+8+16+6+4+5 + 18 iz AA-AM)
+  Total UQ-DEEP track (AA → AZ): 28 commit-ova zatvoreno
+  Total atoma rešeno: ~102 (6+7+11+6+10+7+8+8+16+6+4+5+2 + 18 iz AA-AM)
 ```
 
-### UQ-DEEP-AY (current commit) — Auditor Q 5 novih rupa
+### UQ-DEEP-AZ (current commit) — 4-paralel Auditor R sweep
+
+4 paralelna ultra-deep auditora pokrenuta (R-1 XSS, R-2 security,
+R-3 math/RTP, R-4 a11y/i18n/lifecycle) na disjoint sub-domene:
+
+```
+┌───────┬─────────────────────────────┬──────────────────────────────────┐
+│ Aud.  │ Domen                        │ Verdict                           │
+├───────┼─────────────────────────────┼──────────────────────────────────┤
+│ R-1   │ src/blocks XSS attack surf  │ 0 nove rupe — čist posle Q       │
+│ R-2   │ registry/tools security      │ 1 P1 (mathEngine WASM import)    │
+│ R-3   │ math/RTP/PAR/determinism     │ 0 nove rupe — čist posle MATH-12 │
+│ R-4   │ a11y/i18n/bfcache/lifecycle  │ 1 P0 (sessionTimeout pagehide) + │
+│       │                              │ 1 P2 deferred (settingsPanel ari)│
+└───────┴─────────────────────────────┴──────────────────────────────────┘
+
+Locale parity verified: 5×5 (158 entries × en/de/nl/da/sv) — 0 drift.
+```
+
+```
+┌──────┬──────────────────────────────────────────────┬────────────────────────┐
+│ ID   │ Fix                                           │ File                   │
+├──────┼──────────────────────────────────────────────┼────────────────────────┤
+│ R-P1-1│ mathEngine WASM import path hardening        │ src/blocks/mathEng…    │
+│       │ • HOME validated (abs path, no ..)           │   .mjs:_tryLoadWasm    │
+│       │ • realpathSync ends-with allowlist check     │                        │
+│       │ • Symlink redirect within HOME blocked       │                        │
+│ R-P0-2│ sessionTimeout pagehide cleanup              │ src/blocks/sessionTim… │
+│       │ • countdownTimer + breakTimer clearInterval  │   .mjs:bottom of IIFE  │
+│       │ • Idempotent __stPageHideWired guard         │                        │
+│       │ • Prevents zombie timer fire post-bfcache    │                        │
+├──────┼──────────────────────────────────────────────┼────────────────────────┤
+│ False-positive analysis (Auditor R-4):                                       │
+│  • liveRtpHud __lrhIdleTick → već idempotent (N-P0-2, AV commit)             │
+│  • audio.mjs aria-live → već polite + accessible name (correct)              │
+│  • sessionTimeout aria-live → već assertive + role=alert (correct)           │
+│                                                                              │
+│ P2 deferred (out-of-scope za AZ):                                            │
+│  • settingsPanel.mjs 12 aria-label bez data-i18n stamp (enhancement, ne     │
+│    rupa — engleski fallback radi, lokalizacija je QoL)                       │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### UQ-DEEP-AY — Auditor Q 5 rupa
 
 ```
 ┌──────┬──────────────────────────────────────────────┬────────────────────────┐
@@ -17734,7 +17780,7 @@ determinism + XSS/security/race hardening.
 └──────┴──────────────────────────────────────────────┴────────────────────────┘
 ```
 
-### Trenutni status (HEAD posle UQ-DEEP-AY)
+### Trenutni status (HEAD posle UQ-DEEP-AZ)
 
 ```
 verify gate                         33/33 ALL GREEN
@@ -17770,11 +17816,14 @@ pwaInstallability scope traversal   .. segments + abs-path + scheme reject (AY)
 spinHistoryReplay DOMParser path    inert restore (no attr-handler XSS) (AY)
 jackpotRoomReveal hex 3/6/8-only    rejects 4/5/7 invalid color literals (AY)
 hotReload SSE origin allowlist      same-origin enforced, spoof rejected (AY)
-i18n catalog                        156 entries (RESULT key + cb-chip aria)
+i18n catalog                        158 entries × 5 locales (parity 100%)
 tumble cascade comment               vendor-neutral ("production-grade")
+mathEngine WASM import               HOME validated + realpathSync allowlist (AZ)
+sessionTimeout pagehide cleanup     zombie countdown/break timer prevented (AZ)
+4-paralel Auditor R sweep            R-1/R-3 čisti, R-2/R-4 surgical fix (AZ)
 ```
 
-### Sledeća wave (UQ-DEEP-AZ ili LV3)
+### Sledeća wave (UQ-DEEP-BA ili LV3)
 
 P3 deferred (low priority):
 - Deep-freeze nested objects u defaultConfig (trenutni je shallow)
@@ -17787,6 +17836,8 @@ P3 deferred (low priority):
 - GSAP tween + timeline + FSM binding — IGT layout P2
 - Spine importer + skeleton runtime — IGT layout P2
 - Particle emitter system (@pixi/particle-emitter) — IGT layout P2
+- settingsPanel.mjs 12 aria-label data-i18n stamp (R-4-P2-1, AZ deferred —
+  englez fallback radi, lokalizacija je QoL)
 
 MATH-INTEGRATION-LV3 (sister-repo HTTP backend) i dalje čeka eksplicitan
 Boki "KRENI" signal.

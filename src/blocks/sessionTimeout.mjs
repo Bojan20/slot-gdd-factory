@@ -773,6 +773,28 @@ export function emitSessionTimeoutRuntime(cfg = defaultConfig()) {
         }
       });
     }
+
+    /* UQ-DEEP-AZ R-P0-2 (Auditor R-4): pagehide cleanup.
+       Without this, the countdown setInterval + break setTimeout survive
+       a tab → bfcache transition and can fire renderer callbacks against
+       a torn-down DOM after bfcache restore + module re-eval. Idempotent
+       guard prevents double-wire on hotReload module replace. */
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function'
+        && !window.__stPageHideWired) {
+      window.__stPageHideWired = true;
+      window.addEventListener('pagehide', function () {
+        try {
+          if (STATE && STATE._countdownTimer) {
+            clearInterval(STATE._countdownTimer);
+            STATE._countdownTimer = 0;
+          }
+          if (STATE && STATE._breakTimer) {
+            clearTimeout(STATE._breakTimer);
+            STATE._breakTimer = 0;
+          }
+        } catch (_) { /* never throw from lifecycle handler */ }
+      });
+    }
   })();
 `;
 }
