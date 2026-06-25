@@ -445,7 +445,7 @@ export function emitSettingsPanelMarkup(cfg = defaultConfig()) {
             <div class="settings-row__label">Turbo Mode</div>
             <div class="settings-row__hint">Faster spin cadence</div>
           </div>
-          <button id="settingsTurboToggle" class="settings-toggle" type="button" aria-label="Turbo toggle" aria-pressed="false"></button>
+          <button id="settingsTurboToggle" class="settings-toggle" type="button" aria-label="Turbo toggle" data-i18n-aria="settingsPanel.turboToggle" data-i18n-aria-fallback="Turbo toggle" aria-pressed="false"></button>
         </div>`);
   if (c.showSoundToggle) rows.push(`
         <div class="settings-row" data-setting="soundMuted">
@@ -453,7 +453,7 @@ export function emitSettingsPanelMarkup(cfg = defaultConfig()) {
             <div class="settings-row__label">Sound</div>
             <div class="settings-row__hint">Master audio mute</div>
           </div>
-          <button id="settingsSoundToggle" class="settings-toggle" type="button" aria-label="Sound toggle" aria-pressed="false"></button>
+          <button id="settingsSoundToggle" class="settings-toggle" type="button" aria-label="Sound toggle" data-i18n-aria="settingsPanel.soundToggle" data-i18n-aria-fallback="Sound toggle" aria-pressed="false"></button>
         </div>`);
   if (c.showReducedMotionToggle) rows.push(`
         <div class="settings-row" data-setting="reducedMotion">
@@ -461,7 +461,7 @@ export function emitSettingsPanelMarkup(cfg = defaultConfig()) {
             <div class="settings-row__label">Reduced Animations</div>
             <div class="settings-row__hint">Honor prefers-reduced-motion</div>
           </div>
-          <button id="settingsReducedMotionToggle" class="settings-toggle" type="button" aria-label="Reduced motion toggle" aria-pressed="false"></button>
+          <button id="settingsReducedMotionToggle" class="settings-toggle" type="button" aria-label="Reduced motion toggle" data-i18n-aria="settingsPanel.reducedMotionToggle" data-i18n-aria-fallback="Reduced motion toggle" aria-pressed="false"></button>
         </div>`);
   if (c.showQuickSpinToggle) rows.push(`
         <div class="settings-row" data-setting="quickSpin">
@@ -469,7 +469,7 @@ export function emitSettingsPanelMarkup(cfg = defaultConfig()) {
             <div class="settings-row__label">Quick Spin</div>
             <div class="settings-row__hint">Instant settle on click</div>
           </div>
-          <button id="settingsQuickSpinToggle" class="settings-toggle" type="button" aria-label="Quick spin toggle" aria-pressed="false"></button>
+          <button id="settingsQuickSpinToggle" class="settings-toggle" type="button" aria-label="Quick spin toggle" data-i18n-aria="settingsPanel.quickSpinToggle" data-i18n-aria-fallback="Quick spin toggle" aria-pressed="false"></button>
         </div>`);
   if (c.showAutoHideWinToggle) rows.push(`
         <div class="settings-row" data-setting="autoHideWin">
@@ -477,7 +477,7 @@ export function emitSettingsPanelMarkup(cfg = defaultConfig()) {
             <div class="settings-row__label">Auto-Hide Win Plaque</div>
             <div class="settings-row__hint">Dismiss banner on next spin</div>
           </div>
-          <button id="settingsAutoHideWinToggle" class="settings-toggle" type="button" aria-label="Auto-hide win toggle" aria-pressed="false"></button>
+          <button id="settingsAutoHideWinToggle" class="settings-toggle" type="button" aria-label="Auto-hide win toggle" data-i18n-aria="settingsPanel.autoHideWinToggle" data-i18n-aria-fallback="Auto-hide win toggle" aria-pressed="false"></button>
         </div>`);
   if (c.showLanguageSelector) {
     const options = c.availableLocales.map(l => `<option value="${_escape(l)}">${_escape(l)}</option>`).join('');
@@ -487,7 +487,7 @@ export function emitSettingsPanelMarkup(cfg = defaultConfig()) {
             <div class="settings-row__label">Language</div>
             <div class="settings-row__hint">UI locale</div>
           </div>
-          <select id="settingsLocaleSelect" class="settings-locale-select" aria-label="Locale selector">${options}</select>
+          <select id="settingsLocaleSelect" class="settings-locale-select" aria-label="Locale selector" data-i18n-aria="settingsPanel.localeSelector" data-i18n-aria-fallback="Locale selector">${options}</select>
         </div>`);
   }
 
@@ -502,7 +502,7 @@ export function emitSettingsPanelMarkup(cfg = defaultConfig()) {
             <div class="settings-row__label">Volatility</div>
             <div class="settings-row__hint">Risk profile of math layer</div>
           </div>
-          <div id="settingsVolatilitySeg" class="settings-seg-group" role="radiogroup" aria-label="Volatility selector">${segs}</div>
+          <div id="settingsVolatilitySeg" class="settings-seg-group" role="radiogroup" aria-label="Volatility selector" data-i18n-aria="settingsPanel.volatilitySelector" data-i18n-aria-fallback="Volatility selector">${segs}</div>
         </div>`);
   }
 
@@ -518,7 +518,7 @@ export function emitSettingsPanelMarkup(cfg = defaultConfig()) {
             <div class="settings-row__label">Bet Step</div>
             <div class="settings-row__hint">Quick-select coin value</div>
           </div>
-          <div id="settingsBetStepSeg" class="settings-seg-group" role="radiogroup" aria-label="Bet step selector">${presets}</div>
+          <div id="settingsBetStepSeg" class="settings-seg-group" role="radiogroup" aria-label="Bet step selector" data-i18n-aria="settingsPanel.betStepSelector" data-i18n-aria-fallback="Bet step selector">${presets}</div>
         </div>`);
   }
 
@@ -530,7 +530,7 @@ export function emitSettingsPanelMarkup(cfg = defaultConfig()) {
             <div class="settings-row__label">Max Win Cap</div>
             <div class="settings-row__hint">Honor regulator / GDD win ceiling</div>
           </div>
-          <button id="settingsMaxWinCapToggle" class="settings-toggle" type="button" aria-label="Max win cap toggle" aria-pressed="false"></button>
+          <button id="settingsMaxWinCapToggle" class="settings-toggle" type="button" aria-label="Max win cap toggle" data-i18n-aria="settingsPanel.maxWinCapToggle" data-i18n-aria-fallback="Max win cap toggle" aria-pressed="false"></button>
         </div>`);
   }
   if (c.showHapticToggle) {
@@ -540,7 +540,7 @@ export function emitSettingsPanelMarkup(cfg = defaultConfig()) {
             <div class="settings-row__label">Haptic Feedback</div>
             <div class="settings-row__hint">Vibrate on big wins & free spins</div>
           </div>
-          <button id="settingsHapticToggle" class="settings-toggle" type="button" aria-label="Haptic feedback toggle" aria-pressed="false"></button>
+          <button id="settingsHapticToggle" class="settings-toggle" type="button" aria-label="Haptic feedback toggle" data-i18n-aria="settingsPanel.hapticToggle" data-i18n-aria-fallback="Haptic feedback toggle" aria-pressed="false"></button>
         </div>`);
   }
 

@@ -224,6 +224,20 @@ import { Z } from '../registry/zIndexScale.mjs';
  * harness audit trail) can introspect the obligation. */
 export const PLAY_TIME_DISPLAY_REQUIRED_JURISDICTIONS = Object.freeze(['SE']);
 
+/* UQ-DEEP-BA S-P1-2 (Auditor S-5): jurisdiction-aware reality-check
+   interval floors. If GDD didn't override intervalMs explicitly,
+   resolveConfig picks the regulator floor instead of the demo 10-min
+   default. Operator can still override upward via GDD; downward
+   overrides below the floor are clamped to the floor. */
+export const JURISDICTION_RC_INTERVAL_FLOOR_MS = Object.freeze({
+  UKGC: 60 * 60 * 1000, /* UKGC LCCP 8.3.1 — 60 min recommended */
+  SE:   30 * 60 * 1000, /* SGCG SIFS 2018:6 §7.2 (continuous + reminder) */
+  MGA:  60 * 60 * 1000, /* MGA Player Protection Directive 2018 */
+  ON:   30 * 60 * 1000, /* AGCO Standard 4.07 — 30 min */
+  IT:   60 * 60 * 1000, /* ADM (Italy) — 60 min */
+  ES:   60 * 60 * 1000, /* DGOJ (Spain) — 60 min */
+});
+
 export function resolveConfig(model = {}) {
   const cfg = { ...defaultConfig() };
   const m = (model && model.realityCheck) || {};
@@ -270,6 +284,19 @@ export function resolveConfig(model = {}) {
   const jurisdiction = _rcResolveJurisdiction(model, { fallbackKey: 'realityCheck.jurisdiction' });
   cfg.jurisdiction = jurisdiction;
   cfg.requirePersistentPlayTimeDisplay = !!(jurisdiction && PLAY_TIME_DISPLAY_REQUIRED_JURISDICTIONS.indexOf(jurisdiction) !== -1);
+
+  /* UQ-DEEP-BA S-P1-2 (Auditor S-5): regulator interval floor.
+     If a jurisdiction floor exists AND (a) GDD did not author intervalMs
+     OR (b) authored value is below the floor → clamp UP to floor. This
+     closes the "demo 10-min default ships to UK production" gap without
+     blocking GDD authors from running LONGER intervals if they want. */
+  if (jurisdiction && JURISDICTION_RC_INTERVAL_FLOOR_MS[jurisdiction]) {
+    const floor = JURISDICTION_RC_INTERVAL_FLOOR_MS[jurisdiction];
+    if (!Number.isFinite(m.intervalMs) || cfg.intervalMs < floor) {
+      cfg.intervalMs = floor;
+      cfg.jurisdictionFloorApplied = true;
+    }
+  }
 
   return cfg;
 }

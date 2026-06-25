@@ -1,4 +1,10 @@
 import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
+import { resolveJurisdiction } from './jurisdictionGate.mjs';
+
+/* UQ-DEEP-BA S-P0-1 (Auditor S-5): jurisdictions that prohibit
+   post-win gamble (player risk escalation). UKGC LCCP 5.1.1
+   bans "double or nothing" features; MGA RG framework aligns. */
+const GAMBLE_BANNED_JURISDICTIONS = Object.freeze(['UKGC', 'MGA', 'SE', 'NL', 'DE']);
 /**
  * src/blocks/gamble.mjs
  *
@@ -77,6 +83,14 @@ export function resolveConfig(model = {}) {
 
   if (Array.isArray(model.features) && model.features.some(f => f.kind === 'gamble')) {
     cfg.enabled = true;
+  }
+  /* UQ-DEEP-BA S-P0-1 (Auditor S-5): regulator override — gamble feature
+     hard-disabled in UKGC/MGA/SE/NL/DE regardless of GDD authorial intent.
+     Operator cannot accidentally ship a banned feature via GDD knob. */
+  const jurisdiction = resolveJurisdiction(model);
+  if (jurisdiction && GAMBLE_BANNED_JURISDICTIONS.indexOf(jurisdiction) !== -1) {
+    cfg.enabled = false;
+    cfg.bannedByJurisdiction = jurisdiction;
   }
   return cfg;
 }

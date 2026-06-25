@@ -1,10 +1,10 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-25 10:45 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→AZ ✅ DONE)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-25 10:55 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BA ✅ DONE)
 
 Sve glavne grane backlog-a su zatvorene (MATH + Expert P1/P2/P3 +
 nice-to-have N1-N8 + post-backlog ekstenzije A/B/C). Posle toga
-**28 UQ-DEEP wave-ova (AA → AZ)** zatvoreno sa ukupno **~102 P0/P1 atoma**
-(detalji u dnu fajla, "UQ-DEEP-AN do UQ-DEEP-AZ track" sekcija).
-HEAD: AZ (post-commit će popuniti SHA).
+**29 UQ-DEEP wave-ova (AA → BA)** zatvoreno sa ukupno **~106 P0/P1 atoma**
+(detalji u dnu fajla, "UQ-DEEP-AN do UQ-DEEP-BA track" sekcija).
+HEAD: BA (post-commit će popuniti SHA).
 Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 
 ### 🎯 Trenutni snapshot — posle UQ-DEEP-AY (2026-06-25)
@@ -26,9 +26,12 @@ Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 │ data-block-name coverage                     │ 95%+ (114 markup tagged)     │
 │ defaultConfig freeze coverage                │ 209/211 (98.6%, 2 exempt)    │
 │ MATH precision band                          │ ±0.05% (PRECISION-3+4 wired) │
-│ UQ-DEEP track total commits                  │ 28 (AA → AZ)                  │
-│ UQ-DEEP track total atoms                    │ ~102 P0/P1                    │
+│ UQ-DEEP track total commits                  │ 29 (AA → BA)                  │
+│ UQ-DEEP track total atoms                    │ ~106 P0/P1                    │
 │ 4-paralel auditor R sweep                    │ 2 fix (P0 + P1), 2 false-pos  │
+│ 5-paralel auditor S sweep                    │ 3 fix + P2 backlog cleanup    │
+│ i18n catalog (post-BA)                       │ 166 entries × 5 locales       │
+│ Regulator gates (post-BA)                    │ gamble + realityCheck + buy   │
 └─────────────────────────────────────────────┴──────────────────────────────┘
 ```
 
@@ -17678,15 +17681,15 @@ Boki "KRENI" signal za pokretanje.
 
 ---
 
-## 🛡 UQ-DEEP-AN do UQ-DEEP-AZ track — 2026-06-25 (13 commit-ova posle AM)
+## 🛡 UQ-DEEP-AN do UQ-DEEP-BA track — 2026-06-25 (14 commit-ova posle AM)
 
 Posle UQ-DEEP-AM cosmetic hardening, nastavljen je nezadrživi sweep:
-14 paralelnih auditora (I, J, K, L, M, N, O, P, Q + 4× R + 4 multi-axis)
+19 paralelnih auditora (I, J, K, L, M, N, O, P, Q + 4× R + 5× S + 4 multi-axis)
 prošli post-AM regresiju + IGT corpus + real-time GDD audit + memory/race/
 determinism + XSS/security/race hardening + bfcache lifecycle + import path
-escape defense.
+escape defense + regulator jurisdiction gates + P2 i18n backlog cleanup.
 
-### Wave overview (UQ-DEEP-AN..AZ)
+### Wave overview (UQ-DEEP-AN..BA)
 
 ```
 ┌────────────┬───────────────────────────────────────────────────────────────┬──────────┐
@@ -17704,14 +17707,60 @@ escape defense.
 │ 5779ad2    │ UQ-DEEP-AW · Auditor O + H-1 phase-6 (ReDoS/NUL/Punycode/CSP) │ 6        │
 │ 0c61190    │ UQ-DEEP-AX · Auditor P · 4 XSS/race/NaN/idempotent-wire fix   │ 4 P0/P1  │
 │ 6bfbab5    │ UQ-DEEP-AY · Auditor Q · 5 XSS/path-traversal/SSE/i18n fix    │ 5 P0/P1  │
-│ (current)  │ UQ-DEEP-AZ · 4-paralel Auditor R · bfcache + WASM-import path │ 2 P0/P1  │
+│ 046c2c0    │ UQ-DEEP-AZ · 4-paralel Auditor R · bfcache + WASM-import path │ 2 P0/P1  │
+│ (current)  │ UQ-DEEP-BA · 5-paralel Auditor S · regulator gates + i18n P2  │ 4 + P2-12│
 └────────────┴───────────────────────────────────────────────────────────────┴──────────┘
 
-  Total UQ-DEEP track (AA → AZ): 28 commit-ova zatvoreno
-  Total atoma rešeno: ~102 (6+7+11+6+10+7+8+8+16+6+4+5+2 + 18 iz AA-AM)
+  Total UQ-DEEP track (AA → BA): 29 commit-ova zatvoreno
+  Total atoma rešeno: ~106 (6+7+11+6+10+7+8+8+16+6+4+5+2+4 + 18 iz AA-AM)
 ```
 
-### UQ-DEEP-AZ (current commit) — 4-paralel Auditor R sweep
+### UQ-DEEP-BA (current commit) — 5-paralel Auditor S sweep + P2 i18n cleanup
+
+5 paralelnih auditora (S-1 parser · S-2 HookBus · S-3 verify-gate ·
+S-4 CSS/a11y · S-5 regulator) pokrenuti na disjoint domene. Rezultat
+verifikovan pre fix-a po pravilu `rule_no_false_positive_qa.md`:
+
+```
+┌───────┬─────────────────────────────┬────────────────────────────────────┐
+│ Aud.  │ Domen                        │ Verdict (post-verification)         │
+├───────┼─────────────────────────────┼────────────────────────────────────┤
+│ S-1   │ parser stack                 │ 0 nove rupe — čist (UQ-FORTIFY9+AR)│
+│ S-2   │ HookBus + lifecycle FSM      │ 1 dev-only debt (HMR leak, defer)  │
+│ S-3   │ verify gate integrity        │ FALSE POSITIVE — 3× run ALL GREEN  │
+│ S-4   │ CSS / a11y / WCAG contrast   │ 1 verifikovan (P1), 1 FALSE-POS    │
+│ S-5   │ regulator / compliance       │ 3 verodostojna (1 P0 + 2 enh)      │
+└───────┴─────────────────────────────┴────────────────────────────────────┘
+```
+
+```
+┌──────┬──────────────────────────────────────────────┬────────────────────────┐
+│ ID   │ Fix                                           │ File                   │
+├──────┼──────────────────────────────────────────────┼────────────────────────┤
+│ S-P0-1│ gamble feature — jurisdiction gate           │ src/blocks/gamble.mjs  │
+│       │ UKGC/MGA/SE/NL/DE hard-disable bez obzira    │   resolveConfig        │
+│       │ na GDD intent (UKGC LCCP 5.1.1 gamble ban)   │                        │
+│ S-P1-2│ realityCheck jurisdiction interval floor     │ src/blocks/realityCh…  │
+│       │ UKGC 60min, SE 30min, MGA 60min, ON 30min,   │   .mjs:JURISDICTION_RC │
+│       │ IT/ES 60min — clamp UP only, demo 10min      │   _INTERVAL_FLOOR_MS   │
+│       │ više ne ide u UK production                   │                        │
+│ S-P1-3│ bonusBuy cost-X cap matrix per jurisdiction  │ src/blocks/bonusBuy…   │
+│       │ MGA 500×, ON/IT/ES 250×, NJ 500× — clamp DOWN│   .mjs:BONUS_BUY_COST  │
+│       │ samo (jeftiniji bonus-buy nego cap je OK)    │   _X_CAP               │
+│ +P2   │ settingsPanel.mjs 10 aria-label data-i18n    │ src/blocks/settingsP…  │
+│       │ stamping + 10 entries × 5 locales (en/de/    │   .mjs + i18n/*.json   │
+│       │ nl/da/sv = 50 novih lokalizacija)             │                        │
+├──────┼──────────────────────────────────────────────┼────────────────────────┤
+│ False-positive / defer analysis:                                             │
+│  • S-3 verify idempotency — 3× run ALL GREEN, auditor halucinirao            │
+│  • S-4-P2 pickYourFs HEX_COLOR_RE — $-anchored, injection nemoguć            │
+│  • S-4-P1 anteBetLadder outline — `:focus-visible` fallback OK (P3 enh)      │
+│  • S-2 HookBus listener leak — dev HMR only, ne radi u prod                   │
+│  • S-5 handpay threshold — engine layer scope, ne factory                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### UQ-DEEP-AZ — 4-paralel Auditor R sweep
 
 4 paralelna ultra-deep auditora pokrenuta (R-1 XSS, R-2 security,
 R-3 math/RTP, R-4 a11y/i18n/lifecycle) na disjoint sub-domene:
@@ -17780,7 +17829,7 @@ Locale parity verified: 5×5 (158 entries × en/de/nl/da/sv) — 0 drift.
 └──────┴──────────────────────────────────────────────┴────────────────────────┘
 ```
 
-### Trenutni status (HEAD posle UQ-DEEP-AZ)
+### Trenutni status (HEAD posle UQ-DEEP-BA)
 
 ```
 verify gate                         33/33 ALL GREEN
@@ -17821,9 +17870,15 @@ tumble cascade comment               vendor-neutral ("production-grade")
 mathEngine WASM import               HOME validated + realpathSync allowlist (AZ)
 sessionTimeout pagehide cleanup     zombie countdown/break timer prevented (AZ)
 4-paralel Auditor R sweep            R-1/R-3 čisti, R-2/R-4 surgical fix (AZ)
+gamble jurisdiction gate             UKGC/MGA/SE/NL/DE hard-ban (BA)
+realityCheck interval floor          per-jurisdiction clamp UP (BA)
+bonusBuy cost-X cap matrix           MGA 500× / ON-IT-ES 250× / NJ 500× (BA)
+settingsPanel i18n stamping          10 aria-label × 5 locales = 50 entries (BA)
+i18n catalog                         166 entries × 5 locales (parity 100%)
+5-paralel Auditor S sweep            S-1/S-2 čisti, S-3 false-pos, S-4/S-5 fix
 ```
 
-### Sledeća wave (UQ-DEEP-BA ili LV3)
+### Sledeća wave (UQ-DEEP-BB ili LV3)
 
 P3 deferred (low priority):
 - Deep-freeze nested objects u defaultConfig (trenutni je shallow)

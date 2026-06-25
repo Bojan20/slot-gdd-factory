@@ -4,7 +4,7 @@
   "source_locale": "nl",
   "hash": "373cfa59f4f6",
   "blocks_with_strings": 48,
-  "total_entries": 156,
+  "total_entries": 166,
   "catalog": {
     "audio.0": "Toggle audio",
     "autoplay.0": "AUTO · ",
@@ -161,6 +161,16 @@
     "bonusClimaxReveal.bonus": "BONUS!",
     "turboMode.label": "Turbo mode toggle",
     "spinControl.label": "Spin",
-    "wheelBonusReveal.result": "RESULT"
+    "wheelBonusReveal.result": "RESULT",
+    "settingsPanel.turboToggle": "Turbo schakelen",
+    "settingsPanel.soundToggle": "Geluid schakelen",
+    "settingsPanel.reducedMotionToggle": "Verminderde animatie",
+    "settingsPanel.quickSpinToggle": "Snelle spin",
+    "settingsPanel.autoHideWinToggle": "Win automatisch verbergen",
+    "settingsPanel.localeSelector": "Taalkeuze",
+    "settingsPanel.volatilitySelector": "Volatiliteitskeuze",
+    "settingsPanel.betStepSelector": "Inzetstap",
+    "settingsPanel.maxWinCapToggle": "Max winstlimiet",
+    "settingsPanel.hapticToggle": "Haptische feedback"
   }
 }

@@ -4,7 +4,7 @@
   "source_locale": "sv",
   "hash": "373cfa59f4f6",
   "blocks_with_strings": 48,
-  "total_entries": 156,
+  "total_entries": 166,
   "catalog": {
     "audio.0": "Toggle audio",
     "autoplay.0": "AUTO · ",
@@ -161,6 +161,16 @@
     "bonusClimaxReveal.bonus": "BONUS!",
     "turboMode.label": "Turbo mode toggle",
     "spinControl.label": "Spin",
-    "wheelBonusReveal.result": "RESULT"
+    "wheelBonusReveal.result": "RESULT",
+    "settingsPanel.turboToggle": "Turbo-växel",
+    "settingsPanel.soundToggle": "Ljud-växel",
+    "settingsPanel.reducedMotionToggle": "Reducerad animation",
+    "settingsPanel.quickSpinToggle": "Snabb snurr",
+    "settingsPanel.autoHideWinToggle": "Dölj vinst automatiskt",
+    "settingsPanel.localeSelector": "Språkval",
+    "settingsPanel.volatilitySelector": "Volatilitetsval",
+    "settingsPanel.betStepSelector": "Insatssteg",
+    "settingsPanel.maxWinCapToggle": "Max vinsttak",
+    "settingsPanel.hapticToggle": "Haptisk feedback"
   }
 }

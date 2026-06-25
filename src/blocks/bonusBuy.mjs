@@ -76,6 +76,19 @@ export function defaultConfig() {
  */
 const BONUS_BUY_BANNED_JURISDICTIONS = Object.freeze(['UKGC', 'SE', 'DE', 'NL']);
 
+/* UQ-DEEP-BA S-P1-3 (Auditor S-5): cost-X cap per jurisdiction where
+   bonus-buy is permitted but capped. For HARD-BAN jurisdictions
+   (UKGC/SE/DE/NL) the enabled=false gate above wins; this cap matrix
+   only applies when bonus-buy is allowed. MGA enforces 500× cap;
+   ON AGCO and IT ADM align at 250× to match win-cap ceilings. */
+const BONUS_BUY_COST_X_CAP = Object.freeze({
+  MGA: 500,
+  ON:  250,
+  IT:  250,
+  ES:  250,
+  NJ:  500,
+});
+
 function _resolveBonusBuyJurisdiction(model) {
   const m  = (model && model.bonusBuy) || {};
   const rg = (model && model.responsibleGambling) || {};
@@ -145,12 +158,20 @@ export function resolveConfig(model = {}) {
   } else if (jurisdiction) {
     cfg.jurisdiction = jurisdiction;
     cfg.bannedByJurisdiction = false;
+    /* UQ-DEEP-BA S-P1-3 — cost-X cap matrix for permitted jurisdictions.
+       Clamp DOWN only (GDD authoring cheaper bonus-buy than the regulator
+       cap is fine). Operator cannot exceed regulator ceiling via GDD. */
+    const cap = BONUS_BUY_COST_X_CAP[jurisdiction];
+    if (Number.isFinite(cap) && cfg.costX > cap) {
+      cfg.costX = cap;
+      cfg.cappedByJurisdiction = true;
+    }
   }
 
   return cfg;
 }
 
-export { BONUS_BUY_BANNED_JURISDICTIONS };
+export { BONUS_BUY_BANNED_JURISDICTIONS, BONUS_BUY_COST_X_CAP };
 
 export function emitBonusBuyCSS(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
