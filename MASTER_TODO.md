@@ -1,13 +1,52 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-25 11:10 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB ✅ DONE)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-25 14:50 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB + N+2 D-G ✅ DONE)
 
-Sve glavne grane backlog-a su zatvorene (MATH + Expert P1/P2/P3 +
-nice-to-have N1-N8 + post-backlog ekstenzije A/B/C). Posle toga
-**30 UQ-DEEP wave-ova (AA → BB)** zatvoreno sa ukupno **~108 P0/P1 atoma**
-(detalji u dnu fajla, "UQ-DEEP-AN do UQ-DEEP-BB track" sekcija).
-HEAD: BB (post-commit će popuniti SHA).
+Sve glavne grane backlog-a su zatvorene (Expert P1/P2/P3 +
+nice-to-have N1-N8 + post-backlog ekstenzije A/B/C + N+2 atomi D/E/F/G).
+Posle toga **30 UQ-DEEP wave-ova (AA → BB)** zatvoreno sa ukupno
+**~108 P0/P1 atoma** (detalji u dnu fajla, "UQ-DEEP-AN do UQ-DEEP-BB track" sekcija).
+HEAD: `881a5a7` (UQ-DEEP-BB · 5-paralel Auditor T sweep · 2 timer leak fix).
 Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 
-### 🎯 Trenutni snapshot — posle UQ-DEEP-AY (2026-06-25)
+### 🟢 Trenutno stanje (2026-06-25 14:50 UTC) — šta JE landed
+
+```
+┌──────────────────────────────────────┬────────────────────────────────────┐
+│ Sektor                                │ Status                              │
+├──────────────────────────────────────┼────────────────────────────────────┤
+│ MATH backlog                          │ ✅ 12/12 atoma (CORE+INTEG+FINISH) │
+│ Expert P1 + P2 + P3                   │ ✅ ZATVORENO                        │
+│ N1-N8 nice-to-have                    │ ✅ 8/8 LANDED                       │
+│ N+1 post-backlog (A/B/C)              │ ✅ 3/3 LANDED                       │
+│ N+2 ekstenzije D/E/F/G                │ ✅ 4/7 LANDED                       │
+│ UQ-DEEP track (AA→BB)                 │ ✅ 30 wave-ova / ~108 P0/P1 atoma   │
+│ N+2 ekstenzije H/I/J                  │ 📋 OPEN (3 atoma)                   │
+│ P3 idle (8 stavki)                    │ 📋 OPEN — low priority, ne urgent  │
+│ MATH-INTEGRATION-LV3                  │ ⏸ čeka Boki "KRENI" signal         │
+│ AUDIO X1 (HARD RULE #4)               │ 🔒 LOCKED — čeka Boki "sad možeš"  │
+└──────────────────────────────────────┴────────────────────────────────────┘
+```
+
+### 🎯 Otvoreno (3 atoma N+2 H/I/J · 8 P3 idle · 1 čeka signal)
+
+```
+┌─────┬──────────────────────────────────────────┬────────┬──────────────────┐
+│ ID  │ Stavka                                    │ Effort │ Vrednost          │
+├─────┼──────────────────────────────────────────┼────────┼──────────────────┤
+│ H   │ CI/CD pipeline (GitHub Actions)           │ ~2h    │ Auto-verify + push│
+│     │ verify gate + UQ-16 baseline + cross-     │        │ na svaki PR;      │
+│     │ corpus probe + smoke test po platformi   │        │ regression catch  │
+├─────┼──────────────────────────────────────────┼────────┼──────────────────┤
+│ I   │ Schema versioning + migration             │ ~2h    │ model.json schema │
+│     │ semver bump + migration script za stari   │        │ evolves bez       │
+│     │ GDD-ova kad emit kontrakt menja          │        │ ručnog rewrite    │
+├─────┼──────────────────────────────────────────┼────────┼──────────────────┤
+│ J   │ V9 vision mode aktivacija (cost-capped)   │ ~3-4h  │ Opus screenshot   │
+│     │ — postojeći V9 deterministic + Opus       │        │ + verdict za WARN/│
+│     │ vision call sa $$ guard                   │        │ FAIL cases        │
+└─────┴──────────────────────────────────────────┴────────┴──────────────────┘
+```
+
+### 🎯 Trenutni snapshot — posle UQ-DEEP-BB (2026-06-25)
 
 ```
 ┌─────────────────────────────────────────────┬──────────────────────────────┐
