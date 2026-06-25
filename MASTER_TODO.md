@@ -1,4 +1,58 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-26 00:30 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB + N+2 D-J + UQ-U-1..9 + P3-P1..P6 ✅ DONE)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-26 01:30 UTC (FINAL · ... + LV3 1+13 ✅ DONE)
+
+### 🧠 MATH-INTEGRATION-LV3 · SRCE PAMETNE MAŠINE — 2 ATOMA LANDED (2026-06-26 01:30 UTC)
+
+```
+┌────┬─────────────────────────────────────────────────────────────┬───────────┐
+│ ID   │ Stavka                                                       │ Status     │
+├────┼─────────────────────────────────────────────────────────────┼───────────┤
+│LV3-1 │ tools/sister-rust-server.mjs (spawn + health + runOnce)      │ ✅ LANDED  │
+│      │ Allowed-roots binary guard + HOME-empty refuse (mirror       │ 6/6 tests │
+│      │ UQ-U-3 + UQ-U-7) + REQUIRED_SUMMARY_KEYS contract            │            │
+├────┼─────────────────────────────────────────────────────────────┼───────────┤
+│LV3-13│ tools/auto-converge-solver.mjs · SRCE pametne mašine         │ ✅ LANDED  │
+│      │ NewtonOneD (1D Newton-Raphson + finite-diff slope) +         │ 14/14 tests│
+│      │ NelderMead (N-D simplex sa α=1, γ=2, ρ=0.5, σ=0.5) +         │            │
+│      │ solveRtp driver: loop dok delta ≤ ±0.05% ili max iter        │            │
+│      │ Strategy 'newton' (brz) ili 'simplex' (multi-D coupled)      │            │
+│      │ NULA LLM call — deterministički (reproducible regulator)     │            │
+└────┴─────────────────────────────────────────────────────────────┴───────────┘
+```
+
+**Preostalo iz LV3 — 12 atoma za sledeće sesije:**
+
+```
+┌──────┬──────────────────────────────────────────────────────────┬──────┐
+│  ID   │ Stavka                                                    │ Eff. │
+├──────┼──────────────────────────────────────────────────────────┼──────┤
+│LV3-2 │ sister rust-sim/http_server.rs (Axum + /spin /batch)      │ 1d   │
+│LV3-3 │ backendSpinEngine.mjs ★ (već landed, treba wire)          │ 6h   │
+│LV3-4 │ liveRtpHud.mjs ★ (već landed, treba live data feed)       │ 4h   │
+│LV3-5 │ batchSimulatorPanel.mjs ★ (već landed)                    │ 6h   │
+│LV3-6 │ driftSentinel.mjs ★ (već landed)                          │ 3h   │
+│LV3-7 │ tools/cert-pack-export.mjs (GLI-16 ZIP)                   │ 4h   │
+│LV3-8 │ Web uploader "Backend mode" toggle UI                     │ 3h   │
+│LV3-9 │ Contract test math-lv3-backend.test.mjs                   │ 4h   │
+│LV3-10│ E2E live-rtp-probe (1000 spin convergence verify)         │ 3h   │
+│LV3-11│ Anti-vendor lint shield za backend response               │ 2h   │
+│LV3-12│ docs/math-lv3-architecture.md (runbook)                   │ 3h   │
+│LV3-14│ src/blocks/convergenceHud.mjs (live UI overlay)           │ 4h   │
+└──────┴──────────────────────────────────────────────────────────┴──────┘
+```
+
+★ = blok-ovi postoje (1274 LOC ukupno), treba samo wire ka novoj LV3-1
+auto-converge petlji + LV3-2 Rust HTTP server. Bez LV3-2 trenutno
+auto-converge radi preko `slot_sim --quick` CLI subprocess pattern-a.
+
+**LV3 progres: 2/14 (14%) · ostatak idu sledeće sesije.**
+
+Verify gate (post LV3-1 + LV3-13):
+  test:auto-converge   19/19  ✓  (Newton 5 · Nelder-Mead 3 · solveRtp 6 +
+                                    sister-rust-server 5)
+  test:contracts (9 batched suites)  ALL GREEN  (0.63s)
+  verify:quick                       ALL GATES GREEN
+
+---
 
 ### 🛡 UQ-U-7 3-PARALEL SUPER-DEEP AUDIT — 10 ATOMA LANDED (2026-06-25 23:00 UTC)
 
