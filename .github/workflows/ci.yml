@@ -4,31 +4,47 @@
 #
 # What this gate guarantees on `main`:
 #   1. `npm ci`                  — lockfile-honest install on Linux (cleanest baseline)
-#   2. `npm run verify:quick`    — 100 sub-step `verify` orchestrator (~50s on CI)
-#   3. `npm run test:runtime`    — orchestrator runtime probes (grid renderer, force, globals)
+#   2. `npm run test:runtime`    — orchestrator runtime probes (gridRenderer, devForceButtons,
+#                                   globals contract) — 8 tests, no external deps
 #
-# Why these three and not the full 33-step `verify` here:
-#   - `verify:quick` already encodes the 100 sub-step pre-commit gate Boki uses
-#     locally; reproducing it in CI keeps Boki's local mental model and CI in lockstep.
-#   - `test:runtime` covers the orchestrator probes (gridRenderer, devForceButtons,
-#     globals contract) that the quick gate doesn't sweep directly.
-#   - Heavy probes (cross-browser, load, long-run, full UQ-11 corpus render)
-#     run in `nightly.yml` so PR latency stays under 6 minutes wallclock.
+# Why this minimal scope (honestly: verify:quick is NOT CI-safe today):
+#   `verify:quick` is Boki's local pre-commit orchestrator. It assumes:
+#     - `~/Desktop/GDD/` PDF corpus is present (STRESS-TEST-INGEST step)
+#     - sister repo `slot-math-engine-template` is checked out next door
+#       (math-backend health check; LV3 batch/spin offline otherwise)
+#     - Chromium is installed + baked block-coverage walker baseline is
+#       on-disk under an absolute `/Users/vanvinklstudio/...` path
+#       (UQ-MASTERY block liveness audit)
+#     - V9 visual QA wire writes to `dist/ingest/v9-wire-contract-*`
+#       which the CI run can't reproduce in 50 s
+#   None of those hold on a stateless GitHub-hosted Ubuntu runner; trying
+#   to run verify:quick on CI produces a red wall day-one (verified
+#   empirically — first CI run failed on these exact deps). Putting it
+#   here would defeat the gate. The honest path: keep verify:quick as
+#   the local pre-commit surface, and run only CI-safe contract probes
+#   on the remote runner until a `verify:ci` profile is built that skips
+#   filesystem + sister-repo + chromium gates.
 #
 # Why `test:blocks` is intentionally NOT in this gate:
-#   The block contract suite is Boki's local pre-commit surface. The `verify`
-#   orchestrator's 100 sub-step gate already exercises the aggregated block
-#   contracts through V7/V8/UQ-MASTERY checks, so test:blocks would be
-#   double-coverage on CI without adding regression-catch value. It also
-#   contains the audio block tests which are LOCKED for this repo until the
-#   audio unlock signal lands; CI gate would have to depend on a maintainer
-#   keeping the audio test in sync without being allowed to touch it.
+#   The block contract suite is Boki's local pre-commit surface. It also
+#   contains the audio block tests which are LOCKED for this repo until
+#   the audio unlock signal lands; CI gate would have to depend on a
+#   maintainer keeping the audio test in sync without being allowed to
+#   touch it.
 #
 # Why `test:lego` is intentionally NOT in this gate (for now):
-#   The LEGO invariant walker has a pre-existing 7/8 failure on `main` (HOOK_EVENTS
-#   missing onGddMetaReady / onSymbolModifiersApplied / onCascadeHalted registrations).
-#   Adding it before that regression is closed would land CI permanently red on
-#   day one. Enable this step in a follow-up PR after the HOOK_EVENTS gap is sealed.
+#   The LEGO invariant walker has a pre-existing 7/8 failure on `main`
+#   (HOOK_EVENTS missing onGddMetaReady / onSymbolModifiersApplied /
+#   onCascadeHalted registrations). Adding it before that regression is
+#   closed would land CI permanently red on day one. Enable this step in
+#   a follow-up PR after the HOOK_EVENTS gap is sealed.
+#
+# Roadmap (when the next CI-extension PR lands):
+#   - Add `npm run verify:ci` script that runs verify.mjs with a `--ci`
+#     flag skipping STRESS-TEST-INGEST, math-backend health, block-coverage
+#     walker, V9 ingest wire (all the local-fs-bound steps).
+#   - Add `npm run test:blocks:no-audio` once audio unlock signal lands.
+#   - Add `npm run test:lego` after HOOK_EVENTS registrations land.
 #
 # Node version pin: 20 (LTS as of 2026-Q1) — local Node 25 is fine but CI
 # pins to LTS so a 25→26 breaking change can't kill main without warning.
@@ -53,29 +69,27 @@ permissions:
 
 jobs:
   gate:
-    name: verify:quick + runtime
+    name: install + test:runtime
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # Full history so any tool that does `git log` (block-liveness
-          # walker has a fallback heuristic, anti-vendor lint reads commit
-          # author for whitelist) has something to read.
+          # Full history so any tool that does `git log` has something
+          # to read (anti-vendor lint reads commit author for whitelist).
           fetch-depth: 0
 
-      - name: Setup Node 20 (LTS pin)
+      - name: Setup Node 22 (current GitHub-hosted Ubuntu default)
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # GitHub Actions deprecated Node 20 runners 2025-09. Bumped to
+          # 22 LTS so deprecation notice doesn't sit on every run.
+          node-version: '22'
           cache: 'npm'
 
       - name: Install deps (npm ci)
         run: npm ci
-
-      - name: Verify (quick · 100 sub-step orchestrator)
-        run: npm run verify:quick
 
       - name: Runtime probes
         run: npm run test:runtime
