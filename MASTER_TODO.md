@@ -17607,3 +17607,102 @@ P3 deferred (low priority):
 
 MATH-INTEGRATION-LV3 (sister-repo HTTP backend) i dalje čeka eksplicitan
 Boki "KRENI" signal za pokretanje.
+
+---
+
+## 🛡 UQ-DEEP-AN do UQ-DEEP-AX track — 2026-06-25 (11 commit-ova posle AM)
+
+Posle UQ-DEEP-AM cosmetic hardening, nastavljen je nezadrživi sweep:
+12 paralelnih auditora (I, J, K, L, M, N, O, P + 4 multi-axis) prošli
+post-AM regresiju + IGT corpus + real-time GDD audit + memory/race/
+determinism + XSS/security/race hardening.
+
+### Wave overview (UQ-DEEP-AN..AX)
+
+```
+┌────────────┬───────────────────────────────────────────────────────────────┬──────────┐
+│ Commit     │ Wave / Fokus                                                   │ Atoma    │
+├────────────┼───────────────────────────────────────────────────────────────┼──────────┤
+│ 3eb30a5    │ UQ-DEEP-AN · IGT corpus deep audit (4-axis parallel)          │ 6 P0/P1  │
+│ 8877026    │ UQ-DEEP-AO · real-time GDD audit + IGT layout adoption         │ 7        │
+│ d3c2d48    │ UQ-DEEP-AP · 4-axis residual hardening (race/determ/IGT/sec)  │ 11 P0/P1 │
+│ 3a6b856    │ UQ-DEEP-AQ · i18n stamping + schema canonical + setMult lock   │ 6        │
+│ 2806aed    │ UQ-DEEP-AR · post-AQ Auditor I sweep + 2 AQ-deferred           │ 10       │
+│ 68a028b    │ UQ-DEEP-AS · Auditor J + H-1 phase-2 (autoplay/gamble aria)   │ 7        │
+│ c76b325    │ UQ-DEEP-AT · Auditor K + H-1 phase-3 (realityCheck/energyMtr) │ 8        │
+│ d57b899    │ UQ-DEEP-AU · Auditor L + H-1 phase-4 (bonusBuy/cascadeBoost)  │ 8        │
+│ 1e3a68f    │ UQ-DEEP-AV · ULTIMATIVNO Auditor M+N + H-1 phase-5            │ 16       │
+│ 5779ad2    │ UQ-DEEP-AW · Auditor O + H-1 phase-6 (ReDoS/NUL/Punycode/CSP) │ 6        │
+│ (current)  │ UQ-DEEP-AX · Auditor P · 4 XSS/race/NaN/idempotent-wire fix   │ 4 P0/P1  │
+└────────────┴───────────────────────────────────────────────────────────────┴──────────┘
+
+  Total UQ-DEEP track (AA → AX): 26 commit-ova zatvoreno
+  Total atoma rešeno: ~95 (6+7+11+6+10+7+8+8+16+6+4 + 18 iz AA-AM)
+```
+
+### UQ-DEEP-AX (current commit) — Auditor P 4 nove rupe
+
+```
+┌──────┬──────────────────────────────────────────────┬────────────────────────┐
+│ ID   │ Fix                                           │ File                   │
+├──────┼──────────────────────────────────────────────┼────────────────────────┤
+│ P-P0-1│ jackpotRoomReveal XSS escape r.name          │ src/blocks/jackpot…    │
+│       │ (GDD-derived room name → innerHTML XSS)     │   Reveal.mjs:395-410   │
+│ P-P0-2│ leaderboardChip XSS escape e.score           │ src/blocks/leaderbd…   │
+│       │ (network payload → innerHTML XSS)            │   .mjs:299-310         │
+│ P-P1-3│ mathEngine input guards (NaN propagation)    │ src/blocks/mathEng…    │
+│       │ (payAnywhereExpectedPay + binomialPmfGe)    │   .mjs:152, 199        │
+│ P-P1-4│ audio.mjs idempotent HookBus wire            │ src/blocks/audio.mjs   │
+│       │ (bfcache pageshow / hotReload re-arm)        │   :326-354             │
+└──────┴──────────────────────────────────────────────┴────────────────────────┘
+```
+
+### Trenutni status (HEAD posle UQ-DEEP-AX)
+
+```
+verify gate                         33/33 ALL GREEN
+Block liveness walker               0 DEAD (229 × 25 HTMLs)
+UQ-16 baseline                      REBAKED 339/339
+Anti-vendor lint                    HIGH = 0
+IGT fidelity score                  6 MATCH · 2 PARTIAL · 0 MISMATCH
+Wild paradigma coverage             17/17 (100%)
+sgs-compiler IGT fields             18/18 emit
+defaultConfig freeze coverage       209/211 (98.6% — 2 exempt)
+HookBus guard coverage              211/211 (100%)
+data-block-name coverage            95%+ (114 markup blokova tagged)
+H-1 a11y stamping coverage          155 entries u catalog
+Audit trail formalization           src/registry/auditTrail.mjs (276 LOC)
+STRICT_MATH env gate                fail-fast za synthetic-fallback RTP
+Cascade depth guard                 anti-infinite-loop max 100
+EXPANSION_TYPE enum                 11 values (UQ-DEEP-AN extension)
+Pearson χ² distribution checker     Lanczos approx (15-digit accuracy)
+Centralized z-index scale           0..1000 discrete (themeCSS 2.1B fixed)
+data-stage visibility               IGT P1 stage gating adopted
+blockKindAliases                    snake↔camel 37 entries
+SemVer 2.0.0 (no ReDoS)             disjoint alternative + 120-char cap
+i18n NUL/C1/DEL strip              escape sequence (UTF-8 safe)
+CSP defense-in-depth               unsafe-inline limitation + frame-src none
+Punycode reject (xn-- prefix)       backendSpinEngine NFKC normalize
+Audio cloneNode 'ended' cleanup    Safari memory leak fixed
+SSRF host allowlist                 backendSpinEngine localhost only
+realityCheck bfcache stacking      setInterval idempotent guard
+liveRtpHud bfcache stacking         setInterval idempotent guard
+audio.mjs bfcache wire re-arm      __audioHooksWired idempotent (AX)
+```
+
+### Sledeća wave (UQ-DEEP-AY ili LV3)
+
+P3 deferred (low priority):
+- Deep-freeze nested objects u defaultConfig (trenutni je shallow)
+- IGT IXF 15-stage hook enumeration (orthogonal to slot-stage, doc only)
+- N-tier Rust executor adapter (per-feature simulation u Rust kernel-u)
+- kernelInit boot blob (softwareid, skincode, sessionToken)
+- Cross-browser Playwright probe (Firefox + WebKit; sad samo chromium)
+- RectTransform (responsive anchor/pivot) — IGT layout P1
+- Pixi atlas pipeline + texture packer — IGT layout P2
+- GSAP tween + timeline + FSM binding — IGT layout P2
+- Spine importer + skeleton runtime — IGT layout P2
+- Particle emitter system (@pixi/particle-emitter) — IGT layout P2
+
+MATH-INTEGRATION-LV3 (sister-repo HTTP backend) i dalje čeka eksplicitan
+Boki "KRENI" signal.

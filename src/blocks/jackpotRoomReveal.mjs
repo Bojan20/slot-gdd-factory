@@ -392,6 +392,18 @@ export function emitJackpotRoomRevealRuntime(cfg = defaultConfig()) {
     return chosen;
   }
 
+  /* UQ-DEEP-AX P-P0-1 (Boki 2026-06-25 Auditor P): GDD-derived r.name
+   * gets interpolated INTO innerHTML below; without escape, malicious
+   * room name (e.g. '">\<img src=x onerror=...>') executes as XSS.
+   * resolveConfig validated r.color via hex regex but left r.name raw. */
+  function _esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
   function _paintLadder(awardedName) {
     var ladder = document.getElementById('jrrLadder');
     if (!ladder) return;
@@ -399,11 +411,13 @@ export function emitJackpotRoomRevealRuntime(cfg = defaultConfig()) {
     for (var i = 0; i < ROOMS.length; i++) {
       var r = ROOMS[i];
       var isAwarded = (r.name === awardedName);
+      var safeName = _esc(r.name);
+      /* r.multX = Number(...) already in resolveConfig — safe to interpolate */
       html += '<div class="jrr-tile" '
            +  'data-awarded="' + (isAwarded ? 'true' : 'false') + '" '
            +  'style="animation-delay:' + (i * 120) + 'ms;color:' + r.color + ';" '
-           +  'aria-label="Tier ' + r.name + ', multiplier x' + r.multX + '">'
-           +  '<span class="jrr-tile__name">' + r.name + '</span>'
+           +  'aria-label="Tier ' + safeName + ', multiplier x' + r.multX + '">'
+           +  '<span class="jrr-tile__name">' + safeName + '</span>'
            +  '<span class="jrr-tile__value">x' + r.multX + '</span>'
            +  '</div>';
     }

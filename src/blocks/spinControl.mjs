@@ -350,6 +350,14 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
       HookBus.on('preSpin', function () { _markSpinBusy(); _armSpinReadyWatchdog(); });
       HookBus.on('postSpin', function () { _markSpinReady(); _disarmSpinReadyWatchdog(); });
       HookBus.on('onSlamComplete', function () { _markSpinReady(); _disarmSpinReadyWatchdog(); });
+      /* UQ-DEEP-AX P-P0-1: re-stamp aria on locale change so dynamic-aria
+         button gets the localized SPIN/STOP/SKIP label. */
+      HookBus.on('onLanguagePackApplied', function () {
+        var btn = _btn();
+        if (btn) {
+          try { btn.setAttribute('aria-label', _ariaForState(STATE.current || 'SPIN')); } catch (_) {}
+        }
+      });
     }
     var SPIN_LABEL            = ${JSON.stringify(c.spinAriaLabel)};
     var STOP_LABEL            = ${JSON.stringify(c.stopAriaLabel)};
@@ -396,10 +404,23 @@ export function emitSpinControlRuntime(cfg = defaultConfig()) {
     function _turboActive()    { return !!(typeof window !== 'undefined' && window.__SLOT_TURBO_ACTIVE__); }
     function _autoSpinActive() { return !!(typeof window !== 'undefined' && window.__SLOT_AUTOSPIN_ACTIVE__); }
 
+    /* UQ-DEEP-AX P-P0-1 (Auditor P): localize per-state aria via i18n.
+       Was hardcoded EN SPIN_LABEL/STOP_LABEL/SKIP_LABEL — data-dynamic-aria
+       opt-out (AW) meant paint() never touched it, but cfg-baked EN stayed
+       forever. Now read live from window.__SLOT_I18N__ with EN cfg
+       fallback. Same pattern needed in any dynamic-aria block. */
+    function _i18nOr(key, fb) {
+      try {
+        if (typeof window !== 'undefined' && window.__SLOT_I18N__ && typeof window.__SLOT_I18N__.t === 'function') {
+          return window.__SLOT_I18N__.t(key, fb);
+        }
+      } catch (_) {}
+      return fb;
+    }
     function _ariaForState(s) {
-      if (s === 'SPIN') return SPIN_LABEL;
-      if (s === 'STOP_PRE' || s === 'STOP_POST') return STOP_LABEL;
-      return SKIP_LABEL;
+      if (s === 'SPIN') return _i18nOr('spinControl.spin', SPIN_LABEL);
+      if (s === 'STOP_PRE' || s === 'STOP_POST') return _i18nOr('spinControl.stop', STOP_LABEL);
+      return _i18nOr('spinControl.skip', SKIP_LABEL);
     }
 
     function setState(name) {

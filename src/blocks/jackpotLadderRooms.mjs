@@ -169,7 +169,9 @@ export function emitJackpotLadderRoomsMarkup(cfg = defaultConfig()) {
   if (!cfg.enabled) return '';
   const rooms = TIERS.map(tier => {
     const label = (cfg.labels && cfg.labels[tier]) || tier;
-    return tagBlockMarkup(`<div class="jp-room" role="status" aria-label="${tier} jackpot" data-tier="${tier}" data-active="false">${label}</div>`, 'jackpotLadderRooms');
+    /* UQ-DEEP-AX P-P1-2: inner room aria localized. tier is GDD-supplied
+       (MINI/MINOR/MAJOR/GRAND), pass through fallback. */
+    return tagBlockMarkup(`<div class="jp-room" role="status" aria-label="${tier} jackpot" data-tier="${tier}" data-active="false" data-i18n-aria="jackpotLadderRooms.room" data-i18n-aria-fallback="${tier} jackpot">${label}</div>`, 'jackpotLadderRooms');
   }).join('');
   return `<div id="jpLadder" class="jp-ladder" role="group" aria-label="Jackpot ladder" data-i18n-aria="jackpotLadderRooms.0" data-i18n-aria-fallback="Jackpot ladder">${rooms}</div>`;
 }

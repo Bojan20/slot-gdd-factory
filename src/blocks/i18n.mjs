@@ -456,13 +456,13 @@ export function emitI18nRuntime(cfg = defaultConfig()) {
        Attacker-controlled locale pack (operator-loaded JSON, hot-reload,
        remote endpoint) could inject control chars / oversized payload
        into accessible name → screen-reader phishing + tooltip spoofing.
-       This sanitizer strips ASCII control chars (\u0000–\u001F + )
+       This sanitizer strips ASCII control chars (\u0000–\u001F + \u007F)
        and clamps length to 240 chars (well above any legit UI string but
        cuts payload bombs). textContent paint stays via _t() too — defense
        in depth, even though textContent itself is HTML-safe by browser. */
     function _sanitizeLocaleString(s) {
       if (typeof s !== 'string') return s;
-      var clean = s.replace(/[\u0000-\u001F]/g, '');
+      var clean = s.replace(/[\u0000-\u001F\u007F]/g, '');
       if (clean.length > 240) {
         clean = clean.slice(0, 240);
         /* UQ-DEEP-AS J-P1-1: UTF-16 surrogate-pair cleavage guard.

@@ -150,17 +150,34 @@ export async function bothWaysRtp(ltrOnlyRtp, linePayShare) {
 }
 
 export async function payAnywhereExpectedPay(nCells, pPerCell, payTable) {
+  /* UQ-DEEP-AX P-P1-3 (Boki 2026-06-25 Auditor P): without these guards,
+   * NaN / out-of-range pPerCell silently propagates as NaN through
+   * Math.log(p), corrupting RTP compliance gate downstream.
+   * Mirror pattern from _jsBuyFeatureRtp (UQ H5). */
+  if (!Number.isFinite(nCells) || nCells <= 0) return 0;
+  if (!Number.isFinite(pPerCell) || pPerCell < 0 || pPerCell > 1) return 0;
   await _tryLoadWasm();
   const keys = Array.isArray(payTable) ? payTable.map(r => r.threshold ?? r.k) : [];
   const vals = Array.isArray(payTable) ? payTable.map(r => r.pay ?? r.value) : [];
+  /* Drop pay-table rows where threshold or pay isn't finite — NaN bubbles. */
+  const safeKeys = [];
+  const safeVals = [];
+  for (let i = 0; i < keys.length; i++) {
+    const k = Number(keys[i]);
+    const v = Number(vals[i]);
+    if (Number.isFinite(k) && k > 0 && Number.isFinite(v)) {
+      safeKeys.push(k);
+      safeVals.push(v);
+    }
+  }
   if (_wasm && typeof _wasm.pay_anywhere_expected_pay === 'function') {
     return _wasm.pay_anywhere_expected_pay(
       nCells, pPerCell,
-      new Uint32Array(keys),
-      new Float64Array(vals)
+      new Uint32Array(safeKeys),
+      new Float64Array(safeVals)
     );
   }
-  return _jsPayAnywhereExpectedPay(nCells, pPerCell, keys, vals);
+  return _jsPayAnywhereExpectedPay(nCells, pPerCell, safeKeys, safeVals);
 }
 
 export async function buyFeatureUkgcRts13cPass(bonusAvgPay, buyCost, baseGameRtp, tolerancePp) {
@@ -180,6 +197,11 @@ export async function buyFeatureMgaPass(bonusAvgPay, buyCost, ceilingRtp) {
 }
 
 export async function binomialPmfGe(n, p, kMin) {
+  /* UQ-DEEP-AX P-P1-3 (Boki 2026-06-25 Auditor P): mirror guards from
+   * payAnywhereExpectedPay so direct callers can't poison RTP math. */
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  if (!Number.isFinite(p) || p < 0 || p > 1) return 0;
+  if (!Number.isFinite(kMin) || kMin < 0) return 0;
   await _tryLoadWasm();
   if (_wasm && typeof _wasm.binomialPmfGe === 'function') {
     return _wasm.binomialPmfGe(n, p, kMin);

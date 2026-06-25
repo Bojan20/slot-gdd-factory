@@ -301,10 +301,16 @@ const LBC_TOP_N = ${cfg.topN};
       const safeHandle = String(e.handle).replace(/[<>&"']/g, function(c){
         return ({ '<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;' })[c];
       });
+      /* UQ-DEEP-AX P-P0-2 (Boki 2026-06-25 Auditor P): e.score arrived
+       * raw from network/HookBus payload. Without Number coerce, crafted
+       * payload like score:'<svg onload=...>' executes via innerHTML.
+       * Coerce to integer safely; fallback 0 on non-finite. */
+      var safeScore = Number(e.score);
+      if (!Number.isFinite(safeScore)) safeScore = 0;
       return '<li' + cls + '>' +
         '<span class="lb-rank-no">#' + (i+1) + '</span>' +
         '<span class="lb-handle">' + safeHandle + '</span>' +
-        '<span class="lb-score">' + (e.score || 0) + '</span>' +
+        '<span class="lb-score">' + safeScore + '</span>' +
       '</li>';
     }).join('');
     listEl.innerHTML = html;

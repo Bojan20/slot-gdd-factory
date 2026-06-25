@@ -323,33 +323,54 @@ document.addEventListener('DOMContentLoaded', () => {
    Tumble step plays MULT_GROW only when the multiplier actually grew
    (HookBus.getMult > 1). Without these handlers audioPlay is still
    callable directly (ad-hoc) but lifecycle cues stay silent. */
-if (typeof HookBus !== 'undefined') {
+/* UQ-DEEP-AX P-P1-4 (Boki 2026-06-25 Auditor P): one-shot top-level
+ * wire silently skips on bfcache pageshow / hotReload re-evaluation
+ * because guard checks only once at module evaluation time. Wrap in
+ * named function + idempotency sentinel + pageshow re-arm. Same
+ * pattern as N-P0-2 / AV fix for liveRtpHud.idleTick. */
+function _wireAudioHooks() {
+  if (typeof window === 'undefined') return;
+  if (window.__audioHooksWired) return;
+  if (typeof HookBus === 'undefined' || !HookBus || typeof HookBus.on !== 'function') return;
+  window.__audioHooksWired = true;
   HookBus.on('preSpin', ({ duringFs } = {}) => {
     audioPlay(duringFs ? 'FS_SPIN_START' : 'SPIN_START');
   });
   HookBus.on('onSpinResult', () => {
     audioPlay('REEL_STOP');
   });
-  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onTumbleStep', ({ events } = {}) => {
+  HookBus.on('onTumbleStep', ({ events } = {}) => {
     audioPlay('TUMBLE_REMOVE');
     if (Array.isArray(events) && events.length > 0 && HookBus.getMult && HookBus.getMult() > 1) {
       audioPlay('MULT_GROW');
     }
-  }) : void 0);
-  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('postSpin', ({ events } = {}) => {
+  });
+  HookBus.on('postSpin', ({ events } = {}) => {
     if (!Array.isArray(events) || events.length === 0) return;
     const totalX = events.reduce((a, e) => a + (Number(e && e.payX) || 0), 0);
     if (totalX >= AUDIO_EPIC_X)        audioPlay('WIN_EPIC');
     else if (totalX >= AUDIO_MEGA_X)   audioPlay('WIN_MEGA');
     else if (totalX >= AUDIO_BIG_X)    audioPlay('WIN_BIG');
     else if (totalX > 0)               audioPlay('WIN_BASE');
-  }) : void 0);
-  (typeof HookBus !== 'undefined' && typeof HookBus.on === 'function' ? HookBus.on('onFsTrigger', () => {
+  });
+  HookBus.on('onFsTrigger', () => {
     audioPlay('FS_TRIGGER');
     setTimeout(() => audioPlay('FS_INTRO'), 200);
-  }) : void 0);
+  });
   HookBus.on('onFsEnd', () => {
     audioPlay('FS_OUTRO');
+  });
+}
+_wireAudioHooks();
+/* bfcache pageshow restore re-evaluates module with stale wired flag.
+ * If HookBus got re-created (e.g. hotReload), clear flag + re-arm. */
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('pageshow', function () {
+    if (typeof HookBus !== 'undefined' && HookBus && typeof HookBus.on === 'function') {
+      /* HookBus.on contract: duplicate-listener add is no-op via wiring registry. */
+      window.__audioHooksWired = false;
+      _wireAudioHooks();
+    }
   });
 }
 `;

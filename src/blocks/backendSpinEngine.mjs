@@ -65,13 +65,17 @@ function _isAllowedBackendHost(urlStr) {
        punycode that decodes to visually-identical string. Reject any
        xn-- prefix by default; normalize NFKC + lowercase for compare. */
     const host = String(u.hostname || '').normalize('NFKC').toLowerCase();
-    if (host.startsWith('xn--')) return false;
+    /* UQ-DEEP-AX P-P1-3 (Auditor P): punycode reject moved AFTER allowlist
+       match so legitimate IDN deployment (Asian/Cyrillic operator) opt-in
+       via __BACKEND_ALLOWLIST__ works. Default still rejects unknown xn--. */
     if (host === '127.0.0.1' || host === 'localhost' || host === '::1' || host === '[::1]') return true;
     if (typeof globalThis !== 'undefined' && globalThis.window
         && Array.isArray(globalThis.window.__BACKEND_ALLOWLIST__)) {
       const allow = globalThis.window.__BACKEND_ALLOWLIST__.map((h) => String(h).normalize('NFKC').toLowerCase());
       if (allow.includes(host)) return true;
     }
+    /* Punycode reject moved here — after allowlist gives explicit opt-in. */
+    if (host.startsWith('xn--') && !(typeof globalThis !== 'undefined' && globalThis.window && globalThis.window.__ALLOW_PUNYCODE_BACKEND__ === true)) return false;
     if (typeof globalThis !== 'undefined' && globalThis.location
         && String(globalThis.location.hostname || '').normalize('NFKC').toLowerCase() === host) return true;
     return false;

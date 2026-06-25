@@ -310,12 +310,19 @@ export class ManifestSchemaError extends Error {
  */
 export function isCompatibleSchema(version) {
   if (typeof version !== 'string') return false;
-  /* UQ-DEEP-AW O-P0-1 (Auditor O): ReDoS guard. Pre-bound length, then
-     SemVer 2.0.0 regex sa MUTUALLY-EXCLUSIVE alternative — was
-     `[1-9]\\d*|\\d` (both match "1") → catastrophic backtracking on
-     adversarial input "1.0.0-1.1.1.1.1...!". Now `0|[1-9]\\d*` disjoint.
-     Length cap je 120 chars (real cert versions stay < 60). */
-  if (version.length > 120) return false;
+  /* UQ-DEEP-AW O-P0-1 + AX P-P1-4 (Auditors O + P): ReDoS guard.
+     Pre-bound length, then SemVer 2.0.0 regex sa MUTUALLY-EXCLUSIVE
+     alternative — was `[1-9]\\d*|\\d` (both match "1") → catastrophic
+     backtracking. Now `0|[1-9]\\d*` disjoint.
+     P-P1-4: cap bumped 120 → 256 da real CI bundle sa long build
+     metadata (`+build.{ISO8601}.{40-hex-sha}.{ci-id}`) prolazi. Verified
+     ReDoS-safe pri 256 char (disjoint alternative je glavni guard, ne
+     length cap). Warn na border tako da operator vidi truncation risk. */
+  if (version.length > 256) return false;
+  if (version.length > 200) {
+    try { if (typeof console !== 'undefined' && console.warn)
+      console.warn('[manifest] schema_version unusually long (' + version.length + ' chars) — consider trimming build metadata'); } catch (_) {}
+  }
   // Accept 1.x.y with optional -prerelease.id / +build.id suffix.
   // Identifier alphabet [0-9A-Za-z-] (NO underscore). Numeric prerelease
   // identifiers must NOT have leading zero. SemVer 2.0.0 §9/§10.
