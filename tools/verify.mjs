@@ -3,24 +3,47 @@
  * tools/verify.mjs
  *
  * Wave UQ-12 (2026-06-21) — Pre-commit gate.
+ * Wave UQ-U-6 (2026-06-25) — wired the 7 contract suites that landed
+ *                            for N+2-I/J, UQ-U-1..4, and P3-P1/P2/P3/P4/P6
+ *                            so `npm run verify:quick` stays in lockstep
+ *                            with the GitHub Actions `ci.yml` gate.
  *
- * One orchestrator that runs the minimum "is the repo healthy?" set:
- *   1. featureArchetypes test          — 28 archetypes + alias + filter
- *   2. smartDefaults-archetype-backfill — stage 5 backfill plumbing
- *   3. scaffold-block tool test         — 25-archetype E2E scaffolding
- *   4. UQ-7 corpus audit                — assert unknownFeatureKinds = 0
- *   5. UQ-11 render smoke               — 20-GDD random subset build
+ * One orchestrator that runs the "is the repo healthy?" set. The exact
+ * step count grows each release; the categories are:
+ *   - 13 inline Node tests under `tests/registry/`, `tests/blocks/`,
+ *     and `tests/tools/` (archetypes + parser + scaffold + ingest +
+ *     docs + precommit + UQ-FORTIFY 3..8)
+ *   - UQ-7 corpus audit (assert unknownFeatureKinds === 0)
+ *   - UQ-16 baseline drift (20-slug subset, when baseline exists)
+ *   - UQ-CASH semantic + UQ-FORTIFY9 + UQ-MASTERY-3..6 + N+2 D..G
+ *   - PORTFOLIO REPORT + ANTI-VENDOR LINT + KERNEL AUDIT
+ *   - The 7 UQ-U-6 contract suites (model schema, vision cost-guard,
+ *     deep-freeze utility, IXF 15-stage coverage, Rust executor
+ *     adapter, kernelInit boot blob, RectTransform anchor/pivot)
+ *   - UQ-11 render smoke (skipped under `--quick`)
+ *
+ * Total step count at HEAD ≈ 30; `--quick` trims the long-running
+ * render smoke. Every step uses `run(label, cmd, argv)` and pushes its
+ * result into the shared `results` array.
  *
  * Exit code 0 = healthy, ≥ 1 = at least one gate failed.
  *
  * USAGE
  *   node tools/verify.mjs            — full gate
- *   node tools/verify.mjs --quick    — skip render smoke (steps 1-4 only)
+ *   node tools/verify.mjs --quick    — skip the UQ-11 render smoke
  *   node tools/verify.mjs --json     — emit machine-readable summary
  *
  * INVOKED BY
- *   npm run verify
- *   git pre-commit hook (installed via tools/install-precommit.mjs)
+ *   npm run verify         (full)
+ *   npm run verify:quick   (quick variant via package.json)
+ *   git pre-commit hook    (installed via tools/install-precommit.mjs)
+ *
+ * SISTER GATE
+ *   `.github/workflows/ci.yml` runs a thinner subset (no STRESS-TEST-INGEST,
+ *   no math-backend, no V9-ingest-wire) so the CI gate stays green on a
+ *   stateless GitHub-hosted Ubuntu runner. The 7 UQ-U-6 contract suites
+ *   are wired into BOTH gates so a CI-green PR is always also verify-green
+ *   locally and vice versa.
  */
 import { spawnSync } from 'node:child_process';
 import { readFile, readdir, stat } from 'node:fs/promises';
@@ -1226,6 +1249,42 @@ if (!QUICK) {
 } else if (!JSON_OUT) {
   console.log('  ⏭ UQ-11 render smoke (--quick)');
 }
+
+/* ── UQ-U-6 P0 #1 (Boki 2026-06-25) — close the local↔CI gate divergence.
+ *
+ * Before this addition, the 7 new contract suites that landed on
+ * 2026-06-25 (N+2-I/J + UQ-U-1/2/3/4 + P3-P1/P2/P3/P4/P6) were wired
+ * into `.github/workflows/ci.yml` but NOT into `verify.mjs`. That
+ * meant a maintainer running `npm run verify:quick` locally got a
+ * green check while a CI run on the same diff lit up red. The
+ * UQ-U-6 super-meta audit (auditor U-6-B) flagged this as P0 —
+ * silently letting schema/vision/freeze/IXF/rust/kernel/rect
+ * regressions land was exactly the bug we shipped CI to prevent.
+ *
+ * All 7 suites are pure-Node, sub-second each, no external deps —
+ * safe to run on every verify (no `--quick` short-circuit).
+ * ──────────────────────────────────────────────────────────────── */
+
+run('Schema migration contract suite (model.json semver + planner)',
+  'node', ['tests/_modelSchema.test.mjs']);
+
+run('Vision cost-guard contract suite (BigInt micro-cents + clamps)',
+  'node', ['tests/_visionCostGuard.test.mjs']);
+
+run('Deep-freeze utility contract suite (post UQ-U-4 hardening)',
+  'node', ['tests/_deepFreeze.test.mjs']);
+
+run('IXF 15-stage coverage smoke (S04/S05/S07/S10/S12/S13 anchors)',
+  'node', ['tests/_ixfCoverage.test.mjs']);
+
+run('Rust executor adapter contract suite (sim bridge)',
+  'node', ['tests/_rustExecutorAdapter.test.mjs']);
+
+run('Kernel init boot blob contract suite (softwareid/skin/session)',
+  'node', ['tests/blocks/kernelInit.test.mjs']);
+
+run('RectTransform responsive anchor/pivot contract suite',
+  'node', ['tests/_rectTransform.test.mjs']);
 
 /* ── Summary ────────────────────────────────────────────────────────── */
 const allOk = results.every(r => r.ok);

@@ -1,4 +1,4 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-25 21:30 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB + N+2 D-J + UQ-U-1/U-2/U-3/U-5 + P3-P3/P4/P6 ✅ DONE)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-25 22:05 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB + N+2 D-J + UQ-U-1..6 + P3-P1..P6 ✅ DONE)
 
 ### 🛡 P3-P3 + P3-P4 + P3-P6 — 3 NOVE PRIMITIVE-A LANDED (2026-06-25 21:30 UTC)
 
@@ -123,8 +123,9 @@ Posle toga **30 UQ-DEEP wave-ova (AA → BB)** zatvoreno sa ukupno
 **UQ-U-1 ultra-deep audit (2026-06-25): 4-paralel auditori → 8/8 P0 ZATVORENI.**
 **UQ-U-2 P1 batch (2026-06-25): 15 atoma — vision-guard exact math + v9 hardening + migrate-model robustness + workflows unify.**
 **UQ-U-3 2-paralel deep audit (2026-06-25): 10 verified atoma (2 P0 + 8 P1) — clamp / wrapper validation / fence regex / clone fallback / clamping / actionlint SHA-pin / fetch-depth scope.**
-HEAD: `94180b7` (UQ-U-3 · 10 atoma · CI green sa actionlint step).
-Commit chain danas: `93b5ded → d48caa2 → 6ba2282 → 2846847 → 1495c32 → 7996cc3 → ba03291 → 4f7fc1b → 9b28a40 → 94180b7`.
+**UQ-U-6 super-meta audit (2026-06-25): 2-paralel auditori → 1 P0 + 2 P1 + 4 P2 + 2 P3 ZATVORENI.**
+HEAD: `08ab059` (P3-P3/P4/P6 + UQ-U-5 · 3 nova primitive-a) — UQ-U-6 commit bump u ovom push-u.
+Commit chain danas: `93b5ded → d48caa2 → 6ba2282 → 2846847 → 1495c32 → 7996cc3 → ba03291 → 4f7fc1b → 9b28a40 → 94180b7 → 12b2884 → b0e53a6 → c4d52cb → e96f8a4 → 08ab059 → UQ-U-6`.
 Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 
 ### 🟢 Trenutno stanje (2026-06-25 18:00 UTC) — šta JE landed
@@ -145,6 +146,7 @@ Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 │ UQ-U-1 ultra-audit (P0)               │ ✅ 8/8 LANDED ba03291               │
 │ UQ-U-2 P1 batch                       │ ✅ 15/15 LANDED 9b28a40             │
 │ UQ-U-3 2-paralel deep audit           │ ✅ 10/10 LANDED 94180b7             │
+│ UQ-U-6 super-meta audit (this commit) │ ✅ 9/9 atoma (P0+P1+P2+P3) LANDED   │
 │ P3-P1 deep-freeze utility + audit     │ ✅ LANDED b0e53a6                   │
 │ UQ-U-4 deepFreeze hardening (post P1) │ ✅ 8/8 LANDED c4d52cb               │
 │ P3-P2 IXF 15-stage hook enumeration   │ ✅ LANDED ovaj commit               │
@@ -234,7 +236,7 @@ fragility, CLI greedy argv) — backlog za sledeći Wave UQ-U-2.
 ┌─────────────────────────────────────────────┬──────────────────────────────┐
 │ Indikator                                    │ Vrednost                      │
 ├─────────────────────────────────────────────┼──────────────────────────────┤
-│ HEAD commit                                  │ 94180b7 (UQ-U-3 10 atoma)    │
+│ HEAD commit                                  │ 08ab059 → UQ-U-6 fix sweep   │
 │ Verify gate                                  │ 33/33 + 100 sub-step GREEN   │
 │ CI gate (GitHub Actions)                     │ 6-step + actionlint ✓ green  │
 │   1. checkout fetch-depth event-scoped       │ PR=1 / push=0 (sec)          │

@@ -43,6 +43,9 @@ jobs:
           - test:overflow
           - test:sharpness
     steps:
+      # UQ-U-6 P2 #5 (Boki 2026-06-25): tag-pin policy mirrors ci.yml.
+      # First-party GitHub actions stay at tag (quarterly rotation);
+      # third-party actions are SHA-pinned (none in this workflow today).
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4

@@ -251,9 +251,13 @@ async function captureScreenshots(slug, runDir) {
 function visionCall(model, screenshotPaths, opts = {}) {
   /* UQ-U-2 atom #5 (Boki 2026-06-25): wrapper resolution order MUST allow
      env override before the HOME-hardcoded fallback. CI / sandboxed user
-     accounts (no HOME, or HOME != /Users/vanvinklstudio) used to silently
-     SKIP every game. Order: explicit opts.wrapperPath → V9_VISION_WRAPPER
-     env → HOME-hardcoded default. */
+     accounts (no HOME, or a HOME that does not match the maintainer's
+     workstation layout) used to silently SKIP every game. Order:
+       1. explicit opts.wrapperPath  (test/programmatic injection)
+       2. V9_VISION_WRAPPER env var  (operator override, CI-friendly)
+       3. HOME-derived default       (maintainer convenience)
+     UQ-U-6 P3 #5 (Boki 2026-06-25): scrubbed the specific username from
+     this comment — same content, no maintainer-mac landmine. */
   const wrapper =
     opts.wrapperPath
     || (process.env.V9_VISION_WRAPPER && process.env.V9_VISION_WRAPPER.trim()) ||

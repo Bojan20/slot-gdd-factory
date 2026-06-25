@@ -55,6 +55,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
+      # UQ-U-6 P2 #5 (Boki 2026-06-25): tag-pin policy mirrors ci.yml.
+      # First-party `actions/checkout` and `actions/setup-node` are kept at
+      # tag (`@v4`) because they're GitHub-maintained with quarterly
+      # release rotation — third-party actions are the higher-risk surface
+      # and get SHA-pinned (see ci.yml `reviewdog/action-actionlint`).
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1

@@ -58,14 +58,31 @@ const doc = readFileSync(DOC_PATH, 'utf8');
    may span multiple lines (continuation rows start with `│     │`).
    The hook column is anchor[2]. Hook tokens are comma-separated
    identifiers — we extract every camelCase identifier from the
-   column to be tolerant of whitespace + line-wrap. */
-const ROW_RE = /^│\s*(S\d{2})\s*│([^│]+)│([^│]+)│/;
-const CONT_RE = /^│\s+│([^│]+)│([^│]+)│/;
+   column to be tolerant of whitespace + line-wrap.
+
+   UQ-U-6 P3 #6 (Boki 2026-06-25): the parser used to attach EVERY
+   continuation row to `currentStage`, including continuation rows
+   that belonged to an OUT-OF-BAND non-S## row (e.g. a future `EX01`
+   "extension" row). A non-S row would be silently dropped by ROW_RE
+   but its continuation lines would pollute the previous S-stage's
+   hook set. New rule: a non-S row that nonetheless contains a stage
+   identifier in the first column (`│ EX01 │ ... │ ... │`) closes the
+   current S-stage so subsequent continuation rows have no parent. We
+   detect any `│ XX## │` style first column and reset `currentStage`. */
+const ROW_RE         = /^│\s*(S\d{2})\s*│([^│]+)│([^│]+)│/;
+const ANY_LABEL_RE   = /^│\s*([A-Z]{1,3}\d{2})\s*│/;
+const CONT_RE        = /^│\s+│([^│]+)│([^│]+)│/;
+const SEPARATOR_RE   = /^[├└┌]/; // box-drawing terminators close any open row
 
 const stages = new Map();   // 'S01' → { name, hooks: Set<string> }
 let currentStage = null;
 const lines = doc.split('\n');
 for (const line of lines) {
+  if (SEPARATOR_RE.test(line)) {
+    /* Top/bottom or middle horizontal of the table — close any open row. */
+    currentStage = null;
+    continue;
+  }
   const m = ROW_RE.exec(line);
   if (m) {
     currentStage = m[1].trim();
@@ -73,6 +90,13 @@ for (const line of lines) {
       name: m[2].trim(),
       hooks: extractHooks(m[3]),
     });
+    continue;
+  }
+  /* If this is a labeled row that's NOT an S-stage (e.g. hypothetical
+     extension rows EX01, F01, etc.), close the current S-stage so the
+     extension row's continuations don't leak into it. */
+  if (ANY_LABEL_RE.test(line) && !ROW_RE.test(line)) {
+    currentStage = null;
     continue;
   }
   const c = CONT_RE.exec(line);
