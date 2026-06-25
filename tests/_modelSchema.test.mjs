@@ -77,13 +77,17 @@ t('compareSemver orders correctly', () => {
 });
 
 /* 3 */
-t('buildSchemaEnvelope has version + ISO-8601 generatedAt', () => {
+t('buildSchemaEnvelope has version only (deterministic — no generatedAt)', () => {
+  /* Wave U-1 P0-2 (audit U-2 #21) — `generatedAt` removed from the
+     envelope so the parser output is byte-stable across runs. Audit
+     timestamps live in sidecar logs (e.g. migration runner), not in
+     the model itself. */
   const env = buildSchemaEnvelope();
   assert.equal(env.version, MODEL_SCHEMA_VERSION);
-  assert.match(env.generatedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
-  /* Must round-trip through Date */
-  const d = new Date(env.generatedAt);
-  assert.ok(!Number.isNaN(d.getTime()));
+  assert.equal(env.generatedAt, undefined, 'envelope must not stamp generatedAt');
+  /* Two consecutive calls must be deep-equal — that's the whole point
+     of dropping the timestamp. */
+  assert.deepEqual(buildSchemaEnvelope(), buildSchemaEnvelope());
 });
 
 /* 4 */

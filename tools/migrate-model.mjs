@@ -49,8 +49,17 @@
  * (`find tools/_wave-v-cache -name '*.json' | xargs -I {} node tools/migrate-model.mjs --in {}`).
  */
 
-import { readFileSync, writeFileSync, renameSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import {
+  readFileSync,
+  openSync,
+  writeSync,
+  fsyncSync,
+  closeSync,
+  renameSync,
+  unlinkSync,
+  existsSync,
+} from 'node:fs';
+import { resolve, dirname } from 'node:path';
 
 import {
   MODEL_SCHEMA_VERSION,
@@ -213,13 +222,48 @@ if (!outPath) {
   process.exit(0);
 }
 
-/* Atomic write: tmp → rename. If rename fails, leave the original
-   alone — never half-write the destination. */
+/* Wave U-1 P0-5 (Boki 2026-06-25 audit U-2 #10) — honest atomic write.
+   Previous version used `writeFileSync` + `renameSync` and the header
+   PROMISED `fsync` but never called it. A power loss or hard kernel
+   panic between the rename and the actual disk flush can lose the new
+   data (or worse, leave the file looking complete but holding garbage
+   from a different inode block on some filesystems). Real atomic
+   write:
+     1. openSync(tmpPath, 'w', 0o644)
+     2. writeSync(fd, body)
+     3. fsyncSync(fd)            ← flush file data to disk
+     4. closeSync(fd)
+     5. renameSync(tmpPath, outPath)  ← atomic on POSIX same-fs
+     6. fsyncSync(dirFd)         ← flush the rename to the directory
+   Errors mid-flight: unlink the tmp file so we don't leave litter,
+   then die with the real cause. */
 const tmpPath = `${outPath}.migrate-tmp.${process.pid}`;
+const body = `${JSON.stringify(migrated, null, 2)}\n`;
+let fd = null;
 try {
-  writeFileSync(tmpPath, `${JSON.stringify(migrated, null, 2)}\n`, 'utf8');
+  fd = openSync(tmpPath, 'w', 0o644);
+  writeSync(fd, body);
+  fsyncSync(fd);
+  closeSync(fd);
+  fd = null;
   renameSync(tmpPath, outPath);
+  /* fsync the parent directory so the rename itself is durable. On
+     macOS/HFS+/APFS this is a no-op for the dir fd path but harmless;
+     on Linux/ext4/xfs it's the difference between "rename committed"
+     and "rename pending in the journal". */
+  try {
+    const dirFd = openSync(dirname(outPath), 'r');
+    try { fsyncSync(dirFd); } finally { closeSync(dirFd); }
+  } catch (_) {
+    /* Some platforms refuse fsync on a directory (Windows, some FUSE
+       mounts). The rename itself is still durable — directory fsync
+       is best-effort hardening. */
+  }
 } catch (err) {
+  /* Clean up tmp so we don't accumulate `*.migrate-tmp.PID` litter
+     when --in is hammered in a loop with a write-failing --out. */
+  if (fd !== null) { try { closeSync(fd); } catch (_) { /* ignore */ } }
+  try { if (existsSync(tmpPath)) unlinkSync(tmpPath); } catch (_) { /* ignore */ }
   die(1, `write failed: ${err.message}`);
 }
 

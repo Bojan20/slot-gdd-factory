@@ -89,15 +89,31 @@ export function compareSemver(a, b) {
  * output. The shape is intentionally tiny so it stays cheap to read
  * and forward — consumers should treat it as opaque metadata.
  *
- * @returns {{version: string, generatedAt: string}}
+ * # WHY NO `generatedAt` HERE (Wave U-1 P0-2, Boki 2026-06-25 audit U-2 #21)
+ *
+ * The original design stamped `generatedAt: new Date().toISOString()`
+ * here. That made every `parseGDD()` call produce a model with a
+ * different timestamp — a determinism bomb for any downstream tool
+ * that JSON-stringifies a model and compares against a baked baseline
+ * (uq16, visreg, cross-corpus parity, third-party integrator round
+ * trips). Even hot-loop callers paid an unnecessary `new Date()` per
+ * partial-failure path.
+ *
+ * The envelope now carries ONLY the version (deterministic, single
+ * source of truth in MODEL_SCHEMA_VERSION). Timestamps that audit
+ * "when was this model parsed" belong in a separate audit log emitted
+ * by the orchestrator that calls the parser — not in the parser's
+ * own output where they pollute every snapshot.
+ *
+ * If a consumer genuinely needs a timestamp, they can stamp it at
+ * persistence time (e.g. `tools/migrate-model.mjs --out` could attach
+ * a sidecar `<file>.audit.json` with `{migratedAt, fromVersion, toVersion}`).
+ *
+ * @returns {{version: string}}
  */
 export function buildSchemaEnvelope() {
   return {
     version: MODEL_SCHEMA_VERSION,
-    /* ISO-8601 timestamp — useful for cache invalidation, audit,
-       and "this model was parsed before the bug fix at commit X"
-       investigations. UTC so it sorts lexicographically. */
-    generatedAt: new Date().toISOString(),
   };
 }
 

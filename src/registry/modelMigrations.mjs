@@ -144,7 +144,18 @@ export function migrate(model, toVersion = MODEL_SCHEMA_VERSION) {
   }
   const fromVersion = readModelVersion(model);
   const chain = planMigration(fromVersion, toVersion);
-  let cur = model;
+  /* Wave U-1 P0-3 (Boki 2026-06-25 audit U-2 #5) — defence in depth.
+     The built-in 0.0.0->1.0.0 migration is a shallow spread, which
+     leaves `model.topology`, `model.theme`, etc. as shared references
+     with the caller's input. A future MAJOR migration that touches
+     a nested key (e.g. `m.topology.kind = 'X'`) would mutate the
+     caller's original object. We deep-clone the input ONCE here so
+     every registered migration starts from a fully owned copy. The
+     contract that migrations "MUST NOT mutate input" then holds
+     transitively even if a future engineer writes a sloppy migration.
+     `structuredClone` is in Node since 17 and handles every shape
+     that survives JSON round-trip plus Date/Map/Set. */
+  let cur = chain.length > 0 ? structuredClone(model) : model;
   for (const key of chain) {
     const fn = _registry.get(key);
     /* planMigration only emits keys it found in the registry, so this

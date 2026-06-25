@@ -51,9 +51,9 @@
  *     gate path.
  */
 
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, readdirSync, existsSync, rmSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { dirname, resolve, join } from 'node:path';
+import { dirname, resolve, join, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 
@@ -97,17 +97,44 @@ function parseArgv(argv) {
 
 /* ── slug discovery (shared shape with v9-visual-qa) ───────────────── */
 
+/**
+ * Wave U-1 P0-4 (Boki 2026-06-25 audit U-3 #5) — slug whitelist.
+ *
+ * `--slug=../../etc/passwd-dir` could escape REAL_GAMES via `join()`
+ * and land on attacker-controlled `slot.html`. Headless Chromium then
+ * opens that as `file://` — a local-file read primitive (and on some
+ * configs, exfil channel via DNS prefetch). Defense: restrict slug
+ * names to a strict POSIX-portable charset BEFORE any path join, AND
+ * post-resolve assert the file actually lives under REAL_GAMES. Both
+ * checks fail closed (return [] / skip).
+ */
+const _SLUG_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
+function isSafeSlug(slug) {
+  return typeof slug === 'string' && _SLUG_RE.test(slug);
+}
+function _resolveInRealGames(slug, file) {
+  const p = resolve(REAL_GAMES, slug, file);
+  const root = resolve(REAL_GAMES) + sep;
+  return p.startsWith(root) ? p : null;
+}
+
 function listSlugs(slug, limit) {
   if (slug) {
-    if (!existsSync(join(REAL_GAMES, slug, 'slot.html'))) return [];
+    if (!isSafeSlug(slug)) return [];
+    const html = _resolveInRealGames(slug, 'slot.html');
+    if (!html || !existsSync(html)) return [];
     return [slug];
   }
   if (!existsSync(REAL_GAMES)) return [];
   const entries = readdirSync(REAL_GAMES, { withFileTypes: true })
     .filter((e) => e.isDirectory())
     .map((e) => e.name)
-    .filter((s) => existsSync(join(REAL_GAMES, s, 'slot.html'))
-                && existsSync(join(REAL_GAMES, s, 'model.json')))
+    .filter((s) => {
+      if (!isSafeSlug(s)) return false;
+      const html  = _resolveInRealGames(s, 'slot.html');
+      const model = _resolveInRealGames(s, 'model.json');
+      return html && model && existsSync(html) && existsSync(model);
+    })
     .sort();
   return limit ? entries.slice(0, limit) : entries;
 }
@@ -133,8 +160,12 @@ async function captureScreenshots(slug, runDir) {
     return [];
   }
 
-  const htmlPath = join(REAL_GAMES, slug, 'slot.html');
-  if (!existsSync(htmlPath)) return [];
+  /* Wave U-1 P0-4 — defence in depth: re-validate the slug name AND
+     resolve the html path stays within REAL_GAMES even if a future
+     refactor routes around listSlugs. */
+  if (!isSafeSlug(slug)) return [];
+  const htmlPath = _resolveInRealGames(slug, 'slot.html');
+  if (!htmlPath || !existsSync(htmlPath)) return [];
   const url = pathToFileURL(htmlPath).href;
 
   let browser;
@@ -337,9 +368,19 @@ ENV
 
   for (const slug of slugs) {
     let model, html;
+    /* Wave U-1 P0-4 — listSlugs already filtered, but if a caller
+       passes a hand-crafted slug array through processSlug we re-guard
+       here so the read never escapes REAL_GAMES. Belt + suspenders. */
+    const modelPath = _resolveInRealGames(slug, 'model.json');
+    const htmlPath  = _resolveInRealGames(slug, 'slot.html');
+    if (!modelPath || !htmlPath) {
+      receipts.push({ slug, verdict: 'FAIL', error: 'unsafe slug rejected' });
+      fail++;
+      continue;
+    }
     try {
-      model = JSON.parse(readFileSync(join(REAL_GAMES, slug, 'model.json'), 'utf8'));
-      html  = readFileSync(join(REAL_GAMES, slug, 'slot.html'), 'utf8');
+      model = JSON.parse(readFileSync(modelPath, 'utf8'));
+      html  = readFileSync(htmlPath, 'utf8');
     } catch (e) {
       receipts.push({ slug, verdict: 'FAIL', error: `read: ${e.message}` });
       fail++;

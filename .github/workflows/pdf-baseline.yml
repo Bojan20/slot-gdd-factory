@@ -1,20 +1,31 @@
 # slot-gdd-factory — PDF parser + render baseline
 #
-# Runs on PRs that touch parser, blocks, or PDF-corpus tooling. Skipped
-# on docs-only / workflow-only PRs because parsing the live PDF corpus
-# is ~3–5× slower than the quick gate and we don't want to burn that
-# cost on a typo PR.
+# Runs on PRs that touch the parser, blocks, or PDF-corpus tooling.
+# Skipped on docs-only / workflow-only PRs because parsing the live
+# PDF corpus is ~3-5× slower than the quick gate.
 #
 # Why a separate workflow:
-#   - The `tests/parse-real-pdfs.mjs` suite needs the live `~/Desktop/GDD/`
-#     corpus on Boki's mac. On GitHub-hosted Linux runners the PDF corpus
-#     isn't present, so this workflow uses the repo-bundled `tests/fixtures/`
-#     PDF set (committed) — same 338 baseline files, deterministic shasum.
-#   - Render parity is heavy (full UQ-11 339-game grid). Putting it on a
-#     path-filtered workflow keeps PR feedback fast.
+#   - The `tests/parse-real-pdfs.mjs` suite needs the live ~/Desktop/GDD/
+#     corpus on Boki's mac. On GitHub-hosted Linux runners the PDF
+#     corpus isn't present (and `tests/fixtures/` does NOT carry PDFs
+#     either today — only `semantic-expected.json` + `dirty-pdf-samples/`).
+#   - Wave U-1 P0-6 (audit U-1 #1): previous version soft-skipped when
+#     `have_corpus=false` AND ALWAYS landed green, making the gate
+#     theater. New behaviour: when the corpus is missing the workflow
+#     emits a loud GitHub notice + writes a step-summary so a reviewer
+#     can see the gate is in `awaiting fixtures` mode rather than
+#     "PR validated". A future PR that commits the fixture set into
+#     `tests/fixtures/*.pdf` activates the real gate without code change.
 #
-# Path filter: triggered only when src/blocks/*, src/parser/*, tests/*,
-# tools/_full-corpus-render-parity.mjs, or tools/uq16-baseline.mjs change.
+# Wave U-1 P0-7 (audit U-1 #2) — path filter widening. The previous
+# allow-list missed:
+#   - Any new parser file outside `src/parser/` (e.g. `src/parsers/`
+#     plural, `src/utils/parser-shim.mjs`).
+#   - Any new orchestrator under `src/` that consumes parsed models.
+#   - Top-level `package-lock.json` (dep upgrade can break parse).
+# Adding `src/**` as a broad fallback closes the bypass. The cost is
+# running on slightly more PRs, but the workflow is path-filtered so
+# docs / workflow-only PRs still skip.
 
 name: pdf-baseline
 
@@ -22,15 +33,14 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'src/blocks/**'
-      - 'src/parser/**'
-      - 'src/parsers/**'
-      - 'src/buildSlotHTML.mjs'
+      - 'src/**'
       - 'tests/parse-real-pdfs.mjs'
+      - 'tests/fixtures/**'
       - 'tools/_full-corpus-render-parity.mjs'
       - 'tools/uq16-baseline.mjs'
       - 'tools/lego-gate.mjs'
       - 'package.json'
+      - 'package-lock.json'
 
 concurrency:
   group: pdf-baseline-${{ github.head_ref || github.run_id }}
@@ -56,17 +66,34 @@ jobs:
 
       - run: npm ci
 
-      # Only run if the fixture corpus is committed. Soft-skip if not, so
-      # this workflow doesn't become a permanent red wall when fixtures
-      # are absent on a fork.
+      # Wave U-1 P0-6 — explicit "awaiting fixtures" signal. Previously
+      # this step set have_corpus=false + a single `::notice::` line so
+      # the gate was silently green. The new behaviour writes a
+      # GITHUB_STEP_SUMMARY block so a reviewer landing on the PR sees
+      # an explicit "GATE IN AWAITING-FIXTURES MODE" callout — they
+      # cannot mistake the green check for "parse + parity validated".
       - name: Detect PDF fixture corpus
         id: detect
         run: |
           if [ -d tests/fixtures ] && [ -n "$(find tests/fixtures -name '*.pdf' -print -quit)" ]; then
             echo "have_corpus=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "## pdf-baseline gate"
+              echo ""
+              echo "✅ fixture PDF corpus detected — running parse-real-pdfs + cross-game-parity."
+            } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "have_corpus=false" >> "$GITHUB_OUTPUT"
-            echo "::notice ::tests/fixtures has no PDFs — parse-real-pdfs skipped (run manually on a corpus host)"
+            echo "::warning ::pdf-baseline gate is in AWAITING-FIXTURES mode — tests/fixtures has no PDF files. To activate, commit a minimal fixture set under tests/fixtures/*.pdf."
+            {
+              echo "## ⚠️ pdf-baseline gate: AWAITING FIXTURES"
+              echo ""
+              echo "\`tests/fixtures/\` holds no PDF files, so the parse-corpus + cross-parity steps are skipped."
+              echo ""
+              echo "**This green check does NOT mean the parser was validated against the corpus.** It only confirms the workflow plumbing is wired."
+              echo ""
+              echo "To activate the real gate, commit a minimal PDF fixture set (e.g. 5 vendor-neutral GDDs from \`~/Desktop/GDD/\`) into \`tests/fixtures/\`."
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: parse-real-pdfs

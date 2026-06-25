@@ -1,4 +1,4 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-25 17:40 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB + N+2 D-J ✅ DONE)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-25 17:55 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB + N+2 D-J + UQ-U-1 ✅ DONE)
 
 Sve glavne grane backlog-a su zatvorene (Expert P1/P2/P3 +
 nice-to-have N1-N8 + post-backlog ekstenzije A/B/C + N+2 atomi D/E/F/G/H/I/J).
@@ -30,7 +30,31 @@ Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 └──────────────────────────────────────┴────────────────────────────────────┘
 ```
 
-### 🎯 Otvoreno (0 atoma N+2 · 8 P3 idle · 1 čeka signal) — **N+2 H/I/J SVE LANDED**
+### 🎯 Otvoreno (0 N+2 · 0 UQ-U-1 P0 · 8 P3 idle · 1 čeka signal) — **N+2 + UQ-U-1 ZATVORENO**
+
+### 🛡 UQ-U-1 — Ultra-deep QA posle N+2-H/I/J (4-paralel auditor sweep, 2026-06-25)
+
+```
+┌────┬───────────────────────────────────────────────────────┬────────┬───────┐
+│ #  │ P0 atom                                                │ Auditor│ Status│
+├────┼───────────────────────────────────────────────────────┼────────┼───────┤
+│ U1 │ ci.yml dodaje test:model-schema + test:vision-guard    │ U-4 #1 │ ✅    │
+│ U2 │ buildSchemaEnvelope() generatedAt drop (determinism)   │ U-2#21 │ ✅    │
+│ U3 │ migrate() structuredClone (deep-clone defence)         │ U-2 #5 │ ✅    │
+│ U4 │ v9 path traversal: slug regex + REAL_GAMES guard       │ U-3 #5 │ ✅    │
+│ U5 │ migrate-model.mjs fsync atomic write (open+fsync+ren)  │ U-2#10 │ ✅    │
+│ U6 │ pdf-baseline gate: AWAITING-FIXTURES warning summary   │ U-1 #1 │ ✅    │
+│ U7 │ pdf-baseline path filter: src/** + package-lock        │ U-1 #2 │ ✅    │
+│ U8 │ tools/_audit-model-schema.mjs (walker + --migrate)     │ U-4 #2 │ ✅    │
+│    │ 338 model.json migrated in-place (legacy → 1.0.0)      │        │ ✅    │
+└────┴───────────────────────────────────────────────────────┴────────┴───────┘
+```
+
+P1 nalazi iz iste seanse (multi-line fence strip, --limit NaN, empty-env coerces to 0,
+HOME wrapper path discovery, BFS planner, semver tightening, idempotency assertion
+fragility, CLI greedy argv) — backlog za sledeći Wave UQ-U-2.
+
+### 🎯 Otvoreno (PRE QA wave)
 
 ```
 ┌─────┬──────────────────────────────────────────┬────────┬──────────────────┐
