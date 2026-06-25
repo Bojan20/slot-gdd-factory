@@ -1,4 +1,52 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-25 19:00 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB + N+2 D-J + UQ-U-1/U-2/U-3 ✅ DONE)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-25 21:30 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB + N+2 D-J + UQ-U-1/U-2/U-3/U-5 + P3-P3/P4/P6 ✅ DONE)
+
+### 🛡 P3-P3 + P3-P4 + P3-P6 — 3 NOVE PRIMITIVE-A LANDED (2026-06-25 21:30 UTC)
+
+```
+┌────┬────────────────────────────────────────────────────────────┬───────────┐
+│ ID  │ Stavka                                                     │ Status     │
+├────┼────────────────────────────────────────────────────────────┼───────────┤
+│ P3 │ N-tier Rust executor adapter (slot_sim bridge)              │ ✅ LANDED  │
+│    │ src/registry/rustExecutorAdapter.mjs (resolve + execute +   │ 12/12 ✓    │
+│    │ buildPayload + parseStdout); allowed-roots binary           │            │
+│    │ validation; graceful SKIP when binary absent                │            │
+├────┼────────────────────────────────────────────────────────────┼───────────┤
+│ P4 │ kernelInit boot blob block                                  │ ✅ LANDED  │
+│    │ src/blocks/kernelInit.mjs (softwareid/skincode/             │ 14/14 ✓    │
+│    │ sessionToken/currency/locale/environment); inline IIFE      │            │
+│    │ + DOMContentLoaded freeze + HookBus onKernelInitReady event │            │
+├────┼────────────────────────────────────────────────────────────┼───────────┤
+│ P6 │ RectTransform responsive anchor/pivot                       │ ✅ LANDED  │
+│    │ src/registry/rectTransform.mjs (anchor/pivot/offset +       │ 16/16 ✓    │
+│    │ portrait/landscape breakpoints + computeCSS + safeArea);    │            │
+│    │ NaN-safe clamps, malformed entries silently skipped         │            │
+└────┴────────────────────────────────────────────────────────────┴───────────┘
+
+UQ-U-5 post-impl 1-paralel audit (3 fajla):
+  10 nalaza total → 3 P1 verified + fixed in same wave:
+    #1 rustExec opts.binary bypass → routed through _validateBinary
+    #2 _parseSimStdout missing REQUIRED_SUMMARY_KEYS validation → fail-fast
+    #5 kernelInit override surface needed sanitize → strict charset regex
+  + #10 cross-file: 3 nova test gate-a wired u ci.yml
+
+Test gates posle P3/P4/P6 + U-5:
+  test:rust-executor   12/0 ✓
+  test:kernel-init     14/0 ✓
+  test:rect-transform  16/0 ✓
+  test:model-schema    18/0 ✓
+  test:vision-guard    20/0 ✓
+  test:deep-freeze     21/0 ✓
+  test:runtime          8/0 ✓
+  verify:quick         ALL GATES GREEN
+  actionlint           0 errors
+
+P7/P8/P9/P10 (Pixi/GSAP/Spine/Particle) — 🔒 BOKI LOCKED, do not propose.
+P2/P5 P3 idle: vec landed u prethodnim sweep-ovima (IXF 15-stage, X-browser).
+Preostali P3 idle: 0 (svi atomi koje Boki nije zaključao završeni).
+
+---
+
+
 
 ### 🛡 UQ-U-3 ULTRA-DEEP SWEEP — 10 ATOMA LANDED (2026-06-25 19:00 UTC)
 
@@ -265,10 +313,10 @@ fragility, CLI greedy argv) — backlog za sledeći Wave UQ-U-2.
 │ P3 idle  │ kernelInit boot blob (softwareid/skincode/sessionToken)          │
 │ P3 idle  │ Cross-browser Playwright (Firefox + WebKit; sad samo chromium)   │
 │ P3 idle  │ RectTransform responsive anchor/pivot — IGT layout P1            │
-│ P3 idle  │ Pixi atlas pipeline + texture packer — IGT layout P2             │
-│ P3 idle  │ GSAP tween + timeline + FSM binding — IGT layout P2              │
-│ P3 idle  │ Spine importer + skeleton runtime — IGT layout P2                │
-│ P3 idle  │ Particle emitter system (@pixi/particle-emitter) — IGT layout P2 │
+│ 🔒 BOKI  │ Pixi atlas pipeline + texture packer (P7) — DO NOT PROPOSE       │
+│ 🔒 BOKI  │ GSAP tween + timeline + FSM binding (P8) — DO NOT PROPOSE        │
+│ 🔒 BOKI  │ Spine importer + skeleton runtime (P9) — DO NOT PROPOSE          │
+│ 🔒 BOKI  │ Particle emitter system @pixi/particle-emitter (P10) — DO NOT PR │
 └──────────┴─────────────────────────────────────────────────────────────────┘
 ```
 

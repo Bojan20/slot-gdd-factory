@@ -154,3 +154,17 @@ jobs:
       # doc and the runtime registry now fails CI.
       - name: IXF 15-stage coverage smoke
         run: npm run test:ixf-coverage
+
+      # P3-P3/P4/P6 (Boki 2026-06-25) — 3 nova primitive-a:
+      #   rustExecutorAdapter (N-tier Rust bridge), kernelInit (boot
+      #   blob block), rectTransform (responsive anchor/pivot). All
+      #   pure-Node, sub-100ms each. Wired so a future regression in
+      #   the safety / sanitization / clamping logic fails the PR.
+      - name: Rust executor adapter contract suite
+        run: npm run test:rust-executor
+
+      - name: kernelInit block contract suite
+        run: npm run test:kernel-init
+
+      - name: RectTransform layout primitive contract suite
+        run: npm run test:rect-transform
