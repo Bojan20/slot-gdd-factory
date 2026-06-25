@@ -76,12 +76,45 @@ export const VENDOR_RX = /\b(IGT|Pragmatic[\s\-_.]?Play|Megaways|Cash[\s\-_.]?Er
  * @param {unknown} s
  * @returns {boolean}
  */
+/**
+ * UQ-LV3-QA-2 audit #8 (Boki 2026-06-26): mid-word evasion fix.
+ *
+ * Pre-fix `\b` word-boundary anchors meant `pragm-atic` (hyphen in
+ * the middle of the token) was NOT caught — a known evasion vector
+ * for any operator who tries to slip vendor names past the lint by
+ * inserting punctuation. Now we NFKD-normalize and strip every
+ * separator class (whitespace, hyphen, underscore, dot) BEFORE
+ * pattern matching, so `pragm-atic`, `pragm_atic`, `pragm . atic`
+ * all collapse to `pragmatic` and hit the regex.
+ *
+ * The "presence" regex is recomputed without `\b` boundaries on the
+ * normalized string; the original VENDOR_RX (with boundaries) is
+ * still used for `sanitizeStr` because we DO want the original text
+ * untouched outside the actual tainted slice.
+ */
+/* Normalized variants — separators already stripped before this regex
+   runs, so both `Pragmatic` (alone) and `Pragmatic Play` (with the suffix)
+   land on the `pragmatic` prefix here. Word-boundary not used because
+   the input is already canonical-form. */
+const _NORMALIZED_VENDOR_RX = /(igt|pragmatic|megaways|casheruption|wolfrun|cleopatra|buffaloking|buffalogold|netent|microgaming|scientificgames|l&w|lightandwonder|lightwonder|playngo|novomatic)/i;
+function _normalizeForVendor(s) {
+  if (typeof s !== 'string') return '';
+  /* Drop combining marks, separators, then lowercase. */
+  return s
+    .normalize('NFKD')
+    .replace(/\p{M}+/gu, '')
+    .replace(/[\s._\-]+/g, '')
+    .toLowerCase();
+}
+
 export function isVendorTainted(s) {
   if (typeof s !== 'string') return false;
+  /* Two-pass: anchored regex AND normalized check — taint on EITHER. */
   VENDOR_RX.lastIndex = 0;
-  const tainted = VENDOR_RX.test(s);
+  const anchored = VENDOR_RX.test(s);
   VENDOR_RX.lastIndex = 0;
-  return tainted;
+  if (anchored) return true;
+  return _NORMALIZED_VENDOR_RX.test(_normalizeForVendor(s));
 }
 
 /**
@@ -95,12 +128,17 @@ export function isVendorTainted(s) {
 export function sanitizeStr(s, replacement = '[vendor]') {
   if (typeof s !== 'string') return s;
   VENDOR_RX.lastIndex = 0;
-  if (!VENDOR_RX.test(s)) {
-    VENDOR_RX.lastIndex = 0;
-    return s;
-  }
+  let out = s.replace(VENDOR_RX, replacement);
   VENDOR_RX.lastIndex = 0;
-  return s.replace(VENDOR_RX, replacement);
+  /* UQ-LV3-QA-2 audit #8: if isVendorTainted catches a normalized
+     evasion (`pragm-atic`) but anchored regex doesn't, replace the
+     entire string with the replacement marker — operator can't tell
+     where the vendor mention sat inside the separator-laced token,
+     so collapsing the whole string is the safe call. */
+  if (out === s && isVendorTainted(s)) {
+    out = replacement;
+  }
+  return out;
 }
 
 /**
@@ -120,16 +158,23 @@ export function sanitizeStr(s, replacement = '[vendor]') {
  * @param {WeakSet<object>} [_visited]
  * @returns {T}
  */
-export function sanitizeObj(obj, replacement = '[vendor]', _visited = new WeakSet()) {
+/* UQ-LV3-QA-2 audit #9: depth cap. Acyclic 10000-nested JSON still
+   blew the stack (WeakSet only catches cycles, not depth). 200 levels
+   is far past any realistic backend response. */
+const _MAX_SANITIZE_DEPTH = 200;
+export function sanitizeObj(obj, replacement = '[vendor]', _visited = new WeakSet(), _depth = 0) {
   if (obj === null) return obj;
   const t = typeof obj;
   if (t === 'string') return /** @type {T} */ (sanitizeStr(obj, replacement));
   if (t !== 'object') return obj;
+  if (_depth >= _MAX_SANITIZE_DEPTH) return obj;
   if (_visited.has(obj)) return obj;
   _visited.add(obj);
 
   if (Array.isArray(obj)) {
-    return /** @type {T} */ (obj.map((item) => sanitizeObj(item, replacement, _visited)));
+    return /** @type {T} */ (
+      obj.map((item) => sanitizeObj(item, replacement, _visited, _depth + 1))
+    );
   }
 
   /* Class instances stay opaque — same rule as deepFreeze.mjs. */
@@ -141,7 +186,7 @@ export function sanitizeObj(obj, replacement = '[vendor]', _visited = new WeakSe
   const out = {};
   for (const k of Object.keys(obj)) {
     /* Key NOT scrubbed by design — see header. */
-    out[k] = sanitizeObj(obj[k], replacement, _visited);
+    out[k] = sanitizeObj(obj[k], replacement, _visited, _depth + 1);
   }
   return /** @type {T} */ (out);
 }

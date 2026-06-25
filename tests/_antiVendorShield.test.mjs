@@ -156,5 +156,32 @@ t('sanitizeObj: class instance (Date) opaque, not recursed', () => {
   assert.equal(out.when, d);
 });
 
+/* ─── UQ-LV3-QA-2 regression coverage ───────────────────────────── */
+
+t('UQ-LV3-QA-2 audit #8: mid-word evasion (hyphen) is caught', () => {
+  /* Pre-fix: `pragm-atic` slipped past \b boundary. Post-fix:
+     NFKD-normalize + strip-separators collapses to `pragmatic`. */
+  assert.equal(isVendorTainted('pragm-atic'), true);
+  assert.equal(isVendorTainted('pragm . atic'), true);
+  assert.equal(isVendorTainted('pragm_atic'), true);
+});
+
+t('UQ-LV3-QA-2 audit #8: sanitizeStr replaces separator-laced vendor', () => {
+  /* When anchored regex doesn't catch, the whole string is replaced. */
+  const out = sanitizeStr('pragm-atic clone');
+  assert.notEqual(out, 'pragm-atic clone');
+  assert.match(out, /vendor/);
+});
+
+t('UQ-LV3-QA-2 audit #9: sanitizeObj depth cap (no stack overflow)', () => {
+  /* Build a 1000-deep nested object — pre-fix, deeper would blow the
+     stack. Post-fix, cap = 200 returns plain object at the cap point. */
+  let leaf = { name: 'IGT bottom' };
+  for (let i = 0; i < 1000; i++) leaf = { child: leaf };
+  /* Must NOT throw a RangeError. */
+  const out = sanitizeObj(leaf);
+  assert.ok(out, 'sanitizeObj must survive 1000-deep nesting');
+});
+
 console.log(`\nResult: ${pass} pass / ${fail} fail`);
 if (fail > 0) process.exit(1);

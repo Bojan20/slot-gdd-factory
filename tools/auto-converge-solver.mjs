@@ -97,13 +97,37 @@ export async function NewtonOneD(opts) {
     slopeStep = 0.01,
     bounds = [0.01, 100],
   } = opts;
-  const [lo, hi] = bounds;
+  /* UQ-LV3-QA-1 audit #4: inverted bounds [hi, lo] previously pinned
+     param permanently to lo (Math.min(lo, Math.max(hi, x)) collapses).
+     Throw RangeError instead so the caller can't silently consume
+     garbage results. */
+  let [lo, hi] = bounds;
+  if (!(lo < hi)) {
+    throw new RangeError(
+      `NewtonOneD: bounds must satisfy lo < hi, got [${lo}, ${hi}]`,
+    );
+  }
   const _clamp = (x) => Math.min(hi, Math.max(lo, x));
   const iterations = [];
   let param = _clamp(initial);
 
   for (let step = 0; step < maxIterations; step++) {
-    const measured = await measure(param);
+    let measured;
+    try {
+      measured = await measure(param);
+    } catch (e) {
+      /* UQ-LV3-QA-1 audit #3 sister-fix: measure() can throw when
+         runner fails — bail cleanly with the error reason so caller
+         knows WHICH iteration failed. */
+      iterations.push({ step, param, measured: NaN, delta: NaN, error: e.message });
+      return {
+        converged: false,
+        finalParam: param,
+        finalMeasured: NaN,
+        iterations,
+        reason: `measure threw at iter ${step}: ${e.message}`,
+      };
+    }
     const delta = measured - target;
     iterations.push({ step, param, measured, delta });
     if (Math.abs(delta) <= tolerance) {
@@ -112,7 +136,19 @@ export async function NewtonOneD(opts) {
     /* Forward-difference slope estimate (central would cost 2 calls
        per iteration — keep cheaper unless slope is unstable). */
     const probeParam = _clamp(param + slopeStep);
-    const probeMeasured = await measure(probeParam);
+    let probeMeasured;
+    try {
+      probeMeasured = await measure(probeParam);
+    } catch (e) {
+      iterations[iterations.length - 1].probeError = e.message;
+      return {
+        converged: false,
+        finalParam: param,
+        finalMeasured: measured,
+        iterations,
+        reason: `probe measure threw at iter ${step}: ${e.message}`,
+      };
+    }
     const slope = (probeMeasured - measured) / (probeParam - param);
     iterations[iterations.length - 1].slope = slope;
     if (!Number.isFinite(slope) || Math.abs(slope) < 1e-9) {
@@ -177,6 +213,12 @@ export async function NelderMead(opts) {
     maxIterations = 100,
     bounds,
   } = opts;
+  /* UQ-LV3-QA-1 audit #7: empty initial would degenerate into a single-
+     vertex "simplex" that auto-reports converged with no params. Reject
+     loudly. */
+  if (!Array.isArray(initial) || initial.length === 0) {
+    throw new RangeError('NelderMead: initial params array must be non-empty');
+  }
   const N = initial.length;
   const _clampVec = (v) => {
     if (!bounds) return v.slice();
@@ -330,11 +372,20 @@ export async function solveRtp(opts) {
       measure: async (scale) => {
         const params = { reelWeightScale: scale, fsFrequencyScale: 1.0, multiplierPoolShift: 0 };
         const cfg = _buildConfig(params);
-        const r = await runner(cfg);
+        let r;
+        try {
+          r = await runner(cfg);
+        } catch (e) {
+          r = { ok: false, reason: `runner threw: ${e.message}`, latencyMs: 0 };
+        }
         lastResult = r;
         if (!r.ok || typeof r.rtp !== 'number') {
-          /* Solver gets a sentinel that pushes it away (target + huge
-             penalty so the direction stays meaningful). */
+          /* UQ-LV3-QA-1 audit #3: returning a sentinel `targetRtp ± 0.5`
+             corrupts the slope estimate (slope ≈ ±25) and Newton jumps
+             huge distance in WRONG direction on the next iteration.
+             Instead THROW so NewtonOneD's outer try treats it as a
+             genuine measurement failure → slope = NaN → clean bail-out
+             with `slope vanished` reason. */
           history.push({
             step: history.length,
             params,
@@ -343,7 +394,7 @@ export async function solveRtp(opts) {
             latencyMs: r.latencyMs || 0,
             error: r.reason,
           });
-          return targetRtp + (targetRtp > 0.5 ? -0.5 : 0.5);
+          throw new Error(`runner failed at scale=${scale}: ${r.reason || 'unknown'}`);
         }
         history.push({
           step: history.length,
@@ -370,7 +421,12 @@ export async function solveRtp(opts) {
   }
 
   if (strategy === 'simplex') {
-    let lastParams = null;
+    /* UQ-LV3-QA-1 (Boki 2026-06-26, audit #1): track best vertex's
+       actual signed delta via a side-table keyed by canonical-stringified
+       params. Pre-fix this returned `lastParams` (last evaluated, not best)
+       AND used Math.sign(|score|) which loses sign so finalRtp was ALWAYS
+       above target — regulator audit would flag that as math-fraud. */
+    const paramHistory = new Map(); // key=joined params, value={rtp, params, signedDelta}
     const nelder = await NelderMead({
       initial: [1.0, 1.0, 0.0],
       step: 0.1,
@@ -387,8 +443,15 @@ export async function solveRtp(opts) {
           fsFrequencyScale: fsScale,
           multiplierPoolShift: mShift,
         };
-        lastParams = params;
-        const r = await runner(_buildConfig(params));
+        const key = `${wScale}|${fsScale}|${mShift}`;
+        let r;
+        try {
+          r = await runner(_buildConfig(params));
+        } catch (e) {
+          /* UQ-LV3-QA-1 audit #6: NelderMead unhandled objective throw —
+             catch + report as failure (penalty) instead of propagating. */
+          r = { ok: false, reason: `runner threw: ${e.message}`, latencyMs: 0 };
+        }
         if (!r.ok || typeof r.rtp !== 'number') {
           history.push({
             step: history.length,
@@ -398,29 +461,40 @@ export async function solveRtp(opts) {
             latencyMs: r.latencyMs || 0,
             error: r.reason,
           });
+          paramHistory.set(key, { rtp: NaN, params, signedDelta: NaN });
           return Math.abs(targetRtp) * 10; // heavy penalty
         }
-        const deltaBps = Math.abs(r.rtp - targetRtp) * 10_000;
+        const signedDelta = r.rtp - targetRtp;
+        paramHistory.set(key, { rtp: r.rtp, params, signedDelta });
         history.push({
           step: history.length,
           params,
           measuredRtp: r.rtp,
-          deltaBps: (r.rtp - targetRtp) * 10_000,
+          deltaBps: signedDelta * 10_000,
           latencyMs: r.latencyMs,
         });
-        return Math.abs(r.rtp - targetRtp);
+        return Math.abs(signedDelta);
       },
     });
     const finalDelta = Math.abs(nelder.finalScore);
-    return {
-      converged: nelder.converged && finalDelta <= tolerance,
-      finalParams: lastParams || {
+    /* UQ-LV3-QA-1 audit #1: pull best vertex from paramHistory (not the
+       leaked closure variable) and use its REAL signed delta — preserves
+       sign so finalRtp can be above OR below target. */
+    const bestKey = `${nelder.finalParams[0]}|${nelder.finalParams[1]}|${nelder.finalParams[2]}`;
+    const best = paramHistory.get(bestKey) || {
+      params: {
         reelWeightScale: nelder.finalParams[0],
         fsFrequencyScale: nelder.finalParams[1],
         multiplierPoolShift: nelder.finalParams[2],
       },
-      finalRtp: targetRtp + (nelder.finalScore * Math.sign(nelder.finalScore || 1)),
-      deltaBps: nelder.finalScore * 10_000,
+      rtp: targetRtp + nelder.finalScore,
+      signedDelta: nelder.finalScore,
+    };
+    return {
+      converged: nelder.converged && finalDelta <= tolerance,
+      finalParams: best.params,
+      finalRtp: Number.isFinite(best.rtp) ? best.rtp : targetRtp + best.signedDelta,
+      deltaBps: best.signedDelta * 10_000,
       iterations: history,
       reason: nelder.converged ? undefined : `simplex maxIterations (${maxIterations}) reached`,
     };

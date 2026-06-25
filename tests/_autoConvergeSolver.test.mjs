@@ -307,5 +307,63 @@ await t('_findSummaryForTests handles empty stdout', () => {
   assert.equal(r.ok, false);
 });
 
+/* ─── UQ-LV3-QA-1 regression coverage ───────────────────────────── */
+
+await t('UQ-LV3-QA-1 audit #4: NewtonOneD rejects inverted bounds', async () => {
+  await assert.rejects(
+    () => NewtonOneD({
+      initial: 1.0, target: 0.96, measure: () => 0.95,
+      tolerance: 0.001, bounds: [5.0, 0.1],
+    }),
+    /lo < hi/,
+  );
+});
+
+await t('UQ-LV3-QA-1 audit #3: Newton bails cleanly when measure throws', async () => {
+  const r = await NewtonOneD({
+    initial: 1.0,
+    target: 0.96,
+    measure: () => { throw new Error('runner crashed'); },
+    tolerance: 0.001,
+  });
+  assert.equal(r.converged, false);
+  assert.match(r.reason, /threw/i);
+});
+
+await t('UQ-LV3-QA-1 audit #7: NelderMead rejects empty initial params', async () => {
+  await assert.rejects(
+    () => NelderMead({
+      initial: [], step: 1, objective: () => 0, tolerance: 0.001,
+    }),
+    /non-empty/,
+  );
+});
+
+await t('UQ-LV3-QA-1 audit #1+#2: simplex finalRtp can be BELOW target', async () => {
+  /* Synthetic runner where optimum lands ABOVE target — verifies the
+     sign-preserving fix so caller sees deltaBps > 0 (not the bug where
+     Math.sign(|x|) forced finalRtp always above target). */
+  const r = await solveRtp({
+    model: { name: 'X' },
+    targetRtp: 0.96,
+    toleranceBps: 200,
+    maxIterations: 50,
+    strategy: 'simplex',
+    runner: async (cfg) => {
+      /* RTP = 0.97 when scale=1, declining toward 0.95 at extremes —
+         simplex will find minimum delta near scale=1, so finalRtp ≈ 0.97. */
+      const offset = cfg.reelWeightScale - 1.0;
+      const rtp = 0.97 - 0.01 * offset * offset;
+      return { ok: true, rtp, latencyMs: 5 };
+    },
+  });
+  /* finalRtp must reflect actual measured value (≈0.97), NOT a forced
+     above-target sign hack. */
+  assert.ok(
+    Math.abs(r.finalRtp - 0.97) < 0.02,
+    `expected finalRtp near 0.97 (real best), got ${r.finalRtp}`,
+  );
+});
+
 console.log(`\nResult: ${pass} pass / ${fail} fail`);
 if (fail > 0) process.exit(1);

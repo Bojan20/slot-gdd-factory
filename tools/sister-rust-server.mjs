@@ -251,8 +251,15 @@ function _findSummary(stdout) {
   if (!line) return { ok: false, reason: 'no SUMMARY line in stdout' };
   const fields = {};
   for (const part of line.slice('SUMMARY|'.length).split('|')) {
-    const [k, v] = part.split('=');
-    if (!k) continue;
+    /* UQ-LV3-QA-1 audit #5: indexOf-based split so `extra=k=v` stays
+       intact (k="extra", v="k=v"). Previous `.split('=')` destructured
+       to [k="extra", v="k"] and silently dropped "=v" suffix. Numeric
+       contract fields (rtp/hits/spins) aren't affected but any future
+       string telemetry field with `=` would silently corrupt. */
+    const eq = part.indexOf('=');
+    if (eq <= 0) continue;
+    const k = part.slice(0, eq);
+    const v = part.slice(eq + 1);
     const num = Number(v);
     fields[k] = Number.isFinite(num) ? num : v;
   }
