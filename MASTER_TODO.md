@@ -73,8 +73,10 @@ nice-to-have N1-N8 + post-backlog ekstenzije A/B/C + N+2 atomi D/E/F/G/H/I/J).
 Posle toga **30 UQ-DEEP wave-ova (AA → BB)** zatvoreno sa ukupno
 **~108 P0/P1 atoma** (detalji u dnu fajla, "UQ-DEEP-AN do UQ-DEEP-BB track" sekcija).
 **UQ-U-1 ultra-deep audit (2026-06-25): 4-paralel auditori → 8/8 P0 ZATVORENI.**
-HEAD: `ba03291` (UQ-U-1 · 8 P0 fixes · CI green 6-step gate).
-Commit chain danas: `93b5ded → d48caa2 → 6ba2282 → 2846847 → 1495c32 → 7996cc3 → ba03291`.
+**UQ-U-2 P1 batch (2026-06-25): 15 atoma — vision-guard exact math + v9 hardening + migrate-model robustness + workflows unify.**
+**UQ-U-3 2-paralel deep audit (2026-06-25): 10 verified atoma (2 P0 + 8 P1) — clamp / wrapper validation / fence regex / clone fallback / clamping / actionlint SHA-pin / fetch-depth scope.**
+HEAD: `94180b7` (UQ-U-3 · 10 atoma · CI green sa actionlint step).
+Commit chain danas: `93b5ded → d48caa2 → 6ba2282 → 2846847 → 1495c32 → 7996cc3 → ba03291 → 4f7fc1b → 9b28a40 → 94180b7`.
 Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 
 ### 🟢 Trenutno stanje (2026-06-25 18:00 UTC) — šta JE landed
@@ -92,13 +94,16 @@ Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 │ N+2 ekstenzije H (CI/CD pipeline)     │ ✅ LANDED 2026-06-25                │
 │ N+2 ekstenzije I (Schema versioning)  │ ✅ LANDED 2026-06-25                │
 │ N+2 ekstenzije J (V9 vision capped)   │ ✅ LANDED 2026-06-25                │
+│ UQ-U-1 ultra-audit (P0)               │ ✅ 8/8 LANDED ba03291               │
+│ UQ-U-2 P1 batch                       │ ✅ 15/15 LANDED 9b28a40             │
+│ UQ-U-3 2-paralel deep audit           │ ✅ 10/10 LANDED 94180b7             │
 │ P3 idle (8 stavki)                    │ 📋 OPEN — low priority, ne urgent  │
 │ MATH-INTEGRATION-LV3                  │ ⏸ čeka Boki "KRENI" signal         │
 │ AUDIO X1 (HARD RULE #4)               │ 🔒 LOCKED — čeka Boki "sad možeš"  │
 └──────────────────────────────────────┴────────────────────────────────────┘
 ```
 
-### 🎯 Otvoreno (0 N+2 · 0 UQ-U-1 P0 · 8 P3 idle · 1 čeka signal) — **N+2 + UQ-U-1 ZATVORENO**
+### 🎯 Otvoreno (0 N+2 · 0 UQ-U-1 P0 · 0 UQ-U-2 P1 · 0 UQ-U-3 · 8 P3 idle · 1 čeka signal) — **N+2 + UQ-U-1/U-2/U-3 ZATVORENO**
 
 ### 🛡 UQ-U-1 — Ultra-deep QA posle N+2-H/I/J (4-paralel auditor sweep, 2026-06-25)
 
@@ -171,19 +176,22 @@ fragility, CLI greedy argv) — backlog za sledeći Wave UQ-U-2.
 └─────┴──────────────────────────────────────────┴────────┴──────────────────┘
 ```
 
-### 🎯 Trenutni snapshot — posle UQ-U-1 (2026-06-25 18:00 UTC)
+### 🎯 Trenutni snapshot — posle UQ-U-3 (2026-06-25 19:00 UTC)
 
 ```
 ┌─────────────────────────────────────────────┬──────────────────────────────┐
 │ Indikator                                    │ Vrednost                      │
 ├─────────────────────────────────────────────┼──────────────────────────────┤
-│ HEAD commit                                  │ ba03291 (UQ-U-1 8 P0 fix)    │
+│ HEAD commit                                  │ 94180b7 (UQ-U-3 10 atoma)    │
 │ Verify gate                                  │ 33/33 + 100 sub-step GREEN   │
-│ CI gate (GitHub Actions)                     │ 6-step ✓ ba03291 zelena      │
-│   1. checkout · 2. setup-node 22             │                              │
-│   3. npm ci · 4. test:runtime                │ 8/8                          │
-│   5. test:model-schema                       │ 13/13                        │
-│   6. test:vision-guard                       │ 16/16                        │
+│ CI gate (GitHub Actions)                     │ 6-step + actionlint ✓ green  │
+│   1. checkout fetch-depth event-scoped       │ PR=1 / push=0 (sec)          │
+│   2. setup-node 22 (unified all workflows)   │                              │
+│   3. npm ci                                  │                              │
+│   4. actionlint (SHA-pinned @v1 6fb7acc)     │ 0 errors                      │
+│   5. test:runtime                            │ 8/8                          │
+│   6. test:model-schema                       │ 15/15 (incl. pre-release)     │
+│   7. test:vision-guard                       │ 19/19 (incl. micro-cents)    │
 │ Block liveness walker                        │ 0 DEAD (229 × 25 HTMLs)       │
 │ Anti-vendor lint HIGH                        │ 0 (contract restored)        │
 │ UQ-16 render baseline                        │ REBAKED 339/339              │
@@ -195,19 +203,30 @@ fragility, CLI greedy argv) — backlog za sledeći Wave UQ-U-2.
 │ defaultConfig freeze coverage                │ 209/211 (98.6%, 2 exempt)    │
 │ MATH precision band                          │ ±0.05% (PRECISION-3+4 wired) │
 │ Model schema versioning (N+2-I)              │ MODEL_SCHEMA_VERSION = 1.0.0 │
-│ Model migration registry                     │ 0.0.0 → 1.0.0 stamped         │
+│ Pre-release semver (UQ-U-2 #11)              │ SemVer 2.0 §11/§10 ordering  │
+│ Model migration registry                     │ 0.0.0 → 1.0.0 stamped (BFS)  │
+│ migrate() deep-clone                         │ structuredClone + JSON-fallbk│
 │ V9 vision cost guard (N+2-J)                 │ 20 calls / $2.50 / $0.05 est │
+│ V9 cost accumulator                          │ BigInt micro-cents (exact)   │
+│ V9 wrapper validation (UQ-U-3 #2)            │ V9_VISION_WRAPPER allowed-rt │
+│ V9 multi-line fence strip (UQ-U-3 #3)        │ Regex ``` json + lang-tag    │
+│ V9 cost clamp (UQ-U-3 #1)                    │ 10× est OR $10 ceil sane     │
 │ Audit walker dist/real-games                 │ 338 model.json clean (1.0.0) │
+│ Audit walker atomic write (UQ-U-3 #7)        │ open+fsync+rename + unlink   │
 │ Audit walker tools/_wave-v-cache             │ 344 cache envelopes intact   │
-│ Test:model-schema contract suite             │ 13/13 (incl. determinism)    │
-│ Test:vision-guard contract suite             │ 16/16 (mock wrapper, no $$)  │
+│ Test:model-schema contract suite             │ 15/15 (semver + BFS + rstrt) │
+│ Test:vision-guard contract suite             │ 19/19 (mock wrapper, no $$)  │
 │ Test:runtime probes                          │ 8/8                          │
 │ Verify:quick orchestrator                    │ ALL GATES GREEN               │
-│ Actionlint                                   │ 0 errors / 3 workflows       │
+│ Actionlint (CI step + local)                 │ 0 errors / 3 workflows       │
+│ migrate-model.mjs hardening                  │ TTY guard / argv strict /    │
+│                                              │ semver validate / atomic     │
 │ UQ-DEEP track total commits                  │ 30 (AA → BB)                  │
 │ UQ-DEEP track total atoms                    │ ~108 P0/P1                    │
 │ N+2 D-J track                                │ 7/7 LANDED                    │
-│ UQ-U-1 ultra-audit                           │ 8/8 P0 LANDED                 │
+│ UQ-U-1 ultra-audit (P0 sweep)                │ 8/8 LANDED                    │
+│ UQ-U-2 P1 batch                              │ 15/15 LANDED                  │
+│ UQ-U-3 2-paralel deep audit                  │ 10/10 LANDED (2 P0 + 8 P1)   │
 └─────────────────────────────────────────────┴──────────────────────────────┘
 ```
 
