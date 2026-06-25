@@ -1,15 +1,16 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-25 17:55 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB + N+2 D-J + UQ-U-1 ✅ DONE)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-25 18:00 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB + N+2 D-J + UQ-U-1 ✅ DONE)
 
 Sve glavne grane backlog-a su zatvorene (Expert P1/P2/P3 +
 nice-to-have N1-N8 + post-backlog ekstenzije A/B/C + N+2 atomi D/E/F/G/H/I/J).
 **N+2 grane KOMPLETNO ZATVORENE** — ostaje samo P3 idle + Boki "KRENI" / "audio sad možeš" signali.
 Posle toga **30 UQ-DEEP wave-ova (AA → BB)** zatvoreno sa ukupno
 **~108 P0/P1 atoma** (detalji u dnu fajla, "UQ-DEEP-AN do UQ-DEEP-BB track" sekcija).
-HEAD: `1495c32` (N+2-J · V9 vision-mode + cost guard · CI zelena 26s).
-Posle N+2-H+I+J chain: `93b5ded → d48caa2 → 6ba2282 → 2846847 → 1495c32`.
+**UQ-U-1 ultra-deep audit (2026-06-25): 4-paralel auditori → 8/8 P0 ZATVORENI.**
+HEAD: `ba03291` (UQ-U-1 · 8 P0 fixes · CI green 6-step gate).
+Commit chain danas: `93b5ded → d48caa2 → 6ba2282 → 2846847 → 1495c32 → 7996cc3 → ba03291`.
 Audio (X1) ostaje LOCKED dok Boki eksplicitno ne kaže (HARD RULE #4).
 
-### 🟢 Trenutno stanje (2026-06-25 17:40 UTC) — šta JE landed
+### 🟢 Trenutno stanje (2026-06-25 18:00 UTC) — šta JE landed
 
 ```
 ┌──────────────────────────────────────┬────────────────────────────────────┐
@@ -103,33 +104,43 @@ fragility, CLI greedy argv) — backlog za sledeći Wave UQ-U-2.
 └─────┴──────────────────────────────────────────┴────────┴──────────────────┘
 ```
 
-### 🎯 Trenutni snapshot — posle UQ-DEEP-BB (2026-06-25)
+### 🎯 Trenutni snapshot — posle UQ-U-1 (2026-06-25 18:00 UTC)
 
 ```
 ┌─────────────────────────────────────────────┬──────────────────────────────┐
 │ Indikator                                    │ Vrednost                      │
 ├─────────────────────────────────────────────┼──────────────────────────────┤
-│ HEAD commit                                  │ 6bfbab5 (UQ-DEEP-AY)         │
+│ HEAD commit                                  │ ba03291 (UQ-U-1 8 P0 fix)    │
 │ Verify gate                                  │ 33/33 + 100 sub-step GREEN   │
+│ CI gate (GitHub Actions)                     │ 6-step ✓ ba03291 zelena      │
+│   1. checkout · 2. setup-node 22             │                              │
+│   3. npm ci · 4. test:runtime                │ 8/8                          │
+│   5. test:model-schema                       │ 13/13                        │
+│   6. test:vision-guard                       │ 16/16                        │
 │ Block liveness walker                        │ 0 DEAD (229 × 25 HTMLs)       │
 │ Anti-vendor lint HIGH                        │ 0 (contract restored)        │
 │ UQ-16 render baseline                        │ REBAKED 339/339              │
 │ Real-game PDF render                         │ 338/338 PASS                  │
 │ IGT fidelity score                           │ 6 MATCH · 2 PARTIAL · 0 MISS │
-│ i18n catalog                                 │ 156 entries × 5 locales      │
-│ H-1 a11y stamping                            │ 155 entries (6 phases)       │
+│ i18n catalog                                 │ 166 entries × 5 locales      │
 │ HookBus guard coverage                       │ 211/211 (100%)               │
 │ data-block-name coverage                     │ 95%+ (114 markup tagged)     │
 │ defaultConfig freeze coverage                │ 209/211 (98.6%, 2 exempt)    │
 │ MATH precision band                          │ ±0.05% (PRECISION-3+4 wired) │
+│ Model schema versioning (N+2-I)              │ MODEL_SCHEMA_VERSION = 1.0.0 │
+│ Model migration registry                     │ 0.0.0 → 1.0.0 stamped         │
+│ V9 vision cost guard (N+2-J)                 │ 20 calls / $2.50 / $0.05 est │
+│ Audit walker dist/real-games                 │ 338 model.json clean (1.0.0) │
+│ Audit walker tools/_wave-v-cache             │ 344 cache envelopes intact   │
+│ Test:model-schema contract suite             │ 13/13 (incl. determinism)    │
+│ Test:vision-guard contract suite             │ 16/16 (mock wrapper, no $$)  │
+│ Test:runtime probes                          │ 8/8                          │
+│ Verify:quick orchestrator                    │ ALL GATES GREEN               │
+│ Actionlint                                   │ 0 errors / 3 workflows       │
 │ UQ-DEEP track total commits                  │ 30 (AA → BB)                  │
 │ UQ-DEEP track total atoms                    │ ~108 P0/P1                    │
-│ 4-paralel auditor R sweep                    │ 2 fix (P0 + P1), 2 false-pos  │
-│ 5-paralel auditor S sweep                    │ 3 fix + P2 backlog cleanup    │
-│ 5-paralel auditor T sweep                    │ 2 P1 fix, 4 domena čista       │
-│ i18n catalog (post-BA)                       │ 166 entries × 5 locales       │
-│ Regulator gates (post-BA)                    │ gamble + realityCheck + buy   │
-│ Backend/deploy/cache/upload (T-1..T-4)      │ verifikovano čisto             │
+│ N+2 D-J track                                │ 7/7 LANDED                    │
+│ UQ-U-1 ultra-audit                           │ 8/8 P0 LANDED                 │
 └─────────────────────────────────────────────┴──────────────────────────────┘
 ```
 
