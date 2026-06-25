@@ -47,16 +47,27 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # UQ-U-2 atom #12 (Boki 2026-06-25): unify Node version across
+          # all 3 workflows (ci/pdf-baseline/nightly all on 22). Drift
+          # between Node 20 and 22 means a CI-green PR can ship a nightly
+          # red caused only by stdlib timing/import behavior diffs.
+          node-version: '22'
           cache: 'npm'
 
       - run: npm ci
 
-      - name: Run ${{ matrix.probe }}
-        run: npm run ${{ matrix.probe }}
-        # Probe scripts that don't exist in package.json shouldn't kill the
-        # nightly — log a notice and pass. The matrix is intentionally
-        # over-broad so adding a probe to package.json auto-enrolls it.
+      - name: Run nightly probe
+        # UQ-U-2 atom #13 (Boki 2026-06-25): probe name MUST go through
+        # an env var, never directly interpolated into `run:`. GitHub
+        # Actions runs `run:` through bash; ${{ matrix.probe }} would
+        # be substituted BEFORE bash sees the line, so if matrix.probe
+        # were ever sourced from external input (PR title, label, ...)
+        # it would be a shell-injection foothold. Even with hard-coded
+        # matrix today, this is the canonical preempt fix. See:
+        # https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions
+        env:
+          PROBE: ${{ matrix.probe }}
+        run: npm run "$PROBE"
         continue-on-error: false
 
   cross-browser:
@@ -68,7 +79,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # UQ-U-2 atom #12: same unification (Node 22 across the board).
+          node-version: '22'
           cache: 'npm'
 
       - run: npm ci

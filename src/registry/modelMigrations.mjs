@@ -99,34 +99,49 @@ export function planMigration(fromVersion, toVersion) {
       `planMigration: downgrade not supported (from=${fromVersion} > to=${toVersion})`,
     );
   }
-  const chain = [];
-  let cur = fromVersion;
-  const visited = new Set();
-  while (compareSemver(cur, toVersion) < 0) {
-    if (visited.has(cur)) {
-      throw new Error(`planMigration: cycle detected at version ${cur}`);
-    }
-    visited.add(cur);
-    /* Find the registered migration whose `from` matches `cur`. We
-       intentionally take the SHORTEST single step that gets us closer
-       to `toVersion` so a registry with both `1.0.0->1.1.0` and a
-       hypothetical `1.0.0->2.0.0` shortcut still goes step-by-step
-       (deterministic, predictable for tests). */
-    const candidates = Array.from(_registry.keys())
-      .filter((k) => k.startsWith(`${cur}->`))
-      .map((k) => ({ key: k, to: k.split('->')[1] }))
-      .filter((c) => compareSemver(c.to, toVersion) <= 0)
-      /* Prefer the smallest next step (closest to `cur`). */
-      .sort((a, b) => compareSemver(a.to, b.to));
-    if (candidates.length === 0) {
-      throw new Error(
-        `planMigration: no registered migration from ${cur} toward ${toVersion}`,
-      );
-    }
-    chain.push(candidates[0].key);
-    cur = candidates[0].to;
+  /* UQ-U-2 atom #10 (Boki 2026-06-25): proper BFS planner.
+   *
+   * Previous greedy implementation could deadlock or miss the shortest
+   * path when the registry grew. Now BFS:
+   *   - Treats each version as a graph node.
+   *   - Each registered `from->to` edge is one hop.
+   *   - Returns the SHORTEST chain (fewest registered migrations) that
+   *     ends EXACTLY at `toVersion`. If `toVersion` is reachable via
+   *     intermediate steps (1.0.0 → 1.1.0 → 1.2.0 when target is 1.2.0)
+   *     BFS will find it; if a shortcut 1.0.0 → 1.2.0 exists, BFS prefers
+   *     the single-hop path. Deterministic tie-breaker: sorted edge order.
+   *   - Throws when target unreachable, with the visited set in the error
+   *     so consumers can see how far the planner got.
+   */
+  const edgesByFrom = new Map();
+  for (const key of _registry.keys()) {
+    const [from, to] = key.split('->');
+    if (!edgesByFrom.has(from)) edgesByFrom.set(from, []);
+    edgesByFrom.get(from).push({ key, to });
   }
-  return chain;
+  /* Sort each adjacency list so BFS is deterministic across Map insertion order. */
+  for (const edges of edgesByFrom.values()) {
+    edges.sort((a, b) => compareSemver(a.to, b.to));
+  }
+
+  const queue = [{ version: fromVersion, chain: [] }];
+  const visited = new Set([fromVersion]);
+  while (queue.length > 0) {
+    const node = queue.shift();
+    const edges = edgesByFrom.get(node.version) || [];
+    for (const edge of edges) {
+      if (compareSemver(edge.to, toVersion) > 0) continue; // overshoot
+      const nextChain = [...node.chain, edge.key];
+      if (compareSemver(edge.to, toVersion) === 0) return nextChain;
+      if (!visited.has(edge.to)) {
+        visited.add(edge.to);
+        queue.push({ version: edge.to, chain: nextChain });
+      }
+    }
+  }
+  throw new Error(
+    `planMigration: no path from ${fromVersion} to ${toVersion} (visited: ${Array.from(visited).join(', ')})`,
+  );
 }
 
 /**

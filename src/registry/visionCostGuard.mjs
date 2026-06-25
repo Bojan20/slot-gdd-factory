@@ -59,7 +59,15 @@
  * @returns {GuardConfig}
  */
 export function resolveConfig(env = process.env) {
+  /* UQ-U-2 atom #1 (Boki 2026-06-25): empty string + whitespace must NOT
+     coerce to 0. Previously `Number("")` returns 0, which is "in range",
+     so the guard cap silently became 0 → every call refused with
+     "cap reached 0/0". Operators removed a var to "use the default" and
+     instead nuked the system. Now we reject empty / whitespace / null /
+     undefined explicitly before number coercion. */
   const num = (raw, fallback, { min = 0, max = Infinity } = {}) => {
+    if (raw === undefined || raw === null) return fallback;
+    if (typeof raw === 'string' && raw.trim() === '') return fallback;
     const n = Number(raw);
     if (!Number.isFinite(n) || n < min || n > max) return fallback;
     return n;
@@ -102,24 +110,38 @@ export function resolveConfig(env = process.env) {
 export function createGuard(overrides = {}) {
   const cfg = { ...resolveConfig(), ...overrides };
   let calls = 0;
-  let usd = 0;
+  /* UQ-U-2 atom #2 (Boki 2026-06-25): float drift. 100 × 0.05 in IEEE-754
+     does NOT equal 5.0 (real result: 5.000000000000007). With cap $5 and
+     100 calls planned, the 100th call would silently FAIL the pre-check.
+     Fix: track `usdMicroCents` as INTEGER (BigInt-safe range), convert
+     to dollars only at report boundary. Caps + increments are normalized
+     to micro-cents (×1e6) so the arithmetic is exact. */
+  let usdMicroCents = 0n; // 1 dollar = 1_000_000 micro-cents
+  const TO_MC = (dollars) => BigInt(Math.round(dollars * 1_000_000));
+  const FROM_MC = (mc) => Number(mc) / 1_000_000;
 
   function shouldCallVision() {
     if (calls >= cfg.maxCalls) {
       return {
         ok: false,
         reason: `vision call cap reached: ${calls}/${cfg.maxCalls} calls`,
-        remaining: { calls: 0, usd: Math.max(0, cfg.maxUsd - usd) },
+        remaining: {
+          calls: 0,
+          usd: Math.max(0, cfg.maxUsd - FROM_MC(usdMicroCents)),
+        },
       };
     }
     /* Pre-call check: would this PLANNED call push us past the $$
        ceiling? Use the configured estimate. The actual recordCall()
        takes the observed cost, so an over-estimate just means we cap
        slightly early — that's the safe direction to err. */
-    if (usd + cfg.estUsdPerCall > cfg.maxUsd) {
+    const maxMc = TO_MC(cfg.maxUsd);
+    const estMc = TO_MC(cfg.estUsdPerCall);
+    if (usdMicroCents + estMc > maxMc) {
+      const usdSnapshot = FROM_MC(usdMicroCents);
       return {
         ok: false,
-        reason: `vision $$ cap would be exceeded: $${usd.toFixed(2)} + $${cfg.estUsdPerCall} > $${cfg.maxUsd}`,
+        reason: `vision $$ cap would be exceeded: $${usdSnapshot.toFixed(2)} + $${cfg.estUsdPerCall} > $${cfg.maxUsd}`,
         remaining: { calls: Math.max(0, cfg.maxCalls - calls), usd: 0 },
       };
     }
@@ -127,7 +149,7 @@ export function createGuard(overrides = {}) {
       ok: true,
       remaining: {
         calls: cfg.maxCalls - calls,
-        usd: cfg.maxUsd - usd,
+        usd: cfg.maxUsd - FROM_MC(usdMicroCents),
       },
     };
   }
@@ -137,16 +159,17 @@ export function createGuard(overrides = {}) {
     /* Allow the caller to pass an observed cost (e.g. parsed from the
        wrapper's token-count line). When absent we fall back to the
        est-per-call so the accumulator still moves. */
-    const inc = typeof opts.usd === 'number' && Number.isFinite(opts.usd) && opts.usd >= 0
-      ? opts.usd
-      : cfg.estUsdPerCall;
-    usd += inc;
+    const inc =
+      typeof opts.usd === 'number' && Number.isFinite(opts.usd) && opts.usd >= 0
+        ? opts.usd
+        : cfg.estUsdPerCall;
+    usdMicroCents += TO_MC(inc);
   }
 
   function report() {
     return {
       calls,
-      usd: Number(usd.toFixed(4)),
+      usd: Number(FROM_MC(usdMicroCents).toFixed(4)),
       maxCalls: cfg.maxCalls,
       maxUsd: cfg.maxUsd,
       estUsdPerCall: cfg.estUsdPerCall,
@@ -155,7 +178,7 @@ export function createGuard(overrides = {}) {
 
   function reset() {
     calls = 0;
-    usd = 0;
+    usdMicroCents = 0n;
   }
 
   return { shouldCallVision, recordCall, report, reset };

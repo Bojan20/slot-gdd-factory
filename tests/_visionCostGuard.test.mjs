@@ -268,6 +268,42 @@ await t('processSlug: vision cost recorded into guard', async () => {
   assert.ok(Math.abs(r.usd - 0.04) < 1e-9, `expected ~0.04, got ${r.usd}`);
 });
 
+/* ─── UQ-U-2 atom #1 (empty-env coerces to 0 → silent cap=0) ─────── */
+await t('resolveConfig: empty / whitespace env DOES NOT coerce to 0', async () => {
+  const { resolveConfig } = await import('../src/registry/visionCostGuard.mjs');
+  /* Boki removed CORTEX_V9_MAX_VISION_CALLS thinking "this will use the
+     default". Previously `Number("")` → 0, in [0, 10_000], so cap became
+     0 and EVERY call refused. Now: empty / whitespace / undefined → fallback. */
+  const cfg1 = resolveConfig({ V9_MAX_VISION_CALLS: '' });
+  assert.equal(cfg1.maxCalls, 20, 'empty string must use default 20');
+  const cfg2 = resolveConfig({ V9_MAX_VISION_CALLS: '   ' });
+  assert.equal(cfg2.maxCalls, 20, 'whitespace must use default 20');
+  const cfg3 = resolveConfig({});
+  assert.equal(cfg3.maxCalls, 20, 'absent must use default 20');
+  /* Legit overrides still honored */
+  const cfg4 = resolveConfig({ V9_MAX_VISION_CALLS: '5' });
+  assert.equal(cfg4.maxCalls, 5);
+});
+
+/* ─── UQ-U-2 atom #2 (float drift on 100×0.05) ──────────────────── */
+await t('createGuard: 100 × 0.05 calls do NOT trip $5 cap due to float drift', async () => {
+  /* Pre-fix: 100 * 0.05 in IEEE-754 = 5.000000000000007, so the 100th
+     call's pre-check would silently FAIL even though "we said $5.00".
+     Post-fix: usd tracked as BigInt micro-cents, exact arithmetic. */
+  const guard = createGuard({ maxCalls: 100, maxUsd: 5, estUsdPerCall: 0.05 });
+  for (let i = 0; i < 100; i++) {
+    const d = guard.shouldCallVision();
+    assert.equal(d.ok, true, `call ${i} should pass; reason: ${d.reason}`);
+    guard.recordCall(); // uses estUsdPerCall = 0.05
+  }
+  const r = guard.report();
+  assert.equal(r.calls, 100);
+  assert.equal(r.usd, 5.0, `expected exactly $5.00, got ${r.usd}`);
+  /* 101st must fail — call cap reached. */
+  const final = guard.shouldCallVision();
+  assert.equal(final.ok, false);
+});
+
 /* cleanup */
 rmSync(TMP, { recursive: true, force: true });
 

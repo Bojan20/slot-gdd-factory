@@ -61,7 +61,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # UQ-U-2 atom #12 (Boki 2026-06-25): unify Node 22 across all
+          # 3 workflows so behavior drift can't hide between gates.
+          node-version: '22'
           cache: 'npm'
 
       - run: npm ci

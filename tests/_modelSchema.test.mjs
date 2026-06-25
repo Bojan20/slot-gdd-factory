@@ -36,6 +36,7 @@ import {
   migrate,
   planMigration,
   listMigrations,
+  register,
 } from '../src/registry/modelMigrations.mjs';
 import { parseGDD } from '../src/parser.mjs';
 
@@ -200,6 +201,43 @@ t('CLI: --list prints registry; --version reads file; round-trip OK', () => {
   assert.ok(listMigrations().length >= 1);
 
   rmSync(dir, { recursive: true, force: true });
+});
+
+/* ─── UQ-U-2 atom #11 (pre-release semver) ─────────────────────────── */
+t('compareSemver: pre-release ordering per SemVer 2.0 §11', () => {
+  /* Any pre-release < the release without pre-release */
+  assert.ok(compareSemver('1.0.0-rc1', '1.0.0') < 0);
+  assert.ok(compareSemver('1.0.0', '1.0.0-rc1') > 0);
+  /* Numeric identifier ordering inside pre-release */
+  assert.ok(compareSemver('1.0.0-rc1', '1.0.0-rc2') < 0);
+  /* Alphabetic identifier ordering */
+  assert.ok(compareSemver('1.0.0-alpha', '1.0.0-beta') < 0);
+  /* Same pre-release equal */
+  assert.equal(compareSemver('1.0.0-rc1', '1.0.0-rc1'), 0);
+  /* Build metadata ignored per §10 */
+  assert.equal(compareSemver('1.0.0+build1', '1.0.0+build2'), 0);
+});
+
+t('parseSemver strict mode throws on garbage', () => {
+  /* Default (non-strict) returns [0,0,0] for back-compat */
+  assert.deepEqual(parseSemver('not-a-version'), [0, 0, 0]);
+  /* Strict mode throws */
+  assert.throws(() => parseSemver('not-a-version', { strict: true }), /not a valid semver/);
+  assert.throws(() => parseSemver('1.2', { strict: true }), /not a valid semver/);
+  /* Valid + strict returns triple */
+  assert.deepEqual(parseSemver('2.3.4', { strict: true }), [2, 3, 4]);
+  /* Pre-release also valid in strict (suffix dropped from tuple) */
+  assert.deepEqual(parseSemver('1.0.0-rc1', { strict: true }), [1, 0, 0]);
+});
+
+/* ─── UQ-U-2 atom #10 (BFS planner) ─────────────────────────────────── */
+t('planMigration BFS finds shortest path through multi-hop chain', () => {
+  /* Re-register fixtures so test is hermetic. The runner allows
+     re-registration so this is safe in-process. */
+  register('1.0.0', '1.1.0', (m) => ({ ...m, __schema__: { version: '1.1.0' } }));
+  register('1.1.0', '1.2.0', (m) => ({ ...m, __schema__: { version: '1.2.0' } }));
+  const chain = planMigration('1.0.0', '1.2.0');
+  assert.deepEqual(chain, ['1.0.0->1.1.0', '1.1.0->1.2.0']);
 });
 
 console.log(`\nResult: ${pass} pass / ${fail} fail`);

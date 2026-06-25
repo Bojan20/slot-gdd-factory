@@ -65,6 +65,7 @@ import {
   MODEL_SCHEMA_VERSION,
   readModelVersion,
   compareSemver,
+  parseSemver,
 } from '../src/registry/modelSchemaVersion.mjs';
 import {
   migrate,
@@ -73,14 +74,32 @@ import {
 } from '../src/registry/modelMigrations.mjs';
 
 /* ── tiny argv parser (no external dep) ──────────────────────────── */
+/* UQ-U-2 atom #8 (Boki 2026-06-25): the previous greedy `argv[++i]` had
+   NO guard against the next token being another flag. `--in --out a.json`
+   would assign `--out` as the value of `--in`, then `a.json` became `--out`
+   value, then `--list` would be missing if not last. New parser validates
+   that the NEXT token is not itself a `--flag`, throws explicit error. */
+function _consumeValueArg(argv, i, flag) {
+  const next = argv[i + 1];
+  if (next === undefined) {
+    throw new Error(`${flag} requires a value but none was given`);
+  }
+  if (typeof next === 'string' && next.startsWith('--')) {
+    throw new Error(`${flag} requires a value but got next flag: ${next}`);
+  }
+  return next;
+}
+
 function parseArgv(argv) {
   const out = { _: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--in' || a === '--out' || a === '--to') {
-      out[a.slice(2)] = argv[++i];
+      out[a.slice(2)] = _consumeValueArg(argv, i, a);
+      i++;
     } else if (a === '--version') {
-      out.version = argv[++i];
+      out.version = _consumeValueArg(argv, i, a);
+      i++;
     } else if (a === '--dry-run') {
       out.dryRun = true;
     } else if (a === '--quiet') {
@@ -163,8 +182,25 @@ const inPath = args.in === '-' ? null : resolve(args.in);
 const outPath = args.out ? resolve(args.out) : inPath;
 const target = args.to || MODEL_SCHEMA_VERSION;
 
+/* UQ-U-2 atom #9 (Boki 2026-06-25): --to validated up-front via parseSemver.
+   Before this, garbage like `--to abc` survived until planMigration which
+   would emit a misleading "no migration path" instead of "bad input".
+   Throw clear error fast (strict mode rejects malformed semver). */
+try {
+  parseSemver(target, { strict: true });
+} catch (e) {
+  die(1, `--to value is not valid semver: ${target} (${e.message})`);
+}
+
+/* UQ-U-2 atom #7 (Boki 2026-06-25): stdin TTY guard. `readFileSync(0)`
+   blocks FOREVER if stdin is a TTY (interactive terminal), so a forgotten
+   `--in -` flag freezes the CLI with no diagnostic. Detect TTY and exit
+   with helpful message. */
 let raw;
 if (inPath === null) {
+  if (process.stdin.isTTY) {
+    die(2, '--in - expects piped stdin, but stdin is a TTY (no data). Pipe a file or pass --in <path>.');
+  }
   /* read stdin sync — small payload, fine for CLI use */
   try {
     raw = readFileSync(0, 'utf8');

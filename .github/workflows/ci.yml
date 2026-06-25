@@ -91,6 +91,29 @@ jobs:
       - name: Install deps (npm ci)
         run: npm ci
 
+      # UQ-U-2 atom #14 (Boki 2026-06-25): actionlint as a first-class
+      # CI step. Catches YAML/syntax/shellcheck issues in workflows
+      # BEFORE the rest of the gate runs (so a mistyped matrix value
+      # or unquoted shell var in `run:` fails fast). actionlint is
+      # vendored by the rhysd/actionlint action which pulls the latest
+      # binary on the runner — no install footprint in repo.
+      #
+      # UQ-U-2 atom #15 — SHA pin decision: rhysd/actionlint@v1 + the
+      # actions/checkout@v4 + actions/setup-node@v4 are LEFT AT TAG
+      # because (a) they are first-party / well-known maintained,
+      # (b) GitHub displays the tag → commit SHA mapping in the
+      # workflow viewer, (c) full SHA pinning needs a periodic
+      # refresh dance (dependabot or manual quarterly sweep) which
+      # this repo doesn't yet have set up. Document the decision so
+      # the next audit doesn't repeat the finding without context.
+      - name: Lint workflows (actionlint)
+        uses: reviewdog/action-actionlint@v1
+        with:
+          # reviewdog 2025 rename: fail_on_error → fail_level (string,
+          # one of: none/any/info/warning/error). 'error' = fail on real
+          # errors (same as old fail_on_error: true).
+          fail_level: error
+
       - name: Runtime probes
         run: npm run test:runtime
 

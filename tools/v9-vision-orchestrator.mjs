@@ -79,9 +79,9 @@ function parseArgv(argv) {
     } else if (a === '--slug') {
       out.slug = argv[++i];
     } else if (a.startsWith('--limit=')) {
-      out.limit = parseInt(a.slice('--limit='.length), 10);
+      out.limit = _parseLimit(a.slice('--limit='.length));
     } else if (a === '--limit') {
-      out.limit = parseInt(argv[++i], 10);
+      out.limit = _parseLimit(argv[++i]);
     } else if (a.startsWith('--mock-wrapper=')) {
       out.mockWrapper = a.slice('--mock-wrapper='.length);
     } else if (a === '--mock-wrapper') {
@@ -93,6 +93,24 @@ function parseArgv(argv) {
     }
   }
   return out;
+}
+
+/* UQ-U-2 atom #4 (Boki 2026-06-25): --limit must reject NaN / negative /
+   non-integer with explicit error, not silently coerce to NaN (which then
+   `entries.slice(0, NaN)` returns 0 → orchestrator silently processes
+   NOTHING, looking like success). Returns positive integer or throws.
+   Empty / undefined → returns undefined (no limit = "all"). */
+function _parseLimit(raw) {
+  if (raw === undefined || raw === null || raw === '') return undefined;
+  const s = String(raw).trim();
+  if (!/^\d+$/.test(s)) {
+    throw new Error(`--limit must be a non-negative integer, got: ${JSON.stringify(raw)}`);
+  }
+  const n = parseInt(s, 10);
+  if (!Number.isFinite(n) || n < 0) {
+    throw new Error(`--limit must be a non-negative integer, got: ${JSON.stringify(raw)}`);
+  }
+  return n;
 }
 
 /* ── slug discovery (shared shape with v9-visual-qa) ───────────────── */
@@ -231,8 +249,15 @@ async function captureScreenshots(slug, runDir) {
  * @returns {{verdict: string, score?: number, observed?: string, estUsd?: number}}
  */
 function visionCall(model, screenshotPaths, opts = {}) {
-  const wrapper = opts.wrapperPath
-    || `${process.env.HOME}/Projects/cortex/scripts/cortex-fable-ask`;
+  /* UQ-U-2 atom #5 (Boki 2026-06-25): wrapper resolution order MUST allow
+     env override before the HOME-hardcoded fallback. CI / sandboxed user
+     accounts (no HOME, or HOME != /Users/vanvinklstudio) used to silently
+     SKIP every game. Order: explicit opts.wrapperPath → V9_VISION_WRAPPER
+     env → HOME-hardcoded default. */
+  const wrapper =
+    opts.wrapperPath
+    || (process.env.V9_VISION_WRAPPER && process.env.V9_VISION_WRAPPER.trim()) ||
+    `${process.env.HOME}/Projects/cortex/scripts/cortex-fable-ask`;
   if (!existsSync(wrapper)) {
     return { verdict: 'SKIP', observed: 'wrapper missing', estUsd: 0 };
   }
@@ -264,8 +289,21 @@ function visionCall(model, screenshotPaths, opts = {}) {
   }
   let parsed = null;
   try {
-    const txt = (r.stdout || '').replace(/^```(?:json)?\s*|\s*```$/g, '').trim();
-    parsed = JSON.parse(txt);
+    /* UQ-U-2 atom #3 (Boki 2026-06-25): multi-line code fence strip.
+       Old regex matched ONLY single-line ``` at start/end. Opus 4.8
+       reply often arrives as:
+         ```json\n{ ... }\n```
+       with newline AFTER the opening fence. The old `\s*` after ```
+       didn't consume `\n` in default regex flags (in JS `\s` does
+       include \n, BUT the original `^```...$` anchored at line head
+       only matched first-line fence — the closing ``` on its own line
+       was never stripped). New regex uses `^```...?\r?\n` then `\r?\n?```\s*$`
+       and the `m` flag so anchors match line boundaries. Empty fence
+       block also handled. */
+    let txt = (r.stdout || '').trim();
+    txt = txt.replace(/^```(?:json|JSON)?\s*\r?\n?/, '');
+    txt = txt.replace(/\r?\n?```\s*$/, '');
+    parsed = JSON.parse(txt.trim());
   } catch (e) {
     return {
       verdict: 'WARN',
@@ -356,8 +394,14 @@ ENV
   const guard   = createGuard();
   const vision  = args.flags.has('vision');
   const dryRun  = args.flags.has('dry-run');
-  const runDir  = join(tmpdir(), `v9-vision-${process.pid}-${Date.now()}`);
-  if (vision && !dryRun) mkdirSync(runDir, { recursive: true });
+  /* UQ-U-2 atom #6 (Boki 2026-06-25): switched to mkdtempSync (atomic
+     unique-name temp dir) + try/finally cleanup. Previous PID+Date.now()
+     name had collision risk (two orchestrators kicked off in same ms by
+     a CI test matrix would clobber) and never reaped on crash mid-loop. */
+  let runDir = '';
+  if (vision && !dryRun) {
+    runDir = mkdtempSync(join(tmpdir(), `v9-vision-${process.pid}-`));
+  }
 
   process.stdout.write(
     `V9 Vision orchestrator · ${slugs.length} slug(s) · vision=${vision} dry-run=${dryRun}\n`,
@@ -366,6 +410,9 @@ ENV
   const receipts = [];
   let pass = 0, warn = 0, fail = 0, skip = 0, visionFired = 0;
 
+  /* UQ-U-2 atom #6: try/finally guarantees mkdtempSync cleanup even if
+     processSlug() throws mid-loop (Playwright crash, JSON parse fail). */
+  try {
   for (const slug of slugs) {
     let model, html;
     /* Wave U-1 P0-4 — listSlugs already filtered, but if a caller
@@ -401,8 +448,10 @@ ENV
     }
   }
 
-  if (vision && !dryRun) {
-    try { rmSync(runDir, { recursive: true, force: true }); } catch (_) { /* ignore */ }
+  } finally {
+    if (vision && !dryRun && runDir) {
+      try { rmSync(runDir, { recursive: true, force: true }); } catch (_) { /* ignore */ }
+    }
   }
 
   const ts = new Date().toISOString();

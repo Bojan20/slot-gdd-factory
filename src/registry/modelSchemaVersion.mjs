@@ -52,34 +52,112 @@
 export const MODEL_SCHEMA_VERSION = '1.0.0';
 
 /**
- * Parse a semver triple `MAJOR.MINOR.PATCH` into an array. Returns
- * `[0, 0, 0]` for non-string / malformed input — the migrator treats
- * that as "older than 1.0.0" and routes through the legacy stamp path.
+ * Parse a semver triple `MAJOR.MINOR.PATCH[-prerelease][+build]` into a
+ * structured object. Returns `null` for non-string / malformed input —
+ * the migrator treats that as "older than 1.0.0" and routes through the
+ * legacy stamp path. Wrapper `parseSemver` (below) is the back-compat
+ * tuple form callers already used.
+ *
+ * # UQ-U-2 atom #11 (Boki 2026-06-25): pre-release support
+ *
+ * Pre-release identifiers (`1.0.0-rc1`, `2.0.0-beta.3`) order LOWER than
+ * the same MAJOR.MINOR.PATCH without pre-release per SemVer 2.0 §11.
+ * Build metadata after `+` is IGNORED for ordering per §10. This lets
+ * us cut release candidates without breaking the migration planner.
  *
  * @param {unknown} v
- * @returns {[number, number, number]}
+ * @returns {{major:number,minor:number,patch:number,prerelease:string[]|null}|null}
  */
-export function parseSemver(v) {
-  if (typeof v !== 'string') return [0, 0, 0];
-  const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(v.trim());
-  if (!m) return [0, 0, 0];
-  return [Number(m[1]), Number(m[2]), Number(m[3])];
+function parseSemverFull(v) {
+  if (typeof v !== 'string') return null;
+  const m = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/.exec(v.trim());
+  if (!m) return null;
+  return {
+    major: Number(m[1]),
+    minor: Number(m[2]),
+    patch: Number(m[3]),
+    prerelease: m[4] ? m[4].split('.') : null,
+  };
 }
 
 /**
- * Compare two semver triples. Returns negative if `a < b`, zero if
- * equal, positive if `a > b`. Used by the migration runner to decide
- * whether more migrations are needed.
+ * Parse a semver into `[MAJOR, MINOR, PATCH]` tuple. Pre-release suffix
+ * is dropped from the tuple (use `parseSemverFull` if you need it).
+ *
+ * Returns `[0, 0, 0]` for non-string / malformed input by default
+ * (back-compat with pre-UQ-U-2 callers that route "garbage" through
+ * the legacy 0.x migration path). Pass `{strict: true}` to throw on
+ * malformed input — used by CLI flag validation that needs a clear
+ * "this is not a semver" signal.
+ *
+ * @param {unknown} v
+ * @param {{strict?: boolean}} [opts]
+ * @returns {[number, number, number]}
+ * @throws {TypeError} when `opts.strict` is true and input is invalid
+ */
+export function parseSemver(v, opts = {}) {
+  const full = parseSemverFull(v);
+  if (!full) {
+    if (opts.strict) {
+      throw new TypeError(`parseSemver: not a valid semver: ${JSON.stringify(v)}`);
+    }
+    return [0, 0, 0];
+  }
+  return [full.major, full.minor, full.patch];
+}
+
+/**
+ * Compare two semver strings per SemVer 2.0 ordering rules. Returns
+ * negative if `a < b`, zero if equal, positive if `a > b`. Used by the
+ * migration runner to decide whether more migrations are needed.
+ *
+ * Pre-release identifiers compare per §11:
+ *   - 1.0.0-rc1 < 1.0.0  (any pre-release is less than the release)
+ *   - 1.0.0-rc1 < 1.0.0-rc2  (numeric identifier ordering)
+ *   - 1.0.0-alpha < 1.0.0-beta  (alphabetic identifier ordering)
  *
  * @param {string} a
  * @param {string} b
  * @returns {number}
  */
 export function compareSemver(a, b) {
-  const A = parseSemver(a);
-  const B = parseSemver(b);
-  for (let i = 0; i < 3; i++) {
-    if (A[i] !== B[i]) return A[i] - B[i];
+  const A = parseSemverFull(a);
+  const B = parseSemverFull(b);
+  if (!A || !B) {
+    /* Legacy fallback: treat unparseable as 0.0.0 (existing behaviour). */
+    const fa = parseSemverFull(a) || { major: 0, minor: 0, patch: 0, prerelease: null };
+    const fb = parseSemverFull(b) || { major: 0, minor: 0, patch: 0, prerelease: null };
+    return _cmpFull(fa, fb);
+  }
+  return _cmpFull(A, B);
+}
+
+function _cmpFull(A, B) {
+  if (A.major !== B.major) return A.major - B.major;
+  if (A.minor !== B.minor) return A.minor - B.minor;
+  if (A.patch !== B.patch) return A.patch - B.patch;
+  /* Pre-release ordering per SemVer 2.0 §11 */
+  if (A.prerelease === null && B.prerelease === null) return 0;
+  if (A.prerelease === null) return 1; // release > prerelease
+  if (B.prerelease === null) return -1;
+  const len = Math.max(A.prerelease.length, B.prerelease.length);
+  for (let i = 0; i < len; i++) {
+    const ai = A.prerelease[i];
+    const bi = B.prerelease[i];
+    if (ai === undefined) return -1; // shorter set with all preceding equal is lower
+    if (bi === undefined) return 1;
+    const aNum = /^\d+$/.test(ai);
+    const bNum = /^\d+$/.test(bi);
+    if (aNum && bNum) {
+      const d = Number(ai) - Number(bi);
+      if (d !== 0) return d;
+    } else if (aNum) {
+      return -1; // numeric identifiers always have lower precedence than alphanumeric
+    } else if (bNum) {
+      return 1;
+    } else if (ai !== bi) {
+      return ai < bi ? -1 : 1;
+    }
   }
   return 0;
 }
@@ -133,6 +211,9 @@ export function readModelVersion(model) {
   if (typeof v !== 'string') return '0.0.0';
   /* Defensive: if someone hand-edited the cache JSON and the version
      no longer matches semver, fall through to legacy so the migration
-     runner can re-stamp it cleanly. */
-  return /^\d+\.\d+\.\d+$/.test(v.trim()) ? v.trim() : '0.0.0';
+     runner can re-stamp it cleanly. UQ-U-2 atom #11: pre-release allowed. */
+  const trimmed = v.trim();
+  return /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(trimmed)
+    ? trimmed
+    : '0.0.0';
 }

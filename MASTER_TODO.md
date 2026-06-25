@@ -1,4 +1,40 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-25 18:00 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB + N+2 D-J + UQ-U-1 ✅ DONE)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-25 18:25 UTC (FINAL · N1-N8 + A/B/C + UQ-DEEP AA→BB + N+2 D-J + UQ-U-1/U-2 ✅ DONE)
+
+### 🛡 UQ-U-2 P1 BATCH — 15 ATOMA LANDED (2026-06-25 18:25 UTC)
+
+```
+┌────┬───────────────────────────────────────────────────────┬───────────┐
+│ #  │ P1 atom                                                │ Status     │
+├────┼───────────────────────────────────────────────────────┼───────────┤
+│  1 │ visionCostGuard empty-env coerces to 0 → cap=0 silent  │ ✅ FIXED   │
+│  2 │ visionCostGuard float drift 100×0.05 ≠ $5.00          │ ✅ FIXED   │
+│  3 │ v9 multi-line ``` fence strip regex line-anchored only │ ✅ FIXED   │
+│  4 │ v9 --limit NaN → silent 0 slugs                        │ ✅ FIXED   │
+│  5 │ v9 wrapper HOME hardcode bez V9_VISION_WRAPPER override│ ✅ FIXED   │
+│  6 │ v9 mkdtempSync + try/finally cleanup                   │ ✅ FIXED   │
+│  7 │ migrate-model stdin TTY guard (block forever fix)      │ ✅ FIXED   │
+│  8 │ migrate-model parseArgv greedy --in --out poklapa      │ ✅ FIXED   │
+│  9 │ migrate-model --to garbage validation upfront          │ ✅ FIXED   │
+│ 10 │ modelMigrations BFS planner (zameni greedy walk)       │ ✅ FIXED   │
+│ 11 │ modelSchemaVersion pre-release semver (1.0.0-rc1)      │ ✅ FIXED   │
+│ 12 │ Node version drift workflows (ci=22, nightly=20)       │ ✅ FIXED   │
+│ 13 │ nightly matrix expression-injection preempt fix        │ ✅ FIXED   │
+│ 14 │ actionlint kao CI step                                 │ ✅ FIXED   │
+│ 15 │ SHA-pin actions decision dokumentovan (acknowledge)   │ ✅ DOC'D   │
+└────┴───────────────────────────────────────────────────────┴───────────┘
+
+Post-impl ultra QA: GO commit · 0 regresija · 0 P0/P1 rupa · 13/15 clean,
+2/15 🟡 advisory (--limit 0 = "all" pre-existing semantic + actionlint @v1
+floating tag acknowledged-decision).
+
+Test gates:
+  test:model-schema    13 → 16 pass / 0 fail  (+3 testa)
+  test:vision-guard    16 → 18 pass / 0 fail  (+2 testa)
+  test:runtime         8 / 0
+  verify:quick         ALL GREEN
+  actionlint           0 errors (3 workflows)
+
+---
 
 Sve glavne grane backlog-a su zatvorene (Expert P1/P2/P3 +
 nice-to-have N1-N8 + post-backlog ekstenzije A/B/C + N+2 atomi D/E/F/G/H/I/J).
