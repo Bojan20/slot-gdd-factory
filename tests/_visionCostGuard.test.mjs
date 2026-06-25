@@ -5,23 +5,27 @@
  * cost guard + orchestrator. Uses a mock wrapper (shell script that
  * echoes canned JSON) so no real Opus call ever fires from CI.
  *
- * Covers:
- *   1. resolveConfig env defaults + override
- *   2. resolveConfig rejects malformed env values
- *   3. createGuard() default decision is OK
- *   4. createGuard() refuses when call cap hit
- *   5. createGuard() refuses when $$ cap would be exceeded
- *   6. recordCall accumulates calls + $$
- *   7. report() returns frozen-style snapshot
- *   8. reset() clears accumulator
- *   9. defaultGuard is shared module-level instance
- *  10. processSlug: vision=false → no vision field on receipt
- *  11. processSlug: PASS verdict never triggers vision
- *  12. processSlug: WARN verdict triggers vision (mock wrapper)
- *  13. processSlug: FAIL verdict triggers vision
- *  14. processSlug: dry-run sets vision.verdict=SKIP reason=dry-run
- *  15. processSlug: guard cap → vision.verdict=SKIP with guard reason
- *  16. processSlug: vision cost recorded into guard
+ * Covers (synced to actual test count via UQ-U-9 sweep, 20 cases):
+ *   1.  resolveConfig env defaults + override
+ *   2.  resolveConfig rejects malformed env values
+ *   3.  createGuard() default decision is OK
+ *   4.  createGuard() refuses when call cap hit
+ *   5.  createGuard() refuses when $$ cap would be exceeded
+ *   6.  recordCall accumulates calls + $$
+ *   7.  report() returns frozen-style snapshot
+ *   8.  reset() clears accumulator
+ *   9.  defaultGuard is shared module-level instance
+ *  10.  processSlug: vision=false → no vision field on receipt
+ *  11.  processSlug: PASS verdict never triggers vision
+ *  12.  processSlug: WARN verdict triggers vision (mock wrapper)
+ *  13.  processSlug: dry-run sets vision.verdict=SKIP reason=dry-run
+ *  14.  processSlug: guard cap → vision.verdict=SKIP with guard reason
+ *  15.  processSlug: vision cost recorded into guard
+ *  16.  UQ-U-2 #1: resolveConfig empty/whitespace env DOES NOT coerce to 0
+ *  17.  UQ-U-2 #2: 100 × 0.05 calls do NOT trip $5 cap due to float drift
+ *  18.  UQ-U-3 #1: recordCall clamps suspicious observed cost (1e20)
+ *  19.  UQ-U-3 #6: createGuard overrides also clamped to safe range
+ *  20.  UQ-U-7: reset re-derives base + overrides snapshot
  */
 
 import { strict as assert } from 'node:assert';

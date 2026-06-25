@@ -1261,30 +1261,15 @@ if (!QUICK) {
  * silently letting schema/vision/freeze/IXF/rust/kernel/rect
  * regressions land was exactly the bug we shipped CI to prevent.
  *
- * All 7 suites are pure-Node, sub-second each, no external deps —
- * safe to run on every verify (no `--quick` short-circuit).
+ * UQ-U-9 (Boki 2026-06-25, performance U-8-B #2/#4 deferred):
+ * collapsed 7 spawnSync invocations (~1.55s) into one batched-runner
+ * call (~0.40s). The runner (`tools/_run-contract-suites.mjs`) imports
+ * each suite via dynamic `import()` in a single Node process and
+ * aggregates results; same coverage, 74 % wallclock reduction.
  * ──────────────────────────────────────────────────────────────── */
 
-run('Schema migration contract suite (model.json semver + planner)',
-  'node', ['tests/_modelSchema.test.mjs']);
-
-run('Vision cost-guard contract suite (BigInt micro-cents + clamps)',
-  'node', ['tests/_visionCostGuard.test.mjs']);
-
-run('Deep-freeze utility contract suite (post UQ-U-4 hardening)',
-  'node', ['tests/_deepFreeze.test.mjs']);
-
-run('IXF 15-stage coverage smoke (S04/S05/S07/S10/S12/S13 anchors)',
-  'node', ['tests/_ixfCoverage.test.mjs']);
-
-run('Rust executor adapter contract suite (sim bridge)',
-  'node', ['tests/_rustExecutorAdapter.test.mjs']);
-
-run('Kernel init boot blob contract suite (softwareid/skin/session)',
-  'node', ['tests/blocks/kernelInit.test.mjs']);
-
-run('RectTransform responsive anchor/pivot contract suite',
-  'node', ['tests/_rectTransform.test.mjs']);
+run('All contract suites (batched · 7 suites, 1 process)',
+  'node', ['tools/_run-contract-suites.mjs']);
 
 /* ── Summary ────────────────────────────────────────────────────────── */
 const allOk = results.every(r => r.ok);

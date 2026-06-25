@@ -4,7 +4,16 @@ import { applySmartDefaults } from './registry/smartDefaults.mjs';
 import { buildSchemaEnvelope } from './registry/modelSchemaVersion.mjs';
 /* Optional Node-only handle for Wave V overlay. Top-level dynamic import
  * happens once at module load. The import is wrapped so a browser bundle
- * that strips `node:*` still loads the parser. */
+ * that strips `node:*` still loads the parser.
+ *
+ * UQ-U-9 audit note (Boki 2026-06-25, performance U-8-B #3 considered):
+ * the IIFE await was a candidate for elimination, but in modern Node 22
+ * top-level await is well-optimized (~1-2ms one-time cost at module
+ * load), and the browser-safe try/catch pattern requires async resolve.
+ * Static `import { createRequire } from 'node:module'` would not survive
+ * the browser-bundle strip pass. Keeping the IIFE as-is is the right
+ * trade-off — the regression risk from a Proxy or createRequire shim
+ * outweighs the ~1ms savings. */
 const _waveVFs = await (async () => {
   try {
     const mod = await import('node:fs');

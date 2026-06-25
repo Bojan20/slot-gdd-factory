@@ -134,34 +134,25 @@ jobs:
       - name: Runtime probes
         run: npm run test:runtime
 
-      # Wave U-1 P0-1 (Boki 2026-06-25 ultra-deep QA U-4 #1) — the
-      # schema migration registry + vision cost-guard each ship their
-      # own contract suite, but the previous CI gate ran neither. A PR
-      # could land a subtly broken planner or accumulator and surface
-      # only in production. Both are pure-Node, no external deps,
-      # sub-second runtime — cheap to gate.
-      - name: Schema migration contract suite
-        run: npm run test:model-schema
-
-      - name: Vision cost-guard contract suite
-        run: npm run test:vision-guard
-
-      # P3-P1 (Boki 2026-06-25) — Recursive freeze utility contract.
-      # 21 cases (post UQ-U-4 audit), sub-100ms, pure-Node. Wired into
-      # CI so any regression in deepFreeze (cycle handling, class-
-      # instance opacity, idempotent short-circuit, Symbol/non-enumerable
-      # key coverage) surfaces on the PR.
-      - name: Deep-freeze utility contract suite
-        run: npm run test:deep-freeze
-
-      # P3-P2 (Boki 2026-06-25) — IXF 15-stage coverage smoke.
-      # Anchors S04/S05/S07/S10/S12/S13 + invokes the deep walker
-      # (tools/_ixf-coverage-audit.mjs) which parses docs/IXF-15-STAGES.md
-      # and asserts every stage has at least one hook that ACTUALLY
-      # exists in HOOK_EVENTS. Drift between the regulator-integration
-      # doc and the runtime registry now fails CI.
-      - name: IXF 15-stage coverage smoke
-        run: npm run test:ixf-coverage
+      # UQ-U-9 P1 (Boki 2026-06-25, performance U-8-B #2/#4 deferred):
+      # batched contract-suite runner. Replaces 7 separate `npm run
+      # test:*` spawns with ONE Node process that imports each suite
+      # via dynamic `import()`. 7 × ~80-120ms cold-start (≈ 700-900ms
+      # overhead) collapses to ~80ms total. Measured local 1.55s →
+      # 0.40s (74% wallclock reduction). Same coverage, same failure
+      # surfacing — each suite still owns its own t(name,fn) + tally;
+      # the runner aggregates exit codes and reports per-suite duration.
+      #
+      # Covers ALL 7 prior contract suites in one step:
+      #   - model-schema (18 cases)
+      #   - vision-guard (20 cases)
+      #   - deep-freeze (21 cases)
+      #   - ixf-coverage (7 cases)
+      #   - rust-executor
+      #   - kernel-init
+      #   - rect-transform
+      - name: All contract suites (batched runner)
+        run: npm run test:contracts
 
       # UQ-U-6 P2 #3 (Boki 2026-06-25) — IXF deep walker as a hard
       # gate. The smoke (above) covers a handful of anchor hooks; the
@@ -173,20 +164,6 @@ jobs:
       # regression class that the smoke alone misses.
       - name: IXF deep coverage walker (drift gate)
         run: npm run audit:ixf
-
-      # P3-P3/P4/P6 (Boki 2026-06-25) — 3 nova primitive-a:
-      #   rustExecutorAdapter (N-tier Rust bridge), kernelInit (boot
-      #   blob block), rectTransform (responsive anchor/pivot). All
-      #   pure-Node, sub-100ms each. Wired so a future regression in
-      #   the safety / sanitization / clamping logic fails the PR.
-      - name: Rust executor adapter contract suite
-        run: npm run test:rust-executor
-
-      - name: kernelInit block contract suite
-        run: npm run test:kernel-init
-
-      - name: RectTransform layout primitive contract suite
-        run: npm run test:rect-transform
 
       # UQ-U-8 P1 — on failure, write a step-summary block listing the
       # job + commit + which step failed (GitHub picks up automatically

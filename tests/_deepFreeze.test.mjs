@@ -3,22 +3,28 @@
  *
  * P3-P1 (Boki 2026-06-25) — Contract tests for the recursive freeze util.
  *
- * Covers:
- *   1. Primitives + null pass through (no-op)
- *   2. Plain object becomes frozen at top level
- *   3. Plain object becomes frozen at nested depth
- *   4. Array becomes frozen + every element frozen
- *   5. Nested array inside object frozen
- *   6. Object inside array frozen
- *   7. Idempotent: re-freezing already-deep-frozen is no-op
- *   8. Cycle-safe (self-referencing object doesn't blow stack)
- *   9. Class instance (Date / Map / Set) — frozen at top, internals untouched
- *  10. Function value: passes through (functions are immutable for our purposes)
- *  11. isDeepFrozen returns false when nested key is mutable
- *  12. isDeepFrozen returns true after deepFreeze applied
- *  13. Strict-mode write to nested key THROWS post-deepFreeze
- *  14. Null prototype object treated as plain (recurses)
- *  15. Mixed shape (object → array → object → date) all frozen at correct depths
+ * Covers (synced to actual test count via UQ-U-9 sweep, 21 cases):
+ *   1.  Primitives + null pass through (no-op)
+ *   2.  Plain object becomes frozen at top level
+ *   3.  Plain object becomes frozen at nested depth
+ *   4.  Array becomes frozen + every element frozen
+ *   5.  Nested array inside object frozen
+ *   6.  Object inside array frozen
+ *   7.  Idempotent: re-freezing already-deep-frozen is no-op
+ *   8.  Cycle-safe (self-referencing object doesn't blow stack)
+ *   9.  Class instance (Date / Map / Set) frozen at top, internals untouched
+ *  10.  Function value frozen AND callable
+ *  11.  isDeepFrozen returns false when nested key is mutable
+ *  12.  isDeepFrozen returns true after deepFreeze applied
+ *  13.  Strict-mode write to nested key THROWS post-deepFreeze
+ *  14.  Null prototype object treated as plain (recurses)
+ *  15.  Mixed shape (object → array → object → date) all frozen at correct depths
+ *  16.  UQ-U-4 #1: deepFreeze recurses through SHALLOW-frozen wrapper
+ *  17.  UQ-U-4 #2: deepFreeze recurses into Symbol-keyed nested objects
+ *  18.  UQ-U-4 #2: deepFreeze recurses into non-enumerable own properties
+ *  19.  UQ-U-4 #3: isDeepFrozen returns false for mutable child in cycle
+ *  20.  UQ-U-4 #6: deepFreeze freezes function AND it stays callable
+ *  21.  UQ-U-4 #8: object with non-plain proto frozen at top, children untouched
  */
 
 import { strict as assert } from 'node:assert';

@@ -4,19 +4,25 @@
  * N+2 atom I (Boki 2026-06-25) — Contract tests for the top-level
  * model.json schema versioning + migration runner.
  *
- * Covers:
- *   1. MODEL_SCHEMA_VERSION exports as a valid semver string
- *   2. parseSemver / compareSemver round-trip + ordering
- *   3. buildSchemaEnvelope shape + ISO-8601 timestamp
- *   4. readModelVersion handles missing / malformed / valid envelopes
- *   5. freshModel() (via parseGDD) stamps __schema__ on outputs
- *   6. parseGDD on real markdown stamps __schema__.version === current
- *   7. migrate() on a legacy (no-envelope) model stamps current version
- *   8. migrate() is idempotent (twice = once)
- *   9. migrate() does not mutate the input object
- *  10. planMigration throws on downgrade attempts
- *  11. planMigration returns empty chain for same-version
- *  12. CLI: --list prints registry; --version reads file; round-trip OK
+ * Covers (synced to actual test count via UQ-U-9 sweep, 18 cases):
+ *   1.  MODEL_SCHEMA_VERSION exports as a valid semver string
+ *   2.  parseSemver / compareSemver round-trip + ordering
+ *   3.  buildSchemaEnvelope has version only (deterministic — no generatedAt)
+ *   4.  readModelVersion handles missing / malformed / valid envelopes
+ *   5.  freshModel() (via parseGDD) stamps __schema__ on outputs
+ *   6.  parseGDD on real markdown stamps __schema__.version === current
+ *   7.  migrate() on a legacy (no-envelope) model stamps current version
+ *   8.  migrate() is idempotent (twice = once)
+ *   9.  migrate() does not mutate the input object
+ *  10.  planMigration throws on downgrade attempts
+ *  11.  planMigration returns [] for same-version
+ *  12.  CLI: --list prints registry; --version reads file; round-trip OK
+ *  13.  UQ-U-2 #11: pre-release semver parses + orders per §11
+ *  14.  UQ-U-2 #10: BFS planner picks shortest path on multi-edge registry
+ *  15.  UQ-U-3 #4: structuredClone fallback handles unclonable values
+ *  16.  UQ-U-3 #5: migrate post-condition verifies __schema__.version match
+ *  17.  UQ-U-7: --to garbage rejected up-front via parseSemver(strict)
+ *  18.  UQ-U-7: _resetRegistryForTests cleans probe migrations
  */
 
 import { strict as assert } from 'node:assert';
