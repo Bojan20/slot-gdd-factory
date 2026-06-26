@@ -1,23 +1,28 @@
 ## 📊 PAR-SHEET AUTONOMOUS INGEST — 2026-06-27 status (latest)
 
-### Live verdict ladder (200k × 2 seeds, post-PAR-8-TUNE 4bd27d6)
+### Live verdict ladder (200k × 2 seeds, post-PAR-12-E 732124b)
 
 ```
-┌──────────────────────────┬────────┬───────────┬─────────────────────┐
-│ Slug                       │Measured│ Target    │ Verdict + gap        │
-├──────────────────────────┼────────┼───────────┼─────────────────────┤
-│ cash-eruption              │ 65.83% │ 82.81%    │ WARN  Δ -16.98 pp   │
-│ fort-knox-wolf-run         │ 80.73% │ 70.99%    │ WARN  Δ +9.74 pp    │
-│ book-of-unseen-bonus-buy   │ 19.39% │ 0.80%     │ WARN  Δ +18.59 pp   │
-│ skeleton-key               │ 10.00% │ 75.89%    │ FAIL  Δ -65.88 pp   │
-│ fortune-coin-boost-classic │ 20.42% │ 81.54%    │ WARN  Δ -61.13 pp   │
-└──────────────────────────┴────────┴───────────┴─────────────────────┘
-   4 WARN + 1 FAIL · Cash Eruption od session start 11.26% → 65.83% (+54.57 pp)
+┌──────────────────────────┬────────┬─────────────┬─────────────────────┐
+│ Slug                       │Measured│ Target      │ Verdict + gap        │
+├──────────────────────────┼────────┼─────────────┼─────────────────────┤
+│ cash-eruption              │ 64.68% │ 82.81% (b+h) │ WARN  Δ -18.13 pp   │
+│ fort-knox-wolf-run         │ 68.46% │ 70.99% (b)   │ WARN  Δ  -2.53 pp ★ │
+│ book-of-unseen-bonus-buy   │ 19.39% │  0.80% (b)   │ WARN  Δ +18.59 pp   │
+│ skeleton-key               │ 10.00% │ 75.89% (b)   │ FAIL  Δ -65.88 pp   │
+│ fortune-coin-boost-classic │ 20.42% │ 81.54% (b)   │ WARN  Δ -61.13 pp   │
+└──────────────────────────┴────────┴─────────────┴─────────────────────┘
+   4 WARN + 1 FAIL  ·  Cash Eruption from session start: 11.26% → 64.68% (+53.42 pp)
+                       Fort Knox now tightest center (★ within 2.53 pp of target)
+   Target tags: (b) = baseGame · (b+h) = baseGame + holdAndWin
 ```
 
-### Wave commit chain (2026-06-26 do 2026-06-27)
+### Wave commit chain (2026-06-26 → 2026-06-27)
 
 ```
+732124b  feat(PAR-12-E): tier-scaled synthetic FS schedule + PAR-12-F BoU revert
+0efb251  feat(PAR-8-EXT): real Cash Eruption orb table + coin-unit normalization
+d508768  docs(MASTER_TODO): live verdict ladder + wave commit chain
 4bd27d6  fix(PAR-8-TUNE): calibrate synthetic HnW chances → 32 pp
 eac96bf  feat(PAR-8): Hold & Win synthetic fallback + CE label extraction
 d0bd060  docs(PAR-11-D): close as NOT-APPLICABLE after sister-kernel audit
@@ -31,24 +36,69 @@ baecba9  docs(PAR-11-A): Wild role serialization audit finding
 94ab915  feat(PAR-10): explicit Paylines/PAR_LINES lift → topology + mapper
 ```
 
-### Preostali real gaps (po impactu)
+### Atom resolution map
+
+```
+┌──────────┬──────────────────────────────────────────┬─────────────┐
+│ Atom      │ Šta                                        │ Status       │
+├──────────┼──────────────────────────────────────────┼─────────────┤
+│ PAR-10   │ Paylines/PAR_LINES extract + topo override │ ✅ LANDED    │
+│ PAR-11-A │ Wild role serialization                    │ 📝 AUDIT-ONLY│
+│ PAR-11-B │ No-paytable specials → Cash role           │ ✅ LANDED    │
+│ PAR-11-D │ Sister-side anchor.is_none() fallback fix  │ ❌ N/A        │
+│ PAR-12-A │ extractFreeSpinAwards                      │ ✅ LANDED    │
+│ PAR-12-B │ avgPays → scatter_pays                     │ ✅ LANDED    │
+│ PAR-12-C │ extractFsReelStrips                        │ ✅ LANDED    │
+│ PAR-12-D │ Synthetic FS award fallback                 │ ✅ LANDED    │
+│ PAR-12-E │ Tier-scaled synthetic FS schedule           │ ✅ LANDED    │
+│ PAR-12-F │ cash → scatter promotion (BoU)              │ ❌ REVERTED  │
+│ PAR-12-G │ Bonus Buy mode flag + sister-side support  │ 📋 PLAN      │
+│ PAR-7-FULL│ Multi-comp sum + section-aware RTP routing │ ✅ LANDED    │
+│ PAR-8    │ HnW synthetic fallback + CE label extract  │ ✅ LANDED    │
+│ PAR-8-TUNE│ Calibrate HnW chances → 32 pp              │ ✅ LANDED    │
+│ PAR-8-EXT│ Real CE orb table + coin-unit normalization│ ✅ LANDED    │
+│ PAR-QA-5 │ Ways regex + sheet scope + Paylines anchor  │ ✅ LANDED    │
+└──────────┴──────────────────────────────────────────┴─────────────┘
+```
+
+### Preostali real gaps (po impactu, post-PAR-12-E)
 
 ```
 ┌──────────────────────────┬──────────────────────────────────────────┐
-│ Slug                       │ Šta nedostaje                              │
+│ Slug + gap                 │ Šta nedostaje                              │
 ├──────────────────────────┼──────────────────────────────────────────┤
 │ skeleton-key (-66 pp)      │ Mystery reveal pre-eval + Special Reel    │
 │                            │ Set FS bonus (sister-side feature)         │
 │ fortune-coin (-61 pp)      │ Wild expand za Ways + Coin Boost feature   │
 │                            │ + Jackpot tier (sister-side)               │
-│ cash-eruption (-17 pp)     │ Real CE orb table extraction (PAR-8-EXT)   │
-│                            │ — PAR-001!K3976-N3991 ima 8-tier table     │
-│ fort-knox (+9.7 pp)        │ Synthetic FS schedule overshoots — PAR-12-E│
-│                            │ Fort Knox-specific tighter calibration     │
-│ book-of-unseen (+19 pp)    │ Bonus Buy verdict target je 0.80 % (pre-  │
-│                            │ bonus only). PAR-7-FULL-EXT za bonus buy   │
-│                            │ explicit base+bonus target                  │
+│ book-of-unseen (+19 pp)    │ Bonus Buy mode — Book = cash scatter ali  │
+│                            │ trigger-rate ≈ 100 % razbija standardni    │
+│                            │ FS path (PAR-12-G scope)                   │
+│ cash-eruption (-18 pp)     │ HnW respin compound chain delicate —      │
+│                            │ synthetic chances {0.045, 0.13} land 32 pp│
+│                            │ vs declared 40.91 pp HnW. Real CE table   │
+│                            │ extracted (PAR-8-EXT) — needs trigger     │
+│                            │ probability tuning per-spin                │
+│ fort-knox (-2.5 pp)        │ Closest to target u celom corpusu. Reset  │
+│                            │ delta within W99 ±125 pp band.             │
 └──────────────────────────┴──────────────────────────────────────────┘
+```
+
+### Contract test inventory
+
+```
+┌──────────────────────────────────────┬───────────────────┐
+│ Suite                                  │ Coverage          │
+├──────────────────────────────────────┼───────────────────┤
+│ par-10-paylines.test.mjs              │ 8/8 PASS           │
+│ par-7-full-components.test.mjs        │ 10/10 PASS         │
+│ par-12-free-spins.test.mjs            │ 8/8 PASS           │
+│ par-12c-fs-reels.test.mjs             │ 8/8 PASS           │
+│ par-12d-fs-synthetic.test.mjs         │ 8/8 PASS           │
+│ par-8-hnw.test.mjs                    │ 8/8 PASS           │
+│ par-8-ext-orb-table.test.mjs          │ 8/8 PASS           │
+└──────────────────────────────────────┴───────────────────┘
+   Total: 58/58 cases, all PASS
 ```
 
 ---
