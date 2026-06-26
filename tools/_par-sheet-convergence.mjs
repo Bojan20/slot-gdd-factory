@@ -497,8 +497,23 @@ function mapModelToGameConfig(model) {
             { value: 100, weight: 2 },
             { value: 500, weight: 1 },
           ],
-          orb_land_chance_base: 0.05,
-          orb_land_chance_fill_bonus: 0.15,
+          /* Calibrated 2026-06-27 (chance × orb_values cross-sweep):
+           * HnW contribution is non-linear — respin loop can sustain
+           * past ~50% grid fill, compounding fast. Sweep against the
+           * original 8-tier orb distribution:
+           *
+           *   {0.04, 0.11}  → HnW ≈ 24 pp
+           *   {0.045, 0.13} → HnW ≈ 32 pp ← closest to declared 40.91
+           *   {0.05, 0.15}  → HnW ≈ 59 pp (over by 18)
+           *
+           * Sweet spot {0.045, 0.13}: synthetic HnW under-estimates
+           * declared by ~9 pp (32 measured vs 40.91 declared). That
+           * is honest territory — synthetic distribution will always
+           * be approximate vs real CE 8-tier MINI/MINOR/MAJOR table.
+           * Closing the residual gap requires PAR-8-EXT (full orb
+           * table extraction from PAR-001!K3976-N3991). */
+          orb_land_chance_base: 0.045,
+          orb_land_chance_fill_bonus: 0.13,
         }
       : {
           trigger_count: 255,
