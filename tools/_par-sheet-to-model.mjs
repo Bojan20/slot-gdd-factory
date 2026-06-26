@@ -1268,11 +1268,14 @@ export function extractHnwOrbValues(wb) {
           firstHitSheet = sheetName;
           sourceHeaderRow = r + 1;
         }
-        /* Break out of the outer loop too — only the FIRST orb table
-         * per sheet contributes. Subsequent "coin values" headers in
-         * the same sheet are typically per-trigger-scenario duplicates
-         * (e.g. 6/7/8 Fireballs landed rerun the same Small Fireball
-         * table). */
+        /* First-table-only per sheet. PAR-8-EXT-2 attempted to
+         * combine Small + Big Fireball tables, but Cash Eruption's
+         * sheet contains many "coin values" headers (one per
+         * "N Fireballs landed" scenario). Combining all of them
+         * over-counts the orb pool ~30×. Real Big/Small split lives
+         * inside per-scenario branches which sister has no concept
+         * of — first table (Small Fireball) is the safest single-pool
+         * approximation. */
       }
       if (firstHitSheet !== null) break;
     }
