@@ -151,8 +151,18 @@ function mapModelToGameConfig(model) {
    * trigger 10/20/30 free spins). When the model carries an explicit
    * Free Spin award schedule AND the only candidate trigger symbol
    * is bonus-roled, promote it to scatter for sister consumption. */
-  /* PAR-12-D scope: also promote bonus → scatter when synthetic FS
-   * awards will fire (declared freeSpins ≥ 1.0 with no explicit table). */
+  /* PAR-12-D + PAR-8 (Boki 2026-06-27): promotion logic across two
+   * feature axes:
+   *
+   *   - Bonus → Scatter when FS awards present (explicit or synthetic).
+   *     Sister `count_scatters()` reads is_scatter=true to count FS
+   *     triggers. Par sheets often label the FS trigger as "Bonus".
+   *
+   *   - Cash → Bonus when HnW component RTP declared > 1.0.
+   *     Sister `count_bonus()` + `hold_and_win.trigger_count` drive
+   *     the HnW feature. Cash Eruption Fireball orbs are 'cash' role
+   *     in the extractor (no-paytable symbol heuristic) but need
+   *     is_bonus=true so sister sees them as HnW trigger candidates. */
   const explicitFsAwards = model.par_sheet?.freeSpinAwards
     && Object.keys(model.par_sheet.freeSpinAwards).length > 0;
   const declaredFs = Number(model.payback?.components?.freeSpins);
@@ -162,8 +172,14 @@ function mapModelToGameConfig(model) {
   const hasScatter = allSyms.some((s) => s.role === 'scatter');
   const promoteBonusToScatter = hasFsAwards && !hasScatter;
 
+  const declaredHnw = Number(model.payback?.components?.holdAndWin);
+  const hasHnw = Number.isFinite(declaredHnw) && declaredHnw >= 1.0;
+  const promoteCashToBonus = hasHnw;
+
   const symbols = allSyms.map((s) => {
-    const effectiveRole = promoteBonusToScatter && s.role === 'bonus' ? 'scatter' : s.role;
+    let effectiveRole = s.role;
+    if (promoteBonusToScatter && s.role === 'bonus') effectiveRole = 'scatter';
+    if (promoteCashToBonus && s.role === 'cash') effectiveRole = 'bonus';
     return {
       id: s.id,
       name: s.name,
@@ -442,26 +458,57 @@ function mapModelToGameConfig(model) {
         scatter_pays: {},
       };
     })(),
-    /* PAR-QA-4 fix (Boki 2026-06-26, post-PAR-6 audit): trigger_count was
-     * 6 with empty orb_values + zero orb_land_chance, which let the
-     * sister feature simulator briefly attempt to enter Hold & Win mode
-     * on scatter-rich base spins, then award zeros against undefined
-     * orb tables. Some kernel paths fall back to per-spin "full grid"
-     * payout when orb_values is empty — that was the inflation factor
-     * pushing measured RTP to 8974 % on Cash Eruption.
+    /* PAR-8 (Boki 2026-06-27): Hold & Win config with three-tier ladder:
      *
-     * Set trigger_count to u8::MAX so the HnW trigger condition can
-     * NEVER fire from a 5×3 grid (max possible scatters in BG = 15).
-     * full_grid_bonus + orb chances kept at 0 as a defense in depth. */
-    hold_and_win: {
-      trigger_count: 255,
-      initial_respins: 0,
-      respins_on_new_orb: 0,
-      full_grid_bonus: 0,
-      orb_values: [],
-      orb_land_chance_base: 0,
-      orb_land_chance_fill_bonus: 0,
-    },
+     *   (A) When components.holdAndWin ≥ 1.0 % AND cash-role specials
+     *       were promoted to bonus, emit a SYNTHETIC HnW configuration
+     *       that approximates declared HnW contribution. Industry-
+     *       default Cash Eruption shape:
+     *         trigger_count = 6 (6 Fireballs land → trigger)
+     *         initial_respins = 3
+     *         respins_on_new_orb = 3 (reset counter)
+     *         orb_values = synthetic distribution (mean ≈ 1.5× bet)
+     *         orb_land_chance_base = 0.05 (5% per empty cell per respin)
+     *         orb_land_chance_fill_bonus = 0.15 (boost as grid fills)
+     *
+     *   (B) Disabled (legacy): trigger_count=255, empty orb_values.
+     *       Used when no HnW component declared. Pre-PAR-QA-4 this
+     *       caused 8974% inflation when set to trigger_count=6 with
+     *       empty orbs; the u8::MAX gate prevents that. */
+    hold_and_win: hasHnw
+      ? {
+          trigger_count: 6,
+          initial_respins: 3,
+          respins_on_new_orb: 3,
+          full_grid_bonus: 0,
+          /* Synthetic orb distribution — geometric-like spread of small
+           * coin values with rare big tier. Sister `generate_orb`
+           * samples weighted, returning value × bet_mc per orb. Total
+           * expected per-trigger pay ≈ mean × E[orbs]. Industry profile
+           * for HnW: most orbs are 1-5×, occasional 10-50×, rare
+           * jackpot 100× / 500× / 2000×. */
+          orb_values: [
+            { value: 1, weight: 100 },
+            { value: 2, weight: 60 },
+            { value: 4, weight: 30 },
+            { value: 5, weight: 20 },
+            { value: 10, weight: 10 },
+            { value: 25, weight: 5 },
+            { value: 100, weight: 2 },
+            { value: 500, weight: 1 },
+          ],
+          orb_land_chance_base: 0.05,
+          orb_land_chance_fill_bonus: 0.15,
+        }
+      : {
+          trigger_count: 255,
+          initial_respins: 0,
+          respins_on_new_orb: 0,
+          full_grid_bonus: 0,
+          orb_values: [],
+          orb_land_chance_base: 0,
+          orb_land_chance_fill_bonus: 0,
+        },
     lightning: {
       trigger_chance: 0,
       trigger_chance_fs: 0,
@@ -502,16 +549,33 @@ async function convergeOne(baseUrl, slug, spins, seeds) {
     return { slug, ok: false, reason: `model.json missing for ${slug}` };
   }
   const model = JSON.parse(readFileSync(modelPath, 'utf-8'));
-  /* PAR-7-FAST (Boki 2026-06-26): prefer payback.components.baseGame
-   * as the convergence target when the par sheet declares it. Kernel
-   * currently models only base game line wins (no FS, no HnW), so
-   * comparing measured to base-only declared gives an honest verdict.
-   * Fallback to total declared RTP when components are absent. */
+  /* PAR-7-FAST + PAR-8 (Boki 2026-06-27): verdict target reflects
+   * which feature paths the kernel actually simulates. Layered:
+   *
+   *   (a) When BOTH baseGame + holdAndWin declared AND HnW is enabled
+   *       (mapper promoted cash→bonus + synthetic HnW config), measured
+   *       includes base lines + HnW orb pay. Target = base + HnW share.
+   *   (b) When baseGame alone declared (no HnW path), target = baseGame.
+   *   (c) Fallback to declared total when components absent. */
   const components = model.payback?.components;
-  const declared = Number.isFinite(components?.baseGame)
-    ? Number(components.baseGame)
-    : Number(model.payback?.rtp);
-  const declaredKind = Number.isFinite(components?.baseGame) ? 'baseGame' : 'totalDeclared';
+  const baseGameDecl = Number.isFinite(components?.baseGame)
+    ? Number(components.baseGame) : null;
+  const hnwDecl = Number.isFinite(components?.holdAndWin)
+    ? Number(components.holdAndWin) : null;
+  const totalDecl = Number(model.payback?.rtp);
+
+  let declared;
+  let declaredKind;
+  if (baseGameDecl !== null && hnwDecl !== null && hnwDecl >= 1.0) {
+    declared = baseGameDecl + hnwDecl;
+    declaredKind = 'baseGame+holdAndWin';
+  } else if (baseGameDecl !== null) {
+    declared = baseGameDecl;
+    declaredKind = 'baseGame';
+  } else {
+    declared = totalDecl;
+    declaredKind = 'totalDeclared';
+  }
   if (!Number.isFinite(declared)) {
     return { slug, ok: false, reason: `declared RTP missing in ${slug}` };
   }

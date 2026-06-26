@@ -118,11 +118,20 @@ jela na meniju". Sintetišemo UX iz par sheet metadata, math je real.
 │         │   FK 70.99%. BoU + FCB not detected — label variants    │           │
 │         │   ("Base Game Line Wins"/"Main Game") → PAR-7-FULL.      │           │
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
-│ PAR-8   │ Hold & Win for Cash Eruption                            │ 📋 SKIP  │
-│         │   Cash Eruption par sheet ne nosi HnW RTP label;        │ (data    │
-│         │   declared 96% deklarisuje samo Total i Base. HnW       │ gap)     │
-│         │   share (40.91%) je iz GDD, ne par sheet. Cross-data    │           │
-│         │   requirement — sledeca sesija sa GDD-paired ingest.    │           │
+│ PAR-8   │ Hold & Win synthetic fallback + CE label extraction     │ ✅ LANDED│
+│         │   Re-opened 2026-06-27 — previously thought CE par      │           │
+│         │   sheet ne nosi HnW RTP label, ali "Cash Eruption       │           │
+│         │   Feature From Base Game RTP" je in K69 = 40.91 %.      │           │
+│         │   Extractor regex extended: `(\w[\w\s]*?\s+)?feature   │           │
+│         │   from base game rtp` → holdAndWin field.               │           │
+│         │   Mapper: cash → bonus promotion kad declared HnW ≥ 1.0,│           │
+│         │   plus synthetic HoldAndWinConfig sa trigger_count=6,  │           │
+│         │   initial_respins=3, 8-tier geometric orb distribution. │           │
+│         │   Verdict ladder: target = baseGame + holdAndWin kad   │           │
+│         │   oba prisutni (Cash Eruption target 82.81 %).           │           │
+│         │   Cash Eruption measured 11.26 % → 70.50 % (+59.24 pp). │           │
+│         │   Sad u target band -12.31 pp ispod combined declared.  │           │
+│         │   Contract test 8/8 PASS (par-8-hnw.test.mjs).          │           │
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
 │ PAR-9   │ Topology evalMode + Ways payline universe synthesis     │ ✅ LANDED│
 │         │   Commit c0d9466. PAR-2 scan-uje "N ways" / "N to M     │           │

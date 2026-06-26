@@ -443,6 +443,11 @@ export function extractRtpComponents(wb) {
     { rx: /^\s*base\s+game\s+line\s+wins?\s*[:=%]?\s*$/i, field: 'baseGame' },
     { rx: /^\s*free\s*spins?\s+(re?els?\s+)?rtp\*?\s*[:=%]?\s*$/i, field: 'freeSpins' },
     { rx: /^\s*hold\s*(and|&)?\s*win\s+rtp\*?\s*[:=%]?\s*$/i, field: 'holdAndWin' },
+    /* PAR-8 (Boki 2026-06-27): Cash Eruption style — "Cash Eruption
+     * Feature From Base Game RTP" denotes HnW share of base game.
+     * Loose pattern: "<game name> Feature From Base Game RTP". Also
+     * matches "Feature From Base Game RTP" without slug prefix. */
+    { rx: /^\s*(\w[\w\s]*?\s+)?feature\s+from\s+base\s+game\s+rtp\*?\s*[:=%]?\s*$/i, field: 'holdAndWin' },
     { rx: /^\s*bonus\s+rtp\*?\s*[:=%]?\s*$/i, field: 'bonus' },
   ];
   /* SUM regex — "Base Game <component> RTP" with any non-empty mid-
