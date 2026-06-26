@@ -82,7 +82,18 @@ import XLSXPkg from 'xlsx';
 const XLSX = XLSXPkg.default || XLSXPkg;
 
 const DEFAULT_PARSHEETS_DIR = resolve(process.env.HOME || '', 'Desktop', 'ParSheets');
-const DEFAULT_OUT_DIR = resolve(process.cwd(), 'dist', 'real-games');
+/* Par-sheet-derived models live in a SEPARATE output directory so the
+ * GDD compliance walkers (V14 math compliance, V12 deep industry, V11
+ * RTP-floor, etc.) don't audit them against rules that assume a full
+ * GDD-ingested model (paytable / FS feature / jurisdiction matrix —
+ * fields the par-sheet alone can't provide).
+ *
+ * PAR-4 batch pipeline merges these back into `dist/real-games/<slug>/`
+ * AFTER PAR-3 synthesizes the synthetic GDD wrapper and the compliance
+ * fields are stamped from defaults. That separation keeps the canonical
+ * `dist/real-games/` directory clean — every model in there is the
+ * full pipeline output, not a half-built artifact. */
+const DEFAULT_OUT_DIR = resolve(process.cwd(), 'dist', 'par-sheet-real-games');
 
 // ─── Slug derivation (vendor-neutral, mirrors PAR-1 probe) ───────────────────
 
@@ -211,6 +222,39 @@ function classifySheet(ws, sheetName) {
  *             confidence: number }}
  */
 function extractDeclaredRtp(wb) {
+  /* Priority labels — exact matches preferred (highest weight first).
+   * "Total RTP" wins over "Base RTP" wins over a bare "RTP" wins over
+   * "Hold %" (which is `100 - RTP`, inverted). PAR-QA hardening:
+   * previous regex only matched bare "(total\s+)?rtp" and missed
+   * "Base RTP", "Reported RTP", "Hold %" — losing 2/5 par sheets. */
+  /* `*` suffix is common in operator par sheets ("Hold*:", "Base Game
+   * RTP*") for footnote markers — they should NOT block the match. We
+   * also accept "RTP %" prefix and "RTP Average <number>" inline tokens
+   * where the value is glued to the label. */
+  const PRIORITY_LABELS = [
+    { rx: /^\s*total\s+rtp\*?\s*[:=%]?\s*$/i, weight: 100, invert: false },
+    { rx: /^\s*overall\s+rtp\*?\s*[:=%]?\s*$/i, weight: 95, invert: false },
+    { rx: /^\s*reported\s+rtp\*?\s*[:=%]?\s*$/i, weight: 90, invert: false },
+    { rx: /^\s*declared\s+rtp\*?\s*[:=%]?\s*$/i, weight: 85, invert: false },
+    { rx: /^\s*(combined|theoretical)\s+rtp\*?\s*[:=%]?\s*$/i, weight: 80, invert: false },
+    { rx: /^\s*rtp\*?\s*[:=%]?\s*$/i, weight: 70, invert: false },
+    { rx: /^\s*base\s+(game\s+)?rtp\*?\s*[:=%]?\s*$/i, weight: 60, invert: false },
+    { rx: /^\s*payback\*?\s*[:=%]?\s*$/i, weight: 55, invert: false },
+    { rx: /^\s*payout\*?\s*%?\s*[:=]?\s*$/i, weight: 50, invert: false },
+    /* Hold % is the casino's edge — RTP = 100 - hold. We invert at
+     * read-time so callers always see a payout fraction. Accept trailing
+     * `*` footnote markers ("Hold*:", "Hold %*"). */
+    { rx: /^\s*hold\*?\s*%?\*?\s*[:=]?\s*$/i, weight: 45, invert: true },
+    { rx: /^\s*house\s+edge\*?\s*%?\s*[:=]?\s*$/i, weight: 40, invert: true },
+  ];
+
+  /* Inline "RTP average 96.00 %" / "Total RTP: 96.5%" patterns where the
+   * label and value are in the same cell. Pulled into its own pass so
+   * we don't pollute the label/probe loop with mode-aware logic. */
+  const INLINE_RX = /^\s*(?:total\s+|overall\s+|reported\s+|rtp\s+average\s+|rtp\s*[:=]?\s*)?(\d{1,3}(?:[.,]\d+)?)\s*%/i;
+
+  let best = null; // { value, source, confidence, weight }
+
   for (const sheetName of wb.SheetNames) {
     const ws = wb.Sheets[sheetName];
     const range = sheetRange(ws);
@@ -221,12 +265,41 @@ function extractDeclaredRtp(wb) {
       for (let c = range.s.c; c <= maxC; c++) {
         const s = cellString(ws, r, c);
         if (!s) continue;
-        /* Require near-exact "RTP" tokens — avoid matching "TOTAL RTP",
-         * "BASE RTP" which are valid but are leaves the parser needs to
-         * sort by priority. We pick the first exact match per file. */
-        if (!/^\s*(total\s+)?rtp\s*[:=]?\s*$/i.test(s)) continue;
-        /* Check 5 neighbors: right, down-right, down. Pick first numeric
-         * in [0, 130] range (after 0..1 → 0..100 scaling). */
+
+        /* Inline value first — "RTP average 96.00 %" carries the number
+         * in the same cell. Only accept if the leading token is an RTP
+         * label so we don't grab a stray "0.50%" from random text. */
+        const inline = s.match(INLINE_RX);
+        if (
+          inline &&
+          /\b(rtp|payback|payout)\b/i.test(s) &&
+          !/\b(hold|edge)\b/i.test(s)
+        ) {
+          const n = Number(inline[1].replace(',', '.'));
+          if (Number.isFinite(n)) {
+            const pct = n <= 1.5 ? n * 100 : n;
+            if (pct >= 50 && pct <= 130) {
+              const w = /\btotal|overall|combined/i.test(s) ? 95 : 75;
+              if (!best || w > best.weight) {
+                best = {
+                  value: pct,
+                  source: {
+                    sheet: sheetName,
+                    cell: XLSX.utils.encode_cell({ r, c }),
+                    label: s.trim(),
+                    method: 'inline-value',
+                  },
+                  confidence: Math.min(0.95, w / 100 + 0.05),
+                  weight: w,
+                };
+              }
+            }
+          }
+        }
+
+        const matched = PRIORITY_LABELS.find((p) => p.rx.test(s));
+        if (!matched) continue;
+        /* Check 5 neighbors: right (3), down (1), down-right (1). */
         const probes = [
           [r, c + 1], [r, c + 2], [r, c + 3],
           [r + 1, c], [r + 1, c + 1],
@@ -234,21 +307,34 @@ function extractDeclaredRtp(wb) {
         for (const [pr, pc] of probes) {
           const n = cellNumber(ws, pr, pc);
           if (n === null) continue;
-          /* Normalize: 0..1 → percent, percent stays. */
-          const pct = n <= 1.5 ? n * 100 : n;
-          if (pct >= 50 && pct <= 130) {
-            return {
+          /* Normalize: 0..1 → percent, percent stays. Invert hold/edge
+           * fields so the model always carries a payback fraction. */
+          let pct = n <= 1.5 ? n * 100 : n;
+          if (matched.invert) pct = 100 - pct;
+          if (pct < 50 || pct > 130) continue;
+          /* Confidence = weight / 100, capped at 0.95. */
+          const confidence = Math.min(0.95, matched.weight / 100 + 0.05);
+          if (!best || matched.weight > best.weight) {
+            best = {
               value: pct,
               source: {
                 sheet: sheetName,
                 cell: XLSX.utils.encode_cell({ r: pr, c: pc }),
+                label: s.trim(),
+                inverted: matched.invert,
               },
-              confidence: 0.85,
+              confidence,
+              weight: matched.weight,
             };
           }
+          break; /* first numeric neighbor wins for this label */
         }
       }
     }
+  }
+
+  if (best) {
+    return { value: best.value, source: best.source, confidence: best.confidence };
   }
   return { value: null, source: null, confidence: 0 };
 }
@@ -395,29 +481,76 @@ function extractReelStrips(wb) {
     const symbolCol = best.symbolCol;
 
     /* Walk rows below header. Symbol cell carries the label; reel cols
-     * carry the weight. Stop at the first row where BOTH symbol and ALL
-     * reel weights are empty. */
+     * carry the weight. Multiple sentinel conditions stop the scan
+     * BEFORE we overshoot into a Total/Sum aggregate row or a second
+     * weight band beneath the first.
+     *
+     * PAR-QA hardening (2026-06-26): previous version stopped only on a
+     * 3-row blank run; that let scans walk past empty rows separating
+     * the symbol table from "Total" aggregate rows, which then got
+     * harvested as a 1-symbol row carrying the SUM as its weight (Fort
+     * Knox Wolf Run Reel 5 had a 972_979_097 outlier because the scan
+     * ingested a downstream "TotalSpins" cell as a weight). Sentinels:
+     *
+     *   1. Symbol cell matches Total/Sum/Subtotal/Grand keyword.
+     *   2. Any reel weight is unreasonably large (> 10^7) — par sheet
+     *      weights are typically 1..1_000_000, never close to billions.
+     *      A weight above the per-reel norm × 100 signals an aggregate.
+     *   3. Blank run ≥ 3 rows AFTER ≥ 5 symbols already captured.
+     *   4. Row carries weights but no symbol AND the previous row was
+     *      already a "Total" — bail (paranoia for split aggregates).
+     */
+    const SENTINEL_RX = /^(total|sum|subtotal|grand|average|avg|gross|cnt|count)\b/i;
+    const PER_CELL_HARD_CAP = 10_000_000;
     const symbolList = [];
     const reelWeights = reelCols.map(() => []);
     let blankRowRun = 0;
+    let prevWasAggregate = false;
     for (let r = headerRow + 1; r <= range.e.r; r++) {
       const symbol = cellString(ws, r, symbolCol);
       const weights = reelCols.map((rc) => cellNumber(ws, r, rc.col));
       const hasAnyWeight = weights.some((w) => w !== null && w > 0);
+
+      /* Sentinel #1: aggregate keyword in symbol cell. */
+      if (symbol && SENTINEL_RX.test(symbol)) {
+        if (symbolList.length > 0) break;
+        prevWasAggregate = true;
+        continue;
+      }
+
+      /* Sentinel #2: outlier weight (> hard cap) — almost always means
+       * we walked into a downstream aggregate row that holds e.g. spin
+       * counts in the same column band. Bail. */
+      if (weights.some((w) => w !== null && w > PER_CELL_HARD_CAP)) {
+        if (symbolList.length > 0) break;
+        continue;
+      }
+
       if (!symbol && !hasAnyWeight) {
         blankRowRun++;
-        if (blankRowRun >= 3 && symbolList.length > 0) break;
+        if (blankRowRun >= 3 && symbolList.length >= 5) break;
+        if (blankRowRun >= 10 && symbolList.length > 0) break;
         continue;
       }
       blankRowRun = 0;
-      /* A row without a symbol but with weights is a continuation line —
-       * skip it. A row without weights but with a symbol is a separator
-       * or comment — skip it. Both filter to keep paytable rows only. */
+
+      /* Sentinel #4: weights-only row right after an aggregate marker
+       * — skip silently so we don't seed a phantom symbol. */
+      if (!symbol && hasAnyWeight && prevWasAggregate) {
+        continue;
+      }
+      prevWasAggregate = false;
+
+      /* A row without a symbol but with weights = continuation line.
+       * Without weights but with a symbol = separator / comment. Skip
+       * both to keep only paytable rows. */
       if (!symbol || !hasAnyWeight) continue;
+
       /* Sanitize symbol: keep only alnum + space + dash, max 24 chars.
        * Anti-vendor sanitization happens at emit-time in buildModel(). */
       const cleanSymbol = symbol.replace(/[^A-Za-z0-9 \-_]/g, '').trim().slice(0, 24);
       if (!cleanSymbol) continue;
+
       symbolList.push(cleanSymbol);
       for (let i = 0; i < reelCols.length; i++) {
         const w = weights[i];
@@ -472,6 +605,8 @@ function extractReelStrips(wb) {
  *             confidence: number }}
  */
 function extractMaxWinCap(wb) {
+  /* Pass 1: explicit label match (highest confidence). */
+  const LABEL_RX = /^\s*(max\s*win|win\s*cap|cap|max\s*payout|max\s*pay)\s*[:=]?$/i;
   for (const sheetName of wb.SheetNames) {
     const ws = wb.Sheets[sheetName];
     const cls = classifySheet(ws, sheetName);
@@ -483,8 +618,7 @@ function extractMaxWinCap(wb) {
     for (let r = range.s.r; r <= maxR; r++) {
       for (let c = range.s.c; c <= maxC; c++) {
         const s = cellString(ws, r, c);
-        if (!s) continue;
-        if (!/^(max\s*win|win\s*cap|cap)\s*[:=]?$/i.test(s)) continue;
+        if (!s || !LABEL_RX.test(s)) continue;
         const probes = [
           [r, c + 1], [r, c + 2], [r, c + 3],
           [r + 1, c], [r + 1, c + 1],
@@ -492,22 +626,62 @@ function extractMaxWinCap(wb) {
         for (const [pr, pc] of probes) {
           const n = cellNumber(ws, pr, pc);
           if (n === null) continue;
-          /* Win cap is a multiplier on bet — typical values 1_000..50_000.
-           * Accept anything in that range. */
           if (n >= 100 && n <= 10_000_000) {
             return {
               value: Math.round(n),
               source: {
                 sheet: sheetName,
                 cell: XLSX.utils.encode_cell({ r: pr, c: pc }),
+                method: 'explicit-label',
               },
-              confidence: 0.75,
+              confidence: 0.85,
             };
           }
         }
       }
     }
   }
+
+  /* Pass 2: derive from 100Spins / histogram sheets — find the largest
+   * single payout cell in a "spins / payout" table. Typical par sheet
+   * 100-spin sheets carry per-spin win × N rows with payout in a Bet
+   * Units column; the row with the highest payout × frequency reflects
+   * the engine's max realized win across the histogram. We treat that
+   * as a CONSERVATIVE lower bound on the cap (real cap is ≥ measured
+   * max), tagged with lower confidence so downstream auditors know it
+   * isn't a declared value. */
+  for (const sheetName of wb.SheetNames) {
+    if (!/100\s*spin|histogram|max\s*win|tail/i.test(sheetName)) continue;
+    const ws = wb.Sheets[sheetName];
+    const range = sheetRange(ws);
+    if (!range) continue;
+    const maxR = Math.min(range.e.r, range.s.r + 500);
+    const maxC = Math.min(range.e.c, range.s.c + 40);
+    let maxPayout = 0;
+    let maxAddr = null;
+    for (let r = range.s.r; r <= maxR; r++) {
+      for (let c = range.s.c; c <= maxC; c++) {
+        const cell = cellAt(ws, r, c);
+        if (!cell || cell.t !== 'n') continue;
+        const v = cell.v;
+        /* Win-cap candidates are payout-as-multiplier values: 500..5_000_000
+         * is the typical regulator-grade win cap span. Anything above
+         * suggests a spin count or an aggregate — skip. */
+        if (v >= 500 && v <= 5_000_000 && v > maxPayout) {
+          maxPayout = v;
+          maxAddr = XLSX.utils.encode_cell({ r, c });
+        }
+      }
+    }
+    if (maxPayout >= 500) {
+      return {
+        value: Math.round(maxPayout),
+        source: { sheet: sheetName, cell: maxAddr, method: '100spins-tail-max' },
+        confidence: 0.45, // lower than explicit label, higher than nothing
+      };
+    }
+  }
+
   return { value: null, source: null, confidence: 0 };
 }
 
