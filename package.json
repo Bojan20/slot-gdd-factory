@@ -24,6 +24,7 @@
     "audit:math-chain-no-ai": "node tools/_math-chain-no-ai-lint.mjs",
     "lv3:rtp-probe": "node tools/_lv3-live-rtp-probe.mjs",
     "test:auto-converge": "node tests/_autoConvergeSolver.test.mjs",
+    "test:lv3-http-client": "node tests/_sisterRustHttpClient.test.mjs",
     "test:contracts": "node tools/_run-contract-suites.mjs",
     "test:blocks:fast": "node tools/_run-block-tests.mjs --skip-audio",
     "test:blocks:fast:quiet": "node tools/_run-block-tests.mjs --quiet --skip-audio",

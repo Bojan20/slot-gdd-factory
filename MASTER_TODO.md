@@ -1,6 +1,6 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-26 01:30 UTC (FINAL · ... + LV3 1+13 ✅ DONE)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-26 14:30 UTC (FINAL · ... + LV3 1+2+13 ✅ DONE)
 
-### 🧠 MATH-INTEGRATION-LV3 · SRCE PAMETNE MAŠINE — 2 ATOMA LANDED (2026-06-26 01:30 UTC)
+### 🧠 MATH-INTEGRATION-LV3 · SRCE PAMETNE MAŠINE — 3 ATOMA LANDED (2026-06-26 14:30 UTC)
 
 ```
 ┌────┬─────────────────────────────────────────────────────────────┬───────────┐
@@ -25,7 +25,7 @@
 ┌──────┬──────────────────────────────────────────────────────────┬──────────┐
 │  ID   │ Stavka                                                    │ Status    │
 ├──────┼──────────────────────────────────────────────────────────┼──────────┤
-│LV3-2 │ sister rust-sim/http_server.rs (Axum + /spin /batch)      │ 📋 sister│
+│LV3-2 │ sister rust-sim/http_server.rs (Axum + /spin /batch)      │ ✅ LANDED │
 │LV3-3 │ backendSpinEngine.mjs                                     │ ✅ LANDED │
 │LV3-4 │ liveRtpHud.mjs (423 LOC, live feed)                       │ ✅ LANDED │
 │LV3-5 │ batchSimulatorPanel.mjs (434 LOC, 1M/10M/100M CTA)        │ ✅ LANDED │
@@ -59,13 +59,36 @@ posle save.
 
 LV3 today: LV3-10 + LV3-11 — E2E RTP probe + shared anti-vendor
 sanitization registry sa 12-case contract test.
+
+LV3-2 closeout (2026-06-26 14:30 UTC):
+  sister `rust-sim/src/http_server.rs` (Axum library module) + `rust-sim/
+  src/bin/http_server.rs` (clap binary, --features http gate). Endpoints:
+    GET  /health         engine name/version/uptime/counters
+    GET  /default-config GameConfig::default() as JSON (test helper)
+    POST /spin           one MC run, returns rtp/hits/spins/hit_rate +
+                         canonical SUMMARY|rtp=...|hits=...|spins=... line
+    POST /batch          N independent runs, preserves item id order,
+                         optional stop_on_error short-circuit
+  Hardening: loopback-only bind default (refuses public IPs without
+  --allow-public-bind), per-request total-spin cap + seed cap + batch
+  cap + body-size cap + global in-flight semaphore, u64 overflow check,
+  spawn_blocking off the tokio reactor so rayon MC kernel doesn't starve
+  request handlers. Output contract carries the same three keys the
+  LV3-1 _findSummary parser already speaks so transitional callers stay
+  on the SUMMARY string without code change. Slot-gdd-factory side:
+  `tools/sister-rust-http-client.mjs` (spawn READY-line parser + fetch
+  helpers) + `tests/_sisterRustHttpClient.test.mjs` (10-case contract
+  suite, live tests skip cleanly when sister binary isn't built).
+  Tests: 12/12 Rust unit + 5/5 Rust bin loopback policy + 10/10 JS live
+  contract + verify ALL GATES GREEN (33 gates).
 ```
 
 ★ = blok-ovi postoje (1274 LOC ukupno), treba samo wire ka novoj LV3-1
-auto-converge petlji + LV3-2 Rust HTTP server. Bez LV3-2 trenutno
-auto-converge radi preko `slot_sim --quick` CLI subprocess pattern-a.
+auto-converge petlji + LV3-2 Rust HTTP server. **LV3-2 SAD LANDED** —
+solver može da prebaci sa 50 ms/probe (CLI spawn) na 1–3 ms/probe
+(HTTP RTT) preko `sister-rust-http-client.mjs`.
 
-**LV3 progres: 2/14 (14%) · ostatak idu sledeće sesije.**
+**LV3 progres: 3/14 (21%) · ostatak idu sledeće sesije.**
 
 Verify gate (post LV3-1 + LV3-13):
   test:auto-converge   19/19  ✓  (Newton 5 · Nelder-Mead 3 · solveRtp 6 +
