@@ -1159,6 +1159,137 @@ export function extractFreeSpinAwards(wb) {
  *             source: { sheet: string, headerRow: number, layout: string } | null,
  *             confidence: number }}
  */
+/**
+ * PAR-8-EXT (Boki 2026-06-27): extract real Hold & Win ORB VALUE TABLE
+ * from Cash Eruption-style par sheets.
+ *
+ * # WHY THIS EXISTS
+ *
+ * PAR-8 ships a synthetic 7-tier geometric orb distribution that
+ * approximates the declared HnW RTP share. PAR-8-EXT pulls the actual
+ * vendor-published table: Cash Eruption PAR-001 r3976-r3991 carries
+ *
+ *   K column: coin value (20, 40, 60, 80, ..., 1000, 1500)
+ *   L column: weight in "low" tier
+ *   M column: weight in "med" tier
+ *   N column: weight in "high" tier
+ *   Plus J3988-J3990 = MINI / MINOR / MAJOR jackpot rows with their
+ *   own coin values + weights per tier.
+ *
+ * Total weight per tier sums to 100000 by design. Aggregating
+ * across tiers gives one flat orb distribution suitable for sister
+ * `OrbValue { value, weight }` shape — sister's `generate_orb` picks
+ * via weighted-random with no tier concept (just one big pool).
+ *
+ * Layout detection: scan any sheet that mentions "Small Fireballs"
+ * or "Big Fireball" or "Coin values" header. The walker captures
+ * the K-column coin-value table immediately below the header until
+ * a Total / blank row terminator.
+ *
+ * @returns {{ orbValues: Array<{value: number, weight: number}> | null,
+ *             source: { sheet: string, headerRow: number } | null,
+ *             confidence: number }}
+ */
+export function extractHnwOrbValues(wb) {
+  const ORB_HEADER_RX = /^\s*(small\s+fireballs?|big\s+fireball|orb\s+values?|coin\s+values?)\s*$/i;
+  const TIER_RX = /^\s*(low|med|medium|high)\s*$/i;
+  const TOTAL_RX = /^\s*(total|sum)\s*$/i;
+  const JACKPOT_RX = /^\s*(mini|minor|major|grand)\s*$/i;
+
+  const orbMap = new Map();  /* coin_value → cumulative weight */
+  let firstHitSheet = null;
+  let sourceHeaderRow = null;
+
+  for (const sheetName of wb.SheetNames) {
+    /* PAR-8-EXT (per-sheet boundary, post-CE 125-tier explosion catch):
+     * Cash Eruption ships PAR-001 / PAR-002 / PAR-003 as RTP-variant
+     * sheets with IDENTICAL orb tables. Walking all three multiplies
+     * weights 3×. Anchor extraction to the first sheet that hits and
+     * skip later variants. */
+    if (firstHitSheet !== null && firstHitSheet !== sheetName) continue;
+    const ws = wb.Sheets[sheetName];
+    const range = sheetRange(ws);
+    if (!range) continue;
+
+    /* Scan for orb section headers — need a row that has "coin values"
+     * label in some column + low/med/high tier labels in adjacent cols. */
+    const maxR = Math.min(range.e.r, range.s.r + 6800);
+    const maxC = Math.min(range.e.c, range.s.c + 25);
+
+    for (let r = range.s.r; r <= maxR; r++) {
+      for (let c = range.s.c; c <= maxC; c++) {
+        const s = cellString(ws, r, c);
+        if (!s || !/coin\s+values?/i.test(s)) continue;
+
+        /* Verify low/med/high tier headers in c+1, c+2, c+3. */
+        const t1 = cellString(ws, r, c + 1);
+        const t2 = cellString(ws, r, c + 2);
+        const t3 = cellString(ws, r, c + 3);
+        if (!t1 || !TIER_RX.test(t1)) continue;
+        if (!t2 || !TIER_RX.test(t2)) continue;
+        if (!t3 || !TIER_RX.test(t3)) continue;
+
+        /* Walk rows below — read (coin_value, w_low + w_med + w_high). */
+        for (let rr = r + 1; rr <= Math.min(r + 30, maxR); rr++) {
+          const labelL = cellString(ws, rr, c - 1);
+          if (labelL && TOTAL_RX.test(labelL)) break;
+
+          const v = cellNumber(ws, rr, c);
+          const wLow = cellNumber(ws, rr, c + 1) || 0;
+          const wMed = cellNumber(ws, rr, c + 2) || 0;
+          const wHigh = cellNumber(ws, rr, c + 3) || 0;
+          /* Stop on truly empty row. */
+          if ((v === null || v <= 0) && wLow === 0 && wMed === 0 && wHigh === 0) {
+            /* might be a spacer; check if next row picks up. */
+            const nextV = cellNumber(ws, rr + 1, c);
+            if (nextV === null || nextV <= 0) break;
+            continue;
+          }
+          /* Could be a jackpot row (J col holds MINI/MINOR/MAJOR). */
+          let coinValue = v;
+          if (coinValue === null) {
+            continue;
+          }
+          const totalW = wLow + wMed + wHigh;
+          if (totalW <= 0) continue;
+          /* Cap coin value to industry-reasonable range. Cash Eruption
+           * MAJOR jackpot is 2000×; anything above 10000 is almost
+           * certainly a different column's spillover (frequency counts,
+           * per-spin payout cells, etc.) that share K-column space. */
+          if (coinValue > 10000) continue;
+          orbMap.set(coinValue, (orbMap.get(coinValue) || 0) + totalW);
+        }
+        if (firstHitSheet === null) {
+          firstHitSheet = sheetName;
+          sourceHeaderRow = r + 1;
+        }
+        /* Break out of the outer loop too — only the FIRST orb table
+         * per sheet contributes. Subsequent "coin values" headers in
+         * the same sheet are typically per-trigger-scenario duplicates
+         * (e.g. 6/7/8 Fireballs landed rerun the same Small Fireball
+         * table). */
+      }
+      if (firstHitSheet !== null) break;
+    }
+    if (firstHitSheet !== null) break;
+  }
+
+  if (orbMap.size === 0) {
+    return { orbValues: null, source: null, confidence: 0 };
+  }
+
+  /* Sort by value ascending, emit. */
+  const orbValues = [...orbMap.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([value, weight]) => ({ value, weight }));
+
+  return {
+    orbValues,
+    source: firstHitSheet ? { sheet: firstHitSheet, headerRow: sourceHeaderRow } : null,
+    confidence: 0.85,
+  };
+}
+
 export function extractFsReelStrips(wb) {
   const REEL_HEADER_RX = /^\s*reel\s*(\d+)\s*$/i;
   const TOTAL_RX = /^\s*(total|sum|end)\s*$/i;
@@ -1727,6 +1858,12 @@ async function buildModel(wb, slug) {
    * Key/Mystery). Sister `fs_weights` is consumed by the FS spin
    * generator — placeholder = base weights underestimates FS RTP. */
   const fsReelStrips = extractFsReelStrips(wb);
+  /* PAR-8-EXT (Boki 2026-06-27): real Hold & Win orb value table.
+   * Cash Eruption PAR-001 r3976-r3991 carries an explicit (coin,
+   * weight-per-tier) distribution. Aggregating across low/med/high
+   * tiers yields one flat orb pool that matches sister's
+   * `OrbValue { value, weight }` shape exactly. */
+  const hnwOrbValues = extractHnwOrbValues(wb);
 
   /* Synthesized vendor-neutral display name. */
   const neutralName = sanitize(
@@ -1954,6 +2091,12 @@ async function buildModel(wb, slug) {
            * the mapper level (placeholder behavior). */
           ...(fsReelStrips.reelStrips
             ? { fsReelStrips: fsReelStrips.reelStrips }
+            : {}),
+          /* PAR-8-EXT: real orb table extracted from Cash Eruption-
+           * style sheets. Mapper consumes this in place of the
+           * synthetic 7-tier geometric distribution. */
+          ...(hnwOrbValues.orbValues
+            ? { hnwOrbValues: hnwOrbValues.orbValues }
             : {}),
         }
       : undefined,

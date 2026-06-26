@@ -487,16 +487,30 @@ function mapModelToGameConfig(model) {
            * expected per-trigger pay ≈ mean × E[orbs]. Industry profile
            * for HnW: most orbs are 1-5×, occasional 10-50×, rare
            * jackpot 100× / 500× / 2000×. */
-          orb_values: [
-            { value: 1, weight: 100 },
-            { value: 2, weight: 60 },
-            { value: 4, weight: 30 },
-            { value: 5, weight: 20 },
-            { value: 10, weight: 10 },
-            { value: 25, weight: 5 },
-            { value: 100, weight: 2 },
-            { value: 500, weight: 1 },
-          ],
+          /* PAR-8-EXT (Boki 2026-06-27): prefer par-sheet extracted
+           * orb table when present. Cash Eruption ships explicit 12-
+           * tier distribution at PAR-001 r3977-r3988 (low/med/high
+           * weight tiers summed). Values are in COIN units (1 coin =
+           * bet / N_paylines per industry convention). Sister
+           * `simulate_hnw` computes payout = value × total_bet_mc per
+           * orb, treating value as a total-bet multiplier — so we
+           * normalize by paylineCount before sending. Falls back to
+           * synthetic geometric 8-tier when not extractable. */
+          orb_values: (model.par_sheet?.hnwOrbValues
+            ? model.par_sheet.hnwOrbValues.map((o) => ({
+                value: Math.max(1, Math.round(o.value / paylineCountSafe)),
+                weight: o.weight,
+              }))
+            : [
+                { value: 1, weight: 100 },
+                { value: 2, weight: 60 },
+                { value: 4, weight: 30 },
+                { value: 5, weight: 20 },
+                { value: 10, weight: 10 },
+                { value: 25, weight: 5 },
+                { value: 100, weight: 2 },
+                { value: 500, weight: 1 },
+              ]),
           /* Calibrated 2026-06-27 (chance × orb_values cross-sweep):
            * HnW contribution is non-linear — respin loop can sustain
            * past ~50% grid fill, compounding fast. Sweep against the
