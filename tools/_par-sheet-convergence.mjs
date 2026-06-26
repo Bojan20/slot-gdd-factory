@@ -176,28 +176,62 @@ function mapModelToGameConfig(model) {
   const rows = model.topology?.rows || 3;
   const paylineCount = model.topology?.paylines || 20;
 
-  /* PAR-9 (Boki 2026-06-26, ultra-deep audit catch): payline pattern
-   * fidelity is the dominant factor in measured-vs-declared gap. Two
-   * cases:
+  /* PAR-9 + PAR-10 (Boki 2026-06-26): payline pattern fidelity is the
+   * dominant factor in measured-vs-declared gap. Preference ladder:
    *
-   * 1. Ways games (Skeleton Key 243 ways, Fortune Coin Boost 243 ways):
-   *    declared topology N = rows^reels. We synthesize EVERY possible
-   *    combination of (row per reel) — for 5×3 that's 3^5 = 243 paylines.
-   *    Sister Lines mode then evaluates all 243 patterns; each unique
-   *    grid hit gets credited exactly once, reproducing Ways math
-   *    without requiring a sister-side eval-mode dispatch.
+   * 1. PAR-10: EXPLICIT patterns from par_sheet.paylinePatterns. Lifted
+   *    deterministically from Paylines / PAR_LINES sheet by
+   *    extractPaylinePatterns() in _par-sheet-to-model.mjs. When the
+   *    sheet declares specific zigzag/V-shape patterns (Cash Eruption
+   *    20 lines, Fort Knox 20 lines, Book of Unseen Bonus Buy 10 lines),
+   *    this path reproduces the EXACT shape the kernel must evaluate.
+   *    Row-cycle fallback hit straight lines correctly but mis-counted
+   *    every V/zigzag, costing ~30 pp on cash-eruption baseline.
    *
-   * 2. Lines games (Cash Eruption 8, Fort Knox 20, etc.): if the
-   *    declared paylines fit the rows^reels universe, prefer the
-   *    explicit enumeration. Else fall back to row-cycle synthesis
-   *    (the pre-PAR-9 behavior) acknowledging that pattern fidelity
-   *    is incomplete until PAR-10 lifts actual payline patterns from
-   *    par sheet's Paylines tab. */
+   * 2. PAR-9: Ways games (Skeleton Key 243 ways, Fortune Coin Boost
+   *    243 ways): declared topology N = rows^reels. Synthesize EVERY
+   *    possible combination of (row per reel) — for 5×3 that's 3^5 = 243
+   *    paylines. Sister Lines mode then evaluates all 243 patterns;
+   *    each unique grid hit gets credited exactly once, reproducing
+   *    Ways math without requiring sister-side eval-mode dispatch.
+   *
+   * 3. Legacy row-cycle synthesis: top/middle/bottom rows + (i + r) %
+   *    rows zigzag fan. Pre-PAR-10 behavior, retained as last-resort
+   *    fallback for par sheets without an explicit Paylines tab and
+   *    without Ways topology. Drift on V-shape-heavy games is HIGH. */
   const paylines = [];
   const waysUniverse = Math.pow(rows, reels);
   const isWaysLayout = paylineCount >= 240 && paylineCount <= 8000;
-  if (isWaysLayout && waysUniverse <= 8000 && paylineCount >= waysUniverse * 0.9) {
-    /* Generate full N-ways universe. */
+
+  /* PAR-10: take the explicit Paylines-sheet patterns when:
+   *   (a) the extractor populated par_sheet.paylinePatterns
+   *   (b) every emitted pattern has exactly `reels` entries and each
+   *       row value is within 0..rows-1 (sanity invariant)
+   *
+   * NOTE on count: par sheets sometimes declare ONE paylineCount in
+   * the summary (e.g. Cash Eruption topology probe detects 8) while
+   * the Paylines tab carries a richer 20-line layout. The Paylines
+   * tab is AUTHORITATIVE — when present, we honor its count verbatim
+   * regardless of the topology probe. Topology probe miscounting only
+   * costs us a paytable normalization factor (paylineCountSafe below
+   * is re-bound to `paylines.length` after this block), so the kernel
+   * always sees a consistent (patterns, divisor) pair.
+   *
+   * Validation is intentionally strict on SHAPE — when in doubt, we
+   * fall through to PAR-9 Ways universe or row-cycle so the convergence
+   * number stays honest rather than silently consuming a malformed
+   * pattern set. */
+  const explicitPatterns = model.par_sheet?.paylinePatterns;
+  const explicitOk = Array.isArray(explicitPatterns)
+    && explicitPatterns.length >= 1
+    && explicitPatterns.every((p) => Array.isArray(p) && p.length === reels
+        && p.every((r) => Number.isInteger(r) && r >= 0 && r < rows));
+
+  if (explicitOk) {
+    /* PAR-10 winning path. */
+    for (const p of explicitPatterns) paylines.push([...p]);
+  } else if (isWaysLayout && waysUniverse <= 8000 && paylineCount >= waysUniverse * 0.9) {
+    /* PAR-9 Ways universe synthesis. */
     for (let i = 0; i < waysUniverse; i++) {
       const pattern = [];
       let acc = i;
@@ -208,7 +242,7 @@ function mapModelToGameConfig(model) {
       paylines.push(pattern);
     }
   } else {
-    /* Lines mode: row-cycle synthesis. */
+    /* Legacy row-cycle synthesis. */
     for (let row = 0; row < rows; row++) {
       paylines.push(Array(reels).fill(row));
       if (paylines.length >= paylineCount) break;

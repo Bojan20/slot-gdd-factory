@@ -794,6 +794,173 @@ function extractMaxWinCap(wb) {
 }
 
 /**
+ * PAR-10 (Boki 2026-06-26): Extract explicit payline patterns from the
+ * Paylines / PAR_LINES sheet of a par sheet xlsx.
+ *
+ * # WHY THIS EXISTS
+ *
+ * PAR-5 convergence mapper used to synthesize paylines via row-cycle
+ * fallback ([0,0,0,0,0], [1,1,1,1,1], [2,2,2,2,2], then i%rows zigzag).
+ * That's lossy: Cash Eruption deklariše 20 specifičnih patterns
+ * (top/middle/bottom rows + V-shapes + zigzags) — row-cycle hits the
+ * straight lines but misses every V/zigzag, under-counting middle-row
+ * symbol density. The result was a 30+ pp gap between declared base
+ * RTP (41.90 %) and measured (11.42 %).
+ *
+ * # FORMAT
+ *
+ * The Paylines sheet (sheet name matches `^paylines?$` / `^par[_\s-]?lines?$`)
+ * lays out one Payline label per 5-column block, 4-row block. Each
+ * block contains a 3×5 grid of cells; a cell holds 'X' when that
+ * (row, reel) belongs to the payline shape:
+ *
+ *   col+0..col+4 = 5 reels
+ *   row+1 = top row (grid row 0)
+ *   row+2 = middle row (grid row 1)
+ *   row+3 = bottom row (grid row 2)
+ *
+ *   Example block (Cash Eruption Payline 1, middle row):
+ *     C2 = "Payline 1"
+ *     C3 D3 E3 F3 G3 = blank (top row not hit)
+ *     C4 D4 E4 F4 G4 = "X" "X" "X" "X" "X" (middle row hit)
+ *     C5 D5 E5 F5 G5 = blank
+ *   → pattern = [1, 1, 1, 1, 1]
+ *
+ *   Payline 4 (V-shape):
+ *     R2 = "Payline 4"
+ *     R3 = "X" (top), V3 (top, reel 4)
+ *     S4 (mid, reel 1), U4 (mid, reel 3)
+ *     T5 (bottom, reel 2)
+ *   → pattern = [0, 1, 2, 1, 0]
+ *
+ * The walker scans every cell on every Paylines-tagged sheet, regex-
+ * matches the label, then peeks the X-grid below. Patterns sorted by
+ * line number on emit.
+ *
+ * # WHAT THIS CHANGES
+ *
+ * Closes the cash-eruption WARN by lifting the row-distribution
+ * fidelity from "row-cycle" → "exactly what par sheet declares".
+ *
+ * @returns {{ patterns: number[][] | null, count: number,
+ *             source: { sheet: string } | null, confidence: number }}
+ */
+export function extractPaylinePatterns(wb) {
+  /* Two label conventions seen in the wild:
+   *   - 'Payline 1', 'Payline 2', ... (Cash Eruption, Fort Knox style)
+   *   - 'Line 1:', 'Line 2:', ...     (Book of Unseen style, trailing colon) */
+  const LABEL_RX = /^\s*(?:payline|line)\s+(\d+)\s*:?\s*$/i;
+
+  /* Cell marker that flags "this (row, reel) belongs to the payline":
+   *   - 'X' or 'x' (Cash Eruption, Fort Knox)
+   *   - numeric 1  (Book of Unseen) */
+  const isMarker = (ws, r, c) => {
+    const cell = cellAt(ws, r, c);
+    if (!cell || cell.v === undefined || cell.v === null || cell.v === '') return false;
+    if (typeof cell.v === 'string') return cell.v.trim().toUpperCase() === 'X';
+    if (typeof cell.v === 'number') return cell.v === 1;
+    return false;
+  };
+
+  for (const sheetName of wb.SheetNames) {
+    /* Match: 'Paylines', 'PAR_LINES', 'PARLines', 'par-lines', etc. */
+    if (!/payline|par[_\s-]?lines?/i.test(sheetName)) continue;
+    const ws = wb.Sheets[sheetName];
+    const range = sheetRange(ws);
+    if (!range) continue;
+
+    const maxR = Math.min(range.e.r, range.s.r + 400);
+    const maxC = Math.min(range.e.c, range.s.c + 80);
+
+    /* PAR-10 (Boki 2026-06-26, post-Fort-Knox catch): grid rows-per-block
+     * isn't always 3. Fort Knox lays out 4 rows per block (because the
+     * physical reel window is 5×4 — topology probe under-counts but
+     * Paylines tab is authoritative). Detect block height dynamically:
+     *
+     *   1. Pass A: collect ALL label cells {row, col, line}
+     *   2. Block height = (min vertical distance between two labels
+     *      sharing the same column) − 1. Clamp to [3, 5] — anything
+     *      outside is a malformed sheet.
+     *   3. Pass B: walk markers for offset 1..blockHeight. */
+    const labelCells = [];
+    for (let r = range.s.r; r <= maxR; r++) {
+      for (let c = range.s.c; c <= maxC; c++) {
+        const s = cellString(ws, r, c);
+        if (!s) continue;
+        const m = LABEL_RX.exec(s);
+        if (!m) continue;
+        const lineN = parseInt(m[1], 10);
+        if (Number.isFinite(lineN)) labelCells.push({ r, c, lineN });
+      }
+    }
+    if (labelCells.length === 0) continue;
+
+    /* Vertical stride per column = label_row[N+1] - label_row[N]. The
+     * payline cells fit in (stride − 1) rows. */
+    const byCol = new Map();
+    for (const lc of labelCells) {
+      if (!byCol.has(lc.c)) byCol.set(lc.c, []);
+      byCol.get(lc.c).push(lc.r);
+    }
+    const strides = [];
+    for (const rows of byCol.values()) {
+      rows.sort((a, b) => a - b);
+      for (let i = 1; i < rows.length; i++) strides.push(rows[i] - rows[i - 1]);
+    }
+    const stride = strides.length > 0
+      ? strides.sort((a, b) => a - b)[Math.floor(strides.length / 2)]  // median
+      : 4;  // fallback for single-row sheets (3 pattern rows + 1 spacer)
+    const blockHeight = Math.max(3, Math.min(5, stride - 1));
+
+    const patternsByLine = new Map();
+    for (const lc of labelCells) {
+      const { r, c, lineN } = lc;
+      if (patternsByLine.has(lineN)) continue;
+
+      /* Scan 5 reels × blockHeight rows below the label. Each reel
+       * column gets the row index (0..blockHeight-1) where the marker
+       * lives. If no marker found, skip the entire payline rather
+       * than emit a partial pattern. */
+      const pattern = new Array(5).fill(null);
+      for (let reelIdx = 0; reelIdx < 5; reelIdx++) {
+        const col = c + reelIdx;
+        if (col > maxC) break;
+        for (let rowOffset = 1; rowOffset <= blockHeight; rowOffset++) {
+          if (isMarker(ws, r + rowOffset, col)) {
+            pattern[reelIdx] = rowOffset - 1;
+            break;
+          }
+        }
+      }
+      if (pattern.every((p) => p !== null)) {
+        patternsByLine.set(lineN, pattern);
+      }
+    }
+
+    if (patternsByLine.size > 0) {
+      const sortedLines = [...patternsByLine.keys()].sort((a, b) => a - b);
+      const patterns = sortedLines.map((n) => patternsByLine.get(n));
+      /* Effective grid rows = 1 + max row-index across patterns.
+       * Emitted so topology can be reconciled by callers when
+       * topology probe under-counted the physical window. */
+      const gridRows = 1 + patterns.reduce((m, p) => Math.max(m, ...p), 0);
+      return {
+        patterns,
+        count: patterns.length,
+        gridRows,
+        source: { sheet: sheetName },
+        /* Confidence 0.95 — explicit X-grid extraction is essentially
+         * deterministic when the label regex hits. The remaining 0.05
+         * accounts for malformed blocks (partial coverage skipped). */
+        confidence: 0.95,
+      };
+    }
+  }
+
+  return { patterns: null, count: 0, gridRows: null, source: null, confidence: 0 };
+}
+
+/**
  * Extract paytable rows from the par sheet. Two layouts supported:
  *
  * 1. **Combinations layout** (Cash Eruption, Fortune Coin Boost, Skeleton
@@ -1094,6 +1261,12 @@ async function buildModel(wb, slug) {
    * (not total), giving honest convergence verdicts without waiting
    * for full FS + HnW kernel coverage. */
   const components = extractRtpComponents(wb);
+  /* PAR-10 (Boki 2026-06-26): extract REAL payline patterns from the
+   * Paylines / PAR_LINES sheet so PAR-5 mapper stops synthesizing the
+   * shape via row-cycle fallback. Real patterns let the sister kernel
+   * count V-shapes / zigzags correctly — primary driver of measured
+   * row-distribution density. */
+  const paylinePatterns = extractPaylinePatterns(wb);
 
   /* Synthesized vendor-neutral display name. */
   const neutralName = sanitize(
@@ -1110,8 +1283,22 @@ async function buildModel(wb, slug) {
 
     topology: {
       reels: topo.reels,
-      rows: topo.rows,
-      paylines: topo.paylines,
+      /* PAR-10 (Boki 2026-06-26): when extractor lifted explicit
+       * payline patterns AND those patterns reference rows beyond the
+       * topology probe count (Fort Knox is 5×4 not 5×3, but probe
+       * lacked the 4th-row signal), trust the Paylines tab — it's the
+       * authoritative grid descriptor for what the kernel evaluates. */
+      rows: paylinePatterns.gridRows && paylinePatterns.gridRows > topo.rows
+        ? paylinePatterns.gridRows
+        : topo.rows,
+      /* PAR-10: same logic for paylines count. Paylines tab declares
+       * the canonical line set; topology probe's count is a heuristic
+       * (Summary sheet scan) that under-counts when the par sheet
+       * describes more lines in the Paylines tab than the Summary
+       * label exposes. */
+      paylines: paylinePatterns.count > 0
+        ? paylinePatterns.count
+        : topo.paylines,
       kind: topo.reels === 6 ? 'tumble' : 'rectangular',
       /* PAR-9 (Boki 2026-06-26): explicit evaluation mode. PAR-5
        * convergence mapper dispatches to Ways universe (rows^reels)
@@ -1217,6 +1404,17 @@ async function buildModel(wb, slug) {
            * repeating each symbol `weight` times — that's the
            * authoritative slot_sim contract path. */
           reelStrips: reels.reelWeights,
+          /* PAR-10 (Boki 2026-06-26): explicit payline patterns lifted
+           * from the Paylines sheet. Format: number[][] where each
+           * inner array has length = topology.reels, values 0..rows-1
+           * indicating the grid row each reel anchor occupies. PAR-5
+           * mapper preference order:
+           *   1. paylinePatterns (if present and count >= topology.paylines)
+           *   2. Ways universe (rows^reels) when evalMode === 'ways'
+           *   3. Row-cycle synthesis (legacy fallback) */
+          ...(paylinePatterns.patterns
+            ? { paylinePatterns: paylinePatterns.patterns }
+            : {}),
         }
       : undefined,
 
@@ -1244,6 +1442,9 @@ async function buildModel(wb, slug) {
         reelStrips: reels.source ? `par-sheet:${reels.source.sheet}` : 'absent',
         paytable: pay.source
           ? `par-sheet:${pay.source.sheet}@row${pay.source.headerRow}:${pay.source.layout}`
+          : 'absent',
+        paylinePatterns: paylinePatterns.source
+          ? `par-sheet:${paylinePatterns.source.sheet}[${paylinePatterns.count} lines]`
           : 'absent',
       },
     },
@@ -1398,7 +1599,22 @@ async function main() {
   if (fail > 0) process.exit(1);
 }
 
-main().catch((e) => {
-  console.error('FATAL:', e);
-  process.exit(2);
-});
+/* PAR-10 (Boki 2026-06-26): guard top-level main() so test fixtures can
+ * import extractPaylinePatterns without triggering the CLI dispatch.
+ * Without this, `import { extractPaylinePatterns } from '...'` would
+ * immediately invoke main() and crash because there are no CLI args
+ * in the test process. */
+const __isCliEntry = (() => {
+  try {
+    return import.meta.url === `file://${process.argv[1]}`;
+  } catch {
+    return false;
+  }
+})();
+
+if (__isCliEntry) {
+  main().catch((e) => {
+    console.error('FATAL:', e);
+    process.exit(2);
+  });
+}

@@ -139,16 +139,27 @@ jela na meniju". Sintetišemo UX iz par sheet metadata, math je real.
 │         │   - book-of-unseen FAIL total 96.20% vs measured 19.72% │           │
 │         │   - fortune-coin FAIL total 95.01% vs measured 20.25%   │           │
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
-│ PAR-10  │ Real payline patterns iz Paylines sheet-a               │ 📋 PLAN  │
-│         │   Cash Eruption 8 paylines deklariše SPECIFIC zigzag     │           │
-│         │   patterns u Paylines tab-u (top row, middle, bottom +  │           │
-│         │   5 V-shapes). PAR-5 mapper trenutno generiše row-cycle │           │
-│         │   sinhroničke kopije ([0,0,0,0,0], [1,1,1,1,1], ...) —   │           │
-│         │   under-counts middle-row hits. Treba parse Paylines     │           │
-│         │   sheet cells za { ['X', 'X', 'X', 'X', 'X'] po row-u } │           │
-│         │   i mapirati u model.par_sheet.paylinePatterns. PAR-5   │           │
-│         │   mapper koristi te patterns umesto row-cycle.          │           │
-│         │   Effort: ~1h. Closes cash-eruption gap.                 │           │
+│ PAR-10  │ Real payline patterns iz Paylines / PAR_LINES sheet-a   │ ✅ LANDED│
+│         │   extractPaylinePatterns() u _par-sheet-to-model.mjs:    │           │
+│         │   - Label regex podržava "Payline N" + "Line N:"          │           │
+│         │   - Marker podržava 'X' (string) + 1 (numeric)            │           │
+│         │   - Dynamic block height (3 rows CE/BoU, 4 rows FK)      │           │
+│         │   - Vertical stride median → blockHeight = stride - 1     │           │
+│         │   - Partial-pattern rejection (missing marker → skip)    │           │
+│         │   Wired u par_sheet.paylinePatterns + topology rows/      │           │
+│         │   paylines override kad par sheet je authoritative:      │           │
+│         │   - cash-eruption: 5×3/8 → 5×3/20 (Paylines tab je 20)   │           │
+│         │   - fort-knox: 5×3/20 → 5×4/40 (real grid 4 rows)        │           │
+│         │   - book-of-unseen: 5×3/20 → 5×3/10 (lift od PAR_LINES)  │           │
+│         │   PAR-5 mapper preference ladder (1) explicit patterns,  │           │
+│         │   (2) Ways universe, (3) row-cycle legacy fallback.      │           │
+│         │   Contract test 8/8 (tests/tools/par-10-paylines.test).  │           │
+│         │   Measured delta po slug-u (200k×2): minimum (-0.10pp do │           │
+│         │   -0.33pp). Pattern shape NIJE bila dominantna driver —   │           │
+│         │   Wild substitution + FS contribution dominiraju residual.│           │
+│         │   To je PAR-11/PAR-7-FULL scope. Atom je SHIPPED kao       │           │
+│         │   honest fidelity fix: par sheet je sad authoritative za  │           │
+│         │   topology + paylines, ne više topology probe heuristic.  │           │
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
 │ PAR-11  │ Symbol-id case + Special Reel Set / Mystery reveal      │ 📋 PLAN  │
 │         │   Skeleton Key reel ima 'Key' / 'Mystery' / 'Wild'      │           │
@@ -210,6 +221,63 @@ Ultra-deep audit (3-paralel Explore agente):
     symbol-id case (MODERATE — PAR-11).
   Audit 3 (cortex eyes): 5/5 slot.html clean, reels=5, cells=25,
     runOneBaseSpin OK, 10/10 win-rate frequency.
+```
+
+### PAR-10 closeout receipt (2026-06-26 19:45 UTC)
+
+```
+┌──────────────┬──────────────────────────────────────────────────────┐
+│ Šta zatvara   │ Pattern fidelity: explicit Paylines/PAR_LINES lift   │
+│ Skripte       │ tools/_par-sheet-to-model.mjs (+ extractor + topo    │
+│               │ override + main() guard + export)                    │
+│               │ tools/_par-sheet-convergence.mjs (mapper preference  │
+│               │ ladder: explicit → Ways → row-cycle)                 │
+│               │ tests/tools/par-10-paylines.test.mjs (NEW, 8 PASS)   │
+└──────────────┴──────────────────────────────────────────────────────┘
+
+Topology promene posle re-ingestiranja 5 par sheets:
+
+┌──────────────────────────┬───────────────┬───────────────┐
+│ Slug                       │ Pre-PAR-10    │ Post-PAR-10   │
+├──────────────────────────┼───────────────┼───────────────┤
+│ cash-eruption              │ 5×3 / 8 lines │ 5×3 / 20 lines│
+│ fort-knox-wolf-run         │ 5×3 / 20 lines│ 5×4 / 40 lines│
+│ book-of-unseen-bonus-buy   │ 5×3 / 20 lines│ 5×3 / 10 lines│
+│ skeleton-key               │ 5×3 / 243 ways│ 5×3 / 243 ways│
+│ fortune-coin-boost-classic │ 5×3 / 243 ways│ 5×3 / 243 ways│
+└──────────────────────────┴───────────────┴───────────────┘
+
+Convergence merenje (200k×2 seeds, baseGame target gde dostupan):
+
+┌──────────────────────────┬──────────────┬──────────────┬──────────┐
+│ Slug                       │ PAR-9 measured│PAR-10 measured│ Δ         │
+├──────────────────────────┼──────────────┼──────────────┼──────────┤
+│ cash-eruption              │ 11.42%       │ 11.26%       │ -0.16 pp │
+│ fort-knox-wolf-run         │ 48.10%       │ 48.00%       │ -0.10 pp │
+│ book-of-unseen-bonus-buy   │ 19.72%       │ 19.39%       │ -0.33 pp │
+└──────────────────────────┴──────────────┴──────────────┴──────────┘
+
+Honest verdict: pattern fidelity NIJE bila dominantna driver gap-a.
+Razlike <0.5 pp znače da kernel hits su roughly invariant pod pattern
+shape promenom kad number_of_lines mass × pay-per-line × hit-rate
+stays roughly constant. Real driver-i preostalog gap-a:
+
+  - cash-eruption    : Wild substitution (kernel nema substitutes_for)
+  - fort-knox        : 5×4 grid sad pravilan; preostali gap = wilds + FS
+  - book-of-unseen   : Bonus Buy variants + Wild expansion (PAR-7-FULL)
+  - skeleton-key     : Mystery reveal mechanic (PAR-11)
+  - fortune-coin     : Coin Boost feature (243-ways + bonus, PAR-11)
+
+PAR-10 ISHODI:
+  ✅ Topology probe NE under-counts više (Fort Knox je 5×4 ne 5×3)
+  ✅ Paylines tab je authoritative source za rows + paylines count
+  ✅ Mapper koristi explicit V-shape/zigzag patterns deterministically
+  ✅ Contract test pin: regression u extractoru = test FAIL pre commit-a
+  ✅ Verify gate sve zeleno (33 step-a + new test inkluzija)
+
+SLEDEĆI: PAR-11 (Wild substitution + Mystery reveal). PAR-10 je ono
+što je obećalo da DA — explicit fidelity. Što se measured RTP-a tiče,
+veliki delta nije bio realan da očekuje od ovog atom-a.
 ```
 │         │   Skeleton Key + Cash Eruption HoldAndWin + Book of      │           │
 │         │   Unseen Bonus Buy → declared total RTP uključuje FS    │           │
