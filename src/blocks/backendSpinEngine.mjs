@@ -181,11 +181,34 @@ export function emitBackendSpinEngineRuntime(cfg = defaultConfig(), model = {}) 
   window.__BACKEND_STATUS__ = BSE_STATUS;
   window.__BACKEND_LAST_SPIN__ = null;
 
+  /* UQ-LV3-QA-5-A #7 + QA-5-B #2 (Boki 2026-06-26): fallback audit.
+   * Pre-fix: status flipped to offline silently — cert-pack couldn't
+   * tell HOW MANY spins were Rust-served vs JS-fallback. Now we emit
+   * onBackendFallback on every offline transition AND keep a cumulative
+   * counter (window.__BACKEND_FALLBACK_COUNT__) plus a single-string
+   * banner (window.__BACKEND_FALLBACK_LAST__) that cert-pack-export
+   * reads when building the audit chain. No backticks in this comment
+   * — it lives inside an outer template literal. */
+  window.__BACKEND_FALLBACK_COUNT__ = 0;
+  window.__BACKEND_FALLBACK_LAST__ = null;
+
   function setStatus(s) {
+    var prev = BSE_STATUS;
     BSE_STATUS = s;
     window.__BACKEND_STATUS__ = s;
     if (window.HookBus && typeof window.HookBus.emit === 'function') {
       try { window.HookBus.emit('onBackendStatusChanged', { status: s }); } catch (_) {}
+      if (s === 'offline' && prev !== 'offline') {
+        window.__BACKEND_FALLBACK_COUNT__ += 1;
+        window.__BACKEND_FALLBACK_LAST__ = {
+          at: (typeof Date !== 'undefined') ? new Date().toISOString() : null,
+          fromStatus: prev,
+          totalTransitions: window.__BACKEND_FALLBACK_COUNT__,
+        };
+        try {
+          window.HookBus.emit('onBackendFallback', window.__BACKEND_FALLBACK_LAST__);
+        } catch (_) { /* swallow */ }
+      }
     }
   }
 

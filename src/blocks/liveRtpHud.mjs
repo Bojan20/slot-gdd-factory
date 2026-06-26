@@ -361,6 +361,14 @@ export function emitLiveRtpHudRuntime(cfg = defaultConfig(), model = {}) {
         lrh.history.push(measured);
         if (lrh.history.length > LRH_CFG.sparklineWindow) lrh.history.shift();
       }
+      /* UQ-LV3-QA-5-A #1 (Boki 2026-06-26): expose measured RTP as a
+       * window global so probes (tools/_lv3-live-rtp-probe.mjs) and
+       * regulator inspector tooling can read the running mean without
+       * importing the block. Stays in sync with lrh.rtpSum divided by
+       * lrh.n (single source of truth). Stored as PERCENTAGE (e.g.
+       * 95.87) to match the probe declared-minus-measured math
+       * semantics. No backticks here — outer template literal. */
+      window.__MEASURED_RTP__ = measured * 100;
     }
     paint();
   }

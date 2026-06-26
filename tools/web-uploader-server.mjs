@@ -51,6 +51,41 @@ import { fileURLToPath } from 'node:url';
 import { randomUUID, createHash } from 'node:crypto';
 /* LV3-1 — auto-spawn math-backend kao child process kad uploader bootuje. */
 import { ensureBackendRunning, stopBackend } from './math-backend-spawner.mjs';
+/* UQ-LV3-QA-5-B #3 (Boki 2026-06-26): operator-toggle audit. */
+import { buildAuditEntry } from '../src/registry/auditTrail.mjs';
+
+/* In-memory ring buffer of operator-toggle audit entries. Cert-pack
+ * export reads via `getOperatorToggleAuditLog()`. Persistence to disk
+ * is out-of-band per the existing AUDIT_STORE pattern in math-backend.
+ * Capped at 1000 entries; oldest evicted to keep memory bounded. */
+const _OPERATOR_TOGGLE_AUDIT = [];
+const _OPERATOR_TOGGLE_AUDIT_MAX = 1000;
+export function getOperatorToggleAuditLog() {
+  return _OPERATOR_TOGGLE_AUDIT.slice();
+}
+function _logOperatorToggle(action, fromState, toState, req) {
+  try {
+    const entry = buildAuditEntry({
+      kind: 'operator_backend_toggle',
+      sessionId: 'uploader-' + process.pid,
+      ts: new Date().toISOString(),
+      action,
+      fromHealthOk: !!(fromState && fromState.healthOk),
+      toHealthOk: !!(toState && toState.healthOk),
+      port: toState ? toState.port : null,
+      remoteAddr: (req && req.socket && req.socket.remoteAddress) || 'unknown',
+    });
+    _OPERATOR_TOGGLE_AUDIT.push(entry);
+    if (_OPERATOR_TOGGLE_AUDIT.length > _OPERATOR_TOGGLE_AUDIT_MAX) {
+      _OPERATOR_TOGGLE_AUDIT.shift();
+    }
+  } catch (e) {
+    /* Never break the toggle on audit-log failure. */
+    if (typeof console !== 'undefined' && console.warn) {
+      console.warn('[web-uploader] toggle audit log failed:', e && e.message);
+    }
+  }
+}
 
 let _mathBackendStatus = { spawned: false, healthOk: false, port: 9001, reason: 'not-started' };
 /* UQ-LV3-QA-4 #4 (Boki 2026-06-26): snapshot reference first so a
@@ -472,10 +507,12 @@ async function handleBackendModeToggle(req, res) {
     port: _mathBackendStatus && _mathBackendStatus.port,
     version: _mathBackendStatus && _mathBackendStatus.version,
   };
+  const prevState = { ..._mathBackendStatus };
   try {
     if (wantEnabled) {
       const r = await ensureBackendRunning({ /* let spawner autopick */ });
       _mathBackendStatus = r;
+      _logOperatorToggle('spawned', prevState, _mathBackendStatus, req);
       return sendJSON(res, 200, {
         ok: true,
         action: 'spawned',
@@ -490,6 +527,7 @@ async function handleBackendModeToggle(req, res) {
       reason: 'stopped-by-operator',
       lastKnown,
     };
+    _logOperatorToggle('stopped', prevState, _mathBackendStatus, req);
     return sendJSON(res, 200, {
       ok: true,
       action: 'stopped',
