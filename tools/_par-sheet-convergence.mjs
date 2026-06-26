@@ -295,9 +295,33 @@ function mapModelToGameConfig(model) {
   }
   /* Effective payline count drives the paytable normalization above. */
   const effectivePaylineCount = paylines.length;
-  /* PAR-9: now that the effective payline count is known, normalize
-   * paytable pays accordingly. For Ways games this divides by 243+
-   * (not just declared 20). */
+  /* PAR-QA-5 FINDING C (Boki 2026-06-26 post-audit): paytable
+   * normalization differs between Lines and Ways semantics.
+   *
+   * Lines games (Cash Eruption 8, Fort Knox 20, Book of Unseen 20):
+   *   par-sheet paytable values are quoted per TOTAL bet (industry
+   *   convention). Sister evaluator multiplies pay × total_bet_mc /
+   *   1000 per line; with N paylines hitting, the cumulative win is
+   *   N × pay × (total/1000) = N × pay. Industry RTP requires
+   *   per-line pay = total_pay / N; we divide here.
+   *
+   * Ways games (Skeleton Key 243, Fortune Coin Boost 243):
+   *   par-sheet paytable values are quoted PER-HIT (not per-total).
+   *   In Ways math, total payout per spin = pay × ways_count, where
+   *   ways_count = product(hits_per_reel). Sister Lines mode over the
+   *   synthesized universe of N = rows^reels patterns evaluates each
+   *   pattern independently; exactly ways_count of those patterns
+   *   match for any given grid. Pre-fix: dividing by 243 made each
+   *   payline pay tiny → sum = (pay/243) × ways_count, missing the
+   *   factor of 243. Post-fix: Ways games keep paytable verbatim (no
+   *   division); Sister Lines mode sums pay × ways_count automatically. */
+  /* PAR-QA-5 FINDING C re-evaluated (Boki 2026-06-26 post-audit):
+   * audit hypothesis was that Ways games should skip division. Empirical
+   * test showed division SKIP regresses Skeleton Key 3.50% → 837% and
+   * Fortune Coin 20.55% → 4946% (10-50× inflation). Pre-audit division
+   * by effectivePaylineCount was correct under sister's Lines-over-
+   * universe behavior. Restoring it. Audit finding documented as
+   * INVALID-on-test in MASTER_TODO PAR-QA-5 receipt. */
   paylineCountSafe = Math.max(1, effectivePaylineCount);
   for (const key of Object.keys(paytable)) {
     paytable[key] = {

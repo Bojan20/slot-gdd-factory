@@ -864,7 +864,12 @@ export function extractPaylinePatterns(wb) {
 
   for (const sheetName of wb.SheetNames) {
     /* Match: 'Paylines', 'PAR_LINES', 'PARLines', 'par-lines', etc. */
-    if (!/payline|par[_\s-]?lines?/i.test(sheetName)) continue;
+    /* PAR-QA-5 HIGH (Boki 2026-06-26 post-audit): unanchored regex
+     * collided with sibling sheets like "PaylineHistogram" or
+     * "PaylinesNotes" emitting partial / corrupted patterns. Anchored
+     * to exact canonical names: "Paylines", "PAR_LINES", "Payline" (sg).
+     * Trailing optional digit suffix (e.g. "Paylines2") still permitted. */
+    if (!/^(?:paylines?\d*|par[_\s-]?lines?\d*)$/i.test(sheetName)) continue;
     const ws = wb.Sheets[sheetName];
     const range = sheetRange(ws);
     if (!range) continue;
@@ -1154,17 +1159,38 @@ function extractTopology(wb, reelStripsResult) {
    * 7,776 Ways" — the underlying engine is Ways, not Lines).
    * Pattern: any digits-then-"ways" token, with optional "to X" upper
    * bound which we ignore (we use the BASE ways count). */
+  /* PAR-QA-5 FINDING D + F (Boki 2026-06-26 post-audit):
+   * Tightened to avoid two false-positive vectors that the original
+   * loose match introduced:
+   *   D — "5 ways to play" / "X ways or money back" idiomatic phrases
+   *       in feature description cells hijacking topology. Fix: restrict
+   *       to canonical Summary / Topology sheets (sheet name regex)
+   *       AND require the cell to be the entire token (anchored regex).
+   *   F — confidence bump (plConfidence = 0.85) happened BEFORE the
+   *       Paylines tab fall-through, so a stale "243 ways" string in a
+   *       Notes column could lock topology incorrectly. Fix: bound the
+   *       sheet scope so the regex only fires in Summary-class sheets
+   *       where ways topology is canonically declared. */
+  const SUMMARY_SHEET_RX = /summary|cover|^par[-_\s]?\d|^par[-_\s]?base|^par[-_\s]?\d{3}/i;
+  /* PAR-QA-5 FINDING D revised: substring match (not anchored) inside
+   * Summary-class sheets only. Real par sheets embed ways count in
+   * longer strings like "Topology: 3x5 / 243 to 7,776 Ways" or
+   * "243 to 7776 Ways · 5 reels". Sheet-scope filter alone eliminates
+   * idiomatic false positives ("5 ways to play") since those live in
+   * feature description sheets, not Summary. */
+  const WAYS_LINE_RX = /(\d{2,5})(?:\s*to\s*[\d,]+)?\s*ways?\b/i;
   for (const sheetName of wb.SheetNames) {
+    if (!SUMMARY_SHEET_RX.test(sheetName)) continue;
     const ws = wb.Sheets[sheetName];
     const range = sheetRange(ws);
     if (!range) continue;
-    const maxR = Math.min(range.e.r, range.s.r + 100);
+    const maxR = Math.min(range.e.r, range.s.r + 30);
     const maxC = Math.min(range.e.c, range.s.c + 20);
     for (let r = range.s.r; r <= maxR && waysFound === null; r++) {
       for (let c = range.s.c; c <= maxC; c++) {
         const s = cellString(ws, r, c);
         if (!s) continue;
-        const m = s.match(/(\d{2,5})(?:\s*to\s*[\d,]+)?\s*ways?\b/i);
+        const m = s.match(WAYS_LINE_RX);
         if (m) {
           waysFound = parseInt(m[1], 10);
           plConfidence = 0.85;
