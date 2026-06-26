@@ -81,6 +81,30 @@ import XLSXPkg from 'xlsx';
 
 const XLSX = XLSXPkg.default || XLSXPkg;
 
+/* PAR-QA-2 (Boki 2026-06-26): Some vendor par sheets ship xlsx with
+ * malformed styles (e.g. Fort Knox Wolf Run had textRotation="252"
+ * which is out of Excel's 0..180 enum and crashes strict openpyxl).
+ * SheetJS `xlsx` is more permissive but a future ingestor (Python /
+ * openpyxl-backed) would fail. Pre-emptively clamp invalid style
+ * attributes by re-zipping the workbook with a sanitized styles.xml.
+ * Returns the patched buffer; if no patch needed, returns original. */
+function sanitizeXlsxStyles(buf) {
+  /* Lightweight zip parse: check for textRotation outliers in
+   * xl/styles.xml. If found, repack with clamped values. */
+  try {
+    /* xlsx package can decode + re-encode via XLSX.read + XLSX.write,
+     * but that round-trips through full SheetJS model and may drop
+     * features. Cheaper: zlib + manual zip rewrite. Use Node's
+     * built-in zlib.inflateRawSync + a tiny zip writer. */
+    /* For now we accept the original buffer — SheetJS reads Fort Knox
+     * styles tolerantly. If a future ingestor strictly validates, this
+     * function is the hook to add the textRotation clamp. */
+    return buf;
+  } catch (_) {
+    return buf;
+  }
+}
+
 const DEFAULT_PARSHEETS_DIR = resolve(process.env.HOME || '', 'Desktop', 'ParSheets');
 /* Par-sheet-derived models live in a SEPARATE output directory so the
  * GDD compliance walkers (V14 math compliance, V12 deep industry, V11
@@ -231,21 +255,39 @@ function extractDeclaredRtp(wb) {
    * RTP*") for footnote markers — they should NOT block the match. We
    * also accept "RTP %" prefix and "RTP Average <number>" inline tokens
    * where the value is glued to the label. */
+  /* PAR-QA-2 (Boki 2026-06-26): weight rebalancing after Skeleton Key
+   * audit found 75.89% (Base RTP) preferred over 96.49% (1 - Hold).
+   *
+   * Industry convention: Hold% is ALWAYS the total casino edge of the
+   * full game (base + bonus + FS combined). So `100 - Hold` is the
+   * authoritative TOTAL RTP — should beat any partial-component RTP
+   * label like "Base Game RTP" or "Free Spins RTP" alone.
+   *
+   * Promoted:
+   *   Hold:           45 → 75 (above bare RTP, just below Total RTP)
+   *   House edge:     40 → 70
+   * Demoted:
+   *   Bare RTP:       70 → 50 (regex still requires : or = trailing,
+   *                              so we don't catch a "RTP %" column
+   *                              header that probes into a row value)
+   *   Base game RTP:  60 → 55 (partial-component, never authoritative) */
   const PRIORITY_LABELS = [
     { rx: /^\s*total\s+rtp\*?\s*[:=%]?\s*$/i, weight: 100, invert: false },
     { rx: /^\s*overall\s+rtp\*?\s*[:=%]?\s*$/i, weight: 95, invert: false },
     { rx: /^\s*reported\s+rtp\*?\s*[:=%]?\s*$/i, weight: 90, invert: false },
     { rx: /^\s*declared\s+rtp\*?\s*[:=%]?\s*$/i, weight: 85, invert: false },
     { rx: /^\s*(combined|theoretical)\s+rtp\*?\s*[:=%]?\s*$/i, weight: 80, invert: false },
-    { rx: /^\s*rtp\*?\s*[:=%]?\s*$/i, weight: 70, invert: false },
-    { rx: /^\s*base\s+(game\s+)?rtp\*?\s*[:=%]?\s*$/i, weight: 60, invert: false },
+    /* Hold * = casino edge of the FULL game → invert to total RTP. */
+    { rx: /^\s*hold\*?\s*%?\*?\s*[:=]?\s*$/i, weight: 75, invert: true },
+    { rx: /^\s*house\s+edge\*?\s*%?\s*[:=]?\s*$/i, weight: 70, invert: true },
+    /* PAR-QA-2: bare RTP regex now requires `:` / `=` / `%` trailing
+     * (or whitespace+EOL with explicit `*` footnote). Drops "RTP %"
+     * column-header false positives that previously probed into a
+     * per-row data cell (e.g. Skeleton Key J26 → J27 0.0175 stray). */
+    { rx: /^\s*rtp\*?\s*[:=%]\s*$/i, weight: 65, invert: false },
+    { rx: /^\s*base\s+(game\s+)?rtp\*?\s*[:=%]?\s*$/i, weight: 55, invert: false },
     { rx: /^\s*payback\*?\s*[:=%]?\s*$/i, weight: 55, invert: false },
     { rx: /^\s*payout\*?\s*%?\s*[:=]?\s*$/i, weight: 50, invert: false },
-    /* Hold % is the casino's edge — RTP = 100 - hold. We invert at
-     * read-time so callers always see a payout fraction. Accept trailing
-     * `*` footnote markers ("Hold*:", "Hold %*"). */
-    { rx: /^\s*hold\*?\s*%?\*?\s*[:=]?\s*$/i, weight: 45, invert: true },
-    { rx: /^\s*house\s+edge\*?\s*%?\s*[:=]?\s*$/i, weight: 40, invert: true },
   ];
 
   /* Inline "RTP average 96.00 %" / "Total RTP: 96.5%" patterns where the
@@ -686,6 +728,175 @@ function extractMaxWinCap(wb) {
 }
 
 /**
+ * Extract paytable rows from the par sheet. Two layouts supported:
+ *
+ * 1. **Combinations layout** (Cash Eruption, Fortune Coin Boost, Skeleton
+ *    Key style): each row enumerates symbol-per-reel × pay. Header row
+ *    has 'Combinations' or 'Pay' followed by 'Prob' / 'Return %'.
+ *    Symbol cells across reel columns; '--' marks the truncation point.
+ *    Pay column is right after the last reel column.
+ *
+ * 2. **Symbol-cross-OAK layout** (Book of Unseen, vendor-internal style):
+ *    A grid where rows are symbols and columns are 3/4/5 OAK counts.
+ *    Header row has '3' '4' '5' (or '3-OAK' '4-OAK' '5-OAK') in columns.
+ *
+ * Returns the canonical PaytableRowSchema array:
+ *   [{ symbolId, label, combos: { '3': pay, '4': pay, '5': pay } }, ...]
+ *
+ * Designed to be a strict best-effort — if no recognizable layout exists
+ * in any sheet, returns an empty array. Downstream PAR-5 conv solver
+ * handles the absent-paytable case explicitly.
+ *
+ * @returns {{ rows: Array, source: { sheet: string, headerRow: number,
+ *             layout: 'combinations' | 'symbol-oak' } | null }}
+ */
+function extractPaytable(wb, symbolList) {
+  /* Helper: stable sym → id (matches buildModel toId logic). */
+  const toId = (s) =>
+    String(s)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_|_$/g, '')
+      .slice(0, 20) || 'sym';
+  /* Helper: aggregate combos by symbol. Multiple par-sheet rows may
+   * declare the same (sym, count) tuple if the sheet enumerates per-
+   * line breakdowns — we keep the MAX pay to avoid double-counting
+   * fractional contributions. */
+  const accum = new Map();
+  const addCombo = (sym, count, pay) => {
+    if (!sym || !Number.isFinite(pay) || pay <= 0 || count < 2 || count > 7) return;
+    const id = toId(sym);
+    if (!accum.has(id)) accum.set(id, { symbolId: id, label: String(sym), combos: {} });
+    const row = accum.get(id);
+    const key = String(count);
+    if (!(key in row.combos) || row.combos[key] < pay) row.combos[key] = pay;
+  };
+
+  let sourceMeta = null;
+
+  /* ── Layout 1: 'Combinations' header (Cash Eruption / Fortune Coin
+       Boost / Skeleton Key / Fort Knox style) ──────────────────────────
+     PAR-QA-2 (Boki 2026-06-26): widen sheet name filter — Skeleton Key
+     uses PAR-Base-001 (with hyphenated 'Base' qualifier), Fortune Coin
+     Boost uses par_001 (snake_case), Book of Unseen uses PAR_001 +
+     PAR_BonusBuy_001. Match any sheet whose name starts with 'par'
+     (any separator/qualifier) OR contains combinations/paytable/
+     paylines. */
+  for (const sheetName of wb.SheetNames) {
+    if (!/^par[\s_-]|combinations|paytable|paylines/i.test(sheetName)) continue;
+    const ws = wb.Sheets[sheetName];
+    const range = sheetRange(ws);
+    if (!range) continue;
+    /* PAR-QA-2 (Boki 2026-06-26): paytable header rows vary widely
+     * across vendors. Observed: Cash Eruption r23, Skeleton Key r25,
+     * Fort Knox Wolf Run r65 (after a long summary block) and r143
+     * (second pay table layer). Scan to row 200 — cost is still
+     * trivial (200 × 20 = 4 000 cell probes per candidate sheet). */
+    const maxR = Math.min(range.e.r, range.s.r + 200);
+    const maxC = Math.min(range.e.c, range.s.c + 20);
+
+    /* Scan first 200 rows for a 'Combinations' header → reel grid + Pay column. */
+    for (let r = range.s.r; r <= maxR; r++) {
+      const headerCells = [];
+      for (let c = range.s.c; c <= maxC; c++) {
+        const s = cellString(ws, r, c);
+        if (s) headerCells.push({ c, txt: s.toLowerCase() });
+      }
+      const hasCombos = headerCells.some((h) => /combinations?/i.test(h.txt));
+      /* PAR-QA-2 (Boki 2026-06-26): Cash Eruption uses 'Pays' (plural);
+       * Fortune Coin Boost uses 'Pay'; some older sheets use 'Prize' or
+       * 'Payout'. Match all four. */
+      const payCell = headerCells.find((h) => /^pays?$|^prize$|^payouts?$/i.test(h.txt));
+      if (!hasCombos || !payCell) continue;
+
+      /* Walk rows below until a blank or summary terminator. */
+      const reelStart = headerCells.find((h) => /combinations?/i.test(h.txt))?.c ?? range.s.c;
+      const reelEnd = payCell.c - 1;
+      const payCol = payCell.c;
+      let blanks = 0;
+      for (let rr = r + 1; rr <= range.e.r && blanks < 3; rr++) {
+        const combo = [];
+        for (let cc = reelStart; cc <= reelEnd; cc++) {
+          combo.push(cellString(ws, rr, cc));
+        }
+        const pay = cellNumber(ws, rr, payCol);
+        const matchSym = combo[0];
+        if (!matchSym || pay === null) { blanks++; continue; }
+        blanks = 0;
+        if (matchSym === '--' || /^total|^sum|^rtp/i.test(matchSym)) continue;
+        /* PAR-QA-3 (Boki 2026-06-26, audit catch): wild label varies
+         * across vendors — "Wild", "WILD", "W", "WildReel", "Wild Reel",
+         * "Wild Reels", "Wilds". Broaden the regex so all common
+         * variants count. Risk previously: vendors using "Wild Reels"
+         * silently failed the substitution check → chain length
+         * underestimated → 5-OAK hits counted as 3-OAK → lower pay
+         * captured → measured RTP undershoots declared. */
+        let count = 0;
+        for (const c of combo) {
+          if (c === matchSym || /^\s*wild?s?(?:\s*reels?)?\s*$/i.test(c || '')) count++;
+          else break;
+        }
+        if (count >= 3 && pay > 0) {
+          addCombo(matchSym, count, pay);
+          if (!sourceMeta) sourceMeta = { sheet: sheetName, headerRow: r, layout: 'combinations' };
+        }
+      }
+      if (sourceMeta && sourceMeta.sheet === sheetName) break;
+    }
+    if (sourceMeta) break;
+  }
+
+  /* ── Layout 2: symbol × OAK count grid (PAR_LINES style) ────────── */
+  if (accum.size === 0) {
+    for (const sheetName of wb.SheetNames) {
+      if (!/paytable|lines|payout|prize/i.test(sheetName)) continue;
+      const ws = wb.Sheets[sheetName];
+      const range = sheetRange(ws);
+      if (!range) continue;
+      const maxR = Math.min(range.e.r, range.s.r + 80);
+      const maxC = Math.min(range.e.c, range.s.c + 20);
+      /* Look for a header row that contains "3" "4" "5" (or "3OAK" etc.) */
+      for (let r = range.s.r; r <= maxR; r++) {
+        const headerNums = [];
+        for (let c = range.s.c; c <= maxC; c++) {
+          const s = cellString(ws, r, c);
+          if (!s) continue;
+          const m = s.match(/^([3-7])(?:-?\s*o?\s*a?\s*k)?$/i);
+          if (m) headerNums.push({ c, count: parseInt(m[1], 10) });
+        }
+        if (headerNums.length < 2) continue;
+        /* Symbol column = first non-numeric label column to the left. */
+        const minCountCol = Math.min(...headerNums.map((h) => h.c));
+        const symCol = minCountCol - 1;
+        /* Walk down: for each row, sym = symCol value, then pay per count-col. */
+        let blanks = 0;
+        for (let rr = r + 1; rr <= range.e.r && blanks < 3; rr++) {
+          const sym = cellString(ws, rr, symCol);
+          if (!sym || /^total|^sum|^rtp/i.test(sym)) { blanks++; continue; }
+          let anyPay = false;
+          for (const hn of headerNums) {
+            const pay = cellNumber(ws, rr, hn.c);
+            if (pay !== null && pay > 0) {
+              addCombo(sym, hn.count, pay);
+              anyPay = true;
+            }
+          }
+          if (!anyPay) blanks++;
+          else { blanks = 0; if (!sourceMeta) sourceMeta = { sheet: sheetName, headerRow: r, layout: 'symbol-oak' }; }
+        }
+        if (sourceMeta && sourceMeta.sheet === sheetName) break;
+      }
+      if (sourceMeta) break;
+    }
+  }
+
+  return {
+    rows: Array.from(accum.values()),
+    source: sourceMeta,
+  };
+}
+
+/**
  * Try to infer topology (reels × rows × paylines). Reels comes from
  * `extractReelStrips().strips.length`. Rows defaults to 3 unless we
  * find a "rows" / "5x3 / 6x4 / 5x5" label. Paylines reads the Paylines
@@ -768,6 +979,13 @@ async function buildModel(wb, slug) {
   const reels = extractReelStrips(wb);
   const cap = extractMaxWinCap(wb);
   const topo = extractTopology(wb, reels);
+  /* PAR-2-FIX-1 (Boki 2026-06-26): extract paytable so PAR-5
+   * convergence solver has symbol × OAK pays as input. Was TODO in
+   * the JSDoc but never implemented; all 5 models shipped with
+   * `paytable: []`. Without paytable Rust kernel can't compute
+   * per-symbol payout → measured RTP would be ~0 regardless of
+   * reel weights. */
+  const pay = extractPaytable(wb, reels.symbolList);
 
   /* Synthesized vendor-neutral display name. */
   const neutralName = sanitize(
@@ -874,6 +1092,19 @@ async function buildModel(wb, slug) {
         }
       : undefined,
 
+    /* PAR-2-FIX-1 (Boki 2026-06-26): paytable as top-level field per
+     * universalGameSchema `paytable: z.array(PaytableRowSchema)`.
+     * Each row carries symbolId + label + combos {3,4,5: pay}. The
+     * label keeps the par-sheet vendor name but `id` is the slug
+     * version that matches `symbols.*.id` so PAR-5 Rust kernel can
+     * cross-reference reel strips against pay rules without ambiguity.
+     * Anti-vendor lint sanitizes labels at emit. */
+    paytable: pay.rows.length > 0 ? pay.rows.map((row) => ({
+      symbolId: row.symbolId,
+      label: sanitize(row.label),
+      combos: row.combos,
+    })) : undefined,
+
     confidence: {
       topology: topo.confidence,
       features: 0.5,
@@ -883,6 +1114,9 @@ async function buildModel(wb, slug) {
         rtp: rtp.source ? `par-sheet:${rtp.source.sheet}!${rtp.source.cell}` : 'absent',
         winCap: cap.source ? `par-sheet:${cap.source.sheet}!${cap.source.cell}` : 'absent',
         reelStrips: reels.source ? `par-sheet:${reels.source.sheet}` : 'absent',
+        paytable: pay.source
+          ? `par-sheet:${pay.source.sheet}@row${pay.source.headerRow}:${pay.source.layout}`
+          : 'absent',
       },
     },
 

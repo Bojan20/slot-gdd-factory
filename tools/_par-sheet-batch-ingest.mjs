@@ -124,6 +124,24 @@ function mergeModels(gddModel, parModel) {
   if (parModel.payback) merged.payback = parModel.payback;
   if (parModel.winCap) merged.winCap = parModel.winCap;
   if (parModel.par_sheet) merged.par_sheet = parModel.par_sheet;
+  /* PAR-QA-3 (Boki 2026-06-26, post-PAR-5 audit): PAR-2 paytable carries
+   * real vendor symbolIds (`red7`, `wild`, etc.) that match the par-
+   * sheet reel-strip symbols. PAR-3 synthetic GDD synthesizes
+   * placeholder symbols (H1/M1/L1) — but the synthetic paytable
+   * pays are also placeholders. Pre-fix: the merge dropped the
+   * PAR-2 paytable on the floor, leaving only the H1/M1/L1
+   * placeholders in merged-model.json. PAR-5 convergence solver then
+   * looked up symbol IDs in the wrong namespace and silently fell
+   * back to zero pays → measured RTP wildly wrong.
+   *
+   * Post-fix: PAR-2 paytable wins. Symbols come from PAR-2 too when
+   * PAR-2 emitted them (which is always — PAR-2 always has reel-strip
+   * symbol list, never empty). This way paytable.symbolId references
+   * resolve against the SAME id space as the reel strips. */
+  if (parModel.paytable && parModel.paytable.length > 0) {
+    merged.paytable = parModel.paytable;
+    if (parModel.symbols) merged.symbols = parModel.symbols;
+  }
 
   /* Provenance receipts: keep PAR-2 confidence + meta */
   merged.confidence = {

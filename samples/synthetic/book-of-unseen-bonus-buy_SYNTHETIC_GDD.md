@@ -127,7 +127,7 @@ truth for math-driven slots.
 
 | Field | Value |
 |---|---|
-| Declared RTP | 96.21 % |
+| Declared RTP | 96.20 % |
 | Max-win cap | 4,908,000 × bet |
 | Volatility band | inferred from par sheet weighted reel distribution |
 | Hit frequency | inferred from per-reel symbol count (low symbols dominant ⇒ high hit-rate) |
@@ -195,9 +195,10 @@ real narrative.
   "bet": 0.3,
   "_derivedBy": {
     "topology": "par-sheet-probe",
-    "rtp": "par-sheet:PAR_BonusBuy_100Spins!B6",
+    "rtp": "par-sheet:PAR_001!I1",
     "winCap": "par-sheet:PAR_BonusBuy_100Spins!K66",
-    "reelStrips": "par-sheet:PAR_001"
+    "reelStrips": "par-sheet:PAR_001",
+    "paytable": "par-sheet:PAR_001@row20:combinations"
   }
 }
 ```

@@ -195,9 +195,10 @@ real narrative.
   "bet": 0.3,
   "_derivedBy": {
     "topology": "par-sheet-probe",
-    "rtp": "par-sheet:PAR_100spins!A3",
+    "rtp": "par-sheet:PAR-001!O1",
     "winCap": "absent",
-    "reelStrips": "par-sheet:PAR-001"
+    "reelStrips": "par-sheet:PAR-001",
+    "paytable": "par-sheet:PAR-001@row23:combinations"
   }
 }
 ```

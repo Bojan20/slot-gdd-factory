@@ -197,7 +197,8 @@ real narrative.
     "topology": "par-sheet-probe",
     "rtp": "par-sheet:PAR_001!G13",
     "winCap": "absent",
-    "reelStrips": "par-sheet:PAR_001"
+    "reelStrips": "par-sheet:PAR_001",
+    "paytable": "par-sheet:PAR_001@row65:combinations"
   }
 }
 ```
