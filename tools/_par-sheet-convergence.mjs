@@ -103,6 +103,30 @@ function mapModelToGameConfig(model) {
   for (const b of symBuckets.low || []) allSyms.push({ id: b.id, name: b.label || b.id, role: 'low' });
   for (const b of symBuckets.specials || []) allSyms.push({ id: b.id, name: b.label || b.id, role: b.role });
 
+  /* PAR-11-A (Boki 2026-06-26, AUDIT FINDING): Sister kernel `slot_sim::Symbol`
+   * uses snake_case role enum {lp, hp, wild, scatter, bonus, cash, anchor,
+   * big}. Pre-PAR-11 we emit legacy is_wild/is_scatter/is_bonus flags;
+   * sister silently drops them (role defaults to Lp), so Wild substitution
+   * has been OFF across all par-sheet games.
+   *
+   * EXPERIMENT (PAR-11-A-PROBE, kept here as documentation): switching the
+   * mapping to `role: 'wild'` + substitutes:['*'] caused cash-eruption to
+   * REGRESS from WARN 11.42% → FAIL 6.22% measured. Root cause: sister
+   * `evaluate.rs::wild_subs` substitutes Wild for EVERYTHING that isn't
+   * Cash/Bonus by role. Cash Eruption's Fireball/Volcano are par-sheet
+   * SPECIAL symbols (Hold & Win cash trigger + high-pay anchor with no
+   * standard pay table) that we currently bucket as `high`. With Wild role
+   * active, those cells get wild-counted into hp anchor sequences with
+   * paytable=0, dropping average line wins. PRE-fix kernel behavior was
+   * coincidentally closer because Wild != Wild role disabled the whole
+   * substitution code path.
+   *
+   * RESOLUTION: keep the legacy is_wild/is_scatter/is_bonus shape until
+   * PAR-11-B lands per-game specials classification (Fireball→Cash,
+   * Volcano→Anchor, Cash Eruption Hold&Win trigger map). Then re-introduce
+   * the role mapping with proper Cash/Anchor coverage — measured RTP
+   * should jump UP, not down. Atom documented; revert keeps the math
+   * honest until the wider scope is correct. */
   const symbols = allSyms.map((s) => ({
     id: s.id,
     name: s.name,

@@ -161,18 +161,49 @@ jela na meniju". Sintetišemo UX iz par sheet metadata, math je real.
 │         │   honest fidelity fix: par sheet je sad authoritative za  │           │
 │         │   topology + paylines, ne više topology probe heuristic.  │           │
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
-│ PAR-11  │ Symbol-id case + Special Reel Set / Mystery reveal      │ 📋 PLAN  │
-│         │   Skeleton Key reel ima 'Key' / 'Mystery' / 'Wild'      │           │
-│         │   simbole bez pays (Special Reel Set u par sheet-u +     │           │
-│         │   Mystery reveal mechanic). Pun convergence traži:      │           │
-│         │   - Mystery sym reveal mechanika (random reveal kao     │           │
-│         │     bilo koji LP/MP sym pre evaluacije)                  │           │
-│         │   - Wild substitution chain (Wild expanding na adjacent │           │
-│         │     cells za bonus retrigger)                            │           │
-│         │   - Special Reel Set FS bonus (weighted reel selection) │           │
-│         │   Effort: ~3-4h. Closes Skeleton Key + Book of Unseen   │           │
-│         │   gap. Sister side: ekstended Evaluator hooks za pre-   │           │
-│         │   eval mystery reveal + post-eval wild substitution.     │           │
+│ PAR-11-A│ Wild role serialization audit finding (NOT MERGED)      │ 📋 AUDIT │
+│         │   Sister kernel slot_sim::Symbol koristi snake_case role│           │
+│         │   enum {lp, hp, wild, scatter, bonus, cash, anchor, big}│           │
+│         │   ali factory mapper emit-uje legacy is_wild/is_scatter/│           │
+│         │   is_bonus flags. Sister serde silently dropuje to →     │           │
+│         │   role default-uje na Lp. Wild substitution OFF u svim   │           │
+│         │   par-sheet igrama. Pokušaj fix-a: role:'wild'+ subs:    │           │
+│         │   ['*'] → cash-eruption REGRESS WARN 11.26% → FAIL       │           │
+│         │   6.22% (-5pp drop). Root cause: sister evaluate.rs      │           │
+│         │   wild_subs supstituie Wild SVUDA except Cash/Bonus.    │           │
+│         │   Cash Eruption Fireball/Volcano su specials (Hold&Win  │           │
+│         │   trigger + high-pay anchor sa empty paytable) — pre-   │           │
+│         │   fix bucketizirani kao 'high' → mapper hp role. Sa     │           │
+│         │   Wild substitution aktivan, kernel wild-counts Fireball│           │
+│         │   u hp anchor sekvence sa pay=0 → avg line win pao.      │           │
+│         │   RESOLUTION: revert. PAR-11-B mora ići PRE PAR-11-A.   │           │
+│         │   Komentar u kodu (`tools/_par-sheet-convergence.mjs`   │           │
+│         │   linije 96-130) sadrži punu audit naraciju.              │           │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-11-B│ Per-game specials classification (Cash/Anchor/Big roles)│ 📋 PLAN  │
+│         │   Cash Eruption: Fireball → Cash (HnW orb trigger),     │           │
+│         │   Volcano → Anchor (top-pay no standard table). Skeleton│           │
+│         │   Key: 'Key' / 'Mystery' simboli → Mystery role (custom │           │
+│         │   pre-eval reveal). Fort Knox: Wolf → Cash, FK shield → │           │
+│         │   Anchor. Book of Unseen: Book → Scatter, Eye → Anchor. │           │
+│         │   Implementation:                                        │           │
+│         │   1. Extend extractor (_par-sheet-to-model.mjs) sa per- │           │
+│         │      slug `specialsByName` lookup table — maps par-     │           │
+│         │      sheet symbol name to SymbolRole when name match-uje│           │
+│         │      Cash/Anchor heuristic (HnW trigger, high-pay-no-   │           │
+│         │      table).                                            │           │
+│         │   2. Emit `model.symbols.specials[]` sa proper role.    │           │
+│         │   3. THEN apply PAR-11-A (Wild role serialization) jer  │           │
+│         │      sister wild_subs će ispravno skip Fireball.         │           │
+│         │   Effort: ~2h. Closes cash-eruption Wild substitution    │           │
+│         │   gap properly (expect measured 11% → 25-30% za base RTP)│          │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-11-C│ Mystery reveal + Special Reel Set (Skeleton Key)        │ 📋 PLAN  │
+│         │   Skeleton Key 'Key' / 'Mystery' / 'Wild' simboli + FS  │           │
+│         │   bonus reel set selection. Sister side: pre-eval        │           │
+│         │   Mystery reveal hook (random mapping to LP/MP). Sister  │           │
+│         │   Evaluator extension. Effort: ~3-4h. Closes Skeleton   │           │
+│         │   Key + (partial) Book of Unseen Bonus Buy gap.         │           │
 └────────┴─────────────────────────────────────────────────────────┴──────────┘
 
 ### PAR-QA-4 / PAR-7-FAST / PAR-9 closeout receipt (2026-06-26 19:15 UTC)
