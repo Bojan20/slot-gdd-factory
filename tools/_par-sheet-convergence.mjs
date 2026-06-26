@@ -111,14 +111,36 @@ function mapModelToGameConfig(model) {
     is_bonus: s.role === 'bonus',
   }));
 
-  /* Paytable → sister HashMap<String, PayEntry { pay3, pay4, pay5 }>. */
+  /* PAR-QA-4 fix B (Boki 2026-06-26, minimal-probe isolated):
+   * Sister evaluator multiplies pay × total_bet_mc / 1000, treating
+   * paytable values as multiplier of TOTAL bet. Industry par-sheet
+   * convention is paytable × PER-LINE bet (where per-line bet =
+   * total / N paylines). The two semantics differ by a factor of
+   * N paylines.
+   *
+   * Cross-repo fix would be inside sister `evaluator.rs::evaluate_lines`
+   * — divide payout by paylines.len() — but that re-defines the
+   * vendor-facing contract.
+   *
+   * Factory-side workaround: pre-divide paytable pays by paylineCount
+   * before sending. Net effect on the kernel side becomes:
+   *   raw_pay = paytable_csv_value / paylineCount
+   *   per_spin_win = N_hits × raw_pay × total_bet_mc / 1000
+   * which yields the industry RTP exactly. Verified by minimal probe:
+   *   1-sym-8-lines: pre-fix measured 800%, post-fix expected 100%.
+   *
+   * The total_bet_mc field is now sent as 1000 (1.0 credit total),
+   * matching sister's default. The PAR-6 bet plumbing remains useful
+   * for future flexibility but is not needed for correct RTP under
+   * the workaround. */
+  const paylineCountSafe = Math.max(1, model.topology?.paylines || 20);
   const paytable = {};
   for (const row of model.paytable || []) {
     const combos = row.combos || {};
     paytable[row.symbolId] = {
-      pay3: Number(combos['3']) || 0,
-      pay4: Number(combos['4']) || 0,
-      pay5: Number(combos['5']) || 0,
+      pay3: (Number(combos['3']) || 0) / paylineCountSafe,
+      pay4: (Number(combos['4']) || 0) / paylineCountSafe,
+      pay5: (Number(combos['5']) || 0) / paylineCountSafe,
     };
   }
 
@@ -254,14 +276,16 @@ async function convergeOne(baseUrl, slug, spins, seeds) {
    * correctly. Total bet = paylines × 1_000 mc (= per-line bet 1.0
    * credit × N lines). Without this override the sister kernel uses
    * DEFAULT_TOTAL_BET_MC = 1_000 and treats all paytable values as
-   * multipliers against a 1-credit-total wager, which is wrong for any
-   * multi-line game and inflated measured RTP 95-985× across the
-   * operator inventory. Compute from model.topology.paylines if present;
-   * fall back to 20 (industry common) when the model is paytable-only. */
-  const paylines = Number(model.topology?.paylines);
-  const totalBetMc = Number.isFinite(paylines) && paylines > 0
-    ? Math.round(paylines) * 1_000
-    : 20_000; // 20-line default
+   * multipliers against a 1-credit-total wager.
+   *
+   * PAR-QA-4 (Boki 2026-06-26, minimal-probe verification): the right
+   * fix turned out to be NORMALIZING paytable pays by paylines instead
+   * of inflating the bet. Now we send total_bet_mc = 1_000 (1 credit
+   * total) matching sister default, while mapModelToGameConfig divides
+   * paytable values by paylineCount so kernel-side multiplication
+   * reproduces correct RTP. Verified by minimal probe: 8-line config
+   * pre-fix measured 800 % (factor 8), post-fix expected 100 %. */
+  const totalBetMc = 1_000;
   const item = {
     id: slug,
     config: cfg,
@@ -290,7 +314,15 @@ async function convergeOne(baseUrl, slug, spins, seeds) {
     };
   }
 
-  const measuredPct = r.rtp * 100;  /* sister returns fraction */
+  /* PAR-QA-4 fix (Boki 2026-06-26, minimal-config probe isolated factor
+   * exactly 100× per payline). Root cause: comment claimed "sister
+   * returns fraction" but sister `stats.rs:1070` actually returns
+   * `(won as f64 / wagered as f64) * 100.0` — already in PERCENT.
+   * Pre-fix: mapper multiplied AGAIN by 100, yielding measured 100×
+   * inflated. Hard-verified by 1sym-1line pay=1 probe: expected 100 %,
+   * pre-fix measured 10 000 % (100× drift). Post-fix measured = sister
+   * return verbatim. */
+  const measuredPct = r.rtp;
   const deltaPP = measuredPct - declared;
   const totalSpins = r.spins || spins * seeds;
   const wilsonHalfPP = wilson99HalfWidth(r.rtp, totalSpins) * 100;
