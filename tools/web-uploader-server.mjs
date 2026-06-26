@@ -53,7 +53,14 @@ import { randomUUID, createHash } from 'node:crypto';
 import { ensureBackendRunning, stopBackend } from './math-backend-spawner.mjs';
 
 let _mathBackendStatus = { spawned: false, healthOk: false, port: 9001, reason: 'not-started' };
-export function getMathBackendStatus() { return { ..._mathBackendStatus }; }
+/* UQ-LV3-QA-4 #4 (Boki 2026-06-26): snapshot reference first so a
+ * concurrent toggle that reassigns _mathBackendStatus mid-spread does
+ * NOT yield a torn snapshot. JS assignment is atomic at the reference
+ * level; spreading a single fixed ref is therefore atomic too. */
+export function getMathBackendStatus() {
+  const ref = _mathBackendStatus;
+  return { ...ref };
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = resolve(__filename, '..');
@@ -340,6 +347,164 @@ async function handleStatus(req, res) {
   });
 }
 
+/* LV3-8 (Boki 2026-06-26) — POST /backend-mode handler.
+ *
+ * Contract:
+ *   request:  { "enabled": true | false }
+ *   response: { ok: true, action: "spawned" | "stopped" | "noop",
+ *               status: <current /math-backend-status snapshot> }
+ *   errors:   400 if body malformed, 415 if not JSON, 500 if spawn/stop
+ *             threw an exception
+ *
+ * Safety:
+ *   - Body size capped at 1 KB (we only need a tiny JSON).
+ *   - Strict shape — `enabled` must be a literal boolean.
+ *   - Mutually-exclusive in-flight: if a prior toggle is still
+ *     running, the new request gets 409 with the in-flight action.
+ *   - SSRF / path-traversal don't apply (no external fetch, no
+ *     filesystem write paths controlled by the body).
+ */
+let _backendToggleInFlight = null;
+
+async function handleBackendModeToggle(req, res) {
+  /* UQ-LV3-QA-4 #6 (Boki 2026-06-26): Origin / Referer check.
+   * The uploader binds 127.0.0.1 by default but localhost still
+   * hosts many dev pages — without this guard a malicious local
+   * page could POST /backend-mode cross-origin and start/stop the
+   * math backend during the operator's demo. Same-origin or
+   * curl-style (no Origin header) only. */
+  const origin = req.headers['origin'];
+  if (typeof origin === 'string' && origin.length > 0) {
+    /* Allow only same-origin (Host match). */
+    const host = req.headers['host'] || '';
+    const sameOriginOk =
+      origin.endsWith('://' + host) ||
+      origin === 'http://' + host ||
+      origin === 'https://' + host ||
+      origin === 'http://127.0.0.1' ||
+      origin === 'http://localhost';
+    if (!sameOriginOk) {
+      return sendJSON(res, 403, {
+        ok: false,
+        error: 'cross-origin forbidden',
+      });
+    }
+  }
+  if (_backendToggleInFlight) {
+    return sendJSON(res, 409, {
+      ok: false,
+      error: 'toggle-in-flight',
+      action: _backendToggleInFlight,
+    });
+  }
+  /* UQ-LV3-QA-4 #8: strict Content-Type match on the first token —
+   * multi-value Content-Type (CDN injects `, text/plain`) is rejected.
+   * Pre-fix `.includes('application/json')` allowed the spoof. */
+  const rawCt = (req.headers['content-type'] || '').toLowerCase();
+  const firstToken = rawCt.split(';')[0].split(',')[0].trim();
+  if (firstToken !== 'application/json') {
+    return sendJSON(res, 415, { ok: false, error: 'expect application/json' });
+  }
+  /* UQ-LV3-QA-4 #1 (Boki 2026-06-26): aborted-flag pattern (modeled
+   * after handleIngest). req.destroy() is asynchronous; chunks already
+   * in flight could still hit the `data` handler after destroy. Guard
+   * with explicit `aborted` flip so we stop pushing AND stop accepting
+   * the eventual `end` event as a valid resolution. Race-free even
+   * under TLS termination / proxy buffering. */
+  const body = await new Promise((resolveBody, reject) => {
+    const chunks = [];
+    let total = 0;
+    let aborted = false;
+    let settled = false;
+    function settle(fn) {
+      if (settled) return;
+      settled = true;
+      fn();
+    }
+    req.on('data', (c) => {
+      if (aborted) return;
+      total += c.length;
+      if (total > 1024) {
+        aborted = true;
+        try { req.destroy(); } catch (_) { /* swallow */ }
+        settle(() => reject(new Error('body too large')));
+        return;
+      }
+      chunks.push(c);
+    });
+    req.on('end', () => {
+      if (aborted) return;
+      settle(() => resolveBody(Buffer.concat(chunks).toString('utf8')));
+    });
+    req.on('error', (e) => settle(() => reject(e)));
+  }).catch((e) => ({ _err: e.message }));
+  if (body && body._err) {
+    return sendJSON(res, 400, { ok: false, error: body._err });
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(body);
+  } catch (e) {
+    return sendJSON(res, 400, { ok: false, error: 'json parse: ' + e.message });
+  }
+  if (!parsed || typeof parsed !== 'object' || typeof parsed.enabled !== 'boolean') {
+    return sendJSON(res, 400, {
+      ok: false,
+      error: 'expect { enabled: true | false }',
+    });
+  }
+  const wantEnabled = parsed.enabled;
+  const currentlyOnline = _mathBackendStatus && _mathBackendStatus.healthOk === true;
+  if (wantEnabled === currentlyOnline) {
+    return sendJSON(res, 200, {
+      ok: true,
+      action: 'noop',
+      status: getMathBackendStatus(),
+    });
+  }
+  _backendToggleInFlight = wantEnabled ? 'spawning' : 'stopping';
+  /* UQ-LV3-QA-4 #3 (Boki 2026-06-26): pass `port: undefined` so
+   * ensureBackendRunning can re-probe + autopick (LV3-1 contract).
+   * Pre-fix, the stored port was forced back through the request
+   * which clobbered any post-boot autopick choice. We preserve the
+   * LAST-KNOWN good port + version in `lastKnown` for diagnostics. */
+  const lastKnown = {
+    port: _mathBackendStatus && _mathBackendStatus.port,
+    version: _mathBackendStatus && _mathBackendStatus.version,
+  };
+  try {
+    if (wantEnabled) {
+      const r = await ensureBackendRunning({ /* let spawner autopick */ });
+      _mathBackendStatus = r;
+      return sendJSON(res, 200, {
+        ok: true,
+        action: 'spawned',
+        status: getMathBackendStatus(),
+      });
+    }
+    await stopBackend();
+    _mathBackendStatus = {
+      spawned: false,
+      healthOk: false,
+      port: lastKnown.port || 9001,
+      reason: 'stopped-by-operator',
+      lastKnown,
+    };
+    return sendJSON(res, 200, {
+      ok: true,
+      action: 'stopped',
+      status: getMathBackendStatus(),
+    });
+  } catch (e) {
+    return sendJSON(res, 500, {
+      ok: false,
+      error: 'toggle-failed: ' + (e && e.message || e),
+    });
+  } finally {
+    _backendToggleInFlight = null;
+  }
+}
+
 async function handleIngest(req, res) {
   /* Collect body up to MAX_UPLOAD_BYTES. */
   const chunks = [];
@@ -509,6 +674,18 @@ async function dispatch(req, res) {
     /* LV3-8 — backend liveness + version for UI badge. */
     if (req.method === 'GET' && p === '/math-backend-status') {
       return sendJSON(res, 200, getMathBackendStatus());
+    }
+    /* LV3-8 (Boki 2026-06-26) — operator-controlled backend toggle.
+     * POST /backend-mode { enabled: bool } → start/stop the math
+     * backend on demand. Designed so an inspector can flip BACKEND
+     * (regulator-grade math) vs JS (UI-only) modes during a demo
+     * without restarting the uploader.
+     *
+     * Body schema (strict): { enabled: true | false }. Anything
+     * else → 400. Idempotent: enabling already-online backend is a
+     * no-op success; disabling already-offline likewise. */
+    if (req.method === 'POST' && p === '/backend-mode') {
+      return handleBackendModeToggle(req, res);
     }
     /* UQ-DEEP-G fix (Boki 2026-06-23): browser auto-requests /favicon.ico,
      * server was 404-ing → operator console saw "Failed to load resource:

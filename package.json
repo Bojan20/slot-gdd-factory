@@ -16,6 +16,7 @@
     "test:rect-transform": "node tests/_rectTransform.test.mjs",
     "test:parser-cache": "node tests/_parserCache.test.mjs",
     "test:anti-vendor": "node tests/_antiVendorShield.test.mjs",
+    "test:backend-toggle": "node tests/_backendModeToggle.test.mjs",
     "lv3:rtp-probe": "node tools/_lv3-live-rtp-probe.mjs",
     "test:auto-converge": "node tests/_autoConvergeSolver.test.mjs",
     "test:contracts": "node tools/_run-contract-suites.mjs",

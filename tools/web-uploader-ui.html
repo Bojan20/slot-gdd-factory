@@ -79,33 +79,120 @@
   <div class="meta">
     drag-drop · local · no auth · vanilla HTML
     <span id="mathBackendBadge" style="margin-left: 12px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">MATH backend: probing…</span>
+    <button id="mathBackendToggle" type="button" aria-label="Toggle backend mode" style="margin-left: 8px; padding: 2px 10px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: rgba(120,140,160,0.18); color: #cdeaff; border: 1px solid rgba(120,140,160,0.4); cursor: pointer;" hidden>toggle</button>
+    <span id="mathBackendAnnounce" aria-live="polite" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap;"></span>
   </div>
 </header>
 <script>
-/* LV3-8 — poll /math-backend-status na boot + svake 5s. Show badge. */
+/* LV3-8 — poll /math-backend-status na boot + svake 5s + operator
+   toggle wired to POST /backend-mode. */
 (function () {
+  var pollTimer = null;
+  var lastState = null;
+
   function paintBadge(state) {
     var b = document.getElementById('mathBackendBadge');
+    var t = document.getElementById('mathBackendToggle');
+    var a = document.getElementById('mathBackendAnnounce');
     if (!b) return;
+    var prev = lastState && lastState.healthOk === true;
+    var nowOn = !!(state && state.healthOk);
     if (state && state.healthOk) {
       b.textContent = 'MATH backend: ONLINE :' + state.port;
       b.style.background = 'rgba(56,189,124,0.25)';
       b.style.color = '#38bd7c';
       b.style.border = '1px solid rgba(56,189,124,0.5)';
+      if (t && !t.dataset.busy) {
+        t.hidden = false;
+        t.textContent = 'stop';
+        t.dataset.intent = 'stop';
+        /* UQ-LV3-QA-4 #9: dynamic aria-label so SR users hear the
+           NEXT action instead of a generic "Toggle backend mode". */
+        t.setAttribute('aria-label', 'Stop math backend');
+      }
     } else {
       b.textContent = 'MATH backend: OFFLINE';
       b.style.background = 'rgba(239,68,68,0.25)';
       b.style.color = '#ef4444';
       b.style.border = '1px solid rgba(239,68,68,0.5)';
       b.title = state ? state.reason : 'not started';
+      if (t && !t.dataset.busy) {
+        t.hidden = false;
+        t.textContent = 'start';
+        t.dataset.intent = 'start';
+        t.setAttribute('aria-label', 'Start math backend');
+      }
     }
+    /* Announce ONLY on state transition — no SR spam on 5s polls. */
+    if (a && lastState !== null && prev !== nowOn) {
+      a.textContent = 'Math backend ' + (nowOn ? 'online' : 'offline');
+    }
+    lastState = state ? { healthOk: state.healthOk, port: state.port } : null;
   }
+
   function pollBackend() {
     fetch('/math-backend-status').then(function (r) { return r.ok ? r.json() : null; })
       .then(paintBadge).catch(function () { paintBadge(null); });
   }
-  pollBackend();
-  setInterval(pollBackend, 5000);
+
+  function wireToggle() {
+    var t = document.getElementById('mathBackendToggle');
+    if (!t) return;
+    t.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      /* UQ-LV3-QA-4 #5: busy guard against rapid double-click /
+         SR keydown→click synth events landing before disabled flips. */
+      if (t.dataset.busy === '1') return;
+      t.dataset.busy = '1';
+      var intent = t.dataset.intent || 'start';
+      var wantEnabled = intent === 'start';
+      t.disabled = true;
+      t.textContent = wantEnabled ? 'starting…' : 'stopping…';
+      fetch('/backend-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: wantEnabled }),
+      })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, body: d }; }); })
+        .then(function (res) {
+          if (res.ok && res.body && res.body.status) {
+            paintBadge(res.body.status);
+          } else {
+            paintBadge(null);
+            var a = document.getElementById('mathBackendAnnounce');
+            if (a) a.textContent = 'Backend toggle failed: ' + ((res.body && res.body.error) || 'unknown');
+          }
+        })
+        .catch(function (err) {
+          var a = document.getElementById('mathBackendAnnounce');
+          if (a) a.textContent = 'Backend toggle error: ' + (err && err.message || 'network');
+          paintBadge(null);
+        })
+        /* UQ-LV3-QA-4 #2: finally — re-enable button on EVERY exit
+           path including a paintBadge() throw inside the success then. */
+        .finally(function () {
+          t.disabled = false;
+          delete t.dataset.busy;
+          /* UQ-LV3-QA-4 #10: drop origText / let paintBadge be single
+             source of truth. Force a poll-pull to repaint state. */
+          pollBackend();
+        });
+    });
+  }
+
+  function init() {
+    wireToggle();
+    pollBackend();
+    pollTimer = setInterval(pollBackend, 5000);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+  window.addEventListener('beforeunload', function () {
+    if (pollTimer) clearInterval(pollTimer);
+  }, { once: true });
 })();
 </script>
 <main>
