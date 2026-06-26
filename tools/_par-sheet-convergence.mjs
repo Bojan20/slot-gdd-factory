@@ -133,14 +133,18 @@ function mapModelToGameConfig(model) {
    * matching sister's default. The PAR-6 bet plumbing remains useful
    * for future flexibility but is not needed for correct RTP under
    * the workaround. */
-  const paylineCountSafe = Math.max(1, model.topology?.paylines || 20);
-  const paytable = {};
+  /* paylineCountSafe will be re-bound to the effective count after the
+   * payline universe is generated (Ways vs Lines), but we need a
+   * provisional value for paytable structure. The final normalization
+   * happens after the payline generation block, in `paytableNormalized`. */
+  let paylineCountSafe = Math.max(1, model.topology?.paylines || 20);
+  let paytable = {};
   for (const row of model.paytable || []) {
     const combos = row.combos || {};
     paytable[row.symbolId] = {
-      pay3: (Number(combos['3']) || 0) / paylineCountSafe,
-      pay4: (Number(combos['4']) || 0) / paylineCountSafe,
-      pay5: (Number(combos['5']) || 0) / paylineCountSafe,
+      pay3: Number(combos['3']) || 0,
+      pay4: Number(combos['4']) || 0,
+      pay5: Number(combos['5']) || 0,
     };
   }
 
@@ -172,17 +176,60 @@ function mapModelToGameConfig(model) {
   const rows = model.topology?.rows || 3;
   const paylineCount = model.topology?.paylines || 20;
 
+  /* PAR-9 (Boki 2026-06-26, ultra-deep audit catch): payline pattern
+   * fidelity is the dominant factor in measured-vs-declared gap. Two
+   * cases:
+   *
+   * 1. Ways games (Skeleton Key 243 ways, Fortune Coin Boost 243 ways):
+   *    declared topology N = rows^reels. We synthesize EVERY possible
+   *    combination of (row per reel) — for 5×3 that's 3^5 = 243 paylines.
+   *    Sister Lines mode then evaluates all 243 patterns; each unique
+   *    grid hit gets credited exactly once, reproducing Ways math
+   *    without requiring a sister-side eval-mode dispatch.
+   *
+   * 2. Lines games (Cash Eruption 8, Fort Knox 20, etc.): if the
+   *    declared paylines fit the rows^reels universe, prefer the
+   *    explicit enumeration. Else fall back to row-cycle synthesis
+   *    (the pre-PAR-9 behavior) acknowledging that pattern fidelity
+   *    is incomplete until PAR-10 lifts actual payline patterns from
+   *    par sheet's Paylines tab. */
   const paylines = [];
-  /* Row 0, Row 1, Row 2 — basic horizontals. */
-  for (let row = 0; row < rows; row++) {
-    paylines.push(Array(reels).fill(row));
-    if (paylines.length >= paylineCount) break;
+  const waysUniverse = Math.pow(rows, reels);
+  const isWaysLayout = paylineCount >= 240 && paylineCount <= 8000;
+  if (isWaysLayout && waysUniverse <= 8000 && paylineCount >= waysUniverse * 0.9) {
+    /* Generate full N-ways universe. */
+    for (let i = 0; i < waysUniverse; i++) {
+      const pattern = [];
+      let acc = i;
+      for (let r = 0; r < reels; r++) {
+        pattern.push(acc % rows);
+        acc = Math.floor(acc / rows);
+      }
+      paylines.push(pattern);
+    }
+  } else {
+    /* Lines mode: row-cycle synthesis. */
+    for (let row = 0; row < rows; row++) {
+      paylines.push(Array(reels).fill(row));
+      if (paylines.length >= paylineCount) break;
+    }
+    while (paylines.length < paylineCount) {
+      const i = paylines.length;
+      paylines.push(Array.from({ length: reels }, (_, r) => (i + r) % rows));
+    }
   }
-  /* V-shapes from each pair of corners. */
-  while (paylines.length < paylineCount) {
-    const i = paylines.length;
-    /* Synthesize zigzag: alternating row pattern based on index. */
-    paylines.push(Array.from({ length: reels }, (_, r) => (i + r) % rows));
+  /* Effective payline count drives the paytable normalization above. */
+  const effectivePaylineCount = paylines.length;
+  /* PAR-9: now that the effective payline count is known, normalize
+   * paytable pays accordingly. For Ways games this divides by 243+
+   * (not just declared 20). */
+  paylineCountSafe = Math.max(1, effectivePaylineCount);
+  for (const key of Object.keys(paytable)) {
+    paytable[key] = {
+      pay3: paytable[key].pay3 / paylineCountSafe,
+      pay4: paytable[key].pay4 / paylineCountSafe,
+      pay5: paytable[key].pay5 / paylineCountSafe,
+    };
   }
 
   return {

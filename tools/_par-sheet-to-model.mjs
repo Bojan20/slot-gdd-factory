@@ -976,16 +976,51 @@ function extractTopology(wb, reelStripsResult) {
 
   let rows = 3;
   let paylines = 20;
+  let evalMode = 'lines';
   let rowsConfidence = 0.3;
   let plConfidence = 0.3;
+  let waysFound = null;
+
+  /* PAR-9 (Boki 2026-06-26): scan ALL sheets first for an explicit
+   * "N ways" / "N to M ways" topology declaration. If found, it
+   * overrides paylines + evalMode (Skeleton Key declares "243 to
+   * 7,776 Ways" — the underlying engine is Ways, not Lines).
+   * Pattern: any digits-then-"ways" token, with optional "to X" upper
+   * bound which we ignore (we use the BASE ways count). */
+  for (const sheetName of wb.SheetNames) {
+    const ws = wb.Sheets[sheetName];
+    const range = sheetRange(ws);
+    if (!range) continue;
+    const maxR = Math.min(range.e.r, range.s.r + 100);
+    const maxC = Math.min(range.e.c, range.s.c + 20);
+    for (let r = range.s.r; r <= maxR && waysFound === null; r++) {
+      for (let c = range.s.c; c <= maxC; c++) {
+        const s = cellString(ws, r, c);
+        if (!s) continue;
+        const m = s.match(/(\d{2,5})(?:\s*to\s*[\d,]+)?\s*ways?\b/i);
+        if (m) {
+          waysFound = parseInt(m[1], 10);
+          plConfidence = 0.85;
+          break;
+        }
+      }
+    }
+  }
+  if (waysFound !== null && waysFound >= 9 && waysFound <= 7776) {
+    paylines = waysFound;
+    evalMode = 'ways';
+  }
 
   for (const sheetName of wb.SheetNames) {
     const ws = wb.Sheets[sheetName];
     const range = sheetRange(ws);
     if (!range) continue;
 
-    /* Paylines sheet: count non-empty rows (one row per payline). */
-    if (/payline/i.test(sheetName)) {
+    /* Paylines sheet: count non-empty rows (one row per payline).
+     * PAR-9: skip this if waysFound is already locked — Ways games
+     * draw a few sample paylines in the Paylines sheet for visual UI
+     * but the underlying eval is Ways. */
+    if (waysFound === null && /payline/i.test(sheetName)) {
       let nonEmpty = 0;
       const maxR = Math.min(range.e.r, range.s.r + 300);
       for (let r = range.s.r + 1; r <= maxR; r++) {
@@ -1026,6 +1061,8 @@ function extractTopology(wb, reelStripsResult) {
     reels,
     rows,
     paylines,
+    evalMode,
+    waysFound,
     confidence: Math.min((rowsConfidence + plConfidence + 0.7) / 3, 0.95),
   };
 }
@@ -1076,6 +1113,11 @@ async function buildModel(wb, slug) {
       rows: topo.rows,
       paylines: topo.paylines,
       kind: topo.reels === 6 ? 'tumble' : 'rectangular',
+      /* PAR-9 (Boki 2026-06-26): explicit evaluation mode. PAR-5
+       * convergence mapper dispatches to Ways universe (rows^reels)
+       * when evalMode === 'ways', else stays in Lines mode. */
+      evalMode: topo.evalMode,
+      ...(topo.waysFound !== null ? { waysCount: topo.waysFound } : {}),
     },
 
     payback: rtp.value !== null
