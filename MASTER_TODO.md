@@ -193,30 +193,19 @@ jela na meniju". Sintetišemo UX iz par sheet metadata, math je real.
 │         │   serialization aktivnim). Sister kernel gap (PAR-11-D) │           │
 │         │   mora zatvoriti pre nego što role-mapper postane safe.  │           │
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
-│ PAR-11-D│ Sister-side anchor.is_none() fallback fix (Cash-heavy   │ 📋 NEW   │
-│ (NEW)   │   lines fall into Wild-only paytable lookup → 0 pay)    │           │
-│         │   Audit Round 2 catch: sister evaluate.rs:185-200 sets  │           │
-│         │   anchor=None kad sve cells su Wild/Scatter/Bonus/Cash, │           │
-│         │   pada u all-Wild branch koja traži pt[(wild, count)].  │           │
-│         │   Cash Eruption ima Volcano-dominantne linije (Volcano  │           │
-│         │   weight 9105 na 5 reels = ~3% top-row hit rate). Ako   │           │
-│         │   Volcano je role=Cash (correct), linija ima [Vol,Vol, │           │
-│         │   Vol, Wild, Wild] → all-Cash/Wild → anchor None →      │           │
-│         │   Wild-count=0 (Volcano nije Wild) → pay 0. Pre-PAR-11  │           │
-│         │   coincidentally paid bolje jer Volcano=Lp dozvolilo    │           │
-│         │   selekciju kao anchor.                                  │           │
-│         │   Sister side fix: kad anchor=None, prefer (a) iz-      │           │
-│         │   skenirati Cash-anchored count (Volcano consecutive),  │           │
-│         │   pa potražiti pt[(volcano, count)] — pošto ne postoji  │           │
-│         │   row, vraćaš 0 svesno, ali ne preskačeš liniju u Wild  │           │
-│         │   lookup. ILI (b) inject synthetic pay row za empty-    │           │
-│         │   paytable Cash symbols pri PAR-2 emit (1-coin pay za   │           │
-│         │   3-of-a-kind) tako da default sister kernel handles    │           │
-│         │   gracefully.                                            │           │
-│         │   Sister repo: ~/Projects/slot-math-engine-template/    │           │
-│         │   engine/slot-sim/src/evaluate.rs:185-200.              │           │
-│         │   Effort: ~2-3h sister-side audit + factory regression   │           │
-│         │   test. PRE OVOG, PAR-11-A re-application je premature.  │           │
+│ PAR-11-D│ Sister-side anchor.is_none() fallback fix                │ ❌ N/A    │
+│ (closed)│   DEFERRED-RESOLVED 2026-06-27: audit hypothesis bila    │           │
+│         │   formirana protiv `engine/slot-sim/src/evaluate.rs`    │           │
+│         │   (Lines evaluator sa SymbolRole::Cash). Real HTTP      │           │
+│         │   daemon koristi `rust-sim/src/evaluator.rs` koji nema   │           │
+│         │   Cash role concept i koristi `is_wild/is_scatter/      │           │
+│         │   is_bonus` flags direktno (vidi rust-sim Cargo crate    │           │
+│         │   name = "slot_sim"). evaluate_payline pravilno radi    │           │
+│         │   Wild substitution preko evaluate_target (sym == target│           │
+│         │   || is_wild(sym)). Cash Eruption gap od 30 pp NIJE od │           │
+│         │   Wild substitution — verovatno paytable mapping ili    │           │
+│         │   FS contribution (PAR-12). Closing as NOT-APPLICABLE   │           │
+│         │   for the kernel that runs.                              │           │
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
 │ PAR-11-C│ Mystery reveal + Special Reel Set (Skeleton Key)        │ 📋 PLAN  │
 │         │   Skeleton Key 'Key' / 'Mystery' / 'Wild' simboli + FS  │           │
