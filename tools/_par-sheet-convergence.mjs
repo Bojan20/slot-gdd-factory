@@ -170,15 +170,27 @@ function mapModelToGameConfig(model) {
     && Number.isFinite(declaredFs) && declaredFs >= 1.0;
   const hasFsAwards = explicitFsAwards || syntheticFsAwards;
   const hasScatter = allSyms.some((s) => s.role === 'scatter');
-  const promoteBonusToScatter = hasFsAwards && !hasScatter;
-
+  const hasBonus = allSyms.some((s) => s.role === 'bonus');
+  const promoteBonusToScatter = hasFsAwards && !hasScatter && hasBonus;
   const declaredHnw = Number(model.payback?.components?.holdAndWin);
   const hasHnw = Number.isFinite(declaredHnw) && declaredHnw >= 1.0;
   const promoteCashToBonus = hasHnw;
+  /* PAR-12-F (Boki 2026-06-27, REVERTED): Book of Unseen Bonus Buy
+   * has Book as cash-role no-paytable symbol. Naive cash → scatter
+   * promotion fires sister FS triggers on every Book landing — but
+   * BoU's high Book weight (specifically tuned for Bonus Buy player
+   * purchase model) means scatter trigger rate ≈ 100% per spin,
+   * inflating measured to 26996%. Bonus Buy slots don't follow
+   * standard 3+ scatter trigger semantics — player BUYS into bonus
+   * directly at fixed cost. Sister kernel cannot model that without
+   * a dedicated Bonus Buy code path. Leaving cashScatterPromoteId
+   * null until PAR-12-G implements a bonus-buy mode flag. */
+  const cashScatterPromoteId = null;
 
   const symbols = allSyms.map((s) => {
     let effectiveRole = s.role;
     if (promoteBonusToScatter && s.role === 'bonus') effectiveRole = 'scatter';
+    if (cashScatterPromoteId !== null && s.id === cashScatterPromoteId) effectiveRole = 'scatter';
     if (promoteCashToBonus && s.role === 'cash') effectiveRole = 'bonus';
     return {
       id: s.id,
@@ -436,11 +448,28 @@ function mapModelToGameConfig(model) {
           scatter_pays: model.par_sheet?.freeSpinAvgPays || {},
         };
       }
-      /* (B) PAR-12-D synthetic fallback. */
+      /* (B) PAR-12-D synthetic fallback, scaled by declared FS RTP.
+       *
+       *   declared FS < 5 %   → tight   {3:3, 4:5, 5:8}
+       *   5 ≤ declared < 10   → mid     {3:6, 4:10, 5:14}
+       *   10 ≤ declared < 20  → default {3:10, 4:15, 5:20}
+       *   declared ≥ 20       → wide    {3:15, 4:25, 5:35}
+       *
+       * PAR-12-E (Boki 2026-06-27): Fort Knox declared FS = 7.43 %
+       * but pre-tune {3:10, 4:15, 5:20} produced ~32 pp FS contribution
+       * (measured 80.73% vs target 70.99% = +9.7 pp overshoot, of
+       * which most was FS over-shoot). Tier-based scaling brings
+       * Fort Knox down to mid bucket → ~14-18 pp FS, leaving room
+       * for ~7 pp declared FS match. */
       const declaredFs = Number(model.payback?.components?.freeSpins);
       if (Number.isFinite(declaredFs) && declaredFs >= 1.0) {
+        let awards;
+        if (declaredFs < 5) awards = { '3': 3, '4': 5, '5': 8 };
+        else if (declaredFs < 10) awards = { '3': 6, '4': 10, '5': 14 };
+        else if (declaredFs < 20) awards = { '3': 10, '4': 15, '5': 20 };
+        else awards = { '3': 15, '4': 25, '5': 35 };
         return {
-          awards: { '3': 10, '4': 15, '5': 20 },
+          awards,
           mult_start: 1,
           mult_increment: 0,
           mult_max: 1,
