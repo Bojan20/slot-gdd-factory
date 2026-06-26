@@ -151,8 +151,14 @@ function mapModelToGameConfig(model) {
    * trigger 10/20/30 free spins). When the model carries an explicit
    * Free Spin award schedule AND the only candidate trigger symbol
    * is bonus-roled, promote it to scatter for sister consumption. */
-  const hasFsAwards = model.par_sheet?.freeSpinAwards
+  /* PAR-12-D scope: also promote bonus → scatter when synthetic FS
+   * awards will fire (declared freeSpins ≥ 1.0 with no explicit table). */
+  const explicitFsAwards = model.par_sheet?.freeSpinAwards
     && Object.keys(model.par_sheet.freeSpinAwards).length > 0;
+  const declaredFs = Number(model.payback?.components?.freeSpins);
+  const syntheticFsAwards = !explicitFsAwards
+    && Number.isFinite(declaredFs) && declaredFs >= 1.0;
+  const hasFsAwards = explicitFsAwards || syntheticFsAwards;
   const hasScatter = allSyms.some((s) => s.role === 'scatter');
   const promoteBonusToScatter = hasFsAwards && !hasScatter;
 
@@ -381,28 +387,61 @@ function mapModelToGameConfig(model) {
         }).filter((e) => e.weight > 0),
       );
     })(),
-    /* PAR-12-A + PAR-12-B (Boki 2026-06-27): emit par-sheet-extracted
-     * Free Spin award schedule AND average per-trigger payout. Sister
-     * `FreeSpinsConfig` consumption:
+    /* PAR-12-A/B/C + PAR-12-D (Boki 2026-06-27): emit par-sheet
+     * extracted Free Spin award schedule AND average per-trigger
+     * payout. Sister `FreeSpinsConfig` consumption:
      *   - awards: HashMap<u8, u8>   — scatter_count → spins_awarded
      *   - scatter_pays: HashMap<u8, f64> — scatter_count → trigger pay
      *
-     * scatter_pays uses the par-sheet "Avg. Pay" column as a flat
-     * per-trigger expected payout. This approximates the full FS
-     * contribution without requiring per-spin FS reel weights
-     * (PAR-12-C scope). Trade-off: sister will ALSO simulate `awards`
-     * FS spins using base reel weights, so total FS contribution =
-     * scatter_pays + N × base_RTP × bet. For Skeleton Key this over-
-     * estimates by ~10 × 3.4 % = 0.34 pp per trigger — within W99 CI
-     * for the FAIL→WARN/PASS verdict shift. PAR-12-C will refine. */
-    free_spins: {
-      awards: model.par_sheet?.freeSpinAwards || {},
-      mult_start: 1,
-      mult_increment: 0,
-      mult_max: 1,
-      retrigger_enabled: false,
-      scatter_pays: model.par_sheet?.freeSpinAvgPays || {},
-    },
+     * Three-tier fallback ladder:
+     *
+     *   (A) Explicit awards from extractor (Skeleton Key style table).
+     *       Highest fidelity — par sheet declares exact schedule.
+     *
+     *   (B) PAR-12-D synthetic fallback: when freeSpins component RTP
+     *       is declared > 1.0 % but no explicit award table is present,
+     *       inject industry-default schedule {3:10, 4:15, 5:20}. Sister
+     *       fires FS triggers and simulates spins using base/FS reel
+     *       weights. Contribution = trigger_freq × N_spins × per_FS_RTP,
+     *       imperfect but BETTER than zero. Triggered by:
+     *         components.freeSpins ≥ 1.0  AND  awards is null/empty
+     *
+     *   (C) Empty {} → no FS trigger (legacy behavior). Used when
+     *       par sheet has no FS component at all. */
+    free_spins: (() => {
+      const explicit = model.par_sheet?.freeSpinAwards;
+      if (explicit && Object.keys(explicit).length > 0) {
+        return {
+          awards: explicit,
+          mult_start: 1,
+          mult_increment: 0,
+          mult_max: 1,
+          retrigger_enabled: false,
+          scatter_pays: model.par_sheet?.freeSpinAvgPays || {},
+        };
+      }
+      /* (B) PAR-12-D synthetic fallback. */
+      const declaredFs = Number(model.payback?.components?.freeSpins);
+      if (Number.isFinite(declaredFs) && declaredFs >= 1.0) {
+        return {
+          awards: { '3': 10, '4': 15, '5': 20 },
+          mult_start: 1,
+          mult_increment: 0,
+          mult_max: 1,
+          retrigger_enabled: false,
+          scatter_pays: {},
+        };
+      }
+      /* (C) Empty fallback. */
+      return {
+        awards: {},
+        mult_start: 1,
+        mult_increment: 0,
+        mult_max: 1,
+        retrigger_enabled: false,
+        scatter_pays: {},
+      };
+    })(),
     /* PAR-QA-4 fix (Boki 2026-06-26, post-PAR-6 audit): trigger_count was
      * 6 with empty orb_values + zero orb_land_chance, which let the
      * sister feature simulator briefly attempt to enter Hold & Win mode

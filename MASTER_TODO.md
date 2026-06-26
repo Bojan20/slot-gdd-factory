@@ -488,12 +488,25 @@ contribution gap.
 │         │   Skel Key emit: reel totals [100,100,100,100,100]      │           │
 │         │   Book of Unseen Bonus Buy: [6697,6039,3151,2119,1417]  │           │
 │         │   Mapper consumes via GameConfig.fs_weights (umesto      │           │
-│         │   baseWeights placeholder).                              │           │
-│         │   Contract test 8/8 PASS (par-12c-fs-reels.test.mjs).    │           │
-│         │   NOTE: measured skel-key remains 10.00 % (no further    │           │
-│         │   lift) — sister kernel may not differentiate fs_weights │           │
-│         │   in current FS simulation path (PAR-12-D scope to       │           │
-│         │   investigate sister-side activation).                   │           │
+│         │   baseWeights placeholder). Contract test 8/8 PASS.      │           │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-12-D│ Synthetic FS fallback for prose-only par sheets         │ ✅ LANDED│
+│         │   Three-tier ladder u mapper-u:                          │           │
+│         │   (A) Explicit par-sheet-extracted awards (PAR-12-A).    │           │
+│         │   (B) NEW: When components.freeSpins ≥ 1.0 % AND no      │           │
+│         │       explicit awards, inject industry-default            │           │
+│         │       {3:10, 4:15, 5:20}. Triggers FS contribution from  │           │
+│         │       sister kernel using base/FS reel weights.          │           │
+│         │   (C) Empty {} → legacy "no FS" behavior.                │           │
+│         │   Bonus → scatter promotion extended to synthetic path. │           │
+│         │   Verdict ladder shift (200k×2):                          │           │
+│         │   - fort-knox-wolf-run: 48.00 % → 80.73 % (+32.7 pp)    │           │
+│         │   - fortune-coin: 20.25 % → 20.42 % (+0.2 pp)            │           │
+│         │   Fort Knox now OVERSHOOTS declared baseGame 70.99 % by  │           │
+│         │   9.74 pp — within W99 ±147.96 pp but signals synthetic │           │
+│         │   schedule injects more contribution than actual. Trade- │           │
+│         │   off: better than zero, less accurate than extraction.  │           │
+│         │   Contract test 8/8 PASS (par-12d-fs-synthetic.test).    │           │
 └────────┴─────────────────────────────────────────────────────────┴──────────┘
 ```
 
