@@ -407,39 +407,197 @@ function extractDeclaredRtp(wb) {
  *     sources:    { [field]: 'sheet!cell' }
  *   }
  */
-function extractRtpComponents(wb) {
-  const COMPONENT_RX = [
+export function extractRtpComponents(wb) {
+  /* PAR-7-FULL (Boki 2026-06-26): three classes of label patterns:
+   *
+   * 1. NARROW (exact field names) — Cash Eruption / Fort Knox / Skeleton Key:
+   *      "Base RTP", "Free Spins RTP", "Hold and Win RTP", "Bonus RTP"
+   *    First-hit-wins per field (legacy behavior preserved).
+   *
+   * 2. MULTI-COMPONENT SUM — Fortune Coin Boost:
+   *      "Base Game multiway RTP", "Base Game scatter RTP",
+   *      "Base Game Coins credit RTP", "Base Game Jackpot RTP",
+   *      "Free Spins multiway RTP", "Free Spins scatter RTP", ...
+   *    Multiple BG sub-components → SUM into baseGame field; same for FS.
+   *    Accumulate flag set; first occurrence creates the entry, later
+   *    matches add to the running total.
+   *
+   * 3. SECTION-AWARE — Book of Unseen (Bonus Buy):
+   *      Section heading in column A: "BASE GAME", "BONUS GAME",
+   *      "FREE SPINS", "PRE-BONUS GAME". Cells like "Line Pay %",
+   *      "Bonus Pay %", "Line Wins %" appear UNDER the current
+   *      section. We track the most recent section heading and route
+   *      generic Pay-% labels to the corresponding field.
+   *      "BASE GAME" → baseGame; "BONUS GAME" / "FREE SPINS" → freeSpins.
+   *
+   * Each class can fire independently per sheet — they don't conflict
+   * because the narrow regex requires a "RTP" suffix, the sum regex
+   * requires a mid-token (multiway/scatter/coins/jackpot/etc.) AND
+   * "RTP" suffix, and the section-aware path only fires on "Pay %" /
+   * "Line Wins" pattern that the other two never match. */
+  const NARROW_RX = [
     { rx: /^\s*total\s+rtp\*?\s*[:=%]?\s*$/i, field: 'total' },
     { rx: /^\s*overall\s+rtp\*?\s*[:=%]?\s*$/i, field: 'total' },
     { rx: /^\s*base\s+(game\s+)?rtp\*?\s*[:=%]?\s*$/i, field: 'baseGame' },
+    { rx: /^\s*main\s+(game\s+)?rtp\*?\s*[:=%]?\s*$/i, field: 'baseGame' },
+    { rx: /^\s*base\s+game\s+line\s+wins?\s*[:=%]?\s*$/i, field: 'baseGame' },
     { rx: /^\s*free\s*spins?\s+(re?els?\s+)?rtp\*?\s*[:=%]?\s*$/i, field: 'freeSpins' },
     { rx: /^\s*hold\s*(and|&)?\s*win\s+rtp\*?\s*[:=%]?\s*$/i, field: 'holdAndWin' },
     { rx: /^\s*bonus\s+rtp\*?\s*[:=%]?\s*$/i, field: 'bonus' },
   ];
+  /* SUM regex — "Base Game <component> RTP" with any non-empty mid-
+   * token (multiway, scatter, coins, jackpot, line, etc.). Each match
+   * accumulates into the target field. */
+  const SUM_RX = [
+    { rx: /^\s*base\s+game\s+[a-z][\w\s]*?\s+rtp\*?\s*[:=%]?\s*$/i, field: 'baseGame' },
+    { rx: /^\s*free\s*spins?\s+[a-z][\w\s]*?\s+rtp\*?\s*[:=%]?\s*$/i, field: 'freeSpins' },
+    { rx: /^\s*hold\s*(and|&)?\s*win\s+[a-z][\w\s]*?\s+rtp\*?\s*[:=%]?\s*$/i, field: 'holdAndWin' },
+    { rx: /^\s*bonus\s+[a-z][\w\s]*?\s+rtp\*?\s*[:=%]?\s*$/i, field: 'bonus' },
+  ];
+  /* Section-aware labels — generic "Line Pay %" / "Line Wins %" / "Pay"
+   * that routes via currentSection. NOTE: "Bonus Pay %" is INTENTIONALLY
+   * EXCLUDED from this regex (gets its own routing below) — pre-fix
+   * we lumped Line + Bonus into the same section, inflating Book of
+   * Unseen baseGame to 285 % across all sheets. Line Pay % = the
+   * section's line-win contribution; Bonus Pay % = the section's
+   * bonus-feature trigger contribution (always routes to 'bonus'). */
+  const SECTION_RX = /^\s*(?:line\s+pay|line\s+wins?|line\s*%?|pays?\s*%?)\s*%?\s*[:=]?\s*$/i;
+  const BONUS_PAY_RX = /^\s*bonus\s+pay\s*%?\s*[:=]?\s*$/i;
+  /* Section header detector — exact UPPER-CASE phrases in column A. */
+  const detectSection = (s) => {
+    if (!s) return null;
+    const t = s.trim();
+    if (/^BASE\s+GAME\s*$/i.test(t)) return 'baseGame';
+    if (/^MAIN\s+GAME\s*$/i.test(t)) return 'baseGame';
+    if (/^FREE\s*SPINS?\s*$/i.test(t)) return 'freeSpins';
+    if (/^BONUS\s+GAME\s*$/i.test(t)) return 'freeSpins';
+    if (/^PRE[-_\s]?BONUS\s+GAME\s*$/i.test(t)) return null; /* setup, ignore */
+    if (/^HOLD\s*(AND|&)?\s*WIN\s*$/i.test(t)) return 'holdAndWin';
+    return null;
+  };
+
   const result = { total: null, baseGame: null, freeSpins: null, holdAndWin: null, bonus: null, sources: {} };
+  /* Track which fields are sums so we don't accidentally double-count
+   * when narrow + sum match on the same label. */
+  const isSum = { total: false, baseGame: false, freeSpins: false, holdAndWin: false, bonus: false };
+  /* PAR-7-FULL fix (Boki 2026-06-26, post-FCB regression catch): par
+   * sheets that ship multiple RTP-variant sheets (Fortune Coin Boost
+   * has par_001..par_004 — same structure, four variants) would
+   * accumulate the SAME multi-component sub-fields across each sheet,
+   * 4× inflating the SUM. Track which sheet started the sum for each
+   * field; only continue the accumulation while we're still walking
+   * that sheet. Later sheets are no-ops once the field is anchored. */
+  const sumStartedIn = { total: null, baseGame: null, freeSpins: null, holdAndWin: null, bonus: null };
+
+  const setOrAdd = (field, pct, addr, sheetName, accumulate) => {
+    const tagged = `${sheetName}!${addr}`;
+    if (accumulate) {
+      if (result[field] === null) {
+        result[field] = pct;
+        result.sources[field] = tagged;
+        isSum[field] = true;
+        sumStartedIn[field] = sheetName;
+      } else if (isSum[field] && sumStartedIn[field] === sheetName) {
+        /* Same sheet → keep accumulating. */
+        result[field] += pct;
+        result.sources[field] = result.sources[field] + ',' + tagged;
+      }
+      /* Later sheets do NOT add — same-variant sub-components would
+       * inflate the SUM N times across N variant sheets. */
+    } else {
+      if (result[field] === null) {
+        result[field] = pct;
+        result.sources[field] = tagged;
+      }
+    }
+  };
+
   for (const sheetName of wb.SheetNames) {
     const ws = wb.Sheets[sheetName];
     const range = sheetRange(ws);
     if (!range) continue;
     const maxR = Math.min(range.e.r, range.s.r + 200);
     const maxC = Math.min(range.e.c, range.s.c + 30);
+
+    let currentSection = null;
+
     for (let r = range.s.r; r <= maxR; r++) {
+      /* Section heading detection — column A only. */
+      const colA = cellString(ws, r, range.s.c);
+      const sectionHit = detectSection(colA);
+      if (sectionHit) currentSection = sectionHit;
+
       for (let c = range.s.c; c <= maxC; c++) {
         const s = cellString(ws, r, c);
         if (!s) continue;
-        const matched = COMPONENT_RX.find((p) => p.rx.test(s));
-        if (!matched) continue;
-        if (result[matched.field] !== null) continue; /* first hit wins per field */
-        /* Probe right + down for numeric. */
-        const probes = [[r, c + 1], [r, c + 2], [r, c + 3], [r + 1, c], [r + 1, c + 1]];
-        for (const [pr, pc] of probes) {
-          const n = cellNumber(ws, pr, pc);
-          if (n === null) continue;
-          const pct = n <= 1.5 ? n * 100 : n;
-          if (pct < 0 || pct > 130) continue;
-          result[matched.field] = pct;
-          result.sources[matched.field] = `${sheetName}!${XLSX.utils.encode_cell({ r: pr, c: pc })}`;
-          break;
+
+        /* (1) Narrow match — first hit wins. */
+        const narrow = NARROW_RX.find((p) => p.rx.test(s));
+        if (narrow) {
+          if (result[narrow.field] === null) {
+            /* PAR-7-FULL fix (Boki 2026-06-26): probe RIGHT only — pre-fix
+             * down-probes accidentally picked up the value cell of the
+             * NEXT label row (e.g. Total RTP label probes Free Spins RTP
+             * value, mis-assigning it as Total). Real par sheets place
+             * RTP values to the right of the label every time. */
+            const probes = [[r, c + 1], [r, c + 2], [r, c + 3], [r, c + 4]];
+            for (const [pr, pc] of probes) {
+              const n = cellNumber(ws, pr, pc);
+              if (n === null) continue;
+              const pct = n <= 1.5 ? n * 100 : n;
+              if (pct < 0 || pct > 130) continue;
+              setOrAdd(narrow.field, pct, XLSX.utils.encode_cell({ r: pr, c: pc }), sheetName, false);
+              break;
+            }
+          }
+          continue;
+        }
+
+        /* (2) Sum match — accumulate. */
+        const sum = SUM_RX.find((p) => p.rx.test(s));
+        if (sum) {
+          const probes = [[r, c + 1], [r, c + 2], [r, c + 3], [r + 1, c], [r + 1, c + 1]];
+          for (const [pr, pc] of probes) {
+            const n = cellNumber(ws, pr, pc);
+            if (n === null) continue;
+            const pct = n <= 1.5 ? n * 100 : n;
+            if (pct < 0 || pct > 130) continue;
+            setOrAdd(sum.field, pct, XLSX.utils.encode_cell({ r: pr, c: pc }), sheetName, true);
+            break;
+          }
+          continue;
+        }
+
+        /* (3) Section-aware match — only when currentSection known.
+         * Line Pay % → currentSection's RTP. First-hit-wins per section
+         * to avoid intra-sheet duplicates (each BoU section has one
+         * canonical Line Pay % cell). */
+        if (currentSection && SECTION_RX.test(s)) {
+          const probes = [[r, c + 1], [r, c + 2], [r, c + 3], [r + 1, c], [r + 1, c + 1]];
+          for (const [pr, pc] of probes) {
+            const n = cellNumber(ws, pr, pc);
+            if (n === null) continue;
+            const pct = n <= 1.5 ? n * 100 : n;
+            if (pct < 0 || pct > 130) continue;
+            setOrAdd(currentSection, pct, XLSX.utils.encode_cell({ r: pr, c: pc }), sheetName, false);
+            break;
+          }
+          continue;
+        }
+
+        /* (4) Section-aware bonus pay routing — Bonus Pay % in any
+         * section routes to the global 'bonus' field with first-hit-
+         * wins. This keeps Line + Bonus contributions cleanly split. */
+        if (BONUS_PAY_RX.test(s)) {
+          const probes = [[r, c + 1], [r, c + 2], [r, c + 3], [r + 1, c], [r + 1, c + 1]];
+          for (const [pr, pc] of probes) {
+            const n = cellNumber(ws, pr, pc);
+            if (n === null) continue;
+            const pct = n <= 1.5 ? n * 100 : n;
+            if (pct < 0 || pct > 130) continue;
+            setOrAdd('bonus', pct, XLSX.utils.encode_cell({ r: pr, c: pc }), sheetName, false);
+            break;
+          }
         }
       }
     }

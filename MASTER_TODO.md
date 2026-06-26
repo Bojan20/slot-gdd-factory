@@ -330,6 +330,64 @@ SLEDEĆI: PAR-11 (Wild substitution + Mystery reveal). PAR-10 je ono
 što je obećalo da DA — explicit fidelity. Što se measured RTP-a tiče,
 veliki delta nije bio realan da očekuje od ovog atom-a.
 ```
+
+### PAR-7-FULL closeout receipt (2026-06-27 UTC)
+
+```
+┌──────────────┬──────────────────────────────────────────────────────┐
+│ Šta zatvara   │ Multi-component sum + section-aware RTP routing       │
+│ Skripte       │ tools/_par-sheet-to-model.mjs (extractRtpComponents   │
+│               │ extended sa NARROW / SUM / SECTION-AWARE klasama,    │
+│               │ per-sheet boundary za sumirane fields, probe RIGHT   │
+│               │ only za narrow path)                                  │
+│               │ tests/tools/par-7-full-components.test.mjs (NEW,     │
+│               │ 10/10 PASS)                                           │
+└──────────────┴──────────────────────────────────────────────────────┘
+
+Components populacija — pre vs post:
+
+┌──────────────────────────┬─────────────┬───────────────────────┐
+│ Slug                       │ Pre-PAR-7-F │ Post-PAR-7-F           │
+├──────────────────────────┼─────────────┼───────────────────────┤
+│ cash-eruption              │ base 41.90  │ base 41.90 (unchanged) │
+│ fort-knox-wolf-run         │ base 70.99  │ base 70.99 (unchanged) │
+│ book-of-unseen-bonus-buy   │ base = null │ base 0.80, fs 7.28,    │
+│                            │             │ bonus 89.30           │
+│ skeleton-key               │ base 75.89  │ base 75.89 (unchanged) │
+│ fortune-coin-boost-classic │ base = null │ base 81.54, fs 13.46   │
+└──────────────────────────┴─────────────┴───────────────────────┘
+
+Verdict ladder shift (200k×2 seeds):
+
+┌──────────────────────────┬─────────────┬─────────────┐
+│ Slug                       │ Pre verdict │ Post verdict │
+├──────────────────────────┼─────────────┼─────────────┤
+│ cash-eruption              │ WARN         │ WARN         │
+│ fort-knox-wolf-run         │ WARN         │ WARN         │
+│ book-of-unseen-bonus-buy   │ FAIL (total) │ WARN (base)  │
+│ skeleton-key               │ FAIL         │ FAIL         │
+│ fortune-coin-boost-classic │ FAIL (total) │ WARN (base)  │
+└──────────────────────────┴─────────────┴─────────────┘
+
+Pre = 2 WARN + 3 FAIL. Post = 4 WARN + 1 FAIL. Net: -2 FAIL.
+
+Three label classes architecturally orthogonal:
+  - NARROW: precise field names + first-hit-wins
+  - SUM:    "<base|fs|hnw|bonus> game <mid> RTP" pattern + accumulate
+  - SECTION: column-A heading drives currentSection for "Line Pay %"
+
+Per-sheet boundary fix: sumStartedIn tracker → SUM only acumulira
+unutar prvog sheet-a koji ga sklopi; ostali identični variant sheets
+(FCB par_001..par_004) preskaču accumulation. Pre-fix BoU base bio
+285%, FCB base 317% — 3-4× duplicirano. Post-fix 0.80% / 81.54%.
+
+Probe RIGHT only za narrow (pre-fix down-probe hvatao numeric vrednost
+sledeće label row → mis-assignment, vidi test 7).
+
+SLEDEĆI: PAR-12 (FS reels + scatter triggers). Sad imamo realne
+baseGame target-e za sve 5 slug-ova → smisleno meriti i FS contribution
+gap nakon kernel-side FS implementacije.
+```
 │         │   Skeleton Key + Cash Eruption HoldAndWin + Book of      │           │
 │         │   Unseen Bonus Buy → declared total RTP uključuje FS    │           │
 │         │   contribution koji PAR-5 base-game-only ne meri. Za     │           │
