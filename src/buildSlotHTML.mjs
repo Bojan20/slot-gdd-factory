@@ -165,6 +165,17 @@ import {
   emitLiveRtpHudRuntime,
   resolveConfig as resolveLiveRtpHudConfig,
 } from './blocks/liveRtpHud.mjs';
+/* LV3-14 — Convergence HUD overlay (auto-solver iteration progress).
+   Sister to liveRtpHud: liveRtpHud shows MEASURED vs DECLARED RTP per
+   spin; convergenceHud shows AUTO-SOLVER iteration progress (residual,
+   delta-bps band, terminal converged/diverged state) for regulator
+   live-demo mode. (LV3-14, Boki 2026-06-26 — wire-up.) */
+import {
+  emitConvergenceHudCSS,
+  emitConvergenceHudMarkup,
+  emitConvergenceHudRuntime,
+  resolveConfig as resolveConvergenceHudConfig,
+} from './blocks/convergenceHud.mjs';
 /* LV3-3 — Backend spin engine shim (per-spin fetch ka math-backend). */
 import {
   emitBackendSpinEngineRuntime,
@@ -1738,6 +1749,7 @@ ${emitSuperSymbolCSS(resolveSuperSymbolConfig(model))}
 
 ${emitFreeSpinsCSS(resolveFreeSpinsConfig(model))}
 ${emitLiveRtpHudCSS(resolveLiveRtpHudConfig(model))}
+${emitConvergenceHudCSS(resolveConvergenceHudConfig(model))}
 ${emitBatchSimulatorPanelCSS(resolveBatchSimulatorPanelConfig(model))}
 ${emitDriftSentinelCSS(resolveDriftSentinelConfig(model))}
 ${emitDevToolsCSS()}
@@ -1860,6 +1872,8 @@ ${emitFreeSpinsOverlayMarkup(resolveFreeSpinsConfig(model))}
 
 ${/* LV3 — Live RTP HUD overlay (MATH-INTEGRATION-LV3). */ ''}
 ${emitLiveRtpHudMarkup(resolveLiveRtpHudConfig(model))}
+${/* LV3-14 — Convergence HUD overlay (auto-solver iteration). */ ''}
+${emitConvergenceHudMarkup(resolveConvergenceHudConfig(model))}
 ${emitBatchSimulatorPanelMarkup(resolveBatchSimulatorPanelConfig(model))}
 ${emitDriftSentinelMarkup(resolveDriftSentinelConfig(model))}
 
@@ -2614,6 +2628,11 @@ ${emitHotReloadMarkup(resolveHotReloadConfig(model))}
      Backend engine je POSLEDNJI tako da subscribe-uje postSpin sa
      priority -200 i može da ažurira HUD preko __LIVE_RTP_RECORD__. */
   ${emitLiveRtpHudRuntime(resolveLiveRtpHudConfig(model), model)}
+  ${/* LV3-14 — convergenceHud reads window.__SOLVER_STATE__ pushed
+       by the operator side (uploader → SSE → SimAdapter). It is
+       enabled by smartDefault for any GDD with declared compliance
+       gates, so the regulator demo HTML auto-shows both HUDs. */ ''}
+  ${emitConvergenceHudRuntime(resolveConvergenceHudConfig(model), model)}
   ${emitBatchSimulatorPanelRuntime(resolveBatchSimulatorPanelConfig(model), model)}
   ${emitDriftSentinelRuntime(resolveDriftSentinelConfig(model))}
   ${emitBackendSpinEngineRuntime(resolveBackendSpinEngineConfig(model), model)}

@@ -235,17 +235,19 @@
                     text-decoration:none;text-transform:none;letter-spacing:0;">
             open slot in new tab ↗
           </a>
-          <!-- UQ-LV3-QA-5 Wave 3 (Boki 2026-06-26): cert-pack download
-               button next to preview link. Hidden until ingest yields a
-               slug. Click → GET /cert-pack/<slug> → ZIP download. -->
-          <a id="certPackDownload" href="#" download
+          <!-- UQ-LV3-QA-5 Wave 3 + UQ-LV3-QA-7 Wave 5 (Boki 2026-06-26):
+               cert-pack download as a real button (was <a>) so click
+               can be intercepted by JS handler that uses fetch+Blob to
+               control download lifecycle (no JSON tab on error, busy
+               state during build, SR announce on result). -->
+          <button id="certPackDownload" type="button"
              style="display:none;font-size:11px;font-weight:600;color:#cdeaff;
                     background:rgba(120,200,255,0.18);border:1px solid rgba(120,200,255,0.45);
-                    padding:4px 10px;border-radius:4px;text-decoration:none;
+                    padding:4px 10px;border-radius:4px;cursor:pointer;
                     text-transform:none;letter-spacing:0;"
              aria-label="Download GLI-16 cert pack ZIP">
             cert-pack ↓
-          </a>
+          </button>
         </span>
       </h2>
       <div id="preview"><div class="empty">preview appears here after ingest succeeds</div></div>
@@ -294,6 +296,103 @@
     if (r) { e.preventDefault(); state[r] = null; renderFiles(); }
   });
 
+  /* UQ-LV3-QA-7 Wave 5 (Boki 2026-06-26) — cert-pack <button> click
+     handler. Was an <a download> link which on server error rendered
+     the JSON response in a new tab. Now we fetch+blob+save manually
+     so error → SR announcer + button label, success → real ZIP save.
+
+     Defensive bits:
+       (a) Busy guard — double-click / SR keydown→click race-protected.
+       (b) Slug fixed at click-time (read once into local) so a parallel
+           ingest run that mutates dataset.slug mid-fetch can't poison
+           the download filename.
+       (c) Content-Type sniff: real ZIPs are `application/zip` (or
+           binary octet-stream). Anything else means the server fell
+           through to a JSON error path → parse it, surface the message.
+       (d) URL.revokeObjectURL after .click() so the Blob URL is freed
+           immediately (Chrome holds onto it until tab close otherwise).
+       (e) SR announcement is mandatory on BOTH success and failure —
+           operators on screen-readers must hear that the action
+           completed even when the save dialog handles the visual cue. */
+  var certBtn0 = document.getElementById('certPackDownload');
+  if (certBtn0) {
+    certBtn0.addEventListener('click', async function (ev) {
+      ev.preventDefault();
+      var btn = ev.currentTarget;
+      if (btn.dataset.busy === '1') return;
+      var slug = btn.dataset.slug;
+      if (!slug) {
+        var a0 = document.getElementById('mathBackendAnnounce');
+        if (a0) a0.textContent = 'Cert-pack download unavailable — no slug yet';
+        return;
+      }
+      btn.dataset.busy = '1';
+      btn.disabled = true;
+      var origLabel = btn.textContent;
+      btn.textContent = 'building…';
+      var announce = document.getElementById('mathBackendAnnounce');
+      var objectUrl = null;
+      try {
+        var resp = await fetch('/cert-pack/' + encodeURIComponent(slug));
+        var ct = (resp.headers.get('Content-Type') || '').toLowerCase();
+        var disp = resp.headers.get('Content-Disposition') || '';
+        var looksZip = resp.ok && (ct.indexOf('application/zip') >= 0 ||
+                                   ct.indexOf('octet-stream') >= 0 ||
+                                   /attachment/i.test(disp));
+        if (!looksZip) {
+          /* Server returned JSON error (500 / 503 / 404) — parse, announce. */
+          var msg = 'cert-pack failed';
+          try {
+            var j = await resp.json();
+            if (j && j.error) msg = 'cert-pack: ' + j.error;
+          } catch (_) {
+            msg = 'cert-pack HTTP ' + resp.status;
+          }
+          if (announce) announce.textContent = msg;
+          btn.textContent = 'failed ✗';
+          /* Reset label after 4s so operator can retry. */
+          setTimeout(function () {
+            if (btn.dataset.busy) return; /* respin already in flight */
+            btn.textContent = origLabel;
+          }, 4000);
+          return;
+        }
+        var blob = await resp.blob();
+        objectUrl = URL.createObjectURL(blob);
+        /* Filename — prefer Content-Disposition over slug-based default. */
+        var fname = slug + '-cert-pack.zip';
+        var m = disp.match(/filename="?([^";]+)"?/i);
+        if (m && m[1]) fname = m[1];
+        var dlAnchor = document.createElement('a');
+        dlAnchor.href = objectUrl;
+        dlAnchor.download = fname;
+        document.body.appendChild(dlAnchor);
+        dlAnchor.click();
+        document.body.removeChild(dlAnchor);
+        if (announce) announce.textContent = 'Cert-pack ZIP downloaded: ' + fname;
+        btn.textContent = 'downloaded ✓';
+        setTimeout(function () {
+          if (btn.dataset.busy) return;
+          btn.textContent = origLabel;
+        }, 4000);
+      } catch (err) {
+        if (announce) announce.textContent = 'Cert-pack error: ' + (err && err.message || 'network');
+        btn.textContent = 'failed ✗';
+        setTimeout(function () {
+          if (btn.dataset.busy) return;
+          btn.textContent = origLabel;
+        }, 4000);
+      } finally {
+        btn.disabled = false;
+        delete btn.dataset.busy;
+        if (objectUrl) {
+          /* Defer revoke ~1s so the download dialog has time to read it. */
+          setTimeout(function () { URL.revokeObjectURL(objectUrl); }, 1000);
+        }
+      }
+    });
+  }
+
   drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('hover'); });
   drop.addEventListener('dragleave', () => drop.classList.remove('hover'));
   drop.addEventListener('drop', (e) => {
@@ -331,11 +430,18 @@
     previewDiv.innerHTML = '<div class="empty">waiting for ingest to finish</div>';
     const openLinkReset = document.getElementById('previewOpen');
     if (openLinkReset) { openLinkReset.style.display = 'none'; openLinkReset.removeAttribute('href'); }
-    /* UQ-LV3-QA-5 Wave 3: reset cert-pack link between ingest runs so
-       the operator can't accidentally download a stale ZIP from the
-       previous slug. */
+    /* UQ-LV3-QA-5 Wave 3 + UQ-LV3-QA-7 Wave 5: reset cert-pack button
+       state between ingest runs — operator must not accidentally
+       download stale ZIP, and any busy/disabled state from a previous
+       run must be cleared if the fetch was interrupted. */
     var certReset = document.getElementById('certPackDownload');
-    if (certReset) { certReset.style.display = 'none'; certReset.removeAttribute('href'); }
+    if (certReset) {
+      certReset.style.display = 'none';
+      certReset.removeAttribute('data-slug');
+      certReset.disabled = false;
+      certReset.textContent = 'cert-pack ↓';
+      delete certReset.dataset.busy;
+    }
     const fd = new FormData();
     fd.append('gdd', state.gdd, state.gdd.name);
     if (state.par) fd.append('par', state.par, state.par.name);
@@ -436,13 +542,18 @@
       openLink.href = slotUrl;
       openLink.style.display = 'inline-block';
     }
-    /* UQ-LV3-QA-5 Wave 3: wire cert-pack download. The browser
-       handles the ZIP via the `download` attribute (server returns
-       attachment Content-Disposition so any path also forces save). */
-    var certLink = document.getElementById('certPackDownload');
-    if (certLink) {
-      certLink.href = '/cert-pack/' + encodeURIComponent(slug);
-      certLink.style.display = 'inline-block';
+    /* UQ-LV3-QA-7 Wave 5: cert-pack is a <button>, not <a> — store
+       slug on data-slug attribute and let the click handler (wired
+       at boot) do fetch+Blob+save. This gives us:
+       (1) Error responses (concurrency cap, missing slug, build fail)
+           do NOT leak JSON into a new browser tab — they go to the
+           SR announcer + button label instead.
+       (2) Busy state during the (potentially multi-second) ZIP build.
+       (3) Hard-revoke of object URL after save to keep memory clean. */
+    var certBtn = document.getElementById('certPackDownload');
+    if (certBtn) {
+      certBtn.dataset.slug = slug;
+      certBtn.style.display = 'inline-block';
     }
   }
 

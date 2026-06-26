@@ -100,14 +100,26 @@ t('#7 #certPackDownload anchor present + ARIA labelled', () => {
   assert.match(uiSrc, /aria-label="Download GLI-16 cert pack ZIP"/);
 });
 
-t('#8 href reset between ingest runs (no stale ZIP leak)', () => {
-  /* certReset.style.display = none + removeAttribute('href'). */
+t('#8 button state reset between ingest runs (no stale ZIP leak)', () => {
+  /* UQ-LV3-QA-7 Wave 5 (2026-06-26): cert-pack changed from <a> to
+     <button>, so the reset path no longer touches `href` — it must
+     clear `data-slug`, force `disabled=false`, drop the busy flag, and
+     hide. All four invariants must coexist in the reset block. */
   assert.match(uiSrc, /var certReset = document\.getElementById\(['"]certPackDownload['"]\)/);
-  assert.match(uiSrc, /certReset\.removeAttribute\(['"]href['"]\)/);
+  assert.match(uiSrc, /certReset\.removeAttribute\(['"]data-slug['"]\)/);
+  assert.match(uiSrc, /certReset\.disabled\s*=\s*false/);
+  assert.match(uiSrc, /delete certReset\.dataset\.busy/);
+  assert.match(uiSrc, /certReset\.style\.display\s*=\s*['"]none['"]/);
 });
 
-t('#9 href wired to /cert-pack/<encoded-slug> on finish', () => {
-  assert.match(uiSrc, /certLink\.href\s*=\s*['"]\/cert-pack\/['"]\s*\+\s*encodeURIComponent\(slug\)/);
+t('#9 button wired to /cert-pack/<encoded-slug> via fetch handler', () => {
+  /* UQ-LV3-QA-7 Wave 5: contract evolved from <a href=…> navigation
+     to a real JS fetch handler. Two invariants now hold:
+       (a) The "load receipts" path stores the slug on data-slug
+           instead of writing href.
+       (b) The click handler fetches GET /cert-pack/<encoded-slug>. */
+  assert.match(uiSrc, /certBtn\.dataset\.slug\s*=\s*slug/);
+  assert.match(uiSrc, /fetch\(['"]\/cert-pack\/['"]\s*\+\s*encodeURIComponent\(slug\)/);
 });
 
 /* ── #10 doc sync ─────────────────────────────────────────────────── */

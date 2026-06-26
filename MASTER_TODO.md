@@ -19,7 +19,7 @@
 └────┴─────────────────────────────────────────────────────────────┴───────────┘
 ```
 
-**LV3 status posle ove sesije — 11 atoma LANDED, 2 otvoreno:**
+**LV3 status posle ove sesije — 13 atoma LANDED, 1 otvoreno (sister-repo Rust):**
 
 ```
 ┌──────┬──────────────────────────────────────────────────────────┬──────────┐
@@ -31,13 +31,31 @@
 │LV3-5 │ batchSimulatorPanel.mjs (434 LOC, 1M/10M/100M CTA)        │ ✅ LANDED │
 │LV3-6 │ driftSentinel.mjs (±0.05% guard)                          │ ✅ LANDED │
 │LV3-7 │ tools/cert-pack-export.mjs (GLI-16 ZIP, 384 LOC)          │ ✅ LANDED │
-│LV3-8 │ Web uploader "Backend mode" toggle UI                     │ 📋 OPEN  │
+│LV3-8 │ Web uploader "Backend mode" toggle UI                     │ ✅ LANDED │
 │LV3-9 │ Contract test math-lv3-backend.test.mjs (169 LOC)         │ ✅ LANDED │
 │LV3-10│ E2E live-rtp-probe (tools/_lv3-live-rtp-probe.mjs)        │ ✅ LANDED │
 │LV3-11│ Anti-vendor shield (src/registry/antiVendorShield.mjs)    │ ✅ LANDED │
 │LV3-12│ docs/math-lv3-architecture.md (runbook, 182 LOC)          │ ✅ LANDED │
-│LV3-14│ src/blocks/convergenceHud.mjs (live UI overlay)           │ 📋 OPEN  │
+│LV3-14│ src/blocks/convergenceHud.mjs (live UI overlay, wired)    │ ✅ LANDED │
 └──────┴──────────────────────────────────────────────────────────┴──────────┘
+
+LV3-8 closeout (2026-06-26): toggle UI live at uploader top header sa
+mathBackendBadge + mathBackendToggle + announcer, poll svake 5s,
+busy-guard + dynamic aria-label + UQ-LV3-QA-4 #2/#5/#9/#10 hardening.
+
+LV3-14 closeout (2026-06-26): convergenceHud.mjs (382 LOC) wired in
+buildSlotHTML.mjs (import + CSS + markup + runtime emit). Smart-default
+auto-enable za GDD-ove sa compliance gate-ovima. Sister to liveRtpHud:
+liveRtpHud = MEASURED-vs-DECLARED RTP per spin, convergenceHud =
+auto-solver iter/residual/delta-bps band + terminal converged emit
+preko HookBus.onSolverConverged.
+
+UQ-LV3-QA-7 Wave 5 closeout (2026-06-26): cert-pack download je sad
+<button> + fetch+Blob+save handler (was <a download>). Error responses
+više ne otvaraju JSON tab — idu na SR announcer + button label
+("failed ✗" 4s grace). Busy-guard za double-click, slug fixed pri
+click-time, Content-Type sniff za ZIP-vs-JSON, URL.revokeObjectURL
+posle save.
 
 LV3 today: LV3-10 + LV3-11 — E2E RTP probe + shared anti-vendor
 sanitization registry sa 12-case contract test.

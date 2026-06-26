@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-24T20:10:11.878Z",
+  "generatedAt": "2026-06-26T12:03:10.866Z",
   "blocksDir": "src/blocks",
-  "totalBlocks": 229,
+  "totalBlocks": 231,
   "blocks": [
     {
       "name": "_auto-scaffolded/_auto_multiplier",
@@ -219,7 +219,7 @@
         "haloRGB": "255,211,74",
         "badgeEmoji": "🏆"
       },
-      "loc": 303
+      "loc": 304
     },
     {
       "name": "addedSymbolsInjector",
@@ -258,7 +258,7 @@
         "injectionMs": 280,
         "schemaVersion": "1"
       },
-      "loc": 328
+      "loc": 329
     },
     {
       "name": "allWaysEval",
@@ -336,7 +336,7 @@
         "evaluateBothDirections": true,
         "showPayPath": true
       },
-      "loc": 718
+      "loc": 719
     },
     {
       "name": "ambientBackgroundWheel",
@@ -381,7 +381,7 @@
         "autoOnBigWin": true,
         "autoOnFsTrigger": true
       },
-      "loc": 225
+      "loc": 226
     },
     {
       "name": "ambientBgVariants",
@@ -423,7 +423,7 @@
         "celebrationRGB": "80,40,20",
         "bonusRGB": "24,16,48"
       },
-      "loc": 180
+      "loc": 181
     },
     {
       "name": "anteBet",
@@ -456,7 +456,7 @@
         "label": "ANTE BET",
         "color": "#ffe066"
       },
-      "loc": 271
+      "loc": 272
     },
     {
       "name": "anteBetLadder",
@@ -518,7 +518,7 @@
         "color": "#ffe066",
         "colorDark": "#b08e22"
       },
-      "loc": 384
+      "loc": 385
     },
     {
       "name": "anticipation",
@@ -628,7 +628,7 @@
         "megaWinThresholdX": 50,
         "epicWinThresholdX": 250
       },
-      "loc": 372
+      "loc": 405
     },
     {
       "name": "autoplay",
@@ -694,7 +694,7 @@
         "jurisdiction": "",
         "requireDisclosure": false
       },
-      "loc": 1179
+      "loc": 1188
     },
     {
       "name": "backendSpinEngine",
@@ -718,6 +718,7 @@
         "postSpin"
       ],
       "emittedEvents": [
+        "onBackendFallback",
         "onBackendSpinSampled",
         "onBackendStatusChanged"
       ],
@@ -728,7 +729,7 @@
         "spinTimeoutMs": 3000,
         "maxConsecutiveErrors": 3
       },
-      "loc": 258
+      "loc": 336
     },
     {
       "name": "balanceHud",
@@ -776,7 +777,7 @@
         "creditColor": "120,255,180",
         "ariaLabel": "Balance HUD"
       },
-      "loc": 566
+      "loc": 578
     },
     {
       "name": "batchSimulatorPanel",
@@ -826,7 +827,7 @@
           }
         ]
       },
-      "loc": 434
+      "loc": 435
     },
     {
       "name": "belgiumComplianceGate",
@@ -928,7 +929,7 @@
         "chipTextColor": "20,20,20",
         "ariaLabel": "Adjust bet"
       },
-      "loc": 854
+      "loc": 885
     },
     {
       "name": "bidirectionalWaysEval",
@@ -1002,7 +1003,7 @@
         "highlightLTR": "#ffaa00",
         "highlightRTL": "#00aaff"
       },
-      "loc": 640
+      "loc": 641
     },
     {
       "name": "bigSymbolRender2x2",
@@ -1151,7 +1152,7 @@
         "tierClimaxPulseMs": 600,
         "tierClimaxPulseMinTier": 5
       },
-      "loc": 1552
+      "loc": 1553
     },
     {
       "name": "bonusBuy",
@@ -1191,7 +1192,7 @@
         "rearmMs": 1200,
         "confirmMessage": ""
       },
-      "loc": 306
+      "loc": 333
     },
     {
       "name": "bonusBuyDeterministic",
@@ -1419,7 +1420,7 @@
         "autoEmitOnCreditBucketStart": true,
         "autoEmitOnDailyJackpotAward": true
       },
-      "loc": 281
+      "loc": 282
     },
     {
       "name": "bonusOverlayMutex",
@@ -1526,7 +1527,7 @@
         "title": "PICK A PRIZE",
         "haloColor": "255,180,60"
       },
-      "loc": 395
+      "loc": 396
     },
     {
       "name": "cascadeBooster",
@@ -1578,7 +1579,7 @@
         "requireStepWin": true,
         "hideAtBase": true
       },
-      "loc": 233
+      "loc": 247
     },
     {
       "name": "cascadePathDraw",
@@ -1619,7 +1620,7 @@
         "glowColor": "rgba(255,216,77,0.55)",
         "clearOnNextSpin": true
       },
-      "loc": 195
+      "loc": 196
     },
     {
       "name": "cascadingWildPersistence",
@@ -1706,7 +1707,7 @@
         "restrictToSymbols": [],
         "zIndex": 16
       },
-      "loc": 313
+      "loc": 314
     },
     {
       "name": "cellOverflowCounter",
@@ -1748,7 +1749,7 @@
         "zIndex": 18,
         "preferDataAttr": true
       },
-      "loc": 241
+      "loc": 242
     },
     {
       "name": "clusterPaysEval",
@@ -1896,7 +1897,7 @@
         "color": "#ffd34a",
         "haloRGB": "255,211,74"
       },
-      "loc": 274
+      "loc": 275
     },
     {
       "name": "coinShower",
@@ -1941,7 +1942,7 @@
         "gravityPx": 1400,
         "haptic": false
       },
-      "loc": 357
+      "loc": 358
     },
     {
       "name": "collectableSymbol",
@@ -1991,7 +1992,7 @@
         "pulseMs": 380,
         "zIndex": 40
       },
-      "loc": 274
+      "loc": 275
     },
     {
       "name": "collectRevealOverlay",
@@ -2038,7 +2039,7 @@
         "haloRGB": "255,211,74",
         "ctaLabel": "CLAIM"
       },
-      "loc": 310
+      "loc": 311
     },
     {
       "name": "collectStreakBonus",
@@ -2074,7 +2075,7 @@
         "threshold": 0,
         "payload": null
       },
-      "loc": 148
+      "loc": 149
     },
     {
       "name": "colorblindPatterns",
@@ -2142,7 +2143,44 @@
         "persistKey": "slot.cbPatterns",
         "zIndex": 15
       },
-      "loc": 391
+      "loc": 392
+    },
+    {
+      "name": "convergenceHud",
+      "file": "src/blocks/convergenceHud.mjs",
+      "testFile": "tests/blocks/convergenceHud.test.mjs",
+      "category": "uncategorised",
+      "description": "MATH-INTEGRATION-LV3 atom #14 (Boki 2026-06-26) — Live UI overlay",
+      "exports": [
+        "defaultConfig",
+        "emitConvergenceHudCSS",
+        "emitConvergenceHudMarkup",
+        "emitConvergenceHudRuntime",
+        "resolveConfig",
+        "smartDefault"
+      ],
+      "enabledByDefault": false,
+      "frozen": true,
+      "hasEmitCSS": true,
+      "hasEmitMarkup": true,
+      "hasEmitRuntime": true,
+      "hasResolveConfig": true,
+      "hasDefaultConfig": true,
+      "lifecycleHooks": [
+        "onSlotDestroy"
+      ],
+      "emittedEvents": [
+        "onSolverConverged"
+      ],
+      "defaultConfig": {
+        "enabled": false,
+        "position": "top-left",
+        "pollIntervalMs": 250,
+        "toleranceBps": 5,
+        "debugLog": false,
+        "schemaVersion": "1"
+      },
+      "loc": 382
     },
     {
       "name": "copyWildOrchestrator",
@@ -2184,7 +2222,7 @@
         "mode": "both",
         "schemaVersion": "1"
       },
-      "loc": 425
+      "loc": 426
     },
     {
       "name": "crashSpinEngine",
@@ -2327,7 +2365,7 @@
         "colorDark": "#a07520",
         "haloRGB": "255,211,74"
       },
-      "loc": 335
+      "loc": 336
     },
     {
       "name": "dailyJackpot",
@@ -2372,7 +2410,7 @@
         "currency": "€",
         "currencyPosition": "prefix"
       },
-      "loc": 560
+      "loc": 561
     },
     {
       "name": "denmarkComplianceGate",
@@ -2442,7 +2480,7 @@
         "cooldownMs": 30000,
         "autoDismissMs": 8000
       },
-      "loc": 125
+      "loc": 126
     },
     {
       "name": "dualRoleScatter",
@@ -2484,7 +2522,7 @@
         "zIndex": 17,
         "emitScatterRoleOnFsTrigger": true
       },
-      "loc": 218
+      "loc": 219
     },
     {
       "name": "dynamicWaysEngine",
@@ -2533,7 +2571,7 @@
         "fontSizePx": 16,
         "pulseMs": 500
       },
-      "loc": 502
+      "loc": 503
     },
     {
       "name": "energyMeter",
@@ -2586,7 +2624,7 @@
         "width": 120,
         "showInBase": true
       },
-      "loc": 269
+      "loc": 270
     },
     {
       "name": "euAiActComplianceGate",
@@ -2719,7 +2757,7 @@
         "multTagFontPx": 14,
         "pulseMs": 700
       },
-      "loc": 532
+      "loc": 533
     },
     {
       "name": "extendedWildCountdown",
@@ -2762,7 +2800,7 @@
         "decrementOn": "spinComplete",
         "schemaVersion": "1"
       },
-      "loc": 404
+      "loc": 405
     },
     {
       "name": "featureSimPlugins/clusterEval",
@@ -3127,7 +3165,7 @@
         "minRollupMsForShow": 600,
         "ariaLabel": "Skip animation"
       },
-      "loc": 441
+      "loc": 442
     },
     {
       "name": "franceComplianceGate",
@@ -3219,7 +3257,7 @@
         "featureHideMs": 300,
         "bigWinSafetyMs": 30000
       },
-      "loc": 960
+      "loc": 961
     },
     {
       "name": "fsExpansionWilds",
@@ -3261,7 +3299,7 @@
         "expansionColor": "#ffaa00",
         "pulseMs": 700
       },
-      "loc": 365
+      "loc": 366
     },
     {
       "name": "fsPersistentJackpotPool",
@@ -3307,7 +3345,7 @@
         "showChip": true,
         "maxScattersThreshold": 5
       },
-      "loc": 373
+      "loc": 374
     },
     {
       "name": "fsProgressBar",
@@ -3346,7 +3384,7 @@
         "showOnRetrigger": true,
         "fontSizePx": 12
       },
-      "loc": 310
+      "loc": 312
     },
     {
       "name": "fsReelHeightEscalation",
@@ -3434,7 +3472,7 @@
         "chipPosition": "topRight",
         "showChip": true
       },
-      "loc": 347
+      "loc": 348
     },
     {
       "name": "gamble",
@@ -3471,7 +3509,7 @@
         "collectThresholdX": 0,
         "haloColor": "200,80,80"
       },
-      "loc": 348
+      "loc": 372
     },
     {
       "name": "gambleSecondary",
@@ -3529,7 +3567,7 @@
         "chipColor": "180,80,80",
         "chipTextColor": "255,255,255"
       },
-      "loc": 1007
+      "loc": 1020
     },
     {
       "name": "gddRealityCheck",
@@ -3717,7 +3755,7 @@
         "emitScatterPayTable": true,
         "emitExpandingWildOnlyIfWinning": true
       },
-      "loc": 150
+      "loc": 165
     },
     {
       "name": "genericFeatureBanner",
@@ -3753,7 +3791,7 @@
         "handleKinds": "auto",
         "forceMultiplierValue": 3
       },
-      "loc": 332
+      "loc": 333
     },
     {
       "name": "germanyComplianceGate",
@@ -4038,7 +4076,7 @@
         "animMs": 320,
         "fontSizePx": 13
       },
-      "loc": 369
+      "loc": 370
     },
     {
       "name": "historyLog",
@@ -4090,7 +4128,7 @@
         "winClampMax": 10000000000,
         "currency": ""
       },
-      "loc": 761
+      "loc": 763
     },
     {
       "name": "holdAndWin",
@@ -4164,7 +4202,7 @@
         },
         "orbTable": null
       },
-      "loc": 2234
+      "loc": 2235
     },
     {
       "name": "holdAndWinCreditBucket",
@@ -4368,7 +4406,7 @@
         "fontSizePx": 14,
         "pulseMs": 600
       },
-      "loc": 346
+      "loc": 347
     },
     {
       "name": "holdAndWinReelExpansion",
@@ -4469,7 +4507,7 @@
         "chipColor": "#ffd700",
         "pulseMs": 800
       },
-      "loc": 358
+      "loc": 359
     },
     {
       "name": "hookBus",
@@ -4504,7 +4542,7 @@
       "defaultConfig": {
         "debugLog": false
       },
-      "loc": 1185
+      "loc": 1321
     },
     {
       "name": "hotReload",
@@ -4550,7 +4588,7 @@
         "keepalivePingMs": 25000,
         "indicator": true
       },
-      "loc": 418
+      "loc": 432
     },
     {
       "name": "i18n",
@@ -4589,7 +4627,7 @@
         ],
         "useIntlNumberFormat": false
       },
-      "loc": 586
+      "loc": 706
     },
     {
       "name": "infiniteFsUntilLoss",
@@ -4679,7 +4717,7 @@
         "pulseMs": 420,
         "zIndex": 38
       },
-      "loc": 279
+      "loc": 280
     },
     {
       "name": "infinityReelsEngine",
@@ -4730,7 +4768,7 @@
         "pulseMs": 500,
         "expandAnimMs": 300
       },
-      "loc": 473
+      "loc": 474
     },
     {
       "name": "insuranceBet",
@@ -4767,7 +4805,7 @@
         "color": "#7fbfff",
         "colorDark": "#205080"
       },
-      "loc": 248
+      "loc": 249
     },
     {
       "name": "inSyncReels",
@@ -4808,7 +4846,7 @@
         "mirrorSymbols": true,
         "schemaVersion": "1"
       },
-      "loc": 320
+      "loc": 321
     },
     {
       "name": "italyComplianceGate",
@@ -4900,7 +4938,7 @@
         "activeFg": "#03110a",
         "showAmount": true
       },
-      "loc": 247
+      "loc": 250
     },
     {
       "name": "jackpotPicker",
@@ -4969,7 +5007,7 @@
         "fontSizePx": 18,
         "autoPickMode": false
       },
-      "loc": 603
+      "loc": 604
     },
     {
       "name": "jackpotRoomReveal",
@@ -5039,7 +5077,7 @@
         "ladderGlowColor": "#ffd700",
         "fontSizePx": 32
       },
-      "loc": 506
+      "loc": 523
     },
     {
       "name": "jurisdictionGate",
@@ -5071,6 +5109,41 @@
         "enabled": true
       },
       "loc": 188
+    },
+    {
+      "name": "kernelInit",
+      "file": "src/blocks/kernelInit.mjs",
+      "testFile": "tests/blocks/kernelInit.test.mjs",
+      "category": "uncategorised",
+      "description": "P3-P4 (Boki 2026-06-25) — kernelInit boot blob.",
+      "exports": [
+        "defaultConfig",
+        "emitKernelInitCSS",
+        "emitKernelInitMarkup",
+        "emitKernelInitRuntime",
+        "resolveConfig"
+      ],
+      "enabledByDefault": true,
+      "frozen": true,
+      "hasEmitCSS": true,
+      "hasEmitMarkup": true,
+      "hasEmitRuntime": true,
+      "hasResolveConfig": true,
+      "hasDefaultConfig": true,
+      "lifecycleHooks": [],
+      "emittedEvents": [
+        "onKernelInitReady"
+      ],
+      "defaultConfig": {
+        "enabled": true,
+        "stubMode": true,
+        "softwareid": "slot-gdd-factory-stub",
+        "skincode": "default",
+        "defaultCurrency": "USD",
+        "defaultLocale": "en-US",
+        "environment": "demo"
+      },
+      "loc": 242
     },
     {
       "name": "leaderboardChip",
@@ -5109,7 +5182,7 @@
         "colorDark": "#9a2466",
         "haloRGB": "255,170,212"
       },
-      "loc": 365
+      "loc": 372
     },
     {
       "name": "lightning",
@@ -5267,7 +5340,7 @@
         "ciRedScale": 2,
         "idleRefreshMs": 2000
       },
-      "loc": 421
+      "loc": 453
     },
     {
       "name": "lockedSymbolFs",
@@ -5370,7 +5443,7 @@
         "cardRevealedColor": "#ffd84d",
         "fontSizePx": 20
       },
-      "loc": 498
+      "loc": 499
     },
     {
       "name": "mathEngine",
@@ -5398,7 +5471,7 @@
       "lifecycleHooks": [],
       "emittedEvents": [],
       "defaultConfig": null,
-      "loc": 189
+      "loc": 234
     },
     {
       "name": "megaSymbol",
@@ -5445,7 +5518,7 @@
         "borderColor": "#ffd84d",
         "borderPx": 2
       },
-      "loc": 257
+      "loc": 258
     },
     {
       "name": "megaWildCluster",
@@ -5489,7 +5562,7 @@
         "pulseMs": 900,
         "cornerRadiusPx": 12
       },
-      "loc": 389
+      "loc": 390
     },
     {
       "name": "moneyGrabGrid",
@@ -5561,7 +5634,7 @@
         "cardRevealedColor": "#7af2c8",
         "fontSizePx": 16
       },
-      "loc": 438
+      "loc": 439
     },
     {
       "name": "motionOverlay",
@@ -5646,7 +5719,7 @@
         "zIndex": 33,
         "climbOnBaseTumble": false
       },
-      "loc": 275
+      "loc": 276
     },
     {
       "name": "multiplierOrb",
@@ -5784,7 +5857,7 @@
         "colorDark": "#a07520",
         "haloRGB": "255,211,74"
       },
-      "loc": 395
+      "loc": 396
     },
     {
       "name": "mysteryReveal",
@@ -5826,7 +5899,7 @@
         "position": "center",
         "haptic": false
       },
-      "loc": 329
+      "loc": 330
     },
     {
       "name": "mysterySymbol",
@@ -6003,7 +6076,7 @@
         "scatterDeficit": 1,
         "skipDuringFs": true
       },
-      "loc": 171
+      "loc": 172
     },
     {
       "name": "netherlandsComplianceGate",
@@ -6147,7 +6220,7 @@
         "animMs": 420,
         "fontSizePx": 13
       },
-      "loc": 256
+      "loc": 257
     },
     {
       "name": "paletteRoulette",
@@ -6223,7 +6296,7 @@
         "persist": true,
         "storageKey": "slot.palette"
       },
-      "loc": 246
+      "loc": 247
     },
     {
       "name": "pathAwareMultiplier",
@@ -6293,7 +6366,7 @@
         "showAggregateChip": true,
         "awardScaleDenom": 0
       },
-      "loc": 595
+      "loc": 596
     },
     {
       "name": "pathBonusEngine",
@@ -6340,7 +6413,7 @@
         "finishTileIdx": 15,
         "finishBonusMult": 2
       },
-      "loc": 473
+      "loc": 474
     },
     {
       "name": "patternWin",
@@ -6425,7 +6498,7 @@
         "maxEvents": 9,
         "noWinChance": 0
       },
-      "loc": 205
+      "loc": 210
     },
     {
       "name": "paylineDimmer",
@@ -6468,7 +6541,7 @@
         "clearOnNextSpin": true,
         "skipDuringFs": false
       },
-      "loc": 183
+      "loc": 184
     },
     {
       "name": "paylineOverlay",
@@ -6610,7 +6683,7 @@
         "autoHideOnSpin": true,
         "ariaLabel": "Open paytable"
       },
-      "loc": 802
+      "loc": 806
     },
     {
       "name": "perFsSpinMultiplier",
@@ -6669,7 +6742,7 @@
         "durationMs": 1200,
         "chipColor": "#ffe680"
       },
-      "loc": 289
+      "loc": 290
     },
     {
       "name": "persistentMultiplier",
@@ -6711,7 +6784,7 @@
         "resetOnRoundEnd": true,
         "chipColor": "255,214,110"
       },
-      "loc": 277
+      "loc": 278
     },
     {
       "name": "perTriggerVolatilitySet",
@@ -6797,7 +6870,7 @@
         "messageTpl": "YOU WON {label}",
         "autoCloseMs": 700
       },
-      "loc": 311
+      "loc": 312
     },
     {
       "name": "pickYourFs",
@@ -6850,7 +6923,7 @@
         "cardSelectedColor": "#ffd84d",
         "autoPickMs": 30000
       },
-      "loc": 364
+      "loc": 365
     },
     {
       "name": "playerXp",
@@ -6921,7 +6994,7 @@
           }
         ]
       },
-      "loc": 252
+      "loc": 253
     },
     {
       "name": "plinkoSpinEngine",
@@ -6993,7 +7066,7 @@
         "fakeWinMaxX": 25,
         "celebrationTimeoutMs": 5000
       },
-      "loc": 318
+      "loc": 325
     },
     {
       "name": "potSymbolFireball",
@@ -7081,7 +7154,7 @@
         "color": "#ffaa66",
         "colorDark": "#a04020"
       },
-      "loc": 241
+      "loc": 242
     },
     {
       "name": "progressiveFreeSpins",
@@ -7129,7 +7202,7 @@
         "chipColor": "255,180,80",
         "chipLabel": "FS MULT"
       },
-      "loc": 285
+      "loc": 286
     },
     {
       "name": "progressiveFsRetriggerLadder",
@@ -7198,7 +7271,7 @@
         "inactiveColor": "#aaaaaa",
         "pulseMs": 600
       },
-      "loc": 432
+      "loc": 433
     },
     {
       "name": "pwaInstallability",
@@ -7233,12 +7306,12 @@
         "orientation": "any",
         "themeColor": "#05070c",
         "backgroundColor": "#0b0f16",
-        "scope": ".",
+        "scope": "./",
         "startUrl": ".",
         "iconColor": "#c9a227",
         "captureInstallPrompt": false
       },
-      "loc": 350
+      "loc": 388
     },
     {
       "name": "pyramidGridEngine",
@@ -7279,7 +7352,7 @@
         "cellBorderColor": "#c9a227",
         "fadeFallbackMs": 220
       },
-      "loc": 354
+      "loc": 355
     },
     {
       "name": "randomLightningMultiplier",
@@ -7340,7 +7413,7 @@
         "glowColor": "#88ccff",
         "audioCueId": null
       },
-      "loc": 471
+      "loc": 472
     },
     {
       "name": "randomWildBurst",
@@ -7381,7 +7454,7 @@
         "haloRGB": "255,224,102",
         "maxCellFraction": 0.4
       },
-      "loc": 287
+      "loc": 288
     },
     {
       "name": "realityCheck",
@@ -7390,6 +7463,7 @@
       "category": "audit",
       "description": "Regulator-mandated \"Reality Check\" popup. Periodically interrupts",
       "exports": [
+        "JURISDICTION_RC_INTERVAL_FLOOR_MS",
         "PLAY_TIME_DISPLAY_REQUIRED_JURISDICTIONS",
         "defaultConfig",
         "emitRealityCheckCSS",
@@ -7440,7 +7514,7 @@
         "jurisdiction": null,
         "requirePersistentPlayTimeDisplay": false
       },
-      "loc": 1021
+      "loc": 1067
     },
     {
       "name": "reelEngine",
@@ -7592,7 +7666,7 @@
         "badgeLabel": "LOCKED",
         "autoExtendOnFs": true
       },
-      "loc": 238
+      "loc": 239
     },
     {
       "name": "regulatorDisclosureModal",
@@ -7625,7 +7699,7 @@
         "color": "255,170,80",
         "ackButtonLabel": "I UNDERSTAND"
       },
-      "loc": 538
+      "loc": 539
     },
     {
       "name": "replayControlBar",
@@ -7664,7 +7738,7 @@
         "color": "#7fffd4",
         "colorDark": "#205045"
       },
-      "loc": 236
+      "loc": 237
     },
     {
       "name": "respin",
@@ -7702,7 +7776,7 @@
         "respinsPerTrigger": 1,
         "haloColor": "120,210,255"
       },
-      "loc": 292
+      "loc": 299
     },
     {
       "name": "respinCharge",
@@ -7752,7 +7826,7 @@
         "fullColor": "#48d597",
         "labelTemplate": "RESPIN {N}/{M}"
       },
-      "loc": 244
+      "loc": 245
     },
     {
       "name": "retriggerEscalator",
@@ -7801,7 +7875,7 @@
         "labelTemplate": "+{N} FS (tier {T})",
         "hideAtBase": true
       },
-      "loc": 195
+      "loc": 196
     },
     {
       "name": "retriggerMeter",
@@ -7848,7 +7922,7 @@
         "popMs": 540,
         "zIndex": 42
       },
-      "loc": 328
+      "loc": 329
     },
     {
       "name": "retriggerMultiplierBump",
@@ -7893,7 +7967,7 @@
         "chipColor": "#ffd84d",
         "hudPosition": "topRight"
       },
-      "loc": 262
+      "loc": 263
     },
     {
       "name": "rewardChest",
@@ -7967,7 +8041,7 @@
         "haptic": false,
         "autoCloseMs": 1200
       },
-      "loc": 531
+      "loc": 532
     },
     {
       "name": "romaniaComplianceGate",
@@ -8116,7 +8190,7 @@
         "reducedMotionHaloPx": 6,
         "reducedMotionHaloAlpha": 0.7
       },
-      "loc": 360
+      "loc": 371
     },
     {
       "name": "sessionLevelMeter",
@@ -8150,7 +8224,7 @@
         "colorDark": "#205045",
         "haloRGB": "127,255,212"
       },
-      "loc": 242
+      "loc": 243
     },
     {
       "name": "sessionTimeout",
@@ -8201,7 +8275,7 @@
         "copyContinue": "EXTEND SESSION",
         "copyQuit": "END SESSION"
       },
-      "loc": 778
+      "loc": 801
     },
     {
       "name": "settingsPanel",
@@ -8281,7 +8355,7 @@
         "autoHideOnSpin": true,
         "ariaLabel": "Open settings"
       },
-      "loc": 1023
+      "loc": 1025
     },
     {
       "name": "shareReplay",
@@ -8320,7 +8394,7 @@
         "colorDark": "#5a3a9c",
         "haloRGB": "197,168,255"
       },
-      "loc": 281
+      "loc": 282
     },
     {
       "name": "simultaneousFsHoldAndWinPriority",
@@ -8409,7 +8483,7 @@
         "ariaLabel": "Stop reels",
         "pulseAnimation": true
       },
-      "loc": 464
+      "loc": 465
     },
     {
       "name": "slingoSpinEngine",
@@ -8522,6 +8596,7 @@
         "onHoldAndWinEnd",
         "onHoldAndWinIntro",
         "onHoldAndWinStart",
+        "onLanguagePackApplied",
         "onManualSpinPaceBlocked",
         "onMinSpinPaceDeferred",
         "onScatterCelebrationStart",
@@ -8555,7 +8630,7 @@
         "stopColor": "255,80,80",
         "skipColor": "90,180,255"
       },
-      "loc": 1013
+      "loc": 1035
     },
     {
       "name": "spinHistoryReplay",
@@ -8595,7 +8670,7 @@
         "color": "#7fffd4",
         "haloRGB": "127,255,212"
       },
-      "loc": 268
+      "loc": 280
     },
     {
       "name": "spinTempo",
@@ -8674,7 +8749,7 @@
         "autoOnFlag": true,
         "restrictKinds": []
       },
-      "loc": 162
+      "loc": 163
     },
     {
       "name": "stageBadge",
@@ -8731,7 +8806,7 @@
         "mobilePaddingRight": 10,
         "mobilePaddingLeft": 8
       },
-      "loc": 265
+      "loc": 266
     },
     {
       "name": "stickyMeter",
@@ -8780,7 +8855,7 @@
         "stickySelector": ".cell--sticky, .cell--locked, [data-sticky=\"true\"], [data-locked=\"true\"]",
         "showInBase": false
       },
-      "loc": 247
+      "loc": 248
     },
     {
       "name": "stickyWild",
@@ -8915,7 +8990,7 @@
         "resetAtThreshold": true,
         "resetOnFsEnd": true
       },
-      "loc": 204
+      "loc": 205
     },
     {
       "name": "superchargedFs",
@@ -8967,7 +9042,7 @@
         "activeFg": "#03110a",
         "hideWhenOne": false
       },
-      "loc": 248
+      "loc": 249
     },
     {
       "name": "superSymbol",
@@ -9179,7 +9254,7 @@
         "showPayoutHint": true,
         "payoutHints": {}
       },
-      "loc": 319
+      "loc": 320
     },
     {
       "name": "symbolModifiers",
@@ -9216,7 +9291,7 @@
         "copyWildDirection": "horizontal",
         "schemaVersion": "1"
       },
-      "loc": 456
+      "loc": 457
     },
     {
       "name": "symbolSplitReveal",
@@ -9303,7 +9378,7 @@
         "labelTemplate": "+{N} {S}",
         "haptic": false
       },
-      "loc": 434
+      "loc": 435
     },
     {
       "name": "symbolUpgrade",
@@ -9390,7 +9465,7 @@
         "detectMinReels": 2,
         "persistRound": false
       },
-      "loc": 169
+      "loc": 170
     },
     {
       "name": "themeCSS",
@@ -9491,7 +9566,7 @@
         "color": "#9aa4ff",
         "colorDark": "#3a3f7c"
       },
-      "loc": 377
+      "loc": 378
     },
     {
       "name": "totalMultiplierChip",
@@ -9526,7 +9601,7 @@
         "chipColor": "#ffe680",
         "hideWhenOne": true
       },
-      "loc": 209
+      "loc": 210
     },
     {
       "name": "triggerCounting",
@@ -9636,7 +9711,7 @@
         "chipColor": "#a0ffd0",
         "pulseMs": 500
       },
-      "loc": 300
+      "loc": 301
     },
     {
       "name": "tumbleOnlyFs",
@@ -9711,7 +9786,7 @@
         "position": "sideHud",
         "ariaLabel": "Toggle turbo spin mode"
       },
-      "loc": 377
+      "loc": 378
     },
     {
       "name": "uiToast",
@@ -9766,7 +9841,7 @@
         },
         "maxQueue": 6
       },
-      "loc": 410
+      "loc": 411
     },
     {
       "name": "ukgcComplianceGate",
@@ -9858,7 +9933,7 @@
         "showLabelText": true,
         "labelText": "FORCE"
       },
-      "loc": 1350
+      "loc": 1351
     },
     {
       "name": "volatilitySelector",
@@ -9911,7 +9986,7 @@
         "color": "#7fbfff",
         "colorDark": "#205080"
       },
-      "loc": 337
+      "loc": 338
     },
     {
       "name": "walkingWild",
@@ -10176,7 +10251,7 @@
         "autoSpin": false,
         "title": "BONUS WHEEL"
       },
-      "loc": 534
+      "loc": 535
     },
     {
       "name": "wheelBonusReveal",
@@ -10217,7 +10292,7 @@
         "jackpotMessage": "JACKPOT! {label}",
         "jackpotHaloColor": "255,80,80"
       },
-      "loc": 310
+      "loc": 311
     },
     {
       "name": "wheelSpinEngine",
@@ -10303,7 +10378,7 @@
         "zIndex": 33,
         "labelTemplate": "WILDS {N}/{M}"
       },
-      "loc": 306
+      "loc": 307
     },
     {
       "name": "wildCollisionMultiplier",
@@ -10469,7 +10544,7 @@
         "chipPosition": "top",
         "showChip": true
       },
-      "loc": 210
+      "loc": 211
     },
     {
       "name": "winCap",
@@ -10515,7 +10590,7 @@
         "color": "255,215,0",
         "forceRoundEnd": true
       },
-      "loc": 349
+      "loc": 350
     },
     {
       "name": "winLineFlash",
@@ -10556,7 +10631,7 @@
         "flashColor": "rgba(255,216,77,0.7)",
         "clearOnNextSpin": true
       },
-      "loc": 212
+      "loc": 213
     },
     {
       "name": "winMultiplierBadge",
@@ -10600,7 +10675,7 @@
         "labelTemplate": "×{N}",
         "clearOnNextSpin": true
       },
-      "loc": 217
+      "loc": 218
     },
     {
       "name": "winPresentation",
@@ -10643,7 +10718,7 @@
         "staggerStepMs": 80,
         "suppressLDW": true
       },
-      "loc": 1277
+      "loc": 1305
     },
     {
       "name": "winRollup",
@@ -10686,7 +10761,7 @@
         "currency": "€",
         "currencyPosition": "prefix"
       },
-      "loc": 489
+      "loc": 490
     },
     {
       "name": "winwaysIndicator",
@@ -10725,7 +10800,7 @@
         "flashMs": 650,
         "zIndex": 32
       },
-      "loc": 168
+      "loc": 169
     }
   ]
 }

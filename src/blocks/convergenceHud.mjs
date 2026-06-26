@@ -84,6 +84,21 @@ export function resolveConfig(model) {
   const cfg = { ...defaultConfig() };
   const src = (model && model.convergenceHud) || {};
 
+  /* LV3-14 audit fix (Boki 2026-06-26): fold smartDefault directly
+     into resolveConfig. Pre-fix: smartDefault was an exported but
+     never-invoked function — dead code that mooted the "auto-enable
+     for regulator demo GDDs" claim in the block header. Post-fix:
+     a GDD with `compliance: [...]` (or an explicit __lv3__ feature)
+     auto-flips enabled=true, unless the operator explicitly disables
+     it via model.convergenceHud.enabled = false (which still wins). */
+  const wantsLv3 = !!(model && (
+    (Array.isArray(model.features) && model.features.some(
+      (f) => f && (f.kind === '__lv3__' || f === '__lv3__'),
+    )) ||
+    (Array.isArray(model.compliance) && model.compliance.length > 0)
+  ));
+  if (wantsLv3 && src.enabled !== false) cfg.enabled = true;
+
   if (src.enabled === true)  cfg.enabled = true;
   if (src.enabled === false) cfg.enabled = false;
   if (src.debugLog === true) cfg.debugLog = true;
@@ -364,7 +379,15 @@ export function emitConvergenceHudRuntime(cfgIn) {
 
 /* GDD smart-default backfill: convergenceHud auto-enables alongside
    liveRtpHud when the GDD declares any compliance gate (regulator
-   demo mode) — see liveRtpHud.smartDefault for the parallel rule. */
+   demo mode). LV3-14 (Boki 2026-06-26): smart-default is now FOLDED
+   into resolveConfig() above — there's no external smartDefaults
+   walker that iterates `block.smartDefault()`, so keeping this as a
+   separate export was dead code. This wrapper is preserved for two
+   reasons: (a) backward-compat if any external tool starts iterating
+   block.smartDefault hooks (e.g., src/registry/smartDefaults.mjs
+   stage-7 if it ever lands), (b) the smartDefault logic is testable
+   in isolation. The single source of truth for "should this block
+   auto-enable" is now the wantsLv3 branch inside resolveConfig. */
 export function smartDefault(model, current) {
   const declared = current && typeof current === 'object' ? current : {};
   if (declared.enabled === true || declared.enabled === false) return declared;
