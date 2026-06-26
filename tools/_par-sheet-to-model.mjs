@@ -382,6 +382,72 @@ function extractDeclaredRtp(wb) {
 }
 
 /**
+ * PAR-7-FAST (Boki 2026-06-26): extract RTP COMPONENTS — base game,
+ * free-spins, hold-and-win, bonus contribution — as separate fields.
+ * Operator par sheets typically declare these explicitly in a Summary
+ * block ("Base Game RTP", "Free Spins RTP", "Hold And Win RTP", etc.).
+ *
+ * Why this matters for PAR-5:
+ *
+ *   The kernel currently models BASE GAME LINE WINS only (no scatter
+ *   trigger, no FS, no HnW). So measured RTP can only converge to the
+ *   BASE GAME share of the declared total, not the total itself. With
+ *   components extracted, the verdict ladder can compare measured vs
+ *   declared_base instead of measured vs declared_total — giving an
+ *   honest "is the base game math correct?" check without waiting for
+ *   PAR-7 (FS reel) and PAR-8 (HnW orb) to land.
+ *
+ * Output shape:
+ *   {
+ *     total:      number | null,   // total declared RTP
+ *     baseGame:   number | null,   // base game line contribution
+ *     freeSpins:  number | null,   // FS line/total contribution
+ *     holdAndWin: number | null,   // HnW contribution
+ *     bonus:      number | null,   // other bonus contribution
+ *     sources:    { [field]: 'sheet!cell' }
+ *   }
+ */
+function extractRtpComponents(wb) {
+  const COMPONENT_RX = [
+    { rx: /^\s*total\s+rtp\*?\s*[:=%]?\s*$/i, field: 'total' },
+    { rx: /^\s*overall\s+rtp\*?\s*[:=%]?\s*$/i, field: 'total' },
+    { rx: /^\s*base\s+(game\s+)?rtp\*?\s*[:=%]?\s*$/i, field: 'baseGame' },
+    { rx: /^\s*free\s*spins?\s+(re?els?\s+)?rtp\*?\s*[:=%]?\s*$/i, field: 'freeSpins' },
+    { rx: /^\s*hold\s*(and|&)?\s*win\s+rtp\*?\s*[:=%]?\s*$/i, field: 'holdAndWin' },
+    { rx: /^\s*bonus\s+rtp\*?\s*[:=%]?\s*$/i, field: 'bonus' },
+  ];
+  const result = { total: null, baseGame: null, freeSpins: null, holdAndWin: null, bonus: null, sources: {} };
+  for (const sheetName of wb.SheetNames) {
+    const ws = wb.Sheets[sheetName];
+    const range = sheetRange(ws);
+    if (!range) continue;
+    const maxR = Math.min(range.e.r, range.s.r + 200);
+    const maxC = Math.min(range.e.c, range.s.c + 30);
+    for (let r = range.s.r; r <= maxR; r++) {
+      for (let c = range.s.c; c <= maxC; c++) {
+        const s = cellString(ws, r, c);
+        if (!s) continue;
+        const matched = COMPONENT_RX.find((p) => p.rx.test(s));
+        if (!matched) continue;
+        if (result[matched.field] !== null) continue; /* first hit wins per field */
+        /* Probe right + down for numeric. */
+        const probes = [[r, c + 1], [r, c + 2], [r, c + 3], [r + 1, c], [r + 1, c + 1]];
+        for (const [pr, pc] of probes) {
+          const n = cellNumber(ws, pr, pc);
+          if (n === null) continue;
+          const pct = n <= 1.5 ? n * 100 : n;
+          if (pct < 0 || pct > 130) continue;
+          result[matched.field] = pct;
+          result.sources[matched.field] = `${sheetName}!${XLSX.utils.encode_cell({ r: pr, c: pc })}`;
+          break;
+        }
+      }
+    }
+  }
+  return result;
+}
+
+/**
  * Extract weighted reel data from the par sheet. Inventory layout (seen
  * across all 5 operator par sheets, 2026-06-26):
  *
@@ -986,6 +1052,11 @@ async function buildModel(wb, slug) {
    * per-symbol payout → measured RTP would be ~0 regardless of
    * reel weights. */
   const pay = extractPaytable(wb, reels.symbolList);
+  /* PAR-7-FAST (Boki 2026-06-26): extract per-component RTP shares so
+   * PAR-5 verdict can compare measured BASE GAME RTP vs declared base
+   * (not total), giving honest convergence verdicts without waiting
+   * for full FS + HnW kernel coverage. */
+  const components = extractRtpComponents(wb);
 
   /* Synthesized vendor-neutral display name. */
   const neutralName = sanitize(
@@ -1011,6 +1082,21 @@ async function buildModel(wb, slug) {
       ? {
           rtp: rtp.value,
           source: 'par-sheet-declared',
+          /* PAR-7-FAST: emit per-component shares when found. PAR-5
+           * verdict consumes `components.baseGame` as the convergence
+           * target when present (because the kernel currently models
+           * only base game line wins). */
+          components: (components.baseGame !== null || components.freeSpins !== null ||
+                       components.holdAndWin !== null || components.bonus !== null)
+            ? {
+                total: components.total ?? rtp.value,
+                baseGame: components.baseGame,
+                freeSpins: components.freeSpins,
+                holdAndWin: components.holdAndWin,
+                bonus: components.bonus,
+                sources: components.sources,
+              }
+            : undefined,
         }
       : undefined,
 

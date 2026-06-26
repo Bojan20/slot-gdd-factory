@@ -264,7 +264,16 @@ async function convergeOne(baseUrl, slug, spins, seeds) {
     return { slug, ok: false, reason: `model.json missing for ${slug}` };
   }
   const model = JSON.parse(readFileSync(modelPath, 'utf-8'));
-  const declared = Number(model.payback?.rtp);
+  /* PAR-7-FAST (Boki 2026-06-26): prefer payback.components.baseGame
+   * as the convergence target when the par sheet declares it. Kernel
+   * currently models only base game line wins (no FS, no HnW), so
+   * comparing measured to base-only declared gives an honest verdict.
+   * Fallback to total declared RTP when components are absent. */
+  const components = model.payback?.components;
+  const declared = Number.isFinite(components?.baseGame)
+    ? Number(components.baseGame)
+    : Number(model.payback?.rtp);
+  const declaredKind = Number.isFinite(components?.baseGame) ? 'baseGame' : 'totalDeclared';
   if (!Number.isFinite(declared)) {
     return { slug, ok: false, reason: `declared RTP missing in ${slug}` };
   }
@@ -356,6 +365,8 @@ async function convergeOne(baseUrl, slug, spins, seeds) {
     verdict,
     reason,
     declared,
+    declaredKind,
+    declaredTotal: Number(model.payback?.rtp) || null,
     measuredPct,
     deltaPP,
     wilsonHalfPP,
@@ -424,7 +435,7 @@ async function main() {
       } else {
         const sign = r.deltaPP >= 0 ? '+' : '';
         console.log(
-          ` ${r.verdict.padEnd(4)}  declared=${r.declared.toFixed(2)}%  ` +
+          ` ${r.verdict.padEnd(4)}  declared(${r.declaredKind || 'unk'})=${r.declared.toFixed(2)}%  ` +
           `measured=${r.measuredPct.toFixed(4)}%  Δ=${sign}${r.deltaPP.toFixed(4)}pp  ` +
           `W99=±${r.wilsonHalfPP.toFixed(3)}pp  (${dt}ms)`,
         );
