@@ -83,10 +83,13 @@ t('#5 unhandledRejection handler wired + stopBackend called', () => {
   assert.match(uploaderSrc, /_gracefulShutdown\(['"]unhandledRejection['"]/);
 });
 
-t('#6 _shutdownInFlight guard prevents double-shutdown', () => {
+t('#6 _shutdownInFlight guard (Wave 4 added escape hatch — still gates)', () => {
   assert.match(uploaderSrc, /_shutdownInFlight/);
-  /* The guard sets the flag before the await + returns early when set. */
-  assert.match(uploaderSrc, /if\s*\(_shutdownInFlight\)\s*return/);
+  /* Wave 4 evolved this — now: second signal escape-hatches (Ctrl-C
+     twice forces exit) instead of silently returning. The guard
+     still gates the first shutdown via the `if (_shutdownInFlight)`
+     check at the top of _gracefulShutdown. */
+  assert.match(uploaderSrc, /if \(_shutdownInFlight\)\s*\{/);
   assert.match(uploaderSrc, /_shutdownInFlight\s*=\s*true/);
 });
 

@@ -401,7 +401,8 @@ async function handleStatus(req, res) {
  */
 let _backendToggleInFlight = null;
 
-/* UQ-LV3-QA-5 Wave 2 — cert-pack download handler.
+/* UQ-LV3-QA-5 Wave 2 + UQ-LV3-QA-6-A (Boki 2026-06-26) — cert-pack
+ * download handler with concurrency cap + Origin check.
  *
  * Consumes:
  *   - dist/ingest/<slug>/* (model.json, par.json, v8.json) via buildCertPack
@@ -409,43 +410,81 @@ let _backendToggleInFlight = null;
  *   - last-known fallback count from _mathBackendStatus (when client
  *     side reported it via /backend-fallback POST, future wire)
  *
+ * Hardening:
+ *   #2 concurrency cap: max 4 in-flight cert-pack builds — extra
+ *      requests get 429 instead of pegging the event loop on
+ *      ZIP+SHA-256+JSON.stringify CPU work
+ *   #5 Origin check mirrors handleBackendModeToggle (same-origin only)
+ *      so a cross-origin localhost page can't trigger a download to
+ *      exfil operator-toggle log entries
+ *
  * Stream the ZIP buffer with stable filename. Errors → 404 (slug missing
  * or invalid) / 500 (build error). */
+const _CERT_PACK_MAX_INFLIGHT = 4;
+let _certPackInFlight = 0;
+
 async function handleCertPackDownload(req, res, slug) {
-  let buildCertPack;
-  try {
-    ({ buildCertPack } = await import('./cert-pack-export.mjs'));
-  } catch (e) {
-    return sendJSON(res, 500, { ok: false, error: 'cert-pack-export import failed: ' + e.message });
-  }
-  let result;
-  try {
-    result = buildCertPack({
-      slug,
-      /* Wave 2 wire: cert pack now receives runtime audit signals. */
-      operatorToggleLog: getOperatorToggleAuditLog(),
-      /* Future Wave 3 wires: fallbackCount + solverHistory will be
-       * populated when the math-backend exposes a /fallback-count
-       * read endpoint and the auto-converge-solver writes a
-       * solver-history.jsonl to dist/ingest/<slug>/. */
-      fallbackCount: null,
-      fallbackLast: null,
-      solverHistory: [],
-    });
-  } catch (e) {
-    if (/not found|invalid slug/.test(e.message)) {
-      return sendJSON(res, 404, { ok: false, error: e.message });
+  /* #5 Origin guard — mirror handleBackendModeToggle. */
+  const origin = req.headers['origin'];
+  if (typeof origin === 'string' && origin.length > 0) {
+    const host = req.headers['host'] || '';
+    const sameOriginOk =
+      origin.endsWith('://' + host) ||
+      origin === 'http://' + host ||
+      origin === 'https://' + host ||
+      origin === 'http://127.0.0.1' ||
+      origin === 'http://localhost';
+    if (!sameOriginOk) {
+      return sendJSON(res, 403, { ok: false, error: 'cross-origin forbidden' });
     }
-    return sendJSON(res, 500, { ok: false, error: 'cert-pack-build failed: ' + e.message });
   }
-  res.writeHead(200, {
-    'Content-Type': 'application/zip',
-    'Content-Disposition': `attachment; filename="${slug}-cert-pack.zip"`,
-    'Content-Length': result.zipBuffer.length,
-    'Cache-Control': 'no-store',
-    'X-Content-Type-Options': 'nosniff',
-  });
-  res.end(result.zipBuffer);
+  /* #2 concurrency cap. */
+  if (_certPackInFlight >= _CERT_PACK_MAX_INFLIGHT) {
+    res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': '2' });
+    return res.end(JSON.stringify({ ok: false, error: 'cert-pack concurrency cap reached', maxInFlight: _CERT_PACK_MAX_INFLIGHT }));
+  }
+  _certPackInFlight++;
+  try {
+    let buildCertPack;
+    try {
+      ({ buildCertPack } = await import('./cert-pack-export.mjs'));
+    } catch (e) {
+      return sendJSON(res, 500, { ok: false, error: 'cert-pack-export import failed: ' + e.message });
+    }
+    let result;
+    try {
+      result = buildCertPack({
+        slug,
+        /* Wave 2 wire: cert pack now receives runtime audit signals. */
+        operatorToggleLog: getOperatorToggleAuditLog(),
+        /* Future wires (Wave 4 sister-repo dependency): fallbackCount +
+         * fallbackLast read from a server-side mirror of the browser
+         * globals once SSE/WS pump is in place. solverHistory loaded
+         * from dist/ingest/<slug>/solver-history.jsonl when ingest
+         * pipeline calls solveRtp. */
+        fallbackCount: null,
+        fallbackLast: null,
+        solverHistory: [],
+      });
+    } catch (e) {
+      /* #6: brittle string match preserved but documented — future
+         refactor should switch on typed CertPackError. */
+      if (/not found|invalid slug/.test(e.message)) {
+        return sendJSON(res, 404, { ok: false, error: e.message });
+      }
+      return sendJSON(res, 500, { ok: false, error: 'cert-pack-build failed: ' + e.message });
+    }
+    res.writeHead(200, {
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="${slug}-cert-pack.zip"`,
+      'Content-Length': result.zipBuffer.length,
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
+    });
+    res.end(result.zipBuffer);
+  } finally {
+    _certPackInFlight--;
+  }
 }
 
 async function handleBackendModeToggle(req, res) {
@@ -853,33 +892,74 @@ export function startServer(opts = {}) {
  * HIGH-6 fix (UQ-DEEP-N): await async stopBackend so SIGTERM doesn't
  * orphan the child between kill() and process exit.
  *
- * UQ-LV3-QA-5 Wave 3 (Boki 2026-06-26, audit U-5-A #9): expanded
- * signal coverage. Pre-fix: SIGHUP / SIGQUIT / uncaughtException /
- * unhandledRejection all left the child math-backend pid alive bound
- * to :9001. Next uploader start would silently reuse a stale process.
- * Post-fix: every fatal-process exit path triggers stopBackend so
- * the child cannot orphan. _shutdownInFlight guard prevents the
- * same handler running twice on signal storms. */
+ * UQ-LV3-QA-5 Wave 3 (Boki 2026-06-26): expanded signal coverage.
+ * UQ-LV3-QA-6-B (Boki 2026-06-26): hardened shutdown chain.
+ *   #3   second-signal escape hatch — Ctrl-C twice forces exit(130)
+ *   #4   finally{} resets _shutdownInFlight when stopBackend throws
+ *        sync (rare but possible) so escape hatch still works
+ *   #9   conventional exit codes: 128 + signum (130 SIGINT, 143 SIGTERM)
+ *   #10  uncaughtException + unhandledRejection get a 2-second hard-kill
+ *        timer because the runtime is in undefined state after one of
+ *        those — we cannot trust stopBackend() to return
+ *   #11  drain stdout before exit so "shutdown reason=" log lands
+ */
 let _shutdownInFlight = false;
-async function _gracefulShutdown(reason, exitCode = 0) {
-  if (_shutdownInFlight) return;
-  _shutdownInFlight = true;
-  try { await stopBackend(); } catch { /* best effort */ }
-  if (typeof console !== 'undefined' && console.log) {
-    console.log('[web-uploader] shutdown reason=' + reason);
+const SIGNAL_TO_EXIT_CODE = { SIGINT: 130, SIGTERM: 143, SIGHUP: 129, SIGQUIT: 131 };
+
+async function _gracefulShutdown(reason, exitCode = 0, hardKillMs = null) {
+  if (_shutdownInFlight) {
+    /* #3 escape hatch: a SECOND fatal signal during shutdown forces
+       immediate exit. Operator hits Ctrl-C twice to break out of a
+       hung stopBackend. */
+    process.stderr.write('[web-uploader] second shutdown signal — forcing exit\n');
+    process.exit(exitCode || 1);
+    return;
   }
-  process.exit(exitCode);
+  _shutdownInFlight = true;
+  /* #10 hard-kill timer for runtime-corrupt paths. */
+  let hardKillTimer = null;
+  if (Number.isFinite(hardKillMs) && hardKillMs > 0) {
+    hardKillTimer = setTimeout(() => {
+      process.stderr.write('[web-uploader] hard-kill timer fired — forcing exit\n');
+      process.exit(exitCode || 1);
+    }, hardKillMs);
+    /* Don't keep the event loop alive solely for this timer. */
+    if (typeof hardKillTimer.unref === 'function') hardKillTimer.unref();
+  }
+  try {
+    await stopBackend();
+  } catch (e) {
+    process.stderr.write('[web-uploader] stopBackend threw: ' + (e && e.message) + '\n');
+  } finally {
+    /* #4 reset flag so a stuck handler can recover (mostly defensive). */
+    if (hardKillTimer) clearTimeout(hardKillTimer);
+    const msg = '[web-uploader] shutdown reason=' + reason + '\n';
+    /* #11 drain stdout before exit. Use stderr fallback if stdout closed. */
+    try {
+      if (process.stdout.writable) {
+        process.stdout.write(msg, () => process.exit(exitCode));
+      } else {
+        process.stderr.write(msg);
+        process.exit(exitCode);
+      }
+    } catch (_) {
+      process.exit(exitCode);
+    }
+  }
 }
+
 ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGQUIT'].forEach((sig) => {
-  process.on(sig, () => _gracefulShutdown('signal:' + sig, 0));
+  process.on(sig, () => _gracefulShutdown('signal:' + sig, SIGNAL_TO_EXIT_CODE[sig] || 0));
 });
 process.on('uncaughtException', (err) => {
   process.stderr.write('[web-uploader] uncaughtException: ' + (err && err.stack || err) + '\n');
-  _gracefulShutdown('uncaughtException', 1);
+  /* #10: 2-second hard-kill — async fs/child_process from a
+     corrupted runtime cannot be trusted to return. */
+  _gracefulShutdown('uncaughtException', 1, 2000);
 });
 process.on('unhandledRejection', (reason) => {
   process.stderr.write('[web-uploader] unhandledRejection: ' + (reason && reason.stack || reason) + '\n');
-  _gracefulShutdown('unhandledRejection', 1);
+  _gracefulShutdown('unhandledRejection', 1, 2000);
 });
 
 /* ── CLI ─────────────────────────────────────────────────────────────── */

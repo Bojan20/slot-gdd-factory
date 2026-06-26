@@ -61,6 +61,7 @@ const SUITES = [
   { id: 'lv3-wiring',     path: 'tests/_lv3RegulatorWiring.test.mjs' },
   { id: 'cert-pack-w2',   path: 'tests/_certPackWave2.test.mjs' },
   { id: 'lv3-wave3',      path: 'tests/_lv3Wave3.test.mjs' },
+  { id: 'lv3-wave4',      path: 'tests/_lv3Wave4.test.mjs' },
 ];
 
 const args = process.argv.slice(2);

@@ -262,6 +262,17 @@ export function emitBackendSpinEngineRuntime(cfg = defaultConfig(), model = {}) 
       BSE_ERRORS = 0;
       if (BSE_STATUS !== 'online') setStatus('online');
       window.__BACKEND_LAST_SPIN__ = j;
+      /* UQ-LV3-QA-6-B CRITICAL #5 (Boki 2026-06-26): increment
+       * __BACKEND_TOTAL_SPINS__ BEFORE roundId compute.
+       * Pre-fix: counter was referenced as roundId fallback but
+       * NEVER incremented anywhere → roundId stayed at 0 forever →
+       * liveRtpHud dedup folded ALL backend spins into "sameRound" →
+       * lrh.n stuck at 1 → measured RTP = single sample. Wave 3
+       * "dedup" effectively broke the measured-RTP pipeline.
+       * Post-fix: increment per successful spin. The counter doubles
+       * as a monotonic spin sequence number for dedup AND a public
+       * read for the probe / dashboard. */
+      window.__BACKEND_TOTAL_SPINS__ = (window.__BACKEND_TOTAL_SPINS__ || 0) + 1;
       if (window.HookBus && typeof window.HookBus.emit === 'function') {
         try {
           window.HookBus.emit('onBackendSpinSampled', {

@@ -236,10 +236,18 @@ Wave 3 (this commit) — endpoint round-trip + lifecycle hardening
 `convergenceHud` polls `window.__SOLVER_STATE__` every N ms (default 250).
 Producer side is the auto-converge solver (Node-side); operator pushes
 state to browser via SSE channel that the uploader emits during
-`solveRtp()`. Wave 3 ships the consumer; Wave 4 (sister-repo) will ship
-the SSE producer.
+`solveRtp()`. Wave 3 ships the consumer.
 
-Schema (when present):
+> **⚠️ OPERATOR NOTICE (UQ-LV3-QA-6-C #2, #6 · 2026-06-26):** the
+> producer for `__SOLVER_STATE__` is NOT WIRED in this commit. No code
+> writes the global today. `convergenceHud` will display **IDLE** for
+> the entire demo on a regulator workstation until Wave 4 ships the SSE
+> producer (`/solver-events` SSE on the uploader + ingest pipeline calls
+> `solveRtp` + writes `dist/ingest/<slug>/solver-history.jsonl`). This is
+> a known gap — do NOT demo convergence-hud iteration progress until
+> the producer lands.
+
+Schema (when present — Wave 4 producer MUST emit ALL these fields):
 ```json
 {
   "iter": 7,
@@ -250,3 +258,38 @@ Schema (when present):
   "converged": false
 }
 ```
+
+`targetRtp` is REQUIRED (UQ-LV3-QA-6-B #18) so convergenceHud's
+fallback delta computation `(finalRtp - targetRtp) * 10000` doesn't
+return NaN. If the producer omits it, the consumer should fall back to
+`window.__LIVE_RTP_TARGET__` (already set by liveRtpHud).
+
+## RNG sample provenance (UQ-LV3-QA-6-C #3)
+
+The `rng_sample.bin` entry in the cert pack is currently a
+DETERMINISTIC keystream derived from `slug + certVersion + targetRtp`
+via SHA-256 — see `cover.seedProvenance.seedRule`. This is a
+**reproducibility-fingerprint** suitable for regression testing, NOT a
+regulator-binding PCG64 sample suitable for GLI-16 §3.2.4. A regulator
+inspector reading `cover.seedProvenance.hsmVendor === "derived-
+deterministic"` will mark the pack as **NON-BINDING** until the sister
+Rust binary (`mc_runtime_real`) exposes a `/rng-sample?bytes=N&seed=S`
+endpoint that streams the actual PCG64 keystream. Wave 4 sister-repo
+work.
+
+## End-to-end demo flow status (post UQ-LV3-QA-5/6)
+
+| Demo step | Wired today? | Wave 4 blocker? |
+|:--|:-:|:-:|
+| Drop GDD → ingest | ✅ | — |
+| Backend auto-spawn (LV3-1) | ✅ | — |
+| Operator backend toggle (LV3-8) | ✅ | — |
+| liveRtpHud shows measured RTP | ✅ | — |
+| convergenceHud shows iteration progress | ❌ idle | Wave 4: SSE producer + ingest wire to solveRtp |
+| driftSentinel ±0.05% guard | ✅ | — |
+| backendSpinEngine /spin per click | ✅ | — |
+| Cert-pack ZIP download (UI button) | ✅ | — |
+| solverIterCount populated in mc_results | ❌ 0 | Wave 4: ingest wire to solveRtp |
+| rng_sample.bin regulator-binding | ❌ fingerprint | Wave 4: sister-rust-server PCG64 endpoint |
+| Operator toggle audit in cert-pack | ✅ | — |
+| Per-jurisdiction PASS/FAIL stamp | ✅ | — |

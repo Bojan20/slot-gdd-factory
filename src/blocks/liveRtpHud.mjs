@@ -341,11 +341,32 @@ export function emitLiveRtpHudRuntime(cfg = defaultConfig(), model = {}) {
    * može da fire-uje više postSpin event-ova po jednom finalizovanom spinu).
    * Bind round-close samo: koristi roundId iz event-a ili __ROUND_ID__ globala. */
   var lastRoundId = -1;
+  var lastRecordTs = 0;
   function recordSpin(payX, meta) {
-    /* Dedup po roundId — ako isti round već zabrojen, samo update payX (sum). */
-    var rid = (meta && typeof meta.roundId === 'number') ? meta.roundId
-      : (typeof window.__ROUND_ID__ === 'number') ? window.__ROUND_ID__
-      : lrh.n;                                          /* fallback: monotonic */
+    /* Dedup po roundId — ako isti round vec zabrojen, samo update payX (sum).
+     * UQ-LV3-QA-6-A #1 (Boki 2026-06-26): when neither meta.roundId nor
+     * window.__ROUND_ID__ is present, the old fallback was lrh.n which
+     * ALWAYS produced a new value, so dedup was defeated. New fallback
+     * uses __BACKEND_TOTAL_SPINS__ (monotonic, set by backendSpinEngine
+     * after every successful spin), then falls back to a time-window
+     * heuristic: two recordSpin calls within 16 ms (one frame) are
+     * folded as the same round. Outside the window, treat as a new
+     * round. This protects the measured-RTP pipeline when the engine
+     * legitimately does not supply id (pure-JS demos). No backticks
+     * in this comment — outer template literal. */
+    var rid;
+    if (meta && typeof meta.roundId === 'number') {
+      rid = meta.roundId;
+    } else if (typeof window.__ROUND_ID__ === 'number') {
+      rid = window.__ROUND_ID__;
+    } else if (typeof window.__BACKEND_TOTAL_SPINS__ === 'number') {
+      rid = window.__BACKEND_TOTAL_SPINS__;
+    } else {
+      /* Time-window dedup: same round if within 16 ms of last record. */
+      var nowTs = (typeof Date !== 'undefined') ? Date.now() : 0;
+      rid = (nowTs - lastRecordTs < 16 && lastRoundId !== -1) ? lastRoundId : (lrh.n + 1);
+      lastRecordTs = nowTs;
+    }
     var sameRound = (rid === lastRoundId);
     if (!sameRound) {
       lrh.n++;
