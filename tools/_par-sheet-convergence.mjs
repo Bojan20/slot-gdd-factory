@@ -237,7 +237,28 @@ async function convergeOne(baseUrl, slug, spins, seeds) {
   }
 
   const cfg = mapModelToGameConfig(model);
-  const item = { id: slug, config: cfg, spins, seeds, sequential: true };
+
+  /* PAR-6 (Boki 2026-06-26, post sister 665f0c98): pass the industry-
+   * standard total bet so paytable pays (per-line multipliers) scale
+   * correctly. Total bet = paylines × 1_000 mc (= per-line bet 1.0
+   * credit × N lines). Without this override the sister kernel uses
+   * DEFAULT_TOTAL_BET_MC = 1_000 and treats all paytable values as
+   * multipliers against a 1-credit-total wager, which is wrong for any
+   * multi-line game and inflated measured RTP 95-985× across the
+   * operator inventory. Compute from model.topology.paylines if present;
+   * fall back to 20 (industry common) when the model is paytable-only. */
+  const paylines = Number(model.topology?.paylines);
+  const totalBetMc = Number.isFinite(paylines) && paylines > 0
+    ? Math.round(paylines) * 1_000
+    : 20_000; // 20-line default
+  const item = {
+    id: slug,
+    config: cfg,
+    spins,
+    seeds,
+    sequential: true,
+    total_bet_mc: totalBetMc,
+  };
 
   const batch = await runBatchHttp(baseUrl, [item], { timeoutMs: 600_000 });
   if (!batch.ok || batch.results.length === 0) {

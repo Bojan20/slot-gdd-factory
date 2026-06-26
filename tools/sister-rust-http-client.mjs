@@ -343,7 +343,7 @@ export async function healthCheckHttp(baseUrl, opts = {}) {
  * @param {string} baseUrl
  * @param {object} config GameConfig (sister-repo-shaped — serialized as-is)
  * @param {{spins?: number, seeds?: number, seed?: number, sequential?: boolean,
- *          timeoutMs?: number}} [opts]
+ *          totalBetMc?: number, timeoutMs?: number}} [opts]
  * @returns {Promise<{ok: boolean, verdict: 'PASS'|'WARN'|'FAIL',
  *                    rtp?: number, hitRate?: number, hits?: number,
  *                    spins?: number, latencyMs: number, summary?: string,
@@ -359,6 +359,12 @@ export async function runOnceHttp(baseUrl, config, opts = {}) {
   if (Number.isInteger(opts.seeds)) payload.seeds = opts.seeds;
   if (Number.isInteger(opts.seed)) payload.seed = opts.seed;
   if (typeof opts.sequential === 'boolean') payload.sequential = opts.sequential;
+  /* PAR-6 (sister 665f0c98): per-spin total bet in millicredits. The
+   * sister kernel validates the range server-side; we forward only when
+   * caller explicitly sets it so legacy callers stay byte-compatible. */
+  if (Number.isInteger(opts.totalBetMc) && opts.totalBetMc > 0) {
+    payload.total_bet_mc = opts.totalBetMc;
+  }
 
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
