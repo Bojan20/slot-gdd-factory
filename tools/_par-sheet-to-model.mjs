@@ -576,9 +576,14 @@ export function extractRtpComponents(wb) {
         /* (3) Section-aware match — only when currentSection known.
          * Line Pay % → currentSection's RTP. First-hit-wins per section
          * to avoid intra-sheet duplicates (each BoU section has one
-         * canonical Line Pay % cell). */
+         * canonical Line Pay % cell).
+         *
+         * PAR-7-FULL-FIX (Boki 2026-06-27): probe RIGHT only — pre-fix
+         * down-probe found H22 = 0.00795 (paytable combo cell below
+         * the table header "Pay %") and assigned that as BoU baseGame.
+         * Real value at H63/I63 = 52.82 % was masked by first-hit-wins. */
         if (currentSection && SECTION_RX.test(s)) {
-          const probes = [[r, c + 1], [r, c + 2], [r, c + 3], [r + 1, c], [r + 1, c + 1]];
+          const probes = [[r, c + 1], [r, c + 2], [r, c + 3], [r, c + 4]];
           for (const [pr, pc] of probes) {
             const n = cellNumber(ws, pr, pc);
             if (n === null) continue;
@@ -594,7 +599,7 @@ export function extractRtpComponents(wb) {
          * section routes to the global 'bonus' field with first-hit-
          * wins. This keeps Line + Bonus contributions cleanly split. */
         if (BONUS_PAY_RX.test(s)) {
-          const probes = [[r, c + 1], [r, c + 2], [r, c + 3], [r + 1, c], [r + 1, c + 1]];
+          const probes = [[r, c + 1], [r, c + 2], [r, c + 3], [r, c + 4]];
           for (const [pr, pc] of probes) {
             const n = cellNumber(ws, pr, pc);
             if (n === null) continue;
