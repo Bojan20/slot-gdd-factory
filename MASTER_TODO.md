@@ -388,20 +388,105 @@ SLEDEĆI: PAR-12 (FS reels + scatter triggers). Sad imamo realne
 baseGame target-e za sve 5 slug-ova → smisleno meriti i FS contribution
 gap nakon kernel-side FS implementacije.
 ```
-│         │   Skeleton Key + Cash Eruption HoldAndWin + Book of      │           │
-│         │   Unseen Bonus Buy → declared total RTP uključuje FS    │           │
-│         │   contribution koji PAR-5 base-game-only ne meri. Za     │           │
-│         │   pun ±0.05% convergence:                                 │           │
-│         │   - extract Free Spin reel weights (PAR-Bonus / FS_Reel  │           │
-│         │     sheet u par sheet-u)                                  │           │
-│         │   - extract scatter trigger probability + award schedule │           │
-│         │     (3/4/5 scatters → 10/20/30 FS u par sheet PAR-Bonus)│           │
-│         │   - extract scatter pays (na trigger spin scatter pay je │           │
-│         │     dodato pre FS award)                                  │           │
-│         │   - emit u model.parsheet.fs_weights + scatter_awards +  │           │
-│         │     scatter_pays                                          │           │
-│         │   - PAR-5 mapper postavlja sister free_spins.awards iz   │           │
-│         │     extracted scatter_awards umesto trenutnog empty {}   │           │
+
+### PAR-12-A + PAR-12-B closeout receipt (2026-06-27 UTC)
+
+```
+┌──────────────┬──────────────────────────────────────────────────────┐
+│ Šta zatvara   │ FS award schedule + per-trigger avg pay              │
+│ Skripte       │ tools/_par-sheet-to-model.mjs (extractFreeSpinAwards │
+│               │ + avgPays + sources)                                  │
+│               │ tools/_par-sheet-convergence.mjs (mapper free_spins.  │
+│               │ awards + scatter_pays + bonus → scatter promotion)   │
+│               │ tests/tools/par-12-free-spins.test.mjs (NEW, 8 PASS) │
+└──────────────┴──────────────────────────────────────────────────────┘
+
+Extraction po slug-u:
+
+┌──────────────────────────┬──────────────────┬─────────────────────────┐
+│ Slug                       │ awards            │ avgPays                  │
+├──────────────────────────┼──────────────────┼─────────────────────────┤
+│ cash-eruption              │ null              │ null                     │
+│ fort-knox-wolf-run         │ null              │ null                     │
+│ book-of-unseen-bonus-buy   │ null              │ null                     │
+│ skeleton-key               │ {3:10,4:20,5:30}  │ {3:94.68,4:269.99,5:547.55}│
+│ fortune-coin-boost-classic │ null              │ null                     │
+└──────────────────────────┴──────────────────┴─────────────────────────┘
+
+Only Skeleton Key has explicit FS table sa "N Free Spins" + Avg. Pay
+labelama. Drugi par sheet-ovi prikazuju FS in text only ("3, 4, or 5
+Bonus scatter symbols trigger the bonus") — bez machine-readable
+schedule. Cash Eruption + Fort Knox + Book of Unseen + Fortune Coin
+require per-vendor heuristics in PAR-12-D (next).
+
+Bonus → scatter promotion (mapper-side): when model has freeSpinAwards
+AND no scatter-role specials, the only candidate trigger is the
+bonus-role symbol. Promote it to is_scatter=true so sister kernel
+`count_scatters()` fires the FS event. Industry convention — par sheets
+often label the FS scatter as "Bonus" (Skeleton Key, etc.).
+
+Verdict ladder shift (200k×2 seeds):
+
+┌──────────────────────────┬──────────┬──────────┐
+│ Slug                       │ Pre-12    │ Post-12   │
+├──────────────────────────┼──────────┼──────────┤
+│ cash-eruption              │ WARN      │ WARN      │
+│ fort-knox-wolf-run         │ WARN      │ WARN      │
+│ book-of-unseen-bonus-buy   │ WARN      │ WARN      │
+│ skeleton-key               │ FAIL 3.40 │ FAIL 10.00│
+│ fortune-coin-boost-classic │ WARN      │ WARN      │
+└──────────────────────────┴──────────┴──────────┘
+
+Skeleton Key measured RTP increased 3.40% → 10.00% (+6.6 pp).
+Verdict still FAIL because baseGame target = 75.89% and current
+implementation is missing Wild substitution + Mystery reveal +
+Special Reel Set selection (PAR-11-D + PAR-12-C scope). The
+6.6 pp lift is FS scatter_pays contribution making it through.
+
+Contract test pin: par-12-free-spins.test.mjs (8 cases, all PASS).
+  - Skeleton Key style table
+  - "FS Awarded" header variant
+  - Non-bonus sheet name skip
+  - Workbook without bonus sheet
+  - Out-of-range FS counts rejected
+  - Spacer rows don't advance scatter counter
+  - Partial table (no Avg. Pay)
+  - Empty workbook safety
+
+PAR-12-C (FS reel strip extraction) DEFERRED. PAR-Bonus sheet in
+Skeleton Key uses stride 2 (C, E, G, I, K columns) for reel headers,
+different from base extractor that assumes adjacent cols. Needs
+flex-stride detection. Effort ~3h. Closes most of remaining FS
+contribution gap.
+```
+│ PAR-12-A│ Free Spin award schedule extractor + mapper wire        │ ✅ LANDED│
+│         │   extractFreeSpinAwards() u _par-sheet-to-model.mjs.    │           │
+│         │   Detects "Trigger" / "Avg. Pay" header row + walks     │           │
+│         │   "N Free Spins" labels. Industry-default scatter       │           │
+│         │   mapping (row 1 → 3 scatters, row 2 → 4, row 3 → 5).   │           │
+│         │   Skeleton Key emit: awards = {3:10, 4:20, 5:30}.       │           │
+│         │   Mapper promote-uje bonus-role → scatter kad awards     │           │
+│         │   prisutni AND nema scatter-role specials (Skel Key     │           │
+│         │   "Bonus" simbol je faktički scatter trigger).          │           │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-12-B│ Avg. Pay column → scatter_pays sister consumption       │ ✅ LANDED│
+│         │   Awards extractor sad popunjava avgPays = per-trigger  │           │
+│         │   expected total payout iz "Avg. Pay" column.            │           │
+│         │   Skeleton Key emit: avgPays = {3:94.68, 4:269.99,      │           │
+│         │   5:547.55}. Mapper postavlja sister `FreeSpinsConfig`. │           │
+│         │   scatter_pays = ovo. Sister flat-credita pay na svaki  │           │
+│         │   trigger spin pa zatim simulira awards FS spinova.     │           │
+│         │   Skeleton Key measured 3.40% → 10.00% (+6.6 pp).        │           │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-12-C│ FS reel strip extraction (DEFERRED)                     │ 📋 PLAN  │
+│         │   Skeleton Key PAR-Bonus sheet ima FS reel header at    │           │
+│         │   r106 sa stride 2 (C,E,G,I,K columns) — različito od   │           │
+│         │   base extractor koji očekuje adjacent cols. Treba       │           │
+│         │   flex-stride detection. Plus other vendor formats.     │           │
+│         │   Effort: ~3h. Closes Skeleton Key FS RTP contribution  │           │
+│         │   gap (current 6.6 pp lift from scatter_pays still 65pp │           │
+│         │   short of declared baseGame because FS spins simulate  │           │
+│         │   sa base weights, not real FS strip).                  │           │
 └────────┴─────────────────────────────────────────────────────────┴──────────┘
 ```
 

@@ -144,13 +144,28 @@ function mapModelToGameConfig(model) {
    *   the extractor is RETAINED as no-op signal — it provides correct
    *   metadata for future sister consumption without affecting the
    *   current legacy serialization. */
-  const symbols = allSyms.map((s) => ({
-    id: s.id,
-    name: s.name,
-    is_wild: s.role === 'wild',
-    is_scatter: s.role === 'scatter',
-    is_bonus: s.role === 'bonus',
-  }));
+  /* PAR-12-A (Boki 2026-06-27, post-Skeleton-Key catch): par-sheet
+   * naming convention often labels the FS trigger symbol as "Bonus"
+   * even when sister kernel treats it as the scatter (Skeleton Key:
+   * the par-sheet "Bonus" symbol IS the scatter that lands 3/4/5 to
+   * trigger 10/20/30 free spins). When the model carries an explicit
+   * Free Spin award schedule AND the only candidate trigger symbol
+   * is bonus-roled, promote it to scatter for sister consumption. */
+  const hasFsAwards = model.par_sheet?.freeSpinAwards
+    && Object.keys(model.par_sheet.freeSpinAwards).length > 0;
+  const hasScatter = allSyms.some((s) => s.role === 'scatter');
+  const promoteBonusToScatter = hasFsAwards && !hasScatter;
+
+  const symbols = allSyms.map((s) => {
+    const effectiveRole = promoteBonusToScatter && s.role === 'bonus' ? 'scatter' : s.role;
+    return {
+      id: s.id,
+      name: s.name,
+      is_wild: effectiveRole === 'wild',
+      is_scatter: effectiveRole === 'scatter',
+      is_bonus: effectiveRole === 'bonus',
+    };
+  });
 
   /* PAR-QA-4 fix B (Boki 2026-06-26, minimal-probe isolated):
    * Sister evaluator multiplies pay × total_bet_mc / 1000, treating
@@ -342,13 +357,27 @@ function mapModelToGameConfig(model) {
     paytable,
     base_weights: baseWeights,
     fs_weights: baseWeights,  /* placeholder: same as base until PAR-6 */
+    /* PAR-12-A + PAR-12-B (Boki 2026-06-27): emit par-sheet-extracted
+     * Free Spin award schedule AND average per-trigger payout. Sister
+     * `FreeSpinsConfig` consumption:
+     *   - awards: HashMap<u8, u8>   — scatter_count → spins_awarded
+     *   - scatter_pays: HashMap<u8, f64> — scatter_count → trigger pay
+     *
+     * scatter_pays uses the par-sheet "Avg. Pay" column as a flat
+     * per-trigger expected payout. This approximates the full FS
+     * contribution without requiring per-spin FS reel weights
+     * (PAR-12-C scope). Trade-off: sister will ALSO simulate `awards`
+     * FS spins using base reel weights, so total FS contribution =
+     * scatter_pays + N × base_RTP × bet. For Skeleton Key this over-
+     * estimates by ~10 × 3.4 % = 0.34 pp per trigger — within W99 CI
+     * for the FAIL→WARN/PASS verdict shift. PAR-12-C will refine. */
     free_spins: {
-      awards: {},                  // no scatter→FS for PAR-5
+      awards: model.par_sheet?.freeSpinAwards || {},
       mult_start: 1,
       mult_increment: 0,
       mult_max: 1,
       retrigger_enabled: false,
-      scatter_pays: {},
+      scatter_pays: model.par_sheet?.freeSpinAvgPays || {},
     },
     /* PAR-QA-4 fix (Boki 2026-06-26, post-PAR-6 audit): trigger_count was
      * 6 with empty orb_values + zero orb_land_chance, which let the

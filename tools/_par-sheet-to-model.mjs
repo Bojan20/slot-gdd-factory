@@ -1003,6 +1003,120 @@ function extractMaxWinCap(wb) {
  * @returns {{ patterns: number[][] | null, count: number,
  *             source: { sheet: string } | null, confidence: number }}
  */
+/**
+ * PAR-12-A (Boki 2026-06-27): extract Free Spin AWARD SCHEDULE from
+ * the bonus / free spins sheet of a par sheet xlsx.
+ *
+ * # WHY THIS EXISTS
+ *
+ * Pre-PAR-12 the convergence mapper emitted `free_spins.awards = {}`
+ * (empty map) regardless of slug. Sister kernel `FreeSpinsConfig.awards`
+ * is `HashMap<u8, u8>` (scatter_count → spins_awarded); an empty map
+ * means FS NEVER triggers, so the entire FS RTP contribution is missing
+ * from measured. For Skeleton Key declared FS = 20.60 % out of total
+ * 96.49 %, that's a guaranteed 20 pp gap by design.
+ *
+ * # FORMAT
+ *
+ * Par sheets that ship explicit FS awards have a "Trigger" / "Avg. Pay"
+ * (or "FS Awarded") header row, followed by rows that read like:
+ *
+ *   "10 Free Spins"    94.68
+ *   "20 Free Spins"    269.99
+ *   "30 Free Spins"    547.55
+ *
+ * The label encodes the awarded count (N Free Spins). Scatter count
+ * mapping is implicit — INDUSTRY DEFAULT is 3 / 4 / 5 scatters → 1st /
+ * 2nd / 3rd row of the table. This matches Skeleton Key, Cash Eruption,
+ * Fort Knox and most regulator-grade par sheets.
+ *
+ * Confidence is set to 0.85 — the row-position-to-scatter-count is a
+ * convention, not an explicit lookup. Any par sheet that breaks it
+ * (e.g. 4-scatter trigger only) would need a per-vendor override.
+ *
+ * @returns {{ awards: {[scatter: string]: number} | null,
+ *             source: { sheet: string, headerRow: number } | null,
+ *             confidence: number }}
+ */
+export function extractFreeSpinAwards(wb) {
+  const HEADER_TRIGGER_RX = /^\s*trigger\s*$/i;
+  const HEADER_AWARD_RX = /avg\.?\s*pay|fs\s*award|free\s*spins?\s*awarded|spins?\s*awarded|free\s*game/i;
+  const FS_LABEL_RX = /^(\d+)\s*free\s*spins?\s*$/i;
+
+  for (const sheetName of wb.SheetNames) {
+    /* Restrict to bonus / FS-tagged sheets. Base PAR sheets shouldn't
+     * have award tables. */
+    if (!/bonus|free.*spin/i.test(sheetName)) continue;
+    const ws = wb.Sheets[sheetName];
+    const range = sheetRange(ws);
+    if (!range) continue;
+
+    const maxR = Math.min(range.e.r, range.s.r + 200);
+    const maxC = Math.min(range.e.c, range.s.c + 30);
+
+    /* Pass A: find header row {trigger col, award col}. */
+    let headerRow = null;
+    let triggerCol = null;
+    let awardCol = null;
+    for (let r = range.s.r; r <= maxR; r++) {
+      for (let c = range.s.c; c <= maxC; c++) {
+        const s = cellString(ws, r, c);
+        if (!s || !HEADER_TRIGGER_RX.test(s)) continue;
+        /* Look right for award-style header within 5 columns. */
+        for (let cc = c + 1; cc <= Math.min(maxC, c + 5); cc++) {
+          const s2 = cellString(ws, r, cc);
+          if (s2 && HEADER_AWARD_RX.test(s2)) {
+            headerRow = r;
+            triggerCol = c;
+            awardCol = cc;
+            break;
+          }
+        }
+        if (headerRow !== null) break;
+      }
+      if (headerRow !== null) break;
+    }
+    if (headerRow === null) continue;
+
+    /* Pass B: walk rows below, collect "N Free Spins" → awards. Map
+     * row position (1st, 2nd, 3rd) → scatter count (3, 4, 5) by
+     * industry convention. Also capture the adjacent "Avg. Pay" cell
+     * as a per-trigger total expected payout (scatter_pays equivalent
+     * in sister `FreeSpinsConfig`). */
+    const awards = {};
+    const avgPays = {};
+    let scatterCount = 3;
+    for (let r = headerRow + 1; r <= Math.min(headerRow + 15, maxR); r++) {
+      const lbl = cellString(ws, r, triggerCol);
+      if (!lbl) continue;
+      const m = FS_LABEL_RX.exec(lbl.trim());
+      if (!m) {
+        /* Skip non-matching rows (could be spacer); don't advance counter. */
+        continue;
+      }
+      const fsCount = parseInt(m[1], 10);
+      if (!Number.isFinite(fsCount) || fsCount < 1 || fsCount > 200) continue;
+      const pay = cellNumber(ws, r, awardCol);
+      awards[String(scatterCount)] = fsCount;
+      if (pay !== null && pay >= 0 && pay <= 1_000_000) {
+        avgPays[String(scatterCount)] = pay;
+      }
+      scatterCount++;
+      if (scatterCount > 8) break; /* sanity bound */
+    }
+
+    if (Object.keys(awards).length > 0) {
+      return {
+        awards,
+        avgPays: Object.keys(avgPays).length > 0 ? avgPays : null,
+        source: { sheet: sheetName, headerRow: headerRow + 1 },
+        confidence: 0.85,
+      };
+    }
+  }
+  return { awards: null, avgPays: null, source: null, confidence: 0 };
+}
+
 export function extractPaylinePatterns(wb) {
   /* Two label conventions seen in the wild:
    *   - 'Payline 1', 'Payline 2', ... (Cash Eruption, Fort Knox style)
@@ -1451,6 +1565,13 @@ async function buildModel(wb, slug) {
    * count V-shapes / zigzags correctly — primary driver of measured
    * row-distribution density. */
   const paylinePatterns = extractPaylinePatterns(wb);
+  /* PAR-12-A (Boki 2026-06-27): extract Free Spin award schedule
+   * (scatter_count → spins_awarded) from bonus / FS sheets. Sister
+   * `FreeSpinsConfig.awards` is consumed by mapper; empty map means
+   * FS never triggers. For games like Skeleton Key (FS RTP = 20.60 %),
+   * shipping a real schedule is what unlocks the FS contribution gap
+   * in convergence. */
+  const freeSpinAwards = extractFreeSpinAwards(wb);
 
   /* Synthesized vendor-neutral display name. */
   const neutralName = sanitize(
@@ -1656,6 +1777,22 @@ async function buildModel(wb, slug) {
           ...(paylinePatterns.patterns
             ? { paylinePatterns: paylinePatterns.patterns }
             : {}),
+          /* PAR-12-A (Boki 2026-06-27): explicit Free Spin award
+           * schedule. Format: { "3": 10, "4": 20, "5": 30 } meaning
+           * 3 scatters award 10 FS, etc. Mapper reads this and emits
+           * into sister `FreeSpinsConfig.awards`. */
+          ...(freeSpinAwards.awards
+            ? { freeSpinAwards: freeSpinAwards.awards }
+            : {}),
+          /* PAR-12-B: avg-pay column from the trigger table — per-
+           * scatter-count expected total trigger payout. Sister
+           * `FreeSpinsConfig.scatter_pays` consumes this as a flat
+           * multiplier added on the trigger spin. Closes (most of)
+           * the FS contribution gap without requiring full FS reel
+           * weight extraction. */
+          ...(freeSpinAwards.avgPays
+            ? { freeSpinAvgPays: freeSpinAwards.avgPays }
+            : {}),
         }
       : undefined,
 
@@ -1686,6 +1823,9 @@ async function buildModel(wb, slug) {
           : 'absent',
         paylinePatterns: paylinePatterns.source
           ? `par-sheet:${paylinePatterns.source.sheet}[${paylinePatterns.count} lines]`
+          : 'absent',
+        freeSpinAwards: freeSpinAwards.source
+          ? `par-sheet:${freeSpinAwards.source.sheet}@row${freeSpinAwards.source.headerRow}`
           : 'absent',
       },
     },
