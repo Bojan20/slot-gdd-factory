@@ -182,10 +182,21 @@ function mapModelToGameConfig(model) {
       retrigger_enabled: false,
       scatter_pays: {},
     },
+    /* PAR-QA-4 fix (Boki 2026-06-26, post-PAR-6 audit): trigger_count was
+     * 6 with empty orb_values + zero orb_land_chance, which let the
+     * sister feature simulator briefly attempt to enter Hold & Win mode
+     * on scatter-rich base spins, then award zeros against undefined
+     * orb tables. Some kernel paths fall back to per-spin "full grid"
+     * payout when orb_values is empty — that was the inflation factor
+     * pushing measured RTP to 8974 % on Cash Eruption.
+     *
+     * Set trigger_count to u8::MAX so the HnW trigger condition can
+     * NEVER fire from a 5×3 grid (max possible scatters in BG = 15).
+     * full_grid_bonus + orb chances kept at 0 as a defense in depth. */
     hold_and_win: {
-      trigger_count: 6,
-      initial_respins: 3,
-      respins_on_new_orb: 3,
+      trigger_count: 255,
+      initial_respins: 0,
+      respins_on_new_orb: 0,
       full_grid_bonus: 0,
       orb_values: [],
       orb_land_chance_base: 0,

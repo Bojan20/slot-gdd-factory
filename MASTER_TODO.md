@@ -79,7 +79,7 @@ jela na meniju". Sintetišemo UX iz par sheet metadata, math je real.
 │         │   4. Wild regex /^wild$|^w$/i → /^\\s*wild?s?(?:\\s*    │           │
 │         │      reels?)?\\s*$/i (broader vendor variants)            │           │
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
-│ PAR-6   │ Sister total_bet_mc request override + factory mapper    │ 📋 PLAN  │
+│ PAR-6   │ Sister total_bet_mc request override + factory mapper    │ ✅ LANDED │
 │         │ passes paylines × 1000 as total bet                       │           │
 │         │   ROOT CAUSE: sister/rust-sim/src/http_server.rs:94      │           │
 │         │   hardcodes DEFAULT_TOTAL_BET_MC=1_000. SpinRequest/     │           │
@@ -97,6 +97,32 @@ jela na meniju". Sintetišemo UX iz par sheet metadata, math je real.
 │         │     gap ide na PAR-7)                                     │           │
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
 │ PAR-7   │ FS reel strips + scatter award + scatter pays ingest    │ 📋 PLAN  │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-QA-4│ Measured-RTP inflation root-cause (post-PAR-6 audit)     │ 📋 OPEN │
+│         │   PAR-6 sister+factory total_bet_mc plumbing LANDED      │           │
+│         │   (665f0c98 + 23580e3) i sister bin nosi novi field, ali │           │
+│         │   measured RTP još 95-985× declared. Hipoteze:           │           │
+│         │   1. Paytable values × 1000 u evaluator.rs:125-127 plus  │           │
+│         │      × total_bet/1000 u :307 daje pay × N_lines u credits│           │
+│         │      umesto pay × per_line_bet u credits — vesto skrivena│           │
+│         │      semantic mismatch.                                   │           │
+│         │   2. Symbol-id namespacing: paytable["red7"] vs reel      │           │
+│         │      strip "red7" su uskladjeni snake_case ali možda      │           │
+│         │      sister index lookup razlikuje case ili NFKD norm.    │           │
+│         │   3. Lightning multiplier dispatched iako trigger_chance=0│           │
+│         │   4. wagered counter: možda double-accumulate-uje za     │           │
+│         │      multi-line spinove.                                  │           │
+│         │   5. PAR-2 paytable extractor uzima "Combinations" count  │           │
+│         │      kolonu (963, 52, 11 itd) umesto "Pays" mult column   │           │
+│         │      (250, 50, 10) — već provereno per Cash Eruption,    │           │
+│         │      pays su tačni (250/50/10) ali možda u nekom drugom  │           │
+│         │      par sheet-u extractor crusha column adjacency.       │           │
+│         │   FIX-LAYER: dodaj sister fault-injection probe koji      │           │
+│         │   logguje paytable lookup result + wagered + won za prvih│           │
+│         │   3 spinova → expose koji konkretan factor inflacira.     │           │
+│         │   PAR-QA-4 DoD: cash-eruption measured ≤ 100% (base-game │           │
+│         │   only declared 96%, FS contribution 4% = PAR-7 gap).    │           │
+└────────┴─────────────────────────────────────────────────────────┴──────────┘
 │         │   Skeleton Key + Cash Eruption HoldAndWin + Book of      │           │
 │         │   Unseen Bonus Buy → declared total RTP uključuje FS    │           │
 │         │   contribution koji PAR-5 base-game-only ne meri. Za     │           │
