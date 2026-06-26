@@ -226,14 +226,27 @@
       </div>
     </div>
     <div class="panel" style="margin-top: 16px;">
-      <h2 style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+      <h2 style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
         <span>4 · preview</span>
-        <a id="previewOpen" href="#" target="_blank" rel="noopener"
-           style="display:none;font-size:11px;font-weight:600;color:var(--bg);
-                  background:var(--accent);padding:4px 10px;border-radius:4px;
-                  text-decoration:none;text-transform:none;letter-spacing:0;">
-          open slot in new tab ↗
-        </a>
+        <span style="display:flex;gap:6px;">
+          <a id="previewOpen" href="#" target="_blank" rel="noopener"
+             style="display:none;font-size:11px;font-weight:600;color:var(--bg);
+                    background:var(--accent);padding:4px 10px;border-radius:4px;
+                    text-decoration:none;text-transform:none;letter-spacing:0;">
+            open slot in new tab ↗
+          </a>
+          <!-- UQ-LV3-QA-5 Wave 3 (Boki 2026-06-26): cert-pack download
+               button next to preview link. Hidden until ingest yields a
+               slug. Click → GET /cert-pack/<slug> → ZIP download. -->
+          <a id="certPackDownload" href="#" download
+             style="display:none;font-size:11px;font-weight:600;color:#cdeaff;
+                    background:rgba(120,200,255,0.18);border:1px solid rgba(120,200,255,0.45);
+                    padding:4px 10px;border-radius:4px;text-decoration:none;
+                    text-transform:none;letter-spacing:0;"
+             aria-label="Download GLI-16 cert pack ZIP">
+            cert-pack ↓
+          </a>
+        </span>
       </h2>
       <div id="preview"><div class="empty">preview appears here after ingest succeeds</div></div>
     </div>
@@ -318,6 +331,11 @@
     previewDiv.innerHTML = '<div class="empty">waiting for ingest to finish</div>';
     const openLinkReset = document.getElementById('previewOpen');
     if (openLinkReset) { openLinkReset.style.display = 'none'; openLinkReset.removeAttribute('href'); }
+    /* UQ-LV3-QA-5 Wave 3: reset cert-pack link between ingest runs so
+       the operator can't accidentally download a stale ZIP from the
+       previous slug. */
+    var certReset = document.getElementById('certPackDownload');
+    if (certReset) { certReset.style.display = 'none'; certReset.removeAttribute('href'); }
     const fd = new FormData();
     fd.append('gdd', state.gdd, state.gdd.name);
     if (state.par) fd.append('par', state.par, state.par.name);
@@ -417,6 +435,14 @@
     if (openLink) {
       openLink.href = slotUrl;
       openLink.style.display = 'inline-block';
+    }
+    /* UQ-LV3-QA-5 Wave 3: wire cert-pack download. The browser
+       handles the ZIP via the `download` attribute (server returns
+       attachment Content-Disposition so any path also forces save). */
+    var certLink = document.getElementById('certPackDownload');
+    if (certLink) {
+      certLink.href = '/cert-pack/' + encodeURIComponent(slug);
+      certLink.style.display = 'inline-block';
     }
   }
 

@@ -5,7 +5,13 @@ simulatora u slot gdd simulator." Math NIKAD ne sme AI (regulator
 reproducibility); AI je samo *oko* math-a (PAR auto-fill, anomaly
 explainer, jurisdiction auto-fix).
 
-## Komponente (12 work items, status posle slice 3)
+**2026-06-26 update:** atom count 12 → 14 (added LV3-13
+auto-converge-solver + LV3-14 convergenceHud); 5 audit wave-ova
+zatvoreno (UQ-LV3-QA-1..5 wave 1+2+3). Math-chain-no-AI lint
+(`tools/_math-chain-no-ai-lint.mjs`) je strukturni backstop za
+"math NIKAD AI" pravilo.
+
+## Komponente (14 work items, posle UQ-LV3-QA-5 wave 1+2+3)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -180,3 +186,67 @@ node tools/cert-pack-export.mjs --slug <SLUG> [--out <FILE.zip>]
 - Cert pack scrub-uje cover.json, par_sheet.json, mc_results.json pre
   serializacije
 - Binary path u /health vraća samo basename, ne host path/username
+- **UQ-LV3-QA-5 Wave 2:** cert-pack import-uje `sanitizeObj` iz
+  `src/registry/antiVendorShield.mjs` (shared registry — single source of
+  truth, no more parallel VENDOR_RX drift)
+- **UQ-LV3-QA-5 Wave 1:** `tools/_math-chain-no-ai-lint.mjs` strukturni
+  backstop — fails CI ako bilo koji od 10 math-chain fajlova doda AI SDK
+  import
+
+## UQ-LV3-QA-5 wave summary
+
+```
+Wave 1 (9175078)  — 3 P0 dead-wire fix + AI backstop
+  • liveRtpHud sets window.__MEASURED_RTP__ (probe sad real-passes)
+  • backendSpinEngine emits onBackendFallback + counter
+  • operator backend toggle audit log via buildAuditEntry
+  • tools/_math-chain-no-ai-lint.mjs (10 files swept, 0 hits)
+
+Wave 2 (eb29958)  — cert-pack runtime consume + per-jur PASS/FAIL
+  • buildCertPack accepts opts.fallbackCount/operatorToggleLog/solverHistory
+  • mc_results.runtime block populated when caller supplies signals
+  • jurisdiction.<row>.floorPassed + jurisdiction.verdict propagation
+  • cover.seedProvenance documents derivation rule + HSM vendor + entropy
+  • GET /cert-pack/<slug> route na uploader-server
+  • buildCertPack returns parsed bodies dictionary (ZIP stays canonical)
+
+Wave 3 (this commit) — endpoint round-trip + lifecycle hardening
+  • roundId dedup u backendSpinEngine → liveRtpHud (no 2× sample inflation)
+  • uncaughtException + unhandledRejection + SIGHUP + SIGQUIT cleanup
+  • UI cert-pack download button (next to "open slot in new tab")
+  • docs/math-lv3-architecture.md sync (12 → 14 atom + Wave 2/3 ref)
+```
+
+## Endpoint reference (uploader-server)
+
+| Method | Path | Purpose |
+|:--|:--|:--|
+| GET | `/` | Main UI (web-uploader-ui.html) |
+| GET | `/status` | Server health + session count |
+| GET | `/math-backend-status` | Backend live + port + version |
+| POST | `/backend-mode` | Operator toggle backend on/off (LV3-8, Wave 1 audit) |
+| GET | `/cert-pack/<slug>` | Stream GLI-16 ZIP (Wave 2/3) |
+| POST | `/ingest` | Multipart upload, returns sessionId + SSE |
+| GET | `/events/<sessionId>` | SSE progress stream |
+| GET | `/preview/<slug>` | Serve built slot.html |
+| GET | `/report/<slug>` | V8+V9+PAR+healing receipts JSON |
+
+## __SOLVER_STATE__ contract (LV3-14 convergenceHud feed)
+
+`convergenceHud` polls `window.__SOLVER_STATE__` every N ms (default 250).
+Producer side is the auto-converge solver (Node-side); operator pushes
+state to browser via SSE channel that the uploader emits during
+`solveRtp()`. Wave 3 ships the consumer; Wave 4 (sister-repo) will ship
+the SSE producer.
+
+Schema (when present):
+```json
+{
+  "iter": 7,
+  "residual": 1.2e-4,
+  "deltaBps": 23,
+  "finalRtp": 0.9587,
+  "targetRtp": 0.96,
+  "converged": false
+}
+```

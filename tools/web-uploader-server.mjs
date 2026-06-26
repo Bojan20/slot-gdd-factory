@@ -851,12 +851,35 @@ export function startServer(opts = {}) {
 
 /* Graceful shutdown — child math-backend goes with us.
  * HIGH-6 fix (UQ-DEEP-N): await async stopBackend so SIGTERM doesn't
- * orphan the child between kill() and process exit. */
-['SIGINT', 'SIGTERM'].forEach((sig) => {
-  process.on(sig, async () => {
-    try { await stopBackend(); } catch { /* best effort */ }
-    process.exit(0);
-  });
+ * orphan the child between kill() and process exit.
+ *
+ * UQ-LV3-QA-5 Wave 3 (Boki 2026-06-26, audit U-5-A #9): expanded
+ * signal coverage. Pre-fix: SIGHUP / SIGQUIT / uncaughtException /
+ * unhandledRejection all left the child math-backend pid alive bound
+ * to :9001. Next uploader start would silently reuse a stale process.
+ * Post-fix: every fatal-process exit path triggers stopBackend so
+ * the child cannot orphan. _shutdownInFlight guard prevents the
+ * same handler running twice on signal storms. */
+let _shutdownInFlight = false;
+async function _gracefulShutdown(reason, exitCode = 0) {
+  if (_shutdownInFlight) return;
+  _shutdownInFlight = true;
+  try { await stopBackend(); } catch { /* best effort */ }
+  if (typeof console !== 'undefined' && console.log) {
+    console.log('[web-uploader] shutdown reason=' + reason);
+  }
+  process.exit(exitCode);
+}
+['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGQUIT'].forEach((sig) => {
+  process.on(sig, () => _gracefulShutdown('signal:' + sig, 0));
+});
+process.on('uncaughtException', (err) => {
+  process.stderr.write('[web-uploader] uncaughtException: ' + (err && err.stack || err) + '\n');
+  _gracefulShutdown('uncaughtException', 1);
+});
+process.on('unhandledRejection', (reason) => {
+  process.stderr.write('[web-uploader] unhandledRejection: ' + (reason && reason.stack || reason) + '\n');
+  _gracefulShutdown('unhandledRejection', 1);
 });
 
 /* ── CLI ─────────────────────────────────────────────────────────────── */

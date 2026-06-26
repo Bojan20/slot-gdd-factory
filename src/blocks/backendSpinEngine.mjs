@@ -274,9 +274,18 @@ export function emitBackendSpinEngineRuntime(cfg = defaultConfig(), model = {}) 
           });
         } catch (_) {}
       }
-      /* Auto-update liveRtpHud sa backend-sampled payX rather than browser estimate. */
+      /* UQ-LV3-QA-5 Wave 3 (Boki 2026-06-26, audit U-5-A #11): dedup
+       * via roundId so liveRtpHud counts this spin EXACTLY once even
+       * if its own postSpin hook fires before/after the backend
+       * arrives. Pre-fix: both blocks subscribed to postSpin, both
+       * recorded, lrh.n doubled and measured RTP was biased 2x.
+       * Post-fix: backend passes roundId; liveRtpHud sees the same
+       * id from its own tick and resolves to one sample. */
+      var roundId = (typeof window.__ROUND_ID__ === 'number')
+        ? window.__ROUND_ID__
+        : (window.__BACKEND_TOTAL_SPINS__ || 0);
       if (typeof window.__LIVE_RTP_RECORD__ === 'function') {
-        try { window.__LIVE_RTP_RECORD__(j.payX); } catch (_) {}
+        try { window.__LIVE_RTP_RECORD__(j.payX, { roundId: roundId }); } catch (_) {}
       }
       return j;
     })
