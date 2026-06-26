@@ -1,3 +1,58 @@
+## 📊 PAR-SHEET AUTONOMOUS INGEST — 2026-06-27 status (latest)
+
+### Live verdict ladder (200k × 2 seeds, post-PAR-8-TUNE 4bd27d6)
+
+```
+┌──────────────────────────┬────────┬───────────┬─────────────────────┐
+│ Slug                       │Measured│ Target    │ Verdict + gap        │
+├──────────────────────────┼────────┼───────────┼─────────────────────┤
+│ cash-eruption              │ 65.83% │ 82.81%    │ WARN  Δ -16.98 pp   │
+│ fort-knox-wolf-run         │ 80.73% │ 70.99%    │ WARN  Δ +9.74 pp    │
+│ book-of-unseen-bonus-buy   │ 19.39% │ 0.80%     │ WARN  Δ +18.59 pp   │
+│ skeleton-key               │ 10.00% │ 75.89%    │ FAIL  Δ -65.88 pp   │
+│ fortune-coin-boost-classic │ 20.42% │ 81.54%    │ WARN  Δ -61.13 pp   │
+└──────────────────────────┴────────┴───────────┴─────────────────────┘
+   4 WARN + 1 FAIL · Cash Eruption od session start 11.26% → 65.83% (+54.57 pp)
+```
+
+### Wave commit chain (2026-06-26 do 2026-06-27)
+
+```
+4bd27d6  fix(PAR-8-TUNE): calibrate synthetic HnW chances → 32 pp
+eac96bf  feat(PAR-8): Hold & Win synthetic fallback + CE label extraction
+d0bd060  docs(PAR-11-D): close as NOT-APPLICABLE after sister-kernel audit
+2926574  feat(PAR-12-D): synthetic FS award fallback for prose-only par sheets
+85e87dc  feat(PAR-12-C): FS reel strip extractor + mapper wire
+d6b6915  feat(PAR-12-A/B): FS award schedule + scatter_pays from Avg. Pay
+8b5e6a6  feat(PAR-7-FULL): multi-component sum + section-aware RTP routing
+3397a21  fix(PAR-QA-5): Ways regex anchor + sheet scope + Paylines regex anchor
+4d86da4  feat(PAR-11-B): no-paytable specials → Cash role (no-op signal)
+baecba9  docs(PAR-11-A): Wild role serialization audit finding
+94ab915  feat(PAR-10): explicit Paylines/PAR_LINES lift → topology + mapper
+```
+
+### Preostali real gaps (po impactu)
+
+```
+┌──────────────────────────┬──────────────────────────────────────────┐
+│ Slug                       │ Šta nedostaje                              │
+├──────────────────────────┼──────────────────────────────────────────┤
+│ skeleton-key (-66 pp)      │ Mystery reveal pre-eval + Special Reel    │
+│                            │ Set FS bonus (sister-side feature)         │
+│ fortune-coin (-61 pp)      │ Wild expand za Ways + Coin Boost feature   │
+│                            │ + Jackpot tier (sister-side)               │
+│ cash-eruption (-17 pp)     │ Real CE orb table extraction (PAR-8-EXT)   │
+│                            │ — PAR-001!K3976-N3991 ima 8-tier table     │
+│ fort-knox (+9.7 pp)        │ Synthetic FS schedule overshoots — PAR-12-E│
+│                            │ Fort Knox-specific tighter calibration     │
+│ book-of-unseen (+19 pp)    │ Bonus Buy verdict target je 0.80 % (pre-  │
+│                            │ bonus only). PAR-7-FULL-EXT za bonus buy   │
+│                            │ explicit base+bonus target                  │
+└──────────────────────────┴──────────────────────────────────────────┘
+```
+
+---
+
 ## 📊 PAR-SHEET AUTONOMOUS INGEST — 2026-06-26 17:10 UTC · PAR-1/2/3/QA-1 LANDED
 
 Boki direktiva (2026-06-26 16:00 UTC): *"Zapisi u master todo sve i kreni"* —
