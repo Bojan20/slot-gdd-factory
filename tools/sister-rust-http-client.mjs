@@ -217,27 +217,40 @@ export async function spawnHttpServer(opts = {}) {
 
   let baseUrl;
   let stdoutBuf = '';
+  /* Hoisted so the timeout path + the catch block can always uninstall
+   * the stdout listener, even if `readyPromise` lost the race. Without
+   * this guard a late READY line (or any later stdout chunk) would still
+   * trigger the now-stale `onData` and could leak across a re-spawn —
+   * caught by the LV3-2 cross-paralel audit. */
+  let onData = null;
+  const detachOnData = () => {
+    if (onData) {
+      child.stdout.off('data', onData);
+      onData = null;
+    }
+  };
   const readyPromise = new Promise((resolveReady, rejectReady) => {
-    const onData = (chunk) => {
+    onData = (chunk) => {
       stdoutBuf += chunk.toString('utf8');
       const nl = stdoutBuf.indexOf('\n');
       if (nl < 0) return;
       const line = stdoutBuf.slice(0, nl).trim();
       if (line.startsWith('READY|')) {
         baseUrl = line.slice('READY|'.length).trim();
-        child.stdout.off('data', onData);
+        detachOnData();
         resolveReady(baseUrl);
       } else if (stdoutBuf.length > 4096) {
         /* Defensive cap — if the child writes 4 KiB without a newline
          * something is wrong (verbose log mode, corrupt binary). Reject
          * so the spawn doesn't hang forever. */
-        child.stdout.off('data', onData);
+        detachOnData();
         rejectReady(new Error(`no READY line in first 4 KiB: ${stdoutBuf.slice(0, 200)}`));
       }
     };
     child.stdout.on('data', onData);
     child.once('exit', () => {
       if (!baseUrl) {
+        detachOnData();
         rejectReady(
           new Error(
             `http_server exited before READY (code=${exitInfo?.code}, signal=${exitInfo?.signal})`,
@@ -256,7 +269,12 @@ export async function spawnHttpServer(opts = {}) {
   try {
     await Promise.race([readyPromise, timeoutPromise]);
   } catch (e) {
-    /* Spawn failed — make sure the child is reaped before we surface. */
+    /* Spawn failed — make sure the child is reaped AND the stdout
+     * listener is uninstalled before we surface. The listener detach
+     * matters even if the child is about to die: stdout can buffer one
+     * more chunk between SIGTERM and SIGKILL, and a stale `onData` would
+     * fire against a half-torn-down state. */
+    detachOnData();
     if (!exited) {
       child.kill('SIGTERM');
       await sleep(Math.min(forceKillAfterMs, 1_000));
@@ -377,13 +395,28 @@ export async function runOnceHttp(baseUrl, config, opts = {}) {
         reason: 'response missing required keys (rtp/hits/spins)',
       };
     }
+    /* hitRate parity with LV3-1 `runOnce`: LV3-1 computes
+     *    hitRate = hits / config.spins
+     * (i.e. wins-per-spin against the SPINS-PER-SEED budget the caller
+     * asked for, not the simulator's TOTAL `spins_per_seed × num_seeds`).
+     * The server returns `hit_rate = winning_spins / total_spins`, which
+     * diverges when seeds > 1. Cross-paralel audit (2026-06-26) flagged
+     * this as a silent math drift risk for callers using hitRate for
+     * convergence calibration. We prefer the LV3-1 formula and fall
+     * back to the server-side number only when the caller did not
+     * supply `opts.spins` (in which case the server-side value is the
+     * only honest answer). */
+    const callerSpins = Number.isInteger(opts.spins) ? opts.spins : 0;
+    const lv3OneHitRate =
+      callerSpins > 0 && Number.isFinite(body.hits) ? body.hits / callerSpins : undefined;
+    const serverHitRate = typeof body.hit_rate === 'number' ? body.hit_rate : undefined;
     return {
       ok: true,
       verdict: 'PASS',
       rtp: body.rtp,
       hits: body.hits,
       spins: body.spins,
-      hitRate: typeof body.hit_rate === 'number' ? body.hit_rate : undefined,
+      hitRate: lv3OneHitRate ?? serverHitRate,
       latencyMs,
       summary: typeof body.summary === 'string' ? body.summary : undefined,
       raw: JSON.stringify(body).slice(0, 400),

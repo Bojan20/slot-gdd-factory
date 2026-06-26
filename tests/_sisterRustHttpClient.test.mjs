@@ -242,6 +242,43 @@ await t('runBatchHttp handles empty items array gracefully (client-side)', async
   assert.match(r.reason, /non-empty/);
 });
 
+await t('runOnceHttp hitRate matches LV3-1 formula (hits/config.spins) when caller supplies spins', async () => {
+  if (!live) {
+    return skip(
+      'runOnceHttp hitRate matches LV3-1 formula (hits/config.spins) when caller supplies spins',
+    );
+  }
+  const server = await spawnHttpServer({
+    capTotalSpins: 5000,
+    capSeeds: 2,
+    capBatchItems: 4,
+    capConcurrentRuns: 2,
+    readyTimeoutMs: 15_000,
+  });
+  try {
+    const cfg = await fetchDefaultConfig(server.baseUrl);
+    /* Two seeds × 200 spins/seed = 400 server-side total. LV3-1 formula
+     * uses `hits / caller_spins` (200), not `hits / total` (400). The
+     * fixed client must hand back the LV3-1 number. */
+    const r = await runOnceHttp(server.baseUrl, cfg, {
+      spins: 200,
+      seeds: 2,
+      sequential: true,
+      timeoutMs: 20_000,
+    });
+    assert.equal(r.ok, true, `expected PASS, got: ${r.reason || r.raw}`);
+    if (typeof r.hitRate === 'number' && typeof r.hits === 'number') {
+      const lv3OneRate = r.hits / 200;
+      assert.ok(
+        Math.abs(r.hitRate - lv3OneRate) < 1e-9,
+        `hitRate ${r.hitRate} must equal LV3-1 formula hits/config.spins = ${lv3OneRate}`,
+      );
+    }
+  } finally {
+    await server.dispose();
+  }
+});
+
 await t('dispose() actually terminates the child process', async () => {
   if (!live) return skip('dispose() actually terminates the child process');
   const server = await spawnHttpServer({
