@@ -356,7 +356,31 @@ function mapModelToGameConfig(model) {
     symbols,
     paytable,
     base_weights: baseWeights,
-    fs_weights: baseWeights,  /* placeholder: same as base until PAR-6 */
+    /* PAR-12-C (Boki 2026-06-27): use par-sheet-extracted FS reel
+     * strips when present. Sister `fs_weights` is consumed by the FS
+     * spin generator; with real FS distribution (more Wild, more
+     * scatter, etc.) the FS RTP simulation matches declared FS
+     * contribution far more closely than base-weights placeholder.
+     * Falls back to baseWeights when extractor returned null. */
+    fs_weights: (() => {
+      const explicit = model.par_sheet?.fsReelStrips;
+      if (!explicit || !Array.isArray(explicit) || explicit.length === 0) {
+        return baseWeights;
+      }
+      /* Normalize same way as baseWeights: id-normalize symbols, round
+       * weights to u32-safe integers. */
+      return explicit.map((reel) =>
+        reel.map((e) => {
+          const id = String(e.symbol || e.id || '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_|_$/g, '')
+            .slice(0, 20) || 'sym';
+          const w = Math.max(0, Math.round(Number(e.weight) || 0));
+          return { symbol: id, weight: w };
+        }).filter((e) => e.weight > 0),
+      );
+    })(),
     /* PAR-12-A + PAR-12-B (Boki 2026-06-27): emit par-sheet-extracted
      * Free Spin award schedule AND average per-trigger payout. Sister
      * `FreeSpinsConfig` consumption:

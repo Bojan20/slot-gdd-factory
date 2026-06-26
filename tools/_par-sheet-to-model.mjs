@@ -1117,6 +1117,150 @@ export function extractFreeSpinAwards(wb) {
   return { awards: null, avgPays: null, source: null, confidence: 0 };
 }
 
+/**
+ * PAR-12-C (Boki 2026-06-27): extract Free Spin REEL STRIPS from the
+ * bonus / FS sheet of a par sheet xlsx.
+ *
+ * # WHY THIS EXISTS
+ *
+ * Pre-PAR-12-C the convergence mapper sent `fs_weights = baseWeights`
+ * as a placeholder, so sister FS simulation reused the base reel
+ * distribution. Real par sheets ship distinct FS reel strips —
+ * Skeleton Key's PAR-Bonus has Wild expanded into ALL reels (vs zero
+ * Wilds on reel 0 in base), more Key/Mystery weight on every reel,
+ * etc. Wrong FS weights = measured base RTP × N_FS instead of declared
+ * FS RTP × N_FS. Closing this gap should give ~half of Skeleton Key's
+ * remaining 65 pp delta.
+ *
+ * # FORMAT VARIANTS
+ *
+ * Two layouts seen so far:
+ *
+ *   (a) Adjacent columns ("Reel 1", "Reel 2", ..., "Reel 5" in cols
+ *       D, E, F, G, H of one row + symbol label col in C). Base-style.
+ *   (b) Stride-2 sub-header pairs (Skeleton Key PAR-Bonus): "Reel 1",
+ *       "Reel 2", ..., "Reel 5" in cols C, E, G, I, K. Sub-header row
+ *       below has "Symbol" / "Weight" alternating per pair. Data rows
+ *       are STOP-based (one stop per row, each stop names the symbol
+ *       at that position).
+ *
+ * The walker auto-detects which layout by checking the row immediately
+ * below the Reel-header row for "Symbol" / "Weight" markers. When
+ * stop-based, aggregates stops by symbol per reel to produce the
+ * sister `Vec<Vec<ReelWeight>>` shape. When adjacent-base style,
+ * symbol is in the col immediately LEFT of the first Reel col.
+ *
+ * @returns {{ reelStrips: Array<Array<{symbol: string, weight: number}>> | null,
+ *             source: { sheet: string, headerRow: number, layout: string } | null,
+ *             confidence: number }}
+ */
+export function extractFsReelStrips(wb) {
+  const REEL_HEADER_RX = /^\s*reel\s*(\d+)\s*$/i;
+  const TOTAL_RX = /^\s*(total|sum|end)\s*$/i;
+
+  for (const sheetName of wb.SheetNames) {
+    if (!/bonus|free.*spin|fs[_-]?reel/i.test(sheetName)) continue;
+    const ws = wb.Sheets[sheetName];
+    const range = sheetRange(ws);
+    if (!range) continue;
+
+    const maxR = Math.min(range.e.r, range.s.r + 500);
+    const maxC = Math.min(range.e.c, range.s.c + 60);
+
+    /* Pass A: find row with "Reel 1", "Reel 2", ..., "Reel N" matches.
+     * Require ≥ 3 reels and sequential N starting at 1. */
+    let headerRow = null;
+    let reelCols = [];
+    for (let r = range.s.r; r <= maxR; r++) {
+      const cols = [];
+      for (let c = range.s.c; c <= maxC; c++) {
+        const s = cellString(ws, r, c);
+        if (!s) continue;
+        const m = REEL_HEADER_RX.exec(s);
+        if (m) cols.push({ col: c, n: parseInt(m[1], 10) });
+      }
+      if (cols.length >= 3) {
+        cols.sort((a, b) => a.n - b.n);
+        /* Verify sequential 1..N (no gaps). */
+        if (cols.every((co, i) => co.n === i + 1)) {
+          headerRow = r;
+          reelCols = cols;
+          break;
+        }
+      }
+    }
+    if (headerRow === null) continue;
+
+    /* Pass B: layout detection — check sub-header row for "Symbol" /
+     * "Weight" markers in the FIRST reel column. */
+    const subHeaderRow = headerRow + 1;
+    const subFirst = cellString(ws, subHeaderRow, reelCols[0].col);
+    const isStopBased = subFirst != null && /^\s*symbol\s*$/i.test(subFirst);
+
+    /* For each reel col, decide layout:
+     *   stop-based: symbol_col = reel_col, weight_col = reel_col + 1
+     *   adjacent:   symbol is one shared col LEFT of first reel,
+     *               weight per reel goes straight in reel_col */
+    let reelLayout;
+    let sharedSymbolCol = null;
+    if (isStopBased) {
+      reelLayout = reelCols.map((co) => ({ symbolCol: co.col, weightCol: co.col + 1 }));
+    } else {
+      /* Adjacent layout: symbol col is immediately LEFT of first reel
+       * col, weight goes straight in the reel col itself. */
+      sharedSymbolCol = reelCols[0].col - 1;
+      if (sharedSymbolCol < range.s.c) continue;
+      reelLayout = reelCols.map((co) => ({ symbolCol: sharedSymbolCol, weightCol: co.col }));
+    }
+
+    const dataStartRow = isStopBased ? subHeaderRow + 1 : headerRow + 1;
+
+    /* Pass C: walk data rows, aggregate per-reel-per-symbol weights.
+     * Stop at first "Total" / "Sum" row in symbol column, or after
+     * 30 consecutive empty rows (sparse sheets sometimes leave gaps). */
+    const reelMaps = reelCols.map(() => new Map());
+    let emptyStreak = 0;
+    for (let r = dataStartRow; r <= maxR; r++) {
+      let rowHasData = false;
+      let stopFlag = false;
+
+      for (let i = 0; i < reelLayout.length; i++) {
+        const symCell = cellString(ws, r, reelLayout[i].symbolCol);
+        const wgtCell = cellNumber(ws, r, reelLayout[i].weightCol);
+        if (symCell && TOTAL_RX.test(symCell)) { stopFlag = true; break; }
+        if (!symCell || wgtCell === null) continue;
+        rowHasData = true;
+        const w = Math.max(0, Math.round(wgtCell));
+        if (w > 0) reelMaps[i].set(symCell, (reelMaps[i].get(symCell) || 0) + w);
+      }
+      if (stopFlag) break;
+      if (rowHasData) emptyStreak = 0;
+      else { emptyStreak++; if (emptyStreak > 30) break; }
+    }
+
+    /* Build final shape. Reject if any reel ended up empty (extraction
+     * was malformed — better to fall through to next sheet candidate). */
+    const fsReelStrips = reelMaps.map((m) =>
+      [...m.entries()].map(([symbol, weight]) => ({ symbol, weight })),
+    );
+
+    const allReelsPopulated = fsReelStrips.every((rw) => rw.length > 0);
+    if (allReelsPopulated) {
+      return {
+        reelStrips: fsReelStrips,
+        source: {
+          sheet: sheetName,
+          headerRow: headerRow + 1,
+          layout: isStopBased ? 'stop-based' : 'adjacent',
+        },
+        confidence: 0.85,
+      };
+    }
+  }
+
+  return { reelStrips: null, source: null, confidence: 0 };
+}
+
 export function extractPaylinePatterns(wb) {
   /* Two label conventions seen in the wild:
    *   - 'Payline 1', 'Payline 2', ... (Cash Eruption, Fort Knox style)
@@ -1572,6 +1716,12 @@ async function buildModel(wb, slug) {
    * shipping a real schedule is what unlocks the FS contribution gap
    * in convergence. */
   const freeSpinAwards = extractFreeSpinAwards(wb);
+  /* PAR-12-C (Boki 2026-06-27): extract FS reel strips when the
+   * bonus / FS sheet declares its own weighted reel set. Skeleton Key
+   * PAR-Bonus has dramatically different FS weights (more Wild, more
+   * Key/Mystery). Sister `fs_weights` is consumed by the FS spin
+   * generator — placeholder = base weights underestimates FS RTP. */
+  const fsReelStrips = extractFsReelStrips(wb);
 
   /* Synthesized vendor-neutral display name. */
   const neutralName = sanitize(
@@ -1793,6 +1943,13 @@ async function buildModel(wb, slug) {
           ...(freeSpinAwards.avgPays
             ? { freeSpinAvgPays: freeSpinAwards.avgPays }
             : {}),
+          /* PAR-12-C: weighted reel strips for FS mode. Sister consumes
+           * via `GameConfig.fs_weights` (Vec<Vec<ReelWeight>>). When
+           * extractor returned null we fall back to base weights at
+           * the mapper level (placeholder behavior). */
+          ...(fsReelStrips.reelStrips
+            ? { fsReelStrips: fsReelStrips.reelStrips }
+            : {}),
         }
       : undefined,
 
@@ -1826,6 +1983,9 @@ async function buildModel(wb, slug) {
           : 'absent',
         freeSpinAwards: freeSpinAwards.source
           ? `par-sheet:${freeSpinAwards.source.sheet}@row${freeSpinAwards.source.headerRow}`
+          : 'absent',
+        fsReelStrips: fsReelStrips.source
+          ? `par-sheet:${fsReelStrips.source.sheet}@row${fsReelStrips.source.headerRow}:${fsReelStrips.source.layout}`
           : 'absent',
       },
     },

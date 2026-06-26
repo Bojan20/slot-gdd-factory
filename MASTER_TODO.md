@@ -478,15 +478,22 @@ contribution gap.
 │         │   trigger spin pa zatim simulira awards FS spinova.     │           │
 │         │   Skeleton Key measured 3.40% → 10.00% (+6.6 pp).        │           │
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
-│ PAR-12-C│ FS reel strip extraction (DEFERRED)                     │ 📋 PLAN  │
-│         │   Skeleton Key PAR-Bonus sheet ima FS reel header at    │           │
-│         │   r106 sa stride 2 (C,E,G,I,K columns) — različito od   │           │
-│         │   base extractor koji očekuje adjacent cols. Treba       │           │
-│         │   flex-stride detection. Plus other vendor formats.     │           │
-│         │   Effort: ~3h. Closes Skeleton Key FS RTP contribution  │           │
-│         │   gap (current 6.6 pp lift from scatter_pays still 65pp │           │
-│         │   short of declared baseGame because FS spins simulate  │           │
-│         │   sa base weights, not real FS strip).                  │           │
+│ PAR-12-C│ FS reel strip extraction sa flex-stride detection       │ ✅ LANDED│
+│         │   extractFsReelStrips() detektuje dva layouta:           │           │
+│         │   (a) Stop-based: stride-2 "Reel N" headers + "Symbol"  │           │
+│         │       "Weight" sub-header, one stop per row (Skel Key   │           │
+│         │       PAR-Bonus pattern). Stops aggregirani po simbolu. │           │
+│         │   (b) Adjacent: shared symbol col + per-reel weight cols │           │
+│         │       (base-style fallback).                             │           │
+│         │   Skel Key emit: reel totals [100,100,100,100,100]      │           │
+│         │   Book of Unseen Bonus Buy: [6697,6039,3151,2119,1417]  │           │
+│         │   Mapper consumes via GameConfig.fs_weights (umesto      │           │
+│         │   baseWeights placeholder).                              │           │
+│         │   Contract test 8/8 PASS (par-12c-fs-reels.test.mjs).    │           │
+│         │   NOTE: measured skel-key remains 10.00 % (no further    │           │
+│         │   lift) — sister kernel may not differentiate fs_weights │           │
+│         │   in current FS simulation path (PAR-12-D scope to       │           │
+│         │   investigate sister-side activation).                   │           │
 └────────┴─────────────────────────────────────────────────────────┴──────────┘
 ```
 
