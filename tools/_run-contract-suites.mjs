@@ -59,6 +59,7 @@ const SUITES = [
   { id: 'anti-vendor',    path: 'tests/_antiVendorShield.test.mjs' },
   { id: 'backend-toggle', path: 'tests/_backendModeToggle.test.mjs' },
   { id: 'lv3-wiring',     path: 'tests/_lv3RegulatorWiring.test.mjs' },
+  { id: 'cert-pack-w2',   path: 'tests/_certPackWave2.test.mjs' },
 ];
 
 const args = process.argv.slice(2);

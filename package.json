@@ -18,6 +18,7 @@
     "test:anti-vendor": "node tests/_antiVendorShield.test.mjs",
     "test:backend-toggle": "node tests/_backendModeToggle.test.mjs",
     "test:lv3-wiring": "node tests/_lv3RegulatorWiring.test.mjs",
+    "test:cert-pack-w2": "node tests/_certPackWave2.test.mjs",
     "audit:math-chain-no-ai": "node tools/_math-chain-no-ai-lint.mjs",
     "lv3:rtp-probe": "node tools/_lv3-live-rtp-probe.mjs",
     "test:auto-converge": "node tests/_autoConvergeSolver.test.mjs",

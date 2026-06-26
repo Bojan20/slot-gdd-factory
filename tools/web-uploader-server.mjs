@@ -401,6 +401,53 @@ async function handleStatus(req, res) {
  */
 let _backendToggleInFlight = null;
 
+/* UQ-LV3-QA-5 Wave 2 — cert-pack download handler.
+ *
+ * Consumes:
+ *   - dist/ingest/<slug>/* (model.json, par.json, v8.json) via buildCertPack
+ *   - operator toggle audit log (in-memory)
+ *   - last-known fallback count from _mathBackendStatus (when client
+ *     side reported it via /backend-fallback POST, future wire)
+ *
+ * Stream the ZIP buffer with stable filename. Errors → 404 (slug missing
+ * or invalid) / 500 (build error). */
+async function handleCertPackDownload(req, res, slug) {
+  let buildCertPack;
+  try {
+    ({ buildCertPack } = await import('./cert-pack-export.mjs'));
+  } catch (e) {
+    return sendJSON(res, 500, { ok: false, error: 'cert-pack-export import failed: ' + e.message });
+  }
+  let result;
+  try {
+    result = buildCertPack({
+      slug,
+      /* Wave 2 wire: cert pack now receives runtime audit signals. */
+      operatorToggleLog: getOperatorToggleAuditLog(),
+      /* Future Wave 3 wires: fallbackCount + solverHistory will be
+       * populated when the math-backend exposes a /fallback-count
+       * read endpoint and the auto-converge-solver writes a
+       * solver-history.jsonl to dist/ingest/<slug>/. */
+      fallbackCount: null,
+      fallbackLast: null,
+      solverHistory: [],
+    });
+  } catch (e) {
+    if (/not found|invalid slug/.test(e.message)) {
+      return sendJSON(res, 404, { ok: false, error: e.message });
+    }
+    return sendJSON(res, 500, { ok: false, error: 'cert-pack-build failed: ' + e.message });
+  }
+  res.writeHead(200, {
+    'Content-Type': 'application/zip',
+    'Content-Disposition': `attachment; filename="${slug}-cert-pack.zip"`,
+    'Content-Length': result.zipBuffer.length,
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+  });
+  res.end(result.zipBuffer);
+}
+
 async function handleBackendModeToggle(req, res) {
   /* UQ-LV3-QA-4 #6 (Boki 2026-06-26): Origin / Referer check.
    * The uploader binds 127.0.0.1 by default but localhost still
@@ -712,6 +759,17 @@ async function dispatch(req, res) {
     /* LV3-8 — backend liveness + version for UI badge. */
     if (req.method === 'GET' && p === '/math-backend-status') {
       return sendJSON(res, 200, getMathBackendStatus());
+    }
+    /* UQ-LV3-QA-5 Wave 2 (Boki 2026-06-26) — GET /cert-pack/<slug>:
+     * stream the GLI-16 ZIP for the given ingest slug. Picks up the
+     * runtime audit signals (operator toggle log, backend fallback
+     * count from latest math-backend status) so the cert pack
+     * reflects the live session, not a clean placeholder. Stream the
+     * ZIP with `Content-Type: application/zip` + a stable filename
+     * `<slug>-cert-pack.zip`. Rejects unknown slugs with 404. */
+    const certPackMatch = p.match(/^\/cert-pack\/([a-z0-9._-]{1,80})$/);
+    if (req.method === 'GET' && certPackMatch) {
+      return handleCertPackDownload(req, res, certPackMatch[1]);
     }
     /* LV3-8 (Boki 2026-06-26) — operator-controlled backend toggle.
      * POST /backend-mode { enabled: bool } → start/stop the math
