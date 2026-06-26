@@ -1,4 +1,4 @@
-## 📊 PAR-SHEET AUTONOMOUS INGEST — 2026-06-26 16:30 UTC · PAR-1+PAR-2 LANDED
+## 📊 PAR-SHEET AUTONOMOUS INGEST — 2026-06-26 17:10 UTC · PAR-1/2/3/QA-1 LANDED
 
 Boki direktiva (2026-06-26 16:00 UTC): *"Zapisi u master todo sve i kreni"* —
 nakon razgovora o tome šta je ultimativno rešenje kad nemamo original GDD za
@@ -41,7 +41,7 @@ jela na meniju". Sintetišemo UX iz par sheet metadata, math je real.
 │         │   model.json. Stamp __schema_version__. Anti-vendor      │          │
 │         │   shield na svaki tekstualni field pre emit.              │          │
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
-│ PAR-3   │ tools/_synthetic-gdd-from-parsheet.mjs                   │ 📋 PLAN  │
+│ PAR-3   │ tools/_synthetic-gdd-from-parsheet.mjs                   │ ✅ LANDED │
 │         │   Generiše vendor-neutralan synthetic GDD MD iz par      │          │
 │         │   sheet metadata: slug-derived title ("Game-A 5x3"),     │          │
 │         │   capsule kind iz topology, default theme/tags, UX       │          │
