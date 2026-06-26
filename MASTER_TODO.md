@@ -98,31 +98,119 @@ jela na meniju". Sintetišemo UX iz par sheet metadata, math je real.
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
 │ PAR-7   │ FS reel strips + scatter award + scatter pays ingest    │ 📋 PLAN  │
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
-│ PAR-QA-4│ Measured-RTP inflation root-cause (post-PAR-6 audit)     │ 📋 OPEN │
-│         │   PAR-6 sister+factory total_bet_mc plumbing LANDED      │           │
-│         │   (665f0c98 + 23580e3) i sister bin nosi novi field, ali │           │
-│         │   measured RTP još 95-985× declared. Hipoteze:           │           │
-│         │   1. Paytable values × 1000 u evaluator.rs:125-127 plus  │           │
-│         │      × total_bet/1000 u :307 daje pay × N_lines u credits│           │
-│         │      umesto pay × per_line_bet u credits — vesto skrivena│           │
-│         │      semantic mismatch.                                   │           │
-│         │   2. Symbol-id namespacing: paytable["red7"] vs reel      │           │
-│         │      strip "red7" su uskladjeni snake_case ali možda      │           │
-│         │      sister index lookup razlikuje case ili NFKD norm.    │           │
-│         │   3. Lightning multiplier dispatched iako trigger_chance=0│           │
-│         │   4. wagered counter: možda double-accumulate-uje za     │           │
-│         │      multi-line spinove.                                  │           │
-│         │   5. PAR-2 paytable extractor uzima "Combinations" count  │           │
-│         │      kolonu (963, 52, 11 itd) umesto "Pays" mult column   │           │
-│         │      (250, 50, 10) — već provereno per Cash Eruption,    │           │
-│         │      pays su tačni (250/50/10) ali možda u nekom drugom  │           │
-│         │      par sheet-u extractor crusha column adjacency.       │           │
-│         │   FIX-LAYER: dodaj sister fault-injection probe koji      │           │
-│         │   logguje paytable lookup result + wagered + won za prvih│           │
-│         │   3 spinova → expose koji konkretan factor inflacira.     │           │
-│         │   PAR-QA-4 DoD: cash-eruption measured ≤ 100% (base-game │           │
-│         │   only declared 96%, FS contribution 4% = PAR-7 gap).    │           │
+│ PAR-QA-4│ Measured-RTP inflation root-cause                        │ ✅ LANDED│
+│         │   Commit cbffafe (2026-06-26 17:30 UTC). Cause:          │           │
+│         │   sister stats.rs:1070 vraca RTP vec u procentima        │           │
+│         │   (won/wagered × 100), a PAR-5 mapper × 100 ponovo →      │           │
+│         │   universal 100× factor. Plus secondary paylines factor  │           │
+│         │   (industry pay × per-line bet vs sister pay × total).    │           │
+│         │   Fix: mapper drop drugi × 100, paytable normalize / N    │           │
+│         │   paylines, totalBetMc = 1000 (1.0 credit total).         │           │
+│         │   Verified: minimal-config probe 5/6 PASS, real par-       │           │
+│         │   sheet measured drop 7000-95000% → 3-50%.                │           │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-7   │ FS reel strips + scatter award + scatter pays ingest    │ ✅ FAST   │
+│  -FAST  │   Commit 2be4e38. extractRtpComponents pulls per-       │ LANDED    │
+│         │   component RTP labels: Total / Base Game / FS / HnW /  │           │
+│         │   Bonus. PAR-5 verdict prefers components.baseGame as   │           │
+│         │   convergence target (kernel models only base lines).   │           │
+│         │   3/5 par sheets emit baseGame: CE 41.90%, SK 75.89%,   │           │
+│         │   FK 70.99%. BoU + FCB not detected — label variants    │           │
+│         │   ("Base Game Line Wins"/"Main Game") → PAR-7-FULL.      │           │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-8   │ Hold & Win for Cash Eruption                            │ 📋 SKIP  │
+│         │   Cash Eruption par sheet ne nosi HnW RTP label;        │ (data    │
+│         │   declared 96% deklarisuje samo Total i Base. HnW       │ gap)     │
+│         │   share (40.91%) je iz GDD, ne par sheet. Cross-data    │           │
+│         │   requirement — sledeca sesija sa GDD-paired ingest.    │           │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-9   │ Topology evalMode + Ways payline universe synthesis     │ ✅ LANDED│
+│         │   Commit c0d9466. PAR-2 scan-uje "N ways" / "N to M     │           │
+│         │   ways" topology label across SVE sheets, lock paylines │           │
+│         │   = N + evalMode = 'ways' (confidence 0.85). PAR-5      │           │
+│         │   mapper generate svih N (3^5 = 243 za Skeleton Key /    │           │
+│         │   Fortune Coin Boost) paylines kao full row-per-reel    │           │
+│         │   universe; sister Lines mode evaluiraja svih N → mathe-│           │
+│         │   matica ekvivalentna Ways math.                         │           │
+│         │   Verdict ladder posle PAR-9:                            │           │
+│         │   - cash-eruption WARN base 41.90% vs measured 11.42%   │           │
+│         │   - skeleton-key FAIL base 75.89% vs measured 3.37%     │           │
+│         │   - fort-knox WARN base 70.99% vs measured 48.10%       │           │
+│         │   - book-of-unseen FAIL total 96.20% vs measured 19.72% │           │
+│         │   - fortune-coin FAIL total 95.01% vs measured 20.25%   │           │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-10  │ Real payline patterns iz Paylines sheet-a               │ 📋 PLAN  │
+│         │   Cash Eruption 8 paylines deklariše SPECIFIC zigzag     │           │
+│         │   patterns u Paylines tab-u (top row, middle, bottom +  │           │
+│         │   5 V-shapes). PAR-5 mapper trenutno generiše row-cycle │           │
+│         │   sinhroničke kopije ([0,0,0,0,0], [1,1,1,1,1], ...) —   │           │
+│         │   under-counts middle-row hits. Treba parse Paylines     │           │
+│         │   sheet cells za { ['X', 'X', 'X', 'X', 'X'] po row-u } │           │
+│         │   i mapirati u model.par_sheet.paylinePatterns. PAR-5   │           │
+│         │   mapper koristi te patterns umesto row-cycle.          │           │
+│         │   Effort: ~1h. Closes cash-eruption gap.                 │           │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-11  │ Symbol-id case + Special Reel Set / Mystery reveal      │ 📋 PLAN  │
+│         │   Skeleton Key reel ima 'Key' / 'Mystery' / 'Wild'      │           │
+│         │   simbole bez pays (Special Reel Set u par sheet-u +     │           │
+│         │   Mystery reveal mechanic). Pun convergence traži:      │           │
+│         │   - Mystery sym reveal mechanika (random reveal kao     │           │
+│         │     bilo koji LP/MP sym pre evaluacije)                  │           │
+│         │   - Wild substitution chain (Wild expanding na adjacent │           │
+│         │     cells za bonus retrigger)                            │           │
+│         │   - Special Reel Set FS bonus (weighted reel selection) │           │
+│         │   Effort: ~3-4h. Closes Skeleton Key + Book of Unseen   │           │
+│         │   gap. Sister side: ekstended Evaluator hooks za pre-   │           │
+│         │   eval mystery reveal + post-eval wild substitution.     │           │
 └────────┴─────────────────────────────────────────────────────────┴──────────┘
+
+### PAR-QA-4 / PAR-7-FAST / PAR-9 closeout receipt (2026-06-26 19:15 UTC)
+
+```
+┌──────────────┬──────────────┬──────────────────────────────────────────┐
+│ Atom          │ Commit        │ Šta zatvara                              │
+├──────────────┼──────────────┼──────────────────────────────────────────┤
+│ PAR-QA-4      │ cbffafe       │ 100× inflation factor + minimal probe    │
+│ PAR-7-FAST    │ 2be4e38       │ Component RTP extract + base verdict     │
+│ PAR-9         │ c0d9466       │ evalMode + Ways universe synthesis        │
+└──────────────┴──────────────┴──────────────────────────────────────────┘
+
+Iz pet hipoteza PAR-QA-4 audit-a (5 hipoteza root cause), tačan
+single-line bug bio je mapper × 100 dvaput. Sister stats.rs:1070
+already returns percent. Verified preko minimal-config probe
+(`tools/_par-qa4-minimal-probe.mjs`) sa 6 nameštenih scenaria.
+
+Honest measured-vs-declared (200k spins × 2 seeds, baseGame target
+gde dostupan):
+
+┌──────────────────────────┬─────────────┬─────────────┬──────────┐
+│ Slug                       │ Declared    │ Measured    │ Verdict   │
+├──────────────────────────┼─────────────┼─────────────┼──────────┤
+│ cash-eruption              │ base 41.90% │ 11.42%      │ WARN      │
+│ skeleton-key               │ base 75.89% │  3.37%      │ FAIL      │
+│ fort-knox-wolf-run         │ base 70.99% │ 48.10%      │ WARN      │
+│ book-of-unseen-bonus-buy   │ tot  96.20% │ 19.72%      │ FAIL      │
+│ fortune-coin-boost-classic │ tot  95.01% │ 20.25%      │ FAIL      │
+└──────────────────────────┴─────────────┴─────────────┴──────────┘
+
+Remaining gap = sub-modeled features koje sister kernel ne pokriva:
+  cash-eruption    : payline pattern fidelity (PAR-10)
+  skeleton-key     : Mystery reveal + Wild substitution chain (PAR-11)
+  fort-knox        : Wilson 99% u granicama (variance, ne bug)
+  book-of-unseen   : Bonus Buy variants + label regex (PAR-7-FULL)
+  fortune-coin     : non-standard component labels (PAR-7-FULL)
+
+Ultra-deep audit (3-paralel Explore agente):
+  Audit 1 (PAR-QA-4 safety): paytable division SAFE; no contract test
+    coverage (BLOCKER — add fixture suite); cross-script use ISOLATED;
+    component regex WARN (broaden ke Base Line Wins/Main Game);
+    baseGame values verified iz source cells.
+  Audit 2 (sister gap): eval_mode default Lines (CRITICAL — PAR-9
+    fixed via universe synthesis); payline pattern loss (HIGH — PAR-10);
+    symbol-id case (MODERATE — PAR-11).
+  Audit 3 (cortex eyes): 5/5 slot.html clean, reels=5, cells=25,
+    runOneBaseSpin OK, 10/10 win-rate frequency.
+```
 │         │   Skeleton Key + Cash Eruption HoldAndWin + Book of      │           │
 │         │   Unseen Bonus Buy → declared total RTP uključuje FS    │           │
 │         │   contribution koji PAR-5 base-game-only ne meri. Za     │           │
