@@ -1,3 +1,257 @@
+## 🏆 SAVRŠENO BEZ IJEDNE GREŠKE — 5-FAZNI PLAN (2026-06-26 15:42 UTC · ACTIVE)
+
+Boki direktiva (2026-06-26 13:15 UTC): *"mora da bude savrsen i da radi
+savrseno bezijedne greske ikada. i bildovanje slot igre svih blokova i
+tacne matematike"*.
+
+Trigger u sesiji: 3-paralelni live probe otkrio P0 bug `i18n.mjs` NUL-byte
+regex (svaki slot.html bacao `Invalid regular expression /[U+FFFD-U+001F]/g`
+SyntaxError → cells=0 grid collapse) + sintetički math probe drift
+WoO +36.72 pp, Cash Eruption −29.28 pp, Huff +16.97 pp. Fix: `f6d3076`.
+
+Cilj plana: ELIMINISATI svaku grešku, dokazati sa real Playwright + real
+sister-Rust mereno RTP, ne procene. Svaka faza dodaje novi verify gate
+step koji blokira commit ako se regression vrati.
+
+### 🔭 Filozofija — gde smo vs gde idemo
+
+```
+┌────────────────────────────────┬─────────────────────────┬──────────────────────────┐
+│ Dimenzija                       │ Sada (post f6d3076)     │ "Savršeno"                │
+├────────────────────────────────┼─────────────────────────┼──────────────────────────┤
+│ Verify gate                     │ 33/33 zeleno            │ 33/33 + 4 NOVA gate-a     │
+│ Block liveness                  │ 0 DEAD na 5 pinned igre │ 0 DEAD na svih 338 GDDova │
+│ Runtime browser test            │ Manual + sandbox        │ Playwright auto svaki PR  │
+│ RTP precision                   │ ±0.5 % (declared)       │ ±0.05 % (mereno HTTP)     │
+│ Math feature coverage           │ Trenutno tačno za 5     │ Tačno za svih 338         │
+│ Adversarial fuzz                │ 308 syntetičkih GDDova  │ 308 + 1000 random perm.   │
+│ Console errors po slot.html     │ 0 (posle f6d3076)       │ 0 + observed cont. CI     │
+│ Continuous proof                │ Pre-commit hook lokalno │ GitHub Actions na PR/main │
+└────────────────────────────────┴─────────────────────────┴──────────────────────────┘
+```
+
+### 📋 Trigger gate — ŠTA Boki mora prvo
+
+```
+┌─────┬──────────────────────────────────────────────────┬────────────────────────┐
+│ ID   │ Šta Boki radi                                     │ Bez ovog blokira        │
+├─────┼──────────────────────────────────────────────────┼────────────────────────┤
+│ T-1  │ Drop 5 baseline real par sheet PDF-ova u uploader:│ FAZA 2 ne može da      │
+│      │  · Wrath of Olympus                               │ daje ±0.05% precision. │
+│      │  · Cash Eruption (paytable fali u postojećem      │ Sintetička heuristika  │
+│      │    `reports/par-sheet-ingested/cash-eruption-     │ ostaje "informational" │
+│      │    foundry-gdd.json` — ingest novog sa paytable)  │ ali nije ground truth. │
+│      │  · Huff-n-More-Puff                               │                        │
+│      │  · Crystal Forge                                  │                        │
+│      │  · Midnight Fangs                                 │                        │
+├─────┼──────────────────────────────────────────────────┼────────────────────────┤
+│ T-2  │ macOS Privacy → Screen Recording → ✅ iTerm/Term  │ FAZA 4 (V9 vision     │
+│      │  (TCC grant) — potrebno za Playwright screenshot  │ regression) ne radi.   │
+│      │  + Opus vision rubrika                            │                        │
+└─────┴──────────────────────────────────────────────────┴────────────────────────┘
+```
+
+### 🛠 FAZA 1 — Zero-fault build (1 sesija · ~2h)
+
+**Cilj:** dokazati da svaki blok × svaki GDD × svaki state daje **0 JS
+grešaka, 0 unhandled rejection, validno DOM stanje** (reels≥3, cells>0,
+balance reaguje na bet).
+
+```
+┌────┬──────────────────────────────────────────────────────────┬──────────────┐
+│ #   │ Atom                                                      │ Garancija     │
+├────┼──────────────────────────────────────────────────────────┼──────────────┤
+│ 1a  │ `tools/_zero-fault-runtime-walker.mjs` — Playwright       │ 338 GDD × 5   │
+│     │ headless otvori svaki slot.html, hook na console.error +  │ state = 1690  │
+│     │ window.onerror + onunhandledrejection. JSON receipt po    │ probe / run   │
+│     │ GDD-u u `reports/zero-fault/<slug>.json` sa errors[],     │               │
+│     │ warns[], DOM-invariant assertions[].                      │               │
+├────┼──────────────────────────────────────────────────────────┼──────────────┤
+│ 1b  │ DOM invariant gate proširen sa sandbox-a na svih 338:     │ Per-GDD pass  │
+│     │   reels ≥ 3, cells = reels × rows, balance se menja       │               │
+│     │   na bet, spin button reaguje, paytable otvara, sve       │               │
+│     │   `aria-live` regije postoje.                              │               │
+├────┼──────────────────────────────────────────────────────────┼──────────────┤
+│ 1c  │ Antibody upis za svaki ulovljen pattern (NUL byte i18n je │ Auto-replay   │
+│     │ već u sećanju antibody-a u cortex DB) — `cortex` daemon   │ across        │
+│     │ ga apply-uje proaktivno u future sesije.                  │ sesije        │
+├────┼──────────────────────────────────────────────────────────┼──────────────┤
+│ 1d  │ Verify gate step 34 = "zero-fault-runtime" — fail ako     │ Pre-commit    │
+│     │ ijedan GDD ima > 0 console.error / pageerror /            │ block         │
+│     │ unhandled rejection. Receipt diff vs poslednji baseline.  │               │
+└────┴──────────────────────────────────────────────────────────┴──────────────┘
+```
+
+**DoD:** `npm run verify` garantuje da **nikad više neće postojati
+slot.html koji puca u browser-u**. Ako bilo koji blok unfreeze-uje
+grešku, gate blokira commit.
+
+### 🧮 FAZA 2 — Tačna matematika za sve blokove (2 sesije · ~4h, čeka T-1)
+
+**Cilj:** RTP svake igre u ±0.05% bandu od deklariranog, **real engine
+mereno**, ne procene. Pravi Rust kernel preko LV3-2 HTTP-a, ne sintetički
+plugin-i.
+
+```
+┌────┬──────────────────────────────────────────────────────────┬──────────────┐
+│ #   │ Atom                                                      │ Garancija     │
+├────┼──────────────────────────────────────────────────────────┼──────────────┤
+│ 2a  │ Solver flip preko LV3-2 HTTP klijenta (sister bin radi    │ ~1-3 ms/probe │
+│     │ kao long-lived daemon umesto CLI spawn po probe).         │ 10 000× brže  │
+│     │ Auto-converge se prebacuje sa `runOnce()` (CLI) na        │ od trenutnog  │
+│     │ `runOnceHttp()` (already shipped @ 83b3197).              │ CLI spawn-a.  │
+├────┼──────────────────────────────────────────────────────────┼──────────────┤
+│ 2b  │ Auto-converge gate: za svaki GDD sa declared RTP →        │ ±0.05 % band  │
+│     │ Newton ili Nelder-Mead dok delta ≤ 0.05 pp ili max iter   │ ili WARN sa   │
+│     │ (2048). Receipt: `reports/math-converge/<slug>.json` sa   │ honest gap    │
+│     │ `declaredRtp`, `measuredRtp`, `iter`, `wilson_99`,        │ surfaced.     │
+│     │ `convergedBand`, `verdict`.                                │               │
+├────┼──────────────────────────────────────────────────────────┼──────────────┤
+│ 2c  │ Per-feature math coverage:                                 │ Per feature   │
+│     │   · FS frequency (hits per 10M spins ± 1σ vs declared)    │ trigger rates │
+│     │   · H&W trigger probability (vs Markov model)              │ proven        │
+│     │   · Multiplier ladder expected value (chain × stop prob)   │               │
+│     │   · Bonus buy RTP delta vs base game                       │               │
+│     │   · Scatter pay table sum (paylines × symbols × freq)      │               │
+├────┼──────────────────────────────────────────────────────────┼──────────────┤
+│ 2d  │ Verify gate step 35 = "math-precision-band" — fail ako    │ Pre-commit    │
+│     │ ijedan baseline > ±0.05% delta. WARN za GDD-ove bez par   │ block         │
+│     │ sheet-a (oracle unavailable je dozvoljen samo van         │               │
+│     │ T-1 liste, sa explicit `NON_BINDING` verdict u receipt-u). │               │
+└────┴──────────────────────────────────────────────────────────┴──────────────┘
+```
+
+**DoD:** za 5 T-1 igara `measured_rtp ∈ declared ± 0.0005` (real Rust
+mereno). Per-feature trigger rates u Wilson 99% CI od declared. Bilo
+koji slip kasnije = blokiran commit.
+
+### 🎲 FAZA 3 — 338/338 igara pune kroz savršeni pipeline (1 sesija · ~2h)
+
+**Cilj:** sva trenutna korpusa (5 real + 25 reference + 308 sintetički)
+prolazi Phase 1 + 2 gate-ove. Nove sintetičke generišu po potrebi za
+edge case (npr. mega-multipliers, cluster-pays sa H&W stacking).
+
+```
+┌────┬──────────────────────────────────────────────────────────┬──────────────┐
+│ #   │ Atom                                                      │ Garancija     │
+├────┼──────────────────────────────────────────────────────────┼──────────────┤
+│ 3a  │ PAR sheet inference engine: za 333 GDD bez real par      │ Sintetički,   │
+│     │ sheet-a, generiši approximate weights iz declared         │ MARK kao      │
+│     │ paytable + reel strips. `tools/par-sheet-inferred.mjs`.   │ SYNTHESIZED.  │
+├────┼──────────────────────────────────────────────────────────┼──────────────┤
+│ 3b  │ Per-GDD compliance scorecard — kombinuje V8 assembly +    │ 1 strana po   │
+│     │ V9 visual QA + V10..V12 industry specs + V14 math +       │ GDD-u, regul- │
+│     │ phase 1 zero-fault + phase 2 RTP precision u jedinstveni  │ ator-ready    │
+│     │ "is this game ready to ship?" pass/warn/fail verdict.     │ output        │
+├────┼──────────────────────────────────────────────────────────┼──────────────┤
+│ 3c  │ Verify gate step 36 = "corpus-wide-perfect-pass" — fail   │ Pre-commit    │
+│     │ ako bilo koja od 338 igara ima > 0 P0/P1 nalaza po        │ block         │
+│     │ scorecard-u. Sintetički RTP "INFORMATIONAL" za ne-T-1     │               │
+│     │ igre.                                                      │               │
+└────┴──────────────────────────────────────────────────────────┴──────────────┘
+```
+
+**DoD:** 338/338 GDD u `reports/scorecard/<slug>.json` ima zelen pass
+ili explicit, dokumentovan WARN.
+
+### 🎯 FAZA 4 — Adversarial fuzz + V9 vision (1 sesija · ~3-4h, čeka T-2)
+
+**Cilj:** uhvatiti bug-ove koje deterministic verify ne vidi. 1000 random
+GDD permutacija + vizuelna regression preko Opus vision API-ja.
+
+```
+┌────┬──────────────────────────────────────────────────────────┬──────────────┐
+│ #   │ Atom                                                      │ Garancija     │
+├────┼──────────────────────────────────────────────────────────┼──────────────┤
+│ 4a  │ `tools/_adversarial-fuzz.mjs` — random GDD permutation    │ 1000 × full   │
+│     │ generator: vary grid kind, paytable extremes, feature     │ pipeline      │
+│     │ combination explosions. Goal: trigger ANY block that      │ smoke         │
+│     │ doesn't crash on the 338 pin set.                         │               │
+├────┼──────────────────────────────────────────────────────────┼──────────────┤
+│ 4b  │ V9 vision mode aktivacija (N+2 J): screenshot 5 stanja    │ Vizuelna      │
+│     │ × Opus vision rubrika sa cost cap $2.50/sesija. Surface   │ regression    │
+│     │ button overlap, text cutoff, kontrast < 4.5 kao FAIL.      │               │
+├────┼──────────────────────────────────────────────────────────┼──────────────┤
+│ 4c  │ Verify gate step 37 = "adversarial-clean" — fail ako      │ Pre-commit    │
+│     │ 1000-permutation fuzz nalazi novi unhandled / crash       │ block         │
+│     │ pattern. Auto-extend antibody DB.                          │               │
+└────┴──────────────────────────────────────────────────────────┴──────────────┘
+```
+
+### 🚀 FAZA 5 — Continuous proof (1 sesija · ~2h)
+
+**Cilj:** garancija ne važi samo u Boki-jevom terminalu — radi i u CI na
+PR-u i na main pre push-a, sa istim 37-step verify gate-om.
+
+```
+┌────┬──────────────────────────────────────────────────────────┬──────────────┐
+│ #   │ Atom                                                      │ Garancija     │
+├────┼──────────────────────────────────────────────────────────┼──────────────┤
+│ 5a  │ N+2 H — GitHub Actions workflow (`ci.yml`):               │ Svaki PR      │
+│     │   matrix: { node: [22, 24], os: [ubuntu, macos] }         │ checked       │
+│     │   steps: install · verify · zero-fault · math-precision · │               │
+│     │   adversarial-smoke (100 perm subset za CI brzinu).        │               │
+├────┼──────────────────────────────────────────────────────────┼──────────────┤
+│ 5b  │ Branch protection: main zahteva CI green + 0 review-      │ Push blocked  │
+│     │ overrides. Sve PR-ove gate-uje 37-step verify.            │ ako CI fail.  │
+├────┼──────────────────────────────────────────────────────────┼──────────────┤
+│ 5c  │ Verify report u PR comment (status check API). Operator    │ Vidljivost    │
+│     │ vidi 37/37 zeleno pre merge-a, ne čeka manual klik.       │               │
+└────┴──────────────────────────────────────────────────────────┴──────────────┘
+```
+
+### 📊 Status tracker
+
+```
+┌──────┬───────────────────────────────────────┬──────────┬─────────────────────┐
+│ Faza  │ Stavka                                 │ Status    │ Trigger              │
+├──────┼───────────────────────────────────────┼──────────┼─────────────────────┤
+│ T-1   │ Real par sheet drop (5 igara)          │ ⏳ Boki   │ —                    │
+│ T-2   │ macOS TCC Screen Recording grant       │ ⏳ Boki   │ —                    │
+├──────┼───────────────────────────────────────┼──────────┼─────────────────────┤
+│ F1-a  │ Zero-fault runtime walker              │ 📋 PLAN   │ —                    │
+│ F1-b  │ DOM invariant gate 338-wide            │ 📋 PLAN   │ —                    │
+│ F1-c  │ Antibody upis za i18n NUL pattern      │ ✅ DONE   │ f6d3076              │
+│ F1-d  │ Verify gate step 34                    │ 📋 PLAN   │ —                    │
+├──────┼───────────────────────────────────────┼──────────┼─────────────────────┤
+│ F2-a  │ LV3-2 HTTP solver flip                 │ 📋 PLAN   │ čeka F2-c            │
+│ F2-b  │ Auto-converge gate ±0.05%              │ 📋 PLAN   │ čeka T-1             │
+│ F2-c  │ Per-feature math coverage              │ 📋 PLAN   │ čeka T-1             │
+│ F2-d  │ Verify gate step 35                    │ 📋 PLAN   │ —                    │
+├──────┼───────────────────────────────────────┼──────────┼─────────────────────┤
+│ F3-a  │ PAR sheet inference engine             │ 📋 PLAN   │ —                    │
+│ F3-b  │ Per-GDD compliance scorecard           │ 📋 PLAN   │ —                    │
+│ F3-c  │ Verify gate step 36                    │ 📋 PLAN   │ —                    │
+├──────┼───────────────────────────────────────┼──────────┼─────────────────────┤
+│ F4-a  │ Adversarial fuzz (1000 perm)           │ 📋 PLAN   │ —                    │
+│ F4-b  │ V9 vision aktivacija (= N+2 J)         │ 📋 PLAN   │ čeka T-2             │
+│ F4-c  │ Verify gate step 37                    │ 📋 PLAN   │ —                    │
+├──────┼───────────────────────────────────────┼──────────┼─────────────────────┤
+│ F5-a  │ GitHub Actions ci.yml (= N+2 H)        │ 📋 PLAN   │ —                    │
+│ F5-b  │ Branch protection main                 │ 📋 PLAN   │ Boki repo admin      │
+│ F5-c  │ Verify report u PR comment             │ 📋 PLAN   │ —                    │
+└──────┴───────────────────────────────────────┴──────────┴─────────────────────┘
+```
+
+### 🧪 Receipt iz ove sesije — pre plan write
+
+```
+┌────────────────────────────────────────┬─────────────────────────────────────┐
+│ Šta                                     │ Detalj                                │
+├────────────────────────────────────────┼─────────────────────────────────────┤
+│ P0 i18n.mjs NUL-byte regex              │ Commit f6d3076 · sandbox cells 0→25   │
+│ Cortex eyes sandbox probe               │ runOneBaseSpin OK, balance 1000→999   │
+│ Sintetički math probe drift (3 igre)    │ WoO +36.72pp, CE −29.28pp, Huff +17pp │
+│ Math drift uzrok                        │ featureSimPlugins heuristika, ne      │
+│                                         │ real par sheet weights — sintetičko   │
+│                                         │ approximations, ne ground truth.      │
+│ Real precision blocker                  │ 5 baseline par sheet input fali       │
+│                                         │ (samo CE ima fajl, i taj bez paytable)│
+└────────────────────────────────────────┴─────────────────────────────────────┘
+```
+
+---
+
 ## 🗂 ŠTA MOŽE DALJE — 2026-06-26 15:00 UTC (FINAL · ALL 14 LV3 ATOMA ✅ DONE)
 
 ### 🧠 MATH-INTEGRATION-LV3 · SRCE PAMETNE MAŠINE — 14/14 ATOMA LANDED (2026-06-26 15:00 UTC)
