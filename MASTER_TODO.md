@@ -1,4 +1,4 @@
-## 📊 PAR-SHEET AUTONOMOUS INGEST — 2026-06-26 16:08 UTC · OTVOREN
+## 📊 PAR-SHEET AUTONOMOUS INGEST — 2026-06-26 16:30 UTC · PAR-1+PAR-2 LANDED
 
 Boki direktiva (2026-06-26 16:00 UTC): *"Zapisi u master todo sve i kreni"* —
 nakon razgovora o tome šta je ultimativno rešenje kad nemamo original GDD za
@@ -27,7 +27,7 @@ jela na meniju". Sintetišemo UX iz par sheet metadata, math je real.
 ┌────────┬─────────────────────────────────────────────────────────┬──────────┐
 │ ID      │ Stavka                                                   │ Status    │
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
-│ PAR-1   │ xlsx structure discovery probe                           │ 📋 PLAN  │
+│ PAR-1   │ xlsx structure discovery probe                           │ ✅ LANDED │
 │         │   tools/_par-sheet-structure-probe.mjs — otvara sve 5    │          │
 │         │   par sheet-ova, mapira sheet imena, kolone, header      │          │
 │         │   shape, reel strip lokacije, paytable lokacije, fea-    │          │
@@ -35,7 +35,7 @@ jela na meniju". Sintetišemo UX iz par sheet metadata, math je real.
 │         │   Razlog: par sheet format nije strict — svaki vendor    │          │
 │         │   ima drugačiju strukturu. Probe FIRST, parser POSLE.    │          │
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
-│ PAR-2   │ tools/_par-sheet-to-model.mjs — core parser              │ 📋 PLAN  │
+│ PAR-2   │ tools/_par-sheet-to-model.mjs — core parser              │ ✅ LANDED │
 │         │   xlsx → reel strips + paytable + feature math →         │          │
 │         │   GameConfig (sister-repo shape) + universalGameSchema   │          │
 │         │   model.json. Stamp __schema_version__. Anti-vendor      │          │
@@ -68,6 +68,37 @@ jela na meniju". Sintetišemo UX iz par sheet metadata, math je real.
 │         │     max-win cap respect)                                  │          │
 │         │   - cross-game audit (svih 5 slug, parity, vendor-neutr.)│          │
 └────────┴─────────────────────────────────────────────────────────┴──────────┘
+```
+
+### PAR-1 + PAR-2 closeout (2026-06-26 16:30 UTC)
+
+```
+┌──────────────────────────────────┬───────────────────────────────────────┐
+│ Slug (5)                          │ Parsed shape                          │
+├──────────────────────────────────┼───────────────────────────────────────┤
+│ skeleton-key                      │ 5×3/20, 49 syms, rtp=absent           │
+│ fort-knox-wolf-run                │ 5×3/20, 47 syms, rtp=96.44 %          │
+│ book-of-unseen-bonus-buy          │ 5×3/20, 42 syms, rtp=96.21 %          │
+│ cash-eruption                     │ 5×3/8,  81 syms, rtp=absent           │
+│ fortune-coin-boost-classic        │ 5×3/20, 115 syms, rtp=95.01 %         │
+└──────────────────────────────────┴───────────────────────────────────────┘
+
+5/5 emit valid universalGameSchema model.json + manifest.json sa SHA256
+content pin. PAR-2 commit addce87 push-ovan na main.
+
+Quality issues (PAR-QA target):
+  - skeleton-key + cash-eruption: declared RTP nije detected (treba šire
+    keyword regex: "Base RTP", "Hold %", "Reported RTP").
+  - skeleton-key Reel 5 weight total 1998 (10× ostalih) — verovatno bonus
+    reel, ali možda scan overshooting u Total/Sum agregat red.
+  - fort-knox-wolf-run Reel 5 = 972 979 097 (astronomski) — sigurno
+    extracted neku error vrednost; sentinel row detection treba pre
+    "Sum"/"Total"/all-zero break.
+  - book-of-unseen Reel 4 = 1 354 044 (vs ~600 ostali) — slično.
+  - Win cap absent u svih 5 — alternative extraction iz 100Spins
+    histograms u PAR-QA.
+
+PAR-3, PAR-4, PAR-5, PAR-QA još 📋 PLAN — sledeća sesija.
 ```
 
 ### Garancije
