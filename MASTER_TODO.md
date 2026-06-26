@@ -180,23 +180,43 @@ jela na meniju". Sintetišemo UX iz par sheet metadata, math je real.
 │         │   Komentar u kodu (`tools/_par-sheet-convergence.mjs`   │           │
 │         │   linije 96-130) sadrži punu audit naraciju.              │           │
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
-│ PAR-11-B│ Per-game specials classification (Cash/Anchor/Big roles)│ 📋 PLAN  │
-│         │   Cash Eruption: Fireball → Cash (HnW orb trigger),     │           │
-│         │   Volcano → Anchor (top-pay no standard table). Skeleton│           │
-│         │   Key: 'Key' / 'Mystery' simboli → Mystery role (custom │           │
-│         │   pre-eval reveal). Fort Knox: Wolf → Cash, FK shield → │           │
-│         │   Anchor. Book of Unseen: Book → Scatter, Eye → Anchor. │           │
-│         │   Implementation:                                        │           │
-│         │   1. Extend extractor (_par-sheet-to-model.mjs) sa per- │           │
-│         │      slug `specialsByName` lookup table — maps par-     │           │
-│         │      sheet symbol name to SymbolRole when name match-uje│           │
-│         │      Cash/Anchor heuristic (HnW trigger, high-pay-no-   │           │
-│         │      table).                                            │           │
-│         │   2. Emit `model.symbols.specials[]` sa proper role.    │           │
-│         │   3. THEN apply PAR-11-A (Wild role serialization) jer  │           │
-│         │      sister wild_subs će ispravno skip Fireball.         │           │
-│         │   Effort: ~2h. Closes cash-eruption Wild substitution    │           │
-│         │   gap properly (expect measured 11% → 25-30% za base RTP)│          │
+│ PAR-11-B│ Per-game specials classification (no-paytable → Cash)   │ ✅ LANDED│
+│         │   Heuristic u _par-sheet-to-model.mjs: simbol bez       │ (extract)│
+│         │   paytable entry-ja → role:'cash'. Cash Eruption sad     │           │
+│         │   emit-uje specials = [{wild,wild}, {volcano,cash},     │           │
+│         │   {fireball,cash}]. Skeleton Key: +{key,cash},          │           │
+│         │   {mystery,cash}. Book of Unseen: +{book,cash}.         │           │
+│         │   Status: LANDED u extractoru kao no-op signal — proper │           │
+│         │   metadata se emit-uje za buduću sister consumption.    │           │
+│         │   AKTIVNI mapper i dalje šalje legacy is_wild flags     │           │
+│         │   (Round 2 probe i dalje pokazao FAIL 6.22% sa role     │           │
+│         │   serialization aktivnim). Sister kernel gap (PAR-11-D) │           │
+│         │   mora zatvoriti pre nego što role-mapper postane safe.  │           │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-11-D│ Sister-side anchor.is_none() fallback fix (Cash-heavy   │ 📋 NEW   │
+│ (NEW)   │   lines fall into Wild-only paytable lookup → 0 pay)    │           │
+│         │   Audit Round 2 catch: sister evaluate.rs:185-200 sets  │           │
+│         │   anchor=None kad sve cells su Wild/Scatter/Bonus/Cash, │           │
+│         │   pada u all-Wild branch koja traži pt[(wild, count)].  │           │
+│         │   Cash Eruption ima Volcano-dominantne linije (Volcano  │           │
+│         │   weight 9105 na 5 reels = ~3% top-row hit rate). Ako   │           │
+│         │   Volcano je role=Cash (correct), linija ima [Vol,Vol, │           │
+│         │   Vol, Wild, Wild] → all-Cash/Wild → anchor None →      │           │
+│         │   Wild-count=0 (Volcano nije Wild) → pay 0. Pre-PAR-11  │           │
+│         │   coincidentally paid bolje jer Volcano=Lp dozvolilo    │           │
+│         │   selekciju kao anchor.                                  │           │
+│         │   Sister side fix: kad anchor=None, prefer (a) iz-      │           │
+│         │   skenirati Cash-anchored count (Volcano consecutive),  │           │
+│         │   pa potražiti pt[(volcano, count)] — pošto ne postoji  │           │
+│         │   row, vraćaš 0 svesno, ali ne preskačeš liniju u Wild  │           │
+│         │   lookup. ILI (b) inject synthetic pay row za empty-    │           │
+│         │   paytable Cash symbols pri PAR-2 emit (1-coin pay za   │           │
+│         │   3-of-a-kind) tako da default sister kernel handles    │           │
+│         │   gracefully.                                            │           │
+│         │   Sister repo: ~/Projects/slot-math-engine-template/    │           │
+│         │   engine/slot-sim/src/evaluate.rs:185-200.              │           │
+│         │   Effort: ~2-3h sister-side audit + factory regression   │           │
+│         │   test. PRE OVOG, PAR-11-A re-application je premature.  │           │
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
 │ PAR-11-C│ Mystery reveal + Special Reel Set (Skeleton Key)        │ 📋 PLAN  │
 │         │   Skeleton Key 'Key' / 'Mystery' / 'Wild' simboli + FS  │           │

@@ -1339,13 +1339,28 @@ async function buildModel(wb, slug) {
 
     /* Symbols sub-shape — derived from the par sheet symbol list.
      * universalGameSchema expects `{ high: [], mid: [], low: [], specials: [] }`
-     * (categorized), not a flat array. We bucket by weight/role:
-     *   - specials: wild + scatter + bonus tokens
-     *   - high:     top 30 % of remaining by total weight across reels
-     *   - low:      bottom 30 %
-     *   - mid:      the rest
-     * Wild/scatter/bonus detection uses keyword heuristics (Wild / Bonus
-     * / Scatter / S / W / SC). Anti-vendor sanitization runs at emit. */
+     * (categorized), not a flat array.
+     *
+     * PAR-11-B (Boki 2026-06-26): classification heuristic now lifts
+     * Cash / Anchor specials in addition to wild/scatter/bonus by
+     * NAME. The trick: any symbol that appears on the reels but does
+     * NOT appear in the paytable is, by definition, a special feature
+     * trigger (par-sheet convention — Cash Eruption Fireball orbs,
+     * Volcano top-symbol, Fort Knox Wolf trigger, etc.).
+     *
+     *   no-paytable + high weight (frequent landing) → Cash trigger
+     *                                                  (Hold & Win orb)
+     *   no-paytable + low weight (rare landing)      → Anchor
+     *                                                  (top-tier pattern symbol)
+     *
+     * This matters because sister `evaluate.rs::wild_subs` substitutes
+     * Wild for EVERYTHING that isn't Cash or Bonus by role. Without
+     * Cash classification, when we eventually flip the mapper to
+     * `role: 'wild'` (PAR-11-A re-application), Wild will silently
+     * substitute for Cash orb cells → paytable lookup hits an empty
+     * row → measured RTP drops. PAR-11-A's regression probe surfaced
+     * exactly that bug. PAR-11-B closes the gap by emitting Cash role
+     * BEFORE Wild role gets re-enabled. */
     symbols: reels.symbolList.length > 0
       ? (() => {
           /* Compute total weight per symbol across all reels for bucket
@@ -1364,26 +1379,68 @@ async function buildModel(wb, slug) {
               .replace(/[^a-z0-9]+/g, '_')
               .replace(/^_|_$/g, '')
               .slice(0, 20) || 'sym';
-          const isSpecial = (s) =>
+          const isExplicitSpecial = (s) =>
             /^(wild|w|wilds?|scatter|sc|s|scatters?|bonus|b|bn|bonuses?)$/i.test(s);
+
+          /* PAR-11-B: build the set of symbols that appear in the
+           * paytable. Anything outside this set + outside the explicit
+           * special regex is a feature trigger. */
+          const symbolsInPaytable = new Set(
+            (pay.rows || []).map((row) => row.symbolId),
+          );
+
+          /* PAR-11-B: collect no-paytable feature triggers separately
+           * so we can split them by weight median into Cash vs Anchor. */
+          const featureTriggers = [];
           const specials = [];
           const ordinary = [];
           for (const sym of reels.symbolList) {
+            const id = toId(sym);
             const entry = {
-              id: toId(sym),
+              id,
               label: sanitize(sym),
               weightTotal: totalWeight.get(sym) || 0,
             };
-            if (isSpecial(sym)) {
+            if (isExplicitSpecial(sym)) {
               specials.push({
-                id: toId(sym),
+                id,
                 label: sanitize(sym),
                 role: /wild/i.test(sym) ? 'wild' : /scatter|^s$|^sc$/i.test(sym) ? 'scatter' : 'bonus',
               });
+            } else if (!symbolsInPaytable.has(id)) {
+              /* PAR-11-B: no paytable entry → must be a feature
+               * trigger. Defer Cash/Anchor split until we have all of
+               * them so we can median-split. */
+              featureTriggers.push(entry);
             } else {
               ordinary.push(entry);
             }
           }
+
+          /* PAR-11-B (Boki 2026-06-26, post-Anchor-audit): classify ALL
+           * no-paytable feature triggers as Cash role.
+           *
+           * Initial heuristic split frequent triggers → Cash and rare →
+           * Anchor. Audit caught a sister-side hole: `evaluate.rs:180`
+           * anchor-select only skips Wild/Scatter/Bonus/Cash. Anchor
+           * role IS allowed to BE selected as the line anchor — and
+           * since Anchor-role symbols (Cash Eruption Volcano, etc.)
+           * have empty paytables, the line ends up with anchor_pay=0
+           * even when 5 anchor symbols land. Net effect = same
+           * regression we saw in PAR-11-A probe.
+           *
+           * Conservative fix: ALL no-paytable triggers → Cash. Sister
+           * skip-list excludes Cash from anchor selection AND from
+           * wild_subs target — both behaviors we want for feature
+           * triggers with empty paytables. The semantic difference
+           * (Cash = HnW orb, Anchor = pattern-win symbol) is captured
+           * in extractor metadata but the sister role is uniformly
+           * Cash for empty-paytable specials until a sister-side
+           * Anchor evaluation arrives. */
+          for (const e of featureTriggers) {
+            specials.push({ id: e.id, label: e.label, role: 'cash' });
+          }
+
           /* Sort ordinary by total weight ascending (low weight = rare = high pay). */
           ordinary.sort((a, b) => a.weightTotal - b.weightTotal);
           const n = ordinary.length;

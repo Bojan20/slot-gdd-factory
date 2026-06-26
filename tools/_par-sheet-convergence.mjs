@@ -103,30 +103,47 @@ function mapModelToGameConfig(model) {
   for (const b of symBuckets.low || []) allSyms.push({ id: b.id, name: b.label || b.id, role: 'low' });
   for (const b of symBuckets.specials || []) allSyms.push({ id: b.id, name: b.label || b.id, role: b.role });
 
-  /* PAR-11-A (Boki 2026-06-26, AUDIT FINDING): Sister kernel `slot_sim::Symbol`
-   * uses snake_case role enum {lp, hp, wild, scatter, bonus, cash, anchor,
-   * big}. Pre-PAR-11 we emit legacy is_wild/is_scatter/is_bonus flags;
-   * sister silently drops them (role defaults to Lp), so Wild substitution
-   * has been OFF across all par-sheet games.
+  /* PAR-11-A + PAR-11-B (Boki 2026-06-26, AUDIT FINDING — both atoms
+   * remain DOCUMENTED-ONLY; mapper still emits legacy shape):
    *
-   * EXPERIMENT (PAR-11-A-PROBE, kept here as documentation): switching the
-   * mapping to `role: 'wild'` + substitutes:['*'] caused cash-eruption to
-   * REGRESS from WARN 11.42% → FAIL 6.22% measured. Root cause: sister
-   * `evaluate.rs::wild_subs` substitutes Wild for EVERYTHING that isn't
-   * Cash/Bonus by role. Cash Eruption's Fireball/Volcano are par-sheet
-   * SPECIAL symbols (Hold & Win cash trigger + high-pay anchor with no
-   * standard pay table) that we currently bucket as `high`. With Wild role
-   * active, those cells get wild-counted into hp anchor sequences with
-   * paytable=0, dropping average line wins. PRE-fix kernel behavior was
-   * coincidentally closer because Wild != Wild role disabled the whole
-   * substitution code path.
+   * Sister `slot_sim::Symbol` uses a snake_case role enum, not legacy
+   * is_wild/is_scatter/is_bonus flags. The legacy flags are silently
+   * dropped by sister serde → every symbol arrives as role Lp default.
+   * Wild substitution path is OFF across all par-sheet games.
    *
-   * RESOLUTION: keep the legacy is_wild/is_scatter/is_bonus shape until
-   * PAR-11-B lands per-game specials classification (Fireball→Cash,
-   * Volcano→Anchor, Cash Eruption Hold&Win trigger map). Then re-introduce
-   * the role mapping with proper Cash/Anchor coverage — measured RTP
-   * should jump UP, not down. Atom documented; revert keeps the math
-   * honest until the wider scope is correct. */
+   * Two-round probe history:
+   *
+   *   Round 1 (PAR-11-A naive): map role: 'wild' + substitutes:['*']
+   *   only. Cash Eruption regressed WARN 11.26% → FAIL 6.22% because
+   *   `wild_subs` substituted Wild for Fireball / Volcano (both hp role)
+   *   with paytable=0.
+   *
+   *   Round 2 (PAR-11-A + PAR-11-B): extractor now classifies empty-
+   *   paytable symbols as Cash role. Sister wild_subs correctly skips
+   *   Cash. But cash-eruption STILL measured 6.22%. Inspection of
+   *   sister `evaluate.rs:185-200` "all-Wild leading run" path shows
+   *   that lines starting with multiple Cash symbols (Volcano-heavy)
+   *   trip anchor.is_none() → fall into Wild-only count path → pay
+   *   lookup for Wild paytable → 0 (Cash Eruption has no Wild pay
+   *   row). Pre-PAR-11-A behavior coincidentally paid more because
+   *   Lp-role Volcano was selectable as anchor and counted runs that
+   *   the proper Cash-role classification now correctly excludes.
+   *
+   *   CONCLUSION: factory-side role serialization alone CANNOT close
+   *   this gap. The kernel needs either:
+   *     (a) Anchor role added to anchor.is_none() fallback so empty-
+   *         paytable specials don't fall into Wild-only branch, OR
+   *     (b) Per-game Wild paytable injection when extractor sees a
+   *         no-paytable wild — fake a 1-coin pay so wild-only lines
+   *         contribute something, OR
+   *     (c) sister-side anchor selection that skips Cash and continues
+   *         scanning rather than falling back to wild-only.
+   *
+   *   This is sister-side work (PAR-11-D). Until then, keep legacy
+   *   flag shape so we don't regress. The PAR-11-B specials lift in
+   *   the extractor is RETAINED as no-op signal — it provides correct
+   *   metadata for future sister consumption without affecting the
+   *   current legacy serialization. */
   const symbols = allSyms.map((s) => ({
     id: s.id,
     name: s.name,
