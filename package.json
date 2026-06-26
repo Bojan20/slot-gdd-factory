@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "One-button GDD upload \u2192 parsed model \u2192 playable slot in a new tab. Zero-runtime, vanilla browser.",
+  "description": "One-button GDD upload → parsed model → playable slot in a new tab. Zero-runtime, vanilla browser.",
   "scripts": {
     "test": "node tests/parse-real.mjs && node tests/render-grid-all.mjs && npm run test:model-schema && npm run test:vision-guard && npm run test:deep-freeze && npm run test:ixf-coverage && npm run test:rust-executor && npm run test:kernel-init && npm run test:rect-transform",
     "test:parse": "node tests/parse-real.mjs",
@@ -142,6 +142,7 @@
   },
   "dependencies": {
     "mammoth": "^1.12.0",
-    "pdfjs-dist": "^6.0.227"
+    "pdfjs-dist": "^6.0.227",
+    "xlsx": "^0.18.5"
   }
 }
