@@ -1,6 +1,6 @@
-## 🗂 ŠTA MOŽE DALJE — 2026-06-26 14:30 UTC (FINAL · ... + LV3 1+2+13 ✅ DONE)
+## 🗂 ŠTA MOŽE DALJE — 2026-06-26 15:00 UTC (FINAL · ALL 14 LV3 ATOMA ✅ DONE)
 
-### 🧠 MATH-INTEGRATION-LV3 · SRCE PAMETNE MAŠINE — 3 ATOMA LANDED (2026-06-26 14:30 UTC)
+### 🧠 MATH-INTEGRATION-LV3 · SRCE PAMETNE MAŠINE — 14/14 ATOMA LANDED (2026-06-26 15:00 UTC)
 
 ```
 ┌────┬─────────────────────────────────────────────────────────────┬───────────┐
@@ -19,7 +19,7 @@
 └────┴─────────────────────────────────────────────────────────────┴───────────┘
 ```
 
-**LV3 status posle ove sesije — 13 atoma LANDED, 1 otvoreno (sister-repo Rust):**
+**LV3 status posle ove sesije — SVIH 14 ATOMA LANDED, 0 otvoreno:**
 
 ```
 ┌──────┬──────────────────────────────────────────────────────────┬──────────┐
@@ -79,16 +79,47 @@ LV3-2 closeout (2026-06-26 14:30 UTC):
   `tools/sister-rust-http-client.mjs` (spawn READY-line parser + fetch
   helpers) + `tests/_sisterRustHttpClient.test.mjs` (10-case contract
   suite, live tests skip cleanly when sister binary isn't built).
-  Tests: 12/12 Rust unit + 5/5 Rust bin loopback policy + 10/10 JS live
+  Tests: 12/12 Rust unit + 5/5 Rust bin loopback policy + 11/11 JS live
   contract + verify ALL GATES GREEN (33 gates).
+  Hash pin: sister @ ca6c56e3 + factory @ 83b3197.
+
+UQ-LV3-QA-1 (LV3-2 post-landing audit, 2026-06-26 15:00 UTC):
+  3-paralelni Explore agent audit (Rust server / JS client / cross-repo
+  contract). Rust + cross-repo: ZERO real issues across 6 audit vectors.
+  JS client: 2 real catches, both fixed in factory @ 3f38c84:
+    P0 — stale stdout listener leak on spawnHttpServer timeout race.
+         Hoisted onData out of Promise constructor so the timeout catch
+         block + SIGTERM/SIGKILL fallback always uninstall it via a
+         single detachOnData() helper. Listener now removed in every
+         terminal path (READY, 4-KiB cap, child exit, timeout, catch).
+    P1 — runOnceHttp hitRate diverged from LV3-1 formula. LV3-1 returns
+         hits / config.spins; the server returns winning_spins /
+         total_spins (= spins_per_seed × num_seeds). For seeds>1 the two
+         drift by exactly the seeds factor — a silent 10× math error
+         risk for callers using hitRate for convergence calibration. Fix:
+         runOnceHttp now prefers LV3-1 formula when caller supplies
+         opts.spins; falls back to server-side hit_rate only when no
+         caller-supplied budget exists. runBatchHttp unaffected.
+  Tests: 11/11 (added "runOnceHttp hitRate matches LV3-1 formula"
+  regression guard). Verify ALL 33 GATES GREEN.
+  Items NOT fixed (documented, low priority):
+    - Rust server semaphore drop is RAII-bound to handler future, not
+      to the spawn_blocking task. Permit released on client disconnect
+      but the MC task keeps running in the background. Acceptable for
+      loopback-only deployment; revisit if exposing to LAN.
+    - Tests/skip-as-pass on missing binary is intentional (LV3-1 uses
+      the same pattern). CI gate around the binary build enforces
+      presence — not the JS suite.
+    - 4 KiB READY-line buffer cap may be tight if future binaries add
+      a banner. Raise when/if that happens.
 ```
 
-★ = blok-ovi postoje (1274 LOC ukupno), treba samo wire ka novoj LV3-1
-auto-converge petlji + LV3-2 Rust HTTP server. **LV3-2 SAD LANDED** —
+★ = blok-ovi postoje (1274 LOC ukupno), wired ka LV3-1 auto-converge
+petlji + LV3-2 Rust HTTP server. **LV3-2 LANDED + QA-1 ZATVOREN** —
 solver može da prebaci sa 50 ms/probe (CLI spawn) na 1–3 ms/probe
 (HTTP RTT) preko `sister-rust-http-client.mjs`.
 
-**LV3 progres: 3/14 (21%) · ostatak idu sledeće sesije.**
+**LV3 progres: 14/14 (100%) · sledeća tema na Boki signal.**
 
 Verify gate (post LV3-1 + LV3-13):
   test:auto-converge   19/19  ✓  (Newton 5 · Nelder-Mead 3 · solveRtp 6 +
