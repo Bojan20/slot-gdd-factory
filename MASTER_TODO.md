@@ -1,3 +1,105 @@
+## 📊 PAR-SHEET AUTONOMOUS INGEST — 2026-06-26 16:08 UTC · OTVOREN
+
+Boki direktiva (2026-06-26 16:00 UTC): *"Zapisi u master todo sve i kreni"* —
+nakon razgovora o tome šta je ultimativno rešenje kad nemamo original GDD za
+sve par sheet-ove. Suština: par sheet sadrži SVU matematiku (reel strips,
+paytable, feature math, hit frequency, RTP allocation). GDD je samo kozmetika
+(tema, capsule, UX strings). Bez GDD-a ne fali nam matematika — samo "ime
+jela na meniju". Sintetišemo UX iz par sheet metadata, math je real.
+
+### Realni inventar par sheet-ova (~/Desktop/ParSheets/)
+
+```
+┌─────────────────────────────────────────────────┬─────────────┬──────────┐
+│ Fajl                                              │ Veličina     │ GDD?     │
+├─────────────────────────────────────────────────┼─────────────┼──────────┤
+│ ParSheets_CashEruption 1.xlsx                    │  983 KB      │ ✅ ima   │
+│ ParSheets_FortuneCoinBoost_Classic.xlsx          │  748 KB      │ ❌ nema  │
+│ ParSheets_BookOfUnseen_BonusBuy.xlsx             │  295 KB      │ ❌ nema  │
+│ PARSheets_SkeletonKey.xlsx                       │  254 KB      │ ❌ nema  │
+│ PAR_Sheets_FortKnoxWolfRun.xlsx                  │  238 KB      │ ❌ nema  │
+└─────────────────────────────────────────────────┴─────────────┴──────────┘
+```
+
+### Atomi (5 koraka, jedan plan, bez biranja)
+
+```
+┌────────┬─────────────────────────────────────────────────────────┬──────────┐
+│ ID      │ Stavka                                                   │ Status    │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-1   │ xlsx structure discovery probe                           │ 📋 PLAN  │
+│         │   tools/_par-sheet-structure-probe.mjs — otvara sve 5    │          │
+│         │   par sheet-ova, mapira sheet imena, kolone, header      │          │
+│         │   shape, reel strip lokacije, paytable lokacije, fea-    │          │
+│         │   ture matrix. Output: reports/par-sheet-structure.json  │          │
+│         │   Razlog: par sheet format nije strict — svaki vendor    │          │
+│         │   ima drugačiju strukturu. Probe FIRST, parser POSLE.    │          │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-2   │ tools/_par-sheet-to-model.mjs — core parser              │ 📋 PLAN  │
+│         │   xlsx → reel strips + paytable + feature math →         │          │
+│         │   GameConfig (sister-repo shape) + universalGameSchema   │          │
+│         │   model.json. Stamp __schema_version__. Anti-vendor      │          │
+│         │   shield na svaki tekstualni field pre emit.              │          │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-3   │ tools/_synthetic-gdd-from-parsheet.mjs                   │ 📋 PLAN  │
+│         │   Generiše vendor-neutralan synthetic GDD MD iz par      │          │
+│         │   sheet metadata: slug-derived title ("Game-A 5x3"),     │          │
+│         │   capsule kind iz topology, default theme/tags, UX       │          │
+│         │   strings iz template-a. Output: samples/synthetic/      │          │
+│         │   <slug>_SYNTHETIC_GDD.md za audit/review.                │          │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-4   │ Batch ingest 5 par sheet-ova kroz pun pipeline:          │ 📋 PLAN  │
+│         │   xlsx → model.json → slot.html → cert-pack ZIP          │          │
+│         │   Per slug: dist/real-games/<slug>/ + reports/cert/      │          │
+│         │   <slug>.zip. Zero AI calls (pure deterministic).         │          │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-5   │ Convergence + RTP cert per slug                          │ 📋 PLAN  │
+│         │   Pokreni LV3-13 auto-converge solver preko LV3-2 HTTP   │          │
+│         │   daemona za svaki slug. Mereno RTP mora da bude unutar  │          │
+│         │   ±0.05% od deklarisanog u par sheet-u. Drift > band     │          │
+│         │   = WARN ne FAIL (par sheet je ground truth, naš        │          │
+│         │   merač možda treba kalibraciju). Cert-pack uključuje    │          │
+│         │   declared vs measured RTP komparaciju.                   │          │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-QA  │ Ultra-deep QA sa 3 paralelnih Explore agenata:          │ 📋 PLAN  │
+│         │   - parser audit (xlsx edge cases, encoding, formula     │          │
+│         │     vs value reads, empty cell handling)                  │          │
+│         │   - math audit (RTP calc, hit rate, feature allocation,  │          │
+│         │     max-win cap respect)                                  │          │
+│         │   - cross-game audit (svih 5 slug, parity, vendor-neutr.)│          │
+└────────┴─────────────────────────────────────────────────────────┴──────────┘
+```
+
+### Garancije
+
+```
+┌──────────────────────────────────┬─────────────────────────────────────────┐
+│ Garancija                         │ Mehanizam                                │
+├──────────────────────────────────┼─────────────────────────────────────────┤
+│ Zero vendor branding u repo       │ Anti-vendor shield (LV3-11) auto-saniše │
+│ Reproducibility                   │ Par sheet SHA256 pin u manifest          │
+│ Schema drift safety               │ __schema_version__ stamp na model.json   │
+│ Math precision                    │ ±0.05% band (LV3-13 + LV3-2 daemon)      │
+│ Audit trail                       │ Cert-pack ZIP per slug (LV3-7)           │
+│ Zero AI dependence                │ Pure deterministic, nula LLM poziva      │
+└──────────────────────────────────┴─────────────────────────────────────────┘
+```
+
+### DoD (Definition of Done)
+
+```
+✅ 5/5 par sheet-ova generišu validan model.json + slot.html
+✅ Anti-vendor lint: 0 vendor mentions u emitted output-u
+✅ Convergence solver: per slug declared vs measured RTP delta ≤ ±0.05 pp
+✅ Block liveness: 0 DEAD blokova × 5 slug = 0 cell
+✅ Cert-pack ZIP per slug u reports/cert/<slug>.zip
+✅ Verify gate dodaje step "par-sheet-ingest" — 5/5 pass
+✅ 3-paralelni QA audit prošao bez P0/P1 findings
+✅ MASTER_TODO closeout sa hash pin posle svakog atoma
+```
+
+---
+
 ## 🏆 SAVRŠENO BEZ IJEDNE GREŠKE — 5-FAZNI PLAN (2026-06-26 15:42 UTC · ACTIVE)
 
 Boki direktiva (2026-06-26 13:15 UTC): *"mora da bude savrsen i da radi
