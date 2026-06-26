@@ -53,20 +53,64 @@ jela na meniju". Sintetišemo UX iz par sheet metadata, math je real.
 │         │   Per slug: dist/real-games/<slug>/ + reports/cert/      │          │
 │         │   <slug>.zip. Zero AI calls (pure deterministic).         │          │
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
-│ PAR-5   │ Convergence + RTP cert per slug                          │ 📋 PLAN  │
-│         │   Pokreni LV3-13 auto-converge solver preko LV3-2 HTTP   │          │
-│         │   daemona za svaki slug. Mereno RTP mora da bude unutar  │          │
-│         │   ±0.05% od deklarisanog u par sheet-u. Drift > band     │          │
-│         │   = WARN ne FAIL (par sheet je ground truth, naš        │          │
-│         │   merač možda treba kalibraciju). Cert-pack uključuje    │          │
-│         │   declared vs measured RTP komparaciju.                   │          │
+│ PAR-5   │ Convergence + RTP cert per slug (alat LANDED, math      │ ⚠️ PARTIAL│
+│         │   gap dokumentovan)                                       │           │
+│         │   ALAT: tools/_par-sheet-convergence.mjs (415 LOC)        │           │
+│         │   mapper: universalGameSchema → slot_sim::GameConfig +    │           │
+│         │   batch /spin × Wilson 99% CI + verdict ladder PASS/      │           │
+│         │   WARN/FAIL. Pun lanac radi end-to-end na sva 5 slug.    │           │
+│         │   GAP: measured RTP 95-985× preveliki — sister kernel    │           │
+│         │   hardkodira DEFAULT_TOTAL_BET_MC=1_000 bez per-line     │           │
+│         │   bet override. Industry par sheet pay = × per-line     │           │
+│         │   bet (ne × total), pa kernel mnozi previse. Cross-     │           │
+│         │   repo fix = PAR-6 atom (sledeci).                       │           │
 ├────────┼─────────────────────────────────────────────────────────┼──────────┤
-│ PAR-QA  │ Ultra-deep QA sa 3 paralelnih Explore agenata:          │ 📋 PLAN  │
-│         │   - parser audit (xlsx edge cases, encoding, formula     │          │
-│         │     vs value reads, empty cell handling)                  │          │
-│         │   - math audit (RTP calc, hit rate, feature allocation,  │          │
-│         │     max-win cap respect)                                  │          │
-│         │   - cross-game audit (svih 5 slug, parity, vendor-neutr.)│          │
+│ PAR-QA  │ Ultra-deep QA sa 3 paralelnih Explore agenata           │ ✅ LANDED │
+│         │   (commit 7832fd9 · 2026-06-26 16:10 UTC)                 │           │
+│         │   Findings + fixes:                                        │           │
+│         │   1. PAR-2 paytable extractor not implemented → 150 LOC   │           │
+│         │      added (Layout 1 Combinations + Layout 2 OAK grid)   │           │
+│         │      → 5/5 sheets emit 9-12 paytable rows                 │           │
+│         │   2. Skeleton Key RTP 75.89% (Base only) → 96.49% (Total) │           │
+│         │      sa Hold % weight promote 45 → 75                    │           │
+│         │   3. PAR-4 merge clobbered paytable.symbolId — fix:      │           │
+│         │      ako PAR-2 ima paytable, preserve oba paytable +     │           │
+│         │      symbols iz PAR-2 (id-space match)                    │           │
+│         │   4. Wild regex /^wild$|^w$/i → /^\\s*wild?s?(?:\\s*    │           │
+│         │      reels?)?\\s*$/i (broader vendor variants)            │           │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-6   │ Sister total_bet_mc request override + factory mapper    │ 📋 PLAN  │
+│         │ passes paylines × 1000 as total bet                       │           │
+│         │   ROOT CAUSE: sister/rust-sim/src/http_server.rs:94      │           │
+│         │   hardcodes DEFAULT_TOTAL_BET_MC=1_000. SpinRequest/     │           │
+│         │   BatchItem nemaju bet field. Posledica: paytable pays   │           │
+│         │   tretirani kao × total bet (treba × per-line bet) →     │           │
+│         │   PAR-5 mereni RTP 95-985× preveliki.                    │           │
+│         │   FIX:                                                    │           │
+│         │   - sister: dodaj total_bet_mc: Option<i64> u Spin/Batch │           │
+│         │     request shape; SimConfig override pre simulate_seed  │           │
+│         │   - factory mapper: prosledi total_bet_mc = paylines     │           │
+│         │     × 1000 (industry convention bet)                      │           │
+│         │   - PAR-5 verdict ladder converges sa measured ≈        │           │
+│         │     declared (±0.05% za base-game-only declared RTP-ove)│           │
+│         │   - WARN za games sa FS contribution u declared (cease   │           │
+│         │     gap ide na PAR-7)                                     │           │
+├────────┼─────────────────────────────────────────────────────────┼──────────┤
+│ PAR-7   │ FS reel strips + scatter award + scatter pays ingest    │ 📋 PLAN  │
+│         │   Skeleton Key + Cash Eruption HoldAndWin + Book of      │           │
+│         │   Unseen Bonus Buy → declared total RTP uključuje FS    │           │
+│         │   contribution koji PAR-5 base-game-only ne meri. Za     │           │
+│         │   pun ±0.05% convergence:                                 │           │
+│         │   - extract Free Spin reel weights (PAR-Bonus / FS_Reel  │           │
+│         │     sheet u par sheet-u)                                  │           │
+│         │   - extract scatter trigger probability + award schedule │           │
+│         │     (3/4/5 scatters → 10/20/30 FS u par sheet PAR-Bonus)│           │
+│         │   - extract scatter pays (na trigger spin scatter pay je │           │
+│         │     dodato pre FS award)                                  │           │
+│         │   - emit u model.parsheet.fs_weights + scatter_awards +  │           │
+│         │     scatter_pays                                          │           │
+│         │   - PAR-5 mapper postavlja sister free_spins.awards iz   │           │
+│         │     extracted scatter_awards umesto trenutnog empty {}   │           │
 └────────┴─────────────────────────────────────────────────────────┴──────────┘
 ```
 
@@ -100,6 +144,42 @@ Quality issues (PAR-QA target):
 
 PAR-3, PAR-4, PAR-5, PAR-QA još 📋 PLAN — sledeća sesija.
 ```
+
+### PAR-3 + PAR-4 + PAR-QA + PAR-5 closeout (2026-06-26 16:30→16:10 UTC)
+
+Commit chain:
+  7340f03  feat(PAR-3): vendor-neutral synthetic GDD generator
+  06f4761  feat(PAR-4 + MASTER_TODO): batch ingest pipeline
+  338c93b  fix(PAR-QA): sentinel-row + RTP regex + 100Spins cap (prvi ciklus)
+  7832fd9  feat(PAR-5 + PAR-QA-2/3): convergence solver + paytable extract +
+            Skeleton Key RTP fix + sister gap dokumentovan
+
+5/5 slot.html-ova playable u dist/par-sheet-slots/<slug>/slot.html.
+PAR-5 alat radi tehnicki ali sister bet-sizing gap blokira ground-truth
+convergence — to je PAR-6 atom.
+
+```
+┌─────────────────────────────────┬───────────┬──────────┬──────────┬─────────┐
+│ Slug                              │ Paytable   │ RTP%      │ Mereni     │ Verdict │
+│                                   │ rows       │ declared  │ RTP%       │         │
+├─────────────────────────────────┼───────────┼──────────┼──────────┼─────────┤
+│ cash-eruption                     │ 9          │ 96.00 %   │ 9 133 %    │ FAIL†   │
+│ skeleton-key                      │ 10         │ 96.49 %   │ 7 003 %    │ FAIL†   │
+│ fort-knox-wolf-run                │ 11         │ 96.44 %   │ 95 048 %   │ FAIL†   │
+│ book-of-unseen-bonus-buy          │ 9          │ 96.20 %   │ 39 446 %   │ FAIL†   │
+│ fortune-coin-boost-classic        │ 12         │ 95.01 %   │ 41 097 %   │ FAIL†   │
+└─────────────────────────────────┴───────────┴──────────┴──────────┴─────────┘
+
+† FAIL je iskreni odgovor — drift root cause = sister kernel
+  hardkodira total_bet_mc=1000 (1.0 credit total bet) regardless of
+  paylines. Sister-side fix = PAR-6.
+```
+
+Cortex-eyes audit svih 5 slot.html (file:// Playwright headless):
+  reels=5, cells=25, runOneBaseSpin OK, balance €1000→€999, 0
+  pageerror osim benign CSP frame-ancestors-via-meta warning.
+
+Verify gate: ALL 33 GATES GREEN posle svakog commita.
 
 ### Garancije
 
