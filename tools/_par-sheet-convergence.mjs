@@ -207,9 +207,19 @@ function mapModelToGameConfig(model) {
    * positions — equivalent to "every Mystery reveal as Wild" in real
    * play. Lossy (real Mystery reveal can pick LP/MP too, not just
    * Wild) but a sane approximation given single-wild_idx constraint. */
+  /* PAR-13-A + PAR-13-C: Mystery + Special Reel Set trigger cells →
+   * Wild remap. Skel Key Key cells trigger Special Reel Set FS bonus
+   * in real play (higher per-spin RTP than base). Sister kernel has
+   * no per-reel-set evaluator, so we approximate the contribution by
+   * treating Key cells as Wild substitutes — gives line wins where
+   * Key would otherwise sit as a non-paying junk symbol. */
+  const isSkelKey = /skeleton/i.test(model.slug || model.id || '');
+  const remapPattern = isSkelKey
+    ? /mystery|reveal|^key$/i
+    : /mystery|reveal/i;
   const mysteryIds = new Set(
     allSyms
-      .filter((s) => s.role === 'cash' && /mystery|reveal/i.test(s.name || ''))
+      .filter((s) => s.role === 'cash' && remapPattern.test(s.name || ''))
       .map((s) => s.id),
   );
   const remapToWild = (id) => mysteryIds.has(id) ? 'wild' : id;
