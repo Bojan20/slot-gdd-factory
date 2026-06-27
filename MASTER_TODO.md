@@ -242,18 +242,25 @@ Remaining factory residuals (all small, transition-period):
 │   │ unknown vendor formate) — N+2 FAZA 3       │ vendor xlsx → auto    │     │
 │   │                                            │ structure inference   │     │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
-│ 7 │ F5-a (CI/CD GitHub Actions ci.yml +       │ Verify svaki PR;      │ 3h  │
-│   │ branch protection main) — N+2 FAZA 5       │ no merge bez 33-step  │     │
+│ 7 │ F5-a (CI/CD GHA ci.yml + branch prot.)    │ ✅ LANDED             │ ✓   │
+│   │   tools/verify.mjs --ci flag (skips 8 FS/  │ verify:ci wired into  │     │
+│   │   sister-bound steps), npm run verify:ci   │ GHA ci.yml. Branch   │     │
+│   │   script. ci.yml step "Verify gate (CI-    │ protection doc:      │     │
+│   │   safe profile)" runs full ~60-step gate.  │ docs/BRANCH_PROTECT. │     │
+│   │   docs/BRANCH_PROTECTION.md = operator     │ Operator UI action.  │     │
+│   │   instructions (status check + linear      │ 18-assertion contract │     │
+│   │   history + ≥1 approval + non-bypassable). │ test green.           │     │
 └───┴──────────────────────────────────────────┴──────────────────────┴─────┘
 ```
 
-**Total preostalo do "savršenog ultimativnog stanja": ~14h efektivnog rada
-(PAR-14-D + PAR-14-F + PAR-14-H + PAR-14-I + PAR-14-J LANDED · cumulative
--12h u pet wave-a od inicijalnog ~26h). Sastav: F1 = ~6h, F3 + F5 = ~8h.
-PAR-14-I-FULL (real sweep loop u auto-tune) i PAR-14-J-FUTURE (pravi nov
-neviđen 6. par sheet) ostaju deferred enhancement. Trenutno orchestrator
-pipeline dovoljno robustno za 0-touch 6/6 PASS na bilo kom xlsx-u koji
-prođe ingest stadium (E2E 6 slugs × 5M × 4 = ~5 min wall).**
+**Total preostalo do "savršenog ultimativnog stanja": ~11h efektivnog rada
+(PAR-14-D/F/H/I/J + F5-a LANDED · cumulative -15h u šest wave-a od
+inicijalnog ~26h). Sastav: F1 = ~6h, F3 = ~5h. PAR-14-I-FULL i
+PAR-14-J-FUTURE ostaju deferred. F5 atom (CI/CD + branch protection) sad
+ima operator-facing dokumentaciju + verify:ci CI-safe profile koji se
+izvršava na svakom PR-u (~60 od ~70 koraka; sister-repo/FS-bound 8
+preskočeni). Branch protection toggle = single UI click u GitHub
+settings (instructions u docs/BRANCH_PROTECTION.md).**
 
 ---
 

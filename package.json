@@ -133,6 +133,7 @@
     "prod:build": "node tools/prod-build.mjs",
     "verify": "node tools/verify.mjs",
     "verify:quick": "node tools/verify.mjs --quick",
+    "verify:ci": "node tools/verify.mjs --ci --quick",
     "precommit:install": "node tools/install-precommit.mjs"
   },
   "devDependencies": {

@@ -57,6 +57,21 @@ const REPO = resolve(__dirname, '..');
 const args = process.argv.slice(2);
 const QUICK = args.includes('--quick');
 const JSON_OUT = args.includes('--json');
+/* F5-a (Boki 2026-06-27): CI-safe profile. Skips steps that require
+ * resources only available on the local workstation:
+ *   - ~/Desktop/GDD/ corpus            (STRESS-TEST-INGEST)
+ *   - sister repo slot-math-engine-template/ at peer dir
+ *     (B / B+ / B++ / B+++++ KERNEL BRIDGES, sister probes)
+ *   - Chromium + baked block-coverage walker baseline at absolute paths
+ *     (UQ-MASTERY block liveness audit)
+ *   - V9 vision wire artefacts at dist/ingest/
+ *     (V9 INGEST WIRE)
+ *   - UQ-11 render smoke (already gated by --quick)
+ *
+ * Steps that work on any stateless Ubuntu runner remain enabled. This
+ * surface is targeted at GitHub Actions; local pre-commit still uses
+ * the full verify gate. */
+const CI = args.includes('--ci');
 
 const results = [];
 
@@ -667,9 +682,11 @@ if (existsSync(ingestE2ETest)) {
  * deterministic Python kernels via JSON IPC. Graceful skip when sister
  * repo unavailable in CI. Live: 22 kernel modules callable. */
 const kernelBridgeTest = resolve(REPO, 'tests/contracts/math-kernel-bridge.test.mjs');
-if (existsSync(kernelBridgeTest)) {
+if (existsSync(kernelBridgeTest) && !CI) {
   run('B — MATH KERNEL BRIDGE contract (sister-repo Python kernel handshake)',
     'node', [kernelBridgeTest]);
+} else if (CI && existsSync(kernelBridgeTest)) {
+  if (!JSON_OUT) console.log('  ⏭ B — MATH KERNEL BRIDGE (--ci: sister-repo unavailable)');
 }
 
 /* ── Step 4.97y5: B+ — H&W kernel pre-flight bridge (LIVE analytical RTP)
@@ -679,9 +696,11 @@ if (existsSync(kernelBridgeTest)) {
  * grade) instead of the heuristic Markov walker. Cache-backed so
  * repeated calls on same model are instant. */
 const hwKernelBridgeTest = resolve(REPO, 'tests/contracts/holdandwin-kernel-bridge.test.mjs');
-if (existsSync(hwKernelBridgeTest)) {
+if (existsSync(hwKernelBridgeTest) && !CI) {
   run('B+ — H&W KERNEL BRIDGE (money_collect analytical RTP via Python runner)',
     'node', [hwKernelBridgeTest]);
+} else if (CI && existsSync(hwKernelBridgeTest)) {
+  if (!JSON_OUT) console.log('  ⏭ B+ — H&W KERNEL BRIDGE (--ci: sister-repo Python unavailable)');
 }
 
 /* ── Step 4.97y6: B++ — Cluster-pays kernel bridge contract
@@ -690,9 +709,11 @@ if (existsSync(hwKernelBridgeTest)) {
  * distribution generator (percolation approximation) when empirical PAR
  * data unavailable; uses operator-supplied distribution when present. */
 const clusterKernelBridgeTest = resolve(REPO, 'tests/contracts/cluster-kernel-bridge.test.mjs');
-if (existsSync(clusterKernelBridgeTest)) {
+if (existsSync(clusterKernelBridgeTest) && !CI) {
   run('B++ — CLUSTER KERNEL BRIDGE (analytical cluster RTP via Python runner)',
     'node', [clusterKernelBridgeTest]);
+} else if (CI && existsSync(clusterKernelBridgeTest)) {
+  if (!JSON_OUT) console.log('  ⏭ B++ — CLUSTER KERNEL BRIDGE (--ci: sister-repo Python unavailable)');
 }
 
 /* ── Step 4.97y6.5: D+3 — Slingo evaluator (vendor-neutral pattern pay)
@@ -763,9 +784,11 @@ if (existsSync(vendorParTest)) {
  * cluster kernels alongside heuristic measurement, prints analytical
  * RTP for audit. Graceful skip when sister repo unavailable. */
 const probeKernelTest = resolve(REPO, 'tests/contracts/probe-kernel-preflight.test.mjs');
-if (existsSync(probeKernelTest)) {
+if (existsSync(probeKernelTest) && !CI) {
   run('B+++ — PROBE --kernel-preflight (analytical RTP alongside heuristic)',
     'node', [probeKernelTest]);
+} else if (CI && existsSync(probeKernelTest)) {
+  if (!JSON_OUT) console.log('  ⏭ B+++ — PROBE --kernel-preflight (--ci: sister-repo Python unavailable)');
 }
 
 /* ── Step 4.97y9: B++++ — Probe per-component RTP invariant
@@ -790,9 +813,11 @@ if (existsSync(componentInvariantTest)) {
  *   2 inverse solvers: inverse_solver (1D), multi_dim_inverse_solver (N-D)
  * Total: 24/24 sub-assertions across all 22 kernels. */
 const extraKernelTest = resolve(REPO, 'tests/contracts/extra-kernel-bridges.test.mjs');
-if (existsSync(extraKernelTest)) {
+if (existsSync(extraKernelTest) && !CI) {
   run('B+++++ — EXTRA KERNEL BRIDGES (22/22 sister-repo kernels + 2 solvers)',
     'node', [extraKernelTest]);
+} else if (CI && existsSync(extraKernelTest)) {
+  if (!JSON_OUT) console.log('  ⏭ B+++++ — EXTRA KERNEL BRIDGES (--ci: sister-repo Python unavailable)');
 }
 
 /* ── Step 4.97y11: KERNEL REGISTRY discovery API
@@ -1025,9 +1050,11 @@ if (existsSync(v8WireTest)) {
  * marker mounted). Sa wire-om, svaki ingest emit-uje deterministic
  * structural verdict pre nego što HTML stigne do operatora. */
 const v9WireTest = resolve(REPO, 'tests/contracts/v9-ingest-wire.test.mjs');
-if (existsSync(v9WireTest)) {
+if (existsSync(v9WireTest) && !CI) {
   run('V9 INGEST WIRE (library export + meta tag + dashboard panel + clean/broken HTML fixtures)',
     'node', [v9WireTest]);
+} else if (CI && existsSync(v9WireTest)) {
+  if (!JSON_OUT) console.log('  ⏭ V9 INGEST WIRE (--ci: dist/ingest/ artefacts FS-bound)');
 }
 
 /* ── Step 4.97y30: STRESS-TEST-INGEST (N+1 C) ─────────────────────────
@@ -1044,9 +1071,11 @@ if (existsSync(v9WireTest)) {
  * regresija desi za neki budući PDF, ovaj alat je hvata. Test ide na
  * --limit 5 (~30s) za brzu CI-prolaznost; pun 338-PDF run ide ručno. */
 const stressTest = resolve(REPO, 'tests/contracts/stress-test-ingest.test.mjs');
-if (existsSync(stressTest)) {
+if (existsSync(stressTest) && !CI) {
   run('STRESS-TEST-INGEST (--limit 5 smoke · JSON+MD reports · cleanup contract · --keep retention)',
     'node', [stressTest]);
+} else if (CI && existsSync(stressTest)) {
+  if (!JSON_OUT) console.log('  ⏭ STRESS-TEST-INGEST (--ci: ~/Desktop/GDD corpus FS-bound)');
 }
 
 /* ── Step 4.97y31: UQ-DEEP-A edge-case hardening (paralel-agent audit) ─
@@ -1227,9 +1256,11 @@ if (existsSync(trainerV2)) {
  * any future regression where a block exists in src/blocks/ but slips
  * out of the build pipeline (orphan block, dead UI). */
 const livenessTool = resolve(REPO, 'tools/_block-liveness-walker.mjs');
-if (existsSync(livenessTool)) {
+if (existsSync(livenessTool) && !CI) {
   run('UQ-MASTERY block liveness audit (0 DEAD blokova)',
     'node', [livenessTool]);
+} else if (CI && existsSync(livenessTool)) {
+  if (!JSON_OUT) console.log('  ⏭ UQ-MASTERY block liveness (--ci: baked walker baseline FS-bound)');
 }
 
 /* ── Step 5: UQ-11 render smoke on a 20-GDD subset ──────────────────── */

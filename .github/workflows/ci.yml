@@ -165,6 +165,31 @@ jobs:
       - name: IXF deep coverage walker (drift gate)
         run: npm run audit:ixf
 
+      # F5-a (Boki 2026-06-27) — CI-safe verify profile. `verify:ci`
+      # invokes tools/verify.mjs with --ci --quick: runs the full ~70-
+      # step verify orchestrator BUT skips the local-fs / sister-repo /
+      # chromium-dependent steps that can't reproduce on a stateless
+      # Ubuntu runner.
+      #
+      # Skipped under --ci (8 steps):
+      #   B / B+ / B++ / B+++ / B+++++  — sister-repo Python kernel
+      #     bridges. Sister checkout is not present on the runner.
+      #   V9 INGEST WIRE                — needs dist/ingest/<slug>/
+      #     artefacts that the CI install can't reproduce in time.
+      #   STRESS-TEST-INGEST            — walks ~/Desktop/GDD/ corpus.
+      #   UQ-MASTERY block liveness     — baked walker baseline lives at
+      #     an absolute local path; Chromium dep.
+      #
+      # The remaining steps cover: archetype catalog, parser, scaffolding,
+      # ingest tool, UQ-FORTIFY*, semantic verifier, UQ-CASH/COVER/TRAIN,
+      # V8/V9 contract suites (in-tree fixtures), MATH compliance walker,
+      # MATH-PRECISION calibrator, kernel registry, anti-vendor lint,
+      # web dashboard, GDD one-pager, and the batched 7-suite contract
+      # runner. ~60 steps run; ~8 skip. Failure surface for everything
+      # CI-reproducible stays full-fat.
+      - name: Verify gate (CI-safe profile)
+        run: npm run verify:ci
+
       # UQ-U-8 P1 — on failure, write a step-summary block listing the
       # job + commit + which step failed (GitHub picks up automatically
       # via the linked step result). Plus upload reports/ as artifact
