@@ -70,6 +70,14 @@ import { fileURLToPath } from 'node:url';
 
 import { detectMechanics } from './_par-sheet-classifier-lib.mjs';
 import { deriveSlug } from './_par-sheet-to-model.mjs';
+/* F3-a (Boki 2026-06-27): inference engine for unknown-vendor xlsx.
+ * Stage 1.5 (INFER) runs between INGEST and CLASSIFY when an --xlsx
+ * path is provided, emitting a per-sheet kind classification + vendor
+ * signature + RTP/paytable/reel anchors. Pure best-effort: results land
+ * in the receipt under stages.infer, never block downstream stages. */
+import { inferStructure } from './_par-sheet-inference-engine.mjs';
+import XLSXPkg from 'xlsx';
+const XLSX = XLSXPkg.default ?? XLSXPkg;
 
 const __filename = fileURLToPath(import.meta.url);
 const REPO = resolve(dirname(__filename), '..');
@@ -121,6 +129,38 @@ async function stageIngest(xlsxPath) {
     '--out', PAR_MODELS_DIR,
   ]);
   return { wallMs: Date.now() - t0 };
+}
+
+/**
+ * F3-a stage INFER: best-effort structural inference on the raw xlsx.
+ * Runs in-process via the engine's pure exports — no extra child spawn.
+ * Receipt carries vendor signature + anchor confidence so audit can see
+ * which sheets the orchestrator considered authoritative for each
+ * downstream extractor.
+ *
+ * Pure best-effort: failure to infer is NOT a pipeline halt — receipt
+ * just records the error in stages.infer.error and lets stage CLASSIFY
+ * proceed.
+ */
+function stageInfer(xlsxPath) {
+  const t0 = Date.now();
+  try {
+    const wb = XLSX.readFile(xlsxPath, { cellDates: false, cellNF: false });
+    const inference = inferStructure(wb);
+    return {
+      wallMs: Date.now() - t0,
+      vendor: inference.vendor,
+      anchorsResolved: inference.summary.anchorsResolved,
+      sheetCount: inference.summary.sheetCount,
+      crossCorrelation: inference.crossCorrelation,
+      anchors: inference.anchors,
+    };
+  } catch (e) {
+    return {
+      wallMs: Date.now() - t0,
+      error: e.message,
+    };
+  }
 }
 
 function stageClassify(slug) {
@@ -200,6 +240,14 @@ async function runPipeline(slug, opts) {
     timestamp: new Date().toISOString(),
     stages: {},
   };
+
+  /* Stage 1.5 (F3-a): INFER — best-effort structural inference on the
+   * raw xlsx file. Only runs when opts.xlsx is provided (--xlsx path);
+   * --slug / --all paths skip it since the source xlsx isn't on hand
+   * after stage 1 ingest. */
+  if (opts.xlsx) {
+    receipt.stages.infer = stageInfer(opts.xlsx);
+  }
 
   /* Stage 2: CLASSIFY */
   receipt.stages.classify = stageClassify(slug);
@@ -315,6 +363,7 @@ if (__isCliEntry) {
 
 export {
   parseArgs,
+  stageInfer,
   stageClassify,
   stageAutoTune,
   stageConverge,

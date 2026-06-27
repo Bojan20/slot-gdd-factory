@@ -238,9 +238,16 @@ Remaining factory residuals (all small, transition-period):
 │   │ walker + DOM invariant gate + verify       │ presentation +        │     │
 │   │ step 34) — N+2 FAZA 1                      │ runtime od regresije  │     │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
-│ 6 │ F3-a (PAR sheet inference engine za       │ Operator ubaci nov    │ 5h  │
-│   │ unknown vendor formate) — N+2 FAZA 3       │ vendor xlsx → auto    │     │
-│   │                                            │ structure inference   │     │
+│ 6 │ F3-a (PAR sheet inference engine za       │ ✅ LANDED             │ ✓   │
+│   │ unknown vendor formate) — N+2 FAZA 3       │ Multi-kind sheet      │     │
+│   │   tools/_par-sheet-inference-engine.mjs    │ scoring + anchor      │     │
+│   │   Per-sheet kind scoring + RTP/paytable/   │ resolution + vendor   │     │
+│   │   reel anchors + vendor signature DB       │ DB (L&W, Pragmatic,   │     │
+│   │   (L&W, Pragmatic, IGT, Aristocrat) +      │ IGT, Aristocrat).     │     │
+│   │   cross-correlation paytable↔reels. Pipe-  │ Best-effort INFER     │     │
+│   │   line stages.infer best-effort wire,      │ stage 1.5 u pipeline. │     │
+│   │   never blocks downstream. 18 assertions   │ 18-assertion contract │     │
+│   │   contract test on 4 portfolio par sheets. │ test green.           │     │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
 │ 7 │ F5-a (CI/CD GHA ci.yml + branch prot.)    │ ✅ LANDED             │ ✓   │
 │   │   tools/verify.mjs --ci flag (skips 8 FS/  │ verify:ci wired into  │     │
@@ -253,14 +260,14 @@ Remaining factory residuals (all small, transition-period):
 └───┴──────────────────────────────────────────┴──────────────────────┴─────┘
 ```
 
-**Total preostalo do "savršenog ultimativnog stanja": ~11h efektivnog rada
-(PAR-14-D/F/H/I/J + F5-a LANDED · cumulative -15h u šest wave-a od
-inicijalnog ~26h). Sastav: F1 = ~6h, F3 = ~5h. PAR-14-I-FULL i
-PAR-14-J-FUTURE ostaju deferred. F5 atom (CI/CD + branch protection) sad
-ima operator-facing dokumentaciju + verify:ci CI-safe profile koji se
-izvršava na svakom PR-u (~60 od ~70 koraka; sister-repo/FS-bound 8
-preskočeni). Branch protection toggle = single UI click u GitHub
-settings (instructions u docs/BRANCH_PROTECTION.md).**
+**Total preostalo do "savršenog ultimativnog stanja": ~6h efektivnog rada
+(PAR-14-D/F/H/I/J + F5-a + F3-a LANDED · cumulative -20h u sedam wave-a
+od inicijalnog ~26h). Sastav: F1 = ~6h. PAR-14-I-FULL i PAR-14-J-FUTURE
+ostaju deferred. F3-a inference engine sad emituje vendor signature +
+RTP/paytable/reel anchors + per-sheet kind scores za bilo koji xlsx
+(L&W, Pragmatic, IGT, Aristocrat patterni + generic fallback) — operator
+ubaci nepoznat vendor xlsx, dobija structural inference receipt pre
+nego što extractor uopšte krene.**
 
 ---
 
