@@ -15,8 +15,8 @@
 │  #2  │ Mystery Reveal hook           │ ✅ RUNTIME   │ slot-sim f414d5c    │
 │  #3  │ Multi-Scenario HnW            │ ✅ RUNTIME   │ slot-sim 5edda7e    │
 │  #4  │ Wild Expand spatial mechanic  │ ✅ RUNTIME   │ slot-sim e416cb4   │
-│  #5  │ Special Reel Set evaluator    │ 🟡 SCHEMA    │ slot-sim 01a7aca   │
-│  #6  │ Coin Boost multiplier         │ 🟡 SCHEMA    │ slot-sim 29f5414   │
+│  #5  │ Special Reel Set evaluator    │ ✅ RUNTIME   │ slot-sim def854d   │
+│  #6  │ Coin Boost multiplier         │ ✅ RUNTIME   │ slot-sim 691db8d   │
 └──────┴─────────────────────────────┴─────────────┴─────────────────────┘
 ```
 
