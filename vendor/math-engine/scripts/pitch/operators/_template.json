@@ -1,0 +1,31 @@
+{
+  "operatorId": "custom",
+  "displayName": "_<OperatorDisplayName>_",
+  "legalName": "_<OperatorLegalName>_",
+  "shortName": "_<OperatorShortName>_",
+  "hqLocation": "_<City, Country>_",
+  "tickerSymbol": null,
+  "primaryColor": "#22d3ee",
+  "accentColor": "#0e7490",
+  "industryRank": null,
+  "estimatedRevenue": "_<USD est>_",
+  "tier": "Tier-2",
+  "contactRole": "_<Title>_",
+  "contactName": "_<replace-with-AE-name>_",
+  "contactEmail": "_<replace-with-AE-email>_",
+  "typicalTitle": "_<flagship slot name>_",
+  "portfolioSize": 0,
+  "annualReleases": 0,
+  "certLabsUsed": ["GLI"],
+  "jurisdictions": ["UKGC"],
+  "rtpStandard": "94.0% - 96.5%",
+  "competitorTo": [],
+  "decisionMakerRole": "_<Decision maker title>_",
+  "landingPageSlug": "custom-pilot",
+  "pricingTierLabel": "Tier-2 Studio",
+  "samplePricing": {
+    "pilotUSD": 50000,
+    "yearOneLicenseUSD": 250000,
+    "perSpinCostMills": 0.10
+  }
+}

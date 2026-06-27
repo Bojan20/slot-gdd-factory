@@ -1,0 +1,31 @@
+{
+  "operatorId": "igt",
+  "displayName": "Vendor A",
+  "legalName": "Vendor A PLC",
+  "shortName": "Vendor A",
+  "hqLocation": "London, UK / Providence, RI, USA",
+  "tickerSymbol": "Vendor A",
+  "primaryColor": "#1d4ed8",
+  "accentColor": "#1e3a8a",
+  "industryRank": 3,
+  "estimatedRevenue": "$2.5B",
+  "tier": "Tier-1",
+  "contactRole": "Slot Math Lead",
+  "contactName": "_<replace-with-Vendor A-AE-name>_",
+  "contactEmail": "_<replace-with-Vendor A-AE-email>_",
+  "typicalTitle": "Wheel of Fortune Triple Action Frenzy",
+  "portfolioSize": 900,
+  "annualReleases": 60,
+  "certLabsUsed": ["GLI", "BMM"],
+  "jurisdictions": ["NV", "NJ", "MI", "PA", "UKGC", "MGA"],
+  "rtpStandard": "85.0% - 96.0%",
+  "competitorTo": ["Vendor B", "Vendor C"],
+  "decisionMakerRole": "Director of Game Mathematics",
+  "landingPageSlug": "igt-pilot",
+  "pricingTierLabel": "Tier-1 Enterprise",
+  "samplePricing": {
+    "pilotUSD": 130000,
+    "yearOneLicenseUSD": 800000,
+    "perSpinCostMills": 0.13
+  }
+}

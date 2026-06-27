@@ -1,0 +1,55 @@
+{
+  "name": "@slot-math-engine/sdk",
+  "version": "0.1.0",
+  "description": "Public SDK for slot-math-engine — REST client + IR builder + kernel authoring helpers.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
+    },
+    "./client": {
+      "import": "./dist/client.js",
+      "types": "./dist/client.d.ts"
+    },
+    "./kernel-author": {
+      "import": "./dist/kernel-author.js",
+      "types": "./dist/kernel-author.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "publish:dry": "npm publish --dry-run --access public"
+  },
+  "keywords": [
+    "slot",
+    "math",
+    "engine",
+    "sdk",
+    "rtp",
+    "ir",
+    "kernel"
+  ],
+  "author": "slot-math-engine core team",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

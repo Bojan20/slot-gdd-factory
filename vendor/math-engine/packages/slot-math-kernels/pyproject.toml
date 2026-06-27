@@ -1,0 +1,65 @@
+# ─── slot-math-kernels — distributable W244 closed-form math fleet ────
+# Standalone PyPI package extracting the W244 math kernel fleet from
+# `slot-math-engine-template` monorepo. Allows external operators
+# (math designers, regulator labs, audit firms) to `pip install` and
+# import the closed-form RTP kernels without cloning the full repo.
+#
+# Coverage: 20 closed-form math kernels (money_collect, charge_meter,
+# must_hit_by, pick_chain, buy_feature, wheel, state_machine,
+# expanding_symbol, persistent_multiplier, cascade, cluster_pays,
+# sticky_wilds, stacked_wilds, ways_evaluator, pay_anywhere,
+# both_ways, asymmetric_paytable, hold_and_win (composed),
+# crash_kernel, inverse_solver, multi_dim_inverse_solver).
+#
+# All pure-stdlib — NO numpy / scipy / sympy / z3-solver dependencies.
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "slot-math-kernels"
+version = "1.0.0"
+description = "20 closed-form slot math kernels (RTP, jackpot, FS, cluster, cascade, ways, etc.) — pure-stdlib, regulator-audit-ready."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Boki", email = "bojan.petkovic25@gmail.com" },
+]
+keywords = [
+    "slot", "gambling", "math", "rtp", "kernel", "closed-form",
+    "regulator", "merkle", "audit", "monte-carlo",
+    "newton-raphson", "markov", "binomial",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+# Zero external runtime dependencies — pure-stdlib by design.
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/Bojan20/slot-math-engine-template"
+Documentation = "https://github.com/Bojan20/slot-math-engine-template/blob/main/docs/W244_KERNEL_CATALOG.md"
+Repository = "https://github.com/Bojan20/slot-math-engine-template"
+Issues = "https://github.com/Bojan20/slot-math-engine-template/issues"
+
+[project.scripts]
+slot-math = "slot_math_kernels._cli:main"
+
+[project.optional-dependencies]
+# Acceptance test fixtures + parity check tooling.
+test = [
+    "pytest>=7.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["slot_math_kernels*"]

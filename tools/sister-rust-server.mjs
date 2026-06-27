@@ -61,10 +61,14 @@ import { resolve, sep, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 
-const DEFAULT_REPO = '~/Projects/slot-math-engine-template'.replace(
-  '~',
-  process.env.HOME || '',
-);
+/* JEDAN PROJEKAT (Boki 2026-06-27): vendored u slot-gdd-factory.
+ * Vendored Rust source: <gdd-repo>/vendor/math-engine/  (preferiramo).
+ * Legacy sister-repo: ~/Projects/slot-math-engine-template/ (fallback). */
+const HOME_DIR = process.env.HOME || '';
+const VENDORED_MATH_REPO = resolve(HOME_DIR, 'Projects', 'slot-gdd-factory', 'vendor', 'math-engine');
+const LEGACY_SISTER_REPO = resolve(HOME_DIR, 'Projects', 'slot-math-engine-template');
+const DEFAULT_REPO = existsSync(VENDORED_MATH_REPO) ? VENDORED_MATH_REPO : LEGACY_SISTER_REPO;
+const VENDOR_BIN_DIR = resolve(HOME_DIR, 'Projects', 'slot-gdd-factory', 'vendor', 'bin');
 const DEFAULT_TIMEOUT_MS = 60_000;
 
 /* Allowed-roots policy mirrored from rustExecutorAdapter (UQ-U-3 atom #2 +
@@ -101,6 +105,9 @@ function _validateBinary(abs) {
 function _candidatePath() {
   const explicit = (process.env.SLOT_RUST_BIN || '').trim();
   if (explicit) return resolve(explicit);
+  /* JEDAN PROJEKAT: vendor/bin/slot_sim ima prioritet ako je pre-built. */
+  const vendorBin = resolve(VENDOR_BIN_DIR, 'slot_sim');
+  if (existsSync(vendorBin)) return vendorBin;
   const repo = (process.env.SLOT_RUST_REPO || '').trim() || DEFAULT_REPO;
   return resolve(repo, 'rust-sim', 'target', 'release', 'slot_sim');
 }

@@ -1,0 +1,31 @@
+{
+  "operatorId": "pragmatic",
+  "displayName": "Vendor E",
+  "legalName": "Vendor E Limited",
+  "shortName": "Vendor E",
+  "hqLocation": "Sliema, Malta",
+  "tickerSymbol": null,
+  "primaryColor": "#f59e0b",
+  "accentColor": "#92400e",
+  "industryRank": 4,
+  "estimatedRevenue": "$700M",
+  "tier": "Tier-1",
+  "contactRole": "Head of Slot Mathematics",
+  "contactName": "_<replace-with-Pragmatic-AE-name>_",
+  "contactEmail": "_<replace-with-Pragmatic-AE-email>_",
+  "typicalTitle": "Sweet Bonanza 1000",
+  "portfolioSize": 350,
+  "annualReleases": 70,
+  "certLabsUsed": ["GLI", "BMM", "iTech Labs"],
+  "jurisdictions": ["MGA", "UKGC", "Romania", "Italy"],
+  "rtpStandard": "94.0% - 96.5%",
+  "competitorTo": ["Hacksaw", "Push Gaming"],
+  "decisionMakerRole": "Head of Math + Product",
+  "landingPageSlug": "pragmatic-pilot",
+  "pricingTierLabel": "Tier-1 Studio",
+  "samplePricing": {
+    "pilotUSD": 90000,
+    "yearOneLicenseUSD": 550000,
+    "perSpinCostMills": 0.10
+  }
+}

@@ -1,0 +1,763 @@
+{
+  "name": "Slot Math Template",
+  "version": "1.0",
+  "target_rtp": 96,
+  "reels": 5,
+  "rows": 3,
+  "paylines": [
+    [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    [
+      0,
+      1,
+      2,
+      1,
+      0
+    ],
+    [
+      2,
+      1,
+      0,
+      1,
+      2
+    ],
+    [
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      2,
+      2,
+      1,
+      2,
+      2
+    ],
+    [
+      1,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      2,
+      2,
+      2,
+      1
+    ],
+    [
+      0,
+      1,
+      1,
+      1,
+      0
+    ]
+  ],
+  "symbols": [
+    {
+      "id": "L1",
+      "name": "LP1",
+      "is_wild": false,
+      "is_scatter": false,
+      "is_bonus": false
+    },
+    {
+      "id": "L2",
+      "name": "LP2",
+      "is_wild": false,
+      "is_scatter": false,
+      "is_bonus": false
+    },
+    {
+      "id": "L3",
+      "name": "LP3",
+      "is_wild": false,
+      "is_scatter": false,
+      "is_bonus": false
+    },
+    {
+      "id": "L4",
+      "name": "LP4",
+      "is_wild": false,
+      "is_scatter": false,
+      "is_bonus": false
+    },
+    {
+      "id": "L5",
+      "name": "LP5",
+      "is_wild": false,
+      "is_scatter": false,
+      "is_bonus": false
+    },
+    {
+      "id": "H1",
+      "name": "HP1",
+      "is_wild": false,
+      "is_scatter": false,
+      "is_bonus": false
+    },
+    {
+      "id": "H2",
+      "name": "HP2",
+      "is_wild": false,
+      "is_scatter": false,
+      "is_bonus": false
+    },
+    {
+      "id": "H3",
+      "name": "HP3",
+      "is_wild": false,
+      "is_scatter": false,
+      "is_bonus": false
+    },
+    {
+      "id": "W",
+      "name": "Wild",
+      "is_wild": true,
+      "is_scatter": false,
+      "is_bonus": false
+    },
+    {
+      "id": "S",
+      "name": "Scatter",
+      "is_wild": false,
+      "is_scatter": true,
+      "is_bonus": false
+    },
+    {
+      "id": "B",
+      "name": "Bonus",
+      "is_wild": false,
+      "is_scatter": false,
+      "is_bonus": true
+    }
+  ],
+  "paytable": {
+    "L1": {
+      "pay3": 0.9,
+      "pay4": 2.9,
+      "pay5": 8.8
+    },
+    "L2": {
+      "pay3": 0.9,
+      "pay4": 2.9,
+      "pay5": 8.8
+    },
+    "L3": {
+      "pay3": 0.8,
+      "pay4": 2.2,
+      "pay5": 7.3
+    },
+    "L4": {
+      "pay3": 0.8,
+      "pay4": 2.2,
+      "pay5": 7.3
+    },
+    "L5": {
+      "pay3": 0.6,
+      "pay4": 1.8,
+      "pay5": 4.9
+    },
+    "H1": {
+      "pay3": 3.1,
+      "pay4": 12.2,
+      "pay5": 63
+    },
+    "H2": {
+      "pay3": 2.2,
+      "pay4": 8.8,
+      "pay5": 44
+    },
+    "H3": {
+      "pay3": 2,
+      "pay4": 7.3,
+      "pay5": 39
+    },
+    "W": {
+      "pay3": 3.1,
+      "pay4": 12.2,
+      "pay5": 63
+    }
+  },
+  "base_weights": [
+    [
+      {
+        "symbol": "H1",
+        "weight": 2
+      },
+      {
+        "symbol": "L1",
+        "weight": 9
+      },
+      {
+        "symbol": "L2",
+        "weight": 9
+      },
+      {
+        "symbol": "L3",
+        "weight": 9
+      },
+      {
+        "symbol": "L4",
+        "weight": 9
+      },
+      {
+        "symbol": "L5",
+        "weight": 8
+      },
+      {
+        "symbol": "B",
+        "weight": 7
+      },
+      {
+        "symbol": "W",
+        "weight": 3
+      },
+      {
+        "symbol": "S",
+        "weight": 2
+      },
+      {
+        "symbol": "H2",
+        "weight": 1
+      },
+      {
+        "symbol": "H3",
+        "weight": 1
+      }
+    ],
+    [
+      {
+        "symbol": "L1",
+        "weight": 9
+      },
+      {
+        "symbol": "H1",
+        "weight": 2
+      },
+      {
+        "symbol": "L2",
+        "weight": 9
+      },
+      {
+        "symbol": "L3",
+        "weight": 9
+      },
+      {
+        "symbol": "L4",
+        "weight": 9
+      },
+      {
+        "symbol": "L5",
+        "weight": 8
+      },
+      {
+        "symbol": "B",
+        "weight": 7
+      },
+      {
+        "symbol": "W",
+        "weight": 3
+      },
+      {
+        "symbol": "S",
+        "weight": 2
+      },
+      {
+        "symbol": "H2",
+        "weight": 1
+      },
+      {
+        "symbol": "H3",
+        "weight": 1
+      }
+    ],
+    [
+      {
+        "symbol": "H1",
+        "weight": 2
+      },
+      {
+        "symbol": "L1",
+        "weight": 9
+      },
+      {
+        "symbol": "L2",
+        "weight": 9
+      },
+      {
+        "symbol": "L3",
+        "weight": 9
+      },
+      {
+        "symbol": "L4",
+        "weight": 9
+      },
+      {
+        "symbol": "L5",
+        "weight": 8
+      },
+      {
+        "symbol": "B",
+        "weight": 7
+      },
+      {
+        "symbol": "W",
+        "weight": 3
+      },
+      {
+        "symbol": "S",
+        "weight": 2
+      },
+      {
+        "symbol": "H2",
+        "weight": 1
+      },
+      {
+        "symbol": "H3",
+        "weight": 1
+      }
+    ],
+    [
+      {
+        "symbol": "L1",
+        "weight": 9
+      },
+      {
+        "symbol": "H1",
+        "weight": 2
+      },
+      {
+        "symbol": "L2",
+        "weight": 9
+      },
+      {
+        "symbol": "L3",
+        "weight": 9
+      },
+      {
+        "symbol": "L4",
+        "weight": 9
+      },
+      {
+        "symbol": "L5",
+        "weight": 8
+      },
+      {
+        "symbol": "B",
+        "weight": 7
+      },
+      {
+        "symbol": "W",
+        "weight": 3
+      },
+      {
+        "symbol": "S",
+        "weight": 2
+      },
+      {
+        "symbol": "H2",
+        "weight": 1
+      },
+      {
+        "symbol": "H3",
+        "weight": 1
+      }
+    ],
+    [
+      {
+        "symbol": "H1",
+        "weight": 2
+      },
+      {
+        "symbol": "L1",
+        "weight": 9
+      },
+      {
+        "symbol": "L2",
+        "weight": 9
+      },
+      {
+        "symbol": "L3",
+        "weight": 9
+      },
+      {
+        "symbol": "L4",
+        "weight": 9
+      },
+      {
+        "symbol": "L5",
+        "weight": 8
+      },
+      {
+        "symbol": "B",
+        "weight": 7
+      },
+      {
+        "symbol": "W",
+        "weight": 3
+      },
+      {
+        "symbol": "S",
+        "weight": 2
+      },
+      {
+        "symbol": "H2",
+        "weight": 1
+      },
+      {
+        "symbol": "H3",
+        "weight": 1
+      }
+    ]
+  ],
+  "fs_weights": [
+    [
+      {
+        "symbol": "H1",
+        "weight": 1
+      },
+      {
+        "symbol": "L1",
+        "weight": 8
+      },
+      {
+        "symbol": "L2",
+        "weight": 8
+      },
+      {
+        "symbol": "L3",
+        "weight": 8
+      },
+      {
+        "symbol": "W",
+        "weight": 5
+      },
+      {
+        "symbol": "L4",
+        "weight": 6
+      },
+      {
+        "symbol": "L5",
+        "weight": 7
+      },
+      {
+        "symbol": "B",
+        "weight": 5
+      },
+      {
+        "symbol": "S",
+        "weight": 2
+      },
+      {
+        "symbol": "H2",
+        "weight": 1
+      },
+      {
+        "symbol": "H3",
+        "weight": 1
+      }
+    ],
+    [
+      {
+        "symbol": "L1",
+        "weight": 8
+      },
+      {
+        "symbol": "H1",
+        "weight": 1
+      },
+      {
+        "symbol": "L2",
+        "weight": 8
+      },
+      {
+        "symbol": "L3",
+        "weight": 8
+      },
+      {
+        "symbol": "W",
+        "weight": 5
+      },
+      {
+        "symbol": "L4",
+        "weight": 6
+      },
+      {
+        "symbol": "L5",
+        "weight": 7
+      },
+      {
+        "symbol": "B",
+        "weight": 5
+      },
+      {
+        "symbol": "S",
+        "weight": 2
+      },
+      {
+        "symbol": "H2",
+        "weight": 1
+      },
+      {
+        "symbol": "H3",
+        "weight": 1
+      }
+    ],
+    [
+      {
+        "symbol": "H1",
+        "weight": 1
+      },
+      {
+        "symbol": "L1",
+        "weight": 8
+      },
+      {
+        "symbol": "W",
+        "weight": 5
+      },
+      {
+        "symbol": "L2",
+        "weight": 8
+      },
+      {
+        "symbol": "L3",
+        "weight": 6
+      },
+      {
+        "symbol": "L4",
+        "weight": 7
+      },
+      {
+        "symbol": "L5",
+        "weight": 7
+      },
+      {
+        "symbol": "B",
+        "weight": 5
+      },
+      {
+        "symbol": "S",
+        "weight": 2
+      },
+      {
+        "symbol": "H2",
+        "weight": 1
+      },
+      {
+        "symbol": "H3",
+        "weight": 1
+      }
+    ],
+    [
+      {
+        "symbol": "L1",
+        "weight": 8
+      },
+      {
+        "symbol": "H1",
+        "weight": 1
+      },
+      {
+        "symbol": "L2",
+        "weight": 8
+      },
+      {
+        "symbol": "L3",
+        "weight": 8
+      },
+      {
+        "symbol": "W",
+        "weight": 5
+      },
+      {
+        "symbol": "L4",
+        "weight": 6
+      },
+      {
+        "symbol": "L5",
+        "weight": 7
+      },
+      {
+        "symbol": "B",
+        "weight": 5
+      },
+      {
+        "symbol": "S",
+        "weight": 2
+      },
+      {
+        "symbol": "H2",
+        "weight": 1
+      },
+      {
+        "symbol": "H3",
+        "weight": 1
+      }
+    ],
+    [
+      {
+        "symbol": "H1",
+        "weight": 1
+      },
+      {
+        "symbol": "L1",
+        "weight": 8
+      },
+      {
+        "symbol": "L2",
+        "weight": 8
+      },
+      {
+        "symbol": "L3",
+        "weight": 8
+      },
+      {
+        "symbol": "W",
+        "weight": 5
+      },
+      {
+        "symbol": "L4",
+        "weight": 6
+      },
+      {
+        "symbol": "L5",
+        "weight": 7
+      },
+      {
+        "symbol": "B",
+        "weight": 5
+      },
+      {
+        "symbol": "S",
+        "weight": 2
+      },
+      {
+        "symbol": "H2",
+        "weight": 1
+      },
+      {
+        "symbol": "H3",
+        "weight": 1
+      }
+    ]
+  ],
+  "free_spins": {
+    "awards": {
+      "3": 10,
+      "4": 12,
+      "5": 15
+    },
+    "mult_start": 1,
+    "mult_increment": 1,
+    "mult_max": 10,
+    "retrigger_enabled": true,
+    "scatter_pays": {
+      "3": 2,
+      "4": 5,
+      "5": 20
+    }
+  },
+  "hold_and_win": {
+    "trigger_count": 6,
+    "initial_respins": 3,
+    "respins_on_new_orb": 3,
+    "full_grid_bonus": 500,
+    "orb_values": [
+      {
+        "value": 1,
+        "weight": 608
+      },
+      {
+        "value": 2,
+        "weight": 225
+      },
+      {
+        "value": 3,
+        "weight": 87
+      },
+      {
+        "value": 5,
+        "weight": 40
+      },
+      {
+        "value": 7,
+        "weight": 18
+      },
+      {
+        "value": 10,
+        "weight": 8
+      },
+      {
+        "value": 12,
+        "weight": 6,
+        "jackpot": "MINI"
+      },
+      {
+        "value": 25,
+        "weight": 4,
+        "jackpot": "MINOR"
+      },
+      {
+        "value": 50,
+        "weight": 3,
+        "jackpot": "MAJOR"
+      },
+      {
+        "value": 150,
+        "weight": 1,
+        "jackpot": "GRAND"
+      }
+    ],
+    "orb_land_chance_base": 0.035,
+    "orb_land_chance_fill_bonus": 0.015
+  },
+  "lightning": {
+    "trigger_chance": 0.15,
+    "trigger_chance_fs": 0,
+    "multipliers": [
+      {
+        "value": 2,
+        "weight": 70
+      },
+      {
+        "value": 3,
+        "weight": 18
+      },
+      {
+        "value": 5,
+        "weight": 10
+      },
+      {
+        "value": 10,
+        "weight": 2
+      }
+    ]
+  },
+  "max_win_cap": 5000,
+  "feature_loop_cap": 100
+}

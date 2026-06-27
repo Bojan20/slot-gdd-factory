@@ -1,0 +1,31 @@
+{
+  "operatorId": "hacksaw",
+  "displayName": "Hacksaw Gaming",
+  "legalName": "Hacksaw Gaming AB",
+  "shortName": "Hacksaw",
+  "hqLocation": "Stockholm, Sweden",
+  "tickerSymbol": null,
+  "primaryColor": "#a855f7",
+  "accentColor": "#581c87",
+  "industryRank": 6,
+  "estimatedRevenue": "$120M",
+  "tier": "Tier-2",
+  "contactRole": "Head of Game Design",
+  "contactName": "_<replace-with-Hacksaw-AE-name>_",
+  "contactEmail": "_<replace-with-Hacksaw-AE-email>_",
+  "typicalTitle": "Le Pharaoh",
+  "portfolioSize": 80,
+  "annualReleases": 24,
+  "certLabsUsed": ["GLI", "iTech Labs"],
+  "jurisdictions": ["MGA", "UKGC", "Romania"],
+  "rtpStandard": "95.0% - 96.5%",
+  "competitorTo": ["Vendor E", "Nolimit City"],
+  "decisionMakerRole": "Head of Game Design + Math",
+  "landingPageSlug": "hacksaw-pilot",
+  "pricingTierLabel": "Tier-2 Studio",
+  "samplePricing": {
+    "pilotUSD": 60000,
+    "yearOneLicenseUSD": 300000,
+    "perSpinCostMills": 0.09
+  }
+}

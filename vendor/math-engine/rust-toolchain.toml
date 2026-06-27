@@ -1,0 +1,10 @@
+# Lock Rust toolchain for cross-platform reproducible builds.
+# The differential TS↔Rust parity tests (Faza 10.3) depend on every developer
+# and every CI runner producing byte-identical PCM / RTP output, which means
+# locking compiler version, target spec, and components.
+
+[toolchain]
+channel = "1.83.0"
+components = ["rustfmt", "clippy", "rust-src"]
+targets   = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"]
+profile   = "minimal"

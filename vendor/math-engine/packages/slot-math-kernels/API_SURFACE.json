@@ -1,0 +1,538 @@
+{
+  "asymmetric_paytable": {
+    "classes": {
+      "AsymmetricPaytableParams": [
+        "per_symbol_contributions"
+      ]
+    },
+    "functions": {
+      "asymmetric_paytable_rtp": [
+        "params"
+      ]
+    }
+  },
+  "both_ways": {
+    "classes": {
+      "BothWaysParams": [
+        "ltr_only_rtp",
+        "line_pay_share"
+      ]
+    },
+    "functions": {
+      "bidirectional_multiplier": [
+        "params"
+      ],
+      "both_ways_rtp": [
+        "params"
+      ]
+    }
+  },
+  "both_ways_expanding_wild": {
+    "classes": {
+      "BothWaysExpandingWildParams": [
+        "both_ways_params",
+        "expanding_params"
+      ]
+    },
+    "functions": {
+      "both_ways_expanding_wild_rtp": [
+        "params"
+      ]
+    }
+  },
+  "buy_feature": {
+    "classes": {
+      "BuyFeatureParams": [
+        "bonus_average_pay_x_bet",
+        "buy_cost_x_bet",
+        "base_game_rtp",
+        "target_buy_rtp"
+      ]
+    },
+    "functions": {
+      "buy_feature_audit": [
+        "params"
+      ],
+      "buy_rtp": [
+        "params"
+      ],
+      "delta_pp_vs_base": [
+        "params"
+      ],
+      "fair_buy_cost_x_bet": [
+        "params"
+      ],
+      "mga_2021_02_pass": [
+        "params",
+        "ceiling_rtp"
+      ],
+      "ukgc_rts13c_pass": [
+        "params",
+        "tolerance_pp"
+      ]
+    }
+  },
+  "cascade": {
+    "classes": {
+      "CascadeParams": [
+        "p_initial_win",
+        "base_pay_per_cascade_x_bet",
+        "p_win_per_cascade",
+        "multiplier_ladder",
+        "max_chain"
+      ]
+    },
+    "functions": {
+      "cascade_rtp": [
+        "params"
+      ],
+      "expected_chain_length": [
+        "params"
+      ],
+      "expected_pay_per_trigger": [
+        "params"
+      ]
+    }
+  },
+  "charge_meter": {
+    "classes": {
+      "ChargeMeterParams": [
+        "expected_charge_per_spin",
+        "tiers",
+        "persistent_across_sessions"
+      ],
+      "ChargeTier": [
+        "name",
+        "threshold",
+        "award_value_x_bet",
+        "award_kind"
+      ]
+    },
+    "functions": {
+      "charge_meter_rtp": [
+        "params"
+      ],
+      "expected_charge_from_distribution": [
+        "dist"
+      ],
+      "rtp_contribution_per_tier": [
+        "expected_charge_per_spin",
+        "tier"
+      ]
+    }
+  },
+  "cluster_pays": {
+    "classes": {
+      "ClusterPaysParams": [
+        "cluster_count_distribution",
+        "pay_table",
+        "min_cluster_size",
+        "grid_rows",
+        "grid_cols",
+        "adjacency"
+      ]
+    },
+    "functions": {
+      "cluster_pays_rtp": [
+        "params"
+      ],
+      "expected_pay_per_spin": [
+        "params"
+      ]
+    }
+  },
+  "crash_kernel": {
+    "classes": {
+      "CrashParams": [
+        "house_edge",
+        "cashout_multiplier"
+      ]
+    },
+    "functions": {
+      "crash_audit": [
+        "params",
+        "bankroll_x_bet"
+      ],
+      "expected_rounds_to_ruin": [
+        "params",
+        "bankroll_x_bet"
+      ],
+      "probability_of_crash_below": [
+        "house_edge",
+        "m"
+      ],
+      "probability_of_win": [
+        "params"
+      ],
+      "rtp": [
+        "params"
+      ],
+      "variance_per_round": [
+        "params"
+      ]
+    }
+  },
+  "expanding_symbol": {
+    "classes": {
+      "ExpandingSymbolParams": [
+        "fs_trigger_p",
+        "fs_initial_spins",
+        "reels",
+        "rows",
+        "p_per_cell_in_fs",
+        "pay_table",
+        "symbol_name"
+      ]
+    },
+    "functions": {
+      "expanding_symbol_rtp": [
+        "params"
+      ],
+      "expected_pay_per_fs_spin": [
+        "params"
+      ],
+      "expected_pay_per_trigger": [
+        "params"
+      ],
+      "expected_reels_expanded": [
+        "p_per_cell",
+        "reels",
+        "rows"
+      ],
+      "reel_expansion_probability": [
+        "p_per_cell",
+        "rows"
+      ]
+    }
+  },
+  "hold_and_win": {
+    "classes": {
+      "HoldAndWinParams": [
+        "money_params",
+        "jackpot_pots"
+      ]
+    },
+    "functions": {
+      "hold_and_win_rtp": [
+        "params"
+      ]
+    }
+  },
+  "inverse_solver": {
+    "classes": {
+      "SolveResult": [
+        "converged",
+        "iterations",
+        "final_param",
+        "final_rtp",
+        "error",
+        "target_rtp",
+        "history"
+      ]
+    },
+    "functions": {
+      "bisection_1d": [
+        "rtp_func",
+        "target_rtp",
+        "param_lo",
+        "param_hi",
+        "tolerance",
+        "max_iterations"
+      ],
+      "newton_raphson_1d": [
+        "rtp_func",
+        "gradient_func",
+        "target_rtp",
+        "initial_guess",
+        "tolerance",
+        "max_iterations",
+        "param_lo",
+        "param_hi"
+      ]
+    }
+  },
+  "money_collect": {
+    "classes": {
+      "MoneyCollectParams": [
+        "p_per_cell",
+        "n_cells",
+        "trigger_count_min",
+        "value_table",
+        "respins_reset",
+        "grid_cap"
+      ]
+    },
+    "functions": {
+      "expected_episode_total_value": [
+        "params",
+        "initial_locked_mean"
+      ],
+      "expected_money_value": [
+        "value_table"
+      ],
+      "initial_trigger_probability": [
+        "p_per_cell",
+        "n_cells",
+        "trigger_count_min"
+      ],
+      "money_collect_rtp_contribution": [
+        "params"
+      ]
+    }
+  },
+  "multi_dim_inverse_solver": {
+    "classes": {
+      "MultiDimSolveResult": [
+        "converged",
+        "iterations",
+        "final_params",
+        "final_residual",
+        "final_norm",
+        "target"
+      ]
+    },
+    "functions": {
+      "newton_raphson_nd": [
+        "f",
+        "target",
+        "initial_guess",
+        "jacobian",
+        "tolerance",
+        "max_iterations",
+        "bounds",
+        "damping"
+      ]
+    }
+  },
+  "must_hit_by": {
+    "classes": {
+      "MustHitByParams": [
+        "pots"
+      ],
+      "MustHitByPot": [
+        "name",
+        "seed_x_bet",
+        "contribution_x",
+        "must_hit_by_x_bet",
+        "p_strike_per_spin"
+      ]
+    },
+    "functions": {
+      "expected_spins_to_cap": [
+        "pot"
+      ],
+      "expected_strike_value": [
+        "pot"
+      ],
+      "must_hit_by_rtp": [
+        "params"
+      ],
+      "per_pot_rtp_contribution": [
+        "pot"
+      ],
+      "probability_forced_strike": [
+        "pot"
+      ]
+    }
+  },
+  "pay_anywhere": {
+    "classes": {
+      "PayAnywhereParams": [
+        "n_cells",
+        "p_per_cell",
+        "pay_table",
+        "min_pay_count",
+        "symbol_name"
+      ]
+    },
+    "functions": {
+      "expected_landings": [
+        "params"
+      ],
+      "landing_count_distribution": [
+        "params"
+      ],
+      "pay_anywhere_rtp": [
+        "params"
+      ]
+    }
+  },
+  "persistent_multiplier": {
+    "classes": {
+      "PersistentMultiplierParams": [
+        "fs_trigger_p",
+        "fs_initial_spins",
+        "base_pay_per_spin_x_bet",
+        "initial_multiplier",
+        "bump_increment",
+        "p_bump_per_spin",
+        "max_multiplier"
+      ]
+    },
+    "functions": {
+      "expected_fs_total": [
+        "params"
+      ],
+      "expected_multiplier_at_spin": [
+        "params",
+        "t"
+      ],
+      "persistent_multiplier_rtp": [
+        "params"
+      ]
+    }
+  },
+  "pick_chain": {
+    "classes": {
+      "PickChainParams": [
+        "trigger_p",
+        "levels"
+      ],
+      "PickLevel": [
+        "name",
+        "pool_size",
+        "award_distribution"
+      ]
+    },
+    "functions": {
+      "expected_credit_per_pick": [
+        "level"
+      ],
+      "expected_level_credit_contribution": [
+        "level"
+      ],
+      "expected_picks_at_level": [
+        "level"
+      ],
+      "expected_total_award": [
+        "params"
+      ],
+      "level_advance_probability": [
+        "level"
+      ],
+      "level_credit_probability": [
+        "level"
+      ],
+      "level_end_probability": [
+        "level"
+      ],
+      "pick_chain_rtp": [
+        "params"
+      ]
+    }
+  },
+  "stacked_wilds": {
+    "classes": {
+      "StackedWildsParams": [
+        "n_reels",
+        "p_stacked_per_reel",
+        "pay_per_stacked_count"
+      ]
+    },
+    "functions": {
+      "expected_stacked_count": [
+        "params"
+      ],
+      "stacked_count_distribution": [
+        "params"
+      ],
+      "stacked_wilds_rtp": [
+        "params"
+      ]
+    }
+  },
+  "state_machine": {
+    "classes": {
+      "GameState": [
+        "name",
+        "rtp_component"
+      ],
+      "StateMachineParams": [
+        "states",
+        "transitions"
+      ]
+    },
+    "functions": {
+      "state_machine_rtp": [
+        "params"
+      ],
+      "stationary_distribution": [
+        "params"
+      ]
+    }
+  },
+  "sticky_wilds": {
+    "classes": {
+      "StickyWildsParams": [
+        "trigger_p",
+        "n_respins",
+        "n_cells",
+        "p_wild_per_cell_per_respin",
+        "pay_per_wild_count",
+        "initial_wilds"
+      ]
+    },
+    "functions": {
+      "expected_pay_per_chain": [
+        "params"
+      ],
+      "expected_wilds_per_respin": [
+        "params"
+      ],
+      "sticky_wilds_rtp": [
+        "params"
+      ]
+    }
+  },
+  "ways_evaluator": {
+    "classes": {
+      "WaysEvaluatorParams": [
+        "row_distribution_per_reel",
+        "per_way_rtp_x_bet"
+      ]
+    },
+    "functions": {
+      "expected_rows_per_reel": [
+        "params"
+      ],
+      "expected_ways_count": [
+        "params"
+      ],
+      "ways_evaluator_rtp": [
+        "params"
+      ]
+    }
+  },
+  "wheel": {
+    "classes": {
+      "WheelParams": [
+        "trigger_p",
+        "segments",
+        "max_spin_again"
+      ],
+      "WheelSegment": [
+        "kind",
+        "weight",
+        "value_x_bet",
+        "jackpot_id"
+      ]
+    },
+    "functions": {
+      "expected_award_per_trigger": [
+        "params"
+      ],
+      "spin_again_probability": [
+        "segments"
+      ],
+      "terminal_award_expectation": [
+        "segments"
+      ],
+      "total_weight": [
+        "segments"
+      ],
+      "wheel_rtp": [
+        "params"
+      ]
+    }
+  }
+}

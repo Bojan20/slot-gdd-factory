@@ -44,7 +44,13 @@ import { isAuditEnabled, logKernelCall } from './kernel-audit-logger.mjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
 const REPO       = resolve(__dirname, '..');
-const SISTER_REPO = resolve(REPO, '..', 'slot-math-engine-template');
+/* JEDAN PROJEKAT (Boki 2026-06-27): math engine je vendored unutar slot-gdd-factory.
+ * Primarni izvor: <repo>/vendor/math-engine/  (zamišljeno kao git-tracked).
+ * Legacy fallback: ../slot-math-engine-template (samo ako vendored verzija
+ * fizički nije prisutna — za stare clone-ove pre BLOCK-9 commit-a). */
+const VENDORED_MATH = resolve(REPO, 'vendor', 'math-engine');
+const LEGACY_SISTER = resolve(REPO, '..', 'slot-math-engine-template');
+const SISTER_REPO = existsSync(VENDORED_MATH) ? VENDORED_MATH : LEGACY_SISTER;
 
 const KNOWN_KERNELS = Object.freeze([
   'asymmetric_paytable', 'both_ways', 'both_ways_expanding_wild', 'buy_feature',

@@ -1,0 +1,50 @@
+# Workspace wrapper — exists ONLY so that `cargo check`, `cargo test`,
+# `cargo build` etc. can be invoked from the repository root.
+#
+# The actual Rust crate is `rust-sim/` — see `rust-sim/Cargo.toml` for the
+# library + binary definitions, deps, profiles, and bench/fuzz wiring.
+#
+# Why this wrapper exists:
+#   - CORTEX daemon's GitWatcher runs `cargo check --workspace` from repo
+#     root after every commit. Without a root manifest cargo walks up
+#     looking for `Cargo.toml` and fails (`could not find Cargo.toml`).
+#   - This file fixes that false-positive. It does NOT change how
+#     developers / CI use the crate — `cd rust-sim && cargo …` still
+#     works exactly as before.
+#
+# Why fuzz crate is EXCLUDED:
+#   - `rust-sim/fuzz` uses `cargo-fuzz` which requires nightly Rust.
+#   - Including it in workspace members would break stable
+#     `cargo check --workspace` on every developer machine + CI.
+#   - Fuzz targets are still built/run via the standard
+#     `cargo +nightly fuzz run <target>` from inside `rust-sim/fuzz/`.
+
+[workspace]
+resolver = "2"
+members  = ["rust-sim", "wasm-oracle"]
+exclude  = ["rust-sim/fuzz"]
+
+# Profiles MUST be defined at the workspace root — cargo ignores
+# `[profile.*]` blocks in non-root members and emits a warning otherwise.
+# These values mirror what was previously in `rust-sim/Cargo.toml` so
+# release / dev / bench builds remain bit-for-bit identical.
+
+[profile.release]
+opt-level     = 3
+lto           = "fat"
+codegen-units = 1
+panic         = "abort"
+strip         = true
+
+# wasm-oracle ships as .wasm — optimize for size, not throughput.
+# Mirrors the values previously in `wasm-oracle/Cargo.toml` (now removed
+# to silence cargo's "non-root profile ignored" warning).
+[profile.release.package.mtl-wasm-oracle]
+opt-level = "z"
+
+[profile.dev]
+opt-level = 1
+
+[profile.bench]
+inherits = "release"
+debug    = true

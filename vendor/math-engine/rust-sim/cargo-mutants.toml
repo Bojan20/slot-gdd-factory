@@ -1,0 +1,33 @@
+# cargo-mutants configuration for slot-sim
+# Run: cargo mutants --workspace
+# Target: mutation score ≥ 95% per FAZA 10.7 acceptance criteria
+#
+# Install: cargo install cargo-mutants
+# Run:     cargo mutants -j4 --timeout 60
+# Report:  mutants.out/outcomes.json
+
+# Packages to mutate
+# (runs the full test suite for each mutant)
+# cargo-mutants will discover all source files automatically
+
+# Test timeout per mutant (seconds)
+timeout_multiplier = 2.0
+minimum_test_timeout = 60
+
+# Parallel test jobs
+jobs = 4
+
+# Skip mutating pure constants and trivial getters (reduce noise)
+# The list below uses glob patterns against the source path
+exclude_globs = [
+  "src/gpu/**",        # shader code not exercised by unit tests
+  "src/rng.rs",        # pure mathematical constants would survive
+]
+
+# Minimum test duration – skip mutants that are killed by the initial
+# (unmutated) test run in under this many ms (likely no test coverage)
+# Disabled here so we see all survivors in the first report
+# minimum_test_timeout = 1
+
+# Output directory for mutation results
+output = "mutants.out"

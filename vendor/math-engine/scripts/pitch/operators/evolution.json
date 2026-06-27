@@ -1,0 +1,31 @@
+{
+  "operatorId": "evolution",
+  "displayName": "Evolution",
+  "legalName": "Evolution Gaming Group AB",
+  "shortName": "Evolution",
+  "hqLocation": "Stockholm, Sweden",
+  "tickerSymbol": "EVO",
+  "primaryColor": "#000000",
+  "accentColor": "#dc2626",
+  "industryRank": 5,
+  "estimatedRevenue": "$1.8B",
+  "tier": "Tier-1",
+  "contactRole": "Head of Slots Math (Vendor D / Red Tiger)",
+  "contactName": "_<replace-with-Evolution-AE-name>_",
+  "contactEmail": "_<replace-with-Evolution-AE-email>_",
+  "typicalTitle": "Gonzo's Quest Megaways",
+  "portfolioSize": 500,
+  "annualReleases": 50,
+  "certLabsUsed": ["GLI", "BMM", "iTech Labs"],
+  "jurisdictions": ["MGA", "UKGC", "NJ", "PA", "MI"],
+  "rtpStandard": "94.5% - 96.5%",
+  "competitorTo": ["Vendor E", "Vendor F"],
+  "decisionMakerRole": "VP of Math + RNG",
+  "landingPageSlug": "evolution-pilot",
+  "pricingTierLabel": "Tier-1 Enterprise",
+  "samplePricing": {
+    "pilotUSD": 110000,
+    "yearOneLicenseUSD": 700000,
+    "perSpinCostMills": 0.11
+  }
+}

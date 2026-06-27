@@ -1,0 +1,43 @@
+[package]
+name = "mtl-wasm-oracle"
+version = "0.1.0"
+edition = "2021"
+description = "Math Twin Lockstep — Rust-language oracle compiled to WebAssembly. Third independent witness alongside oracle.js and runtime.js. Mirrors the canonical slot spin pipeline exactly."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# wasm-bindgen — bridge Rust ↔ JS for the spin entry point
+wasm-bindgen = "0.2"
+# serde — IR JSON deserialization, outcome serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde-wasm-bindgen = "0.6"
+# JS Error / Console for diagnostics
+js-sys = "0.3"
+
+# indexmap — JSON object iteration order MUST match JS insertion order so
+# the reel weight table is iterated identically.  BTreeMap sorts keys
+# alphabetically (different from JS), causing wrong symbol draws.
+# Pin indexmap 2.2 — 2.6+ requires edition2024 which the workspace toolchain
+# (Rust 1.83 pinned by rust-toolchain.toml) doesn't support yet.
+indexmap = { version = "= 2.2.6", features = ["serde"] }
+
+# WASM build needs an allocator; the default `dlmalloc` works but
+# `wee_alloc` shaves ~10KB off the bundle.  Disabled by default — flip
+# on with `--features wee_alloc` if size matters.
+wee_alloc = { version = "0.4", optional = true }
+
+[features]
+default = []
+wee_alloc = ["dep:wee_alloc"]
+
+# NOTE: Release-profile overrides for this crate live in the workspace
+# root `Cargo.toml` under `[profile.release.package.mtl-wasm-oracle]`
+# (cargo ignores `[profile.*]` blocks in non-root members).
+
+[lints.clippy]
+# Idiomatic warnings tolerated for now; can be tightened in CI later.
+too_many_arguments = "allow"
+type_complexity = "allow"

@@ -117,10 +117,12 @@ try {
 }
 const LONG_RUN_DISPATCHER = null;  /* setGlobalDispatcher path used above */
 
-const DEFAULT_REPO = '~/Projects/slot-math-engine-template'.replace(
-  '~',
-  process.env.HOME || '',
-);
+/* JEDAN PROJEKAT (Boki 2026-06-27): vendored u slot-gdd-factory. */
+const HOME_DIR = process.env.HOME || '';
+const VENDORED_MATH_REPO = resolve(HOME_DIR, 'Projects', 'slot-gdd-factory', 'vendor', 'math-engine');
+const LEGACY_SISTER_REPO = resolve(HOME_DIR, 'Projects', 'slot-math-engine-template');
+const DEFAULT_REPO = existsSync(VENDORED_MATH_REPO) ? VENDORED_MATH_REPO : LEGACY_SISTER_REPO;
+const VENDOR_BIN_DIR = resolve(HOME_DIR, 'Projects', 'slot-gdd-factory', 'vendor', 'bin');
 const DEFAULT_LISTEN = '127.0.0.1:0';
 const DEFAULT_TIMEOUT_MS = 60_000;
 const DEFAULT_READY_MS = 10_000;
@@ -162,7 +164,15 @@ function _validateBinary(abs) {
 function _candidateHttpPath() {
   const explicit = (process.env.SLOT_RUST_HTTP_BIN || '').trim();
   if (explicit) return resolve(explicit);
+  /* JEDAN PROJEKAT: vendor/bin/http_server ima prioritet. */
+  const vendorBin = resolve(VENDOR_BIN_DIR, 'http_server');
+  if (existsSync(vendorBin)) return vendorBin;
   const repo = (process.env.SLOT_RUST_HTTP_REPO || '').trim() || DEFAULT_REPO;
+  /* Vendored repo ima `rust-sim/target/release/http_server`, ali legacy
+   * sister-repo build može imati i `target/release/http_server` (top-level).
+   * Probaj rust-sim podput PRVI ako postoji. */
+  const rustSimPath = resolve(repo, 'rust-sim', 'target', 'release', 'http_server');
+  if (existsSync(rustSimPath)) return rustSimPath;
   return resolve(repo, 'target', 'release', 'http_server');
 }
 

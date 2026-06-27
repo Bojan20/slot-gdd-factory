@@ -1,0 +1,37 @@
+[workspace]
+
+[package]
+name = "slot-sim"
+version = "0.1.0"
+edition = "2021"
+description = "Universal IR-driven slot Monte-Carlo engine. Game-agnostic: any IR JSON conforming to the canonical schema is playable + verifiable without writing game-specific Rust."
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "slot-sim"
+path = "src/bin/slot_sim.rs"
+
+# W7.2 — Quasi-Monte Carlo demo (convergence comparison MC vs Halton/Sobol/Lattice).
+[[bin]]
+name = "qmc-demo"
+path = "src/bin/qmc_demo.rs"
+
+# W7.2 — Sobol-stratified tail estimator (GRAND probability, P99.9 quantile).
+[[bin]]
+name = "qmc-tail"
+path = "src/bin/qmc_tail.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rand = "0.8"
+rand_pcg = "0.3"
+rayon = "1.10"
+clap = { version = "=4.5.20", features = ["derive"] }
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1

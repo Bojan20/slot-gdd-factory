@@ -1,0 +1,34 @@
+[package]
+name = "slot-math-wasm"
+version = "1.0.0"
+edition = "2021"
+license = "MIT"
+authors = ["Boki <bojan.petkovic25@gmail.com>"]
+description = "W244 hot kernels compiled to WebAssembly za browser-side RTP evaluation"
+repository = "https://github.com/Bojan20/slot-math-engine-template"
+readme = "README.md"
+
+# wasm-opt currently fails na Rust 1.95 emitted features (sign_extension
+# i sl.). Skip optimization step — wasm output je already small (~17 KB).
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+
+[profile.release]
+opt-level = "z"      # smaller binary
+lto = true
+codegen-units = 1
+strip = true
+
+# Standalone — not part of the rust-sim workspace. rust-sim has a different
+# rust-toolchain pin (1.83) za parity-deterministic guarantee; wasm32 zahteva
+# noviji toolchain (≥1.85 za edition2024 dependencies).
+[workspace]
+

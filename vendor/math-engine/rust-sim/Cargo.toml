@@ -1,0 +1,162 @@
+[package]
+name = "slot_sim"
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.80"
+description = "High-performance slot machine Monte Carlo simulator"
+authors = ["Slot Math Engine"]
+license = "MIT"
+
+[dependencies]
+# Parallel processing - latest stable
+rayon = "1.11"
+
+# CLI argument parsing - latest 4.x
+clap = { version = "4.5", features = ["derive"] }
+
+# JSON serialization - latest
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Progress bar - latest
+indicatif = { version = "0.18", features = ["rayon"] }
+
+# FAZA 9 — Speed: SIMD abstractions (NEON/AVX2/SSE2 auto-dispatch, stable Rust)
+wide = "0.7"
+
+# FAZA 9 — Speed: arena allocator for zero-heap per-spin temporaries
+bumpalo = "3"
+
+# No external RNG needed - using Mulberry32 for TS compatibility
+
+# FAZA 3 — Behavior layer: lightweight random for mystery reveals
+# Pinned to 1.x — 2.4+ pulls getrandom 0.4 which requires edition2024
+fastrand = "1.9"
+
+# FAZA 8.5 — Spin recall: sha256 hash chain. Pure-rust impl, no openssl/
+# libgmp deps, stable across all platforms in our target matrix.
+sha2 = "0.10"
+
+# FAZA 9.9 — NUMA-aware allocation: mmap-backed reel strip storage.
+memmap2 = "0.9"
+
+# PAR-021 — Exact rational arithmetic for regulator pre-cert
+# (gives 7/72 instead of the f64 approximation 0.0972...).
+num-rational = { version = "0.4", default-features = false, features = ["num-bigint", "std"] }
+num-bigint = "0.4"
+num-traits = "0.2"
+
+# LV3-2 (MATH-INTEGRATION-LV3) — long-lived HTTP simulator daemon. Lets
+# the auto-converge solver in `slot-gdd-factory` issue thousands of
+# parameter probes without paying the per-spawn process-setup cost. Axum
+# 0.7 + tower 0.5 are both MSRV ≥ 1.75 (we're pinned at 1.80) and avoid
+# edition2024-dependent transitive deps (h3 / printpdf / time 0.3.47+),
+# matching the policy that keeps the wider toolchain on stable 1.83. The
+# tokio feature set is the minimal subset axum needs at runtime:
+#   - macros        → `#[tokio::main]` in the http_server bin
+#   - rt-multi-thread → parallel request handling
+#   - net           → TcpListener bind for axum::serve
+#   - signal        → graceful SIGINT/SIGTERM shutdown
+#   - time          → request-timeout middleware
+# Optional `http` feature gates the server out of the default build so
+# pure-engine consumers (wasm-oracle, gpu kernels) don't pay the axum
+# compile-time cost. The `http_server` binary explicitly requires it.
+axum = { version = "0.7", default-features = false, features = ["http1", "json", "tokio", "tower-log"], optional = true }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal", "time"], optional = true }
+tower = { version = "0.5", default-features = false, optional = true }
+
+# PAR-009 — PDF generator: emitted as PDF-ready Markdown (pandoc-converted
+# downstream). Avoids printpdf 0.7+ which pulls time 0.3.47 → edition2024
+# (requires Rust 1.88+, our toolchain is pinned at 1.83 across CI).
+
+# FAZA 9.8b — GPU compute scaffold. Off by default so the toolchain
+# matrix stays light; flip on with `cargo build --features gpu` once the
+# wgpu integration lands.
+[features]
+default = []
+gpu = []
+# LV3-2 long-lived HTTP simulator daemon. Gates the `http_server` module +
+# `http_server` bin behind a feature flag so wasm/no-net consumers don't
+# pull axum/tokio into their build graph. Enabled via `cargo build
+# --features http --bin http_server` or `--all-features` in CI.
+http = ["dep:axum", "dep:tokio", "dep:tower"]
+
+[dev-dependencies]
+# Benchmark harness with HTML reports and regression detection
+criterion = { version = "0.5", features = ["html_reports"] }
+# FAZA 10 — Testing Fortress: property-based testing
+# Pin proptest 1.4 + tempfile 3.12 to avoid fastrand 2.4 → getrandom 0.4 (edition2024)
+proptest = "= 1.4.0"
+# Explicit pin so proptest's rusty-fork does not resolve to tempfile 3.13+
+tempfile = "= 3.12.0"
+
+# LV3-2 — long-lived Axum HTTP daemon entry point. Only compiles with
+# `--features http`; default builds skip it so the toolchain matrix
+# (wasm-oracle / gpu / no_std consumers) stays clean.
+[[bin]]
+name = "http_server"
+path = "src/bin/http_server.rs"
+required-features = ["http"]
+
+[[bench]]
+name = "spin_throughput"
+harness = false
+
+# FAZA 9.8 — 1T acceptance benchmark. Run with:
+#   cargo bench --bench bulk_throughput
+[[bench]]
+name = "bulk_throughput"
+harness = false
+
+# W212 Faza 600.1 — Pre-prod perf gauntlet. Run with:
+#   cargo bench --bench W212_bench
+[[bench]]
+name = "W212_bench"
+harness = false
+
+# W244 wave 39 — math kernel benchmark suite. Run with:
+#   cargo bench --bench w244_kernel_bench
+[[bench]]
+name = "w244_kernel_bench"
+harness = false
+
+# Package-wide lint policy.
+#
+# New modules (`ir`, `recall`) ship with `-D warnings` clean. The
+# pre-existing simulation / evaluator / speed / analytical / markov
+# modules carry idiomatic lint debt accumulated across Faza 0→10 that's
+# scheduled for the Faza 2 cleanup pass. Allow-list is narrow — only the
+# specific lint kinds that actually trip in the legacy code, not a
+# blanket `-A warnings`. Anything new must justify additions.
+#
+# `[lints]` in Cargo.toml applies to the library AND every test/example
+# target, so we don't have to repeat `#![allow(...)]` in every file.
+[lints.clippy]
+needless_range_loop = "allow"
+manual_range_contains = "allow"
+needless_borrow = "allow"
+unnecessary_cast = "allow"
+field_reassign_with_default = "allow"
+type_complexity = "allow"
+never_loop = "allow"
+doc_lazy_continuation = "allow"
+enum_variant_names = "allow"
+bool_assert_comparison = "allow"
+explicit_counter_loop = "allow"
+explicit_auto_deref = "allow"
+inconsistent_digit_grouping = "allow"
+unreadable_literal = "allow"
+unusual_byte_groupings = "allow"
+useless_vec = "allow"
+approx_constant = "allow"
+
+[lints.rust]
+unused_variables = "allow"
+unused_assignments = "allow"
+dead_code = "allow"
+
+# Profiles moved to workspace root Cargo.toml — cargo ignores profile
+# definitions in non-root members and emits a warning. Build behavior is
+# identical: release uses opt-level=3 + fat LTO + single codegen unit +
+# panic=abort + symbol strip; dev uses opt-level=1; bench inherits release
+# with debug symbols retained.

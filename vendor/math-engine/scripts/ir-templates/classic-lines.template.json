@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0.0",
+  "meta": {
+    "id": "classic-{{slug}}",
+    "name": "{{Title}}",
+    "version": "0.1.0",
+    "description": "{{One-line description of the classic mechanic.}}",
+    "theme_tags": ["classic", "{{family-tag}}"]
+  },
+  "topology": { "kind": "rectangular", "reels": 5, "rows": 3 },
+  "symbols": [
+    { "id": "HP1", "name": "HP1", "kind": "hp" },
+    { "id": "HP2", "name": "HP2", "kind": "hp" },
+    { "id": "HP3", "name": "HP3", "kind": "hp" },
+    { "id": "HP4", "name": "HP4", "kind": "hp" },
+    { "id": "LP1", "name": "LP1", "kind": "lp" },
+    { "id": "LP2", "name": "LP2", "kind": "lp" },
+    { "id": "LP3", "name": "LP3", "kind": "lp" },
+    { "id": "LP4", "name": "LP4", "kind": "lp" },
+    { "id": "WLD", "name": "Wild", "kind": "wild", "substitutes": "*" },
+    { "id": "SCT", "name": "Scatter", "kind": "scatter" }
+  ],
+  "reels": {
+    "mode": "weighted",
+    "base": [
+      { "HP1": 2, "HP2": 2, "HP3": 3, "HP4": 3, "LP1": 6, "LP2": 6, "LP3": 7, "LP4": 7, "WLD": 1, "SCT": 1 },
+      { "HP1": 2, "HP2": 2, "HP3": 3, "HP4": 3, "LP1": 6, "LP2": 6, "LP3": 7, "LP4": 7, "WLD": 1, "SCT": 1 },
+      { "HP1": 2, "HP2": 2, "HP3": 3, "HP4": 3, "LP1": 6, "LP2": 6, "LP3": 7, "LP4": 7, "WLD": 1, "SCT": 1 },
+      { "HP1": 2, "HP2": 2, "HP3": 3, "HP4": 3, "LP1": 6, "LP2": 6, "LP3": 7, "LP4": 7, "WLD": 1, "SCT": 1 },
+      { "HP1": 2, "HP2": 2, "HP3": 3, "HP4": 3, "LP1": 6, "LP2": 6, "LP3": 7, "LP4": 7, "WLD": 1, "SCT": 1 }
+    ]
+  },
+  "evaluation": {
+    "kind": "lines",
+    "paylines": [
+      [1,1,1,1,1],[0,0,0,0,0],[2,2,2,2,2],[0,1,2,1,0],[2,1,0,1,2],
+      [0,0,1,2,2],[2,2,1,0,0],[1,0,0,0,1],[1,2,2,2,1],[0,1,1,1,0],
+      [2,1,1,1,2],[1,0,1,2,1],[1,2,1,0,1],[0,0,2,0,0],[2,2,0,2,2],
+      [1,1,0,1,1],[1,1,2,1,1],[0,2,0,2,0],[2,0,2,0,2],[0,1,2,2,2]
+    ],
+    "direction": "ltr",
+    "min_match": 3,
+    "pay_left_to_right_only": true
+  },
+  "paytable": {
+    "HP1": { "3": 5, "4": 25, "5": 100 },
+    "HP2": { "3": 4, "4": 20, "5": 80 },
+    "HP3": { "3": 3, "4": 15, "5": 60 },
+    "HP4": { "3": 2.5, "4": 12, "5": 50 },
+    "LP1": { "3": 1, "4": 4, "5": 15 },
+    "LP2": { "3": 0.8, "4": 3, "5": 12 },
+    "LP3": { "3": 0.6, "4": 2.5, "5": 10 },
+    "LP4": { "3": 0.5, "4": 2, "5": 8 }
+  },
+  "features": [
+    { "kind": "free_spins", "trigger": { "by": "scatter_count", "thresholds": { "3": 10, "4": 15, "5": 20 } }, "global_multiplier": 2 }
+  ],
+  "rng": { "kind": "mulberry32", "default_seed": 42 },
+  "bet": { "currency": "EUR", "base_bet": 1, "denominations": [0.1, 1.0] },
+  "limits": { "target_rtp": 0.96, "rtp_tolerance": 0.01, "max_win_x": 5000, "win_cap_apply": "per_spin", "target_volatility": "high", "hit_freq_target": 0.30 },
+  "compliance": { "jurisdictions": ["UKGC", "MGA", "ADM"], "rtp_range_required": [0.88, 0.99], "max_win_cap_required": 10000, "near_miss_rule": "must_be_random", "ldw_disclosure": true, "session_time_display": true },
+  "rtp_allocation": { "base_game": 0.70, "free_spins": 0.26, "hold_and_win": 0.0, "jackpot": 0.0, "tolerance": 0.01 }
+}

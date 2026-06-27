@@ -1,0 +1,31 @@
+{
+  "operatorId": "aristocrat",
+  "displayName": "Vendor C",
+  "legalName": "Vendor C Technologies, Inc.",
+  "shortName": "Vendor C",
+  "hqLocation": "Sydney, Australia",
+  "tickerSymbol": "ALL.AX",
+  "primaryColor": "#dc2626",
+  "accentColor": "#7f1d1d",
+  "industryRank": 2,
+  "estimatedRevenue": "$4.1B",
+  "tier": "Tier-1",
+  "contactRole": "Director of Mathematics",
+  "contactName": "_<replace-with-Vendor C-AE-name>_",
+  "contactEmail": "_<replace-with-Vendor C-AE-email>_",
+  "typicalTitle": "Buffalo Diamond",
+  "portfolioSize": 1500,
+  "annualReleases": 95,
+  "certLabsUsed": ["GLI", "BMM", "NMi"],
+  "jurisdictions": ["NV", "NJ", "AU-NSW", "UKGC", "MGA"],
+  "rtpStandard": "88.0% - 96.5%",
+  "competitorTo": ["Vendor B", "Vendor A"],
+  "decisionMakerRole": "Chief Mathematics Officer",
+  "landingPageSlug": "aristocrat-pilot",
+  "pricingTierLabel": "Tier-1 Enterprise",
+  "samplePricing": {
+    "pilotUSD": 140000,
+    "yearOneLicenseUSD": 950000,
+    "perSpinCostMills": 0.11
+  }
+}

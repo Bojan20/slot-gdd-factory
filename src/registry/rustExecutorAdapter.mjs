@@ -69,10 +69,14 @@ export const FEATURE_KINDS = Object.freeze([
   'wheel',
 ]);
 
-const DEFAULT_REPO = '~/Projects/slot-math-engine-template'.replace(
-  '~',
-  process.env.HOME || '',
-);
+/* JEDAN PROJEKAT (Boki 2026-06-27): math engine je vendored.
+ * Vendored Rust source: <gdd-repo>/vendor/math-engine/  (preferiramo build odatle).
+ * Legacy sister-repo: ~/Projects/slot-math-engine-template/ (fallback za stare clone-ove). */
+const HOME_DIR = process.env.HOME || '';
+const VENDORED_MATH_REPO = resolve(HOME_DIR, 'Projects', 'slot-gdd-factory', 'vendor', 'math-engine');
+const LEGACY_SISTER_REPO = resolve(HOME_DIR, 'Projects', 'slot-math-engine-template');
+const DEFAULT_REPO = existsSync(VENDORED_MATH_REPO) ? VENDORED_MATH_REPO : LEGACY_SISTER_REPO;
+const VENDOR_BIN_DIR = resolve(HOME_DIR, 'Projects', 'slot-gdd-factory', 'vendor', 'bin');
 const DEFAULT_TIMEOUT_MS = 60_000;
 
 /**
@@ -88,6 +92,10 @@ const DEFAULT_TIMEOUT_MS = 60_000;
 function _binaryCandidatePath() {
   const explicit = (process.env.SLOT_RUST_BIN || '').trim();
   if (explicit) return resolve(explicit);
+  /* JEDAN PROJEKAT: prvo vendor/bin/slot_sim (pre-built artefakt),
+   * pa onda vendored Rust target/release/slot_sim, pa env override. */
+  const vendorBin = resolve(VENDOR_BIN_DIR, 'slot_sim');
+  if (existsSync(vendorBin)) return vendorBin;
   const repo = (process.env.SLOT_RUST_REPO || '').trim() || DEFAULT_REPO;
   return resolve(repo, 'rust-sim', 'target', 'release', 'slot_sim');
 }

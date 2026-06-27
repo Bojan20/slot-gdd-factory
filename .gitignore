@@ -77,3 +77,14 @@ tests/blocks/_auto-scaffolded/
 # UQ-DEEP-AH (Boki 2026-06-24): IGT material legal safety —
 # private audit dump must NEVER go public (trademark/IP).
 IGT_*
+
+# JEDAN PROJEKAT (Boki 2026-06-27 BLOCK-9) — vendored math engine.
+# vendor/math-engine/ ships full Rust + Python source so the repo is
+# self-contained, but build artefacts MUST NOT be tracked (200MB+).
+vendor/math-engine/target/
+vendor/math-engine/**/target/
+vendor/math-engine/**/*.rlib
+vendor/math-engine/**/*.rmeta
+vendor/math-engine/**/__pycache__/
+vendor/math-engine/**/.pytest_cache/
+vendor/math-engine/**/*.egg-info/

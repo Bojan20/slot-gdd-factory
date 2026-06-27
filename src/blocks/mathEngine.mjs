@@ -59,8 +59,18 @@ async function _tryLoadWasm() {
   /* Reject suspicious HOME values up-front. */
   if (HOME.includes('..') || HOME.includes('\0')) return null;
   if (!(HOME.startsWith('/') || /^[A-Za-z]:[\\/]/.test(HOME))) return null;
-  const expectedSubpath = '/Projects/slot-math-engine-template/packages/slot-math-wasm/pkg/slot_math_wasm.js';
-  const path = `${HOME}${expectedSubpath}`;
+  /* JEDAN PROJEKAT (Boki 2026-06-27): WASM modul je vendored u slot-gdd-factory.
+   * Probaj vendored path PRVI; legacy sister-repo path samo kao fallback za
+   * stare clone-ove. */
+  const vendoredSubpath = '/Projects/slot-gdd-factory/vendor/math-engine/packages/slot-math-wasm/pkg/slot_math_wasm.js';
+  const legacySubpath   = '/Projects/slot-math-engine-template/packages/slot-math-wasm/pkg/slot_math_wasm.js';
+  let path = `${HOME}${vendoredSubpath}`;
+  try {
+    const { existsSync: _exists } = await import('node:fs');
+    if (!_exists(path)) path = `${HOME}${legacySubpath}`;
+  } catch (_) {
+    path = `${HOME}${legacySubpath}`;
+  }
   /* Real-path verification (defence-in-depth — symlink follow attack
      within HOME could otherwise redirect import target). */
   try {

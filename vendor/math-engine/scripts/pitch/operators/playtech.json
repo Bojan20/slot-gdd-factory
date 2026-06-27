@@ -1,0 +1,31 @@
+{
+  "operatorId": "playtech",
+  "displayName": "Vendor F",
+  "legalName": "Vendor F plc",
+  "shortName": "Vendor F",
+  "hqLocation": "Douglas, Isle of Man",
+  "tickerSymbol": "PTEC.L",
+  "primaryColor": "#0ea5e9",
+  "accentColor": "#0c4a6e",
+  "industryRank": 7,
+  "estimatedRevenue": "$1.7B",
+  "tier": "Tier-1",
+  "contactRole": "Director of Slot Math",
+  "contactName": "_<replace-with-Vendor F-AE-name>_",
+  "contactEmail": "_<replace-with-Vendor F-AE-email>_",
+  "typicalTitle": "Age of the Gods Norse",
+  "portfolioSize": 800,
+  "annualReleases": 55,
+  "certLabsUsed": ["GLI", "BMM", "eCOGRA"],
+  "jurisdictions": ["MGA", "UKGC", "Gibraltar", "Spain"],
+  "rtpStandard": "94.0% - 96.5%",
+  "competitorTo": ["Vendor B", "Vendor A"],
+  "decisionMakerRole": "Director of Slot Math",
+  "landingPageSlug": "playtech-pilot",
+  "pricingTierLabel": "Tier-1 Enterprise",
+  "samplePricing": {
+    "pilotUSD": 105000,
+    "yearOneLicenseUSD": 650000,
+    "perSpinCostMills": 0.12
+  }
+}

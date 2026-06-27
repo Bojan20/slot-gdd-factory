@@ -1,0 +1,299 @@
+# ─── slot-math-engine-template — Python tooling package ────────────────────
+# Universal slot math toolkit: PAR parsing, IR codegen, MC verification,
+# cert bundling, evolutionary solvers, provenance, player-behavior
+# simulation, and 5 closed-form RTP solver kernels.
+#
+# Installs the `tools.*` Python packages plus a set of console entry
+# points so an operator can run the full slot-math pipeline without
+# cloning the entire monorepo.
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "slot-math-engine-template"
+version = "0.1.0"
+description = "Universal slot math engine — PAR → IR → MC → cert bundle. Includes evolutionary solvers, crypto-verifiable provenance, player-behavior cohort sim, and 5 closed-form RTP kernels."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary — Vendor-redacted per W-SANITIZE" }
+authors = [
+    { name = "Boki" },
+]
+keywords = [
+    "slot", "gambling", "math", "rtp", "monte-carlo", "regulator",
+    "cert", "merkle", "ed25519", "nsga-ii", "pareto", "genetic",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    # Sign / verify cert bundles (W5.6 + W7.5)
+    "cryptography>=41.0",
+]
+
+[project.optional-dependencies]
+# TS engine validation gate uses tsx + zod; install via npm not pip
+# (see tools/parse_par/_validate_ts_ir.mjs).
+smt = [
+    "z3-solver>=4.12; python_version>='3.10'",
+]
+gdd = [
+    # PDF extractor for W6.1
+    "PyMuPDF>=1.23; python_version>='3.10'",
+]
+all = [
+    "z3-solver>=4.12",
+    "PyMuPDF>=1.23",
+]
+
+[project.scripts]
+# ─── Core pipeline ─────────────────────────────────────────────────────
+slot-parse = "tools.parse_par.__main__:main"
+slot-build = "tools.slot_build.__main__:main"
+slot-build-verify = "tools.slot_build.verify:main"
+slot-build-cert = "tools.slot_build.cert_package:main"
+# ─── Diagnostics ───────────────────────────────────────────────────────
+slot-fs-audit = "tools.diagnostics.fs_rtp_audit:main"
+slot-ir-fuzz = "tools.diagnostics.ir_invariant_fuzzer:main"
+# ─── Evolution & optimization ──────────────────────────────────────────
+slot-evolve = "tools.evolution.genetic_solver:main"
+slot-pareto = "tools.evolution.pareto_solver:main"
+slot-batch = "tools.evolution.batch_runner:main"
+# ─── Player behavior ───────────────────────────────────────────────────
+slot-player-sim = "tools.player_sim.session_simulator:main"
+# ─── Jurisdiction compliance ───────────────────────────────────────────
+slot-jurisdiction-check = "tools.jurisdiction.linter:main"
+# ─── Mission #3 — 12×12 Topology × Feature cert lab matrix ─────────────
+slot-cert-matrix = "tools.cert_lab.matrix_runner:main"
+# ─── Mission #4 — vendor profile scaffolder (Vendor C/D/E + future) ────
+slot-vendor-scaffold = "tools.vendor_profiles.scaffold:main"
+# ─── Mission #4 — synthetic PAR generator (IR-free roundtrip) ──────────
+slot-synth-par = "tools.parse_par.synth_par:main"
+# ─── Mission #8 — Studio UI extensions (WebWorker MC + heatmap + editor)
+slot-studio-extend = "tools.studio_ext.__main__:main"
+# ─── W6.3 / W6.6 — LLM-assisted GDD synthesis + review UI ──────────────
+slot-gdd-llm = "tools.gdd_extract.llm_assist:main"
+slot-gdd-review-ui = "tools.gdd_extract.review_ui:main"
+# ─── W4.9 — Vendor parity doctor (HTML/JSON/MD dashboard)
+slot-par-doctor = "tools.diagnostics.par_doctor:main"
+# ─── W5.6+ — Regulator XML cert emitter (GLI-16 Appendix D shape)
+slot-cert-xml = "tools.slot_build.cert_xml:main"
+# ─── W4.9b — Cross-IR diff tool (HTML + JSON A/B comparator)
+slot-ir-diff = "tools.diagnostics.ir_diff:main"
+# ─── W8 — Operator Pilot Suite (chain every cert + lint into one ZIP)
+slot-operator-pilot = "tools.operator_pilot.__main__:main"
+# ─── W11 — Drift Sentinel (CI gate for silent IR math drift)
+slot-drift-sentinel = "tools.drift_sentinel.__main__:main"
+# ─── W14 — CI Gate Aggregator (repo-wide gate of all gates)
+slot-ci-gate = "tools.ci_gate.__main__:main"
+# ─── W12 — Multi-IR Portfolio Analyzer (RTP/vol/feature matrix)
+slot-portfolio = "tools.portfolio.__main__:main"
+# ─── W16 — IR Lock & Sign (Merkle + ed25519 on IR sidecar)
+slot-ir-lock = "tools.ir_lock.__main__:main"
+# ─── W17 — Multi-IR engine-free cohort simulation runner
+slot-cohort-sim = "tools.cohort_runner.__main__:main"
+# ─── W18 — RNG Quality Mini-Suite (NIST-STS subset)
+slot-rng-quality = "tools.rng_quality.__main__:main"
+# ─── W19 — Telemetry event schema validator (RGS event stream)
+slot-telemetry-validate = "tools.telemetry.__main__:main"
+# ─── W20 — Plugin marketplace bundler (versioned ZIP for upload)
+slot-plugin-bundle = "tools.plugin_bundle.__main__:main"
+# ─── W21 — Replay determinism gate (IR + seed → deterministic stream)
+slot-replay-gate = "tools.replay_gate.__main__:main"
+# ─── W22 — IR schema versioning + migration framework
+slot-ir-migrate = "tools.ir_schema.__main__:main"
+# ─── W24 — Audit trail aggregator (per-game timeline)
+slot-audit-trail = "tools.audit_trail.__main__:main"
+# ─── W23 — IR multi-language localization
+slot-localize = "tools.localization.translator:main"
+# ─── W25 — Repo-wide coverage report (kernels + jurisdictions + …)
+slot-coverage = "tools.coverage_report.__main__:main"
+# ─── W27 — Per-game math specification doc generator
+slot-math-doc = "tools.math_doc.generator:main"
+# ─── W26 — Runtime config cross-reference validator
+slot-config-validate = "tools.config_validator.__main__:main"
+# ─── W28 — Auto changelog generator (git log → grouped CHANGELOG.md)
+slot-changelog = "tools.changelog.__main__:main"
+# ─── W29 — Live RTP monitor (JSONL spin log → rolling/EWMA/drift)
+slot-rtp-monitor = "tools.rtp_monitor.__main__:main"
+# ─── W30 — A/B test framework (2 IRs × cohort sim → verdict)
+slot-ab-test = "tools.ab_test.__main__:main"
+# ─── W31 — Audit hash pinner (lock_root_hash freshness gate)
+slot-audit-pin = "tools.audit_pin.__main__:main"
+# ─── W32 — IR mutation fuzzer (false-negative invariant gate)
+slot-ir-fuzzer = "tools.ir_fuzzer.__main__:main"
+# ─── W33 — Vendor adapter SDK (plugin registry + sniff + convert)
+slot-vendor-adapter = "tools.vendor_adapter.__main__:main"
+# ─── W34 — Spec compliance gate (math doc ↔ IR ↔ kernel)
+slot-spec-compliance = "tools.spec_compliance.__main__:main"
+# ─── W35 — Structural IR diff heatmap (per-field impact)
+slot-ir-diff-heatmap = "tools.ir_diff_heatmap.__main__:main"
+# ─── W36 — RTP curve sweep (kernel parameter scan + ASCII chart)
+slot-rtp-sweep = "tools.rtp_sweep.__main__:main"
+# ─── W37 — Cohort segment analyzer (low/mid/high roller RTP)
+slot-cohort-segment = "tools.cohort_segment.__main__:main"
+# ─── W38 — Regulator export package (IR + math doc + manifest SHA-256)
+slot-regulator-export = "tools.regulator_export.__main__:main"
+# ─── W39 — Portfolio comparator (multi-IR side-by-side table)
+slot-portfolio-compare = "tools.portfolio_compare.__main__:main"
+# ─── W40 — Volatility classifier (CV → LOW/MEDIUM/HIGH/EXTREME)
+slot-volatility-classify = "tools.volatility_classifier.__main__:main"
+# ─── W41 — Feature coverage audit (IR features ↔ kernel catalog)
+slot-feature-coverage = "tools.feature_coverage.__main__:main"
+# ─── W42 — Release notes synthesizer (Conventional Commits → MD)
+slot-release-notes = "tools.release_notes.__main__:main"
+# ─── W43 — Performance budget gate (kernel timing CI guard)
+slot-perf-budget = "tools.perf_budget.__main__:main"
+# ─── W44 — Historical jurisdiction backtest runner
+slot-backtest-runner = "tools.backtest_runner.__main__:main"
+# ─── W45 — Designer sanity linter (pre-MC IR mistake catcher)
+slot-designer-lint = "tools.designer_lint.__main__:main"
+# ─── W46 — Compliance bundle verifier (re-hash manifest)
+slot-bundle-verify = "tools.bundle_verify.__main__:main"
+# ─── W47 — IR sanitizer (redact vendor identifiers for public share)
+slot-ir-sanitize = "tools.ir_sanitizer.__main__:main"
+# ─── W48 — Kernel comparator (equivalence / proportionality between two kernels)
+slot-kernel-compare = "tools.kernel_compare.__main__:main"
+# ─── W49 — Synthetic spin log generator (calibrated JSONL for tests)
+slot-synthetic-log = "tools.synthetic_log_gen.__main__:main"
+# ─── W50 — Live RGS connector (NDJSON tail + TCP → rtp_monitor)
+slot-rgs-connector = "tools.rgs_connector.__main__:main"
+# ─── W51 — Cert XML v2 (Jurisdiction-Tagged Provenance, urn:slotmath:cert:v2)
+slot-cert-xml-v2 = "tools.slot_build.cert_xml_v2:main"
+# ─── W52 — Plugin Marketplace Verifier (publish → download → re-verify round-trip)
+slot-marketplace-verify = "tools.plugin_marketplace.__main__:main"
+# ─── W53 — Multi-Territory Cert Builder (chain lint + cert v2 + marketplace verify)
+slot-multi-territory = "tools.multi_territory.__main__:main"
+# ─── W54 — Real-time Drift Alert Hub (RTP snapshots → rule ladder → sinks)
+slot-drift-alert-hub = "tools.drift_alert_hub.__main__:main"
+# ─── W55 — Plugin Marketplace Listing UI (zero-build static dashboard)
+slot-marketplace-ui = "tools.marketplace_ui.__main__:main"
+# ─── W56 — Cert XML standalone verifier (v1 + v2, IR digest, signature batch)
+slot-cert-verify = "tools.cert_verify.__main__:main"
+# ─── W57 — Operator Dashboard Aggregator (per-game traffic light HTML + JSON)
+slot-operator-dashboard = "tools.operator_dashboard.__main__:main"
+# ─── W58 — IR Diff CI Gate (configurable rules ladder over slot-ir-diff)
+slot-ir-diff-gate = "tools.ir_diff_gate.__main__:main"
+# ─── W59 — Vendor Onboarding Wizard (scaffold → IR → cert in one shot)
+slot-vendor-onboard = "tools.vendor_onboard.__main__:main"
+# ─── W60 — Operator Dashboard Live-stream (watch-mode atomic refresh)
+slot-dashboard-livestream = "tools.dashboard_livestream.__main__:main"
+# ─── W61 — Cross-vendor Math Catalog Sync (SemVer-tagged solver registry)
+slot-catalog-sync = "tools.catalog_sync.__main__:main"
+# ─── W62 — Telemetry → Drift Hub Bridge (NDJSON feed → monitor → alerts)
+slot-telemetry-bridge = "tools.telemetry_bridge.__main__:main"
+# ─── W63 — Catalog Diff Reporter (compare two INDEX.json snapshots)
+slot-catalog-diff = "tools.catalog_diff.__main__:main"
+# ─── W64 — Pilot Sign-off Report (regulator-ready ANSI text)
+slot-pilot-signoff = "tools.pilot_signoff.__main__:main"
+# ─── W65 — Marketplace Plugin Signing CLI (ed25519 sidecar .sig + .sig.b64)
+slot-plugin-sign = "tools.plugin_sign.__main__:main"
+# ─── W66 — Drift Replay Theatre (throttled historical NDJSON re-feeder)
+slot-drift-replay = "tools.drift_replay.__main__:main"
+# ─── W67 — Cert Bundle SBOM (CycloneDX 1.4 over tools.* + entry points)
+slot-cert-sbom = "tools.cert_sbom.__main__:main"
+# ─── W68 — Marketplace Pub-key Bundle (signed publisher key registry)
+slot-pubkey-bundle = "tools.pubkey_bundle.__main__:main"
+# ─── W69 — SBOM Diff Reporter (CycloneDX delta + breaking-change CI gate)
+slot-sbom-diff = "tools.sbom_diff.__main__:main"
+# ─── W70 — Pilot Sign-off PDF (pure-stdlib PDF 1.4 emitter)
+slot-pilot-signoff-pdf = "tools.pilot_signoff_pdf.__main__:main"
+# ─── W71 — Cert Bundle E2E Verifier (chain bundle + cert + sign + pubkey + sbom)
+slot-cert-e2e-verify = "tools.cert_e2e_verify.__main__:main"
+# ─── W72 — Trust Anchor Rotation (rotate / revoke / verify master key)
+slot-trust-anchor = "tools.trust_anchor.__main__:main"
+# ─── W73 — Studio → Marketplace Publish Pipeline (one-shot bundle/sign/publish/verify)
+slot-studio-publish = "tools.studio_publish.__main__:main"
+# ─── W74 — Master Pipeline Gate (repo-wide gate of every gate)
+slot-master-gate = "tools.master_gate.__main__:main"
+# ─── P5.9 — Studio E2E Playwright codegen (config + spec emitter)
+slot-studio-e2e = "tools.studio_e2e.__main__:main"
+# ─── W75 / P7.1 — Marketplace Template Catalog Builder
+slot-marketplace-catalog = "tools.marketplace_catalog.__main__:main"
+# ─── W76 / P7.4 — Pilot Outreach Package Generator
+slot-pilot-outreach = "tools.pilot_outreach.__main__:main"
+# ─── W77 / P7.5 — Public Benchmark Suite (vs published vendor RTPs)
+slot-public-benchmark = "tools.public_benchmark.__main__:main"
+# ─── W78 / P7.6 — Community Contributor Bootstrap Flow
+slot-contribute = "tools.community_contribute.__main__:main"
+# ─── W79 — Multi-Constraint SMT IR Synthesis (RTP+var+max-win+hit-freq simultaneous)
+slot-smt-multi = "tools.smt_multi.__main__:main"
+# ─── W80 — Verifiable Provenance Chain (PAR→Merkle→IR→cert with selective proof)
+slot-provenance-chain = "tools.provenance_chain.__main__:main"
+# ─── W81 — Exact Enumeration Engine v3 (exhaustive ground-truth RTP)
+slot-exact-enum = "tools.exact_enum.__main__:main"
+# ─── PHASE 8 P8.7 — QA Agent ultimate orchestrator (auto + manual + 10-layer)
+slot-qa-agent = "tools.qa_agent.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Bojan20/slot-math-engine-template"
+Repository = "https://github.com/Bojan20/slot-math-engine-template"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tools*"]
+exclude = ["tools.tests*", "**/__pycache__"]
+
+[tool.setuptools.package-data]
+"tools.vendor_profiles" = ["*.yaml", "*.yml"]
+"tools.jurisdiction.profiles" = ["*.yaml", "*.yml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tools/tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+# W244 wave 7 — qa-quick L3 budget protection. The `slow` marker tags
+# tests that individually exceed ~7s (Z3 multi-objective synth, stress
+# test runs across volatility classes, LLM-ingest end-to-end, evolution
+# benchmark). Without filtering, L3 takes ~7 min and gets SIGKILL by
+# the qa-agent runner's per-layer timeout. `qa-quick` invokes pytest
+# with `-m "not slow"` to keep L3 < 90s; `qa-full` (and CI nightlies)
+# run the full set including these heavy regression checks.
+markers = [
+    "slow: tests >7s, skipped in qa-quick L3 (Z3 / stress / LLM / benchmark)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = [
+    "E501",  # line-length handled separately
+    # E741 — single-letter variable names like `l`, `I`. Pragmatic
+    # exception for math code (Markov state `l`, jackpot count `I`,
+    # cluster id, etc.). Style preference, not a correctness bug.
+    "E741",
+    # E702 — multiple statements on one line via semicolon. Used in
+    # tests for compact dataclass mutation chains:
+    #   `g2 = _classic_gdd(); g2.theme = "noir"`
+    # which is intentional brevity, not a real style violation.
+    "E702",
+    # E701 — multiple statements on one line via colon. Same brevity
+    # exception as E702 for guard-clause inline returns:
+    #   `if v is None: return None`
+    "E701",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests insert sys.path before importing tools/*, so E402 is by design.
+"tools/tests/**" = ["E402"]
+# Optional-import shims in CLI modules: try/except sets _HAS_X flag,
+# then conditionally imports the heavy module after the guard.
+"tools/slot_build/gdd_mode.py" = ["E402"]
+"tools/gdd_extract/__main__.py" = ["E402"]
+# Package facades: __init__.py re-exports the public API for the
+# package; the names are imported solely so star-import users (and
+# IDE auto-complete) can resolve them. They appear "unused" to ruff
+# but removing them BREAKS the public API. Listed by package so the
+# blanket F401 ignore doesn't leak into implementation files.
+"tools/*/__init__.py" = ["F401"]
