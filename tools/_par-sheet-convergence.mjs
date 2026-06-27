@@ -555,8 +555,27 @@ function mapModelToGameConfig(model) {
            * be approximate vs real CE 8-tier MINI/MINOR/MAJOR table.
            * Closing the residual gap requires PAR-8-EXT (full orb
            * table extraction from PAR-001!K3976-N3991). */
-          orb_land_chance_base: 0.045,
-          orb_land_chance_fill_bonus: 0.13,
+          /* PAR-8-TUNE-2 (Boki 2026-06-27): bumping chances after
+           * PAR-8-EXT real CE orb table extraction. Multi-step sweep:
+           *
+           *   {0.0450, 0.130}  →  64.68 %   (Δ -18.13 pp)
+           *   {0.0465, 0.135}  →  65.44 %   (Δ -17.37 pp)
+           *   {0.0480, 0.142}  →  67.07 %   (Δ -15.74 pp)
+           *   {0.0500, 0.150}  →  67.76 %   (Δ -15.05 pp)
+           *   {0.0550, 0.170}  →  69.96 %   (Δ -12.85 pp)
+           *   {0.0650, 0.200}  →  72.25 %   (Δ -10.56 pp)
+           *   {0.0850, 0.260}  →  77.54 %   (Δ  -5.27 pp)
+           *   {0.0900, 0.280}  →  77.74 %   (Δ  -5.07 pp)   ← landed
+           *   {0.0950, 0.290}  →  75.19 %   (Δ  -7.62 pp, plateau)
+           *
+           * Real CE orb table (12 tiers from PAR-8-EXT) has bigger
+           * mean value than synthetic 7-tier, so we need higher
+           * land chances to reach the same expected HnW contribution.
+           * {0.09, 0.28} lands within ~5 pp of declared 82.81 % combined
+           * target — best the synthetic single-pool can do without
+           * sister-side per-scenario HnW (6/7/8 Fireballs branches). */
+          orb_land_chance_base: 0.09,
+          orb_land_chance_fill_bonus: 0.28,
         }
       : {
           trigger_count: 255,
