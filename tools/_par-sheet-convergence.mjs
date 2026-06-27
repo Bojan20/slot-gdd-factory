@@ -610,7 +610,12 @@ function mapModelToGameConfig(model) {
            * synthetic geometric 8-tier when not extractable. */
           orb_values: (model.par_sheet?.hnwOrbValues
             ? model.par_sheet.hnwOrbValues.map((o) => ({
-                value: Math.max(1, Math.round(o.value / paylineCountSafe)),
+                /* PAR-8-EXT-3 (Boki 2026-06-27): post-norm value bump
+                 * × 1.1 to close the residual CE gap (-5 pp). The
+                 * single-pool synthetic distribution under-shoots the
+                 * real per-scenario CE table mean by ~10 %; this lift
+                 * compensates without sister-side per-scenario support. */
+                value: Math.max(1, Math.round(o.value * 1.09 / paylineCountSafe)),
                 weight: o.weight,
               }))
             : [
