@@ -81,6 +81,51 @@
     border: 1px solid #45a29e;
   }
   .footer { margin-top: 3rem; font-size: 0.72rem; color: #45a29e; opacity: 0.7; }
+  /* BLOCK-6 · Already-built games launcher (Boki 2026-06-27) */
+  .built-games {
+    width: 100%; max-width: 720px;
+    margin-top: 2rem;
+    padding: 1.25rem;
+    background: rgba(31, 40, 51, 0.6);
+    border: 1px solid #2a3b4c;
+    border-radius: 12px;
+  }
+  .built-games h2 {
+    color: #66fcf1; font-size: 0.85rem; text-transform: uppercase;
+    letter-spacing: 1.5px; margin-bottom: 0.5rem;
+  }
+  .built-games .sub2 {
+    color: #45a29e; font-size: 0.75rem; margin-bottom: 1rem;
+  }
+  .built-games .game-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.6rem;
+  }
+  .built-games a.game-tile {
+    display: block; padding: 0.85rem 1rem;
+    background: #0b0c10; border: 1px solid #45a29e; border-radius: 8px;
+    color: #66fcf1; text-decoration: none; font-size: 0.85rem; font-weight: 600;
+    text-align: center; transition: all 0.15s; letter-spacing: 0.3px;
+  }
+  .built-games a.game-tile:hover {
+    background: rgba(102, 252, 241, 0.1);
+    transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 252, 241, 0.25);
+  }
+  .built-games a.game-tile .tile-sub {
+    display: block; font-size: 0.7rem; color: #45a29e; font-weight: 400;
+    margin-top: 0.25rem; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .built-games .backend-pill {
+    display: inline-block; margin-left: 0.5rem; padding: 0.15rem 0.6rem;
+    border-radius: 6px; font-size: 0.65rem; letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .built-games .backend-pill.live {
+    background: rgba(56, 189, 124, 0.2); color: #38bd7c; border: 1px solid #38bd7c;
+  }
+  .built-games .backend-pill.off {
+    background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444;
+  }
 </style>
 </head>
 <body>
@@ -96,6 +141,47 @@
 <input type="file" id="fileInput" accept=".md,.json,.txt,.markdown,.pdf,.docx,.doc">
 
 <div id="result"></div>
+
+<!-- BLOCK-6 · Already-built games launcher (Boki 2026-06-27) -->
+<div class="built-games" id="builtGames">
+  <h2>
+    🎰 Već zgrađene igre
+    <span class="backend-pill" id="backendStatus">…</span>
+  </h2>
+  <div class="sub2">
+    Klik = otvori slot sa MC Batch panelom · Quick / Standard / Strict / Regulator profili
+  </div>
+  <div class="game-grid" id="builtGamesGrid">
+    <a class="game-tile" href="dist/build-gated/cash-eruption/slot.html">
+      Cash Eruption
+      <span class="tile-sub">build-gated · BLOCK-3 ✓</span>
+    </a>
+  </div>
+  <div class="sub2" style="margin-top: 1rem; font-size: 0.7rem; opacity: 0.6;">
+    Backend (math :9001) mora biti živ da bi profile dugmici radili.
+    Launcher ga pokreće automatski.
+  </div>
+</div>
+
+<script>
+  // BLOCK-6: probe math-backend health
+  (function () {
+    var pill = document.getElementById('backendStatus');
+    if (!pill) return;
+    fetch('http://127.0.0.1:9001/health', { mode: 'cors' })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject('off'); })
+      .then(function (j) {
+        pill.textContent = 'BACKEND LIVE';
+        pill.className = 'backend-pill live';
+        pill.title = 'math-backend on :9001 — v' + (j.version || '?');
+      })
+      .catch(function () {
+        pill.textContent = 'BACKEND OFF';
+        pill.className = 'backend-pill off';
+        pill.title = 'math-backend :9001 ne odgovara — profile dugmici neće raditi';
+      });
+  })();
+</script>
 
 <div class="footer">v0.1 · standalone · math is placeholder dummy</div>
 
