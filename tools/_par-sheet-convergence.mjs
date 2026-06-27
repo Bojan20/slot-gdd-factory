@@ -504,6 +504,17 @@ function mapModelToGameConfig(model) {
      * simulation. Replaces the factory-side scatter_pays scaling
      * hack (PAR-12-G-TUNE) with proper sister-native semantics. */
     bonus_buy_mode: isBonusBuy,
+    /* PAR-14-E #4 sister-side native Wild Expand wire. When enabled,
+     * sister kernel post-spin transforms reels with any Wild into full-
+     * Wild reels. Factory hack (wildExpandFactor) STAYS active during
+     * transition; native flag here lets the kernel know the feature is
+     * permitted so future scoping can drop the factor down without
+     * losing the mechanic. */
+    wild_expand_mode: false,
+    /* PAR-14-E #6 sister-side native Coin Boost wire. Empty distribution
+     * until the factory extractor lifts per-game multiplier tables from
+     * the par sheet (Fortune Coin Boost: 10×, 50×, 100× weighted). */
+    coin_boost_multipliers: [],
     /* PAR-12-C (Boki 2026-06-27): use par-sheet-extracted FS reel
      * strips when present. Sister `fs_weights` is consumed by the FS
      * spin generator; with real FS distribution (more Wild, more
