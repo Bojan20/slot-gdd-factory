@@ -52,6 +52,10 @@ import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync } from 
 import { resolve, join, dirname } from 'node:path';
 import { argv } from 'node:process';
 import { fileURLToPath } from 'node:url';
+/* PAR-14-I (Boki 2026-06-27): classifier ↔ auto-tune glue. detectMechanics()
+ * is the canonical signal for which tuning axes apply per slug. Re-using it
+ * here ensures auto-tune and classifier never drift apart. */
+import { detectMechanics } from './_par-sheet-classifier-lib.mjs';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PAR_MODELS_DIR = join(REPO, 'dist', 'par-sheet-real-games');
@@ -69,34 +73,62 @@ function parseArgs(args) {
 
 /**
  * Detect which tuning axes a slug needs based on its model + slug name.
- * Returns a config skeleton with sensible defaults; auto-tune sweep
- * will refine these to PASS verdict ranges.
+ *
+ * PAR-14-I refactor: this function NOW reads `detectMechanics()` from the
+ * shared classifier-lib instead of duplicating regex checks. The
+ * mechanics flags become the authoritative source for axis activation —
+ * if classifier says `coin_boost.detected = true`, auto-tune flips the
+ * matching tuning axis ON. Any drift between classifier-vs-auto-tune is
+ * impossible by construction.
+ *
+ * @param {object} model  par-sheet ingested model.json
+ * @returns {object}      tuning axes config skeleton (sweep refines)
  */
 function detectTuningAxes(model) {
   const slug = (model.slug || model.id || '').toLowerCase();
+  const mechanics = detectMechanics(model);
   const components = model.payback?.components || {};
-  const par_sheet = model.par_sheet || {};
 
-  const axes = {
+  return {
     slug,
+    /* Each axis carries:
+     *   - enabled: classifier mechanic detection
+     *   - <param>: tuning knobs (initial baseline; sweep refines) */
     hnw: {
-      enabled: Number.isFinite(components.holdAndWin) && components.holdAndWin >= 1.0,
+      enabled: mechanics.hold_and_win.detected,
       orb_land_chance_base: 0.045,
       orb_land_chance_fill_bonus: 0.13,
       orb_value_bump: 1.0,
+      /* Forward auxiliary detection signals so sweep can reason about
+       * orb table presence without re-deriving them. */
+      orb_table_extracted: mechanics.hold_and_win.orb_table_extracted,
+      orb_tier_count: mechanics.hold_and_win.orb_tier_count,
     },
     fs: {
-      enabled: Number.isFinite(components.freeSpins) && components.freeSpins >= 1.0,
+      enabled: mechanics.free_spins.detected,
       bucket: detectFsBucket(components.freeSpins),
       scatter_pays_bump: 1.0,
+      explicit_awards: mechanics.free_spins.explicit_awards,
     },
     bonus_buy: {
-      enabled: /bonus[\s_-]?buy/i.test(slug),
+      enabled: mechanics.bonus_buy.detected,
       scaling: 0.22,
     },
     wild_expand: {
-      enabled: /skeleton|fortune.?coin/i.test(slug),
+      enabled: mechanics.wild_expand.detected,
       factor: 1.0,
+    },
+    coin_boost: {
+      enabled: mechanics.coin_boost.detected,
+      /* When detected, multipliers come directly from the par-sheet
+       * extraction (`ENHANCED_CE_0` table); auto-tune knob only governs
+       * downstream density / carrier coverage. */
+      multipliers: mechanics.coin_boost.multipliers,
+      density_target_pct: 0.667,
+    },
+    special_reel_set: {
+      enabled: mechanics.special_reel_set.detected,
+      set_count: mechanics.special_reel_set.set_count,
     },
     surgical_deltas: {
       /* Per-reel ±N adjustments on Wild/Bonus weights.
@@ -105,12 +137,16 @@ function detectTuningAxes(model) {
       bonus_per_reel: {},
     },
     mystery_remap: {
-      enabled: /skeleton/i.test(slug),
+      /* Mystery → Wild remap stays scoped to slugs with Mystery cash
+       * specials AND a "spreading wild" game design (currently only
+       * Skel Key). The mechanic flag from classifier carries the
+       * structural detection; the slug gate keeps the remap path
+       * Skel-Key-only. */
+      enabled: mechanics.mystery_reveal.detected
+        && /skeleton/i.test(slug),
       pattern: /skeleton/i.test(slug) ? '/mystery|reveal|^key$/i' : '/mystery|reveal/i',
     },
   };
-
-  return axes;
 }
 
 function detectFsBucket(declaredFs) {
@@ -123,19 +159,52 @@ function detectFsBucket(declaredFs) {
 
 /**
  * Read existing auto-tune.json if present, merge with detected axes.
- * This gives a stable baseline for sweep iteration.
+ *
+ * PAR-14-I (Boki 2026-06-27): cache merge strategy is now classifier-
+ * FIRST. Always re-derive axes from the model via `detectTuningAxes`
+ * so new mechanics (e.g. coin_boost, special_reel_set) get added when
+ * the schema evolves. THEN overlay any cached per-axis manual overrides
+ * (preserving sweep-found scaling values from prior runs).
+ *
+ * Semantics:
+ *   - Fresh derive gives every NEW axis that exists in the latest
+ *     mechanic detector.
+ *   - Cached values overlay matching axes' tuning knobs (factor,
+ *     scaling, bucket, etc.) BUT the `enabled` flag always reflects the
+ *     latest classifier output. Slug that lost a feature won't keep an
+ *     orphan enabled axis around.
  */
 function loadOrInitTune(slugDir, model) {
   const tunePath = join(slugDir, 'auto-tune.json');
+  const fresh = detectTuningAxes(model);
   if (existsSync(tunePath)) {
     try {
       const cached = JSON.parse(readFileSync(tunePath, 'utf-8'));
-      return { tune: cached, fromCache: true, tunePath };
+      /* Deep merge: for each axis present in fresh, overlay cached
+       * tunable values (everything except `enabled`). */
+      const merged = { slug: fresh.slug };
+      for (const [axisName, freshAxis] of Object.entries(fresh)) {
+        if (axisName === 'slug') continue;
+        if (typeof freshAxis !== 'object' || freshAxis === null) {
+          merged[axisName] = freshAxis;
+          continue;
+        }
+        const cachedAxis = (cached && typeof cached[axisName] === 'object')
+          ? cached[axisName] : {};
+        merged[axisName] = { ...freshAxis };
+        for (const [k, v] of Object.entries(cachedAxis)) {
+          /* Skip `enabled` — classifier owns activation, not cache. */
+          if (k === 'enabled') continue;
+          /* Carry over tuning knob if it exists on fresh axis. */
+          if (k in freshAxis) merged[axisName][k] = v;
+        }
+      }
+      return { tune: merged, fromCache: true, tunePath };
     } catch (e) {
       console.warn(`▸ ${slugDir}: existing auto-tune.json corrupt, regenerating`);
     }
   }
-  return { tune: detectTuningAxes(model), fromCache: false, tunePath };
+  return { tune: fresh, fromCache: false, tunePath };
 }
 
 function writeTune(tunePath, tune) {

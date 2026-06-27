@@ -214,11 +214,15 @@ Remaining factory residuals (all small, transition-period):
 │   │   par-convergence-100M.yml (Sun 03 UTC).   │ 03 UTC cron.          │     │
 │   │   capTotalSpins typo u base toolu fix-ovan.│                       │     │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
-│ 3 │ PAR-14-I (auto-tune-from-classifier glue) │ "Drop par sheet →     │ 3h  │
-│   │   tools/_par-sheet-classifier.mjs detect   │ savršeno ide kroz     │     │
-│   │   feature → tools/_par-sheet-auto-tune.mjs │ pipeline" — bez       │     │
-│   │   sweep → emit locked scaling.json per     │ ručne kalibracije     │     │
-│   │   slug. 0-touch convergence za novi slot.  │ po slugu.             │     │
+│ 3 │ PAR-14-I (orchestrator + classifier ↔     │ ✅ LANDED             │ ✓   │
+│   │ auto-tune glue)                            │ classifier-lib shared │     │
+│   │   _par-sheet-classifier-lib.mjs            │ by CLI + auto-tune    │     │
+│   │   par-sheet-pipeline.mjs orchestrator      │ + pipeline. Mechanic  │     │
+│   │   1-command: xlsx → classify → tune →      │ flags drive axis      │     │
+│   │   converge → emit reports/par-pipeline.    │ activation; receipts  │     │
+│   │   5/5 PASS @ 5M×4 in ~5 min via pipeline.  │ at reports/par-       │     │
+│   │   18-assertion contract test.              │ pipeline/<slug>.json. │     │
+│   │   Real sweep loop = PAR-14-I-FULL future.  │                       │     │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
 │ 4 │ PAR-14-J (extend portfolio na 6+ slug)    │ Pravi test ultimate   │ 4h  │
 │   │   Sledeći par sheet drop from ~/Desktop/   │ pipeline robustnosti  │     │
@@ -238,9 +242,12 @@ Remaining factory residuals (all small, transition-period):
 └───┴──────────────────────────────────────────┴──────────────────────┴─────┘
 ```
 
-**Total preostalo do "savršenog ultimativnog stanja": ~21h efektivnog rada
-(PAR-14-D + PAR-14-F + PAR-14-H LANDED · cumulative -7h u tri wave-a).
-Sastav: PAR-14-I/J = ~7h, F1 = ~6h, F3 + F5 = ~8h**.
+**Total preostalo do "savršenog ultimativnog stanja": ~18h efektivnog rada
+(PAR-14-D + PAR-14-F + PAR-14-H + PAR-14-I LANDED · cumulative -10h u
+četiri wave-a). Sastav: PAR-14-J = ~4h, F1 = ~6h, F3 + F5 = ~8h.
+PAR-14-I-FULL (real sweep loop u auto-tune) ostaje deferred enhancement;
+trenutno glue + schema + orchestrator dovoljni za 0-touch 5/5 PASS na
+postojećoj portfelji (E2E pipeline 5 slugs × 5M × 4 = ~5 min).**
 
 ---
 
