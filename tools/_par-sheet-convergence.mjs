@@ -291,7 +291,7 @@ function mapModelToGameConfig(model) {
    * multiplier values on line wins during base game. Sister kernel
    * has no such hook. Wild density boost approximates the lift. */
   const isFortuneCoin = /fortune.?coin|coin.?boost/i.test(model.slug || model.id || '');
-  const wildExpandFactor = isSkelKey ? 1.84 : (isFortuneCoin ? 14 : 1);
+  const wildExpandFactor = isSkelKey ? 1.84 : (isFortuneCoin ? 14.18 : 1);
 
   const baseWeights = (model.par_sheet?.reelStrips || []).map((reel) =>
     reel.map((e) => {
@@ -520,9 +520,11 @@ function mapModelToGameConfig(model) {
         /* Scatter_pays per trigger. 3-scatter dominant; 4 + 5 rarer.
          * Scaling derived from BoU declared bonus 89.30 % and ~1 %
          * trigger rate → ~89 × bet per 3-scatter. Tune empirically. */
-        /* Tuned against 5M × 4 seed (W99 ~17 pp) — coarse 200k tune
-         * over-fit to RNG noise. Real BoU scaling lands at 0.24. */
-        const base = Math.round(declaredBonus * 0.24);
+        /* Tuned against 5M × 4 seed. Use float — sister scatter_pays
+         * is HashMap<u8, f64> so fractional bases work. Integer
+         * stepping previously gave 1.18 pp jumps between adjacent
+         * values; float opens a finer tune surface. */
+        const base = declaredBonus * 0.2158;
         return {
           awards: { '3': 0, '4': 0, '5': 0 },
           mult_start: 1,
@@ -550,7 +552,7 @@ function mapModelToGameConfig(model) {
       if (Number.isFinite(declaredFs) && declaredFs >= 1.0) {
         let awards;
         if (declaredFs < 5) awards = { '3': 3, '4': 5, '5': 8 };
-        else if (declaredFs < 10) awards = { '3': 7, '4': 12, '5': 17 };
+        else if (declaredFs < 10) awards = { '3': 7, '4': 12, '5': 16 };
         else if (declaredFs < 20) awards = { '3': 10, '4': 15, '5': 20 };
         else awards = { '3': 15, '4': 25, '5': 35 };
         return {
