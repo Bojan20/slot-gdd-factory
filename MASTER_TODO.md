@@ -198,11 +198,12 @@ Remaining factory residuals (all small, transition-period):
 ┌───┬──────────────────────────────────────────┬──────────────────────┬─────┐
 │ # │ Atom                                       │ Zašto                 │ Eff │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
-│ 1 │ PAR-14-H (BoU Mystery native hand-off)    │ Skida posljednju      │ 2h  │
-│   │   Yank Mystery → Wild remap factory hack.  │ factory remap, čisto  │     │
-│   │   Pravi PAR-14-E-2 is_mystery flag jedini  │ sister pre-eval.      │     │
-│   │   path; sister evaluator pre-eval random   │                       │     │
-│   │   LP/MP. Re-verifikuj +0.04 pp Δ ostaje.   │                       │     │
+│ 1 │ PAR-14-H (Mystery → Wild remap scoping)   │ ✅ LANDED             │ ✓   │
+│   │   Globalni remap yank-ovan; Skel Key-only  │ Mystery → Wild        │     │
+│   │   scope (game-design semantika korektna).  │ scope-gated; BoU      │     │
+│   │   BoU + budući slugovi sa Mystery cash     │ + future Mystery      │     │
+│   │   simbolima koriste sister native          │ slugovi koriste       │     │
+│   │   `apply_mystery_reveal` dispatch.         │ sister native flag.   │     │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
 │ 2 │ PAR-14-D (100M × 4 nightly cron + 1B      │ Tighter PASS band     │ 3h  │
 │   │ pre-release verify)                        │ (~3 pp → 1-2 pp)      │     │
@@ -234,9 +235,9 @@ Remaining factory residuals (all small, transition-period):
 └───┴──────────────────────────────────────────┴──────────────────────┴─────┘
 ```
 
-**Total preostalo do "savršenog ultimativnog stanja": ~26h efektivnog rada
-(PAR-14-F LANDED · ovaj wave -2h). Sastav: PAR-14-H/I/J = ~9h, F1 = ~6h,
-F3 + F5 = ~8h, plus PAR-14-D nightly cron = ~3h**.
+**Total preostalo do "savršenog ultimativnog stanja": ~24h efektivnog rada
+(PAR-14-F + PAR-14-H LANDED · ovaj wave -4h). Sastav: PAR-14-I/J = ~7h,
+F1 = ~6h, F3 + F5 = ~8h, plus PAR-14-D nightly cron = ~3h**.
 
 ---
 

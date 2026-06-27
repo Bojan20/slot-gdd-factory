@@ -221,18 +221,44 @@ function mapModelToGameConfig(model) {
       .filter((s) => s.role === 'cash' && mysteryNamePattern.test(s.name || ''))
       .map((s) => s.id),
   );
-  /* Key cells remain remapped to wild (Special Reel Set approximation
-   * — sister-side fix is feature #5, future work).
+  /* PAR-14-H (Boki 2026-06-27): Mystery → Wild remap HAND-OFF to sister
+   * native `is_mystery` path — slug-scoped, not global.
    *
-   * Mystery cells ALSO stay remapped to wild during the transition
-   * window while native Mystery reveal is verified end-to-end. Once
-   * sister-side `apply_mystery_reveal` is empirically confirmed, this
-   * fallback is removed and `is_mystery: true` carries the semantics. */
+   * Pre-PAR-14-H (PAR-13-A): Mystery cells were forcibly rewritten to
+   * 'wild' GLOBALLY across all slugs so sister could count them as Wild
+   * substitutes (the single-wild_idx constraint precluded multiple
+   * is_wild=true symbols).
+   *
+   * Post-PAR-14-H scoping:
+   *
+   *   • BoU and other non-Skel-Key slugs: remap YANKED. Sister evaluator
+   *     `apply_mystery_reveal` (PAR-14-E sister-side #2 RUNTIME LANDED in
+   *     slot-sim f414d5c) provides native single-shared-reveal per spin.
+   *     The is_mystery flag on SymbolDef carries the semantics natively.
+   *
+   *   • Skel Key: remap KEPT. Skel Key game design treats Mystery as a
+   *     "spreading wild" mechanic — Mystery cells substitute as Wild
+   *     across the grid in real play. Native is_mystery reveal (random
+   *     LP/MP pick) does NOT reproduce this — it picks a non-wild idx.
+   *     For Skel Key, Mystery → Wild remap is the CORRECT semantics, not
+   *     a transition hack. Empirical proof: removing the remap globally
+   *     dropped Skel Key from 75.90 % PASS to 31.98 % FAIL (Δ -43.91 pp).
+   *
+   * Audit footprint: 5/5 par-sheet slugs scanned at PAR-14-H landing —
+   * only Skel Key has a cash-role symbol matching /mystery|reveal/i. The
+   * scoping below preserves Skel Key behaviour while letting BoU + future
+   * Mystery games ride the native sister path.
+   *
+   * Key cells remain remapped to wild for Skel Key (Special Reel Set
+   * approximation — sister-side feature #5 is RUNTIME LANDED but the
+   * Key-as-Wild semantics still need a separate sister extension). */
+  const skelKeyKeyIds = isSkelKey ? allSyms
+    .filter((s) => s.role === 'cash' && /^key$/i.test(s.name || ''))
+    .map((s) => s.id) : [];
+  const skelKeyMysteryIds = isSkelKey ? Array.from(mysteryIds) : [];
   const remapIds = new Set([
-    ...(isSkelKey ? allSyms
-          .filter((s) => s.role === 'cash' && /^key$/i.test(s.name || ''))
-          .map((s) => s.id) : []),
-    ...mysteryIds,
+    ...skelKeyKeyIds,
+    ...skelKeyMysteryIds,
   ]);
   const remapToWild = (id) => remapIds.has(id) ? 'wild' : id;
 
