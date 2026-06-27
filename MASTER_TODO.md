@@ -20,11 +20,17 @@
 └──────┴─────────────────────────────┴─────────────┴─────────────────────┘
 ```
 
-4 features fully runtime-LANDED. #5 + #6 schema wired (config struct +
-default init); runtime dispatch in evaluator hot path is future work
-(par-14-e-5-runtime / par-14-e-6-runtime). Factory mapper hacks remain
-active as fallback during transition — 5M × 4 seed convergence keeps
-4 PASS / 1 WARN ledger steady throughout.
+6/6 features runtime-LANDED in sister kernel (config struct + dispatch
+in evaluator hot path). Factory-side data extractors landed:
+  • #3 Multi-Scenario HnW — extractHnwScenarios(wb) [CE par_001]
+  • #5 Special Reel Set    — extractSpecialReelSets(wb) [Skel Key]
+  • #6 Coin Boost mults    — extractCoinBoostMultipliers(wb) [FCB par_001
+                              `ENHANCED_CE_0` table: {1×:3000, 2×:250,
+                              3×:125}, Δ=+0.02 pp @ 5M×4]
+Remaining factory hacks (wildExpandFactor for FCB Wild boost, Mystery →
+Wild remap for BoU) STAY active during transition — sister-side
+coin_boost dispatch reads is_coin_boost SymbolDef flag from reel strips,
+which FCB's strips don't yet carry. Yank atom: PAR-14-F-fcb-symflag.
 
 ### A) Fundamental limit honest disclosure
 

@@ -1529,6 +1529,101 @@ export function extractSpecialReelSets(wb) {
   return { sets: null, source: null, confidence: 0 };
 }
 
+/**
+ * extractCoinBoostMultipliers — FCB Coin Boost tier weight distribution.
+ *
+ * Fortune Coin Boost-style par sheets carry an "ENHANCED_CE_N" weight table
+ * (N = 0..3 enhancement level) where each row carries a multiplier label
+ * (`1X`, `2X`, `3X`) + optional control symbols (`RL` Remove Level). The
+ * base-level distribution `ENHANCED_CE_0` is the canonical multiplier roll
+ * used when a `Coin Boost` symbol lands at level 0 (the default at game
+ * start). Higher enhancement levels add more 2X/3X weight + RL transitions.
+ *
+ * We aggregate `ENHANCED_CE_0` and emit:
+ *   [{ multiplier: 1, weight: <sum> }, { multiplier: 2, weight: ... }, ...]
+ *
+ * This feeds into the sister-side `GameConfig.coin_boost_multipliers`
+ * field which the rust-sim DynGrid.apply_coin_boost reads at runtime to
+ * sample per-spin multipliers across active Coin/Coin Boost cells.
+ *
+ * Returns { multipliers: Array<{multiplier, weight}> | null, source, confidence }.
+ */
+export function extractCoinBoostMultipliers(wb) {
+  const LEVEL_LABEL_RX = /^\s*ENHANCED_CE_0\s*$/i;
+  const MULT_RX = /^\s*(\d+)\s*[xX]\s*$/;
+
+  for (const sheetName of wb.SheetNames) {
+    const ws = wb.Sheets[sheetName];
+    const range = sheetRange(ws);
+    if (!range) continue;
+
+    const maxR = Math.min(range.e.r, range.s.r + 2000);
+    const maxC = Math.min(range.e.c, range.s.c + 120);
+
+    /* Pass A — find ENHANCED_CE_0 label. */
+    let anchorRow = null;
+    let anchorCol = null;
+    for (let r = range.s.r; r <= maxR; r++) {
+      for (let c = range.s.c; c <= maxC; c++) {
+        const s = cellString(ws, r, c);
+        if (!s || !LEVEL_LABEL_RX.test(s)) continue;
+        anchorRow = r;
+        anchorCol = c;
+        break;
+      }
+      if (anchorRow !== null) break;
+    }
+    if (anchorRow === null) continue;
+
+    /* Pass B — header row should be the next row with "Index | Name | Weight". */
+    let headerRow = null;
+    for (let r = anchorRow + 1; r <= Math.min(anchorRow + 4, maxR); r++) {
+      const idx = cellString(ws, r, anchorCol);
+      const nm = cellString(ws, r, anchorCol + 1);
+      const wt = cellString(ws, r, anchorCol + 2);
+      if (/^index$/i.test(idx || '') && /^name$/i.test(nm || '') && /^weight$/i.test(wt || '')) {
+        headerRow = r;
+        break;
+      }
+    }
+    if (headerRow === null) continue;
+
+    /* Pass C — walk rows aggregating multiplier weights. */
+    const multMap = new Map();
+    for (let r = headerRow + 1; r <= Math.min(headerRow + 60, maxR); r++) {
+      const idxCell = cellNumber(ws, r, anchorCol);
+      const nameCell = cellString(ws, r, anchorCol + 1);
+      const wgt = cellNumber(ws, r, anchorCol + 2);
+      if (idxCell === null && /total/i.test(nameCell || '')) break;
+      if (idxCell === null && (!nameCell || nameCell === '')) {
+        /* Allow blank row gaps. */
+        const ahead = cellString(ws, r + 1, anchorCol + 1);
+        if (!ahead) break;
+        continue;
+      }
+      if (!nameCell || wgt === null || wgt <= 0) continue;
+      const m = MULT_RX.exec(nameCell);
+      if (!m) continue;
+      const mult = parseInt(m[1], 10);
+      if (!Number.isFinite(mult) || mult < 1 || mult > 100) continue;
+      multMap.set(mult, (multMap.get(mult) || 0) + Math.round(wgt));
+    }
+
+    if (multMap.size >= 2) {
+      const multipliers = Array.from(multMap.entries())
+        .sort((a, b) => a[0] - b[0])
+        .map(([multiplier, weight]) => ({ multiplier, weight }));
+      return {
+        multipliers,
+        source: { sheet: sheetName, row: anchorRow + 1, col: anchorCol + 1 },
+        confidence: 0.9,
+      };
+    }
+  }
+
+  return { multipliers: null, source: null, confidence: 0 };
+}
+
 export function extractFsReelStrips(wb) {
   const REEL_HEADER_RX = /^\s*reel\s*(\d+)\s*$/i;
   const TOTAL_RX = /^\s*(total|sum|end)\s*$/i;
@@ -2110,6 +2205,13 @@ async function buildModel(wb, slug) {
    * tiers yields one flat orb pool that matches sister's
    * `OrbValue { value, weight }` shape exactly. */
   const hnwOrbValues = extractHnwOrbValues(wb);
+  /* PAR-14-E #6: FCB Coin Boost multiplier weight distribution from
+   * the par-sheet `ENHANCED_CE_0` table (level-0 base-state roll).
+   * Sister consumes via `GameConfig.coin_boost_multipliers` to seed
+   * `DynGrid.apply_coin_boost` weighted picks per active Coin/Coin
+   * Boost cell. Replaces the hardcoded factory-side multiplier
+   * constants previously stamped in `_par-sheet-convergence.mjs`. */
+  const coinBoostMultipliers = extractCoinBoostMultipliers(wb);
 
   /* Synthesized vendor-neutral display name. */
   const neutralName = sanitize(
@@ -2352,6 +2454,12 @@ async function buildModel(wb, slug) {
           ...(hnwOrbValues.orbValues
             ? { hnwOrbValues: hnwOrbValues.orbValues }
             : {}),
+          /* PAR-14-E #6: FCB Coin Boost tier weight distribution.
+           * Mapper passes this through to GameConfig.coin_boost_multipliers
+           * in place of the hardcoded {1:3000, 2:250, 3:125} constants. */
+          ...(coinBoostMultipliers.multipliers
+            ? { coinBoostMultipliers: coinBoostMultipliers.multipliers }
+            : {}),
         }
       : undefined,
 
@@ -2388,6 +2496,9 @@ async function buildModel(wb, slug) {
           : 'absent',
         fsReelStrips: fsReelStrips.source
           ? `par-sheet:${fsReelStrips.source.sheet}@row${fsReelStrips.source.headerRow}:${fsReelStrips.source.layout}`
+          : 'absent',
+        coinBoostMultipliers: coinBoostMultipliers.source
+          ? `par-sheet:${coinBoostMultipliers.source.sheet}@row${coinBoostMultipliers.source.row}:ENHANCED_CE_0`
           : 'absent',
       },
     },

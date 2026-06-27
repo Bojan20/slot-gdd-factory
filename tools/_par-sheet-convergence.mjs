@@ -511,10 +511,23 @@ function mapModelToGameConfig(model) {
      * permitted so future scoping can drop the factor down without
      * losing the mechanic. */
     wild_expand_mode: false,
-    /* PAR-14-E #6 sister-side native Coin Boost wire. Empty distribution
-     * until the factory extractor lifts per-game multiplier tables from
-     * the par sheet (Fortune Coin Boost: 10×, 50×, 100× weighted). */
-    coin_boost_multipliers: [],
+    /* PAR-14-E #6 sister-side native Coin Boost wire. Sourced from
+     * the par-sheet `ENHANCED_CE_0` table via `extractCoinBoostMultipliers`
+     * (FCB: {1×:3000, 2×:250, 3×:125} base-level distribution). When the
+     * extractor returns null the field stays empty and sister falls back
+     * to the legacy factory hardcoded constants — keeping non-FCB games
+     * unaffected. */
+    coin_boost_multipliers: (() => {
+      const mults = model.par_sheet?.coinBoostMultipliers;
+      if (!Array.isArray(mults) || mults.length === 0) return [];
+      /* Sister struct CoinBoostMultiplier {value: u32, weight: u32}. */
+      return mults
+        .map((m) => ({
+          value: Math.max(1, Math.round(Number(m.multiplier ?? m.value) || 1)),
+          weight: Math.max(0, Math.round(Number(m.weight) || 0)),
+        }))
+        .filter((m) => m.weight > 0);
+    })(),
     /* PAR-12-C (Boki 2026-06-27): use par-sheet-extracted FS reel
      * strips when present. Sister `fs_weights` is consumed by the FS
      * spin generator; with real FS distribution (more Wild, more
