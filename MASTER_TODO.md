@@ -5,6 +5,25 @@
 > ultimativno da se radi za svaki gdd i matematiku kad se ubaci, da uvek bude
 > tačno i savršeno."*
 
+### 0) Sister-side progress (LIVE)
+
+```
+┌──────┬─────────────────────────────┬──────────┬─────────────────────┐
+│ Sis #│ Feature                       │ Status    │ Sister commit        │
+├──────┼─────────────────────────────┼──────────┼─────────────────────┤
+│  #1  │ Bonus Buy Mode native flag    │ ✅ LANDED │ slot-sim 83c0597    │
+│  #2  │ Mystery Reveal hook           │ ✅ LANDED │ slot-sim f414d5c    │
+│  #3  │ Multi-Scenario HnW            │ 🔄 NEXT   │                     │
+│  #4  │ Wild Expand spatial mechanic  │ 📋 PLAN   │                     │
+│  #5  │ Special Reel Set evaluator    │ 📋 PLAN   │                     │
+│  #6  │ Coin Boost multiplier         │ 📋 PLAN   │                     │
+└──────┴─────────────────────────────┴──────────┴─────────────────────┘
+```
+
+5 M × 4 seed convergence held 4 PASS / 1 WARN sa native flags armed
+alongside factory hacks (transition window — hacks ostaju kao fallback
+dok sve native features ne uđu u stabilan path).
+
 ### A) Fundamental limit honest disclosure
 
 Sister kernel `rust-sim`:
