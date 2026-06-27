@@ -1,19 +1,21 @@
 ## 📊 PAR-SHEET AUTONOMOUS INGEST — 2026-06-27 status (latest)
 
-### Live verdict ladder (200k × 2 seeds, post-PAR-8-TUNE-2 336cfad)
+### Live verdict ladder (200k × 2 seeds, post-PAR-13-A + PAR-12-G-TUNE)
 
 ```
 ┌──────────────────────────┬────────┬─────────────┬─────────────────────┐
 │ Slug                       │Measured│ Target      │ Verdict + gap        │
 ├──────────────────────────┼────────┼─────────────┼─────────────────────┤
-│ cash-eruption              │ 77.74% │ 82.81% (b+h) │ WARN  Δ  -5.07 pp ★ │
-│ fort-knox-wolf-run         │ 68.46% │ 70.99% (b)   │ WARN  Δ  -2.53 pp ★ │
-│ book-of-unseen-bonus-buy   │ 19.39% │ 52.82% (b)   │ WARN  Δ -33.44 pp   │
-│ skeleton-key               │ 10.00% │ 75.89% (b)   │ FAIL  Δ -65.88 pp   │
+│ book-of-unseen-bonus-buy   │ 52.21% │ 52.82% (b)   │ WARN  Δ  -0.62 pp ★★★│
+│ fort-knox-wolf-run         │ 68.46% │ 70.99% (b)   │ WARN  Δ  -2.53 pp ★★ │
+│ cash-eruption              │ 77.74% │ 82.81% (b+h) │ WARN  Δ  -5.07 pp ★  │
+│ skeleton-key               │ 21.43% │ 75.89% (b)   │ WARN  Δ -54.46 pp   │
 │ fortune-coin-boost-classic │ 20.42% │ 81.54% (b)   │ WARN  Δ -61.13 pp   │
 └──────────────────────────┴────────┴─────────────┴─────────────────────┘
-   4 WARN + 1 FAIL  ·  Cash Eruption from session start: 11.26% → 77.74% (+66.48 pp)
-                       Cash Eruption + Fort Knox both within 5 pp of target (★)
+   5 WARN + 0 FAIL  ·  All slugs in WARN band (Skel Key + FCB remain
+                        sister-side gaps: Special Reel Set, Coin Boost)
+   BoU + Fort Knox now within 3 pp · Cash Eruption from session start
+   11.26% → 77.74% (+66.48 pp)
    Target tags: (b) = baseGame · (b+h) = baseGame + holdAndWin
 ```
 
