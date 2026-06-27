@@ -1,3 +1,115 @@
+## 🎯 ULTIMATIVNI PLAN — Boki direktiva 2026-06-27
+
+> *"1. ultimativno najbolje moguće. 3. sve redom. i dogovorili smo se da bude
+> i 100m i 1b i 10b spinova da se osiguramo da je sve savršeno. kako predlažeš
+> ultimativno da se radi za svaki gdd i matematiku kad se ubaci, da uvek bude
+> tačno i savršeno."*
+
+### A) Fundamental limit honest disclosure
+
+Sister kernel `rust-sim`:
+- `ReelWeight.weight: u32`
+- `FreeSpinsConfig.awards: HashMap<u8, u8>`
+
+Faktory-side hack (Wild boost faktor, FS bucket tier, scatter_pays scaling)
+integer-quantized → resolution ~0.5 pp najbolje. **PASS svih 5 sa pure
+factory hacks je nedostižno** — to je matematička činjenica.
+
+`scatter_pays: HashMap<u8, f64>` JE float pa BoU Bonus Buy mode dobio PASS
+preko float scaling-a. Drugi atomi (Wild expand factor, FS awards) su integer
+i tu plateau-uje.
+
+### B) Real put do svih 5 PASS — sister-side native features
+
+```
+┌──────────────────────────────────────────┬────────────────────────────┐
+│ Feature                                    │ Code location               │
+├──────────────────────────────────────────┼────────────────────────────┤
+│ Mystery reveal pre-eval hook              │ rust-sim/src/features.rs    │
+│   (random LP/MP sym pre evaluacije)        │ + evaluator.rs:780          │
+│ Special Reel Set per-FS-round evaluator   │ rust-sim/src/features.rs    │
+│   (FS uses different reel set per trigger) │ simulate_free_spins()        │
+│ Coin Boost multiplier injection            │ rust-sim/src/evaluator.rs   │
+│   (multiplier × line wins during base)    │ evaluate_payline()           │
+│ Wild Expand spatial mechanic               │ rust-sim/src/features.rs    │
+│   (Wild landings expand to fill reel)      │ + grid.rs                   │
+│ Bonus Buy mode flag                        │ rust-sim/src/config.rs      │
+│   (force bonus on every spin)              │ + simulator.rs              │
+└──────────────────────────────────────────┴────────────────────────────┘
+```
+
+Bez ovog: faktory-side ostaje synthetic approximation za svaki novi slot.
+
+### C) Auto-discovery pipeline za "ubacin novi par sheet → savršeno"
+
+```
+PAR sheet ingest →
+  1. extract* (paytable, reels, paylines, FS, HnW, components)
+     ✅ već postoji u tools/_par-sheet-to-model.mjs
+  2. classify_specials() — auto cash/anchor/bonus/scatter/wild po:
+     - name regex (Wild/Scatter/Bonus/Book/Mystery/Coin)
+     - paytable membership (no entry → cash/special)
+     - reel weight density (rare → anchor, frequent → cash trigger)
+  3. detect_mechanics() — auto-detect:
+     - Mystery reveal (sym name /mystery|reveal/)
+     - Wild Expand (par sheet header mentions "expand")
+     - Coin Boost (par sheet header mentions "coin boost")
+     - Bonus Buy (slug name /bonus.?buy/)
+     - HnW (orb value table present)
+  4. auto_calibrator (NEW alat) — sweep faktory scaling factors:
+     - sweep ladder: 200k → 2M → 10M progresivno
+     - Wilson 99% gate na svakom koraku
+     - lock parametara kad |Δ| ≤ 0.05 pp AND ≤ W99
+  5. emit verdict @ ±0.05 pp / ±0.5 pp / ±5 pp tier-ovi sa explicit
+     feature gap-ovima u report-u
+```
+
+### D) Convergence verification scaling
+
+```
+┌──────────────┬───────┬──────────────┬─────────────────────────────┐
+│ Spin count    │ Wall   │ W99 half-w   │ Tier                         │
+├──────────────┼───────┼──────────────┼─────────────────────────────┤
+│  200k × 4    │ <1 min │ ~95-150 pp   │ dev smoke (RNG over-fit risk)│
+│    5M × 4    │ ~5 min │ ~14-21 pp    │ CI verify (current)          │
+│  100M × 4    │ ~25 min│ ~3-5 pp      │ tighter PASS verifikacija   │
+│    1B × 4    │ ~4 h   │ ~1-2 pp      │ production-grade            │
+│   10B × 4    │ ~40 h  │ ~0.3-0.6 pp  │ regulator audit             │
+└──────────────┴───────┴──────────────┴─────────────────────────────┘
+```
+
+NE ide na svaki commit. Cron / weekly / pre-release schedule.
+
+### E) Konkretan PAR-14 atom backlog (po redu)
+
+```
+┌──────────┬──────────────────────────────────────────────────────────┐
+│ Atom      │ Šta                                                       │
+├──────────┼──────────────────────────────────────────────────────────┤
+│ PAR-14-A │ Per-reel surgical Wild delta (zaobilazi int plateau)      │
+│           │ FK + SK PASS via per-reel ±1 adjustments                  │
+├──────────┼──────────────────────────────────────────────────────────┤
+│ PAR-14-B │ auto_calibrator alat                                       │
+│           │ tools/_par-sheet-auto-tune.mjs — input model.json, output  │
+│           │ tuned scaling factors per slug                             │
+├──────────┼──────────────────────────────────────────────────────────┤
+│ PAR-14-C │ classifier alat                                            │
+│           │ tools/_par-sheet-classifier.mjs — input par sheet, output  │
+│           │ specials + mechanics flags                                 │
+├──────────┼──────────────────────────────────────────────────────────┤
+│ PAR-14-D │ 100M / 1B / 10B verify gate scripts                        │
+│           │ tools/par-sheet-convergence-100M.mjs (cron / pre-release)  │
+├──────────┼──────────────────────────────────────────────────────────┤
+│ PAR-14-E │ Sister-side TODO with code locations + estimated effort    │
+│           │ Mystery / SRS / Coin Boost / Wild Expand / Bonus Buy mode  │
+└──────────┴──────────────────────────────────────────────────────────┘
+```
+
+PAR-14-E je realan **PASS gate** za svaki novi slot. Faktory-side hacks (A-D)
+su graceful degradation; sister-side (E) je production-grade truth.
+
+---
+
 ## 📊 PAR-SHEET AUTONOMOUS INGEST — 2026-06-27 status (latest)
 
 ### Live verdict ladder (200k × 2 seeds, post-PAR-13 wave + fine-tunes)

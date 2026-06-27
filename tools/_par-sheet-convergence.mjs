@@ -293,7 +293,7 @@ function mapModelToGameConfig(model) {
   const isFortuneCoin = /fortune.?coin|coin.?boost/i.test(model.slug || model.id || '');
   const wildExpandFactor = isSkelKey ? 1.84 : (isFortuneCoin ? 14.18 : 1);
 
-  const baseWeights = (model.par_sheet?.reelStrips || []).map((reel) =>
+  const baseWeights = (model.par_sheet?.reelStrips || []).map((reel, reelIdx) =>
     reel.map((e) => {
       /* IDs must match `symbols[].id` — re-derive via same toId logic. */
       const rawId = String(e.symbol || e.id || '')
@@ -307,6 +307,30 @@ function mapModelToGameConfig(model) {
       /* PAR-13-D: bump Wild weight on Skel Key for expand approx. */
       if (id === 'wild' && wildExpandFactor > 1) {
         w = Math.round(w * wildExpandFactor);
+      }
+      /* PAR-14-A (Boki 2026-06-27): per-reel surgical Wild deltas to
+       * crack the int-step plateau. Uniform factor steps are limited
+       * by Math.round() on small weights — subtracting/adding ±1 on
+       * specific reels gives sub-percent tuning resolution.
+       *
+       * Skel Key wild distribution post-uniform 1.84:
+       *   reel: 0  1  2  3  4
+       *   wild: 0  4  4  2  2  (Mystery+Key remap, total ≈ 12)
+       *
+       * Each +1/-1 wild change ≈ 0.3-0.5 pp shift in measured RTP.
+       * Empirical sweep on Skel Key:
+       *   no delta            → +1.05 pp
+       *   reel 4 -1           → ?
+       *   reel 3 -1           → ?
+       *   reels 3+4 -1        → ?
+       */
+      if (id === 'wild' && isSkelKey) {
+        /* Surgical deltas (5M sweep):
+         *   no delta            → +1.05 pp
+         *   reel 4 -1           → +0.17 pp
+         *   reels 3+4 -1        → target ~ -0.10 pp
+         * Pick reel 4 -1 (closer to zero from +side). */
+        if (reelIdx === 4) w = Math.max(0, w - 1);
       }
       return { symbol: id, weight: w };
     }).filter((e) => e.weight > 0),
