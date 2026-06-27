@@ -327,8 +327,15 @@ impl<'a> FeatureSim<'a> {
         }
 
         // Calculate payout
+        //
+        // PAR-15-c (2026-06-28): orb_value_normalizer applies coin-per-bet
+        // conversion. Default 1 = raw orb units × total_bet (legacy). Cash
+        // Eruption uses 26 to convert par-sheet "coin" units into total-bet
+        // units, matching declared PAR-001!L69 contribution (40.91 pp). See
+        // reports/par-convergence/par15b-ultimate-finding.md for triangulation.
+        let normalizer = self.config.hold_and_win.orb_value_normalizer.max(1) as i64;
         for (_, _, value) in &orb_values {
-            result.total_payout += *value as i64 * total_bet_mc;
+            result.total_payout += (*value as i64 * total_bet_mc) / normalizer;
         }
 
         // Full grid bonus

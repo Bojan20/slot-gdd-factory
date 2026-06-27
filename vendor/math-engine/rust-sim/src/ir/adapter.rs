@@ -670,6 +670,7 @@ fn convert_hold_and_win(
         orb_land_chance_base: 0.035, // sensible default — no IR field yet
         orb_land_chance_fill_bonus: 0.015,
     scenarios: Vec::new(),
+    orb_value_normalizer: 1,
         }
 }
 

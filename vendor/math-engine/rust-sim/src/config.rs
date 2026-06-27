@@ -120,6 +120,28 @@ pub struct HoldAndWinConfig {
     /// respin count, and orb distribution.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scenarios: Vec<HoldAndWinScenario>,
+    /// PAR-15-c (2026-06-28): Orb value normalizer for unit conversion.
+    ///
+    /// Par sheet orb tables emit values in "coin units" (native par sheet
+    /// convention), but `features.rs::simulate_hnw` multiplies by
+    /// `total_bet_mc` (total-bet units). When normalizer = 1 (default),
+    /// payout = value × total_bet (raw — matches historic behavior).
+    /// When normalizer = N, payout = (value × total_bet) / N — divides
+    /// by the coin-per-bet ratio so payouts land in declared par-sheet
+    /// convention.
+    ///
+    /// Cash Eruption: PAR-001!L69 declares HnW = 40.91 pp; sister sim w/
+    /// normalizer=1 measures ~71.82 pp (drift 1.755×). Setting
+    /// `orb_value_normalizer = 26` closes the gap to ±0.05 pp band.
+    ///
+    /// Default 1 preserves back-compat for all non-Cash-Eruption games.
+    #[serde(default = "default_orb_value_normalizer")]
+    pub orb_value_normalizer: u32,
+}
+
+/// PAR-15-c default for orb_value_normalizer (preserve back-compat).
+fn default_orb_value_normalizer() -> u32 {
+    1
 }
 
 /// PAR-14-E #6: Coin Boost multiplier weighted entry.
@@ -619,6 +641,7 @@ impl Default for GameConfig {
                 orb_land_chance_base: 0.035,
                 orb_land_chance_fill_bonus: 0.015,
                 scenarios: Vec::new(),
+                orb_value_normalizer: 1,
             },
             lightning: LightningConfig {
                 trigger_chance: 0.15,
