@@ -66,6 +66,11 @@ concurrency:
 
 permissions:
   contents: read
+  # F5-c (Boki 2026-06-27) — verify summary auto-posts to PR threads.
+  # `pull-requests: write` lets the workflow create / update one
+  # comment per PR (marker-keyed so subsequent runs replace, never
+  # stack).
+  pull-requests: write
 
 jobs:
   gate:
@@ -187,13 +192,71 @@ jobs:
       # web dashboard, GDD one-pager, and the batched 7-suite contract
       # runner. ~60 steps run; ~8 skip. Failure surface for everything
       # CI-reproducible stays full-fat.
-      - name: Verify gate (CI-safe profile)
-        run: npm run verify:ci
+      # F5-c (Boki 2026-06-27) — capture verify JSON for downstream
+      # summary + PR comment. `verify:ci --json` writes the structured
+      # results to a tempfile so a non-zero exit doesn't lose the
+      # report. The bash trap pattern keeps both exit code AND output
+      # so the workflow still fails appropriately.
+      - name: Verify gate (CI-safe profile) + capture JSON
+        id: verify
+        run: |
+          set +e
+          node tools/verify.mjs --ci --quick --json > /tmp/verify.json
+          VERIFY_EXIT=$?
+          # Always emit a quick line so the step's stdout isn't bare.
+          jq -r '.overall' /tmp/verify.json || echo "(verify report unparseable)"
+          exit $VERIFY_EXIT
 
-      # UQ-U-8 P1 — on failure, write a step-summary block listing the
-      # job + commit + which step failed (GitHub picks up automatically
-      # via the linked step result). Plus upload reports/ as artifact
-      # so a maintainer can pull telemetry locally.
+      # F5-c — generate step summary from verify JSON. Always emits,
+      # success OR fail, so reviewers see the full step ladder in the
+      # GitHub Actions UI's Summary tab.
+      - name: Emit verify summary (always)
+        if: always()
+        run: |
+          if [ -f /tmp/verify.json ]; then
+            node tools/_verify-pr-summary.mjs --in /tmp/verify.json --compact >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## ⚠ verify output missing" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Verify step crashed before writing /tmp/verify.json." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # F5-c — post verify summary as a PR comment on every PR event.
+      # Uses the GitHub CLI (pre-installed on ubuntu-latest runners) +
+      # the workflow's GITHUB_TOKEN. Required permission `pull-requests:
+      # write` is granted in the top-level `permissions` block.
+      #
+      # The comment is identified by a hidden marker so subsequent runs
+      # UPDATE the existing comment instead of stacking new ones.
+      - name: Post verify summary as PR comment
+        if: github.event_name == 'pull_request' && always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+        run: |
+          if [ ! -f /tmp/verify.json ]; then
+            echo "no verify json — skipping PR comment"
+            exit 0
+          fi
+          MARKER='<!-- verify-pr-summary-marker -->'
+          {
+            echo "$MARKER"
+            node tools/_verify-pr-summary.mjs --in /tmp/verify.json --compact
+          } > /tmp/verify-comment.md
+
+          # Find existing comment with marker, update or create.
+          EXISTING=$(gh api "repos/${{ github.repository }}/issues/$PR_NUM/comments" \
+            --jq ".[] | select(.body | startswith(\"$MARKER\")) | .id" | head -n 1)
+          if [ -n "$EXISTING" ]; then
+            gh api "repos/${{ github.repository }}/issues/comments/$EXISTING" \
+              -X PATCH -f body="$(cat /tmp/verify-comment.md)"
+            echo "updated comment $EXISTING"
+          else
+            gh pr comment "$PR_NUM" --body-file /tmp/verify-comment.md
+            echo "posted new comment"
+          fi
+
+      # Legacy failure summary kept for explicit "what just blew up" line.
       - name: Emit failure summary
         if: failure()
         run: |
@@ -206,7 +269,7 @@ jobs:
             echo "| event  | ${{ github.event_name }} |"
             echo "| ref    | ${{ github.ref }} |"
             echo ""
-            echo "See the failed step above for stderr/stdout tail. Reports artifact has full traces."
+            echo "See verify summary above (full step ladder) + reports/ artifact for traces."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload reports artifact (on failure)

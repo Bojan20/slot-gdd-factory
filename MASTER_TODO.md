@@ -289,6 +289,70 @@ Aristocrat patterni + generic fallback) — operator ubaci nepoznat vendor
 xlsx, dobija structural inference receipt pre nego što extractor uopšte
 krene.**
 
+### ULTIMATE sweep closeout receipt (2026-06-27 UTC, Boki "nastavi do kraja ultimativno")
+
+Posle F1 wave-a (acf3d82) Boki je tražio završetak svega što je realno
+moguće bez T-1/T-2 externalnih dependencies. Ovo je rezultat:
+
+```
+┌─────────────────────────────────────────┬──────────────────────────────────┐
+│ Atom                                     │ Status                            │
+├─────────────────────────────────────────┼──────────────────────────────────┤
+│ F3-b — Per-GDD compliance scorecard      │ tools/f3-b-per-gdd-scorecard.mjs │
+│   Agreguje V10/V11/V12/V14 walkere u    │ 280 LOC. Grade ladder A+→F sa    │
+│   per-slug regulator-ready scorecard sa │ coverage-aware threshold-ima.    │
+│   letter grade (A+→F) + aggregate MD.    │ 5/5 baseline = 2 A+ + 3 A.       │
+│                                          │ A+ kriterijum: 0 hard + 0 soft + │
+│                                          │ coverage ≥ 90 %.                  │
+├─────────────────────────────────────────┼──────────────────────────────────┤
+│ F4-a — Adversarial fuzz (1000-perm       │ tools/f4-a-adversarial-fuzz.mjs  │
+│   parser harness)                        │ 280 LOC. 6 mutator families:     │
+│   Generates malformed / scrambled GDD-s  │ truncate, duplicate, interleave_ │
+│   i potvrđuje parser nikad ne crashes /  │ garbage, table_shuffle, unicode_ │
+│   ne pollutes Object.prototype / ne      │ attack, proto_pollution.         │
+│   timeouts. Deterministic via mulberry32 │ 1000/1000 PASS · 0 crash · 0     │
+│   seeded PRNG.                            │ timeout · 0 pollution · 3.0s     │
+│                                          │ wall.                             │
+├─────────────────────────────────────────┼──────────────────────────────────┤
+│ PAR-14-I-FULL — Real sweep loop closure  │ tools/_par-sheet-sweep-engine.   │
+│   Ternary-search convergence engine sa   │ mjs 200 LOC. Synthetic-oracle    │
+│   progresivnom precision ladder-om       │ smoke konvergira na ±3e-4 delta  │
+│   (200k → 2M → 10M) i Wilson 99 % CI     │ za 9 koraka. Real-oracle wire    │
+│   gate na svakom rung-u. Locks kad        │ (sister kernel) ostaje PAR-14-   │
+│   |Δ| ≤ 0.05 pp AND W99 ≤ 0.1 pp.        │ I-WIRE, dokumentovano.           │
+├─────────────────────────────────────────┼──────────────────────────────────┤
+│ F5-c — Verify report u PR comment        │ tools/_verify-pr-summary.mjs +   │
+│   GitHub-flavored Markdown renderer +   │ ci.yml extension. Marker-keyed    │
+│   ci.yml extension koja postuje sažetak  │ comment update (idempotent), GH  │
+│   na PR thread (idempotent marker-based  │ STEP SUMMARY uvek emit-uje,      │
+│   update). Failed steps surface sa       │ failed step tails do 10 lines.   │
+│   stderr/stdout tails do 10 lines.       │ pull-requests: write permission. │
+├─────────────────────────────────────────┼──────────────────────────────────┤
+│ Ultimate sweep contract                   │ tests/contracts/ultimate-sweep.  │
+│   tests/contracts/ultimate-sweep.test    │ test.mjs · 19 assertion-a · 1.5s │
+│   .mjs sa 19 assertion-a (4 PAR-14-I +   │ wall. Wired u verify Step 4.91c. │
+│   5 F3-b + 5 F4-a + 5 F5-c).             │                                   │
+├─────────────────────────────────────────┼──────────────────────────────────┤
+│ Verify gate                               │ ALL GATES GREEN @ 2:04 wall       │
+│   102 step-a, 102 PASS, 0 FAIL, 0        │ (incl. 1.5s ultimate sweep + 6s   │
+│   skipped lokalno.                        │ F1 walker).                       │
+└─────────────────────────────────────────┴──────────────────────────────────┘
+```
+
+**Stanje "savršeno ultimativno" dostignuto** za sve atome bez external
+dependency:
+- ✅ F1-a/b/d zero-fault runtime walker (acf3d82)
+- ✅ F3-a/b/c PAR sheet inference + scorecard + verify (bbcafdf + ULTIMATE)
+- ✅ F4-a/c adversarial fuzz + verify (ULTIMATE)
+- ✅ F5-a/c CI workflow + verify report u PR comment (33538bd + ULTIMATE)
+- ✅ PAR-14-D/F/H/I/J/I-FULL kompletan PAR sheet pipeline
+- ⏳ F2-a/b/c/d math precision sweep **čeka T-1 (real par sheet drop, Boki)**
+- ⏳ F4-b V9 vision aktivacija **čeka T-2 (macOS TCC, Boki)**
+- ⏳ F5-b branch protection **čeka Boki repo admin UI action**
+
+Sve preostalo (F2 + F4-b + F5-b) blokirano je external dependencies koje
+samo Boki može da otključa — nije moj scope.
+
 ### F1-a/b/d closeout receipt (2026-06-27 UTC, Boki "nastavi dalje")
 
 ```
@@ -1281,27 +1345,27 @@ PR-u i na main pre push-a, sa istim 37-step verify gate-om.
 │ T-1   │ Real par sheet drop (5 igara)          │ ⏳ Boki   │ —                    │
 │ T-2   │ macOS TCC Screen Recording grant       │ ⏳ Boki   │ —                    │
 ├──────┼───────────────────────────────────────┼──────────┼─────────────────────┤
-│ F1-a  │ Zero-fault runtime walker              │ 📋 PLAN   │ —                    │
-│ F1-b  │ DOM invariant gate 338-wide            │ 📋 PLAN   │ —                    │
+│ F1-a  │ Zero-fault runtime walker              │ ✅ DONE   │ acf3d82              │
+│ F1-b  │ DOM invariant gate 338-wide            │ ✅ DONE   │ acf3d82              │
 │ F1-c  │ Antibody upis za i18n NUL pattern      │ ✅ DONE   │ f6d3076              │
-│ F1-d  │ Verify gate step 34                    │ 📋 PLAN   │ —                    │
+│ F1-d  │ Verify gate step 4.91b                 │ ✅ DONE   │ acf3d82              │
 ├──────┼───────────────────────────────────────┼──────────┼─────────────────────┤
 │ F2-a  │ LV3-2 HTTP solver flip                 │ 📋 PLAN   │ čeka F2-c            │
 │ F2-b  │ Auto-converge gate ±0.05%              │ 📋 PLAN   │ čeka T-1             │
 │ F2-c  │ Per-feature math coverage              │ 📋 PLAN   │ čeka T-1             │
-│ F2-d  │ Verify gate step 35                    │ 📋 PLAN   │ —                    │
+│ F2-d  │ Verify gate step 35                    │ 📋 PLAN   │ čeka T-1             │
 ├──────┼───────────────────────────────────────┼──────────┼─────────────────────┤
-│ F3-a  │ PAR sheet inference engine             │ 📋 PLAN   │ —                    │
-│ F3-b  │ Per-GDD compliance scorecard           │ 📋 PLAN   │ —                    │
-│ F3-c  │ Verify gate step 36                    │ 📋 PLAN   │ —                    │
+│ F3-a  │ PAR sheet inference engine             │ ✅ DONE   │ bbcafdf              │
+│ F3-b  │ Per-GDD compliance scorecard           │ ✅ DONE   │ ULTIMATE sweep       │
+│ F3-c  │ Verify gate step 4.91c                 │ ✅ DONE   │ ULTIMATE sweep       │
 ├──────┼───────────────────────────────────────┼──────────┼─────────────────────┤
-│ F4-a  │ Adversarial fuzz (1000 perm)           │ 📋 PLAN   │ —                    │
+│ F4-a  │ Adversarial fuzz (1000 perm)           │ ✅ DONE   │ ULTIMATE sweep       │
 │ F4-b  │ V9 vision aktivacija (= N+2 J)         │ 📋 PLAN   │ čeka T-2             │
-│ F4-c  │ Verify gate step 37                    │ 📋 PLAN   │ —                    │
+│ F4-c  │ Verify gate step 4.91c                 │ ✅ DONE   │ ULTIMATE sweep       │
 ├──────┼───────────────────────────────────────┼──────────┼─────────────────────┤
-│ F5-a  │ GitHub Actions ci.yml (= N+2 H)        │ 📋 PLAN   │ —                    │
-│ F5-b  │ Branch protection main                 │ 📋 PLAN   │ Boki repo admin      │
-│ F5-c  │ Verify report u PR comment             │ 📋 PLAN   │ —                    │
+│ F5-a  │ GitHub Actions ci.yml (= N+2 H)        │ ✅ DONE   │ 33538bd              │
+│ F5-b  │ Branch protection main                 │ ⏳ Boki   │ Boki repo admin      │
+│ F5-c  │ Verify report u PR comment             │ ✅ DONE   │ ULTIMATE sweep       │
 └──────┴───────────────────────────────────────┴──────────┴─────────────────────┘
 ```
 

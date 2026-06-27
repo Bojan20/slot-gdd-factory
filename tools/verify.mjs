@@ -1263,6 +1263,32 @@ if (existsSync(livenessTool) && !CI) {
   if (!JSON_OUT) console.log('  ⏭ UQ-MASTERY block liveness (--ci: baked walker baseline FS-bound)');
 }
 
+/* ── Step 4.91c: F3-b / F4-a / PAR-14-I-FULL / F5-c ultimate sweep
+ *
+ * Single batched contract (tests/contracts/ultimate-sweep.test.mjs)
+ * covers all 4 atoms landed in the "nastavi do kraja ultimativno"
+ * wave (Boki 2026-06-27):
+ *
+ *   F3-b           — Per-GDD compliance scorecard (grade ladder +
+ *                    aggregate MD).
+ *   F4-a           — Adversarial fuzz harness for the parser
+ *                    (1000-perm full run in CI cron; 50-iter smoke
+ *                    inside this contract).
+ *   PAR-14-I-FULL  — Real sweep loop closure (ternary-search
+ *                    convergence engine + synthetic oracle for the
+ *                    deterministic contract).
+ *   F5-c           — Verify report → GitHub-flavored Markdown summary
+ *                    renderer (consumed by ci.yml for GITHUB_STEP_
+ *                    SUMMARY + PR comment).
+ *
+ * ~1.5 s wall on a local Node — fits pre-commit budget without
+ * blowing the gate. */
+const ultimateSweepTest = resolve(REPO, 'tests/contracts/ultimate-sweep.test.mjs');
+if (existsSync(ultimateSweepTest)) {
+  run('Ultimate sweep contract (F3-b + F4-a + PAR-14-I-FULL + F5-c)',
+    'node', [ultimateSweepTest]);
+}
+
 /* ── Step 4.91b: F1-a/b/d Zero-Fault Runtime Walker (Boki 2026-06-27)
  *
  * Headless Chromium opens 5 baseline slot.html builds from
