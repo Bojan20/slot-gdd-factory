@@ -548,7 +548,7 @@ function mapModelToGameConfig(model) {
       if (Number.isFinite(declaredFs) && declaredFs >= 1.0) {
         let awards;
         if (declaredFs < 5) awards = { '3': 3, '4': 5, '5': 8 };
-        else if (declaredFs < 10) awards = { '3': 6, '4': 10, '5': 14 };
+        else if (declaredFs < 10) awards = { '3': 7, '4': 12, '5': 17 };
         else if (declaredFs < 20) awards = { '3': 10, '4': 15, '5': 20 };
         else awards = { '3': 15, '4': 25, '5': 35 };
         return {
