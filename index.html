@@ -152,14 +152,11 @@
     Klik = otvori slot sa MC Batch panelom · Quick / Standard / Strict / Regulator profili
   </div>
   <div class="game-grid" id="builtGamesGrid">
-    <a class="game-tile" href="dist/build-gated/cash-eruption/slot.html">
-      Cash Eruption
-      <span class="tile-sub">build-gated · BLOCK-3 ✓</span>
-    </a>
+    <div class="sub2" style="grid-column: 1/-1; text-align: center;">učitavanje…</div>
   </div>
-  <div class="sub2" style="margin-top: 1rem; font-size: 0.7rem; opacity: 0.6;">
-    Backend (math :9001) mora biti živ da bi profile dugmici radili.
-    Launcher ga pokreće automatski.
+  <div class="sub2" id="builtCounts" style="margin-top: 1rem; font-size: 0.7rem; opacity: 0.6;">
+    Backend (math :9001) mora biti živ da bi profile dugmići radili. Launcher ga
+    pokreće automatski.
   </div>
 </div>
 
@@ -178,7 +175,73 @@
       .catch(function () {
         pill.textContent = 'BACKEND OFF';
         pill.className = 'backend-pill off';
-        pill.title = 'math-backend :9001 ne odgovara — profile dugmici neće raditi';
+        pill.title = 'math-backend :9001 ne odgovara — profile dugmići neće raditi';
+      });
+  })();
+
+  // BLOCK-6: load list of built games from dist/_built-games.json
+  // Sektor po sektor: ultimate-single-game + build-gated + par-sheet-slots
+  // su "PREMIUM" (math-verified). real-games je veliki corpus (lazy load).
+  (function loadBuiltGames() {
+    var grid    = document.getElementById('builtGamesGrid');
+    var counts  = document.getElementById('builtCounts');
+    if (!grid) return;
+
+    fetch('dist/_built-games.json?_=' + Date.now())
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function (idx) {
+        var html = '';
+        var premium = []
+          .concat(idx.buckets['ultimate-single-game'] || [])
+          .concat(idx.buckets['build-gated']          || [])
+          .concat(idx.buckets['par-sheet-slots']      || []);
+
+        // De-dup po slug-u (prefer ultimate > build-gated > par-sheet-slots)
+        var seen = {};
+        var premiumDedup = premium.filter(function (g) {
+          if (seen[g.slug]) return false;
+          seen[g.slug] = true;
+          return true;
+        });
+
+        // Sort najpre po convergence verdict PASS, pa po mtime DESC
+        premiumDedup.sort(function (a, b) {
+          var apass = a.convergence && a.convergence.verdict === 'PASS' ? 1 : 0;
+          var bpass = b.convergence && b.convergence.verdict === 'PASS' ? 1 : 0;
+          if (apass !== bpass) return bpass - apass;
+          return (b.mtime || 0) - (a.mtime || 0);
+        });
+
+        premiumDedup.forEach(function (g) {
+          var label = g.slug.replace(/-/g, ' ').replace(/\b\w/g, function (c) {
+            return c.toUpperCase();
+          });
+          var sub = g.bucket;
+          if (g.convergence && g.convergence.verdict === 'PASS') {
+            sub += ' · Δ' + g.convergence.finalDeltaPP + 'pp ✓';
+          } else if (g.topology) {
+            sub += ' · ' + g.topology + ' ' + (g.reels || '?') + 'x' + (g.rows || '?');
+          }
+          html += '<a class="game-tile" href="' + g.path + '">' + label +
+                  '<span class="tile-sub">' + sub + '</span></a>';
+        });
+
+        if (html === '') html = '<div class="sub2" style="grid-column: 1/-1; text-align: center;">nema built igara — prvo pokreni `node tools/build-gated.mjs --slug &lt;slug&gt;`</div>';
+        grid.innerHTML = html;
+
+        // Counts footer
+        var bc = idx.bucketCounts || {};
+        counts.textContent =
+          'Premium: ' + premiumDedup.length + ' (math-verified) · ' +
+          'Real-games corpus: ' + (bc['real-games'] || 0) + ' · ' +
+          'Total: ' + idx.totalSlots + ' built · ' +
+          'Latest: ' + (idx.latest ? idx.latest.slug : '—') +
+          ' · Backend (math :9001) mora biti živ za profile dugmiće.';
+      })
+      .catch(function (err) {
+        grid.innerHTML = '<div class="error" style="grid-column: 1/-1;">' +
+          'Index manifest ne postoji. Pokreni: <code>node tools/_emit-launcher-index.mjs</code>' +
+          '</div>';
       });
   })();
 </script>

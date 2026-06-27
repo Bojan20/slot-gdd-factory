@@ -692,13 +692,34 @@ fi
 cat "$SERVER_LOG" >> "$LOG_FILE" 2>/dev/null || true
 
 # ════════════════════════════════════════════════════════════════════════════
-# STEP 12: OPEN BROWSER
+# STEP 12: OPEN BROWSER (dashboard sa svim built igrama)
 # ════════════════════════════════════════════════════════════════════════════
 step 12 "Otvaranje u default browser-u"
 
+# BLOCK-6 (Boki 2026-06-27): pre open-a, emit launcher index manifest
+# `dist/_built-games.json` tako da dashboard u index.html može da fetch-uje
+# listu svih buildovanih igara.
+INDEX_TOOL="$PROJECT_DIR/tools/_emit-launcher-index.mjs"
+if [ -f "$INDEX_TOOL" ]; then
+  if (cd "$PROJECT_DIR" && node "$INDEX_TOOL" 2>&1 | tail -2 | tee -a "$LOG_FILE"); then
+    ok "Launcher index manifest emitovan"
+  else
+    warn "Emit launcher manifest pao — dashboard će prikazati fallback link"
+  fi
+fi
+
 TARGET_URL="$SERVER_URL"
 open "$TARGET_URL" || fail "open $TARGET_URL"
-ok "Browser otvoren: $TARGET_URL"
+ok "Browser otvoren: $TARGET_URL (dashboard sa svim built igrama)"
+
+# BLOCK-6: ako postoji `dist/build-gated/cash-eruption/slot.html` (pinned
+# math-verified flagship), otvori i njega u drugom tab-u tako da Boki
+# odmah vidi gotov slot, ne samo dashboard.
+FLAGSHIP_PATH="$PROJECT_DIR/dist/build-gated/cash-eruption/slot.html"
+if [ -f "$FLAGSHIP_PATH" ]; then
+  FLAGSHIP_URL="${SERVER_URL%/}/dist/build-gated/cash-eruption/slot.html"
+  open "$FLAGSHIP_URL" 2>/dev/null && ok "Flagship slot otvoren: cash-eruption (background tab)"
+fi
 
 # ════════════════════════════════════════════════════════════════════════════
 # FINAL REPORT
