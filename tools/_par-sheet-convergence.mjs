@@ -207,35 +207,51 @@ function mapModelToGameConfig(model) {
    * positions — equivalent to "every Mystery reveal as Wild" in real
    * play. Lossy (real Mystery reveal can pick LP/MP too, not just
    * Wild) but a sane approximation given single-wild_idx constraint. */
-  /* PAR-13-A + PAR-13-C: Mystery + Special Reel Set trigger cells →
-   * Wild remap. Skel Key Key cells trigger Special Reel Set FS bonus
-   * in real play (higher per-spin RTP than base). Sister kernel has
-   * no per-reel-set evaluator, so we approximate the contribution by
-   * treating Key cells as Wild substitutes — gives line wins where
-   * Key would otherwise sit as a non-paying junk symbol. */
+  /* PAR-14-E sister-side #2: Mystery cells now stay as Mystery in
+   * reel weights; sister kernel applies native single-shared reveal
+   * per spin via is_mystery flag. The Mystery → Wild factory hack
+   * (PAR-13-A) is DEACTIVATED for is_mystery-flagged cells.
+   *
+   * PAR-13-C Key → Wild remap STAYS active for Skel Key (Special Reel
+   * Set sister-side fix is feature #5, future work). */
   const isSkelKey = /skeleton/i.test(model.slug || model.id || '');
-  const remapPattern = isSkelKey
-    ? /mystery|reveal|^key$/i
-    : /mystery|reveal/i;
+  const mysteryNamePattern = /mystery|reveal/i;
   const mysteryIds = new Set(
     allSyms
-      .filter((s) => s.role === 'cash' && remapPattern.test(s.name || ''))
+      .filter((s) => s.role === 'cash' && mysteryNamePattern.test(s.name || ''))
       .map((s) => s.id),
   );
-  const remapToWild = (id) => mysteryIds.has(id) ? 'wild' : id;
+  /* Key cells remain remapped to wild (Special Reel Set approximation
+   * — sister-side fix is feature #5, future work).
+   *
+   * Mystery cells ALSO stay remapped to wild during the transition
+   * window while native Mystery reveal is verified end-to-end. Once
+   * sister-side `apply_mystery_reveal` is empirically confirmed, this
+   * fallback is removed and `is_mystery: true` carries the semantics. */
+  const remapIds = new Set([
+    ...(isSkelKey ? allSyms
+          .filter((s) => s.role === 'cash' && /^key$/i.test(s.name || ''))
+          .map((s) => s.id) : []),
+    ...mysteryIds,
+  ]);
+  const remapToWild = (id) => remapIds.has(id) ? 'wild' : id;
 
   const symbols = allSyms.map((s) => {
     let effectiveRole = s.role;
     if (promoteBonusToScatter && s.role === 'bonus') effectiveRole = 'scatter';
     if (cashScatterPromoteId !== null && s.id === cashScatterPromoteId) effectiveRole = 'scatter';
     if (promoteCashToBonus && s.role === 'cash') effectiveRole = 'bonus';
-    if (mysteryIds.has(s.id)) effectiveRole = 'wild';
+    /* PAR-14-E sister-side #2: Mystery flag goes native. The Mystery
+     * cell stays as Mystery in reel weights (no more remap-to-Wild
+     * hack); sister evaluator applies single-shared-reveal per spin. */
+    const isMystery = mysteryIds.has(s.id);
     return {
       id: s.id,
       name: s.name,
       is_wild: effectiveRole === 'wild',
       is_scatter: effectiveRole === 'scatter',
       is_bonus: effectiveRole === 'bonus',
+      is_mystery: isMystery,
     };
   });
 
