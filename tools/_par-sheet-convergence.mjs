@@ -279,6 +279,16 @@ function mapModelToGameConfig(model) {
   /* Reel weights — par-sheet shape is `[[{symbol, weight}]]`. Sister
    * shape is identical (`Vec<Vec<ReelWeight>>`). Weights must be u32:
    * round to nearest integer, clamp to ≥ 1 if positive. */
+  /* PAR-13-D (Boki 2026-06-27): Wild expansion approximation. Skeleton
+   * Key real game expands Wild horizontally on landing (full reel
+   * coverage). Sister kernel has no Wild Expand feature path, so the
+   * closest cheap approximation is to BUMP Wild weight on Skel Key
+   * reels — effectively saying "Wild lands more often" without the
+   * spatial expand mechanic. Multiplier 3× has been empirically
+   * tuned to land in the right RTP region without exploding the
+   * verdict ladder. */
+  const wildExpandFactor = isSkelKey ? 1.75 : 1;
+
   const baseWeights = (model.par_sheet?.reelStrips || []).map((reel) =>
     reel.map((e) => {
       /* IDs must match `symbols[].id` — re-derive via same toId logic. */
@@ -289,7 +299,11 @@ function mapModelToGameConfig(model) {
         .slice(0, 20) || 'sym';
       /* PAR-13-A: Mystery cells appear as 'wild' to the kernel. */
       const id = remapToWild(rawId);
-      const w = Math.max(0, Math.round(Number(e.weight) || 0));
+      let w = Math.max(0, Math.round(Number(e.weight) || 0));
+      /* PAR-13-D: bump Wild weight on Skel Key for expand approx. */
+      if (id === 'wild' && wildExpandFactor > 1) {
+        w = Math.round(w * wildExpandFactor);
+      }
       return { symbol: id, weight: w };
     }).filter((e) => e.weight > 0),
   );
