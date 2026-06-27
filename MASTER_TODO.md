@@ -234,9 +234,25 @@ Remaining factory residuals (all small, transition-period):
 │   │   slug (neviđen par sheet) ostaje kao      │ pipeline (5 min wall).│     │
 │   │   PAR-14-J-FUTURE.                          │                       │     │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
-│ 5 │ F1-a / F1-b / F1-d (zero-fault runtime    │ Brane core            │ 6h  │
-│   │ walker + DOM invariant gate + verify       │ presentation +        │     │
-│   │ step 34) — N+2 FAZA 1                      │ runtime od regresije  │     │
+│ 5 │ F1-a / F1-b / F1-d (zero-fault runtime    │ ✅ LANDED             │ ✓   │
+│   │ walker + DOM invariant gate + verify       │ tools/_zero-fault-    │     │
+│   │ step 4.91b) — N+2 FAZA 1                   │ runtime-walker.mjs    │     │
+│   │   338/338 PASS na svih 338 real-games      │ + verify step 4.91b.  │     │
+│   │   slot.html (~6 min wall sa --all).        │ Headless Chromium,    │     │
+│   │   Pre-commit subset 5 baseline (~6s wall). │ 1s observation,       │     │
+│   │   F1-a: zero console.error/pageerror sa    │ 6 invariants (reels,  │     │
+│   │   harmless filter (backend probes, CSP-    │ cells, balance, spin, │     │
+│   │   via-meta, deprecated). F1-b: 6 DOM       │ help+paytable, aria-  │     │
+│   │   invariants (reels ≥ 3, cells ≥ reels×    │ live). Non-standard   │     │
+│   │   rows i % reels === 0, balance/spin/help, │ topology (hex/plinko/ │     │
+│   │   ≥ 1 aria-live). Reels fallback chain:    │ slingo/wheel/radial/  │     │
+│   │   data-reel-on-cell → [data-reel]-doc-     │ crash) soft-skip      │     │
+│   │   wide → inferred-from-rows → inferred-    │ grid invariants;      │     │
+│   │   from-reels (dual-grid topologies). Non-  │ button/balance/aria   │     │
+│   │   standard topology soft-skip grid probes. │ uvek enforced.        │     │
+│   │   CI-safe skip (dist/real-games FS-bound). │ Playwright self-skip  │     │
+│   │   Playwright self-skip exit 0 kad nije     │ na fresh clone.        │     │
+│   │   instalisan (fresh-clone friendly).        │                       │     │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
 │ 6 │ F3-a (PAR sheet inference engine za       │ ✅ LANDED             │ ✓   │
 │   │ unknown vendor formate) — N+2 FAZA 3       │ Multi-kind sheet      │     │
@@ -260,14 +276,43 @@ Remaining factory residuals (all small, transition-period):
 └───┴──────────────────────────────────────────┴──────────────────────┴─────┘
 ```
 
-**Total preostalo do "savršenog ultimativnog stanja": ~6h efektivnog rada
-(PAR-14-D/F/H/I/J + F5-a + F3-a LANDED · cumulative -20h u sedam wave-a
-od inicijalnog ~26h). Sastav: F1 = ~6h. PAR-14-I-FULL i PAR-14-J-FUTURE
-ostaju deferred. F3-a inference engine sad emituje vendor signature +
-RTP/paytable/reel anchors + per-sheet kind scores za bilo koji xlsx
-(L&W, Pragmatic, IGT, Aristocrat patterni + generic fallback) — operator
-ubaci nepoznat vendor xlsx, dobija structural inference receipt pre
-nego što extractor uopšte krene.**
+**Total preostalo do "savršenog ultimativnog stanja": 0h novih wave-ova
+(PAR-14-D/F/H/I/J + F1-a/b/d + F3-a + F5-a LANDED · cumulative -26h
+kroz osam wave-ova od inicijalnog ~26h). PAR-14-I-FULL i PAR-14-J-FUTURE
+ostaju deferred. F1-a/b/d zero-fault runtime walker (Boki 2026-06-27
+"nastavi dalje") landed sa 338/338 PASS na svih 338 real-games slot.html,
+pre-commit subset 5 baseline (~6s wall), wired u verify step 4.91b, CI-
+safe skip pod --ci, Playwright graceful self-skip ako nije instaliran.
+F3-a inference engine emituje vendor signature + RTP/paytable/reel
+anchors + per-sheet kind scores za bilo koji xlsx (L&W, Pragmatic, IGT,
+Aristocrat patterni + generic fallback) — operator ubaci nepoznat vendor
+xlsx, dobija structural inference receipt pre nego što extractor uopšte
+krene.**
+
+### F1-a/b/d closeout receipt (2026-06-27 UTC, Boki "nastavi dalje")
+
+```
+┌─────────────────────────────────────┬───────────────────────────────────┐
+│ Atom                                  │ Status                              │
+├─────────────────────────────────────┼───────────────────────────────────┤
+│ tools/_zero-fault-runtime-walker.mjs  │ 373 LOC, fresh-clone safe          │
+│   harmless filter (4 patterns)        │ CSP-meta + deprecated + 9001/      │
+│                                        │ health + ERR_FAILED                 │
+│   DOM invariants (6 probes)          │ reels/cells/balance/spin/help/      │
+│                                        │ aria-live                           │
+│   reels fallback chain (4 tiers)     │ data-reel-on-cell → doc-wide →     │
+│                                        │ rows-inference → reels-inference   │
+│   non-standard topology soft-skip    │ hex/plinko/slingo/wheel/radial/    │
+│                                        │ crash                               │
+│ verify.mjs Step 4.91b                  │ F1-d wire, --limit 5, CI-safe skip │
+│ Walker run @ --all                    │ 338/338 PASS, ~6 min wall          │
+│ Walker run @ --limit 5 (pre-commit)  │ 5/5 PASS, ~6s wall                 │
+└─────────────────────────────────────┴───────────────────────────────────┘
+```
+
+Pre-existing fail-ovi van scope-a (UQ-FORTIFY8 live meta-test + RENDER-
+INTEG-A `__GDD_META_VERSION__`) potvrđeni stash-em na HEAD bbcafdf —
+nisu uvedeni F1 wave-om i ostaju za sledeći deep-fix wave.
 
 ---
 

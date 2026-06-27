@@ -64,11 +64,23 @@ function loadPair(slug) {
 }
 
 function extractRuntimeConst(html, name) {
-  /* Find `window.__NAME__ = <json>;` or `const NAME = <json>;` */
-  const winRe = new RegExp(`window\\.${name.replace(/__/g,'__')}\\s*=\\s*([\\s\\S]*?);`, 'm');
-  const m = html.match(winRe);
-  if (m) {
-    try { return JSON.parse(m[1]); } catch (_) { return undefined; }
+  /* Three emit forms supported (UQ-U-7 atom #12 introduced the `_def`
+   * tamper-proof variant on 2026-06-25; older blocks still use direct
+   * window assignment):
+   *   1. `_def('__NAME__', <json>);`            ← gddRuntimeMeta block
+   *   2. `_def("__NAME__", <json>);`            ← double-quote variant
+   *   3. `window.__NAME__ = <json>;`            ← legacy direct assign
+   * The `[\\s\\S]*?` body is non-greedy and stops at the first matching
+   * `);` (form 1/2) or `;` (form 3) so adjacent assignments don't bleed. */
+  const escName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const defReSingle = new RegExp(`_def\\(\\s*'${escName}'\\s*,\\s*([\\s\\S]*?)\\s*\\);`, 'm');
+  const defReDouble = new RegExp(`_def\\(\\s*"${escName}"\\s*,\\s*([\\s\\S]*?)\\s*\\);`, 'm');
+  const winRe = new RegExp(`window\\.${escName}\\s*=\\s*([\\s\\S]*?);`, 'm');
+  for (const re of [defReSingle, defReDouble, winRe]) {
+    const m = html.match(re);
+    if (m) {
+      try { return JSON.parse(m[1]); } catch (_) { return undefined; }
+    }
   }
   return undefined;
 }

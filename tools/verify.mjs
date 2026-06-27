@@ -1263,6 +1263,41 @@ if (existsSync(livenessTool) && !CI) {
   if (!JSON_OUT) console.log('  ⏭ UQ-MASTERY block liveness (--ci: baked walker baseline FS-bound)');
 }
 
+/* ── Step 4.91b: F1-a/b/d Zero-Fault Runtime Walker (Boki 2026-06-27)
+ *
+ * Headless Chromium opens 5 baseline slot.html builds from
+ * dist/real-games/ and asserts:
+ *
+ *   F1-a — ZERO hard console.error / pageerror / unhandled-rejection
+ *          events during page load + 1s observation window. Optional
+ *          backend probes (127.0.0.1:9001/health from backendSpinEngine
+ *          + liveRtpHud), CSP-via-meta warnings and "deprecated" notices
+ *          are filtered as harmless.
+ *
+ *   F1-b — DOM invariants per slot.html:
+ *            • reels_count ≥ 3 (multiple fallbacks: data-reel on .cell,
+ *              [data-reel] doc-wide, inferred from cells/rows/reels)
+ *            • cells_count ≥ reels × rows AND % reels === 0
+ *            • balance / spin / paytable+help buttons present
+ *            • ≥ 1 aria-live region (regulator accessibility contract)
+ *
+ *   F1-d — this verify-gate wire. Pre-commit runs the 5-baseline subset
+ *          (~10s wall). The walker self-skips with exit 0 when
+ *          Playwright Chromium isn't installed so a fresh clone doesn't
+ *          break first-run verify — operator installs Chromium when
+ *          ready (`npx playwright install chromium`).
+ *
+ * CI-safe profile (`--ci`) skips this step because dist/real-games/
+ * artefacts are FS-baked operator-side (not in the commit). The
+ * weekly nightly GHA cron runs `--all` (338 slots, ~6 min wall). */
+const zeroFaultWalker = resolve(REPO, 'tools/_zero-fault-runtime-walker.mjs');
+if (existsSync(zeroFaultWalker) && !CI) {
+  run('F1-a/b zero-fault runtime walker (5 baseline)',
+    'node', [zeroFaultWalker, '--limit', '5']);
+} else if (CI && existsSync(zeroFaultWalker)) {
+  if (!JSON_OUT) console.log('  ⏭ F1-a/b zero-fault walker (--ci: dist/real-games FS-bound)');
+}
+
 /* ── Step 5: UQ-11 render smoke on a 20-GDD subset ──────────────────── */
 if (!QUICK) {
   const RENDER_TOOL = resolve(REPO, 'tools/_full-corpus-render-parity.mjs');
