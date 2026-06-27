@@ -761,6 +761,20 @@ function mapModelToGameConfig(model) {
            * sister-side per-scenario HnW (6/7/8 Fireballs branches). */
           orb_land_chance_base: 0.092,
           orb_land_chance_fill_bonus: 0.29,
+          /* PAR-14-E #3 wire — emit per-scenario branches extracted
+           * from CE PAR-001 "N Fireballs landed" table. Sister
+           * `simulate_hnw` matches initial_bonus_count against these.
+           * Currently scenarios share the SAME chances + orb table
+           * as top-level — sister fall-through gives unchanged
+           * behavior until per-scenario orb extraction lands. */
+          scenarios: (model.par_sheet?.hnwScenarios || []).map((s) => ({
+            initial_count: s.initial_count,
+            initial_respins: s.initial_respins,
+            respins_on_new_orb: s.initial_respins,
+            orb_values: [],
+            orb_land_chance_base: 0.092,
+            orb_land_chance_fill_bonus: 0.29,
+          })),
         }
       : {
           trigger_count: 255,

@@ -1316,6 +1316,77 @@ export function extractHnwOrbValues(wb) {
  *
  * Returns null when no Special Reel Sets table is found.
  */
+/**
+ * PAR-14-E #3 — Extract Cash Eruption style Multi-Scenario HnW table.
+ * Each "N Fireballs landed" section in PAR-001 carries:
+ *   - initial_respins (D column under "Number of remaining respins")
+ *   - per-tier additional-orb weights (driving fill chance)
+ *
+ * This pass extracts the {initial_count, initial_respins} pairs and
+ * lets the mapper attach the SHARED orb_values + chances. Sister's
+ * `simulate_hnw` then dispatches on `initial_bonus_count` and honors
+ * per-scenario respin overrides; future commits can add per-scenario
+ * orb table extraction when factory has the cycles.
+ *
+ * @returns {{ scenarios: Array<{initial_count: number, initial_respins: number}> | null,
+ *             source: { sheet: string } | null, confidence: number }}
+ */
+export function extractHnwScenarios(wb) {
+  const HEADER_RX = /^\s*(\d+)\s*fireballs?\s*landed\s*$/i;
+
+  for (const sheetName of wb.SheetNames) {
+    if (!/^par[\s_-]?\d+|par[\s_-]?\d*$/i.test(sheetName)) continue;
+    const ws = wb.Sheets[sheetName];
+    const range = sheetRange(ws);
+    if (!range) continue;
+
+    const maxR = Math.min(range.e.r, range.s.r + 7000);
+    const maxC = Math.min(range.e.c, range.s.c + 25);
+
+    const seen = new Set();
+    const scenarios = [];
+    for (let r = range.s.r; r <= maxR; r++) {
+      for (let c = range.s.c; c <= maxC; c++) {
+        const s = cellString(ws, r, c);
+        if (!s) continue;
+        const m = HEADER_RX.exec(s);
+        if (!m) continue;
+        const initialCount = parseInt(m[1], 10);
+        if (!Number.isFinite(initialCount) || initialCount < 3 || initialCount > 15) continue;
+        if (seen.has(initialCount)) continue;
+
+        /* Look 2 rows below for the "Number of remaining respins" row,
+         * then read the first numeric in D column. */
+        let initialRespins = null;
+        for (let rr = r + 1; rr <= Math.min(r + 4, maxR); rr++) {
+          const labelCell = cellString(ws, rr, c + 1);
+          if (labelCell && /number\s+of\s+remaining\s+respins/i.test(labelCell)) {
+            const v = cellNumber(ws, rr + 1, c + 1);
+            if (v !== null && v >= 1 && v <= 10) {
+              initialRespins = Math.round(v);
+              break;
+            }
+          }
+        }
+        if (initialRespins === null) initialRespins = 3;
+        scenarios.push({ initial_count: initialCount, initial_respins: initialRespins });
+        seen.add(initialCount);
+      }
+    }
+
+    if (scenarios.length >= 2) {
+      scenarios.sort((a, b) => a.initial_count - b.initial_count);
+      return {
+        scenarios,
+        source: { sheet: sheetName },
+        confidence: 0.85,
+      };
+    }
+  }
+
+  return { scenarios: null, source: null, confidence: 0 };
+}
+
 export function extractSpecialReelSets(wb) {
   const HEADER_RX = /^\s*free\s+spins?\s+reel\s+sets?\s*:?\s*$/i;
   const REEL_HEADER_RX = /^\s*reel\s*(\d+)\s*$/i;
@@ -2030,6 +2101,9 @@ async function buildModel(wb, slug) {
    * with per-set strip definitions. Sister consumes via
    * FreeSpinsConfig.special_reel_sets. */
   const specialReelSets = extractSpecialReelSets(wb);
+  /* PAR-14-E #3: CE Multi-Scenario HnW — per-{N Fireballs} respins +
+   * scenario tags. Sister consumes via HoldAndWinConfig.scenarios. */
+  const hnwScenarios = extractHnwScenarios(wb);
   /* PAR-8-EXT (Boki 2026-06-27): real Hold & Win orb value table.
    * Cash Eruption PAR-001 r3976-r3991 carries an explicit (coin,
    * weight-per-tier) distribution. Aggregating across low/med/high
@@ -2267,6 +2341,10 @@ async function buildModel(wb, slug) {
           /* PAR-14-E #5: native Special Reel Sets for Skel Key. */
           ...(specialReelSets.sets
             ? { specialReelSets: specialReelSets.sets }
+            : {}),
+          /* PAR-14-E #3: CE Multi-Scenario HnW per-{Fireballs} table. */
+          ...(hnwScenarios.scenarios
+            ? { hnwScenarios: hnwScenarios.scenarios }
             : {}),
           /* PAR-8-EXT: real orb table extracted from Cash Eruption-
            * style sheets. Mapper consumes this in place of the
