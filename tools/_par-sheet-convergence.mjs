@@ -287,7 +287,11 @@ function mapModelToGameConfig(model) {
    * spatial expand mechanic. Multiplier 3× has been empirically
    * tuned to land in the right RTP region without exploding the
    * verdict ladder. */
-  const wildExpandFactor = isSkelKey ? 1.75 : 1;
+  /* PAR-13-E: Fortune Coin Boost — Coin / Coin Boost feature credits
+   * multiplier values on line wins during base game. Sister kernel
+   * has no such hook. Wild density boost approximates the lift. */
+  const isFortuneCoin = /fortune.?coin|coin.?boost/i.test(model.slug || model.id || '');
+  const wildExpandFactor = isSkelKey ? 1.75 : (isFortuneCoin ? 14 : 1);
 
   const baseWeights = (model.par_sheet?.reelStrips || []).map((reel) =>
     reel.map((e) => {
