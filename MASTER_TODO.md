@@ -448,12 +448,14 @@ koji je quick profile prikrio. Treba **PAR-15 wave** (slugovan kao
 
 ```
 ┌──────────┬─────────────────────────────────────────────────────────┐
-│ PAR-15-a │ Cash Eruption HIGH_PAY weight investigation             │
-│           │ Identifikuj koji simbol/feature dodaje ~0.4 pp          │
-│ PAR-15-b │ Refit auto-tune iz par sheet model.json                 │
-│ PAR-15-c │ Re-verify na standard tier (Δ ≤ 0.05 pp na 100M)        │
+│ PAR-15-a │ Cash Eruption HIGH_PAY weight investigation     ✅ DONE │
+│ PAR-15-b-2│ Analytic HnW contribution solver (Markov chain) ✅ DONE │
+│ PAR-15-b-3│ Sister kernel emit per-trigger K0 histogram     ⏳ NEXT │
+│ PAR-15-b-4│ Analytic P[trigger] from baseline reelStrips    ⏳ NEXT │
+│ PAR-15-b-5│ Localize gap: sister obs - analytic prediction  ⏳ NEXT │
+│ PAR-15-c │ Re-verify na standard tier (Δ ≤ 0.05 pp na 100M)  ⏳     │
 │ PAR-15-d │ Promote standard za pre-commit kad sve 6 portfolio igara │
-│           │ prolaze standard tier                                    │
+│           │ prolaze standard tier                              ⏳     │
 └──────────┴─────────────────────────────────────────────────────────┘
 ```
 
@@ -543,17 +545,53 @@ LADDER top na 10M (Wilson ~30 pp — isti problem).
 mutual exclusion + extracted orb table over-calibration na single-pool
 distribution.
 
-**PAR-15-b/c/d (fix + verify + promote): ⏳ BLOCKED** dok ne završim jedan
-od preduslova iz prerequisite map-a iznad. Trenutni `cash-eruption` 100M
-verdict (WARN, Δ=+0.38 pp) je **najbolje što trenutna arhitektura može**
-bez analytical solver ili sister-side breakdown emission. Tuning mapper knob-a
-bilo bi statistical theater — underlying component drift (±30 pp) ostao bi
-nevidljiv.
+**PAR-15-b-2 (analytic HnW solver): ✅ DONE** — closed-form Markov-chain
+solver za E[payout_x | K0] sa ±0.001 pp preciznošću u milisekundama.
+Tool: `tools/_par15b-hnw-analytic-solver.mjs`. Full finding:
+`reports/par-convergence/par15b-finding.md`.
+
+### PAR-15-b-2 — KEY FINDING (2026-06-28)
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ Cash Eruption · Analytic E[payout_x | K0]                              │
+├──────┬──────────────┬──────────────┬──────────────────────────────────┤
+│  K0  │ E[orbs_fin]  │ P[full_grid] │ E[payout_x]                       │
+├──────┼──────────────┼──────────────┼──────────────────────────────────┤
+│  6   │   11.8448    │   16.50 %    │   1345.74 × bet                   │
+│  10  │   12.9189    │   20.29 %    │   1467.78 × bet                   │
+│  14  │   14.4206    │   42.06 %    │   1638.39 × bet                   │
+└──────┴──────────────┴──────────────┴──────────────────────────────────┘
+
+Inverse equation: P[trig] = declared_HnW_pp / E[payout_x | trig]
+
+  declared 40.91 pp  →  P[trig] ≈ 2.5 – 3.0 % per spin  (1 in 33–40)
+  sister obs 71.82 pp →  P[trig] ≈ 5.34 % per spin       (1 in 18.7)
+
+DRIFT RATIO: sister fires 1.755× more often than declared.
+```
+
+**Root cause kandidati** (ranked):
+1. Sister `base reel set` over-emits bonus symbols (synth reels heavier
+   than weight tables specify).
+2. `count_bonus` detection over-permissive (tile patterns mis-counted).
+3. HnW threshold off-by-one (triggers at 5 scatters when par sheet
+   expects 6).
+
+**PAR-15-b-3/4/5: ⏳ NEXT** — measure P[K0 | trig] from sister 100M run +
+analytic P[trig] from baseline reelStrips → definitively localize drift.
+
+**PAR-15-c/d (refit + verify + promote): ⏳ BLOCKED** dok b-3/4/5 ne
+identifikuju exact source. Tuning mapper knob-a sada smisleno (znamo
+expected ±0.001 pp impact per knob step preko analytic solver-a).
 
 Probe artefakti:
+- `tools/_par15b-hnw-analytic-solver.mjs` (closed-form Markov solver)
+- `reports/par-convergence/par15b-analytic-cash-eruption.json` (numeric out)
+- `reports/par-convergence/par15b-finding.md` (full report)
 - `/tmp/par15a-probe-component-split.mjs` (3 × 40M = 120M total)
-- `/tmp/par15b-sweep-orb-bump.mjs` (4 × 40M = 160M total)
-- `/tmp/par15b-sweep-chance.mjs` (4 × 40M = 160M total)
+- `/tmp/par15b-sweep-orb-bump.mjs` (4 × 40M = 160M total) — superseded
+- `/tmp/par15b-sweep-chance.mjs` (4 × 40M = 160M total) — superseded
 - `reports/par-convergence/par15a-component-split.json`
 - `reports/par-convergence/par15b-orb-bump-sweep.json`
 - `reports/par-convergence/par15b-chance-sweep.json`
