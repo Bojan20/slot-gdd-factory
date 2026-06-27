@@ -520,7 +520,9 @@ function mapModelToGameConfig(model) {
         /* Scatter_pays per trigger. 3-scatter dominant; 4 + 5 rarer.
          * Scaling derived from BoU declared bonus 89.30 % and ~1 %
          * trigger rate → ~89 × bet per 3-scatter. Tune empirically. */
-        const base = Math.round(declaredBonus * 0.32);
+        /* Tuned against 5M × 4 seed (W99 ~17 pp) — coarse 200k tune
+         * over-fit to RNG noise. Real BoU scaling lands at 0.24. */
+        const base = Math.round(declaredBonus * 0.24);
         return {
           awards: { '3': 0, '4': 0, '5': 0 },
           mult_start: 1,
@@ -615,7 +617,7 @@ function mapModelToGameConfig(model) {
                  * single-pool synthetic distribution under-shoots the
                  * real per-scenario CE table mean by ~10 %; this lift
                  * compensates without sister-side per-scenario support. */
-                value: Math.max(1, Math.round(o.value * 1.09 / paylineCountSafe)),
+                value: Math.max(1, Math.round(o.value * 1.115 / paylineCountSafe)),
                 weight: o.weight,
               }))
             : [
@@ -662,8 +664,8 @@ function mapModelToGameConfig(model) {
            * {0.09, 0.28} lands within ~5 pp of declared 82.81 % combined
            * target — best the synthetic single-pool can do without
            * sister-side per-scenario HnW (6/7/8 Fireballs branches). */
-          orb_land_chance_base: 0.09,
-          orb_land_chance_fill_bonus: 0.28,
+          orb_land_chance_base: 0.092,
+          orb_land_chance_fill_bonus: 0.29,
         }
       : {
           trigger_count: 255,
