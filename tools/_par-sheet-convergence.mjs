@@ -195,11 +195,31 @@ function mapModelToGameConfig(model) {
     }
   }
 
+  /* PAR-13-A (Boki 2026-06-27): Mystery → Wild promotion. Skeleton Key
+   * "Mystery" cash-role symbols reveal as a random LP/MP payable
+   * symbol pre-evaluation in real play. Sister kernel has only a
+   * SINGLE wild_idx (Option<u8>) — multiple is_wild=true symbols
+   * collapse to the first one. So setting Mystery's is_wild=true
+   * doesn't actually count Mystery cells as wild substitutes.
+   *
+   * Fix: rewrite Mystery cells in the reel strip to 'wild' ID. Sister
+   * counts wild cells across the grid including these promoted Mystery
+   * positions — equivalent to "every Mystery reveal as Wild" in real
+   * play. Lossy (real Mystery reveal can pick LP/MP too, not just
+   * Wild) but a sane approximation given single-wild_idx constraint. */
+  const mysteryIds = new Set(
+    allSyms
+      .filter((s) => s.role === 'cash' && /mystery|reveal/i.test(s.name || ''))
+      .map((s) => s.id),
+  );
+  const remapToWild = (id) => mysteryIds.has(id) ? 'wild' : id;
+
   const symbols = allSyms.map((s) => {
     let effectiveRole = s.role;
     if (promoteBonusToScatter && s.role === 'bonus') effectiveRole = 'scatter';
     if (cashScatterPromoteId !== null && s.id === cashScatterPromoteId) effectiveRole = 'scatter';
     if (promoteCashToBonus && s.role === 'cash') effectiveRole = 'bonus';
+    if (mysteryIds.has(s.id)) effectiveRole = 'wild';
     return {
       id: s.id,
       name: s.name,
@@ -252,11 +272,13 @@ function mapModelToGameConfig(model) {
   const baseWeights = (model.par_sheet?.reelStrips || []).map((reel) =>
     reel.map((e) => {
       /* IDs must match `symbols[].id` — re-derive via same toId logic. */
-      const id = String(e.symbol || e.id || '')
+      const rawId = String(e.symbol || e.id || '')
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '_')
         .replace(/^_|_$/g, '')
         .slice(0, 20) || 'sym';
+      /* PAR-13-A: Mystery cells appear as 'wild' to the kernel. */
+      const id = remapToWild(rawId);
       const w = Math.max(0, Math.round(Number(e.weight) || 0));
       return { symbol: id, weight: w };
     }).filter((e) => e.weight > 0),
