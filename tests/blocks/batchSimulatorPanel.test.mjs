@@ -47,5 +47,20 @@ t('runtime emit non-empty string', typeof runtime === 'string' && runtime.length
 const cssOff = emitBatchSimulatorPanelCSS({ ...d, enabled: false });
 t('CSS empty when disabled', cssOff === '');
 
+/* BLOCK-4 profile UI assertions */
+t('profiles is frozen array', Array.isArray(d.profiles) && Object.isFrozen(d.profiles));
+t('profiles has 4 entries', d.profiles.length === 4);
+t('profiles includes quick', d.profiles.some(p => p.key === 'quick'));
+t('profiles includes standard', d.profiles.some(p => p.key === 'standard'));
+t('profiles includes strict', d.profiles.some(p => p.key === 'strict'));
+t('profiles includes regulator', d.profiles.some(p => p.key === 'regulator'));
+t('markup renders profile buttons', /data-profile="quick"/.test(markup) && /data-profile="regulator"/.test(markup));
+t('markup includes bsp-profile-btn class', /bsp-profile-btn/.test(markup));
+t('CSS styles strict profile gold', /bsp-profile-btn--strict/.test(css));
+t('CSS styles regulator profile red', /bsp-profile-btn--regulator/.test(css));
+t('runtime registers profile click handler', /bsp-profile-btn/.test(runtime) && /data-profile|btn\.dataset\.profile/.test(runtime));
+t('runtime POSTs /batch with profile in body', /profile:\s*prof/.test(runtime) && /\/batch/.test(runtime));
+t('runtime renders multi-tier ladder', /j\.rounds/.test(runtime) && /pass-row|fail-row/.test(runtime));
+
 console.log(`\n${pass} pass, ${fail} fail`);
 process.exit(fail === 0 ? 0 : 1);

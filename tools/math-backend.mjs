@@ -33,6 +33,9 @@ import { homedir } from 'node:os';
 import { composeFeatureContributions } from '../src/registry/featureComposer.mjs';
 /* UQ-DEEP-AN AN-1 audit trail */
 import { AUDIT_LOG_SCHEMA_VERSION, buildAuditEntry, validateAuditEntry } from '../src/registry/auditTrail.mjs';
+/* BLOCK-3-f (Boki 2026-06-27): profile-driven block-until-perfect ladder. */
+import { iterationPasses, TIER_PROFILES, TIER_LADDER } from './par-sheet-block-until-perfect.mjs';
+import { MATH_PRECISION_BAND_PP } from '../src/registry/mathPrecision.mjs';
 
 const DEFAULT_PORT = 9001;
 const BINARY_CANDIDATES = [
@@ -776,6 +779,123 @@ const server = http.createServer(async (req, res) => {
         convergence_pass: strictPass,
         convergence_pass_rust: out.convergence_pass,  /* preserve original for debug */
         convergence_criterion: convergenceCriterion,
+      }, origin);
+    }
+
+    if (req.method === 'POST' && p === '/block-until-perfect') {
+      /* BLOCK-3-f (Boki 2026-06-27): operator-selectable convergence profile.
+       * quick=5M smoke, standard=100M commit gate, strict=100M→1B→5B triple,
+       * regulator=1B→5B→10B triple. Each tier runs 4 seeds; PASS requires
+       * confirm consecutive tiers within ±0.05 pp + profile Wilson cap. */
+      const body = await readJsonBody(req);
+      const model = body.model || {};
+      /* UQ-DEEP-AN · AN-2 — STRICT_MATH fail-fast on synthetic RTP. */
+      const _sg = strictMathGuard(model);
+      if (_sg) return send(res, 422, _sg, origin);
+      const profileName = (body.profile && TIER_PROFILES[body.profile]) ? body.profile : 'quick';
+      const profile = TIER_PROFILES[profileName];
+      const ladder = profile.tiers.map((label) => TIER_LADDER.find((t) => t.label === label)).filter(Boolean);
+      if (ladder.length === 0) {
+        return send(res, 500, { error: `profile ${profileName} has empty ladder` }, origin);
+      }
+      let seedHash = 0x811c9dc5 >>> 0;
+      const seedStr = JSON.stringify(model);
+      for (let i = 0; i < seedStr.length; i++) {
+        seedHash ^= seedStr.charCodeAt(i);
+        seedHash = Math.imul(seedHash, 0x01000193) >>> 0;
+      }
+      const baseSeed = seedHash & 0xffff;
+      const rounds = [];
+      let consecutivePass = 0;
+      let passed = false;
+      let lastOut = null;
+      const t0 = Date.now();
+      for (let i = 0; i < ladder.length; i++) {
+        const tier = ladder[i];
+        const seedThis = (baseSeed + i * 7919) & 0xffff;
+        const spinsThis = tier.spins * tier.seeds;
+        let out;
+        try {
+          out = await runBatchQueued(model, spinsThis, seedThis);
+        } catch (e) {
+          rounds.push({ tier: tier.label, spins: spinsThis, seed: seedThis, error: e.message, pass: false });
+          break;
+        }
+        const deltaPP = (typeof out.rtp === 'number' && typeof out.cf_target_rtp === 'number')
+          ? (out.rtp - out.cf_target_rtp) * 100
+          : Infinity;
+        const wilsonHalfPP = (typeof out.wilson_99_halfwidth === 'number')
+          ? out.wilson_99_halfwidth * 100
+          : Infinity;
+        const iter = {
+          tier: tier.label,
+          spins: spinsThis,
+          measuredPct: typeof out.rtp === 'number' ? out.rtp * 100 : null,
+          declaredPct: typeof out.cf_target_rtp === 'number' ? out.cf_target_rtp * 100 : null,
+          deltaPP,
+          wilsonHalfPP,
+        };
+        const pass = iterationPasses(iter, { wilsonCap: profile.wilsonCap });
+        iter.verdict = pass ? 'PASS' : 'FAIL';
+        rounds.push({
+          tier: tier.label,
+          spins: spinsThis,
+          seed: seedThis,
+          rtp: out.rtp,
+          cf_target_rtp: out.cf_target_rtp,
+          delta_bps: typeof out.delta_bps === 'number' ? out.delta_bps : null,
+          deltaPP,
+          wilsonHalfPP,
+          pass,
+          verdict: iter.verdict,
+          spins_per_sec: out.spins_per_sec,
+        });
+        lastOut = out;
+        if (pass) {
+          consecutivePass += 1;
+          if (consecutivePass >= profile.confirm) {
+            passed = true;
+            break;
+          }
+        } else {
+          consecutivePass = 0;
+        }
+      }
+      const wallclockMs = Date.now() - t0;
+      const totalSpins = rounds.reduce((s, r) => s + (r.spins || 0), 0);
+      const lastRound = rounds[rounds.length - 1] || null;
+      const final = lastOut ? {
+        rtp: lastOut.rtp,
+        cf_target_rtp: lastOut.cf_target_rtp,
+        delta_bps: lastOut.delta_bps,
+        deltaPP: lastRound ? lastRound.deltaPP : null,
+        wilsonHalfPP: lastRound ? lastRound.wilsonHalfPP : null,
+        hit_rate: lastOut.hit_rate,
+        max_win_x: lastOut.max_win_x,
+        spins_per_sec: lastOut.spins_per_sec,
+      } : null;
+      const confirmedTiers = passed
+        ? rounds.slice(-profile.confirm).map((r) => r.tier)
+        : [];
+      const terminalReason = passed
+        ? `${profile.confirm}× consecutive PASS confirmed (${confirmedTiers.join(' → ')}) within ±${MATH_PRECISION_BAND_PP} pp`
+        : `escalation exhausted (${consecutivePass}/${profile.confirm} consecutive PASS)`;
+      return send(res, 200, {
+        ok: true,
+        passed,
+        buildAllowed: passed,
+        profile: profileName,
+        confirm: profile.confirm,
+        wilsonCap: profile.wilsonCap,
+        bandPP: MATH_PRECISION_BAND_PP,
+        rounds,
+        roundCount: rounds.length,
+        totalSpins,
+        finalSpins: lastRound ? lastRound.spins : 0,
+        wallclockMs,
+        final,
+        confirmedTiers,
+        terminalReason,
       }, origin);
     }
 
