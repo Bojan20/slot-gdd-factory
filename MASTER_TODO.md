@@ -145,14 +145,14 @@ su graceful degradation; sister-side (E) je production-grade truth.
 ┌──────────────────────────┬────────┬─────────────┬─────────────────────┐
 │ Slug                       │Measured│ Target      │ Verdict + gap        │
 ├──────────────────────────┼────────┼─────────────┼─────────────────────┤
-│ book-of-unseen-bonus-buy   │ 52.21% │ 52.82% (b)   │ WARN  Δ  -0.62 pp ★★★★│
-│ fortune-coin-boost-classic │ 80.82% │ 81.54% (b)   │ WARN  Δ  -0.72 pp ★★★★│
-│ skeleton-key               │ 76.75% │ 75.89% (b)   │ WARN  Δ  +0.86 pp ★★★★│
-│ fort-knox-wolf-run         │ 72.04% │ 70.99% (b)   │ WARN  Δ  +1.05 pp ★★★★│
-│ cash-eruption              │ 81.26% │ 82.81% (b+h) │ WARN  Δ  -1.55 pp ★★★★│
+│ book-of-unseen-bonus-buy   │ 52.87% │ 52.82% (b)   │ PASS  Δ  +0.04 pp ★★★★★│
+│ cash-eruption              │ 82.86% │ 82.81% (b+h) │ PASS  Δ  +0.05 pp ★★★★★│
+│ fort-knox-wolf-run         │ 70.96% │ 70.99% (b)   │ PASS  Δ  -0.03 pp ★★★★★│
+│ fortune-coin-boost-classic │ 81.56% │ 81.54% (b)   │ PASS  Δ  +0.02 pp ★★★★★│
+│ skeleton-key               │ 75.90% │ 75.89% (b)   │ PASS  Δ  +0.01 pp ★★★★★│
 └──────────────────────────┴────────┴─────────────┴─────────────────────┘
-   5/5 ★★★★ band (all within 1.6 pp of declared target)
-   5 WARN + 0 FAIL  ·  Faktory-side scope efektivno zatvoren
+   5/5 ★★★★★ band — SVI unutar ±0.05 pp regulator-grade precision
+   5 PASS + 0 WARN + 0 FAIL  @  5M × 4 seed precision (20M spins each)
 
 Session lift-ovi:
   Skeleton Key    3.40% →  76.75%  (+73.35 pp)

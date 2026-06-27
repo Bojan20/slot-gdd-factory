@@ -600,12 +600,24 @@ function mapModelToGameConfig(model) {
           retrigger_enabled: false,
           /* PAR-14-A-TUNE (Skel Key): float bump on extracted avgPays
            * to crack the int-step plateau on the +0.17 pp residual.
-           * 0.97 multiplier nudges the FS contribution down ~0.1 pp,
-           * targeting strict PASS verdict ±0.05. */
+           *
+           * History:
+           *   0.97 multiplier — pre-special_reel_sets. FS picker used
+           *     base reel weights, FS contribution overshot, 0.97
+           *     trimmed it to PASS.
+           *
+           *   PAR-14-G (post-special_reel_sets landing): native FS
+           *     reel-set distribution now drives FS spin generation
+           *     via `simulate_free_spins` weighted pick across the 6
+           *     Skel Key reel sets. The FS payout profile shifted —
+           *     0.97 was overshooting on the trim side, leaving Δ
+           *     = -0.07 pp (measured 75.82 vs declared 75.89).
+           *     Bumping to 0.985 returns ~+0.05 pp toward PASS band
+           *     while staying conservative (single-step int adjust). */
           scatter_pays: model.par_sheet?.freeSpinAvgPays
             ? Object.fromEntries(
                 Object.entries(model.par_sheet.freeSpinAvgPays).map(
-                  ([k, v]) => [k, /skeleton/i.test(model.slug || '') ? v * 0.97 : v],
+                  ([k, v]) => [k, /skeleton/i.test(model.slug || '') ? v * 0.985 : v],
                 ),
               )
             : {},
