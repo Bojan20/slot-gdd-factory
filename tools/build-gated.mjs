@@ -172,7 +172,13 @@ async function buildSlotHtmlForSlug(slug, outDir) {
   if (!existsSync(modelPath)) {
     throw new Error(`model.json not found for slug "${slug}": ${modelPath}`);
   }
-  const model = JSON.parse(readFileSync(modelPath, 'utf8'));
+  const rawModel = JSON.parse(readFileSync(modelPath, 'utf8'));
+  /* PAR-sheet model.json je universalGameSchema (math-only, no UX
+   * surface). buildSlotHTML očekuje GDD-parsed model sa theme/palette/
+   * narrative/features. Hidratacija: pokreni applySmartDefaults koji
+   * fill-uje sva UX polja sa neutralnim default-ima, pa stamp gate flags. */
+  const { applySmartDefaults } = await import('../src/registry/smartDefaults.mjs');
+  const model = applySmartDefaults(rawModel);
   /* Stamp slug + require flag tako da enforceBuildGate radi. */
   model.__slug = slug;
   model.__require_convergence__ = true;
