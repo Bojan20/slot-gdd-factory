@@ -482,6 +482,12 @@ function mapModelToGameConfig(model) {
     symbols,
     paytable,
     base_weights: baseWeights,
+    /* PAR-14-E sister-side feature #1: Bonus Buy native mode flag.
+     * When the slug matches /bonus[\s_-]?buy/i, sister kernel skips
+     * base game entirely and routes every spin straight to FS
+     * simulation. Replaces the factory-side scatter_pays scaling
+     * hack (PAR-12-G-TUNE) with proper sister-native semantics. */
+    bonus_buy_mode: isBonusBuy,
     /* PAR-12-C (Boki 2026-06-27): use par-sheet-extracted FS reel
      * strips when present. Sister `fs_weights` is consumed by the FS
      * spin generator; with real FS distribution (more Wild, more
