@@ -562,6 +562,21 @@ function mapModelToGameConfig(model) {
      *   (C) Empty {} → no FS trigger (legacy behavior). Used when
      *       par sheet has no FS component at all. */
     free_spins: (() => {
+      /* PAR-14-E #5 — native Special Reel Sets if extracted. */
+      const specialReelSets = (() => {
+        const sets = model.par_sheet?.specialReelSets;
+        if (!Array.isArray(sets) || sets.length === 0) return [];
+        return sets.map((entry) => ({
+          weight: Math.max(1, Math.round(entry.weight || 1)),
+          reels: (entry.reels || []).map((reel) =>
+            reel.map((e) => {
+              const id = String(e.symbol || '').toLowerCase()
+                .replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 20) || 'sym';
+              return { symbol: id, weight: Math.max(0, Math.round(Number(e.weight) || 0)) };
+            }).filter((e) => e.weight > 0),
+          ),
+        }));
+      })();
       const explicit = model.par_sheet?.freeSpinAwards;
       if (explicit && Object.keys(explicit).length > 0) {
         return {
@@ -581,6 +596,7 @@ function mapModelToGameConfig(model) {
                 ),
               )
             : {},
+          special_reel_sets: specialReelSets,
         };
       }
       /* (B-BB) PAR-12-G Bonus Buy mode: when Book/scatter promoted

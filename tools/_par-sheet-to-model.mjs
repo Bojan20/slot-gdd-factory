@@ -1298,6 +1298,166 @@ export function extractHnwOrbValues(wb) {
   };
 }
 
+/**
+ * PAR-14-E #5 — Extract Skeleton Key style Special Reel Sets from a
+ * par sheet. Skel Key PAR-Bonus carries:
+ *
+ *   1. Weighted selection table around r32-r39:
+ *        C33: "Reel Set"  D33: "Weight"
+ *        C34..C39 = set number  D34..D39 = weight
+ *
+ *   2. Per-set strip definitions, each headed by:
+ *        "Free Spins Reel Set:" at (C, row R), set number at E(row R)
+ *      followed 2 rows later by a "Reel 1..N" header row + a sub-header
+ *      "Symbol" "Weight" row, then a stop-based strip table.
+ *
+ * Returns one entry per set, each `{ weight, reels: [[ {symbol, weight} ]] }`.
+ * Sister consumes this as `FreeSpinsConfig.special_reel_sets`.
+ *
+ * Returns null when no Special Reel Sets table is found.
+ */
+export function extractSpecialReelSets(wb) {
+  const HEADER_RX = /^\s*free\s+spins?\s+reel\s+sets?\s*:?\s*$/i;
+  const REEL_HEADER_RX = /^\s*reel\s*(\d+)\s*$/i;
+
+  for (const sheetName of wb.SheetNames) {
+    if (!/bonus|free.*spin|fs[_-]?reel/i.test(sheetName)) continue;
+    const ws = wb.Sheets[sheetName];
+    const range = sheetRange(ws);
+    if (!range) continue;
+
+    const maxR = Math.min(range.e.r, range.s.r + 1200);
+    const maxC = Math.min(range.e.c, range.s.c + 30);
+
+    /* Pass A — find the weighted selection table.
+     * Scan for a cell matching "Reel Set" with adjacent "Weight" cell
+     * (the per-set selection table). Walk down to collect (setNum, weight)
+     * pairs until first non-numeric setNum. */
+    let weightTable = null;
+    outer:
+    for (let r = range.s.r; r <= maxR; r++) {
+      for (let c = range.s.c; c <= maxC; c++) {
+        const s = cellString(ws, r, c);
+        if (!s || !/^\s*reel\s+set\s*$/i.test(s)) continue;
+        const wLabel = cellString(ws, r, c + 1);
+        if (!wLabel || !/^\s*weight\s*$/i.test(wLabel)) continue;
+        const pairs = [];
+        for (let rr = r + 1; rr <= Math.min(r + 30, maxR); rr++) {
+          const setN = cellNumber(ws, rr, c);
+          const w = cellNumber(ws, rr, c + 1);
+          if (setN === null) {
+            const label = cellString(ws, rr, c);
+            if (label && /total/i.test(label)) break;
+            continue;
+          }
+          if (w === null || w <= 0) continue;
+          if (setN < 1 || setN > 20) continue;
+          pairs.push({ set: Math.round(setN), weight: Math.round(w) });
+        }
+        if (pairs.length >= 2) {
+          weightTable = pairs;
+          break outer;
+        }
+      }
+    }
+    if (weightTable === null) continue;
+
+    /* Pass B — for each set, find its "Free Spins Reel Set: N" header
+     * and extract the strip below. */
+    const setEntries = [];
+    for (const { set, weight } of weightTable) {
+      let headerRow = null;
+      let headerCol = null;
+      for (let r = range.s.r; r <= maxR; r++) {
+        for (let c = range.s.c; c <= maxC; c++) {
+          const s = cellString(ws, r, c);
+          if (!s || !HEADER_RX.test(s)) continue;
+          const numCell = cellNumber(ws, r, c + 2);
+          if (numCell === set) {
+            headerRow = r;
+            headerCol = c;
+            break;
+          }
+        }
+        if (headerRow !== null) break;
+      }
+      if (headerRow === null) continue;
+
+      /* Locate Reel header row (2 rows below set header is common). */
+      let reelHeaderRow = null;
+      let reelCols = [];
+      for (let r = headerRow + 1; r <= Math.min(headerRow + 8, maxR); r++) {
+        const cols = [];
+        for (let c = range.s.c; c <= maxC; c++) {
+          const s = cellString(ws, r, c);
+          if (!s) continue;
+          const m = REEL_HEADER_RX.exec(s);
+          if (m) cols.push({ col: c, n: parseInt(m[1], 10) });
+        }
+        if (cols.length >= 3) {
+          cols.sort((a, b) => a.n - b.n);
+          if (cols.every((co, i) => co.n === i + 1)) {
+            reelHeaderRow = r;
+            reelCols = cols;
+            break;
+          }
+        }
+      }
+      if (reelHeaderRow === null) continue;
+
+      /* Sub-header at reelHeaderRow + 1 (Symbol / Weight pairs). */
+      const subFirst = cellString(ws, reelHeaderRow + 1, reelCols[0].col);
+      const isStopBased = subFirst != null && /^\s*symbol\s*$/i.test(subFirst);
+      const dataStartRow = isStopBased ? reelHeaderRow + 2 : reelHeaderRow + 1;
+      const reelLayout = reelCols.map((co) => ({
+        symbolCol: co.col,
+        weightCol: co.col + 1,
+      }));
+
+      /* Aggregate stops by symbol per reel. */
+      const reelMaps = reelCols.map(() => new Map());
+      let emptyStreak = 0;
+      for (let r = dataStartRow; r <= maxR; r++) {
+        let rowHasData = false;
+        let stop = false;
+        for (let i = 0; i < reelLayout.length; i++) {
+          const symCell = cellString(ws, r, reelLayout[i].symbolCol);
+          const wgtCell = cellNumber(ws, r, reelLayout[i].weightCol);
+          if (symCell && /^\s*(total|sum|end)\s*$/i.test(symCell)) {
+            stop = true;
+            break;
+          }
+          if (!symCell || wgtCell === null) continue;
+          rowHasData = true;
+          const w = Math.max(0, Math.round(wgtCell));
+          if (w > 0) reelMaps[i].set(symCell, (reelMaps[i].get(symCell) || 0) + w);
+        }
+        if (stop) break;
+        if (rowHasData) emptyStreak = 0;
+        else { emptyStreak++; if (emptyStreak > 30) break; }
+      }
+
+      const reels = reelMaps.map((m) =>
+        [...m.entries()].map(([symbol, weight]) => ({ symbol, weight })),
+      );
+      const allPopulated = reels.every((rw) => rw.length > 0);
+      if (allPopulated) {
+        setEntries.push({ set, weight, reels });
+      }
+    }
+
+    if (setEntries.length >= 2) {
+      return {
+        sets: setEntries,
+        source: { sheet: sheetName, count: setEntries.length },
+        confidence: 0.85,
+      };
+    }
+  }
+
+  return { sets: null, source: null, confidence: 0 };
+}
+
 export function extractFsReelStrips(wb) {
   const REEL_HEADER_RX = /^\s*reel\s*(\d+)\s*$/i;
   const TOTAL_RX = /^\s*(total|sum|end)\s*$/i;
@@ -1866,6 +2026,10 @@ async function buildModel(wb, slug) {
    * Key/Mystery). Sister `fs_weights` is consumed by the FS spin
    * generator — placeholder = base weights underestimates FS RTP. */
   const fsReelStrips = extractFsReelStrips(wb);
+  /* PAR-14-E #5: Skel Key Special Reel Sets — 6 weighted FS reel sets
+   * with per-set strip definitions. Sister consumes via
+   * FreeSpinsConfig.special_reel_sets. */
+  const specialReelSets = extractSpecialReelSets(wb);
   /* PAR-8-EXT (Boki 2026-06-27): real Hold & Win orb value table.
    * Cash Eruption PAR-001 r3976-r3991 carries an explicit (coin,
    * weight-per-tier) distribution. Aggregating across low/med/high
@@ -2099,6 +2263,10 @@ async function buildModel(wb, slug) {
            * the mapper level (placeholder behavior). */
           ...(fsReelStrips.reelStrips
             ? { fsReelStrips: fsReelStrips.reelStrips }
+            : {}),
+          /* PAR-14-E #5: native Special Reel Sets for Skel Key. */
+          ...(specialReelSets.sets
+            ? { specialReelSets: specialReelSets.sets }
             : {}),
           /* PAR-8-EXT: real orb table extracted from Cash Eruption-
            * style sheets. Mapper consumes this in place of the
