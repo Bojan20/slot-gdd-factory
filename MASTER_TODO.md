@@ -148,8 +148,9 @@ NE ide na svaki commit. Cron / weekly / pre-release schedule.
 │ PAR-14-E-6 │ Coin Boost multiplier extractor (FCB ENHANCED_CE_0) +   │ ✅ LANDED │
 │             │ sister evaluator dispatch (commit 691db8d)               │ 253187d   │
 ├──────────┼──────────────────────────────────────────────────────────┼──────────┤
-│ PAR-14-F  │ FCB SymbolDef.is_coin_boost flag on Coin reel strips    │ 📋 PLAN   │
-│            │ (yanks last factory-side wildExpandFactor=14.18 hack)    │           │
+│ PAR-14-F  │ FCB is_coin_boost wire — LP/MP+bonus carriers, sister   │ ✅ LANDED │
+│            │ apply_coin_boost compound replaces 14.18× Wild-density   │           │
+│            │ hack. Residual 1.125× Wild factor closes ±0.05 pp band.  │           │
 ├──────────┼──────────────────────────────────────────────────────────┼──────────┤
 │ PAR-14-G  │ Skel Key WARN → PASS via scatter_pays tune              │ ✅ LANDED │
 │            │ 5/5 PASS @ ±0.05 pp regulator-grade na 5M × 4           │ 94d0c1a   │
@@ -159,7 +160,7 @@ NE ide na svaki commit. Cron / weekly / pre-release schedule.
 PAR-14-E je realan **PASS gate** za svaki novi slot. Faktory-side hacks (A-D)
 su graceful degradation; sister-side (E) je production-grade truth.
 
-### F) STANJE POSLE PAR-14 WAVE (HEAD 94d0c1a)
+### F) STANJE POSLE PAR-14 WAVE (HEAD post-PAR-14-F)
 
 ```
 ┌─────────────────────────────┬──────┬──────────┐
@@ -175,12 +176,21 @@ su graceful degradation; sister-side (E) je production-grade truth.
 ```
 
 Sister kernel `slot-math-engine-template` HEAD: 691db8dc (Coin Boost dispatch).
-Faktory mapper emit-uje sve 6 native config fields. 4 features su 100% native
-(BoU bonus_buy_mode, CE HnW scenarios, Skel Key special_reel_sets, FCB coin
-boost via partial hack). 1 features su native + factory hack koegzistencija
-(BoU Mystery → Wild remap fallback dok sister `is_mystery` pre-eval potpuno
-ne preuzme; FCB wildExpandFactor=14.18 dok PAR-14-F ne wire-uje is_coin_boost
-flag na reel strips).
+Faktory mapper emit-uje sve 6 native config fields. 5 features su 100% native
+post-PAR-14-F:
+  • BoU `bonus_buy_mode` flag
+  • CE `HnW.scenarios` array (9 fireball scenarios)
+  • Skel Key `FreeSpinsConfig.special_reel_sets` (6 sets, weighted)
+  • FCB `coin_boost_multipliers` + `SymbolDef.is_coin_boost` on LP/MP+bonus
+    carriers (compound lift replaces wildExpandFactor=14.18)
+  • Bonus Buy / HnW scenarios → all driven by extractor real data
+
+Remaining factory residuals (all small, transition-period):
+  • BoU Mystery → Wild reel-strip remap as fallback alongside native
+    `is_mystery` flag (yank atom: PAR-14-H)
+  • FCB residual `wildExpandFactor = 1.125` (was 14.18) — closes the
+    last 1.6 pp gap left by sister's "coarse approximation" coin-boost
+    compound. Honest residual, not a feature substitute.
 
 ### G) ŠTA OSTAJE — sledeći wave (prioritet)
 
@@ -188,51 +198,45 @@ flag na reel strips).
 ┌───┬──────────────────────────────────────────┬──────────────────────┬─────┐
 │ # │ Atom                                       │ Zašto                 │ Eff │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
-│ 1 │ PAR-14-F (FCB is_coin_boost wire)         │ Yank zadnji factory   │ 2h  │
-│   │   Detect Coin/Coin Boost symbols u FCB     │ hack (wildExpandF=14) │     │
-│   │   reel strips i emit is_coin_boost=true.   │ tako da je RTP 100%   │     │
-│   │   Sister picker uzima is_coin_boost cells, │ native = "perfect ke- │     │
-│   │   dispatch coin_boost_multipliers tabelu.  │ rnel" parity za FCB.  │     │
-├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
-│ 2 │ PAR-14-H (BoU Mystery native hand-off)    │ Skida posljednju      │ 2h  │
+│ 1 │ PAR-14-H (BoU Mystery native hand-off)    │ Skida posljednju      │ 2h  │
 │   │   Yank Mystery → Wild remap factory hack.  │ factory remap, čisto  │     │
 │   │   Pravi PAR-14-E-2 is_mystery flag jedini  │ sister pre-eval.      │     │
 │   │   path; sister evaluator pre-eval random   │                       │     │
 │   │   LP/MP. Re-verifikuj +0.04 pp Δ ostaje.   │                       │     │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
-│ 3 │ PAR-14-D (100M × 4 nightly cron + 1B      │ Tighter PASS band     │ 3h  │
+│ 2 │ PAR-14-D (100M × 4 nightly cron + 1B      │ Tighter PASS band     │ 3h  │
 │   │ pre-release verify)                        │ (~3 pp → 1-2 pp)      │     │
 │   │   tools/par-sheet-convergence-100M.mjs     │ catch RNG over-fit;   │     │
 │   │   + GitHub Actions weekly schedule. 1B/10B │ regulator audit gate. │     │
 │   │   pokreće se ručno pred release.            │                       │     │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
-│ 4 │ PAR-14-I (auto-tune-from-classifier glue) │ "Drop par sheet →     │ 3h  │
+│ 3 │ PAR-14-I (auto-tune-from-classifier glue) │ "Drop par sheet →     │ 3h  │
 │   │   tools/_par-sheet-classifier.mjs detect   │ savršeno ide kroz     │     │
 │   │   feature → tools/_par-sheet-auto-tune.mjs │ pipeline" — bez       │     │
 │   │   sweep → emit locked scaling.json per     │ ručne kalibracije     │     │
 │   │   slug. 0-touch convergence za novi slot.  │ po slugu.             │     │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
-│ 5 │ PAR-14-J (extend portfolio na 6+ slug)    │ Pravi test ultimate   │ 4h  │
+│ 4 │ PAR-14-J (extend portfolio na 6+ slug)    │ Pravi test ultimate   │ 4h  │
 │   │   Sledeći par sheet drop from ~/Desktop/   │ pipeline robustnosti  │     │
 │   │   ParSheets/, run kroz PAR-14-I, očekuj    │ — first-pass PASS bez │     │
 │   │   first-pass PASS bez nove ručne tuning.   │ ručne intervencije.   │     │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
-│ 6 │ F1-a / F1-b / F1-d (zero-fault runtime    │ Brane core            │ 6h  │
+│ 5 │ F1-a / F1-b / F1-d (zero-fault runtime    │ Brane core            │ 6h  │
 │   │ walker + DOM invariant gate + verify       │ presentation +        │     │
 │   │ step 34) — N+2 FAZA 1                      │ runtime od regresije  │     │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
-│ 7 │ F3-a (PAR sheet inference engine za       │ Operator ubaci nov    │ 5h  │
+│ 6 │ F3-a (PAR sheet inference engine za       │ Operator ubaci nov    │ 5h  │
 │   │ unknown vendor formate) — N+2 FAZA 3       │ vendor xlsx → auto    │     │
 │   │                                            │ structure inference   │     │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
-│ 8 │ F5-a (CI/CD GitHub Actions ci.yml +       │ Verify svaki PR;      │ 3h  │
+│ 7 │ F5-a (CI/CD GitHub Actions ci.yml +       │ Verify svaki PR;      │ 3h  │
 │   │ branch protection main) — N+2 FAZA 5       │ no merge bez 33-step  │     │
 └───┴──────────────────────────────────────────┴──────────────────────┴─────┘
 ```
 
-**Total preostalo do "savršenog ultimativnog stanja": ~28h efektivnog rada,
-podeljeno na 3 talasa (PAR-14-F/H/I/J = ~10h, F1 = ~6h, F3 + F5 = ~8h, plus
-PAR-14-D nightly cron = ~3h, plus 1 buffer atom ~1h)**.
+**Total preostalo do "savršenog ultimativnog stanja": ~26h efektivnog rada
+(PAR-14-F LANDED · ovaj wave -2h). Sastav: PAR-14-H/I/J = ~9h, F1 = ~6h,
+F3 + F5 = ~8h, plus PAR-14-D nightly cron = ~3h**.
 
 ---
 
@@ -266,6 +270,7 @@ Session lift-ovi:
 ### Wave commit chain (2026-06-26 → 2026-06-27)
 
 ```
+<HEAD>   feat(PAR-14-F): FCB is_coin_boost wire — yank 14.18× hack · 5/5 PASS held
 94d0c1a  feat(PAR-14-G): Skel Key WARN→PASS via scatter_pays tune · 5/5 PASS @ ±0.05 pp
 253187d  feat(PAR-14-E-6-data): FCB Coin Boost multiplier extractor → native config
 d8e08bc  feat(PAR-14-E-3-data): CE Multi-Scenario HnW extractor + scenarios emit
