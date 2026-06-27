@@ -1,25 +1,29 @@
 ## 📊 PAR-SHEET AUTONOMOUS INGEST — 2026-06-27 status (latest)
 
-### Live verdict ladder (200k × 2 seeds, post-PAR-12-E 732124b)
+### Live verdict ladder (200k × 2 seeds, post-PAR-8-TUNE-2 336cfad)
 
 ```
 ┌──────────────────────────┬────────┬─────────────┬─────────────────────┐
 │ Slug                       │Measured│ Target      │ Verdict + gap        │
 ├──────────────────────────┼────────┼─────────────┼─────────────────────┤
-│ cash-eruption              │ 64.68% │ 82.81% (b+h) │ WARN  Δ -18.13 pp   │
+│ cash-eruption              │ 77.74% │ 82.81% (b+h) │ WARN  Δ  -5.07 pp ★ │
 │ fort-knox-wolf-run         │ 68.46% │ 70.99% (b)   │ WARN  Δ  -2.53 pp ★ │
-│ book-of-unseen-bonus-buy   │ 19.39% │  0.80% (b)   │ WARN  Δ +18.59 pp   │
+│ book-of-unseen-bonus-buy   │ 19.39% │ 52.82% (b)   │ WARN  Δ -33.44 pp   │
 │ skeleton-key               │ 10.00% │ 75.89% (b)   │ FAIL  Δ -65.88 pp   │
 │ fortune-coin-boost-classic │ 20.42% │ 81.54% (b)   │ WARN  Δ -61.13 pp   │
 └──────────────────────────┴────────┴─────────────┴─────────────────────┘
-   4 WARN + 1 FAIL  ·  Cash Eruption from session start: 11.26% → 64.68% (+53.42 pp)
-                       Fort Knox now tightest center (★ within 2.53 pp of target)
+   4 WARN + 1 FAIL  ·  Cash Eruption from session start: 11.26% → 77.74% (+66.48 pp)
+                       Cash Eruption + Fort Knox both within 5 pp of target (★)
    Target tags: (b) = baseGame · (b+h) = baseGame + holdAndWin
 ```
 
 ### Wave commit chain (2026-06-26 → 2026-06-27)
 
 ```
+336cfad  fix(PAR-8-TUNE-2): re-calibrate CE HnW chances against extracted orb table
+73c1ed3  docs(PAR-8-EXT): document why orb tables can't combine across CE scenarios
+802d36d  fix(PAR-7-FULL): section-aware probe RIGHT only for "Line Pay %" labels
+a19f390  docs(MASTER_TODO): post-PAR-12-E live status + atom resolution map
 732124b  feat(PAR-12-E): tier-scaled synthetic FS schedule + PAR-12-F BoU revert
 0efb251  feat(PAR-8-EXT): real Cash Eruption orb table + coin-unit normalization
 d508768  docs(MASTER_TODO): live verdict ladder + wave commit chain
