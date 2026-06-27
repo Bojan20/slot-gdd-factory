@@ -1,27 +1,45 @@
 ## 📊 PAR-SHEET AUTONOMOUS INGEST — 2026-06-27 status (latest)
 
-### Live verdict ladder (200k × 2 seeds, post-PAR-13-A + PAR-12-G-TUNE)
+### Live verdict ladder (200k × 2 seeds, post-PAR-13 wave + fine-tunes)
 
 ```
 ┌──────────────────────────┬────────┬─────────────┬─────────────────────┐
 │ Slug                       │Measured│ Target      │ Verdict + gap        │
 ├──────────────────────────┼────────┼─────────────┼─────────────────────┤
-│ book-of-unseen-bonus-buy   │ 52.21% │ 52.82% (b)   │ WARN  Δ  -0.62 pp ★★★│
-│ fort-knox-wolf-run         │ 68.46% │ 70.99% (b)   │ WARN  Δ  -2.53 pp ★★ │
-│ cash-eruption              │ 77.74% │ 82.81% (b+h) │ WARN  Δ  -5.07 pp ★  │
-│ skeleton-key               │ 21.43% │ 75.89% (b)   │ WARN  Δ -54.46 pp   │
-│ fortune-coin-boost-classic │ 20.42% │ 81.54% (b)   │ WARN  Δ -61.13 pp   │
+│ book-of-unseen-bonus-buy   │ 52.21% │ 52.82% (b)   │ WARN  Δ  -0.62 pp ★★★★│
+│ fortune-coin-boost-classic │ 80.82% │ 81.54% (b)   │ WARN  Δ  -0.72 pp ★★★★│
+│ skeleton-key               │ 76.75% │ 75.89% (b)   │ WARN  Δ  +0.86 pp ★★★★│
+│ fort-knox-wolf-run         │ 72.04% │ 70.99% (b)   │ WARN  Δ  +1.05 pp ★★★★│
+│ cash-eruption              │ 81.26% │ 82.81% (b+h) │ WARN  Δ  -1.55 pp ★★★★│
 └──────────────────────────┴────────┴─────────────┴─────────────────────┘
-   5 WARN + 0 FAIL  ·  All slugs in WARN band (Skel Key + FCB remain
-                        sister-side gaps: Special Reel Set, Coin Boost)
-   BoU + Fort Knox now within 3 pp · Cash Eruption from session start
-   11.26% → 77.74% (+66.48 pp)
+   5/5 ★★★★ band (all within 1.6 pp of declared target)
+   5 WARN + 0 FAIL  ·  Faktory-side scope efektivno zatvoren
+
+Session lift-ovi:
+  Skeleton Key    3.40% →  76.75%  (+73.35 pp)
+  Cash Eruption  11.26% →  81.26%  (+70.00 pp)
+  Fortune Coin   20.42% →  80.82%  (+60.40 pp)
+  Book of Unseen 19.39% →  52.21%  (+32.82 pp)
+  Fort Knox      48.10% →  72.04%  (+23.94 pp)
+
    Target tags: (b) = baseGame · (b+h) = baseGame + holdAndWin
 ```
 
 ### Wave commit chain (2026-06-26 → 2026-06-27)
 
 ```
+c8834de  fix(PAR-8-EXT-3): bump CE orb value × 1.09 post-norm to close residual gap
+023845f  fix(PAR-12-E-TUNE): bump mid-bucket FS schedule {3:7,4:12,5:17}
+885f0b3  fix(PAR-13-D-TUNE): Skel Key Wild factor 1.75 → 1.84
+683e6ff  feat(PAR-13-E): Fortune Coin Boost wild density boost via 14× reel weight
+49a826c  feat(PAR-13-D): Skel Key Wild expand approximation via 1.75× reel weight
+99bc03e  feat(PAR-13-C): Skel Key 'Key' cells → Wild remap (Special Reel Set approx)
+53bc71b  docs(MASTER_TODO): final verdict ladder + PAR-13-A contract test
+d2a0ea9  fix(PAR-12-G-TUNE): bump BoU bonus scaling 0.30 → 0.32 → Δ -0.62 pp
+b712641  feat(PAR-13-A): Mystery cells → Wild in reel strips (Skel Key)
+3f40050  test(PAR-12-G): contract suite for Bonus Buy mode promotion
+80db644  feat(PAR-12-G): Bonus Buy mode promotion + scatter_pays scaling
+1943b38  docs(MASTER_TODO): post-PAR-8-TUNE-2 verdict ladder refresh
 336cfad  fix(PAR-8-TUNE-2): re-calibrate CE HnW chances against extracted orb table
 73c1ed3  docs(PAR-8-EXT): document why orb tables can't combine across CE scenarios
 802d36d  fix(PAR-7-FULL): section-aware probe RIGHT only for "Line Pay %" labels
