@@ -24,6 +24,10 @@
  */
 import { buildGridShape } from './gridShape.mjs';
 import { paylineConfig } from './blocks/paylines.mjs';
+/* BLOCK-1-c (Boki 2026-06-27) — hard convergence gate. Opt-in: aktivira
+ * se samo kad env SLOT_BUILD_REQUIRE_CONVERGENCE=1 ili model.__require_
+ * convergence__=true. Default-no pre-existing build path netaknut. */
+import { enforceBuildGate } from './blockBuildGate.mjs';
 
 /* ─── UQ-FORTIFY9 #1 · XSS-safe JSON encoding for inline <script> ──────
  * JSON.stringify može da emituje string koji sadrži `</script>`,
@@ -1134,6 +1138,17 @@ function escapeHtml(s) {
 
 /* Build the base-game-only standalone HTML for a parsed model. */
 export function buildSlotHTML(model) {
+  /* BLOCK-1-c (Boki 2026-06-27) — "sve dok sve nije potpuno savrseno ne
+   * gradi se slot." Hard convergence gate, OPT-IN. Aktivira se kad je
+   * env SLOT_BUILD_REQUIRE_CONVERGENCE=1 ILI kad model nosi flag
+   * __require_convergence__=true. Postojeći putanje (synthetic GDD,
+   * samples/, demo HTML) ne pokreću gate i ostaju netaknute.
+   *
+   * Gate čita reports/par-block-until-perfect/<slug>.json i traži:
+   *   verdict === 'PASS' AND buildAllowed === true AND |Δ| ≤ band.
+   * Bilo koji fail baca BuildGateError pre prvog karaktera HTML-a. */
+  enforceBuildGate(model);
+
   /* Wave 2 (2026-06-16) — Project the canonical spinTempo profile into
    * every engine sub-config BEFORE the engines resolve. Single author-
    * facing knob retunes all six engines. Per-engine pinned overrides

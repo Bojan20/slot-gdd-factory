@@ -380,6 +380,226 @@ nisu uvedeni F1 wave-om i ostaju za sledeći deep-fix wave.
 
 ---
 
+## 🚫 BLOCK-UNTIL-PERFECT GATE — PAR-14-K / BLOCK-1
+
+> *"ja zelim da simulator radi sve dok ne izadje sve savrseno za igru i ne
+> izgradi se slot. dakle sve dok sve nije potpuno savrseno ne gradi se slot.
+> Razumes? sta mi znaci kako mi simulator prikaze gresku? dakle on dobija gdd
+> i par sheet, i druze mora da se odradi igra savrseno, kolko god vremena da
+> treba."*
+> — Boki direktiva 2026-06-27
+
+### Princip
+
+Slot.html se NE gradi dok measured RTP ne konvergira unutar regulatornog
+pojasa od **±0.05 pp** u odnosu na declared RTP iz par sheet-a. Ako
+simulator ne može da dostigne taj pojas — slot NE postoji. Nema parcijalnog
+uspеха, nema "build sa warningom", nema "verovatno je dobro". Ili je
+savršeno, ili ga nema.
+
+### Arhitektura komponenti
+
+```
+┌───────────────────────────────────┬─────────────────────────────────────┐
+│ Komponenta                         │ Odgovornost                         │
+├───────────────────────────────────┼─────────────────────────────────────┤
+│ par-sheet-block-until-perfect.mjs  │ Glavni orkestrator koji vrti loop   │
+│                                    │ dok ne dobije PASS ili dok ne       │
+│                                    │ istroši sve precision tier-ove.     │
+├───────────────────────────────────┼─────────────────────────────────────┤
+│ build-gated.mjs                    │ CLI wrapper: GDD + xlsx →           │
+│                                    │ convergence → buildSlotHTML.        │
+├───────────────────────────────────┼─────────────────────────────────────┤
+│ src/buildSlotHTML.mjs (gate)       │ Hard guard: ako model nema validan  │
+│                                    │ PASS receipt, throw i NE emituje    │
+│                                    │ HTML.                               │
+├───────────────────────────────────┼─────────────────────────────────────┤
+│ tests/contracts/                   │ Fast contract test: proverava da    │
+│ block-until-perfect.test.mjs       │ gate blokira bez receipt-a i da     │
+│                                    │ escalation ladder radi korektno.    │
+├───────────────────────────────────┼─────────────────────────────────────┤
+│ tools/verify.mjs (step)            │ Novi verify step 4.91d pokreće      │
+│                                    │ contract test pre svakog commit-a.  │
+└───────────────────────────────────┴─────────────────────────────────────┘
+```
+
+### Precision escalation ladder
+
+```
+┌───────────┬────────────┬─────────────┬───────────────────────────────────┐
+│ Iteracija │ Spinova    │ Wall (est.) │ Akcija                             │
+├───────────┼────────────┼─────────────┼───────────────────────────────────┤
+│ 1         │ 5M × 4     │ ~5 min      │ brzi PASS check sa auto-tune      │
+│ 2         │ 50M × 4    │ ~40 min     │ sweep aktivnih osa + re-tune      │
+│ 3         │ 100M × 4   │ ~80 min     │ duboko merenje, W99 ~3-5 pp       │
+│ 4         │ 500M × 4   │ ~6 h        │ heavy statistical lock attempt    │
+│ 5         │ 1B × 4     │ ~12 h       │ production-grade convergence      │
+│ 6         │ 5B × 4     │ ~60 h       │ regulator audit tier              │
+│ 7         │ 10B × 4    │ ~120 h      │ finalni terminal tier             │
+└───────────┴────────────┴─────────────┴───────────────────────────────────┘
+```
+
+Ako iteracija na 10B × 4 ne da PASS, sistem emituje **NON-CONVERGENT**
+receipt sa najverovatnijim uzrokom (simbol, feature, mapping) i prekida
+build. Operator dobija eksplicitnu dijagnostiku, a slot ostaje neizgrađen.
+
+### Algoritamski tok
+
+```
+GDD + xlsx
+   │
+   ▼
+INGEST ──► model.json + manifest.json
+   │
+   ▼
+CLASSIFY ──► mechanic flags (fs/hnw/bb/wild_expand/coin_boost/...)
+   │
+   ▼
+AUTO-TUNE ──► dist/par-sheet-real-games/<slug>/auto-tune.json
+   │
+   ▼
+CONVERGE @ 5M×4
+   │
+   ├── PASS (|Δ| ≤ 0.05 pp) ──► BUILD slot.html ──► ✅ GOTOV
+   │
+   └── FAIL ──► SWEEP aktivnih osa iz auto-tune.json
+            │
+            ├── PASS nakon sweep-a ──► BUILD slot.html
+            │
+            └── FAIL ──► ESCALATE na sledeći precision tier
+                         │
+                         └── Ponavlja se do 10B×4
+                              │
+                              ├── PASS ──► BUILD
+                              │
+                              └── FAIL ──► ❌ BUILD BLOKIRAN
+```
+
+### Šta se kreira / menja
+
+```
+┌──────────────────────────────────────┬──────────┬─────────────────────────┐
+│ Fajl                                  │ Tip      │ Šta                    │
+├──────────────────────────────────────┼──────────┼─────────────────────────┤
+│ tools/par-sheet-block-until-perfect. │ NOVO     │ Glavni loop orkestrator │
+│ mjs                                   │          │ + CLI + receipt emit    │
+├──────────────────────────────────────┼──────────┼─────────────────────────┤
+│ tools/build-gated.mjs                 │ NOVO     │ CLI: xlsx→converge→HTML │
+├──────────────────────────────────────┼──────────┼─────────────────────────┤
+│ src/buildSlotHTML.mjs                 │ IZMENA   │ Hard convergence guard  │
+├──────────────────────────────────────┼──────────┼─────────────────────────┤
+│ tests/contracts/                      │ NOVO     │ Contract test           │
+│ block-until-perfect.test.mjs          │          │ (gate + ladder + mock)  │
+├──────────────────────────────────────┼──────────┼─────────────────────────┤
+│ tools/verify.mjs                      │ IZMENA   │ Step 4.91d wire         │
+└──────────────────────────────────────┴──────────┴─────────────────────────┘
+```
+
+### Kriterijumi prihvatanja
+
+1. Bez validnog `reports/par-convergence/<slug>.json` sa `verdict: "PASS"`,
+   `buildSlotHTML()` mora da baci grešku i NE sme da emituje HTML.
+2. Sa validnim PASS receipt-om, `buildSlotHTML()` radi normalno.
+3. `par-sheet-block-until-perfect.mjs --xlsx <fajl>` mora da prođe kroz
+   INGEST → CLASSIFY → AUTO-TUNE → CONVERGE loop.
+4. Ako je igra već PASS na 5M×4 (kao trenutnih 6 slugova), build se dešava
+   odmah nakon prvog tier-a.
+5. Contract test pokriva: gate reject, gate allow, escalation ladder,
+   non-convergent terminal state — sve bez pravih spinova (mock oracle).
+6. `npm run verify` ostaje zelen nakon svih promena.
+
+### Režimi rada
+
+```
+┌─────────────────────┬─────────────────────────────────────────────────────┐
+│ Režim                │ Komanda                                             │
+├─────────────────────┼─────────────────────────────────────────────────────┤
+│ Standard             │ node tools/build-gated.mjs --gdd <md> --xlsx <xlsx> │
+│                      │   Pokreće pun loop do PASS ili terminalnog FAIL.    │
+├─────────────────────┼─────────────────────────────────────────────────────┤
+│ Brzi smoke           │ node tools/par-sheet-block-until-perfect.mjs        │
+│                      │   --xlsx <xlsx> --max-tier 5M                       │
+│                      │   Samo prvi tier — ne gradi slot.                   │
+├─────────────────────┼─────────────────────────────────────────────────────┤
+│ Samo gate check      │ node tools/build-gated.mjs --slug <slug> --check    │
+│                      │   Proverava da li postoji PASS receipt bez build-a. │
+└─────────────────────┴─────────────────────────────────────────────────────┘
+```
+
+### Status
+
+```
+┌──────────┬────────────────────────────────────────────────────┬──────────┐
+│ Atom      │ Opis                                                │ Status   │
+├──────────┼────────────────────────────────────────────────────┼──────────┤
+│ BLOCK-1-a │ Master TODO update + architecture doc              │ ✅ LANDED│
+├──────────┼────────────────────────────────────────────────────┼──────────┤
+│ BLOCK-1-b │ par-sheet-block-until-perfect.mjs orchestrator     │ ✅ LANDED│
+│            │   TIER_LADDER 5M→50M→100M→500M→1B→5B→10B          │           │
+│            │   real oracle (subprocess) + mock oracle (test)    │           │
+│            │   auto-tune nudge između iteracija (idempotent)    │           │
+│            │   diagnoseNonConvergence: +/-/sign-flip → hint     │           │
+├──────────┼────────────────────────────────────────────────────┼──────────┤
+│ BLOCK-1-c │ Hard gate u buildSlotHTML.mjs                      │ ✅ LANDED│
+│            │   src/blockBuildGate.mjs (pure module, no DOM)     │           │
+│            │   enforceBuildGate(model) opt-in (env + model flag)│           │
+│            │   defense-in-depth: re-verify Δ ≤ band na PASS-u   │           │
+│            │   normalizeSlug + BuildGateError sa structured code│           │
+├──────────┼────────────────────────────────────────────────────┼──────────┤
+│ BLOCK-1-d │ build-gated.mjs CLI wrapper                        │ ✅ LANDED│
+│            │   GDD/xlsx/slug → pipeline ingest → convergence    │           │
+│            │   loop → buildSlotHTML (samo na PASS) → slot.html │           │
+│            │   --check / --mock / --max-tier / --skip-pipeline │           │
+│            │   audit receipt u reports/build-gated/<slug>.json │           │
+├──────────┼────────────────────────────────────────────────────┼──────────┤
+│ BLOCK-1-e │ tests/contracts/block-until-perfect.test.mjs       │ ✅ LANDED│
+│            │   19 assertion-a, ~50ms wall, mock oracle          │           │
+│            │   gate: missing/FAIL/lying/valid receipt           │           │
+│            │   loop: immediate PASS / escalation / NON_CONV    │           │
+│            │   diag: positive/negative/sign-flip hint-ovi       │           │
+│            │   TIER_LADDER monotonic + 4-seed konstanta         │           │
+├──────────┼────────────────────────────────────────────────────┼──────────┤
+│ BLOCK-1-f │ verify.mjs step 4.91d + full gate green            │ ✅ LANDED│
+│            │   Step 4.91d wire pre F1 walker step              │           │
+│            │   FULL VERIFY GATE: ALL GREEN @ commit time        │           │
+└──────────┴────────────────────────────────────────────────────┴──────────┘
+```
+
+### BLOCK-1 wave receipt (HEAD post-commit)
+
+```
+┌──────────────────────────────────────────────┬─────────────────────────────┐
+│ Komponenta                                    │ Stanje                       │
+├──────────────────────────────────────────────┼─────────────────────────────┤
+│ tools/par-sheet-block-until-perfect.mjs       │ 390 LOC, mock+real oracle    │
+│ src/blockBuildGate.mjs                        │ 175 LOC, pure module         │
+│ src/buildSlotHTML.mjs                         │ enforceBuildGate na entry   │
+│ tools/build-gated.mjs                         │ 320 LOC, CLI E2E orchestr.   │
+│ tests/contracts/block-until-perfect.test.mjs  │ 19 PASS, mock-driven         │
+│ tools/verify.mjs                              │ Step 4.91d wire green        │
+└──────────────────────────────────────────────┴─────────────────────────────┘
+```
+
+### Kako sad simulator radi "do savršenstva" (operator UX)
+
+```
+1. operator: node tools/build-gated.mjs --gdd <md> --xlsx <par.xlsx>
+2. orchestrator: pipeline ingest → auto-tune → convergence loop
+3. loop iter 1 (5M×4): ako |Δ| ≤ ±0.05 pp → PASS → BUILD
+                       ako FAIL → auto-tune nudge → next tier
+4. loop iter 2..7: 50M → 100M → 500M → 1B → 5B → 10B spinova
+5. terminal:
+   ✅ PASS  → dist/build-gated/<slug>/slot.html + receipt
+   ❌ NON_  → reports/par-block-until-perfect/<slug>.json sa
+       CONV    diagnostic hint (HIGH_PAY weight / missing feature /
+                noise), NIKAKAV slot.html, exit code 1.
+6. defense in depth: čak i ako orchestrator emit-uje pogrešan PASS,
+   blockBuildGate na ulasku u buildSlotHTML re-verifikuje |Δ| ≤ band.
+   Korumpiran receipt sa lažnim PASS = BuildGateError.
+```
+
+---
+
 ## 📊 PAR-SHEET AUTONOMOUS INGEST — 2026-06-27 status (latest)
 
 ### Live verdict ladder (5M × 4 seeds, post-PAR-14-J via PAR-14-I orchestrator)

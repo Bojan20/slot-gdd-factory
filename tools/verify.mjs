@@ -1289,6 +1289,28 @@ if (existsSync(ultimateSweepTest)) {
     'node', [ultimateSweepTest]);
 }
 
+/* ── Step 4.91d: BLOCK-1-e block-until-perfect contract (Boki 2026-06-27)
+ *
+ * Hard convergence gate — slot.html ne sme da se gradi dok measured RTP
+ * ne padne unutar ±0.05 pp od declared RTP. Contract pokriva:
+ *   - slug normalization
+ *   - gate aktivacija (env + model flag)
+ *   - tryConvergencePass: missing/FAIL/lying/valid receipt
+ *   - assertConvergencePass throws BuildGateError
+ *   - enforceBuildGate skipping vs throwing
+ *   - runBlockUntilPerfect: immediate PASS, escalation PASS, NON_CONVERGENT
+ *   - diagnoseNonConvergence: pozitivni/negativni/sign-flip hint-ovi
+ *   - TIER_LADDER monotonic + 4-seed konstanta
+ *
+ * 19 assertions, ~50ms wall. Mock oracle — nema spawn-a, mreže ni Rust
+ * kernel-a. Defense in depth: gate logika i loop logika su 100 % testirane
+ * pre nego što ikad istovari realni convergence run. */
+const blockUntilPerfectTest = resolve(REPO, 'tests/contracts/block-until-perfect.test.mjs');
+if (existsSync(blockUntilPerfectTest)) {
+  run('BLOCK-1-e block-until-perfect contract (19 assertions)',
+    'node', [blockUntilPerfectTest]);
+}
+
 /* ── Step 4.91b: F1-a/b/d Zero-Fault Runtime Walker (Boki 2026-06-27)
  *
  * Headless Chromium opens 5 baseline slot.html builds from
