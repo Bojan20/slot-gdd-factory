@@ -44,6 +44,18 @@
 
 set -uo pipefail
 
+# ── ARG PARSING ─────────────────────────────────────────────────────────────
+# BLOCK-6+ (2026-06-27): launcher može da radi u režimu server-only
+# (bez otvaranja browser-a) da ga SlotGDDOpener.app može pozivati u pozadini.
+SERVER_ONLY=0
+NO_BROWSER=0
+for arg in "$@"; do
+  case "$arg" in
+    --server-only) SERVER_ONLY=1 ;;
+    --no-browser)  NO_BROWSER=1 ;;
+  esac
+done
+
 # ── CONFIG ──────────────────────────────────────────────────────────────────
 PROJECT_DIR="/Users/vanvinklstudio/Projects/slot-gdd-factory"
 SISTER_DIR="/Users/vanvinklstudio/Projects/slot-math-engine-template"
@@ -711,8 +723,12 @@ else
   TARGET_URL="$SERVER_URL"
 fi
 
-open "$TARGET_URL" || fail "open $TARGET_URL"
-ok "Simulator otvoren: $TARGET_URL"
+if [ "$SERVER_ONLY" -eq 0 ] && [ "$NO_BROWSER" -eq 0 ]; then
+  open "$TARGET_URL" || fail "open $TARGET_URL"
+  ok "Simulator otvoren: $TARGET_URL"
+else
+  info "Režim server-only / no-browser — ne otvara browser automatski"
+fi
 
 # ════════════════════════════════════════════════════════════════════════════
 # FINAL REPORT
@@ -765,6 +781,10 @@ if [ "$FAST_PATH" -eq 0 ]; then
   } > "$FAST_PATH_HASH_FILE"
 fi
 
-log "Prozor će se zatvoriti za 5 sekundi..."
-sleep 5
+if [ "$SERVER_ONLY" -eq 0 ]; then
+  log "Prozor će se zatvoriti za 5 sekundi..."
+  sleep 5
+else
+  log "Server-only režim — zatvaram odmah, serveri ostaju u pozadini"
+fi
 exit 0
