@@ -69,6 +69,7 @@ import { argv } from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 import { detectMechanics } from './_par-sheet-classifier-lib.mjs';
+import { deriveSlug } from './_par-sheet-to-model.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const REPO = resolve(dirname(__filename), '..');
@@ -230,9 +231,15 @@ function renderSummary(receipts, totalMs) {
     else if (v === 'WARN') warn++;
     else if (v === 'FAIL') fail++;
     else if (v === 'SKIPPED') skipped++;
-    const feats = r.stages.classify?.detectedFeatures?.join(',') || '-';
-    const axes = r.stages.autoTune?.enabledAxes?.join(',') || '-';
-    const dline = r.abs_delta_pp != null ? `Δ=${r.abs_delta_pp > 0 ? '+' : ''}${r.abs_delta_pp.toFixed(4)}pp` : '';
+    /* PAR-14-J safety: error path produces a receipt with no stages.
+     * Guard the destructure so renderSummary never throws when one
+     * slug fails mid-pipeline. */
+    const stages = r.stages || {};
+    const feats = stages.classify?.detectedFeatures?.join(',') || '-';
+    const axes = stages.autoTune?.enabledAxes?.join(',') || '-';
+    const dline = r.abs_delta_pp != null
+      ? `Δ=${r.abs_delta_pp > 0 ? '+' : ''}${r.abs_delta_pp.toFixed(4)}pp`
+      : (r.error ? `err: ${r.error.substring(0, 60)}` : '');
     console.log(`  ${v.padEnd(7)}  ${r.slug.padEnd(34)} ${dline}`);
     console.log(`    classify[${feats}]  tune[${axes}]`);
   }
@@ -250,11 +257,15 @@ async function main() {
     const t0 = Date.now();
     await stageIngest(opts.xlsx);
     console.log(`  ✓ done (${Date.now() - t0}ms)`);
-    /* Derive slug from filename (matches _par-sheet-to-model deriveSlug). */
-    const fname = opts.xlsx.split('/').pop() || '';
-    const m = fname.match(/ParSheets[_\-\s]+([A-Za-z0-9_\-]+?)(?:[_\-\s]Classic|\.xlsx|$)/i);
-    if (m) targets.push(m[1].toLowerCase().replace(/_/g, '-'));
-    else throw new Error(`cannot derive slug from ${opts.xlsx}`);
+    /* Derive slug via the canonical helper exported by the ingest tool
+     * (PAR-14-J fix): single source of truth, matching the slug-dir
+     * that stage 1 actually writes. Pipeline's previous local regex
+     * stripped CamelCase splits, producing "bookexpandingbonusbuy"
+     * while ingest emitted "book-expanding-bonus-buy" — classify stage
+     * then couldn't find the model.json. */
+    const slug = deriveSlug(opts.xlsx);
+    if (!slug) throw new Error(`cannot derive slug from ${opts.xlsx}`);
+    targets.push(slug);
   } else if (opts.slug) {
     targets.push(opts.slug);
   } else if (opts.all) {

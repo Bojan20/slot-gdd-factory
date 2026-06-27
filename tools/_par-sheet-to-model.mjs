@@ -121,7 +121,7 @@ const DEFAULT_OUT_DIR = resolve(process.cwd(), 'dist', 'par-sheet-real-games');
 
 // ─── Slug derivation (vendor-neutral, mirrors PAR-1 probe) ───────────────────
 
-function deriveSlug(filename) {
+export function deriveSlug(filename) {
   let s = basename(filename, extname(filename));
   s = s.replace(/^par[_\s]*sheets?_?/i, '');
   s = s.replace(/\s+\d+$/, '');

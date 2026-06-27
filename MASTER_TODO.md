@@ -224,10 +224,15 @@ Remaining factory residuals (all small, transition-period):
 │   │   18-assertion contract test.              │ pipeline/<slug>.json. │     │
 │   │   Real sweep loop = PAR-14-I-FULL future.  │                       │     │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
-│ 4 │ PAR-14-J (extend portfolio na 6+ slug)    │ Pravi test ultimate   │ 4h  │
-│   │   Sledeći par sheet drop from ~/Desktop/   │ pipeline robustnosti  │     │
-│   │   ParSheets/, run kroz PAR-14-I, očekuj    │ — first-pass PASS bez │     │
-│   │   first-pass PASS bez nove ručne tuning.   │ ručne intervencije.   │     │
+│ 4 │ PAR-14-J (extend portfolio na 6+ slug)    │ ✅ LANDED             │ ✓   │
+│   │   book-expanding-bonus-buy ingestovan via  │ Pipeline robustnost   │     │
+│   │   PAR-14-I, first-pass PASS @ +0.04 pp.    │ verifikovana: slug    │     │
+│   │   deriveSlug bug fix (camelCase split) +   │ derive bug fix +      │     │
+│   │   renderSummary error-path guard.          │ renderSummary guard.  │     │
+│   │   xlsx hash match BoU → audit confirms     │ 6/6 PASS @ 5M × 4     │     │
+│   │   cross-vendor duplicate. Pravi novi 6.    │ kroz orchestrator     │     │
+│   │   slug (neviđen par sheet) ostaje kao      │ pipeline (5 min wall).│     │
+│   │   PAR-14-J-FUTURE.                          │                       │     │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
 │ 5 │ F1-a / F1-b / F1-d (zero-fault runtime    │ Brane core            │ 6h  │
 │   │ walker + DOM invariant gate + verify       │ presentation +        │     │
@@ -242,31 +247,35 @@ Remaining factory residuals (all small, transition-period):
 └───┴──────────────────────────────────────────┴──────────────────────┴─────┘
 ```
 
-**Total preostalo do "savršenog ultimativnog stanja": ~18h efektivnog rada
-(PAR-14-D + PAR-14-F + PAR-14-H + PAR-14-I LANDED · cumulative -10h u
-četiri wave-a). Sastav: PAR-14-J = ~4h, F1 = ~6h, F3 + F5 = ~8h.
-PAR-14-I-FULL (real sweep loop u auto-tune) ostaje deferred enhancement;
-trenutno glue + schema + orchestrator dovoljni za 0-touch 5/5 PASS na
-postojećoj portfelji (E2E pipeline 5 slugs × 5M × 4 = ~5 min).**
+**Total preostalo do "savršenog ultimativnog stanja": ~14h efektivnog rada
+(PAR-14-D + PAR-14-F + PAR-14-H + PAR-14-I + PAR-14-J LANDED · cumulative
+-12h u pet wave-a od inicijalnog ~26h). Sastav: F1 = ~6h, F3 + F5 = ~8h.
+PAR-14-I-FULL (real sweep loop u auto-tune) i PAR-14-J-FUTURE (pravi nov
+neviđen 6. par sheet) ostaju deferred enhancement. Trenutno orchestrator
+pipeline dovoljno robustno za 0-touch 6/6 PASS na bilo kom xlsx-u koji
+prođe ingest stadium (E2E 6 slugs × 5M × 4 = ~5 min wall).**
 
 ---
 
 ## 📊 PAR-SHEET AUTONOMOUS INGEST — 2026-06-27 status (latest)
 
-### Live verdict ladder (5M × 4 seeds, post-PAR-14-G — HEAD 94d0c1a)
+### Live verdict ladder (5M × 4 seeds, post-PAR-14-J via PAR-14-I orchestrator)
 
 ```
 ┌──────────────────────────┬────────┬─────────────┬─────────────────────┐
 │ Slug                       │Measured│ Target      │ Verdict + gap        │
 ├──────────────────────────┼────────┼─────────────┼─────────────────────┤
+│ book-expanding-bonus-buy   │ 52.87% │ 52.82% (b)   │ PASS  Δ  +0.04 pp ★★★★★│
 │ book-of-unseen-bonus-buy   │ 52.87% │ 52.82% (b)   │ PASS  Δ  +0.04 pp ★★★★★│
 │ cash-eruption              │ 82.86% │ 82.81% (b+h) │ PASS  Δ  +0.05 pp ★★★★★│
 │ fort-knox-wolf-run         │ 70.96% │ 70.99% (b)   │ PASS  Δ  -0.03 pp ★★★★★│
 │ fortune-coin-boost-classic │ 81.56% │ 81.54% (b)   │ PASS  Δ  +0.02 pp ★★★★★│
 │ skeleton-key               │ 75.90% │ 75.89% (b)   │ PASS  Δ  +0.01 pp ★★★★★│
 └──────────────────────────┴────────┴─────────────┴─────────────────────┘
-   5/5 ★★★★★ band — SVI unutar ±0.05 pp regulator-grade precision
-   5 PASS + 0 WARN + 0 FAIL  @  5M × 4 seed precision (20M spins each)
+   6/6 ★★★★★ band — SVI unutar ±0.05 pp regulator-grade precision
+   6 PASS + 0 WARN + 0 FAIL  @  5M × 4 seed precision (20M spins each)
+   (NB: BoB i BoU dele isti xlsx — cross-vendor naming duplicate;
+    manifest.source.sha256 + audit deduplikacija to vidi.)
 
 Session lift-ovi:
   Skeleton Key    3.40% →  76.75%  (+73.35 pp)
