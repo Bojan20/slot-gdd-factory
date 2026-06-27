@@ -291,7 +291,7 @@ function mapModelToGameConfig(model) {
    * multiplier values on line wins during base game. Sister kernel
    * has no such hook. Wild density boost approximates the lift. */
   const isFortuneCoin = /fortune.?coin|coin.?boost/i.test(model.slug || model.id || '');
-  const wildExpandFactor = isSkelKey ? 1.75 : (isFortuneCoin ? 14 : 1);
+  const wildExpandFactor = isSkelKey ? 1.84 : (isFortuneCoin ? 14 : 1);
 
   const baseWeights = (model.par_sheet?.reelStrips || []).map((reel) =>
     reel.map((e) => {
