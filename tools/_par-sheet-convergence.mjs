@@ -492,7 +492,7 @@ function mapModelToGameConfig(model) {
         /* Scatter_pays per trigger. 3-scatter dominant; 4 + 5 rarer.
          * Scaling derived from BoU declared bonus 89.30 % and ~1 %
          * trigger rate → ~89 × bet per 3-scatter. Tune empirically. */
-        const base = Math.round(declaredBonus * 0.3);
+        const base = Math.round(declaredBonus * 0.32);
         return {
           awards: { '3': 0, '4': 0, '5': 0 },
           mult_start: 1,
