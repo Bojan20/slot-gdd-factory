@@ -1074,7 +1074,12 @@ async function convergeOne(baseUrl, slug, spins, seeds) {
     total_bet_mc: totalBetMc,
   };
 
-  const batch = await runBatchHttp(baseUrl, [item], { timeoutMs: 600_000 });
+  /* PAR-14-D (Boki 2026-06-27): bump app-level timeout to 1 h so the
+   * 100M / 1B / 10B tiers don't abort while sister crunches. Sister
+   * single-thread throughput ≈ 178k spins/s, so 100M × 4 ≈ 37 min,
+   * 1B × 4 ≈ 6 h (spawn per-slug as workflow_dispatch separately).
+   * For 10B+ tiers, callers should pass `--spins / --seeds` chunks. */
+  const batch = await runBatchHttp(baseUrl, [item], { timeoutMs: 3_600_000 });
   if (!batch.ok || batch.results.length === 0) {
     return {
       slug,
@@ -1176,10 +1181,16 @@ async function main() {
     process.exit(2);
   }
 
-  console.log(`▸ spawning sister http_server (cap=${opts.spins * opts.seeds + 1})…`);
+  /* PAR-14-D fix (Boki 2026-06-27): pass `capTotalSpins` not `capSpins`
+   * — the latter was a typo silently ignored by spawnHttpServer, leaving
+   * the daemon on its default 50M cap. Harmless at 5M×4=20M (current
+   * CI), but FATAL at 100M×4=400M (PAR-14-D nightly verify). Now sister
+   * is spawned with cap = spins × seeds + 1 explicitly. */
+  const capTotalSpins = opts.spins * opts.seeds + 1;
+  console.log(`▸ spawning sister http_server (cap=${capTotalSpins})…`);
   const server = await spawnHttpServer({
     sister,
-    capSpins: opts.spins * opts.seeds + 1,
+    capTotalSpins,
   });
   console.log(`  bound to ${server.baseUrl} (pid=${server.pid})`);
 

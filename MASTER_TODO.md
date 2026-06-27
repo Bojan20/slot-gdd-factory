@@ -124,8 +124,10 @@ NE ide na svaki commit. Cron / weekly / pre-release schedule.
 │           │ tools/_par-sheet-classifier.mjs — input par sheet, output  │ 11e319d   │
 │           │ specials + mechanics flags                                 │           │
 ├──────────┼──────────────────────────────────────────────────────────┼──────────┤
-│ PAR-14-D │ 100M / 1B / 10B verify gate scripts                        │ 📋 PLAN   │
-│           │ tools/par-sheet-convergence-100M.mjs (cron / pre-release)  │           │
+│ PAR-14-D │ 100M / 1B / 10B verify gate scripts + GHA weekly cron      │ ✅ LANDED │
+│           │ tools/par-sheet-convergence-{100M,1B,10B}.mjs              │           │
+│           │ + .github/workflows/par-convergence-100M.yml (Sun 03 UTC)  │           │
+│           │ + capTotalSpins typo fix in base convergence tool          │           │
 ├──────────┼──────────────────────────────────────────────────────────┼──────────┤
 │ PAR-14-E │ Sister-side TODO with code locations + estimated effort    │ ✅ DOC    │
 │           │ Mystery / SRS / Coin Boost / Wild Expand / Bonus Buy mode  │ eea9d32   │
@@ -205,11 +207,12 @@ Remaining factory residuals (all small, transition-period):
 │   │   simbolima koriste sister native          │ slugovi koriste       │     │
 │   │   `apply_mystery_reveal` dispatch.         │ sister native flag.   │     │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
-│ 2 │ PAR-14-D (100M × 4 nightly cron + 1B      │ Tighter PASS band     │ 3h  │
-│   │ pre-release verify)                        │ (~3 pp → 1-2 pp)      │     │
-│   │   tools/par-sheet-convergence-100M.mjs     │ catch RNG over-fit;   │     │
-│   │   + GitHub Actions weekly schedule. 1B/10B │ regulator audit gate. │     │
-│   │   pokreće se ručno pred release.            │                       │     │
+│ 2 │ PAR-14-D (100M × 4 nightly cron + 1B/10B  │ ✅ LANDED             │ ✓   │
+│   │ pre-release verify)                        │ tools/par-sheet-con-  │     │
+│   │   tools/par-sheet-convergence-100M.mjs +   │ vergence-{100M,1B,    │     │
+│   │   1B.mjs + 10B.mjs wrappers + GHA weekly   │ 10B}.mjs + GHA Sun    │     │
+│   │   par-convergence-100M.yml (Sun 03 UTC).   │ 03 UTC cron.          │     │
+│   │   capTotalSpins typo u base toolu fix-ovan.│                       │     │
 ├───┼──────────────────────────────────────────┼──────────────────────┼─────┤
 │ 3 │ PAR-14-I (auto-tune-from-classifier glue) │ "Drop par sheet →     │ 3h  │
 │   │   tools/_par-sheet-classifier.mjs detect   │ savršeno ide kroz     │     │
@@ -235,9 +238,9 @@ Remaining factory residuals (all small, transition-period):
 └───┴──────────────────────────────────────────┴──────────────────────┴─────┘
 ```
 
-**Total preostalo do "savršenog ultimativnog stanja": ~24h efektivnog rada
-(PAR-14-F + PAR-14-H LANDED · ovaj wave -4h). Sastav: PAR-14-I/J = ~7h,
-F1 = ~6h, F3 + F5 = ~8h, plus PAR-14-D nightly cron = ~3h**.
+**Total preostalo do "savršenog ultimativnog stanja": ~21h efektivnog rada
+(PAR-14-D + PAR-14-F + PAR-14-H LANDED · cumulative -7h u tri wave-a).
+Sastav: PAR-14-I/J = ~7h, F1 = ~6h, F3 + F5 = ~8h**.
 
 ---
 
@@ -271,7 +274,9 @@ Session lift-ovi:
 ### Wave commit chain (2026-06-26 → 2026-06-27)
 
 ```
-<HEAD>   feat(PAR-14-F): FCB is_coin_boost wire — yank 14.18× hack · 5/5 PASS held
+<HEAD>   feat(PAR-14-D): 100M/1B/10B convergence wrappers + GHA weekly cron + capTotalSpins fix
+2432f50  feat(PAR-14-H): Mystery→Wild remap scoped to Skel Key · BoU rides native
+2a15950  feat(PAR-14-F): FCB is_coin_boost wire — yank 14.18× hack · 5/5 PASS held
 94d0c1a  feat(PAR-14-G): Skel Key WARN→PASS via scatter_pays tune · 5/5 PASS @ ±0.05 pp
 253187d  feat(PAR-14-E-6-data): FCB Coin Boost multiplier extractor → native config
 d8e08bc  feat(PAR-14-E-3-data): CE Multi-Scenario HnW extractor + scenarios emit

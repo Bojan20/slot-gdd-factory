@@ -1,0 +1,137 @@
+# slot-gdd-factory — PAR-14-D · Weekly 100M-tier RTP convergence verify
+#
+# Purpose: tighter PASS verification of the 5 par-sheet slugs at the
+# 100M × 4 = 400M-spins-per-slug sample tier. Wilson 99% half-width
+# drops to ≈ 3–5 pp at this scale, exposing RNG over-fit hidden at the
+# CI-default 5M × 4 = 20M tier (W99 ≈ 14–21 pp).
+#
+# Cadence: weekly (Sunday 03:00 UTC = pre-Monday-morning so a fresh
+# series receipt is waiting). Also reachable via workflow_dispatch from
+# the GitHub UI for ad-hoc runs (e.g. after a sister-kernel commit).
+#
+# Wall-clock budget: ~25–30 min per slug × 5 slugs ≈ 2–2.5 h. Sister
+# kernel is single-thread per-request (~50–100M spins/s on m-series),
+# so total runtime fits comfortably inside the 6h GHA job ceiling on
+# ubuntu-latest. Cargo cache shaves first-run cold compile down to
+# ~2 min after the warm path.
+
+name: par-convergence-100M
+
+on:
+  schedule:
+    - cron: '0 3 * * 0'   # Sunday 03:00 UTC
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: 'Single slug to verify (empty = all 5)'
+        required: false
+        default: ''
+      spins:
+        description: 'Spins per seed (default 100_000_000)'
+        required: false
+        default: '100000000'
+      seeds:
+        description: 'Seeds (default 4)'
+        required: false
+        default: '4'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: par-convergence-100M-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  converge:
+    name: 100M × 4 par-sheet RTP convergence
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      # Sister repo (slot-math-engine-template) provides the Rust kernel
+      # binary. Checkout as a sibling worktree at the path the factory
+      # tools expect by default (~/Projects/slot-math-engine-template/).
+      - name: Checkout sister kernel
+        uses: actions/checkout@v4
+        with:
+          repository: Bojan20/slot-math-engine-template
+          path: sister
+          fetch-depth: 1
+
+      - name: Cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            sister/target
+          key: sister-cargo-${{ runner.os }}-${{ hashFiles('sister/**/Cargo.lock') }}
+          restore-keys: |
+            sister-cargo-${{ runner.os }}-
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build sister http_server (release)
+        working-directory: sister
+        run: cargo build --release --bin http_server --features http
+
+      - name: Run 100M convergence
+        env:
+          SLOT_RUST_HTTP_REPO: ${{ github.workspace }}/sister
+          INPUT_SLUG: ${{ github.event.inputs.slug }}
+          INPUT_SPINS: ${{ github.event.inputs.spins }}
+          INPUT_SEEDS: ${{ github.event.inputs.seeds }}
+        run: |
+          ARGS=""
+          if [ -n "$INPUT_SLUG" ]; then
+            ARGS="$ARGS --slug $INPUT_SLUG"
+          fi
+          if [ -n "$INPUT_SPINS" ]; then
+            ARGS="$ARGS --spins $INPUT_SPINS"
+          fi
+          if [ -n "$INPUT_SEEDS" ]; then
+            ARGS="$ARGS --seeds $INPUT_SEEDS"
+          fi
+          node tools/par-sheet-convergence-100M.mjs $ARGS
+
+      - name: Upload receipts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: par-convergence-100M-${{ github.run_id }}
+          path: reports/par-convergence-100M/
+          retention-days: 90
+
+      - name: Surface verdict failures
+        if: always()
+        run: |
+          AGG=reports/par-convergence-100M/_aggregate.json
+          if [ ! -f "$AGG" ]; then
+            echo "Aggregate receipt missing — convergence tool likely crashed."
+            exit 1
+          fi
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('$AGG','utf-8'));
+            const runs = d.runs || [];
+            let fail = 0;
+            for (const r of runs) {
+              const v = r.verdict || 'UNKNOWN';
+              const sign = (r.deltaPP ?? 0) >= 0 ? '+' : '';
+              console.log(\`\${(r.slug||'?').padEnd(30)} \${v.padEnd(5)} Δ=\${sign}\${(r.deltaPP??0).toFixed(4)}pp  W99=±\${(r.wilsonHalfPP??0).toFixed(3)}pp\`);
+              if (v === 'FAIL') fail++;
+            }
+            if (fail > 0) {
+              console.log(\`\\n\${fail} slug(s) FAIL at 100M tier.\`);
+              process.exit(1);
+            }
+          "

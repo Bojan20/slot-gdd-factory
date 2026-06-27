@@ -79,6 +79,44 @@ import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
 
+/* PAR-14-D (Boki 2026-06-27): default undici headersTimeout / bodyTimeout
+ * is 300_000 ms (5 min). At 100M × 4 = 400M spins per slug the sister
+ * Rust kernel blocks the HTTP response for ~25–30 min while it crunches,
+ * so a fresh dispatcher with much longer timeouts is required for any
+ * tier above ~30M spins / request.
+ *
+ * Imported from the `undici` package directly. Node bundles it
+ * internally but doesn't expose `Agent` via a stable global path, so
+ * the npm dep is the simplest cross-version solution. If the import
+ * fails (e.g. someone runs this tool outside the repo without devDeps
+ * installed), we fall back to a null dispatcher — vanilla fetch still
+ * works for sub-5-min requests, and the caller's AbortController +
+ * setTimeout still bounds the operation app-side.
+ *
+ * Override via SLOT_RUST_HTTP_DISPATCHER_TIMEOUT_MS env (default 1 h). */
+const DISPATCHER_TIMEOUT_MS =
+  Number(process.env.SLOT_RUST_HTTP_DISPATCHER_TIMEOUT_MS) || 3_600_000;
+try {
+  /* Cross-version compatibility: Node ships its own undici internally;
+   * `import { Agent }` from the devDep returns a separate copy that
+   * passes the `dispatcher:` option but isn't recognised by Node's
+   * internal fetch in 22+/25. setGlobalDispatcher() patches the live
+   * Node dispatcher in place so every fetch() — internal or external —
+   * picks up the extended timeouts uniformly. */
+  const { Agent, setGlobalDispatcher } = await import('undici');
+  setGlobalDispatcher(new Agent({
+    headersTimeout: DISPATCHER_TIMEOUT_MS,
+    bodyTimeout: DISPATCHER_TIMEOUT_MS,
+    keepAliveTimeout: 60_000,
+    keepAliveMaxTimeout: 60_000,
+  }));
+} catch {
+  /* undici devDep not present — sub-5-min runs still work via the
+   * default global dispatcher; large-tier callers should `npm i` to
+   * pick up the long-running dispatcher path. */
+}
+const LONG_RUN_DISPATCHER = null;  /* setGlobalDispatcher path used above */
+
 const DEFAULT_REPO = '~/Projects/slot-math-engine-template'.replace(
   '~',
   process.env.HOME || '',
@@ -316,7 +354,10 @@ export async function healthCheckHttp(baseUrl, opts = {}) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const resp = await fetch(`${baseUrl}/health`, { signal: ctrl.signal });
+    const resp = await fetch(`${baseUrl}/health`, {
+      signal: ctrl.signal,
+      ...(LONG_RUN_DISPATCHER ? { dispatcher: LONG_RUN_DISPATCHER } : {}),
+    });
     if (!resp.ok) {
       return { ok: false, reason: `health http ${resp.status}` };
     }
@@ -375,6 +416,7 @@ export async function runOnceHttp(baseUrl, config, opts = {}) {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(payload),
       signal: ctrl.signal,
+      ...(LONG_RUN_DISPATCHER ? { dispatcher: LONG_RUN_DISPATCHER } : {}),
     });
     const latencyMs = Date.now() - t0;
     if (!resp.ok) {
@@ -481,6 +523,7 @@ export async function runBatchHttp(baseUrl, items, opts = {}) {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(payload),
       signal: ctrl.signal,
+      ...(LONG_RUN_DISPATCHER ? { dispatcher: LONG_RUN_DISPATCHER } : {}),
     });
     const totalLatencyMs = Date.now() - t0;
     if (!resp.ok) {
