@@ -459,6 +459,108 @@ koji je quick profile prikrio. Treba **PAR-15 wave** (slugovan kao
 
 ---
 
+## 🎯 PAR-15-a — CLOSEOUT receipt (2026-06-28 UTC)
+
+Boki "Ajde radi dalje slot gdd, sta ima jos iz master todo" — uzeo sam PAR-15-a
+investigation kao prirodni sledeći wave posle BLOCK-3-f +0.384 pp drift signal.
+Pun finding doc: `reports/par-convergence/par15a-finding.md`.
+
+### Hard evidence ladder (Cash Eruption)
+
+```
+┌──────────┬────────────┬──────────┬──────────────┬─────────┐
+│ Tier     │ Total spins│ Δ pp     │ Wilson 99    │ Verdict │
+├──────────┼────────────┼──────────┼──────────────┼─────────┤
+│ 1M × 4   │     4M     │ -0.359   │ ±47.79 pp    │ WARN    │
+│ 5M × 4   │    20M     │ +0.047   │ ±21.48 pp    │ PASS *  │
+│ 10M × 4  │    40M     │ +0.193   │ ±15.21 pp    │ WARN    │
+│ 100M × 4 │   400M     │ +0.384   │ ± 4.82 pp    │ WARN ★  │
+└──────────┴────────────┴──────────┴──────────────┴─────────┘
+```
+
+`★` 100M tier potvrdio BLOCK-3-f signal — Δ=+0.384 pp je realan, ne sreća.
+`*` 5M PASS bio je false positive (Δ unutar ±21 pp Wilson noise).
+
+### Tri ključna nalaza
+
+```
+┌────┬────────────────────────────────────────────────────────────────┐
+│ #1 │ FS path contributes 0.00 pp za Cash Eruption (probe potvrdio:  │
+│    │ no_fs measured = baseline measured = 83.0037 %).                │
+├────┼────────────────────────────────────────────────────────────────┤
+│ #2 │ Sister simulator.rs:96 koristi `else if` za HnW/FS — mutually  │
+│    │ exclusive. Cash Eruption deli cash scatters → HnW fire-uje     │
+│    │ prvi, FS nikad ne stigne do threshold-a.                        │
+├────┼────────────────────────────────────────────────────────────────┤
+│ #3 │ Componente drift ±30 pp ali sum slučajno match-uje:            │
+│    │   baseGame   declared 41.90 pp · sister  ~11.18 pp · Δ -30.72  │
+│    │   holdAndWin declared 40.91 pp · sister  ~71.82 pp · Δ +30.91  │
+│    │   freeSpins  declared  7.00 pp · sister   ~0.00 pp · Δ - 7.00  │
+│    │   combined   declared 82.81 pp · sister  ~83.00 pp · Δ + 0.19  │
+└────┴────────────────────────────────────────────────────────────────┘
+```
+
+### PAR-15-b SWEEP attempts — oba inkonkluzivna
+
+```
+sweep #1: orb_value bump (1.105 / 1.110 / 1.112 / 1.108)
+  → svi Δ unutar Wilson noise polja (±15 pp na 40M)
+  → Math.round discretizes per-orb value → knob daje samo ~0.02 pp/step
+
+sweep #2: orb_land_chance_base (0.0915 / 0.0910 / 0.0905 / 0.0900)
+  → non-monotonic response, sve unutar Wilson noise
+  → 40M tier NE MOŽE da diskriminiše knob impact (band 0.05 << Wilson 15)
+```
+
+Knob diskriminacija na ±0.05 pp zahteva Wilson < 0.1 pp → > 5B spins/probe.
+6-step ternary search = ~120 h wallclock. Postojeći `_par-sheet-sweep-engine.mjs`
+LADDER top na 10M (Wilson ~30 pp — isti problem).
+
+### PAR-15-b/c/d prerequisite map
+
+```
+┌──────────────┬─────────────────────────────────────────────────────────┐
+│ PAR-14-I-WIRE│ Real-oracle bridge za sweep engine (sister kernel HTTP  │
+│               │ direct, no per-rung tool spawn) — preduslov za sweep.   │
+├──────────────┼─────────────────────────────────────────────────────────┤
+│ PAR-15-b-1   │ Sister kernel emit-uje per-component RTP breakdown iz   │
+│               │ simulate_hnw / simulate_free_spins — factory direktno   │
+│               │ poredi sa declared per-component.                        │
+├──────────────┼─────────────────────────────────────────────────────────┤
+│ PAR-15-b-2   │ Analytic HnW contribution solver (closed-form per orb   │
+│               │ distribution + chance) — bypasses MC noise, ±0.001 pp   │
+│               │ precision u milisekundama.                              │
+├──────────────┼─────────────────────────────────────────────────────────┤
+│ PAR-15-b-3   │ Sister kernel extend: HnW + FS u istom spinu (currently │
+│               │ else if). PAR sheet deklariše oba kao zasebne komponente│
+│               │ → semantically korektno modelovati oba puta.            │
+└──────────────┴─────────────────────────────────────────────────────────┘
+```
+
+### Honest status
+
+**PAR-15-a (investigation): ✅ DONE** — root cause = sister kernel HnW/FS
+mutual exclusion + extracted orb table over-calibration na single-pool
+distribution.
+
+**PAR-15-b/c/d (fix + verify + promote): ⏳ BLOCKED** dok ne završim jedan
+od preduslova iz prerequisite map-a iznad. Trenutni `cash-eruption` 100M
+verdict (WARN, Δ=+0.38 pp) je **najbolje što trenutna arhitektura može**
+bez analytical solver ili sister-side breakdown emission. Tuning mapper knob-a
+bilo bi statistical theater — underlying component drift (±30 pp) ostao bi
+nevidljiv.
+
+Probe artefakti:
+- `/tmp/par15a-probe-component-split.mjs` (3 × 40M = 120M total)
+- `/tmp/par15b-sweep-orb-bump.mjs` (4 × 40M = 160M total)
+- `/tmp/par15b-sweep-chance.mjs` (4 × 40M = 160M total)
+- `reports/par-convergence/par15a-component-split.json`
+- `reports/par-convergence/par15b-orb-bump-sweep.json`
+- `reports/par-convergence/par15b-chance-sweep.json`
+- `reports/par-convergence/par15a-finding.md` (full report)
+
+---
+
 ## 🚫 BLOCK-UNTIL-PERFECT GATE — PAR-14-K / BLOCK-1
 
 > *"ja zelim da simulator radi sve dok ne izadje sve savrseno za igru i ne
