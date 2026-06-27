@@ -15,6 +15,15 @@ import { buildSchemaEnvelope } from './registry/modelSchemaVersion.mjs';
  * trade-off — the regression risk from a Proxy or createRequire shim
  * outweighs the ~1ms savings. */
 const _waveVFs = await (async () => {
+  /* Browser guard — skip the import entirely in browser context. Without this
+   * the browser STILL logs a failed network fetch for `node:fs` even though
+   * try/catch swallows the rejection, polluting devtools console with a
+   * CORS / ERR_FAILED red line. The _isNode check short-circuits before any
+   * `import()` call fires, so the browser never sees the unsupported URL. */
+  const _isNode = typeof process !== 'undefined'
+                && process.versions != null
+                && !!process.versions.node;
+  if (!_isNode) return null;
   try {
     const mod = await import('node:fs');
     return mod && (mod.default || mod);

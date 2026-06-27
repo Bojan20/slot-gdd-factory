@@ -48,14 +48,35 @@
  *     |deltaPP| ≤ band. Korumpiran receipt sa lažnim PASS bi tu pao.
  */
 
-import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+/* Browser-safe lazy bind of node-only modules. The same pattern parser.mjs
+ * uses (Boki UQ-U-9): statički `import ... from 'node:fs'` u modulu koji
+ * app.js statički importuje uzrokuje browser CORS fail ("Access to script
+ * at 'node:fs' has been blocked by CORS policy"). Fix: top-level await
+ * sa try/catch tako da browser bundle dobije `null` umesto network fetch-a.
+ * Node CLI path je 100% nepromenjen. */
+const _IS_NODE = typeof process !== 'undefined'
+  && !!process?.versions?.node
+  && typeof window === 'undefined';
+
+const _nodeMods = await (async () => {
+  if (!_IS_NODE) return null;
+  try {
+    const [fs, path, url] = await Promise.all([
+      import('node:fs'),
+      import('node:path'),
+      import('node:url'),
+    ]);
+    return { fs, path, url };
+  } catch (_) { return null; }
+})();
 
 import { MATH_PRECISION_BAND_PP } from './registry/mathPrecision.mjs';
 
-const __filename = fileURLToPath(import.meta.url);
-const REPO_ROOT_DEFAULT = resolve(dirname(__filename), '..');
+const REPO_ROOT_DEFAULT = (() => {
+  if (!_nodeMods) return null;
+  const __filename = _nodeMods.url.fileURLToPath(import.meta.url);
+  return _nodeMods.path.resolve(_nodeMods.path.dirname(__filename), '..');
+})();
 
 /* ─── Custom error class ───────────────────────────────────────────── */
 
@@ -85,6 +106,7 @@ export function normalizeSlug(input) {
 
 export function isGateActive(model = null) {
   if (model && model.__require_convergence__ === true) return true;
+  if (!_IS_NODE) return false;
   const env = process.env.SLOT_BUILD_REQUIRE_CONVERGENCE;
   return env === '1' || env === 'true';
 }
@@ -92,17 +114,18 @@ export function isGateActive(model = null) {
 /* ─── Receipt loader (pure I/O) ────────────────────────────────────── */
 
 export function loadConvergenceReceipt(slug, { repoRoot = REPO_ROOT_DEFAULT } = {}) {
+  if (!_nodeMods || !repoRoot) return null;
   const normalized = normalizeSlug(slug);
   if (!normalized) return null;
-  const receiptPath = join(
+  const receiptPath = _nodeMods.path.join(
     repoRoot,
     'reports',
     'par-block-until-perfect',
     `${normalized}.json`,
   );
-  if (!existsSync(receiptPath)) return null;
+  if (!_nodeMods.fs.existsSync(receiptPath)) return null;
   try {
-    const raw = readFileSync(receiptPath, 'utf8');
+    const raw = _nodeMods.fs.readFileSync(receiptPath, 'utf8');
     return JSON.parse(raw);
   } catch (_) {
     return null;

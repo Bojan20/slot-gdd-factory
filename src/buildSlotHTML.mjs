@@ -26,8 +26,21 @@ import { buildGridShape } from './gridShape.mjs';
 import { paylineConfig } from './blocks/paylines.mjs';
 /* BLOCK-1-c (Boki 2026-06-27) — hard convergence gate. Opt-in: aktivira
  * se samo kad env SLOT_BUILD_REQUIRE_CONVERGENCE=1 ili model.__require_
- * convergence__=true. Default-no pre-existing build path netaknut. */
-import { enforceBuildGate } from './blockBuildGate.mjs';
+ * convergence__=true. Default-no pre-existing build path netaknut.
+ *
+ * BROWSER-SAFE GATE (Boki 2026-06-27 console-clean fix):
+ *   blockBuildGate.mjs statički linkuje `node:fs` / `node:path` /
+ *   `node:url`. Static ESM import-i bivaju resolve-ovani od strane
+ *   browser-ovog modula loader-a pre prve linije koda — pa CORS error
+ *   za `node:` šemu udari u devtools i pre nego što izvršenje stigne
+ *   do `enforceBuildGate(model)` call site-a. Browser ionako nikad
+ *   nema env flag `SLOT_BUILD_REQUIRE_CONVERGENCE`, pa je gate tamo
+ *   uvek inaktivan i može da bude no-op. U Node CLI putu (build-gated,
+ *   tests/contracts) gate radi punu logiku kroz lazy dynamic import. */
+let enforceBuildGate = () => ({ allowed: true, skipped: true });
+if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+  ({ enforceBuildGate } = await import('./blockBuildGate.mjs'));
+}
 
 /* ─── UQ-FORTIFY9 #1 · XSS-safe JSON encoding for inline <script> ──────
  * JSON.stringify može da emituje string koji sadrži `</script>`,
