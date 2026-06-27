@@ -692,34 +692,27 @@ fi
 cat "$SERVER_LOG" >> "$LOG_FILE" 2>/dev/null || true
 
 # ════════════════════════════════════════════════════════════════════════════
-# STEP 12: OPEN BROWSER (dashboard sa svim built igrama)
+# STEP 12: OPEN BROWSER (direktno simulator — slot.html sa MC Batch panel)
 # ════════════════════════════════════════════════════════════════════════════
-step 12 "Otvaranje u default browser-u"
+step 12 "Otvaranje simulator-a u default browser-u"
 
-# BLOCK-6 (Boki 2026-06-27): pre open-a, emit launcher index manifest
-# `dist/_built-games.json` tako da dashboard u index.html može da fetch-uje
-# listu svih buildovanih igara.
-INDEX_TOOL="$PROJECT_DIR/tools/_emit-launcher-index.mjs"
-if [ -f "$INDEX_TOOL" ]; then
-  if (cd "$PROJECT_DIR" && node "$INDEX_TOOL" 2>&1 | tail -2 | tee -a "$LOG_FILE"); then
-    ok "Launcher index manifest emitovan"
-  else
-    warn "Emit launcher manifest pao — dashboard će prikazati fallback link"
-  fi
+# BLOCK-6-fix (Boki 2026-06-27): launcher otvara DIREKTNO simulator
+# (Cash Eruption slot.html sa MC Batch panelom — Quick/Standard/Strict/
+# Regulator dugmići). Dashboard sa listom igara je sporedan i ne otvara
+# se automatski; do njega se stiže preko `$SERVER_URL` ako treba.
+SIM_REL_PATH="dist/build-gated/cash-eruption/slot.html"
+SIM_FULL_PATH="$PROJECT_DIR/$SIM_REL_PATH"
+if [ -f "$SIM_FULL_PATH" ]; then
+  TARGET_URL="${SERVER_URL%/}/$SIM_REL_PATH"
+else
+  # Fallback: ako flagship slot.html ne postoji, otvori dashboard tako da
+  # Boki može da klikne bilo koju drugu zgrazenu igru.
+  warn "Cash Eruption slot.html ne postoji u dist/build-gated/ — otvaram dashboard"
+  TARGET_URL="$SERVER_URL"
 fi
 
-TARGET_URL="$SERVER_URL"
 open "$TARGET_URL" || fail "open $TARGET_URL"
-ok "Browser otvoren: $TARGET_URL (dashboard sa svim built igrama)"
-
-# BLOCK-6: ako postoji `dist/build-gated/cash-eruption/slot.html` (pinned
-# math-verified flagship), otvori i njega u drugom tab-u tako da Boki
-# odmah vidi gotov slot, ne samo dashboard.
-FLAGSHIP_PATH="$PROJECT_DIR/dist/build-gated/cash-eruption/slot.html"
-if [ -f "$FLAGSHIP_PATH" ]; then
-  FLAGSHIP_URL="${SERVER_URL%/}/dist/build-gated/cash-eruption/slot.html"
-  open "$FLAGSHIP_URL" 2>/dev/null && ok "Flagship slot otvoren: cash-eruption (background tab)"
-fi
+ok "Simulator otvoren: $TARGET_URL"
 
 # ════════════════════════════════════════════════════════════════════════════
 # FINAL REPORT
