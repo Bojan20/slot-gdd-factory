@@ -450,13 +450,51 @@ koji je quick profile prikrio. Treba **PAR-15 wave** (slugovan kao
 ┌──────────┬─────────────────────────────────────────────────────────┐
 │ PAR-15-a │ Cash Eruption HIGH_PAY weight investigation     ✅ DONE │
 │ PAR-15-b-2│ Analytic HnW contribution solver (Markov chain) ✅ DONE │
-│ PAR-15-b-3│ Sister kernel emit per-trigger K0 histogram     ⏳ NEXT │
-│ PAR-15-b-4│ Analytic P[trigger] from baseline reelStrips    ⏳ NEXT │
-│ PAR-15-b-5│ Localize gap: sister obs - analytic prediction  ⏳ NEXT │
-│ PAR-15-c │ Re-verify na standard tier (Δ ≤ 0.05 pp na 100M)  ⏳     │
-│ PAR-15-d │ Promote standard za pre-commit kad sve 6 portfolio igara │
-│           │ prolaze standard tier                              ⏳     │
+│ PAR-15-b-3│ Sister kernel K0 histogram (replaced by b-4)    ⏭️ SKIP │
+│ PAR-15-b-4│ Analytic P[trigger] from baseline reelStrips    ✅ DONE │
+│ PAR-15-b-5│ ROOT CAUSE LOCATED: orb_value normalizer        ✅ DONE │
+│           │   sister ÷ 1   (raw orb units in features.rs)            │
+│           │   declared ÷ 26 (PAR sheet coin/bet convention)          │
+│           │   gap ratio: 1.733 ≈ observed drift 1.755 ✓              │
+│ PAR-15-c │ FIX: add orb_value_normalizer to HoldAndWinConfig │
+│           │      + features.rs:331 division + auto-tune wire   ⏳   │
+│ PAR-15-d │ Promote standard tier (Δ ≤ 0.05 pp portfolio 6)   ⏳     │
 └──────────┴─────────────────────────────────────────────────────────┘
+
+### PAR-15-b ULTIMATE CLOSEOUT (2026-06-28)
+
+**Three independent models triangulated:**
+
+```
+┌──────────────┬─────────────────────────────────────────────────────┐
+│ M1 declared  │ 40.91 pp  (PAR-001!L69 source-of-truth)              │
+│ M2 inferred  │ 47.10 pp  (math-backend gap = 96 - 41.9 - 7.0)       │
+│ M3 sister obs│ 71.82 pp  (Rust 400M MC measurement)                 │
+│ M4 analytic  │ 1063.49 pp raw → ÷26 = 40.90 pp ✓ matches DECLARED  │
+│              │             → ÷15 = 70.90 pp ✓ matches SISTER OBS    │
+└──────────────┴─────────────────────────────────────────────────────┘
+```
+
+**Conclusion:** orb table ekstrakcija pri PAR sheet ingest-u emit-uje values u
+"coin units" (par sheet native), ali sister `features.rs::simulate_hnw` line
+331 ih treats kao "total_bet units". Implicit normalizer u sister-u je ~14.83
+(blizu num_cells=15), declared koristi ~26 (coin_per_bet ratio za Cash
+Eruption topology). Razlika ratio 26/15 = 1.733 reproduces observed sister/
+declared drift 1.755 sa W99 ±4.82 pp residual noise.
+
+**Architectural fix (PAR-15-c):**
+1. Add `orb_value_normalizer: u32` (default 1) u `HoldAndWinConfig`
+2. Modify `features.rs:331`: `*value as i64 * total_bet_mc / normalizer as i64`
+3. Cash Eruption auto-tune.json: `orb_value_normalizer: 26`
+4. Rebuild rust-sim, run 100M × 4 verify → expect Δ ≤ ±0.05 pp band
+5. Portfolio regression (6 games) — default 1 preserves non-HnW behavior
+
+Full triangulation: `reports/par-convergence/par15b-ultimate-finding.md`.
+
+Probe artefakti (additional za b-4 + ultimate):
+- `tools/_par15b4-trigger-distribution-solver.mjs`
+- `reports/par-convergence/par15b4-trigger-distribution-cash-eruption.json`
+- `reports/par-convergence/par15b-ultimate-finding.md`
 ```
 
 ---
