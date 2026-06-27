@@ -523,38 +523,34 @@ if [ "$NETWORK_OK" -eq 1 ] && [ -d "node_modules/playwright" ]; then
 fi
 
 # ════════════════════════════════════════════════════════════════════════════
-# STEP 7: RUST KERNEL BUILD (sister http_server release binary)
+# STEP 7: RUST KERNEL CHECK (BLOCK-8 · vendored u repo · jedan projekat)
 # ════════════════════════════════════════════════════════════════════════════
-step 7 "Rust kernel build (sister http_server)"
+step 7 "Rust kernel (vendor/bin/mc_runtime_real — jedan projekat)"
 
-SISTER_BINARY="$SISTER_DIR/target/release/http_server"
-if [ -d "$SISTER_DIR" ] && [ "$HAS_CARGO" -eq 1 ]; then
-  REBUILD=0
-  if [ ! -x "$SISTER_BINARY" ]; then
-    info "http_server binary ne postoji — build"
-    REBUILD=1
-  else
-    SRC_NEWEST=$(find "$SISTER_DIR/rust-sim/src" -name "*.rs" -type f -newer "$SISTER_BINARY" 2>/dev/null | head -1)
-    if [ -n "$SRC_NEWEST" ]; then
-      info "Rust src novija od binary-ja — rebuild"
-      REBUILD=1
-    fi
-  fi
-  if [ "$REBUILD" -eq 1 ]; then
-    log "  ${BLUE}▸${NC} cargo build --release --bin http_server (sister)"
-    if ( cd "$SISTER_DIR" && cargo build --release --bin http_server >> "$LOG_FILE" 2>&1 ); then
-      ok "Rust kernel built: $SISTER_BINARY"
-    else
-      warn "cargo build pao — math-backend ce raditi sa postojecim"
-    fi
-  else
-    ok "Rust kernel sveži: $SISTER_BINARY"
-  fi
-elif [ -x "$SISTER_BINARY" ]; then
-  ok "Rust kernel postoji (no-cargo skip rebuild): $SISTER_BINARY"
+VENDOR_BINARY="$PROJECT_DIR/vendor/bin/mc_runtime_real"
+if [ -x "$VENDOR_BINARY" ]; then
+  BIN_SIZE=$(stat -f%z "$VENDOR_BINARY" 2>/dev/null || echo "?")
+  ok "Rust kernel vendored u repo: vendor/bin/mc_runtime_real (${BIN_SIZE} bytes)"
 else
-  warn "Nema sister/binary/cargo — math-backend convergence neće raditi"
-  info "Bez kernel-a: profile dugmici (Quick/Standard/Strict/Regulator) ce vratiti 502"
+  warn "vendor/bin/mc_runtime_real ne postoji u repo-u"
+  if [ -d "$SISTER_DIR" ] && [ "$HAS_CARGO" -eq 1 ]; then
+    info "Auto-build iz sister-a + copy u vendor/bin/"
+    if ( cd "$SISTER_DIR" && cargo build --release --bin mc_runtime_real >> "$LOG_FILE" 2>&1 ); then
+      SISTER_BIN="$SISTER_DIR/target/release/mc_runtime_real"
+      if [ -x "$SISTER_BIN" ]; then
+        mkdir -p "$PROJECT_DIR/vendor/bin"
+        cp "$SISTER_BIN" "$VENDOR_BINARY"
+        chmod +x "$VENDOR_BINARY"
+        ok "Vendored: vendor/bin/mc_runtime_real"
+      fi
+    else
+      warn "cargo build pao — vidi log"
+    fi
+  else
+    warn "Nema vendor binary-ja, nema sister+cargo fallback-a"
+    info "Profile dugmici (Quick/Standard/Strict/Regulator) ce vratiti 502"
+    info "Rebuild instrukcije: vendor/bin/README.md"
+  fi
 fi
 
 # ════════════════════════════════════════════════════════════════════════════

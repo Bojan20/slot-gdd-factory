@@ -38,7 +38,19 @@ import { iterationPasses, TIER_PROFILES, TIER_LADDER } from './par-sheet-block-u
 import { MATH_PRECISION_BAND_PP } from '../src/registry/mathPrecision.mjs';
 
 const DEFAULT_PORT = 9001;
+
+/* BLOCK-8 (Boki 2026-06-27): "sve mora da ide u slot gdd projekat. jedan
+ * projekat jedno sve." Vendor-uj Rust kernel UNUTAR repo-a kao primarni
+ * path. Sister-repo fallback je legacy compat — uklanjaj kad sve test
+ * mašine imaju repo vendor binary. */
+import { fileURLToPath as _fileURLToPath2 } from 'node:url';
+import { dirname as _dirname2 } from 'node:path';
+const _MB_FILENAME = _fileURLToPath2(import.meta.url);
+const _REPO_ROOT = resolvePath(_dirname2(_MB_FILENAME), '..');
 const BINARY_CANDIDATES = [
+  /* PRIMARY: vendored unutar slot-gdd-factory (no external dep). */
+  resolvePath(_REPO_ROOT, 'vendor/bin/mc_runtime_real'),
+  /* LEGACY: sister-repo build (auto-pickup ako vendor nedostaje). */
   resolvePath(homedir(), 'Projects/slot-math-engine-template/target/release/mc_runtime_real'),
   resolvePath(homedir(), 'Projects/slot-math-engine-template/rust-sim/target/release/mc_runtime_real'),
 ];
@@ -50,7 +62,8 @@ function findBinary() {
 
 const BINARY = findBinary();
 if (!BINARY) {
-  console.error('▸ mc_runtime_real binary not found. Run: cargo build --release --bin mc_runtime_real');
+  console.error('▸ mc_runtime_real binary not found u vendor/bin/ ni u sister-repo-u.');
+  console.error('  Rebuild: cd vendor && bash rebuild-rust-kernel.sh   (vidi vendor/README.md)');
   console.error('  Searched:', BINARY_CANDIDATES.join('\n            '));
   process.exit(1);
 }
