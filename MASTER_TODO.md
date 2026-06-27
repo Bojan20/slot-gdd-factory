@@ -8,21 +8,23 @@
 ### 0) Sister-side progress (LIVE)
 
 ```
-┌──────┬─────────────────────────────┬──────────┬─────────────────────┐
-│ Sis #│ Feature                       │ Status    │ Sister commit        │
-├──────┼─────────────────────────────┼──────────┼─────────────────────┤
-│  #1  │ Bonus Buy Mode native flag    │ ✅ LANDED │ slot-sim 83c0597    │
-│  #2  │ Mystery Reveal hook           │ ✅ LANDED │ slot-sim f414d5c    │
-│  #3  │ Multi-Scenario HnW            │ 🔄 NEXT   │                     │
-│  #4  │ Wild Expand spatial mechanic  │ 📋 PLAN   │                     │
-│  #5  │ Special Reel Set evaluator    │ 📋 PLAN   │                     │
-│  #6  │ Coin Boost multiplier         │ 📋 PLAN   │                     │
-└──────┴─────────────────────────────┴──────────┴─────────────────────┘
+┌──────┬─────────────────────────────┬─────────────┬─────────────────────┐
+│ Sis #│ Feature                       │ Status       │ Sister commit        │
+├──────┼─────────────────────────────┼─────────────┼─────────────────────┤
+│  #1  │ Bonus Buy Mode native flag    │ ✅ RUNTIME   │ slot-sim 83c0597    │
+│  #2  │ Mystery Reveal hook           │ ✅ RUNTIME   │ slot-sim f414d5c    │
+│  #3  │ Multi-Scenario HnW            │ ✅ RUNTIME   │ slot-sim 5edda7e    │
+│  #4  │ Wild Expand spatial mechanic  │ ✅ RUNTIME   │ slot-sim e416cb4   │
+│  #5  │ Special Reel Set evaluator    │ 🟡 SCHEMA    │ slot-sim 01a7aca   │
+│  #6  │ Coin Boost multiplier         │ 🟡 SCHEMA    │ slot-sim 29f5414   │
+└──────┴─────────────────────────────┴─────────────┴─────────────────────┘
 ```
 
-5 M × 4 seed convergence held 4 PASS / 1 WARN sa native flags armed
-alongside factory hacks (transition window — hacks ostaju kao fallback
-dok sve native features ne uđu u stabilan path).
+4 features fully runtime-LANDED. #5 + #6 schema wired (config struct +
+default init); runtime dispatch in evaluator hot path is future work
+(par-14-e-5-runtime / par-14-e-6-runtime). Factory mapper hacks remain
+active as fallback during transition — 5M × 4 seed convergence keeps
+4 PASS / 1 WARN ledger steady throughout.
 
 ### A) Fundamental limit honest disclosure
 
