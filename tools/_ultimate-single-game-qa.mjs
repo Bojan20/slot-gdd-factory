@@ -48,12 +48,13 @@ mkdirSync(OUT_DIR, { recursive: true });
 /* ─── CLI parse ──────────────────────────────────────────────────────── */
 
 function parseArgs(argv) {
-  const o = { slug: null, mockMath: false, skipMath: false };
+  const o = { slug: null, mockMath: false, skipMath: false, profile: 'quick' };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--slug')         o.slug = argv[++i];
     else if (a === '--mock-math')  o.mockMath = true;
     else if (a === '--skip-math')  o.skipMath = true;
+    else if (a === '--profile')    o.profile = argv[++i];
     else if (a === '-h' || a === '--help') {
       printHelp(); process.exit(0);
     }
@@ -63,8 +64,9 @@ function parseArgs(argv) {
 
 function printHelp() {
   console.log(`Usage: node tools/_ultimate-single-game-qa.mjs --slug <slug>`);
-  console.log(`Flags: --mock-math   (use mock oracle za math gate)`);
-  console.log(`       --skip-math   (assume math already converged)`);
+  console.log(`Flags: --mock-math       (use mock oracle za math gate)`);
+  console.log(`       --skip-math       (assume math already converged)`);
+  console.log(`       --profile <name>  quick (default) | standard | strict | regulator`);
 }
 
 /* ─── Subprocess runner ──────────────────────────────────────────────── */
@@ -170,7 +172,7 @@ async function stageHydrate(slug) {
 
 /* ─── Stage C — PAR-sheet block-until-perfect ───────────────────────── */
 
-async function stageMath(slug, { mock, skip: skipFlag }) {
+async function stageMath(slug, { mock, skip: skipFlag, profile = 'quick' }) {
   const s = makeStage('C', 'MATH');
   const t0 = Date.now();
 
@@ -180,7 +182,7 @@ async function stageMath(slug, { mock, skip: skipFlag }) {
   }
 
   const tool = join(REPO_ROOT, 'tools', 'par-sheet-block-until-perfect.mjs');
-  const args = [tool, '--slug', slug, '--max-tier', '5M'];
+  const args = [tool, '--slug', slug, '--profile', profile];
   if (mock) args.push('--mock');
 
   const r = await runChild(process.execPath, args);
@@ -192,12 +194,15 @@ async function stageMath(slug, { mock, skip: skipFlag }) {
   }
   const rcpt = JSON.parse(readFileSync(receiptPath, 'utf-8'));
   if (rcpt.verdict !== 'PASS' || !rcpt.buildAllowed) {
-    return fail(s, `verdict=${rcpt.verdict} buildAllowed=${rcpt.buildAllowed} terminalReason=${rcpt.terminalReason}`);
+    return fail(s, `profile=${profile} verdict=${rcpt.verdict} buildAllowed=${rcpt.buildAllowed} reason=${rcpt.terminalReason}`);
   }
   return pass(s, {
+    profile,
     verdict: rcpt.verdict,
     finalTier: rcpt.finalTier,
-    finalDeltaPP: Number(rcpt.finalDeltaPP.toFixed(6)),
+    finalDeltaPP: Number((rcpt.finalDeltaPP ?? 0).toFixed(6)),
+    finalWilsonPP: Number((rcpt.finalWilsonPP ?? 0).toFixed(3)),
+    confirmedTiers: rcpt.confirmedTiers || [rcpt.finalTier],
     band: rcpt.band?.label ?? '±0.05%',
     iterations: rcpt.iterations.length,
     buildAllowed: rcpt.buildAllowed,
@@ -490,7 +495,7 @@ async function main() {
   const stepFns = [
     () => stageIngest(slug),
     () => stageHydrate(slug),
-    () => stageMath(slug, { mock: opts.mockMath, skip: opts.skipMath }),
+    () => stageMath(slug, { mock: opts.mockMath, skip: opts.skipMath, profile: opts.profile }),
     () => stageBuild(slug),
     () => stageLiveness(slug),
     () => stageRender(slug),

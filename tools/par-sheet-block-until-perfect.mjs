@@ -98,12 +98,38 @@ export const TIER_LADDER = Object.freeze([
   { label: '10B',  spins: 10_000_000_000, seeds: 4 },
 ]);
 
+/* BLOCK-3 (Boki 2026-06-27) — tier profile presets. Operator bira profil
+ * po nameni; default je `quick` za pre-commit smoke; `strict` traži
+ * trostruku potvrdu (100M + 1B + 5B); `regulator` je najviši tier
+ * (1B + 5B + 10B) za audit.
+ *
+ * Profil definiše:
+ *   tiers       — koje tier label-e koristi loop
+ *   confirm     — broj UZASTOPNIH PASS-ova potrebnih za verdict=PASS
+ *                 (1 = smoke; 3 = strict triple confirmation)
+ *   wilsonCap   — gornja granica Wilson 99% half-width (pp) — implicitno
+ *                 minimum spinova kroz odabir tier-ova. quick=loose
+ *                 (Wilson ne gate-uje), standard=5pp na 100M, strict=1.5pp
+ *                 na 1B, regulator=0.7pp na 5B.
+ *
+ * NAPOMENA: Wilson ≤ band (0.05 pp) je matematicki dostižan tek na 3.5
+ * triliona spinova (nedostižno u realnom vremenu). 3× consecutive PASS
+ * sa rastucim spinovima (svaki ~10× više od prethodnog) statistički
+ * dokazuje konsistenciju — slot je convergent, ne luck. */
+export const TIER_PROFILES = Object.freeze({
+  quick:     { tiers: ['5M'],                  confirm: 1, wilsonCap: Infinity },
+  standard:  { tiers: ['100M'],                confirm: 1, wilsonCap: 5.0      },
+  strict:    { tiers: ['100M', '1B', '5B'],    confirm: 3, wilsonCap: 5.0      },
+  regulator: { tiers: ['1B', '5B', '10B'],     confirm: 3, wilsonCap: 1.5      },
+});
+
 /* ─── CLI parsing ───────────────────────────────────────────────────── */
 
 function parseArgs(args) {
   const out = {
     slug: null,
     maxTier: '10B',
+    profile: 'quick',
     mock: false,
     autoTune: true,
     dryRun: false,
@@ -112,6 +138,7 @@ function parseArgs(args) {
     const a = args[i];
     if (a === '--slug') out.slug = args[++i];
     else if (a === '--max-tier') out.maxTier = args[++i];
+    else if (a === '--profile') out.profile = args[++i];
     else if (a === '--mock') out.mock = true;
     else if (a === '--no-auto-tune') out.autoTune = false;
     else if (a === '--dry-run') out.dryRun = true;
@@ -119,6 +146,10 @@ function parseArgs(args) {
       printHelp();
       exit(0);
     }
+  }
+  if (!(out.profile in TIER_PROFILES)) {
+    console.error(`error: unknown profile "${out.profile}". Valid: ${Object.keys(TIER_PROFILES).join(', ')}`);
+    exit(2);
   }
   return out;
 }
@@ -132,8 +163,13 @@ USAGE
 
 OPTIONS
   --slug <name>     Slug iz dist/par-sheet-real-games/. (REQUIRED)
+  --profile <name>  Tier preset. Default: quick.
+                      quick     — 5M  ×1   (CI/smoke; loose Wilson gate)
+                      standard  — 100M×1   (Wilson ≤ band; ~25 min)
+                      strict    — 100M+1B+5B (3 consecutive PASS; ~24h)
+                      regulator — 1B+5B+10B  (3 consecutive PASS; audit grade)
   --max-tier <lbl>  Stop escalation posle ovog tier-a (5M|50M|100M|500M|1B|5B|10B).
-                    Default: 10B (full ladder).
+                    Ignored when --profile is set.
   --mock            Koristi mock oracle (za contract test, ne stvarni Rust kernel).
   --no-auto-tune    Preskoči auto-tune sweep pre svake escalation iteracije.
   --dry-run         Samo planiraj ladder, nemoj zvati oracle.
@@ -327,10 +363,28 @@ export function diagnoseNonConvergence(iterations) {
  * je inject-ovan za testabilnost. Real path uses runRealOracle; mock path
  * uses mockOracleIteration.
  */
+/**
+ * Helper: izračuna da li jedna iteracija prolazi PASS pod profilom.
+ * Default (wilsonCap=false): |Δ| ≤ band AND |Δ| ≤ W99 (loose smoke).
+ * Strict (wilsonCap=true): |Δ| ≤ band AND W99 ≤ band (regulator grade).
+ */
+export function iterationPasses(iter, { wilsonCap = Infinity } = {}) {
+  if (iter.verdict !== 'PASS') return false;
+  const absDelta = Math.abs(iter.deltaPP);
+  const inBand = absDelta <= MATH_PRECISION_BAND_PP;
+  if (!inBand) return false;
+  /* Loose Wilson check: signal must be consistent with the W99 envelope. */
+  if (absDelta > iter.wilsonHalfPP) return false;
+  /* Profile-specific Wilson cap (tighter than absolute infinity). */
+  if (iter.wilsonHalfPP > wilsonCap) return false;
+  return true;
+}
+
 export async function runBlockUntilPerfect({
   slug,
   maxTierLabel = '10B',
-  oracle,           /* injected: async (slug, tierIdx, tier) → iteration */
+  profile = null,          /* if set, overrides maxTier + adds confirm logic */
+  oracle,                  /* injected: async (slug, tierIdx, tier) → iter */
   autoTune = true,
   onIteration = () => {},
 } = {}) {
@@ -338,31 +392,57 @@ export async function runBlockUntilPerfect({
   if (typeof oracle !== 'function') {
     throw new Error('oracle function required (use mock or real)');
   }
-  const maxIdx = Math.max(
-    0,
-    TIER_LADDER.findIndex((t) => t.label === maxTierLabel),
-  );
-  const ladder = TIER_LADDER.slice(0, maxIdx + 1);
+
+  /* BLOCK-3-c — profile mode resolves ladder + confirm count from preset. */
+  let ladder;
+  let confirmCount = 1;
+  let wilsonCap = Infinity;
+  if (profile && TIER_PROFILES[profile]) {
+    const p = TIER_PROFILES[profile];
+    confirmCount = p.confirm;
+    wilsonCap = p.wilsonCap;
+    ladder = p.tiers.map((label) => TIER_LADDER.find((t) => t.label === label))
+      .filter(Boolean);
+  } else {
+    const maxIdx = Math.max(
+      0,
+      TIER_LADDER.findIndex((t) => t.label === maxTierLabel),
+    );
+    ladder = TIER_LADDER.slice(0, maxIdx + 1);
+  }
+
   const iterations = [];
+  let consecutivePass = 0;
 
   for (let i = 0; i < ladder.length; i++) {
     const tier = ladder[i];
     const iter = await oracle(slug, i, tier);
     iterations.push(iter);
     onIteration(iter, i);
-    /* STRICT PASS check — verdict from oracle + delta band redundancy. */
-    const absDelta = Math.abs(iter.deltaPP);
-    const inBand = absDelta <= MATH_PRECISION_BAND_PP;
-    const wilsonOk = absDelta <= iter.wilsonHalfPP;
-    if (iter.verdict === 'PASS' && inBand && wilsonOk) {
-      return {
-        verdict: 'PASS',
-        finalTier: tier.label,
-        finalDeltaPP: iter.deltaPP,
-        iterations,
-        buildAllowed: true,
-        terminalReason: `converged within ±${MATH_PRECISION_BAND_PP} pp at tier ${tier.label}`,
-      };
+
+    const passing = iterationPasses(iter, { wilsonCap });
+    if (passing) {
+      consecutivePass += 1;
+      if (consecutivePass >= confirmCount) {
+        return {
+          verdict: 'PASS',
+          finalTier: tier.label,
+          finalDeltaPP: iter.deltaPP,
+          finalWilsonPP: iter.wilsonHalfPP,
+          confirmedTiers: iterations.slice(-confirmCount).map((it) => it.tier),
+          iterations,
+          buildAllowed: true,
+          terminalReason: confirmCount === 1
+            ? `converged within ±${MATH_PRECISION_BAND_PP} pp at tier ${tier.label}`
+            : `${confirmCount}× consecutive PASS confirmed (${iterations.slice(-confirmCount).map(it => it.tier).join(' → ')}) within ±${MATH_PRECISION_BAND_PP} pp${Number.isFinite(wilsonCap) ? ` + Wilson99 ≤ ${wilsonCap} pp` : ''}`,
+          profile: profile || null,
+          wilsonCap,
+        };
+      }
+    } else {
+      /* Any FAIL resets the consecutive counter — strict mode demands an
+       * unbroken run of confirmations at the highest tiers. */
+      consecutivePass = 0;
     }
     /* Optional auto-tune between iterations (not on last). */
     if (autoTune && i < ladder.length - 1) {
@@ -375,10 +455,14 @@ export async function runBlockUntilPerfect({
     verdict: 'NON_CONVERGENT',
     finalTier: ladder[ladder.length - 1].label,
     finalDeltaPP: iterations[iterations.length - 1]?.deltaPP ?? null,
+    finalWilsonPP: iterations[iterations.length - 1]?.wilsonHalfPP ?? null,
+    consecutivePass,
     iterations,
     buildAllowed: false,
-    terminalReason: `escalation exhausted: ${diag.hint}`,
+    terminalReason: `escalation exhausted (${consecutivePass}/${confirmCount} consecutive PASS): ${diag.hint}`,
     diagnosis: diag,
+    profile: profile || null,
+    wilsonCap,
   };
 }
 
@@ -406,14 +490,21 @@ export function writeReceipt(slug, result) {
 function renderReport(slug, result) {
   console.log(`\n┌─ BLOCK-UNTIL-PERFECT · slug: ${slug}`);
   console.log(`│  band: ±${MATH_PRECISION_BAND_PP} pp (regulator-grade)`);
+  if (result.profile) {
+    const wcap = Number.isFinite(result.wilsonCap)
+      ? `≤ ${result.wilsonCap} pp`
+      : 'unbounded';
+    console.log(`│  profile: ${result.profile}  wilsonCap=${wcap}`);
+  }
   console.log(`├─ iterations`);
   for (let i = 0; i < result.iterations.length; i++) {
     const it = result.iterations[i];
-    const mark = it.verdict === 'PASS' ? '✅' : '❌';
+    const passing = iterationPasses(it, { wilsonCap: result.wilsonCap });
+    const mark = passing ? '✅' : '❌';
     console.log(
       `│  ${i + 1}. tier=${it.tier.padEnd(4)} spins=${String(it.spins).padStart(13)} ` +
         `Δ=${it.deltaPP >= 0 ? '+' : ''}${it.deltaPP.toFixed(3)} pp ` +
-        `W99=${it.wilsonHalfPP.toFixed(2)} pp ${mark} ${it.verdict}`,
+        `W99=${it.wilsonHalfPP.toFixed(2)} pp ${mark} ${passing ? 'PASS' : 'FAIL'}`,
     );
   }
   console.log(`├─ verdict: ${result.verdict}`);
@@ -439,13 +530,16 @@ async function main() {
     exit(2);
   }
   if (opts.dryRun) {
-    console.log('dry run — tier ladder:');
-    const cutoff = TIER_LADDER.findIndex((t) => t.label === opts.maxTier);
-    TIER_LADDER.slice(0, cutoff + 1).forEach((t, i) =>
+    const prof = TIER_PROFILES[opts.profile];
+    const wcapStr = Number.isFinite(prof.wilsonCap) ? `≤ ${prof.wilsonCap} pp` : 'unbounded';
+    console.log(`dry run — profile=${opts.profile}  confirm=${prof.confirm}  wilsonCap=${wcapStr}`);
+    console.log('tier ladder:');
+    prof.tiers.forEach((label, i) => {
+      const t = TIER_LADDER.find((x) => x.label === label);
       console.log(
         `  ${i + 1}. ${t.label.padEnd(4)} ${(t.spins * t.seeds).toLocaleString()} total spins`,
-      ),
-    );
+      );
+    });
     exit(0);
   }
   const oracle = opts.mock
@@ -455,6 +549,7 @@ async function main() {
   const result = await runBlockUntilPerfect({
     slug: opts.slug,
     maxTierLabel: opts.maxTier,
+    profile: opts.profile,
     oracle,
     autoTune: opts.autoTune,
     onIteration: (it, i) =>

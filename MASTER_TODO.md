@@ -380,6 +380,85 @@ nisu uvedeni F1 wave-om i ostaju za sledeći deep-fix wave.
 
 ---
 
+## 🎯 BLOCK-3 — Tier profile system + triple-tier confirmation (2026-06-27)
+
+> Boki direktiva: *"da li je uvek bolje ako je veci broj spinova, da li je tacnije
+> tako? ili da se napravi nekoliko simulatorskih spinova, na 100m, na 1b, na 5b?"*
+> + *"ultimativno sa svim qa proverama deep najdublje posle implementacije, i sve
+> to na cash eruption igri"*
+
+### Princip
+
+Single-tier PASS na 5M može da bude **statistička sreća** — Wilson 99%
+poverenje je tu ±21.5 pp, što znači da MERENI rezultat samo NE PROTIVUREČI
+deklarisanom RTP-u, ali ne dokazuje konvergenciju. **Triple-tier
+confirmation** (3 uzastopna PASS-a na rastucim tier-ima) je realan dokaz.
+
+### Tier profile presets
+
+```
+┌────────────┬──────────────────────┬─────────┬─────────────┬─────────────────────┐
+│ Profile    │ Tiers                │ Confirm │ Wilson cap  │ Namena              │
+├────────────┼──────────────────────┼─────────┼─────────────┼─────────────────────┤
+│ quick      │ 5M                   │ 1       │ unbounded   │ pre-commit smoke    │
+│ standard   │ 100M                 │ 1       │ ≤ 5 pp      │ commit / verify gate│
+│ strict     │ 100M → 1B → 5B       │ 3       │ ≤ 5 pp      │ pre-release         │
+│ regulator  │ 1B → 5B → 10B        │ 3       │ ≤ 1.5 pp    │ GLI / UKGC audit    │
+└────────────┴──────────────────────┴─────────┴─────────────┴─────────────────────┘
+```
+
+### Cash Eruption REAL deep finding (Boki 2026-06-27)
+
+```
+┌──────────┬────────┬──────────┬───────────┬────────┐
+│ Tier     │ Spins  │ Δ pp     │ Wilson 99 │ Verdict│
+├──────────┼────────┼──────────┼───────────┼────────┤
+│ 5M × 4   │  20M   │ +0.047   │ ±21.48 pp │ ✅ PASS │  ← false positive
+│ 100M × 4 │ 400M   │ +0.384   │ ± 4.82 pp │ ❌ FAIL │  ← TRUE signal surfaces
+└──────────┴────────┴──────────┴───────────┴────────┘
+```
+
+5M tier dao PASS jer je Δ=0.047 bilo unutar ±0.05 pp BAND-a i unutar
+Wilson noise polja. Tek na 100M tier-u (400M spinova), Wilson se suzio na
+±4.82 pp i pravi signal iskočio: Δ=+0.384 pp je 8× iznad band-a. Diagnoza:
+"measured RTP konzistentno IZNAD declared — HIGH_PAY weight premali u
+model.json ili cash trigger nije recognized kao scatter".
+
+**Posledica**: standard / strict profili će SADA detektovati ovaj drift
+koji je quick profile prikrio. Treba **PAR-15 wave** (slugovan kao
+"high-pay weight tune") da Cash Eruption prođe i standard tier.
+
+### BLOCK-3 atom backlog
+
+```
+┌──────────┬──────────────────────────────────────────────────────┬──────────┐
+│ Atom      │ Šta                                                    │ Status   │
+├──────────┼──────────────────────────────────────────────────────┼──────────┤
+│ BLOCK-3-a │ TIER_PROFILES preset (4 nivoa) u orchestrator-u      │ ✅ LANDED│
+│ BLOCK-3-b │ iterationPasses helper sa wilsonCap parametrom        │ ✅ LANDED│
+│ BLOCK-3-c │ Triple confirmation loop (consecutivePass counter)   │ ✅ LANDED│
+│ BLOCK-3-d │ --profile CLI flag + printHelp + dry-run + report    │ ✅ LANDED│
+│ BLOCK-3-e │ Contract test: 28 assertion-a (10 new za profile)    │ ✅ LANDED│
+│ BLOCK-3-f │ REAL 100M tier confirmation (Δ=+0.384 pp surfaced)   │ ✅ LANDED│
+│ BLOCK-3-g │ ultimate-single-game-qa wired za --profile           │ ✅ LANDED│
+└──────────┴──────────────────────────────────────────────────────┴──────────┘
+```
+
+### Sledeći wave (out of scope za BLOCK-3)
+
+```
+┌──────────┬─────────────────────────────────────────────────────────┐
+│ PAR-15-a │ Cash Eruption HIGH_PAY weight investigation             │
+│           │ Identifikuj koji simbol/feature dodaje ~0.4 pp          │
+│ PAR-15-b │ Refit auto-tune iz par sheet model.json                 │
+│ PAR-15-c │ Re-verify na standard tier (Δ ≤ 0.05 pp na 100M)        │
+│ PAR-15-d │ Promote standard za pre-commit kad sve 6 portfolio igara │
+│           │ prolaze standard tier                                    │
+└──────────┴─────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🚫 BLOCK-UNTIL-PERFECT GATE — PAR-14-K / BLOCK-1
 
 > *"ja zelim da simulator radi sve dok ne izadje sve savrseno za igru i ne

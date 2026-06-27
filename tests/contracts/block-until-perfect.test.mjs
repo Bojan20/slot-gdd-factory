@@ -48,7 +48,9 @@ import {
 
 import {
   TIER_LADDER,
+  TIER_PROFILES,
   diagnoseNonConvergence,
+  iterationPasses,
   runBlockUntilPerfect,
   writeReceipt,
 } from '../../tools/par-sheet-block-until-perfect.mjs';
@@ -390,6 +392,143 @@ async function withEnvAsync(key, value, fn) {
     assert.equal(TIER_LADDER[TIER_LADDER.length - 1].spins, 10_000_000_000);
     /* All seeds = 4 */
     for (const tier of TIER_LADDER) assert.equal(tier.seeds, 4);
+  });
+
+  /* 19. TIER_PROFILES presence + structural invariants */
+  t('19. TIER_PROFILES exposes 4 presets sa kompletnim šemama', () => {
+    const expected = ['quick', 'standard', 'strict', 'regulator'];
+    for (const name of expected) {
+      assert.ok(name in TIER_PROFILES, `profile ${name} missing`);
+      const p = TIER_PROFILES[name];
+      assert.ok(Array.isArray(p.tiers) && p.tiers.length > 0, `${name}.tiers non-empty array`);
+      assert.equal(typeof p.confirm, 'number');
+      assert.ok(p.confirm >= 1);
+      assert.ok('wilsonCap' in p);
+    }
+    /* Strict + regulator zahtevaju 3× consecutive confirmation */
+    assert.equal(TIER_PROFILES.strict.confirm, 3);
+    assert.equal(TIER_PROFILES.regulator.confirm, 3);
+    /* Quick je loose (wilsonCap unbounded) */
+    assert.equal(TIER_PROFILES.quick.wilsonCap, Infinity);
+    /* Regulator je tightest */
+    assert.ok(TIER_PROFILES.regulator.wilsonCap <= TIER_PROFILES.strict.wilsonCap);
+  });
+
+  /* 20. iterationPasses helper — wilsonCap behavior */
+  t('20. iterationPasses: PASS + Δ in band + Δ ≤ W99 + W99 ≤ cap', () => {
+    const ok = iterationPasses(
+      { verdict: 'PASS', deltaPP: 0.02, wilsonHalfPP: 1.5 },
+      { wilsonCap: 5.0 },
+    );
+    assert.equal(ok, true);
+  });
+
+  t('20b. iterationPasses: rejects when W99 > cap', () => {
+    const fail = iterationPasses(
+      { verdict: 'PASS', deltaPP: 0.02, wilsonHalfPP: 6.0 },
+      { wilsonCap: 5.0 },
+    );
+    assert.equal(fail, false);
+  });
+
+  t('20c. iterationPasses: rejects when |Δ| > band even if PASS verdict', () => {
+    const fail = iterationPasses(
+      { verdict: 'PASS', deltaPP: 0.3, wilsonHalfPP: 0.5 },
+      { wilsonCap: 5.0 },
+    );
+    assert.equal(fail, false);
+  });
+
+  t('20d. iterationPasses: rejects FAIL verdict regardless of band', () => {
+    const fail = iterationPasses(
+      { verdict: 'FAIL', deltaPP: 0.01, wilsonHalfPP: 0.5 },
+      { wilsonCap: 5.0 },
+    );
+    assert.equal(fail, false);
+  });
+
+  /* 21. Profile-driven loop: STRICT requires 3 consecutive PASS */
+  await ta('21. strict profile demands 3× consecutive PASS', async () => {
+    let n = 0;
+    const oracle = async (slug, i, tier) => {
+      n++;
+      return {
+        tier: tier.label,
+        spins: tier.spins * tier.seeds,
+        declaredPct: 96.5,
+        measuredPct: 96.52,
+        deltaPP: 0.02,
+        wilsonHalfPP: tier.spins >= 100_000_000 ? 4.7 : 1.5,
+        verdict: 'PASS',
+        reason: 'mock pass',
+        walltimeMs: 1,
+      };
+    };
+    const result = await runBlockUntilPerfect({
+      slug: 'strict-pass-mock',
+      profile: 'strict',
+      oracle,
+      autoTune: false,
+    });
+    assert.equal(result.verdict, 'PASS');
+    assert.equal(result.buildAllowed, true);
+    assert.equal(result.iterations.length, 3, 'strict mora pokrenuti sve 3 tier-a');
+    assert.deepEqual(result.confirmedTiers, ['100M', '1B', '5B']);
+    assert.equal(result.profile, 'strict');
+  });
+
+  /* 22. Strict profile fails ako srednji tier FAIL (resets counter) */
+  await ta('22. strict profile: middle FAIL resets confirmation counter', async () => {
+    const oracle = async (slug, i, tier) => ({
+      tier: tier.label,
+      spins: tier.spins * tier.seeds,
+      declaredPct: 96.5,
+      measuredPct: 96.5 + (i === 1 ? 0.3 : 0.02),  /* fail middle tier */
+      deltaPP: i === 1 ? 0.3 : 0.02,
+      wilsonHalfPP: 2.0,
+      verdict: i === 1 ? 'FAIL' : 'PASS',
+      reason: 'mock',
+      walltimeMs: 1,
+    });
+    const result = await runBlockUntilPerfect({
+      slug: 'strict-broken-mock',
+      profile: 'strict',
+      oracle,
+      autoTune: false,
+    });
+    assert.equal(result.verdict, 'NON_CONVERGENT');
+    assert.equal(result.buildAllowed, false);
+    /* consecutivePass counter was reset; last iter (5B) gave 1 PASS only */
+    assert.equal(result.consecutivePass, 1);
+  });
+
+  /* 23. Quick profile = single tier behavior preserved */
+  await ta('23. quick profile: 1 iteration sufficient for PASS', async () => {
+    const oracle = async () => ({
+      tier: '5M',
+      spins: 20_000_000,
+      declaredPct: 96.5,
+      measuredPct: 96.52,
+      deltaPP: 0.02,
+      wilsonHalfPP: 20,
+      verdict: 'PASS',
+      reason: 'mock',
+      walltimeMs: 1,
+    });
+    const result = await runBlockUntilPerfect({
+      slug: 'quick-mock',
+      profile: 'quick',
+      oracle,
+      autoTune: false,
+    });
+    assert.equal(result.verdict, 'PASS');
+    assert.equal(result.iterations.length, 1);
+    assert.equal(result.finalTier, '5M');
+  });
+
+  /* 24. Regulator profile is strictest tier set */
+  t('24. regulator profile uses 1B+5B+10B (highest tiers)', () => {
+    assert.deepEqual(TIER_PROFILES.regulator.tiers, ['1B', '5B', '10B']);
   });
 
   /* ─── Cleanup ─────────────────────────────────────────────────── */
