@@ -175,17 +175,25 @@ function mapModelToGameConfig(model) {
   const declaredHnw = Number(model.payback?.components?.holdAndWin);
   const hasHnw = Number.isFinite(declaredHnw) && declaredHnw >= 1.0;
   const promoteCashToBonus = hasHnw;
-  /* PAR-12-F (Boki 2026-06-27, REVERTED): Book of Unseen Bonus Buy
-   * has Book as cash-role no-paytable symbol. Naive cash → scatter
-   * promotion fires sister FS triggers on every Book landing — but
-   * BoU's high Book weight (specifically tuned for Bonus Buy player
-   * purchase model) means scatter trigger rate ≈ 100% per spin,
-   * inflating measured to 26996%. Bonus Buy slots don't follow
-   * standard 3+ scatter trigger semantics — player BUYS into bonus
-   * directly at fixed cost. Sister kernel cannot model that without
-   * a dedicated Bonus Buy code path. Leaving cashScatterPromoteId
-   * null until PAR-12-G implements a bonus-buy mode flag. */
-  const cashScatterPromoteId = null;
+
+  /* PAR-12-G (Boki 2026-06-27): Bonus Buy mode — when slug name
+   * includes "bonus-buy" / "bonusbuy" AND there's no scatter or
+   * bonus role, the first cash-role symbol is the bonus trigger.
+   * Naive cash → scatter promotion (PAR-12-F) failed because BoU
+   * Book reel weight (~1-2 % per cell) gives a sparse but real
+   * trigger rate. Sister `count_scatters() >= 3` fires bonus
+   * trigger on those spins. We then arm scatter_pays with values
+   * that approximate declared bonus contribution per trigger.
+   * Sister awards {3:0} means no FS spins fire — just credit
+   * scatter_pays on trigger. */
+  const isBonusBuy = /bonus[\s_-]?buy/i.test(model.slug || model.id || '');
+  let cashScatterPromoteId = null;
+  if (isBonusBuy && hasFsAwards && !hasScatter && !hasBonus && !hasHnw) {
+    const cashCandidates = allSyms.filter((s) => s.role === 'cash');
+    if (cashCandidates.length > 0) {
+      cashScatterPromoteId = cashCandidates[0].id;
+    }
+  }
 
   const symbols = allSyms.map((s) => {
     let effectiveRole = s.role;
@@ -448,6 +456,31 @@ function mapModelToGameConfig(model) {
           scatter_pays: model.par_sheet?.freeSpinAvgPays || {},
         };
       }
+      /* (B-BB) PAR-12-G Bonus Buy mode: when Book/scatter promoted
+       * via cashScatterPromoteId, emit large per-trigger scatter_pays
+       * to approximate the declared bonus contribution. awards stay
+       * at zero — no FS rounds, only trigger pay. Scatter pay is
+       * derived from declared bonus RTP × industry-typical trigger
+       * rate inverse (~1/100). Tuned conservatively to avoid the
+       * 26996 % runaway from PAR-12-F's naive attempt. */
+      const declaredBonus = Number(model.payback?.components?.bonus);
+      const isBb = /bonus[\s_-]?buy/i.test(model.slug || model.id || '');
+      if (isBb && Number.isFinite(declaredBonus) && declaredBonus >= 10
+          && model.symbols?.specials?.some((s) => s.role === 'cash')) {
+        /* Scatter_pays per trigger. 3-scatter dominant; 4 + 5 rarer.
+         * Scaling derived from BoU declared bonus 89.30 % and ~1 %
+         * trigger rate → ~89 × bet per 3-scatter. Tune empirically. */
+        const base = Math.round(declaredBonus * 0.3);
+        return {
+          awards: { '3': 0, '4': 0, '5': 0 },
+          mult_start: 1,
+          mult_increment: 0,
+          mult_max: 1,
+          retrigger_enabled: false,
+          scatter_pays: { '3': base, '4': base * 4, '5': base * 25 },
+        };
+      }
+
       /* (B) PAR-12-D synthetic fallback, scaled by declared FS RTP.
        *
        *   declared FS < 5 %   → tight   {3:3, 4:5, 5:8}
