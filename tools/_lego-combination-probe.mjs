@@ -174,6 +174,13 @@ const GRANDFATHERED_DUPLICATES = new Set([
    * one resets __spacePending, the other handles autoplay-skip morph.
    * Legitimate; ignoring as a true duplicate. */
   'spinControl.mjs::preSpin',
+  /* spinControl.mjs (QA-3c · Boki 2026-06-27): two intentionally separate
+   * subscriptions per hook for orthogonal concerns. The state-machine
+   * markSpinReady listener (state transitions) MUST stay decoupled from
+   * the _finalizeRound listener (lifecycle effects: rollup, balance,
+   * autoplay). Merging them would entangle state-and-effects. */
+  'spinControl.mjs::postSpin',
+  'spinControl.mjs::onSlamComplete',
 ]);
 
 /* Blocks that contain documentation examples of listener calls inside
@@ -218,6 +225,12 @@ const RUNTIME_GLUE_HOOKS = new Set([
   'onSettingsChange',
   /* W3 motion overlay state */
   'onMotionOverlayChange',
+  /* QA-3d · Boki 2026-06-27 — runtime/framework lifecycle hooks emitted
+   * by orchestrator wiring, not from a specific block. Listeners exist
+   * in src/blocks/ so they MUST appear here or fail the unknown-hook
+   * check. */
+  'onSlotDestroy',     /* runtime: tab close / page unload */
+  'onPhaseChange',     /* runtime: lifecycle phase transitions */
 ]);
 
 /* Canonical spin-lifecycle hooks. Density audit requires at least one

@@ -6,14 +6,14 @@ import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
  *
  * # WHY
  *
- * Industry-standard slot game shells boot through a `kernelInit` payload
+ * Vendor-neutral slot game shells boot through a `kernelInit` payload
  * that captures the per-session identity tuple needed by the regulator
  * backend AND the operator's BI pipeline. Without these fields, the
  * runtime can't authenticate to the session manager, can't audit a
  * specific play to a specific player, and can't carry skin / locale /
  * brand variation per launch.
  *
- * Canonical IGT IxF / G2S boot fields (vendor-neutral):
+ * Canonical IxF / G2S boot fields (vendor-neutral):
  *
  *   softwareid    operator's identifier for the game build (string)
  *   skincode      brand / theme variant code (string, locale-correlated)

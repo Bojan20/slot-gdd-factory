@@ -163,7 +163,7 @@ export function emitBatchSimulatorPanelRuntime(cfg = defaultConfig(), model = {}
    * + features kind list (mali wire payload, ne ceo model).
    *
    * UQ-DEEP-AE (Boki 2026-06-24): stricter pruning — empty `holdAndWin:{}`
-   * od parser-stage-5 inference (Gates of Olympus tumble) ne sme da
+   * od parser-stage-5 inference (vendor-neutral tumble fixture) ne sme da
    * šalje enabled:true bez stvarne config (triggerCount). Backend onda
    * vidi hasHoldAndWin=true i daje phantom +40pp HnW contribution.
    * Sada: holdAndWin se prosleđuje SAMO ako ima triggerCount IS number
@@ -184,10 +184,10 @@ export function emitBatchSimulatorPanelRuntime(cfg = defaultConfig(), model = {}
     typeof model.freeSpins.sessionExpectedValue === 'number'
   );
   const pruned = {
-    /* UQ-DEEP-AI (Boki 2026-06-24): "nema IGT ili imena bilo koje firme".
-     * model.name može sadržati vendor-trademarked product brand (Cash Eruption,
-     * Wolf Run, Cleopatra, Gates of Olympus, Buffalo King) — scrub-uj pre
-     * emit-a u runtime BSP_MODEL. Backend ne treba ime za convergence math. */
+    /* UQ-DEEP-AI (Boki 2026-06-24): "nema vendor-coded ili imena bilo koje firme".
+     * model.name može sadržati vendor-trademarked product brand —
+     * scrub-uj pre emit-a u runtime BSP_MODEL. Backend ne treba ime za
+     * convergence math. */
     name: null,
     payback: model.payback || null,
     freeSpins: _fsHasReal ? {

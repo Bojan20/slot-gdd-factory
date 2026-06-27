@@ -18,8 +18,8 @@ import { tagBlockMarkup } from '../registry/blockMarkupWrapper.mjs';
  *   svodi na 0-byte runtime (no-op).
  *
  * Industry reference (vendor-neutral):
- *   Studio + regulator demo modovi (vendor Studio, L&W RAPID, Pragmatic
- *   Play Demo Mode) sve pokazuju live RTP convergence ka declared
+ *   Studio + regulator demo modovi (vendor-neutral reference suites)
+ *   sve pokazuju live RTP convergence ka declared
  *   targetu — to je standard way da operator + regulator vizualno
  *   verifikuje math pre nego što slot ide u production.
  *

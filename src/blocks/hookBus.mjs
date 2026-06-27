@@ -992,6 +992,12 @@ export const HOOK_EVENTS = Object.freeze([
   'onKernelInitReady',          // Owner: kernelInit.mjs (P3-P4 — window.__KERNEL_INIT__ frozen)
   'onSymbolModifiersApplied',   // Owner: symbolModifiers.mjs (multipliers / wilds / sticky transforms)
   'onCascadeHalted',            // Owner: cascadeLimits.mjs (max-depth guard fires)
+  /* QA-3b · Boki 2026-06-27 — close LEGO HOOK_EVENTS registry completeness
+   * gap surfaced by `tools/lego-gate.mjs` ultimate QA. Both events emit
+   * from blocks that observe runtime quality signals; consumers can
+   * subscribe externally (HUD widgets, audit telemetry). */
+  'onBackendFallback',          // Owner: backendSpinEngine.mjs (offline transition; payload = {at, scope, reason})
+  'onSolverConverged',          // Owner: convergenceHud.mjs (RTP solver hit target band; payload = {iter, finalRtp, deltaBps})
 ]);
 
 /* Wave U4: canonical autoplay stop reasons. */
